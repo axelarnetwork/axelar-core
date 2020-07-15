@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+
+  node1:
+    container_name: node1
+    image: golang:1.14.3
+    volumes:
+      - ./build:/go/bin
+      - ./docker/config:/root/config
+      - ./docker/scripts:/root/scripts
+    working_dir: /root/scripts
+    environment:
+      - PERSISTENT_PEERS=${PERSISTENT_PEERS}
+    command: "bash init.sh"
+    ports:
+    - 26656:26656
