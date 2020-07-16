@@ -15,3 +15,6 @@
 /vendor/
 .idea
 
+/build/
+/docker/.scavengeCLI/
+/docker/.scavengeD/

@@ -40,4 +40,3 @@ build: go.sum
 
 .PHONY: docker
 docker: build
-		docker build -t "testnet:latest" .
