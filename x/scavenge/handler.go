@@ -20,13 +20,30 @@ func NewHandler(k Keeper) sdk.Handler {
 			return handleMsgCreateScavenge(ctx, k, msg)
 		case MsgCommitSolution:
 			return handleMsgCommitSolution(ctx, k, msg)
-		case MsgRevealSolution:
-			return handleMsgRevealSolution(ctx, k, msg)
+		case MsgTransferTokens:
+			return handleMsgTransferTokens(ctx, k, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
 		}
 	}
+}
+
+func handleMsgTransferTokens(ctx sdk.Context, k Keeper, msg MsgTransferTokens) (*sdk.Result, error) {
+	if err := k.CoinKeeper.SendCoins(ctx, msg.Sender, msg.Recipient, msg.Amount);err!= nil{
+		return nil, err
+	}
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.EventTypeTransferTokens),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+			sdk.NewAttribute(types.AttributeRecipient, msg.Recipient.String()),
+			sdk.NewAttribute(types.AttributeAmount, msg.Amount.String()),
+		),
+	)
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
 // handleMsgCreateScavenge creates a new scavenge and moves the reward into escrow

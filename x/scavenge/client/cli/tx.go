@@ -32,6 +32,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		GetCmdCreateScavenge(cdc),
 		GetCmdCommitSolution(cdc),
 		GetCmdRevealSolution(cdc),
+		GetCmdTransferTokens(cdc),
 	)...)
 
 	return scavengeTxCmd
@@ -113,6 +114,37 @@ func GetCmdRevealSolution(cdc *codec.Codec) *cobra.Command {
 
 			msg := types.NewMsgRevealSolution(cliCtx.GetFromAddress(), solution)
 			err := msg.ValidateBasic()
+			if err != nil {
+				return err
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+func GetCmdTransferTokens(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "transferTokens [recipient] [amount]",
+		Short: "Sends the specified coins to the recipient address",
+		Args:  cobra.ExactArgs(2), // Does your request require arguments
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+
+			recipient, err := sdk.AccAddressFromBech32(args[0])
+			if err!=nil{
+				return err
+			}
+			amount, err  := sdk.ParseCoins(args[1])
+			if err!=nil{
+				return err
+			}
+
+			msg := types.NewMsgTransferTokens(cliCtx.GetFromAddress(), recipient, amount)
+			err = msg.ValidateBasic()
 			if err != nil {
 				return err
 			}
