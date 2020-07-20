@@ -39,4 +39,5 @@ build: go.sum
 		go build -o ./build/scavengeCLI -mod=readonly $(BUILD_FLAGS) ./cmd/scavengeCLI
 
 .PHONY: docker
-docker: build
+docker:
+	docker-compose -f docker-compose-build.yml up

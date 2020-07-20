@@ -4,7 +4,7 @@ This creates a node running from a pregenerated genesis file.
 
 ## Starting the first/only node
 
-Run `make docker`, then `docker-compose up`
+Run `make docker`, then `docker-compose -f docker-compose-run.yml up`
 
 ## Adding a node to an existing network
 
