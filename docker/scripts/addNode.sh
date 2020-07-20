@@ -1,5 +1,4 @@
 #!/bin/bash
-pwd
 
 if [ -d ../.scavengeD ]
 then
@@ -11,23 +10,21 @@ then
   rm -r ../.scavengeCLI
 fi
 
-scavengeD init mynode --chain-id scavenge --home ../.scavengeD
+scavengeD init "${1}" --chain-id scavenge --home ../.scavengeD
+
+cp -r ../config ../.scavengeD
+
+peers=$(<peers.txt)
+sed "s/persistent_peers = \"\"/persistent_peers = \"$peers\"/g" ../.scavengeD/config/config.toml > tmp && mv tmp ../.scavengeD/config/config.toml
 
 scavengeCLI config keyring-backend test --home ../.scavengeCLI
 
 scavengeCLI keys add treasury --home ../.scavengeCLI --recover < ./treasury_mnemonic.txt
+scavengeCLI keys add validator --home ../.scavengeCLI
 
 scavengeCLI config chain-id scavenge --home ../.scavengeCLI
 scavengeCLI config output json --home ../.scavengeCLI
 scavengeCLI config indent true --home ../.scavengeCLI
 scavengeCLI config trust-node true --home ../.scavengeCLI
 
-cp -r ../config ../.scavengeD
-
-if [[ -n ${PERSISTENT_PEERS} ]]
-then
-  sed "s/persistent_peers = \"\"/persistent_peers = \"$PERSISTENT_PEERS\"/g" ../.scavengeD/config/config.toml > tmp && mv tmp ../.scavengeD/config/config.toml
-fi
-
-scavengeD start --home ../.scavengeD
-#tail -f /dev/null
+scavengeD start
