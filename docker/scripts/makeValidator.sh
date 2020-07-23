@@ -1,7 +1,7 @@
 #!/bin/bash
 
-scavengeCLI tx scavenge transferTokens "$(scavengeCLI keys show validator -a --home ../.scavengeCLI)" 100000000stake \
-  --from treasury --home ../.scavengeCLI --yes
+scavengeCLI tx scavenge transferTokens "$(scavengeCLI keys show validator -a)" 100000000stake \
+  --from treasury --yes
 
 sleep 3
 
@@ -13,5 +13,4 @@ scavengeCLI tx staking create-validator --yes\
  --commission-max-change-rate="0.01" \
  --min-self-delegation="1" \
  --pubkey "$(scavengeD tendermint show-validator)" \
- --from validator \
- --home ../.scavengeCLI
+ --from validator

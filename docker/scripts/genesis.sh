@@ -10,30 +10,30 @@ then
   rm -r ../.scavengeCLI
 fi
 
-scavengeD init "${1}" --chain-id scavenge --home ../.scavengeD
+scavengeD init "${1}" --chain-id scavenge
 
-scavengeCLI config keyring-backend test --home ../.scavengeCLI
+scavengeCLI config keyring-backend test
 
-scavengeCLI keys add treasury --home ../.scavengeCLI --recover < ./treasury_mnemonic.txt
+scavengeCLI keys add treasury --recover < ./treasury_mnemonic.txt
 
-scavengeCLI config chain-id scavenge --home ../.scavengeCLI
-scavengeCLI config output json --home ../.scavengeCLI
-scavengeCLI config indent true --home ../.scavengeCLI
-scavengeCLI config trust-node true --home ../.scavengeCLI
+scavengeCLI config chain-id scavenge
+scavengeCLI config output json
+scavengeCLI config indent true
+scavengeCLI config trust-node true
 
-scavengeCLI keys add validator --home ../.scavengeCLI
+scavengeCLI keys add validator
 
-scavengeD add-genesis-account "$(scavengeCLI keys show validator -a --home ../.scavengeCLI)" 100000000stake --home ../.scavengeD
-scavengeD add-genesis-account "$(scavengeCLI keys show treasury -a --home ../.scavengeCLI)" 1000000000000foo,100000000000stake --home ../.scavengeD
+scavengeD add-genesis-account "$(scavengeCLI keys show validator -a)" 100000000stake
+scavengeD add-genesis-account "$(scavengeCLI keys show treasury -a)" 1000000000000foo,100000000000stake
 
-scavengeD gentx --name validator --keyring-backend test --home ../.scavengeD
+scavengeD gentx --name validator --keyring-backend test
 
-scavengeD collect-gentxs --home ../.scavengeD
+scavengeD collect-gentxs
 
-scavengeD validate-genesis --home ../.scavengeD
+scavengeD validate-genesis
 
 echo "$(scavengeD tendermint show-node-id)@$(hostname):26656" > peers.txt
 
 cp ../.scavengeD/config/genesis.json ../config
 
-scavengeD start --home ../.scavengeD
+scavengeD start

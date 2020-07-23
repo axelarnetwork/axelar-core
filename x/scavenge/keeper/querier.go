@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"fmt"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -20,7 +21,7 @@ func NewQuerier(k Keeper) sdk.Querier {
 		case types.QueryCommit:
 			return getCommit(ctx, path[1:], k)
 		default:
-			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "unknown scavenge query endpoint")
+			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown scavenge query endpoint: %s", path[0]))
 		}
 	}
 }

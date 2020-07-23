@@ -11,6 +11,10 @@ services:
       - ./docker/scripts:/root/scripts
     working_dir: /root/scripts
     command: "bash genesis.sh node1"
+    ports:
+    - 127.0.0.1:26656:26656
+    - 127.0.0.1:26657:26657
+    - 127.0.0.1:1317:1317
 
   node2:
     container_name: node2
