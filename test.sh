@@ -1,6 +1,6 @@
 #!/bin/bash
 
-docker exec node1 scavengeCLI rest-server &
+docker exec node1 scavengeCLI rest-server --laddr tcp://0.0.0.0:1317&
 printf "\n"
 printf "\n"
 echo "==== creating new scavenge ===="

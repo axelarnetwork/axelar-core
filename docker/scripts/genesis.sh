@@ -36,4 +36,4 @@ echo "$(scavengeD tendermint show-node-id)@$(hostname):26656" > peers.txt
 
 cp ../.scavengeD/config/genesis.json ../config
 
-scavengeD start
+scavengeD start --rpc.laddr tcp://0.0.0.0:26657

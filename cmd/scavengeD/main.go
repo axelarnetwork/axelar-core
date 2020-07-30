@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/cosmos/cosmos-sdk/store/types"
 	"io"
 
 	"github.com/spf13/cobra"
@@ -82,7 +83,7 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 
 	return app.NewInitApp(
 		logger, db, traceStore, true, invCheckPeriod,
-		baseapp.SetPruning(store.NewPruningOptionsFromString(viper.GetString("pruning"))),
+		baseapp.SetPruning(types.NewPruningOptionsFromString(viper.GetString("pruning"))),
 		baseapp.SetMinGasPrices(viper.GetString(server.FlagMinGasPrices)),
 		baseapp.SetHaltHeight(viper.GetUint64(server.FlagHaltHeight)),
 		baseapp.SetHaltTime(viper.GetUint64(server.FlagHaltTime)),

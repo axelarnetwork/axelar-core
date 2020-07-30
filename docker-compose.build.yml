@@ -2,7 +2,7 @@ version: '3'
 
 services:
 
-  node1:
+  builder:
     container_name: build
     image: golang:1.14.3
     volumes:

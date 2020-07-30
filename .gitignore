@@ -18,3 +18,5 @@
 /build/
 /docker/.scavengeCLI/
 /docker/.scavengeD/
+/docker/scripts/peers.txt
+/docker/config/genesis.json

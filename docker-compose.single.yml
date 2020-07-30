@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  x-default: &default
+    image: golang:1.14.3
+    volumes:
+      - ./build:/go/bin
+      - ./docker/config:/root/config
+      - ./docker/scripts:/root/scripts
+    working_dir: /root/scripts
+
+  genesis:
+    container_name: genesis
+    <<: *default
+    command: "bash /root/scripts/genesis.sh genesis"
+    ports:
+      - 1317:1317
+      - 26656:26656
+      - 26657:26657
+      - 26658:26658
+
+  node:
+    container_name: node
+    <<: *default
+    command: "bash /root/scripts/addNode.sh node"
+    ports:
+      - 1317:1317
+      - 26656:26656
+      - 26657:26657
+      - 26658:26658

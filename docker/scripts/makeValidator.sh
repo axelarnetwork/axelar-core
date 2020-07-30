@@ -1,7 +1,7 @@
 #!/bin/bash
 
-scavengeCLI tx scavenge transferTokens "$(scavengeCLI keys show validator -a)" 100000000stake \
-  --from treasury --yes
+scavengeCLI tx send "$(scavengeCLI keys show treasury -a)" "$(scavengeCLI keys show validator -a)" 100000000stake \
+ --yes
 
 sleep 3
 

@@ -27,4 +27,4 @@ scavengeCLI config output json
 scavengeCLI config indent true
 scavengeCLI config trust-node true
 
-scavengeD start
+scavengeD start --rpc.laddr tcp://0.0.0.0:26657
