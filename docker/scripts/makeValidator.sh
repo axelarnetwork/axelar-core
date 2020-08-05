@@ -3,7 +3,7 @@
 scavengeCLI tx send "$(scavengeCLI keys show treasury -a)" "$(scavengeCLI keys show validator -a)" 100000000stake \
  --yes
 
-sleep 3
+sleep 5
 
 scavengeCLI tx staking create-validator --yes\
  --amount 100000000stake \

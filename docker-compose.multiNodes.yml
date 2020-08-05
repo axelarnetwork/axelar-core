@@ -1,39 +1,34 @@
 version: '3'
 
 services:
+  x-default: &default
+    image: golang:1.14.3
+    volumes:
+      - ./build:/go/bin
+      - ./docker/config:/root/config
+      - ./docker/scripts:/root/scripts
+    working_dir: /root/scripts
 
   node2:
     container_name: node2
-    extends:
-      file: docker-compose.yml
-      service: node-base
+    <<: *default
     command: bash -c "sleep 10; bash /root/scripts/addNode.sh node2"
-    depends_on:
-      - node1
+
 
   node3:
     container_name: node3
-    extends:
-      file: docker-compose.yml
-      service: node-base
+    <<: *default
     command: bash -c "sleep 10; bash /root/scripts/addNode.sh node3"
-    depends_on:
-      - node1
+
 
   node4:
     container_name: node4
-    extends:
-      file: docker-compose.yml
-      service: node-base
+    <<: *default
     command: bash -c "sleep 10; bash /root/scripts/addNode.sh node4"
-    depends_on:
-      - node1
+
 
   node5:
     container_name: node5
-    extends:
-      file: docker-compose.yml
-      service: node-base
+    <<: *default
     command: bash -c "sleep 10; bash /root/scripts/addNode.sh node5"
-    depends_on:
-      - node1
+

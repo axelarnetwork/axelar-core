@@ -1,14 +1,16 @@
 # Running a testnet
 
-This creates a test network running two validators.
+This creates a test network running five validators.
 
-## Starting two nodes with one acting as validator
+## Starting the network
 
-Run `make docker` to build the binaries, then `docker-compose -f docker-compose-multiple.yml up`
+Run `make docker` to build the binaries. Then, run `docker-compose -f docker-compose.single.yml up genesis` 
+to create the initial validator. Lastly, run `docker-compose -f docker-compose.multiNodes.yml up` to add four additional 
+local nodes.
 
-## Making the second node a validator
+## Elevating all nodes to validators
 
-Run `docker exec node2 bash makeValidator.sh node2` 
+Run `bash makeValidators.sh node2 node3 node4 node5` 
 
 ## Testing 
 Enter either docker container with `docker exec -it <node name> bash`. 
