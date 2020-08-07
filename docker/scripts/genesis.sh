@@ -1,12 +1,10 @@
 #!/bin/bash
 
-if [ -d ../.scavengeD ]
-then
+if [ -d ../.scavengeD ]; then
   rm -r ../.scavengeD
 fi
 
-if [ -d ../.scavengeCLI ]
-then
+if [ -d ../.scavengeCLI ]; then
   rm -r ../.scavengeCLI
 fi
 
@@ -14,7 +12,7 @@ scavengeD init "${1}" --chain-id scavenge
 
 scavengeCLI config keyring-backend test
 
-scavengeCLI keys add treasury --recover < ./treasury_mnemonic.txt
+scavengeCLI keys add treasury --recover <./treasury_mnemonic.txt
 
 scavengeCLI config chain-id scavenge
 scavengeCLI config output json
@@ -32,8 +30,10 @@ scavengeD collect-gentxs
 
 scavengeD validate-genesis
 
-echo "$(scavengeD tendermint show-node-id)@$(hostname):26656" > peers.txt
+echo "$(scavengeD tendermint show-node-id)@$(hostname):26656" >peers.txt
 
 cp ../.scavengeD/config/genesis.json ../config
+
+./modifyConfig.sh
 
 scavengeD start --rpc.laddr tcp://0.0.0.0:26657

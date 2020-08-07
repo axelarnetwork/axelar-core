@@ -9,9 +9,9 @@ import (
 var _ sdk.Msg = &MsgTransferTokens{}
 
 type MsgTransferTokens struct {
-	Sender    	sdk.AccAddress 	`json:"sender" yaml:"sender"`
-	Recipient 	sdk.AccAddress 	`json:"recipient" yaml:"recipient"`
-	Amount  	sdk.Coins	`json:"amount" yaml:"amount"`
+	Sender    sdk.AccAddress `json:"sender" yaml:"sender"`
+	Recipient sdk.AccAddress `json:"recipient" yaml:"recipient"`
+	Amount    sdk.Coins      `json:"amount" yaml:"amount"`
 }
 
 // NewMsgRevealSolution creates a new MsgRevealSolution instance
@@ -20,7 +20,7 @@ func NewMsgTransferTokens(sender sdk.AccAddress, recipient sdk.AccAddress, amoun
 	return MsgTransferTokens{
 		Sender:    sender,
 		Recipient: recipient,
-		Amount:     amount,
+		Amount:    amount,
 	}
 }
 
@@ -48,7 +48,7 @@ func (msg MsgTransferTokens) ValidateBasic() error {
 	if msg.Recipient.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "recipient can't be empty")
 	}
-	if !msg.Amount.IsAllPositive()  {
+	if !msg.Amount.IsAllPositive() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "amount must be a positive integer")
 	}
 	return nil

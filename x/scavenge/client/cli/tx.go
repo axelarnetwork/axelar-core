@@ -135,11 +135,11 @@ func GetCmdTransferTokens(cdc *codec.Codec) *cobra.Command {
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
 			recipient, err := sdk.AccAddressFromBech32(args[0])
-			if err!=nil{
+			if err != nil {
 				return err
 			}
-			amount, err  := sdk.ParseCoins(args[1])
-			if err!=nil{
+			amount, err := sdk.ParseCoins(args[1])
+			if err != nil {
 				return err
 			}
 

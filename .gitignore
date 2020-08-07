@@ -20,3 +20,6 @@
 /docker/.scavengeD/
 /docker/scripts/peers.txt
 /docker/config/genesis.json
+/docker/prometheus/data
+/docker/prometheus/etc
+/docker/prometheus/*tar.gz

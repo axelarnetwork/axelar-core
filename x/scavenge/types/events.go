@@ -5,7 +5,7 @@ const (
 	EventTypeCreateScavenge = "CreateScavenge"
 	EventTypeCommitSolution = "CommitSolution"
 	EventTypeSolveScavenge  = "SolveScavenge"
-	EventTypeTransferTokens  = "TransferTokens"
+	EventTypeTransferTokens = "TransferTokens"
 
 	AttributeDescription           = "description"
 	AttributeSolution              = "solution"
@@ -13,8 +13,8 @@ const (
 	AttributeReward                = "reward"
 	AttributeScavenger             = "scavenger"
 	AttributeSolutionScavengerHash = "solutionScavengerHash"
-	AttributeRecipient = "recipient"
-	AttributeAmount = "amount"
+	AttributeRecipient             = "recipient"
+	AttributeAmount                = "amount"
 
 	AttributeValueCategory = ModuleName
 )

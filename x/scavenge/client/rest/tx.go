@@ -15,8 +15,8 @@ import (
 
 func registerTxRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	r.HandleFunc(
-	"/scavenge/create",
-	CreateScavengeRequestHandlerFn(cliCtx),
+		"/scavenge/create",
+		CreateScavengeRequestHandlerFn(cliCtx),
 	).Methods("POST")
 	r.HandleFunc(
 		"/scavenge/commit",
@@ -30,10 +30,10 @@ func registerTxRoutes(cliCtx context.CLIContext, r *mux.Router) {
 
 // Action TX body
 type ScavengeReq struct {
-	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
-	Reward  sdk.Coins    `json:"reward" yaml:"reward"`
-	Solution string  	 `json:"solution" yaml:"solution"`
-	Description string   `json:"description" yaml:"description"`
+	BaseReq     rest.BaseReq `json:"base_req" yaml:"base_req"`
+	Reward      sdk.Coins    `json:"reward" yaml:"reward"`
+	Solution    string       `json:"solution" yaml:"solution"`
+	Description string       `json:"description" yaml:"description"`
 }
 
 func CreateScavengeRequestHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {

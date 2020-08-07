@@ -37,7 +37,12 @@ lint:
 build: go.sum
 		go build -o ./build/scavengeD -mod=readonly $(BUILD_FLAGS) ./cmd/scavengeD
 		go build -o ./build/scavengeCLI -mod=readonly $(BUILD_FLAGS) ./cmd/scavengeCLI
+		go build -o ./build/testCLI -mod=readonly $(BUILD_FLAGS) ./cmd/testCLI
 
 .PHONY: docker
 docker:
 	docker-compose -f docker-compose.build.yml up
+
+.PHONY: prometheus
+prometheus:
+	@./docker/prometheus/prometheusSetup.sh

@@ -30,7 +30,7 @@ func NewHandler(k Keeper) sdk.Handler {
 }
 
 func handleMsgTransferTokens(ctx sdk.Context, k Keeper, msg MsgTransferTokens) (*sdk.Result, error) {
-	if err := k.CoinKeeper.SendCoins(ctx, msg.Sender, msg.Recipient, msg.Amount);err!= nil{
+	if err := k.CoinKeeper.SendCoins(ctx, msg.Sender, msg.Recipient, msg.Amount); err != nil {
 		return nil, err
 	}
 	ctx.EventManager().EmitEvent(
