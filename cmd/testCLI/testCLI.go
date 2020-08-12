@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/cheggaaa/pb/v3"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -101,6 +102,7 @@ func tpCmd(cdc *amino.Codec) *cobra.Command {
 				return err
 			}
 
+			bar := pb.StartNew(txCount)
 			wg := &sync.WaitGroup{}
 			errChan := make(chan error, goroutines)
 			seq := viper.GetUint64(flags.FlagSequence)
@@ -118,10 +120,12 @@ func tpCmd(cdc *amino.Codec) *cobra.Command {
 						//coins[0].Amount = coins[0].Amount.AddRaw(int64(j +txCount*i))
 						// build and sign the transaction, then broadcast to Tendermint
 						msg := bank.NewMsgSend(cliCtx.GetFromAddress(), to, coins)
+						fmt.Println("is generate only")
 						if err := utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg}); err != nil {
 							errChan <- err
 							break
 						}
+						bar.Increment()
 					}
 				}(wg, errChan)
 			}
@@ -131,6 +135,7 @@ func tpCmd(cdc *amino.Codec) *cobra.Command {
 				return err
 			default:
 				wg.Wait()
+				bar.Finish()
 				errChan <- nil
 			}
 			return nil

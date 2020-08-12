@@ -3,13 +3,12 @@ module github.com/cosmos/sdk-tutorials/scavenge
 go 1.13
 
 require (
+	github.com/cheggaaa/pb/v3 v3.0.5
 	github.com/cosmos/cosmos-sdk v0.39.0
-	github.com/etcd-io/bbolt v1.3.3 // indirect
 	github.com/golang/mock v1.4.3 // indirect
 	github.com/gorilla/mux v1.7.4
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect
-	github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0 // indirect
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.7.0
