@@ -105,7 +105,7 @@ func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 
 			for i := 0; i < goroutines; i++ {
 				name := "test" + strconv.Itoa(i)
-				if _, err = kb.Get(name); err != nil {
+				if _, err = kb.Get(name); err == nil {
 					continue
 				}
 				fmt.Printf("Creating account %v\n", name)
