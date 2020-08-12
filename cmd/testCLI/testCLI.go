@@ -9,7 +9,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
-	crkeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -123,9 +122,7 @@ func tpCmd(cdc *amino.Codec) *cobra.Command {
 					defer wg.Done()
 					for j := 0; j < txPerGR; j += 1 {
 						inBuf := bufio.NewReader(cmd.InOrStdin())
-						s := atomic.AddUint64(&seq, 1)
-						txBldr := newTxBldr(s-1, inBuf, cdc)
-
+						txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 						cliCtx := context.NewCLIContextWithInputAndFrom(inBuf, args[2]).WithCodec(cdc)
 
 						msg := bank.NewMsgSend(cliCtx.GetFromAddress(), to, coins)
@@ -155,7 +152,8 @@ func tpCmd(cdc *amino.Codec) *cobra.Command {
 					defer wg.Done()
 					for j := 0; j < txPerGR; j += 1 {
 						tx := <-broadcastChan
-						if err := utils.GenerateOrBroadcastMsgs(tx.ctx, tx.bldr, []sdk.Msg{tx.msg}); err != nil {
+						s := atomic.AddUint64(&seq, 1)
+						if err := utils.GenerateOrBroadcastMsgs(tx.ctx, tx.bldr.WithSequence(s-1), []sdk.Msg{tx.msg}); err != nil {
 							errChan <- err
 							break
 						}
@@ -180,30 +178,6 @@ func tpCmd(cdc *amino.Codec) *cobra.Command {
 	tpCmd = flags.PostCommands(tpCmd)[0]
 
 	return tpCmd
-}
-
-func newTxBldr(seq uint64, inBuf *bufio.Reader, cdc *amino.Codec) types.TxBuilder {
-	txBldr := auth.NewTxBuilder(
-		nil,
-		uint64(viper.GetInt64(flags.FlagAccountNumber)),
-		seq,
-		flags.GasFlagVar.Gas,
-		viper.GetFloat64(flags.FlagGasAdjustment),
-		flags.GasFlagVar.Simulate,
-		viper.GetString(flags.FlagChainID),
-		viper.GetString(flags.FlagMemo),
-		nil, nil)
-
-	kb, err := crkeys.NewKeyring(sdk.KeyringServiceName(), viper.GetString(flags.FlagKeyringBackend), viper.GetString(flags.FlagHome), inBuf)
-	if err != nil {
-		panic(err)
-	}
-
-	txBldr = txBldr.WithKeybase(kb)
-	txBldr = txBldr.WithTxEncoder(utils.GetTxEncoder(cdc))
-	txBldr = txBldr.WithFees(viper.GetString(flags.FlagFees))
-	txBldr = txBldr.WithGasPrices(viper.GetString(flags.FlagGasPrices))
-	return txBldr
 }
 
 func initConfig(cmd *cobra.Command) error {
