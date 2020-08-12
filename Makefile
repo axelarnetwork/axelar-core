@@ -41,7 +41,7 @@ build: go.sum
 
 .PHONY: docker
 docker:
-	docker-compose -f docker-compose.build.yml up
+	docker-compose -f docker-compose.build.yml up --remove-orphans
 
 .PHONY: prometheus
 prometheus:
