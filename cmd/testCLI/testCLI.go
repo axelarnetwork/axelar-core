@@ -14,7 +14,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/sdk-tutorials/scavenge/app"
 	"github.com/spf13/cobra"
@@ -76,9 +76,9 @@ func main() {
 }
 
 type tx struct {
-	msg  sdk.Msg
-	ctx  context.CLIContext
-	bldr types.TxBuilder
+	msg sdk.Msg
+	ctx context.CLIContext
+	seq uint64
 }
 
 func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
@@ -134,21 +134,26 @@ func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 				prepareCoins = prepareCoins.Add(c)
 			}
 
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+			prepCtx := context.NewCLIContextWithInputAndFrom(inBuf, args[2]).WithCodec(cdc)
+			prepCtx.Output = ioutil.Discard
+			prepCtx.SkipConfirm = true
+			_, prepSeq, err := authtypes.NewAccountRetriever(prepCtx).GetAccountNumberSequence(prepCtx.FromAddress)
+			if err != nil {
+				return err
+			}
 			for i := 0; i < goroutines; i += 1 {
-				txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-				cliCtx := context.NewCLIContextWithInputAndFrom(inBuf, args[2]).WithCodec(cdc)
-
 				to, _, err := context.GetFromFields(inBuf, "test"+strconv.Itoa(i), false)
 				if err != nil {
 					return err
 				}
 
-				msg := bank.NewMsgSend(cliCtx.FromAddress, to, prepareCoins)
-				cliCtx.Output = ioutil.Discard
-				cliCtx.SkipConfirm = true
-				if err := utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg}); err != nil {
+				msg := bank.NewMsgSend(prepCtx.FromAddress, to, prepareCoins)
+
+				if err := utils.GenerateOrBroadcastMsgs(prepCtx, txBldr, []sdk.Msg{msg}); err != nil {
 					return nil
 				}
+				prepSeq += 1
 				prepareAccountsBar.Increment()
 			}
 			prepareAccountsBar.Finish()
@@ -157,7 +162,6 @@ func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 			wg := &sync.WaitGroup{}
 			errChan := make(chan error, goroutines)
 			broadcastChan := make(chan tx, txCount)
-			seq := viper.GetUint64(flags.FlagSequence)
 
 			fmt.Println("Creating transactions:")
 
@@ -165,24 +169,31 @@ func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 				wg.Add(1)
 				go func(wg *sync.WaitGroup, errChan chan<- error, account string) {
 					defer wg.Done()
+					cliCtx := context.NewCLIContextWithInputAndFrom(inBuf, account).WithCodec(cdc)
+					_, seq, err := authtypes.NewAccountRetriever(prepCtx).GetAccountNumberSequence(prepCtx.FromAddress)
+					if err != nil {
+						errChan <- err
+						return
+					}
 					for j := 0; j < txPerGR; j += 1 {
-						txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-						cliCtx := context.NewCLIContextWithInputAndFrom(inBuf, account).WithCodec(cdc)
 
 						to, _, err := context.GetFromFields(inBuf, args[2], false)
 						if err != nil {
 							errChan <- err
+							return
 						}
 
 						msg := bank.NewMsgSend(cliCtx.FromAddress, to, coins)
 						if cliCtx.SkipConfirm {
 							cliCtx.Output = ioutil.Discard
 						}
+
 						broadcastChan <- tx{
-							msg:  msg,
-							ctx:  cliCtx,
-							bldr: txBldr,
+							msg: msg,
+							ctx: cliCtx,
+							seq: seq,
 						}
+						seq += 1
 						createMsgBar.Increment()
 					}
 				}(wg, errChan, "test"+strconv.Itoa(i))
@@ -210,16 +221,14 @@ func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 				wg.Add(1)
 				go func(wg *sync.WaitGroup, errChan chan<- error) {
 					defer wg.Done()
-					s := seq
 					for j := 0; j < txPerGR; j += 1 {
 						tx := <-broadcastChan
 
-						if err := utils.GenerateOrBroadcastMsgs(tx.ctx, tx.bldr.WithSequence(s), []sdk.Msg{tx.msg}); err != nil {
+						if err := utils.GenerateOrBroadcastMsgs(tx.ctx, txBldr.WithSequence(tx.seq), []sdk.Msg{tx.msg}); err != nil {
 							errChan <- err
-							break
+							return
 						}
 						sendMsgBar.Increment()
-						s += 1
 					}
 				}(wg, errChan)
 			}
@@ -238,6 +247,7 @@ func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 	}
 
 	tpCmd = flags.PostCommands(tpCmd)[0]
+	_ = tpCmd.Flags().MarkHidden(flags.FlagSequence)
 	return tpCmd
 }
 
