@@ -21,6 +21,7 @@ import (
 	"github.com/spf13/viper"
 	amino "github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/libs/cli"
+	"io/ioutil"
 	"os"
 	"path"
 	"strconv"
@@ -120,7 +121,9 @@ func tpCmd(cdc *amino.Codec) *cobra.Command {
 						//coins[0].Amount = coins[0].Amount.AddRaw(int64(j +txCount*i))
 						// build and sign the transaction, then broadcast to Tendermint
 						msg := bank.NewMsgSend(cliCtx.GetFromAddress(), to, coins)
-						fmt.Println("is generate only")
+						if cliCtx.SkipConfirm {
+							cliCtx.Output = ioutil.Discard
+						}
 						if err := utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg}); err != nil {
 							errChan <- err
 							break
