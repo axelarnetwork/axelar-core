@@ -37,4 +37,3 @@ cp ../.scavengeD/config/genesis.json ../config
 ./modifyConfig.sh
 
 scavengeD start --rpc.laddr tcp://0.0.0.0:26657
-
