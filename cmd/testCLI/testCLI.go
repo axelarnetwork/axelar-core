@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
+	crkeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -18,14 +19,13 @@ import (
 	"github.com/cosmos/sdk-tutorials/scavenge/app"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	amino "github.com/tendermint/go-amino"
+	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/libs/cli"
 	"io/ioutil"
 	"os"
 	"path"
 	"strconv"
 	"sync"
-	"sync/atomic"
 )
 
 func main() {
@@ -55,7 +55,7 @@ func main() {
 
 	// Construct Root Command
 	rootCmd.AddCommand(
-		tpCmd(cdc),
+		tpCmd(cdc, keys.AddKeyCommand()),
 		rpc.StatusCommand(),
 		client.ConfigCmd(app.DefaultCLIHome),
 		flags.LineBreak,
@@ -81,9 +81,9 @@ type tx struct {
 	bldr types.TxBuilder
 }
 
-func tpCmd(cdc *amino.Codec) *cobra.Command {
+func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 	tpCmd := &cobra.Command{
-		Use:   "tp [txCount] [goroutines] [from_key_or_address] [to_address] [minAmount]",
+		Use:   "tp [txCount] [goroutines] [account_with_funds] [amount]",
 		Short: "Throughput test",
 		Args:  cobra.ExactArgs(5),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -97,16 +97,61 @@ func tpCmd(cdc *amino.Codec) *cobra.Command {
 			}
 			txPerGR := txCount / goroutines
 
-			to, err := sdk.AccAddressFromBech32(args[3])
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			kb, err := crkeys.NewKeyring(sdk.KeyringServiceName(), viper.GetString(flags.FlagKeyringBackend), viper.GetString(flags.FlagHome), inBuf)
 			if err != nil {
 				return err
 			}
 
+			for i := 0; i < goroutines; i++ {
+				name := "test" + strconv.Itoa(i)
+				if _, err = kb.Get(name); err != nil {
+					continue
+				}
+				fmt.Printf("Creating account %v\n", name)
+				err = addKeyCommand.RunE(cmd, []string{name})
+				if err != nil {
+					return err
+				}
+			}
+
 			// parse coins trying to be sent
-			coins, err := sdk.ParseCoins(args[4])
+			coins, err := sdk.ParseCoins(args[3])
 			if err != nil {
 				return err
 			}
+
+			prepareAccountsBar := pb.StartNew(goroutines)
+			fmt.Println("Preparing accounts for testing:")
+
+			prepareCoins := sdk.Coins{}
+
+			for _, coin := range coins {
+				c := coin
+				for i := 0; i < txPerGR-1; i++ {
+					c.Add(coin)
+				}
+				prepareCoins = prepareCoins.Add(c)
+			}
+
+			for i := 0; i < goroutines; i += 1 {
+				txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+				cliCtx := context.NewCLIContextWithInputAndFrom(inBuf, args[2]).WithCodec(cdc)
+
+				to, _, err := context.GetFromFields(inBuf, "test"+strconv.Itoa(i), false)
+				if err != nil {
+					return err
+				}
+
+				msg := bank.NewMsgSend(cliCtx.FromAddress, to, prepareCoins)
+				cliCtx.Output = ioutil.Discard
+				cliCtx.SkipConfirm = true
+				if err := utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg}); err != nil {
+					return nil
+				}
+				prepareAccountsBar.Increment()
+			}
+			prepareAccountsBar.Finish()
 
 			createMsgBar := pb.StartNew(txCount)
 			wg := &sync.WaitGroup{}
@@ -118,14 +163,18 @@ func tpCmd(cdc *amino.Codec) *cobra.Command {
 
 			for i := 0; i < goroutines; i += 1 {
 				wg.Add(1)
-				go func(wg *sync.WaitGroup) {
+				go func(wg *sync.WaitGroup, errChan chan<- error, account string) {
 					defer wg.Done()
 					for j := 0; j < txPerGR; j += 1 {
-						inBuf := bufio.NewReader(cmd.InOrStdin())
 						txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-						cliCtx := context.NewCLIContextWithInputAndFrom(inBuf, args[2]).WithCodec(cdc)
+						cliCtx := context.NewCLIContextWithInputAndFrom(inBuf, account).WithCodec(cdc)
 
-						msg := bank.NewMsgSend(cliCtx.GetFromAddress(), to, coins)
+						to, _, err := context.GetFromFields(inBuf, args[2], false)
+						if err != nil {
+							errChan <- err
+						}
+
+						msg := bank.NewMsgSend(cliCtx.FromAddress, to, coins)
 						if cliCtx.SkipConfirm {
 							cliCtx.Output = ioutil.Discard
 						}
@@ -136,11 +185,22 @@ func tpCmd(cdc *amino.Codec) *cobra.Command {
 						}
 						createMsgBar.Increment()
 					}
-				}(wg)
+				}(wg, errChan, "test"+strconv.Itoa(i))
 			}
 
-			wg.Wait()
-			createMsgBar.Finish()
+			select {
+			case err := <-errChan:
+				createMsgBar.Finish()
+				if err != nil {
+					return err
+				} else {
+					break
+				}
+			default:
+				wg.Wait()
+				createMsgBar.Finish()
+				errChan <- nil
+			}
 
 			fmt.Println("Sending transactions:")
 
@@ -150,14 +210,16 @@ func tpCmd(cdc *amino.Codec) *cobra.Command {
 				wg.Add(1)
 				go func(wg *sync.WaitGroup, errChan chan<- error) {
 					defer wg.Done()
+					s := seq
 					for j := 0; j < txPerGR; j += 1 {
 						tx := <-broadcastChan
-						s := atomic.AddUint64(&seq, 1)
-						if err := utils.GenerateOrBroadcastMsgs(tx.ctx, tx.bldr.WithSequence(s-1), []sdk.Msg{tx.msg}); err != nil {
+
+						if err := utils.GenerateOrBroadcastMsgs(tx.ctx, tx.bldr.WithSequence(s), []sdk.Msg{tx.msg}); err != nil {
 							errChan <- err
 							break
 						}
 						sendMsgBar.Increment()
+						s += 1
 					}
 				}(wg, errChan)
 			}
@@ -176,7 +238,6 @@ func tpCmd(cdc *amino.Codec) *cobra.Command {
 	}
 
 	tpCmd = flags.PostCommands(tpCmd)[0]
-
 	return tpCmd
 }
 
