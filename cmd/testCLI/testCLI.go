@@ -76,6 +76,12 @@ func main() {
 	}
 }
 
+type tx struct {
+	msg  sdk.Msg
+	ctx  context.CLIContext
+	bldr types.TxBuilder
+}
+
 func tpCmd(cdc *amino.Codec) *cobra.Command {
 	tpCmd := &cobra.Command{
 		Use:   "tp [txCount] [goroutines] [from_key_or_address] [to_address] [minAmount]",
@@ -103,13 +109,17 @@ func tpCmd(cdc *amino.Codec) *cobra.Command {
 				return err
 			}
 
-			bar := pb.StartNew(txCount)
+			createMsgBar := pb.StartNew(txCount)
 			wg := &sync.WaitGroup{}
 			errChan := make(chan error, goroutines)
+			broadcastChan := make(chan tx, txCount)
 			seq := viper.GetUint64(flags.FlagSequence)
+
+			fmt.Println("Creating transactions:")
+
 			for i := 0; i < goroutines; i += 1 {
 				wg.Add(1)
-				go func(wg *sync.WaitGroup, errChan chan<- error) {
+				go func(wg *sync.WaitGroup) {
 					defer wg.Done()
 					for j := 0; j < txPerGR; j += 1 {
 						inBuf := bufio.NewReader(cmd.InOrStdin())
@@ -118,27 +128,49 @@ func tpCmd(cdc *amino.Codec) *cobra.Command {
 
 						cliCtx := context.NewCLIContextWithInputAndFrom(inBuf, args[2]).WithCodec(cdc)
 
-						//coins[0].Amount = coins[0].Amount.AddRaw(int64(j +txCount*i))
-						// build and sign the transaction, then broadcast to Tendermint
 						msg := bank.NewMsgSend(cliCtx.GetFromAddress(), to, coins)
 						if cliCtx.SkipConfirm {
 							cliCtx.Output = ioutil.Discard
 						}
-						if err := utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg}); err != nil {
+						broadcastChan <- tx{
+							msg:  msg,
+							ctx:  cliCtx,
+							bldr: txBldr,
+						}
+						createMsgBar.Increment()
+					}
+				}(wg)
+			}
+
+			wg.Wait()
+			createMsgBar.Finish()
+
+			fmt.Println("Sending transactions:")
+
+			sendMsgBar := pb.StartNew(txCount)
+
+			for i := 0; i < goroutines; i += 1 {
+				wg.Add(1)
+				go func(wg *sync.WaitGroup, errChan chan<- error) {
+					defer wg.Done()
+					for j := 0; j < txPerGR; j += 1 {
+						tx := <-broadcastChan
+						if err := utils.GenerateOrBroadcastMsgs(tx.ctx, tx.bldr, []sdk.Msg{tx.msg}); err != nil {
 							errChan <- err
 							break
 						}
-						bar.Increment()
+						sendMsgBar.Increment()
 					}
 				}(wg, errChan)
 			}
 
 			select {
 			case err := <-errChan:
+				sendMsgBar.Finish()
 				return err
 			default:
 				wg.Wait()
-				bar.Finish()
+				sendMsgBar.Finish()
 				errChan <- nil
 			}
 			return nil
