@@ -136,8 +136,8 @@ func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 			prepCtx := context.NewCLIContextWithInputAndFrom(inBuf, args[2]).WithCodec(cdc)
-			//prepCtx.Output = ioutil.Discard
-			//prepCtx.SkipConfirm = true
+			prepCtx.Output = ioutil.Discard
+			prepCtx.SkipConfirm = true
 			_, prepSeq, err := authtypes.NewAccountRetriever(prepCtx).GetAccountNumberSequence(prepCtx.FromAddress)
 			if err != nil {
 				return err
@@ -217,6 +217,7 @@ func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 
 			sendMsgBar := pb.StartNew(txCount)
 
+			wg = &sync.WaitGroup{}
 			for i := 0; i < goroutines; i += 1 {
 				wg.Add(1)
 				go func(wg *sync.WaitGroup, errChan chan<- error) {
