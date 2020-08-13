@@ -199,18 +199,13 @@ func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 				}(wg, errChan, "test"+strconv.Itoa(i))
 			}
 
+			wg.Wait()
+			createMsgBar.Finish()
+
 			select {
 			case err := <-errChan:
-				createMsgBar.Finish()
-				if err != nil {
-					return err
-				} else {
-					break
-				}
+				return err
 			default:
-				wg.Wait()
-				createMsgBar.Finish()
-				errChan <- nil
 			}
 
 			fmt.Println("Sending transactions:")
@@ -234,16 +229,15 @@ func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 				}(wg, errChan)
 			}
 
+			wg.Wait()
+			sendMsgBar.Finish()
+
 			select {
 			case err := <-errChan:
-				sendMsgBar.Finish()
 				return err
 			default:
-				wg.Wait()
-				sendMsgBar.Finish()
-				errChan <- nil
+				return nil
 			}
-			return nil
 		},
 	}
 
