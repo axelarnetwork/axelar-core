@@ -26,6 +26,7 @@ import (
 	"path"
 	"strconv"
 	"sync"
+	"time"
 )
 
 func main() {
@@ -163,6 +164,7 @@ func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 			errChan := make(chan error, goroutines)
 			broadcastChan := make(chan tx, txCount)
 
+			time.Sleep(5 * time.Second)
 			fmt.Println("Creating transactions:")
 
 			for i := 0; i < goroutines; i += 1 {
@@ -170,7 +172,7 @@ func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 				go func(wg *sync.WaitGroup, errChan chan<- error, account string) {
 					defer wg.Done()
 					cliCtx := context.NewCLIContextWithInputAndFrom(inBuf, account).WithCodec(cdc)
-					_, seq, err := authtypes.NewAccountRetriever(prepCtx).GetAccountNumberSequence(prepCtx.FromAddress)
+					_, seq, err := authtypes.NewAccountRetriever(cliCtx).GetAccountNumberSequence(cliCtx.FromAddress)
 					if err != nil {
 						errChan <- err
 						return
