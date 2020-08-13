@@ -150,7 +150,7 @@ func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 
 				msg := bank.NewMsgSend(prepCtx.FromAddress, to, prepareCoins)
 
-				if err := utils.GenerateOrBroadcastMsgs(prepCtx, txBldr, []sdk.Msg{msg}); err != nil {
+				if err := utils.GenerateOrBroadcastMsgs(prepCtx, txBldr.WithSequence(prepSeq), []sdk.Msg{msg}); err != nil {
 					return nil
 				}
 				prepSeq += 1
