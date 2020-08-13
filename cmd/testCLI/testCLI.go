@@ -139,6 +139,7 @@ func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 			prepCtx := context.NewCLIContextWithInputAndFrom(inBuf, args[2]).WithCodec(cdc)
 			prepCtx.Output = ioutil.Discard
 			prepCtx.SkipConfirm = true
+			prepCtx.BroadcastMode = flags.BroadcastBlock
 			_, prepSeq, err := authtypes.NewAccountRetriever(prepCtx).GetAccountNumberSequence(prepCtx.FromAddress)
 			if err != nil {
 				return err
