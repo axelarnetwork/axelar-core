@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"github.com/cheggaaa/pb/v3"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -21,12 +22,12 @@ import (
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/libs/cli"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
 	"strconv"
 	"sync"
-	"time"
 )
 
 func main() {
@@ -160,13 +161,13 @@ func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 			}
 			prepareAccountsBar.Finish()
 
-			createMsgBar := pb.StartNew(txCount)
 			wg := &sync.WaitGroup{}
 			errChan := make(chan error, goroutines)
 			broadcastChan := make(chan tx, txCount)
 
-			time.Sleep(5 * time.Second)
 			fmt.Println("Creating transactions:")
+
+			createMsgBar := pb.StartNew(txCount)
 
 			for i := 0; i < goroutines; i += 1 {
 				wg.Add(1)
@@ -215,7 +216,23 @@ func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 
 			sendMsgBar := pb.StartNew(txCount)
 
+			r, w, err := os.Pipe()
+			if err != nil {
+				panic(err)
+			}
+			origStdout := os.Stdout
+			os.Stdout = w
 			wg = &sync.WaitGroup{}
+			wg.Add(1)
+
+			buf := bytes.Buffer{}
+			go func(reader io.Reader, buffer io.Writer) {
+				defer wg.Done()
+				if _, err := io.Copy(buffer, reader); err != nil {
+					panic(err)
+				}
+			}(r, &buf)
+
 			for i := 0; i < goroutines; i += 1 {
 				wg.Add(1)
 				go func(wg *sync.WaitGroup, errChan chan<- error) {
@@ -234,7 +251,9 @@ func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 
 			wg.Wait()
 			sendMsgBar.Finish()
-
+			_ = r.Close()
+			os.Stdout = origStdout
+			fmt.Println(buf.String())
 			select {
 			case err := <-errChan:
 				return err
