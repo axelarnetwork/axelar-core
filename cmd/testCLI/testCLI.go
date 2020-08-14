@@ -22,7 +22,6 @@ import (
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/libs/cli"
-	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -247,19 +246,19 @@ func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 					}
 				}(wg, errChan)
 			}
-			wg.Add(1)
-			go func(reader io.Reader, buffer io.Writer) {
-				defer wg.Done()
-				if _, err := io.Copy(buffer, reader); err != nil {
-					panic(err)
-				}
-			}(r, &buf)
-
+			//wg.Add(1)
+			//go func(reader io.Reader, buffer io.Writer) {
+			//	defer wg.Done()
+			//	if _, err := io.Copy(buffer, reader); err != nil {
+			//		panic(err)
+			//	}
+			//}(r, &buf)
 			wg.Wait()
 			sendMsgBar.Finish()
 			_ = r.Close()
+			_ = w.Close()
 			os.Stdout = origStdout
-
+			_, _ = buf.ReadFrom(r)
 			fmt.Println(buf.String())
 			select {
 			case err := <-errChan:
