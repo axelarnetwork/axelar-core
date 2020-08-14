@@ -140,12 +140,18 @@ func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 			prepCtx := context.NewCLIContextWithInputAndFrom(inBuf, args[2]).WithCodec(cdc)
 			prepCtx.Output = ioutil.Discard
 			prepCtx.SkipConfirm = true
-			prepCtx.BroadcastMode = flags.BroadcastBlock
+			prepCtx.BroadcastMode = flags.BroadcastSync
 			_, prepSeq, err := authtypes.NewAccountRetriever(prepCtx).GetAccountNumberSequence(prepCtx.FromAddress)
 			if err != nil {
 				return err
 			}
+
+			origStdout := os.Stdout
+			os.Stdout, _ = os.Open(os.DevNull)
 			for i := 0; i < goroutines; i += 1 {
+				if i == goroutines-1 {
+					prepCtx.BroadcastMode = flags.BroadcastBlock
+				}
 				to, _, err := context.GetFromFields(inBuf, "test"+strconv.Itoa(i), false)
 				if err != nil {
 					return err
@@ -160,7 +166,7 @@ func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 				prepareAccountsBar.Increment()
 			}
 			prepareAccountsBar.Finish()
-
+			os.Stdout = origStdout
 			wg := &sync.WaitGroup{}
 			errChan := make(chan error, goroutines)
 			broadcastChan := make(chan tx, txCount)
@@ -220,7 +226,6 @@ func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 			if err != nil {
 				panic(err)
 			}
-			origStdout := os.Stdout
 			os.Stdout = w
 			wg = &sync.WaitGroup{}
 			wg.Add(1)
