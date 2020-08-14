@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"fmt"
 	"github.com/cheggaaa/pb/v3"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -221,15 +220,15 @@ func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 
 			sendMsgBar := pb.StartNew(txCount)
 
-			r, w, err := os.Pipe()
-			if err != nil {
-				panic(err)
-			}
-			origStdout = os.Stdout
-			os.Stdout = w
+			//r, w, err := os.Pipe()
+			//if err != nil {
+			//	panic(err)
+			//}
+			//origStdout = os.Stdout
+			//os.Stdout = w
 			wg = &sync.WaitGroup{}
 
-			buf := bytes.Buffer{}
+			//buf := bytes.Buffer{}
 
 			for i := 0; i < goroutines; i += 1 {
 				wg.Add(1)
@@ -255,11 +254,11 @@ func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 			//}(r, &buf)
 			wg.Wait()
 			sendMsgBar.Finish()
-			_ = r.Close()
-			_ = w.Close()
-			os.Stdout = origStdout
-			_, _ = buf.ReadFrom(r)
-			fmt.Println(buf.String())
+			//_ = r.Close()
+			//_ = w.Close()
+			//os.Stdout = origStdout
+			//_, _ = buf.ReadFrom(r)
+			//fmt.Println(buf.String())
 			select {
 			case err := <-errChan:
 				return err
