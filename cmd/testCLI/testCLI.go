@@ -226,17 +226,11 @@ func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 			if err != nil {
 				panic(err)
 			}
+			origStdout = os.Stdout
 			os.Stdout = w
 			wg = &sync.WaitGroup{}
-			wg.Add(1)
 
 			buf := bytes.Buffer{}
-			go func(reader io.Reader, buffer io.Writer) {
-				defer wg.Done()
-				if _, err := io.Copy(buffer, reader); err != nil {
-					panic(err)
-				}
-			}(r, &buf)
 
 			for i := 0; i < goroutines; i += 1 {
 				wg.Add(1)
@@ -253,11 +247,19 @@ func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 					}
 				}(wg, errChan)
 			}
+			wg.Add(1)
+			go func(reader io.Reader, buffer io.Writer) {
+				defer wg.Done()
+				if _, err := io.Copy(buffer, reader); err != nil {
+					panic(err)
+				}
+			}(r, &buf)
 
 			wg.Wait()
 			sendMsgBar.Finish()
 			_ = r.Close()
 			os.Stdout = origStdout
+
 			fmt.Println(buf.String())
 			select {
 			case err := <-errChan:
