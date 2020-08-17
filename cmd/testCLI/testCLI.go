@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/cheggaaa/pb/v3"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -13,19 +14,18 @@ import (
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/sdk-tutorials/scavenge/app"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	amino "github.com/tendermint/go-amino"
+	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/libs/cli"
 	"io/ioutil"
 	"os"
 	"path"
 	"strconv"
 	"sync"
-	"sync/atomic"
 )
 
 func main() {
@@ -55,7 +55,7 @@ func main() {
 
 	// Construct Root Command
 	rootCmd.AddCommand(
-		tpCmd(cdc),
+		tpCmd(cdc, keys.AddKeyCommand()),
 		rpc.StatusCommand(),
 		client.ConfigCmd(app.DefaultCLIHome),
 		flags.LineBreak,
@@ -75,11 +75,17 @@ func main() {
 	}
 }
 
-func tpCmd(cdc *amino.Codec) *cobra.Command {
+type tx struct {
+	msg sdk.Msg
+	ctx context.CLIContext
+	seq uint64
+}
+
+func tpCmd(cdc *amino.Codec, addKeyCommand *cobra.Command) *cobra.Command {
 	tpCmd := &cobra.Command{
-		Use:   "tp [txCount] [goroutines] [from_key_or_address] [to_address] [minAmount]",
+		Use:   "tp [txCount] [goroutines] [account_with_funds] [amount]",
 		Short: "Throughput test",
-		Args:  cobra.ExactArgs(5),
+		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			txCount, err := strconv.Atoi(args[0])
 			if err != nil {
@@ -91,83 +97,181 @@ func tpCmd(cdc *amino.Codec) *cobra.Command {
 			}
 			txPerGR := txCount / goroutines
 
-			to, err := sdk.AccAddressFromBech32(args[3])
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			kb, err := crkeys.NewKeyring(sdk.KeyringServiceName(), viper.GetString(flags.FlagKeyringBackend), viper.GetString(flags.FlagHome), inBuf)
 			if err != nil {
 				return err
+			}
+
+			for i := 0; i < goroutines; i++ {
+				name := "test" + strconv.Itoa(i)
+				if _, err = kb.Get(name); err == nil {
+					continue
+				}
+				fmt.Printf("Creating account %v\n", name)
+				err = addKeyCommand.RunE(cmd, []string{name})
+				if err != nil {
+					return err
+				}
 			}
 
 			// parse coins trying to be sent
-			coins, err := sdk.ParseCoins(args[4])
+			coins, err := sdk.ParseCoins(args[3])
 			if err != nil {
 				return err
 			}
 
+			prepareAccountsBar := pb.StartNew(goroutines)
+			fmt.Println("Preparing accounts for testing:")
+
+			prepareCoins := sdk.Coins{}
+
+			for _, coin := range coins {
+				c := coin
+				for i := 0; i < txPerGR-1; i++ {
+					c.Add(coin)
+				}
+				prepareCoins = prepareCoins.Add(c)
+			}
+
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+			prepCtx := context.NewCLIContextWithInputAndFrom(inBuf, args[2]).WithCodec(cdc)
+			prepCtx.Output = ioutil.Discard
+			prepCtx.SkipConfirm = true
+			prepCtx.BroadcastMode = flags.BroadcastSync
+			_, prepSeq, err := authtypes.NewAccountRetriever(prepCtx).GetAccountNumberSequence(prepCtx.FromAddress)
+			if err != nil {
+				return err
+			}
+
+			origStdout := os.Stdout
+			os.Stdout, _ = os.Open(os.DevNull)
+			for i := 0; i < goroutines; i += 1 {
+				if i == goroutines-1 {
+					prepCtx.BroadcastMode = flags.BroadcastBlock
+				}
+				to, _, err := context.GetFromFields(inBuf, "test"+strconv.Itoa(i), false)
+				if err != nil {
+					return err
+				}
+
+				msg := bank.NewMsgSend(prepCtx.FromAddress, to, prepareCoins)
+
+				if err := utils.GenerateOrBroadcastMsgs(prepCtx, txBldr.WithSequence(prepSeq), []sdk.Msg{msg}); err != nil {
+					return nil
+				}
+				prepSeq += 1
+				prepareAccountsBar.Increment()
+			}
+			prepareAccountsBar.Finish()
+			os.Stdout = origStdout
 			wg := &sync.WaitGroup{}
 			errChan := make(chan error, goroutines)
-			seq := viper.GetUint64(flags.FlagSequence)
+			broadcastChan := make(chan tx, txCount)
+
+			fmt.Println("Creating transactions:")
+
+			createMsgBar := pb.StartNew(txCount)
+
 			for i := 0; i < goroutines; i += 1 {
 				wg.Add(1)
-				go func(wg *sync.WaitGroup, errChan chan<- error) {
+				go func(wg *sync.WaitGroup, errChan chan<- error, account string) {
 					defer wg.Done()
+					cliCtx := context.NewCLIContextWithInputAndFrom(inBuf, account).WithCodec(cdc)
+					cliCtx.BroadcastMode = flags.BroadcastSync
+					_, seq, err := authtypes.NewAccountRetriever(cliCtx).GetAccountNumberSequence(cliCtx.FromAddress)
+					if err != nil {
+						errChan <- err
+						return
+					}
 					for j := 0; j < txPerGR; j += 1 {
-						inBuf := bufio.NewReader(cmd.InOrStdin())
-						s := atomic.AddUint64(&seq, 1)
-						txBldr := newTxBldr(s-1, inBuf, cdc)
 
-						cliCtx := context.NewCLIContextWithInputAndFrom(inBuf, args[2]).WithCodec(cdc)
+						to, _, err := context.GetFromFields(inBuf, args[2], false)
+						if err != nil {
+							errChan <- err
+							return
+						}
 
-						//coins[0].Amount = coins[0].Amount.AddRaw(int64(j +txCount*i))
-						// build and sign the transaction, then broadcast to Tendermint
-						msg := bank.NewMsgSend(cliCtx.GetFromAddress(), to, coins)
+						msg := bank.NewMsgSend(cliCtx.FromAddress, to, coins)
 						if cliCtx.SkipConfirm {
 							cliCtx.Output = ioutil.Discard
 						}
-						if err := utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg}); err != nil {
-							errChan <- err
-							break
+
+						broadcastChan <- tx{
+							msg: msg,
+							ctx: cliCtx,
+							seq: seq,
 						}
+						seq += 1
+						createMsgBar.Increment()
 					}
-				}(wg, errChan)
+				}(wg, errChan, "test"+strconv.Itoa(i))
 			}
+
+			wg.Wait()
+			createMsgBar.Finish()
 
 			select {
 			case err := <-errChan:
 				return err
 			default:
-				wg.Wait()
-				errChan <- nil
 			}
-			return nil
+
+			fmt.Println("Sending transactions:")
+
+			sendMsgBar := pb.StartNew(txCount)
+
+			//r, w, err := os.Pipe()
+			//if err != nil {
+			//	panic(err)
+			//}
+			//origStdout = os.Stdout
+			//os.Stdout = w
+			wg = &sync.WaitGroup{}
+
+			//buf := bytes.Buffer{}
+
+			for i := 0; i < goroutines; i += 1 {
+				wg.Add(1)
+				go func(wg *sync.WaitGroup, errChan chan<- error) {
+					defer wg.Done()
+					for j := 0; j < txPerGR; j += 1 {
+						tx := <-broadcastChan
+
+						if err := utils.GenerateOrBroadcastMsgs(tx.ctx, txBldr.WithSequence(tx.seq), []sdk.Msg{tx.msg}); err != nil {
+							errChan <- err
+							return
+						}
+						sendMsgBar.Increment()
+					}
+				}(wg, errChan)
+			}
+			//wg.Add(1)
+			//go func(reader io.Reader, buffer io.Writer) {
+			//	defer wg.Done()
+			//	if _, err := io.Copy(buffer, reader); err != nil {
+			//		panic(err)
+			//	}
+			//}(r, &buf)
+			wg.Wait()
+			sendMsgBar.Finish()
+			//_ = r.Close()
+			//_ = w.Close()
+			//os.Stdout = origStdout
+			//_, _ = buf.ReadFrom(r)
+			//fmt.Println(buf.String())
+			select {
+			case err := <-errChan:
+				return err
+			default:
+				return nil
+			}
 		},
 	}
 
 	tpCmd = flags.PostCommands(tpCmd)[0]
-
+	_ = tpCmd.Flags().MarkHidden(flags.FlagSequence)
 	return tpCmd
-}
-
-func newTxBldr(seq uint64, inBuf *bufio.Reader, cdc *amino.Codec) types.TxBuilder {
-	txBldr := auth.NewTxBuilder(
-		nil,
-		uint64(viper.GetInt64(flags.FlagAccountNumber)),
-		seq,
-		flags.GasFlagVar.Gas,
-		viper.GetFloat64(flags.FlagGasAdjustment),
-		flags.GasFlagVar.Simulate,
-		viper.GetString(flags.FlagChainID),
-		viper.GetString(flags.FlagMemo),
-		nil, nil)
-
-	kb, err := crkeys.NewKeyring(sdk.KeyringServiceName(), viper.GetString(flags.FlagKeyringBackend), viper.GetString(flags.FlagHome), inBuf)
-	if err != nil {
-		panic(err)
-	}
-
-	txBldr = txBldr.WithKeybase(kb)
-	txBldr = txBldr.WithTxEncoder(utils.GetTxEncoder(cdc))
-	txBldr = txBldr.WithFees(viper.GetString(flags.FlagFees))
-	txBldr = txBldr.WithGasPrices(viper.GetString(flags.FlagGasPrices))
-	return txBldr
 }
 
 func initConfig(cmd *cobra.Command) error {

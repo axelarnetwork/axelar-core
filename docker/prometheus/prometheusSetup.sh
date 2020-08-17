@@ -7,4 +7,5 @@ fi
 sed "s/UID=.*/UID=$(id -u prometheus)/g" .env >.env.tmp && mv .env.tmp .env
 sed "s/GID=.*/GID=$(id -g prometheus)/g" .env >.env.tmp && mv .env.tmp .env
 echo "Modifying permissions for prometheus directories"
-sudo chown prometheus:prometheus ./data/prometheus
+mkdir "$(dirname "$0")"/data/prometheus -p
+sudo chown prometheus:prometheus "$(dirname "$0")"/data/prometheus

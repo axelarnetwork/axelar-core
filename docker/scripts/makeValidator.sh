@@ -1,9 +1,7 @@
 #!/bin/bash
 
 scavengeCLI tx send "$(scavengeCLI keys show treasury -a)" "$(scavengeCLI keys show validator -a)" 100000000stake \
- --yes
-
-sleep 5
+ --yes -b block
 
 scavengeCLI tx staking create-validator --yes\
  --amount 100000000stake \
@@ -14,3 +12,4 @@ scavengeCLI tx staking create-validator --yes\
  --min-self-delegation="1" \
  --pubkey "$(scavengeD tendermint show-validator)" \
  --from validator
+
