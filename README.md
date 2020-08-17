@@ -36,7 +36,7 @@ Spin up the monitoring node with `docker-compose -f docker-compose.monitor.yml u
 It is configured to read Cosmos metrics from the default metrics port of the genesis container (genesis:26660).
 Grafana is available at `http://localhost:3000`.
 
-###Configuring Grafana 
+### Configuring Grafana 
 The default login is User:`admin` PW:`admin`. When logged in add a new data source at 
 Configuration (cog icon) -> Data Sources. Choose Prometheus, change the name to _Cosmos_ and fill in the URL
 `http://localhost:9090`. Click _Save & Test_. This should show _Data source is working_. 
