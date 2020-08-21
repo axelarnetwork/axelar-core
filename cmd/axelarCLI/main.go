@@ -38,8 +38,8 @@ func main() {
 	config.Seal()
 
 	rootCmd := &cobra.Command{
-		Use:   "scavengeCLI",
-		Short: "Scavenge Client",
+		Use:   "axelarCLI",
+		Short: "Axelar Client",
 	}
 
 	// Add --chain-id to persistent flags and mark it required

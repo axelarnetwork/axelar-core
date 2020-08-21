@@ -43,8 +43,8 @@ func main() {
 	ctx := server.NewDefaultContext()
 	cobra.EnableCommandSorting = false
 	rootCmd := &cobra.Command{
-		Use:               "scavengeD",
-		Short:             "Scavenge Daemon (server)",
+		Use:               "axelarD",
+		Short:             "Axelar Daemon (server)",
 		PersistentPreRunE: server.PersistentPreRunEFn(ctx),
 	}
 

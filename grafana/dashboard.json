@@ -98,7 +98,7 @@
         "lineColor": "rgb(31, 120, 193)",
         "show": false
       },
-      "tableColumn": "tendermint_consensus_height{chain_id=\"scavenge\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
+      "tableColumn": "tendermint_consensus_height{chain_id=\"axelar\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
       "targets": [
         {
           "expr": "tendermint_consensus_height",
@@ -189,7 +189,7 @@
         "lineColor": "rgb(31, 120, 193)",
         "show": false
       },
-      "tableColumn": "tendermint_p2p_peers{chain_id=\"scavenge\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
+      "tableColumn": "tendermint_p2p_peers{chain_id=\"axelar\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
       "targets": [
         {
           "expr": "tendermint_p2p_peers",
@@ -278,7 +278,7 @@
         "lineColor": "rgb(31, 120, 193)",
         "show": false
       },
-      "tableColumn": "tendermint_consensus_validators_power{chain_id=\"scavenge\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
+      "tableColumn": "tendermint_consensus_validators_power{chain_id=\"axelar\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
       "targets": [
         {
           "expr": "tendermint_consensus_validators_power",
@@ -366,7 +366,7 @@
         "lineColor": "rgb(31, 120, 193)",
         "show": false
       },
-      "tableColumn": "tendermint_consensus_rounds{chain_id=\"scavenge\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
+      "tableColumn": "tendermint_consensus_rounds{chain_id=\"axelar\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
       "targets": [
         {
           "expr": "tendermint_consensus_rounds",
@@ -454,7 +454,7 @@
         "lineColor": "rgb(31, 120, 193)",
         "show": false
       },
-      "tableColumn": "tendermint_consensus_num_txs{chain_id=\"scavenge\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
+      "tableColumn": "tendermint_consensus_num_txs{chain_id=\"axelar\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
       "targets": [
         {
           "expr": "tendermint_consensus_num_txs",
@@ -542,7 +542,7 @@
         "lineColor": "rgb(31, 120, 193)",
         "show": false
       },
-      "tableColumn": "tendermint_consensus_total_txs{chain_id=\"scavenge\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
+      "tableColumn": "tendermint_consensus_total_txs{chain_id=\"axelar\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
       "targets": [
         {
           "expr": "tendermint_consensus_total_txs",
@@ -630,7 +630,7 @@
         "lineColor": "rgb(31, 120, 193)",
         "show": false
       },
-      "tableColumn": "tendermint_consensus_block_size_bytes{chain_id=\"scavenge\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
+      "tableColumn": "tendermint_consensus_block_size_bytes{chain_id=\"axelar\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
       "targets": [
         {
           "expr": "tendermint_consensus_block_size_bytes",
@@ -922,7 +922,7 @@
         "lineColor": "rgb(31, 120, 193)",
         "show": false
       },
-      "tableColumn": "tendermint_mempool_size{chain_id=\"scavenge\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
+      "tableColumn": "tendermint_mempool_size{chain_id=\"axelar\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
       "targets": [
         {
           "expr": "tendermint_mempool_size",
@@ -1010,7 +1010,7 @@
         "lineColor": "rgb(31, 120, 193)",
         "show": false
       },
-      "tableColumn": "tendermint_mempool_failed_txs{chain_id=\"scavenge\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
+      "tableColumn": "tendermint_mempool_failed_txs{chain_id=\"axelar\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
       "targets": [
         {
           "expr": "tendermint_mempool_failed_txs",
@@ -1098,7 +1098,7 @@
         "lineColor": "rgb(31, 120, 193)",
         "show": false
       },
-      "tableColumn": "tendermint_mempool_recheck_times{chain_id=\"scavenge\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
+      "tableColumn": "tendermint_mempool_recheck_times{chain_id=\"axelar\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
       "targets": [
         {
           "expr": "tendermint_mempool_recheck_times",
@@ -1186,7 +1186,7 @@
         "lineColor": "rgb(31, 120, 193)",
         "show": false
       },
-      "tableColumn": "tendermint_mempool_tx_size_bytes_count{chain_id=\"scavenge\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
+      "tableColumn": "tendermint_mempool_tx_size_bytes_count{chain_id=\"axelar\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
       "targets": [
         {
           "expr": "tendermint_mempool_tx_size_bytes_count",
@@ -1288,7 +1288,7 @@
         "lineColor": "rgb(31, 120, 193)",
         "show": false
       },
-      "tableColumn": "{chain_id=\"scavenge\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
+      "tableColumn": "{chain_id=\"axelar\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
       "targets": [
         {
           "expr": "tendermint_consensus_validators-tendermint_consensus_missing_validators",
@@ -1376,7 +1376,7 @@
         "lineColor": "rgb(31, 120, 193)",
         "show": false
       },
-      "tableColumn": "tendermint_consensus_missing_validators{chain_id=\"scavenge\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
+      "tableColumn": "tendermint_consensus_missing_validators{chain_id=\"axelar\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
       "targets": [
         {
           "expr": "tendermint_consensus_missing_validators",
@@ -1464,7 +1464,7 @@
         "lineColor": "rgb(31, 120, 193)",
         "show": false
       },
-      "tableColumn": "tendermint_consensus_byzantine_validators{chain_id=\"scavenge\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
+      "tableColumn": "tendermint_consensus_byzantine_validators{chain_id=\"axelar\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
       "targets": [
         {
           "expr": "tendermint_consensus_byzantine_validators",
@@ -1552,7 +1552,7 @@
         "lineColor": "rgb(31, 120, 193)",
         "show": false
       },
-      "tableColumn": "{chain_id=\"scavenge\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
+      "tableColumn": "{chain_id=\"axelar\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
       "targets": [
         {
           "expr": "((tendermint_consensus_byzantine_validators_power + tendermint_consensus_missing_validators_power) / tendermint_consensus_validators_power) * 100",
@@ -1640,7 +1640,7 @@
         "lineColor": "rgb(31, 120, 193)",
         "show": false
       },
-      "tableColumn": "tendermint_consensus_missing_validators_power{chain_id=\"scavenge\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
+      "tableColumn": "tendermint_consensus_missing_validators_power{chain_id=\"axelar\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
       "targets": [
         {
           "expr": "tendermint_consensus_missing_validators_power",
@@ -1728,7 +1728,7 @@
         "lineColor": "rgb(31, 120, 193)",
         "show": false
       },
-      "tableColumn": "tendermint_consensus_byzantine_validators_power{chain_id=\"scavenge\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
+      "tableColumn": "tendermint_consensus_byzantine_validators_power{chain_id=\"axelar\", group=\"Validator\", instance=\"genesis:26660\", job=\"Validator\"}",
       "targets": [
         {
           "expr": "tendermint_consensus_byzantine_validators_power",

@@ -6,6 +6,6 @@ if [ -z "$1" ]; then
 fi
 
 for ((i = 0; i < $1; i++)); do
-  scavengeCLI keys add "test$i"
-  scavengeCLI tx send "$(scavengeCLI keys show treasury -a)" "$(scavengeCLI keys show "test$i" -a)" 10000foo -y
+  axelarCLI keys add "test$i"
+  axelarCLI tx send "$(axelarCLI keys show treasury -a)" "$(axelarCLI keys show "test$i" -a)" 10000foo -y
 done

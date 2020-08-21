@@ -44,7 +44,7 @@ func main() {
 
 	rootCmd := &cobra.Command{
 		Use:   "testCLI",
-		Short: "Scavenge throughput test client",
+		Short: "Transfer throughput test client",
 	}
 
 	// Add --chain-id to persistent flags and mark it required
