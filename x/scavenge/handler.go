@@ -4,10 +4,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"github.com/axelarnetwork/axelar-net/x/scavenge/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/sdk-tutorials/scavenge/x/scavenge/types"
 	"github.com/tendermint/tendermint/crypto"
 )
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/axelarnetwork/axelar-net/app"
 	"os"
 	"path"
 
@@ -16,10 +17,9 @@ import (
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
-	"github.com/cosmos/sdk-tutorials/scavenge/app"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	amino "github.com/tendermint/go-amino"
+	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/libs/cli"
 )
 

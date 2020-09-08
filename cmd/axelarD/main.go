@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/axelarnetwork/axelar-net/app"
 	"github.com/cosmos/cosmos-sdk/store/types"
 	"io"
 
@@ -23,8 +24,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	"github.com/cosmos/cosmos-sdk/x/staking"
-
-	app "github.com/cosmos/sdk-tutorials/scavenge/app"
 )
 
 const flagInvCheckPeriod = "inv-check-period"

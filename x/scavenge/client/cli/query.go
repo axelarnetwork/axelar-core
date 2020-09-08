@@ -4,14 +4,13 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"github.com/axelarnetwork/axelar-net/x/scavenge/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/spf13/cobra"
-
-	"github.com/cosmos/sdk-tutorials/scavenge/x/scavenge/types"
 )
 
 // GetQueryCmd returns the cli query commands for this module

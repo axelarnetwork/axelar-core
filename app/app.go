@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"github.com/axelarnetwork/axelar-net/x/scavenge"
 	"io"
 	"os"
 
@@ -25,7 +26,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
-	"github.com/cosmos/sdk-tutorials/scavenge/x/scavenge"
 )
 
 const appName = "app"

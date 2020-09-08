@@ -4,10 +4,10 @@ import (
 	"fmt"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/axelarnetwork/axelar-net/x/scavenge/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/sdk-tutorials/scavenge/x/scavenge/types"
 )
 
 // NewQuerier creates a new querier for scavenge clients.

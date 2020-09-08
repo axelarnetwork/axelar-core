@@ -1,8 +1,8 @@
 package scavenge
 
 import (
-	"github.com/cosmos/sdk-tutorials/scavenge/x/scavenge/keeper"
-	"github.com/cosmos/sdk-tutorials/scavenge/x/scavenge/types"
+	"github.com/axelarnetwork/axelar-net/x/scavenge/keeper"
+	"github.com/axelarnetwork/axelar-net/x/scavenge/types"
 )
 
 const (

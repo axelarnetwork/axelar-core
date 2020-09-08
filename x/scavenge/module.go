@@ -8,14 +8,14 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/axelarnetwork/axelar-net/x/scavenge/client/cli"
+	"github.com/axelarnetwork/axelar-net/x/scavenge/client/rest"
+	"github.com/axelarnetwork/axelar-net/x/scavenge/types"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/bank"
-	"github.com/cosmos/sdk-tutorials/scavenge/x/scavenge/client/cli"
-	"github.com/cosmos/sdk-tutorials/scavenge/x/scavenge/client/rest"
-	"github.com/cosmos/sdk-tutorials/scavenge/x/scavenge/types"
 )
 
 var (

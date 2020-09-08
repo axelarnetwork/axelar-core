@@ -1,8 +1,8 @@
 package scavenge
 
 import (
+	"github.com/axelarnetwork/axelar-net/x/scavenge/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/sdk-tutorials/scavenge/x/scavenge/types"
 )
 
 // InitGenesis initialize default parameters

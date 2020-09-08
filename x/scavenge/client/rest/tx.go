@@ -3,10 +3,10 @@ package rest
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"github.com/axelarnetwork/axelar-net/x/scavenge/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	"github.com/cosmos/sdk-tutorials/scavenge/x/scavenge/types"
 	"github.com/gorilla/mux"
 	"net/http"
 
