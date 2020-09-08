@@ -32,10 +32,10 @@ const appName = "app"
 
 var (
 	// default home directories for the application CLI
-	DefaultCLIHome = os.ExpandEnv("$HOME/.scavengeCLI")
+	DefaultCLIHome = os.ExpandEnv("$HOME/.axelarCLI")
 
 	// DefaultNodeHome sets the folder where the applcation data and configuration will be stored
-	DefaultNodeHome = os.ExpandEnv("$HOME/.scavengeD")
+	DefaultNodeHome = os.ExpandEnv("$HOME/.axelarD")
 
 	// NewBasicManager is in charge of setting up basic module elemnets
 	ModuleBasics = module.NewBasicManager(

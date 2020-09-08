@@ -1,27 +1,27 @@
 #!/bin/bash
 
-if [ -d ../.scavengeD ]; then
-  rm -r ../.scavengeD
+if [ -d ../.axelarD ]; then
+  rm -r ../.axelarD
 fi
 
-if [ -d ../.scavengeCLI ]; then
-  rm -r ../.scavengeCLI
+if [ -d ../.axelarCLI ]; then
+  rm -r ../.axelarCLI
 fi
 
-scavengeD init "${1}" --chain-id scavenge
+axelarD init "${1}" --chain-id axelar
 
-cp -r ../config ../.scavengeD
+cp -r ../config ../.axelarD
 
-scavengeCLI config keyring-backend test
+axelarCLI config keyring-backend test
 
-scavengeCLI keys add treasury --recover <./treasury_mnemonic.txt
-scavengeCLI keys add validator
+axelarCLI keys add treasury --recover <./treasury_mnemonic.txt
+axelarCLI keys add validator
 
-scavengeCLI config chain-id scavenge
-scavengeCLI config output json
-scavengeCLI config indent true
-scavengeCLI config trust-node true
+axelarCLI config chain-id axelar
+axelarCLI config output json
+axelarCLI config indent true
+axelarCLI config trust-node true
 
 ./modifyConfig.sh
 
-scavengeD start --rpc.laddr tcp://0.0.0.0:26657
+axelarD start --rpc.laddr tcp://0.0.0.0:26657

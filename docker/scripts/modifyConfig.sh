@@ -9,8 +9,8 @@ else
 fi
 
 modify() {
-  sed "s/^$1 =.*/$1 = $2/g" ../.scavengeD/config/config.toml >../.scavengeD/config/config.toml.tmp &&
-    mv ../.scavengeD/config/config.toml.tmp ../.scavengeD/config/config.toml
+  sed "s/^$1 =.*/$1 = $2/g" ../.axelarD/config/config.toml >../.axelarD/config/config.toml.tmp &&
+    mv ../.axelarD/config/config.toml.tmp ../.axelarD/config/config.toml
 }
 
 modify "timeout_commit" "\"1s\""
