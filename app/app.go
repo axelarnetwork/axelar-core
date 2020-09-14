@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"github.com/axelarnetwork/axelar-net/x/axelar"
 	"github.com/axelarnetwork/axelar-net/x/scavenge"
 	"io"
 	"os"
@@ -48,6 +49,7 @@ var (
 		slashing.AppModuleBasic{},
 		supply.AppModuleBasic{},
 
+		axelar.AppModuleBasic{},
 		scavenge.AppModuleBasic{},
 	)
 	// account permissions
@@ -91,6 +93,7 @@ type NewApp struct {
 	supplyKeeper   supply.Keeper
 	paramsKeeper   params.Keeper
 	scavengeKeeper scavenge.Keeper
+	axelarKeeper   axelar.Keeper
 
 	// Module Manager
 	mm *module.Manager
@@ -115,7 +118,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	bApp.SetAppVersion(version.Version)
 
 	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
-		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey, scavenge.StoreKey)
+		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey, axelar.StoreKey, scavenge.StoreKey)
 
 	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
@@ -130,7 +133,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 
 	// The ParamsKeeper handles parameter storage for the application
 	app.paramsKeeper = params.NewKeeper(app.cdc, keys[params.StoreKey], tkeys[params.TStoreKey])
-	// Set specific supspaces
+	// Set specific subspaces
 	app.subspaces[auth.ModuleName] = app.paramsKeeper.Subspace(auth.DefaultParamspace)
 	app.subspaces[bank.ModuleName] = app.paramsKeeper.Subspace(bank.DefaultParamspace)
 	app.subspaces[staking.ModuleName] = app.paramsKeeper.Subspace(staking.DefaultParamspace)
@@ -192,6 +195,12 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		staking.NewMultiStakingHooks(
 			app.distrKeeper.Hooks(),
 			app.slashingKeeper.Hooks()),
+	)
+
+	app.axelarKeeper = axelar.NewKeeper(
+		app.cdc,
+		keys[axelar.StoreKey],
+		make(map[string]Brid),
 	)
 
 	app.scavengeKeeper = scavenge.NewKeeper(
