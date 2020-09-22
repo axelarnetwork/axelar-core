@@ -2,16 +2,17 @@ package axelar
 
 import (
 	"fmt"
-	"github.com/axelarnetwork/axelar-net/x/axelar/internal/types"
+	"github.com/axelarnetwork/axelar-core/x/axelar/keeper"
+	"github.com/axelarnetwork/axelar-core/x/axelar/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-func NewHandler(k Keeper) sdk.Handler {
+func NewHandler(k keeper.Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
-		case MsgTrackAddress:
+		case types.MsgTrackAddress:
 			return handleMsgTrackAddress(ctx, k, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
@@ -20,7 +21,7 @@ func NewHandler(k Keeper) sdk.Handler {
 	}
 }
 
-func handleMsgTrackAddress(ctx sdk.Context, k Keeper, msg MsgTrackAddress) (*sdk.Result, error) {
+func handleMsgTrackAddress(ctx sdk.Context, k keeper.Keeper, msg types.MsgTrackAddress) (*sdk.Result, error) {
 	if err := k.TrackAddress(ctx, types.ExternalChainAddress{Chain: msg.Chain, Address: msg.Address}); err != nil {
 		return nil, err
 	}

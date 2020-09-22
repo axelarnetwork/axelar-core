@@ -3,7 +3,7 @@ package cli
 import (
 	"bufio"
 	"fmt"
-	"github.com/axelarnetwork/axelar-net/x/axelar/internal/types"
+	"github.com/axelarnetwork/axelar-core/x/axelar/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -42,7 +42,7 @@ func GetCmdTrackAddress(cdc *codec.Codec) *cobra.Command {
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			msg := types.NewMsgTrackAddress(cliCtx.GetFromAddress(), args[0], []byte(args[1]))
+			msg := types.NewMsgTrackAddress(cliCtx.GetFromAddress(), args[0], args[1])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

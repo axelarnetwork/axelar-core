@@ -2,9 +2,9 @@ package axelar
 
 import (
 	"encoding/json"
-	"github.com/axelarnetwork/axelar-net/x/axelar/client/cli"
-	"github.com/axelarnetwork/axelar-net/x/axelar/internal/keeper"
-	"github.com/axelarnetwork/axelar-net/x/axelar/internal/types"
+	"github.com/axelarnetwork/axelar-core/x/axelar/client/cli"
+	"github.com/axelarnetwork/axelar-core/x/axelar/keeper"
+	"github.com/axelarnetwork/axelar-core/x/axelar/types"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -43,7 +43,7 @@ func (AppModuleBasic) ValidateGenesis(message json.RawMessage) error {
 	return types.ValidateGenesis(data)
 }
 
-func (AppModuleBasic) RegisterRESTRoutes(cliContext context.CLIContext, router *mux.Router) {
+func (AppModuleBasic) RegisterRESTRoutes(_ context.CLIContext, _ *mux.Router) {
 	//TODO: implement rest interface
 }
 
@@ -57,10 +57,18 @@ func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 
 type AppModule struct {
 	AppModuleBasic
-	keeper Keeper
+	keeper keeper.Keeper
 }
 
-func (AppModule) RegisterInvariants(registry sdk.InvariantRegistry) {
+// NewAppModule creates a new AppModule object
+func NewAppModule(k keeper.Keeper) AppModule {
+	return AppModule{
+		AppModuleBasic: AppModuleBasic{},
+		keeper:         k,
+	}
+}
+
+func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {
 	// No invariants yet
 }
 
@@ -77,7 +85,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
 }
 
 func (AppModule) Route() string {
-	return RouterKey
+	return types.RouterKey
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
@@ -85,7 +93,7 @@ func (am AppModule) NewHandler() sdk.Handler {
 }
 
 func (AppModule) QuerierRoute() string {
-	return QuerierRoute
+	return types.QuerierRoute
 }
 
 func (am AppModule) NewQuerierHandler() sdk.Querier {
