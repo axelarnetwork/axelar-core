@@ -3,22 +3,21 @@ PACKAGES=$(shell go list ./... | grep -v '/simulation')
 VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
 COMMIT := $(shell git log -1 --format='%H')
 
-ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=NewApp \
-	-X github.com/cosmos/cosmos-sdk/version.ServerName=scavengeD \
-	-X github.com/cosmos/cosmos-sdk/version.ClientName=scavengeCLI \
+ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=Axelar \
+	-X github.com/cosmos/cosmos-sdk/version.ServerName=axelarD \
+	-X github.com/cosmos/cosmos-sdk/version.ClientName=axelarCLI \
 	-X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
 	-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) 
 
 BUILD_FLAGS := -ldflags '$(ldflags)'
 
 .PHONY: all
-all: install prometheus
+all: install docker-image
 
 .PHONY: install
 install: go.sum
-		go install -mod=readonly $(BUILD_FLAGS) ./cmd/scavengeD
-		go install -mod=readonly $(BUILD_FLAGS) ./cmd/scavengeCLI
-		go install -mod=readonly $(BUILD_FLAGS) ./cmd/testCLI
+		go install -mod=readonly $(BUILD_FLAGS) ./cmd/axelarD
+		go install -mod=readonly $(BUILD_FLAGS) ./cmd/axelarCLI
 
 go.sum: go.mod
 		@echo "--> Ensure dependencies have not been modified"
@@ -36,17 +35,10 @@ lint:
 
 .PHONY: build
 build: go.sum
-		go build -o ./build/scavengeD -mod=readonly $(BUILD_FLAGS) ./cmd/scavengeD
-		go build -o ./build/scavengeCLI -mod=readonly $(BUILD_FLAGS) ./cmd/scavengeCLI
-		go build -o ./build/testCLI -mod=readonly $(BUILD_FLAGS) ./cmd/testCLI
+		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) ./cmd/axelarD
+		go build -o ./bin/axelarcli -mod=readonly $(BUILD_FLAGS) ./cmd/axelarCLI
 
-.PHONY: docker
-docker:
-	docker-compose -f docker-compose.build.yml up --remove-orphans
+.PHONY: docker-image
+docker-image:
+	@docker build -t axelar/core .
 
-.PHONY: prometheus
-prometheus:
-	@if [ ! -f .env ]; then \
-    	  cp .env.default .env; \
-	fi
-	@./docker/prometheus/prometheusSetup.sh

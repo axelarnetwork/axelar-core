@@ -18,9 +18,11 @@
 /build/
 /docker/.scavengeCLI/
 /docker/.scavengeD/
+/docker/.axelarCLI/
+/docker/.axelarD/
 /docker/scripts/peers.txt
 /docker/config/genesis.json
 /docker/prometheus/data
 /docker/prometheus/etc
 /docker/prometheus/*tar.gz
-.env
+../axelarate/core/.env
