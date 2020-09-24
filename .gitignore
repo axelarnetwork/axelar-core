@@ -25,4 +25,4 @@
 /docker/prometheus/data
 /docker/prometheus/etc
 /docker/prometheus/*tar.gz
-.env
+../axelarate/core/.env

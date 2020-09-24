@@ -2,19 +2,16 @@ package app
 
 import (
 	"encoding/json"
-	"github.com/axelarnetwork/axelar-net/x/scavenge"
 	"io"
 	"os"
-
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
-	tmos "github.com/tendermint/tendermint/libs/os"
-	dbm "github.com/tendermint/tm-db"
+	"os/signal"
+	"syscall"
 
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/simapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -26,16 +23,25 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
+	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/libs/log"
+	tmos "github.com/tendermint/tendermint/libs/os"
+	dbm "github.com/tendermint/tm-db"
+
+	"github.com/axelarnetwork/axelar-core/x/axelar"
+	axKeeper "github.com/axelarnetwork/axelar-core/x/axelar/keeper"
+	axTypes "github.com/axelarnetwork/axelar-core/x/axelar/types"
+	btcKeeper "github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
 )
 
 const appName = "app"
 
 var (
 	// default home directories for the application CLI
-	DefaultCLIHome = os.ExpandEnv("$HOME/.axelarCLI")
+	DefaultCLIHome = os.ExpandEnv("$HOME/.axelarcli")
 
 	// DefaultNodeHome sets the folder where the applcation data and configuration will be stored
-	DefaultNodeHome = os.ExpandEnv("$HOME/.axelarD")
+	DefaultNodeHome = os.ExpandEnv("$HOME/.axelard")
 
 	// NewBasicManager is in charge of setting up basic module elemnets
 	ModuleBasics = module.NewBasicManager(
@@ -48,7 +54,7 @@ var (
 		slashing.AppModuleBasic{},
 		supply.AppModuleBasic{},
 
-		scavenge.AppModuleBasic{},
+		axelar.AppModuleBasic{},
 	)
 	// account permissions
 	maccPerms = map[string][]string{
@@ -71,16 +77,15 @@ func MakeCodec() *codec.Codec {
 	return cdc.Seal()
 }
 
-type NewApp struct {
+type AxelarApp struct {
 	*bam.BaseApp
 	cdc *codec.Codec
+
+	invCheckPeriod uint
 
 	// keys to access the substores
 	keys  map[string]*sdk.KVStoreKey
 	tkeys map[string]*sdk.TransientStoreKey
-
-	// subspaces
-	subspaces map[string]params.Subspace
 
 	// Keepers
 	accountKeeper  auth.AccountKeeper
@@ -90,7 +95,8 @@ type NewApp struct {
 	distrKeeper    distr.Keeper
 	supplyKeeper   supply.Keeper
 	paramsKeeper   params.Keeper
-	scavengeKeeper scavenge.Keeper
+	btcKeeper      btcKeeper.Keeper
+	axelarKeeper   axKeeper.Keeper
 
 	// Module Manager
 	mm *module.Manager
@@ -100,55 +106,56 @@ type NewApp struct {
 }
 
 // verify app interface at compile time
-var _ simapp.App = (*NewApp)(nil)
+var _ simapp.App = &AxelarApp{}
 
-// NewInitApp is a constructor function for scavengeApp
+// NewInitApp is a constructor function for axelarApp
 func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool,
-	invCheckPeriod uint, baseAppOptions ...func(*bam.BaseApp)) *NewApp {
+	invCheckPeriod uint, baseAppOptions ...func(*bam.BaseApp)) *AxelarApp {
 
 	// First define the top level codec that will be shared by the different modules
 	cdc := MakeCodec()
 
 	// BaseApp handles interactions with Tendermint through the ABCI protocol
 	bApp := bam.NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc), baseAppOptions...)
-
+	bApp.SetCommitMultiStoreTracer(traceStore)
 	bApp.SetAppVersion(version.Version)
 
 	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
-		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey, scavenge.StoreKey)
+		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey, axTypes.StoreKey)
 
 	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
 	// Here you initialize your application with the store keys it requires
-	var app = &NewApp{
-		BaseApp:   bApp,
-		cdc:       cdc,
-		keys:      keys,
-		tkeys:     tkeys,
-		subspaces: make(map[string]params.Subspace),
+	var app = &AxelarApp{
+		BaseApp:        bApp,
+		cdc:            cdc,
+		keys:           keys,
+		tkeys:          tkeys,
+		invCheckPeriod: invCheckPeriod,
 	}
 
 	// The ParamsKeeper handles parameter storage for the application
 	app.paramsKeeper = params.NewKeeper(app.cdc, keys[params.StoreKey], tkeys[params.TStoreKey])
-	// Set specific supspaces
-	app.subspaces[auth.ModuleName] = app.paramsKeeper.Subspace(auth.DefaultParamspace)
-	app.subspaces[bank.ModuleName] = app.paramsKeeper.Subspace(bank.DefaultParamspace)
-	app.subspaces[staking.ModuleName] = app.paramsKeeper.Subspace(staking.DefaultParamspace)
-	app.subspaces[distr.ModuleName] = app.paramsKeeper.Subspace(distr.DefaultParamspace)
-	app.subspaces[slashing.ModuleName] = app.paramsKeeper.Subspace(slashing.DefaultParamspace)
+
+	// Set specific subspaces
+	authSubspace := app.paramsKeeper.Subspace(auth.DefaultParamspace)
+	bankSubspace := app.paramsKeeper.Subspace(bank.DefaultParamspace)
+	stakingSubspace := app.paramsKeeper.Subspace(staking.DefaultParamspace)
+	distrSubspace := app.paramsKeeper.Subspace(distr.DefaultParamspace)
+	slashingSubspace := app.paramsKeeper.Subspace(slashing.DefaultParamspace)
 
 	// The AccountKeeper handles address -> account lookups
 	app.accountKeeper = auth.NewAccountKeeper(
 		app.cdc,
 		keys[auth.StoreKey],
-		app.subspaces[auth.ModuleName],
+		authSubspace,
 		auth.ProtoBaseAccount,
 	)
 
 	// The BankKeeper allows you perform sdk.Coins interactions
 	app.bankKeeper = bank.NewBaseKeeper(
 		app.accountKeeper,
-		app.subspaces[bank.ModuleName],
+		bankSubspace,
 		app.ModuleAccountAddrs(),
 	)
 
@@ -166,13 +173,13 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		app.cdc,
 		keys[staking.StoreKey],
 		app.supplyKeeper,
-		app.subspaces[staking.ModuleName],
+		stakingSubspace,
 	)
 
 	app.distrKeeper = distr.NewKeeper(
 		app.cdc,
 		keys[distr.StoreKey],
-		app.subspaces[distr.ModuleName],
+		distrSubspace,
 		&stakingKeeper,
 		app.supplyKeeper,
 		auth.FeeCollectorName,
@@ -183,7 +190,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		app.cdc,
 		keys[slashing.StoreKey],
 		&stakingKeeper,
-		app.subspaces[slashing.ModuleName],
+		slashingSubspace,
 	)
 
 	// register the staking hooks
@@ -194,23 +201,41 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 			app.slashingKeeper.Hooks()),
 	)
 
-	app.scavengeKeeper = scavenge.NewKeeper(
-		app.bankKeeper,
+	app.btcKeeper = btcKeeper.NewBtcKeeper(BtcBridgeAddr)
+
+	// BTC bridge opens a grpc connection. Clean it up on process shutdown
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		_ = <-sigs
+		logger.Debug("closing bitcoin bridge connection")
+		if err := app.btcKeeper.Close(); err != nil {
+			logger.Error(sdkerrors.Wrap(err, "could not close bitcoin bridge connection").Error())
+		}
+	}()
+
+	app.axelarKeeper = axKeeper.NewKeeper(
 		app.cdc,
-		keys[scavenge.StoreKey],
+		keys[axTypes.StoreKey],
+		map[string]axTypes.BridgeKeeper{"bitcoin": app.btcKeeper},
 	)
 
+	// NOTE: Any module instantiated in the module manager that is later modified
+	// must be passed by reference here.
 	app.mm = module.NewManager(
 		genutil.NewAppModule(app.accountKeeper, app.stakingKeeper, app.BaseApp.DeliverTx),
 		auth.NewAppModule(app.accountKeeper),
 		bank.NewAppModule(app.bankKeeper, app.accountKeeper),
-		scavenge.NewAppModule(app.scavengeKeeper, app.bankKeeper),
 		supply.NewAppModule(app.supplyKeeper, app.accountKeeper),
 		distr.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
+		axelar.NewAppModule(app.axelarKeeper),
 	)
 
+	// During begin block slashing happens after distr.BeginBlocker so that
+	// there is nothing left over in the validator fee pool, so as to keep the
+	// CanWithdrawInvariant invariant.
 	app.mm.SetOrderBeginBlockers(distr.ModuleName, slashing.ModuleName)
 	app.mm.SetOrderEndBlockers(staking.ModuleName)
 
@@ -223,7 +248,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		auth.ModuleName,
 		bank.ModuleName,
 		slashing.ModuleName,
-		scavenge.ModuleName,
+		axTypes.ModuleName,
 		supply.ModuleName,
 		genutil.ModuleName,
 	)
@@ -249,9 +274,11 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	app.MountKVStores(keys)
 	app.MountTransientStores(tkeys)
 
-	err := app.LoadLatestVersion(app.keys[bam.MainStoreKey])
-	if err != nil {
-		tmos.Exit(err.Error())
+	if loadLatest {
+		err := app.LoadLatestVersion(app.keys[bam.MainStoreKey])
+		if err != nil {
+			tmos.Exit(err.Error())
+		}
 	}
 
 	return app
@@ -260,11 +287,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 // GenesisState represents chain state at the start of the chain. Any initial state (account balances) are stored here.
 type GenesisState map[string]json.RawMessage
 
-func NewDefaultGenesisState() GenesisState {
-	return ModuleBasics.DefaultGenesis()
-}
-
-func (app *NewApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
+func (app *AxelarApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 	var genesisState GenesisState
 
 	err := app.cdc.UnmarshalJSON(req.AppStateBytes, &genesisState)
@@ -275,30 +298,30 @@ func (app *NewApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.
 	return app.mm.InitGenesis(ctx, genesisState)
 }
 
-func (app *NewApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
+func (app *AxelarApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 	return app.mm.BeginBlock(ctx, req)
 }
 
-func (app *NewApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
+func (app *AxelarApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
 	return app.mm.EndBlock(ctx, req)
 }
 
-func (app *NewApp) LoadHeight(height int64) error {
+func (app *AxelarApp) LoadHeight(height int64) error {
 	return app.LoadVersion(height, app.keys[bam.MainStoreKey])
 }
 
 // Codec returns simapp's codec
-func (app *NewApp) Codec() *codec.Codec {
+func (app *AxelarApp) Codec() *codec.Codec {
 	return app.cdc
 }
 
 // SimulationManager implements the SimulationApp interface
-func (app *NewApp) SimulationManager() *module.SimulationManager {
+func (app *AxelarApp) SimulationManager() *module.SimulationManager {
 	return app.sm
 }
 
 // ModuleAccountAddrs returns all the app's module account addresses.
-func (app *NewApp) ModuleAccountAddrs() map[string]bool {
+func (app *AxelarApp) ModuleAccountAddrs() map[string]bool {
 	modAccAddrs := make(map[string]bool)
 	for acc := range maccPerms {
 		modAccAddrs[supply.NewModuleAddress(acc).String()] = true

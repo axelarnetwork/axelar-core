@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/axelarnetwork/axelar-net/app"
 	"os"
 	"path"
+
+	"github.com/axelarnetwork/axelar-core/app"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"

@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/axelarnetwork/axelar-net/app"
+	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/cosmos/cosmos-sdk/store/types"
 	"io"
 
