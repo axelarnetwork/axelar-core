@@ -2,12 +2,14 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/axelarnetwork/axelar-core/app"
-	"github.com/cosmos/cosmos-sdk/store/types"
 	"io"
+
+	"github.com/cosmos/cosmos-sdk/store/types"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/axelarnetwork/axelar-core/app"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/cli"
@@ -64,7 +66,7 @@ func main() {
 	server.AddCommands(ctx, cdc, rootCmd, newApp, exportAppStateAndTMValidators)
 
 	// prepare and add flags
-	executor := cli.PrepareBaseCmd(rootCmd, "AU", app.DefaultNodeHome)
+	executor := cli.PrepareBaseCmd(rootCmd, "AX", app.DefaultNodeHome)
 	rootCmd.PersistentFlags().UintVar(&invCheckPeriod, flagInvCheckPeriod,
 		0, "Assert registered invariants every N blocks")
 	err := executor.Execute()
@@ -81,7 +83,7 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 	}
 
 	return app.NewInitApp(
-		logger, db, traceStore, true, invCheckPeriod,
+		logger, db, traceStore, true, invCheckPeriod, loadConfig(),
 		baseapp.SetPruning(types.NewPruningOptionsFromString(viper.GetString("pruning"))),
 		baseapp.SetMinGasPrices(viper.GetString(server.FlagMinGasPrices)),
 		baseapp.SetHaltHeight(viper.GetUint64(server.FlagHaltHeight)),
@@ -90,12 +92,22 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 	)
 }
 
+func loadConfig() *app.Config {
+	conf := &app.Config{}
+	if err := viper.Unmarshal(conf); err != nil {
+		panic(err)
+	}
+	return conf
+}
+
 func exportAppStateAndTMValidators(
 	logger log.Logger, db dbm.DB, traceStore io.Writer, height int64, forZeroHeight bool, jailWhiteList []string,
 ) (json.RawMessage, []tmtypes.GenesisValidator, error) {
 
+	conf := loadConfig()
+
 	if height != -1 {
-		aApp := app.NewInitApp(logger, db, traceStore, false, uint(1))
+		aApp := app.NewInitApp(logger, db, traceStore, false, uint(1), conf)
 		err := aApp.LoadHeight(height)
 		if err != nil {
 			return nil, nil, err
@@ -103,7 +115,7 @@ func exportAppStateAndTMValidators(
 		return aApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 	}
 
-	aApp := app.NewInitApp(logger, db, traceStore, true, uint(1))
+	aApp := app.NewInitApp(logger, db, traceStore, true, uint(1), conf)
 
 	return aApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 }

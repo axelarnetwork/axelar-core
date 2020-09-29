@@ -11,7 +11,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/simapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -34,7 +33,9 @@ import (
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
 )
 
-const appName = "app"
+const (
+	appName = "axelar"
+)
 
 var (
 	// default home directories for the application CLI
@@ -110,7 +111,7 @@ var _ simapp.App = &AxelarApp{}
 
 // NewInitApp is a constructor function for axelarApp
 func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool,
-	invCheckPeriod uint, baseAppOptions ...func(*bam.BaseApp)) *AxelarApp {
+	invCheckPeriod uint, axelarCfg *Config, baseAppOptions ...func(*bam.BaseApp)) *AxelarApp {
 
 	// First define the top level codec that will be shared by the different modules
 	cdc := MakeCodec()
@@ -201,7 +202,11 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 			app.slashingKeeper.Hooks()),
 	)
 
-	app.btcKeeper = btcKeeper.NewBtcKeeper(BtcBridgeAddr)
+	var err error
+	app.btcKeeper, err = btcKeeper.NewBtcKeeper(axelarCfg.BtcConfig, logger)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
 
 	// BTC bridge opens a grpc connection. Clean it up on process shutdown
 	sigs := make(chan os.Signal, 1)
@@ -209,9 +214,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	go func() {
 		_ = <-sigs
 		logger.Debug("closing bitcoin bridge connection")
-		if err := app.btcKeeper.Close(); err != nil {
-			logger.Error(sdkerrors.Wrap(err, "could not close bitcoin bridge connection").Error())
-		}
+		app.btcKeeper.Close()
 	}()
 
 	app.axelarKeeper = axKeeper.NewKeeper(
