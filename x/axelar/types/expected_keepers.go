@@ -1,7 +1,9 @@
 package types
 
-import "github.com/axelarnetwork/axelar-core/bridge"
+import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+)
 
 type BridgeKeeper interface {
-	bridge.Keeper
+	TrackAddress(ctx sdk.Context, address string) error
 }

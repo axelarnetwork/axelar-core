@@ -12,17 +12,7 @@
 *.out
 
 # Dependency directories (remove the comment below to include it)
-/vendor/
+vendor/
 .idea
 
-/build/
-/docker/.scavengeCLI/
-/docker/.scavengeD/
-/docker/.axelarCLI/
-/docker/.axelarD/
-/docker/scripts/peers.txt
-/docker/config/genesis.json
-/docker/prometheus/data
-/docker/prometheus/etc
-/docker/prometheus/*tar.gz
-../axelarate/core/.env
+/bin/
