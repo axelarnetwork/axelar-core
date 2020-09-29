@@ -3,7 +3,6 @@ package keeper
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/btcsuite/btcd/btcjson"
@@ -66,11 +65,6 @@ func newRPCClient(cfg types.BtcConfig, logger log.Logger) (*rpcclient.Client, er
 }
 
 func waitForAuthCookie(cookiePath string, timeout time.Duration, logger log.Logger) error {
-	matches, _ := filepath.Glob(cookiePath)
-	for _, match := range matches {
-		fmt.Println(match)
-	}
-
 	_, err := os.Stat(cookiePath)
 	var t time.Duration
 	for os.IsNotExist(err) && t < timeout {
