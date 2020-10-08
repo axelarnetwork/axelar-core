@@ -31,6 +31,7 @@ import (
 	axKeeper "github.com/axelarnetwork/axelar-core/x/axelar/keeper"
 	axTypes "github.com/axelarnetwork/axelar-core/x/axelar/types"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
+	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
 )
 
 const (
@@ -97,6 +98,7 @@ type AxelarApp struct {
 	supplyKeeper   supply.Keeper
 	paramsKeeper   params.Keeper
 	btcKeeper      btcKeeper.Keeper
+	tssKeeper      tssKeeper.Keeper
 	axelarKeeper   axKeeper.Keeper
 
 	// Module Manager
