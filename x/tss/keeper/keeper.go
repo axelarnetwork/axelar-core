@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/axelarnetwork/tssd/pb"
 	"google.golang.org/grpc"
 )
@@ -39,4 +40,12 @@ func NewKeeper() (Keeper, error) {
 		context:           ctx,
 		contextCancelFunc: cancel,
 	}, nil
+}
+
+func (k Keeper) KeygenStart(newKeyID string, parties []types.TSSParty, myPartyIndex int, threshold int) error {
+	return nil
+}
+
+func (k Keeper) KeygenMsgIn(keyID string, payload []byte, isBroadcast bool, from types.TSSPartyID) {
+
 }
