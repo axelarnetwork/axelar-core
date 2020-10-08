@@ -13,8 +13,12 @@ import (
 // )
 
 type Keeper struct {
-	client  pb.GG18Client // TODO `pb` is not a good package name
-	context context.Context
+	client pb.GG18Client // TODO `pb` is not a good package name
+
+	// TODO cruft for grpc; can we get rid of this?
+	connection        *grpc.ClientConn
+	context           context.Context
+	contextCancelFunc context.CancelFunc
 }
 
 func NewKeeper() (Keeper, error) {
@@ -24,13 +28,15 @@ func NewKeeper() (Keeper, error) {
 	if err != nil {
 		return Keeper{}, err
 	}
-	defer conn.Close()
+	// defer conn.Close()
 	client := pb.NewGG18Client(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Hour) // TODO hard coded timeout
-	defer cancel()
+	// defer cancel()
 
 	return Keeper{
-		client:  client,
-		context: ctx,
+		client:            client,
+		connection:        conn,
+		context:           ctx,
+		contextCancelFunc: cancel,
 	}, nil
 }

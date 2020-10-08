@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+
 	"github.com/axelarnetwork/axelar-core/x/axelar/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
@@ -12,11 +13,12 @@ import (
 
 type Keeper struct {
 	bridges  map[string]types.BridgeKeeper
+	tss      types.TSSKeeper
 	storeKey sdk.StoreKey
 	cdc      *codec.Codec
 }
 
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, bridges map[string]types.BridgeKeeper) Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, bridges map[string]types.BridgeKeeper, tss types.TSSKeeper) Keeper {
 	keeper := Keeper{
 		bridges:  bridges,
 		storeKey: key,

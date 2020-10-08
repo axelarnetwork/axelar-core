@@ -219,10 +219,25 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		app.btcKeeper.Close()
 	}()
 
+	app.tssKeeper, err = tssKeeper.NewKeeper()
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+
+	// tss opens a grpc connection. Clean it up on process shutdown
+	go func() {
+		tssSigs := make(chan os.Signal, 1)
+		signal.Notify(tssSigs, syscall.SIGINT, syscall.SIGTERM)
+		<-tssSigs
+		logger.Debug("closing tss gRPC connection")
+		// app.btcKeeper.Close()
+	}()
+
 	app.axelarKeeper = axKeeper.NewKeeper(
 		app.cdc,
 		keys[axTypes.StoreKey],
 		map[string]axTypes.BridgeKeeper{"bitcoin": app.btcKeeper},
+		app.tssKeeper,
 	)
 
 	// NOTE: Any module instantiated in the module manager that is later modified
