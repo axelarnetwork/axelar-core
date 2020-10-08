@@ -16,6 +16,6 @@ require (
 	google.golang.org/grpc v1.32.0
 )
 
-replace github.com/keybase/go-keychain => github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4
+replace github.com/keybase/go-keychain => github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4 // https://github.com/axelarnetwork/axelar-core/issues/36
 
 replace github.com/axelarnetwork/tssd => ../tssd
