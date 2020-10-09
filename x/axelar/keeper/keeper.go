@@ -13,12 +13,11 @@ import (
 
 type Keeper struct {
 	bridges  map[string]types.BridgeKeeper
-	tss      types.TSSKeeper
 	storeKey sdk.StoreKey
 	cdc      *codec.Codec
 }
 
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, bridges map[string]types.BridgeKeeper, tss types.TSSKeeper) Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, bridges map[string]types.BridgeKeeper) Keeper {
 	keeper := Keeper{
 		bridges:  bridges,
 		storeKey: key,

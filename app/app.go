@@ -239,7 +239,6 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		app.cdc,
 		keys[axTypes.StoreKey],
 		map[string]axTypes.BridgeKeeper{"bitcoin": app.btcKeeper},
-		app.tssKeeper,
 	)
 
 	// NOTE: Any module instantiated in the module manager that is later modified
