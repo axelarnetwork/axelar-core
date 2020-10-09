@@ -31,7 +31,9 @@ import (
 	axKeeper "github.com/axelarnetwork/axelar-core/x/axelar/keeper"
 	axTypes "github.com/axelarnetwork/axelar-core/x/axelar/types"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
+	"github.com/axelarnetwork/axelar-core/x/tss"
 	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
+	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 const (
@@ -56,6 +58,7 @@ var (
 		slashing.AppModuleBasic{},
 		supply.AppModuleBasic{},
 
+		tss.AppModuleBasic{},
 		axelar.AppModuleBasic{},
 	)
 	// account permissions
@@ -123,8 +126,17 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	bApp.SetCommitMultiStoreTracer(traceStore)
 	bApp.SetAppVersion(version.Version)
 
-	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
-		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey, axTypes.StoreKey)
+	keys := sdk.NewKVStoreKeys(
+		bam.MainStoreKey,
+		auth.StoreKey,
+		staking.StoreKey,
+		supply.StoreKey,
+		distr.StoreKey,
+		slashing.StoreKey,
+		params.StoreKey,
+		tssTypes.StoreKey,
+		axTypes.StoreKey,
+	)
 
 	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
@@ -251,6 +263,8 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		distr.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
+
+		tss.NewAppModule(app.tssKeeper),
 		axelar.NewAppModule(app.axelarKeeper),
 	)
 
@@ -269,6 +283,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		auth.ModuleName,
 		bank.ModuleName,
 		slashing.ModuleName,
+		tssTypes.ModuleName,
 		axTypes.ModuleName,
 		supply.ModuleName,
 		genutil.ModuleName,

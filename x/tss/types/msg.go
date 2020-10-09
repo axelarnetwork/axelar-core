@@ -6,7 +6,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// golang stupidity: ensure Msg interface compliance at compile time
+// golang stupidity: ensure interface compliance at compile time
 var (
 	_ sdk.Msg = &MsgKeygenStart{}
 	_ sdk.Msg = &MsgIn{}
