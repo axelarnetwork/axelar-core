@@ -3,7 +3,7 @@ package tss
 import (
 	"encoding/json"
 
-	"github.com/axelarnetwork/axelar-core/x/axelar/client/cli"
+	"github.com/axelarnetwork/axelar-core/x/tss/client/cli"
 	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/cosmos/cosmos-sdk/client/context"
