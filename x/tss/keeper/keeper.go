@@ -2,9 +2,9 @@ package keeper
 
 import (
 	"context"
+	"io"
 	"time"
 
-	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/axelarnetwork/tssd/pb"
 	"google.golang.org/grpc"
 )
@@ -14,7 +14,8 @@ import (
 // )
 
 type Keeper struct {
-	client pb.GG18Client // TODO `pb` is not a good package name
+	client       pb.GG18Client // TODO `pb` is not a good package name
+	keygenStream pb.GG18_KeygenClient
 
 	// TODO cruft for grpc; can we get rid of this?
 	connection        *grpc.ClientConn
@@ -42,10 +43,45 @@ func NewKeeper() (Keeper, error) {
 	}, nil
 }
 
-func (k Keeper) KeygenStart(newKeyID string, parties []types.TSSParty, myPartyIndex int, threshold int) error {
+func (k Keeper) KeygenStart(info *pb.KeygenInfo) error {
+	_, err := k.client.KeygenInit(k.context, info)
+	if err != nil {
+		return err
+	}
+	k.keygenStream, err = k.client.Keygen(k.context)
+	if err != nil {
+		return err
+	}
+
+	// TODO save my info from info.Parties[info.MyPartyIndex] ?
+
+	// server handler https://grpc.io/docs/languages/go/basics/#bidirectional-streaming-rpc-1
+	go func() {
+		for {
+			msg, err := k.keygenStream.Recv() // blocking
+			if err == io.EOF {                // output stream closed by server
+				k.keygenStream.CloseSend() // TODO is this the right place to call CloseSend?
+				return
+			}
+			if err != nil {
+				// errCh <- err
+				// t.Errorf("you should never see this: %s", err)
+				// sdkerrors.Wrap(types.ErrConnFailed, fmt.Sprintf("unexpected error when waiting for bitcoin node warmup: %s", err.Error()))
+				return
+			}
+
+			// TODO deliver msg
+			_ = msg
+		}
+	}()
+
 	return nil
 }
 
-func (k Keeper) KeygenMsgIn(keyID string, payload []byte, isBroadcast bool, from types.TSSPartyID) {
-
+func (k Keeper) KeygenMsg(msg *pb.MessageIn) error {
+	if err := k.keygenStream.Send(msg); err != nil {
+		// log message
+		return err
+	}
+	return nil
 }
