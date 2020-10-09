@@ -230,7 +230,9 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		signal.Notify(tssSigs, syscall.SIGINT, syscall.SIGTERM)
 		<-tssSigs
 		logger.Debug("closing tss gRPC connection")
-		// app.btcKeeper.Close()
+		if err := app.tssKeeper.Close(); err != nil {
+			logger.Error(err.Error()) // TODO Logger forces me to throw away error metadata
+		}
 	}()
 
 	app.axelarKeeper = axKeeper.NewKeeper(

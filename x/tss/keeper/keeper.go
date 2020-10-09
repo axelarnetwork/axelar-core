@@ -95,3 +95,11 @@ func (k Keeper) KeygenMsg(ctx sdk.Context, msg *pb.MessageIn) error {
 	}
 	return nil
 }
+
+func (k Keeper) Close() error {
+	k.contextCancelFunc()
+	if err := k.connection.Close(); err != nil {
+		return sdkerrors.Wrap(err, "failure to close connection to server")
+	}
+	return nil
+}
