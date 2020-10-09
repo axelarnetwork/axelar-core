@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
-	"github.com/axelarnetwork/tssd/pb"
+	tssd "github.com/axelarnetwork/tssd/pb"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
@@ -15,8 +15,8 @@ import (
 )
 
 type Keeper struct {
-	client       pb.GG18Client // TODO `pb` is not a good package name
-	keygenStream pb.GG18_KeygenClient
+	client       tssd.GG18Client
+	keygenStream tssd.GG18_KeygenClient
 
 	// TODO cruft for grpc; can we get rid of this?
 	connection        *grpc.ClientConn
@@ -32,7 +32,7 @@ func NewKeeper() (Keeper, error) {
 		return Keeper{}, err
 	}
 	// defer conn.Close()
-	client := pb.NewGG18Client(conn)
+	client := tssd.NewGG18Client(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Hour) // TODO hard coded timeout
 	// defer cancel()
 
@@ -49,7 +49,7 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-func (k Keeper) KeygenStart(ctx sdk.Context, info *pb.KeygenInfo) error {
+func (k Keeper) KeygenStart(ctx sdk.Context, info *tssd.KeygenInfo) error {
 	k.Logger(ctx).Debug(fmt.Sprintf("start keygen protocol: %s", info.NewKeyId))
 	_, err := k.client.KeygenInit(k.context, info)
 	if err != nil {
@@ -86,7 +86,7 @@ func (k Keeper) KeygenStart(ctx sdk.Context, info *pb.KeygenInfo) error {
 	return nil
 }
 
-func (k Keeper) KeygenMsg(ctx sdk.Context, msg *pb.MessageIn) error {
+func (k Keeper) KeygenMsg(ctx sdk.Context, msg *tssd.MessageIn) error {
 	k.Logger(ctx).Debug("incoming message:\nbroadcast? %t\nfrom: %s", msg.IsBroadcast, msg.FromPartyUid)
 	if err := k.keygenStream.Send(msg); err != nil {
 		newErr := sdkerrors.Wrap(err, "failure to send streamed message to server")
