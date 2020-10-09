@@ -13,7 +13,7 @@ func NewHandler(k keeper.Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
-		case types.MsgIn:
+		case types.MsgIn: // TODO it's actually a MsgOut; I need to convert it to a tssd.MessageIn for KeygenMsg()
 			return handleMsgIn(ctx, k, msg)
 		case types.MsgKeygenStart:
 			return handleMsgKeygenStart(ctx, k, msg)

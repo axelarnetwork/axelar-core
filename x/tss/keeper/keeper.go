@@ -88,6 +88,7 @@ func (k Keeper) KeygenStart(ctx sdk.Context, info *tssd.KeygenInfo) error {
 
 func (k Keeper) KeygenMsg(ctx sdk.Context, msg *tssd.MessageIn) error {
 	k.Logger(ctx).Debug("incoming message:\nbroadcast? %t\nfrom: %s", msg.IsBroadcast, msg.FromPartyUid)
+	// TODO enforce protocol order of operations (eg. check for nil keygenStream)
 	if err := k.keygenStream.Send(msg); err != nil {
 		newErr := sdkerrors.Wrap(err, "failure to send streamed message to server")
 		k.Logger(ctx).Error(newErr.Error()) // TODO Logger forces me to throw away error metadata

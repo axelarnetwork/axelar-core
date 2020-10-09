@@ -19,7 +19,7 @@ type MsgKeygenStart struct {
 }
 
 // MsgIn incoming message for either keygen or sign
-// TODO choose a better name?
+// TODO it should be MsgOut! that's what's pushed to the chain; it's my job to convert it to a tssd.MessageIn for KeygenMsg
 type MsgIn struct {
 	Sender  sdk.AccAddress
 	Payload *tssd.MessageIn
