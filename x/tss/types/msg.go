@@ -9,20 +9,20 @@ import (
 // golang stupidity: ensure interface compliance at compile time
 var (
 	_ sdk.Msg = &MsgKeygenStart{}
-	_ sdk.Msg = &MsgIn{}
+	_ sdk.Msg = &MsgTSS{}
 )
 
 // MsgKeygenStart indicate the start of keygen
 type MsgKeygenStart struct {
 	Sender  sdk.AccAddress
-	Payload *tssd.KeygenInfo
+	Payload *tssd.KeygenInfo // TODO probably should not be a pointer; it's serialized by cosmos
 }
 
-// MsgIn incoming message for either keygen or sign
-// TODO it should be MsgOut! that's what's pushed to the chain; it's my job to convert it to a tssd.MessageIn for KeygenMsg
-type MsgIn struct {
-	Sender  sdk.AccAddress
-	Payload *tssd.MessageIn
+// MsgTSS protocol message for either keygen or sign
+type MsgTSS struct {
+	Sender    sdk.AccAddress
+	SessionID string
+	Payload   *tssd.MessageOut // TODO probably should not be a pointer; it's serialized by cosmos
 }
 
 // NewMsgKeygenStart TODO unnecessary method; delete it?
@@ -66,23 +66,23 @@ func (msg MsgKeygenStart) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }
 
-// NewMsgIn TODO unnecessary method; delete it?
-func NewMsgIn(sender sdk.AccAddress, payload *tssd.MessageIn) MsgIn {
-	return MsgIn{
+// NewMsgTSS TODO unnecessary method; delete it?
+func NewMsgTSS(sender sdk.AccAddress, sessionID string, payload *tssd.MessageOut) MsgTSS {
+	return MsgTSS{
 		Sender:  sender,
 		Payload: payload,
 	}
 }
 
 // Route implements the sdk.Msg interface.
-func (msg MsgIn) Route() string { return RouterKey }
+func (msg MsgTSS) Route() string { return RouterKey }
 
 // Type implements the sdk.Msg interface.
 // naming convention follows x/staking/types/msg.go
-func (msg MsgIn) Type() string { return "in" }
+func (msg MsgTSS) Type() string { return "in" }
 
 // ValidateBasic implements the sdk.Msg interface.
-func (msg MsgIn) ValidateBasic() error {
+func (msg MsgTSS) ValidateBasic() error {
 	if msg.Sender == nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "sender must be set")
 	}
@@ -97,12 +97,12 @@ func (msg MsgIn) ValidateBasic() error {
 }
 
 // GetSignBytes implements the sdk.Msg interface.
-func (msg MsgIn) GetSignBytes() []byte {
+func (msg MsgTSS) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
 // GetSigners implements the sdk.Msg interface.
-func (msg MsgIn) GetSigners() []sdk.AccAddress {
+func (msg MsgTSS) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }

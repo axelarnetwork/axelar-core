@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -17,6 +18,7 @@ import (
 type Keeper struct {
 	client       tssd.GG18Client
 	keygenStream tssd.GG18_KeygenClient
+	myUID        []byte
 
 	// TODO cruft for grpc; can we get rid of this?
 	connection        *grpc.ClientConn
@@ -36,9 +38,13 @@ func NewKeeper() (Keeper, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Hour) // TODO hard coded timeout
 	// defer cancel()
 
+	// TODO init myUID to my encrytion pubkey
+	myUID := []byte{'t', 's', 's'}
+
 	return Keeper{
 		client:            client,
 		connection:        conn,
+		myUID:             myUID,
 		context:           ctx,
 		contextCancelFunc: cancel,
 	}, nil
@@ -78,8 +84,7 @@ func (k Keeper) KeygenStart(ctx sdk.Context, info *tssd.KeygenInfo) error {
 			}
 
 			k.Logger(ctx).Debug(fmt.Sprintf("outgoing message:\nbroadcast? %t\nto: %s", msg.IsBroadcast, msg.ToPartyUid))
-			// TODO deliver msg
-			_ = msg
+			// TODO prepare and deliver a MsgTSS
 		}
 	}()
 
@@ -103,4 +108,8 @@ func (k Keeper) Close() error {
 		return sdkerrors.Wrap(err, "failure to close connection to server")
 	}
 	return nil
+}
+
+func (k Keeper) EqualsMyUID(uid []byte) bool {
+	return bytes.Equal(uid, k.myUID)
 }

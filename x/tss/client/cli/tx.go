@@ -28,7 +28,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 	tssTxCmd.AddCommand(flags.PostCommands(
 		getCmdKeygenStart(cdc),
-		getCmdKeygenMsg(cdc),
+		getCmdTSS(cdc),
 	)...)
 
 	return tssTxCmd
@@ -59,10 +59,10 @@ func getCmdKeygenStart(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-func getCmdKeygenMsg(cdc *codec.Codec) *cobra.Command {
+func getCmdTSS(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "keygenMsg [complicated-usage] ", // TODO usage info
-		Short: "Relay a message in an in-progress instance of the threshold key generation protocol",
+		Use:   "tss [complicated-usage] ", // TODO usage info
+		Short: "Relay a message in an in-progress instance of the threshold keygen or sign protocol",
 		Args:  cobra.ExactArgs(2), // Does your request require arguments
 		RunE: func(cmd *cobra.Command, args []string) error {
 
@@ -70,10 +70,11 @@ func getCmdKeygenMsg(cdc *codec.Codec) *cobra.Command {
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			// TODO parse keygen message into a types.MsgIn
-			msg := types.MsgIn{
-				Sender:  cliCtx.GetFromAddress(),
-				Payload: nil, // TODO
+			// TODO parse message into a types.MsgTSS
+			msg := types.MsgTSS{
+				Sender:    cliCtx.GetFromAddress(),
+				SessionID: "",  // TODO
+				Payload:   nil, // TODO
 			}
 			if err := msg.ValidateBasic(); err != nil {
 				return err
