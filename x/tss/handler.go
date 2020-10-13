@@ -59,23 +59,14 @@ func handleMsgTSS(ctx sdk.Context, k keeper.Keeper, msg types.MsgTSS) (*sdk.Resu
 
 func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, msg types.MsgKeygenStart) (*sdk.Result, error) {
 
-	// deduce MyPartyIndex in this keygen group
-	ok := false
-	for i, party := range msg.Payload.Parties {
-		if k.EqualsMyUID(party.Uid) {
-			msg.Payload.MyPartyIndex = int32(i)
-			ok = true
-			break
-		}
-	}
-	if !ok {
-		return &sdk.Result{ // TODO how to return an sdk.Result?
-			Log:    "MsgKeygenStart not directed to me",
-			Events: ctx.EventManager().Events(),
-		}, nil
+	keygenInfo := &tssd.KeygenInfo{
+		NewKeyId:  msg.NewKeyID,
+		Threshold: int32(msg.Threshold),
 	}
 
-	if err := k.KeygenStart(ctx, msg.Payload); err != nil {
+	// TODO populate keygenInfo.Parties, keygenInfo.MyPartyIndex
+
+	if err := k.KeygenStart(ctx, keygenInfo); err != nil {
 		return nil, err
 	}
 
@@ -84,8 +75,8 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, msg types.MsgKeygenS
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.EventTypeMsgKeygenStart),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributePayload, msg.Payload.String()),
+			// sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+			// sdk.NewAttribute(types.AttributePayload, msg.Payload.String()),
 		),
 	)
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil

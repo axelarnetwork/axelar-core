@@ -38,8 +38,7 @@ func NewKeeper() (Keeper, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Hour) // TODO hard coded timeout
 	// defer cancel()
 
-	// TODO init myUID to my encrytion pubkey
-	myUID := []byte{'t', 's', 's'}
+	myUID := []byte{'t', 's', 's'} // TODO init myUID to my cosmos address
 
 	return Keeper{
 		client:            client,

@@ -14,8 +14,10 @@ var (
 
 // MsgKeygenStart indicate the start of keygen
 type MsgKeygenStart struct {
-	Sender  sdk.AccAddress
-	Payload *tssd.KeygenInfo // TODO probably should not be a pointer; it's serialized by cosmos
+	// Sender  sdk.AccAddress
+	// Payload *tssd.KeygenInfo
+	NewKeyID  string
+	Threshold int
 }
 
 // MsgTSS protocol message for either keygen or sign
@@ -26,10 +28,10 @@ type MsgTSS struct {
 }
 
 // NewMsgKeygenStart TODO unnecessary method; delete it?
-func NewMsgKeygenStart(sender sdk.AccAddress, payload *tssd.KeygenInfo) MsgKeygenStart {
+func NewMsgKeygenStart(newKeyID string, threshold int) MsgKeygenStart {
 	return MsgKeygenStart{
-		Sender:  sender,
-		Payload: payload,
+		NewKeyID:  newKeyID,
+		Threshold: threshold,
 	}
 }
 
@@ -42,9 +44,9 @@ func (msg MsgKeygenStart) Type() string { return "keygen_start" }
 
 // ValidateBasic implements the sdk.Msg interface.
 func (msg MsgKeygenStart) ValidateBasic() error {
-	if msg.Sender == nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "sender must be set")
-	}
+	// if msg.Sender == nil {
+	// 	return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "sender must be set")
+	// }
 	// if msg.Chain == "" {
 	// 	return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "name of the chain for address must be set")
 	// }
@@ -63,7 +65,8 @@ func (msg MsgKeygenStart) GetSignBytes() []byte {
 
 // GetSigners implements the sdk.Msg interface.
 func (msg MsgKeygenStart) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Sender}
+	// return []sdk.AccAddress{msg.Sender}
+	return []sdk.AccAddress{}
 }
 
 // NewMsgTSS TODO unnecessary method; delete it?

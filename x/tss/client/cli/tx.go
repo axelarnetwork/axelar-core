@@ -45,10 +45,11 @@ func getCmdKeygenStart(cdc *codec.Codec) *cobra.Command {
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			// TODO parse keygen metadata into a types.MsgKeygenStart
 			msg := types.MsgKeygenStart{
-				Sender:  cliCtx.GetFromAddress(),
-				Payload: nil, // TODO
+				// Sender:  cliCtx.GetFromAddress(),
+				// Payload: nil, // TODO
+				NewKeyID:  "test-key-id", // TODO
+				Threshold: 2,             // TODO
 			}
 			if err := msg.ValidateBasic(); err != nil {
 				return err
