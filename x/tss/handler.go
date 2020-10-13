@@ -28,7 +28,7 @@ func NewHandler(k keeper.Keeper) sdk.Handler {
 func handleMsgTSS(ctx sdk.Context, k keeper.Keeper, msg types.MsgTSS) (*sdk.Result, error) {
 	if !k.EqualsMyUID(msg.Payload.ToPartyUid) {
 		return &sdk.Result{ // TODO how to return an sdk.Result?
-			Log:    "MsgOut not directed to me",
+			Log:    "MsgTSS not directed to me",
 			Events: ctx.EventManager().Events(),
 		}, nil
 	}
@@ -58,6 +58,23 @@ func handleMsgTSS(ctx sdk.Context, k keeper.Keeper, msg types.MsgTSS) (*sdk.Resu
 }
 
 func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, msg types.MsgKeygenStart) (*sdk.Result, error) {
+
+	// deduce MyPartyIndex in this keygen group
+	ok := false
+	for i, party := range msg.Payload.Parties {
+		if k.EqualsMyUID(party.Uid) {
+			msg.Payload.MyPartyIndex = int32(i)
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return &sdk.Result{ // TODO how to return an sdk.Result?
+			Log:    "MsgKeygenStart not directed to me",
+			Events: ctx.EventManager().Events(),
+		}, nil
+	}
+
 	if err := k.KeygenStart(ctx, msg.Payload); err != nil {
 		return nil, err
 	}
