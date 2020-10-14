@@ -16,9 +16,9 @@ import (
 )
 
 type Keeper struct {
-	client       tssd.GG18Client
-	keygenStream tssd.GG18_KeygenClient
-	myUID        []byte
+	stakingKeeper types.StakingKeeper
+	client        tssd.GG18Client
+	keygenStream  tssd.GG18_KeygenClient
 
 	// TODO cruft for grpc; can we get rid of this?
 	connection        *grpc.ClientConn
@@ -26,7 +26,7 @@ type Keeper struct {
 	contextCancelFunc context.CancelFunc
 }
 
-func NewKeeper() (Keeper, error) {
+func NewKeeper(staking types.StakingKeeper) (Keeper, error) {
 
 	// start a gRPC client
 	conn, err := grpc.Dial(":50051", grpc.WithInsecure(), grpc.WithBlock()) // TODO hard coded target
@@ -38,12 +38,10 @@ func NewKeeper() (Keeper, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Hour) // TODO hard coded timeout
 	// defer cancel()
 
-	myUID := []byte{'t', 's', 's'} // TODO init myUID to my cosmos address
-
 	return Keeper{
+		stakingKeeper:     staking,
 		client:            client,
 		connection:        conn,
-		myUID:             myUID,
 		context:           ctx,
 		contextCancelFunc: cancel,
 	}, nil
@@ -54,9 +52,37 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-func (k Keeper) KeygenStart(ctx sdk.Context, info *tssd.KeygenInfo) error {
-	k.Logger(ctx).Debug(fmt.Sprintf("start keygen protocol: %s", info.NewKeyId))
-	_, err := k.client.KeygenInit(k.context, info)
+func (k Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
+	k.Logger(ctx).Debug(fmt.Sprintf("start keygen protocol for key id: %s", info.NewKeyID))
+
+	// TODO how to get my validator address?
+	myAddress := sdk.ValAddress{'t', 's', 's'}
+
+	// populate a []tss.Party with all validator addresses
+	validators := k.stakingKeeper.GetAllValidators(ctx)
+	parties := make([]*tssd.Party, 0, len(validators))
+	ok, myIndex := false, 0
+	for i, v := range validators {
+		party := &tssd.Party{
+			Uid: v.OperatorAddress,
+		}
+		parties = append(parties, party)
+		if myAddress.Equals(v.OperatorAddress) {
+			ok, myIndex = true, i
+		}
+	}
+	if !ok {
+		return fmt.Errorf("my address was not in the validator list")
+	}
+
+	keygenInfo := &tssd.KeygenInfo{
+		NewKeyId:     info.NewKeyID,
+		Threshold:    int32(info.Threshold),
+		Parties:      parties,
+		MyPartyIndex: int32(myIndex),
+	}
+
+	_, err := k.client.KeygenInit(k.context, keygenInfo)
 	if err != nil {
 		return err
 	}
@@ -110,5 +136,7 @@ func (k Keeper) Close() error {
 }
 
 func (k Keeper) EqualsMyUID(uid []byte) bool {
-	return bytes.Equal(uid, k.myUID)
+	// TODO how to get my validator address?
+	myAddress := sdk.ValAddress{'t', 's', 's'}
+	return bytes.Equal(uid, myAddress)
 }

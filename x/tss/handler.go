@@ -58,18 +58,9 @@ func handleMsgTSS(ctx sdk.Context, k keeper.Keeper, msg types.MsgTSS) (*sdk.Resu
 }
 
 func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, msg types.MsgKeygenStart) (*sdk.Result, error) {
-
-	keygenInfo := &tssd.KeygenInfo{
-		NewKeyId:  msg.NewKeyID,
-		Threshold: int32(msg.Threshold),
-	}
-
-	// TODO populate keygenInfo.Parties, keygenInfo.MyPartyIndex
-
-	if err := k.KeygenStart(ctx, keygenInfo); err != nil {
+	if err := k.StartKeygen(ctx, msg); err != nil {
 		return nil, err
 	}
-
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
