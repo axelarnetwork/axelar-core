@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
-	// tssd "github.com/axelarnetwork/tssd/pb"
+	tssd "github.com/axelarnetwork/tssd/pb"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -35,53 +35,65 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 }
 
 func getCmdKeygenStart(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "keygenStart [complicated-usage] ", // TODO usage info
+	cmd := &cobra.Command{
+		Use:   "start-keygen",
 		Short: "Initiate threshold key generation protocol",
-		Args:  cobra.ExactArgs(2), // Does your request require arguments
-		RunE: func(cmd *cobra.Command, args []string) error {
-
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-
-			msg := types.MsgKeygenStart{
-				// Sender:  cliCtx.GetFromAddress(),
-				// Payload: nil, // TODO
-				NewKeyID:  "test-key-id", // TODO
-				Threshold: 2,             // TODO
-			}
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
-		},
+		Args:  cobra.NoArgs,
 	}
+	newKeyID := cmd.Flags().String("id", "", "unique ID for new key (required)")
+	cmd.MarkFlagRequired("id")
+	threshold := cmd.Flags().IntP("threshold", "t", 2, "number of corruptions to withstand (required)")
+	cmd.MarkFlagRequired("threshold")
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		cliCtx := context.NewCLIContext().WithCodec(cdc)
+		inBuf := bufio.NewReader(cmd.InOrStdin())
+		txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+
+		msg := types.MsgKeygenStart{
+			NewKeyID:  *newKeyID,
+			Threshold: *threshold,
+		}
+		if err := msg.ValidateBasic(); err != nil {
+			return err
+		}
+		return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+	}
+	return cmd
 }
 
 func getCmdTSS(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "tss [complicated-usage] ", // TODO usage info
-		Short: "Relay a message in an in-progress instance of the threshold keygen or sign protocol",
-		Args:  cobra.ExactArgs(2), // Does your request require arguments
-		RunE: func(cmd *cobra.Command, args []string) error {
-
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-
-			// TODO parse message into a types.MsgTSS
-			msg := types.MsgTSS{
-				Sender:    cliCtx.GetFromAddress(),
-				SessionID: "",  // TODO
-				Payload:   nil, // TODO
-			}
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
-		},
+	cmd := &cobra.Command{
+		Use:   "send-tss-message",
+		Short: "Relay a message in an in-progress instance of a threshold cryptography protocol",
+		Args:  cobra.NoArgs,
 	}
+	sessionID := cmd.Flags().StringP("session-id", "i", "", "unique ID for protocol (required)")
+	cmd.MarkFlagRequired("session-id")
+	toParty := cmd.Flags().StringP("to", "t", "", "destination validator address (non-broadcast only)")
+	isBroadcast := cmd.Flags().BoolP("is-broadcast", "b", false, "is this a broacast message?")
+	cmd.MarkFlagRequired("is-broadcast")
+	payload := cmd.Flags().BytesBase64P("payload", "p", nil, "message payload")
+	cmd.MarkFlagRequired("payload")
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		cliCtx := context.NewCLIContext().WithCodec(cdc)
+		inBuf := bufio.NewReader(cmd.InOrStdin())
+		txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+
+		msg := types.MsgTSS{
+			Sender:    cliCtx.GetFromAddress(),
+			SessionID: *sessionID,
+			Payload: &tssd.MessageOut{
+				ToPartyUid:  []byte(*toParty),
+				IsBroadcast: *isBroadcast,
+				Payload:     *payload,
+			},
+		}
+		if err := msg.ValidateBasic(); err != nil {
+			return err
+		}
+		return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+	}
+	return cmd
 }
