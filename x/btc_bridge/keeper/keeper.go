@@ -6,11 +6,14 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/btcjson"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
+	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/axelarnetwork/axelar-core/x/axelar/exported"
 	axTypes "github.com/axelarnetwork/axelar-core/x/axelar/types"
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
 )
@@ -32,6 +35,7 @@ const (
 )
 
 func NewBtcKeeper(cfg types.BtcConfig, logger log.Logger) (Keeper, error) {
+	logger.Debug("initializing btc keeper")
 	client, err := newRPCClient(cfg, logger.With("module", fmt.Sprintf("x/%s", types.ModuleName)))
 	if err != nil {
 		return Keeper{}, err
@@ -147,4 +151,40 @@ func (k Keeper) TrackAddress(ctx sdk.Context, address string) error {
 	k.Logger(ctx).Debug(fmt.Sprintf("successfully tracked all past transaction for address %v", address))
 
 	return nil
+}
+
+func (k Keeper) VerifyTx(ctx sdk.Context, tx exported.ExternalTx) bool {
+	k.Logger(ctx).Debug("verifying bitcoin transaction")
+	hash, err := chainhash.NewHashFromStr(tx.TxID)
+	if err != nil {
+		k.Logger(ctx).Info(err.Error())
+		return false
+	}
+
+	txResult, err := k.client.GetTransaction(hash)
+	if err != nil {
+		k.Logger(ctx).Info(err.Error())
+		return false
+	}
+
+	verifiedAmount, err := btcutil.NewAmount(txResult.Amount)
+	if err != nil {
+		k.Logger(ctx).Info(err.Error())
+		return false
+	}
+
+	isEqual := txResult.TxID == tx.TxID &&
+		verifiedAmount == btcutil.Amount(tx.Amount.Amount.Int64()) &&
+		txResult.Confirmations >= 6
+
+	if !isEqual {
+		k.Logger(ctx).Debug(fmt.Sprintf(
+			"txID:%s\nbtcTxId:%s\namount:%v\nbtcAmount:%v",
+			tx.TxID,
+			txResult.TxID,
+			btcutil.Amount(tx.Amount.Amount.Int64()),
+			verifiedAmount,
+		))
+	}
+	return isEqual
 }

@@ -1,16 +1,22 @@
 package types
 
-type GenesisState struct {
-}
+import (
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/x/gov/types"
+)
 
-func NewGenesisState() GenesisState {
-	return GenesisState{}
+type GenesisState struct {
+	VotingInterval int64
 }
 
 func DefaultGenesisState() GenesisState {
-	return GenesisState{}
+	return GenesisState{VotingInterval: 10}
 }
 
-func ValidateGenesis(_ GenesisState) error {
+func ValidateGenesis(state GenesisState) error {
+	if state.VotingInterval == 0 {
+		return sdkerrors.Wrap(types.ErrInvalidGenesis, "voting interval must be larger than 0")
+	}
+
 	return nil
 }

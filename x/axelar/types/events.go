@@ -1,9 +1,12 @@
 package types
 
 const (
-	EventTypeTrackAddress = "trackAddress"
+	EventTypeTrackAddress  = "trackAddress"
+	EventTypeVerifyTx      = "verifyTx"
+	EventTypeRegisterVoter = "registerVoter"
+	EventTypeRecordVotes   = "recordVotes"
 
 	AttributeModule  = ModuleName
 	AttributeAddress = "address"
-	AttributeChain   = "chain"
+	AttributeTx      = "tx"
 )

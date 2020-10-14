@@ -14,6 +14,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
@@ -27,9 +28,12 @@ import (
 	tmos "github.com/tendermint/tendermint/libs/os"
 	dbm "github.com/tendermint/tm-db"
 
+	keyring "github.com/cosmos/cosmos-sdk/crypto/keys"
+
 	"github.com/axelarnetwork/axelar-core/x/axelar"
 	axKeeper "github.com/axelarnetwork/axelar-core/x/axelar/keeper"
 	axTypes "github.com/axelarnetwork/axelar-core/x/axelar/types"
+	bcKeeper "github.com/axelarnetwork/axelar-core/x/broadcast/keeper"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
 )
 
@@ -44,7 +48,7 @@ var (
 	// DefaultNodeHome sets the folder where the applcation data and configuration will be stored
 	DefaultNodeHome = os.ExpandEnv("$HOME/.axelard")
 
-	// NewBasicManager is in charge of setting up basic module elemnets
+	// NewBasicManager is in charge of setting up basic module elements
 	ModuleBasics = module.NewBasicManager(
 		genutil.AppModuleBasic{},
 		auth.AppModuleBasic{},
@@ -217,10 +221,21 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		app.btcKeeper.Close()
 	}()
 
+	keybase, err := keyring.NewKeyring(sdk.KeyringServiceName(), axelarCfg.ClientConfig.KeyringBackend, DefaultCLIHome, os.Stdin)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+	broadcastKeeper, err := bcKeeper.NewKeeper(axelarCfg.ClientConfig, keybase, app.accountKeeper, utils.GetTxEncoder(cdc))
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+
 	app.axelarKeeper = axKeeper.NewKeeper(
 		app.cdc,
 		keys[axTypes.StoreKey],
 		map[string]axTypes.BridgeKeeper{"bitcoin": app.btcKeeper},
+		stakingKeeper,
+		broadcastKeeper,
 	)
 
 	// NOTE: Any module instantiated in the module manager that is later modified
@@ -240,7 +255,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	// there is nothing left over in the validator fee pool, so as to keep the
 	// CanWithdrawInvariant invariant.
 	app.mm.SetOrderBeginBlockers(distr.ModuleName, slashing.ModuleName)
-	app.mm.SetOrderEndBlockers(staking.ModuleName)
+	app.mm.SetOrderEndBlockers(staking.ModuleName, axTypes.ModuleName)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	// NOTE: The genutils moodule must occur after staking so that pools are
