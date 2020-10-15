@@ -1,6 +1,7 @@
 package types
 
 import (
+	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	tssd "github.com/axelarnetwork/tssd/pb"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -8,14 +9,12 @@ import (
 
 // golang stupidity: ensure interface compliance at compile time
 var (
-	_ sdk.Msg = &MsgKeygenStart{}
-	_ sdk.Msg = &MsgTSS{}
+	_ sdk.Msg                = &MsgKeygenStart{}
+	_ broadcast.ValidatorMsg = &MsgTSS{}
 )
 
 // MsgKeygenStart indicate the start of keygen
 type MsgKeygenStart struct {
-	// Sender  sdk.AccAddress
-	// Payload *tssd.KeygenInfo
 	NewKeyID  string
 	Threshold int
 }
@@ -70,10 +69,10 @@ func (msg MsgKeygenStart) GetSigners() []sdk.AccAddress {
 }
 
 // NewMsgTSS TODO unnecessary method; delete it?
-func NewMsgTSS(sender sdk.AccAddress, sessionID string, payload *tssd.MessageOut) MsgTSS {
-	return MsgTSS{
-		Sender:  sender,
-		Payload: payload,
+func NewMsgTSS(sessionID string, payload *tssd.MessageOut) *MsgTSS {
+	return &MsgTSS{
+		SessionID: sessionID,
+		Payload:   payload,
 	}
 }
 
@@ -99,13 +98,18 @@ func (msg MsgTSS) ValidateBasic() error {
 	return nil
 }
 
-// GetSignBytes implements the sdk.Msg interface.
+// GetSignBytes implements the sdk.Msg interface
 func (msg MsgTSS) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
-// GetSigners implements the sdk.Msg interface.
+// GetSigners implements the sdk.Msg interface
 func (msg MsgTSS) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
+}
+
+// SetSender implements the broadcast.ValidatorMsg interface
+func (msg *MsgTSS) SetSender(sender sdk.AccAddress) {
+	msg.Sender = sender
 }

@@ -7,6 +7,7 @@ import (
 	"io"
 	"time"
 
+	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	tssd "github.com/axelarnetwork/tssd/pb"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -16,6 +17,7 @@ import (
 )
 
 type Keeper struct {
+	broadcaster   broadcast.Broadcaster
 	stakingKeeper types.StakingKeeper // needed only for `GetAllValidators`
 	client        tssd.GG18Client
 	keygenStream  tssd.GG18_KeygenClient
@@ -26,7 +28,7 @@ type Keeper struct {
 	contextCancelFunc context.CancelFunc
 }
 
-func NewKeeper(staking types.StakingKeeper) (Keeper, error) {
+func NewKeeper(broadcaster broadcast.Broadcaster, staking types.StakingKeeper) (Keeper, error) {
 
 	// start a gRPC client
 	conn, err := grpc.Dial(":50051", grpc.WithInsecure(), grpc.WithBlock()) // TODO hard coded target
@@ -37,6 +39,7 @@ func NewKeeper(staking types.StakingKeeper) (Keeper, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Hour) // TODO hard coded timeout
 
 	return Keeper{
+		broadcaster:       broadcaster,
 		stakingKeeper:     staking,
 		client:            client,
 		connection:        conn,
@@ -45,7 +48,7 @@ func NewKeeper(staking types.StakingKeeper) (Keeper, error) {
 	}, nil
 }
 
-// Logger returns a module-specific logger.
+// Logger returns a module-specific logger
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
@@ -53,7 +56,11 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 func (k Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 	k.Logger(ctx).Debug(fmt.Sprintf("start keygen protocol for key id: %s", info.NewKeyID))
 
-	myAddress := sdk.ValAddress{'t', 's', 's'} // TODO get my validator address from the broadcast module
+	// TODO call GetLocalPrincipal only once at launch? need to wait until someone pushes a RegisterProxy message on chain...
+	myAddress := k.broadcaster.GetLocalPrincipal(ctx)
+	if myAddress.Empty() {
+		return fmt.Errorf("my address is empty")
+	}
 
 	// populate a []tss.Party with all validator addresses
 	validators := k.stakingKeeper.GetAllValidators(ctx)
@@ -64,7 +71,7 @@ func (k Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 			Uid: v.OperatorAddress,
 		}
 		parties = append(parties, party)
-		if myAddress.Equals(v.OperatorAddress) {
+		if v.OperatorAddress.Equals(myAddress) {
 			ok, myIndex = true, i
 		}
 	}
@@ -87,12 +94,10 @@ func (k Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 	if err != nil {
 		return err
 	}
-	defer k.keygenStream.CloseSend()
-
-	// TODO save my info from info.Parties[info.MyPartyIndex]?
 
 	// server handler https://grpc.io/docs/languages/go/basics/#bidirectional-streaming-rpc-1
 	go func() {
+		defer k.keygenStream.CloseSend() // TODO is this the right place to call CloseSend?
 		for {
 			msg, err := k.keygenStream.Recv() // blocking
 			if err == io.EOF {                // output stream closed by server
@@ -104,12 +109,9 @@ func (k Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 				k.Logger(ctx).Error(newErr.Error()) // TODO what to do with this error?
 				return
 			}
-
-			k.Logger(ctx).Debug(fmt.Sprintf("outgoing message:\nbroadcast? %t\nto: %s", msg.IsBroadcast, msg.ToPartyUid))
-
-			// TODO prepare and deliver a MsgTSS
-			// msg := types.NewMsgBatchVote(bits)
-			// k.broadcaster.Broadcast(ctx, []bcExported.ValidatorMsg{msg})
+			k.Logger(ctx).Debug(fmt.Sprintf("outgoing keygen message:\nnew key id:%s\nmsg: %v", keygenInfo.NewKeyId, msg))
+			tssMsg := types.NewMsgTSS(keygenInfo.NewKeyId, msg)
+			k.broadcaster.Broadcast(ctx, []broadcast.ValidatorMsg{tssMsg})
 		}
 	}()
 

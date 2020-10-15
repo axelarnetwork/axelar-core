@@ -62,6 +62,7 @@ func getCmdKeygenStart(cdc *codec.Codec) *cobra.Command {
 	return cmd
 }
 
+// TODO hide this command; it should only be used for testing, never in production
 func getCmdTSS(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "send-tss-message",
