@@ -51,6 +51,7 @@ func getCmdKeygenStart(cdc *codec.Codec) *cobra.Command {
 		txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
 		msg := types.MsgKeygenStart{
+			Sender:    cliCtx.FromAddress,
 			NewKeyID:  *newKeyID,
 			Threshold: *threshold,
 		}
@@ -72,7 +73,7 @@ func getCmdTSS(cdc *codec.Codec) *cobra.Command {
 	sessionID := cmd.Flags().StringP("session-id", "i", "", "unique ID for protocol (required)")
 	cmd.MarkFlagRequired("session-id")
 	toParty := cmd.Flags().StringP("to", "t", "", "destination validator address (non-broadcast only)")
-	isBroadcast := cmd.Flags().BoolP("is-broadcast", "b", false, "is this a broacast message?")
+	isBroadcast := cmd.Flags().Bool("is-broadcast", false, "is this a broacast message?")
 	cmd.MarkFlagRequired("is-broadcast")
 	payload := cmd.Flags().BytesBase64P("payload", "p", nil, "message payload")
 	cmd.MarkFlagRequired("payload")

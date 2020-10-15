@@ -15,6 +15,7 @@ var (
 
 // MsgKeygenStart indicate the start of keygen
 type MsgKeygenStart struct {
+	Sender    sdk.AccAddress
 	NewKeyID  string
 	Threshold int
 }
@@ -64,8 +65,7 @@ func (msg MsgKeygenStart) GetSignBytes() []byte {
 
 // GetSigners implements the sdk.Msg interface.
 func (msg MsgKeygenStart) GetSigners() []sdk.AccAddress {
-	// return []sdk.AccAddress{msg.Sender}
-	return []sdk.AccAddress{}
+	return []sdk.AccAddress{msg.Sender}
 }
 
 // NewMsgTSS TODO unnecessary method; delete it?

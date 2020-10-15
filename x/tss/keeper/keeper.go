@@ -31,10 +31,12 @@ type Keeper struct {
 func NewKeeper(broadcaster broadcast.Broadcaster, staking types.StakingKeeper) (Keeper, error) {
 
 	// start a gRPC client
-	conn, err := grpc.Dial(":50051", grpc.WithInsecure(), grpc.WithBlock()) // TODO hard coded target
+	fmt.Println("tss module: grpc.Dial...")
+	conn, err := grpc.Dial("host.docker.internal:50051", grpc.WithInsecure(), grpc.WithBlock()) // TODO hard coded target
 	if err != nil {
 		return Keeper{}, err
 	}
+	fmt.Println("done")
 	client := tssd.NewGG18Client(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Hour) // TODO hard coded timeout
 
