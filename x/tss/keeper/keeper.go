@@ -16,7 +16,7 @@ import (
 )
 
 type Keeper struct {
-	stakingKeeper types.StakingKeeper
+	stakingKeeper types.StakingKeeper // needed only for `GetAllValidators`
 	client        tssd.GG18Client
 	keygenStream  tssd.GG18_KeygenClient
 
@@ -33,10 +33,8 @@ func NewKeeper(staking types.StakingKeeper) (Keeper, error) {
 	if err != nil {
 		return Keeper{}, err
 	}
-	// defer conn.Close()
 	client := tssd.NewGG18Client(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Hour) // TODO hard coded timeout
-	// defer cancel()
 
 	return Keeper{
 		stakingKeeper:     staking,
@@ -55,8 +53,7 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 func (k Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 	k.Logger(ctx).Debug(fmt.Sprintf("start keygen protocol for key id: %s", info.NewKeyID))
 
-	// TODO how to get my validator address?
-	myAddress := sdk.ValAddress{'t', 's', 's'}
+	myAddress := sdk.ValAddress{'t', 's', 's'} // TODO get my validator address from the broadcast module
 
 	// populate a []tss.Party with all validator addresses
 	validators := k.stakingKeeper.GetAllValidators(ctx)
@@ -86,10 +83,11 @@ func (k Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 	if err != nil {
 		return err
 	}
-	k.keygenStream, err = k.client.Keygen(k.context)
+	k.keygenStream, err = k.client.Keygen(k.context) // TODO support concurrent sessions
 	if err != nil {
 		return err
 	}
+	defer k.keygenStream.CloseSend()
 
 	// TODO save my info from info.Parties[info.MyPartyIndex]?
 
@@ -99,7 +97,6 @@ func (k Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 			msg, err := k.keygenStream.Recv() // blocking
 			if err == io.EOF {                // output stream closed by server
 				k.Logger(ctx).Debug("stream closed by server")
-				k.keygenStream.CloseSend() // TODO is this the right place to call CloseSend?
 				return
 			}
 			if err != nil {
@@ -109,7 +106,10 @@ func (k Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 			}
 
 			k.Logger(ctx).Debug(fmt.Sprintf("outgoing message:\nbroadcast? %t\nto: %s", msg.IsBroadcast, msg.ToPartyUid))
+
 			// TODO prepare and deliver a MsgTSS
+			// msg := types.NewMsgBatchVote(bits)
+			// k.broadcaster.Broadcast(ctx, []bcExported.ValidatorMsg{msg})
 		}
 	}()
 

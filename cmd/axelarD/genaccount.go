@@ -17,10 +17,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 )
 
-const (
-	flagClientHome = "home-client"
-)
-
 // AddGenesisAccountCmd returns add-genesis-account cobra Command.
 func AddGenesisAccountCmd(
 	ctx *server.Context, cdc *codec.Codec, defaultNodeHome, defaultClientHome string,
@@ -42,7 +38,7 @@ contain valid denominations. Accounts may optionally be supplied with vesting pa
 			addr, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
 				// attempt to lookup address from Keybase if no address was provided
-				kb, err := keys.NewKeyBaseFromDir(viper.GetString(flagClientHome))
+				kb, err := keys.NewKeyBaseFromDir(viper.GetString(CliHomeFlag))
 				if err != nil {
 					return err
 				}
@@ -106,7 +102,7 @@ contain valid denominations. Accounts may optionally be supplied with vesting pa
 	}
 
 	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
-	cmd.Flags().String(flagClientHome, defaultClientHome, "client's home directory")
+	cmd.Flags().String(CliHomeFlag, defaultClientHome, "client's home directory")
 
 	return cmd
 }

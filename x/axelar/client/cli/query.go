@@ -2,8 +2,11 @@ package cli
 
 import (
 	"fmt"
+
+	"github.com/axelarnetwork/axelar-core/x/axelar/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelar/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelar/types"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -43,7 +46,7 @@ func GetCmdTrackedAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				return nil
 			}
 
-			var out types.ExternalChainAddress
+			var out exported.ExternalChainAddress
 			cdc.MustUnmarshalJSON(res, &out)
 			return cliCtx.PrintOutput(out)
 		},

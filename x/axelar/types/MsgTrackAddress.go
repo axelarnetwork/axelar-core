@@ -3,6 +3,8 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/x/axelar/exported"
 )
 
 // Ensure MsgTrackAddress implements sdk.Msg interface
@@ -10,14 +12,12 @@ var _ sdk.Msg = &MsgTrackAddress{}
 
 type MsgTrackAddress struct {
 	Sender  sdk.AccAddress
-	Chain   string
-	Address string
+	Address exported.ExternalChainAddress
 }
 
-func NewMsgTrackAddress(sender sdk.AccAddress, chain string, address string) MsgTrackAddress {
+func NewMsgTrackAddress(sender sdk.AccAddress, address exported.ExternalChainAddress) MsgTrackAddress {
 	return MsgTrackAddress{
 		Sender:  sender,
-		Chain:   chain,
 		Address: address,
 	}
 }
@@ -26,21 +26,16 @@ func (msg MsgTrackAddress) Route() string {
 	return RouterKey
 }
 
-const TrackAddress = "TrackAddress"
-
 func (msg MsgTrackAddress) Type() string {
-	return TrackAddress
+	return "TrackAddress"
 }
 
 func (msg MsgTrackAddress) ValidateBasic() error {
-	if msg.Sender == nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "sender must be set")
+	if msg.Sender.Empty() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
-	if msg.Chain == "" {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "name of the chain for address must be set")
-	}
-	if msg.Address == "" {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "address must be set")
+	if msg.Address.IsInvalid() {
+		return sdkerrors.Wrap(ErrInvalidExternalAddress, msg.Address.String())
 	}
 
 	return nil

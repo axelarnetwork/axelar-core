@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/axelarnetwork/tssd v0.0.0-00010101000000-000000000000
 	github.com/btcsuite/btcd v0.21.0-beta
+	github.com/btcsuite/btcutil v1.0.2
 	github.com/cosmos/cosmos-sdk v0.39.1
 	github.com/golang/protobuf v1.4.2
 	github.com/gorilla/mux v1.7.4

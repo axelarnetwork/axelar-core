@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"io"
+	"path"
 
 	"github.com/cosmos/cosmos-sdk/store/types"
 
@@ -28,7 +29,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking"
 )
 
-const flagInvCheckPeriod = "inv-check-period"
+const (
+	flagInvCheckPeriod = "inv-check-period"
+	CliHomeFlag        = "clihome"
+)
 
 var invCheckPeriod uint
 
@@ -69,6 +73,14 @@ func main() {
 	executor := cli.PrepareBaseCmd(rootCmd, "AX", app.DefaultNodeHome)
 	rootCmd.PersistentFlags().UintVar(&invCheckPeriod, flagInvCheckPeriod,
 		0, "Assert registered invariants every N blocks")
+
+	flags.PostCommands(rootCmd)
+	// this flag has a defined default in PostCommands, but is not bound to viper
+	_ = viper.BindPFlag(flags.FlagGasAdjustment, rootCmd.Flags().Lookup(flags.FlagGasAdjustment))
+
+	rootCmd.PersistentFlags().String(CliHomeFlag, app.DefaultCLIHome, "directory for cli config and data")
+	_ = viper.BindPFlag(CliHomeFlag, rootCmd.Flags().Lookup(CliHomeFlag))
+
 	err := executor.Execute()
 	if err != nil {
 		panic(err)
@@ -93,7 +105,18 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 }
 
 func loadConfig() *app.Config {
+	// need to merge in cli config because axelard now has its own broadcasting client
 	conf := &app.Config{}
+	homeDir := viper.GetString(cli.HomeFlag)
+	cliHomeDir := viper.GetString(CliHomeFlag)
+	cliCfgFile := path.Join(cliHomeDir, "config", "config.toml")
+	viper.SetConfigFile(cliCfgFile)
+	if err := viper.MergeInConfig(); err != nil {
+		panic(err)
+	}
+	cfgFile := path.Join(homeDir, "config", "config.toml")
+	viper.SetConfigFile(cfgFile)
+
 	if err := viper.Unmarshal(conf); err != nil {
 		panic(err)
 	}
