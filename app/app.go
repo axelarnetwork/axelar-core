@@ -33,7 +33,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelar"
 	axKeeper "github.com/axelarnetwork/axelar-core/x/axelar/keeper"
 	axTypes "github.com/axelarnetwork/axelar-core/x/axelar/types"
+	"github.com/axelarnetwork/axelar-core/x/broadcast"
 	bcKeeper "github.com/axelarnetwork/axelar-core/x/broadcast/keeper"
+	bcTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
 )
 
@@ -60,6 +62,7 @@ var (
 		supply.AppModuleBasic{},
 
 		axelar.AppModuleBasic{},
+		broadcast.AppModuleBasic{},
 	)
 	// account permissions
 	maccPerms = map[string][]string{
@@ -93,15 +96,16 @@ type AxelarApp struct {
 	tkeys map[string]*sdk.TransientStoreKey
 
 	// Keepers
-	accountKeeper  auth.AccountKeeper
-	bankKeeper     bank.Keeper
-	stakingKeeper  staking.Keeper
-	slashingKeeper slashing.Keeper
-	distrKeeper    distr.Keeper
-	supplyKeeper   supply.Keeper
-	paramsKeeper   params.Keeper
-	btcKeeper      btcKeeper.Keeper
-	axelarKeeper   axKeeper.Keeper
+	accountKeeper   auth.AccountKeeper
+	bankKeeper      bank.Keeper
+	stakingKeeper   staking.Keeper
+	slashingKeeper  slashing.Keeper
+	distrKeeper     distr.Keeper
+	supplyKeeper    supply.Keeper
+	paramsKeeper    params.Keeper
+	btcKeeper       btcKeeper.Keeper
+	broadcastKeeper bcKeeper.Keeper
+	axelarKeeper    axKeeper.Keeper
 
 	// Module Manager
 	mm *module.Manager
@@ -126,7 +130,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	bApp.SetAppVersion(version.Version)
 
 	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
-		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey, axTypes.StoreKey)
+		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey, axTypes.StoreKey, bcTypes.StoreKey)
 
 	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
@@ -225,7 +229,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
-	broadcastKeeper, err := bcKeeper.NewKeeper(axelarCfg.ClientConfig, keybase, app.accountKeeper, utils.GetTxEncoder(cdc))
+	app.broadcastKeeper, err = bcKeeper.NewKeeper(axelarCfg.ClientConfig, keys[bcTypes.StoreKey], keybase, app.accountKeeper, app.stakingKeeper, utils.GetTxEncoder(cdc))
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
@@ -234,8 +238,8 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		app.cdc,
 		keys[axTypes.StoreKey],
 		map[string]axTypes.BridgeKeeper{"bitcoin": app.btcKeeper},
-		stakingKeeper,
-		broadcastKeeper,
+		app.stakingKeeper,
+		app.broadcastKeeper,
 	)
 
 	// NOTE: Any module instantiated in the module manager that is later modified
@@ -249,6 +253,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 		axelar.NewAppModule(app.axelarKeeper),
+		broadcast.NewAppModule(app.broadcastKeeper),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
@@ -266,6 +271,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		auth.ModuleName,
 		bank.ModuleName,
 		slashing.ModuleName,
+		bcTypes.ModuleName,
 		axTypes.ModuleName,
 		supply.ModuleName,
 		genutil.ModuleName,

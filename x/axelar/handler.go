@@ -20,31 +20,11 @@ func NewHandler(k keeper.Keeper) sdk.Handler {
 			return handleMsgVerifyTx(ctx, k, msg)
 		case types.MsgBatchVote:
 			return handleMsgBatchVote(ctx, k, msg)
-		case types.MsgRegisterVoter:
-			return handleMsgRegisterVoter(ctx, k, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
 		}
 	}
-}
-
-func handleMsgRegisterVoter(ctx sdk.Context, k keeper.Keeper, msg types.MsgRegisterVoter) (*sdk.Result, error) {
-	if err := k.RegisterVoter(ctx, msg.Validator, msg.Voter); err != nil {
-		k.Logger(ctx).Error(err.Error())
-		return nil, err
-	}
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.EventTypeRegisterVoter),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.Validator.String()),
-			sdk.NewAttribute(types.AttributeAddress, msg.Voter.String()),
-		),
-	)
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
 func handleMsgBatchVote(ctx sdk.Context, k keeper.Keeper, msg types.MsgBatchVote) (*sdk.Result, error) {

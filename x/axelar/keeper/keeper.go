@@ -25,11 +25,11 @@ type Keeper struct {
 	bridges       map[string]types.BridgeKeeper
 	storeKey      sdk.StoreKey
 	cdc           *codec.Codec
-	broadcaster   bcExported.Broadcaster
+	broadcaster   types.Broadcaster
 	stakingKeeper staking.Keeper
 }
 
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, bridges map[string]types.BridgeKeeper, stakingKeeper staking.Keeper, client bcExported.Broadcaster) Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, bridges map[string]types.BridgeKeeper, stakingKeeper staking.Keeper, client types.Broadcaster) Keeper {
 	keeper := Keeper{
 		bridges:       bridges,
 		storeKey:      key,
@@ -158,15 +158,6 @@ func (k Keeper) BatchVote(ctx sdk.Context) error {
 	return k.broadcaster.Broadcast(ctx, []bcExported.ValidatorMsg{msg})
 }
 
-func (k Keeper) RegisterVoter(ctx sdk.Context, validator sdk.ValAddress, voter sdk.AccAddress) error {
-	_, found := k.stakingKeeper.GetValidator(ctx, validator)
-	if !found {
-		return types.ErrInvalidValidator
-	}
-	ctx.KVStore(k.storeKey).Set(voter, validator)
-	return nil
-}
-
 func (k Keeper) RecordVotes(ctx sdk.Context, voter sdk.AccAddress, votes []bool) error {
 	if !ctx.KVStore(k.storeKey).Has(voter) {
 		k.Logger(ctx).Debug(fmt.Sprintf("connot find voter %v", voter))
@@ -178,7 +169,7 @@ func (k Keeper) RecordVotes(ctx sdk.Context, voter sdk.AccAddress, votes []bool)
 		k.Logger(ctx).Debug(fmt.Sprintf("vote length:%v, unconfirmed votes: %v", len(votes), len(unconfVotes)))
 		return types.ErrInvalidVotes
 	}
-	validator := sdk.ValAddress(ctx.KVStore(k.storeKey).Get(voter))
+	validator := k.broadcaster.GetPrincipal(ctx, voter)
 	for i, vote := range votes {
 		k.Logger(ctx).Debug("storing vote confirmation")
 		if vote {

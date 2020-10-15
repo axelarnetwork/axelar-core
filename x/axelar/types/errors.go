@@ -10,6 +10,5 @@ var (
 	ErrInvalidExternalTx      = sdkerrors.Register(ModuleName, 4, "invalid external transaction")
 	ErrInvalidChain           = sdkerrors.Register(ModuleName, 5, "invalid chain")
 	ErrInvalidVotes           = sdkerrors.Register(ModuleName, 6, "invalid votes")
-	ErrInvalidValidator       = sdkerrors.Register(ModuleName, 7, "invalid validator")
-	ErrInvalidVoter           = sdkerrors.Register(ModuleName, 8, "invalid voter")
+	ErrInvalidVoter           = sdkerrors.Register(ModuleName, 7, "invalid voter")
 )

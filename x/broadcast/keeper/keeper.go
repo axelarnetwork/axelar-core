@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/rpc/client/http"
 
@@ -14,41 +15,45 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/broadcast/types"
 )
 
-var _ exported.Broadcaster = broadcaster{}
+var _ exported.Broadcaster = Keeper{}
 
-type broadcaster struct {
-	from     sdk.AccAddress
-	keybase  keys.Keybase
-	keeper   auth.AccountKeeper
-	encodeTx sdk.TxEncoder
-	config   types.ClientConfig
-	rpc      *http.HTTP
-	fromName string
+type Keeper struct {
+	stakingKeeper staking.Keeper
+	storeKey      sdk.StoreKey
+	from          sdk.AccAddress
+	keybase       keys.Keybase
+	keeper        auth.AccountKeeper
+	encodeTx      sdk.TxEncoder
+	config        types.ClientConfig
+	rpc           *http.HTTP
+	fromName      string
 }
 
-func NewKeeper(conf types.ClientConfig, keybase keys.Keybase, keeper auth.AccountKeeper, encoder sdk.TxEncoder) (exported.Broadcaster, error) {
+func NewKeeper(conf types.ClientConfig, storeKey sdk.StoreKey, keybase keys.Keybase, authKeeper auth.AccountKeeper, stakingKeeper staking.Keeper, encoder sdk.TxEncoder) (Keeper, error) {
 	from, fromName, err := getAccountAddress(conf.From, keybase)
 	if err != nil {
-		return nil, err
+		return Keeper{}, err
 	}
 	rpc, err := http.New(conf.TendermintNodeUri, "/websocket")
 	if err != nil {
-		return nil, err
+		return Keeper{}, err
 	}
 
-	return broadcaster{
-		from:     from,
-		fromName: fromName,
-		rpc:      rpc,
-		config:   conf,
-		keybase:  keybase,
-		keeper:   keeper,
-		encodeTx: encoder,
+	return Keeper{
+		stakingKeeper: stakingKeeper,
+		storeKey:      storeKey,
+		from:          from,
+		keybase:       keybase,
+		keeper:        authKeeper,
+		encodeTx:      encoder,
+		config:        conf,
+		rpc:           rpc,
+		fromName:      fromName,
 	}, nil
 }
 
 // Logger returns a module-specific logger.
-func (b broadcaster) Logger(ctx sdk.Context) log.Logger {
+func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
@@ -69,51 +74,51 @@ func getAccountAddress(from string, keybase keys.Keybase) (sdk.AccAddress, strin
 	return info.GetAddress(), info.GetName(), nil
 }
 
-func (b broadcaster) Broadcast(ctx sdk.Context, valMsgs []exported.ValidatorMsg) error {
-	b.Logger(ctx).Debug("setting sender")
+func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []exported.ValidatorMsg) error {
+	k.Logger(ctx).Debug("setting sender")
 	msgs := make([]sdk.Msg, 0, len(valMsgs))
 	for _, msg := range valMsgs {
-		b.Logger(ctx).Debug(fmt.Sprintf("b.from: %v", b.from))
-		msg.SetSender(b.from)
+		k.Logger(ctx).Debug(fmt.Sprintf("k.from: %v", k.from))
+		msg.SetSender(k.from)
 		msgs = append(msgs, msg)
 	}
-	b.Logger(ctx).Debug(fmt.Sprintf("preparing to sign:%v", msgs))
-	stdSignMsg, err := b.prepareMsgForSigning(ctx, msgs)
+	k.Logger(ctx).Debug(fmt.Sprintf("preparing to sign:%v", msgs))
+	stdSignMsg, err := k.prepareMsgForSigning(ctx, msgs)
 	if err != nil {
 		return err
 	}
 
-	b.Logger(ctx).Debug("signing")
-	tx, err := b.sign(stdSignMsg)
+	k.Logger(ctx).Debug("signing")
+	tx, err := k.sign(stdSignMsg)
 	if err != nil {
 		return err
 	}
 
-	b.Logger(ctx).Debug("encoding tx")
-	txBytes, err := b.encodeTx(tx)
+	k.Logger(ctx).Debug("encoding tx")
+	txBytes, err := k.encodeTx(tx)
 	if err != nil {
-		b.Logger(ctx).Info(err.Error())
+		k.Logger(ctx).Info(err.Error())
 		return err
 	}
-	b.Logger(ctx).Debug("broadcasting")
+	k.Logger(ctx).Debug("broadcasting")
 	go func() {
-		_, err := b.rpc.BroadcastTxSync(txBytes)
+		_, err := k.rpc.BroadcastTxSync(txBytes)
 		if err != nil {
-			b.Logger(ctx).Error(err.Error())
+			k.Logger(ctx).Error(err.Error())
 		}
 	}()
 	return nil
 }
 
-func (b broadcaster) prepareMsgForSigning(ctx sdk.Context, msgs []sdk.Msg) (auth.StdSignMsg, error) {
-	if b.config.ChainID == "" {
+func (k Keeper) prepareMsgForSigning(ctx sdk.Context, msgs []sdk.Msg) (auth.StdSignMsg, error) {
+	if k.config.ChainID == "" {
 		return auth.StdSignMsg{}, sdkerrors.Wrap(types.ErrInvalidChain, "chain ID required but not specified")
 	}
 
-	acc := b.keeper.GetAccount(ctx, b.from)
+	acc := k.keeper.GetAccount(ctx, k.from)
 
 	return auth.StdSignMsg{
-		ChainID:       b.config.ChainID,
+		ChainID:       k.config.ChainID,
 		AccountNumber: acc.GetAccountNumber(),
 		Sequence:      acc.GetSequence(),
 		Msgs:          msgs,
@@ -121,8 +126,8 @@ func (b broadcaster) prepareMsgForSigning(ctx sdk.Context, msgs []sdk.Msg) (auth
 	}, nil
 }
 
-func (b broadcaster) sign(msg auth.StdSignMsg) (auth.StdTx, error) {
-	sig, err := b.makeSignature(msg)
+func (k Keeper) sign(msg auth.StdSignMsg) (auth.StdTx, error) {
+	sig, err := k.makeSignature(msg)
 	if err != nil {
 		return auth.StdTx{}, err
 	}
@@ -130,8 +135,8 @@ func (b broadcaster) sign(msg auth.StdSignMsg) (auth.StdTx, error) {
 	return auth.NewStdTx(msg.Msgs, msg.Fee, []auth.StdSignature{sig}, msg.Memo), nil
 }
 
-func (b broadcaster) makeSignature(msg auth.StdSignMsg) (auth.StdSignature, error) {
-	sigBytes, pubkey, err := b.keybase.Sign(b.fromName, b.config.KeyringPassphrase, msg.Bytes())
+func (k Keeper) makeSignature(msg auth.StdSignMsg) (auth.StdSignature, error) {
+	sigBytes, pubkey, err := k.keybase.Sign(k.fromName, k.config.KeyringPassphrase, msg.Bytes())
 	if err != nil {
 		return auth.StdSignature{}, err
 	}
@@ -140,4 +145,24 @@ func (b broadcaster) makeSignature(msg auth.StdSignMsg) (auth.StdSignature, erro
 		PubKey:    pubkey,
 		Signature: sigBytes,
 	}, nil
+}
+
+func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy sdk.AccAddress) error {
+	_, found := k.stakingKeeper.GetValidator(ctx, principal)
+	if !found {
+		return types.ErrInvalidValidator
+	}
+	ctx.KVStore(k.storeKey).Set(proxy, principal)
+	return nil
+}
+
+func (k Keeper) GetLocalPrincipal(ctx sdk.Context) sdk.ValAddress {
+	return k.GetPrincipal(ctx, k.from)
+}
+
+func (k Keeper) GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
+	if proxy == nil {
+		return nil
+	}
+	return ctx.KVStore(k.storeKey).Get(proxy)
 }
