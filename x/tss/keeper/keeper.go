@@ -61,7 +61,9 @@ func (k Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 	// TODO call GetLocalPrincipal only once at launch? need to wait until someone pushes a RegisterProxy message on chain...
 	myAddress := k.broadcaster.GetLocalPrincipal(ctx)
 	if myAddress.Empty() {
-		return fmt.Errorf("my address is empty")
+		err := fmt.Errorf("my address is empty")
+		k.Logger(ctx).Error(err.Error())
+		return err
 	}
 
 	// populate a []tss.Party with all validator addresses
@@ -78,7 +80,9 @@ func (k Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 		}
 	}
 	if !ok {
-		return fmt.Errorf("my address was not in the validator list")
+		err := fmt.Errorf("my address is not in the validator list")
+		k.Logger(ctx).Error(err.Error())
+		return err
 	}
 
 	keygenInfo := &tssd.KeygenInfo{
@@ -90,16 +94,18 @@ func (k Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 
 	_, err := k.client.KeygenInit(k.context, keygenInfo)
 	if err != nil {
+		k.Logger(ctx).Error(err.Error())
 		return err
 	}
 	k.keygenStream, err = k.client.Keygen(k.context) // TODO support concurrent sessions
 	if err != nil {
+		k.Logger(ctx).Error(err.Error())
 		return err
 	}
 
 	// server handler https://grpc.io/docs/languages/go/basics/#bidirectional-streaming-rpc-1
 	go func() {
-		defer k.keygenStream.CloseSend() // TODO is this the right place to call CloseSend?
+		defer k.keygenStream.CloseSend()
 		for {
 			msg, err := k.keygenStream.Recv() // blocking
 			if err == io.EOF {                // output stream closed by server

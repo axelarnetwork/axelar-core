@@ -66,7 +66,7 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, msg types.MsgKeygenS
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.EventTypeMsgKeygenStart),
-			// sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
 			// sdk.NewAttribute(types.AttributePayload, msg.Payload.String()),
 		),
 	)
