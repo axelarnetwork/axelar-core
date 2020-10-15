@@ -14,6 +14,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
@@ -27,9 +28,14 @@ import (
 	tmos "github.com/tendermint/tendermint/libs/os"
 	dbm "github.com/tendermint/tm-db"
 
+	keyring "github.com/cosmos/cosmos-sdk/crypto/keys"
+
 	"github.com/axelarnetwork/axelar-core/x/axelar"
 	axKeeper "github.com/axelarnetwork/axelar-core/x/axelar/keeper"
 	axTypes "github.com/axelarnetwork/axelar-core/x/axelar/types"
+	"github.com/axelarnetwork/axelar-core/x/broadcast"
+	bcKeeper "github.com/axelarnetwork/axelar-core/x/broadcast/keeper"
+	bcTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
 	"github.com/axelarnetwork/axelar-core/x/tss"
 	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
@@ -47,7 +53,7 @@ var (
 	// DefaultNodeHome sets the folder where the applcation data and configuration will be stored
 	DefaultNodeHome = os.ExpandEnv("$HOME/.axelard")
 
-	// NewBasicManager is in charge of setting up basic module elemnets
+	// NewBasicManager is in charge of setting up basic module elements
 	ModuleBasics = module.NewBasicManager(
 		genutil.AppModuleBasic{},
 		auth.AppModuleBasic{},
@@ -60,6 +66,7 @@ var (
 
 		tss.AppModuleBasic{},
 		axelar.AppModuleBasic{},
+		broadcast.AppModuleBasic{},
 	)
 	// account permissions
 	maccPerms = map[string][]string{
@@ -93,16 +100,17 @@ type AxelarApp struct {
 	tkeys map[string]*sdk.TransientStoreKey
 
 	// Keepers
-	accountKeeper  auth.AccountKeeper
-	bankKeeper     bank.Keeper
-	stakingKeeper  staking.Keeper
-	slashingKeeper slashing.Keeper
-	distrKeeper    distr.Keeper
-	supplyKeeper   supply.Keeper
-	paramsKeeper   params.Keeper
-	btcKeeper      btcKeeper.Keeper
-	tssKeeper      tssKeeper.Keeper
-	axelarKeeper   axKeeper.Keeper
+	accountKeeper   auth.AccountKeeper
+	bankKeeper      bank.Keeper
+	stakingKeeper   staking.Keeper
+	slashingKeeper  slashing.Keeper
+	distrKeeper     distr.Keeper
+	supplyKeeper    supply.Keeper
+	paramsKeeper    params.Keeper
+	btcKeeper       btcKeeper.Keeper
+	broadcastKeeper bcKeeper.Keeper
+	tssKeeper       tssKeeper.Keeper
+	axelarKeeper    axKeeper.Keeper
 
 	// Module Manager
 	mm *module.Manager
@@ -126,17 +134,8 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	bApp.SetCommitMultiStoreTracer(traceStore)
 	bApp.SetAppVersion(version.Version)
 
-	keys := sdk.NewKVStoreKeys(
-		bam.MainStoreKey,
-		auth.StoreKey,
-		staking.StoreKey,
-		supply.StoreKey,
-		distr.StoreKey,
-		slashing.StoreKey,
-		params.StoreKey,
-		tssTypes.StoreKey,
-		axTypes.StoreKey,
-	)
+	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
+		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey, axTypes.StoreKey, bcTypes.StoreKey)
 
 	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
@@ -231,7 +230,16 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		app.btcKeeper.Close()
 	}()
 
-	app.tssKeeper, err = tssKeeper.NewKeeper(stakingKeeper)
+	keybase, err := keyring.NewKeyring(sdk.KeyringServiceName(), axelarCfg.ClientConfig.KeyringBackend, DefaultCLIHome, os.Stdin)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+	app.broadcastKeeper, err = bcKeeper.NewKeeper(axelarCfg.ClientConfig, keys[bcTypes.StoreKey], keybase, app.accountKeeper, app.stakingKeeper, utils.GetTxEncoder(cdc))
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+
+	app.tssKeeper, err = tssKeeper.NewKeeper(app.broadcastKeeper, app.stakingKeeper)
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
@@ -251,6 +259,8 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		app.cdc,
 		keys[axTypes.StoreKey],
 		map[string]axTypes.BridgeKeeper{"bitcoin": app.btcKeeper},
+		app.stakingKeeper,
+		app.broadcastKeeper,
 	)
 
 	// NOTE: Any module instantiated in the module manager that is later modified
@@ -266,13 +276,14 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 
 		tss.NewAppModule(app.tssKeeper),
 		axelar.NewAppModule(app.axelarKeeper),
+		broadcast.NewAppModule(app.broadcastKeeper),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
 	// there is nothing left over in the validator fee pool, so as to keep the
 	// CanWithdrawInvariant invariant.
 	app.mm.SetOrderBeginBlockers(distr.ModuleName, slashing.ModuleName)
-	app.mm.SetOrderEndBlockers(staking.ModuleName)
+	app.mm.SetOrderEndBlockers(staking.ModuleName, axTypes.ModuleName)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	// NOTE: The genutils moodule must occur after staking so that pools are
@@ -283,6 +294,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		auth.ModuleName,
 		bank.ModuleName,
 		slashing.ModuleName,
+		bcTypes.ModuleName,
 		tssTypes.ModuleName,
 		axTypes.ModuleName,
 		supply.ModuleName,
