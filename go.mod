@@ -6,7 +6,6 @@ require (
 	github.com/axelarnetwork/tssd v0.0.0-00010101000000-000000000000
 	github.com/btcsuite/btcd v0.21.0-beta
 	github.com/cosmos/cosmos-sdk v0.39.1
-	github.com/golang/protobuf v1.4.2
 	github.com/gorilla/mux v1.7.4
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.7.1
@@ -18,4 +17,4 @@ require (
 
 replace github.com/keybase/go-keychain => github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4 // https://github.com/axelarnetwork/axelar-core/issues/36
 
-replace github.com/axelarnetwork/tssd => ../tssd
+replace github.com/axelarnetwork/tssd => ./tssd
