@@ -107,6 +107,7 @@ func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []exported.ValidatorMsg) erro
 	}
 	k.Logger(ctx).Debug("broadcasting")
 	go func() {
+		k.Logger(ctx).Debug("inside broadcasting goroutine")
 		res, err := k.rpc.BroadcastTxSync(txBytes)
 		if err != nil {
 			k.Logger(ctx).Error(err.Error())
@@ -130,7 +131,7 @@ func (k Keeper) prepareMsgForSigning(ctx sdk.Context, msgs []sdk.Msg) (auth.StdS
 		AccountNumber: acc.GetAccountNumber(),
 		Sequence:      acc.GetSequence(),
 		Msgs:          msgs,
-		Fee:           auth.NewStdFee(50000, nil),
+		Fee:           auth.NewStdFee(500000, nil),
 	}, nil
 }
 
