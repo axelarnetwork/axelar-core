@@ -155,17 +155,23 @@ func (k Keeper) makeSignature(msg auth.StdSignMsg) (auth.StdSignature, error) {
 func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy sdk.AccAddress) error {
 	_, found := k.stakingKeeper.GetValidator(ctx, principal)
 	if !found {
+		k.Logger(ctx).Error("could not find validator")
 		return types.ErrInvalidValidator
 	}
+	k.Logger(ctx).Error("getting proxy count")
 	count := k.GetProxyCount(ctx)
+	k.Logger(ctx).Error(fmt.Sprintf("count: %v", count))
 	storedProxy := ctx.KVStore(k.storeKey).Get(principal)
 	if storedProxy != nil {
 		ctx.KVStore(k.storeKey).Delete(storedProxy)
 		count -= 1
 	}
+	k.Logger(ctx).Error("setting proxy")
 	ctx.KVStore(k.storeKey).Set(proxy, principal)
 	count += 1
+	k.Logger(ctx).Error("setting proxy count")
 	k.SetProxyCount(ctx, count)
+	k.Logger(ctx).Error("done")
 	return nil
 }
 
