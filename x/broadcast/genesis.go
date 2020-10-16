@@ -9,7 +9,8 @@ import (
 
 // InitGenesis initialize default parameters
 // and the keeper's address to pubkey map
-func InitGenesis(_ sdk.Context, _ keeper.Keeper, _ types.GenesisState) {
+func InitGenesis(ctx sdk.Context, k keeper.Keeper, g types.GenesisState) {
+	k.SetProxyCount(ctx, g.ProxyCount)
 }
 
 // ExportGenesis writes the current store values

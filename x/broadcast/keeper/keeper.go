@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"encoding/binary"
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys"
@@ -16,6 +17,10 @@ import (
 )
 
 var _ exported.Broadcaster = Keeper{}
+
+const (
+	proxyCount = "proxyCount"
+)
 
 type Keeper struct {
 	stakingKeeper staking.Keeper
@@ -152,7 +157,15 @@ func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy s
 	if !found {
 		return types.ErrInvalidValidator
 	}
+	count := k.GetProxyCount(ctx)
+	storedProxy := ctx.KVStore(k.storeKey).Get(principal)
+	if storedProxy != nil {
+		ctx.KVStore(k.storeKey).Delete(storedProxy)
+		count -= 1
+	}
 	ctx.KVStore(k.storeKey).Set(proxy, principal)
+	count += 1
+	k.SetProxyCount(ctx, count)
 	return nil
 }
 
@@ -165,4 +178,15 @@ func (k Keeper) GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddre
 		return nil
 	}
 	return ctx.KVStore(k.storeKey).Get(proxy)
+}
+
+func (k Keeper) GetProxyCount(ctx sdk.Context) uint32 {
+	countRaw := ctx.KVStore(k.storeKey).Get([]byte(proxyCount))
+	return binary.LittleEndian.Uint32(countRaw)
+}
+
+func (k Keeper) SetProxyCount(ctx sdk.Context, count uint32) {
+	var bz []byte
+	binary.LittleEndian.PutUint32(bz, count)
+	ctx.KVStore(k.storeKey).Set([]byte(proxyCount), bz)
 }
