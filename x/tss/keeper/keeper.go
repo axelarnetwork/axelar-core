@@ -148,6 +148,7 @@ func (k Keeper) KeygenMsg(ctx sdk.Context, msg *types.MsgTSS) error {
 	// TODO only participate if I'm a validator
 
 	myAddress := k.broadcaster.GetLocalPrincipal(ctx)
+	senderAddress := k.broadcaster.GetPrincipal(ctx, msg.Sender) // TODO check for nil
 
 	// TODO allow non-validator nodes
 	if !msg.Payload.IsBroadcast && myAddress.Equals(sdk.AccAddress(msg.Payload.ToPartyUid)) {
@@ -160,7 +161,7 @@ func (k Keeper) KeygenMsg(ctx sdk.Context, msg *types.MsgTSS) error {
 		SessionId:    msg.SessionID,
 		Payload:      msg.Payload.Payload,
 		IsBroadcast:  msg.Payload.IsBroadcast,
-		FromPartyUid: msg.Sender, // TODO convert cosmos address to tss party uid
+		FromPartyUid: senderAddress, // TODO convert cosmos address to tss party uid
 	}
 
 	k.Logger(ctx).Debug(fmt.Sprintf("attempting to send incoming msg to gRPC server"))
