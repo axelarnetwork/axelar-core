@@ -16,10 +16,11 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/broadcast/types"
 )
 
-var _ exported.Broadcaster = Keeper{}
+var _ exported.Broadcaster = &Keeper{}
 
 const (
-	proxyCount = "proxyCount"
+	proxyCountKey = "proxyCount"
+	seqNoKey      = "seqNo"
 )
 
 type Keeper struct {
@@ -79,7 +80,7 @@ func getAccountAddress(from string, keybase keys.Keybase) (sdk.AccAddress, strin
 	return info.GetAddress(), info.GetName(), nil
 }
 
-func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []exported.ValidatorMsg) error {
+func (k *Keeper) Broadcast(ctx sdk.Context, valMsgs []exported.ValidatorMsg) error {
 	k.Logger(ctx).Debug("setting sender")
 	msgs := make([]sdk.Msg, 0, len(valMsgs))
 	for _, msg := range valMsgs {
@@ -108,6 +109,7 @@ func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []exported.ValidatorMsg) erro
 		return err
 	}
 	k.Logger(ctx).Debug("broadcasting")
+	k.setSeqNo(ctx, stdSignMsg.Sequence+1)
 	go func() {
 		k.Logger(ctx).Debug("inside broadcasting goroutine")
 		res, err := k.rpc.BroadcastTxSync(txBytes)
@@ -121,17 +123,21 @@ func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []exported.ValidatorMsg) erro
 	return nil
 }
 
-func (k Keeper) prepareMsgForSigning(ctx sdk.Context, msgs []sdk.Msg) (auth.StdSignMsg, error) {
+func (k *Keeper) prepareMsgForSigning(ctx sdk.Context, msgs []sdk.Msg) (auth.StdSignMsg, error) {
 	if k.config.ChainID == "" {
 		return auth.StdSignMsg{}, sdkerrors.Wrap(types.ErrInvalidChain, "chain ID required but not specified")
 	}
 
 	acc := k.keeper.GetAccount(ctx, k.from)
+	seqNo := k.getSeqNo(ctx)
+	if acc.GetSequence() > seqNo {
+		seqNo = acc.GetSequence()
+	}
 
 	return auth.StdSignMsg{
 		ChainID:       k.config.ChainID,
 		AccountNumber: acc.GetAccountNumber(),
-		Sequence:      acc.GetSequence(),
+		Sequence:      seqNo,
 		Msgs:          msgs,
 		Fee:           auth.NewStdFee(2000000, nil),
 	}, nil
@@ -193,7 +199,7 @@ func (k Keeper) GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddre
 }
 
 func (k Keeper) GetProxyCount(ctx sdk.Context) uint32 {
-	countRaw := ctx.KVStore(k.storeKey).Get([]byte(proxyCount))
+	countRaw := ctx.KVStore(k.storeKey).Get([]byte(proxyCountKey))
 	if countRaw == nil {
 		k.Logger(ctx).Error("count was not set, this is an issue with the genesis init")
 		return 0
@@ -206,5 +212,19 @@ func (k Keeper) SetProxyCount(ctx sdk.Context, count uint32) {
 	binary.LittleEndian.PutUint32(bz, count)
 	k.Logger(ctx).Debug(fmt.Sprintf("count to set: %v", count))
 	k.Logger(ctx).Debug(fmt.Sprintf("count bytes: %v", bz))
-	ctx.KVStore(k.storeKey).Set([]byte(proxyCount), bz)
+	ctx.KVStore(k.storeKey).Set([]byte(proxyCountKey), bz)
+}
+
+func (k Keeper) getSeqNo(ctx sdk.Context) uint64 {
+	seqNo := ctx.KVStore(k.storeKey).Get([]byte(seqNoKey))
+	if seqNo == nil {
+		return 0
+	}
+	return binary.LittleEndian.Uint64(seqNo)
+}
+
+func (k Keeper) setSeqNo(ctx sdk.Context, seqNo uint64) {
+	bz := make([]byte, 4)
+	binary.LittleEndian.PutUint64(bz, seqNo)
+	ctx.KVStore(k.storeKey).Set([]byte(seqNoKey), bz)
 }
