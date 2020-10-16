@@ -80,7 +80,7 @@ func getAccountAddress(from string, keybase keys.Keybase) (sdk.AccAddress, strin
 	return info.GetAddress(), info.GetName(), nil
 }
 
-func (k *Keeper) Broadcast(ctx sdk.Context, valMsgs []exported.ValidatorMsg) error {
+func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []exported.ValidatorMsg) error {
 	k.Logger(ctx).Debug("setting sender")
 	msgs := make([]sdk.Msg, 0, len(valMsgs))
 	for _, msg := range valMsgs {
