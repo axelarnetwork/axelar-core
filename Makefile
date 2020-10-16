@@ -43,5 +43,5 @@ docker-image:
 	@docker build -t axelar/core .
 
 copy-tssd:
-	@cp -r ../tssd ./tssd
+	@rsync -ru ../tssd ./
 
