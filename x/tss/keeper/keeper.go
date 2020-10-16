@@ -59,7 +59,7 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-func (k Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
+func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 	k.Logger(ctx).Debug(fmt.Sprintf("start keygen protocol:\nkey id: %s\nthreshold: %d", info.NewKeyID, info.Threshold))
 
 	// TODO call GetLocalPrincipal only once at launch? need to wait until someone pushes a RegisterProxy message on chain...
@@ -138,7 +138,7 @@ func (k Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 }
 
 func (k Keeper) KeygenMsg(ctx sdk.Context, msg *types.MsgTSS) error {
-	k.Logger(ctx).Debug("incoming message:\nkey id: %s\nis broadcast? %t\nfrom party: %s", msg.SessionID, msg.Payload.IsBroadcast, msg.Sender)
+	k.Logger(ctx).Debug(fmt.Sprintf("incoming message:\nkey id: %s\nis broadcast? %t\nfrom party: %s", msg.SessionID, msg.Payload.IsBroadcast, msg.Sender))
 	// TODO enforce protocol order of operations (eg. check for nil keygenStream)
 	// TODO only participate if I'm a validator
 
@@ -158,11 +158,16 @@ func (k Keeper) KeygenMsg(ctx sdk.Context, msg *types.MsgTSS) error {
 		FromPartyUid: msg.Sender, // TODO convert cosmos address to tss party uid
 	}
 
+	k.Logger(ctx).Debug(fmt.Sprintf("attempting to send incoming msg to gRPC server"))
+	if k.keygenStream == nil {
+		k.Logger(ctx).Error("W...T...F?!?!")
+	}
 	if err := k.keygenStream.Send(msgIn); err != nil {
 		newErr := sdkerrors.Wrap(err, "failure to send streamed message to server")
 		k.Logger(ctx).Error(newErr.Error()) // TODO Logger forces me to throw away error metadata
 		return newErr
 	}
+	k.Logger(ctx).Debug(fmt.Sprintf("message sent"))
 	return nil
 }
 
