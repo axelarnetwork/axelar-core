@@ -16,7 +16,7 @@ func NewHandler(k keeper.Keeper) sdk.Handler {
 		case types.MsgTSS:
 			return handleMsgTSS(ctx, k, &msg)
 		case types.MsgKeygenStart:
-			return handleMsgKeygenStart(ctx, k, msg)
+			return handleMsgKeygenStart(ctx, &k, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
@@ -40,7 +40,7 @@ func handleMsgTSS(ctx sdk.Context, k keeper.Keeper, msg *types.MsgTSS) (*sdk.Res
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, msg types.MsgKeygenStart) (*sdk.Result, error) {
+func handleMsgKeygenStart(ctx sdk.Context, k *keeper.Keeper, msg types.MsgKeygenStart) (*sdk.Result, error) {
 	if err := k.StartKeygen(ctx, msg); err != nil {
 		return nil, err
 	}

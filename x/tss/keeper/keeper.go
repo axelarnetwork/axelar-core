@@ -116,7 +116,11 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 
 	// server handler https://grpc.io/docs/languages/go/basics/#bidirectional-streaming-rpc-1
 	go func() {
-		defer k.keygenStream.CloseSend()
+		defer func() {
+			k.Logger(ctx).Debug("closing grpc stream")
+			k.keygenStream.CloseSend()
+			k.Logger(ctx).Debug("grpc stream closed")
+		}()
 		for {
 			msg, err := k.keygenStream.Recv() // blocking
 			if err == io.EOF {                // output stream closed by server
@@ -131,6 +135,7 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 			k.Logger(ctx).Debug(fmt.Sprintf("outgoing keygen message:\nnew key id:%s\nis broadcast? %t\nto party: %s", keygenInfo.NewKeyId, msg.IsBroadcast, string(msg.ToPartyUid)))
 			tssMsg := types.NewMsgTSS(keygenInfo.NewKeyId, msg)
 			k.broadcaster.Broadcast(ctx, []broadcast.ValidatorMsg{tssMsg})
+			k.Logger(ctx).Debug(fmt.Sprintf("broadcast successful"))
 		}
 	}()
 
