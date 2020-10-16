@@ -224,7 +224,7 @@ func (k Keeper) getSeqNo(ctx sdk.Context) uint64 {
 }
 
 func (k Keeper) setSeqNo(ctx sdk.Context, seqNo uint64) {
-	bz := make([]byte, 4)
+	bz := make([]byte, 7)
 	binary.LittleEndian.PutUint64(bz, seqNo)
 	ctx.KVStore(k.storeKey).Set([]byte(seqNoKey), bz)
 }
