@@ -28,15 +28,20 @@ type Keeper struct {
 	contextCancelFunc context.CancelFunc
 }
 
-func NewKeeper(broadcaster broadcast.Broadcaster, staking types.StakingKeeper) (Keeper, error) {
+func NewKeeper(logger log.Logger, broadcaster broadcast.Broadcaster, staking types.StakingKeeper) (Keeper, error) {
+
+	// TODO don't start gRPC unless I'm a validator???
+
+	logger = logger.With("module", fmt.Sprintf("x/%s", types.ModuleName)) // TODO horrible copy-paste
 
 	// start a gRPC client
-	fmt.Println("tss module: grpc.Dial...")
-	conn, err := grpc.Dial("host.docker.internal:50051", grpc.WithInsecure(), grpc.WithBlock()) // TODO hard coded target
+	const tssdServerAddress = "host.docker.internal:50051"
+	logger.Debug("dialing tssd to address: %d", tssdServerAddress)                   // TODO logger
+	conn, err := grpc.Dial(tssdServerAddress, grpc.WithInsecure(), grpc.WithBlock()) // TODO hard coded target
 	if err != nil {
 		return Keeper{}, err
 	}
-	fmt.Println("done")
+	logger.Debug("done")
 	client := tssd.NewGG18Client(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Hour) // TODO hard coded timeout
 
@@ -56,18 +61,25 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 }
 
 func (k Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
-	k.Logger(ctx).Debug(fmt.Sprintf("start keygen protocol for key id: %s", info.NewKeyID))
+	k.Logger(ctx).Debug(fmt.Sprintf("start keygen protocol:\nkey id: %s\nthreshold: %d", info.NewKeyID, info.Threshold))
 
 	// TODO call GetLocalPrincipal only once at launch? need to wait until someone pushes a RegisterProxy message on chain...
-	myAddress := k.broadcaster.GetLocalPrincipal(ctx)
-	if myAddress.Empty() {
-		err := fmt.Errorf("my address is empty")
+	validators := k.stakingKeeper.GetAllValidators(ctx)
+
+	// keygen cannot proceed unless all validators have registered broadcast proxies
+	// TODO this breaks if the validator set changes
+	if k.broadcaster.GetProxyCount(ctx) != uint32(len(validators)) {
+		err := fmt.Errorf("not enough proxies registered:\nvalidators: %d\nproxies: %d", len(validators), k.broadcaster.GetProxyCount(ctx))
 		k.Logger(ctx).Error(err.Error())
 		return err
 	}
+	myAddress := k.broadcaster.GetLocalPrincipal(ctx)
+	if myAddress.Empty() {
+		k.Logger(ctx).Info("my validator address is empty; I must not be a validator; I'm droppping out of this keygen session")
+		return nil
+	}
 
 	// populate a []tss.Party with all validator addresses
-	validators := k.stakingKeeper.GetAllValidators(ctx)
 	parties := make([]*tssd.Party, 0, len(validators))
 	ok, myIndex := false, 0
 	for i, v := range validators {
@@ -117,7 +129,7 @@ func (k Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 				k.Logger(ctx).Error(newErr.Error()) // TODO what to do with this error?
 				return
 			}
-			k.Logger(ctx).Debug(fmt.Sprintf("outgoing keygen message:\nnew key id:%s\nmsg: %v", keygenInfo.NewKeyId, msg))
+			k.Logger(ctx).Debug(fmt.Sprintf("outgoing keygen message:\nnew key id:%s\nis broadcast? %t\nto party: %s", keygenInfo.NewKeyId, msg.IsBroadcast, string(msg.ToPartyUid)))
 			tssMsg := types.NewMsgTSS(keygenInfo.NewKeyId, msg)
 			k.broadcaster.Broadcast(ctx, []broadcast.ValidatorMsg{tssMsg})
 		}
@@ -127,8 +139,9 @@ func (k Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 }
 
 func (k Keeper) KeygenMsg(ctx sdk.Context, msg *tssd.MessageIn) error {
-	k.Logger(ctx).Debug("incoming message:\nbroadcast? %t\nfrom: %s", msg.IsBroadcast, msg.FromPartyUid)
+	k.Logger(ctx).Debug("incoming message:\nkey id: %s\nis broadcast? %t\nfrom party: %s", msg.SessionId, msg.IsBroadcast, string(msg.FromPartyUid))
 	// TODO enforce protocol order of operations (eg. check for nil keygenStream)
+	// TODO only participate if I'm a validator
 	if err := k.keygenStream.Send(msg); err != nil {
 		newErr := sdkerrors.Wrap(err, "failure to send streamed message to server")
 		k.Logger(ctx).Error(newErr.Error()) // TODO Logger forces me to throw away error metadata
