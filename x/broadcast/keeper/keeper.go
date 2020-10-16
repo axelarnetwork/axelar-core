@@ -99,6 +99,8 @@ func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []exported.ValidatorMsg) erro
 		return err
 	}
 
+	k.Logger(ctx).Debug(fmt.Sprintf("from address: %v, acc no.: %d, seq no.: %d, chainId: %s", k.from, stdSignMsg.AccountNumber, stdSignMsg.Sequence, stdSignMsg.ChainID))
+
 	k.Logger(ctx).Debug("encoding tx")
 	txBytes, err := k.encodeTx(tx)
 	if err != nil {
