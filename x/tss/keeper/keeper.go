@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -36,12 +35,12 @@ func NewKeeper(logger log.Logger, broadcaster broadcast.Broadcaster, staking typ
 
 	// start a gRPC client
 	const tssdServerAddress = "host.docker.internal:50051"
-	logger.Debug("dialing tssd to address: %d", tssdServerAddress)                   // TODO logger
+	logger.Debug(fmt.Sprintf("dialing tssd to gRPC server: %s", tssdServerAddress))  // TODO logger
 	conn, err := grpc.Dial(tssdServerAddress, grpc.WithInsecure(), grpc.WithBlock()) // TODO hard coded target
 	if err != nil {
 		return Keeper{}, err
 	}
-	logger.Debug("done")
+	logger.Debug("gRPC connection established")
 	client := tssd.NewGG18Client(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Hour) // TODO hard coded timeout
 
@@ -138,11 +137,28 @@ func (k Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 	return nil
 }
 
-func (k Keeper) KeygenMsg(ctx sdk.Context, msg *tssd.MessageIn) error {
-	k.Logger(ctx).Debug("incoming message:\nkey id: %s\nis broadcast? %t\nfrom party: %s", msg.SessionId, msg.IsBroadcast, string(msg.FromPartyUid))
+func (k Keeper) KeygenMsg(ctx sdk.Context, msg *types.MsgTSS) error {
+	k.Logger(ctx).Debug("incoming message:\nkey id: %s\nis broadcast? %t\nfrom party: %s", msg.SessionID, msg.Payload.IsBroadcast, msg.Sender)
 	// TODO enforce protocol order of operations (eg. check for nil keygenStream)
 	// TODO only participate if I'm a validator
-	if err := k.keygenStream.Send(msg); err != nil {
+
+	myAddress := k.broadcaster.GetLocalPrincipal(ctx)
+
+	// TODO allow non-validator nodes
+	if !msg.Payload.IsBroadcast && myAddress.Equals(sdk.AccAddress(msg.Payload.ToPartyUid)) {
+		k.Logger(ctx).Info("msg not directed to me")
+		return nil
+	}
+
+	// convert the received MsgTSS into a tss.MessageIn
+	msgIn := &tssd.MessageIn{
+		SessionId:    msg.SessionID,
+		Payload:      msg.Payload.Payload,
+		IsBroadcast:  msg.Payload.IsBroadcast,
+		FromPartyUid: msg.Sender, // TODO convert cosmos address to tss party uid
+	}
+
+	if err := k.keygenStream.Send(msgIn); err != nil {
 		newErr := sdkerrors.Wrap(err, "failure to send streamed message to server")
 		k.Logger(ctx).Error(newErr.Error()) // TODO Logger forces me to throw away error metadata
 		return newErr
@@ -156,10 +172,4 @@ func (k Keeper) Close() error {
 		return sdkerrors.Wrap(err, "failure to close connection to server")
 	}
 	return nil
-}
-
-func (k Keeper) EqualsMyUID(uid []byte) bool {
-	// TODO how to get my validator address?
-	myAddress := sdk.ValAddress{'t', 's', 's'}
-	return bytes.Equal(uid, myAddress)
 }
