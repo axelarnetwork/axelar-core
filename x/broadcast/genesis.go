@@ -16,8 +16,8 @@ func InitGenesis(ctx sdk.Context, k keeper.Keeper, g types.GenesisState) {
 // ExportGenesis writes the current store values
 // to a genesis file, which can be imported again
 // with InitGenesis
-func ExportGenesis(_ sdk.Context, _ keeper.Keeper) types.GenesisState {
-	state := types.GenesisState{}
+func ExportGenesis(ctx sdk.Context, k keeper.Keeper) types.GenesisState {
+	state := types.GenesisState{ProxyCount: k.GetProxyCount(ctx)}
 
 	return state
 }

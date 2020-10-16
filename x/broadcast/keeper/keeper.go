@@ -188,6 +188,10 @@ func (k Keeper) GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddre
 
 func (k Keeper) GetProxyCount(ctx sdk.Context) uint32 {
 	countRaw := ctx.KVStore(k.storeKey).Get([]byte(proxyCount))
+	if countRaw == nil {
+		k.Logger(ctx).Error("count was not set, this is an issue with the genesis init")
+		return 0
+	}
 	return binary.LittleEndian.Uint32(countRaw)
 }
 
