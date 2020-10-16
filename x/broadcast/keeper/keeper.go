@@ -107,9 +107,12 @@ func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []exported.ValidatorMsg) erro
 	}
 	k.Logger(ctx).Debug("broadcasting")
 	go func() {
-		_, err := k.rpc.BroadcastTxSync(txBytes)
+		res, err := k.rpc.BroadcastTxSync(txBytes)
 		if err != nil {
 			k.Logger(ctx).Error(err.Error())
+		}
+		if res != nil && res.Log != "" {
+			k.Logger(ctx).Info(res.Log)
 		}
 	}()
 	return nil
