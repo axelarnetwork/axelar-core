@@ -35,6 +35,7 @@ const (
 )
 
 func NewBtcKeeper(cfg types.BtcConfig, logger log.Logger) (Keeper, error) {
+	// logger = logger.With("module", fmt.Sprintf("x/%s", types.ModuleName))
 	// client, err := newRPCClient(cfg, logger.With("module", fmt.Sprintf("x/%s", types.ModuleName)))
 	// if err != nil {
 	// 	return Keeper{}, err

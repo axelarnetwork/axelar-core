@@ -158,20 +158,20 @@ func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy s
 		k.Logger(ctx).Error("could not find validator")
 		return types.ErrInvalidValidator
 	}
-	k.Logger(ctx).Error("getting proxy count")
+	k.Logger(ctx).Debug("getting proxy count")
 	count := k.GetProxyCount(ctx)
-	k.Logger(ctx).Error(fmt.Sprintf("count: %v", count))
+	k.Logger(ctx).Debug(fmt.Sprintf("count: %v", count))
 	storedProxy := ctx.KVStore(k.storeKey).Get(principal)
 	if storedProxy != nil {
 		ctx.KVStore(k.storeKey).Delete(storedProxy)
 		count -= 1
 	}
-	k.Logger(ctx).Error("setting proxy")
+	k.Logger(ctx).Debug("setting proxy")
 	ctx.KVStore(k.storeKey).Set(proxy, principal)
 	count += 1
-	k.Logger(ctx).Error("setting proxy count")
+	k.Logger(ctx).Debug("setting proxy count")
 	k.SetProxyCount(ctx, count)
-	k.Logger(ctx).Error("done")
+	k.Logger(ctx).Debug("done")
 	return nil
 }
 
@@ -194,5 +194,7 @@ func (k Keeper) GetProxyCount(ctx sdk.Context) uint32 {
 func (k Keeper) SetProxyCount(ctx sdk.Context, count uint32) {
 	var bz []byte
 	binary.LittleEndian.PutUint32(bz, count)
+	k.Logger(ctx).Debug(fmt.Sprintf("count to set: %v", count))
+	k.Logger(ctx).Debug(fmt.Sprintf("count bytes: %v", bz))
 	ctx.KVStore(k.storeKey).Set([]byte(proxyCount), bz)
 }
