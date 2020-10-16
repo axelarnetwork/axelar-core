@@ -196,7 +196,7 @@ func (k Keeper) GetProxyCount(ctx sdk.Context) uint32 {
 }
 
 func (k Keeper) SetProxyCount(ctx sdk.Context, count uint32) {
-	var bz []byte
+	bz := make([]byte, 4)
 	binary.LittleEndian.PutUint32(bz, count)
 	k.Logger(ctx).Debug(fmt.Sprintf("count to set: %v", count))
 	k.Logger(ctx).Debug(fmt.Sprintf("count bytes: %v", bz))
