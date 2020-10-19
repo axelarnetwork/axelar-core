@@ -19,7 +19,7 @@ type Keeper struct {
 	broadcaster   broadcast.Broadcaster
 	stakingKeeper types.StakingKeeper // needed only for `GetAllValidators`
 	client        tssd.GG18Client
-	keygenStream  tssd.GG18_KeygenClient
+	keygenStream  tssd.GG18_KeygenClient // TODO persist in KV store instead?
 
 	// TODO cruft for grpc; can we get rid of this?
 	connection        *grpc.ClientConn
@@ -27,13 +27,13 @@ type Keeper struct {
 	contextCancelFunc context.CancelFunc
 }
 
-func NewKeeper(logger log.Logger, broadcaster broadcast.Broadcaster, staking types.StakingKeeper) (Keeper, error) {
+func NewKeeper(conf types.TssdConfig, logger log.Logger, broadcaster broadcast.Broadcaster, staking types.StakingKeeper) (Keeper, error) {
 	logger = prepareLogger(logger)
 
 	// TODO don't start gRPC unless I'm a validator?
 	// start a gRPC client
-	const tssdServerAddress = "host.docker.internal:50051" // TODO config file
-	logger.Debug(fmt.Sprintf("initiate connection to tssd gRPC server: %s", tssdServerAddress))
+	tssdServerAddress := conf.Host + ":" + conf.Port
+	logger.Info(fmt.Sprintf("initiate connection to tssd gRPC server: %s", tssdServerAddress))
 	conn, err := grpc.Dial(tssdServerAddress, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		return Keeper{}, err

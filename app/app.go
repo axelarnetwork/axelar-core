@@ -239,7 +239,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		tmos.Exit(err.Error())
 	}
 
-	app.tssKeeper, err = tssKeeper.NewKeeper(logger, app.broadcastKeeper, app.stakingKeeper)
+	app.tssKeeper, err = tssKeeper.NewKeeper(axelarCfg.TssdConfig, logger, app.broadcastKeeper, app.stakingKeeper)
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
