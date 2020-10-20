@@ -62,7 +62,7 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 }
 
 func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
-	k.Logger(ctx).Debug(fmt.Sprintf("initiate StartKeygen: threshold [%d] key [%s] ", info.Threshold, info.NewKeyID))
+	k.Logger(ctx).Info(fmt.Sprintf("initiate StartKeygen: threshold [%d] key [%s] ", info.Threshold, info.NewKeyID))
 
 	// TODO call GetLocalPrincipal only once at launch? need to wait until someone pushes a RegisterProxy message on chain...
 	validators := k.stakingKeeper.GetAllValidators(ctx)
@@ -153,7 +153,7 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 				k.Logger(ctx).Error(newErr.Error())
 				return
 			}
-			k.Logger(ctx).Debug(fmt.Sprintf("handler goroutine: outgoing keygen msg: key [%s] from [me] broadcast? %t to [%s]", keygenInfo.NewKeyId, msg.IsBroadcast, sdk.ValAddress(msg.ToPartyUid)))
+			k.Logger(ctx).Debug(fmt.Sprintf("handler goroutine: outgoing keygen msg: key [%s] from [me] broadcast? [%t] to [%s]", keygenInfo.NewKeyId, msg.IsBroadcast, sdk.ValAddress(msg.ToPartyUid)))
 			tssMsg := types.NewMsgTSS(keygenInfo.NewKeyId, msg)
 			if err := k.broadcaster.Broadcast(ctx, []broadcast.ValidatorMsg{tssMsg}); err != nil {
 				newErr := sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing keygen msg")
@@ -186,8 +186,8 @@ func (k Keeper) KeygenMsg(ctx sdk.Context, msg *types.MsgTSS) error {
 	}
 
 	// TODO allow non-validator nodes
-	if !msg.Payload.IsBroadcast && myAddress.Equals(sdk.ValAddress(msg.Payload.ToPartyUid)) {
-		k.Logger(ctx).Info("msg not directed to me; ignore KeygenMsg")
+	if !msg.Payload.IsBroadcast && !myAddress.Equals(sdk.ValAddress(msg.Payload.ToPartyUid)) {
+		k.Logger(ctx).Info(fmt.Sprintf("msg to [%s] not directed to me [%s]; ignore KeygenMsg", sdk.ValAddress(msg.Payload.ToPartyUid), myAddress))
 		return nil
 	}
 
