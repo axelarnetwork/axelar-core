@@ -132,14 +132,7 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 	go func() {
 		k.Logger(ctx).Debug("handler goroutine: begin")
 		defer func() {
-			defer k.Logger(ctx).Debug("handler goroutine: end")
-			k.Logger(ctx).Debug("handler goroutine: initiate gRPC stream CloseSend")
-			if err := k.keygenStream.CloseSend(); err != nil {
-				wrapErr := sdkerrors.Wrap(err, "handler goroutine: gRPC stream CloseSend failure")
-				k.Logger(ctx).Error(wrapErr.Error())
-				return
-			}
-			k.Logger(ctx).Debug("handler goroutine: successful gRPC stream CloseSend")
+			k.Logger(ctx).Debug("handler goroutine: end")
 		}()
 		for {
 			k.Logger(ctx).Debug("handler goroutine: blocking call to gRPC stream Recv...")
@@ -172,6 +165,7 @@ func (k Keeper) KeygenMsg(ctx sdk.Context, msg *types.MsgTSS) error {
 	k.Logger(ctx).Debug(fmt.Sprintf("initiate KeygenMsg: key [%s] from [%s] broadcast? [%t] to [%s]", msg.SessionID, msg.Sender, msg.Payload.IsBroadcast, sdk.ValAddress(msg.Payload.ToPartyUid)))
 
 	// TODO enforce protocol order of operations (eg. check for nil keygenStream)
+	// TODO allow non-validator nodes
 
 	senderAddress := k.broadcaster.GetPrincipal(ctx, msg.Sender)
 	if senderAddress.Empty() {
@@ -185,9 +179,12 @@ func (k Keeper) KeygenMsg(ctx sdk.Context, msg *types.MsgTSS) error {
 		return nil
 	}
 
-	// TODO allow non-validator nodes
 	if !msg.Payload.IsBroadcast && !myAddress.Equals(sdk.ValAddress(msg.Payload.ToPartyUid)) {
 		k.Logger(ctx).Info(fmt.Sprintf("msg to [%s] not directed to me [%s]; ignore KeygenMsg", sdk.ValAddress(msg.Payload.ToPartyUid), myAddress))
+		return nil
+	}
+	if msg.Payload.IsBroadcast && myAddress.Equals(senderAddress) {
+		k.Logger(ctx).Info(fmt.Sprintf("broadcast message from [%s] came from me [%s]; ignore KeygenMsg", senderAddress, myAddress))
 		return nil
 	}
 
