@@ -35,8 +35,10 @@ import (
 	axTypes "github.com/axelarnetwork/axelar-core/x/axelar/types"
 	"github.com/axelarnetwork/axelar-core/x/broadcast"
 	bcKeeper "github.com/axelarnetwork/axelar-core/x/broadcast/keeper"
-	bcTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
+	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
+	"github.com/axelarnetwork/axelar-core/x/btc_bridge"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
+	btcTypes "github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
 )
 
 const (
@@ -62,6 +64,7 @@ var (
 		supply.AppModuleBasic{},
 
 		axelar.AppModuleBasic{},
+		btc_bridge.AppModuleBasic{},
 		broadcast.AppModuleBasic{},
 	)
 	// account permissions
@@ -130,7 +133,8 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	bApp.SetAppVersion(version.Version)
 
 	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
-		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey, axTypes.StoreKey, bcTypes.StoreKey)
+		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey,
+		axTypes.StoreKey, broadcastTypes.StoreKey, btcTypes.StoreKey)
 
 	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
@@ -211,7 +215,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	)
 
 	var err error
-	app.btcKeeper, err = btcKeeper.NewBtcKeeper(axelarCfg.BtcConfig, logger)
+	app.btcKeeper, err = btcKeeper.NewBtcKeeper(app.cdc, keys[btcTypes.StoreKey], axelarCfg.BtcConfig, logger)
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
@@ -229,7 +233,15 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
-	app.broadcastKeeper, err = bcKeeper.NewKeeper(axelarCfg.ClientConfig, keys[bcTypes.StoreKey], keybase, app.accountKeeper, app.stakingKeeper, utils.GetTxEncoder(cdc))
+	app.broadcastKeeper, err = bcKeeper.NewKeeper(
+		axelarCfg.ClientConfig,
+		keys[broadcastTypes.StoreKey],
+		keybase,
+		app.accountKeeper,
+		app.stakingKeeper,
+		utils.GetTxEncoder(cdc),
+		logger,
+	)
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
@@ -254,6 +266,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 		axelar.NewAppModule(app.axelarKeeper),
 		broadcast.NewAppModule(app.broadcastKeeper),
+		btc_bridge.NewAppModule(app.btcKeeper),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
@@ -271,7 +284,8 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		auth.ModuleName,
 		bank.ModuleName,
 		slashing.ModuleName,
-		bcTypes.ModuleName,
+		btcTypes.ModuleName,
+		broadcastTypes.ModuleName,
 		axTypes.ModuleName,
 		supply.ModuleName,
 		genutil.ModuleName,

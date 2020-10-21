@@ -16,3 +16,4 @@ vendor/
 .idea
 
 /bin/
+/tssd/

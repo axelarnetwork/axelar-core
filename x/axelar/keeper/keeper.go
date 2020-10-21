@@ -109,10 +109,6 @@ func (k Keeper) GetVotingInterval(ctx sdk.Context) int64 {
 	return interval
 }
 
-func (k Keeper) Codec() *codec.Codec {
-	return k.cdc
-}
-
 func (k Keeper) getPreVoteTxs(ctx sdk.Context) []types.PreVote {
 	if !ctx.KVStore(k.storeKey).Has([]byte(preVoteTxsKey)) {
 		return nil
@@ -219,12 +215,12 @@ func (k Keeper) confirmTx(ctx sdk.Context, tx exported.ExternalTx) {
 	ctx.KVStore(k.storeKey).Set([]byte("balance_"+tx.Chain), k.cdc.MustMarshalBinaryLengthPrefixed(balance))
 }
 
-func (k Keeper) getBalance(ctx sdk.Context, chain string) sdk.Coins {
+func (k Keeper) getBalance(ctx sdk.Context, chain string) sdk.DecCoins {
 	balanceRaw := ctx.KVStore(k.storeKey).Get([]byte("balance_" + chain))
 	if balanceRaw == nil {
-		return sdk.NewCoins()
+		return sdk.NewDecCoins()
 	}
-	var balance sdk.Coins
+	var balance sdk.DecCoins
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(balanceRaw, &balance)
 	return balance
 }

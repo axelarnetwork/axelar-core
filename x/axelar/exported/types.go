@@ -22,7 +22,7 @@ func (addr ExternalChainAddress) String() string {
 type ExternalTx struct {
 	Chain  string
 	TxID   string
-	Amount sdk.Coin
+	Amount sdk.DecCoin
 }
 
 func (tx ExternalTx) IsInvalid() bool {

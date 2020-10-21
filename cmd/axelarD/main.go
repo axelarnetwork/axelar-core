@@ -74,17 +74,25 @@ func main() {
 	rootCmd.PersistentFlags().UintVar(&invCheckPeriod, flagInvCheckPeriod,
 		0, "Assert registered invariants every N blocks")
 
-	flags.PostCommands(rootCmd)
-	// this flag has a defined default in PostCommands, but is not bound to viper
-	_ = viper.BindPFlag(flags.FlagGasAdjustment, rootCmd.Flags().Lookup(flags.FlagGasAdjustment))
-
-	rootCmd.PersistentFlags().String(CliHomeFlag, app.DefaultCLIHome, "directory for cli config and data")
-	_ = viper.BindPFlag(CliHomeFlag, rootCmd.Flags().Lookup(CliHomeFlag))
+	addAdditionalFlags(rootCmd)
 
 	err := executor.Execute()
 	if err != nil {
 		panic(err)
 	}
+}
+
+func addAdditionalFlags(rootCmd *cobra.Command) {
+	// These flags are intended for submitting transactions.
+	// Since the daemon can broadcast messages now we need the flags here as well (mostly for their default values)
+	flags.PostCommands(rootCmd)
+
+	// This flag has a defined default in PostCommands, but is not bound to viper
+	_ = viper.BindPFlag(flags.FlagGasAdjustment, rootCmd.Flags().Lookup(flags.FlagGasAdjustment))
+
+	// The daemon acts as a broadcaster as well, so we need access to the cli configuration (in particular the keybase)
+	rootCmd.PersistentFlags().String(CliHomeFlag, app.DefaultCLIHome, "directory for cli config and data")
+	_ = viper.BindPFlag(CliHomeFlag, rootCmd.Flags().Lookup(CliHomeFlag))
 }
 
 func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application {

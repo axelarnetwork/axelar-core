@@ -9,6 +9,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcutil"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
@@ -19,7 +20,8 @@ import (
 )
 
 var (
-	_ axTypes.BridgeKeeper = Keeper{}
+	_          axTypes.BridgeKeeper = Keeper{}
+	confHeight                      = []byte("confHeight")
 )
 
 const (
@@ -27,20 +29,24 @@ const (
 )
 
 type Keeper struct {
-	client *rpcclient.Client
+	storeKey sdk.StoreKey
+	client   *rpcclient.Client
+	cdc      *codec.Codec
 }
 
 const (
-	sleep = 1 * time.Second
+	sleep   = 1 * time.Second
+	Satoshi = 1
+	Bitcoin = 100_000_000 * Satoshi
 )
 
-func NewBtcKeeper(cfg types.BtcConfig, logger log.Logger) (Keeper, error) {
+func NewBtcKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, cfg types.BtcConfig, logger log.Logger) (Keeper, error) {
 	logger.Debug("initializing btc keeper")
 	client, err := newRPCClient(cfg, logger.With("module", fmt.Sprintf("x/%s", types.ModuleName)))
 	if err != nil {
 		return Keeper{}, err
 	}
-	return Keeper{client: client}, nil
+	return Keeper{cdc: cdc, storeKey: storeKey, client: client}, nil
 }
 
 func newRPCClient(cfg types.BtcConfig, logger log.Logger) (*rpcclient.Client, error) {
@@ -161,30 +167,54 @@ func (k Keeper) VerifyTx(ctx sdk.Context, tx exported.ExternalTx) bool {
 		return false
 	}
 
-	txResult, err := k.client.GetTransaction(hash)
+	btcTxResult, err := k.client.GetTransaction(hash)
 	if err != nil {
 		k.Logger(ctx).Info(err.Error())
 		return false
 	}
 
-	verifiedAmount, err := btcutil.NewAmount(txResult.Amount)
+	verifiedAmount, err := btcutil.NewAmount(btcTxResult.Amount)
 	if err != nil {
 		k.Logger(ctx).Info(err.Error())
 		return false
 	}
 
-	isEqual := txResult.TxID == tx.TxID &&
-		verifiedAmount == btcutil.Amount(tx.Amount.Amount.Int64()) &&
-		txResult.Confirmations >= 6
+	amountEqual := (tx.Amount.Amount.IsInteger() && k.satoshiEquals(tx.Amount.Amount, verifiedAmount)) ||
+		k.btcEquals(tx.Amount.Amount, verifiedAmount)
+
+	isEqual := btcTxResult.TxID == tx.TxID && amountEqual && btcTxResult.Confirmations >= 6
 
 	if !isEqual {
 		k.Logger(ctx).Debug(fmt.Sprintf(
-			"txID:%s\nbtcTxId:%s\namount:%v\nbtcAmount:%v",
+			"txID:%s\nbtcTxId:%s\ntx amount:%s\nbtc Amount:%v",
 			tx.TxID,
-			txResult.TxID,
-			btcutil.Amount(tx.Amount.Amount.Int64()),
+			btcTxResult.TxID,
+			tx.Amount.String(),
 			verifiedAmount,
 		))
 	}
 	return isEqual
+}
+
+func (k Keeper) satoshiEquals(satoshiAmount sdk.Dec, verifiedAmount btcutil.Amount) bool {
+	return satoshiAmount.IsInt64() && btcutil.Amount(satoshiAmount.Int64()) == verifiedAmount
+}
+
+func (k Keeper) btcEquals(btcAmount sdk.Dec, verifiedAmount btcutil.Amount) bool {
+	return btcutil.Amount(btcAmount.MulInt64(Bitcoin).Int64()) == verifiedAmount
+}
+
+func (k Keeper) SetConfirmationHeight(ctx sdk.Context, height int64) {
+	ctx.KVStore(k.storeKey).Set(confHeight, k.cdc.MustMarshalBinaryLengthPrefixed(height))
+}
+
+func (k Keeper) GetConfirmationHeight(ctx sdk.Context) int64 {
+	rawHeight := ctx.KVStore(k.storeKey).Get(confHeight)
+	if rawHeight == nil {
+		return types.DefaultGenesisState().ConfirmationHeight
+	} else {
+		var height int64
+		k.cdc.MustUnmarshalBinaryLengthPrefixed(rawHeight, &height)
+		return height
+	}
 }
