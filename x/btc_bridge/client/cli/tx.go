@@ -58,17 +58,16 @@ Accepted denominations (case-insensitive): satoshi (sat), bitcoin (btc)`,
 			rawCoin := args[1]
 
 			var decCoin sdk.DecCoin
-			coin, err := sdk.ParseCoin(rawCoin)
+			decCoin, err := sdk.ParseDecCoin(rawCoin)
 			if err != nil {
-				decCoin, err = sdk.ParseDecCoin(rawCoin)
+				coin, err := sdk.ParseCoin(rawCoin)
 				if err != nil {
 					return fmt.Errorf("could not parse coin string")
 				}
-			} else {
 				decCoin = sdk.NewDecCoinFromCoin(coin)
 			}
 
-			switch coin.Denom {
+			switch decCoin.Denom {
 			case Sat:
 				fallthrough
 			case Satoshi:

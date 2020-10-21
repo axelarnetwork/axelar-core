@@ -150,11 +150,16 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 func (k Keeper) TrackAddress(ctx sdk.Context, address string) error {
 	k.Logger(ctx).Debug(fmt.Sprintf("start tracking address %v", address))
 
-	if err := k.client.ImportAddressRescan(address, "axelar", true); err != nil {
-		return err
-	}
+	future := k.client.ImportAddressAsync(address)
 
-	k.Logger(ctx).Debug(fmt.Sprintf("successfully tracked all past transaction for address %v", address))
+	go func() {
+		if err := future.Receive(); err != nil {
+			k.Logger(ctx).Error(fmt.Sprintf("Could not track address %v", address))
+		} else {
+			k.Logger(ctx).Debug(fmt.Sprintf("successfully tracked all past transaction for address %v", address))
+		}
+
+	}()
 
 	return nil
 }
