@@ -38,10 +38,20 @@ build: go.sum
 		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) ./cmd/axelarD
 		go build -o ./bin/axelarcli -mod=readonly $(BUILD_FLAGS) ./cmd/axelarCLI
 
+.PHONY: debug
+debug: go.sum
+		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) -gcflags="all=-N -l" ./cmd/axelarD
+		go build -o ./bin/axelarcli -mod=readonly $(BUILD_FLAGS) -gcflags="all=-N -l" ./cmd/axelarCLI
+
 .PHONY: docker-image
 docker-image:
 	@docker build -t axelar/core .
 
+.PHONY: docker-image-debug
+docker-image-debug:
+	@docker build -t axelar/core-debug -f ./Dockerfile.debug .
+
+.PHONY: copy-tssd
 copy-tssd:
 	@rsync -ru ../tssd ./
 
