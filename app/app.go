@@ -39,6 +39,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
+	"github.com/axelarnetwork/axelar-core/x/tss"
+	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
+	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 const (
@@ -63,6 +66,7 @@ var (
 		slashing.AppModuleBasic{},
 		supply.AppModuleBasic{},
 
+		tss.AppModuleBasic{},
 		axelar.AppModuleBasic{},
 		btc_bridge.AppModuleBasic{},
 		broadcast.AppModuleBasic{},
@@ -108,6 +112,7 @@ type AxelarApp struct {
 	paramsKeeper    params.Keeper
 	btcKeeper       btcKeeper.Keeper
 	broadcastKeeper bcKeeper.Keeper
+	tssKeeper       tssKeeper.Keeper
 	axelarKeeper    axKeeper.Keeper
 
 	// Module Manager
@@ -246,6 +251,22 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		tmos.Exit(err.Error())
 	}
 
+	app.tssKeeper, err = tssKeeper.NewKeeper(axelarCfg.TssdConfig, logger, app.broadcastKeeper, app.stakingKeeper)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+
+	// tss opens a grpc connection. Clean it up on process shutdown
+	go func() {
+		tssSigs := make(chan os.Signal, 1)
+		signal.Notify(tssSigs, syscall.SIGINT, syscall.SIGTERM)
+		<-tssSigs
+		logger.Debug("closing tss gRPC connection")
+		if err := app.tssKeeper.Close(logger); err != nil {
+			logger.Error(err.Error()) // TODO Logger forces me to throw away error metadata
+		}
+	}()
+
 	app.axelarKeeper = axKeeper.NewKeeper(
 		app.cdc,
 		keys[axTypes.StoreKey],
@@ -264,6 +285,8 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		distr.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
+
+		tss.NewAppModule(app.tssKeeper),
 		axelar.NewAppModule(app.axelarKeeper),
 		broadcast.NewAppModule(app.broadcastKeeper),
 		btc_bridge.NewAppModule(app.btcKeeper),
@@ -286,6 +309,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		slashing.ModuleName,
 		btcTypes.ModuleName,
 		broadcastTypes.ModuleName,
+		tssTypes.ModuleName,
 		axTypes.ModuleName,
 		supply.ModuleName,
 		genutil.ModuleName,

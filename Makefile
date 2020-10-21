@@ -42,3 +42,6 @@ build: go.sum
 docker-image:
 	@docker build -t axelar/core .
 
+copy-tssd:
+	@rsync -ru ../tssd ./
+
