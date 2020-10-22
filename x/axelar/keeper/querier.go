@@ -2,9 +2,11 @@ package keeper
 
 import (
 	"fmt"
-	"github.com/axelarnetwork/axelar-core/x/axelar/types"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	abci "github.com/tendermint/tendermint/abci/types"
+
+	"github.com/axelarnetwork/axelar-core/x/axelar/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -27,7 +29,7 @@ func NewQuerier(k Keeper) sdk.Querier {
 
 func queryAddress(ctx sdk.Context, addr string, k Keeper) ([]byte, error) {
 	address := k.GetTrackedAddress(ctx, addr)
-	if !address.IsValid() {
+	if address.IsInvalid() {
 		return nil, types.ErrAddressNotTracked
 	}
 	bz, err := codec.MarshalJSONIndent(types.ModuleCdc, address)

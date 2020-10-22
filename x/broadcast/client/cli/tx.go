@@ -9,17 +9,17 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/spf13/cobra"
 
-	"github.com/axelarnetwork/axelar-core/x/axelar/exported"
-	"github.com/axelarnetwork/axelar-core/x/axelar/types"
+	"github.com/axelarnetwork/axelar-core/x/broadcast/types"
 )
 
 // GetTxCmd returns the transaction commands for this module
 func GetTxCmd(cdc *codec.Codec) *cobra.Command {
-	axelarTxCmd := &cobra.Command{
+	broadcastTxCmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      fmt.Sprintf("%s transactions subcommands", types.ModuleName),
 		DisableFlagParsing:         true,
@@ -27,33 +27,30 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	axelarTxCmd.AddCommand(flags.PostCommands(
-		GetCmdTrackAddress(cdc),
+	broadcastTxCmd.AddCommand(flags.PostCommands(
+		GetCmdRegisterProxy(cdc),
 	)...)
 
-	return axelarTxCmd
+	return broadcastTxCmd
 }
 
-func GetCmdTrackAddress(cdc *codec.Codec) *cobra.Command {
+func GetCmdRegisterProxy(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "trackAddress [chain] [address] ",
-		Short: "Make the axelar network aware of a specific address on another blockchain",
-		Args:  cobra.ExactArgs(2),
+		Use:   "registerProxy [proxy] ",
+		Short: "Register a proxy account for a specific validator principal to broadcast transactions in its stead",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			addr := exported.ExternalChainAddress{
-				Chain:   args[0],
-				Address: args[1],
-			}
-			msg := types.NewMsgTrackAddress(cliCtx.GetFromAddress(), addr)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
+			voter, _, err := context.GetFromFields(inBuf, args[0], false)
+			if err != nil {
+				return sdkerrors.Wrap(err, "proxy invalid")
 			}
 
+			msg := types.NewMsgRegisterProxy(sdk.ValAddress(cliCtx.FromAddress), voter)
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}

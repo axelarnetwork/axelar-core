@@ -1,17 +1,16 @@
-package axelar
+package btc_bridge
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/axelarnetwork/axelar-core/x/axelar/keeper"
-	"github.com/axelarnetwork/axelar-core/x/axelar/types"
+	"github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
+	"github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
 )
 
 // InitGenesis initialize default parameters
 // and the keeper's address to pubkey map
 func InitGenesis(ctx sdk.Context, k keeper.Keeper, state types.GenesisState) {
-	k.SetVotingInterval(ctx, state.VotingInterval)
-	k.SetVotingThreshold(ctx, state.VotingThreshold)
+	k.SetConfirmationHeight(ctx, state.ConfirmationHeight)
 }
 
 // ExportGenesis writes the current store values
@@ -19,8 +18,7 @@ func InitGenesis(ctx sdk.Context, k keeper.Keeper, state types.GenesisState) {
 // with InitGenesis
 func ExportGenesis(ctx sdk.Context, k keeper.Keeper) types.GenesisState {
 	state := types.GenesisState{
-		VotingInterval:  k.GetVotingInterval(ctx),
-		VotingThreshold: k.GetVotingThreshold(ctx),
+		ConfirmationHeight: k.GetConfirmationHeight(ctx),
 	}
 
 	return state

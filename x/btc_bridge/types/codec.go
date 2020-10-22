@@ -5,10 +5,7 @@ import (
 )
 
 // RegisterCodec registers concrete types on codec
-func RegisterCodec(cdc *codec.Codec) {
-	cdc.RegisterConcrete(MsgTrackAddress{}, "axelar/TrackAddress", nil)
-	cdc.RegisterConcrete(MsgVerifyTx{}, "axelar/VerifyTx", nil)
-	cdc.RegisterConcrete(MsgBatchVote{}, "axelar/BatchVote", nil)
+func RegisterCodec(_ *codec.Codec) {
 }
 
 // ModuleCdc defines the module codec
