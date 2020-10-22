@@ -16,7 +16,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/broadcast/types"
 )
 
-var _ exported.Broadcaster = &Keeper{}
+var _ exported.Broadcaster = Keeper{}
 
 const (
 	proxyCountKey = "proxyCount"
@@ -132,7 +132,7 @@ func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []exported.ValidatorMsg) erro
 	return nil
 }
 
-func (k *Keeper) prepareMsgForSigning(ctx sdk.Context, msgs []sdk.Msg) (auth.StdSignMsg, error) {
+func (k Keeper) prepareMsgForSigning(ctx sdk.Context, msgs []sdk.Msg) (auth.StdSignMsg, error) {
 	if k.config.ChainID == "" {
 		return auth.StdSignMsg{}, sdkerrors.Wrap(types.ErrInvalidChain, "chain ID required but not specified")
 	}
