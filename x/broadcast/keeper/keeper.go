@@ -35,7 +35,16 @@ type Keeper struct {
 	fromName      string
 }
 
-func NewKeeper(conf types.ClientConfig, storeKey sdk.StoreKey, keybase keys.Keybase, authKeeper auth.AccountKeeper, stakingKeeper staking.Keeper, encoder sdk.TxEncoder) (Keeper, error) {
+func NewKeeper(
+	conf types.ClientConfig,
+	storeKey sdk.StoreKey,
+	keybase keys.Keybase,
+	authKeeper auth.AccountKeeper,
+	stakingKeeper staking.Keeper,
+	encoder sdk.TxEncoder,
+	logger log.Logger,
+) (Keeper, error) {
+	logger.With("module", fmt.Sprintf("x/%s", types.ModuleName)).Debug("creating broadcast keeper")
 	from, fromName, err := getAccountAddress(conf.From, keybase)
 	if err != nil {
 		return Keeper{}, err
@@ -44,7 +53,7 @@ func NewKeeper(conf types.ClientConfig, storeKey sdk.StoreKey, keybase keys.Keyb
 	if err != nil {
 		return Keeper{}, err
 	}
-
+	logger.With("module", fmt.Sprintf("x/%s", types.ModuleName)).Debug("broadcast keeper created")
 	return Keeper{
 		stakingKeeper: stakingKeeper,
 		storeKey:      storeKey,

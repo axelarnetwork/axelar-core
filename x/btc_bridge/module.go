@@ -1,4 +1,4 @@
-package broadcast
+package btc_bridge
 
 import (
 	"encoding/json"
@@ -11,9 +11,9 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/axelarnetwork/axelar-core/x/broadcast/client/cli"
-	"github.com/axelarnetwork/axelar-core/x/broadcast/keeper"
-	"github.com/axelarnetwork/axelar-core/x/broadcast/types"
+	"github.com/axelarnetwork/axelar-core/x/btc_bridge/client/cli"
+	"github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
+	"github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
 )
 
 var (
