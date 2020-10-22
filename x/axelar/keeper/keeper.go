@@ -243,7 +243,7 @@ func (k Keeper) RecordVotes(ctx sdk.Context, voter sdk.AccAddress, votes []bool)
 }
 
 // Decide if external transactions are accepted based on the number of votes they received
-func (k Keeper) DecideCastVotes(ctx sdk.Context) {
+func (k Keeper) TallyCastVotes(ctx sdk.Context) {
 	k.Logger(ctx).Debug("decide unconfirmed txs")
 	votes := k.getVotes(ctx)
 	k.Logger(ctx).Debug(fmt.Sprintf("votesKey:%v", len(votes)))
