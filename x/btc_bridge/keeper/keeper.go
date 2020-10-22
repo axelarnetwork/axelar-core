@@ -41,13 +41,13 @@ const (
 )
 
 func NewBtcKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, cfg types.BtcConfig, logger log.Logger) (Keeper, error) {
-	// logger = logger.With("module", fmt.Sprintf("x/%s", types.ModuleName))
+	// logger.Debug("initializing btc keeper")
 	// client, err := newRPCClient(cfg, logger.With("module", fmt.Sprintf("x/%s", types.ModuleName)))
 	// if err != nil {
 	// 	return Keeper{}, err
 	// }
-	// return Keeper{client: client}, nil
-	return Keeper{}, nil
+	// return Keeper{cdc: cdc, storeKey: storeKey, client: client}, nil
+	return Keeper{cdc: cdc, storeKey: storeKey}, nil
 }
 
 func newRPCClient(cfg types.BtcConfig, logger log.Logger) (*rpcclient.Client, error) {
