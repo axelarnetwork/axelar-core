@@ -172,8 +172,11 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 func (k Keeper) KeygenMsg(ctx sdk.Context, msg *types.MsgTSS) error {
 	k.Logger(ctx).Debug(fmt.Sprintf("initiate KeygenMsg: key [%s] from [%s] broadcast? [%t] to [%s]", msg.SessionID, msg.Sender, msg.Payload.IsBroadcast, sdk.ValAddress(msg.Payload.ToPartyUid)))
 
-	// TODO enforce protocol order of operations (eg. check for nil keygenStream)
-	// TODO allow non-validator nodes
+	// TODO many of these checks apply to both keygen and sign; refactor them into a Msg() method
+
+	// BEGIN: validity check
+
+	// TODO check that msg.SessionID exists; allow concurrent sessions
 
 	senderAddress := k.broadcaster.GetPrincipal(ctx, msg.Sender)
 	if senderAddress.Empty() {
@@ -181,12 +184,14 @@ func (k Keeper) KeygenMsg(ctx sdk.Context, msg *types.MsgTSS) error {
 		k.Logger(ctx).Error(err.Error())
 		return err
 	}
+
+	// END: validity check -- always return nil after this line!
+
 	myAddress := k.broadcaster.GetLocalPrincipal(ctx)
 	if myAddress.Empty() {
 		k.Logger(ctx).Info("my validator address is empty; I must not be a validator; ignore KeygenMsg")
 		return nil
 	}
-
 	if !msg.Payload.IsBroadcast && !myAddress.Equals(sdk.ValAddress(msg.Payload.ToPartyUid)) {
 		k.Logger(ctx).Info(fmt.Sprintf("msg to [%s] not directed to me [%s]; ignore KeygenMsg", sdk.ValAddress(msg.Payload.ToPartyUid), myAddress))
 		return nil
@@ -214,7 +219,6 @@ func (k Keeper) KeygenMsg(ctx sdk.Context, msg *types.MsgTSS) error {
 		k.Logger(ctx).Error(newErr.Error())
 		return nil // don't propagate nondeterministic errors
 	}
-	// k.Logger(ctx).Debug(fmt.Sprintf("successful foward incoming msg to gRPC server"))
 	k.Logger(ctx).Debug(fmt.Sprintf("successful KeygenMsg: key [%s] ", msg.SessionID))
 	return nil
 }
