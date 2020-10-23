@@ -64,16 +64,24 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 	k.Logger(ctx).Info(fmt.Sprintf("initiate StartKeygen: threshold [%d] key [%s] ", info.Threshold, info.NewKeyID))
 
-	// TODO call GetLocalPrincipal only once at launch? need to wait until someone pushes a RegisterProxy message on chain...
-	validators := k.stakingKeeper.GetAllValidators(ctx)
+	// BEGIN: validity check
 
-	// keygen cannot proceed unless all validators have registered broadcast proxies
-	// TODO this breaks if the validator set changes
+	validators := k.stakingKeeper.GetAllValidators(ctx)
+	if info.Threshold < 1 || info.Threshold > len(validators) {
+		err := fmt.Errorf("invalid threshold: %d, validators: %d", info.Threshold, len(validators))
+		k.Logger(ctx).Error(err.Error())
+		return err
+	}
 	if k.broadcaster.GetProxyCount(ctx) != uint32(len(validators)) {
+		// keygen cannot proceed unless all validators have registered broadcast proxies
 		err := fmt.Errorf("not enough proxies registered: proxies: %d; validators: %d", k.broadcaster.GetProxyCount(ctx), len(validators))
 		k.Logger(ctx).Error(err.Error())
 		return err
 	}
+
+	// END: validity check -- always return nil after this line!
+
+	// TODO call GetLocalPrincipal only once at launch? need to wait until someone pushes a RegisterProxy message on chain...
 	myAddress := k.broadcaster.GetLocalPrincipal(ctx)
 	if myAddress.Empty() {
 		k.Logger(ctx).Info("my validator address is empty; I must not be a validator; ignore StartKeygen")
@@ -90,7 +98,7 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 		parties = append(parties, party)
 		if v.OperatorAddress.Equals(myAddress) {
 			if ok {
-				err := fmt.Errorf("my validator address appears multiple times in the validator list: [%s]", myAddress)
+				err := fmt.Errorf("cosmos bug: my validator address appears multiple times in the validator list: [%s]", myAddress)
 				k.Logger(ctx).Error(err.Error())
 				return nil // don't propagate nondeterministic errors
 			}
@@ -98,7 +106,7 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 		}
 	}
 	if !ok {
-		err := fmt.Errorf("my validator address is not in the validator list: [%s]", myAddress)
+		err := fmt.Errorf("cosmos bug: my validator address is not in the validator list: [%s]", myAddress)
 		k.Logger(ctx).Error(err.Error())
 		return nil // don't propagate nondeterministic errors
 	}
