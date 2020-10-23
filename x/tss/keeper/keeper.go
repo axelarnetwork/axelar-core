@@ -125,7 +125,7 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 		k.Logger(ctx).Error(wrapErr.Error())
 		return nil // don't propagate nondeterministic errors
 	}
-	// k.Logger(ctx).Debug("successful tssd gRPC call KeygenInit")
+	k.Logger(ctx).Debug("successful tssd gRPC call KeygenInit")
 	k.Logger(ctx).Debug("initiate gRPC call Keygen")
 	k.keygenStream, err = k.client.Keygen(k.context) // TODO support concurrent sessions
 	if err != nil {
@@ -133,7 +133,7 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 		k.Logger(ctx).Error(wrapErr.Error())
 		return nil // don't propagate nondeterministic errors
 	}
-	// k.Logger(ctx).Debug("successful tssd gRPC call Keygen")
+	k.Logger(ctx).Debug("successful tssd gRPC call Keygen")
 
 	// server handler https://grpc.io/docs/languages/go/basics/#bidirectional-streaming-rpc-1
 	k.Logger(ctx).Debug("initiate gRPC handler goroutine")
@@ -180,7 +180,7 @@ func (k Keeper) KeygenMsg(ctx sdk.Context, msg *types.MsgTSS) error {
 
 	senderAddress := k.broadcaster.GetPrincipal(ctx, msg.Sender)
 	if senderAddress.Empty() {
-		err := fmt.Errorf("sender validator address is empty; sender must not be a validator; only validators can send messages of type %T; message is invalid", msg)
+		err := fmt.Errorf("invalid message: sender [%s] is not a validator; only validators can send messages of type %T", msg.Sender, msg)
 		k.Logger(ctx).Error(err.Error())
 		return err
 	}
@@ -189,15 +189,15 @@ func (k Keeper) KeygenMsg(ctx sdk.Context, msg *types.MsgTSS) error {
 
 	myAddress := k.broadcaster.GetLocalPrincipal(ctx)
 	if myAddress.Empty() {
-		k.Logger(ctx).Info("my validator address is empty; I must not be a validator; ignore KeygenMsg")
+		k.Logger(ctx).Info("ignore message: i'm not a validator; only validators care about messages of type %T", msg)
 		return nil
 	}
 	if !msg.Payload.IsBroadcast && !myAddress.Equals(sdk.ValAddress(msg.Payload.ToPartyUid)) {
-		k.Logger(ctx).Info(fmt.Sprintf("msg to [%s] not directed to me [%s]; ignore KeygenMsg", sdk.ValAddress(msg.Payload.ToPartyUid), myAddress))
+		k.Logger(ctx).Info(fmt.Sprintf("ignore message: msg to [%s] not directed to me [%s]", sdk.ValAddress(msg.Payload.ToPartyUid), myAddress))
 		return nil
 	}
 	if msg.Payload.IsBroadcast && myAddress.Equals(senderAddress) {
-		k.Logger(ctx).Info(fmt.Sprintf("broadcast message from [%s] came from me [%s]; ignore KeygenMsg", senderAddress, myAddress))
+		k.Logger(ctx).Info(fmt.Sprintf("ignore message: broadcast message from [%s] came from me [%s]", senderAddress, myAddress))
 		return nil
 	}
 

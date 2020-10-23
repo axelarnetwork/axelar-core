@@ -4,6 +4,6 @@ const (
 	EventTypeMsgIn          = "msgIn"
 	EventTypeMsgKeygenStart = "msgKeygenStart"
 
-	AttributeModule  = ModuleName
-	AttributePayload = "payload"
+	AttributeModule     = ModuleName
+	AttributeKeyPayload = "payload"
 )

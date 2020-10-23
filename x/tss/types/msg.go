@@ -1,6 +1,8 @@
 package types
 
 import (
+	"fmt"
+
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	tssd "github.com/axelarnetwork/tssd/pb"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -44,16 +46,16 @@ func (msg MsgKeygenStart) Type() string { return "keygen_start" }
 
 // ValidateBasic implements the sdk.Msg interface.
 func (msg MsgKeygenStart) ValidateBasic() error {
-	// if msg.Sender == nil {
-	// 	return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "sender must be set")
-	// }
-	// if msg.Chain == "" {
-	// 	return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "name of the chain for address must be set")
-	// }
-	// if msg.Address == "" {
-	// 	return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "address must be set")
-	// }
-
+	if msg.Sender == nil {
+		return sdkerrors.Wrap(ErrTss, "sender must be set")
+	}
+	if msg.NewKeyID == "" {
+		return sdkerrors.Wrap(ErrTss, "new key id must be set")
+	}
+	if msg.Threshold < 1 {
+		return sdkerrors.Wrap(ErrTss, fmt.Sprintf("invalid threshold [%d]", msg.Threshold))
+	}
+	// TODO enforce a maximum length for msg.SessionID?
 	return nil
 }
 
@@ -86,15 +88,18 @@ func (msg MsgTSS) Type() string { return "in" }
 // ValidateBasic implements the sdk.Msg interface.
 func (msg MsgTSS) ValidateBasic() error {
 	if msg.Sender == nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "sender must be set")
+		return sdkerrors.Wrap(ErrTss, "sender must be set")
 	}
-	// if msg.Chain == "" {
-	// 	return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "name of the chain for address must be set")
-	// }
-	// if msg.Address == "" {
-	// 	return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "address must be set")
-	// }
-
+	if msg.SessionID == "" {
+		return sdkerrors.Wrap(ErrTss, "session id must be set")
+	}
+	if !msg.Payload.IsBroadcast && len(msg.Payload.ToPartyUid) == 0 {
+		return sdkerrors.Wrap(ErrTss, "non-broadcast message must specify recipient")
+	}
+	if msg.Payload.IsBroadcast && len(msg.Payload.ToPartyUid) != 0 {
+		return sdkerrors.Wrap(ErrTss, "broadcast message must not specify recipient")
+	}
+	// TODO enforce a maximum length for msg.SessionID?
 	return nil
 }
 
