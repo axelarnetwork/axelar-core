@@ -34,7 +34,7 @@ func handleMsgTSS(ctx sdk.Context, k keeper.Keeper, msg *types.MsgTSS) (*sdk.Res
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.EventTypeMsgIn),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributePayload, msg.Payload.String()),
+			sdk.NewAttribute(types.AttributeKeyPayload, msg.Payload.String()),
 		),
 	)
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil

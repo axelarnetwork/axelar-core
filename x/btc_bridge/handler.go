@@ -10,6 +10,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
 )
 
+// This handler is only needed to avoid nil errors, all bridge messages are routed through the axelar module
 func NewHandler(_ keeper.Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())

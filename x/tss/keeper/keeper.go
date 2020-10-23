@@ -64,16 +64,24 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 	k.Logger(ctx).Info(fmt.Sprintf("initiate StartKeygen: threshold [%d] key [%s] ", info.Threshold, info.NewKeyID))
 
-	// TODO call GetLocalPrincipal only once at launch? need to wait until someone pushes a RegisterProxy message on chain...
-	validators := k.stakingKeeper.GetAllValidators(ctx)
+	// BEGIN: validity check
 
-	// keygen cannot proceed unless all validators have registered broadcast proxies
-	// TODO this breaks if the validator set changes
+	validators := k.stakingKeeper.GetAllValidators(ctx)
+	if info.Threshold < 1 || info.Threshold > len(validators) {
+		err := fmt.Errorf("invalid threshold: %d, validators: %d", info.Threshold, len(validators))
+		k.Logger(ctx).Error(err.Error())
+		return err
+	}
 	if k.broadcaster.GetProxyCount(ctx) != uint32(len(validators)) {
+		// keygen cannot proceed unless all validators have registered broadcast proxies
 		err := fmt.Errorf("not enough proxies registered: proxies: %d; validators: %d", k.broadcaster.GetProxyCount(ctx), len(validators))
 		k.Logger(ctx).Error(err.Error())
 		return err
 	}
+
+	// END: validity check -- always return nil after this line!
+
+	// TODO call GetLocalPrincipal only once at launch? need to wait until someone pushes a RegisterProxy message on chain...
 	myAddress := k.broadcaster.GetLocalPrincipal(ctx)
 	if myAddress.Empty() {
 		k.Logger(ctx).Info("my validator address is empty; I must not be a validator; ignore StartKeygen")
@@ -90,7 +98,7 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 		parties = append(parties, party)
 		if v.OperatorAddress.Equals(myAddress) {
 			if ok {
-				err := fmt.Errorf("my validator address appears multiple times in the validator list: [%s]", myAddress)
+				err := fmt.Errorf("cosmos bug: my validator address appears multiple times in the validator list: [%s]", myAddress)
 				k.Logger(ctx).Error(err.Error())
 				return nil // don't propagate nondeterministic errors
 			}
@@ -98,7 +106,7 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 		}
 	}
 	if !ok {
-		err := fmt.Errorf("my validator address is not in the validator list: [%s]", myAddress)
+		err := fmt.Errorf("cosmos bug: my validator address is not in the validator list: [%s]", myAddress)
 		k.Logger(ctx).Error(err.Error())
 		return nil // don't propagate nondeterministic errors
 	}
@@ -117,7 +125,7 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 		k.Logger(ctx).Error(wrapErr.Error())
 		return nil // don't propagate nondeterministic errors
 	}
-	// k.Logger(ctx).Debug("successful tssd gRPC call KeygenInit")
+	k.Logger(ctx).Debug("successful tssd gRPC call KeygenInit")
 	k.Logger(ctx).Debug("initiate gRPC call Keygen")
 	k.keygenStream, err = k.client.Keygen(k.context) // TODO support concurrent sessions
 	if err != nil {
@@ -125,7 +133,7 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 		k.Logger(ctx).Error(wrapErr.Error())
 		return nil // don't propagate nondeterministic errors
 	}
-	// k.Logger(ctx).Debug("successful tssd gRPC call Keygen")
+	k.Logger(ctx).Debug("successful tssd gRPC call Keygen")
 
 	// server handler https://grpc.io/docs/languages/go/basics/#bidirectional-streaming-rpc-1
 	k.Logger(ctx).Debug("initiate gRPC handler goroutine")
@@ -164,27 +172,32 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 func (k Keeper) KeygenMsg(ctx sdk.Context, msg *types.MsgTSS) error {
 	k.Logger(ctx).Debug(fmt.Sprintf("initiate KeygenMsg: key [%s] from [%s] broadcast? [%t] to [%s]", msg.SessionID, msg.Sender, msg.Payload.IsBroadcast, sdk.ValAddress(msg.Payload.ToPartyUid)))
 
-	// TODO enforce protocol order of operations (eg. check for nil keygenStream)
-	// TODO allow non-validator nodes
+	// TODO many of these checks apply to both keygen and sign; refactor them into a Msg() method
+
+	// BEGIN: validity check
+
+	// TODO check that msg.SessionID exists; allow concurrent sessions
 
 	senderAddress := k.broadcaster.GetPrincipal(ctx, msg.Sender)
 	if senderAddress.Empty() {
-		err := fmt.Errorf("sender validator address is empty; sender must not be a validator; only validators can send messages of type %T; message is invalid", msg)
+		err := fmt.Errorf("invalid message: sender [%s] is not a validator; only validators can send messages of type %T", msg.Sender, msg)
 		k.Logger(ctx).Error(err.Error())
 		return err
 	}
+
+	// END: validity check -- always return nil after this line!
+
 	myAddress := k.broadcaster.GetLocalPrincipal(ctx)
 	if myAddress.Empty() {
-		k.Logger(ctx).Info("my validator address is empty; I must not be a validator; ignore KeygenMsg")
+		k.Logger(ctx).Info("ignore message: i'm not a validator; only validators care about messages of type %T", msg)
 		return nil
 	}
-
 	if !msg.Payload.IsBroadcast && !myAddress.Equals(sdk.ValAddress(msg.Payload.ToPartyUid)) {
-		k.Logger(ctx).Info(fmt.Sprintf("msg to [%s] not directed to me [%s]; ignore KeygenMsg", sdk.ValAddress(msg.Payload.ToPartyUid), myAddress))
+		k.Logger(ctx).Info(fmt.Sprintf("ignore message: msg to [%s] not directed to me [%s]", sdk.ValAddress(msg.Payload.ToPartyUid), myAddress))
 		return nil
 	}
 	if msg.Payload.IsBroadcast && myAddress.Equals(senderAddress) {
-		k.Logger(ctx).Info(fmt.Sprintf("broadcast message from [%s] came from me [%s]; ignore KeygenMsg", senderAddress, myAddress))
+		k.Logger(ctx).Info(fmt.Sprintf("ignore message: broadcast message from [%s] came from me [%s]", senderAddress, myAddress))
 		return nil
 	}
 
@@ -206,7 +219,6 @@ func (k Keeper) KeygenMsg(ctx sdk.Context, msg *types.MsgTSS) error {
 		k.Logger(ctx).Error(newErr.Error())
 		return nil // don't propagate nondeterministic errors
 	}
-	// k.Logger(ctx).Debug(fmt.Sprintf("successful foward incoming msg to gRPC server"))
 	k.Logger(ctx).Debug(fmt.Sprintf("successful KeygenMsg: key [%s] ", msg.SessionID))
 	return nil
 }
