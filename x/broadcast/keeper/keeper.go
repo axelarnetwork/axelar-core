@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"encoding/binary"
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys"
@@ -16,6 +17,11 @@ import (
 )
 
 var _ exported.Broadcaster = Keeper{}
+
+const (
+	proxyCountKey = "proxyCount"
+	seqNoKey      = "seqNo"
+)
 
 type Keeper struct {
 	stakingKeeper staking.Keeper
@@ -103,6 +109,8 @@ func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []exported.ValidatorMsg) erro
 		return err
 	}
 
+	k.Logger(ctx).Debug(fmt.Sprintf("from address: %v, acc no.: %d, seq no.: %d, chainId: %s", k.from, stdSignMsg.AccountNumber, stdSignMsg.Sequence, stdSignMsg.ChainID))
+
 	k.Logger(ctx).Debug("encoding tx")
 	txBytes, err := k.encodeTx(tx)
 	if err != nil {
@@ -110,10 +118,15 @@ func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []exported.ValidatorMsg) erro
 		return err
 	}
 	k.Logger(ctx).Debug("broadcasting")
+	k.setSeqNo(ctx, stdSignMsg.Sequence+1)
 	go func() {
-		_, err := k.rpc.BroadcastTxSync(txBytes)
+		k.Logger(ctx).Debug("inside broadcasting goroutine")
+		res, err := k.rpc.BroadcastTxSync(txBytes)
 		if err != nil {
 			k.Logger(ctx).Error(err.Error())
+		}
+		if res != nil && res.Log != "" {
+			k.Logger(ctx).Info(res.Log)
 		}
 	}()
 	return nil
@@ -125,13 +138,17 @@ func (k Keeper) prepareMsgForSigning(ctx sdk.Context, msgs []sdk.Msg) (auth.StdS
 	}
 
 	acc := k.keeper.GetAccount(ctx, k.from)
+	seqNo := k.getSeqNo(ctx)
+	if acc.GetSequence() > seqNo {
+		seqNo = acc.GetSequence()
+	}
 
 	return auth.StdSignMsg{
 		ChainID:       k.config.ChainID,
 		AccountNumber: acc.GetAccountNumber(),
-		Sequence:      acc.GetSequence(),
+		Sequence:      seqNo,
 		Msgs:          msgs,
-		Fee:           auth.NewStdFee(50000, nil),
+		Fee:           auth.NewStdFee(2000000, nil),
 	}, nil
 }
 
@@ -159,9 +176,23 @@ func (k Keeper) makeSignature(msg auth.StdSignMsg) (auth.StdSignature, error) {
 func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy sdk.AccAddress) error {
 	_, found := k.stakingKeeper.GetValidator(ctx, principal)
 	if !found {
+		k.Logger(ctx).Error("could not find validator")
 		return types.ErrInvalidValidator
 	}
+	k.Logger(ctx).Debug("getting proxy count")
+	count := k.GetProxyCount(ctx)
+	k.Logger(ctx).Debug(fmt.Sprintf("count: %v", count))
+	storedProxy := ctx.KVStore(k.storeKey).Get(principal)
+	if storedProxy != nil {
+		ctx.KVStore(k.storeKey).Delete(storedProxy)
+		count -= 1
+	}
+	k.Logger(ctx).Debug("setting proxy")
 	ctx.KVStore(k.storeKey).Set(proxy, principal)
+	count += 1
+	k.Logger(ctx).Debug("setting proxy count")
+	k.SetProxyCount(ctx, count)
+	k.Logger(ctx).Debug("done")
 	return nil
 }
 
@@ -174,4 +205,35 @@ func (k Keeper) GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddre
 		return nil
 	}
 	return ctx.KVStore(k.storeKey).Get(proxy)
+}
+
+func (k Keeper) GetProxyCount(ctx sdk.Context) uint32 {
+	countRaw := ctx.KVStore(k.storeKey).Get([]byte(proxyCountKey))
+	if countRaw == nil {
+		k.Logger(ctx).Error("count was not set, this is an issue with the genesis init")
+		return 0
+	}
+	return binary.LittleEndian.Uint32(countRaw)
+}
+
+func (k Keeper) SetProxyCount(ctx sdk.Context, count uint32) {
+	bz := make([]byte, 4)
+	binary.LittleEndian.PutUint32(bz, count)
+	k.Logger(ctx).Debug(fmt.Sprintf("count to set: %v", count))
+	k.Logger(ctx).Debug(fmt.Sprintf("count bytes: %v", bz))
+	ctx.KVStore(k.storeKey).Set([]byte(proxyCountKey), bz)
+}
+
+func (k Keeper) getSeqNo(ctx sdk.Context) uint64 {
+	seqNo := ctx.KVStore(k.storeKey).Get([]byte(seqNoKey))
+	if seqNo == nil {
+		return 0
+	}
+	return binary.LittleEndian.Uint64(seqNo)
+}
+
+func (k Keeper) setSeqNo(ctx sdk.Context, seqNo uint64) {
+	bz := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bz, seqNo)
+	ctx.KVStore(k.storeKey).Set([]byte(seqNoKey), bz)
 }

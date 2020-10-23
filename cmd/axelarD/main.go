@@ -93,6 +93,12 @@ func addAdditionalFlags(rootCmd *cobra.Command) {
 	// The daemon acts as a broadcaster as well, so we need access to the cli configuration (in particular the keybase)
 	rootCmd.PersistentFlags().String(CliHomeFlag, app.DefaultCLIHome, "directory for cli config and data")
 	_ = viper.BindPFlag(CliHomeFlag, rootCmd.Flags().Lookup(CliHomeFlag))
+
+	rootCmd.PersistentFlags().String("tssd-host", "", "host name for tss daemon")
+	_ = viper.BindPFlag("tssd_host", rootCmd.PersistentFlags().Lookup("tssd-host"))
+
+	rootCmd.PersistentFlags().String("tssd-port", "50051", "port for tss daemon")
+	_ = viper.BindPFlag("tssd_port", rootCmd.PersistentFlags().Lookup("tssd-port"))
 }
 
 func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application {
