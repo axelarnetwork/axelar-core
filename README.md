@@ -9,9 +9,12 @@ See the axelarnetwork/axelarate repo for instructions to run a node.
 Execute `make build` to create local binaries for the validator node. 
 They are created in the `./bin` folder.
 
-## Creating a docker image
-To create a docker image for the validator, execute `make docker-image`.
+## Creating docker images
+To create a regular docker image for the validator, execute `make docker-image`.
 This creates the image axelar/core:latest.
+
+To create a docker image for debugging (with [delve](https://github.com/go-delve/delve)), execute `make docker-image-debug`.
+This creates the image axelar/core-debug:latest.
 
 ## Interacting with a local validator node
 With a local (dockerized) validator running, the `axelarcli` binary can be used to interact with the node.

@@ -1,0 +1,12 @@
+FROM golang:1.15 as debug
+WORKDIR axelar
+RUN go get github.com/go-delve/delve/cmd/dlv
+COPY ./tssd ./tssd
+COPY ./go.mod .
+COPY ./go.sum .
+RUN go mod download
+COPY . .
+
+RUN make debug
+RUN cp /go/axelar/bin/axelar* /root/
+ENV PATH="/root:${PATH}"
