@@ -39,7 +39,7 @@ func main() {
 	config.Seal()
 
 	rootCmd := &cobra.Command{
-		Use:   "axelarCLI",
+		Use:   "axelarcli",
 		Short: "Axelar Client",
 	}
 
@@ -64,8 +64,8 @@ func main() {
 		flags.NewCompletionCmd(rootCmd, true),
 	)
 
-	// Add flags and prefix all env exposed with AA
-	executor := cli.PrepareMainCmd(rootCmd, "AA", app.DefaultCLIHome)
+	// Add flags and prefix all env exposed with AX
+	executor := cli.PrepareMainCmd(rootCmd, "AX", app.DefaultCLIHome)
 
 	err := executor.Execute()
 	if err != nil {
@@ -109,7 +109,6 @@ func txCmd(cdc *amino.Codec) *cobra.Command {
 		authcmd.GetSignCommand(cdc),
 		authcmd.GetMultiSignCommand(cdc),
 		flags.LineBreak,
-		authcmd.GetBroadcastCommand(cdc),
 		authcmd.GetEncodeCommand(cdc),
 		authcmd.GetDecodeCommand(cdc),
 		flags.LineBreak,

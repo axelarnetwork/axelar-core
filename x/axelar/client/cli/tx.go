@@ -3,7 +3,7 @@ package cli
 import (
 	"bufio"
 	"fmt"
-	"github.com/axelarnetwork/axelar-core/x/axelar/types"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -12,6 +12,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/spf13/cobra"
+
+	"github.com/axelarnetwork/axelar-core/x/axelar/exported"
+	"github.com/axelarnetwork/axelar-core/x/axelar/types"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -35,14 +38,18 @@ func GetCmdTrackAddress(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "trackAddress [chain] [address] ",
 		Short: "Make the axelar network aware of a specific address on another blockchain",
-		Args:  cobra.ExactArgs(2), // Does your request require arguments
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			msg := types.NewMsgTrackAddress(cliCtx.GetFromAddress(), args[0], args[1])
+			addr := exported.ExternalChainAddress{
+				Chain:   args[0],
+				Address: args[1],
+			}
+			msg := types.NewMsgTrackAddress(cliCtx.GetFromAddress(), addr)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

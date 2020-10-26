@@ -1,2 +1,4 @@
 Dockerfile
+Dockerfile.debug
 .gitignore
+bin

@@ -11,10 +11,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/simapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
@@ -28,13 +28,25 @@ import (
 	tmos "github.com/tendermint/tendermint/libs/os"
 	dbm "github.com/tendermint/tm-db"
 
+	keyring "github.com/cosmos/cosmos-sdk/crypto/keys"
+
 	"github.com/axelarnetwork/axelar-core/x/axelar"
 	axKeeper "github.com/axelarnetwork/axelar-core/x/axelar/keeper"
 	axTypes "github.com/axelarnetwork/axelar-core/x/axelar/types"
+	"github.com/axelarnetwork/axelar-core/x/broadcast"
+	bcKeeper "github.com/axelarnetwork/axelar-core/x/broadcast/keeper"
+	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
+	"github.com/axelarnetwork/axelar-core/x/btc_bridge"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
+	btcTypes "github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
+	"github.com/axelarnetwork/axelar-core/x/tss"
+	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
+	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
-const appName = "app"
+const (
+	appName = "axelar"
+)
 
 var (
 	// default home directories for the application CLI
@@ -43,7 +55,7 @@ var (
 	// DefaultNodeHome sets the folder where the applcation data and configuration will be stored
 	DefaultNodeHome = os.ExpandEnv("$HOME/.axelard")
 
-	// NewBasicManager is in charge of setting up basic module elemnets
+	// NewBasicManager is in charge of setting up basic module elements
 	ModuleBasics = module.NewBasicManager(
 		genutil.AppModuleBasic{},
 		auth.AppModuleBasic{},
@@ -54,7 +66,10 @@ var (
 		slashing.AppModuleBasic{},
 		supply.AppModuleBasic{},
 
+		tss.AppModuleBasic{},
 		axelar.AppModuleBasic{},
+		btc_bridge.AppModuleBasic{},
+		broadcast.AppModuleBasic{},
 	)
 	// account permissions
 	maccPerms = map[string][]string{
@@ -88,15 +103,17 @@ type AxelarApp struct {
 	tkeys map[string]*sdk.TransientStoreKey
 
 	// Keepers
-	accountKeeper  auth.AccountKeeper
-	bankKeeper     bank.Keeper
-	stakingKeeper  staking.Keeper
-	slashingKeeper slashing.Keeper
-	distrKeeper    distr.Keeper
-	supplyKeeper   supply.Keeper
-	paramsKeeper   params.Keeper
-	btcKeeper      btcKeeper.Keeper
-	axelarKeeper   axKeeper.Keeper
+	accountKeeper   auth.AccountKeeper
+	bankKeeper      bank.Keeper
+	stakingKeeper   staking.Keeper
+	slashingKeeper  slashing.Keeper
+	distrKeeper     distr.Keeper
+	supplyKeeper    supply.Keeper
+	paramsKeeper    params.Keeper
+	btcKeeper       btcKeeper.Keeper
+	broadcastKeeper bcKeeper.Keeper
+	tssKeeper       tssKeeper.Keeper
+	axelarKeeper    axKeeper.Keeper
 
 	// Module Manager
 	mm *module.Manager
@@ -110,7 +127,7 @@ var _ simapp.App = &AxelarApp{}
 
 // NewInitApp is a constructor function for axelarApp
 func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool,
-	invCheckPeriod uint, baseAppOptions ...func(*bam.BaseApp)) *AxelarApp {
+	invCheckPeriod uint, axelarCfg *Config, baseAppOptions ...func(*bam.BaseApp)) *AxelarApp {
 
 	// First define the top level codec that will be shared by the different modules
 	cdc := MakeCodec()
@@ -121,7 +138,8 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	bApp.SetAppVersion(version.Version)
 
 	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
-		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey, axTypes.StoreKey)
+		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey,
+		axTypes.StoreKey, broadcastTypes.StoreKey, btcTypes.StoreKey)
 
 	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
@@ -201,7 +219,11 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 			app.slashingKeeper.Hooks()),
 	)
 
-	app.btcKeeper = btcKeeper.NewBtcKeeper(BtcBridgeAddr)
+	var err error
+	app.btcKeeper, err = btcKeeper.NewBtcKeeper(app.cdc, keys[btcTypes.StoreKey], axelarCfg.BtcConfig, logger)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
 
 	// BTC bridge opens a grpc connection. Clean it up on process shutdown
 	sigs := make(chan os.Signal, 1)
@@ -209,8 +231,39 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	go func() {
 		_ = <-sigs
 		logger.Debug("closing bitcoin bridge connection")
-		if err := app.btcKeeper.Close(); err != nil {
-			logger.Error(sdkerrors.Wrap(err, "could not close bitcoin bridge connection").Error())
+		app.btcKeeper.Close()
+	}()
+
+	keybase, err := keyring.NewKeyring(sdk.KeyringServiceName(), axelarCfg.ClientConfig.KeyringBackend, DefaultCLIHome, os.Stdin)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+	app.broadcastKeeper, err = bcKeeper.NewKeeper(
+		axelarCfg.ClientConfig,
+		keys[broadcastTypes.StoreKey],
+		keybase,
+		app.accountKeeper,
+		app.stakingKeeper,
+		utils.GetTxEncoder(cdc),
+		logger,
+	)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+
+	app.tssKeeper, err = tssKeeper.NewKeeper(axelarCfg.TssdConfig, logger, app.broadcastKeeper, app.stakingKeeper)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+
+	// tss opens a grpc connection. Clean it up on process shutdown
+	go func() {
+		tssSigs := make(chan os.Signal, 1)
+		signal.Notify(tssSigs, syscall.SIGINT, syscall.SIGTERM)
+		<-tssSigs
+		logger.Debug("closing tss gRPC connection")
+		if err := app.tssKeeper.Close(logger); err != nil {
+			logger.Error(err.Error()) // TODO Logger forces me to throw away error metadata
 		}
 	}()
 
@@ -218,6 +271,8 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		app.cdc,
 		keys[axTypes.StoreKey],
 		map[string]axTypes.BridgeKeeper{"bitcoin": app.btcKeeper},
+		app.stakingKeeper,
+		app.broadcastKeeper,
 	)
 
 	// NOTE: Any module instantiated in the module manager that is later modified
@@ -230,14 +285,18 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		distr.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
+
+		tss.NewAppModule(app.tssKeeper),
 		axelar.NewAppModule(app.axelarKeeper),
+		broadcast.NewAppModule(app.broadcastKeeper),
+		btc_bridge.NewAppModule(app.btcKeeper),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
 	// there is nothing left over in the validator fee pool, so as to keep the
 	// CanWithdrawInvariant invariant.
 	app.mm.SetOrderBeginBlockers(distr.ModuleName, slashing.ModuleName)
-	app.mm.SetOrderEndBlockers(staking.ModuleName)
+	app.mm.SetOrderEndBlockers(staking.ModuleName, axTypes.ModuleName)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	// NOTE: The genutils moodule must occur after staking so that pools are
@@ -248,6 +307,9 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		auth.ModuleName,
 		bank.ModuleName,
 		slashing.ModuleName,
+		tssTypes.ModuleName,
+		btcTypes.ModuleName,
+		broadcastTypes.ModuleName,
 		axTypes.ModuleName,
 		supply.ModuleName,
 		genutil.ModuleName,

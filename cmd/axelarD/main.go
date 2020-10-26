@@ -2,12 +2,15 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/axelarnetwork/axelar-core/app"
-	"github.com/cosmos/cosmos-sdk/store/types"
 	"io"
+	"path"
+
+	"github.com/cosmos/cosmos-sdk/store/types"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/axelarnetwork/axelar-core/app"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/cli"
@@ -26,7 +29,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking"
 )
 
-const flagInvCheckPeriod = "inv-check-period"
+const (
+	flagInvCheckPeriod = "inv-check-period"
+	CliHomeFlag        = "clihome"
+)
 
 var invCheckPeriod uint
 
@@ -64,13 +70,35 @@ func main() {
 	server.AddCommands(ctx, cdc, rootCmd, newApp, exportAppStateAndTMValidators)
 
 	// prepare and add flags
-	executor := cli.PrepareBaseCmd(rootCmd, "AU", app.DefaultNodeHome)
+	executor := cli.PrepareBaseCmd(rootCmd, "AX", app.DefaultNodeHome)
 	rootCmd.PersistentFlags().UintVar(&invCheckPeriod, flagInvCheckPeriod,
 		0, "Assert registered invariants every N blocks")
+
+	addAdditionalFlags(rootCmd)
+
 	err := executor.Execute()
 	if err != nil {
 		panic(err)
 	}
+}
+
+func addAdditionalFlags(rootCmd *cobra.Command) {
+	// These flags are intended for submitting transactions.
+	// Since the daemon can broadcast messages now we need the flags here as well (mostly for their default values)
+	flags.PostCommands(rootCmd)
+
+	// This flag has a defined default in PostCommands, but is not bound to viper
+	_ = viper.BindPFlag(flags.FlagGasAdjustment, rootCmd.Flags().Lookup(flags.FlagGasAdjustment))
+
+	// The daemon acts as a broadcaster as well, so we need access to the cli configuration (in particular the keybase)
+	rootCmd.PersistentFlags().String(CliHomeFlag, app.DefaultCLIHome, "directory for cli config and data")
+	_ = viper.BindPFlag(CliHomeFlag, rootCmd.Flags().Lookup(CliHomeFlag))
+
+	rootCmd.PersistentFlags().String("tssd-host", "", "host name for tss daemon")
+	_ = viper.BindPFlag("tssd_host", rootCmd.PersistentFlags().Lookup("tssd-host"))
+
+	rootCmd.PersistentFlags().String("tssd-port", "50051", "port for tss daemon")
+	_ = viper.BindPFlag("tssd_port", rootCmd.PersistentFlags().Lookup("tssd-port"))
 }
 
 func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application {
@@ -81,7 +109,7 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 	}
 
 	return app.NewInitApp(
-		logger, db, traceStore, true, invCheckPeriod,
+		logger, db, traceStore, true, invCheckPeriod, loadConfig(),
 		baseapp.SetPruning(types.NewPruningOptionsFromString(viper.GetString("pruning"))),
 		baseapp.SetMinGasPrices(viper.GetString(server.FlagMinGasPrices)),
 		baseapp.SetHaltHeight(viper.GetUint64(server.FlagHaltHeight)),
@@ -90,12 +118,33 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 	)
 }
 
+func loadConfig() *app.Config {
+	// need to merge in cli config because axelard now has its own broadcasting client
+	conf := &app.Config{}
+	homeDir := viper.GetString(cli.HomeFlag)
+	cliHomeDir := viper.GetString(CliHomeFlag)
+	cliCfgFile := path.Join(cliHomeDir, "config", "config.toml")
+	viper.SetConfigFile(cliCfgFile)
+	if err := viper.MergeInConfig(); err != nil {
+		panic(err)
+	}
+	cfgFile := path.Join(homeDir, "config", "config.toml")
+	viper.SetConfigFile(cfgFile)
+
+	if err := viper.Unmarshal(conf); err != nil {
+		panic(err)
+	}
+	return conf
+}
+
 func exportAppStateAndTMValidators(
 	logger log.Logger, db dbm.DB, traceStore io.Writer, height int64, forZeroHeight bool, jailWhiteList []string,
 ) (json.RawMessage, []tmtypes.GenesisValidator, error) {
 
+	conf := loadConfig()
+
 	if height != -1 {
-		aApp := app.NewInitApp(logger, db, traceStore, false, uint(1))
+		aApp := app.NewInitApp(logger, db, traceStore, false, uint(1), conf)
 		err := aApp.LoadHeight(height)
 		if err != nil {
 			return nil, nil, err
@@ -103,7 +152,7 @@ func exportAppStateAndTMValidators(
 		return aApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 	}
 
-	aApp := app.NewInitApp(logger, db, traceStore, true, uint(1))
+	aApp := app.NewInitApp(logger, db, traceStore, true, uint(1), conf)
 
 	return aApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 }

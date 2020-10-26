@@ -2,9 +2,7 @@ package axelar
 
 import (
 	"encoding/json"
-	"github.com/axelarnetwork/axelar-core/x/axelar/client/cli"
-	"github.com/axelarnetwork/axelar-core/x/axelar/keeper"
-	"github.com/axelarnetwork/axelar-core/x/axelar/types"
+
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -12,6 +10,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
+
+	"github.com/axelarnetwork/axelar-core/x/axelar/client/cli"
+	"github.com/axelarnetwork/axelar-core/x/axelar/keeper"
+	"github.com/axelarnetwork/axelar-core/x/axelar/types"
 )
 
 var (
@@ -44,7 +46,7 @@ func (AppModuleBasic) ValidateGenesis(message json.RawMessage) error {
 }
 
 func (AppModuleBasic) RegisterRESTRoutes(_ context.CLIContext, _ *mux.Router) {
-	//TODO: implement rest interface
+	// TODO: implement rest interface
 }
 
 func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {

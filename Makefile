@@ -4,8 +4,8 @@ VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
 COMMIT := $(shell git log -1 --format='%H')
 
 ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=Axelar \
-	-X github.com/cosmos/cosmos-sdk/version.ServerName=axelarD \
-	-X github.com/cosmos/cosmos-sdk/version.ClientName=axelarCLI \
+	-X github.com/cosmos/cosmos-sdk/version.ServerName=axelard \
+	-X github.com/cosmos/cosmos-sdk/version.ClientName=axelarcli \
 	-X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
 	-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) 
 
@@ -38,7 +38,20 @@ build: go.sum
 		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) ./cmd/axelarD
 		go build -o ./bin/axelarcli -mod=readonly $(BUILD_FLAGS) ./cmd/axelarCLI
 
+.PHONY: debug
+debug: go.sum
+		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) -gcflags="all=-N -l" ./cmd/axelarD
+		go build -o ./bin/axelarcli -mod=readonly $(BUILD_FLAGS) -gcflags="all=-N -l" ./cmd/axelarCLI
+
 .PHONY: docker-image
 docker-image:
 	@docker build -t axelar/core .
+
+.PHONY: docker-image-debug
+docker-image-debug:
+	@docker build -t axelar/core-debug -f ./Dockerfile.debug .
+
+.PHONY: copy-tssd
+copy-tssd:
+	@rsync -ru ../tssd ./
 
