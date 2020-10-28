@@ -11,3 +11,11 @@ type Config struct {
 	tssdTypes.TssdConfig        `mapstructure:",squash"`
 	broadcastTypes.ClientConfig `mapstructure:",squash"`
 }
+
+func DefaultConfig() Config {
+	return Config{
+		BtcConfig:    btcTypes.DefaultConfig(),
+		TssdConfig:   tssdTypes.TssdConfig{},
+		ClientConfig: broadcastTypes.ClientConfig{},
+	}
+}

@@ -32,6 +32,8 @@ type Keeper struct {
 	storeKey sdk.StoreKey
 	client   *rpcclient.Client
 	cdc      *codec.Codec
+	// set to false to test the blockchain without external btc bridge
+	withBridge bool
 }
 
 const (
@@ -41,13 +43,16 @@ const (
 )
 
 func NewBtcKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, cfg types.BtcConfig, logger log.Logger) (Keeper, error) {
-	// logger.Debug("initializing btc keeper")
-	// client, err := newRPCClient(cfg, logger.With("module", fmt.Sprintf("x/%s", types.ModuleName)))
-	// if err != nil {
-	// 	return Keeper{}, err
-	// }
-	// return Keeper{cdc: cdc, storeKey: storeKey, client: client}, nil
-	return Keeper{cdc: cdc, storeKey: storeKey}, nil
+	logger.Debug("initializing btc keeper")
+	var client *rpcclient.Client
+	if cfg.WithBridge {
+		var err error
+		if client, err = newRPCClient(cfg, prepareLogger(logger)); err != nil {
+			return Keeper{}, err
+		}
+	}
+
+	return Keeper{cdc: cdc, storeKey: storeKey, client: client, withBridge: cfg.WithBridge}, nil
 }
 
 func newRPCClient(cfg types.BtcConfig, logger log.Logger) (*rpcclient.Client, error) {
@@ -62,7 +67,7 @@ func newRPCClient(cfg types.BtcConfig, logger log.Logger) (*rpcclient.Client, er
 		DisableAutoReconnect: false,
 		HTTPPostMode:         true, // Bitcoin core only supports HTTP POST mode
 	}
-	// Notice the notification parameter is nil since notifications are
+	// Note the notification parameter is nil since notifications are
 	// not supported in HTTP POST mode.
 	client, err := rpcclient.New(rpcCfg, nil)
 	if err != nil {
@@ -89,6 +94,21 @@ func waitForAuthCookie(cookiePath string, timeout time.Duration, logger log.Logg
 	} else {
 		return sdkerrors.Wrap(types.ErrInvalidConfig, fmt.Sprintf("bitcoin auth cookie could not be found at %s", cookiePath))
 	}
+}
+
+type connection struct {
+	client  *rpcclient.Client
+	retries int
+	error   error
+}
+
+func (c *connection) isAvailable() bool {
+	_, c.error = c.client.GetBlockChainInfo()
+	return c.error == nil
+}
+
+func (c connection) Error() error {
+	return c.error
 }
 
 func waitForBtcWarmup(client *rpcclient.Client, timeout time.Duration, logger log.Logger) error {
@@ -124,32 +144,28 @@ func unexpectedError(err error) error {
 	return sdkerrors.Wrap(types.ErrConnFailed, fmt.Sprintf("unexpected error when waiting for bitcoin node warmup: %s", err.Error()))
 }
 
-type connection struct {
-	client  *rpcclient.Client
-	retries int
-	error   error
-}
-
-func (c *connection) isAvailable() bool {
-	_, c.error = c.client.GetBlockChainInfo()
-	return c.error == nil
-}
-
-func (c connection) Error() error {
-	return c.error
-}
-
+// Clean up connection to bridge
 func (k Keeper) Close() {
-	k.client.Shutdown()
+	if k.withBridge {
+		k.client.Shutdown()
+	}
 }
 
 // Logger returns a module-specific logger.
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {
-	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
+	return prepareLogger(ctx.Logger())
+}
+
+func prepareLogger(logger log.Logger) log.Logger {
+	return logger.With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
 func (k Keeper) TrackAddress(ctx sdk.Context, address string) error {
 	k.Logger(ctx).Debug(fmt.Sprintf("start tracking address %v", address))
+
+	if !k.withBridge {
+		return nil
+	}
 
 	future := k.client.ImportAddressAsync(address)
 
@@ -167,6 +183,11 @@ func (k Keeper) TrackAddress(ctx sdk.Context, address string) error {
 
 func (k Keeper) VerifyTx(ctx sdk.Context, tx exported.ExternalTx) bool {
 	k.Logger(ctx).Debug("verifying bitcoin transaction")
+
+	if !k.withBridge {
+		return false
+	}
+
 	hash, err := chainhash.NewHashFromStr(tx.TxID)
 	if err != nil {
 		k.Logger(ctx).Info(err.Error())
