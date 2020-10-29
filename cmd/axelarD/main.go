@@ -131,7 +131,7 @@ func loadConfig() app.Config {
 	cfgFile := path.Join(homeDir, "config", "config.toml")
 	viper.SetConfigFile(cfgFile)
 
-	if err := viper.Unmarshal(conf); err != nil {
+	if err := viper.Unmarshal(&conf); err != nil {
 		panic(err)
 	}
 	return conf
