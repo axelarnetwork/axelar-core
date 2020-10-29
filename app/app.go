@@ -127,7 +127,7 @@ var _ simapp.App = &AxelarApp{}
 
 // NewInitApp is a constructor function for axelarApp
 func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool,
-	invCheckPeriod uint, axelarCfg *Config, baseAppOptions ...func(*bam.BaseApp)) *AxelarApp {
+	invCheckPeriod uint, axelarCfg Config, baseAppOptions ...func(*bam.BaseApp)) *AxelarApp {
 
 	// First define the top level codec that will be shared by the different modules
 	cdc := MakeCodec()
