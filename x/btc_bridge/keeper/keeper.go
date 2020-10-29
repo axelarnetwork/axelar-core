@@ -164,6 +164,7 @@ func (k Keeper) TrackAddress(ctx sdk.Context, address string) error {
 	k.Logger(ctx).Debug(fmt.Sprintf("start tracking address %v", address))
 
 	if !k.withBridge {
+		k.Logger(ctx).Debug("running without btc bridge")
 		return nil
 	}
 
@@ -185,6 +186,7 @@ func (k Keeper) VerifyTx(ctx sdk.Context, tx exported.ExternalTx) bool {
 	k.Logger(ctx).Debug("verifying bitcoin transaction")
 
 	if !k.withBridge {
+		k.Logger(ctx).Debug("running without btc bridge")
 		return false
 	}
 
