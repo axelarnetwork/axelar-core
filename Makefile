@@ -3,7 +3,7 @@ PACKAGES=$(shell go list ./... | grep -v '/simulation')
 VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
 COMMIT := $(shell git log -1 --format='%H')
 
-ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=Axelar \
+ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=axelar \
 	-X github.com/cosmos/cosmos-sdk/version.ServerName=axelard \
 	-X github.com/cosmos/cosmos-sdk/version.ClientName=axelarcli \
 	-X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
@@ -16,8 +16,8 @@ all: install docker-image
 
 .PHONY: install
 install: go.sum
-		go install -mod=readonly $(BUILD_FLAGS) ./cmd/axelarD
-		go install -mod=readonly $(BUILD_FLAGS) ./cmd/axelarCLI
+		go install -mod=readonly $(BUILD_FLAGS) ./cmd/axelard
+		go install -mod=readonly $(BUILD_FLAGS) ./cmd/axelarcli
 
 go.sum: go.mod
 		@echo "--> Ensure dependencies have not been modified"
