@@ -118,9 +118,9 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 	)
 }
 
-func loadConfig() *app.Config {
+func loadConfig() app.Config {
 	// need to merge in cli config because axelard now has its own broadcasting client
-	conf := &app.Config{}
+	conf := app.DefaultConfig()
 	homeDir := viper.GetString(cli.HomeFlag)
 	cliHomeDir := viper.GetString(CliHomeFlag)
 	cliCfgFile := path.Join(cliHomeDir, "config", "config.toml")
