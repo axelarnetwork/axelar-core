@@ -5,6 +5,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/x/axelar/exported"
+	"github.com/axelarnetwork/axelar-core/x/axelar/types"
 )
 
 // Ensure MsgTrackAddress implements sdk.Msg interface
@@ -35,7 +36,7 @@ func (msg MsgVerifyTx) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
 	if msg.Tx.IsInvalid() {
-		return sdkerrors.Wrap(ErrInvalidExternalTx, msg.Tx.String())
+		return sdkerrors.Wrap(types.ErrInvalidExternalTx, msg.Tx.String())
 	}
 
 	return nil

@@ -4,9 +4,8 @@ import (
 	"encoding/json"
 	"io"
 	"os"
-	"os/signal"
-	"syscall"
 
+	"github.com/btcsuite/btcd/rpcclient"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/simapp"
@@ -220,19 +219,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	)
 
 	var err error
-	app.btcKeeper, err = btcKeeper.NewBtcKeeper(app.cdc, keys[btcTypes.StoreKey], axelarCfg.BtcConfig, logger)
-	if err != nil {
-		tmos.Exit(err.Error())
-	}
-
-	// BTC bridge opens a grpc connection. Clean it up on process shutdown
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		_ = <-sigs
-		logger.Debug("closing bitcoin bridge connection")
-		app.btcKeeper.Close()
-	}()
+	app.btcKeeper = btcKeeper.NewBtcKeeper(app.cdc, keys[btcTypes.StoreKey])
 
 	keybase, err := keyring.NewKeyring(sdk.KeyringServiceName(), axelarCfg.ClientConfig.KeyringBackend, DefaultCLIHome, os.Stdin)
 	if err != nil {
@@ -255,25 +242,29 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
-
 	// tss opens a grpc connection. Clean it up on process shutdown
-	go func() {
-		tssSigs := make(chan os.Signal, 1)
-		signal.Notify(tssSigs, syscall.SIGINT, syscall.SIGTERM)
-		<-tssSigs
-		logger.Debug("closing tss gRPC connection")
+	tmos.TrapSignal(logger, func() {
 		if err := app.tssKeeper.Close(logger); err != nil {
 			logger.Error(err.Error()) // TODO Logger forces me to throw away error metadata
 		}
-	}()
+	})
 
 	app.axelarKeeper = axKeeper.NewKeeper(
 		app.cdc,
 		keys[axTypes.StoreKey],
-		map[string]axTypes.BridgeKeeper{"bitcoin": app.btcKeeper},
 		app.stakingKeeper,
 		app.broadcastKeeper,
 	)
+
+	var rpc *rpcclient.Client
+	if axelarCfg.WithBtcBridge {
+		rpc, err := btcTypes.NewRPCClient(axelarCfg.BtcConfig, logger)
+		if err != nil {
+			tmos.Exit(err.Error())
+		}
+		// BTC bridge opens a grpc connection. Clean it up on process shutdown
+		tmos.TrapSignal(logger, rpc.Shutdown)
+	}
 
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
@@ -289,7 +280,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		tss.NewAppModule(app.tssKeeper),
 		axelar.NewAppModule(app.axelarKeeper),
 		broadcast.NewAppModule(app.broadcastKeeper),
-		btc_bridge.NewAppModule(app.btcKeeper),
+		btc_bridge.NewAppModule(app.btcKeeper, app.axelarKeeper, rpc),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that

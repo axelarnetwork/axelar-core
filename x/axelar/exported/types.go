@@ -35,3 +35,8 @@ func (tx ExternalTx) IsInvalid() bool {
 func (tx ExternalTx) String() string {
 	return fmt.Sprintf("chain: %s, txID: %s, amount: %s", tx.Chain, tx.TxID, tx.Amount.String())
 }
+
+type FutureVote struct {
+	Tx          ExternalTx
+	LocalAccept bool
+}

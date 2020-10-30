@@ -14,7 +14,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/x/axelar/exported"
-	axTypes "github.com/axelarnetwork/axelar-core/x/axelar/types"
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
 )
 
@@ -105,7 +104,7 @@ Accepted denominations (case-insensitive): satoshi (sat), bitcoin (btc)`,
 				TxID:   args[0],
 				Amount: decCoin,
 			}
-			msg := axTypes.NewMsgVerifyTx(cliCtx.GetFromAddress(), tx)
+			msg := types.NewMsgVerifyTx(cliCtx.GetFromAddress(), tx)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
