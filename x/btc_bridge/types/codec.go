@@ -5,7 +5,8 @@ import (
 )
 
 // RegisterCodec registers concrete types on codec
-func RegisterCodec(_ *codec.Codec) {
+func RegisterCodec(cdc *codec.Codec) {
+	cdc.RegisterConcrete(MsgTrackAddress{}, "btcbridge/TrackAddress", nil)
 }
 
 // ModuleCdc defines the module codec

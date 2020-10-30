@@ -14,8 +14,6 @@ func NewHandler(k keeper.Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
-		case types.MsgTrackAddress:
-			return handleMsgTrackAddress(ctx, k, msg)
 		case types.MsgVerifyTx:
 			return handleMsgVerifyTx(ctx, k, msg)
 		case types.MsgBatchVote:
@@ -41,23 +39,6 @@ func handleMsgBatchVote(ctx sdk.Context, k keeper.Keeper, msg types.MsgBatchVote
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.EventTypeRecordVotes),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
 			sdk.NewAttribute(types.AttributeAddress, fmt.Sprintf("%v", msg.Votes)),
-		),
-	)
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
-}
-
-func handleMsgTrackAddress(ctx sdk.Context, k keeper.Keeper, msg types.MsgTrackAddress) (*sdk.Result, error) {
-	if err := k.TrackAddress(ctx, msg.Address); err != nil {
-		return nil, err
-	}
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.EventTypeTrackAddress),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeAddress, msg.Address.String()),
 		),
 	)
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil

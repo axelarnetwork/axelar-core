@@ -19,27 +19,49 @@ import (
 )
 
 const (
-	Sat     = "sat"
-	Satoshi = "satoshi"
-	BTC     = "btc"
-	Bitcoin = "bitcoin"
+	sat     = "sat"
+	satoshi = "satoshi"
+	btc     = "btc"
+	bitcoin = "bitcoin"
 )
 
 // GetTxCmd returns the transaction commands for this module
 func GetTxCmd(cdc *codec.Codec) *cobra.Command {
-	axelarTxCmd := &cobra.Command{
-		Use:                        Bitcoin,
+	btcTxCmd := &cobra.Command{
+		Use:                        bitcoin,
 		Short:                      fmt.Sprintf("%s transactions subcommands", types.ModuleName),
 		DisableFlagParsing:         true,
 		SuggestionsMinimumDistance: 2,
 		RunE:                       client.ValidateCmd,
 	}
 
-	axelarTxCmd.AddCommand(flags.PostCommands(
+	btcTxCmd.AddCommand(flags.PostCommands(
+		GetCmdTrackAddress(cdc),
 		GetCmdVerifyTx(cdc),
 	)...)
 
-	return axelarTxCmd
+	return btcTxCmd
+}
+
+func GetCmdTrackAddress(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "trackAddress [address] ",
+		Short: "Make the axelar network aware of a specific address on Bitcoin",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+
+			msg := types.NewMsgTrackAddress(cliCtx.GetFromAddress(), args[1])
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
 }
 
 func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
@@ -68,15 +90,11 @@ Accepted denominations (case-insensitive): satoshi (sat), bitcoin (btc)`,
 			}
 
 			switch decCoin.Denom {
-			case Sat:
-				fallthrough
-			case Satoshi:
+			case sat, satoshi:
 				if !decCoin.Amount.IsInteger() {
 					return fmt.Errorf("satoshi must be an integer value")
 				}
-			case BTC:
-				fallthrough
-			case Bitcoin:
+			case btc, bitcoin:
 				break
 			default:
 				return fmt.Errorf("choose a correct denomination: satoshi (sat), bitcoin (btc)")

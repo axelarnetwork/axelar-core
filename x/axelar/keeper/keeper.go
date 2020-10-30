@@ -46,42 +46,12 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-func (k Keeper) TrackAddress(ctx sdk.Context, address exported.ExternalChainAddress) error {
-	br, err := k.getBridge(address.Chain)
-	if err != nil {
-		return err
-	}
-
-	if err := br.TrackAddress(ctx, address.Address); err != nil {
-		return sdkerrors.Wrapf(err, "bridge to %s is unable to track address", address.Chain)
-	}
-
-	k.setTrackedAddress(ctx, address)
-
-	return nil
-}
-
 func (k Keeper) getBridge(chain string) (types.BridgeKeeper, error) {
 	br, ok := k.bridges[chain]
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrInvalidChain, "%s is not bridged", chain)
 	}
 	return br, nil
-}
-
-func (k Keeper) setTrackedAddress(ctx sdk.Context, address exported.ExternalChainAddress) {
-	ctx.KVStore(k.storeKey).Set([]byte(address.Address), []byte(address.Chain))
-}
-
-func (k Keeper) GetTrackedAddress(ctx sdk.Context, address string) exported.ExternalChainAddress {
-	chain := ctx.KVStore(k.storeKey).Get([]byte(address))
-	if chain == nil {
-		return exported.ExternalChainAddress{}
-	}
-	return exported.ExternalChainAddress{
-		Chain:   string(chain),
-		Address: address,
-	}
 }
 
 func (k Keeper) VerifyTx(ctx sdk.Context, tx exported.ExternalTx) error {
