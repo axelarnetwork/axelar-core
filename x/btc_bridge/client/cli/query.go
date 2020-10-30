@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/axelarnetwork/axelar-core/x/axelar/exported"
-	"github.com/axelarnetwork/axelar-core/x/axelar/keeper"
-	"github.com/axelarnetwork/axelar-core/x/axelar/types"
+	"github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
+	"github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -16,17 +16,17 @@ import (
 
 // GetQueryCmd returns the cli query commands for this module
 func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	axelarQueryCmd := &cobra.Command{
-		Use:                        types.ModuleName,
+	btcQueryCmd := &cobra.Command{
+		Use:                        bitcoin,
 		Short:                      fmt.Sprintf("Querying commands for the %s module", types.ModuleName),
 		DisableFlagParsing:         true,
 		SuggestionsMinimumDistance: 2,
 		RunE:                       client.ValidateCmd,
 	}
 
-	axelarQueryCmd.AddCommand(flags.GetCommands(GetCmdTrackedAddress(queryRoute, cdc))...)
+	btcQueryCmd.AddCommand(flags.GetCommands(GetCmdTrackedAddress(queryRoute, cdc))...)
 
-	return axelarQueryCmd
+	return btcQueryCmd
 
 }
 

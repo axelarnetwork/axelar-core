@@ -170,6 +170,7 @@ func (k Keeper) TrackAddress(ctx sdk.Context, address string) error {
 
 	future := k.client.ImportAddressAsync(address)
 
+	k.setTrackedAddress(ctx, address)
 	go func() {
 		if err := future.Receive(); err != nil {
 			k.Logger(ctx).Error(fmt.Sprintf("Could not track address %v", address))
@@ -180,6 +181,21 @@ func (k Keeper) TrackAddress(ctx sdk.Context, address string) error {
 	}()
 
 	return nil
+}
+
+func (k Keeper) setTrackedAddress(ctx sdk.Context, address string) {
+	ctx.KVStore(k.storeKey).Set([]byte(address), []byte{})
+}
+
+func (k Keeper) GetTrackedAddress(ctx sdk.Context, address string) exported.ExternalChainAddress {
+	val := ctx.KVStore(k.storeKey).Get([]byte(address))
+	if val == nil {
+		return exported.ExternalChainAddress{}
+	}
+	return exported.ExternalChainAddress{
+		Chain:   "Bitcoin",
+		Address: address,
+	}
 }
 
 func (k Keeper) VerifyTx(ctx sdk.Context, tx exported.ExternalTx) bool {

@@ -3,8 +3,6 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-
-	"github.com/axelarnetwork/axelar-core/x/axelar/exported"
 )
 
 // Ensure MsgTrackAddress implements sdk.Msg interface
@@ -12,10 +10,10 @@ var _ sdk.Msg = &MsgTrackAddress{}
 
 type MsgTrackAddress struct {
 	Sender  sdk.AccAddress
-	Address exported.ExternalChainAddress
+	Address string
 }
 
-func NewMsgTrackAddress(sender sdk.AccAddress, address exported.ExternalChainAddress) MsgTrackAddress {
+func NewMsgTrackAddress(sender sdk.AccAddress, address string) MsgTrackAddress {
 	return MsgTrackAddress{
 		Sender:  sender,
 		Address: address,
@@ -34,8 +32,8 @@ func (msg MsgTrackAddress) ValidateBasic() error {
 	if msg.Sender.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
-	if msg.Address.IsInvalid() {
-		return sdkerrors.Wrap(ErrInvalidExternalAddress, msg.Address.String())
+	if msg.Address == "" {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Address)
 	}
 
 	return nil
