@@ -258,7 +258,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 
 	var rpc *rpcclient.Client
 	if axelarCfg.WithBtcBridge {
-		rpc, err := btcTypes.NewRPCClient(axelarCfg.BtcConfig, logger)
+		rpc, err = btcTypes.NewRPCClient(axelarCfg.BtcConfig, logger)
 		if err != nil {
 			tmos.Exit(err.Error())
 		}

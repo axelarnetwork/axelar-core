@@ -53,7 +53,7 @@ func GetCmdTrackAddress(cdc *codec.Codec) *cobra.Command {
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			msg := types.NewMsgTrackAddress(cliCtx.GetFromAddress(), args[1])
+			msg := types.NewMsgTrackAddress(cliCtx.GetFromAddress(), args[0])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

@@ -1,6 +1,8 @@
 package types
 
 import (
+	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -32,7 +34,7 @@ func (msg MsgTrackAddress) ValidateBasic() error {
 	if msg.Sender.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
-	if msg.Address == "" {
+	if _, err := btcutil.DecodeAddress(msg.Address, &chaincfg.MainNetParams); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Address)
 	}
 

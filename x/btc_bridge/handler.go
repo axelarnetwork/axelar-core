@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	Satoshi = 1
-	Bitcoin = 100_000_000 * Satoshi
+	Satoshi int64 = 1
+	Bitcoin       = 100_000_000 * Satoshi
 )
 
 // This handler is only needed to avoid nil errors, all bridge messages are routed through the axelar module
@@ -43,17 +43,20 @@ func handleMsgTrackAddress(ctx sdk.Context, k keeper.Keeper, rpc *rpcclient.Clie
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.EventTypeTrackAddress),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
 			sdk.NewAttribute(types.AttributeAddress, msg.Address),
 		),
 	)
 
 	if rpc == nil {
-		k.Logger(ctx).Debug("running without btc bridge")
-		return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+		return &sdk.Result{
+			Log:    "running without btc bridge",
+			Data:   k.Codec().MustMarshalBinaryLengthPrefixed(false),
+			Events: ctx.EventManager().Events(),
+		}, nil
 	}
 
+	// Importing an address takes a long time, therefore it cannot be done in the critical path
 	future := rpc.ImportAddressAsync(msg.Address)
 	k.SetTrackedAddress(ctx, msg.Address)
 
@@ -72,11 +75,17 @@ func handleMsgTrackAddress(ctx sdk.Context, k keeper.Keeper, rpc *rpcclient.Clie
 func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc *rpcclient.Client, msg types.MsgVerifyTx) (*sdk.Result, error) {
 	k.Logger(ctx).Debug("verifying bitcoin transaction")
 
+	// This is the only check where the input can be faulty, therefore do not vote on error and discard tx
+	hash, err := chainhash.NewHashFromStr(msg.Tx.TxID)
+	if err != nil {
+		k.Logger(ctx).Info(err.Error())
+		return nil, sdkerrors.Wrap(err, "could not transform Bitcoin transaction ID to hash")
+	}
+
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.EventTypeVerifyTx),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
 			sdk.NewAttribute(types.AttributeTx, msg.Tx.String()),
 		),
@@ -89,13 +98,6 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc *rpc
 			Data:   k.Codec().MustMarshalBinaryLengthPrefixed(false),
 			Events: ctx.EventManager().Events(),
 		}, nil
-	}
-
-	// This is the only check where the input can be faulty, therefore do not vote on error and discard tx
-	hash, err := chainhash.NewHashFromStr(msg.Tx.TxID)
-	if err != nil {
-		k.Logger(ctx).Info(err.Error())
-		return nil, sdkerrors.Wrap(err, "could not transform Bitcoin transaction ID to hash")
 	}
 
 	btcTxResult, err := rpc.GetTransaction(hash)
@@ -121,31 +123,25 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc *rpc
 	}
 
 	expectedAmount := msg.Tx.Amount.Amount
-
 	isEqual := btcTxResult.TxID == msg.Tx.TxID &&
 		amountEquals(expectedAmount, actualAmount) &&
 		btcTxResult.Confirmations >= k.GetConfirmationHeight(ctx)
 
-	if !isEqual {
-		k.Logger(ctx).Debug(fmt.Sprintf(
-			"txID:%s\nbtcTxId:%s\ntx amount:%s\nbtc Amount:%v",
-			msg.Tx.TxID,
-			btcTxResult.TxID,
-			msg.Tx.Amount.String(),
-			actualAmount,
-		))
-		v.SetFutureVote(ctx, exported.FutureVote{Tx: msg.Tx, LocalAccept: false})
-		return &sdk.Result{
-			Log:    sdkerrors.Wrap(err, "expected transaction differs from actual transaction on Bitcoin").Error(),
-			Data:   k.Codec().MustMarshalBinaryLengthPrefixed(false),
-			Events: ctx.EventManager().Events(),
-		}, nil
-	}
+	v.SetFutureVote(ctx, exported.FutureVote{Tx: msg.Tx, LocalAccept: isEqual})
 
-	v.SetFutureVote(ctx, exported.FutureVote{Tx: msg.Tx, LocalAccept: true})
+	var logMsg string
+	if isEqual {
+		logMsg = "successfully verified transaction"
+	} else {
+		logMsg = fmt.Sprintf(
+			"expected transaction differs from actual transaction on Bitcoin:\n"+
+				"expected txID:%s, amount:%s\n"+
+				"actual txId:%s, amount:%v",
+			msg.Tx.TxID, msg.Tx.Amount.String(), btcTxResult.TxID, actualAmount)
+	}
 	return &sdk.Result{
-		Log:    sdkerrors.Wrap(err, "successfully verified transaction").Error(),
-		Data:   k.Codec().MustMarshalBinaryLengthPrefixed(true),
+		Log:    logMsg,
+		Data:   k.Codec().MustMarshalBinaryLengthPrefixed(isEqual),
 		Events: ctx.EventManager().Events(),
 	}, nil
 }
@@ -160,5 +156,5 @@ func satoshiEquals(satoshiAmount sdk.Dec, verifiedAmount btcutil.Amount) bool {
 }
 
 func btcEquals(btcAmount sdk.Dec, verifiedAmount btcutil.Amount) bool {
-	return btcutil.Amount(btcAmount.MulInt64(Bitcoin).Int64()) == verifiedAmount
+	return btcutil.Amount(btcAmount.MulInt64(Bitcoin).RoundInt64()) == verifiedAmount
 }
