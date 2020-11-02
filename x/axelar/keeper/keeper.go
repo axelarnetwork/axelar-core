@@ -28,11 +28,11 @@ type Keeper struct {
 	stakingKeeper staking.Keeper
 }
 
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, stakingKeeper staking.Keeper, client types.Broadcaster) Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, stakingKeeper staking.Keeper, broadcaster types.Broadcaster) Keeper {
 	keeper := Keeper{
 		storeKey:      key,
 		cdc:           cdc,
-		broadcaster:   client,
+		broadcaster:   broadcaster,
 		stakingKeeper: stakingKeeper,
 	}
 	return keeper

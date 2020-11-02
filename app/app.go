@@ -256,7 +256,9 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		app.broadcastKeeper,
 	)
 
+	// Enable running a node with or without a Bitcoin bridge
 	var rpc *rpcclient.Client
+	var btcModule btc_bridge.AppModule
 	if axelarCfg.WithBtcBridge {
 		rpc, err = btcTypes.NewRPCClient(axelarCfg.BtcConfig, logger)
 		if err != nil {
@@ -264,6 +266,10 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		}
 		// BTC bridge opens a grpc connection. Clean it up on process shutdown
 		tmos.TrapSignal(logger, rpc.Shutdown)
+		bridge := btcTypes.NewBridge(rpc, axelarCfg.ConfirmationHeight)
+		btcModule = btc_bridge.NewAppModule(app.btcKeeper, app.axelarKeeper, bridge)
+	} else {
+		btcModule = btc_bridge.NewDummyAppModule(app.btcKeeper, app.axelarKeeper)
 	}
 
 	// NOTE: Any module instantiated in the module manager that is later modified
@@ -280,7 +286,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		tss.NewAppModule(app.tssKeeper),
 		axelar.NewAppModule(app.axelarKeeper),
 		broadcast.NewAppModule(app.broadcastKeeper),
-		btc_bridge.NewAppModule(app.btcKeeper, app.axelarKeeper, rpc),
+		btcModule,
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
