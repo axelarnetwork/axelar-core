@@ -28,6 +28,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 	tssTxCmd.AddCommand(flags.PostCommands(
 		getCmdKeygenStart(cdc),
+		getCmdSignStart(cdc),
 		getCmdTSS(cdc),
 	)...)
 
@@ -54,6 +55,36 @@ func getCmdKeygenStart(cdc *codec.Codec) *cobra.Command {
 			Sender:    cliCtx.FromAddress,
 			NewKeyID:  *newKeyID,
 			Threshold: *threshold,
+		}
+		if err := msg.ValidateBasic(); err != nil {
+			return err
+		}
+		return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+	}
+	return cmd
+}
+
+func getCmdSignStart(cdc *codec.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "start-sign [message]",
+		Short: "Initiate threshold signature protocol",
+		Args:  cobra.ExactArgs(1),
+	}
+	newSigID := cmd.Flags().String("new-sig-id", "", "unique ID for new signature (required)")
+	cmd.MarkFlagRequired("new-sig-id")
+	keyID := cmd.Flags().String("key-id", "", "unique ID for signature pubkey (required)")
+	cmd.MarkFlagRequired("key-id")
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		cliCtx := context.NewCLIContext().WithCodec(cdc)
+		inBuf := bufio.NewReader(cmd.InOrStdin())
+		txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+
+		msg := types.MsgSignStart{
+			Sender:   cliCtx.FromAddress,
+			NewSigID: *newSigID,
+			KeyID:    *keyID,
+			Msg:      []byte(args[0]),
 		}
 		if err := msg.ValidateBasic(); err != nil {
 			return err
