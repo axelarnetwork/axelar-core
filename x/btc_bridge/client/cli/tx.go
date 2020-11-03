@@ -65,7 +65,7 @@ func GetCmdTrackAddress(cdc *codec.Codec) *cobra.Command {
 
 func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "verifyTx [txId] [amount] ",
+		Use:   "verifyTx [txId] [amount]",
 		Short: "Verify a Bitcoin transaction",
 		Long: `Verify that a transaction happened on the Bitcoin chain so it can be processed on axelar.
 Accepted denominations (case-insensitive): satoshi (sat), bitcoin (btc)`,

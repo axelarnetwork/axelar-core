@@ -20,27 +20,24 @@ func (addr ExternalChainAddress) String() string {
 }
 
 type ExternalTx struct {
-	Chain       string
-	TxID        string
-	Amount      sdk.DecCoin
-	Destination ExternalChainAddress
+	Chain  string
+	TxID   string
+	Amount sdk.DecCoin
 }
 
 func (tx ExternalTx) IsInvalid() bool {
 	return tx.Chain == "" ||
 		tx.TxID == "" ||
 		!tx.Amount.IsValid() ||
-		!tx.Amount.IsPositive() ||
-		tx.Destination.IsInvalid()
+		!tx.Amount.IsPositive()
 }
 
 func (tx ExternalTx) String() string {
 	return fmt.Sprintf(
-		"chain: %s, txID: %s, amount: %s, destination: {%s}",
+		"chain: %s, txID: %s, amount: %s",
 		tx.Chain,
 		tx.TxID,
 		tx.Amount.String(),
-		tx.Destination.String(),
 	)
 }
 
