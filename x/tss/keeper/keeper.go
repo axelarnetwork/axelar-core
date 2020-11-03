@@ -223,6 +223,11 @@ func (k Keeper) KeygenMsg(ctx sdk.Context, msg *types.MsgTSS) error {
 	return nil
 }
 
+func (k *Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
+	k.Logger(ctx).Info(fmt.Sprintf("TODO not implemented: StartSign: signature [%s] key [%s] ", info.NewSigID, info.KeyID))
+	return nil
+}
+
 func (k Keeper) Close(logger log.Logger) error {
 	logger = prepareLogger(logger)
 	logger.Debug(fmt.Sprintf("initiate Close"))
