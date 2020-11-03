@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"fmt"
 	"io"
 	"math/big"
@@ -238,6 +239,10 @@ func (k *Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
 // but we don't want to import btcd everywhere
 func (k *Keeper) GetSig(ctx sdk.Context, sigID string) (r *big.Int, s *big.Int) {
 	return nil, nil
+}
+
+func (k *Keeper) GetKey(ctx sdk.Context, keyID string) ecdsa.PublicKey {
+	return ecdsa.PublicKey{}
 }
 
 func (k Keeper) Close(logger log.Logger) error {
