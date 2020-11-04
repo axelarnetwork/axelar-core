@@ -36,6 +36,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 	btcTxCmd.AddCommand(flags.PostCommands(
 		GetCmdTrackAddress(cdc),
+		GetCmdTrackAddressFromPubKey(cdc),
 		GetCmdVerifyTx(cdc),
 	)...)
 
@@ -54,6 +55,28 @@ func GetCmdTrackAddress(cdc *codec.Codec) *cobra.Command {
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
 			msg := types.NewMsgTrackAddress(cliCtx.GetFromAddress(), args[0])
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+func GetCmdTrackAddressFromPubKey(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "trackAddressFromPubKey [chain] [keyId] ",
+		Short: "Make the axelar network aware of a specific address on Bitcoin",
+		Long:  "Make the axelar network aware of a specific address on Bitcoin. Choose \"mainnet\" or \"testnet3\" for the chain.",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+
+			msg := types.NewMsgTrackAddressFromPubKey(cliCtx.GetFromAddress(), args[1], args[0])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
