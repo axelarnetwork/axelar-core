@@ -159,15 +159,16 @@ func (k Keeper) SignMsg(ctx sdk.Context, msg *types.MsgSignTraffic) error {
 		k.Logger(ctx).Error(newErr.Error())
 		return nil
 	}
-	k.Logger(ctx).Debug("myAddress [%s], senderAddress [%s], parsed toAddress [%s]", myAddress, senderAddress, toAddress)
-	if !msg.Payload.IsBroadcast && !myAddress.Equals(toAddress) {
-		k.Logger(ctx).Info(fmt.Sprintf("ignore message: msg to [%s] not directed to me [%s]", toAddress, myAddress))
-		return nil
-	}
-	if msg.Payload.IsBroadcast && myAddress.Equals(senderAddress) {
-		k.Logger(ctx).Info(fmt.Sprintf("ignore message: broadcast message from [%s] came from me [%s]", senderAddress, myAddress))
-		return nil
-	}
+	k.Logger(ctx).Debug(fmt.Sprintf("myAddress [%s], senderAddress [%s], parsed toAddress [%s]", myAddress, senderAddress, toAddress))
+	// TODO this ignore code is buggy but I don't know why
+	// if !msg.Payload.IsBroadcast && !myAddress.Equals(toAddress) {
+	// 	k.Logger(ctx).Info(fmt.Sprintf("ignore message: msg to [%s] not directed to me [%s]", toAddress, myAddress))
+	// 	return nil
+	// }
+	// if msg.Payload.IsBroadcast && myAddress.Equals(senderAddress) {
+	// 	k.Logger(ctx).Info(fmt.Sprintf("ignore message: broadcast message from [%s] came from me [%s]", senderAddress, myAddress))
+	// 	return nil
+	// }
 
 	// convert the received types.MsgSignTraffic into a tssd.SignMsgIn
 	msgIn := &tssd.SignMsgIn{
