@@ -6,6 +6,7 @@ import (
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
@@ -18,20 +19,22 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
 )
 
-func NewHandler(k keeper.Keeper, v types.Voter, b types.Bridge, s types.Signer) sdk.Handler {
+const bitcoin = "bitcoin"
+
+func NewHandler(k keeper.Keeper, v types.Voter, rpc *rpcclient.Client, s types.Signer) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
 		case types.MsgTrackAddress:
-			return handleMsgTrackAddress(ctx, k, b, msg)
+			return handleMsgTrackAddress(ctx, k, rpc, msg)
 		case types.MsgTrackAddressFromPubKey:
-			return handleMsgTrackAddressFromPubKey(ctx, k, b, s, msg)
+			return handleMsgTrackAddressFromPubKey(ctx, k, rpc, s, msg)
 		case types.MsgVerifyTx:
-			return handleMsgVerifyTx(ctx, k, v, b, msg)
+			return handleMsgVerifyTx(ctx, k, v, rpc, msg)
 		case types.MsgRawTx:
 			return handleMsgRawTx(ctx, k, v, msg)
 		case types.MsgWithdraw:
-			return handleMsgWithdraw(ctx, k, b, s, msg)
+			return handleMsgWithdraw(ctx, k, rpc, s, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
@@ -39,7 +42,7 @@ func NewHandler(k keeper.Keeper, v types.Voter, b types.Bridge, s types.Signer) 
 	}
 }
 
-func handleMsgTrackAddressFromPubKey(ctx sdk.Context, k keeper.Keeper, b types.Bridge, s types.Signer, msg types.MsgTrackAddressFromPubKey) (*sdk.Result, error) {
+func handleMsgTrackAddressFromPubKey(ctx sdk.Context, k keeper.Keeper, rpc *rpcclient.Client, s types.Signer, msg types.MsgTrackAddressFromPubKey) (*sdk.Result, error) {
 	key := s.GetKey(ctx, msg.Chain)
 	if key == (ecdsa.PublicKey{}) {
 		return nil, fmt.Errorf("keyId not recognized")
@@ -50,7 +53,7 @@ func handleMsgTrackAddressFromPubKey(ctx sdk.Context, k keeper.Keeper, b types.B
 		return nil, sdkerrors.Wrap(err, "could not convert the given public key into a bitcoin address")
 	}
 
-	trackAddress(ctx, k, b, addr.EncodeAddress())
+	trackAddress(ctx, k, rpc, addr.EncodeAddress())
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -80,7 +83,7 @@ func addressFromKey(key ecdsa.PublicKey, chain string) (*btcutil.AddressPubKey, 
 	return btcutil.NewAddressPubKey(btcPK.SerializeUncompressed(), params)
 }
 
-func handleMsgTrackAddress(ctx sdk.Context, k keeper.Keeper, b types.Bridge, msg types.MsgTrackAddress) (*sdk.Result, error) {
+func handleMsgTrackAddress(ctx sdk.Context, k keeper.Keeper, rpc *rpcclient.Client, msg types.MsgTrackAddress) (*sdk.Result, error) {
 	k.Logger(ctx).Debug(fmt.Sprintf("start tracking address %v", msg.Address))
 
 	ctx.EventManager().EmitEvent(
@@ -92,16 +95,16 @@ func handleMsgTrackAddress(ctx sdk.Context, k keeper.Keeper, b types.Bridge, msg
 		),
 	)
 
-	trackAddress(ctx, k, b, msg.Address)
+	trackAddress(ctx, k, rpc, msg.Address)
 
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func trackAddress(ctx sdk.Context, k keeper.Keeper, b types.Bridge, address string) {
+func trackAddress(ctx sdk.Context, k keeper.Keeper, rpc *rpcclient.Client, address string) {
 	// Importing an address takes a long time, therefore it cannot be done in the critical path.
 	// ctx might not be valid anymore when err is returned, so closing over logger to be safe
 	go func(logger log.Logger) {
-		if err := b.TrackAddress(address); err != nil {
+		if err := rpc.ImportAddress(address); err != nil {
 			logger.Error(fmt.Sprintf("Could not track address %v", address))
 		} else {
 			logger.Debug(fmt.Sprintf("successfully tracked all past transaction for address %v", address))
@@ -111,7 +114,7 @@ func trackAddress(ctx sdk.Context, k keeper.Keeper, b types.Bridge, address stri
 	k.SetTrackedAddress(ctx, address)
 }
 
-func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, b types.Bridge, msg types.MsgVerifyTx) (*sdk.Result, error) {
+func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc *rpcclient.Client, msg types.MsgVerifyTx) (*sdk.Result, error) {
 	k.Logger(ctx).Debug("verifying bitcoin transaction")
 	txId := msg.UTXO.Hash.String()
 	ctx.EventManager().EmitEvent(
@@ -126,8 +129,8 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, b types.
 
 	k.SetUTXO(ctx, txId, msg.UTXO)
 
-	txForVote := exported.ExternalTx{Chain: "bitcoin", TxID: txId}
-	if err := b.VerifyTx(msg.UTXO); err != nil {
+	txForVote := exported.ExternalTx{Chain: bitcoin, TxID: txId}
+	if err := verifyTx(rpc, msg.UTXO, k.GetConfirmationHeight(ctx)); err != nil {
 		v.SetFutureVote(ctx, exported.FutureVote{Tx: txForVote, LocalAccept: false})
 
 		k.Logger(ctx).Debug(sdkerrors.Wrapf(err,
@@ -149,7 +152,10 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, b types.
 
 func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.MsgRawTx) (*sdk.Result, error) {
 	txId := msg.TxHash.String()
-	if !v.IsVerified(ctx, txId) {
+	if !v.IsVerified(ctx, exported.ExternalTx{
+		Chain: bitcoin,
+		TxID:  txId,
+	}) {
 		return nil, fmt.Errorf("transaction not verified")
 	}
 	utxo := k.GetUTXO(ctx, txId)
@@ -190,7 +196,7 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.M
 	}, nil
 }
 
-func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, b types.Bridge, signer types.Signer, msg types.MsgWithdraw) (*sdk.Result, error) {
+func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, rpc *rpcclient.Client, signer types.Signer, msg types.MsgWithdraw) (*sdk.Result, error) {
 	utxo := k.GetUTXO(ctx, msg.TxID)
 	if utxo == nil {
 		return nil, fmt.Errorf("transaction ID is not known")
@@ -236,7 +242,7 @@ func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, b types.Bridge, signer 
 	)
 
 	// This is beyond Axelar's control, so can only log the error but move on regardless
-	if err = b.Send(rawTx); err != nil {
+	if _, err := rpc.SendRawTransaction(rawTx, false); err != nil {
 		k.Logger(ctx).Error(sdkerrors.Wrap(err, "sending transaction to Bitcoin failed").Error())
 		return &sdk.Result{
 			Log:    "failed to send transaction to Bitcoin (other nodes might have succeeded)",
@@ -248,4 +254,38 @@ func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, b types.Bridge, signer 
 		Log:    "successfully sent withdraw transaction to Bitcoin",
 		Events: ctx.EventManager().Events(),
 	}, nil
+}
+
+func verifyTx(rpc *rpcclient.Client, utxo types.UTXO, expectedConfirmationHeight uint64) error {
+	actualTx, err := rpc.GetRawTransactionVerbose(utxo.Hash)
+	if err != nil {
+		return sdkerrors.Wrap(err, "could not retrieve Bitcoin transaction")
+	}
+
+	if utxo.VoutIdx >= uint32(len(actualTx.Vout)) {
+		return fmt.Errorf("vout index out of range")
+	}
+
+	vout := actualTx.Vout[utxo.VoutIdx]
+
+	if len(vout.ScriptPubKey.Addresses) > 1 {
+		return fmt.Errorf("deposit must be only spendable by a single address")
+	}
+	if vout.ScriptPubKey.Addresses[0] != utxo.Address.String() {
+		return fmt.Errorf("expected destination address does not match actual destination address")
+	}
+
+	actualAmount, err := btcutil.NewAmount(vout.Value)
+	if err != nil {
+		return sdkerrors.Wrap(err, "could not parse transaction amount of the Bitcoin response")
+	}
+	if utxo.Amount != actualAmount {
+		return fmt.Errorf("expected amount does not match actual amount")
+	}
+
+	if actualTx.Confirmations < expectedConfirmationHeight {
+		return fmt.Errorf("not enough confirmations yet")
+	}
+
+	return nil
 }

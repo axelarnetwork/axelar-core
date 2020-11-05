@@ -50,16 +50,16 @@ func (k Keeper) GetTrackedAddress(ctx sdk.Context, address string) exported.Exte
 	}
 }
 
-func (k Keeper) SetConfirmationHeight(ctx sdk.Context, height int64) {
+func (k Keeper) SetConfirmationHeight(ctx sdk.Context, height uint64) {
 	ctx.KVStore(k.storeKey).Set(confHeight, k.cdc.MustMarshalBinaryLengthPrefixed(height))
 }
 
-func (k Keeper) GetConfirmationHeight(ctx sdk.Context) int64 {
+func (k Keeper) GetConfirmationHeight(ctx sdk.Context) uint64 {
 	rawHeight := ctx.KVStore(k.storeKey).Get(confHeight)
 	if rawHeight == nil {
 		return types.DefaultGenesisState().ConfirmationHeight
 	} else {
-		var height int64
+		var height uint64
 		k.cdc.MustUnmarshalBinaryLengthPrefixed(rawHeight, &height)
 		return height
 	}

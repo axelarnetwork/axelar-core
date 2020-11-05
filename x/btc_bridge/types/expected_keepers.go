@@ -12,7 +12,7 @@ import (
 
 type Voter interface {
 	SetFutureVote(ctx sdk.Context, vote exported.FutureVote)
-	IsVerified(ctx sdk.Context, txId string) bool
+	IsVerified(ctx sdk.Context, tx exported.ExternalTx) bool
 }
 
 type Signer interface {

@@ -6,7 +6,7 @@ import (
 )
 
 type GenesisState struct {
-	ConfirmationHeight int64
+	ConfirmationHeight uint64
 }
 
 func DefaultGenesisState() GenesisState {

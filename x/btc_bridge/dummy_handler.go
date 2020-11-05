@@ -12,6 +12,6 @@ import (
 // For testing purposes only
 func NewDummyHandler(_ keeper.Keeper, _ types.Voter) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
-		return nil, fmt.Errorf("node has no Bitcoin bridge, aborting")
+		return nil, fmt.Errorf("node has no Bitcoin rpc, aborting")
 	}
 }
