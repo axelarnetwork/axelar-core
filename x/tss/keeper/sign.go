@@ -130,7 +130,7 @@ func (k *Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
 }
 
 // SignMsg TODO refactor code copied from keygen
-func (k Keeper) SignMsg(ctx sdk.Context, msg *types.MsgSignTraffic) error {
+func (k Keeper) SignMsg(ctx sdk.Context, msg types.MsgSignTraffic) error {
 	k.Logger(ctx).Debug(fmt.Sprintf("initiate SignMsg: sig_id [%s] from broadcaster [%s] broadcast? [%t] to [%s]", msg.SessionID, msg.Sender, msg.Payload.IsBroadcast, msg.Payload.ToPartyUid))
 
 	// TODO many of these checks apply to both keygen and sign; refactor them into a Msg() method
@@ -150,7 +150,7 @@ func (k Keeper) SignMsg(ctx sdk.Context, msg *types.MsgSignTraffic) error {
 
 	myAddress := k.broadcaster.GetLocalPrincipal(ctx)
 	if myAddress.Empty() {
-		k.Logger(ctx).Info("ignore message: i'm not a validator; only validators care about messages of type %T", msg)
+		k.Logger(ctx).Info(fmt.Sprintf("ignore message: i'm not a validator; only validators care about messages of type %T", msg))
 		return nil
 	}
 	toAddress, err := sdk.ValAddressFromBech32(msg.Payload.ToPartyUid)

@@ -36,14 +36,14 @@ type MsgSignStart struct {
 type MsgKeygenTraffic struct {
 	Sender    sdk.AccAddress
 	SessionID string
-	Payload   *tssd.KeygenTrafficOut // TODO pointer or not?
+	Payload   *tssd.KeygenTrafficOut // pointer because it contains a mutex
 }
 
 // MsgSignTraffic protocol message
 type MsgSignTraffic struct {
 	Sender    sdk.AccAddress
 	SessionID string
-	Payload   *tssd.SignTrafficOut // TODO pointer or not?
+	Payload   *tssd.SignTrafficOut // pointer because it contains a mutex
 }
 
 // NewMsgKeygenStart TODO unnecessary method; delete it?
