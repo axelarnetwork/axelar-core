@@ -13,7 +13,7 @@ import (
 var (
 	_ sdk.Msg                = &MsgKeygenStart{}
 	_ sdk.Msg                = &MsgSignStart{}
-	_ broadcast.ValidatorMsg = &MsgTSS{}
+	_ broadcast.ValidatorMsg = &MsgKeygenTraffic{}
 )
 
 // MsgKeygenStart indicate the start of keygen
@@ -31,11 +31,11 @@ type MsgSignStart struct {
 	Msg      []byte
 }
 
-// MsgTSS protocol message for either keygen or sign
-type MsgTSS struct {
+// MsgKeygenTraffic protocol message for either keygen or sign
+type MsgKeygenTraffic struct {
 	Sender    sdk.AccAddress
 	SessionID string
-	Payload   *tssd.MessageOut // TODO probably should not be a pointer; it's serialized by cosmos
+	Payload   *tssd.KeygenTrafficOut // TODO pointer or not?
 }
 
 // NewMsgKeygenStart TODO unnecessary method; delete it?
@@ -124,23 +124,23 @@ func (msg MsgSignStart) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }
 
-// NewMsgTSS TODO unnecessary method; delete it?
-func NewMsgTSS(sessionID string, payload *tssd.MessageOut) *MsgTSS {
-	return &MsgTSS{
+// NewMsgKeygenTraffic TODO unnecessary method; delete it?
+func NewMsgKeygenTraffic(sessionID string, payload *tssd.KeygenTrafficOut) *MsgKeygenTraffic {
+	return &MsgKeygenTraffic{
 		SessionID: sessionID,
 		Payload:   payload,
 	}
 }
 
 // Route implements the sdk.Msg interface.
-func (msg MsgTSS) Route() string { return RouterKey }
+func (msg MsgKeygenTraffic) Route() string { return RouterKey }
 
 // Type implements the sdk.Msg interface.
 // naming convention follows x/staking/types/msg.go
-func (msg MsgTSS) Type() string { return "in" }
+func (msg MsgKeygenTraffic) Type() string { return "in" }
 
 // ValidateBasic implements the sdk.Msg interface.
-func (msg MsgTSS) ValidateBasic() error {
+func (msg MsgKeygenTraffic) ValidateBasic() error {
 	if msg.Sender == nil {
 		return sdkerrors.Wrap(ErrTss, "sender must be set")
 	}
@@ -158,17 +158,17 @@ func (msg MsgTSS) ValidateBasic() error {
 }
 
 // GetSignBytes implements the sdk.Msg interface
-func (msg MsgTSS) GetSignBytes() []byte {
+func (msg MsgKeygenTraffic) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
 // GetSigners implements the sdk.Msg interface
-func (msg MsgTSS) GetSigners() []sdk.AccAddress {
+func (msg MsgKeygenTraffic) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }
 
 // SetSender implements the broadcast.ValidatorMsg interface
-func (msg *MsgTSS) SetSender(sender sdk.AccAddress) {
+func (msg *MsgKeygenTraffic) SetSender(sender sdk.AccAddress) {
 	msg.Sender = sender
 }

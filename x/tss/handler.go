@@ -13,8 +13,8 @@ func NewHandler(k keeper.Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
-		case types.MsgTSS:
-			return handleMsgTSS(ctx, k, &msg)
+		case types.MsgKeygenTraffic:
+			return handleMsgKeygenTraffic(ctx, k, &msg)
 		case types.MsgKeygenStart:
 			return handleMsgKeygenStart(ctx, &k, msg)
 		case types.MsgSignStart:
@@ -26,7 +26,7 @@ func NewHandler(k keeper.Keeper) sdk.Handler {
 	}
 }
 
-func handleMsgTSS(ctx sdk.Context, k keeper.Keeper, msg *types.MsgTSS) (*sdk.Result, error) {
+func handleMsgKeygenTraffic(ctx sdk.Context, k keeper.Keeper, msg *types.MsgKeygenTraffic) (*sdk.Result, error) {
 	if err := k.KeygenMsg(ctx, msg); err != nil {
 		return nil, err
 	}
