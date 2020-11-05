@@ -129,6 +129,71 @@ func (k *Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
 	return nil
 }
 
+// SignMsg TODO refactor code copied from keygen
+func (k Keeper) SignMsg(ctx sdk.Context, msg *types.MsgSignTraffic) error {
+	k.Logger(ctx).Debug(fmt.Sprintf("initiate SignMsg: sig_id [%s] from broadcaster [%s] broadcast? [%t] to [%s]", msg.SessionID, msg.Sender, msg.Payload.IsBroadcast, msg.Payload.ToPartyUid))
+
+	// TODO many of these checks apply to both keygen and sign; refactor them into a Msg() method
+
+	// BEGIN: validity check
+
+	// TODO check that msg.SessionID exists; allow concurrent sessions
+
+	senderAddress := k.broadcaster.GetPrincipal(ctx, msg.Sender)
+	if senderAddress.Empty() {
+		err := fmt.Errorf("invalid message: sender [%s] is not a validator; only validators can send messages of type %T", msg.Sender, msg)
+		k.Logger(ctx).Error(err.Error())
+		return err
+	}
+
+	// END: validity check -- always return nil after this line!
+
+	myAddress := k.broadcaster.GetLocalPrincipal(ctx)
+	if myAddress.Empty() {
+		k.Logger(ctx).Info("ignore message: i'm not a validator; only validators care about messages of type %T", msg)
+		return nil
+	}
+	toAddress, err := sdk.ValAddressFromBech32(msg.Payload.ToPartyUid)
+	if err != nil {
+		newErr := sdkerrors.Wrap(err, fmt.Sprintf("failed to parse [%s] into a validator address", msg.Payload.ToPartyUid))
+		k.Logger(ctx).Error(newErr.Error())
+		return nil
+	}
+	k.Logger(ctx).Debug("myAddress [%s], senderAddress [%s], parsed toAddress [%s]", myAddress, senderAddress, toAddress)
+	if !msg.Payload.IsBroadcast && !myAddress.Equals(toAddress) {
+		k.Logger(ctx).Info(fmt.Sprintf("ignore message: msg to [%s] not directed to me [%s]", toAddress, myAddress))
+		return nil
+	}
+	if msg.Payload.IsBroadcast && myAddress.Equals(senderAddress) {
+		k.Logger(ctx).Info(fmt.Sprintf("ignore message: broadcast message from [%s] came from me [%s]", senderAddress, myAddress))
+		return nil
+	}
+
+	// convert the received types.MsgSignTraffic into a tssd.SignMsgIn
+	msgIn := &tssd.SignMsgIn{
+		Data: &tssd.SignMsgIn_Msg{
+			Msg: &tssd.SignTrafficIn{
+				Payload:      msg.Payload.Payload,
+				IsBroadcast:  msg.Payload.IsBroadcast,
+				FromPartyUid: senderAddress.String(),
+			},
+		},
+	}
+
+	k.Logger(ctx).Debug(fmt.Sprintf("initiate forward incoming msg to gRPC server"))
+	if k.signStream == nil {
+		k.Logger(ctx).Error("nil signStream")
+		return nil // don't propagate nondeterministic errors
+	}
+	if err := k.signStream.Send(msgIn); err != nil {
+		newErr := sdkerrors.Wrap(err, "failure to send incoming msg to gRPC server")
+		k.Logger(ctx).Error(newErr.Error())
+		return nil // don't propagate nondeterministic errors
+	}
+	k.Logger(ctx).Debug(fmt.Sprintf("successful SignMsg: sig_id [%s] ", msg.SessionID))
+	return nil
+}
+
 // GetSig returns the signature associated with sigID
 // or nil, nil if no such signature exists
 // TODO we need a suiable signature struct
