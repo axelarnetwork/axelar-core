@@ -59,6 +59,7 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 		k.Logger(ctx).Error(err.Error())
 		return nil // don't propagate nondeterministic errors
 	}
+	k.Logger(ctx).Debug("partyUids: %v", partyUids)
 
 	k.Logger(ctx).Debug("initiate tssd gRPC call Keygen")
 	var err error
@@ -132,7 +133,7 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 }
 
 func (k Keeper) KeygenMsg(ctx sdk.Context, msg *types.MsgKeygenTraffic) error {
-	k.Logger(ctx).Debug(fmt.Sprintf("initiate KeygenMsg: key [%s] from [%s] broadcast? [%t] to [%s]", msg.SessionID, msg.Sender, msg.Payload.IsBroadcast, msg.Payload.ToPartyUid))
+	k.Logger(ctx).Debug(fmt.Sprintf("initiate KeygenMsg: key [%s] from broadcaster [%s] broadcast? [%t] to [%s]", msg.SessionID, msg.Sender, msg.Payload.IsBroadcast, msg.Payload.ToPartyUid))
 
 	// TODO many of these checks apply to both keygen and sign; refactor them into a Msg() method
 
