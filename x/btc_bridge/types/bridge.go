@@ -5,16 +5,9 @@ import (
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
+	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-
-	"github.com/axelarnetwork/axelar-core/x/axelar/exported"
-)
-
-const (
-	Satoshi int64 = 1
-	Bitcoin       = 100_000_000 * Satoshi
 )
 
 type Bridge struct {
@@ -30,13 +23,8 @@ func (b Bridge) TrackAddress(address string) error {
 	return b.rpc.ImportAddress(address)
 }
 
-func (b Bridge) VeriyfyTx(tx exported.ExternalTx) error {
-	hash, err := chainhash.NewHashFromStr(tx.TxID)
-	if err != nil {
-		return sdkerrors.Wrap(err, "could not transform Bitcoin transaction ID to hash")
-	}
-
-	btcTxResult, err := b.rpc.GetTransaction(hash)
+func (b Bridge) VerifyTx(txHash *chainhash.Hash, expectedAmount btcutil.Amount) error {
+	btcTxResult, err := b.rpc.GetTransaction(txHash)
 	if err != nil {
 		return sdkerrors.Wrap(err, "could not retrieve Bitcoin transaction")
 	}
@@ -46,9 +34,8 @@ func (b Bridge) VeriyfyTx(tx exported.ExternalTx) error {
 		return sdkerrors.Wrap(err, "could not parse transaction amount of the Bitcoin response")
 	}
 
-	expectedAmount := tx.Amount.Amount
-	isEqual := btcTxResult.TxID == tx.TxID &&
-		amountEquals(expectedAmount, actualAmount) &&
+	isEqual := btcTxResult.TxID == txHash.String() &&
+		expectedAmount == actualAmount &&
 		btcTxResult.Confirmations >= b.expectedConfirmationHeight
 	if !isEqual {
 		return fmt.Errorf(
@@ -59,15 +46,7 @@ func (b Bridge) VeriyfyTx(tx exported.ExternalTx) error {
 	return nil
 }
 
-func amountEquals(expectedAmount sdk.Dec, actualAmount btcutil.Amount) bool {
-	return (expectedAmount.IsInteger() && satoshiEquals(expectedAmount, actualAmount)) ||
-		btcEquals(expectedAmount, actualAmount)
-}
-
-func satoshiEquals(satoshiAmount sdk.Dec, verifiedAmount btcutil.Amount) bool {
-	return satoshiAmount.IsInt64() && btcutil.Amount(satoshiAmount.Int64()) == verifiedAmount
-}
-
-func btcEquals(btcAmount sdk.Dec, verifiedAmount btcutil.Amount) bool {
-	return btcutil.Amount(btcAmount.MulInt64(Bitcoin).RoundInt64()) == verifiedAmount
+func (b Bridge) Send(tx *wire.MsgTx) error {
+	_, err := b.rpc.SendRawTransaction(tx, false)
+	return err
 }

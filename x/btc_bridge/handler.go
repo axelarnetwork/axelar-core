@@ -6,7 +6,7 @@ import (
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -17,7 +17,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
 )
 
-func NewHandler(k keeper.Keeper, v types.Voter, b types.Bridge) sdk.Handler {
+func NewHandler(k keeper.Keeper, v types.Voter, b types.Bridge, s types.Signer) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
@@ -27,6 +27,8 @@ func NewHandler(k keeper.Keeper, v types.Voter, b types.Bridge) sdk.Handler {
 			return handleMsgTrackAddressFromPubKey(ctx, k, b, s, msg)
 		case types.MsgVerifyTx:
 			return handleMsgVerifyTx(ctx, k, v, b, msg)
+		case types.MsgWithdraw:
+			return handleMsgWithdraw(ctx, k, b, s, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
@@ -35,15 +37,34 @@ func NewHandler(k keeper.Keeper, v types.Voter, b types.Bridge) sdk.Handler {
 }
 
 func handleMsgTrackAddressFromPubKey(ctx sdk.Context, k keeper.Keeper, b types.Bridge, s types.Signer, msg types.MsgTrackAddressFromPubKey) (*sdk.Result, error) {
-	key := s.GetKey(ctx, msg.KeyID)
-	emptyKey := ecdsa.PublicKey{}
-	if key == emptyKey {
+	key := s.GetKey(ctx, msg.Chain)
+	if key == (ecdsa.PublicKey{}) {
 		return nil, fmt.Errorf("keyId not recognized")
 	}
 
+	addr, err := addressFromKey(key, msg.Chain)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "could not convert the given public key into a bitcoin address")
+	}
+
+	trackAddress(ctx, k, b, addr.EncodeAddress())
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+			sdk.NewAttribute(types.AttributeAddress, addr.EncodeAddress()),
+		),
+	)
+
+	return &sdk.Result{Log: "successfully created a tracked address", Events: ctx.EventManager().Events()}, nil
+}
+
+func addressFromKey(key ecdsa.PublicKey, chain string) (*btcutil.AddressPubKey, error) {
 	btcPK := btcec.PublicKey(key)
 	var params *chaincfg.Params
-	switch msg.Chain {
+	switch chain {
 	case chaincfg.MainNetParams.Name:
 		params = &chaincfg.MainNetParams
 	case chaincfg.TestNet3Params.Name:
@@ -52,22 +73,7 @@ func handleMsgTrackAddressFromPubKey(ctx sdk.Context, k keeper.Keeper, b types.B
 
 	// For compatibility we use the uncompressed key as the basis for address generation.
 	// Could be changed in the future to decrease tx size
-	addr, err := btcutil.NewAddressPubKey(btcPK.SerializeUncompressed(), params)
-	if err != nil {
-		return nil, sdkerrors.Wrap(err, "could not convert the given public key into a bitcoin address")
-	}
-	trackAddress(ctx, k, b, addr.EncodeAddress())
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeAddress, msg.KeyID),
-		),
-	)
-
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+	return btcutil.NewAddressPubKey(btcPK.SerializeUncompressed(), params)
 }
 
 func handleMsgTrackAddress(ctx sdk.Context, k keeper.Keeper, b types.Bridge, msg types.MsgTrackAddress) (*sdk.Result, error) {
@@ -109,32 +115,74 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, b types.
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeTx, msg.Tx.String()),
+			sdk.NewAttribute(types.AttributeTxId, msg.TxHash.String()),
+			sdk.NewAttribute(types.AttributeAmount, msg.Amount.String()),
 		),
 	)
 
-	// Validators can decide this check deterministically, so no need to go through 2nd layer consensus to discard
-	_, err := chainhash.NewHashFromStr(msg.Tx.TxID)
-	if err != nil {
-		k.Logger(ctx).Info(err.Error())
-		return nil, sdkerrors.Wrap(err, "could not transform Bitcoin transaction ID to hash")
-	}
-
-	if err = b.VeriyfyTx(msg.Tx); err != nil {
-		v.SetFutureVote(ctx, exported.FutureVote{Tx: msg.Tx, LocalAccept: false})
+	txForVote := exported.ExternalTx{Chain: "bitcoin", TxID: msg.TxHash.String()}
+	if err := b.VerifyTx(msg.TxHash, msg.Amount); err != nil {
+		v.SetFutureVote(ctx, exported.FutureVote{Tx: txForVote, LocalAccept: false})
 		k.Logger(ctx).Debug(sdkerrors.Wrapf(err,
-			"expected transaction (%s) could not be verified", msg.Tx.String()).Error())
+			"expected transaction (%s) could not be verified", msg.TxHash.String()).Error())
 		return &sdk.Result{
 			Log:    err.Error(),
 			Data:   k.Codec().MustMarshalBinaryLengthPrefixed(false),
 			Events: ctx.EventManager().Events(),
 		}, nil
 	} else {
-		v.SetFutureVote(ctx, exported.FutureVote{Tx: msg.Tx, LocalAccept: true})
+		v.SetFutureVote(ctx, exported.FutureVote{Tx: txForVote, LocalAccept: true})
 		return &sdk.Result{
 			Log:    "successfully verified transaction",
 			Data:   k.Codec().MustMarshalBinaryLengthPrefixed(true),
 			Events: ctx.EventManager().Events(),
 		}, nil
 	}
+}
+
+func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, b types.Bridge, signer types.Signer, msg types.MsgWithdraw) (*sdk.Result, error) {
+	rawTx, pkscript, amount := k.GetRaw(msg.TxID)
+	if rawTx == nil {
+		return nil, fmt.Errorf("withdraw tx for ID %s has not been prepared yet", msg.TxID)
+	}
+	r, s := signer.GetSig(ctx, msg.SignatureID)
+	sig := btcec.Signature{
+		R: r,
+		S: s,
+	}
+
+	sigScript, err := txscript.NewScriptBuilder().AddData(append(sig.Serialize(), byte(txscript.SigHashAll))).Script()
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "could not create bitcoin singature script")
+	}
+	rawTx.TxIn[0].SignatureScript = sigScript
+
+	flags := txscript.StandardVerifyFlags
+
+	vm, err := txscript.NewEngine(pkscript, rawTx, 0, flags, nil, nil, amount)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "could not create execution engine, aborting")
+	}
+	if err := vm.Execute(); err != nil {
+		return nil, sdkerrors.Wrap(err, "transaction failed to execute, aborting")
+	}
+
+	if err = b.Send(rawTx); err != nil {
+		return nil, err
+	}
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+			sdk.NewAttribute(types.AttributeTxId, msg.TxID),
+			sdk.NewAttribute(types.AttributeSigId, msg.SignatureID),
+		),
+	)
+
+	return &sdk.Result{
+		Log:    "successfully sent withdraw transaction to Bitcoin",
+		Events: ctx.EventManager().Events(),
+	}, nil
 }

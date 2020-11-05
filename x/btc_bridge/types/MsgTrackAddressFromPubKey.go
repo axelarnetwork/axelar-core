@@ -17,7 +17,7 @@ type MsgTrackAddressFromPubKey struct {
 	Chain  string
 }
 
-func NewMsgTrackAddressFromPubKey(sender sdk.AccAddress, keyId string, chain string) MsgTrackAddressFromPubKey {
+func NewMsgTrackAddressFromPubKey(sender sdk.AccAddress, chain string, keyId string) MsgTrackAddressFromPubKey {
 	return MsgTrackAddressFromPubKey{
 		Sender: sender,
 		KeyID:  keyId,

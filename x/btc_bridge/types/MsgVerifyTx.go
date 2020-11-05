@@ -1,11 +1,12 @@
 package types
 
 import (
+	"fmt"
+
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-
-	"github.com/axelarnetwork/axelar-core/x/axelar/exported"
-	"github.com/axelarnetwork/axelar-core/x/axelar/types"
 )
 
 // Ensure MsgTrackAddress implements sdk.Msg interface
@@ -13,13 +14,15 @@ var _ sdk.Msg = &MsgVerifyTx{}
 
 type MsgVerifyTx struct {
 	Sender sdk.AccAddress
-	Tx     exported.ExternalTx
+	TxHash *chainhash.Hash
+	Amount btcutil.Amount
 }
 
-func NewMsgVerifyTx(sender sdk.AccAddress, tx exported.ExternalTx) MsgVerifyTx {
+func NewMsgVerifyTx(sender sdk.AccAddress, txHash *chainhash.Hash, amount btcutil.Amount) MsgVerifyTx {
 	return MsgVerifyTx{
 		Sender: sender,
-		Tx:     tx,
+		TxHash: txHash,
+		Amount: amount,
 	}
 }
 
@@ -35,8 +38,11 @@ func (msg MsgVerifyTx) ValidateBasic() error {
 	if msg.Sender.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
-	if msg.Tx.IsInvalid() {
-		return sdkerrors.Wrap(types.ErrInvalidExternalTx, msg.Tx.String())
+	if msg.TxHash == nil {
+		return fmt.Errorf("missing transaction hash")
+	}
+	if msg.Amount <= 0 {
+		return fmt.Errorf("transaction amount must be greater than zero")
 	}
 
 	return nil

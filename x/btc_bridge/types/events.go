@@ -3,5 +3,8 @@ package types
 const (
 	AttributeModule  = ModuleName
 	AttributeAddress = "address"
-	AttributeTx      = "tx"
+	AttributeTxId    = "txId"
+	AttributeSigId   = "sigId"
+	AttributeKeyId   = "keyId"
+	AttributeAmount  = "amount"
 )

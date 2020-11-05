@@ -3,6 +3,7 @@ package keeper
 import (
 	"fmt"
 
+	"github.com/btcsuite/btcd/wire"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -61,4 +62,8 @@ func (k Keeper) GetConfirmationHeight(ctx sdk.Context) int64 {
 
 func (k Keeper) Codec() *codec.Codec {
 	return k.cdc
+}
+
+func (k Keeper) GetRaw(txId string) (rawTx *wire.MsgTx, pkscript []byte, amount int64) {
+	return nil, nil, 0
 }

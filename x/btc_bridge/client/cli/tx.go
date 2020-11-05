@@ -3,31 +3,28 @@ package cli
 import (
 	"bufio"
 	"fmt"
+	"io"
 
+	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/spf13/cobra"
 
-	"github.com/axelarnetwork/axelar-core/x/axelar/exported"
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
-)
-
-const (
-	sat     = "sat"
-	satoshi = "satoshi"
-	btc     = "btc"
-	bitcoin = "bitcoin"
 )
 
 // GetTxCmd returns the transaction commands for this module
 func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	btcTxCmd := &cobra.Command{
-		Use:                        bitcoin,
+		Use:                        "bitcoin",
 		Short:                      fmt.Sprintf("%s transactions subcommands", types.ModuleName),
 		DisableFlagParsing:         true,
 		SuggestionsMinimumDistance: 2,
@@ -38,6 +35,8 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		GetCmdTrackAddress(cdc),
 		GetCmdTrackAddressFromPubKey(cdc),
 		GetCmdVerifyTx(cdc),
+		GetCmdWithdraw(cdc),
+		GetCmdGenerateRawTx(cdc),
 	)...)
 
 	return btcTxCmd
@@ -45,14 +44,12 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 func GetCmdTrackAddress(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "trackAddress [address] ",
+		Use:   "trackAddress [address]",
 		Short: "Make the axelar network aware of a specific address on Bitcoin",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+			cliCtx, txBldr := prepare(cmd.InOrStdin(), cdc)
 
 			msg := types.NewMsgTrackAddress(cliCtx.GetFromAddress(), args[0])
 			if err := msg.ValidateBasic(); err != nil {
@@ -66,17 +63,16 @@ func GetCmdTrackAddress(cdc *codec.Codec) *cobra.Command {
 
 func GetCmdTrackAddressFromPubKey(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "trackAddressFromPubKey [chain] [keyId] ",
+		Use:   "trackAddressFromPubKey [chain] [keyId]",
 		Short: "Make the axelar network aware of a specific address on Bitcoin",
-		Long:  "Make the axelar network aware of a specific address on Bitcoin. Choose \"mainnet\" or \"testnet3\" for the chain.",
-		Args:  cobra.ExactArgs(1),
+		Long: fmt.Sprintf("Make the axelar network aware of a specific address on Bitcoin. Choose \"%s\" or \"%s\" for the chain.",
+			chaincfg.MainNetParams.Name, chaincfg.TestNet3Params.Name),
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+			cliCtx, txBldr := prepare(cmd.InOrStdin(), cdc)
 
-			msg := types.NewMsgTrackAddressFromPubKey(cliCtx.GetFromAddress(), args[1], args[0])
+			msg := types.NewMsgTrackAddressFromPubKey(cliCtx.GetFromAddress(), args[0], args[1])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -95,39 +91,19 @@ Accepted denominations (case-insensitive): satoshi (sat), bitcoin (btc)`,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+			cliCtx, txBldr := prepare(cmd.InOrStdin(), cdc)
 
-			rawCoin := args[1]
-
-			var decCoin sdk.DecCoin
-			decCoin, err := sdk.ParseDecCoin(rawCoin)
+			hash, err := chainhash.NewHashFromStr(args[0])
 			if err != nil {
-				coin, err := sdk.ParseCoin(rawCoin)
-				if err != nil {
-					return fmt.Errorf("could not parse coin string")
-				}
-				decCoin = sdk.NewDecCoinFromCoin(coin)
+				return sdkerrors.Wrap(err, "could not transform Bitcoin transaction ID to hash")
 			}
 
-			switch decCoin.Denom {
-			case sat, satoshi:
-				if !decCoin.Amount.IsInteger() {
-					return fmt.Errorf("satoshi must be an integer value")
-				}
-			case btc, bitcoin:
-				break
-			default:
-				return fmt.Errorf("choose a correct denomination: satoshi (sat), bitcoin (btc)")
+			amount, err := types.ParseBtc(args[1])
+			if err != nil {
+				return err
 			}
 
-			tx := exported.ExternalTx{
-				Chain:  "bitcoin",
-				TxID:   args[0],
-				Amount: decCoin,
-			}
-			msg := types.NewMsgVerifyTx(cliCtx.GetFromAddress(), tx)
+			msg := types.NewMsgVerifyTx(cliCtx.GetFromAddress(), hash, amount)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -135,4 +111,57 @@ Accepted denominations (case-insensitive): satoshi (sat), bitcoin (btc)`,
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
+}
+
+func GetCmdWithdraw(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "withdraw [sourceTxId] [sigId]",
+		Short: "Withdraw funds from an Axelar address",
+		Long: `Withdraw funds from an Axelar address according to a previously signed raw transaction. 
+Ensure the axelar address is being tracked and the transaction signed first`,
+		Args: cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			cliCtx, txBldr := prepare(cmd.InOrStdin(), cdc)
+
+			msg := types.NewMsgWithdraw(cliCtx.GetFromAddress(), args[0], args[1])
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+func GetCmdGenerateRawTx(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "rawTx [sourceTxId] [amount] [destination]",
+		Short: "Generate raw transaction",
+		Long:  `Generate raw transaction that can be used to spend the [amount] from the source transaction to the [destination]`,
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			cliCtx, txBldr := prepare(cmd.InOrStdin(), cdc)
+
+			btc, err := types.ParseBtc(args[1])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgRawTx(cliCtx.GetFromAddress(), args[0], btc, args[2])
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+func prepare(reader io.Reader, cdc *codec.Codec) (context.CLIContext, authTypes.TxBuilder) {
+	cliCtx := context.NewCLIContext().WithCodec(cdc)
+	inBuf := bufio.NewReader(reader)
+	txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+	return cliCtx, txBldr
 }

@@ -8,6 +8,7 @@ import (
 func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgTrackAddress{}, "btcbridge/TrackAddress", nil)
 	cdc.RegisterConcrete(MsgVerifyTx{}, "btcbridge/VerifyTx", nil)
+	cdc.RegisterConcrete(MsgWithdraw{}, "btcbridge/Withdraw", nil)
 }
 
 // ModuleCdc defines the module codec
