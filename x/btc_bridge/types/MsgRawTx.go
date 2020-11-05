@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -13,15 +14,15 @@ var _ sdk.Msg = &MsgRawTx{}
 
 type MsgRawTx struct {
 	Sender      sdk.AccAddress
-	TxID        string
+	TxHash      *chainhash.Hash
 	Amount      btcutil.Amount
-	Destination string
+	Destination btcutil.Address
 }
 
-func NewMsgRawTx(sender sdk.AccAddress, txId string, amount btcutil.Amount, destination string) MsgRawTx {
+func NewMsgRawTx(sender sdk.AccAddress, txHash *chainhash.Hash, amount btcutil.Amount, destination btcutil.Address) MsgRawTx {
 	return MsgRawTx{
 		Sender:      sender,
-		TxID:        txId,
+		TxHash:      txHash,
 		Amount:      amount,
 		Destination: destination,
 	}
@@ -39,13 +40,13 @@ func (msg MsgRawTx) ValidateBasic() error {
 	if msg.Sender.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
-	if msg.TxID == "" {
-		return fmt.Errorf("invalid tx ID: %s", msg.TxID)
+	if msg.TxHash == nil {
+		return fmt.Errorf("missing transaction ID")
 	}
 	if msg.Amount <= 0 {
 		return fmt.Errorf("transaction amount must be greater than zero")
 	}
-	if msg.Destination == "" {
+	if msg.Destination == nil {
 		return fmt.Errorf("missing destination")
 	}
 

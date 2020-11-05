@@ -12,6 +12,11 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
 )
 
+const (
+	rawKey  = "raw"
+	utxoKey = "utxo"
+)
+
 var (
 	confHeight = []byte("confHeight")
 )
@@ -64,6 +69,34 @@ func (k Keeper) Codec() *codec.Codec {
 	return k.cdc
 }
 
-func (k Keeper) GetRaw(txId string) (rawTx *wire.MsgTx, pkscript []byte, amount int64) {
-	return nil, nil, 0
+func (k Keeper) GetRawTx(ctx sdk.Context, txId string) *wire.MsgTx {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(rawKey + txId))
+	if bz == nil {
+		return nil
+	}
+	var tx *wire.MsgTx
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, tx)
+
+	return tx
+}
+
+func (k Keeper) SetRawTx(ctx sdk.Context, txId string, tx *wire.MsgTx) {
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(tx)
+	ctx.KVStore(k.storeKey).Set([]byte(rawKey+txId), bz)
+}
+
+func (k Keeper) SetUTXO(ctx sdk.Context, txId string, utxo types.UTXO) {
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(utxo)
+	ctx.KVStore(k.storeKey).Set([]byte(utxoKey+txId), bz)
+}
+
+func (k Keeper) GetUTXO(ctx sdk.Context, txId string) *types.UTXO {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(utxoKey + txId))
+	if bz == nil {
+		return nil
+	}
+	var utxo *types.UTXO
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, utxo)
+
+	return utxo
 }

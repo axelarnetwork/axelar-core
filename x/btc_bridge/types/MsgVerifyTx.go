@@ -14,15 +14,18 @@ var _ sdk.Msg = &MsgVerifyTx{}
 
 type MsgVerifyTx struct {
 	Sender sdk.AccAddress
-	TxHash *chainhash.Hash
-	Amount btcutil.Amount
+	UTXO   UTXO
 }
 
-func NewMsgVerifyTx(sender sdk.AccAddress, txHash *chainhash.Hash, amount btcutil.Amount) MsgVerifyTx {
+func NewMsgVerifyTx(sender sdk.AccAddress, txHash *chainhash.Hash, voutIdx uint32, destination btcutil.Address, amount btcutil.Amount) MsgVerifyTx {
 	return MsgVerifyTx{
 		Sender: sender,
-		TxHash: txHash,
-		Amount: amount,
+		UTXO: UTXO{
+			Hash:    txHash,
+			VoutIdx: voutIdx,
+			Address: destination,
+			Amount:  amount,
+		},
 	}
 }
 
@@ -38,11 +41,8 @@ func (msg MsgVerifyTx) ValidateBasic() error {
 	if msg.Sender.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
-	if msg.TxHash == nil {
-		return fmt.Errorf("missing transaction hash")
-	}
-	if msg.Amount <= 0 {
-		return fmt.Errorf("transaction amount must be greater than zero")
+	if msg.UTXO.IsInvalid() {
+		return fmt.Errorf("invalid utxo")
 	}
 
 	return nil

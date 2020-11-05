@@ -4,9 +4,11 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"strconv"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -84,18 +86,23 @@ func GetCmdTrackAddressFromPubKey(cdc *codec.Codec) *cobra.Command {
 
 func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "verifyTx [txId] [amount]",
+		Use:   "verifyTx [chain] [txId] [destination] [amount] [opt. voutIdx]",
 		Short: "Verify a Bitcoin transaction",
-		Long: `Verify that a transaction happened on the Bitcoin chain so it can be processed on axelar.
-Accepted denominations (case-insensitive): satoshi (sat), bitcoin (btc)`,
-		Args: cobra.ExactArgs(2),
+		Long: "Verify that a transaction happened on the Bitcoin chain so it can be processed on axelar." +
+			"The parameter [voutIdx] is optional. Accepted denominations (case-insensitive): satoshi (sat), bitcoin (btc)",
+		Args: cobra.RangeArgs(4, 5),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx, txBldr := prepare(cmd.InOrStdin(), cdc)
 
-			hash, err := chainhash.NewHashFromStr(args[0])
+			hash, err := parseHash(args[1])
 			if err != nil {
-				return sdkerrors.Wrap(err, "could not transform Bitcoin transaction ID to hash")
+				return err
+			}
+
+			addr, err := parseAddress(args[0], args[2])
+			if err != nil {
+				return err
 			}
 
 			amount, err := types.ParseBtc(args[1])
@@ -103,7 +110,16 @@ Accepted denominations (case-insensitive): satoshi (sat), bitcoin (btc)`,
 				return err
 			}
 
-			msg := types.NewMsgVerifyTx(cliCtx.GetFromAddress(), hash, amount)
+			var voutIdx uint32 = 0
+			if len(args) == 5 {
+				n, err := strconv.ParseUint(args[4], 10, 32)
+				if err != nil {
+					return sdkerrors.Wrap(err, "could not parse voutIdx")
+				}
+				voutIdx = uint32(n)
+			}
+
+			msg := types.NewMsgVerifyTx(cliCtx.GetFromAddress(), hash, voutIdx, addr, amount)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -136,20 +152,27 @@ Ensure the axelar address is being tracked and the transaction signed first`,
 
 func GetCmdGenerateRawTx(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "rawTx [sourceTxId] [amount] [destination]",
+		Use:   "rawTx [chain] [sourceTxId] [amount] [destination]",
 		Short: "Generate raw transaction",
 		Long:  `Generate raw transaction that can be used to spend the [amount] from the source transaction to the [destination]`,
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx, txBldr := prepare(cmd.InOrStdin(), cdc)
 
-			btc, err := types.ParseBtc(args[1])
+			hash, err := parseHash(args[1])
 			if err != nil {
 				return err
 			}
 
-			msg := types.NewMsgRawTx(cliCtx.GetFromAddress(), args[0], btc, args[2])
+			btc, err := types.ParseBtc(args[2])
+			if err != nil {
+				return err
+			}
+
+			addr, err := parseAddress(args[0], args[3])
+
+			msg := types.NewMsgRawTx(cliCtx.GetFromAddress(), hash, btc, addr)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -164,4 +187,32 @@ func prepare(reader io.Reader, cdc *codec.Codec) (context.CLIContext, authTypes.
 	inBuf := bufio.NewReader(reader)
 	txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 	return cliCtx, txBldr
+}
+
+func parseHash(txId string) (*chainhash.Hash, error) {
+	hash, err := chainhash.NewHashFromStr(txId)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "could not transform Bitcoin transaction ID to hash")
+	}
+	return hash, nil
+}
+
+func parseAddress(chain, address string) (addr btcutil.Address, err error) {
+	switch chain {
+	case chaincfg.MainNetParams.Name:
+		if addr, err = btcutil.DecodeAddress(address, &chaincfg.MainNetParams); err != nil {
+			return nil, sdkerrors.Wrap(err, "could not decode destination address")
+		}
+	case chaincfg.TestNet3Params.Name:
+		if addr, err = btcutil.DecodeAddress(address, &chaincfg.TestNet3Params); err != nil {
+			return nil, sdkerrors.Wrap(err, "could not decode destination address")
+		}
+	default:
+		return nil, fmt.Errorf(
+			"missing chain name, choose %s or %s",
+			chaincfg.MainNetParams.Name,
+			chaincfg.TestNet3Params.Name,
+		)
+	}
+	return addr, nil
 }

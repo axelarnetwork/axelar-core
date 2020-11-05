@@ -7,6 +7,7 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/txscript"
+	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -27,6 +28,8 @@ func NewHandler(k keeper.Keeper, v types.Voter, b types.Bridge, s types.Signer) 
 			return handleMsgTrackAddressFromPubKey(ctx, k, b, s, msg)
 		case types.MsgVerifyTx:
 			return handleMsgVerifyTx(ctx, k, v, b, msg)
+		case types.MsgRawTx:
+			return handleMsgRawTx(ctx, k, v, msg)
 		case types.MsgWithdraw:
 			return handleMsgWithdraw(ctx, k, b, s, msg)
 		default:
@@ -54,6 +57,7 @@ func handleMsgTrackAddressFromPubKey(ctx sdk.Context, k keeper.Keeper, b types.B
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+			sdk.NewAttribute(types.AttributeKeyId, msg.KeyID),
 			sdk.NewAttribute(types.AttributeAddress, addr.EncodeAddress()),
 		),
 	)
@@ -109,22 +113,25 @@ func trackAddress(ctx sdk.Context, k keeper.Keeper, b types.Bridge, address stri
 
 func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, b types.Bridge, msg types.MsgVerifyTx) (*sdk.Result, error) {
 	k.Logger(ctx).Debug("verifying bitcoin transaction")
-
+	txId := msg.UTXO.Hash.String()
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeTxId, msg.TxHash.String()),
-			sdk.NewAttribute(types.AttributeAmount, msg.Amount.String()),
+			sdk.NewAttribute(types.AttributeTxId, txId),
+			sdk.NewAttribute(types.AttributeAmount, msg.UTXO.Amount.String()),
 		),
 	)
 
-	txForVote := exported.ExternalTx{Chain: "bitcoin", TxID: msg.TxHash.String()}
-	if err := b.VerifyTx(msg.TxHash, msg.Amount); err != nil {
+	k.SetUTXO(ctx, txId, msg.UTXO)
+
+	txForVote := exported.ExternalTx{Chain: "bitcoin", TxID: txId}
+	if err := b.VerifyTx(msg.UTXO); err != nil {
 		v.SetFutureVote(ctx, exported.FutureVote{Tx: txForVote, LocalAccept: false})
+
 		k.Logger(ctx).Debug(sdkerrors.Wrapf(err,
-			"expected transaction (%s) could not be verified", msg.TxHash.String()).Error())
+			"expected transaction (%s) could not be verified", txId).Error())
 		return &sdk.Result{
 			Log:    err.Error(),
 			Data:   k.Codec().MustMarshalBinaryLengthPrefixed(false),
@@ -140,12 +147,63 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, b types.
 	}
 }
 
+func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.MsgRawTx) (*sdk.Result, error) {
+	txId := msg.TxHash.String()
+	if !v.IsVerified(ctx, txId) {
+		return nil, fmt.Errorf("transaction not verified")
+	}
+	utxo := k.GetUTXO(ctx, txId)
+	if utxo == nil {
+		return nil, fmt.Errorf("transaction ID is not known")
+	}
+
+	tx := wire.NewMsgTx(wire.TxVersion)
+
+	outPoint := wire.NewOutPoint(utxo.Hash, utxo.VoutIdx)
+	// The signature script will be set later
+	txIn := wire.NewTxIn(outPoint, nil, nil)
+	tx.AddTxIn(txIn)
+
+	addrScript, err := txscript.PayToAddrScript(msg.Destination)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "could not create pay-to-address script for destination address")
+	}
+	txOut := wire.NewTxOut(int64(msg.Amount), addrScript)
+	tx.AddTxOut(txOut)
+
+	k.SetRawTx(ctx, txId, tx)
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+			sdk.NewAttribute(types.AttributeTxId, txId),
+			sdk.NewAttribute(types.AttributeAmount, msg.Amount.String()),
+			sdk.NewAttribute(types.AttributeDestination, msg.Destination.String()),
+		),
+	)
+
+	return &sdk.Result{
+		Log:    "successfully created withdraw transaction for Bitcoin",
+		Events: ctx.EventManager().Events(),
+	}, nil
+}
+
 func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, b types.Bridge, signer types.Signer, msg types.MsgWithdraw) (*sdk.Result, error) {
-	rawTx, pkscript, amount := k.GetRaw(msg.TxID)
+	utxo := k.GetUTXO(ctx, msg.TxID)
+	if utxo == nil {
+		return nil, fmt.Errorf("transaction ID is not known")
+	}
+
+	rawTx := k.GetRawTx(ctx, msg.TxID)
 	if rawTx == nil {
 		return nil, fmt.Errorf("withdraw tx for ID %s has not been prepared yet", msg.TxID)
 	}
 	r, s := signer.GetSig(ctx, msg.SignatureID)
+	if r == nil || s == nil {
+		return nil, fmt.Errorf("signature not found")
+	}
 	sig := btcec.Signature{
 		R: r,
 		S: s,
@@ -159,16 +217,12 @@ func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, b types.Bridge, signer 
 
 	flags := txscript.StandardVerifyFlags
 
-	vm, err := txscript.NewEngine(pkscript, rawTx, 0, flags, nil, nil, amount)
+	vm, err := txscript.NewEngine(utxo.PkScript(), rawTx, 0, flags, nil, nil, rawTx.TxOut[0].Value)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "could not create execution engine, aborting")
 	}
 	if err := vm.Execute(); err != nil {
 		return nil, sdkerrors.Wrap(err, "transaction failed to execute, aborting")
-	}
-
-	if err = b.Send(rawTx); err != nil {
-		return nil, err
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -180,6 +234,15 @@ func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, b types.Bridge, signer 
 			sdk.NewAttribute(types.AttributeSigId, msg.SignatureID),
 		),
 	)
+
+	// This is beyond Axelar's control, so can only log the error but move on regardless
+	if err = b.Send(rawTx); err != nil {
+		k.Logger(ctx).Error(sdkerrors.Wrap(err, "sending transaction to Bitcoin failed").Error())
+		return &sdk.Result{
+			Log:    "failed to send transaction to Bitcoin (other nodes might have succeeded)",
+			Events: ctx.EventManager().Events(),
+		}, nil
+	}
 
 	return &sdk.Result{
 		Log:    "successfully sent withdraw transaction to Bitcoin",
