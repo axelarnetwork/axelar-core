@@ -59,7 +59,7 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 		k.Logger(ctx).Error(err.Error())
 		return nil // don't propagate nondeterministic errors
 	}
-	k.Logger(ctx).Debug("partyUids: %v", partyUids)
+	k.Logger(ctx).Debug(fmt.Sprintf("partyUids: %v", partyUids))
 
 	k.Logger(ctx).Debug("initiate tssd gRPC call Keygen")
 	var err error
@@ -161,15 +161,16 @@ func (k Keeper) KeygenMsg(ctx sdk.Context, msg *types.MsgKeygenTraffic) error {
 		k.Logger(ctx).Error(newErr.Error())
 		return nil
 	}
-	k.Logger(ctx).Debug("myAddress [%s], senderAddress [%s], parsed toAddress [%s]", myAddress, senderAddress, toAddress)
-	if !msg.Payload.IsBroadcast && !myAddress.Equals(toAddress) {
-		k.Logger(ctx).Info(fmt.Sprintf("ignore message: msg to [%s] not directed to me [%s]", toAddress, myAddress))
-		return nil
-	}
-	if msg.Payload.IsBroadcast && myAddress.Equals(senderAddress) {
-		k.Logger(ctx).Info(fmt.Sprintf("ignore message: broadcast message from [%s] came from me [%s]", senderAddress, myAddress))
-		return nil
-	}
+	k.Logger(ctx).Debug(fmt.Sprintf("myAddress [%s], senderAddress [%s], parsed toAddress [%s]", myAddress, senderAddress, toAddress))
+	// TODO this ignore code is buggy but I don't know why
+	// if !msg.Payload.IsBroadcast && !myAddress.Equals(toAddress) {
+	// 	k.Logger(ctx).Info(fmt.Sprintf("ignore message: msg to [%s] not directed to me [%s]", toAddress, myAddress))
+	// 	return nil
+	// }
+	// if msg.Payload.IsBroadcast && myAddress.Equals(senderAddress) {
+	// 	k.Logger(ctx).Info(fmt.Sprintf("ignore message: broadcast message from [%s] came from me [%s]", senderAddress, myAddress))
+	// 	return nil
+	// }
 
 	// convert the received types.MsgKeygenTraffic into a tssd.KeygenMsgIn
 	msgIn := &tssd.KeygenMsgIn{
