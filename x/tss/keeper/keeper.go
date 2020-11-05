@@ -18,7 +18,8 @@ type Keeper struct {
 	broadcaster   broadcast.Broadcaster
 	stakingKeeper types.StakingKeeper // needed only for `GetAllValidators`
 	client        tssd.GG18Client
-	keygenStream  tssd.GG18_KeygenClient // TODO persist in KV store instead?
+	keygenStream  tssd.GG18_KeygenClient // TODO support multiple concurrent sessions
+	signStream    tssd.GG18_SignClient   // TODO support multiple concurrent sessions
 
 	// TODO cruft for grpc; can we get rid of this?
 	connection        *grpc.ClientConn

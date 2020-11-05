@@ -79,10 +79,10 @@ func getCmdSignStart(cdc *codec.Codec) *cobra.Command {
 		txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
 		msg := types.MsgSignStart{
-			Sender:   cliCtx.FromAddress,
-			NewSigID: *newSigID,
-			KeyID:    *keyID,
-			Msg:      []byte(args[0]),
+			Sender:    cliCtx.FromAddress,
+			NewSigID:  *newSigID,
+			KeyID:     *keyID,
+			MsgToSign: []byte(args[0]),
 		}
 		if err := msg.ValidateBasic(); err != nil {
 			return err
