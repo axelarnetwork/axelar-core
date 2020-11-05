@@ -6,7 +6,6 @@ import (
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
@@ -21,7 +20,7 @@ import (
 
 const bitcoin = "bitcoin"
 
-func NewHandler(k keeper.Keeper, v types.Voter, rpc *rpcclient.Client, s types.Signer) sdk.Handler {
+func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Signer) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
@@ -42,7 +41,7 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc *rpcclient.Client, s types.S
 	}
 }
 
-func handleMsgTrackAddressFromPubKey(ctx sdk.Context, k keeper.Keeper, rpc *rpcclient.Client, s types.Signer, msg types.MsgTrackAddressFromPubKey) (*sdk.Result, error) {
+func handleMsgTrackAddressFromPubKey(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, msg types.MsgTrackAddressFromPubKey) (*sdk.Result, error) {
 	key := s.GetKey(ctx, msg.Chain)
 	if key == (ecdsa.PublicKey{}) {
 		return nil, fmt.Errorf("keyId not recognized")
@@ -83,7 +82,7 @@ func addressFromKey(key ecdsa.PublicKey, chain string) (*btcutil.AddressPubKey, 
 	return btcutil.NewAddressPubKey(btcPK.SerializeUncompressed(), params)
 }
 
-func handleMsgTrackAddress(ctx sdk.Context, k keeper.Keeper, rpc *rpcclient.Client, msg types.MsgTrackAddress) (*sdk.Result, error) {
+func handleMsgTrackAddress(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, msg types.MsgTrackAddress) (*sdk.Result, error) {
 	k.Logger(ctx).Debug(fmt.Sprintf("start tracking address %v", msg.Address))
 
 	ctx.EventManager().EmitEvent(
@@ -100,7 +99,7 @@ func handleMsgTrackAddress(ctx sdk.Context, k keeper.Keeper, rpc *rpcclient.Clie
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func trackAddress(ctx sdk.Context, k keeper.Keeper, rpc *rpcclient.Client, address string) {
+func trackAddress(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, address string) {
 	// Importing an address takes a long time, therefore it cannot be done in the critical path.
 	// ctx might not be valid anymore when err is returned, so closing over logger to be safe
 	go func(logger log.Logger) {
@@ -114,7 +113,7 @@ func trackAddress(ctx sdk.Context, k keeper.Keeper, rpc *rpcclient.Client, addre
 	k.SetTrackedAddress(ctx, address)
 }
 
-func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc *rpcclient.Client, msg types.MsgVerifyTx) (*sdk.Result, error) {
+func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc types.RPCClient, msg types.MsgVerifyTx) (*sdk.Result, error) {
 	k.Logger(ctx).Debug("verifying bitcoin transaction")
 	txId := msg.UTXO.Hash.String()
 	ctx.EventManager().EmitEvent(
@@ -196,7 +195,7 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.M
 	}, nil
 }
 
-func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, rpc *rpcclient.Client, signer types.Signer, msg types.MsgWithdraw) (*sdk.Result, error) {
+func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, signer types.Signer, msg types.MsgWithdraw) (*sdk.Result, error) {
 	utxo := k.GetUTXO(ctx, msg.TxID)
 	if utxo == nil {
 		return nil, fmt.Errorf("transaction ID is not known")
@@ -256,7 +255,7 @@ func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, rpc *rpcclient.Client, 
 	}, nil
 }
 
-func verifyTx(rpc *rpcclient.Client, utxo types.UTXO, expectedConfirmationHeight uint64) error {
+func verifyTx(rpc types.RPCClient, utxo types.UTXO, expectedConfirmationHeight uint64) error {
 	actualTx, err := rpc.GetRawTransactionVerbose(utxo.Hash)
 	if err != nil {
 		return sdkerrors.Wrap(err, "could not retrieve Bitcoin transaction")
