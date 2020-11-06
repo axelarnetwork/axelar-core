@@ -13,7 +13,6 @@ import (
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdkTypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
@@ -48,6 +47,10 @@ type TestRPC struct {
 	rawTx          func() (*btcjson.TxRawResult, error)
 }
 
+func (t *TestRPC) ImportAddressRescan(address string, account string, rescan bool) error {
+	panic("implement me")
+}
+
 func (t *TestRPC) ImportAddress(address string) error {
 	t.trackedAddress = address
 	t.cancel()
@@ -71,11 +74,11 @@ func (t TestSigner) StartSign(ctx sdkTypes.Context, info tssTypes.MsgSignStart) 
 	panic("implement me")
 }
 
-func (t TestSigner) GetSig(ctx sdkTypes.Context, sigID string) (r *big.Int, s *big.Int) {
+func (t TestSigner) GetSig(ctx sdkTypes.Context, sigID string) (r *big.Int, s *big.Int, err error) {
 	panic("implement me")
 }
 
-func (t TestSigner) GetKey(ctx sdkTypes.Context, keyID string) ecdsa.PublicKey {
+func (t TestSigner) GetKey(ctx sdkTypes.Context, keyID string) (ecdsa.PublicKey, error) {
 	panic("implement me")
 }
 
@@ -217,12 +220,12 @@ func TestVerifyTx_InvalidHash(t *testing.T) {
 
 	hash, _ := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
 
-	address, _ := btcutil.DecodeAddress("bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq", &chaincfg.MainNetParams)
 	utxo := types.UTXO{
+		Chain:   chaincfg.MainNetParams.Name,
 		Hash:    hash,
 		VoutIdx: 0,
 		Amount:  10,
-		Address: address,
+		Address: "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
 	}
 
 	assert.False(t, utxo.IsInvalid())
@@ -250,12 +253,12 @@ func TestVerifyTx_InvalidUTXO(t *testing.T) {
 
 	hash, _ := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
 
-	address, _ := btcutil.DecodeAddress("bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq", &chaincfg.MainNetParams)
 	utxo := types.UTXO{
+		Chain:   chaincfg.MainNetParams.Name,
 		Hash:    hash,
 		VoutIdx: 0,
 		Amount:  10,
-		Address: address,
+		Address: "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
 	}
 	rpc := TestRPC{
 		rawTx: func() (*btcjson.TxRawResult, error) {
@@ -266,7 +269,7 @@ func TestVerifyTx_InvalidUTXO(t *testing.T) {
 					Value: 10,
 					N:     0,
 					ScriptPubKey: btcjson.ScriptPubKeyResult{
-						Addresses: []string{address.String()},
+						Addresses: []string{utxo.Address},
 					},
 				}},
 				Confirmations: 7,
