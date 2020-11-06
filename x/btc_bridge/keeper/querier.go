@@ -6,10 +6,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/axelarnetwork/axelar-core/x/axelar/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
 )
 
 const (
