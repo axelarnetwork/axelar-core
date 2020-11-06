@@ -3,7 +3,6 @@ package keeper
 import (
 	"fmt"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -16,26 +15,24 @@ import (
 )
 
 var (
+	futureVotesKey    = []byte("futureVotesKey")
+	publicVotesKey    = []byte("publicVotesKey")
 	votingIntervalKey = []byte("votingInterval")
-	preVotesKey       = []byte("preVotesKey")
-	votesKey          = []byte("votesKey")
 	votingThreshold   = []byte("votingThreshold")
 )
 
 type Keeper struct {
-	bridges       map[string]types.BridgeKeeper
 	storeKey      sdk.StoreKey
 	cdc           *codec.Codec
 	broadcaster   types.Broadcaster
 	stakingKeeper staking.Keeper
 }
 
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, bridges map[string]types.BridgeKeeper, stakingKeeper staking.Keeper, client types.Broadcaster) Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, stakingKeeper staking.Keeper, broadcaster types.Broadcaster) Keeper {
 	keeper := Keeper{
-		bridges:       bridges,
 		storeKey:      key,
 		cdc:           cdc,
-		broadcaster:   client,
+		broadcaster:   broadcaster,
 		stakingKeeper: stakingKeeper,
 	}
 	return keeper
@@ -46,73 +43,27 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-func (k Keeper) TrackAddress(ctx sdk.Context, address exported.ExternalChainAddress) error {
-	br, err := k.getBridge(address.Chain)
-	if err != nil {
-		return err
-	}
+func (k Keeper) SetFutureVote(ctx sdk.Context, vote exported.FutureVote) {
+	k.Logger(ctx).Debug("getting future votes")
+	futureVotes := k.getFutureVotes(ctx)
 
-	if err := br.TrackAddress(ctx, address.Address); err != nil {
-		return sdkerrors.Wrapf(err, "bridge to %s is unable to track address", address.Chain)
-	}
-
-	k.setTrackedAddress(ctx, address)
-
-	return nil
+	futureVotes = append(futureVotes, vote)
+	k.Logger(ctx).Debug("store future votes")
+	k.setFutureVotes(ctx, futureVotes)
 }
 
-func (k Keeper) getBridge(chain string) (types.BridgeKeeper, error) {
-	br, ok := k.bridges[chain]
-	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrInvalidChain, "%s is not bridged", chain)
+func (k Keeper) getFutureVotes(ctx sdk.Context) []exported.FutureVote {
+	if !ctx.KVStore(k.storeKey).Has(futureVotesKey) {
+		return []exported.FutureVote{}
 	}
-	return br, nil
+	bz := ctx.KVStore(k.storeKey).Get(futureVotesKey)
+	var futureVotes []exported.FutureVote
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &futureVotes)
+	return futureVotes
 }
 
-func (k Keeper) setTrackedAddress(ctx sdk.Context, address exported.ExternalChainAddress) {
-	ctx.KVStore(k.storeKey).Set([]byte(address.Address), []byte(address.Chain))
-}
-
-func (k Keeper) GetTrackedAddress(ctx sdk.Context, address string) exported.ExternalChainAddress {
-	chain := ctx.KVStore(k.storeKey).Get([]byte(address))
-	if chain == nil {
-		return exported.ExternalChainAddress{}
-	}
-	return exported.ExternalChainAddress{
-		Chain:   string(chain),
-		Address: address,
-	}
-}
-
-func (k Keeper) VerifyTx(ctx sdk.Context, tx exported.ExternalTx) error {
-	k.Logger(ctx).Debug("getting bridge")
-	br, err := k.getBridge(tx.Chain)
-	if err != nil {
-		return err
-	}
-
-	k.Logger(ctx).Debug("getting prevote txs")
-	preVoteTxs := k.getPreVotes(ctx)
-
-	k.Logger(ctx).Debug("letting bridge verify tx")
-	preVoteTxs = append(preVoteTxs, types.PreVote{Tx: tx, LocalAccept: br.VerifyTx(ctx, tx)})
-	k.Logger(ctx).Debug("store vote")
-	k.setPreVotes(ctx, preVoteTxs)
-	return nil
-}
-
-func (k Keeper) getPreVotes(ctx sdk.Context) []types.PreVote {
-	if !ctx.KVStore(k.storeKey).Has(preVotesKey) {
-		return []types.PreVote{}
-	}
-	bz := ctx.KVStore(k.storeKey).Get(preVotesKey)
-	var preVotes []types.PreVote
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &preVotes)
-	return preVotes
-}
-
-func (k Keeper) setPreVotes(ctx sdk.Context, preVoteTxs []types.PreVote) {
-	ctx.KVStore(k.storeKey).Set(preVotesKey, k.cdc.MustMarshalBinaryLengthPrefixed(preVoteTxs))
+func (k Keeper) setFutureVotes(ctx sdk.Context, preVoteTxs []exported.FutureVote) {
+	ctx.KVStore(k.storeKey).Set(futureVotesKey, k.cdc.MustMarshalBinaryLengthPrefixed(preVoteTxs))
 }
 
 func (k Keeper) SetVotingInterval(ctx sdk.Context, votingInterval int64) {
@@ -128,10 +79,10 @@ func (k Keeper) GetVotingInterval(ctx sdk.Context) int64 {
 	return interval
 }
 
-// Vote on all cached prevote transactions
+// Broadcast the batched future votes
 func (k Keeper) BatchVote(ctx sdk.Context) error {
-	preVotes := k.getPreVotes(ctx)
-	k.Logger(ctx).Debug(fmt.Sprintf("unpublished votesKey:%v", len(preVotes)))
+	preVotes := k.getFutureVotes(ctx)
+	k.Logger(ctx).Debug(fmt.Sprintf("unpublished publicVotesKey:%v", len(preVotes)))
 
 	if len(preVotes) == 0 {
 		return nil
@@ -146,9 +97,9 @@ func (k Keeper) BatchVote(ctx sdk.Context) error {
 		bits = append(bits, preVote.LocalAccept)
 	}
 
-	k.setVotes(ctx, votes)
+	k.setPublicVotes(ctx, votes)
 	// Reset preVotes because this batch is about to be broadcast
-	k.setPreVotes(ctx, []types.PreVote{})
+	k.setFutureVotes(ctx, []exported.FutureVote{})
 	msg := types.NewMsgBatchVote(bits)
 	k.Logger(ctx).Debug(fmt.Sprintf("msg:%v", msg))
 
@@ -161,17 +112,17 @@ type serializableVote struct {
 	ValAddresses []sdk.ValAddress
 }
 
-func (k Keeper) setVotes(ctx sdk.Context, votes []types.Vote) {
+func (k Keeper) setPublicVotes(ctx sdk.Context, votes []types.Vote) {
 	serVotes := mapToSerializable(votes)
 
-	ctx.KVStore(k.storeKey).Set(votesKey, k.cdc.MustMarshalBinaryLengthPrefixed(serVotes))
+	ctx.KVStore(k.storeKey).Set(publicVotesKey, k.cdc.MustMarshalBinaryLengthPrefixed(serVotes))
 }
 
-func (k Keeper) getVotes(ctx sdk.Context) []types.Vote {
-	if !ctx.KVStore(k.storeKey).Has(votesKey) {
+func (k Keeper) getPublicVotes(ctx sdk.Context) []types.Vote {
+	if !ctx.KVStore(k.storeKey).Has(publicVotesKey) {
 		return nil
 	}
-	bz := ctx.KVStore(k.storeKey).Get(votesKey)
+	bz := ctx.KVStore(k.storeKey).Get(publicVotesKey)
 	var serVotes []serializableVote
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &serVotes)
 
@@ -226,9 +177,9 @@ func (k Keeper) RecordVotes(ctx sdk.Context, voter sdk.AccAddress, votes []bool)
 		return types.ErrInvalidVoter
 	}
 
-	unconfVotes := k.getVotes(ctx)
+	unconfVotes := k.getPublicVotes(ctx)
 	if len(votes) != len(unconfVotes) {
-		k.Logger(ctx).Debug(fmt.Sprintf("vote length:%v, unconfirmed votesKey: %v", len(votes), len(unconfVotes)))
+		k.Logger(ctx).Debug(fmt.Sprintf("vote length:%v, unconfirmed publicVotesKey: %v", len(votes), len(unconfVotes)))
 		return types.ErrInvalidVotes
 	}
 	for i, vote := range votes {
@@ -238,15 +189,15 @@ func (k Keeper) RecordVotes(ctx sdk.Context, voter sdk.AccAddress, votes []bool)
 		}
 	}
 
-	k.setVotes(ctx, unconfVotes)
+	k.setPublicVotes(ctx, unconfVotes)
 	return nil
 }
 
 // Decide if external transactions are accepted based on the number of votes they received
 func (k Keeper) TallyCastVotes(ctx sdk.Context) {
 	k.Logger(ctx).Debug("decide unconfirmed txs")
-	votes := k.getVotes(ctx)
-	k.Logger(ctx).Debug(fmt.Sprintf("votesKey:%v", len(votes)))
+	votes := k.getPublicVotes(ctx)
+	k.Logger(ctx).Debug(fmt.Sprintf("publicVotesKey:%v", len(votes)))
 
 	if len(votes) == 0 {
 		return
@@ -262,14 +213,13 @@ func (k Keeper) TallyCastVotes(ctx sdk.Context) {
 		k.Logger(ctx).Debug(fmt.Sprintf("voting power:%v", power))
 
 		threshold := k.GetVotingThreshold(ctx)
-		// tx has 2/3 majority vote to confirm
 		if threshold.IsMet(power, totalPower) {
 			k.confirmTx(ctx, vote.Tx)
 		}
 	}
 
 	// Transactions have been processed, so reset for the next batch
-	k.setVotes(ctx, []types.Vote{})
+	k.setPublicVotes(ctx, []types.Vote{})
 }
 
 // temporary sanity check and logger until we actually do something with the verified transactions

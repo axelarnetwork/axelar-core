@@ -53,20 +53,33 @@ func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	return cli.GetTxCmd(cdc)
 }
 
-func (AppModuleBasic) GetQueryCmd(_ *codec.Codec) *cobra.Command {
-	return nil
+func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
+	return cli.GetQueryCmd(types.QuerierRoute, cdc)
 }
 
 type AppModule struct {
 	AppModuleBasic
 	keeper keeper.Keeper
+	voter  types.Voter
+	bridge *types.Bridge
 }
 
-// NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper) AppModule {
+// Used for testing without bridge
+func NewDummyAppModule(k keeper.Keeper, voter types.Voter) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
+		voter:          voter,
+	}
+}
+
+// NewAppModule creates a new AppModule object
+func NewAppModule(k keeper.Keeper, voter types.Voter, b types.Bridge) AppModule {
+	return AppModule{
+		AppModuleBasic: AppModuleBasic{},
+		keeper:         k,
+		voter:          voter,
+		bridge:         &b,
 	}
 }
 
@@ -91,7 +104,10 @@ func (AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper)
+	if am.bridge == nil {
+		return NewDummyHandler(am.keeper, am.voter)
+	}
+	return NewHandler(am.keeper, am.voter, *am.bridge)
 }
 
 func (AppModule) QuerierRoute() string {
