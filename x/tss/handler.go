@@ -17,6 +17,8 @@ func NewHandler(k keeper.Keeper) sdk.Handler {
 			return handleMsgTSS(ctx, k, &msg)
 		case types.MsgKeygenStart:
 			return handleMsgKeygenStart(ctx, &k, msg)
+		case types.MsgSignStart:
+			return handleMsgSignStart(ctx, &k, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
@@ -49,6 +51,22 @@ func handleMsgKeygenStart(ctx sdk.Context, k *keeper.Keeper, msg types.MsgKeygen
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.EventTypeMsgKeygenStart),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+			// sdk.NewAttribute(types.AttributePayload, msg.Payload.String()),
+		),
+	)
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+}
+
+func handleMsgSignStart(ctx sdk.Context, k *keeper.Keeper, msg types.MsgSignStart) (*sdk.Result, error) {
+	if err := k.StartSign(ctx, msg); err != nil {
+		return nil, err
+	}
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.EventTypeMsgSignStart),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
 			// sdk.NewAttribute(types.AttributePayload, msg.Payload.String()),
 		),

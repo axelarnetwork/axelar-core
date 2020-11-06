@@ -6,11 +6,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelar/exported"
 )
 
-type PreVote struct {
-	Tx          exported.ExternalTx
-	LocalAccept bool
-}
-
 type Vote struct {
 	Tx exported.ExternalTx
 	// Using a map instead of an array ensures that validators cannot vote multiple times.
