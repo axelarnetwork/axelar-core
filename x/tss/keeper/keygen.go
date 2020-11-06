@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/tendermint/tendermint/libs/log"
+
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	tssd "github.com/axelarnetwork/tssd/pb"
@@ -55,7 +57,7 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 		}
 	}
 	if !ok {
-		err := fmt.Errorf("cosmos bug: my validator address is not in the validator list: [%s]", myAddress)
+		err := fmt.Errorf("broadcaster module bug: my validator address is not in the validator list: [%s]", myAddress)
 		k.Logger(ctx).Error(err.Error())
 		return nil // don't propagate nondeterministic errors
 	}
@@ -81,52 +83,57 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 			},
 		},
 	}
-	k.Logger(ctx).Debug("initiate tssd gRPC keygen send keygen init data")
-	if err := k.keygenStream.Send(keygenInfo); err != nil {
-		wrapErr := sdkerrors.Wrap(err, "failed tssd gRPC keygen send keygen init data")
-		k.Logger(ctx).Error(wrapErr.Error())
-		return nil // don't propagate nondeterministic errors
-	}
-	k.Logger(ctx).Debug("successful tssd gRPC keygen send keygen init data")
+
+	k.Logger(ctx).Debug("initiate tssd gRPC keygen init goroutine")
+	go func(log log.Logger) {
+		log.Debug("keygen init goroutine: begin")
+		defer log.Debug("keygen init goroutine: end")
+		if err := k.keygenStream.Send(keygenInfo); err != nil {
+			wrapErr := sdkerrors.Wrap(err, "failed tssd gRPC keygen send keygen init data")
+			log.Error(wrapErr.Error())
+		} else {
+			log.Debug("successful tssd gRPC keygen init goroutine")
+		}
+	}(k.Logger(ctx))
 
 	// server handler https://grpc.io/docs/languages/go/basics/#bidirectional-streaming-rpc-1
 	// TODO refactor
 	k.Logger(ctx).Debug("initiate gRPC handler goroutine")
-	go func() {
-		k.Logger(ctx).Debug("handler goroutine: begin")
+	go func(log log.Logger) {
+		log.Debug("handler goroutine: begin")
 		defer func() {
-			k.Logger(ctx).Debug("handler goroutine: end")
+			log.Debug("handler goroutine: end")
 		}()
 		for {
-			k.Logger(ctx).Debug("handler goroutine: blocking call to gRPC stream Recv...")
+			log.Debug("handler goroutine: blocking call to gRPC stream Recv...")
 			msgOneof, err := k.keygenStream.Recv() // blocking
 			if err == io.EOF {                     // output stream closed by server
-				k.Logger(ctx).Debug("handler goroutine: gRPC stream closed by server")
+				log.Debug("handler goroutine: gRPC stream closed by server")
 				return
 			}
 			if err != nil {
 				newErr := sdkerrors.Wrap(err, "handler goroutine: failure to receive msg from gRPC server stream")
-				k.Logger(ctx).Error(newErr.Error())
+				log.Error(newErr.Error())
 				return
 			}
 
 			msg := msgOneof.GetMsg()
 			if msg == nil {
 				newErr := sdkerrors.Wrap(types.ErrTss, "handler goroutine: server stream should send only msg type")
-				k.Logger(ctx).Error(newErr.Error())
+				log.Error(newErr.Error())
 				return
 			}
 
-			k.Logger(ctx).Debug(fmt.Sprintf("handler goroutine: outgoing keygen msg: key [%s] from me [%s] broadcast? [%t] to [%s]", info.NewKeyID, myAddress, msg.IsBroadcast, msg.ToPartyUid))
+			log.Debug(fmt.Sprintf("handler goroutine: outgoing keygen msg: key [%s] from me [%s] broadcast? [%t] to [%s]", info.NewKeyID, myAddress, msg.IsBroadcast, msg.ToPartyUid))
 			tssMsg := types.NewMsgKeygenTraffic(info.NewKeyID, msg)
 			if err := k.broadcaster.Broadcast(ctx, []broadcast.ValidatorMsg{tssMsg}); err != nil {
 				newErr := sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing keygen msg")
-				k.Logger(ctx).Error(newErr.Error())
+				log.Error(newErr.Error())
 				return
 			}
-			k.Logger(ctx).Debug(fmt.Sprintf("handler goroutine: successful keygen msg broadcast"))
+			log.Debug(fmt.Sprintf("handler goroutine: successful keygen msg broadcast"))
 		}
-	}()
+	}(k.Logger(ctx))
 
 	k.Logger(ctx).Debug(fmt.Sprintf("successful StartKeygen: key [%s] ", info.NewKeyID))
 	return nil
