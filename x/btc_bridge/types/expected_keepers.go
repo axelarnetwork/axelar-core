@@ -15,6 +15,6 @@ type Voter interface {
 }
 
 type Signer interface {
-	GetSig(ctx sdk.Context, sigID string) (r *big.Int, s *big.Int)
+	GetSig(ctx sdk.Context, sigID string) (r *big.Int, s *big.Int, e error)
 	GetKey(ctx sdk.Context, keyID string) (ecdsa.PublicKey, error)
 }

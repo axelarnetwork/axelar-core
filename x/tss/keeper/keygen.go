@@ -208,8 +208,8 @@ func (k Keeper) KeygenMsg(ctx sdk.Context, msg types.MsgKeygenTraffic) error {
 
 func (k Keeper) GetKey(ctx sdk.Context, keyUid string) (ecdsa.PublicKey, error) {
 	pubkeyBytes, err := k.client.GetKey(k.context,
-		&tssd.KeyUid{
-			KeyUid: keyUid,
+		&tssd.Uid{
+			Uid: keyUid,
 		},
 	)
 	if err != nil {

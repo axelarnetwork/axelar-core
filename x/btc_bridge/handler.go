@@ -205,8 +205,8 @@ func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, si
 	if rawTx == nil {
 		return nil, fmt.Errorf("withdraw tx for ID %s has not been prepared yet", msg.TxID)
 	}
-	r, s := signer.GetSig(ctx, msg.SignatureID)
-	if r == nil || s == nil {
+	r, s, err := signer.GetSig(ctx, msg.SignatureID)
+	if err != nil {
 		return nil, fmt.Errorf("signature not found")
 	}
 	sig := btcec.Signature{
