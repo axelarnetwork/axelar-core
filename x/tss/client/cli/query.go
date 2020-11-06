@@ -1,0 +1,61 @@
+package cli
+
+import (
+	"bytes"
+	"crypto/ecdsa"
+	"encoding/gob"
+	"fmt"
+
+	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
+	"github.com/axelarnetwork/axelar-core/x/tss/types"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/spf13/cobra"
+)
+
+// GetQueryCmd returns the cli query commands for this module
+func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	tssQueryCmd := &cobra.Command{
+		Use:                        types.ModuleName,
+		Short:                      fmt.Sprintf("Querying commands for the %s module", types.ModuleName),
+		DisableFlagParsing:         true,
+		SuggestionsMinimumDistance: 2,
+		RunE:                       client.ValidateCmd,
+	}
+
+	tssQueryCmd.AddCommand(flags.GetCommands(GetCmdGetKey(queryRoute, cdc))...)
+
+	return tssQueryCmd
+
+}
+
+func GetCmdGetKey(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "get-key [id]", // TODO should this use keeper.QueryGetKey constant?
+		Short: "Get a threshold pubkey",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			keyID := args[0]
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryGetKey, keyID), nil)
+			if err != nil {
+				fmt.Printf("get-key error for id [%s]: [%v]", keyID, err)
+				return nil
+			}
+
+			var out ecdsa.PublicKey
+			if err := gob.NewDecoder(bytes.NewReader(res)).Decode(&out); err != nil {
+				fmt.Printf("faulure to re-deserialize pubkey from querier [%s]: [%v]", keyID, err)
+				return nil
+			}
+
+			// TODO can't figure out how to register elliptic.Curve interface and *btcec.KoblitzCurve struct that implements it with amino codec
+			// thus, anything that uses amino will break, including the following call to PrintOutput
+			fmt.Printf("TEST printout: [%v]", out)
+			return cliCtx.PrintOutput(out)
+		},
+	}
+}

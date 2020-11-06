@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/btcsuite/btcd/btcec"
 	"github.com/tendermint/tendermint/libs/log"
 
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
@@ -15,6 +16,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
+
+func init() {
+	// TODO we break abstraction because we need to know the underlying curve type used in tss-lib
+	gob.Register(&btcec.KoblitzCurve{}) // used in GetKey
+}
 
 func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 	k.Logger(ctx).Info(fmt.Sprintf("initiate StartKeygen: threshold [%d] key [%s] ", info.Threshold, info.NewKeyID))

@@ -54,7 +54,7 @@ func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 }
 
 func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
-	return nil
+	return cli.GetQueryCmd(types.QuerierRoute, cdc)
 }
 
 type AppModule struct {
@@ -99,7 +99,7 @@ func (AppModule) QuerierRoute() string {
 }
 
 func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return nil
+	return keeper.NewQuerier(am.keeper) // TODO why is NewQuerier in the keeper package (see NewHandler above)
 }
 
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
