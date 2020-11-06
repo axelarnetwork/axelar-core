@@ -24,3 +24,10 @@ func (u UTXO) PkScript() []byte {
 func (u UTXO) IsInvalid() bool {
 	return u.Hash == nil || u.Amount < 0 || u.Address == nil
 }
+
+func (u UTXO) Equals(other UTXO) bool {
+	return u.Hash.IsEqual(other.Hash) &&
+		u.VoutIdx == other.VoutIdx &&
+		u.Amount == other.Amount &&
+		u.Address.String() == other.Address.String()
+}

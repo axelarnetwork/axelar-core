@@ -157,8 +157,8 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.M
 	}) {
 		return nil, fmt.Errorf("transaction not verified")
 	}
-	utxo := k.GetUTXO(ctx, txId)
-	if utxo == nil {
+	utxo, ok := k.GetUTXO(ctx, txId)
+	if !ok {
 		return nil, fmt.Errorf("transaction ID is not known")
 	}
 
@@ -196,8 +196,8 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.M
 }
 
 func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, signer types.Signer, msg types.MsgWithdraw) (*sdk.Result, error) {
-	utxo := k.GetUTXO(ctx, msg.TxID)
-	if utxo == nil {
+	utxo, ok := k.GetUTXO(ctx, msg.TxID)
+	if !ok {
 		return nil, fmt.Errorf("transaction ID is not known")
 	}
 
