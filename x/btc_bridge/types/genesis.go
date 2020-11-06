@@ -10,7 +10,7 @@ type GenesisState struct {
 }
 
 func DefaultGenesisState() GenesisState {
-	return GenesisState{ConfirmationHeight: 6}
+	return GenesisState{ConfirmationHeight: 1}
 }
 
 func ValidateGenesis(state GenesisState) error {
