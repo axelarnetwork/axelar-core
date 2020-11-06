@@ -74,7 +74,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, b types.
 		return nil, sdkerrors.Wrap(err, "could not transform Bitcoin transaction ID to hash")
 	}
 
-	if err = b.VeriyfyTx(msg.Tx); err != nil {
+	if err = b.VerifyTx(msg.Tx); err != nil {
 		v.SetFutureVote(ctx, exported.FutureVote{Tx: msg.Tx, LocalAccept: false})
 		k.Logger(ctx).Debug(sdkerrors.Wrapf(err,
 			"expected transaction (%s) could not be verified", msg.Tx.String()).Error())

@@ -9,7 +9,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	axTypes "github.com/axelarnetwork/axelar-core/x/axelar/types"
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
 )
 
@@ -31,7 +30,7 @@ func NewQuerier(k Keeper) sdk.Querier {
 func queryAddress(ctx sdk.Context, addr string, k Keeper) ([]byte, error) {
 	address := k.GetTrackedAddress(ctx, addr)
 	if address.IsInvalid() {
-		return nil, axTypes.ErrAddressNotTracked
+		return nil, types.ErrAddressNotTracked
 	}
 	bz, err := codec.MarshalJSONIndent(types.ModuleCdc, address)
 	if err != nil {

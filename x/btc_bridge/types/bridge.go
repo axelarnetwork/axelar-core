@@ -30,7 +30,7 @@ func (b Bridge) TrackAddress(address string) error {
 	return b.rpc.ImportAddress(address)
 }
 
-func (b Bridge) VeriyfyTx(tx exported.ExternalTx) error {
+func (b Bridge) VerifyTx(tx exported.ExternalTx) error {
 	hash, err := chainhash.NewHashFromStr(tx.TxID)
 	if err != nil {
 		return sdkerrors.Wrap(err, "could not transform Bitcoin transaction ID to hash")
