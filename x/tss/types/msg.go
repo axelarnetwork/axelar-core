@@ -13,7 +13,8 @@ import (
 var (
 	_ sdk.Msg                = &MsgKeygenStart{}
 	_ sdk.Msg                = &MsgSignStart{}
-	_ broadcast.ValidatorMsg = &MsgTSS{}
+	_ broadcast.ValidatorMsg = &MsgKeygenTraffic{}
+	_ broadcast.ValidatorMsg = &MsgSignTraffic{}
 )
 
 // MsgKeygenStart indicate the start of keygen
@@ -25,17 +26,24 @@ type MsgKeygenStart struct {
 
 // MsgSignStart indicate the start of sign
 type MsgSignStart struct {
-	Sender   sdk.AccAddress
-	NewSigID string
-	KeyID    string
-	Msg      []byte
+	Sender    sdk.AccAddress
+	NewSigID  string
+	KeyID     string
+	MsgToSign []byte
 }
 
-// MsgTSS protocol message for either keygen or sign
-type MsgTSS struct {
+// MsgKeygenTraffic protocol message
+type MsgKeygenTraffic struct {
 	Sender    sdk.AccAddress
 	SessionID string
-	Payload   *tssd.MessageOut // TODO probably should not be a pointer; it's serialized by cosmos
+	Payload   *tssd.KeygenTrafficOut // pointer because it contains a mutex
+}
+
+// MsgSignTraffic protocol message
+type MsgSignTraffic struct {
+	Sender    sdk.AccAddress
+	SessionID string
+	Payload   *tssd.SignTrafficOut // pointer because it contains a mutex
 }
 
 // NewMsgKeygenStart TODO unnecessary method; delete it?
@@ -82,9 +90,9 @@ func (msg MsgKeygenStart) GetSigners() []sdk.AccAddress {
 // NewMsgSignStart TODO unnecessary method; delete it?
 func NewMsgSignStart(newSigID string, keyID string, msg []byte) MsgSignStart {
 	return MsgSignStart{
-		NewSigID: newSigID,
-		KeyID:    keyID,
-		Msg:      msg,
+		NewSigID:  newSigID,
+		KeyID:     keyID,
+		MsgToSign: msg,
 	}
 }
 
@@ -106,7 +114,7 @@ func (msg MsgSignStart) ValidateBasic() error {
 	if msg.KeyID == "" {
 		return sdkerrors.Wrap(ErrTss, "key id must be set")
 	}
-	if msg.Msg == nil {
+	if msg.MsgToSign == nil {
 		return sdkerrors.Wrap(ErrTss, "msg must be set")
 	}
 	// TODO enforce a maximum length for msg.SessionID?
@@ -124,23 +132,23 @@ func (msg MsgSignStart) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }
 
-// NewMsgTSS TODO unnecessary method; delete it?
-func NewMsgTSS(sessionID string, payload *tssd.MessageOut) *MsgTSS {
-	return &MsgTSS{
+// NewMsgKeygenTraffic TODO unnecessary method; delete it?
+func NewMsgKeygenTraffic(sessionID string, payload *tssd.KeygenTrafficOut) *MsgKeygenTraffic {
+	return &MsgKeygenTraffic{
 		SessionID: sessionID,
 		Payload:   payload,
 	}
 }
 
 // Route implements the sdk.Msg interface.
-func (msg MsgTSS) Route() string { return RouterKey }
+func (msg MsgKeygenTraffic) Route() string { return RouterKey }
 
 // Type implements the sdk.Msg interface.
 // naming convention follows x/staking/types/msg.go
-func (msg MsgTSS) Type() string { return "in" }
+func (msg MsgKeygenTraffic) Type() string { return "in" }
 
 // ValidateBasic implements the sdk.Msg interface.
-func (msg MsgTSS) ValidateBasic() error {
+func (msg MsgKeygenTraffic) ValidateBasic() error {
 	if msg.Sender == nil {
 		return sdkerrors.Wrap(ErrTss, "sender must be set")
 	}
@@ -158,17 +166,66 @@ func (msg MsgTSS) ValidateBasic() error {
 }
 
 // GetSignBytes implements the sdk.Msg interface
-func (msg MsgTSS) GetSignBytes() []byte {
+func (msg MsgKeygenTraffic) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
 // GetSigners implements the sdk.Msg interface
-func (msg MsgTSS) GetSigners() []sdk.AccAddress {
+func (msg MsgKeygenTraffic) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }
 
 // SetSender implements the broadcast.ValidatorMsg interface
-func (msg *MsgTSS) SetSender(sender sdk.AccAddress) {
+func (msg *MsgKeygenTraffic) SetSender(sender sdk.AccAddress) {
+	msg.Sender = sender
+}
+
+// NewMsgSignTraffic TODO unnecessary method; delete it?
+func NewMsgSignTraffic(sessionID string, payload *tssd.SignTrafficOut) *MsgSignTraffic {
+	return &MsgSignTraffic{
+		SessionID: sessionID,
+		Payload:   payload,
+	}
+}
+
+// Route implements the sdk.Msg interface.
+func (msg MsgSignTraffic) Route() string { return RouterKey }
+
+// Type implements the sdk.Msg interface.
+// naming convention follows x/staking/types/msg.go
+func (msg MsgSignTraffic) Type() string { return "in" }
+
+// ValidateBasic implements the sdk.Msg interface.
+func (msg MsgSignTraffic) ValidateBasic() error {
+	if msg.Sender == nil {
+		return sdkerrors.Wrap(ErrTss, "sender must be set")
+	}
+	if msg.SessionID == "" {
+		return sdkerrors.Wrap(ErrTss, "session id must be set")
+	}
+	if !msg.Payload.IsBroadcast && len(msg.Payload.ToPartyUid) == 0 {
+		return sdkerrors.Wrap(ErrTss, "non-broadcast message must specify recipient")
+	}
+	if msg.Payload.IsBroadcast && len(msg.Payload.ToPartyUid) != 0 {
+		return sdkerrors.Wrap(ErrTss, "broadcast message must not specify recipient")
+	}
+	// TODO enforce a maximum length for msg.SessionID?
+	return nil
+}
+
+// GetSignBytes implements the sdk.Msg interface
+func (msg MsgSignTraffic) GetSignBytes() []byte {
+	bz := ModuleCdc.MustMarshalJSON(msg)
+	return sdk.MustSortJSON(bz)
+}
+
+// GetSigners implements the sdk.Msg interface
+func (msg MsgSignTraffic) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{msg.Sender}
+}
+
+// SetSender implements the broadcast.ValidatorMsg interface
+func (msg *MsgSignTraffic) SetSender(sender sdk.AccAddress) {
 	msg.Sender = sender
 }
