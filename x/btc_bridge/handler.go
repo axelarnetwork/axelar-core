@@ -42,8 +42,8 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Sig
 }
 
 func handleMsgTrackAddressFromPubKey(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, msg types.MsgTrackAddressFromPubKey) (*sdk.Result, error) {
-	key := s.GetKey(ctx, msg.Chain)
-	if key == (ecdsa.PublicKey{}) {
+	key, err := s.GetKey(ctx, msg.KeyID)
+	if err != nil {
 		return nil, fmt.Errorf("keyId not recognized")
 	}
 

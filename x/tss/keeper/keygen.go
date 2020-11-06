@@ -1,7 +1,9 @@
 package keeper
 
 import (
+	"bytes"
 	"crypto/ecdsa"
+	"encoding/gob"
 	"fmt"
 	"io"
 
@@ -204,6 +206,20 @@ func (k Keeper) KeygenMsg(ctx sdk.Context, msg types.MsgKeygenTraffic) error {
 	return nil
 }
 
-func (k *Keeper) GetKey(ctx sdk.Context, keyID string) ecdsa.PublicKey {
-	return ecdsa.PublicKey{}
+func (k Keeper) GetKey(ctx sdk.Context, keyUid string) (ecdsa.PublicKey, error) {
+	pubkeyBytes, err := k.client.GetKey(k.context,
+		&tssd.KeyUid{
+			KeyUid: keyUid,
+		},
+	)
+	if err != nil {
+		return ecdsa.PublicKey{}, sdkerrors.Wrapf(err, "failure gRPC get key [%s]", keyUid)
+	}
+
+	var pubkey ecdsa.PublicKey
+	if err := gob.NewDecoder(bytes.NewReader(pubkeyBytes.Payload)).Decode(&pubkey); err != nil {
+		return ecdsa.PublicKey{}, fmt.Errorf("faulure to deserialize key [%s]: [%v]", keyUid, err)
+	}
+
+	return pubkey, nil
 }
