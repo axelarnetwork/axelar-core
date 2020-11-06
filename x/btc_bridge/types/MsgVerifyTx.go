@@ -17,10 +17,11 @@ type MsgVerifyTx struct {
 	UTXO   UTXO
 }
 
-func NewMsgVerifyTx(sender sdk.AccAddress, txHash *chainhash.Hash, voutIdx uint32, destination btcutil.Address, amount btcutil.Amount) MsgVerifyTx {
+func NewMsgVerifyTx(sender sdk.AccAddress, chain string, txHash *chainhash.Hash, voutIdx uint32, destination string, amount btcutil.Amount) MsgVerifyTx {
 	return MsgVerifyTx{
 		Sender: sender,
 		UTXO: UTXO{
+			Chain:   chain,
 			Hash:    txHash,
 			VoutIdx: voutIdx,
 			Address: destination,

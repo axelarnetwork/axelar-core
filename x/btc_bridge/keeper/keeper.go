@@ -3,10 +3,7 @@ package keeper
 import (
 	"fmt"
 
-	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -88,25 +85,8 @@ func (k Keeper) SetRawTx(ctx sdk.Context, txId string, tx *wire.MsgTx) {
 	ctx.KVStore(k.storeKey).Set([]byte(rawKey+txId), bz)
 }
 
-type serializableUtxo struct {
-	Hash    *chainhash.Hash
-	VoutIdx uint32
-	Amount  btcutil.Amount
-	Address string
-	Chain   string
-}
-
 func (k Keeper) SetUTXO(ctx sdk.Context, txId string, utxo types.UTXO) {
-	sUtxo := serializableUtxo{
-		Hash:    utxo.Hash,
-		VoutIdx: utxo.VoutIdx,
-		Amount:  utxo.Amount,
-		Address: utxo.Address.EncodeAddress(),
-	}
-	if utxo.Address.IsForNet(&chaincfg.MainNetParams) {
-		sUtxo.Chain = chaincfg.MainNetParams.Name
-	}
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(sUtxo)
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(utxo)
 	ctx.KVStore(k.storeKey).Set([]byte(utxoKey+txId), bz)
 }
 
@@ -115,20 +95,8 @@ func (k Keeper) GetUTXO(ctx sdk.Context, txId string) (types.UTXO, bool) {
 	if bz == nil {
 		return types.UTXO{}, false
 	}
-	var sUtxo serializableUtxo
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &sUtxo)
-	var chain *chaincfg.Params
-	if sUtxo.Chain == chaincfg.MainNetParams.Name {
-		chain = &chaincfg.MainNetParams
-	} else {
-		chain = &chaincfg.TestNet3Params
-	}
+	var utxo types.UTXO
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &utxo)
 
-	address, _ := btcutil.DecodeAddress(sUtxo.Address, chain)
-	return types.UTXO{
-		Hash:    sUtxo.Hash,
-		VoutIdx: sUtxo.VoutIdx,
-		Amount:  sUtxo.Amount,
-		Address: address,
-	}, true
+	return utxo, true
 }
