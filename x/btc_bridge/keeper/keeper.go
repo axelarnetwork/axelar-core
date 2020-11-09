@@ -75,7 +75,7 @@ func (k Keeper) GetRawTx(ctx sdk.Context, txId string) *wire.MsgTx {
 		return nil
 	}
 	var tx *wire.MsgTx
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, tx)
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &tx)
 
 	return tx
 }
