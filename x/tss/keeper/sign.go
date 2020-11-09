@@ -27,7 +27,7 @@ func (k *Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
 	// TODO for now assume all validators participate
 	validators := k.stakingKeeper.GetAllValidators(ctx)
 	if k.broadcaster.GetProxyCount(ctx) != uint32(len(validators)) {
-		// keygen cannot proceed unless all validators have registered broadcast proxies
+		// sign cannot proceed unless all validators have registered broadcast proxies
 		err := fmt.Errorf("not enough proxies registered: proxies: %d; validators: %d", k.broadcaster.GetProxyCount(ctx), len(validators))
 		k.Logger(ctx).Error(err.Error())
 		return err
@@ -74,7 +74,7 @@ func (k *Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
 		log.Debug("sign init goroutine: begin")
 		defer log.Debug("sign init goroutine: end")
 		if err := k.signStream.Send(signInfo); err != nil {
-			wrapErr := sdkerrors.Wrap(err, "failed tssd gRPC sign send keygen init data")
+			wrapErr := sdkerrors.Wrap(err, "failed tssd gRPC sign send sign init data")
 			log.Error(wrapErr.Error())
 		} else {
 			log.Debug("successful tssd gRPC sign init goroutine")
@@ -112,11 +112,11 @@ func (k *Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
 			log.Debug(fmt.Sprintf("handler goroutine: outgoing sign msg: key [%s] from me [%s] broadcast? [%t] to [%s]", info.KeyID, myAddress, msg.IsBroadcast, msg.ToPartyUid))
 			tssMsg := types.NewMsgSignTraffic(info.KeyID, msg)
 			if err := k.broadcaster.Broadcast(ctx, []broadcast.ValidatorMsg{tssMsg}); err != nil {
-				newErr := sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing keygen msg")
+				newErr := sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing sign msg")
 				log.Error(newErr.Error())
 				return
 			}
-			log.Debug(fmt.Sprintf("handler goroutine: successful keygen msg broadcast"))
+			log.Debug(fmt.Sprintf("handler goroutine: successful sign msg broadcast"))
 		}
 	}(k.Logger(ctx))
 
@@ -199,7 +199,7 @@ func (k Keeper) SignMsg(ctx sdk.Context, msg types.MsgSignTraffic) error {
 // but we don't want to import btcd everywhere
 func (k Keeper) GetSig(ctx sdk.Context, sigUid string) (r *big.Int, s *big.Int, e error) {
 
-	sigBytes, err := k.client.GetKey(k.context,
+	sigBytes, err := k.client.GetSig(k.context,
 		&tssd.Uid{
 			Uid: sigUid,
 		},
