@@ -85,11 +85,11 @@ func (t TestSigner) GetKey(ctx sdkTypes.Context, keyID string) (ecdsa.PublicKey,
 var _ sdkTypes.MultiStore = TestMultiStore{}
 
 func NewMultiStore() sdkTypes.MultiStore {
-	return TestMultiStore{kvstore: NewTestKVStore()}
+	return TestMultiStore{kvstore: map[string]sdkTypes.KVStore{}}
 }
 
 type TestMultiStore struct {
-	kvstore sdkTypes.KVStore
+	kvstore map[string]sdkTypes.KVStore
 }
 
 func (t TestMultiStore) GetStoreType() sdkTypes.StoreType {
@@ -117,7 +117,13 @@ func (t TestMultiStore) GetStore(key sdkTypes.StoreKey) sdkTypes.Store {
 }
 
 func (t TestMultiStore) GetKVStore(key sdkTypes.StoreKey) sdkTypes.KVStore {
-	return t.kvstore
+	if store, ok := t.kvstore[key.String()]; ok {
+		return store
+	} else {
+		store := TestKVStore{}
+		t.kvstore[key.String()] = store
+		return store
+	}
 }
 
 func (t TestMultiStore) TracingEnabled() bool {
@@ -131,8 +137,6 @@ func (t TestMultiStore) SetTracer(w io.Writer) sdkTypes.MultiStore {
 func (t TestMultiStore) SetTracingContext(context sdkTypes.TraceContext) sdkTypes.MultiStore {
 	panic("implement me")
 }
-
-var _ sdkTypes.KVStore = TestKVStore{}
 
 func NewTestKVStore() sdkTypes.KVStore {
 	return TestKVStore{store: map[string][]byte{}}
@@ -174,7 +178,7 @@ func (t TestKVStore) Set(key, value []byte) {
 }
 
 func (t TestKVStore) Delete(key []byte) {
-	panic("implement me")
+	delete(t.store, string(key))
 }
 
 func (t TestKVStore) Iterator(start, end []byte) sdkTypes.Iterator {
