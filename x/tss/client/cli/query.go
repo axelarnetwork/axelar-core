@@ -1,13 +1,11 @@
 package cli
 
 import (
-	"bytes"
-	"crypto/ecdsa"
-	"encoding/gob"
 	"fmt"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
+	"github.com/binance-chain/tss-lib/crypto"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -46,15 +44,14 @@ func GetCmdGetKey(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				return nil
 			}
 
-			var out ecdsa.PublicKey
-			if err := gob.NewDecoder(bytes.NewReader(res)).Decode(&out); err != nil {
-				fmt.Printf("faulure to re-deserialize pubkey from querier [%s]: [%v]", keyID, err)
-				return nil
+			var out crypto.ECPoint
+			cdc.MustUnmarshalJSON(res, &out)
+
+			// crypto.ECPoint supports only json marshalling
+			if cliCtx.OutputFormat != "json" {
+				fmt.Printf("warning: output format [%s] not supported. use '-o json'", cliCtx.OutputFormat)
 			}
 
-			// TODO can't figure out how to register elliptic.Curve interface and *btcec.KoblitzCurve struct that implements it with amino codec
-			// thus, anything that uses amino will break, including the following call to PrintOutput
-			fmt.Printf("TEST printout: [%v]", out)
 			return cliCtx.PrintOutput(out)
 		},
 	}

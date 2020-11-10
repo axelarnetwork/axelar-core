@@ -1,12 +1,13 @@
 package keeper
 
 import (
-	"bytes"
-	"encoding/gob"
 	"fmt"
 
+	"github.com/axelarnetwork/axelar-core/x/tss/types"
+	"github.com/axelarnetwork/tssd/convert"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -27,15 +28,21 @@ func NewQuerier(k Keeper) sdk.Querier {
 }
 
 func queryGetKey(ctx sdk.Context, keyID string, k Keeper) ([]byte, error) {
-	pubkey, err := k.GetKey(ctx, keyID)
+	pk, err := k.GetKey(ctx, keyID)
 	if err != nil {
 		return nil, sdkerrors.Wrapf(err, "GetKey error for key [%s]", keyID)
 	}
 
-	var bz bytes.Buffer
-	if err := gob.NewEncoder(&bz).Encode(pubkey); err != nil {
-		return nil, sdkerrors.Wrapf(err, "failed to re-serialize pubkey for query [%s]", keyID)
+	// cosmos sdk forces us to marshal the result into []byte
+	// this []byte will then be immediately unmarshalled and then re-marshalled for printing
+
+	// pubkey is of type ecdsa.PublicKey, which is inherently un-marshalable
+	// convert pubkey to tss-libs crypto.ECPoint, which is marshallable
+	pkMarshalable := convert.PubkeyToPoint(pk)
+	bz, err := codec.MarshalJSONIndent(types.ModuleCdc, pkMarshalable)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}
 
-	return bz.Bytes(), nil
+	return bz, nil
 }

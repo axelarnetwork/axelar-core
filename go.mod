@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/axelarnetwork/tssd v0.0.0-00010101000000-000000000000
+	github.com/binance-chain/tss-lib v1.3.2 // for tests only
 	github.com/btcsuite/btcd v0.21.0-beta
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/cosmos/cosmos-sdk v0.39.1
