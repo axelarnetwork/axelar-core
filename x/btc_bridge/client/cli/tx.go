@@ -69,7 +69,7 @@ func GetCmdTrackAddressFromPubKey(cdc *codec.Codec) *cobra.Command {
 		Short: "Make the axelar network aware of a specific address on Bitcoin",
 		Long: fmt.Sprintf("Make the axelar network aware of a specific address on Bitcoin. Choose \"%s\" or \"%s\" for the chain.",
 			chaincfg.MainNetParams.Name, chaincfg.TestNet3Params.Name),
-		Args: cobra.ExactArgs(1),
+		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx, txBldr := prepare(cmd.InOrStdin(), cdc)
@@ -100,12 +100,12 @@ func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			addr, err := parseAddress(args[0], args[2])
+			_, err = parseAddress(args[0], args[2])
 			if err != nil {
 				return err
 			}
 
-			amount, err := types.ParseBtc(args[1])
+			amount, err := types.ParseBtc(args[3])
 			if err != nil {
 				return err
 			}
@@ -119,7 +119,7 @@ func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
 				voutIdx = uint32(n)
 			}
 
-			msg := types.NewMsgVerifyTx(cliCtx.GetFromAddress(), hash, voutIdx, addr, amount)
+			msg := types.NewMsgVerifyTx(cliCtx.GetFromAddress(), args[0], hash, voutIdx, args[2], amount)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -131,16 +131,16 @@ func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
 
 func GetCmdWithdraw(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "withdraw [sourceTxId] [sigId]",
+		Use:   "withdraw [sourceTxId] [sigId] [keyId]",
 		Short: "Withdraw funds from an Axelar address",
 		Long: `Withdraw funds from an Axelar address according to a previously signed raw transaction. 
 Ensure the axelar address is being tracked and the transaction signed first`,
-		Args: cobra.ExactArgs(2),
+		Args: cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx, txBldr := prepare(cmd.InOrStdin(), cdc)
 
-			msg := types.NewMsgWithdraw(cliCtx.GetFromAddress(), args[0], args[1])
+			msg := types.NewMsgWithdraw(cliCtx.GetFromAddress(), args[0], args[1], args[2])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -170,9 +170,9 @@ func GetCmdGenerateRawTx(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			addr, err := parseAddress(args[0], args[3])
+			_, err = parseAddress(args[0], args[3])
 
-			msg := types.NewMsgRawTx(cliCtx.GetFromAddress(), hash, btc, addr)
+			msg := types.NewMsgRawTx(cliCtx.GetFromAddress(), args[0], hash, btc, args[3])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

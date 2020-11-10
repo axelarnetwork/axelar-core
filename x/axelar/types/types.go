@@ -22,5 +22,5 @@ type VotingThreshold struct {
 }
 
 func (t VotingThreshold) IsMet(accept sdk.Int, total sdk.Int) bool {
-	return accept.MulRaw(t.Numerator).GT(total.MulRaw(t.Denominator))
+	return accept.MulRaw(t.Denominator).GT(total.MulRaw(t.Numerator))
 }

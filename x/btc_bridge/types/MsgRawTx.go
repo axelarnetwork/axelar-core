@@ -16,11 +16,13 @@ type MsgRawTx struct {
 	Sender      sdk.AccAddress
 	TxHash      *chainhash.Hash
 	Amount      btcutil.Amount
-	Destination btcutil.Address
+	Destination string
+	Chain       string
 }
 
-func NewMsgRawTx(sender sdk.AccAddress, txHash *chainhash.Hash, amount btcutil.Amount, destination btcutil.Address) MsgRawTx {
+func NewMsgRawTx(sender sdk.AccAddress, chain string, txHash *chainhash.Hash, amount btcutil.Amount, destination string) MsgRawTx {
 	return MsgRawTx{
+		Chain:       chain,
 		Sender:      sender,
 		TxHash:      txHash,
 		Amount:      amount,
@@ -46,7 +48,7 @@ func (msg MsgRawTx) ValidateBasic() error {
 	if msg.Amount <= 0 {
 		return fmt.Errorf("transaction amount must be greater than zero")
 	}
-	if msg.Destination == nil {
+	if msg.Destination == "" {
 		return fmt.Errorf("missing destination")
 	}
 

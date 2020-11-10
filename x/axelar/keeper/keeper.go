@@ -81,6 +81,10 @@ func (k Keeper) GetVotingInterval(ctx sdk.Context) int64 {
 
 // Broadcast the batched future votes
 func (k Keeper) BatchVote(ctx sdk.Context) error {
+	if local := k.broadcaster.GetLocalPrincipal(ctx); local == nil {
+		return nil
+	}
+
 	preVotes := k.getFutureVotes(ctx)
 	k.Logger(ctx).Debug(fmt.Sprintf("unpublished publicVotesKey:%v", len(preVotes)))
 

@@ -90,13 +90,13 @@ func (k Keeper) SetUTXO(ctx sdk.Context, txId string, utxo types.UTXO) {
 	ctx.KVStore(k.storeKey).Set([]byte(utxoKey+txId), bz)
 }
 
-func (k Keeper) GetUTXO(ctx sdk.Context, txId string) *types.UTXO {
+func (k Keeper) GetUTXO(ctx sdk.Context, txId string) (types.UTXO, bool) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(utxoKey + txId))
 	if bz == nil {
-		return nil
+		return types.UTXO{}, false
 	}
-	var utxo *types.UTXO
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, utxo)
+	var utxo types.UTXO
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &utxo)
 
-	return utxo
+	return utxo, true
 }

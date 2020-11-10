@@ -14,13 +14,15 @@ type MsgWithdraw struct {
 	Sender      sdk.AccAddress
 	TxID        string
 	SignatureID string
+	KeyID       string
 }
 
-func NewMsgWithdraw(sender sdk.AccAddress, txId string, sigId string) MsgWithdraw {
+func NewMsgWithdraw(sender sdk.AccAddress, txId string, sigId string, keyId string) MsgWithdraw {
 	return MsgWithdraw{
 		Sender:      sender,
 		TxID:        txId,
 		SignatureID: sigId,
+		KeyID:       keyId,
 	}
 }
 

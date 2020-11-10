@@ -103,7 +103,7 @@ func trackAddress(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, address
 	// Importing an address takes a long time, therefore it cannot be done in the critical path.
 	// ctx might not be valid anymore when err is returned, so closing over logger to be safe
 	go func(logger log.Logger) {
-		if err := rpc.ImportAddress(address); err != nil {
+		if err := rpc.ImportAddressRescan(address, "", false); err != nil {
 			logger.Error(fmt.Sprintf("Could not track address %v", address))
 		} else {
 			logger.Debug(fmt.Sprintf("successfully tracked all past transaction for address %v", address))
@@ -157,8 +157,8 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.M
 	}) {
 		return nil, fmt.Errorf("transaction not verified")
 	}
-	utxo := k.GetUTXO(ctx, txId)
-	if utxo == nil {
+	utxo, ok := k.GetUTXO(ctx, txId)
+	if !ok {
 		return nil, fmt.Errorf("transaction ID is not known")
 	}
 
@@ -169,7 +169,15 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.M
 	txIn := wire.NewTxIn(outPoint, nil, nil)
 	tx.AddTxIn(txIn)
 
-	addrScript, err := txscript.PayToAddrScript(msg.Destination)
+	var params *chaincfg.Params
+	if msg.Chain == chaincfg.MainNetParams.Name {
+		params = &chaincfg.MainNetParams
+	} else {
+		params = &chaincfg.TestNet3Params
+	}
+
+	destination, _ := btcutil.DecodeAddress(msg.Destination, params)
+	addrScript, err := txscript.PayToAddrScript(destination)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "could not create pay-to-address script for destination address")
 	}
@@ -178,6 +186,8 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.M
 
 	k.SetRawTx(ctx, txId, tx)
 
+	hash, err := txscript.CalcSignatureHash(utxo.PkScript(), txscript.SigHashAll, tx, 0)
+	k.Logger(ctx).Info(fmt.Sprintf("bitcoin tx to sign: %s", k.Codec().MustMarshalJSON(hash)))
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
@@ -185,19 +195,20 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.M
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
 			sdk.NewAttribute(types.AttributeTxId, txId),
 			sdk.NewAttribute(types.AttributeAmount, msg.Amount.String()),
-			sdk.NewAttribute(types.AttributeDestination, msg.Destination.String()),
+			sdk.NewAttribute(types.AttributeDestination, msg.Destination),
 		),
 	)
 
 	return &sdk.Result{
-		Log:    "successfully created withdraw transaction for Bitcoin",
+		Data:   hash,
+		Log:    fmt.Sprintf("successfully created withdraw transaction for Bitcoin : %s", string(hash)),
 		Events: ctx.EventManager().Events(),
 	}, nil
 }
 
 func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, signer types.Signer, msg types.MsgWithdraw) (*sdk.Result, error) {
-	utxo := k.GetUTXO(ctx, msg.TxID)
-	if utxo == nil {
+	utxo, ok := k.GetUTXO(ctx, msg.TxID)
+	if !ok {
 		return nil, fmt.Errorf("transaction ID is not known")
 	}
 
@@ -214,7 +225,13 @@ func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, si
 		S: s,
 	}
 
-	sigScript, err := txscript.NewScriptBuilder().AddData(append(sig.Serialize(), byte(txscript.SigHashAll))).Script()
+	pk, err := signer.GetKey(ctx, msg.KeyID)
+	if err != nil {
+		return nil, fmt.Errorf("key not found")
+	}
+
+	key := btcec.PublicKey(pk)
+	sigScript, err := txscript.NewScriptBuilder().AddData(append(sig.Serialize(), byte(txscript.SigHashAll))).AddData(key.SerializeUncompressed()).Script()
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "could not create bitcoin singature script")
 	}
@@ -270,7 +287,7 @@ func verifyTx(rpc types.RPCClient, utxo types.UTXO, expectedConfirmationHeight u
 	if len(vout.ScriptPubKey.Addresses) > 1 {
 		return fmt.Errorf("deposit must be only spendable by a single address")
 	}
-	if vout.ScriptPubKey.Addresses[0] != utxo.Address.String() {
+	if vout.ScriptPubKey.Addresses[0] != utxo.Address {
 		return fmt.Errorf("expected destination address does not match actual destination address")
 	}
 
