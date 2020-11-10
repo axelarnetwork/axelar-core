@@ -5,7 +5,6 @@ import (
 	"io"
 	"math/big"
 
-	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/tendermint/tendermint/libs/log"
 
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
@@ -57,11 +56,6 @@ func (k *Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
 	}
 	k.Logger(ctx).Debug("successful tssd gRPC call Sign")
 
-	// TODO temporary: vew info.MsgToSign as JSON marshalled data, unmarshal it into a []byte
-	var realMsgToSign []byte
-	amino := codec.New()
-	amino.MustUnmarshalJSON(info.MsgToSign, &realMsgToSign)
-
 	// TODO refactor
 	signInfo := &tssd.SignMsgIn{
 		Data: &tssd.SignMsgIn_Init{
@@ -69,7 +63,7 @@ func (k *Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
 				NewSigUid:     info.NewSigID,
 				KeyUid:        info.KeyID,
 				PartyUids:     partyUids,
-				MessageToSign: realMsgToSign,
+				MessageToSign: info.MsgToSign,
 			},
 		},
 	}
