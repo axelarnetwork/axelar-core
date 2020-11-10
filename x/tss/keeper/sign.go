@@ -7,11 +7,13 @@ import (
 
 	"github.com/tendermint/tendermint/libs/log"
 
-	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
-	"github.com/axelarnetwork/axelar-core/x/tss/types"
+	"github.com/axelarnetwork/tssd/convert"
 	tssd "github.com/axelarnetwork/tssd/pb"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 // StartSign TODO refactor code copied from StartKeygen
@@ -24,7 +26,7 @@ func (k *Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
 	// TODO for now assume all validators participate
 	validators := k.stakingKeeper.GetAllValidators(ctx)
 	if k.broadcaster.GetProxyCount(ctx) != uint32(len(validators)) {
-		// keygen cannot proceed unless all validators have registered broadcast proxies
+		// sign cannot proceed unless all validators have registered broadcast proxies
 		err := fmt.Errorf("not enough proxies registered: proxies: %d; validators: %d", k.broadcaster.GetProxyCount(ctx), len(validators))
 		k.Logger(ctx).Error(err.Error())
 		return err
@@ -54,6 +56,7 @@ func (k *Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
 		return nil // don't propagate nondeterministic errors
 	}
 	k.Logger(ctx).Debug("successful tssd gRPC call Sign")
+
 	// TODO refactor
 	signInfo := &tssd.SignMsgIn{
 		Data: &tssd.SignMsgIn_Init{
@@ -71,7 +74,7 @@ func (k *Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
 		log.Debug("sign init goroutine: begin")
 		defer log.Debug("sign init goroutine: end")
 		if err := k.signStream.Send(signInfo); err != nil {
-			wrapErr := sdkerrors.Wrap(err, "failed tssd gRPC sign send keygen init data")
+			wrapErr := sdkerrors.Wrap(err, "failed tssd gRPC sign send sign init data")
 			log.Error(wrapErr.Error())
 		} else {
 			log.Debug("successful tssd gRPC sign init goroutine")
@@ -106,14 +109,14 @@ func (k *Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
 				return
 			}
 
-			log.Debug(fmt.Sprintf("handler goroutine: outgoing sign msg: key [%s] from me [%s] broadcast? [%t] to [%s]", info.KeyID, myAddress, msg.IsBroadcast, msg.ToPartyUid))
-			tssMsg := types.NewMsgSignTraffic(info.KeyID, msg)
+			log.Debug(fmt.Sprintf("handler goroutine: outgoing sign msg: sig_id [%s] from me [%s] broadcast? [%t] to [%s]", info.NewSigID, myAddress, msg.IsBroadcast, msg.ToPartyUid))
+			tssMsg := types.NewMsgSignTraffic(info.NewSigID, msg)
 			if err := k.broadcaster.Broadcast(ctx, []broadcast.ValidatorMsg{tssMsg}); err != nil {
-				newErr := sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing keygen msg")
+				newErr := sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing sign msg")
 				log.Error(newErr.Error())
 				return
 			}
-			log.Debug(fmt.Sprintf("handler goroutine: successful keygen msg broadcast"))
+			log.Debug(fmt.Sprintf("handler goroutine: successful sign msg broadcast"))
 		}
 	}(k.Logger(ctx))
 
@@ -194,6 +197,15 @@ func (k Keeper) SignMsg(ctx sdk.Context, msg types.MsgSignTraffic) error {
 // https://github.com/tendermint/tendermint/blob/1a8e42d41e9a2a21cb47806a083253ad54c22456/crypto/secp256k1/secp256k1_nocgo.go#L62
 // https://github.com/btcsuite/btcd/blob/535f25593d47297f2c7f27fac7725c3b9b05727d/btcec/signature.go#L25-L29
 // but we don't want to import btcd everywhere
-func (k *Keeper) GetSig(ctx sdk.Context, sigID string) (r *big.Int, s *big.Int) {
-	return nil, nil
+func (k Keeper) GetSig(ctx sdk.Context, sigUid string) (r *big.Int, s *big.Int, e error) {
+	sigBytes, err := k.client.GetSig(
+		k.context,
+		&tssd.Uid{
+			Uid: sigUid,
+		},
+	)
+	if err != nil {
+		return nil, nil, sdkerrors.Wrapf(err, "failure gRPC get sig [%s]", sigUid)
+	}
+	return convert.BytesToSig(sigBytes.Payload)
 }

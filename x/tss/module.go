@@ -3,9 +3,6 @@ package tss
 import (
 	"encoding/json"
 
-	"github.com/axelarnetwork/axelar-core/x/tss/client/cli"
-	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
-	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -13,6 +10,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
+
+	"github.com/axelarnetwork/axelar-core/x/tss/client/cli"
+	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
+	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 // golang stupidity: ensure interface compliance at compile time
@@ -54,7 +55,7 @@ func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 }
 
 func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
-	return nil
+	return cli.GetQueryCmd(types.QuerierRoute, cdc)
 }
 
 type AppModule struct {
@@ -99,7 +100,7 @@ func (AppModule) QuerierRoute() string {
 }
 
 func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return nil
+	return keeper.NewQuerier(am.keeper) // TODO why is NewQuerier in the keeper package (see NewHandler above)
 }
 
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {

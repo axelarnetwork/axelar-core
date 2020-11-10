@@ -3,6 +3,7 @@ package btc_bridge
 import (
 	"encoding/json"
 
+	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -61,7 +62,8 @@ type AppModule struct {
 	AppModuleBasic
 	keeper keeper.Keeper
 	voter  types.Voter
-	bridge *types.Bridge
+	rpc    *rpcclient.Client
+	signer types.Signer
 }
 
 // Used for testing without bridge
@@ -74,12 +76,13 @@ func NewDummyAppModule(k keeper.Keeper, voter types.Voter) AppModule {
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, voter types.Voter, b types.Bridge) AppModule {
+func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, rpc *rpcclient.Client) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
 		voter:          voter,
-		bridge:         &b,
+		signer:         signer,
+		rpc:            rpc,
 	}
 }
 
@@ -104,10 +107,10 @@ func (AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	if am.bridge == nil {
+	if am.rpc == nil {
 		return NewDummyHandler(am.keeper, am.voter)
 	}
-	return NewHandler(am.keeper, am.voter, *am.bridge)
+	return NewHandler(am.keeper, am.voter, am.rpc, am.signer)
 }
 
 func (AppModule) QuerierRoute() string {

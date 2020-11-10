@@ -1,7 +1,11 @@
 package types
 
 const (
-	AttributeModule  = ModuleName
-	AttributeAddress = "address"
-	AttributeTx      = "tx"
+	AttributeModule      = ModuleName
+	AttributeAddress     = "address"
+	AttributeTxId        = "txId"
+	AttributeSigId       = "sigId"
+	AttributeKeyId       = "keyId"
+	AttributeAmount      = "amount"
+	AttributeDestination = "destination"
 )

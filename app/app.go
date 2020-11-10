@@ -266,8 +266,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		}
 		// BTC bridge opens a grpc connection. Clean it up on process shutdown
 		tmos.TrapSignal(logger, rpc.Shutdown)
-		bridge := btcTypes.NewBridge(rpc, axelarCfg.ConfirmationHeight)
-		btcModule = btc_bridge.NewAppModule(app.btcKeeper, app.axelarKeeper, bridge)
+		btcModule = btc_bridge.NewAppModule(app.btcKeeper, app.axelarKeeper, app.tssKeeper, rpc)
 	} else {
 		btcModule = btc_bridge.NewDummyAppModule(app.btcKeeper, app.axelarKeeper)
 	}

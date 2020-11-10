@@ -2,8 +2,6 @@ package exported
 
 import (
 	"fmt"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 type ExternalChainAddress struct {
@@ -20,24 +18,20 @@ func (addr ExternalChainAddress) String() string {
 }
 
 type ExternalTx struct {
-	Chain  string
-	TxID   string
-	Amount sdk.DecCoin
+	Chain string
+	TxID  string
 }
 
 func (tx ExternalTx) IsInvalid() bool {
 	return tx.Chain == "" ||
-		tx.TxID == "" ||
-		!tx.Amount.IsValid() ||
-		!tx.Amount.IsPositive()
+		tx.TxID == ""
 }
 
 func (tx ExternalTx) String() string {
 	return fmt.Sprintf(
-		"chain: %s, txID: %s, amount: %s",
+		"chain: %s, txID: %s",
 		tx.Chain,
 		tx.TxID,
-		tx.Amount.String(),
 	)
 }
 

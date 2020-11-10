@@ -1,11 +1,12 @@
 package types
 
 import (
+	"fmt"
+
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-
-	"github.com/axelarnetwork/axelar-core/x/axelar/exported"
-	"github.com/axelarnetwork/axelar-core/x/axelar/types"
 )
 
 // Ensure MsgTrackAddress implements sdk.Msg interface
@@ -13,13 +14,19 @@ var _ sdk.Msg = &MsgVerifyTx{}
 
 type MsgVerifyTx struct {
 	Sender sdk.AccAddress
-	Tx     exported.ExternalTx
+	UTXO   UTXO
 }
 
-func NewMsgVerifyTx(sender sdk.AccAddress, tx exported.ExternalTx) MsgVerifyTx {
+func NewMsgVerifyTx(sender sdk.AccAddress, chain string, txHash *chainhash.Hash, voutIdx uint32, destination string, amount btcutil.Amount) MsgVerifyTx {
 	return MsgVerifyTx{
 		Sender: sender,
-		Tx:     tx,
+		UTXO: UTXO{
+			Chain:   chain,
+			Hash:    txHash,
+			VoutIdx: voutIdx,
+			Address: destination,
+			Amount:  amount,
+		},
 	}
 }
 
@@ -35,8 +42,8 @@ func (msg MsgVerifyTx) ValidateBasic() error {
 	if msg.Sender.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
-	if msg.Tx.IsInvalid() {
-		return sdkerrors.Wrap(types.ErrInvalidExternalTx, msg.Tx.String())
+	if msg.UTXO.IsInvalid() {
+		return fmt.Errorf("invalid utxo")
 	}
 
 	return nil
