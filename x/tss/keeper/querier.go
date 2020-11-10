@@ -33,11 +33,8 @@ func queryGetKey(ctx sdk.Context, keyID string, k Keeper) ([]byte, error) {
 		return nil, sdkerrors.Wrapf(err, "GetKey error for key [%s]", keyID)
 	}
 
-	// cosmos sdk forces us to marshal the result into []byte
-	// this []byte will then be immediately unmarshalled and then re-marshalled for printing
-
-	// pubkey is of type ecdsa.PublicKey, which is inherently un-marshalable
-	// convert pubkey to tss-libs crypto.ECPoint, which is marshallable
+	// pk is of type ecdsa.PublicKey, which is inherently un-marshalable
+	// convert pk to tss-libs crypto.ECPoint, which implements json.Marshaler
 	pkMarshalable := convert.PubkeyToPoint(pk)
 	bz, err := codec.MarshalJSONIndent(types.ModuleCdc, pkMarshalable)
 	if err != nil {

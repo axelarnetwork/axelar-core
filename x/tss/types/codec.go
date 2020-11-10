@@ -10,10 +10,6 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgKeygenTraffic{}, "tss/MsgKeygenTraffic", nil)
 	cdc.RegisterConcrete(MsgSignStart{}, "tss/MsgSignStart", nil)
 	cdc.RegisterConcrete(MsgSignTraffic{}, "tss/MsgSignTraffic", nil)
-
-	// used in tss/keeper/querier.go
-	// cdc.RegisterInterface((*elliptic.Curve)(nil), nil)
-	// cdc.RegisterConcrete(&btcec.KoblitzCurve{}, "tss/elliptic.Curve", nil)
 }
 
 // ModuleCdc defines the module codec
