@@ -1,8 +1,6 @@
 package keeper
 
 import (
-	"bytes"
-	"encoding/gob"
 	"fmt"
 	"io"
 	"math/big"
@@ -11,7 +9,7 @@ import (
 
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
-	"github.com/axelarnetwork/tssd/ecdsasig"
+	"github.com/axelarnetwork/tssd/convert"
 	tssd "github.com/axelarnetwork/tssd/pb"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -198,8 +196,8 @@ func (k Keeper) SignMsg(ctx sdk.Context, msg types.MsgSignTraffic) error {
 // https://github.com/btcsuite/btcd/blob/535f25593d47297f2c7f27fac7725c3b9b05727d/btcec/signature.go#L25-L29
 // but we don't want to import btcd everywhere
 func (k Keeper) GetSig(ctx sdk.Context, sigUid string) (r *big.Int, s *big.Int, e error) {
-
-	sigBytes, err := k.client.GetSig(k.context,
+	sigBytes, err := k.client.GetSig(
+		k.context,
 		&tssd.Uid{
 			Uid: sigUid,
 		},
@@ -207,11 +205,5 @@ func (k Keeper) GetSig(ctx sdk.Context, sigUid string) (r *big.Int, s *big.Int, 
 	if err != nil {
 		return nil, nil, sdkerrors.Wrapf(err, "failure gRPC get sig [%s]", sigUid)
 	}
-
-	var sig ecdsasig.Signature
-	if err := gob.NewDecoder(bytes.NewReader(sigBytes.Payload)).Decode(&sig); err != nil {
-		return nil, nil, fmt.Errorf("faulure to deserialize sig [%s]: [%v]", sigUid, err)
-	}
-
-	return sig.R, sig.S, nil
+	return convert.BytesToSig(sigBytes.Payload)
 }

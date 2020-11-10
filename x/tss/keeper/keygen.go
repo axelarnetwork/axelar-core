@@ -1,26 +1,19 @@
 package keeper
 
 import (
-	"bytes"
 	"crypto/ecdsa"
-	"encoding/gob"
 	"fmt"
 	"io"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/tendermint/tendermint/libs/log"
 
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
+	"github.com/axelarnetwork/tssd/convert"
 	tssd "github.com/axelarnetwork/tssd/pb"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
-
-func init() {
-	// TODO we break abstraction because we need to know the underlying curve type used in tss-lib
-	gob.Register(&btcec.KoblitzCurve{}) // used in GetKey
-}
 
 func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 	k.Logger(ctx).Info(fmt.Sprintf("initiate StartKeygen: threshold [%d] key [%s] ", info.Threshold, info.NewKeyID))
@@ -213,7 +206,8 @@ func (k Keeper) KeygenMsg(ctx sdk.Context, msg types.MsgKeygenTraffic) error {
 }
 
 func (k Keeper) GetKey(ctx sdk.Context, keyUid string) (ecdsa.PublicKey, error) {
-	pubkeyBytes, err := k.client.GetKey(k.context,
+	pubkeyBytes, err := k.client.GetKey(
+		k.context,
 		&tssd.Uid{
 			Uid: keyUid,
 		},
@@ -221,11 +215,5 @@ func (k Keeper) GetKey(ctx sdk.Context, keyUid string) (ecdsa.PublicKey, error) 
 	if err != nil {
 		return ecdsa.PublicKey{}, sdkerrors.Wrapf(err, "failure gRPC get key [%s]", keyUid)
 	}
-
-	var pubkey ecdsa.PublicKey
-	if err := gob.NewDecoder(bytes.NewReader(pubkeyBytes.Payload)).Decode(&pubkey); err != nil {
-		return ecdsa.PublicKey{}, fmt.Errorf("faulure to deserialize key [%s]: [%v]", keyUid, err)
-	}
-
-	return pubkey, nil
+	return convert.BytesToPubkey(pubkeyBytes.Payload)
 }
