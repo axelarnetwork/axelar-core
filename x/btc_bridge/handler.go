@@ -253,11 +253,12 @@ func createSigScript(ctx sdk.Context, signer types.Signer, sigId, keyId string) 
 func validateWithdrawTx(withdrawTx *wire.MsgTx, pkScript []byte) error {
 	flags := txscript.StandardVerifyFlags
 
-	vm, err := txscript.NewEngine(pkScript, withdrawTx, 0, flags, nil, nil, withdrawTx.TxOut[0].Value)
+	// execute (dry-run) the public key and signature script to validate them
+	scriptEngine, err := txscript.NewEngine(pkScript, withdrawTx, 0, flags, nil, nil, withdrawTx.TxOut[0].Value)
 	if err != nil {
 		return sdkerrors.Wrap(err, "could not create execution engine, aborting")
 	}
-	if err := vm.Execute(); err != nil {
+	if err := scriptEngine.Execute(); err != nil {
 		return sdkerrors.Wrap(err, "transaction failed to execute, aborting")
 	}
 	return nil
