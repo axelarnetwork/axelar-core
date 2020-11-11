@@ -7,9 +7,6 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// Ensure MsgTrackAddress implements sdk.Msg interface
-var _ sdk.Msg = &MsgWithdraw{}
-
 type MsgWithdraw struct {
 	Sender      sdk.AccAddress
 	TxID        string
@@ -17,7 +14,7 @@ type MsgWithdraw struct {
 	KeyID       string
 }
 
-func NewMsgWithdraw(sender sdk.AccAddress, txId string, sigId string, keyId string) MsgWithdraw {
+func NewMsgWithdraw(sender sdk.AccAddress, txId string, sigId string, keyId string) sdk.Msg {
 	return MsgWithdraw{
 		Sender:      sender,
 		TxID:        txId,
@@ -39,10 +36,13 @@ func (msg MsgWithdraw) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
 	if msg.TxID == "" {
-		return fmt.Errorf("invalid tx ID: %s", msg.TxID)
+		return fmt.Errorf("missing transaction ID")
 	}
 	if msg.SignatureID == "" {
-		return fmt.Errorf("invalid signature ID: %s", msg.SignatureID)
+		return fmt.Errorf("missing signature ID")
+	}
+	if msg.KeyID == "" {
+		return fmt.Errorf("missing key ID")
 	}
 
 	return nil

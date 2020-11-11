@@ -9,20 +9,15 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// Ensure MsgTrackAddress implements sdk.Msg interface
-var _ sdk.Msg = &MsgRawTx{}
-
 type MsgRawTx struct {
 	Sender      sdk.AccAddress
 	TxHash      *chainhash.Hash
 	Amount      btcutil.Amount
-	Destination string
-	Chain       string
+	Destination BtcAddress
 }
 
-func NewMsgRawTx(sender sdk.AccAddress, chain string, txHash *chainhash.Hash, amount btcutil.Amount, destination string) MsgRawTx {
+func NewMsgRawTx(sender sdk.AccAddress, txHash *chainhash.Hash, amount btcutil.Amount, destination BtcAddress) sdk.Msg {
 	return MsgRawTx{
-		Chain:       chain,
 		Sender:      sender,
 		TxHash:      txHash,
 		Amount:      amount,
@@ -48,8 +43,8 @@ func (msg MsgRawTx) ValidateBasic() error {
 	if msg.Amount <= 0 {
 		return fmt.Errorf("transaction amount must be greater than zero")
 	}
-	if msg.Destination == "" {
-		return fmt.Errorf("missing destination")
+	if err := msg.Destination.Validate(); err != nil {
+		return sdkerrors.Wrap(err, "invalid destination")
 	}
 
 	return nil

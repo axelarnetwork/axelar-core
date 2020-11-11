@@ -1,37 +1,30 @@
 package types
 
 import (
-	"github.com/btcsuite/btcd/chaincfg"
+	"fmt"
+
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcutil"
 )
 
 type UTXO struct {
-	Chain   string
 	Hash    *chainhash.Hash
 	VoutIdx uint32
 	Amount  btcutil.Amount
-	Address string
+	Address BtcAddress
 }
 
-func (u UTXO) PkScript() []byte {
-	var params *chaincfg.Params
-	if u.Chain == chaincfg.MainNetParams.Name {
-		params = &chaincfg.MainNetParams
-	} else {
-		params = &chaincfg.TestNet3Params
+func (u UTXO) Validate() error {
+	if u.Hash == nil {
+		return fmt.Errorf("missing hash")
 	}
-	addr, _ := btcutil.DecodeAddress(u.Address, params)
-	if script, err := txscript.PayToAddrScript(addr); err != nil {
-		return nil
-	} else {
-		return script
+	if u.Amount <= 0 {
+		return fmt.Errorf("amount must be greater than 0")
 	}
-}
-
-func (u UTXO) IsInvalid() bool {
-	return u.Hash == nil || u.Amount < 0 || u.Address == ""
+	if err := u.Address.Validate(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (u UTXO) Equals(other UTXO) bool {

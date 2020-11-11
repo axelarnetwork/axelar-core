@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
@@ -26,8 +25,8 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Sig
 		switch msg := msg.(type) {
 		case types.MsgTrackAddress:
 			return handleMsgTrackAddress(ctx, k, rpc, msg)
-		case types.MsgTrackAddressFromPubKey:
-			return handleMsgTrackAddressFromPubKey(ctx, k, rpc, s, msg)
+		case types.MsgTrackPubKey:
+			return handleMsgTrackPubKey(ctx, k, rpc, s, msg)
 		case types.MsgVerifyTx:
 			return handleMsgVerifyTx(ctx, k, v, rpc, msg)
 		case types.MsgRawTx:
@@ -41,7 +40,24 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Sig
 	}
 }
 
-func handleMsgTrackAddressFromPubKey(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, msg types.MsgTrackAddressFromPubKey) (*sdk.Result, error) {
+func handleMsgTrackAddress(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, msg types.MsgTrackAddress) (*sdk.Result, error) {
+	k.Logger(ctx).Debug(fmt.Sprintf("start tracking address %v", msg.Address))
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+			sdk.NewAttribute(types.AttributeAddress, msg.Address.String()),
+		),
+	)
+
+	trackAddress(ctx, k, rpc, msg.Address.String(), msg.Rescan)
+
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+}
+
+func handleMsgTrackPubKey(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, msg types.MsgTrackPubKey) (*sdk.Result, error) {
 	key, err := s.GetKey(ctx, msg.KeyID)
 	if err != nil {
 		return nil, fmt.Errorf("keyId not recognized")
@@ -52,7 +68,7 @@ func handleMsgTrackAddressFromPubKey(ctx sdk.Context, k keeper.Keeper, rpc types
 		return nil, sdkerrors.Wrap(err, "could not convert the given public key into a bitcoin address")
 	}
 
-	trackAddress(ctx, k, rpc, addr.EncodeAddress())
+	trackAddress(ctx, k, rpc, addr.EncodeAddress(), false)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -65,52 +81,6 @@ func handleMsgTrackAddressFromPubKey(ctx sdk.Context, k keeper.Keeper, rpc types
 	)
 
 	return &sdk.Result{Log: "successfully created a tracked address", Events: ctx.EventManager().Events()}, nil
-}
-
-func addressFromKey(key ecdsa.PublicKey, chain string) (*btcutil.AddressPubKey, error) {
-	btcPK := btcec.PublicKey(key)
-	var params *chaincfg.Params
-	switch chain {
-	case chaincfg.MainNetParams.Name:
-		params = &chaincfg.MainNetParams
-	case chaincfg.TestNet3Params.Name:
-		params = &chaincfg.TestNet3Params
-	}
-
-	// For compatibility we use the uncompressed key as the basis for address generation.
-	// Could be changed in the future to decrease tx size
-	return btcutil.NewAddressPubKey(btcPK.SerializeUncompressed(), params)
-}
-
-func handleMsgTrackAddress(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, msg types.MsgTrackAddress) (*sdk.Result, error) {
-	k.Logger(ctx).Debug(fmt.Sprintf("start tracking address %v", msg.Address))
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeAddress, msg.Address),
-		),
-	)
-
-	trackAddress(ctx, k, rpc, msg.Address)
-
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
-}
-
-func trackAddress(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, address string) {
-	// Importing an address takes a long time, therefore it cannot be done in the critical path.
-	// ctx might not be valid anymore when err is returned, so closing over logger to be safe
-	go func(logger log.Logger) {
-		if err := rpc.ImportAddressRescan(address, "", false); err != nil {
-			logger.Error(fmt.Sprintf("Could not track address %v", address))
-		} else {
-			logger.Debug(fmt.Sprintf("successfully tracked all past transaction for address %v", address))
-		}
-	}(k.Logger(ctx))
-
-	k.SetTrackedAddress(ctx, address)
 }
 
 func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc types.RPCClient, msg types.MsgVerifyTx) (*sdk.Result, error) {
@@ -162,21 +132,23 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.M
 		return nil, fmt.Errorf("transaction ID is not known")
 	}
 
+	/*
+		Creating a Bitcoin transaction one step at a time:
+			1. Create the transaction message
+			2. Get the output of the deposit transaction and convert it into the transaction input
+			3. Create a new output
+		See https://blog.hlongvu.com/post/t0xx5dejn3-Understanding-btcd-Part-4-Create-and-Sign-a-Bitcoin-transaction-with-btcd
+	*/
+
 	tx := wire.NewMsgTx(wire.TxVersion)
 
 	outPoint := wire.NewOutPoint(utxo.Hash, utxo.VoutIdx)
-	// The signature script will be set later
+	// The signature script will be set later and we have no witness
 	txIn := wire.NewTxIn(outPoint, nil, nil)
 	tx.AddTxIn(txIn)
 
-	var params *chaincfg.Params
-	if msg.Chain == chaincfg.MainNetParams.Name {
-		params = &chaincfg.MainNetParams
-	} else {
-		params = &chaincfg.TestNet3Params
-	}
-
-	destination, _ := btcutil.DecodeAddress(msg.Destination, params)
+	// msg.ValidateBasic will be called before the handler, so there is no way we have a malformed address here
+	destination, _ := msg.Destination.Convert()
 	addrScript, err := txscript.PayToAddrScript(destination)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "could not create pay-to-address script for destination address")
@@ -186,7 +158,8 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.M
 
 	k.SetRawTx(ctx, txId, tx)
 
-	hash, err := txscript.CalcSignatureHash(utxo.PkScript(), txscript.SigHashAll, tx, 0)
+	// Print out the hash that becomes the input for the threshold signing
+	hash, err := txscript.CalcSignatureHash(utxo.Address.PkScript(), txscript.SigHashAll, tx, 0)
 	k.Logger(ctx).Info(fmt.Sprintf("bitcoin tx to sign: %s", k.Codec().MustMarshalJSON(hash)))
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -195,56 +168,36 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.M
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
 			sdk.NewAttribute(types.AttributeTxId, txId),
 			sdk.NewAttribute(types.AttributeAmount, msg.Amount.String()),
-			sdk.NewAttribute(types.AttributeDestination, msg.Destination),
+			sdk.NewAttribute(types.AttributeDestination, msg.Destination.String()),
 		),
 	)
 
 	return &sdk.Result{
 		Data:   hash,
-		Log:    fmt.Sprintf("successfully created withdraw transaction for Bitcoin : %s", string(hash)),
+		Log:    fmt.Sprintf("successfully created withdraw transaction for Bitcoin. Hash to sign: %s", k.Codec().MustMarshalJSON(hash)),
 		Events: ctx.EventManager().Events(),
 	}, nil
 }
 
 func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, signer types.Signer, msg types.MsgWithdraw) (*sdk.Result, error) {
-	utxo, ok := k.GetUTXO(ctx, msg.TxID)
-	if !ok {
-		return nil, fmt.Errorf("transaction ID is not known")
+	sigScript, err := createSigScript(ctx, signer, msg.SignatureID, msg.KeyID)
+	if err != nil {
+		return nil, err
 	}
 
 	rawTx := k.GetRawTx(ctx, msg.TxID)
 	if rawTx == nil {
 		return nil, fmt.Errorf("withdraw tx for ID %s has not been prepared yet", msg.TxID)
 	}
-	r, s, err := signer.GetSig(ctx, msg.SignatureID)
-	if err != nil {
-		return nil, fmt.Errorf("signature not found")
-	}
-	sig := btcec.Signature{
-		R: r,
-		S: s,
-	}
 
-	pk, err := signer.GetKey(ctx, msg.KeyID)
-	if err != nil {
-		return nil, fmt.Errorf("key not found")
-	}
-
-	key := btcec.PublicKey(pk)
-	sigScript, err := txscript.NewScriptBuilder().AddData(append(sig.Serialize(), byte(txscript.SigHashAll))).AddData(key.SerializeUncompressed()).Script()
-	if err != nil {
-		return nil, sdkerrors.Wrap(err, "could not create bitcoin singature script")
-	}
 	rawTx.TxIn[0].SignatureScript = sigScript
-
-	flags := txscript.StandardVerifyFlags
-
-	vm, err := txscript.NewEngine(utxo.PkScript(), rawTx, 0, flags, nil, nil, rawTx.TxOut[0].Value)
+	pkScript, err := getPkScript(ctx, k, msg.TxID)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "could not create execution engine, aborting")
+		return nil, err
 	}
-	if err := vm.Execute(); err != nil {
-		return nil, sdkerrors.Wrap(err, "transaction failed to execute, aborting")
+
+	if err := validateWithdrawTx(rawTx, pkScript); err != nil {
+		return nil, err
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -257,7 +210,7 @@ func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, si
 		),
 	)
 
-	// This is beyond Axelar's control, so can only log the error but move on regardless
+	// This is beyond axelar's control, so we can only log the error and move on regardless
 	if _, err := rpc.SendRawTransaction(rawTx, false); err != nil {
 		k.Logger(ctx).Error(sdkerrors.Wrap(err, "sending transaction to Bitcoin failed").Error())
 		return &sdk.Result{
@@ -272,13 +225,85 @@ func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, si
 	}, nil
 }
 
+func createSigScript(ctx sdk.Context, signer types.Signer, sigId, keyId string) ([]byte, error) {
+	r, s, err := signer.GetSig(ctx, sigId)
+	if err != nil {
+		return nil, fmt.Errorf("signature not found")
+	}
+	sig := btcec.Signature{
+		R: r,
+		S: s,
+	}
+	sigBytes := append(sig.Serialize(), byte(txscript.SigHashAll))
+
+	pk, err := signer.GetKey(ctx, keyId)
+	if err != nil {
+		return nil, fmt.Errorf("key not found")
+	}
+	key := btcec.PublicKey(pk)
+	keyBytes := key.SerializeUncompressed()
+
+	sigScript, err := txscript.NewScriptBuilder().AddData(sigBytes).AddData(keyBytes).Script()
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "could not create bitcoin signature script")
+	}
+	return sigScript, nil
+}
+
+func validateWithdrawTx(withdrawTx *wire.MsgTx, pkScript []byte) error {
+	flags := txscript.StandardVerifyFlags
+
+	vm, err := txscript.NewEngine(pkScript, withdrawTx, 0, flags, nil, nil, withdrawTx.TxOut[0].Value)
+	if err != nil {
+		return sdkerrors.Wrap(err, "could not create execution engine, aborting")
+	}
+	if err := vm.Execute(); err != nil {
+		return sdkerrors.Wrap(err, "transaction failed to execute, aborting")
+	}
+	return nil
+}
+
+func getPkScript(ctx sdk.Context, k keeper.Keeper, txId string) ([]byte, error) {
+	utxo, ok := k.GetUTXO(ctx, txId)
+	if !ok {
+		return nil, fmt.Errorf("transaction ID is not known")
+	}
+	return utxo.Address.PkScript(), nil
+}
+
+func trackAddress(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, address string, rescan bool) {
+
+	// Importing an address takes a long time, therefore it cannot be done in the critical path
+	go func(logger log.Logger) {
+		if rescan {
+			logger.Debug("Rescanning entire Bitcoin blockchain for past transactions. This will take a while.")
+		}
+		if err := rpc.ImportAddressRescan(address, "", rescan); err != nil {
+			logger.Error(fmt.Sprintf("Could not track address %v", address))
+		} else {
+			logger.Debug(fmt.Sprintf("successfully tracked address %v", address))
+		}
+		// ctx might not be valid anymore when err is returned, so closing over logger to be safe
+	}(k.Logger(ctx))
+
+	k.SetTrackedAddress(ctx, address)
+}
+
+func addressFromKey(key ecdsa.PublicKey, chain types.Chain) (*btcutil.AddressPubKey, error) {
+	btcPK := btcec.PublicKey(key)
+
+	// For compatibility we use the uncompressed key as the basis for address generation.
+	// Could be changed in the future to decrease tx size
+	return btcutil.NewAddressPubKey(btcPK.SerializeUncompressed(), chain.Params())
+}
+
 func verifyTx(rpc types.RPCClient, utxo types.UTXO, expectedConfirmationHeight uint64) error {
 	actualTx, err := rpc.GetRawTransactionVerbose(utxo.Hash)
 	if err != nil {
 		return sdkerrors.Wrap(err, "could not retrieve Bitcoin transaction")
 	}
 
-	if utxo.VoutIdx >= uint32(len(actualTx.Vout)) {
+	if uint32(len(actualTx.Vout)) <= utxo.VoutIdx {
 		return fmt.Errorf("vout index out of range")
 	}
 
@@ -287,7 +312,7 @@ func verifyTx(rpc types.RPCClient, utxo types.UTXO, expectedConfirmationHeight u
 	if len(vout.ScriptPubKey.Addresses) > 1 {
 		return fmt.Errorf("deposit must be only spendable by a single address")
 	}
-	if vout.ScriptPubKey.Addresses[0] != utxo.Address {
+	if vout.ScriptPubKey.Addresses[0] != utxo.Address.String() {
 		return fmt.Errorf("expected destination address does not match actual destination address")
 	}
 
@@ -295,7 +320,7 @@ func verifyTx(rpc types.RPCClient, utxo types.UTXO, expectedConfirmationHeight u
 	if err != nil {
 		return sdkerrors.Wrap(err, "could not parse transaction amount of the Bitcoin response")
 	}
-	if utxo.Amount != actualAmount {
+	if actualAmount != utxo.Amount {
 		return fmt.Errorf("expected amount does not match actual amount")
 	}
 

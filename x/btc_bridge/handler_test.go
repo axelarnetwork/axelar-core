@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/btcjson"
-	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -48,7 +47,9 @@ type TestRPC struct {
 }
 
 func (t *TestRPC) ImportAddressRescan(address string, account string, rescan bool) error {
-	panic("implement me")
+	t.trackedAddress = address
+	t.cancel()
+	return nil
 }
 
 func (t *TestRPC) ImportAddress(address string) error {
@@ -120,7 +121,7 @@ func (t TestMultiStore) GetKVStore(key sdkTypes.StoreKey) sdkTypes.KVStore {
 	if store, ok := t.kvstore[key.String()]; ok {
 		return store
 	} else {
-		store := TestKVStore{}
+		store := NewTestKVStore()
 		t.kvstore[key.String()] = store
 		return store
 	}
@@ -197,7 +198,7 @@ func TestTrackAddress(t *testing.T) {
 	handler := NewHandler(k, &TestVoter{}, &rpc, TestSigner{})
 
 	ctx := sdkTypes.NewContext(NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	expectedAddress := "bitcoinTestAddress"
+	expectedAddress, _ := types.ParseBtcAddress("bitcoinTestAddress", "mainnet")
 	_, err := handler(ctx, types.MsgTrackAddress{
 		Sender:  sdkTypes.AccAddress("sender"),
 		Address: expectedAddress,
@@ -205,7 +206,7 @@ func TestTrackAddress(t *testing.T) {
 
 	assert.Nil(t, err)
 	<-rpcCtx.Done()
-	assert.Equal(t, expectedAddress, rpc.trackedAddress)
+	assert.Equal(t, expectedAddress.String(), rpc.trackedAddress)
 }
 
 func TestVerifyTx_InvalidHash(t *testing.T) {
@@ -223,16 +224,15 @@ func TestVerifyTx_InvalidHash(t *testing.T) {
 	ctx := sdkTypes.NewContext(NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 
 	hash, _ := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
-
+	addr, _ := types.ParseBtcAddress("bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq", "mainnet")
 	utxo := types.UTXO{
-		Chain:   chaincfg.MainNetParams.Name,
 		Hash:    hash,
 		VoutIdx: 0,
 		Amount:  10,
-		Address: "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
+		Address: addr,
 	}
 
-	assert.False(t, utxo.IsInvalid())
+	assert.Nil(t, utxo.Validate())
 
 	_, err := handler(ctx, types.MsgVerifyTx{
 		Sender: sdkTypes.AccAddress("sender"),
@@ -257,12 +257,12 @@ func TestVerifyTx_InvalidUTXO(t *testing.T) {
 
 	hash, _ := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
 
+	addr, _ := types.ParseBtcAddress("bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq", "mainnet")
 	utxo := types.UTXO{
-		Chain:   chaincfg.MainNetParams.Name,
 		Hash:    hash,
 		VoutIdx: 0,
 		Amount:  10,
-		Address: "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
+		Address: addr,
 	}
 	rpc := TestRPC{
 		rawTx: func() (*btcjson.TxRawResult, error) {
@@ -273,7 +273,7 @@ func TestVerifyTx_InvalidUTXO(t *testing.T) {
 					Value: 10,
 					N:     0,
 					ScriptPubKey: btcjson.ScriptPubKeyResult{
-						Addresses: []string{utxo.Address},
+						Addresses: []string{utxo.Address.String()},
 					},
 				}},
 				Confirmations: 7,
@@ -284,7 +284,7 @@ func TestVerifyTx_InvalidUTXO(t *testing.T) {
 	handler := NewHandler(k, v, &rpc, TestSigner{})
 	ctx := sdkTypes.NewContext(NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 
-	assert.False(t, utxo.IsInvalid())
+	assert.Nil(t, utxo.Validate())
 
 	_, err := handler(ctx, types.MsgVerifyTx{
 		Sender: sdkTypes.AccAddress("sender"),
