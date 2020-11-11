@@ -193,8 +193,9 @@ func GetCmdRawTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "rawTx [sourceTxId] [amount] [destination]",
 		Short: "Generate raw transaction",
-		Long:  `Generate raw transaction that can be used to spend the [amount] from the source transaction to the [destination]`,
-		Args:  cobra.ExactArgs(3),
+		Long: "Generate raw transaction that can be used to spend the [amount] from the source transaction to the [destination]. " +
+			"The difference between the source transaction output amount and the given [amount] becomes the transaction fee",
+		Args: cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx, txBldr := prepare(cmd.InOrStdin(), cdc)
