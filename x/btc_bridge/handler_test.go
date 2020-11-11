@@ -12,6 +12,7 @@ import (
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
+	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdkTypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
@@ -249,7 +250,7 @@ func TestVerifyTx_InvalidHash(t *testing.T) {
 	}, v.vote)
 }
 
-func TestVerifyTx_InvalidUTXO(t *testing.T) {
+func TestVerifyTx_ValidUTXO(t *testing.T) {
 	cdc := codec.New()
 
 	types.RegisterCodec(cdc)
@@ -270,7 +271,7 @@ func TestVerifyTx_InvalidUTXO(t *testing.T) {
 				Txid: hash.String(),
 				Hash: hash.String(),
 				Vout: []btcjson.Vout{{
-					Value: 10,
+					Value: btcutil.Amount(10).ToBTC(),
 					N:     0,
 					ScriptPubKey: btcjson.ScriptPubKeyResult{
 						Addresses: []string{utxo.Address.String()},
@@ -297,7 +298,7 @@ func TestVerifyTx_InvalidUTXO(t *testing.T) {
 			Chain: "bitcoin",
 			TxID:  hash.String(),
 		},
-		LocalAccept: false,
+		LocalAccept: true,
 	}, v.vote)
 
 	actualUtxo, ok := k.GetUTXO(ctx, hash.String())
