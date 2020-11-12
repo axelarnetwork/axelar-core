@@ -40,6 +40,9 @@ func NewBlockchain() BlockChain {
 
 // WithBlockSize returns a blockchain with blocks of at most the specified size.
 func (bc BlockChain) WithBlockSize(size int) BlockChain {
+	if size < 1 {
+		panic("block size must be at least 1")
+	}
 	bc.blockSize = size
 	return bc
 }
@@ -96,9 +99,8 @@ func cutBlocks(msgs <-chan sdk.Msg, blockSize int, timeOut time.Duration) <-chan
 					break loop
 				}
 
-				if len(nextBlock.msgs) < blockSize {
-					nextBlock.msgs = append(nextBlock.msgs, msg)
-				} else {
+				nextBlock.msgs = append(nextBlock.msgs, msg)
+				if len(nextBlock.msgs) == blockSize {
 					blocks <- nextBlock
 					nextBlock = newBlock(blockSize, nextBlock.height+1)
 				}
@@ -112,11 +114,11 @@ func cutBlocks(msgs <-chan sdk.Msg, blockSize int, timeOut time.Duration) <-chan
 	return blocks
 }
 
-func reset(timeOut time.Duration) chan bool {
-	var timedOut chan bool
+func reset(timeOut time.Duration) chan struct{} {
+	var timedOut chan struct{}
 
 	if timeOut > 0 {
-		timedOut = make(chan bool)
+		timedOut = make(chan struct{})
 		go func() {
 			time.Sleep(timeOut)
 			close(timedOut)
@@ -126,12 +128,11 @@ func reset(timeOut time.Duration) chan bool {
 }
 
 type Node struct {
-	in            chan block
-	handlers      map[string]sdk.Handler
-	beginBlockers []sdk.BeginBlocker
-	endBlockers   []sdk.EndBlocker
-	ctx           sdk.Context
-	moniker       string
+	in          chan block
+	handlers    map[string]sdk.Handler
+	endBlockers []sdk.EndBlocker
+	ctx         sdk.Context
+	moniker     string
 }
 
 // NewNode creates a new node that can be added to the blockchain.
@@ -139,12 +140,11 @@ type Node struct {
 // The context will be passed on to the registered handlers.
 func NewNode(moniker string, ctx sdk.Context) Node {
 	return Node{
-		moniker:       moniker,
-		ctx:           ctx,
-		in:            make(chan block, 1),
-		handlers:      make(map[string]sdk.Handler, 0),
-		beginBlockers: make([]sdk.BeginBlocker, 0),
-		endBlockers:   make([]sdk.EndBlocker, 0),
+		moniker:     moniker,
+		ctx:         ctx,
+		in:          make(chan block, 1),
+		handlers:    make(map[string]sdk.Handler, 0),
+		endBlockers: make([]sdk.EndBlocker, 0),
 	}
 }
 
