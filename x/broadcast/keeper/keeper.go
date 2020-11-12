@@ -189,6 +189,8 @@ func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy s
 	}
 	k.Logger(ctx).Debug("setting proxy")
 	ctx.KVStore(k.storeKey).Set(proxy, principal)
+	// Creating a reverse lookup
+	ctx.KVStore(k.storeKey).Set(principal, proxy)
 	count += 1
 	k.Logger(ctx).Debug("setting proxy count")
 	k.SetProxyCount(ctx, count)
@@ -219,8 +221,7 @@ func (k Keeper) GetProxyCount(ctx sdk.Context) uint32 {
 func (k Keeper) SetProxyCount(ctx sdk.Context, count uint32) {
 	bz := make([]byte, 4)
 	binary.LittleEndian.PutUint32(bz, count)
-	k.Logger(ctx).Debug(fmt.Sprintf("count to set: %v", count))
-	k.Logger(ctx).Debug(fmt.Sprintf("count bytes: %v", bz))
+	k.Logger(ctx).Debug(fmt.Sprintf("number of known proxies: %v", count))
 	ctx.KVStore(k.storeKey).Set([]byte(proxyCountKey), bz)
 }
 

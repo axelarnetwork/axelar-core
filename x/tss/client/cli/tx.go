@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -13,6 +12,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/spf13/cobra"
+
+	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -78,11 +79,13 @@ func getCmdSignStart(cdc *codec.Codec) *cobra.Command {
 		inBuf := bufio.NewReader(cmd.InOrStdin())
 		txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
+		var toSign []byte
+		cdc.MustUnmarshalJSON([]byte(args[0]), &toSign)
 		msg := types.MsgSignStart{
 			Sender:    cliCtx.FromAddress,
 			NewSigID:  *newSigID,
 			KeyID:     *keyID,
-			MsgToSign: []byte(args[0]),
+			MsgToSign: toSign,
 		}
 		if err := msg.ValidateBasic(); err != nil {
 			return err
