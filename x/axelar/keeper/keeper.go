@@ -81,6 +81,10 @@ func (k Keeper) GetVotingInterval(ctx sdk.Context) int64 {
 
 // Broadcast the batched future votes
 func (k Keeper) BatchVote(ctx sdk.Context) error {
+	if local := k.broadcaster.GetLocalPrincipal(ctx); local == nil {
+		return nil
+	}
+
 	preVotes := k.getFutureVotes(ctx)
 	k.Logger(ctx).Debug(fmt.Sprintf("unpublished publicVotesKey:%v", len(preVotes)))
 
@@ -222,27 +226,10 @@ func (k Keeper) TallyCastVotes(ctx sdk.Context) {
 	k.setPublicVotes(ctx, []types.Vote{})
 }
 
-// temporary sanity check and logger until we actually do something with the verified transactions
 func (k Keeper) confirmTx(ctx sdk.Context, tx exported.ExternalTx) {
 	k.Logger(ctx).Debug(fmt.Sprintf("confirming tx:%v", tx))
-	balance := k.getBalance(ctx, tx.Chain)
-	balance = balance.Add(tx.Amount)
-	k.Logger(ctx).Debug(fmt.Sprintf("balance on %s: %v", tx.Chain, balance.String()))
-	k.setBalance(ctx, tx.Chain, balance)
-}
-
-func (k Keeper) setBalance(ctx sdk.Context, chain string, balance sdk.DecCoins) {
-	ctx.KVStore(k.storeKey).Set([]byte("balance_"+chain), k.cdc.MustMarshalBinaryLengthPrefixed(balance))
-}
-
-func (k Keeper) getBalance(ctx sdk.Context, chain string) sdk.DecCoins {
-	balanceRaw := ctx.KVStore(k.storeKey).Get([]byte("balance_" + chain))
-	if balanceRaw == nil {
-		return sdk.NewDecCoins()
-	}
-	var balance sdk.DecCoins
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(balanceRaw, &balance)
-	return balance
+	key := k.cdc.MustMarshalBinaryLengthPrefixed(tx)
+	ctx.KVStore(k.storeKey).Set(key, k.cdc.MustMarshalBinaryLengthPrefixed(true))
 }
 
 func (k Keeper) GetVotingThreshold(ctx sdk.Context) types.VotingThreshold {
@@ -254,4 +241,15 @@ func (k Keeper) GetVotingThreshold(ctx sdk.Context) types.VotingThreshold {
 
 func (k Keeper) SetVotingThreshold(ctx sdk.Context, threshold types.VotingThreshold) {
 	ctx.KVStore(k.storeKey).Set(votingThreshold, k.cdc.MustMarshalBinaryLengthPrefixed(threshold))
+}
+
+func (k Keeper) IsVerified(ctx sdk.Context, tx exported.ExternalTx) bool {
+	key := k.cdc.MustMarshalBinaryLengthPrefixed(tx)
+	bz := ctx.KVStore(k.storeKey).Get(key)
+	if bz == nil {
+		return false
+	}
+	var isVerified bool
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &isVerified)
+	return isVerified
 }

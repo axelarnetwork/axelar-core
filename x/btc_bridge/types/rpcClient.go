@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/btcjson"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
+	"github.com/btcsuite/btcd/wire"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
 )
@@ -15,6 +17,13 @@ const (
 	sleep          = 1 * time.Second
 	ErrRpcInWarmup = btcjson.RPCErrorCode(-28)
 )
+
+type RPCClient interface {
+	ImportAddress(address string) error
+	ImportAddressRescan(address string, account string, rescan bool) error
+	GetRawTransactionVerbose(hash *chainhash.Hash) (*btcjson.TxRawResult, error)
+	SendRawTransaction(tx *wire.MsgTx, b bool) (*chainhash.Hash, error)
+}
 
 func NewRPCClient(cfg BtcConfig, logger log.Logger) (*rpcclient.Client, error) {
 	logger = logger.With("module", fmt.Sprintf("x/%s", ModuleName))

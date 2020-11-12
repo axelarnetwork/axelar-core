@@ -6,11 +6,11 @@ import (
 )
 
 type GenesisState struct {
-	ConfirmationHeight int64
+	ConfirmationHeight uint64
 }
 
 func DefaultGenesisState() GenesisState {
-	return GenesisState{ConfirmationHeight: 6}
+	return GenesisState{ConfirmationHeight: 1}
 }
 
 func ValidateGenesis(state GenesisState) error {

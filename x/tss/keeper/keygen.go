@@ -7,11 +7,13 @@ import (
 
 	"github.com/tendermint/tendermint/libs/log"
 
-	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
-	"github.com/axelarnetwork/axelar-core/x/tss/types"
+	"github.com/axelarnetwork/tssd/convert"
 	tssd "github.com/axelarnetwork/tssd/pb"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
@@ -204,6 +206,15 @@ func (k Keeper) KeygenMsg(ctx sdk.Context, msg types.MsgKeygenTraffic) error {
 	return nil
 }
 
-func (k *Keeper) GetKey(ctx sdk.Context, keyID string) ecdsa.PublicKey {
-	return ecdsa.PublicKey{}
+func (k Keeper) GetKey(ctx sdk.Context, keyUid string) (ecdsa.PublicKey, error) {
+	pubkeyBytes, err := k.client.GetKey(
+		k.context,
+		&tssd.Uid{
+			Uid: keyUid,
+		},
+	)
+	if err != nil {
+		return ecdsa.PublicKey{}, sdkerrors.Wrapf(err, "failure gRPC get key [%s]", keyUid)
+	}
+	return convert.BytesToPubkey(pubkeyBytes.Payload)
 }
