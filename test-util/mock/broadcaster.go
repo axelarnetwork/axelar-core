@@ -1,6 +1,7 @@
 package mock
 
 import (
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/x/broadcast/exported"
@@ -12,12 +13,14 @@ type broadcaster struct {
 	val2Proxy map[string]sdk.AccAddress
 	proxy2Val map[string]sdk.ValAddress
 	principal sdk.ValAddress
+	cdc       *codec.Codec
 }
 
 // NewBroadcaster creates a new broadcaster mock that sends messages to the blockchainIn channel.
 // Messages are sent from the sender account, while the local validator account is given by localPrincipal.
-func NewBroadcaster(sender sdk.AccAddress, localPrincipal sdk.ValAddress, blockchainIn chan<- sdk.Msg) exported.Broadcaster {
+func NewBroadcaster(cdc *codec.Codec, sender sdk.AccAddress, localPrincipal sdk.ValAddress, blockchainIn chan<- sdk.Msg) exported.Broadcaster {
 	return broadcaster{
+		cdc:       cdc,
 		in:        blockchainIn,
 		sender:    sender,
 		val2Proxy: make(map[string]sdk.AccAddress),
@@ -29,7 +32,18 @@ func NewBroadcaster(sender sdk.AccAddress, localPrincipal sdk.ValAddress, blockc
 func (b broadcaster) Broadcast(_ sdk.Context, msgs []exported.ValidatorMsg) error {
 	for _, msg := range msgs {
 		msg.SetSender(b.sender)
-		b.in <- msg
+
+		/*
+			exported.ValidatorMsg is usually implemented by a pointer.
+			However, handler expect to receive the message by value and do a switch on the message type.
+			If they receive the pointer they won't recognize the correct message type.
+			By marshalling and unmarshalling into sdk.Msg we get the message by value.
+		*/
+		bz := b.cdc.MustMarshalBinaryLengthPrefixed(msg)
+		var sentMsg sdk.Msg
+		b.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &sentMsg)
+
+		b.in <- sentMsg
 	}
 	return nil
 }

@@ -60,8 +60,8 @@ func (bc BlockChain) Input() chan<- sdk.Msg {
 }
 
 // AddNode adds a node to the blockchain. This node will receive blocks from the blockchain.
-func (bc *BlockChain) AddNode(node Node) {
-	bc.nodes = append(bc.nodes, node)
+func (bc *BlockChain) AddNodes(nodes ...Node) {
+	bc.nodes = append(bc.nodes, nodes...)
 }
 
 // Start starts the block dissemination. Only call once all parameters and nodes are fully set up.
@@ -130,7 +130,7 @@ func reset(timeOut time.Duration) chan struct{} {
 type Node struct {
 	in          chan block
 	handlers    map[string]sdk.Handler
-	endBlockers []sdk.EndBlocker
+	endBlockers []func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate
 	ctx         sdk.Context
 	moniker     string
 }
@@ -144,7 +144,7 @@ func NewNode(moniker string, ctx sdk.Context) Node {
 		ctx:         ctx,
 		in:          make(chan block, 1),
 		handlers:    make(map[string]sdk.Handler, 0),
-		endBlockers: make([]sdk.EndBlocker, 0),
+		endBlockers: make([]func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate, 0),
 	}
 }
 
@@ -156,13 +156,14 @@ func (n Node) WithHandler(moduleName string, handler sdk.Handler) Node {
 
 // WithEndBlockers returns a node with the specified EndBlocker functions.
 // They are executed in the order they are provided.
-func (n Node) WithEndBlockers(endBlockers ...sdk.EndBlocker) Node {
+func (n Node) WithEndBlockers(endBlockers ...func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate) Node {
 	n.endBlockers = append(n.endBlockers, endBlockers...)
 	return n
 }
 
 func (n Node) start() {
 	for b := range n.in {
+		log.Printf("node %s begins block %v", n.moniker, b.height)
 		/*
 			While Cosmos also has BeginBlockers, so far we implement none.
 			Extend the Node struct analogously to the EndBlockers
@@ -172,6 +173,9 @@ func (n Node) start() {
 		// handle messages
 		for _, msg := range b.msgs {
 			if h, ok := n.handlers[msg.Route()]; ok {
+				if err := msg.ValidateBasic(); err != nil {
+					log.Printf("node %s returned an error when validating message %s", n.moniker, msg.Type())
+				}
 				if _, err := h(n.ctx, msg); err != nil {
 					log.Printf("node %s returned an error from handler for route %s", n.moniker, msg.Route())
 				}
@@ -180,6 +184,7 @@ func (n Node) start() {
 			}
 		}
 
+		log.Printf("node %s ends block %v", n.moniker, b.height)
 		// end block
 		for _, endBlocker := range n.endBlockers {
 			endBlocker(n.ctx, abci.RequestEndBlock{Height: b.height})
