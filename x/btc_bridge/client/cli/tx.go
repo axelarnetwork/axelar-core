@@ -128,7 +128,7 @@ func getCmdTrackPubKey(chain types.Chain, rescan *bool, cdc *codec.Codec) *cobra
 		Long: "Make the axelar network aware of a specific address on Bitcoin derived from a public key." +
 			"The keyId must be associated with a previously completed keygen round. " +
 			"Use --rescan to rescan the entire Bitcoin history for past transactions",
-		Args: cobra.RangeArgs(1, 2),
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx, txBldr := prepare(cmd.InOrStdin(), cdc)
