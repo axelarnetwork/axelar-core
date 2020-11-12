@@ -200,11 +200,6 @@ func (k Keeper) SignMsg(ctx sdk.Context, msg types.MsgSignTraffic) error {
 
 // GetSig returns the signature associated with sigID
 // or nil, nil if no such signature exists
-// TODO we need a suiable signature struct
-// Tendermint uses btcd under the hood:
-// https://github.com/tendermint/tendermint/blob/1a8e42d41e9a2a21cb47806a083253ad54c22456/crypto/secp256k1/secp256k1_nocgo.go#L62
-// https://github.com/btcsuite/btcd/blob/535f25593d47297f2c7f27fac7725c3b9b05727d/btcec/signature.go#L25-L29
-// but we don't want to import btcd everywhere
 func (k Keeper) GetSig(ctx sdk.Context, sigUid string) (r *big.Int, s *big.Int, e error) {
 	sigBytes, err := k.client.GetSig(
 		k.context,
