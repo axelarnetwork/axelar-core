@@ -6,16 +6,16 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/axelarnetwork/axelar-core/x/broadcast/keeper"
+	"github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/broadcast/types"
 )
 
-func NewHandler(k keeper.Keeper) sdk.Handler {
+func NewHandler(b exported.Broadcaster) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
 		case types.MsgRegisterProxy:
-			return handleMsgRegisterProxy(ctx, k, msg)
+			return handleMsgRegisterProxy(ctx, b, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
@@ -23,9 +23,8 @@ func NewHandler(k keeper.Keeper) sdk.Handler {
 	}
 }
 
-func handleMsgRegisterProxy(ctx sdk.Context, k keeper.Keeper, msg types.MsgRegisterProxy) (*sdk.Result, error) {
-	if err := k.RegisterProxy(ctx, msg.Principal, msg.Proxy); err != nil {
-		k.Logger(ctx).Error(err.Error())
+func handleMsgRegisterProxy(ctx sdk.Context, b exported.Broadcaster, msg types.MsgRegisterProxy) (*sdk.Result, error) {
+	if err := b.RegisterProxy(ctx, msg.Principal, msg.Proxy); err != nil {
 		return nil, err
 	}
 

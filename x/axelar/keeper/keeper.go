@@ -3,7 +3,6 @@ package keeper
 import (
 	"fmt"
 
-	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/x/axelar/exported"
@@ -22,18 +21,18 @@ var (
 )
 
 type Keeper struct {
-	storeKey      sdk.StoreKey
-	cdc           *codec.Codec
-	broadcaster   types.Broadcaster
-	stakingKeeper staking.Keeper
+	storeKey    sdk.StoreKey
+	cdc         *codec.Codec
+	broadcaster types.Broadcaster
+	staker      types.Staker
 }
 
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, stakingKeeper staking.Keeper, broadcaster types.Broadcaster) Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, staker types.Staker, broadcaster types.Broadcaster) Keeper {
 	keeper := Keeper{
-		storeKey:      key,
-		cdc:           cdc,
-		broadcaster:   broadcaster,
-		stakingKeeper: stakingKeeper,
+		storeKey:    key,
+		cdc:         cdc,
+		broadcaster: broadcaster,
+		staker:      staker,
 	}
 	return keeper
 }
@@ -86,7 +85,7 @@ func (k Keeper) BatchVote(ctx sdk.Context) error {
 	}
 
 	preVotes := k.getFutureVotes(ctx)
-	k.Logger(ctx).Debug(fmt.Sprintf("unpublished publicVotesKey:%v", len(preVotes)))
+	k.Logger(ctx).Debug(fmt.Sprintf("unpublished votes:%v", len(preVotes)))
 
 	if len(preVotes) == 0 {
 		return nil
@@ -105,7 +104,7 @@ func (k Keeper) BatchVote(ctx sdk.Context) error {
 	// Reset preVotes because this batch is about to be broadcast
 	k.setFutureVotes(ctx, []exported.FutureVote{})
 	msg := types.NewMsgBatchVote(bits)
-	k.Logger(ctx).Debug(fmt.Sprintf("msg:%v", msg))
+	k.Logger(ctx).Debug(fmt.Sprintf("vote: %v", msg))
 
 	return k.broadcaster.Broadcast(ctx, []bcExported.ValidatorMsg{msg})
 }
@@ -175,9 +174,10 @@ func mapFromSerializable(serVotes []serializableVote) []types.Vote {
 
 // Record all votes from one validator on a batch of transactions
 func (k Keeper) RecordVotes(ctx sdk.Context, voter sdk.AccAddress, votes []bool) error {
+	k.Logger(ctx).Debug("recording vote")
 	validator := k.broadcaster.GetPrincipal(ctx, voter)
 	if validator == nil {
-		k.Logger(ctx).Error(fmt.Sprintf("connot find voter %v", voter))
+		k.Logger(ctx).Error(fmt.Sprintf("cannot find voter %v", voter))
 		return types.ErrInvalidVoter
 	}
 
@@ -199,19 +199,19 @@ func (k Keeper) RecordVotes(ctx sdk.Context, voter sdk.AccAddress, votes []bool)
 
 // Decide if external transactions are accepted based on the number of votes they received
 func (k Keeper) TallyCastVotes(ctx sdk.Context) {
-	k.Logger(ctx).Debug("decide unconfirmed txs")
+	k.Logger(ctx).Debug("tally votes")
 	votes := k.getPublicVotes(ctx)
-	k.Logger(ctx).Debug(fmt.Sprintf("publicVotesKey:%v", len(votes)))
+	k.Logger(ctx).Debug(fmt.Sprintf("cast votes:%v", len(votes)))
 
 	if len(votes) == 0 {
 		return
 	}
-	totalPower := k.stakingKeeper.GetLastTotalPower(ctx)
+	totalPower := k.staker.GetLastTotalPower(ctx)
 	k.Logger(ctx).Debug(fmt.Sprintf("total power:%v", totalPower))
 	for _, vote := range votes {
 		var power = sdk.ZeroInt()
 		for _, valAddr := range vote.Confirmations {
-			validator := k.stakingKeeper.Validator(ctx, valAddr)
+			validator := k.staker.Validator(ctx, valAddr)
 			power = power.AddRaw(validator.GetConsensusPower())
 		}
 		k.Logger(ctx).Debug(fmt.Sprintf("voting power:%v", power))
