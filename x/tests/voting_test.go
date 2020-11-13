@@ -7,17 +7,19 @@ import (
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcutil"
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/staking/exported"
+	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/axelarnetwork/axelar-core/test-util/mock"
+	test_utils "github.com/axelarnetwork/axelar-core/test-utils"
+	"github.com/axelarnetwork/axelar-core/test-utils/mock"
 	"github.com/axelarnetwork/axelar-core/x/axelar"
+	axExported "github.com/axelarnetwork/axelar-core/x/axelar/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelar/keeper"
 	axTypes "github.com/axelarnetwork/axelar-core/x/axelar/types"
 	"github.com/axelarnetwork/axelar-core/x/broadcast"
+	bcExported "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
@@ -26,164 +28,166 @@ import (
 	axMock "github.com/axelarnetwork/axelar-core/x/tests/mock"
 )
 
-// test data
+/*
+This file should function as an example of how to use the blockchain mock to run integration tests for
+Cosmos modules without spinning up Tendermint consensus and multiple real nodes
+*/
+
+/*
+Test data
+while the hash and addresses are correctly formatted, these transactions are not real
+*/
 var (
-	// while the hash and addresses are correctly formatted, these transactions are not real
-	txId1    = "9cd961aca555c49f8e15011f64eae821fcefdb675aa880e901a6ea6c86700f60"
-	hash1, _ = chainhash.NewHashFromStr(txId1)
-	dest1    = "2NGZSCz4iug4677pdNAFtTJhRhBU7k7g6dY"
-	txId2    = "5bf532819c06bfe1dffe3a4d71ca9f5aff0f61699c84be797910f379c7dab48c"
-	hash2, _ = chainhash.NewHashFromStr(txId2)
-	dest2    = "2Mv9yBkCHbmG3viJzFFSDsbhyNihYWnhbiB"
-	txId3    = "03de73d454813a5909a8b3565dfef6852ed3418baa6930e3b7dbb9117702cf07"
-	hash3, _ = chainhash.NewHashFromStr(txId3)
-	dest3    = "2MujoFWjkfm8vwn8bFWCwS1UP9KLLk7Eqyj"
-	txId4    = "9b9ef444466cd50c85e88f2dca957ffa66dcf79d47652c0667ea6b1f3108b77a"
-	hash4, _ = chainhash.NewHashFromStr(txId4)
-	dest4    = "2MwU72uP9DWeXxPoq4VBRPH4UkDkH2zkhah"
-	txId5    = "74d39e87c810a80faff70dcbd988c661dbe283a27f903cd587ab9c0b221cc602"
-	hash5, _ = chainhash.NewHashFromStr(txId5)
-	dest5    = "tb1q9mncjrazn5xgqdcqyjc0q0vzaytx2uzfc69q0x"
-	txs      = map[string]*btcjson.TxRawResult{
-		txId1: {
-			Txid: txId1,
-			Hash: hash1.String(),
-			Vout: []btcjson.Vout{{
-				Value: btcutil.Amount(1).ToBTC(), ScriptPubKey: btcjson.ScriptPubKeyResult{Addresses: []string{dest1}},
-			}},
-			Confirmations: 9,
-		},
-		txId2: {
-			Txid: txId2,
-			Hash: hash2.String(),
-			Vout: []btcjson.Vout{{
-				Value: btcutil.Amount(2).ToBTC(), ScriptPubKey: btcjson.ScriptPubKeyResult{Addresses: []string{dest2}},
-			}},
-			Confirmations: 17,
-		},
-		txId3: {
-			Txid: txId3,
-			Hash: hash3.String(),
-			Vout: []btcjson.Vout{{
-				Value: btcutil.Amount(3).ToBTC(), ScriptPubKey: btcjson.ScriptPubKeyResult{Addresses: []string{dest3}},
-			}},
-			Confirmations: 9,
-		},
-		txId4: {
-			Txid: txId4,
-			Hash: hash4.String(),
-			Vout: []btcjson.Vout{{
-				Value: btcutil.Amount(4).ToBTC(), ScriptPubKey: btcjson.ScriptPubKeyResult{Addresses: []string{dest4}},
-			}},
-			Confirmations: 8,
-		},
-		txId5: {
-			Txid: txId5,
-			Hash: hash5.String(),
-			Vout: []btcjson.Vout{{
-				Value: btcutil.Amount(5).ToBTC(), ScriptPubKey: btcjson.ScriptPubKeyResult{Addresses: []string{dest5}},
-			}},
-			Confirmations: 12,
-		}}
+	txIds = []string{
+		"9cd961aca555c49f8e15011f64eae821fcefdb675aa880e901a6ea6c86700f60",
+		"5bf532819c06bfe1dffe3a4d71ca9f5aff0f61699c84be797910f379c7dab48c",
+		"03de73d454813a5909a8b3565dfef6852ed3418baa6930e3b7dbb9117702cf07",
+		"9b9ef444466cd50c85e88f2dca957ffa66dcf79d47652c0667ea6b1f3108b77a",
+		"74d39e87c810a80faff70dcbd988c661dbe283a27f903cd587ab9c0b221cc602"}
+	hash1, _     = chainhash.NewHashFromStr(txIds[0])
+	hash2, _     = chainhash.NewHashFromStr(txIds[1])
+	hash3, _     = chainhash.NewHashFromStr(txIds[2])
+	hash4, _     = chainhash.NewHashFromStr(txIds[3])
+	hash5, _     = chainhash.NewHashFromStr(txIds[4])
+	destinations = []string{
+		"2NGZSCz4iug4677pdNAFtTJhRhBU7k7g6dY",
+		"2Mv9yBkCHbmG3viJzFFSDsbhyNihYWnhbiB",
+		"2MujoFWjkfm8vwn8bFWCwS1UP9KLLk7Eqyj",
+		"2MwU72uP9DWeXxPoq4VBRPH4UkDkH2zkhah",
+		"tb1q9mncjrazn5xgqdcqyjc0q0vzaytx2uzfc69q0x"}
+	txs = map[string]*btcjson.TxRawResult{
+		txIds[0]: {Txid: txIds[0], Hash: hash1.String(), Vout: []btcjson.Vout{vout(1, destinations[0])}, Confirmations: 9},
+		txIds[1]: {Txid: txIds[1], Hash: hash2.String(), Vout: []btcjson.Vout{vout(2, destinations[1])}, Confirmations: 17},
+		txIds[2]: {Txid: txIds[2], Hash: hash3.String(), Vout: []btcjson.Vout{vout(3, destinations[2])}, Confirmations: 9},
+		txIds[3]: {Txid: txIds[3], Hash: hash4.String(), Vout: []btcjson.Vout{vout(4, destinations[3])}, Confirmations: 8},
+		txIds[4]: {Txid: txIds[4], Hash: hash5.String(), Vout: []btcjson.Vout{vout(5, destinations[4])}, Confirmations: 12}}
 )
-
-func prepareMsgs() []sdk.Msg {
-	tx1 := btcTypes.NewMsgVerifyTx(sdk.AccAddress("user1"), hash1, 0, btcTypes.BtcAddress{
-		Chain:         "testnet3",
-		EncodedString: dest1,
-	}, btcutil.Amount(1))
-
-	tx2 := btcTypes.NewMsgVerifyTx(sdk.AccAddress("user1"), hash2, 0, btcTypes.BtcAddress{
-		Chain:         "testnet3",
-		EncodedString: dest2,
-	}, btcutil.Amount(2))
-
-	tx3 := btcTypes.NewMsgVerifyTx(sdk.AccAddress("user1"), hash3, 0, btcTypes.BtcAddress{
-		Chain:         "testnet3",
-		EncodedString: dest3,
-	}, btcutil.Amount(3))
-
-	tx4 := btcTypes.NewMsgVerifyTx(sdk.AccAddress("user1"), hash4, 0, btcTypes.BtcAddress{
-		Chain:         "testnet3",
-		EncodedString: dest4,
-	}, btcutil.Amount(4))
-
-	tx5 := btcTypes.NewMsgVerifyTx(sdk.AccAddress("user1"), hash5, 0, btcTypes.BtcAddress{
-		Chain:         "testnet3",
-		EncodedString: dest5,
-	}, btcutil.Amount(5))
-
-	return []sdk.Msg{tx1, tx2, tx3, tx4, tx5}
-}
 
 func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 
 	// setting up the test infrastructure
-
-	vAddr1 := sdk.ValAddress("val1")
-	vAddr2 := sdk.ValAddress("val2")
-	vAddr3 := sdk.ValAddress("val3")
-	val1 := axMock.NewTestValidator(vAddr1, 100)
-	val2 := axMock.NewTestValidator(vAddr2, 80)
-	val3 := axMock.NewTestValidator(vAddr3, 170)
+	val1 := axMock.NewTestValidator(sdk.ValAddress("val1"), 100)
+	val2 := axMock.NewTestValidator(sdk.ValAddress("val2"), 80)
+	val3 := axMock.NewTestValidator(sdk.ValAddress("val3"), 170)
 	staker := axMock.NewTestStaker(val1, val2, val3)
 
-	b1 := sdk.AccAddress("broadcaster1")
-	b2 := sdk.AccAddress("broadcaster2")
-	b3 := sdk.AccAddress("broadcaster3")
-
+	// Choose block size and optionally timeout according to the needs of the test
 	blockChain := mock.NewBlockchain().WithBlockSize(2).WithBlockTimeOut(100 * time.Millisecond)
 
-	node1 := newNode(val1, b1, staker, blockChain.Input())
-	node2 := newNode(val2, b2, staker, blockChain.Input())
-	node3 := newNode(val3, b3, staker, blockChain.Input())
+	b1 := mock.NewBroadcaster(test_utils.Codec(), sdk.AccAddress("broadcaster1"), val1.GetOperator(), blockChain.Input())
+	b2 := mock.NewBroadcaster(test_utils.Codec(), sdk.AccAddress("broadcaster2"), val2.GetOperator(), blockChain.Input())
+	b3 := mock.NewBroadcaster(test_utils.Codec(), sdk.AccAddress("broadcaster3"), val3.GetOperator(), blockChain.Input())
 
-	blockChain.AddNodes(node1, node2, node3)
+	nodes := []mock.Node{
+		newNode("node1", b1, staker),
+		newNode("node2", b2, staker),
+		newNode("node3", b3, staker)}
+
+	blockChain.AddNodes(nodes...)
 	blockChain.Start()
 
 	in := blockChain.Input()
 	defer close(in)
 
+	verifyMsgs := []sdk.Msg{
+		prepareVerifyMsg(hash1, destinations[0], 1),
+		prepareVerifyMsg(hash2, destinations[1], 2),
+		prepareVerifyMsg(hash3, destinations[2], 3),
+		prepareVerifyMsg(hash4, destinations[3], 4),
+		prepareVerifyMsg(hash5, destinations[4], 5),
+	}
+
 	// test begin
 
-	in <- broadcastTypes.NewMsgRegisterProxy(val1.GetOperator(), b1)
-	in <- broadcastTypes.NewMsgRegisterProxy(val2.GetOperator(), b2)
-	in <- broadcastTypes.NewMsgRegisterProxy(val3.GetOperator(), b3)
+	in <- broadcastTypes.NewMsgRegisterProxy(val1.GetOperator(), b1.Address)
+	in <- broadcastTypes.NewMsgRegisterProxy(val2.GetOperator(), b2.Address)
+	in <- broadcastTypes.NewMsgRegisterProxy(val3.GetOperator(), b3.Address)
 
-	for _, msg := range prepareMsgs() {
+	for _, msg := range verifyMsgs {
 		in <- msg
 	}
 
-	// TODO: implement meaningful assertions instead of just checking the log output while the test is running
-	time.Sleep(10 * time.Minute)
+	timeOut := test_utils.StartTimeout(5 * time.Second)
+
+loop:
+	for {
+		select {
+		case <-timeOut:
+			break loop
+		default:
+			confirmed := allTxConfirmed(nodes)
+			if confirmed {
+				break loop
+			}
+			time.Sleep(1 * time.Second)
+		}
+	}
+
+	assert.True(t, allTxConfirmed(nodes))
 }
 
-func newNode(val exported.ValidatorI, broadcasterAddr sdk.AccAddress, staker axTypes.Staker, blockchainIn chan<- sdk.Msg) mock.Node {
+func vout(amount int, destination string) btcjson.Vout {
+	return btcjson.Vout{
+		Value:        btcutil.Amount(amount).ToBTC(),
+		ScriptPubKey: btcjson.ScriptPubKeyResult{Addresses: []string{destination}},
+	}
+}
+
+func prepareVerifyMsg(hash *chainhash.Hash, destination string, amount int) sdk.Msg {
+	return btcTypes.NewMsgVerifyTx(sdk.AccAddress("user1"), hash, 0, btcTypes.BtcAddress{
+		Chain:         "testnet3",
+		EncodedString: destination,
+	}, btcutil.Amount(amount))
+}
+
+func newNode(moniker string, broadcaster bcExported.Broadcaster, staker axTypes.Staker) mock.Node {
+	/*
+		Multistore is mocked so we can more easily manipulate existing state and assert that specific state changes happen.
+		For now, we never use the Header information, so we can just initialize an empty struct.
+		We only simulate the actual transaction execution, not the test run before adding a transaction to the mempool,
+		so isCheckTx should always be false.
+		Tendermint already has a logger for tests defined, so that's probably good enough.
+	*/
 	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 
-	// register the types needed for marshaling, do not forget sdk.Msg!
-	cdc := codec.New()
-	cdc.RegisterInterface((*sdk.Msg)(nil), nil)
-	axTypes.RegisterCodec(cdc)
-	btcTypes.RegisterCodec(cdc)
-
-	broadcaster := mock.NewBroadcaster(cdc, broadcasterAddr, val.GetOperator(), blockchainIn)
-	axK := keeper.NewKeeper(cdc, sdk.NewKVStoreKey(axTypes.StoreKey), staker, broadcaster)
-	axK.SetVotingInterval(ctx, 10)
-	axK.SetVotingThreshold(ctx, axTypes.VotingThreshold{Numerator: 2, Denominator: 3})
+	// Initialize all keepers and handlers you want to involve in the test
+	axK := keeper.NewKeeper(test_utils.Codec(), mock.NewKVStoreKey(axTypes.StoreKey), staker, broadcaster)
 	axH := axelar.NewHandler(axK)
 
-	btcK := btcKeeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey(btcTypes.StoreKey))
+	btcK := btcKeeper.NewBtcKeeper(test_utils.Codec(), mock.NewKVStoreKey(btcTypes.StoreKey))
+	// We use a mock for the bitcoin rpc client so we can control the responses from the "bitcoin" network
 	btcH := btc_bridge.NewHandler(btcK, axK, &btcMock.TestRPC{RawTxs: txs}, nil)
 
 	broadcastH := broadcast.NewHandler(broadcaster)
 
+	// Set the correct initial state in the keepers
+	axelar.InitGenesis(ctx, axK, axTypes.DefaultGenesisState())
+	btc_bridge.InitGenesis(ctx, btcK, btcTypes.DefaultGenesisState())
+
+	// Define all functions that should run at the end of a block
 	eb := func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 		return axelar.EndBlocker(ctx, req, axK)
 	}
-	return mock.NewNode(val.GetOperator().String(), ctx).
+	return mock.NewNode(moniker, ctx).
 		WithHandler(axTypes.ModuleName, axH).
 		WithHandler(btcTypes.ModuleName, btcH).
 		WithHandler(broadcastTypes.ModuleName, broadcastH).
 		WithEndBlockers(eb)
+}
+
+func allTxConfirmed(nodes []mock.Node) bool {
+	allConfirmed := true
+	axStoreKey := mock.NewKVStoreKey(axTypes.StoreKey)
+	for _, node := range nodes {
+		kvStore := node.Ctx.KVStore(axStoreKey)
+		for _, txId := range txIds {
+			tx := axExported.ExternalTx{Chain: "bitcoin", TxID: txId}
+			key := test_utils.Codec().MustMarshalBinaryLengthPrefixed(tx)
+			if kvStore.Get(key) == nil {
+				allConfirmed = false
+				break
+			}
+		}
+	}
+	return allConfirmed
 }

@@ -2,12 +2,13 @@ package mock
 
 import (
 	"io"
+	"sync"
 
 	sdkTypes "github.com/cosmos/cosmos-sdk/types"
 )
 
 func NewMultiStore() sdkTypes.MultiStore {
-	return TestMultiStore{kvstore: map[string]sdkTypes.KVStore{}}
+	return TestMultiStore{kvstore: make(map[string]sdkTypes.KVStore)}
 }
 
 type TestMultiStore struct {
@@ -61,10 +62,11 @@ func (t TestMultiStore) SetTracingContext(context sdkTypes.TraceContext) sdkType
 }
 
 func NewTestKVStore() sdkTypes.KVStore {
-	return TestKVStore{store: map[string][]byte{}}
+	return TestKVStore{mutex: &sync.RWMutex{}, store: make(map[string][]byte)}
 }
 
 type TestKVStore struct {
+	mutex *sync.RWMutex
 	store map[string][]byte
 }
 
@@ -81,6 +83,8 @@ func (t TestKVStore) CacheWrapWithTrace(w io.Writer, tc sdkTypes.TraceContext) s
 }
 
 func (t TestKVStore) Get(key []byte) []byte {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
 	val, ok := t.store[string(key)]
 
 	if ok {
@@ -91,15 +95,22 @@ func (t TestKVStore) Get(key []byte) []byte {
 }
 
 func (t TestKVStore) Has(key []byte) bool {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
 	_, ok := t.store[string(key)]
 	return ok
 }
 
 func (t TestKVStore) Set(key, value []byte) {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
 	t.store[string(key)] = value
 }
 
 func (t TestKVStore) Delete(key []byte) {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
 	delete(t.store, string(key))
 }
 
@@ -109,4 +120,19 @@ func (t TestKVStore) Iterator(start, end []byte) sdkTypes.Iterator {
 
 func (t TestKVStore) ReverseIterator(start, end []byte) sdkTypes.Iterator {
 	panic("implement me")
+}
+
+type TestStoreKey string
+
+// NewKVStoreKey provides a simple store key for testing
+func NewKVStoreKey(key string) sdkTypes.StoreKey {
+	return TestStoreKey(key)
+}
+
+func (t TestStoreKey) Name() string {
+	return string(t)
+}
+
+func (t TestStoreKey) String() string {
+	return string(t)
 }

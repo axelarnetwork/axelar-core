@@ -131,7 +131,7 @@ type Node struct {
 	in          chan block
 	handlers    map[string]sdk.Handler
 	endBlockers []func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate
-	ctx         sdk.Context
+	Ctx         sdk.Context
 	moniker     string
 }
 
@@ -141,7 +141,7 @@ type Node struct {
 func NewNode(moniker string, ctx sdk.Context) Node {
 	return Node{
 		moniker:     moniker,
-		ctx:         ctx,
+		Ctx:         ctx,
 		in:          make(chan block, 1),
 		handlers:    make(map[string]sdk.Handler, 0),
 		endBlockers: make([]func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate, 0),
@@ -176,7 +176,7 @@ func (n Node) start() {
 				if err := msg.ValidateBasic(); err != nil {
 					log.Printf("node %s returned an error when validating message %s", n.moniker, msg.Type())
 				}
-				if _, err := h(n.ctx, msg); err != nil {
+				if _, err := h(n.Ctx, msg); err != nil {
 					log.Printf("node %s returned an error from handler for route %s", n.moniker, msg.Route())
 				}
 			} else {
@@ -187,7 +187,7 @@ func (n Node) start() {
 		log.Printf("node %s ends block %v", n.moniker, b.height)
 		// end block
 		for _, endBlocker := range n.endBlockers {
-			endBlocker(n.ctx, abci.RequestEndBlock{Height: b.height})
+			endBlocker(n.Ctx, abci.RequestEndBlock{Height: b.height})
 		}
 	}
 }

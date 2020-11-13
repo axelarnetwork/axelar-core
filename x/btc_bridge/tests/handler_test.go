@@ -14,7 +14,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/axelarnetwork/axelar-core/test-util/mock"
+	"github.com/axelarnetwork/axelar-core/test-utils/mock"
 	"github.com/axelarnetwork/axelar-core/x/axelar/exported"
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge"
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
