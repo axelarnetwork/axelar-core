@@ -6,11 +6,15 @@ import sdk "github.com/cosmos/cosmos-sdk/types"
 // Recommended pattern: In other modules, define a keeper interface in the respective expected_keepers.go file and
 // embed this interface into it
 type Broadcaster interface {
+	// Broadcast sends the passed messages to the network.
+	// Do not call it from the main thread or risk a deadlock (the main thread is needed to validate incoming messages)
 	Broadcast(ctx sdk.Context, msgs []ValidatorMsg) error
+
 	RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy sdk.AccAddress) error
 
 	// Returns nil if not set
 	GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
+
 	GetProxyCount(ctx sdk.Context) uint32
 
 	// WARNING: Handle with care, this exposes local information that is DIFFERENT for each validator

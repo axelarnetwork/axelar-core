@@ -13,7 +13,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
@@ -29,6 +28,7 @@ import (
 
 	keyring "github.com/cosmos/cosmos-sdk/crypto/keys"
 
+	"github.com/axelarnetwork/axelar-core/store"
 	"github.com/axelarnetwork/axelar-core/x/axelar"
 	axKeeper "github.com/axelarnetwork/axelar-core/x/axelar/keeper"
 	axTypes "github.com/axelarnetwork/axelar-core/x/axelar/types"
@@ -225,15 +225,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
-	app.broadcastKeeper, err = bcKeeper.NewKeeper(
-		axelarCfg.ClientConfig,
-		keys[broadcastTypes.StoreKey],
-		keybase,
-		app.accountKeeper,
-		app.stakingKeeper,
-		utils.GetTxEncoder(cdc),
-		logger,
-	)
+	app.broadcastKeeper, err = bcKeeper.NewKeeper(app.cdc, keys[broadcastTypes.StoreKey], store.NewSubjectiveStore(), keybase, app.accountKeeper, app.stakingKeeper, axelarCfg.ClientConfig, logger)
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
@@ -252,6 +244,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	app.axelarKeeper = axKeeper.NewKeeper(
 		app.cdc,
 		keys[axTypes.StoreKey],
+		store.NewSubjectiveStore(),
 		app.stakingKeeper,
 		app.broadcastKeeper,
 	)

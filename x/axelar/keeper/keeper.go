@@ -3,8 +3,10 @@ package keeper
 import (
 	"fmt"
 
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/axelarnetwork/axelar-core/store"
 	"github.com/axelarnetwork/axelar-core/x/axelar/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelar/types"
 	bcExported "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
@@ -14,25 +16,28 @@ import (
 )
 
 var (
-	futureVotesKey    = []byte("futureVotesKey")
-	publicVotesKey    = []byte("publicVotesKey")
-	votingIntervalKey = []byte("votingInterval")
-	votingThreshold   = []byte("votingThreshold")
+	futureVotesKey     = []byte("futureVotesKey")
+	publicVotesKey     = []byte("publicVotesKey")
+	votingIntervalKey  = []byte("votingIntervalKey")
+	votingThresholdKey = []byte("votingThresholdKey")
+	txKey              = []byte("txKey")
 )
 
 type Keeper struct {
-	storeKey    sdk.StoreKey
-	cdc         *codec.Codec
-	broadcaster types.Broadcaster
-	staker      types.Staker
+	subjectiveStore store.SubjectiveStore
+	storeKey        sdk.StoreKey
+	cdc             *codec.Codec
+	broadcaster     types.Broadcaster
+	staker          types.Staker
 }
 
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, staker types.Staker, broadcaster types.Broadcaster) Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, subjectiveStore store.SubjectiveStore, staker types.Staker, broadcaster types.Broadcaster) Keeper {
 	keeper := Keeper{
-		storeKey:    key,
-		cdc:         cdc,
-		broadcaster: broadcaster,
-		staker:      staker,
+		subjectiveStore: subjectiveStore,
+		storeKey:        key,
+		cdc:             cdc,
+		broadcaster:     broadcaster,
+		staker:          staker,
 	}
 	return keeper
 }
@@ -42,27 +47,31 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
+// SetFutureVote stores the subjective votes of this node
 func (k Keeper) SetFutureVote(ctx sdk.Context, vote exported.FutureVote) {
 	k.Logger(ctx).Debug("getting future votes")
-	futureVotes := k.getFutureVotes(ctx)
+	futureVotes := k.getFutureVotes()
 
 	futureVotes = append(futureVotes, vote)
 	k.Logger(ctx).Debug("store future votes")
-	k.setFutureVotes(ctx, futureVotes)
+	k.setFutureVotes(futureVotes)
 }
 
-func (k Keeper) getFutureVotes(ctx sdk.Context) []exported.FutureVote {
-	if !ctx.KVStore(k.storeKey).Has(futureVotesKey) {
+// Because votes may differ between nodes they need to be stored outside the regular kvstore
+// (whose hash becomes part of the Merkle tree)
+func (k Keeper) getFutureVotes() []exported.FutureVote {
+	bz := k.subjectiveStore.Get(futureVotesKey)
+	if bz == nil {
 		return []exported.FutureVote{}
 	}
-	bz := ctx.KVStore(k.storeKey).Get(futureVotesKey)
 	var futureVotes []exported.FutureVote
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &futureVotes)
 	return futureVotes
 }
 
-func (k Keeper) setFutureVotes(ctx sdk.Context, preVoteTxs []exported.FutureVote) {
-	ctx.KVStore(k.storeKey).Set(futureVotesKey, k.cdc.MustMarshalBinaryLengthPrefixed(preVoteTxs))
+// See getFutureVotes
+func (k Keeper) setFutureVotes(preVoteTxs []exported.FutureVote) {
+	k.subjectiveStore.Set(futureVotesKey, k.cdc.MustMarshalBinaryLengthPrefixed(preVoteTxs))
 }
 
 func (k Keeper) SetVotingInterval(ctx sdk.Context, votingInterval int64) {
@@ -80,11 +89,7 @@ func (k Keeper) GetVotingInterval(ctx sdk.Context) int64 {
 
 // Broadcast the batched future votes
 func (k Keeper) BatchVote(ctx sdk.Context) error {
-	if local := k.broadcaster.GetLocalPrincipal(ctx); local == nil {
-		return nil
-	}
-
-	preVotes := k.getFutureVotes(ctx)
+	preVotes := k.getFutureVotes()
 	k.Logger(ctx).Debug(fmt.Sprintf("unpublished votes:%v", len(preVotes)))
 
 	if len(preVotes) == 0 {
@@ -93,82 +98,44 @@ func (k Keeper) BatchVote(ctx sdk.Context) error {
 	var bits []bool
 	var votes []types.Vote
 	for _, preVote := range preVotes {
+		// prepare vote collecting structure
 		votes = append(votes, types.Vote{
 			Tx:            preVote.Tx,
-			Confirmations: make(map[string]sdk.ValAddress),
+			Confirmations: make([]types.Confirmation, 0),
 		})
+
+		// collect own votes
 		bits = append(bits, preVote.LocalAccept)
 	}
 
 	k.setPublicVotes(ctx, votes)
 	// Reset preVotes because this batch is about to be broadcast
-	k.setFutureVotes(ctx, []exported.FutureVote{})
+	k.setFutureVotes([]exported.FutureVote{})
+
 	msg := types.NewMsgBatchVote(bits)
 	k.Logger(ctx).Debug(fmt.Sprintf("vote: %v", msg))
 
-	return k.broadcaster.Broadcast(ctx, []bcExported.ValidatorMsg{msg})
-}
-
-type serializableVote struct {
-	Tx           exported.ExternalTx
-	ValStrings   []string
-	ValAddresses []sdk.ValAddress
+	// Broadcast is a local action, it must not have any influence on the validity of the message
+	go func(logger log.Logger) {
+		err := k.broadcaster.Broadcast(ctx, []bcExported.ValidatorMsg{msg})
+		if err != nil {
+			logger.Error(sdkerrors.Wrap(err, "broadcasting votes failed").Error())
+		}
+	}(k.Logger(ctx))
+	return nil
 }
 
 func (k Keeper) setPublicVotes(ctx sdk.Context, votes []types.Vote) {
-	serVotes := mapToSerializable(votes)
-
-	ctx.KVStore(k.storeKey).Set(publicVotesKey, k.cdc.MustMarshalBinaryLengthPrefixed(serVotes))
+	ctx.KVStore(k.storeKey).Set(publicVotesKey, k.cdc.MustMarshalBinaryLengthPrefixed(votes))
 }
 
 func (k Keeper) getPublicVotes(ctx sdk.Context) []types.Vote {
-	if !ctx.KVStore(k.storeKey).Has(publicVotesKey) {
+	bz := ctx.KVStore(k.storeKey).Get(publicVotesKey)
+	if bz == nil {
 		return nil
 	}
-	bz := ctx.KVStore(k.storeKey).Get(publicVotesKey)
-	var serVotes []serializableVote
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &serVotes)
-
-	return mapFromSerializable(serVotes)
-}
-
-func mapToSerializable(votes []types.Vote) []serializableVote {
-	// The map struct is an unsupported data type for amino, so we need to map it to a list of key-values
-	var serVotes []serializableVote
-	for _, vote := range votes {
-		var valStrings []string
-		var valAddresses []sdk.ValAddress
-
-		// WARNING: iterating over a map is not deterministic behaviour,
-		// so code down the line must NOT rely on the order of these arrays.
-		// Only use the serializableVote struct in the setter and getter.
-		for s, a := range vote.Confirmations {
-			valStrings = append(valStrings, s)
-			valAddresses = append(valAddresses, a)
-		}
-		serVotes = append(serVotes, serializableVote{
-			Tx:           vote.Tx,
-			ValStrings:   valStrings,
-			ValAddresses: valAddresses,
-		})
-	}
-	return serVotes
-}
-
-// see mapToSerializable
-func mapFromSerializable(serVotes []serializableVote) []types.Vote {
 	var votes []types.Vote
-	for _, serVote := range serVotes {
-		confirmations := make(map[string]sdk.ValAddress)
-
-		for i := 0; i < len(serVote.ValStrings); i++ {
-			confirmations[serVote.ValStrings[i]] = serVote.ValAddresses[i]
-		}
-		votes = append(votes, types.Vote{
-			Tx:            serVote.Tx,
-			Confirmations: confirmations,
-		})
-	}
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &votes)
 	return votes
 }
 
@@ -181,19 +148,24 @@ func (k Keeper) RecordVotes(ctx sdk.Context, voter sdk.AccAddress, votes []bool)
 		return types.ErrInvalidVoter
 	}
 
-	unconfVotes := k.getPublicVotes(ctx)
-	if len(votes) != len(unconfVotes) {
-		k.Logger(ctx).Debug(fmt.Sprintf("vote length:%v, unconfirmed publicVotesKey: %v", len(votes), len(unconfVotes)))
+	unconfirmedVotes := k.getPublicVotes(ctx)
+	if len(votes) != len(unconfirmedVotes) {
+		k.Logger(ctx).Debug(fmt.Sprintf("votes to record:%v, unconfirmed transactions: %v", len(votes), len(unconfirmedVotes)))
 		return types.ErrInvalidVotes
 	}
 	for i, vote := range votes {
 		k.Logger(ctx).Debug("storing vote confirmation")
-		if vote {
-			unconfVotes[i].Confirmations[validator.String()] = validator
+		// ignore votes from validators that already voted this round
+		if !k.hasVoted(ctx, validator) {
+			unconfirmedVotes[i].Confirmations = append(unconfirmedVotes[i].Confirmations, types.Confirmation{
+				Validator: validator,
+				Confirms:  vote,
+			})
 		}
 	}
 
-	k.setPublicVotes(ctx, unconfVotes)
+	k.setHasVoted(ctx, validator)
+	k.setPublicVotes(ctx, unconfirmedVotes)
 	return nil
 }
 
@@ -210,11 +182,15 @@ func (k Keeper) TallyCastVotes(ctx sdk.Context) {
 	k.Logger(ctx).Debug(fmt.Sprintf("total power:%v", totalPower))
 	for _, vote := range votes {
 		var power = sdk.ZeroInt()
-		for _, valAddr := range vote.Confirmations {
-			validator := k.staker.Validator(ctx, valAddr)
-			power = power.AddRaw(validator.GetConsensusPower())
+		for _, confirmation := range vote.Confirmations {
+			validator := k.staker.Validator(ctx, confirmation.Validator)
+			if confirmation.Confirms {
+				power = power.AddRaw(validator.GetConsensusPower())
+			}
+			// The vote has been tallied, so clear the lookup for the next round
+			k.clearHasVoted(ctx, validator.GetOperator())
 		}
-		k.Logger(ctx).Debug(fmt.Sprintf("voting power:%v", power))
+		k.Logger(ctx).Debug(fmt.Sprintf("voting power for %s: %v", vote.Tx.TxID, power))
 
 		threshold := k.GetVotingThreshold(ctx)
 		if threshold.IsMet(power, totalPower) {
@@ -222,34 +198,39 @@ func (k Keeper) TallyCastVotes(ctx sdk.Context) {
 		}
 	}
 
-	// Transactions have been processed, so reset for the next batch
+	// Transactions have been processed, so reset for the next round
 	k.setPublicVotes(ctx, []types.Vote{})
 }
 
+func (k Keeper) IsVerified(ctx sdk.Context, tx exported.ExternalTx) bool {
+	return ctx.KVStore(k.storeKey).Has(append(txKey, k.cdc.MustMarshalBinaryLengthPrefixed(tx)...))
+}
+
 func (k Keeper) confirmTx(ctx sdk.Context, tx exported.ExternalTx) {
-	k.Logger(ctx).Debug(fmt.Sprintf("confirming tx:%v", tx))
+	k.Logger(ctx).Debug(fmt.Sprintf("confirming txKey:%v", tx))
 	key := k.cdc.MustMarshalBinaryLengthPrefixed(tx)
-	ctx.KVStore(k.storeKey).Set(key, k.cdc.MustMarshalBinaryLengthPrefixed(true))
+	ctx.KVStore(k.storeKey).Set(append(txKey, key...), []byte("confirmed"))
 }
 
 func (k Keeper) GetVotingThreshold(ctx sdk.Context) types.VotingThreshold {
-	rawThreshold := ctx.KVStore(k.storeKey).Get(votingThreshold)
+	rawThreshold := ctx.KVStore(k.storeKey).Get(votingThresholdKey)
 	var threshold types.VotingThreshold
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(rawThreshold, &threshold)
 	return threshold
 }
 
 func (k Keeper) SetVotingThreshold(ctx sdk.Context, threshold types.VotingThreshold) {
-	ctx.KVStore(k.storeKey).Set(votingThreshold, k.cdc.MustMarshalBinaryLengthPrefixed(threshold))
+	ctx.KVStore(k.storeKey).Set(votingThresholdKey, k.cdc.MustMarshalBinaryLengthPrefixed(threshold))
 }
 
-func (k Keeper) IsVerified(ctx sdk.Context, tx exported.ExternalTx) bool {
-	key := k.cdc.MustMarshalBinaryLengthPrefixed(tx)
-	bz := ctx.KVStore(k.storeKey).Get(key)
-	if bz == nil {
-		return false
-	}
-	var isVerified bool
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &isVerified)
-	return isVerified
+func (k Keeper) hasVoted(ctx sdk.Context, voter sdk.ValAddress) bool {
+	return ctx.KVStore(k.storeKey).Has(voter.Bytes())
+}
+
+func (k Keeper) setHasVoted(ctx sdk.Context, validator sdk.ValAddress) {
+	ctx.KVStore(k.storeKey).Set(validator.Bytes(), []byte("voted"))
+}
+
+func (k Keeper) clearHasVoted(ctx sdk.Context, validator sdk.ValAddress) {
+	ctx.KVStore(k.storeKey).Delete(validator.Bytes())
 }

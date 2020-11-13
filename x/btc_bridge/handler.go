@@ -99,6 +99,10 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 	k.SetUTXO(ctx, txId, msg.UTXO)
 
 	txForVote := exported.ExternalTx{Chain: bitcoin, TxID: txId}
+	/*
+	 Anyone not able to verify the transaction will automatically record a negative vote,
+	 but only validators will later send out that vote.
+	*/
 	if err := verifyTx(rpc, msg.UTXO, k.GetConfirmationHeight(ctx)); err != nil {
 		v.SetFutureVote(ctx, exported.FutureVote{Tx: txForVote, LocalAccept: false})
 
