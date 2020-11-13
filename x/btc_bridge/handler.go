@@ -60,6 +60,7 @@ func handleMsgTrackAddress(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient
 func handleMsgTrackPubKey(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, msg types.MsgTrackPubKey) (*sdk.Result, error) {
 	key, err := s.GetKey(ctx, msg.KeyID)
 	if err != nil {
+		k.Logger(ctx).Error("keyId not recognized")
 		return nil, fmt.Errorf("keyId not recognized")
 	}
 
