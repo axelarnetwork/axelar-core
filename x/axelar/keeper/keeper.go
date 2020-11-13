@@ -207,7 +207,7 @@ func (k Keeper) IsVerified(ctx sdk.Context, tx exported.ExternalTx) bool {
 }
 
 func (k Keeper) confirmTx(ctx sdk.Context, tx exported.ExternalTx) {
-	k.Logger(ctx).Debug(fmt.Sprintf("confirming txKey:%v", tx))
+	k.Logger(ctx).Debug(fmt.Sprintf("confirming tx: %v", tx))
 	key := k.cdc.MustMarshalBinaryLengthPrefixed(tx)
 	ctx.KVStore(k.storeKey).Set(append(txKey, key...), []byte("confirmed"))
 }
