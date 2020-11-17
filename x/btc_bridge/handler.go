@@ -60,6 +60,7 @@ func handleMsgTrackAddress(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient
 func handleMsgTrackPubKey(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, msg types.MsgTrackPubKey) (*sdk.Result, error) {
 	key, err := s.GetKey(ctx, msg.KeyID)
 	if err != nil {
+		k.Logger(ctx).Error("keyId not recognized")
 		return nil, fmt.Errorf("keyId not recognized")
 	}
 
@@ -99,6 +100,10 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 	k.SetUTXO(ctx, txId, msg.UTXO)
 
 	txForVote := exported.ExternalTx{Chain: bitcoin, TxID: txId}
+	/*
+	 Anyone not able to verify the transaction will automatically record a negative vote,
+	 but only validators will later send out that vote.
+	*/
 	if err := verifyTx(rpc, msg.UTXO, k.GetConfirmationHeight(ctx)); err != nil {
 		v.SetFutureVote(ctx, exported.FutureVote{Tx: txForVote, LocalAccept: false})
 
