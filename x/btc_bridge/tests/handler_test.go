@@ -15,11 +15,11 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/test-utils/mock"
-	"github.com/axelarnetwork/axelar-core/x/axelar/exported"
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge"
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
 	btcMock "github.com/axelarnetwork/axelar-core/x/btc_bridge/tests/mock"
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
+	"github.com/axelarnetwork/axelar-core/x/voting/exported"
 )
 
 func TestTrackAddress(t *testing.T) {

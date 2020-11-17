@@ -35,13 +35,13 @@ lint:
 
 .PHONY: build
 build: go.sum
-		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) ./cmd/axelarD
-		go build -o ./bin/axelarcli -mod=readonly $(BUILD_FLAGS) ./cmd/axelarCLI
+		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) ./cmd/axelard
+		go build -o ./bin/axelarcli -mod=readonly $(BUILD_FLAGS) ./cmd/axelarcli
 
 .PHONY: debug
 debug: go.sum
-		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) -gcflags="all=-N -l" ./cmd/axelarD
-		go build -o ./bin/axelarcli -mod=readonly $(BUILD_FLAGS) -gcflags="all=-N -l" ./cmd/axelarCLI
+		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) -gcflags="all=-N -l" ./cmd/axelard
+		go build -o ./bin/axelarcli -mod=readonly $(BUILD_FLAGS) -gcflags="all=-N -l" ./cmd/axelarcli
 
 .PHONY: docker-image
 docker-image:

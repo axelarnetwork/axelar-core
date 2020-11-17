@@ -12,12 +12,9 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/axelarnetwork/axelar-core/store"
 	test_utils "github.com/axelarnetwork/axelar-core/test-utils"
 	"github.com/axelarnetwork/axelar-core/test-utils/mock"
-	"github.com/axelarnetwork/axelar-core/x/axelar"
-	axExported "github.com/axelarnetwork/axelar-core/x/axelar/exported"
-	"github.com/axelarnetwork/axelar-core/x/axelar/keeper"
-	axTypes "github.com/axelarnetwork/axelar-core/x/axelar/types"
 	"github.com/axelarnetwork/axelar-core/x/broadcast"
 	bcExported "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
@@ -26,6 +23,10 @@ import (
 	btcMock "github.com/axelarnetwork/axelar-core/x/btc_bridge/tests/mock"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
 	axMock "github.com/axelarnetwork/axelar-core/x/tests/mock"
+	"github.com/axelarnetwork/axelar-core/x/voting"
+	axExported "github.com/axelarnetwork/axelar-core/x/voting/exported"
+	"github.com/axelarnetwork/axelar-core/x/voting/keeper"
+	axTypes "github.com/axelarnetwork/axelar-core/x/voting/types"
 )
 
 /*
@@ -72,7 +73,7 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 	staker := axMock.NewTestStaker(val1, val2, val3)
 
 	// Choose block size and optionally timeout according to the needs of the test
-	blockChain := mock.NewBlockchain().WithBlockSize(2).WithBlockTimeOut(100 * time.Millisecond)
+	blockChain := mock.NewBlockchain().WithBlockSize(2).WithBlockTimeOut(10 * time.Millisecond)
 
 	b1 := mock.NewBroadcaster(test_utils.Codec(), sdk.AccAddress("broadcaster1"), val1.GetOperator(), blockChain.Input())
 	b2 := mock.NewBroadcaster(test_utils.Codec(), sdk.AccAddress("broadcaster2"), val2.GetOperator(), blockChain.Input())
@@ -108,11 +109,14 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 	}
 
 	timeOut := test_utils.StartTimeout(5 * time.Second)
+	reachedHeight25 := notifyOnBlock25(blockChain)
 
 loop:
 	for {
 		select {
 		case <-timeOut:
+			break loop
+		case <-reachedHeight25:
 			break loop
 		default:
 			confirmed := allTxConfirmed(nodes)
@@ -124,6 +128,21 @@ loop:
 	}
 
 	assert.True(t, allTxConfirmed(nodes))
+}
+
+func notifyOnBlock25(blockChain mock.BlockChain) chan struct{} {
+	reachedHeight25 := make(chan struct{})
+	go func() {
+		for {
+			if blockChain.CurrentHeight() > 25 {
+				close(reachedHeight25)
+				break
+			}
+			time.Sleep(1 * time.Second)
+		}
+
+	}()
+	return reachedHeight25
 }
 
 func vout(amount int, destination string) btcjson.Vout {
@@ -151,8 +170,8 @@ func newNode(moniker string, broadcaster bcExported.Broadcaster, staker axTypes.
 	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 
 	// Initialize all keepers and handlers you want to involve in the test
-	axK := keeper.NewKeeper(test_utils.Codec(), mock.NewKVStoreKey(axTypes.StoreKey), staker, broadcaster)
-	axH := axelar.NewHandler(axK)
+	axK := keeper.NewKeeper(test_utils.Codec(), mock.NewKVStoreKey(axTypes.StoreKey), store.NewSubjectiveStore(), staker, broadcaster)
+	axH := voting.NewHandler(axK)
 
 	btcK := btcKeeper.NewBtcKeeper(test_utils.Codec(), mock.NewKVStoreKey(btcTypes.StoreKey))
 	// We use a mock for the bitcoin rpc client so we can control the responses from the "bitcoin" network
@@ -161,12 +180,12 @@ func newNode(moniker string, broadcaster bcExported.Broadcaster, staker axTypes.
 	broadcastH := broadcast.NewHandler(broadcaster)
 
 	// Set the correct initial state in the keepers
-	axelar.InitGenesis(ctx, axK, axTypes.DefaultGenesisState())
+	voting.InitGenesis(ctx, axK, axTypes.DefaultGenesisState())
 	btc_bridge.InitGenesis(ctx, btcK, btcTypes.DefaultGenesisState())
 
 	// Define all functions that should run at the end of a block
 	eb := func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-		return axelar.EndBlocker(ctx, req, axK)
+		return voting.EndBlocker(ctx, req, axK)
 	}
 	return mock.NewNode(moniker, ctx).
 		WithHandler(axTypes.ModuleName, axH).
@@ -182,7 +201,8 @@ func allTxConfirmed(nodes []mock.Node) bool {
 		kvStore := node.Ctx.KVStore(axStoreKey)
 		for _, txId := range txIds {
 			tx := axExported.ExternalTx{Chain: "bitcoin", TxID: txId}
-			key := test_utils.Codec().MustMarshalBinaryLengthPrefixed(tx)
+			// TODO: this is too tightly coupled to the actual implementation, check interface IsVerified() instead
+			key := append([]byte("tx_"), test_utils.Codec().MustMarshalBinaryLengthPrefixed(tx)...)
 			if kvStore.Get(key) == nil {
 				allConfirmed = false
 				break

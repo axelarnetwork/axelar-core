@@ -3,6 +3,7 @@ package mock
 import (
 	"fmt"
 	"log"
+	"sync/atomic"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -10,10 +11,11 @@ import (
 )
 
 type BlockChain struct {
-	blockSize    int
-	in           chan sdk.Msg
-	nodes        []Node
-	blockTimeOut time.Duration
+	blockSize     int
+	in            chan sdk.Msg
+	nodes         []Node
+	blockTimeOut  time.Duration
+	currentHeight *int64
 }
 
 type block struct {
@@ -31,10 +33,11 @@ func newBlock(size int, height int64) block {
 // so a block will only be disseminated once the specified block size is reached.
 func NewBlockchain() BlockChain {
 	return BlockChain{
-		blockSize:    1,
-		blockTimeOut: 0,
-		in:           make(chan sdk.Msg, 1000),
-		nodes:        make([]Node, 0),
+		blockSize:     1,
+		blockTimeOut:  0,
+		in:            make(chan sdk.Msg, 1000),
+		nodes:         make([]Node, 0),
+		currentHeight: new(int64),
 	}
 }
 
@@ -72,8 +75,13 @@ func (bc BlockChain) Start() {
 	go disseminateBlocks(bc)
 }
 
+func (bc BlockChain) CurrentHeight() int64 {
+	return *bc.currentHeight
+}
+
 func disseminateBlocks(bc BlockChain) {
 	for b := range cutBlocks(bc.in, bc.blockSize, bc.blockTimeOut) {
+		atomic.AddInt64(bc.currentHeight, 1)
 		for _, n := range bc.nodes {
 			n.in <- b
 		}

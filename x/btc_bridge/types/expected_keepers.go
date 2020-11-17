@@ -6,7 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/axelarnetwork/axelar-core/x/axelar/exported"
+	"github.com/axelarnetwork/axelar-core/x/voting/exported"
 )
 
 type Voter interface {

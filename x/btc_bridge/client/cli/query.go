@@ -3,9 +3,9 @@ package cli
 import (
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/x/axelar/exported"
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
+	"github.com/axelarnetwork/axelar-core/x/voting/exported"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"

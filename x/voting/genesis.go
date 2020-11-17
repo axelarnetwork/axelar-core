@@ -1,10 +1,10 @@
-package axelar
+package voting
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/axelarnetwork/axelar-core/x/axelar/keeper"
-	"github.com/axelarnetwork/axelar-core/x/axelar/types"
+	"github.com/axelarnetwork/axelar-core/x/voting/keeper"
+	"github.com/axelarnetwork/axelar-core/x/voting/types"
 )
 
 // InitGenesis initialize default parameters

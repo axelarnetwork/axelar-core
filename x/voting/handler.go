@@ -1,4 +1,4 @@
-package axelar
+package voting
 
 import (
 	"fmt"
@@ -6,15 +6,15 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/axelarnetwork/axelar-core/x/axelar/keeper"
-	"github.com/axelarnetwork/axelar-core/x/axelar/types"
+	"github.com/axelarnetwork/axelar-core/x/voting/keeper"
+	"github.com/axelarnetwork/axelar-core/x/voting/types"
 )
 
 func NewHandler(k keeper.Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
-		case types.MsgBatchVote:
+		case types.MsgBallot:
 			return handleMsgBatchVote(ctx, k, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
@@ -23,10 +23,10 @@ func NewHandler(k keeper.Keeper) sdk.Handler {
 	}
 }
 
-func handleMsgBatchVote(ctx sdk.Context, k keeper.Keeper, msg types.MsgBatchVote) (*sdk.Result, error) {
+func handleMsgBatchVote(ctx sdk.Context, k keeper.Keeper, msg types.MsgBallot) (*sdk.Result, error) {
 	k.Logger(ctx).Debug("Handle batched votes")
 
-	if err := k.RecordVotes(ctx, msg.Sender, msg.Votes); err != nil {
+	if err := k.ProcessBallot(ctx, msg.Sender, msg.Votes); err != nil {
 		k.Logger(ctx).Error(err.Error())
 		return nil, err
 	}

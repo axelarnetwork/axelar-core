@@ -3,17 +3,17 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/axelarnetwork/axelar-core/x/axelar/exported"
+	"github.com/axelarnetwork/axelar-core/x/voting/exported"
 )
 
-type Confirmation struct {
+type Vote struct {
 	Validator sdk.ValAddress
 	Confirms  bool
 }
 
-type Vote struct {
-	Tx            exported.ExternalTx
-	Confirmations []Confirmation
+type Poll struct {
+	Tx    exported.ExternalTx
+	Votes []Vote
 }
 
 type VotingThreshold struct {

@@ -6,10 +6,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	axTypes "github.com/axelarnetwork/axelar-core/x/axelar/types"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
+	axTypes "github.com/axelarnetwork/axelar-core/x/voting/types"
 )
 
 var (

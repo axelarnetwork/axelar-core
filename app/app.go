@@ -29,9 +29,6 @@ import (
 	keyring "github.com/cosmos/cosmos-sdk/crypto/keys"
 
 	"github.com/axelarnetwork/axelar-core/store"
-	"github.com/axelarnetwork/axelar-core/x/axelar"
-	axKeeper "github.com/axelarnetwork/axelar-core/x/axelar/keeper"
-	axTypes "github.com/axelarnetwork/axelar-core/x/axelar/types"
 	"github.com/axelarnetwork/axelar-core/x/broadcast"
 	bcKeeper "github.com/axelarnetwork/axelar-core/x/broadcast/keeper"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
@@ -41,6 +38,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss"
 	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
+	"github.com/axelarnetwork/axelar-core/x/voting"
+	axKeeper "github.com/axelarnetwork/axelar-core/x/voting/keeper"
+	axTypes "github.com/axelarnetwork/axelar-core/x/voting/types"
 )
 
 const (
@@ -66,7 +66,7 @@ var (
 		supply.AppModuleBasic{},
 
 		tss.AppModuleBasic{},
-		axelar.AppModuleBasic{},
+		voting.AppModuleBasic{},
 		btc_bridge.AppModuleBasic{},
 		broadcast.AppModuleBasic{},
 	)
@@ -276,7 +276,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 
 		tss.NewAppModule(app.tssKeeper),
-		axelar.NewAppModule(app.axelarKeeper),
+		voting.NewAppModule(app.axelarKeeper),
 		broadcast.NewAppModule(app.broadcastKeeper),
 		btcModule,
 	)

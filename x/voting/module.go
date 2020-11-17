@@ -1,4 +1,4 @@
-package axelar
+package voting
 
 import (
 	"encoding/json"
@@ -11,8 +11,8 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/axelarnetwork/axelar-core/x/axelar/keeper"
-	"github.com/axelarnetwork/axelar-core/x/axelar/types"
+	"github.com/axelarnetwork/axelar-core/x/voting/keeper"
+	"github.com/axelarnetwork/axelar-core/x/voting/types"
 )
 
 var (

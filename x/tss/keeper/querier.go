@@ -23,7 +23,7 @@ func NewQuerier(k Keeper) sdk.Querier {
 		case QueryGetKey:
 			return queryGetKey(ctx, path[1], k)
 		default:
-			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown axelar query endpoint: %s", path[0]))
+			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown tss query endpoint: %s", path[0]))
 		}
 	}
 }

@@ -11,9 +11,9 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	sdkTypes "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/axelarnetwork/axelar-core/x/axelar/exported"
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
+	"github.com/axelarnetwork/axelar-core/x/voting/exported"
 )
 
 var _ types.Voter = &TestVoter{}
@@ -22,7 +22,7 @@ type TestVoter struct {
 	Vote *exported.FutureVote
 }
 
-func (t *TestVoter) SetFutureVote(ctx sdkTypes.Context, vote exported.FutureVote) {
+func (t *TestVoter) SetFutureVote(_ sdkTypes.Context, vote exported.FutureVote) {
 	t.Vote = &vote
 }
 
@@ -38,7 +38,7 @@ type TestRPC struct {
 	RawTxs         map[string]*btcjson.TxRawResult
 }
 
-func (t *TestRPC) ImportAddressRescan(address string, account string, rescan bool) error {
+func (t *TestRPC) ImportAddressRescan(address string, _ string, _ bool) error {
 	t.TrackedAddress = address
 	t.Cancel()
 	return nil
