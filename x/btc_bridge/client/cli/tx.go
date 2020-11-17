@@ -82,22 +82,13 @@ func GetCmdTrack(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 		RunE:  client.ValidateCmd,
 	}
 
-	var rescan *bool
-
-	addrCmd := getCmdTrackAddress(chain, rescan, cdc)
-	pubKeyCmd := getCmdTrackPubKey(chain, rescan, cdc)
-
-	addrCmd.Flags().Bool("rescan", false,
-		"Rescan the entire Bitcoin blockchain for previous transactions to this address")
-	pubKeyCmd.Flags().Bool("rescan", false,
-		"Rescan the entire Bitcoin blockchain for previous transactions to this address")
-
-	trackCmd.AddCommand(flags.PostCommands(addrCmd, pubKeyCmd)...)
+	trackCmd.AddCommand(flags.PostCommands(getCmdTrackAddress(chain, cdc), getCmdTrackPubKey(chain, cdc))...)
 	return trackCmd
 }
 
-func getCmdTrackAddress(chain types.Chain, rescan *bool, cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
+func getCmdTrackAddress(chain types.Chain, cdc *codec.Codec) *cobra.Command {
+	var rescan bool
+	addrCmd := &cobra.Command{
 		Use:   "address [address]",
 		Short: "Make the axelar network aware of a specific address on Bitcoin",
 		Long:  "Make the axelar network aware of a specific address on Bitcoin. Use --rescan to rescan the entire Bitcoin history for past transactions",
@@ -111,7 +102,7 @@ func getCmdTrackAddress(chain types.Chain, rescan *bool, cdc *codec.Codec) *cobr
 				return nil
 			}
 
-			msg := types.NewMsgTrackAddress(cliCtx.GetFromAddress(), addr, *rescan)
+			msg := types.NewMsgTrackAddress(cliCtx.GetFromAddress(), addr, rescan)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -119,10 +110,14 @@ func getCmdTrackAddress(chain types.Chain, rescan *bool, cdc *codec.Codec) *cobr
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
+
+	addRescanFlag(addrCmd, &rescan)
+	return addrCmd
 }
 
-func getCmdTrackPubKey(chain types.Chain, rescan *bool, cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
+func getCmdTrackPubKey(chain types.Chain, cdc *codec.Codec) *cobra.Command {
+	var rescan bool
+	pubKeyCmd := &cobra.Command{
 		Use:   "pubKey  [keyId]",
 		Short: "Make the axelar network aware of a specific address on Bitcoin derived from a public key",
 		Long: "Make the axelar network aware of a specific address on Bitcoin derived from a public key." +
@@ -133,7 +128,7 @@ func getCmdTrackPubKey(chain types.Chain, rescan *bool, cdc *codec.Codec) *cobra
 
 			cliCtx, txBldr := prepare(cmd.InOrStdin(), cdc)
 
-			msg := types.NewMsgTrackPubKey(cliCtx.GetFromAddress(), chain, args[0], *rescan)
+			msg := types.NewMsgTrackPubKey(cliCtx.GetFromAddress(), chain, args[0], rescan)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -141,6 +136,8 @@ func getCmdTrackPubKey(chain types.Chain, rescan *bool, cdc *codec.Codec) *cobra
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
+	addRescanFlag(pubKeyCmd, &rescan)
+	return pubKeyCmd
 }
 
 func GetCmdVerifyTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
@@ -164,17 +161,17 @@ func GetCmdVerifyTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			addr, err := types.ParseBtcAddress(args[1], chain)
+			addr, err := types.ParseBtcAddress(args[2], chain)
 			if err != nil {
 				return err
 			}
 
-			amount, err := parseBtc(args[2])
+			amount, err := parseBtc(args[3])
 			if err != nil {
 				return err
 			}
 
-			voutIdx, err := parseVoutIdx(err, args[3])
+			voutIdx, err := parseVoutIdx(err, args[1])
 			if err != nil {
 				return err
 			}
@@ -289,4 +286,9 @@ func parseBtc(rawCoin string) (btcutil.Amount, error) {
 	default:
 		return 0, fmt.Errorf("choose a correct denomination: %s (%s), %s (%s)", satoshi, sat, bitcoin, btc)
 	}
+}
+
+func addRescanFlag(addrCmd *cobra.Command, rescan *bool) {
+	addrCmd.Flags().BoolVar(rescan, "rescan", false,
+		"Rescan the entire Bitcoin blockchain for previous transactions to this address")
 }

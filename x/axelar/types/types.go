@@ -6,13 +6,14 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelar/exported"
 )
 
+type Confirmation struct {
+	Validator sdk.ValAddress
+	Confirms  bool
+}
+
 type Vote struct {
-	Tx exported.ExternalTx
-	// Using a map instead of an array ensures that validators cannot vote multiple times.
-	// The actual validator address is needed frequently,
-	// therefore the confirmations not only record the ValAddress string and a bool (emulating a hash set),
-	// but the []byte representation as well
-	Confirmations map[string]sdk.ValAddress
+	Tx            exported.ExternalTx
+	Confirmations []Confirmation
 }
 
 type VotingThreshold struct {

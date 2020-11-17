@@ -4,14 +4,17 @@ import (
 	"encoding/binary"
 	"fmt"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/rpc/client/http"
 
+	"github.com/axelarnetwork/axelar-core/store"
 	"github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/broadcast/types"
 )
@@ -24,24 +27,26 @@ const (
 )
 
 type Keeper struct {
-	stakingKeeper staking.Keeper
-	storeKey      sdk.StoreKey
-	from          sdk.AccAddress
-	keybase       keys.Keybase
-	keeper        auth.AccountKeeper
-	encodeTx      sdk.TxEncoder
-	config        types.ClientConfig
-	rpc           *http.HTTP
-	fromName      string
+	stakingKeeper   staking.Keeper
+	storeKey        sdk.StoreKey
+	from            sdk.AccAddress
+	keybase         keys.Keybase
+	authKeeper      auth.AccountKeeper
+	encodeTx        sdk.TxEncoder
+	config          types.ClientConfig
+	rpc             *http.HTTP
+	fromName        string
+	subjectiveStore store.SubjectiveStore
 }
 
 func NewKeeper(
-	conf types.ClientConfig,
+	cdc *codec.Codec,
 	storeKey sdk.StoreKey,
+	subjectiveStore store.SubjectiveStore,
 	keybase keys.Keybase,
 	authKeeper auth.AccountKeeper,
 	stakingKeeper staking.Keeper,
-	encoder sdk.TxEncoder,
+	conf types.ClientConfig,
 	logger log.Logger,
 ) (Keeper, error) {
 	logger.With("module", fmt.Sprintf("x/%s", types.ModuleName)).Debug("creating broadcast keeper")
@@ -55,15 +60,16 @@ func NewKeeper(
 	}
 	logger.With("module", fmt.Sprintf("x/%s", types.ModuleName)).Debug("broadcast keeper created")
 	return Keeper{
-		stakingKeeper: stakingKeeper,
-		storeKey:      storeKey,
-		from:          from,
-		keybase:       keybase,
-		keeper:        authKeeper,
-		encodeTx:      encoder,
-		config:        conf,
-		rpc:           rpc,
-		fromName:      fromName,
+		subjectiveStore: subjectiveStore,
+		stakingKeeper:   stakingKeeper,
+		storeKey:        storeKey,
+		from:            from,
+		keybase:         keybase,
+		authKeeper:      authKeeper,
+		encodeTx:        utils.GetTxEncoder(cdc),
+		config:          conf,
+		rpc:             rpc,
+		fromName:        fromName,
 	}, nil
 }
 
@@ -89,7 +95,12 @@ func getAccountAddress(from string, keybase keys.Keybase) (sdk.AccAddress, strin
 	return info.GetAddress(), info.GetName(), nil
 }
 
+// Broadcast sends the passed message to the network. Needs to be called asynchronously or it will block
 func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []exported.ValidatorMsg) error {
+	if k.GetLocalPrincipal(ctx) == nil {
+		return fmt.Errorf("broadcaster is not registered as a proxy")
+	}
+
 	k.Logger(ctx).Debug("setting sender")
 	msgs := make([]sdk.Msg, 0, len(valMsgs))
 	for _, msg := range valMsgs {
@@ -118,17 +129,14 @@ func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []exported.ValidatorMsg) erro
 		return err
 	}
 	k.Logger(ctx).Debug("broadcasting")
-	k.setSeqNo(ctx, stdSignMsg.Sequence+1)
-	go func() {
-		k.Logger(ctx).Debug("inside broadcasting goroutine")
-		res, err := k.rpc.BroadcastTxSync(txBytes)
-		if err != nil {
-			k.Logger(ctx).Error(err.Error())
-		}
-		if res != nil && res.Log != "" {
-			k.Logger(ctx).Info(res.Log)
-		}
-	}()
+	k.setSeqNo(stdSignMsg.Sequence + 1)
+	res, err := k.rpc.BroadcastTxSync(txBytes)
+	if err != nil {
+		k.Logger(ctx).Error(err.Error())
+	}
+	if res != nil && res.Log != "" {
+		k.Logger(ctx).Info(res.Log)
+	}
 	return nil
 }
 
@@ -137,8 +145,8 @@ func (k Keeper) prepareMsgForSigning(ctx sdk.Context, msgs []sdk.Msg) (auth.StdS
 		return auth.StdSignMsg{}, sdkerrors.Wrap(types.ErrInvalidChain, "chain ID required but not specified")
 	}
 
-	acc := k.keeper.GetAccount(ctx, k.from)
-	seqNo := k.getSeqNo(ctx)
+	acc := k.authKeeper.GetAccount(ctx, k.from)
+	seqNo := k.getSeqNo()
 	if acc.GetSequence() > seqNo {
 		seqNo = acc.GetSequence()
 	}
@@ -225,16 +233,16 @@ func (k Keeper) SetProxyCount(ctx sdk.Context, count uint32) {
 	ctx.KVStore(k.storeKey).Set([]byte(proxyCountKey), bz)
 }
 
-func (k Keeper) getSeqNo(ctx sdk.Context) uint64 {
-	seqNo := ctx.KVStore(k.storeKey).Get([]byte(seqNoKey))
+func (k Keeper) getSeqNo() uint64 {
+	seqNo := k.subjectiveStore.Get([]byte(seqNoKey))
 	if seqNo == nil {
 		return 0
 	}
 	return binary.LittleEndian.Uint64(seqNo)
 }
 
-func (k Keeper) setSeqNo(ctx sdk.Context, seqNo uint64) {
+func (k Keeper) setSeqNo(seqNo uint64) {
 	bz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(bz, seqNo)
-	ctx.KVStore(k.storeKey).Set([]byte(seqNoKey), bz)
+	k.subjectiveStore.Set([]byte(seqNoKey), bz)
 }
