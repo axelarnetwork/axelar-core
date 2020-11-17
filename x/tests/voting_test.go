@@ -13,8 +13,8 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/store"
-	test_utils "github.com/axelarnetwork/axelar-core/test-utils"
-	"github.com/axelarnetwork/axelar-core/test-utils/mock"
+	test_utils "github.com/axelarnetwork/axelar-core/testutils"
+	"github.com/axelarnetwork/axelar-core/testutils/mock"
 	"github.com/axelarnetwork/axelar-core/x/broadcast"
 	bcExported "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
@@ -22,7 +22,6 @@ import (
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
 	btcMock "github.com/axelarnetwork/axelar-core/x/btc_bridge/tests/mock"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
-	axMock "github.com/axelarnetwork/axelar-core/x/tests/mock"
 	"github.com/axelarnetwork/axelar-core/x/voting"
 	axExported "github.com/axelarnetwork/axelar-core/x/voting/exported"
 	"github.com/axelarnetwork/axelar-core/x/voting/keeper"
@@ -67,10 +66,10 @@ var (
 func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 
 	// setting up the test infrastructure
-	val1 := axMock.NewTestValidator(sdk.ValAddress("val1"), 100)
-	val2 := axMock.NewTestValidator(sdk.ValAddress("val2"), 80)
-	val3 := axMock.NewTestValidator(sdk.ValAddress("val3"), 170)
-	staker := axMock.NewTestStaker(val1, val2, val3)
+	val1 := mock.NewTestValidator(sdk.ValAddress("val1"), 100)
+	val2 := mock.NewTestValidator(sdk.ValAddress("val2"), 80)
+	val3 := mock.NewTestValidator(sdk.ValAddress("val3"), 170)
+	staker := mock.NewTestStaker(val1, val2, val3)
 
 	// Choose block size and optionally timeout according to the needs of the test
 	blockChain := mock.NewBlockchain().WithBlockSize(2).WithBlockTimeOut(10 * time.Millisecond)

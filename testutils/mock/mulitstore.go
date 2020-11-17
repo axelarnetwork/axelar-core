@@ -23,7 +23,7 @@ func (t TestMultiStore) CacheWrap() sdkTypes.CacheWrap {
 	panic("implement me")
 }
 
-func (t TestMultiStore) CacheWrapWithTrace(w io.Writer, tc sdkTypes.TraceContext) sdkTypes.CacheWrap {
+func (t TestMultiStore) CacheWrapWithTrace(_ io.Writer, _ sdkTypes.TraceContext) sdkTypes.CacheWrap {
 	panic("implement me")
 }
 
@@ -31,11 +31,11 @@ func (t TestMultiStore) CacheMultiStore() sdkTypes.CacheMultiStore {
 	panic("implement me")
 }
 
-func (t TestMultiStore) CacheMultiStoreWithVersion(version int64) (sdkTypes.CacheMultiStore, error) {
+func (t TestMultiStore) CacheMultiStoreWithVersion(_ int64) (sdkTypes.CacheMultiStore, error) {
 	panic("implement me")
 }
 
-func (t TestMultiStore) GetStore(key sdkTypes.StoreKey) sdkTypes.Store {
+func (t TestMultiStore) GetStore(_ sdkTypes.StoreKey) sdkTypes.Store {
 	panic("implement me")
 }
 
@@ -53,11 +53,11 @@ func (t TestMultiStore) TracingEnabled() bool {
 	panic("implement me")
 }
 
-func (t TestMultiStore) SetTracer(w io.Writer) sdkTypes.MultiStore {
+func (t TestMultiStore) SetTracer(_ io.Writer) sdkTypes.MultiStore {
 	panic("implement me")
 }
 
-func (t TestMultiStore) SetTracingContext(context sdkTypes.TraceContext) sdkTypes.MultiStore {
+func (t TestMultiStore) SetTracingContext(_ sdkTypes.TraceContext) sdkTypes.MultiStore {
 	panic("implement me")
 }
 
@@ -78,7 +78,7 @@ func (t TestKVStore) CacheWrap() sdkTypes.CacheWrap {
 	panic("implement me")
 }
 
-func (t TestKVStore) CacheWrapWithTrace(w io.Writer, tc sdkTypes.TraceContext) sdkTypes.CacheWrap {
+func (t TestKVStore) CacheWrapWithTrace(_ io.Writer, _ sdkTypes.TraceContext) sdkTypes.CacheWrap {
 	panic("implement me")
 }
 
@@ -114,11 +114,11 @@ func (t TestKVStore) Delete(key []byte) {
 	delete(t.store, string(key))
 }
 
-func (t TestKVStore) Iterator(start, end []byte) sdkTypes.Iterator {
+func (t TestKVStore) Iterator(_, _ []byte) sdkTypes.Iterator {
 	panic("implement me")
 }
 
-func (t TestKVStore) ReverseIterator(start, end []byte) sdkTypes.Iterator {
+func (t TestKVStore) ReverseIterator(_, _ []byte) sdkTypes.Iterator {
 	panic("implement me")
 }
 
