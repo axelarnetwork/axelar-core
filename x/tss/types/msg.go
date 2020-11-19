@@ -36,14 +36,14 @@ type MsgSignStart struct {
 type MsgKeygenTraffic struct {
 	Sender    sdk.AccAddress
 	SessionID string
-	Payload   *tssd.KeygenTrafficOut // pointer because it contains a mutex
+	Payload   *tssd.TrafficOut // pointer because it contains a mutex
 }
 
 // MsgSignTraffic protocol message
 type MsgSignTraffic struct {
 	Sender    sdk.AccAddress
 	SessionID string
-	Payload   *tssd.SignTrafficOut // pointer because it contains a mutex
+	Payload   *tssd.TrafficOut // pointer because it contains a mutex
 }
 
 // NewMsgKeygenStart TODO unnecessary method; delete it?
@@ -133,7 +133,7 @@ func (msg MsgSignStart) GetSigners() []sdk.AccAddress {
 }
 
 // NewMsgKeygenTraffic TODO unnecessary method; delete it?
-func NewMsgKeygenTraffic(sessionID string, payload *tssd.KeygenTrafficOut) *MsgKeygenTraffic {
+func NewMsgKeygenTraffic(sessionID string, payload *tssd.TrafficOut) *MsgKeygenTraffic {
 	return &MsgKeygenTraffic{
 		SessionID: sessionID,
 		Payload:   payload,
@@ -182,7 +182,7 @@ func (msg *MsgKeygenTraffic) SetSender(sender sdk.AccAddress) {
 }
 
 // NewMsgSignTraffic TODO unnecessary method; delete it?
-func NewMsgSignTraffic(sessionID string, payload *tssd.SignTrafficOut) *MsgSignTraffic {
+func NewMsgSignTraffic(sessionID string, payload *tssd.TrafficOut) *MsgSignTraffic {
 	return &MsgSignTraffic{
 		SessionID: sessionID,
 		Payload:   payload,

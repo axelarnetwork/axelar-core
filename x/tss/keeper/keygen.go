@@ -74,9 +74,9 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 	}
 	// k.Logger(ctx).Debug("successful tssd gRPC call Keygen")
 	// TODO refactor
-	keygenInfo := &tssd.KeygenMsgIn{
-		Data: &tssd.KeygenMsgIn_Init{
-			Init: &tssd.KeygenInit{
+	keygenInfo := &tssd.MessageIn{
+		Data: &tssd.MessageIn_KeygenInit{
+			KeygenInit: &tssd.KeygenInit{
 				NewKeyUid:    info.NewKeyID,
 				Threshold:    int32(info.Threshold),
 				PartyUids:    partyUids,
@@ -120,7 +120,24 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 				return
 			}
 
-			msg := msgOneof.GetMsg()
+			if msgResult := msgOneof.GetKeygenResult(); msgResult != nil {
+				if err := k.keygenStream.CloseSend(); err != nil {
+					newErr := sdkerrors.Wrap(err, "handler goroutine: failure to CloseSend stream")
+					log.Error(newErr.Error())
+					return
+				}
+				pubkey, err := convert.BytesToPubkey(msgResult)
+				if err != nil {
+					newErr := sdkerrors.Wrap(err, "handler goroutine: failure to deserialize pubkey")
+					log.Error(newErr.Error())
+					return
+				}
+				// TODO do something with the pubkey
+				log.Info(fmt.Sprintf("handler goroutine: received pubkey from server! [%v]", pubkey))
+				return
+			}
+
+			msg := msgOneof.GetTraffic()
 			if msg == nil {
 				newErr := sdkerrors.Wrap(types.ErrTss, "handler goroutine: server stream should send only msg type")
 				log.Error(newErr.Error())
@@ -174,21 +191,20 @@ func (k Keeper) KeygenMsg(ctx sdk.Context, msg types.MsgKeygenTraffic) error {
 	if toAddress.String() != msg.Payload.ToPartyUid {
 		k.Logger(ctx).Error("Keygen message: address parse discrepancy: given [%s] got [%s]", msg.Payload.ToPartyUid, toAddress.String())
 	}
-	// TODO this ignore code is buggy but I don't know why
 	if !msg.Payload.IsBroadcast && !myAddress.Equals(toAddress) {
 		k.Logger(ctx).Info(fmt.Sprintf("I should ignore: msg to [%s] not directed to me [%s]", toAddress, myAddress))
 		return nil
-	} else if msg.Payload.IsBroadcast && myAddress.Equals(senderAddress) {
+	}
+	if msg.Payload.IsBroadcast && myAddress.Equals(senderAddress) {
 		k.Logger(ctx).Info(fmt.Sprintf("I should ignore: broadcast msg from [%s] came from me [%s]", senderAddress, myAddress))
 		return nil
-	} else {
-		k.Logger(ctx).Info(fmt.Sprintf("I should NOT ignore: msg from [%s] to [%s] broadcast [%t] me [%s]", senderAddress, toAddress, msg.Payload.IsBroadcast, myAddress))
 	}
+	k.Logger(ctx).Info(fmt.Sprintf("I should NOT ignore: msg from [%s] to [%s] broadcast [%t] me [%s]", senderAddress, toAddress, msg.Payload.IsBroadcast, myAddress))
 
 	// convert the received types.MsgKeygenTraffic into a tssd.KeygenMsgIn
-	msgIn := &tssd.KeygenMsgIn{
-		Data: &tssd.KeygenMsgIn_Msg{
-			Msg: &tssd.KeygenTrafficIn{
+	msgIn := &tssd.MessageIn{
+		Data: &tssd.MessageIn_Traffic{
+			Traffic: &tssd.TrafficIn{
 				Payload:      msg.Payload.Payload,
 				IsBroadcast:  msg.Payload.IsBroadcast,
 				FromPartyUid: senderAddress.String(),
