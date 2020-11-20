@@ -17,8 +17,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/voting/exported"
 )
 
-const bitcoin = "bitcoin"
-
 func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Signer) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
@@ -29,6 +27,8 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Sig
 			return handleMsgTrackPubKey(ctx, k, rpc, s, msg)
 		case types.MsgVerifyTx:
 			return handleMsgVerifyTx(ctx, k, v, rpc, msg)
+		case *types.MsgVoteVerifiedTx:
+			return handleMsgVoteVerifiedTx(ctx, v, *msg)
 		case types.MsgRawTx:
 			return handleMsgRawTx(ctx, k, v, msg)
 		case types.MsgWithdraw:
@@ -38,6 +38,13 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Sig
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
 		}
 	}
+}
+
+func handleMsgVoteVerifiedTx(ctx sdk.Context, v types.Voter, msg types.MsgVoteVerifiedTx) (*sdk.Result, error) {
+	if _, err := v.TallyVote(ctx, &msg); err != nil {
+		return nil, err
+	}
+	return nil, nil
 }
 
 func handleMsgTrackAddress(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, msg types.MsgTrackAddress) (*sdk.Result, error) {
@@ -87,6 +94,12 @@ func handleMsgTrackPubKey(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient,
 func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc types.RPCClient, msg types.MsgVerifyTx) (*sdk.Result, error) {
 	k.Logger(ctx).Debug("verifying bitcoin transaction")
 	txId := msg.UTXO.Hash.String()
+
+	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: txId}
+	if err := v.InitPoll(ctx, poll); err != nil {
+		return nil, sdkerrors.Wrap(err, "could not initialize new poll")
+	}
+
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
@@ -99,13 +112,19 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 
 	k.SetUTXO(ctx, txId, msg.UTXO)
 
-	txForVote := exported.ExternalTx{Chain: bitcoin, TxID: txId}
 	/*
 	 Anyone not able to verify the transaction will automatically record a negative vote,
 	 but only validators will later send out that vote.
 	*/
 	if err := verifyTx(rpc, msg.UTXO, k.GetConfirmationHeight(ctx)); err != nil {
-		v.SetFutureVote(ctx, exported.FutureVote{Tx: txForVote, LocalAccept: false})
+		if err := v.Vote(ctx, &types.MsgVoteVerifiedTx{PollMeta: poll, Accept: false}); err != nil {
+			k.Logger(ctx).Error(sdkerrors.Wrap(err, "voting failed").Error())
+			return &sdk.Result{
+				Log:    err.Error(),
+				Data:   k.Codec().MustMarshalBinaryLengthPrefixed(false),
+				Events: ctx.EventManager().Events(),
+			}, nil
+		}
 
 		k.Logger(ctx).Debug(sdkerrors.Wrapf(err,
 			"expected transaction (%s) could not be verified", txId).Error())
@@ -115,7 +134,14 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 			Events: ctx.EventManager().Events(),
 		}, nil
 	} else {
-		v.SetFutureVote(ctx, exported.FutureVote{Tx: txForVote, LocalAccept: true})
+		if err := v.Vote(ctx, &types.MsgVoteVerifiedTx{PollMeta: poll, Accept: true}); err != nil {
+			k.Logger(ctx).Error(sdkerrors.Wrap(err, "voting failed").Error())
+			return &sdk.Result{
+				Log:    err.Error(),
+				Data:   k.Codec().MustMarshalBinaryLengthPrefixed(false),
+				Events: ctx.EventManager().Events(),
+			}, nil
+		}
 		return &sdk.Result{
 			Log:    "successfully verified transaction",
 			Data:   k.Codec().MustMarshalBinaryLengthPrefixed(true),
@@ -126,10 +152,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 
 func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.MsgRawTx) (*sdk.Result, error) {
 	txId := msg.TxHash.String()
-	if !v.IsVerified(ctx, exported.ExternalTx{
-		Chain: bitcoin,
-		TxID:  txId,
-	}) {
+	if v.Result(ctx, exported.PollMeta{ID: txId, Module: types.ModuleName, Type: types.MsgVerifyTx{}.Type()}) == nil {
 		return nil, fmt.Errorf("transaction not verified")
 	}
 	utxo, ok := k.GetUTXO(ctx, txId)

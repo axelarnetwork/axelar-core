@@ -3,18 +3,19 @@ package types
 import (
 	"fmt"
 
-	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	tssd "github.com/axelarnetwork/tssd/pb"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 )
 
 // golang stupidity: ensure interface compliance at compile time
 var (
-	_ sdk.Msg                = &MsgKeygenStart{}
-	_ sdk.Msg                = &MsgSignStart{}
-	_ broadcast.ValidatorMsg = &MsgKeygenTraffic{}
-	_ broadcast.ValidatorMsg = &MsgSignTraffic{}
+	_ sdk.Msg                      = &MsgKeygenStart{}
+	_ sdk.Msg                      = &MsgSignStart{}
+	_ broadcast.MsgWithProxySender = &MsgKeygenTraffic{}
+	_ broadcast.MsgWithProxySender = &MsgSignTraffic{}
 )
 
 // MsgKeygenStart indicate the start of keygen
@@ -176,7 +177,7 @@ func (msg MsgKeygenTraffic) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }
 
-// SetSender implements the broadcast.ValidatorMsg interface
+// SetSender implements the broadcast.MsgWithProxySender interface
 func (msg *MsgKeygenTraffic) SetSender(sender sdk.AccAddress) {
 	msg.Sender = sender
 }
@@ -225,7 +226,7 @@ func (msg MsgSignTraffic) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }
 
-// SetSender implements the broadcast.ValidatorMsg interface
+// SetSender implements the broadcast.MsgWithProxySender interface
 func (msg *MsgSignTraffic) SetSender(sender sdk.AccAddress) {
 	msg.Sender = sender
 }

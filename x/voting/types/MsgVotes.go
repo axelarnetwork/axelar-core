@@ -5,13 +5,14 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/axelarnetwork/axelar-core/x/broadcast/exported"
+	brExported "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
+	"github.com/axelarnetwork/axelar-core/x/voting/exported"
 )
 
-var _ exported.ValidatorMsg = &MsgBallot{}
+var _ brExported.MsgWithProxySender = &MsgBallot{}
 
 type MsgBallot struct {
-	Votes  []bool
+	Votes  []exported.MsgVote
 	Sender sdk.AccAddress
 }
 
@@ -24,7 +25,7 @@ func (msg MsgBallot) Route() string {
 }
 
 func (msg MsgBallot) Type() string {
-	return "BatchVote"
+	return "SendBallot"
 }
 
 func (msg MsgBallot) ValidateBasic() error {
@@ -41,8 +42,4 @@ func (msg MsgBallot) GetSignBytes() []byte {
 
 func (msg MsgBallot) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
-}
-
-func NewMsgBatchVote(votes []bool) *MsgBallot {
-	return &MsgBallot{Votes: votes}
 }

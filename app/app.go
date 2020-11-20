@@ -39,8 +39,8 @@ import (
 	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/axelarnetwork/axelar-core/x/voting"
-	axKeeper "github.com/axelarnetwork/axelar-core/x/voting/keeper"
-	axTypes "github.com/axelarnetwork/axelar-core/x/voting/types"
+	vKeeper "github.com/axelarnetwork/axelar-core/x/voting/keeper"
+	vTypes "github.com/axelarnetwork/axelar-core/x/voting/types"
 )
 
 const (
@@ -112,7 +112,7 @@ type AxelarApp struct {
 	btcKeeper       btcKeeper.Keeper
 	broadcastKeeper bcKeeper.Keeper
 	tssKeeper       tssKeeper.Keeper
-	axelarKeeper    axKeeper.Keeper
+	votingKeeper    vKeeper.Keeper
 
 	// Module Manager
 	mm *module.Manager
@@ -138,7 +138,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 
 	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
 		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey,
-		axTypes.StoreKey, broadcastTypes.StoreKey, btcTypes.StoreKey)
+		vTypes.StoreKey, broadcastTypes.StoreKey, btcTypes.StoreKey)
 
 	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
@@ -241,13 +241,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		}
 	})
 
-	app.axelarKeeper = axKeeper.NewKeeper(
-		app.cdc,
-		keys[axTypes.StoreKey],
-		store.NewSubjectiveStore(),
-		app.stakingKeeper,
-		app.broadcastKeeper,
-	)
+	app.votingKeeper = vKeeper.NewKeeper(app.cdc, keys[vTypes.StoreKey], store.NewSubjectiveStore(), app.stakingKeeper, app.broadcastKeeper)
 
 	// Enable running a node with or without a Bitcoin bridge
 	var rpc *rpcclient.Client
@@ -259,9 +253,9 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		}
 		// BTC bridge opens a grpc connection. Clean it up on process shutdown
 		tmos.TrapSignal(logger, rpc.Shutdown)
-		btcModule = btc_bridge.NewAppModule(app.btcKeeper, app.axelarKeeper, app.tssKeeper, rpc)
+		btcModule = btc_bridge.NewAppModule(app.btcKeeper, app.votingKeeper, app.tssKeeper, rpc)
 	} else {
-		btcModule = btc_bridge.NewDummyAppModule(app.btcKeeper, app.axelarKeeper)
+		btcModule = btc_bridge.NewDummyAppModule(app.btcKeeper, app.votingKeeper)
 	}
 
 	// NOTE: Any module instantiated in the module manager that is later modified
@@ -276,7 +270,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 
 		tss.NewAppModule(app.tssKeeper),
-		voting.NewAppModule(app.axelarKeeper),
+		voting.NewAppModule(app.votingKeeper, app.Router()),
 		broadcast.NewAppModule(app.broadcastKeeper),
 		btcModule,
 	)
@@ -285,7 +279,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	// there is nothing left over in the validator fee pool, so as to keep the
 	// CanWithdrawInvariant invariant.
 	app.mm.SetOrderBeginBlockers(distr.ModuleName, slashing.ModuleName)
-	app.mm.SetOrderEndBlockers(staking.ModuleName, axTypes.ModuleName)
+	app.mm.SetOrderEndBlockers(staking.ModuleName, vTypes.ModuleName)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	// NOTE: The genutils moodule must occur after staking so that pools are
@@ -299,7 +293,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		tssTypes.ModuleName,
 		btcTypes.ModuleName,
 		broadcastTypes.ModuleName,
-		axTypes.ModuleName,
+		vTypes.ModuleName,
 		supply.ModuleName,
 		genutil.ModuleName,
 	)

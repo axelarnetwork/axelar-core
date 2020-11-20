@@ -19,6 +19,7 @@ var (
 )
 
 // Codec creates a codec for testing with all necessary types registered.
+// This codec is not sealed so tests can add their own mock types.
 func Codec() *codec.Codec {
 	// Use cache if initialized before
 	if cdc != nil {
@@ -35,7 +36,6 @@ func Codec() *codec.Codec {
 	tssTypes.RegisterCodec(cdc)
 	broadcastTypes.RegisterCodec(cdc)
 
-	cdc.Seal()
 	return cdc
 }
 
@@ -50,6 +50,7 @@ func StartTimeout(t time.Duration) chan struct{} {
 }
 
 // RandIntGen represents an random integer generator.
+// Call Stop when done so dangling goroutines can be cleaned up.
 type RandIntGen struct {
 	ch      chan int
 	done    chan struct{}
@@ -84,14 +85,31 @@ func (g RandIntGen) Where(predicate func(i int) bool) RandIntGen {
 }
 
 // Take returns a slice of random integers of the given length.
-// It stops the underlying generator from returning further numbers.
 func (g RandIntGen) Take(count int) []int {
 	nums := make([]int, 0, count)
 	for i := 0; i < count; i++ {
 		nums = append(nums, <-g.ch)
 	}
-	g.stop()
 	return nums
+}
+
+// Next returns a single random integer.
+func (g RandIntGen) Next() int {
+	return <-g.ch
+}
+
+// Stop closes all goroutines used during number generation.
+func (g *RandIntGen) Stop() {
+	// stop the deepest wrapped channel in
+	if g.wrapped != nil {
+		g.wrapped.Stop()
+	} else {
+		close(g.done)
+	}
+
+	// drain own channel and block until all channels are closed (the close cascades from the bottom up)
+	for range g.ch {
+	}
 }
 
 func generate(generator func() int) RandIntGen {
@@ -110,15 +128,48 @@ func generate(generator func() int) RandIntGen {
 	return g
 }
 
-func (g *RandIntGen) stop() {
-	// stop the deepest wrapped channel in
-	if g.wrapped != nil {
-		g.wrapped.stop()
-	} else {
-		close(g.done)
-	}
+// RandBoolGen represents an random bool generator.
+// Call Stop when done so dangling goroutines can be cleaned up.
+type RandBoolGen struct {
+	ch   chan bool
+	done chan struct{}
+}
 
-	// drain own channel and block until all channels are closed (the close cascades from the bottom up)
+// RandBools returns a random bool generator that adheres to the given ratio of true to false values.
+func RandBools(ratio float64) RandBoolGen {
+	g := RandBoolGen{ch: make(chan bool), done: make(chan struct{})}
+	go func() {
+		for {
+			select {
+			case <-g.done:
+				close(g.ch)
+				return
+			default:
+				g.ch <- rand.Float64() < ratio
+			}
+		}
+	}()
+	return g
+}
+
+// Take returns a slice of random bools of the given length.
+func (g RandBoolGen) Take(count int) []bool {
+	res := make([]bool, 0, count)
+	for i := 0; i < count; i++ {
+		res = append(res, <-g.ch)
+	}
+	return res
+}
+
+// Next returns a single random bool.
+func (g RandBoolGen) Next() bool {
+	return <-g.ch
+}
+
+// Stop closes all goroutines used during bool generation.
+func (g RandBoolGen) Stop() {
+	close(g.done)
+	// drain own channel so it can be closed
 	for range g.ch {
 	}
 }

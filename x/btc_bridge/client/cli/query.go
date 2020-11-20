@@ -3,15 +3,14 @@ package cli
 import (
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
-	"github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
-	"github.com/axelarnetwork/axelar-core/x/voting/exported"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/spf13/cobra"
+
+	"github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
+	"github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
 )
 
 // GetQueryCmd returns the cli query commands for this module
@@ -46,7 +45,7 @@ func GetCmdTrackedAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				return nil
 			}
 
-			var out exported.ExternalChainAddress
+			var out types.ExternalChainAddress
 			cdc.MustUnmarshalJSON(res, &out)
 			return cliCtx.PrintOutput(out)
 		},

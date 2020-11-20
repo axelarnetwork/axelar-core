@@ -2,6 +2,7 @@ package mock
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/staking/exported"
 	"github.com/tendermint/tendermint/crypto"
 
@@ -16,7 +17,7 @@ type TestStaker struct {
 	totalPower int64
 }
 
-func NewTestStaker(validators ...exported.ValidatorI) TestStaker {
+func NewTestStaker(validators ...staking.ValidatorI) TestStaker {
 	staker := TestStaker{map[string]exported.ValidatorI{}, 0}
 
 	for _, val := range validators {

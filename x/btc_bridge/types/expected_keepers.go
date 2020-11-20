@@ -10,8 +10,10 @@ import (
 )
 
 type Voter interface {
-	SetFutureVote(ctx sdk.Context, vote exported.FutureVote)
-	IsVerified(ctx sdk.Context, tx exported.ExternalTx) bool
+	InitPoll(ctx sdk.Context, poll exported.PollMeta) error
+	Vote(ctx sdk.Context, vote exported.MsgVote) error
+	TallyVote(ctx sdk.Context, vote exported.MsgVote) (exported.Vote, error)
+	Result(ctx sdk.Context, poll exported.PollMeta) exported.Vote
 }
 
 type Signer interface {

@@ -137,7 +137,7 @@ func reset(timeOut time.Duration) chan struct{} {
 
 type Node struct {
 	in          chan block
-	handlers    map[string]sdk.Handler
+	router      sdk.Router
 	endBlockers []func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate
 	Ctx         sdk.Context
 	moniker     string
@@ -146,20 +146,14 @@ type Node struct {
 // NewNode creates a new node that can be added to the blockchain.
 // The moniker is used to differentiate nodes for logging purposes.
 // The context will be passed on to the registered handlers.
-func NewNode(moniker string, ctx sdk.Context) Node {
+func NewNode(moniker string, ctx sdk.Context, router sdk.Router) Node {
 	return Node{
 		moniker:     moniker,
 		Ctx:         ctx,
 		in:          make(chan block, 1),
-		handlers:    make(map[string]sdk.Handler, 0),
+		router:      router,
 		endBlockers: make([]func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate, 0),
 	}
-}
-
-// WithHandler returns a node with a handler for the specified module.
-func (n Node) WithHandler(moduleName string, handler sdk.Handler) Node {
-	n.handlers[moduleName] = handler
-	return n
 }
 
 // WithEndBlockers returns a node with the specified EndBlocker functions.
@@ -180,7 +174,7 @@ func (n Node) start() {
 
 		// handle messages
 		for _, msg := range b.msgs {
-			if h, ok := n.handlers[msg.Route()]; ok {
+			if h := n.router.Route(n.Ctx, msg.Route()); h != nil {
 				if err := msg.ValidateBasic(); err != nil {
 					log.Printf("node %s returned an error when validating message %s", n.moniker, msg.Type())
 				}
@@ -198,4 +192,28 @@ func (n Node) start() {
 			endBlocker(n.Ctx, abci.RequestEndBlock{Height: b.height})
 		}
 	}
+}
+
+type Router struct {
+	handlers map[string]sdk.Handler
+}
+
+// NewRouter returns a new Router that deals with handler routing
+func NewRouter() sdk.Router {
+	return Router{handlers: map[string]sdk.Handler{}}
+}
+
+// AddRoute adds a new handler route
+func (r Router) AddRoute(moduleName string, h sdk.Handler) sdk.Router {
+	r.handlers[moduleName] = h
+	return r
+}
+
+// Route tries to route the given path to a registered handler. Returns nil when the path is not found.
+func (r Router) Route(_ sdk.Context, path string) sdk.Handler {
+	h, ok := r.handlers[path]
+	if !ok {
+		return nil
+	}
+	return h
 }

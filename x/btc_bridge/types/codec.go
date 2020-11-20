@@ -11,6 +11,10 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgVerifyTx{}, "btcbridge/VerifyTx", nil)
 	cdc.RegisterConcrete(MsgRawTx{}, "btcbridge/RawTx", nil)
 	cdc.RegisterConcrete(MsgWithdraw{}, "btcbridge/Withdraw", nil)
+	cdc.RegisterConcrete(&MsgVoteVerifiedTx{}, "btcbridge/MsgVoteVerifiedTx", nil)
+
+	//	TODO: Remove when btcbridge uses write-in voting pattern
+	cdc.RegisterConcrete(DummyData{}, "btcbridge/DummyData", nil)
 }
 
 // ModuleCdc defines the module codec

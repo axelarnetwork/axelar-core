@@ -1,41 +1,29 @@
 package exported
 
 import (
-	"fmt"
+	"github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 )
 
-type ExternalChainAddress struct {
-	Chain   string
-	Address string
+type VotingData interface {
 }
 
-func (addr ExternalChainAddress) IsInvalid() bool {
-	return addr.Chain == "" || addr.Address == ""
+type PollMeta struct {
+	Module string
+	Type   string
+	ID     string
 }
 
-func (addr ExternalChainAddress) String() string {
-	return fmt.Sprintf("chain: %s, address: %s", addr.Chain, addr.Address)
+func (p PollMeta) String() string {
+	return p.Module + p.Type + p.ID
 }
 
-type ExternalTx struct {
-	Chain string
-	TxID  string
+type Vote interface {
+	Poll() PollMeta
+	Data() VotingData
+	Confirms() bool
 }
 
-func (tx ExternalTx) IsInvalid() bool {
-	return tx.Chain == "" ||
-		tx.TxID == ""
-}
-
-func (tx ExternalTx) String() string {
-	return fmt.Sprintf(
-		"chain: %s, txID: %s",
-		tx.Chain,
-		tx.TxID,
-	)
-}
-
-type FutureVote struct {
-	Tx          ExternalTx
-	LocalAccept bool
+type MsgVote interface {
+	exported.MsgWithProxySender
+	Vote
 }

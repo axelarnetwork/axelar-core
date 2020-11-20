@@ -23,7 +23,7 @@ import (
 	btcMock "github.com/axelarnetwork/axelar-core/x/btc_bridge/tests/mock"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
 	"github.com/axelarnetwork/axelar-core/x/voting"
-	axExported "github.com/axelarnetwork/axelar-core/x/voting/exported"
+	vExported "github.com/axelarnetwork/axelar-core/x/voting/exported"
 	"github.com/axelarnetwork/axelar-core/x/voting/keeper"
 	axTypes "github.com/axelarnetwork/axelar-core/x/voting/types"
 )
@@ -78,10 +78,11 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 	b2 := mock.NewBroadcaster(test_utils.Codec(), sdk.AccAddress("broadcaster2"), val2.GetOperator(), blockChain.Input())
 	b3 := mock.NewBroadcaster(test_utils.Codec(), sdk.AccAddress("broadcaster3"), val3.GetOperator(), blockChain.Input())
 
-	nodes := []mock.Node{
-		newNode("node1", b1, staker),
-		newNode("node2", b2, staker),
-		newNode("node3", b3, staker)}
+	n1, v1 := newNode("node1", b1, staker)
+	n2, v2 := newNode("node2", b2, staker)
+	n3, v3 := newNode("node3", b3, staker)
+	nodes := []mock.Node{n1, n2, n3}
+	voters := []btcTypes.Voter{v1, v2, v3}
 
 	blockChain.AddNodes(nodes...)
 	blockChain.Start()
@@ -99,15 +100,15 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 
 	// test begin
 
-	in <- broadcastTypes.NewMsgRegisterProxy(val1.GetOperator(), b1.Address)
-	in <- broadcastTypes.NewMsgRegisterProxy(val2.GetOperator(), b2.Address)
-	in <- broadcastTypes.NewMsgRegisterProxy(val3.GetOperator(), b3.Address)
+	in <- broadcastTypes.NewMsgRegisterProxy(val1.GetOperator(), b1.Proxy)
+	in <- broadcastTypes.NewMsgRegisterProxy(val2.GetOperator(), b2.Proxy)
+	in <- broadcastTypes.NewMsgRegisterProxy(val3.GetOperator(), b3.Proxy)
 
 	for _, msg := range verifyMsgs {
 		in <- msg
 	}
 
-	timeOut := test_utils.StartTimeout(5 * time.Second)
+	timeOut := test_utils.StartTimeout(500 * time.Millisecond)
 	reachedHeight25 := notifyOnBlock25(blockChain)
 
 loop:
@@ -118,15 +119,15 @@ loop:
 		case <-reachedHeight25:
 			break loop
 		default:
-			confirmed := allTxConfirmed(nodes)
+			confirmed := allTxConfirmed(nodes, voters)
 			if confirmed {
 				break loop
 			}
-			time.Sleep(1 * time.Second)
+			time.Sleep(20 * time.Millisecond)
 		}
 	}
 
-	assert.True(t, allTxConfirmed(nodes))
+	assert.True(t, allTxConfirmed(nodes, voters))
 }
 
 func notifyOnBlock25(blockChain mock.BlockChain) chan struct{} {
@@ -158,7 +159,7 @@ func prepareVerifyMsg(hash *chainhash.Hash, destination string, amount int) sdk.
 	}, btcutil.Amount(amount))
 }
 
-func newNode(moniker string, broadcaster bcExported.Broadcaster, staker axTypes.Staker) mock.Node {
+func newNode(moniker string, broadcaster bcExported.Broadcaster, staker axTypes.Staker) (mock.Node, btcTypes.Voter) {
 	/*
 		Multistore is mocked so we can more easily manipulate existing state and assert that specific state changes happen.
 		For now, we never use the Header information, so we can just initialize an empty struct.
@@ -169,40 +170,38 @@ func newNode(moniker string, broadcaster bcExported.Broadcaster, staker axTypes.
 	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 
 	// Initialize all keepers and handlers you want to involve in the test
-	axK := keeper.NewKeeper(test_utils.Codec(), mock.NewKVStoreKey(axTypes.StoreKey), store.NewSubjectiveStore(), staker, broadcaster)
-	axH := voting.NewHandler(axK)
+	vK := keeper.NewKeeper(test_utils.Codec(), mock.NewKVStoreKey(axTypes.StoreKey), store.NewSubjectiveStore(), staker, broadcaster)
+	r := mock.NewRouter()
+	vH := voting.NewHandler(vK, r)
 
 	btcK := btcKeeper.NewBtcKeeper(test_utils.Codec(), mock.NewKVStoreKey(btcTypes.StoreKey))
 	// We use a mock for the bitcoin rpc client so we can control the responses from the "bitcoin" network
-	btcH := btc_bridge.NewHandler(btcK, axK, &btcMock.TestRPC{RawTxs: txs}, nil)
+	btcH := btc_bridge.NewHandler(btcK, vK, &btcMock.TestRPC{RawTxs: txs}, nil)
 
 	broadcastH := broadcast.NewHandler(broadcaster)
 
 	// Set the correct initial state in the keepers
-	voting.InitGenesis(ctx, axK, axTypes.DefaultGenesisState())
+	voting.InitGenesis(ctx, vK, axTypes.DefaultGenesisState())
 	btc_bridge.InitGenesis(ctx, btcK, btcTypes.DefaultGenesisState())
 
 	// Define all functions that should run at the end of a block
 	eb := func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-		return voting.EndBlocker(ctx, req, axK)
+		return voting.EndBlocker(ctx, req, vK)
 	}
-	return mock.NewNode(moniker, ctx).
-		WithHandler(axTypes.ModuleName, axH).
-		WithHandler(btcTypes.ModuleName, btcH).
-		WithHandler(broadcastTypes.ModuleName, broadcastH).
-		WithEndBlockers(eb)
+
+	// route all handlers
+	r.AddRoute(axTypes.ModuleName, vH).
+		AddRoute(btcTypes.ModuleName, btcH).
+		AddRoute(broadcastTypes.ModuleName, broadcastH)
+	return mock.NewNode(moniker, ctx, r).WithEndBlockers(eb), vK
 }
 
-func allTxConfirmed(nodes []mock.Node) bool {
+func allTxConfirmed(nodes []mock.Node, voters []btcTypes.Voter) bool {
 	allConfirmed := true
-	axStoreKey := mock.NewKVStoreKey(axTypes.StoreKey)
-	for _, node := range nodes {
-		kvStore := node.Ctx.KVStore(axStoreKey)
+	for i, voter := range voters {
 		for _, txId := range txIds {
-			tx := axExported.ExternalTx{Chain: "bitcoin", TxID: txId}
-			// TODO: this is too tightly coupled to the actual implementation, check interface IsVerified() instead
-			key := append([]byte("tx_"), test_utils.Codec().MustMarshalBinaryLengthPrefixed(tx)...)
-			if kvStore.Get(key) == nil {
+			poll := vExported.PollMeta{Module: btcTypes.RouterKey, Type: btcTypes.MsgVerifyTx{}.Type(), ID: txId}
+			if voter.Result(nodes[i].Ctx, poll) == nil {
 				allConfirmed = false
 				break
 			}
