@@ -58,9 +58,9 @@ func (k *Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
 	// k.Logger(ctx).Debug("successful tssd gRPC call Sign")
 
 	// TODO refactor
-	signInfo := &tssd.SignMsgIn{
-		Data: &tssd.SignMsgIn_Init{
-			Init: &tssd.SignInit{
+	signInfo := &tssd.MessageIn{
+		Data: &tssd.MessageIn_SignInit{
+			SignInit: &tssd.SignInit{
 				NewSigUid:     info.NewSigID,
 				KeyUid:        info.KeyID,
 				PartyUids:     partyUids,
@@ -104,7 +104,24 @@ func (k *Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
 				return
 			}
 
-			msg := msgOneof.GetMsg()
+			if msgResult := msgOneof.GetSignResult(); msgResult != nil {
+				if err := k.signStream.CloseSend(); err != nil {
+					newErr := sdkerrors.Wrap(err, "handler goroutine: failure to CloseSend stream")
+					log.Error(newErr.Error())
+					return
+				}
+				r, s, err := convert.BytesToSig(msgResult)
+				if err != nil {
+					newErr := sdkerrors.Wrap(err, "handler goroutine: failure to deserialize sig")
+					log.Error(newErr.Error())
+					return
+				}
+				// TODO do something with the sig
+				log.Info(fmt.Sprintf("handler goroutine: received sigy from server! [%s], [%s]", r, s))
+				return
+			}
+
+			msg := msgOneof.GetTraffic()
 			if msg == nil {
 				newErr := sdkerrors.Wrap(types.ErrTss, "handler goroutine: server stream should send only msg type")
 				log.Error(newErr.Error())
@@ -171,9 +188,9 @@ func (k Keeper) SignMsg(ctx sdk.Context, msg types.MsgSignTraffic) error {
 	}
 
 	// convert the received types.MsgSignTraffic into a tssd.SignMsgIn
-	msgIn := &tssd.SignMsgIn{
-		Data: &tssd.SignMsgIn_Msg{
-			Msg: &tssd.SignTrafficIn{
+	msgIn := &tssd.MessageIn{
+		Data: &tssd.MessageIn_Traffic{
+			Traffic: &tssd.TrafficIn{
 				Payload:      msg.Payload.Payload,
 				IsBroadcast:  msg.Payload.IsBroadcast,
 				FromPartyUid: senderAddress.String(),
