@@ -6,12 +6,14 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/axelarnetwork/axelar-core/x/axelar/exported"
+	"github.com/axelarnetwork/axelar-core/x/voting/exported"
 )
 
 type Voter interface {
-	SetFutureVote(ctx sdk.Context, vote exported.FutureVote)
-	IsVerified(ctx sdk.Context, tx exported.ExternalTx) bool
+	InitPoll(ctx sdk.Context, poll exported.PollMeta) error
+	Vote(ctx sdk.Context, vote exported.MsgVote) error
+	TallyVote(ctx sdk.Context, vote exported.MsgVote) error
+	Result(ctx sdk.Context, poll exported.PollMeta) exported.Vote
 }
 
 type Signer interface {

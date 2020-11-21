@@ -146,7 +146,7 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 
 			log.Debug(fmt.Sprintf("handler goroutine: outgoing keygen msg: key [%s] from me [%s] to [%s] broadcast [%t]", info.NewKeyID, myAddress, msg.ToPartyUid, msg.IsBroadcast))
 			tssMsg := types.NewMsgKeygenTraffic(info.NewKeyID, msg)
-			if err := k.broadcaster.Broadcast(ctx, []broadcast.ValidatorMsg{tssMsg}); err != nil {
+			if err := k.broadcaster.Broadcast(ctx, []broadcast.MsgWithSenderSetter{tssMsg}); err != nil {
 				newErr := sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing keygen msg")
 				log.Error(newErr.Error())
 				return

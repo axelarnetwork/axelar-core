@@ -11,7 +11,7 @@ var _ exported.Broadcaster = Broadcaster{}
 
 type Broadcaster struct {
 	in        chan<- sdk.Msg
-	Address   sdk.AccAddress
+	Proxy     sdk.AccAddress
 	val2Proxy map[string]sdk.AccAddress
 	proxy2Val map[string]sdk.ValAddress
 	principal sdk.ValAddress
@@ -24,19 +24,19 @@ func NewBroadcaster(cdc *codec.Codec, sender sdk.AccAddress, localPrincipal sdk.
 	return Broadcaster{
 		cdc:       cdc,
 		in:        blockchainIn,
-		Address:   sender,
+		Proxy:     sender,
 		val2Proxy: make(map[string]sdk.AccAddress),
 		proxy2Val: make(map[string]sdk.ValAddress),
 		principal: localPrincipal,
 	}
 }
 
-func (b Broadcaster) Broadcast(_ sdk.Context, msgs []exported.ValidatorMsg) error {
+func (b Broadcaster) Broadcast(_ sdk.Context, msgs []exported.MsgWithSenderSetter) error {
 	for _, msg := range msgs {
-		msg.SetSender(b.Address)
+		msg.SetSender(b.Proxy)
 
 		/*
-			exported.ValidatorMsg is usually implemented by a pointer.
+			exported.MsgWithSenderSetter is usually implemented by a pointer.
 			However, handler expect to receive the message by value and do a switch on the message type.
 			If they receive the pointer they won't recognize the correct message type.
 			By marshalling and unmarshalling into sdk.Msg we get the message by value.

@@ -5,7 +5,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking/exported"
 	"github.com/tendermint/tendermint/crypto"
 
-	"github.com/axelarnetwork/axelar-core/x/axelar/types"
+	"github.com/axelarnetwork/axelar-core/x/voting/types"
 )
 
 var _ types.Staker = TestStaker{}
@@ -26,11 +26,11 @@ func NewTestStaker(validators ...exported.ValidatorI) TestStaker {
 	return staker
 }
 
-func (s TestStaker) GetLastTotalPower(ctx sdk.Context) (power sdk.Int) {
+func (s TestStaker) GetLastTotalPower(_ sdk.Context) (power sdk.Int) {
 	return sdk.NewInt(s.totalPower)
 }
 
-func (s TestStaker) Validator(ctx sdk.Context, address sdk.ValAddress) exported.ValidatorI {
+func (s TestStaker) Validator(_ sdk.Context, address sdk.ValAddress) exported.ValidatorI {
 	return s.validators[address.String()]
 }
 
@@ -106,22 +106,22 @@ func (v TestValidator) GetDelegatorShares() sdk.Dec {
 	panic("implement me")
 }
 
-func (v TestValidator) TokensFromShares(dec sdk.Dec) sdk.Dec {
+func (v TestValidator) TokensFromShares(_ sdk.Dec) sdk.Dec {
 	panic("implement me")
 }
 
-func (v TestValidator) TokensFromSharesTruncated(dec sdk.Dec) sdk.Dec {
+func (v TestValidator) TokensFromSharesTruncated(_ sdk.Dec) sdk.Dec {
 	panic("implement me")
 }
 
-func (v TestValidator) TokensFromSharesRoundUp(dec sdk.Dec) sdk.Dec {
+func (v TestValidator) TokensFromSharesRoundUp(_ sdk.Dec) sdk.Dec {
 	panic("implement me")
 }
 
-func (v TestValidator) SharesFromTokens(amt sdk.Int) (sdk.Dec, error) {
+func (v TestValidator) SharesFromTokens(_ sdk.Int) (sdk.Dec, error) {
 	panic("implement me")
 }
 
-func (v TestValidator) SharesFromTokensTruncated(amt sdk.Int) (sdk.Dec, error) {
+func (v TestValidator) SharesFromTokensTruncated(_ sdk.Int) (sdk.Dec, error) {
 	panic("implement me")
 }

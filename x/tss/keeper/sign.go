@@ -130,7 +130,7 @@ func (k *Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
 
 			log.Debug(fmt.Sprintf("handler goroutine: outgoing sign msg: sig_id [%s] from me [%s] broadcast? [%t] to [%s]", info.NewSigID, myAddress, msg.IsBroadcast, msg.ToPartyUid))
 			tssMsg := types.NewMsgSignTraffic(info.NewSigID, msg)
-			if err := k.broadcaster.Broadcast(ctx, []broadcast.ValidatorMsg{tssMsg}); err != nil {
+			if err := k.broadcaster.Broadcast(ctx, []broadcast.MsgWithSenderSetter{tssMsg}); err != nil {
 				newErr := sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing sign msg")
 				log.Error(newErr.Error())
 				return

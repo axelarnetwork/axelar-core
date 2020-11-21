@@ -1,4 +1,4 @@
-package axelar
+package voting
 
 import (
 	"encoding/json"
@@ -11,8 +11,8 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/axelarnetwork/axelar-core/x/axelar/keeper"
-	"github.com/axelarnetwork/axelar-core/x/axelar/types"
+	"github.com/axelarnetwork/axelar-core/x/voting/keeper"
+	"github.com/axelarnetwork/axelar-core/x/voting/types"
 )
 
 var (
@@ -59,13 +59,15 @@ func (AppModuleBasic) GetQueryCmd(_ *codec.Codec) *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 	keeper keeper.Keeper
+	router sdk.Router
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper) AppModule {
+func NewAppModule(k keeper.Keeper, r sdk.Router) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
+		router:         r,
 	}
 }
 
@@ -90,7 +92,7 @@ func (AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper)
+	return NewHandler(am.keeper, am.router)
 }
 
 func (AppModule) QuerierRoute() string {

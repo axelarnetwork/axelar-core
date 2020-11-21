@@ -14,8 +14,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/axelarnetwork/axelar-core/test-utils/mock"
-	"github.com/axelarnetwork/axelar-core/x/axelar/exported"
+	"github.com/axelarnetwork/axelar-core/testutils/mock"
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge"
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
 	btcMock "github.com/axelarnetwork/axelar-core/x/btc_bridge/tests/mock"
@@ -27,7 +26,7 @@ func TestTrackAddress(t *testing.T) {
 	k := keeper.NewBtcKeeper(cdc, sdkTypes.NewKVStoreKey("testKey"))
 	rpcCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	rpc := btcMock.TestRPC{Cancel: cancel}
-	handler := btc_bridge.NewHandler(k, &btcMock.TestVoter{}, &rpc, btcMock.TestSigner{})
+	handler := btc_bridge.NewHandler(k, &btcMock.TestVoter{}, &rpc, nil)
 
 	ctx := sdkTypes.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	expectedAddress, _ := types.ParseBtcAddress("bitcoinTestAddress", "mainnet")
@@ -41,7 +40,7 @@ func TestTrackAddress(t *testing.T) {
 	assert.Equal(t, expectedAddress.String(), rpc.TrackedAddress)
 }
 
-func TestVerifyTx_InvalidHash(t *testing.T) {
+func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 	cdc := codec.New()
 
 	types.RegisterCodec(cdc)
@@ -50,7 +49,7 @@ func TestVerifyTx_InvalidHash(t *testing.T) {
 		RawTxs: map[string]*btcjson.TxRawResult{},
 	}
 	v := &btcMock.TestVoter{}
-	handler := btc_bridge.NewHandler(k, v, &rpc, btcMock.TestSigner{})
+	handler := btc_bridge.NewHandler(k, v, &rpc, nil)
 	ctx := sdkTypes.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 
 	hash, _ := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
@@ -68,15 +67,10 @@ func TestVerifyTx_InvalidHash(t *testing.T) {
 		Sender: sdkTypes.AccAddress("sender"),
 		UTXO:   utxo,
 	})
-
 	assert.Nil(t, err)
-	assert.Equal(t, &exported.FutureVote{
-		Tx: exported.ExternalTx{
-			Chain: "bitcoin",
-			TxID:  hash.String(),
-		},
-		LocalAccept: false,
-	}, v.Vote)
+	assert.True(t, v.InitPollCalled)
+	assert.True(t, v.VoteCalledCorrectly)
+	assert.False(t, v.RecordedVote.Data().(bool))
 }
 
 func TestVerifyTx_ValidUTXO(t *testing.T) {
@@ -111,7 +105,7 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 		},
 	}
 	v := &btcMock.TestVoter{}
-	handler := btc_bridge.NewHandler(k, v, &rpc, btcMock.TestSigner{})
+	handler := btc_bridge.NewHandler(k, v, &rpc, nil)
 	ctx := sdkTypes.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 
 	assert.Nil(t, utxo.Validate())
@@ -122,13 +116,9 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 	})
 
 	assert.Nil(t, err)
-	assert.Equal(t, &exported.FutureVote{
-		Tx: exported.ExternalTx{
-			Chain: "bitcoin",
-			TxID:  hash.String(),
-		},
-		LocalAccept: true,
-	}, v.Vote)
+	assert.True(t, v.InitPollCalled)
+	assert.True(t, v.VoteCalledCorrectly)
+	assert.True(t, v.RecordedVote.Data().(bool))
 
 	actualUtxo, ok := k.GetUTXO(ctx, hash.String())
 	assert.True(t, ok)
