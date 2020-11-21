@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -108,13 +109,13 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 		in <- msg
 	}
 
-	timeOut := test_utils.StartTimeout(500 * time.Millisecond)
+	timeOut, _ := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	reachedHeight25 := notifyOnBlock25(blockChain)
 
 loop:
 	for {
 		select {
-		case <-timeOut:
+		case <-timeOut.Done():
 			break loop
 		case <-reachedHeight25:
 			break loop

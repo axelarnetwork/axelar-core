@@ -9,9 +9,11 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/voting/exported"
 )
 
-var _ brExported.MsgWithProxySender = &MsgBallot{}
+var _ brExported.MsgWithSenderSetter = &MsgBallot{}
 
+// MsgBallot holds subjective validator opinions and is used to broadcast them to the network
 type MsgBallot struct {
+	// each vote represents vote by the local validator regarding a different currently open poll
 	Votes  []exported.MsgVote
 	Sender sdk.AccAddress
 }
@@ -28,7 +30,11 @@ func (msg MsgBallot) Type() string {
 	return "SendBallot"
 }
 
+// ValidateBasic does a simple validation check that
+// doesn't require access to any other information.
 func (msg MsgBallot) ValidateBasic() error {
+	// the individual votes' ValidateBasic function is not called here because we should not discard a whole ballot
+	// because of a single faulty vote
 	if msg.Votes == nil {
 		return fmt.Errorf("votes must not be nil")
 	}

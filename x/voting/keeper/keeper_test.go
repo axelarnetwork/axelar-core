@@ -1,11 +1,10 @@
 package keeper
 
 import (
-	"sync"
+	"context"
 	"testing"
 	"time"
 
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/stretchr/testify/assert"
@@ -21,34 +20,29 @@ import (
 )
 
 var (
-	once = sync.Once{}
-
-	// test data
+	// default test data, each tests adds modifications as necessary
 	poll1 = exported.PollMeta{Module: "testModule", Type: "testType", ID: "poll1"}
 	poll2 = exported.PollMeta{Module: "testModule", Type: "testType", ID: "poll2"}
 	poll3 = exported.PollMeta{Module: "otherModule", Type: "otherType", ID: "poll3"}
 
-	voteForPoll1 = &mockVote{R: poll1.Module, T: poll1.Type, P: poll1, D: "poll1 data", C: true}
-	voteForPoll2 = &mockVote{R: poll2.Module, T: poll2.Type, P: poll2, D: "poll2 data", C: false}
-	voteForPoll3 = &mockVote{R: poll3.Module, T: poll3.Type, P: poll3, D: "poll3 data", C: false}
+	voteForPoll1 = &mockVote{Path: poll1.Module, MsgType: poll1.Type, PollMeta: poll1, VotingData: "poll1 data"}
+	voteForPoll2 = &mockVote{Path: poll2.Module, MsgType: poll2.Type, PollMeta: poll2, VotingData: "poll2 data"}
+	voteForPoll3 = &mockVote{Path: poll3.Module, MsgType: poll3.Type, PollMeta: poll3, VotingData: "poll3 data"}
 )
 
-func cdc() *codec.Codec {
+func init() {
 	cdc := testutils.Codec()
-	once.Do(func() {
-		cdc.RegisterConcrete(&mockVote{}, "mockVote", nil)
-		cdc.RegisterConcrete("", "string", nil)
-	})
-	return cdc
+	cdc.RegisterConcrete(&mockVote{}, "mockVote", nil)
+	cdc.RegisterConcrete("", "string", nil)
 }
 
 func newKeeper(b bcExported.Broadcaster, validators ...staking.ValidatorI) Keeper {
-	return NewKeeper(cdc(), mock.NewKVStoreKey("voting"), store.NewSubjectiveStore(), mock.NewTestStaker(validators...), b)
+	return NewKeeper(testutils.Codec(), mock.NewKVStoreKey("voting"), store.NewSubjectiveStore(), mock.NewTestStaker(validators...), b)
 }
 
 func newBroadcaster() (mock.Broadcaster, <-chan sdk.Msg) {
 	out := make(chan sdk.Msg, 10)
-	b := mock.NewBroadcaster(cdc(), sdk.AccAddress("sender"), sdk.ValAddress("validator"), out)
+	b := mock.NewBroadcaster(testutils.Codec(), sdk.AccAddress("sender"), sdk.ValAddress("validator"), out)
 	return b, out
 }
 
@@ -111,12 +105,12 @@ func voteOnNextBallot(t *testing.T) {
 	k.SendBallot(ctx)
 
 	// assert that exactly one ballot with one vote is sent out
-	timeout := testutils.StartTimeout(100 * time.Millisecond)
+	timeout, _ := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	msgCount := 0
 loop:
 	for {
 		select {
-		case <-timeout:
+		case <-timeout.Done():
 			break loop
 		case msg := <-out:
 			if msgCount == 0 {
@@ -156,12 +150,12 @@ func votesNotRepeatedInConsecutiveBallots(t *testing.T) {
 	k.SendBallot(ctx)
 
 	// assert the votes are batched according to the timing of the SendBallot call
-	timeout := testutils.StartTimeout(100 * time.Millisecond)
+	timeout, _ := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	msgCount := 0
 loop:
 	for {
 		select {
-		case <-timeout:
+		case <-timeout.Done():
 			break loop
 		case msg := <-out:
 			assert.IsType(t, types.MsgBallot{}, msg)
@@ -192,9 +186,9 @@ func voteMultipleTimesReturnError(t *testing.T) {
 	assert.NoError(t, k.InitPoll(ctx, poll1))
 	assert.NoError(t, k.Vote(ctx, voteForPoll1))
 	v2 := *voteForPoll1
-	v2.C = false
+	v2.VotingData = "different data"
 	v3 := v2
-	v3.D = "different data"
+	v3.VotingData = "even more different data"
 
 	assert.Error(t, k.Vote(ctx, &v2))
 	assert.Error(t, k.Vote(ctx, &v3))
@@ -211,9 +205,9 @@ func noVotesNoBallot(t *testing.T) {
 
 	k.SendBallot(ctx)
 
-	timeout := testutils.StartTimeout(100 * time.Millisecond)
+	timeout, _ := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	select {
-	case <-timeout:
+	case <-timeout.Done():
 		break
 	case <-out:
 		assert.FailNow(t, "should not receive any messages")
@@ -232,7 +226,7 @@ func tallyNonExistingPollReturnError(t *testing.T) {
 	// copy to not overwrite defaults
 	v2 := *voteForPoll2
 	v2.SetSender(b.Proxy)
-	_, err := k.TallyVote(ctx, &v2)
+	err := k.TallyVote(ctx, &v2)
 	assert.Error(t, err)
 }
 
@@ -248,7 +242,7 @@ func tallyUnknownVoterReturnError(t *testing.T) {
 	// copy to not overwrite defaults
 	v1 := *voteForPoll1
 	v1.SetSender(sdk.AccAddress("some other proxy"))
-	_, err := k.TallyVote(ctx, &v1)
+	err := k.TallyVote(ctx, &v1)
 	assert.Error(t, err)
 }
 
@@ -268,9 +262,10 @@ func tallyNoWinner(t *testing.T) {
 	// copy to not overwrite defaults
 	v1 := *voteForPoll1
 	v1.SetSender(b.Proxy)
-	data, err := k.TallyVote(ctx, &v1)
+	err := k.TallyVote(ctx, &v1)
+	res := k.Result(ctx, v1.PollMeta)
 	assert.NoError(t, err)
-	assert.Nil(t, data)
+	assert.Nil(t, res)
 }
 
 func tallyWithWinner(t *testing.T) {
@@ -289,10 +284,10 @@ func tallyWithWinner(t *testing.T) {
 	// copy to not overwrite defaults
 	v1 := *voteForPoll1
 	v1.SetSender(b.Proxy)
-	res, err := k.TallyVote(ctx, &v1)
+	err := k.TallyVote(ctx, &v1)
+	res := k.Result(ctx, v1.PollMeta)
 	assert.NoError(t, err)
-	assert.Equal(t, voteForPoll1.D, res.Data())
-	assert.Equal(t, voteForPoll1.C, res.Confirms())
+	assert.Equal(t, voteForPoll1.VotingData, res.Data())
 }
 
 func tallyTwoVotesFromSameValidatorReturnError(t *testing.T) {
@@ -312,21 +307,21 @@ func tallyTwoVotesFromSameValidatorReturnError(t *testing.T) {
 
 	// different decision
 	v2.SetSender(b.Proxy)
-	v2.C = !v2.C
+	v2.VotingData = "different data"
 
 	// different data
 	v3.SetSender(b.Proxy)
-	v3.D = "unique data"
+	v3.VotingData = "even more different data"
 
 	assert.NoError(t, k.InitPoll(ctx, poll1))
 
-	_, err := k.TallyVote(ctx, &v1)
+	err := k.TallyVote(ctx, &v1)
 	assert.NoError(t, err)
 
-	_, err = k.TallyVote(ctx, &v2)
+	err = k.TallyVote(ctx, &v2)
 	assert.Error(t, err)
 
-	_, err = k.TallyVote(ctx, &v3)
+	err = k.TallyVote(ctx, &v3)
 	assert.Error(t, err)
 }
 
@@ -356,21 +351,23 @@ func tallyMultipleVotesUntilDecision(t *testing.T) {
 	v2.SetSender(proxy2)
 	v3.SetSender(proxy3)
 
-	v3.C = false
+	v3.VotingData = "different data"
 
-	res, err := k.TallyVote(ctx, &v1)
+	err := k.TallyVote(ctx, &v1)
+	res := k.Result(ctx, v1.PollMeta)
 	assert.NoError(t, err)
 	assert.Nil(t, res)
 
-	res, err = k.TallyVote(ctx, &v3)
+	err = k.TallyVote(ctx, &v3)
+	res = k.Result(ctx, v3.PollMeta)
 	assert.NoError(t, err)
 	assert.Nil(t, res)
 
-	res, err = k.TallyVote(ctx, &v2)
+	err = k.TallyVote(ctx, &v2)
+	res = k.Result(ctx, v2.PollMeta)
 	assert.NoError(t, err)
 	assert.NotNil(t, res)
-	assert.Equal(t, v1.D, res.Data())
-	assert.Equal(t, v1.C, res.Confirms())
+	assert.Equal(t, v1.VotingData, res.Data())
 }
 
 func tallyForDecidedPoll(t *testing.T) {
@@ -399,30 +396,30 @@ func tallyForDecidedPoll(t *testing.T) {
 	v2.SetSender(proxy2)
 	v3.SetSender(proxy3)
 
-	v3.C = false
+	v3.VotingData = "different data"
 
-	res, err := k.TallyVote(ctx, &v1)
+	err := k.TallyVote(ctx, &v1)
+	res := k.Result(ctx, v1.PollMeta)
 	assert.NoError(t, err)
 	assert.Nil(t, res)
 
-	res, err = k.TallyVote(ctx, &v2)
+	err = k.TallyVote(ctx, &v2)
+	res = k.Result(ctx, v2.PollMeta)
 	assert.NoError(t, err)
-	assert.Equal(t, v1.D, res.Data())
-	assert.Equal(t, v1.C, res.Confirms())
+	assert.Equal(t, v1.VotingData, res.Data())
 
-	res, err = k.TallyVote(ctx, &v3)
+	err = k.TallyVote(ctx, &v3)
+	res = k.Result(ctx, v3.PollMeta)
 	assert.NoError(t, err)
-	assert.Equal(t, v1.D, res.Data())
-	assert.Equal(t, v1.C, res.Confirms())
+	assert.Equal(t, v1.VotingData, res.Data())
 }
 
 type mockVote struct {
-	R      string
-	T      string
-	P      exported.PollMeta
-	D      exported.VotingData
-	C      bool
-	sender sdk.AccAddress
+	Path       string
+	MsgType    string
+	PollMeta   exported.PollMeta
+	VotingData exported.VotingData
+	sender     sdk.AccAddress
 }
 
 func (m *mockVote) SetSender(address sdk.AccAddress) {
@@ -430,11 +427,11 @@ func (m *mockVote) SetSender(address sdk.AccAddress) {
 }
 
 func (m mockVote) Route() string {
-	return m.R
+	return m.Path
 }
 
 func (m mockVote) Type() string {
-	return m.T
+	return m.MsgType
 }
 
 func (m mockVote) ValidateBasic() error {
@@ -450,13 +447,9 @@ func (m mockVote) GetSigners() []sdk.AccAddress {
 }
 
 func (m mockVote) Poll() exported.PollMeta {
-	return m.P
+	return m.PollMeta
 }
 
 func (m mockVote) Data() exported.VotingData {
-	return m.D
-}
-
-func (m mockVote) Confirms() bool {
-	return m.C
+	return m.VotingData
 }

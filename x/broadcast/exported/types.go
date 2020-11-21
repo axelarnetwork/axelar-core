@@ -8,7 +8,7 @@ import sdk "github.com/cosmos/cosmos-sdk/types"
 type Broadcaster interface {
 	// Broadcast sends the passed messages to the network.
 	// Do not call it from the main thread or risk a deadlock (the main thread is needed to validate incoming messages)
-	Broadcast(ctx sdk.Context, msgs []MsgWithProxySender) error
+	Broadcast(ctx sdk.Context, msgs []MsgWithSenderSetter) error
 
 	RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy sdk.AccAddress) error
 
@@ -21,7 +21,7 @@ type Broadcaster interface {
 	GetLocalPrincipal(ctx sdk.Context) sdk.ValAddress
 }
 
-type MsgWithProxySender interface {
+type MsgWithSenderSetter interface {
 	sdk.Msg
 	SetSender(address sdk.AccAddress)
 }

@@ -40,8 +40,9 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Sig
 	}
 }
 
+// This can be used as a potential hook to immediately act on a poll being decided by the vote
 func handleMsgVoteVerifiedTx(ctx sdk.Context, v types.Voter, msg types.MsgVoteVerifiedTx) (*sdk.Result, error) {
-	if _, err := v.TallyVote(ctx, &msg); err != nil {
+	if err := v.TallyVote(ctx, &msg); err != nil {
 		return nil, err
 	}
 	return nil, nil
@@ -117,7 +118,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 	 but only validators will later send out that vote.
 	*/
 	if err := verifyTx(rpc, msg.UTXO, k.GetConfirmationHeight(ctx)); err != nil {
-		if err := v.Vote(ctx, &types.MsgVoteVerifiedTx{PollMeta: poll, Accept: false}); err != nil {
+		if err := v.Vote(ctx, &types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false}); err != nil {
 			k.Logger(ctx).Error(sdkerrors.Wrap(err, "voting failed").Error())
 			return &sdk.Result{
 				Log:    err.Error(),
@@ -134,7 +135,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 			Events: ctx.EventManager().Events(),
 		}, nil
 	} else {
-		if err := v.Vote(ctx, &types.MsgVoteVerifiedTx{PollMeta: poll, Accept: true}); err != nil {
+		if err := v.Vote(ctx, &types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: true}); err != nil {
 			k.Logger(ctx).Error(sdkerrors.Wrap(err, "voting failed").Error())
 			return &sdk.Result{
 				Log:    err.Error(),
@@ -152,7 +153,8 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 
 func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.MsgRawTx) (*sdk.Result, error) {
 	txId := msg.TxHash.String()
-	if v.Result(ctx, exported.PollMeta{ID: txId, Module: types.ModuleName, Type: types.MsgVerifyTx{}.Type()}) == nil {
+	poll := exported.PollMeta{ID: txId, Module: types.ModuleName, Type: types.MsgVerifyTx{}.Type()}
+	if isVerified(ctx, v, poll) {
 		return nil, fmt.Errorf("transaction not verified")
 	}
 	utxo, ok := k.GetUTXO(ctx, txId)
@@ -205,6 +207,11 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.M
 		Log:    fmt.Sprintf("successfully created withdraw transaction for Bitcoin. Hash to sign: %s", k.Codec().MustMarshalJSON(hash)),
 		Events: ctx.EventManager().Events(),
 	}, nil
+}
+
+func isVerified(ctx sdk.Context, v types.Voter, poll exported.PollMeta) bool {
+	res := v.Result(ctx, poll)
+	return res == nil || !res.Data().(bool)
 }
 
 func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, signer types.Signer, msg types.MsgWithdraw) (*sdk.Result, error) {

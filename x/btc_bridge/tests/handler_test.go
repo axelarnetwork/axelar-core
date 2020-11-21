@@ -70,7 +70,7 @@ func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 	assert.Nil(t, err)
 	assert.True(t, v.InitPollCalled)
 	assert.True(t, v.VoteCalledCorrectly)
-	assert.False(t, v.RecordedVote.Confirms())
+	assert.False(t, v.RecordedVote.Data().(bool))
 }
 
 func TestVerifyTx_ValidUTXO(t *testing.T) {
@@ -118,7 +118,7 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 	assert.Nil(t, err)
 	assert.True(t, v.InitPollCalled)
 	assert.True(t, v.VoteCalledCorrectly)
-	assert.True(t, v.RecordedVote.Confirms())
+	assert.True(t, v.RecordedVote.Data().(bool))
 
 	actualUtxo, ok := k.GetUTXO(ctx, hash.String())
 	assert.True(t, ok)

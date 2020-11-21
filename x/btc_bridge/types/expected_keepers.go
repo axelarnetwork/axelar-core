@@ -12,7 +12,7 @@ import (
 type Voter interface {
 	InitPoll(ctx sdk.Context, poll exported.PollMeta) error
 	Vote(ctx sdk.Context, vote exported.MsgVote) error
-	TallyVote(ctx sdk.Context, vote exported.MsgVote) (exported.Vote, error)
+	TallyVote(ctx sdk.Context, vote exported.MsgVote) error
 	Result(ctx sdk.Context, poll exported.PollMeta) exported.Vote
 }
 

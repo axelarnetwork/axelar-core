@@ -7,9 +7,8 @@ import (
 )
 
 type TalliedVote struct {
-	Tally    sdk.Int
-	Data     exported.VotingData
-	Confirms bool
+	Tally sdk.Int
+	Data  exported.VotingData
 }
 
 type Poll struct {
@@ -22,7 +21,6 @@ type Poll struct {
 type VoteResult struct {
 	exported.PollMeta
 	exported.VotingData
-	Conf bool
 }
 
 func (v VoteResult) Poll() exported.PollMeta {
@@ -31,10 +29,6 @@ func (v VoteResult) Poll() exported.PollMeta {
 
 func (v VoteResult) Data() exported.VotingData {
 	return v.VotingData
-}
-
-func (v VoteResult) Confirms() bool {
-	return v.Conf
 }
 
 type VotingThreshold struct {

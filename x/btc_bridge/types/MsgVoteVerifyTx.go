@@ -8,14 +8,10 @@ import (
 
 var _ exported.MsgVote = &MsgVoteVerifiedTx{}
 
-// TODO: remove this type when btcbridge moves to the write-in voting pattern
-type DummyData struct{}
-
 type MsgVoteVerifiedTx struct {
-	Sender    sdk.AccAddress
-	PollMeta  exported.PollMeta
-	Accept    bool
-	DummyData DummyData
+	Sender     sdk.AccAddress
+	PollMeta   exported.PollMeta
+	VotingData bool
 }
 
 func (msg MsgVoteVerifiedTx) Poll() exported.PollMeta {
@@ -24,11 +20,7 @@ func (msg MsgVoteVerifiedTx) Poll() exported.PollMeta {
 
 func (msg *MsgVoteVerifiedTx) Data() exported.VotingData {
 	// dummy return, must not be empty, otherwise marshaling crashes
-	return msg.DummyData
-}
-
-func (msg MsgVoteVerifiedTx) Confirms() bool {
-	return msg.Accept
+	return msg.VotingData
 }
 
 func (msg MsgVoteVerifiedTx) Route() string {

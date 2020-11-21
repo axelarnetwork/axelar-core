@@ -12,10 +12,10 @@ import (
 
 // golang stupidity: ensure interface compliance at compile time
 var (
-	_ sdk.Msg                      = &MsgKeygenStart{}
-	_ sdk.Msg                      = &MsgSignStart{}
-	_ broadcast.MsgWithProxySender = &MsgKeygenTraffic{}
-	_ broadcast.MsgWithProxySender = &MsgSignTraffic{}
+	_ sdk.Msg                       = &MsgKeygenStart{}
+	_ sdk.Msg                       = &MsgSignStart{}
+	_ broadcast.MsgWithSenderSetter = &MsgKeygenTraffic{}
+	_ broadcast.MsgWithSenderSetter = &MsgSignTraffic{}
 )
 
 // MsgKeygenStart indicate the start of keygen
@@ -177,7 +177,7 @@ func (msg MsgKeygenTraffic) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }
 
-// SetSender implements the broadcast.MsgWithProxySender interface
+// SetSender implements the broadcast.MsgWithSenderSetter interface
 func (msg *MsgKeygenTraffic) SetSender(sender sdk.AccAddress) {
 	msg.Sender = sender
 }
@@ -226,7 +226,7 @@ func (msg MsgSignTraffic) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }
 
-// SetSender implements the broadcast.MsgWithProxySender interface
+// SetSender implements the broadcast.MsgWithSenderSetter interface
 func (msg *MsgSignTraffic) SetSender(sender sdk.AccAddress) {
 	msg.Sender = sender
 }

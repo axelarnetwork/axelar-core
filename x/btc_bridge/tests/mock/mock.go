@@ -34,7 +34,7 @@ func (t *TestVoter) Vote(_ sdkTypes.Context, vote exported.MsgVote) error {
 	return nil
 }
 
-func (t *TestVoter) TallyVote(_ sdkTypes.Context, _ exported.MsgVote) (exported.Vote, error) {
+func (t *TestVoter) TallyVote(_ sdkTypes.Context, _ exported.MsgVote) error {
 	panic("implement me")
 }
 

@@ -3,7 +3,6 @@ package testutils
 
 import (
 	"math/rand"
-	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -37,16 +36,6 @@ func Codec() *codec.Codec {
 	broadcastTypes.RegisterCodec(cdc)
 
 	return cdc
-}
-
-// StartTimeout returns a channel that closes after the given duration.
-func StartTimeout(t time.Duration) chan struct{} {
-	timeOut := make(chan struct{})
-	go func() {
-		time.Sleep(t)
-		close(timeOut)
-	}()
-	return timeOut
 }
 
 // RandIntGen represents an random integer generator.
@@ -107,9 +96,9 @@ func (g *RandIntGen) Stop() {
 		close(g.done)
 	}
 
-	// drain own channel and block until all channels are closed (the close cascades from the bottom up)
-	for range g.ch {
-	}
+	// The underlying generator might be stuck in the default select case trying to push a value into the channel,
+	// so we need to make sure it is unstuck to be able to close the output channel
+	<-g.ch
 }
 
 func generate(generator func() int) RandIntGen {
@@ -169,7 +158,8 @@ func (g RandBoolGen) Next() bool {
 // Stop closes all goroutines used during bool generation.
 func (g RandBoolGen) Stop() {
 	close(g.done)
-	// drain own channel so it can be closed
-	for range g.ch {
-	}
+
+	// The underlying generator might be stuck in the default select case trying to push a value into the channel,
+	// so we need to make sure it is unstuck to be able to close the output channel
+	<-g.ch
 }
