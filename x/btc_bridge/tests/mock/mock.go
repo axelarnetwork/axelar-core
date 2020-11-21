@@ -2,31 +2,43 @@ package mock
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"fmt"
-	"math/big"
 
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	sdkTypes "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/axelarnetwork/axelar-core/x/axelar/exported"
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
-	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
+	"github.com/axelarnetwork/axelar-core/x/voting/exported"
 )
 
 var _ types.Voter = &TestVoter{}
 
 type TestVoter struct {
-	Vote *exported.FutureVote
+	InitPollCalled      bool
+	Poll                exported.PollMeta
+	VoteCalledCorrectly bool
+	RecordedVote        exported.MsgVote
 }
 
-func (t *TestVoter) SetFutureVote(ctx sdkTypes.Context, vote exported.FutureVote) {
-	t.Vote = &vote
+func (t *TestVoter) InitPoll(_ sdkTypes.Context, poll exported.PollMeta) error {
+	t.InitPollCalled = true
+	t.Poll = poll
+	return nil
 }
 
-func (t TestVoter) IsVerified(ctx sdkTypes.Context, tx exported.ExternalTx) bool {
+func (t *TestVoter) Vote(_ sdkTypes.Context, vote exported.MsgVote) error {
+	t.VoteCalledCorrectly = t.Poll.String() == vote.Poll().String()
+	t.RecordedVote = vote
+	return nil
+}
+
+func (t *TestVoter) TallyVote(_ sdkTypes.Context, _ exported.MsgVote) error {
+	panic("implement me")
+}
+
+func (t *TestVoter) Result(_ sdkTypes.Context, _ exported.PollMeta) exported.Vote {
 	panic("implement me")
 }
 
@@ -38,7 +50,7 @@ type TestRPC struct {
 	RawTxs         map[string]*btcjson.TxRawResult
 }
 
-func (t *TestRPC) ImportAddressRescan(address string, account string, rescan bool) error {
+func (t *TestRPC) ImportAddressRescan(address string, _ string, _ bool) error {
 	t.TrackedAddress = address
 	t.Cancel()
 	return nil
@@ -58,23 +70,6 @@ func (t TestRPC) GetRawTransactionVerbose(hash *chainhash.Hash) (*btcjson.TxRawR
 	}
 }
 
-func (t TestRPC) SendRawTransaction(tx *wire.MsgTx, b bool) (*chainhash.Hash, error) {
-	panic("implement me")
-}
-
-var _ types.Signer = TestSigner{}
-
-type TestSigner struct {
-}
-
-func (t TestSigner) StartSign(ctx sdkTypes.Context, info tssTypes.MsgSignStart) error {
-	panic("implement me")
-}
-
-func (t TestSigner) GetSig(ctx sdkTypes.Context, sigID string) (r *big.Int, s *big.Int, err error) {
-	panic("implement me")
-}
-
-func (t TestSigner) GetKey(ctx sdkTypes.Context, keyID string) (ecdsa.PublicKey, error) {
+func (t TestRPC) SendRawTransaction(_ *wire.MsgTx, _ bool) (*chainhash.Hash, error) {
 	panic("implement me")
 }

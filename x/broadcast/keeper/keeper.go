@@ -96,7 +96,7 @@ func getAccountAddress(from string, keybase keys.Keybase) (sdk.AccAddress, strin
 }
 
 // Broadcast sends the passed message to the network. Needs to be called asynchronously or it will block
-func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []exported.ValidatorMsg) error {
+func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []exported.MsgWithSenderSetter) error {
 	if k.GetLocalPrincipal(ctx) == nil {
 		return fmt.Errorf("broadcaster is not registered as a proxy")
 	}

@@ -225,8 +225,8 @@ func GetCmdRawTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 func GetCmdWithdraw(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "withdraw [sourceTxId] [sigId] [keyId]",
-		Short: "Withdraw funds from an Axelar address",
-		Long: `Withdraw funds from an Axelar address according to a previously signed raw transaction. 
+		Short: "Withdraw funds from an axelar address",
+		Long: `Withdraw funds from an axelar address according to a previously signed raw transaction. 
 Ensure the axelar address is being tracked and the transaction signed first`,
 		Args: cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {

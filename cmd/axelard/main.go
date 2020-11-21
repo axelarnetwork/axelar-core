@@ -48,7 +48,7 @@ func main() {
 	ctx := server.NewDefaultContext()
 	cobra.EnableCommandSorting = false
 	rootCmd := &cobra.Command{
-		Use:               "axelarD",
+		Use:               "axelard",
 		Short:             "Axelar Daemon (server)",
 		PersistentPreRunE: server.PersistentPreRunEFn(ctx),
 	}

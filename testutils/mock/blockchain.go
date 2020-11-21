@@ -3,6 +3,7 @@ package mock
 import (
 	"fmt"
 	"log"
+	"sync/atomic"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -10,10 +11,11 @@ import (
 )
 
 type BlockChain struct {
-	blockSize    int
-	in           chan sdk.Msg
-	nodes        []Node
-	blockTimeOut time.Duration
+	blockSize     int
+	in            chan sdk.Msg
+	nodes         []Node
+	blockTimeOut  time.Duration
+	currentHeight *int64
 }
 
 type block struct {
@@ -31,10 +33,11 @@ func newBlock(size int, height int64) block {
 // so a block will only be disseminated once the specified block size is reached.
 func NewBlockchain() BlockChain {
 	return BlockChain{
-		blockSize:    1,
-		blockTimeOut: 0,
-		in:           make(chan sdk.Msg, 1000),
-		nodes:        make([]Node, 0),
+		blockSize:     1,
+		blockTimeOut:  0,
+		in:            make(chan sdk.Msg, 1000),
+		nodes:         make([]Node, 0),
+		currentHeight: new(int64),
 	}
 }
 
@@ -72,8 +75,13 @@ func (bc BlockChain) Start() {
 	go disseminateBlocks(bc)
 }
 
+func (bc BlockChain) CurrentHeight() int64 {
+	return *bc.currentHeight
+}
+
 func disseminateBlocks(bc BlockChain) {
 	for b := range cutBlocks(bc.in, bc.blockSize, bc.blockTimeOut) {
+		atomic.AddInt64(bc.currentHeight, 1)
 		for _, n := range bc.nodes {
 			n.in <- b
 		}
@@ -129,7 +137,7 @@ func reset(timeOut time.Duration) chan struct{} {
 
 type Node struct {
 	in          chan block
-	handlers    map[string]sdk.Handler
+	router      sdk.Router
 	endBlockers []func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate
 	Ctx         sdk.Context
 	moniker     string
@@ -138,20 +146,14 @@ type Node struct {
 // NewNode creates a new node that can be added to the blockchain.
 // The moniker is used to differentiate nodes for logging purposes.
 // The context will be passed on to the registered handlers.
-func NewNode(moniker string, ctx sdk.Context) Node {
+func NewNode(moniker string, ctx sdk.Context, router sdk.Router) Node {
 	return Node{
 		moniker:     moniker,
 		Ctx:         ctx,
 		in:          make(chan block, 1),
-		handlers:    make(map[string]sdk.Handler, 0),
+		router:      router,
 		endBlockers: make([]func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate, 0),
 	}
-}
-
-// WithHandler returns a node with a handler for the specified module.
-func (n Node) WithHandler(moduleName string, handler sdk.Handler) Node {
-	n.handlers[moduleName] = handler
-	return n
 }
 
 // WithEndBlockers returns a node with the specified EndBlocker functions.
@@ -172,7 +174,7 @@ func (n Node) start() {
 
 		// handle messages
 		for _, msg := range b.msgs {
-			if h, ok := n.handlers[msg.Route()]; ok {
+			if h := n.router.Route(n.Ctx, msg.Route()); h != nil {
 				if err := msg.ValidateBasic(); err != nil {
 					log.Printf("node %s returned an error when validating message %s", n.moniker, msg.Type())
 				}
@@ -190,4 +192,28 @@ func (n Node) start() {
 			endBlocker(n.Ctx, abci.RequestEndBlock{Height: b.height})
 		}
 	}
+}
+
+type Router struct {
+	handlers map[string]sdk.Handler
+}
+
+// NewRouter returns a new Router that deals with handler routing
+func NewRouter() sdk.Router {
+	return Router{handlers: map[string]sdk.Handler{}}
+}
+
+// AddRoute adds a new handler route
+func (r Router) AddRoute(moduleName string, h sdk.Handler) sdk.Router {
+	r.handlers[moduleName] = h
+	return r
+}
+
+// Route tries to route the given path to a registered handler. Returns nil when the path is not found.
+func (r Router) Route(_ sdk.Context, path string) sdk.Handler {
+	h, ok := r.handlers[path]
+	if !ok {
+		return nil
+	}
+	return h
 }

@@ -22,7 +22,7 @@ func NewQuerier(k Keeper) sdk.Querier {
 		case QueryTrackedAddress:
 			return queryAddress(ctx, path[1], k)
 		default:
-			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown axelar query endpoint: %s", path[0]))
+			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown btc-bridge query endpoint: %s", path[0]))
 		}
 	}
 }
