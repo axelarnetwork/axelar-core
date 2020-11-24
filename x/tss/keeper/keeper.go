@@ -5,18 +5,20 @@ import (
 	"fmt"
 	"time"
 
-	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
-	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	tssd "github.com/axelarnetwork/tssd/pb"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
+
+	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
+	"github.com/axelarnetwork/axelar-core/x/staking/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 type Keeper struct {
 	broadcaster   broadcast.Broadcaster
-	stakingKeeper types.StakingKeeper // needed only for `GetAllValidators`
+	stakingKeeper exported.Staker // needed only for `GetAllValidators`
 	client        tssd.GG18Client
 	keygenStream  tssd.GG18_KeygenClient // TODO support multiple concurrent sessions
 	signStream    tssd.GG18_SignClient   // TODO support multiple concurrent sessions
@@ -27,7 +29,7 @@ type Keeper struct {
 	contextCancelFunc context.CancelFunc
 }
 
-func NewKeeper(conf types.TssdConfig, logger log.Logger, broadcaster broadcast.Broadcaster, staking types.StakingKeeper) (Keeper, error) {
+func NewKeeper(conf types.TssdConfig, logger log.Logger, broadcaster broadcast.Broadcaster, staking exported.Staker) (Keeper, error) {
 	logger = prepareLogger(logger)
 
 	// TODO don't start gRPC unless I'm a validator?
@@ -67,6 +69,7 @@ func (k Keeper) Close(logger log.Logger) error {
 	k.contextCancelFunc()
 	if err := k.connection.Close(); err != nil {
 		wrapErr := sdkerrors.Wrap(err, "failure to close connection to server")
+		//goland:noinspection GoNilness
 		logger.Error(wrapErr.Error())
 		return wrapErr
 	}

@@ -5,15 +5,26 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking/exported"
 	"github.com/tendermint/tendermint/crypto"
 
-	"github.com/axelarnetwork/axelar-core/x/voting/types"
+	stExported "github.com/axelarnetwork/axelar-core/x/staking/exported"
 )
 
-var _ types.Staker = TestStaker{}
+var _ stExported.Staker = TestStaker{}
 var _ exported.ValidatorI = TestValidator{}
 
 type TestStaker struct {
 	validators map[string]exported.ValidatorI
 	totalPower int64
+}
+
+func (s TestStaker) IterateValidators(_ sdk.Context, fn func(index int64, validator exported.ValidatorI) (stop bool)) {
+	var i int64 = 0
+	for _, v := range s.validators {
+		stop := fn(i, v)
+		if stop {
+			break
+		}
+		i++
+	}
 }
 
 func NewTestStaker(validators ...exported.ValidatorI) TestStaker {

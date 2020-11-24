@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/cosmos/cosmos-sdk/x/staking/exported"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/tssd/convert"
@@ -21,7 +22,9 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 
 	// BEGIN: validity check
 
-	validators := k.stakingKeeper.GetAllValidators(ctx)
+	var validators []exported.ValidatorI
+	fnAppend := func(_ int64, v exported.ValidatorI) (stop bool) { validators = append(validators, v); return false }
+	k.stakingKeeper.IterateValidators(ctx, fnAppend)
 	if info.Threshold < 1 || info.Threshold > len(validators) {
 		err := fmt.Errorf("invalid threshold: %d, validators: %d", info.Threshold, len(validators))
 		k.Logger(ctx).Error(err.Error())
@@ -48,8 +51,8 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 	partyUids := make([]string, 0, len(validators))
 	ok, myIndex := false, 0
 	for i, v := range validators {
-		partyUids = append(partyUids, v.OperatorAddress.String())
-		if v.OperatorAddress.Equals(myAddress) {
+		partyUids = append(partyUids, v.GetOperator().String())
+		if v.GetOperator().Equals(myAddress) {
 			if ok {
 				err := fmt.Errorf("cosmos bug: my validator address appears multiple times in the validator list: [%s]", myAddress)
 				k.Logger(ctx).Error(err.Error())

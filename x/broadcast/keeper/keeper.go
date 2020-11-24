@@ -10,16 +10,16 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/rpc/client/http"
 
 	"github.com/axelarnetwork/axelar-core/store"
-	"github.com/axelarnetwork/axelar-core/x/broadcast/exported"
+	brExported "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/broadcast/types"
+	stExported "github.com/axelarnetwork/axelar-core/x/staking/exported"
 )
 
-var _ exported.Broadcaster = Keeper{}
+var _ brExported.Broadcaster = Keeper{}
 
 const (
 	proxyCountKey = "proxyCount"
@@ -27,7 +27,7 @@ const (
 )
 
 type Keeper struct {
-	stakingKeeper   staking.Keeper
+	stakingKeeper   stExported.Staker
 	storeKey        sdk.StoreKey
 	from            sdk.AccAddress
 	keybase         keys.Keybase
@@ -45,7 +45,7 @@ func NewKeeper(
 	subjectiveStore store.SubjectiveStore,
 	keybase keys.Keybase,
 	authKeeper auth.AccountKeeper,
-	stakingKeeper staking.Keeper,
+	stakingKeeper stExported.Staker,
 	conf types.ClientConfig,
 	logger log.Logger,
 ) (Keeper, error) {
@@ -96,7 +96,7 @@ func getAccountAddress(from string, keybase keys.Keybase) (sdk.AccAddress, strin
 }
 
 // Broadcast sends the passed message to the network. Needs to be called asynchronously or it will block
-func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []exported.MsgWithSenderSetter) error {
+func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []brExported.MsgWithSenderSetter) error {
 	if k.GetLocalPrincipal(ctx) == nil {
 		return fmt.Errorf("broadcaster is not registered as a proxy")
 	}
@@ -182,8 +182,8 @@ func (k Keeper) makeSignature(msg auth.StdSignMsg) (auth.StdSignature, error) {
 }
 
 func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy sdk.AccAddress) error {
-	_, found := k.stakingKeeper.GetValidator(ctx, principal)
-	if !found {
+	v := k.stakingKeeper.Validator(ctx, principal)
+	if v == nil {
 		k.Logger(ctx).Error("could not find validator")
 		return types.ErrInvalidValidator
 	}

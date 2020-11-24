@@ -5,6 +5,7 @@ import (
 	"io"
 	"math/big"
 
+	"github.com/cosmos/cosmos-sdk/x/staking/exported"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/tssd/convert"
@@ -24,7 +25,9 @@ func (k *Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
 	// BEGIN: validity check
 
 	// TODO for now assume all validators participate
-	validators := k.stakingKeeper.GetAllValidators(ctx)
+	var validators []exported.ValidatorI
+	fnAppend := func(_ int64, v exported.ValidatorI) (stop bool) { validators = append(validators, v); return false }
+	k.stakingKeeper.IterateValidators(ctx, fnAppend)
 	if k.broadcaster.GetProxyCount(ctx) != uint32(len(validators)) {
 		// sign cannot proceed unless all validators have registered broadcast proxies
 		err := fmt.Errorf("not enough proxies registered: proxies: %d; validators: %d", k.broadcaster.GetProxyCount(ctx), len(validators))
@@ -44,7 +47,7 @@ func (k *Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
 	// build partyUids by converting validators into a []string
 	partyUids := make([]string, 0, len(validators))
 	for _, v := range validators {
-		partyUids = append(partyUids, v.OperatorAddress.String())
+		partyUids = append(partyUids, v.GetOperator().String())
 	}
 
 	// k.Logger(ctx).Debug("initiate tssd gRPC call Sign")
