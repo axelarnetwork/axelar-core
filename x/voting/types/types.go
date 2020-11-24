@@ -32,7 +32,7 @@ func (v VoteResult) Data() exported.VotingData {
 }
 
 type VotingThreshold struct {
-	// split threshold into Numerator and denominator to avoid floating point errors down the line
+	// split threshold into numerator and denominator to avoid floating point errors down the line
 	Numerator   int64
 	Denominator int64
 }
