@@ -16,7 +16,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/store"
 	brExported "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/broadcast/types"
-	stExported "github.com/axelarnetwork/axelar-core/x/staking/exported"
 )
 
 var _ brExported.Broadcaster = Keeper{}
@@ -27,7 +26,7 @@ const (
 )
 
 type Keeper struct {
-	stakingKeeper   stExported.Staker
+	stakingKeeper   types.Staker
 	storeKey        sdk.StoreKey
 	from            sdk.AccAddress
 	keybase         keys.Keybase
@@ -45,7 +44,7 @@ func NewKeeper(
 	subjectiveStore store.SubjectiveStore,
 	keybase keys.Keybase,
 	authKeeper auth.AccountKeeper,
-	stakingKeeper stExported.Staker,
+	stakingKeeper types.Staker,
 	conf types.ClientConfig,
 	logger log.Logger,
 ) (Keeper, error) {

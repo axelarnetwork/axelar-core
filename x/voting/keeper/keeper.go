@@ -15,7 +15,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/store"
 	bcExported "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
-	stExported "github.com/axelarnetwork/axelar-core/x/staking/exported"
+
 	"github.com/axelarnetwork/axelar-core/x/voting/exported"
 	"github.com/axelarnetwork/axelar-core/x/voting/types"
 )
@@ -35,10 +35,10 @@ type Keeper struct {
 	storeKey        sdk.StoreKey
 	cdc             *codec.Codec
 	broadcaster     types.Broadcaster
-	staker          stExported.Staker
+	staker          types.Staker
 }
 
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, subjectiveStore store.SubjectiveStore, staker stExported.Staker, broadcaster types.Broadcaster) Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, subjectiveStore store.SubjectiveStore, staker types.Staker, broadcaster types.Broadcaster) Keeper {
 	keeper := Keeper{
 		subjectiveStore: subjectiveStore,
 		storeKey:        key,

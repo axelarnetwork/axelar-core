@@ -11,14 +11,12 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
 
-	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
-	"github.com/axelarnetwork/axelar-core/x/staking/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 type Keeper struct {
-	broadcaster   broadcast.Broadcaster
-	stakingKeeper exported.Staker // needed only for `GetAllValidators`
+	broadcaster   types.Broadcaster
+	stakingKeeper types.Staker // needed only for `GetAllValidators`
 	client        tssd.GG18Client
 	keygenStream  tssd.GG18_KeygenClient // TODO support multiple concurrent sessions
 	signStream    tssd.GG18_SignClient   // TODO support multiple concurrent sessions
@@ -29,7 +27,7 @@ type Keeper struct {
 	contextCancelFunc context.CancelFunc
 }
 
-func NewKeeper(conf types.TssdConfig, logger log.Logger, broadcaster broadcast.Broadcaster, staking exported.Staker) (Keeper, error) {
+func NewKeeper(conf types.TssdConfig, logger log.Logger, broadcaster types.Broadcaster, staking types.Staker) (Keeper, error) {
 	logger = prepareLogger(logger)
 
 	// TODO don't start gRPC unless I'm a validator?
