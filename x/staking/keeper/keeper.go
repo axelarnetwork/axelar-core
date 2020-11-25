@@ -24,6 +24,9 @@ const roundPrefix = "r-"
 // const interval = 7 * 24 * time.Hour
 const interval = 10 * time.Second
 
+// Make sure the keeper implements the Staker interface
+var _ exported.Staker = Keeper{}
+
 type Keeper struct {
 	storeKey sdk.StoreKey
 	staking  staking.Keeper

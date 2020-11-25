@@ -5,6 +5,8 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
+var _ sdk.Msg = MsgSnapshot{}
+
 type MsgSnapshot struct {
 	Sender sdk.AccAddress
 }
