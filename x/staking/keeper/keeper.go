@@ -31,15 +31,42 @@ type Keeper struct {
 }
 
 func (k Keeper) GetLastTotalPower(ctx sdk.Context) (power sdk.Int) {
-	panic("implement me")
+
+	return k.staking.GetLastTotalPower(ctx)
+
 }
 
 func (k Keeper) Validator(ctx sdk.Context, address sdk.ValAddress) (exported.Validator, error) {
-	panic("implement me")
+
+	result := exported.Validator{}
+
+	validator, ok := k.staking.GetValidator(ctx, address)
+
+	if !ok {
+		return result, fmt.Errorf("Invalid validator address")
+	}
+
+	result.Address = address
+	result.Power = validator.GetConsensusPower()
+
+	return result, nil
 }
 
-func (k Keeper) IterateValidators(ctx sdk.Context, fn func(index int64, validator exported.Validator) (stop bool)) {
-	panic("implement me")
+func (k Keeper) IterateValidators(ctx sdk.Context, fn func(_ int64, _ exported.Validator) (stop bool)) {
+
+	fnPrepared := func(i int64, v sdkExported.ValidatorI) (stop bool) {
+
+		validator := exported.Validator{
+
+			Address: v.GetOperator(),
+			Power:   v.GetConsensusPower(),
+		}
+
+		return fn(i, validator)
+	}
+
+	k.staking.IterateValidators(ctx, fnPrepared)
+
 }
 
 // NewKeeper creates a new keeper for the staking module
@@ -140,6 +167,8 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, nextRound int64) {
 
 		Validators: validators,
 		Timestamp:  ctx.BlockTime(),
+		Height:     ctx.BlockHeight(),
+		TotalPower: k.staking.GetLastTotalPower(ctx),
 	}
 
 	ctx.KVStore(k.storeKey).Set([]byte(roundKey(nextRound)), k.cdc.MustMarshalBinaryLengthPrefixed(snapshot))

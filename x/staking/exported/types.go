@@ -4,7 +4,6 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/staking/exported"
 )
 
 type Validator struct {
@@ -17,12 +16,6 @@ type Snapshot struct {
 	Timestamp  time.Time   `json:"timestamp"`
 	Height     int64       `json:"height"`
 	TotalPower sdk.Int     `json:"totalpower"`
-}
-
-type SnapshotInfo struct {
-	BlockHeight int64
-	Validators  exported.ValidatorI
-	Time        time.Time
 }
 
 type Staker interface {
