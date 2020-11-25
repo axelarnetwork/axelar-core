@@ -61,13 +61,15 @@ func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 	keeper keeper.Keeper
+	staker types.Staker
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper) AppModule {
+func NewAppModule(k keeper.Keeper, s types.Staker) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
+		staker:         s,
 	}
 }
 
@@ -92,7 +94,7 @@ func (AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper)
+	return NewHandler(am.keeper, am.staker)
 }
 
 func (AppModule) QuerierRoute() string {

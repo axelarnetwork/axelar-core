@@ -14,6 +14,7 @@ import (
 var (
 	_ sdk.Msg                       = &MsgKeygenStart{}
 	_ sdk.Msg                       = &MsgSignStart{}
+	_ sdk.Msg                       = MsgMasterKeyRefresh{}
 	_ broadcast.MsgWithSenderSetter = &MsgKeygenTraffic{}
 	_ broadcast.MsgWithSenderSetter = &MsgSignTraffic{}
 )
@@ -47,14 +48,6 @@ type MsgSignTraffic struct {
 	Payload   *tssd.TrafficOut // pointer because it contains a mutex
 }
 
-// NewMsgKeygenStart TODO unnecessary method; delete it?
-func NewMsgKeygenStart(newKeyID string, threshold int) MsgKeygenStart {
-	return MsgKeygenStart{
-		NewKeyID:  newKeyID,
-		Threshold: threshold,
-	}
-}
-
 // Route implements the sdk.Msg interface.
 func (msg MsgKeygenStart) Route() string { return RouterKey }
 
@@ -86,15 +79,6 @@ func (msg MsgKeygenStart) GetSignBytes() []byte {
 // GetSigners implements the sdk.Msg interface.
 func (msg MsgKeygenStart) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
-}
-
-// NewMsgSignStart TODO unnecessary method; delete it?
-func NewMsgSignStart(newSigID string, keyID string, msg []byte) MsgSignStart {
-	return MsgSignStart{
-		NewSigID:  newSigID,
-		KeyID:     keyID,
-		MsgToSign: msg,
-	}
 }
 
 // Route implements the sdk.Msg interface.
@@ -131,14 +115,6 @@ func (msg MsgSignStart) GetSignBytes() []byte {
 // GetSigners implements the sdk.Msg interface.
 func (msg MsgSignStart) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
-}
-
-// NewMsgKeygenTraffic TODO unnecessary method; delete it?
-func NewMsgKeygenTraffic(sessionID string, payload *tssd.TrafficOut) *MsgKeygenTraffic {
-	return &MsgKeygenTraffic{
-		SessionID: sessionID,
-		Payload:   payload,
-	}
 }
 
 // Route implements the sdk.Msg interface.
@@ -182,14 +158,6 @@ func (msg *MsgKeygenTraffic) SetSender(sender sdk.AccAddress) {
 	msg.Sender = sender
 }
 
-// NewMsgSignTraffic TODO unnecessary method; delete it?
-func NewMsgSignTraffic(sessionID string, payload *tssd.TrafficOut) *MsgSignTraffic {
-	return &MsgSignTraffic{
-		SessionID: sessionID,
-		Payload:   payload,
-	}
-}
-
 // Route implements the sdk.Msg interface.
 func (msg MsgSignTraffic) Route() string { return RouterKey }
 
@@ -229,4 +197,27 @@ func (msg MsgSignTraffic) GetSigners() []sdk.AccAddress {
 // SetSender implements the broadcast.MsgWithSenderSetter interface
 func (msg *MsgSignTraffic) SetSender(sender sdk.AccAddress) {
 	msg.Sender = sender
+}
+
+type MsgMasterKeyRefresh struct {
+	Sender sdk.AccAddress
+}
+
+func (msg MsgMasterKeyRefresh) Route() string { return RouterKey }
+func (msg MsgMasterKeyRefresh) Type() string  { return "MasterKeyRefresh" }
+
+func (msg MsgMasterKeyRefresh) ValidateBasic() error {
+	if msg.Sender == nil {
+		return sdkerrors.ErrInvalidAddress
+	}
+	return nil
+}
+
+func (msg MsgMasterKeyRefresh) GetSignBytes() []byte {
+	bz := ModuleCdc.MustMarshalJSON(msg)
+	return sdk.MustSortJSON(bz)
+}
+
+func (msg MsgMasterKeyRefresh) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{msg.Sender}
 }

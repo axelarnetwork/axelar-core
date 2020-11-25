@@ -1,22 +1,25 @@
 package mock
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/staking/exported"
-	"github.com/tendermint/tendermint/crypto"
 
 	stExported "github.com/axelarnetwork/axelar-core/x/staking/exported"
 )
 
 var _ stExported.Staker = TestStaker{}
-var _ exported.ValidatorI = TestValidator{}
 
 type TestStaker struct {
-	validators map[string]exported.ValidatorI
+	validators map[string]stExported.Validator
 	totalPower int64
 }
 
-func (s TestStaker) IterateValidators(_ sdk.Context, fn func(index int64, validator exported.ValidatorI) (stop bool)) {
+func (s TestStaker) GetLatestSnapshot(_ sdk.Context) (stExported.Snapshot, error) {
+	panic("implement me")
+}
+
+func (s TestStaker) IterateValidators(_ sdk.Context, fn func(index int64, validator stExported.Validator) (stop bool)) {
 	var i int64 = 0
 	for _, v := range s.validators {
 		stop := fn(i, v)
@@ -27,12 +30,12 @@ func (s TestStaker) IterateValidators(_ sdk.Context, fn func(index int64, valida
 	}
 }
 
-func NewTestStaker(validators ...exported.ValidatorI) TestStaker {
-	staker := TestStaker{map[string]exported.ValidatorI{}, 0}
+func NewTestStaker(validators ...stExported.Validator) TestStaker {
+	staker := TestStaker{map[string]stExported.Validator{}, 0}
 
 	for _, val := range validators {
-		staker.validators[val.GetOperator().String()] = val
-		staker.totalPower += val.GetConsensusPower()
+		staker.validators[val.Address.String()] = val
+		staker.totalPower += val.Power
 	}
 	return staker
 }
@@ -41,98 +44,18 @@ func (s TestStaker) GetLastTotalPower(_ sdk.Context) (power sdk.Int) {
 	return sdk.NewInt(s.totalPower)
 }
 
-func (s TestStaker) Validator(_ sdk.Context, address sdk.ValAddress) exported.ValidatorI {
-	return s.validators[address.String()]
-}
-
-type TestValidator struct {
-	power   int64
-	address sdk.ValAddress
-}
-
-func NewTestValidator(addr sdk.ValAddress, votingPower int64) TestValidator {
-	return TestValidator{
-		power:   votingPower,
-		address: addr,
+func (s TestStaker) Validator(_ sdk.Context, address sdk.ValAddress) (stExported.Validator, error) {
+	v, ok := s.validators[address.String()]
+	if !ok {
+		return stExported.Validator{}, fmt.Errorf("validator does not exist")
 	}
+	return v, nil
 }
 
-func (v TestValidator) IsJailed() bool {
-	panic("implement me")
-}
-
-func (v TestValidator) GetMoniker() string {
-	panic("implement me")
-}
-
-func (v TestValidator) GetStatus() sdk.BondStatus {
-	panic("implement me")
-}
-
-func (v TestValidator) IsBonded() bool {
-	panic("implement me")
-}
-
-func (v TestValidator) IsUnbonded() bool {
-	panic("implement me")
-}
-
-func (v TestValidator) IsUnbonding() bool {
-	panic("implement me")
-}
-
-func (v TestValidator) GetOperator() sdk.ValAddress {
-	return v.address
-}
-
-func (v TestValidator) GetConsPubKey() crypto.PubKey {
-	panic("implement me")
-}
-
-func (v TestValidator) GetConsAddr() sdk.ConsAddress {
-	panic("implement me")
-}
-
-func (v TestValidator) GetTokens() sdk.Int {
-	panic("implement me")
-}
-
-func (v TestValidator) GetBondedTokens() sdk.Int {
-	panic("implement me")
-}
-
-func (v TestValidator) GetConsensusPower() int64 {
-	return v.power
-}
-
-func (v TestValidator) GetCommission() sdk.Dec {
-	panic("implement me")
-}
-
-func (v TestValidator) GetMinSelfDelegation() sdk.Int {
-	panic("implement me")
-}
-
-func (v TestValidator) GetDelegatorShares() sdk.Dec {
-	panic("implement me")
-}
-
-func (v TestValidator) TokensFromShares(_ sdk.Dec) sdk.Dec {
-	panic("implement me")
-}
-
-func (v TestValidator) TokensFromSharesTruncated(_ sdk.Dec) sdk.Dec {
-	panic("implement me")
-}
-
-func (v TestValidator) TokensFromSharesRoundUp(_ sdk.Dec) sdk.Dec {
-	panic("implement me")
-}
-
-func (v TestValidator) SharesFromTokens(_ sdk.Int) (sdk.Dec, error) {
-	panic("implement me")
-}
-
-func (v TestValidator) SharesFromTokensTruncated(_ sdk.Int) (sdk.Dec, error) {
-	panic("implement me")
+func (s TestStaker) GetAllValidators(_ sdk.Context) []stExported.Validator {
+	var vals []stExported.Validator
+	for _, v := range s.validators {
+		vals = append(vals, v)
+	}
+	return vals
 }

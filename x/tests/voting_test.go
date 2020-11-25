@@ -68,17 +68,17 @@ var (
 func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 
 	// setting up the test infrastructure
-	val1 := mock.NewTestValidator(sdk.ValAddress("val1"), 100)
-	val2 := mock.NewTestValidator(sdk.ValAddress("val2"), 80)
-	val3 := mock.NewTestValidator(sdk.ValAddress("val3"), 170)
+	val1 := exported.Validator{Address: sdk.ValAddress("val1"), Power: 100}
+	val2 := exported.Validator{Address: sdk.ValAddress("val2"), Power: 80}
+	val3 := exported.Validator{Address: sdk.ValAddress("val3"), Power: 170}
 	staker := mock.NewTestStaker(val1, val2, val3)
 
 	// Choose block size and optionally timeout according to the needs of the test
 	blockChain := mock.NewBlockchain().WithBlockSize(2).WithBlockTimeOut(10 * time.Millisecond)
 
-	b1 := mock.NewBroadcaster(test_utils.Codec(), sdk.AccAddress("broadcaster1"), val1.GetOperator(), blockChain.Input())
-	b2 := mock.NewBroadcaster(test_utils.Codec(), sdk.AccAddress("broadcaster2"), val2.GetOperator(), blockChain.Input())
-	b3 := mock.NewBroadcaster(test_utils.Codec(), sdk.AccAddress("broadcaster3"), val3.GetOperator(), blockChain.Input())
+	b1 := mock.NewBroadcaster(test_utils.Codec(), sdk.AccAddress("broadcaster1"), val1.Address, blockChain.Input())
+	b2 := mock.NewBroadcaster(test_utils.Codec(), sdk.AccAddress("broadcaster2"), val2.Address, blockChain.Input())
+	b3 := mock.NewBroadcaster(test_utils.Codec(), sdk.AccAddress("broadcaster3"), val3.Address, blockChain.Input())
 
 	n1, v1 := newNode("node1", b1, staker)
 	n2, v2 := newNode("node2", b2, staker)
@@ -102,9 +102,9 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 
 	// test begin
 
-	in <- broadcastTypes.NewMsgRegisterProxy(val1.GetOperator(), b1.Proxy)
-	in <- broadcastTypes.NewMsgRegisterProxy(val2.GetOperator(), b2.Proxy)
-	in <- broadcastTypes.NewMsgRegisterProxy(val3.GetOperator(), b3.Proxy)
+	in <- broadcastTypes.NewMsgRegisterProxy(val1.Address, b1.Proxy)
+	in <- broadcastTypes.NewMsgRegisterProxy(val2.Address, b2.Proxy)
+	in <- broadcastTypes.NewMsgRegisterProxy(val3.Address, b3.Proxy)
 
 	for _, msg := range verifyMsgs {
 		in <- msg

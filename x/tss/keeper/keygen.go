@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/cosmos/cosmos-sdk/x/staking/exported"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/tssd/convert"
@@ -14,22 +13,17 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
+	stExported "github.com/axelarnetwork/axelar-core/x/staking/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
-func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
-	k.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d]", info.NewKeyID, info.Threshold))
-
+func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, validators []stExported.Validator) error {
+	k.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d]", keyID, threshold))
+	if _, ok := k.keygenStreams[keyID]; ok {
+		return fmt.Errorf("keygen protocol for ID %s already in progress", keyID)
+	}
 	// BEGIN: validity check
 
-	var validators []exported.ValidatorI
-	fnAppend := func(_ int64, v exported.ValidatorI) (stop bool) { validators = append(validators, v); return false }
-	k.stakingKeeper.IterateValidators(ctx, fnAppend)
-	if info.Threshold < 1 || info.Threshold > len(validators) {
-		err := fmt.Errorf("invalid threshold: %d, validators: %d", info.Threshold, len(validators))
-		k.Logger(ctx).Error(err.Error())
-		return err
-	}
 	if k.broadcaster.GetProxyCount(ctx) != uint32(len(validators)) {
 		// keygen cannot proceed unless all validators have registered broadcast proxies
 		err := fmt.Errorf("not enough proxies registered: proxies: %d; validators: %d", k.broadcaster.GetProxyCount(ctx), len(validators))
@@ -51,8 +45,8 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 	partyUids := make([]string, 0, len(validators))
 	ok, myIndex := false, 0
 	for i, v := range validators {
-		partyUids = append(partyUids, v.GetOperator().String())
-		if v.GetOperator().Equals(myAddress) {
+		partyUids = append(partyUids, v.Address.String())
+		if v.Address.Equals(myAddress) {
 			if ok {
 				err := fmt.Errorf("cosmos bug: my validator address appears multiple times in the validator list: [%s]", myAddress)
 				k.Logger(ctx).Error(err.Error())
@@ -69,19 +63,20 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 
 	// k.Logger(ctx).Debug("initiate tssd gRPC call Keygen")
 	var err error
-	k.keygenStream, err = k.client.Keygen(k.context)
+	grpcCtx, _ := k.newContext()
+	stream, err := k.client.Keygen(grpcCtx)
 	if err != nil {
-		wrapErr := sdkerrors.Wrap(err, "failed tssd gRPC call Keygen")
-		k.Logger(ctx).Error(wrapErr.Error())
+		k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tssd gRPC call Keygen").Error())
 		return nil // don't propagate nondeterministic errors
 	}
+	k.keygenStreams[keyID] = stream
 	// k.Logger(ctx).Debug("successful tssd gRPC call Keygen")
 	// TODO refactor
 	keygenInfo := &tssd.MessageIn{
 		Data: &tssd.MessageIn_KeygenInit{
 			KeygenInit: &tssd.KeygenInit{
-				NewKeyUid:    info.NewKeyID,
-				Threshold:    int32(info.Threshold),
+				NewKeyUid:    keyID,
+				Threshold:    int32(threshold),
 				PartyUids:    partyUids,
 				MyPartyIndex: int32(myIndex),
 			},
@@ -94,7 +89,7 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 	go func(log log.Logger) {
 		// log.Debug("keygen init goroutine: begin")
 		// defer log.Debug("keygen init goroutine: end")
-		if err := k.keygenStream.Send(keygenInfo); err != nil {
+		if err := stream.Send(keygenInfo); err != nil {
 			wrapErr := sdkerrors.Wrap(err, "failed tssd gRPC keygen send keygen init data")
 			log.Error(wrapErr.Error())
 		} else {
@@ -112,8 +107,8 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 		}()
 		for {
 			// log.Debug("handler goroutine: blocking call to gRPC stream Recv...")
-			msgOneof, err := k.keygenStream.Recv() // blocking
-			if err == io.EOF {                     // output stream closed by server
+			msgOneof, err := stream.Recv() // blocking
+			if err == io.EOF {             // output stream closed by server
 				log.Debug("handler goroutine: gRPC stream closed by server")
 				return
 			}
@@ -124,7 +119,7 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 			}
 
 			if msgResult := msgOneof.GetKeygenResult(); msgResult != nil {
-				if err := k.keygenStream.CloseSend(); err != nil {
+				if err := stream.CloseSend(); err != nil {
 					newErr := sdkerrors.Wrap(err, "handler goroutine: failure to CloseSend stream")
 					log.Error(newErr.Error())
 					return
@@ -147,8 +142,14 @@ func (k *Keeper) StartKeygen(ctx sdk.Context, info types.MsgKeygenStart) error {
 				return
 			}
 
-			log.Debug(fmt.Sprintf("handler goroutine: outgoing keygen msg: key [%s] from me [%s] to [%s] broadcast [%t]", info.NewKeyID, myAddress, msg.ToPartyUid, msg.IsBroadcast))
-			tssMsg := types.NewMsgKeygenTraffic(info.NewKeyID, msg)
+			log.Debug(fmt.Sprintf(
+				"handler goroutine: outgoing keygen msg: key [%s] from me [%s] to [%s] broadcast [%t]",
+				keyID,
+				myAddress,
+				msg.ToPartyUid,
+				msg.IsBroadcast,
+			))
+			tssMsg := &types.MsgKeygenTraffic{SessionID: keyID, Payload: msg}
 			if err := k.broadcaster.Broadcast(ctx, []broadcast.MsgWithSenderSetter{tssMsg}); err != nil {
 				newErr := sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing keygen msg")
 				log.Error(newErr.Error())
@@ -216,25 +217,33 @@ func (k Keeper) KeygenMsg(ctx sdk.Context, msg types.MsgKeygenTraffic) error {
 	}
 
 	// k.Logger(ctx).Debug(fmt.Sprintf("initiate forward incoming msg to gRPC server"))
-	if k.keygenStream == nil {
+	stream, ok := k.keygenStreams[msg.SessionID]
+	if !ok {
 		k.Logger(ctx).Error("nil keygenStream")
 		return nil // don't propagate nondeterministic errors
 	}
 
-	k.Logger(ctx).Debug(fmt.Sprintf("Keygen message: forward incoming to tssd: key [%s] from [%s] to [%s] broadcast [%t] me [%s]", msg.SessionID, senderAddress.String(), toAddress.String(), msg.Payload.IsBroadcast, myAddress.String()))
+	k.Logger(ctx).Debug(fmt.Sprintf(
+		"Keygen message: forward incoming to tssd: key [%s] from [%s] to [%s] broadcast [%t] me [%s]",
+		msg.SessionID,
+		senderAddress.String(),
+		toAddress.String(),
+		msg.Payload.IsBroadcast,
+		myAddress.String(),
+	))
 
-	if err := k.keygenStream.Send(msgIn); err != nil {
-		newErr := sdkerrors.Wrap(err, "failure to send incoming msg to gRPC server")
-		k.Logger(ctx).Error(newErr.Error())
+	if err := stream.Send(msgIn); err != nil {
+		k.Logger(ctx).Error(sdkerrors.Wrap(err, "failure to send incoming msg to gRPC server").Error())
 		return nil // don't propagate nondeterministic errors
 	}
 	// k.Logger(ctx).Debug(fmt.Sprintf("successful KeygenMsg: key [%s] ", msg.SessionID))
 	return nil
 }
 
-func (k Keeper) GetKey(ctx sdk.Context, keyUid string) (ecdsa.PublicKey, error) {
+func (k Keeper) GetKey(_ sdk.Context, keyUid string) (ecdsa.PublicKey, error) {
+	ctx, _ := k.newContext()
 	pubkeyBytes, err := k.client.GetKey(
-		k.context,
+		ctx,
 		&tssd.Uid{
 			Uid: keyUid,
 		},
@@ -243,4 +252,8 @@ func (k Keeper) GetKey(ctx sdk.Context, keyUid string) (ecdsa.PublicKey, error) 
 		return ecdsa.PublicKey{}, sdkerrors.Wrapf(err, "failure gRPC get key [%s]", keyUid)
 	}
 	return convert.BytesToPubkey(pubkeyBytes.Payload)
+}
+
+func (k Keeper) StartKeyRefresh(ctx sdk.Context, validators []stExported.Validator) error {
+	panic("implement me")
 }

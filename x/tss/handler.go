@@ -3,13 +3,14 @@ package tss
 import (
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
-	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
+	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
-func NewHandler(k keeper.Keeper) sdk.Handler {
+func NewHandler(k keeper.Keeper, s types.Staker) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
@@ -18,14 +19,39 @@ func NewHandler(k keeper.Keeper) sdk.Handler {
 		case types.MsgSignTraffic:
 			return handleMsgSignTraffic(ctx, k, msg)
 		case types.MsgKeygenStart:
-			return handleMsgKeygenStart(ctx, &k, msg)
+			return handleMsgKeygenStart(ctx, k, s, msg)
 		case types.MsgSignStart:
-			return handleMsgSignStart(ctx, &k, msg)
+			return handleMsgSignStart(ctx, k, msg)
+		case types.MsgMasterKeyRefresh:
+			return handleMsgMasterKeyRefresh(ctx, k, s, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
 		}
 	}
+}
+
+func handleMsgMasterKeyRefresh(ctx sdk.Context, k keeper.Keeper, s types.Staker, msg types.MsgMasterKeyRefresh) (*sdk.Result, error) {
+	snapshot, err := s.GetLatestSnapshot(ctx)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "key refresh failed")
+	}
+	if k.IsKeyRefreshLocked(ctx, snapshot.Timestamp) {
+		return nil, fmt.Errorf("key refresh locked")
+	}
+
+	if err := k.StartKeyRefresh(ctx, snapshot.Validators); err != nil {
+		return nil, sdkerrors.Wrap(err, "key refresh failed")
+	}
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+		),
+	)
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
 func handleMsgKeygenTraffic(ctx sdk.Context, k keeper.Keeper, msg types.MsgKeygenTraffic) (*sdk.Result, error) {
@@ -44,9 +70,19 @@ func handleMsgKeygenTraffic(ctx sdk.Context, k keeper.Keeper, msg types.MsgKeyge
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-// k passed by reference because StartKeygen needs a pointer receiver to write state
-func handleMsgKeygenStart(ctx sdk.Context, k *keeper.Keeper, msg types.MsgKeygenStart) (*sdk.Result, error) {
-	if err := k.StartKeygen(ctx, msg); err != nil {
+func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Staker, msg types.MsgKeygenStart) (*sdk.Result, error) {
+	snapshot, err := s.GetLatestSnapshot(ctx)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "key refresh failed")
+	}
+
+	if msg.Threshold < 1 || msg.Threshold > len(snapshot.Validators) {
+		err := fmt.Errorf("invalid threshold: %d, validators: %d", msg.Threshold, len(snapshot.Validators))
+		k.Logger(ctx).Error(err.Error())
+		return nil, err
+	}
+
+	if err := k.StartKeygen(ctx, msg.NewKeyID, msg.Threshold, snapshot.Validators); err != nil {
 		return nil, err
 	}
 	ctx.EventManager().EmitEvent(
@@ -61,8 +97,7 @@ func handleMsgKeygenStart(ctx sdk.Context, k *keeper.Keeper, msg types.MsgKeygen
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-// k passed by reference because StartSign needs a pointer receiver to write state
-func handleMsgSignStart(ctx sdk.Context, k *keeper.Keeper, msg types.MsgSignStart) (*sdk.Result, error) {
+func handleMsgSignStart(ctx sdk.Context, k keeper.Keeper, msg types.MsgSignStart) (*sdk.Result, error) {
 	if err := k.StartSign(ctx, msg); err != nil {
 		return nil, err
 	}

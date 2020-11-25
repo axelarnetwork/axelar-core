@@ -7,70 +7,53 @@ import (
 
 	tssd "github.com/axelarnetwork/tssd/pb"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/tendermint/tendermint/libs/log"
-	"google.golang.org/grpc"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
+)
+
+const (
+	lockingPeriodKey = "lockingPeriod"
 )
 
 type Keeper struct {
 	broadcaster   types.Broadcaster
 	stakingKeeper types.Staker // needed only for `GetAllValidators`
 	client        tssd.GG18Client
-	keygenStream  tssd.GG18_KeygenClient // TODO support multiple concurrent sessions
-	signStream    tssd.GG18_SignClient   // TODO support multiple concurrent sessions
-
-	// TODO cruft for grpc; can we get rid of this?
-	connection        *grpc.ClientConn
-	context           context.Context
-	contextCancelFunc context.CancelFunc
+	keygenStreams map[string]tssd.GG18_KeygenClient
+	signStreams   map[string]tssd.GG18_SignClient
+	paramSpace    params.Subspace
 }
 
-func NewKeeper(conf types.TssdConfig, logger log.Logger, broadcaster types.Broadcaster, staking types.Staker) (Keeper, error) {
-	logger = prepareLogger(logger)
-
-	// TODO don't start gRPC unless I'm a validator?
-	// start a gRPC client
-	tssdServerAddress := conf.Host + ":" + conf.Port
-	logger.Info(fmt.Sprintf("initiate connection to tssd gRPC server: %s", tssdServerAddress))
-	conn, err := grpc.Dial(tssdServerAddress, grpc.WithInsecure(), grpc.WithBlock())
-	if err != nil {
-		return Keeper{}, err
-	}
-	logger.Debug("successful connection to tssd gRPC server")
-	client := tssd.NewGG18Client(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Hour) // TODO config file
-
+func NewKeeper(client tssd.GG18Client, paramSpace params.Subspace, broadcaster types.Broadcaster, staking types.Staker) Keeper {
 	return Keeper{
-		broadcaster:       broadcaster,
-		stakingKeeper:     staking,
-		client:            client,
-		connection:        conn,
-		context:           ctx,
-		contextCancelFunc: cancel,
-	}, nil
-}
-
-func prepareLogger(logger log.Logger) log.Logger {
-	return logger.With("module", fmt.Sprintf("x/%s", types.ModuleName))
+		broadcaster:   broadcaster,
+		stakingKeeper: staking,
+		client:        client,
+		keygenStreams: map[string]tssd.GG18_KeygenClient{},
+		signStreams:   map[string]tssd.GG18_SignClient{},
+		paramSpace:    paramSpace,
+	}
 }
 
 // Logger returns a module-specific logger
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {
-	return prepareLogger(ctx.Logger())
+	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-func (k Keeper) Close(logger log.Logger) error {
-	logger = prepareLogger(logger)
-	logger.Debug(fmt.Sprintf("initiate Close"))
-	k.contextCancelFunc()
-	if err := k.connection.Close(); err != nil {
-		wrapErr := sdkerrors.Wrap(err, "failure to close connection to server")
-		//goland:noinspection GoNilness
-		logger.Error(wrapErr.Error())
-		return wrapErr
-	}
-	logger.Debug(fmt.Sprintf("successful Close"))
-	return nil
+// need to create a new context for every new protocol start
+func (k Keeper) newContext() (context.Context, context.CancelFunc) {
+	// TODO: make timeout a config parameter?
+	return context.WithTimeout(context.Background(), 2*time.Hour)
+}
+
+func (k Keeper) IsKeyRefreshLocked(ctx sdk.Context, snapshotTime time.Time) bool {
+	lp := k.lockingPeriod(ctx)
+	return snapshotTime.Add(lp).Before(ctx.BlockTime())
+}
+
+func (k Keeper) lockingPeriod(ctx sdk.Context) (lockingPeriod time.Duration) {
+	k.paramSpace.Get(ctx, []byte(lockingPeriodKey), &lockingPeriod)
+	return
 }

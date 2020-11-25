@@ -4,6 +4,7 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/staking/exported"
 )
 
 type Validator struct {
@@ -18,11 +19,17 @@ type Snapshot struct {
 	TotalPower sdk.Int     `json:"totalpower"`
 }
 
+type SnapshotInfo struct {
+	BlockHeight int64
+	Validators  exported.ValidatorI
+	Time        time.Time
+}
+
 type Staker interface {
 	GetLastTotalPower(ctx sdk.Context) (power sdk.Int)
-	Validator(ctx sdk.Context, address sdk.ValAddress) Validator
+	Validator(ctx sdk.Context, address sdk.ValAddress) (Validator, error)
 	// TODO: check if this is actually the correct function we need (e.g. do we need only bonded?)
 	IterateValidators(ctx sdk.Context, fn func(index int64, validator Validator) (stop bool))
 
-	GetLatestSnapshot(ctx sdk.Context) Snapshot
+	GetLatestSnapshot(ctx sdk.Context) (Snapshot, error)
 }

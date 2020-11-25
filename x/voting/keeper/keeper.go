@@ -146,8 +146,8 @@ func (k Keeper) TallyVote(ctx sdk.Context, vote exported.MsgVote) error {
 		k.Logger(ctx).Error(err.Error())
 		return err
 	}
-	validator := k.staker.Validator(ctx, valAddress)
-	if validator == nil {
+	validator, err := k.staker.Validator(ctx, valAddress)
+	if err != nil {
 		return fmt.Errorf("address does not belong to an account in the validator set")
 	}
 
@@ -171,7 +171,7 @@ func (k Keeper) TallyVote(ctx sdk.Context, vote exported.MsgVote) error {
 	i := k.getTalliedVoteIdx(ctx, vote)
 	if i == indexNotFound {
 		talliedVote = types.TalliedVote{
-			Tally: sdk.NewInt(validator.GetConsensusPower()),
+			Tally: sdk.NewInt(validator.Power),
 			Data:  vote.Data(),
 		}
 
@@ -179,7 +179,7 @@ func (k Keeper) TallyVote(ctx sdk.Context, vote exported.MsgVote) error {
 		k.setTalliedVoteIdx(ctx, vote, len(poll.Votes)-1)
 	} else {
 		talliedVote = poll.Votes[i]
-		talliedVote.Tally = talliedVote.Tally.AddRaw(validator.GetConsensusPower())
+		talliedVote.Tally = talliedVote.Tally.AddRaw(validator.Power)
 	}
 
 	threshold := k.GetVotingThreshold(ctx)

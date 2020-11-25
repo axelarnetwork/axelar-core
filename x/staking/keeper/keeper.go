@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/axelarnetwork/axelar-core/x/staking/exported"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/axelarnetwork/axelar-core/x/staking/types"
+	"github.com/axelarnetwork/axelar-core/x/staking/exported"
+
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	sdkExported "github.com/cosmos/cosmos-sdk/x/staking/exported"
+
+	"github.com/axelarnetwork/axelar-core/x/staking/types"
 
 	"github.com/tendermint/tendermint/libs/log"
 )
@@ -18,8 +20,8 @@ import (
 const lastRound = "lastRound"
 const roundPrefix = "r-"
 
-//for now, have a small interval between rounds
-//const interval = 7 * 24 * time.Hour
+// for now, have a small interval between rounds
+// const interval = 7 * 24 * time.Hour
 const interval = 10 * time.Second
 
 type Keeper struct {
@@ -28,15 +30,25 @@ type Keeper struct {
 	cdc      *codec.Codec
 }
 
-// NewKeeper creates a new keeper for the staking module
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, staking staking.Keeper) (Keeper, error) {
+func (k Keeper) GetLastTotalPower(ctx sdk.Context) (power sdk.Int) {
+	panic("implement me")
+}
 
+func (k Keeper) Validator(ctx sdk.Context, address sdk.ValAddress) (exported.Validator, error) {
+	panic("implement me")
+}
+
+func (k Keeper) IterateValidators(ctx sdk.Context, fn func(index int64, validator exported.Validator) (stop bool)) {
+	panic("implement me")
+}
+
+// NewKeeper creates a new keeper for the staking module
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, staking staking.Keeper) Keeper {
 	return Keeper{
 		storeKey: key,
 		cdc:      cdc,
 		staking:  staking,
-	}, nil
-
+	}
 }
 
 // TakeSnapshot attempts to create a new snapshot
@@ -71,7 +83,7 @@ func (k Keeper) TakeSnapshot(ctx sdk.Context) error {
 }
 
 // GetLastSnapshot retrieves the last created snapshot
-func (k Keeper) GetLastSnapshot(ctx sdk.Context) (exported.Snapshot, error) {
+func (k Keeper) GetLatestSnapshot(ctx sdk.Context) (exported.Snapshot, error) {
 
 	r := k.getLastRound(ctx)
 

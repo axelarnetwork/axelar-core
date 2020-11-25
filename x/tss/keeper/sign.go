@@ -5,7 +5,6 @@ import (
 	"io"
 	"math/big"
 
-	"github.com/cosmos/cosmos-sdk/x/staking/exported"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/tssd/convert"
@@ -14,19 +13,24 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
+	stExported "github.com/axelarnetwork/axelar-core/x/staking/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 // StartSign TODO refactor code copied from StartKeygen
-func (k *Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
+func (k Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
+	if _, ok := k.signStreams[info.NewSigID]; ok {
+		return fmt.Errorf("signing protocol for ID %s already in progress", info.NewSigID)
+	}
+
 	k.Logger(ctx).Info(fmt.Sprintf("new Sign: sig_id [%s] key_id [%s] message [%s]", info.NewSigID, info.KeyID, string(info.MsgToSign)))
 
 	// TODO do validity check here, everything else in a separate func win no return value to enforce that we return only nil after the validity check has passed
 	// BEGIN: validity check
 
 	// TODO for now assume all validators participate
-	var validators []exported.ValidatorI
-	fnAppend := func(_ int64, v exported.ValidatorI) (stop bool) { validators = append(validators, v); return false }
+	var validators []stExported.Validator
+	fnAppend := func(_ int64, v stExported.Validator) (stop bool) { validators = append(validators, v); return false }
 	k.stakingKeeper.IterateValidators(ctx, fnAppend)
 	if k.broadcaster.GetProxyCount(ctx) != uint32(len(validators)) {
 		// sign cannot proceed unless all validators have registered broadcast proxies
@@ -47,17 +51,18 @@ func (k *Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
 	// build partyUids by converting validators into a []string
 	partyUids := make([]string, 0, len(validators))
 	for _, v := range validators {
-		partyUids = append(partyUids, v.GetOperator().String())
+		partyUids = append(partyUids, v.Address.String())
 	}
 
 	// k.Logger(ctx).Debug("initiate tssd gRPC call Sign")
-	var err error
-	k.signStream, err = k.client.Sign(k.context)
+	grpcCtx, _ := k.newContext()
+	stream, err := k.client.Sign(grpcCtx)
 	if err != nil {
 		wrapErr := sdkerrors.Wrap(err, "failed tssd gRPC call Sign")
 		k.Logger(ctx).Error(wrapErr.Error())
 		return nil // don't propagate nondeterministic errors
 	}
+	k.signStreams[info.NewSigID] = stream
 	// k.Logger(ctx).Debug("successful tssd gRPC call Sign")
 
 	// TODO refactor
@@ -78,7 +83,7 @@ func (k *Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
 	go func(log log.Logger) {
 		// log.Debug("sign init goroutine: begin")
 		// defer log.Debug("sign init goroutine: end")
-		if err := k.signStream.Send(signInfo); err != nil {
+		if err := stream.Send(signInfo); err != nil {
 			wrapErr := sdkerrors.Wrap(err, "failed tssd gRPC sign send sign init data")
 			log.Error(wrapErr.Error())
 		} else {
@@ -96,8 +101,8 @@ func (k *Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
 		}()
 		for {
 			// log.Debug("handler goroutine: blocking call to gRPC stream Recv...")
-			msgOneof, err := k.signStream.Recv() // blocking
-			if err == io.EOF {                   // output stream closed by server
+			msgOneof, err := stream.Recv() // blocking
+			if err == io.EOF {             // output stream closed by server
 				log.Debug("handler goroutine: gRPC stream closed by server")
 				return
 			}
@@ -108,7 +113,7 @@ func (k *Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
 			}
 
 			if msgResult := msgOneof.GetSignResult(); msgResult != nil {
-				if err := k.signStream.CloseSend(); err != nil {
+				if err := stream.CloseSend(); err != nil {
 					newErr := sdkerrors.Wrap(err, "handler goroutine: failure to CloseSend stream")
 					log.Error(newErr.Error())
 					return
@@ -132,7 +137,8 @@ func (k *Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
 			}
 
 			log.Debug(fmt.Sprintf("handler goroutine: outgoing sign msg: sig_id [%s] from me [%s] broadcast? [%t] to [%s]", info.NewSigID, myAddress, msg.IsBroadcast, msg.ToPartyUid))
-			tssMsg := types.NewMsgSignTraffic(info.NewSigID, msg)
+			// sender is set by broadcaster
+			tssMsg := &types.MsgSignTraffic{SessionID: info.NewSigID, Payload: msg}
 			if err := k.broadcaster.Broadcast(ctx, []broadcast.MsgWithSenderSetter{tssMsg}); err != nil {
 				newErr := sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing sign msg")
 				log.Error(newErr.Error())
@@ -202,14 +208,15 @@ func (k Keeper) SignMsg(ctx sdk.Context, msg types.MsgSignTraffic) error {
 	}
 
 	// k.Logger(ctx).Debug(fmt.Sprintf("initiate forward incoming msg to gRPC server"))
-	if k.signStream == nil {
+	stream, ok := k.signStreams[msg.SessionID]
+	if !ok {
 		k.Logger(ctx).Error("nil signStream")
 		return nil // don't propagate nondeterministic errors
 	}
 
 	k.Logger(ctx).Debug(fmt.Sprintf("Sign message: forward incoming to tssd: sig [%s] from [%s] to [%s] broadcast [%t] me [%s]", msg.SessionID, senderAddress.String(), toAddress.String(), msg.Payload.IsBroadcast, myAddress.String()))
 
-	if err := k.signStream.Send(msgIn); err != nil {
+	if err := stream.Send(msgIn); err != nil {
 		newErr := sdkerrors.Wrap(err, "failure to send incoming msg to gRPC server")
 		k.Logger(ctx).Error(newErr.Error())
 		return nil // don't propagate nondeterministic errors
@@ -220,13 +227,9 @@ func (k Keeper) SignMsg(ctx sdk.Context, msg types.MsgSignTraffic) error {
 
 // GetSig returns the signature associated with sigID
 // or nil, nil if no such signature exists
-func (k Keeper) GetSig(ctx sdk.Context, sigUid string) (r *big.Int, s *big.Int, e error) {
-	sigBytes, err := k.client.GetSig(
-		k.context,
-		&tssd.Uid{
-			Uid: sigUid,
-		},
-	)
+func (k Keeper) GetSig(_ sdk.Context, sigUid string) (r *big.Int, s *big.Int, e error) {
+	ctx, _ := k.newContext()
+	sigBytes, err := k.client.GetSig(ctx, &tssd.Uid{Uid: sigUid})
 	if err != nil {
 		return nil, nil, sdkerrors.Wrapf(err, "failure gRPC get sig [%s]", sigUid)
 	}
