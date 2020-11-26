@@ -9,7 +9,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/staking/exported"
 
-	"github.com/cosmos/cosmos-sdk/x/staking"
+	//"github.com/cosmos/cosmos-sdk/x/staking"
 	sdkExported "github.com/cosmos/cosmos-sdk/x/staking/exported"
 
 	"github.com/axelarnetwork/axelar-core/x/staking/types"
@@ -29,8 +29,19 @@ var _ exported.Staker = Keeper{}
 
 type Keeper struct {
 	storeKey sdk.StoreKey
-	staking  staking.Keeper
+	staking  types.StakingKeeper
 	cdc      *codec.Codec
+}
+
+// NewKeeper creates a new keeper for the staking module
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, staking types.StakingKeeper) Keeper {
+
+	return Keeper{
+		storeKey: key,
+		cdc:      cdc,
+		staking:  staking,
+	}
+
 }
 
 func (k Keeper) GetLastTotalPower(ctx sdk.Context) (power sdk.Int) {
@@ -70,15 +81,6 @@ func (k Keeper) IterateValidators(ctx sdk.Context, fn func(_ int64, _ exported.V
 
 	k.staking.IterateValidators(ctx, fnPrepared)
 
-}
-
-// NewKeeper creates a new keeper for the staking module
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, staking staking.Keeper) Keeper {
-	return Keeper{
-		storeKey: key,
-		cdc:      cdc,
-		staking:  staking,
-	}
 }
 
 // TakeSnapshot attempts to create a new snapshot
@@ -174,6 +176,7 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, nextRound int64) {
 		TotalPower: k.staking.GetLastTotalPower(ctx),
 	}
 
+	k.setLastRound(ctx, nextRound)
 	ctx.KVStore(k.storeKey).Set([]byte(roundKey(nextRound)), k.cdc.MustMarshalBinaryLengthPrefixed(snapshot))
 
 }
