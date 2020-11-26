@@ -13,6 +13,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/store"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/mock"
+	"github.com/axelarnetwork/axelar-core/utils"
 	bcExported "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	stExported "github.com/axelarnetwork/axelar-core/x/staking/exported"
 	"github.com/axelarnetwork/axelar-core/x/voting/exported"
@@ -49,12 +50,16 @@ func newBroadcaster() (mock.Broadcaster, <-chan sdk.Msg) {
 func TestKeeper(t *testing.T) {
 	t.Run("no error on initializing new poll", func(t *testing.T) { initPollNoError(t) })
 	t.Run("error when initializing poll with same id as existing poll", func(t *testing.T) { initPollSameIdReturnError(t) })
+
+	t.Run("vote on []byte data", func(t *testing.T) { voteOnBytes(t) })
+
 	t.Run("error when voting for unknown poll, no polls initialized", func(t *testing.T) { voteNoPollsReturnError(t) })
 	t.Run("error when voting where poll id matches none of the existing polls", func(t *testing.T) { votePollIdMismatchReturnError(t) })
 	t.Run("vote for existing poll is added to next ballot, exactly one message", func(t *testing.T) { voteOnNextBallot(t) })
 	t.Run("votes that are part of one ballot will not be added to consecutive ballots", func(t *testing.T) { votesNotRepeatedInConsecutiveBallots(t) })
 	t.Run("error when voting on same poll multiple times", func(t *testing.T) { voteMultipleTimesReturnError(t) })
 	t.Run("send no ballot when there are no votes", func(t *testing.T) { noVotesNoBallot(t) })
+
 	t.Run("error when tallying non-existing poll", func(t *testing.T) { tallyNonExistingPollReturnError(t) })
 	t.Run("error when tallied vote comes from unauthorized voter", func(t *testing.T) { tallyUnknownVoterReturnError(t) })
 	t.Run("error when tallying second vote from same validator", func(t *testing.T) { tallyTwoVotesFromSameValidatorReturnError(t) })
@@ -76,6 +81,28 @@ func initPollSameIdReturnError(t *testing.T) {
 
 	assert.NoError(t, k.InitPoll(ctx, poll1))
 	assert.Error(t, k.InitPoll(ctx, poll1))
+}
+
+func voteOnBytes(t *testing.T) {
+	b, msgs := newBroadcaster()
+	k := newKeeper(b)
+	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	v1 := voteForPoll1
+	v1.VotingData = []byte("some test data")
+
+	assert.NoError(t, k.InitPoll(ctx, poll1))
+	assert.NoError(t, k.Vote(ctx, v1))
+	k.SendBallot(ctx)
+
+	timeout, _ := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	select {
+	case <-timeout.Done():
+		assert.FailNow(t, "no message received")
+	case m := <-msgs:
+		assert.IsType(t, types.MsgBallot{}, m)
+		assert.Len(t, m.(types.MsgBallot).Votes, 1)
+		assert.Equal(t, v1.VotingData, m.(types.MsgBallot).Votes[0].Data())
+	}
 }
 
 func voteNoPollsReturnError(t *testing.T) {
@@ -219,7 +246,7 @@ func tallyNonExistingPollReturnError(t *testing.T) {
 	b, _ := newBroadcaster()
 	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), b.Proxy))
 	k := newKeeper(b, stExported.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10})
-	k.SetVotingThreshold(ctx, types.VotingThreshold{Numerator: 2, Denominator: 3})
+	k.SetVotingThreshold(ctx, utils.Threshold{Numerator: 2, Denominator: 3})
 
 	assert.NoError(t, k.InitPoll(ctx, poll1))
 
@@ -235,7 +262,7 @@ func tallyUnknownVoterReturnError(t *testing.T) {
 	b, _ := newBroadcaster()
 	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), b.Proxy))
 	k := newKeeper(b, stExported.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10})
-	k.SetVotingThreshold(ctx, types.VotingThreshold{Numerator: 2, Denominator: 3})
+	k.SetVotingThreshold(ctx, utils.Threshold{Numerator: 2, Denominator: 3})
 
 	assert.NoError(t, k.InitPoll(ctx, poll1))
 
@@ -255,7 +282,7 @@ func tallyNoWinner(t *testing.T) {
 		stExported.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10},
 		stExported.Validator{Address: sdk.ValAddress("big spender"), Power: 90},
 	)
-	k.SetVotingThreshold(ctx, types.VotingThreshold{Numerator: 2, Denominator: 3})
+	k.SetVotingThreshold(ctx, utils.Threshold{Numerator: 2, Denominator: 3})
 
 	assert.NoError(t, k.InitPoll(ctx, poll1))
 
@@ -277,7 +304,7 @@ func tallyWithWinner(t *testing.T) {
 		stExported.Validator{Address: b.GetLocalPrincipal(ctx), Power: 90},
 		stExported.Validator{Address: sdk.ValAddress("small fish"), Power: 10},
 	)
-	k.SetVotingThreshold(ctx, types.VotingThreshold{Numerator: 2, Denominator: 3})
+	k.SetVotingThreshold(ctx, utils.Threshold{Numerator: 2, Denominator: 3})
 
 	assert.NoError(t, k.InitPoll(ctx, poll1))
 
@@ -296,7 +323,7 @@ func tallyTwoVotesFromSameValidatorReturnError(t *testing.T) {
 	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), b.Proxy))
 	validator := stExported.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10}
 	k := newKeeper(b, validator)
-	k.SetVotingThreshold(ctx, types.VotingThreshold{Numerator: 2, Denominator: 3})
+	k.SetVotingThreshold(ctx, utils.Threshold{Numerator: 2, Denominator: 3})
 
 	// copy to not overwrite defaults
 	v1 := *voteForPoll1
@@ -338,7 +365,7 @@ func tallyMultipleVotesUntilDecision(t *testing.T) {
 	assert.NoError(t, b.RegisterProxy(ctx, val3.Address, proxy3))
 
 	k := newKeeper(b, val1, val2, val3)
-	k.SetVotingThreshold(ctx, types.VotingThreshold{Numerator: 2, Denominator: 3})
+	k.SetVotingThreshold(ctx, utils.Threshold{Numerator: 2, Denominator: 3})
 
 	assert.NoError(t, k.InitPoll(ctx, poll1))
 
@@ -383,7 +410,7 @@ func tallyForDecidedPoll(t *testing.T) {
 	assert.NoError(t, b.RegisterProxy(ctx, val3.Address, proxy3))
 
 	k := newKeeper(b, val1, val2, val3)
-	k.SetVotingThreshold(ctx, types.VotingThreshold{Numerator: 2, Denominator: 3})
+	k.SetVotingThreshold(ctx, utils.Threshold{Numerator: 2, Denominator: 3})
 
 	assert.NoError(t, k.InitPoll(ctx, poll1))
 

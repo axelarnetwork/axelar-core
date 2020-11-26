@@ -47,7 +47,7 @@ import (
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/axelarnetwork/axelar-core/x/voting"
 	vKeeper "github.com/axelarnetwork/axelar-core/x/voting/keeper"
-	vTypes "github.com/axelarnetwork/axelar-core/x/voting/types"
+	votingTypes "github.com/axelarnetwork/axelar-core/x/voting/types"
 )
 
 const (
@@ -147,7 +147,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 
 	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
 		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey,
-		vTypes.StoreKey, broadcastTypes.StoreKey, btcTypes.StoreKey, stakingTypes.StoreKey)
+		votingTypes.StoreKey, broadcastTypes.StoreKey, btcTypes.StoreKey, stakingTypes.StoreKey, tssTypes.StoreKey)
 
 	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
@@ -253,7 +253,9 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	logger.Debug("successful connection to tssd gRPC server")
 
 	client := tssd.NewGG18Client(conn)
-	app.tssKeeper = tssKeeper.NewKeeper(client, tssSubspace, app.broadcastKeeper, app.axStakingKeeper)
+	app.tssKeeper = tssKeeper.NewKeeper(keys[tssTypes.StoreKey], client, tssSubspace,
+		app.broadcastKeeper, app.axStakingKeeper, app.votingKeeper,
+	)
 
 	// Clean up tss grpc connection on process shutdown
 	tmos.TrapSignal(logger, func() {
@@ -265,7 +267,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		logger.Debug("successful Close")
 	})
 
-	app.votingKeeper = vKeeper.NewKeeper(app.cdc, keys[vTypes.StoreKey], store.NewSubjectiveStore(), app.axStakingKeeper, app.broadcastKeeper)
+	app.votingKeeper = vKeeper.NewKeeper(app.cdc, keys[votingTypes.StoreKey], store.NewSubjectiveStore(), app.axStakingKeeper, app.broadcastKeeper)
 
 	// Enable running a node with or without a Bitcoin bridge
 	var rpc *rpcclient.Client
@@ -293,7 +295,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 
-		tss.NewAppModule(app.tssKeeper, app.axStakingKeeper),
+		tss.NewAppModule(app.tssKeeper, app.axStakingKeeper, app.votingKeeper),
 		voting.NewAppModule(app.votingKeeper, app.Router()),
 		broadcast.NewAppModule(app.broadcastKeeper),
 		btcModule,
@@ -303,7 +305,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	// there is nothing left over in the validator fee pool, so as to keep the
 	// CanWithdrawInvariant invariant.
 	app.mm.SetOrderBeginBlockers(distr.ModuleName, slashing.ModuleName)
-	app.mm.SetOrderEndBlockers(staking.ModuleName, vTypes.ModuleName)
+	app.mm.SetOrderEndBlockers(staking.ModuleName, votingTypes.ModuleName)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	// NOTE: The genutils moodule must occur after staking so that pools are
@@ -317,7 +319,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		tssTypes.ModuleName,
 		btcTypes.ModuleName,
 		broadcastTypes.ModuleName,
-		vTypes.ModuleName,
+		votingTypes.ModuleName,
 		supply.ModuleName,
 		genutil.ModuleName,
 	)

@@ -2,6 +2,7 @@ package tss
 
 import (
 	"fmt"
+	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -10,7 +11,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
-func NewHandler(k keeper.Keeper, s types.Staker) sdk.Handler {
+func NewHandler(k keeper.Keeper, s types.Staker, v types.Voter) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
@@ -24,6 +25,8 @@ func NewHandler(k keeper.Keeper, s types.Staker) sdk.Handler {
 			return handleMsgSignStart(ctx, k, msg)
 		case types.MsgMasterKeyRefresh:
 			return handleMsgMasterKeyRefresh(ctx, k, s, msg)
+		case types.MsgVotePubKey:
+			return handleMsgVotePubKey(ctx, k, v, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
@@ -31,16 +34,36 @@ func NewHandler(k keeper.Keeper, s types.Staker) sdk.Handler {
 	}
 }
 
+func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.MsgVotePubKey) (*sdk.Result, error) {
+	if err := v.TallyVote(ctx, &msg); err != nil {
+		return nil, err
+	}
+	event := sdk.NewEvent(
+		sdk.EventTypeMessage,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+		sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+		sdk.NewAttribute(types.AttributePoll, msg.PollMeta.String()),
+		sdk.NewAttribute(types.AttributeKeyPayload, string(msg.PubKeyBytes)),
+	)
+	if vote := v.Result(ctx, msg.PollMeta); vote != nil {
+		k.SetPubkey(ctx, msg.PollMeta.ID, msg.PubKeyBytes)
+		event = event.AppendAttributes(sdk.NewAttribute(types.AttributePollDecided, strconv.FormatBool(true)))
+	}
+
+	ctx.EventManager().EmitEvent(event.AppendAttributes())
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+}
+
 func handleMsgMasterKeyRefresh(ctx sdk.Context, k keeper.Keeper, s types.Staker, msg types.MsgMasterKeyRefresh) (*sdk.Result, error) {
 	snapshot, err := s.GetLatestSnapshot(ctx)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "key refresh failed")
 	}
-	if k.IsKeyRefreshLocked(ctx, snapshot.Timestamp) {
+	if k.IsKeyRefreshLocked(ctx, snapshot.Height) {
 		return nil, fmt.Errorf("key refresh locked")
 	}
 
-	if err := k.StartKeyRefresh(ctx, snapshot.Validators); err != nil {
+	if err := k.StartKeyRefresh(ctx, msg.Chain, snapshot.Validators); err != nil {
 		return nil, sdkerrors.Wrap(err, "key refresh failed")
 	}
 

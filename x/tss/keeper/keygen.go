@@ -15,9 +15,21 @@ import (
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	stExported "github.com/axelarnetwork/axelar-core/x/staking/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
+	"github.com/axelarnetwork/axelar-core/x/voting/exported"
 )
 
+const (
+	regularKeyPrefix = "regular_"
+	masterKeyPrefix  = "master_"
+)
+
+// StartKeygen starts a keygen protocol with the specified parameters
 func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, validators []stExported.Validator) error {
+	// add the keyID prefix so it can never get in conflict with the master keygen
+	return k.startKeygen(ctx, regularKeyPrefix+keyID, threshold, validators)
+}
+
+func (k Keeper) startKeygen(ctx sdk.Context, keyID string, threshold int, validators []stExported.Validator) error {
 	k.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d]", keyID, threshold))
 	if _, ok := k.keygenStreams[keyID]; ok {
 		return fmt.Errorf("keygen protocol for ID %s already in progress", keyID)
@@ -90,8 +102,7 @@ func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, valida
 		// log.Debug("keygen init goroutine: begin")
 		// defer log.Debug("keygen init goroutine: end")
 		if err := stream.Send(keygenInfo); err != nil {
-			wrapErr := sdkerrors.Wrap(err, "failed tssd gRPC keygen send keygen init data")
-			log.Error(wrapErr.Error())
+			log.Error(sdkerrors.Wrap(err, "failed tssd gRPC keygen send keygen init data").Error())
 		} else {
 			// log.Debug("successful tssd gRPC keygen init goroutine")
 		}
@@ -130,8 +141,13 @@ func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, valida
 					log.Error(newErr.Error())
 					return
 				}
-				// TODO do something with the pubkey
+
 				log.Info(fmt.Sprintf("handler goroutine: received pubkey from server! [%v]", pubkey))
+				if err := k.voter.Vote(ctx, &types.MsgVotePubKey{PubKeyBytes: msgResult}); err != nil {
+					log.Error(err.Error())
+					return
+				}
+
 				return
 			}
 
@@ -188,8 +204,8 @@ func (k Keeper) KeygenMsg(ctx sdk.Context, msg types.MsgKeygenTraffic) error {
 	}
 	toAddress, err := sdk.ValAddressFromBech32(msg.Payload.ToPartyUid)
 	if err != nil {
-		newErr := sdkerrors.Wrap(err, fmt.Sprintf("failed to parse [%s] into a validator address", msg.Payload.ToPartyUid))
-		k.Logger(ctx).Error(newErr.Error())
+		k.Logger(ctx).Error(sdkerrors.Wrap(err, fmt.Sprintf("failed to parse [%s] into a validator address",
+			msg.Payload.ToPartyUid)).Error())
 		return nil
 	}
 	if toAddress.String() != msg.Payload.ToPartyUid {
@@ -240,20 +256,31 @@ func (k Keeper) KeygenMsg(ctx sdk.Context, msg types.MsgKeygenTraffic) error {
 	return nil
 }
 
-func (k Keeper) GetKey(_ sdk.Context, keyUid string) (ecdsa.PublicKey, error) {
-	ctx, _ := k.newContext()
-	pubkeyBytes, err := k.client.GetKey(
-		ctx,
-		&tssd.Uid{
-			Uid: keyUid,
-		},
-	)
-	if err != nil {
-		return ecdsa.PublicKey{}, sdkerrors.Wrapf(err, "failure gRPC get key [%s]", keyUid)
-	}
-	return convert.BytesToPubkey(pubkeyBytes.Payload)
+func (k Keeper) GetKey(ctx sdk.Context, keyID string) (ecdsa.PublicKey, error) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(keyID))
+	return convert.BytesToPubkey(bz)
 }
 
-func (k Keeper) StartKeyRefresh(ctx sdk.Context, validators []stExported.Validator) error {
-	panic("implement me")
+// StartKeyRefresh starts a keygen protocol to replace the current master k
+func (k Keeper) StartKeyRefresh(ctx sdk.Context, chain string, validators []stExported.Validator) error {
+	keyID := masterKeyPrefix + chain
+	poll := exported.PollMeta{
+		Module: types.ModuleName,
+		Type:   types.MsgMasterKeyRefresh{}.Type(),
+		ID:     keyID,
+	}
+	if err := k.voter.InitPoll(ctx, poll); err != nil {
+		return err
+	}
+
+	p := k.GetParams(ctx)
+
+	// these casts should never panic because we start out with an int
+	threshold := int(p.Threshold.IsMetBy(sdk.NewInt(int64(len(validators)))).Int64())
+
+	return k.startKeygen(ctx, keyID, threshold, validators)
+}
+
+func (k Keeper) SetPubkey(ctx sdk.Context, keyID string, pubkeyBytes []byte) {
+	ctx.KVStore(k.storeKey).Set([]byte(keyID), pubkeyBytes)
 }

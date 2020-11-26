@@ -10,6 +10,8 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgKeygenTraffic{}, "tss/MsgKeygenTraffic", nil)
 	cdc.RegisterConcrete(MsgSignStart{}, "tss/MsgSignStart", nil)
 	cdc.RegisterConcrete(MsgSignTraffic{}, "tss/MsgSignTraffic", nil)
+	// this module's votes contain byte slices
+	cdc.RegisterConcrete([]byte{}, "tss/bytes", nil)
 }
 
 // ModuleCdc defines the module codec

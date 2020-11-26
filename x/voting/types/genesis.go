@@ -3,17 +3,19 @@ package types
 import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
+
+	"github.com/axelarnetwork/axelar-core/utils"
 )
 
 type GenesisState struct {
 	VotingInterval  int64
-	VotingThreshold VotingThreshold
+	VotingThreshold utils.Threshold
 }
 
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
 		VotingInterval: 10,
-		VotingThreshold: VotingThreshold{
+		VotingThreshold: utils.Threshold{
 			Numerator:   2,
 			Denominator: 3,
 		},

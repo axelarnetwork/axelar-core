@@ -14,6 +14,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/store"
+	"github.com/axelarnetwork/axelar-core/utils"
 	bcExported "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 
 	"github.com/axelarnetwork/axelar-core/x/voting/exported"
@@ -69,14 +70,14 @@ func (k Keeper) GetVotingInterval(ctx sdk.Context) int64 {
 }
 
 // SetVotingThreshold sets the voting power threshold that must be reached to decide a poll
-func (k Keeper) SetVotingThreshold(ctx sdk.Context, threshold types.VotingThreshold) {
+func (k Keeper) SetVotingThreshold(ctx sdk.Context, threshold utils.Threshold) {
 	ctx.KVStore(k.storeKey).Set([]byte(votingThresholdKey), k.cdc.MustMarshalBinaryLengthPrefixed(threshold))
 }
 
 // GetVotingThreshold returns the voting power threshold that must be reached to decide a poll
-func (k Keeper) GetVotingThreshold(ctx sdk.Context) types.VotingThreshold {
+func (k Keeper) GetVotingThreshold(ctx sdk.Context) utils.Threshold {
 	rawThreshold := ctx.KVStore(k.storeKey).Get([]byte(votingThresholdKey))
-	var threshold types.VotingThreshold
+	var threshold utils.Threshold
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(rawThreshold, &threshold)
 	return threshold
 }

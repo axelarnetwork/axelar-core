@@ -1,16 +1,22 @@
 package types
 
-type GenesisState struct {
-}
+import (
+	"fmt"
 
-func NewGenesisState() GenesisState {
-	return GenesisState{}
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+)
+
+type GenesisState struct {
+	Params Params
 }
 
 func DefaultGenesisState() GenesisState {
-	return GenesisState{}
+	return GenesisState{DefaultParams()}
 }
 
-func ValidateGenesis(_ GenesisState) error {
+func ValidateGenesis(g GenesisState) error {
+	if err := g.Params.Validate(); err != nil {
+		return sdkerrors.Wrap(err, fmt.Sprintf("genesis state for module %s is invalid", ModuleName))
+	}
 	return nil
 }

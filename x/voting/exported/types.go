@@ -1,6 +1,8 @@
 package exported
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 )
 
@@ -27,4 +29,11 @@ type Vote interface {
 type MsgVote interface {
 	exported.MsgWithSenderSetter
 	Vote
+}
+
+type Voter interface {
+	InitPoll(ctx sdk.Context, poll PollMeta) error
+	Vote(ctx sdk.Context, vote MsgVote) error
+	TallyVote(ctx sdk.Context, vote MsgVote) error
+	Result(ctx sdk.Context, poll PollMeta) Vote
 }

@@ -112,7 +112,7 @@ func (k Keeper) TakeSnapshot(ctx sdk.Context) error {
 
 }
 
-// GetLastSnapshot retrieves the last created snapshot
+// GetLatestSnapshot retrieves the last created snapshot
 func (k Keeper) GetLatestSnapshot(ctx sdk.Context) (exported.Snapshot, error) {
 
 	r := k.getLastRound(ctx)

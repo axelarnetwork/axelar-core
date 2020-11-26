@@ -31,7 +31,7 @@ func (k Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
 	// TODO for now assume all validators participate
 	var validators []stExported.Validator
 	fnAppend := func(_ int64, v stExported.Validator) (stop bool) { validators = append(validators, v); return false }
-	k.stakingKeeper.IterateValidators(ctx, fnAppend)
+	k.staker.IterateValidators(ctx, fnAppend)
 	if k.broadcaster.GetProxyCount(ctx) != uint32(len(validators)) {
 		// sign cannot proceed unless all validators have registered broadcast proxies
 		err := fmt.Errorf("not enough proxies registered: proxies: %d; validators: %d", k.broadcaster.GetProxyCount(ctx), len(validators))
@@ -58,8 +58,7 @@ func (k Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
 	grpcCtx, _ := k.newContext()
 	stream, err := k.client.Sign(grpcCtx)
 	if err != nil {
-		wrapErr := sdkerrors.Wrap(err, "failed tssd gRPC call Sign")
-		k.Logger(ctx).Error(wrapErr.Error())
+		k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tssd gRPC call Sign").Error())
 		return nil // don't propagate nondeterministic errors
 	}
 	k.signStreams[info.NewSigID] = stream
@@ -84,8 +83,7 @@ func (k Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart) error {
 		// log.Debug("sign init goroutine: begin")
 		// defer log.Debug("sign init goroutine: end")
 		if err := stream.Send(signInfo); err != nil {
-			wrapErr := sdkerrors.Wrap(err, "failed tssd gRPC sign send sign init data")
-			log.Error(wrapErr.Error())
+			log.Error(sdkerrors.Wrap(err, "failed tssd gRPC sign send sign init data").Error())
 		} else {
 			// log.Debug("successful tssd gRPC sign init goroutine")
 		}
@@ -178,8 +176,7 @@ func (k Keeper) SignMsg(ctx sdk.Context, msg types.MsgSignTraffic) error {
 	}
 	toAddress, err := sdk.ValAddressFromBech32(msg.Payload.ToPartyUid)
 	if err != nil {
-		newErr := sdkerrors.Wrap(err, fmt.Sprintf("failed to parse [%s] into a validator address", msg.Payload.ToPartyUid))
-		k.Logger(ctx).Error(newErr.Error())
+		k.Logger(ctx).Error(sdkerrors.Wrap(err, fmt.Sprintf("failed to parse [%s] into a validator address", msg.Payload.ToPartyUid)).Error())
 		return nil
 	}
 	if toAddress.String() != msg.Payload.ToPartyUid {
@@ -217,8 +214,7 @@ func (k Keeper) SignMsg(ctx sdk.Context, msg types.MsgSignTraffic) error {
 	k.Logger(ctx).Debug(fmt.Sprintf("Sign message: forward incoming to tssd: sig [%s] from [%s] to [%s] broadcast [%t] me [%s]", msg.SessionID, senderAddress.String(), toAddress.String(), msg.Payload.IsBroadcast, myAddress.String()))
 
 	if err := stream.Send(msgIn); err != nil {
-		newErr := sdkerrors.Wrap(err, "failure to send incoming msg to gRPC server")
-		k.Logger(ctx).Error(newErr.Error())
+		k.Logger(ctx).Error(sdkerrors.Wrap(err, "failure to send incoming msg to gRPC server").Error())
 		return nil // don't propagate nondeterministic errors
 	}
 	// k.Logger(ctx).Debug(fmt.Sprintf("successful SignMsg: sig_id [%s] ", msg.SessionID))

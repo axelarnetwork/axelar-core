@@ -8,15 +8,85 @@ import (
 	tssd "github.com/axelarnetwork/tssd/pb"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/stretchr/testify/assert"
+	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
+	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/mock"
 	stExported "github.com/axelarnetwork/axelar-core/x/staking/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/types"
+	"github.com/axelarnetwork/axelar-core/x/voting/exported"
 )
 
-func newStaker() mock.TestStaker {
+func TestKeeper_IsKeyRefreshLocked_Locked(t *testing.T) {
+	s := setup(t)
+
+	for _, currHeight := range testutils.RandIntsBetween(0, 100000).Take(100) {
+		ctx := s.ctx.WithBlockHeight(int64(currHeight))
+
+		// snapshotHeight + lockingPeriod > currHeight
+		lockingPeriod := testutils.RandIntsBetween(0, currHeight).Next()
+		snapshotHeight := testutils.RandIntsBetween(currHeight-lockingPeriod+1, currHeight).Next()
+
+		p := types.DefaultParams()
+		p.LockingPeriod = int64(lockingPeriod)
+		s.keeper.SetParams(s.ctx, p)
+
+		assert.True(t, s.keeper.IsKeyRefreshLocked(ctx, int64(snapshotHeight)))
+	}
+}
+
+func TestKeeper_IsKeyRefreshLocked_Unlocked(t *testing.T) {
+	s := setup(t)
+
+	for _, currHeight := range testutils.RandIntsBetween(0, 100000).Take(100) {
+		ctx := s.ctx.WithBlockHeight(int64(currHeight))
+
+		// snapshotHeight + lockingPeriod <= currHeight
+		lockingPeriod := testutils.RandIntsBetween(0, currHeight).Next()
+		snapshotHeight := testutils.RandIntsBetween(0, currHeight-lockingPeriod+1).Next()
+
+		p := types.DefaultParams()
+		p.LockingPeriod = int64(lockingPeriod)
+		s.keeper.SetParams(s.ctx, p)
+
+		assert.False(t, s.keeper.IsKeyRefreshLocked(ctx, int64(snapshotHeight)))
+	}
+}
+
+type testSetup struct {
+	keeper      Keeper
+	staker      mock.Staker
+	voter       mockVoter
+	broadcaster mock.Broadcaster
+	ctx         sdk.Context
+	client      mockTssClient
+}
+
+func setup(t *testing.T) testSetup {
+	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	staker := newStaker()
+	broadcaster := prepareBroadcaster(t, ctx, testutils.Codec(), staker.GetAllValidators(ctx), nil)
+	subspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), "tss")
+	voter := mockVoter{receivedVote: make(chan exported.MsgVote, 1000), initializedPoll: make(chan exported.PollMeta, 100)}
+	client := mockTssClient{keygen: mockKeyGenClient{recv: make(chan *tssd.MessageOut, 1)}}
+	k := NewKeeper(mock.NewKVStoreKey("tss"), client, subspace, broadcaster, staker, voter)
+	k.SetParams(ctx, types.DefaultParams())
+	return testSetup{
+		keeper:      k,
+		staker:      staker,
+		broadcaster: broadcaster,
+		ctx:         ctx,
+		client:      client,
+		voter:       voter,
+	}
+}
+
+func newStaker() mock.Staker {
 	val1 := stExported.Validator{Address: sdk.ValAddress("validator1"), Power: 100}
 	val2 := stExported.Validator{Address: sdk.ValAddress("validator2"), Power: 100}
 	val3 := stExported.Validator{Address: sdk.ValAddress("validator3"), Power: 100}
@@ -36,21 +106,23 @@ func prepareBroadcaster(t *testing.T, ctx sdk.Context, cdc *codec.Codec, validat
 }
 
 type mockTssClient struct {
+	keygen mockKeyGenClient
+	sign   mockSignClient
 }
 
 func (tc mockTssClient) Keygen(_ context.Context, _ ...grpc.CallOption) (tssd.GG18_KeygenClient, error) {
-	return mockKeyGenClient{}, nil
+	return tc.keygen, nil
 }
 
-func (tc mockTssClient) Sign(ctx context.Context, opts ...grpc.CallOption) (tssd.GG18_SignClient, error) {
-	return mockSignClient{}, nil
+func (tc mockTssClient) Sign(_ context.Context, _ ...grpc.CallOption) (tssd.GG18_SignClient, error) {
+	return tc.sign, nil
 }
 
-func (tc mockTssClient) GetKey(ctx context.Context, in *tssd.Uid, opts ...grpc.CallOption) (*tssd.Bytes, error) {
+func (tc mockTssClient) GetKey(_ context.Context, _ *tssd.Uid, _ ...grpc.CallOption) (*tssd.Bytes, error) {
 	panic("implement me")
 }
 
-func (tc mockTssClient) GetSig(ctx context.Context, in *tssd.Uid, opts ...grpc.CallOption) (*tssd.Bytes, error) {
+func (tc mockTssClient) GetSig(_ context.Context, _ *tssd.Uid, _ ...grpc.CallOption) (*tssd.Bytes, error) {
 	panic("implement me")
 }
 
@@ -58,7 +130,7 @@ type mockKeyGenClient struct {
 	recv chan *tssd.MessageOut
 }
 
-func (kc mockKeyGenClient) Send(in *tssd.MessageIn) error {
+func (kc mockKeyGenClient) Send(_ *tssd.MessageIn) error {
 	return nil
 }
 
@@ -75,18 +147,18 @@ func (kc mockKeyGenClient) Trailer() metadata.MD {
 }
 
 func (kc mockKeyGenClient) CloseSend() error {
-	panic("implement me")
+	return nil
 }
 
 func (kc mockKeyGenClient) Context() context.Context {
 	panic("implement me")
 }
 
-func (kc mockKeyGenClient) SendMsg(msg interface{}) error {
+func (kc mockKeyGenClient) SendMsg(_ interface{}) error {
 	panic("implement me")
 }
 
-func (kc mockKeyGenClient) RecvMsg(msg interface{}) error {
+func (kc mockKeyGenClient) RecvMsg(_ interface{}) error {
 	panic("implement me")
 }
 
@@ -94,7 +166,7 @@ type mockSignClient struct {
 	recv chan *tssd.MessageOut
 }
 
-func (sc mockSignClient) Send(in *tssd.MessageIn) error {
+func (sc mockSignClient) Send(_ *tssd.MessageIn) error {
 	return nil
 }
 
@@ -118,10 +190,33 @@ func (sc mockSignClient) Context() context.Context {
 	panic("implement me")
 }
 
-func (sc mockSignClient) SendMsg(msg interface{}) error {
+func (sc mockSignClient) SendMsg(_ interface{}) error {
 	panic("implement me")
 }
 
-func (sc mockSignClient) RecvMsg(msg interface{}) error {
+func (sc mockSignClient) RecvMsg(_ interface{}) error {
+	panic("implement me")
+}
+
+type mockVoter struct {
+	receivedVote    chan exported.MsgVote
+	initializedPoll chan exported.PollMeta
+}
+
+func (m mockVoter) InitPoll(_ sdk.Context, poll exported.PollMeta) error {
+	m.initializedPoll <- poll
+	return nil
+}
+
+func (m mockVoter) Vote(_ sdk.Context, vote exported.MsgVote) error {
+	m.receivedVote <- vote
+	return nil
+}
+
+func (m mockVoter) TallyVote(_ sdk.Context, _ exported.MsgVote) error {
+	panic("implement me")
+}
+
+func (m mockVoter) Result(_ sdk.Context, _ exported.PollMeta) exported.Vote {
 	panic("implement me")
 }

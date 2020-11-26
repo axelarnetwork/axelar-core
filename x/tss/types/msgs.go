@@ -3,11 +3,13 @@ package types
 import (
 	"fmt"
 
+	"github.com/axelarnetwork/tssd/convert"
 	tssd "github.com/axelarnetwork/tssd/pb"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
+	voting "github.com/axelarnetwork/axelar-core/x/voting/exported"
 )
 
 // golang stupidity: ensure interface compliance at compile time
@@ -17,6 +19,7 @@ var (
 	_ sdk.Msg                       = MsgMasterKeyRefresh{}
 	_ broadcast.MsgWithSenderSetter = &MsgKeygenTraffic{}
 	_ broadcast.MsgWithSenderSetter = &MsgSignTraffic{}
+	_ voting.MsgVote                = &MsgVotePubKey{}
 )
 
 // MsgKeygenStart indicate the start of keygen
@@ -52,7 +55,7 @@ type MsgSignTraffic struct {
 func (msg MsgKeygenStart) Route() string { return RouterKey }
 
 // Type implements the sdk.Msg interface.
-// naming convention follows x/staking/types/msg.go
+// naming convention follows x/staking/types/msgs.go
 func (msg MsgKeygenStart) Type() string { return "keygen_start" }
 
 // ValidateBasic implements the sdk.Msg interface.
@@ -85,7 +88,7 @@ func (msg MsgKeygenStart) GetSigners() []sdk.AccAddress {
 func (msg MsgSignStart) Route() string { return RouterKey }
 
 // Type implements the sdk.Msg interface.
-// naming convention follows x/staking/types/msg.go
+// naming convention follows x/staking/types/msgs.go
 func (msg MsgSignStart) Type() string { return "sign_start" }
 
 // ValidateBasic implements the sdk.Msg interface.
@@ -121,7 +124,7 @@ func (msg MsgSignStart) GetSigners() []sdk.AccAddress {
 func (msg MsgKeygenTraffic) Route() string { return RouterKey }
 
 // Type implements the sdk.Msg interface.
-// naming convention follows x/staking/types/msg.go
+// naming convention follows x/staking/types/msgs.go
 func (msg MsgKeygenTraffic) Type() string { return "in" }
 
 // ValidateBasic implements the sdk.Msg interface.
@@ -162,7 +165,7 @@ func (msg *MsgKeygenTraffic) SetSender(sender sdk.AccAddress) {
 func (msg MsgSignTraffic) Route() string { return RouterKey }
 
 // Type implements the sdk.Msg interface.
-// naming convention follows x/staking/types/msg.go
+// naming convention follows x/staking/types/msgs.go
 func (msg MsgSignTraffic) Type() string { return "in" }
 
 // ValidateBasic implements the sdk.Msg interface.
@@ -201,6 +204,7 @@ func (msg *MsgSignTraffic) SetSender(sender sdk.AccAddress) {
 
 type MsgMasterKeyRefresh struct {
 	Sender sdk.AccAddress
+	Chain  string
 }
 
 func (msg MsgMasterKeyRefresh) Route() string { return RouterKey }
@@ -220,4 +224,53 @@ func (msg MsgMasterKeyRefresh) GetSignBytes() []byte {
 
 func (msg MsgMasterKeyRefresh) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
+}
+
+type MsgVotePubKey struct {
+	Sender   sdk.AccAddress
+	PollMeta voting.PollMeta
+	// need to vote on the bytes instead of ecds.PublicKey, otherwise we lose the elliptic curve information
+	PubKeyBytes []byte
+}
+
+func (msg MsgVotePubKey) Route() string {
+	return RouterKey
+}
+
+func (msg MsgVotePubKey) Type() string {
+	return msg.Type()
+}
+
+func (msg MsgVotePubKey) ValidateBasic() error {
+	if msg.Sender == nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
+	}
+	if msg.PubKeyBytes == nil {
+		return fmt.Errorf("missing public key data")
+	}
+	if _, err := convert.BytesToPubkey(msg.PubKeyBytes); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (msg MsgVotePubKey) GetSignBytes() []byte {
+	bz := ModuleCdc.MustMarshalJSON(msg)
+	return sdk.MustSortJSON(bz)
+}
+
+func (msg MsgVotePubKey) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{msg.Sender}
+}
+
+func (msg *MsgVotePubKey) SetSender(address sdk.AccAddress) {
+	msg.Sender = address
+}
+
+func (msg MsgVotePubKey) Poll() voting.PollMeta {
+	return msg.PollMeta
+}
+
+func (msg MsgVotePubKey) Data() voting.VotingData {
+	return msg.PubKeyBytes
 }

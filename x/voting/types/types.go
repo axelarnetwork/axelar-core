@@ -30,13 +30,3 @@ func (v VoteResult) Poll() exported.PollMeta {
 func (v VoteResult) Data() exported.VotingData {
 	return v.VotingData
 }
-
-type VotingThreshold struct {
-	// split threshold into numerator and denominator to avoid floating point errors down the line
-	Numerator   int64
-	Denominator int64
-}
-
-func (t VotingThreshold) IsMet(accept sdk.Int, total sdk.Int) bool {
-	return accept.MulRaw(t.Denominator).GT(total.MulRaw(t.Numerator))
-}

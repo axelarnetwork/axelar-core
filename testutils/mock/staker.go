@@ -5,21 +5,21 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	stExported "github.com/axelarnetwork/axelar-core/x/staking/exported"
+	staking "github.com/axelarnetwork/axelar-core/x/staking/exported"
 )
 
-var _ stExported.Staker = TestStaker{}
+var _ staking.Staker = Staker{}
 
-type TestStaker struct {
-	validators map[string]stExported.Validator
+type Staker struct {
+	validators map[string]staking.Validator
 	totalPower int64
 }
 
-func (s TestStaker) GetLatestSnapshot(_ sdk.Context) (stExported.Snapshot, error) {
+func (s Staker) GetLatestSnapshot(_ sdk.Context) (staking.Snapshot, error) {
 	panic("implement me")
 }
 
-func (s TestStaker) IterateValidators(_ sdk.Context, fn func(index int64, validator stExported.Validator) (stop bool)) {
+func (s Staker) IterateValidators(_ sdk.Context, fn func(index int64, validator staking.Validator) (stop bool)) {
 	var i int64 = 0
 	for _, v := range s.validators {
 		stop := fn(i, v)
@@ -30,8 +30,8 @@ func (s TestStaker) IterateValidators(_ sdk.Context, fn func(index int64, valida
 	}
 }
 
-func NewTestStaker(validators ...stExported.Validator) TestStaker {
-	staker := TestStaker{map[string]stExported.Validator{}, 0}
+func NewTestStaker(validators ...staking.Validator) Staker {
+	staker := Staker{map[string]staking.Validator{}, 0}
 
 	for _, val := range validators {
 		staker.validators[val.Address.String()] = val
@@ -40,20 +40,20 @@ func NewTestStaker(validators ...stExported.Validator) TestStaker {
 	return staker
 }
 
-func (s TestStaker) GetLastTotalPower(_ sdk.Context) (power sdk.Int) {
+func (s Staker) GetLastTotalPower(_ sdk.Context) (power sdk.Int) {
 	return sdk.NewInt(s.totalPower)
 }
 
-func (s TestStaker) Validator(_ sdk.Context, address sdk.ValAddress) (stExported.Validator, error) {
+func (s Staker) Validator(_ sdk.Context, address sdk.ValAddress) (staking.Validator, error) {
 	v, ok := s.validators[address.String()]
 	if !ok {
-		return stExported.Validator{}, fmt.Errorf("validator does not exist")
+		return staking.Validator{}, fmt.Errorf("validator does not exist")
 	}
 	return v, nil
 }
 
-func (s TestStaker) GetAllValidators(_ sdk.Context) []stExported.Validator {
-	var vals []stExported.Validator
+func (s Staker) GetAllValidators(_ sdk.Context) []staking.Validator {
+	var vals []staking.Validator
 	for _, v := range s.validators {
 		vals = append(vals, v)
 	}
