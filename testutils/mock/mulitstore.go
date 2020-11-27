@@ -212,7 +212,7 @@ func newMockIterator(start, end []byte, content map[string][]byte) mockIterator 
 
 		b := []byte(k)
 
-		if !less(b, start) && less(b, end) {
+		if (start == nil && end == nil) || (!less(b, start) && less(b, end)) {
 
 			//make sure data is a copy so that there is no concurrent writing
 			temp := make([]byte, len(k))
