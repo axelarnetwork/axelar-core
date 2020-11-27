@@ -14,7 +14,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/store"
-	test_utils "github.com/axelarnetwork/axelar-core/testutils"
+	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/mock"
 	"github.com/axelarnetwork/axelar-core/x/broadcast"
 	bcExported "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
@@ -76,9 +76,9 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 	// Choose block size and optionally timeout according to the needs of the test
 	blockChain := mock.NewBlockchain().WithBlockSize(2).WithBlockTimeOut(10 * time.Millisecond)
 
-	b1 := mock.NewBroadcaster(test_utils.Codec(), sdk.AccAddress("broadcaster1"), val1.Address, blockChain.Input())
-	b2 := mock.NewBroadcaster(test_utils.Codec(), sdk.AccAddress("broadcaster2"), val2.Address, blockChain.Input())
-	b3 := mock.NewBroadcaster(test_utils.Codec(), sdk.AccAddress("broadcaster3"), val3.Address, blockChain.Input())
+	b1 := mock.NewBroadcaster(testutils.Codec(), sdk.AccAddress("broadcaster1"), val1.Address, blockChain.Input())
+	b2 := mock.NewBroadcaster(testutils.Codec(), sdk.AccAddress("broadcaster2"), val2.Address, blockChain.Input())
+	b3 := mock.NewBroadcaster(testutils.Codec(), sdk.AccAddress("broadcaster3"), val3.Address, blockChain.Input())
 
 	n1, v1 := newNode("node1", b1, staker)
 	n2, v2 := newNode("node2", b2, staker)
@@ -172,11 +172,11 @@ func newNode(moniker string, broadcaster bcExported.Broadcaster, staker exported
 	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 
 	// Initialize all keepers and handlers you want to involve in the test
-	vK := keeper.NewKeeper(test_utils.Codec(), mock.NewKVStoreKey(axTypes.StoreKey), store.NewSubjectiveStore(), staker, broadcaster)
+	vK := keeper.NewKeeper(testutils.Codec(), mock.NewKVStoreKey(axTypes.StoreKey), store.NewSubjectiveStore(), staker, broadcaster)
 	r := mock.NewRouter()
 	vH := voting.NewHandler(vK, r)
 
-	btcK := btcKeeper.NewBtcKeeper(test_utils.Codec(), mock.NewKVStoreKey(btcTypes.StoreKey))
+	btcK := btcKeeper.NewBtcKeeper(testutils.Codec(), mock.NewKVStoreKey(btcTypes.StoreKey))
 	// We use a mock for the bitcoin rpc client so we can control the responses from the "bitcoin" network
 	btcH := btc_bridge.NewHandler(btcK, vK, &btcMock.TestRPC{RawTxs: txs}, nil)
 

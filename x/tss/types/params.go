@@ -29,7 +29,7 @@ type Params struct {
 
 func DefaultParams() Params {
 	return Params{
-		LockingPeriod: 1000,
+		LockingPeriod: 1,
 		Threshold:     utils.Threshold{Numerator: 2, Denominator: 3},
 	}
 }

@@ -190,8 +190,10 @@ func (k Keeper) TallyVote(ctx sdk.Context, vote exported.MsgVote) error {
 		poll.Votes = append(poll.Votes, talliedVote)
 		k.setTalliedVoteIdx(ctx, vote, len(poll.Votes)-1)
 	} else {
+		// this assignment copies the value, so we need to write it back into the array
 		talliedVote = poll.Votes[i]
 		talliedVote.Tally = talliedVote.Tally.AddRaw(validator.Power)
+		poll.Votes[i] = talliedVote
 	}
 
 	threshold := k.GetVotingThreshold(ctx)

@@ -1,20 +1,16 @@
 package cli
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/spf13/cobra"
 
+	cliUtils "github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/staking/types"
 )
 
@@ -44,7 +40,7 @@ func getCmdSnapshot(cdc *codec.Codec) *cobra.Command {
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 
-		cliCtx, txBldr := prepare(cmd.InOrStdin(), cdc)
+		cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
 
 		msg := types.MsgSnapshot{
 			Sender: cliCtx.FromAddress,
@@ -55,11 +51,4 @@ func getCmdSnapshot(cdc *codec.Codec) *cobra.Command {
 		return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 	}
 	return cmd
-}
-
-func prepare(reader io.Reader, cdc *codec.Codec) (context.CLIContext, authTypes.TxBuilder) {
-	cliCtx := context.NewCLIContext().WithCodec(cdc)
-	inBuf := bufio.NewReader(reader)
-	txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-	return cliCtx, txBldr
 }

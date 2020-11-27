@@ -96,7 +96,13 @@ func MakeCodec() *codec.Codec {
 	sdk.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
 
-	return cdc.Seal()
+	cdc = cdc.Seal()
+
+	// all other modules can sent voting messages through the voting module,
+	// so it must be able to marshal these message types
+	votingTypes.ModuleCdc = cdc
+
+	return cdc
 }
 
 type AxelarApp struct {
@@ -293,6 +299,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 
+		axStaking.NewAppModule(app.axStakingKeeper),
 		tss.NewAppModule(app.tssKeeper, app.axStakingKeeper, app.votingKeeper),
 		voting.NewAppModule(app.votingKeeper, app.Router()),
 		broadcast.NewAppModule(app.broadcastKeeper),

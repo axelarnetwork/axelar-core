@@ -28,12 +28,12 @@ func NewHandler(k keeper.Keeper, s types.Staker, v types.Voter) sdk.Handler {
 			return handleMsgSignStart(ctx, k, s, v, msg)
 		case types.MsgMasterKeyRefresh:
 			return handleMsgMasterKeyRefresh(ctx, k, s, v, msg)
-		case types.MsgVotePubKey:
-			return handleMsgVotePubKey(ctx, k, v, msg)
-		case types.MsgVoteSig:
-			return handleMsgVoteSig(ctx, k, v, msg)
 		case types.MsgRotateMasterKey:
 			return handleMsgRotateMasterKey(ctx, k, msg)
+		case *types.MsgVotePubKey:
+			return handleMsgVotePubKey(ctx, k, v, *msg)
+		case *types.MsgVoteSig:
+			return handleMsgVoteSig(ctx, k, v, *msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
@@ -103,8 +103,10 @@ func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg ty
 
 		switch msg.PollMeta.Type {
 		case types.MsgKeygenStart{}.Type():
+			k.Logger(ctx).Debug(fmt.Sprintf("public key with ID %s confirmed", msg.PollMeta.ID))
 			k.SetKey(ctx, msg.PollMeta.ID, msg.PubKeyBytes)
 		case types.MsgMasterKeyRefresh{}.Type():
+			k.Logger(ctx).Debug(fmt.Sprintf("master key for chain %s confirmed", msg.PollMeta.ID))
 			k.SetNextMasterKey(ctx, msg.PollMeta.ID, msg.PubKeyBytes)
 		}
 	}
@@ -139,6 +141,7 @@ func handleMsgMasterKeyRefresh(ctx sdk.Context, k keeper.Keeper, s types.Staker,
 				k.Logger(ctx).Error(err.Error())
 				return
 			}
+			k.Logger(ctx).Debug("voting on a new master key")
 			if err := v.Vote(ctx, &types.MsgVotePubKey{PollMeta: poll, PubKeyBytes: bz}); err != nil {
 				k.Logger(ctx).Error(err.Error())
 				return

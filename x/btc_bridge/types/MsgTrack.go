@@ -50,10 +50,20 @@ func (msg MsgTrackAddress) GetSigners() []sdk.AccAddress {
 }
 
 type MsgTrackPubKey struct {
-	Sender sdk.AccAddress
-	KeyID  string
-	Chain  Chain
-	Rescan bool
+	Sender       sdk.AccAddress
+	KeyID        string
+	UseMasterKey bool
+	Chain        Chain
+	Rescan       bool
+}
+
+func NewMsgTrackPubKeyWithMasterKey(sender sdk.AccAddress, chain Chain, rescan bool) sdk.Msg {
+	return MsgTrackPubKey{
+		Sender:       sender,
+		Chain:        chain,
+		Rescan:       rescan,
+		UseMasterKey: true,
+	}
 }
 
 func NewMsgTrackPubKey(sender sdk.AccAddress, chain Chain, keyId string, rescan bool) sdk.Msg {
@@ -77,7 +87,7 @@ func (msg MsgTrackPubKey) ValidateBasic() error {
 	if msg.Sender.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
-	if msg.KeyID == "" {
+	if msg.KeyID == "" && !msg.UseMasterKey {
 		return fmt.Errorf("missing public key ID")
 	}
 	if err := msg.Chain.Validate(); err != nil {

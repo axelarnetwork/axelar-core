@@ -133,8 +133,8 @@ func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []broadcast.MsgWithSenderSett
 	if err != nil {
 		k.Logger(ctx).Error(err.Error())
 	}
-	if res != nil && res.Log != "" {
-		k.Logger(ctx).Info(res.Log)
+	if res != nil && res.Log != "" && res.Log != "[]" {
+		k.Logger(ctx).Info("broadcast msg log: " + res.Log)
 	}
 	return nil
 }
@@ -188,7 +188,7 @@ func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy s
 	}
 	k.Logger(ctx).Debug("getting proxy count")
 	count := k.GetProxyCount(ctx)
-	k.Logger(ctx).Debug(fmt.Sprintf("count: %v", count))
+
 	storedProxy := ctx.KVStore(k.storeKey).Get(principal)
 	if storedProxy != nil {
 		ctx.KVStore(k.storeKey).Delete(storedProxy)

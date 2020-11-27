@@ -10,7 +10,12 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgKeygenTraffic{}, "tss/MsgKeygenTraffic", nil)
 	cdc.RegisterConcrete(MsgSignStart{}, "tss/MsgSignStart", nil)
 	cdc.RegisterConcrete(MsgSignTraffic{}, "tss/MsgSignTraffic", nil)
-	// this module's votes contain byte slices
+	cdc.RegisterConcrete(MsgMasterKeyRefresh{}, "tss/MsgMasterKeyRefresh", nil)
+	cdc.RegisterConcrete(MsgRotateMasterKey{}, "tss/MsgRotateMasterKey", nil)
+	cdc.RegisterConcrete(&MsgVoteSig{}, "tss/MsgVoteSig", nil)
+	cdc.RegisterConcrete(&MsgVotePubKey{}, "tss/MsgVotePubKey", nil)
+
+	// this module's votes contain byte slices and for the VotingData interface
 	cdc.RegisterConcrete([]byte{}, "tss/bytes", nil)
 }
 

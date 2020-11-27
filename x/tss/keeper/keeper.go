@@ -96,7 +96,6 @@ func (k Keeper) prepareTrafficIn(ctx sdk.Context, sender sdk.AccAddress, session
 	}
 	k.Logger(ctx).Info(fmt.Sprintf("I should NOT ignore: msg from [%s] to [%s] broadcast [%t] me [%s]", senderAddress, toAddress, payload.IsBroadcast, myAddress))
 
-	// convert the received types.MsgKeygenTraffic into a tssd.KeygenMsgIn
 	msgIn := &tssd.MessageIn{
 		Data: &tssd.MessageIn_Traffic{
 			Traffic: &tssd.TrafficIn{

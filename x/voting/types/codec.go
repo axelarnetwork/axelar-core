@@ -15,12 +15,6 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterInterface((*exported.Vote)(nil), nil)
 }
 
-// ModuleCdc defines the module codec
+// ModuleCdc defines the module codec. For the voting module, this must be set from the app.go,
+// because it needs access to a codec that has registered all concrete message types from all modules
 var ModuleCdc *codec.Codec
-
-func init() {
-	ModuleCdc = codec.New()
-	RegisterCodec(ModuleCdc)
-	codec.RegisterCrypto(ModuleCdc)
-	ModuleCdc.Seal()
-}

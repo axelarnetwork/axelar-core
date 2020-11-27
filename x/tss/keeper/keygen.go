@@ -184,7 +184,8 @@ func (k Keeper) RotateMasterKey(ctx sdk.Context, chain string) error {
 		return fmt.Errorf("there is no next master key stored for %s", chain)
 	}
 	ctx.KVStore(k.storeKey).Set([]byte(masterKeyPrefix+chain), bz)
-	ctx.KVStore(k.storeKey).Delete([]byte(masterKeyPrefix + chain))
+	ctx.KVStore(k.storeKey).Delete([]byte(nextMasterKeyPrefix + chain))
+	k.Logger(ctx).Debug(fmt.Sprintf("rotated master key for chain %s", chain))
 	return nil
 }
 

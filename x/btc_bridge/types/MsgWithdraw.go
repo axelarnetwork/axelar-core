@@ -8,10 +8,20 @@ import (
 )
 
 type MsgWithdraw struct {
-	Sender      sdk.AccAddress
-	TxID        string
-	SignatureID string
-	KeyID       string
+	Sender       sdk.AccAddress
+	TxID         string
+	SignatureID  string
+	KeyID        string
+	UseMasterKey bool
+}
+
+func NewMsgWithdrawWithMasterKey(sender sdk.AccAddress, txId string, sigId string) sdk.Msg {
+	return MsgWithdraw{
+		Sender:       sender,
+		TxID:         txId,
+		SignatureID:  sigId,
+		UseMasterKey: true,
+	}
 }
 
 func NewMsgWithdraw(sender sdk.AccAddress, txId string, sigId string, keyId string) sdk.Msg {
@@ -41,7 +51,7 @@ func (msg MsgWithdraw) ValidateBasic() error {
 	if msg.SignatureID == "" {
 		return fmt.Errorf("missing signature ID")
 	}
-	if msg.KeyID == "" {
+	if msg.KeyID == "" && !msg.UseMasterKey {
 		return fmt.Errorf("missing key ID")
 	}
 

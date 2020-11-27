@@ -14,6 +14,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/voting/exported"
 )
 
@@ -66,7 +67,13 @@ func handleMsgTrackAddress(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient
 }
 
 func handleMsgTrackPubKey(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, msg types.MsgTrackPubKey) (*sdk.Result, error) {
-	key, err := s.GetKey(ctx, msg.KeyID)
+	var key ecdsa.PublicKey
+	var err error
+	if msg.UseMasterKey {
+		key, err = s.GetMasterKey(ctx, "bitcoin")
+	} else {
+		key, err = s.GetKey(ctx, msg.KeyID)
+	}
 	if err != nil {
 		k.Logger(ctx).Error("keyId not recognized")
 		return nil, fmt.Errorf("keyId not recognized")
@@ -215,7 +222,24 @@ func isVerified(ctx sdk.Context, v types.Voter, poll exported.PollMeta) bool {
 }
 
 func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, signer types.Signer, msg types.MsgWithdraw) (*sdk.Result, error) {
-	sigScript, err := createSigScript(ctx, signer, msg.SignatureID, msg.KeyID)
+	sig, err := signer.GetSig(ctx, msg.SignatureID)
+	if err != nil {
+		return nil, fmt.Errorf("signature not found")
+	}
+
+	var pk ecdsa.PublicKey
+	if msg.UseMasterKey {
+		pk, err = signer.GetMasterKey(ctx, msg.KeyID)
+		if err != nil {
+			return nil, fmt.Errorf("key not found")
+		}
+	} else {
+		pk, err = signer.GetKey(ctx, msg.KeyID)
+		if err != nil {
+			return nil, fmt.Errorf("key not found")
+		}
+	}
+	sigScript, err := createSigScript(sig, pk)
 	if err != nil {
 		return nil, err
 	}
@@ -260,21 +284,13 @@ func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, si
 	}, nil
 }
 
-func createSigScript(ctx sdk.Context, signer types.Signer, sigId, keyId string) ([]byte, error) {
-	s, err := signer.GetSig(ctx, sigId)
-	if err != nil {
-		return nil, fmt.Errorf("signature not found")
-	}
+func createSigScript(s tss.Signature, pk ecdsa.PublicKey) ([]byte, error) {
 	sig := btcec.Signature{
 		R: s.R,
 		S: s.S,
 	}
 	sigBytes := append(sig.Serialize(), byte(txscript.SigHashAll))
 
-	pk, err := signer.GetKey(ctx, keyId)
-	if err != nil {
-		return nil, fmt.Errorf("key not found")
-	}
 	key := btcec.PublicKey(pk)
 	keyBytes := key.SerializeUncompressed()
 
