@@ -2,6 +2,7 @@ package mock
 
 import (
 	"io"
+	"sort"
 	"sync"
 
 	sdkTypes "github.com/cosmos/cosmos-sdk/types"
@@ -114,12 +115,33 @@ func (t TestKVStore) Delete(key []byte) {
 	delete(t.store, string(key))
 }
 
-func (t TestKVStore) Iterator(_, _ []byte) sdkTypes.Iterator {
-	panic("implement me")
+func (t TestKVStore) Iterator(start, end []byte) sdkTypes.Iterator {
+
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
+	return newMockIterator(start, end, t.store)
 }
 
-func (t TestKVStore) ReverseIterator(_, _ []byte) sdkTypes.Iterator {
-	panic("implement me")
+func (t TestKVStore) ReverseIterator(start, end []byte) sdkTypes.Iterator {
+
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
+	mock := newMockIterator(start, end, t.store)
+
+	// reverse the order of the iterator, which is returned already
+	// sorted in ascending order
+	for i, j := 0, len(mock.keys)-1; i < j; i, j = i+1, j-1 {
+		mock.keys[i], mock.keys[j] = mock.keys[j], mock.keys[i]
+		mock.values[i], mock.values[j] = mock.values[j], mock.values[i]
+
+	}
+
+	mock.start = end
+	mock.end = start
+
+	return mock
 }
 
 type TestStoreKey string
@@ -135,4 +157,163 @@ func (t TestStoreKey) Name() string {
 
 func (t TestStoreKey) String() string {
 	return string(t)
+}
+
+// mock iterator
+type mockIterator struct {
+	keys       [][]byte
+	values     [][]byte
+	index      int
+	start, end []byte
+}
+
+// used to construct the mock iterator and returns true if
+// bytes slice x is less than bytes slice y according to
+// the sdk contract for the db.Iterator interface
+func less(x, y []byte) bool {
+
+	// go over each byte of x
+	for i := 0; i < len(x); i++ {
+
+		// if x is greater length than y and all its
+		// previoys bytes were greater or equal, than
+		// x > y
+		if i >= len(y) {
+
+			return false
+		}
+
+		// if at the current index, x's byte is less than
+		// y's byte, than x < y
+		if x[i] < y[i] {
+
+			return true
+		}
+
+	}
+
+	// if we cycled through all bytes of x and reached this point,
+	// then x is either a prefix of y, or is equal to y. The former
+	// means x < y, while the latter means x >= y
+
+	if len(x) < len(y) {
+		return true
+	}
+
+	return false
+}
+
+func newMockIterator(start, end []byte, content map[string][]byte) mockIterator {
+
+	keys := make([][]byte, 0)
+
+	// select the keys according to the specified domain
+	for k := range content {
+
+		b := []byte(k)
+
+		if !less(b, start) && less(b, end) {
+
+			//make sure data is a copy so that there is no concurrent writing
+			temp := make([]byte, len(k))
+			copy(temp, []byte(k))
+			keys = append(keys, temp)
+		}
+	}
+
+	// Sort the keys in ascending order
+	sort.Slice(keys, func(i, j int) bool {
+
+		return less(keys[i], keys[j])
+
+	})
+
+	// With the keys chosen and sorted, we can now populate the slice of values
+	values := make([][]byte, len(keys))
+
+	for i := 0; i < len(keys); i++ {
+
+		//make sure data is a copy so that there is no concurrent writing
+		value := content[string(keys[i])]
+		temp := make([]byte, len(value))
+		copy(temp, value)
+
+		values[i] = temp
+	}
+
+	return mockIterator{
+		keys:   keys,
+		values: values,
+		index:  0,
+		start:  start,
+		end:    end,
+	}
+}
+
+// The start & end (exclusive) limits to iterate over.
+// If end < start, then the Iterator goes in reverse order.
+//
+// A domain of ([]byte{12, 13}, []byte{12, 14}) will iterate
+// over anything with the prefix []byte{12, 13}.
+//
+// The smallest key is the empty byte array []byte{} - see BeginningKey().
+// The largest key is the nil byte array []byte(nil) - see EndingKey().
+// CONTRACT: start, end readonly []byte
+
+func (mi mockIterator) Domain() (start []byte, end []byte) {
+
+	return mi.start, mi.end
+
+}
+
+// Valid returns whether the current position is valid.
+// Once invalid, an Iterator is forever invalid.
+func (mi mockIterator) Valid() bool {
+
+	return mi.index < len(mi.keys)
+
+}
+
+// Next moves the iterator to the next sequential key in the database, as
+// defined by order of iteration.
+// If Valid returns false, this method will panic.
+func (mi mockIterator) Next() {
+
+	mi.index++
+
+}
+
+// Key returns the key of the cursor.
+// If Valid returns false, this method will panic.
+// CONTRACT: key readonly []byte
+func (mi mockIterator) Key() (key []byte) {
+
+	if !mi.Valid() {
+		panic("Iterator position out of bounds")
+	}
+
+	return mi.keys[mi.index]
+}
+
+// Value returns the value of the cursor.
+// If Valid returns false, this method will panic.
+// CONTRACT: value readonly []byte
+func (mi mockIterator) Value() (value []byte) {
+
+	if !mi.Valid() {
+		panic("Iterator position out of bounds")
+	}
+
+	return mi.values[mi.index]
+}
+
+func (mi mockIterator) Error() error {
+
+	return nil
+}
+
+// Close releases the Iterator.
+func (mi mockIterator) Close() {
+
+	//Do what?
 }
