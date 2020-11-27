@@ -16,6 +16,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/store"
 	"github.com/axelarnetwork/axelar-core/utils"
 	bcExported "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
+	staking "github.com/axelarnetwork/axelar-core/x/staking/exported"
 
 	"github.com/axelarnetwork/axelar-core/x/voting/exported"
 	"github.com/axelarnetwork/axelar-core/x/voting/types"
@@ -89,7 +90,12 @@ func (k Keeper) InitPoll(ctx sdk.Context, poll exported.PollMeta) error {
 		return fmt.Errorf("poll with same name already exists")
 	}
 
-	ctx.KVStore(k.storeKey).Set([]byte(poll.String()), k.cdc.MustMarshalBinaryLengthPrefixed(types.Poll{Meta: poll}))
+	r := k.staker.GetLatestRound(ctx)
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(types.Poll{
+		Meta:                   poll,
+		ValidatorSnapshotRound: r,
+	})
+	ctx.KVStore(k.storeKey).Set([]byte(poll.String()), bz)
 	return nil
 }
 
@@ -144,17 +150,22 @@ func (k Keeper) TallyVote(ctx sdk.Context, vote exported.MsgVote) error {
 	valAddress := k.broadcaster.GetPrincipal(ctx, vote.GetSigners()[0])
 	if valAddress == nil {
 		err := fmt.Errorf("account %v is not registered as a validator proxy", vote.GetSigners()[0])
-		k.Logger(ctx).Error(err.Error())
 		return err
-	}
-	validator, err := k.staker.Validator(ctx, valAddress)
-	if err != nil {
-		return fmt.Errorf("address does not belong to an account in the validator set")
 	}
 
 	poll := k.getPoll(ctx, vote.Poll())
 	if poll == nil {
 		return fmt.Errorf("poll does not exist or is closed")
+	}
+
+	snapshot, err := k.staker.GetSnapshot(ctx, poll.ValidatorSnapshotRound)
+	if err != nil {
+		return err
+	}
+
+	validator, ok := find(snapshot.Validators, valAddress)
+	if !ok {
+		return fmt.Errorf("address %s is not eligible to vote in this poll", valAddress.String())
 	}
 
 	if k.getHasVoted(ctx, vote.Poll(), valAddress) {
@@ -184,10 +195,9 @@ func (k Keeper) TallyVote(ctx sdk.Context, vote exported.MsgVote) error {
 	}
 
 	threshold := k.GetVotingThreshold(ctx)
-	totalPower := k.staker.GetLastTotalPower(ctx)
-	if threshold.IsMet(talliedVote.Tally, totalPower) {
+	if threshold.IsMet(talliedVote.Tally, snapshot.TotalPower) {
 		k.Logger(ctx).Debug(fmt.Sprintf("threshold of %d/%d has been met for %s: %s/%s",
-			threshold.Numerator, threshold.Denominator, vote.Poll(), talliedVote.Tally.String(), totalPower.String()))
+			threshold.Numerator, threshold.Denominator, vote.Poll(), talliedVote.Tally.String(), snapshot.TotalPower.String()))
 		poll.Result = types.VoteResult{
 			PollMeta:   poll.Meta,
 			VotingData: talliedVote.Data,
@@ -276,4 +286,13 @@ func (k Keeper) hash(data exported.VotingData) string {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(data)
 	h := sha256.Sum256(bz)
 	return string(h[:])
+}
+
+func find(validators []staking.Validator, address sdk.ValAddress) (staking.Validator, bool) {
+	for _, v := range validators {
+		if v.Address.Equals(address) {
+			return v, true
+		}
+	}
+	return staking.Validator{}, false
 }

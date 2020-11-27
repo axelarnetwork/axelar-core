@@ -12,8 +12,9 @@ type TalliedVote struct {
 }
 
 type Poll struct {
-	Meta  exported.PollMeta
-	Votes []TalliedVote
+	Meta                   exported.PollMeta
+	ValidatorSnapshotRound int64
+	Votes                  []TalliedVote
 	// nil as long as the poll is undecided
 	Result exported.Vote
 }

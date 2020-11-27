@@ -1,25 +1,21 @@
 package cli
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"strconv"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/spf13/cobra"
 
+	cliUtils "github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
 )
 
@@ -95,7 +91,7 @@ func getCmdTrackAddress(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			cliCtx, txBldr := prepare(cmd.InOrStdin(), cdc)
+			cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
 
 			addr, err := types.ParseBtcAddress(args[0], chain)
 			if err != nil {
@@ -126,7 +122,7 @@ func getCmdTrackPubKey(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			cliCtx, txBldr := prepare(cmd.InOrStdin(), cdc)
+			cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
 
 			msg := types.NewMsgTrackPubKey(cliCtx.GetFromAddress(), chain, args[0], rescan)
 			if err := msg.ValidateBasic(); err != nil {
@@ -154,7 +150,7 @@ func GetCmdVerifyTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 		Args: cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			cliCtx, txBldr := prepare(cmd.InOrStdin(), cdc)
+			cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
 
 			hash, err := parseHash(args[0])
 			if err != nil {
@@ -195,7 +191,7 @@ func GetCmdRawTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 		Args: cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			cliCtx, txBldr := prepare(cmd.InOrStdin(), cdc)
+			cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
 
 			hash, err := parseHash(args[0])
 			if err != nil {
@@ -231,7 +227,7 @@ Ensure the axelar address is being tracked and the transaction signed first`,
 		Args: cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			cliCtx, txBldr := prepare(cmd.InOrStdin(), cdc)
+			cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
 
 			msg := types.NewMsgWithdraw(cliCtx.GetFromAddress(), args[0], args[1], args[2])
 			if err := msg.ValidateBasic(); err != nil {
@@ -241,13 +237,6 @@ Ensure the axelar address is being tracked and the transaction signed first`,
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
-}
-
-func prepare(reader io.Reader, cdc *codec.Codec) (context.CLIContext, authTypes.TxBuilder) {
-	cliCtx := context.NewCLIContext().WithCodec(cdc)
-	inBuf := bufio.NewReader(reader)
-	txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-	return cliCtx, txBldr
 }
 
 func parseHash(txId string) (*chainhash.Hash, error) {

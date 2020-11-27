@@ -18,11 +18,13 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 		MsgToSign: []byte("message"),
 	}
 
-	assert.NoError(t, s.keeper.StartSign(s.ctx, msg))
+	_, err := s.keeper.StartSign(s.ctx, msg, s.staker.GetAllValidators(s.ctx))
+	assert.NoError(t, err)
 
 	msg.KeyID = "keyID2"
 	msg.MsgToSign = []byte("second message")
-	assert.Error(t, s.keeper.StartSign(s.ctx, msg))
+	_, err = s.keeper.StartSign(s.ctx, msg, s.staker.GetAllValidators(s.ctx))
+	assert.Error(t, err)
 }
 
 // Even if no session exists the keeper must not return an error, because we need to keep validators and

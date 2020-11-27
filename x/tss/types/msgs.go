@@ -238,7 +238,7 @@ func (msg MsgVotePubKey) Route() string {
 }
 
 func (msg MsgVotePubKey) Type() string {
-	return msg.Type()
+	return "MsgVotePubKey"
 }
 
 func (msg MsgVotePubKey) ValidateBasic() error {
@@ -273,4 +273,86 @@ func (msg MsgVotePubKey) Poll() voting.PollMeta {
 
 func (msg MsgVotePubKey) Data() voting.VotingData {
 	return msg.PubKeyBytes
+}
+
+type MsgVoteSig struct {
+	Sender   sdk.AccAddress
+	PollMeta voting.PollMeta
+	// need to vote on the bytes instead of r, s, because Go cannot deserialize private fields using reflection (so *big.Int does not work)
+	SigBytes []byte
+}
+
+func (msg MsgVoteSig) Route() string {
+	return RouterKey
+}
+
+func (msg MsgVoteSig) Type() string {
+	return "MsgVoteSig"
+}
+
+func (msg MsgVoteSig) ValidateBasic() error {
+	if msg.Sender == nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
+	}
+	if msg.SigBytes == nil {
+		return fmt.Errorf("missing signature data")
+	}
+	if _, _, err := convert.BytesToSig(msg.SigBytes); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (msg MsgVoteSig) GetSignBytes() []byte {
+	bz := ModuleCdc.MustMarshalJSON(msg)
+	return sdk.MustSortJSON(bz)
+}
+
+func (msg MsgVoteSig) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{msg.Sender}
+}
+
+func (msg *MsgVoteSig) SetSender(address sdk.AccAddress) {
+	msg.Sender = address
+}
+
+func (msg MsgVoteSig) Poll() voting.PollMeta {
+	return msg.PollMeta
+}
+
+func (msg MsgVoteSig) Data() voting.VotingData {
+	return msg.SigBytes
+}
+
+type MsgRotateMasterKey struct {
+	Sender sdk.AccAddress
+	Chain  string
+}
+
+func (msg MsgRotateMasterKey) Route() string {
+	return RouterKey
+}
+
+func (msg MsgRotateMasterKey) Type() string {
+	return "MsgRotateMasterKey"
+}
+
+func (msg MsgRotateMasterKey) ValidateBasic() error {
+	if msg.Sender == nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
+	}
+	if msg.Chain == "" {
+		return fmt.Errorf("missing chain")
+	}
+
+	return nil
+}
+
+func (msg MsgRotateMasterKey) GetSignBytes() []byte {
+	bz := ModuleCdc.MustMarshalJSON(msg)
+	return sdk.MustSortJSON(bz)
+}
+
+func (msg MsgRotateMasterKey) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{msg.Sender}
 }

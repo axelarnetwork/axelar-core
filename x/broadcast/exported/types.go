@@ -15,6 +15,9 @@ type Broadcaster interface {
 	// Returns nil if not set
 	GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
 
+	// Returns nil if not set
+	GetProxy(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress
+
 	GetProxyCount(ctx sdk.Context) uint32
 
 	// WARNING: Handle with care, this exposes local information that is DIFFERENT for each validator

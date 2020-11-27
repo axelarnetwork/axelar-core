@@ -261,13 +261,13 @@ func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, si
 }
 
 func createSigScript(ctx sdk.Context, signer types.Signer, sigId, keyId string) ([]byte, error) {
-	r, s, err := signer.GetSig(ctx, sigId)
+	s, err := signer.GetSig(ctx, sigId)
 	if err != nil {
 		return nil, fmt.Errorf("signature not found")
 	}
 	sig := btcec.Signature{
-		R: r,
-		S: s,
+		R: s.R,
+		S: s.S,
 	}
 	sigBytes := append(sig.Serialize(), byte(txscript.SigHashAll))
 

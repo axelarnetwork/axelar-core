@@ -32,7 +32,6 @@ func handleMsgRegisterProxy(ctx sdk.Context, b exported.Broadcaster, msg types.M
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.EventTypeRegisterProxy),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Principal.String()),
 			sdk.NewAttribute(types.AttributeAddress, msg.Proxy.String()),
 		),

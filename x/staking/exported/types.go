@@ -19,10 +19,8 @@ type Snapshot struct {
 }
 
 type Staker interface {
-	GetLastTotalPower(ctx sdk.Context) (power sdk.Int)
 	Validator(ctx sdk.Context, address sdk.ValAddress) (Validator, error)
-	// TODO: check if this is actually the correct function we need (e.g. do we need only bonded?)
-	IterateValidators(ctx sdk.Context, fn func(index int64, validator Validator) (stop bool))
-
 	GetLatestSnapshot(ctx sdk.Context) (Snapshot, error)
+	GetLatestRound(ctx sdk.Context) int64
+	GetSnapshot(ctx sdk.Context, round int64) (Snapshot, error)
 }

@@ -253,9 +253,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	logger.Debug("successful connection to tssd gRPC server")
 
 	client := tssd.NewGG18Client(conn)
-	app.tssKeeper = tssKeeper.NewKeeper(keys[tssTypes.StoreKey], client, tssSubspace,
-		app.broadcastKeeper, app.axStakingKeeper, app.votingKeeper,
-	)
+	app.tssKeeper = tssKeeper.NewKeeper(keys[tssTypes.StoreKey], app.cdc, client, tssSubspace, app.broadcastKeeper)
 
 	// Clean up tss grpc connection on process shutdown
 	tmos.TrapSignal(logger, func() {

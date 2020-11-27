@@ -36,7 +36,7 @@ func TestKeeper_IsKeyRefreshLocked_Locked(t *testing.T) {
 		p.LockingPeriod = int64(lockingPeriod)
 		s.keeper.SetParams(s.ctx, p)
 
-		assert.True(t, s.keeper.IsKeyRefreshLocked(ctx, int64(snapshotHeight)))
+		assert.True(t, s.keeper.IsKeyRefreshLocked(ctx, "", int64(snapshotHeight)))
 	}
 }
 
@@ -54,7 +54,7 @@ func TestKeeper_IsKeyRefreshLocked_Unlocked(t *testing.T) {
 		p.LockingPeriod = int64(lockingPeriod)
 		s.keeper.SetParams(s.ctx, p)
 
-		assert.False(t, s.keeper.IsKeyRefreshLocked(ctx, int64(snapshotHeight)))
+		assert.False(t, s.keeper.IsKeyRefreshLocked(ctx, "", int64(snapshotHeight)))
 	}
 }
 
@@ -74,7 +74,7 @@ func setup(t *testing.T) testSetup {
 	subspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), "tss")
 	voter := mockVoter{receivedVote: make(chan exported.MsgVote, 1000), initializedPoll: make(chan exported.PollMeta, 100)}
 	client := mockTssClient{keygen: mockKeyGenClient{recv: make(chan *tssd.MessageOut, 1)}}
-	k := NewKeeper(mock.NewKVStoreKey("tss"), client, subspace, broadcaster, staker, voter)
+	k := NewKeeper(mock.NewKVStoreKey("tss"), testutils.Codec(), client, subspace, broadcaster)
 	k.SetParams(ctx, types.DefaultParams())
 	return testSetup{
 		keeper:      k,
@@ -91,7 +91,7 @@ func newStaker() mock.Staker {
 	val2 := stExported.Validator{Address: sdk.ValAddress("validator2"), Power: 100}
 	val3 := stExported.Validator{Address: sdk.ValAddress("validator3"), Power: 100}
 	val4 := stExported.Validator{Address: sdk.ValAddress("validator4"), Power: 100}
-	staker := mock.NewTestStaker(val1, val2, val3, val4)
+	staker := mock.NewTestStaker(1, val1, val2, val3, val4)
 	return staker
 }
 

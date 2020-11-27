@@ -41,13 +41,6 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, staking types.StakingKeeper) 
 		cdc:      cdc,
 		staking:  staking,
 	}
-
-}
-
-func (k Keeper) GetLastTotalPower(ctx sdk.Context) (power sdk.Int) {
-
-	return k.staking.GetLastTotalPower(ctx)
-
 }
 
 func (k Keeper) Validator(ctx sdk.Context, address sdk.ValAddress) (exported.Validator, error) {
@@ -86,7 +79,7 @@ func (k Keeper) IterateValidators(ctx sdk.Context, fn func(_ int64, _ exported.V
 // TakeSnapshot attempts to create a new snapshot
 func (k Keeper) TakeSnapshot(ctx sdk.Context) error {
 
-	r := k.getLastRound(ctx)
+	r := k.GetLatestRound(ctx)
 
 	if r == -1 {
 
@@ -117,7 +110,7 @@ func (k Keeper) TakeSnapshot(ctx sdk.Context) error {
 // GetLatestSnapshot retrieves the last created snapshot
 func (k Keeper) GetLatestSnapshot(ctx sdk.Context) (exported.Snapshot, error) {
 
-	r := k.getLastRound(ctx)
+	r := k.GetLatestRound(ctx)
 
 	if r == -1 {
 
@@ -177,7 +170,7 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, nextRound int64) {
 	}
 
 	k.setLastRound(ctx, nextRound)
-	ctx.KVStore(k.storeKey).Set([]byte(roundKey(nextRound)), k.cdc.MustMarshalBinaryLengthPrefixed(snapshot))
+	ctx.KVStore(k.storeKey).Set(roundKey(nextRound), k.cdc.MustMarshalBinaryLengthPrefixed(snapshot))
 
 }
 
@@ -186,7 +179,7 @@ func (k Keeper) setLastRound(ctx sdk.Context, round int64) {
 	ctx.KVStore(k.storeKey).Set([]byte(lastRound), k.cdc.MustMarshalBinaryLengthPrefixed(round))
 }
 
-func (k Keeper) getLastRound(ctx sdk.Context) int64 {
+func (k Keeper) GetLatestRound(ctx sdk.Context) int64 {
 
 	bz := ctx.KVStore(k.storeKey).Get([]byte(lastRound))
 

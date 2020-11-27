@@ -14,11 +14,11 @@ import (
 	"github.com/tendermint/tendermint/rpc/client/http"
 
 	"github.com/axelarnetwork/axelar-core/store"
-	brExported "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
+	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/broadcast/types"
 )
 
-var _ brExported.Broadcaster = Keeper{}
+var _ broadcast.Broadcaster = Keeper{}
 
 const (
 	proxyCountKey = "proxyCount"
@@ -95,7 +95,7 @@ func getAccountAddress(from string, keybase keys.Keybase) (sdk.AccAddress, strin
 }
 
 // Broadcast sends the passed message to the network. Needs to be called asynchronously or it will block
-func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []brExported.MsgWithSenderSetter) error {
+func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []broadcast.MsgWithSenderSetter) error {
 	if k.GetLocalPrincipal(ctx) == nil {
 		return fmt.Errorf("broadcaster is not registered as a proxy")
 	}
@@ -230,6 +230,10 @@ func (k Keeper) SetProxyCount(ctx sdk.Context, count uint32) {
 	binary.LittleEndian.PutUint32(bz, count)
 	k.Logger(ctx).Debug(fmt.Sprintf("number of known proxies: %v", count))
 	ctx.KVStore(k.storeKey).Set([]byte(proxyCountKey), bz)
+}
+
+func (k Keeper) GetProxy(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
+	return ctx.KVStore(k.storeKey).Get(principal)
 }
 
 func (k Keeper) getSeqNo() uint64 {

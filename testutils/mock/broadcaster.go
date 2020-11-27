@@ -60,6 +60,10 @@ func (b Broadcaster) GetPrincipal(_ sdk.Context, proxy sdk.AccAddress) sdk.ValAd
 	return b.proxy2Val[proxy.String()]
 }
 
+func (b Broadcaster) GetProxy(_ sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
+	return b.val2Proxy[principal.String()]
+}
+
 func (b Broadcaster) GetProxyCount(_ sdk.Context) uint32 {
 	return uint32(len(b.val2Proxy))
 }

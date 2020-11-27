@@ -71,7 +71,7 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 	val1 := exported.Validator{Address: sdk.ValAddress("val1"), Power: 100}
 	val2 := exported.Validator{Address: sdk.ValAddress("val2"), Power: 80}
 	val3 := exported.Validator{Address: sdk.ValAddress("val3"), Power: 170}
-	staker := mock.NewTestStaker(val1, val2, val3)
+	staker := mock.NewTestStaker(1, val1, val2, val3)
 
 	// Choose block size and optionally timeout according to the needs of the test
 	blockChain := mock.NewBlockchain().WithBlockSize(2).WithBlockTimeOut(10 * time.Millisecond)

@@ -38,7 +38,7 @@ func init() {
 }
 
 func newKeeper(b bcExported.Broadcaster, validators ...stExported.Validator) Keeper {
-	return NewKeeper(testutils.Codec(), mock.NewKVStoreKey("voting"), store.NewSubjectiveStore(), mock.NewTestStaker(validators...), b)
+	return NewKeeper(testutils.Codec(), mock.NewKVStoreKey("voting"), store.NewSubjectiveStore(), mock.NewTestStaker(1, validators...), b)
 }
 
 func newBroadcaster() (mock.Broadcaster, <-chan sdk.Msg) {
