@@ -43,20 +43,20 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, staking types.StakingKeeper) 
 	}
 }
 
-func (k Keeper) Validator(ctx sdk.Context, address sdk.ValAddress) (exported.Validator, error) {
+func (k Keeper) Validator(ctx sdk.Context, address sdk.ValAddress) (exported.Validator, bool) {
 
 	result := exported.Validator{}
 
 	validator, ok := k.staking.GetValidator(ctx, address)
 
 	if !ok {
-		return result, fmt.Errorf("Invalid validator address")
+		return result, false
 	}
 
 	result.Address = address
 	result.Power = validator.GetConsensusPower()
 
-	return result, nil
+	return result, true
 }
 
 func (k Keeper) IterateValidators(ctx sdk.Context, fn func(_ int64, _ exported.Validator) (stop bool)) {
@@ -87,11 +87,11 @@ func (k Keeper) TakeSnapshot(ctx sdk.Context) error {
 		return nil
 	}
 
-	s, err := k.GetSnapshot(ctx, r)
+	s, ok := k.GetSnapshot(ctx, r)
 
-	if err != nil {
+	if !ok {
 
-		return fmt.Errorf("Unable to take snapshot: %s", err)
+		return fmt.Errorf("Unable to take snapshot: no snapshot for latest round %d", r)
 	}
 
 	ts := ctx.BlockTime()
@@ -108,13 +108,13 @@ func (k Keeper) TakeSnapshot(ctx sdk.Context) error {
 }
 
 // GetLatestSnapshot retrieves the last created snapshot
-func (k Keeper) GetLatestSnapshot(ctx sdk.Context) (exported.Snapshot, error) {
+func (k Keeper) GetLatestSnapshot(ctx sdk.Context) (exported.Snapshot, bool) {
 
 	r := k.GetLatestRound(ctx)
 
 	if r == -1 {
 
-		return exported.Snapshot{}, fmt.Errorf("No snapshots available")
+		return exported.Snapshot{}, false
 
 	}
 
@@ -122,7 +122,7 @@ func (k Keeper) GetLatestSnapshot(ctx sdk.Context) (exported.Snapshot, error) {
 }
 
 // GetSnapshot retrieves a snapshot by round, if it exists
-func (k Keeper) GetSnapshot(ctx sdk.Context, round int64) (exported.Snapshot, error) {
+func (k Keeper) GetSnapshot(ctx sdk.Context, round int64) (exported.Snapshot, bool) {
 
 	var snapshot exported.Snapshot
 
@@ -130,12 +130,12 @@ func (k Keeper) GetSnapshot(ctx sdk.Context, round int64) (exported.Snapshot, er
 
 	if bz == nil {
 
-		return snapshot, fmt.Errorf("Round not found: %d", round)
+		return snapshot, false
 	}
 
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &snapshot)
 
-	return snapshot, nil
+	return snapshot, true
 }
 
 // Logger returns the logger

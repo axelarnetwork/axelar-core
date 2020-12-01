@@ -158,9 +158,9 @@ func (k Keeper) TallyVote(ctx sdk.Context, vote exported.MsgVote) error {
 		return fmt.Errorf("poll does not exist or is closed")
 	}
 
-	snapshot, err := k.staker.GetSnapshot(ctx, poll.ValidatorSnapshotRound)
-	if err != nil {
-		return err
+	snapshot, ok := k.staker.GetSnapshot(ctx, poll.ValidatorSnapshotRound)
+	if !ok {
+		return fmt.Errorf("No snapshot found for round %d", poll.ValidatorSnapshotRound)
 	}
 
 	validator, ok := find(snapshot.Validators, valAddress)

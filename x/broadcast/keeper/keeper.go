@@ -181,8 +181,8 @@ func (k Keeper) makeSignature(msg auth.StdSignMsg) (auth.StdSignature, error) {
 }
 
 func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy sdk.AccAddress) error {
-	_, err := k.stakingKeeper.Validator(ctx, principal)
-	if err != nil {
+	_, ok := k.stakingKeeper.Validator(ctx, principal)
+	if !ok {
 		k.Logger(ctx).Error("could not find validator")
 		return types.ErrInvalidValidator
 	}

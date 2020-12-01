@@ -19,8 +19,8 @@ type Snapshot struct {
 }
 
 type Staker interface {
-	Validator(ctx sdk.Context, address sdk.ValAddress) (Validator, error)
-	GetLatestSnapshot(ctx sdk.Context) (Snapshot, error)
+	Validator(ctx sdk.Context, address sdk.ValAddress) (Validator, bool)
+	GetLatestSnapshot(ctx sdk.Context) (Snapshot, bool)
 	GetLatestRound(ctx sdk.Context) int64
-	GetSnapshot(ctx sdk.Context, round int64) (Snapshot, error)
+	GetSnapshot(ctx sdk.Context, round int64) (Snapshot, bool)
 }

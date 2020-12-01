@@ -9,6 +9,7 @@ import (
 
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
+	stTypes "github.com/axelarnetwork/axelar-core/x/staking/types"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	axTypes "github.com/axelarnetwork/axelar-core/x/voting/types"
 )
@@ -34,6 +35,7 @@ func Codec() *codec.Codec {
 	btcTypes.RegisterCodec(cdc)
 	tssTypes.RegisterCodec(cdc)
 	broadcastTypes.RegisterCodec(cdc)
+	stTypes.RegisterCodec(cdc)
 
 	return cdc
 }

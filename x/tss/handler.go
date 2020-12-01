@@ -115,9 +115,9 @@ func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg ty
 }
 
 func handleMsgMasterKeyRefresh(ctx sdk.Context, k keeper.Keeper, s types.Staker, v types.Voter, msg types.MsgMasterKeyRefresh) (*sdk.Result, error) {
-	snapshot, err := s.GetLatestSnapshot(ctx)
-	if err != nil {
-		return nil, sdkerrors.Wrap(err, "key refresh failed")
+	snapshot, ok := s.GetLatestSnapshot(ctx)
+	if !ok {
+		return nil, fmt.Errorf("key refresh failed")
 	}
 	if k.IsKeyRefreshLocked(ctx, msg.Chain, snapshot.Height) {
 		return nil, fmt.Errorf("key refresh locked")
@@ -175,9 +175,9 @@ func handleMsgKeygenTraffic(ctx sdk.Context, k keeper.Keeper, msg types.MsgKeyge
 }
 
 func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Staker, v types.Voter, msg types.MsgKeygenStart) (*sdk.Result, error) {
-	snapshot, err := s.GetLatestSnapshot(ctx)
-	if err != nil {
-		return nil, sdkerrors.Wrap(err, "key refresh failed")
+	snapshot, ok := s.GetLatestSnapshot(ctx)
+	if !ok {
+		return nil, fmt.Errorf("key refresh failed")
 	}
 
 	if msg.Threshold < 1 || msg.Threshold > len(snapshot.Validators) {
@@ -222,9 +222,9 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Staker, v ty
 
 func handleMsgSignStart(ctx sdk.Context, k keeper.Keeper, s types.Staker, v types.Voter, msg types.MsgSignStart) (*sdk.Result, error) {
 	// TODO for now assume all validators participate
-	snapshot, err := s.GetLatestSnapshot(ctx)
-	if err != nil {
-		return nil, sdkerrors.Wrap(err, "signing failed")
+	snapshot, ok := s.GetLatestSnapshot(ctx)
+	if !ok {
+		return nil, fmt.Errorf("signing failed")
 	}
 	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.NewSigID}
 	if err := v.InitPoll(ctx, poll); err != nil {

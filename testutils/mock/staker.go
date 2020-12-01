@@ -1,7 +1,6 @@
 package mock
 
 import (
-	"fmt"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -27,12 +26,12 @@ func NewTestStaker(startRound int64, validators ...staking.Validator) Staker {
 	return staker
 }
 
-func (s Staker) Validator(_ sdk.Context, address sdk.ValAddress) (staking.Validator, error) {
+func (s Staker) Validator(_ sdk.Context, address sdk.ValAddress) (staking.Validator, bool) {
 	v, ok := s.validators[address.String()]
 	if !ok {
-		return staking.Validator{}, fmt.Errorf("validator does not exist")
+		return staking.Validator{}, false
 	}
-	return v, nil
+	return v, true
 }
 
 func (s Staker) GetAllValidators(_ sdk.Context) []staking.Validator {
@@ -47,9 +46,9 @@ func (s Staker) GetLatestRound(_ sdk.Context) int64 {
 	return s.round
 }
 
-func (s Staker) GetSnapshot(_ sdk.Context, round int64) (staking.Snapshot, error) {
+func (s Staker) GetSnapshot(_ sdk.Context, round int64) (staking.Snapshot, bool) {
 	if round != s.round {
-		return staking.Snapshot{}, fmt.Errorf("wrong round")
+		return staking.Snapshot{}, false
 	}
 	var vs []staking.Validator
 	for _, v := range s.validators {
@@ -60,10 +59,10 @@ func (s Staker) GetSnapshot(_ sdk.Context, round int64) (staking.Snapshot, error
 		Timestamp:  time.Now(),
 		Height:     s.round,
 		TotalPower: sdk.NewInt(s.totalPower),
-	}, nil
+	}, true
 }
 
-func (s Staker) GetLatestSnapshot(ctx sdk.Context) (staking.Snapshot, error) {
+func (s Staker) GetLatestSnapshot(ctx sdk.Context) (staking.Snapshot, bool) {
 	return s.GetSnapshot(ctx, s.round)
 }
 
