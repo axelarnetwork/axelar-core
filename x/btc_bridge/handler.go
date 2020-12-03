@@ -67,16 +67,21 @@ func handleMsgTrackAddress(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient
 }
 
 func handleMsgTrackPubKey(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, msg types.MsgTrackPubKey) (*sdk.Result, error) {
+	var keyID string
 	var key ecdsa.PublicKey
 	var err error
 	if msg.UseMasterKey {
+		keyID = "bitcoin"
 		key, err = s.GetMasterKey(ctx, "bitcoin")
 	} else {
+		keyID = msg.KeyID
 		key, err = s.GetKey(ctx, msg.KeyID)
 	}
 	if err != nil {
-		k.Logger(ctx).Error("keyId not recognized")
-		return nil, fmt.Errorf("keyId not recognized")
+
+		errMsg := fmt.Sprintf("Error while retrieving key for ID '%s': %v", keyID, err)
+		k.Logger(ctx).Error(errMsg)
+		return nil, fmt.Errorf(errMsg)
 	}
 
 	addr, err := addressFromKey(key, msg.Chain)
