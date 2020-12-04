@@ -13,7 +13,13 @@ import (
 )
 
 func TestMsgVotePubKey_Marshaling(t *testing.T) {
+	// proper addresses need to be a specific length, otherwise the json unmarshaling fails
+	sender := make([]byte, sdk.AddrLen)
+	for i := range sender {
+		sender[i] = 0
+	}
 	vote := tss.MsgVotePubKey{
+		Sender: sender,
 		PollMeta: exported.PollMeta{
 			Module: "test",
 			Type:   "test",
@@ -23,7 +29,7 @@ func TestMsgVotePubKey_Marshaling(t *testing.T) {
 	}
 	ballot := types.MsgBallot{
 		Votes:  []exported.MsgVote{&vote},
-		Sender: sdk.AccAddress("sender"),
+		Sender: sender,
 	}
 	cdc := testutils.Codec()
 

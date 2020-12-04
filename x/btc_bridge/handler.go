@@ -72,7 +72,7 @@ func handleMsgTrackPubKey(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient,
 	var err error
 	if msg.UseMasterKey {
 		keyID = "bitcoin"
-		key, err = s.GetMasterKey(ctx, "bitcoin")
+		key, err = s.GetLatestMasterKey(ctx, "bitcoin")
 	} else {
 		keyID = msg.KeyID
 		key, err = s.GetKey(ctx, msg.KeyID)
@@ -234,7 +234,7 @@ func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, si
 
 	var pk ecdsa.PublicKey
 	if msg.UseMasterKey {
-		pk, err = signer.GetMasterKey(ctx, msg.KeyID)
+		pk, err = signer.GetLatestMasterKey(ctx, msg.KeyID)
 		if err != nil {
 			return nil, fmt.Errorf("key not found")
 		}
