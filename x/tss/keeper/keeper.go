@@ -27,6 +27,7 @@ type Keeper struct {
 	cdc           *codec.Codec
 }
 
+// NewKeeper constructs a tss keeper
 func NewKeeper(storeKey sdk.StoreKey, cdc *codec.Codec, client tssd.GG18Client, paramSpace params.Subspace, broadcaster types.Broadcaster) Keeper {
 	return Keeper{
 		broadcaster:   broadcaster,

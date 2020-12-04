@@ -97,6 +97,39 @@ func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, valida
 	return pubkeyChan, nil
 }
 
+// KeygenMsg takes a types.MsgKeygenTraffic from the chain and relays it to the keygen protocol
+func (k Keeper) KeygenMsg(ctx sdk.Context, msg types.MsgKeygenTraffic) error {
+	msgIn, err := k.prepareTrafficIn(ctx, msg.Sender, msg.SessionID, msg.Payload)
+	if err != nil {
+		return err
+	}
+	if msgIn == nil {
+		return nil
+	}
+
+	stream, ok := k.keygenStreams[msg.SessionID]
+	if !ok {
+		k.Logger(ctx).Error(fmt.Sprintf("no keygen session with id %s", msg.SessionID))
+		return nil // don't propagate nondeterministic errors
+	}
+
+	if err := stream.Send(msgIn); err != nil {
+		k.Logger(ctx).Error(sdkerrors.Wrap(err, "failure to send incoming msg to gRPC server").Error())
+		return nil // don't propagate nondeterministic errors
+	}
+	return nil
+}
+
+func (k Keeper) GetKey(ctx sdk.Context, keyID string) (ecdsa.PublicKey, error) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(keyID))
+	return convert.BytesToPubkey(bz)
+}
+
+// GetLatestMasterKey returns the latest master key that was set for the given chain
+func (k Keeper) GetLatestMasterKey(ctx sdk.Context, chain string) (ecdsa.PublicKey, error) {
+	return k.GetPreviousMasterKey(ctx, chain, 0)
+}
+
 func (k Keeper) setKeygenStart(ctx sdk.Context, keyID string) {
 	ctx.KVStore(k.storeKey).Set([]byte(blockHeightPrefix+keyID), k.cdc.MustMarshalBinaryLengthPrefixed(ctx.BlockHeight()))
 }
@@ -146,39 +179,6 @@ func (k Keeper) prepareKeygen(ctx sdk.Context, keyID string, threshold int, vali
 	return stream, keygenInit
 }
 
-// KeygenMsg takes a types.MsgKeygenTraffic from the chain and relays it to the keygen protocol
-func (k Keeper) KeygenMsg(ctx sdk.Context, msg types.MsgKeygenTraffic) error {
-	msgIn, err := k.prepareTrafficIn(ctx, msg.Sender, msg.SessionID, msg.Payload)
-	if err != nil {
-		return err
-	}
-	if msgIn == nil {
-		return nil
-	}
-
-	stream, ok := k.keygenStreams[msg.SessionID]
-	if !ok {
-		k.Logger(ctx).Error(fmt.Sprintf("no keygen session with id %s", msg.SessionID))
-		return nil // don't propagate nondeterministic errors
-	}
-
-	if err := stream.Send(msgIn); err != nil {
-		k.Logger(ctx).Error(sdkerrors.Wrap(err, "failure to send incoming msg to gRPC server").Error())
-		return nil // don't propagate nondeterministic errors
-	}
-	return nil
-}
-
-func (k Keeper) GetKey(ctx sdk.Context, keyID string) (ecdsa.PublicKey, error) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(keyID))
-	return convert.BytesToPubkey(bz)
-}
-
-// GetLatestMasterKey returns the latest master key that was set for the given chain
-func (k Keeper) GetLatestMasterKey(ctx sdk.Context, chain string) (ecdsa.PublicKey, error) {
-	return k.GetPreviousMasterKey(ctx, chain, 0)
-}
-
 /*
 GetPreviousMasterKey returns the master key for the given chain x rotations ago, where x is given by previousRotations
 
@@ -193,7 +193,7 @@ func (k Keeper) GetPreviousMasterKey(ctx sdk.Context, chain string, previousRota
 	// This indirection is necessary, because we need the keyID for other purposes, eg signing
 	keyId := ctx.KVStore(k.storeKey).Get([]byte(masterKeyID(r-previousRotations, chain)))
 	if keyId == nil {
-		return ecdsa.PublicKey{}, fmt.Errorf("no master key for chain %s found in snapshot round %d", chain, previousRotations)
+		return ecdsa.PublicKey{}, fmt.Errorf("there is no master key for chain %s %d rotations ago", chain, previousRotations)
 	}
 	return k.GetKey(ctx, string(keyId))
 }
