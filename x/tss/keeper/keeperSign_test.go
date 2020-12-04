@@ -12,18 +12,18 @@ import (
 func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 	s := setup(t)
 	msg := types.MsgSignStart{
-		Sender:    s.broadcaster.Proxy,
+		Sender:    s.Broadcaster.Proxy,
 		NewSigID:  "sigID",
 		KeyID:     "keyID1",
 		MsgToSign: []byte("message"),
 	}
 
-	_, err := s.keeper.StartSign(s.ctx, msg, s.staker.GetAllValidators(s.ctx))
+	_, err := s.Keeper.StartSign(s.Ctx, msg, s.Staker.GetAllValidators())
 	assert.NoError(t, err)
 
 	msg.KeyID = "keyID2"
 	msg.MsgToSign = []byte("second message")
-	_, err = s.keeper.StartSign(s.ctx, msg, s.staker.GetAllValidators(s.ctx))
+	_, err = s.Keeper.StartSign(s.Ctx, msg, s.Staker.GetAllValidators())
 	assert.Error(t, err)
 }
 
@@ -32,8 +32,8 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 func TestKeeper_SignMsg_NoSessionWithGivenID_Return(t *testing.T) {
 	s := setup(t)
 
-	assert.NoError(t, s.keeper.SignMsg(s.ctx, types.MsgSignTraffic{
-		Sender:    s.broadcaster.Proxy,
+	assert.NoError(t, s.Keeper.SignMsg(s.Ctx, types.MsgSignTraffic{
+		Sender:    s.Broadcaster.Proxy,
 		SessionID: "sigID",
 		Payload:   &tssd.TrafficOut{},
 	}))

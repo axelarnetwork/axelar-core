@@ -16,7 +16,7 @@ import (
 var (
 	_ sdk.Msg                       = &MsgKeygenStart{}
 	_ sdk.Msg                       = &MsgSignStart{}
-	_ sdk.Msg                       = MsgMasterKeyRefresh{}
+	_ sdk.Msg                       = MsgAssignNextMasterKey{}
 	_ broadcast.MsgWithSenderSetter = &MsgKeygenTraffic{}
 	_ broadcast.MsgWithSenderSetter = &MsgSignTraffic{}
 	_ voting.MsgVote                = &MsgVotePubKey{}
@@ -202,27 +202,31 @@ func (msg *MsgSignTraffic) SetSender(sender sdk.AccAddress) {
 	msg.Sender = sender
 }
 
-type MsgMasterKeyRefresh struct {
+type MsgAssignNextMasterKey struct {
 	Sender sdk.AccAddress
 	Chain  string
+	KeyID  string
 }
 
-func (msg MsgMasterKeyRefresh) Route() string { return RouterKey }
-func (msg MsgMasterKeyRefresh) Type() string  { return "MasterKeyRefresh" }
+func (msg MsgAssignNextMasterKey) Route() string { return RouterKey }
+func (msg MsgAssignNextMasterKey) Type() string  { return "MasterKeyRefresh" }
 
-func (msg MsgMasterKeyRefresh) ValidateBasic() error {
+func (msg MsgAssignNextMasterKey) ValidateBasic() error {
 	if msg.Sender == nil {
 		return sdkerrors.ErrInvalidAddress
+	}
+	if msg.KeyID == "" {
+		return sdkerrors.Wrap(ErrTss, "key id must be set")
 	}
 	return nil
 }
 
-func (msg MsgMasterKeyRefresh) GetSignBytes() []byte {
+func (msg MsgAssignNextMasterKey) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
-func (msg MsgMasterKeyRefresh) GetSigners() []sdk.AccAddress {
+func (msg MsgAssignNextMasterKey) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }
 

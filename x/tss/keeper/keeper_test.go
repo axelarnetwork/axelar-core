@@ -2,10 +2,14 @@ package keeper
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"math/big"
 	"strconv"
 	"testing"
 
+	"github.com/axelarnetwork/tssd/convert"
 	tssd "github.com/axelarnetwork/tssd/pb"
+	"github.com/btcsuite/btcd/btcec"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
@@ -22,68 +26,74 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/voting/exported"
 )
 
-func TestKeeper_IsKeyRefreshLocked_Locked(t *testing.T) {
-	s := setup(t)
-
-	for _, currHeight := range testutils.RandIntsBetween(0, 100000).Take(100) {
-		ctx := s.ctx.WithBlockHeight(int64(currHeight))
-
-		// snapshotHeight + lockingPeriod > currHeight
-		lockingPeriod := testutils.RandIntsBetween(0, currHeight).Next()
-		snapshotHeight := testutils.RandIntsBetween(currHeight-lockingPeriod+1, currHeight).Next()
-
-		p := types.DefaultParams()
-		p.LockingPeriod = int64(lockingPeriod)
-		s.keeper.SetParams(s.ctx, p)
-
-		assert.True(t, s.keeper.IsKeyRefreshLocked(ctx, "", int64(snapshotHeight)))
-	}
-}
-
-func TestKeeper_IsKeyRefreshLocked_Unlocked(t *testing.T) {
-	s := setup(t)
-
-	for _, currHeight := range testutils.RandIntsBetween(0, 100000).Take(100) {
-		ctx := s.ctx.WithBlockHeight(int64(currHeight))
-
-		// snapshotHeight + lockingPeriod <= currHeight
-		lockingPeriod := testutils.RandIntsBetween(0, currHeight).Next()
-		snapshotHeight := testutils.RandIntsBetween(0, currHeight-lockingPeriod+1).Next()
-
-		p := types.DefaultParams()
-		p.LockingPeriod = int64(lockingPeriod)
-		s.keeper.SetParams(s.ctx, p)
-
-		assert.False(t, s.keeper.IsKeyRefreshLocked(ctx, "", int64(snapshotHeight)))
-	}
-}
-
 type testSetup struct {
-	keeper      Keeper
-	staker      mock.Staker
-	voter       mockVoter
-	broadcaster mock.Broadcaster
-	ctx         sdk.Context
-	client      mockTssClient
+	Keeper          Keeper
+	Staker          mock.Staker
+	Voter           mockVoter
+	Broadcaster     mock.Broadcaster
+	Ctx             sdk.Context
+	Client          mockTssClient
+	RandDistinctStr testutils.RandDistinctStringGen
+	RandPosInt      testutils.RandIntGen
 }
 
 func setup(t *testing.T) testSetup {
 	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	staker := newStaker()
-	broadcaster := prepareBroadcaster(t, ctx, testutils.Codec(), staker.GetAllValidators(ctx), nil)
+	broadcaster := prepareBroadcaster(t, ctx, testutils.Codec(), staker.GetAllValidators(), nil)
 	subspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), "tss")
 	voter := mockVoter{receivedVote: make(chan exported.MsgVote, 1000), initializedPoll: make(chan exported.PollMeta, 100)}
 	client := mockTssClient{keygen: mockKeyGenClient{recv: make(chan *tssd.MessageOut, 1)}}
 	k := NewKeeper(mock.NewKVStoreKey("tss"), testutils.Codec(), client, subspace, broadcaster)
 	k.SetParams(ctx, types.DefaultParams())
+
 	return testSetup{
-		keeper:      k,
-		staker:      staker,
-		broadcaster: broadcaster,
-		ctx:         ctx,
-		client:      client,
-		voter:       voter,
+		Keeper:          k,
+		Staker:          staker,
+		Broadcaster:     broadcaster,
+		Ctx:             ctx,
+		Client:          client,
+		Voter:           voter,
+		RandPosInt:      testutils.RandIntsBetween(0, 100000000),
+		RandDistinctStr: testutils.RandStrings(3, 15).Distinct(),
 	}
+}
+
+func (s testSetup) SetLockingPeriod(lockingPeriod int64) {
+	p := types.DefaultParams()
+	p.LockingPeriod = lockingPeriod
+	s.Keeper.SetParams(s.Ctx, p)
+}
+
+func (s testSetup) SetKeygenResult(pk ecdsa.PublicKey) {
+	bz, _ := convert.PubkeyToBytes(pk)
+	s.Client.keygen.recv <- &tssd.MessageOut{Data: &tssd.MessageOut_KeygenResult{KeygenResult: bz}}
+}
+
+func (s testSetup) SetKey(t *testing.T, ctx sdk.Context) (keyID string, keyChan ecdsa.PublicKey) {
+	keyID = s.RandDistinctStr.Next()
+	key := s.RandomPK()
+	res, err := s.Keeper.StartKeygen(ctx, keyID, len(s.Staker.GetAllValidators())-1, s.Staker.GetAllValidators())
+	assert.NoError(t, err)
+
+	s.SetKeygenResult(key)
+
+	publicKey := <-res
+	s.Keeper.SetKey(ctx, keyID, publicKey)
+	return keyID, publicKey
+}
+
+func (s testSetup) RandomPK() ecdsa.PublicKey {
+	return ecdsa.PublicKey{
+		Curve: btcec.S256(),
+		X:     big.NewInt(s.RandPosInt.Next()),
+		Y:     big.NewInt(s.RandPosInt.Next()),
+	}
+}
+
+func (s testSetup) Teardown() {
+	s.RandPosInt.Stop()
+	s.RandDistinctStr.Stop()
 }
 
 func newStaker() mock.Staker {

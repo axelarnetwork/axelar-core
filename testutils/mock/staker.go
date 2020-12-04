@@ -11,19 +11,38 @@ import (
 var _ staking.Staker = Staker{}
 
 type Staker struct {
+	snapshots  []staking.Snapshot
 	validators map[string]staking.Validator
-	totalPower int64
-	round      int64
 }
 
-func NewTestStaker(startRound int64, validators ...staking.Validator) Staker {
-	staker := Staker{validators: map[string]staking.Validator{}, round: startRound}
+func NewTestStaker(blockHeight int64, validators ...staking.Validator) Staker {
+	staker := Staker{snapshots: []staking.Snapshot{snapshot(blockHeight, validators)}, validators: map[string]staking.Validator{}}
 
 	for _, val := range validators {
 		staker.validators[val.Address.String()] = val
-		staker.totalPower += val.Power
 	}
 	return staker
+}
+
+func (s Staker) Snapshot(blockHeight int64, validators ...staking.Validator) {
+	for _, val := range validators {
+		s.validators[val.Address.String()] = val
+	}
+
+	s.snapshots = append(s.snapshots, snapshot(blockHeight, validators))
+}
+
+func snapshot(blockHeight int64, validators []staking.Validator) staking.Snapshot {
+	var totalPower int64
+	for _, val := range validators {
+		totalPower += val.Power
+	}
+	return staking.Snapshot{
+		Validators: validators,
+		Timestamp:  time.Now(),
+		Height:     blockHeight,
+		TotalPower: sdk.NewInt(totalPower),
+	}
 }
 
 func (s Staker) Validator(_ sdk.Context, address sdk.ValAddress) (staking.Validator, bool) {
@@ -34,7 +53,7 @@ func (s Staker) Validator(_ sdk.Context, address sdk.ValAddress) (staking.Valida
 	return v, true
 }
 
-func (s Staker) GetAllValidators(_ sdk.Context) []staking.Validator {
+func (s Staker) GetAllValidators() []staking.Validator {
 	var vals []staking.Validator
 	for _, v := range s.validators {
 		vals = append(vals, v)
@@ -43,36 +62,16 @@ func (s Staker) GetAllValidators(_ sdk.Context) []staking.Validator {
 }
 
 func (s Staker) GetLatestRound(_ sdk.Context) int64 {
-	return s.round
+	return int64(len(s.snapshots) - 1)
 }
 
 func (s Staker) GetSnapshot(_ sdk.Context, round int64) (staking.Snapshot, bool) {
-	if round != s.round {
+	if round >= int64(len(s.snapshots)) {
 		return staking.Snapshot{}, false
 	}
-	var vs []staking.Validator
-	for _, v := range s.validators {
-		vs = append(vs, v)
-	}
-	return staking.Snapshot{
-		Validators: vs,
-		Timestamp:  time.Now(),
-		Height:     s.round,
-		TotalPower: sdk.NewInt(s.totalPower),
-	}, true
+	return s.snapshots[round], true
 }
 
 func (s Staker) GetLatestSnapshot(ctx sdk.Context) (staking.Snapshot, bool) {
-	return s.GetSnapshot(ctx, s.round)
-}
-
-func (s Staker) IterateValidators(_ sdk.Context, fn func(index int64, validator staking.Validator) (stop bool)) {
-	var i int64 = 0
-	for _, v := range s.validators {
-		stop := fn(i, v)
-		if stop {
-			break
-		}
-		i++
-	}
+	return s.GetSnapshot(ctx, int64(len(s.snapshots)-1))
 }

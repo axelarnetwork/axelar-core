@@ -40,29 +40,35 @@ func Codec() *codec.Codec {
 	return cdc
 }
 
-// RandIntGen represents an random integer generator.
+// RandIntBetween returns a random integer between lower (inclusive) and upper (exclusive).
+// It panics if  upper <= lower.
+func RandIntBetween(lower int64, upper int64) int64 {
+	return rand.Int63n(upper-lower) + lower
+}
+
+// RandIntGen represents an random integer generator to generate a sequence of integers with the same properties.
 // Call Stop when done so dangling goroutines can be cleaned up.
 type RandIntGen struct {
-	ch      chan int
+	ch      chan int64
 	done    chan struct{}
 	wrapped *RandIntGen
 }
 
 // RandInts returns a random integer generator for positive integers.
 func RandInts() RandIntGen {
-	return generate(rand.Int)
+	return generateInt64(rand.Int63)
 }
 
 // RandIntsBetween returns a random integer generator for numbers between lower (inclusive) and upper (exclusive).
 // It panics if  upper <= lower.
-func RandIntsBetween(lower int, upper int) RandIntGen {
-	return generate(func() int { return rand.Intn(upper-lower) + lower })
+func RandIntsBetween(lower int64, upper int64) RandIntGen {
+	return generateInt64(func() int64 { return rand.Int63n(upper-lower) + lower })
 }
 
 // Restrict the output of the underlying generator to adhere to the predicate.
 // If the predicate is not satisfiable the Take function will deadlock.
-func (g RandIntGen) Where(predicate func(i int) bool) RandIntGen {
-	newGen := RandIntGen{ch: make(chan int), wrapped: &g}
+func (g RandIntGen) Where(predicate func(i int64) bool) RandIntGen {
+	newGen := RandIntGen{ch: make(chan int64), wrapped: &g}
 	go func() {
 		// cascade channel close when underlying generator channel closes
 		defer close(newGen.ch)
@@ -76,8 +82,8 @@ func (g RandIntGen) Where(predicate func(i int) bool) RandIntGen {
 }
 
 // Take returns a slice of random integers of the given length.
-func (g RandIntGen) Take(count int) []int {
-	nums := make([]int, 0, count)
+func (g RandIntGen) Take(count int) []int64 {
+	nums := make([]int64, 0, count)
 	for i := 0; i < count; i++ {
 		nums = append(nums, <-g.ch)
 	}
@@ -85,7 +91,7 @@ func (g RandIntGen) Take(count int) []int {
 }
 
 // Next returns a single random integer.
-func (g RandIntGen) Next() int {
+func (g RandIntGen) Next() int64 {
 	return <-g.ch
 }
 
@@ -103,8 +109,8 @@ func (g *RandIntGen) Stop() {
 	<-g.ch
 }
 
-func generate(generator func() int) RandIntGen {
-	g := RandIntGen{ch: make(chan int), done: make(chan struct{}), wrapped: nil}
+func generateInt64(generator func() int64) RandIntGen {
+	g := RandIntGen{ch: make(chan int64), done: make(chan struct{}), wrapped: nil}
 	go func() {
 		for {
 			select {
@@ -164,4 +170,106 @@ func (g RandBoolGen) Stop() {
 	// The underlying generator might be stuck in the default select case trying to push a value into the channel,
 	// so we need to make sure it is unstuck to be able to close the output channel
 	<-g.ch
+}
+
+// RandStringGen represents an random string generator.
+// Call Stop when done so dangling goroutines can be cleaned up.
+type RandStringGen struct {
+	ch         chan string
+	done       chan struct{}
+	lengthGen  RandIntGen
+	alphabet   []rune
+	charPicker RandIntGen
+}
+
+// RandStrings returns a random string generator that produces strings of random length in the given limits (inclusive)
+func RandStrings(minLength int, maxLength int) RandStringGen {
+	alphabet := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.")
+	g := RandStringGen{
+		ch:         make(chan string),
+		done:       make(chan struct{}),
+		lengthGen:  RandIntsBetween(int64(minLength), int64(maxLength+1)),
+		alphabet:   alphabet,
+		charPicker: RandIntsBetween(0, int64(len(alphabet))),
+	}
+	go func() {
+		for {
+			select {
+			case <-g.done:
+				close(g.ch)
+				return
+			default:
+				s := make([]rune, g.lengthGen.Next())
+				for i := range s {
+					s[i] = g.alphabet[g.charPicker.Next()]
+				}
+				g.ch <- string(s)
+			}
+		}
+	}()
+	return g
+}
+
+// Take returns a slice of random strings of the given length.
+func (g RandStringGen) Take(count int) []string {
+	res := make([]string, 0, count)
+	for i := 0; i < count; i++ {
+		res = append(res, <-g.ch)
+	}
+	return res
+}
+
+// Next returns a single random string.
+func (g RandStringGen) Next() string {
+	return <-g.ch
+}
+
+// Stop closes all goroutines used during string generation.
+func (g RandStringGen) Stop() {
+	close(g.done)
+
+	// The underlying generator might be stuck in the default select case trying to push a value into the channel,
+	// so we need to make sure it is unstuck to be able to close the output channel
+	<-g.ch
+	g.charPicker.Stop()
+	g.lengthGen.Stop()
+}
+
+// Take returns a slice of random strings of the given length.
+func (g RandStringGen) Distinct() RandDistinctStringGen {
+	return RandDistinctStringGen{RandStringGen: g, previous: make(map[string]struct{})}
+}
+
+// RandDistinctStringGen represents an random string generator which returns distinct strings.
+// Call Stop when done so dangling goroutines can be cleaned up.
+type RandDistinctStringGen struct {
+	RandStringGen
+	previous map[string]struct{}
+}
+
+// Take returns a slice of distinct random strings of the given length.
+func (g RandDistinctStringGen) Take(count int) []string {
+	res := make([]string, 0, count)
+	for i := 0; i < count; i++ {
+		for {
+			s := <-g.ch
+			if _, ok := g.previous[s]; !ok {
+				res = append(res, s)
+				g.previous[s] = struct{}{}
+				break
+			}
+		}
+	}
+	return res
+}
+
+// Next returns a single random string that is distinct from all previously generated strings.
+func (g RandDistinctStringGen) Next() string {
+	for {
+		s := <-g.ch
+		if _, ok := g.previous[s]; !ok {
+			g.previous[s] = struct{}{}
+			return s
+		}
+	}
 }

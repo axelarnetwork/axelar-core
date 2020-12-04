@@ -27,7 +27,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	tssTxCmd.AddCommand(flags.PostCommands(
 		getCmdKeygenStart(cdc),
 		getCmdSignStart(cdc),
-		getCmdMasterKeyRefresh(cdc),
+		getCmdMasterKeyAssignNext(cdc),
 		getCmdRotateMasterKey(cdc),
 	)...)
 
@@ -65,19 +65,20 @@ func getCmdKeygenStart(cdc *codec.Codec) *cobra.Command {
 	return cmd
 }
 
-func getCmdMasterKeyRefresh(cdc *codec.Codec) *cobra.Command {
+func getCmdMasterKeyAssignNext(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "mk-refresh [chain]",
-		Short: "Create a new master key for the given chain",
-		Args:  cobra.ExactArgs(1),
+		Use:   "mk-assign-next [chain] [keyID]",
+		Short: "Assigns a previously created key with [keyID] as the next master key for [chain]",
+		Args:  cobra.ExactArgs(2),
 	}
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
 
-		msg := types.MsgMasterKeyRefresh{
+		msg := types.MsgAssignNextMasterKey{
 			Sender: cliCtx.FromAddress,
 			Chain:  args[0],
+			KeyID:  args[1],
 		}
 		if err := msg.ValidateBasic(); err != nil {
 			return err

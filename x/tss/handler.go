@@ -26,8 +26,8 @@ func NewHandler(k keeper.Keeper, s types.Staker, v types.Voter) sdk.Handler {
 			return handleMsgKeygenStart(ctx, k, s, v, msg)
 		case types.MsgSignStart:
 			return handleMsgSignStart(ctx, k, s, v, msg)
-		case types.MsgMasterKeyRefresh:
-			return handleMsgMasterKeyRefresh(ctx, k, s, v, msg)
+		case types.MsgAssignNextMasterKey:
+			return handleMsgAssignNextMasterKey(ctx, k, s, v, msg)
 		case types.MsgRotateMasterKey:
 			return handleMsgRotateMasterKey(ctx, k, msg)
 		case *types.MsgVotePubKey:
@@ -104,50 +104,28 @@ func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg ty
 		switch msg.PollMeta.Type {
 		case types.MsgKeygenStart{}.Type():
 			k.Logger(ctx).Debug(fmt.Sprintf("public key with ID %s confirmed", msg.PollMeta.ID))
-			k.SetKey(ctx, msg.PollMeta.ID, msg.PubKeyBytes)
-		case types.MsgMasterKeyRefresh{}.Type():
-			k.Logger(ctx).Debug(fmt.Sprintf("master key for chain %s confirmed", msg.PollMeta.ID))
-			k.SetNextMasterKey(ctx, msg.PollMeta.ID, msg.PubKeyBytes)
+			// Assert: types.MsgVotePubKey.ValidateBasic already checks the conversion, so this cannot fail here
+			pubKey, _ := convert.BytesToPubkey(msg.PubKeyBytes)
+			k.SetKey(ctx, msg.PollMeta.ID, pubKey)
+		default:
+			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
+				fmt.Sprintf("unrecognized voting message type: %T", msg))
 		}
 	}
 
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func handleMsgMasterKeyRefresh(ctx sdk.Context, k keeper.Keeper, s types.Staker, v types.Voter, msg types.MsgMasterKeyRefresh) (*sdk.Result, error) {
+func handleMsgAssignNextMasterKey(ctx sdk.Context, k keeper.Keeper, s types.Staker, v types.Voter, msg types.MsgAssignNextMasterKey) (*sdk.Result, error) {
 	snapshot, ok := s.GetLatestSnapshot(ctx)
 	if !ok {
 		return nil, fmt.Errorf("key refresh failed")
 	}
-	if k.IsKeyRefreshLocked(ctx, msg.Chain, snapshot.Height) {
-		return nil, fmt.Errorf("key refresh locked")
-	}
 
-	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.Chain}
-	if err := v.InitPoll(ctx, poll); err != nil {
+	err := k.AssignNextMasterKey(ctx, msg.Chain, snapshot.Height, msg.KeyID)
+	if err != nil {
 		return nil, err
 	}
-
-	pkChan, err := k.StartKeyRefresh(ctx, msg.Chain, snapshot.Validators)
-	if err != nil {
-		return nil, sdkerrors.Wrap(err, "key refresh failed")
-	}
-
-	go func() {
-		pk, ok := <-pkChan
-		if ok {
-			bz, err := convert.PubkeyToBytes(pk)
-			if err != nil {
-				k.Logger(ctx).Error(err.Error())
-				return
-			}
-			k.Logger(ctx).Debug("voting on a new master key")
-			if err := v.Vote(ctx, &types.MsgVotePubKey{PollMeta: poll, PubKeyBytes: bz}); err != nil {
-				k.Logger(ctx).Error(err.Error())
-				return
-			}
-		}
-	}()
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
