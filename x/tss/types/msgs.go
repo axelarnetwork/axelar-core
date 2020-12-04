@@ -16,6 +16,7 @@ import (
 var (
 	_ sdk.Msg                       = &MsgKeygenStart{}
 	_ sdk.Msg                       = &MsgSignStart{}
+	_ sdk.Msg                       = &MsgMasterKeySignStart{}
 	_ sdk.Msg                       = MsgAssignNextMasterKey{}
 	_ broadcast.MsgWithSenderSetter = &MsgKeygenTraffic{}
 	_ broadcast.MsgWithSenderSetter = &MsgSignTraffic{}
@@ -69,7 +70,7 @@ func (msg MsgKeygenStart) ValidateBasic() error {
 	if msg.Threshold < 1 {
 		return sdkerrors.Wrap(ErrTss, fmt.Sprintf("invalid threshold [%d]", msg.Threshold))
 	}
-	// TODO enforce a maximum length for msg.SessionID?
+	// TODO enforce a maximum length for msg.NewKeyID?
 	return nil
 }
 
@@ -105,7 +106,7 @@ func (msg MsgSignStart) ValidateBasic() error {
 	if msg.MsgToSign == nil {
 		return sdkerrors.Wrap(ErrTss, "msg must be set")
 	}
-	// TODO enforce a maximum length for msg.SessionID?
+	// TODO enforce a maximum length for msg.NewSigID?
 	return nil
 }
 
@@ -358,5 +359,47 @@ func (msg MsgRotateMasterKey) GetSignBytes() []byte {
 }
 
 func (msg MsgRotateMasterKey) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{msg.Sender}
+}
+
+type MsgMasterKeySignStart struct {
+	Sender    sdk.AccAddress
+	NewSigID  string
+	Chain     string
+	MsgToSign []byte
+}
+
+func (msg MsgMasterKeySignStart) Route() string {
+	return RouterKey
+}
+
+func (msg MsgMasterKeySignStart) Type() string {
+	return "MsgMasterKeySignStart"
+}
+
+// ValidateBasic implements the sdk.Msg interface.
+func (msg MsgMasterKeySignStart) ValidateBasic() error {
+	if msg.Sender == nil {
+		return sdkerrors.Wrap(ErrTss, "sender must be set")
+	}
+	if msg.NewSigID == "" {
+		return sdkerrors.Wrap(ErrTss, "new sig id must be set")
+	}
+	if msg.Chain == "" {
+		return sdkerrors.Wrap(ErrTss, "chain must be set")
+	}
+	if msg.MsgToSign == nil {
+		return sdkerrors.Wrap(ErrTss, "msg must be set")
+	}
+	// TODO enforce a maximum length for msg.NewSigID?
+	return nil
+}
+
+func (msg MsgMasterKeySignStart) GetSignBytes() []byte {
+	bz := ModuleCdc.MustMarshalJSON(msg)
+	return sdk.MustSortJSON(bz)
+}
+
+func (msg MsgMasterKeySignStart) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }

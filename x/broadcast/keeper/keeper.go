@@ -36,8 +36,10 @@ type Keeper struct {
 	rpc             *http.HTTP
 	fromName        string
 	subjectiveStore store.SubjectiveStore
+	cdc             *codec.Codec
 }
 
+// NewKeeper constructs a broadcast keeper
 func NewKeeper(
 	cdc *codec.Codec,
 	storeKey sdk.StoreKey,
@@ -66,6 +68,7 @@ func NewKeeper(
 		keybase:         keybase,
 		authKeeper:      authKeeper,
 		encodeTx:        utils.GetTxEncoder(cdc),
+		cdc:             cdc,
 		config:          conf,
 		rpc:             rpc,
 		fromName:        fromName,
@@ -77,25 +80,8 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-func getAccountAddress(from string, keybase keys.Keybase) (sdk.AccAddress, string, error) {
-	var info keys.Info
-	if addr, err := sdk.AccAddressFromBech32(from); err == nil {
-		info, err = keybase.GetByAddress(addr)
-		if err != nil {
-			return nil, "", err
-		}
-	} else {
-		info, err = keybase.Get(from)
-		if err != nil {
-			return nil, "", err
-		}
-	}
-
-	return info.GetAddress(), info.GetName(), nil
-}
-
 // Broadcast sends the passed message to the network. Needs to be called asynchronously or it will block
-func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []broadcast.MsgWithSenderSetter) error {
+func (k Keeper) BroadcastSync(ctx sdk.Context, valMsgs []broadcast.MsgWithSenderSetter) error {
 	if k.GetLocalPrincipal(ctx) == nil {
 		return fmt.Errorf("broadcaster is not registered as a proxy")
 	}
@@ -139,6 +125,84 @@ func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []broadcast.MsgWithSenderSett
 	return nil
 }
 
+// RegisterProxy registers a proxy address for a given principal, which can broadcast messages in the principal's name
+func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy sdk.AccAddress) error {
+	_, ok := k.stakingKeeper.Validator(ctx, principal)
+	if !ok {
+		k.Logger(ctx).Error("could not find validator")
+		return types.ErrInvalidValidator
+	}
+	k.Logger(ctx).Debug("getting proxy count")
+	count := k.getProxyCount(ctx)
+
+	storedProxy := ctx.KVStore(k.storeKey).Get(principal)
+	if storedProxy != nil {
+		ctx.KVStore(k.storeKey).Delete(storedProxy)
+		count -= 1
+	}
+	k.Logger(ctx).Debug("setting proxy")
+	ctx.KVStore(k.storeKey).Set(proxy, principal)
+	// Creating a reverse lookup
+	ctx.KVStore(k.storeKey).Set(principal, proxy)
+	count += 1
+	k.Logger(ctx).Debug("setting proxy count")
+	k.setProxyCount(ctx, count)
+	k.Logger(ctx).Debug("done")
+	return nil
+}
+
+// GetLocalPrincipal returns the address of the local validator account. Returns nil if not set.
+//
+// WARNING: Handle with care, this call is non-deterministic because it exposes local information that is DIFFERENT for each validator
+func (k Keeper) GetLocalPrincipal(ctx sdk.Context) sdk.ValAddress {
+	return k.GetPrincipal(ctx, k.from)
+}
+
+// GetPrincipal returns the proxy address for a given principal address. Returns nil if not set.
+func (k Keeper) GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
+	if proxy == nil {
+		return nil
+	}
+	return ctx.KVStore(k.storeKey).Get(proxy)
+}
+
+// GetProxy returns the proxy address for a given principal address. Returns nil if not set.
+func (k Keeper) GetProxy(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
+	return ctx.KVStore(k.storeKey).Get(principal)
+}
+
+func (k Keeper) setProxyCount(ctx sdk.Context, count int) {
+	k.Logger(ctx).Debug(fmt.Sprintf("number of known proxies: %v", count))
+	ctx.KVStore(k.storeKey).Set([]byte(proxyCountKey), k.cdc.MustMarshalBinaryBare(count))
+}
+
+func (k Keeper) getProxyCount(ctx sdk.Context) int {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(proxyCountKey))
+	if bz == nil {
+		return 0
+	}
+	var count int
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &count)
+	return count
+}
+
+func getAccountAddress(from string, keybase keys.Keybase) (sdk.AccAddress, string, error) {
+	var info keys.Info
+	if addr, err := sdk.AccAddressFromBech32(from); err == nil {
+		info, err = keybase.GetByAddress(addr)
+		if err != nil {
+			return nil, "", err
+		}
+	} else {
+		info, err = keybase.Get(from)
+		if err != nil {
+			return nil, "", err
+		}
+	}
+
+	return info.GetAddress(), info.GetName(), nil
+}
+
 func (k Keeper) prepareMsgForSigning(ctx sdk.Context, msgs []sdk.Msg) (auth.StdSignMsg, error) {
 	if k.config.ChainID == "" {
 		return auth.StdSignMsg{}, sdkerrors.Wrap(types.ErrInvalidChain, "chain ID required but not specified")
@@ -178,62 +242,6 @@ func (k Keeper) makeSignature(msg auth.StdSignMsg) (auth.StdSignature, error) {
 		PubKey:    pubkey,
 		Signature: sigBytes,
 	}, nil
-}
-
-func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy sdk.AccAddress) error {
-	_, ok := k.stakingKeeper.Validator(ctx, principal)
-	if !ok {
-		k.Logger(ctx).Error("could not find validator")
-		return types.ErrInvalidValidator
-	}
-	k.Logger(ctx).Debug("getting proxy count")
-	count := k.GetProxyCount(ctx)
-
-	storedProxy := ctx.KVStore(k.storeKey).Get(principal)
-	if storedProxy != nil {
-		ctx.KVStore(k.storeKey).Delete(storedProxy)
-		count -= 1
-	}
-	k.Logger(ctx).Debug("setting proxy")
-	ctx.KVStore(k.storeKey).Set(proxy, principal)
-	// Creating a reverse lookup
-	ctx.KVStore(k.storeKey).Set(principal, proxy)
-	count += 1
-	k.Logger(ctx).Debug("setting proxy count")
-	k.SetProxyCount(ctx, count)
-	k.Logger(ctx).Debug("done")
-	return nil
-}
-
-func (k Keeper) GetLocalPrincipal(ctx sdk.Context) sdk.ValAddress {
-	return k.GetPrincipal(ctx, k.from)
-}
-
-func (k Keeper) GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
-	if proxy == nil {
-		return nil
-	}
-	return ctx.KVStore(k.storeKey).Get(proxy)
-}
-
-func (k Keeper) GetProxyCount(ctx sdk.Context) uint32 {
-	countRaw := ctx.KVStore(k.storeKey).Get([]byte(proxyCountKey))
-	if countRaw == nil {
-		k.Logger(ctx).Error("count was not set, this is an issue with the genesis init")
-		return 0
-	}
-	return binary.LittleEndian.Uint32(countRaw)
-}
-
-func (k Keeper) SetProxyCount(ctx sdk.Context, count uint32) {
-	bz := make([]byte, 4)
-	binary.LittleEndian.PutUint32(bz, count)
-	k.Logger(ctx).Debug(fmt.Sprintf("number of known proxies: %v", count))
-	ctx.KVStore(k.storeKey).Set([]byte(proxyCountKey), bz)
-}
-
-func (k Keeper) GetProxy(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
-	return ctx.KVStore(k.storeKey).Get(principal)
 }
 
 func (k Keeper) getSeqNo() uint64 {

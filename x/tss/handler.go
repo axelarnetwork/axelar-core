@@ -8,10 +8,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	exported2 "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
-	"github.com/axelarnetwork/axelar-core/x/voting/exported"
+	voting "github.com/axelarnetwork/axelar-core/x/voting/exported"
 )
 
 func NewHandler(k keeper.Keeper, s types.Staker, v types.Voter) sdk.Handler {
@@ -26,8 +26,10 @@ func NewHandler(k keeper.Keeper, s types.Staker, v types.Voter) sdk.Handler {
 			return handleMsgKeygenStart(ctx, k, s, v, msg)
 		case types.MsgSignStart:
 			return handleMsgSignStart(ctx, k, s, v, msg)
+		case types.MsgMasterKeySignStart:
+			return handleMsgMasterKeySignStart(ctx, k, s, v, msg)
 		case types.MsgAssignNextMasterKey:
-			return handleMsgAssignNextMasterKey(ctx, k, s, v, msg)
+			return handleMsgAssignNextMasterKey(ctx, k, s, msg)
 		case types.MsgRotateMasterKey:
 			return handleMsgRotateMasterKey(ctx, k, msg)
 		case *types.MsgVotePubKey:
@@ -77,7 +79,7 @@ func handleMsgVoteSig(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types
 		if err != nil {
 			return nil, err
 		}
-		if err := k.SetSig(ctx, msg.PollMeta.ID, exported2.Signature{R: r, S: s}); err != nil {
+		if err := k.SetSig(ctx, msg.PollMeta.ID, exported.Signature{R: r, S: s}); err != nil {
 			return nil, err
 		}
 	}
@@ -116,7 +118,7 @@ func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg ty
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func handleMsgAssignNextMasterKey(ctx sdk.Context, k keeper.Keeper, s types.Staker, v types.Voter, msg types.MsgAssignNextMasterKey) (*sdk.Result, error) {
+func handleMsgAssignNextMasterKey(ctx sdk.Context, k keeper.Keeper, s types.Staker, msg types.MsgAssignNextMasterKey) (*sdk.Result, error) {
 	snapshot, ok := s.GetLatestSnapshot(ctx)
 	if !ok {
 		return nil, fmt.Errorf("key refresh failed")
@@ -164,7 +166,7 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Staker, v ty
 		return nil, err
 	}
 
-	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.NewKeyID}
+	poll := voting.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.NewKeyID}
 	if err := v.InitPoll(ctx, poll); err != nil {
 		return nil, err
 	}
@@ -204,7 +206,7 @@ func handleMsgSignStart(ctx sdk.Context, k keeper.Keeper, s types.Staker, v type
 	if !ok {
 		return nil, fmt.Errorf("signing failed")
 	}
-	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.NewSigID}
+	poll := voting.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.NewSigID}
 	if err := v.InitPoll(ctx, poll); err != nil {
 		return nil, err
 	}
@@ -214,20 +216,8 @@ func handleMsgSignStart(ctx sdk.Context, k keeper.Keeper, s types.Staker, v type
 		return nil, err
 	}
 
-	go func() {
-		sig, ok := <-sigChan
-		if ok {
-			bz, err := convert.SigToBytes(sig.R.Bytes(), sig.S.Bytes())
-			if err != nil {
-				k.Logger(ctx).Error(err.Error())
-				return
-			}
-			if err := v.Vote(ctx, &types.MsgVoteSig{PollMeta: poll, SigBytes: bz}); err != nil {
-				k.Logger(ctx).Error(err.Error())
-				return
-			}
-		}
-	}()
+	go voteOnSignResult(ctx, k, v, sigChan, poll)
+
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
@@ -236,6 +226,49 @@ func handleMsgSignStart(ctx sdk.Context, k keeper.Keeper, s types.Staker, v type
 		),
 	)
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+}
+
+func handleMsgMasterKeySignStart(ctx sdk.Context, k keeper.Keeper, s types.Staker, v types.Voter, msg types.MsgMasterKeySignStart) (*sdk.Result, error) {
+	// TODO for now assume all validators participate
+	snapshot, ok := s.GetLatestSnapshot(ctx)
+	if !ok {
+		return nil, fmt.Errorf("signing failed")
+	}
+	poll := voting.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.NewSigID}
+	if err := v.InitPoll(ctx, poll); err != nil {
+		return nil, err
+	}
+
+	sigChan, err := k.StartMasterKeySign(ctx, msg, snapshot.Validators)
+	if err != nil {
+		return nil, err
+	}
+
+	go voteOnSignResult(ctx, k, v, sigChan, poll)
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+		),
+	)
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+}
+
+func voteOnSignResult(ctx sdk.Context, k keeper.Keeper, v types.Voter, sigChan <-chan exported.Signature, poll voting.PollMeta) {
+	sig, ok := <-sigChan
+	if ok {
+		bz, err := convert.SigToBytes(sig.R.Bytes(), sig.S.Bytes())
+		if err != nil {
+			k.Logger(ctx).Error(err.Error())
+			return
+		}
+		if err := v.Vote(ctx, &types.MsgVoteSig{PollMeta: poll, SigBytes: bz}); err != nil {
+			k.Logger(ctx).Error(err.Error())
+			return
+		}
+	}
 }
 
 func handleMsgSignTraffic(ctx sdk.Context, k keeper.Keeper, msg types.MsgSignTraffic) (*sdk.Result, error) {

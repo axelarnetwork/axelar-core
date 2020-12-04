@@ -31,7 +31,7 @@ func NewBroadcaster(cdc *codec.Codec, sender sdk.AccAddress, localPrincipal sdk.
 	}
 }
 
-func (b Broadcaster) Broadcast(_ sdk.Context, msgs []exported.MsgWithSenderSetter) error {
+func (b Broadcaster) BroadcastSync(_ sdk.Context, msgs []exported.MsgWithSenderSetter) error {
 	for _, msg := range msgs {
 		msg.SetSender(b.Proxy)
 

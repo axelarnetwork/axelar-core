@@ -133,10 +133,10 @@ func (k Keeper) SendBallot(ctx sdk.Context) {
 	// Reset ballot for the next round
 	k.setPendingBallot(types.MsgBallot{})
 
-	// Broadcast is a subjective action, so it must not cause non-deterministic changes to the tx execution.
+	// BroadcastSync is a subjective action, so it must not cause non-deterministic changes to the tx execution.
 	// Because of this and to prevent a deadlock it needs to run in its own goroutine without any callbacks.
 	go func(logger log.Logger) {
-		err := k.broadcaster.Broadcast(ctx, []bcExported.MsgWithSenderSetter{&ballot})
+		err := k.broadcaster.BroadcastSync(ctx, []bcExported.MsgWithSenderSetter{&ballot})
 		if err != nil {
 			logger.Error(sdkerrors.Wrap(err, "broadcasting ballot failed").Error())
 		} else {

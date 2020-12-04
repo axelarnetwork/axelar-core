@@ -18,6 +18,7 @@ import (
 const (
 	rotationPrefix    = "round_"
 	blockHeightPrefix = "blockHeight_"
+	pkPrefix          = "pk_"
 )
 
 // StartKeygen starts a keygen protocol with the specified parameters
@@ -73,7 +74,7 @@ func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, valida
 				keyID, keygenInit.KeygenInit.PartyUids[keygenInit.KeygenInit.MyPartyIndex], msg.ToPartyUid, msg.IsBroadcast))
 			// sender is set by broadcaster
 			tssMsg := &types.MsgKeygenTraffic{SessionID: keyID, Payload: msg}
-			if err := k.broadcaster.Broadcast(ctx, []broadcast.MsgWithSenderSetter{tssMsg}); err != nil {
+			if err := k.broadcaster.BroadcastSync(ctx, []broadcast.MsgWithSenderSetter{tssMsg}); err != nil {
 				k.Logger(ctx).Error(sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing sign msg").Error())
 				return
 			}
@@ -121,7 +122,7 @@ func (k Keeper) KeygenMsg(ctx sdk.Context, msg types.MsgKeygenTraffic) error {
 }
 
 func (k Keeper) GetKey(ctx sdk.Context, keyID string) (ecdsa.PublicKey, error) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(keyID))
+	bz := ctx.KVStore(k.storeKey).Get([]byte(pkPrefix + keyID))
 	return convert.BytesToPubkey(bz)
 }
 
@@ -134,7 +135,7 @@ func (k Keeper) SetKey(ctx sdk.Context, keyID string, key ecdsa.PublicKey) {
 	if err != nil {
 		panic(err)
 	}
-	ctx.KVStore(k.storeKey).Set([]byte(keyID), bz)
+	ctx.KVStore(k.storeKey).Set([]byte(pkPrefix+keyID), bz)
 }
 
 // GetLatestMasterKey returns the latest master key that was set for the given chain
@@ -150,10 +151,10 @@ Example:
 returns the master key for Bitcoin three rotations ago.
 */
 func (k Keeper) GetPreviousMasterKey(ctx sdk.Context, chain string, beforeCurrent int64) (ecdsa.PublicKey, error) {
-	r := k.getRotationCount(ctx, chain)
-
 	// The master key entry stores the keyID of a previously successfully stored key, so we need to do a second lookup after we retrieve the ID.
 	// This indirection is necessary, because we need the keyID for other purposes, eg signing
+
+	r := k.getRotationCount(ctx, chain)
 	keyId := ctx.KVStore(k.storeKey).Get([]byte(masterKeyID(r-beforeCurrent, chain)))
 	if keyId == nil {
 		return ecdsa.PublicKey{}, fmt.Errorf("there is no master key for chain %s %d rotations ago", chain, beforeCurrent)
@@ -163,14 +164,21 @@ func (k Keeper) GetPreviousMasterKey(ctx sdk.Context, chain string, beforeCurren
 
 // AssignNextMasterKey stores a new master key for a given chain which will become the default once RotateMasterKey is called
 func (k Keeper) AssignNextMasterKey(ctx sdk.Context, chain string, snapshotHeight int64, keyID string) error {
-	if k.isKeyRefreshLocked(ctx, keyID, chain, snapshotHeight) {
+	keyGenHeight, ok := k.getKeygenStart(ctx, keyID)
+	if !ok {
+		return fmt.Errorf("there is no key with ID %s", keyID)
+	}
+	masterKeyHeight := k.getLatestMasterKeyHeight(ctx, chain)
+
+	p := k.GetParams(ctx)
+	// key has been generated during locking period or there already is a master key for the current snapshot
+	if snapshotHeight+p.LockingPeriod > keyGenHeight || masterKeyHeight > snapshotHeight {
 		return fmt.Errorf("key refresh locked")
 	}
 
-	r := k.getRotationCount(ctx, chain)
-
 	// The master key entry needs to store the keyID instead of the public key, because the keyID is needed whenever
 	// the keeper calls the secure private key store (e.g. for signing) and we would lose the keyID information otherwise
+	r := k.getRotationCount(ctx, chain)
 	ctx.KVStore(k.storeKey).Set([]byte(masterKeyID(r+1, chain)), []byte(keyID))
 
 	k.Logger(ctx).Debug(fmt.Sprintf("prepared master key rotation for chain %s", chain))
@@ -233,19 +241,6 @@ func (k Keeper) prepareKeygen(ctx sdk.Context, keyID string, threshold int, vali
 
 	k.Logger(ctx).Debug(fmt.Sprintf("my uid [%s] index %d of %v", myAddress.String(), myIndex, partyUids))
 	return stream, keygenInit
-}
-
-// isKeyRefreshLocked checks if the key with the given keyID has been created before the locking period for the given snapshot was over
-// and if the current master key for the given chain has been created after the snapshot
-func (k Keeper) isKeyRefreshLocked(ctx sdk.Context, keyID string, chain string, snapshotHeight int64) bool {
-	keyGenHeight, ok := k.getKeygenStart(ctx, keyID)
-	if !ok {
-		keyGenHeight = 0
-	}
-	masterKeyHeight := k.getLatestMasterKeyHeight(ctx, chain)
-
-	p := k.GetParams(ctx)
-	return snapshotHeight+p.LockingPeriod > keyGenHeight || masterKeyHeight > snapshotHeight
 }
 
 func masterKeyID(rotation int64, chain string) string {

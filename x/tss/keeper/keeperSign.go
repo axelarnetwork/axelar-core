@@ -14,6 +14,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
+// StartMasterKeySign starts a tss signing protocol using the specified key for the given chain.
 func (k Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart, validators []staking.Validator) (<-chan exported.Signature, error) {
 	if _, ok := k.signStreams[info.NewSigID]; ok {
 		return nil, fmt.Errorf("signing protocol for ID %s already in progress", info.NewSigID)
@@ -58,7 +59,7 @@ func (k Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart, validators [
 				info.NewSigID, msg.IsBroadcast, msg.ToPartyUid))
 			// sender is set by broadcaster
 			tssMsg := &types.MsgSignTraffic{SessionID: info.NewSigID, Payload: msg}
-			if err := k.broadcaster.Broadcast(ctx, []broadcast.MsgWithSenderSetter{tssMsg}); err != nil {
+			if err := k.broadcaster.BroadcastSync(ctx, []broadcast.MsgWithSenderSetter{tssMsg}); err != nil {
 				k.Logger(ctx).Error(sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing sign msg").Error())
 				return
 			}
@@ -81,39 +82,19 @@ func (k Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart, validators [
 	return sigChan, nil
 }
 
-func (k Keeper) prepareSign(ctx sdk.Context, info types.MsgSignStart, validators []staking.Validator) (types.Stream, *tssd.MessageIn_SignInit) {
-	// TODO call GetLocalPrincipal only once at launch? need to wait until someone pushes a RegisterProxy message on chain...
-	myAddress := k.broadcaster.GetLocalPrincipal(ctx)
-	if myAddress.Empty() {
-		k.Logger(ctx).Info("ignore Sign: my validator address is empty so I must not be a validator")
-		return nil, nil
+// StartMasterKeySign starts a tss signing protocol using the master key for the given chain.
+func (k Keeper) StartMasterKeySign(ctx sdk.Context, info types.MsgMasterKeySignStart, validators []staking.Validator) (<-chan exported.Signature, error) {
+	r := k.getRotationCount(ctx, info.Chain)
+	keyID := ctx.KVStore(k.storeKey).Get([]byte(masterKeyID(r, info.Chain)))
+	if keyID == nil {
+		return nil, fmt.Errorf("master key for chain %s not set", info.Chain)
 	}
-
-	partyUids, _, err := addrToUids(validators, myAddress)
-	if err != nil {
-		k.Logger(ctx).Error(err.Error())
-		return nil, nil
-	}
-
-	grpcCtx, _ := k.newContext()
-	stream, err := k.client.Sign(grpcCtx)
-	if err != nil {
-		k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tssd gRPC call Sign").Error())
-		return nil, nil
-	}
-	k.signStreams[info.NewSigID] = stream
-	// TODO refactor
-	signInit := &tssd.MessageIn_SignInit{
-		SignInit: &tssd.SignInit{
-			NewSigUid:     info.NewSigID,
-			KeyUid:        info.KeyID,
-			PartyUids:     partyUids,
-			MessageToSign: info.MsgToSign,
-		},
-	}
-
-	k.Logger(ctx).Debug(fmt.Sprintf("my uid [%s] of %v", myAddress.String(), partyUids))
-	return stream, signInit
+	return k.StartSign(ctx, types.MsgSignStart{
+		Sender:    info.Sender,
+		NewSigID:  info.NewSigID,
+		KeyID:     string(keyID),
+		MsgToSign: info.MsgToSign,
+	}, validators)
 }
 
 // SignMsg takes a types.MsgSignTraffic from the chain and relays it to the keygen protocol
@@ -161,4 +142,39 @@ func (k Keeper) SetSig(ctx sdk.Context, sigID string, signature exported.Signatu
 	}
 	ctx.KVStore(k.storeKey).Set([]byte(sigID), bz)
 	return nil
+}
+
+func (k Keeper) prepareSign(ctx sdk.Context, info types.MsgSignStart, validators []staking.Validator) (types.Stream, *tssd.MessageIn_SignInit) {
+	// TODO call GetLocalPrincipal only once at launch? need to wait until someone pushes a RegisterProxy message on chain...
+	myAddress := k.broadcaster.GetLocalPrincipal(ctx)
+	if myAddress.Empty() {
+		k.Logger(ctx).Info("ignore Sign: my validator address is empty so I must not be a validator")
+		return nil, nil
+	}
+
+	partyUids, _, err := addrToUids(validators, myAddress)
+	if err != nil {
+		k.Logger(ctx).Error(err.Error())
+		return nil, nil
+	}
+
+	grpcCtx, _ := k.newContext()
+	stream, err := k.client.Sign(grpcCtx)
+	if err != nil {
+		k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tssd gRPC call Sign").Error())
+		return nil, nil
+	}
+	k.signStreams[info.NewSigID] = stream
+	// TODO refactor
+	signInit := &tssd.MessageIn_SignInit{
+		SignInit: &tssd.SignInit{
+			NewSigUid:     info.NewSigID,
+			KeyUid:        info.KeyID,
+			PartyUids:     partyUids,
+			MessageToSign: info.MsgToSign,
+		},
+	}
+
+	k.Logger(ctx).Debug(fmt.Sprintf("my uid [%s] of %v", myAddress.String(), partyUids))
+	return stream, signInit
 }
