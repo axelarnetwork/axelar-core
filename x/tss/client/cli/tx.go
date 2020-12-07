@@ -120,22 +120,37 @@ func getCmdSignStart(cdc *codec.Codec) *cobra.Command {
 	if cmd.MarkFlagRequired("new-sig-id") != nil {
 		panic("flag not set")
 	}
-	keyID := cmd.Flags().String("key-id", "", "unique ID for signature pubkey (required)")
-	if cmd.MarkFlagRequired("key-id") != nil {
-		panic("flag not set")
-	}
+	keyID := cmd.Flags().String("key-id", "", "unique ID for signature pubkey")
+	masterKey := cmd.Flags().StringP("master-key", "m", "", "use the master key registered for the given chain")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		if *keyID == "" && *masterKey == "" {
+			return fmt.Errorf("either flag --key-id or --master-key must be set")
+		}
+		if *keyID != "" && *masterKey != "" {
+			return fmt.Errorf("flags --key-id and --master-key must not both be set")
+		}
 		cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
 
 		var toSign []byte
 		cdc.MustUnmarshalJSON([]byte(args[0]), &toSign)
-		msg := types.MsgSignStart{
-			Sender:    cliCtx.FromAddress,
-			NewSigID:  *newSigID,
-			KeyID:     *keyID,
-			MsgToSign: toSign,
+		var msg sdk.Msg
+		if *keyID != "" {
+			msg = types.MsgSignStart{
+				Sender:    cliCtx.FromAddress,
+				NewSigID:  *newSigID,
+				KeyID:     *keyID,
+				MsgToSign: toSign,
+			}
+		} else {
+			msg = types.MsgMasterKeySignStart{
+				Sender:    cliCtx.FromAddress,
+				NewSigID:  *newSigID,
+				Chain:     *masterKey,
+				MsgToSign: toSign,
+			}
 		}
+
 		if err := msg.ValidateBasic(); err != nil {
 			return err
 		}

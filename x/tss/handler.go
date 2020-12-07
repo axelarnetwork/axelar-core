@@ -45,7 +45,7 @@ func NewHandler(k keeper.Keeper, s types.Staker, v types.Voter) sdk.Handler {
 
 func handleMsgRotateMasterKey(ctx sdk.Context, k keeper.Keeper, msg types.MsgRotateMasterKey) (*sdk.Result, error) {
 	if err := k.RotateMasterKey(ctx, msg.Chain); err != nil {
-		return nil, sdkerrors.Wrap(err, "failed to rotate master key")
+		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -61,7 +61,7 @@ func handleMsgRotateMasterKey(ctx sdk.Context, k keeper.Keeper, msg types.MsgRot
 
 func handleMsgVoteSig(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.MsgVoteSig) (*sdk.Result, error) {
 	if err := v.TallyVote(ctx, &msg); err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
 	}
 
 	event := sdk.NewEvent(
@@ -77,10 +77,10 @@ func handleMsgVoteSig(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types
 
 		r, s, err := convert.BytesToSig(msg.SigBytes)
 		if err != nil {
-			return nil, err
+			return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
 		}
 		if err := k.SetSig(ctx, msg.PollMeta.ID, exported.Signature{R: r, S: s}); err != nil {
-			return nil, err
+			return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
 		}
 	}
 
@@ -89,7 +89,7 @@ func handleMsgVoteSig(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types
 
 func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.MsgVotePubKey) (*sdk.Result, error) {
 	if err := v.TallyVote(ctx, &msg); err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
 	}
 
 	event := sdk.NewEvent(
@@ -121,12 +121,12 @@ func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg ty
 func handleMsgAssignNextMasterKey(ctx sdk.Context, k keeper.Keeper, s types.Staker, msg types.MsgAssignNextMasterKey) (*sdk.Result, error) {
 	snapshot, ok := s.GetLatestSnapshot(ctx)
 	if !ok {
-		return nil, fmt.Errorf("key refresh failed")
+		return nil, sdkerrors.Wrap(types.ErrTss, "key refresh failed")
 	}
 
 	err := k.AssignNextMasterKey(ctx, msg.Chain, snapshot.Height, msg.KeyID)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -141,7 +141,7 @@ func handleMsgAssignNextMasterKey(ctx sdk.Context, k keeper.Keeper, s types.Stak
 
 func handleMsgKeygenTraffic(ctx sdk.Context, k keeper.Keeper, msg types.MsgKeygenTraffic) (*sdk.Result, error) {
 	if err := k.KeygenMsg(ctx, msg); err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
 	}
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -157,23 +157,23 @@ func handleMsgKeygenTraffic(ctx sdk.Context, k keeper.Keeper, msg types.MsgKeyge
 func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Staker, v types.Voter, msg types.MsgKeygenStart) (*sdk.Result, error) {
 	snapshot, ok := s.GetLatestSnapshot(ctx)
 	if !ok {
-		return nil, fmt.Errorf("key refresh failed")
+		return nil, sdkerrors.Wrap(types.ErrTss, "the system needs to have at least one validator snapshot")
 	}
 
 	if msg.Threshold < 1 || msg.Threshold > len(snapshot.Validators) {
 		err := fmt.Errorf("invalid threshold: %d, validators: %d", msg.Threshold, len(snapshot.Validators))
 		k.Logger(ctx).Error(err.Error())
-		return nil, err
+		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
 	}
 
 	poll := voting.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.NewKeyID}
 	if err := v.InitPoll(ctx, poll); err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
 	}
 
 	pkChan, err := k.StartKeygen(ctx, msg.NewKeyID, msg.Threshold, snapshot.Validators)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
 	}
 
 	go func() {

@@ -47,7 +47,7 @@ func GetCmdRegisterProxy(cdc *codec.Codec) *cobra.Command {
 
 			voter, _, err := context.GetFromFields(inBuf, args[0], false)
 			if err != nil {
-				return sdkerrors.Wrap(err, "proxy invalid")
+				return sdkerrors.Wrap(types.ErrBroadcast, "proxy invalid")
 			}
 
 			msg := types.NewMsgRegisterProxy(sdk.ValAddress(cliCtx.FromAddress), voter)

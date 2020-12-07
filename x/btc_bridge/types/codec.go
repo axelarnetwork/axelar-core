@@ -12,6 +12,7 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgRawTx{}, "btcbridge/RawTx", nil)
 	cdc.RegisterConcrete(MsgWithdraw{}, "btcbridge/Withdraw", nil)
 	cdc.RegisterConcrete(&MsgVoteVerifiedTx{}, "btcbridge/MsgVoteVerifiedTx", nil)
+	cdc.RegisterConcrete(MsgTransferToNewMasterKey{}, "btcbridge/MsgTransferToNewMasterKey", nil)
 
 	//	TODO: Replace bool with full bitcoin tx data when btcbridge uses write-in voting pattern
 	cdc.RegisterConcrete(true, "btcbridge/VotingData", nil)

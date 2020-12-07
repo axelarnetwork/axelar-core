@@ -173,7 +173,7 @@ func (k Keeper) GetProxy(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddre
 
 func (k Keeper) setProxyCount(ctx sdk.Context, count int) {
 	k.Logger(ctx).Debug(fmt.Sprintf("number of known proxies: %v", count))
-	ctx.KVStore(k.storeKey).Set([]byte(proxyCountKey), k.cdc.MustMarshalBinaryBare(count))
+	ctx.KVStore(k.storeKey).Set([]byte(proxyCountKey), k.cdc.MustMarshalBinaryLengthPrefixed(count))
 }
 
 func (k Keeper) getProxyCount(ctx sdk.Context) int {
