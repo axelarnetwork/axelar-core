@@ -1,6 +1,7 @@
 package mock
 
 import (
+	"bytes"
 	"io"
 	"sort"
 	"sync"
@@ -167,42 +168,6 @@ type mockIterator struct {
 	start, end []byte
 }
 
-// used to construct the mock iterator and returns true if
-// bytes slice x is less than bytes slice y according to
-// the sdk contract for the db.Iterator interface
-func less(x, y []byte) bool {
-
-	// go over each byte of x
-	for i := 0; i < len(x); i++ {
-
-		// if x is greater length than y and all its
-		// previoys bytes were greater or equal, than
-		// x > y
-		if i >= len(y) {
-
-			return false
-		}
-
-		// if at the current index, x's byte is less than
-		// y's byte, than x < y
-		if x[i] < y[i] {
-
-			return true
-		}
-
-	}
-
-	// if we cycled through all bytes of x and reached this point,
-	// then x is either a prefix of y, or is equal to y. The former
-	// means x < y, while the latter means x >= y
-
-	if len(x) < len(y) {
-		return true
-	}
-
-	return false
-}
-
 func newMockIterator(start, end []byte, content map[string][]byte) mockIterator {
 
 	keys := make([][]byte, 0)
@@ -212,7 +177,7 @@ func newMockIterator(start, end []byte, content map[string][]byte) mockIterator 
 
 		b := []byte(k)
 
-		if (start == nil && end == nil) || (!less(b, start) && less(b, end)) {
+		if (start == nil && end == nil) || (bytes.Compare(b, start) >= 0 && bytes.Compare(b, end) < 0) {
 
 			//make sure data is a copy so that there is no concurrent writing
 			temp := make([]byte, len(k))
@@ -224,7 +189,7 @@ func newMockIterator(start, end []byte, content map[string][]byte) mockIterator 
 	// Sort the keys in ascending order
 	sort.Slice(keys, func(i, j int) bool {
 
-		return less(keys[i], keys[j])
+		return bytes.Compare(keys[i], keys[j]) < 0
 
 	})
 
