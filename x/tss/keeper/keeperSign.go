@@ -9,13 +9,13 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
-	staking "github.com/axelarnetwork/axelar-core/x/staking/exported"
+	snapshotting "github.com/axelarnetwork/axelar-core/x/snapshotting/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 // StartMasterKeySign starts a tss signing protocol using the specified key for the given chain.
-func (k Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart, validators []staking.Validator) (<-chan exported.Signature, error) {
+func (k Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart, validators []snapshotting.Validator) (<-chan exported.Signature, error) {
 	if _, ok := k.signStreams[info.NewSigID]; ok {
 		return nil, fmt.Errorf("signing protocol for ID %s already in progress", info.NewSigID)
 	}
@@ -83,7 +83,7 @@ func (k Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart, validators [
 }
 
 // StartMasterKeySign starts a tss signing protocol using the master key for the given chain.
-func (k Keeper) StartMasterKeySign(ctx sdk.Context, info types.MsgMasterKeySignStart, validators []staking.Validator) (<-chan exported.Signature, error) {
+func (k Keeper) StartMasterKeySign(ctx sdk.Context, info types.MsgMasterKeySignStart, validators []snapshotting.Validator) (<-chan exported.Signature, error) {
 	r := k.getRotationCount(ctx, info.Chain)
 	keyID := ctx.KVStore(k.storeKey).Get([]byte(masterKeyID(r, info.Chain)))
 	if keyID == nil {
@@ -144,7 +144,7 @@ func (k Keeper) SetSig(ctx sdk.Context, sigID string, signature exported.Signatu
 	return nil
 }
 
-func (k Keeper) prepareSign(ctx sdk.Context, info types.MsgSignStart, validators []staking.Validator) (types.Stream, *tssd.MessageIn_SignInit) {
+func (k Keeper) prepareSign(ctx sdk.Context, info types.MsgSignStart, validators []snapshotting.Validator) (types.Stream, *tssd.MessageIn_SignInit) {
 	// TODO call GetLocalPrincipal only once at launch? need to wait until someone pushes a RegisterProxy message on chain...
 	myAddress := k.broadcaster.GetLocalPrincipal(ctx)
 	if myAddress.Empty() {

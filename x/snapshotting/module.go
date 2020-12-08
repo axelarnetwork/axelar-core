@@ -1,4 +1,4 @@
-package staking
+package snapshoting
 
 import (
 	"encoding/json"
@@ -11,9 +11,9 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/axelarnetwork/axelar-core/x/staking/client/cli"
-	"github.com/axelarnetwork/axelar-core/x/staking/keeper"
-	"github.com/axelarnetwork/axelar-core/x/staking/types"
+	"github.com/axelarnetwork/axelar-core/x/snapshotting/client/cli"
+	"github.com/axelarnetwork/axelar-core/x/snapshotting/keeper"
+	"github.com/axelarnetwork/axelar-core/x/snapshotting/types"
 )
 
 var (

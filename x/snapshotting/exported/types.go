@@ -18,7 +18,7 @@ type Snapshot struct {
 	TotalPower sdk.Int     `json:"totalpower"`
 }
 
-type Staker interface {
+type Snapshotter interface {
 	Validator(ctx sdk.Context, address sdk.ValAddress) (Validator, bool)
 	GetLatestSnapshot(ctx sdk.Context) (Snapshot, bool)
 	GetLatestRound(ctx sdk.Context) int64

@@ -1,10 +1,10 @@
-package staking
+package snapshoting
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/axelarnetwork/axelar-core/x/staking/keeper"
+	"github.com/axelarnetwork/axelar-core/x/snapshotting/keeper"
 )
 
 // BeginBlocker check for infraction evidence or downtime of validators

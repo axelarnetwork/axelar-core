@@ -12,8 +12,8 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/mock"
-	"github.com/axelarnetwork/axelar-core/x/staking/exported"
-	"github.com/axelarnetwork/axelar-core/x/staking/types"
+	"github.com/axelarnetwork/axelar-core/x/snapshotting/exported"
+	"github.com/axelarnetwork/axelar-core/x/snapshotting/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"

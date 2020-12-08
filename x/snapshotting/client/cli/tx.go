@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 
 	cliUtils "github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/x/staking/types"
+	"github.com/axelarnetwork/axelar-core/x/snapshotting/types"
 )
 
 // GetTxCmd returns the transaction commands for this module

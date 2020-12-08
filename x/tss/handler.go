@@ -14,7 +14,7 @@ import (
 	voting "github.com/axelarnetwork/axelar-core/x/voting/exported"
 )
 
-func NewHandler(k keeper.Keeper, s types.Staker, v types.Voter) sdk.Handler {
+func NewHandler(k keeper.Keeper, s types.Snapshotter, v types.Voter) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
@@ -118,7 +118,7 @@ func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg ty
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func handleMsgAssignNextMasterKey(ctx sdk.Context, k keeper.Keeper, s types.Staker, msg types.MsgAssignNextMasterKey) (*sdk.Result, error) {
+func handleMsgAssignNextMasterKey(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, msg types.MsgAssignNextMasterKey) (*sdk.Result, error) {
 	snapshot, ok := s.GetLatestSnapshot(ctx)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrTss, "key refresh failed")
@@ -154,7 +154,7 @@ func handleMsgKeygenTraffic(ctx sdk.Context, k keeper.Keeper, msg types.MsgKeyge
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Staker, v types.Voter, msg types.MsgKeygenStart) (*sdk.Result, error) {
+func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, v types.Voter, msg types.MsgKeygenStart) (*sdk.Result, error) {
 	snapshot, ok := s.GetLatestSnapshot(ctx)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrTss, "the system needs to have at least one validator snapshot")
@@ -200,7 +200,7 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Staker, v ty
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func handleMsgSignStart(ctx sdk.Context, k keeper.Keeper, s types.Staker, v types.Voter, msg types.MsgSignStart) (*sdk.Result, error) {
+func handleMsgSignStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, v types.Voter, msg types.MsgSignStart) (*sdk.Result, error) {
 	// TODO for now assume all validators participate
 	snapshot, ok := s.GetLatestSnapshot(ctx)
 	if !ok {
@@ -228,7 +228,7 @@ func handleMsgSignStart(ctx sdk.Context, k keeper.Keeper, s types.Staker, v type
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func handleMsgMasterKeySignStart(ctx sdk.Context, k keeper.Keeper, s types.Staker, v types.Voter, msg types.MsgMasterKeySignStart) (*sdk.Result, error) {
+func handleMsgMasterKeySignStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, v types.Voter, msg types.MsgMasterKeySignStart) (*sdk.Result, error) {
 	// TODO for now assume all validators participate
 	snapshot, ok := s.GetLatestSnapshot(ctx)
 	if !ok {

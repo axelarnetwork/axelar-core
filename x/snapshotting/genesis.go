@@ -1,10 +1,10 @@
-package staking
+package snapshoting
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/axelarnetwork/axelar-core/x/staking/keeper"
-	"github.com/axelarnetwork/axelar-core/x/staking/types"
+	"github.com/axelarnetwork/axelar-core/x/snapshotting/keeper"
+	"github.com/axelarnetwork/axelar-core/x/snapshotting/types"
 )
 
 // InitGenesis initialize default parameters

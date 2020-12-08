@@ -23,7 +23,7 @@ import (
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
 	btcMock "github.com/axelarnetwork/axelar-core/x/btc_bridge/tests/mock"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
-	"github.com/axelarnetwork/axelar-core/x/staking/exported"
+	"github.com/axelarnetwork/axelar-core/x/snapshotting/exported"
 	"github.com/axelarnetwork/axelar-core/x/voting"
 	vExported "github.com/axelarnetwork/axelar-core/x/voting/exported"
 	"github.com/axelarnetwork/axelar-core/x/voting/keeper"
@@ -161,7 +161,7 @@ func prepareVerifyMsg(hash *chainhash.Hash, destination string, amount int) sdk.
 	}, btcutil.Amount(amount))
 }
 
-func newNode(moniker string, broadcaster bcExported.Broadcaster, staker exported.Staker) (mock.Node, btcTypes.Voter) {
+func newNode(moniker string, broadcaster bcExported.Broadcaster, staker exported.Snapshotter) (mock.Node, btcTypes.Voter) {
 	/*
 		Multistore is mocked so we can more easily manipulate existing state and assert that specific state changes happen.
 		For now, we never use the Header information, so we can just initialize an empty struct.

@@ -2,7 +2,7 @@ package types
 
 import (
 	bcExported "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
-	stExported "github.com/axelarnetwork/axelar-core/x/staking/exported"
+	ssExported "github.com/axelarnetwork/axelar-core/x/snapshotting/exported"
 	vExported "github.com/axelarnetwork/axelar-core/x/voting/exported"
 )
 
@@ -10,8 +10,8 @@ type Broadcaster interface {
 	bcExported.Broadcaster
 }
 
-type Staker interface {
-	stExported.Staker
+type Snapshotter interface {
+	ssExported.Snapshotter
 }
 
 type Voter interface {

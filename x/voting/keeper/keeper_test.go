@@ -15,7 +15,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/mock"
 	"github.com/axelarnetwork/axelar-core/utils"
 	bcExported "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
-	stExported "github.com/axelarnetwork/axelar-core/x/staking/exported"
+	ssExported "github.com/axelarnetwork/axelar-core/x/snapshotting/exported"
 	"github.com/axelarnetwork/axelar-core/x/voting/exported"
 	"github.com/axelarnetwork/axelar-core/x/voting/types"
 )
@@ -37,7 +37,7 @@ func init() {
 	cdc.RegisterConcrete("", "string", nil)
 }
 
-func newKeeper(b bcExported.Broadcaster, validators ...stExported.Validator) Keeper {
+func newKeeper(b bcExported.Broadcaster, validators ...ssExported.Validator) Keeper {
 	return NewKeeper(testutils.Codec(), mock.NewKVStoreKey("voting"), store.NewSubjectiveStore(), mock.NewTestStaker(1, validators...), b)
 }
 
@@ -245,7 +245,7 @@ func tallyNonExistingPollReturnError(t *testing.T) {
 	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	b, _ := newBroadcaster()
 	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), b.Proxy))
-	k := newKeeper(b, stExported.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10})
+	k := newKeeper(b, ssExported.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10})
 	k.SetVotingThreshold(ctx, utils.Threshold{Numerator: 2, Denominator: 3})
 
 	assert.NoError(t, k.InitPoll(ctx, poll1))
@@ -261,7 +261,7 @@ func tallyUnknownVoterReturnError(t *testing.T) {
 	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	b, _ := newBroadcaster()
 	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), b.Proxy))
-	k := newKeeper(b, stExported.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10})
+	k := newKeeper(b, ssExported.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10})
 	k.SetVotingThreshold(ctx, utils.Threshold{Numerator: 2, Denominator: 3})
 
 	assert.NoError(t, k.InitPoll(ctx, poll1))
@@ -279,8 +279,8 @@ func tallyNoWinner(t *testing.T) {
 	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), b.Proxy))
 	k := newKeeper(
 		b,
-		stExported.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10},
-		stExported.Validator{Address: sdk.ValAddress("big spender"), Power: 90},
+		ssExported.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10},
+		ssExported.Validator{Address: sdk.ValAddress("big spender"), Power: 90},
 	)
 	k.SetVotingThreshold(ctx, utils.Threshold{Numerator: 2, Denominator: 3})
 
@@ -301,8 +301,8 @@ func tallyWithWinner(t *testing.T) {
 	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), b.Proxy))
 	k := newKeeper(
 		b,
-		stExported.Validator{Address: b.GetLocalPrincipal(ctx), Power: 90},
-		stExported.Validator{Address: sdk.ValAddress("small fish"), Power: 10},
+		ssExported.Validator{Address: b.GetLocalPrincipal(ctx), Power: 90},
+		ssExported.Validator{Address: sdk.ValAddress("small fish"), Power: 10},
 	)
 	k.SetVotingThreshold(ctx, utils.Threshold{Numerator: 2, Denominator: 3})
 
@@ -321,7 +321,7 @@ func tallyTwoVotesFromSameValidatorReturnError(t *testing.T) {
 	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	b, _ := newBroadcaster()
 	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), b.Proxy))
-	validator := stExported.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10}
+	validator := ssExported.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10}
 	k := newKeeper(b, validator)
 	k.SetVotingThreshold(ctx, utils.Threshold{Numerator: 2, Denominator: 3})
 
@@ -357,9 +357,9 @@ func tallyMultipleVotesUntilDecision(t *testing.T) {
 	b, _ := newBroadcaster()
 	proxy2 := sdk.AccAddress("proxy2")
 	proxy3 := sdk.AccAddress("proxy3")
-	val1 := stExported.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10}
-	val2 := stExported.Validator{Address: sdk.ValAddress("val2"), Power: 10}
-	val3 := stExported.Validator{Address: sdk.ValAddress("val3"), Power: 7}
+	val1 := ssExported.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10}
+	val2 := ssExported.Validator{Address: sdk.ValAddress("val2"), Power: 10}
+	val3 := ssExported.Validator{Address: sdk.ValAddress("val3"), Power: 7}
 	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), b.Proxy))
 	assert.NoError(t, b.RegisterProxy(ctx, val2.Address, proxy2))
 	assert.NoError(t, b.RegisterProxy(ctx, val3.Address, proxy3))
@@ -402,9 +402,9 @@ func tallyForDecidedPoll(t *testing.T) {
 	b, _ := newBroadcaster()
 	proxy2 := sdk.AccAddress("proxy2")
 	proxy3 := sdk.AccAddress("proxy3")
-	val1 := stExported.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10}
-	val2 := stExported.Validator{Address: sdk.ValAddress("val2"), Power: 10}
-	val3 := stExported.Validator{Address: sdk.ValAddress("val3"), Power: 7}
+	val1 := ssExported.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10}
+	val2 := ssExported.Validator{Address: sdk.ValAddress("val2"), Power: 10}
+	val3 := ssExported.Validator{Address: sdk.ValAddress("val3"), Power: 7}
 	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), b.Proxy))
 	assert.NoError(t, b.RegisterProxy(ctx, val2.Address, proxy2))
 	assert.NoError(t, b.RegisterProxy(ctx, val3.Address, proxy3))

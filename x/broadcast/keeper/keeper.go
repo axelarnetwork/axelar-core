@@ -26,7 +26,7 @@ const (
 )
 
 type Keeper struct {
-	stakingKeeper   types.Staker
+	stakingKeeper   types.Snapshotter
 	storeKey        sdk.StoreKey
 	from            sdk.AccAddress
 	keybase         keys.Keybase
@@ -46,7 +46,7 @@ func NewKeeper(
 	subjectiveStore store.SubjectiveStore,
 	keybase keys.Keybase,
 	authKeeper auth.AccountKeeper,
-	stakingKeeper types.Staker,
+	stakingKeeper types.Snapshotter,
 	conf types.ClientConfig,
 	logger log.Logger,
 ) (Keeper, error) {

@@ -39,9 +39,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
-	axStaking "github.com/axelarnetwork/axelar-core/x/staking"
-	sKeeper "github.com/axelarnetwork/axelar-core/x/staking/keeper"
-	stakingTypes "github.com/axelarnetwork/axelar-core/x/staking/types"
+	axStaking "github.com/axelarnetwork/axelar-core/x/snapshotting"
+	sKeeper "github.com/axelarnetwork/axelar-core/x/snapshotting/keeper"
+	ssTypes "github.com/axelarnetwork/axelar-core/x/snapshotting/types"
 	"github.com/axelarnetwork/axelar-core/x/tss"
 	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -153,7 +153,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 
 	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
 		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey,
-		votingTypes.StoreKey, broadcastTypes.StoreKey, btcTypes.StoreKey, stakingTypes.StoreKey, tssTypes.StoreKey)
+		votingTypes.StoreKey, broadcastTypes.StoreKey, btcTypes.StoreKey, ssTypes.StoreKey, tssTypes.StoreKey)
 
 	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
@@ -237,7 +237,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	var err error
 	app.btcKeeper = btcKeeper.NewBtcKeeper(app.cdc, keys[btcTypes.StoreKey])
 
-	app.axStakingKeeper = sKeeper.NewKeeper(app.cdc, keys[stakingTypes.StoreKey], app.stakingKeeper)
+	app.axStakingKeeper = sKeeper.NewKeeper(app.cdc, keys[ssTypes.StoreKey], app.stakingKeeper)
 
 	keybase, err := keyring.NewKeyring(sdk.KeyringServiceName(), axelarCfg.ClientConfig.KeyringBackend, DefaultCLIHome, os.Stdin)
 	if err != nil {

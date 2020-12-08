@@ -1,4 +1,4 @@
-package staking
+package snapshoting
 
 import (
 	"fmt"
@@ -6,8 +6,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/axelarnetwork/axelar-core/x/staking/keeper"
-	"github.com/axelarnetwork/axelar-core/x/staking/types"
+	"github.com/axelarnetwork/axelar-core/x/snapshotting/keeper"
+	"github.com/axelarnetwork/axelar-core/x/snapshotting/types"
 )
 
 func NewHandler(k keeper.Keeper) sdk.Handler {

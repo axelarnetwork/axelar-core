@@ -16,7 +16,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/store"
 	"github.com/axelarnetwork/axelar-core/utils"
 	bcExported "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
-	staking "github.com/axelarnetwork/axelar-core/x/staking/exported"
+	ssExported "github.com/axelarnetwork/axelar-core/x/snapshotting/exported"
 
 	"github.com/axelarnetwork/axelar-core/x/voting/exported"
 	"github.com/axelarnetwork/axelar-core/x/voting/types"
@@ -37,10 +37,10 @@ type Keeper struct {
 	storeKey        sdk.StoreKey
 	cdc             *codec.Codec
 	broadcaster     types.Broadcaster
-	staker          types.Staker
+	staker          types.Snapshotter
 }
 
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, subjectiveStore store.SubjectiveStore, staker types.Staker, broadcaster types.Broadcaster) Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, subjectiveStore store.SubjectiveStore, staker types.Snapshotter, broadcaster types.Broadcaster) Keeper {
 	keeper := Keeper{
 		subjectiveStore: subjectiveStore,
 		storeKey:        key,
@@ -290,11 +290,11 @@ func (k Keeper) hash(data exported.VotingData) string {
 	return string(h[:])
 }
 
-func find(validators []staking.Validator, address sdk.ValAddress) (staking.Validator, bool) {
+func find(validators []ssExported.Validator, address sdk.ValAddress) (ssExported.Validator, bool) {
 	for _, v := range validators {
 		if v.Address.Equals(address) {
 			return v, true
 		}
 	}
-	return staking.Validator{}, false
+	return ssExported.Validator{}, false
 }

@@ -1,9 +1,9 @@
 package types
 
 import (
-	stExported "github.com/axelarnetwork/axelar-core/x/staking/exported"
+	ssExported "github.com/axelarnetwork/axelar-core/x/snapshotting/exported"
 )
 
-type Staker interface {
-	stExported.Staker
+type Snapshotter interface {
+	ssExported.Snapshotter
 }

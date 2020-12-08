@@ -21,14 +21,14 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/mock"
-	stExported "github.com/axelarnetwork/axelar-core/x/staking/exported"
+	ssExported "github.com/axelarnetwork/axelar-core/x/snapshotting/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/axelarnetwork/axelar-core/x/voting/exported"
 )
 
 type testSetup struct {
 	Keeper          Keeper
-	Staker          mock.Staker
+	Staker          mock.Snapshotter
 	Voter           mockVoter
 	Broadcaster     mock.Broadcaster
 	Ctx             sdk.Context
@@ -96,16 +96,16 @@ func (s testSetup) Teardown() {
 	s.RandDistinctStr.Stop()
 }
 
-func newStaker() mock.Staker {
-	val1 := stExported.Validator{Address: sdk.ValAddress("validator1"), Power: 100}
-	val2 := stExported.Validator{Address: sdk.ValAddress("validator2"), Power: 100}
-	val3 := stExported.Validator{Address: sdk.ValAddress("validator3"), Power: 100}
-	val4 := stExported.Validator{Address: sdk.ValAddress("validator4"), Power: 100}
+func newStaker() mock.Snapshotter {
+	val1 := ssExported.Validator{Address: sdk.ValAddress("validator1"), Power: 100}
+	val2 := ssExported.Validator{Address: sdk.ValAddress("validator2"), Power: 100}
+	val3 := ssExported.Validator{Address: sdk.ValAddress("validator3"), Power: 100}
+	val4 := ssExported.Validator{Address: sdk.ValAddress("validator4"), Power: 100}
 	staker := mock.NewTestStaker(1, val1, val2, val3, val4)
 	return staker
 }
 
-func prepareBroadcaster(t *testing.T, ctx sdk.Context, cdc *codec.Codec, validators []stExported.Validator, msgIn chan sdk.Msg) mock.Broadcaster {
+func prepareBroadcaster(t *testing.T, ctx sdk.Context, cdc *codec.Codec, validators []ssExported.Validator, msgIn chan sdk.Msg) mock.Broadcaster {
 	broadcaster := mock.NewBroadcaster(cdc, sdk.AccAddress("proxy0"), validators[0].Address, msgIn)
 
 	for i, v := range validators {

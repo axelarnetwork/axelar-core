@@ -7,12 +7,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/axelarnetwork/axelar-core/x/staking/exported"
+	"github.com/axelarnetwork/axelar-core/x/snapshotting/exported"
 
 	//"github.com/cosmos/cosmos-sdk/x/staking"
 	sdkExported "github.com/cosmos/cosmos-sdk/x/staking/exported"
 
-	"github.com/axelarnetwork/axelar-core/x/staking/types"
+	"github.com/axelarnetwork/axelar-core/x/snapshotting/types"
 
 	"github.com/tendermint/tendermint/libs/log"
 )
@@ -25,7 +25,7 @@ const roundPrefix = "r-"
 const interval = 10 * time.Second
 
 // Make sure the keeper implements the Staker interface
-var _ exported.Staker = Keeper{}
+var _ exported.Snapshotter = Keeper{}
 
 type Keeper struct {
 	storeKey sdk.StoreKey

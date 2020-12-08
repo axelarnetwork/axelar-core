@@ -11,7 +11,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
-	staking "github.com/axelarnetwork/axelar-core/x/staking/exported"
+	snapshotting "github.com/axelarnetwork/axelar-core/x/snapshotting/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -22,7 +22,7 @@ const (
 )
 
 // StartKeygen starts a keygen protocol with the specified parameters
-func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, validators []staking.Validator) (<-chan ecdsa.PublicKey, error) {
+func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, validators []snapshotting.Validator) (<-chan ecdsa.PublicKey, error) {
 	// BEGIN: validity check
 
 	// keygen cannot proceed unless all validators have registered broadcast proxies
@@ -208,7 +208,7 @@ func (k Keeper) getKeygenStart(ctx sdk.Context, keyID string) (int64, bool) {
 	return blockHeight, true
 }
 
-func (k Keeper) prepareKeygen(ctx sdk.Context, keyID string, threshold int, validators []staking.Validator) (types.Stream, *tssd.MessageIn_KeygenInit) {
+func (k Keeper) prepareKeygen(ctx sdk.Context, keyID string, threshold int, validators []snapshotting.Validator) (types.Stream, *tssd.MessageIn_KeygenInit) {
 	// TODO call GetLocalPrincipal only once at launch? need to wait until someone pushes a RegisterProxy message on chain...
 	myAddress := k.broadcaster.GetLocalPrincipal(ctx)
 	if myAddress.Empty() {

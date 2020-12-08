@@ -13,7 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/tendermint/tendermint/libs/log"
 
-	staking "github.com/axelarnetwork/axelar-core/x/staking/exported"
+	snapshoting "github.com/axelarnetwork/axelar-core/x/snapshotting/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -164,7 +164,7 @@ func (k Keeper) handleStream(ctx sdk.Context, s types.Stream) (broadcast <-chan 
 	return broadcastChan, resChan
 }
 
-func addrToUids(validators []staking.Validator, myAddress sdk.ValAddress) (partyIDs []string, myIndex int32, err error) {
+func addrToUids(validators []snapshoting.Validator, myAddress sdk.ValAddress) (partyIDs []string, myIndex int32, err error) {
 	// populate a []tss.Party with all validator addresses
 	partyUids := make([]string, 0, len(validators))
 	alreadySeen, myIndex := false, 0
@@ -185,7 +185,7 @@ func addrToUids(validators []staking.Validator, myAddress sdk.ValAddress) (party
 	return partyUids, myIndex, nil
 }
 
-func (k Keeper) checkProxies(ctx sdk.Context, validators []staking.Validator) error {
+func (k Keeper) checkProxies(ctx sdk.Context, validators []snapshoting.Validator) error {
 	for _, v := range validators {
 		if k.broadcaster.GetProxy(ctx, v.Address) == nil {
 			return fmt.Errorf("validator %s has not registered a proxy", v.Address)
