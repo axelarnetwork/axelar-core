@@ -8,6 +8,7 @@ require (
 	github.com/btcsuite/btcd v0.21.0-beta
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/cosmos/cosmos-sdk v0.39.1
+	github.com/ethereum/go-ethereum v1.9.24
 	github.com/gorilla/mux v1.7.4
 	github.com/matryer/moq v0.1.5-0.20201215041547-c6c218eee632 // indirect
 	github.com/spf13/cobra v1.0.0
