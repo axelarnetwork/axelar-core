@@ -1,10 +1,19 @@
 package types
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	staking "github.com/cosmos/cosmos-sdk/x/staking/types"
+	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-type StakingKeeper interface {
-	GetAllValidators(ctx sdk.Context) (validators []staking.Validator)
+type Broadcaster interface {
+	broadcast.Broadcaster
+}
+
+type Snapshotter interface {
+	snapshot.Snapshotter
+}
+
+type Voter interface {
+	vote.Voter
 }

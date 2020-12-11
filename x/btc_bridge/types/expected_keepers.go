@@ -2,21 +2,19 @@ package types
 
 import (
 	"crypto/ecdsa"
-	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/axelarnetwork/axelar-core/x/voting/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 type Voter interface {
-	InitPoll(ctx sdk.Context, poll exported.PollMeta) error
-	Vote(ctx sdk.Context, vote exported.MsgVote) error
-	TallyVote(ctx sdk.Context, vote exported.MsgVote) error
-	Result(ctx sdk.Context, poll exported.PollMeta) exported.Vote
+	voting.Voter
 }
 
 type Signer interface {
-	GetSig(ctx sdk.Context, sigID string) (r *big.Int, s *big.Int, e error)
-	GetKey(ctx sdk.Context, keyID string) (ecdsa.PublicKey, error)
+	GetSig(ctx sdk.Context, sigID string) (tss.Signature, bool)
+	GetKey(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool)
+	GetLatestMasterKey(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool)
 }

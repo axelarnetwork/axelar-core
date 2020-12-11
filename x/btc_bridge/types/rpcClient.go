@@ -22,7 +22,7 @@ type RPCClient interface {
 	ImportAddress(address string) error
 	ImportAddressRescan(address string, account string, rescan bool) error
 	GetRawTransactionVerbose(hash *chainhash.Hash) (*btcjson.TxRawResult, error)
-	SendRawTransaction(tx *wire.MsgTx, b bool) (*chainhash.Hash, error)
+	SendRawTransaction(tx *wire.MsgTx, allowHighFees bool) (*chainhash.Hash, error)
 }
 
 func NewRPCClient(cfg BtcConfig, logger log.Logger) (*rpcclient.Client, error) {

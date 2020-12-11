@@ -31,7 +31,7 @@ func NewBroadcaster(cdc *codec.Codec, sender sdk.AccAddress, localPrincipal sdk.
 	}
 }
 
-func (b Broadcaster) Broadcast(_ sdk.Context, msgs []exported.MsgWithSenderSetter) error {
+func (b Broadcaster) BroadcastSync(_ sdk.Context, msgs []exported.MsgWithSenderSetter) error {
 	for _, msg := range msgs {
 		msg.SetSender(b.Proxy)
 
@@ -58,6 +58,10 @@ func (b Broadcaster) RegisterProxy(_ sdk.Context, principal sdk.ValAddress, prox
 
 func (b Broadcaster) GetPrincipal(_ sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
 	return b.proxy2Val[proxy.String()]
+}
+
+func (b Broadcaster) GetProxy(_ sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
+	return b.val2Proxy[principal.String()]
 }
 
 func (b Broadcaster) GetProxyCount(_ sdk.Context) uint32 {

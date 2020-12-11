@@ -1,9 +1,11 @@
 package types
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/axelarnetwork/axelar-core/x/voting/exported"
+	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 var _ exported.MsgVote = &MsgVoteVerifiedTx{}
@@ -32,7 +34,10 @@ func (msg MsgVoteVerifiedTx) Type() string {
 }
 
 func (msg MsgVoteVerifiedTx) ValidateBasic() error {
-	return nil
+	if msg.Sender == nil {
+		return fmt.Errorf("missing sender")
+	}
+	return msg.PollMeta.Validate()
 }
 
 func (msg MsgVoteVerifiedTx) GetSignBytes() []byte {

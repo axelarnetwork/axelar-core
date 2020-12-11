@@ -1,10 +1,10 @@
 package types
 
 const (
-	EventTypeMsgIn          = "msgIn"
-	EventTypeMsgKeygenStart = "msgKeygenStart"
-	EventTypeMsgSignStart   = "msgSignStart"
-
-	AttributeModule     = ModuleName
-	AttributeKeyPayload = "payload"
+	AttributeModule      = ModuleName
+	AttributeKeyPayload  = "key"
+	AttributeSigPayload  = "signature"
+	AttributePoll        = "poll"
+	AttributePollDecided = "decided"
+	AttributeChain       = "chain"
 )

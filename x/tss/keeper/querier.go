@@ -29,9 +29,9 @@ func NewQuerier(k Keeper) sdk.Querier {
 }
 
 func queryGetKey(ctx sdk.Context, keyID string, k Keeper) ([]byte, error) {
-	pk, err := k.GetKey(ctx, keyID)
-	if err != nil {
-		return nil, sdkerrors.Wrapf(err, "GetKey error for key [%s]", keyID)
+	pk, ok := k.GetKey(ctx, keyID)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrTss, "key [%s] not found", keyID)
 	}
 
 	// pk is of type ecdsa.PublicKey, which is inherently un-marshalable
