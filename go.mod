@@ -10,7 +10,6 @@ require (
 	github.com/cosmos/cosmos-sdk v0.39.1
 	github.com/ethereum/go-ethereum v1.9.24
 	github.com/gorilla/mux v1.7.4
-	github.com/matryer/moq v0.1.5-0.20201215041547-c6c218eee632 // indirect
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.6.1

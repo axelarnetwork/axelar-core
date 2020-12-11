@@ -3,7 +3,6 @@ package keeper
 import (
 	"fmt"
 
-	"github.com/btcsuite/btcd/wire"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -16,7 +15,7 @@ var (
 )
 
 const (
-	rawKey = "raw"
+	txKey = "utxo"
 )
 
 type Keeper struct {
@@ -37,21 +36,6 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-func (k Keeper) SetTrackedAddress(ctx sdk.Context, address string) {
-	ctx.KVStore(k.storeKey).Set([]byte(address), []byte{})
-}
-
-func (k Keeper) GetTrackedAddress(ctx sdk.Context, address string) types.ExternalChainAddress {
-	val := ctx.KVStore(k.storeKey).Get([]byte(address))
-	if val == nil {
-		return types.ExternalChainAddress{}
-	}
-	return types.ExternalChainAddress{
-		Chain:   "Ethereum",
-		Address: address,
-	}
-}
-
 func (k Keeper) SetConfirmationHeight(ctx sdk.Context, height uint64) {
 	ctx.KVStore(k.storeKey).Set(confHeight, k.cdc.MustMarshalBinaryLengthPrefixed(height))
 }
@@ -67,18 +51,18 @@ func (k Keeper) GetConfirmationHeight(ctx sdk.Context) uint64 {
 	}
 }
 
-func (k Keeper) GetRawTx(ctx sdk.Context, txId string) *wire.MsgTx {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(rawKey + txId))
-	if bz == nil {
-		return nil
-	}
-	var tx *wire.MsgTx
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &tx)
-
-	return tx
+func (k Keeper) SetTX(ctx sdk.Context, txId string, utxo types.TX) {
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(utxo)
+	ctx.KVStore(k.storeKey).Set([]byte(txKey+txId), bz)
 }
 
-func (k Keeper) SetRawTx(ctx sdk.Context, txId string, tx *wire.MsgTx) {
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(tx)
-	ctx.KVStore(k.storeKey).Set([]byte(rawKey+txId), bz)
+func (k Keeper) GetTX(ctx sdk.Context, txId string) (types.TX, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(txKey + txId))
+	if bz == nil {
+		return types.TX{}, false
+	}
+	var tx types.TX
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &tx)
+
+	return tx, true
 }

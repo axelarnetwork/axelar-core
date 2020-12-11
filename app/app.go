@@ -40,6 +40,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/broadcast"
 	broadcastKeeper "github.com/axelarnetwork/axelar-core/x/broadcast/keeper"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
+	eth_bridge "github.com/axelarnetwork/axelar-core/x/eth_bridge"
 	"github.com/axelarnetwork/axelar-core/x/snapshot"
 	snapKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
@@ -121,6 +122,7 @@ type AxelarApp struct {
 	supplyKeeper    supply.Keeper
 	paramsKeeper    params.Keeper
 	btcKeeper       btcKeeper.Keeper
+	ethKeeper       ethKeeper.Keeper
 	broadcastKeeper broadcastKeeper.Keeper
 	tssKeeper       tssKeeper.Keeper
 	votingKeeper    voteKeeper.Keeper
@@ -234,6 +236,8 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	var err error
 	app.btcKeeper = btcKeeper.NewBtcKeeper(app.cdc, keys[btcTypes.StoreKey])
 
+	app.ethKeeper = ethKeeper.NewEthKeeper(app.cdc, keys[ethTypes.StoreKey])
+
 	app.axStakingKeeper = snapKeeper.NewKeeper(app.cdc, keys[snapTypes.StoreKey], app.stakingKeeper)
 
 	keybase, err := keyring.NewKeyring(sdk.KeyringServiceName(), axelarCfg.ClientConfig.KeyringBackend, DefaultCLIHome, os.Stdin)
@@ -285,19 +289,27 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	app.votingKeeper = voteKeeper.NewKeeper(app.cdc, keys[voteTypes.StoreKey], store.NewSubjectiveStore(), app.axStakingKeeper, app.broadcastKeeper)
 
 	// Enable running a node with or without a Bitcoin bridge
-	var rpc *rpcclient.Client
+	var rpcBTC *rpcclient.Client
 	var btcModule bitcoin.AppModule
 	if axelarCfg.WithBtcBridge {
-		rpc, err = btcTypes.NewRPCClient(axelarCfg.BtcConfig, logger)
+		rpcBTC, err = btcTypes.NewRPCClient(axelarCfg.BtcConfig, logger)
 		if err != nil {
 			tmos.Exit(err.Error())
 		}
 		// BTC bridge opens a grpc connection. Clean it up on process shutdown
-		tmos.TrapSignal(logger, rpc.Shutdown)
+		tmos.TrapSignal(logger, rpcBTC.Shutdown)
 		btcModule = bitcoin.NewAppModule(app.btcKeeper, app.votingKeeper, app.tssKeeper, rpc)
 	} else {
 		btcModule = bitcoin.NewDummyAppModule(app.btcKeeper, app.votingKeeper)
 	}
+
+	//TODO: enable running node without an Ethereum bridge
+	rpcETC, err := ethTypes.NewRPCClient()
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+
+	ethBridge := eth_bridge.NewAppModule(app.ethKeeper, app.votingKeeper, app.tssKeeper, rpcETC)
 
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
@@ -314,7 +326,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		tss.NewAppModule(app.tssKeeper, app.axStakingKeeper, app.votingKeeper),
 		vote.NewAppModule(app.votingKeeper),
 		broadcast.NewAppModule(app.broadcastKeeper),
-		btcModule,
+		btcModule, ethBridge,
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
