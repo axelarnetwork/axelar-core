@@ -23,11 +23,11 @@ import (
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
 	btcMock "github.com/axelarnetwork/axelar-core/x/btc_bridge/tests/mock"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
-	"github.com/axelarnetwork/axelar-core/x/snapshotting/exported"
-	"github.com/axelarnetwork/axelar-core/x/voting"
-	vExported "github.com/axelarnetwork/axelar-core/x/voting/exported"
-	"github.com/axelarnetwork/axelar-core/x/voting/keeper"
-	axTypes "github.com/axelarnetwork/axelar-core/x/voting/types"
+	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	"github.com/axelarnetwork/axelar-core/x/vote"
+	vExported "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	"github.com/axelarnetwork/axelar-core/x/vote/keeper"
+	axTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 /*
@@ -110,13 +110,14 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 		in <- msg
 	}
 
-	timeOut, _ := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	timeout, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	defer cancel()
 	reachedHeight25 := notifyOnBlock25(blockChain)
 
 loop:
 	for {
 		select {
-		case <-timeOut.Done():
+		case <-timeout.Done():
 			break loop
 		case <-reachedHeight25:
 			break loop
@@ -174,7 +175,7 @@ func newNode(moniker string, broadcaster bcExported.Broadcaster, staker exported
 	// Initialize all keepers and handlers you want to involve in the test
 	vK := keeper.NewKeeper(testutils.Codec(), mock.NewKVStoreKey(axTypes.StoreKey), store.NewSubjectiveStore(), staker, broadcaster)
 	r := mock.NewRouter()
-	vH := voting.NewHandler(vK, r)
+	vH := vote.NewHandler(vK, r)
 
 	btcK := btcKeeper.NewBtcKeeper(testutils.Codec(), mock.NewKVStoreKey(btcTypes.StoreKey))
 	// We use a mock for the bitcoin rpc client so we can control the responses from the "bitcoin" network
@@ -183,12 +184,12 @@ func newNode(moniker string, broadcaster bcExported.Broadcaster, staker exported
 	broadcastH := broadcast.NewHandler(broadcaster)
 
 	// Set the correct initial state in the keepers
-	voting.InitGenesis(ctx, vK, axTypes.DefaultGenesisState())
+	vote.InitGenesis(ctx, vK, axTypes.DefaultGenesisState())
 	btc_bridge.InitGenesis(ctx, btcK, btcTypes.DefaultGenesisState())
 
 	// Define all functions that should run at the end of a block
 	eb := func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-		return voting.EndBlocker(ctx, req, vK)
+		return vote.EndBlocker(ctx, req, vK)
 	}
 
 	// route all handlers

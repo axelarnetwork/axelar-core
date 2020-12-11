@@ -1,9 +1,9 @@
 package types
 
 import (
-	ssExported "github.com/axelarnetwork/axelar-core/x/snapshotting/exported"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 )
 
 type Snapshotter interface {
-	ssExported.Snapshotter
+	snapshot.Snapshotter
 }

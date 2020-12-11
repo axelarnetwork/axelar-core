@@ -11,18 +11,18 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
-	snapshotting "github.com/axelarnetwork/axelar-core/x/snapshotting/exported"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 const (
 	rotationPrefix    = "round_"
-	blockHeightPrefix = "blockHeight_"
+	keygenStartHeight = "blockHeight_"
 	pkPrefix          = "pk_"
 )
 
 // StartKeygen starts a keygen protocol with the specified parameters
-func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, validators []snapshotting.Validator) (<-chan ecdsa.PublicKey, error) {
+func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, validators []snapshot.Validator) (<-chan ecdsa.PublicKey, error) {
 	// BEGIN: validity check
 
 	// keygen cannot proceed unless all validators have registered broadcast proxies
@@ -30,7 +30,7 @@ func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, valida
 		return nil, err
 	}
 
-	if ctx.KVStore(k.storeKey).Has([]byte(blockHeightPrefix + keyID)) {
+	if ctx.KVStore(k.storeKey).Has([]byte(keygenStartHeight + keyID)) {
 		return nil, fmt.Errorf("keyID %s is already in use", keyID)
 	}
 
@@ -121,14 +121,22 @@ func (k Keeper) KeygenMsg(ctx sdk.Context, msg types.MsgKeygenTraffic) error {
 	return nil
 }
 
-func (k Keeper) GetKey(ctx sdk.Context, keyID string) (ecdsa.PublicKey, error) {
+func (k Keeper) GetKey(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(pkPrefix + keyID))
-	return convert.BytesToPubkey(bz)
+	if bz == nil {
+		return ecdsa.PublicKey{}, false
+	}
+	pk, err := convert.BytesToPubkey(bz)
+	// the setter is controlled by the keeper alone, so an error here should be a catastrophic failure
+	if err != nil {
+		panic(err)
+	}
+	return pk, true
 }
 
 // SetKey stores the given public key under the given key ID
 func (k Keeper) SetKey(ctx sdk.Context, keyID string, key ecdsa.PublicKey) {
-	// Free up the keyID from the stream map because using the keyID here means that the tss protocol has completed
+	// Delete the reference to the keygen stream with keyID because entering this function means the tss protocol has completed
 	delete(k.keygenStreams, keyID)
 
 	bz, err := convert.PubkeyToBytes(key)
@@ -139,25 +147,25 @@ func (k Keeper) SetKey(ctx sdk.Context, keyID string, key ecdsa.PublicKey) {
 }
 
 // GetLatestMasterKey returns the latest master key that was set for the given chain
-func (k Keeper) GetLatestMasterKey(ctx sdk.Context, chain string) (ecdsa.PublicKey, error) {
+func (k Keeper) GetLatestMasterKey(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool) {
 	return k.GetPreviousMasterKey(ctx, chain, 0)
 }
 
 /*
-GetPreviousMasterKey returns the master key for the given chain x rotations ago, where x is given by beforeCurrent
+GetPreviousMasterKey returns the master key for the given chain x rotations ago, where x is given by offsetFromTop
 
 Example:
 	k.GetPreviousMasterKey(ctx, "bitcoin", 3)
 returns the master key for Bitcoin three rotations ago.
 */
-func (k Keeper) GetPreviousMasterKey(ctx sdk.Context, chain string, beforeCurrent int64) (ecdsa.PublicKey, error) {
+func (k Keeper) GetPreviousMasterKey(ctx sdk.Context, chain string, offsetFromTop int64) (ecdsa.PublicKey, bool) {
 	// The master key entry stores the keyID of a previously successfully stored key, so we need to do a second lookup after we retrieve the ID.
 	// This indirection is necessary, because we need the keyID for other purposes, eg signing
 
 	r := k.getRotationCount(ctx, chain)
-	keyId := ctx.KVStore(k.storeKey).Get([]byte(masterKeyID(r-beforeCurrent, chain)))
+	keyId := ctx.KVStore(k.storeKey).Get([]byte(masterKeyID(r-offsetFromTop, chain)))
 	if keyId == nil {
-		return ecdsa.PublicKey{}, fmt.Errorf("there is no master key for chain %s %d rotations ago", chain, beforeCurrent)
+		return ecdsa.PublicKey{}, false
 	}
 	return k.GetKey(ctx, string(keyId))
 }
@@ -195,11 +203,11 @@ func (k Keeper) RotateMasterKey(ctx sdk.Context, chain string) error {
 }
 
 func (k Keeper) setKeygenStart(ctx sdk.Context, keyID string) {
-	ctx.KVStore(k.storeKey).Set([]byte(blockHeightPrefix+keyID), k.cdc.MustMarshalBinaryLengthPrefixed(ctx.BlockHeight()))
+	ctx.KVStore(k.storeKey).Set([]byte(keygenStartHeight+keyID), k.cdc.MustMarshalBinaryLengthPrefixed(ctx.BlockHeight()))
 }
 
 func (k Keeper) getKeygenStart(ctx sdk.Context, keyID string) (int64, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(blockHeightPrefix + keyID))
+	bz := ctx.KVStore(k.storeKey).Get([]byte(keygenStartHeight + keyID))
 	if bz == nil {
 		return 0, false
 	}
@@ -208,7 +216,7 @@ func (k Keeper) getKeygenStart(ctx sdk.Context, keyID string) (int64, bool) {
 	return blockHeight, true
 }
 
-func (k Keeper) prepareKeygen(ctx sdk.Context, keyID string, threshold int, validators []snapshotting.Validator) (types.Stream, *tssd.MessageIn_KeygenInit) {
+func (k Keeper) prepareKeygen(ctx sdk.Context, keyID string, threshold int, validators []snapshot.Validator) (types.Stream, *tssd.MessageIn_KeygenInit) {
 	// TODO call GetLocalPrincipal only once at launch? need to wait until someone pushes a RegisterProxy message on chain...
 	myAddress := k.broadcaster.GetLocalPrincipal(ctx)
 	if myAddress.Empty() {
@@ -222,7 +230,9 @@ func (k Keeper) prepareKeygen(ctx sdk.Context, keyID string, threshold int, vali
 		return nil, nil
 	}
 
-	grpcCtx, _ := k.newContext()
+	// only nodes in the validator set reach past this point
+
+	grpcCtx, _ := k.newGrpcContext()
 	stream, err := k.client.Keygen(grpcCtx)
 	if err != nil {
 		k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tssd gRPC call Keygen").Error())

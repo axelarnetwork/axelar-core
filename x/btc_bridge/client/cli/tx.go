@@ -328,5 +328,5 @@ func addRescanFlag(cmd *cobra.Command, rescan *bool) {
 }
 
 func addKeyIdFlag(pubKeyCmd *cobra.Command, keyID *string) {
-	pubKeyCmd.Flags().StringVarP(keyID, "key-id", "k", "", "")
+	pubKeyCmd.Flags().StringVarP(keyID, "key-id", "k", "", "Specify the ID of the key to use")
 }

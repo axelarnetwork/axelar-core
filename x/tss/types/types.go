@@ -9,8 +9,3 @@ type Stream interface {
 	Recv() (*pb.MessageOut, error)
 	CloseSend() error
 }
-
-type MasterKey struct {
-	BlockHeight int64
-	PK          []byte
-}

@@ -15,7 +15,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	"github.com/axelarnetwork/axelar-core/x/voting/exported"
+	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 const bitcoin = "bitcoin"
@@ -46,9 +46,9 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Sig
 }
 
 func handleMsgTransferToNewMasterKey(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, msg types.MsgTransferToNewMasterKey) (*sdk.Result, error) {
-	pk, err := s.GetLatestMasterKey(ctx, bitcoin)
-	if err != nil {
-		return nil, fmt.Errorf("key not found")
+	pk, ok := s.GetLatestMasterKey(ctx, bitcoin)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrBtcBridge, "key not found")
 	}
 
 	tx, err := prepareTx(ctx, k, s, msg.TxID, msg.SignatureID, pk)
@@ -83,8 +83,8 @@ func handleMsgTransferToNewMasterKey(ctx sdk.Context, k keeper.Keeper, rpc types
 }
 
 func prepareTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, txID, sigID string, pk ecdsa.PublicKey) (*wire.MsgTx, error) {
-	sig, err := s.GetSig(ctx, sigID)
-	if err != nil {
+	sig, ok := s.GetSig(ctx, sigID)
+	if !ok {
 		return nil, fmt.Errorf("signature not found")
 	}
 	sigScript, err := createSigScript(sig, pk)
@@ -138,24 +138,21 @@ func handleMsgTrackAddress(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient
 func handleMsgTrackPubKey(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, msg types.MsgTrackPubKey) (*sdk.Result, error) {
 	var keyID string
 	var key ecdsa.PublicKey
-	var err error
+	var ok bool
 	if msg.UseMasterKey {
 		keyID = bitcoin
-		key, err = s.GetLatestMasterKey(ctx, bitcoin)
+		key, ok = s.GetLatestMasterKey(ctx, bitcoin)
 	} else {
 		keyID = msg.KeyID
-		key, err = s.GetKey(ctx, msg.KeyID)
+		key, ok = s.GetKey(ctx, msg.KeyID)
 	}
-	if err != nil {
-
-		errMsg := fmt.Sprintf("Error while retrieving key for ID '%s': %v", keyID, err)
-		k.Logger(ctx).Error(errMsg)
-		return nil, fmt.Errorf(errMsg)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrBtcBridge, fmt.Sprintf("key with ID %s not found", keyID))
 	}
 
 	addr, err := addressFromKey(key, msg.Chain)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "could not convert the given public key into a bitcoin address")
+		return nil, sdkerrors.Wrap(types.ErrBtcBridge, sdkerrors.Wrap(err, "could not convert the given public key into a bitcoin address").Error())
 	}
 
 	trackAddress(ctx, k, rpc, addr.EncodeAddress(), false)
@@ -179,7 +176,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 
 	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: txId}
 	if err := v.InitPoll(ctx, poll); err != nil {
-		return nil, sdkerrors.Wrap(err, "could not initialize new poll")
+		return nil, sdkerrors.Wrap(types.ErrBtcBridge, "could not initialize new poll")
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -292,13 +289,13 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.M
 
 func isVerified(ctx sdk.Context, v types.Voter, poll exported.PollMeta) bool {
 	res := v.Result(ctx, poll)
-	return res == nil || !res.Data().(bool)
+	return res == nil || !res.(bool)
 }
 
 func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, msg types.MsgWithdraw) (*sdk.Result, error) {
-	pk, err := s.GetKey(ctx, msg.KeyID)
-	if err != nil {
-		return nil, fmt.Errorf("key not found")
+	pk, ok := s.GetKey(ctx, msg.KeyID)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrBtcBridge, "key not found")
 	}
 
 	tx, err := prepareTx(ctx, k, s, msg.TxID, msg.SignatureID, pk)

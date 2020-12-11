@@ -11,7 +11,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
-	voting "github.com/axelarnetwork/axelar-core/x/voting/exported"
+	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 func NewHandler(k keeper.Keeper, s types.Snapshotter, v types.Voter) sdk.Handler {
@@ -60,10 +60,6 @@ func handleMsgRotateMasterKey(ctx sdk.Context, k keeper.Keeper, msg types.MsgRot
 }
 
 func handleMsgVoteSig(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.MsgVoteSig) (*sdk.Result, error) {
-	if err := v.TallyVote(ctx, &msg); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
-	}
-
 	event := sdk.NewEvent(
 		sdk.EventTypeMessage,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
@@ -72,15 +68,33 @@ func handleMsgVoteSig(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types
 		sdk.NewAttribute(types.AttributeSigPayload, string(msg.SigBytes)),
 	)
 
-	if vote := v.Result(ctx, msg.PollMeta); vote != nil {
+	if _, ok := k.GetSig(ctx, msg.PollMeta.ID); ok {
+		// the signature is already set, no need for further processing of the vote
+		event = event.AppendAttributes(sdk.NewAttribute(types.AttributePollDecided, strconv.FormatBool(true)))
+		return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+	}
+
+	if err := v.TallyVote(ctx, &msg); err != nil {
+		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
+	}
+
+	if result := v.Result(ctx, msg.PollMeta); result != nil {
+		// the result is not necessarily the same as the msg (the vote could have been decided earlier and now a false vote is cast),
+		// so use result instead of msg
 		event = event.AppendAttributes(sdk.NewAttribute(types.AttributePollDecided, strconv.FormatBool(true)))
 
-		r, s, err := convert.BytesToSig(msg.SigBytes)
-		if err != nil {
-			return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
-		}
-		if err := k.SetSig(ctx, msg.PollMeta.ID, exported.Signature{R: r, S: s}); err != nil {
-			return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
+		switch sigBytes := result.(type) {
+		case []byte:
+			r, s, err := convert.BytesToSig(sigBytes)
+			if err != nil {
+				return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
+			}
+			if err := k.SetSig(ctx, msg.PollMeta.ID, exported.Signature{R: r, S: s}); err != nil {
+				return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
+			}
+		default:
+			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
+				fmt.Sprintf("unrecognized voting result type: %T", result))
 		}
 	}
 
@@ -88,10 +102,6 @@ func handleMsgVoteSig(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types
 }
 
 func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.MsgVotePubKey) (*sdk.Result, error) {
-	if err := v.TallyVote(ctx, &msg); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
-	}
-
 	event := sdk.NewEvent(
 		sdk.EventTypeMessage,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
@@ -100,18 +110,31 @@ func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg ty
 		sdk.NewAttribute(types.AttributeKeyPayload, string(msg.PubKeyBytes)),
 	)
 
-	if vote := v.Result(ctx, msg.PollMeta); vote != nil {
+	if _, ok := k.GetKey(ctx, msg.PollMeta.ID); ok {
+		// the key is already set, no need for further processing of the vote
 		event = event.AppendAttributes(sdk.NewAttribute(types.AttributePollDecided, strconv.FormatBool(true)))
+		return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+	}
 
-		switch msg.PollMeta.Type {
-		case types.MsgKeygenStart{}.Type():
+	if err := v.TallyVote(ctx, &msg); err != nil {
+		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
+	}
+
+	if result := v.Result(ctx, msg.PollMeta); result != nil {
+		event = event.AppendAttributes(sdk.NewAttribute(types.AttributePollDecided, strconv.FormatBool(true)))
+		// the result is not necessarily the same as the msg (the vote could have been decided earlier and now a false vote is cast),
+		// so use result instead of msg
+		switch pkBytes := result.(type) {
+		case []byte:
 			k.Logger(ctx).Debug(fmt.Sprintf("public key with ID %s confirmed", msg.PollMeta.ID))
-			// Assert: types.MsgVotePubKey.ValidateBasic already checks the conversion, so this cannot fail here
-			pubKey, _ := convert.BytesToPubkey(msg.PubKeyBytes)
+			pubKey, err := convert.BytesToPubkey(pkBytes)
+			if err != nil {
+				return nil, sdkerrors.Wrap(types.ErrTss, "could not marshal signature")
+			}
 			k.SetKey(ctx, msg.PollMeta.ID, pubKey)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
-				fmt.Sprintf("unrecognized voting message type: %T", msg))
+				fmt.Sprintf("unrecognized voting result type: %T", result))
 		}
 	}
 

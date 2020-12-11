@@ -39,15 +39,15 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
-	axStaking "github.com/axelarnetwork/axelar-core/x/snapshotting"
-	sKeeper "github.com/axelarnetwork/axelar-core/x/snapshotting/keeper"
-	ssTypes "github.com/axelarnetwork/axelar-core/x/snapshotting/types"
+	axStaking "github.com/axelarnetwork/axelar-core/x/snapshot"
+	sKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
+	ssTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	"github.com/axelarnetwork/axelar-core/x/tss"
 	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
-	"github.com/axelarnetwork/axelar-core/x/voting"
-	vKeeper "github.com/axelarnetwork/axelar-core/x/voting/keeper"
-	votingTypes "github.com/axelarnetwork/axelar-core/x/voting/types"
+	"github.com/axelarnetwork/axelar-core/x/vote"
+	vKeeper "github.com/axelarnetwork/axelar-core/x/vote/keeper"
+	votingTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 const (
@@ -73,7 +73,7 @@ var (
 		supply.AppModuleBasic{},
 
 		tss.AppModuleBasic{},
-		voting.AppModuleBasic{},
+		vote.AppModuleBasic{},
 		btc_bridge.AppModuleBasic{},
 		broadcast.AppModuleBasic{},
 		axStaking.AppModuleBasic{},
@@ -98,7 +98,7 @@ func MakeCodec() *codec.Codec {
 
 	cdc = cdc.Seal()
 
-	// all other modules can sent voting messages through the voting module,
+	// all other modules can sent voting messages through the vote module,
 	// so it must be able to marshal these message types
 	votingTypes.ModuleCdc = cdc
 
@@ -301,7 +301,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 
 		axStaking.NewAppModule(app.axStakingKeeper),
 		tss.NewAppModule(app.tssKeeper, app.axStakingKeeper, app.votingKeeper),
-		voting.NewAppModule(app.votingKeeper, app.Router()),
+		vote.NewAppModule(app.votingKeeper, app.Router()),
 		broadcast.NewAppModule(app.broadcastKeeper),
 		btcModule,
 	)

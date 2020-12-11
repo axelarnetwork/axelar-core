@@ -8,8 +8,8 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
-	"github.com/axelarnetwork/axelar-core/x/voting/exported"
-	"github.com/axelarnetwork/axelar-core/x/voting/types"
+	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	"github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 func TestMsgVotePubKey_Marshaling(t *testing.T) {

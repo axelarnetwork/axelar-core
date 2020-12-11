@@ -9,7 +9,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
-	voting "github.com/axelarnetwork/axelar-core/x/voting/exported"
+	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // golang stupidity: ensure interface compliance at compile time
@@ -217,7 +217,10 @@ func (msg MsgAssignNextMasterKey) ValidateBasic() error {
 		return sdkerrors.ErrInvalidAddress
 	}
 	if msg.KeyID == "" {
-		return sdkerrors.Wrap(ErrTss, "key id must be set")
+		return fmt.Errorf("key id must be set")
+	}
+	if msg.Chain == "" {
+		return fmt.Errorf("chain must be set")
 	}
 	return nil
 }
@@ -234,7 +237,7 @@ func (msg MsgAssignNextMasterKey) GetSigners() []sdk.AccAddress {
 type MsgVotePubKey struct {
 	Sender   sdk.AccAddress
 	PollMeta voting.PollMeta
-	// need to vote on the bytes instead of ecds.PublicKey, otherwise we lose the elliptic curve information
+	// need to vote on the bytes instead of ecdsa.PublicKey, otherwise we lose the elliptic curve information
 	PubKeyBytes []byte
 }
 
@@ -256,7 +259,7 @@ func (msg MsgVotePubKey) ValidateBasic() error {
 	if _, err := convert.BytesToPubkey(msg.PubKeyBytes); err != nil {
 		return err
 	}
-	return nil
+	return msg.PollMeta.Validate()
 }
 
 func (msg MsgVotePubKey) GetSignBytes() []byte {
@@ -305,7 +308,7 @@ func (msg MsgVoteSig) ValidateBasic() error {
 	if _, _, err := convert.BytesToSig(msg.SigBytes); err != nil {
 		return err
 	}
-	return nil
+	return msg.PollMeta.Validate()
 }
 
 func (msg MsgVoteSig) GetSignBytes() []byte {

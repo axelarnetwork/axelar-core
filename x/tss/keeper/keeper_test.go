@@ -21,9 +21,9 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/mock"
-	ssExported "github.com/axelarnetwork/axelar-core/x/snapshotting/exported"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
-	"github.com/axelarnetwork/axelar-core/x/voting/exported"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 type testSetup struct {
@@ -42,7 +42,7 @@ func setup(t *testing.T) testSetup {
 	staker := newStaker()
 	broadcaster := prepareBroadcaster(t, ctx, testutils.Codec(), staker.GetAllValidators(), nil)
 	subspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), "tss")
-	voter := mockVoter{receivedVote: make(chan exported.MsgVote, 1000), initializedPoll: make(chan exported.PollMeta, 100)}
+	voter := mockVoter{receivedVote: make(chan vote.MsgVote, 1000), initializedPoll: make(chan vote.PollMeta, 100)}
 	client := mockTssClient{keygen: mockKeyGenClient{recv: make(chan *tssd.MessageOut, 1)}}
 	k := NewKeeper(mock.NewKVStoreKey("tss"), testutils.Codec(), client, subspace, broadcaster)
 	k.SetParams(ctx, types.DefaultParams())
@@ -97,15 +97,15 @@ func (s testSetup) Teardown() {
 }
 
 func newStaker() mock.Snapshotter {
-	val1 := ssExported.Validator{Address: sdk.ValAddress("validator1"), Power: 100}
-	val2 := ssExported.Validator{Address: sdk.ValAddress("validator2"), Power: 100}
-	val3 := ssExported.Validator{Address: sdk.ValAddress("validator3"), Power: 100}
-	val4 := ssExported.Validator{Address: sdk.ValAddress("validator4"), Power: 100}
+	val1 := snapshot.Validator{Address: sdk.ValAddress("validator1"), Power: 100}
+	val2 := snapshot.Validator{Address: sdk.ValAddress("validator2"), Power: 100}
+	val3 := snapshot.Validator{Address: sdk.ValAddress("validator3"), Power: 100}
+	val4 := snapshot.Validator{Address: sdk.ValAddress("validator4"), Power: 100}
 	staker := mock.NewTestStaker(1, val1, val2, val3, val4)
 	return staker
 }
 
-func prepareBroadcaster(t *testing.T, ctx sdk.Context, cdc *codec.Codec, validators []ssExported.Validator, msgIn chan sdk.Msg) mock.Broadcaster {
+func prepareBroadcaster(t *testing.T, ctx sdk.Context, cdc *codec.Codec, validators []snapshot.Validator, msgIn chan sdk.Msg) mock.Broadcaster {
 	broadcaster := mock.NewBroadcaster(cdc, sdk.AccAddress("proxy0"), validators[0].Address, msgIn)
 
 	for i, v := range validators {
@@ -209,24 +209,24 @@ func (sc mockSignClient) RecvMsg(_ interface{}) error {
 }
 
 type mockVoter struct {
-	receivedVote    chan exported.MsgVote
-	initializedPoll chan exported.PollMeta
+	receivedVote    chan vote.MsgVote
+	initializedPoll chan vote.PollMeta
 }
 
-func (m mockVoter) InitPoll(_ sdk.Context, poll exported.PollMeta) error {
+func (m mockVoter) InitPoll(_ sdk.Context, poll vote.PollMeta) error {
 	m.initializedPoll <- poll
 	return nil
 }
 
-func (m mockVoter) Vote(_ sdk.Context, vote exported.MsgVote) error {
+func (m mockVoter) Vote(_ sdk.Context, vote vote.MsgVote) error {
 	m.receivedVote <- vote
 	return nil
 }
 
-func (m mockVoter) TallyVote(_ sdk.Context, _ exported.MsgVote) error {
+func (m mockVoter) TallyVote(_ sdk.Context, _ vote.MsgVote) error {
 	panic("implement me")
 }
 
-func (m mockVoter) Result(_ sdk.Context, _ exported.PollMeta) exported.Vote {
+func (m mockVoter) Result(_ sdk.Context, _ vote.PollMeta) vote.Vote {
 	panic("implement me")
 }

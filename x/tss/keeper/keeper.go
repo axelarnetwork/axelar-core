@@ -13,7 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/tendermint/tendermint/libs/log"
 
-	snapshoting "github.com/axelarnetwork/axelar-core/x/snapshotting/exported"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -46,7 +46,7 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 }
 
 // need to create a new context for every new protocol start
-func (k Keeper) newContext() (context.Context, context.CancelFunc) {
+func (k Keeper) newGrpcContext() (context.Context, context.CancelFunc) {
 	// TODO: make timeout a config parameter?
 	return context.WithTimeout(context.Background(), 2*time.Hour)
 }
@@ -164,7 +164,8 @@ func (k Keeper) handleStream(ctx sdk.Context, s types.Stream) (broadcast <-chan 
 	return broadcastChan, resChan
 }
 
-func addrToUids(validators []snapshoting.Validator, myAddress sdk.ValAddress) (partyIDs []string, myIndex int32, err error) {
+// addrToUids returns an error if myAddr is not part of the validator slice
+func addrToUids(validators []snapshot.Validator, myAddress sdk.ValAddress) (partyIDs []string, myIndex int32, err error) {
 	// populate a []tss.Party with all validator addresses
 	partyUids := make([]string, 0, len(validators))
 	alreadySeen, myIndex := false, 0
@@ -185,7 +186,7 @@ func addrToUids(validators []snapshoting.Validator, myAddress sdk.ValAddress) (p
 	return partyUids, myIndex, nil
 }
 
-func (k Keeper) checkProxies(ctx sdk.Context, validators []snapshoting.Validator) error {
+func (k Keeper) checkProxies(ctx sdk.Context, validators []snapshot.Validator) error {
 	for _, v := range validators {
 		if k.broadcaster.GetProxy(ctx, v.Address) == nil {
 			return fmt.Errorf("validator %s has not registered a proxy", v.Address)

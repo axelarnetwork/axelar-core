@@ -6,18 +6,15 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	voting "github.com/axelarnetwork/axelar-core/x/voting/exported"
+	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 type Voter interface {
-	InitPoll(ctx sdk.Context, poll voting.PollMeta) error
-	Vote(ctx sdk.Context, vote voting.MsgVote) error
-	TallyVote(ctx sdk.Context, vote voting.MsgVote) error
-	Result(ctx sdk.Context, poll voting.PollMeta) voting.Vote
+	voting.Voter
 }
 
 type Signer interface {
-	GetSig(ctx sdk.Context, sigID string) (tss.Signature, error)
-	GetKey(ctx sdk.Context, keyID string) (ecdsa.PublicKey, error)
-	GetLatestMasterKey(ctx sdk.Context, chain string) (ecdsa.PublicKey, error)
+	GetSig(ctx sdk.Context, sigID string) (tss.Signature, bool)
+	GetKey(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool)
+	GetLatestMasterKey(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool)
 }

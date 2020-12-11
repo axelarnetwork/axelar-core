@@ -1,7 +1,6 @@
 package testutils
 
 import (
-	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -108,15 +107,14 @@ func boolTake13(t *testing.T) {
 	assert.Equal(t, 13, len(g.Take(13)))
 }
 
+// this test is testing distribution sampling, so in very rare cases the test can fail (outlier sampling)
 func ratioConvergesToOneEigth(t *testing.T) {
 	expectedRatio := 1.0 / 8
 	g := RandBools(expectedRatio)
 	defer g.Stop()
 
-	ratio1 := calcRatio(g.Take(10))
-	ratio2 := calcRatio(g.Take(500))
-
-	assert.True(t, math.Abs(ratio1-expectedRatio) > math.Abs(ratio2-expectedRatio))
+	actualRatio := calcRatio(g.Take(50000))
+	assert.InEpsilon(t, expectedRatio, actualRatio, 0.05)
 }
 
 func calcRatio(values []bool) float64 {

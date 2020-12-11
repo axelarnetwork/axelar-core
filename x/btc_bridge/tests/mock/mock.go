@@ -10,7 +10,7 @@ import (
 	sdkTypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
-	"github.com/axelarnetwork/axelar-core/x/voting/exported"
+	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 var _ types.Voter = &TestVoter{}
@@ -38,7 +38,7 @@ func (t *TestVoter) TallyVote(_ sdkTypes.Context, _ exported.MsgVote) error {
 	panic("implement me")
 }
 
-func (t *TestVoter) Result(_ sdkTypes.Context, _ exported.PollMeta) exported.Vote {
+func (t *TestVoter) Result(_ sdkTypes.Context, _ exported.PollMeta) exported.VotingData {
 	panic("implement me")
 }
 

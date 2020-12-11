@@ -9,9 +9,9 @@ import (
 
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
-	spTypes "github.com/axelarnetwork/axelar-core/x/snapshotting/types"
+	spTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
-	axTypes "github.com/axelarnetwork/axelar-core/x/voting/types"
+	axTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 var (

@@ -83,5 +83,8 @@ func (p Params) Validate() error {
 	if err := validateLockingPeriod(p.LockingPeriod); err != nil {
 		return err
 	}
+	if err := validateThreshold(p.Threshold); err != nil {
+		return err
+	}
 	return nil
 }

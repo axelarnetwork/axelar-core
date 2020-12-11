@@ -9,13 +9,17 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
-	snapshotting "github.com/axelarnetwork/axelar-core/x/snapshotting/exported"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
+const (
+	sigPrefix = "sig_"
+)
+
 // StartMasterKeySign starts a tss signing protocol using the specified key for the given chain.
-func (k Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart, validators []snapshotting.Validator) (<-chan exported.Signature, error) {
+func (k Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart, validators []snapshot.Validator) (<-chan exported.Signature, error) {
 	if _, ok := k.signStreams[info.NewSigID]; ok {
 		return nil, fmt.Errorf("signing protocol for ID %s already in progress", info.NewSigID)
 	}
@@ -83,7 +87,7 @@ func (k Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart, validators [
 }
 
 // StartMasterKeySign starts a tss signing protocol using the master key for the given chain.
-func (k Keeper) StartMasterKeySign(ctx sdk.Context, info types.MsgMasterKeySignStart, validators []snapshotting.Validator) (<-chan exported.Signature, error) {
+func (k Keeper) StartMasterKeySign(ctx sdk.Context, info types.MsgMasterKeySignStart, validators []snapshot.Validator) (<-chan exported.Signature, error) {
 	r := k.getRotationCount(ctx, info.Chain)
 	keyID := ctx.KVStore(k.storeKey).Get([]byte(masterKeyID(r, info.Chain)))
 	if keyID == nil {
@@ -122,29 +126,33 @@ func (k Keeper) SignMsg(ctx sdk.Context, msg types.MsgSignTraffic) error {
 
 // GetSig returns the signature associated with sigID
 // or nil, nil if no such signature exists
-func (k Keeper) GetSig(ctx sdk.Context, sigID string) (exported.Signature, error) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(sigID))
+func (k Keeper) GetSig(ctx sdk.Context, sigID string) (exported.Signature, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(sigPrefix + sigID))
 	if bz == nil {
-		return exported.Signature{}, fmt.Errorf("signature not found")
+		return exported.Signature{}, false
 	}
 	r, s, err := convert.BytesToSig(bz)
 	if err != nil {
-		return exported.Signature{}, err
+		// the setter is controlled by the keeper alone, so an error here should be a catastrophic failure
+		panic(err)
 	}
 
-	return exported.Signature{R: r, S: s}, nil
+	return exported.Signature{R: r, S: s}, true
 }
 
 func (k Keeper) SetSig(ctx sdk.Context, sigID string, signature exported.Signature) error {
+	// Delete the reference to the signing stream with sigID because entering this function means the tss protocol has completed
+	delete(k.signStreams, sigID)
+
 	bz, err := convert.SigToBytes(signature.R.Bytes(), signature.S.Bytes())
 	if err != nil {
 		return err
 	}
-	ctx.KVStore(k.storeKey).Set([]byte(sigID), bz)
+	ctx.KVStore(k.storeKey).Set([]byte(sigPrefix+sigID), bz)
 	return nil
 }
 
-func (k Keeper) prepareSign(ctx sdk.Context, info types.MsgSignStart, validators []snapshotting.Validator) (types.Stream, *tssd.MessageIn_SignInit) {
+func (k Keeper) prepareSign(ctx sdk.Context, info types.MsgSignStart, validators []snapshot.Validator) (types.Stream, *tssd.MessageIn_SignInit) {
 	// TODO call GetLocalPrincipal only once at launch? need to wait until someone pushes a RegisterProxy message on chain...
 	myAddress := k.broadcaster.GetLocalPrincipal(ctx)
 	if myAddress.Empty() {
@@ -158,7 +166,7 @@ func (k Keeper) prepareSign(ctx sdk.Context, info types.MsgSignStart, validators
 		return nil, nil
 	}
 
-	grpcCtx, _ := k.newContext()
+	grpcCtx, _ := k.newGrpcContext()
 	stream, err := k.client.Sign(grpcCtx)
 	if err != nil {
 		k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tssd gRPC call Sign").Error())

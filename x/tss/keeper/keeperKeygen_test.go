@@ -124,8 +124,8 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_NewKeyIsSet(t *testing.T) {
 		assert.NoError(t, s.Keeper.AssignNextMasterKey(ctx, chain, snapshotHeight, keyID))
 		assert.NoError(t, s.Keeper.RotateMasterKey(s.Ctx, chain))
 
-		actualKey, err := s.Keeper.GetLatestMasterKey(s.Ctx, chain)
-		assert.NoError(t, err)
+		actualKey, ok := s.Keeper.GetLatestMasterKey(s.Ctx, chain)
+		assert.True(t, ok)
 		assert.Equal(t, expectedKey, actualKey)
 	}
 }
@@ -151,13 +151,13 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_MultipleTimes_PreviousKeysSt
 		}
 
 		// sanity check that the latest key is the last that was set
-		actualKey, err := s.Keeper.GetLatestMasterKey(ctx, chain)
-		assert.NoError(t, err)
+		actualKey, ok := s.Keeper.GetLatestMasterKey(ctx, chain)
+		assert.True(t, ok)
 		assert.Equal(t, masterKeys[len(masterKeys)-1], actualKey)
 
 		for i, key := range masterKeys {
-			actualKey, err = s.Keeper.GetPreviousMasterKey(ctx, chain, int64(len(masterKeys)-i-1))
-			assert.NoError(t, err)
+			actualKey, ok = s.Keeper.GetPreviousMasterKey(ctx, chain, int64(len(masterKeys)-i-1))
+			assert.True(t, ok)
 			assert.Equal(t, key, actualKey)
 		}
 	}
