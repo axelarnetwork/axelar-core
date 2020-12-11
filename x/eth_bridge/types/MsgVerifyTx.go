@@ -1,17 +1,26 @@
 package types
 
 import (
+	"math/big"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 type MsgVerifyTx struct {
 	Sender sdk.AccAddress
+	TX     TX
 }
 
-func NewMsgVerifyTx(sender sdk.AccAddress) sdk.Msg {
+func NewMsgVerifyTx(sender sdk.AccAddress, hash *common.Hash, address EthAddress, tx big.Int) sdk.Msg {
 	return MsgVerifyTx{
 		Sender: sender,
+		TX: TX{
+			Hash:    hash,
+			Address: address,
+			Amount:  tx,
+		},
 	}
 }
 
