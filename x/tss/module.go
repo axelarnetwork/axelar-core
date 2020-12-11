@@ -47,7 +47,7 @@ func (AppModuleBasic) ValidateGenesis(message json.RawMessage) error {
 }
 
 func (AppModuleBasic) RegisterRESTRoutes(_ context.CLIContext, _ *mux.Router) {
-	//TODO: implement rest interface
+	// TODO: implement rest interface
 }
 
 func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
@@ -61,13 +61,17 @@ func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 	keeper keeper.Keeper
+	staker types.Snapshotter
+	voter  types.Voter
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper) AppModule {
+func NewAppModule(k keeper.Keeper, s types.Snapshotter, v types.Voter) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
+		staker:         s,
+		voter:          v,
 	}
 }
 
@@ -92,7 +96,7 @@ func (AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper)
+	return NewHandler(am.keeper, am.staker, am.voter)
 }
 
 func (AppModule) QuerierRoute() string {

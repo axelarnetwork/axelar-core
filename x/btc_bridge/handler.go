@@ -14,8 +14,11 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
-	"github.com/axelarnetwork/axelar-core/x/voting/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
+
+const bitcoin = "bitcoin"
 
 func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Signer) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
@@ -33,11 +36,78 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Sig
 			return handleMsgRawTx(ctx, k, v, msg)
 		case types.MsgWithdraw:
 			return handleMsgWithdraw(ctx, k, rpc, s, msg)
+		case types.MsgTransferToNewMasterKey:
+			return handleMsgTransferToNewMasterKey(ctx, k, rpc, s, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
 		}
 	}
+}
+
+func handleMsgTransferToNewMasterKey(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, msg types.MsgTransferToNewMasterKey) (*sdk.Result, error) {
+	pk, ok := s.GetLatestMasterKey(ctx, bitcoin)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrBtcBridge, "key not found")
+	}
+
+	tx, err := prepareTx(ctx, k, s, msg.TxID, msg.SignatureID, pk)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrBtcBridge, err.Error())
+	}
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+			sdk.NewAttribute(types.AttributeTxId, msg.TxID),
+			sdk.NewAttribute(types.AttributeSigId, msg.SignatureID),
+		),
+	)
+
+	// This is beyond axelar's control, so we can only log the error and move on regardless
+	hash, err := rpc.SendRawTransaction(tx, false)
+	if err != nil {
+		k.Logger(ctx).Error(sdkerrors.Wrap(err, "sending transaction to Bitcoin failed").Error())
+		return &sdk.Result{
+			Log:    fmt.Sprintf("failed to sent transaction to Bitcoin (other nodes might have succeeded): %s", err.Error()),
+			Events: ctx.EventManager().Events(),
+		}, nil
+	}
+
+	return &sdk.Result{
+		Log:    fmt.Sprintf("successfully sent transaction %s to Bitcoin", hash),
+		Events: ctx.EventManager().Events(),
+	}, nil
+}
+
+func prepareTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, txID, sigID string, pk ecdsa.PublicKey) (*wire.MsgTx, error) {
+	sig, ok := s.GetSig(ctx, sigID)
+	if !ok {
+		return nil, fmt.Errorf("signature not found")
+	}
+	sigScript, err := createSigScript(sig, pk)
+	if err != nil {
+		return nil, err
+	}
+
+	rawTx := k.GetRawTx(ctx, txID)
+	if rawTx == nil {
+		return nil, fmt.Errorf("withdraw tx for ID %s has not been prepared yet", txID)
+	}
+
+	rawTx.TxIn[0].SignatureScript = sigScript
+	pkScript, err := getPkScript(ctx, k, txID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := validateWithdrawTx(rawTx, pkScript); err != nil {
+		return nil, err
+	}
+
+	return rawTx, nil
 }
 
 // This can be used as a potential hook to immediately act on a poll being decided by the vote
@@ -66,15 +136,23 @@ func handleMsgTrackAddress(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient
 }
 
 func handleMsgTrackPubKey(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, msg types.MsgTrackPubKey) (*sdk.Result, error) {
-	key, err := s.GetKey(ctx, msg.KeyID)
-	if err != nil {
-		k.Logger(ctx).Error("keyId not recognized")
-		return nil, fmt.Errorf("keyId not recognized")
+	var keyID string
+	var key ecdsa.PublicKey
+	var ok bool
+	if msg.UseMasterKey {
+		keyID = bitcoin
+		key, ok = s.GetLatestMasterKey(ctx, bitcoin)
+	} else {
+		keyID = msg.KeyID
+		key, ok = s.GetKey(ctx, msg.KeyID)
+	}
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrBtcBridge, fmt.Sprintf("key with ID %s not found", keyID))
 	}
 
 	addr, err := addressFromKey(key, msg.Chain)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "could not convert the given public key into a bitcoin address")
+		return nil, sdkerrors.Wrap(types.ErrBtcBridge, sdkerrors.Wrap(err, "could not convert the given public key into a bitcoin address").Error())
 	}
 
 	trackAddress(ctx, k, rpc, addr.EncodeAddress(), false)
@@ -98,7 +176,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 
 	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: txId}
 	if err := v.InitPoll(ctx, poll); err != nil {
-		return nil, sdkerrors.Wrap(err, "could not initialize new poll")
+		return nil, sdkerrors.Wrap(types.ErrBtcBridge, "could not initialize new poll")
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -211,28 +289,18 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.M
 
 func isVerified(ctx sdk.Context, v types.Voter, poll exported.PollMeta) bool {
 	res := v.Result(ctx, poll)
-	return res == nil || !res.Data().(bool)
+	return res == nil || !res.(bool)
 }
 
-func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, signer types.Signer, msg types.MsgWithdraw) (*sdk.Result, error) {
-	sigScript, err := createSigScript(ctx, signer, msg.SignatureID, msg.KeyID)
+func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, msg types.MsgWithdraw) (*sdk.Result, error) {
+	pk, ok := s.GetKey(ctx, msg.KeyID)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrBtcBridge, "key not found")
+	}
+
+	tx, err := prepareTx(ctx, k, s, msg.TxID, msg.SignatureID, pk)
 	if err != nil {
-		return nil, err
-	}
-
-	rawTx := k.GetRawTx(ctx, msg.TxID)
-	if rawTx == nil {
-		return nil, fmt.Errorf("withdraw tx for ID %s has not been prepared yet", msg.TxID)
-	}
-
-	rawTx.TxIn[0].SignatureScript = sigScript
-	pkScript, err := getPkScript(ctx, k, msg.TxID)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := validateWithdrawTx(rawTx, pkScript); err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(types.ErrBtcBridge, err.Error())
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -246,35 +314,28 @@ func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, si
 	)
 
 	// This is beyond axelar's control, so we can only log the error and move on regardless
-	if _, err := rpc.SendRawTransaction(rawTx, false); err != nil {
+	hash, err := rpc.SendRawTransaction(tx, false)
+	if err != nil {
 		k.Logger(ctx).Error(sdkerrors.Wrap(err, "sending transaction to Bitcoin failed").Error())
 		return &sdk.Result{
-			Log:    "failed to send transaction to Bitcoin (other nodes might have succeeded)",
+			Log:    fmt.Sprintf("failed to sent transaction to Bitcoin (other nodes might have succeeded): %s", err.Error()),
 			Events: ctx.EventManager().Events(),
 		}, nil
 	}
 
 	return &sdk.Result{
-		Log:    "successfully sent withdraw transaction to Bitcoin",
+		Log:    fmt.Sprintf("successfully sent transaction %s to Bitcoin", hash),
 		Events: ctx.EventManager().Events(),
 	}, nil
 }
 
-func createSigScript(ctx sdk.Context, signer types.Signer, sigId, keyId string) ([]byte, error) {
-	r, s, err := signer.GetSig(ctx, sigId)
-	if err != nil {
-		return nil, fmt.Errorf("signature not found")
-	}
+func createSigScript(s tss.Signature, pk ecdsa.PublicKey) ([]byte, error) {
 	sig := btcec.Signature{
-		R: r,
-		S: s,
+		R: s.R,
+		S: s.S,
 	}
 	sigBytes := append(sig.Serialize(), byte(txscript.SigHashAll))
 
-	pk, err := signer.GetKey(ctx, keyId)
-	if err != nil {
-		return nil, fmt.Errorf("key not found")
-	}
 	key := btcec.PublicKey(pk)
 	keyBytes := key.SerializeUncompressed()
 

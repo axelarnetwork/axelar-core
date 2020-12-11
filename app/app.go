@@ -2,14 +2,17 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 
+	tssd "github.com/axelarnetwork/tssd/pb"
 	"github.com/btcsuite/btcd/rpcclient"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/simapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -25,6 +28,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	dbm "github.com/tendermint/tm-db"
+	"google.golang.org/grpc"
 
 	keyring "github.com/cosmos/cosmos-sdk/crypto/keys"
 
@@ -35,12 +39,15 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/btc_bridge"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
+	axStaking "github.com/axelarnetwork/axelar-core/x/snapshot"
+	sKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
+	ssTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	"github.com/axelarnetwork/axelar-core/x/tss"
 	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
-	"github.com/axelarnetwork/axelar-core/x/voting"
-	vKeeper "github.com/axelarnetwork/axelar-core/x/voting/keeper"
-	vTypes "github.com/axelarnetwork/axelar-core/x/voting/types"
+	"github.com/axelarnetwork/axelar-core/x/vote"
+	vKeeper "github.com/axelarnetwork/axelar-core/x/vote/keeper"
+	votingTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 const (
@@ -66,9 +73,10 @@ var (
 		supply.AppModuleBasic{},
 
 		tss.AppModuleBasic{},
-		voting.AppModuleBasic{},
+		vote.AppModuleBasic{},
 		btc_bridge.AppModuleBasic{},
 		broadcast.AppModuleBasic{},
+		axStaking.AppModuleBasic{},
 	)
 	// account permissions
 	maccPerms = map[string][]string{
@@ -88,7 +96,13 @@ func MakeCodec() *codec.Codec {
 	sdk.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
 
-	return cdc.Seal()
+	cdc = cdc.Seal()
+
+	// all other modules can sent voting messages through the vote module,
+	// so it must be able to marshal these message types
+	votingTypes.ModuleCdc = cdc
+
+	return cdc
 }
 
 type AxelarApp struct {
@@ -113,6 +127,7 @@ type AxelarApp struct {
 	broadcastKeeper bcKeeper.Keeper
 	tssKeeper       tssKeeper.Keeper
 	votingKeeper    vKeeper.Keeper
+	axStakingKeeper sKeeper.Keeper
 
 	// Module Manager
 	mm *module.Manager
@@ -138,7 +153,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 
 	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
 		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey,
-		vTypes.StoreKey, broadcastTypes.StoreKey, btcTypes.StoreKey)
+		votingTypes.StoreKey, broadcastTypes.StoreKey, btcTypes.StoreKey, ssTypes.StoreKey, tssTypes.StoreKey)
 
 	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
@@ -160,6 +175,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	stakingSubspace := app.paramsKeeper.Subspace(staking.DefaultParamspace)
 	distrSubspace := app.paramsKeeper.Subspace(distr.DefaultParamspace)
 	slashingSubspace := app.paramsKeeper.Subspace(slashing.DefaultParamspace)
+	tssSubspace := app.paramsKeeper.Subspace(tssTypes.DefaultParamspace)
 
 	// The AccountKeeper handles address -> account lookups
 	app.accountKeeper = auth.NewAccountKeeper(
@@ -221,27 +237,41 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	var err error
 	app.btcKeeper = btcKeeper.NewBtcKeeper(app.cdc, keys[btcTypes.StoreKey])
 
+	app.axStakingKeeper = sKeeper.NewKeeper(app.cdc, keys[ssTypes.StoreKey], app.stakingKeeper)
+
 	keybase, err := keyring.NewKeyring(sdk.KeyringServiceName(), axelarCfg.ClientConfig.KeyringBackend, DefaultCLIHome, os.Stdin)
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
-	app.broadcastKeeper, err = bcKeeper.NewKeeper(app.cdc, keys[broadcastTypes.StoreKey], store.NewSubjectiveStore(), keybase, app.accountKeeper, app.stakingKeeper, axelarCfg.ClientConfig, logger)
+	app.broadcastKeeper, err = bcKeeper.NewKeeper(app.cdc, keys[broadcastTypes.StoreKey], store.NewSubjectiveStore(), keybase, app.accountKeeper, app.axStakingKeeper, axelarCfg.ClientConfig, logger)
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
 
-	app.tssKeeper, err = tssKeeper.NewKeeper(axelarCfg.TssdConfig, logger, app.broadcastKeeper, app.stakingKeeper)
+	// TODO don't start gRPC unless I'm a validator?
+	// start a gRPC client
+	tssdServerAddress := axelarCfg.Host + ":" + axelarCfg.Port
+	logger.Info(fmt.Sprintf("initiate connection to tssd gRPC server: %s", tssdServerAddress))
+	conn, err := grpc.Dial(tssdServerAddress, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
-	// tss opens a grpc connection. Clean it up on process shutdown
+	logger.Debug("successful connection to tssd gRPC server")
+
+	client := tssd.NewGG18Client(conn)
+	app.tssKeeper = tssKeeper.NewKeeper(keys[tssTypes.StoreKey], app.cdc, client, tssSubspace, app.broadcastKeeper)
+
+	// Clean up tss grpc connection on process shutdown
 	tmos.TrapSignal(logger, func() {
-		if err := app.tssKeeper.Close(logger); err != nil {
-			logger.Error(err.Error()) // TODO Logger forces me to throw away error metadata
+		logger.Debug("initiate Close")
+		if err := conn.Close(); err != nil {
+			logger.Error(sdkerrors.Wrap(err, "failure to close connection to server").Error())
+			return
 		}
+		logger.Debug("successful Close")
 	})
 
-	app.votingKeeper = vKeeper.NewKeeper(app.cdc, keys[vTypes.StoreKey], store.NewSubjectiveStore(), app.stakingKeeper, app.broadcastKeeper)
+	app.votingKeeper = vKeeper.NewKeeper(app.cdc, keys[votingTypes.StoreKey], store.NewSubjectiveStore(), app.axStakingKeeper, app.broadcastKeeper)
 
 	// Enable running a node with or without a Bitcoin bridge
 	var rpc *rpcclient.Client
@@ -269,8 +299,9 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 
-		tss.NewAppModule(app.tssKeeper),
-		voting.NewAppModule(app.votingKeeper, app.Router()),
+		axStaking.NewAppModule(app.axStakingKeeper),
+		tss.NewAppModule(app.tssKeeper, app.axStakingKeeper, app.votingKeeper),
+		vote.NewAppModule(app.votingKeeper, app.Router()),
 		broadcast.NewAppModule(app.broadcastKeeper),
 		btcModule,
 	)
@@ -279,7 +310,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	// there is nothing left over in the validator fee pool, so as to keep the
 	// CanWithdrawInvariant invariant.
 	app.mm.SetOrderBeginBlockers(distr.ModuleName, slashing.ModuleName)
-	app.mm.SetOrderEndBlockers(staking.ModuleName, vTypes.ModuleName)
+	app.mm.SetOrderEndBlockers(staking.ModuleName, votingTypes.ModuleName)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	// NOTE: The genutils moodule must occur after staking so that pools are
@@ -293,7 +324,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		tssTypes.ModuleName,
 		btcTypes.ModuleName,
 		broadcastTypes.ModuleName,
-		vTypes.ModuleName,
+		votingTypes.ModuleName,
 		supply.ModuleName,
 		genutil.ModuleName,
 	)
