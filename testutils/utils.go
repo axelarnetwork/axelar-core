@@ -7,11 +7,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
-	btcTypes "github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
-	spTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
-	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
-	axTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
+	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/types"
+	btcbridge "github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 var (
@@ -31,11 +31,11 @@ func Codec() *codec.Codec {
 	sdk.RegisterCodec(cdc)
 
 	// Add new modules here so tests have access to marshalling the registered types
-	axTypes.RegisterCodec(cdc)
-	btcTypes.RegisterCodec(cdc)
-	tssTypes.RegisterCodec(cdc)
-	broadcastTypes.RegisterCodec(cdc)
-	spTypes.RegisterCodec(cdc)
+	vote.RegisterCodec(cdc)
+	btcbridge.RegisterCodec(cdc)
+	tss.RegisterCodec(cdc)
+	broadcast.RegisterCodec(cdc)
+	snapshot.RegisterCodec(cdc)
 
 	return cdc
 }
