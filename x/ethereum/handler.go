@@ -1,4 +1,4 @@
-package btc_bridge
+package eth_bridge
 
 import (
 	"bytes"
@@ -8,8 +8,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/axelarnetwork/axelar-core/x/eth_bridge/keeper"
-	"github.com/axelarnetwork/axelar-core/x/eth_bridge/types"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 

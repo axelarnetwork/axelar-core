@@ -1,4 +1,4 @@
-package btc_bridge
+package eth_bridge
 
 import (
 	"encoding/json"
@@ -12,9 +12,9 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/axelarnetwork/axelar-core/x/eth_bridge/client/cli"
-	"github.com/axelarnetwork/axelar-core/x/eth_bridge/keeper"
-	"github.com/axelarnetwork/axelar-core/x/eth_bridge/types"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/client/cli"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 )
 
 var (

@@ -6,11 +6,9 @@ import (
 
 // RegisterCodec registers concrete types on codec
 func RegisterCodec(cdc *codec.Codec) {
-	cdc.RegisterConcrete(MsgWithdraw{}, "ethbridge/TrackAddress", nil)
+	cdc.RegisterConcrete(MsgVoteVerifiedTx{}, "ethbridge/VoteVerifyTx", nil)
 	cdc.RegisterConcrete(MsgVerifyTx{}, "ethbridge/VerifyTx", nil)
 
-	//	TODO: Replace bool with full bitcoin tx data when ethbridge uses write-in voting pattern
-	cdc.RegisterConcrete(true, "ethbridge/VotingData", nil)
 }
 
 // ModuleCdc defines the module codec

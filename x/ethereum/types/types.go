@@ -17,20 +17,7 @@ const (
 	Goerli  = "goerli"
 )
 
-type ExternalChainAddress struct {
-	Chain   string
-	Address string
-}
-
-func (addr ExternalChainAddress) IsInvalid() bool {
-	return addr.Chain == "" || addr.Address == ""
-}
-
-func (addr ExternalChainAddress) String() string {
-	return fmt.Sprintf("chain: %s, address: %s", addr.Chain, addr.Address)
-}
-
-// This type provides additional functionality based on the bitcoin chain name
+// This type provides additional functionality based on the ethereum chain name
 type Chain string
 
 // Validate checks if the object is a valid chain

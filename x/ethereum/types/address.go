@@ -5,8 +5,8 @@ import (
 )
 
 /*
-BtcAddress is used as an address format that can be validated and marshalled.
-Golang's reflection cannot deal with private fields, so (un)marshalling of btcutil.Address does not work.
+EthAddress is used as an address format that can be validated and marshalled.
+Golang's reflection cannot deal with private fields, so (un)marshalling of common.Address does not work.
 Therefore, we need this data type for communication.
 */
 type EthAddress struct {
@@ -37,19 +37,7 @@ func (a EthAddress) String() string {
 	return a.EncodedString
 }
 
-// Convert decodes the address into a btcutil.Address
+// Convert decodes the address into a common.Address
 func (a EthAddress) Convert() common.Address {
 	return common.HexToAddress(a.EncodedString)
 }
-
-// PkScript creates a script to pay a transaction output to the address
-/*func (a EthAddress) PkScript() []byte {
-	addr := a.Convert()
-
-	if script, err := txscript.PayToAddrScript(addr); err != nil {
-		return nil
-	} else {
-		return script
-	}
-}
-*/

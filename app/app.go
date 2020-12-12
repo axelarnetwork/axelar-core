@@ -40,7 +40,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/broadcast"
 	broadcastKeeper "github.com/axelarnetwork/axelar-core/x/broadcast/keeper"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
-	eth_bridge "github.com/axelarnetwork/axelar-core/x/eth_bridge"
+	ethereum "github.com/axelarnetwork/axelar-core/x/ethereum"
+	ethKeeper "github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
+	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	"github.com/axelarnetwork/axelar-core/x/snapshot"
 	snapKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
@@ -77,6 +79,7 @@ var (
 		tss.AppModuleBasic{},
 		vote.AppModuleBasic{},
 		bitcoin.AppModuleBasic{},
+		ethereum.AppModuleBasic{},
 		broadcast.AppModuleBasic{},
 		snapshot.AppModuleBasic{},
 	)
@@ -152,7 +155,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 
 	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
 		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey,
-		voteTypes.StoreKey, broadcastTypes.StoreKey, btcTypes.StoreKey, snapTypes.StoreKey, tssTypes.StoreKey)
+		voteTypes.StoreKey, broadcastTypes.StoreKey, btcTypes.StoreKey, ethTypes.StoreKey, snapTypes.StoreKey, tssTypes.StoreKey)
 
 	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
@@ -298,7 +301,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		}
 		// BTC bridge opens a grpc connection. Clean it up on process shutdown
 		tmos.TrapSignal(logger, rpcBTC.Shutdown)
-		btcModule = bitcoin.NewAppModule(app.btcKeeper, app.votingKeeper, app.tssKeeper, rpc)
+		btcModule = bitcoin.NewAppModule(app.btcKeeper, app.votingKeeper, app.tssKeeper, rpcBTC)
 	} else {
 		btcModule = bitcoin.NewDummyAppModule(app.btcKeeper, app.votingKeeper)
 	}
@@ -308,8 +311,9 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
+	logger.Debug("Successfully connected to ethereum node")
 
-	ethBridge := eth_bridge.NewAppModule(app.ethKeeper, app.votingKeeper, app.tssKeeper, rpcETC)
+	ethBridge := ethereum.NewAppModule(app.ethKeeper, app.votingKeeper, app.tssKeeper, rpcETC)
 
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
@@ -346,6 +350,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		slashing.ModuleName,
 		tssTypes.ModuleName,
 		btcTypes.ModuleName,
+		ethTypes.ModuleName,
 		broadcastTypes.ModuleName,
 		voteTypes.ModuleName,
 		supply.ModuleName,

@@ -1,10 +1,10 @@
-package btc_bridge
+package eth_bridge
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/axelarnetwork/axelar-core/x/eth_bridge/keeper"
-	"github.com/axelarnetwork/axelar-core/x/eth_bridge/types"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 )
 
 // InitGenesis initialize default parameters

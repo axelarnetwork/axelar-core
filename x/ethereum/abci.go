@@ -1,10 +1,10 @@
-package btc_bridge
+package eth_bridge
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/axelarnetwork/axelar-core/x/eth_bridge/keeper"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 )
 
 // BeginBlocker check for infraction evidence or downtime of validators

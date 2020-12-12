@@ -7,7 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/axelarnetwork/axelar-core/x/eth_bridge/types"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 )
 
 var (

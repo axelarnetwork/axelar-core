@@ -18,7 +18,7 @@ func NewQuerier(k Keeper) sdk.Querier {
 		switch path[0] {
 
 		default:
-			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown btc-bridge query endpoint: %s", path[0]))
+			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown eth-bridge query endpoint: %s", path[0]))
 		}
 	}
 }
