@@ -1,4 +1,4 @@
-package btc_bridge
+package bitcoin
 
 import (
 	"crypto/ecdsa"
@@ -12,8 +12,8 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
-	"github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -48,12 +48,12 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Sig
 func handleMsgTransferToNewMasterKey(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, msg types.MsgTransferToNewMasterKey) (*sdk.Result, error) {
 	pk, ok := s.GetLatestMasterKey(ctx, bitcoin)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrBtcBridge, "key not found")
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, "key not found")
 	}
 
 	tx, err := prepareTx(ctx, k, s, msg.TxID, msg.SignatureID, pk)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrBtcBridge, err.Error())
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -147,12 +147,12 @@ func handleMsgTrackPubKey(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient,
 		key, ok = s.GetKey(ctx, msg.KeyID)
 	}
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrBtcBridge, fmt.Sprintf("key with ID %s not found", keyID))
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("key with ID %s not found", keyID))
 	}
 
 	addr, err := addressFromKey(key, msg.Chain)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrBtcBridge, sdkerrors.Wrap(err, "could not convert the given public key into a bitcoin address").Error())
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, sdkerrors.Wrap(err, "could not convert the given public key into a bitcoin address").Error())
 	}
 
 	trackAddress(ctx, k, rpc, addr.EncodeAddress(), false)
@@ -176,7 +176,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 
 	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: txId}
 	if err := v.InitPoll(ctx, poll); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrBtcBridge, "could not initialize new poll")
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, "could not initialize new poll")
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -295,12 +295,12 @@ func isVerified(ctx sdk.Context, v types.Voter, poll exported.PollMeta) bool {
 func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, msg types.MsgWithdraw) (*sdk.Result, error) {
 	pk, ok := s.GetKey(ctx, msg.KeyID)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrBtcBridge, "key not found")
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, "key not found")
 	}
 
 	tx, err := prepareTx(ctx, k, s, msg.TxID, msg.SignatureID, pk)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrBtcBridge, err.Error())
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
 
 	ctx.EventManager().EmitEvent(

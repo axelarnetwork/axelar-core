@@ -16,7 +16,7 @@ import (
 	"github.com/spf13/cobra"
 
 	cliUtils "github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
 
 const (

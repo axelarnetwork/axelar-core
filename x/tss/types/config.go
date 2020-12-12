@@ -1,6 +1,6 @@
 package types
 
-type TssdConfig struct {
+type TssConfig struct {
 	Host string `mapstructure:"tssd_host"`
 	Port string `mapstructure:"tssd_port"`
 }

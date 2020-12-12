@@ -15,10 +15,10 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/testutils/mock"
-	"github.com/axelarnetwork/axelar-core/x/btc_bridge"
-	"github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
-	btcMock "github.com/axelarnetwork/axelar-core/x/btc_bridge/tests/mock"
-	"github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
+	"github.com/axelarnetwork/axelar-core/x/bitcoin"
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
+	btcMock "github.com/axelarnetwork/axelar-core/x/bitcoin/tests/mock"
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
 
 func TestTrackAddress(t *testing.T) {
@@ -26,7 +26,7 @@ func TestTrackAddress(t *testing.T) {
 	k := keeper.NewBtcKeeper(cdc, sdkTypes.NewKVStoreKey("testKey"))
 	rpcCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	rpc := btcMock.TestRPC{Cancel: cancel}
-	handler := btc_bridge.NewHandler(k, &btcMock.TestVoter{}, &rpc, nil)
+	handler := bitcoin.NewHandler(k, &btcMock.TestVoter{}, &rpc, nil)
 
 	ctx := sdkTypes.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	expectedAddress, _ := types.ParseBtcAddress("bitcoinTestAddress", "mainnet")
@@ -49,7 +49,7 @@ func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 		RawTxs: map[string]*btcjson.TxRawResult{},
 	}
 	v := &btcMock.TestVoter{}
-	handler := btc_bridge.NewHandler(k, v, &rpc, nil)
+	handler := bitcoin.NewHandler(k, v, &rpc, nil)
 	ctx := sdkTypes.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 
 	hash, _ := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
@@ -105,7 +105,7 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 		},
 	}
 	v := &btcMock.TestVoter{}
-	handler := btc_bridge.NewHandler(k, v, &rpc, nil)
+	handler := bitcoin.NewHandler(k, v, &rpc, nil)
 	ctx := sdkTypes.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 
 	assert.Nil(t, utxo.Validate())
