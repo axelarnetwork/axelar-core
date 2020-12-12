@@ -33,21 +33,21 @@ import (
 	keyring "github.com/cosmos/cosmos-sdk/crypto/keys"
 
 	"github.com/axelarnetwork/axelar-core/store"
+	"github.com/axelarnetwork/axelar-core/x/bitcoin"
+	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
+	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/axelarnetwork/axelar-core/x/broadcast"
-	bcKeeper "github.com/axelarnetwork/axelar-core/x/broadcast/keeper"
+	broadcastKeeper "github.com/axelarnetwork/axelar-core/x/broadcast/keeper"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
-	"github.com/axelarnetwork/axelar-core/x/btc_bridge"
-	btcKeeper "github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
-	btcTypes "github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
-	axStaking "github.com/axelarnetwork/axelar-core/x/snapshot"
-	sKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
-	ssTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
+	"github.com/axelarnetwork/axelar-core/x/snapshot"
+	snapKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
+	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	"github.com/axelarnetwork/axelar-core/x/tss"
 	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/axelarnetwork/axelar-core/x/vote"
-	vKeeper "github.com/axelarnetwork/axelar-core/x/vote/keeper"
-	votingTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
+	voteKeeper "github.com/axelarnetwork/axelar-core/x/vote/keeper"
+	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 const (
@@ -74,9 +74,9 @@ var (
 
 		tss.AppModuleBasic{},
 		vote.AppModuleBasic{},
-		btc_bridge.AppModuleBasic{},
+		bitcoin.AppModuleBasic{},
 		broadcast.AppModuleBasic{},
-		axStaking.AppModuleBasic{},
+		snapshot.AppModuleBasic{},
 	)
 	// account permissions
 	maccPerms = map[string][]string{
@@ -100,7 +100,7 @@ func MakeCodec() *codec.Codec {
 
 	// all other modules can sent voting messages through the vote module,
 	// so it must be able to marshal these message types
-	votingTypes.ModuleCdc = cdc
+	voteTypes.ModuleCdc = cdc
 
 	return cdc
 }
@@ -124,10 +124,10 @@ type AxelarApp struct {
 	supplyKeeper    supply.Keeper
 	paramsKeeper    params.Keeper
 	btcKeeper       btcKeeper.Keeper
-	broadcastKeeper bcKeeper.Keeper
+	broadcastKeeper broadcastKeeper.Keeper
 	tssKeeper       tssKeeper.Keeper
-	votingKeeper    vKeeper.Keeper
-	axStakingKeeper sKeeper.Keeper
+	votingKeeper    voteKeeper.Keeper
+	axStakingKeeper snapKeeper.Keeper
 
 	// Module Manager
 	mm *module.Manager
@@ -153,7 +153,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 
 	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
 		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey,
-		votingTypes.StoreKey, broadcastTypes.StoreKey, btcTypes.StoreKey, ssTypes.StoreKey, tssTypes.StoreKey)
+		voteTypes.StoreKey, broadcastTypes.StoreKey, btcTypes.StoreKey, snapTypes.StoreKey, tssTypes.StoreKey)
 
 	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
@@ -237,13 +237,13 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	var err error
 	app.btcKeeper = btcKeeper.NewBtcKeeper(app.cdc, keys[btcTypes.StoreKey])
 
-	app.axStakingKeeper = sKeeper.NewKeeper(app.cdc, keys[ssTypes.StoreKey], app.stakingKeeper)
+	app.axStakingKeeper = snapKeeper.NewKeeper(app.cdc, keys[snapTypes.StoreKey], app.stakingKeeper)
 
 	keybase, err := keyring.NewKeyring(sdk.KeyringServiceName(), axelarCfg.ClientConfig.KeyringBackend, DefaultCLIHome, os.Stdin)
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
-	app.broadcastKeeper, err = bcKeeper.NewKeeper(app.cdc, keys[broadcastTypes.StoreKey], store.NewSubjectiveStore(), keybase, app.accountKeeper, app.axStakingKeeper, axelarCfg.ClientConfig, logger)
+	app.broadcastKeeper, err = broadcastKeeper.NewKeeper(app.cdc, keys[broadcastTypes.StoreKey], store.NewSubjectiveStore(), keybase, app.accountKeeper, app.axStakingKeeper, axelarCfg.ClientConfig, logger)
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
@@ -271,11 +271,11 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		logger.Debug("successful Close")
 	})
 
-	app.votingKeeper = vKeeper.NewKeeper(app.cdc, keys[votingTypes.StoreKey], store.NewSubjectiveStore(), app.axStakingKeeper, app.broadcastKeeper)
+	app.votingKeeper = voteKeeper.NewKeeper(app.cdc, keys[voteTypes.StoreKey], store.NewSubjectiveStore(), app.axStakingKeeper, app.broadcastKeeper)
 
 	// Enable running a node with or without a Bitcoin bridge
 	var rpc *rpcclient.Client
-	var btcModule btc_bridge.AppModule
+	var btcModule bitcoin.AppModule
 	if axelarCfg.WithBtcBridge {
 		rpc, err = btcTypes.NewRPCClient(axelarCfg.BtcConfig, logger)
 		if err != nil {
@@ -283,9 +283,9 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		}
 		// BTC bridge opens a grpc connection. Clean it up on process shutdown
 		tmos.TrapSignal(logger, rpc.Shutdown)
-		btcModule = btc_bridge.NewAppModule(app.btcKeeper, app.votingKeeper, app.tssKeeper, rpc)
+		btcModule = bitcoin.NewAppModule(app.btcKeeper, app.votingKeeper, app.tssKeeper, rpc)
 	} else {
-		btcModule = btc_bridge.NewDummyAppModule(app.btcKeeper, app.votingKeeper)
+		btcModule = bitcoin.NewDummyAppModule(app.btcKeeper, app.votingKeeper)
 	}
 
 	// NOTE: Any module instantiated in the module manager that is later modified
@@ -299,7 +299,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 
-		axStaking.NewAppModule(app.axStakingKeeper),
+		snapshot.NewAppModule(app.axStakingKeeper),
 		tss.NewAppModule(app.tssKeeper, app.axStakingKeeper, app.votingKeeper),
 		vote.NewAppModule(app.votingKeeper, app.Router()),
 		broadcast.NewAppModule(app.broadcastKeeper),
@@ -310,7 +310,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	// there is nothing left over in the validator fee pool, so as to keep the
 	// CanWithdrawInvariant invariant.
 	app.mm.SetOrderBeginBlockers(distr.ModuleName, slashing.ModuleName)
-	app.mm.SetOrderEndBlockers(staking.ModuleName, votingTypes.ModuleName)
+	app.mm.SetOrderEndBlockers(staking.ModuleName, voteTypes.ModuleName)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	// NOTE: The genutils moodule must occur after staking so that pools are
@@ -324,7 +324,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		tssTypes.ModuleName,
 		btcTypes.ModuleName,
 		broadcastTypes.ModuleName,
-		votingTypes.ModuleName,
+		voteTypes.ModuleName,
 		supply.ModuleName,
 		genutil.ModuleName,
 	)

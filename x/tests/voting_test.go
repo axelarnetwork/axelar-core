@@ -16,13 +16,13 @@ import (
 	"github.com/axelarnetwork/axelar-core/store"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/mock"
+	"github.com/axelarnetwork/axelar-core/x/bitcoin"
+	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
+	btcMock "github.com/axelarnetwork/axelar-core/x/bitcoin/tests/mock"
+	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/axelarnetwork/axelar-core/x/broadcast"
 	bcExported "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
-	"github.com/axelarnetwork/axelar-core/x/btc_bridge"
-	btcKeeper "github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
-	btcMock "github.com/axelarnetwork/axelar-core/x/btc_bridge/tests/mock"
-	btcTypes "github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote"
 	vExported "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -179,13 +179,13 @@ func newNode(moniker string, broadcaster bcExported.Broadcaster, staker exported
 
 	btcK := btcKeeper.NewBtcKeeper(testutils.Codec(), mock.NewKVStoreKey(btcTypes.StoreKey))
 	// We use a mock for the bitcoin rpc client so we can control the responses from the "bitcoin" network
-	btcH := btc_bridge.NewHandler(btcK, vK, &btcMock.TestRPC{RawTxs: txs}, nil)
+	btcH := bitcoin.NewHandler(btcK, vK, &btcMock.TestRPC{RawTxs: txs}, nil)
 
 	broadcastH := broadcast.NewHandler(broadcaster)
 
 	// Set the correct initial state in the keepers
 	vote.InitGenesis(ctx, vK, axTypes.DefaultGenesisState())
-	btc_bridge.InitGenesis(ctx, btcK, btcTypes.DefaultGenesisState())
+	bitcoin.InitGenesis(ctx, btcK, btcTypes.DefaultGenesisState())
 
 	// Define all functions that should run at the end of a block
 	eb := func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {

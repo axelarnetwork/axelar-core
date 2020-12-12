@@ -1,10 +1,10 @@
-package btc_bridge
+package bitcoin
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/axelarnetwork/axelar-core/x/btc_bridge/keeper"
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 )
 
 // BeginBlocker check for infraction evidence or downtime of validators

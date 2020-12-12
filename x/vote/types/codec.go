@@ -12,6 +12,9 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterInterface((*exported.MsgVote)(nil), nil)
 	cdc.RegisterInterface((*exported.VotingData)(nil), nil)
 	cdc.RegisterInterface((*exported.Vote)(nil), nil)
+
+	// Default type for voting, i.e. yes/no vote. Modules need to register their own types if they need more elaborate VotingData
+	cdc.RegisterConcrete(true, "vote/VotingData", nil)
 }
 
 // ModuleCdc defines the module codec. For the vote module, this must be set from the app.go,
