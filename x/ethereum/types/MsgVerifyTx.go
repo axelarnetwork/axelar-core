@@ -13,13 +13,14 @@ type MsgVerifyTx struct {
 	TX     TX
 }
 
-func NewMsgVerifyTx(sender sdk.AccAddress, hash *common.Hash, address EthAddress, tx big.Int) sdk.Msg {
+func NewMsgVerifyTx(sender sdk.AccAddress, hash *common.Hash, address EthAddress, amount big.Int, txType TXType) sdk.Msg {
 	return MsgVerifyTx{
 		Sender: sender,
 		TX: TX{
 			Hash:    hash,
 			Address: address,
-			Amount:  tx,
+			Amount:  amount,
+			TXType:  txType,
 		},
 	}
 }

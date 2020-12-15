@@ -55,7 +55,7 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc types.R
 	*/
 
 	//TODO: Add support to specify a key other than the master key
-	pk, ok := s.GetLatestMasterKey(ctx, ethereum)
+	pk, ok := s.GetCurrentMasterKey(ctx, ethereum)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEthBridge, "key not found")
 	}

@@ -27,6 +27,11 @@ const (
 	ethereum = "ethereum"
 	wei      = "wei"
 	gwei     = "gwei"
+	btc      = "btc"
+	bitcoin  = "bitcoin"
+
+	//TODO: not sure how many decimals a BTC token is supposed to have in ethereum
+	btcDecs = 18
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -42,49 +47,69 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	}
 
 	mainnetCmd := makeCommand(types.Mainnet)
+	mainnetEtherCmd := makeCommand("ether")
+	mainnetEtherCmd.AddCommand(
+		flags.PostCommands(
+			GetCmdEther(types.Chain(types.Mainnet), cdc))...)
 	mainnetCmd.AddCommand(
 		flags.PostCommands(
-			GetCmdVerifyTx(types.Chain(types.Mainnet), cdc))...)
+			GetCmdVerifyTx(types.Chain(types.Mainnet), cdc), mainnetEtherCmd)...)
 
 	ropstenCmd := makeCommand(types.Ropsten)
+	ropstenEtherCmd := makeCommand("ether")
+	ropstenEtherCmd.AddCommand(
+		flags.PostCommands(
+			GetCmdEther(types.Chain(types.Mainnet), cdc))...)
 	ropstenCmd.AddCommand(
 		flags.PostCommands(
-			GetCmdVerifyTx(types.Chain(types.Ropsten), cdc))...)
+			GetCmdVerifyTx(types.Chain(types.Ropsten), cdc), ropstenCmd)...)
 
 	kovanCmd := makeCommand(types.Kovan)
+	kovanEtherCmd := makeCommand("ether")
+	kovanEtherCmd.AddCommand(
+		flags.PostCommands(
+			GetCmdEther(types.Chain(types.Mainnet), cdc))...)
 	kovanCmd.AddCommand(
 		flags.PostCommands(
-			GetCmdVerifyTx(types.Chain(types.Kovan), cdc))...)
+			GetCmdVerifyTx(types.Chain(types.Kovan), cdc), kovanEtherCmd)...)
 
 	rinkebyCmd := makeCommand(types.Rinkeby)
+	rinkebyEtherCmd := makeCommand("ether")
+	rinkebyEtherCmd.AddCommand(
+		flags.PostCommands(
+			GetCmdEther(types.Chain(types.Mainnet), cdc))...)
 	rinkebyCmd.AddCommand(
 		flags.PostCommands(
-			GetCmdVerifyTx(types.Chain(types.Rinkeby), cdc))...)
+			GetCmdVerifyTx(types.Chain(types.Rinkeby), cdc), rinkebyEtherCmd)...)
 
 	goerliCmd := makeCommand(types.Goerli)
+	goerliEtherCmd := makeCommand("ether")
+	goerliEtherCmd.AddCommand(
+		flags.PostCommands(
+			GetCmdEther(types.Chain(types.Mainnet), cdc))...)
 	goerliCmd.AddCommand(
 		flags.PostCommands(
-			GetCmdVerifyTx(types.Chain(types.Goerli), cdc))...)
+			GetCmdVerifyTx(types.Chain(types.Goerli), cdc), goerliEtherCmd)...)
 
 	ethTxCmd.AddCommand(mainnetCmd, ropstenCmd, kovanCmd, rinkebyCmd, goerliCmd)
 
 	return ethTxCmd
 }
 
-func makeCommand(network string) *cobra.Command {
+func makeCommand(name string) *cobra.Command {
 
 	return &cobra.Command{
-		Use:                        network,
-		Short:                      fmt.Sprintf("%s transactions subcommands", network),
+		Use:                        name,
+		Short:                      fmt.Sprintf("%s transactions subcommands", name),
 		SuggestionsMinimumDistance: 2,
 		RunE:                       client.ValidateCmd,
 	}
 }
 
-func GetCmdRawTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
+func GetCmdEther(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 
 	return &cobra.Command{
-		Use:   "rawTx [sourceTxId] [amount] [destination]",
+		Use:   "ether [sourceTxId] [amount] [destination]",
 		Short: "Generate raw transaction",
 		Long: "Generate raw transaction that can be used to spend the [amount] from the source transaction to the [destination]. " +
 			"The difference between the source transaction output amount and the given [amount] becomes the transaction fee",
@@ -95,9 +120,14 @@ func GetCmdRawTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 
 			hash := common.HexToHash(args[0])
 
-			eth, err := parseEth(args[1])
+			eth, txType, err := parseValue(args[1])
 			if err != nil {
 				return err
+			}
+
+			if txType != types.TypeETH {
+
+				return fmt.Errorf("amount must be a unit of ether")
 			}
 
 			//TODO: Add parameters to specify a key other than the master key
@@ -106,7 +136,7 @@ func GetCmdRawTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			msg := types.NewMsgRawTx(cliCtx.GetFromAddress(), &hash, eth, addr)
+			msg := types.NewMsgRawTx(cliCtx.GetFromAddress(), &hash, eth, addr, txType)
 
 			if err := msg.ValidateBasic(); err != nil {
 				return err
@@ -119,7 +149,7 @@ func GetCmdRawTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 
 func GetCmdVerifyTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "verifyTx [txId] [voutIdx] [destination] [amount] ",
+		Use:   "verifyTx [txId] [destination] [amount] ",
 		Short: "Verify an Ethereum transaction",
 		Long: fmt.Sprintf(
 			"Verify that a transaction happened on the Ethereum chain so it can be processed on axelar. "+
@@ -140,12 +170,12 @@ func GetCmdVerifyTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			amount, err := parseEth(args[2])
+			amount, txType, err := parseValue(args[2])
 			if err != nil {
 				return err
 			}
 
-			msg := types.NewMsgVerifyTx(cliCtx.GetFromAddress(), &hash, addr, amount)
+			msg := types.NewMsgVerifyTx(cliCtx.GetFromAddress(), &hash, addr, amount, txType)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -162,15 +192,24 @@ func prepare(reader io.Reader, cdc *codec.Codec) (context.CLIContext, authTypes.
 	return cliCtx, txBldr
 }
 
-func parseEth(rawCoin string) (value big.Int, err error) {
+func parseValue(rawValue string) (value big.Int, txType types.TXType, err error) {
 
 	value = *big.NewInt(0)
 	err = nil
+	txType = types.TypeERC20
+
+	// if the function is given a basic integer value without units,
+	// it will assume is raw representation of a ERC20 token
+	if v, ok := big.NewInt(0).SetString(rawValue, 10); ok {
+
+		return *v, txType, nil
+
+	}
 
 	var coin sdk.DecCoin
-	coin, err = sdk.ParseDecCoin(rawCoin)
+	coin, err = sdk.ParseDecCoin(rawValue)
 	if err != nil {
-		return value, fmt.Errorf("could not parse coin string")
+		return value, txType, fmt.Errorf("could not parse coin string")
 	}
 
 	val := big.NewInt(coin.Amount.Int64())
@@ -184,13 +223,21 @@ func parseEth(rawCoin string) (value big.Int, err error) {
 		}
 
 		value = *val
+		txType = types.TypeETH
 
 	case eth, ethereum:
 
 		value = *(new(big.Int).Mul(val, big.NewInt(params.Ether)))
+		txType = types.TypeETH
 
 	case gwei:
-		value = *(new(big.Int).Mul(val, big.NewInt(params.Ether)))
+		value = *(new(big.Int).Mul(val, big.NewInt(params.GWei)))
+		txType = types.TypeETH
+
+	case btc, bitcoin:
+		var i, e = big.NewInt(10), big.NewInt(btcDecs)
+		i.Exp(i, e, nil)
+		value = *(new(big.Int).Mul(val, i))
 
 	default:
 		err = fmt.Errorf("choose a correct denomination: %s (%s), %s, %s", eth, ethereum, wei, gwei)

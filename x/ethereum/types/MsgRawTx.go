@@ -14,14 +14,16 @@ type MsgRawTx struct {
 	TxHash      *common.Hash
 	Amount      big.Int
 	Destination EthAddress
+	TXType      TXType
 }
 
-func NewMsgRawTx(sender sdk.AccAddress, txHash *common.Hash, amount big.Int, destination EthAddress) sdk.Msg {
+func NewMsgRawTx(sender sdk.AccAddress, txHash *common.Hash, amount big.Int, destination EthAddress, txType TXType) sdk.Msg {
 	return MsgRawTx{
 		Sender:      sender,
 		TxHash:      txHash,
 		Amount:      amount,
 		Destination: destination,
+		TXType:      txType,
 	}
 }
 
@@ -45,6 +47,10 @@ func (msg MsgRawTx) ValidateBasic() error {
 	}
 	if err := msg.Destination.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid destination")
+	}
+
+	if !msg.TXType.IsValid() {
+		return fmt.Errorf("Invalid transaction type")
 	}
 
 	return nil

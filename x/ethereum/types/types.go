@@ -56,6 +56,7 @@ type TX struct {
 	Hash    *common.Hash
 	Amount  big.Int
 	Address EthAddress
+	TXType  TXType
 }
 
 func (u TX) Validate() error {
@@ -68,6 +69,11 @@ func (u TX) Validate() error {
 	if err := u.Address.Validate(); err != nil {
 		return err
 	}
+
+	if !u.TXType.IsValid() {
+		return fmt.Errorf("Invalid transaction type")
+	}
+
 	return nil
 }
 
@@ -75,5 +81,21 @@ func (u TX) Equals(other TX) bool {
 	return other.Validate() == nil &&
 		bytes.Equal(u.Hash.Bytes(), other.Hash.Bytes()) &&
 		bytes.Equal(u.Amount.Bytes(), other.Amount.Bytes()) &&
+		bytes.Equal([]byte(u.TXType), []byte(other.TXType)) &&
 		u.Address == other.Address
+}
+
+type TXType string
+
+const (
+	TypeETH   TXType = "eth"
+	TypeERC20        = "erc20"
+)
+
+func (lt TXType) IsValid() bool {
+	switch lt {
+	case TypeETH, TypeERC20:
+		return false
+	}
+	return true
 }
