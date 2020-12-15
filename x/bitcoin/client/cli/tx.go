@@ -133,7 +133,7 @@ func getCmdTrackPubKey(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 			if useMasterKey {
 				msg = types.NewMsgTrackPubKeyWithMasterKey(cliCtx.GetFromAddress(), chain, rescan)
 			} else {
-				msg = types.NewMsgTrackPubKey(cliCtx.GetFromAddress(), chain, args[0], rescan)
+				msg = types.NewMsgTrackPubKey(cliCtx.GetFromAddress(), chain, keyID, rescan)
 			}
 
 			if err := msg.ValidateBasic(); err != nil {
@@ -223,9 +223,9 @@ func GetCmdRawTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 
 			var msg sdk.Msg
 			if useMasterKey {
-				msg = types.NewMsgRawTxForMasterKey(cliCtx.GetFromAddress(), hash, btc)
+				msg = types.NewMsgRawTxForMasterKey(cliCtx.GetFromAddress(), chain, hash, btc)
 			} else {
-				addr, err := types.ParseBtcAddress(args[2], chain)
+				addr, err := types.ParseBtcAddress(destination, chain)
 				if err != nil {
 					return err
 				}

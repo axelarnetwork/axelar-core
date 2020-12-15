@@ -210,6 +210,13 @@ func RandStrings(minLength int, maxLength int) RandStringGen {
 	return g
 }
 
+// RandString returns a random string of random length in the given limits (inclusive)
+func RandString(len int) string {
+	g := RandStrings(len, len)
+	defer g.Stop()
+	return g.Next()
+}
+
 // Take returns a slice of random strings of the given length.
 func (g RandStringGen) Take(count int) []string {
 	res := make([]string, 0, count)
