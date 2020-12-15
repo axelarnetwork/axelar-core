@@ -13,13 +13,15 @@ type MsgRawTxForMasterKey struct {
 	Sender sdk.AccAddress
 	TxHash *chainhash.Hash
 	Amount btcutil.Amount
+	Chain  Chain
 }
 
-func NewMsgRawTxForMasterKey(sender sdk.AccAddress, txHash *chainhash.Hash, amount btcutil.Amount) sdk.Msg {
+func NewMsgRawTxForMasterKey(sender sdk.AccAddress, chain Chain, txHash *chainhash.Hash, amount btcutil.Amount) sdk.Msg {
 	return MsgRawTxForMasterKey{
 		Sender: sender,
 		TxHash: txHash,
 		Amount: amount,
+		Chain:  chain,
 	}
 }
 
@@ -41,8 +43,7 @@ func (msg MsgRawTxForMasterKey) ValidateBasic() error {
 	if msg.Amount <= 0 {
 		return fmt.Errorf("transaction amount must be greater than zero")
 	}
-
-	return nil
+	return msg.Chain.Validate()
 }
 
 func (msg MsgRawTxForMasterKey) GetSignBytes() []byte {

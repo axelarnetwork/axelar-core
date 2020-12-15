@@ -146,9 +146,13 @@ func (k Keeper) SetKey(ctx sdk.Context, keyID string, key ecdsa.PublicKey) {
 	ctx.KVStore(k.storeKey).Set([]byte(pkPrefix+keyID), bz)
 }
 
-// GetLatestMasterKey returns the latest master key that was set for the given chain
-func (k Keeper) GetLatestMasterKey(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool) {
+// GetCurrentMasterKey returns the latest master key that was set for the given chain
+func (k Keeper) GetCurrentMasterKey(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool) {
 	return k.GetPreviousMasterKey(ctx, chain, 0)
+}
+
+func (k Keeper) GetNextMasterKey(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool) {
+	return k.GetPreviousMasterKey(ctx, chain, -1)
 }
 
 /*
