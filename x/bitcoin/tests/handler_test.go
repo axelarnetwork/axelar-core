@@ -27,6 +27,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
+const testReps = 100
+
 func TestTrackAddress(t *testing.T) {
 	cdc := testutils.Codec()
 	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"))
@@ -159,7 +161,7 @@ func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
 
 	handler := bitcoin.NewHandler(k, v, &btcMock.TestRPC{}, signer)
 
-	for i := 0; i < 100; i++ {
+	for i := 0; i < testReps; i++ {
 		ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 		sk, _ = ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 		skNext, _ = ecdsa.GenerateKey(btcec.S256(), rand.Reader)

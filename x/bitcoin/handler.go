@@ -252,7 +252,8 @@ func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s 
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
 
-	return &sdk.Result{Log: sentToBitcoin(rpc, rawTx, k.Logger(ctx)), Events: ctx.EventManager().Events()}, nil
+	logMsg := sentToBitcoin(rpc, rawTx, k.Logger(ctx))
+	return &sdk.Result{Log: logMsg, Events: ctx.EventManager().Events()}, nil
 }
 
 func handleMsgTransferToNewMasterKey(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, msg types.MsgTransferToNewMasterKey) (*sdk.Result, error) {
@@ -276,7 +277,8 @@ func handleMsgTransferToNewMasterKey(ctx sdk.Context, k keeper.Keeper, rpc types
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
 
-	return &sdk.Result{Log: sentToBitcoin(rpc, rawTx, k.Logger(ctx)), Events: ctx.EventManager().Events()}, nil
+	logMsg := sentToBitcoin(rpc, rawTx, k.Logger(ctx))
+	return &sdk.Result{Log: logMsg, Events: ctx.EventManager().Events()}, nil
 }
 
 func isTxVerified(ctx sdk.Context, v types.Voter, txId string) bool {
