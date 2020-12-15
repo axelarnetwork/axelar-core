@@ -16,5 +16,6 @@ type Voter interface {
 type Signer interface {
 	GetSig(ctx sdk.Context, sigID string) (tss.Signature, bool)
 	GetKey(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool)
-	GetLatestMasterKey(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool)
+	GetCurrentMasterKey(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool)
+	GetNextMasterKey(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool)
 }
