@@ -8,6 +8,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
+	ethTypes "github.com/ethereum/go-ethereum/core/types"
 )
 
 var (
@@ -15,7 +16,8 @@ var (
 )
 
 const (
-	txKey = "utxo"
+	rawKey = "raw"
+	txKey  = "utxo"
 )
 
 type Keeper struct {
@@ -49,6 +51,22 @@ func (k Keeper) GetConfirmationHeight(ctx sdk.Context) uint64 {
 		k.cdc.MustUnmarshalBinaryLengthPrefixed(rawHeight, &height)
 		return height
 	}
+}
+
+func (k Keeper) GetRawTx(ctx sdk.Context, txId string) *ethTypes.Transaction {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(rawKey + txId))
+	if bz == nil {
+		return nil
+	}
+	var tx *ethTypes.Transaction
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &tx)
+
+	return tx
+}
+
+func (k Keeper) SetRawTx(ctx sdk.Context, txId string, tx *ethTypes.Transaction) {
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(tx)
+	ctx.KVStore(k.storeKey).Set([]byte(rawKey+txId), bz)
 }
 
 func (k Keeper) SetTX(ctx sdk.Context, txId string, utxo types.TX) {

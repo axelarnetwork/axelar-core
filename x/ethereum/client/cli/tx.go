@@ -14,6 +14,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/spf13/cobra"
 
+	cliUtils "github.com/axelarnetwork/axelar-core/utils"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -77,6 +78,42 @@ func makeCommand(network string) *cobra.Command {
 		Short:                      fmt.Sprintf("%s transactions subcommands", network),
 		SuggestionsMinimumDistance: 2,
 		RunE:                       client.ValidateCmd,
+	}
+}
+
+func GetCmdRawTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
+
+	return &cobra.Command{
+		Use:   "rawTx [sourceTxId] [amount] [destination]",
+		Short: "Generate raw transaction",
+		Long: "Generate raw transaction that can be used to spend the [amount] from the source transaction to the [destination]. " +
+			"The difference between the source transaction output amount and the given [amount] becomes the transaction fee",
+		Args: cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
+
+			hash := common.HexToHash(args[0])
+
+			eth, err := parseEth(args[1])
+			if err != nil {
+				return err
+			}
+
+			//TODO: Add parameters to specify a key other than the master key
+			addr, err := types.ParseEthAddress(args[2], chain)
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgRawTx(cliCtx.GetFromAddress(), &hash, eth, addr)
+
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
 	}
 }
 

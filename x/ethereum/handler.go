@@ -11,6 +11,14 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+
+	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+)
+
+const (
+	ethereum = "ethereum"
+	gasLimit = uint64(21000)
 )
 
 func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Signer) sdk.Handler {
@@ -29,6 +37,75 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
 		}
 	}
+}
+
+func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Signer, msg types.MsgRawTx) (*sdk.Result, error) {
+	txId := msg.TxHash.String()
+
+	poll := exported.PollMeta{ID: txId, Module: types.ModuleName, Type: types.MsgVerifyTx{}.Type()}
+
+	if isVerified(ctx, v, poll) {
+		return nil, fmt.Errorf("transaction not verified")
+	}
+
+	/*
+		Creating an Ethereum transaction with eth client. see:
+		https://medium.com/coinmonks/web3-go-part-1-31c68c68e20e
+		https://goethereumbook.org/en/transaction-raw-create/
+	*/
+
+	//TODO: Add support to specify a key other than the master key
+	pk, ok := s.GetLatestMasterKey(ctx, ethereum)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEthBridge, "key not found")
+	}
+
+	fromAddress := crypto.PubkeyToAddress(pk)
+	nonce, err := rpc.PendingNonceAt(context.Background(), fromAddress)
+	if err != nil {
+		return nil, fmt.Errorf("Could not create nonce: %s", err)
+	}
+
+	gasPrice, err := rpc.SuggestGasPrice(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("Could not calculate gas price: %s", err)
+	}
+
+	// TODO: how to include data in the command line so that it can travel within the message?
+	var data []byte
+
+	toAddress := msg.Destination.Convert()
+	value := msg.Amount
+
+	tx := ethTypes.NewTransaction(nonce, toAddress, &value, gasLimit, gasPrice, data)
+
+	k.SetRawTx(ctx, txId, tx)
+
+	// Print out the hash that becomes the input for the threshold signing
+	chainID, err := rpc.NetworkID(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("Could not retieve ethereum network: %s", err)
+	}
+	signer := ethTypes.NewEIP155Signer(chainID)
+	hash := signer.Hash(tx).Bytes()
+
+	k.Logger(ctx).Info(fmt.Sprintf("ethereum tx to sign: %s", k.Codec().MustMarshalJSON(hash)))
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+			sdk.NewAttribute(types.AttributeTxId, txId),
+			sdk.NewAttribute(types.AttributeAmount, msg.Amount.String()),
+			sdk.NewAttribute(types.AttributeDestination, msg.Destination.String()),
+		),
+	)
+
+	return &sdk.Result{
+		Data:   hash,
+		Log:    fmt.Sprintf("successfully created withdraw transaction for Ethereum. Hash to sign: %s", k.Codec().MustMarshalJSON(hash)),
+		Events: ctx.EventManager().Events(),
+	}, nil
 }
 
 // This can be used as a potential hook to immediately act on a poll being decided by the vote
@@ -102,6 +179,11 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v 
 		}, nil
 	}
 
+}
+
+func isVerified(ctx sdk.Context, v types.Voter, poll exported.PollMeta) bool {
+	res := v.Result(ctx, poll)
+	return res == nil || !res.(bool)
 }
 
 func verifyTx(rpc types.RPCClient, tx types.TX, expectedConfirmationHeight uint64) error {
