@@ -66,6 +66,23 @@ var (
 	btcTx *btcjson.TxRawResult
 )
 
+// Testing the key rotation functionality.
+// (0. Register proxies for all validators)
+//  1. Create an initial validator snapshot
+//  2. Create a key
+//  3. Designate that key to be the first master key for bitcoin
+//  4. Rotate to the designated master key
+//  5. Track the bitcoin address corresponding to the master key
+//  6. Simulate bitcoin deposit to the current master key
+//  7. Verify the deposit is confirmed on bitcoin
+//  8. Create a second snapshot
+//  9. Create a new key with the second snapshot's validator set
+// 10. Designate that key to be the next master key for bitcoin
+// 11. Create a raw tx to transfer funds from the first master key address to the second key's address
+// 12. Sign the hash of the raw tx with the OLD snapshot's validator set
+// 13. Send the signed transaction to bitcoin
+// 14. Verify the fund transfer is confirmed on bitcoin
+// 15. Rotate to the new master key
 func TestKeyRotation(t *testing.T) {
 	chain := mock.NewBlockchain().WithBlockTimeOut(10 * time.Millisecond)
 
@@ -73,12 +90,13 @@ func TestKeyRotation(t *testing.T) {
 	defer stringGen.Stop()
 
 	for i, valAddr := range stringGen.Take(nodeCount) {
-		validators = append(validators, staking.Validator{
+		validator := staking.Validator{
 			OperatorAddress: sdk.ValAddress(valAddr),
-			Tokens:          sdk.NewInt(testutils.RandIntBetween(100, 1000)).Mul(sdk.PowerReduction),
+			Tokens:          sdk.TokensFromConsensusPower(testutils.RandIntBetween(100, 1000)),
 			Status:          sdk.Bonded,
-		})
-		node := newNode("node"+strconv.Itoa(i), validators[i].OperatorAddress, chain)
+		}
+		validators = append(validators, validator)
+		node := newNode("node"+strconv.Itoa(i), validator.OperatorAddress, chain)
 		chain.AddNodes(node)
 	}
 	chain.Start()
@@ -258,9 +276,7 @@ func newNode(moniker string, validator sdk.ValAddress, chain mock.BlockChain) mo
 			}
 			return nil, fmt.Errorf("tx %s not found", hash.String())
 		},
-		SendRawTransactionFunc: func(tx *wire.MsgTx, allowHighFees bool) (*chainhash.Hash, error) {
-			return nil, nil
-		}}
+		SendRawTransactionFunc: func(*wire.MsgTx, bool) (*chainhash.Hash, error) { return nil, nil }}
 
 	toSign := make(chan []byte, 1)
 	tssdClient := &tssdMock.TSSDClientMock{
