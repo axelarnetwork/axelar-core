@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -12,6 +13,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 
+	ethereumRoot "github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -48,43 +52,18 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc types.R
 		return nil, fmt.Errorf("transaction not verified")
 	}
 
-	/*
-		Creating an Ethereum transaction with eth client. see:
-		https://medium.com/coinmonks/web3-go-part-1-31c68c68e20e
-		https://goethereumbook.org/en/transaction-raw-create/
-	*/
+	tx, err := createTransaction(ctx, rpc, s, msg)
 
-	//TODO: Add support to specify a key other than the master key
-	pk, ok := s.GetCurrentMasterKey(ctx, ethereum)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEthBridge, "key not found")
-	}
-
-	fromAddress := crypto.PubkeyToAddress(pk)
-	nonce, err := rpc.PendingNonceAt(context.Background(), fromAddress)
 	if err != nil {
-		return nil, fmt.Errorf("Could not create nonce: %s", err)
+		return nil, fmt.Errorf("Could not create ethereum transaction: %s", err)
 	}
-
-	gasPrice, err := rpc.SuggestGasPrice(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("Could not calculate gas price: %s", err)
-	}
-
-	// TODO: how to include data in the command line so that it can travel within the message?
-	var data []byte
-
-	toAddress := msg.Destination.Convert()
-	value := msg.Amount
-
-	tx := ethTypes.NewTransaction(nonce, toAddress, &value, gasLimit, gasPrice, data)
 
 	k.SetRawTx(ctx, txId, tx)
 
 	// Print out the hash that becomes the input for the threshold signing
 	chainID, err := rpc.NetworkID(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("Could not retieve ethereum network: %s", err)
+		return nil, fmt.Errorf("Could not retrieve ethereum network: %s", err)
 	}
 	signer := ethTypes.NewEIP155Signer(chainID)
 	hash := signer.Hash(tx).Bytes()
@@ -224,4 +203,77 @@ func verifyTx(rpc types.RPCClient, tx types.TX, expectedConfirmationHeight uint6
 	}
 
 	return nil
+}
+
+/*
+	Creating an Ethereum transaction with eth client. See:
+
+	https://medium.com/coinmonks/web3-go-part-1-31c68c68e20e
+	https://goethereumbook.org/en/transaction-raw-create/
+*/
+func createTransaction(ctx sdk.Context, rpc types.RPCClient, s types.Signer, msg types.MsgRawTx) (*ethTypes.Transaction, error) {
+
+	//TODO: Add support to specify a key other than the master key
+	pk, ok := s.GetCurrentMasterKey(ctx, ethereum)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEthBridge, "key not found")
+	}
+
+	fromAddress := crypto.PubkeyToAddress(pk)
+	nonce, err := rpc.PendingNonceAt(context.Background(), fromAddress)
+	if err != nil {
+		return nil, fmt.Errorf("Could not create nonce: %s", err)
+	}
+
+	toAddress := msg.Destination.Convert()
+
+	gasPrice, err := rpc.SuggestGasPrice(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("Could not calculate gas price: %s", err)
+	}
+
+	var data []byte
+	var gasLimit uint64
+	value := big.NewInt(0)
+
+	switch msg.TXType {
+
+	case types.TypeETH:
+
+		value.Set(&msg.Amount)
+		gasLimit = uint64(21000)
+
+	case types.TypeERC20:
+
+		/*
+			Perform serialization according to these tutorials:
+
+			https://medium.com/swlh/understanding-data-payloads-in-ethereum-transactions-354dbe995371
+			https://medium.com/mycrypto/why-do-we-need-transaction-data-39c922930e92
+			https://goethereumbook.org/en/transfer-tokens/
+		*/
+
+		addr := hexutil.Encode(common.LeftPadBytes(msg.Destination.Convert().Bytes(), 32))
+		val := hexutil.Encode(common.LeftPadBytes(msg.Amount.Bytes(), 32))
+
+		data = append(data, types.ERC20MintSel...)
+		data = append(data, addr...)
+		data = append(data, val...)
+
+		gasLimit, err = rpc.EstimateGas(context.Background(), ethereumRoot.CallMsg{
+			To:   &toAddress,
+			Data: data,
+		})
+
+		if err != nil {
+			return nil, fmt.Errorf("Could not estimate gas limit: %s", err)
+		}
+
+	default:
+
+		return nil, fmt.Errorf("Unsuported transaction type: %s", err)
+
+	}
+
+	return ethTypes.NewTransaction(nonce, toAddress, value, gasLimit, gasPrice, data), nil
 }

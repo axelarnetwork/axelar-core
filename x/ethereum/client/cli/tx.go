@@ -47,46 +47,51 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	}
 
 	mainnetCmd := makeCommand(types.Mainnet)
-	mainnetEtherCmd := makeCommand("ether")
+	mainnetEtherCmd := makeCommand("rawTx")
 	mainnetEtherCmd.AddCommand(
 		flags.PostCommands(
-			GetCmdEther(types.Chain(types.Mainnet), cdc))...)
+			GetCmdRawTx(types.Chain(types.Mainnet), types.TypeETH, cdc),
+			GetCmdRawTx(types.Chain(types.Mainnet), types.TypeERC20, cdc))...)
 	mainnetCmd.AddCommand(
 		flags.PostCommands(
 			GetCmdVerifyTx(types.Chain(types.Mainnet), cdc), mainnetEtherCmd)...)
 
 	ropstenCmd := makeCommand(types.Ropsten)
-	ropstenEtherCmd := makeCommand("ether")
+	ropstenEtherCmd := makeCommand("rawTx")
 	ropstenEtherCmd.AddCommand(
 		flags.PostCommands(
-			GetCmdEther(types.Chain(types.Mainnet), cdc))...)
+			GetCmdRawTx(types.Chain(types.Ropsten), types.TypeETH, cdc),
+			GetCmdRawTx(types.Chain(types.Ropsten), types.TypeERC20, cdc))...)
 	ropstenCmd.AddCommand(
 		flags.PostCommands(
 			GetCmdVerifyTx(types.Chain(types.Ropsten), cdc), ropstenCmd)...)
 
 	kovanCmd := makeCommand(types.Kovan)
-	kovanEtherCmd := makeCommand("ether")
+	kovanEtherCmd := makeCommand("rawTx")
 	kovanEtherCmd.AddCommand(
 		flags.PostCommands(
-			GetCmdEther(types.Chain(types.Mainnet), cdc))...)
+			GetCmdRawTx(types.Chain(types.Kovan), types.TypeETH, cdc),
+			GetCmdRawTx(types.Chain(types.Kovan), types.TypeERC20, cdc))...)
 	kovanCmd.AddCommand(
 		flags.PostCommands(
 			GetCmdVerifyTx(types.Chain(types.Kovan), cdc), kovanEtherCmd)...)
 
 	rinkebyCmd := makeCommand(types.Rinkeby)
-	rinkebyEtherCmd := makeCommand("ether")
+	rinkebyEtherCmd := makeCommand("rawTx")
 	rinkebyEtherCmd.AddCommand(
 		flags.PostCommands(
-			GetCmdEther(types.Chain(types.Mainnet), cdc))...)
+			GetCmdRawTx(types.Chain(types.Rinkeby), types.TypeETH, cdc),
+			GetCmdRawTx(types.Chain(types.Rinkeby), types.TypeERC20, cdc))...)
 	rinkebyCmd.AddCommand(
 		flags.PostCommands(
 			GetCmdVerifyTx(types.Chain(types.Rinkeby), cdc), rinkebyEtherCmd)...)
 
 	goerliCmd := makeCommand(types.Goerli)
-	goerliEtherCmd := makeCommand("ether")
+	goerliEtherCmd := makeCommand("rawTx")
 	goerliEtherCmd.AddCommand(
 		flags.PostCommands(
-			GetCmdEther(types.Chain(types.Mainnet), cdc))...)
+			GetCmdRawTx(types.Chain(types.Goerli), types.TypeETH, cdc),
+			GetCmdRawTx(types.Chain(types.Goerli), types.TypeERC20, cdc))...)
 	goerliCmd.AddCommand(
 		flags.PostCommands(
 			GetCmdVerifyTx(types.Chain(types.Goerli), cdc), goerliEtherCmd)...)
@@ -106,14 +111,12 @@ func makeCommand(name string) *cobra.Command {
 	}
 }
 
-func GetCmdEther(chain types.Chain, cdc *codec.Codec) *cobra.Command {
+func GetCmdRawTx(chain types.Chain, subCmd types.TXType, cdc *codec.Codec) *cobra.Command {
 
 	return &cobra.Command{
-		Use:   "ether [sourceTxId] [amount] [destination]",
+		Use:   fmt.Sprintf("%s [sourceTxId] [amount] [destination]", subCmd),
 		Short: "Generate raw transaction",
-		Long: "Generate raw transaction that can be used to spend the [amount] from the source transaction to the [destination]. " +
-			"The difference between the source transaction output amount and the given [amount] becomes the transaction fee",
-		Args: cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
@@ -125,9 +128,9 @@ func GetCmdEther(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			if txType != types.TypeETH {
+			if txType != subCmd {
 
-				return fmt.Errorf("amount must be a unit of ether")
+				return fmt.Errorf("amount must be a unit of %s", subCmd)
 			}
 
 			//TODO: Add parameters to specify a key other than the master key

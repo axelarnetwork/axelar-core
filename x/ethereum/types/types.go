@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"golang.org/x/crypto/sha3"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/params"
 )
@@ -15,7 +18,25 @@ const (
 	Kovan   = "kovan"
 	Rinkeby = "rinkby"
 	Goerli  = "goerli"
+
+	erc20Mint = "mint(address,uint256)"
 )
+
+var ERC20MintSel string
+
+func init() {
+	ERC20MintSel = calcSelector(erc20Mint)
+}
+
+func calcSelector(funcSignature string) string {
+
+	hash := sha3.NewLegacyKeccak256()
+
+	hash.Write([]byte(funcSignature))
+	buf := hash.Sum(nil)
+
+	return hexutil.Encode(buf[:4])
+}
 
 // This type provides additional functionality based on the ethereum chain name
 type Chain string
@@ -88,7 +109,7 @@ func (u TX) Equals(other TX) bool {
 type TXType string
 
 const (
-	TypeETH   TXType = "eth"
+	TypeETH   TXType = "ether"
 	TypeERC20        = "erc20"
 )
 
