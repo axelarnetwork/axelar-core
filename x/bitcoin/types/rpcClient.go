@@ -18,6 +18,8 @@ const (
 	ErrRpcInWarmup = btcjson.RPCErrorCode(-28)
 )
 
+//go:generate moq -pkg mock -out ./mock/rpcClient.go . RPCClient
+
 type RPCClient interface {
 	ImportAddress(address string) error
 	ImportAddressRescan(address string, account string, rescan bool) error

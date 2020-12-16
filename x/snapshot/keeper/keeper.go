@@ -21,7 +21,7 @@ const roundPrefix = "r-"
 
 // for now, have a small interval between rounds
 // const interval = 7 * 24 * time.Hour
-const interval = 10 * time.Second
+const interval = 10 * time.Millisecond
 
 // Make sure the keeper implements the Staker interface
 var _ exported.Snapshotter = Keeper{}

@@ -43,7 +43,10 @@ func newKeeper(b broadcast.Broadcaster, validators ...snapshot.Validator) Keeper
 
 func newBroadcaster() (mock.Broadcaster, <-chan sdk.Msg) {
 	out := make(chan sdk.Msg, 10)
-	b := mock.NewBroadcaster(testutils.Codec(), sdk.AccAddress("sender"), sdk.ValAddress("validator"), out)
+	b := mock.NewBroadcaster(testutils.Codec(), sdk.ValAddress("validator"), func(msg sdk.Msg) (result <-chan mock.Result) {
+		out <- msg
+		return nil
+	})
 	return b, out
 }
 
@@ -87,6 +90,8 @@ func voteOnBytes(t *testing.T) {
 	b, msgs := newBroadcaster()
 	k := newKeeper(b)
 	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	_ = b.RegisterProxy(ctx, b.LocalPrincipal, sdk.AccAddress("proxy"))
+
 	v1 := voteForPoll1
 	v1.VotingData = []byte("some test data")
 
@@ -125,6 +130,7 @@ func votePollIdMismatchReturnError(t *testing.T) {
 func voteOnNextBallot(t *testing.T) {
 	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	b, out := newBroadcaster()
+	_ = b.RegisterProxy(ctx, b.LocalPrincipal, sdk.AccAddress("proxy"))
 	k := newKeeper(b)
 
 	assert.NoError(t, k.InitPoll(ctx, poll1))
@@ -160,6 +166,7 @@ loop:
 func votesNotRepeatedInConsecutiveBallots(t *testing.T) {
 	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	b, out := newBroadcaster()
+	_ = b.RegisterProxy(ctx, b.LocalPrincipal, sdk.AccAddress("proxy"))
 	k := newKeeper(b)
 
 	assert.NoError(t, k.InitPoll(ctx, poll1))
@@ -211,6 +218,7 @@ loop:
 func voteMultipleTimesReturnError(t *testing.T) {
 	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	b, _ := newBroadcaster()
+	_ = b.RegisterProxy(ctx, b.LocalPrincipal, sdk.AccAddress("proxy"))
 	k := newKeeper(b)
 
 	assert.NoError(t, k.InitPoll(ctx, poll1))
@@ -227,6 +235,7 @@ func voteMultipleTimesReturnError(t *testing.T) {
 func noVotesNoBallot(t *testing.T) {
 	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	b, out := newBroadcaster()
+	_ = b.RegisterProxy(ctx, b.LocalPrincipal, sdk.AccAddress("proxy"))
 	k := newKeeper(b)
 
 	assert.NoError(t, k.InitPoll(ctx, poll1))
@@ -248,7 +257,8 @@ func noVotesNoBallot(t *testing.T) {
 func tallyNonExistingPollReturnError(t *testing.T) {
 	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	b, _ := newBroadcaster()
-	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), b.Proxy))
+	proxy1 := sdk.AccAddress("proxy1")
+	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), proxy1))
 	k := newKeeper(b, snapshot.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10})
 	k.SetVotingThreshold(ctx, utils.Threshold{Numerator: 2, Denominator: 3})
 
@@ -256,7 +266,7 @@ func tallyNonExistingPollReturnError(t *testing.T) {
 
 	// copy to not overwrite defaults
 	v2 := *voteForPoll2
-	v2.SetSender(b.Proxy)
+	v2.SetSender(proxy1)
 	err := k.TallyVote(ctx, &v2)
 	assert.Error(t, err)
 }
@@ -264,7 +274,8 @@ func tallyNonExistingPollReturnError(t *testing.T) {
 func tallyUnknownVoterReturnError(t *testing.T) {
 	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	b, _ := newBroadcaster()
-	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), b.Proxy))
+	proxy1 := sdk.AccAddress("proxy1")
+	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), proxy1))
 	k := newKeeper(b, snapshot.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10})
 	k.SetVotingThreshold(ctx, utils.Threshold{Numerator: 2, Denominator: 3})
 
@@ -280,7 +291,8 @@ func tallyUnknownVoterReturnError(t *testing.T) {
 func tallyNoWinner(t *testing.T) {
 	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	b, _ := newBroadcaster()
-	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), b.Proxy))
+	proxy1 := sdk.AccAddress("proxy1")
+	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), proxy1))
 	k := newKeeper(
 		b,
 		snapshot.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10},
@@ -292,7 +304,7 @@ func tallyNoWinner(t *testing.T) {
 
 	// copy to not overwrite defaults
 	v1 := *voteForPoll1
-	v1.SetSender(b.Proxy)
+	v1.SetSender(proxy1)
 	err := k.TallyVote(ctx, &v1)
 	res := k.Result(ctx, v1.PollMeta)
 	assert.NoError(t, err)
@@ -302,7 +314,8 @@ func tallyNoWinner(t *testing.T) {
 func tallyWithWinner(t *testing.T) {
 	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	b, _ := newBroadcaster()
-	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), b.Proxy))
+	proxy1 := sdk.AccAddress("proxy1")
+	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), proxy1))
 	k := newKeeper(
 		b,
 		snapshot.Validator{Address: b.GetLocalPrincipal(ctx), Power: 90},
@@ -314,7 +327,7 @@ func tallyWithWinner(t *testing.T) {
 
 	// copy to not overwrite defaults
 	v1 := *voteForPoll1
-	v1.SetSender(b.Proxy)
+	v1.SetSender(proxy1)
 	err := k.TallyVote(ctx, &v1)
 	res := k.Result(ctx, v1.PollMeta)
 	assert.NoError(t, err)
@@ -324,7 +337,8 @@ func tallyWithWinner(t *testing.T) {
 func tallyTwoVotesFromSameValidatorReturnError(t *testing.T) {
 	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	b, _ := newBroadcaster()
-	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), b.Proxy))
+	proxy1 := sdk.AccAddress("proxy1")
+	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), proxy1))
 	validator := snapshot.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10}
 	k := newKeeper(b, validator)
 	k.SetVotingThreshold(ctx, utils.Threshold{Numerator: 2, Denominator: 3})
@@ -334,14 +348,14 @@ func tallyTwoVotesFromSameValidatorReturnError(t *testing.T) {
 	v2 := v1
 	v3 := v1
 
-	v1.SetSender(b.Proxy)
+	v1.SetSender(proxy1)
 
 	// different decision
-	v2.SetSender(b.Proxy)
+	v2.SetSender(proxy1)
 	v2.VotingData = "different data"
 
 	// different data
-	v3.SetSender(b.Proxy)
+	v3.SetSender(proxy1)
 	v3.VotingData = "even more different data"
 
 	assert.NoError(t, k.InitPoll(ctx, poll1))
@@ -359,12 +373,13 @@ func tallyTwoVotesFromSameValidatorReturnError(t *testing.T) {
 func tallyMultipleVotesUntilDecision(t *testing.T) {
 	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	b, _ := newBroadcaster()
+	proxy1 := sdk.AccAddress("proxy1")
 	proxy2 := sdk.AccAddress("proxy2")
 	proxy3 := sdk.AccAddress("proxy3")
 	val1 := snapshot.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10}
 	val2 := snapshot.Validator{Address: sdk.ValAddress("val2"), Power: 10}
 	val3 := snapshot.Validator{Address: sdk.ValAddress("val3"), Power: 7}
-	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), b.Proxy))
+	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), proxy1))
 	assert.NoError(t, b.RegisterProxy(ctx, val2.Address, proxy2))
 	assert.NoError(t, b.RegisterProxy(ctx, val3.Address, proxy3))
 
@@ -378,7 +393,7 @@ func tallyMultipleVotesUntilDecision(t *testing.T) {
 	v2 := v1
 	v3 := v1
 
-	v1.SetSender(b.Proxy)
+	v1.SetSender(proxy1)
 	v2.SetSender(proxy2)
 	v3.SetSender(proxy3)
 
@@ -404,12 +419,13 @@ func tallyMultipleVotesUntilDecision(t *testing.T) {
 func tallyForDecidedPoll(t *testing.T) {
 	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	b, _ := newBroadcaster()
+	proxy1 := sdk.AccAddress("proxy1")
 	proxy2 := sdk.AccAddress("proxy2")
 	proxy3 := sdk.AccAddress("proxy3")
 	val1 := snapshot.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10}
 	val2 := snapshot.Validator{Address: sdk.ValAddress("val2"), Power: 10}
 	val3 := snapshot.Validator{Address: sdk.ValAddress("val3"), Power: 7}
-	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), b.Proxy))
+	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), proxy1))
 	assert.NoError(t, b.RegisterProxy(ctx, val2.Address, proxy2))
 	assert.NoError(t, b.RegisterProxy(ctx, val3.Address, proxy3))
 
@@ -423,7 +439,7 @@ func tallyForDecidedPoll(t *testing.T) {
 	v2 := v1
 	v3 := v1
 
-	v1.SetSender(b.Proxy)
+	v1.SetSender(proxy1)
 	v2.SetSender(proxy2)
 	v3.SetSender(proxy3)
 

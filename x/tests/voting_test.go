@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -18,8 +17,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/mock"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
-	btcMock "github.com/axelarnetwork/axelar-core/x/bitcoin/tests/mock"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	btcMock "github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/broadcast"
 	bcExported "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
@@ -76,21 +75,18 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 	// Choose block size and optionally timeout according to the needs of the test
 	blockChain := mock.NewBlockchain().WithBlockSize(2).WithBlockTimeOut(10 * time.Millisecond)
 
-	b1 := mock.NewBroadcaster(testutils.Codec(), sdk.AccAddress("broadcaster1"), val1.Address, blockChain.Input())
-	b2 := mock.NewBroadcaster(testutils.Codec(), sdk.AccAddress("broadcaster2"), val2.Address, blockChain.Input())
-	b3 := mock.NewBroadcaster(testutils.Codec(), sdk.AccAddress("broadcaster3"), val3.Address, blockChain.Input())
+	b1 := mock.NewBroadcaster(testutils.Codec(), val1.Address, blockChain.Submit)
+	b2 := mock.NewBroadcaster(testutils.Codec(), val2.Address, blockChain.Submit)
+	b3 := mock.NewBroadcaster(testutils.Codec(), val3.Address, blockChain.Submit)
 
-	n1, v1 := newNode("node1", b1, staker)
-	n2, v2 := newNode("node2", b2, staker)
-	n3, v3 := newNode("node3", b3, staker)
+	n1, v1 := newNode2("node1", b1, staker)
+	n2, v2 := newNode2("node2", b2, staker)
+	n3, v3 := newNode2("node3", b3, staker)
 	nodes := []mock.Node{n1, n2, n3}
 	voters := []btcTypes.Voter{v1, v2, v3}
 
 	blockChain.AddNodes(nodes...)
 	blockChain.Start()
-
-	in := blockChain.Input()
-	defer close(in)
 
 	verifyMsgs := []sdk.Msg{
 		prepareVerifyMsg(hash1, destinations[0], 1),
@@ -102,50 +98,23 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 
 	// test begin
 
-	in <- broadcastTypes.NewMsgRegisterProxy(val1.Address, b1.Proxy)
-	in <- broadcastTypes.NewMsgRegisterProxy(val2.Address, b2.Proxy)
-	in <- broadcastTypes.NewMsgRegisterProxy(val3.Address, b3.Proxy)
+	// register proxies
+	res := <-blockChain.Submit(broadcastTypes.MsgRegisterProxy{Principal: val1.Address, Proxy: sdk.AccAddress("proxy1")})
+	assert.NoError(t, res.Error)
+	res = <-blockChain.Submit(broadcastTypes.MsgRegisterProxy{Principal: val2.Address, Proxy: sdk.AccAddress("proxy2")})
+	assert.NoError(t, res.Error)
+	res = <-blockChain.Submit(broadcastTypes.MsgRegisterProxy{Principal: val3.Address, Proxy: sdk.AccAddress("proxy3")})
+	assert.NoError(t, res.Error)
 
+	// verify txs
 	for _, msg := range verifyMsgs {
-		in <- msg
+		res := <-blockChain.Submit(msg)
+		assert.NoError(t, res.Error)
 	}
 
-	timeout, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
-	defer cancel()
-	reachedHeight25 := notifyOnBlock25(blockChain)
-
-loop:
-	for {
-		select {
-		case <-timeout.Done():
-			break loop
-		case <-reachedHeight25:
-			break loop
-		default:
-			confirmed := allTxConfirmed(nodes, voters)
-			if confirmed {
-				break loop
-			}
-			time.Sleep(20 * time.Millisecond)
-		}
-	}
+	<-blockChain.WaitNBlocks(15)
 
 	assert.True(t, allTxConfirmed(nodes, voters))
-}
-
-func notifyOnBlock25(blockChain mock.BlockChain) chan struct{} {
-	reachedHeight25 := make(chan struct{})
-	go func() {
-		for {
-			if blockChain.CurrentHeight() > 25 {
-				close(reachedHeight25)
-				break
-			}
-			time.Sleep(1 * time.Second)
-		}
-
-	}()
-	return reachedHeight25
 }
 
 func vout(amount int, destination string) btcjson.Vout {
@@ -162,7 +131,7 @@ func prepareVerifyMsg(hash *chainhash.Hash, destination string, amount int) sdk.
 	}, btcutil.Amount(amount))
 }
 
-func newNode(moniker string, broadcaster bcExported.Broadcaster, staker exported.Snapshotter) (mock.Node, btcTypes.Voter) {
+func newNode2(moniker string, broadcaster bcExported.Broadcaster, staker exported.Snapshotter) (mock.Node, btcTypes.Voter) {
 	/*
 		Multistore is mocked so we can more easily manipulate existing state and assert that specific state changes happen.
 		For now, we never use the Header information, so we can just initialize an empty struct.

@@ -255,16 +255,16 @@ func handleMsgMasterKeySignStart(ctx sdk.Context, k keeper.Keeper, s types.Snaps
 	// TODO for now assume all validators participate
 	snapshot, ok := s.GetLatestSnapshot(ctx)
 	if !ok {
-		return nil, fmt.Errorf("signing failed")
+		return nil, sdkerrors.Wrap(types.ErrTss, "no snapshot available")
 	}
 	poll := voting.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.NewSigID}
 	if err := v.InitPoll(ctx, poll); err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
 	}
 
 	sigChan, err := k.StartMasterKeySign(ctx, msg, snapshot.Validators)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
 	}
 
 	go voteOnSignResult(ctx, k, v, sigChan, poll)

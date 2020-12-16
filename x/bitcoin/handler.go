@@ -91,7 +91,8 @@ func handleMsgTrackPubKey(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient,
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, sdkerrors.Wrap(err, "could not convert the given public key into a bitcoin address").Error())
 	}
 
-	trackAddress(ctx, k, rpc, addr.EncodeAddress(), false)
+	encodedAddr := addr.EncodeAddress()
+	trackAddress(ctx, k, rpc, encodedAddr, false)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -99,11 +100,15 @@ func handleMsgTrackPubKey(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
 			sdk.NewAttribute(types.AttributeKeyId, msg.KeyID),
-			sdk.NewAttribute(types.AttributeAddress, addr.EncodeAddress()),
+			sdk.NewAttribute(types.AttributeAddress, encodedAddr),
 		),
 	)
 
-	return &sdk.Result{Log: "successfully created a tracked address", Events: ctx.EventManager().Events()}, nil
+	return &sdk.Result{
+		Data:   []byte(encodedAddr),
+		Log:    fmt.Sprintf("successfully created a tracked address %s", encodedAddr),
+		Events: ctx.EventManager().Events(),
+	}, nil
 }
 
 func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc types.RPCClient, msg types.MsgVerifyTx) (*sdk.Result, error) {

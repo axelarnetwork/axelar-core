@@ -9,6 +9,8 @@ import (
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Voter Signer
+
 type Voter interface {
 	voting.Voter
 }

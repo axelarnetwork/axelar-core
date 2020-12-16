@@ -26,7 +26,7 @@ const (
 )
 
 type Keeper struct {
-	stakingKeeper   types.Snapshotter
+	snapshotter     types.Snapshotter
 	storeKey        sdk.StoreKey
 	from            sdk.AccAddress
 	keybase         keys.Keybase
@@ -62,7 +62,7 @@ func NewKeeper(
 	logger.With("module", fmt.Sprintf("x/%s", types.ModuleName)).Debug("broadcast keeper created")
 	return Keeper{
 		subjectiveStore: subjectiveStore,
-		stakingKeeper:   stakingKeeper,
+		snapshotter:     stakingKeeper,
 		storeKey:        storeKey,
 		from:            from,
 		keybase:         keybase,
@@ -127,7 +127,7 @@ func (k Keeper) BroadcastSync(ctx sdk.Context, valMsgs []broadcast.MsgWithSender
 
 // RegisterProxy registers a proxy address for a given principal, which can broadcast messages in the principal's name
 func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy sdk.AccAddress) error {
-	_, ok := k.stakingKeeper.Validator(ctx, principal)
+	_, ok := k.snapshotter.Validator(ctx, principal)
 	if !ok {
 		k.Logger(ctx).Error("could not find validator")
 		return types.ErrInvalidValidator

@@ -31,7 +31,7 @@ func TestKeeper_KeygenMsg_NoSessionWithGivenID_Return(t *testing.T) {
 
 	for _, keyID := range s.RandDistinctStr.Take(100) {
 		assert.NoError(t, s.Keeper.KeygenMsg(s.Ctx, types.MsgKeygenTraffic{
-			Sender:    s.Broadcaster.Proxy,
+			Sender:    s.Broadcaster.GetProxy(s.Ctx, s.Broadcaster.LocalPrincipal),
 			SessionID: keyID,
 			Payload:   &tssd.TrafficOut{},
 		}))

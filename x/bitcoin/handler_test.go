@@ -1,4 +1,4 @@
-package tests
+package bitcoin
 
 import (
 	"context"
@@ -19,10 +19,9 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/mock"
-	"github.com/axelarnetwork/axelar-core/x/bitcoin"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
-	btcMock "github.com/axelarnetwork/axelar-core/x/bitcoin/tests/mock"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	btcMock "github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -34,7 +33,7 @@ func TestTrackAddress(t *testing.T) {
 	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"))
 	rpcCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	rpc := btcMock.TestRPC{Cancel: cancel}
-	handler := bitcoin.NewHandler(k, &btcMock.TestVoter{}, &rpc, nil)
+	handler := NewHandler(k, &btcMock.TestVoter{}, &rpc, nil)
 
 	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	expectedAddress, _ := types.ParseBtcAddress("bitcoinTestAddress", "mainnet")
@@ -55,7 +54,7 @@ func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 		RawTxs: map[string]*btcjson.TxRawResult{},
 	}
 	v := &btcMock.TestVoter{}
-	handler := bitcoin.NewHandler(k, v, &rpc, nil)
+	handler := NewHandler(k, v, &rpc, nil)
 	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 
 	hash, _ := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
@@ -109,7 +108,7 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 		},
 	}
 	v := &btcMock.TestVoter{}
-	handler := bitcoin.NewHandler(k, v, &rpc, nil)
+	handler := NewHandler(k, v, &rpc, nil)
 	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 
 	assert.Nil(t, utxo.Validate())
@@ -159,7 +158,7 @@ func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
 		return pollMeta.ID == txID
 	}}
 
-	handler := bitcoin.NewHandler(k, v, &btcMock.TestRPC{}, signer)
+	handler := NewHandler(k, v, &btcMock.TestRPC{}, signer)
 
 	for i := 0; i < testReps; i++ {
 		ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())

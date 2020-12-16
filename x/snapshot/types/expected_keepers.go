@@ -6,6 +6,8 @@ import (
 	typesStaking "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . StakingKeeper
+
 // StakingKeeper adopts the methods from "github.com/cosmos/cosmos-sdk/x/staking/exported" that are
 // actually used by this module
 type StakingKeeper interface {

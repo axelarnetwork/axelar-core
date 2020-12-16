@@ -39,17 +39,17 @@ type testSetup struct {
 
 func setup(t *testing.T) testSetup {
 	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	staker := newStaker()
-	broadcaster := prepareBroadcaster(t, ctx, testutils.Codec(), staker.GetAllValidators(), nil)
+	snapshotter := newSnapshotter()
+	broadcaster := prepareBroadcaster(t, ctx, testutils.Codec(), snapshotter.GetAllValidators())
 	subspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), "tss")
 	voter := mockVoter{receivedVote: make(chan vote.MsgVote, 1000), initializedPoll: make(chan vote.PollMeta, 100)}
 	client := mockTssClient{keygen: mockKeyGenClient{recv: make(chan *tssd.MessageOut, 1)}}
-	k := NewKeeper(mock.NewKVStoreKey("tss"), testutils.Codec(), client, subspace, broadcaster)
+	k := NewKeeper(testutils.Codec(), mock.NewKVStoreKey("tss"), client, subspace, broadcaster)
 	k.SetParams(ctx, types.DefaultParams())
 
 	return testSetup{
 		Keeper:          k,
-		Staker:          staker,
+		Staker:          snapshotter,
 		Broadcaster:     broadcaster,
 		Ctx:             ctx,
 		Client:          client,
@@ -96,7 +96,7 @@ func (s testSetup) Teardown() {
 	s.RandDistinctStr.Stop()
 }
 
-func newStaker() mock.Snapshotter {
+func newSnapshotter() mock.Snapshotter {
 	val1 := snapshot.Validator{Address: sdk.ValAddress("validator1"), Power: 100}
 	val2 := snapshot.Validator{Address: sdk.ValAddress("validator2"), Power: 100}
 	val3 := snapshot.Validator{Address: sdk.ValAddress("validator3"), Power: 100}
@@ -105,8 +105,10 @@ func newStaker() mock.Snapshotter {
 	return staker
 }
 
-func prepareBroadcaster(t *testing.T, ctx sdk.Context, cdc *codec.Codec, validators []snapshot.Validator, msgIn chan sdk.Msg) mock.Broadcaster {
-	broadcaster := mock.NewBroadcaster(cdc, sdk.AccAddress("proxy0"), validators[0].Address, msgIn)
+func prepareBroadcaster(t *testing.T, ctx sdk.Context, cdc *codec.Codec, validators []snapshot.Validator) mock.Broadcaster {
+	broadcaster := mock.NewBroadcaster(cdc, validators[0].Address, func(msg sdk.Msg) (result <-chan mock.Result) {
+		return make(chan mock.Result)
+	})
 
 	for i, v := range validators {
 		assert.NoError(t, broadcaster.RegisterProxy(ctx, v.Address, sdk.AccAddress("proxy"+strconv.Itoa(i))))
