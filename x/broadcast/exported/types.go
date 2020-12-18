@@ -2,13 +2,15 @@ package exported
 
 import sdk "github.com/cosmos/cosmos-sdk/types"
 
+//go:generate moq -out ./mock/types.go -pkg mock . Broadcaster
+
 // This interface is exposed for convenience, otherwise all other modules would have to reimplement it.
 // Recommended pattern: In other modules, define a keeper interface in the respective expected_keepers.go file and
 // embed this interface into it
 type Broadcaster interface {
-	// BroadcastSync sends the passed messages synchronously to the network.
+	// Broadcast sends the passed messages synchronously to the network.
 	// Do not call it from the main thread or risk a deadlock (the main thread is needed to validate incoming messages)
-	BroadcastSync(ctx sdk.Context, msgs []MsgWithSenderSetter) error
+	Broadcast(ctx sdk.Context, msgs []MsgWithSenderSetter) error
 
 	// RegisterProxy registers a proxy address for a given principal, which can broadcast messages in the principal's name
 	RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy sdk.AccAddress) error

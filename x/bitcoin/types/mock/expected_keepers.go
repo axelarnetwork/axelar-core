@@ -32,7 +32,7 @@ var _ types.Voter = &VoterMock{}
 // 	               panic("mock out the TallyVote method")
 //             },
 //             VoteFunc: func(ctx sdk.Context, vote voting.MsgVote) error {
-// 	               panic("mock out the Vote method")
+// 	               panic("mock out the RecordVote method")
 //             },
 //         }
 //
@@ -50,7 +50,7 @@ type VoterMock struct {
 	// TallyVoteFunc mocks the TallyVote method.
 	TallyVoteFunc func(ctx sdk.Context, vote voting.MsgVote) error
 
-	// VoteFunc mocks the Vote method.
+	// VoteFunc mocks the RecordVote method.
 	VoteFunc func(ctx sdk.Context, vote voting.MsgVote) error
 
 	// calls tracks calls to the methods.
@@ -73,14 +73,14 @@ type VoterMock struct {
 		TallyVote []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
-			// Vote is the vote argument value.
+			// RecordVote is the vote argument value.
 			Vote voting.MsgVote
 		}
-		// Vote holds details about calls to the Vote method.
+		// RecordVote holds details about calls to the RecordVote method.
 		Vote []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
-			// Vote is the vote argument value.
+			// RecordVote is the vote argument value.
 			Vote voting.MsgVote
 		}
 	}
@@ -195,10 +195,10 @@ func (mock *VoterMock) TallyVoteCalls() []struct {
 	return calls
 }
 
-// Vote calls VoteFunc.
-func (mock *VoterMock) Vote(ctx sdk.Context, vote voting.MsgVote) error {
+// RecordVote calls VoteFunc.
+func (mock *VoterMock) RecordVote(ctx sdk.Context, vote voting.MsgVote) error {
 	if mock.VoteFunc == nil {
-		panic("VoterMock.VoteFunc: method is nil but Voter.Vote was just called")
+		panic("VoterMock.VoteFunc: method is nil but Voter.RecordVote was just called")
 	}
 	callInfo := struct {
 		Ctx  sdk.Context
@@ -213,7 +213,7 @@ func (mock *VoterMock) Vote(ctx sdk.Context, vote voting.MsgVote) error {
 	return mock.VoteFunc(ctx, vote)
 }
 
-// VoteCalls gets all the calls that were made to Vote.
+// VoteCalls gets all the calls that were made to RecordVote.
 // Check the length with:
 //     len(mockedVoter.VoteCalls())
 func (mock *VoterMock) VoteCalls() []struct {

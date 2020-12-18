@@ -7,7 +7,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkExported "github.com/cosmos/cosmos-sdk/x/staking/exported"
-	typesStaking "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"sync"
 )
 
@@ -24,11 +23,11 @@ var _ types.StakingKeeper = &StakingKeeperMock{}
 //             GetLastTotalPowerFunc: func(ctx sdk.Context) sdk.Int {
 // 	               panic("mock out the GetLastTotalPower method")
 //             },
-//             GetValidatorFunc: func(ctx sdk.Context, addr sdk.ValAddress) (typesStaking.Validator, bool) {
-// 	               panic("mock out the GetValidator method")
+//             IterateLastValidatorsFunc: func(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool))  {
+// 	               panic("mock out the IterateLastValidators method")
 //             },
-//             IterateValidatorsFunc: func(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool))  {
-// 	               panic("mock out the IterateValidators method")
+//             ValidatorFunc: func(ctx sdk.Context, address sdk.ValAddress) sdkExported.ValidatorI {
+// 	               panic("mock out the Validator method")
 //             },
 //         }
 //
@@ -40,11 +39,11 @@ type StakingKeeperMock struct {
 	// GetLastTotalPowerFunc mocks the GetLastTotalPower method.
 	GetLastTotalPowerFunc func(ctx sdk.Context) sdk.Int
 
-	// GetValidatorFunc mocks the GetValidator method.
-	GetValidatorFunc func(ctx sdk.Context, addr sdk.ValAddress) (typesStaking.Validator, bool)
+	// IterateLastValidatorsFunc mocks the IterateLastValidators method.
+	IterateLastValidatorsFunc func(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool))
 
-	// IterateValidatorsFunc mocks the IterateValidators method.
-	IterateValidatorsFunc func(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool))
+	// ValidatorFunc mocks the Validator method.
+	ValidatorFunc func(ctx sdk.Context, address sdk.ValAddress) sdkExported.ValidatorI
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -53,24 +52,24 @@ type StakingKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 		}
-		// GetValidator holds details about calls to the GetValidator method.
-		GetValidator []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Addr is the addr argument value.
-			Addr sdk.ValAddress
-		}
-		// IterateValidators holds details about calls to the IterateValidators method.
-		IterateValidators []struct {
+		// IterateLastValidators holds details about calls to the IterateLastValidators method.
+		IterateLastValidators []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Fn is the fn argument value.
 			Fn func(index int64, validator sdkExported.ValidatorI) (stop bool)
 		}
+		// Validator holds details about calls to the Validator method.
+		Validator []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Address is the address argument value.
+			Address sdk.ValAddress
+		}
 	}
-	lockGetLastTotalPower sync.RWMutex
-	lockGetValidator      sync.RWMutex
-	lockIterateValidators sync.RWMutex
+	lockGetLastTotalPower     sync.RWMutex
+	lockIterateLastValidators sync.RWMutex
+	lockValidator             sync.RWMutex
 }
 
 // GetLastTotalPower calls GetLastTotalPowerFunc.
@@ -104,45 +103,10 @@ func (mock *StakingKeeperMock) GetLastTotalPowerCalls() []struct {
 	return calls
 }
 
-// GetValidator calls GetValidatorFunc.
-func (mock *StakingKeeperMock) GetValidator(ctx sdk.Context, addr sdk.ValAddress) (typesStaking.Validator, bool) {
-	if mock.GetValidatorFunc == nil {
-		panic("StakingKeeperMock.GetValidatorFunc: method is nil but StakingKeeper.GetValidator was just called")
-	}
-	callInfo := struct {
-		Ctx  sdk.Context
-		Addr sdk.ValAddress
-	}{
-		Ctx:  ctx,
-		Addr: addr,
-	}
-	mock.lockGetValidator.Lock()
-	mock.calls.GetValidator = append(mock.calls.GetValidator, callInfo)
-	mock.lockGetValidator.Unlock()
-	return mock.GetValidatorFunc(ctx, addr)
-}
-
-// GetValidatorCalls gets all the calls that were made to GetValidator.
-// Check the length with:
-//     len(mockedStakingKeeper.GetValidatorCalls())
-func (mock *StakingKeeperMock) GetValidatorCalls() []struct {
-	Ctx  sdk.Context
-	Addr sdk.ValAddress
-} {
-	var calls []struct {
-		Ctx  sdk.Context
-		Addr sdk.ValAddress
-	}
-	mock.lockGetValidator.RLock()
-	calls = mock.calls.GetValidator
-	mock.lockGetValidator.RUnlock()
-	return calls
-}
-
-// IterateValidators calls IterateValidatorsFunc.
-func (mock *StakingKeeperMock) IterateValidators(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool)) {
-	if mock.IterateValidatorsFunc == nil {
-		panic("StakingKeeperMock.IterateValidatorsFunc: method is nil but StakingKeeper.IterateValidators was just called")
+// IterateLastValidators calls IterateLastValidatorsFunc.
+func (mock *StakingKeeperMock) IterateLastValidators(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool)) {
+	if mock.IterateLastValidatorsFunc == nil {
+		panic("StakingKeeperMock.IterateLastValidatorsFunc: method is nil but StakingKeeper.IterateLastValidators was just called")
 	}
 	callInfo := struct {
 		Ctx sdk.Context
@@ -151,16 +115,16 @@ func (mock *StakingKeeperMock) IterateValidators(ctx sdk.Context, fn func(index 
 		Ctx: ctx,
 		Fn:  fn,
 	}
-	mock.lockIterateValidators.Lock()
-	mock.calls.IterateValidators = append(mock.calls.IterateValidators, callInfo)
-	mock.lockIterateValidators.Unlock()
-	mock.IterateValidatorsFunc(ctx, fn)
+	mock.lockIterateLastValidators.Lock()
+	mock.calls.IterateLastValidators = append(mock.calls.IterateLastValidators, callInfo)
+	mock.lockIterateLastValidators.Unlock()
+	mock.IterateLastValidatorsFunc(ctx, fn)
 }
 
-// IterateValidatorsCalls gets all the calls that were made to IterateValidators.
+// IterateLastValidatorsCalls gets all the calls that were made to IterateLastValidators.
 // Check the length with:
-//     len(mockedStakingKeeper.IterateValidatorsCalls())
-func (mock *StakingKeeperMock) IterateValidatorsCalls() []struct {
+//     len(mockedStakingKeeper.IterateLastValidatorsCalls())
+func (mock *StakingKeeperMock) IterateLastValidatorsCalls() []struct {
 	Ctx sdk.Context
 	Fn  func(index int64, validator sdkExported.ValidatorI) (stop bool)
 } {
@@ -168,8 +132,43 @@ func (mock *StakingKeeperMock) IterateValidatorsCalls() []struct {
 		Ctx sdk.Context
 		Fn  func(index int64, validator sdkExported.ValidatorI) (stop bool)
 	}
-	mock.lockIterateValidators.RLock()
-	calls = mock.calls.IterateValidators
-	mock.lockIterateValidators.RUnlock()
+	mock.lockIterateLastValidators.RLock()
+	calls = mock.calls.IterateLastValidators
+	mock.lockIterateLastValidators.RUnlock()
+	return calls
+}
+
+// Validator calls ValidatorFunc.
+func (mock *StakingKeeperMock) Validator(ctx sdk.Context, address sdk.ValAddress) sdkExported.ValidatorI {
+	if mock.ValidatorFunc == nil {
+		panic("StakingKeeperMock.ValidatorFunc: method is nil but StakingKeeper.Validator was just called")
+	}
+	callInfo := struct {
+		Ctx     sdk.Context
+		Address sdk.ValAddress
+	}{
+		Ctx:     ctx,
+		Address: address,
+	}
+	mock.lockValidator.Lock()
+	mock.calls.Validator = append(mock.calls.Validator, callInfo)
+	mock.lockValidator.Unlock()
+	return mock.ValidatorFunc(ctx, address)
+}
+
+// ValidatorCalls gets all the calls that were made to Validator.
+// Check the length with:
+//     len(mockedStakingKeeper.ValidatorCalls())
+func (mock *StakingKeeperMock) ValidatorCalls() []struct {
+	Ctx     sdk.Context
+	Address sdk.ValAddress
+} {
+	var calls []struct {
+		Ctx     sdk.Context
+		Address sdk.ValAddress
+	}
+	mock.lockValidator.RLock()
+	calls = mock.calls.Validator
+	mock.lockValidator.RUnlock()
 	return calls
 }

@@ -1,4 +1,4 @@
-package mock
+package fake
 
 import (
 	"fmt"
@@ -19,7 +19,7 @@ type Broadcaster struct {
 	cdc            *codec.Codec
 }
 
-// NewBroadcaster creates a new broadcaster mock that sends messages to the blockchainIn channel.
+// NewBroadcaster creates a new broadcaster fake that sends messages to the blockchainIn channel.
 func NewBroadcaster(cdc *codec.Codec, localPrincipal sdk.ValAddress, submitMsg func(msg sdk.Msg) (result <-chan Result)) Broadcaster {
 	return Broadcaster{
 		cdc:            cdc,
@@ -30,7 +30,7 @@ func NewBroadcaster(cdc *codec.Codec, localPrincipal sdk.ValAddress, submitMsg f
 	}
 }
 
-func (b Broadcaster) BroadcastSync(ctx sdk.Context, msgs []exported.MsgWithSenderSetter) error {
+func (b Broadcaster) Broadcast(ctx sdk.Context, msgs []exported.MsgWithSenderSetter) error {
 	for _, msg := range msgs {
 		proxy := b.GetProxy(ctx, b.LocalPrincipal)
 		if proxy == nil {

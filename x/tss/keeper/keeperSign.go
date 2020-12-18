@@ -63,7 +63,7 @@ func (k Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart, validators [
 				info.NewSigID, msg.IsBroadcast, msg.ToPartyUid))
 			// sender is set by broadcaster
 			tssMsg := &types.MsgSignTraffic{SessionID: info.NewSigID, Payload: msg}
-			if err := k.broadcaster.BroadcastSync(ctx, []broadcast.MsgWithSenderSetter{tssMsg}); err != nil {
+			if err := k.broadcaster.Broadcast(ctx, []broadcast.MsgWithSenderSetter{tssMsg}); err != nil {
 				k.Logger(ctx).Error(sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing sign msg").Error())
 				return
 			}

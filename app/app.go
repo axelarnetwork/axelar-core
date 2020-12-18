@@ -27,6 +27,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	tmos "github.com/tendermint/tendermint/libs/os"
+	"github.com/tendermint/tendermint/rpc/client/http"
 	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
 
@@ -97,10 +98,6 @@ func MakeCodec() *codec.Codec {
 	codec.RegisterCrypto(cdc)
 
 	cdc = cdc.Seal()
-
-	// all other modules can sent voting messages through the vote module,
-	// so it must be able to marshal these message types
-	voteTypes.ModuleCdc = cdc
 
 	return cdc
 }
@@ -243,7 +240,21 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
-	app.broadcastKeeper, err = broadcastKeeper.NewKeeper(app.cdc, keys[broadcastTypes.StoreKey], store.NewSubjectiveStore(), keybase, app.accountKeeper, app.axStakingKeeper, axelarCfg.ClientConfig, logger)
+	abciClient, err := http.New(axelarCfg.TendermintNodeUri, "/websocket")
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+	app.broadcastKeeper, err = broadcastKeeper.NewKeeper(
+		app.cdc,
+		keys[broadcastTypes.StoreKey],
+		store.NewSubjectiveStore(),
+		keybase,
+		app.accountKeeper,
+		app.axStakingKeeper,
+		abciClient,
+		axelarCfg.ClientConfig,
+		logger,
+	)
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
@@ -301,7 +312,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 
 		snapshot.NewAppModule(app.axStakingKeeper),
 		tss.NewAppModule(app.tssKeeper, app.axStakingKeeper, app.votingKeeper),
-		vote.NewAppModule(app.votingKeeper, app.Router()),
+		vote.NewAppModule(app.votingKeeper),
 		broadcast.NewAppModule(app.broadcastKeeper),
 		btcModule,
 	)

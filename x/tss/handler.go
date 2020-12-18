@@ -207,7 +207,7 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 				k.Logger(ctx).Error(err.Error())
 				return
 			}
-			if err := v.Vote(ctx, &types.MsgVotePubKey{PollMeta: poll, PubKeyBytes: bz}); err != nil {
+			if err := v.RecordVote(ctx, &types.MsgVotePubKey{PollMeta: poll, PubKeyBytes: bz}); err != nil {
 				k.Logger(ctx).Error(err.Error())
 				return
 			}
@@ -287,7 +287,7 @@ func voteOnSignResult(ctx sdk.Context, k keeper.Keeper, v types.Voter, sigChan <
 			k.Logger(ctx).Error(err.Error())
 			return
 		}
-		if err := v.Vote(ctx, &types.MsgVoteSig{PollMeta: poll, SigBytes: bz}); err != nil {
+		if err := v.RecordVote(ctx, &types.MsgVoteSig{PollMeta: poll, SigBytes: bz}); err != nil {
 			k.Logger(ctx).Error(err.Error())
 			return
 		}

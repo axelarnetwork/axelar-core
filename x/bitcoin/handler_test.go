@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"crypto/rand"
+	"fmt"
 	"testing"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
@@ -18,7 +20,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
-	"github.com/axelarnetwork/axelar-core/testutils/mock"
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	btcMock "github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
@@ -31,31 +33,44 @@ const testReps = 100
 func TestTrackAddress(t *testing.T) {
 	cdc := testutils.Codec()
 	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"))
-	rpcCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	rpc := btcMock.TestRPC{Cancel: cancel}
-	handler := NewHandler(k, &btcMock.TestVoter{}, &rpc, nil)
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	timeout, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	rpc := btcMock.RPCClientMock{ImportAddressRescanFunc: func(address string, _ string, rescan bool) error {
+		cancel()
+		return nil
+	}}
 
-	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	expectedAddress, _ := types.ParseBtcAddress("bitcoinTestAddress", "mainnet")
-	_, err := handler(ctx, types.MsgTrackAddress{
-		Sender:  sdk.AccAddress("sender"),
-		Address: expectedAddress,
-	})
+	sk, _ := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
+	pk := btcec.PublicKey(sk.PublicKey)
+	addr, _ := btcutil.NewAddressPubKey(pk.SerializeUncompressed(), &chaincfg.MainNetParams)
+	expectedAddress, err := types.ParseBtcAddress(addr.EncodeAddress(), types.Chain(chaincfg.MainNetParams.Name))
+	if err != nil {
+		panic(err)
+	}
 
+	handler := NewHandler(k, &btcMock.VoterMock{}, &rpc, &btcMock.SignerMock{})
+	_, err = handler(ctx, types.MsgTrackAddress{Sender: sdk.AccAddress("sender"), Address: expectedAddress})
+
+	<-timeout.Done()
 	assert.Nil(t, err)
-	<-rpcCtx.Done()
-	assert.Equal(t, expectedAddress.String(), rpc.TrackedAddress)
+	assert.Equal(t, 1, len(rpc.ImportAddressRescanCalls()))
+	assert.False(t, rpc.ImportAddressRescanCalls()[0].Rescan)
+	assert.Equal(t, expectedAddress.String(), rpc.ImportAddressRescanCalls()[0].Address)
 }
 
 func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 	cdc := testutils.Codec()
 	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"))
-	rpc := btcMock.TestRPC{
-		RawTxs: map[string]*btcjson.TxRawResult{},
+	rpc := btcMock.RPCClientMock{
+		GetRawTransactionVerboseFunc: func(hash *chainhash.Hash) (*btcjson.TxRawResult, error) {
+			return nil, fmt.Errorf("not found")
+		},
 	}
-	v := &btcMock.TestVoter{}
-	handler := NewHandler(k, v, &rpc, nil)
-	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	var poll exported.PollMeta
+	v := &btcMock.VoterMock{
+		InitPollFunc: func(_ sdk.Context, p exported.PollMeta) error { poll = p; return nil },
+		VoteFunc:     func(ctx sdk.Context, vote exported.MsgVote) error { return nil },
+	}
 
 	hash, _ := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
 	addr, _ := types.ParseBtcAddress("bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq", "mainnet")
@@ -65,17 +80,24 @@ func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 		Amount:  10,
 		Address: addr,
 	}
+	if err := utxo.Validate(); err != nil {
+		panic(err)
+	}
 
-	assert.Nil(t, utxo.Validate())
+	handler := NewHandler(k, v, &rpc, &btcMock.SignerMock{})
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 
-	_, err := handler(ctx, types.MsgVerifyTx{
-		Sender: sdk.AccAddress("sender"),
-		UTXO:   utxo,
-	})
+	_, err := handler(ctx, types.MsgVerifyTx{Sender: sdk.AccAddress("sender"), UTXO: utxo})
 	assert.Nil(t, err)
-	assert.True(t, v.InitPollCalled)
-	assert.True(t, v.VoteCalledCorrectly)
-	assert.False(t, v.RecordedVote.Data().(bool))
+
+	assert.Equal(t, 1, len(v.InitPollCalls()))
+	assert.Equal(t, hash.String(), v.InitPollCalls()[0].Poll.ID)
+	assert.Equal(t, types.MsgVerifyTx{}.Type(), v.InitPollCalls()[0].Poll.Type)
+	assert.Equal(t, types.ModuleName, v.InitPollCalls()[0].Poll.Module)
+
+	assert.Equal(t, 1, len(v.VoteCalls()))
+	assert.Equal(t, poll, v.VoteCalls()[0].Vote.Poll())
+	assert.Equal(t, false, v.VoteCalls()[0].Vote.Data())
 }
 
 func TestVerifyTx_ValidUTXO(t *testing.T) {
@@ -83,7 +105,6 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"))
 
 	hash, _ := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
-
 	addr, _ := types.ParseBtcAddress("bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq", "mainnet")
 	utxo := types.UTXO{
 		Hash:    hash,
@@ -91,37 +112,51 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 		Amount:  10,
 		Address: addr,
 	}
-	rpc := btcMock.TestRPC{
-		RawTxs: map[string]*btcjson.TxRawResult{
-			hash.String(): {
-				Txid: hash.String(),
-				Hash: hash.String(),
-				Vout: []btcjson.Vout{{
-					Value: btcutil.Amount(10).ToBTC(),
-					N:     0,
-					ScriptPubKey: btcjson.ScriptPubKeyResult{
-						Addresses: []string{utxo.Address.String()},
-					},
-				}},
-				Confirmations: 7,
-			},
+	if err := utxo.Validate(); err != nil {
+		panic(err)
+	}
+
+	rpc := btcMock.RPCClientMock{
+		GetRawTransactionVerboseFunc: func(hash *chainhash.Hash) (*btcjson.TxRawResult, error) {
+			if hash.IsEqual(utxo.Hash) {
+				return &btcjson.TxRawResult{
+					Txid: hash.String(),
+					Hash: hash.String(),
+					Vout: []btcjson.Vout{{
+						Value: btcutil.Amount(10).ToBTC(),
+						N:     0,
+						ScriptPubKey: btcjson.ScriptPubKeyResult{
+							Addresses: []string{utxo.Address.String()},
+						},
+					}},
+					Confirmations: 7,
+				}, nil
+			}
+			return nil, fmt.Errorf("not found")
 		},
 	}
-	v := &btcMock.TestVoter{}
-	handler := NewHandler(k, v, &rpc, nil)
-	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 
-	assert.Nil(t, utxo.Validate())
+	var poll exported.PollMeta
+	v := &btcMock.VoterMock{
+		InitPollFunc: func(_ sdk.Context, p exported.PollMeta) error { poll = p; return nil },
+		VoteFunc: func(ctx sdk.Context, vote exported.MsgVote) error {
+			return nil
+		},
+	}
+	handler := NewHandler(k, v, &rpc, &btcMock.SignerMock{})
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 
-	_, err := handler(ctx, types.MsgVerifyTx{
-		Sender: sdk.AccAddress("sender"),
-		UTXO:   utxo,
-	})
-
+	_, err := handler(ctx, types.MsgVerifyTx{Sender: sdk.AccAddress("sender"), UTXO: utxo})
 	assert.Nil(t, err)
-	assert.True(t, v.InitPollCalled)
-	assert.True(t, v.VoteCalledCorrectly)
-	assert.True(t, v.RecordedVote.Data().(bool))
+
+	assert.Equal(t, 1, len(v.InitPollCalls()))
+	assert.Equal(t, hash.String(), v.InitPollCalls()[0].Poll.ID)
+	assert.Equal(t, types.MsgVerifyTx{}.Type(), v.InitPollCalls()[0].Poll.Type)
+	assert.Equal(t, types.ModuleName, v.InitPollCalls()[0].Poll.Module)
+
+	assert.Equal(t, 1, len(v.VoteCalls()))
+	assert.Equal(t, poll, v.VoteCalls()[0].Vote.Poll())
+	assert.Equal(t, true, v.VoteCalls()[0].Vote.Data())
 
 	actualUtxo, ok := k.GetUTXO(ctx, hash.String())
 	assert.True(t, ok)
@@ -130,19 +165,19 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 
 func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
 	cdc := testutils.Codec()
-	k := keeper.NewBtcKeeper(cdc, mock.NewKVStoreKey(types.StoreKey))
+	k := keeper.NewBtcKeeper(cdc, fake.NewKVStoreKey(types.StoreKey))
 
 	var sk, skNext *ecdsa.PrivateKey
 	var txHash []byte
 	var txID, sigID string
-	signer := btcMock.TestSigner{
-		GetCurrentMasterKeyMock: func(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool) {
+	signer := &btcMock.SignerMock{
+		GetCurrentMasterKeyFunc: func(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool) {
 			return sk.PublicKey, true
 		},
-		GetNextMasterKeyMock: func(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool) {
+		GetNextMasterKeyFunc: func(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool) {
 			return skNext.PublicKey, true
 		},
-		GetSigMock: func(ctx sdk.Context, sID string) (tss.Signature, bool) {
+		GetSigFunc: func(ctx sdk.Context, sID string) (tss.Signature, bool) {
 			if sID == sigID {
 				r, s, err := ecdsa.Sign(rand.Reader, sk, txHash)
 				if err != nil {
@@ -153,15 +188,16 @@ func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
 			return tss.Signature{}, false
 		},
 	}
-
-	v := &btcMock.TestVoter{ResultMock: func(s sdk.Context, pollMeta exported.PollMeta) exported.VotingData {
+	v := &btcMock.VoterMock{ResultFunc: func(s sdk.Context, pollMeta exported.PollMeta) exported.VotingData {
 		return pollMeta.ID == txID
 	}}
-
-	handler := NewHandler(k, v, &btcMock.TestRPC{}, signer)
+	rpc := &btcMock.RPCClientMock{SendRawTransactionFunc: func(tx *wire.MsgTx, allowHighFees bool) (*chainhash.Hash, error) {
+		return nil, nil
+	}}
+	handler := NewHandler(k, v, rpc, signer)
 
 	for i := 0; i < testReps; i++ {
-		ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+		ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 		sk, _ = ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 		skNext, _ = ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 		sigID = testutils.RandString(int(testutils.RandIntBetween(5, 20)))

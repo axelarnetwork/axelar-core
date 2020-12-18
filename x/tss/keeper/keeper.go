@@ -170,8 +170,8 @@ func addrToUids(validators []snapshot.Validator, myAddress sdk.ValAddress) (part
 	partyUids := make([]string, 0, len(validators))
 	alreadySeen, myIndex := false, 0
 	for i, v := range validators {
-		partyUids = append(partyUids, v.Address.String())
-		if v.Address.Equals(myAddress) {
+		partyUids = append(partyUids, v.GetOperator().String())
+		if v.GetOperator().Equals(myAddress) {
 			if alreadySeen {
 				return nil, 0, fmt.Errorf("cosmos bug: my validator address appears multiple times in the validator list: [%s]", myAddress)
 			}
@@ -188,8 +188,8 @@ func addrToUids(validators []snapshot.Validator, myAddress sdk.ValAddress) (part
 
 func (k Keeper) checkProxies(ctx sdk.Context, validators []snapshot.Validator) error {
 	for _, v := range validators {
-		if k.broadcaster.GetProxy(ctx, v.Address) == nil {
-			return fmt.Errorf("validator %s has not registered a proxy", v.Address)
+		if k.broadcaster.GetProxy(ctx, v.GetOperator()) == nil {
+			return fmt.Errorf("validator %s has not registered a proxy", v.GetOperator())
 		}
 	}
 	return nil

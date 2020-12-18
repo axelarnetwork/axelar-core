@@ -74,7 +74,7 @@ func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, valida
 				keyID, keygenInit.KeygenInit.PartyUids[keygenInit.KeygenInit.MyPartyIndex], msg.ToPartyUid, msg.IsBroadcast))
 			// sender is set by broadcaster
 			tssMsg := &types.MsgKeygenTraffic{SessionID: keyID, Payload: msg}
-			if err := k.broadcaster.BroadcastSync(ctx, []broadcast.MsgWithSenderSetter{tssMsg}); err != nil {
+			if err := k.broadcaster.Broadcast(ctx, []broadcast.MsgWithSenderSetter{tssMsg}); err != nil {
 				k.Logger(ctx).Error(sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing sign msg").Error())
 				return
 			}

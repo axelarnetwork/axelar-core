@@ -29,7 +29,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/store"
 	"github.com/axelarnetwork/axelar-core/testutils"
-	"github.com/axelarnetwork/axelar-core/testutils/mock"
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin"
 	bitcoinKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
@@ -84,7 +84,7 @@ var (
 // 14. Verify the fund transfer is confirmed on bitcoin
 // 15. Rotate to the new master key
 func TestKeyRotation(t *testing.T) {
-	chain := mock.NewBlockchain().WithBlockTimeOut(10 * time.Millisecond)
+	chain := fake.NewBlockchain().WithBlockTimeOut(10 * time.Millisecond)
 
 	stringGen := testutils.RandStrings(5, 50).Distinct()
 	defer stringGen.Stop()
@@ -248,11 +248,11 @@ func TestKeyRotation(t *testing.T) {
 	assert.NoError(t, res.Error)
 }
 
-func newNode(moniker string, validator sdk.ValAddress, chain mock.BlockChain) mock.Node {
-	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+func newNode(moniker string, validator sdk.ValAddress, chain fake.BlockChain) fake.Node {
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 
 	stakingKeeper := &snapMock.StakingKeeperMock{
-		IterateValidatorsFunc: func(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool)) {
+		IterateLastValidatorsFunc: func(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool)) {
 			for j, val := range validators {
 				if fn(int64(j), val) {
 					break
@@ -321,12 +321,12 @@ func newNode(moniker string, validator sdk.ValAddress, chain mock.BlockChain) mo
 			}, nil
 		}}
 
-	broadcaster := mock.NewBroadcaster(testutils.Codec(), validator, chain.Submit)
+	broadcaster := fake.NewBroadcaster(testutils.Codec(), validator, chain.Submit)
 
-	snapKeeper := snapshotKeeper.NewKeeper(testutils.Codec(), mock.NewKVStoreKey(snapTypes.StoreKey), stakingKeeper)
-	vKeeper := voteKeeper.NewKeeper(testutils.Codec(), mock.NewKVStoreKey(voteTypes.StoreKey), store.NewSubjectiveStore(), snapKeeper, broadcaster)
-	btcKeeper := bitcoinKeeper.NewBtcKeeper(testutils.Codec(), mock.NewKVStoreKey(btcTypes.StoreKey))
-	tKeeper := tssKeeper.NewKeeper(testutils.Codec(), mock.NewKVStoreKey(tssTypes.StoreKey), tssdClient,
+	snapKeeper := snapshotKeeper.NewKeeper(testutils.Codec(), fake.NewKVStoreKey(snapTypes.StoreKey), stakingKeeper)
+	vKeeper := voteKeeper.NewKeeper(testutils.Codec(), fake.NewKVStoreKey(voteTypes.StoreKey), store.NewSubjectiveStore(), snapKeeper, broadcaster)
+	btcKeeper := bitcoinKeeper.NewBtcKeeper(testutils.Codec(), fake.NewKVStoreKey(btcTypes.StoreKey))
+	tKeeper := tssKeeper.NewKeeper(testutils.Codec(), fake.NewKVStoreKey(tssTypes.StoreKey), tssdClient,
 		params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), tssTypes.DefaultParamspace),
 		broadcaster,
 	)
@@ -335,13 +335,13 @@ func newNode(moniker string, validator sdk.ValAddress, chain mock.BlockChain) mo
 	vKeeper.SetVotingThreshold(ctx, voteTypes.DefaultGenesisState().VotingThreshold)
 
 	tKeeper.SetParams(ctx, tssTypes.DefaultParams())
-	router := mock.NewRouter()
+	router := fake.NewRouter()
 
 	broadcastHandler := broadcast.NewHandler(broadcaster)
 	btcHandler := bitcoin.NewHandler(btcKeeper, vKeeper, btcClient, tKeeper)
 	snapHandler := snapshot.NewHandler(snapKeeper)
 	tssHandler := tss.NewHandler(tKeeper, snapKeeper, vKeeper)
-	voteHandler := vote.NewHandler(vKeeper, router)
+	voteHandler := vote.NewHandler()
 
 	router = router.
 		AddRoute(broadcastTypes.RouterKey, broadcastHandler).
@@ -350,7 +350,7 @@ func newNode(moniker string, validator sdk.ValAddress, chain mock.BlockChain) mo
 		AddRoute(voteTypes.RouterKey, voteHandler).
 		AddRoute(tssTypes.RouterKey, tssHandler)
 
-	node := mock.NewNode(moniker, ctx, router).
+	node := fake.NewNode(moniker, ctx, router).
 		WithEndBlockers(func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 			return vote.EndBlocker(ctx, req, vKeeper)
 		})
