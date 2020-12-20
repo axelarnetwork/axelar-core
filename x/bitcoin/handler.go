@@ -28,7 +28,7 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Sig
 		case types.MsgTrackPubKey:
 			return handleMsgTrackPubKey(ctx, k, rpc, s, msg)
 		case types.MsgVerifyTx:
-			return handleMsgVerifyTx(ctx, k, v, rpc, msg)
+			return handleMsgVerifyTx(ctx, k, v, rpc, s, msg)
 		case *types.MsgVoteVerifiedTx:
 			return handleMsgVoteVerifiedTx(ctx, v, *msg)
 		case types.MsgRawTx:
@@ -111,13 +111,13 @@ func handleMsgTrackPubKey(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient,
 	}, nil
 }
 
-func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc types.RPCClient, msg types.MsgVerifyTx) (*sdk.Result, error) {
+func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Signer, msg types.MsgVerifyTx) (*sdk.Result, error) {
 	k.Logger(ctx).Debug("verifying bitcoin transaction")
 	txId := msg.UTXO.Hash.String()
 
 	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: txId}
 	if err := v.InitPoll(ctx, poll); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrBitcoin, "could not initialize new poll")
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -129,6 +129,21 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 			sdk.NewAttribute(types.AttributeAmount, msg.UTXO.Amount.String()),
 		),
 	)
+
+	if msg.UseMasterKey {
+		key, ok := s.GetNextMasterKey(ctx, bitcoin)
+		if !ok {
+			return nil, sdkerrors.Wrap(types.ErrBitcoin, "no next master key assigned")
+		}
+		addr, err := addressFromKey(key, msg.Chain)
+		if err != nil {
+			return nil, sdkerrors.Wrap(types.ErrBitcoin, "could not derive Bitcoin address from next master key")
+		}
+		msg.UTXO.Address = types.BtcAddress{
+			Chain:         msg.Chain,
+			EncodedString: addr.EncodeAddress(),
+		}
+	}
 
 	k.SetUTXO(ctx, txId, msg.UTXO)
 
@@ -237,53 +252,47 @@ func handleMsgRawTxForMasterKey(ctx sdk.Context, k keeper.Keeper, s types.Signer
 }
 
 func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, msg types.MsgWithdraw) (*sdk.Result, error) {
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeTxId, msg.TxID),
-			sdk.NewAttribute(types.AttributeSigId, msg.SignatureID),
-		),
-	)
-
 	pk, ok := s.GetKey(ctx, msg.KeyID)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, "key not found")
 	}
 
-	rawTx, err := assembleBtcTx(ctx, k, s, msg.TxID, msg.SignatureID, pk)
-	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
-	}
-
-	logMsg := sentToBitcoin(rpc, rawTx, k.Logger(ctx))
-	return &sdk.Result{Log: logMsg, Events: ctx.EventManager().Events()}, nil
+	return sendTxToBitcoin(ctx, k, rpc, s, msg.Sender, msg.TxID, msg.SignatureID, pk)
 }
 
 func handleMsgTransferToNewMasterKey(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, msg types.MsgTransferToNewMasterKey) (*sdk.Result, error) {
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeTxId, msg.TxID),
-			sdk.NewAttribute(types.AttributeSigId, msg.SignatureID),
-		),
-	)
-
 	pk, ok := s.GetCurrentMasterKey(ctx, bitcoin)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, "key not found")
 	}
 
-	rawTx, err := assembleBtcTx(ctx, k, s, msg.TxID, msg.SignatureID, pk)
+	return sendTxToBitcoin(ctx, k, rpc, s, msg.Sender, msg.TxID, msg.SignatureID, pk)
+}
+
+func sendTxToBitcoin(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, sender sdk.AccAddress, txID string, sigID string, pk ecdsa.PublicKey) (*sdk.Result, error) {
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeySender, sender.String()),
+			sdk.NewAttribute(types.AttributeTxId, txID),
+			sdk.NewAttribute(types.AttributeSigId, sigID),
+		),
+	)
+
+	rawTx, err := assembleBtcTx(ctx, k, s, txID, sigID, pk)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
 
-	logMsg := sentToBitcoin(rpc, rawTx, k.Logger(ctx))
-	return &sdk.Result{Log: logMsg, Events: ctx.EventManager().Events()}, nil
+	// This is beyond axelar's control, so we can only log the error and move on regardless
+	hash, err := rpc.SendRawTransaction(rawTx, false)
+	if err != nil {
+		k.Logger(ctx).Error(sdkerrors.Wrap(err, "sending transaction to Bitcoin failed").Error())
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("failed to sent transaction to Bitcoin (other nodes might have succeeded): %s", err.Error()))
+	}
+
+	return &sdk.Result{Data: hash[:], Log: fmt.Sprintf("successfully sent transaction %s to Bitcoin", hash), Events: ctx.EventManager().Events()}, nil
 }
 
 func isTxVerified(ctx sdk.Context, v types.Voter, txId string) bool {
@@ -312,17 +321,6 @@ func assembleBtcTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, txID string
 		return nil, err
 	}
 	return rawTx, nil
-}
-
-func sentToBitcoin(rpc types.RPCClient, rawTx *wire.MsgTx, logger log.Logger) string {
-	// This is beyond axelar's control, so we can only log the error and move on regardless
-	hash, err := rpc.SendRawTransaction(rawTx, false)
-	if err != nil {
-		logger.Error(sdkerrors.Wrap(err, "sending transaction to Bitcoin failed").Error())
-		return fmt.Sprintf("failed to sent transaction to Bitcoin (other nodes might have succeeded): %s", err.Error())
-	}
-
-	return fmt.Sprintf("successfully sent transaction %s to Bitcoin", hash)
 }
 
 func createSigScript(ctx sdk.Context, s types.Signer, sigID string, pk ecdsa.PublicKey) ([]byte, error) {

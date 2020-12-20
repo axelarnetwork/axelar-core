@@ -192,7 +192,8 @@ func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
 		return pollMeta.ID == txID
 	}}
 	rpc := &btcMock.RPCClientMock{SendRawTransactionFunc: func(tx *wire.MsgTx, allowHighFees bool) (*chainhash.Hash, error) {
-		return nil, nil
+		hash := tx.TxHash()
+		return &hash, nil
 	}}
 	handler := NewHandler(k, v, rpc, signer)
 

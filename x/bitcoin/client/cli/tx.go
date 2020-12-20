@@ -20,11 +20,12 @@ import (
 )
 
 const (
-	sat      = "sat"
-	satoshi  = "satoshi"
-	btc      = "btc"
-	bitcoin  = "bitcoin"
-	satToBtc = 100_000_000
+	sat           = "sat"
+	satoshi       = "satoshi"
+	btc           = "btc"
+	bitcoin       = "bitcoin"
+	satToBtc      = 100_000_000
+	masterKeyFlag = "master-key"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -116,10 +117,10 @@ func getCmdTrackPubKey(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 	var useMasterKey bool
 	var keyID string
 	pubKeyCmd := &cobra.Command{
-		Use:   "pubKey",
+		Use:   "pubKey [--key-id <key ID> | -m]",
 		Short: "Make the axelar network aware of a specific address on Bitcoin derived from a public key",
 		Long: "Make the axelar network aware of a specific address on Bitcoin derived from a public key. " +
-			"Either specify the keyId associated with a previously completed keygen round or use the current master key. " +
+			"Either specify the key ID associated with a previously completed keygen round or use the current master key. " +
 			"Use --rescan|-r to rescan the entire Bitcoin history for past transactions",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -149,17 +150,19 @@ func getCmdTrackPubKey(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 }
 
 func GetCmdVerifyTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "verifyTx [txId] [voutIdx] [destination] [amount] ",
+	var useMasterKey bool
+	var destination string
+	verifyCmd := &cobra.Command{
+		Use:   "verifyTx [txId] [voutIdx] [amount] [-d <destination> | -m]",
 		Short: "Verify a Bitcoin transaction",
 		Long: fmt.Sprintf(
 			"Verify that a transaction happened on the Bitcoin chain so it can be processed on axelar. "+
 				"Choose %s or %s for the chain. Accepted denominations (case-insensitive): %s/%s, %s/%s. "+
 				"Select the index of the transaction output as voutIdx.\n"+
 				"Example: verifyTx f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16 1 "+
-				"bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq 0.13btc",
+				"0.13btc -d bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
 			chaincfg.MainNetParams.Name, chaincfg.TestNet3Params.Name, satoshi, sat, bitcoin, btc),
-		Args: cobra.ExactArgs(4),
+		Args: cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
@@ -169,12 +172,7 @@ func GetCmdVerifyTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			addr, err := types.ParseBtcAddress(args[2], chain)
-			if err != nil {
-				return err
-			}
-
-			amount, err := parseBtc(args[3])
+			amount, err := parseBtc(args[2])
 			if err != nil {
 				return err
 			}
@@ -182,6 +180,14 @@ func GetCmdVerifyTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 			voutIdx, err := parseVoutIdx(err, args[1])
 			if err != nil {
 				return err
+			}
+
+			var addr types.BtcAddress
+			if !useMasterKey {
+				addr, err = types.ParseBtcAddress(args[2], chain)
+				if err != nil {
+					return err
+				}
 			}
 
 			msg := types.NewMsgVerifyTx(cliCtx.GetFromAddress(), hash, voutIdx, addr, amount)
@@ -192,13 +198,16 @@ func GetCmdVerifyTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
+	addDestinationFlag(verifyCmd, &destination)
+	addMasterKeyFlag(verifyCmd, &useMasterKey)
+	return verifyCmd
 }
 
 func GetCmdRawTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 	var useMasterKey bool
 	var destination string
 	rawTxCmd := &cobra.Command{
-		Use:   "rawTx [sourceTxId] [amount]",
+		Use:   "rawTx [sourceTxId] [amount] [-d <destination> | -m]",
 		Short: "Generate raw transaction",
 		Long: "Generate raw transaction that can be used to spend the [amount] from the source transaction to the [destination]. " +
 			"The difference between the source transaction output amount and the given [amount] becomes the transaction fee",
@@ -239,7 +248,7 @@ func GetCmdRawTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
-	rawTxCmd.Flags().StringVarP(&destination, "destination", "d", "", "Set the destination address for the transaction")
+	addDestinationFlag(rawTxCmd, &destination)
 	addMasterKeyFlag(rawTxCmd, &useMasterKey)
 	return rawTxCmd
 }
@@ -248,10 +257,10 @@ func GetCmdWithdraw(cdc *codec.Codec) *cobra.Command {
 	var useMasterKey bool
 	var keyID string
 	withdrawCmd := &cobra.Command{
-		Use:   "withdraw [sourceTxId] [sigId]",
+		Use:   "withdraw [sourceTxId] [sigId] [--key-id <key ID> | -m]",
 		Short: "Withdraw funds from an axelar address",
 		Long: "Withdraw funds from an axelar address according to a previously signed raw transaction. " +
-			"Either specify the keyId associated with a previously completed keygen round or use the current master key. " +
+			"Either specify the key ID associated with a previously completed keygen round or use the current master key. " +
 			"Ensure the axelar address is being tracked and the transaction signed first.",
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -319,7 +328,11 @@ func parseBtc(rawCoin string) (btcutil.Amount, error) {
 }
 
 func addMasterKeyFlag(cmd *cobra.Command, useMasterKey *bool) {
-	cmd.Flags().BoolVarP(useMasterKey, "master-key", "m", false, "Use the current master key instead of a specific key")
+	cmd.Flags().BoolVarP(useMasterKey, masterKeyFlag, "m", false, "Use the current master key instead of a specific key")
+}
+
+func addDestinationFlag(cmd *cobra.Command, destination *string) {
+	cmd.Flags().StringVarP(destination, "destination", "d", "", "Set the destination address for the transaction")
 }
 
 func addRescanFlag(cmd *cobra.Command, rescan *bool) {
