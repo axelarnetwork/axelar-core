@@ -42,7 +42,10 @@ func TestTrackAddress(t *testing.T) {
 
 	sk, _ := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 	pk := btcec.PublicKey(sk.PublicKey)
-	addr, _ := btcutil.NewAddressPubKey(pk.SerializeUncompressed(), &chaincfg.MainNetParams)
+	addr, err := btcutil.NewAddressPubKeyHash(btcutil.Hash160(pk.SerializeCompressed()), &chaincfg.MainNetParams)
+	if err != nil {
+		panic(err)
+	}
 	expectedAddress, err := types.ParseBtcAddress(addr.EncodeAddress(), types.Chain(chaincfg.MainNetParams.Name))
 	if err != nil {
 		panic(err)
@@ -223,7 +226,7 @@ func prepareMsgTransferToNewMasterKey(ctx sdk.Context, k keeper.Keeper, sk *ecds
 
 	txId := hash.String()
 	btcPk := btcec.PublicKey(sk.PublicKey)
-	addr, err := btcutil.NewAddressPubKey(btcPk.SerializeUncompressed(), &chaincfg.MainNetParams)
+	addr, err := btcutil.NewAddressPubKeyHash(btcutil.Hash160(btcPk.SerializeCompressed()), &chaincfg.MainNetParams)
 	if err != nil {
 		panic(err)
 	}

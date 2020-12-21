@@ -253,9 +253,11 @@ func handleMsgSignStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, v
 
 func handleMsgMasterKeySignStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, v types.Voter, msg types.MsgMasterKeySignStart) (*sdk.Result, error) {
 	// TODO for now assume all validators participate
-	snapshot, ok := s.GetLatestSnapshot(ctx)
+	r := s.GetLatestRound(ctx)
+
+	snapshot, ok := s.GetSnapshot(ctx, r-1)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrTss, "no snapshot available")
+		return nil, sdkerrors.Wrap(types.ErrTss, "no previous snapshot available")
 	}
 	poll := voting.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.NewSigID}
 	if err := v.InitPoll(ctx, poll); err != nil {
