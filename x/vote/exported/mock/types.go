@@ -8,7 +8,8 @@ import (
 
 var _ exported.MsgVote = &MsgVoteMock{}
 
-// MsgVoteMock is a mock implementation of exported.MsgVote.
+// MsgVoteMock is a mock implementation of exported.MsgVote. We cannot use moq here, because this msg must be marshalled
+// and amino cannot marshal anonymous functions
 type MsgVoteMock struct {
 	RouteVal  string
 	TypeVal   string

@@ -87,7 +87,7 @@ func TestKeeper_InitPoll_SameIdReturnError(t *testing.T) {
 }
 
 // vote for existing poll is broadcast exactly once
-func TestKeeper_Vote_OnNextBallot(t *testing.T) {
+func TestKeeper_Vote_OnNextBroadcast(t *testing.T) {
 	s := setup()
 
 	poll := randPoll()
@@ -129,8 +129,8 @@ func TestKeeper_Vote_PollIdMismatch_ReturnError(t *testing.T) {
 	assert.Error(t, s.Keeper.RecordVote(s.Ctx, vote))
 }
 
-// send two votes on first ballot and one vote on second ballot
-func TestKeeper_Vote_VotesNotRepeatedInConsecutiveBallots(t *testing.T) {
+// send two votes on first broadcast and one vote on second broadcast
+func TestKeeper_Vote_VotesNotRepeatedInConsecutiveBroadcasts(t *testing.T) {
 	s := setup()
 
 	poll1 := randPoll()
@@ -162,7 +162,7 @@ func TestKeeper_Vote_VotesNotRepeatedInConsecutiveBallots(t *testing.T) {
 	s.Keeper.SendVotes(s.Ctx)
 	<-s.Timeout.Done()
 
-	// assert correct ballots
+	// assert correct votes
 	assert.Equal(t, 2, len(s.Broadcaster.BroadcastCalls()))
 	assert.Equal(t, 2, len(s.Broadcaster.BroadcastCalls()[0].Msgs))
 	assert.Equal(t, 1, len(s.Broadcaster.BroadcastCalls()[1].Msgs))
@@ -197,8 +197,8 @@ func TestKeeper_Vote_MultipleTimes_ReturnError(t *testing.T) {
 	assert.Error(t, s.Keeper.RecordVote(s.Ctx, vote3))
 }
 
-// send no ballot when there are no votes
-func TestKeeper_Vote_noVotes_NoBallot(t *testing.T) {
+// send no broadcast when there are no votes
+func TestKeeper_Vote_noVotes_NoBroadcast(t *testing.T) {
 	s := setup()
 
 	poll1 := randPoll()

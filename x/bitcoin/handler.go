@@ -51,7 +51,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, v types.Voter, msg types.MsgVoteVe
 	if err := v.TallyVote(ctx, &msg); err != nil {
 		return nil, err
 	}
-	return nil, nil
+	return &sdk.Result{}, nil
 }
 
 func handleMsgTrackAddress(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, msg types.MsgTrackAddress) (*sdk.Result, error) {
@@ -86,7 +86,7 @@ func handleMsgTrackPubKey(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient,
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("key with ID %s not found", keyID))
 	}
 
-	addr, err := addressFromKey(key, msg.Chain)
+	addr, err := pkHashFromKey(key, msg.Chain)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, sdkerrors.Wrap(err, "could not convert the given public key into a bitcoin address").Error())
 	}
@@ -130,12 +130,22 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 		),
 	)
 
-	if msg.UseMasterKey {
-		key, ok := s.GetNextMasterKey(ctx, bitcoin)
-		if !ok {
-			return nil, sdkerrors.Wrap(types.ErrBitcoin, "no next master key assigned")
+	if msg.UseCurrentMasterKey || msg.UseNextMasterKey {
+		var key ecdsa.PublicKey
+		var ok bool
+		if msg.UseCurrentMasterKey {
+			key, ok = s.GetCurrentMasterKey(ctx, bitcoin)
+			if !ok {
+				return nil, sdkerrors.Wrap(types.ErrBitcoin, "no current master key assigned")
+			}
 		}
-		addr, err := addressFromKey(key, msg.Chain)
+		if msg.UseNextMasterKey {
+			key, ok = s.GetNextMasterKey(ctx, bitcoin)
+			if !ok {
+				return nil, sdkerrors.Wrap(types.ErrBitcoin, "no next master key assigned")
+			}
+		}
+		addr, err := pkHashFromKey(key, msg.Chain)
 		if err != nil {
 			return nil, sdkerrors.Wrap(types.ErrBitcoin, "could not derive Bitcoin address from next master key")
 		}
@@ -144,7 +154,6 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 			EncodedString: addr.EncodeAddress(),
 		}
 	}
-
 	k.SetUTXO(ctx, txId, msg.UTXO)
 
 	/*
@@ -221,7 +230,7 @@ func handleMsgRawTxForMasterKey(ctx sdk.Context, k keeper.Keeper, s types.Signer
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, "next master key not set")
 	}
-	destination, err := addressFromKey(pk, msg.Chain)
+	destination, err := pkHashFromKey(pk, msg.Chain)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, "could not create bitcoin address from master key")
 	}
@@ -238,7 +247,7 @@ func handleMsgRawTxForMasterKey(ctx sdk.Context, k keeper.Keeper, s types.Signer
 	)
 
 	if isTxVerified(ctx, v, txId) {
-		return nil, fmt.Errorf("transaction not verified")
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, "transaction not verified")
 	}
 	if hash, err := createRawTx(ctx, k, txId, destination, int64(msg.Amount)); err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
@@ -336,7 +345,7 @@ func createSigScript(ctx sdk.Context, s types.Signer, sigID string, pk ecdsa.Pub
 	sigBytes := append(btcSig.Serialize(), byte(txscript.SigHashAll))
 
 	key := btcec.PublicKey(pk)
-	keyBytes := key.SerializeUncompressed()
+	keyBytes := key.SerializeCompressed()
 
 	sigScript, err := txscript.NewScriptBuilder().AddData(sigBytes).AddData(keyBytes).Script()
 	if err != nil {
@@ -422,12 +431,11 @@ func createRawTx(ctx sdk.Context, k keeper.Keeper, txId string, destination btcu
 	return hash, nil
 }
 
-func addressFromKey(key ecdsa.PublicKey, chain types.Chain) (*btcutil.AddressPubKey, error) {
+// we use Pay2PKH for added security over Pay2PK as well as for the benefit of getting a parsed address back when calling
+// getrawtransaction() on the Bitcoin rpc client
+func pkHashFromKey(key ecdsa.PublicKey, chain types.Chain) (*btcutil.AddressPubKeyHash, error) {
 	btcPK := btcec.PublicKey(key)
-
-	// For compatibility we use the uncompressed key as the basis for address generation.
-	// Could be changed in the future to decrease tx size
-	return btcutil.NewAddressPubKey(btcPK.SerializeUncompressed(), chain.Params())
+	return btcutil.NewAddressPubKeyHash(btcutil.Hash160(btcPK.SerializeCompressed()), chain.Params())
 }
 
 func verifyTx(rpc types.RPCClient, utxo types.UTXO, expectedConfirmationHeight uint64) error {

@@ -166,8 +166,7 @@ func (k Keeper) GetPreviousMasterKey(ctx sdk.Context, chain string, offsetFromTo
 	// The master key entry stores the keyID of a previously successfully stored key, so we need to do a second lookup after we retrieve the ID.
 	// This indirection is necessary, because we need the keyID for other purposes, eg signing
 
-	r := k.getRotationCount(ctx, chain)
-	keyId := ctx.KVStore(k.storeKey).Get([]byte(masterKeyID(r-offsetFromTop, chain)))
+	keyId := k.getPreviousMasterKeyId(ctx, chain, offsetFromTop)
 	if keyId == nil {
 		return ecdsa.PublicKey{}, false
 	}
@@ -191,7 +190,7 @@ func (k Keeper) AssignNextMasterKey(ctx sdk.Context, chain string, snapshotHeigh
 	// The master key entry needs to store the keyID instead of the public key, because the keyID is needed whenever
 	// the keeper calls the secure private key store (e.g. for signing) and we would lose the keyID information otherwise
 	r := k.getRotationCount(ctx, chain)
-	ctx.KVStore(k.storeKey).Set([]byte(masterKeyID(r+1, chain)), []byte(keyID))
+	ctx.KVStore(k.storeKey).Set([]byte(masterKeyStoreKey(r+1, chain)), []byte(keyID))
 
 	k.Logger(ctx).Debug(fmt.Sprintf("prepared master key rotation for chain %s", chain))
 	return nil
@@ -257,8 +256,14 @@ func (k Keeper) prepareKeygen(ctx sdk.Context, keyID string, threshold int, vali
 	return stream, keygenInit
 }
 
-func masterKeyID(rotation int64, chain string) string {
+func masterKeyStoreKey(rotation int64, chain string) string {
 	return rotationPrefix + strconv.FormatInt(rotation, 10) + chain
+}
+
+func (k Keeper) getPreviousMasterKeyId(ctx sdk.Context, chain string, offsetFromTop int64) []byte {
+	r := k.getRotationCount(ctx, chain)
+	keyId := ctx.KVStore(k.storeKey).Get([]byte(masterKeyStoreKey(r-offsetFromTop, chain)))
+	return keyId
 }
 
 func (k Keeper) getRotationCount(ctx sdk.Context, chain string) int64 {
@@ -277,7 +282,7 @@ func (k Keeper) setRotationCount(ctx sdk.Context, chain string, rotation int64) 
 
 func (k Keeper) getLatestMasterKeyHeight(ctx sdk.Context, chain string) int64 {
 	r := k.getRotationCount(ctx, chain)
-	height, ok := k.getKeygenStart(ctx, masterKeyID(r, chain))
+	height, ok := k.getKeygenStart(ctx, masterKeyStoreKey(r, chain))
 	if !ok {
 		return 0
 	}

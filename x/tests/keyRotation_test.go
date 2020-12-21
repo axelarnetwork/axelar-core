@@ -374,7 +374,7 @@ func TestKeyRotation(t *testing.T) {
 
 	// verify master key transfer
 	res = <-chain.Submit(
-		btcTypes.NewMsgVerifyTxForMasterKey(sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
+		btcTypes.NewMsgVerifyTxForNextMasterKey(sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
 			transferTxHash, voutIdx, amount, btcTypes.Chain(chaincfg.MainNetParams.Name)))
 	assert.NoError(t, res.Error)
 

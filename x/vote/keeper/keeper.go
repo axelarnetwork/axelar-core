@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	pendingBallotKey   = "ballot"
+	pendingVotes       = "pending"
 	votingIntervalKey  = "votingInterval"
 	votingThresholdKey = "votingThreshold"
 
@@ -105,37 +105,37 @@ func (k Keeper) RecordVote(ctx sdk.Context, vote exported.MsgVote) error {
 		return fmt.Errorf("no poll registered with the given id")
 	}
 
-	ballot := k.getPendingBallot()
-	for _, existingVote := range ballot {
+	votes := k.getPendingVotes()
+	for _, existingVote := range votes {
 		if existingVote.Poll() == vote.Poll() {
 			return fmt.Errorf(fmt.Sprintf("already recorded a vote for poll %s", vote.Poll()))
 		}
 	}
-	ballot = append(ballot, vote)
+	votes = append(votes, vote)
 	k.Logger(ctx).Debug(fmt.Sprintf("new vote for poll %s, data hash: %s",
 		vote.Poll().String(), k.hash(vote.Data())))
-	k.setPendingBallot(ballot)
+	k.setPendingVotes(votes)
 
 	return nil
 }
 
 // SendVotes broadcasts all unpublished votes to the entire network.
 func (k Keeper) SendVotes(ctx sdk.Context) {
-	ballot := k.getPendingBallot()
-	k.Logger(ctx).Debug(fmt.Sprintf("unpublished votes:%v", len(ballot)))
+	votes := k.getPendingVotes()
+	k.Logger(ctx).Debug(fmt.Sprintf("unpublished votes:%v", len(votes)))
 
-	if len(ballot) == 0 {
+	if len(votes) == 0 {
 		return
 	}
 
-	// Reset ballot for the next round
-	k.setPendingBallot(nil)
+	// Reset votes for the next round
+	k.setPendingVotes(nil)
 
 	// Broadcast is a subjective action, so it must not cause non-deterministic changes to the tx execution.
 	// Because of this and to prevent a deadlock it needs to run in its own goroutine without any callbacks.
 	go func(logger log.Logger) {
 		var msgs []broadcast.MsgWithSenderSetter
-		for _, vote := range ballot {
+		for _, vote := range votes {
 			msgs = append(msgs, vote)
 		}
 
@@ -223,19 +223,19 @@ func (k Keeper) Result(ctx sdk.Context, pollMeta exported.PollMeta) exported.Vot
 
 // Because votes may differ between nodes they need to be stored outside the regular kvstore
 // (whose hash becomes part of the Merkle tree)
-func (k Keeper) getPendingBallot() []exported.MsgVote {
-	bz := k.subjectiveStore.Get([]byte(pendingBallotKey))
+func (k Keeper) getPendingVotes() []exported.MsgVote {
+	bz := k.subjectiveStore.Get([]byte(pendingVotes))
 	if bz == nil {
 		return nil
 	}
-	var ballot []exported.MsgVote
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &ballot)
-	return ballot
+	var votes []exported.MsgVote
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &votes)
+	return votes
 }
 
-// See getPendingBallot
-func (k Keeper) setPendingBallot(ballot []exported.MsgVote) {
-	k.subjectiveStore.Set([]byte(pendingBallotKey), k.cdc.MustMarshalBinaryLengthPrefixed(ballot))
+// See getPendingVotes
+func (k Keeper) setPendingVotes(votes []exported.MsgVote) {
+	k.subjectiveStore.Set([]byte(pendingVotes), k.cdc.MustMarshalBinaryLengthPrefixed(votes))
 }
 
 // using a pointer reference to adhere to the pattern of returning nil if value is not found

@@ -150,10 +150,11 @@ func getCmdTrackPubKey(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 }
 
 func GetCmdVerifyTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
-	var useMasterKey bool
+	var useCurrentMasterKey bool
+	var useNextMasterKey bool
 	var destination string
 	verifyCmd := &cobra.Command{
-		Use:   "verifyTx [txId] [voutIdx] [amount] [-d <destination> | -m]",
+		Use:   "verifyTx [txId] [voutIdx] [amount] [-d <destination> | --curr-mk | --next-mk]",
 		Short: "Verify a Bitcoin transaction",
 		Long: fmt.Sprintf(
 			"Verify that a transaction happened on the Bitcoin chain so it can be processed on axelar. "+
@@ -182,16 +183,21 @@ func GetCmdVerifyTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			var addr types.BtcAddress
-			if !useMasterKey {
-				addr, err = types.ParseBtcAddress(args[2], chain)
+			var msg sdk.Msg
+			if useCurrentMasterKey {
+				msg = types.NewMsgVerifyTxForCurrentMasterKey(cliCtx.GetFromAddress(), hash, voutIdx, amount, chain)
+			} else if useNextMasterKey {
+				msg = types.NewMsgVerifyTxForNextMasterKey(cliCtx.GetFromAddress(), hash, voutIdx, amount, chain)
+			} else {
+				addr, err := types.ParseBtcAddress(destination, chain)
 				if err != nil {
 					return err
 				}
+
+				msg = types.NewMsgVerifyTx(cliCtx.GetFromAddress(), hash, voutIdx, addr, amount)
 			}
 
-			msg := types.NewMsgVerifyTx(cliCtx.GetFromAddress(), hash, voutIdx, addr, amount)
-			if err := msg.ValidateBasic(); err != nil {
+			if err = msg.ValidateBasic(); err != nil {
 				return err
 			}
 
@@ -199,7 +205,8 @@ func GetCmdVerifyTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 		},
 	}
 	addDestinationFlag(verifyCmd, &destination)
-	addMasterKeyFlag(verifyCmd, &useMasterKey)
+	verifyCmd.Flags().BoolVar(&useCurrentMasterKey, "curr-mk", false, "Use the current master key instead of a specific key")
+	verifyCmd.Flags().BoolVar(&useNextMasterKey, "next-mk", false, "Use the current master key instead of a specific key")
 	return verifyCmd
 }
 

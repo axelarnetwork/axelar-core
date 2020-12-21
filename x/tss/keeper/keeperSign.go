@@ -88,8 +88,7 @@ func (k Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart, validators [
 
 // StartMasterKeySign starts a tss signing protocol using the master key for the given chain.
 func (k Keeper) StartMasterKeySign(ctx sdk.Context, info types.MsgMasterKeySignStart, validators []snapshot.Validator) (<-chan exported.Signature, error) {
-	r := k.getRotationCount(ctx, info.Chain)
-	keyID := ctx.KVStore(k.storeKey).Get([]byte(masterKeyID(r, info.Chain)))
+	keyID := k.getPreviousMasterKeyId(ctx, info.Chain, 0)
 	if keyID == nil {
 		return nil, fmt.Errorf("master key for chain %s not set", info.Chain)
 	}
