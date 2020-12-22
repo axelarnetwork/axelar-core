@@ -25,14 +25,14 @@ var _ types.Voter = &VoterMock{}
 //             InitPollFunc: func(ctx sdk.Context, poll voting.PollMeta) error {
 // 	               panic("mock out the InitPoll method")
 //             },
+//             RecordVoteFunc: func(ctx sdk.Context, vote voting.MsgVote) error {
+// 	               panic("mock out the RecordVote method")
+//             },
 //             ResultFunc: func(ctx sdk.Context, poll voting.PollMeta) voting.VotingData {
 // 	               panic("mock out the Result method")
 //             },
 //             TallyVoteFunc: func(ctx sdk.Context, vote voting.MsgVote) error {
 // 	               panic("mock out the TallyVote method")
-//             },
-//             VoteFunc: func(ctx sdk.Context, vote voting.MsgVote) error {
-// 	               panic("mock out the RecordVote method")
 //             },
 //         }
 //
@@ -44,14 +44,14 @@ type VoterMock struct {
 	// InitPollFunc mocks the InitPoll method.
 	InitPollFunc func(ctx sdk.Context, poll voting.PollMeta) error
 
+	// RecordVoteFunc mocks the RecordVote method.
+	RecordVoteFunc func(ctx sdk.Context, vote voting.MsgVote) error
+
 	// ResultFunc mocks the Result method.
 	ResultFunc func(ctx sdk.Context, poll voting.PollMeta) voting.VotingData
 
 	// TallyVoteFunc mocks the TallyVote method.
 	TallyVoteFunc func(ctx sdk.Context, vote voting.MsgVote) error
-
-	// VoteFunc mocks the RecordVote method.
-	VoteFunc func(ctx sdk.Context, vote voting.MsgVote) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -61,6 +61,13 @@ type VoterMock struct {
 			Ctx sdk.Context
 			// Poll is the poll argument value.
 			Poll voting.PollMeta
+		}
+		// RecordVote holds details about calls to the RecordVote method.
+		RecordVote []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Vote is the vote argument value.
+			Vote voting.MsgVote
 		}
 		// Result holds details about calls to the Result method.
 		Result []struct {
@@ -73,21 +80,14 @@ type VoterMock struct {
 		TallyVote []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
-			// RecordVote is the vote argument value.
-			Vote voting.MsgVote
-		}
-		// RecordVote holds details about calls to the RecordVote method.
-		Vote []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// RecordVote is the vote argument value.
+			// Vote is the vote argument value.
 			Vote voting.MsgVote
 		}
 	}
-	lockInitPoll  sync.RWMutex
-	lockResult    sync.RWMutex
-	lockTallyVote sync.RWMutex
-	lockVote      sync.RWMutex
+	lockInitPoll   sync.RWMutex
+	lockRecordVote sync.RWMutex
+	lockResult     sync.RWMutex
+	lockTallyVote  sync.RWMutex
 }
 
 // InitPoll calls InitPollFunc.
@@ -122,6 +122,41 @@ func (mock *VoterMock) InitPollCalls() []struct {
 	mock.lockInitPoll.RLock()
 	calls = mock.calls.InitPoll
 	mock.lockInitPoll.RUnlock()
+	return calls
+}
+
+// RecordVote calls RecordVoteFunc.
+func (mock *VoterMock) RecordVote(ctx sdk.Context, vote voting.MsgVote) error {
+	if mock.RecordVoteFunc == nil {
+		panic("VoterMock.RecordVoteFunc: method is nil but Voter.RecordVote was just called")
+	}
+	callInfo := struct {
+		Ctx  sdk.Context
+		Vote voting.MsgVote
+	}{
+		Ctx:  ctx,
+		Vote: vote,
+	}
+	mock.lockRecordVote.Lock()
+	mock.calls.RecordVote = append(mock.calls.RecordVote, callInfo)
+	mock.lockRecordVote.Unlock()
+	return mock.RecordVoteFunc(ctx, vote)
+}
+
+// RecordVoteCalls gets all the calls that were made to RecordVote.
+// Check the length with:
+//     len(mockedVoter.RecordVoteCalls())
+func (mock *VoterMock) RecordVoteCalls() []struct {
+	Ctx  sdk.Context
+	Vote voting.MsgVote
+} {
+	var calls []struct {
+		Ctx  sdk.Context
+		Vote voting.MsgVote
+	}
+	mock.lockRecordVote.RLock()
+	calls = mock.calls.RecordVote
+	mock.lockRecordVote.RUnlock()
 	return calls
 }
 
@@ -195,41 +230,6 @@ func (mock *VoterMock) TallyVoteCalls() []struct {
 	return calls
 }
 
-// RecordVote calls VoteFunc.
-func (mock *VoterMock) RecordVote(ctx sdk.Context, vote voting.MsgVote) error {
-	if mock.VoteFunc == nil {
-		panic("VoterMock.VoteFunc: method is nil but Voter.RecordVote was just called")
-	}
-	callInfo := struct {
-		Ctx  sdk.Context
-		Vote voting.MsgVote
-	}{
-		Ctx:  ctx,
-		Vote: vote,
-	}
-	mock.lockVote.Lock()
-	mock.calls.Vote = append(mock.calls.Vote, callInfo)
-	mock.lockVote.Unlock()
-	return mock.VoteFunc(ctx, vote)
-}
-
-// VoteCalls gets all the calls that were made to RecordVote.
-// Check the length with:
-//     len(mockedVoter.VoteCalls())
-func (mock *VoterMock) VoteCalls() []struct {
-	Ctx  sdk.Context
-	Vote voting.MsgVote
-} {
-	var calls []struct {
-		Ctx  sdk.Context
-		Vote voting.MsgVote
-	}
-	mock.lockVote.RLock()
-	calls = mock.calls.Vote
-	mock.lockVote.RUnlock()
-	return calls
-}
-
 // Ensure, that SignerMock does implement types.Signer.
 // If this is not the case, regenerate this file with moq.
 var _ types.Signer = &SignerMock{}
@@ -245,6 +245,9 @@ var _ types.Signer = &SignerMock{}
 //             },
 //             GetKeyFunc: func(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool) {
 // 	               panic("mock out the GetKey method")
+//             },
+//             GetKeyForSigIDFunc: func(ctx sdk.Context, sigID string) (ecdsa.PublicKey, bool) {
+// 	               panic("mock out the GetKeyForSigID method")
 //             },
 //             GetNextMasterKeyFunc: func(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool) {
 // 	               panic("mock out the GetNextMasterKey method")
@@ -264,6 +267,9 @@ type SignerMock struct {
 
 	// GetKeyFunc mocks the GetKey method.
 	GetKeyFunc func(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool)
+
+	// GetKeyForSigIDFunc mocks the GetKeyForSigID method.
+	GetKeyForSigIDFunc func(ctx sdk.Context, sigID string) (ecdsa.PublicKey, bool)
 
 	// GetNextMasterKeyFunc mocks the GetNextMasterKey method.
 	GetNextMasterKeyFunc func(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool)
@@ -287,6 +293,13 @@ type SignerMock struct {
 			// KeyID is the keyID argument value.
 			KeyID string
 		}
+		// GetKeyForSigID holds details about calls to the GetKeyForSigID method.
+		GetKeyForSigID []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// SigID is the sigID argument value.
+			SigID string
+		}
 		// GetNextMasterKey holds details about calls to the GetNextMasterKey method.
 		GetNextMasterKey []struct {
 			// Ctx is the ctx argument value.
@@ -304,6 +317,7 @@ type SignerMock struct {
 	}
 	lockGetCurrentMasterKey sync.RWMutex
 	lockGetKey              sync.RWMutex
+	lockGetKeyForSigID      sync.RWMutex
 	lockGetNextMasterKey    sync.RWMutex
 	lockGetSig              sync.RWMutex
 }
@@ -375,6 +389,41 @@ func (mock *SignerMock) GetKeyCalls() []struct {
 	mock.lockGetKey.RLock()
 	calls = mock.calls.GetKey
 	mock.lockGetKey.RUnlock()
+	return calls
+}
+
+// GetKeyForSigID calls GetKeyForSigIDFunc.
+func (mock *SignerMock) GetKeyForSigID(ctx sdk.Context, sigID string) (ecdsa.PublicKey, bool) {
+	if mock.GetKeyForSigIDFunc == nil {
+		panic("SignerMock.GetKeyForSigIDFunc: method is nil but Signer.GetKeyForSigID was just called")
+	}
+	callInfo := struct {
+		Ctx   sdk.Context
+		SigID string
+	}{
+		Ctx:   ctx,
+		SigID: sigID,
+	}
+	mock.lockGetKeyForSigID.Lock()
+	mock.calls.GetKeyForSigID = append(mock.calls.GetKeyForSigID, callInfo)
+	mock.lockGetKeyForSigID.Unlock()
+	return mock.GetKeyForSigIDFunc(ctx, sigID)
+}
+
+// GetKeyForSigIDCalls gets all the calls that were made to GetKeyForSigID.
+// Check the length with:
+//     len(mockedSigner.GetKeyForSigIDCalls())
+func (mock *SignerMock) GetKeyForSigIDCalls() []struct {
+	Ctx   sdk.Context
+	SigID string
+} {
+	var calls []struct {
+		Ctx   sdk.Context
+		SigID string
+	}
+	mock.lockGetKeyForSigID.RLock()
+	calls = mock.calls.GetKeyForSigID
+	mock.lockGetKeyForSigID.RUnlock()
 	return calls
 }
 

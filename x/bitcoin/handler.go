@@ -243,7 +243,7 @@ func handleMsgSendTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s ty
 		),
 	)
 
-	rawTx, err := assembleBtcTx(ctx, k, s, msg.TxID, msg.TxID, pk)
+	rawTx, err := assembleBtcTx(ctx, k, s, msg.TxID, pk, msg.SignatureID)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
@@ -264,7 +264,7 @@ func isTxVerified(ctx sdk.Context, v types.Voter, txId string) bool {
 	return res == nil || !res.(bool)
 }
 
-func assembleBtcTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, txID string, sigID string, pk ecdsa.PublicKey) (*wire.MsgTx, error) {
+func assembleBtcTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, txID string, pk ecdsa.PublicKey, sigID string) (*wire.MsgTx, error) {
 	rawTx := k.GetRawTx(ctx, txID)
 	if rawTx == nil {
 		return nil, fmt.Errorf("withdraw tx for ID %s has not been prepared yet", txID)

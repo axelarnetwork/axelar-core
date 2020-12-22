@@ -28,7 +28,7 @@ func NewMsgRawTx(sender sdk.AccAddress, txHash *chainhash.Hash, amount btcutil.A
 	}
 }
 
-func NewMsgRawTxForNextMasterKey(sender sdk.AccAddress, chain Chain, txHash *chainhash.Hash, amount btcutil.Amount) sdk.Msg {
+func NewMsgRawTxForNextMasterKey(sender sdk.AccAddress, chain Chain, txHash *chainhash.Hash, amount btcutil.Amount) MsgRawTx {
 	return MsgRawTx{
 		Sender: sender,
 		TxHash: txHash,

@@ -222,18 +222,14 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 }
 
 func handleMsgSignStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, v types.Voter, msg types.MsgSignStart) (*sdk.Result, error) {
-	var keyID string
-	var ok bool
-	switch msg.Mode {
-	case types.ModeSpecificKey:
-		keyID = msg.KeyID
-	case types.ModeMasterKey:
-		keyID, ok = k.GetCurrentMasterKeyID(ctx, msg.Chain)
+	if msg.Mode == types.ModeMasterKey {
+		keyID, ok := k.GetCurrentMasterKeyID(ctx, msg.Chain)
 		if !ok {
 			return nil, fmt.Errorf("master key for chain %s not set", msg.Chain)
 		}
+		msg.KeyID = keyID
 	}
-	round, ok := k.GetSnapshotRoundForKeyID(ctx, keyID)
+	round, ok := k.GetSnapshotRoundForKeyID(ctx, msg.KeyID)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrTss, fmt.Sprintf("unknown key ID"))
 	}
