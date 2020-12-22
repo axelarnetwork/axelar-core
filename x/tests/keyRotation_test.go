@@ -283,7 +283,7 @@ func TestKeyRotation(t *testing.T) {
 
 	// create a tx to transfer funds from master key 1 to master key 2
 	amount = btcutil.Amount(int64(amount) - testutils.RandIntBetween(1, int64(amount)-1))
-	res = <-chain.Submit(btcTypes.NewMsgRawTxForMasterKey(
+	res = <-chain.Submit(btcTypes.NewMsgRawTxForNextMasterKey(
 		sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
 		btcTypes.Chain(chaincfg.MainNetParams.Name),
 		txHash,
