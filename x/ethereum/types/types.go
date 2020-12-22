@@ -25,10 +25,10 @@ const (
 var ERC20MintSel string
 
 func init() {
-	ERC20MintSel = calcSelector(erc20Mint)
+	ERC20MintSel = CalcSelector(erc20Mint)
 }
 
-func calcSelector(funcSignature string) string {
+func CalcSelector(funcSignature string) string {
 
 	hash := sha3.NewLegacyKeccak256()
 
@@ -109,13 +109,13 @@ func (u TX) Equals(other TX) bool {
 type TXType string
 
 const (
-	TypeETH   TXType = "ether"
-	TypeERC20        = "erc20"
+	TypeETH       TXType = "ether"
+	TypeERC20mint TXType = "erc20mint"
 )
 
 func (lt TXType) IsValid() bool {
 	switch lt {
-	case TypeETH, TypeERC20:
+	case TypeETH, TypeERC20mint:
 		return false
 	}
 	return true

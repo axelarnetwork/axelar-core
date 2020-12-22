@@ -22,7 +22,7 @@ import (
 
 const (
 	ethereum = "ethereum"
-	gasLimit = uint64(21000)
+	gasLimit = uint64(3000000)
 )
 
 func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Signer) sdk.Handler {
@@ -232,42 +232,16 @@ func createTransaction(ctx sdk.Context, rpc types.RPCClient, s types.Signer, msg
 		return nil, fmt.Errorf("Could not calculate gas price: %s", err)
 	}
 
-	var data []byte
-	var gasLimit uint64
-	value := big.NewInt(0)
-
 	switch msg.TXType {
 
 	case types.TypeETH:
 
-		value.Set(&msg.Amount)
-		gasLimit = uint64(21000)
+		return ethTypes.NewTransaction(nonce, toAddress, &msg.Amount, gasLimit, gasPrice, make([]byte, 0)), nil
 
-	case types.TypeERC20:
+	case types.TypeERC20mint:
 
-		/*
-			Perform serialization according to these tutorials:
-
-			https://medium.com/swlh/understanding-data-payloads-in-ethereum-transactions-354dbe995371
-			https://medium.com/mycrypto/why-do-we-need-transaction-data-39c922930e92
-			https://goethereumbook.org/en/transfer-tokens/
-		*/
-
-		addr := hexutil.Encode(common.LeftPadBytes(msg.Destination.Convert().Bytes(), 32))
-		val := hexutil.Encode(common.LeftPadBytes(msg.Amount.Bytes(), 32))
-
-		data = append(data, types.ERC20MintSel...)
-		data = append(data, addr...)
-		data = append(data, val...)
-
-		gasLimit, err = rpc.EstimateGas(context.Background(), ethereumRoot.CallMsg{
-			To:   &toAddress,
-			Data: data,
-		})
-
-		if err != nil {
-			return nil, fmt.Errorf("Could not estimate gas limit: %s", err)
-		}
+		// TODO: correctly look up the contract address once the deploy contract functionality is done
+		return createMintTransaction(rpc, fromAddress, toAddress, toAddress, gasLimit, &msg.Amount)
 
 	default:
 
@@ -275,5 +249,90 @@ func createTransaction(ctx sdk.Context, rpc types.RPCClient, s types.Signer, msg
 
 	}
 
-	return ethTypes.NewTransaction(nonce, toAddress, value, gasLimit, gasPrice, data), nil
+}
+
+/*
+  Create a transaction for smart contract deployment. See:
+
+  https://goethereumbook.org/en/smart-contract-deploy/
+  https://gist.github.com/tomconte/6ce22128b15ba36bb3d7585d5180fba0
+
+  If gasLimit is set to 0, the function will attempt to estimate the amount of gas needed
+*/
+func createDeploySCTransaction(rpc types.RPCClient, fromAddr common.Address, gasLimit uint64, byteCode []byte) (*ethTypes.Transaction, error) {
+
+	nonce, err := rpc.PendingNonceAt(context.Background(), fromAddr)
+	if err != nil {
+		return nil, fmt.Errorf("Could not create nonce: %s", err)
+	}
+
+	gasPrice, err := rpc.SuggestGasPrice(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("Could not calculate gas price: %s", err)
+	}
+
+	if gasLimit == 0 {
+
+		gasLimit, err = rpc.EstimateGas(context.Background(), ethereumRoot.CallMsg{
+			To:   nil,
+			Data: byteCode,
+		})
+
+		if err != nil {
+			return nil, fmt.Errorf("Could not estimate gas limit: %s", err)
+		}
+	}
+
+	value := big.NewInt(0)
+
+	return ethTypes.NewContractCreation(nonce, value, gasLimit, gasPrice, byteCode), nil
+
+}
+
+/*
+  Create a transaction to mint tokens for a ERC20 smart contract. See:
+
+  https://medium.com/swlh/understanding-data-payloads-in-ethereum-transactions-354dbe995371
+  https://medium.com/mycrypto/why-do-we-need-transaction-data-39c922930e92
+  https://goethereumbook.org/en/transfer-tokens/
+
+  If gasLimit is set to 0, the function will attempt to estimate the amount of gas needed
+*/
+func createMintTransaction(rpc types.RPCClient, fromAddr, contractAddr, toAddr common.Address, gasLimit uint64, amount *big.Int) (*ethTypes.Transaction, error) {
+
+	paddedAddr := hexutil.Encode(common.LeftPadBytes(toAddr.Bytes(), 32))
+	paddedVal := hexutil.Encode(common.LeftPadBytes(amount.Bytes(), 32))
+
+	var data []byte
+
+	data = append(data, common.FromHex(types.ERC20MintSel)...)
+	data = append(data, common.FromHex(paddedAddr)...)
+	data = append(data, common.FromHex(paddedVal)...)
+
+	nonce, err := rpc.PendingNonceAt(context.Background(), fromAddr)
+	if err != nil {
+		return nil, fmt.Errorf("Could not create nonce: %s", err)
+	}
+
+	value := big.NewInt(0)
+
+	gasPrice, err := rpc.SuggestGasPrice(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("Could not calculate gas price: %s", err)
+	}
+
+	if gasLimit == 0 {
+
+		gasLimit, err = rpc.EstimateGas(context.Background(), ethereumRoot.CallMsg{
+			To:   &contractAddr,
+			Data: data,
+		})
+
+		if err != nil {
+			return nil, fmt.Errorf("Could not estimate gas limit: %s", err)
+		}
+	}
+
+	return ethTypes.NewTransaction(nonce, contractAddr, value, gasLimit, gasPrice, data), nil
+
 }

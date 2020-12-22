@@ -51,7 +51,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	mainnetEtherCmd.AddCommand(
 		flags.PostCommands(
 			GetCmdRawTx(types.Chain(types.Mainnet), types.TypeETH, cdc),
-			GetCmdRawTx(types.Chain(types.Mainnet), types.TypeERC20, cdc))...)
+			GetCmdRawTx(types.Chain(types.Mainnet), types.TypeERC20mint, cdc))...)
 	mainnetCmd.AddCommand(
 		flags.PostCommands(
 			GetCmdVerifyTx(types.Chain(types.Mainnet), cdc), mainnetEtherCmd)...)
@@ -61,7 +61,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	ropstenEtherCmd.AddCommand(
 		flags.PostCommands(
 			GetCmdRawTx(types.Chain(types.Ropsten), types.TypeETH, cdc),
-			GetCmdRawTx(types.Chain(types.Ropsten), types.TypeERC20, cdc))...)
+			GetCmdRawTx(types.Chain(types.Ropsten), types.TypeERC20mint, cdc))...)
 	ropstenCmd.AddCommand(
 		flags.PostCommands(
 			GetCmdVerifyTx(types.Chain(types.Ropsten), cdc), ropstenCmd)...)
@@ -71,7 +71,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	kovanEtherCmd.AddCommand(
 		flags.PostCommands(
 			GetCmdRawTx(types.Chain(types.Kovan), types.TypeETH, cdc),
-			GetCmdRawTx(types.Chain(types.Kovan), types.TypeERC20, cdc))...)
+			GetCmdRawTx(types.Chain(types.Kovan), types.TypeERC20mint, cdc))...)
 	kovanCmd.AddCommand(
 		flags.PostCommands(
 			GetCmdVerifyTx(types.Chain(types.Kovan), cdc), kovanEtherCmd)...)
@@ -81,7 +81,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	rinkebyEtherCmd.AddCommand(
 		flags.PostCommands(
 			GetCmdRawTx(types.Chain(types.Rinkeby), types.TypeETH, cdc),
-			GetCmdRawTx(types.Chain(types.Rinkeby), types.TypeERC20, cdc))...)
+			GetCmdRawTx(types.Chain(types.Rinkeby), types.TypeERC20mint, cdc))...)
 	rinkebyCmd.AddCommand(
 		flags.PostCommands(
 			GetCmdVerifyTx(types.Chain(types.Rinkeby), cdc), rinkebyEtherCmd)...)
@@ -91,7 +91,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	goerliEtherCmd.AddCommand(
 		flags.PostCommands(
 			GetCmdRawTx(types.Chain(types.Goerli), types.TypeETH, cdc),
-			GetCmdRawTx(types.Chain(types.Goerli), types.TypeERC20, cdc))...)
+			GetCmdRawTx(types.Chain(types.Goerli), types.TypeERC20mint, cdc))...)
 	goerliCmd.AddCommand(
 		flags.PostCommands(
 			GetCmdVerifyTx(types.Chain(types.Goerli), cdc), goerliEtherCmd)...)
@@ -199,7 +199,7 @@ func parseValue(rawValue string) (value big.Int, txType types.TXType, err error)
 
 	value = *big.NewInt(0)
 	err = nil
-	txType = types.TypeERC20
+	txType = types.TypeERC20mint
 
 	// if the function is given a basic integer value without units,
 	// it will assume is raw representation of a ERC20 token
