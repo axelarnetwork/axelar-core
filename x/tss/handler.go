@@ -207,7 +207,7 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 				k.Logger(ctx).Error(err.Error())
 				return
 			}
-			if err := v.Vote(ctx, &types.MsgVotePubKey{PollMeta: poll, PubKeyBytes: bz}); err != nil {
+			if err := v.RecordVote(ctx, &types.MsgVotePubKey{PollMeta: poll, PubKeyBytes: bz}); err != nil {
 				k.Logger(ctx).Error(err.Error())
 				return
 			}
@@ -253,18 +253,20 @@ func handleMsgSignStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, v
 
 func handleMsgMasterKeySignStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, v types.Voter, msg types.MsgMasterKeySignStart) (*sdk.Result, error) {
 	// TODO for now assume all validators participate
-	snapshot, ok := s.GetLatestSnapshot(ctx)
+	r := s.GetLatestRound(ctx)
+
+	snapshot, ok := s.GetSnapshot(ctx, r-1)
 	if !ok {
-		return nil, fmt.Errorf("signing failed")
+		return nil, sdkerrors.Wrap(types.ErrTss, "no previous snapshot available")
 	}
 	poll := voting.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.NewSigID}
 	if err := v.InitPoll(ctx, poll); err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
 	}
 
 	sigChan, err := k.StartMasterKeySign(ctx, msg, snapshot.Validators)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
 	}
 
 	go voteOnSignResult(ctx, k, v, sigChan, poll)
@@ -287,7 +289,7 @@ func voteOnSignResult(ctx sdk.Context, k keeper.Keeper, v types.Voter, sigChan <
 			k.Logger(ctx).Error(err.Error())
 			return
 		}
-		if err := v.Vote(ctx, &types.MsgVoteSig{PollMeta: poll, SigBytes: bz}); err != nil {
+		if err := v.RecordVote(ctx, &types.MsgVoteSig{PollMeta: poll, SigBytes: bz}); err != nil {
 			k.Logger(ctx).Error(err.Error())
 			return
 		}

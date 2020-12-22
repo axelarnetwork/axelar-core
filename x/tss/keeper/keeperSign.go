@@ -63,7 +63,7 @@ func (k Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart, validators [
 				info.NewSigID, msg.IsBroadcast, msg.ToPartyUid))
 			// sender is set by broadcaster
 			tssMsg := &types.MsgSignTraffic{SessionID: info.NewSigID, Payload: msg}
-			if err := k.broadcaster.BroadcastSync(ctx, []broadcast.MsgWithSenderSetter{tssMsg}); err != nil {
+			if err := k.broadcaster.Broadcast(ctx, []broadcast.MsgWithSenderSetter{tssMsg}); err != nil {
 				k.Logger(ctx).Error(sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing sign msg").Error())
 				return
 			}
@@ -88,8 +88,7 @@ func (k Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart, validators [
 
 // StartMasterKeySign starts a tss signing protocol using the master key for the given chain.
 func (k Keeper) StartMasterKeySign(ctx sdk.Context, info types.MsgMasterKeySignStart, validators []snapshot.Validator) (<-chan exported.Signature, error) {
-	r := k.getRotationCount(ctx, info.Chain)
-	keyID := ctx.KVStore(k.storeKey).Get([]byte(masterKeyID(r, info.Chain)))
+	keyID := k.getPreviousMasterKeyId(ctx, info.Chain, 0)
 	if keyID == nil {
 		return nil, fmt.Errorf("master key for chain %s not set", info.Chain)
 	}

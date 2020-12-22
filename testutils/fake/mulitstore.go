@@ -1,4 +1,4 @@
-package mock
+package fake
 
 import (
 	"bytes"
@@ -160,7 +160,7 @@ func (t TestStoreKey) String() string {
 	return string(t)
 }
 
-// mock iterator
+// fake iterator
 type mockIterator struct {
 	keys       [][]byte
 	values     [][]byte

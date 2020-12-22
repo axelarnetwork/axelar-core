@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	tssd "github.com/axelarnetwork/tssd/pb"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -12,18 +13,18 @@ import (
 func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 	s := setup(t)
 	msg := types.MsgSignStart{
-		Sender:    s.Broadcaster.Proxy,
+		Sender:    sdk.AccAddress(s.Broadcaster.LocalPrincipal),
 		NewSigID:  "sigID",
 		KeyID:     "keyID1",
 		MsgToSign: []byte("message"),
 	}
 
-	_, err := s.Keeper.StartSign(s.Ctx, msg, s.Staker.GetAllValidators())
+	_, err := s.Keeper.StartSign(s.Ctx, msg, validators)
 	assert.NoError(t, err)
 
 	msg.KeyID = "keyID2"
 	msg.MsgToSign = []byte("second message")
-	_, err = s.Keeper.StartSign(s.Ctx, msg, s.Staker.GetAllValidators())
+	_, err = s.Keeper.StartSign(s.Ctx, msg, validators)
 	assert.Error(t, err)
 }
 
@@ -33,7 +34,7 @@ func TestKeeper_SignMsg_NoSessionWithGivenID_Return(t *testing.T) {
 	s := setup(t)
 
 	assert.NoError(t, s.Keeper.SignMsg(s.Ctx, types.MsgSignTraffic{
-		Sender:    s.Broadcaster.Proxy,
+		Sender:    s.Broadcaster.GetProxy(s.Ctx, s.Broadcaster.LocalPrincipal),
 		SessionID: "sigID",
 		Payload:   &tssd.TrafficOut{},
 	}))

@@ -1,6 +1,8 @@
-package mock
+package fake
 
 import (
+	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -10,30 +12,31 @@ import (
 var _ exported.Broadcaster = Broadcaster{}
 
 type Broadcaster struct {
-	in        chan<- sdk.Msg
-	Proxy     sdk.AccAddress
-	val2Proxy map[string]sdk.AccAddress
-	proxy2Val map[string]sdk.ValAddress
-	principal sdk.ValAddress
-	cdc       *codec.Codec
+	submitMsg      func(msg sdk.Msg) (result <-chan Result)
+	val2Proxy      map[string]sdk.AccAddress
+	proxy2Val      map[string]sdk.ValAddress
+	LocalPrincipal sdk.ValAddress
+	cdc            *codec.Codec
 }
 
-// NewBroadcaster creates a new broadcaster mock that sends messages to the blockchainIn channel.
-// Messages are sent from the sender account, while the local validator account is given by localPrincipal.
-func NewBroadcaster(cdc *codec.Codec, sender sdk.AccAddress, localPrincipal sdk.ValAddress, blockchainIn chan<- sdk.Msg) Broadcaster {
+// NewBroadcaster creates a new broadcaster fake that sends messages to the blockchainIn channel.
+func NewBroadcaster(cdc *codec.Codec, localPrincipal sdk.ValAddress, submitMsg func(msg sdk.Msg) (result <-chan Result)) Broadcaster {
 	return Broadcaster{
-		cdc:       cdc,
-		in:        blockchainIn,
-		Proxy:     sender,
-		val2Proxy: make(map[string]sdk.AccAddress),
-		proxy2Val: make(map[string]sdk.ValAddress),
-		principal: localPrincipal,
+		cdc:            cdc,
+		submitMsg:      submitMsg,
+		val2Proxy:      make(map[string]sdk.AccAddress),
+		proxy2Val:      make(map[string]sdk.ValAddress),
+		LocalPrincipal: localPrincipal,
 	}
 }
 
-func (b Broadcaster) BroadcastSync(_ sdk.Context, msgs []exported.MsgWithSenderSetter) error {
+func (b Broadcaster) Broadcast(ctx sdk.Context, msgs []exported.MsgWithSenderSetter) error {
 	for _, msg := range msgs {
-		msg.SetSender(b.Proxy)
+		proxy := b.GetProxy(ctx, b.LocalPrincipal)
+		if proxy == nil {
+			return fmt.Errorf("proxy not set")
+		}
+		msg.SetSender(proxy)
 
 		/*
 			exported.MsgWithSenderSetter is usually implemented by a pointer.
@@ -45,7 +48,7 @@ func (b Broadcaster) BroadcastSync(_ sdk.Context, msgs []exported.MsgWithSenderS
 		var sentMsg sdk.Msg
 		b.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &sentMsg)
 
-		b.in <- sentMsg
+		_ = b.submitMsg(sentMsg)
 	}
 	return nil
 }
@@ -69,5 +72,5 @@ func (b Broadcaster) GetProxyCount(_ sdk.Context) uint32 {
 }
 
 func (b Broadcaster) GetLocalPrincipal(_ sdk.Context) sdk.ValAddress {
-	return b.principal
+	return b.LocalPrincipal
 }

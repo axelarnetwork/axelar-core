@@ -1,4 +1,4 @@
-package tests
+package types_test
 
 import (
 	"testing"
@@ -9,7 +9,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
-	"github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 func TestMsgVotePubKey_Marshaling(t *testing.T) {
@@ -18,7 +17,7 @@ func TestMsgVotePubKey_Marshaling(t *testing.T) {
 	for i := range sender {
 		sender[i] = 0
 	}
-	vote := tss.MsgVotePubKey{
+	vote := &tss.MsgVotePubKey{
 		Sender: sender,
 		PollMeta: exported.PollMeta{
 			Module: "test",
@@ -27,21 +26,17 @@ func TestMsgVotePubKey_Marshaling(t *testing.T) {
 		},
 		PubKeyBytes: []byte("some bytes"),
 	}
-	ballot := types.MsgBallot{
-		Votes:  []exported.MsgVote{&vote},
-		Sender: sender,
-	}
 	cdc := testutils.Codec()
 
-	bz := cdc.MustMarshalBinaryLengthPrefixed(ballot)
+	bz := cdc.MustMarshalBinaryLengthPrefixed(vote)
 	var msg sdk.Msg
 	cdc.MustUnmarshalBinaryLengthPrefixed(bz, &msg)
 
-	assert.Equal(t, ballot, msg)
+	assert.Equal(t, vote, msg)
 
-	bz = cdc.MustMarshalJSON(ballot)
+	bz = cdc.MustMarshalJSON(vote)
 	var msg2 sdk.Msg
 	cdc.MustUnmarshalJSON(bz, &msg2)
 
-	assert.Equal(t, ballot, msg2)
+	assert.Equal(t, vote, msg2)
 }

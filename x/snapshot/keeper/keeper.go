@@ -21,9 +21,9 @@ const roundPrefix = "r-"
 
 // for now, have a small interval between rounds
 // const interval = 7 * 24 * time.Hour
-const interval = 10 * time.Second
+const interval = 10 * time.Millisecond
 
-// Make sure the keeper implements the Staker interface
+// Make sure the keeper implements the Snapshotter interface
 var _ exported.Snapshotter = Keeper{}
 
 type Keeper struct {
@@ -34,7 +34,6 @@ type Keeper struct {
 
 // NewKeeper creates a new keeper for the staking module
 func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, staking types.StakingKeeper) Keeper {
-
 	return Keeper{
 		storeKey: key,
 		cdc:      cdc,
@@ -42,74 +41,47 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, staking types.StakingKeeper) 
 	}
 }
 
-func (k Keeper) Validator(ctx sdk.Context, address sdk.ValAddress) (exported.Validator, bool) {
+// GetValidator returns the validator with the given address. Returns false if no validator with that address exists
+func (k Keeper) GetValidator(ctx sdk.Context, address sdk.ValAddress) (exported.Validator, bool) {
+	snapshot, ok := k.GetLatestSnapshot(ctx)
 
-	result := exported.Validator{}
-
-	validator, ok := k.staking.GetValidator(ctx, address)
-
+	// only use the underlying staking keeper if there are no snapshots yet
 	if !ok {
-		return result, false
-	}
-
-	result.Address = address
-	result.Power = validator.GetConsensusPower()
-
-	return result, true
-}
-
-// TODO: Investigate if you still need this function
-func (k Keeper) IterateValidators(ctx sdk.Context, fn func(_ int64, _ exported.Validator) (stop bool)) {
-
-	fnPrepared := func(i int64, v sdkExported.ValidatorI) (stop bool) {
-
-		validator := exported.Validator{
-
-			Address: v.GetOperator(),
-			Power:   v.GetConsensusPower(),
+		validator := k.staking.Validator(ctx, address)
+		if validator == nil {
+			return nil, false
 		}
-
-		return fn(i, validator)
+		return validator, true
 	}
 
-	k.staking.IterateValidators(ctx, fnPrepared)
-
+	return snapshot.GetValidator(address)
 }
 
 // TakeSnapshot attempts to create a new snapshot
 func (k Keeper) TakeSnapshot(ctx sdk.Context) error {
-
 	r := k.GetLatestRound(ctx)
 
-	if r == -1 {
+	if r != -1 {
+		s, ok := k.GetSnapshot(ctx, r)
+		if !ok {
 
-		k.executeSnapshot(ctx, r+1)
-		return nil
-	}
+			return fmt.Errorf("Unable to take snapshot: no snapshot for latest round %d", r)
+		}
+		ts := ctx.BlockTime()
+		if s.Timestamp.Add(interval).After(ts) {
 
-	s, ok := k.GetSnapshot(ctx, r)
+			return fmt.Errorf("Unable to take snapshot: %s", "Too soon to take a snapshot")
 
-	if !ok {
-
-		return fmt.Errorf("Unable to take snapshot: no snapshot for latest round %d", r)
-	}
-
-	ts := ctx.BlockTime()
-
-	if s.Timestamp.Add(interval).After(ts) {
-
-		return fmt.Errorf("Unable to take snapshot: %s", "Too soon to take a snapshot")
-
+		}
 	}
 
 	k.executeSnapshot(ctx, r+1)
+	k.setLatestRound(ctx, r+1)
 	return nil
-
 }
 
 // GetLatestSnapshot retrieves the last created snapshot
 func (k Keeper) GetLatestSnapshot(ctx sdk.Context) (exported.Snapshot, bool) {
-
 	r := k.GetLatestRound(ctx)
 
 	if r == -1 {
@@ -123,7 +95,6 @@ func (k Keeper) GetLatestSnapshot(ctx sdk.Context) (exported.Snapshot, bool) {
 
 // GetSnapshot retrieves a snapshot by round, if it exists
 func (k Keeper) GetSnapshot(ctx sdk.Context, round int64) (exported.Snapshot, bool) {
-
 	var snapshot exported.Snapshot
 
 	bz := ctx.KVStore(k.storeKey).Get(roundKey(round))
@@ -138,49 +109,7 @@ func (k Keeper) GetSnapshot(ctx sdk.Context, round int64) (exported.Snapshot, bo
 	return snapshot, true
 }
 
-// Logger returns the logger
-func (k Keeper) Logger(ctx sdk.Context) log.Logger {
-	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
-}
-
-func (k Keeper) executeSnapshot(ctx sdk.Context, nextRound int64) {
-
-	var validators []exported.Validator
-
-	fnAppend := func(_ int64, v sdkExported.ValidatorI) (stop bool) {
-
-		validator := exported.Validator{
-
-			Address: v.GetOperator(),
-			Power:   v.GetConsensusPower(),
-		}
-
-		validators = append(validators, validator)
-		return false
-	}
-
-	k.staking.IterateValidators(ctx, fnAppend)
-
-	snapshot := exported.Snapshot{
-
-		Validators: validators,
-		Timestamp:  ctx.BlockTime(),
-		Height:     ctx.BlockHeight(),
-		TotalPower: k.staking.GetLastTotalPower(ctx),
-	}
-
-	k.setLastRound(ctx, nextRound)
-	ctx.KVStore(k.storeKey).Set(roundKey(nextRound), k.cdc.MustMarshalBinaryLengthPrefixed(snapshot))
-
-}
-
-func (k Keeper) setLastRound(ctx sdk.Context, round int64) {
-
-	ctx.KVStore(k.storeKey).Set([]byte(lastRound), k.cdc.MustMarshalBinaryLengthPrefixed(round))
-}
-
 func (k Keeper) GetLatestRound(ctx sdk.Context) int64 {
-
 	bz := ctx.KVStore(k.storeKey).Get([]byte(lastRound))
 
 	if bz == nil {
@@ -191,6 +120,34 @@ func (k Keeper) GetLatestRound(ctx sdk.Context) int64 {
 	var i int64
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &i)
 	return i
+}
+
+// Logger returns the logger
+func (k Keeper) Logger(ctx sdk.Context) log.Logger {
+	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
+}
+
+func (k Keeper) executeSnapshot(ctx sdk.Context, nextRound int64) {
+	var validators []exported.Validator
+	fnAppend := func(_ int64, v sdkExported.ValidatorI) (stop bool) {
+		validators = append(validators, v)
+		return false
+	}
+
+	k.staking.IterateLastValidators(ctx, fnAppend)
+
+	snapshot := exported.Snapshot{
+		Validators: validators,
+		Timestamp:  ctx.BlockTime(),
+		Height:     ctx.BlockHeight(),
+		TotalPower: k.staking.GetLastTotalPower(ctx),
+	}
+
+	ctx.KVStore(k.storeKey).Set(roundKey(nextRound), k.cdc.MustMarshalBinaryLengthPrefixed(snapshot))
+}
+
+func (k Keeper) setLatestRound(ctx sdk.Context, round int64) {
+	ctx.KVStore(k.storeKey).Set([]byte(lastRound), k.cdc.MustMarshalBinaryLengthPrefixed(round))
 }
 
 func roundKey(round int64) []byte {
