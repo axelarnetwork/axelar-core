@@ -28,9 +28,9 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Sig
 		case types.MsgVerifyTx:
 			return handleMsgVerifyTx(ctx, k, v, rpc, s, msg)
 		case *types.MsgVoteVerifiedTx:
-			return handleMsgVoteVerifiedTx(ctx, v, *msg)
+			return handleMsgVoteVerifiedTx(ctx, k, v, *msg)
 		case types.MsgRawTx:
-			return handleMsgRawTx(ctx, k, s, v, msg)
+			return handleMsgRawTx(ctx, k, s, msg)
 		case types.MsgSendTx:
 			return handleMsgSendTx(ctx, k, rpc, s, msg)
 		default:
@@ -40,10 +40,16 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Sig
 	}
 }
 
-// This can be used as a potential hook to immediately act on a poll being decided by the vote
-func handleMsgVoteVerifiedTx(ctx sdk.Context, v types.Voter, msg types.MsgVoteVerifiedTx) (*sdk.Result, error) {
+func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.MsgVoteVerifiedTx) (*sdk.Result, error) {
 	if err := v.TallyVote(ctx, &msg); err != nil {
 		return nil, err
+	}
+
+	if res := v.Result(ctx, msg.Poll()); res != nil {
+		if err := k.ProcessUTXOPollResult(ctx, msg.PollMeta.ID, res.(bool)); err != nil {
+			return nil, err
+		}
+		v.DeletePoll(ctx, msg.Poll())
 	}
 	return &sdk.Result{}, nil
 }
@@ -102,6 +108,9 @@ func handleMsgTrack(ctx sdk.Context, k keeper.Keeper, s types.Signer, rpc types.
 func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Signer, msg types.MsgVerifyTx) (*sdk.Result, error) {
 	k.Logger(ctx).Debug("verifying bitcoin transaction")
 	txId := msg.UTXO.Hash.String()
+	if _, ok := k.GetUTXO(ctx, txId); ok {
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, "transaction already verified")
+	}
 
 	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: txId}
 	if err := v.InitPoll(ctx, poll); err != nil {
@@ -143,13 +152,15 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 		}
 	}
 
-	k.SetUTXO(ctx, txId, msg.UTXO)
+	k.SetUTXOForPoll(ctx, poll.ID, msg.UTXO)
 
 	/*
 	 Anyone not able to verify the transaction will automatically record a negative vote,
 	 but only validators will later send out that vote.
 	*/
-	if err := verifyTx(rpc, msg.UTXO, k.GetConfirmationHeight(ctx)); err != nil {
+	err := verifyTx(rpc, msg.UTXO, k.GetConfirmationHeight(ctx))
+	if err != nil {
+		k.Logger(ctx).Debug(fmt.Sprintf("tx %s verification failed: %s", txId, err.Error()))
 		if err := v.RecordVote(ctx, &types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false}); err != nil {
 			k.Logger(ctx).Error(sdkerrors.Wrap(err, "voting failed").Error())
 			return &sdk.Result{
@@ -158,9 +169,6 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 				Events: ctx.EventManager().Events(),
 			}, nil
 		}
-
-		k.Logger(ctx).Debug(sdkerrors.Wrapf(err,
-			"expected transaction (%s) could not be verified", txId).Error())
 		return &sdk.Result{
 			Log:    err.Error(),
 			Data:   k.Codec().MustMarshalBinaryLengthPrefixed(false),
@@ -183,7 +191,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 	}
 }
 
-func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, v types.Voter, msg types.MsgRawTx) (*sdk.Result, error) {
+func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, msg types.MsgRawTx) (*sdk.Result, error) {
 	txId := msg.TxHash.String()
 	var destination btcutil.Address
 	var err error
@@ -213,12 +221,14 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, v types.Vo
 		),
 	)
 
-	if isTxVerified(ctx, v, txId) {
+	utxo, ok := k.GetUTXO(ctx, txId)
+	if !ok {
 		return nil, fmt.Errorf("transaction not verified")
 	}
-	if hash, err := createRawTx(ctx, k, txId, destination, int64(msg.Amount)); err != nil {
+	if hash, err := createRawTx(ctx, k, utxo, destination, int64(msg.Amount)); err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	} else {
+		k.Logger(ctx).Info(fmt.Sprintf("bitcoin tx to sign: %s", k.Codec().MustMarshalJSON(hash)))
 		return &sdk.Result{
 			Data:   hash,
 			Log:    fmt.Sprintf("successfully created an unsigned transaction for Bitcoin. Hash to sign: %s", k.Codec().MustMarshalJSON(hash)),
@@ -256,12 +266,6 @@ func handleMsgSendTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s ty
 	}
 
 	return &sdk.Result{Data: hash[:], Log: fmt.Sprintf("successfully sent transaction %s to Bitcoin", hash), Events: ctx.EventManager().Events()}, nil
-}
-
-func isTxVerified(ctx sdk.Context, v types.Voter, txId string) bool {
-	poll := exported.PollMeta{ID: txId, Module: types.ModuleName, Type: types.MsgVerifyTx{}.Type()}
-	res := v.Result(ctx, poll)
-	return res == nil || !res.(bool)
 }
 
 func assembleBtcTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, txID string, pk ecdsa.PublicKey, sigID string) (*wire.MsgTx, error) {
@@ -347,20 +351,14 @@ func trackAddress(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, address
 	k.SetTrackedAddress(ctx, address)
 }
 
-func createRawTx(ctx sdk.Context, k keeper.Keeper, txId string, destination btcutil.Address, amount int64) (hash []byte, err error) {
-	utxo, ok := k.GetUTXO(ctx, txId)
-	if !ok {
-		return nil, fmt.Errorf("transaction ID is not known")
-	}
-
-	/*
-		Creating a Bitcoin transaction one step at a time:
-			1. Create the transaction message
-			2. Get the output of the deposit transaction and convert it into the transaction input
-			3. Create a new output
-		See https://blog.hlongvu.com/post/t0xx5dejn3-Understanding-btcd-Part-4-Create-and-Sign-a-Bitcoin-transaction-with-btcd
-	*/
-
+/*
+	Creating a Bitcoin transaction one step at a time:
+		1. Create the transaction message
+		2. Get the output of the deposit transaction and convert it into the transaction input
+		3. Create a new output
+	See https://blog.hlongvu.com/post/t0xx5dejn3-Understanding-btcd-Part-4-Create-and-Sign-a-Bitcoin-transaction-with-btcd
+*/
+func createRawTx(ctx sdk.Context, k keeper.Keeper, utxo types.UTXO, destination btcutil.Address, amount int64) (hash []byte, err error) {
 	tx := wire.NewMsgTx(wire.TxVersion)
 
 	outPoint := wire.NewOutPoint(utxo.Hash, utxo.VoutIdx)
@@ -376,11 +374,11 @@ func createRawTx(ctx sdk.Context, k keeper.Keeper, txId string, destination btcu
 	txOut := wire.NewTxOut(amount, addrScript)
 	tx.AddTxOut(txOut)
 
-	k.SetRawTx(ctx, txId, tx)
+	k.SetRawTx(ctx, utxo.Hash.String(), tx)
 
 	// Print out the hash that becomes the input for the threshold signing
 	hash, err = txscript.CalcSignatureHash(utxo.Address.PkScript(), txscript.SigHashAll, tx, 0)
-	k.Logger(ctx).Info(fmt.Sprintf("bitcoin tx to sign: %s", k.Codec().MustMarshalJSON(hash)))
+
 	return hash, nil
 }
 

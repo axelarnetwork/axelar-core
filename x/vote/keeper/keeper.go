@@ -24,6 +24,9 @@ const (
 	pendingVotes       = "pending"
 	votingIntervalKey  = "votingInterval"
 	votingThresholdKey = "votingThreshold"
+	pollPrefix         = "poll_"
+	talliedPrefix      = "tallied_"
+	addrPrefix         = "addr_"
 
 	// Dummy values: the values do not matter, used as markers
 	voted         byte = 0
@@ -84,24 +87,38 @@ func (k Keeper) GetVotingThreshold(ctx sdk.Context) utils.Threshold {
 // InitPoll initializes a new poll. This is the first step of the voting protocol.
 // The Keeper only accepts votes for initialized polls.
 func (k Keeper) InitPoll(ctx sdk.Context, poll exported.PollMeta) error {
-	if ctx.KVStore(k.storeKey).Has([]byte(poll.String())) {
+	if k.getPoll(ctx, poll) != nil {
 		return fmt.Errorf("poll with same name already exists")
 	}
 
 	r := k.snapshotter.GetLatestRound(ctx)
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(types.Poll{
-		Meta:                   poll,
-		ValidatorSnapshotRound: r,
-	})
-	ctx.KVStore(k.storeKey).Set([]byte(poll.String()), bz)
+	k.setPoll(ctx, types.Poll{Meta: poll, ValidatorSnapshotRound: r})
 	return nil
+}
+
+// DeletePoll deletes the specified poll.
+func (k Keeper) DeletePoll(ctx sdk.Context, poll exported.PollMeta) {
+	// delete poll
+	ctx.KVStore(k.storeKey).Delete([]byte(pollPrefix + poll.String()))
+
+	// delete tallied votes index for poll
+	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(talliedPrefix+poll.String()))
+	for ; iter.Valid(); iter.Next() {
+		ctx.KVStore(k.storeKey).Delete(iter.Key())
+	}
+
+	// delete voter index for poll
+	iter = sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(addrPrefix+poll.String()))
+	for ; iter.Valid(); iter.Next() {
+		ctx.KVStore(k.storeKey).Delete(iter.Key())
+	}
 }
 
 // RecordVote readies a vote to be broadcast to the entire network.
 // Votes are only valid if they correspond to a previously initialized poll.
 // Depending on the voting interval, multiple votes might be batched together when broadcasting.
 func (k Keeper) RecordVote(ctx sdk.Context, vote exported.MsgVote) error {
-	if !ctx.KVStore(k.storeKey).Has([]byte(vote.Poll().String())) {
+	if k.getPoll(ctx, vote.Poll()) == nil {
 		return fmt.Errorf("no poll registered with the given id")
 	}
 
@@ -240,7 +257,7 @@ func (k Keeper) setPendingVotes(votes []exported.MsgVote) {
 
 // using a pointer reference to adhere to the pattern of returning nil if value is not found
 func (k Keeper) getPoll(ctx sdk.Context, pollMeta exported.PollMeta) *types.Poll {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(pollMeta.String()))
+	bz := ctx.KVStore(k.storeKey).Get([]byte(pollPrefix + pollMeta.String()))
 	if bz == nil {
 		return nil
 	}
@@ -251,7 +268,7 @@ func (k Keeper) getPoll(ctx sdk.Context, pollMeta exported.PollMeta) *types.Poll
 }
 
 func (k Keeper) setPoll(ctx sdk.Context, poll types.Poll) {
-	ctx.KVStore(k.storeKey).Set([]byte(poll.Meta.String()), k.cdc.MustMarshalBinaryLengthPrefixed(poll))
+	ctx.KVStore(k.storeKey).Set([]byte(pollPrefix+poll.Meta.String()), k.cdc.MustMarshalBinaryLengthPrefixed(poll))
 }
 
 // To adhere to the same one-return-value pattern as the other getters return a marker value if not found
@@ -273,15 +290,15 @@ func (k Keeper) setTalliedVoteIdx(ctx sdk.Context, vote exported.MsgVote, i int)
 }
 
 func (k Keeper) getHasVoted(ctx sdk.Context, poll exported.PollMeta, address sdk.ValAddress) bool {
-	return ctx.KVStore(k.storeKey).Has(append([]byte(poll.String()), address...))
+	return ctx.KVStore(k.storeKey).Has([]byte(addrPrefix + poll.String() + address.String()))
 }
 
 func (k Keeper) setHasVoted(ctx sdk.Context, poll exported.PollMeta, address sdk.ValAddress) {
-	ctx.KVStore(k.storeKey).Set(append([]byte(poll.String()), address...), []byte{voted})
+	ctx.KVStore(k.storeKey).Set([]byte(addrPrefix+poll.String()+address.String()), []byte{voted})
 }
 
 func (k Keeper) talliedVoteKey(vote exported.MsgVote) []byte {
-	return []byte(vote.Poll().String() + k.hash(vote.Data()))
+	return []byte(talliedPrefix + vote.Poll().String() + k.hash(vote.Data()))
 }
 
 func (k Keeper) hash(data exported.VotingData) string {
