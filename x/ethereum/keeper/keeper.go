@@ -18,6 +18,7 @@ var (
 const (
 	rawKey = "raw"
 	txKey  = "utxo"
+	scKey  = "utxo"
 )
 
 type Keeper struct {
@@ -83,4 +84,16 @@ func (k Keeper) GetTX(ctx sdk.Context, txId string) (types.TX, bool) {
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &tx)
 
 	return tx, true
+}
+
+func (k Keeper) SetSmartContract(ctx sdk.Context, scId string, bytecode []byte) {
+
+	ctx.KVStore(k.storeKey).Set([]byte(scKey+scId), bytecode)
+
+}
+
+func (k Keeper) GetSmartContract(ctx sdk.Context, scId string) []byte {
+
+	return ctx.KVStore(k.storeKey).Get([]byte(txKey + scId))
+
 }

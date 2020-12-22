@@ -30,8 +30,11 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
 
-		case *types.MsgVoteVerifiedTx:
-			return handleMsgVoteVerifiedTx(ctx, v, *msg)
+		case types.MsgInstallSC:
+			return handleMsgInstallSC(ctx, k, msg)
+
+		case types.MsgVoteVerifiedTx:
+			return handleMsgVoteVerifiedTx(ctx, v, msg)
 
 		case types.MsgVerifyTx:
 			return handleMsgVerifyTx(ctx, k, rpc, v, msg)
@@ -41,6 +44,22 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
 		}
 	}
+}
+
+func handleMsgInstallSC(ctx sdk.Context, k keeper.Keeper, msg types.MsgInstallSC) (*sdk.Result, error) {
+
+	k.SetSmartContract(ctx, msg.SmartContractID, msg.Bytecode)
+
+	str := fmt.Sprintf("successfully installed smart contract for Ethereum with ID '%s'", msg.SmartContractID)
+
+	k.Logger(ctx).Info(str)
+
+	return &sdk.Result{
+		Data:   k.Codec().MustMarshalBinaryLengthPrefixed(true),
+		Log:    str,
+		Events: ctx.EventManager().Events(),
+	}, nil
+
 }
 
 func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Signer, msg types.MsgRawTx) (*sdk.Result, error) {

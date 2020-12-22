@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math/big"
+	"strings"
 
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -46,6 +48,10 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
+	ethTxCmd.AddCommand(flags.PostCommands(
+		GetCmdInstallSC(cdc),
+	)...)
+
 	mainnetCmd := makeCommand(types.Mainnet)
 	mainnetEtherCmd := makeCommand("rawTx")
 	mainnetEtherCmd.AddCommand(
@@ -54,7 +60,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 			GetCmdRawTx(types.Chain(types.Mainnet), types.TypeERC20mint, cdc))...)
 	mainnetCmd.AddCommand(
 		flags.PostCommands(
-			GetCmdVerifyTx(types.Chain(types.Mainnet), cdc), mainnetEtherCmd)...)
+			GetCmdVerifyTx(types.Chain(types.Mainnet), cdc))...)
 
 	ropstenCmd := makeCommand(types.Ropsten)
 	ropstenEtherCmd := makeCommand("rawTx")
@@ -64,7 +70,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 			GetCmdRawTx(types.Chain(types.Ropsten), types.TypeERC20mint, cdc))...)
 	ropstenCmd.AddCommand(
 		flags.PostCommands(
-			GetCmdVerifyTx(types.Chain(types.Ropsten), cdc), ropstenCmd)...)
+			GetCmdVerifyTx(types.Chain(types.Ropsten), cdc))...)
 
 	kovanCmd := makeCommand(types.Kovan)
 	kovanEtherCmd := makeCommand("rawTx")
@@ -74,7 +80,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 			GetCmdRawTx(types.Chain(types.Kovan), types.TypeERC20mint, cdc))...)
 	kovanCmd.AddCommand(
 		flags.PostCommands(
-			GetCmdVerifyTx(types.Chain(types.Kovan), cdc), kovanEtherCmd)...)
+			GetCmdVerifyTx(types.Chain(types.Kovan), cdc))...)
 
 	rinkebyCmd := makeCommand(types.Rinkeby)
 	rinkebyEtherCmd := makeCommand("rawTx")
@@ -84,7 +90,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 			GetCmdRawTx(types.Chain(types.Rinkeby), types.TypeERC20mint, cdc))...)
 	rinkebyCmd.AddCommand(
 		flags.PostCommands(
-			GetCmdVerifyTx(types.Chain(types.Rinkeby), cdc), rinkebyEtherCmd)...)
+			GetCmdVerifyTx(types.Chain(types.Rinkeby), cdc))...)
 
 	goerliCmd := makeCommand(types.Goerli)
 	goerliEtherCmd := makeCommand("rawTx")
@@ -94,7 +100,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 			GetCmdRawTx(types.Chain(types.Goerli), types.TypeERC20mint, cdc))...)
 	goerliCmd.AddCommand(
 		flags.PostCommands(
-			GetCmdVerifyTx(types.Chain(types.Goerli), cdc), goerliEtherCmd)...)
+			GetCmdVerifyTx(types.Chain(types.Goerli), cdc))...)
 
 	ethTxCmd.AddCommand(mainnetCmd, ropstenCmd, kovanCmd, rinkebyCmd, goerliCmd)
 
@@ -146,6 +152,43 @@ func GetCmdRawTx(chain types.Chain, subCmd types.TXType, cdc *codec.Codec) *cobr
 			}
 
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+func GetCmdInstallSC(cdc *codec.Codec) *cobra.Command {
+
+	return &cobra.Command{
+
+		Use:   "installSC [contract Id] [file path] ",
+		Short: "Install an ethereum smart contract in Axelar",
+
+		Args: cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
+
+			content, err := ioutil.ReadFile(args[1])
+
+			if err != nil {
+				return err
+			}
+
+			byteCode := common.FromHex(strings.TrimSuffix(string(content), "\n"))
+
+			// if this conversion fails, it may mean that it is already a binary file and not an hex string
+			if err != nil {
+
+				byteCode = content
+			}
+
+			msg := types.NewMsgInstallSC(cliCtx.GetFromAddress(), args[0], byteCode)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+
 		},
 	}
 }
