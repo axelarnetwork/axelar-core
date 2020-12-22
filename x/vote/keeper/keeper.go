@@ -16,14 +16,12 @@ import (
 	"github.com/axelarnetwork/axelar-core/store"
 	"github.com/axelarnetwork/axelar-core/utils"
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
-	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 const (
-	pendingBallotKey   = "ballot"
+	pendingVotes       = "pending"
 	votingIntervalKey  = "votingInterval"
 	votingThresholdKey = "votingThreshold"
 
@@ -37,16 +35,16 @@ type Keeper struct {
 	storeKey        sdk.StoreKey
 	cdc             *codec.Codec
 	broadcaster     types.Broadcaster
-	staker          types.Snapshotter
+	snapshotter     types.Snapshotter
 }
 
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, subjectiveStore store.SubjectiveStore, staker types.Snapshotter, broadcaster types.Broadcaster) Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, subjectiveStore store.SubjectiveStore, snapshotter types.Snapshotter, broadcaster types.Broadcaster) Keeper {
 	keeper := Keeper{
 		subjectiveStore: subjectiveStore,
 		storeKey:        key,
 		cdc:             cdc,
 		broadcaster:     broadcaster,
-		staker:          staker,
+		snapshotter:     snapshotter,
 	}
 	return keeper
 }
@@ -56,12 +54,12 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-// SetVotingInterval sets the interval in which a ballot is supposed to be broadcast
+// SetVotingInterval sets the interval in which votes are supposed to be broadcast
 func (k Keeper) SetVotingInterval(ctx sdk.Context, votingInterval int64) {
 	ctx.KVStore(k.storeKey).Set([]byte(votingIntervalKey), k.cdc.MustMarshalBinaryLengthPrefixed(votingInterval))
 }
 
-// GetVotingInterval returns the interval in which a ballot is supposed to be broadcast
+// GetVotingInterval returns the interval in which votes are supposed to be broadcast
 func (k Keeper) GetVotingInterval(ctx sdk.Context) int64 {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(votingIntervalKey))
 
@@ -90,7 +88,7 @@ func (k Keeper) InitPoll(ctx sdk.Context, poll exported.PollMeta) error {
 		return fmt.Errorf("poll with same name already exists")
 	}
 
-	r := k.staker.GetLatestRound(ctx)
+	r := k.snapshotter.GetLatestRound(ctx)
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(types.Poll{
 		Meta:                   poll,
 		ValidatorSnapshotRound: r,
@@ -99,71 +97,76 @@ func (k Keeper) InitPoll(ctx sdk.Context, poll exported.PollMeta) error {
 	return nil
 }
 
-// Vote readies a vote to be broadcast to the entire network.
+// RecordVote readies a vote to be broadcast to the entire network.
 // Votes are only valid if they correspond to a previously initialized poll.
-// Depending on the voting interval multiple votes might be batched together into a ballot before broadcasting.
-func (k Keeper) Vote(ctx sdk.Context, vote exported.MsgVote) error {
+// Depending on the voting interval, multiple votes might be batched together when broadcasting.
+func (k Keeper) RecordVote(ctx sdk.Context, vote exported.MsgVote) error {
 	if !ctx.KVStore(k.storeKey).Has([]byte(vote.Poll().String())) {
 		return fmt.Errorf("no poll registered with the given id")
 	}
 
-	ballot := k.getPendingBallot()
-	for _, prevVote := range ballot.Votes {
-		if prevVote.Poll() == vote.Poll() {
-			return fmt.Errorf(fmt.Sprintf("ballot already contains vote for poll %s", vote.Poll()))
+	votes := k.getPendingVotes()
+	for _, existingVote := range votes {
+		if existingVote.Poll() == vote.Poll() {
+			return fmt.Errorf(fmt.Sprintf("already recorded a vote for poll %s", vote.Poll()))
 		}
 	}
-	ballot.Votes = append(ballot.Votes, vote)
+	votes = append(votes, vote)
 	k.Logger(ctx).Debug(fmt.Sprintf("new vote for poll %s, data hash: %s",
 		vote.Poll().String(), k.hash(vote.Data())))
-	k.setPendingBallot(ballot)
+	k.setPendingVotes(votes)
 
 	return nil
 }
 
-// SendBallot broadcasts all unpublished votes to the entire network.
-func (k Keeper) SendBallot(ctx sdk.Context) {
-	ballot := k.getPendingBallot()
-	k.Logger(ctx).Debug(fmt.Sprintf("unpublished votes:%v", len(ballot.Votes)))
+// SendVotes broadcasts all unpublished votes to the entire network.
+func (k Keeper) SendVotes(ctx sdk.Context) {
+	votes := k.getPendingVotes()
+	k.Logger(ctx).Debug(fmt.Sprintf("unpublished votes:%v", len(votes)))
 
-	if len(ballot.Votes) == 0 {
+	if len(votes) == 0 {
 		return
 	}
 
-	// Reset ballot for the next round
-	k.setPendingBallot(types.MsgBallot{})
+	// Reset votes for the next round
+	k.setPendingVotes(nil)
 
-	// BroadcastSync is a subjective action, so it must not cause non-deterministic changes to the tx execution.
+	// Broadcast is a subjective action, so it must not cause non-deterministic changes to the tx execution.
 	// Because of this and to prevent a deadlock it needs to run in its own goroutine without any callbacks.
 	go func(logger log.Logger) {
-		err := k.broadcaster.BroadcastSync(ctx, []broadcast.MsgWithSenderSetter{&ballot})
+		var msgs []broadcast.MsgWithSenderSetter
+		for _, vote := range votes {
+			msgs = append(msgs, vote)
+		}
+
+		err := k.broadcaster.Broadcast(ctx, msgs)
 		if err != nil {
-			logger.Error(sdkerrors.Wrap(err, "broadcasting ballot failed").Error())
+			logger.Error(sdkerrors.Wrap(err, "broadcasting votes failed").Error())
 		} else {
-			logger.Debug("broadcasting ballot")
+			logger.Debug("broadcasting votes")
 		}
 	}(k.Logger(ctx))
 }
 
 // TallyVote tallies votes that have been broadcast. Each validator can only vote once per poll.
 func (k Keeper) TallyVote(ctx sdk.Context, vote exported.MsgVote) error {
+	poll := k.getPoll(ctx, vote.Poll())
+	if poll == nil {
+		return fmt.Errorf("poll does not exist or is closed")
+	}
+
 	valAddress := k.broadcaster.GetPrincipal(ctx, vote.GetSigners()[0])
 	if valAddress == nil {
 		err := fmt.Errorf("account %v is not registered as a validator proxy", vote.GetSigners()[0])
 		return err
 	}
 
-	poll := k.getPoll(ctx, vote.Poll())
-	if poll == nil {
-		return fmt.Errorf("poll does not exist or is closed")
-	}
-
-	snap, ok := k.staker.GetSnapshot(ctx, poll.ValidatorSnapshotRound)
+	snap, ok := k.snapshotter.GetSnapshot(ctx, poll.ValidatorSnapshotRound)
 	if !ok {
-		return fmt.Errorf("No snapshot found for round %d", poll.ValidatorSnapshotRound)
+		return fmt.Errorf("no snapshot found for round %d", poll.ValidatorSnapshotRound)
 	}
 
-	validator, ok := find(snap.Validators, valAddress)
+	validator, ok := snap.GetValidator(valAddress)
 	if !ok {
 		return fmt.Errorf("address %s is not eligible to vote in this poll", valAddress.String())
 	}
@@ -183,7 +186,7 @@ func (k Keeper) TallyVote(ctx sdk.Context, vote exported.MsgVote) error {
 	i := k.getTalliedVoteIdx(ctx, vote)
 	if i == indexNotFound {
 		talliedVote = types.TalliedVote{
-			Tally: sdk.NewInt(validator.Power),
+			Tally: sdk.NewInt(validator.GetConsensusPower()),
 			Data:  vote.Data(),
 		}
 
@@ -192,7 +195,7 @@ func (k Keeper) TallyVote(ctx sdk.Context, vote exported.MsgVote) error {
 	} else {
 		// this assignment copies the value, so we need to write it back into the array
 		talliedVote = poll.Votes[i]
-		talliedVote.Tally = talliedVote.Tally.AddRaw(validator.Power)
+		talliedVote.Tally = talliedVote.Tally.AddRaw(validator.GetConsensusPower())
 		poll.Votes[i] = talliedVote
 	}
 
@@ -220,19 +223,19 @@ func (k Keeper) Result(ctx sdk.Context, pollMeta exported.PollMeta) exported.Vot
 
 // Because votes may differ between nodes they need to be stored outside the regular kvstore
 // (whose hash becomes part of the Merkle tree)
-func (k Keeper) getPendingBallot() types.MsgBallot {
-	bz := k.subjectiveStore.Get([]byte(pendingBallotKey))
+func (k Keeper) getPendingVotes() []exported.MsgVote {
+	bz := k.subjectiveStore.Get([]byte(pendingVotes))
 	if bz == nil {
-		return types.MsgBallot{}
+		return nil
 	}
-	var ballot types.MsgBallot
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &ballot)
-	return ballot
+	var votes []exported.MsgVote
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &votes)
+	return votes
 }
 
-// See getPendingBallot
-func (k Keeper) setPendingBallot(ballot types.MsgBallot) {
-	k.subjectiveStore.Set([]byte(pendingBallotKey), k.cdc.MustMarshalBinaryLengthPrefixed(ballot))
+// See getPendingVotes
+func (k Keeper) setPendingVotes(votes []exported.MsgVote) {
+	k.subjectiveStore.Set([]byte(pendingVotes), k.cdc.MustMarshalBinaryLengthPrefixed(votes))
 }
 
 // using a pointer reference to adhere to the pattern of returning nil if value is not found
@@ -285,13 +288,4 @@ func (k Keeper) hash(data exported.VotingData) string {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(data)
 	h := sha256.Sum256(bz)
 	return string(h[:])
-}
-
-func find(validators []snapshot.Validator, address sdk.ValAddress) (snapshot.Validator, bool) {
-	for _, v := range validators {
-		if v.Address.Equals(address) {
-			return v, true
-		}
-	}
-	return snapshot.Validator{}, false
 }

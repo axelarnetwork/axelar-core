@@ -29,6 +29,7 @@ func Codec() *codec.Codec {
 	cdc = codec.New()
 
 	sdk.RegisterCodec(cdc)
+	codec.RegisterCrypto(cdc)
 
 	// Add new modules here so tests have access to marshalling the registered types
 	vote.RegisterCodec(cdc)

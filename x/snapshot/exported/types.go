@@ -1,14 +1,17 @@
 package exported
 
 import (
+	"bytes"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-type Validator struct {
-	Address sdk.ValAddress `json:"validators"`
-	Power   int64          `json:"power"`
+//go:generate moq -out ./mock/types.go -pkg mock . Snapshotter Validator
+
+type Validator interface {
+	GetOperator() sdk.ValAddress
+	GetConsensusPower() int64
 }
 
 type Snapshot struct {
@@ -18,8 +21,19 @@ type Snapshot struct {
 	TotalPower sdk.Int     `json:"totalpower"`
 }
 
+func (s Snapshot) GetValidator(address sdk.ValAddress) (Validator, bool) {
+	for _, validator := range s.Validators {
+		if bytes.Equal(validator.GetOperator(), address) {
+			return validator, true
+		}
+	}
+
+	return nil, false
+}
+
 type Snapshotter interface {
-	Validator(ctx sdk.Context, address sdk.ValAddress) (Validator, bool)
+	// GetValidator returns the validator with the given address. Returns false if no validator with that address exists
+	GetValidator(ctx sdk.Context, address sdk.ValAddress) (Validator, bool)
 	GetLatestSnapshot(ctx sdk.Context) (Snapshot, bool)
 	GetLatestRound(ctx sdk.Context) int64
 	GetSnapshot(ctx sdk.Context, round int64) (Snapshot, bool)
