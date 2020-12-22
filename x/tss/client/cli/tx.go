@@ -116,8 +116,8 @@ func getCmdSignStart(cdc *codec.Codec) *cobra.Command {
 		Short: "Initiate threshold signature protocol",
 		Args:  cobra.ExactArgs(1),
 	}
-	newSigID := cmd.Flags().String("new-sig-id", "", "unique ID for new signature (required)")
-	if cmd.MarkFlagRequired("new-sig-id") != nil {
+	newSigID := cmd.Flags().String("id", "", "unique ID for new signature (required)")
+	if cmd.MarkFlagRequired("id") != nil {
 		panic("flag not set")
 	}
 	keyID := cmd.Flags().String("key-id", "", "unique ID for signature pubkey")
@@ -138,16 +138,18 @@ func getCmdSignStart(cdc *codec.Codec) *cobra.Command {
 		if *keyID != "" {
 			msg = types.MsgSignStart{
 				Sender:    cliCtx.FromAddress,
-				NewSigID:  *newSigID,
+				SigID:     *newSigID,
 				KeyID:     *keyID,
 				MsgToSign: toSign,
+				Mode:      types.ModeSpecificKey,
 			}
 		} else {
-			msg = types.MsgMasterKeySignStart{
+			msg = types.MsgSignStart{
 				Sender:    cliCtx.FromAddress,
-				NewSigID:  *newSigID,
-				Chain:     *masterKey,
+				SigID:     *newSigID,
 				MsgToSign: toSign,
+				Chain:     *masterKey,
+				Mode:      types.ModeMasterKey,
 			}
 		}
 

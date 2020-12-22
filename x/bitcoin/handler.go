@@ -23,22 +23,16 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Sig
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
-		case types.MsgTrackAddress:
-			return handleMsgTrackAddress(ctx, k, rpc, msg)
-		case types.MsgTrackPubKey:
-			return handleMsgTrackPubKey(ctx, k, rpc, s, msg)
+		case types.MsgTrack:
+			return handleMsgTrack(ctx, k, s, rpc, msg)
 		case types.MsgVerifyTx:
 			return handleMsgVerifyTx(ctx, k, v, rpc, s, msg)
 		case *types.MsgVoteVerifiedTx:
 			return handleMsgVoteVerifiedTx(ctx, v, *msg)
 		case types.MsgRawTx:
-			return handleMsgRawTx(ctx, k, v, msg)
-		case types.MsgRawTxForMasterKey:
-			return handleMsgRawTxForMasterKey(ctx, k, s, v, msg)
-		case types.MsgWithdraw:
-			return handleMsgWithdraw(ctx, k, rpc, s, msg)
-		case types.MsgTransferToNewMasterKey:
-			return handleMsgTransferToNewMasterKey(ctx, k, rpc, s, msg)
+			return handleMsgRawTx(ctx, k, s, v, msg)
+		case types.MsgSendTx:
+			return handleMsgSendTx(ctx, k, rpc, s, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
@@ -54,45 +48,39 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, v types.Voter, msg types.MsgVoteVe
 	return &sdk.Result{}, nil
 }
 
-func handleMsgTrackAddress(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, msg types.MsgTrackAddress) (*sdk.Result, error) {
-	k.Logger(ctx).Debug(fmt.Sprintf("start tracking address %v", msg.Address))
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeAddress, msg.Address.String()),
-		),
-	)
-
-	trackAddress(ctx, k, rpc, msg.Address.String(), msg.Rescan)
-
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
-}
-
-func handleMsgTrackPubKey(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, msg types.MsgTrackPubKey) (*sdk.Result, error) {
-	var keyID string
-	var key ecdsa.PublicKey
-	var ok bool
-	if msg.UseMasterKey {
-		keyID = bitcoin
-		key, ok = s.GetCurrentMasterKey(ctx, bitcoin)
+func handleMsgTrack(ctx sdk.Context, k keeper.Keeper, s types.Signer, rpc types.RPCClient, msg types.MsgTrack) (*sdk.Result, error) {
+	var encodedAddr string
+	if msg.Mode == types.ModeSpecificAddress {
+		encodedAddr = msg.Address.EncodedString
 	} else {
-		keyID = msg.KeyID
-		key, ok = s.GetKey(ctx, msg.KeyID)
-	}
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("key with ID %s not found", keyID))
-	}
+		var keyID string
+		var key ecdsa.PublicKey
+		var ok bool
 
-	addr, err := pkHashFromKey(key, msg.Chain)
-	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrBitcoin, sdkerrors.Wrap(err, "could not convert the given public key into a bitcoin address").Error())
-	}
+		switch msg.Mode {
+		case types.ModeSpecificKey:
+			keyID = msg.KeyID
+			key, ok = s.GetKey(ctx, msg.KeyID)
+			if !ok {
+				return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("key with ID %s not found", keyID))
+			}
+		case types.ModeCurrentMasterKey:
+			keyID = bitcoin
+			key, ok = s.GetCurrentMasterKey(ctx, bitcoin)
+			if !ok {
+				return nil, sdkerrors.Wrap(types.ErrBitcoin, "master key not set")
+			}
+		}
 
-	encodedAddr := addr.EncodeAddress()
-	trackAddress(ctx, k, rpc, encodedAddr, false)
+		addr, err := pkHashFromKey(key, msg.Chain)
+		if err != nil {
+			return nil, sdkerrors.Wrap(types.ErrBitcoin, sdkerrors.Wrap(err, "could not convert the given public key into a bitcoin address").Error())
+		}
+
+		encodedAddr = addr.EncodeAddress()
+	}
+	k.Logger(ctx).Debug(fmt.Sprintf("start tracking address %v", encodedAddr))
+	trackAddress(ctx, k, rpc, encodedAddr, msg.Rescan)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -106,7 +94,7 @@ func handleMsgTrackPubKey(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient,
 
 	return &sdk.Result{
 		Data:   []byte(encodedAddr),
-		Log:    fmt.Sprintf("successfully created a tracked address %s", encodedAddr),
+		Log:    fmt.Sprintf("successfully tracked address %s", encodedAddr),
 		Events: ctx.EventManager().Events(),
 	}, nil
 }
@@ -130,16 +118,16 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 		),
 	)
 
-	if msg.UseCurrentMasterKey || msg.UseNextMasterKey {
+	if msg.Mode != types.ModeSpecificAddress {
 		var key ecdsa.PublicKey
 		var ok bool
-		if msg.UseCurrentMasterKey {
+		switch msg.Mode {
+		case types.ModeCurrentMasterKey:
 			key, ok = s.GetCurrentMasterKey(ctx, bitcoin)
 			if !ok {
 				return nil, sdkerrors.Wrap(types.ErrBitcoin, "no current master key assigned")
 			}
-		}
-		if msg.UseNextMasterKey {
+		case types.ModeNextMasterKey:
 			key, ok = s.GetNextMasterKey(ctx, bitcoin)
 			if !ok {
 				return nil, sdkerrors.Wrap(types.ErrBitcoin, "no next master key assigned")
@@ -147,13 +135,14 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 		}
 		addr, err := pkHashFromKey(key, msg.Chain)
 		if err != nil {
-			return nil, sdkerrors.Wrap(types.ErrBitcoin, "could not derive Bitcoin address from next master key")
+			return nil, sdkerrors.Wrap(types.ErrBitcoin, "could not derive Bitcoin address next master key")
 		}
 		msg.UTXO.Address = types.BtcAddress{
 			Chain:         msg.Chain,
 			EncodedString: addr.EncodeAddress(),
 		}
 	}
+
 	k.SetUTXO(ctx, txId, msg.UTXO)
 
 	/*
@@ -194,45 +183,23 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 	}
 }
 
-func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.MsgRawTx) (*sdk.Result, error) {
+func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, v types.Voter, msg types.MsgRawTx) (*sdk.Result, error) {
 	txId := msg.TxHash.String()
-	// msg.ValidateBasic will be called before the handler, so there is no way we have a malformed address here
-	destination, _ := msg.Destination.Convert()
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeTxId, txId),
-			sdk.NewAttribute(types.AttributeAmount, msg.Amount.String()),
-			sdk.NewAttribute(types.AttributeDestination, msg.Destination.String()),
-		),
-	)
-
-	if isTxVerified(ctx, v, txId) {
-		return nil, fmt.Errorf("transaction not verified")
-	}
-	if hash, err := createRawTx(ctx, k, txId, destination, int64(msg.Amount)); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
-	} else {
-		return &sdk.Result{
-			Data:   hash,
-			Log:    fmt.Sprintf("successfully created withdraw transaction for Bitcoin. Hash to sign: %s", k.Codec().MustMarshalJSON(hash)),
-			Events: ctx.EventManager().Events(),
-		}, nil
-	}
-}
-
-func handleMsgRawTxForMasterKey(ctx sdk.Context, k keeper.Keeper, s types.Signer, v types.Voter, msg types.MsgRawTxForMasterKey) (*sdk.Result, error) {
-	txId := msg.TxHash.String()
-	pk, ok := s.GetNextMasterKey(ctx, bitcoin)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrBitcoin, "next master key not set")
-	}
-	destination, err := pkHashFromKey(pk, msg.Chain)
-	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrBitcoin, "could not create bitcoin address from master key")
+	var destination btcutil.Address
+	var err error
+	switch msg.Mode {
+	case types.ModeSpecificAddress:
+		// msg.ValidateBasic will be called before the handler, so there is no way we have a malformed address here
+		destination, _ = msg.Destination.Convert()
+	case types.ModeNextMasterKey:
+		pk, ok := s.GetNextMasterKey(ctx, bitcoin)
+		if !ok {
+			return nil, sdkerrors.Wrap(types.ErrBitcoin, "next master key not set")
+		}
+		destination, err = pkHashFromKey(pk, msg.Chain)
+		if err != nil {
+			return nil, sdkerrors.Wrap(types.ErrBitcoin, "could not create bitcoin address from master key")
+		}
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -247,49 +214,36 @@ func handleMsgRawTxForMasterKey(ctx sdk.Context, k keeper.Keeper, s types.Signer
 	)
 
 	if isTxVerified(ctx, v, txId) {
-		return nil, sdkerrors.Wrap(types.ErrBitcoin, "transaction not verified")
+		return nil, fmt.Errorf("transaction not verified")
 	}
 	if hash, err := createRawTx(ctx, k, txId, destination, int64(msg.Amount)); err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	} else {
 		return &sdk.Result{
 			Data:   hash,
-			Log:    fmt.Sprintf("successfully created withdraw transaction for Bitcoin. Hash to sign: %s", k.Codec().MustMarshalJSON(hash)),
+			Log:    fmt.Sprintf("successfully created an unsigned transaction for Bitcoin. Hash to sign: %s", k.Codec().MustMarshalJSON(hash)),
 			Events: ctx.EventManager().Events(),
 		}, nil
 	}
 }
 
-func handleMsgWithdraw(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, msg types.MsgWithdraw) (*sdk.Result, error) {
-	pk, ok := s.GetKey(ctx, msg.KeyID)
+func handleMsgSendTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, msg types.MsgSendTx) (*sdk.Result, error) {
+	pk, ok := s.GetKeyForSigID(ctx, msg.SignatureID)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrBitcoin, "key not found")
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("could not find a corresponding key for sig ID %s", msg.SignatureID))
 	}
 
-	return sendTxToBitcoin(ctx, k, rpc, s, msg.Sender, msg.TxID, msg.SignatureID, pk)
-}
-
-func handleMsgTransferToNewMasterKey(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, msg types.MsgTransferToNewMasterKey) (*sdk.Result, error) {
-	pk, ok := s.GetCurrentMasterKey(ctx, bitcoin)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrBitcoin, "key not found")
-	}
-
-	return sendTxToBitcoin(ctx, k, rpc, s, msg.Sender, msg.TxID, msg.SignatureID, pk)
-}
-
-func sendTxToBitcoin(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, sender sdk.AccAddress, txID string, sigID string, pk ecdsa.PublicKey) (*sdk.Result, error) {
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-			sdk.NewAttribute(sdk.AttributeKeySender, sender.String()),
-			sdk.NewAttribute(types.AttributeTxId, txID),
-			sdk.NewAttribute(types.AttributeSigId, sigID),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+			sdk.NewAttribute(types.AttributeTxId, msg.TxID),
+			sdk.NewAttribute(types.AttributeSigId, msg.SignatureID),
 		),
 	)
 
-	rawTx, err := assembleBtcTx(ctx, k, s, txID, sigID, pk)
+	rawTx, err := assembleBtcTx(ctx, k, s, msg.TxID, msg.TxID, pk)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
@@ -377,7 +331,6 @@ func getPkScript(ctx sdk.Context, k keeper.Keeper, txId string) ([]byte, error) 
 }
 
 func trackAddress(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, address string, rescan bool) {
-
 	// Importing an address takes a long time, therefore it cannot be done in the critical path
 	go func(logger log.Logger) {
 		if rescan {

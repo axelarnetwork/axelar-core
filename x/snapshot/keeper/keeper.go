@@ -141,6 +141,7 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, nextRound int64) {
 		Timestamp:  ctx.BlockTime(),
 		Height:     ctx.BlockHeight(),
 		TotalPower: k.staking.GetLastTotalPower(ctx),
+		Round:      nextRound,
 	}
 
 	ctx.KVStore(k.storeKey).Set(roundKey(nextRound), k.cdc.MustMarshalBinaryLengthPrefixed(snapshot))

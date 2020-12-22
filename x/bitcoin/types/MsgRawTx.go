@@ -14,6 +14,8 @@ type MsgRawTx struct {
 	TxHash      *chainhash.Hash
 	Amount      btcutil.Amount
 	Destination BtcAddress
+	Chain       Chain
+	Mode        int
 }
 
 func NewMsgRawTx(sender sdk.AccAddress, txHash *chainhash.Hash, amount btcutil.Amount, destination BtcAddress) sdk.Msg {
@@ -22,6 +24,17 @@ func NewMsgRawTx(sender sdk.AccAddress, txHash *chainhash.Hash, amount btcutil.A
 		TxHash:      txHash,
 		Amount:      amount,
 		Destination: destination,
+		Mode:        ModeSpecificAddress,
+	}
+}
+
+func NewMsgRawTxForNextMasterKey(sender sdk.AccAddress, chain Chain, txHash *chainhash.Hash, amount btcutil.Amount) sdk.Msg {
+	return MsgRawTx{
+		Sender: sender,
+		TxHash: txHash,
+		Amount: amount,
+		Chain:  chain,
+		Mode:   ModeNextMasterKey,
 	}
 }
 
@@ -43,8 +56,16 @@ func (msg MsgRawTx) ValidateBasic() error {
 	if msg.Amount <= 0 {
 		return fmt.Errorf("transaction amount must be greater than zero")
 	}
-	if err := msg.Destination.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid destination")
+
+	switch msg.Mode {
+	case ModeSpecificAddress:
+		if err := msg.Destination.Validate(); err != nil {
+			return sdkerrors.Wrap(err, "invalid destination")
+		}
+	case ModeNextMasterKey:
+		return msg.Chain.Validate()
+	default:
+		return fmt.Errorf("chosen mode not recognized")
 	}
 
 	return nil

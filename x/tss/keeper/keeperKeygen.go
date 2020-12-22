@@ -15,18 +15,12 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
-const (
-	rotationPrefix    = "round_"
-	keygenStartHeight = "blockHeight_"
-	pkPrefix          = "pk_"
-)
-
 // StartKeygen starts a keygen protocol with the specified parameters
-func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, validators []snapshot.Validator) (<-chan ecdsa.PublicKey, error) {
+func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, snapshot snapshot.Snapshot) (<-chan ecdsa.PublicKey, error) {
 	// BEGIN: validity check
 
 	// keygen cannot proceed unless all validators have registered broadcast proxies
-	if err := k.checkProxies(ctx, validators); err != nil {
+	if err := k.checkProxies(ctx, snapshot.Validators); err != nil {
 		return nil, err
 	}
 
@@ -39,8 +33,10 @@ func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, valida
 		so do not return an error but simply close the result channel
 	*/
 
-	// store block height for this key gen to be able to verify later if the produced key is allowed as a master key
+	// store block height for this keygen to be able to verify later if the produced key is allowed as a master key
 	k.setKeygenStart(ctx, keyID)
+	// store snapshot round to be able to look up the correct validator set when signing with this key
+	k.setSnapshotRoundForKeyID(ctx, keyID, snapshot.Round)
 
 	k.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d]", keyID, threshold))
 
@@ -50,7 +46,7 @@ func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, valida
 		return pubkeyChan, nil
 	}
 
-	stream, keygenInit := k.prepareKeygen(ctx, keyID, threshold, validators)
+	stream, keygenInit := k.prepareKeygen(ctx, keyID, threshold, snapshot.Validators)
 	k.keygenStreams[keyID] = stream
 	if stream == nil || keygenInit == nil {
 		close(pubkeyChan)
@@ -287,4 +283,26 @@ func (k Keeper) getLatestMasterKeyHeight(ctx sdk.Context, chain string) int64 {
 		return 0
 	}
 	return height
+}
+
+func (k Keeper) setSnapshotRoundForKeyID(ctx sdk.Context, keyID string, round int64) {
+	ctx.KVStore(k.storeKey).Set([]byte(snapshotForKeyIDPrefix+keyID), k.cdc.MustMarshalBinaryBare(round))
+}
+
+func (k Keeper) GetSnapshotRoundForKeyID(ctx sdk.Context, keyID string) (int64, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(snapshotForKeyIDPrefix + keyID))
+	if bz == nil {
+		return 0, false
+	}
+	var round int64
+	k.cdc.MustUnmarshalBinaryBare(bz, &round)
+	return round, true
+}
+
+func (k Keeper) GetCurrentMasterKeyID(ctx sdk.Context, chain string) (string, bool) {
+	keyID := k.getPreviousMasterKeyId(ctx, chain, 0)
+	if keyID == nil {
+		return "", false
+	}
+	return string(keyID), true
 }

@@ -7,31 +7,29 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-type MsgWithdraw struct {
+type MsgSendTx struct {
 	Sender      sdk.AccAddress
 	TxID        string
 	SignatureID string
-	KeyID       string
 }
 
-func NewMsgWithdraw(sender sdk.AccAddress, txId string, sigId string, keyId string) sdk.Msg {
-	return MsgWithdraw{
+func NewMsgSendTx(sender sdk.AccAddress, txId string, sigId string) sdk.Msg {
+	return MsgSendTx{
 		Sender:      sender,
 		TxID:        txId,
 		SignatureID: sigId,
-		KeyID:       keyId,
 	}
 }
 
-func (msg MsgWithdraw) Route() string {
+func (msg MsgSendTx) Route() string {
 	return RouterKey
 }
 
-func (msg MsgWithdraw) Type() string {
+func (msg MsgSendTx) Type() string {
 	return "Withdraw"
 }
 
-func (msg MsgWithdraw) ValidateBasic() error {
+func (msg MsgSendTx) ValidateBasic() error {
 	if msg.Sender.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
@@ -41,18 +39,15 @@ func (msg MsgWithdraw) ValidateBasic() error {
 	if msg.SignatureID == "" {
 		return fmt.Errorf("missing signature ID")
 	}
-	if msg.KeyID == "" {
-		return fmt.Errorf("missing key ID")
-	}
 
 	return nil
 }
 
-func (msg MsgWithdraw) GetSignBytes() []byte {
+func (msg MsgSendTx) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
-func (msg MsgWithdraw) GetSigners() []sdk.AccAddress {
+func (msg MsgSendTx) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }
