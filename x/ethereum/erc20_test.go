@@ -80,8 +80,7 @@ func TestGanache(t *testing.T) {
 	_, err := client.NetworkID(context.Background())
 
 	if err != nil {
-		t.Error(err)
-		t.Logf("Ganache not running, skipping this test")
+		t.Logf("Ganache not running, skipping this test (error: %v)", err)
 		t.SkipNow()
 	}
 

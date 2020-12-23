@@ -101,14 +101,14 @@ func (k Keeper) GetSmartContract(ctx sdk.Context, scId string) []byte {
 
 }
 
-func (k Keeper) GetTxIDForContractID(ctx sdk.Context, contractID string) (common.Hash, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(txIDForSCPrefix + contractID))
+func (k Keeper) GetTxIDForContractID(ctx sdk.Context, contractID string, networkID types.Network) (common.Hash, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(txIDForSCPrefix + contractID + string(networkID)))
 	if bz == nil {
 		return common.Hash{}, false
 	}
 	return common.BytesToHash(bz), true
 }
 
-func (k Keeper) SetTxIDForContractID(ctx sdk.Context, contractID string, txID common.Hash) {
-	ctx.KVStore(k.storeKey).Set([]byte(txIDForSCPrefix+contractID), txID.Bytes())
+func (k Keeper) SetTxIDForContractID(ctx sdk.Context, contractID string, networkID types.Network, txID common.Hash) {
+	ctx.KVStore(k.storeKey).Set([]byte(txIDForSCPrefix+contractID+string(networkID)), txID.Bytes())
 }

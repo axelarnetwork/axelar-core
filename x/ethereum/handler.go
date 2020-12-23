@@ -66,16 +66,8 @@ func handleMsgInstallSC(ctx sdk.Context, k keeper.Keeper, msg types.MsgInstallSC
 }
 
 func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Signer, msg types.MsgRawTx) (*sdk.Result, error) {
-	verifiedTxID, ok := k.GetTxIDForContractID(ctx, msg.ContractID)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, "contract ID unknown")
-	}
 
-	if isVerified(ctx, v, exported.PollMeta{Module: types.ModuleName, Type: types.MsgVerifyTx{}.Type(), ID: verifiedTxID.String()}) {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("contract not deployed yet"))
-	}
-
-	tx, err := createTransaction(ctx, rpc, s, msg.Destination, msg.Amount.BigInt(), k.GetSmartContract(ctx, msg.ContractID), msg.TXType)
+	tx, err := createTransaction(ctx, rpc, s, k, v, msg)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not create ethereum transaction: %s", err))
 	}
@@ -134,7 +126,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, rpc typ
 	}
 
 	if msg.TxType == types.TypeSCDeploy {
-		k.SetTxIDForContractID(ctx, msg.Tx.ContractID, msg.Tx.Hash)
+		k.SetTxIDForContractID(ctx, msg.Tx.ContractID, msg.Tx.Network, msg.Tx.Hash)
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -251,7 +243,7 @@ func verifyTx(ctx sdk.Context, rpc types.RPCClient, k keeper.Keeper, msg types.M
 	https://medium.com/coinmonks/web3-go-part-1-31c68c68e20e
 	https://goethereumbook.org/en/transaction-raw-create/
 */
-func createTransaction(ctx sdk.Context, rpc types.RPCClient, s types.Signer, toAddress common.Address, amount *big.Int, byteCode []byte, txType types.TXType) (*ethTypes.Transaction, error) {
+func createTransaction(ctx sdk.Context, rpc types.RPCClient, s types.Signer, k keeper.Keeper, v types.Voter, msg types.MsgRawTx) (*ethTypes.Transaction, error) {
 
 	pk, ok := s.GetCurrentMasterKey(ctx, ethereum)
 	if !ok {
@@ -260,16 +252,28 @@ func createTransaction(ctx sdk.Context, rpc types.RPCClient, s types.Signer, toA
 
 	fromAddress := crypto.PubkeyToAddress(pk)
 
-	switch txType {
+	switch msg.TXType {
 
 	case types.TypeERC20mint:
 
-		contractAddress := common.BytesToAddress(byteCode)
-		return createMintTransaction(rpc, fromAddress, contractAddress, toAddress, gasLimit, amount)
+		hash, err := verifyContract(ctx, k, v, msg.ContractID, msg.Network)
+		if err != nil {
+			return nil, sdkerrors.Wrapf(types.ErrEthereum, "could not verify contract transaction: %v", err)
+		}
+
+		receipt, err := rpc.TransactionReceipt(context.Background(), *hash)
+		if err != nil {
+			return nil, sdkerrors.Wrapf(types.ErrEthereum, "could not obtain receipt: %v", err)
+		}
+
+		contractAddress := receipt.ContractAddress
+		return createMintTransaction(rpc, fromAddress, contractAddress, msg.Destination, gasLimit, msg.Amount.BigInt())
 
 	case types.TypeSCDeploy:
 
-		return createDeploySCTransaction(rpc, fromAddress, gasLimit, byteCode)
+		byteCodes := k.GetSmartContract(ctx, msg.ContractID)
+
+		return createDeploySCTransaction(rpc, fromAddress, gasLimit, byteCodes)
 
 	default:
 
@@ -366,4 +370,17 @@ func createMintCallData(toAddr common.Address, amount *big.Int) []byte {
 	data = append(data, common.FromHex(paddedAddr)...)
 	data = append(data, common.FromHex(paddedVal)...)
 	return data
+}
+
+func verifyContract(ctx sdk.Context, k keeper.Keeper, v types.Voter, contractID string, networkID types.Network) (*common.Hash, error) {
+	verifiedTxID, ok := k.GetTxIDForContractID(ctx, contractID, networkID)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, "contract ID unknown")
+	}
+
+	if isVerified(ctx, v, exported.PollMeta{Module: types.ModuleName, Type: types.MsgVerifyTx{}.Type(), ID: verifiedTxID.String()}) {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("contract not deployed yet"))
+	}
+
+	return &verifiedTxID, nil
 }

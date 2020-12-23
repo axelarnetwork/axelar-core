@@ -15,8 +15,11 @@ const (
 	Mainnet = "mainnet"
 	Ropsten = "ropsten"
 	Kovan   = "kovan"
-	Rinkeby = "rinkby"
+	Rinkeby = "rinkeby"
 	Goerli  = "goerli"
+
+	// Ganache is a local testnet
+	Ganache = "ganache"
 
 	erc20Mint = "mint(address,uint256)"
 )
@@ -43,15 +46,16 @@ type Network string
 // Validate checks if the object is a valid network
 func (n Network) Validate() error {
 	switch string(n) {
-	case Mainnet, Ropsten, Kovan, Rinkeby, Goerli:
+	case Mainnet, Ropsten, Kovan, Rinkeby, Goerli, Ganache:
 		return nil
 	default:
-		return fmt.Errorf("network could not be parsed, choose %s, %s, %s, %s or %s",
+		return fmt.Errorf("network could not be parsed, choose %s, %s, %s, %s, %s or %s",
 			Mainnet,
 			Ropsten,
 			Kovan,
 			Rinkeby,
 			Goerli,
+			Ganache,
 		)
 	}
 }

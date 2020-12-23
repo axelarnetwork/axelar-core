@@ -31,7 +31,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 	ethTxCmd.AddCommand(flags.PostCommands(GetCmdInstallSC(cdc))...)
 
-	nets := []types.Network{types.Mainnet, types.Ropsten, types.Kovan, types.Rinkeby, types.Goerli}
+	nets := []types.Network{types.Mainnet, types.Ropsten, types.Kovan, types.Rinkeby, types.Goerli, types.Ganache}
 	for _, net := range nets {
 		rawTxCmd := makeCommand("raw")
 		rawTxCmd.AddCommand(flags.PostCommands(GetCmdDeploy(net, cdc), GetCmdMint(net, cdc))...)
@@ -168,7 +168,7 @@ func GetCmdVerifyMintTx(network types.Network, cdc *codec.Codec) *cobra.Command 
 
 func GetCmdVerifyDeployTx(network types.Network, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "deploy [txID] [contractID] ",
+		Use:   "deploy [tx hash] [contract ID] ",
 		Short: "Verify an Ethereum transaction",
 
 		Args: cobra.ExactArgs(2),
