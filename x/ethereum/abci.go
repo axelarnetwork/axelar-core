@@ -1,4 +1,4 @@
-package eth_bridge
+package ethereum
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"

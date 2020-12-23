@@ -1,4 +1,4 @@
-package eth_bridge
+package ethereum
 
 import (
 	"context"
@@ -85,7 +85,7 @@ func TestGanache(t *testing.T) {
 	_, err := client.NetworkID(context.Background())
 
 	if err != nil {
-
+		t.Error(err)
 		t.Logf("Ganache not running, skipping this test")
 		t.SkipNow()
 	}

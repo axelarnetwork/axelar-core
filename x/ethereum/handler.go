@@ -1,4 +1,4 @@
-package eth_bridge
+package ethereum
 
 import (
 	"bytes"
