@@ -71,6 +71,56 @@ func TestERC20Marshal(t *testing.T) {
 
 }
 
+type testECDSA struct {
+	V, R, S *big.Int
+}
+
+func TestSig(t *testing.T) {
+
+	wallet, err := hdwallet.NewFromMnemonic(mnemonic)
+	assert.NoError(t, err)
+
+	path := hdwallet.MustParseDerivationPath("m/44'/60'/0'/0/0")
+	account, err := wallet.Derive(path, false)
+	assert.NoError(t, err)
+
+	addr := account.Address
+
+	privateKey, err := wallet.PrivateKey(account)
+	assert.NoError(t, err)
+
+	tx1 := ethTypes.NewTransaction(0, addr, big.NewInt(0), 0, big.NewInt(0), make([]byte, 0))
+	tx2 := ethTypes.NewTransaction(0, addr, big.NewInt(0), 0, big.NewInt(0), make([]byte, 0))
+
+	signer := ethTypes.NewEIP155Signer(big.NewInt(0))
+
+	signedTx1, err := ethTypes.SignTx(tx1, signer, privateKey)
+	assert.NoError(t, err)
+
+	V1, R1, S1 := signedTx1.RawSignatureValues()
+
+	values1 := testECDSA{
+		V: V1,
+		R: R1,
+		S: S1,
+	}
+
+	sig := encodeSig(R1, S1)
+
+	signedTx2, err := tx2.WithSignature(signer, sig)
+	assert.NoError(t, err)
+
+	V2, R2, S2 := signedTx2.RawSignatureValues()
+
+	values2 := testECDSA{
+		V: V2,
+		R: R2,
+		S: S2,
+	}
+
+	assert.Equal(t, values1, values2)
+}
+
 // This test deploys an ERC20 mintable contract and mints tokens for a predetermined wallet.
 // It requires ganache to be executing and initialized with the `mnemonic` constant.
 // If ganache is not running, the test is skipped

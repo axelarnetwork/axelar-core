@@ -384,3 +384,15 @@ func verifyContract(ctx sdk.Context, k keeper.Keeper, v types.Voter, contractID 
 
 	return &verifiedTxID, nil
 }
+
+func encodeSig(R, S *big.Int) []byte {
+
+	var sig []byte
+
+	sig = append(sig, common.LeftPadBytes(R.Bytes(), 32)...)
+	sig = append(sig, common.LeftPadBytes(S.Bytes(), 32)...)
+	sig = append(sig, make([]byte, 1)...)
+	sig[64] = 1
+
+	return sig
+}
