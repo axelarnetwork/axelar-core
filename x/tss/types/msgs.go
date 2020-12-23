@@ -13,9 +13,11 @@ import (
 )
 
 const (
-	ModeSpecificKey int = iota
+	ModeSpecificKey Mode = iota
 	ModeMasterKey
 )
+
+type Mode int
 
 // golang stupidity: ensure interface compliance at compile time
 var (
@@ -88,7 +90,7 @@ type MsgSignStart struct {
 	KeyID     string
 	Chain     string
 	MsgToSign []byte
-	Mode      int
+	Mode      Mode
 }
 
 // Route implements the sdk.Msg interface.

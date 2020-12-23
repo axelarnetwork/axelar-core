@@ -9,7 +9,7 @@ import (
 
 type MsgTrack struct {
 	Sender  sdk.AccAddress
-	Mode    int
+	Mode    Mode
 	Address BtcAddress
 	KeyID   string
 	Chain   Chain
@@ -61,6 +61,7 @@ func (msg MsgTrack) ValidateBasic() error {
 		if msg.KeyID == "" {
 			return fmt.Errorf("missing public key ID")
 		}
+		fallthrough
 	case ModeCurrentMasterKey:
 		if err := msg.Chain.Validate(); err != nil {
 			return err

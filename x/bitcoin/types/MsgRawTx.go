@@ -15,7 +15,7 @@ type MsgRawTx struct {
 	Amount      btcutil.Amount
 	Destination BtcAddress
 	Chain       Chain
-	Mode        int
+	Mode        Mode
 }
 
 func NewMsgRawTx(sender sdk.AccAddress, txHash *chainhash.Hash, amount btcutil.Amount, destination BtcAddress) sdk.Msg {

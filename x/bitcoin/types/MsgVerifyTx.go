@@ -12,7 +12,7 @@ import (
 type MsgVerifyTx struct {
 	Sender sdk.AccAddress
 	UTXO   UTXO
-	Mode   int
+	Mode   Mode
 	Chain  Chain
 }
 
@@ -29,7 +29,7 @@ func NewMsgVerifyTx(sender sdk.AccAddress, txHash *chainhash.Hash, voutIdx uint3
 	}
 }
 
-func NewMsgVerifyTxForMasterKey(sender sdk.AccAddress, txHash *chainhash.Hash, voutIdx uint32, amount btcutil.Amount, mode int, chain Chain) sdk.Msg {
+func NewMsgVerifyTxForMasterKey(sender sdk.AccAddress, txHash *chainhash.Hash, voutIdx uint32, amount btcutil.Amount, mode Mode, chain Chain) sdk.Msg {
 	return MsgVerifyTx{
 		Sender: sender,
 		UTXO: UTXO{
