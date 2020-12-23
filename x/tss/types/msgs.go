@@ -12,11 +12,17 @@ import (
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
+const (
+	ModeSpecificKey Mode = iota
+	ModeMasterKey
+)
+
+type Mode int
+
 // golang stupidity: ensure interface compliance at compile time
 var (
 	_ sdk.Msg                       = &MsgKeygenStart{}
 	_ sdk.Msg                       = &MsgSignStart{}
-	_ sdk.Msg                       = &MsgMasterKeySignStart{}
 	_ sdk.Msg                       = MsgAssignNextMasterKey{}
 	_ broadcast.MsgWithSenderSetter = &MsgKeygenTraffic{}
 	_ broadcast.MsgWithSenderSetter = &MsgSignTraffic{}
@@ -28,14 +34,6 @@ type MsgKeygenStart struct {
 	Sender    sdk.AccAddress
 	NewKeyID  string
 	Threshold int
-}
-
-// MsgSignStart indicate the start of sign
-type MsgSignStart struct {
-	Sender    sdk.AccAddress
-	NewSigID  string
-	KeyID     string
-	MsgToSign []byte
 }
 
 // MsgKeygenTraffic protocol message
@@ -57,7 +55,7 @@ func (msg MsgKeygenStart) Route() string { return RouterKey }
 
 // Type implements the sdk.Msg interface.
 // naming convention follows x/staking/types/msgs.go
-func (msg MsgKeygenStart) Type() string { return "keygen_start" }
+func (msg MsgKeygenStart) Type() string { return "KeyGenStart" }
 
 // ValidateBasic implements the sdk.Msg interface.
 func (msg MsgKeygenStart) ValidateBasic() error {
@@ -85,28 +83,48 @@ func (msg MsgKeygenStart) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }
 
+// MsgSignStart indicate the start of sign
+type MsgSignStart struct {
+	Sender    sdk.AccAddress
+	SigID     string
+	KeyID     string
+	Chain     string
+	MsgToSign []byte
+	Mode      Mode
+}
+
 // Route implements the sdk.Msg interface.
 func (msg MsgSignStart) Route() string { return RouterKey }
 
 // Type implements the sdk.Msg interface.
 // naming convention follows x/staking/types/msgs.go
-func (msg MsgSignStart) Type() string { return "sign_start" }
+func (msg MsgSignStart) Type() string { return "SignStart" }
 
 // ValidateBasic implements the sdk.Msg interface.
 func (msg MsgSignStart) ValidateBasic() error {
 	if msg.Sender == nil {
 		return sdkerrors.Wrap(ErrTss, "sender must be set")
 	}
-	if msg.NewSigID == "" {
+	if msg.SigID == "" {
 		return sdkerrors.Wrap(ErrTss, "new sig id must be set")
-	}
-	if msg.KeyID == "" {
-		return sdkerrors.Wrap(ErrTss, "key id must be set")
 	}
 	if msg.MsgToSign == nil {
 		return sdkerrors.Wrap(ErrTss, "msg must be set")
 	}
-	// TODO enforce a maximum length for msg.NewSigID?
+
+	switch msg.Mode {
+	case ModeSpecificKey:
+		if msg.KeyID == "" {
+			return sdkerrors.Wrap(ErrTss, "key id must be set")
+		}
+	case ModeMasterKey:
+		if msg.Chain == "" {
+			return sdkerrors.Wrap(ErrTss, "chain must be set")
+		}
+	}
+
+	// TODO enforce a maximum length for msg.SigID?
+
 	return nil
 }
 
@@ -126,7 +144,7 @@ func (msg MsgKeygenTraffic) Route() string { return RouterKey }
 
 // Type implements the sdk.Msg interface.
 // naming convention follows x/staking/types/msgs.go
-func (msg MsgKeygenTraffic) Type() string { return "in" }
+func (msg MsgKeygenTraffic) Type() string { return "KeygenTraffic" }
 
 // ValidateBasic implements the sdk.Msg interface.
 func (msg MsgKeygenTraffic) ValidateBasic() error {
@@ -167,7 +185,7 @@ func (msg MsgSignTraffic) Route() string { return RouterKey }
 
 // Type implements the sdk.Msg interface.
 // naming convention follows x/staking/types/msgs.go
-func (msg MsgSignTraffic) Type() string { return "in" }
+func (msg MsgSignTraffic) Type() string { return "SignTraffic" }
 
 // ValidateBasic implements the sdk.Msg interface.
 func (msg MsgSignTraffic) ValidateBasic() error {
@@ -210,7 +228,7 @@ type MsgAssignNextMasterKey struct {
 }
 
 func (msg MsgAssignNextMasterKey) Route() string { return RouterKey }
-func (msg MsgAssignNextMasterKey) Type() string  { return "MasterKeyRefresh" }
+func (msg MsgAssignNextMasterKey) Type() string  { return "AssignNextMasterKey" }
 
 func (msg MsgAssignNextMasterKey) ValidateBasic() error {
 	if msg.Sender == nil {
@@ -246,7 +264,7 @@ func (msg MsgVotePubKey) Route() string {
 }
 
 func (msg MsgVotePubKey) Type() string {
-	return "MsgVotePubKey"
+	return "VotePubKey"
 }
 
 func (msg MsgVotePubKey) ValidateBasic() error {
@@ -295,7 +313,7 @@ func (msg MsgVoteSig) Route() string {
 }
 
 func (msg MsgVoteSig) Type() string {
-	return "MsgVoteSig"
+	return "VoteSig"
 }
 
 func (msg MsgVoteSig) ValidateBasic() error {
@@ -342,7 +360,7 @@ func (msg MsgRotateMasterKey) Route() string {
 }
 
 func (msg MsgRotateMasterKey) Type() string {
-	return "MsgRotateMasterKey"
+	return "RotateMasterKey"
 }
 
 func (msg MsgRotateMasterKey) ValidateBasic() error {
@@ -362,47 +380,5 @@ func (msg MsgRotateMasterKey) GetSignBytes() []byte {
 }
 
 func (msg MsgRotateMasterKey) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Sender}
-}
-
-type MsgMasterKeySignStart struct {
-	Sender    sdk.AccAddress
-	NewSigID  string
-	Chain     string
-	MsgToSign []byte
-}
-
-func (msg MsgMasterKeySignStart) Route() string {
-	return RouterKey
-}
-
-func (msg MsgMasterKeySignStart) Type() string {
-	return "MsgMasterKeySignStart"
-}
-
-// ValidateBasic implements the sdk.Msg interface.
-func (msg MsgMasterKeySignStart) ValidateBasic() error {
-	if msg.Sender == nil {
-		return sdkerrors.Wrap(ErrTss, "sender must be set")
-	}
-	if msg.NewSigID == "" {
-		return sdkerrors.Wrap(ErrTss, "new sig id must be set")
-	}
-	if msg.Chain == "" {
-		return sdkerrors.Wrap(ErrTss, "chain must be set")
-	}
-	if msg.MsgToSign == nil {
-		return sdkerrors.Wrap(ErrTss, "msg must be set")
-	}
-	// TODO enforce a maximum length for msg.NewSigID?
-	return nil
-}
-
-func (msg MsgMasterKeySignStart) GetSignBytes() []byte {
-	bz := ModuleCdc.MustMarshalJSON(msg)
-	return sdk.MustSortJSON(bz)
-}
-
-func (msg MsgMasterKeySignStart) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }

@@ -30,7 +30,7 @@ func (msg MsgVoteVerifiedTx) Route() string {
 }
 
 func (msg MsgVoteVerifiedTx) Type() string {
-	return "MsgVoteVerifiedTx"
+	return "VoteVerifiedTx"
 }
 
 func (msg MsgVoteVerifiedTx) ValidateBasic() error {

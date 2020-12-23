@@ -68,7 +68,7 @@ func addSubCommands(command *cobra.Command, chain types.Chain, cdc *codec.Codec)
 		flags.PostCommands(
 			GetCmdVerifyTx(chain, cdc),
 			GetCmdRawTx(chain, cdc),
-			GetCmdWithdraw(cdc))...)
+			GetCmdSend(cdc))...)
 	command.AddCommand(cmds...)
 }
 
@@ -185,9 +185,9 @@ func GetCmdVerifyTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 
 			var msg sdk.Msg
 			if useCurrentMasterKey {
-				msg = types.NewMsgVerifyTxForCurrentMasterKey(cliCtx.GetFromAddress(), hash, voutIdx, amount, chain)
+				msg = types.NewMsgVerifyTxForMasterKey(cliCtx.GetFromAddress(), hash, voutIdx, amount, types.ModeCurrentMasterKey, chain)
 			} else if useNextMasterKey {
-				msg = types.NewMsgVerifyTxForNextMasterKey(cliCtx.GetFromAddress(), hash, voutIdx, amount, chain)
+				msg = types.NewMsgVerifyTxForMasterKey(cliCtx.GetFromAddress(), hash, voutIdx, amount, types.ModeNextMasterKey, chain)
 			} else {
 				addr, err := types.ParseBtcAddress(destination, chain)
 				if err != nil {
@@ -216,7 +216,7 @@ func GetCmdRawTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 	rawTxCmd := &cobra.Command{
 		Use:   "rawTx [sourceTxId] [amount] [-d <destination> | -m]",
 		Short: "Generate raw transaction",
-		Long: "Generate raw transaction that can be used to spend the [amount] from the source transaction to the [destination]. " +
+		Long: "Generate raw transaction that can be used to spend the [amount] from the source transaction to the destination (specific address or next master key). " +
 			"The difference between the source transaction output amount and the given [amount] becomes the transaction fee",
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -239,7 +239,7 @@ func GetCmdRawTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 
 			var msg sdk.Msg
 			if useMasterKey {
-				msg = types.NewMsgRawTxForMasterKey(cliCtx.GetFromAddress(), chain, hash, btc)
+				msg = types.NewMsgRawTxForNextMasterKey(cliCtx.GetFromAddress(), chain, hash, btc)
 			} else {
 				addr, err := types.ParseBtcAddress(destination, chain)
 				if err != nil {
@@ -260,30 +260,18 @@ func GetCmdRawTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 	return rawTxCmd
 }
 
-func GetCmdWithdraw(cdc *codec.Codec) *cobra.Command {
-	var useMasterKey bool
-	var keyID string
-	withdrawCmd := &cobra.Command{
-		Use:   "withdraw [sourceTxId] [sigId] [--key-id <key ID> | -m]",
+func GetCmdSend(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "send [sourceTxId] [sigId]",
 		Short: "Withdraw funds from an axelar address",
 		Long: "Withdraw funds from an axelar address according to a previously signed raw transaction. " +
-			"Either specify the key ID associated with a previously completed keygen round or use the current master key. " +
 			"Ensure the axelar address is being tracked and the transaction signed first.",
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
 
-			if (useMasterKey && keyID != "") || (!useMasterKey && keyID == "") {
-				return fmt.Errorf("either set the flag to use a key ID or to use the master key, not both")
-			}
-
-			var msg sdk.Msg
-			if useMasterKey {
-				msg = types.NewMsgTransferToNewMasterKey(cliCtx.GetFromAddress(), args[0], args[1])
-			} else {
-				msg = types.NewMsgWithdraw(cliCtx.GetFromAddress(), args[0], args[1], keyID)
-			}
+			msg := types.NewMsgSendTx(cliCtx.GetFromAddress(), args[0], args[1])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -291,9 +279,6 @@ func GetCmdWithdraw(cdc *codec.Codec) *cobra.Command {
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
-	addMasterKeyFlag(withdrawCmd, &useMasterKey)
-	addKeyIdFlag(withdrawCmd, &keyID)
-	return withdrawCmd
 }
 
 func parseHash(txId string) (*chainhash.Hash, error) {

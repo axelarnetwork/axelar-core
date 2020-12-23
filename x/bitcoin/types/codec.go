@@ -6,14 +6,11 @@ import (
 
 // RegisterCodec registers concrete types on codec
 func RegisterCodec(cdc *codec.Codec) {
-	cdc.RegisterConcrete(MsgTrackAddress{}, "bitcoin/TrackAddress", nil)
-	cdc.RegisterConcrete(MsgTrackPubKey{}, "bitcoin/MsgTrackPubKey", nil)
+	cdc.RegisterConcrete(MsgTrack{}, "bitcoin/MsgTrack", nil)
 	cdc.RegisterConcrete(MsgVerifyTx{}, "bitcoin/VerifyTx", nil)
 	cdc.RegisterConcrete(MsgRawTx{}, "bitcoin/RawTx", nil)
-	cdc.RegisterConcrete(MsgWithdraw{}, "bitcoin/Withdraw", nil)
+	cdc.RegisterConcrete(MsgSendTx{}, "bitcoin/Withdraw", nil)
 	cdc.RegisterConcrete(&MsgVoteVerifiedTx{}, "bitcoin/MsgVoteVerifiedTx", nil)
-	cdc.RegisterConcrete(MsgTransferToNewMasterKey{}, "bitcoin/MsgTransferToNewMasterKey", nil)
-	cdc.RegisterConcrete(MsgRawTxForMasterKey{}, "bitcoin/MsgRawTxForMasterKey", nil)
 }
 
 // ModuleCdc defines the module codec
