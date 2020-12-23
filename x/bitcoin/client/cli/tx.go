@@ -20,12 +20,10 @@ import (
 )
 
 const (
-	sat           = "sat"
-	satoshi       = "satoshi"
-	btc           = "btc"
-	bitcoin       = "bitcoin"
-	satToBtc      = 100_000_000
-	masterKeyFlag = "master-key"
+	sat     = "sat"
+	satoshi = "satoshi"
+	btc     = "btc"
+	bitcoin = "bitcoin"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -308,14 +306,14 @@ func parseBtc(rawCoin string) (btcutil.Amount, error) {
 	case btc, bitcoin:
 		// sdk.Coin does not reduce precision, even if all decimal places are 0,
 		// so need to call RoundInt64 to return the correct value
-		return btcutil.Amount(coin.Amount.MulInt64(satToBtc).RoundInt64()), nil
+		return btcutil.Amount(coin.Amount.MulInt64(btcutil.SatoshiPerBitcoin).RoundInt64()), nil
 	default:
 		return 0, fmt.Errorf("choose a correct denomination: %s (%s), %s (%s)", satoshi, sat, bitcoin, btc)
 	}
 }
 
 func addMasterKeyFlag(cmd *cobra.Command, useMasterKey *bool) {
-	cmd.Flags().BoolVarP(useMasterKey, masterKeyFlag, "m", false, "Use the current master key instead of a specific key")
+	cmd.Flags().BoolVarP(useMasterKey, "master-key", "m", false, "Use the current master key instead of a specific key")
 }
 
 func addDestinationFlag(cmd *cobra.Command, destination *string) {
