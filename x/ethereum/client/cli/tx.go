@@ -127,17 +127,17 @@ func makeCommand(name string) *cobra.Command {
 func GetCmdDeploy(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 
 	var useMasterKey bool
-	var destination string
+	var deployer string
 
 	cmd := &cobra.Command{
-		Use:   "mint [contract ID] [-d <deployer address> | -m]",
-		Short: "mint BTC tokens transaction",
-		Args:  cobra.ExactArgs(2),
+		Use:   "deploy [contract ID] [-d <deployer address> | -m]",
+		Short: "deploy smart contract transaction",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
 
-			if (destination == "" && !useMasterKey) || (destination != "" && useMasterKey) {
+			if (deployer == "" && !useMasterKey) || (deployer != "" && useMasterKey) {
 				return fmt.Errorf("either set the flag to set the destination or to use the master key, not both\"")
 			}
 
@@ -145,7 +145,7 @@ func GetCmdDeploy(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 			if useMasterKey {
 				msg = types.NewMsgRawTxForNextMasterKey(cliCtx.GetFromAddress(), nil, *big.NewInt(0), []byte(args[0]), types.TypeSCdeploy)
 			} else {
-				addr, err := types.ParseEthAddress(destination, chain)
+				addr, err := types.ParseEthAddress(deployer, chain)
 				if err != nil {
 					return err
 				}
@@ -161,7 +161,7 @@ func GetCmdDeploy(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 		},
 	}
 
-	addDestinationFlag(cmd, &destination)
+	addDestinationFlag(cmd, &deployer)
 	addMasterKeyFlag(cmd, &useMasterKey)
 	return cmd
 }
