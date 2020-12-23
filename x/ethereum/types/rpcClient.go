@@ -11,16 +11,16 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-//TODO: fetch this parameters from config file, and check how to connect to actual node
+//go:generate moq -out ./mock/rpcClient.go -pkg mock . RPCClient
+
+// TODO: fetch this parameters from config file, and check how to connect to actual node
 const (
 	myproject = "82e8e37695ed406cb9313ec09bae18e7"
 	gateway   = "goerli.infura.io"
 )
 
 func NewRPCClient() (*ethclient.Client, error) {
-
 	return ethclient.Dial(fmt.Sprintf("https://%s/v3/%s", gateway, myproject))
-
 }
 
 type RPCClient interface {

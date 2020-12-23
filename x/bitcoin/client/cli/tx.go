@@ -12,18 +12,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+	authUtils "github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/spf13/cobra"
 
-	cliUtils "github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/denom"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-)
-
-const (
-	sat     = "sat"
-	satoshi = "satoshi"
-	btc     = "btc"
-	bitcoin = "bitcoin"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -85,7 +79,7 @@ func getCmdTrackAddress(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
+			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
 
 			addr, err := types.ParseBtcAddress(args[0], chain)
 			if err != nil {
@@ -97,7 +91,7 @@ func getCmdTrackAddress(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
 
@@ -118,7 +112,7 @@ func getCmdTrackPubKey(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
+			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
 
 			var msg sdk.Msg
 			if (useMasterKey && keyID != "") || (!useMasterKey && keyID == "") {
@@ -133,7 +127,7 @@ func getCmdTrackPubKey(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
 	addKeyIdFlag(pubKeyCmd, &keyID)
@@ -155,21 +149,22 @@ func GetCmdVerifyTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 				"Select the index of the transaction output as voutIdx.\n"+
 				"Example: verifyTx f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16 1 "+
 				"0.13btc -d bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
-			chaincfg.MainNetParams.Name, chaincfg.TestNet3Params.Name, satoshi, sat, bitcoin, btc),
+			chaincfg.MainNetParams.Name, chaincfg.TestNet3Params.Name, denom.Satoshi, denom.Sat, denom.Bitcoin, denom.Btc),
 		Args: cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
+			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
 
 			hash, err := parseHash(args[0])
 			if err != nil {
 				return err
 			}
 
-			amount, err := parseBtc(args[2])
+			sat, err := denom.ParseSatoshi(args[2])
 			if err != nil {
 				return err
 			}
+			amount := btcutil.Amount(sat.Amount.Int64())
 
 			voutIdx, err := parseVoutIdx(err, args[1])
 			if err != nil {
@@ -194,7 +189,7 @@ func GetCmdVerifyTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
 	addDestinationFlag(verifyCmd, &destination)
@@ -214,17 +209,18 @@ func GetCmdRawTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
+			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
 
 			hash, err := parseHash(args[0])
 			if err != nil {
 				return err
 			}
 
-			btc, err := parseBtc(args[1])
+			sat, err := denom.ParseSatoshi(args[2])
 			if err != nil {
 				return err
 			}
+			amount := btcutil.Amount(sat.Amount.Int64())
 
 			if (destination == "" && !useMasterKey) || (destination != "" && useMasterKey) {
 				return fmt.Errorf("either set the flag to set the destination or to use the master key, not both\"")
@@ -232,20 +228,20 @@ func GetCmdRawTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 
 			var msg sdk.Msg
 			if useMasterKey {
-				msg = types.NewMsgRawTxForNextMasterKey(cliCtx.GetFromAddress(), chain, hash, btc)
+				msg = types.NewMsgRawTxForNextMasterKey(cliCtx.GetFromAddress(), chain, hash, amount)
 			} else {
 				addr, err := types.ParseBtcAddress(destination, chain)
 				if err != nil {
 					return err
 				}
 
-				msg = types.NewMsgRawTx(cliCtx.GetFromAddress(), hash, btc, addr)
+				msg = types.NewMsgRawTx(cliCtx.GetFromAddress(), hash, amount, addr)
 			}
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
 	addDestinationFlag(rawTxCmd, &destination)
@@ -262,14 +258,14 @@ func GetCmdSend(cdc *codec.Codec) *cobra.Command {
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
+			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
 
 			msg := types.NewMsgSendTx(cliCtx.GetFromAddress(), args[0], args[1])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
 }
@@ -288,28 +284,6 @@ func parseVoutIdx(err error, voutIdx string) (uint32, error) {
 		return 0, sdkerrors.Wrap(err, "could not parse voutIdx")
 	}
 	return uint32(n), nil
-}
-
-func parseBtc(rawCoin string) (btcutil.Amount, error) {
-	var coin sdk.DecCoin
-	coin, err := sdk.ParseDecCoin(rawCoin)
-	if err != nil {
-		return 0, fmt.Errorf("could not parse coin string")
-	}
-
-	switch coin.Denom {
-	case sat, satoshi:
-		if !coin.Amount.IsInteger() {
-			return 0, fmt.Errorf("satoshi must be an integer value")
-		}
-		return btcutil.Amount(coin.Amount.Int64()), nil
-	case btc, bitcoin:
-		// sdk.Coin does not reduce precision, even if all decimal places are 0,
-		// so need to call RoundInt64 to return the correct value
-		return btcutil.Amount(coin.Amount.MulInt64(btcutil.SatoshiPerBitcoin).RoundInt64()), nil
-	default:
-		return 0, fmt.Errorf("choose a correct denomination: %s (%s), %s (%s)", satoshi, sat, bitcoin, btc)
-	}
 }
 
 func addMasterKeyFlag(cmd *cobra.Command, useMasterKey *bool) {

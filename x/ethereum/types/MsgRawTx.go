@@ -2,7 +2,6 @@ package types
 
 import (
 	"fmt"
-	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -11,34 +10,30 @@ import (
 
 type MsgRawTx struct {
 	Sender      sdk.AccAddress
-	TxHash      *common.Hash
-	Amount      big.Int
-	Data        []byte
-	Destination EthAddress
 	TXType      TXType
-	Mode        Mode
+	Amount      sdk.Int
+	Destination common.Address
+	Network     Network
+	ContractID  string
 }
 
-func NewMsgRawTx(sender sdk.AccAddress, txHash *common.Hash, amount big.Int, data []byte, destination EthAddress, txType TXType) sdk.Msg {
+func NewMsgRawTxForMint(sender sdk.AccAddress, network Network, contractID string, amount sdk.Int, destination common.Address) sdk.Msg {
 	return MsgRawTx{
 		Sender:      sender,
-		TxHash:      txHash,
+		Network:     network,
 		Amount:      amount,
-		Data:        data,
 		Destination: destination,
-		TXType:      txType,
-		Mode:        ModeSpecificAddress,
+		ContractID:  contractID,
+		TXType:      TypeERC20mint,
 	}
 }
 
-func NewMsgRawTxForNextMasterKey(sender sdk.AccAddress, txHash *common.Hash, amount big.Int, data []byte, txType TXType) sdk.Msg {
+func NewMsgRawTxForDeploy(sender sdk.AccAddress, network Network, contractID string) sdk.Msg {
 	return MsgRawTx{
-		Sender: sender,
-		TxHash: txHash,
-		Amount: amount,
-		Data:   data,
-		TXType: txType,
-		Mode:   ModeNextMasterKey,
+		Sender:     sender,
+		Network:    network,
+		ContractID: contractID,
+		TXType:     TypeSCDeploy,
 	}
 }
 
@@ -54,24 +49,22 @@ func (msg MsgRawTx) ValidateBasic() error {
 	if msg.Sender.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
-	if msg.TxHash == nil {
-		return fmt.Errorf("missing transaction ID")
+	if err := msg.Network.Validate(); err != nil {
+		return sdkerrors.Wrap(err, "invalid network")
 	}
-	if msg.Amount.Int64() <= 0 {
-		return fmt.Errorf("transaction amount must be greater than zero")
-	}
-	if err := msg.Destination.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid destination")
+	if msg.ContractID == "" {
+		return fmt.Errorf("missing contract ID")
 	}
 
-	if !msg.TXType.IsValid() {
-		return fmt.Errorf("Invalid transaction type")
+	switch msg.TXType {
+	case TypeERC20mint:
+		if msg.Amount.Int64() <= 0 {
+			return fmt.Errorf("transaction amount must be greater than zero")
+		}
+	case TypeSCDeploy:
+	default:
+		return fmt.Errorf("wrong tx type")
 	}
-
-	if !msg.Mode.IsValid() {
-		return fmt.Errorf("Invalid transaction mode")
-	}
-
 	return nil
 }
 

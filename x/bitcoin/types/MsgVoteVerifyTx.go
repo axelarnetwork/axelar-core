@@ -21,7 +21,6 @@ func (msg MsgVoteVerifiedTx) Poll() exported.PollMeta {
 }
 
 func (msg *MsgVoteVerifiedTx) Data() exported.VotingData {
-	// dummy return, must not be empty, otherwise marshaling crashes
 	return msg.VotingData
 }
 

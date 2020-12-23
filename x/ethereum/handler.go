@@ -37,7 +37,7 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 			return handleMsgVoteVerifiedTx(ctx, v, msg)
 
 		case types.MsgVerifyTx:
-			return handleMsgVerifyTx(ctx, k, rpc, v, msg)
+			return handleMsgVerifyTx(ctx, k, s, rpc, v, msg)
 
 		case types.MsgRawTx:
 			return handleMsgRawTx(ctx, k, v, rpc, s, msg)
@@ -66,47 +66,33 @@ func handleMsgInstallSC(ctx sdk.Context, k keeper.Keeper, msg types.MsgInstallSC
 }
 
 func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Signer, msg types.MsgRawTx) (*sdk.Result, error) {
-	txId := msg.TxHash.String()
-
-	var destination common.Address
-	var err error
-	switch msg.Mode {
-	case types.ModeSpecificAddress:
-		destination = msg.Destination.Convert()
-	case types.ModeNextMasterKey:
-		pk, ok := s.GetNextMasterKey(ctx, ethereum)
-		if !ok {
-			return nil, sdkerrors.Wrap(types.ErrEthBridge, "next master key not set")
-		}
-		destination = crypto.PubkeyToAddress(pk)
-		if err != nil {
-			return nil, sdkerrors.Wrap(types.ErrEthBridge, "could not create ethereum address from master key")
-		}
+	verifiedTxID, ok := k.GetTxIDForContractID(ctx, msg.ContractID)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, "contract ID unknown")
 	}
 
-	poll := exported.PollMeta{ID: txId, Module: types.ModuleName, Type: types.MsgVerifyTx{}.Type()}
-
-	if isVerified(ctx, v, poll) {
-		return nil, fmt.Errorf("transaction not verified")
+	if isVerified(ctx, v, exported.PollMeta{Module: types.ModuleName, Type: types.MsgVerifyTx{}.Type(), ID: verifiedTxID.String()}) {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("contract not deployed yet"))
 	}
 
-	tx, err := createTransaction(ctx, k, rpc, s, destination, &msg.Amount, msg.Data, msg.TXType)
-
+	tx, err := createTransaction(ctx, rpc, s, msg.Destination, msg.Amount.BigInt(), k.GetSmartContract(ctx, msg.ContractID), msg.TXType)
 	if err != nil {
-		return nil, fmt.Errorf("Could not create ethereum transaction: %s", err)
+		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not create ethereum transaction: %s", err))
 	}
 
+	txId := tx.Hash().String()
 	k.SetRawTx(ctx, txId, tx)
+	k.Logger(ctx).Info(fmt.Sprintf("storing tx %s", txId))
 
 	// Print out the hash that becomes the input for the threshold signing
-	chainID, err := rpc.NetworkID(context.Background())
+	networkID, err := rpc.NetworkID(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("Could not retrieve ethereum network: %s", err)
+		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not retrieve ethereum network: %s", err))
 	}
-	signer := ethTypes.NewEIP155Signer(chainID)
+	signer := ethTypes.NewEIP155Signer(networkID)
 	hash := signer.Hash(tx).Bytes()
 
-	k.Logger(ctx).Info(fmt.Sprintf("ethereum tx to sign: %s", k.Codec().MustMarshalJSON(hash)))
+	k.Logger(ctx).Info(fmt.Sprintf("ethereum tx [%s] to sign: %s", txId, k.Codec().MustMarshalJSON(hash)))
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
@@ -133,13 +119,22 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, v types.Voter, msg types.MsgVoteVe
 	return nil, nil
 }
 
-func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v types.Voter, msg types.MsgVerifyTx) (*sdk.Result, error) {
+func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, rpc types.RPCClient, v types.Voter, msg types.MsgVerifyTx) (*sdk.Result, error) {
 	k.Logger(ctx).Debug("verifying ethereum transaction")
-	txId := msg.TX.Hash.String()
+	txId := msg.Tx.Hash.String()
+
+	mk, ok := s.GetCurrentMasterKey(ctx, ethereum)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, "master key not found")
+	}
 
 	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: txId}
 	if err := v.InitPoll(ctx, poll); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthBridge, "could not initialize new poll")
+		return nil, sdkerrors.Wrap(types.ErrEthereum, "could not initialize new poll")
+	}
+
+	if msg.TxType == types.TypeSCDeploy {
+		k.SetTxIDForContractID(ctx, msg.Tx.ContractID, msg.Tx.Hash)
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -148,19 +143,19 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v 
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
 			sdk.NewAttribute(types.AttributeTxId, txId),
-			sdk.NewAttribute(types.AttributeAmount, msg.TX.Amount.String()),
+			sdk.NewAttribute(types.AttributeAmount, msg.Tx.Amount.String()),
 		),
 	)
 
-	k.SetTX(ctx, txId, msg.TX)
+	k.SetTX(ctx, txId, msg.Tx)
 
 	/*
 	 Anyone not able to verify the transaction will automatically record a negative vote,
 	 but only validators will later send out that vote.
 	*/
 
-	if err := verifyTx(rpc, msg.TX, k.GetConfirmationHeight(ctx)); err != nil {
-
+	if err := verifyTx(ctx, rpc, k, msg, crypto.PubkeyToAddress(mk)); err != nil {
+		k.Logger(ctx).Debug(sdkerrors.Wrapf(err, "expected transaction (%s) could not be verified", txId).Error())
 		if err := v.RecordVote(ctx, &types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false}); err != nil {
 			k.Logger(ctx).Error(sdkerrors.Wrap(err, "voting failed").Error())
 			return &sdk.Result{
@@ -170,8 +165,6 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v 
 			}, nil
 		}
 
-		k.Logger(ctx).Debug(sdkerrors.Wrapf(err,
-			"expected transaction (%s) could not be verified", txId).Error())
 		return &sdk.Result{
 			Log:    err.Error(),
 			Data:   k.Codec().MustMarshalBinaryLengthPrefixed(false),
@@ -179,7 +172,6 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v 
 		}, nil
 
 	} else {
-
 		if err := v.RecordVote(ctx, &types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: true}); err != nil {
 			k.Logger(ctx).Error(sdkerrors.Wrap(err, "voting failed").Error())
 			return &sdk.Result{
@@ -198,49 +190,71 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v 
 
 }
 
+func verifyDeploy(actualTx *ethTypes.Transaction, byteCode []byte) error {
+	if !bytes.Equal(actualTx.Data(), byteCode) {
+		return fmt.Errorf("smart contract byte code mismatch")
+	}
+	return nil
+}
+
+func verifyMint(actualTx *ethTypes.Transaction, expectedTx types.Tx) error {
+
+	if actualTx.To().String() != expectedTx.Destination.String() {
+		return fmt.Errorf("expected destination address does not match actual destination address")
+	}
+
+	if actualTx.Value().Cmp(expectedTx.Amount.BigInt()) != 0 {
+		return fmt.Errorf("expected amount does not match actual amount")
+	}
+
+	return nil
+}
+
 func isVerified(ctx sdk.Context, v types.Voter, poll exported.PollMeta) bool {
 	res := v.Result(ctx, poll)
 	return res == nil || !res.(bool)
 }
 
-func verifyTx(rpc types.RPCClient, tx types.TX, expectedConfirmationHeight uint64) error {
-
-	//TODO: parallelise all 3 RPC calls
-	actualTx, pending, err := rpc.TransactionByHash(context.Background(), *tx.Hash)
-
+func verifyTx(ctx sdk.Context, rpc types.RPCClient, k keeper.Keeper, msg types.MsgVerifyTx, expectedSender common.Address) error {
+	actualTx, pending, err := rpc.TransactionByHash(context.Background(), msg.Tx.Hash)
 	if err != nil {
 		return sdkerrors.Wrap(err, "could not retrieve Ethereum transaction")
 	}
 
 	if pending {
-		return fmt.Errorf("Transaction is pending")
+		return fmt.Errorf("transaction is pending")
 	}
 
-	if actualTx.To().String() != tx.Address.String() {
-		return fmt.Errorf("expected destination address does not match actual destination address")
+	sender, err := ethTypes.Sender(ethTypes.NewEIP155Signer(msg.Tx.Network.Params().ChainID), actualTx)
+	if err != nil {
+		return fmt.Errorf("could not derive sender")
 	}
 
-	if !bytes.Equal(actualTx.Value().Bytes(), tx.Amount.Bytes()) {
-		return fmt.Errorf("expected amount does not match actual amount")
+	if sender != expectedSender {
+		return fmt.Errorf("sender does not match")
 	}
 
-	receipt, err := rpc.TransactionReceipt(context.Background(), *tx.Hash)
-
+	receipt, err := rpc.TransactionReceipt(context.Background(), msg.Tx.Hash)
 	if err != nil {
 		return sdkerrors.Wrap(err, "could not retrieve Ethereum receipt")
 	}
 
-	number, err := rpc.BlockNumber(context.Background())
-
+	blockNumber, err := rpc.BlockNumber(context.Background())
 	if err != nil {
 		return sdkerrors.Wrap(err, "could not retrieve Ethereum block number")
 	}
 
-	if (number - receipt.BlockNumber.Uint64()) < expectedConfirmationHeight {
+	if (blockNumber - receipt.BlockNumber.Uint64()) < k.GetConfirmationHeight(ctx) {
 		return fmt.Errorf("not enough confirmations yet")
 	}
-
-	return nil
+	switch msg.TxType {
+	case types.TypeERC20mint:
+		return verifyMint(actualTx, msg.Tx)
+	case types.TypeSCDeploy:
+		return verifyDeploy(actualTx, k.GetSmartContract(ctx, msg.Tx.ContractID))
+	default:
+		return fmt.Errorf("unknown tx type")
+	}
 }
 
 /*
@@ -249,47 +263,30 @@ func verifyTx(rpc types.RPCClient, tx types.TX, expectedConfirmationHeight uint6
 	https://medium.com/coinmonks/web3-go-part-1-31c68c68e20e
 	https://goethereumbook.org/en/transaction-raw-create/
 */
-func createTransaction(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, toAddress common.Address, amount *big.Int, data []byte, txType types.TXType) (*ethTypes.Transaction, error) {
+func createTransaction(ctx sdk.Context, rpc types.RPCClient, s types.Signer, toAddress common.Address, amount *big.Int, byteCode []byte, txType types.TXType) (*ethTypes.Transaction, error) {
 
-	//TODO: Add support to specify a key other than the master key
 	pk, ok := s.GetCurrentMasterKey(ctx, ethereum)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEthBridge, "key not found")
+		return nil, fmt.Errorf("key not found")
 	}
 
 	fromAddress := crypto.PubkeyToAddress(pk)
-	nonce, err := rpc.PendingNonceAt(context.Background(), fromAddress)
-	if err != nil {
-		return nil, fmt.Errorf("Could not create nonce: %s", err)
-	}
-
-	gasPrice, err := rpc.SuggestGasPrice(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("Could not calculate gas price: %s", err)
-	}
 
 	switch txType {
 
-	case types.TypeETH:
-
-		return ethTypes.NewTransaction(nonce, toAddress, amount, gasLimit, gasPrice, make([]byte, 0)), nil
-
 	case types.TypeERC20mint:
 
-		contractAddress := common.BytesToAddress(data)
+		contractAddress := common.BytesToAddress(byteCode)
 		return createMintTransaction(rpc, fromAddress, contractAddress, toAddress, gasLimit, amount)
 
-	case types.TypeSCdeploy:
+	case types.TypeSCDeploy:
 
-		byteCodes := k.GetSmartContract(ctx, string(data))
-		return createDeploySCTransaction(rpc, fromAddress, gasLimit, byteCodes)
+		return createDeploySCTransaction(rpc, fromAddress, gasLimit, byteCode)
 
 	default:
 
-		return nil, fmt.Errorf("Unsuported transaction type: %s", err)
-
+		return nil, fmt.Errorf("unknown tx type")
 	}
-
 }
 
 /*

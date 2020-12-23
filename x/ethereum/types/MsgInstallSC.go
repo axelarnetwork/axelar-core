@@ -14,9 +14,7 @@ type MsgInstallSC struct {
 }
 
 func NewMsgInstallSC(sender sdk.AccAddress, id string, bytecode []byte) sdk.Msg {
-
 	return MsgInstallSC{
-
 		Sender:          sender,
 		SmartContractID: id,
 		Bytecode:        bytecode,

@@ -5,10 +5,12 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
+
+	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 )
 
 var (
@@ -16,9 +18,10 @@ var (
 )
 
 const (
-	rawKey = "raw"
-	txKey  = "utxo"
-	scKey  = "utxo"
+	rawPrefix       = "raw_"
+	txPrefix        = "tx_"
+	scPrefix        = "sc_"
+	txIDForSCPrefix = "scTxID_"
 )
 
 type Keeper struct {
@@ -55,7 +58,7 @@ func (k Keeper) GetConfirmationHeight(ctx sdk.Context) uint64 {
 }
 
 func (k Keeper) GetRawTx(ctx sdk.Context, txId string) *ethTypes.Transaction {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(rawKey + txId))
+	bz := ctx.KVStore(k.storeKey).Get([]byte(rawPrefix + txId))
 	if bz == nil {
 		return nil
 	}
@@ -67,20 +70,20 @@ func (k Keeper) GetRawTx(ctx sdk.Context, txId string) *ethTypes.Transaction {
 
 func (k Keeper) SetRawTx(ctx sdk.Context, txId string, tx *ethTypes.Transaction) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(tx)
-	ctx.KVStore(k.storeKey).Set([]byte(rawKey+txId), bz)
+	ctx.KVStore(k.storeKey).Set([]byte(rawPrefix+txId), bz)
 }
 
-func (k Keeper) SetTX(ctx sdk.Context, txId string, utxo types.TX) {
+func (k Keeper) SetTX(ctx sdk.Context, txId string, utxo types.Tx) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(utxo)
-	ctx.KVStore(k.storeKey).Set([]byte(txKey+txId), bz)
+	ctx.KVStore(k.storeKey).Set([]byte(txPrefix+txId), bz)
 }
 
-func (k Keeper) GetTX(ctx sdk.Context, txId string) (types.TX, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(txKey + txId))
+func (k Keeper) GetTX(ctx sdk.Context, txId string) (types.Tx, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(txPrefix + txId))
 	if bz == nil {
-		return types.TX{}, false
+		return types.Tx{}, false
 	}
-	var tx types.TX
+	var tx types.Tx
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &tx)
 
 	return tx, true
@@ -88,12 +91,24 @@ func (k Keeper) GetTX(ctx sdk.Context, txId string) (types.TX, bool) {
 
 func (k Keeper) SetSmartContract(ctx sdk.Context, scId string, bytecode []byte) {
 
-	ctx.KVStore(k.storeKey).Set([]byte(scKey+scId), bytecode)
+	ctx.KVStore(k.storeKey).Set([]byte(scPrefix+scId), bytecode)
 
 }
 
 func (k Keeper) GetSmartContract(ctx sdk.Context, scId string) []byte {
 
-	return ctx.KVStore(k.storeKey).Get([]byte(txKey + scId))
+	return ctx.KVStore(k.storeKey).Get([]byte(txPrefix + scId))
 
+}
+
+func (k Keeper) GetTxIDForContractID(ctx sdk.Context, contractID string) (common.Hash, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(txIDForSCPrefix + contractID))
+	if bz == nil {
+		return common.Hash{}, false
+	}
+	return common.BytesToHash(bz), true
+}
+
+func (k Keeper) SetTxIDForContractID(ctx sdk.Context, contractID string, txID common.Hash) {
+	ctx.KVStore(k.storeKey).Set([]byte(txIDForSCPrefix+contractID), txID.Bytes())
 }

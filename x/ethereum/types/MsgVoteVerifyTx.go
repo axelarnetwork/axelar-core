@@ -21,7 +21,6 @@ func (msg MsgVoteVerifiedTx) Poll() exported.PollMeta {
 }
 
 func (msg *MsgVoteVerifiedTx) Data() exported.VotingData {
-	// dummy return, must not be empty, otherwise marshaling crashes
 	return msg.VotingData
 }
 
@@ -30,7 +29,7 @@ func (msg MsgVoteVerifiedTx) Route() string {
 }
 
 func (msg MsgVoteVerifiedTx) Type() string {
-	return "MsgVoteVerifiedTx"
+	return "VoteVerifiedTx"
 }
 
 func (msg MsgVoteVerifiedTx) ValidateBasic() error {

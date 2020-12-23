@@ -47,13 +47,8 @@ func TestERC20Marshal(t *testing.T) {
 	// test function selector
 	assert.Equal(t, erc20TransferSel, types.CalcSelector(erc20Transfer))
 
-	addr := types.EthAddress{
-		Chain:         "fubar",
-		EncodedString: erc20Addr,
-	}
-
 	// test first parameter (the address)
-	paddedAddr := hexutil.Encode(common.LeftPadBytes(addr.Convert().Bytes(), 32))
+	paddedAddr := hexutil.Encode(common.LeftPadBytes(common.HexToAddress(erc20Addr).Bytes(), 32))
 
 	assert.Equal(t, erc20PaddedAddr, paddedAddr)
 
@@ -119,9 +114,9 @@ func testDeploy(t *testing.T, client *ethclient.Client, deployerAddr common.Addr
 
 	byteCode := common.FromHex(MymintableBin)
 
-	chainID, err := client.NetworkID(context.Background())
+	networkID, err := client.NetworkID(context.Background())
 	assert.NoError(t, err)
-	signer := ethTypes.NewEIP155Signer(chainID)
+	signer := ethTypes.NewEIP155Signer(networkID)
 
 	tx, err := createDeploySCTransaction(client, deployerAddr, gasLimit, byteCode)
 	assert.NoError(t, err)
@@ -139,7 +134,7 @@ func testDeploy(t *testing.T, client *ethclient.Client, deployerAddr common.Addr
 	// so we prepare the test for this possibility and allow it to retry
 	for i := 0; i < maxReceiptAttempts; i++ {
 
-		t.Logf("Trying to fetch receipt for TX 0x%x", hash.Bytes())
+		t.Logf("Trying to fetch receipt for Tx 0x%x", hash.Bytes())
 		time.Sleep(1 * time.Second)
 		receipt, err = client.TransactionReceipt(context.Background(), hash)
 
@@ -185,9 +180,9 @@ func testMint(t *testing.T, client *ethclient.Client, creatorAddr, contractAddr,
 	tx, err := createMintTransaction(client, creatorAddr, contractAddr, toAddr, gasLimit, amount)
 	assert.NoError(t, err)
 
-	chainID, err := client.NetworkID(context.Background())
+	networkID, err := client.NetworkID(context.Background())
 	assert.NoError(t, err)
-	signedTx, err := ethTypes.SignTx(tx, ethTypes.NewEIP155Signer(chainID), privateKey)
+	signedTx, err := ethTypes.SignTx(tx, ethTypes.NewEIP155Signer(networkID), privateKey)
 	assert.NoError(t, err)
 	err = client.SendTransaction(context.Background(), signedTx)
 	assert.NoError(t, err)

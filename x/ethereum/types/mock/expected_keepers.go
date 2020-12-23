@@ -5,7 +5,7 @@ package mock
 
 import (
 	"crypto/ecdsa"
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -22,9 +22,6 @@ var _ types.Voter = &VoterMock{}
 //
 //         // make and configure a mocked types.Voter
 //         mockedVoter := &VoterMock{
-//             DeletePollFunc: func(ctx sdk.Context, poll voting.PollMeta)  {
-// 	               panic("mock out the DeletePoll method")
-//             },
 //             InitPollFunc: func(ctx sdk.Context, poll voting.PollMeta) error {
 // 	               panic("mock out the InitPoll method")
 //             },
@@ -44,9 +41,6 @@ var _ types.Voter = &VoterMock{}
 //
 //     }
 type VoterMock struct {
-	// DeletePollFunc mocks the DeletePoll method.
-	DeletePollFunc func(ctx sdk.Context, poll voting.PollMeta)
-
 	// InitPollFunc mocks the InitPoll method.
 	InitPollFunc func(ctx sdk.Context, poll voting.PollMeta) error
 
@@ -61,13 +55,6 @@ type VoterMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// DeletePoll holds details about calls to the DeletePoll method.
-		DeletePoll []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Poll is the poll argument value.
-			Poll voting.PollMeta
-		}
 		// InitPoll holds details about calls to the InitPoll method.
 		InitPoll []struct {
 			// Ctx is the ctx argument value.
@@ -97,46 +84,10 @@ type VoterMock struct {
 			Vote voting.MsgVote
 		}
 	}
-	lockDeletePoll sync.RWMutex
 	lockInitPoll   sync.RWMutex
 	lockRecordVote sync.RWMutex
 	lockResult     sync.RWMutex
 	lockTallyVote  sync.RWMutex
-}
-
-// DeletePoll calls DeletePollFunc.
-func (mock *VoterMock) DeletePoll(ctx sdk.Context, poll voting.PollMeta) {
-	if mock.DeletePollFunc == nil {
-		panic("VoterMock.DeletePollFunc: method is nil but Voter.DeletePoll was just called")
-	}
-	callInfo := struct {
-		Ctx  sdk.Context
-		Poll voting.PollMeta
-	}{
-		Ctx:  ctx,
-		Poll: poll,
-	}
-	mock.lockDeletePoll.Lock()
-	mock.calls.DeletePoll = append(mock.calls.DeletePoll, callInfo)
-	mock.lockDeletePoll.Unlock()
-	mock.DeletePollFunc(ctx, poll)
-}
-
-// DeletePollCalls gets all the calls that were made to DeletePoll.
-// Check the length with:
-//     len(mockedVoter.DeletePollCalls())
-func (mock *VoterMock) DeletePollCalls() []struct {
-	Ctx  sdk.Context
-	Poll voting.PollMeta
-} {
-	var calls []struct {
-		Ctx  sdk.Context
-		Poll voting.PollMeta
-	}
-	mock.lockDeletePoll.RLock()
-	calls = mock.calls.DeletePoll
-	mock.lockDeletePoll.RUnlock()
-	return calls
 }
 
 // InitPoll calls InitPollFunc.
@@ -295,9 +246,6 @@ var _ types.Signer = &SignerMock{}
 //             GetKeyFunc: func(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool) {
 // 	               panic("mock out the GetKey method")
 //             },
-//             GetKeyForSigIDFunc: func(ctx sdk.Context, sigID string) (ecdsa.PublicKey, bool) {
-// 	               panic("mock out the GetKeyForSigID method")
-//             },
 //             GetNextMasterKeyFunc: func(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool) {
 // 	               panic("mock out the GetNextMasterKey method")
 //             },
@@ -316,9 +264,6 @@ type SignerMock struct {
 
 	// GetKeyFunc mocks the GetKey method.
 	GetKeyFunc func(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool)
-
-	// GetKeyForSigIDFunc mocks the GetKeyForSigID method.
-	GetKeyForSigIDFunc func(ctx sdk.Context, sigID string) (ecdsa.PublicKey, bool)
 
 	// GetNextMasterKeyFunc mocks the GetNextMasterKey method.
 	GetNextMasterKeyFunc func(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool)
@@ -342,13 +287,6 @@ type SignerMock struct {
 			// KeyID is the keyID argument value.
 			KeyID string
 		}
-		// GetKeyForSigID holds details about calls to the GetKeyForSigID method.
-		GetKeyForSigID []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// SigID is the sigID argument value.
-			SigID string
-		}
 		// GetNextMasterKey holds details about calls to the GetNextMasterKey method.
 		GetNextMasterKey []struct {
 			// Ctx is the ctx argument value.
@@ -366,7 +304,6 @@ type SignerMock struct {
 	}
 	lockGetCurrentMasterKey sync.RWMutex
 	lockGetKey              sync.RWMutex
-	lockGetKeyForSigID      sync.RWMutex
 	lockGetNextMasterKey    sync.RWMutex
 	lockGetSig              sync.RWMutex
 }
@@ -438,41 +375,6 @@ func (mock *SignerMock) GetKeyCalls() []struct {
 	mock.lockGetKey.RLock()
 	calls = mock.calls.GetKey
 	mock.lockGetKey.RUnlock()
-	return calls
-}
-
-// GetKeyForSigID calls GetKeyForSigIDFunc.
-func (mock *SignerMock) GetKeyForSigID(ctx sdk.Context, sigID string) (ecdsa.PublicKey, bool) {
-	if mock.GetKeyForSigIDFunc == nil {
-		panic("SignerMock.GetKeyForSigIDFunc: method is nil but Signer.GetKeyForSigID was just called")
-	}
-	callInfo := struct {
-		Ctx   sdk.Context
-		SigID string
-	}{
-		Ctx:   ctx,
-		SigID: sigID,
-	}
-	mock.lockGetKeyForSigID.Lock()
-	mock.calls.GetKeyForSigID = append(mock.calls.GetKeyForSigID, callInfo)
-	mock.lockGetKeyForSigID.Unlock()
-	return mock.GetKeyForSigIDFunc(ctx, sigID)
-}
-
-// GetKeyForSigIDCalls gets all the calls that were made to GetKeyForSigID.
-// Check the length with:
-//     len(mockedSigner.GetKeyForSigIDCalls())
-func (mock *SignerMock) GetKeyForSigIDCalls() []struct {
-	Ctx   sdk.Context
-	SigID string
-} {
-	var calls []struct {
-		Ctx   sdk.Context
-		SigID string
-	}
-	mock.lockGetKeyForSigID.RLock()
-	calls = mock.calls.GetKeyForSigID
-	mock.lockGetKeyForSigID.RUnlock()
 	return calls
 }
 

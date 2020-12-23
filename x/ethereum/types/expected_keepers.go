@@ -8,6 +8,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Voter Signer
+
 type Voter interface {
 	voting.Voter
 }
