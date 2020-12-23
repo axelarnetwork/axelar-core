@@ -22,6 +22,23 @@ const (
 	erc20Mint = "mint(address,uint256)"
 )
 
+type Mode int
+
+const (
+	ModeSpecificAddress Mode = iota
+	ModeCurrentMasterKey
+	ModeNextMasterKey
+	ModeSpecificKey
+)
+
+func (lt Mode) IsValid() bool {
+	switch lt {
+	case ModeSpecificAddress, ModeCurrentMasterKey, ModeNextMasterKey, ModeSpecificKey:
+		return false
+	}
+	return true
+}
+
 var ERC20MintSel string
 
 func init() {
@@ -102,20 +119,21 @@ func (u TX) Equals(other TX) bool {
 	return other.Validate() == nil &&
 		bytes.Equal(u.Hash.Bytes(), other.Hash.Bytes()) &&
 		bytes.Equal(u.Amount.Bytes(), other.Amount.Bytes()) &&
-		bytes.Equal([]byte(u.TXType), []byte(other.TXType)) &&
+		u.TXType == other.TXType &&
 		u.Address == other.Address
 }
 
-type TXType string
+type TXType int
 
 const (
-	TypeETH       TXType = "ether"
-	TypeERC20mint TXType = "erc20mint"
+	TypeETH TXType = iota
+	TypeSCdeploy
+	TypeERC20mint
 )
 
 func (lt TXType) IsValid() bool {
 	switch lt {
-	case TypeETH, TypeERC20mint:
+	case TypeETH, TypeSCdeploy, TypeERC20mint:
 		return false
 	}
 	return true

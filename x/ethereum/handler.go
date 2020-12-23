@@ -39,6 +39,9 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 		case types.MsgVerifyTx:
 			return handleMsgVerifyTx(ctx, k, rpc, v, msg)
 
+		case types.MsgRawTx:
+			return handleMsgRawTx(ctx, k, v, rpc, s, msg)
+
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
@@ -65,13 +68,29 @@ func handleMsgInstallSC(ctx sdk.Context, k keeper.Keeper, msg types.MsgInstallSC
 func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Signer, msg types.MsgRawTx) (*sdk.Result, error) {
 	txId := msg.TxHash.String()
 
+	var destination common.Address
+	var err error
+	switch msg.Mode {
+	case types.ModeSpecificAddress:
+		destination = msg.Destination.Convert()
+	case types.ModeNextMasterKey:
+		pk, ok := s.GetNextMasterKey(ctx, ethereum)
+		if !ok {
+			return nil, sdkerrors.Wrap(types.ErrEthBridge, "next master key not set")
+		}
+		destination = crypto.PubkeyToAddress(pk)
+		if err != nil {
+			return nil, sdkerrors.Wrap(types.ErrEthBridge, "could not create ethereum address from master key")
+		}
+	}
+
 	poll := exported.PollMeta{ID: txId, Module: types.ModuleName, Type: types.MsgVerifyTx{}.Type()}
 
 	if isVerified(ctx, v, poll) {
 		return nil, fmt.Errorf("transaction not verified")
 	}
 
-	tx, err := createTransaction(ctx, rpc, s, msg)
+	tx, err := createTransaction(ctx, rpc, s, destination, &msg.Amount, msg.TXType)
 
 	if err != nil {
 		return nil, fmt.Errorf("Could not create ethereum transaction: %s", err)
@@ -230,7 +249,7 @@ func verifyTx(rpc types.RPCClient, tx types.TX, expectedConfirmationHeight uint6
 	https://medium.com/coinmonks/web3-go-part-1-31c68c68e20e
 	https://goethereumbook.org/en/transaction-raw-create/
 */
-func createTransaction(ctx sdk.Context, rpc types.RPCClient, s types.Signer, msg types.MsgRawTx) (*ethTypes.Transaction, error) {
+func createTransaction(ctx sdk.Context, rpc types.RPCClient, s types.Signer, toAddress common.Address, amount *big.Int, txType types.TXType) (*ethTypes.Transaction, error) {
 
 	//TODO: Add support to specify a key other than the master key
 	pk, ok := s.GetCurrentMasterKey(ctx, ethereum)
@@ -244,23 +263,21 @@ func createTransaction(ctx sdk.Context, rpc types.RPCClient, s types.Signer, msg
 		return nil, fmt.Errorf("Could not create nonce: %s", err)
 	}
 
-	toAddress := msg.Destination.Convert()
-
 	gasPrice, err := rpc.SuggestGasPrice(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("Could not calculate gas price: %s", err)
 	}
 
-	switch msg.TXType {
+	switch txType {
 
 	case types.TypeETH:
 
-		return ethTypes.NewTransaction(nonce, toAddress, &msg.Amount, gasLimit, gasPrice, make([]byte, 0)), nil
+		return ethTypes.NewTransaction(nonce, toAddress, amount, gasLimit, gasPrice, make([]byte, 0)), nil
 
 	case types.TypeERC20mint:
 
 		// TODO: correctly look up the contract address once the deploy contract functionality is done
-		return createMintTransaction(rpc, fromAddress, toAddress, toAddress, gasLimit, &msg.Amount)
+		return createMintTransaction(rpc, fromAddress, toAddress, toAddress, gasLimit, amount)
 
 	default:
 

@@ -34,6 +34,8 @@ const (
 
 	//TODO: not sure how many decimals a BTC token is supposed to have in ethereum
 	btcDecs = 18
+
+	masterKeyFlag = "master-key"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -56,8 +58,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	mainnetEtherCmd := makeCommand("rawTx")
 	mainnetEtherCmd.AddCommand(
 		flags.PostCommands(
-			GetCmdRawTx(types.Chain(types.Mainnet), types.TypeETH, cdc),
-			GetCmdRawTx(types.Chain(types.Mainnet), types.TypeERC20mint, cdc))...)
+			GetCmdEther(types.Chain(types.Mainnet), cdc))...)
 	mainnetCmd.AddCommand(
 		flags.PostCommands(
 			GetCmdVerifyTx(types.Chain(types.Mainnet), cdc))...)
@@ -66,8 +67,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	ropstenEtherCmd := makeCommand("rawTx")
 	ropstenEtherCmd.AddCommand(
 		flags.PostCommands(
-			GetCmdRawTx(types.Chain(types.Ropsten), types.TypeETH, cdc),
-			GetCmdRawTx(types.Chain(types.Ropsten), types.TypeERC20mint, cdc))...)
+			GetCmdEther(types.Chain(types.Ropsten), cdc))...)
 	ropstenCmd.AddCommand(
 		flags.PostCommands(
 			GetCmdVerifyTx(types.Chain(types.Ropsten), cdc))...)
@@ -76,8 +76,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	kovanEtherCmd := makeCommand("rawTx")
 	kovanEtherCmd.AddCommand(
 		flags.PostCommands(
-			GetCmdRawTx(types.Chain(types.Kovan), types.TypeETH, cdc),
-			GetCmdRawTx(types.Chain(types.Kovan), types.TypeERC20mint, cdc))...)
+			GetCmdEther(types.Chain(types.Kovan), cdc))...)
 	kovanCmd.AddCommand(
 		flags.PostCommands(
 			GetCmdVerifyTx(types.Chain(types.Kovan), cdc))...)
@@ -86,8 +85,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	rinkebyEtherCmd := makeCommand("rawTx")
 	rinkebyEtherCmd.AddCommand(
 		flags.PostCommands(
-			GetCmdRawTx(types.Chain(types.Rinkeby), types.TypeETH, cdc),
-			GetCmdRawTx(types.Chain(types.Rinkeby), types.TypeERC20mint, cdc))...)
+			GetCmdEther(types.Chain(types.Rinkeby), cdc))...)
 	rinkebyCmd.AddCommand(
 		flags.PostCommands(
 			GetCmdVerifyTx(types.Chain(types.Rinkeby), cdc))...)
@@ -96,8 +94,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	goerliEtherCmd := makeCommand("rawTx")
 	goerliEtherCmd.AddCommand(
 		flags.PostCommands(
-			GetCmdRawTx(types.Chain(types.Goerli), types.TypeETH, cdc),
-			GetCmdRawTx(types.Chain(types.Goerli), types.TypeERC20mint, cdc))...)
+			GetCmdEther(types.Chain(types.Goerli), cdc))...)
 	goerliCmd.AddCommand(
 		flags.PostCommands(
 			GetCmdVerifyTx(types.Chain(types.Goerli), cdc))...)
@@ -117,10 +114,13 @@ func makeCommand(name string) *cobra.Command {
 	}
 }
 
-func GetCmdRawTx(chain types.Chain, subCmd types.TXType, cdc *codec.Codec) *cobra.Command {
+func GetCmdEther(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 
-	return &cobra.Command{
-		Use:   fmt.Sprintf("%s [sourceTxId] [amount] [destination]", subCmd),
+	var useMasterKey bool
+	var destination string
+
+	cmd := &cobra.Command{
+		Use:   "ether [sourceTxId] [amount] [destination]",
 		Short: "Generate raw transaction",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -134,18 +134,21 @@ func GetCmdRawTx(chain types.Chain, subCmd types.TXType, cdc *codec.Codec) *cobr
 				return err
 			}
 
-			if txType != subCmd {
-
-				return fmt.Errorf("amount must be a unit of %s", subCmd)
+			if (destination == "" && !useMasterKey) || (destination != "" && useMasterKey) {
+				return fmt.Errorf("either set the flag to set the destination or to use the master key, not both\"")
 			}
 
-			//TODO: Add parameters to specify a key other than the master key
-			addr, err := types.ParseEthAddress(args[2], chain)
-			if err != nil {
-				return err
-			}
+			var msg sdk.Msg
+			if useMasterKey {
+				msg = types.NewMsgRawTxForNextMasterKey(cliCtx.GetFromAddress(), &hash, eth, make([]byte, 0), txType)
+			} else {
+				addr, err := types.ParseEthAddress(destination, chain)
+				if err != nil {
+					return err
+				}
 
-			msg := types.NewMsgRawTx(cliCtx.GetFromAddress(), &hash, eth, addr, txType)
+				msg = types.NewMsgRawTx(cliCtx.GetFromAddress(), &hash, eth, make([]byte, 0), addr, txType)
+			}
 
 			if err := msg.ValidateBasic(); err != nil {
 				return err
@@ -154,6 +157,10 @@ func GetCmdRawTx(chain types.Chain, subCmd types.TXType, cdc *codec.Codec) *cobr
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
+
+	addDestinationFlag(cmd, &destination)
+	addMasterKeyFlag(cmd, &useMasterKey)
+	return cmd
 }
 
 func GetCmdInstallSC(cdc *codec.Codec) *cobra.Command {
@@ -229,6 +236,14 @@ func GetCmdVerifyTx(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
+}
+
+func addMasterKeyFlag(cmd *cobra.Command, useMasterKey *bool) {
+	cmd.Flags().BoolVarP(useMasterKey, masterKeyFlag, "m", false, "Use the current master key instead of a specific key")
+}
+
+func addDestinationFlag(cmd *cobra.Command, destination *string) {
+	cmd.Flags().StringVarP(destination, "destination", "d", "", "Set the destination address for the transaction")
 }
 
 func prepare(reader io.Reader, cdc *codec.Codec) (context.CLIContext, authTypes.TxBuilder) {

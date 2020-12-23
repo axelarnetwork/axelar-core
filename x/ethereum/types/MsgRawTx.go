@@ -13,17 +13,32 @@ type MsgRawTx struct {
 	Sender      sdk.AccAddress
 	TxHash      *common.Hash
 	Amount      big.Int
+	Data        []byte
 	Destination EthAddress
 	TXType      TXType
+	Mode        Mode
 }
 
-func NewMsgRawTx(sender sdk.AccAddress, txHash *common.Hash, amount big.Int, destination EthAddress, txType TXType) sdk.Msg {
+func NewMsgRawTx(sender sdk.AccAddress, txHash *common.Hash, amount big.Int, data []byte, destination EthAddress, txType TXType) sdk.Msg {
 	return MsgRawTx{
 		Sender:      sender,
 		TxHash:      txHash,
 		Amount:      amount,
+		Data:        data,
 		Destination: destination,
 		TXType:      txType,
+		Mode:        ModeSpecificAddress,
+	}
+}
+
+func NewMsgRawTxForNextMasterKey(sender sdk.AccAddress, txHash *common.Hash, amount big.Int, data []byte, txType TXType) sdk.Msg {
+	return MsgRawTx{
+		Sender: sender,
+		TxHash: txHash,
+		Amount: amount,
+		Data:   data,
+		TXType: txType,
+		Mode:   ModeNextMasterKey,
 	}
 }
 
@@ -51,6 +66,10 @@ func (msg MsgRawTx) ValidateBasic() error {
 
 	if !msg.TXType.IsValid() {
 		return fmt.Errorf("Invalid transaction type")
+	}
+
+	if !msg.Mode.IsValid() {
+		return fmt.Errorf("Invalid transaction mode")
 	}
 
 	return nil
