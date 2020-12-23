@@ -58,7 +58,9 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	mainnetEtherCmd := makeCommand("rawTx")
 	mainnetEtherCmd.AddCommand(
 		flags.PostCommands(
-			GetCmdEther(types.Chain(types.Mainnet), cdc))...)
+			GetCmdDeploy(types.Chain(types.Mainnet), cdc),
+			GetCmdEther(types.Chain(types.Mainnet), cdc),
+			GetCmdMint(types.Chain(types.Mainnet), cdc))...)
 	mainnetCmd.AddCommand(
 		flags.PostCommands(
 			GetCmdVerifyTx(types.Chain(types.Mainnet), cdc))...)
@@ -67,7 +69,9 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	ropstenEtherCmd := makeCommand("rawTx")
 	ropstenEtherCmd.AddCommand(
 		flags.PostCommands(
-			GetCmdEther(types.Chain(types.Ropsten), cdc))...)
+			GetCmdDeploy(types.Chain(types.Ropsten), cdc),
+			GetCmdEther(types.Chain(types.Ropsten), cdc),
+			GetCmdMint(types.Chain(types.Ropsten), cdc))...)
 	ropstenCmd.AddCommand(
 		flags.PostCommands(
 			GetCmdVerifyTx(types.Chain(types.Ropsten), cdc))...)
@@ -76,7 +80,9 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	kovanEtherCmd := makeCommand("rawTx")
 	kovanEtherCmd.AddCommand(
 		flags.PostCommands(
-			GetCmdEther(types.Chain(types.Kovan), cdc))...)
+			GetCmdDeploy(types.Chain(types.Kovan), cdc),
+			GetCmdEther(types.Chain(types.Kovan), cdc),
+			GetCmdMint(types.Chain(types.Kovan), cdc))...)
 	kovanCmd.AddCommand(
 		flags.PostCommands(
 			GetCmdVerifyTx(types.Chain(types.Kovan), cdc))...)
@@ -85,7 +91,9 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	rinkebyEtherCmd := makeCommand("rawTx")
 	rinkebyEtherCmd.AddCommand(
 		flags.PostCommands(
-			GetCmdEther(types.Chain(types.Rinkeby), cdc))...)
+			GetCmdDeploy(types.Chain(types.Rinkeby), cdc),
+			GetCmdEther(types.Chain(types.Rinkeby), cdc),
+			GetCmdMint(types.Chain(types.Rinkeby), cdc))...)
 	rinkebyCmd.AddCommand(
 		flags.PostCommands(
 			GetCmdVerifyTx(types.Chain(types.Rinkeby), cdc))...)
@@ -94,7 +102,9 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	goerliEtherCmd := makeCommand("rawTx")
 	goerliEtherCmd.AddCommand(
 		flags.PostCommands(
-			GetCmdEther(types.Chain(types.Goerli), cdc))...)
+			GetCmdDeploy(types.Chain(types.Goerli), cdc),
+			GetCmdEther(types.Chain(types.Goerli), cdc),
+			GetCmdMint(types.Chain(types.Goerli), cdc))...)
 	goerliCmd.AddCommand(
 		flags.PostCommands(
 			GetCmdVerifyTx(types.Chain(types.Goerli), cdc))...)
@@ -114,14 +124,56 @@ func makeCommand(name string) *cobra.Command {
 	}
 }
 
-func GetCmdEther(chain types.Chain, cdc *codec.Codec) *cobra.Command {
+func GetCmdDeploy(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 
 	var useMasterKey bool
 	var destination string
 
 	cmd := &cobra.Command{
-		Use:   "ether [sourceTxId] [amount] [destination]",
-		Short: "Generate raw transaction",
+		Use:   "mint [contract ID] [-d <deployer address> | -m]",
+		Short: "mint BTC tokens transaction",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
+
+			if (destination == "" && !useMasterKey) || (destination != "" && useMasterKey) {
+				return fmt.Errorf("either set the flag to set the destination or to use the master key, not both\"")
+			}
+
+			var msg sdk.Msg
+			if useMasterKey {
+				msg = types.NewMsgRawTxForNextMasterKey(cliCtx.GetFromAddress(), nil, *big.NewInt(0), []byte(args[0]), types.TypeSCdeploy)
+			} else {
+				addr, err := types.ParseEthAddress(destination, chain)
+				if err != nil {
+					return err
+				}
+
+				msg = types.NewMsgRawTx(cliCtx.GetFromAddress(), nil, *big.NewInt(0), []byte(args[0]), addr, types.TypeSCdeploy)
+			}
+
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+
+	addDestinationFlag(cmd, &destination)
+	addMasterKeyFlag(cmd, &useMasterKey)
+	return cmd
+}
+
+func GetCmdMint(chain types.Chain, cdc *codec.Codec) *cobra.Command {
+
+	var useMasterKey bool
+	var destination string
+
+	cmd := &cobra.Command{
+		Use:   "mint [sourceTxId] [amount] [contract address] [-d <destination> | -m]",
+		Short: "mint BTC tokens transaction",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
@@ -132,6 +184,68 @@ func GetCmdEther(chain types.Chain, cdc *codec.Codec) *cobra.Command {
 			eth, txType, err := parseValue(args[1])
 			if err != nil {
 				return err
+			}
+
+			if txType != types.TypeERC20mint {
+
+				return fmt.Errorf("amount given must be a unit of bitcoin")
+			}
+
+			if (destination == "" && !useMasterKey) || (destination != "" && useMasterKey) {
+				return fmt.Errorf("either set the flag to set the destination or to use the master key, not both\"")
+			}
+
+			var msg sdk.Msg
+
+			data := common.HexToAddress(args[2]).Bytes()
+
+			if useMasterKey {
+				msg = types.NewMsgRawTxForNextMasterKey(cliCtx.GetFromAddress(), &hash, eth, data, txType)
+			} else {
+				addr, err := types.ParseEthAddress(destination, chain)
+				if err != nil {
+					return err
+				}
+
+				msg = types.NewMsgRawTx(cliCtx.GetFromAddress(), &hash, eth, data, addr, txType)
+			}
+
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+
+	addDestinationFlag(cmd, &destination)
+	addMasterKeyFlag(cmd, &useMasterKey)
+	return cmd
+}
+
+func GetCmdEther(chain types.Chain, cdc *codec.Codec) *cobra.Command {
+
+	var useMasterKey bool
+	var destination string
+
+	cmd := &cobra.Command{
+		Use:   "ether [sourceTxId] [amount] [-d <destination> | -m]",
+		Short: "ether transfer transaction",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
+
+			hash := common.HexToHash(args[0])
+
+			eth, txType, err := parseValue(args[1])
+			if err != nil {
+				return err
+			}
+
+			if txType != types.TypeETH {
+
+				return fmt.Errorf("amount given must be a unit of ether")
 			}
 
 			if (destination == "" && !useMasterKey) || (destination != "" && useMasterKey) {
@@ -167,7 +281,7 @@ func GetCmdInstallSC(cdc *codec.Codec) *cobra.Command {
 
 	return &cobra.Command{
 
-		Use:   "installSC [contract Id] [file path] ",
+		Use:   "installSC [contract ID] [file path] ",
 		Short: "Install an ethereum smart contract in Axelar",
 
 		Args: cobra.ExactArgs(2),

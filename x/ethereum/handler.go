@@ -90,7 +90,7 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc types.R
 		return nil, fmt.Errorf("transaction not verified")
 	}
 
-	tx, err := createTransaction(ctx, rpc, s, destination, &msg.Amount, msg.TXType)
+	tx, err := createTransaction(ctx, k, rpc, s, destination, &msg.Amount, msg.Data, msg.TXType)
 
 	if err != nil {
 		return nil, fmt.Errorf("Could not create ethereum transaction: %s", err)
@@ -249,7 +249,7 @@ func verifyTx(rpc types.RPCClient, tx types.TX, expectedConfirmationHeight uint6
 	https://medium.com/coinmonks/web3-go-part-1-31c68c68e20e
 	https://goethereumbook.org/en/transaction-raw-create/
 */
-func createTransaction(ctx sdk.Context, rpc types.RPCClient, s types.Signer, toAddress common.Address, amount *big.Int, txType types.TXType) (*ethTypes.Transaction, error) {
+func createTransaction(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, toAddress common.Address, amount *big.Int, data []byte, txType types.TXType) (*ethTypes.Transaction, error) {
 
 	//TODO: Add support to specify a key other than the master key
 	pk, ok := s.GetCurrentMasterKey(ctx, ethereum)
@@ -276,8 +276,13 @@ func createTransaction(ctx sdk.Context, rpc types.RPCClient, s types.Signer, toA
 
 	case types.TypeERC20mint:
 
-		// TODO: correctly look up the contract address once the deploy contract functionality is done
-		return createMintTransaction(rpc, fromAddress, toAddress, toAddress, gasLimit, amount)
+		contractAddress := common.BytesToAddress(data)
+		return createMintTransaction(rpc, fromAddress, contractAddress, toAddress, gasLimit, amount)
+
+	case types.TypeSCdeploy:
+
+		byteCodes := k.GetSmartContract(ctx, string(data))
+		return createDeploySCTransaction(rpc, fromAddress, gasLimit, byteCodes)
 
 	default:
 
