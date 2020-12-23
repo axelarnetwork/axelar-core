@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/axelarnetwork/tssd/convert"
 	tssd "github.com/axelarnetwork/tssd/pb"
@@ -32,7 +33,13 @@ var (
 	val3       = newValidator(sdk.ValAddress("validator3"), 100)
 	val4       = newValidator(sdk.ValAddress("validator4"), 100)
 	validators = []snapshot.Validator{val1, val2, val3, val4}
-
+	snap       = snapshot.Snapshot{
+		Validators: validators,
+		Timestamp:  time.Now(),
+		Height:     testutils.RandIntBetween(1, 1000000),
+		TotalPower: sdk.NewInt(400),
+		Round:      testutils.RandIntBetween(0, 100000),
+	}
 	randPosInt      = testutils.RandIntsBetween(0, 100000000)
 	randDistinctStr = testutils.RandStrings(3, 15).Distinct()
 )
@@ -104,7 +111,7 @@ func (s *testSetup) SetLockingPeriod(lockingPeriod int64) {
 func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context) (keyID string, keyChan ecdsa.PublicKey) {
 	keyID = randDistinctStr.Next()
 	s.PrivateKey = make(chan *ecdsa.PrivateKey, 1)
-	res, err := s.Keeper.StartKeygen(ctx, keyID, len(validators)-1, validators)
+	res, err := s.Keeper.StartKeygen(ctx, keyID, len(validators)-1, snap)
 	assert.NoError(t, err)
 
 	publicKey := <-res

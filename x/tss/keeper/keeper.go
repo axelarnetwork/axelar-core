@@ -17,6 +17,15 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
+const (
+	rotationPrefix         = "round_"
+	keygenStartHeight      = "blockHeight_"
+	pkPrefix               = "pk_"
+	snapshotForKeyIDPrefix = "sfkid_"
+	sigPrefix              = "sig_"
+	keyIDForSigPrefix      = "kidfs_"
+)
+
 type Keeper struct {
 	broadcaster   types.Broadcaster
 	client        tssd.GG18Client

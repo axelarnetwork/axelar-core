@@ -8,6 +8,15 @@ import (
 	"github.com/btcsuite/btcutil"
 )
 
+const (
+	ModeSpecificAddress Mode = iota
+	ModeCurrentMasterKey
+	ModeNextMasterKey
+	ModeSpecificKey
+)
+
+type Mode int
+
 type ExternalChainAddress struct {
 	Chain   string
 	Address string

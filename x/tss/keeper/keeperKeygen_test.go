@@ -14,9 +14,9 @@ import (
 func TestKeeper_StartKeygen_IdAlreadyInUse_ReturnError(t *testing.T) {
 	for _, keyID := range randDistinctStr.Distinct().Take(100) {
 		s := setup(t)
-		_, err := s.Keeper.StartKeygen(s.Ctx, keyID, 1, validators)
+		_, err := s.Keeper.StartKeygen(s.Ctx, keyID, 1, snap)
 		assert.NoError(t, err)
-		_, err = s.Keeper.StartKeygen(s.Ctx, keyID, 1, validators)
+		_, err = s.Keeper.StartKeygen(s.Ctx, keyID, 1, snap)
 		assert.Error(t, err)
 	}
 }
@@ -47,7 +47,7 @@ func TestKeeper_AssignNextMasterKey_StartKeygenDuringLockingPeriod_Locked(t *tes
 		s.SetLockingPeriod(lockingPeriod)
 
 		keyID := randDistinctStr.Next()
-		res, err := s.Keeper.StartKeygen(ctx, keyID, len(validators)-1, validators)
+		res, err := s.Keeper.StartKeygen(ctx, keyID, len(validators)-1, snap)
 		assert.NoError(t, err)
 
 		// time passes
@@ -81,7 +81,7 @@ func TestKeeper_AssignNextMasterKey_StartKeygenAfterLockingPeriod_Unlocked(t *te
 		s.SetLockingPeriod(lockingPeriod)
 
 		keyID := randDistinctStr.Next()
-		res, err := s.Keeper.StartKeygen(ctx, keyID, len(validators)-1, validators)
+		res, err := s.Keeper.StartKeygen(ctx, keyID, len(validators)-1, snap)
 		assert.NoError(t, err)
 
 		// time passes

@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"crypto/ecdsa"
 	"fmt"
 
 	"github.com/axelarnetwork/tssd/convert"
@@ -14,17 +15,13 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
-const (
-	sigPrefix = "sig_"
-)
-
 // StartMasterKeySign starts a tss signing protocol using the specified key for the given chain.
 func (k Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart, validators []snapshot.Validator) (<-chan exported.Signature, error) {
-	if _, ok := k.signStreams[info.NewSigID]; ok {
-		return nil, fmt.Errorf("signing protocol for ID %s already in progress", info.NewSigID)
+	if _, ok := k.signStreams[info.SigID]; ok {
+		return nil, fmt.Errorf("signing protocol for ID %s already in progress", info.SigID)
 	}
 
-	k.Logger(ctx).Info(fmt.Sprintf("new Sign: sig_id [%s] key_id [%s] message [%s]", info.NewSigID, info.KeyID, string(info.MsgToSign)))
+	k.Logger(ctx).Info(fmt.Sprintf("new Sign: sig_id [%s] key_id [%s] message [%s]", info.SigID, info.KeyID, string(info.MsgToSign)))
 
 	// BEGIN: validity check
 
@@ -38,6 +35,11 @@ func (k Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart, validators [
 		so do not return an error but simply close the result channel
 	*/
 
+	if _, ok := k.getKeyIDForSig(ctx, info.SigID); ok {
+		return nil, fmt.Errorf("sigID %s has been used before", info.SigID)
+	}
+	k.setKeyIDForSig(ctx, info.SigID, info.KeyID)
+
 	sigChan := make(chan exported.Signature)
 
 	stream, signInit := k.prepareSign(ctx, info, validators)
@@ -45,7 +47,7 @@ func (k Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart, validators [
 		close(sigChan)
 		return sigChan, nil // don't propagate nondeterministic errors
 	}
-	k.signStreams[info.NewSigID] = stream
+	k.signStreams[info.SigID] = stream
 
 	go func() {
 		if err := stream.Send(&tssd.MessageIn{Data: signInit}); err != nil {
@@ -60,9 +62,9 @@ func (k Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart, validators [
 		for msg := range broadcastChan {
 			k.Logger(ctx).Debug(fmt.Sprintf(
 				"handler goroutine: outgoing msg: session id [%s] broadcast? [%t] to [%s]",
-				info.NewSigID, msg.IsBroadcast, msg.ToPartyUid))
+				info.SigID, msg.IsBroadcast, msg.ToPartyUid))
 			// sender is set by broadcaster
-			tssMsg := &types.MsgSignTraffic{SessionID: info.NewSigID, Payload: msg}
+			tssMsg := &types.MsgSignTraffic{SessionID: info.SigID, Payload: msg}
 			if err := k.broadcaster.Broadcast(ctx, []broadcast.MsgWithSenderSetter{tssMsg}); err != nil {
 				k.Logger(ctx).Error(sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing sign msg").Error())
 				return
@@ -84,20 +86,6 @@ func (k Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart, validators [
 		k.Logger(ctx).Info(fmt.Sprintf("handler goroutine: received sig from server! [%s], [%s]", r, s))
 	}()
 	return sigChan, nil
-}
-
-// StartMasterKeySign starts a tss signing protocol using the master key for the given chain.
-func (k Keeper) StartMasterKeySign(ctx sdk.Context, info types.MsgMasterKeySignStart, validators []snapshot.Validator) (<-chan exported.Signature, error) {
-	keyID := k.getPreviousMasterKeyId(ctx, info.Chain, 0)
-	if keyID == nil {
-		return nil, fmt.Errorf("master key for chain %s not set", info.Chain)
-	}
-	return k.StartSign(ctx, types.MsgSignStart{
-		Sender:    info.Sender,
-		NewSigID:  info.NewSigID,
-		KeyID:     string(keyID),
-		MsgToSign: info.MsgToSign,
-	}, validators)
 }
 
 // SignMsg takes a types.MsgSignTraffic from the chain and relays it to the keygen protocol
@@ -171,11 +159,11 @@ func (k Keeper) prepareSign(ctx sdk.Context, info types.MsgSignStart, validators
 		k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tssd gRPC call Sign").Error())
 		return nil, nil
 	}
-	k.signStreams[info.NewSigID] = stream
+	k.signStreams[info.SigID] = stream
 	// TODO refactor
 	signInit := &tssd.MessageIn_SignInit{
 		SignInit: &tssd.SignInit{
-			NewSigUid:     info.NewSigID,
+			NewSigUid:     info.SigID,
 			KeyUid:        info.KeyID,
 			PartyUids:     partyUids,
 			MessageToSign: info.MsgToSign,
@@ -184,4 +172,24 @@ func (k Keeper) prepareSign(ctx sdk.Context, info types.MsgSignStart, validators
 
 	k.Logger(ctx).Debug(fmt.Sprintf("my uid [%s] of %v", myAddress.String(), partyUids))
 	return stream, signInit
+}
+
+func (k Keeper) GetKeyForSigID(ctx sdk.Context, sigID string) (ecdsa.PublicKey, bool) {
+	keyID, ok := k.getKeyIDForSig(ctx, sigID)
+	if !ok {
+		return ecdsa.PublicKey{}, false
+	}
+	return k.GetKey(ctx, keyID)
+}
+
+func (k Keeper) setKeyIDForSig(ctx sdk.Context, sigID string, keyID string) {
+	ctx.KVStore(k.storeKey).Set([]byte(keyIDForSigPrefix+sigID), []byte(keyID))
+}
+
+func (k Keeper) getKeyIDForSig(ctx sdk.Context, sigID string) (string, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(keyIDForSigPrefix + sigID))
+	if bz == nil {
+		return "", false
+	}
+	return string(bz), true
 }

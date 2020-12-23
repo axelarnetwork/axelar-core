@@ -52,7 +52,7 @@ func TestTrackAddress(t *testing.T) {
 	}
 
 	handler := NewHandler(k, &btcMock.VoterMock{}, &rpc, &btcMock.SignerMock{})
-	_, err = handler(ctx, types.MsgTrackAddress{Sender: sdk.AccAddress("sender"), Address: expectedAddress})
+	_, err = handler(ctx, types.NewMsgTrackAddress(sdk.AccAddress("sender"), expectedAddress, false))
 
 	<-timeout.Done()
 	assert.Nil(t, err)
@@ -71,8 +71,8 @@ func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 	}
 	var poll exported.PollMeta
 	v := &btcMock.VoterMock{
-		InitPollFunc: func(_ sdk.Context, p exported.PollMeta) error { poll = p; return nil },
-		VoteFunc:     func(ctx sdk.Context, vote exported.MsgVote) error { return nil },
+		InitPollFunc:   func(_ sdk.Context, p exported.PollMeta) error { poll = p; return nil },
+		RecordVoteFunc: func(ctx sdk.Context, vote exported.MsgVote) error { return nil },
 	}
 
 	hash, _ := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
@@ -98,9 +98,9 @@ func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 	assert.Equal(t, types.MsgVerifyTx{}.Type(), v.InitPollCalls()[0].Poll.Type)
 	assert.Equal(t, types.ModuleName, v.InitPollCalls()[0].Poll.Module)
 
-	assert.Equal(t, 1, len(v.VoteCalls()))
-	assert.Equal(t, poll, v.VoteCalls()[0].Vote.Poll())
-	assert.Equal(t, false, v.VoteCalls()[0].Vote.Data())
+	assert.Equal(t, 1, len(v.RecordVoteCalls()))
+	assert.Equal(t, poll, v.RecordVoteCalls()[0].Vote.Poll())
+	assert.Equal(t, false, v.RecordVoteCalls()[0].Vote.Data())
 }
 
 func TestVerifyTx_ValidUTXO(t *testing.T) {
@@ -142,7 +142,7 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 	var poll exported.PollMeta
 	v := &btcMock.VoterMock{
 		InitPollFunc: func(_ sdk.Context, p exported.PollMeta) error { poll = p; return nil },
-		VoteFunc: func(ctx sdk.Context, vote exported.MsgVote) error {
+		RecordVoteFunc: func(ctx sdk.Context, vote exported.MsgVote) error {
 			return nil
 		},
 	}
@@ -157,9 +157,9 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 	assert.Equal(t, types.MsgVerifyTx{}.Type(), v.InitPollCalls()[0].Poll.Type)
 	assert.Equal(t, types.ModuleName, v.InitPollCalls()[0].Poll.Module)
 
-	assert.Equal(t, 1, len(v.VoteCalls()))
-	assert.Equal(t, poll, v.VoteCalls()[0].Vote.Poll())
-	assert.Equal(t, true, v.VoteCalls()[0].Vote.Data())
+	assert.Equal(t, 1, len(v.RecordVoteCalls()))
+	assert.Equal(t, poll, v.RecordVoteCalls()[0].Vote.Poll())
+	assert.Equal(t, true, v.RecordVoteCalls()[0].Vote.Data())
 
 	actualUtxo, ok := k.GetUTXO(ctx, hash.String())
 	assert.True(t, ok)
@@ -190,6 +190,9 @@ func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
 			}
 			return tss.Signature{}, false
 		},
+		GetKeyForSigIDFunc: func(ctx sdk.Context, sigID string) (ecdsa.PublicKey, bool) {
+			return sk.PublicKey, true
+		},
 	}
 	v := &btcMock.VoterMock{ResultFunc: func(s sdk.Context, pollMeta exported.PollMeta) exported.VotingData {
 		return pollMeta.ID == txID
@@ -215,10 +218,13 @@ func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
 
 		_, err = handler(ctx, transfer)
 		assert.NoError(t, err)
+
+		assert.Equal(t, i+1, len(signer.GetKeyForSigIDCalls()))
+		assert.Equal(t, sigID, signer.GetKeyForSigIDCalls()[i].SigID)
 	}
 }
 
-func prepareMsgTransferToNewMasterKey(ctx sdk.Context, k keeper.Keeper, sk *ecdsa.PrivateKey, sigID string) (types.MsgRawTxForMasterKey, types.MsgTransferToNewMasterKey) {
+func prepareMsgTransferToNewMasterKey(ctx sdk.Context, k keeper.Keeper, sk *ecdsa.PrivateKey, sigID string) (types.MsgRawTx, types.MsgSendTx) {
 	hash, err := chainhash.NewHash([]byte(testutils.RandString(chainhash.HashSize)))
 	if err != nil {
 		panic(err)
@@ -240,17 +246,8 @@ func prepareMsgTransferToNewMasterKey(ctx sdk.Context, k keeper.Keeper, sk *ecds
 
 	sender := sdk.AccAddress(testutils.RandString(int(testutils.RandIntBetween(5, 50))))
 
-	rawTx := types.MsgRawTxForMasterKey{
-		Sender: sender,
-		TxHash: hash,
-		Amount: amount,
-		Chain:  types.Chain(chaincfg.MainNetParams.Name),
-	}
+	rawTx := types.NewMsgRawTxForNextMasterKey(sender, types.Chain(chaincfg.MainNetParams.Name), hash, amount)
 
-	transfer := types.MsgTransferToNewMasterKey{
-		Sender:      sender,
-		TxID:        txId,
-		SignatureID: sigID,
-	}
+	transfer := types.NewMsgSendTx(sender, txId, sigID)
 	return rawTx, transfer
 }

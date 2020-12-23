@@ -33,7 +33,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 func getCmdSnapshot(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "snapshot",
+		Use:   "now",
 		Short: "Trigger a new snapshot of the current validator set",
 		Args:  cobra.NoArgs,
 	}

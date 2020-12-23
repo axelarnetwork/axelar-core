@@ -283,7 +283,7 @@ func TestKeyRotation(t *testing.T) {
 
 	// create a tx to transfer funds from master key 1 to master key 2
 	amount = btcutil.Amount(int64(amount) - testutils.RandIntBetween(1, int64(amount)-1))
-	res = <-chain.Submit(btcTypes.NewMsgRawTxForMasterKey(
+	res = <-chain.Submit(btcTypes.NewMsgRawTxForNextMasterKey(
 		sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
 		btcTypes.Chain(chaincfg.MainNetParams.Name),
 		txHash,
@@ -326,11 +326,12 @@ func TestKeyRotation(t *testing.T) {
 
 	// sign transfer tx
 	sigID := stringGen.Next()
-	res = <-chain.Submit(tssTypes.MsgMasterKeySignStart{
+	res = <-chain.Submit(tssTypes.MsgSignStart{
 		Sender:    sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
-		NewSigID:  sigID,
+		SigID:     sigID,
 		Chain:     "bitcoin",
 		MsgToSign: res.Data,
+		Mode:      tssTypes.ModeMasterKey,
 	})
 	assert.NoError(t, res.Error)
 
@@ -343,7 +344,7 @@ func TestKeyRotation(t *testing.T) {
 
 	// execute transfer tx
 	res = <-chain.Submit(
-		btcTypes.NewMsgTransferToNewMasterKey(sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
+		btcTypes.NewMsgSendTx(sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
 			txHash.String(),
 			sigID))
 	assert.NoError(t, res.Error)
@@ -374,8 +375,8 @@ func TestKeyRotation(t *testing.T) {
 
 	// verify master key transfer
 	res = <-chain.Submit(
-		btcTypes.NewMsgVerifyTxForNextMasterKey(sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
-			transferTxHash, voutIdx, amount, btcTypes.Chain(chaincfg.MainNetParams.Name)))
+		btcTypes.NewMsgVerifyTxForMasterKey(sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
+			transferTxHash, voutIdx, amount, btcTypes.ModeNextMasterKey, btcTypes.Chain(chaincfg.MainNetParams.Name)))
 	assert.NoError(t, res.Error)
 
 	// wait for voting to be done

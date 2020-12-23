@@ -10,11 +10,10 @@ import (
 )
 
 type MsgVerifyTx struct {
-	Sender              sdk.AccAddress
-	UTXO                UTXO
-	UseCurrentMasterKey bool
-	UseNextMasterKey    bool
-	Chain               Chain
+	Sender sdk.AccAddress
+	UTXO   UTXO
+	Mode   Mode
+	Chain  Chain
 }
 
 func NewMsgVerifyTx(sender sdk.AccAddress, txHash *chainhash.Hash, voutIdx uint32, destination BtcAddress, amount btcutil.Amount) sdk.Msg {
@@ -26,12 +25,11 @@ func NewMsgVerifyTx(sender sdk.AccAddress, txHash *chainhash.Hash, voutIdx uint3
 			Address: destination,
 			Amount:  amount,
 		},
-		UseCurrentMasterKey: false,
-		UseNextMasterKey:    false,
+		Mode: ModeSpecificAddress,
 	}
 }
 
-func NewMsgVerifyTxForCurrentMasterKey(sender sdk.AccAddress, txHash *chainhash.Hash, voutIdx uint32, amount btcutil.Amount, chain Chain) sdk.Msg {
+func NewMsgVerifyTxForMasterKey(sender sdk.AccAddress, txHash *chainhash.Hash, voutIdx uint32, amount btcutil.Amount, mode Mode, chain Chain) sdk.Msg {
 	return MsgVerifyTx{
 		Sender: sender,
 		UTXO: UTXO{
@@ -39,23 +37,8 @@ func NewMsgVerifyTxForCurrentMasterKey(sender sdk.AccAddress, txHash *chainhash.
 			VoutIdx: voutIdx,
 			Amount:  amount,
 		},
-		UseCurrentMasterKey: true,
-		UseNextMasterKey:    false,
-		Chain:               chain,
-	}
-}
-
-func NewMsgVerifyTxForNextMasterKey(sender sdk.AccAddress, txHash *chainhash.Hash, voutIdx uint32, amount btcutil.Amount, chain Chain) sdk.Msg {
-	return MsgVerifyTx{
-		Sender: sender,
-		UTXO: UTXO{
-			Hash:    txHash,
-			VoutIdx: voutIdx,
-			Amount:  amount,
-		},
-		UseNextMasterKey:    true,
-		UseCurrentMasterKey: false,
-		Chain:               chain,
+		Mode:  mode,
+		Chain: chain,
 	}
 }
 
@@ -71,10 +54,11 @@ func (msg MsgVerifyTx) ValidateBasic() error {
 	if msg.Sender.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
-	if msg.UseNextMasterKey && msg.UseCurrentMasterKey {
-		return fmt.Errorf("choose either custom address, current or next master key")
-	}
-	if msg.UseCurrentMasterKey || msg.UseNextMasterKey {
+
+	switch msg.Mode {
+	case ModeSpecificAddress:
+		return msg.UTXO.Validate()
+	case ModeCurrentMasterKey, ModeNextMasterKey:
 		if msg.UTXO.Hash == nil {
 			return fmt.Errorf("missing hash")
 		}
@@ -87,12 +71,9 @@ func (msg MsgVerifyTx) ValidateBasic() error {
 		if err := msg.Chain.Validate(); err != nil {
 			return err
 		}
-	} else {
-		if err := msg.UTXO.Validate(); err != nil {
-			return err
-		}
+	default:
+		return fmt.Errorf("chosen mode not recognized")
 	}
-
 	return nil
 }
 

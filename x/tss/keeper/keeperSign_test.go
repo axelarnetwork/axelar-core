@@ -14,7 +14,7 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 	s := setup(t)
 	msg := types.MsgSignStart{
 		Sender:    sdk.AccAddress(s.Broadcaster.LocalPrincipal),
-		NewSigID:  "sigID",
+		SigID:     "sigID",
 		KeyID:     "keyID1",
 		MsgToSign: []byte("message"),
 	}

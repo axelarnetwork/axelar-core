@@ -19,6 +19,7 @@ type Snapshot struct {
 	Timestamp  time.Time   `json:"timestamp"`
 	Height     int64       `json:"height"`
 	TotalPower sdk.Int     `json:"totalpower"`
+	Round      int64       `json:"round"`
 }
 
 func (s Snapshot) GetValidator(address sdk.ValAddress) (Validator, bool) {
