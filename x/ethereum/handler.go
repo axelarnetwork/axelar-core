@@ -190,26 +190,6 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, rpc typ
 
 }
 
-func verifyDeploy(actualTx *ethTypes.Transaction, byteCode []byte) error {
-	if !bytes.Equal(actualTx.Data(), byteCode) {
-		return fmt.Errorf("smart contract byte code mismatch")
-	}
-	return nil
-}
-
-func verifyMint(actualTx *ethTypes.Transaction, expectedTx types.Tx) error {
-
-	if actualTx.To().String() != expectedTx.Destination.String() {
-		return fmt.Errorf("expected destination address does not match actual destination address")
-	}
-
-	if actualTx.Value().Cmp(expectedTx.Amount.BigInt()) != 0 {
-		return fmt.Errorf("expected amount does not match actual amount")
-	}
-
-	return nil
-}
-
 func isVerified(ctx sdk.Context, v types.Voter, poll exported.PollMeta) bool {
 	res := v.Result(ctx, poll)
 	return res == nil || !res.(bool)
@@ -249,9 +229,17 @@ func verifyTx(ctx sdk.Context, rpc types.RPCClient, k keeper.Keeper, msg types.M
 	}
 	switch msg.TxType {
 	case types.TypeERC20mint:
-		return verifyMint(actualTx, msg.Tx)
+
+		if !bytes.Equal(actualTx.Data(), createMintCallData(msg.Tx.Destination, msg.Tx.Amount.BigInt())) {
+			return fmt.Errorf("mint call mismatch")
+		}
+
+		return nil
 	case types.TypeSCDeploy:
-		return verifyDeploy(actualTx, k.GetSmartContract(ctx, msg.Tx.ContractID))
+		if !bytes.Equal(actualTx.Data(), k.GetSmartContract(ctx, msg.Tx.ContractID)) {
+			return fmt.Errorf("smart contract byte code mismatch")
+		}
+		return nil
 	default:
 		return fmt.Errorf("unknown tx type")
 	}
@@ -338,14 +326,7 @@ func createDeploySCTransaction(rpc types.RPCClient, fromAddr common.Address, gas
 */
 func createMintTransaction(rpc types.RPCClient, fromAddr, contractAddr, toAddr common.Address, gasLimit uint64, amount *big.Int) (*ethTypes.Transaction, error) {
 
-	paddedAddr := hexutil.Encode(common.LeftPadBytes(toAddr.Bytes(), 32))
-	paddedVal := hexutil.Encode(common.LeftPadBytes(amount.Bytes(), 32))
-
-	var data []byte
-
-	data = append(data, common.FromHex(types.ERC20MintSel)...)
-	data = append(data, common.FromHex(paddedAddr)...)
-	data = append(data, common.FromHex(paddedVal)...)
+	data := createMintCallData(toAddr, amount)
 
 	nonce, err := rpc.PendingNonceAt(context.Background(), fromAddr)
 	if err != nil {
@@ -373,4 +354,16 @@ func createMintTransaction(rpc types.RPCClient, fromAddr, contractAddr, toAddr c
 
 	return ethTypes.NewTransaction(nonce, contractAddr, value, gasLimit, gasPrice, data), nil
 
+}
+
+func createMintCallData(toAddr common.Address, amount *big.Int) []byte {
+	paddedAddr := hexutil.Encode(common.LeftPadBytes(toAddr.Bytes(), 32))
+	paddedVal := hexutil.Encode(common.LeftPadBytes(amount.Bytes(), 32))
+
+	var data []byte
+
+	data = append(data, common.FromHex(types.ERC20MintSel)...)
+	data = append(data, common.FromHex(paddedAddr)...)
+	data = append(data, common.FromHex(paddedVal)...)
+	return data
 }
