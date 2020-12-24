@@ -43,6 +43,10 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 		case types.MsgRawTx:
 			return handleMsgRawTx(ctx, k, v, rpc, s, msg)
 
+		case types.MsgSendTx:
+
+			return handleMsgSendTx(ctx, k, rpc, s, msg)
+
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
