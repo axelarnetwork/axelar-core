@@ -402,12 +402,13 @@ func encodeSig(hash []byte, expectedPubKey ecdsa.PublicKey, R, S *big.Int) ([]by
 		return nil, err
 	}
 
-	if expectedPubKey.Equal(pubkey) {
+	if bytes.Equal(expectedPubKey.Y.Bytes(), pubkey.Y.Bytes()) {
 
 		return sig, nil
 	}
 
 	sig[64] = 1
+
 	return sig, nil
 
 }

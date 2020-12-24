@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"math/big"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	hdwallet "github.com/miguelmota/go-ethereum-hdwallet"
 	"github.com/stretchr/testify/assert"
@@ -71,57 +73,80 @@ func TestERC20Marshal(t *testing.T) {
 
 }
 
-type testECDSA struct {
-	V, R, S *big.Int
-}
+const (
+	dataLength = 256
+	iterations = 32
+)
 
 func TestSig(t *testing.T) {
 
-	wallet, err := hdwallet.NewFromMnemonic(mnemonic)
-	assert.NoError(t, err)
+	for i := 0; i < iterations; i++ {
 
-	path := hdwallet.MustParseDerivationPath("m/44'/60'/0'/0/0")
-	account, err := wallet.Derive(path, false)
-	assert.NoError(t, err)
+		nonce := rand.Uint64()
+		amount := big.NewInt(rand.Int63())
+		gasLimit := rand.Uint64()
+		gasPrice := big.NewInt(rand.Int63())
+		chainID := big.NewInt(rand.Int63())
+		data := make([]byte, dataLength)
+		rand.Read(data)
 
-	addr := account.Address
+		wallet, err := hdwallet.NewFromMnemonic(mnemonic)
+		assert.NoError(t, err)
 
-	privateKey, err := wallet.PrivateKey(account)
-	assert.NoError(t, err)
+		path := hdwallet.MustParseDerivationPath("m/44'/60'/0'/0/0")
+		account, err := wallet.Derive(path, false)
+		assert.NoError(t, err)
 
-	tx1 := ethTypes.NewTransaction(0, addr, big.NewInt(0), 0, big.NewInt(0), make([]byte, 0))
-	tx2 := ethTypes.NewTransaction(0, addr, big.NewInt(0), 0, big.NewInt(0), make([]byte, 0))
+		addr := account.Address
 
-	signer := ethTypes.NewEIP155Signer(big.NewInt(0))
+		privateKey, err := wallet.PrivateKey(account)
+		assert.NoError(t, err)
 
-	signedTx1, err := ethTypes.SignTx(tx1, signer, privateKey)
-	assert.NoError(t, err)
+		tx1 := ethTypes.NewTransaction(nonce, addr, amount, gasLimit, gasPrice, data)
+		tx2 := ethTypes.NewTransaction(nonce, addr, amount, gasLimit, gasPrice, data)
 
-	V1, R1, S1 := signedTx1.RawSignatureValues()
+		signer := ethTypes.NewEIP155Signer(chainID)
 
-	values1 := testECDSA{
-		V: V1,
-		R: R1,
-		S: S1,
+		signedTx1, err := ethTypes.SignTx(tx1, signer, privateKey)
+		assert.NoError(t, err)
+
+		V1, R1, S1 := signedTx1.RawSignatureValues()
+
+		hash := signer.Hash(tx1).Bytes()
+
+		sig, err := encodeSig(hash, privateKey.PublicKey, R1, S1)
+		assert.NoError(t, err)
+
+		recoveredPK, err := crypto.SigToPub(hash, sig)
+		assert.NoError(t, err)
+		assert.Equal(t, privateKey.PublicKey.X.Bytes(), recoveredPK.X.Bytes())
+		assert.Equal(t, privateKey.PublicKey.Y.Bytes(), recoveredPK.Y.Bytes())
+		//assert.True(t, privateKey.PublicKey.Equal(recoveredPK)) // does not work
+
+		recoveredAddr := crypto.PubkeyToAddress(*recoveredPK)
+		assert.Equal(t, addr, recoveredAddr)
+
+		signedTx2, err := tx2.WithSignature(signer, sig)
+		assert.NoError(t, err)
+
+		V2, R2, S2 := signedTx2.RawSignatureValues()
+
+		assert.Equal(t, V1, V2)
+		assert.Equal(t, R1, R2)
+		assert.Equal(t, S1, S2)
+
+		if sig[64] == 0 {
+			sig[64] = 1
+		} else {
+			sig[64] = 0
+		}
+
+		recoveredPK, err = crypto.SigToPub(hash, sig)
+		assert.NoError(t, err)
+
+		recoveredAddr = crypto.PubkeyToAddress(*recoveredPK)
+		assert.NotEqual(t, addr, recoveredAddr)
 	}
-
-	hash := signer.Hash(tx1).Bytes()
-
-	sig, err := encodeSig(hash, privateKey.PublicKey, R1, S1)
-	assert.NoError(t, err)
-
-	signedTx2, err := tx2.WithSignature(signer, sig)
-	assert.NoError(t, err)
-
-	V2, R2, S2 := signedTx2.RawSignatureValues()
-
-	values2 := testECDSA{
-		V: V2,
-		R: R2,
-		S: S2,
-	}
-
-	assert.Equal(t, values1, values2)
 }
 
 // This test deploys an ERC20 mintable contract and mints tokens for a predetermined wallet.
