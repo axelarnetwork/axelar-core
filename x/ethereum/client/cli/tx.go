@@ -42,7 +42,8 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		sendCmd := GetCmdSend(cdc)
 
 		netRootCmd := makeCommand(string(net))
-		netRootCmd.AddCommand(rawTxCmd, verifyTxCmd, sendCmd)
+		netRootCmd.AddCommand(rawTxCmd, verifyTxCmd)
+		netRootCmd.AddCommand(flags.PostCommands(sendCmd)...)
 
 		ethTxCmd.AddCommand(netRootCmd)
 	}
