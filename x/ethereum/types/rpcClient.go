@@ -19,9 +19,10 @@ const (
 	ganache   = "http://127.0.0.1:7545"
 )
 
-func NewRPCClient() (*ethclient.Client, error) {
+func NewRPCClient(url string) (*ethclient.Client, error) {
 	//return ethclient.Dial(fmt.Sprintf("https://%s/v3/%s", gateway, myproject))
-	return ethclient.Dial("http://host.docker.internal:7545")
+	//return ethclient.Dial("http://host.docker.internal:7545")
+	return ethclient.Dial(url)
 }
 
 type RPCClient interface {

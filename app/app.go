@@ -312,7 +312,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	app.votingKeeper = voteKeeper.NewKeeper(app.cdc, keys[voteTypes.StoreKey], store.NewSubjectiveStore(), app.snapKeeper, app.broadcastKeeper)
 
 	// TODO: enable running node without an Ethereum bridge
-	rpcETC, err := ethTypes.NewRPCClient()
+	rpcETC, err := ethTypes.NewRPCClient(axelarCfg.EthRpcAddr)
 	if err != nil {
 		tmos.Exit(err.Error())
 	}

@@ -9,6 +9,7 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgVoteVerifiedTx{}, "ethbridge/VoteVerifyTx", nil)
 	cdc.RegisterConcrete(MsgVerifyTx{}, "ethbridge/VerifyTx", nil)
 	cdc.RegisterConcrete(MsgRawTx{}, "ethbridge/RawTx", nil)
+	cdc.RegisterConcrete(MsgSendTx{}, "ethbridge/SendTx", nil)
 	cdc.RegisterConcrete(MsgInstallSC{}, "ethbridge/InstallSC", nil)
 
 }
