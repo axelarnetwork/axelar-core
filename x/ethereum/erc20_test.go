@@ -121,7 +121,6 @@ func TestSig(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, privateKey.PublicKey.X.Bytes(), recoveredPK.X.Bytes())
 		assert.Equal(t, privateKey.PublicKey.Y.Bytes(), recoveredPK.Y.Bytes())
-		//assert.True(t, privateKey.PublicKey.Equal(recoveredPK)) // does not work
 
 		recoveredAddr := crypto.PubkeyToAddress(*recoveredPK)
 		assert.Equal(t, addr, recoveredAddr)

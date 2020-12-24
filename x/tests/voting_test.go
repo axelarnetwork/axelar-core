@@ -45,11 +45,18 @@ var (
 		"03de73d454813a5909a8b3565dfef6852ed3418baa6930e3b7dbb9117702cf07",
 		"9b9ef444466cd50c85e88f2dca957ffa66dcf79d47652c0667ea6b1f3108b77a",
 		"74d39e87c810a80faff70dcbd988c661dbe283a27f903cd587ab9c0b221cc602"}
-	hash1, _     = chainhash.NewHashFromStr(txIds[0])
-	hash2, _     = chainhash.NewHashFromStr(txIds[1])
-	hash3, _     = chainhash.NewHashFromStr(txIds[2])
-	hash4, _     = chainhash.NewHashFromStr(txIds[3])
-	hash5, _     = chainhash.NewHashFromStr(txIds[4])
+	hash1, _ = chainhash.NewHashFromStr(txIds[0])
+	hash2, _ = chainhash.NewHashFromStr(txIds[1])
+	hash3, _ = chainhash.NewHashFromStr(txIds[2])
+	hash4, _ = chainhash.NewHashFromStr(txIds[3])
+	hash5, _ = chainhash.NewHashFromStr(txIds[4])
+	senders  = []string{
+		"2MwU72uP9DWeXxPoq4VBRPH4UkDkH2zkhah",
+		"2MujoFWjkfm8vwn8bFWCwS1UP9KLLk7Eqyj",
+		"2NGZSCz4iug4677pdNAFtTJhRhBU7k7g6dY",
+		"tb1q9mncjrazn5xgqdcqyjc0q0vzaytx2uzfc69q0x",
+		"2Mv9yBkCHbmG3viJzFFSDsbhyNihYWnhbiB"}
+
 	destinations = []string{
 		"2NGZSCz4iug4677pdNAFtTJhRhBU7k7g6dY",
 		"2Mv9yBkCHbmG3viJzFFSDsbhyNihYWnhbiB",
@@ -96,11 +103,11 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 	blockChain.Start()
 
 	verifyMsgs := []sdk.Msg{
-		prepareVerifyMsg(hash1, destinations[0], 1),
-		prepareVerifyMsg(hash2, destinations[1], 2),
-		prepareVerifyMsg(hash3, destinations[2], 3),
-		prepareVerifyMsg(hash4, destinations[3], 4),
-		prepareVerifyMsg(hash5, destinations[4], 5),
+		prepareVerifyMsg(hash1, senders[0], destinations[0], 1),
+		prepareVerifyMsg(hash2, senders[1], destinations[1], 2),
+		prepareVerifyMsg(hash3, senders[2], destinations[2], 3),
+		prepareVerifyMsg(hash4, senders[3], destinations[3], 4),
+		prepareVerifyMsg(hash5, senders[4], destinations[4], 5),
 	}
 
 	// test begin
@@ -131,9 +138,12 @@ func vout(amount int, destination string) btcjson.Vout {
 	}
 }
 
-func prepareVerifyMsg(hash *chainhash.Hash, destination string, amount int) sdk.Msg {
+func prepareVerifyMsg(hash *chainhash.Hash, sender string, destination string, amount int) sdk.Msg {
 	return btcTypes.NewMsgVerifyTx(sdk.AccAddress("user1"), hash, 0, btcTypes.BtcAddress{
-		Chain:         "testnet3",
+		Network:       "testnet3",
+		EncodedString: sender,
+	}, btcTypes.BtcAddress{
+		Network:       "testnet3",
 		EncodedString: destination,
 	}, btcutil.Amount(amount))
 }
@@ -149,16 +159,16 @@ func newNodeForVote(moniker string, broadcaster bcExported.Broadcaster, staker v
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 
 	// Initialize all keepers and handlers you want to involve in the test
-	vK := keeper.NewKeeper(testutils.Codec(), fake.NewKVStoreKey(voteTypes.StoreKey), store.NewSubjectiveStore(), staker, broadcaster)
+	vK := keeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(voteTypes.StoreKey), store.NewSubjectiveStore(), staker, broadcaster)
 	r := fake.NewRouter()
 	vH := vote.NewHandler()
 
-	btcK := btcKeeper.NewBtcKeeper(testutils.Codec(), fake.NewKVStoreKey(btcTypes.StoreKey))
+	btcK := btcKeeper.NewBtcKeeper(testutils.Codec(), sdk.NewKVStoreKey(btcTypes.StoreKey))
 	// We use a fake for the bitcoin rpc client so we can control the responses from the "bitcoin" network
 	btcH := bitcoin.NewHandler(btcK, vK, &btcMock.RPCClientMock{
 		GetRawTransactionVerboseFunc: func(hash *chainhash.Hash) (*btcjson.TxRawResult, error) {
 			return txs[hash.String()], nil
-		}}, nil)
+		}}, nil, nil)
 
 	broadcastH := broadcast.NewHandler(broadcaster)
 

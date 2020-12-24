@@ -21,6 +21,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	btcMock "github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
@@ -46,12 +47,12 @@ func TestTrackAddress(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	expectedAddress, err := types.ParseBtcAddress(addr.EncodeAddress(), types.Chain(chaincfg.MainNetParams.Name))
+	expectedAddress, err := types.ParseBtcAddress(addr.EncodeAddress(), types.Network(chaincfg.MainNetParams.Name))
 	if err != nil {
 		panic(err)
 	}
 
-	handler := NewHandler(k, &btcMock.VoterMock{}, &rpc, &btcMock.SignerMock{})
+	handler := NewHandler(k, &btcMock.VoterMock{}, &rpc, &btcMock.SignerMock{}, &btcMock.BalancerMock{})
 	_, err = handler(ctx, types.NewMsgTrackAddress(sdk.AccAddress("sender"), expectedAddress, false))
 
 	<-timeout.Done()
@@ -76,18 +77,20 @@ func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 	}
 
 	hash, _ := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
-	addr, _ := types.ParseBtcAddress("bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq", "mainnet")
+	sender, _ := types.ParseBtcAddress("1NtzRAvBRZsUjG5i5MxNt9xwaUByri9Rg2", "mainnet")
+	recipient, _ := types.ParseBtcAddress("bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq", "mainnet")
 	utxo := types.UTXO{
-		Hash:    hash,
-		VoutIdx: 0,
-		Amount:  10,
-		Address: addr,
+		Hash:      hash,
+		VoutIdx:   0,
+		Amount:    10,
+		Recipient: recipient,
+		Sender:    sender,
 	}
 	if err := utxo.Validate(); err != nil {
 		panic(err)
 	}
 
-	handler := NewHandler(k, v, &rpc, &btcMock.SignerMock{})
+	handler := NewHandler(k, v, &rpc, &btcMock.SignerMock{}, &btcMock.BalancerMock{})
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 
 	_, err := handler(ctx, types.MsgVerifyTx{Sender: sdk.AccAddress("sender"), UTXO: utxo})
@@ -108,12 +111,15 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"))
 
 	hash, _ := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
-	addr, _ := types.ParseBtcAddress("bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq", "mainnet")
+	recipient, _ := types.ParseBtcAddress("bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq", "mainnet")
+	sender, _ := types.ParseBtcAddress("1NtzRAvBRZsUjG5i5MxNt9xwaUByri9Rg2", "mainnet")
+	spentHash, _ := chainhash.NewHashFromStr("74d39e87c810a80faff70dcbd988c661dbe283a27f903cd587ab9c0b221cc602")
 	utxo := types.UTXO{
-		Hash:    hash,
-		VoutIdx: 0,
-		Amount:  10,
-		Address: addr,
+		Hash:      hash,
+		VoutIdx:   0,
+		Amount:    10,
+		Recipient: recipient,
+		Sender:    sender,
 	}
 	if err := utxo.Validate(); err != nil {
 		panic(err)
@@ -125,16 +131,34 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 				return &btcjson.TxRawResult{
 					Txid: hash.String(),
 					Hash: hash.String(),
+					Vin: []btcjson.Vin{{
+						Txid: spentHash.String(),
+						Vout: 0,
+					}},
 					Vout: []btcjson.Vout{{
 						Value: btcutil.Amount(10).ToBTC(),
 						N:     0,
 						ScriptPubKey: btcjson.ScriptPubKeyResult{
-							Addresses: []string{utxo.Address.String()},
+							Addresses: []string{utxo.Recipient.String()},
 						},
 					}},
 					Confirmations: 7,
 				}, nil
 			}
+			if hash.IsEqual(spentHash) {
+				return &btcjson.TxRawResult{
+					Txid: hash.String(),
+					Hash: hash.String(),
+					Vout: []btcjson.Vout{{
+						N: 0,
+						ScriptPubKey: btcjson.ScriptPubKeyResult{
+							Addresses: []string{sender.String()},
+						},
+					}},
+					Confirmations: 20,
+				}, nil
+			}
+
 			return nil, fmt.Errorf("not found")
 		},
 	}
@@ -146,7 +170,7 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 			return nil
 		},
 	}
-	handler := NewHandler(k, v, &rpc, &btcMock.SignerMock{})
+	handler := NewHandler(k, v, &rpc, &btcMock.SignerMock{}, &btcMock.BalancerMock{})
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 
 	_, err := handler(ctx, types.MsgVerifyTx{Sender: sdk.AccAddress("sender"), UTXO: utxo})
@@ -168,16 +192,16 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 
 func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
 	cdc := testutils.Codec()
-	k := keeper.NewBtcKeeper(cdc, fake.NewKVStoreKey(types.StoreKey))
+	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey(types.StoreKey))
 
 	var sk, skNext *ecdsa.PrivateKey
 	var txHash []byte
 	var txID, sigID string
 	signer := &btcMock.SignerMock{
-		GetCurrentMasterKeyFunc: func(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool) {
+		GetCurrentMasterKeyFunc: func(ctx sdk.Context, chain balance.Chain) (ecdsa.PublicKey, bool) {
 			return sk.PublicKey, true
 		},
-		GetNextMasterKeyFunc: func(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool) {
+		GetNextMasterKeyFunc: func(ctx sdk.Context, chain balance.Chain) (ecdsa.PublicKey, bool) {
 			return skNext.PublicKey, true
 		},
 		GetSigFunc: func(ctx sdk.Context, sID string) (tss.Signature, bool) {
@@ -201,7 +225,10 @@ func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
 		hash := tx.TxHash()
 		return &hash, nil
 	}}
-	handler := NewHandler(k, v, rpc, signer)
+	b := &btcMock.BalancerMock{IsLinkedFunc: func(ctx sdk.Context, sender balance.CrossChainAddress) (balance.CrossChainAddress, bool) {
+		return balance.CrossChainAddress{}, false
+	}}
+	handler := NewHandler(k, v, rpc, signer, b)
 
 	for i := 0; i < testReps; i++ {
 		ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
@@ -242,13 +269,13 @@ func prepareMsgTransferToNewMasterKey(ctx sdk.Context, k keeper.Keeper, sk *ecds
 		Hash:    hash,
 		VoutIdx: uint32(testutils.RandIntBetween(0, 10)),
 		Amount:  amount,
-		Address: types.BtcAddress{Chain: types.Chain(chaincfg.MainNetParams.Name), EncodedString: addr.EncodeAddress()},
+		Recipient: types.BtcAddress{Network: types.Network(chaincfg.MainNetParams.Name), EncodedString: addr.EncodeAddress()},
 	})
 	_ = k.ProcessUTXOPollResult(ctx, txId, true)
 
 	sender := sdk.AccAddress(testutils.RandString(int(testutils.RandIntBetween(5, 50))))
 
-	rawTx := types.NewMsgRawTxForNextMasterKey(sender, types.Chain(chaincfg.MainNetParams.Name), hash, amount)
+	rawTx := types.NewMsgRawTxForNextMasterKey(sender, types.Network(chaincfg.MainNetParams.Name), hash, amount)
 
 	transfer := types.NewMsgSendTx(sender, txId, sigID)
 	return rawTx, transfer

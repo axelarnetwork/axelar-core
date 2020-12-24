@@ -1,10 +1,10 @@
-package snapshot
+package balance
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
-	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
+	"github.com/axelarnetwork/axelar-core/x/balance/keeper"
+	"github.com/axelarnetwork/axelar-core/x/balance/types"
 )
 
 // InitGenesis initialize default parameters

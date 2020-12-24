@@ -29,7 +29,7 @@ func NewQuerier(k Keeper) sdk.Querier {
 
 func queryAddress(ctx sdk.Context, addr string, k Keeper) ([]byte, error) {
 	address := k.GetTrackedAddress(ctx, addr)
-	if address.IsInvalid() {
+	if address == "" {
 		return nil, types.ErrAddressNotTracked
 	}
 	bz, err := codec.MarshalJSONIndent(types.ModuleCdc, address)

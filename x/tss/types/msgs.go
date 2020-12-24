@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 
+	"github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/tssd/convert"
 	tssd "github.com/axelarnetwork/tssd/pb"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -88,7 +89,7 @@ type MsgSignStart struct {
 	Sender    sdk.AccAddress
 	SigID     string
 	KeyID     string
-	Chain     string
+	Chain     exported.Chain
 	MsgToSign []byte
 	Mode      Mode
 }
@@ -118,8 +119,8 @@ func (msg MsgSignStart) ValidateBasic() error {
 			return sdkerrors.Wrap(ErrTss, "key id must be set")
 		}
 	case ModeMasterKey:
-		if msg.Chain == "" {
-			return sdkerrors.Wrap(ErrTss, "chain must be set")
+		if err := msg.Chain.Validate(); err != nil {
+			return err
 		}
 	}
 
@@ -223,7 +224,7 @@ func (msg *MsgSignTraffic) SetSender(sender sdk.AccAddress) {
 
 type MsgAssignNextMasterKey struct {
 	Sender sdk.AccAddress
-	Chain  string
+	Chain  exported.Chain
 	KeyID  string
 }
 
@@ -237,8 +238,8 @@ func (msg MsgAssignNextMasterKey) ValidateBasic() error {
 	if msg.KeyID == "" {
 		return fmt.Errorf("key id must be set")
 	}
-	if msg.Chain == "" {
-		return fmt.Errorf("chain must be set")
+	if err := msg.Chain.Validate(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -352,7 +353,7 @@ func (msg MsgVoteSig) Data() voting.VotingData {
 
 type MsgRotateMasterKey struct {
 	Sender sdk.AccAddress
-	Chain  string
+	Chain  exported.Chain
 }
 
 func (msg MsgRotateMasterKey) Route() string {
@@ -367,8 +368,8 @@ func (msg MsgRotateMasterKey) ValidateBasic() error {
 	if msg.Sender == nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
-	if msg.Chain == "" {
-		return fmt.Errorf("missing chain")
+	if err := msg.Chain.Validate(); err != nil {
+		return err
 	}
 
 	return nil

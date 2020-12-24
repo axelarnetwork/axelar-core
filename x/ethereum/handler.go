@@ -10,6 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -22,7 +23,6 @@ import (
 )
 
 const (
-	ethereum = "ethereum"
 	gasLimit = uint64(3000000)
 )
 
@@ -160,7 +160,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, rpc typ
 	k.Logger(ctx).Debug("verifying ethereum transaction")
 	txId := msg.Tx.Hash.String()
 
-	mk, ok := s.GetCurrentMasterKey(ctx, ethereum)
+	mk, ok := s.GetCurrentMasterKey(ctx, balance.Ethereum)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, "master key not found")
 	}
@@ -290,7 +290,7 @@ func verifyTx(ctx sdk.Context, rpc types.RPCClient, k keeper.Keeper, msg types.M
 */
 func createTransaction(ctx sdk.Context, rpc types.RPCClient, s types.Signer, k keeper.Keeper, v types.Voter, msg types.MsgRawTx) (*ethTypes.Transaction, error) {
 
-	pk, ok := s.GetCurrentMasterKey(ctx, ethereum)
+	pk, ok := s.GetCurrentMasterKey(ctx, balance.Ethereum)
 	if !ok {
 		return nil, fmt.Errorf("key not found")
 	}

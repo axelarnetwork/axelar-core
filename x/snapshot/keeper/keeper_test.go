@@ -58,7 +58,7 @@ func TestSnapshots(t *testing.T) {
 
 			assert.True(t, staker.GetLastTotalPower(ctx).Equal(sdk.NewInt(int64(params.totalPower))))
 
-			keeper := NewKeeper(cdc, fake.NewKVStoreKey("staking"), staker)
+			keeper := NewKeeper(cdc, sdk.NewKVStoreKey("staking"), staker)
 
 			_, ok := keeper.GetSnapshot(ctx, 0)
 

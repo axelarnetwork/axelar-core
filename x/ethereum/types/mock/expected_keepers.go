@@ -5,6 +5,7 @@ package mock
 
 import (
 	"crypto/ecdsa"
+	"github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -240,7 +241,7 @@ var _ types.Signer = &SignerMock{}
 //
 //         // make and configure a mocked types.Signer
 //         mockedSigner := &SignerMock{
-//             GetCurrentMasterKeyFunc: func(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool) {
+//             GetCurrentMasterKeyFunc: func(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool) {
 // 	               panic("mock out the GetCurrentMasterKey method")
 //             },
 //             GetKeyFunc: func(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool) {
@@ -249,7 +250,7 @@ var _ types.Signer = &SignerMock{}
 //             GetKeyForSigIDFunc: func(ctx sdk.Context, sigID string) (ecdsa.PublicKey, bool) {
 // 	               panic("mock out the GetKeyForSigID method")
 //             },
-//             GetNextMasterKeyFunc: func(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool) {
+//             GetNextMasterKeyFunc: func(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool) {
 // 	               panic("mock out the GetNextMasterKey method")
 //             },
 //             GetSigFunc: func(ctx sdk.Context, sigID string) (tss.Signature, bool) {
@@ -263,7 +264,7 @@ var _ types.Signer = &SignerMock{}
 //     }
 type SignerMock struct {
 	// GetCurrentMasterKeyFunc mocks the GetCurrentMasterKey method.
-	GetCurrentMasterKeyFunc func(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool)
+	GetCurrentMasterKeyFunc func(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool)
 
 	// GetKeyFunc mocks the GetKey method.
 	GetKeyFunc func(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool)
@@ -272,7 +273,7 @@ type SignerMock struct {
 	GetKeyForSigIDFunc func(ctx sdk.Context, sigID string) (ecdsa.PublicKey, bool)
 
 	// GetNextMasterKeyFunc mocks the GetNextMasterKey method.
-	GetNextMasterKeyFunc func(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool)
+	GetNextMasterKeyFunc func(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool)
 
 	// GetSigFunc mocks the GetSig method.
 	GetSigFunc func(ctx sdk.Context, sigID string) (tss.Signature, bool)
@@ -284,7 +285,7 @@ type SignerMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Chain is the chain argument value.
-			Chain string
+			Chain exported.Chain
 		}
 		// GetKey holds details about calls to the GetKey method.
 		GetKey []struct {
@@ -305,7 +306,7 @@ type SignerMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Chain is the chain argument value.
-			Chain string
+			Chain exported.Chain
 		}
 		// GetSig holds details about calls to the GetSig method.
 		GetSig []struct {
@@ -323,13 +324,13 @@ type SignerMock struct {
 }
 
 // GetCurrentMasterKey calls GetCurrentMasterKeyFunc.
-func (mock *SignerMock) GetCurrentMasterKey(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool) {
+func (mock *SignerMock) GetCurrentMasterKey(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool) {
 	if mock.GetCurrentMasterKeyFunc == nil {
 		panic("SignerMock.GetCurrentMasterKeyFunc: method is nil but Signer.GetCurrentMasterKey was just called")
 	}
 	callInfo := struct {
 		Ctx   sdk.Context
-		Chain string
+		Chain exported.Chain
 	}{
 		Ctx:   ctx,
 		Chain: chain,
@@ -345,11 +346,11 @@ func (mock *SignerMock) GetCurrentMasterKey(ctx sdk.Context, chain string) (ecds
 //     len(mockedSigner.GetCurrentMasterKeyCalls())
 func (mock *SignerMock) GetCurrentMasterKeyCalls() []struct {
 	Ctx   sdk.Context
-	Chain string
+	Chain exported.Chain
 } {
 	var calls []struct {
 		Ctx   sdk.Context
-		Chain string
+		Chain exported.Chain
 	}
 	mock.lockGetCurrentMasterKey.RLock()
 	calls = mock.calls.GetCurrentMasterKey
@@ -428,13 +429,13 @@ func (mock *SignerMock) GetKeyForSigIDCalls() []struct {
 }
 
 // GetNextMasterKey calls GetNextMasterKeyFunc.
-func (mock *SignerMock) GetNextMasterKey(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool) {
+func (mock *SignerMock) GetNextMasterKey(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool) {
 	if mock.GetNextMasterKeyFunc == nil {
 		panic("SignerMock.GetNextMasterKeyFunc: method is nil but Signer.GetNextMasterKey was just called")
 	}
 	callInfo := struct {
 		Ctx   sdk.Context
-		Chain string
+		Chain exported.Chain
 	}{
 		Ctx:   ctx,
 		Chain: chain,
@@ -450,11 +451,11 @@ func (mock *SignerMock) GetNextMasterKey(ctx sdk.Context, chain string) (ecdsa.P
 //     len(mockedSigner.GetNextMasterKeyCalls())
 func (mock *SignerMock) GetNextMasterKeyCalls() []struct {
 	Ctx   sdk.Context
-	Chain string
+	Chain exported.Chain
 } {
 	var calls []struct {
 		Ctx   sdk.Context
-		Chain string
+		Chain exported.Chain
 	}
 	mock.lockGetNextMasterKey.RLock()
 	calls = mock.calls.GetNextMasterKey

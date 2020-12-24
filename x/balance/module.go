@@ -1,9 +1,8 @@
-package bitcoin
+package balance
 
 import (
 	"encoding/json"
 
-	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -12,9 +11,8 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/client/cli"
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	"github.com/axelarnetwork/axelar-core/x/balance/keeper"
+	"github.com/axelarnetwork/axelar-core/x/balance/types"
 )
 
 var (
@@ -50,40 +48,24 @@ func (AppModuleBasic) RegisterRESTRoutes(_ context.CLIContext, _ *mux.Router) {
 	// TODO: implement rest interface
 }
 
-func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
-	return cli.GetTxCmd(cdc)
+func (AppModuleBasic) GetTxCmd(_ *codec.Codec) *cobra.Command {
+	return nil
 }
 
-func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
-	return cli.GetQueryCmd(types.QuerierRoute, cdc)
+func (AppModuleBasic) GetQueryCmd(_ *codec.Codec) *cobra.Command {
+	return nil
 }
 
 type AppModule struct {
 	AppModuleBasic
-	keeper   keeper.Keeper
-	voter    types.Voter
-	rpc      *rpcclient.Client
-	signer   types.Signer
-	balancer types.Balancer
-}
-
-// Used for testing without bridge
-func NewDummyAppModule(k keeper.Keeper, voter types.Voter) AppModule {
-	return AppModule{
-		AppModuleBasic: AppModuleBasic{},
-		keeper:         k,
-		voter:          voter,
-	}
+	keeper keeper.Keeper
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, rpc *rpcclient.Client) AppModule {
+func NewAppModule(k keeper.Keeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
-		voter:          voter,
-		signer:         signer,
-		rpc:            rpc,
 	}
 }
 
@@ -108,10 +90,7 @@ func (AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	if am.rpc == nil {
-		return NewDummyHandler(am.keeper, am.voter)
-	}
-	return NewHandler(am.keeper, am.voter, am.rpc, am.signer, am.balancer)
+	return NewHandler()
 }
 
 func (AppModule) QuerierRoute() string {

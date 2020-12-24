@@ -45,7 +45,7 @@ func GetCmdTrackedAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				return nil
 			}
 
-			var out types.ExternalChainAddress
+			var out string
 			cdc.MustUnmarshalJSON(res, &out)
 			return cliCtx.PrintOutput(out)
 		},

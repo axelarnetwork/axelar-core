@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
@@ -12,14 +13,14 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/axelarnetwork/axelar-core/utils/denom"
+	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-const bitcoin = "bitcoin"
-
-func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Signer) sdk.Handler {
+func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Signer, b types.Balancer) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
@@ -28,11 +29,13 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Sig
 		case types.MsgVerifyTx:
 			return handleMsgVerifyTx(ctx, k, v, rpc, s, msg)
 		case *types.MsgVoteVerifiedTx:
-			return handleMsgVoteVerifiedTx(ctx, k, v, *msg)
+			return handleMsgVoteVerifiedTx(ctx, k, v,b, *msg)
 		case types.MsgRawTx:
-			return handleMsgRawTx(ctx, k, s, msg)
+			return handleMsgRawTx(ctx, k,b, s, msg)
 		case types.MsgSendTx:
 			return handleMsgSendTx(ctx, k, rpc, s, msg)
+		case types.MsgTransfer:
+			return handleMsgTransfer(ctx, b, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
@@ -40,16 +43,53 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Sig
 	}
 }
 
-func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.MsgVoteVerifiedTx) (*sdk.Result, error) {
+func handleMsgTransfer(ctx sdk.Context, b types.Balancer, msg types.MsgTransfer) (*sdk.Result, error) {
+	btcAddr := balance.CrossChainAddress{Chain: balance.Bitcoin, Address: msg.BTCAddress.String()}
+	b.LinkAddresses(ctx, btcAddr, msg.Destination)
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+			sdk.NewAttribute(types.AttributeAddress, btcAddr.String()),
+			sdk.NewAttribute(types.AttributeAddress, msg.Destination.String()),
+		),
+	)
+
+	return &sdk.Result{
+		Log:    fmt.Sprintf("successfully linked {%s} and {%s}", btcAddr.String(), msg.Destination.String()),
+		Events: ctx.EventManager().Events(),
+	}, nil
+}
+
+// This can be used as a potential hook to immediately act on a poll being decided by the vote
+func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, b types.Balancer, msg types.MsgVoteVerifiedTx) (*sdk.Result, error) {
 	if err := v.TallyVote(ctx, &msg); err != nil {
 		return nil, err
 	}
 
-	if res := v.Result(ctx, msg.Poll()); res != nil {
+	if confirmed := v.Result(ctx, msg.Poll()); confirmed != nil {
 		if err := k.ProcessUTXOPollResult(ctx, msg.PollMeta.ID, res.(bool)); err != nil {
 			return nil, err
 		}
 		v.DeletePoll(ctx, msg.Poll())
+
+		if confirmed.(bool) {
+			utxo, ok := k.GetUTXO(ctx, msg.PollMeta.ID)
+			if !ok {
+				return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("utxo for poll %s was not stored", msg.PollMeta.String()))
+			}
+			sender := balance.CrossChainAddress{Chain: balance.Bitcoin, Address: utxo.Sender.String()}
+			if recp, linked := b.GetRecipient(ctx, sender); linked {
+				satoshi := sdk.NewCoin(denom.Satoshi, sdk.NewInt(int64(utxo.Amount)))
+				err := b.PrepareForTransfer(ctx, sender, satoshi)
+				if err != nil {
+					return nil, sdkerrors.Wrap(types.ErrBitcoin, "could not prepare transaction for transfer")
+				}
+				k.Logger(ctx).Debug(fmt.Sprintf("%s prepared for tranfer to %s", satoshi.String(), recp.String()))
+			}
+		}
 	}
 	return &sdk.Result{}, nil
 }
@@ -59,20 +99,17 @@ func handleMsgTrack(ctx sdk.Context, k keeper.Keeper, s types.Signer, rpc types.
 	if msg.Mode == types.ModeSpecificAddress {
 		encodedAddr = msg.Address.EncodedString
 	} else {
-		var keyID string
 		var key ecdsa.PublicKey
 		var ok bool
 
 		switch msg.Mode {
 		case types.ModeSpecificKey:
-			keyID = msg.KeyID
 			key, ok = s.GetKey(ctx, msg.KeyID)
 			if !ok {
-				return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("key with ID %s not found", keyID))
+				return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("key with ID %s not found", msg.KeyID))
 			}
 		case types.ModeCurrentMasterKey:
-			keyID = bitcoin
-			key, ok = s.GetCurrentMasterKey(ctx, bitcoin)
+			key, ok = s.GetCurrentMasterKey(ctx, balance.Bitcoin)
 			if !ok {
 				return nil, sdkerrors.Wrap(types.ErrBitcoin, "master key not set")
 			}
@@ -132,22 +169,22 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 		var ok bool
 		switch msg.Mode {
 		case types.ModeCurrentMasterKey:
-			key, ok = s.GetCurrentMasterKey(ctx, bitcoin)
+			key, ok = s.GetCurrentMasterKey(ctx, balance.Bitcoin)
 			if !ok {
 				return nil, sdkerrors.Wrap(types.ErrBitcoin, "no current master key assigned")
 			}
 		case types.ModeNextMasterKey:
-			key, ok = s.GetNextMasterKey(ctx, bitcoin)
+			key, ok = s.GetNextMasterKey(ctx, balance.Bitcoin)
 			if !ok {
 				return nil, sdkerrors.Wrap(types.ErrBitcoin, "no next master key assigned")
 			}
 		}
-		addr, err := pkHashFromKey(key, msg.Chain)
+		addr, err := pkHashFromKey(key, msg.Network)
 		if err != nil {
 			return nil, sdkerrors.Wrap(types.ErrBitcoin, "could not derive Bitcoin address next master key")
 		}
-		msg.UTXO.Address = types.BtcAddress{
-			Chain:         msg.Chain,
+		msg.UTXO.Recipient = types.BtcAddress{
+			Network:       msg.Network,
 			EncodedString: addr.EncodeAddress(),
 		}
 	}
@@ -191,7 +228,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 	}
 }
 
-func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, msg types.MsgRawTx) (*sdk.Result, error) {
+func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, b types.Balancer, s types.Signer, msg types.MsgRawTx) (*sdk.Result, error) {
 	txId := msg.TxHash.String()
 	var destination btcutil.Address
 	var err error
@@ -200,7 +237,7 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, msg types.
 		// msg.ValidateBasic will be called before the handler, so there is no way we have a malformed address here
 		destination, _ = msg.Destination.Convert()
 	case types.ModeNextMasterKey:
-		pk, ok := s.GetNextMasterKey(ctx, bitcoin)
+		pk, ok := s.GetNextMasterKey(ctx, balance.Bitcoin)
 		if !ok {
 			return nil, sdkerrors.Wrap(types.ErrBitcoin, "next master key not set")
 		}
@@ -225,7 +262,7 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, msg types.
 	if !ok {
 		return nil, fmt.Errorf("transaction not verified")
 	}
-	if hash, err := createRawTx(ctx, k, utxo, destination, int64(msg.Amount)); err != nil {
+	if hash, err := createRawTx(ctx, k, b, utxo, destination, int64(msg.Amount)); err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	} else {
 		k.Logger(ctx).Info(fmt.Sprintf("bitcoin tx to sign: %s", k.Codec().MustMarshalJSON(hash)))
@@ -331,7 +368,7 @@ func getPkScript(ctx sdk.Context, k keeper.Keeper, txId string) ([]byte, error) 
 	if !ok {
 		return nil, fmt.Errorf("transaction ID is not known")
 	}
-	return utxo.Address.PkScript(), nil
+	return utxo.Recipient.PkScript(), nil
 }
 
 func trackAddress(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, address string, rescan bool) {
@@ -358,7 +395,12 @@ func trackAddress(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, address
 		3. Create a new output
 	See https://blog.hlongvu.com/post/t0xx5dejn3-Understanding-btcd-Part-4-Create-and-Sign-a-Bitcoin-transaction-with-btcd
 */
-func createRawTx(ctx sdk.Context, k keeper.Keeper, utxo types.UTXO, destination btcutil.Address, amount int64) (hash []byte, err error) {
+func createRawTx(ctx sdk.Context, k keeper.Keeper, b types.Balancer, utxo types.UTXO, destination btcutil.Address, amount int64) (hash []byte, err error) {
+	sender := balance.CrossChainAddress{Chain: balance.Bitcoin, Address: utxo.Sender.String()}
+	if recipient, linked := b.GetRecipient(ctx, sender); linked {
+		return nil, fmt.Errorf("transactions from %s are linked to recipient %s and cannot be withdrawn", sender, recipient)
+	}
+
 	tx := wire.NewMsgTx(wire.TxVersion)
 
 	outPoint := wire.NewOutPoint(utxo.Hash, utxo.VoutIdx)
@@ -377,14 +419,14 @@ func createRawTx(ctx sdk.Context, k keeper.Keeper, utxo types.UTXO, destination 
 	k.SetRawTx(ctx, utxo.Hash.String(), tx)
 
 	// Print out the hash that becomes the input for the threshold signing
-	hash, err = txscript.CalcSignatureHash(utxo.Address.PkScript(), txscript.SigHashAll, tx, 0)
-
+	hash, err = txscript.CalcSignatureHash(utxo.Recipient.PkScript(), txscript.SigHashAll, tx, 0)
+	k.Logger(ctx).Info(fmt.Sprintf("bitcoin tx to sign: %s", k.Codec().MustMarshalJSON(hash)))
 	return hash, nil
 }
 
 // we use Pay2PKH for added security over Pay2PK as well as for the benefit of getting a parsed address back when calling
 // getrawtransaction() on the Bitcoin rpc client
-func pkHashFromKey(key ecdsa.PublicKey, chain types.Chain) (*btcutil.AddressPubKeyHash, error) {
+func pkHashFromKey(key ecdsa.PublicKey, chain types.Network) (*btcutil.AddressPubKeyHash, error) {
 	btcPK := btcec.PublicKey(key)
 	return btcutil.NewAddressPubKeyHash(btcutil.Hash160(btcPK.SerializeCompressed()), chain.Params())
 }
@@ -401,10 +443,11 @@ func verifyTx(rpc types.RPCClient, utxo types.UTXO, expectedConfirmationHeight u
 
 	vout := actualTx.Vout[utxo.VoutIdx]
 
-	if len(vout.ScriptPubKey.Addresses) > 1 {
+	if len(vout.ScriptPubKey.Addresses) != 1 {
 		return fmt.Errorf("deposit must be only spendable by a single address")
 	}
-	if vout.ScriptPubKey.Addresses[0] != utxo.Address.String() {
+
+	if vout.ScriptPubKey.Addresses[0] != utxo.Recipient.String() {
 		return fmt.Errorf("expected destination address does not match actual destination address")
 	}
 
@@ -418,6 +461,32 @@ func verifyTx(rpc types.RPCClient, utxo types.UTXO, expectedConfirmationHeight u
 
 	if actualTx.Confirmations < expectedConfirmationHeight {
 		return fmt.Errorf("not enough confirmations yet")
+	}
+
+	if len(actualTx.Vin) < 1 {
+		return fmt.Errorf("transaction does not have any input")
+	}
+
+	spentTxHash, err := chainhash.NewHashFromStr(actualTx.Vin[0].Txid)
+	if err != nil {
+		return fmt.Errorf("could not read the spent transaction's hash")
+	}
+	spentTx, err := rpc.GetRawTransactionVerbose(spentTxHash)
+	if err != nil {
+		return sdkerrors.Wrap(err, "could not retrieve spent Bitcoin transaction")
+	}
+	if uint32(len(spentTx.Vout)) <= actualTx.Vin[0].Vout {
+		return fmt.Errorf("vout index of spent transaction out of range")
+	}
+
+	spentVout := spentTx.Vout[actualTx.Vin[0].Vout]
+
+	if len(spentVout.ScriptPubKey.Addresses) != 1 {
+		return fmt.Errorf("deposit must be sent by a single address")
+	}
+
+	if spentVout.ScriptPubKey.Addresses[0] != utxo.Sender.String() {
+		return fmt.Errorf("expected recipient address does not match actual recipient address")
 	}
 
 	return nil

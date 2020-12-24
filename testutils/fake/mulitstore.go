@@ -145,21 +145,6 @@ func (t TestKVStore) ReverseIterator(start, end []byte) sdkTypes.Iterator {
 	return mock
 }
 
-type TestStoreKey string
-
-// NewKVStoreKey provides a simple store key for testing
-func NewKVStoreKey(key string) sdkTypes.StoreKey {
-	return TestStoreKey(key)
-}
-
-func (t TestStoreKey) Name() string {
-	return string(t)
-}
-
-func (t TestStoreKey) String() string {
-	return string(t)
-}
-
 // fake iterator
 type mockIterator struct {
 	keys       [][]byte

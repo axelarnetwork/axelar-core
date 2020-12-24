@@ -51,7 +51,7 @@ func handleMsgRotateMasterKey(ctx sdk.Context, k keeper.Keeper, msg types.MsgRot
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeChain, msg.Chain),
+			sdk.NewAttribute(types.AttributeChain, msg.Chain.String()),
 		),
 	)
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil

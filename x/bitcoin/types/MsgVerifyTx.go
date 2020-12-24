@@ -10,26 +10,27 @@ import (
 )
 
 type MsgVerifyTx struct {
-	Sender sdk.AccAddress
-	UTXO   UTXO
-	Mode   Mode
-	Chain  Chain
+	Sender  sdk.AccAddress
+	UTXO    UTXO
+	Mode    Mode
+	Network Network
 }
 
-func NewMsgVerifyTx(sender sdk.AccAddress, txHash *chainhash.Hash, voutIdx uint32, destination BtcAddress, amount btcutil.Amount) sdk.Msg {
+func NewMsgVerifyTx(sender sdk.AccAddress, txHash *chainhash.Hash, voutIdx uint32, btcSender BtcAddress, recipient BtcAddress, amount btcutil.Amount) sdk.Msg {
 	return MsgVerifyTx{
 		Sender: sender,
 		UTXO: UTXO{
-			Hash:    txHash,
-			VoutIdx: voutIdx,
-			Address: destination,
-			Amount:  amount,
+			Hash:      txHash,
+			VoutIdx:   voutIdx,
+			Sender:    btcSender,
+			Recipient: recipient,
+			Amount:    amount,
 		},
 		Mode: ModeSpecificAddress,
 	}
 }
 
-func NewMsgVerifyTxForMasterKey(sender sdk.AccAddress, txHash *chainhash.Hash, voutIdx uint32, amount btcutil.Amount, mode Mode, chain Chain) sdk.Msg {
+func NewMsgVerifyTxForNextMasterKey(sender sdk.AccAddress, txHash *chainhash.Hash, voutIdx uint32, amount btcutil.Amount, network Network) sdk.Msg {
 	return MsgVerifyTx{
 		Sender: sender,
 		UTXO: UTXO{
@@ -37,8 +38,22 @@ func NewMsgVerifyTxForMasterKey(sender sdk.AccAddress, txHash *chainhash.Hash, v
 			VoutIdx: voutIdx,
 			Amount:  amount,
 		},
-		Mode:  mode,
-		Chain: chain,
+		Mode:    ModeNextMasterKey,
+		Network: network,
+	}
+}
+
+func NewMsgVerifyTxToCurrentMasterKey(sender sdk.AccAddress, txHash *chainhash.Hash, voutIdx uint32, btcSender BtcAddress, amount btcutil.Amount, network Network) sdk.Msg {
+	return MsgVerifyTx{
+		Sender: sender,
+		UTXO: UTXO{
+			Hash:    txHash,
+			VoutIdx: voutIdx,
+			Amount:  amount,
+			Sender:  btcSender,
+		},
+		Mode:    ModeCurrentMasterKey,
+		Network: network,
 	}
 }
 
@@ -65,10 +80,10 @@ func (msg MsgVerifyTx) ValidateBasic() error {
 		if msg.UTXO.Amount <= 0 {
 			return fmt.Errorf("amount must be greater than 0")
 		}
-		if msg.UTXO.Address.Validate() == nil {
+		if msg.UTXO.Recipient.Validate() == nil {
 			return fmt.Errorf("destination should not be set when using master key flags")
 		}
-		if err := msg.Chain.Validate(); err != nil {
+		if err := msg.Network.Validate(); err != nil {
 			return err
 		}
 	default:
