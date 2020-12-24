@@ -105,7 +105,10 @@ func TestSig(t *testing.T) {
 		S: S1,
 	}
 
-	sig := encodeSig(R1, S1)
+	hash := signer.Hash(tx1).Bytes()
+
+	sig, err := encodeSig(hash, privateKey.PublicKey, R1, S1)
+	assert.NoError(t, err)
 
 	signedTx2, err := tx2.WithSignature(signer, sig)
 	assert.NoError(t, err)

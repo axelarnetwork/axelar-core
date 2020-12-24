@@ -3,6 +3,7 @@ package ethereum
 import (
 	"bytes"
 	"context"
+	"crypto/ecdsa"
 	"fmt"
 	"math/big"
 
@@ -385,14 +386,28 @@ func verifyContract(ctx sdk.Context, k keeper.Keeper, v types.Voter, contractID 
 	return &verifiedTxID, nil
 }
 
-func encodeSig(R, S *big.Int) []byte {
+func encodeSig(hash []byte, expectedPubKey ecdsa.PublicKey, R, S *big.Int) ([]byte, error) {
 
 	var sig []byte
+	var err error
+	var pubkey *ecdsa.PublicKey
 
 	sig = append(sig, common.LeftPadBytes(R.Bytes(), 32)...)
 	sig = append(sig, common.LeftPadBytes(S.Bytes(), 32)...)
 	sig = append(sig, make([]byte, 1)...)
-	sig[64] = 1
+	sig[64] = 0
 
-	return sig
+	if pubkey, err = crypto.SigToPub(hash, sig); err != nil {
+
+		return nil, err
+	}
+
+	if expectedPubKey.Equal(pubkey) {
+
+		return sig, nil
+	}
+
+	sig[64] = 1
+	return sig, nil
+
 }
