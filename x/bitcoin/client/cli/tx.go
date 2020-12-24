@@ -202,7 +202,7 @@ func GetCmdVerifyTx(network types.Network, cdc *codec.Codec) *cobra.Command {
 		},
 	}
 	addRecipientFlag(verifyCmd, &recipient)
-	verifyCmd.Flags().StringVarP(&sender, "sender", "s", "", "Address of the sender")
+	verifyCmd.Flags().StringVar(&sender, "sender", "", "Address of the sender")
 	verifyCmd.Flags().BoolVar(&fromCurrentMasterKey, "from-curr-mk", false, "Send to current master key instead of a specific key")
 	verifyCmd.Flags().BoolVar(&toCurrentMasterKey, "to-curr-mk", false, "Send to current master key instead of a specific key")
 	verifyCmd.Flags().BoolVar(&toNextMasterKey, "to-next-mk", false, "Send to next master key instead of a specific key")
