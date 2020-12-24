@@ -66,15 +66,6 @@ type AppModule struct {
 	signer types.Signer
 }
 
-// Used for testing without bridge
-func NewDummyAppModule(k keeper.Keeper, voter types.Voter) AppModule {
-	return AppModule{
-		AppModuleBasic: AppModuleBasic{},
-		keeper:         k,
-		voter:          voter,
-	}
-}
-
 // NewAppModule creates a new AppModule object
 func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, rpc *ethclient.Client) AppModule {
 	return AppModule{

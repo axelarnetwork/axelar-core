@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -310,6 +311,17 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 
 	app.votingKeeper = voteKeeper.NewKeeper(app.cdc, keys[voteTypes.StoreKey], store.NewSubjectiveStore(), app.snapKeeper, app.broadcastKeeper)
 
+	// TODO: enable running node without an Ethereum bridge
+	rpcETC, err := ethTypes.NewRPCClient()
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+	_, err = rpcETC.NetworkID(context.Background())
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+	logger.Debug("Successfully connected to ethereum node")
+
 	// Enable running a node with or without a Bitcoin bridge
 	var rpcBTC *rpcclient.Client
 	var btcModule bitcoin.AppModule
@@ -324,13 +336,6 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	} else {
 		btcModule = bitcoin.NewDummyAppModule(app.btcKeeper, app.votingKeeper)
 	}
-
-	// TODO: enable running node without an Ethereum bridge
-	rpcETC, err := ethTypes.NewRPCClient()
-	if err != nil {
-		tmos.Exit(err.Error())
-	}
-	logger.Debug("Successfully connected to ethereum node")
 
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.

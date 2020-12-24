@@ -21,7 +21,7 @@ const (
 
 func NewRPCClient() (*ethclient.Client, error) {
 	//return ethclient.Dial(fmt.Sprintf("https://%s/v3/%s", gateway, myproject))
-	return ethclient.Dial(ganache)
+	return ethclient.Dial("http://host.docker.internal:7545")
 }
 
 type RPCClient interface {
