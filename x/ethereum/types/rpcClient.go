@@ -2,7 +2,6 @@ package types
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -17,10 +16,12 @@ import (
 const (
 	myproject = "82e8e37695ed406cb9313ec09bae18e7"
 	gateway   = "goerli.infura.io"
+	ganache   = "http://127.0.0.1:7545"
 )
 
 func NewRPCClient() (*ethclient.Client, error) {
-	return ethclient.Dial(fmt.Sprintf("https://%s/v3/%s", gateway, myproject))
+	//return ethclient.Dial(fmt.Sprintf("https://%s/v3/%s", gateway, myproject))
+	return ethclient.Dial(ganache)
 }
 
 type RPCClient interface {
