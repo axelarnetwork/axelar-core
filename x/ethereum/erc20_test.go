@@ -135,6 +135,12 @@ func TestSig(t *testing.T) {
 		assert.Equal(t, R1, R2)
 		assert.Equal(t, S1, S2)
 
+		expectedBZ := crypto.CompressPubkey(&privateKey.PublicKey)
+		recoveredBZ := crypto.CompressPubkey(recoveredPK)
+
+		assert.True(t, crypto.VerifySignature(expectedBZ, hash, sig[:64]))
+		assert.True(t, crypto.VerifySignature(recoveredBZ, hash, sig[:64]))
+
 		if sig[64] == 0 {
 			sig[64] = 1
 		} else {

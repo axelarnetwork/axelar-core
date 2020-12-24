@@ -50,6 +50,50 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 	}
 }
 
+func handleMsgSendTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, msg types.MsgSendTx) (*sdk.Result, error) {
+
+	pk, ok := s.GetKeyForSigID(ctx, msg.SignatureID)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not find a corresponding key for sig ID %s", msg.SignatureID))
+	}
+
+	rawTx := k.GetRawTx(ctx, msg.TxID)
+	if rawTx == nil {
+		return nil, fmt.Errorf("raw tx for ID %s has not been prepared yet", msg.TxID)
+	}
+
+	networkID, err := rpc.NetworkID(context.Background())
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not obtain network ID %v", err))
+	}
+
+	sig, ok := s.GetSig(ctx, msg.SignatureID)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not find a corresponding signature for sig ID %s", msg.SignatureID))
+	}
+
+	signer := ethTypes.NewEIP155Signer(networkID)
+	hash := signer.Hash(rawTx).Bytes()
+
+	recoverableSig, err := encodeSig(hash, pk, sig.R, sig.S)
+
+	signedTx, err := rawTx.WithSignature(signer, recoverableSig)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not insert generated signature: %v", err))
+	}
+
+	err = rpc.SendTransaction(context.Background(), signedTx)
+
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not send transaction to network : %v", err))
+	}
+
+	hash = signedTx.Hash().Bytes()
+
+	return &sdk.Result{Data: hash, Log: fmt.Sprintf("successfully sent transaction %s to Ethereum", hash), Events: ctx.EventManager().Events()}, nil
+
+}
+
 func handleMsgInstallSC(ctx sdk.Context, k keeper.Keeper, msg types.MsgInstallSC) (*sdk.Result, error) {
 
 	k.SetSmartContract(ctx, msg.SmartContractID, msg.Bytecode)
