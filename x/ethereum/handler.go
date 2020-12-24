@@ -34,7 +34,7 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 		case types.MsgInstallSC:
 			return handleMsgInstallSC(ctx, k, msg)
 
-		case types.MsgVoteVerifiedTx:
+		case *types.MsgVoteVerifiedTx:
 			return handleMsgVoteVerifiedTx(ctx, v, msg)
 
 		case types.MsgVerifyTx:
@@ -66,14 +66,15 @@ func handleMsgSendTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s ty
 		return nil, fmt.Errorf("raw tx for ID %s has not been prepared yet", msg.TxID)
 	}
 
-	networkID, err := rpc.NetworkID(context.Background())
-	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not obtain network ID %v", err))
-	}
-
 	sig, ok := s.GetSig(ctx, msg.SignatureID)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not find a corresponding signature for sig ID %s", msg.SignatureID))
+	}
+
+	networkID, err := rpc.NetworkID(context.Background())
+	if err != nil {
+		k.Logger(ctx).Error(err.Error())
+		// Todo: properly deal with error
 	}
 
 	signer := ethTypes.NewEIP155Signer(networkID)
@@ -85,16 +86,15 @@ func handleMsgSendTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s ty
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not insert generated signature: %v", err))
 	}
-
+	hash = signedTx.Hash().Bytes()
 	err = rpc.SendTransaction(context.Background(), signedTx)
-
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not send transaction to network : %v", err))
+		k.Logger(ctx).Error(err.Error())
 	}
 
 	hash = signedTx.Hash().Bytes()
 
-	return &sdk.Result{Data: hash, Log: fmt.Sprintf("successfully sent transaction %s to Ethereum", hash), Events: ctx.EventManager().Events()}, nil
+	return &sdk.Result{Data: hash, Log: fmt.Sprintf("successfully sent transaction %s to Ethereum", k.Codec().MustMarshalJSON(hash)), Events: ctx.EventManager().Events()}, nil
 
 }
 
@@ -153,11 +153,11 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc types.R
 }
 
 // This can be used as a potential hook to immediately act on a poll being decided by the vote
-func handleMsgVoteVerifiedTx(ctx sdk.Context, v types.Voter, msg types.MsgVoteVerifiedTx) (*sdk.Result, error) {
-	if err := v.TallyVote(ctx, &msg); err != nil {
+func handleMsgVoteVerifiedTx(ctx sdk.Context, v types.Voter, msg *types.MsgVoteVerifiedTx) (*sdk.Result, error) {
+	if err := v.TallyVote(ctx, msg); err != nil {
 		return nil, err
 	}
-	return nil, nil
+	return &sdk.Result{}, nil
 }
 
 func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, rpc types.RPCClient, v types.Voter, msg types.MsgVerifyTx) (*sdk.Result, error) {
@@ -246,7 +246,13 @@ func verifyTx(ctx sdk.Context, rpc types.RPCClient, k keeper.Keeper, msg types.M
 		return fmt.Errorf("transaction is pending")
 	}
 
-	sender, err := ethTypes.Sender(ethTypes.NewEIP155Signer(msg.Tx.Network.Params().ChainID), actualTx)
+	networkID, err := rpc.NetworkID(context.Background())
+	if err != nil {
+		k.Logger(ctx).Error(err.Error())
+		// Todo: properly deal with error
+	}
+
+	sender, err := ethTypes.Sender(ethTypes.NewEIP155Signer(networkID), actualTx)
 	if err != nil {
 		return fmt.Errorf("could not derive sender")
 	}

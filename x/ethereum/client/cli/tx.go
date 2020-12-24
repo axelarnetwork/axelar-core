@@ -199,7 +199,9 @@ func GetCmdVerifyDeployTx(network types.Network, cdc *codec.Codec) *cobra.Comman
 
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
 
-			hash := common.HexToHash(args[0])
+			var hashBz []byte
+			cdc.MustUnmarshalJSON([]byte(args[0]), &hashBz)
+			hash := common.BytesToHash(hashBz)
 
 			msg := types.NewMsgVerifyDeployTx(cliCtx.GetFromAddress(), network, hash, args[1])
 			if err := msg.ValidateBasic(); err != nil {

@@ -6,7 +6,7 @@ import (
 
 // RegisterCodec registers concrete types on codec
 func RegisterCodec(cdc *codec.Codec) {
-	cdc.RegisterConcrete(MsgVoteVerifiedTx{}, "ethereum/VoteVerifyTx", nil)
+	cdc.RegisterConcrete(&MsgVoteVerifiedTx{}, "ethereum/VoteVerifyTx", nil)
 	cdc.RegisterConcrete(MsgVerifyTx{}, "ethereum/VerifyTx", nil)
 	cdc.RegisterConcrete(MsgRawTx{}, "ethereum/RawTx", nil)
 	cdc.RegisterConcrete(MsgInstallSC{}, "ethereum/InstallSC", nil)

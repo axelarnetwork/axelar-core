@@ -35,7 +35,7 @@ func NewMsgVerifyDeployTx(sender sdk.AccAddress, network Network, hash common.Ha
 			Hash:       hash,
 			ContractID: contractID,
 		},
-		TxType: TypeERC20mint,
+		TxType: TypeSCDeploy,
 	}
 }
 

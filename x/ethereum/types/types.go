@@ -71,6 +71,8 @@ func (n Network) Params() *params.ChainConfig {
 		return params.RinkebyChainConfig
 	case Goerli:
 		return params.GoerliChainConfig
+	case Ganache:
+		return params.AllCliqueProtocolChanges
 	default:
 		return nil
 	}

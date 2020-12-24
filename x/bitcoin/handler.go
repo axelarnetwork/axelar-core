@@ -29,7 +29,7 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Sig
 		case types.MsgVerifyTx:
 			return handleMsgVerifyTx(ctx, k, v, rpc, s, msg)
 		case *types.MsgVoteVerifiedTx:
-			return handleMsgVoteVerifiedTx(ctx, k, v,b, *msg)
+			return handleMsgVoteVerifiedTx(ctx, k, v, b, msg)
 		case types.MsgRawTx:
 			return handleMsgRawTx(ctx, k,b, s, msg)
 		case types.MsgSendTx:
@@ -64,8 +64,8 @@ func handleMsgTransfer(ctx sdk.Context, b types.Balancer, msg types.MsgTransfer)
 }
 
 // This can be used as a potential hook to immediately act on a poll being decided by the vote
-func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, b types.Balancer, msg types.MsgVoteVerifiedTx) (*sdk.Result, error) {
-	if err := v.TallyVote(ctx, &msg); err != nil {
+func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, b types.Balancer, msg *types.MsgVoteVerifiedTx) (*sdk.Result, error) {
+	if err := v.TallyVote(ctx, msg); err != nil {
 		return nil, err
 	}
 
@@ -299,7 +299,7 @@ func handleMsgSendTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s ty
 	hash, err := rpc.SendRawTransaction(rawTx, false)
 	if err != nil {
 		k.Logger(ctx).Error(sdkerrors.Wrap(err, "sending transaction to Bitcoin failed").Error())
-		return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("failed to sent transaction to Bitcoin (other nodes might have succeeded): %s", err.Error()))
+		return &sdk.Result{Log: fmt.Sprintf("failed to sent transaction to Bitcoin (other nodes might have succeeded): %s", err.Error())}, nil
 	}
 
 	return &sdk.Result{Data: hash[:], Log: fmt.Sprintf("successfully sent transaction %s to Bitcoin", hash), Events: ctx.EventManager().Events()}, nil
