@@ -63,13 +63,13 @@ func (k Keeper) GetRawTx(ctx sdk.Context, txId string) *ethTypes.Transaction {
 		return nil
 	}
 	var tx *ethTypes.Transaction
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &tx)
+	k.cdc.MustUnmarshalJSON(bz, &tx)
 
 	return tx
 }
 
 func (k Keeper) SetRawTx(ctx sdk.Context, txId string, tx *ethTypes.Transaction) {
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(tx)
+	bz := k.cdc.MustMarshalJSON(tx)
 	ctx.KVStore(k.storeKey).Set([]byte(rawPrefix+txId), bz)
 }
 
