@@ -97,7 +97,7 @@ func (k Keeper) SetSmartContract(ctx sdk.Context, scId string, bytecode []byte) 
 
 func (k Keeper) GetSmartContract(ctx sdk.Context, scId string) []byte {
 
-	return ctx.KVStore(k.storeKey).Get([]byte(txPrefix + scId))
+	return ctx.KVStore(k.storeKey).Get([]byte(scPrefix + scId))
 
 }
 
