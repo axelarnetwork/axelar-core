@@ -4,6 +4,19 @@ The axelar-core app based on the Cosmos SDK is the main application of the axela
 This repository is used to build the necessary binaries and docker image to run a core validator.
 See the axelarnetwork/axelarate repo for instructions to run a node. 
 
+## Dependencies
+
+This repository is dependent on https://github.com/axelarnetwork/tssd/. To be able to build it ensure they reside both in the same parent directory:
+```
+|
++--axelarnetwork
+   |
+   +--axelar-core
+   |
+   +--tssd
+```
+Execute `make copy-tssd` to copy the build-relevant data over before building axelar-core.
+
 ## Building binaries locally
 
 Execute `make build` to create local binaries for the validator node. 
@@ -28,3 +41,8 @@ http://localhost:8080/pkg/github.com/axelarnetwork/axelar-core. The index flag m
 
 Comments at the beginning of packages, before types and before functions are automatically taken from the source files to populate the documentation. 
 See https://blog.golang.org/godoc for more information.
+
+## Test tools
+Because it is an executable, github.com/matryer/moq is not automatically downloaded when executing ``go mod download`` or similar commands. Execute ``go get github.com/matryer/moq`` to install the _moq_ tool to generate mocks for interfaces.
+
+In [testutils](https://github.com/axelarnetwork/axelar-core/tree/master/testutils) there are helpers defined to simplify randomized testing.
