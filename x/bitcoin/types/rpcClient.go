@@ -30,11 +30,17 @@ type RPCClient interface {
 func NewRPCClient(cfg BtcConfig, logger log.Logger) (*rpcclient.Client, error) {
 	logger = logger.With("module", fmt.Sprintf("x/%s", ModuleName))
 
-	if cfg.RpcUser == "" || cfg.RpcPass == "" {
+	// Make sure there are authentication parameters
+	if cfg.CookiePath != "" {
 
 		if err := waitForAuthCookie(cfg.CookiePath, cfg.StartUpTimeout, logger); err != nil {
 			return nil, err
 		}
+
+	} else if !(cfg.RpcUser != "" && cfg.RpcPass != "") {
+
+		return nil, sdkerrors.Wrap(ErrConnFailed, "Authentication method must be specified (either username/password or cookie)")
+
 	}
 
 	rpcCfg := &rpcclient.ConnConfig{
