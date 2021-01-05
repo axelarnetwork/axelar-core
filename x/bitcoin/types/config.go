@@ -7,6 +7,8 @@ import (
 
 type BtcConfig struct {
 	RpcAddr        string        `mapstructure:"rpc_addr"`
+	RpcUser        string        `mapstructure:"rpc_user"`
+	RpcPass        string        `mapstructure:"rpc_pass"`
 	CookiePath     string        `mapstructure:"cookie_file"`
 	RPCTimeout     time.Duration `mapstructure:"timeout_rpc"`
 	StartUpTimeout time.Duration `mapstructure:"timeout_startup"`

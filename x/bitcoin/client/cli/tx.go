@@ -39,35 +39,21 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	mainnet := chaincfg.MainNetParams.Name
-	mainnetCmd := &cobra.Command{
-		Use:                        mainnet,
-		Short:                      fmt.Sprintf("%s transactions subcommands", mainnet),
-		SuggestionsMinimumDistance: 2,
-		RunE:                       client.ValidateCmd,
+	networks := []chaincfg.Params{chaincfg.MainNetParams, chaincfg.TestNet3Params, chaincfg.RegressionNetParams}
+
+	for _, network := range networks {
+
+		cmd := &cobra.Command{
+			Use:                        network.Name,
+			Short:                      fmt.Sprintf("%s transactions subcommands", network.Name),
+			SuggestionsMinimumDistance: 2,
+			RunE:                       client.ValidateCmd,
+		}
+
+		addSubCommands(cmd, types.Chain(network.Name), cdc)
+
+		btcTxCmd.AddCommand(cmd)
 	}
-
-	testnet3 := chaincfg.TestNet3Params.Name
-	testnet3Cmd := &cobra.Command{
-		Use:                        testnet3,
-		Short:                      fmt.Sprintf("%s transactions subcommands", testnet3),
-		SuggestionsMinimumDistance: 2,
-		RunE:                       client.ValidateCmd,
-	}
-
-	regtest := chaincfg.RegressionNetParams.Name
-	regTestCmd := &cobra.Command{
-		Use:                        regtest,
-		Short:                      fmt.Sprintf("%s transactions subcommands", regtest),
-		SuggestionsMinimumDistance: 2,
-		RunE:                       client.ValidateCmd,
-	}
-
-	addSubCommands(mainnetCmd, types.Chain(mainnet), cdc)
-	addSubCommands(testnet3Cmd, types.Chain(testnet3), cdc)
-	addSubCommands(regTestCmd, types.Chain(regtest), cdc)
-
-	btcTxCmd.AddCommand(mainnetCmd, testnet3Cmd, regTestCmd)
 
 	return btcTxCmd
 }

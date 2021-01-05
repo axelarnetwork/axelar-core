@@ -29,13 +29,19 @@ type RPCClient interface {
 
 func NewRPCClient(cfg BtcConfig, logger log.Logger) (*rpcclient.Client, error) {
 	logger = logger.With("module", fmt.Sprintf("x/%s", ModuleName))
-	if err := waitForAuthCookie(cfg.CookiePath, cfg.StartUpTimeout, logger); err != nil {
-		return nil, err
+
+	if cfg.RpcUser == "" || cfg.RpcPass == "" {
+
+		if err := waitForAuthCookie(cfg.CookiePath, cfg.StartUpTimeout, logger); err != nil {
+			return nil, err
+		}
 	}
 
 	rpcCfg := &rpcclient.ConnConfig{
 		Host:                 cfg.RpcAddr,
 		CookiePath:           cfg.CookiePath,
+		User:                 cfg.RpcUser,
+		Pass:                 cfg.RpcPass,
 		DisableTLS:           true, // Bitcoin core does not provide TLS by default
 		DisableAutoReconnect: false,
 		HTTPPostMode:         true, // Bitcoin core only supports HTTP POST mode
