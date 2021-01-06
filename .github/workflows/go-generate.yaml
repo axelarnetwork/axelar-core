@@ -1,0 +1,43 @@
+name: Check Go Generate Up-to-date
+
+on:
+  - pull_request
+
+jobs:
+  check-go-generate-up-to-date:
+    strategy:
+      matrix:
+        go-version:
+          - 1.15.x
+        os:
+          - ubuntu-18.04
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Install moq
+        run: go get github.com/matryer/moq
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # This step will be removed once the tssd module is installed by go get
+      - name: Checkout tssd
+        uses: actions/checkout@v2
+        with:
+          repository: axelarnetwork/tssd
+          path: ./tssd
+          ssh-key: ${{ secrets.CICD_RSA_KEY }}
+
+      - name: Check generated code up-to-date
+        run: |
+          go generate ./...
+
+          if [ -n "$(git status --porcelain)" ]; then
+            exit 1;
+          else
+            exit 0;
+          fi
