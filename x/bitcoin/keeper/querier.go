@@ -3,7 +3,8 @@ package keeper
 import (
 	"fmt"
 
-	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcd/wire"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -13,29 +14,34 @@ import (
 )
 
 const (
-	QueryTrackedAddress = "address"
+	QueryTxInfo = "txInfo"
 )
 
-func NewQuerier(k Keeper) sdk.Querier {
+func NewQuerier(_ Keeper, rpc types.RPCClient) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		switch path[0] {
-		case QueryTrackedAddress:
-			return queryAddress(ctx, path[1], k)
+		case QueryTxInfo:
+			return queryTxInfo(rpc, path[1], path[2])
 		default:
-			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown btc-bridge query endpoint: %s", path[0]))
+			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown btc-bridge query endpoint: %s", path[1]))
 		}
 	}
 }
 
-func queryAddress(ctx sdk.Context, addr string, k Keeper) ([]byte, error) {
-	address := k.GetTrackedAddress(ctx, addr)
-	if address == "" {
-		return nil, types.ErrAddressNotTracked
-	}
-	bz, err := codec.MarshalJSONIndent(types.ModuleCdc, address)
+func queryTxInfo(rpc types.RPCClient, txID string, voutIdx string) ([]byte, error) {
+	v, err := types.ParseVoutIdx(voutIdx)
 	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
+		return nil, err
+	}
+	hash, err := chainhash.NewHashFromStr(txID)
+	if err != nil {
+		return nil, err
 	}
 
-	return bz, nil
+	info, err := rpc.GetOutPointInfo(wire.NewOutPoint(hash, v))
+	if err != nil {
+		return nil, err
+	}
+
+	return types.ModuleCdc.MustMarshalJSON(info), nil
 }

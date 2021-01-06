@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
@@ -66,8 +65,8 @@ func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 	cdc := testutils.Codec()
 	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"))
 	rpc := btcMock.RPCClientMock{
-		GetRawTransactionVerboseFunc: func(hash *chainhash.Hash) (*btcjson.TxRawResult, error) {
-			return nil, fmt.Errorf("not found")
+		GetOutPointInfoFunc: func(out *wire.OutPoint) (types.OutPointInfo, error) {
+			return types.OutPointInfo{}, fmt.Errorf("not found")
 		},
 	}
 	var poll exported.PollMeta
@@ -78,20 +77,20 @@ func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 
 	hash, _ := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
 	recipient, _ := types.ParseBtcAddress("bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq", "mainnet")
-	utxo := types.UTXO{
-		Hash:      hash,
-		VoutIdx:   0,
-		Amount:    10,
-		Recipient: recipient,
+	info := types.OutPointInfo{
+		OutPoint:      wire.NewOutPoint(hash, 0),
+		Amount:        10,
+		Recipient:     recipient,
+		Confirmations: 7,
 	}
-	if err := utxo.Validate(); err != nil {
+	if err := info.Validate(); err != nil {
 		panic(err)
 	}
 
 	handler := NewHandler(k, v, &rpc, &btcMock.SignerMock{}, &btcMock.BalancerMock{})
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 
-	_, err := handler(ctx, types.MsgVerifyTx{Sender: sdk.AccAddress("sender"), UTXO: utxo})
+	_, err := handler(ctx, types.MsgVerifyTx{Sender: sdk.AccAddress("sender"), OutPointInfo: info})
 	assert.Nil(t, err)
 
 	assert.Equal(t, 1, len(v.InitPollCalls()))
@@ -110,39 +109,23 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 
 	hash, _ := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
 	recipient, _ := types.ParseBtcAddress("bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq", "mainnet")
-	spentHash, _ := chainhash.NewHashFromStr("74d39e87c810a80faff70dcbd988c661dbe283a27f903cd587ab9c0b221cc602")
-	utxo := types.UTXO{
-		Hash:      hash,
-		VoutIdx:   0,
-		Amount:    10,
-		Recipient: recipient,
+	info := types.OutPointInfo{
+		OutPoint:      wire.NewOutPoint(hash, 0),
+		Amount:        10,
+		Recipient:     recipient,
+		Confirmations: 7,
 	}
-	if err := utxo.Validate(); err != nil {
+	if err := info.Validate(); err != nil {
 		panic(err)
 	}
 
 	rpc := btcMock.RPCClientMock{
-		GetRawTransactionVerboseFunc: func(hash *chainhash.Hash) (*btcjson.TxRawResult, error) {
-			if hash.IsEqual(utxo.Hash) {
-				return &btcjson.TxRawResult{
-					Txid: hash.String(),
-					Hash: hash.String(),
-					Vin: []btcjson.Vin{{
-						Txid: spentHash.String(),
-						Vout: 0,
-					}},
-					Vout: []btcjson.Vout{{
-						Value: btcutil.Amount(10).ToBTC(),
-						N:     0,
-						ScriptPubKey: btcjson.ScriptPubKeyResult{
-							Addresses: []string{utxo.Recipient.String()},
-						},
-					}},
-					Confirmations: 7,
-				}, nil
+		GetOutPointInfoFunc: func(out *wire.OutPoint) (types.OutPointInfo, error) {
+			if hash.IsEqual(&out.Hash) {
+				return info, nil
 			}
 
-			return nil, fmt.Errorf("not found")
+			return types.OutPointInfo{}, fmt.Errorf("not found")
 		},
 	}
 
@@ -156,7 +139,7 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 	handler := NewHandler(k, v, &rpc, &btcMock.SignerMock{}, &btcMock.BalancerMock{})
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 
-	_, err := handler(ctx, types.MsgVerifyTx{Sender: sdk.AccAddress("sender"), UTXO: utxo})
+	_, err := handler(ctx, types.MsgVerifyTx{Sender: sdk.AccAddress("sender"), OutPointInfo: info})
 	assert.Nil(t, err)
 
 	assert.Equal(t, 1, len(v.InitPollCalls()))
@@ -169,8 +152,9 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 	assert.Equal(t, true, v.RecordVoteCalls()[0].Vote.Data())
 
 	actualUtxo, ok := k.GetUTXOForPoll(ctx, hash.String())
+	//actualOutPoint, ok := k.GetOutPoint(ctx, hash.String())
 	assert.True(t, ok)
-	assert.True(t, utxo.Equals(actualUtxo))
+	assert.True(t, info.Equals(actualOutPoint))
 }
 
 func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
@@ -247,10 +231,8 @@ func prepareMsgTransferToNewMasterKey(ctx sdk.Context, k keeper.Keeper, sk *ecds
 		panic(err)
 	}
 	amount := btcutil.Amount(testutils.RandIntBetween(1, 100000000))
-
-	k.SetUTXOForPoll(ctx, txId, types.UTXO{
-		Hash:      hash,
-		VoutIdx:   uint32(testutils.RandIntBetween(0, 10)),
+	k.SetOutpointInfo(ctx, txId, types.OutPointInfo{
+		OutPoint:  wire.NewOutPoint(hash, uint32(testutils.RandIntBetween(0, 10))),
 		Amount:    amount,
 		Recipient: types.BtcAddress{Network: types.Network(chaincfg.MainNetParams.Name), EncodedString: addr.EncodeAddress()},
 	})

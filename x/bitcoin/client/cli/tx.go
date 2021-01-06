@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
@@ -18,6 +17,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/denom"
 	"github.com/axelarnetwork/axelar-core/x/balance/exported"
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
 
@@ -51,13 +51,14 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	return btcTxCmd
 }
 
-func addSubCommands(command *cobra.Command, network types.Network, cdc *codec.Codec) {
+func addTxSubCommands(command *cobra.Command, network types.Network, cdc *codec.Codec) {
 	cmds := append([]*cobra.Command{GetCmdTrack(network, cdc)},
 		flags.PostCommands(
-			GetCmdVerifyTx(network, cdc),
+			GetCmdVerifyTx(cdc),
 			GetCmdRawTx(network, cdc),
-			GetCmdSend(cdc))...)
-	GetCmdTransfer(network, cdc)
+			GetCmdSend(cdc),
+			GetCmdTransfer(network, cdc))...)
+
 	command.AddCommand(cmds...)
 }
 
@@ -138,57 +139,28 @@ func getCmdTrackPubKey(network types.Network, cdc *codec.Codec) *cobra.Command {
 	return pubKeyCmd
 }
 
-func GetCmdVerifyTx(network types.Network, cdc *codec.Codec) *cobra.Command {
+func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
 	var toCurrentMasterKey bool
 	var toNextMasterKey bool
 	var recipient string
 	var fromCurrentMasterKey bool
 	verifyCmd := &cobra.Command{
-		Use:   "verifyTx [txId] [voutIdx] [amount] [-r <recipient> | --to-curr-mk | --to-next-mk ]",
+		Use:   "verifyTx [txInfo json]",
 		Short: "Verify a Bitcoin transaction",
 		Long: fmt.Sprintf(
 			"Verify that a transaction happened on the Bitcoin network so it can be processed on axelar. "+
-				"Choose %s or %s for the network. Accepted denominations (case-insensitive): %s/%s, %s/%s. "+
-				"Select the index of the transaction output as voutIdx.\n"+
-				"Example: verifyTx 3PtPE3yZAnGoqKsN23gWVpLMYQ4b7a4PxK 1 "+
-				"0.13btc -d bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
-			chaincfg.MainNetParams.Name, chaincfg.TestNet3Params.Name, denom.Satoshi, denom.Sat, denom.Bitcoin, denom.Btc),
-		Args: cobra.ExactArgs(3),
+				"Get the json string by using the %s query", keeper.QueryTxInfo),
+		Args: cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
 
-			hash, err := parseHash(args[0])
-			if err != nil {
-				return err
-			}
+			var out types.OutPointInfo
+			cliCtx.Codec.MustUnmarshalJSON([]byte(args[0]), &out)
 
-			sat, err := denom.ParseSatoshi(args[2])
-			if err != nil {
-				return err
-			}
-			amount := btcutil.Amount(sat.Amount.Int64())
+			msg := types.MsgVerifyTx{Sender: cliCtx.GetFromAddress(), OutPointInfo: out}
 
-			voutIdx, err := parseVoutIdx(err, args[1])
-			if err != nil {
-				return err
-			}
-
-			var msg sdk.Msg
-			if toCurrentMasterKey {
-				msg = types.NewMsgVerifyTxToCurrentMasterKey(cliCtx.GetFromAddress(), hash, voutIdx, amount, network)
-			} else if fromCurrentMasterKey && toNextMasterKey {
-				msg = types.NewMsgVerifyTxForNextMasterKey(cliCtx.GetFromAddress(), hash, voutIdx, amount, network)
-			} else {
-				recipient, err := types.ParseBtcAddress(recipient, network)
-				if err != nil {
-					return err
-				}
-
-				msg = types.NewMsgVerifyTx(cliCtx.GetFromAddress(), hash, voutIdx, recipient, amount)
-			}
-
-			if err = msg.ValidateBasic(); err != nil {
+			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
 
@@ -215,9 +187,9 @@ func GetCmdRawTx(network types.Network, cdc *codec.Codec) *cobra.Command {
 
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
 
-			hash, err := parseHash(args[0])
+			hash, err := chainhash.NewHashFromStr(args[0])
 			if err != nil {
-				return err
+				return sdkerrors.Wrap(err, "could not transform Bitcoin transaction ID to hash")
 			}
 
 			sat, err := denom.ParseSatoshi(args[1])
@@ -299,22 +271,6 @@ func GetCmdTransfer(network types.Network, cdc *codec.Codec) *cobra.Command {
 			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
-}
-
-func parseHash(txId string) (*chainhash.Hash, error) {
-	hash, err := chainhash.NewHashFromStr(txId)
-	if err != nil {
-		return nil, sdkerrors.Wrap(err, "could not transform Bitcoin transaction ID to hash")
-	}
-	return hash, nil
-}
-
-func parseVoutIdx(err error, voutIdx string) (uint32, error) {
-	n, err := strconv.ParseUint(voutIdx, 10, 32)
-	if err != nil {
-		return 0, sdkerrors.Wrap(err, "could not parse voutIdx")
-	}
-	return uint32(n), nil
 }
 
 func addMasterKeyFlag(cmd *cobra.Command, useMasterKey *bool) {

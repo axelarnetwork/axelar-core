@@ -10,7 +10,7 @@ import (
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/wire"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -186,12 +186,13 @@ func newNodeForVote(moniker string, broadcaster bcExported.Broadcaster, staker v
 	btcK := btcKeeper.NewBtcKeeper(testutils.Codec(), sdk.NewKVStoreKey(btcTypes.StoreKey))
 	// We use a fake for the bitcoin rpc client so we can control the responses from the "bitcoin" network
 	btcH := bitcoin.NewHandler(btcK, vK, &btcMock.RPCClientMock{
-		GetRawTransactionVerboseFunc: func(hash *chainhash.Hash) (*btcjson.TxRawResult, error) {
-			return txs[hash.String()], nil
+		GetOutPointInfoFunc: func(out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
+			return txs[out.Hash.String()], nil
 		}}, nil, &btcMock.BalancerMock{
 		GetRecipientFunc: func(ctx sdk.Context, sender balance.CrossChainAddress) (balance.CrossChainAddress, bool) {
 			return balance.CrossChainAddress{}, false
-		}})
+		},
+	})
 
 	broadcastH := broadcast.NewHandler(broadcaster)
 

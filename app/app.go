@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 
-	"github.com/btcsuite/btcd/rpcclient"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/simapp"
@@ -257,7 +256,6 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 			app.slashingKeeper.Hooks()),
 	)
 
-	var err error
 	app.btcKeeper = btcKeeper.NewBtcKeeper(app.cdc, keys[btcTypes.StoreKey])
 
 	app.ethKeeper = ethKeeper.NewEthKeeper(app.cdc, keys[ethTypes.StoreKey])
@@ -320,7 +318,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	logger.Debug("Successfully connected to ethereum node")
 
 	// Enable running a node with or without a Bitcoin bridge
-	var rpcBTC *rpcclient.Client
+	var rpcBTC *btcTypes.RPCClientImpl
 	var btcModule bitcoin.AppModule
 	if axelarCfg.WithBtcBridge {
 		rpcBTC, err = btcTypes.NewRPCClient(axelarCfg.BtcConfig, logger)

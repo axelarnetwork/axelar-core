@@ -3,7 +3,6 @@ package bitcoin
 import (
 	"encoding/json"
 
-	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -62,7 +61,7 @@ type AppModule struct {
 	AppModuleBasic
 	keeper   keeper.Keeper
 	voter    types.Voter
-	rpc      *rpcclient.Client
+	rpc      types.RPCClient
 	signer   types.Signer
 	balancer types.Balancer
 }
@@ -77,7 +76,7 @@ func NewDummyAppModule(k keeper.Keeper, voter types.Voter) AppModule {
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, rpc *rpcclient.Client) AppModule {
+func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, rpc types.RPCClient) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,

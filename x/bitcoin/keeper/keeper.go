@@ -13,7 +13,7 @@ import (
 
 const (
 	rawPrefix  = "raw_"
-	utxoPrefix = "utxo_"
+	outPointPrefix = "out_"
 	pollPrefix = "poll_"
 	addrPrefix = "addr_"
 )
@@ -83,20 +83,20 @@ func (k Keeper) SetRawTx(ctx sdk.Context, txID string, tx *wire.MsgTx) {
 	ctx.KVStore(k.storeKey).Set([]byte(rawPrefix+txID), bz)
 }
 
-func (k Keeper) setUTXO(ctx sdk.Context, txId string, utxo types.UTXO) {
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(utxo)
-	ctx.KVStore(k.storeKey).Set([]byte(utxoPrefix+txId), bz)
+func (k Keeper) setOutpointInfo(ctx sdk.Context, txId string, info types.OutPointInfo) {
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(info)
+	ctx.KVStore(k.storeKey).Set([]byte(outPointPrefix+txId), bz)
 }
 
-func (k Keeper) GetUTXO(ctx sdk.Context, txID string) (types.UTXO, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(utxoPrefix + txID))
+func (k Keeper) GetOutPoint(ctx sdk.Context, txId string) (types.OutPointInfo, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(outPointPrefix + txId))
 	if bz == nil {
-		return types.UTXO{}, false
+		return types.OutPointInfo{}, false
 	}
-	var utxo types.UTXO
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &utxo)
+	var out types.OutPointInfo
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &out)
 
-	return utxo, true
+	return out, true
 }
 
 func (k Keeper) SetUTXOForPoll(ctx sdk.Context, pollID string, utxo types.UTXO) {

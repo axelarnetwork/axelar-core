@@ -2,10 +2,12 @@ package types
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 const (
@@ -17,16 +19,16 @@ const (
 
 type Mode int
 
-type UTXO struct {
-	Hash      *chainhash.Hash
-	VoutIdx   uint32
-	Amount    btcutil.Amount
-	Recipient BtcAddress
+type OutPointInfo struct {
+	OutPoint      *wire.OutPoint
+	Amount        btcutil.Amount
+	Recipient     BtcAddress
+	Confirmations uint64
 }
 
-func (u UTXO) Validate() error {
-	if u.Hash == nil {
-		return fmt.Errorf("missing hash")
+func (u OutPointInfo) Validate() error {
+	if u.OutPoint == nil {
+		return fmt.Errorf("missing outpoint")
 	}
 	if u.Amount <= 0 {
 		return fmt.Errorf("amount must be greater than 0")
@@ -37,9 +39,9 @@ func (u UTXO) Validate() error {
 	return nil
 }
 
-func (u UTXO) Equals(other UTXO) bool {
-	return u.Hash.IsEqual(other.Hash) &&
-		u.VoutIdx == other.VoutIdx &&
+func (u OutPointInfo) Equals(other OutPointInfo) bool {
+	return u.OutPoint.Hash.IsEqual(&other.OutPoint.Hash) &&
+		u.OutPoint.Index == other.OutPoint.Index &&
 		u.Amount == other.Amount &&
 		u.Recipient == other.Recipient
 }
@@ -73,4 +75,12 @@ func (c Network) Params() *chaincfg.Params {
 	default:
 		return nil
 	}
+}
+
+func ParseVoutIdx(voutIdx string) (uint32, error) {
+	n, err := strconv.ParseUint(voutIdx, 10, 32)
+	if err != nil {
+		return 0, sdkerrors.Wrap(err, "could not parse voutIdx")
+	}
+	return uint32(n), nil
 }

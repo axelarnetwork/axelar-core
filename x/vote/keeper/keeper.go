@@ -129,8 +129,7 @@ func (k Keeper) RecordVote(ctx sdk.Context, vote exported.MsgVote) error {
 		}
 	}
 	votes = append(votes, vote)
-	k.Logger(ctx).Debug(fmt.Sprintf("new vote for poll %s, data hash: %s",
-		vote.Poll().String(), k.hash(vote.Data())))
+	k.Logger(ctx).Debug(fmt.Sprintf("new vote for poll %s, data hash: %s", vote.Poll().String(), k.hash(vote.Data())))
 	k.setPendingVotes(votes)
 
 	return nil

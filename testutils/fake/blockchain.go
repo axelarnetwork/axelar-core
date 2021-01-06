@@ -183,18 +183,20 @@ type Node struct {
 	endBlockers []func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate
 	Ctx         sdk.Context
 	moniker     string
+	queriers    map[string]sdk.Querier
 }
 
 // NewNode creates a new node that can be added to the blockchain.
 // The moniker is used to differentiate nodes for logging purposes.
 // The context will be passed on to the registered handlers.
-func NewNode(moniker string, ctx sdk.Context, router sdk.Router) Node {
+func NewNode(moniker string, ctx sdk.Context, router sdk.Router, queriers map[string]sdk.Querier) Node {
 	return Node{
 		moniker:     moniker,
 		Ctx:         ctx,
 		in:          make(chan block, 1),
 		router:      router,
 		endBlockers: make([]func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate, 0),
+		queriers:    queriers,
 	}
 }
 
@@ -203,6 +205,10 @@ func NewNode(moniker string, ctx sdk.Context, router sdk.Router) Node {
 func (n Node) WithEndBlockers(endBlockers ...func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate) Node {
 	n.endBlockers = append(n.endBlockers, endBlockers...)
 	return n
+}
+
+func (n Node) Query(path []string) ([]byte, error) {
+	return n.queriers[path[0]](n.Ctx, path[1:], abci.RequestQuery{})
 }
 
 func (n Node) start() {
