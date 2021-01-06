@@ -37,17 +37,17 @@ func NewRPCClient(cfg BtcConfig, logger log.Logger) (*rpcclient.Client, error) {
 			return nil, err
 		}
 
-	} else if cfg.RpcUser == "" || cfg.RpcPass == "" {
+	} else if cfg.RPCUser == "" || cfg.RPCPass == "" {
 
 		return nil, sdkerrors.Wrap(ErrConnFailed, "Authentication method must be specified (either username/password or cookie)")
 
 	}
 
 	rpcCfg := &rpcclient.ConnConfig{
-		Host:                 cfg.RpcAddr,
+		Host:                 cfg.RPCAddr,
 		CookiePath:           cfg.CookiePath,
-		User:                 cfg.RpcUser,
-		Pass:                 cfg.RpcPass,
+		User:                 cfg.RPCUser,
+		Pass:                 cfg.RPCPass,
 		DisableTLS:           true, // Bitcoin core does not provide TLS by default
 		DisableAutoReconnect: false,
 		HTTPPostMode:         true, // Bitcoin core only supports HTTP POST mode
