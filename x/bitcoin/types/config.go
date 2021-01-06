@@ -6,7 +6,9 @@ import (
 )
 
 type BtcConfig struct {
-	RpcAddr        string        `mapstructure:"rpc_addr"`
+	RPCAddr        string        `mapstructure:"rpc_addr"`
+	RPCUser        string        `mapstructure:"rpc_user"`
+	RPCPass        string        `mapstructure:"rpc_pass"`
 	CookiePath     string        `mapstructure:"cookie_file"`
 	RPCTimeout     time.Duration `mapstructure:"timeout_rpc"`
 	StartUpTimeout time.Duration `mapstructure:"timeout_startup"`
@@ -15,7 +17,7 @@ type BtcConfig struct {
 
 func DefaultConfig() BtcConfig {
 	return BtcConfig{
-		RpcAddr:        "localhost:8332",
+		RPCAddr:        "localhost:8332",
 		CookiePath:     os.ExpandEnv("$HOME/.bitcoin/.cookie"),
 		RPCTimeout:     60 * time.Second,
 		StartUpTimeout: 100 * time.Second,

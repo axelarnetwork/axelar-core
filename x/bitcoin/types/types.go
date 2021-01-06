@@ -63,12 +63,13 @@ type Chain string
 // Validate checks if the object is a valid chain
 func (c Chain) Validate() error {
 	switch string(c) {
-	case chaincfg.MainNetParams.Name, chaincfg.TestNet3Params.Name:
+	case chaincfg.MainNetParams.Name, chaincfg.TestNet3Params.Name, chaincfg.RegressionNetParams.Name:
 		return nil
 	default:
-		return fmt.Errorf("chain could not be parsed, choose %s or %s",
+		return fmt.Errorf("chain could not be parsed, choose %s, %s, or %s",
 			chaincfg.MainNetParams.Name,
 			chaincfg.TestNet3Params.Name,
+			chaincfg.RegressionNetParams.Name,
 		)
 	}
 }
@@ -80,6 +81,8 @@ func (c Chain) Params() *chaincfg.Params {
 		return &chaincfg.MainNetParams
 	case chaincfg.TestNet3Params.Name:
 		return &chaincfg.TestNet3Params
+	case chaincfg.RegressionNetParams.Name:
+		return &chaincfg.RegressionNetParams
 	default:
 		return nil
 	}
