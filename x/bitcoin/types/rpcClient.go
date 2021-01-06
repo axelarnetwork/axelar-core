@@ -37,7 +37,7 @@ func NewRPCClient(cfg BtcConfig, logger log.Logger) (*rpcclient.Client, error) {
 			return nil, err
 		}
 
-	} else if !(cfg.RpcUser != "" && cfg.RpcPass != "") {
+	} else if cfg.RpcUser == "" || cfg.RpcPass == "" {
 
 		return nil, sdkerrors.Wrap(ErrConnFailed, "Authentication method must be specified (either username/password or cookie)")
 
