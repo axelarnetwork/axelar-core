@@ -25,11 +25,12 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	btcTxCmd.AddCommand(flags.GetCommands(GetCmdTxInfo(queryRoute, cdc))...)
+	btcTxCmd.AddCommand(flags.GetCommands(GetCmdTxInfo(queryRoute, cdc), GetCmdRawTx(queryRoute, cdc))...)
 
 	return btcTxCmd
 }
 
+// GetCmdTxInfo returns the tx info query command
 func GetCmdTxInfo(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "txInfo [txID]",
@@ -39,7 +40,7 @@ func GetCmdTxInfo(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txID := args[0]
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryTxInfo, txID), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryOutInfo, txID), nil)
 			if err != nil {
 				return sdkerrors.Wrapf(err, "could not resolve txID %s", txID)
 			}
@@ -49,4 +50,36 @@ func GetCmdTxInfo(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			return cliCtx.PrintOutput(res)
 		},
 	}
+}
+
+// GetCmdRawTx returns the raw tx creation command
+func GetCmdRawTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	var useMasterKey bool
+	var recipient string
+	rawTxCmd := &cobra.Command{
+		Use:   "rawTx [txID] [amount] [-r <recipient> | -m]",
+		Short: "Get a raw transaction that spends [amount] of the utxo of [txID] to <recipient> or the next master key in rotation",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			txID := args[0]
+			amount := args[1]
+
+			if (recipient == "" && !useMasterKey) || (recipient != "" && useMasterKey) {
+				return fmt.Errorf("either set the flag to set the recipient or to use the master key, not both\"")
+			}
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s/%s", queryRoute, keeper.QueryRawTx, txID, amount, recipient), nil)
+			if err != nil {
+				return sdkerrors.Wrapf(err, "could not resolve txID %s", txID)
+			}
+
+			// Ensure the output can be unmarshalled
+			cdc.MustUnmarshalJSON(res, &types.OutPointInfo{})
+			return cliCtx.PrintOutput(res)
+		},
+	}
+	addRecipientFlag(rawTxCmd, &recipient)
+	addMasterKeyFlag(rawTxCmd, &useMasterKey)
+	return rawTxCmd
 }

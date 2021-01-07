@@ -1,8 +1,10 @@
 package fake
 
 import (
+	"bytes"
 	"fmt"
 	"log"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -10,11 +12,14 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
+// Result contains either the result of a successful message execution or the error that occurred
 type Result struct {
 	*sdk.Result
 	Error error
 }
 
+// BlockChain is a fake that emulates the behaviour of a full blockchain network (consensus and message dissemination)
+// for testing
 type BlockChain struct {
 	blockSize int
 	in        chan struct {
@@ -24,6 +29,7 @@ type BlockChain struct {
 	nodes         []Node
 	blockTimeOut  time.Duration
 	currentHeight *int64
+	blockListener func(block)
 }
 
 type block struct {
@@ -41,12 +47,12 @@ func newBlock(size int, header abci.Header) block {
 	}, 0, size), header: header}
 }
 
-// NewBlockchain returns a mocked blockchain with default parameters.
+// NewBlockchain returns a faked blockchain with default parameters.
 // Use the With* functions to specify different parameters.
 // By default, the blockchain does not time out,
 // so a block will only be disseminated once the specified block size is reached.
-func NewBlockchain() BlockChain {
-	return BlockChain{
+func NewBlockchain() *BlockChain {
+	return &BlockChain{
 		blockSize:    1,
 		blockTimeOut: 0,
 		in: make(chan struct {
@@ -55,11 +61,12 @@ func NewBlockchain() BlockChain {
 		}, 1000),
 		nodes:         make([]Node, 0),
 		currentHeight: new(int64),
+		blockListener: func(block) {},
 	}
 }
 
 // WithBlockSize returns a blockchain with blocks of at most the specified size.
-func (bc BlockChain) WithBlockSize(size int) BlockChain {
+func (bc *BlockChain) WithBlockSize(size int) *BlockChain {
 	if size < 1 {
 		panic("block size must be at least 1")
 	}
@@ -69,48 +76,71 @@ func (bc BlockChain) WithBlockSize(size int) BlockChain {
 
 // WithBlockTimeOut returns a blockchain with a timeout. The timeout resets whenever a message is received.
 // When the timer runs out it disseminates the next block regardless of its size.
-func (bc BlockChain) WithBlockTimeOut(timeOut time.Duration) BlockChain {
+func (bc *BlockChain) WithBlockTimeOut(timeOut time.Duration) *BlockChain {
 	bc.blockTimeOut = timeOut
 	return bc
 }
 
 // Submit sends a message to the blockchain. It returns a channel with the result.
-func (bc BlockChain) Submit(msg sdk.Msg) (result <-chan Result) {
+func (bc *BlockChain) Submit(msg sdk.Msg) <-chan Result {
 	// all nodes will push their output into this channel
-	out := make(chan Result, 1000)
+	out := make(chan Result, len(bc.nodes))
 	bc.in <- struct {
 		sdk.Msg
 		out chan<- Result
 	}{msg, out}
-	return out
+
+	result := make(chan Result, 1)
+	go func() {
+		var r *Result
+		for i := 0; i < cap(out); i++ {
+			temp := <-out
+			if r == nil {
+				r = &temp
+			} else if !equals(*r, temp) {
+				panic(fmt.Sprintf("expected %v, got %v", r, temp))
+			}
+		}
+		if r == nil {
+			panic("no result")
+		}
+		result <- *r
+	}()
+	return result
 }
 
-// AddNode adds a node to the blockchain. This node will receive blocks from the blockchain.
+func equals(this Result, other Result) bool {
+	return this.Error == other.Error && this.Log == other.Log && bytes.Equal(this.Data, other.Data)
+}
+
+// AddNodes adds a node to the blockchain. This node will receive blocks from the blockchain.
 func (bc *BlockChain) AddNodes(nodes ...Node) {
 	bc.nodes = append(bc.nodes, nodes...)
 }
 
 // Start starts the block dissemination. Only call once all parameters and nodes are fully set up.
-func (bc BlockChain) Start() {
+func (bc *BlockChain) Start() {
 	for _, n := range bc.nodes {
 		go n.start()
 	}
 	go bc.disseminateBlocks()
 }
 
-func (bc BlockChain) CurrentHeight() int64 {
+// CurrentHeight returns the current block height.
+func (bc *BlockChain) CurrentHeight() int64 {
 	return *bc.currentHeight
 }
 
-func (bc BlockChain) disseminateBlocks() {
+func (bc *BlockChain) disseminateBlocks() {
 	for b := range bc.cutBlocks() {
+		bc.blockListener(b)
 		for _, n := range bc.nodes {
 			n.in <- b
 		}
 	}
 }
 
-func (bc BlockChain) cutBlocks() <-chan block {
+func (bc *BlockChain) cutBlocks() <-chan block {
 	blocks := make(chan block, 1)
 	go func() {
 		// close block channel when message channel is closed
@@ -148,20 +178,19 @@ func (bc BlockChain) cutBlocks() <-chan block {
 	return blocks
 }
 
-func (bc BlockChain) WaitNBlocks(n int64) chan struct{} {
+// WaitNBlocks waits for n blocks to be disseminated before returning. Do not use without setting a block timeout or the test
+// will deadlock.
+func (bc *BlockChain) WaitNBlocks(n int64) {
 	currHeight := bc.CurrentHeight()
-	done := make(chan struct{})
-
-	go func() {
-		for {
-			if bc.CurrentHeight() >= currHeight+n {
-				close(done)
-				break
-			}
-			time.Sleep(10 * time.Millisecond)
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	bc.blockListener = func(b block) {
+		if b.header.Height-currHeight >= n {
+			bc.blockListener = func(block) {}
+			wg.Done()
 		}
-	}()
-	return done
+	}
+	wg.Wait()
 }
 
 func reset(timeOut time.Duration) chan struct{} {
@@ -177,6 +206,8 @@ func reset(timeOut time.Duration) chan struct{} {
 	return timedOut
 }
 
+// Node is a fake that emulates the behaviour of a Cosmos node by retrieving blocks from the network,
+// unpacking the messages and routing them to the correct modules
 type Node struct {
 	in          chan block
 	router      sdk.Router
@@ -207,6 +238,7 @@ func (n Node) WithEndBlockers(endBlockers ...func(ctx sdk.Context, req abci.Requ
 	return n
 }
 
+// Query allows to query a node. Returns a serialized response
 func (n Node) Query(path []string) ([]byte, error) {
 	return n.queriers[path[0]](n.Ctx, path[1:], abci.RequestQuery{})
 }
@@ -226,10 +258,6 @@ func (n Node) start() {
 			if err := msg.ValidateBasic(); err != nil {
 				log.Printf("node %s returned an error when validating message %s", n.moniker, msg.Type())
 
-				// another node already returned a result
-				if len(msg.out) > 0 {
-					continue
-				}
 				msg.out <- Result{nil, err}
 
 			} else if h := n.router.Route(n.Ctx, msg.Route()); h != nil {
@@ -237,10 +265,7 @@ func (n Node) start() {
 				if err != nil {
 					log.Printf("node %s returned an error from handler for route %s: %s", n.moniker, msg.Route(), err.Error())
 				}
-				// another node already returned a result
-				if len(msg.out) > 0 {
-					continue
-				}
+
 				msg.out <- Result{res, err}
 
 			} else {
@@ -256,6 +281,7 @@ func (n Node) start() {
 	}
 }
 
+// Router is a fake that is used by the Node to route messages to the correct module handlers
 type Router struct {
 	handlers map[string]sdk.Handler
 }

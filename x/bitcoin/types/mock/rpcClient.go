@@ -29,6 +29,9 @@ var _ types.RPCClient = &RPCClientMock{}
 //             ImportAddressRescanFunc: func(address string, account string, rescan bool) error {
 // 	               panic("mock out the ImportAddressRescan method")
 //             },
+//             NetworkFunc: func() types.Network {
+// 	               panic("mock out the Network method")
+//             },
 //             SendRawTransactionFunc: func(tx *wire.MsgTx, allowHighFees bool) (*chainhash.Hash, error) {
 // 	               panic("mock out the SendRawTransaction method")
 //             },
@@ -47,6 +50,9 @@ type RPCClientMock struct {
 
 	// ImportAddressRescanFunc mocks the ImportAddressRescan method.
 	ImportAddressRescanFunc func(address string, account string, rescan bool) error
+
+	// NetworkFunc mocks the Network method.
+	NetworkFunc func() types.Network
 
 	// SendRawTransactionFunc mocks the SendRawTransaction method.
 	SendRawTransactionFunc func(tx *wire.MsgTx, allowHighFees bool) (*chainhash.Hash, error)
@@ -72,6 +78,9 @@ type RPCClientMock struct {
 			// Rescan is the rescan argument value.
 			Rescan bool
 		}
+		// Network holds details about calls to the Network method.
+		Network []struct {
+		}
 		// SendRawTransaction holds details about calls to the SendRawTransaction method.
 		SendRawTransaction []struct {
 			// Tx is the tx argument value.
@@ -83,6 +92,7 @@ type RPCClientMock struct {
 	lockGetOutPointInfo     sync.RWMutex
 	lockImportAddress       sync.RWMutex
 	lockImportAddressRescan sync.RWMutex
+	lockNetwork             sync.RWMutex
 	lockSendRawTransaction  sync.RWMutex
 }
 
@@ -184,6 +194,32 @@ func (mock *RPCClientMock) ImportAddressRescanCalls() []struct {
 	mock.lockImportAddressRescan.RLock()
 	calls = mock.calls.ImportAddressRescan
 	mock.lockImportAddressRescan.RUnlock()
+	return calls
+}
+
+// Network calls NetworkFunc.
+func (mock *RPCClientMock) Network() types.Network {
+	if mock.NetworkFunc == nil {
+		panic("RPCClientMock.NetworkFunc: method is nil but RPCClient.Network was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockNetwork.Lock()
+	mock.calls.Network = append(mock.calls.Network, callInfo)
+	mock.lockNetwork.Unlock()
+	return mock.NetworkFunc()
+}
+
+// NetworkCalls gets all the calls that were made to Network.
+// Check the length with:
+//     len(mockedRPCClient.NetworkCalls())
+func (mock *RPCClientMock) NetworkCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockNetwork.RLock()
+	calls = mock.calls.Network
+	mock.lockNetwork.RUnlock()
 	return calls
 }
 

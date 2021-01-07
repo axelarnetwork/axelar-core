@@ -4,18 +4,15 @@ import (
 	"fmt"
 
 	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/wire"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authUtils "github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/utils/denom"
 	"github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
@@ -55,13 +52,14 @@ func addTxSubCommands(command *cobra.Command, network types.Network, cdc *codec.
 	cmds := append([]*cobra.Command{GetCmdTrack(network, cdc)},
 		flags.PostCommands(
 			GetCmdVerifyTx(cdc),
-			GetCmdRawTx(network, cdc),
+			GetCmdSignRawTx(cdc),
 			GetCmdSend(cdc),
 			GetCmdTransfer(network, cdc))...)
 
 	command.AddCommand(cmds...)
 }
 
+// GetCmdTrack returns the address tracking command
 func GetCmdTrack(network types.Network, cdc *codec.Codec) *cobra.Command {
 	trackCmd := &cobra.Command{
 		Use:   "track",
@@ -139,6 +137,7 @@ func getCmdTrackPubKey(network types.Network, cdc *codec.Codec) *cobra.Command {
 	return pubKeyCmd
 }
 
+// GetCmdVerifyTx returns the transaction verification command
 func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
 	var toCurrentMasterKey bool
 	var toNextMasterKey bool
@@ -149,8 +148,8 @@ func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
 		Short: "Verify a Bitcoin transaction",
 		Long: fmt.Sprintf(
 			"Verify that a transaction happened on the Bitcoin network so it can be processed on axelar. "+
-				"Get the json string by using the %s query", keeper.QueryTxInfo),
-		Args: cobra.ExactArgs(4),
+				"Get the json string by using the %s query", keeper.QueryOutInfo),
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
@@ -174,45 +173,20 @@ func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
 	return verifyCmd
 }
 
-func GetCmdRawTx(network types.Network, cdc *codec.Codec) *cobra.Command {
-	var useMasterKey bool
-	var recipient string
-	rawTxCmd := &cobra.Command{
-		Use:   "rawTx [sourceTxId] [amount] [-r <recipient> | -m]",
-		Short: "Generate raw transaction",
-		Long: "Generate raw transaction that can be used to spend the [amount] from the source transaction to the recipient (specific address or next master key). " +
-			"The difference between the source transaction output amount and the given [amount] becomes the transaction fee",
-		Args: cobra.ExactArgs(2),
+// GetCmdSignRawTx returns the command to sign a raw Bitcoin transaction
+func GetCmdSignRawTx(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "rawTx [txID] [tx json]",
+		Short: "Register raw spending transaction with utxo of [txID]",
+		Long:  fmt.Sprintf("Sign raw transaction. Get raw transaction by querying %s", keeper.QueryRawTx),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
+			var tx *wire.MsgTx
+			types.ModuleCdc.MustUnmarshalJSON([]byte(args[1]), &tx)
 
-			hash, err := chainhash.NewHashFromStr(args[0])
-			if err != nil {
-				return sdkerrors.Wrap(err, "could not transform Bitcoin transaction ID to hash")
-			}
-
-			sat, err := denom.ParseSatoshi(args[1])
-			if err != nil {
-				return err
-			}
-			amount := btcutil.Amount(sat.Amount.Int64())
-
-			if (recipient == "" && !useMasterKey) || (recipient != "" && useMasterKey) {
-				return fmt.Errorf("either set the flag to set the recipient or to use the master key, not both\"")
-			}
-
-			var msg sdk.Msg
-			if useMasterKey {
-				msg = types.NewMsgRawTxForNextMasterKey(cliCtx.GetFromAddress(), network, hash, amount)
-			} else {
-				addr, err := types.ParseBtcAddress(recipient, network)
-				if err != nil {
-					return err
-				}
-
-				msg = types.NewMsgRawTx(cliCtx.GetFromAddress(), hash, amount, addr)
-			}
+			msg := types.NewMsgRawTx(cliCtx.GetFromAddress(), args[0], tx)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -220,11 +194,9 @@ func GetCmdRawTx(network types.Network, cdc *codec.Codec) *cobra.Command {
 			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
-	addRecipientFlag(rawTxCmd, &recipient)
-	addMasterKeyFlag(rawTxCmd, &useMasterKey)
-	return rawTxCmd
 }
 
+// GetCmdSend returns the command to send a signed Bitcoin transaction to the Bitcoin network
 func GetCmdSend(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "send [sourceTxId] [sigId]",
@@ -246,6 +218,7 @@ func GetCmdSend(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
+// GetCmdTransfer returns the command to link a bitcoin address to an address on a different blockchain for a future transfer of assets
 func GetCmdTransfer(network types.Network, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "transfer [btcAddress] [recipient chain] [recipient address]",

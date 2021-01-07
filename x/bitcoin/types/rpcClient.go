@@ -16,24 +16,32 @@ import (
 
 const (
 	sleep          = 1 * time.Second
-	ErrRpcInWarmup = btcjson.RPCErrorCode(-28)
+	errRpcInWarmup = btcjson.RPCErrorCode(-28)
 )
 
 //go:generate moq -pkg mock -out ./mock/rpcClient.go . RPCClient
 
+// RPCClient defines the interface of an rpc client communication with the Bitcoin network
 type RPCClient interface {
-	ImportAddress(address string) error
 	ImportAddressRescan(address string, account string, rescan bool) error
 	GetOutPointInfo(out *wire.OutPoint) (OutPointInfo, error)
 	SendRawTransaction(tx *wire.MsgTx, allowHighFees bool) (*chainhash.Hash, error)
+	Network() Network
 }
 
+// RPCClientImpl implements the RPCClient interface
 type RPCClientImpl struct {
 	*rpcclient.Client
 	Timeout time.Duration
-	Network Network
+	network Network
 }
 
+// Network returns the Bitcoin network the client is connected to
+func (r *RPCClientImpl) Network() Network {
+	return r.network
+}
+
+// NewRPCClient creates a new instance of RPCClientImpl
 func NewRPCClient(cfg BtcConfig, logger log.Logger) (*RPCClientImpl, error) {
 	logger = logger.With("module", fmt.Sprintf("x/%s", ModuleName))
 
@@ -96,11 +104,11 @@ func (r *RPCClientImpl) setNetwork(logger log.Logger) error {
 	var retries int
 
 	// Ensure the loop is run at least once
-	var err error = btcjson.RPCError{Code: ErrRpcInWarmup}
+	var err error = btcjson.RPCError{Code: errRpcInWarmup}
 	for retries = 0; err != nil && retries < maxRetries; retries++ {
 		switch err := err.(type) {
 		case *btcjson.RPCError:
-			if err.Code == ErrRpcInWarmup {
+			if err.Code == errRpcInWarmup {
 				logger.Debug("waiting for bitcoin rpc server to start")
 				time.Sleep(sleep)
 			} else {
@@ -117,7 +125,7 @@ func (r *RPCClientImpl) setNetwork(logger log.Logger) error {
 		if info == nil {
 			return fmt.Errorf("bitcoin blockchain info is nil")
 		}
-		r.Network = Network(info.Chain)
+		r.network = Network(info.Chain)
 		return nil
 	} else {
 		return sdkerrors.Wrap(ErrTimeOut, "could not establish a connection to the bitcoin node")
@@ -128,6 +136,7 @@ func unexpectedError(err error) error {
 	return sdkerrors.Wrap(ErrConnFailed, fmt.Sprintf("unexpected error when waiting for bitcoin node warmup: %s", err.Error()))
 }
 
+// GetOutPointInfo returns all relevant information for a specific transaction outpoint
 func (r *RPCClientImpl) GetOutPointInfo(out *wire.OutPoint) (OutPointInfo, error) {
 	tx, err := r.GetRawTransactionVerbose(&out.Hash)
 	if err != nil {
@@ -143,7 +152,7 @@ func (r *RPCClientImpl) GetOutPointInfo(out *wire.OutPoint) (OutPointInfo, error
 	if len(vout.ScriptPubKey.Addresses) != 1 {
 		return OutPointInfo{}, fmt.Errorf("deposit must be only spendable by a single address")
 	}
-	recipient, err := ParseBtcAddress(vout.ScriptPubKey.Addresses[0], r.Network)
+	recipient, err := ParseBtcAddress(vout.ScriptPubKey.Addresses[0], r.network)
 	if err != nil {
 		return OutPointInfo{}, err
 	}
@@ -174,7 +183,7 @@ func (r *RPCClientImpl) GetOutPointInfo(out *wire.OutPoint) (OutPointInfo, error
 	if len(spentVout.ScriptPubKey.Addresses) != 1 {
 		return OutPointInfo{}, fmt.Errorf("deposit must be sent by a single address")
 	}
-	sender, err := ParseBtcAddress(spentVout.ScriptPubKey.Addresses[0], r.Network)
+	sender, err := ParseBtcAddress(spentVout.ScriptPubKey.Addresses[0], r.network)
 	if err != nil {
 		return OutPointInfo{}, err
 	}

@@ -3,79 +3,65 @@ package types
 import (
 	"fmt"
 
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/wire"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
+// MsgRawTx  is a message struct to make a new raw transaction known to the blockchain
 type MsgRawTx struct {
-	Sender      sdk.AccAddress
-	TxHash      *chainhash.Hash
-	Amount      btcutil.Amount
-	Destination BtcAddress
-	Chain       Network
-	Mode        Mode
+	Sender sdk.AccAddress
+	TxID   string
+	RawTx  *wire.MsgTx
 }
 
-func NewMsgRawTx(sender sdk.AccAddress, txHash *chainhash.Hash, amount btcutil.Amount, destination BtcAddress) sdk.Msg {
-	return MsgRawTx{
-		Sender:      sender,
-		TxHash:      txHash,
-		Amount:      amount,
-		Destination: destination,
-		Mode:        ModeSpecificAddress,
-	}
-}
-
-func NewMsgRawTxForNextMasterKey(sender sdk.AccAddress, chain Network, txHash *chainhash.Hash, amount btcutil.Amount) MsgRawTx {
+// NewMsgRawTx creates a new MsgRawTx
+func NewMsgRawTx(sender sdk.AccAddress, txID string, rawTx *wire.MsgTx) MsgRawTx {
 	return MsgRawTx{
 		Sender: sender,
-		TxHash: txHash,
-		Amount: amount,
-		Chain:  chain,
-		Mode:   ModeNextMasterKey,
+		TxID:   txID,
+		RawTx:  rawTx,
 	}
 }
 
+// Route returns the module route
 func (msg MsgRawTx) Route() string {
 	return RouterKey
 }
 
+// Type returns the type of the message
 func (msg MsgRawTx) Type() string {
 	return "RawTx"
 }
 
+// ValidateBasic performs a stateless check of the message content
 func (msg MsgRawTx) ValidateBasic() error {
 	if msg.Sender.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
-	if msg.TxHash == nil {
-		return fmt.Errorf("missing transaction ID")
+	if msg.TxID == "" {
+		return fmt.Errorf("missing txID")
 	}
-	if msg.Amount <= 0 {
-		return fmt.Errorf("transaction amount must be greater than zero")
+	if msg.RawTx.TxIn == nil {
+		return fmt.Errorf("missing txIn")
 	}
-
-	switch msg.Mode {
-	case ModeSpecificAddress:
-		if err := msg.Destination.Validate(); err != nil {
-			return sdkerrors.Wrap(err, "invalid destination")
-		}
-	case ModeNextMasterKey:
-		return msg.Chain.Validate()
-	default:
-		return fmt.Errorf("chosen mode not recognized")
+	if msg.RawTx.TxOut == nil {
+		return fmt.Errorf("missing txOut")
+	}
+	if len(msg.RawTx.TxOut) != 1 {
+		return fmt.Errorf("expected exactly 1 txOut, got %d", len(msg.RawTx.TxOut))
 	}
 
 	return nil
 }
 
+// GetSignBytes returns the serialization of the message
 func (msg MsgRawTx) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
+// GetSigners returns the signer of the message
 func (msg MsgRawTx) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }

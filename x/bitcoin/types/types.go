@@ -1,24 +1,24 @@
 package types
 
 import (
+	"crypto/ecdsa"
 	"fmt"
-	"strconv"
 
+	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 const (
 	ModeSpecificAddress Mode = iota
 	ModeCurrentMasterKey
-	ModeNextMasterKey
 	ModeSpecificKey
 )
 
 type Mode int
 
+// OutPointInfo describes all the necessary information to verify the outPoint of a transaction
 type OutPointInfo struct {
 	OutPoint      *wire.OutPoint
 	Amount        btcutil.Amount
@@ -26,6 +26,7 @@ type OutPointInfo struct {
 	Confirmations uint64
 }
 
+// Validate ensures that all fields are filled with sensible values
 func (u OutPointInfo) Validate() error {
 	if u.OutPoint == nil {
 		return fmt.Errorf("missing outpoint")
@@ -39,6 +40,7 @@ func (u OutPointInfo) Validate() error {
 	return nil
 }
 
+// Equals checks if two OutPointInfo objects are semantically equal
 func (u OutPointInfo) Equals(other OutPointInfo) bool {
 	return u.OutPoint.Hash.IsEqual(&other.OutPoint.Hash) &&
 		u.OutPoint.Index == other.OutPoint.Index &&
@@ -46,7 +48,7 @@ func (u OutPointInfo) Equals(other OutPointInfo) bool {
 		u.Recipient == other.Recipient
 }
 
-// This type provides additional functionality based on the bitcoin chain name
+// Network provides additional functionality based on the bitcoin network name
 type Network string
 
 // Validate checks if the object is a valid chain
@@ -77,10 +79,10 @@ func (c Network) Params() *chaincfg.Params {
 	}
 }
 
-func ParseVoutIdx(voutIdx string) (uint32, error) {
-	n, err := strconv.ParseUint(voutIdx, 10, 32)
-	if err != nil {
-		return 0, sdkerrors.Wrap(err, "could not parse voutIdx")
-	}
-	return uint32(n), nil
+// PKHashFromKey creates a Bitcoin pubKey hash address from a public key.
+// We use Pay2PKH for added security over Pay2PK as well as for the benefit of getting a parsed address from the response of
+// getrawtransaction() on the Bitcoin rpc client
+func PKHashFromKey(key ecdsa.PublicKey, chain Network) (*btcutil.AddressPubKeyHash, error) {
+	btcPK := btcec.PublicKey(key)
+	return btcutil.NewAddressPubKeyHash(btcutil.Hash160(btcPK.SerializeCompressed()), chain.Params())
 }

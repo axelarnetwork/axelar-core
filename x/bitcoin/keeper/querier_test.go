@@ -19,7 +19,6 @@ import (
 )
 
 func TestQuerier_TxInfo(t *testing.T) {
-
 	for i := 0; i < 100; i++ {
 		sender := testutils.RandString(int(testutils.RandIntBetween(5, 20)))
 		recipient := testutils.RandString(int(testutils.RandIntBetween(5, 20)))
@@ -40,19 +39,18 @@ func TestQuerier_TxInfo(t *testing.T) {
 			Confirmations: uint64(testutils.RandIntBetween(0, 10000)),
 		}
 
-		query := NewQuerier(Keeper{}, &mock.RPCClientMock{
+		query := NewQuerier(Keeper{}, &mock.BalancerMock{}, &mock.SignerMock{}, &mock.RPCClientMock{
 			GetOutPointInfoFunc: func(out *wire.OutPoint) (types.OutPointInfo, error) {
 				if out.Hash.IsEqual(&info.OutPoint.Hash) {
 					return info, nil
 				}
 				return types.OutPointInfo{}, fmt.Errorf("not found")
 			}})
-		bz, err = query(sdk.Context{}, []string{QueryTxInfo, info.OutPoint.Hash.String(), strconv.Itoa(int(info.OutPoint.Index))}, abci.RequestQuery{})
+		bz, err = query(sdk.Context{}, []string{QueryOutInfo, info.OutPoint.Hash.String(), strconv.Itoa(int(info.OutPoint.Index))}, abci.RequestQuery{})
 		assert.NoError(t, err)
 
 		var unmarshaled types.OutPointInfo
 		testutils.Codec().MustUnmarshalJSON(bz, &unmarshaled)
 		assert.True(t, info.Equals(unmarshaled))
 	}
-
 }

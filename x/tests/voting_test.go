@@ -111,7 +111,7 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 		assert.NoError(t, res.Error)
 	}
 
-	<-blockChain.WaitNBlocks(15)
+	blockChain.WaitNBlocks(15)
 
 	assert.True(t, allTxVoteCompleted(nodes, btcKeepers, hashes))
 }
