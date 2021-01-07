@@ -90,17 +90,9 @@ func TestSig(t *testing.T) {
 		data := make([]byte, dataLength)
 		rand.Read(data)
 
-		wallet, err := hdwallet.NewFromMnemonic(mnemonic)
+		privateKey, err := getPrivateKey("m/44'/60'/0'/0/0")
 		assert.NoError(t, err)
-
-		path := hdwallet.MustParseDerivationPath("m/44'/60'/0'/0/0")
-		account, err := wallet.Derive(path, false)
-		assert.NoError(t, err)
-
-		addr := account.Address
-
-		privateKey, err := wallet.PrivateKey(account)
-		assert.NoError(t, err)
+		addr := crypto.PubkeyToAddress(privateKey.PublicKey)
 
 		tx1 := ethTypes.NewTransaction(nonce, addr, amount, gasLimit, gasPrice, data)
 		tx2 := ethTypes.NewTransaction(nonce, addr, amount, gasLimit, gasPrice, data)
@@ -167,27 +159,18 @@ func TestGanache(t *testing.T) {
 		t.SkipNow()
 	}
 
-	wallet, err := hdwallet.NewFromMnemonic(mnemonic)
+	deployerKey, err := getPrivateKey("m/44'/60'/0'/0/0")
+	assert.NoError(t, err)
+	deployerAddr := crypto.PubkeyToAddress(deployerKey.PublicKey)
+
+	contractAddr := testDeploy(t, client, deployerAddr, deployerKey)
+
+	toKey, err := getPrivateKey("m/44'/60'/0'/0/1")
 	assert.NoError(t, err)
 
-	path := hdwallet.MustParseDerivationPath("m/44'/60'/0'/0/0")
-	deployerAccount, err := wallet.Derive(path, false)
-	assert.NoError(t, err)
+	toAddr := crypto.PubkeyToAddress(toKey.PublicKey)
 
-	deployerAddr := deployerAccount.Address
-
-	privateKey, err := wallet.PrivateKey(deployerAccount)
-	assert.NoError(t, err)
-
-	contractAddr := testDeploy(t, client, deployerAddr, privateKey)
-
-	path = hdwallet.MustParseDerivationPath("m/44'/60'/0'/0/1")
-	deployerAccount, err = wallet.Derive(path, false)
-	assert.NoError(t, err)
-
-	toAddr := deployerAccount.Address
-
-	testMint(t, client, deployerAddr, contractAddr, toAddr, privateKey)
+	testMint(t, client, deployerAddr, contractAddr, toAddr, deployerKey)
 }
 
 // Deploys the smart contract available for these tests. It avoids deployment via the contract ABI
@@ -278,5 +261,29 @@ func testMint(t *testing.T, client *ethclient.Client, creatorAddr, contractAddr,
 	expectedAmount := big.NewInt(0).Add(originalAmount, amount)
 
 	assert.Equal(t, expectedAmount, newAmount)
+
+}
+
+func getPrivateKey(derivation string) (*ecdsa.PrivateKey, error) {
+
+	wallet, err := hdwallet.NewFromMnemonic(mnemonic)
+	if err != nil {
+		return nil, err
+	}
+
+	path := hdwallet.MustParseDerivationPath(derivation)
+	account, err := wallet.Derive(path, false)
+
+	if err != nil {
+		return nil, err
+	}
+
+	privateKey, err := wallet.PrivateKey(account)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return privateKey, nil
 
 }
