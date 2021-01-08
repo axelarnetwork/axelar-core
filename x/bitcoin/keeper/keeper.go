@@ -12,8 +12,10 @@ import (
 )
 
 const (
-	rawKey  = "raw"
-	utxoKey = "utxo"
+	rawPrefix  = "raw_"
+	utxoPrefix = "utxo_"
+	pollPrefix = "poll_"
+	addrPrefix = "addr_"
 )
 
 var (
@@ -35,11 +37,11 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 }
 
 func (k Keeper) SetTrackedAddress(ctx sdk.Context, address string) {
-	ctx.KVStore(k.storeKey).Set([]byte(address), []byte{})
+	ctx.KVStore(k.storeKey).Set([]byte(addrPrefix+address), []byte{})
 }
 
 func (k Keeper) GetTrackedAddress(ctx sdk.Context, address string) types.ExternalChainAddress {
-	val := ctx.KVStore(k.storeKey).Get([]byte(address))
+	val := ctx.KVStore(k.storeKey).Get([]byte(addrPrefix + address))
 	if val == nil {
 		return types.ExternalChainAddress{}
 	}
@@ -69,7 +71,7 @@ func (k Keeper) Codec() *codec.Codec {
 }
 
 func (k Keeper) GetRawTx(ctx sdk.Context, txId string) *wire.MsgTx {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(rawKey + txId))
+	bz := ctx.KVStore(k.storeKey).Get([]byte(rawPrefix + txId))
 	if bz == nil {
 		return nil
 	}
@@ -79,18 +81,18 @@ func (k Keeper) GetRawTx(ctx sdk.Context, txId string) *wire.MsgTx {
 	return tx
 }
 
-func (k Keeper) SetRawTx(ctx sdk.Context, txId string, tx *wire.MsgTx) {
+func (k Keeper) SetRawTx(ctx sdk.Context, txID string, tx *wire.MsgTx) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(tx)
-	ctx.KVStore(k.storeKey).Set([]byte(rawKey+txId), bz)
+	ctx.KVStore(k.storeKey).Set([]byte(rawPrefix+txID), bz)
 }
 
-func (k Keeper) SetUTXO(ctx sdk.Context, txId string, utxo types.UTXO) {
+func (k Keeper) setUTXO(ctx sdk.Context, txId string, utxo types.UTXO) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(utxo)
-	ctx.KVStore(k.storeKey).Set([]byte(utxoKey+txId), bz)
+	ctx.KVStore(k.storeKey).Set([]byte(utxoPrefix+txId), bz)
 }
 
-func (k Keeper) GetUTXO(ctx sdk.Context, txId string) (types.UTXO, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(utxoKey + txId))
+func (k Keeper) GetUTXO(ctx sdk.Context, txID string) (types.UTXO, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(utxoPrefix + txID))
 	if bz == nil {
 		return types.UTXO{}, false
 	}
@@ -98,4 +100,33 @@ func (k Keeper) GetUTXO(ctx sdk.Context, txId string) (types.UTXO, bool) {
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &utxo)
 
 	return utxo, true
+}
+
+func (k Keeper) SetUTXOForPoll(ctx sdk.Context, pollID string, utxo types.UTXO) {
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(utxo)
+	ctx.KVStore(k.storeKey).Set([]byte(pollPrefix+pollID), bz)
+}
+
+func (k Keeper) GetUTXOForPoll(ctx sdk.Context, pollID string) (types.UTXO, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(pollPrefix + pollID))
+	if bz == nil {
+		return types.UTXO{}, false
+	}
+	var utxo types.UTXO
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &utxo)
+
+	return utxo, true
+}
+
+// ProcessUTXOPollResult stores the UTXO permanently if confirmed or discards the data otherwise
+func (k Keeper) ProcessUTXOPollResult(ctx sdk.Context, pollID string, confirmed bool) error {
+	utxo, ok := k.GetUTXOForPoll(ctx, pollID)
+	if !ok {
+		return fmt.Errorf("poll not found")
+	}
+	if confirmed {
+		k.setUTXO(ctx, utxo.Hash.String(), utxo)
+	}
+	ctx.KVStore(k.storeKey).Delete([]byte(pollPrefix + pollID))
+	return nil
 }
