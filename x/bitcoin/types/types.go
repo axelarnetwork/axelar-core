@@ -21,7 +21,6 @@ type UTXO struct {
 	Hash      *chainhash.Hash
 	VoutIdx   uint32
 	Amount    btcutil.Amount
-	Sender    BtcAddress
 	Recipient BtcAddress
 }
 
@@ -31,9 +30,6 @@ func (u UTXO) Validate() error {
 	}
 	if u.Amount <= 0 {
 		return fmt.Errorf("amount must be greater than 0")
-	}
-	if err := u.Sender.Validate(); err != nil {
-		return err
 	}
 	if err := u.Recipient.Validate(); err != nil {
 		return err
@@ -45,8 +41,7 @@ func (u UTXO) Equals(other UTXO) bool {
 	return u.Hash.IsEqual(other.Hash) &&
 		u.VoutIdx == other.VoutIdx &&
 		u.Amount == other.Amount &&
-		u.Recipient == other.Recipient &&
-		u.Sender == other.Sender
+		u.Recipient == other.Recipient
 }
 
 // This type provides additional functionality based on the bitcoin chain name

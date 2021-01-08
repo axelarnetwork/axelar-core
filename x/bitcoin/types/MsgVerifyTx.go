@@ -16,13 +16,12 @@ type MsgVerifyTx struct {
 	Network Network
 }
 
-func NewMsgVerifyTx(sender sdk.AccAddress, txHash *chainhash.Hash, voutIdx uint32, btcSender BtcAddress, recipient BtcAddress, amount btcutil.Amount) sdk.Msg {
+func NewMsgVerifyTx(sender sdk.AccAddress, txHash *chainhash.Hash, voutIdx uint32, recipient BtcAddress, amount btcutil.Amount) sdk.Msg {
 	return MsgVerifyTx{
 		Sender: sender,
 		UTXO: UTXO{
 			Hash:      txHash,
 			VoutIdx:   voutIdx,
-			Sender:    btcSender,
 			Recipient: recipient,
 			Amount:    amount,
 		},
@@ -43,14 +42,13 @@ func NewMsgVerifyTxForNextMasterKey(sender sdk.AccAddress, txHash *chainhash.Has
 	}
 }
 
-func NewMsgVerifyTxToCurrentMasterKey(sender sdk.AccAddress, txHash *chainhash.Hash, voutIdx uint32, btcSender BtcAddress, amount btcutil.Amount, network Network) sdk.Msg {
+func NewMsgVerifyTxToCurrentMasterKey(sender sdk.AccAddress, txHash *chainhash.Hash, voutIdx uint32, amount btcutil.Amount, network Network) sdk.Msg {
 	return MsgVerifyTx{
 		Sender: sender,
 		UTXO: UTXO{
 			Hash:    txHash,
 			VoutIdx: voutIdx,
 			Amount:  amount,
-			Sender:  btcSender,
 		},
 		Mode:    ModeCurrentMasterKey,
 		Network: network,

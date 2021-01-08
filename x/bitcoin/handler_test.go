@@ -77,14 +77,12 @@ func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 	}
 
 	hash, _ := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
-	sender, _ := types.ParseBtcAddress("1NtzRAvBRZsUjG5i5MxNt9xwaUByri9Rg2", "mainnet")
 	recipient, _ := types.ParseBtcAddress("bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq", "mainnet")
 	utxo := types.UTXO{
 		Hash:      hash,
 		VoutIdx:   0,
 		Amount:    10,
 		Recipient: recipient,
-		Sender:    sender,
 	}
 	if err := utxo.Validate(); err != nil {
 		panic(err)
@@ -112,14 +110,12 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 
 	hash, _ := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
 	recipient, _ := types.ParseBtcAddress("bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq", "mainnet")
-	sender, _ := types.ParseBtcAddress("1NtzRAvBRZsUjG5i5MxNt9xwaUByri9Rg2", "mainnet")
 	spentHash, _ := chainhash.NewHashFromStr("74d39e87c810a80faff70dcbd988c661dbe283a27f903cd587ab9c0b221cc602")
 	utxo := types.UTXO{
 		Hash:      hash,
 		VoutIdx:   0,
 		Amount:    10,
 		Recipient: recipient,
-		Sender:    sender,
 	}
 	if err := utxo.Validate(); err != nil {
 		panic(err)
@@ -143,19 +139,6 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 						},
 					}},
 					Confirmations: 7,
-				}, nil
-			}
-			if hash.IsEqual(spentHash) {
-				return &btcjson.TxRawResult{
-					Txid: hash.String(),
-					Hash: hash.String(),
-					Vout: []btcjson.Vout{{
-						N: 0,
-						ScriptPubKey: btcjson.ScriptPubKeyResult{
-							Addresses: []string{sender.String()},
-						},
-					}},
-					Confirmations: 20,
 				}, nil
 			}
 

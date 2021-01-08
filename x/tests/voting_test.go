@@ -50,13 +50,10 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 		prevHash := createHash()
 		hash := createHash()
 		hashes = append(hashes, hash)
-		sender := createAddress()
 		recipient := createAddress()
 		prevVoutIdx := uint32(testutils.RandIntBetween(0, 100))
 		amount := testutils.RandIntBetween(0, 100000)
-		prevAmount := testutils.RandIntBetween(amount, 100000)
 		confirmations := uint64(testutils.RandIntBetween(7, 10000))
-		prevConfirmations := uint64(testutils.RandIntBetween(int64(confirmations), 10000))
 		// deposit tx
 		txs[hash.String()] = &btcjson.TxRawResult{
 			Txid:          hash.String(),
@@ -66,17 +63,7 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 			Confirmations: confirmations,
 		}
 
-		prevVout := make([]btcjson.Vout, testutils.RandIntBetween(int64(prevVoutIdx), 101))
-		prevVout[prevVoutIdx] = createVout(prevAmount, sender.String())
-		// tx that is spent by deposit tx
-		txs[prevHash.String()] = &btcjson.TxRawResult{
-			Txid:          prevHash.String(),
-			Hash:          prevHash.String(),
-			Vout:          prevVout,
-			Confirmations: prevConfirmations,
-		}
-
-		verifyMsgs = append(verifyMsgs, prepareVerifyMsg(hash, sender.String(), recipient.String(), amount))
+		verifyMsgs = append(verifyMsgs, prepareVerifyMsg(hash, recipient.String(), amount))
 	}
 
 	// setting up the test infrastructure
@@ -174,11 +161,8 @@ func createVout(amount int64, recipient string) btcjson.Vout {
 	}
 }
 
-func prepareVerifyMsg(hash *chainhash.Hash, sender string, recipient string, amount int64) sdk.Msg {
+func prepareVerifyMsg(hash *chainhash.Hash, recipient string, amount int64) sdk.Msg {
 	return btcTypes.NewMsgVerifyTx(sdk.AccAddress("user1"), hash, 0, btcTypes.BtcAddress{
-		Network:       btcTypes.Network(chaincfg.MainNetParams.Name),
-		EncodedString: sender,
-	}, btcTypes.BtcAddress{
 		Network:       btcTypes.Network(chaincfg.MainNetParams.Name),
 		EncodedString: recipient,
 	}, btcutil.Amount(amount))

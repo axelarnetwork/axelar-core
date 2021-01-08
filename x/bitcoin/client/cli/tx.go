@@ -142,10 +142,9 @@ func GetCmdVerifyTx(network types.Network, cdc *codec.Codec) *cobra.Command {
 	var toCurrentMasterKey bool
 	var toNextMasterKey bool
 	var recipient string
-	var sender string
 	var fromCurrentMasterKey bool
 	verifyCmd := &cobra.Command{
-		Use:   "verifyTx [txId] [voutIdx] [amount] [-s <sender> | --from-curr-mk ] [-r <recipient> | --to-curr-mk | --to-next-mk ]",
+		Use:   "verifyTx [txId] [voutIdx] [amount] [-r <recipient> | --to-curr-mk | --to-next-mk ]",
 		Short: "Verify a Bitcoin transaction",
 		Long: fmt.Sprintf(
 			"Verify that a transaction happened on the Bitcoin network so it can be processed on axelar. "+
@@ -154,7 +153,7 @@ func GetCmdVerifyTx(network types.Network, cdc *codec.Codec) *cobra.Command {
 				"Example: verifyTx 3PtPE3yZAnGoqKsN23gWVpLMYQ4b7a4PxK 1 "+
 				"0.13btc -d bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
 			chaincfg.MainNetParams.Name, chaincfg.TestNet3Params.Name, denom.Satoshi, denom.Sat, denom.Bitcoin, denom.Btc),
-		Args: cobra.ExactArgs(4),
+		Args: cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
@@ -177,21 +176,16 @@ func GetCmdVerifyTx(network types.Network, cdc *codec.Codec) *cobra.Command {
 
 			var msg sdk.Msg
 			if toCurrentMasterKey {
-				sender, err := types.ParseBtcAddress(sender, network)
-				if err != nil {
-					return err
-				}
-				msg = types.NewMsgVerifyTxToCurrentMasterKey(cliCtx.GetFromAddress(), hash, voutIdx, sender, amount, network)
+				msg = types.NewMsgVerifyTxToCurrentMasterKey(cliCtx.GetFromAddress(), hash, voutIdx, amount, network)
 			} else if fromCurrentMasterKey && toNextMasterKey {
 				msg = types.NewMsgVerifyTxForNextMasterKey(cliCtx.GetFromAddress(), hash, voutIdx, amount, network)
 			} else {
-				sender, err := types.ParseBtcAddress(sender, network)
 				recipient, err := types.ParseBtcAddress(recipient, network)
 				if err != nil {
 					return err
 				}
 
-				msg = types.NewMsgVerifyTx(cliCtx.GetFromAddress(), hash, voutIdx, sender, recipient, amount)
+				msg = types.NewMsgVerifyTx(cliCtx.GetFromAddress(), hash, voutIdx, recipient, amount)
 			}
 
 			if err = msg.ValidateBasic(); err != nil {
@@ -202,7 +196,6 @@ func GetCmdVerifyTx(network types.Network, cdc *codec.Codec) *cobra.Command {
 		},
 	}
 	addRecipientFlag(verifyCmd, &recipient)
-	verifyCmd.Flags().StringVar(&sender, "sender", "", "Address of the sender")
 	verifyCmd.Flags().BoolVar(&fromCurrentMasterKey, "from-curr-mk", false, "Send to current master key instead of a specific key")
 	verifyCmd.Flags().BoolVar(&toCurrentMasterKey, "to-curr-mk", false, "Send to current master key instead of a specific key")
 	verifyCmd.Flags().BoolVar(&toNextMasterKey, "to-next-mk", false, "Send to next master key instead of a specific key")

@@ -9,9 +9,6 @@ import (
 	"testing"
 	"time"
 
-	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
-	balanceKeeper "github.com/axelarnetwork/axelar-core/x/balance/keeper"
-	balanceTypes "github.com/axelarnetwork/axelar-core/x/balance/types"
 	"github.com/axelarnetwork/tssd/convert"
 	tssd "github.com/axelarnetwork/tssd/pb"
 	"github.com/btcsuite/btcd/btcec"
@@ -28,6 +25,10 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
+
+	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
+	balanceKeeper "github.com/axelarnetwork/axelar-core/x/balance/keeper"
+	balanceTypes "github.com/axelarnetwork/axelar-core/x/balance/types"
 
 	"github.com/axelarnetwork/axelar-core/store"
 	"github.com/axelarnetwork/axelar-core/testutils"
@@ -250,16 +251,7 @@ func TestKeyRotation(t *testing.T) {
 	}
 
 	// verify deposit to master key
-	res = <-chain.Submit(btcTypes.NewMsgVerifyTx(
-		sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
-		txHash,
-		voutIdx,
-		btcTypes.BtcAddress{
-			Network:       btcTypes.Network(chaincfg.MainNetParams.Name),
-			EncodedString: sender.String(),
-		},
-		recipient,
-		amount))
+	res = <-chain.Submit(btcTypes.NewMsgVerifyTx(sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress), txHash, voutIdx, recipient, amount))
 	assert.NoError(t, res.Error)
 
 	// wait for voting to be done
