@@ -3,7 +3,7 @@ module github.com/axelarnetwork/axelar-core
 go 1.13
 
 require (
-	github.com/axelarnetwork/tssd v0.0.0-00010101000000-000000000000
+	github.com/axelarnetwork/tssd v0.0.0-20210107210332-7e3f2d78ef7e
 	github.com/binance-chain/tss-lib v1.3.2 // for tests only
 	github.com/btcsuite/btcd v0.21.0-beta
 	github.com/btcsuite/btcutil v1.0.2
@@ -20,5 +20,3 @@ require (
 )
 
 replace github.com/keybase/go-keychain => github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4 // https://github.com/axelarnetwork/axelar-core/issues/36
-
-replace github.com/axelarnetwork/tssd => ./tssd
