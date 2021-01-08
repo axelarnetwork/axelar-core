@@ -163,13 +163,13 @@ func GetCmdVerifyTx(network types.Network, cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			sat, err := denom.ParseSatoshi(args[3])
+			sat, err := denom.ParseSatoshi(args[2])
 			if err != nil {
 				return err
 			}
 			amount := btcutil.Amount(sat.Amount.Int64())
 
-			voutIdx, err := parseVoutIdx(err, args[2])
+			voutIdx, err := parseVoutIdx(err, args[1])
 			if err != nil {
 				return err
 			}
@@ -220,7 +220,7 @@ func GetCmdRawTx(network types.Network, cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			sat, err := denom.ParseSatoshi(args[2])
+			sat, err := denom.ParseSatoshi(args[1])
 			if err != nil {
 				return err
 			}
