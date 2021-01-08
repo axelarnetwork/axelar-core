@@ -225,7 +225,7 @@ func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
 		hash := tx.TxHash()
 		return &hash, nil
 	}}
-	b := &btcMock.BalancerMock{IsLinkedFunc: func(ctx sdk.Context, sender balance.CrossChainAddress) (balance.CrossChainAddress, bool) {
+	b := &btcMock.BalancerMock{GetRecipientFunc: func(ctx sdk.Context, sender balance.CrossChainAddress) (balance.CrossChainAddress, bool) {
 		return balance.CrossChainAddress{}, false
 	}}
 	handler := NewHandler(k, v, rpc, signer, b)
@@ -266,9 +266,9 @@ func prepareMsgTransferToNewMasterKey(ctx sdk.Context, k keeper.Keeper, sk *ecds
 	amount := btcutil.Amount(testutils.RandIntBetween(1, 100000000))
 
 	k.SetUTXOForPoll(ctx, txId, types.UTXO{
-		Hash:    hash,
-		VoutIdx: uint32(testutils.RandIntBetween(0, 10)),
-		Amount:  amount,
+		Hash:      hash,
+		VoutIdx:   uint32(testutils.RandIntBetween(0, 10)),
+		Amount:    amount,
 		Recipient: types.BtcAddress{Network: types.Network(chaincfg.MainNetParams.Name), EncodedString: addr.EncodeAddress()},
 	})
 	_ = k.ProcessUTXOPollResult(ctx, txId, true)

@@ -61,12 +61,12 @@ type RPCClientMock struct {
 		}
 		// ImportAddress holds details about calls to the ImportAddress method.
 		ImportAddress []struct {
-			// Recipient is the address argument value.
+			// Address is the address argument value.
 			Address string
 		}
 		// ImportAddressRescan holds details about calls to the ImportAddressRescan method.
 		ImportAddressRescan []struct {
-			// Recipient is the address argument value.
+			// Address is the address argument value.
 			Address string
 			// Account is the account argument value.
 			Account string

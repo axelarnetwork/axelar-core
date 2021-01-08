@@ -1,7 +1,6 @@
 package app
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -31,8 +30,9 @@ import (
 	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
 
-	"github.com/axelarnetwork/axelar-core/x/balance"
 	tssd "github.com/axelarnetwork/tssd/pb"
+
+	"github.com/axelarnetwork/axelar-core/x/balance"
 
 	keyring "github.com/cosmos/cosmos-sdk/crypto/keys"
 
@@ -64,13 +64,13 @@ const (
 )
 
 var (
-	// default home directories for the application CLI
+	// DefaultCLIHome sets the default home directories for the application CLI
 	DefaultCLIHome = os.ExpandEnv("$HOME/.axelarcli")
 
 	// DefaultNodeHome sets the folder where the applcation data and configuration will be stored
 	DefaultNodeHome = os.ExpandEnv("$HOME/.axelard")
 
-	// NewBasicManager is in charge of setting up basic module elements
+	// ModuleBasics is in charge of setting up basic module elements
 	ModuleBasics = module.NewBasicManager(
 		genutil.AppModuleBasic{},
 		auth.AppModuleBasic{},
@@ -112,6 +112,7 @@ func MakeCodec() *codec.Codec {
 	return cdc
 }
 
+// AxelarApp defines the axelar Cosmos app that runs all modules
 type AxelarApp struct {
 	*bam.BaseApp
 	cdc *codec.Codec
@@ -316,10 +317,6 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
-	_, err = rpcETC.NetworkID(context.Background())
-	if err != nil {
-		tmos.Exit(err.Error())
-	}
 	logger.Debug("Successfully connected to ethereum node")
 
 	// Enable running a node with or without a Bitcoin bridge
@@ -415,6 +412,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 // GenesisState represents chain state at the start of the chain. Any initial state (account balances) are stored here.
 type GenesisState map[string]json.RawMessage
 
+// InitChainer handles the chain initialization from a genesis file
 func (app *AxelarApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 	var genesisState GenesisState
 
@@ -426,14 +424,18 @@ func (app *AxelarApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) ab
 	return app.mm.InitGenesis(ctx, genesisState)
 }
 
+// BeginBlocker calls the BeginBlock() function of every module at the beginning of a new block
 func (app *AxelarApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 	return app.mm.BeginBlock(ctx, req)
 }
 
+// EndBlocker calls the EndBlock() function of every module at the end of a block
 func (app *AxelarApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
 	return app.mm.EndBlock(ctx, req)
 }
 
+// LoadHeight loads the application version at a given height. It will panic if called
+// more than once on a running baseapp.
 func (app *AxelarApp) LoadHeight(height int64) error {
 	return app.LoadVersion(height, app.keys[bam.MainStoreKey])
 }

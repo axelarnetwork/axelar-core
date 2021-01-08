@@ -26,7 +26,7 @@ var _ types.StakingKeeper = &StakingKeeperMock{}
 //             IterateLastValidatorsFunc: func(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool))  {
 // 	               panic("mock out the IterateLastValidators method")
 //             },
-//             ValidatorFunc: func(ctx sdk.Context, address sdk.ValAddress) sdkExported.ValidatorI {
+//             ValidatorFunc: func(ctx sdk.Context, addr sdk.ValAddress) sdkExported.ValidatorI {
 // 	               panic("mock out the Validator method")
 //             },
 //         }
@@ -43,7 +43,7 @@ type StakingKeeperMock struct {
 	IterateLastValidatorsFunc func(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool))
 
 	// ValidatorFunc mocks the Validator method.
-	ValidatorFunc func(ctx sdk.Context, address sdk.ValAddress) sdkExported.ValidatorI
+	ValidatorFunc func(ctx sdk.Context, addr sdk.ValAddress) sdkExported.ValidatorI
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -63,8 +63,8 @@ type StakingKeeperMock struct {
 		Validator []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
-			// Address is the address argument value.
-			Address sdk.ValAddress
+			// Addr is the addr argument value.
+			Addr sdk.ValAddress
 		}
 	}
 	lockGetLastTotalPower     sync.RWMutex
@@ -139,33 +139,33 @@ func (mock *StakingKeeperMock) IterateLastValidatorsCalls() []struct {
 }
 
 // Validator calls ValidatorFunc.
-func (mock *StakingKeeperMock) Validator(ctx sdk.Context, address sdk.ValAddress) sdkExported.ValidatorI {
+func (mock *StakingKeeperMock) Validator(ctx sdk.Context, addr sdk.ValAddress) sdkExported.ValidatorI {
 	if mock.ValidatorFunc == nil {
 		panic("StakingKeeperMock.ValidatorFunc: method is nil but StakingKeeper.Validator was just called")
 	}
 	callInfo := struct {
-		Ctx     sdk.Context
-		Address sdk.ValAddress
+		Ctx  sdk.Context
+		Addr sdk.ValAddress
 	}{
-		Ctx:     ctx,
-		Address: address,
+		Ctx:  ctx,
+		Addr: addr,
 	}
 	mock.lockValidator.Lock()
 	mock.calls.Validator = append(mock.calls.Validator, callInfo)
 	mock.lockValidator.Unlock()
-	return mock.ValidatorFunc(ctx, address)
+	return mock.ValidatorFunc(ctx, addr)
 }
 
 // ValidatorCalls gets all the calls that were made to Validator.
 // Check the length with:
 //     len(mockedStakingKeeper.ValidatorCalls())
 func (mock *StakingKeeperMock) ValidatorCalls() []struct {
-	Ctx     sdk.Context
-	Address sdk.ValAddress
+	Ctx  sdk.Context
+	Addr sdk.ValAddress
 } {
 	var calls []struct {
-		Ctx     sdk.Context
-		Address sdk.ValAddress
+		Ctx  sdk.Context
+		Addr sdk.ValAddress
 	}
 	mock.lockValidator.RLock()
 	calls = mock.calls.Validator

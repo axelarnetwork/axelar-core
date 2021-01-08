@@ -12,19 +12,6 @@ import (
 
 //go:generate moq -out ./mock/rpcClient.go -pkg mock . RPCClient
 
-// TODO: fetch this parameters from config file, and check how to connect to actual node
-const (
-	myproject = "82e8e37695ed406cb9313ec09bae18e7"
-	gateway   = "goerli.infura.io"
-	ganache   = "http://127.0.0.1:7545"
-)
-
-func NewRPCClient(url string) (*ethclient.Client, error) {
-	//return ethclient.Dial(fmt.Sprintf("https://%s/v3/%s", gateway, myproject))
-	//return ethclient.Dial("http://host.docker.internal:7545")
-	return ethclient.Dial(url)
-}
-
 type RPCClient interface {
 	TransactionByHash(ctx context.Context, hash common.Hash) (tx *types.Transaction, isPending bool, err error)
 	BlockNumber(ctx context.Context) (uint64, error)
@@ -34,4 +21,34 @@ type RPCClient interface {
 	SuggestGasPrice(ctx context.Context) (*big.Int, error)
 	NetworkID(ctx context.Context) (*big.Int, error)
 	EstimateGas(ctx context.Context, msg ethereum.CallMsg) (uint64, error)
+}
+
+type rpc struct {
+	*ethclient.Client
+	networkID *big.Int
+}
+
+func NewRPCClient(url string) (*rpc, error) {
+	client, err := ethclient.Dial(url)
+	if err != nil {
+		return nil, err
+	}
+	r := &rpc{Client: client}
+
+	// cache the network id
+	if _, err := r.NetworkID(context.Background()); err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
+func (r *rpc) NetworkID(ctx context.Context) (*big.Int, error) {
+	if r.networkID == nil {
+		networkID, err := r.Client.NetworkID(ctx)
+		if err != nil {
+			return nil, err
+		}
+		r.networkID = networkID
+	}
+	return r.networkID, nil
 }

@@ -23,6 +23,9 @@ var _ types.Voter = &VoterMock{}
 //
 //         // make and configure a mocked types.Voter
 //         mockedVoter := &VoterMock{
+//             DeletePollFunc: func(ctx sdk.Context, poll voting.PollMeta)  {
+// 	               panic("mock out the DeletePoll method")
+//             },
 //             InitPollFunc: func(ctx sdk.Context, poll voting.PollMeta) error {
 // 	               panic("mock out the InitPoll method")
 //             },
@@ -42,6 +45,9 @@ var _ types.Voter = &VoterMock{}
 //
 //     }
 type VoterMock struct {
+	// DeletePollFunc mocks the DeletePoll method.
+	DeletePollFunc func(ctx sdk.Context, poll voting.PollMeta)
+
 	// InitPollFunc mocks the InitPoll method.
 	InitPollFunc func(ctx sdk.Context, poll voting.PollMeta) error
 
@@ -56,6 +62,13 @@ type VoterMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// DeletePoll holds details about calls to the DeletePoll method.
+		DeletePoll []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Poll is the poll argument value.
+			Poll voting.PollMeta
+		}
 		// InitPoll holds details about calls to the InitPoll method.
 		InitPoll []struct {
 			// Ctx is the ctx argument value.
@@ -85,10 +98,46 @@ type VoterMock struct {
 			Vote voting.MsgVote
 		}
 	}
+	lockDeletePoll sync.RWMutex
 	lockInitPoll   sync.RWMutex
 	lockRecordVote sync.RWMutex
 	lockResult     sync.RWMutex
 	lockTallyVote  sync.RWMutex
+}
+
+// DeletePoll calls DeletePollFunc.
+func (mock *VoterMock) DeletePoll(ctx sdk.Context, poll voting.PollMeta) {
+	if mock.DeletePollFunc == nil {
+		panic("VoterMock.DeletePollFunc: method is nil but Voter.DeletePoll was just called")
+	}
+	callInfo := struct {
+		Ctx  sdk.Context
+		Poll voting.PollMeta
+	}{
+		Ctx:  ctx,
+		Poll: poll,
+	}
+	mock.lockDeletePoll.Lock()
+	mock.calls.DeletePoll = append(mock.calls.DeletePoll, callInfo)
+	mock.lockDeletePoll.Unlock()
+	mock.DeletePollFunc(ctx, poll)
+}
+
+// DeletePollCalls gets all the calls that were made to DeletePoll.
+// Check the length with:
+//     len(mockedVoter.DeletePollCalls())
+func (mock *VoterMock) DeletePollCalls() []struct {
+	Ctx  sdk.Context
+	Poll voting.PollMeta
+} {
+	var calls []struct {
+		Ctx  sdk.Context
+		Poll voting.PollMeta
+	}
+	mock.lockDeletePoll.RLock()
+	calls = mock.calls.DeletePoll
+	mock.lockDeletePoll.RUnlock()
+	return calls
 }
 
 // InitPoll calls InitPollFunc.

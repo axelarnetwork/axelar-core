@@ -557,7 +557,7 @@ var _ types.Balancer = &BalancerMock{}
 //
 //         // make and configure a mocked types.Balancer
 //         mockedBalancer := &BalancerMock{
-//             IsLinkedFunc: func(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool) {
+//             GetRecipientFunc: func(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool) {
 // 	               panic("mock out the GetRecipient method")
 //             },
 //             LinkAddressesFunc: func(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress)  {
@@ -573,8 +573,8 @@ var _ types.Balancer = &BalancerMock{}
 //
 //     }
 type BalancerMock struct {
-	// IsLinkedFunc mocks the GetRecipient method.
-	IsLinkedFunc func(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool)
+	// GetRecipientFunc mocks the GetRecipient method.
+	GetRecipientFunc func(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool)
 
 	// LinkAddressesFunc mocks the LinkAddresses method.
 	LinkAddressesFunc func(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress)
@@ -585,7 +585,7 @@ type BalancerMock struct {
 	// calls tracks calls to the methods.
 	calls struct {
 		// GetRecipient holds details about calls to the GetRecipient method.
-		IsLinked []struct {
+		GetRecipient []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Sender is the sender argument value.
@@ -610,15 +610,15 @@ type BalancerMock struct {
 			Amount sdk.Coin
 		}
 	}
-	lockIsLinked           sync.RWMutex
+	lockGetRecipient       sync.RWMutex
 	lockLinkAddresses      sync.RWMutex
 	lockPrepareForTransfer sync.RWMutex
 }
 
-// GetRecipient calls IsLinkedFunc.
+// GetRecipient calls GetRecipientFunc.
 func (mock *BalancerMock) GetRecipient(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool) {
-	if mock.IsLinkedFunc == nil {
-		panic("BalancerMock.IsLinkedFunc: method is nil but Balancer.GetRecipient was just called")
+	if mock.GetRecipientFunc == nil {
+		panic("BalancerMock.GetRecipientFunc: method is nil but Balancer.GetRecipient was just called")
 	}
 	callInfo := struct {
 		Ctx    sdk.Context
@@ -627,16 +627,16 @@ func (mock *BalancerMock) GetRecipient(ctx sdk.Context, sender exported.CrossCha
 		Ctx:    ctx,
 		Sender: sender,
 	}
-	mock.lockIsLinked.Lock()
-	mock.calls.IsLinked = append(mock.calls.IsLinked, callInfo)
-	mock.lockIsLinked.Unlock()
-	return mock.IsLinkedFunc(ctx, sender)
+	mock.lockGetRecipient.Lock()
+	mock.calls.GetRecipient = append(mock.calls.GetRecipient, callInfo)
+	mock.lockGetRecipient.Unlock()
+	return mock.GetRecipientFunc(ctx, sender)
 }
 
-// IsLinkedCalls gets all the calls that were made to GetRecipient.
+// GetRecipientCalls gets all the calls that were made to GetRecipient.
 // Check the length with:
-//     len(mockedBalancer.IsLinkedCalls())
-func (mock *BalancerMock) IsLinkedCalls() []struct {
+//     len(mockedBalancer.GetRecipientCalls())
+func (mock *BalancerMock) GetRecipientCalls() []struct {
 	Ctx    sdk.Context
 	Sender exported.CrossChainAddress
 } {
@@ -644,9 +644,9 @@ func (mock *BalancerMock) IsLinkedCalls() []struct {
 		Ctx    sdk.Context
 		Sender exported.CrossChainAddress
 	}
-	mock.lockIsLinked.RLock()
-	calls = mock.calls.IsLinked
-	mock.lockIsLinked.RUnlock()
+	mock.lockGetRecipient.RLock()
+	calls = mock.calls.GetRecipient
+	mock.lockGetRecipient.RUnlock()
 	return calls
 }
 

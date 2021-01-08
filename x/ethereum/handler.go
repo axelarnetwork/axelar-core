@@ -55,7 +55,6 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 }
 
 func handleMsgSendTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, msg types.MsgSendTx) (*sdk.Result, error) {
-
 	pk, ok := s.GetKeyForSigID(ctx, msg.SignatureID)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not find a corresponding key for sig ID %s", msg.SignatureID))
@@ -92,9 +91,7 @@ func handleMsgSendTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s ty
 		k.Logger(ctx).Error(err.Error())
 	}
 
-	hash = signedTx.Hash().Bytes()
-
-	return &sdk.Result{Data: hash, Log: fmt.Sprintf("successfully sent transaction %s to Ethereum", k.Codec().MustMarshalJSON(hash)), Events: ctx.EventManager().Events()}, nil
+	return &sdk.Result{Data: k.Codec().MustMarshalJSON(hash), Log: fmt.Sprintf("successfully sent transaction %s to Ethereum", k.Codec().MustMarshalJSON(hash)), Events: ctx.EventManager().Events()}, nil
 
 }
 
@@ -348,12 +345,12 @@ func createDeploySCTransaction(rpc types.RPCClient, fromAddr common.Address, gas
 
 	nonce, err := rpc.PendingNonceAt(context.Background(), fromAddr)
 	if err != nil {
-		return nil, fmt.Errorf("Could not create nonce: %s", err)
+		return nil, fmt.Errorf("could not create nonce: %s", err)
 	}
 
 	gasPrice, err := rpc.SuggestGasPrice(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("Could not calculate gas price: %s", err)
+		return nil, fmt.Errorf("could not calculate gas price: %s", err)
 	}
 
 	if gasLimit == 0 {
@@ -364,7 +361,7 @@ func createDeploySCTransaction(rpc types.RPCClient, fromAddr common.Address, gas
 		})
 
 		if err != nil {
-			return nil, fmt.Errorf("Could not estimate gas limit: %s", err)
+			return nil, fmt.Errorf("could not estimate gas limit: %s", err)
 		}
 	}
 
@@ -389,14 +386,14 @@ func createMintTransaction(rpc types.RPCClient, fromAddr, contractAddr, toAddr c
 
 	nonce, err := rpc.PendingNonceAt(context.Background(), fromAddr)
 	if err != nil {
-		return nil, fmt.Errorf("Could not create nonce: %s", err)
+		return nil, fmt.Errorf("could not create nonce: %s", err)
 	}
 
 	value := big.NewInt(0)
 
 	gasPrice, err := rpc.SuggestGasPrice(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("Could not calculate gas price: %s", err)
+		return nil, fmt.Errorf("could not calculate gas price: %s", err)
 	}
 
 	if gasLimit == 0 {
@@ -407,7 +404,7 @@ func createMintTransaction(rpc types.RPCClient, fromAddr, contractAddr, toAddr c
 		})
 
 		if err != nil {
-			return nil, fmt.Errorf("Could not estimate gas limit: %s", err)
+			return nil, fmt.Errorf("could not estimate gas limit: %s", err)
 		}
 	}
 

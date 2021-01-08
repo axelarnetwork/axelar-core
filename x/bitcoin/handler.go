@@ -31,7 +31,7 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Sig
 		case *types.MsgVoteVerifiedTx:
 			return handleMsgVoteVerifiedTx(ctx, k, v, b, msg)
 		case types.MsgRawTx:
-			return handleMsgRawTx(ctx, k,b, s, msg)
+			return handleMsgRawTx(ctx, k, b, s, msg)
 		case types.MsgSendTx:
 			return handleMsgSendTx(ctx, k, rpc, s, msg)
 		case types.MsgTransfer:
@@ -70,7 +70,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, b 
 	}
 
 	if confirmed := v.Result(ctx, msg.Poll()); confirmed != nil {
-		if err := k.ProcessUTXOPollResult(ctx, msg.PollMeta.ID, res.(bool)); err != nil {
+		if err := k.ProcessUTXOPollResult(ctx, msg.PollMeta.ID, confirmed.(bool)); err != nil {
 			return nil, err
 		}
 		v.DeletePoll(ctx, msg.Poll())

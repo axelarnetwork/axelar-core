@@ -7,7 +7,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -62,12 +61,12 @@ type AppModule struct {
 	AppModuleBasic
 	keeper keeper.Keeper
 	voter  types.Voter
-	rpc    *ethclient.Client
+	rpc    types.RPCClient
 	signer types.Signer
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, rpc *ethclient.Client) AppModule {
+func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, rpc types.RPCClient) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
