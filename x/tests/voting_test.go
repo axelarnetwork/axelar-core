@@ -25,7 +25,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/vote"
-	vExported "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/keeper"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
@@ -87,11 +86,11 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 	b2 := fake.NewBroadcaster(testutils.Codec(), val2.GetOperator(), blockChain.Submit)
 	b3 := fake.NewBroadcaster(testutils.Codec(), val3.GetOperator(), blockChain.Submit)
 
-	n1, v1 := newNodeForVote("node1", b1, staker)
-	n2, v2 := newNodeForVote("node2", b2, staker)
-	n3, v3 := newNodeForVote("node3", b3, staker)
+	n1, btcK1 := newNodeForVote("node1", b1, staker)
+	n2, btcK2 := newNodeForVote("node2", b2, staker)
+	n3, btcK3 := newNodeForVote("node3", b3, staker)
 	nodes := []fake.Node{n1, n2, n3}
-	voters := []btcTypes.Voter{v1, v2, v3}
+	btcKeepers := []btcKeeper.Keeper{btcK1, btcK2, btcK3}
 
 	blockChain.AddNodes(nodes...)
 	blockChain.Start()
@@ -122,7 +121,7 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 
 	<-blockChain.WaitNBlocks(15)
 
-	assert.True(t, allTxConfirmed(nodes, voters))
+	assert.True(t, allTxConfirmed(nodes, btcKeepers))
 }
 
 func vout(amount int, destination string) btcjson.Vout {
@@ -139,7 +138,7 @@ func prepareVerifyMsg(hash *chainhash.Hash, destination string, amount int) sdk.
 	}, btcutil.Amount(amount))
 }
 
-func newNodeForVote(moniker string, broadcaster bcExported.Broadcaster, staker voteTypes.Snapshotter) (fake.Node, btcTypes.Voter) {
+func newNodeForVote(moniker string, broadcaster bcExported.Broadcaster, staker voteTypes.Snapshotter) (fake.Node, btcKeeper.Keeper) {
 	/*
 		Multistore is mocked so we can more easily manipulate existing state and assert that specific state changes happen.
 		For now, we never use the Header information, so we can just initialize an empty struct.
@@ -176,15 +175,14 @@ func newNodeForVote(moniker string, broadcaster bcExported.Broadcaster, staker v
 	r.AddRoute(voteTypes.ModuleName, vH).
 		AddRoute(btcTypes.ModuleName, btcH).
 		AddRoute(broadcastTypes.ModuleName, broadcastH)
-	return fake.NewNode(moniker, ctx, r).WithEndBlockers(eb), vK
+	return fake.NewNode(moniker, ctx, r).WithEndBlockers(eb), btcK
 }
 
-func allTxConfirmed(nodes []fake.Node, voters []btcTypes.Voter) bool {
+func allTxConfirmed(nodes []fake.Node, keepers []btcKeeper.Keeper) bool {
 	allConfirmed := true
-	for i, voter := range voters {
+	for i, k := range keepers {
 		for _, txId := range txIds {
-			poll := vExported.PollMeta{Module: btcTypes.RouterKey, Type: btcTypes.MsgVerifyTx{}.Type(), ID: txId}
-			if voter.Result(nodes[i].Ctx, poll) == nil {
+			if _, ok := k.GetUTXO(nodes[i].Ctx, txId); !ok {
 				allConfirmed = false
 				break
 			}

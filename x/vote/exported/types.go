@@ -48,6 +48,7 @@ type MsgVote interface {
 
 type Voter interface {
 	InitPoll(ctx sdk.Context, poll PollMeta) error
+	DeletePoll(ctx sdk.Context, poll PollMeta)
 	RecordVote(ctx sdk.Context, vote MsgVote) error
 	TallyVote(ctx sdk.Context, vote MsgVote) error
 	Result(ctx sdk.Context, poll PollMeta) VotingData

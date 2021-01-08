@@ -168,7 +168,7 @@ type mockIterator struct {
 	start, end []byte
 }
 
-func newMockIterator(start, end []byte, content map[string][]byte) mockIterator {
+func newMockIterator(start, end []byte, content map[string][]byte) *mockIterator {
 
 	keys := make([][]byte, 0)
 
@@ -179,7 +179,7 @@ func newMockIterator(start, end []byte, content map[string][]byte) mockIterator 
 
 		if (start == nil && end == nil) || (bytes.Compare(b, start) >= 0 && bytes.Compare(b, end) < 0) {
 
-			//make sure data is a copy so that there is no concurrent writing
+			// make sure data is a copy so that there is no concurrent writing
 			temp := make([]byte, len(k))
 			copy(temp, []byte(k))
 			keys = append(keys, temp)
@@ -198,7 +198,7 @@ func newMockIterator(start, end []byte, content map[string][]byte) mockIterator 
 
 	for i := 0; i < len(keys); i++ {
 
-		//make sure data is a copy so that there is no concurrent writing
+		// make sure data is a copy so that there is no concurrent writing
 		value := content[string(keys[i])]
 		temp := make([]byte, len(value))
 		copy(temp, value)
@@ -206,7 +206,7 @@ func newMockIterator(start, end []byte, content map[string][]byte) mockIterator 
 		values[i] = temp
 	}
 
-	return mockIterator{
+	return &mockIterator{
 		keys:   keys,
 		values: values,
 		index:  0,
@@ -226,33 +226,26 @@ func newMockIterator(start, end []byte, content map[string][]byte) mockIterator 
 // CONTRACT: start, end readonly []byte
 
 func (mi mockIterator) Domain() (start []byte, end []byte) {
-
 	return mi.start, mi.end
-
 }
 
 // Valid returns whether the current position is valid.
 // Once invalid, an Iterator is forever invalid.
 func (mi mockIterator) Valid() bool {
-
 	return mi.index < len(mi.keys)
-
 }
 
 // Next moves the iterator to the next sequential key in the database, as
 // defined by order of iteration.
 // If Valid returns false, this method will panic.
-func (mi mockIterator) Next() {
-
+func (mi *mockIterator) Next() {
 	mi.index++
-
 }
 
 // Key returns the key of the cursor.
 // If Valid returns false, this method will panic.
 // CONTRACT: key readonly []byte
 func (mi mockIterator) Key() (key []byte) {
-
 	if !mi.Valid() {
 		panic("Iterator position out of bounds")
 	}
@@ -264,7 +257,6 @@ func (mi mockIterator) Key() (key []byte) {
 // If Valid returns false, this method will panic.
 // CONTRACT: value readonly []byte
 func (mi mockIterator) Value() (value []byte) {
-
 	if !mi.Valid() {
 		panic("Iterator position out of bounds")
 	}
@@ -273,12 +265,9 @@ func (mi mockIterator) Value() (value []byte) {
 }
 
 func (mi mockIterator) Error() error {
-
 	return nil
 }
 
 // Close releases the Iterator.
 func (mi mockIterator) Close() {
-
-	//Do what?
 }
