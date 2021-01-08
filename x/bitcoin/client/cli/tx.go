@@ -40,7 +40,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 			RunE:                       client.ValidateCmd,
 		}
 
-		addSubCommands(cmd, types.Network(network.Name), cdc)
+		addTxSubCommands(cmd, types.Network(network.Name), cdc)
 
 		btcTxCmd.AddCommand(cmd)
 	}

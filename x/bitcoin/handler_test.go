@@ -153,8 +153,7 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 	assert.Equal(t, poll, v.RecordVoteCalls()[0].Vote.Poll())
 	assert.Equal(t, true, v.RecordVoteCalls()[0].Vote.Data())
 
-	actualUtxo, ok := k.GetUTXOForPoll(ctx, hash.String())
-	//actualOutPoint, ok := k.GetOutPoint(ctx, hash.String())
+	actualOutPoint, ok := k.GetUnverifiedOutPoint(ctx, hash.String())
 	assert.True(t, ok)
 	assert.True(t, info.Equals(actualOutPoint))
 }
@@ -230,31 +229,31 @@ func prepareMsgTransferToNewMasterKey(ctx sdk.Context, k keeper.Keeper, signer *
 		panic(err)
 	}
 
-	txId := hash.String()
+	txID := hash.String()
 	btcPk := btcec.PublicKey(sk.PublicKey)
 	addr, err := btcutil.NewAddressPubKeyHash(btcutil.Hash160(btcPk.SerializeCompressed()), rpc.Network().Params())
 	if err != nil {
 		panic(err)
 	}
 	amount := btcutil.Amount(testutils.RandIntBetween(1, 100000000))
-	k.SetOutpointInfo(ctx, txId, types.OutPointInfo{
+	k.SetUnverifiedOutpoint(ctx, txID, types.OutPointInfo{
 		OutPoint:  wire.NewOutPoint(hash, uint32(testutils.RandIntBetween(0, 10))),
 		Amount:    amount,
 		Recipient: types.BtcAddress{Network: rpc.Network(), EncodedString: addr.EncodeAddress()},
 	})
-	_ = k.ProcessUTXOPollResult(ctx, txId, true)
+	_ = k.ProcessVerificationResult(ctx, txID, true)
 
 	sender := sdk.AccAddress(testutils.RandString(int(testutils.RandIntBetween(5, 50))))
 
 	query := keeper.NewQuerier(k, b, signer, rpc)
-	bz, err := query(ctx, []string{keeper.QueryRawTx, txId, strconv.Itoa(int(amount)) + denom.Sat}, abci.RequestQuery{})
+	bz, err := query(ctx, []string{keeper.QueryRawTx, txID, strconv.Itoa(int(amount)) + denom.Sat}, abci.RequestQuery{})
 	if err != nil {
 		panic(err)
 	}
 	var rawTx *wire.MsgTx
 	testutils.Codec().MustUnmarshalJSON(bz, &rawTx)
-	msgRawTx := types.NewMsgRawTx(sender, txId, rawTx)
+	msgRawTx := types.NewMsgRawTx(sender, txID, rawTx)
 
-	transfer := types.NewMsgSendTx(sender, txId, sigID)
+	transfer := types.NewMsgSendTx(sender, txID, sigID)
 	return msgRawTx, transfer
 }

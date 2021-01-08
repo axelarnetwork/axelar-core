@@ -13,10 +13,10 @@ type MsgSendTx struct {
 	SignatureID string
 }
 
-func NewMsgSendTx(sender sdk.AccAddress, txId string, sigId string) MsgSendTx {
+func NewMsgSendTx(sender sdk.AccAddress, txID string, sigId string) MsgSendTx {
 	return MsgSendTx{
 		Sender:      sender,
-		TxID:        txId,
+		TxID:        txID,
 		SignatureID: sigId,
 	}
 }

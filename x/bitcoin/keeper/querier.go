@@ -62,8 +62,8 @@ func queryTxInfo(rpc types.RPCClient, txID string, voutIdx string) ([]byte, erro
 	return types.ModuleCdc.MustMarshalJSON(info), nil
 }
 
-func createRawTx(ctx sdk.Context, k Keeper, b types.Balancer, s types.Signer, rpc types.RPCClient, txId string, amountStr string, recipientAddr string) ([]byte, error) {
-	out, ok := k.GetOutPoint(ctx, txId)
+func createRawTx(ctx sdk.Context, k Keeper, b types.Balancer, s types.Signer, rpc types.RPCClient, txID string, amountStr string, recipientAddr string) ([]byte, error) {
+	out, ok := k.GetVerifiedOutPoint(ctx, txID)
 	if !ok {
 		return nil, fmt.Errorf("transaction ID is not known")
 	}

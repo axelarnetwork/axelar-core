@@ -29,7 +29,7 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Sig
 		case *types.MsgVoteVerifiedTx:
 			return handleMsgVoteVerifiedTx(ctx, k, v, msg)
 		case types.MsgRawTx:
-			return handleMsgRawTx(ctx, k, s, msg)
+			return handleMsgRawTx(ctx, k, msg)
 		case types.MsgSendTx:
 			return handleMsgSendTx(ctx, k, rpc, s, msg)
 		case types.MsgTransfer:
@@ -68,7 +68,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, ms
 	}
 
 	if confirmed := v.Result(ctx, msg.Poll()); confirmed != nil {
-		if err := k.ProcessUTXOPollResult(ctx, msg.PollMeta.ID, confirmed.(bool)); err != nil {
+		if err := k.ProcessVerificationResult(ctx, msg.PollMeta.ID, confirmed.(bool)); err != nil {
 			return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("utxo for poll %s was not stored", msg.PollMeta.String()))
 		}
 		v.DeletePoll(ctx, msg.Poll())
@@ -131,8 +131,8 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 		return nil, sdkerrors.Wrapf(types.ErrBitcoin, "not enough confirmations")
 	}
 
-	txId := msg.OutPointInfo.OutPoint.Hash.String()
-	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: txId}
+	txID := msg.OutPointInfo.OutPoint.Hash.String()
+	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: txID}
 	if err := v.InitPoll(ctx, poll); err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
@@ -142,12 +142,12 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeTxId, txId),
+			sdk.NewAttribute(types.AttributetxID, txID),
 			sdk.NewAttribute(types.AttributeAmount, msg.OutPointInfo.Amount.String()),
 		),
 	)
 
-	k.SetOutpointInfo(ctx, txId, msg.OutPointInfo)
+	k.SetUnverifiedOutpoint(ctx, txID, msg.OutPointInfo)
 
 	/*
 	 Anyone not able to verify the transaction will automatically record a negative vote,
@@ -163,7 +163,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 			return &sdk.Result{Log: err.Error(), Events: ctx.EventManager().Events()}, nil
 		}
 
-		k.Logger(ctx).Debug(fmt.Sprintf("transaction (%s) was verified", txId))
+		k.Logger(ctx).Debug(fmt.Sprintf("transaction (%s) was verified", txID))
 		return &sdk.Result{Log: "successfully verified transaction", Events: ctx.EventManager().Events()}, nil
 	// verification unsuccessful
 	default:
@@ -172,12 +172,12 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 			return &sdk.Result{Log: err.Error(), Events: ctx.EventManager().Events()}, nil
 		}
 
-		k.Logger(ctx).Debug(sdkerrors.Wrapf(err, "expected transaction (%s) could not be verified", txId).Error())
+		k.Logger(ctx).Debug(sdkerrors.Wrapf(err, "expected transaction (%s) could not be verified", txID).Error())
 		return &sdk.Result{Log: err.Error(), Events: ctx.EventManager().Events()}, nil
 	}
 }
 
-func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.MsgRawTx) (*sdk.Result, error) {
+func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, msg types.MsgRawTx) (*sdk.Result, error) {
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
@@ -188,7 +188,8 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.M
 
 	for _, in := range msg.RawTx.TxIn {
 		txID := in.PreviousOutPoint.Hash.String()
-		if !isTxVerified(ctx, v, txID) {
+
+		if _, ok := k.GetVerifiedOutPoint(ctx, msg.TxID); !ok {
 			return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("transaction %s not verified", txID))
 		}
 	}
@@ -224,7 +225,7 @@ func handleMsgSendTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s ty
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeTxId, msg.TxID),
+			sdk.NewAttribute(types.AttributetxID, msg.TxID),
 			sdk.NewAttribute(types.AttributeSigId, msg.SignatureID),
 		),
 	)
@@ -242,12 +243,6 @@ func handleMsgSendTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s ty
 	}
 
 	return &sdk.Result{Data: hash[:], Log: fmt.Sprintf("successfully sent transaction %s to Bitcoin", hash), Events: ctx.EventManager().Events()}, nil
-}
-
-func isTxVerified(ctx sdk.Context, v types.Voter, txId string) bool {
-	poll := exported.PollMeta{ID: txId, Module: types.ModuleName, Type: types.MsgVerifyTx{}.Type()}
-	res := v.Result(ctx, poll)
-	return res != nil && res.(bool)
 }
 
 func assembleBtcTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, txID string, pk ecdsa.PublicKey, sigID string) (*wire.MsgTx, error) {
@@ -308,8 +303,8 @@ func validateTxScripts(tx *wire.MsgTx, pkScript []byte) error {
 	return nil
 }
 
-func getPkScript(ctx sdk.Context, k keeper.Keeper, txId string) ([]byte, error) {
-	out, ok := k.GetOutPoint(ctx, txId)
+func getPkScript(ctx sdk.Context, k keeper.Keeper, txID string) ([]byte, error) {
+	out, ok := k.GetVerifiedOutPoint(ctx, txID)
 	if !ok {
 		return nil, fmt.Errorf("transaction ID is not known")
 	}

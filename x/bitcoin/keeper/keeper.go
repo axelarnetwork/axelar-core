@@ -12,10 +12,10 @@ import (
 )
 
 const (
-	rawPrefix  = "raw_"
+	rawPrefix      = "raw_"
 	outPointPrefix = "out_"
-	pollPrefix = "poll_"
-	addrPrefix = "addr_"
+	pollPrefix     = "poll_"
+	addrPrefix     = "addr_"
 )
 
 var (
@@ -67,8 +67,8 @@ func (k Keeper) Codec() *codec.Codec {
 	return k.cdc
 }
 
-func (k Keeper) GetRawTx(ctx sdk.Context, txId string) *wire.MsgTx {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(rawPrefix + txId))
+func (k Keeper) GetRawTx(ctx sdk.Context, txID string) *wire.MsgTx {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(rawPrefix + txID))
 	if bz == nil {
 		return nil
 	}
@@ -83,13 +83,13 @@ func (k Keeper) SetRawTx(ctx sdk.Context, txID string, tx *wire.MsgTx) {
 	ctx.KVStore(k.storeKey).Set([]byte(rawPrefix+txID), bz)
 }
 
-func (k Keeper) setOutpointInfo(ctx sdk.Context, txId string, info types.OutPointInfo) {
+func (k Keeper) setOutpointInfo(ctx sdk.Context, txID string, info types.OutPointInfo) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(info)
-	ctx.KVStore(k.storeKey).Set([]byte(outPointPrefix+txId), bz)
+	ctx.KVStore(k.storeKey).Set([]byte(outPointPrefix+txID), bz)
 }
 
-func (k Keeper) GetOutPoint(ctx sdk.Context, txId string) (types.OutPointInfo, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(outPointPrefix + txId))
+func (k Keeper) GetVerifiedOutPoint(ctx sdk.Context, txID string) (types.OutPointInfo, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(outPointPrefix + txID))
 	if bz == nil {
 		return types.OutPointInfo{}, false
 	}
@@ -99,31 +99,31 @@ func (k Keeper) GetOutPoint(ctx sdk.Context, txId string) (types.OutPointInfo, b
 	return out, true
 }
 
-func (k Keeper) SetUTXOForPoll(ctx sdk.Context, pollID string, utxo types.UTXO) {
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(utxo)
-	ctx.KVStore(k.storeKey).Set([]byte(pollPrefix+pollID), bz)
+func (k Keeper) SetUnverifiedOutpoint(ctx sdk.Context, txID string, info types.OutPointInfo) {
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(info)
+	ctx.KVStore(k.storeKey).Set([]byte(pollPrefix+txID), bz)
 }
 
-func (k Keeper) GetUTXOForPoll(ctx sdk.Context, pollID string) (types.UTXO, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(pollPrefix + pollID))
+func (k Keeper) GetUnverifiedOutPoint(ctx sdk.Context, txID string) (types.OutPointInfo, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(pollPrefix + txID))
 	if bz == nil {
-		return types.UTXO{}, false
+		return types.OutPointInfo{}, false
 	}
-	var utxo types.UTXO
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &utxo)
+	var info types.OutPointInfo
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &info)
 
-	return utxo, true
+	return info, true
 }
 
-// ProcessUTXOPollResult stores the UTXO permanently if confirmed or discards the data otherwise
-func (k Keeper) ProcessUTXOPollResult(ctx sdk.Context, pollID string, confirmed bool) error {
-	utxo, ok := k.GetUTXOForPoll(ctx, pollID)
+// ProcessVerificationResult stores the OutPointInfo permanently if confirmed or discards the data otherwise
+func (k Keeper) ProcessVerificationResult(ctx sdk.Context, txID string, verified bool) error {
+	info, ok := k.GetUnverifiedOutPoint(ctx, txID)
 	if !ok {
 		return fmt.Errorf("poll not found")
 	}
-	if confirmed {
-		k.setUTXO(ctx, utxo.Hash.String(), utxo)
+	if verified {
+		k.setOutpointInfo(ctx, info.OutPoint.Hash.String(), info)
 	}
-	ctx.KVStore(k.storeKey).Delete([]byte(pollPrefix + pollID))
+	ctx.KVStore(k.storeKey).Delete([]byte(pollPrefix + txID))
 	return nil
 }

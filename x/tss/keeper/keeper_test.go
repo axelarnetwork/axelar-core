@@ -120,8 +120,8 @@ func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context) (keyID string, keyChan
 }
 
 func prepareBroadcaster(t *testing.T, ctx sdk.Context, cdc *codec.Codec, validators []snapshot.Validator) fake.Broadcaster {
-	broadcaster := fake.NewBroadcaster(cdc, validators[0].GetOperator(), func(msg sdk.Msg) (result <-chan fake.Result) {
-		return make(chan fake.Result)
+	broadcaster := fake.NewBroadcaster(cdc, validators[0].GetOperator(), func(msg sdk.Msg) (result <-chan *fake.Result) {
+		return make(chan *fake.Result)
 	})
 
 	for i, v := range validators {

@@ -24,7 +24,7 @@ type BlockChain struct {
 	blockSize int
 	in        chan struct {
 		sdk.Msg
-		out chan<- Result
+		out chan<- *Result
 	}
 	nodes         []Node
 	blockTimeOut  time.Duration
@@ -35,7 +35,7 @@ type BlockChain struct {
 type block struct {
 	msgs []struct {
 		sdk.Msg
-		out chan<- Result
+		out chan<- *Result
 	}
 	header abci.Header
 }
@@ -43,7 +43,7 @@ type block struct {
 func newBlock(size int, header abci.Header) block {
 	return block{msgs: make([]struct {
 		sdk.Msg
-		out chan<- Result
+		out chan<- *Result
 	}, 0, size), header: header}
 }
 
@@ -57,7 +57,7 @@ func NewBlockchain() *BlockChain {
 		blockTimeOut: 0,
 		in: make(chan struct {
 			sdk.Msg
-			out chan<- Result
+			out chan<- *Result
 		}, 1000),
 		nodes:         make([]Node, 0),
 		currentHeight: new(int64),
@@ -82,35 +82,42 @@ func (bc *BlockChain) WithBlockTimeOut(timeOut time.Duration) *BlockChain {
 }
 
 // Submit sends a message to the blockchain. It returns a channel with the result.
-func (bc *BlockChain) Submit(msg sdk.Msg) <-chan Result {
+func (bc *BlockChain) Submit(msg sdk.Msg) <-chan *Result {
 	// all nodes will push their output into this channel
-	out := make(chan Result, len(bc.nodes))
+	out := make(chan *Result, len(bc.nodes))
 	bc.in <- struct {
 		sdk.Msg
-		out chan<- Result
+		out chan<- *Result
 	}{msg, out}
 
-	result := make(chan Result, 1)
+	result := make(chan *Result, 1)
 	go func() {
 		var r *Result
 		for i := 0; i < cap(out); i++ {
 			temp := <-out
 			if r == nil {
-				r = &temp
-			} else if !equals(*r, temp) {
+				r = temp
+			} else if temp == nil || !equals(*r, *temp) {
 				panic(fmt.Sprintf("expected %v, got %v", r, temp))
 			}
 		}
 		if r == nil {
 			panic("no result")
 		}
-		result <- *r
+		result <- r
 	}()
 	return result
 }
 
 func equals(this Result, other Result) bool {
-	return this.Error == other.Error && this.Log == other.Log && bytes.Equal(this.Data, other.Data)
+	if this.Error != nil && other.Error != nil && this.Error.Error() == other.Error.Error() {
+		return true
+	}
+	if this.Result != nil && other.Result != nil && this.Log == other.Log && bytes.Equal(this.Data, other.Data) {
+		return true
+	}
+
+	return false
 }
 
 // AddNodes adds a node to the blockchain. This node will receive blocks from the blockchain.
@@ -258,7 +265,7 @@ func (n Node) start() {
 			if err := msg.ValidateBasic(); err != nil {
 				log.Printf("node %s returned an error when validating message %s", n.moniker, msg.Type())
 
-				msg.out <- Result{nil, err}
+				msg.out <- &Result{nil, err}
 
 			} else if h := n.router.Route(n.Ctx, msg.Route()); h != nil {
 				res, err := h(n.Ctx, msg.Msg)
@@ -266,7 +273,7 @@ func (n Node) start() {
 					log.Printf("node %s returned an error from handler for route %s: %s", n.moniker, msg.Route(), err.Error())
 				}
 
-				msg.out <- Result{res, err}
+				msg.out <- &Result{res, err}
 
 			} else {
 				panic(fmt.Sprintf("no handler for route %s defined", msg.Route()))

@@ -62,7 +62,7 @@ func makeCommand(name string) *cobra.Command {
 
 func GetCmdSend(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "send [sourceTxId] [sigId]",
+		Use:   "send [sourcetxID] [sigId]",
 		Short: "Submit the specified transaction to ethereum with the specified signature",
 
 		Args: cobra.ExactArgs(2),
@@ -167,7 +167,7 @@ func parseByteCode(filePath string) ([]byte, error) {
 
 func GetCmdVerifyMintTx(network types.Network, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "mint [txId] [destination] [amount] ",
+		Use:   "mint [txID] [destination] [amount] ",
 		Short: "Verify an Ethereum transaction",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {

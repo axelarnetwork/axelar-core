@@ -118,9 +118,9 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc types.R
 		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not create ethereum transaction: %s", err))
 	}
 
-	txId := tx.Hash().String()
-	k.SetRawTx(ctx, txId, tx)
-	k.Logger(ctx).Info(fmt.Sprintf("storing tx %s", txId))
+	txID := tx.Hash().String()
+	k.SetRawTx(ctx, txID, tx)
+	k.Logger(ctx).Info(fmt.Sprintf("storing tx %s", txID))
 
 	// Print out the hash that becomes the input for the threshold signing
 	networkID, err := rpc.NetworkID(context.Background())
@@ -130,13 +130,13 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc types.R
 	signer := ethTypes.NewEIP155Signer(networkID)
 	hash := signer.Hash(tx).Bytes()
 
-	k.Logger(ctx).Info(fmt.Sprintf("ethereum tx [%s] to sign: %s", txId, k.Codec().MustMarshalJSON(hash)))
+	k.Logger(ctx).Info(fmt.Sprintf("ethereum tx [%s] to sign: %s", txID, k.Codec().MustMarshalJSON(hash)))
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeTxId, txId),
+			sdk.NewAttribute(types.AttributetxID, txID),
 			sdk.NewAttribute(types.AttributeAmount, msg.Amount.String()),
 			sdk.NewAttribute(types.AttributeDestination, msg.Destination.String()),
 		),
@@ -170,13 +170,14 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, s 
 
 func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, rpc types.RPCClient, v types.Voter, msg types.MsgVerifyTx) (*sdk.Result, error) {
 	k.Logger(ctx).Debug("verifying ethereum transaction")
-	txId := msg.Tx.Hash.String()
+	txID := msg.Tx.Hash.String()
+
 	mk, ok := s.GetCurrentMasterKey(ctx, balance.Ethereum)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, "master key not found")
 	}
 
-	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: txId}
+	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: txID}
 	if err := v.InitPoll(ctx, poll); err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
@@ -190,20 +191,20 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, rpc typ
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeTxId, txId),
+			sdk.NewAttribute(types.AttributetxID, txID),
 			sdk.NewAttribute(types.AttributeAmount, msg.Tx.Amount.String()),
 		),
 	)
 
-	k.SetTxForPoll(ctx, poll.ID, msg.Tx)
+	k.SetTxForPoll(ctx, txID msg.Tx)
 
 	/*
 	 Anyone not able to verify the transaction will automatically record a negative vote,
 	 but only validators will later send out that vote.
 	*/
-	err := verifyTx(ctx, rpc, k, msg, crypto.PubkeyToAddress(mk))
-	if err != nil {
-		k.Logger(ctx).Debug(fmt.Sprintf("tx %s verification failed: %s", txId, err.Error()))
+
+	if err := verifyTx(ctx, rpc, k, msg, crypto.PubkeyToAddress(mk)); err != nil {
+		k.Logger(ctx).Debug(sdkerrors.Wrapf(err, "expected transaction (%s) could not be verified", txID).Error())
 		if err := v.RecordVote(ctx, &types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false}); err != nil {
 			k.Logger(ctx).Error(sdkerrors.Wrap(err, "voting failed").Error())
 			return &sdk.Result{
@@ -427,7 +428,7 @@ func createMintCallData(toAddr common.Address, amount *big.Int) []byte {
 }
 
 func verifyContract(ctx sdk.Context, k keeper.Keeper, v types.Voter, contractID string, networkID types.Network) (*common.Hash, error) {
-	verifiedTxID, ok := k.GetTxIDForContractID(ctx, contractID, networkID)
+	verifiedtxID, ok := k.GettxIDForContractID(ctx, contractID, networkID)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, "contract ID unknown")
 	}
@@ -437,7 +438,7 @@ func verifyContract(ctx sdk.Context, k keeper.Keeper, v types.Voter, contractID 
 		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("contract deployment not verified yet"))
 	}
 
-	return &verifiedTxID, nil
+	return &verifiedtxID, nil
 }
 
 func encodeSig(hash []byte, expectedPubKey ecdsa.PublicKey, R, S *big.Int) ([]byte, error) {

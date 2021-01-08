@@ -22,7 +22,7 @@ const (
 	txPrefix        = "tx_"
 	pollPrefix      = "poll_"
 	scPrefix        = "sc_"
-	txIDForSCPrefix = "scTxID_"
+	txIDForSCPrefix = "sctxID_"
 )
 
 type Keeper struct {
@@ -58,8 +58,8 @@ func (k Keeper) GetConfirmationHeight(ctx sdk.Context) uint64 {
 	}
 }
 
-func (k Keeper) GetRawTx(ctx sdk.Context, txId string) *ethTypes.Transaction {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(rawPrefix + txId))
+func (k Keeper) GetRawTx(ctx sdk.Context, txID string) *ethTypes.Transaction {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(rawPrefix + txID))
 	if bz == nil {
 		return nil
 	}
@@ -69,14 +69,14 @@ func (k Keeper) GetRawTx(ctx sdk.Context, txId string) *ethTypes.Transaction {
 	return tx
 }
 
-func (k Keeper) SetRawTx(ctx sdk.Context, txId string, tx *ethTypes.Transaction) {
+func (k Keeper) SetRawTx(ctx sdk.Context, txID string, tx *ethTypes.Transaction) {
 	bz := k.cdc.MustMarshalJSON(tx)
-	ctx.KVStore(k.storeKey).Set([]byte(rawPrefix+txId), bz)
+	ctx.KVStore(k.storeKey).Set([]byte(rawPrefix+txID), bz)
 }
 
-func (k Keeper) setTx(ctx sdk.Context, txId string, tx types.Tx) {
+func (k Keeper) setTx(ctx sdk.Context, txID string, tx types.Tx) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(tx)
-	ctx.KVStore(k.storeKey).Set([]byte(txPrefix+txId), bz)
+	ctx.KVStore(k.storeKey).Set([]byte(txPrefix+txID), bz)
 }
 
 func (k Keeper) GetTx(ctx sdk.Context, txId string) (types.Tx, bool) {
@@ -131,7 +131,7 @@ func (k Keeper) GetSmartContract(ctx sdk.Context, scId string) []byte {
 
 }
 
-func (k Keeper) GetTxIDForContractID(ctx sdk.Context, contractID string, networkID types.Network) (common.Hash, bool) {
+func (k Keeper) GettxIDForContractID(ctx sdk.Context, contractID string, networkID types.Network) (common.Hash, bool) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(txIDForSCPrefix + contractID + string(networkID)))
 	if bz == nil {
 		return common.Hash{}, false
@@ -139,6 +139,6 @@ func (k Keeper) GetTxIDForContractID(ctx sdk.Context, contractID string, network
 	return common.BytesToHash(bz), true
 }
 
-func (k Keeper) SetTxIDForContractID(ctx sdk.Context, contractID string, networkID types.Network, txID common.Hash) {
+func (k Keeper) SettxIDForContractID(ctx sdk.Context, contractID string, networkID types.Network, txID common.Hash) {
 	ctx.KVStore(k.storeKey).Set([]byte(txIDForSCPrefix+contractID+string(networkID)), txID.Bytes())
 }
