@@ -21,22 +21,25 @@ jobs:
       - name: Install moq
         run: go get github.com/matryer/moq
 
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.CICD_RSA_KEY }}
+          known_hosts: ${{ secrets.KNOWN_HOSTS_GITHUB }}
+
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # This step will be removed once the tssd module is installed by go get
-      - name: Checkout tssd
-        uses: actions/checkout@v2
-        with:
-          repository: axelarnetwork/tssd
-          path: ./tssd
-          ssh-key: ${{ secrets.CICD_RSA_KEY }}
-
       - name: Check generated code up-to-date
         run: |
-          go generate ./...
+          git config --global url."git@github.com:axelarnetwork".insteadOf https://github.com/axelarnetwork
+
+          go generate -x ./...
 
           if [ -n "$(git status --porcelain)" ]; then
+            echo Following files are changed...
+            git status
+
             exit 1;
           else
             exit 0;
