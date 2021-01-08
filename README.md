@@ -2,11 +2,19 @@
 
 The axelar-core app based on the Cosmos SDK is the main application of the axelar network.
 This repository is used to build the necessary binaries and docker image to run a core validator.
-See the axelarnetwork/axelarate repo for instructions to run a node. 
+See the axelarnetwork/axelarate repo for instructions to run a node.
+
+## Prerequisites for building binaries and docker images
+Since axelar-core requires tssd to build which is a private module, you will need to
+
+1. Have a SSH key on your machine
+2. Add your public key to your Github account for authentication
+3. Run `ssh-add ~/.ssh/{private key file name}` to add your private key to your ssh agent
+4. Run `git config --global url."git@github.com:axelarnetwork".insteadOf https://github.com/axelarnetwork` to force `go get` to authenticate via ssh
 
 ## Building binaries locally
 
-Execute `make build` to create local binaries for the validator node. 
+Execute `make build` to create local binaries for the validator node.
 They are created in the `./bin` folder.
 
 ## Creating docker images
@@ -23,8 +31,8 @@ Run `./bin/axelarcli --help` after building the binaries to get information abou
 ## Show API documentation
 Execute `GO111MODULE=off go get -u golang.org/x/tools/cmd/godoc` to ensure that `godoc` is installed on the host.
 
-After the installation, execute `godoc -http ":{port}" -index` to host a local godoc server. For example, with port `8080` the documentation is hosted at 
+After the installation, execute `godoc -http ":{port}" -index` to host a local godoc server. For example, with port `8080` the documentation is hosted at
 http://localhost:8080/pkg/github.com/axelarnetwork/axelar-core. The index flag makes the documentation searchable.
 
-Comments at the beginning of packages, before types and before functions are automatically taken from the source files to populate the documentation. 
+Comments at the beginning of packages, before types and before functions are automatically taken from the source files to populate the documentation.
 See https://blog.golang.org/godoc for more information.
