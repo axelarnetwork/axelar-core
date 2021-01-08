@@ -208,7 +208,7 @@ func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
 		skNext, _ = ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 		sigID = testutils.RandString(int(testutils.RandIntBetween(5, 20)))
 
-		rawTx, transfer := prepareMsgTransferToNewMasterKey(ctx, k, signer, b, rpc, sk, sigID)
+		rawTx, transfer := prepareMsgTransferToNewMasterKey(ctx, k, signer, rpc, sk, sigID)
 		txID = transfer.TxID
 
 		res, err := handler(ctx, rawTx)
@@ -223,7 +223,7 @@ func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
 	}
 }
 
-func prepareMsgTransferToNewMasterKey(ctx sdk.Context, k keeper.Keeper, signer *btcMock.SignerMock, b *btcMock.BalancerMock, rpc *btcMock.RPCClientMock, sk *ecdsa.PrivateKey, sigID string) (types.MsgRawTx, types.MsgSendTx) {
+func prepareMsgTransferToNewMasterKey(ctx sdk.Context, k keeper.Keeper, signer *btcMock.SignerMock, rpc *btcMock.RPCClientMock, sk *ecdsa.PrivateKey, sigID string) (types.MsgRawTx, types.MsgSendTx) {
 	hash, err := chainhash.NewHash([]byte(testutils.RandString(chainhash.HashSize)))
 	if err != nil {
 		panic(err)
@@ -245,7 +245,7 @@ func prepareMsgTransferToNewMasterKey(ctx sdk.Context, k keeper.Keeper, signer *
 
 	sender := sdk.AccAddress(testutils.RandString(int(testutils.RandIntBetween(5, 50))))
 
-	query := keeper.NewQuerier(k, b, signer, rpc)
+	query := keeper.NewQuerier(k, signer, rpc)
 	bz, err := query(ctx, []string{keeper.QueryRawTx, txID, strconv.Itoa(int(amount)) + denom.Sat}, abci.RequestQuery{})
 	if err != nil {
 		panic(err)

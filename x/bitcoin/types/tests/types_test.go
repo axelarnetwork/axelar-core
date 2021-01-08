@@ -31,27 +31,21 @@ func TestOutPointInfo_Equals(t *testing.T) {
 	op1 := types.OutPointInfo{
 		OutPoint: wire.NewOutPoint(hash1, 3),
 		Amount:   0,
-		Sender: types.BtcAddress{
-			Network:       types.Network(chaincfg.MainNetParams.Name),
-			EncodedString: "testsender",
-		},
 		Recipient: types.BtcAddress{
 			Network:       types.Network(chaincfg.MainNetParams.Name),
 			EncodedString: "testrecipient",
 		},
+		Confirmations: 16,
 	}
 
 	op2 := types.OutPointInfo{
 		OutPoint: wire.NewOutPoint(hash2, 3),
 		Amount:   0,
-		Sender: types.BtcAddress{
-			Network:       types.Network(chaincfg.MainNetParams.Name),
-			EncodedString: "testsender",
-		},
 		Recipient: types.BtcAddress{
 			Network:       types.Network(chaincfg.MainNetParams.Name),
 			EncodedString: "testrecipient",
 		},
+		Confirmations: 16,
 	}
 
 	assert.True(t, op1.Equals(op2))
@@ -77,27 +71,21 @@ func TestOutPointInfo_PointerReference_Equals(t *testing.T) {
 	op1 := &types.OutPointInfo{
 		OutPoint: wire.NewOutPoint(hash1, 3),
 		Amount:   0,
-		Sender: types.BtcAddress{
-			Network:       types.Network(chaincfg.MainNetParams.Name),
-			EncodedString: "testsender",
-		},
 		Recipient: types.BtcAddress{
 			Network:       types.Network(chaincfg.MainNetParams.Name),
 			EncodedString: "testrecipient",
 		},
+		Confirmations: 23,
 	}
 
 	op2 := &types.OutPointInfo{
 		OutPoint: wire.NewOutPoint(hash2, 3),
 		Amount:   0,
-		Sender: types.BtcAddress{
-			Network:       types.Network(chaincfg.MainNetParams.Name),
-			EncodedString: "testsender",
-		},
 		Recipient: types.BtcAddress{
 			Network:       types.Network(chaincfg.MainNetParams.Name),
 			EncodedString: "testrecipient",
 		},
+		Confirmations: 23,
 	}
 	assert.True(t, op1.Equals(*op2))
 	assert.Equal(t, op1, op2)

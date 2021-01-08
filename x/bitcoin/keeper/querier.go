@@ -26,16 +26,16 @@ const (
 )
 
 // NewQuerier returns a new querier for the Bitcoin module
-func NewQuerier(k Keeper, b types.Balancer, s types.Signer, rpc types.RPCClient) sdk.Querier {
+func NewQuerier(k Keeper, s types.Signer, rpc types.RPCClient) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		switch path[0] {
 		case QueryOutInfo:
 			return queryTxInfo(rpc, path[1], path[2])
 		case QueryRawTx:
 			if len(path) == 4 {
-				return createRawTx(ctx, k, b, s, rpc, path[1], path[2], path[3])
+				return createRawTx(ctx, k, s, rpc, path[1], path[2], path[3])
 			} else {
-				return createRawTx(ctx, k, b, s, rpc, path[1], path[2], "")
+				return createRawTx(ctx, k, s, rpc, path[1], path[2], "")
 			}
 
 		default:
@@ -62,14 +62,10 @@ func queryTxInfo(rpc types.RPCClient, txID string, voutIdx string) ([]byte, erro
 	return types.ModuleCdc.MustMarshalJSON(info), nil
 }
 
-func createRawTx(ctx sdk.Context, k Keeper, b types.Balancer, s types.Signer, rpc types.RPCClient, txID string, amountStr string, recipientAddr string) ([]byte, error) {
+func createRawTx(ctx sdk.Context, k Keeper, s types.Signer, rpc types.RPCClient, txID string, amountStr string, recipientAddr string) ([]byte, error) {
 	out, ok := k.GetVerifiedOutPoint(ctx, txID)
 	if !ok {
 		return nil, fmt.Errorf("transaction ID is not known")
-	}
-	sender := balance.CrossChainAddress{Chain: balance.Bitcoin, Address: out.Sender.String()}
-	if externalRecipient, linked := b.GetRecipient(ctx, sender); linked {
-		return nil, fmt.Errorf("transactions from %s are linked to recipient %s and cannot be withdrawn", sender, externalRecipient)
 	}
 
 	/*

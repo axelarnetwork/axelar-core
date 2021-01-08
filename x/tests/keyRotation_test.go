@@ -398,7 +398,6 @@ func TestKeyRotation(t *testing.T) {
 			return btcTypes.OutPointInfo{
 				OutPoint:      out,
 				Amount:        amount,
-				Sender:        masterKey1Addr,
 				Recipient:     masterKey2Addr,
 				Confirmations: confirmations,
 			}, nil
@@ -466,7 +465,7 @@ func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *f
 		AddRoute(voteTypes.RouterKey, voteHandler).
 		AddRoute(tssTypes.RouterKey, tssHandler)
 
-	queriers := map[string]sdk.Querier{btcTypes.QuerierRoute: btcKeeper.NewQuerier(bitKeeper, balancer, tKeeper, mocks.BTC)}
+	queriers := map[string]sdk.Querier{btcTypes.QuerierRoute: btcKeeper.NewQuerier(bitKeeper, tKeeper, mocks.BTC)}
 
 	node := fake.NewNode(moniker, ctx, router, queriers).
 		WithEndBlockers(func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {

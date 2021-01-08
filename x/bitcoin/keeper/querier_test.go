@@ -20,7 +20,6 @@ import (
 
 func TestQuerier_TxInfo(t *testing.T) {
 	for i := 0; i < 100; i++ {
-		sender := testutils.RandString(int(testutils.RandIntBetween(5, 20)))
 		recipient := testutils.RandString(int(testutils.RandIntBetween(5, 20)))
 		var bz []byte
 		for _, b := range testutils.RandIntsBetween(0, 256).Take(chainhash.HashSize) {
@@ -34,12 +33,11 @@ func TestQuerier_TxInfo(t *testing.T) {
 				Index: uint32(testutils.RandIntBetween(0, 100)),
 			},
 			Amount:        btcutil.Amount(testutils.RandIntBetween(0, 100000000)),
-			Sender:        types.BtcAddress{Network: types.Network(chaincfg.MainNetParams.Name), EncodedString: sender},
 			Recipient:     types.BtcAddress{Network: types.Network(chaincfg.MainNetParams.Name), EncodedString: recipient},
 			Confirmations: uint64(testutils.RandIntBetween(0, 10000)),
 		}
 
-		query := NewQuerier(Keeper{}, &mock.BalancerMock{}, &mock.SignerMock{}, &mock.RPCClientMock{
+		query := NewQuerier(Keeper{}, &mock.SignerMock{}, &mock.RPCClientMock{
 			GetOutPointInfoFunc: func(out *wire.OutPoint) (types.OutPointInfo, error) {
 				if out.Hash.IsEqual(&info.OutPoint.Hash) {
 					return info, nil

@@ -118,7 +118,7 @@ func (AppModule) QuerierRoute() string {
 }
 
 func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return nil
+	return keeper.NewQuerier(am.keeper, am.signer, am.rpc)
 }
 
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {

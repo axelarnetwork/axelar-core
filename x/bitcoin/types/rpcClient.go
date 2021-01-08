@@ -166,32 +166,9 @@ func (r *RPCClientImpl) GetOutPointInfo(out *wire.OutPoint) (OutPointInfo, error
 		return OutPointInfo{}, fmt.Errorf("transaction must have exactly one input")
 	}
 
-	spentTxHash, err := chainhash.NewHashFromStr(tx.Vin[0].Txid)
-	if err != nil {
-		return OutPointInfo{}, fmt.Errorf("could not read the spent transaction's hash")
-	}
-	spentTx, err := r.GetRawTransactionVerbose(spentTxHash)
-	if err != nil {
-		return OutPointInfo{}, sdkerrors.Wrap(err, "could not retrieve spent Bitcoin transaction")
-	}
-	if uint32(len(spentTx.Vout)) <= tx.Vin[0].Vout {
-		return OutPointInfo{}, fmt.Errorf("vout index of spent transaction out of range")
-	}
-
-	spentVout := spentTx.Vout[tx.Vin[0].Vout]
-
-	if len(spentVout.ScriptPubKey.Addresses) != 1 {
-		return OutPointInfo{}, fmt.Errorf("deposit must be sent by a single address")
-	}
-	sender, err := ParseBtcAddress(spentVout.ScriptPubKey.Addresses[0], r.network)
-	if err != nil {
-		return OutPointInfo{}, err
-	}
-
 	return OutPointInfo{
 		OutPoint:      out,
 		Amount:        amount,
-		Sender:        sender,
 		Recipient:     recipient,
 		Confirmations: tx.Confirmations,
 	}, nil
