@@ -20,6 +20,7 @@ var (
 const (
 	rawPrefix       = "raw_"
 	txPrefix        = "tx_"
+	pollPrefix      = "poll_"
 	scPrefix        = "sc_"
 	txIDForSCPrefix = "scTxID_"
 )
@@ -73,12 +74,12 @@ func (k Keeper) SetRawTx(ctx sdk.Context, txId string, tx *ethTypes.Transaction)
 	ctx.KVStore(k.storeKey).Set([]byte(rawPrefix+txId), bz)
 }
 
-func (k Keeper) SetTX(ctx sdk.Context, txId string, utxo types.Tx) {
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(utxo)
+func (k Keeper) setTx(ctx sdk.Context, txId string, tx types.Tx) {
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(tx)
 	ctx.KVStore(k.storeKey).Set([]byte(txPrefix+txId), bz)
 }
 
-func (k Keeper) GetTX(ctx sdk.Context, txId string) (types.Tx, bool) {
+func (k Keeper) GetTx(ctx sdk.Context, txId string) (types.Tx, bool) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(txPrefix + txId))
 	if bz == nil {
 		return types.Tx{}, false
@@ -87,6 +88,35 @@ func (k Keeper) GetTX(ctx sdk.Context, txId string) (types.Tx, bool) {
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &tx)
 
 	return tx, true
+}
+
+func (k Keeper) SetTxForPoll(ctx sdk.Context, pollID string, tx types.Tx) {
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(tx)
+	ctx.KVStore(k.storeKey).Set([]byte(pollPrefix+pollID), bz)
+}
+
+func (k Keeper) GetTxForPoll(ctx sdk.Context, pollID string) (types.Tx, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(pollPrefix + pollID))
+	if bz == nil {
+		return types.Tx{}, false
+	}
+	var tx types.Tx
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &tx)
+
+	return tx, true
+}
+
+// ProcessTxPollResult stores the TX permanently if confirmed or discards the data otherwise
+func (k Keeper) ProcessTxPollResult(ctx sdk.Context, pollID string, confirmed bool) error {
+	tx, ok := k.GetTxForPoll(ctx, pollID)
+	if !ok {
+		return fmt.Errorf("poll not found")
+	}
+	if confirmed {
+		k.setTx(ctx, tx.Hash.String(), tx)
+	}
+	ctx.KVStore(k.storeKey).Delete([]byte(pollPrefix + pollID))
+	return nil
 }
 
 func (k Keeper) SetSmartContract(ctx sdk.Context, scId string, bytecode []byte) {

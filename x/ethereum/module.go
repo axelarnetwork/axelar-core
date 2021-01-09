@@ -59,19 +59,21 @@ func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 
 type AppModule struct {
 	AppModuleBasic
-	keeper keeper.Keeper
-	voter  types.Voter
-	rpc    types.RPCClient
-	signer types.Signer
+	keeper   keeper.Keeper
+	voter    types.Voter
+	balancer types.Balancer
+	rpc      types.RPCClient
+	signer   types.Signer
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, rpc types.RPCClient) AppModule {
+func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, balancer types.Balancer, rpc types.RPCClient) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
 		voter:          voter,
 		signer:         signer,
+		balancer:       balancer,
 		rpc:            rpc,
 	}
 }
@@ -101,7 +103,7 @@ func (am AppModule) NewHandler() sdk.Handler {
 		return NewDummyHandler(am.keeper, am.voter)
 	}*/
 
-	return NewHandler(am.keeper, am.rpc, am.voter, am.signer)
+	return NewHandler(am.keeper, am.rpc, am.voter, am.signer, am.balancer)
 }
 
 func (AppModule) QuerierRoute() string {

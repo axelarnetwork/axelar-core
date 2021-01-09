@@ -546,3 +546,184 @@ func (mock *SignerMock) GetSigCalls() []struct {
 	mock.lockGetSig.RUnlock()
 	return calls
 }
+
+// Ensure, that BalancerMock does implement types.Balancer.
+// If this is not the case, regenerate this file with moq.
+var _ types.Balancer = &BalancerMock{}
+
+// BalancerMock is a mock implementation of types.Balancer.
+//
+//     func TestSomethingThatUsesBalancer(t *testing.T) {
+//
+//         // make and configure a mocked types.Balancer
+//         mockedBalancer := &BalancerMock{
+//             GetRecipientFunc: func(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool) {
+// 	               panic("mock out the GetRecipient method")
+//             },
+//             LinkAddressesFunc: func(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress)  {
+// 	               panic("mock out the LinkAddresses method")
+//             },
+//             PrepareForTransferFunc: func(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error {
+// 	               panic("mock out the PrepareForTransfer method")
+//             },
+//         }
+//
+//         // use mockedBalancer in code that requires types.Balancer
+//         // and then make assertions.
+//
+//     }
+type BalancerMock struct {
+	// GetRecipientFunc mocks the GetRecipient method.
+	GetRecipientFunc func(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool)
+
+	// LinkAddressesFunc mocks the LinkAddresses method.
+	LinkAddressesFunc func(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress)
+
+	// PrepareForTransferFunc mocks the PrepareForTransfer method.
+	PrepareForTransferFunc func(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetRecipient holds details about calls to the GetRecipient method.
+		GetRecipient []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Sender is the sender argument value.
+			Sender exported.CrossChainAddress
+		}
+		// LinkAddresses holds details about calls to the LinkAddresses method.
+		LinkAddresses []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Sender is the sender argument value.
+			Sender exported.CrossChainAddress
+			// Recipient is the recipient argument value.
+			Recipient exported.CrossChainAddress
+		}
+		// PrepareForTransfer holds details about calls to the PrepareForTransfer method.
+		PrepareForTransfer []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Sender is the sender argument value.
+			Sender exported.CrossChainAddress
+			// Amount is the amount argument value.
+			Amount sdk.Coin
+		}
+	}
+	lockGetRecipient       sync.RWMutex
+	lockLinkAddresses      sync.RWMutex
+	lockPrepareForTransfer sync.RWMutex
+}
+
+// GetRecipient calls GetRecipientFunc.
+func (mock *BalancerMock) GetRecipient(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool) {
+	if mock.GetRecipientFunc == nil {
+		panic("BalancerMock.GetRecipientFunc: method is nil but Balancer.GetRecipient was just called")
+	}
+	callInfo := struct {
+		Ctx    sdk.Context
+		Sender exported.CrossChainAddress
+	}{
+		Ctx:    ctx,
+		Sender: sender,
+	}
+	mock.lockGetRecipient.Lock()
+	mock.calls.GetRecipient = append(mock.calls.GetRecipient, callInfo)
+	mock.lockGetRecipient.Unlock()
+	return mock.GetRecipientFunc(ctx, sender)
+}
+
+// GetRecipientCalls gets all the calls that were made to GetRecipient.
+// Check the length with:
+//     len(mockedBalancer.GetRecipientCalls())
+func (mock *BalancerMock) GetRecipientCalls() []struct {
+	Ctx    sdk.Context
+	Sender exported.CrossChainAddress
+} {
+	var calls []struct {
+		Ctx    sdk.Context
+		Sender exported.CrossChainAddress
+	}
+	mock.lockGetRecipient.RLock()
+	calls = mock.calls.GetRecipient
+	mock.lockGetRecipient.RUnlock()
+	return calls
+}
+
+// LinkAddresses calls LinkAddressesFunc.
+func (mock *BalancerMock) LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) {
+	if mock.LinkAddressesFunc == nil {
+		panic("BalancerMock.LinkAddressesFunc: method is nil but Balancer.LinkAddresses was just called")
+	}
+	callInfo := struct {
+		Ctx       sdk.Context
+		Sender    exported.CrossChainAddress
+		Recipient exported.CrossChainAddress
+	}{
+		Ctx:       ctx,
+		Sender:    sender,
+		Recipient: recipient,
+	}
+	mock.lockLinkAddresses.Lock()
+	mock.calls.LinkAddresses = append(mock.calls.LinkAddresses, callInfo)
+	mock.lockLinkAddresses.Unlock()
+	mock.LinkAddressesFunc(ctx, sender, recipient)
+}
+
+// LinkAddressesCalls gets all the calls that were made to LinkAddresses.
+// Check the length with:
+//     len(mockedBalancer.LinkAddressesCalls())
+func (mock *BalancerMock) LinkAddressesCalls() []struct {
+	Ctx       sdk.Context
+	Sender    exported.CrossChainAddress
+	Recipient exported.CrossChainAddress
+} {
+	var calls []struct {
+		Ctx       sdk.Context
+		Sender    exported.CrossChainAddress
+		Recipient exported.CrossChainAddress
+	}
+	mock.lockLinkAddresses.RLock()
+	calls = mock.calls.LinkAddresses
+	mock.lockLinkAddresses.RUnlock()
+	return calls
+}
+
+// PrepareForTransfer calls PrepareForTransferFunc.
+func (mock *BalancerMock) PrepareForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error {
+	if mock.PrepareForTransferFunc == nil {
+		panic("BalancerMock.PrepareForTransferFunc: method is nil but Balancer.PrepareForTransfer was just called")
+	}
+	callInfo := struct {
+		Ctx    sdk.Context
+		Sender exported.CrossChainAddress
+		Amount sdk.Coin
+	}{
+		Ctx:    ctx,
+		Sender: sender,
+		Amount: amount,
+	}
+	mock.lockPrepareForTransfer.Lock()
+	mock.calls.PrepareForTransfer = append(mock.calls.PrepareForTransfer, callInfo)
+	mock.lockPrepareForTransfer.Unlock()
+	return mock.PrepareForTransferFunc(ctx, sender, amount)
+}
+
+// PrepareForTransferCalls gets all the calls that were made to PrepareForTransfer.
+// Check the length with:
+//     len(mockedBalancer.PrepareForTransferCalls())
+func (mock *BalancerMock) PrepareForTransferCalls() []struct {
+	Ctx    sdk.Context
+	Sender exported.CrossChainAddress
+	Amount sdk.Coin
+} {
+	var calls []struct {
+		Ctx    sdk.Context
+		Sender exported.CrossChainAddress
+		Amount sdk.Coin
+	}
+	mock.lockPrepareForTransfer.RLock()
+	calls = mock.calls.PrepareForTransfer
+	mock.lockPrepareForTransfer.RUnlock()
+	return calls
+}

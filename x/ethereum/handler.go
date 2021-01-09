@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"math/big"
 
+	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -26,7 +26,7 @@ const (
 	gasLimit = uint64(3000000)
 )
 
-func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Signer) sdk.Handler {
+func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Signer, b types.Balancer) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
@@ -35,7 +35,7 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 			return handleMsgInstallSC(ctx, k, msg)
 
 		case *types.MsgVoteVerifiedTx:
-			return handleMsgVoteVerifiedTx(ctx, v, msg)
+			return handleMsgVoteVerifiedTx(ctx, k, v, s, b, msg)
 
 		case types.MsgVerifyTx:
 			return handleMsgVerifyTx(ctx, k, s, rpc, v, msg)
@@ -150,9 +150,20 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc types.R
 }
 
 // This can be used as a potential hook to immediately act on a poll being decided by the vote
-func handleMsgVoteVerifiedTx(ctx sdk.Context, v types.Voter, msg *types.MsgVoteVerifiedTx) (*sdk.Result, error) {
+func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, s types.Signer, b types.Balancer, msg *types.MsgVoteVerifiedTx) (*sdk.Result, error) {
+
 	if err := v.TallyVote(ctx, msg); err != nil {
 		return nil, err
+	}
+
+	if confirmed := v.Result(ctx, msg.Poll()); confirmed != nil {
+		if err := k.ProcessTxPollResult(ctx, msg.PollMeta.ID, confirmed.(bool)); err != nil {
+
+			return nil, err
+		}
+
+		v.DeletePoll(ctx, msg.Poll())
+
 	}
 	return &sdk.Result{}, nil
 }
@@ -160,7 +171,6 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, v types.Voter, msg *types.MsgVoteV
 func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, rpc types.RPCClient, v types.Voter, msg types.MsgVerifyTx) (*sdk.Result, error) {
 	k.Logger(ctx).Debug("verifying ethereum transaction")
 	txId := msg.Tx.Hash.String()
-
 	mk, ok := s.GetCurrentMasterKey(ctx, balance.Ethereum)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, "master key not found")
@@ -168,7 +178,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, rpc typ
 
 	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: txId}
 	if err := v.InitPoll(ctx, poll); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, "could not initialize new poll")
+		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
 
 	if msg.TxType == types.TypeSCDeploy {
@@ -185,15 +195,15 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, rpc typ
 		),
 	)
 
-	k.SetTX(ctx, txId, msg.Tx)
+	k.SetTxForPoll(ctx, poll.ID, msg.Tx)
 
 	/*
 	 Anyone not able to verify the transaction will automatically record a negative vote,
 	 but only validators will later send out that vote.
 	*/
-
-	if err := verifyTx(ctx, rpc, k, msg, crypto.PubkeyToAddress(mk)); err != nil {
-		k.Logger(ctx).Debug(sdkerrors.Wrapf(err, "expected transaction (%s) could not be verified", txId).Error())
+	err := verifyTx(ctx, rpc, k, msg, crypto.PubkeyToAddress(mk))
+	if err != nil {
+		k.Logger(ctx).Debug(fmt.Sprintf("tx %s verification failed: %s", txId, err.Error()))
 		if err := v.RecordVote(ctx, &types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false}); err != nil {
 			k.Logger(ctx).Error(sdkerrors.Wrap(err, "voting failed").Error())
 			return &sdk.Result{
@@ -202,13 +212,11 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, rpc typ
 				Events: ctx.EventManager().Events(),
 			}, nil
 		}
-
 		return &sdk.Result{
 			Log:    err.Error(),
 			Data:   k.Codec().MustMarshalBinaryLengthPrefixed(false),
 			Events: ctx.EventManager().Events(),
 		}, nil
-
 	} else {
 		if err := v.RecordVote(ctx, &types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: true}); err != nil {
 			k.Logger(ctx).Error(sdkerrors.Wrap(err, "voting failed").Error())
@@ -218,7 +226,6 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, rpc typ
 				Events: ctx.EventManager().Events(),
 			}, nil
 		}
-
 		return &sdk.Result{
 			Log:    "successfully verified transaction",
 			Data:   k.Codec().MustMarshalBinaryLengthPrefixed(true),
@@ -226,11 +233,6 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, rpc typ
 		}, nil
 	}
 
-}
-
-func isVerified(ctx sdk.Context, v types.Voter, poll exported.PollMeta) bool {
-	res := v.Result(ctx, poll)
-	return res == nil || !res.(bool)
 }
 
 func verifyTx(ctx sdk.Context, rpc types.RPCClient, k keeper.Keeper, msg types.MsgVerifyTx, expectedSender common.Address) error {
@@ -430,8 +432,9 @@ func verifyContract(ctx sdk.Context, k keeper.Keeper, v types.Voter, contractID 
 		return nil, sdkerrors.Wrap(types.ErrEthereum, "contract ID unknown")
 	}
 
-	if isVerified(ctx, v, exported.PollMeta{Module: types.ModuleName, Type: types.MsgVerifyTx{}.Type(), ID: verifiedTxID.String()}) {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("contract not deployed yet"))
+	_, ok = k.GetTx(ctx, verifiedTxID.String())
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("contract deployment not verified yet"))
 	}
 
 	return &verifiedTxID, nil

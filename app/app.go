@@ -349,7 +349,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		tss.NewAppModule(app.tssKeeper, app.snapKeeper, app.votingKeeper),
 		vote.NewAppModule(app.votingKeeper),
 		broadcast.NewAppModule(app.broadcastKeeper),
-		ethereum.NewAppModule(app.ethKeeper, app.votingKeeper, app.tssKeeper, rpcETC),
+		ethereum.NewAppModule(app.ethKeeper, app.votingKeeper, app.tssKeeper, app.balanceKeeper, rpcETC),
 		balance.NewAppModule(app.balanceKeeper),
 		btcModule,
 	)

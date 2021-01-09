@@ -41,7 +41,7 @@ func TestInstallSC(t *testing.T) {
 	cdc := testutils.Codec()
 	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"))
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	handler := NewHandler(k, &ethMock.RPCClientMock{}, &ethMock.VoterMock{}, &ethMock.SignerMock{})
+	handler := NewHandler(k, &ethMock.RPCClientMock{}, &ethMock.VoterMock{}, &ethMock.SignerMock{}, &ethMock.BalancerMock{})
 	binary := common.FromHex(MymintableBin)
 	_, err := handler(ctx, types.NewMsgInstallSC(sdk.AccAddress("sender"), contractID, binary))
 
@@ -68,7 +68,7 @@ func TestVerifyTx_Deploy_ContractMissing(t *testing.T) {
 
 	rpc, signer, voter := getVerifyMocks(signedTx, networkID, txBlockNum, privateKey.PublicKey)
 
-	handler := NewHandler(k, rpc, voter, signer)
+	handler := NewHandler(k, rpc, voter, signer, &ethMock.BalancerMock{})
 	_, err = handler(ctx, types.NewMsgVerifyDeployTx(sdk.AccAddress("sender"), network, signedTx.Hash(), contractID))
 	assert.NoError(t, err)
 
@@ -104,7 +104,7 @@ func TestVerifyTx_Deploy_WrongMK(t *testing.T) {
 		return key.PublicKey, true
 	}
 
-	handler := NewHandler(k, rpc, voter, signer)
+	handler := NewHandler(k, rpc, voter, signer, &ethMock.BalancerMock{})
 	_, err = handler(ctx, types.NewMsgVerifyDeployTx(sdk.AccAddress("sender"), network, signedTx.Hash(), contractID))
 	assert.NoError(t, err)
 
@@ -133,7 +133,7 @@ func TestVerifyTx_Deploy_WrongTXHash(t *testing.T) {
 	k = keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"))
 	k.SetSmartContract(ctx, contractID, signedTx.Data())
 
-	handler := NewHandler(k, rpc, voter, signer)
+	handler := NewHandler(k, rpc, voter, signer, &ethMock.BalancerMock{})
 	wrongHash := common.BytesToHash([]byte(testutils.RandString(256)))
 	_, err = handler(ctx, types.NewMsgVerifyDeployTx(sdk.AccAddress("sender"), network, wrongHash, contractID))
 	assert.NoError(t, err)
@@ -164,14 +164,14 @@ func TestVerifyTx_Deploy_Success(t *testing.T) {
 	k = keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"))
 	k.SetSmartContract(ctx, contractID, signedTx.Data())
 
-	handler := NewHandler(k, rpc, voter, signer)
+	handler := NewHandler(k, rpc, voter, signer, &ethMock.BalancerMock{})
 
 	_, err = handler(ctx, types.NewMsgVerifyDeployTx(sdk.AccAddress("sender"), network, signedTx.Hash(), contractID))
 	assert.NoError(t, err)
 
 	assertVoteCompleted(t, signedTx.Hash(), voter, true)
 
-	actualTX, ok := k.GetTX(ctx, signedTx.Hash().String())
+	actualTX, ok := k.GetTxForPoll(ctx, poll.ID)
 	assert.True(t, ok)
 
 	assert.Equal(t, signedTx.Hash().Bytes(), actualTX.Hash.Bytes())
@@ -212,7 +212,7 @@ func TestVerifyTx_Mint_WrongMK(t *testing.T) {
 
 	}
 
-	handler := NewHandler(k, rpc, voter, signer)
+	handler := NewHandler(k, rpc, voter, signer, &ethMock.BalancerMock{})
 	_, err = handler(ctx, types.NewMsgVerifyMintTx(sdk.AccAddress("sender"), network, signedTx.Hash(), toAddr, sdk.NewIntFromBigInt(amount)))
 	assert.NoError(t, err)
 
@@ -244,7 +244,7 @@ func TestVerifyTx_Mint_WrongTXHash(t *testing.T) {
 
 	rpc, signer, voter := getVerifyMocks(signedTx, networkID, txBlockNum, privateKey.PublicKey)
 
-	handler := NewHandler(k, rpc, voter, signer)
+	handler := NewHandler(k, rpc, voter, signer, &ethMock.BalancerMock{})
 	wrongHash := common.BytesToHash([]byte(testutils.RandString(256)))
 
 	_, err = handler(ctx, types.NewMsgVerifyMintTx(sdk.AccAddress("sender"), network, wrongHash, toAddr, sdk.NewIntFromBigInt(amount)))
@@ -279,7 +279,7 @@ func TestVerifyTx_Mint_WrongToAddr(t *testing.T) {
 
 	rpc, signer, voter := getVerifyMocks(signedTx, networkID, txBlockNum, privateKey.PublicKey)
 
-	handler := NewHandler(k, rpc, voter, signer)
+	handler := NewHandler(k, rpc, voter, signer, &ethMock.BalancerMock{})
 	wrongToAddr := common.BytesToAddress([]byte(testutils.RandString(256)))
 
 	_, err = handler(ctx, types.NewMsgVerifyMintTx(sdk.AccAddress("sender"), network, signedTx.Hash(), wrongToAddr, sdk.NewIntFromBigInt(amount)))
@@ -314,7 +314,7 @@ func TestVerifyTx_Mint_WrongAmount(t *testing.T) {
 
 	rpc, signer, voter := getVerifyMocks(signedTx, networkID, txBlockNum, privateKey.PublicKey)
 
-	handler := NewHandler(k, rpc, voter, signer)
+	handler := NewHandler(k, rpc, voter, signer, &ethMock.BalancerMock{})
 	wrongAmount := big.NewInt(testutils.RandInts().Next())
 
 	_, err = handler(ctx, types.NewMsgVerifyMintTx(sdk.AccAddress("sender"), network, signedTx.Hash(), toAddr, sdk.NewIntFromBigInt(wrongAmount)))
@@ -349,13 +349,13 @@ func TestVerifyTx_Mint_Success(t *testing.T) {
 
 	rpc, signer, voter := getVerifyMocks(signedTx, networkID, txBlockNum, privateKey.PublicKey)
 
-	handler := NewHandler(k, rpc, voter, signer)
+	handler := NewHandler(k, rpc, voter, signer, &ethMock.BalancerMock{})
 	_, err = handler(ctx, types.NewMsgVerifyMintTx(sdk.AccAddress("sender"), network, signedTx.Hash(), toAddr, sdk.NewIntFromBigInt(amount)))
 	assert.NoError(t, err)
 
 	assertVoteCompleted(t, signedTx.Hash(), voter, true)
 
-	actualTX, ok := k.GetTX(ctx, signedTx.Hash().String())
+	actualTX, ok := k.GetTxForPoll(ctx, poll.ID)
 	assert.True(t, ok)
 
 	assert.Equal(t, signedTx.Hash().Bytes(), actualTX.Hash.Bytes())

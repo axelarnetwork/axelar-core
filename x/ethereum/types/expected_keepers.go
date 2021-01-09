@@ -9,10 +9,16 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Voter Signer
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Voter Signer Balancer
 
 type Voter interface {
 	voting.Voter
+}
+
+type Balancer interface {
+	LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress)
+	PrepareForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error
+	GetRecipient(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool)
 }
 
 type Signer interface {
