@@ -11,7 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/rpc/client/http"
+	"github.com/tendermint/tendermint/rpc/client"
 
 	"github.com/axelarnetwork/axelar-core/store"
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
@@ -26,14 +26,14 @@ const (
 )
 
 type Keeper struct {
-	stakingKeeper   types.Snapshotter
+	snapshotter     types.Snapshotter
 	storeKey        sdk.StoreKey
 	from            sdk.AccAddress
 	keybase         keys.Keybase
 	authKeeper      auth.AccountKeeper
 	encodeTx        sdk.TxEncoder
 	config          types.ClientConfig
-	rpc             *http.HTTP
+	rpc             client.ABCIClient
 	fromName        string
 	subjectiveStore store.SubjectiveStore
 	cdc             *codec.Codec
@@ -47,6 +47,7 @@ func NewKeeper(
 	keybase keys.Keybase,
 	authKeeper auth.AccountKeeper,
 	stakingKeeper types.Snapshotter,
+	client client.ABCIClient,
 	conf types.ClientConfig,
 	logger log.Logger,
 ) (Keeper, error) {
@@ -55,14 +56,10 @@ func NewKeeper(
 	if err != nil {
 		return Keeper{}, err
 	}
-	rpc, err := http.New(conf.TendermintNodeUri, "/websocket")
-	if err != nil {
-		return Keeper{}, err
-	}
 	logger.With("module", fmt.Sprintf("x/%s", types.ModuleName)).Debug("broadcast keeper created")
 	return Keeper{
 		subjectiveStore: subjectiveStore,
-		stakingKeeper:   stakingKeeper,
+		snapshotter:     stakingKeeper,
 		storeKey:        storeKey,
 		from:            from,
 		keybase:         keybase,
@@ -70,7 +67,7 @@ func NewKeeper(
 		encodeTx:        utils.GetTxEncoder(cdc),
 		cdc:             cdc,
 		config:          conf,
-		rpc:             rpc,
+		rpc:             client,
 		fromName:        fromName,
 	}, nil
 }
@@ -81,7 +78,7 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 }
 
 // Broadcast sends the passed message to the network. Needs to be called asynchronously or it will block
-func (k Keeper) BroadcastSync(ctx sdk.Context, valMsgs []broadcast.MsgWithSenderSetter) error {
+func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []broadcast.MsgWithSenderSetter) error {
 	if k.GetLocalPrincipal(ctx) == nil {
 		return fmt.Errorf("broadcaster is not registered as a proxy")
 	}
@@ -115,7 +112,7 @@ func (k Keeper) BroadcastSync(ctx sdk.Context, valMsgs []broadcast.MsgWithSender
 	}
 	k.Logger(ctx).Debug("broadcasting")
 	k.setSeqNo(stdSignMsg.Sequence + 1)
-	res, err := k.rpc.BroadcastTxSync(txBytes)
+	res, err := k.rpc.BroadcastTxAsync(txBytes)
 	if err != nil {
 		k.Logger(ctx).Error(err.Error())
 	}
@@ -127,7 +124,7 @@ func (k Keeper) BroadcastSync(ctx sdk.Context, valMsgs []broadcast.MsgWithSender
 
 // RegisterProxy registers a proxy address for a given principal, which can broadcast messages in the principal's name
 func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy sdk.AccAddress) error {
-	_, ok := k.stakingKeeper.Validator(ctx, principal)
+	_, ok := k.snapshotter.GetValidator(ctx, principal)
 	if !ok {
 		k.Logger(ctx).Error("could not find validator")
 		return types.ErrInvalidValidator

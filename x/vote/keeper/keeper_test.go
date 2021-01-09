@@ -12,475 +12,378 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/store"
 	"github.com/axelarnetwork/axelar-core/testutils"
-	"github.com/axelarnetwork/axelar-core/testutils/mock"
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/utils"
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
+	bcMock "github.com/axelarnetwork/axelar-core/x/broadcast/exported/mock"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
-	"github.com/axelarnetwork/axelar-core/x/vote/types"
+	"github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
 )
 
 var (
-	// default test data, each tests adds modifications as necessary
-	poll1 = exported.PollMeta{Module: "testModule", Type: "testType", ID: "poll1"}
-	poll2 = exported.PollMeta{Module: "testModule", Type: "testType", ID: "poll2"}
-	poll3 = exported.PollMeta{Module: "otherModule", Type: "otherType", ID: "poll3"}
-
-	voteForPoll1 = &mockVote{Path: poll1.Module, MsgType: poll1.Type, PollMeta: poll1, VotingData: "poll1 data"}
-	voteForPoll2 = &mockVote{Path: poll2.Module, MsgType: poll2.Type, PollMeta: poll2, VotingData: "poll2 data"}
-	voteForPoll3 = &mockVote{Path: poll3.Module, MsgType: poll3.Type, PollMeta: poll3, VotingData: "poll3 data"}
+	stringGen = testutils.RandStrings(5, 50).Distinct()
 )
 
 func init() {
 	cdc := testutils.Codec()
-	cdc.RegisterConcrete(&mockVote{}, "mockVote", nil)
+	cdc.RegisterConcrete(&mock.MsgVoteMock{}, "mockVote", nil)
 	cdc.RegisterConcrete("", "string", nil)
 }
 
-func newKeeper(b broadcast.Broadcaster, validators ...snapshot.Validator) Keeper {
-	return NewKeeper(testutils.Codec(), mock.NewKVStoreKey("voting"), store.NewSubjectiveStore(), mock.NewTestStaker(1, validators...), b)
+type testSetup struct {
+	Keeper      Keeper
+	Ctx         sdk.Context
+	Broadcaster *bcMock.BroadcasterMock
+	Snapshotter *snapMock.SnapshotterMock
+	// used by the snapshotter when returning a snapshot
+	ValidatorSet []snapshot.Validator
+	Timeout      context.Context
+	cancel       context.CancelFunc
 }
 
-func newBroadcaster() (mock.Broadcaster, <-chan sdk.Msg) {
-	out := make(chan sdk.Msg, 10)
-	b := mock.NewBroadcaster(testutils.Codec(), sdk.AccAddress("sender"), sdk.ValAddress("validator"), out)
-	return b, out
-}
-
-func TestKeeper(t *testing.T) {
-	t.Run("no error on initializing new poll", func(t *testing.T) { initPollNoError(t) })
-	t.Run("error when initializing poll with same id as existing poll", func(t *testing.T) { initPollSameIdReturnError(t) })
-
-	t.Run("vote on []byte data", func(t *testing.T) { voteOnBytes(t) })
-
-	t.Run("error when voting for unknown poll, no polls initialized", func(t *testing.T) { voteNoPollsReturnError(t) })
-	t.Run("error when voting where poll id matches none of the existing polls", func(t *testing.T) { votePollIdMismatchReturnError(t) })
-	t.Run("vote for existing poll is added to next ballot, exactly one message", func(t *testing.T) { voteOnNextBallot(t) })
-	t.Run("votes that are part of one ballot will not be added to consecutive ballots", func(t *testing.T) { votesNotRepeatedInConsecutiveBallots(t) })
-	t.Run("error when voting on same poll multiple times", func(t *testing.T) { voteMultipleTimesReturnError(t) })
-	t.Run("send no ballot when there are no votes", func(t *testing.T) { noVotesNoBallot(t) })
-
-	t.Run("error when tallying non-existing poll", func(t *testing.T) { tallyNonExistingPollReturnError(t) })
-	t.Run("error when tallied vote comes from unauthorized voter", func(t *testing.T) { tallyUnknownVoterReturnError(t) })
-	t.Run("error when tallying second vote from same validator", func(t *testing.T) { tallyTwoVotesFromSameValidatorReturnError(t) })
-	t.Run("tally vote no winner", func(t *testing.T) { tallyNoWinner(t) })
-	t.Run("tally vote with winner", func(t *testing.T) { tallyWithWinner(t) })
-	t.Run("tally multiple votes until poll is decided", func(t *testing.T) { tallyMultipleVotesUntilDecision(t) })
-	t.Run("tally vote for already decided vote", func(t *testing.T) { tallyForDecidedPoll(t) })
-}
-
-func initPollNoError(t *testing.T) {
-	k := newKeeper(nil)
-	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	assert.NoError(t, k.InitPoll(ctx, poll1))
-}
-
-func initPollSameIdReturnError(t *testing.T) {
-	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k := newKeeper(nil)
-
-	assert.NoError(t, k.InitPoll(ctx, poll1))
-	assert.Error(t, k.InitPoll(ctx, poll1))
-}
-
-func voteOnBytes(t *testing.T) {
-	b, msgs := newBroadcaster()
-	k := newKeeper(b)
-	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	v1 := voteForPoll1
-	v1.VotingData = []byte("some test data")
-
-	assert.NoError(t, k.InitPoll(ctx, poll1))
-	assert.NoError(t, k.Vote(ctx, v1))
-	k.SendBallot(ctx)
-
-	timeout, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cancel()
-	select {
-	case <-timeout.Done():
-		assert.FailNow(t, "no message received")
-	case m := <-msgs:
-		assert.IsType(t, types.MsgBallot{}, m)
-		assert.Len(t, m.(types.MsgBallot).Votes, 1)
-		assert.Equal(t, v1.VotingData, m.(types.MsgBallot).Votes[0].Data())
-	}
-}
-
-func voteNoPollsReturnError(t *testing.T) {
-	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k := newKeeper(nil)
-
-	assert.Error(t, k.Vote(ctx, voteForPoll1))
-}
-
-func votePollIdMismatchReturnError(t *testing.T) {
-	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k := newKeeper(nil)
-
-	assert.NoError(t, k.InitPoll(ctx, poll1))
-
-	assert.Error(t, k.Vote(ctx, voteForPoll2))
-}
-
-func voteOnNextBallot(t *testing.T) {
-	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	b, out := newBroadcaster()
-	k := newKeeper(b)
-
-	assert.NoError(t, k.InitPoll(ctx, poll1))
-	assert.NoError(t, k.Vote(ctx, voteForPoll1))
-
-	k.SendBallot(ctx)
-
-	// assert that exactly one ballot with one vote is sent out
-	timeout, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cancel()
-	msgCount := 0
-loop:
-	for {
-		select {
-		case <-timeout.Done():
-			break loop
-		case msg := <-out:
-			if msgCount == 0 {
-				msgCount += 1
-				assert.IsType(t, types.MsgBallot{}, msg)
-				assert.Len(t, msg.(types.MsgBallot).Votes, 1)
-				assert.Equal(t, voteForPoll1, msg.(types.MsgBallot).Votes[0])
-			} else {
-				assert.FailNow(t, "broadcasting multiple messages")
+func setup() *testSetup {
+	setup := &testSetup{Ctx: sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())}
+	setup.Snapshotter = &snapMock.SnapshotterMock{
+		GetLatestRoundFunc: func(sdk.Context) int64 {
+			return testutils.RandIntBetween(1, 10000)
+		},
+		GetSnapshotFunc: func(sdk.Context, int64) (snapshot.Snapshot, bool) {
+			totalPower := sdk.ZeroInt()
+			for _, v := range setup.ValidatorSet {
+				totalPower = totalPower.AddRaw(v.GetConsensusPower())
 			}
+			return snapshot.Snapshot{Validators: setup.ValidatorSet, TotalPower: totalPower}, true
+		},
+	}
+	setup.Broadcaster = &bcMock.BroadcasterMock{BroadcastFunc: func(sdk.Context, []broadcast.MsgWithSenderSetter) error {
+		setup.cancel()
+		return nil
+	}}
+	setup.Keeper = NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(stringGen.Next()), store.NewSubjectiveStore(),
+		setup.Snapshotter, setup.Broadcaster)
+	return setup
+}
+
+func (s *testSetup) NewTimeout(t time.Duration) {
+	s.Timeout, s.cancel = context.WithTimeout(context.Background(), t)
+}
+
+// no error on initializing new poll
+func TestKeeper_InitPoll_NoError(t *testing.T) {
+	s := setup()
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, randPoll()))
+}
+
+// error when initializing poll with same id as existing poll
+func TestKeeper_InitPoll_SameIdReturnError(t *testing.T) {
+	s := setup()
+
+	poll := randPoll()
+
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
+	assert.Error(t, s.Keeper.InitPoll(s.Ctx, poll))
+}
+
+// vote for existing poll is broadcast exactly once
+func TestKeeper_Vote_OnNextBroadcast(t *testing.T) {
+	s := setup()
+
+	poll := randPoll()
+	vote := randVoteForPoll(poll)
+
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
+	assert.NoError(t, s.Keeper.RecordVote(s.Ctx, vote))
+
+	// give go a chance to switch context, because broadcast needs to be done on a different thread
+	s.NewTimeout(10 * time.Millisecond)
+	s.Keeper.SendVotes(s.Ctx)
+	<-s.Timeout.Done()
+
+	assert.Equal(t, 1, len(s.Broadcaster.BroadcastCalls()))
+	assert.Equal(t, 1, len(s.Broadcaster.BroadcastCalls()[0].Msgs))
+	m := s.Broadcaster.BroadcastCalls()[0].Msgs[0]
+	assert.Equal(t, vote, m.(exported.MsgVote))
+}
+
+// error when voting for unknown poll, no polls initialized
+func TestKeeper_Vote_On_NoPolls_ReturnError(t *testing.T) {
+	s := setup()
+
+	poll := randPoll()
+	vote := randVoteForPoll(poll)
+	assert.Error(t, s.Keeper.RecordVote(s.Ctx, vote))
+}
+
+// error when voting where poll id matches none of the existing polls
+func TestKeeper_Vote_PollIdMismatch_ReturnError(t *testing.T) {
+	s := setup()
+
+	initializedPoll := randPoll()
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, initializedPoll))
+
+	notInitializedPoll := randPoll()
+	vote := randVoteForPoll(notInitializedPoll)
+
+	assert.Error(t, s.Keeper.RecordVote(s.Ctx, vote))
+}
+
+// send two votes on first broadcast and one vote on second broadcast
+func TestKeeper_Vote_VotesNotRepeatedInConsecutiveBroadcasts(t *testing.T) {
+	s := setup()
+
+	poll1 := randPoll()
+	poll2 := randPoll()
+	poll3 := randPoll()
+
+	voteForPoll1 := randVoteForPoll(poll1)
+	voteForPoll2 := randVoteForPoll(poll2)
+	voteForPoll3 := randVoteForPoll(poll3)
+
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll1))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll2))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll3))
+
+	assert.NoError(t, s.Keeper.RecordVote(s.Ctx, voteForPoll1))
+	assert.NoError(t, s.Keeper.RecordVote(s.Ctx, voteForPoll2))
+
+	// give go a chance to switch context, because broadcast needs to be done on a different thread
+	s.NewTimeout(10 * time.Millisecond)
+	s.Keeper.SendVotes(s.Ctx)
+	<-s.Timeout.Done()
+
+	assert.NoError(t, s.Keeper.RecordVote(s.Ctx, voteForPoll3))
+
+	s.Keeper.SendVotes(s.Ctx)
+
+	// give go a chance to switch context, because broadcast needs to be done on a different thread
+	s.NewTimeout(10 * time.Millisecond)
+	s.Keeper.SendVotes(s.Ctx)
+	<-s.Timeout.Done()
+
+	// assert correct votes
+	assert.Equal(t, 2, len(s.Broadcaster.BroadcastCalls()))
+	assert.Equal(t, 2, len(s.Broadcaster.BroadcastCalls()[0].Msgs))
+	assert.Equal(t, 1, len(s.Broadcaster.BroadcastCalls()[1].Msgs))
+
+	// assert correct votes
+	assert.Equal(t, voteForPoll1, s.Broadcaster.BroadcastCalls()[0].Msgs[0])
+	assert.Equal(t, voteForPoll2, s.Broadcaster.BroadcastCalls()[0].Msgs[1])
+	assert.Equal(t, voteForPoll3, s.Broadcaster.BroadcastCalls()[1].Msgs[0])
+}
+
+// error when voting on same poll multiple times
+func TestKeeper_Vote_MultipleTimes_ReturnError(t *testing.T) {
+	s := setup()
+
+	poll := randPoll()
+	vote1 := randVoteForPoll(poll)
+
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
+	assert.NoError(t, s.Keeper.RecordVote(s.Ctx, vote1))
+
+	// submit vote1 again
+	assert.Error(t, s.Keeper.RecordVote(s.Ctx, vote1))
+
+	// same poll, different data
+	vote2 := vote1
+	vote2.DataVal = stringGen.Next()
+	assert.Error(t, s.Keeper.RecordVote(s.Ctx, vote2))
+
+	// same poll, different data
+	vote3 := vote1
+	vote3.DataVal = stringGen.Next()
+	assert.Error(t, s.Keeper.RecordVote(s.Ctx, vote3))
+}
+
+// send no broadcast when there are no votes
+func TestKeeper_Vote_noVotes_NoBroadcast(t *testing.T) {
+	s := setup()
+
+	poll1 := randPoll()
+	poll2 := randPoll()
+	poll3 := randPoll()
+
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll1))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll2))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll3))
+
+	// give go a chance to switch context, because broadcast needs to be done on a different thread
+	s.NewTimeout(10 * time.Millisecond)
+	s.Keeper.SendVotes(s.Ctx)
+	<-s.Timeout.Done()
+
+	assert.Equal(t, 0, len(s.Broadcaster.BroadcastCalls()))
+}
+
+// error when tallying non-existing poll
+func TestKeeper_TallyVote_NonExistingPoll_ReturnError(t *testing.T) {
+	s := setup()
+
+	poll := randPoll()
+	vote := randVote()
+
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
+	assert.Error(t, s.Keeper.TallyVote(s.Ctx, vote))
+}
+
+// error when tallied vote comes from unauthorized voter
+func TestKeeper_TallyVote_UnknownVoter_ReturnError(t *testing.T) {
+	s := setup()
+	// proxy is unknown
+	s.Broadcaster.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return nil }
+
+	poll := randPoll()
+	vote := randVoteForPoll(poll)
+
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
+	assert.Error(t, s.Keeper.TallyVote(s.Ctx, vote))
+}
+
+// tally vote no winner
+func TestKeeper_TallyVote_NoWinner(t *testing.T) {
+	s := setup()
+	s.Keeper.SetVotingThreshold(s.Ctx, utils.Threshold{Numerator: 2, Denominator: 3})
+	s.ValidatorSet = []snapshot.Validator{
+		// minority power
+		newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(0, 200)),
+		// majority power
+		newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(200, 1000)),
+	}
+	// return minority
+	s.Broadcaster.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return s.ValidatorSet[0].GetOperator() }
+
+	poll := randPoll()
+	vote := randVoteForPoll(poll)
+
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
+	err := s.Keeper.TallyVote(s.Ctx, vote)
+	res := s.Keeper.Result(s.Ctx, poll)
+	assert.NoError(t, err)
+	assert.Nil(t, res)
+}
+
+// tally vote with winner
+func TestKeeper_TallyVote_WithWinner(t *testing.T) {
+	s := setup()
+	s.Keeper.SetVotingThreshold(s.Ctx, utils.Threshold{Numerator: 2, Denominator: 3})
+	s.ValidatorSet = []snapshot.Validator{
+		// minority power
+		newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(0, 200)),
+		// majority power
+		newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(200, 1000)),
+	}
+	// return majority
+	s.Broadcaster.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return s.ValidatorSet[1].GetOperator() }
+	poll := randPoll()
+	vote := randVoteForPoll(poll)
+
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
+	err := s.Keeper.TallyVote(s.Ctx, vote)
+	res := s.Keeper.Result(s.Ctx, poll)
+	assert.NoError(t, err)
+	assert.Equal(t, vote.Data(), res)
+}
+
+// error when tallying second vote from same validator
+func TestKeeper_TallyVote_TwoVotesFromSameValidator_ReturnError(t *testing.T) {
+	s := setup()
+	s.Keeper.SetVotingThreshold(s.Ctx, utils.Threshold{Numerator: 2, Denominator: 3})
+	s.ValidatorSet = []snapshot.Validator{newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(0, 1000))}
+
+	// return same validator for all votes
+	s.Broadcaster.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return s.ValidatorSet[0].GetOperator() }
+
+	poll := randPoll()
+	vote1 := randVoteForPoll(poll)
+	vote2 := randVoteForPoll(poll)
+	vote3 := randVoteForPoll(poll)
+
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
+	assert.NoError(t, s.Keeper.TallyVote(s.Ctx, vote1))
+	assert.Error(t, s.Keeper.TallyVote(s.Ctx, vote2))
+	assert.Error(t, s.Keeper.TallyVote(s.Ctx, vote3))
+}
+
+// tally multiple votes until poll is decided
+func TestKeeper_TallyVote_MultipleVotesUntilDecision(t *testing.T) {
+	s := setup()
+	s.Keeper.SetVotingThreshold(s.Ctx, utils.Threshold{Numerator: 2, Denominator: 3})
+	s.ValidatorSet = []snapshot.Validator{
+		// ensure first validator does not have majority voting power
+		newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(0, 100)),
+		newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(100, 200)),
+		newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(100, 200)),
+		newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(100, 200)),
+		newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(100, 200)),
+	}
+
+	poll := randPoll()
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
+
+	vote := randVoteForPoll(poll)
+	s.Broadcaster.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return s.ValidatorSet[0].GetOperator() }
+
+	assert.NoError(t, s.Keeper.TallyVote(s.Ctx, vote))
+	assert.Nil(t, s.Keeper.Result(s.Ctx, poll))
+
+	var pollDecided bool
+	for i, val := range s.ValidatorSet {
+		if i == 0 {
+			continue
 		}
+		s.Broadcaster.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return val.GetOperator() }
+		assert.NoError(t, s.Keeper.TallyVote(s.Ctx, vote))
+		pollDecided = pollDecided || s.Keeper.Result(s.Ctx, poll) != nil
 	}
-	if msgCount < 1 {
-		assert.FailNow(t, "broadcast timed out before receiving the ballot")
+
+	assert.Equal(t, vote.Data(), s.Keeper.Result(s.Ctx, poll))
+}
+
+// tally vote for already decided vote
+func TestKeeper_TallyVote_ForDecidedPoll(t *testing.T) {
+	s := setup()
+	s.Keeper.SetVotingThreshold(s.Ctx, utils.Threshold{Numerator: 2, Denominator: 3})
+	s.ValidatorSet = []snapshot.Validator{
+		// ensure first validator has majority voting power
+		newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(1000, 2000)),
+		newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(100, 200)),
 	}
+
+	poll := randPoll()
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
+
+	vote1 := randVoteForPoll(poll)
+	s.Broadcaster.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return s.ValidatorSet[0].GetOperator() }
+
+	assert.NoError(t, s.Keeper.TallyVote(s.Ctx, vote1))
+	assert.Equal(t, vote1.Data(), s.Keeper.Result(s.Ctx, poll))
+
+	vote2 := randVoteForPoll(poll)
+	assert.NotEqual(t, vote1.Data(), vote2.Data())
+	s.Broadcaster.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return s.ValidatorSet[1].GetOperator() }
+
+	assert.NoError(t, s.Keeper.TallyVote(s.Ctx, vote2))
+	assert.Equal(t, vote1.Data(), s.Keeper.Result(s.Ctx, poll))
 }
 
-func votesNotRepeatedInConsecutiveBallots(t *testing.T) {
-	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	b, out := newBroadcaster()
-	k := newKeeper(b)
-
-	assert.NoError(t, k.InitPoll(ctx, poll1))
-	assert.NoError(t, k.InitPoll(ctx, poll2))
-	assert.NoError(t, k.InitPoll(ctx, poll3))
-
-	assert.NoError(t, k.Vote(ctx, voteForPoll1))
-	assert.NoError(t, k.Vote(ctx, voteForPoll2))
-
-	k.SendBallot(ctx)
-
-	// make sure that the first message is sent out before the second
-	time.Sleep(10 * time.Millisecond)
-
-	assert.NoError(t, k.Vote(ctx, voteForPoll3))
-
-	k.SendBallot(ctx)
-
-	// assert the votes are batched according to the timing of the SendBallot call
-	timeout, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cancel()
-	msgCount := 0
-loop:
-	for {
-		select {
-		case <-timeout.Done():
-			break loop
-		case msg := <-out:
-			assert.IsType(t, types.MsgBallot{}, msg)
-			switch msgCount {
-			case 0:
-				assert.Len(t, msg.(types.MsgBallot).Votes, 2)
-				assert.Equal(t, voteForPoll1, msg.(types.MsgBallot).Votes[0])
-				assert.Equal(t, voteForPoll2, msg.(types.MsgBallot).Votes[1])
-			case 1:
-				assert.Len(t, msg.(types.MsgBallot).Votes, 1)
-				assert.Equal(t, voteForPoll3, msg.(types.MsgBallot).Votes[0])
-			default:
-				assert.FailNow(t, "broadcasting too many messages")
-			}
-			msgCount += 1
-		}
-	}
-	if msgCount < 2 {
-		assert.FailNow(t, "broadcast timed out before receiving both ballots")
-	}
+func randVoteForPoll(poll exported.PollMeta) *mock.MsgVoteMock {
+	vote := randVote()
+	vote.PollVal = poll
+	return vote
 }
 
-func voteMultipleTimesReturnError(t *testing.T) {
-	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	b, _ := newBroadcaster()
-	k := newKeeper(b)
-
-	assert.NoError(t, k.InitPoll(ctx, poll1))
-	assert.NoError(t, k.Vote(ctx, voteForPoll1))
-	v2 := *voteForPoll1
-	v2.VotingData = "different data"
-	v3 := v2
-	v3.VotingData = "even more different data"
-
-	assert.Error(t, k.Vote(ctx, &v2))
-	assert.Error(t, k.Vote(ctx, &v3))
+func randVote() *mock.MsgVoteMock {
+	return &mock.MsgVoteMock{PollVal: randPoll(), DataVal: stringGen.Next(), Sender: sdk.AccAddress(stringGen.Next())}
 }
 
-func noVotesNoBallot(t *testing.T) {
-	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	b, out := newBroadcaster()
-	k := newKeeper(b)
-
-	assert.NoError(t, k.InitPoll(ctx, poll1))
-	assert.NoError(t, k.InitPoll(ctx, poll2))
-	assert.NoError(t, k.InitPoll(ctx, poll3))
-
-	k.SendBallot(ctx)
-
-	timeout, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cancel()
-	select {
-	case <-timeout.Done():
-		break
-	case <-out:
-		assert.FailNow(t, "should not receive any messages")
-	}
+func randPoll() exported.PollMeta {
+	return exported.PollMeta{Module: stringGen.Next(), Type: stringGen.Next(), ID: stringGen.Next()}
 }
 
-func tallyNonExistingPollReturnError(t *testing.T) {
-	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	b, _ := newBroadcaster()
-	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), b.Proxy))
-	k := newKeeper(b, snapshot.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10})
-	k.SetVotingThreshold(ctx, utils.Threshold{Numerator: 2, Denominator: 3})
-
-	assert.NoError(t, k.InitPoll(ctx, poll1))
-
-	// copy to not overwrite defaults
-	v2 := *voteForPoll2
-	v2.SetSender(b.Proxy)
-	err := k.TallyVote(ctx, &v2)
-	assert.Error(t, err)
-}
-
-func tallyUnknownVoterReturnError(t *testing.T) {
-	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	b, _ := newBroadcaster()
-	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), b.Proxy))
-	k := newKeeper(b, snapshot.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10})
-	k.SetVotingThreshold(ctx, utils.Threshold{Numerator: 2, Denominator: 3})
-
-	assert.NoError(t, k.InitPoll(ctx, poll1))
-
-	// copy to not overwrite defaults
-	v1 := *voteForPoll1
-	v1.SetSender(sdk.AccAddress("some other proxy"))
-	err := k.TallyVote(ctx, &v1)
-	assert.Error(t, err)
-}
-
-func tallyNoWinner(t *testing.T) {
-	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	b, _ := newBroadcaster()
-	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), b.Proxy))
-	k := newKeeper(
-		b,
-		snapshot.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10},
-		snapshot.Validator{Address: sdk.ValAddress("big spender"), Power: 90},
-	)
-	k.SetVotingThreshold(ctx, utils.Threshold{Numerator: 2, Denominator: 3})
-
-	assert.NoError(t, k.InitPoll(ctx, poll1))
-
-	// copy to not overwrite defaults
-	v1 := *voteForPoll1
-	v1.SetSender(b.Proxy)
-	err := k.TallyVote(ctx, &v1)
-	res := k.Result(ctx, v1.PollMeta)
-	assert.NoError(t, err)
-	assert.Nil(t, res)
-}
-
-func tallyWithWinner(t *testing.T) {
-	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	b, _ := newBroadcaster()
-	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), b.Proxy))
-	k := newKeeper(
-		b,
-		snapshot.Validator{Address: b.GetLocalPrincipal(ctx), Power: 90},
-		snapshot.Validator{Address: sdk.ValAddress("small fish"), Power: 10},
-	)
-	k.SetVotingThreshold(ctx, utils.Threshold{Numerator: 2, Denominator: 3})
-
-	assert.NoError(t, k.InitPoll(ctx, poll1))
-
-	// copy to not overwrite defaults
-	v1 := *voteForPoll1
-	v1.SetSender(b.Proxy)
-	err := k.TallyVote(ctx, &v1)
-	res := k.Result(ctx, v1.PollMeta)
-	assert.NoError(t, err)
-	assert.Equal(t, voteForPoll1.VotingData, res)
-}
-
-func tallyTwoVotesFromSameValidatorReturnError(t *testing.T) {
-	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	b, _ := newBroadcaster()
-	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), b.Proxy))
-	validator := snapshot.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10}
-	k := newKeeper(b, validator)
-	k.SetVotingThreshold(ctx, utils.Threshold{Numerator: 2, Denominator: 3})
-
-	// copy to not overwrite defaults
-	v1 := *voteForPoll1
-	v2 := v1
-	v3 := v1
-
-	v1.SetSender(b.Proxy)
-
-	// different decision
-	v2.SetSender(b.Proxy)
-	v2.VotingData = "different data"
-
-	// different data
-	v3.SetSender(b.Proxy)
-	v3.VotingData = "even more different data"
-
-	assert.NoError(t, k.InitPoll(ctx, poll1))
-
-	err := k.TallyVote(ctx, &v1)
-	assert.NoError(t, err)
-
-	err = k.TallyVote(ctx, &v2)
-	assert.Error(t, err)
-
-	err = k.TallyVote(ctx, &v3)
-	assert.Error(t, err)
-}
-
-func tallyMultipleVotesUntilDecision(t *testing.T) {
-	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	b, _ := newBroadcaster()
-	proxy2 := sdk.AccAddress("proxy2")
-	proxy3 := sdk.AccAddress("proxy3")
-	val1 := snapshot.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10}
-	val2 := snapshot.Validator{Address: sdk.ValAddress("val2"), Power: 10}
-	val3 := snapshot.Validator{Address: sdk.ValAddress("val3"), Power: 7}
-	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), b.Proxy))
-	assert.NoError(t, b.RegisterProxy(ctx, val2.Address, proxy2))
-	assert.NoError(t, b.RegisterProxy(ctx, val3.Address, proxy3))
-
-	k := newKeeper(b, val1, val2, val3)
-	k.SetVotingThreshold(ctx, utils.Threshold{Numerator: 2, Denominator: 3})
-
-	assert.NoError(t, k.InitPoll(ctx, poll1))
-
-	// copy to not overwrite defaults
-	v1 := *voteForPoll1
-	v2 := v1
-	v3 := v1
-
-	v1.SetSender(b.Proxy)
-	v2.SetSender(proxy2)
-	v3.SetSender(proxy3)
-
-	v3.VotingData = "different data"
-
-	err := k.TallyVote(ctx, &v1)
-	res := k.Result(ctx, v1.PollMeta)
-	assert.NoError(t, err)
-	assert.Nil(t, res)
-
-	err = k.TallyVote(ctx, &v3)
-	res = k.Result(ctx, v3.PollMeta)
-	assert.NoError(t, err)
-	assert.Nil(t, res)
-
-	err = k.TallyVote(ctx, &v2)
-	res = k.Result(ctx, v2.PollMeta)
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, v1.VotingData, res)
-}
-
-func tallyForDecidedPoll(t *testing.T) {
-	ctx := sdk.NewContext(mock.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	b, _ := newBroadcaster()
-	proxy2 := sdk.AccAddress("proxy2")
-	proxy3 := sdk.AccAddress("proxy3")
-	val1 := snapshot.Validator{Address: b.GetLocalPrincipal(ctx), Power: 10}
-	val2 := snapshot.Validator{Address: sdk.ValAddress("val2"), Power: 10}
-	val3 := snapshot.Validator{Address: sdk.ValAddress("val3"), Power: 7}
-	assert.NoError(t, b.RegisterProxy(ctx, b.GetLocalPrincipal(ctx), b.Proxy))
-	assert.NoError(t, b.RegisterProxy(ctx, val2.Address, proxy2))
-	assert.NoError(t, b.RegisterProxy(ctx, val3.Address, proxy3))
-
-	k := newKeeper(b, val1, val2, val3)
-	k.SetVotingThreshold(ctx, utils.Threshold{Numerator: 2, Denominator: 3})
-
-	assert.NoError(t, k.InitPoll(ctx, poll1))
-
-	// copy to not overwrite defaults
-	v1 := *voteForPoll1
-	v2 := v1
-	v3 := v1
-
-	v1.SetSender(b.Proxy)
-	v2.SetSender(proxy2)
-	v3.SetSender(proxy3)
-
-	v3.VotingData = "different data"
-
-	err := k.TallyVote(ctx, &v1)
-	res := k.Result(ctx, v1.PollMeta)
-	assert.NoError(t, err)
-	assert.Nil(t, res)
-
-	err = k.TallyVote(ctx, &v2)
-	res = k.Result(ctx, v2.PollMeta)
-	assert.NoError(t, err)
-	assert.Equal(t, v1.VotingData, res)
-
-	err = k.TallyVote(ctx, &v3)
-	res = k.Result(ctx, v3.PollMeta)
-	assert.NoError(t, err)
-	assert.Equal(t, v1.VotingData, res)
-}
-
-type mockVote struct {
-	Path       string
-	MsgType    string
-	PollMeta   exported.PollMeta
-	VotingData exported.VotingData
-	sender     sdk.AccAddress
-}
-
-func (m *mockVote) SetSender(address sdk.AccAddress) {
-	m.sender = address
-}
-
-func (m mockVote) Route() string {
-	return m.Path
-}
-
-func (m mockVote) Type() string {
-	return m.MsgType
-}
-
-func (m mockVote) ValidateBasic() error {
-	return nil
-}
-
-func (m mockVote) GetSignBytes() []byte {
-	return nil
-}
-
-func (m mockVote) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.sender}
-}
-
-func (m mockVote) Poll() exported.PollMeta {
-	return m.PollMeta
-}
-
-func (m mockVote) Data() exported.VotingData {
-	return m.VotingData
+func newValidator(address sdk.ValAddress, power int64) *snapMock.ValidatorMock {
+	return &snapMock.ValidatorMock{
+		GetOperatorFunc:       func() sdk.ValAddress { return address },
+		GetConsensusPowerFunc: func() int64 { return power }}
 }

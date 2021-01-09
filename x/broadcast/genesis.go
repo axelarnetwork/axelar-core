@@ -8,7 +8,7 @@ import (
 )
 
 // InitGenesis initialize default parameters
-// and the keeper's address to pubkey map
+// from the genesis state
 func InitGenesis(_ sdk.Context, _ keeper.Keeper, _ types.GenesisState) {
 }
 

@@ -26,8 +26,6 @@ func NewHandler(k keeper.Keeper, s types.Snapshotter, v types.Voter) sdk.Handler
 			return handleMsgKeygenStart(ctx, k, s, v, msg)
 		case types.MsgSignStart:
 			return handleMsgSignStart(ctx, k, s, v, msg)
-		case types.MsgMasterKeySignStart:
-			return handleMsgMasterKeySignStart(ctx, k, s, v, msg)
 		case types.MsgAssignNextMasterKey:
 			return handleMsgAssignNextMasterKey(ctx, k, s, msg)
 		case types.MsgRotateMasterKey:
@@ -53,7 +51,7 @@ func handleMsgRotateMasterKey(ctx sdk.Context, k keeper.Keeper, msg types.MsgRot
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeChain, msg.Chain),
+			sdk.NewAttribute(types.AttributeChain, msg.Chain.String()),
 		),
 	)
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
@@ -194,7 +192,7 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
 	}
 
-	pkChan, err := k.StartKeygen(ctx, msg.NewKeyID, msg.Threshold, snapshot.Validators)
+	pkChan, err := k.StartKeygen(ctx, msg.NewKeyID, msg.Threshold, snapshot)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
 	}
@@ -207,7 +205,7 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 				k.Logger(ctx).Error(err.Error())
 				return
 			}
-			if err := v.Vote(ctx, &types.MsgVotePubKey{PollMeta: poll, PubKeyBytes: bz}); err != nil {
+			if err := v.RecordVote(ctx, &types.MsgVotePubKey{PollMeta: poll, PubKeyBytes: bz}); err != nil {
 				k.Logger(ctx).Error(err.Error())
 				return
 			}
@@ -224,45 +222,27 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 }
 
 func handleMsgSignStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, v types.Voter, msg types.MsgSignStart) (*sdk.Result, error) {
-	// TODO for now assume all validators participate
-	snapshot, ok := s.GetLatestSnapshot(ctx)
+	if msg.Mode == types.ModeMasterKey {
+		keyID, ok := k.GetCurrentMasterKeyID(ctx, msg.Chain)
+		if !ok {
+			return nil, fmt.Errorf("master key for chain %s not set", msg.Chain)
+		}
+		msg.KeyID = keyID
+	}
+	round, ok := k.GetSnapshotRoundForKeyID(ctx, msg.KeyID)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrTss, fmt.Sprintf("unknown key ID"))
+	}
+	snapshot, ok := s.GetSnapshot(ctx, round)
 	if !ok {
 		return nil, fmt.Errorf("signing failed")
 	}
-	poll := voting.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.NewSigID}
+	poll := voting.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.SigID}
 	if err := v.InitPoll(ctx, poll); err != nil {
 		return nil, err
 	}
 
 	sigChan, err := k.StartSign(ctx, msg, snapshot.Validators)
-	if err != nil {
-		return nil, err
-	}
-
-	go voteOnSignResult(ctx, k, v, sigChan, poll)
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-		),
-	)
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
-}
-
-func handleMsgMasterKeySignStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, v types.Voter, msg types.MsgMasterKeySignStart) (*sdk.Result, error) {
-	// TODO for now assume all validators participate
-	snapshot, ok := s.GetLatestSnapshot(ctx)
-	if !ok {
-		return nil, fmt.Errorf("signing failed")
-	}
-	poll := voting.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.NewSigID}
-	if err := v.InitPoll(ctx, poll); err != nil {
-		return nil, err
-	}
-
-	sigChan, err := k.StartMasterKeySign(ctx, msg, snapshot.Validators)
 	if err != nil {
 		return nil, err
 	}
@@ -287,7 +267,7 @@ func voteOnSignResult(ctx sdk.Context, k keeper.Keeper, v types.Voter, sigChan <
 			k.Logger(ctx).Error(err.Error())
 			return
 		}
-		if err := v.Vote(ctx, &types.MsgVoteSig{PollMeta: poll, SigBytes: bz}); err != nil {
+		if err := v.RecordVote(ctx, &types.MsgVoteSig{PollMeta: poll, SigBytes: bz}); err != nil {
 			k.Logger(ctx).Error(err.Error())
 			return
 		}

@@ -1,21 +1,23 @@
 package app
 
 import (
-	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
-	btcTypes "github.com/axelarnetwork/axelar-core/x/btc_bridge/types"
-	tssdTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
+	bitcoin "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/types"
+	ethereum "github.com/axelarnetwork/axelar-core/x/ethereum/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 type Config struct {
-	btcTypes.BtcConfig          `mapstructure:"axelar_bridge_btc"`
-	tssdTypes.TssdConfig        `mapstructure:",squash"`
-	broadcastTypes.ClientConfig `mapstructure:",squash"`
+	ethereum.EthConfig     `mapstructure:"axelar_bridge_eth"`
+	bitcoin.BtcConfig      `mapstructure:"axelar_bridge_btc"`
+	tss.TssConfig          `mapstructure:",squash"`
+	broadcast.ClientConfig `mapstructure:",squash"`
 }
 
 func DefaultConfig() Config {
 	return Config{
-		BtcConfig:    btcTypes.DefaultConfig(),
-		TssdConfig:   tssdTypes.TssdConfig{},
-		ClientConfig: broadcastTypes.ClientConfig{},
+		BtcConfig:    bitcoin.DefaultConfig(),
+		TssConfig:    tss.TssConfig{},
+		ClientConfig: broadcast.ClientConfig{},
 	}
 }

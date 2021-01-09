@@ -7,7 +7,7 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=axelar \
 	-X github.com/cosmos/cosmos-sdk/version.ServerName=axelard \
 	-X github.com/cosmos/cosmos-sdk/version.ClientName=axelarcli \
 	-X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
-	-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) 
+	-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT)
 
 BUILD_FLAGS := -ldflags '$(ldflags)'
 
@@ -45,13 +45,8 @@ debug: go.sum
 
 .PHONY: docker-image
 docker-image:
-	@docker build -t axelar/core .
+	@DOCKER_BUILDKIT=1 docker build --ssh default -t axelar/core .
 
 .PHONY: docker-image-debug
 docker-image-debug:
-	@docker build -t axelar/core-debug -f ./Dockerfile.debug .
-
-.PHONY: copy-tssd
-copy-tssd:
-	@rsync -ru ../tssd ./
-
+	@DOCKER_BUILDKIT=1 docker build --ssh default -t axelar/core-debug -f ./Dockerfile.debug .
