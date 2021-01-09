@@ -26,6 +26,10 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
 
+	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
+	balanceKeeper "github.com/axelarnetwork/axelar-core/x/balance/keeper"
+	balanceTypes "github.com/axelarnetwork/axelar-core/x/balance/types"
+
 	"github.com/axelarnetwork/axelar-core/store"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -162,7 +166,7 @@ func TestKeyRotation(t *testing.T) {
 	// assign key as bitcoin master key
 	res = <-chain.Submit(tssTypes.MsgAssignNextMasterKey{
 		Sender: sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
-		Chain:  "bitcoin",
+		Chain:  balance.Bitcoin,
 		KeyID:  masterKeyID1,
 	})
 	assert.NoError(t, res.Error)
@@ -170,23 +174,39 @@ func TestKeyRotation(t *testing.T) {
 	// rotate to the first master key
 	res = <-chain.Submit(tssTypes.MsgRotateMasterKey{
 		Sender: sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
-		Chain:  "bitcoin",
+		Chain:  balance.Bitcoin,
 	})
 	assert.NoError(t, res.Error)
 
 	// track bitcoin transactions for address derived from master key
 	res = <-chain.Submit(btcTypes.NewMsgTrackPubKeyWithMasterKey(
 		sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
-		btcTypes.Chain(chaincfg.MainNetParams.Name), false))
+		btcTypes.Network(chaincfg.MainNetParams.Name), false))
 	assert.NoError(t, res.Error)
 
 	// simulate deposit to master key address
+	prevSK, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
+	if err != nil {
+		panic(err)
+	}
+	prevTxHash, err := chainhash.NewHash([]byte(testutils.RandString(32)))
+	if err != nil {
+		panic(err)
+	}
+	prevVoutIdx := uint32(testutils.RandIntBetween(0, 100))
+
+	prevPK := btcec.PublicKey(prevSK.PublicKey)
+	sender, err := btcutil.NewAddressPubKeyHash(btcutil.Hash160(prevPK.SerializeCompressed()), &chaincfg.MainNetParams)
+	if err != nil {
+		panic(err)
+	}
+
 	txHash, err := chainhash.NewHash([]byte(testutils.RandString(32)))
 	if err != nil {
 		panic(err)
 	}
 
-	btcAddr, err := btcTypes.ParseBtcAddress(string(res.Data), btcTypes.Chain(chaincfg.MainNetParams.Name))
+	recipient, err := btcTypes.ParseBtcAddress(string(res.Data), btcTypes.Network(chaincfg.MainNetParams.Name))
 	if err != nil {
 		panic(err)
 	}
@@ -196,15 +216,33 @@ func TestKeyRotation(t *testing.T) {
 
 	mocks.BTC.GetRawTransactionVerboseFunc = func(hash *chainhash.Hash) (*btcjson.TxRawResult, error) {
 		if hash.IsEqual(txHash) {
+			vin := make([]btcjson.Vin, 1)
+			vin[0] = btcjson.Vin{Vout: prevVoutIdx, Txid: prevTxHash.String()}
+
 			vout := make([]btcjson.Vout, testutils.RandIntBetween(int64(voutIdx)+1, 100))
 			vout[voutIdx] = btcjson.Vout{
 				N:            voutIdx,
 				Value:        amount.ToBTC(),
-				ScriptPubKey: btcjson.ScriptPubKeyResult{Addresses: []string{btcAddr.String()}},
+				ScriptPubKey: btcjson.ScriptPubKeyResult{Addresses: []string{recipient.String()}},
 			}
 			return &btcjson.TxRawResult{
 				Txid:          txHash.String(),
 				Hash:          txHash.String(),
+				Vin:           vin,
+				Vout:          vout,
+				Confirmations: uint64(testutils.RandIntBetween(1, 10000)),
+			}, nil
+		}
+
+		if hash.IsEqual(prevTxHash) {
+			vout := make([]btcjson.Vout, testutils.RandIntBetween(int64(prevVoutIdx)+1, 100))
+			vout[prevVoutIdx] = btcjson.Vout{
+				N:            prevVoutIdx,
+				ScriptPubKey: btcjson.ScriptPubKeyResult{Addresses: []string{sender.String()}},
+			}
+			return &btcjson.TxRawResult{
+				Txid:          prevTxHash.String(),
+				Hash:          prevTxHash.String(),
 				Vout:          vout,
 				Confirmations: uint64(testutils.RandIntBetween(1, 10000)),
 			}, nil
@@ -213,12 +251,7 @@ func TestKeyRotation(t *testing.T) {
 	}
 
 	// verify deposit to master key
-	res = <-chain.Submit(btcTypes.NewMsgVerifyTx(
-		sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
-		txHash,
-		voutIdx,
-		btcAddr,
-		amount))
+	res = <-chain.Submit(btcTypes.NewMsgVerifyTx(sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress), txHash, voutIdx, recipient, amount))
 	assert.NoError(t, res.Error)
 
 	// wait for voting to be done
@@ -276,7 +309,7 @@ func TestKeyRotation(t *testing.T) {
 	// assign second key to be the second master key
 	res = <-chain.Submit(tssTypes.MsgAssignNextMasterKey{
 		Sender: sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
-		Chain:  "bitcoin",
+		Chain:  balance.Bitcoin,
 		KeyID:  keyID2,
 	})
 	assert.NoError(t, res.Error)
@@ -285,7 +318,7 @@ func TestKeyRotation(t *testing.T) {
 	amount = btcutil.Amount(int64(amount) - testutils.RandIntBetween(1, int64(amount)-1))
 	res = <-chain.Submit(btcTypes.NewMsgRawTxForNextMasterKey(
 		sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
-		btcTypes.Chain(chaincfg.MainNetParams.Name),
+		btcTypes.Network(chaincfg.MainNetParams.Name),
 		txHash,
 		amount))
 	assert.NoError(t, res.Error)
@@ -329,7 +362,7 @@ func TestKeyRotation(t *testing.T) {
 	res = <-chain.Submit(tssTypes.MsgSignStart{
 		Sender:    sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
 		SigID:     sigID,
-		Chain:     "bitcoin",
+		Chain:     balance.Bitcoin,
 		MsgToSign: res.Data,
 		Mode:      tssTypes.ModeMasterKey,
 	})
@@ -375,8 +408,8 @@ func TestKeyRotation(t *testing.T) {
 
 	// verify master key transfer
 	res = <-chain.Submit(
-		btcTypes.NewMsgVerifyTxForMasterKey(sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
-			transferTxHash, voutIdx, amount, btcTypes.ModeNextMasterKey, btcTypes.Chain(chaincfg.MainNetParams.Name)))
+		btcTypes.NewMsgVerifyTxForNextMasterKey(sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
+			transferTxHash, voutIdx, amount, btcTypes.Network(chaincfg.MainNetParams.Name)))
 	assert.NoError(t, res.Error)
 
 	// wait for voting to be done
@@ -385,7 +418,7 @@ func TestKeyRotation(t *testing.T) {
 	// rotate master key to key 2
 	res = <-chain.Submit(tssTypes.MsgRotateMasterKey{
 		Sender: sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
-		Chain:  "bitcoin",
+		Chain:  balance.Bitcoin,
 	})
 	assert.NoError(t, res.Error)
 }
@@ -395,13 +428,14 @@ func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain fa
 
 	broadcaster := fake.NewBroadcaster(testutils.Codec(), validator, chain.Submit)
 
-	snapKeeper := snapshotKeeper.NewKeeper(testutils.Codec(), fake.NewKVStoreKey(snapTypes.StoreKey), mocks.Staker)
-	vKeeper := voteKeeper.NewKeeper(testutils.Codec(), fake.NewKVStoreKey(voteTypes.StoreKey), store.NewSubjectiveStore(), snapKeeper, broadcaster)
-	btcKeeper := bitcoinKeeper.NewBtcKeeper(testutils.Codec(), fake.NewKVStoreKey(btcTypes.StoreKey))
-	tKeeper := tssKeeper.NewKeeper(testutils.Codec(), fake.NewKVStoreKey(tssTypes.StoreKey), mocks.TSSD,
+	snapKeeper := snapshotKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(snapTypes.StoreKey), mocks.Staker)
+	vKeeper := voteKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(voteTypes.StoreKey), store.NewSubjectiveStore(), snapKeeper, broadcaster)
+	btcKeeper := bitcoinKeeper.NewBtcKeeper(testutils.Codec(), sdk.NewKVStoreKey(btcTypes.StoreKey))
+	tKeeper := tssKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(tssTypes.StoreKey), mocks.TSSD,
 		params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), tssTypes.DefaultParamspace),
 		broadcaster,
 	)
+	balancer := balanceKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(balanceTypes.StoreKey))
 
 	vKeeper.SetVotingInterval(ctx, voteTypes.DefaultGenesisState().VotingInterval)
 	vKeeper.SetVotingThreshold(ctx, voteTypes.DefaultGenesisState().VotingThreshold)
@@ -410,7 +444,7 @@ func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain fa
 	router := fake.NewRouter()
 
 	broadcastHandler := broadcast.NewHandler(broadcaster)
-	btcHandler := bitcoin.NewHandler(btcKeeper, vKeeper, mocks.BTC, tKeeper)
+	btcHandler := bitcoin.NewHandler(btcKeeper, vKeeper, mocks.BTC, tKeeper, balancer)
 	snapHandler := snapshot.NewHandler(snapKeeper)
 	tssHandler := tss.NewHandler(tKeeper, snapKeeper, vKeeper)
 	voteHandler := vote.NewHandler()

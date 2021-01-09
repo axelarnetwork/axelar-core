@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/tssd/convert"
 	tssd "github.com/axelarnetwork/tssd/pb"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -143,11 +144,11 @@ func (k Keeper) SetKey(ctx sdk.Context, keyID string, key ecdsa.PublicKey) {
 }
 
 // GetCurrentMasterKey returns the latest master key that was set for the given chain
-func (k Keeper) GetCurrentMasterKey(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool) {
+func (k Keeper) GetCurrentMasterKey(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool) {
 	return k.GetPreviousMasterKey(ctx, chain, 0)
 }
 
-func (k Keeper) GetNextMasterKey(ctx sdk.Context, chain string) (ecdsa.PublicKey, bool) {
+func (k Keeper) GetNextMasterKey(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool) {
 	return k.GetPreviousMasterKey(ctx, chain, -1)
 }
 
@@ -158,7 +159,7 @@ Example:
 	k.GetPreviousMasterKey(ctx, "bitcoin", 3)
 returns the master key for Bitcoin three rotations ago.
 */
-func (k Keeper) GetPreviousMasterKey(ctx sdk.Context, chain string, offsetFromTop int64) (ecdsa.PublicKey, bool) {
+func (k Keeper) GetPreviousMasterKey(ctx sdk.Context, chain exported.Chain, offsetFromTop int64) (ecdsa.PublicKey, bool) {
 	// The master key entry stores the keyID of a previously successfully stored key, so we need to do a second lookup after we retrieve the ID.
 	// This indirection is necessary, because we need the keyID for other purposes, eg signing
 
@@ -170,7 +171,7 @@ func (k Keeper) GetPreviousMasterKey(ctx sdk.Context, chain string, offsetFromTo
 }
 
 // AssignNextMasterKey stores a new master key for a given chain which will become the default once RotateMasterKey is called
-func (k Keeper) AssignNextMasterKey(ctx sdk.Context, chain string, snapshotHeight int64, keyID string) error {
+func (k Keeper) AssignNextMasterKey(ctx sdk.Context, chain exported.Chain, snapshotHeight int64, keyID string) error {
 	keyGenHeight, ok := k.getKeygenStart(ctx, keyID)
 	if !ok {
 		return fmt.Errorf("there is no key with ID %s", keyID)
@@ -193,7 +194,7 @@ func (k Keeper) AssignNextMasterKey(ctx sdk.Context, chain string, snapshotHeigh
 }
 
 // RotateMasterKey rotates to the next stored master key. Returns an error if no new master key has been prepared
-func (k Keeper) RotateMasterKey(ctx sdk.Context, chain string) error {
+func (k Keeper) RotateMasterKey(ctx sdk.Context, chain exported.Chain) error {
 	r := k.getRotationCount(ctx, chain)
 	k.setRotationCount(ctx, chain, r+1)
 
@@ -252,18 +253,18 @@ func (k Keeper) prepareKeygen(ctx sdk.Context, keyID string, threshold int, vali
 	return stream, keygenInit
 }
 
-func masterKeyStoreKey(rotation int64, chain string) string {
-	return rotationPrefix + strconv.FormatInt(rotation, 10) + chain
+func masterKeyStoreKey(rotation int64, chain exported.Chain) string {
+	return rotationPrefix + strconv.FormatInt(rotation, 10) + chain.String()
 }
 
-func (k Keeper) getPreviousMasterKeyId(ctx sdk.Context, chain string, offsetFromTop int64) []byte {
+func (k Keeper) getPreviousMasterKeyId(ctx sdk.Context, chain exported.Chain, offsetFromTop int64) []byte {
 	r := k.getRotationCount(ctx, chain)
 	keyId := ctx.KVStore(k.storeKey).Get([]byte(masterKeyStoreKey(r-offsetFromTop, chain)))
 	return keyId
 }
 
-func (k Keeper) getRotationCount(ctx sdk.Context, chain string) int64 {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(rotationPrefix + chain))
+func (k Keeper) getRotationCount(ctx sdk.Context, chain exported.Chain) int64 {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(rotationPrefix + chain.String()))
 	if bz == nil {
 		return 0
 	}
@@ -272,11 +273,11 @@ func (k Keeper) getRotationCount(ctx sdk.Context, chain string) int64 {
 	return rotation
 }
 
-func (k Keeper) setRotationCount(ctx sdk.Context, chain string, rotation int64) {
-	ctx.KVStore(k.storeKey).Set([]byte(rotationPrefix+chain), k.cdc.MustMarshalBinaryLengthPrefixed(rotation))
+func (k Keeper) setRotationCount(ctx sdk.Context, chain exported.Chain, rotation int64) {
+	ctx.KVStore(k.storeKey).Set([]byte(rotationPrefix+chain.String()), k.cdc.MustMarshalBinaryLengthPrefixed(rotation))
 }
 
-func (k Keeper) getLatestMasterKeyHeight(ctx sdk.Context, chain string) int64 {
+func (k Keeper) getLatestMasterKeyHeight(ctx sdk.Context, chain exported.Chain) int64 {
 	r := k.getRotationCount(ctx, chain)
 	height, ok := k.getKeygenStart(ctx, masterKeyStoreKey(r, chain))
 	if !ok {
@@ -299,7 +300,7 @@ func (k Keeper) GetSnapshotRoundForKeyID(ctx sdk.Context, keyID string) (int64, 
 	return round, true
 }
 
-func (k Keeper) GetCurrentMasterKeyID(ctx sdk.Context, chain string) (string, bool) {
+func (k Keeper) GetCurrentMasterKeyID(ctx sdk.Context, chain exported.Chain) (string, bool) {
 	keyID := k.getPreviousMasterKeyId(ctx, chain, 0)
 	if keyID == nil {
 		return "", false

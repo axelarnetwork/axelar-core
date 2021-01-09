@@ -8,7 +8,7 @@ import (
 )
 
 // InitGenesis initialize default parameters
-// and the keeper's address to pubkey map
+// from the genesis state
 func InitGenesis(ctx sdk.Context, k keeper.Keeper, state types.GenesisState) {
 	k.SetVotingInterval(ctx, state.VotingInterval)
 	k.SetVotingThreshold(ctx, state.VotingThreshold)

@@ -95,7 +95,7 @@ func setup(t *testing.T) *testSetup {
 				CloseSendFunc: func() error { return nil },
 			}, nil
 		}}
-	k := NewKeeper(testutils.Codec(), fake.NewKVStoreKey("tss"), client, subspace, broadcaster)
+	k := NewKeeper(testutils.Codec(), sdk.NewKVStoreKey("tss"), client, subspace, broadcaster)
 	k.SetParams(ctx, types.DefaultParams())
 
 	setup.Keeper = k

@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 
 	cliUtils "github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -77,7 +78,7 @@ func getCmdMasterKeyAssignNext(cdc *codec.Codec) *cobra.Command {
 
 		msg := types.MsgAssignNextMasterKey{
 			Sender: cliCtx.FromAddress,
-			Chain:  args[0],
+			Chain:  exported.ChainFromString(args[0]),
 			KeyID:  args[1],
 		}
 		if err := msg.ValidateBasic(); err != nil {
@@ -100,7 +101,7 @@ func getCmdRotateMasterKey(cdc *codec.Codec) *cobra.Command {
 
 		msg := types.MsgRotateMasterKey{
 			Sender: cliCtx.FromAddress,
-			Chain:  args[0],
+			Chain:  exported.ChainFromString(args[0]),
 		}
 		if err := msg.ValidateBasic(); err != nil {
 			return err
@@ -121,13 +122,13 @@ func getCmdSignStart(cdc *codec.Codec) *cobra.Command {
 		panic("flag not set")
 	}
 	keyID := cmd.Flags().String("key-id", "", "unique ID for signature pubkey")
-	masterKey := cmd.Flags().StringP("master-key", "m", "", "use the master key registered for the given chain")
+	chainForMasterKey := cmd.Flags().StringP("master-key", "m", "", "use the master key registered for the given chain")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		if *keyID == "" && *masterKey == "" {
+		if *keyID == "" && *chainForMasterKey == "" {
 			return fmt.Errorf("either flag --key-id or --master-key must be set")
 		}
-		if *keyID != "" && *masterKey != "" {
+		if *keyID != "" && *chainForMasterKey != "" {
 			return fmt.Errorf("flags --key-id and --master-key must not both be set")
 		}
 		cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
@@ -148,7 +149,7 @@ func getCmdSignStart(cdc *codec.Codec) *cobra.Command {
 				Sender:    cliCtx.FromAddress,
 				SigID:     *newSigID,
 				MsgToSign: toSign,
-				Chain:     *masterKey,
+				Chain:     exported.ChainFromString(*chainForMasterKey),
 				Mode:      types.ModeMasterKey,
 			}
 		}

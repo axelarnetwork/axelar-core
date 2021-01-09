@@ -61,7 +61,7 @@ func setup() *testSetup {
 		setup.cancel()
 		return nil
 	}}
-	setup.Keeper = NewKeeper(testutils.Codec(), fake.NewKVStoreKey(stringGen.Next()), store.NewSubjectiveStore(),
+	setup.Keeper = NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(stringGen.Next()), store.NewSubjectiveStore(),
 		setup.Snapshotter, setup.Broadcaster)
 	return setup
 }

@@ -40,15 +40,12 @@ func (k Keeper) SetTrackedAddress(ctx sdk.Context, address string) {
 	ctx.KVStore(k.storeKey).Set([]byte(addrPrefix+address), []byte{})
 }
 
-func (k Keeper) GetTrackedAddress(ctx sdk.Context, address string) types.ExternalChainAddress {
+func (k Keeper) GetTrackedAddress(ctx sdk.Context, address string) string {
 	val := ctx.KVStore(k.storeKey).Get([]byte(addrPrefix + address))
 	if val == nil {
-		return types.ExternalChainAddress{}
+		return ""
 	}
-	return types.ExternalChainAddress{
-		Chain:   "Bitcoin",
-		Address: address,
-	}
+	return address
 }
 
 func (k Keeper) SetConfirmationHeight(ctx sdk.Context, height uint64) {

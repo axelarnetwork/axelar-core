@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 
-	tssd "github.com/axelarnetwork/tssd/pb"
 	"github.com/btcsuite/btcd/rpcclient"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -31,15 +30,24 @@ import (
 	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
 
+	tssd "github.com/axelarnetwork/tssd/pb"
+
+	"github.com/axelarnetwork/axelar-core/x/balance"
+
 	keyring "github.com/cosmos/cosmos-sdk/crypto/keys"
 
 	"github.com/axelarnetwork/axelar-core/store"
+	balanceKeeper "github.com/axelarnetwork/axelar-core/x/balance/keeper"
+	balanceTypes "github.com/axelarnetwork/axelar-core/x/balance/types"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/axelarnetwork/axelar-core/x/broadcast"
 	broadcastKeeper "github.com/axelarnetwork/axelar-core/x/broadcast/keeper"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
+	"github.com/axelarnetwork/axelar-core/x/ethereum"
+	ethKeeper "github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
+	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	"github.com/axelarnetwork/axelar-core/x/snapshot"
 	snapKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
@@ -56,13 +64,13 @@ const (
 )
 
 var (
-	// default home directories for the application CLI
+	// DefaultCLIHome sets the default home directories for the application CLI
 	DefaultCLIHome = os.ExpandEnv("$HOME/.axelarcli")
 
 	// DefaultNodeHome sets the folder where the applcation data and configuration will be stored
 	DefaultNodeHome = os.ExpandEnv("$HOME/.axelard")
 
-	// NewBasicManager is in charge of setting up basic module elements
+	// ModuleBasics is in charge of setting up basic module elements
 	ModuleBasics = module.NewBasicManager(
 		genutil.AppModuleBasic{},
 		auth.AppModuleBasic{},
@@ -76,8 +84,10 @@ var (
 		tss.AppModuleBasic{},
 		vote.AppModuleBasic{},
 		bitcoin.AppModuleBasic{},
+		ethereum.AppModuleBasic{},
 		broadcast.AppModuleBasic{},
 		snapshot.AppModuleBasic{},
+		balance.AppModuleBasic{},
 	)
 	// account permissions
 	maccPerms = map[string][]string{
@@ -102,6 +112,7 @@ func MakeCodec() *codec.Codec {
 	return cdc
 }
 
+// AxelarApp defines the axelar Cosmos app that runs all modules
 type AxelarApp struct {
 	*bam.BaseApp
 	cdc *codec.Codec
@@ -121,10 +132,12 @@ type AxelarApp struct {
 	supplyKeeper    supply.Keeper
 	paramsKeeper    params.Keeper
 	btcKeeper       btcKeeper.Keeper
+	ethKeeper       ethKeeper.Keeper
 	broadcastKeeper broadcastKeeper.Keeper
 	tssKeeper       tssKeeper.Keeper
 	votingKeeper    voteKeeper.Keeper
-	axStakingKeeper snapKeeper.Keeper
+	snapKeeper      snapKeeper.Keeper
+	balanceKeeper   balanceKeeper.Keeper
 
 	// Module Manager
 	mm *module.Manager
@@ -148,9 +161,22 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	bApp.SetCommitMultiStoreTracer(traceStore)
 	bApp.SetAppVersion(version.Version)
 
-	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
-		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey,
-		voteTypes.StoreKey, broadcastTypes.StoreKey, btcTypes.StoreKey, snapTypes.StoreKey, tssTypes.StoreKey)
+	keys := sdk.NewKVStoreKeys(
+		bam.MainStoreKey,
+		auth.StoreKey,
+		staking.StoreKey,
+		supply.StoreKey,
+		distr.StoreKey,
+		slashing.StoreKey,
+		params.StoreKey,
+		voteTypes.StoreKey,
+		broadcastTypes.StoreKey,
+		btcTypes.StoreKey,
+		ethTypes.StoreKey,
+		snapTypes.StoreKey,
+		tssTypes.StoreKey,
+		balanceTypes.StoreKey,
+	)
 
 	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
@@ -234,7 +260,9 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	var err error
 	app.btcKeeper = btcKeeper.NewBtcKeeper(app.cdc, keys[btcTypes.StoreKey])
 
-	app.axStakingKeeper = snapKeeper.NewKeeper(app.cdc, keys[snapTypes.StoreKey], app.stakingKeeper)
+	app.ethKeeper = ethKeeper.NewEthKeeper(app.cdc, keys[ethTypes.StoreKey])
+
+	app.snapKeeper = snapKeeper.NewKeeper(app.cdc, keys[snapTypes.StoreKey], app.stakingKeeper)
 
 	keybase, err := keyring.NewKeyring(sdk.KeyringServiceName(), axelarCfg.ClientConfig.KeyringBackend, DefaultCLIHome, os.Stdin)
 	if err != nil {
@@ -250,7 +278,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		store.NewSubjectiveStore(),
 		keybase,
 		app.accountKeeper,
-		app.axStakingKeeper,
+		app.snapKeeper,
 		abciClient,
 		axelarCfg.ClientConfig,
 		logger,
@@ -282,19 +310,26 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		logger.Debug("successful Close")
 	})
 
-	app.votingKeeper = voteKeeper.NewKeeper(app.cdc, keys[voteTypes.StoreKey], store.NewSubjectiveStore(), app.axStakingKeeper, app.broadcastKeeper)
+	app.votingKeeper = voteKeeper.NewKeeper(app.cdc, keys[voteTypes.StoreKey], store.NewSubjectiveStore(), app.snapKeeper, app.broadcastKeeper)
+
+	// TODO: enable running node without an Ethereum bridge
+	rpcETC, err := ethTypes.NewRPCClient(axelarCfg.EthRpcAddr)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+	logger.Debug("Successfully connected to ethereum node")
 
 	// Enable running a node with or without a Bitcoin bridge
-	var rpc *rpcclient.Client
+	var rpcBTC *rpcclient.Client
 	var btcModule bitcoin.AppModule
 	if axelarCfg.WithBtcBridge {
-		rpc, err = btcTypes.NewRPCClient(axelarCfg.BtcConfig, logger)
+		rpcBTC, err = btcTypes.NewRPCClient(axelarCfg.BtcConfig, logger)
 		if err != nil {
 			tmos.Exit(err.Error())
 		}
 		// BTC bridge opens a grpc connection. Clean it up on process shutdown
-		tmos.TrapSignal(logger, rpc.Shutdown)
-		btcModule = bitcoin.NewAppModule(app.btcKeeper, app.votingKeeper, app.tssKeeper, rpc)
+		tmos.TrapSignal(logger, rpcBTC.Shutdown)
+		btcModule = bitcoin.NewAppModule(app.btcKeeper, app.votingKeeper, app.tssKeeper, rpcBTC)
 	} else {
 		btcModule = bitcoin.NewDummyAppModule(app.btcKeeper, app.votingKeeper)
 	}
@@ -310,10 +345,12 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 
-		snapshot.NewAppModule(app.axStakingKeeper),
-		tss.NewAppModule(app.tssKeeper, app.axStakingKeeper, app.votingKeeper),
+		snapshot.NewAppModule(app.snapKeeper),
+		tss.NewAppModule(app.tssKeeper, app.snapKeeper, app.votingKeeper),
 		vote.NewAppModule(app.votingKeeper),
 		broadcast.NewAppModule(app.broadcastKeeper),
+		ethereum.NewAppModule(app.ethKeeper, app.votingKeeper, app.tssKeeper, app.balanceKeeper, rpcETC),
+		balance.NewAppModule(app.balanceKeeper),
 		btcModule,
 	)
 
@@ -334,6 +371,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		slashing.ModuleName,
 		tssTypes.ModuleName,
 		btcTypes.ModuleName,
+		ethTypes.ModuleName,
 		broadcastTypes.ModuleName,
 		voteTypes.ModuleName,
 		supply.ModuleName,
@@ -374,6 +412,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 // GenesisState represents chain state at the start of the chain. Any initial state (account balances) are stored here.
 type GenesisState map[string]json.RawMessage
 
+// InitChainer handles the chain initialization from a genesis file
 func (app *AxelarApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 	var genesisState GenesisState
 
@@ -385,14 +424,18 @@ func (app *AxelarApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) ab
 	return app.mm.InitGenesis(ctx, genesisState)
 }
 
+// BeginBlocker calls the BeginBlock() function of every module at the beginning of a new block
 func (app *AxelarApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 	return app.mm.BeginBlock(ctx, req)
 }
 
+// EndBlocker calls the EndBlock() function of every module at the end of a block
 func (app *AxelarApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
 	return app.mm.EndBlock(ctx, req)
 }
 
+// LoadHeight loads the application version at a given height. It will panic if called
+// more than once on a running baseapp.
 func (app *AxelarApp) LoadHeight(height int64) error {
 	return app.LoadVersion(height, app.keys[bam.MainStoreKey])
 }

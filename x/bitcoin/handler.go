@@ -12,14 +12,13 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
 
+	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-const bitcoin = "bitcoin"
-
-func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Signer) sdk.Handler {
+func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Signer, b types.Balancer) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
@@ -28,11 +27,13 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Sig
 		case types.MsgVerifyTx:
 			return handleMsgVerifyTx(ctx, k, v, rpc, s, msg)
 		case *types.MsgVoteVerifiedTx:
-			return handleMsgVoteVerifiedTx(ctx, k, v, *msg)
+			return handleMsgVoteVerifiedTx(ctx, k, v, msg)
 		case types.MsgRawTx:
 			return handleMsgRawTx(ctx, k, s, msg)
 		case types.MsgSendTx:
 			return handleMsgSendTx(ctx, k, rpc, s, msg)
+		case types.MsgTransfer:
+			return handleMsgTransfer(ctx, b, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
@@ -40,13 +41,34 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, s types.Sig
 	}
 }
 
-func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.MsgVoteVerifiedTx) (*sdk.Result, error) {
-	if err := v.TallyVote(ctx, &msg); err != nil {
+func handleMsgTransfer(ctx sdk.Context, b types.Balancer, msg types.MsgTransfer) (*sdk.Result, error) {
+	btcAddr := balance.CrossChainAddress{Chain: balance.Bitcoin, Address: msg.BTCAddress.String()}
+	b.LinkAddresses(ctx, btcAddr, msg.Destination)
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+			sdk.NewAttribute(types.AttributeAddress, btcAddr.String()),
+			sdk.NewAttribute(types.AttributeAddress, msg.Destination.String()),
+		),
+	)
+
+	return &sdk.Result{
+		Log:    fmt.Sprintf("successfully linked {%s} and {%s}", btcAddr.String(), msg.Destination.String()),
+		Events: ctx.EventManager().Events(),
+	}, nil
+}
+
+// This can be used as a potential hook to immediately act on a poll being decided by the vote
+func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg *types.MsgVoteVerifiedTx) (*sdk.Result, error) {
+	if err := v.TallyVote(ctx, msg); err != nil {
 		return nil, err
 	}
 
-	if res := v.Result(ctx, msg.Poll()); res != nil {
-		if err := k.ProcessUTXOPollResult(ctx, msg.PollMeta.ID, res.(bool)); err != nil {
+	if confirmed := v.Result(ctx, msg.Poll()); confirmed != nil {
+		if err := k.ProcessUTXOPollResult(ctx, msg.PollMeta.ID, confirmed.(bool)); err != nil {
 			return nil, err
 		}
 		v.DeletePoll(ctx, msg.Poll())
@@ -59,20 +81,17 @@ func handleMsgTrack(ctx sdk.Context, k keeper.Keeper, s types.Signer, rpc types.
 	if msg.Mode == types.ModeSpecificAddress {
 		encodedAddr = msg.Address.EncodedString
 	} else {
-		var keyID string
 		var key ecdsa.PublicKey
 		var ok bool
 
 		switch msg.Mode {
 		case types.ModeSpecificKey:
-			keyID = msg.KeyID
 			key, ok = s.GetKey(ctx, msg.KeyID)
 			if !ok {
-				return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("key with ID %s not found", keyID))
+				return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("key with ID %s not found", msg.KeyID))
 			}
 		case types.ModeCurrentMasterKey:
-			keyID = bitcoin
-			key, ok = s.GetCurrentMasterKey(ctx, bitcoin)
+			key, ok = s.GetCurrentMasterKey(ctx, balance.Bitcoin)
 			if !ok {
 				return nil, sdkerrors.Wrap(types.ErrBitcoin, "master key not set")
 			}
@@ -132,22 +151,22 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 		var ok bool
 		switch msg.Mode {
 		case types.ModeCurrentMasterKey:
-			key, ok = s.GetCurrentMasterKey(ctx, bitcoin)
+			key, ok = s.GetCurrentMasterKey(ctx, balance.Bitcoin)
 			if !ok {
 				return nil, sdkerrors.Wrap(types.ErrBitcoin, "no current master key assigned")
 			}
 		case types.ModeNextMasterKey:
-			key, ok = s.GetNextMasterKey(ctx, bitcoin)
+			key, ok = s.GetNextMasterKey(ctx, balance.Bitcoin)
 			if !ok {
 				return nil, sdkerrors.Wrap(types.ErrBitcoin, "no next master key assigned")
 			}
 		}
-		addr, err := pkHashFromKey(key, msg.Chain)
+		addr, err := pkHashFromKey(key, msg.Network)
 		if err != nil {
 			return nil, sdkerrors.Wrap(types.ErrBitcoin, "could not derive Bitcoin address next master key")
 		}
-		msg.UTXO.Address = types.BtcAddress{
-			Chain:         msg.Chain,
+		msg.UTXO.Recipient = types.BtcAddress{
+			Network:       msg.Network,
 			EncodedString: addr.EncodeAddress(),
 		}
 	}
@@ -200,7 +219,7 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, msg types.
 		// msg.ValidateBasic will be called before the handler, so there is no way we have a malformed address here
 		destination, _ = msg.Destination.Convert()
 	case types.ModeNextMasterKey:
-		pk, ok := s.GetNextMasterKey(ctx, bitcoin)
+		pk, ok := s.GetNextMasterKey(ctx, balance.Bitcoin)
 		if !ok {
 			return nil, sdkerrors.Wrap(types.ErrBitcoin, "next master key not set")
 		}
@@ -262,7 +281,7 @@ func handleMsgSendTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s ty
 	hash, err := rpc.SendRawTransaction(rawTx, false)
 	if err != nil {
 		k.Logger(ctx).Error(sdkerrors.Wrap(err, "sending transaction to Bitcoin failed").Error())
-		return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("failed to sent transaction to Bitcoin (other nodes might have succeeded): %s", err.Error()))
+		return &sdk.Result{Log: fmt.Sprintf("failed to sent transaction to Bitcoin (other nodes might have succeeded): %s", err.Error())}, nil
 	}
 
 	return &sdk.Result{Data: hash[:], Log: fmt.Sprintf("successfully sent transaction %s to Bitcoin", hash), Events: ctx.EventManager().Events()}, nil
@@ -331,7 +350,7 @@ func getPkScript(ctx sdk.Context, k keeper.Keeper, txId string) ([]byte, error) 
 	if !ok {
 		return nil, fmt.Errorf("transaction ID is not known")
 	}
-	return utxo.Address.PkScript(), nil
+	return utxo.Recipient.PkScript(), nil
 }
 
 func trackAddress(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, address string, rescan bool) {
@@ -377,14 +396,14 @@ func createRawTx(ctx sdk.Context, k keeper.Keeper, utxo types.UTXO, destination 
 	k.SetRawTx(ctx, utxo.Hash.String(), tx)
 
 	// Print out the hash that becomes the input for the threshold signing
-	hash, err = txscript.CalcSignatureHash(utxo.Address.PkScript(), txscript.SigHashAll, tx, 0)
-
+	hash, err = txscript.CalcSignatureHash(utxo.Recipient.PkScript(), txscript.SigHashAll, tx, 0)
+	k.Logger(ctx).Info(fmt.Sprintf("bitcoin tx to sign: %s", k.Codec().MustMarshalJSON(hash)))
 	return hash, nil
 }
 
 // we use Pay2PKH for added security over Pay2PK as well as for the benefit of getting a parsed address back when calling
 // getrawtransaction() on the Bitcoin rpc client
-func pkHashFromKey(key ecdsa.PublicKey, chain types.Chain) (*btcutil.AddressPubKeyHash, error) {
+func pkHashFromKey(key ecdsa.PublicKey, chain types.Network) (*btcutil.AddressPubKeyHash, error) {
 	btcPK := btcec.PublicKey(key)
 	return btcutil.NewAddressPubKeyHash(btcutil.Hash160(btcPK.SerializeCompressed()), chain.Params())
 }
@@ -401,10 +420,11 @@ func verifyTx(rpc types.RPCClient, utxo types.UTXO, expectedConfirmationHeight u
 
 	vout := actualTx.Vout[utxo.VoutIdx]
 
-	if len(vout.ScriptPubKey.Addresses) > 1 {
+	if len(vout.ScriptPubKey.Addresses) != 1 {
 		return fmt.Errorf("deposit must be only spendable by a single address")
 	}
-	if vout.ScriptPubKey.Addresses[0] != utxo.Address.String() {
+
+	if vout.ScriptPubKey.Addresses[0] != utxo.Recipient.String() {
 		return fmt.Errorf("expected destination address does not match actual destination address")
 	}
 

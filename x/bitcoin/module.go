@@ -60,10 +60,11 @@ func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 
 type AppModule struct {
 	AppModuleBasic
-	keeper keeper.Keeper
-	voter  types.Voter
-	rpc    *rpcclient.Client
-	signer types.Signer
+	keeper   keeper.Keeper
+	voter    types.Voter
+	rpc      *rpcclient.Client
+	signer   types.Signer
+	balancer types.Balancer
 }
 
 // Used for testing without bridge
@@ -110,7 +111,7 @@ func (am AppModule) NewHandler() sdk.Handler {
 	if am.rpc == nil {
 		return NewDummyHandler(am.keeper, am.voter)
 	}
-	return NewHandler(am.keeper, am.voter, am.rpc, am.signer)
+	return NewHandler(am.keeper, am.voter, am.rpc, am.signer, am.balancer)
 }
 
 func (AppModule) QuerierRoute() string {

@@ -12,7 +12,7 @@ type MsgTrack struct {
 	Mode    Mode
 	Address BtcAddress
 	KeyID   string
-	Chain   Chain
+	Chain   Network
 	Rescan  bool
 }
 
@@ -25,7 +25,7 @@ func NewMsgTrackAddress(sender sdk.AccAddress, address BtcAddress, rescan bool) 
 	}
 }
 
-func NewMsgTrackPubKey(sender sdk.AccAddress, chain Chain, keyId string, rescan bool) sdk.Msg {
+func NewMsgTrackPubKey(sender sdk.AccAddress, chain Network, keyId string, rescan bool) sdk.Msg {
 	return MsgTrack{
 		Sender: sender,
 		KeyID:  keyId,
@@ -35,7 +35,7 @@ func NewMsgTrackPubKey(sender sdk.AccAddress, chain Chain, keyId string, rescan 
 	}
 }
 
-func NewMsgTrackPubKeyWithMasterKey(sender sdk.AccAddress, chain Chain, rescan bool) sdk.Msg {
+func NewMsgTrackPubKeyWithMasterKey(sender sdk.AccAddress, chain Network, rescan bool) sdk.Msg {
 	return MsgTrack{
 		Sender: sender,
 		Chain:  chain,

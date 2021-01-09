@@ -14,7 +14,7 @@ type MsgRawTx struct {
 	TxHash      *chainhash.Hash
 	Amount      btcutil.Amount
 	Destination BtcAddress
-	Chain       Chain
+	Chain       Network
 	Mode        Mode
 }
 
@@ -28,7 +28,7 @@ func NewMsgRawTx(sender sdk.AccAddress, txHash *chainhash.Hash, amount btcutil.A
 	}
 }
 
-func NewMsgRawTxForNextMasterKey(sender sdk.AccAddress, chain Chain, txHash *chainhash.Hash, amount btcutil.Amount) MsgRawTx {
+func NewMsgRawTxForNextMasterKey(sender sdk.AccAddress, chain Network, txHash *chainhash.Hash, amount btcutil.Amount) MsgRawTx {
 	return MsgRawTx{
 		Sender: sender,
 		TxHash: txHash,
