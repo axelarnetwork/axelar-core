@@ -21,10 +21,12 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	tssdMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
+	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 var (
@@ -95,7 +97,10 @@ func setup(t *testing.T) *testSetup {
 				CloseSendFunc: func() error { return nil },
 			}, nil
 		}}
-	k := NewKeeper(testutils.Codec(), sdk.NewKVStoreKey("tss"), client, subspace, broadcaster)
+	voter := &mock.VoterMock{InitPollFunc: func(ctx sdk.Context, poll exported.PollMeta) error {
+		return nil
+	}}
+	k := NewKeeper(testutils.Codec(), sdk.NewKVStoreKey("tss"), client, subspace, voter, broadcaster)
 	k.SetParams(ctx, types.DefaultParams())
 
 	setup.Keeper = k

@@ -32,9 +32,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	verifyTxCmd := makeCommand("verify")
 	verifyTxCmd.AddCommand(flags.PostCommands(GetCmdVerifyMintTx(cdc), GetCmdVerifyDeployTx(cdc))...)
 
-	sendCmd := GetCmdSend(cdc)
 	ethTxCmd.AddCommand(rawTxCmd, verifyTxCmd)
-	ethTxCmd.AddCommand(flags.PostCommands(sendCmd)...)
 
 	return ethTxCmd
 }
@@ -45,26 +43,6 @@ func makeCommand(name string) *cobra.Command {
 		Short:                      fmt.Sprintf("%s transactions subcommands", name),
 		SuggestionsMinimumDistance: 2,
 		RunE:                       client.ValidateCmd,
-	}
-}
-
-func GetCmdSend(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "send [txHash] [sigID]",
-		Short: "Submit the specified transaction to ethereum with the specified signature",
-
-		Args: cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-
-			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
-
-			msg := types.NewMsgSendTx(cliCtx.GetFromAddress(), args[0], args[1])
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
-		},
 	}
 }
 

@@ -298,7 +298,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	logger.Debug("successful connection to tssd gRPC server")
 
 	client := tssd.NewGG18Client(conn)
-	app.tssKeeper = tssKeeper.NewKeeper(app.cdc, keys[tssTypes.StoreKey], client, tssSubspace, app.broadcastKeeper)
+	app.tssKeeper = tssKeeper.NewKeeper(app.cdc, keys[tssTypes.StoreKey], client, tssSubspace, app.votingKeeper, app.broadcastKeeper)
 
 	// Clean up tss grpc connection on process shutdown
 	tmos.TrapSignal(logger, func() {
@@ -350,7 +350,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		tss.NewAppModule(app.tssKeeper, app.snapKeeper, app.votingKeeper),
 		vote.NewAppModule(app.votingKeeper),
 		broadcast.NewAppModule(app.broadcastKeeper),
-		ethereum.NewAppModule(app.ethKeeper, app.votingKeeper, app.tssKeeper, app.balanceKeeper, rpcETC),
+		ethereum.NewAppModule(app.ethKeeper, app.votingKeeper, app.tssKeeper, app.snapKeeper, app.balanceKeeper, rpcETC),
 		balance.NewAppModule(app.balanceKeeper),
 		btcModule,
 	)

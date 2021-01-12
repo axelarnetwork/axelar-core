@@ -39,7 +39,6 @@ func addTxSubCommands(command *cobra.Command, cdc *codec.Codec) {
 		flags.PostCommands(
 			GetCmdVerifyTx(cdc),
 			GetCmdSignRawTx(cdc),
-			GetCmdSend(cdc),
 		)...)
 
 	command.AddCommand(cmds...)
@@ -163,29 +162,7 @@ func GetCmdSignRawTx(cdc *codec.Codec) *cobra.Command {
 			var tx *wire.MsgTx
 			types.ModuleCdc.MustUnmarshalJSON([]byte(args[1]), &tx)
 
-			msg := types.NewMsgRawTx(cliCtx.GetFromAddress(), args[0], tx)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
-		},
-	}
-}
-
-// GetCmdSend returns the command to send a signed Bitcoin transaction to the Bitcoin network
-func GetCmdSend(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "send [sourceTxId] [sigId]",
-		Short: "Withdraw funds from an axelar address",
-		Long: "Withdraw funds from an axelar address according to a previously signed raw transaction. " +
-			"Ensure the axelar address is being tracked and the transaction signed first.",
-		Args: cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-
-			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
-
-			msg := types.NewMsgSendTx(cliCtx.GetFromAddress(), args[0], args[1])
+			msg := types.NewMsgSignTx(cliCtx.GetFromAddress(), args[0], tx)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

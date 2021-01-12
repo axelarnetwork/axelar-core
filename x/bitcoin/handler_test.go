@@ -26,6 +26,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	btcMock "github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -169,6 +170,13 @@ func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
 	var txHash []byte
 	var txID, sigID string
 	signer := &btcMock.SignerMock{
+		GetCurrentMasterKeyIDFunc: func(ctx sdk.Context, chain balance.Chain) (string, bool) {
+			return "mkID", true
+		},
+		StartSignFunc: func(ctx sdk.Context, keyID string, sID string, msg []byte, validators []snapshot.Validator) error {
+			sigID = sID
+			return nil
+		},
 		GetCurrentMasterKeyFunc: func(ctx sdk.Context, chain balance.Chain) (ecdsa.PublicKey, bool) {
 			return sk.PublicKey, true
 		},
@@ -203,21 +211,23 @@ func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
 	b := &btcMock.BalancerMock{GetRecipientFunc: func(ctx sdk.Context, sender balance.CrossChainAddress) (balance.CrossChainAddress, bool) {
 		return balance.CrossChainAddress{}, false
 	}}
-	handler := NewHandler(k, v, rpc, signer, &btcMock.SnapshotterMock{}, b)
+	snap := &btcMock.SnapshotterMock{GetLatestSnapshotFunc: func(ctx sdk.Context) (snapshot.Snapshot, bool) {
+		return snapshot.Snapshot{}, true
+	}}
+	handler := NewHandler(k, v, rpc, signer, snap, b)
+	querier := keeper.NewQuerier(k, signer, rpc)
 
 	for i := 0; i < testReps; i++ {
 		sk, _ = ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 		skNext, _ = ecdsa.GenerateKey(btcec.S256(), rand.Reader)
-		sigID = testutils.RandString(int(testutils.RandIntBetween(5, 20)))
 
-		rawTx, transfer := prepareMsgTransferToNewMasterKey(ctx, k, signer, rpc, sk, sigID)
-		txID = transfer.TxID
+		rawTx := prepareMsgSign(ctx, k, querier, sk)
 
 		res, err := handler(ctx, rawTx)
 		assert.NoError(t, err)
 		txHash = res.Data
 
-		_, err = handler(ctx, transfer)
+		_, err = querier(ctx, []string{keeper.QuerySendTx, rawTx.TxID}, abci.RequestQuery{})
 		assert.NoError(t, err)
 
 		assert.Equal(t, i+1, len(signer.GetKeyForSigIDCalls()))
@@ -225,7 +235,7 @@ func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
 	}
 }
 
-func prepareMsgTransferToNewMasterKey(ctx sdk.Context, k keeper.Keeper, signer *btcMock.SignerMock, rpc *btcMock.RPCClientMock, sk *ecdsa.PrivateKey, sigID string) (types.MsgSignTx, types.MsgSendTx) {
+func prepareMsgSign(ctx sdk.Context, k keeper.Keeper, querier sdk.Querier, sk *ecdsa.PrivateKey) types.MsgSignTx {
 	hash, err := chainhash.NewHash([]byte(testutils.RandString(chainhash.HashSize)))
 	if err != nil {
 		panic(err)
@@ -233,7 +243,7 @@ func prepareMsgTransferToNewMasterKey(ctx sdk.Context, k keeper.Keeper, signer *
 
 	txID := hash.String()
 	btcPk := btcec.PublicKey(sk.PublicKey)
-	addr, err := btcutil.NewAddressPubKeyHash(btcutil.Hash160(btcPk.SerializeCompressed()), rpc.Network().Params())
+	addr, err := k.GetAddress(ctx, btcPk)
 	if err != nil {
 		panic(err)
 	}
@@ -253,16 +263,14 @@ func prepareMsgTransferToNewMasterKey(ctx sdk.Context, k keeper.Keeper, signer *
 	}
 	sender := sdk.AccAddress(testutils.RandString(int(testutils.RandIntBetween(5, 50))))
 
-	query := keeper.NewQuerier(k, signer, rpc)
 	qParams := types.RawParams{TxID: txID, Satoshi: sdk.NewInt64Coin(denom.Satoshi, int64(amount))}
-	bz, err := query(ctx, []string{keeper.QueryRawTx}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(qParams)})
+	bz, err := querier(ctx, []string{keeper.QueryRawTx}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(qParams)})
 	if err != nil {
 		panic(err)
 	}
 	var rawTx *wire.MsgTx
 	testutils.Codec().MustUnmarshalJSON(bz, &rawTx)
-	msgRawTx := types.NewMsgRawTx(sender, txID, rawTx)
+	msgRawTx := types.NewMsgSignTx(sender, txID, rawTx)
 
-	transfer := types.NewMsgSendTx(sender, txID, sigID)
-	return msgRawTx, transfer
+	return msgRawTx
 }

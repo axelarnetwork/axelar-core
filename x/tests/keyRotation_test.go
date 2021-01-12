@@ -82,7 +82,7 @@ type testMocks struct {
 // 10. Create a new key with the second snapshot's validator set (wait for vote)
 // 11. Designate that key to be the next master key for bitcoin
 // 12. Create a raw tx to transfer funds from the first master key address to the second key's address
-// 13. Sign the hash of the raw tx with the OLD snapshot's validator set (wait for vote)
+// 13. Sign the raw tx with the OLD snapshot's validator set (wait for vote)
 // 14. Send the signed transaction to bitcoin
 // 15. Query transfer tx info
 // 16. Verify the fund transfer is confirmed on bitcoin (wait for vote)
@@ -233,7 +233,7 @@ func TestKeyRotation(t *testing.T) {
 	}
 
 	// query for deposit info
-	bz, err := nodes[0].Query([]string{btcTypes.QuerierRoute, btcKeeper.QueryOutInfo, txHash.String(), strconv.Itoa(voutIdx)})
+	bz, err := nodes[0].Query([]string{btcTypes.QuerierRoute, btcKeeper.QueryOutInfo, txHash.String(), strconv.Itoa(voutIdx)}, abci.RequestQuery{})
 	assert.NoError(t, err)
 	var info btcTypes.OutPointInfo
 	testutils.Codec().MustUnmarshalJSON(bz, &info)
@@ -305,16 +305,17 @@ func TestKeyRotation(t *testing.T) {
 	// create a tx to transfer funds from master key 1 to master key 2
 	amount = btcutil.Amount(int64(amount) - testutils.RandIntBetween(1, int64(amount)-1))
 
-	bz, err = nodes[0].Query([]string{btcTypes.QuerierRoute, btcKeeper.QueryRawTx, txHash.String(), strconv.Itoa(int(amount)) + denom.Sat, ""})
+	bz, err = nodes[0].Query(
+		[]string{btcTypes.QuerierRoute, btcKeeper.QueryRawTx},
+		abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(
+			btcTypes.RawParams{
+				TxID:    txHash.String(),
+				Satoshi: sdk.NewInt64Coin(denom.Sat, int64(amount)),
+			})},
+	)
 	assert.NoError(t, err)
 	var rawTx *wire.MsgTx
 	testutils.Codec().MustUnmarshalJSON(bz, &rawTx)
-
-	res = <-chain.Submit(btcTypes.NewMsgRawTx(
-		sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
-		txHash.String(),
-		rawTx))
-	assert.NoError(t, res.Error)
 
 	// set up tssd mock for signing
 	msgToSign := make(chan []byte, nodeCount)
@@ -351,29 +352,21 @@ func TestKeyRotation(t *testing.T) {
 	}
 
 	// sign transfer tx
-	sigID := stringGen.Next()
-	res = <-chain.Submit(tssTypes.MsgSignStart{
-		Sender:    sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
-		SigID:     sigID,
-		Chain:     balance.Bitcoin,
-		MsgToSign: res.Data,
-		Mode:      tssTypes.ModeMasterKey,
-	})
+	res = <-chain.Submit(btcTypes.NewMsgSignTx(
+		sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
+		txHash.String(),
+		rawTx))
 	assert.NoError(t, res.Error)
-
 	// assert tssd was properly called
 	<-closeTimeout.Done()
 	assert.Equal(t, nodeCount, len(mocks.Sign.CloseSendCalls()))
 
 	// wait for voting to be done
-	chain.WaitNBlocks(12)
+	chain.WaitNBlocks(22)
 
-	// execute transfer tx
-	res = <-chain.Submit(
-		btcTypes.NewMsgSendTx(sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
-			txHash.String(),
-			sigID))
-	assert.NoError(t, res.Error)
+	// send tx to Bitcoin
+	_, err = nodes[0].Query([]string{btcTypes.QuerierRoute, btcKeeper.QuerySendTx, txHash.String()}, abci.RequestQuery{})
+	assert.NoError(t, err)
 
 	// set up btc mock to return the new tx
 	nextMasterPK := btcec.PublicKey(masterKey2.PublicKey)
@@ -405,7 +398,7 @@ func TestKeyRotation(t *testing.T) {
 	}
 
 	// query for transfer info
-	bz, err = nodes[0].Query([]string{btcTypes.QuerierRoute, btcKeeper.QueryOutInfo, transferTxHash.String(), strconv.Itoa(voutIdx)})
+	bz, err = nodes[0].Query([]string{btcTypes.QuerierRoute, btcKeeper.QueryOutInfo, transferTxHash.String(), strconv.Itoa(voutIdx)}, abci.RequestQuery{})
 	assert.NoError(t, err)
 	testutils.Codec().MustUnmarshalJSON(bz, &info)
 
@@ -435,26 +428,30 @@ func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *f
 	broadcaster := fake.NewBroadcaster(testutils.Codec(), validator, chain.Submit)
 
 	snapKeeper := snapshotKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(snapTypes.StoreKey), mocks.Staker)
-	vKeeper := voteKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(voteTypes.StoreKey), store.NewSubjectiveStore(), snapKeeper, broadcaster)
+	voter := voteKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(voteTypes.StoreKey), store.NewSubjectiveStore(), snapKeeper, broadcaster)
+
 	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	bitKeeper := btcKeeper.NewBtcKeeper(testutils.Codec(), sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)
-	tKeeper := tssKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(tssTypes.StoreKey), mocks.TSSD,
+	bitcoinKeeper := btcKeeper.NewBtcKeeper(testutils.Codec(), sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)
+	btcParams := btcTypes.DefaultParams()
+	btcParams.Network = mocks.BTC.Network()
+	bitcoinKeeper.SetParams(ctx, btcParams)
+
+	signer := tssKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(tssTypes.StoreKey), mocks.TSSD,
 		params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), tssTypes.DefaultParamspace),
-		broadcaster,
+		voter, broadcaster,
 	)
-	bitKeeper.SetParams(ctx, btcTypes.DefaultParams())
+	signer.SetParams(ctx, tssTypes.DefaultParams())
 	balancer := balanceKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(balanceTypes.StoreKey))
 
-	vKeeper.SetVotingInterval(ctx, voteTypes.DefaultGenesisState().VotingInterval)
-	vKeeper.SetVotingThreshold(ctx, voteTypes.DefaultGenesisState().VotingThreshold)
+	voter.SetVotingInterval(ctx, voteTypes.DefaultGenesisState().VotingInterval)
+	voter.SetVotingThreshold(ctx, voteTypes.DefaultGenesisState().VotingThreshold)
 
-	tKeeper.SetParams(ctx, tssTypes.DefaultParams())
 	router := fake.NewRouter()
 
 	broadcastHandler := broadcast.NewHandler(broadcaster)
-	btcHandler := bitcoin.NewHandler(bitKeeper, vKeeper, mocks.BTC, tKeeper, snapKeeper, balancer)
+	btcHandler := bitcoin.NewHandler(bitcoinKeeper, voter, mocks.BTC, signer, snapKeeper, balancer)
 	snapHandler := snapshot.NewHandler(snapKeeper)
-	tssHandler := tss.NewHandler(tKeeper, snapKeeper, vKeeper)
+	tssHandler := tss.NewHandler(signer, snapKeeper, voter)
 	voteHandler := vote.NewHandler()
 
 	router = router.
@@ -464,11 +461,11 @@ func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *f
 		AddRoute(voteTypes.RouterKey, voteHandler).
 		AddRoute(tssTypes.RouterKey, tssHandler)
 
-	queriers := map[string]sdk.Querier{btcTypes.QuerierRoute: btcKeeper.NewQuerier(bitKeeper, tKeeper, mocks.BTC)}
+	queriers := map[string]sdk.Querier{btcTypes.QuerierRoute: btcKeeper.NewQuerier(bitcoinKeeper, signer, mocks.BTC)}
 
 	node := fake.NewNode(moniker, ctx, router, queriers).
 		WithEndBlockers(func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-			return vote.EndBlocker(ctx, req, vKeeper)
+			return vote.EndBlocker(ctx, req, voter)
 		})
 	return node
 }

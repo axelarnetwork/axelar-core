@@ -15,8 +15,8 @@ type MsgSignTx struct {
 	RawTx  *wire.MsgTx
 }
 
-// NewMsgRawTx creates a new MsgSignTx
-func NewMsgRawTx(sender sdk.AccAddress, txID string, rawTx *wire.MsgTx) MsgSignTx {
+// NewMsgSignTx creates a new MsgSignTx
+func NewMsgSignTx(sender sdk.AccAddress, txID string, rawTx *wire.MsgTx) MsgSignTx {
 	return MsgSignTx{
 		Sender: sender,
 		TxID:   txID,

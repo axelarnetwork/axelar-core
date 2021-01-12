@@ -246,8 +246,8 @@ func (n Node) WithEndBlockers(endBlockers ...func(ctx sdk.Context, req abci.Requ
 }
 
 // Query allows to query a node. Returns a serialized response
-func (n Node) Query(path []string) ([]byte, error) {
-	return n.queriers[path[0]](n.Ctx, path[1:], abci.RequestQuery{})
+func (n Node) Query(path []string, query abci.RequestQuery) ([]byte, error) {
+	return n.queriers[path[0]](n.Ctx, path[1:], query)
 }
 
 func (n Node) start() {

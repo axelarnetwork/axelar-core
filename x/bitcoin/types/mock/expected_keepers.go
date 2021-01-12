@@ -309,7 +309,7 @@ var _ types.Signer = &SignerMock{}
 //             GetSigFunc: func(ctx sdk.Context, sigID string) (tss.Signature, bool) {
 // 	               panic("mock out the GetSig method")
 //             },
-//             StartSignFunc: func(ctx sdk.Context, keyID string, sigID string, msg []byte, validators []snapshot.Validator) (<-chan tss.Signature, error) {
+//             StartSignFunc: func(ctx sdk.Context, keyID string, sigID string, msg []byte, validators []snapshot.Validator) error {
 // 	               panic("mock out the StartSign method")
 //             },
 //         }
@@ -338,7 +338,7 @@ type SignerMock struct {
 	GetSigFunc func(ctx sdk.Context, sigID string) (tss.Signature, bool)
 
 	// StartSignFunc mocks the StartSign method.
-	StartSignFunc func(ctx sdk.Context, keyID string, sigID string, msg []byte, validators []snapshot.Validator) (<-chan tss.Signature, error)
+	StartSignFunc func(ctx sdk.Context, keyID string, sigID string, msg []byte, validators []snapshot.Validator) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -618,7 +618,7 @@ func (mock *SignerMock) GetSigCalls() []struct {
 }
 
 // StartSign calls StartSignFunc.
-func (mock *SignerMock) StartSign(ctx sdk.Context, keyID string, sigID string, msg []byte, validators []snapshot.Validator) (<-chan tss.Signature, error) {
+func (mock *SignerMock) StartSign(ctx sdk.Context, keyID string, sigID string, msg []byte, validators []snapshot.Validator) error {
 	if mock.StartSignFunc == nil {
 		panic("SignerMock.StartSignFunc: method is nil but Signer.StartSign was just called")
 	}

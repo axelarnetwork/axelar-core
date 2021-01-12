@@ -21,6 +21,7 @@ const (
 	QueryMasterKey = "masterkey"
 	CreateDeployTx = "deploy"
 	CreateMintTx   = "mint"
+	SendTx         = "send"
 )
 
 func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer) sdk.Querier {
@@ -32,6 +33,8 @@ func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer) sdk.Querier {
 			return createDeployTx(ctx, rpc, s, req.Data)
 		case CreateMintTx:
 			return createMintTx(ctx, k, s, rpc, req.Data)
+		case SendTx:
+			return sendTx(ctx, k, rpc, s, path[1])
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown eth-bridge query endpoint: %s", path[0]))
 		}
@@ -165,4 +168,33 @@ func getContractOwner(ctx sdk.Context, s types.Signer) (common.Address, error) {
 
 	fromAddress := crypto.PubkeyToAddress(pk)
 	return fromAddress, nil
+}
+
+func sendTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, txID string) ([]byte, error) {
+	h, err := k.GetHashToSign(ctx, txID)
+	if err != nil {
+		return nil, err
+	}
+	sigID := h.String()
+	pk, ok := s.GetKeyForSigID(ctx, sigID)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not find a corresponding key for sig ID %s", sigID))
+	}
+
+	sig, ok := s.GetSig(ctx, sigID)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not find a corresponding signature for sig ID %s", sigID))
+	}
+
+	signedTx, err := k.SignRawTransaction(ctx, txID, sig, pk)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not insert generated signature: %v", err))
+	}
+
+	err = rpc.SendTransaction(context.Background(), signedTx)
+	if err != nil {
+		k.Logger(ctx).Error(err.Error())
+	}
+
+	return k.Codec().MustMarshalJSON(fmt.Sprintf("successfully sent transaction %s to Ethereum", signedTx.Hash().String())), nil
 }

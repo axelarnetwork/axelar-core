@@ -8,27 +8,27 @@ import (
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-type MsgRawTx struct {
+type MsgSignTx struct {
 	Sender sdk.AccAddress
 	Tx     *ethTypes.Transaction
 }
 
 func NewMsgRawTx(sender sdk.AccAddress, tx *ethTypes.Transaction) sdk.Msg {
-	return MsgRawTx{
+	return MsgSignTx{
 		Sender: sender,
 		Tx:     tx,
 	}
 }
 
-func (msg MsgRawTx) Route() string {
+func (msg MsgSignTx) Route() string {
 	return RouterKey
 }
 
-func (msg MsgRawTx) Type() string {
+func (msg MsgSignTx) Type() string {
 	return "RawTx"
 }
 
-func (msg MsgRawTx) ValidateBasic() error {
+func (msg MsgSignTx) ValidateBasic() error {
 	if msg.Sender.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
@@ -47,11 +47,11 @@ func (msg MsgRawTx) ValidateBasic() error {
 	return nil
 }
 
-func (msg MsgRawTx) GetSignBytes() []byte {
+func (msg MsgSignTx) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
-func (msg MsgRawTx) GetSigners() []sdk.AccAddress {
+func (msg MsgSignTx) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }

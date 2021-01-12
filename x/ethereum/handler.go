@@ -8,14 +8,16 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Signer) sdk.Handler {
+func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Signer, snap snapshot.Snapshotter) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
@@ -23,10 +25,8 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 			return handleMsgVerifyTx(ctx, k, rpc, v, msg)
 		case *types.MsgVoteVerifiedTx:
 			return handleMsgVoteVerifiedTx(ctx, k, v, msg)
-		case types.MsgRawTx:
-			return handleMsgRawTx(ctx, k, msg)
-		case types.MsgSendTx:
-			return handleMsgSendTx(ctx, k, rpc, s, msg)
+		case types.MsgSignTx:
+			return handleMsgSignTx(ctx, k, s, snap, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
@@ -109,7 +109,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, ms
 	return &sdk.Result{}, nil
 }
 
-func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, msg types.MsgRawTx) (*sdk.Result, error) {
+func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap snapshot.Snapshotter, msg types.MsgSignTx) (*sdk.Result, error) {
 	txID := msg.Tx.Hash().String()
 	k.SetRawTx(ctx, txID, msg.Tx)
 	k.Logger(ctx).Info(fmt.Sprintf("storing raw tx %s", txID))
@@ -118,8 +118,7 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, msg types.MsgRawTx) (*sdk.
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
 
-	json := k.Codec().MustMarshalJSON(hash)
-	k.Logger(ctx).Info(fmt.Sprintf("ethereum tx [%s] to sign: %s", txID, json))
+	k.Logger(ctx).Info(fmt.Sprintf("ethereum tx [%s] to sign: %s", txID, k.Codec().MustMarshalJSON(hash)))
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
@@ -129,41 +128,27 @@ func handleMsgRawTx(ctx sdk.Context, k keeper.Keeper, msg types.MsgRawTx) (*sdk.
 		),
 	)
 
+	keyID, ok := signer.GetCurrentMasterKeyID(ctx, balance.Bitcoin)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no master key for chain %s found", balance.Bitcoin)
+	}
+
+	s, ok := snap.GetLatestSnapshot(ctx)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, "no snapshot found")
+	}
+	err = signer.StartSign(ctx, keyID, hash.String(), hash.Bytes(), s.Validators)
+	if err != nil {
+		if !ok {
+			return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		}
+	}
+
 	return &sdk.Result{
-		Data:   json,
-		Log:    fmt.Sprintf("successfully created withdraw transaction for Ethereum. Hash to sign: %s", json),
+		Data:   []byte(txID),
+		Log:    fmt.Sprintf("successfully started signing protocol for transaction with ID %s.", txID),
 		Events: ctx.EventManager().Events(),
 	}, nil
-}
-
-func handleMsgSendTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, s types.Signer, msg types.MsgSendTx) (*sdk.Result, error) {
-	pk, ok := s.GetKeyForSigID(ctx, msg.SignatureID)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not find a corresponding key for sig ID %s", msg.SignatureID))
-	}
-
-	sig, ok := s.GetSig(ctx, msg.SignatureID)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not find a corresponding signature for sig ID %s", msg.SignatureID))
-	}
-
-	signedTx, err := k.SignRawTransaction(ctx, msg.TxID, sig, pk)
-	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not insert generated signature: %v", err))
-	}
-
-	err = rpc.SendTransaction(context.Background(), signedTx)
-	if err != nil {
-		k.Logger(ctx).Error(err.Error())
-	}
-
-	json := k.Codec().MustMarshalJSON(signedTx)
-	return &sdk.Result{
-		Data:   json,
-		Log:    fmt.Sprintf("successfully sent transaction %s to Ethereum", json),
-		Events: ctx.EventManager().Events(),
-	}, nil
-
 }
 
 func verifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, expectedTx *ethTypes.Transaction) error {

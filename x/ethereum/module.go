@@ -16,6 +16,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/ethereum/client/cli"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 )
 
 var (
@@ -66,10 +67,11 @@ type AppModule struct {
 	balancer types.Balancer
 	rpc      types.RPCClient
 	signer   types.Signer
+	snap     snapshot.Snapshotter
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, balancer types.Balancer, rpc types.RPCClient) AppModule {
+func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, snap snapshot.Snapshotter, balancer types.Balancer, rpc types.RPCClient) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
@@ -77,6 +79,7 @@ func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, balan
 		signer:         signer,
 		balancer:       balancer,
 		rpc:            rpc,
+		snap:           snap,
 	}
 }
 
@@ -113,7 +116,7 @@ func (AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper, am.rpc, am.voter, am.signer)
+	return NewHandler(am.keeper, am.rpc, am.voter, am.signer, am.snap)
 }
 
 func (AppModule) QuerierRoute() string {

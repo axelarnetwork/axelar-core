@@ -34,7 +34,7 @@ func NewQuerier(k Keeper, s types.Signer, rpc types.RPCClient) sdk.Querier {
 		case QueryRawTx:
 			return createRawTx(ctx, k, s, req.Data)
 		case QuerySendTx:
-			return sendTx(ctx, k, rpc, s, req.Data)
+			return sendTx(ctx, k, rpc, s, path[1])
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown btc-bridge query endpoint: %s", path[1]))
 		}
@@ -87,20 +87,19 @@ func createRawTx(ctx sdk.Context, k Keeper, s types.Signer, data []byte) ([]byte
 	return types.ModuleCdc.MustMarshalJSON(tx), nil
 }
 
-func sendTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, data []byte) ([]byte, error) {
-	var params types.SendParams
-	err := types.ModuleCdc.UnmarshalJSON(data, &params)
+func sendTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, txID string) ([]byte, error) {
+	h, err := k.GetHashToSign(ctx, txID)
 	if err != nil {
 		return nil, err
 	}
-
-	key, ok := s.GetKeyForSigID(ctx, params.SignatureID)
+	sigID := string(h)
+	key, ok := s.GetKeyForSigID(ctx, sigID)
 	if !ok {
-		return nil, fmt.Errorf("could not find a corresponding key for sig ID %s", params.SignatureID)
+		return nil, fmt.Errorf("could not find a corresponding key for tx ID %s", txID)
 	}
 	pk := btcec.PublicKey(key)
 
-	sig, ok := s.GetSig(ctx, params.SignatureID)
+	sig, ok := s.GetSig(ctx, sigID)
 	if !ok {
 		return nil, fmt.Errorf("signature not found")
 	}
@@ -109,7 +108,7 @@ func sendTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, data
 		S: sig.S,
 	}
 
-	tx, err := k.AssembleBtcTx(ctx, params.TxID, pk, btcSig)
+	tx, err := k.AssembleBtcTx(ctx, txID, pk, btcSig)
 	if err != nil {
 		return nil, err
 	}

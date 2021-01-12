@@ -44,7 +44,7 @@ func TestVerifyTx_Deploy_HashNotFound(t *testing.T) {
 		return nil, false, fmt.Errorf("wrong hash")
 	}
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, createSnapshotter())
 
 	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
 
@@ -65,7 +65,7 @@ func TestVerifyTx_Deploy_WithoutData(t *testing.T) {
 		return ethTypes.NewContractCreation(signedTx.Nonce(), signedTx.Value(), signedTx.Gas(), signedTx.GasPrice(), nil), false, nil
 	}
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
 
@@ -86,7 +86,7 @@ func TestVerifyTx_Deploy_Pending(t *testing.T) {
 		return signedTx, true, nil
 	}
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
 
@@ -113,7 +113,7 @@ func TestVerifyTx_Deploy_WrongValue(t *testing.T) {
 		), false, nil
 	}
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
 
@@ -134,7 +134,7 @@ func TestVerifyTx_Deploy_NotConfirmed(t *testing.T) {
 		return signedTx, false, nil
 	}
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
 
@@ -152,7 +152,7 @@ func TestVerifyTx_Deploy_Success(t *testing.T) {
 	k := newKeeper(ctx, minConfHeight)
 	rpc := createBasicRPCMock(signedTx, confCount)
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
 
@@ -173,7 +173,7 @@ func TestVerifyTx_Mint_HashNotFound(t *testing.T) {
 		return nil, false, fmt.Errorf("wrong hash")
 	}
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
 
@@ -194,7 +194,7 @@ func TestVerifyTx_Mint_WithoutData(t *testing.T) {
 		return ethTypes.NewContractCreation(signedTx.Nonce(), signedTx.Value(), signedTx.Gas(), signedTx.GasPrice(), nil), false, nil
 	}
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
 
@@ -215,7 +215,7 @@ func TestVerifyTx_Mint_WrongRecipient(t *testing.T) {
 		return ethTypes.NewContractCreation(signedTx.Nonce(), signedTx.Value(), signedTx.Gas(), signedTx.GasPrice(), nil), false, nil
 	}
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
 
@@ -236,7 +236,7 @@ func TestVerifyTx_Mint_Pending(t *testing.T) {
 		return signedTx, true, nil
 	}
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
 
@@ -263,7 +263,7 @@ func TestVerifyTx_Mint_WrongValue(t *testing.T) {
 		), false, nil
 	}
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
 
@@ -284,7 +284,7 @@ func TestVerifyTx_Mint_NotConfirmed(t *testing.T) {
 		return signedTx, false, nil
 	}
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
 
@@ -302,7 +302,7 @@ func TestVerifyTx_Mint_Success(t *testing.T) {
 	k := newKeeper(ctx, minConfHeight)
 	rpc := createBasicRPCMock(signedTx, confCount)
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
 
@@ -402,4 +402,8 @@ func newKeeper(ctx sdk.Context, confHeight int64) keeper.Keeper {
 	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"), subspace)
 	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(confHeight)})
 	return k
+}
+
+func createSnapshotter() types.Snapshotter {
+	return &ethMock.SnapshotterMock{}
 }

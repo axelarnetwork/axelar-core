@@ -25,7 +25,7 @@ func NewHandler(k keeper.Keeper, s types.Snapshotter, v types.Voter) sdk.Handler
 		case types.MsgKeygenStart:
 			return handleMsgKeygenStart(ctx, k, s, v, msg)
 		case types.MsgSignStart:
-			return handleMsgSignStart(ctx, k, s, v, msg)
+			return handleMsgSignStart(ctx, k, s, msg)
 		case types.MsgAssignNextMasterKey:
 			return handleMsgAssignNextMasterKey(ctx, k, s, msg)
 		case types.MsgRotateMasterKey:
@@ -221,7 +221,7 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func handleMsgSignStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, v types.Voter, msg types.MsgSignStart) (*sdk.Result, error) {
+func handleMsgSignStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, msg types.MsgSignStart) (*sdk.Result, error) {
 	if msg.Mode == types.ModeMasterKey {
 		keyID, ok := k.GetCurrentMasterKeyID(ctx, msg.Chain)
 		if !ok {
@@ -237,17 +237,11 @@ func handleMsgSignStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, v
 	if !ok {
 		return nil, fmt.Errorf("signing failed")
 	}
-	poll := voting.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.SigID}
-	if err := v.InitPoll(ctx, poll); err != nil {
-		return nil, err
-	}
 
-	sigChan, err := k.StartSign(ctx, msg.KeyID, msg.SigID, msg.MsgToSign, snapshot.Validators)
+	err := k.StartSign(ctx, msg.KeyID, msg.SigID, msg.MsgToSign, snapshot.Validators)
 	if err != nil {
 		return nil, err
 	}
-
-	go voteOnSignResult(ctx, k, v, sigChan, poll)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -257,21 +251,6 @@ func handleMsgSignStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, v
 		),
 	)
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
-}
-
-func voteOnSignResult(ctx sdk.Context, k keeper.Keeper, v types.Voter, sigChan <-chan exported.Signature, poll voting.PollMeta) {
-	sig, ok := <-sigChan
-	if ok {
-		bz, err := convert.SigToBytes(sig.R.Bytes(), sig.S.Bytes())
-		if err != nil {
-			k.Logger(ctx).Error(err.Error())
-			return
-		}
-		if err := v.RecordVote(ctx, &types.MsgVoteSig{PollMeta: poll, SigBytes: bz}); err != nil {
-			k.Logger(ctx).Error(err.Error())
-			return
-		}
-	}
 }
 
 func handleMsgSignTraffic(ctx sdk.Context, k keeper.Keeper, msg types.MsgSignTraffic) (*sdk.Result, error) {

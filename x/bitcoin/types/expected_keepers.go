@@ -22,7 +22,7 @@ type Snapshotter interface {
 }
 
 type Signer interface {
-	StartSign(ctx sdk.Context, keyID string, sigID string, msg []byte, validators []snapshot.Validator) (<-chan tss.Signature, error)
+	StartSign(ctx sdk.Context, keyID string, sigID string, msg []byte, validators []snapshot.Validator) error
 	GetCurrentMasterKeyID(ctx sdk.Context, chain exported.Chain) (string, bool)
 	GetSig(ctx sdk.Context, sigID string) (tss.Signature, bool)
 	GetKey(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool)

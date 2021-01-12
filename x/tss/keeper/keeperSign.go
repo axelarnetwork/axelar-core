@@ -13,12 +13,18 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
+	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-// StartMasterKeySign starts a tss signing protocol using the specified key for the given chain.
-func (k Keeper) StartSign(ctx sdk.Context, keyID string, sigID string, msg []byte, validators []snapshot.Validator) (<-chan exported.Signature, error) {
+// StartSign starts a tss signing protocol using the specified key for the given chain.
+func (k Keeper) StartSign(ctx sdk.Context, keyID string, sigID string, msg []byte, validators []snapshot.Validator) error {
 	if _, ok := k.signStreams[sigID]; ok {
-		return nil, fmt.Errorf("signing protocol for ID %s already in progress", sigID)
+		return fmt.Errorf("signing protocol for ID %s already in progress", sigID)
+	}
+
+	poll := voting.PollMeta{Module: types.ModuleName, Type: "sign", ID: sigID}
+	if err := k.voter.InitPoll(ctx, poll); err != nil {
+		return err
 	}
 
 	k.Logger(ctx).Info(fmt.Sprintf("new Sign: sig_id [%s] key_id [%s] message [%s]", sigID, keyID, string(msg)))
@@ -27,7 +33,7 @@ func (k Keeper) StartSign(ctx sdk.Context, keyID string, sigID string, msg []byt
 
 	// sign cannot proceed unless all validators have registered broadcast proxies
 	if err := k.checkProxies(ctx, validators); err != nil {
-		return nil, err
+		return err
 	}
 
 	/*
@@ -36,16 +42,16 @@ func (k Keeper) StartSign(ctx sdk.Context, keyID string, sigID string, msg []byt
 	*/
 
 	if _, ok := k.getKeyIDForSig(ctx, sigID); ok {
-		return nil, fmt.Errorf("sigID %s has been used before", sigID)
+		return fmt.Errorf("sigID %s has been used before", sigID)
 	}
 	k.setKeyIDForSig(ctx, sigID, keyID)
 
-	sigChan := make(chan exported.Signature)
+	voteChan := make(chan voting.MsgVote)
 
 	stream, signInit := k.prepareSign(ctx, keyID, sigID, msg, validators)
 	if stream == nil || signInit == nil {
-		close(sigChan)
-		return sigChan, nil // don't propagate nondeterministic errors
+		close(voteChan)
+		return nil // don't propagate nondeterministic errors
 	}
 	k.signStreams[sigID] = stream
 
@@ -74,18 +80,17 @@ func (k Keeper) StartSign(ctx sdk.Context, keyID string, sigID string, msg []byt
 
 	// handle result
 	go func() {
-		defer close(sigChan)
-		bz := <-resChan
-		r, s, err := convert.BytesToSig(bz)
-		if err != nil {
-			k.Logger(ctx).Error(sdkerrors.Wrap(err, "handler goroutine: failure to deserialize sig").Error())
-			return
+		defer close(voteChan)
+		sig, ok := <-resChan
+		k.Logger(ctx).Info("handler goroutine: received sig from server!")
+		if ok {
+			err := k.voter.RecordVote(ctx, &types.MsgVoteSig{PollMeta: poll, SigBytes: sig})
+			if err != nil {
+				k.Logger(ctx).Error(err.Error())
+			}
 		}
-
-		sigChan <- exported.Signature{R: r, S: s}
-		k.Logger(ctx).Info(fmt.Sprintf("handler goroutine: received sig from server! [%s], [%s]", r, s))
 	}()
-	return sigChan, nil
+	return nil
 }
 
 // SignMsg takes a types.MsgSignTraffic from the chain and relays it to the keygen protocol

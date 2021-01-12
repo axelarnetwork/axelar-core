@@ -172,7 +172,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 	}
 }
 
-func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, snapshotter types.Snapshotter, msg types.MsgSignTx) (*sdk.Result, error) {
+func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap types.Snapshotter, msg types.MsgSignTx) (*sdk.Result, error) {
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
@@ -197,21 +197,22 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, s types.Signer, snapshott
 	}
 	k.Logger(ctx).Info(fmt.Sprintf("bitcoin tx to sign: %s", k.Codec().MustMarshalJSON(hash)))
 
-	snap, ok := snapshotter.GetLatestSnapshot(ctx)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrBitcoin, "no snapshot found")
-	}
-	keyID, ok := s.GetCurrentMasterKeyID(ctx, balance.Bitcoin)
+	keyID, ok := signer.GetCurrentMasterKeyID(ctx, balance.Bitcoin)
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrBitcoin, "no master key for chain %s found", balance.Bitcoin)
 	}
 
-	_, err = s.StartSign(ctx, keyID, string(hash), hash, snap.Validators)
+	s, ok := snap.GetLatestSnapshot(ctx)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, "no snapshot found")
+	}
+	err = signer.StartSign(ctx, keyID, string(hash), hash, s.Validators)
 	if err != nil {
 		if !ok {
 			return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 		}
 	}
+
 	return &sdk.Result{
 		Data:   hash,
 		Log:    fmt.Sprintf("successfully started signing protocol for transaction that spends %s.", msg.TxID),

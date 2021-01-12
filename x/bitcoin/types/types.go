@@ -79,11 +79,6 @@ func (n Network) Params() *chaincfg.Params {
 	}
 }
 
-type SendParams struct {
-	SignatureID string
-	TxID        string
-}
-
 type RawParams struct {
 	Recipient string
 	TxID      string

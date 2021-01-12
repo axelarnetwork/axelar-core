@@ -15,12 +15,12 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 	keyID := "keyID1"
 	msgToSign := []byte("message")
 
-	_, err := s.Keeper.StartSign(s.Ctx, keyID, sigID, msgToSign, validators)
+	err := s.Keeper.StartSign(s.Ctx, keyID, sigID, msgToSign, validators)
 	assert.NoError(t, err)
 
 	keyID = "keyID2"
 	msgToSign = []byte("second message")
-	_, err = s.Keeper.StartSign(s.Ctx, keyID, sigID, msgToSign, validators)
+	err = s.Keeper.StartSign(s.Ctx, keyID, sigID, msgToSign, validators)
 	assert.Error(t, err)
 }
 
