@@ -24,8 +24,6 @@ func NewHandler(k keeper.Keeper, s types.Snapshotter, v types.Voter) sdk.Handler
 			return handleMsgSignTraffic(ctx, k, msg)
 		case types.MsgKeygenStart:
 			return handleMsgKeygenStart(ctx, k, s, v, msg)
-		case types.MsgSignStart:
-			return handleMsgSignStart(ctx, k, s, msg)
 		case types.MsgAssignNextMasterKey:
 			return handleMsgAssignNextMasterKey(ctx, k, s, msg)
 		case types.MsgRotateMasterKey:
@@ -211,38 +209,6 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 			}
 		}
 	}()
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-		),
-	)
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
-}
-
-func handleMsgSignStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, msg types.MsgSignStart) (*sdk.Result, error) {
-	if msg.Mode == types.ModeMasterKey {
-		keyID, ok := k.GetCurrentMasterKeyID(ctx, msg.Chain)
-		if !ok {
-			return nil, fmt.Errorf("master key for chain %s not set", msg.Chain)
-		}
-		msg.KeyID = keyID
-	}
-	round, ok := k.GetSnapshotRoundForKeyID(ctx, msg.KeyID)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrTss, fmt.Sprintf("unknown key ID"))
-	}
-	snapshot, ok := s.GetSnapshot(ctx, round)
-	if !ok {
-		return nil, fmt.Errorf("signing failed")
-	}
-
-	err := k.StartSign(ctx, msg.KeyID, msg.SigID, msg.MsgToSign, snapshot.Validators)
-	if err != nil {
-		return nil, err
-	}
-
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
