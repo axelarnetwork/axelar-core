@@ -18,9 +18,6 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
-      - name: Install moq
-        run: go get github.com/matryer/moq
-
       - name: Install SSH key
         uses: shimataro/ssh-key-action@v2
         with:
@@ -30,10 +27,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Check generated code up-to-date
+      - name: Install moq
         run: |
           git config --global url."git@github.com:axelarnetwork".insteadOf https://github.com/axelarnetwork
+          go get github.com/matryer/moq
 
+      - name: Check generated code up-to-date
+        run: |
           go generate -x ./...
 
           if [ -n "$(git status --porcelain)" ]; then
