@@ -12,12 +12,12 @@ import (
 
 type MsgTransfer struct {
 	Sender      sdk.AccAddress
-	BTCAddress  BtcAddress
+	BTCAddress  btcutil.Address
 	Destination exported.CrossChainAddress
 	Amount      btcutil.Amount
 }
 
-func NewMsgTransfer(sender sdk.AccAddress, btcAddress BtcAddress, destination exported.CrossChainAddress) sdk.Msg {
+func NewMsgTransfer(sender sdk.AccAddress, btcAddress btcutil.Address, destination exported.CrossChainAddress) sdk.Msg {
 	return MsgTransfer{
 		Sender:      sender,
 		BTCAddress:  btcAddress,
@@ -42,8 +42,8 @@ func (msg MsgTransfer) ValidateBasic() error {
 	if err := msg.Destination.Validate(); err != nil {
 		return err
 	}
-	if err := msg.BTCAddress.Validate(); err != nil {
-		return err
+	if msg.BTCAddress.String() == "" {
+		return fmt.Errorf("invalid address to track")
 	}
 	return nil
 }

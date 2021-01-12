@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
@@ -20,7 +19,6 @@ import (
 
 func TestQuerier_TxInfo(t *testing.T) {
 	for i := 0; i < 100; i++ {
-		recipient := testutils.RandString(int(testutils.RandIntBetween(5, 20)))
 		var bz []byte
 		for _, b := range testutils.RandIntsBetween(0, 256).Take(chainhash.HashSize) {
 			bz = append(bz, byte(b))
@@ -33,7 +31,7 @@ func TestQuerier_TxInfo(t *testing.T) {
 				Index: uint32(testutils.RandIntBetween(0, 100)),
 			},
 			Amount:        btcutil.Amount(testutils.RandIntBetween(0, 100000000)),
-			Recipient:     types.BtcAddress{Network: types.Network(chaincfg.MainNetParams.Name), EncodedString: recipient},
+			Recipient:     testutils.RandStrings(5, 20).Take(1)[0],
 			Confirmations: uint64(testutils.RandIntBetween(0, 10000)),
 		}
 

@@ -5,35 +5,18 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/ethereum/go-ethereum/common"
+	ethTypes "github.com/ethereum/go-ethereum/core/types"
 )
 
 type MsgRawTx struct {
-	Sender      sdk.AccAddress
-	TXType      TXType
-	Amount      sdk.Int
-	Destination common.Address
-	Network     Network
-	ContractID  string
+	Sender sdk.AccAddress
+	Tx     *ethTypes.Transaction
 }
 
-func NewMsgRawTxForMint(sender sdk.AccAddress, network Network, contractID string, amount sdk.Int, destination common.Address) sdk.Msg {
+func NewMsgRawTx(sender sdk.AccAddress, tx *ethTypes.Transaction) sdk.Msg {
 	return MsgRawTx{
-		Sender:      sender,
-		Network:     network,
-		Amount:      amount,
-		Destination: destination,
-		ContractID:  contractID,
-		TXType:      TypeERC20mint,
-	}
-}
-
-func NewMsgRawTxForDeploy(sender sdk.AccAddress, network Network, contractID string) sdk.Msg {
-	return MsgRawTx{
-		Sender:     sender,
-		Network:    network,
-		ContractID: contractID,
-		TXType:     TypeSCDeploy,
+		Sender: sender,
+		Tx:     tx,
 	}
 }
 
@@ -49,21 +32,17 @@ func (msg MsgRawTx) ValidateBasic() error {
 	if msg.Sender.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
-	if err := msg.Network.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid network")
+	if msg.Tx == nil {
+		return fmt.Errorf("missing tx")
 	}
-	if msg.ContractID == "" {
-		return fmt.Errorf("missing contract ID")
+	if msg.Tx.Data() == nil {
+		return fmt.Errorf("missing smart contract call data")
 	}
-
-	switch msg.TXType {
-	case TypeERC20mint:
-		if msg.Amount.Int64() <= 0 {
-			return fmt.Errorf("transaction amount must be greater than zero")
-		}
-	case TypeSCDeploy:
-	default:
-		return fmt.Errorf("wrong tx type")
+	if msg.Tx.To() == nil {
+		return fmt.Errorf("missing recipient")
+	}
+	if msg.Tx.GasPrice() == nil {
+		return fmt.Errorf("missing gas price")
 	}
 	return nil
 }

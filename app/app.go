@@ -198,6 +198,8 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	distrSubspace := app.paramsKeeper.Subspace(distr.DefaultParamspace)
 	slashingSubspace := app.paramsKeeper.Subspace(slashing.DefaultParamspace)
 	tssSubspace := app.paramsKeeper.Subspace(tssTypes.DefaultParamspace)
+	btcSubspace := app.paramsKeeper.Subspace(btcTypes.DefaultParamspace)
+	ethSubspace := app.paramsKeeper.Subspace(ethTypes.DefaultParamspace)
 
 	// The AccountKeeper handles address -> account lookups
 	app.accountKeeper = auth.NewAccountKeeper(
@@ -256,9 +258,9 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 			app.slashingKeeper.Hooks()),
 	)
 
-	app.btcKeeper = btcKeeper.NewBtcKeeper(app.cdc, keys[btcTypes.StoreKey])
+	app.btcKeeper = btcKeeper.NewBtcKeeper(app.cdc, keys[btcTypes.StoreKey], btcSubspace)
 
-	app.ethKeeper = ethKeeper.NewEthKeeper(app.cdc, keys[ethTypes.StoreKey])
+	app.ethKeeper = ethKeeper.NewEthKeeper(app.cdc, keys[ethTypes.StoreKey], ethSubspace)
 
 	app.snapKeeper = snapKeeper.NewKeeper(app.cdc, keys[snapTypes.StoreKey], app.stakingKeeper)
 
@@ -318,19 +320,20 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	logger.Debug("Successfully connected to ethereum node")
 
 	// Enable running a node with or without a Bitcoin bridge
-	var rpcBTC *btcTypes.RPCClientImpl
+	var rpcBTC btcTypes.RPCClient
 	var btcModule bitcoin.AppModule
 	if axelarCfg.WithBtcBridge {
-		rpcBTC, err = btcTypes.NewRPCClient(axelarCfg.BtcConfig, logger)
+		rpc, err := btcTypes.NewRPCClient(axelarCfg.BtcConfig, logger)
 		if err != nil {
 			tmos.Exit(err.Error())
 		}
 		// BTC bridge opens a grpc connection. Clean it up on process shutdown
-		tmos.TrapSignal(logger, rpcBTC.Shutdown)
-		btcModule = bitcoin.NewAppModule(app.btcKeeper, app.votingKeeper, app.tssKeeper, rpcBTC)
+		tmos.TrapSignal(logger, rpc.Shutdown)
+		rpcBTC = rpc
 	} else {
-		btcModule = bitcoin.NewDummyAppModule(app.btcKeeper, app.votingKeeper)
+		rpcBTC = btcTypes.DummyClient{}
 	}
+	btcModule = bitcoin.NewAppModule(app.btcKeeper, app.votingKeeper, app.tssKeeper, app.snapKeeper, rpcBTC)
 
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.

@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	tssd "github.com/axelarnetwork/tssd/pb"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -12,19 +11,16 @@ import (
 
 func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 	s := setup(t)
-	msg := types.MsgSignStart{
-		Sender:    sdk.AccAddress(s.Broadcaster.LocalPrincipal),
-		SigID:     "sigID",
-		KeyID:     "keyID1",
-		MsgToSign: []byte("message"),
-	}
+	sigID := "sigID"
+	keyID := "keyID1"
+	msgToSign := []byte("message")
 
-	_, err := s.Keeper.StartSign(s.Ctx, msg, validators)
+	_, err := s.Keeper.StartSign(s.Ctx, keyID, sigID, msgToSign, validators)
 	assert.NoError(t, err)
 
-	msg.KeyID = "keyID2"
-	msg.MsgToSign = []byte("second message")
-	_, err = s.Keeper.StartSign(s.Ctx, msg, validators)
+	keyID = "keyID2"
+	msgToSign = []byte("second message")
+	_, err = s.Keeper.StartSign(s.Ctx, keyID, sigID, msgToSign, validators)
 	assert.Error(t, err)
 }
 

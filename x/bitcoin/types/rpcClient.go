@@ -152,10 +152,6 @@ func (r *RPCClientImpl) GetOutPointInfo(out *wire.OutPoint) (OutPointInfo, error
 	if len(vout.ScriptPubKey.Addresses) != 1 {
 		return OutPointInfo{}, fmt.Errorf("deposit must be only spendable by a single address")
 	}
-	recipient, err := ParseBtcAddress(vout.ScriptPubKey.Addresses[0], r.network)
-	if err != nil {
-		return OutPointInfo{}, err
-	}
 
 	amount, err := btcutil.NewAmount(vout.Value)
 	if err != nil {
@@ -169,7 +165,25 @@ func (r *RPCClientImpl) GetOutPointInfo(out *wire.OutPoint) (OutPointInfo, error
 	return OutPointInfo{
 		OutPoint:      out,
 		Amount:        amount,
-		Recipient:     recipient,
+		Recipient:     vout.ScriptPubKey.Addresses[0],
 		Confirmations: tx.Confirmations,
 	}, nil
+}
+
+type DummyClient struct{}
+
+func (d DummyClient) ImportAddressRescan(string, string, bool) error {
+	return fmt.Errorf("no response")
+}
+
+func (d DummyClient) GetOutPointInfo(*wire.OutPoint) (OutPointInfo, error) {
+	return OutPointInfo{}, fmt.Errorf("no response")
+}
+
+func (d DummyClient) SendRawTransaction(*wire.MsgTx, bool) (*chainhash.Hash, error) {
+	return nil, fmt.Errorf("no response")
+}
+
+func (d DummyClient) Network() Network {
+	return DefaultParams().Network
 }

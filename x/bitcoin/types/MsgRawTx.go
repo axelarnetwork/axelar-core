@@ -8,16 +8,16 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// MsgRawTx  is a message struct to make a new raw transaction known to the blockchain
-type MsgRawTx struct {
+// MsgSignTx  is a message struct to make a new raw transaction known to the blockchain
+type MsgSignTx struct {
 	Sender sdk.AccAddress
 	TxID   string
 	RawTx  *wire.MsgTx
 }
 
-// NewMsgRawTx creates a new MsgRawTx
-func NewMsgRawTx(sender sdk.AccAddress, txID string, rawTx *wire.MsgTx) MsgRawTx {
-	return MsgRawTx{
+// NewMsgRawTx creates a new MsgSignTx
+func NewMsgRawTx(sender sdk.AccAddress, txID string, rawTx *wire.MsgTx) MsgSignTx {
+	return MsgSignTx{
 		Sender: sender,
 		TxID:   txID,
 		RawTx:  rawTx,
@@ -25,17 +25,17 @@ func NewMsgRawTx(sender sdk.AccAddress, txID string, rawTx *wire.MsgTx) MsgRawTx
 }
 
 // Route returns the module route
-func (msg MsgRawTx) Route() string {
+func (msg MsgSignTx) Route() string {
 	return RouterKey
 }
 
 // Type returns the type of the message
-func (msg MsgRawTx) Type() string {
+func (msg MsgSignTx) Type() string {
 	return "RawTx"
 }
 
 // ValidateBasic performs a stateless check of the message content
-func (msg MsgRawTx) ValidateBasic() error {
+func (msg MsgSignTx) ValidateBasic() error {
 	if msg.Sender.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
@@ -56,12 +56,12 @@ func (msg MsgRawTx) ValidateBasic() error {
 }
 
 // GetSignBytes returns the serialization of the message
-func (msg MsgRawTx) GetSignBytes() []byte {
+func (msg MsgSignTx) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
 // GetSigners returns the signer of the message
-func (msg MsgRawTx) GetSigners() []sdk.AccAddress {
+func (msg MsgSignTx) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }

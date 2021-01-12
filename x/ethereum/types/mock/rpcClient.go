@@ -5,23 +5,23 @@ package mock
 
 import (
 	"context"
-	ethereumtypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
-	coretypes "github.com/ethereum/go-ethereum/core/types"
+	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"math/big"
 	"sync"
 )
 
-// Ensure, that RPCClientMock does implement ethereumtypes.RPCClient.
+// Ensure, that RPCClientMock does implement types.RPCClient.
 // If this is not the case, regenerate this file with moq.
-var _ ethereumtypes.RPCClient = &RPCClientMock{}
+var _ types.RPCClient = &RPCClientMock{}
 
-// RPCClientMock is a mock implementation of ethereumtypes.RPCClient.
+// RPCClientMock is a mock implementation of types.RPCClient.
 //
 //     func TestSomethingThatUsesRPCClient(t *testing.T) {
 //
-//         // make and configure a mocked ethereumtypes.RPCClient
+//         // make and configure a mocked types.RPCClient
 //         mockedRPCClient := &RPCClientMock{
 //             BlockNumberFunc: func(ctx context.Context) (uint64, error) {
 // 	               panic("mock out the BlockNumber method")
@@ -35,21 +35,21 @@ var _ ethereumtypes.RPCClient = &RPCClientMock{}
 //             PendingNonceAtFunc: func(ctx context.Context, account common.Address) (uint64, error) {
 // 	               panic("mock out the PendingNonceAt method")
 //             },
-//             SendTransactionFunc: func(ctx context.Context, tx *coretypes.Transaction) error {
+//             SendTransactionFunc: func(ctx context.Context, tx *ethTypes.Transaction) error {
 // 	               panic("mock out the SendTransaction method")
 //             },
 //             SuggestGasPriceFunc: func(ctx context.Context) (*big.Int, error) {
 // 	               panic("mock out the SuggestGasPrice method")
 //             },
-//             TransactionByHashFunc: func(ctx context.Context, hash common.Hash) (*coretypes.Transaction, bool, error) {
+//             TransactionByHashFunc: func(ctx context.Context, hash common.Hash) (*ethTypes.Transaction, bool, error) {
 // 	               panic("mock out the TransactionByHash method")
 //             },
-//             TransactionReceiptFunc: func(ctx context.Context, txHash common.Hash) (*coretypes.Receipt, error) {
+//             TransactionReceiptFunc: func(ctx context.Context, txHash common.Hash) (*ethTypes.Receipt, error) {
 // 	               panic("mock out the TransactionReceipt method")
 //             },
 //         }
 //
-//         // use mockedRPCClient in code that requires ethereumtypes.RPCClient
+//         // use mockedRPCClient in code that requires types.RPCClient
 //         // and then make assertions.
 //
 //     }
@@ -67,16 +67,16 @@ type RPCClientMock struct {
 	PendingNonceAtFunc func(ctx context.Context, account common.Address) (uint64, error)
 
 	// SendTransactionFunc mocks the SendTransaction method.
-	SendTransactionFunc func(ctx context.Context, tx *coretypes.Transaction) error
+	SendTransactionFunc func(ctx context.Context, tx *ethTypes.Transaction) error
 
 	// SuggestGasPriceFunc mocks the SuggestGasPrice method.
 	SuggestGasPriceFunc func(ctx context.Context) (*big.Int, error)
 
 	// TransactionByHashFunc mocks the TransactionByHash method.
-	TransactionByHashFunc func(ctx context.Context, hash common.Hash) (*coretypes.Transaction, bool, error)
+	TransactionByHashFunc func(ctx context.Context, hash common.Hash) (*ethTypes.Transaction, bool, error)
 
 	// TransactionReceiptFunc mocks the TransactionReceipt method.
-	TransactionReceiptFunc func(ctx context.Context, txHash common.Hash) (*coretypes.Receipt, error)
+	TransactionReceiptFunc func(ctx context.Context, txHash common.Hash) (*ethTypes.Receipt, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -109,7 +109,7 @@ type RPCClientMock struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Tx is the tx argument value.
-			Tx *coretypes.Transaction
+			Tx *ethTypes.Transaction
 		}
 		// SuggestGasPrice holds details about calls to the SuggestGasPrice method.
 		SuggestGasPrice []struct {
@@ -274,13 +274,13 @@ func (mock *RPCClientMock) PendingNonceAtCalls() []struct {
 }
 
 // SendTransaction calls SendTransactionFunc.
-func (mock *RPCClientMock) SendTransaction(ctx context.Context, tx *coretypes.Transaction) error {
+func (mock *RPCClientMock) SendTransaction(ctx context.Context, tx *ethTypes.Transaction) error {
 	if mock.SendTransactionFunc == nil {
 		panic("RPCClientMock.SendTransactionFunc: method is nil but RPCClient.SendTransaction was just called")
 	}
 	callInfo := struct {
 		Ctx context.Context
-		Tx  *coretypes.Transaction
+		Tx  *ethTypes.Transaction
 	}{
 		Ctx: ctx,
 		Tx:  tx,
@@ -296,11 +296,11 @@ func (mock *RPCClientMock) SendTransaction(ctx context.Context, tx *coretypes.Tr
 //     len(mockedRPCClient.SendTransactionCalls())
 func (mock *RPCClientMock) SendTransactionCalls() []struct {
 	Ctx context.Context
-	Tx  *coretypes.Transaction
+	Tx  *ethTypes.Transaction
 } {
 	var calls []struct {
 		Ctx context.Context
-		Tx  *coretypes.Transaction
+		Tx  *ethTypes.Transaction
 	}
 	mock.lockSendTransaction.RLock()
 	calls = mock.calls.SendTransaction
@@ -340,7 +340,7 @@ func (mock *RPCClientMock) SuggestGasPriceCalls() []struct {
 }
 
 // TransactionByHash calls TransactionByHashFunc.
-func (mock *RPCClientMock) TransactionByHash(ctx context.Context, hash common.Hash) (*coretypes.Transaction, bool, error) {
+func (mock *RPCClientMock) TransactionByHash(ctx context.Context, hash common.Hash) (*ethTypes.Transaction, bool, error) {
 	if mock.TransactionByHashFunc == nil {
 		panic("RPCClientMock.TransactionByHashFunc: method is nil but RPCClient.TransactionByHash was just called")
 	}
@@ -375,7 +375,7 @@ func (mock *RPCClientMock) TransactionByHashCalls() []struct {
 }
 
 // TransactionReceipt calls TransactionReceiptFunc.
-func (mock *RPCClientMock) TransactionReceipt(ctx context.Context, txHash common.Hash) (*coretypes.Receipt, error) {
+func (mock *RPCClientMock) TransactionReceipt(ctx context.Context, txHash common.Hash) (*ethTypes.Receipt, error) {
 	if mock.TransactionReceiptFunc == nil {
 		panic("RPCClientMock.TransactionReceiptFunc: method is nil but RPCClient.TransactionReceipt was just called")
 	}

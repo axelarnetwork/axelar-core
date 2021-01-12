@@ -2,7 +2,7 @@ package types
 
 const (
 	AttributeModule      = ModuleName
-	AttributetxID        = "txID"
+	AttributeTxID        = "txID"
 	AttributeAmount      = "amount"
 	AttributeDestination = "destination"
 )

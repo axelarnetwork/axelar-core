@@ -242,7 +242,7 @@ func handleMsgSignStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, v
 		return nil, err
 	}
 
-	sigChan, err := k.StartSign(ctx, msg, snapshot.Validators)
+	sigChan, err := k.StartSign(ctx, msg.KeyID, msg.SigID, msg.MsgToSign, snapshot.Validators)
 	if err != nil {
 		return nil, err
 	}

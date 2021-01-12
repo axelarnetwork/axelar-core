@@ -1,6 +1,7 @@
 package types
 
 import (
+	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/codec"
 )
 
@@ -8,9 +9,11 @@ import (
 func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgTrack{}, "bitcoin/MsgTrack", nil)
 	cdc.RegisterConcrete(MsgVerifyTx{}, "bitcoin/VerifyTx", nil)
-	cdc.RegisterConcrete(MsgRawTx{}, "bitcoin/RawTx", nil)
+	cdc.RegisterConcrete(MsgSignTx{}, "bitcoin/RawTx", nil)
 	cdc.RegisterConcrete(MsgSendTx{}, "bitcoin/Withdraw", nil)
 	cdc.RegisterConcrete(&MsgVoteVerifiedTx{}, "bitcoin/MsgVoteVerifiedTx", nil)
+	cdc.RegisterInterface((*btcutil.Address)(nil), nil)
+	cdc.RegisterConcrete(&btcutil.AddressPubKeyHash{}, "bitcoin/pkhash", nil)
 }
 
 // ModuleCdc defines the module codec

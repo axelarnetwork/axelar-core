@@ -64,25 +64,18 @@ type AppModule struct {
 	rpc      types.RPCClient
 	signer   types.Signer
 	balancer types.Balancer
-}
-
-// Used for testing without bridge
-func NewDummyAppModule(k keeper.Keeper, voter types.Voter) AppModule {
-	return AppModule{
-		AppModuleBasic: AppModuleBasic{},
-		keeper:         k,
-		voter:          voter,
-	}
+	snap     types.Snapshotter
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, rpc types.RPCClient) AppModule {
+func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, snapshotter types.Snapshotter, rpc types.RPCClient) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
 		voter:          voter,
 		signer:         signer,
 		rpc:            rpc,
+		snap:           snapshotter,
 	}
 }
 
@@ -93,6 +86,7 @@ func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {
 func (am AppModule) InitGenesis(ctx sdk.Context, message json.RawMessage) []abci.ValidatorUpdate {
 	var genesisState types.GenesisState
 	types.ModuleCdc.MustUnmarshalJSON(message, &genesisState)
+
 	InitGenesis(ctx, am.keeper, genesisState)
 	return []abci.ValidatorUpdate{}
 }
@@ -107,10 +101,7 @@ func (AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	if am.rpc == nil {
-		return NewDummyHandler(am.keeper, am.voter)
-	}
-	return NewHandler(am.keeper, am.voter, am.rpc, am.signer, am.balancer)
+	return NewHandler(am.keeper, am.voter, am.rpc, am.signer, am.snap, am.balancer)
 }
 
 func (AppModule) QuerierRoute() string {

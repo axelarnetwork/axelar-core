@@ -1,17 +1,14 @@
 package tests
 
 import (
-	"crypto/ecdsa"
-	"crypto/rand"
 	"testing"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -49,7 +46,6 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 	for i := 0; i < txCount; i++ {
 		hash := createHash()
 		hashes = append(hashes, hash)
-		recipient := createAddress()
 		amount := testutils.RandIntBetween(0, 100000)
 		confirmations := uint64(testutils.RandIntBetween(7, 10000))
 		// deposit tx
@@ -58,11 +54,8 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 				Hash:  *hash,
 				Index: 0,
 			},
-			Amount: btcutil.Amount(amount),
-			Recipient: btcTypes.BtcAddress{
-				Network:       btcTypes.Network(chaincfg.MainNetParams.Name),
-				EncodedString: recipient.EncodeAddress(),
-			},
+			Amount:        btcutil.Amount(amount),
+			Recipient:     testutils.RandString(int(testutils.RandIntBetween(5, 20))),
 			Confirmations: confirmations,
 		}
 		txs[hash.String()] = info
@@ -123,26 +116,13 @@ func allTxVoteCompleted(nodes []fake.Node, btcKeeper []btcKeeper.Keeper, hashes 
 	allConfirmed := true
 	for i, k := range btcKeeper {
 		for _, hash := range hashes {
-			if _, ok := k.GetVerifiedOutPoint(nodes[i].Ctx, hash.String()); !ok {
+			if ok := k.HasVerifiedOutPoint(nodes[i].Ctx, hash.String()); !ok {
 				allConfirmed = false
 				break
 			}
 		}
 	}
 	return allConfirmed
-}
-
-func createAddress() btcutil.Address {
-	sk, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
-	if err != nil {
-		panic(err)
-	}
-	pk := btcec.PublicKey(sk.PublicKey)
-	addr, err := btcutil.NewAddressPubKeyHash(btcutil.Hash160(pk.SerializeCompressed()), &chaincfg.MainNetParams)
-	if err != nil {
-		panic(err)
-	}
-	return addr
 }
 
 func createHash() *chainhash.Hash {
@@ -172,12 +152,15 @@ func newNodeForVote(moniker string, broadcaster bcExported.Broadcaster, staker v
 	r := fake.NewRouter()
 	vH := vote.NewHandler()
 
-	btcK := btcKeeper.NewBtcKeeper(testutils.Codec(), sdk.NewKVStoreKey(btcTypes.StoreKey))
+	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
+	btcK := btcKeeper.NewBtcKeeper(testutils.Codec(), sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)
+	btcK.SetParams(ctx, btcTypes.DefaultParams())
+
 	// We use a fake for the bitcoin rpc client so we can control the responses from the "bitcoin" network
 	btcH := bitcoin.NewHandler(btcK, vK, &btcMock.RPCClientMock{
 		GetOutPointInfoFunc: func(out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
 			return txs[out.Hash.String()], nil
-		}}, nil, &btcMock.BalancerMock{
+		}}, nil, nil, &btcMock.BalancerMock{
 		GetRecipientFunc: func(ctx sdk.Context, sender balance.CrossChainAddress) (balance.CrossChainAddress, bool) {
 			return balance.CrossChainAddress{}, false
 		},

@@ -5,7 +5,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"fmt"
-	"strconv"
 	"testing"
 	"time"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -34,8 +34,10 @@ const testReps = 100
 
 func TestTrackAddress(t *testing.T) {
 	cdc := testutils.Codec()
-	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"))
+	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
+	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	k.SetParams(ctx, types.DefaultParams())
 	timeout, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 	rpc := btcMock.RPCClientMock{ImportAddressRescanFunc: func(address string, _ string, rescan bool) error {
 		cancel()
@@ -48,24 +50,23 @@ func TestTrackAddress(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	expectedAddress, err := types.ParseBtcAddress(addr.EncodeAddress(), types.Network(chaincfg.MainNetParams.Name))
-	if err != nil {
-		panic(err)
-	}
 
-	handler := NewHandler(k, &btcMock.VoterMock{}, &rpc, &btcMock.SignerMock{}, &btcMock.BalancerMock{})
-	_, err = handler(ctx, types.NewMsgTrackAddress(sdk.AccAddress("sender"), expectedAddress, false))
+	handler := NewHandler(k, &btcMock.VoterMock{}, &rpc, &btcMock.SignerMock{}, &btcMock.SnapshotterMock{}, &btcMock.BalancerMock{})
+	_, err = handler(ctx, types.NewMsgTrackAddress(sdk.AccAddress("sender"), addr, false))
 
 	<-timeout.Done()
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(rpc.ImportAddressRescanCalls()))
 	assert.False(t, rpc.ImportAddressRescanCalls()[0].Rescan)
-	assert.Equal(t, expectedAddress.String(), rpc.ImportAddressRescanCalls()[0].Address)
+	assert.Equal(t, addr.String(), rpc.ImportAddressRescanCalls()[0].Address)
 }
 
 func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 	cdc := testutils.Codec()
-	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"))
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
+	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
+	k.SetParams(ctx, types.DefaultParams())
 	rpc := btcMock.RPCClientMock{
 		GetOutPointInfoFunc: func(out *wire.OutPoint) (types.OutPointInfo, error) {
 			return types.OutPointInfo{}, fmt.Errorf("not found")
@@ -78,19 +79,17 @@ func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 	}
 
 	hash, _ := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
-	recipient, _ := types.ParseBtcAddress("bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq", "mainnet")
 	info := types.OutPointInfo{
 		OutPoint:      wire.NewOutPoint(hash, 0),
 		Amount:        10,
-		Recipient:     recipient,
+		Recipient:     "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
 		Confirmations: 7,
 	}
 	if err := info.Validate(); err != nil {
 		panic(err)
 	}
 
-	handler := NewHandler(k, v, &rpc, &btcMock.SignerMock{}, &btcMock.BalancerMock{})
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	handler := NewHandler(k, v, &rpc, &btcMock.SignerMock{}, &btcMock.SnapshotterMock{}, &btcMock.BalancerMock{})
 
 	_, err := handler(ctx, types.MsgVerifyTx{Sender: sdk.AccAddress("sender"), OutPointInfo: info})
 	assert.Nil(t, err)
@@ -107,14 +106,16 @@ func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 
 func TestVerifyTx_ValidUTXO(t *testing.T) {
 	cdc := testutils.Codec()
-	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"))
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
+	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
+	k.SetParams(ctx, types.DefaultParams())
 
 	hash, _ := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
-	recipient, _ := types.ParseBtcAddress("bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq", "mainnet")
 	info := types.OutPointInfo{
 		OutPoint:      wire.NewOutPoint(hash, 0),
 		Amount:        10,
-		Recipient:     recipient,
+		Recipient:     "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
 		Confirmations: 7,
 	}
 	if err := info.Validate(); err != nil {
@@ -138,8 +139,7 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 			return nil
 		},
 	}
-	handler := NewHandler(k, v, &rpc, &btcMock.SignerMock{}, &btcMock.BalancerMock{})
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	handler := NewHandler(k, v, &rpc, &btcMock.SignerMock{}, &btcMock.SnapshotterMock{}, &btcMock.BalancerMock{})
 
 	_, err := handler(ctx, types.MsgVerifyTx{Sender: sdk.AccAddress("sender"), OutPointInfo: info})
 	assert.Nil(t, err)
@@ -160,7 +160,10 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 
 func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
 	cdc := testutils.Codec()
-	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey(types.StoreKey))
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
+	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
+	k.SetParams(ctx, types.DefaultParams())
 
 	var sk, skNext *ecdsa.PrivateKey
 	var txHash []byte
@@ -200,10 +203,9 @@ func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
 	b := &btcMock.BalancerMock{GetRecipientFunc: func(ctx sdk.Context, sender balance.CrossChainAddress) (balance.CrossChainAddress, bool) {
 		return balance.CrossChainAddress{}, false
 	}}
-	handler := NewHandler(k, v, rpc, signer, b)
+	handler := NewHandler(k, v, rpc, signer, &btcMock.SnapshotterMock{}, b)
 
 	for i := 0; i < testReps; i++ {
-		ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 		sk, _ = ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 		skNext, _ = ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 		sigID = testutils.RandString(int(testutils.RandIntBetween(5, 20)))
@@ -223,7 +225,7 @@ func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
 	}
 }
 
-func prepareMsgTransferToNewMasterKey(ctx sdk.Context, k keeper.Keeper, signer *btcMock.SignerMock, rpc *btcMock.RPCClientMock, sk *ecdsa.PrivateKey, sigID string) (types.MsgRawTx, types.MsgSendTx) {
+func prepareMsgTransferToNewMasterKey(ctx sdk.Context, k keeper.Keeper, signer *btcMock.SignerMock, rpc *btcMock.RPCClientMock, sk *ecdsa.PrivateKey, sigID string) (types.MsgSignTx, types.MsgSendTx) {
 	hash, err := chainhash.NewHash([]byte(testutils.RandString(chainhash.HashSize)))
 	if err != nil {
 		panic(err)
@@ -236,17 +238,24 @@ func prepareMsgTransferToNewMasterKey(ctx sdk.Context, k keeper.Keeper, signer *
 		panic(err)
 	}
 	amount := btcutil.Amount(testutils.RandIntBetween(1, 100000000))
-	k.SetUnverifiedOutpoint(ctx, txID, types.OutPointInfo{
-		OutPoint:  wire.NewOutPoint(hash, uint32(testutils.RandIntBetween(0, 10))),
-		Amount:    amount,
-		Recipient: types.BtcAddress{Network: rpc.Network(), EncodedString: addr.EncodeAddress()},
+	err = k.SetUnverifiedOutpoint(ctx, txID, types.OutPointInfo{
+		OutPoint:      wire.NewOutPoint(hash, uint32(testutils.RandIntBetween(0, 10))),
+		Amount:        amount,
+		Recipient:     addr.EncodeAddress(),
+		Confirmations: uint64(testutils.RandIntBetween(7, 1000)),
 	})
-	_ = k.ProcessVerificationResult(ctx, txID, true)
-
+	if err != nil {
+		panic(err)
+	}
+	err = k.ProcessVerificationResult(ctx, txID, true)
+	if err != nil {
+		panic(err)
+	}
 	sender := sdk.AccAddress(testutils.RandString(int(testutils.RandIntBetween(5, 50))))
 
 	query := keeper.NewQuerier(k, signer, rpc)
-	bz, err := query(ctx, []string{keeper.QueryRawTx, txID, strconv.Itoa(int(amount)) + denom.Sat}, abci.RequestQuery{})
+	qParams := types.RawParams{TxID: txID, Satoshi: sdk.NewInt64Coin(denom.Satoshi, int64(amount))}
+	bz, err := query(ctx, []string{keeper.QueryRawTx}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(qParams)})
 	if err != nil {
 		panic(err)
 	}

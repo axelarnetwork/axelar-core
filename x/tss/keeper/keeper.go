@@ -31,7 +31,7 @@ type Keeper struct {
 	client        tssd.GG18Client
 	keygenStreams map[string]types.Stream
 	signStreams   map[string]types.Stream
-	paramSpace    params.Subspace
+	params        params.Subspace
 	storeKey      sdk.StoreKey
 	cdc           *codec.Codec
 }
@@ -44,7 +44,7 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, client types.TSSDClient,
 		cdc:           cdc,
 		keygenStreams: map[string]types.Stream{},
 		signStreams:   map[string]types.Stream{},
-		paramSpace:    paramSpace.WithKeyTable(types.KeyTable()),
+		params:        paramSpace.WithKeyTable(types.KeyTable()),
 		storeKey:      storeKey,
 	}
 }
@@ -62,13 +62,20 @@ func (k Keeper) newGrpcContext() (context.Context, context.CancelFunc) {
 
 // SetParams sets the tss module's parameters
 func (k Keeper) SetParams(ctx sdk.Context, set types.Params) {
-	k.paramSpace.SetParamSet(ctx, &set)
+	k.params.SetParamSet(ctx, &set)
 }
 
-// SetParams gets the tss module's parameters
+// GetParams gets the tss module's parameters
 func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
-	k.paramSpace.GetParamSet(ctx, &params)
+	k.params.GetParamSet(ctx, &params)
 	return
+}
+
+// getLockingPeriod returns the period of blocks that keygen is locked after a new snapshot has been created
+func (k Keeper) getLockingPeriod(ctx sdk.Context) int64 {
+	var period int64
+	k.params.Get(ctx, types.KeyLockingPeriod, &period)
+	return period
 }
 
 func (k Keeper) prepareTrafficIn(ctx sdk.Context, sender sdk.AccAddress, sessionID string, payload *tssd.TrafficOut) (*tssd.MessageIn, error) {

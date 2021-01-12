@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 
+	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -10,13 +11,12 @@ import (
 type MsgTrack struct {
 	Sender  sdk.AccAddress
 	Mode    Mode
-	Address BtcAddress
+	Address btcutil.Address
 	KeyID   string
-	Chain   Network
 	Rescan  bool
 }
 
-func NewMsgTrackAddress(sender sdk.AccAddress, address BtcAddress, rescan bool) sdk.Msg {
+func NewMsgTrackAddress(sender sdk.AccAddress, address btcutil.Address, rescan bool) sdk.Msg {
 	return MsgTrack{
 		Sender:  sender,
 		Address: address,
@@ -25,20 +25,18 @@ func NewMsgTrackAddress(sender sdk.AccAddress, address BtcAddress, rescan bool) 
 	}
 }
 
-func NewMsgTrackPubKey(sender sdk.AccAddress, chain Network, keyId string, rescan bool) sdk.Msg {
+func NewMsgTrackPubKey(sender sdk.AccAddress, keyId string, rescan bool) sdk.Msg {
 	return MsgTrack{
 		Sender: sender,
 		KeyID:  keyId,
-		Chain:  chain,
 		Rescan: rescan,
 		Mode:   ModeSpecificKey,
 	}
 }
 
-func NewMsgTrackPubKeyWithMasterKey(sender sdk.AccAddress, chain Network, rescan bool) sdk.Msg {
+func NewMsgTrackPubKeyWithMasterKey(sender sdk.AccAddress, rescan bool) sdk.Msg {
 	return MsgTrack{
 		Sender: sender,
-		Chain:  chain,
 		Rescan: rescan,
 		Mode:   ModeCurrentMasterKey,
 	}
@@ -57,18 +55,15 @@ func (msg MsgTrack) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
 	switch msg.Mode {
+	case ModeCurrentMasterKey:
+		// nothing
 	case ModeSpecificKey:
 		if msg.KeyID == "" {
 			return fmt.Errorf("missing public key ID")
 		}
-		fallthrough
-	case ModeCurrentMasterKey:
-		if err := msg.Chain.Validate(); err != nil {
-			return err
-		}
 	case ModeSpecificAddress:
-		if err := msg.Address.Validate(); err != nil {
-			return sdkerrors.Wrap(err, "invalid address to track")
+		if msg.Address.String() == "" {
+			return fmt.Errorf("invalid address to track")
 		}
 	default:
 		return fmt.Errorf("chosen mode not recognized")

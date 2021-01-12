@@ -188,9 +188,7 @@ func TestKeyRotation(t *testing.T) {
 	assert.NoError(t, res.Error)
 
 	// track bitcoin transactions for address derived from master key
-	res = <-chain.Submit(btcTypes.NewMsgTrackPubKeyWithMasterKey(
-		sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
-		mocks.BTC.Network(), false))
+	res = <-chain.Submit(btcTypes.NewMsgTrackPubKeyWithMasterKey(sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress), false))
 	assert.NoError(t, res.Error)
 
 	// simulate deposit to master key address
@@ -210,7 +208,7 @@ func TestKeyRotation(t *testing.T) {
 		panic(err)
 	}
 
-	masterKey1Addr, err := btcTypes.ParseBtcAddress(string(res.Data), mocks.BTC.Network())
+	masterKey1Addr, err := btcutil.DecodeAddress(string(res.Data), mocks.BTC.Network().Params())
 	if err != nil {
 		panic(err)
 	}
@@ -225,7 +223,7 @@ func TestKeyRotation(t *testing.T) {
 			return btcTypes.OutPointInfo{
 				OutPoint:      out,
 				Amount:        amount,
-				Recipient:     masterKey1Addr,
+				Recipient:     masterKey1Addr.EncodeAddress(),
 				Confirmations: confirmations,
 			}, nil
 
@@ -383,7 +381,7 @@ func TestKeyRotation(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	masterKey2Addr, err := btcTypes.ParseBtcAddress(pkHash.String(), mocks.BTC.Network())
+	masterKey2Addr, err := btcutil.DecodeAddress(pkHash.String(), mocks.BTC.Network().Params())
 	if err != nil {
 		panic(err)
 	}
@@ -398,7 +396,7 @@ func TestKeyRotation(t *testing.T) {
 			return btcTypes.OutPointInfo{
 				OutPoint:      out,
 				Amount:        amount,
-				Recipient:     masterKey2Addr,
+				Recipient:     masterKey2Addr.EncodeAddress(),
 				Confirmations: confirmations,
 			}, nil
 		}
@@ -427,8 +425,7 @@ func TestKeyRotation(t *testing.T) {
 	assert.NoError(t, res.Error)
 
 	// track bitcoin transactions for address derived from master key 2
-	res = <-chain.Submit(btcTypes.NewMsgTrackPubKeyWithMasterKey(
-		sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress), mocks.BTC.Network(), false))
+	res = <-chain.Submit(btcTypes.NewMsgTrackPubKeyWithMasterKey(sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress), false))
 	assert.NoError(t, res.Error)
 }
 
@@ -439,11 +436,13 @@ func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *f
 
 	snapKeeper := snapshotKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(snapTypes.StoreKey), mocks.Staker)
 	vKeeper := voteKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(voteTypes.StoreKey), store.NewSubjectiveStore(), snapKeeper, broadcaster)
-	bitKeeper := btcKeeper.NewBtcKeeper(testutils.Codec(), sdk.NewKVStoreKey(btcTypes.StoreKey))
+	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
+	bitKeeper := btcKeeper.NewBtcKeeper(testutils.Codec(), sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)
 	tKeeper := tssKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(tssTypes.StoreKey), mocks.TSSD,
 		params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), tssTypes.DefaultParamspace),
 		broadcaster,
 	)
+	bitKeeper.SetParams(ctx, btcTypes.DefaultParams())
 	balancer := balanceKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(balanceTypes.StoreKey))
 
 	vKeeper.SetVotingInterval(ctx, voteTypes.DefaultGenesisState().VotingInterval)
@@ -453,7 +452,7 @@ func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *f
 	router := fake.NewRouter()
 
 	broadcastHandler := broadcast.NewHandler(broadcaster)
-	btcHandler := bitcoin.NewHandler(bitKeeper, vKeeper, mocks.BTC, tKeeper, balancer)
+	btcHandler := bitcoin.NewHandler(bitKeeper, vKeeper, mocks.BTC, tKeeper, snapKeeper, balancer)
 	snapHandler := snapshot.NewHandler(snapKeeper)
 	tssHandler := tss.NewHandler(tKeeper, snapKeeper, vKeeper)
 	voteHandler := vote.NewHandler()

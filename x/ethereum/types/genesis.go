@@ -1,21 +1,22 @@
 package types
 
 import (
+	"fmt"
+
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/cosmos-sdk/x/gov/types"
 )
 
 type GenesisState struct {
-	ConfirmationHeight uint64
+	Params Params
 }
 
 func DefaultGenesisState() GenesisState {
-	return GenesisState{ConfirmationHeight: 1}
+	return GenesisState{DefaultParams()}
 }
 
 func ValidateGenesis(state GenesisState) error {
-	if state.ConfirmationHeight < 0 {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, "transaction confirmation height must be greater than 0")
+	if err := state.Params.Validate(); err != nil {
+		return sdkerrors.Wrap(err, fmt.Sprintf("genesis state for module %s is invalid", ModuleName))
 	}
 
 	return nil

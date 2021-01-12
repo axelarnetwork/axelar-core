@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -13,7 +13,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/axelarnetwork/axelar-core/utils/denom"
 	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
@@ -22,7 +21,8 @@ const (
 	// QueryOutInfo is the route to query for a transaction's outPoint information
 	QueryOutInfo = "outPointInfo"
 	// QueryRawTx is the route to query for an unsigned raw transaction
-	QueryRawTx = "rawTx"
+	QueryRawTx  = "rawTx"
+	QuerySendTx = "sendTx"
 )
 
 // NewQuerier returns a new querier for the Bitcoin module
@@ -30,21 +30,18 @@ func NewQuerier(k Keeper, s types.Signer, rpc types.RPCClient) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		switch path[0] {
 		case QueryOutInfo:
-			return queryTxInfo(rpc, path[1], path[2])
+			return queryTxOutInfo(rpc, path[1], path[2])
 		case QueryRawTx:
-			if len(path) == 4 {
-				return createRawTx(ctx, k, s, rpc, path[1], path[2], path[3])
-			} else {
-				return createRawTx(ctx, k, s, rpc, path[1], path[2], "")
-			}
-
+			return createRawTx(ctx, k, s, req.Data)
+		case QuerySendTx:
+			return sendTx(ctx, k, rpc, s, req.Data)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown btc-bridge query endpoint: %s", path[1]))
 		}
 	}
 }
 
-func queryTxInfo(rpc types.RPCClient, txID string, voutIdx string) ([]byte, error) {
+func queryTxOutInfo(rpc types.RPCClient, txID string, voutIdx string) ([]byte, error) {
 	v, err := strconv.ParseUint(voutIdx, 10, 32)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "could not parse voutIdx")
@@ -62,34 +59,16 @@ func queryTxInfo(rpc types.RPCClient, txID string, voutIdx string) ([]byte, erro
 	return types.ModuleCdc.MustMarshalJSON(info), nil
 }
 
-func createRawTx(ctx sdk.Context, k Keeper, s types.Signer, rpc types.RPCClient, txID string, amountStr string, recipientAddr string) ([]byte, error) {
-	out, ok := k.GetVerifiedOutPoint(ctx, txID)
-	if !ok {
-		return nil, fmt.Errorf("transaction ID is not known")
+func createRawTx(ctx sdk.Context, k Keeper, s types.Signer, data []byte) ([]byte, error) {
+	var params types.RawParams
+	err := types.ModuleCdc.UnmarshalJSON(data, &params)
+	if err != nil {
+		return nil, err
 	}
 
-	/*
-		Creating a Bitcoin transaction one step at a time:
-			1. Create the transaction message
-			2. Get the output of the deposit transaction and convert it into the transaction input
-			3. Create a new output
-		See https://blog.hlongvu.com/post/t0xx5dejn3-Understanding-btcd-Part-4-Create-and-Sign-a-Bitcoin-transaction-with-btcd
-	*/
-
-	tx := wire.NewMsgTx(wire.TxVersion)
-
-	// The signature script will be set later and we have no witness
-	txIn := wire.NewTxIn(out.OutPoint, nil, nil)
-	tx.AddTxIn(txIn)
-
 	var recipient btcutil.Address
-	var err error
-	if recipientAddr != "" {
-		addr, err := types.ParseBtcAddress(recipientAddr, rpc.Network())
-		if err != nil {
-			return nil, err
-		}
-		recipient, err = addr.Convert()
+	if params.Recipient != "" {
+		recipient, err = btcutil.DecodeAddress(params.Recipient, k.getNetwork(ctx).Params())
 		if err != nil {
 			return nil, err
 		}
@@ -98,19 +77,49 @@ func createRawTx(ctx sdk.Context, k Keeper, s types.Signer, rpc types.RPCClient,
 		if !ok {
 			return nil, sdkerrors.Wrap(types.ErrBitcoin, "next master key not set")
 		}
-		recipient, err = types.PKHashFromKey(pk, rpc.Network())
-	}
-	addrScript, err := txscript.PayToAddrScript(recipient)
-	if err != nil {
-		return nil, sdkerrors.Wrap(err, "could not create pay-to-address script for destination address")
+		recipient, err = k.GetAddress(ctx, btcec.PublicKey(pk))
 	}
 
-	sat, err := denom.ParseSatoshi(amountStr)
+	tx, err := k.CreateTx(ctx, params.TxID, params.Satoshi, recipient)
 	if err != nil {
 		return nil, err
 	}
-	txOut := wire.NewTxOut(sat.Amount.Int64(), addrScript)
-	tx.AddTxOut(txOut)
-
 	return types.ModuleCdc.MustMarshalJSON(tx), nil
+}
+
+func sendTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, data []byte) ([]byte, error) {
+	var params types.SendParams
+	err := types.ModuleCdc.UnmarshalJSON(data, &params)
+	if err != nil {
+		return nil, err
+	}
+
+	key, ok := s.GetKeyForSigID(ctx, params.SignatureID)
+	if !ok {
+		return nil, fmt.Errorf("could not find a corresponding key for sig ID %s", params.SignatureID)
+	}
+	pk := btcec.PublicKey(key)
+
+	sig, ok := s.GetSig(ctx, params.SignatureID)
+	if !ok {
+		return nil, fmt.Errorf("signature not found")
+	}
+	btcSig := btcec.Signature{
+		R: sig.R,
+		S: sig.S,
+	}
+
+	tx, err := k.AssembleBtcTx(ctx, params.TxID, pk, btcSig)
+	if err != nil {
+		return nil, err
+	}
+
+	// This is beyond axelar's control, so we can only log the error and move on regardless
+	hash, err := rpc.SendRawTransaction(tx, false)
+	if err != nil {
+		k.Logger(ctx).Error(sdkerrors.Wrap(err, "sending transaction to Bitcoin failed").Error())
+		return nil, err
+	}
+
+	return k.Codec().MustMarshalJSON(fmt.Sprintf("successfully sent transaction %s to Bitcoin", hash.String())), nil
 }

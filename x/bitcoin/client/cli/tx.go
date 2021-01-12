@@ -5,6 +5,7 @@ import (
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/wire"
+	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -13,7 +14,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
@@ -29,49 +29,35 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	networks := []chaincfg.Params{chaincfg.MainNetParams, chaincfg.TestNet3Params, chaincfg.RegressionNetParams}
-
-	for _, network := range networks {
-
-		cmd := &cobra.Command{
-			Use:                        network.Name,
-			Short:                      fmt.Sprintf("%s transactions subcommands", network.Name),
-			SuggestionsMinimumDistance: 2,
-			RunE:                       client.ValidateCmd,
-		}
-
-		addTxSubCommands(cmd, types.Network(network.Name), cdc)
-
-		btcTxCmd.AddCommand(cmd)
-	}
+	addTxSubCommands(btcTxCmd, cdc)
 
 	return btcTxCmd
 }
 
-func addTxSubCommands(command *cobra.Command, network types.Network, cdc *codec.Codec) {
-	cmds := append([]*cobra.Command{GetCmdTrack(network, cdc)},
+func addTxSubCommands(command *cobra.Command, cdc *codec.Codec) {
+	cmds := append([]*cobra.Command{GetCmdTrack(cdc)},
 		flags.PostCommands(
 			GetCmdVerifyTx(cdc),
 			GetCmdSignRawTx(cdc),
 			GetCmdSend(cdc),
-			GetCmdTransfer(network, cdc))...)
+		)...)
 
 	command.AddCommand(cmds...)
 }
 
 // GetCmdTrack returns the address tracking command
-func GetCmdTrack(network types.Network, cdc *codec.Codec) *cobra.Command {
+func GetCmdTrack(cdc *codec.Codec) *cobra.Command {
 	trackCmd := &cobra.Command{
 		Use:   "track",
 		Short: "Bitcoin address or public key tracking subcommand",
 		RunE:  client.ValidateCmd,
 	}
 
-	trackCmd.AddCommand(flags.PostCommands(getCmdTrackAddress(network, cdc), getCmdTrackPubKey(network, cdc))...)
+	trackCmd.AddCommand(flags.PostCommands(getCmdTrackAddress(cdc), getCmdTrackPubKey(cdc))...)
 	return trackCmd
 }
 
-func getCmdTrackAddress(network types.Network, cdc *codec.Codec) *cobra.Command {
+func getCmdTrackAddress(cdc *codec.Codec) *cobra.Command {
 	var rescan bool
 	addrCmd := &cobra.Command{
 		Use:   "address [address]",
@@ -82,7 +68,7 @@ func getCmdTrackAddress(network types.Network, cdc *codec.Codec) *cobra.Command 
 
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
 
-			addr, err := types.ParseBtcAddress(args[0], network)
+			addr, err := btcutil.DecodeAddress(args[0], &chaincfg.MainNetParams)
 			if err != nil {
 				return nil
 			}
@@ -100,7 +86,7 @@ func getCmdTrackAddress(network types.Network, cdc *codec.Codec) *cobra.Command 
 	return addrCmd
 }
 
-func getCmdTrackPubKey(network types.Network, cdc *codec.Codec) *cobra.Command {
+func getCmdTrackPubKey(cdc *codec.Codec) *cobra.Command {
 	var rescan bool
 	var useMasterKey bool
 	var keyID string
@@ -120,9 +106,9 @@ func getCmdTrackPubKey(network types.Network, cdc *codec.Codec) *cobra.Command {
 				return fmt.Errorf("either set the flag to use a key ID or to use the master key, not both")
 			}
 			if useMasterKey {
-				msg = types.NewMsgTrackPubKeyWithMasterKey(cliCtx.GetFromAddress(), network, rescan)
+				msg = types.NewMsgTrackPubKeyWithMasterKey(cliCtx.GetFromAddress(), rescan)
 			} else {
-				msg = types.NewMsgTrackPubKey(cliCtx.GetFromAddress(), network, keyID, rescan)
+				msg = types.NewMsgTrackPubKey(cliCtx.GetFromAddress(), keyID, rescan)
 			}
 
 			if err := msg.ValidateBasic(); err != nil {
@@ -139,11 +125,7 @@ func getCmdTrackPubKey(network types.Network, cdc *codec.Codec) *cobra.Command {
 
 // GetCmdVerifyTx returns the transaction verification command
 func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
-	var toCurrentMasterKey bool
-	var toNextMasterKey bool
-	var recipient string
-	var fromCurrentMasterKey bool
-	verifyCmd := &cobra.Command{
+	return &cobra.Command{
 		Use:   "verifyTx [txInfo json]",
 		Short: "Verify a Bitcoin transaction",
 		Long: fmt.Sprintf(
@@ -166,11 +148,6 @@ func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
 			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
-	addRecipientFlag(verifyCmd, &recipient)
-	verifyCmd.Flags().BoolVar(&fromCurrentMasterKey, "from-curr-mk", false, "Send to current master key instead of a specific key")
-	verifyCmd.Flags().BoolVar(&toCurrentMasterKey, "to-curr-mk", false, "Send to current master key instead of a specific key")
-	verifyCmd.Flags().BoolVar(&toNextMasterKey, "to-next-mk", false, "Send to next master key instead of a specific key")
-	return verifyCmd
 }
 
 // GetCmdSignRawTx returns the command to sign a raw Bitcoin transaction
@@ -209,34 +186,6 @@ func GetCmdSend(cdc *codec.Codec) *cobra.Command {
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
 
 			msg := types.NewMsgSendTx(cliCtx.GetFromAddress(), args[0], args[1])
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
-		},
-	}
-}
-
-// GetCmdTransfer returns the command to link a bitcoin address to an address on a different blockchain for a future transfer of assets
-func GetCmdTransfer(network types.Network, cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "transfer [btcAddress] [recipient chain] [recipient address]",
-		Short: "Connect a Bitcoin address to a recipient address on a recipient chain for a future transfer.",
-		Args:  cobra.ExactArgs(3),
-		RunE: func(cmd *cobra.Command, args []string) error {
-
-			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
-
-			btcAddr, err := types.ParseBtcAddress(args[0], network)
-			if err != nil {
-				return err
-			}
-
-			msg := types.NewMsgTransfer(cliCtx.GetFromAddress(), btcAddr, exported.CrossChainAddress{
-				Chain:   exported.ChainFromString(args[1]),
-				Address: args[1],
-			})
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
