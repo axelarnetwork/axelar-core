@@ -12,19 +12,6 @@ Since axelar-core requires tssd to build which is a private module, you will nee
 3. Run `ssh-add ~/.ssh/{private key file name}` to add your private key to your ssh agent
 4. Run `git config --global url."git@github.com:axelarnetwork".insteadOf https://github.com/axelarnetwork` to force `go get` to authenticate via ssh
 
-## Dependencies
-
-This repository is dependent on https://github.com/axelarnetwork/tssd/. To be able to build it ensure they reside both in the same parent directory:
-```
-|
-+--axelarnetwork
-   |
-   +--axelar-core
-   |
-   +--tssd
-```
-Execute `make copy-tssd` to copy the build-relevant data over before building axelar-core.
-
 ## Building binaries locally
 
 Execute `make build` to create local binaries for the validator node.
