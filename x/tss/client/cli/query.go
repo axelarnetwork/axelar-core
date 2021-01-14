@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 
-	"github.com/binance-chain/tss-lib/crypto"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -24,37 +23,10 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	tssQueryCmd.AddCommand(flags.GetCommands(GetCmdGetKey(queryRoute, cdc), GetCmdMasterAddress(queryRoute, cdc))...)
+	tssQueryCmd.AddCommand(flags.GetCommands(GetCmdMasterAddress(queryRoute, cdc))...)
 
 	return tssQueryCmd
 
-}
-
-func GetCmdGetKey(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "get-key [id]", // TODO should this use keeper.QueryGetKey constant?
-		Short: "Get a threshold pubkey",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			keyID := args[0]
-
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryGetKey, keyID), nil)
-			if err != nil {
-				return err
-			}
-
-			var out crypto.ECPoint
-			cdc.MustUnmarshalJSON(res, &out)
-
-			// crypto.ECPoint supports only json marshalling
-			if cliCtx.OutputFormat != "json" {
-				fmt.Printf("warning: output format [%s] not supported. use '-o json'", cliCtx.OutputFormat)
-			}
-
-			return cliCtx.PrintOutput(out)
-		},
-	}
 }
 
 func GetCmdMasterAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
