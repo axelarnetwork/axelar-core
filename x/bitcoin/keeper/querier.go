@@ -19,6 +19,7 @@ import (
 )
 
 const (
+	QueryMasterAddress = "masterAddr"
 	// QueryOutInfo is the route to query for a transaction's outPoint information
 	QueryOutInfo = "outPointInfo"
 	// QueryRawTx is the route to query for an unsigned raw transaction
@@ -30,6 +31,8 @@ const (
 func NewQuerier(k Keeper, s types.Signer, rpc types.RPCClient) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		switch path[0] {
+		case QueryMasterAddress:
+			return queryMasterAddress(ctx, k, s)
 		case QueryOutInfo:
 			return queryTxOutInfo(rpc, path[1], path[2])
 		case QueryRawTx:
@@ -40,6 +43,20 @@ func NewQuerier(k Keeper, s types.Signer, rpc types.RPCClient) sdk.Querier {
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown btc-bridge query endpoint: %s", path[1]))
 		}
 	}
+}
+
+func queryMasterAddress(ctx sdk.Context, k Keeper, s types.Signer) ([]byte, error) {
+	pk, ok := s.GetCurrentMasterKey(ctx, balance.Bitcoin)
+	if !ok {
+		return nil, fmt.Errorf("key not found")
+	}
+
+	addr, err := k.GetAddress(ctx, btcec.PublicKey(pk))
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
+	}
+
+	return []byte(addr.EncodeAddress()), nil
 }
 
 func queryTxOutInfo(rpc types.RPCClient, txID string, voutIdx string) ([]byte, error) {
