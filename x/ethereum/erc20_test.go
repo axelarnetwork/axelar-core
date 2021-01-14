@@ -189,7 +189,7 @@ func testDeploy(t *testing.T, client *ethclient.Client, privateKey *ecdsa.Privat
 	networkID, err := client.NetworkID(context.Background())
 	assert.NoError(t, err)
 	signer := ethTypes.NewEIP155Signer(networkID)
-	var gasLimit uint64 = 30000000
+	var gasLimit uint64 = 3000000
 	tssSigner := &mock.SignerMock{GetCurrentMasterKeyFunc: func(sdk.Context, balance.Chain) (ecdsa.PublicKey, bool) {
 		return privateKey.PublicKey, true
 	}}
@@ -261,7 +261,7 @@ func testMint(t *testing.T, client *ethclient.Client, creatorAddr, contractAddr,
 	amount.Mul(amount, decBig)
 	t.Logf("Amount: %d", amount)
 
-	var gasLimit uint64 = 30000000
+	var gasLimit uint64 = 3000000
 	tssSigner := &mock.SignerMock{GetCurrentMasterKeyFunc: func(sdk.Context, balance.Chain) (ecdsa.PublicKey, bool) {
 		return privateKey.PublicKey, true
 	}}
