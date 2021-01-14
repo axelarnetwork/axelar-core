@@ -139,7 +139,7 @@ func createMintTx(ctx sdk.Context, k Keeper, s types.Signer, rpc types.RPCClient
 		return nil, fmt.Errorf("could not create nonce: %s", err)
 	}
 
-	callData := types.CreateMintCallData(params.Recipient, params.Amount.BigInt())
+	callData := types.CreateMintCallData(common.HexToAddress(params.Recipient), params.Amount.BigInt())
 
 	if params.GasLimit == 0 {
 

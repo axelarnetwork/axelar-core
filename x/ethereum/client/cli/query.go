@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"strings"
@@ -78,8 +79,15 @@ func GetCmdCreateMintTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
+			// check if the address is valid
+			if bytes.Equal(common.HexToAddress(args[1]).Bytes(), make([]byte, 20)) {
+
+				return fmt.Errorf("invalid recipient address")
+
+			}
+
 			params := types.MintParams{
-				Recipient:  common.HexToAddress(args[1]),
+				Recipient:  args[1],
 				Amount:     amount.Amount,
 				ContractID: args[0],
 				GasLimit:   gasLimit,

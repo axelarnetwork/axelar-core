@@ -117,7 +117,7 @@ type DeployParams struct {
 }
 
 type MintParams struct {
-	Recipient  common.Address
+	Recipient  string
 	Amount     sdk.Int
 	ContractID string
 	GasLimit   uint64
