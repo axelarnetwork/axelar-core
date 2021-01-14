@@ -12,7 +12,8 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
-	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -41,7 +42,7 @@ func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer) sdk.Querier {
 	}
 }
 
-func queryMasterAddress(ctx sdk.Context, s ethTypes.Signer) ([]byte, error) {
+func queryMasterAddress(ctx sdk.Context, s types.Signer) ([]byte, error) {
 
 	pk, ok := s.GetCurrentMasterKey(ctx, balance.Ethereum)
 	if !ok {
