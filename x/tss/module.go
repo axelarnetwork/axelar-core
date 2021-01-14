@@ -54,8 +54,8 @@ func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	return cli.GetTxCmd(cdc)
 }
 
-func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
-	return cli.GetQueryCmd(types.QuerierRoute, cdc)
+func (AppModuleBasic) GetQueryCmd(_ *codec.Codec) *cobra.Command {
+	return nil
 }
 
 type AppModule struct {

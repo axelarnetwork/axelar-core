@@ -29,12 +29,35 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	}
 
 	btcTxCmd.AddCommand(flags.GetCommands(
+		GetCmdMasterAddress(queryRoute, cdc),
 		GetCmdTxInfo(queryRoute, cdc),
 		GetCmdRawTx(queryRoute, cdc),
 		GetCmdSendTx(queryRoute, cdc),
 	)...)
 
 	return btcTxCmd
+}
+
+func GetCmdMasterAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "master-address",
+		Short: "Query bitcoin master key.",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryMasterAddress)
+
+			res, _, err := cliCtx.QueryWithData(path, nil)
+			if err != nil {
+				return sdkerrors.Wrap(err, "could not resolve master key")
+			}
+
+			return cliCtx.PrintOutput(string(res))
+		},
+	}
+
+	return cmd
 }
 
 // GetCmdTxInfo returns the tx info query command
