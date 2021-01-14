@@ -13,11 +13,8 @@ import (
 )
 
 const (
-	QueryGetKey    = "get-key"
 	QueryMasterKey = "get-masterkey"
 )
-
-const ()
 
 func NewQuerier(k Keeper) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
@@ -31,12 +28,10 @@ func NewQuerier(k Keeper) sdk.Querier {
 }
 
 func queryMasterAddress(ctx sdk.Context, args []string, k Keeper) ([]byte, error) {
-
 	var address string
 	var err error
 
 	chain := balance.ChainFromString(args[0])
-
 	err = chain.Validate()
 
 	if err != nil {
@@ -51,24 +46,17 @@ func queryMasterAddress(ctx sdk.Context, args []string, k Keeper) ([]byte, error
 	switch chain {
 
 	case balance.Bitcoin:
-
 		if len(args) < 2 {
-
 			err = fmt.Errorf("no network specified")
-
 		} else {
-
 			network := args[1]
-
 			address, err = bitcoin.PubkeyToAddress(pk, network)
-
 		}
-	case balance.Ethereum:
 
+	case balance.Ethereum:
 		address, err = ethereum.PubkeyToAddress(pk)
 
 	default:
-
 		err = fmt.Errorf("unknown chain")
 	}
 
