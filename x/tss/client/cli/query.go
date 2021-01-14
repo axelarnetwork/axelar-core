@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 
-	"github.com/binance-chain/tss-lib/crypto"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -24,35 +23,70 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	tssQueryCmd.AddCommand(flags.GetCommands(GetCmdGetKey(queryRoute, cdc))...)
+	masterAddressCmd := &cobra.Command{
+		Use:                        "get-masteraddress",
+		Short:                      "get master address subcommand",
+		SuggestionsMinimumDistance: 2,
+		RunE:                       client.ValidateCmd,
+	}
+
+	masterAddressCmd.AddCommand(flags.GetCommands(
+		GetCmdBitcoinMasterAddress(queryRoute, cdc),
+		GetCmdEthereumMasterAddress(queryRoute, cdc))...)
+
+	tssQueryCmd.AddCommand(masterAddressCmd)
 
 	return tssQueryCmd
 
 }
 
-func GetCmdGetKey(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "get-key [id]", // TODO should this use keeper.QueryGetKey constant?
-		Short: "Get a threshold pubkey",
+func GetCmdBitcoinMasterAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "bitcoin [network]",
+		Short: "Query bitcoin master key.",
+		Long:  "Query bitcoin master key. Network should be `mainnet`, `testnet3`, or `regtest`",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			keyID := args[0]
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryGetKey, keyID), nil)
+			network := args[0]
+
+			path := fmt.Sprintf("custom/%s/%s/bitcoin/%s", queryRoute, keeper.QueryMasterKey, network)
+
+			res, _, err := cliCtx.QueryWithData(path, nil)
 			if err != nil {
-				return err
+				fmt.Printf("could not resolve master key: %s\n", err.Error())
+
+				return nil
 			}
 
-			var out crypto.ECPoint
-			cdc.MustUnmarshalJSON(res, &out)
-
-			// crypto.ECPoint supports only json marshalling
-			if cliCtx.OutputFormat != "json" {
-				fmt.Printf("warning: output format [%s] not supported. use '-o json'", cliCtx.OutputFormat)
-			}
-
-			return cliCtx.PrintOutput(out)
+			return cliCtx.PrintOutput(string(res))
 		},
 	}
+
+	return cmd
+}
+
+func GetCmdEthereumMasterAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "ethereum",
+		Short: "Query ethereum master key.",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			path := fmt.Sprintf("custom/%s/%s/ethereum/", queryRoute, keeper.QueryMasterKey)
+
+			res, _, err := cliCtx.QueryWithData(path, nil)
+			if err != nil {
+				fmt.Printf("could not resolve master key: %s\n", err.Error())
+
+				return nil
+			}
+
+			return cliCtx.PrintOutput(string(res))
+		},
+	}
+
+	return cmd
 }
