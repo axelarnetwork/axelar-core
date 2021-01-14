@@ -23,14 +23,14 @@ const (
 func ParseSatoshi(rawCoin string) (sdk.Coin, error) {
 	var coin sdk.DecCoin
 
-	intCoin, err := sdk.ParseCoin(rawCoin)
-	if err != nil {
+	if intCoin, err := sdk.ParseCoin(rawCoin); err == nil {
+		coin = sdk.NewDecCoinFromCoin(intCoin)
+	} else {
 		coin, err = sdk.ParseDecCoin(rawCoin)
 		if err != nil {
 			return sdk.Coin{}, fmt.Errorf("could not parse coin string")
 		}
 	}
-	coin = sdk.NewDecCoinFromCoin(intCoin)
 
 	switch coin.Denom {
 	case Sat, Satoshi:

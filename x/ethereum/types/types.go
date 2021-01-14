@@ -22,7 +22,6 @@ const (
 	Ropsten = "ropsten"
 	Rinkeby = "rinkeby"
 	Goerli  = "goerli"
-
 	// Ganache is a local testnet
 	Ganache = "ganache"
 

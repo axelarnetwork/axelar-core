@@ -26,11 +26,11 @@ var _ types.RPCClient = &RPCClientMock{}
 //             BlockNumberFunc: func(ctx context.Context) (uint64, error) {
 // 	               panic("mock out the BlockNumber method")
 //             },
+//             ChainIDFunc: func(ctx context.Context) (*big.Int, error) {
+// 	               panic("mock out the ChainID method")
+//             },
 //             EstimateGasFunc: func(ctx context.Context, msg ethereum.CallMsg) (uint64, error) {
 // 	               panic("mock out the EstimateGas method")
-//             },
-//             NetworkIDFunc: func(ctx context.Context) (*big.Int, error) {
-// 	               panic("mock out the NetworkID method")
 //             },
 //             PendingNonceAtFunc: func(ctx context.Context, account common.Address) (uint64, error) {
 // 	               panic("mock out the PendingNonceAt method")
@@ -57,11 +57,11 @@ type RPCClientMock struct {
 	// BlockNumberFunc mocks the BlockNumber method.
 	BlockNumberFunc func(ctx context.Context) (uint64, error)
 
+	// ChainIDFunc mocks the ChainID method.
+	ChainIDFunc func(ctx context.Context) (*big.Int, error)
+
 	// EstimateGasFunc mocks the EstimateGas method.
 	EstimateGasFunc func(ctx context.Context, msg ethereum.CallMsg) (uint64, error)
-
-	// NetworkIDFunc mocks the NetworkID method.
-	NetworkIDFunc func(ctx context.Context) (*big.Int, error)
 
 	// PendingNonceAtFunc mocks the PendingNonceAt method.
 	PendingNonceAtFunc func(ctx context.Context, account common.Address) (uint64, error)
@@ -85,17 +85,17 @@ type RPCClientMock struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 		}
+		// ChainID holds details about calls to the ChainID method.
+		ChainID []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+		}
 		// EstimateGas holds details about calls to the EstimateGas method.
 		EstimateGas []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Msg is the msg argument value.
 			Msg ethereum.CallMsg
-		}
-		// NetworkID holds details about calls to the NetworkID method.
-		NetworkID []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
 		}
 		// PendingNonceAt holds details about calls to the PendingNonceAt method.
 		PendingNonceAt []struct {
@@ -132,8 +132,8 @@ type RPCClientMock struct {
 		}
 	}
 	lockBlockNumber        sync.RWMutex
+	lockChainID            sync.RWMutex
 	lockEstimateGas        sync.RWMutex
-	lockNetworkID          sync.RWMutex
 	lockPendingNonceAt     sync.RWMutex
 	lockSendTransaction    sync.RWMutex
 	lockSuggestGasPrice    sync.RWMutex
@@ -172,6 +172,37 @@ func (mock *RPCClientMock) BlockNumberCalls() []struct {
 	return calls
 }
 
+// ChainID calls ChainIDFunc.
+func (mock *RPCClientMock) ChainID(ctx context.Context) (*big.Int, error) {
+	if mock.ChainIDFunc == nil {
+		panic("RPCClientMock.ChainIDFunc: method is nil but RPCClient.ChainID was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockChainID.Lock()
+	mock.calls.ChainID = append(mock.calls.ChainID, callInfo)
+	mock.lockChainID.Unlock()
+	return mock.ChainIDFunc(ctx)
+}
+
+// ChainIDCalls gets all the calls that were made to ChainID.
+// Check the length with:
+//     len(mockedRPCClient.ChainIDCalls())
+func (mock *RPCClientMock) ChainIDCalls() []struct {
+	Ctx context.Context
+} {
+	var calls []struct {
+		Ctx context.Context
+	}
+	mock.lockChainID.RLock()
+	calls = mock.calls.ChainID
+	mock.lockChainID.RUnlock()
+	return calls
+}
+
 // EstimateGas calls EstimateGasFunc.
 func (mock *RPCClientMock) EstimateGas(ctx context.Context, msg ethereum.CallMsg) (uint64, error) {
 	if mock.EstimateGasFunc == nil {
@@ -204,37 +235,6 @@ func (mock *RPCClientMock) EstimateGasCalls() []struct {
 	mock.lockEstimateGas.RLock()
 	calls = mock.calls.EstimateGas
 	mock.lockEstimateGas.RUnlock()
-	return calls
-}
-
-// NetworkID calls NetworkIDFunc.
-func (mock *RPCClientMock) NetworkID(ctx context.Context) (*big.Int, error) {
-	if mock.NetworkIDFunc == nil {
-		panic("RPCClientMock.NetworkIDFunc: method is nil but RPCClient.NetworkID was just called")
-	}
-	callInfo := struct {
-		Ctx context.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockNetworkID.Lock()
-	mock.calls.NetworkID = append(mock.calls.NetworkID, callInfo)
-	mock.lockNetworkID.Unlock()
-	return mock.NetworkIDFunc(ctx)
-}
-
-// NetworkIDCalls gets all the calls that were made to NetworkID.
-// Check the length with:
-//     len(mockedRPCClient.NetworkIDCalls())
-func (mock *RPCClientMock) NetworkIDCalls() []struct {
-	Ctx context.Context
-} {
-	var calls []struct {
-		Ctx context.Context
-	}
-	mock.lockNetworkID.RLock()
-	calls = mock.calls.NetworkID
-	mock.lockNetworkID.RUnlock()
 	return calls
 }
 

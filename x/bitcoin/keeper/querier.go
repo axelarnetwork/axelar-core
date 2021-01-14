@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"encoding/hex"
 	"fmt"
 	"strconv"
 
@@ -21,8 +22,8 @@ const (
 	// QueryOutInfo is the route to query for a transaction's outPoint information
 	QueryOutInfo = "outPointInfo"
 	// QueryRawTx is the route to query for an unsigned raw transaction
-	QueryRawTx  = "rawTx"
-	QuerySendTx = "sendTx"
+	QueryRawTx = "rawTx"
+	SendTx     = "sendTx"
 )
 
 // NewQuerier returns a new querier for the Bitcoin module
@@ -33,7 +34,7 @@ func NewQuerier(k Keeper, s types.Signer, rpc types.RPCClient) sdk.Querier {
 			return queryTxOutInfo(rpc, path[1], path[2])
 		case QueryRawTx:
 			return createRawTx(ctx, k, s, req.Data)
-		case QuerySendTx:
+		case SendTx:
 			return sendTx(ctx, k, rpc, s, path[1])
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown btc-bridge query endpoint: %s", path[1]))
@@ -63,14 +64,14 @@ func createRawTx(ctx sdk.Context, k Keeper, s types.Signer, data []byte) ([]byte
 	var params types.RawParams
 	err := types.ModuleCdc.UnmarshalJSON(data, &params)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
 
 	var recipient btcutil.Address
 	if params.Recipient != "" {
 		recipient, err = btcutil.DecodeAddress(params.Recipient, k.getNetwork(ctx).Params())
 		if err != nil {
-			return nil, err
+			return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 		}
 	} else {
 		pk, ok := s.GetNextMasterKey(ctx, balance.Bitcoin)
@@ -82,7 +83,7 @@ func createRawTx(ctx sdk.Context, k Keeper, s types.Signer, data []byte) ([]byte
 
 	tx, err := k.CreateTx(ctx, params.TxID, params.Satoshi, recipient)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
 	return types.ModuleCdc.MustMarshalJSON(tx), nil
 }
@@ -90,18 +91,18 @@ func createRawTx(ctx sdk.Context, k Keeper, s types.Signer, data []byte) ([]byte
 func sendTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, txID string) ([]byte, error) {
 	h, err := k.GetHashToSign(ctx, txID)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
-	sigID := string(h)
+	sigID := hex.EncodeToString(h)
 	key, ok := s.GetKeyForSigID(ctx, sigID)
 	if !ok {
-		return nil, fmt.Errorf("could not find a corresponding key for tx ID %s", txID)
+		return nil, sdkerrors.Wrapf(types.ErrBitcoin, "could not find a corresponding key for tx ID %s", txID)
 	}
 	pk := btcec.PublicKey(key)
 
 	sig, ok := s.GetSig(ctx, sigID)
 	if !ok {
-		return nil, fmt.Errorf("signature not found")
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, "signature not found")
 	}
 	btcSig := btcec.Signature{
 		R: sig.R,
@@ -110,14 +111,14 @@ func sendTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, txID
 
 	tx, err := k.AssembleBtcTx(ctx, txID, pk, btcSig)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
 
 	// This is beyond axelar's control, so we can only log the error and move on regardless
 	hash, err := rpc.SendRawTransaction(tx, false)
 	if err != nil {
 		k.Logger(ctx).Error(sdkerrors.Wrap(err, "sending transaction to Bitcoin failed").Error())
-		return nil, err
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
 
 	return k.Codec().MustMarshalJSON(fmt.Sprintf("successfully sent transaction %s to Bitcoin", hash.String())), nil

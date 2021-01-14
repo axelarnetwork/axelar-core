@@ -18,7 +18,7 @@ type Voter interface {
 }
 
 type Snapshotter interface {
-	GetLatestSnapshot(ctx sdk.Context) (snapshot.Snapshot, bool)
+	GetSnapshot(ctx sdk.Context, round int64) (snapshot.Snapshot, bool)
 }
 
 type Signer interface {
@@ -29,6 +29,7 @@ type Signer interface {
 	GetCurrentMasterKey(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool)
 	GetNextMasterKey(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool)
 	GetKeyForSigID(ctx sdk.Context, sigID string) (ecdsa.PublicKey, bool)
+	GetSnapshotRoundForKeyID(ctx sdk.Context, keyID string) (int64, bool)
 }
 
 type Balancer interface {

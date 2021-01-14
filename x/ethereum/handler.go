@@ -1,7 +1,6 @@
 package ethereum
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 
@@ -153,24 +152,6 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 
 func verifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, expectedTx *ethTypes.Transaction) error {
 	hash := expectedTx.Hash()
-	actualTx, pending, err := rpc.TransactionByHash(context.Background(), hash)
-	if err != nil {
-		return sdkerrors.Wrap(err, "could not retrieve Ethereum transaction")
-	}
-
-	if pending {
-		return fmt.Errorf("transaction is pending")
-	}
-
-	if !bytes.Equal(actualTx.Data(), expectedTx.Data()) {
-		return fmt.Errorf("tx smart contract data not as expected")
-	}
-
-	actualVal := actualTx.Value()
-	if actualVal == nil || actualVal.Cmp(expectedTx.Value()) != 0 {
-		return fmt.Errorf("expected tx value %d, got %d", expectedTx.Value(), actualVal)
-	}
-
 	receipt, err := rpc.TransactionReceipt(context.Background(), hash)
 	if err != nil {
 		return sdkerrors.Wrap(err, "could not retrieve Ethereum receipt")

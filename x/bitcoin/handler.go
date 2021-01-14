@@ -2,6 +2,7 @@ package bitcoin
 
 import (
 	"crypto/ecdsa"
+	"encoding/hex"
 	"fmt"
 
 	"github.com/btcsuite/btcd/btcec"
@@ -195,18 +196,23 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
-	k.Logger(ctx).Info(fmt.Sprintf("bitcoin tx to sign: %s", k.Codec().MustMarshalJSON(hash)))
+	serializedHash := hex.EncodeToString(hash)
+	k.Logger(ctx).Info(fmt.Sprintf("bitcoin tx to sign: %s", serializedHash))
 
 	keyID, ok := signer.GetCurrentMasterKeyID(ctx, balance.Bitcoin)
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrBitcoin, "no master key for chain %s found", balance.Bitcoin)
 	}
 
-	s, ok := snap.GetLatestSnapshot(ctx)
+	round, ok := signer.GetSnapshotRoundForKeyID(ctx, keyID)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrBitcoin, "no snapshot round for key ID %s registered", keyID)
+	}
+	s, ok := snap.GetSnapshot(ctx, round)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, "no snapshot found")
 	}
-	err = signer.StartSign(ctx, keyID, string(hash), hash, s.Validators)
+	err = signer.StartSign(ctx, keyID, string(serializedHash), hash, s.Validators)
 	if err != nil {
 		if !ok {
 			return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())

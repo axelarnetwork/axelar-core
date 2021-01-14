@@ -159,7 +159,7 @@ func TestSig(t *testing.T) {
 func TestGanache(t *testing.T) {
 
 	client, _ := ethclient.Dial("http://127.0.0.1:7545")
-	_, err := client.NetworkID(context.Background())
+	_, err := client.ChainID(context.Background())
 
 	if err != nil {
 		t.Logf("Ganache not running, skipping this test (error: %v)", err)

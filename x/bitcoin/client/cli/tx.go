@@ -152,8 +152,8 @@ func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
 // GetCmdSignRawTx returns the command to sign a raw Bitcoin transaction
 func GetCmdSignRawTx(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "rawTx [txID] [tx json]",
-		Short: "Register raw spending transaction with utxo of [txID]",
+		Use:   "signTx [txID] [tx json]",
+		Short: "Sign raw spending transaction with utxo of [txID]",
 		Long:  fmt.Sprintf("Sign raw transaction. Get raw transaction by querying %s", keeper.QueryRawTx),
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -107,7 +107,7 @@ func (r *RPCClientImpl) setNetwork(logger log.Logger) error {
 	var err error = btcjson.RPCError{Code: errRpcInWarmup}
 	for retries = 0; err != nil && retries < maxRetries; retries++ {
 		switch err := err.(type) {
-		case *btcjson.RPCError:
+		case btcjson.RPCError:
 			if err.Code == errRpcInWarmup {
 				logger.Debug("waiting for bitcoin rpc server to start")
 				time.Sleep(sleep)
@@ -156,10 +156,6 @@ func (r *RPCClientImpl) GetOutPointInfo(out *wire.OutPoint) (OutPointInfo, error
 	amount, err := btcutil.NewAmount(vout.Value)
 	if err != nil {
 		return OutPointInfo{}, sdkerrors.Wrap(err, "could not parse transaction amount of the Bitcoin response")
-	}
-
-	if len(tx.Vin) != 1 {
-		return OutPointInfo{}, fmt.Errorf("transaction must have exactly one input")
 	}
 
 	return OutPointInfo{

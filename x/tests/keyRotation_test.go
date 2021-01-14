@@ -365,7 +365,7 @@ func TestKeyRotation(t *testing.T) {
 	chain.WaitNBlocks(22)
 
 	// send tx to Bitcoin
-	_, err = nodes[0].Query([]string{btcTypes.QuerierRoute, btcKeeper.QuerySendTx, txHash.String()}, abci.RequestQuery{})
+	_, err = nodes[0].Query([]string{btcTypes.QuerierRoute, btcKeeper.SendTx, txHash.String()}, abci.RequestQuery{})
 	assert.NoError(t, err)
 
 	// set up btc mock to return the new tx

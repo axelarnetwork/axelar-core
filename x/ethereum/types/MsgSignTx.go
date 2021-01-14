@@ -13,7 +13,7 @@ type MsgSignTx struct {
 	Tx     *ethTypes.Transaction
 }
 
-func NewMsgRawTx(sender sdk.AccAddress, tx *ethTypes.Transaction) sdk.Msg {
+func NewMsgSignTx(sender sdk.AccAddress, tx *ethTypes.Transaction) sdk.Msg {
 	return MsgSignTx{
 		Sender: sender,
 		Tx:     tx,
@@ -25,7 +25,7 @@ func (msg MsgSignTx) Route() string {
 }
 
 func (msg MsgSignTx) Type() string {
-	return "RawTx"
+	return "SignTx"
 }
 
 func (msg MsgSignTx) ValidateBasic() error {
@@ -34,15 +34,6 @@ func (msg MsgSignTx) ValidateBasic() error {
 	}
 	if msg.Tx == nil {
 		return fmt.Errorf("missing tx")
-	}
-	if msg.Tx.Data() == nil {
-		return fmt.Errorf("missing smart contract call data")
-	}
-	if msg.Tx.To() == nil {
-		return fmt.Errorf("missing recipient")
-	}
-	if msg.Tx.GasPrice() == nil {
-		return fmt.Errorf("missing gas price")
 	}
 	return nil
 }

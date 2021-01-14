@@ -90,14 +90,14 @@ func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {
 func (am AppModule) InitGenesis(ctx sdk.Context, message json.RawMessage) []abci.ValidatorUpdate {
 	var genesisState types.GenesisState
 	types.ModuleCdc.MustUnmarshalJSON(message, &genesisState)
-	id, err := am.rpc.NetworkID(context.Background())
+	id, err := am.rpc.ChainID(context.Background())
 	if err != nil {
 		panic(err)
 	}
 	actualNetwork := types.NetworkByID(id)
 	if genesisState.Params.Network != actualNetwork {
 		panic(fmt.Sprintf(
-			"local etehreum client not configured correctly: expected network %s, got %s",
+			"local ethereum client not configured correctly: expected network %s, got %s",
 			genesisState.Params.Network,
 			actualNetwork,
 		))

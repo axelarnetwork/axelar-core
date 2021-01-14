@@ -2,7 +2,9 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/btcsuite/btcd/wire"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -10,6 +12,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/spf13/cobra"
 
+	"github.com/axelarnetwork/axelar-core/utils/denom"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
@@ -25,7 +28,11 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	btcTxCmd.AddCommand(flags.GetCommands(GetCmdTxInfo(queryRoute, cdc), GetCmdRawTx(queryRoute, cdc))...)
+	btcTxCmd.AddCommand(flags.GetCommands(
+		GetCmdTxInfo(queryRoute, cdc),
+		GetCmdRawTx(queryRoute, cdc),
+		GetCmdSendTx(queryRoute, cdc),
+	)...)
 
 	return btcTxCmd
 }
@@ -33,21 +40,22 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 // GetCmdTxInfo returns the tx info query command
 func GetCmdTxInfo(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "txInfo [txID]",
-		Short: "Query the transaction info of a transaction with [txID] on Bitcoin",
-		Args:  cobra.ExactArgs(1),
+		Use:   "txInfo [txID] [voutIdx]",
+		Short: "Query the info of the outpoint at index [voutIdx] of transaction [txID] on Bitcoin",
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txID := args[0]
-
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryOutInfo, txID), nil)
+			voutIdx := args[1]
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QueryOutInfo, txID, voutIdx), nil)
 			if err != nil {
-				return sdkerrors.Wrapf(err, "could not resolve txID %s", txID)
+				return sdkerrors.Wrapf(err, "could not resolve txID %s and vout %s", txID, voutIdx)
 			}
 
-			// Ensure the output can be unmarshalled
-			cdc.MustUnmarshalJSON(res, &types.OutPointInfo{})
-			return cliCtx.PrintOutput(res)
+			var out types.OutPointInfo
+			cdc.MustUnmarshalJSON(res, &out)
+			fmt.Println(strings.ReplaceAll(string(res), "\"", "\\\""))
+			return cliCtx.PrintOutput(out)
 		},
 	}
 }
@@ -62,24 +70,54 @@ func GetCmdRawTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			txID := args[0]
-			amount := args[1]
 
 			if (recipient == "" && !useMasterKey) || (recipient != "" && useMasterKey) {
 				return fmt.Errorf("either set the flag to set the recipient or to use the master key, not both\"")
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s/%s", queryRoute, keeper.QueryRawTx, txID, amount, recipient), nil)
+			amount, err := denom.ParseSatoshi(args[1])
 			if err != nil {
-				return sdkerrors.Wrapf(err, "could not resolve txID %s", txID)
+				return err
 			}
 
-			// Ensure the output can be unmarshalled
-			cdc.MustUnmarshalJSON(res, &types.OutPointInfo{})
-			return cliCtx.PrintOutput(res)
+			params := types.RawParams{
+				Recipient: recipient,
+				TxID:      args[0],
+				Satoshi:   amount,
+			}
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryRawTx), cdc.MustMarshalJSON(params))
+			if err != nil {
+				return sdkerrors.Wrapf(err, "could not create a new transaction spending transaction %s", params.TxID)
+			}
+
+			var tx *wire.MsgTx
+			cdc.MustUnmarshalJSON(res, &tx)
+			fmt.Println(strings.ReplaceAll(string(res), "\"", "\\\""))
+			return cliCtx.PrintOutput(tx)
 		},
 	}
 	addRecipientFlag(rawTxCmd, &recipient)
 	addMasterKeyFlag(rawTxCmd, &useMasterKey)
 	return rawTxCmd
+}
+
+// GetCmdSendTx sends a transaction to Bitcoin
+func GetCmdSendTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "send [txID]",
+		Short: "Send a transaction that spends tx [txID] to Bitcoin",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.SendTx, args[0]), nil)
+			if err != nil {
+				return sdkerrors.Wrapf(err, "could not send the transaction spending transaction %s", args[0])
+			}
+
+			var out string
+			cdc.MustUnmarshalJSON(res, &out)
+			return cliCtx.PrintOutput(out)
+		},
+	}
 }

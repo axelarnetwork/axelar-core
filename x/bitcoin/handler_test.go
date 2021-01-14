@@ -177,9 +177,6 @@ func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
 			sigID = sID
 			return nil
 		},
-		GetCurrentMasterKeyFunc: func(ctx sdk.Context, chain balance.Chain) (ecdsa.PublicKey, bool) {
-			return sk.PublicKey, true
-		},
 		GetNextMasterKeyFunc: func(ctx sdk.Context, chain balance.Chain) (ecdsa.PublicKey, bool) {
 			return skNext.PublicKey, true
 		},
@@ -196,6 +193,9 @@ func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
 		GetKeyForSigIDFunc: func(ctx sdk.Context, sigID string) (ecdsa.PublicKey, bool) {
 			return sk.PublicKey, true
 		},
+		GetSnapshotRoundForKeyIDFunc: func(ctx sdk.Context, keyID string) (int64, bool) {
+			return testutils.RandIntBetween(0, 100000), true
+		},
 	}
 	v := &btcMock.VoterMock{ResultFunc: func(s sdk.Context, pollMeta exported.PollMeta) exported.VotingData {
 		return pollMeta.ID == txID
@@ -211,7 +211,7 @@ func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
 	b := &btcMock.BalancerMock{GetRecipientFunc: func(ctx sdk.Context, sender balance.CrossChainAddress) (balance.CrossChainAddress, bool) {
 		return balance.CrossChainAddress{}, false
 	}}
-	snap := &btcMock.SnapshotterMock{GetLatestSnapshotFunc: func(ctx sdk.Context) (snapshot.Snapshot, bool) {
+	snap := &btcMock.SnapshotterMock{GetSnapshotFunc: func(ctx sdk.Context, round int64) (snapshot.Snapshot, bool) {
 		return snapshot.Snapshot{}, true
 	}}
 	handler := NewHandler(k, v, rpc, signer, snap, b)
@@ -221,13 +221,13 @@ func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
 		sk, _ = ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 		skNext, _ = ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 
-		rawTx := prepareMsgSign(ctx, k, querier, sk)
+		signTx := prepareMsgSign(ctx, k, querier, sk)
 
-		res, err := handler(ctx, rawTx)
+		res, err := handler(ctx, signTx)
 		assert.NoError(t, err)
 		txHash = res.Data
 
-		_, err = querier(ctx, []string{keeper.QuerySendTx, rawTx.TxID}, abci.RequestQuery{})
+		_, err = querier(ctx, []string{keeper.SendTx, signTx.TxID}, abci.RequestQuery{})
 		assert.NoError(t, err)
 
 		assert.Equal(t, i+1, len(signer.GetKeyForSigIDCalls()))

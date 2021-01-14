@@ -297,6 +297,8 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	}
 	logger.Debug("successful connection to tssd gRPC server")
 
+	app.votingKeeper = voteKeeper.NewKeeper(app.cdc, keys[voteTypes.StoreKey], store.NewSubjectiveStore(), app.snapKeeper, app.broadcastKeeper)
+
 	client := tssd.NewGG18Client(conn)
 	app.tssKeeper = tssKeeper.NewKeeper(app.cdc, keys[tssTypes.StoreKey], client, tssSubspace, app.votingKeeper, app.broadcastKeeper)
 
@@ -309,8 +311,6 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		}
 		logger.Debug("successful Close")
 	})
-
-	app.votingKeeper = voteKeeper.NewKeeper(app.cdc, keys[voteTypes.StoreKey], store.NewSubjectiveStore(), app.snapKeeper, app.broadcastKeeper)
 
 	// TODO: enable running node without an Ethereum bridge
 	rpcETC, err := ethTypes.NewRPCClient(axelarCfg.EthRpcAddr)

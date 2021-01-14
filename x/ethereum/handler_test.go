@@ -32,6 +32,101 @@ const (
 
 var sender = sdk.AccAddress(testutils.RandString(int(testutils.RandIntBetween(5, 20))))
 
+func TestDeployTx_DifferentValue_DifferentHash(t *testing.T) {
+	tx1 := createSignedDeployTx()
+	privateKey, err := ethCrypto.GenerateKey()
+	if err != nil {
+		panic(err)
+	}
+	tx1, err = ethTypes.SignTx(tx1, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	if err != nil {
+		panic(err)
+	}
+	newValue := big.NewInt(testutils.RandIntBetween(1, 10000))
+	tx2 := sign(ethTypes.NewContractCreation(tx1.Nonce(), newValue, tx1.Gas(), tx1.GasPrice(), tx1.Data()))
+	tx2, err = ethTypes.SignTx(tx2, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	if err != nil {
+		panic(err)
+	}
+	assert.NotEqual(t, tx1.Hash(), tx2.Hash())
+}
+
+func TestDeployTx_DifferentData_DifferentHash(t *testing.T) {
+	tx1 := createSignedDeployTx()
+	privateKey, err := ethCrypto.GenerateKey()
+	if err != nil {
+		panic(err)
+	}
+	tx1, err = ethTypes.SignTx(tx1, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	if err != nil {
+		panic(err)
+	}
+	newData := testutils.RandBytes(int(testutils.RandIntBetween(1, 10000)))
+	tx2 := sign(ethTypes.NewContractCreation(tx1.Nonce(), tx1.Value(), tx1.Gas(), tx1.GasPrice(), newData))
+	tx2, err = ethTypes.SignTx(tx2, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	if err != nil {
+		panic(err)
+	}
+	assert.NotEqual(t, tx1.Hash(), tx2.Hash())
+}
+
+func TestMintTx_DifferentValue_DifferentHash(t *testing.T) {
+	tx1 := createSignedMintTx()
+	privateKey, err := ethCrypto.GenerateKey()
+	if err != nil {
+		panic(err)
+	}
+	tx1, err = ethTypes.SignTx(tx1, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	if err != nil {
+		panic(err)
+	}
+	newValue := big.NewInt(testutils.RandIntBetween(1, 10000))
+	tx2 := sign(ethTypes.NewTransaction(tx1.Nonce(), *tx1.To(), newValue, tx1.Gas(), tx1.GasPrice(), tx1.Data()))
+	tx2, err = ethTypes.SignTx(tx2, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	if err != nil {
+		panic(err)
+	}
+	assert.NotEqual(t, tx1.Hash(), tx2.Hash())
+}
+
+func TestMintTx_DifferentData_DifferentHash(t *testing.T) {
+	tx1 := createSignedMintTx()
+	privateKey, err := ethCrypto.GenerateKey()
+	if err != nil {
+		panic(err)
+	}
+	tx1, err = ethTypes.SignTx(tx1, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	if err != nil {
+		panic(err)
+	}
+	newData := testutils.RandBytes(int(testutils.RandIntBetween(1, 10000)))
+	tx2 := sign(ethTypes.NewTransaction(tx1.Nonce(), *tx1.To(), tx1.Value(), tx1.Gas(), tx1.GasPrice(), newData))
+	tx2, err = ethTypes.SignTx(tx2, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	if err != nil {
+		panic(err)
+	}
+	assert.NotEqual(t, tx1.Hash(), tx2.Hash())
+}
+
+func TestMintTx_DifferentRecipient_DifferentHash(t *testing.T) {
+	tx1 := createSignedMintTx()
+	privateKey, err := ethCrypto.GenerateKey()
+	if err != nil {
+		panic(err)
+	}
+	tx1, err = ethTypes.SignTx(tx1, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	if err != nil {
+		panic(err)
+	}
+	newTo := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+	tx2 := sign(ethTypes.NewTransaction(tx1.Nonce(), newTo, tx1.Value(), tx1.Gas(), tx1.GasPrice(), tx1.Data()))
+	tx2, err = ethTypes.SignTx(tx2, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	if err != nil {
+		panic(err)
+	}
+	assert.NotEqual(t, tx1.Hash(), tx2.Hash())
+}
+
 func TestVerifyTx_Deploy_HashNotFound(t *testing.T) {
 	minConfHeight := testutils.RandIntBetween(1, 10)
 	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
@@ -40,80 +135,11 @@ func TestVerifyTx_Deploy_HashNotFound(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
 	rpc := createBasicRPCMock(signedTx, confCount)
-	rpc.TransactionByHashFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Transaction, bool, error) {
-		return nil, false, fmt.Errorf("wrong hash")
+	rpc.TransactionReceiptFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Receipt, error) {
+		return nil, fmt.Errorf("wrong hash")
 	}
 	voter := createVoterMock()
 	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, createSnapshotter())
-
-	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
-
-	assert.NoError(t, err)
-	assert.True(t, k.HasUnverifiedTx(ctx, signedTx.Hash().String()))
-	assertVotedOnPoll(t, voter, signedTx.Hash(), false)
-}
-
-func TestVerifyTx_Deploy_WithoutData(t *testing.T) {
-	minConfHeight := testutils.RandIntBetween(1, 10)
-	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
-	signedTx := createSignedDeployTx()
-
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k := newKeeper(ctx, minConfHeight)
-	rpc := createBasicRPCMock(signedTx, confCount)
-	rpc.TransactionByHashFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Transaction, bool, error) {
-		return ethTypes.NewContractCreation(signedTx.Nonce(), signedTx.Value(), signedTx.Gas(), signedTx.GasPrice(), nil), false, nil
-	}
-	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
-
-	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
-
-	assert.NoError(t, err)
-	assert.True(t, k.HasUnverifiedTx(ctx, signedTx.Hash().String()))
-	assertVotedOnPoll(t, voter, signedTx.Hash(), false)
-}
-
-func TestVerifyTx_Deploy_Pending(t *testing.T) {
-	minConfHeight := testutils.RandIntBetween(1, 10)
-	var confCount int64 = 0
-	signedTx := createSignedDeployTx()
-
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k := newKeeper(ctx, minConfHeight)
-	rpc := createBasicRPCMock(signedTx, confCount)
-	rpc.TransactionByHashFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Transaction, bool, error) {
-		return signedTx, true, nil
-	}
-	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
-
-	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
-
-	assert.NoError(t, err)
-	assert.True(t, k.HasUnverifiedTx(ctx, signedTx.Hash().String()))
-	assertVotedOnPoll(t, voter, signedTx.Hash(), false)
-}
-
-func TestVerifyTx_Deploy_WrongValue(t *testing.T) {
-	minConfHeight := testutils.RandIntBetween(1, 10)
-	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
-	signedTx := createSignedDeployTx()
-
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k := newKeeper(ctx, minConfHeight)
-	rpc := createBasicRPCMock(signedTx, confCount)
-	rpc.TransactionByHashFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Transaction, bool, error) {
-		return ethTypes.NewContractCreation(
-			signedTx.Nonce(),
-			big.NewInt(testutils.RandIntBetween(0, math.MaxInt64)),
-			signedTx.Gas(),
-			signedTx.GasPrice(),
-			signedTx.Data(),
-		), false, nil
-	}
-	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
 
@@ -169,98 +195,8 @@ func TestVerifyTx_Mint_HashNotFound(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
 	rpc := createBasicRPCMock(signedTx, confCount)
-	rpc.TransactionByHashFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Transaction, bool, error) {
-		return nil, false, fmt.Errorf("wrong hash")
-	}
-	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
-
-	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
-
-	assert.NoError(t, err)
-	assert.True(t, k.HasUnverifiedTx(ctx, signedTx.Hash().String()))
-	assertVotedOnPoll(t, voter, signedTx.Hash(), false)
-}
-
-func TestVerifyTx_Mint_WithoutData(t *testing.T) {
-	minConfHeight := testutils.RandIntBetween(1, 10)
-	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
-	signedTx := createSignedMintTx()
-
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k := newKeeper(ctx, minConfHeight)
-	rpc := createBasicRPCMock(signedTx, confCount)
-	rpc.TransactionByHashFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Transaction, bool, error) {
-		return ethTypes.NewContractCreation(signedTx.Nonce(), signedTx.Value(), signedTx.Gas(), signedTx.GasPrice(), nil), false, nil
-	}
-	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
-
-	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
-
-	assert.NoError(t, err)
-	assert.True(t, k.HasUnverifiedTx(ctx, signedTx.Hash().String()))
-	assertVotedOnPoll(t, voter, signedTx.Hash(), false)
-}
-
-func TestVerifyTx_Mint_WrongRecipient(t *testing.T) {
-	minConfHeight := testutils.RandIntBetween(1, 10)
-	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
-	signedTx := createSignedMintTx()
-
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k := newKeeper(ctx, minConfHeight)
-	rpc := createBasicRPCMock(signedTx, confCount)
-	rpc.TransactionByHashFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Transaction, bool, error) {
-		return ethTypes.NewContractCreation(signedTx.Nonce(), signedTx.Value(), signedTx.Gas(), signedTx.GasPrice(), nil), false, nil
-	}
-	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
-
-	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
-
-	assert.NoError(t, err)
-	assert.True(t, k.HasUnverifiedTx(ctx, signedTx.Hash().String()))
-	assertVotedOnPoll(t, voter, signedTx.Hash(), false)
-}
-
-func TestVerifyTx_Mint_Pending(t *testing.T) {
-	minConfHeight := testutils.RandIntBetween(1, 10)
-	var confCount int64 = 0
-	signedTx := createSignedMintTx()
-
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k := newKeeper(ctx, minConfHeight)
-	rpc := createBasicRPCMock(signedTx, confCount)
-	rpc.TransactionByHashFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Transaction, bool, error) {
-		return signedTx, true, nil
-	}
-	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
-
-	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
-
-	assert.NoError(t, err)
-	assert.True(t, k.HasUnverifiedTx(ctx, signedTx.Hash().String()))
-	assertVotedOnPoll(t, voter, signedTx.Hash(), false)
-}
-
-func TestVerifyTx_Mint_WrongValue(t *testing.T) {
-	minConfHeight := testutils.RandIntBetween(1, 10)
-	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
-	signedTx := createSignedMintTx()
-
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k := newKeeper(ctx, minConfHeight)
-	rpc := createBasicRPCMock(signedTx, confCount)
-	rpc.TransactionByHashFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Transaction, bool, error) {
-		return ethTypes.NewContractCreation(
-			signedTx.Nonce(),
-			big.NewInt(testutils.RandIntBetween(0, math.MaxInt64)),
-			signedTx.Gas(),
-			signedTx.GasPrice(),
-			signedTx.Data(),
-		), false, nil
+	rpc.TransactionReceiptFunc = func(ctx context.Context, txHash common.Hash) (*ethTypes.Receipt, error) {
+		return nil, fmt.Errorf("wrong hash")
 	}
 	voter := createVoterMock()
 	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
@@ -351,14 +287,8 @@ func createBasicRPCMock(tx *ethTypes.Transaction, confCount int64) *ethMock.RPCC
 	blockNum := testutils.RandIntBetween(confCount, 100000000)
 
 	rpc := ethMock.RPCClientMock{
-		NetworkIDFunc: func(ctx context.Context) (*big.Int, error) {
+		ChainIDFunc: func(ctx context.Context) (*big.Int, error) {
 			return network.Params().ChainID, nil
-		},
-		TransactionByHashFunc: func(ctx context.Context, hash common.Hash) (_ *ethTypes.Transaction, isPending bool, err error) {
-			if bytes.Equal(tx.Hash().Bytes(), hash.Bytes()) {
-				return tx, false, nil
-			}
-			return nil, false, fmt.Errorf("transaction not found")
 		},
 		TransactionReceiptFunc: func(ctx context.Context, hash common.Hash) (*ethTypes.Receipt, error) {
 			if bytes.Equal(tx.Hash().Bytes(), hash.Bytes()) {
