@@ -156,9 +156,6 @@ func TestVerifyTx_Deploy_NotConfirmed(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
 	rpc := createBasicRPCMock(signedTx, confCount)
-	rpc.TransactionByHashFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Transaction, bool, error) {
-		return signedTx, false, nil
-	}
 	voter := createVoterMock()
 	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
 
@@ -216,9 +213,6 @@ func TestVerifyTx_Mint_NotConfirmed(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
 	rpc := createBasicRPCMock(signedTx, confCount)
-	rpc.TransactionByHashFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Transaction, bool, error) {
-		return signedTx, false, nil
-	}
 	voter := createVoterMock()
 	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
 
@@ -292,7 +286,7 @@ func createBasicRPCMock(tx *ethTypes.Transaction, confCount int64) *ethMock.RPCC
 		},
 		TransactionReceiptFunc: func(ctx context.Context, hash common.Hash) (*ethTypes.Receipt, error) {
 			if bytes.Equal(tx.Hash().Bytes(), hash.Bytes()) {
-				return &ethTypes.Receipt{BlockNumber: big.NewInt(blockNum - confCount)}, nil
+				return &ethTypes.Receipt{TxHash: tx.Hash(), BlockNumber: big.NewInt(blockNum - confCount)}, nil
 			}
 			return nil, fmt.Errorf("transaction not found")
 		},
