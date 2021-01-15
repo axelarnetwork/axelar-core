@@ -49,7 +49,7 @@ func CalcSelector(funcSignature string) string {
 	return hexutil.Encode(buf[:4])
 }
 
-// This type provides additional functionality based on the ethereum network name
+// Network provides additional functionality based on the ethereum network name
 type Network string
 
 func NetworkByID(id *big.Int) Network {

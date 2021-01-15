@@ -17,10 +17,6 @@ import (
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
-var (
-	confHeight = []byte("confHeight")
-)
-
 const (
 	rawPrefix       = "raw_"
 	txPrefix        = "tx_"

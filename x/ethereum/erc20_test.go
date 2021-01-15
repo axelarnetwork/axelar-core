@@ -172,8 +172,6 @@ func TestGanache(t *testing.T) {
 
 	deployerKey, err := getPrivateKey("m/44'/60'/0'/0/0")
 	assert.NoError(t, err)
-	deployerAddr := crypto.PubkeyToAddress(deployerKey.PublicKey)
-
 	contractAddr, txHash := testDeploy(t, client, deployerKey)
 
 	toKey, err := getPrivateKey("m/44'/60'/0'/0/1")
@@ -181,7 +179,7 @@ func TestGanache(t *testing.T) {
 
 	toAddr := crypto.PubkeyToAddress(toKey.PublicKey)
 
-	testMint(t, client, deployerAddr, contractAddr, toAddr, txHash, deployerKey)
+	testMint(t, client, contractAddr, toAddr, txHash, deployerKey)
 }
 
 // Deploys the smart contract available for these tests. It avoids deployment via the contract ABI
@@ -244,7 +242,7 @@ func testDeploy(t *testing.T, client *ethclient.Client, privateKey *ecdsa.Privat
 
 // Mint tokens associated to the contract used by these tests and associate them to the given wallet.
 // It avoids invoking the mint function throught the ABI in favor of creating a raw transaction for the same purpose.
-func testMint(t *testing.T, client *ethclient.Client, creatorAddr, contractAddr, toAddr common.Address, txHash common.Hash, privateKey *ecdsa.PrivateKey) {
+func testMint(t *testing.T, client *ethclient.Client, contractAddr, toAddr common.Address, txHash common.Hash, privateKey *ecdsa.PrivateKey) {
 
 	instance, err := NewMymintable(contractAddr, client)
 

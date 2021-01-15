@@ -212,7 +212,7 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, "no snapshot found")
 	}
-	err = signer.StartSign(ctx, keyID, string(serializedHash), hash, s.Validators)
+	err = signer.StartSign(ctx, keyID, serializedHash, hash, s.Validators)
 	if err != nil {
 		if !ok {
 			return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
