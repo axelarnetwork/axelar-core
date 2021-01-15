@@ -74,16 +74,18 @@ func GetCmdCreateMintTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			amount, err := denom.ParseSatoshi(args[3])
+			amount, err := denom.ParseSatoshi(args[2])
 			if err != nil {
 				return err
 			}
 
-			// check if the address is valid
-			if bytes.Equal(common.HexToAddress(args[1]).Bytes(), make([]byte, 20)) {
+			// check if the addresses are valid
+			if !validAddress(args[0]) {
+				return fmt.Errorf("invalid contract address")
+			}
 
+			if !validAddress(args[1]) {
 				return fmt.Errorf("invalid recipient address")
-
 			}
 
 			params := types.MintParams{
@@ -176,4 +178,15 @@ func parseByteCode(filePath string) ([]byte, error) {
 
 	byteCode := common.FromHex(strings.TrimSuffix(string(content), "\n"))
 	return byteCode, nil
+}
+
+func validAddress(address string) bool {
+
+	if bytes.Equal(common.HexToAddress(address).Bytes(), make([]byte, common.AddressLength)) {
+
+		return false
+
+	}
+
+	return true
 }
