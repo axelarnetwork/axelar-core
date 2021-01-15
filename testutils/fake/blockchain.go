@@ -91,6 +91,7 @@ func (bc *BlockChain) Submit(msg sdk.Msg) <-chan *Result {
 		out chan<- *Result
 	}{msg, out}
 
+	// check that all nodes return the same result
 	result := make(chan *Result, 1)
 	go func() {
 		var r *Result
