@@ -139,7 +139,3 @@ func CreateMintCallData(toAddr common.Address, amount *big.Int) []byte {
 	data = append(data, common.FromHex(paddedVal)...)
 	return data
 }
-
-func GenerateContractAddress(toAddr common.Address, nonce uint64) string {
-	panic("implement me")
-}

@@ -101,7 +101,7 @@ func createDeployTx(ctx sdk.Context, rpc types.RPCClient, s types.Signer, data [
 	tx := ethTypes.NewContractCreation(nonce, value, params.GasLimit, gasPrice, params.ByteCode)
 	result := types.DeployResult{
 		Tx:              types.ModuleCdc.MustMarshalJSON(tx),
-		ContractAddress: types.GenerateContractAddress(contractOwner, nonce),
+		ContractAddress: crypto.CreateAddress(contractOwner, nonce).String(),
 	}
 	return types.ModuleCdc.MustMarshalJSON(result), nil
 }

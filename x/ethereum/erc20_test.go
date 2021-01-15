@@ -205,8 +205,11 @@ func testDeploy(t *testing.T, client *ethclient.Client, privateKey *ecdsa.Privat
 	query := keeper.NewQuerier(client, keeper.Keeper{}, tssSigner)
 	txBz, err := query(sdk.Context{}, []string{keeper.CreateDeployTx}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(params)})
 	assert.NoError(t, err)
+
+	var result types.DeployResult
+	testutils.Codec().MustUnmarshalJSON(txBz, &result)
 	var tx *ethTypes.Transaction
-	testutils.Codec().MustUnmarshalJSON(txBz, &tx)
+	testutils.Codec().MustUnmarshalJSON(result.Tx, &tx)
 
 	signedTx, err := ethTypes.SignTx(tx, signer, privateKey)
 	assert.NoError(t, err)
@@ -270,10 +273,10 @@ func testMint(t *testing.T, client *ethclient.Client, creatorAddr, contractAddr,
 	}}
 
 	params := types.MintParams{
-		GasLimit:   gasLimit,
-		Amount:     sdk.NewIntFromBigInt(amount),
-		Recipient:  toAddr.String(),
-		ContractID: contractID,
+		GasLimit:     gasLimit,
+		Amount:       sdk.NewIntFromBigInt(amount),
+		Recipient:    toAddr.String(),
+		ContractAddr: contractAddr.String(),
 	}
 
 	minConfHeight := testutils.RandIntBetween(1, 10)

@@ -141,7 +141,7 @@ func TestVerifyTx_Deploy_HashNotFound(t *testing.T) {
 	voter := createVoterMock()
 	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, createSnapshotter())
 
-	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
+	_, err := handler(ctx, types.NewMsgVerifyTx(sender, types.ModuleCdc.MustMarshalJSON(signedTx)))
 
 	assert.NoError(t, err)
 	assert.True(t, k.HasUnverifiedTx(ctx, signedTx.Hash().String()))
@@ -162,7 +162,7 @@ func TestVerifyTx_Deploy_NotConfirmed(t *testing.T) {
 	voter := createVoterMock()
 	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
 
-	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
+	_, err := handler(ctx, types.NewMsgVerifyTx(sender, types.ModuleCdc.MustMarshalJSON(signedTx)))
 
 	assert.NoError(t, err)
 	assert.True(t, k.HasUnverifiedTx(ctx, signedTx.Hash().String()))
@@ -180,7 +180,7 @@ func TestVerifyTx_Deploy_Success(t *testing.T) {
 	voter := createVoterMock()
 	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
 
-	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
+	_, err := handler(ctx, types.NewMsgVerifyTx(sender, types.ModuleCdc.MustMarshalJSON(signedTx)))
 
 	assert.NoError(t, err)
 	assert.True(t, k.HasUnverifiedTx(ctx, signedTx.Hash().String()))
@@ -201,7 +201,7 @@ func TestVerifyTx_Mint_HashNotFound(t *testing.T) {
 	voter := createVoterMock()
 	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
 
-	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
+	_, err := handler(ctx, types.NewMsgVerifyTx(sender, types.ModuleCdc.MustMarshalJSON(signedTx)))
 
 	assert.NoError(t, err)
 	assert.True(t, k.HasUnverifiedTx(ctx, signedTx.Hash().String()))
@@ -222,7 +222,7 @@ func TestVerifyTx_Mint_NotConfirmed(t *testing.T) {
 	voter := createVoterMock()
 	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
 
-	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
+	_, err := handler(ctx, types.NewMsgVerifyTx(sender, types.ModuleCdc.MustMarshalJSON(signedTx)))
 
 	assert.NoError(t, err)
 	assert.True(t, k.HasUnverifiedTx(ctx, signedTx.Hash().String()))
@@ -240,7 +240,7 @@ func TestVerifyTx_Mint_Success(t *testing.T) {
 	voter := createVoterMock()
 	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
 
-	_, err := handler(ctx, types.NewMsgVerifyTx(sender, signedTx))
+	_, err := handler(ctx, types.NewMsgVerifyTx(sender, types.ModuleCdc.MustMarshalJSON(signedTx)))
 
 	assert.NoError(t, err)
 	assert.True(t, k.HasUnverifiedTx(ctx, signedTx.Hash().String()))
