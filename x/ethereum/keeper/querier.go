@@ -31,7 +31,7 @@ func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer) sdk.Querier {
 		case QueryMasterKey:
 			return queryMasterAddress(ctx, s)
 		case CreateDeployTx:
-			return createDeployTx(ctx, rpc, s, req.Data)
+			return createDeployTx(ctx, k, rpc, s, req.Data)
 		case CreateMintTx:
 			return createMintTx(ctx, s, rpc, req.Data)
 		case SendTx:
@@ -64,7 +64,7 @@ func queryMasterAddress(ctx sdk.Context, s types.Signer) ([]byte, error) {
 
   If gasLimit is set to 0, the function will attempt to estimate the amount of gas needed
 */
-func createDeployTx(ctx sdk.Context, rpc types.RPCClient, s types.Signer, data []byte) ([]byte, error) {
+func createDeployTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, data []byte) ([]byte, error) {
 	var params types.DeployParams
 	err := types.ModuleCdc.UnmarshalJSON(data, &params)
 	if err != nil {
@@ -103,6 +103,7 @@ func createDeployTx(ctx sdk.Context, rpc types.RPCClient, s types.Signer, data [
 		Tx:              types.ModuleCdc.MustMarshalJSON(tx),
 		ContractAddress: crypto.CreateAddress(contractOwner, nonce).String(),
 	}
+	k.Logger(ctx).Debug(fmt.Sprintf("Contract address: %s", result.ContractAddress))
 	return types.ModuleCdc.MustMarshalJSON(result), nil
 }
 

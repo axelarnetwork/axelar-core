@@ -216,7 +216,7 @@ func (k Keeper) prepareMsgForSigning(ctx sdk.Context, msgs []sdk.Msg) (auth.StdS
 		AccountNumber: acc.GetAccountNumber(),
 		Sequence:      seqNo,
 		Msgs:          msgs,
-		Fee:           auth.NewStdFee(2000000, nil),
+		Fee:           auth.NewStdFee(10000000, nil),
 	}, nil
 }
 

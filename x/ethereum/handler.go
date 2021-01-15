@@ -140,9 +140,7 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 	}
 	err = signer.StartSign(ctx, keyID, hash.String(), hash.Bytes(), s.Validators)
 	if err != nil {
-		if !ok {
-			return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
-		}
+		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
 
 	return &sdk.Result{
