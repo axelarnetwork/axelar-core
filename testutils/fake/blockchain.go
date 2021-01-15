@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -28,7 +27,7 @@ type BlockChain struct {
 	}
 	nodes         []Node
 	blockTimeOut  time.Duration
-	currentHeight *int64
+	currentHeight int64
 	blockListener func(block)
 }
 
@@ -60,25 +59,27 @@ func NewBlockchain() *BlockChain {
 			out chan<- *Result
 		}, 1000),
 		nodes:         make([]Node, 0),
-		currentHeight: new(int64),
+		currentHeight: 0,
 		blockListener: func(block) {},
 	}
 }
 
 // WithBlockSize returns a blockchain with blocks of at most the specified size.
-func (bc *BlockChain) WithBlockSize(size int) *BlockChain {
+func (bc BlockChain) WithBlockSize(size int) *BlockChain {
 	if size < 1 {
 		panic("block size must be at least 1")
 	}
-	bc.blockSize = size
-	return bc
+	newChain := deepCopy(bc)
+	newChain.blockSize = size
+	return newChain
 }
 
 // WithBlockTimeOut returns a blockchain with a timeout. The timeout resets whenever a message is received.
 // When the timer runs out it disseminates the next block regardless of its size.
-func (bc *BlockChain) WithBlockTimeOut(timeOut time.Duration) *BlockChain {
-	bc.blockTimeOut = timeOut
-	return bc
+func (bc BlockChain) WithBlockTimeOut(timeOut time.Duration) *BlockChain {
+	newChain := deepCopy(bc)
+	newChain.blockTimeOut = timeOut
+	return newChain
 }
 
 // Submit sends a message to the blockchain. It returns a channel with the result.
@@ -134,8 +135,8 @@ func (bc *BlockChain) Start() {
 }
 
 // CurrentHeight returns the current block height.
-func (bc *BlockChain) CurrentHeight() int64 {
-	return *bc.currentHeight
+func (bc BlockChain) CurrentHeight() int64 {
+	return bc.currentHeight
 }
 
 func (bc *BlockChain) disseminateBlocks() {
@@ -153,7 +154,7 @@ func (bc *BlockChain) cutBlocks() <-chan block {
 		// close block channel when message channel is closed
 		defer close(blocks)
 		nextBlock := newBlock(bc.blockSize, abci.Header{Height: bc.CurrentHeight(), Time: time.Now()})
-		atomic.AddInt64(bc.currentHeight, 1)
+		bc.currentHeight += 1
 
 	loop:
 		for {
@@ -171,14 +172,14 @@ func (bc *BlockChain) cutBlocks() <-chan block {
 				if len(nextBlock.msgs) == bc.blockSize {
 					blocks <- nextBlock
 					nextBlock = newBlock(bc.blockSize, abci.Header{Height: bc.CurrentHeight(), Time: time.Now()})
-					atomic.AddInt64(bc.currentHeight, 1)
+					bc.currentHeight += 1
 
 				}
 			// timeout happened before receiving a message, cut the block here and start a new one
 			case <-timedOut:
 				blocks <- nextBlock
 				nextBlock = newBlock(bc.blockSize, abci.Header{Height: bc.CurrentHeight(), Time: time.Now()})
-				atomic.AddInt64(bc.currentHeight, 1)
+				bc.currentHeight += 1
 			}
 		}
 	}()
@@ -211,6 +212,18 @@ func reset(timeOut time.Duration) chan struct{} {
 		}()
 	}
 	return timedOut
+}
+
+func deepCopy(bc BlockChain) *BlockChain {
+	newChain := NewBlockchain()
+	newChain.blockSize = bc.blockSize
+	newChain.blockTimeOut = bc.blockTimeOut
+	newChain.currentHeight = bc.currentHeight
+	for _, node := range bc.nodes {
+		newChain.nodes = append(newChain.nodes, node)
+	}
+
+	return newChain
 }
 
 // Node is a fake that emulates the behaviour of a Cosmos node by retrieving blocks from the network,
