@@ -18,10 +18,9 @@ import (
 )
 
 const (
-	rawPrefix       = "raw_"
-	txPrefix        = "tx_"
-	pendingPrefix   = "pend_"
-	txIDForSCPrefix = "scTxID_"
+	rawPrefix     = "raw_"
+	txPrefix      = "tx_"
+	pendingPrefix = "pend_"
 )
 
 type Keeper struct {
@@ -102,19 +101,7 @@ func (k Keeper) ProcessVerificationResult(ctx sdk.Context, txID string, verified
 	return nil
 }
 
-func (k Keeper) GetTxIDForContractID(ctx sdk.Context, contractID string) (common.Hash, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(txIDForSCPrefix + contractID))
-	if bz == nil {
-		return common.Hash{}, false
-	}
-	return common.BytesToHash(bz), true
-}
-
-func (k Keeper) SetTxIDForContractID(ctx sdk.Context, contractID string, txID common.Hash) {
-	ctx.KVStore(k.storeKey).Set([]byte(txIDForSCPrefix+contractID), txID.Bytes())
-}
-
-func (k Keeper) SignRawTransaction(ctx sdk.Context, txID string, sig tss.Signature, pk ecdsa.PublicKey) (*ethTypes.Transaction, error) {
+func (k Keeper) AssembleEthTx(ctx sdk.Context, txID string, pk ecdsa.PublicKey, sig tss.Signature) (*ethTypes.Transaction, error) {
 	rawTx := k.getRawTx(ctx, txID)
 	if rawTx == nil {
 		return nil, fmt.Errorf("raw tx for ID %s has not been prepared yet", txID)

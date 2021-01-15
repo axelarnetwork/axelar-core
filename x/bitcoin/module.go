@@ -2,6 +2,7 @@ package bitcoin
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -86,7 +87,14 @@ func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {
 func (am AppModule) InitGenesis(ctx sdk.Context, message json.RawMessage) []abci.ValidatorUpdate {
 	var genesisState types.GenesisState
 	types.ModuleCdc.MustUnmarshalJSON(message, &genesisState)
-
+	actualNetwork := am.rpc.Network()
+	if genesisState.Params.Network != actualNetwork {
+		panic(fmt.Sprintf(
+			"local bitcoin client not configured correctly: expected network %s, got %s",
+			genesisState.Params.Network,
+			actualNetwork,
+		))
+	}
 	InitGenesis(ctx, am.keeper, genesisState)
 	return []abci.ValidatorUpdate{}
 }

@@ -181,11 +181,8 @@ func parseByteCode(filePath string) ([]byte, error) {
 }
 
 func validAddress(address string) bool {
-
 	if bytes.Equal(common.HexToAddress(address).Bytes(), make([]byte, common.AddressLength)) {
-
 		return false
-
 	}
 
 	return true

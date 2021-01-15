@@ -8,7 +8,7 @@ import (
 func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(&MsgVoteVerifiedTx{}, "ethereum/VoteVerifyTx", nil)
 	cdc.RegisterConcrete(MsgVerifyTx{}, "ethereum/VerifyTx", nil)
-	cdc.RegisterConcrete(MsgSignTx{}, "ethereum/RawTx", nil)
+	cdc.RegisterConcrete(MsgSignTx{}, "ethereum/SignTx", nil)
 
 }
 

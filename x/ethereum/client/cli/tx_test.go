@@ -94,11 +94,6 @@ func TestMsgSignTx_CorrectCosmosSigning(t *testing.T) {
 		Tx:     json,
 	}
 
-	// msg := types.MsgVoteVerifiedTx{
-	// 	Sender:     info.GetAddress(),
-	// 	PollMeta:   exported.PollMeta{},
-	// 	VotingData: false,
-	// }
 	bz, err := txBldr.BuildAndSign(accountName, pw, []sdk.Msg{msg})
 	if err != nil {
 		panic(err)

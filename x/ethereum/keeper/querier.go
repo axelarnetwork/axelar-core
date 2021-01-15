@@ -96,9 +96,7 @@ func createDeployTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Sign
 		}
 	}
 
-	value := big.NewInt(0)
-
-	tx := ethTypes.NewContractCreation(nonce, value, params.GasLimit, gasPrice, params.ByteCode)
+	tx := ethTypes.NewContractCreation(nonce, big.NewInt(0), params.GasLimit, gasPrice, params.ByteCode)
 	result := types.DeployResult{
 		Tx:              tx,
 		ContractAddress: crypto.CreateAddress(contractOwner, nonce).String(),
@@ -122,22 +120,24 @@ func createMintTx(ctx sdk.Context, s types.Signer, rpc types.RPCClient, data []b
 	if err != nil {
 		return nil, err
 	}
+	callData := types.CreateMintCallData(common.HexToAddress(params.Recipient), params.Amount.BigInt())
+	contractAddr := common.HexToAddress(params.ContractAddr)
 
 	contractOwner, err := getContractOwner(ctx, s)
 	if err != nil {
 		return nil, err
 	}
-
 	nonce, err := rpc.PendingNonceAt(context.Background(), contractOwner)
 	if err != nil {
 		return nil, fmt.Errorf("could not create nonce: %s", err)
 	}
 
-	callData := types.CreateMintCallData(common.HexToAddress(params.Recipient), params.Amount.BigInt())
-	contractAddr := common.HexToAddress(params.ContractAddr)
+	gasPrice, err := rpc.SuggestGasPrice(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("could not calculate gas price: %s", err)
+	}
 
 	if params.GasLimit == 0 {
-
 		params.GasLimit, err = rpc.EstimateGas(context.Background(), ethereumRoot.CallMsg{
 			To:   &contractAddr,
 			Data: callData,
@@ -145,11 +145,6 @@ func createMintTx(ctx sdk.Context, s types.Signer, rpc types.RPCClient, data []b
 		if err != nil {
 			return nil, fmt.Errorf("could not estimate gas limit: %s", err)
 		}
-	}
-
-	gasPrice, err := rpc.SuggestGasPrice(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("could not calculate gas price: %s", err)
 	}
 
 	tx := ethTypes.NewTransaction(nonce, contractAddr, big.NewInt(0), params.GasLimit, gasPrice, callData)
@@ -182,7 +177,7 @@ func sendTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, txID
 		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not find a corresponding signature for sig ID %s", sigID))
 	}
 
-	signedTx, err := k.SignRawTransaction(ctx, txID, sig, pk)
+	signedTx, err := k.AssembleEthTx(ctx, txID, pk, sig)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not insert generated signature: %v", err))
 	}

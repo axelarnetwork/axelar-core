@@ -33,7 +33,6 @@ import (
 
 const (
 	// Used to test ERC20 marshalling of invocations
-	contractID       = "testSC"
 	erc20Transfer    = "transfer(address,uint256)"
 	erc20TransferSel = "0xa9059cbb"
 	erc20Addr        = "0x337c67618968370907da31daef3020238d01c9de"
@@ -172,19 +171,19 @@ func TestGanache(t *testing.T) {
 
 	deployerKey, err := getPrivateKey("m/44'/60'/0'/0/0")
 	assert.NoError(t, err)
-	contractAddr, txHash := testDeploy(t, client, deployerKey)
+	contractAddr := testDeploy(t, client, deployerKey)
 
 	toKey, err := getPrivateKey("m/44'/60'/0'/0/1")
 	assert.NoError(t, err)
 
 	toAddr := crypto.PubkeyToAddress(toKey.PublicKey)
 
-	testMint(t, client, contractAddr, toAddr, txHash, deployerKey)
+	testMint(t, client, contractAddr, toAddr, deployerKey)
 }
 
 // Deploys the smart contract available for these tests. It avoids deployment via the contract ABI
 // in favor of creating a raw transaction for the same purpose.
-func testDeploy(t *testing.T, client *ethclient.Client, privateKey *ecdsa.PrivateKey) (common.Address, common.Hash) {
+func testDeploy(t *testing.T, client *ethclient.Client, privateKey *ecdsa.PrivateKey) common.Address {
 
 	byteCode := common.FromHex(MymintableBin)
 
@@ -229,7 +228,7 @@ func testDeploy(t *testing.T, client *ethclient.Client, privateKey *ecdsa.Privat
 
 			t.Logf("Contract address: %s\n", receipt.ContractAddress.Hex())
 
-			return receipt.ContractAddress, hash
+			return receipt.ContractAddress
 		}
 
 		t.Logf("Error getting receipt: %v\n", err)
@@ -237,12 +236,12 @@ func testDeploy(t *testing.T, client *ethclient.Client, privateKey *ecdsa.Privat
 
 	t.FailNow()
 
-	return common.Address{}, common.Hash{}
+	return common.Address{}
 }
 
 // Mint tokens associated to the contract used by these tests and associate them to the given wallet.
 // It avoids invoking the mint function throught the ABI in favor of creating a raw transaction for the same purpose.
-func testMint(t *testing.T, client *ethclient.Client, contractAddr, toAddr common.Address, txHash common.Hash, privateKey *ecdsa.PrivateKey) {
+func testMint(t *testing.T, client *ethclient.Client, contractAddr, toAddr common.Address, privateKey *ecdsa.PrivateKey) {
 
 	instance, err := NewMymintable(contractAddr, client)
 
@@ -279,8 +278,6 @@ func testMint(t *testing.T, client *ethclient.Client, contractAddr, toAddr commo
 	minConfHeight := testutils.RandIntBetween(1, 10)
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
-
-	k.SetTxIDForContractID(ctx, contractID, txHash)
 
 	query := keeper.NewQuerier(client, k, tssSigner)
 	txBz, err := query(ctx, []string{keeper.CreateMintTx}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(params)})

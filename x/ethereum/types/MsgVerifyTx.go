@@ -10,7 +10,8 @@ import (
 
 type MsgVerifyTx struct {
 	Sender sdk.AccAddress
-	Tx     []byte
+	// Tx is stored in serialized form because the amino codec cannot properly deserialize MsgVerifyTx otherwise
+	Tx []byte
 }
 
 func NewMsgVerifyTx(sender sdk.AccAddress, json []byte) MsgVerifyTx {
