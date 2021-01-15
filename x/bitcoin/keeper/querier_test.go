@@ -17,7 +17,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
 )
 
-func TestQuerier_TxInfo(t *testing.T) {
+// TestQuerier_TxInfo_CorrectMarshalling is a regression test that ensures OutPointInfo is correctly marshalled and unmarshalled
+func TestQuerier_TxInfo_CorrectMarshalling(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		var bz []byte
 		for _, b := range testutils.RandIntsBetween(0, 256).Take(chainhash.HashSize) {
