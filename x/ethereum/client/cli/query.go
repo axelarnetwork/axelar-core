@@ -155,7 +155,7 @@ func GetCmdSendTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s%s", queryRoute, keeper.SendTx, args[0]), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.SendTx, args[0]), nil)
 			if err != nil {
 				return sdkerrors.Wrapf(err, "could not send the transaction spending transaction %s", args[0])
 			}

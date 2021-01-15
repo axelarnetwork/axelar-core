@@ -136,7 +136,7 @@ func (k Keeper) SignRawTransaction(ctx sdk.Context, txID string, sig tss.Signatu
 
 func (k Keeper) GetHashToSign(ctx sdk.Context, txID string) (common.Hash, error) {
 	rawTx := k.getRawTx(ctx, txID)
-	if rawTx != nil {
+	if rawTx == nil {
 		return common.Hash{}, fmt.Errorf("raw tx with id %s not found", txID)
 	}
 	signer := k.getSigner(ctx)

@@ -35,7 +35,8 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 
 func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v types.Voter, msg types.MsgVerifyTx) (*sdk.Result, error) {
 	k.Logger(ctx).Debug("verifying ethereum transaction")
-	txID := msg.Tx.Hash().String()
+	tx := msg.UnmarshaledTx()
+	txID := tx.Hash().String()
 
 	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: txID}
 	if err := v.InitPoll(ctx, poll); err != nil {
@@ -51,14 +52,14 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v 
 		),
 	)
 
-	k.SetUnverifiedTx(ctx, txID, msg.Tx)
+	k.SetUnverifiedTx(ctx, txID, tx)
 
 	/*
 	 Anyone not able to verify the transaction will automatically record a negative vote,
 	 but only validators will later send out that vote.
 	*/
 
-	if err := verifyTx(ctx, k, rpc, msg.Tx); err != nil {
+	if err := verifyTx(ctx, k, rpc, tx); err != nil {
 		k.Logger(ctx).Debug(sdkerrors.Wrapf(err, "expected transaction (%s) could not be verified", txID).Error())
 		if err := v.RecordVote(ctx, &types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false}); err != nil {
 			k.Logger(ctx).Error(sdkerrors.Wrap(err, "voting failed").Error())
@@ -109,8 +110,9 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, ms
 }
 
 func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap snapshot.Snapshotter, msg types.MsgSignTx) (*sdk.Result, error) {
-	txID := msg.Tx.Hash().String()
-	k.SetRawTx(ctx, txID, msg.Tx)
+	tx := msg.UnmarshaledTx()
+	txID := tx.Hash().String()
+	k.SetRawTx(ctx, txID, tx)
 	k.Logger(ctx).Info(fmt.Sprintf("storing raw tx %s", txID))
 	hash, err := k.GetHashToSign(ctx, txID)
 	if err != nil {
@@ -127,9 +129,9 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 		),
 	)
 
-	keyID, ok := signer.GetCurrentMasterKeyID(ctx, balance.Bitcoin)
+	keyID, ok := signer.GetCurrentMasterKeyID(ctx, balance.Ethereum)
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no master key for chain %s found", balance.Bitcoin)
+		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no master key for chain %s found", balance.Ethereum)
 	}
 
 	s, ok := snap.GetLatestSnapshot(ctx)

@@ -10,13 +10,13 @@ import (
 
 type MsgSignTx struct {
 	Sender sdk.AccAddress
-	Tx     *ethTypes.Transaction
+	Tx     []byte
 }
 
-func NewMsgSignTx(sender sdk.AccAddress, tx *ethTypes.Transaction) sdk.Msg {
+func NewMsgSignTx(sender sdk.AccAddress, jsonTx []byte) sdk.Msg {
 	return MsgSignTx{
 		Sender: sender,
-		Tx:     tx,
+		Tx:     jsonTx,
 	}
 }
 
@@ -35,6 +35,10 @@ func (msg MsgSignTx) ValidateBasic() error {
 	if msg.Tx == nil {
 		return fmt.Errorf("missing tx")
 	}
+	tx := ethTypes.Transaction{}
+	if err := tx.UnmarshalJSON(msg.Tx); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -45,4 +49,13 @@ func (msg MsgSignTx) GetSignBytes() []byte {
 
 func (msg MsgSignTx) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
+}
+
+func (msg MsgSignTx) UnmarshaledTx() *ethTypes.Transaction {
+	tx := &ethTypes.Transaction{}
+	err := tx.UnmarshalJSON(msg.Tx)
+	if err != nil {
+		panic(err)
+	}
+	return tx
 }

@@ -10,13 +10,13 @@ import (
 
 type MsgVerifyTx struct {
 	Sender sdk.AccAddress
-	Tx     *ethTypes.Transaction
+	Tx     []byte
 }
 
-func NewMsgVerifyTx(sender sdk.AccAddress, tx *ethTypes.Transaction) MsgVerifyTx {
+func NewMsgVerifyTx(sender sdk.AccAddress, json []byte) MsgVerifyTx {
 	return MsgVerifyTx{
 		Sender: sender,
-		Tx:     tx,
+		Tx:     json,
 	}
 }
 
@@ -35,11 +35,13 @@ func (msg MsgVerifyTx) ValidateBasic() error {
 	if msg.Tx == nil {
 		return fmt.Errorf("missing tx")
 	}
-	if msg.Tx.Data() == nil {
-		return fmt.Errorf("missing smart contract call data")
+	tx := &ethTypes.Transaction{}
+	err := tx.UnmarshalJSON(msg.Tx)
+	if err != nil {
+		return err
 	}
-	if msg.Tx.Value() == nil {
-		return fmt.Errorf("missing tx value")
+	if tx.Data() == nil {
+		return fmt.Errorf("missing smart contract call data")
 	}
 
 	return nil
@@ -52,4 +54,13 @@ func (msg MsgVerifyTx) GetSignBytes() []byte {
 
 func (msg MsgVerifyTx) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
+}
+
+func (msg MsgVerifyTx) UnmarshaledTx() *ethTypes.Transaction {
+	tx := &ethTypes.Transaction{}
+	err := tx.UnmarshalJSON(msg.Tx)
+	if err != nil {
+		panic(err)
+	}
+	return tx
 }

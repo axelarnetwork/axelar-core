@@ -47,7 +47,7 @@ func GetCmdSignTx(cdc *codec.Codec) *cobra.Command {
 			var tx *ethTypes.Transaction
 			cdc.MustUnmarshalJSON(json, &tx)
 
-			msg := types.NewMsgSignTx(cliCtx.GetFromAddress(), tx)
+			msg := types.NewMsgSignTx(cliCtx.GetFromAddress(), json)
 
 			if err := msg.ValidateBasic(); err != nil {
 				return err
@@ -76,7 +76,7 @@ func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
 			var tx *ethTypes.Transaction
 			cdc.MustUnmarshalJSON(json, &tx)
 
-			msg := types.NewMsgVerifyTx(cliCtx.GetFromAddress(), tx)
+			msg := types.NewMsgVerifyTx(cliCtx.GetFromAddress(), json)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
