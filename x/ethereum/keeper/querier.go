@@ -189,7 +189,7 @@ func sendTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, txID
 
 	err = rpc.SendTransaction(context.Background(), signedTx)
 	if err != nil {
-		k.Logger(ctx).Error(err.Error())
+		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
 
 	return k.Codec().MustMarshalJSON(fmt.Sprintf("successfully sent transaction %s to Ethereum", signedTx.Hash().String())), nil
