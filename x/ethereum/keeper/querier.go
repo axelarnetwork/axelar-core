@@ -99,8 +99,12 @@ func createDeployTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Sign
 	value := big.NewInt(0)
 
 	tx := ethTypes.NewContractCreation(nonce, value, params.GasLimit, gasPrice, params.ByteCode)
+	json, err := tx.MarshalJSON()
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+	}
 	result := types.DeployResult{
-		Tx:              types.ModuleCdc.MustMarshalJSON(tx),
+		Tx:              json,
 		ContractAddress: crypto.CreateAddress(contractOwner, nonce).String(),
 	}
 	k.Logger(ctx).Debug(fmt.Sprintf("Contract address: %s", result.ContractAddress))
