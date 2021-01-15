@@ -68,7 +68,7 @@ func GetCmdMasterAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
 func GetCmdCreateMintTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	var gasLimit uint64
 	cmd := &cobra.Command{
-		Use:   "mint [contractID] [recipient] [amount]",
+		Use:   "mint [contractAddr] [recipient] [amount]",
 		Short: "Receive a raw mint transaction",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -87,10 +87,10 @@ func GetCmdCreateMintTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 
 			params := types.MintParams{
-				Recipient:  args[1],
-				Amount:     amount.Amount,
-				ContractID: args[0],
-				GasLimit:   gasLimit,
+				Recipient:    args[1],
+				Amount:       amount.Amount,
+				ContractAddr: args[0],
+				GasLimit:     gasLimit,
 			}
 
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.CreateMintTx), cdc.MustMarshalJSON(params))
@@ -136,8 +136,11 @@ func GetCmdCreateDeployTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				return nil
 			}
 
+			var result types.DeployResult
+			cdc.MustUnmarshalJSON(res, &res)
+
 			var tx *ethTypes.Transaction
-			cdc.MustUnmarshalJSON(res, &tx)
+			cdc.MustUnmarshalJSON(result.Tx, &tx)
 			fmt.Println(string(cdc.MustMarshalJSON(tx)))
 			return nil
 		},

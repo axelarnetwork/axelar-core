@@ -33,7 +33,7 @@ func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer) sdk.Querier {
 		case CreateDeployTx:
 			return createDeployTx(ctx, rpc, s, req.Data)
 		case CreateMintTx:
-			return createMintTx(ctx, k, s, rpc, req.Data)
+			return createMintTx(ctx, s, rpc, req.Data)
 		case SendTx:
 			return sendTx(ctx, k, rpc, s, path[1])
 		default:
@@ -115,7 +115,7 @@ func createDeployTx(ctx sdk.Context, rpc types.RPCClient, s types.Signer, data [
 
   If gasLimit is set to 0, the function will attempt to estimate the amount of gas needed
 */
-func createMintTx(ctx sdk.Context, k Keeper, s types.Signer, rpc types.RPCClient, data []byte) ([]byte, error) {
+func createMintTx(ctx sdk.Context, s types.Signer, rpc types.RPCClient, data []byte) ([]byte, error) {
 	var params types.MintParams
 	err := types.ModuleCdc.UnmarshalJSON(data, &params)
 	if err != nil {
