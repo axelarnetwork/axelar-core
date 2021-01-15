@@ -8,6 +8,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"golang.org/x/crypto/sha3"
 
@@ -118,7 +119,7 @@ type DeployParams struct {
 
 type DeployResult struct {
 	ContractAddress string
-	Tx              []byte
+	Tx              *ethTypes.Transaction
 }
 
 type MintParams struct {

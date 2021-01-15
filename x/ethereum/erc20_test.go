@@ -8,8 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/tendermint/tendermint/libs/log"
+
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -203,15 +204,13 @@ func testDeploy(t *testing.T, client *ethclient.Client, privateKey *ecdsa.Privat
 	}
 
 	query := keeper.NewQuerier(client, keeper.Keeper{}, tssSigner)
-	txBz, err := query(sdk.Context{}, []string{keeper.CreateDeployTx}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(params)})
+	res, err := query(sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger()), []string{keeper.CreateDeployTx}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(params)})
 	assert.NoError(t, err)
 
 	var result types.DeployResult
-	testutils.Codec().MustUnmarshalJSON(txBz, &result)
-	var tx *ethTypes.Transaction
-	testutils.Codec().MustUnmarshalJSON(result.Tx, &tx)
+	testutils.Codec().MustUnmarshalJSON(res, &result)
 
-	signedTx, err := ethTypes.SignTx(tx, signer, privateKey)
+	signedTx, err := ethTypes.SignTx(result.Tx, signer, privateKey)
 	assert.NoError(t, err)
 	err = client.SendTransaction(context.Background(), signedTx)
 	assert.NoError(t, err)

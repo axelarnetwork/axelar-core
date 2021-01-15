@@ -137,17 +137,9 @@ func GetCmdCreateDeployTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 
 			var result types.DeployResult
-			cdc.MustUnmarshalJSON(res, &res)
+			cdc.MustUnmarshalJSON(res, &result)
 
-			var json []byte
-			cdc.MustUnmarshalJSON(result.Tx, json)
-
-			tx := &ethTypes.Transaction{}
-			err = tx.UnmarshalJSON(json)
-			if err != nil {
-				return err
-			}
-			fmt.Println(string(cdc.MustMarshalJSON(tx)))
+			fmt.Println(string(cdc.MustMarshalJSON(result.Tx)))
 			return nil
 		},
 	}
