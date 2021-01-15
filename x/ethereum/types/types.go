@@ -116,11 +116,16 @@ type DeployParams struct {
 	GasLimit uint64
 }
 
+type DeployResult struct {
+	ContractAddress string
+	Tx              []byte
+}
+
 type MintParams struct {
-	Recipient  string
-	Amount     sdk.Int
-	ContractID string
-	GasLimit   uint64
+	Recipient    string
+	Amount       sdk.Int
+	ContractAddr string
+	GasLimit     uint64
 }
 
 func CreateMintCallData(toAddr common.Address, amount *big.Int) []byte {
@@ -133,4 +138,8 @@ func CreateMintCallData(toAddr common.Address, amount *big.Int) []byte {
 	data = append(data, common.FromHex(paddedAddr)...)
 	data = append(data, common.FromHex(paddedVal)...)
 	return data
+}
+
+func GenerateContractAddress(toAddr common.Address, nonce uint64) string {
+	panic("implement me")
 }

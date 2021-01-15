@@ -99,8 +99,11 @@ func createDeployTx(ctx sdk.Context, rpc types.RPCClient, s types.Signer, data [
 	value := big.NewInt(0)
 
 	tx := ethTypes.NewContractCreation(nonce, value, params.GasLimit, gasPrice, params.ByteCode)
-
-	return types.ModuleCdc.MustMarshalJSON(tx), nil
+	result := types.DeployResult{
+		Tx:              types.ModuleCdc.MustMarshalJSON(tx),
+		ContractAddress: types.GenerateContractAddress(contractOwner, nonce),
+	}
+	return types.ModuleCdc.MustMarshalJSON(result), nil
 }
 
 /*
@@ -124,27 +127,18 @@ func createMintTx(ctx sdk.Context, k Keeper, s types.Signer, rpc types.RPCClient
 		return nil, err
 	}
 
-	hash, ok := k.GetTxIDForContractID(ctx, params.ContractID)
-	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrEthereum, "selected contract's deployment is not verified")
-	}
-
-	receipt, err := rpc.TransactionReceipt(context.Background(), hash)
-	if err != nil {
-		return nil, sdkerrors.Wrapf(types.ErrEthereum, "could not obtain receipt: %v", err)
-	}
-
 	nonce, err := rpc.PendingNonceAt(context.Background(), contractOwner)
 	if err != nil {
 		return nil, fmt.Errorf("could not create nonce: %s", err)
 	}
 
 	callData := types.CreateMintCallData(common.HexToAddress(params.Recipient), params.Amount.BigInt())
+	contractAddr := common.HexToAddress(params.ContractAddr)
 
 	if params.GasLimit == 0 {
 
 		params.GasLimit, err = rpc.EstimateGas(context.Background(), ethereumRoot.CallMsg{
-			To:   &receipt.ContractAddress,
+			To:   &contractAddr,
 			Data: callData,
 		})
 		if err != nil {
@@ -157,7 +151,7 @@ func createMintTx(ctx sdk.Context, k Keeper, s types.Signer, rpc types.RPCClient
 		return nil, fmt.Errorf("could not calculate gas price: %s", err)
 	}
 
-	tx := ethTypes.NewTransaction(nonce, receipt.ContractAddress, big.NewInt(0), params.GasLimit, gasPrice, callData)
+	tx := ethTypes.NewTransaction(nonce, contractAddr, big.NewInt(0), params.GasLimit, gasPrice, callData)
 	return types.ModuleCdc.MustMarshalJSON(tx), nil
 }
 
