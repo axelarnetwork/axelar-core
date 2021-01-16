@@ -27,7 +27,6 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 	tssTxCmd.AddCommand(flags.PostCommands(
 		getCmdKeygenStart(cdc),
-		getCmdSignStart(cdc),
 		getCmdMasterKeyAssignNext(cdc),
 		getCmdRotateMasterKey(cdc),
 	)...)
@@ -103,57 +102,6 @@ func getCmdRotateMasterKey(cdc *codec.Codec) *cobra.Command {
 			Sender: cliCtx.FromAddress,
 			Chain:  exported.ChainFromString(args[0]),
 		}
-		if err := msg.ValidateBasic(); err != nil {
-			return err
-		}
-		return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
-	}
-	return cmd
-}
-
-func getCmdSignStart(cdc *codec.Codec) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "start-sign [message]",
-		Short: "Initiate threshold signature protocol",
-		Args:  cobra.ExactArgs(1),
-	}
-	newSigID := cmd.Flags().String("id", "", "unique ID for new signature (required)")
-	if cmd.MarkFlagRequired("id") != nil {
-		panic("flag not set")
-	}
-	keyID := cmd.Flags().String("key-id", "", "unique ID for signature pubkey")
-	chainForMasterKey := cmd.Flags().StringP("master-key", "m", "", "use the master key registered for the given chain")
-
-	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		if *keyID == "" && *chainForMasterKey == "" {
-			return fmt.Errorf("either flag --key-id or --master-key must be set")
-		}
-		if *keyID != "" && *chainForMasterKey != "" {
-			return fmt.Errorf("flags --key-id and --master-key must not both be set")
-		}
-		cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
-
-		var toSign []byte
-		cdc.MustUnmarshalJSON([]byte(args[0]), &toSign)
-		var msg sdk.Msg
-		if *keyID != "" {
-			msg = types.MsgSignStart{
-				Sender:    cliCtx.FromAddress,
-				SigID:     *newSigID,
-				KeyID:     *keyID,
-				MsgToSign: toSign,
-				Mode:      types.ModeSpecificKey,
-			}
-		} else {
-			msg = types.MsgSignStart{
-				Sender:    cliCtx.FromAddress,
-				SigID:     *newSigID,
-				MsgToSign: toSign,
-				Chain:     exported.ChainFromString(*chainForMasterKey),
-				Mode:      types.ModeMasterKey,
-			}
-		}
-
 		if err := msg.ValidateBasic(); err != nil {
 			return err
 		}

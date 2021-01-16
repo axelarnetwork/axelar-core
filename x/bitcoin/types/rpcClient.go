@@ -9,25 +9,40 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/wire"
+	"github.com/btcsuite/btcutil"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
 )
 
 const (
 	sleep          = 1 * time.Second
-	ErrRpcInWarmup = btcjson.RPCErrorCode(-28)
+	errRpcInWarmup = btcjson.RPCErrorCode(-28)
 )
 
 //go:generate moq -pkg mock -out ./mock/rpcClient.go . RPCClient
 
+// RPCClient defines the interface of an rpc client communication with the Bitcoin network
 type RPCClient interface {
-	ImportAddress(address string) error
 	ImportAddressRescan(address string, account string, rescan bool) error
-	GetRawTransactionVerbose(hash *chainhash.Hash) (*btcjson.TxRawResult, error)
+	GetOutPointInfo(out *wire.OutPoint) (OutPointInfo, error)
 	SendRawTransaction(tx *wire.MsgTx, allowHighFees bool) (*chainhash.Hash, error)
+	Network() Network
 }
 
-func NewRPCClient(cfg BtcConfig, logger log.Logger) (*rpcclient.Client, error) {
+// RPCClientImpl implements the RPCClient interface
+type RPCClientImpl struct {
+	*rpcclient.Client
+	Timeout time.Duration
+	network Network
+}
+
+// Network returns the Bitcoin network the client is connected to
+func (r *RPCClientImpl) Network() Network {
+	return r.network
+}
+
+// NewRPCClient creates a new instance of RPCClientImpl
+func NewRPCClient(cfg BtcConfig, logger log.Logger) (*RPCClientImpl, error) {
 	logger = logger.With("module", fmt.Sprintf("x/%s", ModuleName))
 
 	// Make sure there are authentication parameters
@@ -58,11 +73,12 @@ func NewRPCClient(cfg BtcConfig, logger log.Logger) (*rpcclient.Client, error) {
 	if err != nil {
 		return nil, sdkerrors.Wrap(ErrConnFailed, "could not start the bitcoin rpc client")
 	}
-
-	if err = waitForBtcWarmup(client, cfg.RPCTimeout, logger); err != nil {
+	r := &RPCClientImpl{Client: client, Timeout: cfg.RPCTimeout}
+	if err = r.setNetwork(logger); err != nil {
 		return nil, err
 	}
-	return client, nil
+
+	return r, nil
 }
 
 func waitForAuthCookie(cookiePath string, timeout time.Duration, logger log.Logger) error {
@@ -81,44 +97,35 @@ func waitForAuthCookie(cookiePath string, timeout time.Duration, logger log.Logg
 	}
 }
 
-type connection struct {
-	client  *rpcclient.Client
-	retries int
-	error   error
-}
+func (r *RPCClientImpl) setNetwork(logger log.Logger) error {
+	maxRetries := int(r.Timeout / sleep)
 
-func (c *connection) isAvailable() bool {
-	_, c.error = c.client.GetBlockChainInfo()
-	return c.error == nil
-}
+	var info *btcjson.GetBlockChainInfoResult
+	var retries int
 
-func (c connection) Error() error {
-	return c.error
-}
-
-func waitForBtcWarmup(client *rpcclient.Client, timeout time.Duration, logger log.Logger) error {
-	conn := connection{
-		client:  client,
-		retries: 0,
-	}
-
-	maxRetries := int(timeout / sleep)
-	for !conn.isAvailable() && conn.retries < maxRetries {
-		switch conn.error.(type) {
-		case *btcjson.RPCError:
-			if conn.error.(*btcjson.RPCError).Code == ErrRpcInWarmup {
+	// Ensure the loop is run at least once
+	var err error = btcjson.RPCError{Code: errRpcInWarmup}
+	for retries = 0; err != nil && retries < maxRetries; retries++ {
+		switch err := err.(type) {
+		case btcjson.RPCError:
+			if err.Code == errRpcInWarmup {
 				logger.Debug("waiting for bitcoin rpc server to start")
 				time.Sleep(sleep)
 			} else {
-				return unexpectedError(conn.error)
+				return unexpectedError(err)
 			}
 		default:
-			return unexpectedError(conn.error)
+			return unexpectedError(err)
 		}
+		info, err = r.GetBlockChainInfo()
 	}
 
-	if conn.retries < maxRetries {
+	if retries < maxRetries {
 		logger.Info("btc bridge client successfully connected to bitcoin node")
+		if info == nil {
+			return fmt.Errorf("bitcoin blockchain info is nil")
+		}
+		r.network = Network(info.Chain)
 		return nil
 	} else {
 		return sdkerrors.Wrap(ErrTimeOut, "could not establish a connection to the bitcoin node")
@@ -127,4 +134,52 @@ func waitForBtcWarmup(client *rpcclient.Client, timeout time.Duration, logger lo
 
 func unexpectedError(err error) error {
 	return sdkerrors.Wrap(ErrConnFailed, fmt.Sprintf("unexpected error when waiting for bitcoin node warmup: %s", err.Error()))
+}
+
+// GetOutPointInfo returns all relevant information for a specific transaction outpoint
+func (r *RPCClientImpl) GetOutPointInfo(out *wire.OutPoint) (OutPointInfo, error) {
+	tx, err := r.GetRawTransactionVerbose(&out.Hash)
+	if err != nil {
+		return OutPointInfo{}, sdkerrors.Wrap(err, "could not retrieve Bitcoin transaction")
+	}
+
+	if uint32(len(tx.Vout)) <= out.Index {
+		return OutPointInfo{}, fmt.Errorf("vout index out of range")
+	}
+
+	vout := tx.Vout[out.Index]
+
+	if len(vout.ScriptPubKey.Addresses) != 1 {
+		return OutPointInfo{}, fmt.Errorf("deposit must be only spendable by a single address")
+	}
+
+	amount, err := btcutil.NewAmount(vout.Value)
+	if err != nil {
+		return OutPointInfo{}, sdkerrors.Wrap(err, "could not parse transaction amount of the Bitcoin response")
+	}
+
+	return OutPointInfo{
+		OutPoint:      out,
+		Amount:        amount,
+		Recipient:     vout.ScriptPubKey.Addresses[0],
+		Confirmations: tx.Confirmations,
+	}, nil
+}
+
+type DummyClient struct{}
+
+func (d DummyClient) ImportAddressRescan(string, string, bool) error {
+	return fmt.Errorf("no response")
+}
+
+func (d DummyClient) GetOutPointInfo(*wire.OutPoint) (OutPointInfo, error) {
+	return OutPointInfo{}, fmt.Errorf("no response")
+}
+
+func (d DummyClient) SendRawTransaction(*wire.MsgTx, bool) (*chainhash.Hash, error) {
+	return nil, fmt.Errorf("no response")
+}
+
+func (d DummyClient) Network() Network {
+	return DefaultParams().Network
 }

@@ -1,17 +1,14 @@
 package tests
 
 import (
-	"crypto/ecdsa"
-	"crypto/rand"
 	"testing"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcd/btcjson"
-	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -39,7 +36,7 @@ This file should function as an example of how to use the blockchain fake to run
 Cosmos modules without spinning up Tendermint consensus and multiple real nodes
 */
 
-var txs = map[string]*btcjson.TxRawResult{}
+var txs = map[string]btcTypes.OutPointInfo{}
 
 func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 	// test data
@@ -47,23 +44,22 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 	var hashes []*chainhash.Hash
 	var verifyMsgs []sdk.Msg
 	for i := 0; i < txCount; i++ {
-		prevHash := createHash()
 		hash := createHash()
 		hashes = append(hashes, hash)
-		recipient := createAddress()
-		prevVoutIdx := uint32(testutils.RandIntBetween(0, 100))
 		amount := testutils.RandIntBetween(0, 100000)
 		confirmations := uint64(testutils.RandIntBetween(7, 10000))
 		// deposit tx
-		txs[hash.String()] = &btcjson.TxRawResult{
-			Txid:          hash.String(),
-			Hash:          hash.String(),
-			Vin:           []btcjson.Vin{{Txid: prevHash.String(), Vout: prevVoutIdx}},
-			Vout:          []btcjson.Vout{createVout(amount, recipient.String())},
+		info := btcTypes.OutPointInfo{
+			OutPoint: &wire.OutPoint{
+				Hash:  *hash,
+				Index: 0,
+			},
+			Amount:        btcutil.Amount(amount),
+			Recipient:     testutils.RandString(int(testutils.RandIntBetween(5, 20))),
 			Confirmations: confirmations,
 		}
-
-		verifyMsgs = append(verifyMsgs, prepareVerifyMsg(hash, recipient.String(), amount))
+		txs[hash.String()] = info
+		verifyMsgs = append(verifyMsgs, btcTypes.MsgVerifyTx{Sender: sdk.AccAddress("user1"), OutPointInfo: info})
 	}
 
 	// setting up the test infrastructure
@@ -111,7 +107,7 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 		assert.NoError(t, res.Error)
 	}
 
-	<-blockChain.WaitNBlocks(15)
+	blockChain.WaitNBlocks(15)
 
 	assert.True(t, allTxVoteCompleted(nodes, btcKeepers, hashes))
 }
@@ -120,26 +116,13 @@ func allTxVoteCompleted(nodes []fake.Node, btcKeeper []btcKeeper.Keeper, hashes 
 	allConfirmed := true
 	for i, k := range btcKeeper {
 		for _, hash := range hashes {
-			if _, ok := k.GetUTXO(nodes[i].Ctx, hash.String()); !ok {
+			if ok := k.HasVerifiedOutPoint(nodes[i].Ctx, hash.String()); !ok {
 				allConfirmed = false
 				break
 			}
 		}
 	}
 	return allConfirmed
-}
-
-func createAddress() btcutil.Address {
-	sk, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
-	if err != nil {
-		panic(err)
-	}
-	pk := btcec.PublicKey(sk.PublicKey)
-	addr, err := btcutil.NewAddressPubKeyHash(btcutil.Hash160(pk.SerializeCompressed()), &chaincfg.MainNetParams)
-	if err != nil {
-		panic(err)
-	}
-	return addr
 }
 
 func createHash() *chainhash.Hash {
@@ -152,20 +135,6 @@ func createHash() *chainhash.Hash {
 		panic(err)
 	}
 	return hash
-}
-
-func createVout(amount int64, recipient string) btcjson.Vout {
-	return btcjson.Vout{
-		Value:        btcutil.Amount(amount).ToBTC(),
-		ScriptPubKey: btcjson.ScriptPubKeyResult{Addresses: []string{recipient}},
-	}
-}
-
-func prepareVerifyMsg(hash *chainhash.Hash, recipient string, amount int64) sdk.Msg {
-	return btcTypes.NewMsgVerifyTx(sdk.AccAddress("user1"), hash, 0, btcTypes.BtcAddress{
-		Network:       btcTypes.Network(chaincfg.MainNetParams.Name),
-		EncodedString: recipient,
-	}, btcutil.Amount(amount))
 }
 
 func newNodeForVote(moniker string, broadcaster bcExported.Broadcaster, staker voteTypes.Snapshotter) (fake.Node, btcKeeper.Keeper) {
@@ -183,15 +152,19 @@ func newNodeForVote(moniker string, broadcaster bcExported.Broadcaster, staker v
 	r := fake.NewRouter()
 	vH := vote.NewHandler()
 
-	btcK := btcKeeper.NewBtcKeeper(testutils.Codec(), sdk.NewKVStoreKey(btcTypes.StoreKey))
+	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
+	btcK := btcKeeper.NewBtcKeeper(testutils.Codec(), sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)
+	btcK.SetParams(ctx, btcTypes.DefaultParams())
+
 	// We use a fake for the bitcoin rpc client so we can control the responses from the "bitcoin" network
 	btcH := bitcoin.NewHandler(btcK, vK, &btcMock.RPCClientMock{
-		GetRawTransactionVerboseFunc: func(hash *chainhash.Hash) (*btcjson.TxRawResult, error) {
-			return txs[hash.String()], nil
-		}}, nil, &btcMock.BalancerMock{
+		GetOutPointInfoFunc: func(out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
+			return txs[out.Hash.String()], nil
+		}}, nil, nil, &btcMock.BalancerMock{
 		GetRecipientFunc: func(ctx sdk.Context, sender balance.CrossChainAddress) (balance.CrossChainAddress, bool) {
 			return balance.CrossChainAddress{}, false
-		}})
+		},
+	})
 
 	broadcastH := broadcast.NewHandler(broadcaster)
 
@@ -208,7 +181,7 @@ func newNodeForVote(moniker string, broadcaster bcExported.Broadcaster, staker v
 	r.AddRoute(voteTypes.ModuleName, vH).
 		AddRoute(btcTypes.ModuleName, btcH).
 		AddRoute(broadcastTypes.ModuleName, broadcastH)
-	return fake.NewNode(moniker, ctx, r).WithEndBlockers(eb), btcK
+	return fake.NewNode(moniker, ctx, r, nil).WithEndBlockers(eb), btcK
 }
 
 func newValidator(address sdk.ValAddress, power int64) *snapMock.ValidatorMock {

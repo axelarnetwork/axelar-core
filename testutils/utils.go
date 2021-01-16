@@ -9,6 +9,7 @@ import (
 
 	bitcoin "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/types"
+	ethereum "github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/types"
@@ -31,12 +32,13 @@ func Codec() *codec.Codec {
 	sdk.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
 
-	// Add new modules here so tests have access to marshalling the registered types
+	// Add new modules here so tests have access to marshalling the registered ethereum
 	vote.RegisterCodec(cdc)
 	bitcoin.RegisterCodec(cdc)
 	tss.RegisterCodec(cdc)
 	broadcast.RegisterCodec(cdc)
 	snapshot.RegisterCodec(cdc)
+	ethereum.RegisterCodec(cdc)
 
 	return cdc
 }
@@ -45,6 +47,17 @@ func Codec() *codec.Codec {
 // It panics if  upper <= lower.
 func RandIntBetween(lower int64, upper int64) int64 {
 	return rand.Int63n(upper-lower) + lower
+}
+
+// RandBytes resturns a random slice of bytes of the specified length
+func RandBytes(len int) []byte {
+	bz := make([]byte, len)
+	gen := RandIntsBetween(0, 256)
+	defer gen.Stop()
+	for i, b := range gen.Take(len) {
+		bz[i] = byte(b)
+	}
+	return bz
 }
 
 // RandIntGen represents an random integer generator to generate a sequence of integers with the same properties.
@@ -66,7 +79,7 @@ func RandIntsBetween(lower int64, upper int64) RandIntGen {
 	return generateInt64(func() int64 { return rand.Int63n(upper-lower) + lower })
 }
 
-// Restrict the output of the underlying generator to adhere to the predicate.
+// Where restricts the output of the underlying generator to adhere to the predicate.
 // If the predicate is not satisfiable the Take function will deadlock.
 func (g RandIntGen) Where(predicate func(i int64) bool) RandIntGen {
 	newGen := RandIntGen{ch: make(chan int64), wrapped: &g}
@@ -243,7 +256,7 @@ func (g RandStringGen) Stop() {
 	g.lengthGen.Stop()
 }
 
-// Take returns a slice of random strings of the given length.
+// Distinct returns a new unique string
 func (g RandStringGen) Distinct() RandDistinctStringGen {
 	return RandDistinctStringGen{RandStringGen: g, previous: make(map[string]struct{})}
 }

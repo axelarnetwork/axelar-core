@@ -4,73 +4,83 @@ import (
 	"fmt"
 
 	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 const (
 	ModeSpecificAddress Mode = iota
 	ModeCurrentMasterKey
-	ModeNextMasterKey
 	ModeSpecificKey
+)
+
+var (
+	Mainnet  = Network(chaincfg.MainNetParams.Name)
+	Testnet3 = Network(chaincfg.TestNet3Params.Name)
+	Regtest  = Network(chaincfg.RegressionNetParams.Name)
 )
 
 type Mode int
 
-type UTXO struct {
-	Hash      *chainhash.Hash
-	VoutIdx   uint32
-	Amount    btcutil.Amount
-	Recipient BtcAddress
+// OutPointInfo describes all the necessary information to verify the outPoint of a transaction
+type OutPointInfo struct {
+	OutPoint      *wire.OutPoint
+	Amount        btcutil.Amount
+	Recipient     string
+	Confirmations uint64
 }
 
-func (u UTXO) Validate() error {
-	if u.Hash == nil {
-		return fmt.Errorf("missing hash")
+// Validate ensures that all fields are filled with sensible values
+func (i OutPointInfo) Validate() error {
+	if i.OutPoint == nil {
+		return fmt.Errorf("missing outpoint")
 	}
-	if u.Amount <= 0 {
+	if i.Amount <= 0 {
 		return fmt.Errorf("amount must be greater than 0")
 	}
-	if err := u.Recipient.Validate(); err != nil {
-		return err
+	if i.Recipient == "" {
+		return fmt.Errorf("invalid address to track")
 	}
 	return nil
 }
 
-func (u UTXO) Equals(other UTXO) bool {
-	return u.Hash.IsEqual(other.Hash) &&
-		u.VoutIdx == other.VoutIdx &&
-		u.Amount == other.Amount &&
-		u.Recipient == other.Recipient
+// Equals checks if two OutPointInfo objects are semantically equal
+func (i OutPointInfo) Equals(other OutPointInfo) bool {
+	return i.OutPoint.Hash.IsEqual(&other.OutPoint.Hash) &&
+		i.OutPoint.Index == other.OutPoint.Index &&
+		i.Amount == other.Amount &&
+		i.Recipient == other.Recipient
 }
 
-// This type provides additional functionality based on the bitcoin chain name
+// Network provides additional functionality based on the bitcoin network name
 type Network string
 
 // Validate checks if the object is a valid chain
-func (c Network) Validate() error {
-	switch string(c) {
-	case chaincfg.MainNetParams.Name, chaincfg.TestNet3Params.Name, chaincfg.RegressionNetParams.Name:
-		return nil
-	default:
-		return fmt.Errorf("chain could not be parsed, choose %s, %s, or %s",
-			chaincfg.MainNetParams.Name,
-			chaincfg.TestNet3Params.Name,
-			chaincfg.RegressionNetParams.Name,
-		)
+func (n Network) Validate() error {
+	if n.Params() == nil {
+		return fmt.Errorf("network could not be parsed, choose %s, %s, or %s",
+			Mainnet, Testnet3, Regtest)
 	}
+	return nil
 }
 
 // Params returns the configuration parameters associated with the chain
-func (c Network) Params() *chaincfg.Params {
-	switch string(c) {
-	case chaincfg.MainNetParams.Name:
+func (n Network) Params() *chaincfg.Params {
+	switch n {
+	case Mainnet:
 		return &chaincfg.MainNetParams
-	case chaincfg.TestNet3Params.Name:
+	case Testnet3:
 		return &chaincfg.TestNet3Params
-	case chaincfg.RegressionNetParams.Name:
+	case Regtest:
 		return &chaincfg.RegressionNetParams
 	default:
 		return nil
 	}
+}
+
+type RawParams struct {
+	Recipient string
+	TxID      string
+	Satoshi   sdk.Coin
 }

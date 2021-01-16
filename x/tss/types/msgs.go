@@ -3,27 +3,20 @@ package types
 import (
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/tssd/convert"
 	tssd "github.com/axelarnetwork/tssd/pb"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/axelarnetwork/axelar-core/x/balance/exported"
+
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-const (
-	ModeSpecificKey Mode = iota
-	ModeMasterKey
-)
-
-type Mode int
-
 // golang stupidity: ensure interface compliance at compile time
 var (
 	_ sdk.Msg                       = &MsgKeygenStart{}
-	_ sdk.Msg                       = &MsgSignStart{}
 	_ sdk.Msg                       = MsgAssignNextMasterKey{}
 	_ broadcast.MsgWithSenderSetter = &MsgKeygenTraffic{}
 	_ broadcast.MsgWithSenderSetter = &MsgSignTraffic{}
@@ -81,62 +74,6 @@ func (msg MsgKeygenStart) GetSignBytes() []byte {
 
 // GetSigners implements the sdk.Msg interface.
 func (msg MsgKeygenStart) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Sender}
-}
-
-// MsgSignStart indicate the start of sign
-type MsgSignStart struct {
-	Sender    sdk.AccAddress
-	SigID     string
-	KeyID     string
-	Chain     exported.Chain
-	MsgToSign []byte
-	Mode      Mode
-}
-
-// Route implements the sdk.Msg interface.
-func (msg MsgSignStart) Route() string { return RouterKey }
-
-// Type implements the sdk.Msg interface.
-// naming convention follows x/staking/types/msgs.go
-func (msg MsgSignStart) Type() string { return "SignStart" }
-
-// ValidateBasic implements the sdk.Msg interface.
-func (msg MsgSignStart) ValidateBasic() error {
-	if msg.Sender == nil {
-		return sdkerrors.Wrap(ErrTss, "sender must be set")
-	}
-	if msg.SigID == "" {
-		return sdkerrors.Wrap(ErrTss, "new sig id must be set")
-	}
-	if msg.MsgToSign == nil {
-		return sdkerrors.Wrap(ErrTss, "msg must be set")
-	}
-
-	switch msg.Mode {
-	case ModeSpecificKey:
-		if msg.KeyID == "" {
-			return sdkerrors.Wrap(ErrTss, "key id must be set")
-		}
-	case ModeMasterKey:
-		if err := msg.Chain.Validate(); err != nil {
-			return err
-		}
-	}
-
-	// TODO enforce a maximum length for msg.SigID?
-
-	return nil
-}
-
-// GetSignBytes implements the sdk.Msg interface.
-func (msg MsgSignStart) GetSignBytes() []byte {
-	bz := ModuleCdc.MustMarshalJSON(msg)
-	return sdk.MustSortJSON(bz)
-}
-
-// GetSigners implements the sdk.Msg interface.
-func (msg MsgSignStart) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }
 

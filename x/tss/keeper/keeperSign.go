@@ -13,21 +13,27 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
+	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-// StartMasterKeySign starts a tss signing protocol using the specified key for the given chain.
-func (k Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart, validators []snapshot.Validator) (<-chan exported.Signature, error) {
-	if _, ok := k.signStreams[info.SigID]; ok {
-		return nil, fmt.Errorf("signing protocol for ID %s already in progress", info.SigID)
+// StartSign starts a tss signing protocol using the specified key for the given chain.
+func (k Keeper) StartSign(ctx sdk.Context, keyID string, sigID string, msg []byte, validators []snapshot.Validator) error {
+	if _, ok := k.signStreams[sigID]; ok {
+		return fmt.Errorf("signing protocol for ID %s already in progress", sigID)
 	}
 
-	k.Logger(ctx).Info(fmt.Sprintf("new Sign: sig_id [%s] key_id [%s] message [%s]", info.SigID, info.KeyID, string(info.MsgToSign)))
+	poll := voting.PollMeta{Module: types.ModuleName, Type: "sign", ID: sigID}
+	if err := k.voter.InitPoll(ctx, poll); err != nil {
+		return err
+	}
+
+	k.Logger(ctx).Info(fmt.Sprintf("new Sign: sig_id [%s] key_id [%s] message [%s]", sigID, keyID, string(msg)))
 
 	// BEGIN: validity check
 
 	// sign cannot proceed unless all validators have registered broadcast proxies
 	if err := k.checkProxies(ctx, validators); err != nil {
-		return nil, err
+		return err
 	}
 
 	/*
@@ -35,19 +41,19 @@ func (k Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart, validators [
 		so do not return an error but simply close the result channel
 	*/
 
-	if _, ok := k.getKeyIDForSig(ctx, info.SigID); ok {
-		return nil, fmt.Errorf("sigID %s has been used before", info.SigID)
+	if _, ok := k.getKeyIDForSig(ctx, sigID); ok {
+		return fmt.Errorf("sigID %s has been used before", sigID)
 	}
-	k.setKeyIDForSig(ctx, info.SigID, info.KeyID)
+	k.setKeyIDForSig(ctx, sigID, keyID)
 
-	sigChan := make(chan exported.Signature)
+	voteChan := make(chan voting.MsgVote)
 
-	stream, signInit := k.prepareSign(ctx, info, validators)
+	stream, signInit := k.prepareSign(ctx, keyID, sigID, msg, validators)
 	if stream == nil || signInit == nil {
-		close(sigChan)
-		return sigChan, nil // don't propagate nondeterministic errors
+		close(voteChan)
+		return nil // don't propagate nondeterministic errors
 	}
-	k.signStreams[info.SigID] = stream
+	k.signStreams[sigID] = stream
 
 	go func() {
 		if err := stream.Send(&tssd.MessageIn{Data: signInit}); err != nil {
@@ -62,9 +68,9 @@ func (k Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart, validators [
 		for msg := range broadcastChan {
 			k.Logger(ctx).Debug(fmt.Sprintf(
 				"handler goroutine: outgoing msg: session id [%s] broadcast? [%t] to [%s]",
-				info.SigID, msg.IsBroadcast, msg.ToPartyUid))
+				sigID, msg.IsBroadcast, msg.ToPartyUid))
 			// sender is set by broadcaster
-			tssMsg := &types.MsgSignTraffic{SessionID: info.SigID, Payload: msg}
+			tssMsg := &types.MsgSignTraffic{SessionID: sigID, Payload: msg}
 			if err := k.broadcaster.Broadcast(ctx, []broadcast.MsgWithSenderSetter{tssMsg}); err != nil {
 				k.Logger(ctx).Error(sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing sign msg").Error())
 				return
@@ -74,18 +80,17 @@ func (k Keeper) StartSign(ctx sdk.Context, info types.MsgSignStart, validators [
 
 	// handle result
 	go func() {
-		defer close(sigChan)
-		bz := <-resChan
-		r, s, err := convert.BytesToSig(bz)
-		if err != nil {
-			k.Logger(ctx).Error(sdkerrors.Wrap(err, "handler goroutine: failure to deserialize sig").Error())
-			return
+		defer close(voteChan)
+		sig, ok := <-resChan
+		k.Logger(ctx).Info("handler goroutine: received sig from server!")
+		if ok {
+			err := k.voter.RecordVote(ctx, &types.MsgVoteSig{PollMeta: poll, SigBytes: sig})
+			if err != nil {
+				k.Logger(ctx).Error(err.Error())
+			}
 		}
-
-		sigChan <- exported.Signature{R: r, S: s}
-		k.Logger(ctx).Info(fmt.Sprintf("handler goroutine: received sig from server! [%s], [%s]", r, s))
 	}()
-	return sigChan, nil
+	return nil
 }
 
 // SignMsg takes a types.MsgSignTraffic from the chain and relays it to the keygen protocol
@@ -139,7 +144,7 @@ func (k Keeper) SetSig(ctx sdk.Context, sigID string, signature exported.Signatu
 	return nil
 }
 
-func (k Keeper) prepareSign(ctx sdk.Context, info types.MsgSignStart, validators []snapshot.Validator) (types.Stream, *tssd.MessageIn_SignInit) {
+func (k Keeper) prepareSign(ctx sdk.Context, keyID, sigID string, msg []byte, validators []snapshot.Validator) (types.Stream, *tssd.MessageIn_SignInit) {
 	// TODO call GetLocalPrincipal only once at launch? need to wait until someone pushes a RegisterProxy message on chain...
 	myAddress := k.broadcaster.GetLocalPrincipal(ctx)
 	if myAddress.Empty() {
@@ -159,14 +164,14 @@ func (k Keeper) prepareSign(ctx sdk.Context, info types.MsgSignStart, validators
 		k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tssd gRPC call Sign").Error())
 		return nil, nil
 	}
-	k.signStreams[info.SigID] = stream
+	k.signStreams[sigID] = stream
 	// TODO refactor
 	signInit := &tssd.MessageIn_SignInit{
 		SignInit: &tssd.SignInit{
-			NewSigUid:     info.SigID,
-			KeyUid:        info.KeyID,
+			NewSigUid:     sigID,
+			KeyUid:        keyID,
 			PartyUids:     partyUids,
-			MessageToSign: info.MsgToSign,
+			MessageToSign: msg,
 		},
 	}
 

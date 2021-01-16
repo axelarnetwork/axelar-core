@@ -9,17 +9,14 @@ import (
 
 // InitGenesis initialize default parameters
 // from the genesis state
-func InitGenesis(ctx sdk.Context, k keeper.Keeper, state types.GenesisState) {
-	k.SetConfirmationHeight(ctx, state.ConfirmationHeight)
+func InitGenesis(ctx sdk.Context, k keeper.Keeper, g types.GenesisState) {
+	k.SetParams(ctx, g.Params)
 }
 
 // ExportGenesis writes the current store values
 // to a genesis file, which can be imported again
 // with InitGenesis
 func ExportGenesis(ctx sdk.Context, k keeper.Keeper) types.GenesisState {
-	state := types.GenesisState{
-		ConfirmationHeight: k.GetConfirmationHeight(ctx),
-	}
-
-	return state
+	params := k.GetParams(ctx)
+	return types.GenesisState{Params: params}
 }

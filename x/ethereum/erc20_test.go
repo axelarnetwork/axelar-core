@@ -8,6 +8,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/tendermint/tendermint/libs/log"
+
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -16,12 +21,17 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	hdwallet "github.com/miguelmota/go-ethereum-hdwallet"
 	"github.com/stretchr/testify/assert"
+	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/axelarnetwork/axelar-core/testutils"
+	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/types/mock"
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 const (
-
 	// Used to test ERC20 marshalling of invocations
 	erc20Transfer    = "transfer(address,uint256)"
 	erc20TransferSel = "0xa9059cbb"
@@ -104,12 +114,12 @@ func TestSig(t *testing.T) {
 
 		V1, R1, S1 := signedTx1.RawSignatureValues()
 
-		hash := signer.Hash(tx1).Bytes()
+		hash := signer.Hash(tx1)
 
-		sig, err := encodeSig(hash, privateKey.PublicKey, R1, S1)
+		sig, err := types.ToEthSignature(exported.Signature{R: R1, S: S1}, hash, privateKey.PublicKey)
 		assert.NoError(t, err)
 
-		recoveredPK, err := crypto.SigToPub(hash, sig)
+		recoveredPK, err := crypto.SigToPub(hash.Bytes(), sig[:])
 		assert.NoError(t, err)
 		assert.Equal(t, privateKey.PublicKey.X.Bytes(), recoveredPK.X.Bytes())
 		assert.Equal(t, privateKey.PublicKey.Y.Bytes(), recoveredPK.Y.Bytes())
@@ -117,7 +127,7 @@ func TestSig(t *testing.T) {
 		recoveredAddr := crypto.PubkeyToAddress(*recoveredPK)
 		assert.Equal(t, addr, recoveredAddr)
 
-		signedTx2, err := tx2.WithSignature(signer, sig)
+		signedTx2, err := tx2.WithSignature(signer, sig[:])
 		assert.NoError(t, err)
 
 		V2, R2, S2 := signedTx2.RawSignatureValues()
@@ -129,8 +139,8 @@ func TestSig(t *testing.T) {
 		expectedBZ := crypto.CompressPubkey(&privateKey.PublicKey)
 		recoveredBZ := crypto.CompressPubkey(recoveredPK)
 
-		assert.True(t, crypto.VerifySignature(expectedBZ, hash, sig[:64]))
-		assert.True(t, crypto.VerifySignature(recoveredBZ, hash, sig[:64]))
+		assert.True(t, crypto.VerifySignature(expectedBZ, hash.Bytes(), sig[:64]))
+		assert.True(t, crypto.VerifySignature(recoveredBZ, hash.Bytes(), sig[:64]))
 
 		if sig[64] == 0 {
 			sig[64] = 1
@@ -138,7 +148,7 @@ func TestSig(t *testing.T) {
 			sig[64] = 0
 		}
 
-		recoveredPK, err = crypto.SigToPub(hash, sig)
+		recoveredPK, err = crypto.SigToPub(hash.Bytes(), sig[:])
 		assert.NoError(t, err)
 
 		recoveredAddr = crypto.PubkeyToAddress(*recoveredPK)
@@ -152,7 +162,7 @@ func TestSig(t *testing.T) {
 func TestGanache(t *testing.T) {
 
 	client, _ := ethclient.Dial("http://127.0.0.1:7545")
-	_, err := client.NetworkID(context.Background())
+	_, err := client.ChainID(context.Background())
 
 	if err != nil {
 		t.Logf("Ganache not running, skipping this test (error: %v)", err)
@@ -161,32 +171,43 @@ func TestGanache(t *testing.T) {
 
 	deployerKey, err := getPrivateKey("m/44'/60'/0'/0/0")
 	assert.NoError(t, err)
-	deployerAddr := crypto.PubkeyToAddress(deployerKey.PublicKey)
-
-	contractAddr := testDeploy(t, client, deployerAddr, deployerKey)
+	contractAddr := testDeploy(t, client, deployerKey)
 
 	toKey, err := getPrivateKey("m/44'/60'/0'/0/1")
 	assert.NoError(t, err)
 
 	toAddr := crypto.PubkeyToAddress(toKey.PublicKey)
 
-	testMint(t, client, deployerAddr, contractAddr, toAddr, deployerKey)
+	testMint(t, client, contractAddr, toAddr, deployerKey)
 }
 
 // Deploys the smart contract available for these tests. It avoids deployment via the contract ABI
 // in favor of creating a raw transaction for the same purpose.
-func testDeploy(t *testing.T, client *ethclient.Client, deployerAddr common.Address, privateKey *ecdsa.PrivateKey) common.Address {
+func testDeploy(t *testing.T, client *ethclient.Client, privateKey *ecdsa.PrivateKey) common.Address {
 
 	byteCode := common.FromHex(MymintableBin)
 
 	networkID, err := client.NetworkID(context.Background())
 	assert.NoError(t, err)
 	signer := ethTypes.NewEIP155Signer(networkID)
+	var gasLimit uint64 = 3000000
+	tssSigner := &mock.SignerMock{GetCurrentMasterKeyFunc: func(sdk.Context, balance.Chain) (ecdsa.PublicKey, bool) {
+		return privateKey.PublicKey, true
+	}}
 
-	tx, err := createDeploySCTransaction(client, deployerAddr, gasLimit, byteCode)
+	params := types.DeployParams{
+		ByteCode: byteCode,
+		GasLimit: gasLimit,
+	}
+
+	query := keeper.NewQuerier(client, keeper.Keeper{}, tssSigner)
+	res, err := query(sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger()), []string{keeper.CreateDeployTx}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(params)})
 	assert.NoError(t, err)
 
-	signedTx, err := ethTypes.SignTx(tx, signer, privateKey)
+	var result types.DeployResult
+	testutils.Codec().MustUnmarshalJSON(res, &result)
+
+	signedTx, err := ethTypes.SignTx(result.Tx, signer, privateKey)
 	assert.NoError(t, err)
 	err = client.SendTransaction(context.Background(), signedTx)
 	assert.NoError(t, err)
@@ -220,7 +241,7 @@ func testDeploy(t *testing.T, client *ethclient.Client, deployerAddr common.Addr
 
 // Mint tokens associated to the contract used by these tests and associate them to the given wallet.
 // It avoids invoking the mint function throught the ABI in favor of creating a raw transaction for the same purpose.
-func testMint(t *testing.T, client *ethclient.Client, creatorAddr, contractAddr, toAddr common.Address, privateKey *ecdsa.PrivateKey) {
+func testMint(t *testing.T, client *ethclient.Client, contractAddr, toAddr common.Address, privateKey *ecdsa.PrivateKey) {
 
 	instance, err := NewMymintable(contractAddr, client)
 
@@ -242,8 +263,27 @@ func testMint(t *testing.T, client *ethclient.Client, creatorAddr, contractAddr,
 	amount.Mul(amount, decBig)
 	t.Logf("Amount: %d", amount)
 
-	tx, err := createMintTransaction(client, creatorAddr, contractAddr, toAddr, gasLimit, amount)
+	var gasLimit uint64 = 3000000
+	tssSigner := &mock.SignerMock{GetCurrentMasterKeyFunc: func(sdk.Context, balance.Chain) (ecdsa.PublicKey, bool) {
+		return privateKey.PublicKey, true
+	}}
+
+	params := types.MintParams{
+		GasLimit:     gasLimit,
+		Amount:       sdk.NewIntFromBigInt(amount),
+		Recipient:    toAddr.String(),
+		ContractAddr: contractAddr.String(),
+	}
+
+	minConfHeight := testutils.RandIntBetween(1, 10)
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	k := newKeeper(ctx, minConfHeight)
+
+	query := keeper.NewQuerier(client, k, tssSigner)
+	txBz, err := query(ctx, []string{keeper.CreateMintTx}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(params)})
 	assert.NoError(t, err)
+	var tx *ethTypes.Transaction
+	testutils.Codec().MustUnmarshalJSON(txBz, &tx)
 
 	networkID, err := client.NetworkID(context.Background())
 	assert.NoError(t, err)

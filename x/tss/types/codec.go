@@ -8,7 +8,6 @@ import (
 func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgKeygenStart{}, "tss/MsgKeygenStart", nil)
 	cdc.RegisterConcrete(MsgKeygenTraffic{}, "tss/MsgKeygenTraffic", nil)
-	cdc.RegisterConcrete(MsgSignStart{}, "tss/MsgSignStart", nil)
 	cdc.RegisterConcrete(MsgSignTraffic{}, "tss/MsgSignTraffic", nil)
 	cdc.RegisterConcrete(MsgAssignNextMasterKey{}, "tss/MsgAssignNextMasterKey", nil)
 	cdc.RegisterConcrete(MsgRotateMasterKey{}, "tss/MsgRotateMasterKey", nil)

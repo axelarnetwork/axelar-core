@@ -1,9 +1,11 @@
 package ethereum
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 
-	"github.com/cosmos/cosmos-sdk/client/context"
+	sdkCli "github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -14,6 +16,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/ethereum/client/cli"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 )
 
 var (
@@ -45,7 +48,7 @@ func (AppModuleBasic) ValidateGenesis(message json.RawMessage) error {
 	return types.ValidateGenesis(data)
 }
 
-func (AppModuleBasic) RegisterRESTRoutes(_ context.CLIContext, _ *mux.Router) {
+func (AppModuleBasic) RegisterRESTRoutes(_ sdkCli.CLIContext, _ *mux.Router) {
 	// TODO: implement rest interface
 }
 
@@ -54,7 +57,7 @@ func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 }
 
 func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
-	return nil
+	return cli.GetQueryCmd(types.QuerierRoute, cdc)
 }
 
 type AppModule struct {
@@ -64,10 +67,11 @@ type AppModule struct {
 	balancer types.Balancer
 	rpc      types.RPCClient
 	signer   types.Signer
+	snap     snapshot.Snapshotter
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, balancer types.Balancer, rpc types.RPCClient) AppModule {
+func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, snap snapshot.Snapshotter, balancer types.Balancer, rpc types.RPCClient) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
@@ -75,6 +79,7 @@ func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, balan
 		signer:         signer,
 		balancer:       balancer,
 		rpc:            rpc,
+		snap:           snap,
 	}
 }
 
@@ -85,6 +90,18 @@ func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {
 func (am AppModule) InitGenesis(ctx sdk.Context, message json.RawMessage) []abci.ValidatorUpdate {
 	var genesisState types.GenesisState
 	types.ModuleCdc.MustUnmarshalJSON(message, &genesisState)
+	id, err := am.rpc.ChainID(context.Background())
+	if err != nil {
+		panic(err)
+	}
+	actualNetwork := types.NetworkByID(id)
+	if genesisState.Params.Network != actualNetwork {
+		panic(fmt.Sprintf(
+			"local ethereum client not configured correctly: expected network %s, got %s",
+			genesisState.Params.Network,
+			actualNetwork,
+		))
+	}
 	InitGenesis(ctx, am.keeper, genesisState)
 	return []abci.ValidatorUpdate{}
 }
@@ -99,11 +116,7 @@ func (AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	/*if am.rpc == nil {
-		return NewDummyHandler(am.keeper, am.voter)
-	}*/
-
-	return NewHandler(am.keeper, am.rpc, am.voter, am.signer, am.balancer)
+	return NewHandler(am.keeper, am.rpc, am.voter, am.signer, am.snap)
 }
 
 func (AppModule) QuerierRoute() string {
@@ -111,7 +124,7 @@ func (AppModule) QuerierRoute() string {
 }
 
 func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return nil
+	return keeper.NewQuerier(am.rpc, am.keeper, am.signer)
 }
 
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {

@@ -1,37 +1,48 @@
 package keeper
 
 import (
+	"crypto/ecdsa"
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/tendermint/tendermint/libs/log"
 
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
-)
-
-var (
-	confHeight = []byte("confHeight")
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 const (
-	rawPrefix       = "raw_"
-	txPrefix        = "tx_"
-	pollPrefix      = "poll_"
-	scPrefix        = "sc_"
-	txIDForSCPrefix = "scTxID_"
+	rawPrefix     = "raw_"
+	txPrefix      = "tx_"
+	pendingPrefix = "pend_"
 )
 
 type Keeper struct {
 	storeKey sdk.StoreKey
 	cdc      *codec.Codec
+	params   params.Subspace
 }
 
-func NewEthKeeper(cdc *codec.Codec, storeKey sdk.StoreKey) Keeper {
-	return Keeper{cdc: cdc, storeKey: storeKey}
+func NewEthKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
+	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable())}
+}
+
+// SetParams sets the eth module's parameters
+func (k Keeper) SetParams(ctx sdk.Context, p types.Params) {
+	k.params.SetParamSet(ctx, &p)
+}
+
+// GetParams gets the eth module's parameters
+func (k Keeper) GetParams(ctx sdk.Context) types.Params {
+	var p types.Params
+	k.params.GetParamSet(ctx, &p)
+	return p
 }
 
 func (k Keeper) Codec() *codec.Codec {
@@ -43,23 +54,14 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-func (k Keeper) SetConfirmationHeight(ctx sdk.Context, height uint64) {
-	ctx.KVStore(k.storeKey).Set(confHeight, k.cdc.MustMarshalBinaryLengthPrefixed(height))
+func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context) uint64 {
+	var h uint64
+	k.params.Get(ctx, types.KeyConfirmationHeight, &h)
+	return h
 }
 
-func (k Keeper) GetConfirmationHeight(ctx sdk.Context) uint64 {
-	rawHeight := ctx.KVStore(k.storeKey).Get(confHeight)
-	if rawHeight == nil {
-		return types.DefaultGenesisState().ConfirmationHeight
-	} else {
-		var height uint64
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(rawHeight, &height)
-		return height
-	}
-}
-
-func (k Keeper) GetRawTx(ctx sdk.Context, txId string) *ethTypes.Transaction {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(rawPrefix + txId))
+func (k Keeper) getRawTx(ctx sdk.Context, txID string) *ethTypes.Transaction {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(rawPrefix + txID))
 	if bz == nil {
 		return nil
 	}
@@ -69,76 +71,63 @@ func (k Keeper) GetRawTx(ctx sdk.Context, txId string) *ethTypes.Transaction {
 	return tx
 }
 
-func (k Keeper) SetRawTx(ctx sdk.Context, txId string, tx *ethTypes.Transaction) {
+func (k Keeper) SetRawTx(ctx sdk.Context, txID string, tx *ethTypes.Transaction) {
 	bz := k.cdc.MustMarshalJSON(tx)
-	ctx.KVStore(k.storeKey).Set([]byte(rawPrefix+txId), bz)
+	ctx.KVStore(k.storeKey).Set([]byte(rawPrefix+txID), bz)
 }
 
-func (k Keeper) setTx(ctx sdk.Context, txId string, tx types.Tx) {
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(tx)
-	ctx.KVStore(k.storeKey).Set([]byte(txPrefix+txId), bz)
+func (k Keeper) HasVerifiedTx(ctx sdk.Context, txID string) bool {
+	return ctx.KVStore(k.storeKey).Has([]byte(txPrefix + txID))
 }
 
-func (k Keeper) GetTx(ctx sdk.Context, txId string) (types.Tx, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(txPrefix + txId))
+func (k Keeper) SetUnverifiedTx(ctx sdk.Context, txID string, tx *ethTypes.Transaction) {
+	ctx.KVStore(k.storeKey).Set([]byte(pendingPrefix+txID), tx.Hash().Bytes())
+}
+
+func (k Keeper) HasUnverifiedTx(ctx sdk.Context, txID string) bool {
+	return ctx.KVStore(k.storeKey).Has([]byte(pendingPrefix + txID))
+}
+
+// ProcessVerificationResult stores the TX permanently if confirmed or discards the data otherwise
+func (k Keeper) ProcessVerificationResult(ctx sdk.Context, txID string, verified bool) error {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingPrefix + txID))
 	if bz == nil {
-		return types.Tx{}, false
+		return fmt.Errorf("tx %s not found", txID)
 	}
-	var tx types.Tx
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &tx)
-
-	return tx, true
-}
-
-func (k Keeper) SetTxForPoll(ctx sdk.Context, pollID string, tx types.Tx) {
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(tx)
-	ctx.KVStore(k.storeKey).Set([]byte(pollPrefix+pollID), bz)
-}
-
-func (k Keeper) GetTxForPoll(ctx sdk.Context, pollID string) (types.Tx, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(pollPrefix + pollID))
-	if bz == nil {
-		return types.Tx{}, false
+	if verified {
+		ctx.KVStore(k.storeKey).Set([]byte(txPrefix+txID), bz)
 	}
-	var tx types.Tx
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &tx)
-
-	return tx, true
-}
-
-// ProcessTxPollResult stores the TX permanently if confirmed or discards the data otherwise
-func (k Keeper) ProcessTxPollResult(ctx sdk.Context, pollID string, confirmed bool) error {
-	tx, ok := k.GetTxForPoll(ctx, pollID)
-	if !ok {
-		return fmt.Errorf("poll not found")
-	}
-	if confirmed {
-		k.setTx(ctx, tx.Hash.String(), tx)
-	}
-	ctx.KVStore(k.storeKey).Delete([]byte(pollPrefix + pollID))
+	ctx.KVStore(k.storeKey).Delete([]byte(pendingPrefix + txID))
 	return nil
 }
 
-func (k Keeper) SetSmartContract(ctx sdk.Context, scId string, bytecode []byte) {
-
-	ctx.KVStore(k.storeKey).Set([]byte(scPrefix+scId), bytecode)
-
-}
-
-func (k Keeper) GetSmartContract(ctx sdk.Context, scId string) []byte {
-
-	return ctx.KVStore(k.storeKey).Get([]byte(scPrefix + scId))
-
-}
-
-func (k Keeper) GetTxIDForContractID(ctx sdk.Context, contractID string, networkID types.Network) (common.Hash, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(txIDForSCPrefix + contractID + string(networkID)))
-	if bz == nil {
-		return common.Hash{}, false
+func (k Keeper) AssembleEthTx(ctx sdk.Context, txID string, pk ecdsa.PublicKey, sig tss.Signature) (*ethTypes.Transaction, error) {
+	rawTx := k.getRawTx(ctx, txID)
+	if rawTx == nil {
+		return nil, fmt.Errorf("raw tx for ID %s has not been prepared yet", txID)
 	}
-	return common.BytesToHash(bz), true
+
+	signer := k.getSigner(ctx)
+
+	recoverableSig, err := types.ToEthSignature(sig, signer.Hash(rawTx), pk)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not create recoverable signature: %v", err))
+	}
+
+	return rawTx.WithSignature(signer, recoverableSig[:])
 }
 
-func (k Keeper) SetTxIDForContractID(ctx sdk.Context, contractID string, networkID types.Network, txID common.Hash) {
-	ctx.KVStore(k.storeKey).Set([]byte(txIDForSCPrefix+contractID+string(networkID)), txID.Bytes())
+func (k Keeper) GetHashToSign(ctx sdk.Context, txID string) (common.Hash, error) {
+	rawTx := k.getRawTx(ctx, txID)
+	if rawTx == nil {
+		return common.Hash{}, fmt.Errorf("raw tx with id %s not found", txID)
+	}
+	signer := k.getSigner(ctx)
+	return signer.Hash(rawTx), nil
+}
+
+func (k Keeper) getSigner(ctx sdk.Context) ethTypes.EIP155Signer {
+	var network types.Network
+	k.params.Get(ctx, types.KeyNetwork, &network)
+	return ethTypes.NewEIP155Signer(network.Params().ChainID)
 }

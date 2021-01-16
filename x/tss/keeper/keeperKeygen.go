@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/tssd/convert"
 	tssd "github.com/axelarnetwork/tssd/pb"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/x/balance/exported"
 
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -148,6 +149,11 @@ func (k Keeper) GetCurrentMasterKey(ctx sdk.Context, chain exported.Chain) (ecds
 	return k.GetPreviousMasterKey(ctx, chain, 0)
 }
 
+// GetCurrentMasterKeyID returns the ID of the latest master key that was set for the given chain
+func (k Keeper) GetCurrentMasterKeyID(ctx sdk.Context, chain exported.Chain) (string, bool) {
+	return k.getPreviousMasterKeyId(ctx, chain, 0)
+}
+
 func (k Keeper) GetNextMasterKey(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool) {
 	return k.GetPreviousMasterKey(ctx, chain, -1)
 }
@@ -163,11 +169,11 @@ func (k Keeper) GetPreviousMasterKey(ctx sdk.Context, chain exported.Chain, offs
 	// The master key entry stores the keyID of a previously successfully stored key, so we need to do a second lookup after we retrieve the ID.
 	// This indirection is necessary, because we need the keyID for other purposes, eg signing
 
-	keyId := k.getPreviousMasterKeyId(ctx, chain, offsetFromTop)
-	if keyId == nil {
+	keyID, ok := k.getPreviousMasterKeyId(ctx, chain, offsetFromTop)
+	if !ok {
 		return ecdsa.PublicKey{}, false
 	}
-	return k.GetKey(ctx, string(keyId))
+	return k.GetKey(ctx, keyID)
 }
 
 // AssignNextMasterKey stores a new master key for a given chain which will become the default once RotateMasterKey is called
@@ -178,9 +184,8 @@ func (k Keeper) AssignNextMasterKey(ctx sdk.Context, chain exported.Chain, snaps
 	}
 	masterKeyHeight := k.getLatestMasterKeyHeight(ctx, chain)
 
-	p := k.GetParams(ctx)
 	// key has been generated during locking period or there already is a master key for the current snapshot
-	if snapshotHeight+p.LockingPeriod > keyGenHeight || masterKeyHeight > snapshotHeight {
+	if snapshotHeight+k.getLockingPeriod(ctx) > keyGenHeight || masterKeyHeight > snapshotHeight {
 		return fmt.Errorf("key refresh locked")
 	}
 
@@ -257,10 +262,13 @@ func masterKeyStoreKey(rotation int64, chain exported.Chain) string {
 	return rotationPrefix + strconv.FormatInt(rotation, 10) + chain.String()
 }
 
-func (k Keeper) getPreviousMasterKeyId(ctx sdk.Context, chain exported.Chain, offsetFromTop int64) []byte {
+func (k Keeper) getPreviousMasterKeyId(ctx sdk.Context, chain exported.Chain, offsetFromTop int64) (string, bool) {
 	r := k.getRotationCount(ctx, chain)
 	keyId := ctx.KVStore(k.storeKey).Get([]byte(masterKeyStoreKey(r-offsetFromTop, chain)))
-	return keyId
+	if keyId == nil {
+		return "", false
+	}
+	return string(keyId), true
 }
 
 func (k Keeper) getRotationCount(ctx sdk.Context, chain exported.Chain) int64 {
@@ -298,12 +306,4 @@ func (k Keeper) GetSnapshotRoundForKeyID(ctx sdk.Context, keyID string) (int64, 
 	var round int64
 	k.cdc.MustUnmarshalBinaryBare(bz, &round)
 	return round, true
-}
-
-func (k Keeper) GetCurrentMasterKeyID(ctx sdk.Context, chain exported.Chain) (string, bool) {
-	keyID := k.getPreviousMasterKeyId(ctx, chain, 0)
-	if keyID == nil {
-		return "", false
-	}
-	return string(keyID), true
 }

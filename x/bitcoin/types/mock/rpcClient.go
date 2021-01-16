@@ -5,7 +5,6 @@ package mock
 
 import (
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"sync"
@@ -21,14 +20,14 @@ var _ types.RPCClient = &RPCClientMock{}
 //
 //         // make and configure a mocked types.RPCClient
 //         mockedRPCClient := &RPCClientMock{
-//             GetRawTransactionVerboseFunc: func(hash *chainhash.Hash) (*btcjson.TxRawResult, error) {
-// 	               panic("mock out the GetRawTransactionVerbose method")
-//             },
-//             ImportAddressFunc: func(address string) error {
-// 	               panic("mock out the ImportAddress method")
+//             GetOutPointInfoFunc: func(out *wire.OutPoint) (types.OutPointInfo, error) {
+// 	               panic("mock out the GetOutPointInfo method")
 //             },
 //             ImportAddressRescanFunc: func(address string, account string, rescan bool) error {
 // 	               panic("mock out the ImportAddressRescan method")
+//             },
+//             NetworkFunc: func() types.Network {
+// 	               panic("mock out the Network method")
 //             },
 //             SendRawTransactionFunc: func(tx *wire.MsgTx, allowHighFees bool) (*chainhash.Hash, error) {
 // 	               panic("mock out the SendRawTransaction method")
@@ -40,29 +39,24 @@ var _ types.RPCClient = &RPCClientMock{}
 //
 //     }
 type RPCClientMock struct {
-	// GetRawTransactionVerboseFunc mocks the GetRawTransactionVerbose method.
-	GetRawTransactionVerboseFunc func(hash *chainhash.Hash) (*btcjson.TxRawResult, error)
-
-	// ImportAddressFunc mocks the ImportAddress method.
-	ImportAddressFunc func(address string) error
+	// GetOutPointInfoFunc mocks the GetOutPointInfo method.
+	GetOutPointInfoFunc func(out *wire.OutPoint) (types.OutPointInfo, error)
 
 	// ImportAddressRescanFunc mocks the ImportAddressRescan method.
 	ImportAddressRescanFunc func(address string, account string, rescan bool) error
+
+	// NetworkFunc mocks the Network method.
+	NetworkFunc func() types.Network
 
 	// SendRawTransactionFunc mocks the SendRawTransaction method.
 	SendRawTransactionFunc func(tx *wire.MsgTx, allowHighFees bool) (*chainhash.Hash, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// GetRawTransactionVerbose holds details about calls to the GetRawTransactionVerbose method.
-		GetRawTransactionVerbose []struct {
-			// Hash is the hash argument value.
-			Hash *chainhash.Hash
-		}
-		// ImportAddress holds details about calls to the ImportAddress method.
-		ImportAddress []struct {
-			// Address is the address argument value.
-			Address string
+		// GetOutPointInfo holds details about calls to the GetOutPointInfo method.
+		GetOutPointInfo []struct {
+			// Out is the out argument value.
+			Out *wire.OutPoint
 		}
 		// ImportAddressRescan holds details about calls to the ImportAddressRescan method.
 		ImportAddressRescan []struct {
@@ -73,6 +67,9 @@ type RPCClientMock struct {
 			// Rescan is the rescan argument value.
 			Rescan bool
 		}
+		// Network holds details about calls to the Network method.
+		Network []struct {
+		}
 		// SendRawTransaction holds details about calls to the SendRawTransaction method.
 		SendRawTransaction []struct {
 			// Tx is the tx argument value.
@@ -81,71 +78,40 @@ type RPCClientMock struct {
 			AllowHighFees bool
 		}
 	}
-	lockGetRawTransactionVerbose sync.RWMutex
-	lockImportAddress            sync.RWMutex
-	lockImportAddressRescan      sync.RWMutex
-	lockSendRawTransaction       sync.RWMutex
+	lockGetOutPointInfo     sync.RWMutex
+	lockImportAddressRescan sync.RWMutex
+	lockNetwork             sync.RWMutex
+	lockSendRawTransaction  sync.RWMutex
 }
 
-// GetRawTransactionVerbose calls GetRawTransactionVerboseFunc.
-func (mock *RPCClientMock) GetRawTransactionVerbose(hash *chainhash.Hash) (*btcjson.TxRawResult, error) {
-	if mock.GetRawTransactionVerboseFunc == nil {
-		panic("RPCClientMock.GetRawTransactionVerboseFunc: method is nil but RPCClient.GetRawTransactionVerbose was just called")
+// GetOutPointInfo calls GetOutPointInfoFunc.
+func (mock *RPCClientMock) GetOutPointInfo(out *wire.OutPoint) (types.OutPointInfo, error) {
+	if mock.GetOutPointInfoFunc == nil {
+		panic("RPCClientMock.GetOutPointInfoFunc: method is nil but RPCClient.GetOutPointInfo was just called")
 	}
 	callInfo := struct {
-		Hash *chainhash.Hash
+		Out *wire.OutPoint
 	}{
-		Hash: hash,
+		Out: out,
 	}
-	mock.lockGetRawTransactionVerbose.Lock()
-	mock.calls.GetRawTransactionVerbose = append(mock.calls.GetRawTransactionVerbose, callInfo)
-	mock.lockGetRawTransactionVerbose.Unlock()
-	return mock.GetRawTransactionVerboseFunc(hash)
+	mock.lockGetOutPointInfo.Lock()
+	mock.calls.GetOutPointInfo = append(mock.calls.GetOutPointInfo, callInfo)
+	mock.lockGetOutPointInfo.Unlock()
+	return mock.GetOutPointInfoFunc(out)
 }
 
-// GetRawTransactionVerboseCalls gets all the calls that were made to GetRawTransactionVerbose.
+// GetOutPointInfoCalls gets all the calls that were made to GetOutPointInfo.
 // Check the length with:
-//     len(mockedRPCClient.GetRawTransactionVerboseCalls())
-func (mock *RPCClientMock) GetRawTransactionVerboseCalls() []struct {
-	Hash *chainhash.Hash
+//     len(mockedRPCClient.GetOutPointInfoCalls())
+func (mock *RPCClientMock) GetOutPointInfoCalls() []struct {
+	Out *wire.OutPoint
 } {
 	var calls []struct {
-		Hash *chainhash.Hash
+		Out *wire.OutPoint
 	}
-	mock.lockGetRawTransactionVerbose.RLock()
-	calls = mock.calls.GetRawTransactionVerbose
-	mock.lockGetRawTransactionVerbose.RUnlock()
-	return calls
-}
-
-// ImportAddress calls ImportAddressFunc.
-func (mock *RPCClientMock) ImportAddress(address string) error {
-	if mock.ImportAddressFunc == nil {
-		panic("RPCClientMock.ImportAddressFunc: method is nil but RPCClient.ImportAddress was just called")
-	}
-	callInfo := struct {
-		Address string
-	}{
-		Address: address,
-	}
-	mock.lockImportAddress.Lock()
-	mock.calls.ImportAddress = append(mock.calls.ImportAddress, callInfo)
-	mock.lockImportAddress.Unlock()
-	return mock.ImportAddressFunc(address)
-}
-
-// ImportAddressCalls gets all the calls that were made to ImportAddress.
-// Check the length with:
-//     len(mockedRPCClient.ImportAddressCalls())
-func (mock *RPCClientMock) ImportAddressCalls() []struct {
-	Address string
-} {
-	var calls []struct {
-		Address string
-	}
-	mock.lockImportAddress.RLock()
-	calls = mock.calls.ImportAddress
-	mock.lockImportAddress.RUnlock()
+	mock.lockGetOutPointInfo.RLock()
+	calls = mock.calls.GetOutPointInfo
+	mock.lockGetOutPointInfo.RUnlock()
 	return calls
 }
 
@@ -185,6 +151,32 @@ func (mock *RPCClientMock) ImportAddressRescanCalls() []struct {
 	mock.lockImportAddressRescan.RLock()
 	calls = mock.calls.ImportAddressRescan
 	mock.lockImportAddressRescan.RUnlock()
+	return calls
+}
+
+// Network calls NetworkFunc.
+func (mock *RPCClientMock) Network() types.Network {
+	if mock.NetworkFunc == nil {
+		panic("RPCClientMock.NetworkFunc: method is nil but RPCClient.Network was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockNetwork.Lock()
+	mock.calls.Network = append(mock.calls.Network, callInfo)
+	mock.lockNetwork.Unlock()
+	return mock.NetworkFunc()
+}
+
+// NetworkCalls gets all the calls that were made to Network.
+// Check the length with:
+//     len(mockedRPCClient.NetworkCalls())
+func (mock *RPCClientMock) NetworkCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockNetwork.RLock()
+	calls = mock.calls.Network
+	mock.lockNetwork.RUnlock()
 	return calls
 }
 

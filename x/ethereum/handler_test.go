@@ -3,24 +3,22 @@ package ethereum
 import (
 	"bytes"
 	"context"
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	cryptoRand "crypto/rand"
 	"fmt"
 	"math/big"
-	"math/rand"
 	"testing"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/params"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/math"
+	ethCrypto "github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
-	"github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	ethMock "github.com/axelarnetwork/axelar-core/x/ethereum/types/mock"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/ethereum/go-ethereum/common"
-	ethCrypto "github.com/ethereum/go-ethereum/crypto"
 
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/assert"
@@ -29,433 +27,307 @@ import (
 )
 
 const (
-	contractID   = "testSC"
-	contractAddr = "0xE1D849ED321D6075B81e5F37E01163bE9485fd13"
-	network      = types.Network(types.Rinkeby)
+	network = types.Network(types.Rinkeby)
 )
 
-var poll vote.PollMeta
+var sender = sdk.AccAddress(testutils.RandString(int(testutils.RandIntBetween(5, 20))))
 
-func TestInstallSC(t *testing.T) {
-
-	cdc := testutils.Codec()
-	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"))
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	handler := NewHandler(k, &ethMock.RPCClientMock{}, &ethMock.VoterMock{}, &ethMock.SignerMock{}, &ethMock.BalancerMock{})
-	binary := common.FromHex(MymintableBin)
-	_, err := handler(ctx, types.NewMsgInstallSC(sdk.AccAddress("sender"), contractID, binary))
-
-	assert.NoError(t, err)
-	assert.Equal(t, binary, k.GetSmartContract(ctx, contractID))
-
-}
-func TestVerifyTx_Deploy_ContractMissing(t *testing.T) {
-
-	cdc := testutils.Codec()
-	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"))
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-
-	networkID := big.NewInt(0).SetBytes([]byte(network))
-	txBlockNum := big.NewInt(rand.Int63())
-
+func TestDeployTx_DifferentValue_DifferentHash(t *testing.T) {
+	tx1 := createSignedDeployTx()
 	privateKey, err := ethCrypto.GenerateKey()
-	assert.NoError(t, err)
-
-	tx := generateDeploy(common.FromHex(MymintableBin))
-
-	signedTx, err := ethTypes.SignTx(tx, ethTypes.NewEIP155Signer(networkID), privateKey)
-	assert.NoError(t, err)
-
-	rpc, signer, voter := getVerifyMocks(signedTx, networkID, txBlockNum, privateKey.PublicKey)
-
-	handler := NewHandler(k, rpc, voter, signer, &ethMock.BalancerMock{})
-	_, err = handler(ctx, types.NewMsgVerifyDeployTx(sdk.AccAddress("sender"), network, signedTx.Hash(), contractID))
-	assert.NoError(t, err)
-
-	assertVoteCompleted(t, signedTx.Hash(), voter, false)
-
-}
-
-func TestVerifyTx_Deploy_WrongMK(t *testing.T) {
-
-	cdc := testutils.Codec()
-	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"))
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-
-	networkID := big.NewInt(0).SetBytes([]byte(network))
-	txBlockNum := big.NewInt(rand.Int63())
-
-	privateKey, err := ethCrypto.GenerateKey()
-	assert.NoError(t, err)
-
-	tx := generateDeploy(common.FromHex(MymintableBin))
-
-	signedTx, err := ethTypes.SignTx(tx, ethTypes.NewEIP155Signer(networkID), privateKey)
-	assert.NoError(t, err)
-
-	rpc, signer, voter := getVerifyMocks(signedTx, networkID, txBlockNum, privateKey.PublicKey)
-	// wrong master key
-	k = keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"))
-	k.SetSmartContract(ctx, contractID, signedTx.Data())
-
-	signer.GetCurrentMasterKeyFunc = func(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool) {
-
-		key, _ := ecdsa.GenerateKey(elliptic.P256(), cryptoRand.Reader)
-		return key.PublicKey, true
+	if err != nil {
+		panic(err)
 	}
-
-	handler := NewHandler(k, rpc, voter, signer, &ethMock.BalancerMock{})
-	_, err = handler(ctx, types.NewMsgVerifyDeployTx(sdk.AccAddress("sender"), network, signedTx.Hash(), contractID))
-	assert.NoError(t, err)
-
-	assertVoteCompleted(t, signedTx.Hash(), voter, false)
+	tx1, err = ethTypes.SignTx(tx1, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	if err != nil {
+		panic(err)
+	}
+	newValue := big.NewInt(testutils.RandIntBetween(1, 10000))
+	tx2 := sign(ethTypes.NewContractCreation(tx1.Nonce(), newValue, tx1.Gas(), tx1.GasPrice(), tx1.Data()))
+	tx2, err = ethTypes.SignTx(tx2, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	if err != nil {
+		panic(err)
+	}
+	assert.NotEqual(t, tx1.Hash(), tx2.Hash())
 }
 
-func TestVerifyTx_Deploy_WrongTXHash(t *testing.T) {
-
-	cdc := testutils.Codec()
-	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"))
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-
-	networkID := big.NewInt(0).SetBytes([]byte(network))
-	txBlockNum := big.NewInt(rand.Int63())
-
+func TestDeployTx_DifferentData_DifferentHash(t *testing.T) {
+	tx1 := createSignedDeployTx()
 	privateKey, err := ethCrypto.GenerateKey()
+	if err != nil {
+		panic(err)
+	}
+	tx1, err = ethTypes.SignTx(tx1, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	if err != nil {
+		panic(err)
+	}
+	newData := testutils.RandBytes(int(testutils.RandIntBetween(1, 10000)))
+	tx2 := sign(ethTypes.NewContractCreation(tx1.Nonce(), tx1.Value(), tx1.Gas(), tx1.GasPrice(), newData))
+	tx2, err = ethTypes.SignTx(tx2, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	if err != nil {
+		panic(err)
+	}
+	assert.NotEqual(t, tx1.Hash(), tx2.Hash())
+}
+
+func TestMintTx_DifferentValue_DifferentHash(t *testing.T) {
+	tx1 := createSignedMintTx()
+	privateKey, err := ethCrypto.GenerateKey()
+	if err != nil {
+		panic(err)
+	}
+	tx1, err = ethTypes.SignTx(tx1, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	if err != nil {
+		panic(err)
+	}
+	newValue := big.NewInt(testutils.RandIntBetween(1, 10000))
+	tx2 := sign(ethTypes.NewTransaction(tx1.Nonce(), *tx1.To(), newValue, tx1.Gas(), tx1.GasPrice(), tx1.Data()))
+	tx2, err = ethTypes.SignTx(tx2, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	if err != nil {
+		panic(err)
+	}
+	assert.NotEqual(t, tx1.Hash(), tx2.Hash())
+}
+
+func TestMintTx_DifferentData_DifferentHash(t *testing.T) {
+	tx1 := createSignedMintTx()
+	privateKey, err := ethCrypto.GenerateKey()
+	if err != nil {
+		panic(err)
+	}
+	tx1, err = ethTypes.SignTx(tx1, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	if err != nil {
+		panic(err)
+	}
+	newData := testutils.RandBytes(int(testutils.RandIntBetween(1, 10000)))
+	tx2 := sign(ethTypes.NewTransaction(tx1.Nonce(), *tx1.To(), tx1.Value(), tx1.Gas(), tx1.GasPrice(), newData))
+	tx2, err = ethTypes.SignTx(tx2, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	if err != nil {
+		panic(err)
+	}
+	assert.NotEqual(t, tx1.Hash(), tx2.Hash())
+}
+
+func TestMintTx_DifferentRecipient_DifferentHash(t *testing.T) {
+	tx1 := createSignedMintTx()
+	privateKey, err := ethCrypto.GenerateKey()
+	if err != nil {
+		panic(err)
+	}
+	tx1, err = ethTypes.SignTx(tx1, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	if err != nil {
+		panic(err)
+	}
+	newTo := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+	tx2 := sign(ethTypes.NewTransaction(tx1.Nonce(), newTo, tx1.Value(), tx1.Gas(), tx1.GasPrice(), tx1.Data()))
+	tx2, err = ethTypes.SignTx(tx2, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	if err != nil {
+		panic(err)
+	}
+	assert.NotEqual(t, tx1.Hash(), tx2.Hash())
+}
+
+func TestVerifyTx_Deploy_HashNotFound(t *testing.T) {
+	minConfHeight := testutils.RandIntBetween(1, 10)
+	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
+	signedTx := createSignedDeployTx()
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	k := newKeeper(ctx, minConfHeight)
+	rpc := createBasicRPCMock(signedTx, confCount)
+	rpc.TransactionReceiptFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Receipt, error) {
+		return nil, fmt.Errorf("wrong hash")
+	}
+	voter := createVoterMock()
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, createSnapshotter())
+
+	_, err := handler(ctx, types.NewMsgVerifyTx(sender, types.ModuleCdc.MustMarshalJSON(signedTx)))
+
 	assert.NoError(t, err)
+	assert.True(t, k.HasUnverifiedTx(ctx, signedTx.Hash().String()))
+	assertVotedOnPoll(t, voter, signedTx.Hash(), false)
+}
 
-	tx := generateDeploy(common.FromHex(MymintableBin))
+func TestVerifyTx_Deploy_NotConfirmed(t *testing.T) {
+	minConfHeight := testutils.RandIntBetween(1, 10)
+	confCount := testutils.RandIntBetween(0, minConfHeight)
+	signedTx := createSignedDeployTx()
 
-	signedTx, err := ethTypes.SignTx(tx, ethTypes.NewEIP155Signer(networkID), privateKey)
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	k := newKeeper(ctx, minConfHeight)
+	rpc := createBasicRPCMock(signedTx, confCount)
+	voter := createVoterMock()
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
+
+	_, err := handler(ctx, types.NewMsgVerifyTx(sender, types.ModuleCdc.MustMarshalJSON(signedTx)))
+
 	assert.NoError(t, err)
-
-	rpc, signer, voter := getVerifyMocks(signedTx, networkID, txBlockNum, privateKey.PublicKey)
-
-	k = keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"))
-	k.SetSmartContract(ctx, contractID, signedTx.Data())
-
-	handler := NewHandler(k, rpc, voter, signer, &ethMock.BalancerMock{})
-	wrongHash := common.BytesToHash([]byte(testutils.RandString(256)))
-	_, err = handler(ctx, types.NewMsgVerifyDeployTx(sdk.AccAddress("sender"), network, wrongHash, contractID))
-	assert.NoError(t, err)
-
-	assertVoteCompleted(t, wrongHash, voter, false)
-
+	assert.True(t, k.HasUnverifiedTx(ctx, signedTx.Hash().String()))
+	assertVotedOnPoll(t, voter, signedTx.Hash(), false)
 }
 
 func TestVerifyTx_Deploy_Success(t *testing.T) {
+	minConfHeight := testutils.RandIntBetween(1, 10)
+	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
+	signedTx := createSignedDeployTx()
 
-	cdc := testutils.Codec()
-	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"))
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	k := newKeeper(ctx, minConfHeight)
+	rpc := createBasicRPCMock(signedTx, confCount)
+	voter := createVoterMock()
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
 
-	networkID := big.NewInt(0).SetBytes([]byte(network))
-	txBlockNum := big.NewInt(rand.Int63())
+	_, err := handler(ctx, types.NewMsgVerifyTx(sender, types.ModuleCdc.MustMarshalJSON(signedTx)))
 
-	privateKey, err := ethCrypto.GenerateKey()
 	assert.NoError(t, err)
-
-	tx := generateDeploy(common.FromHex(MymintableBin))
-
-	signedTx, err := ethTypes.SignTx(tx, ethTypes.NewEIP155Signer(networkID), privateKey)
-	assert.NoError(t, err)
-
-	rpc, signer, voter := getVerifyMocks(signedTx, networkID, txBlockNum, privateKey.PublicKey)
-
-	k = keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"))
-	k.SetSmartContract(ctx, contractID, signedTx.Data())
-
-	handler := NewHandler(k, rpc, voter, signer, &ethMock.BalancerMock{})
-
-	_, err = handler(ctx, types.NewMsgVerifyDeployTx(sdk.AccAddress("sender"), network, signedTx.Hash(), contractID))
-	assert.NoError(t, err)
-
-	assertVoteCompleted(t, signedTx.Hash(), voter, true)
-
-	actualTX, ok := k.GetTxForPoll(ctx, poll.ID)
-	assert.True(t, ok)
-
-	assert.Equal(t, signedTx.Hash().Bytes(), actualTX.Hash.Bytes())
-	assert.Equal(t, contractID, actualTX.ContractID)
-	assert.Equal(t, network, actualTX.Network)
-
+	assert.True(t, k.HasUnverifiedTx(ctx, signedTx.Hash().String()))
+	assertVotedOnPoll(t, voter, signedTx.Hash(), true)
 }
-func TestVerifyTx_Mint_WrongMK(t *testing.T) {
 
-	cdc := testutils.Codec()
-	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"))
+func TestVerifyTx_Mint_HashNotFound(t *testing.T) {
+	minConfHeight := testutils.RandIntBetween(1, 10)
+	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
+	signedTx := createSignedMintTx()
+
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-
-	networkID := big.NewInt(0).SetBytes([]byte(network))
-	txBlockNum := big.NewInt(rand.Int63())
-
-	privateKey, err := ethCrypto.GenerateKey()
-	assert.NoError(t, err)
-
-	toAddr := common.HexToAddress(erc20Addr)
-	amount, ok := big.NewInt(0).SetString(erc20Val, 10)
-	assert.True(t, ok)
-
-	contractAddr := common.HexToAddress(contractAddr)
-
-	tx := generateMint(contractAddr, toAddr, amount)
-
-	signedTx, err := ethTypes.SignTx(tx, ethTypes.NewEIP155Signer(networkID), privateKey)
-	assert.NoError(t, err)
-	assert.NotNil(t, signedTx)
-
-	rpc, signer, voter := getVerifyMocks(signedTx, networkID, txBlockNum, privateKey.PublicKey)
-
-	signer.GetCurrentMasterKeyFunc = func(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool) {
-
-		key, _ := ecdsa.GenerateKey(elliptic.P256(), cryptoRand.Reader)
-		return key.PublicKey, true
-
+	k := newKeeper(ctx, minConfHeight)
+	rpc := createBasicRPCMock(signedTx, confCount)
+	rpc.TransactionReceiptFunc = func(ctx context.Context, txHash common.Hash) (*ethTypes.Receipt, error) {
+		return nil, fmt.Errorf("wrong hash")
 	}
+	voter := createVoterMock()
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
 
-	handler := NewHandler(k, rpc, voter, signer, &ethMock.BalancerMock{})
-	_, err = handler(ctx, types.NewMsgVerifyMintTx(sdk.AccAddress("sender"), network, signedTx.Hash(), toAddr, sdk.NewIntFromBigInt(amount)))
+	_, err := handler(ctx, types.NewMsgVerifyTx(sender, types.ModuleCdc.MustMarshalJSON(signedTx)))
+
 	assert.NoError(t, err)
-
-	assertVoteCompleted(t, signedTx.Hash(), voter, false)
-}
-func TestVerifyTx_Mint_WrongTXHash(t *testing.T) {
-
-	cdc := testutils.Codec()
-	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"))
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-
-	networkID := big.NewInt(0).SetBytes([]byte(network))
-	txBlockNum := big.NewInt(rand.Int63())
-
-	privateKey, err := ethCrypto.GenerateKey()
-	assert.NoError(t, err)
-
-	toAddr := common.HexToAddress(erc20Addr)
-	amount, ok := big.NewInt(0).SetString(erc20Val, 10)
-	assert.True(t, ok)
-
-	contractAddr := common.HexToAddress(contractAddr)
-
-	tx := generateMint(contractAddr, toAddr, amount)
-
-	signedTx, err := ethTypes.SignTx(tx, ethTypes.NewEIP155Signer(networkID), privateKey)
-	assert.NoError(t, err)
-	assert.NotNil(t, signedTx)
-
-	rpc, signer, voter := getVerifyMocks(signedTx, networkID, txBlockNum, privateKey.PublicKey)
-
-	handler := NewHandler(k, rpc, voter, signer, &ethMock.BalancerMock{})
-	wrongHash := common.BytesToHash([]byte(testutils.RandString(256)))
-
-	_, err = handler(ctx, types.NewMsgVerifyMintTx(sdk.AccAddress("sender"), network, wrongHash, toAddr, sdk.NewIntFromBigInt(amount)))
-	assert.NoError(t, err)
-
-	assertVoteCompleted(t, wrongHash, voter, false)
+	assert.True(t, k.HasUnverifiedTx(ctx, signedTx.Hash().String()))
+	assertVotedOnPoll(t, voter, signedTx.Hash(), false)
 }
 
-func TestVerifyTx_Mint_WrongToAddr(t *testing.T) {
+func TestVerifyTx_Mint_NotConfirmed(t *testing.T) {
+	minConfHeight := testutils.RandIntBetween(1, 10)
+	confCount := testutils.RandIntBetween(0, minConfHeight)
+	signedTx := createSignedMintTx()
 
-	cdc := testutils.Codec()
-	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"))
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	k := newKeeper(ctx, minConfHeight)
+	rpc := createBasicRPCMock(signedTx, confCount)
+	voter := createVoterMock()
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
 
-	networkID := big.NewInt(0).SetBytes([]byte(network))
-	txBlockNum := big.NewInt(rand.Int63())
+	_, err := handler(ctx, types.NewMsgVerifyTx(sender, types.ModuleCdc.MustMarshalJSON(signedTx)))
 
-	privateKey, err := ethCrypto.GenerateKey()
 	assert.NoError(t, err)
-
-	toAddr := common.HexToAddress(erc20Addr)
-	amount, ok := big.NewInt(0).SetString(erc20Val, 10)
-	assert.True(t, ok)
-
-	contractAddr := common.HexToAddress(contractAddr)
-
-	tx := generateMint(contractAddr, toAddr, amount)
-
-	signedTx, err := ethTypes.SignTx(tx, ethTypes.NewEIP155Signer(networkID), privateKey)
-	assert.NoError(t, err)
-	assert.NotNil(t, signedTx)
-
-	rpc, signer, voter := getVerifyMocks(signedTx, networkID, txBlockNum, privateKey.PublicKey)
-
-	handler := NewHandler(k, rpc, voter, signer, &ethMock.BalancerMock{})
-	wrongToAddr := common.BytesToAddress([]byte(testutils.RandString(256)))
-
-	_, err = handler(ctx, types.NewMsgVerifyMintTx(sdk.AccAddress("sender"), network, signedTx.Hash(), wrongToAddr, sdk.NewIntFromBigInt(amount)))
-	assert.NoError(t, err)
-
-	assertVoteCompleted(t, signedTx.Hash(), voter, false)
-}
-
-func TestVerifyTx_Mint_WrongAmount(t *testing.T) {
-
-	cdc := testutils.Codec()
-	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"))
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-
-	networkID := big.NewInt(0).SetBytes([]byte(network))
-	txBlockNum := big.NewInt(rand.Int63())
-
-	privateKey, err := ethCrypto.GenerateKey()
-	assert.NoError(t, err)
-
-	toAddr := common.HexToAddress(erc20Addr)
-	amount, ok := big.NewInt(0).SetString(erc20Val, 10)
-	assert.True(t, ok)
-
-	contractAddr := common.HexToAddress(contractAddr)
-
-	tx := generateMint(contractAddr, toAddr, amount)
-
-	signedTx, err := ethTypes.SignTx(tx, ethTypes.NewEIP155Signer(networkID), privateKey)
-	assert.NoError(t, err)
-	assert.NotNil(t, signedTx)
-
-	rpc, signer, voter := getVerifyMocks(signedTx, networkID, txBlockNum, privateKey.PublicKey)
-
-	handler := NewHandler(k, rpc, voter, signer, &ethMock.BalancerMock{})
-	wrongAmount := big.NewInt(testutils.RandInts().Next())
-
-	_, err = handler(ctx, types.NewMsgVerifyMintTx(sdk.AccAddress("sender"), network, signedTx.Hash(), toAddr, sdk.NewIntFromBigInt(wrongAmount)))
-	assert.NoError(t, err)
-
-	assertVoteCompleted(t, signedTx.Hash(), voter, false)
+	assert.True(t, k.HasUnverifiedTx(ctx, signedTx.Hash().String()))
+	assertVotedOnPoll(t, voter, signedTx.Hash(), false)
 }
 
 func TestVerifyTx_Mint_Success(t *testing.T) {
+	minConfHeight := testutils.RandIntBetween(1, 10)
+	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
+	signedTx := createSignedMintTx()
 
-	cdc := testutils.Codec()
-	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"))
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	k := newKeeper(ctx, minConfHeight)
+	rpc := createBasicRPCMock(signedTx, confCount)
+	voter := createVoterMock()
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
 
-	networkID := big.NewInt(0).SetBytes([]byte(network))
-	txBlockNum := big.NewInt(rand.Int63())
+	_, err := handler(ctx, types.NewMsgVerifyTx(sender, types.ModuleCdc.MustMarshalJSON(signedTx)))
 
-	privateKey, err := ethCrypto.GenerateKey()
 	assert.NoError(t, err)
-
-	toAddr := common.HexToAddress(erc20Addr)
-	amount, ok := big.NewInt(0).SetString(erc20Val, 10)
-	assert.True(t, ok)
-
-	contractAddr := common.HexToAddress(contractAddr)
-
-	tx := generateMint(contractAddr, toAddr, amount)
-
-	signedTx, err := ethTypes.SignTx(tx, ethTypes.NewEIP155Signer(networkID), privateKey)
-	assert.NoError(t, err)
-	assert.NotNil(t, signedTx)
-
-	rpc, signer, voter := getVerifyMocks(signedTx, networkID, txBlockNum, privateKey.PublicKey)
-
-	handler := NewHandler(k, rpc, voter, signer, &ethMock.BalancerMock{})
-	_, err = handler(ctx, types.NewMsgVerifyMintTx(sdk.AccAddress("sender"), network, signedTx.Hash(), toAddr, sdk.NewIntFromBigInt(amount)))
-	assert.NoError(t, err)
-
-	assertVoteCompleted(t, signedTx.Hash(), voter, true)
-
-	actualTX, ok := k.GetTxForPoll(ctx, poll.ID)
-	assert.True(t, ok)
-
-	assert.Equal(t, signedTx.Hash().Bytes(), actualTX.Hash.Bytes())
-	assert.Equal(t, network, actualTX.Network)
-	assert.Equal(t, amount, actualTX.Amount.BigInt())
-
+	assert.True(t, k.HasUnverifiedTx(ctx, signedTx.Hash().String()))
+	assertVotedOnPoll(t, voter, signedTx.Hash(), true)
 }
 
-func generateDeploy(byteCode []byte) *ethTypes.Transaction {
-
+func createSignedDeployTx() *ethTypes.Transaction {
 	generator := testutils.RandInts()
 
 	nonce := uint64(generator.Next())
 	gasPrice := big.NewInt(generator.Next())
 	gasLimit := uint64(generator.Next())
 	value := big.NewInt(0)
+	byteCode := testutils.RandBytes(int(testutils.RandIntBetween(1, 10000)))
 
-	return ethTypes.NewContractCreation(nonce, value, gasLimit, gasPrice, byteCode)
-
+	return sign(ethTypes.NewContractCreation(nonce, value, gasLimit, gasPrice, byteCode))
 }
 
-func generateMint(contractAddr, toAddr common.Address, amount *big.Int) *ethTypes.Transaction {
+func sign(tx *ethTypes.Transaction) *ethTypes.Transaction {
+	privateKey, err := ethCrypto.GenerateKey()
+	if err != nil {
+		panic(err)
+	}
+	signedTx, err := ethTypes.SignTx(tx, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	if err != nil {
+		panic(err)
+	}
+	return signedTx
+}
 
+func createSignedMintTx() *ethTypes.Transaction {
 	generator := testutils.RandInts()
-
+	contractAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+	toAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
 	nonce := uint64(generator.Next())
 	gasPrice := big.NewInt(testutils.RandInts().Next())
 	gasLimit := uint64(generator.Next())
 	value := big.NewInt(0)
-	data := createMintCallData(toAddr, amount)
-
-	return ethTypes.NewTransaction(nonce, contractAddr, value, gasLimit, gasPrice, data)
-
+	data := types.CreateMintCallData(toAddr, big.NewInt(testutils.RandIntBetween(1, math.MaxInt64)))
+	return sign(ethTypes.NewTransaction(nonce, contractAddr, value, gasLimit, gasPrice, data))
 }
 
-func getVerifyMocks(signedTx *ethTypes.Transaction, networkID, blockNum *big.Int, pk ecdsa.PublicKey) (*ethMock.RPCClientMock, *ethMock.SignerMock, *ethMock.VoterMock) {
+func createBasicRPCMock(tx *ethTypes.Transaction, confCount int64) *ethMock.RPCClientMock {
+	blockNum := testutils.RandIntBetween(confCount, 100000000)
 
 	rpc := ethMock.RPCClientMock{
-
-		NetworkIDFunc: func(ctx context.Context) (*big.Int, error) {
-			return networkID, nil
+		ChainIDFunc: func(ctx context.Context) (*big.Int, error) {
+			return network.Params().ChainID, nil
 		},
-
-		TransactionByHashFunc: func(ctx context.Context, hash common.Hash) (tx *ethTypes.Transaction, isPending bool, err error) {
-
-			if bytes.Equal(signedTx.Hash().Bytes(), hash.Bytes()) {
-
-				return signedTx, false, nil
-			}
-
-			return nil, false, fmt.Errorf("transaction not found")
-		},
-
 		TransactionReceiptFunc: func(ctx context.Context, hash common.Hash) (*ethTypes.Receipt, error) {
-
-			if bytes.Equal(signedTx.Hash().Bytes(), hash.Bytes()) {
-
-				return &ethTypes.Receipt{
-					BlockNumber: blockNum,
-				}, nil
+			if bytes.Equal(tx.Hash().Bytes(), hash.Bytes()) {
+				return &ethTypes.Receipt{TxHash: tx.Hash(), BlockNumber: big.NewInt(blockNum - confCount)}, nil
 			}
-
 			return nil, fmt.Errorf("transaction not found")
 		},
-
 		BlockNumberFunc: func(ctx context.Context) (uint64, error) {
-
-			lastBlockNum := big.NewInt(rand.Int63() + 1)
-			return lastBlockNum.Add(lastBlockNum, blockNum).Uint64(), nil
-
+			return big.NewInt(blockNum).Uint64(), nil
 		},
 	}
 
-	signer := ethMock.SignerMock{
-
-		GetCurrentMasterKeyFunc: func(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool) {
-
-			return pk, true
-		},
-	}
-
-	voter := ethMock.VoterMock{
-		InitPollFunc: func(_ sdk.Context, p vote.PollMeta) error { poll = p; return nil },
-		RecordVoteFunc: func(ctx sdk.Context, vote vote.MsgVote) error {
-			return nil
-		},
-	}
-
-	return &rpc, &signer, &voter
+	return &rpc
 }
 
-func assertVoteCompleted(t *testing.T, hash common.Hash, voter *ethMock.VoterMock, result bool) {
+func createVoterMock() *ethMock.VoterMock {
+	return &ethMock.VoterMock{
+		InitPollFunc:   func(sdk.Context, vote.PollMeta) error { return nil },
+		RecordVoteFunc: func(sdk.Context, vote.MsgVote) error { return nil },
+	}
+}
+
+func assertVotedOnPoll(t *testing.T, voter *ethMock.VoterMock, hash common.Hash, verified bool) {
 
 	assert.Equal(t, 1, len(voter.InitPollCalls()))
-	assert.Equal(t, hash.String(), voter.InitPollCalls()[0].Poll.ID)
-	assert.Equal(t, types.MsgVerifyTx{}.Type(), voter.InitPollCalls()[0].Poll.Type)
 	assert.Equal(t, types.ModuleName, voter.InitPollCalls()[0].Poll.Module)
+	assert.Equal(t, types.MsgVerifyTx{}.Type(), voter.InitPollCalls()[0].Poll.Type)
+	assert.Equal(t, hash.String(), voter.InitPollCalls()[0].Poll.ID)
+
+	initPoll := voter.InitPollCalls()[0].Poll
 
 	assert.Equal(t, 1, len(voter.RecordVoteCalls()))
-	assert.Equal(t, poll, voter.RecordVoteCalls()[0].Vote.Poll())
-	assert.Equal(t, result, voter.RecordVoteCalls()[0].Vote.Data())
+	assert.Equal(t, initPoll, voter.RecordVoteCalls()[0].Vote.Poll())
+	assert.Equal(t, verified, voter.RecordVoteCalls()[0].Vote.Data())
 
+}
+
+func newKeeper(ctx sdk.Context, confHeight int64) keeper.Keeper {
+	cdc := testutils.Codec()
+	subspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
+	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"), subspace)
+	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(confHeight)})
+	return k
+}
+
+func createSnapshotter() types.Snapshotter {
+	return &ethMock.SnapshotterMock{}
 }

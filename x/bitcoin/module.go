@@ -2,8 +2,8 @@ package bitcoin
 
 import (
 	"encoding/json"
+	"fmt"
 
-	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -62,28 +62,21 @@ type AppModule struct {
 	AppModuleBasic
 	keeper   keeper.Keeper
 	voter    types.Voter
-	rpc      *rpcclient.Client
+	rpc      types.RPCClient
 	signer   types.Signer
 	balancer types.Balancer
-}
-
-// Used for testing without bridge
-func NewDummyAppModule(k keeper.Keeper, voter types.Voter) AppModule {
-	return AppModule{
-		AppModuleBasic: AppModuleBasic{},
-		keeper:         k,
-		voter:          voter,
-	}
+	snap     types.Snapshotter
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, rpc *rpcclient.Client) AppModule {
+func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, snapshotter types.Snapshotter, rpc types.RPCClient) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
 		voter:          voter,
 		signer:         signer,
 		rpc:            rpc,
+		snap:           snapshotter,
 	}
 }
 
@@ -94,6 +87,14 @@ func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {
 func (am AppModule) InitGenesis(ctx sdk.Context, message json.RawMessage) []abci.ValidatorUpdate {
 	var genesisState types.GenesisState
 	types.ModuleCdc.MustUnmarshalJSON(message, &genesisState)
+	actualNetwork := am.rpc.Network()
+	if genesisState.Params.Network != actualNetwork {
+		panic(fmt.Sprintf(
+			"local bitcoin client not configured correctly: expected network %s, got %s",
+			genesisState.Params.Network,
+			actualNetwork,
+		))
+	}
 	InitGenesis(ctx, am.keeper, genesisState)
 	return []abci.ValidatorUpdate{}
 }
@@ -108,10 +109,7 @@ func (AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	if am.rpc == nil {
-		return NewDummyHandler(am.keeper, am.voter)
-	}
-	return NewHandler(am.keeper, am.voter, am.rpc, am.signer, am.balancer)
+	return NewHandler(am.keeper, am.voter, am.rpc, am.signer, am.snap, am.balancer)
 }
 
 func (AppModule) QuerierRoute() string {
@@ -119,7 +117,7 @@ func (AppModule) QuerierRoute() string {
 }
 
 func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return nil
+	return keeper.NewQuerier(am.keeper, am.signer, am.rpc)
 }
 
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
