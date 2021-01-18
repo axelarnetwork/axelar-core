@@ -153,8 +153,15 @@ type DeployParams struct {
 // DeployResult describes the result of the deploy contract query,
 // containing the raw unsigned transaction and the address to which the contract will be deployed
 type DeployResult struct {
-	ContractAddress string
-	Tx              *ethTypes.Transaction
+	ContractAddress string                `json:"contract_address"`
+	Tx              *ethTypes.Transaction `json:"tx"`
+}
+
+// SendTxResult describes the result of the send signed tx query,
+// containing the signed transaction and the unsigned tx hash
+type SendTxResult struct {
+	TxID     string                `json:"tx_id"`
+	SignedTx *ethTypes.Transaction `json:"tx"`
 }
 
 // CommandParams describe the parameters used to send a pre-signed command to the given contract,

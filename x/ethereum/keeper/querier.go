@@ -128,7 +128,12 @@ func sendSignedTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
 
-	return k.Codec().MustMarshalJSON(fmt.Sprintf("successfully sent transaction %s to Ethereum", signedTx.Hash().String())), nil
+	result := types.SendTxResult{
+		TxID: txID,
+		SignedTx:              signedTx,
+	}
+
+	return k.Codec().MustMarshalJSON(result), nil
 }
 
 func createTxAndSend(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, data []byte) ([]byte, error) {
