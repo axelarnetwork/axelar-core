@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
@@ -11,6 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authUtils "github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -39,6 +41,7 @@ func addTxSubCommands(command *cobra.Command, cdc *codec.Codec) {
 		flags.PostCommands(
 			GetCmdVerifyTx(cdc),
 			GetCmdSignRawTx(cdc),
+			GetCmdLink(cdc),
 		)...)
 
 	command.AddCommand(cmds...)
@@ -163,6 +166,36 @@ func GetCmdSignRawTx(cdc *codec.Codec) *cobra.Command {
 			types.ModuleCdc.MustUnmarshalJSON([]byte(args[1]), &tx)
 
 			msg := types.NewMsgSignTx(cliCtx.GetFromAddress(), args[0], tx)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+// GetCmdLink links a cross chain address to a bitcoin address created by Axelar
+func GetCmdLink(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "link [chain] [address]",
+		Short: "Link a cross chain address to a bitcoin address created by Axelar",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
+
+			chain := balance.ChainFromString(args[0])
+			if err := chain.Validate(); err != nil {
+				return err
+			}
+
+			address := balance.CrossChainAddress{Chain: balance.Bitcoin, Address: args[1]}
+			if err := address.Validate(); err != nil {
+				return err
+			}
+
+			msg := types.MsgLink{Sender: cliCtx.GetFromAddress(), Address: address}
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

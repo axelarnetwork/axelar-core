@@ -51,7 +51,7 @@ func queryMasterAddress(ctx sdk.Context, k Keeper, s types.Signer) ([]byte, erro
 		return nil, fmt.Errorf("key not found")
 	}
 
-	addr, err := k.GetAddress(ctx, btcec.PublicKey(pk))
+	addr, err := k.GetAddress(ctx, btcec.PublicKey(pk), balance.CrossChainAddress{})
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
@@ -95,7 +95,7 @@ func createRawTx(ctx sdk.Context, k Keeper, s types.Signer, data []byte) ([]byte
 		if !ok {
 			return nil, sdkerrors.Wrap(types.ErrBitcoin, "next master key not set")
 		}
-		recipient, err = k.GetAddress(ctx, btcec.PublicKey(pk))
+		recipient, err = k.GetAddress(ctx, btcec.PublicKey(pk), balance.CrossChainAddress{})
 	}
 
 	tx, err := k.CreateTx(ctx, params.TxID, params.Satoshi, recipient)

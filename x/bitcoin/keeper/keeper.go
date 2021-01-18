@@ -13,6 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/tendermint/tendermint/libs/log"
 
+	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
 
@@ -194,8 +195,14 @@ func (k Keeper) GetHashToSign(ctx sdk.Context, txID string) ([]byte, error) {
 // GetAddress creates a Bitcoin pubKey hash address from a public key.
 // We use Pay2PKH for added security over Pay2PK as well as for the benefit of getting a parsed address from the response of
 // getrawtransaction() on the Bitcoin rpc client
-func (k Keeper) GetAddress(ctx sdk.Context, pk btcec.PublicKey) (btcutil.Address, error) {
+// If a cross chain address is specified, the hash address is created using a nonce calculated from the cross chain address
+func (k Keeper) GetAddress(ctx sdk.Context, pk btcec.PublicKey, crossAddr balance.CrossChainAddress) (btcutil.Address, error) {
 	addr, err := btcutil.NewAddressPubKeyHash(btcutil.Hash160(pk.SerializeCompressed()), k.getNetwork(ctx).Params())
+
+	if err := crossAddr.Validate(); err == nil {
+		//TODO: calculate with the cross chain address
+	}
+
 	return addr, sdkerrors.Wrap(err, "could not convert the given public key into a bitcoin address")
 }
 

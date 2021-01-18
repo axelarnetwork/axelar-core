@@ -241,7 +241,7 @@ func prepareMsgSign(ctx sdk.Context, k keeper.Keeper, querier sdk.Querier, sk *e
 
 	txID := hash.String()
 	btcPk := btcec.PublicKey(sk.PublicKey)
-	addr, err := k.GetAddress(ctx, btcPk)
+	addr, err := k.GetAddress(ctx, btcPk, balance.CrossChainAddress{})
 	if err != nil {
 		panic(err)
 	}

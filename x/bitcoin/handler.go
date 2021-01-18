@@ -29,8 +29,8 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, signer type
 			return handleMsgVoteVerifiedTx(ctx, k, v, msg)
 		case types.MsgSignTx:
 			return handleMsgSignTx(ctx, k, signer, snap, msg)
-		case types.MsgTransfer:
-			return handleMsgTransfer(ctx, b, msg)
+		case types.MsgLink:
+			return handleMsgLink(ctx, k, signer, b, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
@@ -38,9 +38,20 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, signer type
 	}
 }
 
-func handleMsgTransfer(ctx sdk.Context, b types.Balancer, msg types.MsgTransfer) (*sdk.Result, error) {
-	btcAddr := balance.CrossChainAddress{Chain: balance.Bitcoin, Address: msg.BTCAddress.String()}
-	b.LinkAddresses(ctx, btcAddr, msg.Destination)
+func handleMsgLink(ctx sdk.Context, k keeper.Keeper, s types.Signer, b types.Balancer, msg types.MsgLink) (*sdk.Result, error) {
+
+	key, ok := s.GetCurrentMasterKey(ctx, balance.Bitcoin)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, "master key not set")
+	}
+
+	btcAddr, err := k.GetAddress(ctx, btcec.PublicKey(key), msg.Address)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
+
+	}
+
+	b.LinkAddresses(ctx, balance.CrossChainAddress{Chain: balance.Bitcoin, Address: btcAddr.String()}, msg.Address)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -48,12 +59,12 @@ func handleMsgTransfer(ctx sdk.Context, b types.Balancer, msg types.MsgTransfer)
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
 			sdk.NewAttribute(types.AttributeAddress, btcAddr.String()),
-			sdk.NewAttribute(types.AttributeAddress, msg.Destination.String()),
+			sdk.NewAttribute(types.AttributeAddress, msg.Address.String()),
 		),
 	)
 
 	return &sdk.Result{
-		Log:    fmt.Sprintf("successfully linked {%s} and {%s}", btcAddr.String(), msg.Destination.String()),
+		Log:    fmt.Sprintf("successfully linked {%s} and {%s}", btcAddr.String(), msg.Address.String()),
 		Events: ctx.EventManager().Events(),
 	}, nil
 }
@@ -94,7 +105,7 @@ func handleMsgTrack(ctx sdk.Context, k keeper.Keeper, s types.Signer, rpc types.
 			}
 		}
 
-		addr, err := k.GetAddress(ctx, btcec.PublicKey(key))
+		addr, err := k.GetAddress(ctx, btcec.PublicKey(key), balance.CrossChainAddress{})
 		if err != nil {
 			return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 		}
