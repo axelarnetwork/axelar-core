@@ -1,8 +1,8 @@
 package cli
 
 import (
-	"bytes"
 	"fmt"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"io/ioutil"
 	"strings"
 
@@ -53,7 +53,7 @@ func GetCmdMasterAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryMasterKey), nil)
 			if err != nil {
-				fmt.Printf("could not resolve master key: %s\n", err.Error())
+				fmt.Printf(types.ErrFMasterKey, err.Error())
 
 				return nil
 			}
@@ -75,19 +75,7 @@ func GetCmdCreateMintTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			amount, err := denom.ParseSatoshi(args[2])
-			if err != nil {
-				return err
-			}
-
-			// check if the addresses are valid
-			if !validAddress(args[0]) {
-				return fmt.Errorf("invalid contract address")
-			}
-
-			if !validAddress(args[1]) {
-				return fmt.Errorf("invalid recipient address")
-			}
+			amount, err := ValidMintParams(args[0], args[1], args[2])
 
 			params := types.MintParams{
 				Recipient:    args[1],
@@ -98,7 +86,7 @@ func GetCmdCreateMintTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.CreateMintTx), cdc.MustMarshalJSON(params))
 			if err != nil {
-				fmt.Printf("could not resolve master key: %s\n", err.Error())
+				fmt.Printf(types.ErrFMintTx, err.Error())
 
 				return nil
 			}
@@ -113,6 +101,26 @@ func GetCmdCreateMintTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return cmd
 }
 
+func ValidMintParams(contractAddr string, recipientAddr string, amountStr string) (amount sdk.Coin, err error){
+	amount, err = denom.ParseSatoshi(amountStr)
+	if err != nil {
+		return
+	}
+
+	// check if the addresses are valid
+	if !types.ValidAddress(contractAddr) {
+		err = fmt.Errorf("invalid contract address")
+		return
+	}
+
+	if !types.ValidAddress(recipientAddr) {
+		err = fmt.Errorf("invalid recipient address")
+		return
+	}
+
+	return
+}
+
 func GetCmdCreateDeployTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	var gasLimit uint64
 	cmd := &cobra.Command{
@@ -122,7 +130,7 @@ func GetCmdCreateDeployTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			bz, err := parseByteCode(args[0])
+			bz, err := ParseByteCode(args[0])
 			if err != nil {
 				return err
 			}
@@ -134,7 +142,7 @@ func GetCmdCreateDeployTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.CreateDeployTx), cdc.MustMarshalJSON(params))
 			if err != nil {
-				fmt.Printf("could not resolve master key: %s\n", err.Error())
+				fmt.Printf(types.ErrFDeployTx, err.Error())
 
 				return nil
 			}
@@ -161,7 +169,7 @@ func GetCmdSendTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.SendTx, args[0]), nil)
 			if err != nil {
-				return sdkerrors.Wrapf(err, "could not send the transaction spending transaction %s", args[0])
+				return sdkerrors.Wrapf(err, types.ErrFSendTx, args[0])
 			}
 
 			var out string
@@ -184,7 +192,7 @@ func GetCmdSendMintTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s/%s", queryRoute, keeper.SendMintTx, commandID, fromAddress, contractAddress), nil)
 			if err != nil {
-				return sdkerrors.Wrapf(err, "could not send Ethereum transaction executing mint command %s", commandID)
+				return sdkerrors.Wrapf(err, types.ErrFSendMintTx, commandID)
 			}
 
 			var out string
@@ -195,7 +203,7 @@ func GetCmdSendMintTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-func parseByteCode(filePath string) ([]byte, error) {
+func ParseByteCode(filePath string) ([]byte, error) {
 	content, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return nil, err
@@ -203,12 +211,4 @@ func parseByteCode(filePath string) ([]byte, error) {
 
 	byteCode := common.FromHex(strings.TrimSuffix(string(content), "\n"))
 	return byteCode, nil
-}
-
-func validAddress(address string) bool {
-	if bytes.Equal(common.HexToAddress(address).Bytes(), make([]byte, common.AddressLength)) {
-		return false
-	}
-
-	return true
 }

@@ -22,10 +22,10 @@ var (
 
 // OutPointInfo describes all the necessary information to verify the outPoint of a transaction
 type OutPointInfo struct {
-	OutPoint      *wire.OutPoint
-	Amount        btcutil.Amount
-	DepositAddr   string
-	Confirmations uint64
+	OutPoint      *wire.OutPoint `json:"outpoint" yaml:"outpoint"`
+	Amount        btcutil.Amount `json:"amount" yaml:"amount"`
+	DepositAddr   string `json:"deposit_address" yaml:"deposit_address"`
+	Confirmations uint64 `json:"confirmations" yaml:"confirmations"`
 }
 
 // Validate ensures that all fields are filled with sensible values

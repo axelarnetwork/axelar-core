@@ -13,6 +13,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/client/cli"
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/client/rest"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
@@ -46,8 +47,8 @@ func (AppModuleBasic) ValidateGenesis(message json.RawMessage) error {
 	return types.ValidateGenesis(data)
 }
 
-func (AppModuleBasic) RegisterRESTRoutes(_ context.CLIContext, _ *mux.Router) {
-	// TODO: implement rest interface
+func (AppModuleBasic) RegisterRESTRoutes(cliCtx context.CLIContext, rtr *mux.Router) {
+	rest.RegisterRoutes(cliCtx, rtr)
 }
 
 func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
