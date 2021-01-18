@@ -2,7 +2,6 @@ package broadcast
 
 import (
 	"encoding/json"
-	"github.com/axelarnetwork/axelar-core/x/broadcast/client/rest"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -13,6 +12,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/x/broadcast/client/cli"
+	"github.com/axelarnetwork/axelar-core/x/broadcast/client/rest"
 	"github.com/axelarnetwork/axelar-core/x/broadcast/keeper"
 	"github.com/axelarnetwork/axelar-core/x/broadcast/types"
 )
