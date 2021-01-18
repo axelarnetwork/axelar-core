@@ -190,7 +190,7 @@ func GetCmdLink(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			address := balance.CrossChainAddress{Chain: balance.Bitcoin, Address: args[1]}
+			address := balance.CrossChainAddress{Chain: chain, Address: args[1]}
 			if err := address.Validate(); err != nil {
 				return err
 			}
