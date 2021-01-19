@@ -25,10 +25,12 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey) Keeper {
 	return Keeper{cdc: cdc, storeKey: storeKey}
 }
 
+// LinkAddresses links a sender address to a crosschain recipient address
 func (k Keeper) LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) {
 	ctx.KVStore(k.storeKey).Set([]byte(senderPrefix+marshalCrossChainAddress(sender)), k.cdc.MustMarshalBinaryLengthPrefixed(recipient))
 }
 
+// PrepareForTransfer appoints the amount of tokens to be transfered/minted to the recipient previously linked to the specified sender
 func (k Keeper) PrepareForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error {
 	recp, ok := k.getRecipient(ctx, sender)
 	if !ok {
@@ -41,14 +43,17 @@ func (k Keeper) PrepareForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 	return nil
 }
 
+// GetPendingTransfersForChain returns the current set of pending transfers for a given chain
 func (k Keeper) GetPendingTransfersForChain(ctx sdk.Context, chain exported.Chain) []exported.CrossChainTransfer {
 	return k.getAddresses(ctx, pendingPrefix, chain)
 }
 
+// GetArchivedTransfersForChain returns the history of concluded transactions to a given chain
 func (k Keeper) GetArchivedTransfersForChain(ctx sdk.Context, chain exported.Chain) []exported.CrossChainTransfer {
 	return k.getAddresses(ctx, archivedPrefix, chain)
 }
 
+// ArchivePendingTransfers marks the transfer for the given recipient as concluded and archived
 func (k Keeper) ArchivePendingTransfers(ctx sdk.Context, recipient exported.CrossChainAddress) {
 	transfers := ctx.KVStore(k.storeKey).Get([]byte(pendingPrefix + marshalCrossChainAddress(recipient)))
 	ctx.KVStore(k.storeKey).Delete([]byte(pendingPrefix + marshalCrossChainAddress(recipient)))

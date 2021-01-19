@@ -29,46 +29,44 @@ func init() {
 
 func TestLink(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	sender, recipient := makeRandAddresses()
+	sender, recipient := makeRandAddressesForChain(makeRandomChain(), makeRandomChain())
 
 	keeper.LinkAddresses(ctx, sender, recipient)
-	result, ok := keeper.getRecipient(ctx, sender)
-	assert.True(t, ok)
-	assert.Equal(t, recipient, result)
+	err := keeper.PrepareForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
+	assert.NoError(t, err)
 
 	sender.Address = testutils.RandString(20)
-	result, ok = keeper.getRecipient(ctx, sender)
-	assert.False(t, ok)
-	assert.Equal(t, exported.CrossChainAddress{}, result)
+	err = keeper.PrepareForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
+	assert.Error(t, err)
 }
 
 func TestPrepare(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	sender, _ := makeRandAddresses()
+	sender, _ := makeRandAddressesForChain(makeRandomChain(), makeRandomChain())
 
 	err := keeper.PrepareForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
 	assert.Error(t, err)
-	chain := exported.Chain(testutils.RandIntBetween(0, exported.ConnectedChainCount))
-	denom := makeRandomDenom()
+	destination := makeRandomChain()
 	senders := make([]exported.CrossChainAddress, 0)
 
 	for i := 0; i < linkedAddr; i++ {
-		sender, recipient := makeRandAddressesForChain(chain)
+		sender, recipient := makeRandAddressesForChain(makeRandomChain(), destination)
 		senders = append(senders, sender)
 		keeper.LinkAddresses(ctx, sender, recipient)
-		err = keeper.PrepareForTransfer(ctx, sender, makeRandAmount(denom))
+		err = keeper.PrepareForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
 		assert.NoError(t, err)
 	}
 
-	transfers := keeper.GetPendingTransfersForChain(ctx, chain)
+	transfers := keeper.GetPendingTransfersForChain(ctx, destination)
 	assert.Equal(t, linkedAddr, len(transfers))
 
+	denom := makeRandomDenom()
 	for _, sender := range senders {
 		err = keeper.PrepareForTransfer(ctx, sender, sdk.NewInt64Coin(denom, 10))
 		assert.NoError(t, err)
 	}
 
-	transfersUpdated := keeper.GetPendingTransfersForChain(ctx, chain)
+	transfersUpdated := keeper.GetPendingTransfersForChain(ctx, destination)
 	assert.Equal(t, linkedAddr, len(transfersUpdated))
 
 	count := 0
@@ -87,25 +85,25 @@ func TestArchive(t *testing.T) {
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 
-	chain := exported.Chain(testutils.RandIntBetween(0, exported.ConnectedChainCount))
+	destination := makeRandomChain()
 	denom := makeRandomDenom()
 	recipients := make([]exported.CrossChainAddress, 0)
 
 	for i := 0; i < linkedAddr; i++ {
-		sender, recipient := makeRandAddressesForChain(chain)
+		sender, recipient := makeRandAddressesForChain(makeRandomChain(), destination)
 		recipients = append(recipients, recipient)
 		keeper.LinkAddresses(ctx, sender, recipient)
 		err := keeper.PrepareForTransfer(ctx, sender, makeRandAmount(denom))
 		assert.NoError(t, err)
 	}
 
-	transfers := keeper.GetPendingTransfersForChain(ctx, chain)
+	transfers := keeper.GetPendingTransfersForChain(ctx, destination)
 
 	for _, recipient := range recipients {
 		keeper.ArchivePendingTransfers(ctx, recipient)
 	}
 
-	archived := keeper.GetArchivedTransfersForChain(ctx, chain)
+	archived := keeper.GetArchivedTransfersForChain(ctx, destination)
 	assert.Equal(t, linkedAddr, len(archived))
 
 	count := 0
@@ -134,30 +132,21 @@ func makeRandomDenom() string {
 
 func makeRandAmount(denom string) sdk.Coin {
 
-	return sdk.NewCoin(denom, sdk.NewInt(testutils.RandIntBetween(0, maxAmount)))
+	return sdk.NewCoin(denom, sdk.NewInt(testutils.RandIntBetween(1, maxAmount)))
 }
 
-func makeRandAddresses() (exported.CrossChainAddress, exported.CrossChainAddress) {
+func makeRandomChain() exported.Chain {
+	return exported.Chain(testutils.RandIntBetween(1, exported.ConnectedChainCount))
+}
+
+func makeRandAddressesForChain(origin, distination exported.Chain) (exported.CrossChainAddress, exported.CrossChainAddress) {
 	sender := exported.CrossChainAddress{
 		Address: testutils.RandString(addrMaxLength),
-		Chain:   exported.Chain(testutils.RandIntBetween(0, exported.ConnectedChainCount)),
+		Chain:   origin,
 	}
 	recipient := exported.CrossChainAddress{
 		Address: testutils.RandString(addrMaxLength),
-		Chain:   exported.Chain(testutils.RandIntBetween(0, exported.ConnectedChainCount)),
-	}
-
-	return sender, recipient
-}
-
-func makeRandAddressesForChain(chain exported.Chain) (exported.CrossChainAddress, exported.CrossChainAddress) {
-	sender := exported.CrossChainAddress{
-		Address: testutils.RandString(addrMaxLength),
-		Chain:   chain,
-	}
-	recipient := exported.CrossChainAddress{
-		Address: testutils.RandString(addrMaxLength),
-		Chain:   chain,
+		Chain:   distination,
 	}
 
 	return sender, recipient
