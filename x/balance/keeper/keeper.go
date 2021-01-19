@@ -26,7 +26,7 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey) Keeper {
 }
 
 func (k Keeper) LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) {
-	ctx.KVStore(k.storeKey).Set([]byte(senderPrefix+marshalCrossChainAddress(sender)), k.cdc.MustMarshalBinaryBare(recipient))
+	ctx.KVStore(k.storeKey).Set([]byte(senderPrefix+marshalCrossChainAddress(sender)), k.cdc.MustMarshalBinaryLengthPrefixed(recipient))
 }
 
 func (k Keeper) PrepareForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error {
@@ -56,7 +56,7 @@ func (k Keeper) ArchivePendingTransfers(ctx sdk.Context, recipient exported.Cros
 }
 
 func (k Keeper) setPendingTransfers(ctx sdk.Context, recipient exported.CrossChainAddress, transfers sdk.Coins) {
-	ctx.KVStore(k.storeKey).Set([]byte(pendingPrefix+marshalCrossChainAddress(recipient)), k.cdc.MustMarshalBinaryBare(transfers))
+	ctx.KVStore(k.storeKey).Set([]byte(pendingPrefix+marshalCrossChainAddress(recipient)), k.cdc.MustMarshalBinaryLengthPrefixed(transfers))
 }
 
 func (k Keeper) getRecipient(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool) {
@@ -66,7 +66,7 @@ func (k Keeper) getRecipient(ctx sdk.Context, sender exported.CrossChainAddress)
 	}
 
 	var recp exported.CrossChainAddress
-	k.cdc.MustUnmarshalBinaryBare(bz, &recp)
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &recp)
 	return recp, true
 }
 
@@ -77,7 +77,7 @@ func (k Keeper) getPendingTransfers(ctx sdk.Context, recipient exported.CrossCha
 	}
 
 	var transfers sdk.Coins
-	k.cdc.MustUnmarshalBinaryBare(bz, &transfers)
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &transfers)
 	return transfers
 }
 
@@ -94,7 +94,7 @@ func (k Keeper) getAddresses(ctx sdk.Context, getType string, chain exported.Cha
 
 		bz := iter.Value()
 		var amount sdk.Coins
-		k.cdc.MustUnmarshalBinaryBare(bz, &amount)
+		k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &amount)
 
 		transfers = append(transfers, exported.CrossChainTransfer{Recipient: recipient, Amount: amount})
 
