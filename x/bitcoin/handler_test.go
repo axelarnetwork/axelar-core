@@ -208,9 +208,7 @@ func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
 		NetworkFunc: func() types.Network {
 			return types.Network(chaincfg.MainNetParams.Name)
 		}}
-	b := &btcMock.BalancerMock{GetRecipientFunc: func(ctx sdk.Context, sender balance.CrossChainAddress) (balance.CrossChainAddress, bool) {
-		return balance.CrossChainAddress{}, false
-	}}
+	b := &btcMock.BalancerMock{}
 	snap := &btcMock.SnapshotterMock{GetSnapshotFunc: func(ctx sdk.Context, round int64) (snapshot.Snapshot, bool) {
 		return snapshot.Snapshot{}, true
 	}}
