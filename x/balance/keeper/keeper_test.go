@@ -47,11 +47,11 @@ func TestPrepare(t *testing.T) {
 	err := keeper.PrepareForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
 	assert.Error(t, err)
 	destination := makeRandomChain()
-	senders := make([]exported.CrossChainAddress, 0)
+	addresses := make(map[exported.CrossChainAddress]exported.CrossChainAddress)
 
 	for i := 0; i < linkedAddr; i++ {
 		sender, recipient := makeRandAddressesForChain(makeRandomChain(), destination)
-		senders = append(senders, sender)
+		addresses[sender] = recipient
 		keeper.LinkAddresses(ctx, sender, recipient)
 		err = keeper.PrepareForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
 		assert.NoError(t, err)
@@ -60,9 +60,11 @@ func TestPrepare(t *testing.T) {
 	transfers := keeper.GetPendingTransfersForChain(ctx, destination)
 	assert.Equal(t, linkedAddr, len(transfers))
 
-	denom := makeRandomDenom()
-	for _, sender := range senders {
-		err = keeper.PrepareForTransfer(ctx, sender, sdk.NewInt64Coin(denom, 10))
+	amounts := make(map[exported.CrossChainAddress]sdk.Coin)
+	for sender, recipient := range addresses {
+		amount := makeRandAmount(makeRandomDenom())
+		err = keeper.PrepareForTransfer(ctx, sender, amount)
+		amounts[recipient] = amount
 		assert.NoError(t, err)
 	}
 
@@ -72,9 +74,9 @@ func TestPrepare(t *testing.T) {
 	count := 0
 	for _, transfer1 := range transfers {
 		for _, transfer2 := range transfersUpdated {
-			if transfer1.Recipient.Address == transfer2.Recipient.Address {
+			if transfer1.Recipient.Address == transfer2.Recipient.Address && transfer1.Recipient.Chain == transfer2.Recipient.Chain {
 				count++
-				assert.Equal(t, transfer2.Amount, transfer1.Amount.Add(sdk.NewInt64Coin(denom, 10)))
+				assert.Equal(t, transfer2.Amount, transfer1.Amount.Add(amounts[transfer1.Recipient]))
 			}
 		}
 	}

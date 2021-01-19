@@ -94,7 +94,7 @@ func (k Keeper) getAddresses(ctx sdk.Context, getType string, chain exported.Cha
 	for ; iter.Valid(); iter.Next() {
 
 		key := iter.Key()
-		bytes := key[len(prefix)-1:]
+		bytes := key[len(prefix):]
 		recipient := exported.CrossChainAddress{Address: string(bytes), Chain: chain}
 
 		bz := iter.Value()
