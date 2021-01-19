@@ -37,16 +37,17 @@ func registerProxyHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 		// Read the request parameters
 		var req SendReq
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
 			return
 		}
 
-		req.BaseReq = req.BaseReq.Sanitize()
-		if !req.BaseReq.ValidateBasic(w) {
+		baseReq := req.BaseReq.Sanitize()
+		if !baseReq.ValidateBasic(w) {
 			return
 		}
 
 		// Extract the sender address from the request params (instead of using cliCtx)
-		fromAddr, err := sdk.AccAddressFromBech32(req.BaseReq.From)
+		fromAddr, err := sdk.AccAddressFromBech32(baseReq.From)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -55,6 +56,6 @@ func registerProxyHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 		// Val address is validator's operator
 		// @? Changing the fromAddr in the request params does not seem to affect the message - validator operator address is always used
 		msg := types.NewMsgRegisterProxy(sdk.ValAddress(fromAddr), voter)
-		utils.WriteGenerateStdTxResponse(w, cliCtx, req.BaseReq, []sdk.Msg{msg})
+		utils.WriteGenerateStdTxResponse(w, cliCtx, baseReq, []sdk.Msg{msg})
 	}
 }

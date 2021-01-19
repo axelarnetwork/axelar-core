@@ -2,6 +2,7 @@ package rest
 
 import (
 	"fmt"
+	clientUtils "github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -22,20 +23,23 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 
 func regsiterSnapshotHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 	return func (w http.ResponseWriter, r *http.Request) {
-
-		// Unmarshall and validate request
 		var req SendReq
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
 			return
 		}
-		req.BaseReq = req.BaseReq.Sanitize()
-		if !req.BaseReq.ValidateBasic(w) {
+		baseReq := req.BaseReq.Sanitize()
+		if !baseReq.ValidateBasic(w) {
 			return
 		}
 
-		fromAddr, err := sdk.AccAddressFromBech32(req.BaseReq.From)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+		//fromAddr, err := sdk.AccAddressFromBech32(req.BaseReq.From)
+		//if err != nil {
+		//	rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+		//	return
+		//}
+		fromAddr, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
+		if !ok {
 			return
 		}
 
