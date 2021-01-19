@@ -3,6 +3,8 @@ package exported
 import (
 	"fmt"
 	"strings"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 const (
@@ -12,18 +14,18 @@ const (
 	Ethereum
 
 	// increment when adding a new chain
-	connectedChainCount = 3
+	ConnectedChainCount = 3
 )
 
 var (
 	// add labels when new chains are added IN THE CORRECT ORDER
-	labels = [connectedChainCount]string{"unknown chain", "Bitcoin", "Ethereum"}
+	labels = [ConnectedChainCount]string{"unknown chain", "Bitcoin", "Ethereum"}
 )
 
 type Chain int
 
 func (c Chain) Validate() error {
-	if c < 0 || c >= connectedChainCount {
+	if c < 0 || c >= ConnectedChainCount {
 		return fmt.Errorf("unknown chain")
 	}
 	return nil
@@ -62,4 +64,9 @@ func (a CrossChainAddress) Validate() error {
 
 func (a CrossChainAddress) String() string {
 	return fmt.Sprintf("chain: %s, address: %s", a.Chain.String(), a.Address)
+}
+
+type CrossChainTransfer struct {
+	Recipient CrossChainAddress
+	Amount    sdk.Coins
 }
