@@ -19,10 +19,11 @@ type Voter interface {
 
 type Balancer interface {
 	LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress)
+	GetRecipient(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool)
 	PrepareForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error
 	GetPendingTransfersForChain(ctx sdk.Context, chain exported.Chain) []exported.CrossChainTransfer
 	GetArchivedTransfersForChain(ctx sdk.Context, chain exported.Chain) []exported.CrossChainTransfer
-	ArchivePendingTransfers(ctx sdk.Context, recipient exported.CrossChainAddress)
+	ArchivePendingTransfer(ctx sdk.Context, transfer exported.CrossChainTransfer)
 }
 
 type Signer interface {
