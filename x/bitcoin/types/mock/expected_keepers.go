@@ -723,8 +723,8 @@ var _ types.Balancer = &BalancerMock{}
 //
 //         // make and configure a mocked types.Balancer
 //         mockedBalancer := &BalancerMock{
-//             ArchivePendingTransfersFunc: func(ctx sdk.Context, transfer exported.CrossChainTransfer)  {
-// 	               panic("mock out the ArchivePendingTransfers method")
+//             ArchivePendingTransferFunc: func(ctx sdk.Context, transfer exported.CrossChainTransfer)  {
+// 	               panic("mock out the ArchivePendingTransfer method")
 //             },
 //             GetArchivedTransfersForChainFunc: func(ctx sdk.Context, chain exported.Chain) []exported.CrossChainTransfer {
 // 	               panic("mock out the GetArchivedTransfersForChain method")
@@ -745,8 +745,8 @@ var _ types.Balancer = &BalancerMock{}
 //
 //     }
 type BalancerMock struct {
-	// ArchivePendingTransfersFunc mocks the ArchivePendingTransfers method.
-	ArchivePendingTransfersFunc func(ctx sdk.Context, transfer exported.CrossChainTransfer)
+	// ArchivePendingTransferFunc mocks the ArchivePendingTransfer method.
+	ArchivePendingTransferFunc func(ctx sdk.Context, transfer exported.CrossChainTransfer)
 
 	// GetArchivedTransfersForChainFunc mocks the GetArchivedTransfersForChain method.
 	GetArchivedTransfersForChainFunc func(ctx sdk.Context, chain exported.Chain) []exported.CrossChainTransfer
@@ -762,8 +762,8 @@ type BalancerMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// ArchivePendingTransfers holds details about calls to the ArchivePendingTransfers method.
-		ArchivePendingTransfers []struct {
+		// ArchivePendingTransfer holds details about calls to the ArchivePendingTransfer method.
+		ArchivePendingTransfer []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Transfer is the transfer argument value.
@@ -802,17 +802,17 @@ type BalancerMock struct {
 			Amount sdk.Coin
 		}
 	}
-	lockArchivePendingTransfers      sync.RWMutex
+	lockArchivePendingTransfer       sync.RWMutex
 	lockGetArchivedTransfersForChain sync.RWMutex
 	lockGetPendingTransfersForChain  sync.RWMutex
 	lockLinkAddresses                sync.RWMutex
 	lockPrepareForTransfer           sync.RWMutex
 }
 
-// ArchivePendingTransfers calls ArchivePendingTransfersFunc.
-func (mock *BalancerMock) ArchivePendingTransfers(ctx sdk.Context, transfer exported.CrossChainTransfer) {
-	if mock.ArchivePendingTransfersFunc == nil {
-		panic("BalancerMock.ArchivePendingTransfersFunc: method is nil but Balancer.ArchivePendingTransfers was just called")
+// ArchivePendingTransfer calls ArchivePendingTransferFunc.
+func (mock *BalancerMock) ArchivePendingTransfer(ctx sdk.Context, transfer exported.CrossChainTransfer) {
+	if mock.ArchivePendingTransferFunc == nil {
+		panic("BalancerMock.ArchivePendingTransferFunc: method is nil but Balancer.ArchivePendingTransfer was just called")
 	}
 	callInfo := struct {
 		Ctx      sdk.Context
@@ -821,16 +821,16 @@ func (mock *BalancerMock) ArchivePendingTransfers(ctx sdk.Context, transfer expo
 		Ctx:      ctx,
 		Transfer: transfer,
 	}
-	mock.lockArchivePendingTransfers.Lock()
-	mock.calls.ArchivePendingTransfers = append(mock.calls.ArchivePendingTransfers, callInfo)
-	mock.lockArchivePendingTransfers.Unlock()
-	mock.ArchivePendingTransfersFunc(ctx, transfer)
+	mock.lockArchivePendingTransfer.Lock()
+	mock.calls.ArchivePendingTransfer = append(mock.calls.ArchivePendingTransfer, callInfo)
+	mock.lockArchivePendingTransfer.Unlock()
+	mock.ArchivePendingTransferFunc(ctx, transfer)
 }
 
-// ArchivePendingTransfersCalls gets all the calls that were made to ArchivePendingTransfers.
+// ArchivePendingTransferCalls gets all the calls that were made to ArchivePendingTransfer.
 // Check the length with:
-//     len(mockedBalancer.ArchivePendingTransfersCalls())
-func (mock *BalancerMock) ArchivePendingTransfersCalls() []struct {
+//     len(mockedBalancer.ArchivePendingTransferCalls())
+func (mock *BalancerMock) ArchivePendingTransferCalls() []struct {
 	Ctx      sdk.Context
 	Transfer exported.CrossChainTransfer
 } {
@@ -838,9 +838,9 @@ func (mock *BalancerMock) ArchivePendingTransfersCalls() []struct {
 		Ctx      sdk.Context
 		Transfer exported.CrossChainTransfer
 	}
-	mock.lockArchivePendingTransfers.RLock()
-	calls = mock.calls.ArchivePendingTransfers
-	mock.lockArchivePendingTransfers.RUnlock()
+	mock.lockArchivePendingTransfer.RLock()
+	calls = mock.calls.ArchivePendingTransfer
+	mock.lockArchivePendingTransfer.RUnlock()
 	return calls
 }
 

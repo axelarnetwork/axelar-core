@@ -91,7 +91,7 @@ func TestArchive(t *testing.T) {
 	transfers := keeper.GetPendingTransfersForChain(ctx, destination)
 
 	for _, transfer := range transfers {
-		keeper.ArchivePendingTransfers(ctx, transfer)
+		keeper.ArchivePendingTransfer(ctx, transfer)
 	}
 
 	archived := keeper.GetArchivedTransfersForChain(ctx, destination)
