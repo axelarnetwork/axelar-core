@@ -139,7 +139,7 @@ func TestVerifyTx_Deploy_HashNotFound(t *testing.T) {
 		return nil, fmt.Errorf("wrong hash")
 	}
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, createSnapshotter())
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, createSnapshotter(), &ethMock.BalancerMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyTx(sender, types.ModuleCdc.MustMarshalJSON(signedTx)))
 
@@ -157,7 +157,7 @@ func TestVerifyTx_Deploy_NotConfirmed(t *testing.T) {
 	k := newKeeper(ctx, minConfHeight)
 	rpc := createBasicRPCMock(signedTx, confCount)
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.BalancerMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyTx(sender, types.ModuleCdc.MustMarshalJSON(signedTx)))
 
@@ -175,7 +175,7 @@ func TestVerifyTx_Deploy_Success(t *testing.T) {
 	k := newKeeper(ctx, minConfHeight)
 	rpc := createBasicRPCMock(signedTx, confCount)
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.BalancerMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyTx(sender, types.ModuleCdc.MustMarshalJSON(signedTx)))
 
@@ -196,7 +196,7 @@ func TestVerifyTx_Mint_HashNotFound(t *testing.T) {
 		return nil, fmt.Errorf("wrong hash")
 	}
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.BalancerMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyTx(sender, types.ModuleCdc.MustMarshalJSON(signedTx)))
 
@@ -214,7 +214,7 @@ func TestVerifyTx_Mint_NotConfirmed(t *testing.T) {
 	k := newKeeper(ctx, minConfHeight)
 	rpc := createBasicRPCMock(signedTx, confCount)
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.BalancerMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyTx(sender, types.ModuleCdc.MustMarshalJSON(signedTx)))
 
@@ -232,7 +232,7 @@ func TestVerifyTx_Mint_Success(t *testing.T) {
 	k := newKeeper(ctx, minConfHeight)
 	rpc := createBasicRPCMock(signedTx, confCount)
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.BalancerMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyTx(sender, types.ModuleCdc.MustMarshalJSON(signedTx)))
 
