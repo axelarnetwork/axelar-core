@@ -47,28 +47,28 @@ func TestPrepare(t *testing.T) {
 	err := keeper.PrepareForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
 	assert.Error(t, err)
 	destination := makeRandomChain()
-	amount := make(map[exported.CrossChainAddress]sdk.Coin)
+	amounts := make(map[exported.CrossChainAddress]sdk.Coin)
 
 	for i := 0; i < linkedAddr; i++ {
 		sender, recipient := makeRandAddressesForChain(makeRandomChain(), destination)
-		amount[recipient] = makeRandAmount(makeRandomDenom())
+		amounts[recipient] = makeRandAmount(makeRandomDenom())
 		keeper.LinkAddresses(ctx, sender, recipient)
-		err = keeper.PrepareForTransfer(ctx, sender, amount[recipient])
+		err = keeper.PrepareForTransfer(ctx, sender, amounts[recipient])
 		assert.NoError(t, err)
 	}
 
 	transfers := keeper.GetPendingTransfersForChain(ctx, destination)
+	assert.Equal(t, len(transfers), len(amounts))
+	assert.Equal(t, linkedAddr, len(transfers))
 
 	count := 0
 	for _, x := range transfers {
-		for y, amount := range amount {
-			if x.Recipient.Address == y.Address {
-				count++
-				assert.Equal(t, x.Amount, amount)
-			}
+		amount, ok := amounts[x.Recipient]
+		if ok {
+			count++
+			assert.Equal(t, x.Amount, amount)
 		}
 	}
-	assert.Equal(t, linkedAddr, len(transfers))
 	assert.Equal(t, linkedAddr, count)
 }
 
