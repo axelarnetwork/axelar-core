@@ -55,7 +55,7 @@ func (k Keeper) GetArchivedTransfersForChain(ctx sdk.Context, chain exported.Cha
 }
 
 // ArchivePendingTransfers marks the transfer for the given recipient as concluded and archived
-func (k Keeper) ArchivePendingTransfers(ctx sdk.Context, transfer exported.CrossChainTransfer) {
+func (k Keeper) ArchivePendingTransfer(ctx sdk.Context, transfer exported.CrossChainTransfer) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingPrefix + marshalCrossChainKey(transfer.Recipient.Chain, transfer.ID)))
 	if bz != nil {
 		ctx.KVStore(k.storeKey).Delete([]byte(pendingPrefix + marshalCrossChainKey(transfer.Recipient.Chain, transfer.ID)))
@@ -68,7 +68,6 @@ func (k Keeper) setPendingTransfer(ctx sdk.Context, recipient exported.CrossChai
 	var next uint64 = 0
 	bz := ctx.KVStore(k.storeKey).Get([]byte(sequenceKey))
 	if bz != nil {
-
 		next = binary.LittleEndian.Uint64(bz)
 	}
 
