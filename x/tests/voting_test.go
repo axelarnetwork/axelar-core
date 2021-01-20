@@ -54,7 +54,7 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 				Index: 0,
 			},
 			Amount:        btcutil.Amount(amount),
-			Recipient:     testutils.RandString(int(testutils.RandIntBetween(5, 20))),
+			DepositAddr:   testutils.RandString(int(testutils.RandIntBetween(5, 20))),
 			Confirmations: confirmations,
 		}
 		txs[hash.String()] = info

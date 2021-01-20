@@ -35,31 +35,18 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 }
 
 func addTxSubCommands(command *cobra.Command, cdc *codec.Codec) {
-	cmds := append([]*cobra.Command{GetCmdTrack(cdc)},
-		flags.PostCommands(
-			GetCmdVerifyTx(cdc),
-			GetCmdSignRawTx(cdc),
-		)...)
 
-	command.AddCommand(cmds...)
+	command.AddCommand(flags.PostCommands(
+		GetCmdTrackAddress(cdc),
+		GetCmdVerifyTx(cdc),
+		GetCmdSignRawTx(cdc),
+	)...)
 }
 
-// GetCmdTrack returns the address tracking command
-func GetCmdTrack(cdc *codec.Codec) *cobra.Command {
-	trackCmd := &cobra.Command{
-		Use:   "track",
-		Short: "Bitcoin address or public key tracking subcommand",
-		RunE:  client.ValidateCmd,
-	}
-
-	trackCmd.AddCommand(flags.PostCommands(getCmdTrackAddress(cdc), getCmdTrackPubKey(cdc))...)
-	return trackCmd
-}
-
-func getCmdTrackAddress(cdc *codec.Codec) *cobra.Command {
+func GetCmdTrackAddress(cdc *codec.Codec) *cobra.Command {
 	var rescan bool
 	addrCmd := &cobra.Command{
-		Use:   "address [address]",
+		Use:   "track [address]",
 		Short: "Make the axelar network aware of a specific address on Bitcoin",
 		Long:  "Make the axelar network aware of a specific address on Bitcoin. Use --rescan to rescan the entire Bitcoin history for past transactions",
 		Args:  cobra.ExactArgs(1),
@@ -83,43 +70,6 @@ func getCmdTrackAddress(cdc *codec.Codec) *cobra.Command {
 
 	addRescanFlag(addrCmd, &rescan)
 	return addrCmd
-}
-
-func getCmdTrackPubKey(cdc *codec.Codec) *cobra.Command {
-	var rescan bool
-	var useMasterKey bool
-	var keyID string
-	pubKeyCmd := &cobra.Command{
-		Use:   "pubKey [--key-id <key ID> | -m]",
-		Short: "Make the axelar network aware of a specific address on Bitcoin derived from a public key",
-		Long: "Make the axelar network aware of a specific address on Bitcoin derived from a public key. " +
-			"Either specify the key ID associated with a previously completed keygen round or use the current master key. " +
-			"Use --rescan|-r to rescan the entire Bitcoin history for past transactions",
-		Args: cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-
-			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
-
-			var msg sdk.Msg
-			if (useMasterKey && keyID != "") || (!useMasterKey && keyID == "") {
-				return fmt.Errorf("either set the flag to use a key ID or to use the master key, not both")
-			}
-			if useMasterKey {
-				msg = types.NewMsgTrackPubKeyWithMasterKey(cliCtx.GetFromAddress(), rescan)
-			} else {
-				msg = types.NewMsgTrackPubKey(cliCtx.GetFromAddress(), keyID, rescan)
-			}
-
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
-		},
-	}
-	addKeyIdFlag(pubKeyCmd, &keyID)
-	addMasterKeyFlag(pubKeyCmd, &useMasterKey)
-	addRescanFlag(pubKeyCmd, &rescan)
-	return pubKeyCmd
 }
 
 // GetCmdVerifyTx returns the transaction verification command
@@ -172,19 +122,7 @@ func GetCmdSignRawTx(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-func addMasterKeyFlag(cmd *cobra.Command, useMasterKey *bool) {
-	cmd.Flags().BoolVarP(useMasterKey, "master-key", "m", false, "Use the current master key instead of a specific key")
-}
-
-func addRecipientFlag(cmd *cobra.Command, recipient *string) {
-	cmd.Flags().StringVarP(recipient, "recipient", "r", "", "Set the recipient address for the transaction")
-}
-
 func addRescanFlag(cmd *cobra.Command, rescan *bool) {
 	cmd.Flags().BoolVarP(rescan, "rescan", "r", false,
 		"Rescan the entire Bitcoin blockchain for previous transactions to this address")
-}
-
-func addKeyIdFlag(pubKeyCmd *cobra.Command, keyID *string) {
-	pubKeyCmd.Flags().StringVarP(keyID, "key-id", "k", "", "Specify the ID of the key to use")
 }

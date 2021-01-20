@@ -3,10 +3,8 @@ package keeper
 import (
 	"encoding/hex"
 	"fmt"
-	"strconv"
 
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -19,7 +17,8 @@ import (
 )
 
 const (
-	QueryMasterAddress = "masterAddr"
+	QueryDepositAddress       = "depositAddr"
+	QueryConsolidationAddress = "consolidationAddr"
 	// QueryOutInfo is the route to query for a transaction's outPoint information
 	QueryOutInfo = "outPointInfo"
 	// QueryRawTx is the route to query for an unsigned raw transaction
@@ -28,30 +27,38 @@ const (
 )
 
 // NewQuerier returns a new querier for the Bitcoin module
-func NewQuerier(k Keeper, s types.Signer, rpc types.RPCClient) sdk.Querier {
+func NewQuerier(k Keeper, s types.Signer, b types.Balancer, rpc types.RPCClient) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		switch path[0] {
-		case QueryMasterAddress:
-			return queryMasterAddress(ctx, k, s)
+		case QueryDepositAddress:
+			return queryDepositAddress(ctx, k, s, req.Data)
+		case QueryConsolidationAddress:
+			return queryConsolidationAddress(ctx, k, b, s, req.Data)
 		case QueryOutInfo:
-			return queryTxOutInfo(rpc, path[1], path[2])
+			return queryTxOutInfo(rpc, req.Data)
 		case QueryRawTx:
-			return createRawTx(ctx, k, s, req.Data)
+			return createRawTx(ctx, k, req.Data)
 		case SendTx:
-			return sendTx(ctx, k, rpc, s, path[1])
+			return sendTx(ctx, k, b, rpc, s, path[1])
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown btc-bridge query endpoint: %s", path[1]))
 		}
 	}
 }
 
-func queryMasterAddress(ctx sdk.Context, k Keeper, s types.Signer) ([]byte, error) {
-	pk, ok := s.GetCurrentMasterKey(ctx, balance.Bitcoin)
-	if !ok {
-		return nil, fmt.Errorf("key not found")
+func queryDepositAddress(ctx sdk.Context, k Keeper, s types.Signer, data []byte) ([]byte, error) {
+	var recipient balance.CrossChainAddress
+	err := types.ModuleCdc.UnmarshalJSON(data, &recipient)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "could not parse the recipient")
 	}
 
-	addr, err := k.GetAddress(ctx, btcec.PublicKey(pk))
+	pk, ok := s.GetCurrentMasterKey(ctx, balance.Bitcoin)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, "key not found")
+	}
+
+	addr, err := k.GetDepositAddress(ctx, btcec.PublicKey(pk), recipient)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
@@ -59,17 +66,41 @@ func queryMasterAddress(ctx sdk.Context, k Keeper, s types.Signer) ([]byte, erro
 	return []byte(addr.EncodeAddress()), nil
 }
 
-func queryTxOutInfo(rpc types.RPCClient, txID string, voutIdx string) ([]byte, error) {
-	v, err := strconv.ParseUint(voutIdx, 10, 32)
+func queryConsolidationAddress(ctx sdk.Context, k Keeper, b types.Balancer, s types.Signer, data []byte) ([]byte, error) {
+	var oldAddr balance.CrossChainAddress
+	err := types.ModuleCdc.UnmarshalJSON(data, &oldAddr)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "could not parse voutIdx")
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, "could not parse the current address")
 	}
-	hash, err := chainhash.NewHashFromStr(txID)
-	if err != nil {
-		return nil, err
+	if oldAddr.Chain != balance.Bitcoin {
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, "the current address must be a bitcoin address")
 	}
 
-	info, err := rpc.GetOutPointInfo(wire.NewOutPoint(hash, uint32(v)))
+	recipient, ok := b.GetRecipient(ctx, oldAddr)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, "the current address is not linked to any cross-chain recipient")
+	}
+
+	pk, ok := s.GetNextMasterKey(ctx, balance.Bitcoin)
+	if !ok {
+		return nil, fmt.Errorf("key not found")
+	}
+
+	addr, err := k.GetDepositAddress(ctx, btcec.PublicKey(pk), recipient)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
+	}
+
+	return []byte(addr.EncodeAddress()), nil
+}
+
+func queryTxOutInfo(rpc types.RPCClient, data []byte) ([]byte, error) {
+	var out *wire.OutPoint
+	err := types.ModuleCdc.UnmarshalJSON(data, &out)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "could not parse the outpoint")
+	}
+	info, err := rpc.GetOutPointInfo(out)
 	if err != nil {
 		return nil, err
 	}
@@ -77,36 +108,36 @@ func queryTxOutInfo(rpc types.RPCClient, txID string, voutIdx string) ([]byte, e
 	return types.ModuleCdc.MustMarshalJSON(info), nil
 }
 
-func createRawTx(ctx sdk.Context, k Keeper, s types.Signer, data []byte) ([]byte, error) {
-	var params types.RawParams
+func createRawTx(ctx sdk.Context, k Keeper, data []byte) ([]byte, error) {
+	var params types.RawTxParams
 	err := types.ModuleCdc.UnmarshalJSON(data, &params)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
 
-	var recipient btcutil.Address
-	if params.Recipient != "" {
-		recipient, err = btcutil.DecodeAddress(params.Recipient, k.getNetwork(ctx).Params())
-		if err != nil {
-			return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
-		}
-	} else {
-		pk, ok := s.GetNextMasterKey(ctx, balance.Bitcoin)
-		if !ok {
-			return nil, sdkerrors.Wrap(types.ErrBitcoin, "next master key not set")
-		}
-		recipient, err = k.GetAddress(ctx, btcec.PublicKey(pk))
+	recipient, err := btcutil.DecodeAddress(params.DepositAddr, k.getNetwork(ctx).Params())
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
 
-	tx, err := k.CreateTx(ctx, params.TxID, params.Satoshi, recipient)
+	outPoint, ok := k.GetVerifiedOutPoint(ctx, params.OutPoint)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, "no outpoint of tx %s not found")
+	}
+	tx, err := types.CreateTx(outPoint.OutPoint, params.Satoshi, recipient)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
 	return types.ModuleCdc.MustMarshalJSON(tx), nil
 }
 
-func sendTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, txID string) ([]byte, error) {
-	h, err := k.GetHashToSign(ctx, txID)
+func sendTx(ctx sdk.Context, k Keeper, b types.Balancer, rpc types.RPCClient, s types.Signer, txID string) ([]byte, error) {
+	rawTx := k.GetRawTx(ctx, txID)
+	if rawTx == nil {
+		return nil, sdkerrors.Wrapf(types.ErrBitcoin, "withdraw tx for ID %s has not been prepared yet", txID)
+	}
+
+	h, err := k.GetHashToSign(ctx, rawTx)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
@@ -126,7 +157,14 @@ func sendTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, txID
 		S: sig.S,
 	}
 
-	tx, err := k.AssembleBtcTx(ctx, txID, pk, btcSig)
+	info, ok := k.GetVerifiedOutPoint(ctx, rawTx.TxIn[0].PreviousOutPoint)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, "verified outpoint info not found")
+	}
+
+	recipient, ok := b.GetRecipient(ctx, balance.CrossChainAddress{Chain: balance.Bitcoin, Address: info.DepositAddr})
+
+	tx, err := k.AssembleBtcTx(ctx, rawTx, pk, btcSig, recipient)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}

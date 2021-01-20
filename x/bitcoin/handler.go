@@ -1,11 +1,9 @@
 package bitcoin
 
 import (
-	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
 
-	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
@@ -22,7 +20,7 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, signer type
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
 		case types.MsgTrack:
-			return handleMsgTrack(ctx, k, signer, rpc, msg)
+			return handleMsgTrack(ctx, k, rpc, msg)
 		case types.MsgVerifyTx:
 			return handleMsgVerifyTx(ctx, k, v, rpc, msg)
 		case *types.MsgVoteVerifiedTx:
@@ -36,6 +34,27 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, signer type
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
 		}
 	}
+}
+
+func handleMsgTrack(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, msg types.MsgTrack) (*sdk.Result, error) {
+	encodedAddr := msg.Address.EncodeAddress()
+	k.Logger(ctx).Debug(fmt.Sprintf("start tracking address %v", encodedAddr))
+	trackAddress(ctx, k, rpc, encodedAddr, msg.Rescan)
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+			sdk.NewAttribute(types.AttributeAddress, encodedAddr),
+		),
+	)
+
+	return &sdk.Result{
+		Data:   []byte(encodedAddr),
+		Log:    fmt.Sprintf("successfully tracked address %s", encodedAddr),
+		Events: ctx.EventManager().Events(),
+	}, nil
 }
 
 func handleMsgTransfer(ctx sdk.Context, b types.Balancer, msg types.MsgTransfer) (*sdk.Result, error) {
@@ -54,69 +73,6 @@ func handleMsgTransfer(ctx sdk.Context, b types.Balancer, msg types.MsgTransfer)
 
 	return &sdk.Result{
 		Log:    fmt.Sprintf("successfully linked {%s} and {%s}", btcAddr.String(), msg.Destination.String()),
-		Events: ctx.EventManager().Events(),
-	}, nil
-}
-
-// This can be used as a potential hook to immediately act on a poll being decided by the vote
-func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg *types.MsgVoteVerifiedTx) (*sdk.Result, error) {
-	if err := v.TallyVote(ctx, msg); err != nil {
-		return nil, err
-	}
-
-	if confirmed := v.Result(ctx, msg.Poll()); confirmed != nil {
-		if err := k.ProcessVerificationResult(ctx, msg.PollMeta.ID, confirmed.(bool)); err != nil {
-			return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("utxo for poll %s was not stored", msg.PollMeta.String()))
-		}
-		v.DeletePoll(ctx, msg.Poll())
-	}
-	return &sdk.Result{}, nil
-}
-
-func handleMsgTrack(ctx sdk.Context, k keeper.Keeper, s types.Signer, rpc types.RPCClient, msg types.MsgTrack) (*sdk.Result, error) {
-	var encodedAddr string
-	if msg.Mode == types.ModeSpecificAddress {
-		encodedAddr = msg.Address.EncodeAddress()
-	} else {
-		var key ecdsa.PublicKey
-		var ok bool
-
-		switch msg.Mode {
-		case types.ModeSpecificKey:
-			key, ok = s.GetKey(ctx, msg.KeyID)
-			if !ok {
-				return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("key with ID %s not found", msg.KeyID))
-			}
-		case types.ModeCurrentMasterKey:
-			key, ok = s.GetCurrentMasterKey(ctx, balance.Bitcoin)
-			if !ok {
-				return nil, sdkerrors.Wrap(types.ErrBitcoin, "master key not set")
-			}
-		}
-
-		addr, err := k.GetAddress(ctx, btcec.PublicKey(key))
-		if err != nil {
-			return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
-		}
-
-		encodedAddr = addr.EncodeAddress()
-	}
-	k.Logger(ctx).Debug(fmt.Sprintf("start tracking address %v", encodedAddr))
-	trackAddress(ctx, k, rpc, encodedAddr, msg.Rescan)
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeKeyId, msg.KeyID),
-			sdk.NewAttribute(types.AttributeAddress, encodedAddr),
-		),
-	)
-
-	return &sdk.Result{
-		Data:   []byte(encodedAddr),
-		Log:    fmt.Sprintf("successfully tracked address %s", encodedAddr),
 		Events: ctx.EventManager().Events(),
 	}, nil
 }
@@ -141,7 +97,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 	)
 
 	// store outpoint for later reference
-	if err := k.SetUnverifiedOutpoint(ctx, txID, msg.OutPointInfo); err != nil {
+	if err := k.SetUnverifiedOutpoint(ctx, msg.OutPointInfo); err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
 
@@ -173,6 +129,21 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 	}
 }
 
+// This can be used as a potential hook to immediately act on a poll being decided by the vote
+func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg *types.MsgVoteVerifiedTx) (*sdk.Result, error) {
+	if err := v.TallyVote(ctx, msg); err != nil {
+		return nil, err
+	}
+
+	if confirmed := v.Result(ctx, msg.Poll()); confirmed != nil {
+		if err := k.ProcessVerificationResult(ctx, msg.PollMeta.ID, confirmed.(bool)); err != nil {
+			return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("utxo for poll %s was not stored", msg.PollMeta.String()))
+		}
+		v.DeletePoll(ctx, msg.Poll())
+	}
+	return &sdk.Result{}, nil
+}
+
 func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap types.Snapshotter, msg types.MsgSignTx) (*sdk.Result, error) {
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -182,17 +153,10 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 		),
 	)
 
-	for _, in := range msg.RawTx.TxIn {
-		txID := in.PreviousOutPoint.Hash.String()
-
-		if ok := k.HasVerifiedOutPoint(ctx, msg.TxID); !ok {
-			return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("transaction %s not verified", txID))
-		}
-	}
 	k.SetRawTx(ctx, msg.TxID, msg.RawTx)
 
 	// Print out the hash that becomes the input for the threshold signing
-	hash, err := k.GetHashToSign(ctx, msg.TxID)
+	hash, err := k.GetHashToSign(ctx, msg.RawTx)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
@@ -249,7 +213,7 @@ func verifyTx(rpc types.RPCClient, expectedInfo types.OutPointInfo) error {
 		return sdkerrors.Wrap(err, "could not retrieve Bitcoin transaction")
 	}
 
-	if actualInfo.Recipient != expectedInfo.Recipient {
+	if actualInfo.DepositAddr != expectedInfo.DepositAddr {
 		return fmt.Errorf("expected destination address does not match actual destination address")
 	}
 

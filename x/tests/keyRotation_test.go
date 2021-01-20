@@ -223,7 +223,7 @@ func TestKeyRotation(t *testing.T) {
 			return btcTypes.OutPointInfo{
 				OutPoint:      out,
 				Amount:        amount,
-				Recipient:     masterKey1Addr.EncodeAddress(),
+				DepositAddr:   masterKey1Addr.EncodeAddress(),
 				Confirmations: confirmations,
 			}, nil
 
@@ -308,7 +308,7 @@ func TestKeyRotation(t *testing.T) {
 	bz, err = nodes[0].Query(
 		[]string{btcTypes.QuerierRoute, btcKeeper.QueryRawTx},
 		abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(
-			btcTypes.RawParams{
+			btcTypes.RawTxParams{
 				TxID:    txHash.String(),
 				Satoshi: sdk.NewInt64Coin(denom.Sat, int64(amount)),
 			})},
@@ -389,7 +389,7 @@ func TestKeyRotation(t *testing.T) {
 			return btcTypes.OutPointInfo{
 				OutPoint:      out,
 				Amount:        amount,
-				Recipient:     masterKey2Addr.EncodeAddress(),
+				DepositAddr:   masterKey2Addr.EncodeAddress(),
 				Confirmations: confirmations,
 			}, nil
 		}

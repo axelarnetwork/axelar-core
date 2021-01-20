@@ -83,7 +83,7 @@ func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 	info := types.OutPointInfo{
 		OutPoint:      wire.NewOutPoint(hash, 0),
 		Amount:        10,
-		Recipient:     "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
+		DepositAddr:   "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
 		Confirmations: 7,
 	}
 	if err := info.Validate(); err != nil {
@@ -116,7 +116,7 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 	info := types.OutPointInfo{
 		OutPoint:      wire.NewOutPoint(hash, 0),
 		Amount:        10,
-		Recipient:     "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
+		DepositAddr:   "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
 		Confirmations: 7,
 	}
 	if err := info.Validate(); err != nil {
@@ -159,7 +159,7 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 	assert.True(t, info.Equals(actualOutPoint))
 }
 
-func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
+func TestSignTx(t *testing.T) {
 	cdc := testutils.Codec()
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
@@ -213,13 +213,16 @@ func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
 		return snapshot.Snapshot{}, true
 	}}
 	handler := NewHandler(k, v, rpc, signer, snap, b)
-	querier := keeper.NewQuerier(k, signer, rpc)
+	querier := keeper.NewQuerier(k, signer, b, rpc)
 
-	for i := 0; i < testReps; i++ {
+	for i, recpAddr := range testutils.RandStrings(5, 20).Take(testReps) {
 		sk, _ = ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 		skNext, _ = ecdsa.GenerateKey(btcec.S256(), rand.Reader)
+		recipient := balance.CrossChainAddress{Chain: balance.Chain(testutils.RandIntBetween(1, balance.ConnectedChainCount)),
+			Address: recpAddr,
+		}
 
-		signTx := prepareMsgSign(ctx, k, querier, sk)
+		signTx := prepareMsgSign(ctx, k, querier, sk, recipient)
 
 		res, err := handler(ctx, signTx)
 		assert.NoError(t, err)
@@ -233,7 +236,7 @@ func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
 	}
 }
 
-func prepareMsgSign(ctx sdk.Context, k keeper.Keeper, querier sdk.Querier, sk *ecdsa.PrivateKey) types.MsgSignTx {
+func prepareMsgSign(ctx sdk.Context, k keeper.Keeper, querier sdk.Querier, sk *ecdsa.PrivateKey, recipient balance.CrossChainAddress) types.MsgSignTx {
 	hash, err := chainhash.NewHash([]byte(testutils.RandString(chainhash.HashSize)))
 	if err != nil {
 		panic(err)
@@ -241,15 +244,16 @@ func prepareMsgSign(ctx sdk.Context, k keeper.Keeper, querier sdk.Querier, sk *e
 
 	txID := hash.String()
 	btcPk := btcec.PublicKey(sk.PublicKey)
-	addr, err := k.GetAddress(ctx, btcPk)
+	addr, err := k.GetDepositAddress(ctx, btcPk, recipient)
 	if err != nil {
 		panic(err)
 	}
 	amount := btcutil.Amount(testutils.RandIntBetween(1, 100000000))
-	err = k.SetUnverifiedOutpoint(ctx, txID, types.OutPointInfo{
-		OutPoint:      wire.NewOutPoint(hash, uint32(testutils.RandIntBetween(0, 10))),
+	outPoint := wire.NewOutPoint(hash, uint32(testutils.RandIntBetween(0, 10)))
+	err = k.SetUnverifiedOutpoint(ctx, types.OutPointInfo{
+		OutPoint:      outPoint,
 		Amount:        amount,
-		Recipient:     addr.EncodeAddress(),
+		DepositAddr:   addr.EncodeAddress(),
 		Confirmations: uint64(testutils.RandIntBetween(7, 1000)),
 	})
 	if err != nil {
@@ -261,7 +265,7 @@ func prepareMsgSign(ctx sdk.Context, k keeper.Keeper, querier sdk.Querier, sk *e
 	}
 	sender := sdk.AccAddress(testutils.RandString(int(testutils.RandIntBetween(5, 50))))
 
-	qParams := types.RawParams{TxID: txID, Satoshi: sdk.NewInt64Coin(denom.Satoshi, int64(amount))}
+	qParams := types.RawTxParams{OutPoint: *outPoint, Satoshi: sdk.NewInt64Coin(denom.Satoshi, int64(amount))}
 	bz, err := querier(ctx, []string{keeper.QueryRawTx}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(qParams)})
 	if err != nil {
 		panic(err)

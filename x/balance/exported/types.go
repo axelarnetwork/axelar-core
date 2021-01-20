@@ -25,7 +25,7 @@ var (
 type Chain int
 
 func (c Chain) Validate() error {
-	if c < 0 || c >= ConnectedChainCount {
+	if c <= 0 || c >= ConnectedChainCount {
 		return fmt.Errorf("unknown chain")
 	}
 	return nil

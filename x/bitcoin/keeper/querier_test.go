@@ -32,7 +32,7 @@ func TestQuerier_TxInfo_CorrectMarshalling(t *testing.T) {
 				Index: uint32(testutils.RandIntBetween(0, 100)),
 			},
 			Amount:        btcutil.Amount(testutils.RandIntBetween(0, 100000000)),
-			Recipient:     testutils.RandStrings(5, 20).Take(1)[0],
+			DepositAddr:   testutils.RandStrings(5, 20).Take(1)[0],
 			Confirmations: uint64(testutils.RandIntBetween(0, 10000)),
 		}
 

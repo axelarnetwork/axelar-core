@@ -161,7 +161,7 @@ func (r *RPCClientImpl) GetOutPointInfo(out *wire.OutPoint) (OutPointInfo, error
 	return OutPointInfo{
 		OutPoint:      out,
 		Amount:        amount,
-		Recipient:     vout.ScriptPubKey.Addresses[0],
+		DepositAddr:   vout.ScriptPubKey.Addresses[0],
 		Confirmations: tx.Confirmations,
 	}, nil
 }
