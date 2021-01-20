@@ -4,7 +4,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
-	"strings"
+	"math"
 
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -47,13 +47,13 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, s types.Signer, b types.Bal
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, "master key not set")
 	}
 
-	btcAddr, err := k.GetAddress(ctx, btcec.PublicKey(key), msg.Address)
+	btcAddr, err := k.GetAddress(ctx, btcec.PublicKey(key), msg.Recipient)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 
 	}
 
-	b.LinkAddresses(ctx, balance.CrossChainAddress{Chain: balance.Bitcoin, Address: btcAddr.String()}, msg.Address)
+	b.LinkAddresses(ctx, balance.CrossChainAddress{Chain: balance.Bitcoin, Address: btcAddr.EncodeAddress()}, msg.Recipient)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -61,12 +61,13 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, s types.Signer, b types.Bal
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
 			sdk.NewAttribute(types.AttributeAddress, btcAddr.String()),
-			sdk.NewAttribute(types.AttributeAddress, msg.Address.String()),
+			sdk.NewAttribute(types.AttributeAddress, msg.Recipient.String()),
 		),
 	)
 
 	return &sdk.Result{
-		Log:    fmt.Sprintf("successfully linked {%s} and {%s}", btcAddr.String(), msg.Address.String()),
+		Data:   []byte(btcAddr.EncodeAddress()),
+		Log:    fmt.Sprintf("successfully linked {%s} and {%s}", btcAddr.EncodeAddress(), msg.Recipient.String()),
 		Events: ctx.EventManager().Events(),
 	}, nil
 }
@@ -104,14 +105,10 @@ func prepareTransfer(ctx sdk.Context, k keeper.Keeper, b types.Balancer, txID st
 		return nil // No need to return a error if not linked
 	}
 
-	str := strings.ReplaceAll(outPoint.Amount.String(), " ", "")
-	str = strings.ToLower(str)
-	amount, err := denom.ParseSatoshi(str)
-	if err != nil {
-		return err
-	}
+	value := int64(outPoint.Amount.ToBTC() * math.Pow10(8))
+	amount := sdk.NewCoin(denom.Satoshi, sdk.NewInt(value))
 
-	b.PrepareForTransfer(ctx, depositAddr, amount)
+	err := b.EnqueueForTransfer(ctx, depositAddr, amount)
 	if err != nil {
 		return err
 	}

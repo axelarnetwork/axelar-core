@@ -9,14 +9,14 @@ import (
 )
 
 type MsgLink struct {
-	Sender  sdk.AccAddress
-	Address exported.CrossChainAddress
+	Sender    sdk.AccAddress
+	Recipient exported.CrossChainAddress
 }
 
 func NewMsgLink(sender sdk.AccAddress, btcAddress btcutil.Address, destination exported.CrossChainAddress) sdk.Msg {
 	return MsgLink{
-		Sender:  sender,
-		Address: destination,
+		Sender:    sender,
+		Recipient: destination,
 	}
 }
 func (msg MsgLink) Route() string {
@@ -24,7 +24,7 @@ func (msg MsgLink) Route() string {
 }
 
 func (msg MsgLink) Type() string {
-	return "Transfer"
+	return "Link"
 }
 
 func (msg MsgLink) ValidateBasic() error {
@@ -32,7 +32,7 @@ func (msg MsgLink) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
 
-	if err := msg.Address.Validate(); err != nil {
+	if err := msg.Recipient.Validate(); err != nil {
 		return err
 	}
 	return nil

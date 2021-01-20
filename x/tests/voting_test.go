@@ -16,7 +16,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/store"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
-	balExported "github.com/axelarnetwork/axelar-core/x/balance/exported"
+	balKeeper "github.com/axelarnetwork/axelar-core/x/balance/keeper"
+	balTypes "github.com/axelarnetwork/axelar-core/x/balance/types"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
@@ -156,15 +157,13 @@ func newNodeForVote(moniker string, broadcaster bcExported.Broadcaster, staker v
 	btcK := btcKeeper.NewBtcKeeper(testutils.Codec(), sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)
 	btcK.SetParams(ctx, btcTypes.DefaultParams())
 
+	balK := balKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(balTypes.StoreKey))
+
 	// We use a fake for the bitcoin rpc client so we can control the responses from the "bitcoin" network
 	btcH := bitcoin.NewHandler(btcK, vK, &btcMock.RPCClientMock{
 		GetOutPointInfoFunc: func(out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
 			return txs[out.Hash.String()], nil
-		}}, nil, nil, &btcMock.BalancerMock{
-		GetRecipientFunc: func(ctx sdk.Context, s balExported.CrossChainAddress) (balExported.CrossChainAddress, bool) {
-			return balExported.CrossChainAddress{}, false
-		},
-	})
+		}}, nil, nil, balK)
 
 	broadcastH := broadcast.NewHandler(broadcaster)
 

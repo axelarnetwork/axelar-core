@@ -186,16 +186,13 @@ func GetCmdLink(cdc *codec.Codec) *cobra.Command {
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
 
 			chain := balance.ChainFromString(args[0])
-			if err := chain.Validate(); err != nil {
-				return err
-			}
-
 			address := balance.CrossChainAddress{Chain: chain, Address: args[1]}
+
 			if err := address.Validate(); err != nil {
 				return err
 			}
 
-			msg := types.MsgLink{Sender: cliCtx.GetFromAddress(), Address: address}
+			msg := types.MsgLink{Sender: cliCtx.GetFromAddress(), Recipient: address}
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

@@ -44,8 +44,8 @@ func (k Keeper) GetRecipient(ctx sdk.Context, sender exported.CrossChainAddress)
 	return recp, true
 }
 
-// PrepareForTransfer appoints the amount of tokens to be transfered/minted to the recipient previously linked to the specified sender
-func (k Keeper) PrepareForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error {
+// EnqueueForTransfer appoints the amount of tokens to be transfered/minted to the recipient previously linked to the specified sender
+func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error {
 	recipient, ok := k.GetRecipient(ctx, sender)
 	if !ok {
 		return fmt.Errorf("no recipient linked to sender %s", sender.String())
