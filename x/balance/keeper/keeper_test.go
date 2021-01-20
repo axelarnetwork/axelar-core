@@ -34,10 +34,16 @@ func TestLink(t *testing.T) {
 	keeper.LinkAddresses(ctx, sender, recipient)
 	err := keeper.PrepareForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
 	assert.NoError(t, err)
+	recp, ok := keeper.GetRecipient(ctx, sender)
+	assert.True(t, ok)
+	assert.Equal(t, recipient, recp)
 
 	sender.Address = testutils.RandString(20)
 	err = keeper.PrepareForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
 	assert.Error(t, err)
+	recp, ok = keeper.GetRecipient(ctx, sender)
+	assert.False(t, ok)
+	assert.NotEqual(t, recipient, recp)
 }
 
 func TestPrepare(t *testing.T) {
