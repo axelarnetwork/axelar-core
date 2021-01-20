@@ -62,11 +62,11 @@ func TestPrepare(t *testing.T) {
 	assert.Equal(t, linkedAddr, len(transfers))
 
 	count := 0
-	for _, x := range transfers {
-		amount, ok := amounts[x.Recipient]
+	for _, transfer := range transfers {
+		amount, ok := amounts[transfer.Recipient]
 		if ok {
 			count++
-			assert.Equal(t, x.Amount, amount)
+			assert.Equal(t, transfer.Amount, amount)
 		}
 	}
 	assert.Equal(t, linkedAddr, count)
