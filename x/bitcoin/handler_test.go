@@ -159,6 +159,140 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 	assert.True(t, info.Equals(actualOutPoint))
 }
 
+func TestVoteVerifiedTx_NoOutpointForTransfer(t *testing.T) {
+	cdc := testutils.Codec()
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
+	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
+	k.SetParams(ctx, types.DefaultParams())
+
+	v := &btcMock.VoterMock{
+		TallyVoteFunc:  func(ctx sdk.Context, vote exported.MsgVote) error { return nil },
+		ResultFunc:     func(ctx sdk.Context, poll exported.PollMeta) exported.VotingData { return true },
+		DeletePollFunc: func(ctx sdk.Context, poll exported.PollMeta) {},
+	}
+
+	sender := balance.CrossChainAddress{Address: "sender", Chain: balance.Bitcoin}
+	recipient := balance.CrossChainAddress{Address: "recipient", Chain: balance.Ethereum}
+	b := &btcMock.BalancerMock{
+		GetRecipientFunc: func(ctx sdk.Context, s balance.CrossChainAddress) (balance.CrossChainAddress, bool) {
+			if s.Address == sender.Address {
+				return recipient, true
+			}
+			return balance.CrossChainAddress{}, false
+		},
+
+		PrepareForTransferFunc: func(ctx sdk.Context, s balance.CrossChainAddress, amount sdk.Coin) error {
+			if s.Address != sender.Address {
+				return fmt.Errorf("sender not linked to a recipient")
+			}
+			return nil
+		},
+	}
+
+	handler := NewHandler(k, v, &btcMock.RPCClientMock{}, &btcMock.SignerMock{}, &btcMock.SnapshotterMock{}, b)
+	poll := exported.PollMeta{Module: "bitcoin", Type: "verify", ID: "txid"}
+	msg := &types.MsgVoteVerifiedTx{Sender: sdk.AccAddress("sender"), PollMeta: poll, VotingData: true}
+	_, err := handler(ctx, msg)
+	assert.Error(t, err)
+
+}
+
+func TestVoteVerifiedTx_SucessNoTransfer(t *testing.T) {
+	cdc := testutils.Codec()
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
+	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
+	k.SetParams(ctx, types.DefaultParams())
+
+	hash, err := chainhash.NewHash(testutils.RandBytes(32))
+	assert.NoError(t, err)
+	outpoint := &wire.OutPoint{
+		Hash:  *hash,
+		Index: 0,
+	}
+	outpointInfo := types.OutPointInfo{
+		OutPoint:      outpoint,
+		Amount:        btcutil.Amount(1000000),
+		Recipient:     "sender",
+		Confirmations: 100,
+	}
+	k.SetUnverifiedOutpoint(ctx, "txid", outpointInfo)
+
+	v := &btcMock.VoterMock{
+		TallyVoteFunc:  func(ctx sdk.Context, vote exported.MsgVote) error { return nil },
+		ResultFunc:     func(ctx sdk.Context, poll exported.PollMeta) exported.VotingData { return true },
+		DeletePollFunc: func(ctx sdk.Context, poll exported.PollMeta) {},
+	}
+
+	b := &btcMock.BalancerMock{
+		GetRecipientFunc: func(ctx sdk.Context, s balance.CrossChainAddress) (balance.CrossChainAddress, bool) {
+			return balance.CrossChainAddress{}, false
+		},
+		PrepareForTransferFunc: func(ctx sdk.Context, s balance.CrossChainAddress, amount sdk.Coin) error { return nil },
+	}
+
+	handler := NewHandler(k, v, &btcMock.RPCClientMock{}, &btcMock.SignerMock{}, &btcMock.SnapshotterMock{}, b)
+	poll := exported.PollMeta{Module: "bitcoin", Type: "verify", ID: "txid"}
+	msg := &types.MsgVoteVerifiedTx{Sender: sdk.AccAddress("sender"), PollMeta: poll, VotingData: true}
+	_, err = handler(ctx, msg)
+	assert.NoError(t, err)
+
+}
+
+func TestVoteVerifiedTx_SucessAndTransfer(t *testing.T) {
+	cdc := testutils.Codec()
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
+	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
+	k.SetParams(ctx, types.DefaultParams())
+
+	hash, err := chainhash.NewHash(testutils.RandBytes(32))
+	assert.NoError(t, err)
+	outpoint := &wire.OutPoint{
+		Hash:  *hash,
+		Index: 0,
+	}
+	outpointInfo := types.OutPointInfo{
+		OutPoint:      outpoint,
+		Amount:        btcutil.Amount(1000000),
+		Recipient:     "sender",
+		Confirmations: 100,
+	}
+	k.SetUnverifiedOutpoint(ctx, "txid", outpointInfo)
+
+	v := &btcMock.VoterMock{
+		TallyVoteFunc:  func(ctx sdk.Context, vote exported.MsgVote) error { return nil },
+		ResultFunc:     func(ctx sdk.Context, poll exported.PollMeta) exported.VotingData { return true },
+		DeletePollFunc: func(ctx sdk.Context, poll exported.PollMeta) {},
+	}
+
+	sender := balance.CrossChainAddress{Address: "sender", Chain: balance.Bitcoin}
+	recipient := balance.CrossChainAddress{Address: "recipient", Chain: balance.Ethereum}
+	b := &btcMock.BalancerMock{
+		GetRecipientFunc: func(ctx sdk.Context, s balance.CrossChainAddress) (balance.CrossChainAddress, bool) {
+			if s.Address == sender.Address {
+				return recipient, true
+			}
+			return balance.CrossChainAddress{}, false
+		},
+
+		PrepareForTransferFunc: func(ctx sdk.Context, s balance.CrossChainAddress, amount sdk.Coin) error {
+			if s.Address != sender.Address {
+				return fmt.Errorf("sender not linked to a recipient")
+			}
+			return nil
+		},
+	}
+
+	handler := NewHandler(k, v, &btcMock.RPCClientMock{}, &btcMock.SignerMock{}, &btcMock.SnapshotterMock{}, b)
+	poll := exported.PollMeta{Module: "bitcoin", Type: "verify", ID: "txid"}
+	msg := &types.MsgVoteVerifiedTx{Sender: sdk.AccAddress("sender"), PollMeta: poll, VotingData: true}
+	_, err = handler(ctx, msg)
+	assert.NoError(t, err)
+
+}
+
 func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
 	cdc := testutils.Codec()
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())

@@ -4,12 +4,14 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
+	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/axelarnetwork/axelar-core/utils/denom"
 	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
@@ -26,7 +28,7 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, signer type
 		case types.MsgVerifyTx:
 			return handleMsgVerifyTx(ctx, k, v, rpc, msg)
 		case *types.MsgVoteVerifiedTx:
-			return handleMsgVoteVerifiedTx(ctx, k, v, msg)
+			return handleMsgVoteVerifiedTx(ctx, k, v, b, msg)
 		case types.MsgSignTx:
 			return handleMsgSignTx(ctx, k, signer, snap, msg)
 		case types.MsgLink:
@@ -70,18 +72,53 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, s types.Signer, b types.Bal
 }
 
 // This can be used as a potential hook to immediately act on a poll being decided by the vote
-func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg *types.MsgVoteVerifiedTx) (*sdk.Result, error) {
+func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, b types.Balancer, msg *types.MsgVoteVerifiedTx) (*sdk.Result, error) {
 	if err := v.TallyVote(ctx, msg); err != nil {
 		return nil, err
 	}
 
 	if confirmed := v.Result(ctx, msg.Poll()); confirmed != nil {
-		if err := k.ProcessVerificationResult(ctx, msg.PollMeta.ID, confirmed.(bool)); err != nil {
+		txID := msg.PollMeta.ID
+		if err := k.ProcessVerificationResult(ctx, txID, confirmed.(bool)); err != nil {
 			return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("utxo for poll %s was not stored", msg.PollMeta.String()))
 		}
 		v.DeletePoll(ctx, msg.Poll())
+
+		err := prepareTransfer(ctx, k, b, txID)
+		if err != nil {
+			return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("error while preparing transfer: %v", err))
+		}
 	}
 	return &sdk.Result{}, nil
+}
+
+func prepareTransfer(ctx sdk.Context, k keeper.Keeper, b types.Balancer, txID string) error {
+	outPoint, ok := k.GetVerifiedOutPoint(ctx, txID)
+	if !ok {
+		return fmt.Errorf("outpoint not verified")
+	}
+
+	depositAddr := balance.CrossChainAddress{Address: outPoint.Recipient, Chain: balance.Bitcoin}
+	recipient, ok := b.GetRecipient(ctx, depositAddr)
+	if !ok {
+		return nil // No need to return a error if not linked
+	}
+
+	str := strings.ReplaceAll(outPoint.Amount.String(), " ", "")
+	str = strings.ToLower(str)
+	amount, err := denom.ParseSatoshi(str)
+	if err != nil {
+		return err
+	}
+
+	b.PrepareForTransfer(ctx, depositAddr, amount)
+	if err != nil {
+		return err
+	}
+	k.Logger(ctx).Info(fmt.Sprintf("Transfer of %s to cross chain address %s in %s successfully prepared",
+		outPoint.Amount.String(), recipient.Address, recipient.Chain.String()))
+
+	return nil
 }
 
 func handleMsgTrack(ctx sdk.Context, k keeper.Keeper, s types.Signer, rpc types.RPCClient, msg types.MsgTrack) (*sdk.Result, error) {
