@@ -47,39 +47,28 @@ func TestPrepare(t *testing.T) {
 	err := keeper.PrepareForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
 	assert.Error(t, err)
 	destination := makeRandomChain()
-	addresses := make(map[exported.CrossChainAddress]exported.CrossChainAddress)
+	amount := make(map[exported.CrossChainAddress]sdk.Coin)
 
 	for i := 0; i < linkedAddr; i++ {
 		sender, recipient := makeRandAddressesForChain(makeRandomChain(), destination)
-		addresses[sender] = recipient
+		amount[recipient] = makeRandAmount(makeRandomDenom())
 		keeper.LinkAddresses(ctx, sender, recipient)
-		err = keeper.PrepareForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
+		err = keeper.PrepareForTransfer(ctx, sender, amount[recipient])
 		assert.NoError(t, err)
 	}
 
 	transfers := keeper.GetPendingTransfersForChain(ctx, destination)
-	assert.Equal(t, linkedAddr, len(transfers))
-
-	amounts := make(map[exported.CrossChainAddress]sdk.Coin)
-	for sender, recipient := range addresses {
-		amount := makeRandAmount(makeRandomDenom())
-		err = keeper.PrepareForTransfer(ctx, sender, amount)
-		amounts[recipient] = amount
-		assert.NoError(t, err)
-	}
-
-	transfersUpdated := keeper.GetPendingTransfersForChain(ctx, destination)
-	assert.Equal(t, linkedAddr, len(transfersUpdated))
 
 	count := 0
-	for _, transfer1 := range transfers {
-		for _, transfer2 := range transfersUpdated {
-			if transfer1.Recipient.Address == transfer2.Recipient.Address && transfer1.Recipient.Chain == transfer2.Recipient.Chain {
+	for _, x := range transfers {
+		for y, amount := range amount {
+			if x.Recipient.Address == y.Address {
 				count++
-				assert.Equal(t, transfer2.Amount, transfer1.Amount.Add(amounts[transfer1.Recipient]))
+				assert.Equal(t, x.Amount, amount)
 			}
 		}
 	}
+	assert.Equal(t, linkedAddr, len(transfers))
 	assert.Equal(t, linkedAddr, count)
 }
 
@@ -101,8 +90,8 @@ func TestArchive(t *testing.T) {
 
 	transfers := keeper.GetPendingTransfersForChain(ctx, destination)
 
-	for _, recipient := range recipients {
-		keeper.ArchivePendingTransfers(ctx, recipient)
+	for _, transfer := range transfers {
+		keeper.ArchivePendingTransfers(ctx, transfer)
 	}
 
 	archived := keeper.GetArchivedTransfersForChain(ctx, destination)
@@ -118,6 +107,7 @@ func TestArchive(t *testing.T) {
 		}
 	}
 	assert.Equal(t, linkedAddr, count)
+	assert.Equal(t, 0, len(keeper.GetPendingTransfersForChain(ctx, destination)))
 
 }
 

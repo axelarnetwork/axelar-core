@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"encoding/binary"
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -14,6 +15,8 @@ const (
 	recipientPrefix = "recp_"
 	pendingPrefix   = "pend_"
 	archivedPrefix  = "arch_"
+
+	sequenceKey = "nextID"
 )
 
 type Keeper struct {
@@ -27,19 +30,17 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey) Keeper {
 
 // LinkAddresses links a sender address to a crosschain recipient address
 func (k Keeper) LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) {
-	ctx.KVStore(k.storeKey).Set([]byte(senderPrefix+marshalCrossChainAddress(sender)), k.cdc.MustMarshalBinaryLengthPrefixed(recipient))
+	ctx.KVStore(k.storeKey).Set([]byte(marshalCrossChainAddress(sender)), k.cdc.MustMarshalBinaryLengthPrefixed(recipient))
 }
 
 // PrepareForTransfer appoints the amount of tokens to be transfered/minted to the recipient previously linked to the specified sender
 func (k Keeper) PrepareForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error {
-	recp, ok := k.getRecipient(ctx, sender)
+	recipient, ok := k.getRecipient(ctx, sender)
 	if !ok {
 		return fmt.Errorf("no recipient linked to sender %s", sender.String())
 	}
+	k.setPendingTransfer(ctx, recipient, amount)
 
-	transfers := k.getPendingTransfers(ctx, recp)
-	transfers = transfers.Add(amount)
-	k.setPendingTransfers(ctx, recp, transfers)
 	return nil
 }
 
@@ -54,18 +55,34 @@ func (k Keeper) GetArchivedTransfersForChain(ctx sdk.Context, chain exported.Cha
 }
 
 // ArchivePendingTransfers marks the transfer for the given recipient as concluded and archived
-func (k Keeper) ArchivePendingTransfers(ctx sdk.Context, recipient exported.CrossChainAddress) {
-	transfers := ctx.KVStore(k.storeKey).Get([]byte(pendingPrefix + marshalCrossChainAddress(recipient)))
-	ctx.KVStore(k.storeKey).Delete([]byte(pendingPrefix + marshalCrossChainAddress(recipient)))
-	ctx.KVStore(k.storeKey).Set([]byte(archivedPrefix+marshalCrossChainAddress(recipient)), transfers)
+func (k Keeper) ArchivePendingTransfers(ctx sdk.Context, transfer exported.CrossChainTransfer) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingPrefix + marshalCrossChainKey(transfer.Recipient.Chain, transfer.ID)))
+	if bz != nil {
+		ctx.KVStore(k.storeKey).Delete([]byte(pendingPrefix + marshalCrossChainKey(transfer.Recipient.Chain, transfer.ID)))
+		ctx.KVStore(k.storeKey).Set([]byte(archivedPrefix+marshalCrossChainKey(transfer.Recipient.Chain, transfer.ID)), bz)
+	}
 }
 
-func (k Keeper) setPendingTransfers(ctx sdk.Context, recipient exported.CrossChainAddress, transfers sdk.Coins) {
-	ctx.KVStore(k.storeKey).Set([]byte(pendingPrefix+marshalCrossChainAddress(recipient)), k.cdc.MustMarshalBinaryLengthPrefixed(transfers))
+func (k Keeper) setPendingTransfer(ctx sdk.Context, recipient exported.CrossChainAddress, amount sdk.Coin) {
+
+	var next uint64 = 0
+	bz := ctx.KVStore(k.storeKey).Get([]byte(sequenceKey))
+	if bz != nil {
+
+		next = binary.LittleEndian.Uint64(bz)
+	}
+
+	transfer := exported.CrossChainTransfer{Recipient: recipient, Amount: amount, ID: next}
+	ctx.KVStore(k.storeKey).Set([]byte(pendingPrefix+marshalCrossChainKey(recipient.Chain, next)), k.cdc.MustMarshalBinaryLengthPrefixed(transfer))
+
+	next++
+	bz = make([]byte, 8)
+	binary.LittleEndian.PutUint64(bz, next)
+	ctx.KVStore(k.storeKey).Set([]byte(sequenceKey), bz)
 }
 
 func (k Keeper) getRecipient(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(senderPrefix + marshalCrossChainAddress(sender)))
+	bz := ctx.KVStore(k.storeKey).Get([]byte(marshalCrossChainAddress(sender)))
 	if bz == nil {
 		return exported.CrossChainAddress{}, false
 	}
@@ -75,39 +92,25 @@ func (k Keeper) getRecipient(ctx sdk.Context, sender exported.CrossChainAddress)
 	return recp, true
 }
 
-func (k Keeper) getPendingTransfers(ctx sdk.Context, recipient exported.CrossChainAddress) sdk.Coins {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingPrefix + marshalCrossChainAddress(recipient)))
-	if bz == nil {
-		return sdk.NewCoins()
-	}
-
-	var transfers sdk.Coins
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &transfers)
-	return transfers
-}
-
 func (k Keeper) getAddresses(ctx sdk.Context, getType string, chain exported.Chain) []exported.CrossChainTransfer {
 	transfers := make([]exported.CrossChainTransfer, 0)
 	prefix := []byte(getType + chain.String() + "_")
 
 	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), prefix)
 	for ; iter.Valid(); iter.Next() {
-
-		key := iter.Key()
-		bytes := key[len(prefix):]
-		recipient := exported.CrossChainAddress{Address: string(bytes), Chain: chain}
-
 		bz := iter.Value()
-		var amount sdk.Coins
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &amount)
-
-		transfers = append(transfers, exported.CrossChainTransfer{Recipient: recipient, Amount: amount})
-
+		var transfer exported.CrossChainTransfer
+		k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &transfer)
+		transfers = append(transfers, transfer)
 	}
 
 	return transfers
 }
 
 func marshalCrossChainAddress(addr exported.CrossChainAddress) string {
-	return addr.Chain.String() + "_" + addr.Address
+	return senderPrefix + addr.Chain.String() + "_" + addr.Address
+}
+
+func marshalCrossChainKey(chain exported.Chain, sequence uint64) string {
+	return fmt.Sprintf("%s_%d", chain.String(), sequence)
 }

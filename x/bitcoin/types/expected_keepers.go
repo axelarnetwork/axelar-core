@@ -37,5 +37,5 @@ type Balancer interface {
 	PrepareForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error
 	GetPendingTransfersForChain(ctx sdk.Context, chain exported.Chain) []exported.CrossChainTransfer
 	GetArchivedTransfersForChain(ctx sdk.Context, chain exported.Chain) []exported.CrossChainTransfer
-	ArchivePendingTransfers(ctx sdk.Context, recipient exported.CrossChainAddress)
+	ArchivePendingTransfers(ctx sdk.Context, transfer exported.CrossChainTransfer)
 }
