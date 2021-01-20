@@ -683,6 +683,9 @@ var _ types.Balancer = &BalancerMock{}
 //             GetPendingTransfersForChainFunc: func(ctx sdk.Context, chain exported.Chain) []exported.CrossChainTransfer {
 // 	               panic("mock out the GetPendingTransfersForChain method")
 //             },
+//             GetRecipientFunc: func(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool) {
+// 	               panic("mock out the GetRecipient method")
+//             },
 //             LinkAddressesFunc: func(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress)  {
 // 	               panic("mock out the LinkAddresses method")
 //             },
@@ -704,6 +707,9 @@ type BalancerMock struct {
 
 	// GetPendingTransfersForChainFunc mocks the GetPendingTransfersForChain method.
 	GetPendingTransfersForChainFunc func(ctx sdk.Context, chain exported.Chain) []exported.CrossChainTransfer
+
+	// GetRecipientFunc mocks the GetRecipient method.
+	GetRecipientFunc func(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool)
 
 	// LinkAddressesFunc mocks the LinkAddresses method.
 	LinkAddressesFunc func(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress)
@@ -734,6 +740,13 @@ type BalancerMock struct {
 			// Chain is the chain argument value.
 			Chain exported.Chain
 		}
+		// GetRecipient holds details about calls to the GetRecipient method.
+		GetRecipient []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Sender is the sender argument value.
+			Sender exported.CrossChainAddress
+		}
 		// LinkAddresses holds details about calls to the LinkAddresses method.
 		LinkAddresses []struct {
 			// Ctx is the ctx argument value.
@@ -756,6 +769,7 @@ type BalancerMock struct {
 	lockArchivePendingTransfer       sync.RWMutex
 	lockGetArchivedTransfersForChain sync.RWMutex
 	lockGetPendingTransfersForChain  sync.RWMutex
+	lockGetRecipient                 sync.RWMutex
 	lockLinkAddresses                sync.RWMutex
 	lockPrepareForTransfer           sync.RWMutex
 }
@@ -862,6 +876,41 @@ func (mock *BalancerMock) GetPendingTransfersForChainCalls() []struct {
 	mock.lockGetPendingTransfersForChain.RLock()
 	calls = mock.calls.GetPendingTransfersForChain
 	mock.lockGetPendingTransfersForChain.RUnlock()
+	return calls
+}
+
+// GetRecipient calls GetRecipientFunc.
+func (mock *BalancerMock) GetRecipient(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool) {
+	if mock.GetRecipientFunc == nil {
+		panic("BalancerMock.GetRecipientFunc: method is nil but Balancer.GetRecipient was just called")
+	}
+	callInfo := struct {
+		Ctx    sdk.Context
+		Sender exported.CrossChainAddress
+	}{
+		Ctx:    ctx,
+		Sender: sender,
+	}
+	mock.lockGetRecipient.Lock()
+	mock.calls.GetRecipient = append(mock.calls.GetRecipient, callInfo)
+	mock.lockGetRecipient.Unlock()
+	return mock.GetRecipientFunc(ctx, sender)
+}
+
+// GetRecipientCalls gets all the calls that were made to GetRecipient.
+// Check the length with:
+//     len(mockedBalancer.GetRecipientCalls())
+func (mock *BalancerMock) GetRecipientCalls() []struct {
+	Ctx    sdk.Context
+	Sender exported.CrossChainAddress
+} {
+	var calls []struct {
+		Ctx    sdk.Context
+		Sender exported.CrossChainAddress
+	}
+	mock.lockGetRecipient.RLock()
+	calls = mock.calls.GetRecipient
+	mock.lockGetRecipient.RUnlock()
 	return calls
 }
 

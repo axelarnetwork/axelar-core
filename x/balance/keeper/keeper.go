@@ -33,9 +33,20 @@ func (k Keeper) LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress
 	ctx.KVStore(k.storeKey).Set([]byte(marshalCrossChainAddress(sender)), k.cdc.MustMarshalBinaryLengthPrefixed(recipient))
 }
 
+func (k Keeper) GetRecipient(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(marshalCrossChainAddress(sender)))
+	if bz == nil {
+		return exported.CrossChainAddress{}, false
+	}
+
+	var recp exported.CrossChainAddress
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &recp)
+	return recp, true
+}
+
 // PrepareForTransfer appoints the amount of tokens to be transfered/minted to the recipient previously linked to the specified sender
 func (k Keeper) PrepareForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error {
-	recipient, ok := k.getRecipient(ctx, sender)
+	recipient, ok := k.GetRecipient(ctx, sender)
 	if !ok {
 		return fmt.Errorf("no recipient linked to sender %s", sender.String())
 	}
@@ -78,17 +89,6 @@ func (k Keeper) setPendingTransfer(ctx sdk.Context, recipient exported.CrossChai
 	bz = make([]byte, 8)
 	binary.LittleEndian.PutUint64(bz, next)
 	ctx.KVStore(k.storeKey).Set([]byte(sequenceKey), bz)
-}
-
-func (k Keeper) getRecipient(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(marshalCrossChainAddress(sender)))
-	if bz == nil {
-		return exported.CrossChainAddress{}, false
-	}
-
-	var recp exported.CrossChainAddress
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &recp)
-	return recp, true
 }
 
 func (k Keeper) getAddresses(ctx sdk.Context, getType string, chain exported.Chain) []exported.CrossChainTransfer {
