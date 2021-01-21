@@ -9,9 +9,7 @@ import (
 
 type MsgTrack struct {
 	Sender  sdk.AccAddress
-	Mode    Mode
 	Address string
-	KeyID   string
 	Rescan  bool
 }
 
@@ -20,24 +18,6 @@ func NewMsgTrackAddress(sender sdk.AccAddress, address string, rescan bool) sdk.
 		Sender:  sender,
 		Address: address,
 		Rescan:  rescan,
-		Mode:    ModeSpecificAddress,
-	}
-}
-
-func NewMsgTrackPubKey(sender sdk.AccAddress, keyId string, rescan bool) sdk.Msg {
-	return MsgTrack{
-		Sender: sender,
-		KeyID:  keyId,
-		Rescan: rescan,
-		Mode:   ModeSpecificKey,
-	}
-}
-
-func NewMsgTrackPubKeyWithMasterKey(sender sdk.AccAddress, rescan bool) sdk.Msg {
-	return MsgTrack{
-		Sender: sender,
-		Rescan: rescan,
-		Mode:   ModeCurrentMasterKey,
 	}
 }
 
@@ -53,19 +33,8 @@ func (msg MsgTrack) ValidateBasic() error {
 	if msg.Sender.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
-	switch msg.Mode {
-	case ModeCurrentMasterKey:
-		// nothing
-	case ModeSpecificKey:
-		if msg.KeyID == "" {
-			return fmt.Errorf("missing public key ID")
-		}
-	case ModeSpecificAddress:
-		if msg.Address == "" {
-			return fmt.Errorf("invalid address to track")
-		}
-	default:
-		return fmt.Errorf("chosen mode not recognized")
+	if msg.Address == "" {
+		return fmt.Errorf("invalid address to track")
 	}
 	return nil
 }

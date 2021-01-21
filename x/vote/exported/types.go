@@ -8,7 +8,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 )
 
-// This interface is needed so that the amino codec can (un)marshal the voting data correctly
+// VotingData is needed so that the amino codec can (un)marshal the voting data correctly
 type VotingData interface {
 }
 
@@ -46,6 +46,7 @@ type MsgVote interface {
 	Vote
 }
 
+// Voter is the interface that provides voting functionality to other modules
 type Voter interface {
 	InitPoll(ctx sdk.Context, poll PollMeta) error
 	DeletePoll(ctx sdk.Context, poll PollMeta)

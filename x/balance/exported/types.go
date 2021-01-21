@@ -9,12 +9,16 @@ import (
 
 const (
 	// DO NOT CHANGE THE ORDER OF THE CHAINS. MODULES WOULD ATTRIBUTE TXS TO THE WRONG CHAIN
+
+	// NONE is the invalid chain marker
 	NONE Chain = iota
+	// Bitcoin is the bitcoin marker for cross-chain transfers
 	Bitcoin
+	// Ethereum is the bitcoin marker for cross-chain transfers
 	Ethereum
 
-	// increment when adding a new chain
-	ConnectedChainCount = 3
+	// ConnectedChainCount shows the total amount of chains (including the invalid chain) that are supported by axelar
+	ConnectedChainCount = 3 // increment when adding a new chain
 )
 
 var (
@@ -25,7 +29,7 @@ var (
 type Chain int
 
 func (c Chain) Validate() error {
-	if c < 0 || c >= ConnectedChainCount {
+	if c <= 0 || c >= ConnectedChainCount {
 		return fmt.Errorf("unknown chain")
 	}
 	return nil

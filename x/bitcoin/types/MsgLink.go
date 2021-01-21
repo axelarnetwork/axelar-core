@@ -1,7 +1,6 @@
 package types
 
 import (
-	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -13,7 +12,7 @@ type MsgLink struct {
 	Recipient exported.CrossChainAddress
 }
 
-func NewMsgLink(sender sdk.AccAddress, btcAddress btcutil.Address, destination exported.CrossChainAddress) sdk.Msg {
+func NewMsgLink(sender sdk.AccAddress, destination exported.CrossChainAddress) sdk.Msg {
 	return MsgLink{
 		Sender:    sender,
 		Recipient: destination,
