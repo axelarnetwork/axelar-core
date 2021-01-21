@@ -15,6 +15,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	authRest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
@@ -134,6 +135,7 @@ func txCmd(cdc *amino.Codec) *cobra.Command {
 func registerRoutes(rs *lcd.RestServer) {
 	client.RegisterRoutes(rs.CliCtx, rs.Mux)
 	app.ModuleBasics.RegisterRESTRoutes(rs.CliCtx, rs.Mux)
+	authRest.RegisterTxRoutes(rs.CliCtx, rs.Mux)
 }
 
 func initConfig(cmd *cobra.Command) error {

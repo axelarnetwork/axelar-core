@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/codec"
+
 	//"encoding/json"
 	"os"
 
@@ -22,14 +24,29 @@ func main() {
 func run() error {
 	cdc := app.MakeCodec()
 
+	// Configure wallet
 	config := *wallet.DefaultConfig()
 	fmt.Printf("%+v\n", config)
-	w, err := wallet.CreateWalletFromMnemoic(config, "abtcd_mnemonic.txt")
+	wallet, err := wallet.CreateWallet(config)
 	if err != nil {
 		return err
 	}
 
-	// stdTx
+	// Import account
+	if err := wallet.ImportMnemonicFromFile("abtcd_mnemonic.txt"); err != nil {
+		return err
+	}
+
+	// Instantiate REST context for building and submitting transactions
+	restCtx := rest.RestContext{Codec: cdc, URL: "http://localhost:1317"}
+	if err := restCtx.TxSnapshotNow(wallet); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func exampleSignTx(cdc *codec.Codec, w *wallet.Wallet) error {
 	stdTx, err := utils.ReadStdTxFromFile(cdc, "unsignedTx.json")
 	if err != nil {
 		return err
@@ -41,13 +58,6 @@ func run() error {
 		return err
 	}
 	fmt.Printf("%+v\n", signedTx)
-
-	restCtx := rest.RestContext{Codec: cdc, URL: "http://localhost:1317"}
-	fmt.Printf("%+v\n", restCtx)
-
-	if err := restCtx.TxSnapshotNow(w, ""); err != nil {
-		return err
-	}
 
 	return nil
 }

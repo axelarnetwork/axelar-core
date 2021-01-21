@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 )
@@ -28,6 +29,9 @@ type WalletConfig struct {
 	broadcastTypes.ClientConfig
 	AppName       string // keybase app name
 	RootDir       string // keybase root dir
+	Gas string
+	GasFees sdk.Coins
+	GasPrices sdk.DecCoins
 }
 
 // Temporary placeholder for proper account store
@@ -36,14 +40,15 @@ type Account struct {
 
 func ReadMnemonicFromFile(fname string) (string,error) {
 	file, err := os.Open(fname)
+	if file != nil {
+		defer file.Close()
+	}
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
 
 	b, err := ioutil.ReadAll(file)
-	// @fix not robust way of trimming mnemonic
-	return string(b)[:len(b)-1], nil
+	return strings.TrimSpace(string(b)), nil
 }
 
 func DefaultConfig() *WalletConfig {
@@ -53,42 +58,31 @@ func DefaultConfig() *WalletConfig {
 			TendermintNodeUri: "",
 			ChainID:           "axelar",
 			BroadcastConfig: broadcastTypes.BroadcastConfig{
-				From:              "myKey",
+				From:              "",
 				KeyringPassphrase: "",
 				GasAdjustment:     0,
 			},
 		},
 		AppName:      "abtcd",
 		RootDir:      "keytest",
+		Gas: "",
+		//GasPrices: "",
+		//GasFees: "",
 	}
 }
 
-func CreateWalletFromMnemoic(config WalletConfig, mnemonicFile string) (Wallet, error) {
-	defaultConfig := *DefaultConfig()
-	if config == (WalletConfig{}) {
-		config = defaultConfig
-	}
+func CreateWallet(config WalletConfig) (Wallet, error) {
+	//defaultConfig := *DefaultConfig()
+	//if config == WalletConfig{} {
+	//	config = defaultConfig
+	//}
 
 	keybase, err := keyring.NewKeyring(config.AppName, config.KeyringBackend, config.RootDir, os.Stdin)
 	if err != nil {
 		return Wallet{}, err
 	}
 
-	mnemonic, err := ReadMnemonicFromFile(mnemonicFile)
-	if err != nil {
-		return Wallet{}, err
-	}
-
-	// nil algo will use keys.Secp256k1
-	keyInfo, err := keybase.CreateAccount(config.From, mnemonic, keyring.DefaultBIP39Passphrase, cliKeyring.DefaultKeyPass,"", keyring.Secp256k1)
-	if err != nil {
-		return Wallet{}, err
-	}
-	fmt.Printf("%+v\n", keyInfo)
-
-	fromAddr := sdk.AccAddress("")
-
-	return NewWallet(keybase, config, fromAddr,0, 0), nil
+	return NewWallet(keybase, config, sdk.AccAddress("cosmos1tvz9j7lll27mcfdtk85j24dutk53m3pjfzaxsq"),4, 1), nil
 }
 
 func NewWallet(keybase keyring.Keybase, config WalletConfig, fromAddr sdk.AccAddress, accountNumber uint64, sequenceNumber uint64) Wallet {
@@ -96,11 +90,30 @@ func NewWallet(keybase keyring.Keybase, config WalletConfig, fromAddr sdk.AccAdd
 		keybase: keybase,
 		Config:  config,
 		FromAddr: fromAddr,
-		//Account: account,
 		AccountNumber: accountNumber,
 		SequenceNumber: sequenceNumber,
 	}
 }
+
+func (w *Wallet) ImportMnemonicFromFile (mnemonicFile string) error {
+	mnemonic, err := ReadMnemonicFromFile(mnemonicFile)
+	if err != nil {
+		return err
+	}
+
+	// Empty algo parameter will default to keys.Secp256k1
+	keyInfo, err := w.keybase.CreateAccount(w.Config.From, mnemonic, keyring.DefaultBIP39Passphrase, cliKeyring.DefaultKeyPass,"", keyring.Secp256k1)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Key info from mnemonic file:\n%+v\n", keyInfo)
+	return nil
+}
+
+// Import account using an encrypted ASCII armor private key file
+//func (w *Wallet) ImportArmorFromFile() error {
+//}
 
 // SignStdTx appends a signature to a StdTx and returns a copy of it. If append
 // is false, it replaces the signatures already attached with the new signature.
