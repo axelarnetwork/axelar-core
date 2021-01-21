@@ -36,6 +36,7 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		GetCmdCreateMintTx(queryRoute, cdc),
 		GetCmdCreateDeployTx(queryRoute, cdc),
 		GetCmdSendTx(queryRoute, cdc),
+		GetCmdSendMintTx(queryRoute, cdc),
 	)...)
 
 	return ethQueryCmd
@@ -153,7 +154,7 @@ func GetCmdCreateDeployTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 func GetCmdSendTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "send [txID]",
-		Short: "Send a transaction that spends tx [txID] to Bitcoin",
+		Short: "Send a transaction that spends tx [txID] to Ethereum",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
@@ -165,6 +166,30 @@ func GetCmdSendTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			var out string
 			cdc.MustUnmarshalJSON(res, &out)
+			return cliCtx.PrintOutput(out)
+		},
+	}
+}
+
+func GetCmdSendMintTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "send-mint [commandID] [fromAddress] [contractAddress]",
+		Short: "Send a transaction signed by [fromAddress] that executes mint command [commandID] to Ethereum contract at [contractAddress]",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			commandID := args[0]
+			fromAddress := args[1]
+			contractAddress := args[2]
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s/%s", queryRoute, keeper.SendMintTx, commandID, fromAddress, contractAddress), nil)
+			if err != nil {
+				return sdkerrors.Wrapf(err, "could not send Ethereum transaction executing mint command %s", commandID)
+			}
+
+			var out string
+			cdc.MustUnmarshalJSON(res, &out)
+
 			return cliCtx.PrintOutput(out)
 		},
 	}

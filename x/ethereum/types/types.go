@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -27,16 +28,31 @@ const (
 	// Ganache is a local testnet
 	Ganache = "ganache"
 
-	erc20Mint            = "mint(address,uint256)"
-	axelarGatewayExecute = "execute(bytes)"
+	erc20Mint = "mint(address,uint256)"
 
+	// TODO: Check if there's a way to install the smart contract module with compiled ABI files
+	axelarGatewayABI = `[
+		{
+			"inputs": [
+				{
+					"internalType": "bytes",
+          "name": "input",
+          "type": "bytes"
+        }
+			],
+			"name": "execute",
+			"outputs": [],
+			"stateMutability": "nonpayable",
+			"type": "function"
+		}
+	]`
 	axelarGatewayCommandMint = "mintToken"
+	axelarGatewayFuncExecute = "execute"
 )
 
 var (
-	ERC20MintSel            = CalcSelector(erc20Mint)
-	AxelarGatewayExecuteSel = CalcSelector(axelarGatewayExecute)
-	networksByID            = map[int64]Network{
+	ERC20MintSel = CalcSelector(erc20Mint)
+	networksByID = map[int64]Network{
 		params.MainnetChainConfig.ChainID.Int64():       Mainnet,
 		params.RopstenChainConfig.ChainID.Int64():       Ropsten,
 		params.RinkebyChainConfig.ChainID.Int64():       Rinkeby,
@@ -144,6 +160,42 @@ func CreateMintCallData(toAddr common.Address, amount *big.Int) []byte {
 	data = append(data, common.FromHex(paddedAddr)...)
 	data = append(data, common.FromHex(paddedVal)...)
 	return data
+}
+
+func CreateExecuteData(commandData []byte, commandSig Signature) ([]byte, error) {
+	abiEncoder, err := abi.JSON(strings.NewReader(axelarGatewayABI))
+	if err != nil {
+		return nil, err
+	}
+
+	var homesteadCommandSig []byte
+	homesteadCommandSig = append(homesteadCommandSig, commandSig[:]...)
+
+	/* TODO: We have to make v 27 or 28 due to openzeppelin's implementation at https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/cryptography/ECDSA.sol
+	requiring that. Consider copying and modifying it to reqire v to be just 0 or 1
+	instead.
+	*/
+	if homesteadCommandSig[64] == 0 || homesteadCommandSig[64] == 1 {
+		homesteadCommandSig[64] += 27
+	}
+
+	bytesType, err := abi.NewType("bytes", "bytes", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	arguments := abi.Arguments{{Type: bytesType}, {Type: bytesType}}
+	executeData, err := arguments.Pack(commandData, homesteadCommandSig)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := abiEncoder.Pack(axelarGatewayFuncExecute, executeData)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 func GetEthereumSignHash(data []byte) common.Hash {

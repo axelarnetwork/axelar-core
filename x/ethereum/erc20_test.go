@@ -18,7 +18,6 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethclient"
 	hdwallet "github.com/miguelmota/go-ethereum-hdwallet"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -160,10 +159,7 @@ func TestSig(t *testing.T) {
 // It requires ganache to be executing and initialized with the `mnemonic` constant.
 // If ganache is not running, the test is skipped
 func TestGanache(t *testing.T) {
-
-	client, _ := ethclient.Dial("http://127.0.0.1:7545")
-	_, err := client.ChainID(context.Background())
-
+	client, err := types.NewRPCClient("http://127.0.0.1:7545")
 	if err != nil {
 		t.Logf("Ganache not running, skipping this test (error: %v)", err)
 		t.SkipNow()
@@ -183,7 +179,7 @@ func TestGanache(t *testing.T) {
 
 // Deploys the smart contract available for these tests. It avoids deployment via the contract ABI
 // in favor of creating a raw transaction for the same purpose.
-func testDeploy(t *testing.T, client *ethclient.Client, privateKey *ecdsa.PrivateKey) common.Address {
+func testDeploy(t *testing.T, client *types.EthRPCClient, privateKey *ecdsa.PrivateKey) common.Address {
 
 	byteCode := common.FromHex(MymintableBin)
 
@@ -241,8 +237,7 @@ func testDeploy(t *testing.T, client *ethclient.Client, privateKey *ecdsa.Privat
 
 // Mint tokens associated to the contract used by these tests and associate them to the given wallet.
 // It avoids invoking the mint function throught the ABI in favor of creating a raw transaction for the same purpose.
-func testMint(t *testing.T, client *ethclient.Client, contractAddr, toAddr common.Address, privateKey *ecdsa.PrivateKey) {
-
+func testMint(t *testing.T, client *types.EthRPCClient, contractAddr, toAddr common.Address, privateKey *ecdsa.PrivateKey) {
 	instance, err := NewMymintable(contractAddr, client)
 
 	assert.NoError(t, err)

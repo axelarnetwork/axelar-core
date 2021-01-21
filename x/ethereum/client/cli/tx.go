@@ -13,7 +13,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 )
 
@@ -95,17 +94,11 @@ func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
 
 func GetCmdSignPendingTransfersTx(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "sign-pending-transfers [chain]",
+		Use:   "sign-pending-transfers",
 		Short: "Sign all pending transfers to Ethereum",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
-			chainStr := args[0]
-
-			chain := exported.ChainFromString(chainStr)
-			if err := chain.Validate(); err != nil {
-				return err
-			}
 
 			msg := types.NewMsgSignPendingTransfersTx(cliCtx.GetFromAddress())
 			if err := msg.ValidateBasic(); err != nil {

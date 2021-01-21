@@ -35,6 +35,9 @@ var _ types.RPCClient = &RPCClientMock{}
 //             PendingNonceAtFunc: func(ctx context.Context, account common.Address) (uint64, error) {
 // 	               panic("mock out the PendingNonceAt method")
 //             },
+//             SendAndSignTransactionFunc: func(ctx context.Context, msg ethereum.CallMsg) (string, error) {
+// 	               panic("mock out the SendAndSignTransaction method")
+//             },
 //             SendTransactionFunc: func(ctx context.Context, tx *ethTypes.Transaction) error {
 // 	               panic("mock out the SendTransaction method")
 //             },
@@ -62,6 +65,9 @@ type RPCClientMock struct {
 
 	// PendingNonceAtFunc mocks the PendingNonceAt method.
 	PendingNonceAtFunc func(ctx context.Context, account common.Address) (uint64, error)
+
+	// SendAndSignTransactionFunc mocks the SendAndSignTransaction method.
+	SendAndSignTransactionFunc func(ctx context.Context, msg ethereum.CallMsg) (string, error)
 
 	// SendTransactionFunc mocks the SendTransaction method.
 	SendTransactionFunc func(ctx context.Context, tx *ethTypes.Transaction) error
@@ -98,6 +104,13 @@ type RPCClientMock struct {
 			// Account is the account argument value.
 			Account common.Address
 		}
+		// SendAndSignTransaction holds details about calls to the SendAndSignTransaction method.
+		SendAndSignTransaction []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Msg is the msg argument value.
+			Msg ethereum.CallMsg
+		}
 		// SendTransaction holds details about calls to the SendTransaction method.
 		SendTransaction []struct {
 			// Ctx is the ctx argument value.
@@ -118,13 +131,14 @@ type RPCClientMock struct {
 			TxHash common.Hash
 		}
 	}
-	lockBlockNumber        sync.RWMutex
-	lockChainID            sync.RWMutex
-	lockEstimateGas        sync.RWMutex
-	lockPendingNonceAt     sync.RWMutex
-	lockSendTransaction    sync.RWMutex
-	lockSuggestGasPrice    sync.RWMutex
-	lockTransactionReceipt sync.RWMutex
+	lockBlockNumber            sync.RWMutex
+	lockChainID                sync.RWMutex
+	lockEstimateGas            sync.RWMutex
+	lockPendingNonceAt         sync.RWMutex
+	lockSendAndSignTransaction sync.RWMutex
+	lockSendTransaction        sync.RWMutex
+	lockSuggestGasPrice        sync.RWMutex
+	lockTransactionReceipt     sync.RWMutex
 }
 
 // BlockNumber calls BlockNumberFunc.
@@ -256,6 +270,41 @@ func (mock *RPCClientMock) PendingNonceAtCalls() []struct {
 	mock.lockPendingNonceAt.RLock()
 	calls = mock.calls.PendingNonceAt
 	mock.lockPendingNonceAt.RUnlock()
+	return calls
+}
+
+// SendAndSignTransaction calls SendAndSignTransactionFunc.
+func (mock *RPCClientMock) SendAndSignTransaction(ctx context.Context, msg ethereum.CallMsg) (string, error) {
+	if mock.SendAndSignTransactionFunc == nil {
+		panic("RPCClientMock.SendAndSignTransactionFunc: method is nil but RPCClient.SendAndSignTransaction was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+		Msg ethereum.CallMsg
+	}{
+		Ctx: ctx,
+		Msg: msg,
+	}
+	mock.lockSendAndSignTransaction.Lock()
+	mock.calls.SendAndSignTransaction = append(mock.calls.SendAndSignTransaction, callInfo)
+	mock.lockSendAndSignTransaction.Unlock()
+	return mock.SendAndSignTransactionFunc(ctx, msg)
+}
+
+// SendAndSignTransactionCalls gets all the calls that were made to SendAndSignTransaction.
+// Check the length with:
+//     len(mockedRPCClient.SendAndSignTransactionCalls())
+func (mock *RPCClientMock) SendAndSignTransactionCalls() []struct {
+	Ctx context.Context
+	Msg ethereum.CallMsg
+} {
+	var calls []struct {
+		Ctx context.Context
+		Msg ethereum.CallMsg
+	}
+	mock.lockSendAndSignTransaction.RLock()
+	calls = mock.calls.SendAndSignTransaction
+	mock.lockSendAndSignTransaction.RUnlock()
 	return calls
 }
 
