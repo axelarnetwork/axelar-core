@@ -32,14 +32,14 @@ func TestLink(t *testing.T) {
 	sender, recipient := makeRandAddressesForChain(makeRandomChain(), makeRandomChain())
 
 	keeper.LinkAddresses(ctx, sender, recipient)
-	err := keeper.PrepareForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
+	err := keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
 	assert.NoError(t, err)
 	recp, ok := keeper.GetRecipient(ctx, sender)
 	assert.True(t, ok)
 	assert.Equal(t, recipient, recp)
 
 	sender.Address = testutils.RandString(20)
-	err = keeper.PrepareForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
+	err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
 	assert.Error(t, err)
 	recp, ok = keeper.GetRecipient(ctx, sender)
 	assert.False(t, ok)
@@ -50,7 +50,7 @@ func TestPrepare(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	sender, _ := makeRandAddressesForChain(makeRandomChain(), makeRandomChain())
 
-	err := keeper.PrepareForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
+	err := keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
 	assert.Error(t, err)
 	destination := makeRandomChain()
 	amounts := make(map[exported.CrossChainAddress]sdk.Coin)
@@ -59,7 +59,7 @@ func TestPrepare(t *testing.T) {
 		sender, recipient := makeRandAddressesForChain(makeRandomChain(), destination)
 		amounts[recipient] = makeRandAmount(makeRandomDenom())
 		keeper.LinkAddresses(ctx, sender, recipient)
-		err = keeper.PrepareForTransfer(ctx, sender, amounts[recipient])
+		err = keeper.EnqueueForTransfer(ctx, sender, amounts[recipient])
 		assert.NoError(t, err)
 	}
 
@@ -90,7 +90,7 @@ func TestArchive(t *testing.T) {
 		sender, recipient := makeRandAddressesForChain(makeRandomChain(), destination)
 		recipients = append(recipients, recipient)
 		keeper.LinkAddresses(ctx, sender, recipient)
-		err := keeper.PrepareForTransfer(ctx, sender, makeRandAmount(denom))
+		err := keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(denom))
 		assert.NoError(t, err)
 	}
 

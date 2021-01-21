@@ -249,7 +249,7 @@ func TestKeeper_TallyVote_NoWinner(t *testing.T) {
 		// minority power
 		newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(0, 200)),
 		// majority power
-		newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(200, 1000)),
+		newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(300, 1000)),
 	}
 	// return minority
 	s.Broadcaster.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return s.ValidatorSet[0].GetOperator() }
@@ -272,7 +272,7 @@ func TestKeeper_TallyVote_WithWinner(t *testing.T) {
 		// minority power
 		newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(0, 200)),
 		// majority power
-		newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(200, 1000)),
+		newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(300, 1000)),
 	}
 	// return majority
 	s.Broadcaster.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return s.ValidatorSet[1].GetOperator() }

@@ -677,6 +677,9 @@ var _ types.Balancer = &BalancerMock{}
 //             ArchivePendingTransferFunc: func(ctx sdk.Context, transfer exported.CrossChainTransfer)  {
 // 	               panic("mock out the ArchivePendingTransfer method")
 //             },
+//             EnqueueForTransferFunc: func(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error {
+// 	               panic("mock out the EnqueueForTransfer method")
+//             },
 //             GetArchivedTransfersForChainFunc: func(ctx sdk.Context, chain exported.Chain) []exported.CrossChainTransfer {
 // 	               panic("mock out the GetArchivedTransfersForChain method")
 //             },
@@ -689,9 +692,6 @@ var _ types.Balancer = &BalancerMock{}
 //             LinkAddressesFunc: func(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress)  {
 // 	               panic("mock out the LinkAddresses method")
 //             },
-//             PrepareForTransferFunc: func(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error {
-// 	               panic("mock out the PrepareForTransfer method")
-//             },
 //         }
 //
 //         // use mockedBalancer in code that requires types.Balancer
@@ -701,6 +701,9 @@ var _ types.Balancer = &BalancerMock{}
 type BalancerMock struct {
 	// ArchivePendingTransferFunc mocks the ArchivePendingTransfer method.
 	ArchivePendingTransferFunc func(ctx sdk.Context, transfer exported.CrossChainTransfer)
+
+	// EnqueueForTransferFunc mocks the EnqueueForTransfer method.
+	EnqueueForTransferFunc func(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error
 
 	// GetArchivedTransfersForChainFunc mocks the GetArchivedTransfersForChain method.
 	GetArchivedTransfersForChainFunc func(ctx sdk.Context, chain exported.Chain) []exported.CrossChainTransfer
@@ -714,9 +717,6 @@ type BalancerMock struct {
 	// LinkAddressesFunc mocks the LinkAddresses method.
 	LinkAddressesFunc func(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress)
 
-	// PrepareForTransferFunc mocks the PrepareForTransfer method.
-	PrepareForTransferFunc func(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error
-
 	// calls tracks calls to the methods.
 	calls struct {
 		// ArchivePendingTransfer holds details about calls to the ArchivePendingTransfer method.
@@ -725,6 +725,15 @@ type BalancerMock struct {
 			Ctx sdk.Context
 			// Transfer is the transfer argument value.
 			Transfer exported.CrossChainTransfer
+		}
+		// EnqueueForTransfer holds details about calls to the EnqueueForTransfer method.
+		EnqueueForTransfer []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Sender is the sender argument value.
+			Sender exported.CrossChainAddress
+			// Amount is the amount argument value.
+			Amount sdk.Coin
 		}
 		// GetArchivedTransfersForChain holds details about calls to the GetArchivedTransfersForChain method.
 		GetArchivedTransfersForChain []struct {
@@ -756,22 +765,13 @@ type BalancerMock struct {
 			// Recipient is the recipient argument value.
 			Recipient exported.CrossChainAddress
 		}
-		// PrepareForTransfer holds details about calls to the PrepareForTransfer method.
-		PrepareForTransfer []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Sender is the sender argument value.
-			Sender exported.CrossChainAddress
-			// Amount is the amount argument value.
-			Amount sdk.Coin
-		}
 	}
 	lockArchivePendingTransfer       sync.RWMutex
+	lockEnqueueForTransfer           sync.RWMutex
 	lockGetArchivedTransfersForChain sync.RWMutex
 	lockGetPendingTransfersForChain  sync.RWMutex
 	lockGetRecipient                 sync.RWMutex
 	lockLinkAddresses                sync.RWMutex
-	lockPrepareForTransfer           sync.RWMutex
 }
 
 // ArchivePendingTransfer calls ArchivePendingTransferFunc.
@@ -806,6 +806,45 @@ func (mock *BalancerMock) ArchivePendingTransferCalls() []struct {
 	mock.lockArchivePendingTransfer.RLock()
 	calls = mock.calls.ArchivePendingTransfer
 	mock.lockArchivePendingTransfer.RUnlock()
+	return calls
+}
+
+// EnqueueForTransfer calls EnqueueForTransferFunc.
+func (mock *BalancerMock) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error {
+	if mock.EnqueueForTransferFunc == nil {
+		panic("BalancerMock.EnqueueForTransferFunc: method is nil but Balancer.EnqueueForTransfer was just called")
+	}
+	callInfo := struct {
+		Ctx    sdk.Context
+		Sender exported.CrossChainAddress
+		Amount sdk.Coin
+	}{
+		Ctx:    ctx,
+		Sender: sender,
+		Amount: amount,
+	}
+	mock.lockEnqueueForTransfer.Lock()
+	mock.calls.EnqueueForTransfer = append(mock.calls.EnqueueForTransfer, callInfo)
+	mock.lockEnqueueForTransfer.Unlock()
+	return mock.EnqueueForTransferFunc(ctx, sender, amount)
+}
+
+// EnqueueForTransferCalls gets all the calls that were made to EnqueueForTransfer.
+// Check the length with:
+//     len(mockedBalancer.EnqueueForTransferCalls())
+func (mock *BalancerMock) EnqueueForTransferCalls() []struct {
+	Ctx    sdk.Context
+	Sender exported.CrossChainAddress
+	Amount sdk.Coin
+} {
+	var calls []struct {
+		Ctx    sdk.Context
+		Sender exported.CrossChainAddress
+		Amount sdk.Coin
+	}
+	mock.lockEnqueueForTransfer.RLock()
+	calls = mock.calls.EnqueueForTransfer
+	mock.lockEnqueueForTransfer.RUnlock()
 	return calls
 }
 
@@ -950,45 +989,6 @@ func (mock *BalancerMock) LinkAddressesCalls() []struct {
 	mock.lockLinkAddresses.RLock()
 	calls = mock.calls.LinkAddresses
 	mock.lockLinkAddresses.RUnlock()
-	return calls
-}
-
-// PrepareForTransfer calls PrepareForTransferFunc.
-func (mock *BalancerMock) PrepareForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error {
-	if mock.PrepareForTransferFunc == nil {
-		panic("BalancerMock.PrepareForTransferFunc: method is nil but Balancer.PrepareForTransfer was just called")
-	}
-	callInfo := struct {
-		Ctx    sdk.Context
-		Sender exported.CrossChainAddress
-		Amount sdk.Coin
-	}{
-		Ctx:    ctx,
-		Sender: sender,
-		Amount: amount,
-	}
-	mock.lockPrepareForTransfer.Lock()
-	mock.calls.PrepareForTransfer = append(mock.calls.PrepareForTransfer, callInfo)
-	mock.lockPrepareForTransfer.Unlock()
-	return mock.PrepareForTransferFunc(ctx, sender, amount)
-}
-
-// PrepareForTransferCalls gets all the calls that were made to PrepareForTransfer.
-// Check the length with:
-//     len(mockedBalancer.PrepareForTransferCalls())
-func (mock *BalancerMock) PrepareForTransferCalls() []struct {
-	Ctx    sdk.Context
-	Sender exported.CrossChainAddress
-	Amount sdk.Coin
-} {
-	var calls []struct {
-		Ctx    sdk.Context
-		Sender exported.CrossChainAddress
-		Amount sdk.Coin
-	}
-	mock.lockPrepareForTransfer.RLock()
-	calls = mock.calls.PrepareForTransfer
-	mock.lockPrepareForTransfer.RUnlock()
 	return calls
 }
 

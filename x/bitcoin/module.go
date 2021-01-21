@@ -69,7 +69,7 @@ type AppModule struct {
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, snapshotter types.Snapshotter, rpc types.RPCClient) AppModule {
+func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, snapshotter types.Snapshotter, balancer types.Balancer, rpc types.RPCClient) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
@@ -77,6 +77,7 @@ func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, snaps
 		signer:         signer,
 		rpc:            rpc,
 		snap:           snapshotter,
+		balancer:       balancer,
 	}
 }
 

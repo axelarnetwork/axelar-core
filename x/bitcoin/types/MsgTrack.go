@@ -3,18 +3,17 @@ package types
 import (
 	"fmt"
 
-	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 type MsgTrack struct {
 	Sender  sdk.AccAddress
-	Address btcutil.Address
+	Address string
 	Rescan  bool
 }
 
-func NewMsgTrackAddress(sender sdk.AccAddress, address btcutil.Address, rescan bool) sdk.Msg {
+func NewMsgTrackAddress(sender sdk.AccAddress, address string, rescan bool) sdk.Msg {
 	return MsgTrack{
 		Sender:  sender,
 		Address: address,
@@ -34,7 +33,7 @@ func (msg MsgTrack) ValidateBasic() error {
 	if msg.Sender.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
-	if msg.Address.String() == "" {
+	if msg.Address == "" {
 		return fmt.Errorf("invalid address to track")
 	}
 	return nil

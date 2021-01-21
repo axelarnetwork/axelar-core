@@ -3,14 +3,14 @@ package cli
 import (
 	"fmt"
 
-	"github.com/btcsuite/btcd/chaincfg"
+	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authUtils "github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -29,18 +29,14 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	addTxSubCommands(btcTxCmd, cdc)
-
-	return btcTxCmd
-}
-
-func addTxSubCommands(command *cobra.Command, cdc *codec.Codec) {
-
-	command.AddCommand(flags.PostCommands(
+	btcTxCmd.AddCommand(flags.PostCommands(
 		GetCmdTrackAddress(cdc),
 		GetCmdVerifyTx(cdc),
 		GetCmdSignRawTx(cdc),
+		GetCmdLink(cdc),
 	)...)
+
+	return btcTxCmd
 }
 
 func GetCmdTrackAddress(cdc *codec.Codec) *cobra.Command {
@@ -54,12 +50,7 @@ func GetCmdTrackAddress(cdc *codec.Codec) *cobra.Command {
 
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
 
-			addr, err := btcutil.DecodeAddress(args[0], &chaincfg.MainNetParams)
-			if err != nil {
-				return nil
-			}
-
-			msg := types.NewMsgTrackAddress(cliCtx.GetFromAddress(), addr, rescan)
+			msg := types.NewMsgTrackAddress(cliCtx.GetFromAddress(), args[0], rescan)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -113,6 +104,33 @@ func GetCmdSignRawTx(cdc *codec.Codec) *cobra.Command {
 			types.ModuleCdc.MustUnmarshalJSON([]byte(args[1]), &tx)
 
 			msg := types.NewMsgSignTx(cliCtx.GetFromAddress(), args[0], tx)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+// GetCmdLink links a cross chain address to a bitcoin address created by Axelar
+func GetCmdLink(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "link [chain] [address]",
+		Short: "Link a cross chain address to a bitcoin address created by Axelar",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
+
+			chain := balance.ChainFromString(args[0])
+			address := balance.CrossChainAddress{Chain: chain, Address: args[1]}
+
+			if err := address.Validate(); err != nil {
+				return err
+			}
+
+			msg := types.MsgLink{Sender: cliCtx.GetFromAddress(), Recipient: address}
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

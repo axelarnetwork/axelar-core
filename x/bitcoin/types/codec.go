@@ -11,6 +11,7 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgVerifyTx{}, "bitcoin/VerifyTx", nil)
 	cdc.RegisterConcrete(MsgSignTx{}, "bitcoin/SignTx", nil)
 	cdc.RegisterConcrete(MsgTrack{}, "bitcoin/Track", nil)
+	cdc.RegisterConcrete(MsgLink{}, "bitcoin/Link", nil)
 	cdc.RegisterInterface((*btcutil.Address)(nil), nil)
 	cdc.RegisterConcrete(&btcutil.AddressPubKeyHash{}, "bitcoin/pkhash", nil)
 }
