@@ -11,8 +11,8 @@ import (
 	"net/http"
 )
 
-// SendReq defines the properties of a send request's body.
-type SendReq struct {
+// ReqRegisterProxy defines the properties of a send request's body.
+type ReqRegisterProxy struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 }
 
@@ -35,7 +35,7 @@ func registerProxyHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		// Read the request parameters
-		var req SendReq
+		var req ReqRegisterProxy
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
 			return

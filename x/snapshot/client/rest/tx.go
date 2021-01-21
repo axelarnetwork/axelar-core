@@ -13,17 +13,17 @@ import (
 )
 
 // SendReq defines the properties of a send request's body.
-type SendReq struct {
+type ReqSnapshotNow struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 }
 
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
-	r.HandleFunc(fmt.Sprintf("/tx/%s/now", types.ModuleName), regsiterSnapshotHandlerFn(cliCtx)).Methods("POST")
+	r.HandleFunc(fmt.Sprintf("/tx/%s/now", types.ModuleName), snapshotNowHandlerFn(cliCtx)).Methods("POST")
 }
 
-func regsiterSnapshotHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
+func snapshotNowHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 	return func (w http.ResponseWriter, r *http.Request) {
-		var req SendReq
+		var req ReqSnapshotNow
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
 			return
@@ -33,11 +33,6 @@ func regsiterSnapshotHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		//fromAddr, err := sdk.AccAddressFromBech32(req.BaseReq.From)
-		//if err != nil {
-		//	rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-		//	return
-		//}
 		fromAddr, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
 		if !ok {
 			return
