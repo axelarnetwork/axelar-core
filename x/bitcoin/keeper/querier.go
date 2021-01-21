@@ -58,7 +58,7 @@ func queryDepositAddress(ctx sdk.Context, k Keeper, s types.Signer, data []byte)
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, "key not found")
 	}
 
-	addr, err := k.GetDepositAddress(ctx, btcec.PublicKey(pk), recipient)
+	addr, err := k.GenerateDepositAddress(ctx, btcec.PublicKey(pk), recipient)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
@@ -86,7 +86,7 @@ func queryConsolidationAddress(ctx sdk.Context, k Keeper, b types.Balancer, s ty
 		return nil, fmt.Errorf("key not found")
 	}
 
-	addr, err := k.GetDepositAddress(ctx, btcec.PublicKey(pk), recipient)
+	addr, err := k.GenerateDepositAddress(ctx, btcec.PublicKey(pk), recipient)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
@@ -120,7 +120,7 @@ func createRawTx(ctx sdk.Context, k Keeper, data []byte) ([]byte, error) {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
 
-	outPoint, ok := k.GetVerifiedOutPoint(ctx, params.OutPoint)
+	outPoint, ok := k.GetVerifiedOutPointInfo(ctx, params.OutPoint)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, "no outpoint of tx %s not found")
 	}
@@ -157,12 +157,15 @@ func sendTx(ctx sdk.Context, k Keeper, b types.Balancer, rpc types.RPCClient, s 
 		S: sig.S,
 	}
 
-	info, ok := k.GetVerifiedOutPoint(ctx, rawTx.TxIn[0].PreviousOutPoint)
+	info, ok := k.GetVerifiedOutPointInfo(ctx, rawTx.TxIn[0].PreviousOutPoint)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, "verified outpoint info not found")
 	}
 
 	recipient, ok := b.GetRecipient(ctx, balance.CrossChainAddress{Chain: balance.Bitcoin, Address: info.DepositAddr})
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, "recipient for deposit not found")
+	}
 
 	tx, err := k.AssembleBtcTx(ctx, rawTx, pk, btcSig, recipient)
 	if err != nil {

@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"fmt"
-	"strconv"
 	"testing"
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
@@ -36,14 +35,14 @@ func TestQuerier_TxInfo_CorrectMarshalling(t *testing.T) {
 			Confirmations: uint64(testutils.RandIntBetween(0, 10000)),
 		}
 
-		query := NewQuerier(Keeper{}, &mock.SignerMock{}, &mock.RPCClientMock{
+		query := NewQuerier(Keeper{}, &mock.SignerMock{}, &mock.BalancerMock{}, &mock.RPCClientMock{
 			GetOutPointInfoFunc: func(out *wire.OutPoint) (types.OutPointInfo, error) {
 				if out.Hash.IsEqual(&info.OutPoint.Hash) {
 					return info, nil
 				}
 				return types.OutPointInfo{}, fmt.Errorf("not found")
 			}})
-		bz, err = query(sdk.Context{}, []string{QueryOutInfo, info.OutPoint.Hash.String(), strconv.Itoa(int(info.OutPoint.Index))}, abci.RequestQuery{})
+		bz, err = query(sdk.Context{}, []string{QueryOutInfo}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(info.OutPoint)})
 		assert.NoError(t, err)
 
 		var unmarshaled types.OutPointInfo

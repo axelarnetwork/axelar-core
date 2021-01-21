@@ -81,7 +81,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 	k.Logger(ctx).Debug("verifying bitcoin transaction")
 
 	txID := msg.OutPointInfo.OutPoint.Hash.String()
-	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: txID}
+	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.OutPointInfo.OutPoint.String()}
 	if err := v.InitPoll(ctx, poll); err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
@@ -97,7 +97,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 	)
 
 	// store outpoint for later reference
-	if err := k.SetUnverifiedOutpoint(ctx, msg.OutPointInfo); err != nil {
+	if err := k.SetUnverifiedOutpointInfo(ctx, msg.OutPointInfo); err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
 

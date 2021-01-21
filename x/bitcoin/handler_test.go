@@ -80,8 +80,9 @@ func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 	}
 
 	hash, _ := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
+	outpoint := wire.NewOutPoint(hash, 0)
 	info := types.OutPointInfo{
-		OutPoint:      wire.NewOutPoint(hash, 0),
+		OutPoint:      outpoint,
 		Amount:        10,
 		DepositAddr:   "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
 		Confirmations: 7,
@@ -96,7 +97,7 @@ func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, 1, len(v.InitPollCalls()))
-	assert.Equal(t, hash.String(), v.InitPollCalls()[0].Poll.ID)
+	assert.Equal(t, outpoint.String(), v.InitPollCalls()[0].Poll.ID)
 	assert.Equal(t, types.MsgVerifyTx{}.Type(), v.InitPollCalls()[0].Poll.Type)
 	assert.Equal(t, types.ModuleName, v.InitPollCalls()[0].Poll.Module)
 
@@ -113,8 +114,9 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 	k.SetParams(ctx, types.DefaultParams())
 
 	hash, _ := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
+	outPoint := wire.NewOutPoint(hash, 0)
 	info := types.OutPointInfo{
-		OutPoint:      wire.NewOutPoint(hash, 0),
+		OutPoint:      outPoint,
 		Amount:        10,
 		DepositAddr:   "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
 		Confirmations: 7,
@@ -143,10 +145,10 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 	handler := NewHandler(k, v, &rpc, &btcMock.SignerMock{}, &btcMock.SnapshotterMock{}, &btcMock.BalancerMock{})
 
 	_, err := handler(ctx, types.MsgVerifyTx{Sender: sdk.AccAddress("sender"), OutPointInfo: info})
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	assert.Equal(t, 1, len(v.InitPollCalls()))
-	assert.Equal(t, hash.String(), v.InitPollCalls()[0].Poll.ID)
+	assert.Equal(t, outPoint.String(), v.InitPollCalls()[0].Poll.ID)
 	assert.Equal(t, types.MsgVerifyTx{}.Type(), v.InitPollCalls()[0].Poll.Type)
 	assert.Equal(t, types.ModuleName, v.InitPollCalls()[0].Poll.Module)
 
@@ -154,7 +156,7 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 	assert.Equal(t, poll, v.RecordVoteCalls()[0].Vote.Poll())
 	assert.Equal(t, true, v.RecordVoteCalls()[0].Vote.Data())
 
-	actualOutPoint, ok := k.GetUnverifiedOutPoint(ctx, hash.String())
+	actualOutPoint, ok := k.GetUnverifiedOutPointInfo(ctx, info.OutPoint)
 	assert.True(t, ok)
 	assert.True(t, info.Equals(actualOutPoint))
 }
@@ -221,6 +223,9 @@ func TestSignTx(t *testing.T) {
 		recipient := balance.CrossChainAddress{Chain: balance.Chain(testutils.RandIntBetween(1, balance.ConnectedChainCount)),
 			Address: recpAddr,
 		}
+		b.GetRecipientFunc = func(ctx sdk.Context, sender balance.CrossChainAddress) (balance.CrossChainAddress, bool) {
+			return recipient, true
+		}
 
 		signTx := prepareMsgSign(ctx, k, querier, sk, recipient)
 
@@ -244,13 +249,13 @@ func prepareMsgSign(ctx sdk.Context, k keeper.Keeper, querier sdk.Querier, sk *e
 
 	txID := hash.String()
 	btcPk := btcec.PublicKey(sk.PublicKey)
-	addr, err := k.GetDepositAddress(ctx, btcPk, recipient)
+	addr, err := k.GenerateDepositAddress(ctx, btcPk, recipient)
 	if err != nil {
 		panic(err)
 	}
 	amount := btcutil.Amount(testutils.RandIntBetween(1, 100000000))
 	outPoint := wire.NewOutPoint(hash, uint32(testutils.RandIntBetween(0, 10)))
-	err = k.SetUnverifiedOutpoint(ctx, types.OutPointInfo{
+	err = k.SetUnverifiedOutpointInfo(ctx, types.OutPointInfo{
 		OutPoint:      outPoint,
 		Amount:        amount,
 		DepositAddr:   addr.EncodeAddress(),
@@ -259,13 +264,13 @@ func prepareMsgSign(ctx sdk.Context, k keeper.Keeper, querier sdk.Querier, sk *e
 	if err != nil {
 		panic(err)
 	}
-	err = k.ProcessVerificationResult(ctx, txID, true)
+	err = k.ProcessVerificationResult(ctx, outPoint.String(), true)
 	if err != nil {
 		panic(err)
 	}
 	sender := sdk.AccAddress(testutils.RandString(int(testutils.RandIntBetween(5, 50))))
 
-	qParams := types.RawTxParams{OutPoint: *outPoint, Satoshi: sdk.NewInt64Coin(denom.Satoshi, int64(amount))}
+	qParams := types.RawTxParams{OutPoint: *outPoint, Satoshi: sdk.NewInt64Coin(denom.Satoshi, int64(amount)), DepositAddr: addr.EncodeAddress()}
 	bz, err := querier(ctx, []string{keeper.QueryRawTx}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(qParams)})
 	if err != nil {
 		panic(err)

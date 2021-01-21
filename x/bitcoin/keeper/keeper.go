@@ -23,6 +23,7 @@ const (
 	outPointPrefix = "out_"
 	pendingPrefix  = "pend_"
 	addrPrefix     = "addr_"
+	scriptPrefix   = "script_"
 )
 
 type Keeper struct {
@@ -90,7 +91,7 @@ func (k Keeper) SetRawTx(ctx sdk.Context, txID string, tx *wire.MsgTx) {
 	ctx.KVStore(k.storeKey).Set([]byte(rawPrefix+txID), bz)
 }
 
-func (k Keeper) GetVerifiedOutPoint(ctx sdk.Context, outpoint wire.OutPoint) (types.OutPointInfo, bool) {
+func (k Keeper) GetVerifiedOutPointInfo(ctx sdk.Context, outpoint wire.OutPoint) (types.OutPointInfo, bool) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(outPointPrefix + outpoint.String()))
 	if bz == nil {
 		return types.OutPointInfo{}, false
@@ -101,7 +102,7 @@ func (k Keeper) GetVerifiedOutPoint(ctx sdk.Context, outpoint wire.OutPoint) (ty
 	return out, true
 }
 
-func (k Keeper) SetUnverifiedOutpoint(ctx sdk.Context, info types.OutPointInfo) error {
+func (k Keeper) SetUnverifiedOutpointInfo(ctx sdk.Context, info types.OutPointInfo) error {
 	minHeight := k.getRequiredConfirmationHeight(ctx)
 	if info.Confirmations < minHeight {
 		return fmt.Errorf("not enough confirmations, expected at least %d, got %d", minHeight, info.Confirmations)
@@ -111,8 +112,8 @@ func (k Keeper) SetUnverifiedOutpoint(ctx sdk.Context, info types.OutPointInfo) 
 	return nil
 }
 
-func (k Keeper) GetUnverifiedOutPoint(ctx sdk.Context, txID string) (types.OutPointInfo, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingPrefix + txID))
+func (k Keeper) GetUnverifiedOutPointInfo(ctx sdk.Context, outpoint *wire.OutPoint) (types.OutPointInfo, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingPrefix + outpoint.String()))
 	if bz == nil {
 		return types.OutPointInfo{}, false
 	}
@@ -122,77 +123,92 @@ func (k Keeper) GetUnverifiedOutPoint(ctx sdk.Context, txID string) (types.OutPo
 	return info, true
 }
 
-// ProcessVerificationResult stores the OutPointInfo related to the txID permanently if confirmed or discards the data otherwise
-func (k Keeper) ProcessVerificationResult(ctx sdk.Context, txID string, verified bool) error {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingPrefix + txID))
+// ProcessVerificationResult stores the info related to the specified outpoint (format txID:voutIdx) permanently if confirmed or discards the data otherwise
+func (k Keeper) ProcessVerificationResult(ctx sdk.Context, outPoint string, verified bool) error {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingPrefix + outPoint))
 	if bz == nil {
-		return fmt.Errorf("tx %s not found", txID)
+		return fmt.Errorf("outpoint %s not found", outPoint)
 	}
 	if verified {
-		ctx.KVStore(k.storeKey).Set([]byte(outPointPrefix+txID), bz)
+		ctx.KVStore(k.storeKey).Set([]byte(outPointPrefix+outPoint), bz)
 	}
-	ctx.KVStore(k.storeKey).Delete([]byte(pendingPrefix + txID))
+	ctx.KVStore(k.storeKey).Delete([]byte(pendingPrefix + outPoint))
 	return nil
 }
 
-func (k Keeper) AssembleBtcTx(ctx sdk.Context, rawTx *wire.MsgTx, pk btcec.PublicKey, sig btcec.Signature, recipient balance.CrossChainAddress) (*wire.MsgTx, error) {
-
-	sigScript, err := createSigScript(sig, pk, recipient)
-	if err != nil {
-		return nil, err
-	}
-	rawTx.TxIn[0].SignatureScript = sigScript
-
-	pkScript, err := k.getPayToAddrScript(ctx, rawTx.TxIn[0].PreviousOutPoint)
-	if err != nil {
-		return nil, err
-	}
-	if err := validateTxScripts(rawTx, pkScript); err != nil {
-		return nil, err
-	}
-	return rawTx, nil
-}
-
-func (k Keeper) GetHashToSign(ctx sdk.Context, rawTx *wire.MsgTx) ([]byte, error) {
-	if len(rawTx.TxIn) != 1 {
-		return nil, fmt.Errorf("transaction must have exactly one input")
-	}
-	script, err := k.getPayToAddrScript(ctx, rawTx.TxIn[0].PreviousOutPoint)
-	if err != nil {
-		return nil, err
-	}
-	return txscript.CalcSignatureHash(script, txscript.SigHashAll, rawTx, 0)
-}
-
-// GetDepositAddress creates a Bitcoin address to deposit tokens for a transfer to the recipient address.
+// GenerateDepositAddress creates a Bitcoin address to deposit tokens for a transfer to the recipient address.
 // This address is unique for each recipient.
-func (k Keeper) GetDepositAddress(ctx sdk.Context, pk btcec.PublicKey, recipient balance.CrossChainAddress) (btcutil.Address, error) {
-	redeemScript, err := getRedeemScript(pk, recipient)
+func (k Keeper) GenerateDepositAddress(ctx sdk.Context, pk btcec.PublicKey, recipient balance.CrossChainAddress) (btcutil.Address, error) {
+	redeemScript, err := createRedeemScript(pk, recipient)
 	if err != nil {
 		return nil, err
 	}
-	addr, err := btcutil.NewAddressWitnessScriptHash(sha256.New().Sum(redeemScript), k.getNetwork(ctx).Params())
+	hash := sha256.Sum256(redeemScript)
+	addr, err := btcutil.NewAddressWitnessScriptHash(hash[:], k.getNetwork(ctx).Params())
 	if err != nil {
 		return nil, err
 	}
 	return addr, nil
 }
 
-func (k Keeper) getPayToAddrScript(ctx sdk.Context, outPoint wire.OutPoint) ([]byte, error) {
-	out, ok := k.GetVerifiedOutPoint(ctx, outPoint)
+func (k Keeper) SetRedeemScript(ctx sdk.Context, address btcutil.Address, script []byte) {
+	ctx.KVStore(k.storeKey).Set([]byte(scriptPrefix+address.String()), script)
+}
+
+func (k Keeper) GetRedeemScript(ctx sdk.Context, address btcutil.Address) ([]byte, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(scriptPrefix + address.String()))
+	return bz, bz == nil
+}
+
+func (k Keeper) GetHashToSign(ctx sdk.Context, rawTx *wire.MsgTx) ([]byte, error) {
+	if len(rawTx.TxIn) != 1 {
+		return nil, fmt.Errorf("transaction must have exactly one input")
+	}
+
+	addr, err := k.getDepositAddress(ctx, rawTx)
+	if err != nil {
+		return nil, err
+	}
+	script, ok := k.GetRedeemScript(ctx, addr)
+	if !ok {
+		return nil, fmt.Errorf("could not find a redeem script for outpoint %s", rawTx.TxIn[0].PreviousOutPoint.String())
+	}
+	return txscript.CalcWitnessSigHash(script, txscript.NewTxSigHashes(rawTx), txscript.SigHashAll, rawTx, 0, rawTx.TxOut[0].Value)
+}
+
+func (k Keeper) AssembleBtcTx(ctx sdk.Context, rawTx *wire.MsgTx, sig btcec.Signature) (*wire.MsgTx, error) {
+	addr, err := k.getDepositAddress(ctx, rawTx)
+	if err != nil {
+		return nil, err
+	}
+
+	witness, err := k.createWitness(ctx, sig, addr)
+	if err != nil {
+		return nil, err
+	}
+	rawTx.TxIn[0].Witness = witness
+
+	payScript, err := txscript.PayToAddrScript(addr)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := validateTxScripts(rawTx, payScript); err != nil {
+		return nil, err
+	}
+	return rawTx, nil
+}
+
+func (k Keeper) getDepositAddress(ctx sdk.Context, rawTx *wire.MsgTx) (btcutil.Address, error) {
+	out, ok := k.GetVerifiedOutPointInfo(ctx, rawTx.TxIn[0].PreviousOutPoint)
 	if !ok {
 		return nil, fmt.Errorf("transaction ID is not known")
 	}
-	network := k.getNetwork(ctx)
-	addr, err := btcutil.DecodeAddress(out.DepositAddr, network.Params())
+	addr, err := btcutil.DecodeAddress(out.DepositAddr, k.getNetwork(ctx).Params())
 	if err != nil {
 		return nil, err
 	}
-	script, err := txscript.PayToAddrScript(addr)
-	if err != nil {
-		return nil, err
-	}
-	return script, nil
+	return addr, nil
 }
 
 func (k Keeper) getNetwork(ctx sdk.Context) types.Network {
@@ -201,17 +217,13 @@ func (k Keeper) getNetwork(ctx sdk.Context) types.Network {
 	return network
 }
 
-func createSigScript(sig btcec.Signature, pk btcec.PublicKey, recipient balance.CrossChainAddress) ([]byte, error) {
+func (k Keeper) createWitness(ctx sdk.Context, sig btcec.Signature, address btcutil.Address) (wire.TxWitness, error) {
 	sigBytes := append(sig.Serialize(), byte(txscript.SigHashAll))
-	redeemScript, err := getRedeemScript(pk, recipient)
-	if err != nil {
-		return nil, err
+	redeemScript, ok := k.GetRedeemScript(ctx, address)
+	if !ok {
+		return nil, fmt.Errorf("redeem script for address %s not found", address.String())
 	}
-	sigScript, err := txscript.NewScriptBuilder().AddData(sigBytes).AddData(redeemScript).Script()
-	if err != nil {
-		return nil, sdkerrors.Wrap(err, "could not create bitcoin signature script")
-	}
-	return sigScript, nil
+	return wire.TxWitness{sigBytes, redeemScript}, nil
 }
 
 func validateTxScripts(tx *wire.MsgTx, pkScript []byte) error {
@@ -228,7 +240,7 @@ func validateTxScripts(tx *wire.MsgTx, pkScript []byte) error {
 	return nil
 }
 
-func getRedeemScript(pk btcec.PublicKey, crossAddr balance.CrossChainAddress) ([]byte, error) {
+func createRedeemScript(pk btcec.PublicKey, crossAddr balance.CrossChainAddress) ([]byte, error) {
 	keyBz := pk.SerializeCompressed()
 	nonce := btcutil.Hash160([]byte(crossAddr.String()))
 
