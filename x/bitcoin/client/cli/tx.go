@@ -4,9 +4,7 @@ import (
 	"fmt"
 
 	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
-	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -70,12 +68,7 @@ func getCmdTrackAddress(cdc *codec.Codec) *cobra.Command {
 
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
 
-			addr, err := btcutil.DecodeAddress(args[0], &chaincfg.MainNetParams)
-			if err != nil {
-				return nil
-			}
-
-			msg := types.NewMsgTrackAddress(cliCtx.GetFromAddress(), addr, rescan)
+			msg := types.NewMsgTrackAddress(cliCtx.GetFromAddress(), args[0], rescan)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

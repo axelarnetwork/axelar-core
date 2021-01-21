@@ -33,6 +33,75 @@ import (
 
 const testReps = 100
 
+func TestLink_NoMasterKey(t *testing.T) {
+	cdc := testutils.Codec()
+	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
+	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	k.SetParams(ctx, types.DefaultParams())
+
+	recipient := balance.CrossChainAddress{Address: "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7", Chain: balance.Ethereum}
+
+	getKeyCalled := false
+	s := &btcMock.SignerMock{
+		GetCurrentMasterKeyFunc: func(ctx sdk.Context, chain balance.Chain) (ecdsa.PublicKey, bool) {
+			getKeyCalled = true
+			return ecdsa.PublicKey{}, false
+		},
+	}
+
+	handler := NewHandler(k, &btcMock.VoterMock{}, &btcMock.RPCClientMock{}, s, &btcMock.SnapshotterMock{}, &btcMock.BalancerMock{})
+	_, err := handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), Recipient: recipient})
+
+	assert.Error(t, err)
+	assert.True(t, getKeyCalled)
+}
+
+func TestLink_Success(t *testing.T) {
+	cdc := testutils.Codec()
+	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
+	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	k.SetParams(ctx, types.DefaultParams())
+
+	recipient := balance.CrossChainAddress{Address: "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7", Chain: balance.Ethereum}
+	privKey, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
+	if err != nil {
+		panic(err)
+	}
+	btcAddr, err := k.GetAddress(ctx, btcec.PublicKey(privKey.PublicKey), recipient)
+	if err != nil {
+		panic(err)
+
+	}
+	sender := balance.CrossChainAddress{Address: btcAddr.EncodeAddress(), Chain: balance.Bitcoin}
+
+	linkCalled := false
+	b := &btcMock.BalancerMock{
+		LinkAddressesFunc: func(ctx sdk.Context, s balance.CrossChainAddress, r balance.CrossChainAddress) {
+
+			assert.Equal(t, s, sender)
+			assert.Equal(t, r, recipient)
+			linkCalled = true
+		},
+	}
+
+	getKeyCalled := false
+	s := &btcMock.SignerMock{
+		GetCurrentMasterKeyFunc: func(ctx sdk.Context, chain balance.Chain) (ecdsa.PublicKey, bool) {
+			getKeyCalled = true
+			return privKey.PublicKey, true
+		},
+	}
+
+	handler := NewHandler(k, &btcMock.VoterMock{}, &btcMock.RPCClientMock{}, s, &btcMock.SnapshotterMock{}, b)
+	_, err = handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), Recipient: recipient})
+
+	assert.NoError(t, err)
+	assert.True(t, getKeyCalled)
+	assert.True(t, linkCalled)
+}
+
 func TestTrackAddress(t *testing.T) {
 	cdc := testutils.Codec()
 	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
@@ -53,7 +122,7 @@ func TestTrackAddress(t *testing.T) {
 	}
 
 	handler := NewHandler(k, &btcMock.VoterMock{}, &rpc, &btcMock.SignerMock{}, &btcMock.SnapshotterMock{}, &btcMock.BalancerMock{})
-	_, err = handler(ctx, types.NewMsgTrackAddress(sdk.AccAddress("sender"), addr, false))
+	_, err = handler(ctx, types.NewMsgTrackAddress(sdk.AccAddress("sender"), addr.EncodeAddress(), false))
 
 	<-timeout.Done()
 	assert.Nil(t, err)

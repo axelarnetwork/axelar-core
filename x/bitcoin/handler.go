@@ -55,6 +55,9 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, s types.Signer, b types.Bal
 
 	b.LinkAddresses(ctx, balance.CrossChainAddress{Chain: balance.Bitcoin, Address: btcAddr.EncodeAddress()}, msg.Recipient)
 
+	logMsg := fmt.Sprintf("successfully linked {%s} and {%s}", btcAddr.EncodeAddress(), msg.Recipient.String())
+	k.Logger(ctx).Info(logMsg)
+
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
@@ -67,7 +70,7 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, s types.Signer, b types.Bal
 
 	return &sdk.Result{
 		Data:   []byte(btcAddr.EncodeAddress()),
-		Log:    fmt.Sprintf("successfully linked {%s} and {%s}", btcAddr.EncodeAddress(), msg.Recipient.String()),
+		Log:    logMsg,
 		Events: ctx.EventManager().Events(),
 	}, nil
 }
@@ -121,7 +124,7 @@ func prepareTransfer(ctx sdk.Context, k keeper.Keeper, b types.Balancer, txID st
 func handleMsgTrack(ctx sdk.Context, k keeper.Keeper, s types.Signer, rpc types.RPCClient, msg types.MsgTrack) (*sdk.Result, error) {
 	var encodedAddr string
 	if msg.Mode == types.ModeSpecificAddress {
-		encodedAddr = msg.Address.EncodeAddress()
+		encodedAddr = msg.Address
 	} else {
 		var key ecdsa.PublicKey
 		var ok bool

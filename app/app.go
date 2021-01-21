@@ -264,6 +264,8 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 
 	app.snapKeeper = snapKeeper.NewKeeper(app.cdc, keys[snapTypes.StoreKey], app.stakingKeeper)
 
+	app.balanceKeeper = balanceKeeper.NewKeeper(app.cdc, keys[balanceTypes.StoreKey])
+
 	keybase, err := keyring.NewKeyring(sdk.KeyringServiceName(), axelarCfg.ClientConfig.KeyringBackend, DefaultCLIHome, os.Stdin)
 	if err != nil {
 		tmos.Exit(err.Error())
@@ -333,7 +335,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	} else {
 		rpcBTC = btcTypes.DummyClient{}
 	}
-	btcModule = bitcoin.NewAppModule(app.btcKeeper, app.votingKeeper, app.tssKeeper, app.snapKeeper, rpcBTC)
+	btcModule = bitcoin.NewAppModule(app.btcKeeper, app.votingKeeper, app.tssKeeper, app.snapKeeper, app.balanceKeeper, rpcBTC)
 
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
