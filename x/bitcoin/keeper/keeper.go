@@ -65,6 +65,8 @@ func (k Keeper) GetTrackedAddress(ctx sdk.Context, address string) string {
 	return address
 }
 
+// GetRequiredConfirmationHeight returns the minimum number of confirmations a transaction must have on Bitcoin
+// before axelar will accept it for verification.
 func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context) uint64 {
 	var h uint64
 	k.params.Get(ctx, types.KeyConfirmationHeight, &h)

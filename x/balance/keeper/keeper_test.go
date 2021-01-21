@@ -3,19 +3,20 @@ package keeper
 import (
 	"testing"
 
-	"github.com/axelarnetwork/axelar-core/testutils"
-	"github.com/axelarnetwork/axelar-core/x/balance/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	"github.com/axelarnetwork/axelar-core/testutils"
+	"github.com/axelarnetwork/axelar-core/x/balance/exported"
+
 	"github.com/stretchr/testify/assert"
+
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
 )
 
 const (
 	addrMaxLength int   = 20
-	denomLength   int   = 3
 	maxAmount     int64 = 100000000000
 	linkedAddr    int   = 50
 )

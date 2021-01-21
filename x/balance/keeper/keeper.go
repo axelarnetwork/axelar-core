@@ -11,10 +11,9 @@ import (
 )
 
 const (
-	senderPrefix    = "send_"
-	recipientPrefix = "recp_"
-	pendingPrefix   = "pend_"
-	archivedPrefix  = "arch_"
+	senderPrefix   = "send_"
+	pendingPrefix  = "pend_"
+	archivedPrefix = "arch_"
 
 	sequenceKey = "nextID"
 )
@@ -65,7 +64,7 @@ func (k Keeper) GetArchivedTransfersForChain(ctx sdk.Context, chain exported.Cha
 	return k.getAddresses(ctx, archivedPrefix, chain)
 }
 
-// ArchivePendingTransfers marks the transfer for the given recipient as concluded and archived
+// ArchivePendingTransfer marks the transfer for the given recipient as concluded and archived
 func (k Keeper) ArchivePendingTransfer(ctx sdk.Context, transfer exported.CrossChainTransfer) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingPrefix + marshalCrossChainKey(transfer.Recipient.Chain, transfer.ID)))
 	if bz != nil {

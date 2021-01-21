@@ -67,7 +67,7 @@ func queryDepositAddress(ctx sdk.Context, k Keeper, s types.Signer, data []byte)
 }
 
 func queryConsolidationAddress(ctx sdk.Context, k Keeper, b types.Balancer, s types.Signer, currAddr string) ([]byte, error) {
-	recipient, ok := b.GetRecipient(ctx, balance.CrossChainAddress{balance.Bitcoin, currAddr})
+	recipient, ok := b.GetRecipient(ctx, balance.CrossChainAddress{Chain: balance.Bitcoin, Address: currAddr})
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, "the current address is not linked to any cross-chain recipient")
 	}

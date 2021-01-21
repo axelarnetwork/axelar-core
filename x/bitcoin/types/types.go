@@ -14,12 +14,6 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-const (
-	ModeSpecificAddress Mode = iota
-	ModeCurrentMasterKey
-	ModeSpecificKey
-)
-
 var (
 	Mainnet  = Network(chaincfg.MainNetParams.Name)
 	Testnet3 = Network(chaincfg.TestNet3Params.Name)

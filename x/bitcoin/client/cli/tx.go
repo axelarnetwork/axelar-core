@@ -3,13 +3,14 @@ package cli
 import (
 	"fmt"
 
-	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authUtils "github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+
+	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 
 	"github.com/spf13/cobra"
 
