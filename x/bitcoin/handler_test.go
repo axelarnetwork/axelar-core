@@ -42,10 +42,8 @@ func TestLink_NoMasterKey(t *testing.T) {
 
 	recipient := balance.CrossChainAddress{Address: "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7", Chain: balance.Ethereum}
 
-	getKeyCalled := false
 	s := &btcMock.SignerMock{
 		GetCurrentMasterKeyFunc: func(ctx sdk.Context, chain balance.Chain) (ecdsa.PublicKey, bool) {
-			getKeyCalled = true
 			return ecdsa.PublicKey{}, false
 		},
 	}
@@ -54,7 +52,7 @@ func TestLink_NoMasterKey(t *testing.T) {
 	_, err := handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), Recipient: recipient})
 
 	assert.Error(t, err)
-	assert.True(t, getKeyCalled)
+	assert.Equal(t, 1, len(s.GetCurrentMasterKeyCalls()))
 }
 
 func TestLink_Success(t *testing.T) {
@@ -76,20 +74,12 @@ func TestLink_Success(t *testing.T) {
 	}
 	sender := balance.CrossChainAddress{Address: btcAddr.EncodeAddress(), Chain: balance.Bitcoin}
 
-	linkCalled := false
 	b := &btcMock.BalancerMock{
-		LinkAddressesFunc: func(ctx sdk.Context, s balance.CrossChainAddress, r balance.CrossChainAddress) {
-
-			assert.Equal(t, s, sender)
-			assert.Equal(t, r, recipient)
-			linkCalled = true
-		},
+		LinkAddressesFunc: func(ctx sdk.Context, s balance.CrossChainAddress, r balance.CrossChainAddress) {},
 	}
 
-	getKeyCalled := false
 	s := &btcMock.SignerMock{
 		GetCurrentMasterKeyFunc: func(ctx sdk.Context, chain balance.Chain) (ecdsa.PublicKey, bool) {
-			getKeyCalled = true
 			return privKey.PublicKey, true
 		},
 	}
@@ -98,8 +88,10 @@ func TestLink_Success(t *testing.T) {
 	_, err = handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), Recipient: recipient})
 
 	assert.NoError(t, err)
-	assert.True(t, getKeyCalled)
-	assert.True(t, linkCalled)
+	assert.Equal(t, 1, len(b.LinkAddressesCalls()))
+	assert.Equal(t, sender, b.LinkAddressesCalls()[0].Sender)
+	assert.Equal(t, recipient, b.LinkAddressesCalls()[0].Recipient)
+	assert.Equal(t, 1, len(s.GetCurrentMasterKeyCalls()))
 }
 
 func TestTrackAddress(t *testing.T) {
@@ -277,28 +269,18 @@ func TestVoteVerifiedTx_IncompleteVote(t *testing.T) {
 	}
 	k.SetUnverifiedOutpoint(ctx, "txid", outpointInfo)
 
-	pollDeleted := false
 	poll := exported.PollMeta{Module: "bitcoin", Type: "verify", ID: "txid"}
 	v := &btcMock.VoterMock{
-		TallyVoteFunc: func(ctx sdk.Context, vote exported.MsgVote) error { return nil },
-		ResultFunc:    func(ctx sdk.Context, poll exported.PollMeta) exported.VotingData { return nil },
-		DeletePollFunc: func(ctx sdk.Context, p exported.PollMeta) {
-			assert.Equal(t, p.ID, poll.ID)
-			assert.Equal(t, p.Module, poll.Module)
-			assert.Equal(t, p.Type, poll.Type)
-			if p.ID == poll.ID && p.Module == poll.Module && p.Type == poll.Type {
-				pollDeleted = true
-			}
-		},
+		TallyVoteFunc:  func(ctx sdk.Context, vote exported.MsgVote) error { return nil },
+		ResultFunc:     func(ctx sdk.Context, poll exported.PollMeta) exported.VotingData { return nil },
+		DeletePollFunc: func(ctx sdk.Context, p exported.PollMeta) {},
 	}
 
-	enqueueCalled := false
 	b := &btcMock.BalancerMock{
 		GetRecipientFunc: func(ctx sdk.Context, s balance.CrossChainAddress) (balance.CrossChainAddress, bool) {
 			return balance.CrossChainAddress{}, false
 		},
 		EnqueueForTransferFunc: func(ctx sdk.Context, s balance.CrossChainAddress, amount sdk.Coin) error {
-			enqueueCalled = true
 			return nil
 		},
 	}
@@ -307,8 +289,8 @@ func TestVoteVerifiedTx_IncompleteVote(t *testing.T) {
 	msg := &types.MsgVoteVerifiedTx{Sender: sdk.AccAddress("sender"), PollMeta: poll, VotingData: true}
 	_, err = handler(ctx, msg)
 	assert.NoError(t, err)
-	assert.False(t, pollDeleted)
-	assert.False(t, enqueueCalled)
+	assert.Equal(t, 0, len(v.DeletePollCalls()))
+	assert.Equal(t, 0, len(b.EnqueueForTransferCalls()))
 }
 
 func TestVoteVerifiedTx_SucessNoTransfer(t *testing.T) {
@@ -334,38 +316,27 @@ func TestVoteVerifiedTx_SucessNoTransfer(t *testing.T) {
 	}
 	k.SetUnverifiedOutpoint(ctx, "txid", outpointInfo)
 
-	pollDeleted := false
 	poll := exported.PollMeta{Module: "bitcoin", Type: "verify", ID: "txid"}
 	v := &btcMock.VoterMock{
-		TallyVoteFunc: func(ctx sdk.Context, vote exported.MsgVote) error { return nil },
-		ResultFunc:    func(ctx sdk.Context, poll exported.PollMeta) exported.VotingData { return true },
-		DeletePollFunc: func(ctx sdk.Context, p exported.PollMeta) {
-			assert.Equal(t, p.ID, poll.ID)
-			assert.Equal(t, p.Module, poll.Module)
-			assert.Equal(t, p.Type, poll.Type)
-			if p.ID == poll.ID && p.Module == poll.Module && p.Type == poll.Type {
-				pollDeleted = true
-			}
-		},
+		TallyVoteFunc:  func(ctx sdk.Context, vote exported.MsgVote) error { return nil },
+		ResultFunc:     func(ctx sdk.Context, poll exported.PollMeta) exported.VotingData { return true },
+		DeletePollFunc: func(ctx sdk.Context, p exported.PollMeta) {},
 	}
 
-	enqueueCalled := false
 	b := &btcMock.BalancerMock{
 		GetRecipientFunc: func(ctx sdk.Context, s balance.CrossChainAddress) (balance.CrossChainAddress, bool) {
 			return balance.CrossChainAddress{}, false
 		},
-		EnqueueForTransferFunc: func(ctx sdk.Context, s balance.CrossChainAddress, amount sdk.Coin) error {
-			enqueueCalled = true
-			return nil
-		},
+		EnqueueForTransferFunc: func(ctx sdk.Context, s balance.CrossChainAddress, amount sdk.Coin) error { return nil },
 	}
 
 	handler := NewHandler(k, v, &btcMock.RPCClientMock{}, &btcMock.SignerMock{}, &btcMock.SnapshotterMock{}, b)
 	msg := &types.MsgVoteVerifiedTx{Sender: sdk.AccAddress("sender"), PollMeta: poll, VotingData: true}
 	_, err = handler(ctx, msg)
 	assert.NoError(t, err)
-	assert.True(t, pollDeleted)
-	assert.False(t, enqueueCalled)
+	assert.Equal(t, 1, len(v.DeletePollCalls()))
+	assert.Equal(t, poll, v.DeletePollCalls()[0].Poll)
+	assert.Equal(t, 0, len(b.EnqueueForTransferCalls()))
 }
 
 func TestVoteVerifiedTx_SucessAndTransfer(t *testing.T) {
@@ -391,25 +362,16 @@ func TestVoteVerifiedTx_SucessAndTransfer(t *testing.T) {
 	}
 	k.SetUnverifiedOutpoint(ctx, "txid", outpointInfo)
 
-	pollDeleted := false
 	poll := exported.PollMeta{Module: "bitcoin", Type: "verify", ID: "txid"}
 	v := &btcMock.VoterMock{
-		TallyVoteFunc: func(ctx sdk.Context, v exported.MsgVote) error { return nil },
-		ResultFunc:    func(ctx sdk.Context, p exported.PollMeta) exported.VotingData { return true },
-		DeletePollFunc: func(ctx sdk.Context, p exported.PollMeta) {
-			assert.Equal(t, p.ID, poll.ID)
-			assert.Equal(t, p.Module, poll.Module)
-			assert.Equal(t, p.Type, poll.Type)
-			if p.ID == poll.ID && p.Module == poll.Module && p.Type == poll.Type {
-				pollDeleted = true
-			}
-		},
+		TallyVoteFunc:  func(ctx sdk.Context, v exported.MsgVote) error { return nil },
+		ResultFunc:     func(ctx sdk.Context, p exported.PollMeta) exported.VotingData { return true },
+		DeletePollFunc: func(ctx sdk.Context, p exported.PollMeta) {},
 	}
 
 	sender := balance.CrossChainAddress{Address: "sender", Chain: balance.Bitcoin}
 	recipient := balance.CrossChainAddress{Address: "recipient", Chain: balance.Ethereum}
 
-	enqueueCalled := false
 	b := &btcMock.BalancerMock{
 		GetRecipientFunc: func(ctx sdk.Context, s balance.CrossChainAddress) (balance.CrossChainAddress, bool) {
 			if s.Address == sender.Address {
@@ -422,8 +384,6 @@ func TestVoteVerifiedTx_SucessAndTransfer(t *testing.T) {
 			if s.Address != sender.Address {
 				return fmt.Errorf("sender not linked to a recipient")
 			}
-			assert.Equal(t, s.Address, sender.Address)
-			enqueueCalled = true
 			return nil
 		},
 	}
@@ -432,8 +392,10 @@ func TestVoteVerifiedTx_SucessAndTransfer(t *testing.T) {
 	msg := &types.MsgVoteVerifiedTx{Sender: sdk.AccAddress("sender"), PollMeta: poll, VotingData: true}
 	_, err = handler(ctx, msg)
 	assert.NoError(t, err)
-	assert.True(t, pollDeleted)
-	assert.True(t, enqueueCalled)
+	assert.Equal(t, 1, len(v.DeletePollCalls()))
+	assert.Equal(t, poll, v.DeletePollCalls()[0].Poll)
+	assert.Equal(t, 1, len(b.EnqueueForTransferCalls()))
+	assert.Equal(t, sender, b.EnqueueForTransferCalls()[0].Sender)
 }
 
 func TestMasterKey_RawTx_Then_Transfer(t *testing.T) {
