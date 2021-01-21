@@ -7,6 +7,7 @@ import (
 	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -26,12 +27,16 @@ const (
 	// Ganache is a local testnet
 	Ganache = "ganache"
 
-	erc20Mint = "mint(address,uint256)"
+	erc20Mint            = "mint(address,uint256)"
+	axelarGatewayExecute = "execute(bytes)"
+
+	axelarGatewayCommandMint = "mintToken"
 )
 
 var (
-	ERC20MintSel = CalcSelector(erc20Mint)
-	networksByID = map[int64]Network{
+	ERC20MintSel            = CalcSelector(erc20Mint)
+	AxelarGatewayExecuteSel = CalcSelector(axelarGatewayExecute)
+	networksByID            = map[int64]Network{
 		params.MainnetChainConfig.ChainID.Int64():       Mainnet,
 		params.RopstenChainConfig.ChainID.Int64():       Ropsten,
 		params.RinkebyChainConfig.ChainID.Int64():       Rinkeby,
@@ -139,4 +144,116 @@ func CreateMintCallData(toAddr common.Address, amount *big.Int) []byte {
 	data = append(data, common.FromHex(paddedAddr)...)
 	data = append(data, common.FromHex(paddedVal)...)
 	return data
+}
+
+func GetEthereumSignHash(data []byte) common.Hash {
+	hash := crypto.Keccak256(data)
+	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(hash), hash)
+
+	return crypto.Keccak256Hash([]byte(msg))
+}
+
+func CreateExecuteMintData(chainID *big.Int, commandID [32]byte, addresses []string, denoms []string, amounts []*big.Int) ([]byte, error) {
+	uint256Type, err := abi.NewType("uint256", "uint256", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	bytes32Type, err := abi.NewType("bytes32", "bytes32", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	stringType, err := abi.NewType("string", "string", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	bytesType, err := abi.NewType("bytes", "bytes", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	mintParams, err := createMintParams(addresses, denoms, amounts)
+	if err != nil {
+		return nil, err
+	}
+
+	arguments := abi.Arguments{{Type: uint256Type}, {Type: bytes32Type}, {Type: stringType}, {Type: bytesType}}
+	result, err := arguments.Pack(
+		chainID,
+		commandID,
+		axelarGatewayCommandMint,
+		mintParams,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+/* This function would strip off anything in the strings beyond 32 bytes */
+// TODO: Remove this function after https://github.com/axelarnetwork/ethereum-bridge/issues/3 is implemented
+func stringArrToByte32Arr(stringArr []string) [][32]byte {
+	var result [][32]byte
+
+	for _, str := range stringArr {
+		bytes := []byte(str)
+		var byte32 [32]byte
+
+		copy(byte32[:], bytes[:32])
+		result = append(result, byte32)
+	}
+
+	return result
+}
+
+/* This function would strip off anything in the hex strings beyond 32 bytes */
+func hexArrToByte32Arr(hexes []string) [][32]byte {
+	var result [][32]byte
+
+	for _, hex := range hexes {
+		var byte32 [32]byte
+
+		copy(byte32[:], common.LeftPadBytes(common.FromHex(hex), 32)[:32])
+		result = append(result, byte32)
+	}
+
+	return result
+}
+
+func createMintParams(addresses []string, denoms []string, amounts []*big.Int) ([]byte, error) {
+	length := len(addresses)
+
+	if len(denoms) != length || len(amounts) != length {
+		return nil, fmt.Errorf("addresses, denoms and amounts have different length")
+	}
+
+	bytes32ArrayType, err := abi.NewType("bytes32[]", "bytes32[]", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	addressArrayType, err := abi.NewType("address[]", "address[]", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	uint256ArrayType, err := abi.NewType("uint256[]", "uint256[]", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	arguments := abi.Arguments{{Type: bytes32ArrayType}, {Type: addressArrayType}, {Type: uint256ArrayType}}
+	result, err := arguments.Pack(
+		stringArrToByte32Arr(denoms),
+		hexArrToByte32Arr(addresses),
+		amounts,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

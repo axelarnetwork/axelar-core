@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 )
 
@@ -27,7 +28,13 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	ethTxCmd.AddCommand(flags.PostCommands(GetCmdSignTx(cdc), GetCmdVerifyTx(cdc))...)
+	ethTxCmd.AddCommand(
+		flags.PostCommands(
+			GetCmdSignTx(cdc),
+			GetCmdVerifyTx(cdc),
+			GetCmdSignPendingTransfersTx(cdc),
+		)...,
+	)
 
 	return ethTxCmd
 }
@@ -77,6 +84,30 @@ func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
 			cdc.MustUnmarshalJSON(json, &tx)
 
 			msg := types.NewMsgVerifyTx(cliCtx.GetFromAddress(), json)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+func GetCmdSignPendingTransfersTx(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "sign-pending-transfers [chain]",
+		Short: "Sign all pending transfers to Ethereum",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
+			chainStr := args[0]
+
+			chain := exported.ChainFromString(chainStr)
+			if err := chain.Validate(); err != nil {
+				return err
+			}
+
+			msg := types.NewMsgSignPendingTransfersTx(cliCtx.GetFromAddress())
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

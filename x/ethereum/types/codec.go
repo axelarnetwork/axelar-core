@@ -9,7 +9,7 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(&MsgVoteVerifiedTx{}, "ethereum/VoteVerifyTx", nil)
 	cdc.RegisterConcrete(MsgVerifyTx{}, "ethereum/VerifyTx", nil)
 	cdc.RegisterConcrete(MsgSignTx{}, "ethereum/SignTx", nil)
-
+	cdc.RegisterConcrete(MsgSignPendingTransfersTx{}, "ethereum/SignPendingTransfersTx", nil)
 }
 
 // ModuleCdc defines the module codec

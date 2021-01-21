@@ -2,7 +2,10 @@ package ethereum
 
 import (
 	"context"
+	"encoding/binary"
+	"encoding/hex"
 	"fmt"
+	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -14,9 +17,10 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	crypto "github.com/ethereum/go-ethereum/crypto"
 )
 
-func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Signer, snap snapshot.Snapshotter) sdk.Handler {
+func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Signer, snap snapshot.Snapshotter, balancer types.Balancer) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
@@ -26,11 +30,93 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 			return handleMsgVoteVerifiedTx(ctx, k, v, msg)
 		case types.MsgSignTx:
 			return handleMsgSignTx(ctx, k, s, snap, msg)
+		case types.MsgSignPendingTransfersTx:
+			return handleMsgSignPendingTransfersTx(ctx, k, s, snap, balancer, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
 		}
 	}
+}
+
+func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap snapshot.Snapshotter, balancer types.Balancer, msg types.MsgSignPendingTransfersTx) (*sdk.Result, error) {
+	pendingTransfers := balancer.GetPendingTransfersForChain(ctx, balance.Ethereum)
+	addresses, denoms, amounts := flatTransfers(pendingTransfers)
+	chainID := k.GetParams(ctx).Network.Params().ChainID
+	commandID := calculateCommandID(pendingTransfers)
+
+	data, err := types.CreateExecuteMintData(chainID, commandID, addresses, denoms, amounts)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+	}
+
+	keyID, ok := signer.GetCurrentMasterKeyID(ctx, balance.Ethereum)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no master key for chain %s found", balance.Ethereum)
+	}
+
+	snapshot, ok := snap.GetLatestSnapshot(ctx)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, "no snapshot found")
+	}
+
+	commandIDHex := hex.EncodeToString(commandID[:])
+	k.Logger(ctx).Info(fmt.Sprintf("storing data for mint command %s", commandIDHex))
+	k.SetCommandData(ctx, commandID, data)
+
+	k.Logger(ctx).Info(fmt.Sprintf("signing mint command [%s] for pending transfers to chain %s", commandIDHex, balance.Ethereum))
+	signHash := types.GetEthereumSignHash(data)
+
+	err = signer.StartSign(ctx, keyID, commandIDHex, signHash.Bytes(), snapshot.Validators)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+	}
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+			sdk.NewAttribute(types.AttributeCommandID, commandIDHex),
+		),
+	)
+
+	return &sdk.Result{
+		Data:   signHash.Bytes(),
+		Log:    fmt.Sprintf("successfully started signing protocol for chain %s pending transfers", balance.Ethereum),
+		Events: ctx.EventManager().Events(),
+	}, nil
+}
+
+// TODO: Remove this function after https://github.com/axelarnetwork/ethereum-bridge/issues/3 is implemented
+func calculateCommandID(transfers []balance.CrossChainTransfer) [32]byte {
+	var result [32]byte
+	var hash []byte
+
+	for _, transfer := range transfers {
+		idByte := make([]byte, 8)
+		binary.LittleEndian.PutUint64(idByte, transfer.ID)
+
+		hash = crypto.Keccak256(hash, idByte)
+	}
+
+	copy(result[:], hash[:32])
+
+	return result
+}
+
+func flatTransfers(transfers []balance.CrossChainTransfer) ([]string, []string, []*big.Int) {
+	var addresses []string
+	var denoms []string
+	var amounts []*big.Int
+
+	for _, transfer := range transfers {
+		addresses = append(addresses, transfer.Recipient.Address)
+		denoms = append(denoms, transfer.Amount.Denom)
+		amounts = append(amounts, transfer.Amount.Amount.BigInt())
+	}
+
+	return addresses, denoms, amounts
 }
 
 func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v types.Voter, msg types.MsgVerifyTx) (*sdk.Result, error) {
