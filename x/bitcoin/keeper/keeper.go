@@ -91,12 +91,12 @@ func (k Keeper) SetRawTx(ctx sdk.Context, txID string, tx *wire.MsgTx) {
 	ctx.KVStore(k.storeKey).Set([]byte(rawPrefix+txID), bz)
 }
 
-func (k Keeper) HasVerifiedOutPoint(ctx sdk.Context, txID string) bool {
-	return ctx.KVStore(k.storeKey).Has([]byte(outPointPrefix + txID))
+func (k Keeper) HasVerifiedOutPoint(ctx sdk.Context, outPoint *wire.OutPoint) bool {
+	return ctx.KVStore(k.storeKey).Has([]byte(outPointPrefix + outPoint.String()))
 }
 
-func (k Keeper) GetVerifiedOutPointInfo(ctx sdk.Context, outpoint *wire.OutPoint) (types.OutPointInfo, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(outPointPrefix + outpoint.String()))
+func (k Keeper) GetVerifiedOutPointInfo(ctx sdk.Context, outPoint *wire.OutPoint) (types.OutPointInfo, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(outPointPrefix + outPoint.String()))
 	if bz == nil {
 		return types.OutPointInfo{}, false
 	}

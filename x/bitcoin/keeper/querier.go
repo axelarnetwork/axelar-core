@@ -33,7 +33,7 @@ func NewQuerier(k Keeper, s types.Signer, b types.Balancer, rpc types.RPCClient)
 		case QueryDepositAddress:
 			return queryDepositAddress(ctx, k, s, req.Data)
 		case QueryConsolidationAddress:
-			return queryConsolidationAddress(ctx, k, b, s, req.Data)
+			return queryConsolidationAddress(ctx, k, b, s, path[1])
 		case QueryOutInfo:
 			return queryTxOutInfo(rpc, req.Data)
 		case QueryRawTx:
@@ -66,17 +66,8 @@ func queryDepositAddress(ctx sdk.Context, k Keeper, s types.Signer, data []byte)
 	return []byte(addr.EncodeAddress()), nil
 }
 
-func queryConsolidationAddress(ctx sdk.Context, k Keeper, b types.Balancer, s types.Signer, data []byte) ([]byte, error) {
-	var oldAddr balance.CrossChainAddress
-	err := types.ModuleCdc.UnmarshalJSON(data, &oldAddr)
-	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrBitcoin, "could not parse the current address")
-	}
-	if oldAddr.Chain != balance.Bitcoin {
-		return nil, sdkerrors.Wrap(types.ErrBitcoin, "the current address must be a bitcoin address")
-	}
-
-	recipient, ok := b.GetRecipient(ctx, oldAddr)
+func queryConsolidationAddress(ctx sdk.Context, k Keeper, b types.Balancer, s types.Signer, currAddr string) ([]byte, error) {
+	recipient, ok := b.GetRecipient(ctx, balance.CrossChainAddress{balance.Bitcoin, currAddr})
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, "the current address is not linked to any cross-chain recipient")
 	}
@@ -164,5 +155,5 @@ func sendTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, txID
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
 
-	return k.Codec().MustMarshalJSON(fmt.Sprintf("successfully sent transaction %s to Bitcoin", hash.String())), nil
+	return k.Codec().MustMarshalJSON(hash), nil
 }
