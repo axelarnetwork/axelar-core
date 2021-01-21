@@ -3,7 +3,6 @@ package types
 import (
 	"fmt"
 
-	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -11,12 +10,12 @@ import (
 type MsgTrack struct {
 	Sender  sdk.AccAddress
 	Mode    Mode
-	Address btcutil.Address
+	Address string
 	KeyID   string
 	Rescan  bool
 }
 
-func NewMsgTrackAddress(sender sdk.AccAddress, address btcutil.Address, rescan bool) sdk.Msg {
+func NewMsgTrackAddress(sender sdk.AccAddress, address string, rescan bool) sdk.Msg {
 	return MsgTrack{
 		Sender:  sender,
 		Address: address,
@@ -62,7 +61,7 @@ func (msg MsgTrack) ValidateBasic() error {
 			return fmt.Errorf("missing public key ID")
 		}
 	case ModeSpecificAddress:
-		if msg.Address.String() == "" {
+		if msg.Address == "" {
 			return fmt.Errorf("invalid address to track")
 		}
 	default:

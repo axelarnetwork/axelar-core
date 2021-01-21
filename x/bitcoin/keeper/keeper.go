@@ -13,6 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/tendermint/tendermint/libs/log"
 
+	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
 
@@ -92,7 +93,7 @@ func (k Keeper) HasVerifiedOutPoint(ctx sdk.Context, txID string) bool {
 	return ctx.KVStore(k.storeKey).Has([]byte(outPointPrefix + txID))
 }
 
-func (k Keeper) getVerifiedOutPoint(ctx sdk.Context, txID string) (types.OutPointInfo, bool) {
+func (k Keeper) GetVerifiedOutPoint(ctx sdk.Context, txID string) (types.OutPointInfo, bool) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(outPointPrefix + txID))
 	if bz == nil {
 		return types.OutPointInfo{}, false
@@ -138,7 +139,7 @@ func (k Keeper) ProcessVerificationResult(ctx sdk.Context, txID string, verified
 }
 
 func (k Keeper) getPkScript(ctx sdk.Context, txID string) ([]byte, error) {
-	out, ok := k.getVerifiedOutPoint(ctx, txID)
+	out, ok := k.GetVerifiedOutPoint(ctx, txID)
 	if !ok {
 		return nil, fmt.Errorf("transaction ID is not known")
 	}
@@ -194,13 +195,19 @@ func (k Keeper) GetHashToSign(ctx sdk.Context, txID string) ([]byte, error) {
 // GetAddress creates a Bitcoin pubKey hash address from a public key.
 // We use Pay2PKH for added security over Pay2PK as well as for the benefit of getting a parsed address from the response of
 // getrawtransaction() on the Bitcoin rpc client
-func (k Keeper) GetAddress(ctx sdk.Context, pk btcec.PublicKey) (btcutil.Address, error) {
+// If a cross chain address is specified, the hash address is created using a nonce calculated from the cross chain address
+func (k Keeper) GetAddress(ctx sdk.Context, pk btcec.PublicKey, crossAddr balance.CrossChainAddress) (btcutil.Address, error) {
 	addr, err := btcutil.NewAddressPubKeyHash(btcutil.Hash160(pk.SerializeCompressed()), k.getNetwork(ctx).Params())
+
+	if err := crossAddr.Validate(); err == nil {
+		//TODO: calculate with the cross chain address
+	}
+
 	return addr, sdkerrors.Wrap(err, "could not convert the given public key into a bitcoin address")
 }
 
 func (k Keeper) CreateTx(ctx sdk.Context, utxoID string, satoshi sdk.Coin, recipient btcutil.Address) (*wire.MsgTx, error) {
-	out, ok := k.getVerifiedOutPoint(ctx, utxoID)
+	out, ok := k.GetVerifiedOutPoint(ctx, utxoID)
 	if !ok {
 		return nil, fmt.Errorf("transaction ID is not known")
 	}
