@@ -65,7 +65,7 @@ func (k Keeper) GetTrackedAddress(ctx sdk.Context, address string) string {
 	return address
 }
 
-func (k Keeper) getRequiredConfirmationHeight(ctx sdk.Context) uint64 {
+func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context) uint64 {
 	var h uint64
 	k.params.Get(ctx, types.KeyConfirmationHeight, &h)
 	return h
@@ -95,7 +95,7 @@ func (k Keeper) HasVerifiedOutPoint(ctx sdk.Context, txID string) bool {
 	return ctx.KVStore(k.storeKey).Has([]byte(outPointPrefix + txID))
 }
 
-func (k Keeper) GetVerifiedOutPointInfo(ctx sdk.Context, outpoint wire.OutPoint) (types.OutPointInfo, bool) {
+func (k Keeper) GetVerifiedOutPointInfo(ctx sdk.Context, outpoint *wire.OutPoint) (types.OutPointInfo, bool) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(outPointPrefix + outpoint.String()))
 	if bz == nil {
 		return types.OutPointInfo{}, false
@@ -106,14 +106,9 @@ func (k Keeper) GetVerifiedOutPointInfo(ctx sdk.Context, outpoint wire.OutPoint)
 	return out, true
 }
 
-func (k Keeper) SetUnverifiedOutpointInfo(ctx sdk.Context, info types.OutPointInfo) error {
-	minHeight := k.getRequiredConfirmationHeight(ctx)
-	if info.Confirmations < minHeight {
-		return fmt.Errorf("not enough confirmations, expected at least %d, got %d", minHeight, info.Confirmations)
-	}
+func (k Keeper) SetUnverifiedOutpointInfo(ctx sdk.Context, info types.OutPointInfo) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(info)
 	ctx.KVStore(k.storeKey).Set([]byte(pendingPrefix+info.OutPoint.String()), bz)
-	return nil
 }
 
 func (k Keeper) GetUnverifiedOutPointInfo(ctx sdk.Context, outpoint *wire.OutPoint) (types.OutPointInfo, bool) {
@@ -140,19 +135,19 @@ func (k Keeper) ProcessVerificationResult(ctx sdk.Context, outPoint string, veri
 	return nil
 }
 
-// GenerateDepositAddress creates a Bitcoin address to deposit tokens for a transfer to the recipient address.
-// This address is unique for each recipient.
-func (k Keeper) GenerateDepositAddress(ctx sdk.Context, pk btcec.PublicKey, recipient balance.CrossChainAddress) (btcutil.Address, error) {
+// GenerateDepositAddressAndRedeemScript creates a Bitcoin address to deposit tokens for a transfer to the recipient address,
+// as well as the corresponding redeem script to spend it. The generated address is unique for each recipient.
+func (k Keeper) GenerateDepositAddressAndRedeemScript(ctx sdk.Context, pk btcec.PublicKey, recipient balance.CrossChainAddress) (btcutil.Address, []byte, error) {
 	redeemScript, err := createRedeemScript(pk, recipient)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	hash := sha256.Sum256(redeemScript)
 	addr, err := btcutil.NewAddressWitnessScriptHash(hash[:], k.getNetwork(ctx).Params())
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return addr, nil
+	return addr, redeemScript, nil
 }
 
 func (k Keeper) SetRedeemScript(ctx sdk.Context, address btcutil.Address, script []byte) {
@@ -161,7 +156,7 @@ func (k Keeper) SetRedeemScript(ctx sdk.Context, address btcutil.Address, script
 
 func (k Keeper) GetRedeemScript(ctx sdk.Context, address btcutil.Address) ([]byte, bool) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(scriptPrefix + address.String()))
-	return bz, bz == nil
+	return bz, bz != nil
 }
 
 func (k Keeper) GetHashToSign(ctx sdk.Context, rawTx *wire.MsgTx) ([]byte, error) {
@@ -204,7 +199,7 @@ func (k Keeper) AssembleBtcTx(ctx sdk.Context, rawTx *wire.MsgTx, sig btcec.Sign
 }
 
 func (k Keeper) getDepositAddress(ctx sdk.Context, rawTx *wire.MsgTx) (btcutil.Address, error) {
-	out, ok := k.GetVerifiedOutPointInfo(ctx, rawTx.TxIn[0].PreviousOutPoint)
+	out, ok := k.GetVerifiedOutPointInfo(ctx, &rawTx.TxIn[0].PreviousOutPoint)
 	if !ok {
 		return nil, fmt.Errorf("transaction ID is not known")
 	}

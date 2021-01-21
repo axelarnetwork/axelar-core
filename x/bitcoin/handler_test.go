@@ -67,7 +67,7 @@ func TestLink_Success(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	btcAddr, err := k.GetAddress(ctx, btcec.PublicKey(privKey.PublicKey), recipient)
+	btcAddr, _, err := k.GenerateDepositAddressAndRedeemScript(ctx, btcec.PublicKey(privKey.PublicKey), recipient)
 	if err != nil {
 		panic(err)
 
@@ -267,10 +267,10 @@ func TestVoteVerifiedTx_IncompleteVote(t *testing.T) {
 	outpointInfo := types.OutPointInfo{
 		OutPoint:      outpoint,
 		Amount:        btcutil.Amount(1000000),
-		Recipient:     "sender",
+		DepositAddr:   "sender",
 		Confirmations: 100,
 	}
-	k.SetUnverifiedOutpoint(ctx, "txid", outpointInfo)
+	k.SetUnverifiedOutpointInfo(ctx, outpointInfo)
 
 	poll := exported.PollMeta{Module: "bitcoin", Type: "verify", ID: "txid"}
 	v := &btcMock.VoterMock{
@@ -314,12 +314,12 @@ func TestVoteVerifiedTx_SucessNoTransfer(t *testing.T) {
 	outpointInfo := types.OutPointInfo{
 		OutPoint:      outpoint,
 		Amount:        btcutil.Amount(1000000),
-		Recipient:     "sender",
+		DepositAddr:   "sender",
 		Confirmations: 100,
 	}
-	k.SetUnverifiedOutpoint(ctx, "txid", outpointInfo)
+	k.SetUnverifiedOutpointInfo(ctx, outpointInfo)
 
-	poll := exported.PollMeta{Module: "bitcoin", Type: "verify", ID: "txid"}
+	poll := exported.PollMeta{Module: "bitcoin", Type: "verify", ID: outpoint.String()}
 	v := &btcMock.VoterMock{
 		TallyVoteFunc:  func(ctx sdk.Context, vote exported.MsgVote) error { return nil },
 		ResultFunc:     func(ctx sdk.Context, poll exported.PollMeta) exported.VotingData { return true },
@@ -360,12 +360,12 @@ func TestVoteVerifiedTx_SucessAndTransfer(t *testing.T) {
 	outpointInfo := types.OutPointInfo{
 		OutPoint:      outpoint,
 		Amount:        btcutil.Amount(1000000),
-		Recipient:     "sender",
+		DepositAddr:   "sender",
 		Confirmations: 100,
 	}
-	k.SetUnverifiedOutpoint(ctx, "txid", outpointInfo)
+	k.SetUnverifiedOutpointInfo(ctx, outpointInfo)
 
-	poll := exported.PollMeta{Module: "bitcoin", Type: "verify", ID: "txid"}
+	poll := exported.PollMeta{Module: "bitcoin", Type: "verify", ID: outpoint.String()}
 	v := &btcMock.VoterMock{
 		TallyVoteFunc:  func(ctx sdk.Context, v exported.MsgVote) error { return nil },
 		ResultFunc:     func(ctx sdk.Context, p exported.PollMeta) exported.VotingData { return true },
@@ -457,7 +457,7 @@ func TestSignTx(t *testing.T) {
 	handler := NewHandler(k, v, rpc, signer, snap, b)
 	querier := keeper.NewQuerier(k, signer, b, rpc)
 
-	for i, recpAddr := range testutils.RandStrings(5, 20).Take(testReps) {
+	for _, recpAddr := range testutils.RandStrings(5, 20).Take(testReps) {
 		sk, _ = ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 		skNext, _ = ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 		recipient := balance.CrossChainAddress{Chain: balance.Chain(testutils.RandIntBetween(1, balance.ConnectedChainCount)),
@@ -475,9 +475,6 @@ func TestSignTx(t *testing.T) {
 
 		_, err = querier(ctx, []string{keeper.SendTx, signTx.TxID}, abci.RequestQuery{})
 		assert.NoError(t, err)
-
-		assert.Equal(t, i+1, len(signer.GetKeyForSigIDCalls()))
-		assert.Equal(t, sigID, signer.GetKeyForSigIDCalls()[i].SigID)
 	}
 }
 
@@ -489,28 +486,26 @@ func prepareMsgSign(ctx sdk.Context, k keeper.Keeper, querier sdk.Querier, sk *e
 
 	txID := hash.String()
 	btcPk := btcec.PublicKey(sk.PublicKey)
-	addr, err := k.GenerateDepositAddress(ctx, btcPk, recipient)
+	addr, script, err := k.GenerateDepositAddressAndRedeemScript(ctx, btcPk, recipient)
 	if err != nil {
 		panic(err)
 	}
+	k.SetRedeemScript(ctx, addr, script)
 	amount := btcutil.Amount(testutils.RandIntBetween(1, 100000000))
 	outPoint := wire.NewOutPoint(hash, uint32(testutils.RandIntBetween(0, 10)))
-	err = k.SetUnverifiedOutpointInfo(ctx, types.OutPointInfo{
+	k.SetUnverifiedOutpointInfo(ctx, types.OutPointInfo{
 		OutPoint:      outPoint,
 		Amount:        amount,
 		DepositAddr:   addr.EncodeAddress(),
 		Confirmations: uint64(testutils.RandIntBetween(7, 1000)),
 	})
-	if err != nil {
-		panic(err)
-	}
 	err = k.ProcessVerificationResult(ctx, outPoint.String(), true)
 	if err != nil {
 		panic(err)
 	}
 	sender := sdk.AccAddress(testutils.RandString(int(testutils.RandIntBetween(5, 50))))
 
-	qParams := types.RawTxParams{OutPoint: *outPoint, Satoshi: sdk.NewInt64Coin(denom.Satoshi, int64(amount)), DepositAddr: addr.EncodeAddress()}
+	qParams := types.RawTxParams{OutPoint: outPoint, Satoshi: sdk.NewInt64Coin(denom.Satoshi, int64(amount)), DepositAddr: addr.EncodeAddress()}
 	bz, err := querier(ctx, []string{keeper.QueryRawTx}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(qParams)})
 	if err != nil {
 		panic(err)

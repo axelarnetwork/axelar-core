@@ -85,7 +85,7 @@ func (n Network) Params() *chaincfg.Params {
 }
 
 type RawTxParams struct {
-	OutPoint    wire.OutPoint
+	OutPoint    *wire.OutPoint
 	DepositAddr string
 	Satoshi     sdk.Coin
 }

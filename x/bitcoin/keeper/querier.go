@@ -39,7 +39,7 @@ func NewQuerier(k Keeper, s types.Signer, b types.Balancer, rpc types.RPCClient)
 		case QueryRawTx:
 			return createRawTx(ctx, k, req.Data)
 		case SendTx:
-			return sendTx(ctx, k, b, rpc, s, path[1])
+			return sendTx(ctx, k, rpc, s, path[1])
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown btc-bridge query endpoint: %s", path[1]))
 		}
@@ -58,7 +58,7 @@ func queryDepositAddress(ctx sdk.Context, k Keeper, s types.Signer, data []byte)
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, "key not found")
 	}
 
-	addr, err := k.GenerateDepositAddress(ctx, btcec.PublicKey(pk), recipient)
+	addr, _, err := k.GenerateDepositAddressAndRedeemScript(ctx, btcec.PublicKey(pk), recipient)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
@@ -86,7 +86,7 @@ func queryConsolidationAddress(ctx sdk.Context, k Keeper, b types.Balancer, s ty
 		return nil, fmt.Errorf("key not found")
 	}
 
-	addr, err := k.GenerateDepositAddress(ctx, btcec.PublicKey(pk), recipient)
+	addr, _, err := k.GenerateDepositAddressAndRedeemScript(ctx, btcec.PublicKey(pk), recipient)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
@@ -131,7 +131,7 @@ func createRawTx(ctx sdk.Context, k Keeper, data []byte) ([]byte, error) {
 	return types.ModuleCdc.MustMarshalJSON(tx), nil
 }
 
-func sendTx(ctx sdk.Context, k Keeper, b types.Balancer, rpc types.RPCClient, s types.Signer, txID string) ([]byte, error) {
+func sendTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, txID string) ([]byte, error) {
 	rawTx := k.GetRawTx(ctx, txID)
 	if rawTx == nil {
 		return nil, sdkerrors.Wrapf(types.ErrBitcoin, "withdraw tx for ID %s has not been prepared yet", txID)
@@ -141,13 +141,8 @@ func sendTx(ctx sdk.Context, k Keeper, b types.Balancer, rpc types.RPCClient, s 
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
-	sigID := hex.EncodeToString(h)
-	key, ok := s.GetKeyForSigID(ctx, sigID)
-	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrBitcoin, "could not find a corresponding key for tx ID %s", txID)
-	}
-	pk := btcec.PublicKey(key)
 
+	sigID := hex.EncodeToString(h)
 	sig, ok := s.GetSig(ctx, sigID)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, "signature not found")
@@ -157,17 +152,7 @@ func sendTx(ctx sdk.Context, k Keeper, b types.Balancer, rpc types.RPCClient, s 
 		S: sig.S,
 	}
 
-	info, ok := k.GetVerifiedOutPointInfo(ctx, rawTx.TxIn[0].PreviousOutPoint)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrBitcoin, "verified outpoint info not found")
-	}
-
-	recipient, ok := b.GetRecipient(ctx, balance.CrossChainAddress{Chain: balance.Bitcoin, Address: info.DepositAddr})
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrBitcoin, "recipient for deposit not found")
-	}
-
-	tx, err := k.AssembleBtcTx(ctx, rawTx, pk, btcSig, recipient)
+	tx, err := k.AssembleBtcTx(ctx, rawTx, btcSig)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}

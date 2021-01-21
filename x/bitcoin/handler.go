@@ -3,8 +3,9 @@ package bitcoin
 import (
 	"encoding/hex"
 	"fmt"
-	"math"
 
+	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/wire"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
@@ -45,11 +46,12 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, s types.Signer, b types.Bal
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, "master key not set")
 	}
 
-	btcAddr, err := k.GetAddress(ctx, btcec.PublicKey(key), msg.Recipient)
+	btcAddr, script, err := k.GenerateDepositAddressAndRedeemScript(ctx, btcec.PublicKey(key), msg.Recipient)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 
 	}
+	k.SetRedeemScript(ctx, btcAddr, script)
 
 	b.LinkAddresses(ctx, balance.CrossChainAddress{Chain: balance.Bitcoin, Address: btcAddr.EncodeAddress()}, msg.Recipient)
 
@@ -73,50 +75,22 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, s types.Signer, b types.Bal
 	}, nil
 }
 
-func handleMsgTrack(ctx sdk.Context, k keeper.Keeper, s types.Signer, rpc types.RPCClient, msg types.MsgTrack) (*sdk.Result, error) {
-	var encodedAddr string
-	if msg.Mode == types.ModeSpecificAddress {
-		encodedAddr = msg.Address
-	} else {
-		var key ecdsa.PublicKey
-		var ok bool
-
-		switch msg.Mode {
-		case types.ModeSpecificKey:
-			key, ok = s.GetKey(ctx, msg.KeyID)
-			if !ok {
-				return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("key with ID %s not found", msg.KeyID))
-			}
-		case types.ModeCurrentMasterKey:
-			key, ok = s.GetCurrentMasterKey(ctx, balance.Bitcoin)
-			if !ok {
-				return nil, sdkerrors.Wrap(types.ErrBitcoin, "master key not set")
-			}
-		}
-
-		addr, err := k.GetAddress(ctx, btcec.PublicKey(key), balance.CrossChainAddress{})
-		if err != nil {
-			return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
-		}
-
-		encodedAddr = addr.EncodeAddress()
-	}
-	k.Logger(ctx).Debug(fmt.Sprintf("start tracking address %v", encodedAddr))
-	trackAddress(ctx, k, rpc, encodedAddr, msg.Rescan)
+func handleMsgTrack(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, msg types.MsgTrack) (*sdk.Result, error) {
+	k.Logger(ctx).Debug(fmt.Sprintf("start tracking address %v", msg.Address))
+	trackAddress(ctx, k, rpc, msg.Address, msg.Rescan)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeKeyId, msg.KeyID),
-			sdk.NewAttribute(types.AttributeAddress, encodedAddr),
+			sdk.NewAttribute(types.AttributeAddress, msg.Address),
 		),
 	)
 
 	return &sdk.Result{
-		Data:   []byte(encodedAddr),
-		Log:    fmt.Sprintf("successfully tracked address %s", encodedAddr),
+		Data:   []byte(msg.Address),
+		Log:    fmt.Sprintf("successfully tracked address %s", msg.Address),
 		Events: ctx.EventManager().Events(),
 	}, nil
 }
@@ -141,16 +115,14 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 	)
 
 	// store outpoint for later reference
-	if err := k.SetUnverifiedOutpointInfo(ctx, msg.OutPointInfo); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
-	}
+	k.SetUnverifiedOutpointInfo(ctx, msg.OutPointInfo)
 
 	/*
 	 Anyone not able to verify the transaction will automatically record a negative vote,
 	 but only validators will later send out that vote.
 	*/
 
-	err := verifyTx(rpc, msg.OutPointInfo)
+	err := verifyTx(rpc, msg.OutPointInfo, k.GetRequiredConfirmationHeight(ctx))
 	switch err {
 	// verification successful
 	case nil:
@@ -180,13 +152,16 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, b 
 	}
 
 	if confirmed := v.Result(ctx, msg.Poll()); confirmed != nil {
-		txID := msg.PollMeta.ID
-		if err := k.ProcessVerificationResult(ctx, txID, confirmed.(bool)); err != nil {
+		outPoint, err := types.OutPointFromStr(msg.PollMeta.ID)
+		if err != nil {
+			return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
+		}
+		if err := k.ProcessVerificationResult(ctx, msg.PollMeta.ID, confirmed.(bool)); err != nil {
 			return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("utxo for poll %s was not stored", msg.PollMeta.String()))
 		}
 		v.DeletePoll(ctx, msg.Poll())
 
-		err := prepareTransfer(ctx, k, b, txID)
+		err = enqueueForTransfer(ctx, k, b, outPoint)
 		if err != nil {
 			return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("error while preparing transfer: %v", err))
 		}
@@ -257,7 +232,7 @@ func trackAddress(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, address
 	k.SetTrackedAddress(ctx, address)
 }
 
-func verifyTx(rpc types.RPCClient, expectedInfo types.OutPointInfo) error {
+func verifyTx(rpc types.RPCClient, expectedInfo types.OutPointInfo, requiredConfirmations uint64) error {
 	actualInfo, err := rpc.GetOutPointInfo(expectedInfo.OutPoint)
 	if err != nil {
 		return sdkerrors.Wrap(err, "could not retrieve Bitcoin transaction")
@@ -271,34 +246,34 @@ func verifyTx(rpc types.RPCClient, expectedInfo types.OutPointInfo) error {
 		return fmt.Errorf("expected amount does not match actual amount")
 	}
 
-	if actualInfo.Confirmations < expectedInfo.Confirmations {
+	if actualInfo.Confirmations < requiredConfirmations {
 		return fmt.Errorf("not enough confirmations yet")
 	}
 
 	return nil
 }
 
-func prepareTransfer(ctx sdk.Context, k keeper.Keeper, b types.Balancer, txID string) error {
-	outPoint, ok := k.GetVerifiedOutPoint(ctx, txID)
+func enqueueForTransfer(ctx sdk.Context, k keeper.Keeper, b types.Balancer, outPoint *wire.OutPoint) error {
+	info, ok := k.GetVerifiedOutPointInfo(ctx, outPoint)
 	if !ok {
 		return fmt.Errorf("outpoint not verified")
 	}
 
-	depositAddr := balance.CrossChainAddress{Address: outPoint.Recipient, Chain: balance.Bitcoin}
+	depositAddr := balance.CrossChainAddress{Address: info.DepositAddr, Chain: balance.Bitcoin}
 	recipient, ok := b.GetRecipient(ctx, depositAddr)
+	// Do nothing if not linked
 	if !ok {
-		return nil // No need to return a error if not linked
+		return nil
 	}
 
-	value := int64(outPoint.Amount.ToBTC() * math.Pow10(8))
-	amount := sdk.NewCoin(denom.Satoshi, sdk.NewInt(value))
+	amount := sdk.NewInt64Coin(denom.Satoshi, int64(info.Amount))
 
 	err := b.EnqueueForTransfer(ctx, depositAddr, amount)
 	if err != nil {
 		return err
 	}
 	k.Logger(ctx).Info(fmt.Sprintf("Transfer of %s to cross chain address %s in %s successfully prepared",
-		outPoint.Amount.String(), recipient.Address, recipient.Chain.String()))
+		info.Amount.String(), recipient.Address, recipient.Chain.String()))
 
 	return nil
 }

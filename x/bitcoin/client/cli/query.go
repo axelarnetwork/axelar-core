@@ -142,7 +142,7 @@ func GetCmdRawTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			params := types.RawTxParams{
 				DepositAddr: args[3],
-				OutPoint:    *out,
+				OutPoint:    out,
 				Satoshi:     amount,
 			}
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryRawTx), cdc.MustMarshalJSON(params))
