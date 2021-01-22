@@ -171,7 +171,7 @@ func (k Keeper) GenerateDepositAddressAndRedeemScript(ctx sdk.Context, pk btcec.
 		return nil, nil, err
 	}
 	hash := sha256.Sum256(redeemScript)
-	addr, err := btcutil.NewAddressWitnessScriptHash(hash[:], k.getNetwork(ctx).Params())
+	addr, err := btcutil.NewAddressWitnessScriptHash(hash[:], k.getNetwork(ctx).Params)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -231,7 +231,7 @@ func (k Keeper) getDepositAddress(ctx sdk.Context, outpoint *wire.OutPoint) (btc
 	if !ok {
 		return nil, fmt.Errorf("transaction ID is not known")
 	}
-	addr, err := btcutil.DecodeAddress(out.DepositAddr, k.getNetwork(ctx).Params())
+	addr, err := btcutil.DecodeAddress(out.DepositAddr, k.getNetwork(ctx).Params)
 	if err != nil {
 		return nil, err
 	}

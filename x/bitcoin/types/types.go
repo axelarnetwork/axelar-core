@@ -15,12 +15,10 @@ import (
 )
 
 var (
-	Mainnet  = Network(chaincfg.MainNetParams.Name)
-	Testnet3 = Network(chaincfg.TestNet3Params.Name)
-	Regtest  = Network(chaincfg.RegressionNetParams.Name)
+	Mainnet  = Network{&chaincfg.MainNetParams}
+	Testnet3 = Network{&chaincfg.TestNet3Params}
+	Regtest  = Network{&chaincfg.RegressionNetParams}
 )
-
-type Mode int
 
 // OutPointInfo describes all the necessary information to verify the outPoint of a transaction
 type OutPointInfo struct {
@@ -53,29 +51,30 @@ func (i OutPointInfo) Equals(other OutPointInfo) bool {
 }
 
 // Network provides additional functionality based on the bitcoin network name
-type Network string
+type Network struct {
+	// Params returns the configuration parameters associated with the chain
+	Params *chaincfg.Params
+}
+
+func NetworkFromStr(net string) (Network, error) {
+	switch net {
+	case "main":
+		return Network{&chaincfg.MainNetParams}, nil
+	case "test":
+		return Network{&chaincfg.TestNet3Params}, nil
+	case "regtest":
+		return Network{&chaincfg.RegressionNetParams}, nil
+	default:
+		return Network{}, fmt.Errorf("unknown network: %s", net)
+	}
+}
 
 // Validate checks if the object is a valid chain
 func (n Network) Validate() error {
-	if n.Params() == nil {
-		return fmt.Errorf("network could not be parsed, choose %s, %s, or %s",
-			Mainnet, Testnet3, Regtest)
+	if n.Params == nil {
+		return fmt.Errorf("network could not be parsed, choose main, test, or regtest")
 	}
 	return nil
-}
-
-// Params returns the configuration parameters associated with the chain
-func (n Network) Params() *chaincfg.Params {
-	switch n {
-	case Mainnet:
-		return &chaincfg.MainNetParams
-	case Testnet3:
-		return &chaincfg.TestNet3Params
-	case Regtest:
-		return &chaincfg.RegressionNetParams
-	default:
-		return nil
-	}
 }
 
 type RawTxParams struct {

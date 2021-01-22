@@ -12,7 +12,6 @@ import (
 	"github.com/axelarnetwork/tssd/convert"
 	tssd "github.com/axelarnetwork/tssd/pb"
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
@@ -484,9 +483,7 @@ func createMocks() testMocks {
 			hash := tx.TxHash()
 			return &hash, nil
 		},
-		NetworkFunc: func() btcTypes.Network {
-			return btcTypes.Network(chaincfg.MainNetParams.Name)
-		}}
+		NetworkFunc: func() btcTypes.Network { return btcTypes.Mainnet }}
 
 	keygen := &tssdMock.TSSDKeyGenClientMock{}
 	sign := &tssdMock.TSSDSignClientMock{}

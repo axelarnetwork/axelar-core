@@ -106,7 +106,7 @@ func createRawTx(ctx sdk.Context, k Keeper, data []byte) ([]byte, error) {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
 
-	recipient, err := btcutil.DecodeAddress(params.DepositAddr, k.getNetwork(ctx).Params())
+	recipient, err := btcutil.DecodeAddress(params.DepositAddr, k.getNetwork(ctx).Params)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}

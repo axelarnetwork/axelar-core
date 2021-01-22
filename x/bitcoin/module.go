@@ -89,11 +89,11 @@ func (am AppModule) InitGenesis(ctx sdk.Context, message json.RawMessage) []abci
 	var genesisState types.GenesisState
 	types.ModuleCdc.MustUnmarshalJSON(message, &genesisState)
 	actualNetwork := am.rpc.Network()
-	if genesisState.Params.Network != actualNetwork {
+	if genesisState.Params.Network.Params.Name != actualNetwork.Params.Name {
 		panic(fmt.Sprintf(
 			"local bitcoin client not configured correctly: expected network %s, got %s",
-			genesisState.Params.Network,
-			actualNetwork,
+			genesisState.Params.Network.Params.Name,
+			actualNetwork.Params.Name,
 		))
 	}
 	InitGenesis(ctx, am.keeper, genesisState)

@@ -496,9 +496,7 @@ func TestSignTx(t *testing.T) {
 			hash := tx.TxHash()
 			return &hash, nil
 		},
-		NetworkFunc: func() types.Network {
-			return types.Network(chaincfg.MainNetParams.Name)
-		}}
+		NetworkFunc: func() types.Network { return types.Mainnet }}
 	b := &btcMock.BalancerMock{}
 	snap := &btcMock.SnapshotterMock{GetSnapshotFunc: func(ctx sdk.Context, round int64) (snapshot.Snapshot, bool) {
 		return snapshot.Snapshot{}, true

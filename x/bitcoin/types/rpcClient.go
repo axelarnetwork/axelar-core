@@ -104,10 +104,10 @@ func (r *RPCClientImpl) setNetwork(logger log.Logger) error {
 	var retries int
 
 	// Ensure the loop is run at least once
-	var err error = btcjson.RPCError{Code: errRpcInWarmup}
+	var err error = &btcjson.RPCError{Code: errRpcInWarmup}
 	for retries = 0; err != nil && retries < maxRetries; retries++ {
 		switch err := err.(type) {
-		case btcjson.RPCError:
+		case *btcjson.RPCError:
 			if err.Code == errRpcInWarmup {
 				logger.Debug("waiting for bitcoin rpc server to start")
 				time.Sleep(sleep)
@@ -125,8 +125,8 @@ func (r *RPCClientImpl) setNetwork(logger log.Logger) error {
 		if info == nil {
 			return fmt.Errorf("bitcoin blockchain info is nil")
 		}
-		r.network = Network(info.Chain)
-		return nil
+		r.network, err = NetworkFromStr(info.Chain)
+		return err
 	} else {
 		return sdkerrors.Wrap(ErrTimeOut, "could not establish a connection to the bitcoin node")
 	}
