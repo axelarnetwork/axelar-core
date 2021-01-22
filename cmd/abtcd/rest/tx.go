@@ -1,82 +1,31 @@
 package rest
 
 import (
+	"bytes"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
-	"bytes"
-	"fmt"
-	"errors"
 
 	"github.com/axelarnetwork/axelar-core/cmd/abtcd/wallet"
-	snapshotRest "github.com/axelarnetwork/axelar-core/x/snapshot/client/rest"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/codec"
 	typesRest "github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authRest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 )
 
-
-type RestContext struct {
-	URL string
-	Codec *codec.Codec
+type ReqTx interface {
+	GetBaseReq() typesRest.BaseReq
 }
 
-func NewRestConext(cdc *codec.Codec, url string) (RestContext) {
-	return RestContext {
-		Codec: cdc,
-		URL: url,
-	}
-}
-
-func prepareBaseReq(w wallet.Wallet) typesRest.BaseReq {
+func PrepareBaseReq(w *wallet.Wallet) typesRest.BaseReq {
 	// @TODO Get account information using auth/accounts
 
 	// @NB "signer index" in broadcast handler refers to signer pub keys slice on signed stdTx
 	return typesRest.NewBaseReq(w.FromAddr.String(), "", w.Config.ChainID, w.Config.Gas, "", w.AccountNumber, w.SequenceNumber, w.Config.GasFees, w.Config.GasPrices, false)
 }
 
-// This is for the account on the val node only
-// @TODO abstract into func SubmitTx(req, route string)
-func (rc RestContext) TxSnapshotNow(w wallet.Wallet) error {
-	// 0. Update account nonce
-
-	// 1. Build the stdTx using API route
-	body := snapshotRest.ReqSnapshotNow {
-		BaseReq: prepareBaseReq(w),
-	}
-
-	txRoute := "tx/snapshot/now"
-	stdTx, err := rc.RequestTxMessage(txRoute, body)
-	if err != nil {
-		return err
-	}
-
-	// 2. Sign the tx
-	signedStdTx, err := w.SignStdTx(stdTx, false)
-	if err != nil {
-		return err
-	}
-
-	// 3. Broadcast tx
-	txResp, err := rc.BroadcastSignedTx(signedStdTx, "block")
-	if err != nil {
-		return err
-	}
-
-	if !TxResponseSuccess(txResp) {
-		reason := txResp.RawLog
-		if len(reason) == 0 { reason = fmt.Sprintf("Code %d", txResp.Code) }
-		return errors.New(fmt.Sprintf("TxSubmission to %s failed. Reason: %s", txRoute, reason))
-	}
-	fmt.Printf("Tx SUCCESS: %s at height %d with txHash: %s\n\n", txRoute, txResp.Height, txResp.TxHash)
-
-	return nil
-}
-
-
-func (rc RestContext) RequestTxMessage(route string, body interface {}) (auth.StdTx, error){
+func (rc RestContext) RequestBuildTx(route string, body ReqTx) (auth.StdTx, error) {
 	json := rc.Codec.MustMarshalJSON(body)
 	stdTx := auth.StdTx{}
 
@@ -94,7 +43,6 @@ func (rc RestContext) RequestTxMessage(route string, body interface {}) (auth.St
 		return stdTx, errors.New(fmt.Sprintf("Post to %s resulted in status %s", uri, resp.Status))
 	}
 
-
 	msgBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return stdTx, err
@@ -107,7 +55,15 @@ func (rc RestContext) RequestTxMessage(route string, body interface {}) (auth.St
 	return stdTx, err
 }
 
-func (rc RestContext) BroadcastSignedTx(stdTx auth.StdTx, mode string) (txResp sdk.TxResponse, err error) {
+func TxRespSuccess(resp sdk.TxResponse) bool {
+	if resp.Height == 0 || resp.Empty() {
+		return false
+	}
+
+	return true
+}
+
+func (rc RestContext) BroadcastTx(stdTx auth.StdTx, mode string) (txResp sdk.TxResponse, err error) {
 	broadcastReq := authRest.BroadcastReq{
 		Tx:   stdTx,
 		Mode: mode,
@@ -143,17 +99,43 @@ func (rc RestContext) BroadcastSignedTx(stdTx auth.StdTx, mode string) (txResp s
 		return
 	}
 
-	success := TxResponseSuccess(txResp)
+	success := TxRespSuccess(txResp)
 	if !success {
 		fmt.Printf("Tx FAILURE: broadcast failed with code %s#%d:\n%+v\n", txResp.Codespace, txResp.Code, string(msgBytes))
 	}
 	return
 }
 
-func TxResponseSuccess(resp sdk.TxResponse) bool {
-	if resp.Height == 0 || resp.Empty() {
-		return false
+func (rc RestContext) SubmitTx(w *wallet.Wallet, txRoute string, txReq ReqTx) error {
+	// 0. Update account nonce
+
+	// 1. Build the stdTx using API route
+
+	stdTx, err := rc.RequestBuildTx(txRoute, txReq)
+	if err != nil {
+		return err
 	}
 
-	return true
+	// 2. Sign the tx
+	signedStdTx, err := w.SignStdTx(stdTx, false)
+	if err != nil {
+		return err
+	}
+
+	// 3. Broadcast tx
+	txResp, err := rc.BroadcastTx(signedStdTx, "block")
+	if err != nil {
+		return err
+	}
+
+	if !TxRespSuccess(txResp) {
+		reason := txResp.RawLog
+		if len(reason) == 0 {
+			reason = fmt.Sprintf("Code %d", txResp.Code)
+		}
+		return errors.New(fmt.Sprintf("TxSubmission to %s failed. Reason: %s", txRoute, reason))
+	}
+	fmt.Printf("Tx SUCCESS: %s at height %d with txHash: %s\n\n", txRoute, txResp.Height, txResp.TxHash)
+
+	return nil
 }

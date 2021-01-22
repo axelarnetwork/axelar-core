@@ -17,40 +17,21 @@ import (
 // Wallet is a similar context to the broadcast keeper
 type Wallet struct {
 	keybase keyring.Keybase
-	//EncodeTx sdk.TxEncoder
-	Config WalletConfig
+	Config  WalletConfig
 
-	FromName string
-	FromAddr sdk.AccAddress
-	//Account  Account
-	AccountNumber uint64
-	SequenceNumber     uint64
+	FromName       string
+	FromAddr       sdk.AccAddress
+	AccountNumber  uint64
+	SequenceNumber uint64
 }
 
 type WalletConfig struct {
 	broadcastTypes.ClientConfig
-	AppName       string // keybase app name
-	RootDir       string // keybase root dir
-	Gas string
-	GasFees sdk.Coins
+	AppName   string // keybase app name
+	RootDir   string // keybase root dir
+	Gas       string
+	GasFees   sdk.Coins
 	GasPrices sdk.DecCoins
-}
-
-// Temporary placeholder for proper account store
-type Account struct {
-}
-
-func ReadMnemonicFromFile(fname string) (string,error) {
-	file, err := os.Open(fname)
-	if file != nil {
-		defer file.Close()
-	}
-	if err != nil {
-		return "", err
-	}
-
-	b, err := ioutil.ReadAll(file)
-	return strings.TrimSpace(string(b)), nil
 }
 
 func DefaultConfig() *WalletConfig {
@@ -65,19 +46,19 @@ func DefaultConfig() *WalletConfig {
 				GasAdjustment:     0,
 			},
 		},
-		AppName:      "abtcd",
-		RootDir:      "keytest",
-		Gas: "",
-		//GasPrices: "",
-		//GasFees: "",
+		AppName:   "abtcd",
+		RootDir:   "keytest",
+		Gas:       "",
+		GasFees:   nil,
+		GasPrices: nil,
 	}
 }
 
 func CreateWallet(config WalletConfig) (Wallet, error) {
-	//defaultConfig := *DefaultConfig()
-	//if config == WalletConfig{} {
-	//	config = defaultConfig
-	//}
+	// defaultConfig := *DefaultConfig()
+	// if config == (WalletConfig{}) {
+	// 	config = defaultConfig
+	// }
 
 	// @todo configure keyring keyphrase
 	keybase, err := keyring.NewKeyring(config.AppName, config.KeyringBackend, config.RootDir, os.Stdin)
@@ -85,20 +66,20 @@ func CreateWallet(config WalletConfig) (Wallet, error) {
 		return Wallet{}, err
 	}
 
-	return NewWallet(keybase, config,7, 2), nil
+	return NewWallet(keybase, config, 7, 3), nil
 }
 
 func NewWallet(keybase keyring.Keybase, config WalletConfig, accountNumber uint64, sequenceNumber uint64) Wallet {
 	return Wallet{
-		keybase: keybase,
-		Config:  config,
-		AccountNumber: accountNumber,
+		keybase:        keybase,
+		Config:         config,
+		AccountNumber:  accountNumber,
 		SequenceNumber: sequenceNumber,
 	}
 }
 
-func (w *Wallet) ImportMnemonicFromFile (mnemonicFile string, name string) error {
-	mnemonic, err := ReadMnemonicFromFile(mnemonicFile)
+func (w *Wallet) ImportMnemonicFromFile(mnemonicFile string, name string) error {
+	mnemonic, err := readMnemonicFromFile(mnemonicFile)
 	if err != nil {
 		return err
 	}
@@ -194,3 +175,15 @@ func (w *Wallet) SetAccount(from string) error {
 	return nil
 }
 
+func readMnemonicFromFile(fname string) (string, error) {
+	file, err := os.Open(fname)
+	if file != nil {
+		defer file.Close()
+	}
+	if err != nil {
+		return "", err
+	}
+
+	b, err := ioutil.ReadAll(file)
+	return strings.TrimSpace(string(b)), nil
+}

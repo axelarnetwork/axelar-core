@@ -17,12 +17,14 @@ type ReqSnapshotNow struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 }
 
+func (r ReqSnapshotNow) GetBaseReq() rest.BaseReq { return r.BaseReq }
+
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("/tx/%s/now", types.ModuleName), snapshotNowHandlerFn(cliCtx)).Methods("POST")
 }
 
 func snapshotNowHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
-	return func (w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqSnapshotNow
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
@@ -38,7 +40,7 @@ func snapshotNowHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		msg := types.MsgSnapshot{ Sender: fromAddr }
+		msg := types.MsgSnapshot{Sender: fromAddr}
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
