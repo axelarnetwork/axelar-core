@@ -75,14 +75,9 @@ func GetCmdConsolidationAddress(queryRoute string, cdc *codec.Codec) *cobra.Comm
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryConsolidationAddress)
+			path := fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryConsolidationAddress, args[0])
 
-			chain := exported.ChainFromString(args[0])
-			if err := chain.Validate(); err != nil {
-				return err
-			}
-
-			res, _, err := cliCtx.QueryWithData(path, cdc.MustMarshalJSON(exported.CrossChainAddress{Chain: chain, Address: args[1]}))
+			res, _, err := cliCtx.QueryWithData(path, nil)
 			if err != nil {
 				return sdkerrors.Wrap(err, "could not resolve master key")
 			}
