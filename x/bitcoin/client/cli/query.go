@@ -125,18 +125,18 @@ func GetCmdRawTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			amount, err := denom.ParseSatoshi(args[2])
-			if err != nil {
-				return err
-			}
-
 			out, err := types.OutPointFromStr(args[0])
 			if err != nil {
 				return err
 			}
 
+			amount, err := denom.ParseSatoshi(args[1])
+			if err != nil {
+				return err
+			}
+
 			params := types.RawTxParams{
-				DepositAddr: args[3],
+				DepositAddr: args[2],
 				OutPoint:    out,
 				Satoshi:     amount,
 			}
