@@ -53,8 +53,14 @@ func mint(app modules.AppContext) (err error) {
 	//ethAddr, err := reader.ReadString('\n')
 	ethAddr := "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"
 	fmt.Println(ethAddr)
+	ethAddr = strings.TrimSpace(ethAddr)
 
-	err = app.TxBitcoinLink("Ethereum", strings.TrimSpace(ethAddr))
+	err = app.TxBitcoinLink("Ethereum", ethAddr)
+
+	depositAddr, err := app.QueryDepositAddress("Ethereum", ethAddr)
+	fmt.Printf("Deposit BTC to %s\n", depositAddr)
+	fmt.Print("Hit return once btc is deposited...")
+	fmt.Scanln()
 
 	return
 }

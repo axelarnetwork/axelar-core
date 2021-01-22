@@ -12,7 +12,6 @@ import (
 	typesRest "github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authRest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
-	typesAuth "github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
 type ReqTx interface {
@@ -67,47 +66,7 @@ func (rc RestContext) SubmitTx(w *wallet.Wallet, txRoute string, txReq interface
 	return nil
 }
 
-type  QueryRespAccount struct {
-	Height uint64 `json:"height" yaml:"height"`
-	Account typesAuth.BaseAccount `json:"result" yaml:"result"`
-}
 
-// @TODO move to query.go
-// @TODO abstract
-func (rc RestContext) QueryAccount(address sdk.AccAddress) (account typesAuth.BaseAccount, err error){
-
-	uri := fmt.Sprintf("%s/auth/accounts/%s", rc.URL, address.String())
-	resp, err := http.Get(uri)
-	if err != nil {
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		msgBytes, _ := ioutil.ReadAll(resp.Body)
-		fmt.Printf("GET %s: Error%+v\n", uri, string(msgBytes))
-		err = errors.New(fmt.Sprintf("Query to %s resulted in status %s", uri, resp.Status))
-		return
-	}
-
-	msgBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return
-	}
-
-	var queryResp typesRest.ResponseWithHeight
-	err = rc.Codec.UnmarshalJSON(msgBytes, &queryResp)
-	if err != nil {
-		return
-	}
-
-	err = rc.Codec.UnmarshalJSON(queryResp.Result, &account)
-	if err != nil {
-		return
-	}
-
-	return
-}
 
 func (rc RestContext) RequestBuildTx(route string, body interface{}) (auth.StdTx, error) {
 	json := rc.Codec.MustMarshalJSON(body)
@@ -134,7 +93,7 @@ func (rc RestContext) RequestBuildTx(route string, body interface{}) (auth.StdTx
 
 	err = rc.Codec.UnmarshalJSON(msgBytes, &stdTx)
 
-	fmt.Printf("From %s:\n%+v\n\n", uri, string(msgBytes))
+	//fmt.Printf("From %s:\n%+v\n\n", uri, string(msgBytes))
 	//fmt.Printf("From %s: Unmarshalled stdTx\n%+v\n", uri, stdTx)
 	return stdTx, err
 }
@@ -155,7 +114,7 @@ func (rc RestContext) BroadcastTx(stdTx auth.StdTx, mode string) (txResp sdk.TxR
 	json := rc.Codec.MustMarshalJSON(broadcastReq)
 	uri := fmt.Sprintf("%s/%s", rc.URL, "txs")
 
-	fmt.Printf("From %s: Signed msg json\n%+v\n\n", uri, string(json))
+	fmt.Printf("POST %s: Signed msg json\n%+v\n\n", uri, string(json))
 	resp, err := http.Post(uri, "application/json", bytes.NewBuffer(json))
 	if resp != nil {
 		defer func() {

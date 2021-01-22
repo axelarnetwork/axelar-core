@@ -4,6 +4,7 @@ import (
 	"fmt"
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
 	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
@@ -16,12 +17,13 @@ import (
 )
 
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router ) {
-	r.HandleFunc(fmt.Sprintf("/tx/%s/link/{chain}", types.ModuleName), linkHandlerFn(cliCtx)).Methods("POST")
-	r.HandleFunc(fmt.Sprintf("/tx/%s/track/pubkey", types.ModuleName), trackPubKeyHandlerFn(cliCtx)).Methods("POST")
-	r.HandleFunc(fmt.Sprintf("/tx/%s/track/address/{address}", types.ModuleName), trackAddressHandlerFn(cliCtx)).Methods("POST")
-	r.HandleFunc(fmt.Sprintf("/tx/%s/verify", types.ModuleName), verifyTxHandlerFn(cliCtx)).Methods("POST")
+	r.HandleFunc(fmt.Sprintf("/tx/%s/link/{chain}", types.RestRoute), linkHandlerFn(cliCtx)).Methods("POST")
+	r.HandleFunc(fmt.Sprintf("/tx/%s/track/pubkey", types.RestRoute), trackPubKeyHandlerFn(cliCtx)).Methods("POST")
+	r.HandleFunc(fmt.Sprintf("/tx/%s/track/address/{address}", types.RestRoute), trackAddressHandlerFn(cliCtx)).Methods("POST")
+	r.HandleFunc(fmt.Sprintf("/tx/%s/verify", types.RestRoute), verifyTxHandlerFn(cliCtx)).Methods("POST")
 	//r.HandleFunc(fmt.Sprintf("/tx/%s/sign/{txId}", types.ModuleName), signTxHandlerFn(cliCtx)).Methods("POST")
 
+	r.HandleFunc(fmt.Sprintf("/query/%s/%s/{chain}/{address}", types.RestRoute, keeper.QueryDepositAddress), QueryDepositAddress(cliCtx)).Methods("GET")
 	//r.HandleFunc(fmt.Sprintf("/query/%s/%s", types.ModuleName, keeper.QueryMasterAddress), QueryMasterAddressHandlerFn(cliCtx, keeper.QueryMasterAddress)).Methods("GET")
 }
 
@@ -39,7 +41,7 @@ type ReqTrackAddress struct {
 
 type ReqLink struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
-	Address string `json:"key_id" yaml:"key_id"`
+	Address string `json:"address" yaml:"address"`
 }
 
 type ReqVerifyTx struct {
