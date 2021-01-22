@@ -26,14 +26,15 @@ func run() error {
 
 	// Configure wallet
 	config := *wallet.DefaultConfig()
-	fmt.Printf("%+v\n", config)
+	//fmt.Printf("%+v\n", config)
+
 	wallet, err := wallet.CreateWallet(config)
 	if err != nil {
 		return err
 	}
 
 	// Import account
-	if err := wallet.ImportMnemonicFromFile("abtcd_mnemonic.txt"); err != nil {
+	if err := wallet.ImportMnemonicFromFile("abtcd_mnemonic2.txt", "abtcd"); err != nil {
 		return err
 	}
 

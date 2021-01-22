@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 
+	broadcastKeeper "github.com/axelarnetwork/axelar-core/x/broadcast/keeper"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 )
 
@@ -19,6 +20,7 @@ type Wallet struct {
 	//EncodeTx sdk.TxEncoder
 	Config WalletConfig
 
+	FromName string
 	FromAddr sdk.AccAddress
 	//Account  Account
 	AccountNumber uint64
@@ -58,7 +60,7 @@ func DefaultConfig() *WalletConfig {
 			TendermintNodeUri: "",
 			ChainID:           "axelar",
 			BroadcastConfig: broadcastTypes.BroadcastConfig{
-				From:              "",
+				From:              "abtcd",
 				KeyringPassphrase: "",
 				GasAdjustment:     0,
 			},
@@ -77,37 +79,49 @@ func CreateWallet(config WalletConfig) (Wallet, error) {
 	//	config = defaultConfig
 	//}
 
+	// @todo configure keyring keyphrase
 	keybase, err := keyring.NewKeyring(config.AppName, config.KeyringBackend, config.RootDir, os.Stdin)
 	if err != nil {
 		return Wallet{}, err
 	}
 
-	return NewWallet(keybase, config, sdk.AccAddress("cosmos1tvz9j7lll27mcfdtk85j24dutk53m3pjfzaxsq"),4, 1), nil
+	return NewWallet(keybase, config,7, 2), nil
 }
 
-func NewWallet(keybase keyring.Keybase, config WalletConfig, fromAddr sdk.AccAddress, accountNumber uint64, sequenceNumber uint64) Wallet {
+func NewWallet(keybase keyring.Keybase, config WalletConfig, accountNumber uint64, sequenceNumber uint64) Wallet {
 	return Wallet{
 		keybase: keybase,
 		Config:  config,
-		FromAddr: fromAddr,
 		AccountNumber: accountNumber,
 		SequenceNumber: sequenceNumber,
 	}
 }
 
-func (w *Wallet) ImportMnemonicFromFile (mnemonicFile string) error {
+func (w *Wallet) ImportMnemonicFromFile (mnemonicFile string, name string) error {
 	mnemonic, err := ReadMnemonicFromFile(mnemonicFile)
 	if err != nil {
 		return err
 	}
 
+	if name == "" {
+		name = w.Config.From
+	}
+
+	// Always use BIP 44
+	hdPath := keyring.CreateHDPath(0, 0).String()
+
 	// Empty algo parameter will default to keys.Secp256k1
-	keyInfo, err := w.keybase.CreateAccount(w.Config.From, mnemonic, keyring.DefaultBIP39Passphrase, cliKeyring.DefaultKeyPass,"", keyring.Secp256k1)
+	keyInfo, err := w.keybase.CreateAccount(name, mnemonic, keyring.DefaultBIP39Passphrase, cliKeyring.DefaultKeyPass, hdPath, keyring.Secp256k1)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Key info from mnemonic file:\n%+v\n", keyInfo)
+	if err := w.SetAccount(keyInfo.GetName()); err != nil {
+		return err
+	}
+
+	// @test verify account imports correct pubkey
+	fmt.Printf("Wallet.FromAddr: %+v\n", w.FromAddr.String())
 	return nil
 }
 
@@ -155,7 +169,7 @@ func (w Wallet) Sign(msg auth.StdSignMsg) (auth.StdTx, error) {
 }
 
 func (w Wallet) makeSignature(msg auth.StdSignMsg) (auth.StdSignature, error) {
-	sigBytes, pubkey, err := w.keybase.Sign(w.Config.From, w.Config.KeyringPassphrase, msg.Bytes())
+	sigBytes, pubkey, err := w.keybase.Sign(w.FromName, w.Config.KeyringPassphrase, msg.Bytes())
 	if err != nil {
 		return auth.StdSignature{}, err
 	}
@@ -165,3 +179,18 @@ func (w Wallet) makeSignature(msg auth.StdSignMsg) (auth.StdSignature, error) {
 		Signature: sigBytes,
 	}, nil
 }
+
+// Use account name or address to set active wallet account
+func (w *Wallet) SetAccount(from string) error {
+	// @todo Just get directly from keybase
+	address, name, err := broadcastKeeper.GetAccountAddress(from, w.keybase)
+	if err != nil {
+		return err
+	}
+
+	w.FromAddr = address
+	w.FromName = name
+
+	return nil
+}
+
