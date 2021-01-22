@@ -82,6 +82,7 @@ func TestLink_Success(t *testing.T) {
 		GetCurrentMasterKeyFunc: func(ctx sdk.Context, chain balance.Chain) (ecdsa.PublicKey, bool) {
 			return privKey.PublicKey, true
 		},
+		GetCurrentMasterKeyIDFunc: func(ctx sdk.Context, chain balance.Chain) (string, bool) { return "testkey", true },
 	}
 
 	handler := NewHandler(k, &btcMock.VoterMock{}, &btcMock.RPCClientMock{}, s, &btcMock.SnapshotterMock{}, b)
@@ -296,6 +297,52 @@ func TestVoteVerifiedTx_IncompleteVote(t *testing.T) {
 	assert.Equal(t, 0, len(b.EnqueueForTransferCalls()))
 }
 
+func TestVoteVerifiedTx_KeyIDNotFound(t *testing.T) {
+	cdc := testutils.Codec()
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
+	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
+	k.SetParams(ctx, types.DefaultParams())
+
+	hash, err := chainhash.NewHash(testutils.RandBytes(32))
+	if err != nil {
+		panic(err)
+	}
+	outpoint := &wire.OutPoint{
+		Hash:  *hash,
+		Index: 0,
+	}
+	outpointInfo := types.OutPointInfo{
+		OutPoint:      outpoint,
+		Amount:        btcutil.Amount(1000000),
+		DepositAddr:   "sender",
+		Confirmations: 100,
+	}
+	k.SetUnverifiedOutpointInfo(ctx, outpointInfo)
+
+	poll := exported.PollMeta{Module: "bitcoin", Type: "verify", ID: outpoint.String()}
+	v := &btcMock.VoterMock{
+		TallyVoteFunc:  func(ctx sdk.Context, vote exported.MsgVote) error { return nil },
+		ResultFunc:     func(ctx sdk.Context, poll exported.PollMeta) exported.VotingData { return true },
+		DeletePollFunc: func(ctx sdk.Context, p exported.PollMeta) {},
+	}
+
+	b := &btcMock.BalancerMock{
+		GetRecipientFunc: func(ctx sdk.Context, s balance.CrossChainAddress) (balance.CrossChainAddress, bool) {
+			return balance.CrossChainAddress{}, false
+		},
+		EnqueueForTransferFunc: func(ctx sdk.Context, s balance.CrossChainAddress, amount sdk.Coin) error { return nil },
+	}
+
+	handler := NewHandler(k, v, &btcMock.RPCClientMock{}, &btcMock.SignerMock{}, &btcMock.SnapshotterMock{}, b)
+	msg := &types.MsgVoteVerifiedTx{Sender: sdk.AccAddress("sender"), PollMeta: poll, VotingData: true}
+	_, err = handler(ctx, msg)
+	assert.Error(t, err)
+	assert.Equal(t, 1, len(v.DeletePollCalls()))
+	assert.Equal(t, poll, v.DeletePollCalls()[0].Poll)
+	assert.Equal(t, 0, len(b.EnqueueForTransferCalls()))
+}
+
 func TestVoteVerifiedTx_SucessNoTransfer(t *testing.T) {
 	cdc := testutils.Codec()
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
@@ -318,6 +365,7 @@ func TestVoteVerifiedTx_SucessNoTransfer(t *testing.T) {
 		Confirmations: 100,
 	}
 	k.SetUnverifiedOutpointInfo(ctx, outpointInfo)
+	k.SetKeyIDByAddress(ctx, "sender", "testkey")
 
 	poll := exported.PollMeta{Module: "bitcoin", Type: "verify", ID: outpoint.String()}
 	v := &btcMock.VoterMock{
@@ -364,6 +412,7 @@ func TestVoteVerifiedTx_SucessAndTransfer(t *testing.T) {
 		Confirmations: 100,
 	}
 	k.SetUnverifiedOutpointInfo(ctx, outpointInfo)
+	k.SetKeyIDByAddress(ctx, "sender", "testkey")
 
 	poll := exported.PollMeta{Module: "bitcoin", Type: "verify", ID: outpoint.String()}
 	v := &btcMock.VoterMock{
@@ -473,7 +522,7 @@ func TestSignTx(t *testing.T) {
 		assert.NoError(t, err)
 		txHash = res.Data
 
-		_, err = querier(ctx, []string{keeper.SendTx, signTx.TxID}, abci.RequestQuery{})
+		_, err = querier(ctx, []string{keeper.SendTx}, abci.RequestQuery{Data: cdc.MustMarshalJSON(signTx.Outpoint)})
 		assert.NoError(t, err)
 	}
 }
@@ -484,7 +533,6 @@ func prepareMsgSign(ctx sdk.Context, k keeper.Keeper, querier sdk.Querier, sk *e
 		panic(err)
 	}
 
-	txID := hash.String()
 	btcPk := btcec.PublicKey(sk.PublicKey)
 	addr, script, err := k.GenerateDepositAddressAndRedeemScript(ctx, btcPk, recipient)
 	if err != nil {
@@ -512,7 +560,9 @@ func prepareMsgSign(ctx sdk.Context, k keeper.Keeper, querier sdk.Querier, sk *e
 	}
 	var rawTx *wire.MsgTx
 	testutils.Codec().MustUnmarshalJSON(bz, &rawTx)
-	msgRawTx := types.NewMsgSignTx(sender, txID, rawTx)
+	msgRawTx := types.NewMsgSignTx(sender, outPoint, rawTx)
+
+	k.SetKeyIDByOutpoint(ctx, outPoint, "testkey")
 
 	return msgRawTx
 }

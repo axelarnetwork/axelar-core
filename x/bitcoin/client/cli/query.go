@@ -75,14 +75,9 @@ func GetCmdConsolidationAddress(queryRoute string, cdc *codec.Codec) *cobra.Comm
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryConsolidationAddress)
+			path := fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryConsolidationAddress, args[0])
 
-			chain := exported.ChainFromString(args[0])
-			if err := chain.Validate(); err != nil {
-				return err
-			}
-
-			res, _, err := cliCtx.QueryWithData(path, cdc.MustMarshalJSON(exported.CrossChainAddress{Chain: chain, Address: args[1]}))
+			res, _, err := cliCtx.QueryWithData(path, nil)
 			if err != nil {
 				return sdkerrors.Wrap(err, "could not resolve master key")
 			}
@@ -130,18 +125,18 @@ func GetCmdRawTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			amount, err := denom.ParseSatoshi(args[2])
-			if err != nil {
-				return err
-			}
-
 			out, err := types.OutPointFromStr(args[0])
 			if err != nil {
 				return err
 			}
 
+			amount, err := denom.ParseSatoshi(args[1])
+			if err != nil {
+				return err
+			}
+
 			params := types.RawTxParams{
-				DepositAddr: args[3],
+				DepositAddr: args[2],
 				OutPoint:    out,
 				Satoshi:     amount,
 			}
@@ -167,7 +162,12 @@ func GetCmdSendTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.SendTx, args[0]), nil)
+			outpoint, err := types.OutPointFromStr(args[0])
+			if err != nil {
+				return err
+			}
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.SendTx), cdc.MustMarshalJSON(outpoint))
 			if err != nil {
 				return sdkerrors.Wrapf(err, "could not send the transaction spending transaction %s", args[0])
 			}

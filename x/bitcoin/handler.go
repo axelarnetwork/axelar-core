@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcd/wire"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
@@ -54,6 +53,12 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, s types.Signer, b types.Bal
 	k.SetRedeemScript(ctx, btcAddr, script)
 
 	b.LinkAddresses(ctx, balance.CrossChainAddress{Chain: balance.Bitcoin, Address: btcAddr.EncodeAddress()}, msg.Recipient)
+
+	id, ok := s.GetCurrentMasterKeyID(ctx, balance.Bitcoin)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, "master key not set")
+	}
+	k.SetKeyIDByAddress(ctx, btcAddr.EncodeAddress(), id)
 
 	logMsg := fmt.Sprintf("successfully linked {%s} and {%s}", btcAddr.EncodeAddress(), msg.Recipient.String())
 	k.Logger(ctx).Info(logMsg)
@@ -161,7 +166,17 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, b 
 		}
 		v.DeletePoll(ctx, msg.Poll())
 
-		err = enqueueForTransfer(ctx, k, b, outPoint)
+		info, ok := k.GetVerifiedOutPointInfo(ctx, outPoint)
+		if !ok {
+			return nil, sdkerrors.Wrap(types.ErrBitcoin, "outpoint not verified")
+		}
+		id, ok := k.GetKeyIDByAddress(ctx, info.DepositAddr)
+		if !ok {
+			return nil, sdkerrors.Wrap(types.ErrBitcoin, "key id not found")
+		}
+		k.SetKeyIDByOutpoint(ctx, outPoint, id)
+
+		err = enqueueForTransfer(ctx, k, b, info)
 		if err != nil {
 			return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("error while preparing transfer: %v", err))
 		}
@@ -178,7 +193,7 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 		),
 	)
 
-	k.SetRawTx(ctx, msg.TxID, msg.RawTx)
+	k.SetRawTx(ctx, msg.Outpoint, msg.RawTx)
 
 	// Print out the hash that becomes the input for the threshold signing
 	hash, err := k.GetHashToSign(ctx, msg.RawTx)
@@ -188,9 +203,9 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 	serializedHash := hex.EncodeToString(hash)
 	k.Logger(ctx).Info(fmt.Sprintf("bitcoin tx to sign: %s", serializedHash))
 
-	keyID, ok := signer.GetCurrentMasterKeyID(ctx, balance.Bitcoin)
+	keyID, ok := k.GetKeyIDByOutpoint(ctx, msg.Outpoint)
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrBitcoin, "no master key for chain %s found", balance.Bitcoin)
+		return nil, sdkerrors.Wrapf(types.ErrBitcoin, "no key ID for chain %s found", balance.Bitcoin)
 	}
 
 	round, ok := signer.GetSnapshotRoundForKeyID(ctx, keyID)
@@ -210,7 +225,7 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 
 	return &sdk.Result{
 		Data:   hash,
-		Log:    fmt.Sprintf("successfully started signing protocol for transaction that spends %s.", msg.TxID),
+		Log:    fmt.Sprintf("successfully started signing protocol for transaction that spends %s.", msg.Outpoint),
 		Events: ctx.EventManager().Events(),
 	}, nil
 }
@@ -253,12 +268,7 @@ func verifyTx(rpc types.RPCClient, expectedInfo types.OutPointInfo, requiredConf
 	return nil
 }
 
-func enqueueForTransfer(ctx sdk.Context, k keeper.Keeper, b types.Balancer, outPoint *wire.OutPoint) error {
-	info, ok := k.GetVerifiedOutPointInfo(ctx, outPoint)
-	if !ok {
-		return fmt.Errorf("outpoint not verified")
-	}
-
+func enqueueForTransfer(ctx sdk.Context, k keeper.Keeper, b types.Balancer, info types.OutPointInfo) error {
 	depositAddr := balance.CrossChainAddress{Address: info.DepositAddr, Chain: balance.Bitcoin}
 	recipient, ok := b.GetRecipient(ctx, depositAddr)
 	// Do nothing if not linked

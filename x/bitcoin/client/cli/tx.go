@@ -94,7 +94,7 @@ func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
 // GetCmdSignRawTx returns the command to sign a raw Bitcoin transaction
 func GetCmdSignRawTx(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "signTx [txID] [tx json]",
+		Use:   "signTx [txID:voutIdx] [tx json]",
 		Short: "Sign raw spending transaction with utxo of [txID]",
 		Long:  fmt.Sprintf("Sign raw transaction. Get raw transaction by querying %s", keeper.QueryRawTx),
 		Args:  cobra.ExactArgs(2),
@@ -104,7 +104,12 @@ func GetCmdSignRawTx(cdc *codec.Codec) *cobra.Command {
 			var tx *wire.MsgTx
 			types.ModuleCdc.MustUnmarshalJSON([]byte(args[1]), &tx)
 
-			msg := types.NewMsgSignTx(cliCtx.GetFromAddress(), args[0], tx)
+			outpoint, err := types.OutPointFromStr(args[0])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgSignTx(cliCtx.GetFromAddress(), outpoint, tx)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

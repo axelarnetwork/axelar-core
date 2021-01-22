@@ -19,11 +19,13 @@ import (
 )
 
 const (
-	rawPrefix      = "raw_"
-	outPointPrefix = "out_"
-	pendingPrefix  = "pend_"
-	addrPrefix     = "addr_"
-	scriptPrefix   = "script_"
+	rawPrefix             = "raw_"
+	outPointPrefix        = "out_"
+	pendingPrefix         = "pend_"
+	addrPrefix            = "addr_"
+	scriptPrefix          = "script_"
+	keyIDbyAddrPrefix     = "addrID_"
+	keyIDbyOutPointPrefix = "outID_"
 )
 
 type Keeper struct {
@@ -77,8 +79,32 @@ func (k Keeper) Codec() *codec.Codec {
 	return k.cdc
 }
 
-func (k Keeper) GetRawTx(ctx sdk.Context, txID string) *wire.MsgTx {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(rawPrefix + txID))
+func (k Keeper) SetKeyIDByAddress(ctx sdk.Context, address string, keyID string) {
+	ctx.KVStore(k.storeKey).Set([]byte(keyIDbyAddrPrefix+address), []byte(keyID))
+}
+
+func (k Keeper) GetKeyIDByAddress(ctx sdk.Context, address string) (string, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(keyIDbyAddrPrefix + address))
+	if bz == nil {
+		return "", false
+	}
+	return string(bz), true
+}
+
+func (k Keeper) SetKeyIDByOutpoint(ctx sdk.Context, outpoint *wire.OutPoint, keyID string) {
+	ctx.KVStore(k.storeKey).Set([]byte(keyIDbyOutPointPrefix+outpoint.String()), []byte(keyID))
+}
+
+func (k Keeper) GetKeyIDByOutpoint(ctx sdk.Context, outpoint *wire.OutPoint) (string, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(keyIDbyOutPointPrefix + outpoint.String()))
+	if bz == nil {
+		return "", false
+	}
+	return string(bz), true
+}
+
+func (k Keeper) GetRawTx(ctx sdk.Context, outpoint *wire.OutPoint) *wire.MsgTx {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(rawPrefix + outpoint.String()))
 	if bz == nil {
 		return nil
 	}
@@ -88,9 +114,9 @@ func (k Keeper) GetRawTx(ctx sdk.Context, txID string) *wire.MsgTx {
 	return tx
 }
 
-func (k Keeper) SetRawTx(ctx sdk.Context, txID string, tx *wire.MsgTx) {
+func (k Keeper) SetRawTx(ctx sdk.Context, outpoint *wire.OutPoint, tx *wire.MsgTx) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(tx)
-	ctx.KVStore(k.storeKey).Set([]byte(rawPrefix+txID), bz)
+	ctx.KVStore(k.storeKey).Set([]byte(rawPrefix+outpoint.String()), bz)
 }
 
 func (k Keeper) HasVerifiedOutPoint(ctx sdk.Context, outPoint *wire.OutPoint) bool {
@@ -166,7 +192,7 @@ func (k Keeper) GetHashToSign(ctx sdk.Context, rawTx *wire.MsgTx) ([]byte, error
 		return nil, fmt.Errorf("transaction must have exactly one input")
 	}
 
-	addr, err := k.getDepositAddress(ctx, rawTx)
+	addr, err := k.getDepositAddress(ctx, &rawTx.TxIn[0].PreviousOutPoint)
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +204,7 @@ func (k Keeper) GetHashToSign(ctx sdk.Context, rawTx *wire.MsgTx) ([]byte, error
 }
 
 func (k Keeper) AssembleBtcTx(ctx sdk.Context, rawTx *wire.MsgTx, sig btcec.Signature) (*wire.MsgTx, error) {
-	addr, err := k.getDepositAddress(ctx, rawTx)
+	addr, err := k.getDepositAddress(ctx, &rawTx.TxIn[0].PreviousOutPoint)
 	if err != nil {
 		return nil, err
 	}
@@ -200,8 +226,8 @@ func (k Keeper) AssembleBtcTx(ctx sdk.Context, rawTx *wire.MsgTx, sig btcec.Sign
 	return rawTx, nil
 }
 
-func (k Keeper) getDepositAddress(ctx sdk.Context, rawTx *wire.MsgTx) (btcutil.Address, error) {
-	out, ok := k.GetVerifiedOutPointInfo(ctx, &rawTx.TxIn[0].PreviousOutPoint)
+func (k Keeper) getDepositAddress(ctx sdk.Context, outpoint *wire.OutPoint) (btcutil.Address, error) {
+	out, ok := k.GetVerifiedOutPointInfo(ctx, outpoint)
 	if !ok {
 		return nil, fmt.Errorf("transaction ID is not known")
 	}

@@ -39,7 +39,7 @@ func NewQuerier(k Keeper, s types.Signer, b types.Balancer, rpc types.RPCClient)
 		case QueryRawTx:
 			return createRawTx(ctx, k, req.Data)
 		case SendTx:
-			return sendTx(ctx, k, rpc, s, path[1])
+			return sendTx(ctx, k, rpc, s, req.Data)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown btc-bridge query endpoint: %s", path[1]))
 		}
@@ -122,10 +122,15 @@ func createRawTx(ctx sdk.Context, k Keeper, data []byte) ([]byte, error) {
 	return types.ModuleCdc.MustMarshalJSON(tx), nil
 }
 
-func sendTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, txID string) ([]byte, error) {
-	rawTx := k.GetRawTx(ctx, txID)
+func sendTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, data []byte) ([]byte, error) {
+	var out *wire.OutPoint
+	err := types.ModuleCdc.UnmarshalJSON(data, &out)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "could not parse the outpoint")
+	}
+	rawTx := k.GetRawTx(ctx, out)
 	if rawTx == nil {
-		return nil, sdkerrors.Wrapf(types.ErrBitcoin, "withdraw tx for ID %s has not been prepared yet", txID)
+		return nil, sdkerrors.Wrapf(types.ErrBitcoin, "withdraw tx for outpoint %s has not been prepared yet", out)
 	}
 
 	h, err := k.GetHashToSign(ctx, rawTx)
