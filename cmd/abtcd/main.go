@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/cmd/abtcd/rest"
@@ -17,28 +18,43 @@ func main() {
 	}
 }
 
+
 func run() error {
 	cdc := app.MakeCodec()
 
-	// Configure wallet
+	// Import account to wallet from mnemonic file
 	config := *wallet.DefaultConfig()
-	//fmt.Printf("%+v\n", config)
-
-	wallet, err := wallet.CreateWallet(config)
+	w, err := wallet.CreateWallet(config)
 	if err != nil {
 		return err
 	}
-
-	// Import account
-	if err := wallet.ImportMnemonicFromFile("abtcd_mnemonic2.txt", "abtcd"); err != nil {
+	if err := w.ImportMnemonicFromFile("abtcd_mnemonic.txt", "abtcd"); err != nil {
 		return err
 	}
 
 	// Instantiate REST context for building and submitting transactions
 	restCtx := rest.RestContext{Codec: cdc, URL: "http://localhost:1317"}
-	if err := modules.TxSnapshotNow(&wallet, &restCtx); err != nil {
-		return err
+	app := modules.AppContext{ Wallet: w, RestCtx: restCtx }
+
+	return mint(app)
+}
+
+func mint(app modules.AppContext) (err error) {
+	// 0. Assume master keys are set up
+	if err = app.TxSnapshotNow(); err != nil {
+		return
 	}
 
-	return nil
+
+	// A. Link eth and btc addresses
+	// 1. link eth_address
+	fmt.Print("Enter ethereum address to link: ")
+	//reader := bufio.NewReader(os.Stdin)
+	//ethAddr, err := reader.ReadString('\n')
+	ethAddr := "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"
+	fmt.Println(ethAddr)
+
+	err = app.TxBitcoinLink("Ethereum", strings.TrimSpace(ethAddr))
+
+	return
 }

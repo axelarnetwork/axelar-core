@@ -2,16 +2,15 @@ package modules
 
 import (
 	"github.com/axelarnetwork/axelar-core/cmd/abtcd/rest"
-	"github.com/axelarnetwork/axelar-core/cmd/abtcd/wallet"
 	snapshotRest "github.com/axelarnetwork/axelar-core/x/snapshot/client/rest"
 )
 
-func TxSnapshotNow(w *wallet.Wallet, rc *rest.RestContext) error {
+func (app *AppContext) TxSnapshotNow() error {
 	txReq := snapshotRest.ReqSnapshotNow{
-		BaseReq: rest.PrepareBaseReq(w),
+		BaseReq: rest.PrepareBaseReq(&app.Wallet),
 	}
 
 	txRoute := "tx/snapshot/now"
 
-	return rc.SubmitTx(w, txRoute, txReq)
+	return app.RestCtx.SubmitTx(&app.Wallet, txRoute, txReq)
 }

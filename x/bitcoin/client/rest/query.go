@@ -6,8 +6,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/types/rest"
-
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 )
 
 func QueryMasterAddressHandlerFn(cliCtx context.CLIContext, queryRoute string) http.HandlerFunc {
@@ -19,7 +17,7 @@ func QueryMasterAddressHandlerFn(cliCtx context.CLIContext, queryRoute string) h
 			return
 		}
 
-		path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryMasterAddress)
+		path := fmt.Sprintf("custom/%s/%s", queryRoute, "MasterAddress") // @TODO use cli route constant
 		res, _, err := cliCtx.QueryWithData(path, nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
