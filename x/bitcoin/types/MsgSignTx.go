@@ -10,17 +10,17 @@ import (
 
 // MsgSignTx  is a message struct to make a new raw transaction known to the blockchain
 type MsgSignTx struct {
-	Sender sdk.AccAddress
-	TxID   string
-	RawTx  *wire.MsgTx
+	Sender   sdk.AccAddress
+	Outpoint *wire.OutPoint
+	RawTx    *wire.MsgTx
 }
 
 // NewMsgSignTx creates a new MsgSignTx
-func NewMsgSignTx(sender sdk.AccAddress, txID string, rawTx *wire.MsgTx) MsgSignTx {
+func NewMsgSignTx(sender sdk.AccAddress, outpoint *wire.OutPoint, rawTx *wire.MsgTx) MsgSignTx {
 	return MsgSignTx{
-		Sender: sender,
-		TxID:   txID,
-		RawTx:  rawTx,
+		Sender:   sender,
+		Outpoint: outpoint,
+		RawTx:    rawTx,
 	}
 }
 
@@ -39,7 +39,7 @@ func (msg MsgSignTx) ValidateBasic() error {
 	if msg.Sender.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
-	if msg.TxID == "" {
+	if msg.Outpoint == nil {
 		return fmt.Errorf("missing txID")
 	}
 	if msg.RawTx.TxIn == nil {
