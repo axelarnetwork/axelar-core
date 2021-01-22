@@ -196,9 +196,26 @@ type RandStringGen struct {
 	charPicker RandIntGen
 }
 
-// RandStrings returns a random string generator that produces strings of random length in the given limits (inclusive)
+// RandStrings returns a random string generator that produces strings from the default alphabet of random length in the given limits (inclusive)
 func RandStrings(minLength int, maxLength int) RandStringGen {
-	alphabet := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.")
+	alphabet := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.:")
+	return RandStringsWithAlphabet(alphabet, minLength, maxLength)
+}
+
+// RandStringBetween returns a random string of random length in the given limits (inclusive)
+func RandStringBetween(minLength int, maxLength int) string {
+	g := RandStrings(minLength, maxLength)
+	defer g.Stop()
+	return g.Next()
+}
+
+// RandString returns a random string of random length in the given limits (inclusive)
+func RandString(len int) string {
+	return RandStringBetween(len, len)
+}
+
+// RandStringsWithAlphabet returns a random string generator that produces strings from the given alphabet of length between the given limits (inclusive)
+func RandStringsWithAlphabet(alphabet []rune, minLength int, maxLength int) RandStringGen {
 	g := RandStringGen{
 		ch:         make(chan string),
 		done:       make(chan struct{}),
@@ -222,13 +239,6 @@ func RandStrings(minLength int, maxLength int) RandStringGen {
 		}
 	}()
 	return g
-}
-
-// RandString returns a random string of random length in the given limits (inclusive)
-func RandString(len int) string {
-	g := RandStrings(len, len)
-	defer g.Stop()
-	return g.Next()
 }
 
 // Take returns a slice of random strings of the given length.

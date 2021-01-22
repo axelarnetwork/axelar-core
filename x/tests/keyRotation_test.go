@@ -124,7 +124,7 @@ func TestKeyRotation(t *testing.T) {
 	}
 
 	// take first validator snapshot
-	res := <-chain.Submit(snapTypes.MsgSnapshot{Sender: sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress)})
+	res := <-chain.Submit(snapTypes.MsgSnapshot{Sender: randomSender()})
 	assert.NoError(t, res.Error)
 
 	// set up tssd mock for first keygen
@@ -157,7 +157,7 @@ func TestKeyRotation(t *testing.T) {
 	// create first key
 	masterKeyID1 := stringGen.Next()
 	res = <-chain.Submit(tssTypes.MsgKeygenStart{
-		Sender:    sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
+		Sender:    randomSender(),
 		NewKeyID:  masterKeyID1,
 		Threshold: int(testutils.RandIntBetween(1, int64(len(validators)))),
 	})
@@ -174,7 +174,7 @@ func TestKeyRotation(t *testing.T) {
 
 	// assign key as bitcoin master key
 	res = <-chain.Submit(tssTypes.MsgAssignNextMasterKey{
-		Sender: sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
+		Sender: randomSender(),
 		Chain:  balance.Bitcoin,
 		KeyID:  masterKeyID1,
 	})
@@ -182,71 +182,60 @@ func TestKeyRotation(t *testing.T) {
 
 	// rotate to the first master key
 	res = <-chain.Submit(tssTypes.MsgRotateMasterKey{
-		Sender: sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
+		Sender: randomSender(),
 		Chain:  balance.Bitcoin,
 	})
 	assert.NoError(t, res.Error)
 
+	// get deposit address for ethereum transfer
+	ethAddr := balance.CrossChainAddress{Chain: balance.Ethereum, Address: testutils.RandStringBetween(5, 20)}
+	res = <-chain.Submit(btcTypes.NewMsgLink(randomSender(), ethAddr))
+	assert.NoError(t, res.Error)
+	depositAddr := string(res.Data)
+
 	// track bitcoin transactions for address derived from master key
-	res = <-chain.Submit(btcTypes.NewMsgTrackPubKeyWithMasterKey(sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress), false))
+	res = <-chain.Submit(btcTypes.NewMsgTrackAddress(randomSender(), depositAddr, true))
 	assert.NoError(t, res.Error)
 
 	// simulate deposit to master key address
-	prevSK, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
+	txHash, err := chainhash.NewHash(testutils.RandBytes(32))
 	if err != nil {
 		panic(err)
 	}
 
-	prevPK := btcec.PublicKey(prevSK.PublicKey)
-	pkHash, err := btcutil.NewAddressPubKeyHash(btcutil.Hash160(prevPK.SerializeCompressed()), mocks.BTC.Network().Params())
-	if err != nil {
-		panic(err)
-	}
-
-	txHash, err := chainhash.NewHash([]byte(testutils.RandString(32)))
-	if err != nil {
-		panic(err)
-	}
-
-	masterKey1Addr, err := btcutil.DecodeAddress(string(res.Data), mocks.BTC.Network().Params())
-	if err != nil {
-		panic(err)
-	}
-
-	voutIdx := int(testutils.RandIntBetween(0, 100))
+	voutIdx := uint32(testutils.RandIntBetween(0, 100))
+	expectedOut := wire.NewOutPoint(txHash, voutIdx)
 	amount := btcutil.Amount(testutils.RandIntBetween(1, 10000000))
 	confirmations := uint64(testutils.RandIntBetween(1, 10000))
 
 	mocks.BTC.GetOutPointInfoFunc = func(out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
-		if out.Hash.IsEqual(txHash) {
-
+		if out.String() == expectedOut.String() {
 			return btcTypes.OutPointInfo{
-				OutPoint:      out,
+				OutPoint:      expectedOut,
 				Amount:        amount,
-				Recipient:     masterKey1Addr.EncodeAddress(),
+				DepositAddr:   depositAddr,
 				Confirmations: confirmations,
 			}, nil
-
 		}
 
 		return btcTypes.OutPointInfo{}, fmt.Errorf("tx %s not found", out.String())
 	}
 
 	// query for deposit info
-	bz, err := nodes[0].Query([]string{btcTypes.QuerierRoute, btcKeeper.QueryOutInfo, txHash.String(), strconv.Itoa(voutIdx)}, abci.RequestQuery{})
+	bz, err := nodes[0].Query([]string{btcTypes.QuerierRoute, btcKeeper.QueryOutInfo}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(expectedOut)})
 	assert.NoError(t, err)
 	var info btcTypes.OutPointInfo
 	testutils.Codec().MustUnmarshalJSON(bz, &info)
 
 	// verify deposit to master key
-	res = <-chain.Submit(btcTypes.NewMsgVerifyTx(sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress), info))
+	res = <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender(), info))
 	assert.NoError(t, res.Error)
 
 	// wait for voting to be done
 	chain.WaitNBlocks(12)
 
 	// second snapshot
-	res = <-chain.Submit(snapTypes.MsgSnapshot{Sender: sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress)})
+	res = <-chain.Submit(snapTypes.MsgSnapshot{Sender: randomSender()})
 	assert.NoError(t, res.Error)
 
 	// set up tssd mock for second keygen
@@ -279,7 +268,7 @@ func TestKeyRotation(t *testing.T) {
 	// second keygen with validator set of second snapshot
 	keyID2 := stringGen.Next()
 	res = <-chain.Submit(tssTypes.MsgKeygenStart{
-		Sender:    sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
+		Sender:    randomSender(),
 		NewKeyID:  keyID2,
 		Threshold: int(testutils.RandIntBetween(1, int64(len(validators)))),
 	})
@@ -296,21 +285,31 @@ func TestKeyRotation(t *testing.T) {
 
 	// assign second key to be the second master key
 	res = <-chain.Submit(tssTypes.MsgAssignNextMasterKey{
-		Sender: sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
+		Sender: randomSender(),
 		Chain:  balance.Bitcoin,
 		KeyID:  keyID2,
 	})
 	assert.NoError(t, res.Error)
 
-	// create a tx to transfer funds from master key 1 to master key 2
+	// get consolidation address
+	bz, err = nodes[0].Query([]string{btcTypes.QuerierRoute, btcKeeper.QueryConsolidationAddress, depositAddr}, abci.RequestQuery{})
+	assert.NoError(t, err)
+	consAddr := string(bz)
+
+	// track consolidation address
+	res = <-chain.Submit(btcTypes.NewMsgTrackAddress(randomSender(), consAddr, true))
+	assert.NoError(t, res.Error)
+
+	// create a tx to transfer funds from deposit address to consolidation address
 	amount = btcutil.Amount(int64(amount) - testutils.RandIntBetween(1, int64(amount)-1))
 
 	bz, err = nodes[0].Query(
 		[]string{btcTypes.QuerierRoute, btcKeeper.QueryRawTx},
 		abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(
-			btcTypes.RawParams{
-				TxID:    txHash.String(),
-				Satoshi: sdk.NewInt64Coin(denom.Sat, int64(amount)),
+			btcTypes.RawTxParams{
+				OutPoint:    expectedOut,
+				DepositAddr: consAddr,
+				Satoshi:     sdk.NewInt64Coin(denom.Sat, int64(amount)),
 			})},
 	)
 	assert.NoError(t, err)
@@ -353,8 +352,8 @@ func TestKeyRotation(t *testing.T) {
 
 	// sign transfer tx
 	res = <-chain.Submit(btcTypes.NewMsgSignTx(
-		sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
-		txHash.String(),
+		randomSender(),
+		expectedOut,
 		rawTx))
 	assert.NoError(t, res.Error)
 	// assert tssd was properly called
@@ -365,31 +364,22 @@ func TestKeyRotation(t *testing.T) {
 	chain.WaitNBlocks(22)
 
 	// send tx to Bitcoin
-	_, err = nodes[0].Query([]string{btcTypes.QuerierRoute, btcKeeper.SendTx, txHash.String()}, abci.RequestQuery{})
+	bz, err = nodes[0].Query([]string{btcTypes.QuerierRoute, btcKeeper.SendTx},
+		abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(expectedOut)})
 	assert.NoError(t, err)
 
 	// set up btc mock to return the new tx
-	nextMasterPK := btcec.PublicKey(masterKey2.PublicKey)
-	pkHash, err = btcutil.NewAddressPubKeyHash(btcutil.Hash160(nextMasterPK.SerializeCompressed()), mocks.BTC.Network().Params())
-	if err != nil {
-		panic(err)
-	}
-	masterKey2Addr, err := btcutil.DecodeAddress(pkHash.String(), mocks.BTC.Network().Params())
-	if err != nil {
-		panic(err)
-	}
-
-	voutIdx = int(testutils.RandIntBetween(0, 100))
-	transferTxHash := &chainhash.Hash{}
+	var transferHash *chainhash.Hash
+	testutils.Codec().MustUnmarshalJSON(bz, &transferHash)
+	voutIdx = 0
 	confirmations = uint64(testutils.RandIntBetween(1, 10000))
-
-	assert.NoError(t, transferTxHash.SetBytes(res.Data))
+	transferOut := wire.NewOutPoint(transferHash, voutIdx)
 	mocks.BTC.GetOutPointInfoFunc = func(out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
-		if out.Hash.IsEqual(transferTxHash) {
+		if out.String() == transferOut.String() {
 			return btcTypes.OutPointInfo{
-				OutPoint:      out,
+				OutPoint:      transferOut,
 				Amount:        amount,
-				Recipient:     masterKey2Addr.EncodeAddress(),
+				DepositAddr:   consAddr,
 				Confirmations: confirmations,
 			}, nil
 		}
@@ -398,13 +388,13 @@ func TestKeyRotation(t *testing.T) {
 	}
 
 	// query for transfer info
-	bz, err = nodes[0].Query([]string{btcTypes.QuerierRoute, btcKeeper.QueryOutInfo, transferTxHash.String(), strconv.Itoa(voutIdx)}, abci.RequestQuery{})
+	bz, err = nodes[0].Query([]string{btcTypes.QuerierRoute, btcKeeper.QueryOutInfo}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(transferOut)})
 	assert.NoError(t, err)
 	testutils.Codec().MustUnmarshalJSON(bz, &info)
 
 	// verify master key transfer
 	res = <-chain.Submit(
-		btcTypes.NewMsgVerifyTx(sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress), info))
+		btcTypes.NewMsgVerifyTx(randomSender(), info))
 	assert.NoError(t, res.Error)
 
 	// wait for voting to be done
@@ -412,14 +402,14 @@ func TestKeyRotation(t *testing.T) {
 
 	// rotate master key to key 2
 	res = <-chain.Submit(tssTypes.MsgRotateMasterKey{
-		Sender: sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress),
+		Sender: randomSender(),
 		Chain:  balance.Bitcoin,
 	})
 	assert.NoError(t, res.Error)
+}
 
-	// track bitcoin transactions for address derived from master key 2
-	res = <-chain.Submit(btcTypes.NewMsgTrackPubKeyWithMasterKey(sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress), false))
-	assert.NoError(t, res.Error)
+func randomSender() sdk.AccAddress {
+	return sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress)
 }
 
 func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *fake.BlockChain) fake.Node {
@@ -461,7 +451,7 @@ func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *f
 		AddRoute(voteTypes.RouterKey, voteHandler).
 		AddRoute(tssTypes.RouterKey, tssHandler)
 
-	queriers := map[string]sdk.Querier{btcTypes.QuerierRoute: btcKeeper.NewQuerier(bitcoinKeeper, signer, mocks.BTC)}
+	queriers := map[string]sdk.Querier{btcTypes.QuerierRoute: btcKeeper.NewQuerier(bitcoinKeeper, signer, balancer, mocks.BTC)}
 
 	node := fake.NewNode(moniker, ctx, router, queriers).
 		WithEndBlockers(func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {

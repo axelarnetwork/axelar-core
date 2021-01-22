@@ -16,7 +16,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/store"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
-	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
+	balKeeper "github.com/axelarnetwork/axelar-core/x/balance/keeper"
+	balTypes "github.com/axelarnetwork/axelar-core/x/balance/types"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
@@ -41,21 +42,18 @@ var txs = map[string]btcTypes.OutPointInfo{}
 func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 	// test data
 	txCount := 5
-	var hashes []*chainhash.Hash
+	var outPoints []*wire.OutPoint
 	var verifyMsgs []sdk.Msg
 	for i := 0; i < txCount; i++ {
 		hash := createHash()
-		hashes = append(hashes, hash)
+		outPoints = append(outPoints, wire.NewOutPoint(hash, 0))
 		amount := testutils.RandIntBetween(0, 100000)
 		confirmations := uint64(testutils.RandIntBetween(7, 10000))
 		// deposit tx
 		info := btcTypes.OutPointInfo{
-			OutPoint: &wire.OutPoint{
-				Hash:  *hash,
-				Index: 0,
-			},
+			OutPoint:      outPoints[i],
 			Amount:        btcutil.Amount(amount),
-			Recipient:     testutils.RandString(int(testutils.RandIntBetween(5, 20))),
+			DepositAddr:   testutils.RandString(int(testutils.RandIntBetween(5, 20))),
 			Confirmations: confirmations,
 		}
 		txs[hash.String()] = info
@@ -109,14 +107,14 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 
 	blockChain.WaitNBlocks(15)
 
-	assert.True(t, allTxVoteCompleted(nodes, btcKeepers, hashes))
+	assert.True(t, allTxVoteCompleted(nodes, btcKeepers, outPoints))
 }
 
-func allTxVoteCompleted(nodes []fake.Node, btcKeeper []btcKeeper.Keeper, hashes []*chainhash.Hash) bool {
+func allTxVoteCompleted(nodes []fake.Node, btcKeeper []btcKeeper.Keeper, outPoints []*wire.OutPoint) bool {
 	allConfirmed := true
 	for i, k := range btcKeeper {
-		for _, hash := range hashes {
-			if ok := k.HasVerifiedOutPoint(nodes[i].Ctx, hash.String()); !ok {
+		for _, out := range outPoints {
+			if ok := k.HasVerifiedOutPoint(nodes[i].Ctx, out); !ok {
 				allConfirmed = false
 				break
 			}
@@ -156,15 +154,13 @@ func newNodeForVote(moniker string, broadcaster bcExported.Broadcaster, staker v
 	btcK := btcKeeper.NewBtcKeeper(testutils.Codec(), sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)
 	btcK.SetParams(ctx, btcTypes.DefaultParams())
 
+	balK := balKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(balTypes.StoreKey))
+
 	// We use a fake for the bitcoin rpc client so we can control the responses from the "bitcoin" network
 	btcH := bitcoin.NewHandler(btcK, vK, &btcMock.RPCClientMock{
 		GetOutPointInfoFunc: func(out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
 			return txs[out.Hash.String()], nil
-		}}, nil, nil, &btcMock.BalancerMock{
-		GetRecipientFunc: func(ctx sdk.Context, sender balance.CrossChainAddress) (balance.CrossChainAddress, bool) {
-			return balance.CrossChainAddress{}, false
-		},
-	})
+		}}, nil, nil, balK)
 
 	broadcastH := broadcast.NewHandler(broadcaster)
 

@@ -21,6 +21,7 @@ const (
 	rawPrefix     = "raw_"
 	txPrefix      = "tx_"
 	pendingPrefix = "pend_"
+	commandPrefix = "command_"
 )
 
 type Keeper struct {
@@ -58,6 +59,18 @@ func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context) uint64 {
 	var h uint64
 	k.params.Get(ctx, types.KeyConfirmationHeight, &h)
 	return h
+}
+
+func (k Keeper) SetCommandData(ctx sdk.Context, commandID [32]byte, commandData []byte) {
+	key := append([]byte(commandPrefix), commandID[:]...)
+
+	ctx.KVStore(k.storeKey).Set(key, commandData)
+}
+
+func (k Keeper) GetCommandData(ctx sdk.Context, commandID [32]byte) {
+	key := append([]byte(commandPrefix), commandID[:]...)
+
+	ctx.KVStore(k.storeKey).Get(key)
 }
 
 func (k Keeper) getRawTx(ctx sdk.Context, txID string) *ethTypes.Transaction {

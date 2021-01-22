@@ -13,14 +13,18 @@ import (
 
 //go:generate moq -pkg mock -out ./mock/expected_keepers.go . Voter Signer Balancer Snapshotter
 
+// Voter wraps around the existing exported.Voter interface to adhere to the Cosmos convention of keeping all
+// expected keepers from other modules in the expected_keepers.go file
 type Voter interface {
 	voting.Voter
 }
 
+// Snapshotter provides snapshot functionality
 type Snapshotter interface {
 	GetSnapshot(ctx sdk.Context, round int64) (snapshot.Snapshot, bool)
 }
 
+// Signer provides keygen and signing functionality
 type Signer interface {
 	StartSign(ctx sdk.Context, keyID string, sigID string, msg []byte, validators []snapshot.Validator) error
 	GetCurrentMasterKeyID(ctx sdk.Context, chain exported.Chain) (string, bool)
@@ -32,8 +36,12 @@ type Signer interface {
 	GetSnapshotRoundForKeyID(ctx sdk.Context, keyID string) (int64, bool)
 }
 
+// Balancer provides functionality to manage cross-chain transfers
 type Balancer interface {
 	LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress)
-	PrepareForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error
 	GetRecipient(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool)
+	EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error
+	GetPendingTransfersForChain(ctx sdk.Context, chain exported.Chain) []exported.CrossChainTransfer
+	GetArchivedTransfersForChain(ctx sdk.Context, chain exported.Chain) []exported.CrossChainTransfer
+	ArchivePendingTransfer(ctx sdk.Context, transfer exported.CrossChainTransfer)
 }
