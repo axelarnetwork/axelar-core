@@ -19,13 +19,13 @@ import (
 )
 
 const (
-	rawPrefix        = "raw_"
-	outPointPrefix   = "out_"
-	pendingPrefix    = "pend_"
-	addrPrefix       = "addr_"
-	scriptPrefix     = "script_"
-	addrIDPrefix     = "addrID_"
-	outPointIDPrefix = "outID_"
+	rawPrefix             = "raw_"
+	outPointPrefix        = "out_"
+	pendingPrefix         = "pend_"
+	addrPrefix            = "addr_"
+	scriptPrefix          = "script_"
+	keyIDbyAddrPrefix     = "addrID_"
+	keyIDbyOutPointPrefix = "outID_"
 )
 
 type Keeper struct {
@@ -80,11 +80,11 @@ func (k Keeper) Codec() *codec.Codec {
 }
 
 func (k Keeper) SetKeyIDByAddress(ctx sdk.Context, address string, keyID string) {
-	ctx.KVStore(k.storeKey).Set([]byte(addrIDPrefix+address), []byte(keyID))
+	ctx.KVStore(k.storeKey).Set([]byte(keyIDbyAddrPrefix+address), []byte(keyID))
 }
 
 func (k Keeper) GetKeyIDByAddress(ctx sdk.Context, address string) (string, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(addrIDPrefix + address))
+	bz := ctx.KVStore(k.storeKey).Get([]byte(keyIDbyAddrPrefix + address))
 	if bz == nil {
 		return "", false
 	}
@@ -92,11 +92,11 @@ func (k Keeper) GetKeyIDByAddress(ctx sdk.Context, address string) (string, bool
 }
 
 func (k Keeper) SetKeyIDByOutpoint(ctx sdk.Context, outpoint *wire.OutPoint, keyID string) {
-	ctx.KVStore(k.storeKey).Set([]byte(outPointIDPrefix+outpoint.String()), []byte(keyID))
+	ctx.KVStore(k.storeKey).Set([]byte(keyIDbyOutPointPrefix+outpoint.String()), []byte(keyID))
 }
 
 func (k Keeper) GetKeyIDByOutpoint(ctx sdk.Context, outpoint *wire.OutPoint) (string, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(outPointIDPrefix + outpoint.String()))
+	bz := ctx.KVStore(k.storeKey).Get([]byte(keyIDbyOutPointPrefix + outpoint.String()))
 	if bz == nil {
 		return "", false
 	}

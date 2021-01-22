@@ -203,9 +203,9 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 	serializedHash := hex.EncodeToString(hash)
 	k.Logger(ctx).Info(fmt.Sprintf("bitcoin tx to sign: %s", serializedHash))
 
-	keyID, ok := signer.GetCurrentMasterKeyID(ctx, balance.Bitcoin)
+	keyID, ok := k.GetKeyIDByOutpoint(ctx, msg.Outpoint)
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrBitcoin, "no master key for chain %s found", balance.Bitcoin)
+		return nil, sdkerrors.Wrapf(types.ErrBitcoin, "no key ID for chain %s found", balance.Bitcoin)
 	}
 
 	round, ok := signer.GetSnapshotRoundForKeyID(ctx, keyID)

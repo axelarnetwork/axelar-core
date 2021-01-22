@@ -353,7 +353,7 @@ func TestKeyRotation(t *testing.T) {
 	// sign transfer tx
 	res = <-chain.Submit(btcTypes.NewMsgSignTx(
 		randomSender(),
-		txHash.String(),
+		expectedOut,
 		rawTx))
 	assert.NoError(t, res.Error)
 	// assert tssd was properly called
@@ -364,7 +364,8 @@ func TestKeyRotation(t *testing.T) {
 	chain.WaitNBlocks(22)
 
 	// send tx to Bitcoin
-	bz, err = nodes[0].Query([]string{btcTypes.QuerierRoute, btcKeeper.SendTx, txHash.String()}, abci.RequestQuery{})
+	bz, err = nodes[0].Query([]string{btcTypes.QuerierRoute, btcKeeper.SendTx},
+		abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(expectedOut)})
 	assert.NoError(t, err)
 
 	// set up btc mock to return the new tx
