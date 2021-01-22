@@ -23,6 +23,7 @@ const (
 	CreateDeployTx = "deploy"
 	CreateMintTx   = "mint"
 	SendTx         = "send"
+	SendMintTx     = "send-mint-tx"
 )
 
 func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer) sdk.Querier {
@@ -36,10 +37,55 @@ func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer) sdk.Querier {
 			return createMintTx(ctx, s, rpc, req.Data)
 		case SendTx:
 			return sendTx(ctx, k, rpc, s, path[1])
+		case SendMintTx:
+			commandID := path[1]
+			fromAddress := common.HexToAddress(path[2])
+			contractAddress := common.HexToAddress(path[3])
+
+			return createMintTxAndSend(ctx, k, rpc, s, commandID, fromAddress, contractAddress)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown eth-bridge query endpoint: %s", path[0]))
 		}
 	}
+}
+
+func createMintTxAndSend(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, commandID string, fromAddress common.Address, contractAddress common.Address) ([]byte, error) {
+	var commandIDByte32 [32]byte
+	copy(commandIDByte32[:], common.Hex2Bytes(commandID)[:32])
+	commandData := k.GetCommandData(ctx, commandIDByte32)
+
+	sig, ok := s.GetSig(ctx, commandID)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not find a corresponding signature for sig ID %s", commandID))
+	}
+
+	pk, ok := s.GetKeyForSigID(ctx, commandID)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not find a corresponding key for sig ID %s", commandID))
+	}
+
+	commandSig, err := types.ToEthSignature(sig, types.GetEthereumSignHash(commandData), pk)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not create recoverable signature: %v", err))
+	}
+
+	data, err := types.CreateExecuteData(commandData, commandSig)
+	if err != nil {
+		return nil, fmt.Errorf("could not create mint transaction data: %s", err)
+	}
+
+	msg := ethereumRoot.CallMsg{
+		From: fromAddress,
+		To:   &contractAddress,
+		Data: data,
+	}
+
+	txHash, err := rpc.SendAndSignTransaction(context.Background(), msg)
+	if err != nil {
+		return nil, fmt.Errorf("could not send mint transaction: %s", err)
+	}
+
+	return k.Codec().MustMarshalJSON(fmt.Sprintf("successfully sent transaction %s to Ethereum", txHash)), nil
 }
 
 func queryMasterAddress(ctx sdk.Context, s types.Signer) ([]byte, error) {

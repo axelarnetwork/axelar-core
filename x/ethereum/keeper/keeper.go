@@ -67,10 +67,10 @@ func (k Keeper) SetCommandData(ctx sdk.Context, commandID [32]byte, commandData 
 	ctx.KVStore(k.storeKey).Set(key, commandData)
 }
 
-func (k Keeper) GetCommandData(ctx sdk.Context, commandID [32]byte) {
+func (k Keeper) GetCommandData(ctx sdk.Context, commandID [32]byte) []byte {
 	key := append([]byte(commandPrefix), commandID[:]...)
 
-	ctx.KVStore(k.storeKey).Get(key)
+	return ctx.KVStore(k.storeKey).Get(key)
 }
 
 func (k Keeper) getRawTx(ctx sdk.Context, txID string) *ethTypes.Transaction {
