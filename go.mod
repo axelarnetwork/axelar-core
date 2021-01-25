@@ -3,8 +3,7 @@ module github.com/axelarnetwork/axelar-core
 go 1.13
 
 require (
-	github.com/axelarnetwork/tssd v0.0.0-20210107210332-7e3f2d78ef7e
-	github.com/binance-chain/tss-lib v1.3.2 // for tests only
+	github.com/axelarnetwork/tssd v0.0.0-20210115070842-5aaffe0b2178
 	github.com/btcsuite/btcd v0.21.0-beta
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/cosmos/cosmos-sdk v0.39.1
