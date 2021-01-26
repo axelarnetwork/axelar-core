@@ -8,8 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/axelarnetwork/tssd/convert"
-	tssd "github.com/axelarnetwork/tssd/pb"
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -82,33 +81,35 @@ func setup(t *testing.T) *testSetup {
 	}
 
 	client := &tssdMock.TSSDClientMock{
-		KeygenFunc: func(context.Context, ...grpc.CallOption) (tssd.GG18_KeygenClient, error) {
+		KeygenFunc: func(context.Context, ...grpc.CallOption) (tofnd.GG20_KeygenClient, error) {
 			return &tssdMock.TSSDKeyGenClientMock{
-				SendFunc: func(*tssd.MessageIn) error {
+				SendFunc: func(*tofnd.MessageIn) error {
 					k, _ := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 					setup.PrivateKey <- k
 					return nil
 				},
-				RecvFunc: func() (*tssd.MessageOut, error) {
+				RecvFunc: func() (*tofnd.MessageOut, error) {
 					key := <-setup.PrivateKey
-					bz, _ := convert.PubkeyToBytes(key.PublicKey)
+					btcecPK := btcec.PublicKey(key.PublicKey)
+					bz := btcecPK.SerializeCompressed()
 					setup.PrivateKey <- key
-					return &tssd.MessageOut{Data: &tssd.MessageOut_KeygenResult{KeygenResult: bz}}, nil
+					return &tofnd.MessageOut{Data: &tofnd.MessageOut_KeygenResult{KeygenResult: bz}}, nil
 				},
 				CloseSendFunc: func() error { return nil },
 			}, nil
 		},
-		SignFunc: func(context.Context, ...grpc.CallOption) (tssd.GG18_SignClient, error) {
+		SignFunc: func(context.Context, ...grpc.CallOption) (tofnd.GG20_SignClient, error) {
 			return &tssdMock.TSSDSignClientMock{
-				SendFunc: func(in *tssd.MessageIn) error {
+				SendFunc: func(in *tofnd.MessageIn) error {
 					k := <-setup.PrivateKey
-					r, s, _ := ecdsa.Sign(rand.Reader, k, in.Data.(*tssd.MessageIn_SignInit).SignInit.MessageToSign)
-					bz, _ := convert.SigToBytes(r.Bytes(), s.Bytes())
+					r, s, _ := ecdsa.Sign(rand.Reader, k, in.Data.(*tofnd.MessageIn_SignInit).SignInit.MessageToSign)
+					btcecSig := btcec.Signature{R: r, S: s}
+					bz := btcecSig.Serialize()
 					setup.Signature <- bz
 					return nil
 				},
-				RecvFunc: func() (*tssd.MessageOut, error) {
-					return &tssd.MessageOut{Data: &tssd.MessageOut_SignResult{SignResult: <-setup.Signature}}, nil
+				RecvFunc: func() (*tofnd.MessageOut, error) {
+					return &tofnd.MessageOut{Data: &tofnd.MessageOut_SignResult{SignResult: <-setup.Signature}}, nil
 				},
 				CloseSendFunc: func() error { return nil },
 			}, nil

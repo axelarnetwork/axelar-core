@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	tssd "github.com/axelarnetwork/tssd/pb"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
@@ -43,6 +42,7 @@ import (
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/tss"
 	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	tssdMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/vote"
@@ -177,12 +177,12 @@ func createMocks(validators []staking.Validator) testMocks {
 	}
 
 	keygen := &tssdMock.TSSDKeyGenClientMock{
-		SendFunc:      func(*tssd.MessageIn) error { return nil },
+		SendFunc:      func(*tofnd.MessageIn) error { return nil },
 		CloseSendFunc: func() error { return nil }}
 	sign := &tssdMock.TSSDSignClientMock{}
 	tssdClient := &tssdMock.TSSDClientMock{
-		KeygenFunc: func(context.Context, ...grpc.CallOption) (tssd.GG18_KeygenClient, error) { return keygen, nil },
-		SignFunc:   func(context.Context, ...grpc.CallOption) (tssd.GG18_SignClient, error) { return sign, nil },
+		KeygenFunc: func(context.Context, ...grpc.CallOption) (tofnd.GG20_KeygenClient, error) { return keygen, nil },
+		SignFunc:   func(context.Context, ...grpc.CallOption) (tofnd.GG20_SignClient, error) { return sign, nil },
 	}
 	return testMocks{
 		BTC:     btcClient,

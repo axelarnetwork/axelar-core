@@ -3,7 +3,7 @@ package keeper
 import (
 	"testing"
 
-	tssd "github.com/axelarnetwork/tssd/pb"
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -37,6 +37,6 @@ func TestKeeper_SignMsg_NoSessionWithGivenID_Return(t *testing.T) {
 	assert.NoError(t, s.Keeper.SignMsg(s.Ctx, types.MsgSignTraffic{
 		Sender:    s.Broadcaster.GetProxy(s.Ctx, s.Broadcaster.LocalPrincipal),
 		SessionID: "sigID",
-		Payload:   &tssd.TrafficOut{},
+		Payload:   &tofnd.TrafficOut{},
 	}))
 }

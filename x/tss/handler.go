@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/axelarnetwork/tssd/convert"
+	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -78,7 +78,7 @@ func handleMsgVoteSig(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types
 		return &sdk.Result{Log: fmt.Sprintf("signature %s already verified", msg.PollMeta.ID)}, nil
 	}
 
-	if _, _, err := convert.BytesToSig(msg.SigBytes); err != nil {
+	if _, err := btcec.ParseDERSignature(msg.SigBytes, btcec.S256()); err != nil {
 		return nil, sdkerrors.Wrap(err, "discard vote for invalid signature")
 	}
 
@@ -133,11 +133,12 @@ func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg ty
 		switch pkBytes := result.(type) {
 		case []byte:
 			k.Logger(ctx).Debug(fmt.Sprintf("public key with ID %s confirmed", msg.PollMeta.ID))
-			pubKey, err := convert.BytesToPubkey(pkBytes)
+			btcecPK, err := btcec.ParsePubKey(pkBytes, btcec.S256())
 			if err != nil {
-				return nil, fmt.Errorf("could not marshal signature")
+				return nil, fmt.Errorf("could not unmarshal public key bytes: [%v]", err)
 			}
-			k.SetKey(ctx, msg.PollMeta.ID, pubKey)
+			pubKey := btcecPK.ToECDSA()
+			k.SetKey(ctx, msg.PollMeta.ID, *pubKey)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized voting result type: %T", result))
@@ -234,11 +235,8 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 	go func() {
 		pk, ok := <-pkChan
 		if ok {
-			bz, err := convert.PubkeyToBytes(pk)
-			if err != nil {
-				k.Logger(ctx).Error(err.Error())
-				return
-			}
+			btcecPK := btcec.PublicKey(pk)
+			bz := btcecPK.SerializeCompressed()
 			v.RecordVote(&types.MsgVotePubKey{PollMeta: poll, PubKeyBytes: bz})
 		}
 	}()

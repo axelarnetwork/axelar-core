@@ -1,7 +1,7 @@
 package types
 
 import (
-	tssd "github.com/axelarnetwork/tssd/pb"
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
@@ -34,17 +34,17 @@ type Voter interface {
 
 // TSSDClient wraps around TSSDKeyGenClient and TSSDSignClient
 type TSSDClient interface {
-	tssd.GG18Client
+	tofnd.GG20Client
 }
 
 // TSSDKeyGenClient provides keygen functionality
 type TSSDKeyGenClient interface {
-	tssd.GG18_KeygenClient
+	tofnd.GG20_KeygenClient
 }
 
 // TSSDSignClient provides signing functionality
 type TSSDSignClient interface {
-	tssd.GG18_SignClient
+	tofnd.GG20_SignClient
 }
 
 // StakingKeeper adopts the methods from "github.com/cosmos/cosmos-sdk/x/staking/exported" that are

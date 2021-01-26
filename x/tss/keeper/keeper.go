@@ -7,7 +7,7 @@ import (
 	"math"
 	"time"
 
-	tssd "github.com/axelarnetwork/tssd/pb"
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -31,7 +31,7 @@ const (
 type Keeper struct {
 	broadcaster   types.Broadcaster
 	snapshotter   types.Snapshotter
-	client        tssd.GG18Client
+	client        tofnd.GG20Client
 	keygenStreams map[string]types.Stream
 	signStreams   map[string]types.Stream
 	params        params.Subspace
@@ -85,7 +85,7 @@ func (k Keeper) getLockingPeriod(ctx sdk.Context) int64 {
 	return period
 }
 
-func (k Keeper) prepareTrafficIn(ctx sdk.Context, sender sdk.AccAddress, sessionID string, payload *tssd.TrafficOut) (*tssd.MessageIn, error) {
+func (k Keeper) prepareTrafficIn(ctx sdk.Context, sender sdk.AccAddress, sessionID string, payload *tofnd.TrafficOut) (*tofnd.MessageIn, error) {
 	// deterministic error
 	senderAddress := k.broadcaster.GetPrincipal(ctx, sender)
 	if senderAddress.Empty() {
@@ -117,9 +117,9 @@ func (k Keeper) prepareTrafficIn(ctx sdk.Context, sender sdk.AccAddress, session
 		return nil, nil
 	}
 
-	msgIn := &tssd.MessageIn{
-		Data: &tssd.MessageIn_Traffic{
-			Traffic: &tssd.TrafficIn{
+	msgIn := &tofnd.MessageIn{
+		Data: &tofnd.MessageIn_Traffic{
+			Traffic: &tofnd.TrafficIn{
 				Payload:      payload.Payload,
 				IsBroadcast:  payload.IsBroadcast,
 				FromPartyUid: senderAddress.String(),
@@ -138,8 +138,8 @@ func (k Keeper) prepareTrafficIn(ctx sdk.Context, sender sdk.AccAddress, session
 	return msgIn, nil
 }
 
-func (k Keeper) handleStream(ctx sdk.Context, s types.Stream) (broadcast <-chan *tssd.TrafficOut, result <-chan []byte) {
-	broadcastChan := make(chan *tssd.TrafficOut)
+func (k Keeper) handleStream(ctx sdk.Context, s types.Stream) (broadcast <-chan *tofnd.TrafficOut, result <-chan []byte) {
+	broadcastChan := make(chan *tofnd.TrafficOut)
 	resChan := make(chan []byte)
 
 	// server handler https://grpc.io/docs/languages/go/basics/#bidirectional-streaming-rpc-1
@@ -166,12 +166,12 @@ func (k Keeper) handleStream(ctx sdk.Context, s types.Stream) (broadcast <-chan 
 			}
 
 			switch msg := msgOneof.GetData().(type) {
-			case *tssd.MessageOut_Traffic:
+			case *tofnd.MessageOut_Traffic:
 				broadcastChan <- msg.Traffic
-			case *tssd.MessageOut_KeygenResult:
+			case *tofnd.MessageOut_KeygenResult:
 				resChan <- msg.KeygenResult
 				return
-			case *tssd.MessageOut_SignResult:
+			case *tofnd.MessageOut_SignResult:
 				resChan <- msg.SignResult
 				return
 			default:

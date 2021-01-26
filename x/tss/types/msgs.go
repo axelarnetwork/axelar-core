@@ -3,8 +3,8 @@ package types
 import (
 	"fmt"
 
-	"github.com/axelarnetwork/tssd/convert"
-	tssd "github.com/axelarnetwork/tssd/pb"
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
+	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -31,14 +31,14 @@ type MsgKeygenStart struct {
 type MsgKeygenTraffic struct {
 	Sender    sdk.AccAddress
 	SessionID string
-	Payload   *tssd.TrafficOut // pointer because it contains a mutex
+	Payload   *tofnd.TrafficOut // pointer because it contains a mutex
 }
 
 // MsgSignTraffic protocol message
 type MsgSignTraffic struct {
 	Sender    sdk.AccAddress
 	SessionID string
-	Payload   *tssd.TrafficOut // pointer because it contains a mutex
+	Payload   *tofnd.TrafficOut // pointer because it contains a mutex
 }
 
 // Route implements the sdk.Msg interface.
@@ -217,7 +217,7 @@ func (msg MsgVotePubKey) ValidateBasic() error {
 	if msg.PubKeyBytes == nil {
 		return fmt.Errorf("missing public key data")
 	}
-	if _, err := convert.BytesToPubkey(msg.PubKeyBytes); err != nil {
+	if _, err := btcec.ParsePubKey(msg.PubKeyBytes, btcec.S256()); err != nil {
 		return err
 	}
 	return msg.PollMeta.Validate()
@@ -275,7 +275,7 @@ func (msg MsgVoteSig) ValidateBasic() error {
 	if msg.SigBytes == nil {
 		return fmt.Errorf("missing signature data")
 	}
-	if _, _, err := convert.BytesToSig(msg.SigBytes); err != nil {
+	if _, err := btcec.ParseDERSignature(msg.SigBytes, btcec.S256()); err != nil {
 		return err
 	}
 	return msg.PollMeta.Validate()
