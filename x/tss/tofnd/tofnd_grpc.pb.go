@@ -266,5 +266,5 @@ var _GG20_serviceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "tofnd/tofnd.proto",
+	Metadata: "x/tss/tofnd/tofnd.proto",
 }
