@@ -94,6 +94,7 @@ func handleMsgVoteSig(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types
 		}
 	}
 
+	ctx.EventManager().EmitEvent(event)
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
@@ -134,6 +135,7 @@ func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg ty
 		}
 	}
 
+	ctx.EventManager().EmitEvent(event)
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 

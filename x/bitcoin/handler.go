@@ -3,6 +3,7 @@ package bitcoin
 import (
 	"encoding/hex"
 	"fmt"
+	"strconv"
 
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -152,6 +153,14 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 
 // This can be used as a potential hook to immediately act on a poll being decided by the vote
 func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, b types.Balancer, msg *types.MsgVoteVerifiedTx) (*sdk.Result, error) {
+	event := sdk.NewEvent(
+		sdk.EventTypeMessage,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+		sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+		sdk.NewAttribute(types.AttributePoll, msg.PollMeta.String()),
+		sdk.NewAttribute(types.AttributeVotingData, strconv.FormatBool(msg.VotingData)),
+	)
+
 	if err := v.TallyVote(ctx, msg); err != nil {
 		return nil, err
 	}
@@ -180,8 +189,12 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, b 
 		if err != nil {
 			return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("error while preparing transfer: %v", err))
 		}
+
+		event = event.AppendAttributes(sdk.NewAttribute(types.AttributePollConfirmed, strconv.FormatBool(confirmed.(bool))))
 	}
-	return &sdk.Result{}, nil
+
+	ctx.EventManager().EmitEvent(event)
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
 func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap types.Snapshotter, msg types.MsgSignTx) (*sdk.Result, error) {
