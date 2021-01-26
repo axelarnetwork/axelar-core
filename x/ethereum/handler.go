@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -180,6 +181,14 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v 
 
 // This can be used as a potential hook to immediately act on a poll being decided by the vote
 func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg *types.MsgVoteVerifiedTx) (*sdk.Result, error) {
+	event := sdk.NewEvent(
+		sdk.EventTypeMessage,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+		sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+		sdk.NewAttribute(types.AttributePoll, msg.PollMeta.String()),
+		sdk.NewAttribute(types.AttributeVotingData, strconv.FormatBool(msg.VotingData)),
+	)
+
 	if err := v.TallyVote(ctx, msg); err != nil {
 		return nil, err
 	}
@@ -191,8 +200,12 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, ms
 		}
 
 		v.DeletePoll(ctx, msg.Poll())
+
+		event = event.AppendAttributes(sdk.NewAttribute(types.AttributePollConfirmed, strconv.FormatBool(confirmed.(bool))))
 	}
-	return &sdk.Result{}, nil
+
+	ctx.EventManager().EmitEvent(event)
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
 func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap snapshot.Snapshotter, msg types.MsgSignTx) (*sdk.Result, error) {
