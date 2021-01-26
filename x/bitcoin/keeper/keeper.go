@@ -192,19 +192,30 @@ func (k Keeper) GetHashToSign(ctx sdk.Context, rawTx *wire.MsgTx) ([]byte, error
 		return nil, fmt.Errorf("transaction must have exactly one input")
 	}
 
-	addr, err := k.getDepositAddress(ctx, &rawTx.TxIn[0].PreviousOutPoint)
+	prevOutInfo, ok := k.GetVerifiedOutPointInfo(ctx, &rawTx.TxIn[0].PreviousOutPoint)
+	if !ok {
+		return nil, fmt.Errorf("transaction ID is not known")
+	}
+
+	addr, err := btcutil.DecodeAddress(prevOutInfo.DepositAddr, k.getNetwork(ctx).Params)
 	if err != nil {
 		return nil, err
 	}
+
 	script, ok := k.GetRedeemScript(ctx, addr)
 	if !ok {
 		return nil, fmt.Errorf("could not find a redeem script for outpoint %s", rawTx.TxIn[0].PreviousOutPoint.String())
 	}
-	return txscript.CalcWitnessSigHash(script, txscript.NewTxSigHashes(rawTx), txscript.SigHashAll, rawTx, 0, rawTx.TxOut[0].Value)
+	return txscript.CalcWitnessSigHash(script, txscript.NewTxSigHashes(rawTx), txscript.SigHashAll, rawTx, 0, int64(prevOutInfo.Amount))
 }
 
 func (k Keeper) AssembleBtcTx(ctx sdk.Context, rawTx *wire.MsgTx, sig btcec.Signature) (*wire.MsgTx, error) {
-	addr, err := k.getDepositAddress(ctx, &rawTx.TxIn[0].PreviousOutPoint)
+	prevOutInfo, ok := k.GetVerifiedOutPointInfo(ctx, &rawTx.TxIn[0].PreviousOutPoint)
+	if !ok {
+		return nil, fmt.Errorf("transaction ID is not known")
+	}
+
+	addr, err := btcutil.DecodeAddress(prevOutInfo.DepositAddr, k.getNetwork(ctx).Params)
 	if err != nil {
 		return nil, err
 	}
@@ -220,22 +231,10 @@ func (k Keeper) AssembleBtcTx(ctx sdk.Context, rawTx *wire.MsgTx, sig btcec.Sign
 		return nil, err
 	}
 
-	if err := validateTxScripts(rawTx, payScript); err != nil {
+	if err := validateTxScripts(prevOutInfo, rawTx, payScript); err != nil {
 		return nil, err
 	}
 	return rawTx, nil
-}
-
-func (k Keeper) getDepositAddress(ctx sdk.Context, outpoint *wire.OutPoint) (btcutil.Address, error) {
-	out, ok := k.GetVerifiedOutPointInfo(ctx, outpoint)
-	if !ok {
-		return nil, fmt.Errorf("transaction ID is not known")
-	}
-	addr, err := btcutil.DecodeAddress(out.DepositAddr, k.getNetwork(ctx).Params)
-	if err != nil {
-		return nil, err
-	}
-	return addr, nil
 }
 
 func (k Keeper) getNetwork(ctx sdk.Context) types.Network {
@@ -253,11 +252,11 @@ func (k Keeper) createWitness(ctx sdk.Context, sig btcec.Signature, address btcu
 	return wire.TxWitness{sigBytes, redeemScript}, nil
 }
 
-func validateTxScripts(tx *wire.MsgTx, pkScript []byte) error {
+func validateTxScripts(prevOutInfo types.OutPointInfo, tx *wire.MsgTx, pkScript []byte) error {
 	flags := txscript.StandardVerifyFlags
 
 	// execute (dry-run) the public key and signature script to validate them
-	scriptEngine, err := txscript.NewEngine(pkScript, tx, 0, flags, nil, nil, tx.TxOut[0].Value)
+	scriptEngine, err := txscript.NewEngine(pkScript, tx, 0, flags, nil, nil, int64(prevOutInfo.Amount))
 	if err != nil {
 		return sdkerrors.Wrap(err, "could not create execution engine, aborting")
 	}
