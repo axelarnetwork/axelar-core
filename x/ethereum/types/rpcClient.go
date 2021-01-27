@@ -113,7 +113,7 @@ func (d DummyClient) SuggestGasPrice(ctx context.Context) (*big.Int, error) {
 }
 
 func (d DummyClient) ChainID(ctx context.Context) (*big.Int, error) {
-	panic("implement me")
+	return DefaultParams().Network.Params().ChainID, nil
 }
 
 func (d DummyClient) EstimateGas(ctx context.Context, msg ethereum.CallMsg) (uint64, error) {
