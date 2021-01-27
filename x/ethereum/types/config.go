@@ -1,8 +1,8 @@
 package types
 
 type EthConfig struct {
-	EthRpcAddr    string `mapstructure:"eth_rpc_addr"`
-	WithEthBridge bool   `mapstructure:"start-with-ethbridge"`
+	EthRpcAddr    string `mapstructure:"rpc_addr"`
+	WithEthBridge bool   `mapstructure:"start-with-bridge"`
 }
 
 func DefaultConfig() EthConfig {
