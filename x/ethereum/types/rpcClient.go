@@ -119,7 +119,3 @@ func (d DummyClient) ChainID(ctx context.Context) (*big.Int, error) {
 func (d DummyClient) EstimateGas(ctx context.Context, msg ethereum.CallMsg) (uint64, error) {
 	panic("implement me")
 }
-
-func NewDummyClient() (RPCClient, error) {
-	return DummyClient{}, nil
-}
