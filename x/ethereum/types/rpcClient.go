@@ -67,7 +67,7 @@ func toCallArg(msg ethereum.CallMsg) interface{} {
 	return arg
 }
 
-func NewRPCClient(url string) (*EthRPCClient, error) {
+func NewRPCClient(url string) (RPCClient, error) {
 	client, err := ethclient.Dial(url)
 	if err != nil {
 		return nil, err
@@ -84,4 +84,42 @@ func NewRPCClient(url string) (*EthRPCClient, error) {
 	}
 
 	return &EthRPCClient{Client: client, rpc: rpc}, nil
+}
+
+type DummyClient struct{}
+
+func (d DummyClient) BlockNumber(ctx context.Context) (uint64, error) {
+	panic("implement me")
+}
+
+func (d DummyClient) TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
+	panic("implement me")
+}
+
+func (d DummyClient) SendTransaction(ctx context.Context, tx *types.Transaction) error {
+	panic("implement me")
+}
+
+func (d DummyClient) SendAndSignTransaction(ctx context.Context, msg ethereum.CallMsg) (string, error) {
+	panic("implement me")
+}
+
+func (d DummyClient) PendingNonceAt(ctx context.Context, account common.Address) (uint64, error) {
+	panic("implement me")
+}
+
+func (d DummyClient) SuggestGasPrice(ctx context.Context) (*big.Int, error) {
+	panic("implement me")
+}
+
+func (d DummyClient) ChainID(ctx context.Context) (*big.Int, error) {
+	panic("implement me")
+}
+
+func (d DummyClient) EstimateGas(ctx context.Context, msg ethereum.CallMsg) (uint64, error) {
+	panic("implement me")
+}
+
+func NewDummyClient() (RPCClient, error) {
+	return DummyClient{}, nil
 }
