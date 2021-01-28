@@ -22,9 +22,11 @@ jobs:
           ssh-private-key: ${{ secrets.CICD_RSA_KEY }}
 
       - name: Build docker image
-        run: make docker-image
+        run: |
+          make docker-image
+          make docker-image-debug
 
-      - name: Push to ECR
+      - name: Push to ECR (latest)
         uses: jwalton/gh-ecr-push@v1
         with:
           access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -32,3 +34,12 @@ jobs:
           region: us-east-2
           local-image: axelar/core
           image: axelar-core:latest
+
+      - name: Push to ECR (latest-debug)
+        uses: jwalton/gh-ecr-push@v1
+        with:
+          access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          region: us-east-2
+          local-image: axelar/core-debug
+          image: axelar-core:latest-debug
