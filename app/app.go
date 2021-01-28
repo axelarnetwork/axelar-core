@@ -322,7 +322,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		}
 		logger.Debug("Successfully connected to ethereum node")
 	} else {
-		rpcEth = ethTypes.DummyClient{}
+		rpcEth = ethTypes.NewDummyRPC()
 	}
 
 	// Enable running a node with or without a Bitcoin bridge
@@ -336,7 +336,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		tmos.TrapSignal(logger, rpc.Shutdown)
 		rpcBTC = rpc
 	} else {
-		rpcBTC = btcTypes.DummyClient{}
+		rpcBTC = btcTypes.NewDummyRPC()
 	}
 
 	// NOTE: Any module instantiated in the module manager that is later modified

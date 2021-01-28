@@ -2,6 +2,7 @@ package types
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -14,11 +15,7 @@ import (
 
 //go:generate moq -out ./mock/rpcClient.go -pkg mock . RPCClient
 
-type EthRPCClient struct {
-	*ethclient.Client
-	rpc *rpc.Client
-}
-
+// RPCClient provides calls to an Ethereum RPC endpoint
 type RPCClient interface {
 	BlockNumber(ctx context.Context) (uint64, error)
 	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
@@ -30,7 +27,34 @@ type RPCClient interface {
 	EstimateGas(ctx context.Context, msg ethereum.CallMsg) (uint64, error)
 }
 
-func (ethRPCClient *EthRPCClient) SendAndSignTransaction(ctx context.Context, msg ethereum.CallMsg) (string, error) {
+// RPCClientImpl implements RPCClient
+type RPCClientImpl struct {
+	*ethclient.Client
+	rpc *rpc.Client
+}
+
+// NewRPCClient returns an Ethereum rpc client
+func NewRPCClient(url string) (*RPCClientImpl, error) {
+	client, err := ethclient.Dial(url)
+	if err != nil {
+		return nil, err
+	}
+
+	rpcClient, err := rpc.DialContext(context.Background(), url)
+	if err != nil {
+		return nil, err
+	}
+
+	// try to access ethereum network
+	if _, err := client.ChainID(context.Background()); err != nil {
+		return nil, err
+	}
+
+	return &RPCClientImpl{Client: client, rpc: rpcClient}, nil
+}
+
+// SendAndSignTransaction sends an unsigned transaction to an Ethereum node which tries to sign and submit it
+func (ethRPCClient *RPCClientImpl) SendAndSignTransaction(ctx context.Context, msg ethereum.CallMsg) (string, error) {
 	var txHash hexutil.Bytes
 
 	err := ethRPCClient.rpc.CallContext(ctx, &txHash, "eth_sendTransaction", toCallArg(msg))
@@ -67,55 +91,49 @@ func toCallArg(msg ethereum.CallMsg) interface{} {
 	return arg
 }
 
-func NewRPCClient(url string) (RPCClient, error) {
-	client, err := ethclient.Dial(url)
-	if err != nil {
-		return nil, err
-	}
+type dummyClient struct{}
 
-	rpc, err := rpc.DialContext(context.Background(), url)
-	if err != nil {
-		return nil, err
-	}
-
-	// try to access ethereum network
-	if _, err := client.ChainID(context.Background()); err != nil {
-		return nil, err
-	}
-
-	return &EthRPCClient{Client: client, rpc: rpc}, nil
+// NewDummyRPC returns a placeholder for an rpc client. It does not make any rpc calls
+func NewDummyRPC() RPCClient {
+	return dummyClient{}
 }
 
-type DummyClient struct{}
-
-func (d DummyClient) BlockNumber(ctx context.Context) (uint64, error) {
-	panic("implement me")
+// BlockNumber implements RPCClient
+func (d dummyClient) BlockNumber(context.Context) (uint64, error) {
+	return 0, fmt.Errorf("no response")
 }
 
-func (d DummyClient) TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
-	panic("implement me")
+// TransactionReceipt implements RPCClient
+func (d dummyClient) TransactionReceipt(context.Context, common.Hash) (*types.Receipt, error) {
+	return nil, fmt.Errorf("no response")
 }
 
-func (d DummyClient) SendTransaction(ctx context.Context, tx *types.Transaction) error {
-	panic("implement me")
+// SendTransaction implements RPCClient
+func (d dummyClient) SendTransaction(context.Context, *types.Transaction) error {
+	return fmt.Errorf("no response")
 }
 
-func (d DummyClient) SendAndSignTransaction(ctx context.Context, msg ethereum.CallMsg) (string, error) {
-	panic("implement me")
+// SendAndSignTransaction implements RPCClient
+func (d dummyClient) SendAndSignTransaction(context.Context, ethereum.CallMsg) (string, error) {
+	return "", fmt.Errorf("no response")
 }
 
-func (d DummyClient) PendingNonceAt(ctx context.Context, account common.Address) (uint64, error) {
-	panic("implement me")
+// PendingNonceAt implements RPCClient
+func (d dummyClient) PendingNonceAt(context.Context, common.Address) (uint64, error) {
+	return 0, fmt.Errorf("no response")
 }
 
-func (d DummyClient) SuggestGasPrice(ctx context.Context) (*big.Int, error) {
-	panic("implement me")
+// SuggestGasPrice implements RPCClient
+func (d dummyClient) SuggestGasPrice(context.Context) (*big.Int, error) {
+	return nil, fmt.Errorf("no response")
 }
 
-func (d DummyClient) ChainID(ctx context.Context) (*big.Int, error) {
+// ChainID implements RPCClient
+func (d dummyClient) ChainID(context.Context) (*big.Int, error) {
 	return DefaultParams().Network.Params().ChainID, nil
 }
 
-func (d DummyClient) EstimateGas(ctx context.Context, msg ethereum.CallMsg) (uint64, error) {
-	panic("implement me")
+// EstimateGas implements RPCClient
+func (d dummyClient) EstimateGas(context.Context, ethereum.CallMsg) (uint64, error) {
+	return 0, fmt.Errorf("no response")
 }
