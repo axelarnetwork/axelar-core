@@ -52,7 +52,7 @@ func queryMasterAddress(ctx sdk.Context, s types.Signer) ([]byte, error) {
 
 	pk, ok := s.GetCurrentMasterKey(ctx, balance.Ethereum)
 	if !ok {
-		return nil, fmt.Errorf("key not found")
+		return nil, sdkerrors.Wrap(types.ErrEthereum, "key not found")
 	}
 
 	fromAddress := crypto.PubkeyToAddress(pk)

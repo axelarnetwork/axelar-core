@@ -105,7 +105,7 @@ func GetCmdCreateDeployTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 // GetCmdSendTx sends a transaction to Ethereum
 func GetCmdSendTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "send [txID]",
+		Use:   "sendTx [txID]",
 		Short: "Send a transaction that spends tx [txID] to Ethereum",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -126,7 +126,7 @@ func GetCmdSendTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 // GetCmdSendCommand returns the query to send a signed command from an externally controlled address to the specified contract
 func GetCmdSendCommand(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "send [commandID] [fromAddress] [contractAddress]",
+		Use:   "sendCommand [commandID] [fromAddress] [contractAddress]",
 		Short: "Send a transaction signed by [fromAddress] that executes the command [commandID] to Ethereum contract at [contractAddress]",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
