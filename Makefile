@@ -12,12 +12,7 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=axelar \
 BUILD_FLAGS := -ldflags '$(ldflags)'
 
 .PHONY: all
-all: install docker-image
-
-.PHONY: install
-install: go.sum
-		go install -mod=readonly $(BUILD_FLAGS) ./cmd/axelard
-		go install -mod=readonly $(BUILD_FLAGS) ./cmd/axelarcli
+all: generate build docker-image docker-image-debug
 
 go.sum: go.mod
 		@echo "--> Ensure dependencies have not been modified"
@@ -33,20 +28,29 @@ lint:
 	@golangci-lint run
 	@go mod verify
 
+# Build the project with release flags
 .PHONY: build
 build: go.sum
 		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) ./cmd/axelard
 		go build -o ./bin/axelarcli -mod=readonly $(BUILD_FLAGS) ./cmd/axelarcli
 
+# Build the project with debug flags
 .PHONY: debug
 debug: go.sum
 		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) -gcflags="all=-N -l" ./cmd/axelard
 		go build -o ./bin/axelarcli -mod=readonly $(BUILD_FLAGS) -gcflags="all=-N -l" ./cmd/axelarcli
 
+# Build a release image
 .PHONY: docker-image
 docker-image:
 	@DOCKER_BUILDKIT=1 docker build --ssh default -t axelar/core .
 
+# Build a docker image that is able to run dlv and a debugger can be hooked up to
 .PHONY: docker-image-debug
 docker-image-debug:
 	@DOCKER_BUILDKIT=1 docker build --ssh default -t axelar/core-debug -f ./Dockerfile.debug .
+
+# Run all the code generators in the project
+.PHONY: generate
+generate:
+	go generate ./...
