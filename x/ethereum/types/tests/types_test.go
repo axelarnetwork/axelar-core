@@ -13,7 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func TestCreateExecuteMintData_SingleMint(t *testing.T) {
+func TestCreateMintCommandData_SingleMint(t *testing.T) {
 	chainID := big.NewInt(1)
 	var commandID types.CommandID
 	copy(commandID[:], common.FromHex("0xec78d9c22c08bb9f0ecd5d95571ae83e3f22219c5a9278c3270691d50abfd91b"))
@@ -38,7 +38,7 @@ func TestCreateExecuteMintData_SingleMint(t *testing.T) {
 	assert.Equal(t, expected, common.Bytes2Hex(actual))
 }
 
-func TestCreateExecuteMintData_MultipleMint(t *testing.T) {
+func TestCreateMintCommandData_MultipleMint(t *testing.T) {
 	chainID := big.NewInt(1)
 	var commandID types.CommandID
 	copy(commandID[:], common.FromHex("0xec78d9c22c08bb9f0ecd5d95571ae83e3f22219c5a9278c3270691d50abfd91b"))
@@ -57,6 +57,29 @@ func TestCreateExecuteMintData_MultipleMint(t *testing.T) {
 			{Recipient: exported.CrossChainAddress{Chain: exported.Ethereum, Address: addressA}, Amount: sdk.NewCoin(denomA, amountA)},
 			{Recipient: exported.CrossChainAddress{Chain: exported.Ethereum, Address: addressB}, Amount: sdk.NewCoin(denomB, amountB)},
 		})
+
+	assert.NoError(t, err)
+	assert.Equal(t, expected, common.Bytes2Hex(actual))
+}
+
+func TestCreateDeployTokenCommandData_CorrectData(t *testing.T) {
+	chainID := big.NewInt(1)
+	var commandID types.CommandID
+	copy(commandID[:], common.FromHex("0x5763814b98a3aa86f212797af3273868b5dd6e2a532d764a79b98ca859e7bbad"))
+	tokenName := "an awesome token"
+	symbol := "aat"
+	decimals := uint8(18)
+	capacity := sdk.NewInt(10000)
+
+	expected := "00000000000000000000000000000000000000000000000000000000000000015763814b98a3aa86f212797af3273868b5dd6e2a532d764a79b98ca859e7bbad000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000000b6465706c6f79546f6b656e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000001200000000000000000000000000000000000000000000000000000000000027100000000000000000000000000000000000000000000000000000000000000010616e20617765736f6d6520746f6b656e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000036161740000000000000000000000000000000000000000000000000000000000"
+	actual, err := types.CreateDeployTokenCommandData(
+		chainID,
+		commandID,
+		tokenName,
+		symbol,
+		decimals,
+		capacity,
+	)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, common.Bytes2Hex(actual))
