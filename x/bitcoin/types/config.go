@@ -1,7 +1,6 @@
 package types
 
 import (
-	"os"
 	"time"
 )
 
@@ -18,7 +17,6 @@ type BtcConfig struct {
 func DefaultConfig() BtcConfig {
 	return BtcConfig{
 		RPCAddr:        "localhost:8332",
-		CookiePath:     os.ExpandEnv("$HOME/.bitcoin/.cookie"),
 		RPCTimeout:     60 * time.Second,
 		StartUpTimeout: 100 * time.Second,
 		WithBtcBridge:  true,
