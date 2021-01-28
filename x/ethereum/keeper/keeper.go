@@ -61,13 +61,13 @@ func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context) uint64 {
 	return h
 }
 
-func (k Keeper) SetCommandData(ctx sdk.Context, commandID [32]byte, commandData []byte) {
+func (k Keeper) SetCommandData(ctx sdk.Context, commandID types.CommandID, commandData []byte) {
 	key := append([]byte(commandPrefix), commandID[:]...)
 
 	ctx.KVStore(k.storeKey).Set(key, commandData)
 }
 
-func (k Keeper) GetCommandData(ctx sdk.Context, commandID [32]byte) []byte {
+func (k Keeper) GetCommandData(ctx sdk.Context, commandID types.CommandID) []byte {
 	key := append([]byte(commandPrefix), commandID[:]...)
 
 	return ctx.KVStore(k.storeKey).Get(key)
