@@ -12,10 +12,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/spf13/cobra"
 
-	"github.com/axelarnetwork/axelar-core/utils/denom"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
@@ -33,16 +31,16 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 	ethQueryCmd.AddCommand(flags.GetCommands(
 		GetCmdMasterAddress(queryRoute, cdc),
-		GetCmdCreateMintTx(queryRoute, cdc),
 		GetCmdCreateDeployTx(queryRoute, cdc),
 		GetCmdSendTx(queryRoute, cdc),
-		GetCmdSendMintTx(queryRoute, cdc),
+		GetCmdSendCommand(queryRoute, cdc),
 	)...)
 
 	return ethQueryCmd
 
 }
 
+// GetCmdMasterAddress returns the query for the ethereum master address that owns the AxelarGateway contract
 func GetCmdMasterAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "master-address",
@@ -51,7 +49,7 @@ func GetCmdMasterAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryMasterKey), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryMasterAddress), nil)
 			if err != nil {
 				fmt.Printf("could not resolve master key: %s\n", err.Error())
 
@@ -66,53 +64,7 @@ func GetCmdMasterAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return cmd
 }
 
-func GetCmdCreateMintTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	var gasLimit uint64
-	cmd := &cobra.Command{
-		Use:   "mint [contractAddr] [recipient] [amount]",
-		Short: "Receive a raw mint transaction",
-		Args:  cobra.ExactArgs(3),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			amount, err := denom.ParseSatoshi(args[2])
-			if err != nil {
-				return err
-			}
-
-			// check if the addresses are valid
-			if !validAddress(args[0]) {
-				return fmt.Errorf("invalid contract address")
-			}
-
-			if !validAddress(args[1]) {
-				return fmt.Errorf("invalid recipient address")
-			}
-
-			params := types.MintParams{
-				Recipient:    args[1],
-				Amount:       amount.Amount,
-				ContractAddr: args[0],
-				GasLimit:     gasLimit,
-			}
-
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.CreateMintTx), cdc.MustMarshalJSON(params))
-			if err != nil {
-				fmt.Printf("could not resolve master key: %s\n", err.Error())
-
-				return nil
-			}
-
-			var tx *ethTypes.Transaction
-			cdc.MustUnmarshalJSON(res, &tx)
-			fmt.Println(string(cdc.MustMarshalJSON(tx)))
-			return nil
-		},
-	}
-	cmd.Flags().Uint64Var(&gasLimit, "gas-limit", 3000000, "default Ethereum gas limit")
-	return cmd
-}
-
+// GetCmdCreateDeployTx returns the query for a raw unsigned Ethereum deploy transaction for the smart contract of a given path
 func GetCmdCreateDeployTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	var gasLimit uint64
 	cmd := &cobra.Command{
@@ -171,10 +123,11 @@ func GetCmdSendTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-func GetCmdSendMintTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
+// GetCmdSendCommand returns the query to send a signed command from an externally controlled address to the specified contract
+func GetCmdSendCommand(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "send-mint [commandID] [fromAddress] [contractAddress]",
-		Short: "Send a transaction signed by [fromAddress] that executes mint command [commandID] to Ethereum contract at [contractAddress]",
+		Use:   "send [commandID] [fromAddress] [contractAddress]",
+		Short: "Send a transaction signed by [fromAddress] that executes the command [commandID] to Ethereum contract at [contractAddress]",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			commandID := args[0]
@@ -182,7 +135,7 @@ func GetCmdSendMintTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			contractAddress := args[2]
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s/%s", queryRoute, keeper.SendMintTx, commandID, fromAddress, contractAddress), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s/%s", queryRoute, keeper.SendCommand, commandID, fromAddress, contractAddress), nil)
 			if err != nil {
 				return sdkerrors.Wrapf(err, "could not send Ethereum transaction executing mint command %s", commandID)
 			}

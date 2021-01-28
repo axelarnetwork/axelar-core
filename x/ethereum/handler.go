@@ -2,10 +2,8 @@ package ethereum
 
 import (
 	"context"
-	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"math/big"
 	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -18,9 +16,10 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
-	crypto "github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
+// NewHandler returns the handler of the ethereum module
 func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Signer, snap snapshot.Snapshotter, balancer types.Balancer) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
@@ -29,6 +28,8 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 			return handleMsgVerifyTx(ctx, k, rpc, v, msg)
 		case *types.MsgVoteVerifiedTx:
 			return handleMsgVoteVerifiedTx(ctx, k, v, msg)
+		case types.MsgSignDeployToken:
+			return handleMsgSignDeployToken(ctx, k, s, snap, msg)
 		case types.MsgSignTx:
 			return handleMsgSignTx(ctx, k, s, snap, msg)
 		case types.MsgSignPendingTransfersTx:
@@ -51,11 +52,10 @@ func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer ty
 		}, nil
 	}
 
-	addresses, denoms, amounts := flatTransfers(pendingTransfers)
 	chainID := k.GetParams(ctx).Network.Params().ChainID
-	commandID := calculateCommandID(pendingTransfers)
+	commandID := types.CalculateCommandID(pendingTransfers)
 
-	data, err := types.CreateExecuteMintData(chainID, commandID, addresses, denoms, amounts)
+	data, err := types.CreateMintCommandData(chainID, commandID, pendingTransfers)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
@@ -65,7 +65,7 @@ func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer ty
 		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no master key for chain %s found", balance.Ethereum)
 	}
 
-	snapshot, ok := snap.GetLatestSnapshot(ctx)
+	s, ok := snap.GetLatestSnapshot(ctx)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, "no snapshot found")
 	}
@@ -77,7 +77,7 @@ func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer ty
 	k.Logger(ctx).Info(fmt.Sprintf("signing mint command [%s] for pending transfers to chain %s", commandIDHex, balance.Ethereum))
 	signHash := types.GetEthereumSignHash(data)
 
-	err = signer.StartSign(ctx, keyID, commandIDHex, signHash.Bytes(), snapshot.Validators)
+	err = signer.StartSign(ctx, keyID, commandIDHex, signHash.Bytes(), s.Validators)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
@@ -96,37 +96,6 @@ func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer ty
 		Log:    fmt.Sprintf("successfully started signing protocol for chain %s pending transfers", balance.Ethereum),
 		Events: ctx.EventManager().Events(),
 	}, nil
-}
-
-// TODO: Remove this function after https://github.com/axelarnetwork/ethereum-bridge/issues/3 is implemented
-func calculateCommandID(transfers []balance.CrossChainTransfer) [32]byte {
-	var result [32]byte
-	var hash []byte
-
-	for _, transfer := range transfers {
-		idByte := make([]byte, 8)
-		binary.LittleEndian.PutUint64(idByte, transfer.ID)
-
-		hash = crypto.Keccak256(hash, idByte)
-	}
-
-	copy(result[:], hash[:32])
-
-	return result
-}
-
-func flatTransfers(transfers []balance.CrossChainTransfer) ([]string, []string, []*big.Int) {
-	var addresses []string
-	var denoms []string
-	var amounts []*big.Int
-
-	for _, transfer := range transfers {
-		addresses = append(addresses, transfer.Recipient.Address)
-		denoms = append(denoms, transfer.Amount.Denom)
-		amounts = append(amounts, transfer.Amount.Amount.BigInt())
-	}
-
-	return addresses, denoms, amounts
 }
 
 func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v types.Voter, msg types.MsgVerifyTx) (*sdk.Result, error) {
@@ -217,6 +186,54 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, ms
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
+func handleMsgSignDeployToken(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap snapshot.Snapshotter, msg types.MsgSignDeployToken) (*sdk.Result, error) {
+	chainID := k.GetParams(ctx).Network.Params().ChainID
+
+	var commandID types.CommandID
+	copy(commandID[:], crypto.Keccak256([]byte(msg.TokenName))[:32])
+
+	data, err := types.CreateDeployTokenCommandData(chainID, commandID, msg.TokenName, msg.Symbol, msg.Decimals, msg.Capacity)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+	}
+
+	keyID, ok := signer.GetCurrentMasterKeyID(ctx, balance.Ethereum)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no master key for chain %s found", balance.Ethereum)
+	}
+
+	s, ok := snap.GetLatestSnapshot(ctx)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, "no snapshot found")
+	}
+
+	commandIDHex := hex.EncodeToString(commandID[:])
+	k.Logger(ctx).Info(fmt.Sprintf("storing data for deploy-token command %s", commandIDHex))
+	k.SetCommandData(ctx, commandID, data)
+
+	signHash := types.GetEthereumSignHash(data)
+
+	err = signer.StartSign(ctx, keyID, commandIDHex, signHash.Bytes(), s.Validators)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+	}
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+			sdk.NewAttribute(types.AttributeCommandID, commandIDHex),
+		),
+	)
+
+	return &sdk.Result{
+		Data:   signHash.Bytes(),
+		Log:    fmt.Sprintf("successfully started signing protocol for deploy-token %s command", msg.TokenName),
+		Events: ctx.EventManager().Events(),
+	}, nil
+}
+
 func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap snapshot.Snapshotter, msg types.MsgSignTx) (*sdk.Result, error) {
 	tx := msg.UnmarshaledTx()
 	txID := tx.Hash().String()
@@ -246,7 +263,7 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, "no snapshot found")
 	}
-	err = signer.StartSign(ctx, keyID, hash.String(), hash.Bytes(), s.Validators)
+	err = signer.StartSign(ctx, keyID, txID, hash.Bytes(), s.Validators)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}

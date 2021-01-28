@@ -10,7 +10,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/math"
 	ethCrypto "github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
@@ -71,7 +70,7 @@ func TestDeployTx_DifferentData_DifferentHash(t *testing.T) {
 }
 
 func TestMintTx_DifferentValue_DifferentHash(t *testing.T) {
-	tx1 := createSignedMintTx()
+	tx1 := createSignedEthTx()
 	privateKey, err := ethCrypto.GenerateKey()
 	if err != nil {
 		panic(err)
@@ -90,7 +89,7 @@ func TestMintTx_DifferentValue_DifferentHash(t *testing.T) {
 }
 
 func TestMintTx_DifferentData_DifferentHash(t *testing.T) {
-	tx1 := createSignedMintTx()
+	tx1 := createSignedEthTx()
 	privateKey, err := ethCrypto.GenerateKey()
 	if err != nil {
 		panic(err)
@@ -109,7 +108,7 @@ func TestMintTx_DifferentData_DifferentHash(t *testing.T) {
 }
 
 func TestMintTx_DifferentRecipient_DifferentHash(t *testing.T) {
-	tx1 := createSignedMintTx()
+	tx1 := createSignedEthTx()
 	privateKey, err := ethCrypto.GenerateKey()
 	if err != nil {
 		panic(err)
@@ -187,7 +186,7 @@ func TestVerifyTx_Deploy_Success(t *testing.T) {
 func TestVerifyTx_Mint_HashNotFound(t *testing.T) {
 	minConfHeight := testutils.RandIntBetween(1, 10)
 	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
-	signedTx := createSignedMintTx()
+	signedTx := createSignedEthTx()
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
@@ -208,7 +207,7 @@ func TestVerifyTx_Mint_HashNotFound(t *testing.T) {
 func TestVerifyTx_Mint_NotConfirmed(t *testing.T) {
 	minConfHeight := testutils.RandIntBetween(1, 10)
 	confCount := testutils.RandIntBetween(0, minConfHeight)
-	signedTx := createSignedMintTx()
+	signedTx := createSignedEthTx()
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
@@ -226,7 +225,7 @@ func TestVerifyTx_Mint_NotConfirmed(t *testing.T) {
 func TestVerifyTx_Mint_Success(t *testing.T) {
 	minConfHeight := testutils.RandIntBetween(1, 10)
 	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
-	signedTx := createSignedMintTx()
+	signedTx := createSignedEthTx()
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
@@ -265,15 +264,15 @@ func sign(tx *ethTypes.Transaction) *ethTypes.Transaction {
 	return signedTx
 }
 
-func createSignedMintTx() *ethTypes.Transaction {
+func createSignedEthTx() *ethTypes.Transaction {
 	generator := testutils.RandInts()
 	contractAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
-	toAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
 	nonce := uint64(generator.Next())
 	gasPrice := big.NewInt(testutils.RandInts().Next())
 	gasLimit := uint64(generator.Next())
 	value := big.NewInt(0)
-	data := types.CreateMintCallData(toAddr, big.NewInt(testutils.RandIntBetween(1, math.MaxInt64)))
+
+	data := testutils.RandBytes(int(testutils.RandIntBetween(0, 1000)))
 	return sign(ethTypes.NewTransaction(nonce, contractAddr, value, gasLimit, gasPrice, data))
 }
 
