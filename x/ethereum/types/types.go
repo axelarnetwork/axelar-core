@@ -46,7 +46,7 @@ const (
 		}
 	]`
 	axelarGatewayCommandMint        = "mintToken"
-	axelarGatewayCommandDeployToken = "mintToken"
+	axelarGatewayCommandDeployToken = "deployToken"
 	axelarGatewayFuncExecute        = "execute"
 )
 
@@ -198,7 +198,7 @@ func CreateMintCommandData(chainID *big.Int, commandID CommandID, transfers []ba
 
 // CreateDeployTokenCommandData returns the command data to deploy the specified token
 func CreateDeployTokenCommandData(chainID *big.Int, commandID CommandID, tokenName string, symbol string, decimals uint8, capacity sdk.Int) ([]byte, error) {
-	deployParams, err := createDeployTokenParams(tokenName, symbol, decimals, capacity)
+	deployParams, err := createDeployTokenParams(tokenName, symbol, decimals, capacity.BigInt())
 	if err != nil {
 		return nil, err
 	}
@@ -330,7 +330,7 @@ func createMintParams(addresses []string, denoms []string, amounts []*big.Int) (
 	return result, nil
 }
 
-func createDeployTokenParams(tokenName string, symbol string, decimals uint8, capacity sdk.Int) ([]byte, error) {
+func createDeployTokenParams(tokenName string, symbol string, decimals uint8, capacity *big.Int) ([]byte, error) {
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
 		return nil, err
