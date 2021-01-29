@@ -160,6 +160,8 @@ func createTxAndSend(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Sig
 		return nil, sdkerrors.Wrapf(types.ErrEthereum, "could not create transaction data: %s", err)
 	}
 
+	k.Logger(ctx).Debug(common.Bytes2Hex(executeData))
+
 	contractAddr := common.HexToAddress(params.ContractAddr)
 	msg := ethereumRoot.CallMsg{
 		From: common.HexToAddress(params.Sender),
