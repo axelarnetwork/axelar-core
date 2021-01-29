@@ -32,7 +32,7 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 			return handleMsgSignDeployToken(ctx, k, s, snap, msg)
 		case types.MsgSignTx:
 			return handleMsgSignTx(ctx, k, s, snap, msg)
-		case types.MsgSignPendingTransfersTx:
+		case types.MsgSignPendingTransfers:
 			return handleMsgSignPendingTransfersTx(ctx, k, s, snap, balancer, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
@@ -41,7 +41,7 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 	}
 }
 
-func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap snapshot.Snapshotter, balancer types.Balancer, msg types.MsgSignPendingTransfersTx) (*sdk.Result, error) {
+func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap snapshot.Snapshotter, balancer types.Balancer, msg types.MsgSignPendingTransfers) (*sdk.Result, error) {
 	pendingTransfers := balancer.GetPendingTransfersForChain(ctx, balance.Ethereum)
 
 	if len(pendingTransfers) == 0 {
@@ -92,8 +92,8 @@ func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer ty
 	)
 
 	return &sdk.Result{
-		Data:   signHash.Bytes(),
-		Log:    fmt.Sprintf("successfully started signing protocol for chain %s pending transfers", balance.Ethereum),
+		Data:   commandID[:],
+		Log:    fmt.Sprintf("successfully started signing protocol for %s pending transfers, commandID: %s", balance.Ethereum, commandIDHex),
 		Events: ctx.EventManager().Events(),
 	}, nil
 }
@@ -228,8 +228,8 @@ func handleMsgSignDeployToken(ctx sdk.Context, k keeper.Keeper, signer types.Sig
 	)
 
 	return &sdk.Result{
-		Data:   signHash.Bytes(),
-		Log:    fmt.Sprintf("successfully started signing protocol for deploy-token %s command", msg.TokenName),
+		Data:   commandID[:],
+		Log:    fmt.Sprintf("successfully started signing protocol for deploy-token command %s", commandIDHex),
 		Events: ctx.EventManager().Events(),
 	}, nil
 }

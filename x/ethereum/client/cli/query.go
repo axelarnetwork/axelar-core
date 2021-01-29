@@ -93,7 +93,6 @@ func GetCmdCreateDeployTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			var result types.DeployResult
 			cdc.MustUnmarshalJSON(res, &result)
-
 			fmt.Println(string(cdc.MustMarshalJSON(result.Tx)))
 			return nil
 		},
@@ -130,12 +129,15 @@ func GetCmdSendCommand(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		Short: "Send a transaction signed by [fromAddress] that executes the command [commandID] to Ethereum contract at [contractAddress]",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			commandID := args[0]
-			fromAddress := args[1]
-			contractAddress := args[2]
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s/%s", queryRoute, keeper.SendCommand, commandID, fromAddress, contractAddress), nil)
+			var commandID types.CommandID
+			copy(commandID[:], common.Hex2Bytes(args[0]))
+			params := types.CommandParams{
+				CommandID:    commandID,
+				Sender:       args[1],
+				ContractAddr: args[2],
+			}
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.SendCommand), cdc.MustMarshalJSON(params))
 			if err != nil {
 				return sdkerrors.Wrapf(err, "could not send Ethereum transaction executing mint command %s", commandID)
 			}

@@ -126,7 +126,7 @@ func ToEthSignature(sig tss.Signature, hash common.Hash, pk ecdsa.PublicKey) (Si
 	return s, nil
 }
 
-// DeployParams describe the parameter used to create a deploy contract transaction for Ethereum
+// DeployParams describe the parameters used to create a deploy contract transaction for Ethereum
 type DeployParams struct {
 	ByteCode []byte
 	GasLimit uint64
@@ -137,6 +137,14 @@ type DeployParams struct {
 type DeployResult struct {
 	ContractAddress string
 	Tx              *ethTypes.Transaction
+}
+
+// CommandParams describe the parameters used to send a pre-signed command to the given contract,
+// with the sender signing the transaction on the Ethereum node
+type CommandParams struct {
+	CommandID    CommandID
+	Sender       string
+	ContractAddr string
 }
 
 // CreateExecuteData wraps the specific command data and includes the command signature.
