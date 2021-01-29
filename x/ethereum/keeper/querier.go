@@ -37,11 +37,7 @@ func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer) sdk.Querier {
 		case SendTx:
 			return sendSignedTx(ctx, k, rpc, s, path[1])
 		case SendCommand:
-			commandID := path[1]
-			fromAddress := common.HexToAddress(path[2])
-			contractAddress := common.HexToAddress(path[3])
-
-			return createTxAndSend(ctx, k, rpc, s, commandID, fromAddress, contractAddress)
+			return createTxAndSend(ctx, k, rpc, s, req.Data)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown eth-bridge query endpoint: %s", path[0]))
 		}
@@ -74,7 +70,7 @@ func createDeployTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Sign
 	var params types.DeployParams
 	err := types.ModuleCdc.UnmarshalJSON(data, &params)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
 
 	contractOwner, err := getContractOwner(ctx, s)
@@ -135,35 +131,40 @@ func sendSignedTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer
 	return k.Codec().MustMarshalJSON(fmt.Sprintf("successfully sent transaction %s to Ethereum", signedTx.Hash().String())), nil
 }
 
-func createTxAndSend(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, commandID string, fromAddress common.Address, contractAddress common.Address) ([]byte, error) {
-	var commandIDByte32 types.CommandID
-	copy(commandIDByte32[:], common.Hex2Bytes(commandID)[:32])
-	commandData := k.GetCommandData(ctx, commandIDByte32)
-
-	sig, ok := s.GetSig(ctx, commandID)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not find a corresponding signature for sig ID %s", commandID))
+func createTxAndSend(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, data []byte) ([]byte, error) {
+	var params types.CommandParams
+	err := types.ModuleCdc.UnmarshalJSON(data, &params)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
 
-	pk, ok := s.GetKeyForSigID(ctx, commandID)
+	commandIDHex := common.Bytes2Hex(params.CommandID[:])
+	sig, ok := s.GetSig(ctx, commandIDHex)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not find a corresponding key for sig ID %s", commandID))
+		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not find a corresponding signature for sig ID %s", commandIDHex))
 	}
 
+	pk, ok := s.GetKeyForSigID(ctx, commandIDHex)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not find a corresponding key for sig ID %s", commandIDHex))
+	}
+
+	commandData := k.GetCommandData(ctx, params.CommandID)
 	commandSig, err := types.ToEthSignature(sig, types.GetEthereumSignHash(commandData), pk)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not create recoverable signature: %v", err))
 	}
 
-	data, err := types.CreateExecuteData(commandData, commandSig)
+	executeData, err := types.CreateExecuteData(commandData, commandSig)
 	if err != nil {
-		return nil, fmt.Errorf("could not create mint transaction data: %s", err)
+		return nil, fmt.Errorf("could not create transaction data: %s", err)
 	}
 
+	contractAddr := common.HexToAddress(params.ContractAddr)
 	msg := ethereumRoot.CallMsg{
-		From: fromAddress,
-		To:   &contractAddress,
-		Data: data,
+		From: common.HexToAddress(params.Sender),
+		To:   &contractAddr,
+		Data: executeData,
 	}
 
 	txHash, err := rpc.SendAndSignTransaction(context.Background(), msg)
