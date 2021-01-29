@@ -89,11 +89,11 @@ func queryTxOutInfo(rpc types.RPCClient, data []byte) ([]byte, error) {
 	var out *wire.OutPoint
 	err := types.ModuleCdc.UnmarshalJSON(data, &out)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "could not parse the outpoint")
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, sdkerrors.Wrap(err, "could not parse the outpoint").Error())
 	}
 	info, err := rpc.GetOutPointInfo(out)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}
 
 	return types.ModuleCdc.MustMarshalJSON(info), nil
@@ -126,7 +126,7 @@ func sendTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, data
 	var out *wire.OutPoint
 	err := types.ModuleCdc.UnmarshalJSON(data, &out)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "could not parse the outpoint")
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, sdkerrors.Wrap(err, "could not parse the outpoint").Error())
 	}
 	rawTx := k.GetRawTx(ctx, out)
 	if rawTx == nil {
