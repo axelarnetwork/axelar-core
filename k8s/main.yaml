@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: axelar-core-0
+  namespace: default
+spec:
+  type: LoadBalancer
+  selector:
+    statefulset.kubernetes.io/pod-name: axelar-core-0
+  ports:
+    - name: p2p
+      port: 26656
+      targetPort: 26656
+    - name: rpc
+      port: 26657
+      targetPort: 26657
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: axelar-core
+  namespace: default
+spec:
+  serviceName: axelar-core
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      sts: axelar-core
+  template:
+    metadata:
+      labels:
+        sts: axelar-core
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: tssd
+          imagePullPolicy: Always
+          image: 499786161782.dkr.ecr.us-east-2.amazonaws.com/tssd:latest
+          command:
+            - tssd
+        - name: axelar-core
+          imagePullPolicy: Always
+          image: 499786161782.dkr.ecr.us-east-2.amazonaws.com/axelar-core:latest
+          env:
+            - name: CONFIG_PATH
+              value: /config/devnet.toml
+            - name: TREASURY_MNEMONIC_PATH
+              value: /config/treasury_mnemonic.txt
+            - name: GENESIS
+              value: "true"
+            - name: LOCAL
+              value: "false"
+            - name: TSSD_HOST
+              value: "127.0.0.1"
+          ports:
+            - containerPort: 26656
+            - containerPort: 26657
+          volumeMounts:
+            - name: axelar-core-volume-mount
+              mountPath: /root
+            - name: axelar-core-config
+              mountPath: /config
+      volumes:
+        - name: axelar-core-config
+          configMap:
+            name: axelar-core-config
+  volumeClaimTemplates:
+    - metadata:
+        name: axelar-core-volume-mount
+      spec:
+        storageClassName: aws-gp2
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi

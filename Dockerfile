@@ -23,5 +23,7 @@ RUN make build
 
 FROM alpine:3.12
 
-COPY --from=build /go/axelar/bin/axelar* /root/
-ENV PATH="/root:${PATH}"
+COPY --from=build /go/axelar/bin/axelar* /usr/local/bin/
+COPY ./entrypoint.sh /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
