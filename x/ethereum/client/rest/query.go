@@ -2,9 +2,9 @@ package rest
 
 import (
 	"fmt"
-	"github.com/axelarnetwork/axelar-core/x/ethereum/client/cli"
+	//"github.com/axelarnetwork/axelar-core/x/ethereum/client/cli"
 	"github.com/ethereum/go-ethereum/common"
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	//ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
@@ -25,7 +25,7 @@ func QueryMasterAddress(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryMasterKey), nil)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryMasterAddress), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
 			return
@@ -40,58 +40,58 @@ func QueryMasterAddress(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-func QueryCreateMintTx(cliCtx context.CLIContext) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
-
-		contractAddr := mux.Vars(r)["contractAddr"]
-		recipient := mux.Vars(r)["recipient"]
-		amount, err := cli.ValidMintParams(contractAddr, recipient, r.URL.Query().Get("amount"))
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		gasLimit, err := parseGasLimit(w, r)
-		if err != nil {
-			return
-		}
-
-		params := types.MintParams{
-			Recipient:    recipient,
-			Amount:       amount.Amount,
-			ContractAddr: contractAddr,
-			GasLimit: gasLimit,
-		}
-
-		json, err := cliCtx.Codec.MarshalJSON(params)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.CreateMintTx), json)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMintTx).Error())
-			return
-		}
-
-		err = types.ValidTxJson(res)
-
-		var tx *ethTypes.Transaction
-		err = cliCtx.Codec.UnmarshalJSON(res, &tx)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		rest.PostProcessResponse(w, cliCtx, string(cliCtx.Codec.MustMarshalJSON(tx)))
-	}
-}
+//func QueryCreateMintTx(cliCtx context.CLIContext) http.HandlerFunc {
+//	return func(w http.ResponseWriter, r *http.Request) {
+//		w.Header().Set("Content-Type", "application/json")
+//		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+//		if !ok {
+//			return
+//		}
+//
+//		contractAddr := mux.Vars(r)["contractAddr"]
+//		recipient := mux.Vars(r)["recipient"]
+//		amount, err := cli.ValidMintParams(contractAddr, recipient, r.URL.Query().Get("amount"))
+//		if err != nil {
+//			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+//			return
+//		}
+//
+//		gasLimit, err := parseGasLimit(w, r)
+//		if err != nil {
+//			return
+//		}
+//
+//		params := types.MintParams{
+//			Recipient:    recipient,
+//			Amount:       amount.Amount,
+//			ContractAddr: contractAddr,
+//			GasLimit: gasLimit,
+//		}
+//
+//		json, err := cliCtx.Codec.MarshalJSON(params)
+//		if err != nil {
+//			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+//			return
+//		}
+//
+//		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.CreateMintTx), json)
+//		if err != nil {
+//			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMintTx).Error())
+//			return
+//		}
+//
+//		err = types.ValidTxJson(res)
+//
+//		var tx *ethTypes.Transaction
+//		err = cliCtx.Codec.UnmarshalJSON(res, &tx)
+//		if err != nil {
+//			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+//			return
+//		}
+//
+//		rest.PostProcessResponse(w, cliCtx, string(cliCtx.Codec.MustMarshalJSON(tx)))
+//	}
+//}
 
 func QueryCreateDeployTx(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -163,34 +163,34 @@ func QuerySendTx(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-func QuerySendMintTx(cliCtx context.CLIContext) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
-
-		commandID := mux.Vars(r)["commandID"]
-		contractAddr := mux.Vars(r)["contractAddr"]
-		fromAddr := r.URL.Query().Get("fromAddress")
-
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s/%s", types.QuerierRoute, keeper.SendMintTx, commandID, fromAddr, contractAddr), nil)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSendMintTx, commandID).Error())
-			return
-		}
-
-		var out string
-		err = cliCtx.Codec.UnmarshalJSON(res, &out)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		rest.PostProcessResponse(w, cliCtx, out)
-	}
-}
+//func QuerySendMintTx(cliCtx context.CLIContext) http.HandlerFunc {
+//	return func(w http.ResponseWriter, r *http.Request) {
+//		w.Header().Set("Content-Type", "application/json")
+//		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+//		if !ok {
+//			return
+//		}
+//
+//		commandID := mux.Vars(r)["commandID"]
+//		contractAddr := mux.Vars(r)["contractAddr"]
+//		fromAddr := r.URL.Query().Get("fromAddress")
+//
+//		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s/%s", types.QuerierRoute, keeper.SendCOmmand, commandID, fromAddr, contractAddr), nil)
+//		if err != nil {
+//			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSendMintTx, commandID).Error())
+//			return
+//		}
+//
+//		var out string
+//		err = cliCtx.Codec.UnmarshalJSON(res, &out)
+//		if err != nil {
+//			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+//			return
+//		}
+//
+//		rest.PostProcessResponse(w, cliCtx, out)
+//	}
+//}
 
 func parseGasLimit(w http.ResponseWriter, r *http.Request) (uint64, error) {
 	glStr := r.URL.Query().Get("gasLimit")

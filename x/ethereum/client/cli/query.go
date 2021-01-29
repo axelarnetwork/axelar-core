@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"io/ioutil"
 	"strings"
 
