@@ -157,7 +157,7 @@ func createTxAndSend(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Sig
 
 	executeData, err := types.CreateExecuteData(commandData, commandSig)
 	if err != nil {
-		return nil, fmt.Errorf("could not create transaction data: %s", err)
+		return nil, sdkerrors.Wrapf(types.ErrEthereum, "could not create transaction data: %s", err)
 	}
 
 	contractAddr := common.HexToAddress(params.ContractAddr)
@@ -169,7 +169,7 @@ func createTxAndSend(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Sig
 
 	txHash, err := rpc.SendAndSignTransaction(context.Background(), msg)
 	if err != nil {
-		return nil, fmt.Errorf("could not send mint transaction: %s", err)
+		return nil, sdkerrors.Wrapf(types.ErrEthereum, "could not send mint transaction: %s", err)
 	}
 
 	return k.Codec().MustMarshalJSON(fmt.Sprintf("successfully sent transaction %s to Ethereum", txHash)), nil
