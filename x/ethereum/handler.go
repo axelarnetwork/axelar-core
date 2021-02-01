@@ -42,6 +42,15 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 
 func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap snapshot.Snapshotter, balancer types.Balancer, msg types.MsgSignPendingTransfersTx) (*sdk.Result, error) {
 	pendingTransfers := balancer.GetPendingTransfersForChain(ctx, balance.Ethereum)
+
+	if len(pendingTransfers) == 0 {
+		return &sdk.Result{
+			Data:   nil,
+			Log:    fmt.Sprintf("no pending transfer for chain %s found", balance.Ethereum),
+			Events: ctx.EventManager().Events(),
+		}, nil
+	}
+
 	addresses, denoms, amounts := flatTransfers(pendingTransfers)
 	chainID := k.GetParams(ctx).Network.Params().ChainID
 	commandID := calculateCommandID(pendingTransfers)
