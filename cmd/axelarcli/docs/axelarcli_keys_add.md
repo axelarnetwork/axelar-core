@@ -17,6 +17,7 @@ You can add a multisig key by passing the list of key names you want the public 
 flag and the minimum number of signatures required through --multisig-threshold. The keys are sorted by address, unless
 the flag --nosort is set.
 
+
 ```
 axelarcli keys add <name> [flags]
 ```

@@ -54,9 +54,8 @@ docker-image-debug:
 .Phony: prereqs
 prereqs:
 	go get github.com/matryer/moq
-	go get github.com/sebdah/markdown-toc
 
 # Run all the code generators in the project
 .PHONY: generate
 generate: prereqs
-	go generate ./...
+	go generate -x ./...

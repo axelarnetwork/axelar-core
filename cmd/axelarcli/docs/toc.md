@@ -1,5 +1,4 @@
 # CLI command overview
-
 * [axelarcli](axelarcli.md)     - Axelar Client
 	* [config \<key\> [value]](axelarcli_config.md)     - Create or query an application CLI configuration file
 	* [keys](axelarcli_keys.md)     - Add or view local private keys

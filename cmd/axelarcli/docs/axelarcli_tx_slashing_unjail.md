@@ -8,6 +8,7 @@ unjail a jailed validator:
 
 $ <appcli> tx slashing unjail --from mykey
 
+
 ```
 axelarcli tx slashing unjail [flags]
 ```
