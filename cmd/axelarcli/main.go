@@ -31,7 +31,8 @@ import (
 	"github.com/tendermint/tendermint/libs/cli"
 )
 
-//go:generate go run ./ -docs "./docs" && mdformat "./docs/*"
+//go:generate go run ./ -docs ./docs
+//go:generate mdformat ./docs
 
 func main() {
 	docs := flag.String("docs", "", "only generate documentation for the CLI commands into the specified folder")
@@ -57,7 +58,11 @@ func main() {
 			fmt.Printf("Failed to clean the documentation folder: %s, exiting...\n", err)
 			os.Exit(1)
 		}
-		os.Mkdir(*docs, os.ModePerm)
+
+		if err := os.Mkdir(*docs, os.ModePerm); err != nil {
+			fmt.Printf("Failed creating the documentation folder: %s, exiting...\n", err)
+			os.Exit(1)
+		}
 		deleteLineBreakCmds(rootCmd)
 		if err := doc.GenMarkdownTree(rootCmd, *docs); err != nil {
 			fmt.Printf("Failed generating CLI command documentation: %s, exiting...\n", err)
