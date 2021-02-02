@@ -21,8 +21,6 @@ Querying subcommands
 ### SEE ALSO
 
 * [axelarcli](axelarcli.md)	 - Axelar Client
-* [axelarcli query ](axelarcli_query_.md)	 - 
-* [axelarcli query ](axelarcli_query_.md)	 - 
 * [axelarcli query account](axelarcli_query_account.md)	 - Query account balance
 * [axelarcli query auth](axelarcli_query_auth.md)	 - Querying commands for the auth module
 * [axelarcli query bitcoin](axelarcli_query_bitcoin.md)	 - bitcoin query subcommands

@@ -15,9 +15,6 @@ Axelar Client
 
 ### SEE ALSO
 
-* [axelarcli ](axelarcli_.md)	 - 
-* [axelarcli ](axelarcli_.md)	 - 
-* [axelarcli ](axelarcli_.md)	 - 
 * [axelarcli config](axelarcli_config.md)	 - Create or query an application CLI configuration file
 * [axelarcli keys](axelarcli_keys.md)	 - Add or view local private keys
 * [axelarcli query](axelarcli_query.md)	 - Querying subcommands

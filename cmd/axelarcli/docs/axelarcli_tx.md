@@ -21,9 +21,6 @@ Transactions subcommands
 ### SEE ALSO
 
 * [axelarcli](axelarcli.md)	 - Axelar Client
-* [axelarcli tx ](axelarcli_tx_.md)	 - 
-* [axelarcli tx ](axelarcli_tx_.md)	 - 
-* [axelarcli tx ](axelarcli_tx_.md)	 - 
 * [axelarcli tx bitcoin](axelarcli_tx_bitcoin.md)	 - bitcoin transactions subcommands
 * [axelarcli tx broadcast](axelarcli_tx_broadcast.md)	 - broadcast transactions subcommands
 * [axelarcli tx decode](axelarcli_tx_decode.md)	 - Decode an amino-encoded transaction string.

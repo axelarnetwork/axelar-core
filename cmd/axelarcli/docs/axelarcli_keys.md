@@ -26,7 +26,6 @@ Keys allows you to manage your local keystore for tendermint.
 ### SEE ALSO
 
 * [axelarcli](axelarcli.md)	 - Axelar Client
-* [axelarcli keys ](axelarcli_keys_.md)	 - 
 * [axelarcli keys add](axelarcli_keys_add.md)	 - Add an encrypted private key (either newly generated or recovered), encrypt it, and save to disk
 * [axelarcli keys delete](axelarcli_keys_delete.md)	 - Delete the given keys
 * [axelarcli keys export](axelarcli_keys_export.md)	 - Export private keys
