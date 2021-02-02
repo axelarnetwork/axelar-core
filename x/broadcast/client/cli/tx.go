@@ -74,6 +74,15 @@ func GetCmdSendStake(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
+			if coins.Len() != 1 {
+				return fmt.Errorf("Only a single amount is permitted")
+			}
+
+			if coins.GetDenomByIndex(0) != "stake" {
+				return fmt.Errorf("Invalid denomination")
+
+			}
+
 			inputs := make([]bank.Input, 0)
 			outputs := make([]bank.Output, 0)
 
