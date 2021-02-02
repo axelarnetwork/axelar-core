@@ -30,11 +30,11 @@ jobs:
       - name: Install moq
         run: |
           git config --global url."git@github.com:axelarnetwork".insteadOf https://github.com/axelarnetwork
-          make prereqs
+          go get github.com/matryer/moq
 
       - name: Check generated code up-to-date
         run: |
-          make generate
+          go generate -x ./...
 
           if [ -n "$(git status --porcelain)" ]; then
             echo Following files are changed...
