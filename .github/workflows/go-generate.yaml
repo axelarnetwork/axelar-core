@@ -49,6 +49,9 @@ jobs:
           if [ -n "$(git status --porcelain)" ]; then
             echo Following files are changed...
             git status
+            
+            echo Changes:
+            git diff
 
             exit 1;
           else
