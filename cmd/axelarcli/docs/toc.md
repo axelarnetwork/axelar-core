@@ -1,143 +1,143 @@
 # CLI command overview
 * [axelarcli](axelarcli.md)     - Axelar Client
-	* [config \<key\> [value]](axelarcli_config.md)     - Create or query an application CLI configuration file
-	* [keys](axelarcli_keys.md)     - Add or view local private keys
-		* [add \<name\>](axelarcli_keys_add.md)     - Add an encrypted private key (either newly generated or recovered)
-		  , encrypt it, and save to disk
-		* [delete \<name\>...](axelarcli_keys_delete.md)     - Delete the given keys
-		* [export \<name\>](axelarcli_keys_export.md)     - Export private keys
-		* [import \<name\> \<keyfile\>](axelarcli_keys_import.md)     - Import private keys into the local keybase
-		* [list](axelarcli_keys_list.md)     - List all keys
-		* [migrate](axelarcli_keys_migrate.md)     - Migrate keys from the legacy (db-based) Keybase
-		* [mnemonic](axelarcli_keys_mnemonic.md)     - Compute the bip39 mnemonic for some input entropy
-		* [parse \<hex-or-bech32-address\>](axelarcli_keys_parse.md)     - Parse address from hex to bech32 and vice
-		  versa
-		* [show [name [name...]]](axelarcli_keys_show.md)     - Show key info for the given name
-	* [query](axelarcli_query.md)     - Querying subcommands
-		* [account [address]](axelarcli_query_account.md)     - Query account balance
-		* [auth](axelarcli_query_auth.md)     - Querying commands for the auth module
-			* [account [address]](axelarcli_query_auth_account.md)     - Query account balance
-		* [bitcoin](axelarcli_query_bitcoin.md)     - bitcoin query subcommands
-			* [consolidation-addr [deposit addr]](axelarcli_query_bitcoin_consolidation-addr.md)     - Returns a new
-			  consolidation address for an old deposit address
-			* [deposit-addr [blockchain] [recipient addr]](axelarcli_query_bitcoin_deposit-addr.md)     - Returns a
-			  bitcoin deposit address for a recipient address on another blockchain
-			* [rawTx [txID:voutIdx] [amount] [recipient]](axelarcli_query_bitcoin_rawTx.md)     - Get a raw transaction
-			  that spends [amount] of the outpoint [voutIdx] of [txID] to <recipient> or the next master key in rotation
-			* [send [txID:voutIdx]](axelarcli_query_bitcoin_send.md)     - Send a transaction to Bitcoin that spends
-			  output [voutIdx] of tx [txID]
-			* [txInfo [txID:voutIdx]](axelarcli_query_bitcoin_txInfo.md)     - Query the info of the outpoint at
-			  index [voutIdx] of transaction [txID] on Bitcoin
-		* [block [height]](axelarcli_query_block.md)     - Get verified data for a the block at given height
-		* [distribution](axelarcli_query_distribution.md)     - Querying commands for the distribution module
-			* [commission [validator]](axelarcli_query_distribution_commission.md)     - Query distribution validator
-			  commission
-			* [community-pool](axelarcli_query_distribution_community-pool.md)     - Query the amount of coins in the
-			  community pool
-			* [params](axelarcli_query_distribution_params.md)     - Query distribution params
-			* [rewards [delegator-addr] [\<validator-addr\>]](axelarcli_query_distribution_rewards.md)     - Query all
-			  distribution delegator rewards or rewards from a particular validator
-			* [slashes [validator] [start-height] [end-height]](axelarcli_query_distribution_slashes.md)     - Query
-			  distribution validator slashes
-			* [validator-outstanding-rewards [validator]](axelarcli_query_distribution_validator-outstanding-rewards.md)
-			  - Query distribution outstanding (un-withdrawn) rewards for a validator and all their delegations
-		* [ethereum](axelarcli_query_ethereum.md)     - Querying commands for the ethereum module
-			* [deploy [smart contract file path]](axelarcli_query_ethereum_deploy.md)     - Receive a raw deploy
-			  transaction
-			* [master-address](axelarcli_query_ethereum_master-address.md)     - Query an address by key ID
-			* [mint [contractAddr] [recipient] [amount]](axelarcli_query_ethereum_mint.md)     - Receive a raw mint
-			  transaction
-			* [send [txID]](axelarcli_query_ethereum_send.md)     - Send a transaction that spends tx [txID] to Ethereum
-			* [send-mint [commandID] [fromAddress] [contractAddress]](axelarcli_query_ethereum_send-mint.md)     - Send
-			  a transaction signed by [fromAddress] that executes mint command [commandID] to Ethereum contract
-			  at [contractAddress]
-		* [slashing](axelarcli_query_slashing.md)     - Querying commands for the slashing module
-			* [params](axelarcli_query_slashing_params.md)     - Query the current slashing parameters
-			* [signing-info [validator-conspub]](axelarcli_query_slashing_signing-info.md)     - Query a validator's
-			  signing information
-		* [staking](axelarcli_query_staking.md)     - Querying commands for the staking module
-			* [delegation [delegator-addr] [validator-addr]](axelarcli_query_staking_delegation.md)     - Query a
-			  delegation based on address and validator address
-			* [delegations [delegator-addr]](axelarcli_query_staking_delegations.md)     - Query all delegations made by
-			  one delegator
-			* [delegations-to [validator-addr]](axelarcli_query_staking_delegations-to.md)     - Query all delegations
-			  made to one validator
-			* [historical-info [height]](axelarcli_query_staking_historical-info.md)     - Query historical info at
-			  given height
-			* [params](axelarcli_query_staking_params.md)     - Query the current staking parameters information
-			* [pool](axelarcli_query_staking_pool.md)     - Query the current staking pool values
-			* [redelegation [delegator-addr] [src-validator-addr] [dst-validator-addr]](axelarcli_query_staking_redelegation.md)
-			  - Query a redelegation record based on delegator and a source and destination validator address
-			* [redelegations [delegator-addr]](axelarcli_query_staking_redelegations.md)     - Query all redelegations
-			  records for one delegator
-			* [redelegations-from [validator-addr]](axelarcli_query_staking_redelegations-from.md)     - Query all
-			  outgoing redelegatations from a validator
-			* [unbonding-delegation [delegator-addr] [validator-addr]](axelarcli_query_staking_unbonding-delegation.md)
-			  - Query an unbonding-delegation record based on delegator and validator address
-			* [unbonding-delegations [delegator-addr]](axelarcli_query_staking_unbonding-delegations.md)     - Query all
-			  unbonding-delegations records for one delegator
-			* [unbonding-delegations-from [validator-addr]](axelarcli_query_staking_unbonding-delegations-from.md)     -
-			  Query all unbonding delegatations from a validator
-			* [validator [validator-addr]](axelarcli_query_staking_validator.md)     - Query a validator
-			* [validators](axelarcli_query_staking_validators.md)     - Query for all validators
-		* [supply](axelarcli_query_supply.md)     - Querying commands for the supply module
-			* [total [denom]](axelarcli_query_supply_total.md)     - Query the total supply of coins of the chain
-		* [tendermint-validator-set [height]](axelarcli_query_tendermint-validator-set.md)     - Get the full tendermint
-		  validator set at given height
-		* [tx [hash]](axelarcli_query_tx.md)     - Query for a transaction by hash in a committed block
-		* [txs](axelarcli_query_txs.md)     - Query for paginated transactions that match a set of events
-	* [rest-server](axelarcli_rest-server.md)     - Start LCD (light-client daemon), a local REST server
-	* [status](axelarcli_status.md)     - Query remote node for status
-	* [tx](axelarcli_tx.md)     - Transactions subcommands
-		* [bitcoin](axelarcli_tx_bitcoin.md)     - bitcoin transactions subcommands
-			* [link [chain] [address]](axelarcli_tx_bitcoin_link.md)     - Link a cross chain address to a bitcoin
-			  address created by Axelar
-			* [signTx [txID:voutIdx] [tx json]](axelarcli_tx_bitcoin_signTx.md)     - Sign raw spending transaction with
-			  utxo of [txID]
-			* [track [address]](axelarcli_tx_bitcoin_track.md)     - Make the axelar network aware of a specific address
-			  on Bitcoin
-			* [verifyTx [txInfo json]](axelarcli_tx_bitcoin_verifyTx.md)     - Verify a Bitcoin transaction
-		* [broadcast](axelarcli_tx_broadcast.md)     - broadcast transactions subcommands
-			* [registerProxy [proxy] ](axelarcli_tx_broadcast_registerProxy.md)     - Register a proxy account for a
-			  specific validator principal to broadcast transactions in its stead
-		* [decode [amino-byte-string]](axelarcli_tx_decode.md)     - Decode an amino-encoded transaction string.
-		* [distribution](axelarcli_tx_distribution.md)     - Distribution transactions subcommands
-			* [fund-community-pool [amount]](axelarcli_tx_distribution_fund-community-pool.md)     - Funds the community
-			  pool with the specified amount
-			* [set-withdraw-addr [withdraw-addr]](axelarcli_tx_distribution_set-withdraw-addr.md)     - change the
-			  default withdraw address for rewards associated with an address
-			* [withdraw-all-rewards](axelarcli_tx_distribution_withdraw-all-rewards.md)     - withdraw all delegations
-			  rewards for a delegator
-			* [withdraw-rewards [validator-addr]](axelarcli_tx_distribution_withdraw-rewards.md)     - Withdraw rewards
-			  from a given delegation address, and optionally withdraw validator commission if the delegation address
-			  given is a validator operator
-		* [encode [file]](axelarcli_tx_encode.md)     - Encode transactions generated offline
-		* [ethereum](axelarcli_tx_ethereum.md)     - ethereum transactions subcommands
-			* [sign [tx json file path]](axelarcli_tx_ethereum_sign.md)     - sign a raw Ethereum transaction
-			* [sign-pending-transfers](axelarcli_tx_ethereum_sign-pending-transfers.md)     - Sign all pending transfers
-			  to Ethereum
-			* [verify [tx json file path]](axelarcli_tx_ethereum_verify.md)     - Verify an Ethereum transaction
-		* [multisign [file] [name] [[signature]...]](axelarcli_tx_multisign.md)     - Generate multisig signatures for
-		  transactions generated offline
-		* [send [from_key_or_address] [to_address] [amount]](axelarcli_tx_send.md)     - Create and sign a send tx
-		* [sign [file]](axelarcli_tx_sign.md)     - Sign transactions generated offline
-		* [slashing](axelarcli_tx_slashing.md)     - Slashing transactions subcommands
-			* [unjail](axelarcli_tx_slashing_unjail.md)     - unjail validator previously jailed for downtime
-		* [snapshot](axelarcli_tx_snapshot.md)     - snapshot transactions subcommands
-			* [now](axelarcli_tx_snapshot_now.md)     - Trigger a new snapshot of the current validator set
-		* [staking](axelarcli_tx_staking.md)     - Staking transaction subcommands
-			* [create-validator](axelarcli_tx_staking_create-validator.md)     - create new validator initialized with a
-			  self-delegation to it
-			* [delegate [validator-addr] [amount]](axelarcli_tx_staking_delegate.md)     - Delegate liquid tokens to a
-			  validator
-			* [edit-validator](axelarcli_tx_staking_edit-validator.md)     - edit an existing validator account
-			* [redelegate [src-validator-addr] [dst-validator-addr] [amount]](axelarcli_tx_staking_redelegate.md)     -
-			  Redelegate illiquid tokens from one validator to another
-			* [unbond [validator-addr] [amount]](axelarcli_tx_staking_unbond.md)     - Unbond shares from a validator
-		* [tss](axelarcli_tx_tss.md)     - tss transactions subcommands
-			* [mk-assign-next [chain] [keyID]](axelarcli_tx_tss_mk-assign-next.md)     - Assigns a previously created
-			  key with [keyID] as the next master key for [chain]
-			* [mk-rotate [chain]](axelarcli_tx_tss_mk-rotate.md)     - Rotate the given chain from the old master key to
-			  the previously created one (see mk-refresh)
-			* [start-keygen](axelarcli_tx_tss_start-keygen.md)     - Initiate threshold key generation protocol
-	* [version](axelarcli_version.md)     - Print the app version
+    * [config \<key\> [value]](axelarcli_config.md)     - Create or query an application CLI configuration file
+    * [keys](axelarcli_keys.md)     - Add or view local private keys
+        * [add \<name\>](axelarcli_keys_add.md)     - Add an encrypted private key (either newly generated or recovered)
+          , encrypt it, and save to disk
+        * [delete \<name\>...](axelarcli_keys_delete.md)     - Delete the given keys
+        * [export \<name\>](axelarcli_keys_export.md)     - Export private keys
+        * [import \<name\> \<keyfile\>](axelarcli_keys_import.md)     - Import private keys into the local keybase
+        * [list](axelarcli_keys_list.md)     - List all keys
+        * [migrate](axelarcli_keys_migrate.md)     - Migrate keys from the legacy (db-based) Keybase
+        * [mnemonic](axelarcli_keys_mnemonic.md)     - Compute the bip39 mnemonic for some input entropy
+        * [parse \<hex-or-bech32-address\>](axelarcli_keys_parse.md)     - Parse address from hex to bech32 and vice
+          versa
+        * [show [name [name...]]](axelarcli_keys_show.md)     - Show key info for the given name
+    * [query](axelarcli_query.md)     - Querying subcommands
+        * [account [address]](axelarcli_query_account.md)     - Query account balance
+        * [auth](axelarcli_query_auth.md)     - Querying commands for the auth module
+            * [account [address]](axelarcli_query_auth_account.md)     - Query account balance
+        * [bitcoin](axelarcli_query_bitcoin.md)     - bitcoin query subcommands
+            * [consolidation-addr [deposit addr]](axelarcli_query_bitcoin_consolidation-addr.md)     - Returns a new
+              consolidation address for an old deposit address
+            * [deposit-addr [blockchain] [recipient addr]](axelarcli_query_bitcoin_deposit-addr.md)     - Returns a
+              bitcoin deposit address for a recipient address on another blockchain
+            * [rawTx [txID:voutIdx] [amount] [recipient]](axelarcli_query_bitcoin_rawTx.md)     - Get a raw transaction
+              that spends [amount] of the outpoint [voutIdx] of [txID] to <recipient> or the next master key in rotation
+            * [send [txID:voutIdx]](axelarcli_query_bitcoin_send.md)     - Send a transaction to Bitcoin that spends
+              output [voutIdx] of tx [txID]
+            * [txInfo [txID:voutIdx]](axelarcli_query_bitcoin_txInfo.md)     - Query the info of the outpoint at
+              index [voutIdx] of transaction [txID] on Bitcoin
+        * [block [height]](axelarcli_query_block.md)     - Get verified data for a the block at given height
+        * [distribution](axelarcli_query_distribution.md)     - Querying commands for the distribution module
+            * [commission [validator]](axelarcli_query_distribution_commission.md)     - Query distribution validator
+              commission
+            * [community-pool](axelarcli_query_distribution_community-pool.md)     - Query the amount of coins in the
+              community pool
+            * [params](axelarcli_query_distribution_params.md)     - Query distribution params
+            * [rewards [delegator-addr] [\<validator-addr\>]](axelarcli_query_distribution_rewards.md)     - Query all
+              distribution delegator rewards or rewards from a particular validator
+            * [slashes [validator] [start-height] [end-height]](axelarcli_query_distribution_slashes.md)     - Query
+              distribution validator slashes
+            * [validator-outstanding-rewards [validator]](axelarcli_query_distribution_validator-outstanding-rewards.md)
+              - Query distribution outstanding (un-withdrawn) rewards for a validator and all their delegations
+        * [ethereum](axelarcli_query_ethereum.md)     - Querying commands for the ethereum module
+            * [deploy [smart contract file path]](axelarcli_query_ethereum_deploy.md)     - Receive a raw deploy
+              transaction
+            * [master-address](axelarcli_query_ethereum_master-address.md)     - Query an address by key ID
+            * [mint [contractAddr] [recipient] [amount]](axelarcli_query_ethereum_mint.md)     - Receive a raw mint
+              transaction
+            * [send [txID]](axelarcli_query_ethereum_send.md)     - Send a transaction that spends tx [txID] to Ethereum
+            * [send-mint [commandID] [fromAddress] [contractAddress]](axelarcli_query_ethereum_send-mint.md)     - Send
+              a transaction signed by [fromAddress] that executes mint command [commandID] to Ethereum contract
+              at [contractAddress]
+        * [slashing](axelarcli_query_slashing.md)     - Querying commands for the slashing module
+            * [params](axelarcli_query_slashing_params.md)     - Query the current slashing parameters
+            * [signing-info [validator-conspub]](axelarcli_query_slashing_signing-info.md)     - Query a validator's
+              signing information
+        * [staking](axelarcli_query_staking.md)     - Querying commands for the staking module
+            * [delegation [delegator-addr] [validator-addr]](axelarcli_query_staking_delegation.md)     - Query a
+              delegation based on address and validator address
+            * [delegations [delegator-addr]](axelarcli_query_staking_delegations.md)     - Query all delegations made by
+              one delegator
+            * [delegations-to [validator-addr]](axelarcli_query_staking_delegations-to.md)     - Query all delegations
+              made to one validator
+            * [historical-info [height]](axelarcli_query_staking_historical-info.md)     - Query historical info at
+              given height
+            * [params](axelarcli_query_staking_params.md)     - Query the current staking parameters information
+            * [pool](axelarcli_query_staking_pool.md)     - Query the current staking pool values
+            * [redelegation [delegator-addr] [src-validator-addr] [dst-validator-addr]](axelarcli_query_staking_redelegation.md)
+              - Query a redelegation record based on delegator and a source and destination validator address
+            * [redelegations [delegator-addr]](axelarcli_query_staking_redelegations.md)     - Query all redelegations
+              records for one delegator
+            * [redelegations-from [validator-addr]](axelarcli_query_staking_redelegations-from.md)     - Query all
+              outgoing redelegatations from a validator
+            * [unbonding-delegation [delegator-addr] [validator-addr]](axelarcli_query_staking_unbonding-delegation.md)
+              - Query an unbonding-delegation record based on delegator and validator address
+            * [unbonding-delegations [delegator-addr]](axelarcli_query_staking_unbonding-delegations.md)     - Query all
+              unbonding-delegations records for one delegator
+            * [unbonding-delegations-from [validator-addr]](axelarcli_query_staking_unbonding-delegations-from.md)     -
+              Query all unbonding delegatations from a validator
+            * [validator [validator-addr]](axelarcli_query_staking_validator.md)     - Query a validator
+            * [validators](axelarcli_query_staking_validators.md)     - Query for all validators
+        * [supply](axelarcli_query_supply.md)     - Querying commands for the supply module
+            * [total [denom]](axelarcli_query_supply_total.md)     - Query the total supply of coins of the chain
+        * [tendermint-validator-set [height]](axelarcli_query_tendermint-validator-set.md)     - Get the full tendermint
+          validator set at given height
+        * [tx [hash]](axelarcli_query_tx.md)     - Query for a transaction by hash in a committed block
+        * [txs](axelarcli_query_txs.md)     - Query for paginated transactions that match a set of events
+    * [rest-server](axelarcli_rest-server.md)     - Start LCD (light-client daemon), a local REST server
+    * [status](axelarcli_status.md)     - Query remote node for status
+    * [tx](axelarcli_tx.md)     - Transactions subcommands
+        * [bitcoin](axelarcli_tx_bitcoin.md)     - bitcoin transactions subcommands
+            * [link [chain] [address]](axelarcli_tx_bitcoin_link.md)     - Link a cross chain address to a bitcoin
+              address created by Axelar
+            * [signTx [txID:voutIdx] [tx json]](axelarcli_tx_bitcoin_signTx.md)     - Sign raw spending transaction with
+              utxo of [txID]
+            * [track [address]](axelarcli_tx_bitcoin_track.md)     - Make the axelar network aware of a specific address
+              on Bitcoin
+            * [verifyTx [txInfo json]](axelarcli_tx_bitcoin_verifyTx.md)     - Verify a Bitcoin transaction
+        * [broadcast](axelarcli_tx_broadcast.md)     - broadcast transactions subcommands
+            * [registerProxy [proxy] ](axelarcli_tx_broadcast_registerProxy.md)     - Register a proxy account for a
+              specific validator principal to broadcast transactions in its stead
+        * [decode [amino-byte-string]](axelarcli_tx_decode.md)     - Decode an amino-encoded transaction string.
+        * [distribution](axelarcli_tx_distribution.md)     - Distribution transactions subcommands
+            * [fund-community-pool [amount]](axelarcli_tx_distribution_fund-community-pool.md)     - Funds the community
+              pool with the specified amount
+            * [set-withdraw-addr [withdraw-addr]](axelarcli_tx_distribution_set-withdraw-addr.md)     - change the
+              default withdraw address for rewards associated with an address
+            * [withdraw-all-rewards](axelarcli_tx_distribution_withdraw-all-rewards.md)     - withdraw all delegations
+              rewards for a delegator
+            * [withdraw-rewards [validator-addr]](axelarcli_tx_distribution_withdraw-rewards.md)     - Withdraw rewards
+              from a given delegation address, and optionally withdraw validator commission if the delegation address
+              given is a validator operator
+        * [encode [file]](axelarcli_tx_encode.md)     - Encode transactions generated offline
+        * [ethereum](axelarcli_tx_ethereum.md)     - ethereum transactions subcommands
+            * [sign [tx json file path]](axelarcli_tx_ethereum_sign.md)     - sign a raw Ethereum transaction
+            * [sign-pending-transfers](axelarcli_tx_ethereum_sign-pending-transfers.md)     - Sign all pending transfers
+              to Ethereum
+            * [verify [tx json file path]](axelarcli_tx_ethereum_verify.md)     - Verify an Ethereum transaction
+        * [multisign [file] [name] [[signature]...]](axelarcli_tx_multisign.md)     - Generate multisig signatures for
+          transactions generated offline
+        * [send [from_key_or_address] [to_address] [amount]](axelarcli_tx_send.md)     - Create and sign a send tx
+        * [sign [file]](axelarcli_tx_sign.md)     - Sign transactions generated offline
+        * [slashing](axelarcli_tx_slashing.md)     - Slashing transactions subcommands
+            * [unjail](axelarcli_tx_slashing_unjail.md)     - unjail validator previously jailed for downtime
+        * [snapshot](axelarcli_tx_snapshot.md)     - snapshot transactions subcommands
+            * [now](axelarcli_tx_snapshot_now.md)     - Trigger a new snapshot of the current validator set
+        * [staking](axelarcli_tx_staking.md)     - Staking transaction subcommands
+            * [create-validator](axelarcli_tx_staking_create-validator.md)     - create new validator initialized with a
+              self-delegation to it
+            * [delegate [validator-addr] [amount]](axelarcli_tx_staking_delegate.md)     - Delegate liquid tokens to a
+              validator
+            * [edit-validator](axelarcli_tx_staking_edit-validator.md)     - edit an existing validator account
+            * [redelegate [src-validator-addr] [dst-validator-addr] [amount]](axelarcli_tx_staking_redelegate.md)     -
+              Redelegate illiquid tokens from one validator to another
+            * [unbond [validator-addr] [amount]](axelarcli_tx_staking_unbond.md)     - Unbond shares from a validator
+        * [tss](axelarcli_tx_tss.md)     - tss transactions subcommands
+            * [mk-assign-next [chain] [keyID]](axelarcli_tx_tss_mk-assign-next.md)     - Assigns a previously created
+              key with [keyID] as the next master key for [chain]
+            * [mk-rotate [chain]](axelarcli_tx_tss_mk-rotate.md)     - Rotate the given chain from the old master key to
+              the previously created one (see mk-refresh)
+            * [start-keygen](axelarcli_tx_tss_start-keygen.md)     - Initiate threshold key generation protocol
+    * [version](axelarcli_version.md)     - Print the app version
