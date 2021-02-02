@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/x/broadcast/types"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -29,6 +30,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 	broadcastTxCmd.AddCommand(flags.PostCommands(
 		GetCmdRegisterProxy(cdc),
+		GetCmdSendStake(cdc),
 	)...)
 
 	return broadcastTxCmd
@@ -51,6 +53,48 @@ func GetCmdRegisterProxy(cdc *codec.Codec) *cobra.Command {
 			}
 
 			msg := types.NewMsgRegisterProxy(sdk.ValAddress(cliCtx.FromAddress), voter)
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+func GetCmdSendStake(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "sendStake [amount] [address 1] ... [address n]",
+		Short: "Sends the specified amount of stake to the designated addresses",
+		Args:  cobra.MinimumNArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+
+			coins, err := sdk.ParseCoins(args[0])
+			if err != nil {
+				return err
+			}
+
+			inputs := make([]bank.Input, 0)
+			outputs := make([]bank.Output, 0)
+
+			for i, addr := range args {
+
+				// ignore the amount argument
+				if i == 0 {
+					continue
+				}
+
+				to, err := sdk.AccAddressFromBech32(addr)
+				if err != nil {
+					return err
+				}
+
+				inputs = append(inputs, bank.NewInput(cliCtx.FromAddress, coins))
+				outputs = append(outputs, bank.NewOutput(to, coins))
+
+			}
+
+			msg := bank.NewMsgMultiSend(inputs, outputs)
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
