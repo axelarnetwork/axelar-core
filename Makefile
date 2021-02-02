@@ -50,7 +50,13 @@ docker-image:
 docker-image-debug:
 	@DOCKER_BUILDKIT=1 docker build --ssh default -t axelar/core-debug -f ./Dockerfile.debug .
 
+# Install all generate prerequisites
+.Phony: prereqs
+prereqs:
+	go get github.com/matryer/moq
+	go get github.com/sebdah/markdown-toc
+
 # Run all the code generators in the project
 .PHONY: generate
-generate:
+generate: prereqs
 	go generate ./...

@@ -1,9 +1,16 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path"
+	"path/filepath"
+	"strings"
+
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/spf13/cobra/doc"
 
 	"github.com/axelarnetwork/axelar-core/app"
 
@@ -24,7 +31,11 @@ import (
 	"github.com/tendermint/tendermint/libs/cli"
 )
 
+//go:generate go run ./ -docs "./docs"
+
 func main() {
+	docs := flag.String("docs", "", "only generate documentation for the CLI commands into the specified folder")
+	flag.Parse()
 	// Configure cobra to sort commands
 	cobra.EnableCommandSorting = false
 
@@ -38,6 +49,34 @@ func main() {
 	config.SetBech32PrefixForConsensusNode(sdk.Bech32PrefixConsAddr, sdk.Bech32PrefixConsPub)
 	config.Seal()
 
+	rootCmd := CreateRootCmd(cdc)
+
+	// If run with the docs flag, generate documentation for all CLI commands
+	if *docs != "" {
+		if err := doc.GenMarkdownTree(rootCmd, *docs); err != nil {
+			fmt.Printf("Failed generating CLI command documentation: %s, exiting...\n", err)
+			os.Exit(1)
+		}
+
+		if err := genTOC(rootCmd, *docs); err != nil {
+			fmt.Printf("Failed generating CLI command table of contents: %s, exiting...\n", err)
+			os.Exit(1)
+		}
+
+		os.Exit(0)
+	}
+
+	// Add flags and prefix all env exposed with AX
+	executor := cli.PrepareMainCmd(rootCmd, "AX", app.DefaultCLIHome)
+
+	err := executor.Execute()
+	if err != nil {
+		fmt.Printf("Failed executing CLI command: %s, exiting...\n", err)
+		os.Exit(1)
+	}
+}
+
+func CreateRootCmd(cdc *codec.Codec) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "axelarcli",
 		Short: "Axelar Client",
@@ -63,15 +102,7 @@ func main() {
 		version.Cmd,
 		flags.NewCompletionCmd(rootCmd, true),
 	)
-
-	// Add flags and prefix all env exposed with AX
-	executor := cli.PrepareMainCmd(rootCmd, "AX", app.DefaultCLIHome)
-
-	err := executor.Execute()
-	if err != nil {
-		fmt.Printf("Failed executing CLI command: %s, exiting...\n", err)
-		os.Exit(1)
-	}
+	return rootCmd
 }
 
 func queryCmd(cdc *amino.Codec) *cobra.Command {
@@ -157,4 +188,46 @@ func initConfig(cmd *cobra.Command) error {
 		return err
 	}
 	return viper.BindPFlag(cli.OutputFlag, cmd.PersistentFlags().Lookup(cli.OutputFlag))
+}
+
+func genTOC(cmd *cobra.Command, dir string) error {
+	toc := make([]string, 0)
+	toc = append(toc, genTOCEntry(cmd, dir)...)
+	filename := filepath.Join(dir, "toc.md")
+	f, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	_, err = io.WriteString(f, "# CLI command overview\n")
+	if err != nil {
+		return err
+	}
+	for _, s := range toc {
+		_, err = io.WriteString(f, s)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func genTOCEntry(cmd *cobra.Command, dir string) []string {
+	if cmd == flags.LineBreak {
+		return nil
+	}
+
+	basename := strings.Replace(cmd.CommandPath(), " ", "_", -1) + ".md"
+	label := cmd.Use
+	label = strings.ReplaceAll(label, "<", "\\<")
+	label = strings.ReplaceAll(label, ">", "\\>")
+	toc := []string{fmt.Sprintf("* [%s](%s)\t - %s\n", label, basename, cmd.Short)}
+	for _, c := range cmd.Commands() {
+		if !c.IsAvailableCommand() || c.IsAdditionalHelpTopicCommand() {
+			continue
+		}
+		for _, entry := range genTOCEntry(c, dir) {
+			toc = append(toc, "\t"+entry)
+		}
+	}
+	return toc
 }
