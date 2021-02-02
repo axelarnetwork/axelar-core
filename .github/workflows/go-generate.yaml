@@ -17,6 +17,9 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go-version }}
+          
+      - name: Install Python
+        uses: actions/setup-python@v1
 
       - name: Install SSH key
         uses: shimataro/ssh-key-action@v2
@@ -27,14 +30,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Install prereqs
+      - name: Install moq
         run: |
           git config --global url."git@github.com:axelarnetwork".insteadOf https://github.com/axelarnetwork
           go get github.com/matryer/moq
-          pip3 install mdformat
-          echo $PATH
-          /usr/local/bin/mdformat
-
+      
+      - name: Install mdformat
+        
+        uses: BSFishy/pip-action@v1
+        with:
+          # The packages to install from Pip
+          packages: mdformat
+    
       - name: Check generated code up-to-date
         run: |
           go generate -x ./...
