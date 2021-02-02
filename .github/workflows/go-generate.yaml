@@ -36,7 +36,6 @@ jobs:
       - name: Check generated code up-to-date
         run: |
           go generate -x ./...
-          mdform
 
           if [ -n "$(git status --porcelain)" ]; then
             echo Following files are changed...

@@ -31,7 +31,7 @@ import (
 	"github.com/tendermint/tendermint/libs/cli"
 )
 
-//go:generate go run ./ -docs "./docs"
+//go:generate go run ./ -docs "./docs" && mdformat "./docs"
 
 func main() {
 	docs := flag.String("docs", "", "only generate documentation for the CLI commands into the specified folder")
