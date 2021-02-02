@@ -27,14 +27,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Install moq
+      - name: Install prereqs
         run: |
           git config --global url."git@github.com:axelarnetwork".insteadOf https://github.com/axelarnetwork
           go get github.com/matryer/moq
+          pip3 install mdformat
 
       - name: Check generated code up-to-date
         run: |
           go generate -x ./...
+          mdform
 
           if [ -n "$(git status --porcelain)" ]; then
             echo Following files are changed...
