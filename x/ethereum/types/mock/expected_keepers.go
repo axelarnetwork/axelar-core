@@ -289,30 +289,30 @@ var _ types.Signer = &SignerMock{}
 //
 // 	func TestSomethingThatUsesSigner(t *testing.T) {
 //
-//         // make and configure a mocked types.Signer
-//         mockedSigner := &SignerMock{
-//             GetCurrentMasterKeyFunc: func(ctx sdk.Context, chain balance.Chain) (ecdsa.PublicKey, bool) {
-// 	               panic("mock out the GetCurrentMasterKey method")
-//             },
-//             GetCurrentMasterKeyIDFunc: func(ctx sdk.Context, chain balance.Chain) (string, bool) {
-// 	               panic("mock out the GetCurrentMasterKeyID method")
-//             },
-//             GetKeyFunc: func(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool) {
-// 	               panic("mock out the GetKey method")
-//             },
-//             GetKeyForSigIDFunc: func(ctx sdk.Context, sigID string) (ecdsa.PublicKey, bool) {
-// 	               panic("mock out the GetKeyForSigID method")
-//             },
-//             GetNextMasterKeyFunc: func(ctx sdk.Context, chain balance.Chain) (ecdsa.PublicKey, bool) {
-// 	               panic("mock out the GetNextMasterKey method")
-//             },
-//             GetSigFunc: func(ctx sdk.Context, sigID string) (tss.Signature, bool) {
-// 	               panic("mock out the GetSig method")
-//             },
-//             StartSignFunc: func(ctx sdk.Context, keyID string, sigID string, msg []byte, validators []snapshot.Validator) error {
-// 	               panic("mock out the StartSign method")
-//             },
-//         }
+// 		// make and configure a mocked types.Signer
+// 		mockedSigner := &SignerMock{
+// 			GetCurrentMasterKeyFunc: func(ctx sdk.Context, chain balance.Chain) (ecdsa.PublicKey, bool) {
+// 				panic("mock out the GetCurrentMasterKey method")
+// 			},
+// 			GetCurrentMasterKeyIDFunc: func(ctx sdk.Context, chain balance.Chain) (string, bool) {
+// 				panic("mock out the GetCurrentMasterKeyID method")
+// 			},
+// 			GetKeyFunc: func(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool) {
+// 				panic("mock out the GetKey method")
+// 			},
+// 			GetKeyForSigIDFunc: func(ctx sdk.Context, sigID string) (ecdsa.PublicKey, bool) {
+// 				panic("mock out the GetKeyForSigID method")
+// 			},
+// 			GetNextMasterKeyFunc: func(ctx sdk.Context, chain balance.Chain) (ecdsa.PublicKey, bool) {
+// 				panic("mock out the GetNextMasterKey method")
+// 			},
+// 			GetSigFunc: func(ctx sdk.Context, sigID string) (tss.Signature, bool) {
+// 				panic("mock out the GetSig method")
+// 			},
+// 			StartSignFunc: func(ctx sdk.Context, keyID string, sigID string, msg []byte, validators []snapshot.Validator) error {
+// 				panic("mock out the StartSign method")
+// 			},
+// 		}
 //
 // 		// use mockedSigner in code that requires types.Signer
 // 		// and then make assertions.
