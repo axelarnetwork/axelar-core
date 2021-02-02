@@ -32,7 +32,8 @@ jobs:
           git config --global url."git@github.com:axelarnetwork".insteadOf https://github.com/axelarnetwork
           go get github.com/matryer/moq
           pip3 install mdformat
-          mdformat
+          echo $PATH
+          /usr/local/bin/mdformat
 
       - name: Check generated code up-to-date
         run: |
