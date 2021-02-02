@@ -31,7 +31,7 @@ import (
 	"github.com/tendermint/tendermint/libs/cli"
 )
 
-//go:generate go run ./ -docs "./docs" && mdformat "./docs"
+//go:generate go run ./ -docs "./docs" && mdformat "./docs/*"
 
 func main() {
 	docs := flag.String("docs", "", "only generate documentation for the CLI commands into the specified folder")
@@ -53,6 +53,12 @@ func main() {
 
 	// If run with the docs flag, generate documentation for all CLI commands
 	if *docs != "" {
+		if err := os.RemoveAll(*docs); err != nil {
+			fmt.Printf("Failed to clean the documentation folder: %s, exiting...\n", err)
+			os.Exit(1)
+		}
+		os.Mkdir(*docs, os.ModePerm)
+		deleteLineBreakCmds(rootCmd)
 		if err := doc.GenMarkdownTree(rootCmd, *docs); err != nil {
 			fmt.Printf("Failed generating CLI command documentation: %s, exiting...\n", err)
 			os.Exit(1)
@@ -212,10 +218,6 @@ func genTOC(cmd *cobra.Command, dir string) error {
 }
 
 func genTOCEntry(cmd *cobra.Command, dir string) []string {
-	if cmd == flags.LineBreak {
-		return nil
-	}
-
 	basename := strings.Replace(cmd.CommandPath(), " ", "_", -1) + ".md"
 	label := cmd.Use
 	label = strings.ReplaceAll(label, "<", "\\<")
@@ -230,4 +232,11 @@ func genTOCEntry(cmd *cobra.Command, dir string) []string {
 		}
 	}
 	return toc
+}
+
+func deleteLineBreakCmds(cmd *cobra.Command) {
+	cmd.RemoveCommand(flags.LineBreak)
+	for _, c := range cmd.Commands() {
+		deleteLineBreakCmds(c)
+	}
 }
