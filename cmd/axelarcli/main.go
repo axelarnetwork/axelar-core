@@ -51,16 +51,10 @@ func main() {
 
 	// If run with the docs flag, generate documentation for all CLI commands
 	if *docs != "" {
-		// if err := os.RemoveAll(*docs); err != nil {
-		// 	fmt.Printf("Failed to clean the documentation folder: %s, exiting...\n", err)
-		// 	os.Exit(1)
-		// }
-		//
-		// if err := os.Mkdir(*docs, os.ModePerm); err != nil {
-		// 	fmt.Printf("Failed creating the documentation folder: %s, exiting...\n", err)
-		// 	os.Exit(1)
-		// }
 		cmd := CreateRootCmd(cdc, "$HOME/.axelarcli")
+		// The AutoGen tag includes a date, so when the time zone of the local machine is different from the time zone
+		// of the github host the date could be different and the PR check fail. Therefore we disable it
+		cmd.DisableAutoGenTag = true
 		deleteLineBreakCmds(cmd)
 		if err := doc.GenMarkdownTree(cmd, *docs); err != nil {
 			fmt.Printf("Failed generating CLI command documentation: %s, exiting...\n", err)
