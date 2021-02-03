@@ -11,7 +11,6 @@ require (
 	github.com/gorilla/mux v1.7.4
 	github.com/matryer/moq v0.2.0
 	github.com/miguelmota/go-ethereum-hdwallet v0.0.0-20200123000308-a60dcd172b4c
-	github.com/sebdah/markdown-toc v0.0.0-20171116085747-3bb461875c34 // indirect
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.6.1

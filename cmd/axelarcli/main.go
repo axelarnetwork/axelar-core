@@ -221,7 +221,7 @@ func genTOCEntry(cmd *cobra.Command, dir string) []string {
 	label := cmd.Use
 	label = strings.ReplaceAll(label, "<", "\\<")
 	label = strings.ReplaceAll(label, ">", "\\>")
-	toc := []string{fmt.Sprintf("* [%s](%s)\t - %s\n", label, basename, cmd.Short)}
+	toc := []string{fmt.Sprintf("- [%s](%s)\t - %s\n", label, basename, cmd.Short)}
 	for _, c := range cmd.Commands() {
 		if !c.IsAvailableCommand() || c.IsAdditionalHelpTopicCommand() {
 			continue

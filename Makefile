@@ -54,6 +54,7 @@ docker-image-debug:
 .Phony: prereqs
 prereqs:
 	go get github.com/matryer/moq
+	pip3 install mdformat
 
 # Run all the code generators in the project
 .PHONY: generate
