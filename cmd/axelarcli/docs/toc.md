@@ -69,6 +69,7 @@
       - [verifyTx \[txInfo json\]](axelarcli_tx_bitcoin_verifyTx.md)	 - Verify a Bitcoin transaction
     - [broadcast](axelarcli_tx_broadcast.md)	 - broadcast transactions subcommands
       - [registerProxy \[proxy\] ](axelarcli_tx_broadcast_registerProxy.md)	 - Register a proxy account for a specific validator principal to broadcast transactions in its stead
+      - [sendStake \[amount\] \[address 1\] ... \[address n\]](axelarcli_tx_broadcast_sendStake.md)	 - Sends the specified amount of stake to the designated addresses
     - [decode \[amino-byte-string\]](axelarcli_tx_decode.md)	 - Decode an amino-encoded transaction string.
     - [distribution](axelarcli_tx_distribution.md)	 - Distribution transactions subcommands
       - [fund-community-pool \[amount\]](axelarcli_tx_distribution_fund-community-pool.md)	 - Funds the community pool with the specified amount

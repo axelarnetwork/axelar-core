@@ -26,3 +26,4 @@ axelarcli tx broadcast [flags]
 
 - [axelarcli tx](axelarcli_tx.md)	 - Transactions subcommands
 - [axelarcli tx broadcast registerProxy](axelarcli_tx_broadcast_registerProxy.md)	 - Register a proxy account for a specific validator principal to broadcast transactions in its stead
+- [axelarcli tx broadcast sendStake](axelarcli_tx_broadcast_sendStake.md)	 - Sends the specified amount of stake to the designated addresses
