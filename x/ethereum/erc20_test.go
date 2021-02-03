@@ -179,13 +179,13 @@ func TestGanache(t *testing.T) {
 
 // Deploys the smart contract available for these tests. It avoids deployment via the contract ABI
 // in favor of creating a raw transaction for the same purpose.
-func testDeploy(t *testing.T, client *types.EthRPCClient, privateKey *ecdsa.PrivateKey) common.Address {
+func testDeploy(t *testing.T, client *types.RPCClientImpl, privateKey *ecdsa.PrivateKey) common.Address {
 
 	byteCode := common.FromHex(MymintableBin)
 
-	networkID, err := client.NetworkID(context.Background())
+	chainID, err := client.ChainID(context.Background())
 	assert.NoError(t, err)
-	signer := ethTypes.NewEIP155Signer(networkID)
+	signer := ethTypes.NewEIP155Signer(chainID)
 	var gasLimit uint64 = 3000000
 	tssSigner := &mock.SignerMock{GetCurrentMasterKeyFunc: func(sdk.Context, balance.Chain) (ecdsa.PublicKey, bool) {
 		return privateKey.PublicKey, true
@@ -237,7 +237,7 @@ func testDeploy(t *testing.T, client *types.EthRPCClient, privateKey *ecdsa.Priv
 
 // Mint tokens associated to the contract used by these tests and associate them to the given wallet.
 // It avoids invoking the mint function throught the ABI in favor of creating a raw transaction for the same purpose.
-func testMint(t *testing.T, client *types.EthRPCClient, contractAddr, toAddr common.Address, privateKey *ecdsa.PrivateKey) {
+func testMint(t *testing.T, client *types.RPCClientImpl, contractAddr, toAddr common.Address, privateKey *ecdsa.PrivateKey) {
 	instance, err := NewMymintable(contractAddr, client)
 
 	assert.NoError(t, err)

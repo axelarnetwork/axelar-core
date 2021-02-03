@@ -314,16 +314,19 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		logger.Debug("successful Close")
 	})
 
-	// TODO: enable running node without an Ethereum bridge
-	rpcETC, err := ethTypes.NewRPCClient(axelarCfg.EthRpcAddr)
-	if err != nil {
-		tmos.Exit(err.Error())
+	var rpcEth ethTypes.RPCClient
+	if axelarCfg.WithEthBridge {
+		rpcEth, err = ethTypes.NewRPCClient(axelarCfg.EthRpcAddr)
+		if err != nil {
+			tmos.Exit(err.Error())
+		}
+		logger.Debug("Successfully connected to ethereum node")
+	} else {
+		rpcEth = ethTypes.NewDummyRPC()
 	}
-	logger.Debug("Successfully connected to ethereum node")
 
 	// Enable running a node with or without a Bitcoin bridge
 	var rpcBTC btcTypes.RPCClient
-	var btcModule bitcoin.AppModule
 	if axelarCfg.WithBtcBridge {
 		rpc, err := btcTypes.NewRPCClient(axelarCfg.BtcConfig, logger)
 		if err != nil {
@@ -333,9 +336,8 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		tmos.TrapSignal(logger, rpc.Shutdown)
 		rpcBTC = rpc
 	} else {
-		rpcBTC = btcTypes.DummyClient{}
+		rpcBTC = btcTypes.NewDummyRPC()
 	}
-	btcModule = bitcoin.NewAppModule(app.btcKeeper, app.votingKeeper, app.tssKeeper, app.snapKeeper, app.balanceKeeper, rpcBTC)
 
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
@@ -352,9 +354,9 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		tss.NewAppModule(app.tssKeeper, app.snapKeeper, app.votingKeeper),
 		vote.NewAppModule(app.votingKeeper),
 		broadcast.NewAppModule(app.broadcastKeeper),
-		ethereum.NewAppModule(app.ethKeeper, app.votingKeeper, app.tssKeeper, app.snapKeeper, app.balanceKeeper, rpcETC),
 		balance.NewAppModule(app.balanceKeeper),
-		btcModule,
+		ethereum.NewAppModule(app.ethKeeper, app.votingKeeper, app.tssKeeper, app.snapKeeper, app.balanceKeeper, rpcEth),
+		bitcoin.NewAppModule(app.btcKeeper, app.votingKeeper, app.tssKeeper, app.snapKeeper, app.balanceKeeper, rpcBTC),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that

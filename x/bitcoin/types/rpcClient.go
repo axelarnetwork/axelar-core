@@ -174,20 +174,29 @@ func (r *RPCClientImpl) GetOutPointInfo(out *wire.OutPoint) (OutPointInfo, error
 	}, nil
 }
 
-type DummyClient struct{}
+type dummyClient struct{}
 
-func (d DummyClient) ImportAddressRescan(string, string, bool) error {
+// NewDummyRPC returns a placeholder for an rpc client. It does not make any rpc calls
+func NewDummyRPC() RPCClient {
+	return dummyClient{}
+}
+
+// ImportAddressRescan implements RPCClient
+func (d dummyClient) ImportAddressRescan(string, string, bool) error {
 	return fmt.Errorf("no response")
 }
 
-func (d DummyClient) GetOutPointInfo(*wire.OutPoint) (OutPointInfo, error) {
+// GetOutPointInfo implements RPCClient
+func (d dummyClient) GetOutPointInfo(*wire.OutPoint) (OutPointInfo, error) {
 	return OutPointInfo{}, fmt.Errorf("no response")
 }
 
-func (d DummyClient) SendRawTransaction(*wire.MsgTx, bool) (*chainhash.Hash, error) {
+// SendRawTransaction implements RPCClient
+func (d dummyClient) SendRawTransaction(*wire.MsgTx, bool) (*chainhash.Hash, error) {
 	return nil, fmt.Errorf("no response")
 }
 
-func (d DummyClient) Network() Network {
+// Network implements RPCClient
+func (d dummyClient) Network() Network {
 	return DefaultParams().Network
 }
