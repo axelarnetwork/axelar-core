@@ -31,8 +31,7 @@ import (
 	"github.com/tendermint/tendermint/libs/cli"
 )
 
-//go:generate go run ./ -docs ./docs
-//go:generate mdformat ./docs
+//go:generate ./genDocs.sh ./docs
 
 func main() {
 	docs := flag.String("docs", "", "only generate documentation for the CLI commands into the specified folder")
@@ -50,32 +49,33 @@ func main() {
 	config.SetBech32PrefixForConsensusNode(sdk.Bech32PrefixConsAddr, sdk.Bech32PrefixConsPub)
 	config.Seal()
 
-	rootCmd := CreateRootCmd(cdc)
-
 	// If run with the docs flag, generate documentation for all CLI commands
 	if *docs != "" {
-		if err := os.RemoveAll(*docs); err != nil {
-			fmt.Printf("Failed to clean the documentation folder: %s, exiting...\n", err)
-			os.Exit(1)
-		}
-
-		if err := os.Mkdir(*docs, os.ModePerm); err != nil {
-			fmt.Printf("Failed creating the documentation folder: %s, exiting...\n", err)
-			os.Exit(1)
-		}
-		deleteLineBreakCmds(rootCmd)
-		if err := doc.GenMarkdownTree(rootCmd, *docs); err != nil {
+		// if err := os.RemoveAll(*docs); err != nil {
+		// 	fmt.Printf("Failed to clean the documentation folder: %s, exiting...\n", err)
+		// 	os.Exit(1)
+		// }
+		//
+		// if err := os.Mkdir(*docs, os.ModePerm); err != nil {
+		// 	fmt.Printf("Failed creating the documentation folder: %s, exiting...\n", err)
+		// 	os.Exit(1)
+		// }
+		cmd := CreateRootCmd(cdc, "$HOME/.axelarcli")
+		deleteLineBreakCmds(cmd)
+		if err := doc.GenMarkdownTree(cmd, *docs); err != nil {
 			fmt.Printf("Failed generating CLI command documentation: %s, exiting...\n", err)
 			os.Exit(1)
 		}
 
-		if err := genTOC(rootCmd, *docs); err != nil {
+		if err := genTOC(cmd, *docs); err != nil {
 			fmt.Printf("Failed generating CLI command table of contents: %s, exiting...\n", err)
 			os.Exit(1)
 		}
 
 		os.Exit(0)
 	}
+
+	rootCmd := CreateRootCmd(cdc, app.DefaultCLIHome)
 
 	// Add flags and prefix all env exposed with AX
 	executor := cli.PrepareMainCmd(rootCmd, "AX", app.DefaultCLIHome)
@@ -87,7 +87,7 @@ func main() {
 	}
 }
 
-func CreateRootCmd(cdc *codec.Codec) *cobra.Command {
+func CreateRootCmd(cdc *codec.Codec, homeDir string) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "axelarcli",
 		Short: "Axelar Client",
@@ -102,7 +102,7 @@ func CreateRootCmd(cdc *codec.Codec) *cobra.Command {
 	// Construct Root Command
 	rootCmd.AddCommand(
 		rpc.StatusCommand(),
-		client.ConfigCmd(app.DefaultCLIHome),
+		client.ConfigCmd(homeDir),
 		queryCmd(cdc),
 		txCmd(cdc),
 		flags.LineBreak,

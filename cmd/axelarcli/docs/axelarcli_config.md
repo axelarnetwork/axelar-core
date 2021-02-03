@@ -15,7 +15,7 @@ axelarcli config <key> [value] [flags]
 ```
       --get           print configuration value or its default if unset
   -h, --help          help for config
-      --home string   set client's home directory for configuration (default "/Users/chris/.axelarcli")
+      --home string   set client's home directory for configuration (default "$HOME/.axelarcli")
 ```
 
 ### Options inherited from parent commands
