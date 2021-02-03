@@ -40,6 +40,11 @@ debug: go.sum
 		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) -gcflags="all=-N -l" ./cmd/axelard
 		go build -o ./bin/axelarcli -mod=readonly $(BUILD_FLAGS) -gcflags="all=-N -l" ./cmd/axelarcli
 
+# Build axelarcli with release flags for alpine architecture
+.PHONY: alpine-axelarcli
+alpine-axelarcli: go.sum
+		GOOS=linux GOARCH=amd64 go build -o ./bin/axelarcli -mod=readonly $(BUILD_FLAGS) ./cmd/axelarcli
+
 # Build a release image
 .PHONY: docker-image
 docker-image:
