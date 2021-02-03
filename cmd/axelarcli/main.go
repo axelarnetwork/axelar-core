@@ -116,7 +116,7 @@ func queryCmd(cdc *amino.Codec) *cobra.Command {
 		Aliases: []string{"q"},
 		Short:   "Querying subcommands",
 	}
-
+	dafdsf
 	queryCmd.AddCommand(
 		authcmd.GetAccountCmd(cdc),
 		flags.LineBreak,
