@@ -19,40 +19,40 @@ var _ types.RPCClient = &RPCClientMock{}
 
 // RPCClientMock is a mock implementation of types.RPCClient.
 //
-//     func TestSomethingThatUsesRPCClient(t *testing.T) {
+// 	func TestSomethingThatUsesRPCClient(t *testing.T) {
 //
-//         // make and configure a mocked types.RPCClient
-//         mockedRPCClient := &RPCClientMock{
-//             BlockNumberFunc: func(ctx context.Context) (uint64, error) {
-// 	               panic("mock out the BlockNumber method")
-//             },
-//             ChainIDFunc: func(ctx context.Context) (*big.Int, error) {
-// 	               panic("mock out the ChainID method")
-//             },
-//             EstimateGasFunc: func(ctx context.Context, msg ethereum.CallMsg) (uint64, error) {
-// 	               panic("mock out the EstimateGas method")
-//             },
-//             PendingNonceAtFunc: func(ctx context.Context, account common.Address) (uint64, error) {
-// 	               panic("mock out the PendingNonceAt method")
-//             },
-//             SendAndSignTransactionFunc: func(ctx context.Context, msg ethereum.CallMsg) (string, error) {
-// 	               panic("mock out the SendAndSignTransaction method")
-//             },
-//             SendTransactionFunc: func(ctx context.Context, tx *ethTypes.Transaction) error {
-// 	               panic("mock out the SendTransaction method")
-//             },
-//             SuggestGasPriceFunc: func(ctx context.Context) (*big.Int, error) {
-// 	               panic("mock out the SuggestGasPrice method")
-//             },
-//             TransactionReceiptFunc: func(ctx context.Context, txHash common.Hash) (*ethTypes.Receipt, error) {
-// 	               panic("mock out the TransactionReceipt method")
-//             },
-//         }
+// 		// make and configure a mocked types.RPCClient
+// 		mockedRPCClient := &RPCClientMock{
+// 			BlockNumberFunc: func(ctx context.Context) (uint64, error) {
+// 				panic("mock out the BlockNumber method")
+// 			},
+// 			ChainIDFunc: func(ctx context.Context) (*big.Int, error) {
+// 				panic("mock out the ChainID method")
+// 			},
+// 			EstimateGasFunc: func(ctx context.Context, msg ethereum.CallMsg) (uint64, error) {
+// 				panic("mock out the EstimateGas method")
+// 			},
+// 			PendingNonceAtFunc: func(ctx context.Context, account common.Address) (uint64, error) {
+// 				panic("mock out the PendingNonceAt method")
+// 			},
+// 			SendAndSignTransactionFunc: func(ctx context.Context, msg ethereum.CallMsg) (string, error) {
+// 				panic("mock out the SendAndSignTransaction method")
+// 			},
+// 			SendTransactionFunc: func(ctx context.Context, tx *ethTypes.Transaction) error {
+// 				panic("mock out the SendTransaction method")
+// 			},
+// 			SuggestGasPriceFunc: func(ctx context.Context) (*big.Int, error) {
+// 				panic("mock out the SuggestGasPrice method")
+// 			},
+// 			TransactionReceiptFunc: func(ctx context.Context, txHash common.Hash) (*ethTypes.Receipt, error) {
+// 				panic("mock out the TransactionReceipt method")
+// 			},
+// 		}
 //
-//         // use mockedRPCClient in code that requires types.RPCClient
-//         // and then make assertions.
+// 		// use mockedRPCClient in code that requires types.RPCClient
+// 		// and then make assertions.
 //
-//     }
+// 	}
 type RPCClientMock struct {
 	// BlockNumberFunc mocks the BlockNumber method.
 	BlockNumberFunc func(ctx context.Context) (uint64, error)

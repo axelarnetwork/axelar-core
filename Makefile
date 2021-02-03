@@ -50,7 +50,13 @@ docker-image:
 docker-image-debug:
 	@DOCKER_BUILDKIT=1 docker build --ssh default -t axelar/core-debug -f ./Dockerfile.debug .
 
+# Install all generate prerequisites
+.Phony: prereqs
+prereqs:
+	go get github.com/matryer/moq
+	pip3 install mdformat
+
 # Run all the code generators in the project
 .PHONY: generate
-generate:
-	go generate ./...
+generate: prereqs
+	go generate -x ./...

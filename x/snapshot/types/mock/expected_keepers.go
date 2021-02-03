@@ -16,25 +16,25 @@ var _ types.StakingKeeper = &StakingKeeperMock{}
 
 // StakingKeeperMock is a mock implementation of types.StakingKeeper.
 //
-//     func TestSomethingThatUsesStakingKeeper(t *testing.T) {
+// 	func TestSomethingThatUsesStakingKeeper(t *testing.T) {
 //
-//         // make and configure a mocked types.StakingKeeper
-//         mockedStakingKeeper := &StakingKeeperMock{
-//             GetLastTotalPowerFunc: func(ctx sdk.Context) sdk.Int {
-// 	               panic("mock out the GetLastTotalPower method")
-//             },
-//             IterateLastValidatorsFunc: func(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool))  {
-// 	               panic("mock out the IterateLastValidators method")
-//             },
-//             ValidatorFunc: func(ctx sdk.Context, addr sdk.ValAddress) sdkExported.ValidatorI {
-// 	               panic("mock out the Validator method")
-//             },
-//         }
+// 		// make and configure a mocked types.StakingKeeper
+// 		mockedStakingKeeper := &StakingKeeperMock{
+// 			GetLastTotalPowerFunc: func(ctx sdk.Context) sdk.Int {
+// 				panic("mock out the GetLastTotalPower method")
+// 			},
+// 			IterateLastValidatorsFunc: func(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool))  {
+// 				panic("mock out the IterateLastValidators method")
+// 			},
+// 			ValidatorFunc: func(ctx sdk.Context, addr sdk.ValAddress) sdkExported.ValidatorI {
+// 				panic("mock out the Validator method")
+// 			},
+// 		}
 //
-//         // use mockedStakingKeeper in code that requires types.StakingKeeper
-//         // and then make assertions.
+// 		// use mockedStakingKeeper in code that requires types.StakingKeeper
+// 		// and then make assertions.
 //
-//     }
+// 	}
 type StakingKeeperMock struct {
 	// GetLastTotalPowerFunc mocks the GetLastTotalPower method.
 	GetLastTotalPowerFunc func(ctx sdk.Context) sdk.Int

@@ -15,28 +15,28 @@ var _ exported.Snapshotter = &SnapshotterMock{}
 
 // SnapshotterMock is a mock implementation of exported.Snapshotter.
 //
-//     func TestSomethingThatUsesSnapshotter(t *testing.T) {
+// 	func TestSomethingThatUsesSnapshotter(t *testing.T) {
 //
-//         // make and configure a mocked exported.Snapshotter
-//         mockedSnapshotter := &SnapshotterMock{
-//             GetLatestRoundFunc: func(ctx sdk.Context) int64 {
-// 	               panic("mock out the GetLatestRound method")
-//             },
-//             GetLatestSnapshotFunc: func(ctx sdk.Context) (exported.Snapshot, bool) {
-// 	               panic("mock out the GetLatestSnapshot method")
-//             },
-//             GetSnapshotFunc: func(ctx sdk.Context, round int64) (exported.Snapshot, bool) {
-// 	               panic("mock out the GetSnapshot method")
-//             },
-//             GetValidatorFunc: func(ctx sdk.Context, address sdk.ValAddress) (exported.Validator, bool) {
-// 	               panic("mock out the GetValidator method")
-//             },
-//         }
+// 		// make and configure a mocked exported.Snapshotter
+// 		mockedSnapshotter := &SnapshotterMock{
+// 			GetLatestRoundFunc: func(ctx sdk.Context) int64 {
+// 				panic("mock out the GetLatestRound method")
+// 			},
+// 			GetLatestSnapshotFunc: func(ctx sdk.Context) (exported.Snapshot, bool) {
+// 				panic("mock out the GetLatestSnapshot method")
+// 			},
+// 			GetSnapshotFunc: func(ctx sdk.Context, round int64) (exported.Snapshot, bool) {
+// 				panic("mock out the GetSnapshot method")
+// 			},
+// 			GetValidatorFunc: func(ctx sdk.Context, address sdk.ValAddress) (exported.Validator, bool) {
+// 				panic("mock out the GetValidator method")
+// 			},
+// 		}
 //
-//         // use mockedSnapshotter in code that requires exported.Snapshotter
-//         // and then make assertions.
+// 		// use mockedSnapshotter in code that requires exported.Snapshotter
+// 		// and then make assertions.
 //
-//     }
+// 	}
 type SnapshotterMock struct {
 	// GetLatestRoundFunc mocks the GetLatestRound method.
 	GetLatestRoundFunc func(ctx sdk.Context) int64
@@ -221,22 +221,22 @@ var _ exported.Validator = &ValidatorMock{}
 
 // ValidatorMock is a mock implementation of exported.Validator.
 //
-//     func TestSomethingThatUsesValidator(t *testing.T) {
+// 	func TestSomethingThatUsesValidator(t *testing.T) {
 //
-//         // make and configure a mocked exported.Validator
-//         mockedValidator := &ValidatorMock{
-//             GetConsensusPowerFunc: func() int64 {
-// 	               panic("mock out the GetConsensusPower method")
-//             },
-//             GetOperatorFunc: func() sdk.ValAddress {
-// 	               panic("mock out the GetOperator method")
-//             },
-//         }
+// 		// make and configure a mocked exported.Validator
+// 		mockedValidator := &ValidatorMock{
+// 			GetConsensusPowerFunc: func() int64 {
+// 				panic("mock out the GetConsensusPower method")
+// 			},
+// 			GetOperatorFunc: func() sdk.ValAddress {
+// 				panic("mock out the GetOperator method")
+// 			},
+// 		}
 //
-//         // use mockedValidator in code that requires exported.Validator
-//         // and then make assertions.
+// 		// use mockedValidator in code that requires exported.Validator
+// 		// and then make assertions.
 //
-//     }
+// 	}
 type ValidatorMock struct {
 	// GetConsensusPowerFunc mocks the GetConsensusPower method.
 	GetConsensusPowerFunc func() int64

@@ -29,15 +29,25 @@ With a local (dockerized) validator running, the `axelarcli` binary can be used 
 Run `./bin/axelarcli --help` after building the binaries to get information about the available commands.
 
 ## Show API documentation
+
 Execute `GO111MODULE=off go get -u golang.org/x/tools/cmd/godoc` to ensure that `godoc` is installed on the host.
 
-After the installation, execute `godoc -http ":{port}" -index` to host a local godoc server. For example, with port `8080` the documentation is hosted at
+After the installation, execute `godoc -http ":{port}" -index` to host a local godoc server. For example, with
+port `8080` the documentation is hosted at
 http://localhost:8080/pkg/github.com/axelarnetwork/axelar-core. The index flag makes the documentation searchable.
 
-Comments at the beginning of packages, before types and before functions are automatically taken from the source files to populate the documentation. 
-See https://blog.golang.org/godoc for more information.
+Comments at the beginning of packages, before types and before functions are automatically taken from the source files
+to populate the documentation. See https://blog.golang.org/godoc for more information.
+
+### CLI command documentation
+
+For the full list of available CLI commands for `axelarcli` see [here](cmd/axelarcli/docs/toc.md)
 
 ## Test tools
-Because it is an executable, github.com/matryer/moq is not automatically downloaded when executing ``go mod download`` or similar commands. Execute ``go get github.com/matryer/moq`` to install the _moq_ tool to generate mocks for interfaces.
 
-In [testutils](https://github.com/axelarnetwork/axelar-core/tree/master/testutils) there are helpers defined to simplify randomized testing.
+Because it is an executable, github.com/matryer/moq is not automatically downloaded when executing ``go mod download``
+or similar commands. Execute ``go get github.com/matryer/moq`` to install the _moq_ tool to generate mocks for
+interfaces.
+
+In [testutils](https://github.com/axelarnetwork/axelar-core/tree/master/testutils) there are helpers defined to simplify
+randomized testing.

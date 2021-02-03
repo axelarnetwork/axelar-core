@@ -15,31 +15,31 @@ var _ exported.Broadcaster = &BroadcasterMock{}
 
 // BroadcasterMock is a mock implementation of exported.Broadcaster.
 //
-//     func TestSomethingThatUsesBroadcaster(t *testing.T) {
+// 	func TestSomethingThatUsesBroadcaster(t *testing.T) {
 //
-//         // make and configure a mocked exported.Broadcaster
-//         mockedBroadcaster := &BroadcasterMock{
-//             BroadcastFunc: func(ctx sdk.Context, msgs []exported.MsgWithSenderSetter) error {
-// 	               panic("mock out the Broadcast method")
-//             },
-//             GetLocalPrincipalFunc: func(ctx sdk.Context) sdk.ValAddress {
-// 	               panic("mock out the GetLocalPrincipal method")
-//             },
-//             GetPrincipalFunc: func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
-// 	               panic("mock out the GetPrincipal method")
-//             },
-//             GetProxyFunc: func(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
-// 	               panic("mock out the GetProxy method")
-//             },
-//             RegisterProxyFunc: func(ctx sdk.Context, principal sdk.ValAddress, proxy sdk.AccAddress) error {
-// 	               panic("mock out the RegisterProxy method")
-//             },
-//         }
+// 		// make and configure a mocked exported.Broadcaster
+// 		mockedBroadcaster := &BroadcasterMock{
+// 			BroadcastFunc: func(ctx sdk.Context, msgs []exported.MsgWithSenderSetter) error {
+// 				panic("mock out the Broadcast method")
+// 			},
+// 			GetLocalPrincipalFunc: func(ctx sdk.Context) sdk.ValAddress {
+// 				panic("mock out the GetLocalPrincipal method")
+// 			},
+// 			GetPrincipalFunc: func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
+// 				panic("mock out the GetPrincipal method")
+// 			},
+// 			GetProxyFunc: func(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
+// 				panic("mock out the GetProxy method")
+// 			},
+// 			RegisterProxyFunc: func(ctx sdk.Context, principal sdk.ValAddress, proxy sdk.AccAddress) error {
+// 				panic("mock out the RegisterProxy method")
+// 			},
+// 		}
 //
-//         // use mockedBroadcaster in code that requires exported.Broadcaster
-//         // and then make assertions.
+// 		// use mockedBroadcaster in code that requires exported.Broadcaster
+// 		// and then make assertions.
 //
-//     }
+// 	}
 type BroadcasterMock struct {
 	// BroadcastFunc mocks the Broadcast method.
 	BroadcastFunc func(ctx sdk.Context, msgs []exported.MsgWithSenderSetter) error

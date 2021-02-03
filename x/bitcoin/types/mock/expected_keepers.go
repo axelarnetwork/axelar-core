@@ -20,31 +20,31 @@ var _ types.Voter = &VoterMock{}
 
 // VoterMock is a mock implementation of types.Voter.
 //
-//     func TestSomethingThatUsesVoter(t *testing.T) {
+// 	func TestSomethingThatUsesVoter(t *testing.T) {
 //
-//         // make and configure a mocked types.Voter
-//         mockedVoter := &VoterMock{
-//             DeletePollFunc: func(ctx sdk.Context, poll voting.PollMeta)  {
-// 	               panic("mock out the DeletePoll method")
-//             },
-//             InitPollFunc: func(ctx sdk.Context, poll voting.PollMeta) error {
-// 	               panic("mock out the InitPoll method")
-//             },
-//             RecordVoteFunc: func(ctx sdk.Context, vote voting.MsgVote) error {
-// 	               panic("mock out the RecordVote method")
-//             },
-//             ResultFunc: func(ctx sdk.Context, poll voting.PollMeta) voting.VotingData {
-// 	               panic("mock out the Result method")
-//             },
-//             TallyVoteFunc: func(ctx sdk.Context, vote voting.MsgVote) error {
-// 	               panic("mock out the TallyVote method")
-//             },
-//         }
+// 		// make and configure a mocked types.Voter
+// 		mockedVoter := &VoterMock{
+// 			DeletePollFunc: func(ctx sdk.Context, poll voting.PollMeta)  {
+// 				panic("mock out the DeletePoll method")
+// 			},
+// 			InitPollFunc: func(ctx sdk.Context, poll voting.PollMeta) error {
+// 				panic("mock out the InitPoll method")
+// 			},
+// 			RecordVoteFunc: func(ctx sdk.Context, vote voting.MsgVote) error {
+// 				panic("mock out the RecordVote method")
+// 			},
+// 			ResultFunc: func(ctx sdk.Context, poll voting.PollMeta) voting.VotingData {
+// 				panic("mock out the Result method")
+// 			},
+// 			TallyVoteFunc: func(ctx sdk.Context, vote voting.MsgVote) error {
+// 				panic("mock out the TallyVote method")
+// 			},
+// 		}
 //
-//         // use mockedVoter in code that requires types.Voter
-//         // and then make assertions.
+// 		// use mockedVoter in code that requires types.Voter
+// 		// and then make assertions.
 //
-//     }
+// 	}
 type VoterMock struct {
 	// DeletePollFunc mocks the DeletePoll method.
 	DeletePollFunc func(ctx sdk.Context, poll voting.PollMeta)
@@ -287,40 +287,40 @@ var _ types.Signer = &SignerMock{}
 
 // SignerMock is a mock implementation of types.Signer.
 //
-//     func TestSomethingThatUsesSigner(t *testing.T) {
+// 	func TestSomethingThatUsesSigner(t *testing.T) {
 //
-//         // make and configure a mocked types.Signer
-//         mockedSigner := &SignerMock{
-//             GetCurrentMasterKeyFunc: func(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool) {
-// 	               panic("mock out the GetCurrentMasterKey method")
-//             },
-//             GetCurrentMasterKeyIDFunc: func(ctx sdk.Context, chain exported.Chain) (string, bool) {
-// 	               panic("mock out the GetCurrentMasterKeyID method")
-//             },
-//             GetKeyFunc: func(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool) {
-// 	               panic("mock out the GetKey method")
-//             },
-//             GetKeyForSigIDFunc: func(ctx sdk.Context, sigID string) (ecdsa.PublicKey, bool) {
-// 	               panic("mock out the GetKeyForSigID method")
-//             },
-//             GetNextMasterKeyFunc: func(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool) {
-// 	               panic("mock out the GetNextMasterKey method")
-//             },
-//             GetSigFunc: func(ctx sdk.Context, sigID string) (tss.Signature, bool) {
-// 	               panic("mock out the GetSig method")
-//             },
-//             GetSnapshotRoundForKeyIDFunc: func(ctx sdk.Context, keyID string) (int64, bool) {
-// 	               panic("mock out the GetSnapshotRoundForKeyID method")
-//             },
-//             StartSignFunc: func(ctx sdk.Context, keyID string, sigID string, msg []byte, validators []snapshot.Validator) error {
-// 	               panic("mock out the StartSign method")
-//             },
-//         }
+// 		// make and configure a mocked types.Signer
+// 		mockedSigner := &SignerMock{
+// 			GetCurrentMasterKeyFunc: func(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool) {
+// 				panic("mock out the GetCurrentMasterKey method")
+// 			},
+// 			GetCurrentMasterKeyIDFunc: func(ctx sdk.Context, chain exported.Chain) (string, bool) {
+// 				panic("mock out the GetCurrentMasterKeyID method")
+// 			},
+// 			GetKeyFunc: func(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool) {
+// 				panic("mock out the GetKey method")
+// 			},
+// 			GetKeyForSigIDFunc: func(ctx sdk.Context, sigID string) (ecdsa.PublicKey, bool) {
+// 				panic("mock out the GetKeyForSigID method")
+// 			},
+// 			GetNextMasterKeyFunc: func(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool) {
+// 				panic("mock out the GetNextMasterKey method")
+// 			},
+// 			GetSigFunc: func(ctx sdk.Context, sigID string) (tss.Signature, bool) {
+// 				panic("mock out the GetSig method")
+// 			},
+// 			GetSnapshotRoundForKeyIDFunc: func(ctx sdk.Context, keyID string) (int64, bool) {
+// 				panic("mock out the GetSnapshotRoundForKeyID method")
+// 			},
+// 			StartSignFunc: func(ctx sdk.Context, keyID string, sigID string, msg []byte, validators []snapshot.Validator) error {
+// 				panic("mock out the StartSign method")
+// 			},
+// 		}
 //
-//         // use mockedSigner in code that requires types.Signer
-//         // and then make assertions.
+// 		// use mockedSigner in code that requires types.Signer
+// 		// and then make assertions.
 //
-//     }
+// 	}
 type SignerMock struct {
 	// GetCurrentMasterKeyFunc mocks the GetCurrentMasterKey method.
 	GetCurrentMasterKeyFunc func(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool)
@@ -719,34 +719,34 @@ var _ types.Balancer = &BalancerMock{}
 
 // BalancerMock is a mock implementation of types.Balancer.
 //
-//     func TestSomethingThatUsesBalancer(t *testing.T) {
+// 	func TestSomethingThatUsesBalancer(t *testing.T) {
 //
-//         // make and configure a mocked types.Balancer
-//         mockedBalancer := &BalancerMock{
-//             ArchivePendingTransferFunc: func(ctx sdk.Context, transfer exported.CrossChainTransfer)  {
-// 	               panic("mock out the ArchivePendingTransfer method")
-//             },
-//             EnqueueForTransferFunc: func(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error {
-// 	               panic("mock out the EnqueueForTransfer method")
-//             },
-//             GetArchivedTransfersForChainFunc: func(ctx sdk.Context, chain exported.Chain) []exported.CrossChainTransfer {
-// 	               panic("mock out the GetArchivedTransfersForChain method")
-//             },
-//             GetPendingTransfersForChainFunc: func(ctx sdk.Context, chain exported.Chain) []exported.CrossChainTransfer {
-// 	               panic("mock out the GetPendingTransfersForChain method")
-//             },
-//             GetRecipientFunc: func(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool) {
-// 	               panic("mock out the GetRecipient method")
-//             },
-//             LinkAddressesFunc: func(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress)  {
-// 	               panic("mock out the LinkAddresses method")
-//             },
-//         }
+// 		// make and configure a mocked types.Balancer
+// 		mockedBalancer := &BalancerMock{
+// 			ArchivePendingTransferFunc: func(ctx sdk.Context, transfer exported.CrossChainTransfer)  {
+// 				panic("mock out the ArchivePendingTransfer method")
+// 			},
+// 			EnqueueForTransferFunc: func(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error {
+// 				panic("mock out the EnqueueForTransfer method")
+// 			},
+// 			GetArchivedTransfersForChainFunc: func(ctx sdk.Context, chain exported.Chain) []exported.CrossChainTransfer {
+// 				panic("mock out the GetArchivedTransfersForChain method")
+// 			},
+// 			GetPendingTransfersForChainFunc: func(ctx sdk.Context, chain exported.Chain) []exported.CrossChainTransfer {
+// 				panic("mock out the GetPendingTransfersForChain method")
+// 			},
+// 			GetRecipientFunc: func(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool) {
+// 				panic("mock out the GetRecipient method")
+// 			},
+// 			LinkAddressesFunc: func(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress)  {
+// 				panic("mock out the LinkAddresses method")
+// 			},
+// 		}
 //
-//         // use mockedBalancer in code that requires types.Balancer
-//         // and then make assertions.
+// 		// use mockedBalancer in code that requires types.Balancer
+// 		// and then make assertions.
 //
-//     }
+// 	}
 type BalancerMock struct {
 	// ArchivePendingTransferFunc mocks the ArchivePendingTransfer method.
 	ArchivePendingTransferFunc func(ctx sdk.Context, transfer exported.CrossChainTransfer)
@@ -1047,19 +1047,19 @@ var _ types.Snapshotter = &SnapshotterMock{}
 
 // SnapshotterMock is a mock implementation of types.Snapshotter.
 //
-//     func TestSomethingThatUsesSnapshotter(t *testing.T) {
+// 	func TestSomethingThatUsesSnapshotter(t *testing.T) {
 //
-//         // make and configure a mocked types.Snapshotter
-//         mockedSnapshotter := &SnapshotterMock{
-//             GetSnapshotFunc: func(ctx sdk.Context, round int64) (snapshot.Snapshot, bool) {
-// 	               panic("mock out the GetSnapshot method")
-//             },
-//         }
+// 		// make and configure a mocked types.Snapshotter
+// 		mockedSnapshotter := &SnapshotterMock{
+// 			GetSnapshotFunc: func(ctx sdk.Context, round int64) (snapshot.Snapshot, bool) {
+// 				panic("mock out the GetSnapshot method")
+// 			},
+// 		}
 //
-//         // use mockedSnapshotter in code that requires types.Snapshotter
-//         // and then make assertions.
+// 		// use mockedSnapshotter in code that requires types.Snapshotter
+// 		// and then make assertions.
 //
-//     }
+// 	}
 type SnapshotterMock struct {
 	// GetSnapshotFunc mocks the GetSnapshot method.
 	GetSnapshotFunc func(ctx sdk.Context, round int64) (snapshot.Snapshot, bool)

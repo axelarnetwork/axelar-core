@@ -16,28 +16,28 @@ var _ types.RPCClient = &RPCClientMock{}
 
 // RPCClientMock is a mock implementation of types.RPCClient.
 //
-//     func TestSomethingThatUsesRPCClient(t *testing.T) {
+// 	func TestSomethingThatUsesRPCClient(t *testing.T) {
 //
-//         // make and configure a mocked types.RPCClient
-//         mockedRPCClient := &RPCClientMock{
-//             GetOutPointInfoFunc: func(out *wire.OutPoint) (types.OutPointInfo, error) {
-// 	               panic("mock out the GetOutPointInfo method")
-//             },
-//             ImportAddressRescanFunc: func(address string, account string, rescan bool) error {
-// 	               panic("mock out the ImportAddressRescan method")
-//             },
-//             NetworkFunc: func() types.Network {
-// 	               panic("mock out the Network method")
-//             },
-//             SendRawTransactionFunc: func(tx *wire.MsgTx, allowHighFees bool) (*chainhash.Hash, error) {
-// 	               panic("mock out the SendRawTransaction method")
-//             },
-//         }
+// 		// make and configure a mocked types.RPCClient
+// 		mockedRPCClient := &RPCClientMock{
+// 			GetOutPointInfoFunc: func(out *wire.OutPoint) (types.OutPointInfo, error) {
+// 				panic("mock out the GetOutPointInfo method")
+// 			},
+// 			ImportAddressRescanFunc: func(address string, account string, rescan bool) error {
+// 				panic("mock out the ImportAddressRescan method")
+// 			},
+// 			NetworkFunc: func() types.Network {
+// 				panic("mock out the Network method")
+// 			},
+// 			SendRawTransactionFunc: func(tx *wire.MsgTx, allowHighFees bool) (*chainhash.Hash, error) {
+// 				panic("mock out the SendRawTransaction method")
+// 			},
+// 		}
 //
-//         // use mockedRPCClient in code that requires types.RPCClient
-//         // and then make assertions.
+// 		// use mockedRPCClient in code that requires types.RPCClient
+// 		// and then make assertions.
 //
-//     }
+// 	}
 type RPCClientMock struct {
 	// GetOutPointInfoFunc mocks the GetOutPointInfo method.
 	GetOutPointInfoFunc func(out *wire.OutPoint) (types.OutPointInfo, error)
