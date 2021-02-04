@@ -19,8 +19,8 @@ const (
 
 var (
 
-	// KeyChainsCurrencyInfo represents the key for the chains currency info parameter
-	KeyChainsCurrencyInfo = []byte("currencyInfo")
+	// KeyChainsAssetInfo represents the key for the chains Asset info parameter
+	KeyChainsAssetInfo = []byte("assetInfo")
 )
 
 // KeyTable retrieves a subspace table for the module
@@ -28,25 +28,25 @@ func KeyTable() subspace.KeyTable {
 	return subspace.NewKeyTable().RegisterParamSet(&Params{})
 }
 
-// ChainCurrencyInfo holds information about which forms of currency a chain supports
-type ChainCurrencyInfo struct {
-	Chain           exported.Chain
-	NativeDenom     string
-	SupportsForeign bool
+// ChainAssetInfo holds information about which forms of asset a chain supports
+type ChainAssetInfo struct {
+	Chain                 exported.Chain
+	NativeDenom           string
+	SupportsForeignAssets bool
 }
 
 // Params represent the genesis parameters for the module
 type Params struct {
-	ChainsCurrencyInfo []ChainCurrencyInfo
+	ChainsAssetInfo []ChainAssetInfo
 }
 
 // DefaultParams creates the default genesis parameters
 func DefaultParams() Params {
 	return Params{
 
-		ChainsCurrencyInfo: []ChainCurrencyInfo{
-			{Chain: exported.Bitcoin, NativeDenom: bitcoinDenom, SupportsForeign: false},
-			{Chain: exported.Ethereum, NativeDenom: ethereumDenom, SupportsForeign: true},
+		ChainsAssetInfo: []ChainAssetInfo{
+			{Chain: exported.Bitcoin, NativeDenom: bitcoinDenom, SupportsForeignAssets: false},
+			{Chain: exported.Ethereum, NativeDenom: ethereumDenom, SupportsForeignAssets: true},
 		},
 	}
 }
@@ -62,20 +62,20 @@ func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
 		set on the correct Params data struct
 	*/
 	return subspace.ParamSetPairs{
-		subspace.NewParamSetPair(KeyChainsCurrencyInfo, &p.ChainsCurrencyInfo, validateChains),
+		subspace.NewParamSetPair(KeyChainsAssetInfo, &p.ChainsAssetInfo, validateChains),
 	}
 }
 
 // Validate checks if the parameters are valid
 func (p Params) Validate() error {
-	return validateChains(p.ChainsCurrencyInfo)
+	return validateChains(p.ChainsAssetInfo)
 }
 
 func validateChains(infos interface{}) error {
 
-	is, ok := infos.([]ChainCurrencyInfo)
+	is, ok := infos.([]ChainAssetInfo)
 	if !ok {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, fmt.Sprintf("invalid parameter type for chain currency infos: %T", infos))
+		return sdkerrors.Wrap(types.ErrInvalidGenesis, fmt.Sprintf("invalid parameter type for chain asset infos: %T", infos))
 	}
 
 	for _, i := range is {
@@ -98,27 +98,27 @@ func validateChains(infos interface{}) error {
 	return nil
 }
 
-func validateBitcoin(info ChainCurrencyInfo) error {
+func validateBitcoin(info ChainAssetInfo) error {
 
 	if info.NativeDenom != bitcoinDenom {
 		return sdkerrors.Wrap(types.ErrInvalidGenesis, "incorrect bitcoin denomination")
 	}
 
-	if info.SupportsForeign == true {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, "bitcoin does not support foreign currency")
+	if info.SupportsForeignAssets == true {
+		return sdkerrors.Wrap(types.ErrInvalidGenesis, "bitcoin does not support foreign assets")
 	}
 
 	return nil
 }
 
-func validateEthereum(info ChainCurrencyInfo) error {
+func validateEthereum(info ChainAssetInfo) error {
 
 	if info.NativeDenom != ethereumDenom {
 		return sdkerrors.Wrap(types.ErrInvalidGenesis, "incorrect ethereum denomination")
 	}
 
-	if info.SupportsForeign == false {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, "ethereum does support foreign currency")
+	if info.SupportsForeignAssets == false {
+		return sdkerrors.Wrap(types.ErrInvalidGenesis, "ethereum does support foreign assets")
 	}
 
 	return nil

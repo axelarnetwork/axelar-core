@@ -37,9 +37,9 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspa
 func (k Keeper) SetParams(ctx sdk.Context, p types.Params) {
 	k.params.SetParamSet(ctx, &p)
 
-	// Avoid linear complexity when fetching currency information for a chain
-	for _, info := range p.ChainsCurrencyInfo {
-		k.SetChainCurrencyInfo(ctx, info.Chain, info.NativeDenom, info.SupportsForeign)
+	// Avoid linear complexity when fetching asset information for a chain
+	for _, info := range p.ChainsAssetInfo {
+		k.SetChainAssetInfo(ctx, info.Chain, info.NativeDenom, info.SupportsForeignAssets)
 	}
 }
 
@@ -50,8 +50,8 @@ func (k Keeper) GetParams(ctx sdk.Context) types.Params {
 	return p
 }
 
-// GetChainCurrencyInfo retrieves the specification for a chain's currency
-func (k Keeper) GetChainCurrencyInfo(ctx sdk.Context, chain exported.Chain) (nativeDenom string, supportsForeign bool, found bool) {
+// GetChainAssetInfo retrieves the specification for a chain's assets
+func (k Keeper) GetChainAssetInfo(ctx sdk.Context, chain exported.Chain) (nativeDenom string, supportsForeign bool, found bool) {
 
 	if err := chain.Validate(); err != nil {
 		return
@@ -62,23 +62,23 @@ func (k Keeper) GetChainCurrencyInfo(ctx sdk.Context, chain exported.Chain) (nat
 		return
 	}
 
-	var info types.ChainCurrencyInfo
+	var info types.ChainAssetInfo
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &info)
 
 	nativeDenom = info.NativeDenom
-	supportsForeign = info.SupportsForeign
+	supportsForeign = info.SupportsForeignAssets
 	found = true
 
 	return
 }
 
-// SetChainCurrencyInfo sets the specification for a chain's currency
-func (k Keeper) SetChainCurrencyInfo(ctx sdk.Context, chain exported.Chain, nativeDenom string, supportsForeign bool) error {
+// SetChainAssetInfo sets the specification for a chain's assets
+func (k Keeper) SetChainAssetInfo(ctx sdk.Context, chain exported.Chain, nativeDenom string, supportsForeign bool) error {
 	if err := chain.Validate(); err != nil {
 		return err
 	}
 
-	info := types.ChainCurrencyInfo{Chain: chain, NativeDenom: nativeDenom, SupportsForeign: supportsForeign}
+	info := types.ChainAssetInfo{Chain: chain, NativeDenom: nativeDenom, SupportsForeignAssets: supportsForeign}
 	ctx.KVStore(k.storeKey).Set([]byte(infoPrefix+chain.String()), k.cdc.MustMarshalBinaryLengthPrefixed(info))
 
 	return nil
