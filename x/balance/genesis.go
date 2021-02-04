@@ -9,12 +9,14 @@ import (
 
 // InitGenesis initialize default parameters
 // from the genesis state
-func InitGenesis(_ sdk.Context, _ keeper.Keeper, _ types.GenesisState) {
+func InitGenesis(ctx sdk.Context, k keeper.Keeper, g types.GenesisState) {
+	k.SetParams(ctx, g.Params)
 }
 
 // ExportGenesis writes the current store values
 // to a genesis file, which can be imported again
 // with InitGenesis
-func ExportGenesis(_ sdk.Context, _ keeper.Keeper) types.GenesisState {
-	return types.GenesisState{}
+func ExportGenesis(ctx sdk.Context, k keeper.Keeper) types.GenesisState {
+	params := k.GetParams(ctx)
+	return types.GenesisState{Params: params}
 }

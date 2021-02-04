@@ -430,7 +430,10 @@ func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *f
 		voter, broadcaster,
 	)
 	signer.SetParams(ctx, tssTypes.DefaultParams())
-	balancer := balanceKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(balanceTypes.StoreKey))
+
+	balanceSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("balanceKey"), sdk.NewKVStoreKey("tbalanceKey"), "balance")
+	balancer := balanceKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(balanceTypes.StoreKey), balanceSubspace)
+	balancer.SetParams(ctx, balanceTypes.DefaultParams())
 
 	voter.SetVotingInterval(ctx, voteTypes.DefaultGenesisState().VotingInterval)
 	voter.SetVotingThreshold(ctx, voteTypes.DefaultGenesisState().VotingThreshold)

@@ -4,11 +4,13 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/params"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/x/balance/exported"
+	"github.com/axelarnetwork/axelar-core/x/balance/types"
 
 	"github.com/stretchr/testify/assert"
 
@@ -25,11 +27,13 @@ var keeper Keeper
 
 func init() {
 	cdc := testutils.Codec()
-	keeper = NewKeeper(cdc, sdk.NewKVStoreKey("testKey"))
+	balanceSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("balanceKey"), sdk.NewKVStoreKey("tbalanceKey"), "balance")
+	keeper = NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), balanceSubspace)
 }
 
 func TestLink(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	keeper.SetParams(ctx, types.DefaultParams())
 	sender, recipient := makeRandAddressesForChain(makeRandomChain(), makeRandomChain())
 
 	keeper.LinkAddresses(ctx, sender, recipient)
@@ -49,6 +53,7 @@ func TestLink(t *testing.T) {
 
 func TestPrepare(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	keeper.SetParams(ctx, types.DefaultParams())
 	sender, _ := makeRandAddressesForChain(makeRandomChain(), makeRandomChain())
 
 	err := keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
@@ -82,6 +87,7 @@ func TestPrepare(t *testing.T) {
 func TestArchive(t *testing.T) {
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	keeper.SetParams(ctx, types.DefaultParams())
 
 	destination := makeRandomChain()
 	denom := makeRandomDenom()

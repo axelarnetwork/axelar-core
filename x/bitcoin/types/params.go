@@ -63,7 +63,7 @@ func validateConfirmationHeight(height interface{}) error {
 func validateNetwork(network interface{}) error {
 	n, ok := network.(Network)
 	if !ok {
-		return fmt.Errorf("invalid parameter type for network: %T", network)
+		return sdkerrors.Wrap(types.ErrInvalidGenesis, fmt.Sprintf("invalid parameter type for network: %T", network))
 	}
 	return n.Validate()
 }

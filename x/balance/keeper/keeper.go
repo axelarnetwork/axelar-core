@@ -6,25 +6,82 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/params"
 
 	"github.com/axelarnetwork/axelar-core/x/balance/exported"
+	"github.com/axelarnetwork/axelar-core/x/balance/types"
 )
 
 const (
 	senderPrefix   = "send_"
+	infoPrefix     = "info_"
 	pendingPrefix  = "pend_"
 	archivedPrefix = "arch_"
 
 	sequenceKey = "nextID"
 )
 
+//Keeper represents a ballance keeper
 type Keeper struct {
 	storeKey sdk.StoreKey
 	cdc      *codec.Codec
+	params   params.Subspace
 }
 
-func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey) Keeper {
-	return Keeper{cdc: cdc, storeKey: storeKey}
+// NewKeeper returns a new balance keeper
+func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
+	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable())}
+}
+
+// SetParams sets the balance module's parameters
+func (k Keeper) SetParams(ctx sdk.Context, p types.Params) {
+	k.params.SetParamSet(ctx, &p)
+
+	// Avoid linear complexity when fetching currency information for a chain
+	for _, info := range p.ChainsCurrencyInfo {
+		k.SetChainCurrencyInfo(ctx, info.Chain, info.NativeDenom, info.SupportsForeign)
+	}
+}
+
+// GetParams gets the balance module's parameters
+func (k Keeper) GetParams(ctx sdk.Context) types.Params {
+	var p types.Params
+	k.params.GetParamSet(ctx, &p)
+	return p
+}
+
+// GetChainCurrencyInfo retrieves the specification for a chain's currency
+func (k Keeper) GetChainCurrencyInfo(ctx sdk.Context, chain exported.Chain) (nativeDenom string, supportsForeign bool, found bool) {
+
+	if err := chain.Validate(); err != nil {
+		return
+	}
+
+	bz := ctx.KVStore(k.storeKey).Get([]byte(infoPrefix + chain.String()))
+	if bz == nil {
+		return
+	}
+
+	var info types.ChainCurrencyInfo
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &info)
+
+	nativeDenom = info.NativeDenom
+	supportsForeign = info.SupportsForeign
+	found = true
+
+	return
+}
+
+// SetChainCurrencyInfo sets the specification for a chain's currency
+func (k Keeper) SetChainCurrencyInfo(ctx sdk.Context, chain exported.Chain, nativeDenom string, supportsForeign bool) error {
+	if err := chain.Validate(); err != nil {
+		return err
+	}
+
+	info := types.ChainCurrencyInfo{Chain: chain, NativeDenom: nativeDenom, SupportsForeign: supportsForeign}
+	ctx.KVStore(k.storeKey).Set([]byte(infoPrefix+chain.String()), k.cdc.MustMarshalBinaryLengthPrefixed(info))
+
+	return nil
 }
 
 // LinkAddresses links a sender address to a crosschain recipient address
@@ -32,6 +89,7 @@ func (k Keeper) LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress
 	ctx.KVStore(k.storeKey).Set([]byte(marshalCrossChainAddress(sender)), k.cdc.MustMarshalBinaryLengthPrefixed(recipient))
 }
 
+// GetRecipient retrieves the cross chain recipient associated to the specified sender
 func (k Keeper) GetRecipient(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(marshalCrossChainAddress(sender)))
 	if bz == nil {

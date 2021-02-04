@@ -200,6 +200,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	tssSubspace := app.paramsKeeper.Subspace(tssTypes.DefaultParamspace)
 	btcSubspace := app.paramsKeeper.Subspace(btcTypes.DefaultParamspace)
 	ethSubspace := app.paramsKeeper.Subspace(ethTypes.DefaultParamspace)
+	balanceSubspace := app.paramsKeeper.Subspace(balanceTypes.DefaultParamspace)
 
 	// The AccountKeeper handles address -> account lookups
 	app.accountKeeper = auth.NewAccountKeeper(
@@ -264,7 +265,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 
 	app.snapKeeper = snapKeeper.NewKeeper(app.cdc, keys[snapTypes.StoreKey], app.stakingKeeper)
 
-	app.balanceKeeper = balanceKeeper.NewKeeper(app.cdc, keys[balanceTypes.StoreKey])
+	app.balanceKeeper = balanceKeeper.NewKeeper(app.cdc, keys[balanceTypes.StoreKey], balanceSubspace)
 
 	keybase, err := keyring.NewKeyring(sdk.KeyringServiceName(), axelarCfg.ClientConfig.KeyringBackend, DefaultCLIHome, os.Stdin)
 	if err != nil {
@@ -377,6 +378,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		tssTypes.ModuleName,
 		btcTypes.ModuleName,
 		ethTypes.ModuleName,
+		balanceTypes.ModuleName,
 		broadcastTypes.ModuleName,
 		voteTypes.ModuleName,
 		supply.ModuleName,
