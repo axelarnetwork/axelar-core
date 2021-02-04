@@ -39,7 +39,7 @@ func (k Keeper) SetParams(ctx sdk.Context, p types.Params) {
 
 	// Avoid linear complexity when fetching asset information for a chain
 	for _, info := range p.ChainsAssetInfo {
-		k.SetChainAssetInfo(ctx, info.Chain, info.NativeDenom, info.SupportsForeignAssets)
+		k.SetChainAssetInfo(ctx, info.Chain, info.NativeAsset, info.SupportsForeignAssets)
 	}
 }
 
@@ -51,22 +51,13 @@ func (k Keeper) GetParams(ctx sdk.Context) types.Params {
 }
 
 // GetChainAssetInfo retrieves the specification for a chain's assets
-func (k Keeper) GetChainAssetInfo(ctx sdk.Context, chain exported.Chain) (nativeDenom string, supportsForeign bool, found bool) {
-
-	if err := chain.Validate(); err != nil {
-		return
-	}
-
+func (k Keeper) GetChainAssetInfo(ctx sdk.Context, chain exported.Chain) (info types.ChainAssetInfo, found bool) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(infoPrefix + chain.String()))
 	if bz == nil {
 		return
 	}
 
-	var info types.ChainAssetInfo
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &info)
-
-	nativeDenom = info.NativeDenom
-	supportsForeign = info.SupportsForeignAssets
 	found = true
 
 	return
@@ -74,11 +65,7 @@ func (k Keeper) GetChainAssetInfo(ctx sdk.Context, chain exported.Chain) (native
 
 // SetChainAssetInfo sets the specification for a chain's assets
 func (k Keeper) SetChainAssetInfo(ctx sdk.Context, chain exported.Chain, nativeDenom string, supportsForeign bool) error {
-	if err := chain.Validate(); err != nil {
-		return err
-	}
-
-	info := types.ChainAssetInfo{Chain: chain, NativeDenom: nativeDenom, SupportsForeignAssets: supportsForeign}
+	info := types.ChainAssetInfo{Chain: chain, NativeAsset: nativeDenom, SupportsForeignAssets: supportsForeign}
 	ctx.KVStore(k.storeKey).Set([]byte(infoPrefix+chain.String()), k.cdc.MustMarshalBinaryLengthPrefixed(info))
 
 	return nil

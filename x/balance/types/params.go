@@ -1,8 +1,6 @@
 package types
 
 import (
-	"fmt"
-
 	"github.com/axelarnetwork/axelar-core/x/balance/exported"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
@@ -31,7 +29,7 @@ func KeyTable() subspace.KeyTable {
 // ChainAssetInfo holds information about which forms of asset a chain supports
 type ChainAssetInfo struct {
 	Chain                 exported.Chain
-	NativeDenom           string
+	NativeAsset           string
 	SupportsForeignAssets bool
 }
 
@@ -45,8 +43,8 @@ func DefaultParams() Params {
 	return Params{
 
 		ChainsAssetInfo: []ChainAssetInfo{
-			{Chain: exported.Bitcoin, NativeDenom: bitcoinDenom, SupportsForeignAssets: false},
-			{Chain: exported.Ethereum, NativeDenom: ethereumDenom, SupportsForeignAssets: true},
+			{Chain: exported.Bitcoin, NativeAsset: bitcoinDenom, SupportsForeignAssets: false},
+			{Chain: exported.Ethereum, NativeAsset: ethereumDenom, SupportsForeignAssets: true},
 		},
 	}
 }
@@ -75,55 +73,19 @@ func validateChains(infos interface{}) error {
 
 	is, ok := infos.([]ChainAssetInfo)
 	if !ok {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, fmt.Sprintf("invalid parameter type for chain asset infos: %T", infos))
+		return sdkerrors.Wrapf(types.ErrInvalidGenesis, "invalid parameter type for chain asset infos: %T", infos)
 	}
 
 	for _, i := range is {
-		var err error = nil
 
-		switch i.Chain {
-		case exported.Bitcoin:
-			err = validateBitcoin(i)
-		case exported.Ethereum:
-			err = validateEthereum(i)
-		case exported.NONE:
-			err = sdkerrors.Wrap(types.ErrInvalidGenesis, "invalid chain")
-		default:
-			//non-pre-defined chain
-			if i.NativeDenom == "" {
-				err = sdkerrors.Wrap(types.ErrInvalidGenesis, "invalid asset denomination")
-			}
+		if i.Chain == exported.NONE {
+			return sdkerrors.Wrap(types.ErrInvalidGenesis, "invalid chain")
 		}
 
-		if err != nil {
-			return err
+		if i.NativeAsset == "" {
+			return sdkerrors.Wrap(types.ErrInvalidGenesis, "invalid asset denomination")
 		}
-	}
 
-	return nil
-}
-
-func validateBitcoin(info ChainAssetInfo) error {
-
-	if info.NativeDenom != bitcoinDenom {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, "incorrect bitcoin denomination")
-	}
-
-	if info.SupportsForeignAssets {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, "bitcoin does not support foreign assets")
-	}
-
-	return nil
-}
-
-func validateEthereum(info ChainAssetInfo) error {
-
-	if info.NativeDenom != ethereumDenom {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, "incorrect ethereum denomination")
-	}
-
-	if !info.SupportsForeignAssets {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, "ethereum does support foreign assets")
 	}
 
 	return nil
