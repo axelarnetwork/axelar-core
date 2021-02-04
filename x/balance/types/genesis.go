@@ -1,8 +1,6 @@
 package types
 
 import (
-	"fmt"
-
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
@@ -19,7 +17,7 @@ func DefaultGenesisState() GenesisState {
 // ValidateGenesis checks if the genesis state is valid
 func ValidateGenesis(state GenesisState) error {
 	if err := state.Params.Validate(); err != nil {
-		return sdkerrors.Wrap(err, fmt.Sprintf("genesis state for module %s is invalid", ModuleName))
+		return sdkerrors.Wrapf(err, "genesis state for module %s is invalid", ModuleName)
 	}
 
 	return nil
