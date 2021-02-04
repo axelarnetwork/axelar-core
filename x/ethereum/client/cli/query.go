@@ -139,7 +139,7 @@ func GetCmdSendCommand(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.SendCommand), cdc.MustMarshalJSON(params))
 			if err != nil {
-				return sdkerrors.Wrapf(err, "could not send Ethereum transaction executing mint command %s", commandID)
+				return sdkerrors.Wrapf(err, "could not send Ethereum transaction executing command %s", commandID)
 			}
 
 			var out string
