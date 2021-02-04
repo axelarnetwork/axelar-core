@@ -23,5 +23,27 @@ RUN make build
 
 FROM alpine:3.12
 
-COPY --from=build /go/axelar/bin/axelar* /root/
-ENV PATH="/root:${PATH}"
+COPY --from=build /go/axelar/bin/axelar* /usr/local/bin/
+COPY ./entrypoint.sh /entrypoint.sh
+
+# The home directory of axelar-core where configuration/genesis/data are stored
+ENV HOME_DIR /root
+# Whether or not to start the REST server
+ENV START_REST false
+# Host name for tss daemon (only necessary for validator nodes)
+ENV TSSD_HOST ""
+# The keyring backend type https://docs.cosmos.network/master/run-node/keyring.html
+ENV KEYRING_BACKEND test
+# The chain ID
+ENV CHAIN_ID axelar
+# The peer list to connect to the network
+ENV PEERS ""
+# Path of an existing configuration file to use (optional)
+ENV CONFIG_PATH ""
+# A initialization script to create the genesis file (optional)
+ENV INIT_SCRIPT ""
+
+RUN mkdir "${HOME_DIR}/.axelard"
+RUN mkdir "${HOME_DIR}/.axelarcli"
+
+ENTRYPOINT ["/entrypoint.sh"]
