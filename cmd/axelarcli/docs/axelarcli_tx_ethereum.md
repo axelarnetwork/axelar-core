@@ -26,5 +26,6 @@ axelarcli tx ethereum [flags]
 
 - [axelarcli tx](axelarcli_tx.md)	 - Transactions subcommands
 - [axelarcli tx ethereum sign](axelarcli_tx_ethereum_sign.md)	 - sign a raw Ethereum transaction
+- [axelarcli tx ethereum sign-deploy-token](axelarcli_tx_ethereum_sign-deploy-token.md)	 - Signs the call data to deploy a token with the AxelarGateway contract
 - [axelarcli tx ethereum sign-pending-transfers](axelarcli_tx_ethereum_sign-pending-transfers.md)	 - Sign all pending transfers to Ethereum
 - [axelarcli tx ethereum verify](axelarcli_tx_ethereum_verify.md)	 - Verify an Ethereum transaction
