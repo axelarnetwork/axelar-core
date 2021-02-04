@@ -14,7 +14,7 @@ const (
 	DefaultParamspace = ModuleName
 
 	bitcoinDenom  = "satoshi"
-	ethereumDenom = "eth"
+	ethereumDenom = "wei"
 )
 
 var (
@@ -86,8 +86,13 @@ func validateChains(infos interface{}) error {
 			err = validateBitcoin(i)
 		case exported.Ethereum:
 			err = validateEthereum(i)
+		case exported.NONE:
+			err = sdkerrors.Wrap(types.ErrInvalidGenesis, "invalid chain")
 		default:
-			err = sdkerrors.Wrap(types.ErrInvalidGenesis, "unknown chain")
+			//non-pre-defined chain
+			if i.NativeDenom == "" {
+				err = sdkerrors.Wrap(types.ErrInvalidGenesis, "invalid asset denomination")
+			}
 		}
 
 		if err != nil {
@@ -104,7 +109,7 @@ func validateBitcoin(info ChainAssetInfo) error {
 		return sdkerrors.Wrap(types.ErrInvalidGenesis, "incorrect bitcoin denomination")
 	}
 
-	if info.SupportsForeignAssets == true {
+	if info.SupportsForeignAssets {
 		return sdkerrors.Wrap(types.ErrInvalidGenesis, "bitcoin does not support foreign assets")
 	}
 
@@ -117,7 +122,7 @@ func validateEthereum(info ChainAssetInfo) error {
 		return sdkerrors.Wrap(types.ErrInvalidGenesis, "incorrect ethereum denomination")
 	}
 
-	if info.SupportsForeignAssets == false {
+	if !info.SupportsForeignAssets {
 		return sdkerrors.Wrap(types.ErrInvalidGenesis, "ethereum does support foreign assets")
 	}
 
