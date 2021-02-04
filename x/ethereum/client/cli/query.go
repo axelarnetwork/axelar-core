@@ -138,7 +138,7 @@ func GetCmdSendCommand(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.SendCommand), cdc.MustMarshalJSON(params))
 			if err != nil {
-				return sdkerrors.Wrapf(err, types.ErrFSendMintTx, commandID)
+				return sdkerrors.Wrapf(err, types.ErrFSendCommandTx, commandID)
 			}
 
 			var out string

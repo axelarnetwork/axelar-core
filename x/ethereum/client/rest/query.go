@@ -2,19 +2,21 @@ package rest
 
 import (
 	"fmt"
-	//"github.com/axelarnetwork/axelar-core/x/ethereum/client/cli"
-	"github.com/ethereum/go-ethereum/common"
-	//ethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
 	"strings"
 
-	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
-	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
+	// "github.com/axelarnetwork/axelar-core/x/ethereum/client/cli"
+	"github.com/ethereum/go-ethereum/common"
+	// ethTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/gorilla/mux"
+
 	"github.com/cosmos/cosmos-sdk/client/context"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/rest"
+
+	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 )
 
 func QueryMasterAddress(cliCtx context.CLIContext) http.HandlerFunc {
@@ -177,7 +179,7 @@ func QuerySendTx(cliCtx context.CLIContext) http.HandlerFunc {
 //
 //		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s/%s", types.QuerierRoute, keeper.SendCOmmand, commandID, fromAddr, contractAddr), nil)
 //		if err != nil {
-//			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSendMintTx, commandID).Error())
+//			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSendCommandTx, commandID).Error())
 //			return
 //		}
 //

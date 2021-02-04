@@ -674,22 +674,22 @@ var _ types.Balancer = &BalancerMock{}
 //
 // 		// make and configure a mocked types.Balancer
 // 		mockedBalancer := &BalancerMock{
-// 			ArchivePendingTransferFunc: func(ctx sdk.Context, transfer exported.CrossChainTransfer)  {
+// 			ArchivePendingTransferFunc: func(ctx sdk.Context, transfer balance.CrossChainTransfer)  {
 // 				panic("mock out the ArchivePendingTransfer method")
 // 			},
-// 			EnqueueForTransferFunc: func(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error {
+// 			EnqueueForTransferFunc: func(ctx sdk.Context, sender balance.CrossChainAddress, amount sdk.Coin) error {
 // 				panic("mock out the EnqueueForTransfer method")
 // 			},
-// 			GetArchivedTransfersForChainFunc: func(ctx sdk.Context, chain exported.Chain) []exported.CrossChainTransfer {
+// 			GetArchivedTransfersForChainFunc: func(ctx sdk.Context, chain balance.Chain) []balance.CrossChainTransfer {
 // 				panic("mock out the GetArchivedTransfersForChain method")
 // 			},
-// 			GetPendingTransfersForChainFunc: func(ctx sdk.Context, chain exported.Chain) []exported.CrossChainTransfer {
+// 			GetPendingTransfersForChainFunc: func(ctx sdk.Context, chain balance.Chain) []balance.CrossChainTransfer {
 // 				panic("mock out the GetPendingTransfersForChain method")
 // 			},
-// 			GetRecipientFunc: func(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool) {
+// 			GetRecipientFunc: func(ctx sdk.Context, sender balance.CrossChainAddress) (balance.CrossChainAddress, bool) {
 // 				panic("mock out the GetRecipient method")
 // 			},
-// 			LinkAddressesFunc: func(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress)  {
+// 			LinkAddressesFunc: func(ctx sdk.Context, sender balance.CrossChainAddress, recipient balance.CrossChainAddress)  {
 // 				panic("mock out the LinkAddresses method")
 // 			},
 // 		}
