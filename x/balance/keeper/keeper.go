@@ -37,9 +37,10 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspa
 func (k Keeper) SetParams(ctx sdk.Context, p types.Params) {
 	k.params.SetParamSet(ctx, &p)
 
-	// Avoid linear complexity when fetching asset information for a chain
+	// By copying this data to the KV store, we avoid having to iterate across all element
+	// in the parameters table when a caller needs to fetch information from it
 	for _, info := range p.ChainsAssetInfo {
-		k.SetChainAssetInfo(ctx, info.Chain, info.NativeAsset, info.SupportsForeignAssets)
+		k.SetChainAssetInfo(ctx, info)
 	}
 }
 
@@ -64,9 +65,8 @@ func (k Keeper) GetChainAssetInfo(ctx sdk.Context, chain exported.Chain) (info t
 }
 
 // SetChainAssetInfo sets the specification for a chain's assets
-func (k Keeper) SetChainAssetInfo(ctx sdk.Context, chain exported.Chain, nativeDenom string, supportsForeign bool) error {
-	info := types.ChainAssetInfo{Chain: chain, NativeAsset: nativeDenom, SupportsForeignAssets: supportsForeign}
-	ctx.KVStore(k.storeKey).Set([]byte(infoPrefix+chain.String()), k.cdc.MustMarshalBinaryLengthPrefixed(info))
+func (k Keeper) SetChainAssetInfo(ctx sdk.Context, info types.ChainAssetInfo) error {
+	ctx.KVStore(k.storeKey).Set([]byte(infoPrefix+info.Chain.String()), k.cdc.MustMarshalBinaryLengthPrefixed(info))
 
 	return nil
 }

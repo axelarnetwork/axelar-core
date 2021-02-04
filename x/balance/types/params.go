@@ -78,8 +78,8 @@ func validateChains(infos interface{}) error {
 
 	for _, i := range is {
 
-		if i.Chain == exported.NONE {
-			return sdkerrors.Wrap(types.ErrInvalidGenesis, "invalid chain")
+		if err := i.Chain.Validate(); err != nil {
+			return sdkerrors.Wrapf(types.ErrInvalidGenesis, "invalid chain: %v", err)
 		}
 
 		if i.NativeAsset == "" {
