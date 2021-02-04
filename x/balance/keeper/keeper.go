@@ -6,25 +6,69 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/params"
 
 	"github.com/axelarnetwork/axelar-core/x/balance/exported"
+	"github.com/axelarnetwork/axelar-core/x/balance/types"
 )
 
 const (
 	senderPrefix   = "send_"
+	infoPrefix     = "info_"
 	pendingPrefix  = "pend_"
 	archivedPrefix = "arch_"
 
 	sequenceKey = "nextID"
 )
 
+//Keeper represents a ballance keeper
 type Keeper struct {
 	storeKey sdk.StoreKey
 	cdc      *codec.Codec
+	params   params.Subspace
 }
 
-func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey) Keeper {
-	return Keeper{cdc: cdc, storeKey: storeKey}
+// NewKeeper returns a new balance keeper
+func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
+	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable())}
+}
+
+// SetParams sets the balance module's parameters
+func (k Keeper) SetParams(ctx sdk.Context, p types.Params) {
+	k.params.SetParamSet(ctx, &p)
+
+	// Avoid linear complexity when fetching asset information for a chain
+	for _, info := range p.ChainsAssetInfo {
+		k.SetChainAssetInfo(ctx, info.Chain, info.NativeAsset, info.SupportsForeignAssets)
+	}
+}
+
+// GetParams gets the balance module's parameters
+func (k Keeper) GetParams(ctx sdk.Context) types.Params {
+	var p types.Params
+	k.params.GetParamSet(ctx, &p)
+	return p
+}
+
+// GetChainAssetInfo retrieves the specification for a chain's assets
+func (k Keeper) GetChainAssetInfo(ctx sdk.Context, chain exported.Chain) (info types.ChainAssetInfo, found bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(infoPrefix + chain.String()))
+	if bz == nil {
+		return
+	}
+
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &info)
+	found = true
+
+	return
+}
+
+// SetChainAssetInfo sets the specification for a chain's assets
+func (k Keeper) SetChainAssetInfo(ctx sdk.Context, chain exported.Chain, nativeDenom string, supportsForeign bool) error {
+	info := types.ChainAssetInfo{Chain: chain, NativeAsset: nativeDenom, SupportsForeignAssets: supportsForeign}
+	ctx.KVStore(k.storeKey).Set([]byte(infoPrefix+chain.String()), k.cdc.MustMarshalBinaryLengthPrefixed(info))
+
+	return nil
 }
 
 // LinkAddresses links a sender address to a crosschain recipient address
@@ -32,6 +76,7 @@ func (k Keeper) LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress
 	ctx.KVStore(k.storeKey).Set([]byte(marshalCrossChainAddress(sender)), k.cdc.MustMarshalBinaryLengthPrefixed(recipient))
 }
 
+// GetRecipient retrieves the cross chain recipient associated to the specified sender
 func (k Keeper) GetRecipient(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(marshalCrossChainAddress(sender)))
 	if bz == nil {
