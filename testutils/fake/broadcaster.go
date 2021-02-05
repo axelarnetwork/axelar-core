@@ -40,7 +40,7 @@ func (b Broadcaster) Broadcast(ctx sdk.Context, msgs []exported.MsgWithSenderSet
 
 		/*
 			exported.MsgWithSenderSetter is usually implemented by a pointer.
-			However, handler expect to receive the message by value and do a switch on the message type.
+			However, handlers expect to receive the message by value and do a switch on the message type.
 			If they receive the pointer they won't recognize the correct message type.
 			By marshalling and unmarshalling into sdk.Msg we get the message by value.
 		*/
