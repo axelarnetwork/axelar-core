@@ -20,6 +20,22 @@ prepareCli() {
   axelarcli config trust-node true
 }
 
+isCliPrepared() {
+  if [ -f "$CLI_HOME_DIR/config/config.toml" ]; then
+    return 0
+  fi
+
+  return 1
+}
+
+isGenesisInitialized() {
+  if [ -f "$D_HOME_DIR/config/genesis.json" ]; then
+    return 0
+  fi
+
+  return 1
+}
+
 initGenesis() {
   if [ -n "$INIT_SCRIPT" ] && [ -f "$INIT_SCRIPT" ]; then
     echo "Running script at $INIT_SCRIPT to create the genesis file"
@@ -32,15 +48,15 @@ initGenesis() {
 CLI_HOME_DIR="$HOME_DIR/.axelarcli"
 D_HOME_DIR="$HOME_DIR/.axelard"
 
-if [ "$(fileCount $CLI_HOME_DIR)" -eq 0 ]; then
+if ! isCliPrepared; then
   prepareCli
 fi
 
-if [ "$(fileCount $D_HOME_DIR)" -eq 0 ]; then
+if ! isGenesisInitialized; then
   initGenesis
 fi
 
-if [ ! -f "$D_HOME_DIR/config/genesis.json" ]; then
+if ! isGenesisInitialized; then
   echo "Missing genesis file"
   exit 1
 fi
