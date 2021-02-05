@@ -34,17 +34,28 @@ func init() {
 func TestLink(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	keeper.SetParams(ctx, types.DefaultParams())
-	sender, recipient := makeRandAddressesForChain(makeRandomChain(), makeRandomChain())
 
+	// invalid chain
+	sender, recipient := makeRandAddressesForChain(makeRandomChain(), exported.NONE)
+	err := keeper.LinkAddresses(ctx, sender, recipient)
+	assert.Error(t, err)
+
+	// chain does not support foreign assets
+	sender, recipient = makeRandAddressesForChain(exported.Bitcoin, exported.Ethereum)
 	keeper.LinkAddresses(ctx, sender, recipient)
-	err := keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
+	err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
+	assert.Error(t, err)
+
+	sender, recipient = makeRandAddressesForChain(exported.Bitcoin, exported.Ethereum)
+	keeper.LinkAddresses(ctx, sender, recipient)
+	err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount("satoshi"))
 	assert.NoError(t, err)
 	recp, ok := keeper.GetRecipient(ctx, sender)
 	assert.True(t, ok)
 	assert.Equal(t, recipient, recp)
 
 	sender.Address = testutils.RandString(20)
-	err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
+	err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount("satoshi"))
 	assert.Error(t, err)
 	recp, ok = keeper.GetRecipient(ctx, sender)
 	assert.False(t, ok)
@@ -54,22 +65,22 @@ func TestLink(t *testing.T) {
 func TestPrepare(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	keeper.SetParams(ctx, types.DefaultParams())
-	sender, _ := makeRandAddressesForChain(makeRandomChain(), makeRandomChain())
 
-	err := keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
+	// addresses not linked yet
+	sender, _ := makeRandAddressesForChain(exported.Bitcoin, exported.Ethereum)
+	err := keeper.EnqueueForTransfer(ctx, sender, makeRandAmount("satoshi"))
 	assert.Error(t, err)
-	destination := makeRandomChain()
-	amounts := make(map[exported.CrossChainAddress]sdk.Coin)
 
+	amounts := make(map[exported.CrossChainAddress]sdk.Coin)
 	for i := 0; i < linkedAddr; i++ {
-		sender, recipient := makeRandAddressesForChain(makeRandomChain(), destination)
-		amounts[recipient] = makeRandAmount(makeRandomDenom())
+		sender, recipient := makeRandAddressesForChain(exported.Bitcoin, exported.Ethereum)
+		amounts[recipient] = makeRandAmount("satoshi")
 		keeper.LinkAddresses(ctx, sender, recipient)
 		err = keeper.EnqueueForTransfer(ctx, sender, amounts[recipient])
 		assert.NoError(t, err)
 	}
 
-	transfers := keeper.GetPendingTransfersForChain(ctx, destination)
+	transfers := keeper.GetPendingTransfersForChain(ctx, exported.Ethereum)
 	assert.Equal(t, len(transfers), len(amounts))
 	assert.Equal(t, linkedAddr, len(transfers))
 
@@ -89,25 +100,26 @@ func TestArchive(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	keeper.SetParams(ctx, types.DefaultParams())
 
-	destination := makeRandomChain()
-	denom := makeRandomDenom()
 	recipients := make([]exported.CrossChainAddress, 0)
+	var total uint64 = 0
 
 	for i := 0; i < linkedAddr; i++ {
-		sender, recipient := makeRandAddressesForChain(makeRandomChain(), destination)
+		sender, recipient := makeRandAddressesForChain(exported.Bitcoin, exported.Ethereum)
 		recipients = append(recipients, recipient)
 		keeper.LinkAddresses(ctx, sender, recipient)
-		err := keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(denom))
+		amount := makeRandAmount("satoshi")
+		err := keeper.EnqueueForTransfer(ctx, sender, amount)
 		assert.NoError(t, err)
+		total += amount.Amount.Uint64()
 	}
 
-	transfers := keeper.GetPendingTransfersForChain(ctx, destination)
+	transfers := keeper.GetPendingTransfersForChain(ctx, exported.Ethereum)
 
 	for _, transfer := range transfers {
 		keeper.ArchivePendingTransfer(ctx, transfer)
 	}
 
-	archived := keeper.GetArchivedTransfersForChain(ctx, destination)
+	archived := keeper.GetArchivedTransfersForChain(ctx, exported.Ethereum)
 	assert.Equal(t, linkedAddr, len(archived))
 
 	count := 0
@@ -120,8 +132,18 @@ func TestArchive(t *testing.T) {
 		}
 	}
 	assert.Equal(t, linkedAddr, count)
-	assert.Equal(t, 0, len(keeper.GetPendingTransfersForChain(ctx, destination)))
+	assert.Equal(t, 0, len(keeper.GetPendingTransfersForChain(ctx, exported.Ethereum)))
 
+	// Test that the total amount transferred is being properly accounted for
+	sender, recipient := makeRandAddressesForChain(exported.Ethereum, exported.Bitcoin)
+	err := keeper.LinkAddresses(ctx, sender, recipient)
+	assert.NoError(t, err)
+	amount := sdk.NewCoin("satoshi", sdk.Int(sdk.NewUint(total+1)))
+	err = keeper.EnqueueForTransfer(ctx, sender, amount)
+	assert.Error(t, err)
+	amount = sdk.NewCoin("satoshi", sdk.Int(sdk.NewUint(total)))
+	err = keeper.EnqueueForTransfer(ctx, sender, amount)
+	assert.NoError(t, err)
 }
 
 func makeRandomDenom() string {

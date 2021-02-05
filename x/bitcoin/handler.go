@@ -53,7 +53,11 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, s types.Signer, b types.Bal
 	}
 	k.SetRedeemScript(ctx, btcAddr, script)
 
-	b.LinkAddresses(ctx, balance.CrossChainAddress{Chain: balance.Bitcoin, Address: btcAddr.EncodeAddress()}, msg.Recipient)
+	err = b.LinkAddresses(ctx, balance.CrossChainAddress{Chain: balance.Bitcoin, Address: btcAddr.EncodeAddress()}, msg.Recipient)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
+
+	}
 
 	id, ok := s.GetCurrentMasterKeyID(ctx, balance.Bitcoin)
 	if !ok {

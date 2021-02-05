@@ -738,7 +738,7 @@ var _ types.Balancer = &BalancerMock{}
 // 			GetRecipientFunc: func(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool) {
 // 				panic("mock out the GetRecipient method")
 // 			},
-// 			LinkAddressesFunc: func(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress)  {
+// 			LinkAddressesFunc: func(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error {
 // 				panic("mock out the LinkAddresses method")
 // 			},
 // 		}
@@ -764,7 +764,7 @@ type BalancerMock struct {
 	GetRecipientFunc func(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool)
 
 	// LinkAddressesFunc mocks the LinkAddresses method.
-	LinkAddressesFunc func(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress)
+	LinkAddressesFunc func(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -1003,7 +1003,7 @@ func (mock *BalancerMock) GetRecipientCalls() []struct {
 }
 
 // LinkAddresses calls LinkAddressesFunc.
-func (mock *BalancerMock) LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) {
+func (mock *BalancerMock) LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error {
 	if mock.LinkAddressesFunc == nil {
 		panic("BalancerMock.LinkAddressesFunc: method is nil but Balancer.LinkAddresses was just called")
 	}
@@ -1019,7 +1019,7 @@ func (mock *BalancerMock) LinkAddresses(ctx sdk.Context, sender exported.CrossCh
 	mock.lockLinkAddresses.Lock()
 	mock.calls.LinkAddresses = append(mock.calls.LinkAddresses, callInfo)
 	mock.lockLinkAddresses.Unlock()
-	mock.LinkAddressesFunc(ctx, sender, recipient)
+	return mock.LinkAddressesFunc(ctx, sender, recipient)
 }
 
 // LinkAddressesCalls gets all the calls that were made to LinkAddresses.
