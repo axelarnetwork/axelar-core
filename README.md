@@ -9,7 +9,7 @@ Since axelar-core requires tssd to build which is a private module, you will nee
 
 1. Have a SSH key on your machine
 2. Add your public key to your Github account for authentication
-3. Run `ssh-add ~/.ssh/{private key file name}` to add your private key to your ssh agent
+3. Run `ssh-add ~/.ssh/{private key file name}` to add your private key to your ssh agent (**IMPORTANT**: the ssh agent only keeps your priate key in memory so you have to repeat this step every time you restart your machine; alternatively, you can add `ssh-add ~/.ssh/{private key file name} &>/dev/null` in your shell's .rc file so that the key is added automatically)
 4. Run `git config --global url."git@github.com:axelarnetwork".insteadOf https://github.com/axelarnetwork` to force `go get` to authenticate via ssh
 
 ## Building binaries locally
