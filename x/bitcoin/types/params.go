@@ -30,7 +30,7 @@ type Params struct {
 func DefaultParams() Params {
 	return Params{
 		ConfirmationHeight: 1,
-		Network:            Testnet3,
+		Network:            Regtest,
 	}
 }
 
