@@ -152,12 +152,15 @@ func (k Keeper) SendVotes(ctx sdk.Context) {
 		msgs = append(msgs, vote)
 	}
 
-	err := k.broadcaster.Broadcast(ctx, msgs)
-	if err != nil {
-		k.Logger(ctx).Error(sdkerrors.Wrap(err, "broadcasting votes failed").Error())
-	} else {
+	// Broadcast is a subjective action, so it must not cause non-deterministic changes to the tx execution.
+	// Because of this and to prevent a deadlock it needs to run in its own goroutine without any callbacks.
+	go func() {
 		k.Logger(ctx).Debug("broadcasting votes")
-	}
+		err := k.broadcaster.Broadcast(ctx, msgs)
+		if err != nil {
+			k.Logger(ctx).Error(sdkerrors.Wrap(err, "broadcasting votes failed").Error())
+		}
+	}()
 }
 
 // TallyVote tallies votes that have been broadcast. Each validator can only vote once per poll.
