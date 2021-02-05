@@ -99,14 +99,15 @@ func (k Keeper) GetRecipient(ctx sdk.Context, sender exported.CrossChainAddress)
 
 // EnqueueForTransfer appoints the amount of tokens to be transfered/minted to the recipient previously linked to the specified sender
 func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error {
-	info, ok := k.GetChainAssetInfo(ctx, sender.Chain)
+	infoSender, ok := k.GetChainAssetInfo(ctx, sender.Chain)
 	if !ok {
 		return fmt.Errorf("no chain asset info available for sender %s", sender.String())
 	}
-	if !info.SupportsForeignAssets && info.NativeAsset != amount.Denom {
+	if !infoSender.SupportsForeignAssets && infoSender.NativeAsset != amount.Denom {
 		return fmt.Errorf("senders's chain %s does not support foreign assets", sender.Chain.String())
 	}
-	if info.NativeAsset != amount.Denom && amount.Amount.Uint64() > k.getChainTotal(ctx, sender.Chain, amount.Denom) {
+
+	if infoSender.NativeAsset != amount.Denom && !k.getChainTotal(ctx, sender.Chain, amount.Denom).IsGTE(amount) {
 		return fmt.Errorf("not enough funds avaiable for asset '%s' in chain %s", amount.Denom, sender.Chain)
 	}
 
@@ -115,8 +116,8 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 		return fmt.Errorf("no recipient linked to sender %s", sender.String())
 	}
 
-	info, _ = k.GetChainAssetInfo(ctx, recipient.Chain)
-	if !info.SupportsForeignAssets && info.NativeAsset != amount.Denom {
+	infoRecipient, _ := k.GetChainAssetInfo(ctx, recipient.Chain)
+	if !infoRecipient.SupportsForeignAssets && infoRecipient.NativeAsset != amount.Denom {
 		return fmt.Errorf("recipient's chain %s does not support foreign assets", recipient.Chain.String())
 	}
 
@@ -155,21 +156,22 @@ func (k Keeper) ArchivePendingTransfer(ctx sdk.Context, transfer exported.CrossC
 	}
 }
 
-func (k Keeper) getChainTotal(ctx sdk.Context, chain exported.Chain, denom string) uint64 {
+func (k Keeper) getChainTotal(ctx sdk.Context, chain exported.Chain, denom string) sdk.Coin {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(totalPrefix + chain.String() + "_" + denom))
 	if bz == nil {
-		bz = make([]byte, 8)
+		return sdk.NewCoin(denom, sdk.NewInt(0))
 	}
-	return binary.LittleEndian.Uint64(bz)
+
+	var total sdk.Coin
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &total)
+	return total
 }
 
 func (k Keeper) updateChainTotal(ctx sdk.Context, chain exported.Chain, amount sdk.Coin) {
 	total := k.getChainTotal(ctx, chain, amount.Denom)
-	total += amount.Amount.Uint64()
+	total = total.Add(amount)
 
-	bz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(bz, total)
-	ctx.KVStore(k.storeKey).Set([]byte(totalPrefix+chain.String()+"_"+amount.Denom), bz)
+	ctx.KVStore(k.storeKey).Set([]byte(totalPrefix+chain.String()+"_"+amount.Denom), k.cdc.MustMarshalBinaryLengthPrefixed(total))
 }
 
 func (k Keeper) setPendingTransfer(ctx sdk.Context, recipient exported.CrossChainAddress, amount sdk.Coin) {
