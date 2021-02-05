@@ -246,7 +246,7 @@ func TestKeeper_TallyVote_NoWinner(t *testing.T) {
 	s := setup()
 	s.Keeper.SetVotingThreshold(s.Ctx, utils.Threshold{Numerator: 2, Denominator: 3})
 	minorityPower := newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(0, 200))
-	majorityPower := newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(3/2*minorityPower.GetConsensusPower(), 1000))
+	majorityPower := newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(3/2*minorityPower.GetConsensusPower()+1, 1000))
 	s.ValidatorSet = []snapshot.Validator{minorityPower, majorityPower}
 
 	s.Broadcaster.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return minorityPower.GetOperator() }
@@ -266,7 +266,7 @@ func TestKeeper_TallyVote_WithWinner(t *testing.T) {
 	s := setup()
 	s.Keeper.SetVotingThreshold(s.Ctx, utils.Threshold{Numerator: 2, Denominator: 3})
 	minorityPower := newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(0, 200))
-	majorityPower := newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(3/2*minorityPower.GetConsensusPower(), 1000))
+	majorityPower := newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(3/2*minorityPower.GetConsensusPower()+1, 1000))
 	s.ValidatorSet = []snapshot.Validator{minorityPower, majorityPower}
 
 	s.Broadcaster.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return majorityPower.GetOperator() }
@@ -340,7 +340,7 @@ func TestKeeper_TallyVote_ForDecidedPoll(t *testing.T) {
 	s := setup()
 	s.Keeper.SetVotingThreshold(s.Ctx, utils.Threshold{Numerator: 2, Denominator: 3})
 	minorityPower := newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(0, 200))
-	majorityPower := newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(3/2*minorityPower.GetConsensusPower(), 1000))
+	majorityPower := newValidator(sdk.ValAddress(stringGen.Next()), testutils.RandIntBetween(3/2*minorityPower.GetConsensusPower()+1, 1000))
 	s.ValidatorSet = []snapshot.Validator{minorityPower, majorityPower}
 
 	poll := randPoll()
