@@ -5,23 +5,23 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-type MsgSignPendingTransfersTx struct {
+type MsgSignPendingTransfers struct {
 	Sender sdk.AccAddress
 }
 
 func NewMsgSignPendingTransfersTx(sender sdk.AccAddress) sdk.Msg {
-	return MsgSignPendingTransfersTx{Sender: sender}
+	return MsgSignPendingTransfers{Sender: sender}
 }
 
-func (msg MsgSignPendingTransfersTx) Route() string {
+func (msg MsgSignPendingTransfers) Route() string {
 	return RouterKey
 }
 
-func (msg MsgSignPendingTransfersTx) Type() string {
+func (msg MsgSignPendingTransfers) Type() string {
 	return "SignPendingTransfersTx"
 }
 
-func (msg MsgSignPendingTransfersTx) ValidateBasic() error {
+func (msg MsgSignPendingTransfers) ValidateBasic() error {
 	if msg.Sender.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
@@ -29,11 +29,11 @@ func (msg MsgSignPendingTransfersTx) ValidateBasic() error {
 	return nil
 }
 
-func (msg MsgSignPendingTransfersTx) GetSignBytes() []byte {
+func (msg MsgSignPendingTransfers) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
-func (msg MsgSignPendingTransfersTx) GetSigners() []sdk.AccAddress {
+func (msg MsgSignPendingTransfers) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }

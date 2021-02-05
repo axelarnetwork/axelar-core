@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"io/ioutil"
+	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -32,12 +33,14 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 			GetCmdSignTx(cdc),
 			GetCmdVerifyTx(cdc),
 			GetCmdSignPendingTransfersTx(cdc),
+			GetCmdSignDeployToken(cdc),
 		)...,
 	)
 
 	return ethTxCmd
 }
 
+// GetCmdSignTx returns the cli command to sign the given transaction
 func GetCmdSignTx(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "sign [tx json file path]",
@@ -66,6 +69,7 @@ func GetCmdSignTx(cdc *codec.Codec) *cobra.Command {
 	return cmd
 }
 
+// GetCmdVerifyTx returns the cli command to verify the given transaction
 func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "verify [tx json file path]",
@@ -92,6 +96,7 @@ func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
+// GetCmdSignPendingTransfersTx returns the cli command to sign all pending token transfers to Ethereum
 func GetCmdSignPendingTransfersTx(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "sign-pending-transfers",
@@ -102,6 +107,34 @@ func GetCmdSignPendingTransfersTx(cdc *codec.Codec) *cobra.Command {
 
 			msg := types.NewMsgSignPendingTransfersTx(cliCtx.GetFromAddress())
 			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+// GetCmdSignDeployToken returns the cli command to sign deploy-token command data for Ethereum
+func GetCmdSignDeployToken(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "sign-deploy-token [name] [symbol] [decimals] [capacity]",
+		Short: "Signs the call data to deploy a token with the AxelarGateway contract",
+		Args:  cobra.ExactArgs(4),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
+
+			decs, err := strconv.ParseUint(args[2], 10, 8)
+			if err != nil {
+				return fmt.Errorf("could not parse decimals")
+			}
+
+			capacity, ok := sdk.NewIntFromString(args[3])
+			if !ok {
+				return fmt.Errorf("could not parse capacity")
+			}
+			msg := types.NewMsgSignDeployToken(cliCtx.GetFromAddress(), args[0], args[1], uint8(decs), capacity)
+			if err = msg.ValidateBasic(); err != nil {
 				return err
 			}
 

@@ -13,7 +13,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -32,7 +31,6 @@ import (
 
 const (
 	// Used to test ERC20 marshalling of invocations
-	erc20Transfer    = "transfer(address,uint256)"
 	erc20TransferSel = "0xa9059cbb"
 	erc20Addr        = "0x337c67618968370907da31daef3020238d01c9de"
 	erc20Val         = "10000000000000000000"
@@ -54,10 +52,6 @@ https://medium.com/swlh/understanding-data-payloads-in-ethereum-transactions-354
 https://medium.com/mycrypto/why-do-we-need-transaction-data-39c922930e92
 */
 func TestERC20Marshal(t *testing.T) {
-
-	// test function selector
-	assert.Equal(t, erc20TransferSel, types.CalcSelector(erc20Transfer))
-
 	// test first parameter (the address)
 	paddedAddr := hexutil.Encode(common.LeftPadBytes(common.HexToAddress(erc20Addr).Bytes(), 32))
 
@@ -167,14 +161,7 @@ func TestGanache(t *testing.T) {
 
 	deployerKey, err := getPrivateKey("m/44'/60'/0'/0/0")
 	assert.NoError(t, err)
-	contractAddr := testDeploy(t, client, deployerKey)
-
-	toKey, err := getPrivateKey("m/44'/60'/0'/0/1")
-	assert.NoError(t, err)
-
-	toAddr := crypto.PubkeyToAddress(toKey.PublicKey)
-
-	testMint(t, client, contractAddr, toAddr, deployerKey)
+	_ = testDeploy(t, client, deployerKey)
 }
 
 // Deploys the smart contract available for these tests. It avoids deployment via the contract ABI
@@ -233,70 +220,6 @@ func testDeploy(t *testing.T, client *types.RPCClientImpl, privateKey *ecdsa.Pri
 	t.FailNow()
 
 	return common.Address{}
-}
-
-// Mint tokens associated to the contract used by these tests and associate them to the given wallet.
-// It avoids invoking the mint function throught the ABI in favor of creating a raw transaction for the same purpose.
-func testMint(t *testing.T, client *types.RPCClientImpl, contractAddr, toAddr common.Address, privateKey *ecdsa.PrivateKey) {
-	instance, err := NewMymintable(contractAddr, client)
-
-	assert.NoError(t, err)
-
-	originalAmount, err := instance.BalanceOf(&bind.CallOpts{}, toAddr)
-
-	assert.NoError(t, err)
-
-	t.Logf("Original ammount: %d", originalAmount)
-
-	decimals, err := instance.Decimals(&bind.CallOpts{})
-	assert.NoError(t, err)
-
-	t.Logf("Decimals: %d", decimals)
-
-	decBig := big.NewInt(int64(decimals))
-	amount := big.NewInt(10)
-	amount.Mul(amount, decBig)
-	t.Logf("Amount: %d", amount)
-
-	var gasLimit uint64 = 3000000
-	tssSigner := &mock.SignerMock{GetCurrentMasterKeyFunc: func(sdk.Context, balance.Chain) (ecdsa.PublicKey, bool) {
-		return privateKey.PublicKey, true
-	}}
-
-	params := types.MintParams{
-		GasLimit:     gasLimit,
-		Amount:       sdk.NewIntFromBigInt(amount),
-		Recipient:    toAddr.String(),
-		ContractAddr: contractAddr.String(),
-	}
-
-	minConfHeight := testutils.RandIntBetween(1, 10)
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k := newKeeper(ctx, minConfHeight)
-
-	query := keeper.NewQuerier(client, k, tssSigner)
-	txBz, err := query(ctx, []string{keeper.CreateMintTx}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(params)})
-	assert.NoError(t, err)
-	var tx *ethTypes.Transaction
-	testutils.Codec().MustUnmarshalJSON(txBz, &tx)
-
-	networkID, err := client.NetworkID(context.Background())
-	assert.NoError(t, err)
-	signedTx, err := ethTypes.SignTx(tx, ethTypes.NewEIP155Signer(networkID), privateKey)
-	assert.NoError(t, err)
-	err = client.SendTransaction(context.Background(), signedTx)
-	assert.NoError(t, err)
-
-	newAmount, err := instance.BalanceOf(&bind.CallOpts{}, toAddr)
-
-	assert.NoError(t, err)
-
-	t.Logf("New Amount: %d", newAmount)
-
-	expectedAmount := big.NewInt(0).Add(originalAmount, amount)
-
-	assert.Equal(t, expectedAmount, newAmount)
-
 }
 
 func getPrivateKey(derivation string) (*ecdsa.PrivateKey, error) {
