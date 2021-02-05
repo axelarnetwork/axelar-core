@@ -104,11 +104,11 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 		return fmt.Errorf("no chain asset info available for sender %s", sender.String())
 	}
 	if !infoSender.SupportsForeignAssets && infoSender.NativeAsset != amount.Denom {
-		return fmt.Errorf("senders's chain %s does not support foreign assets", sender.Chain.String())
+		return fmt.Errorf("sender's chain %s does not support foreign assets", sender.Chain.String())
 	}
 
 	if infoSender.NativeAsset != amount.Denom && !k.getChainTotal(ctx, sender.Chain, amount.Denom).IsGTE(amount) {
-		return fmt.Errorf("not enough funds avaiable for asset '%s' in chain %s", amount.Denom, sender.Chain)
+		return fmt.Errorf("not enough funds available for asset '%s' in chain %s", amount.Denom, sender.Chain)
 	}
 
 	recipient, ok := k.GetRecipient(ctx, sender)
@@ -159,7 +159,7 @@ func (k Keeper) ArchivePendingTransfer(ctx sdk.Context, transfer exported.CrossC
 func (k Keeper) getChainTotal(ctx sdk.Context, chain exported.Chain, denom string) sdk.Coin {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(totalPrefix + chain.String() + "_" + denom))
 	if bz == nil {
-		return sdk.NewCoin(denom, sdk.NewInt(0))
+		return sdk.NewCoin(denom, sdk.ZeroInt())
 	}
 
 	var total sdk.Coin
