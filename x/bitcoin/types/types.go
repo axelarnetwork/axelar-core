@@ -56,6 +56,7 @@ type Network struct {
 	Params *chaincfg.Params
 }
 
+// NetworkFromStr returns network given string
 func NetworkFromStr(net string) (Network, error) {
 	switch net {
 	case "main":
