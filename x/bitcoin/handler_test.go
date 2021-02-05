@@ -75,7 +75,7 @@ func TestLink_Success(t *testing.T) {
 	sender := balance.CrossChainAddress{Address: btcAddr.EncodeAddress(), Chain: balance.Bitcoin}
 
 	b := &btcMock.BalancerMock{
-		LinkAddressesFunc: func(ctx sdk.Context, s balance.CrossChainAddress, r balance.CrossChainAddress) {},
+		LinkAddressesFunc: func(ctx sdk.Context, s balance.CrossChainAddress, r balance.CrossChainAddress) error { return nil },
 	}
 
 	s := &btcMock.SignerMock{
