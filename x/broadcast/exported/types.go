@@ -8,8 +8,7 @@ import sdk "github.com/cosmos/cosmos-sdk/types"
 // Recommended pattern: In other modules, define a keeper interface in the respective expected_keepers.go file and
 // embed this interface into it
 type Broadcaster interface {
-	// Broadcast sends the passed messages synchronously to the network.
-	// Do not call it from the main thread or risk a deadlock (the main thread is needed to validate incoming messages)
+	// Broadcast sends the passed messages to the network.
 	Broadcast(ctx sdk.Context, msgs []MsgWithSenderSetter) error
 
 	// RegisterProxy registers a proxy address for a given principal, which can broadcast messages in the principal's name
