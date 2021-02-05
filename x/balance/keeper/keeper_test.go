@@ -192,6 +192,10 @@ func TestTotalSucess(t *testing.T) {
 	amount := sdk.NewCoin(denom.Satoshi, sdk.Int(sdk.NewUint(total)))
 	err = keeper.EnqueueForTransfer(ctx, sender, amount)
 	assert.NoError(t, err)
+
+	amount = sdk.NewCoin(denom.Satoshi, sdk.Int(sdk.NewUint(total)))
+	err = keeper.EnqueueForTransfer(ctx, sender, amount)
+	assert.Error(t, err)
 }
 
 func makeRandomDenom() string {

@@ -121,6 +121,9 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 		return fmt.Errorf("recipient's chain %s does not support foreign assets", recipient.Chain.String())
 	}
 
+	if infoSender.NativeAsset != amount.Denom {
+		k.updateChainTotal(ctx, sender.Chain, amount.Amount.Neg(), amount.Denom)
+	}
 	k.setPendingTransfer(ctx, recipient, amount)
 
 	return nil
@@ -152,7 +155,7 @@ func (k Keeper) ArchivePendingTransfer(ctx sdk.Context, transfer exported.CrossC
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &t)
 	info, _ := k.GetChainAssetInfo(ctx, t.Recipient.Chain)
 	if info.NativeAsset != t.Amount.Denom {
-		k.updateChainTotal(ctx, t.Recipient.Chain, t.Amount)
+		k.updateChainTotal(ctx, t.Recipient.Chain, t.Amount.Amount, t.Amount.Denom)
 	}
 }
 
@@ -167,11 +170,11 @@ func (k Keeper) getChainTotal(ctx sdk.Context, chain exported.Chain, denom strin
 	return total
 }
 
-func (k Keeper) updateChainTotal(ctx sdk.Context, chain exported.Chain, amount sdk.Coin) {
-	total := k.getChainTotal(ctx, chain, amount.Denom)
-	total = total.Add(amount)
+func (k Keeper) updateChainTotal(ctx sdk.Context, chain exported.Chain, amount sdk.Int, denom string) {
+	total := k.getChainTotal(ctx, chain, denom)
+	total = sdk.NewCoin(denom, total.Amount.Add(amount))
 
-	ctx.KVStore(k.storeKey).Set([]byte(totalPrefix+chain.String()+"_"+amount.Denom), k.cdc.MustMarshalBinaryLengthPrefixed(total))
+	ctx.KVStore(k.storeKey).Set([]byte(totalPrefix+chain.String()+"_"+denom), k.cdc.MustMarshalBinaryLengthPrefixed(total))
 }
 
 func (k Keeper) setPendingTransfer(ctx sdk.Context, recipient exported.CrossChainAddress, amount sdk.Coin) {
