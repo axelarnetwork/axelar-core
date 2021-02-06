@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -16,14 +17,13 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
 
+// Query paths
 const (
 	QueryDepositAddress       = "depositAddr"
 	QueryConsolidationAddress = "consolidationAddr"
-	// QueryOutInfo is the route to query for a transaction's outPoint information
-	QueryOutInfo = "outPointInfo"
-	// QueryRawTx is the route to query for an unsigned raw transaction
-	QueryRawTx = "rawTx"
-	SendTx     = "sendTx"
+	QueryOutInfo              = "outPointInfo"
+	QueryRawTx                = "rawTx"
+	SendTx                    = "sendTx"
 )
 
 // NewQuerier returns a new querier for the Bitcoin module
@@ -35,7 +35,11 @@ func NewQuerier(k Keeper, s types.Signer, b types.Balancer, rpc types.RPCClient)
 		case QueryConsolidationAddress:
 			return queryConsolidationAddress(ctx, k, b, s, path[1])
 		case QueryOutInfo:
-			return queryTxOutInfo(rpc, req.Data)
+			blockHash, err := chainhash.NewHashFromStr(path[1])
+			if err != nil {
+
+			}
+			return queryTxOutInfo(rpc, blockHash, req.Data)
 		case QueryRawTx:
 			return createRawTx(ctx, k, req.Data)
 		case SendTx:
@@ -48,9 +52,8 @@ func NewQuerier(k Keeper, s types.Signer, b types.Balancer, rpc types.RPCClient)
 
 func queryDepositAddress(ctx sdk.Context, k Keeper, s types.Signer, data []byte) ([]byte, error) {
 	var recipient balance.CrossChainAddress
-	err := types.ModuleCdc.UnmarshalJSON(data, &recipient)
-	if err != nil {
-		return nil, sdkerrors.Wrap(err, "could not parse the recipient")
+	if err := types.ModuleCdc.UnmarshalJSON(data, &recipient); err != nil {
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, "could not parse the recipient")
 	}
 
 	pk, ok := s.GetCurrentMasterKey(ctx, balance.Bitcoin)
@@ -85,13 +88,13 @@ func queryConsolidationAddress(ctx sdk.Context, k Keeper, b types.Balancer, s ty
 	return []byte(addr.EncodeAddress()), nil
 }
 
-func queryTxOutInfo(rpc types.RPCClient, data []byte) ([]byte, error) {
+func queryTxOutInfo(rpc types.RPCClient, blockHash *chainhash.Hash, data []byte) ([]byte, error) {
 	var out *wire.OutPoint
 	err := types.ModuleCdc.UnmarshalJSON(data, &out)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, sdkerrors.Wrap(err, "could not parse the outpoint").Error())
 	}
-	info, err := rpc.GetOutPointInfo(out)
+	info, err := rpc.GetOutPointInfo(blockHash, out)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 	}

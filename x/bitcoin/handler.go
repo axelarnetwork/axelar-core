@@ -8,7 +8,6 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils/denom"
 	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
@@ -22,8 +21,6 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, signer type
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
-		case types.MsgTrack:
-			return handleMsgTrack(ctx, k, rpc, msg)
 		case types.MsgVerifyTx:
 			return handleMsgVerifyTx(ctx, k, v, rpc, msg)
 		case *types.MsgVoteVerifiedTx:
@@ -81,26 +78,6 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, s types.Signer, b types.Bal
 	return &sdk.Result{
 		Data:   []byte(btcAddr.EncodeAddress()),
 		Log:    logMsg,
-		Events: ctx.EventManager().Events(),
-	}, nil
-}
-
-func handleMsgTrack(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, msg types.MsgTrack) (*sdk.Result, error) {
-	k.Logger(ctx).Debug(fmt.Sprintf("start tracking address %v", msg.Address))
-	trackAddress(ctx, k, rpc, msg.Address, msg.Rescan)
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeAddress, msg.Address),
-		),
-	)
-
-	return &sdk.Result{
-		Data:   []byte(msg.Address),
-		Log:    fmt.Sprintf("successfully tracked address %s", msg.Address),
 		Events: ctx.EventManager().Events(),
 	}, nil
 }
@@ -247,25 +224,8 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 	}, nil
 }
 
-func trackAddress(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, address string, rescan bool) {
-	// Importing an address takes a long time, therefore it cannot be done in the critical path
-	go func(logger log.Logger) {
-		if rescan {
-			logger.Debug("Rescanning entire Bitcoin blockchain for past transactions. This will take a while.")
-		}
-		if err := rpc.ImportAddressRescan(address, "", rescan); err != nil {
-			logger.Error(fmt.Sprintf("Could not track address %v", address))
-		} else {
-			logger.Debug(fmt.Sprintf("successfully tracked address %v", address))
-		}
-		// ctx might not be valid anymore when err is returned, so closing over logger to be safe
-	}(k.Logger(ctx))
-
-	k.SetTrackedAddress(ctx, address)
-}
-
 func verifyTx(rpc types.RPCClient, expectedInfo types.OutPointInfo, requiredConfirmations uint64) error {
-	actualInfo, err := rpc.GetOutPointInfo(expectedInfo.OutPoint)
+	actualInfo, err := rpc.GetOutPointInfo(expectedInfo.BlockHash, expectedInfo.OutPoint)
 	if err != nil {
 		return sdkerrors.Wrap(err, "could not retrieve Bitcoin transaction")
 	}

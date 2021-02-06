@@ -46,18 +46,26 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 	var outPoints []*wire.OutPoint
 	var verifyMsgs []sdk.Msg
 	for i := 0; i < txCount; i++ {
-		hash := createHash()
-		outPoints = append(outPoints, wire.NewOutPoint(hash, 0))
+		txHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+		if err != nil {
+			panic(err)
+		}
+		blockHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+		if err != nil {
+			panic(err)
+		}
+		outPoints = append(outPoints, wire.NewOutPoint(txHash, 0))
 		amount := testutils.RandIntBetween(0, 100000)
 		confirmations := uint64(testutils.RandIntBetween(7, 10000))
 		// deposit tx
 		info := btcTypes.OutPointInfo{
 			OutPoint:      outPoints[i],
+			BlockHash:     blockHash,
 			Amount:        btcutil.Amount(amount),
 			DepositAddr:   testutils.RandString(int(testutils.RandIntBetween(5, 20))),
 			Confirmations: confirmations,
 		}
-		txs[hash.String()] = info
+		txs[blockHash.String()+txHash.String()] = info
 		verifyMsgs = append(verifyMsgs, btcTypes.MsgVerifyTx{Sender: sdk.AccAddress("user1"), OutPointInfo: info})
 	}
 
@@ -124,18 +132,6 @@ func allTxVoteCompleted(nodes []fake.Node, btcKeeper []btcKeeper.Keeper, outPoin
 	return allConfirmed
 }
 
-func createHash() *chainhash.Hash {
-	var bz []byte
-	for _, b := range testutils.RandIntsBetween(0, 256).Take(chainhash.HashSize) {
-		bz = append(bz, byte(b))
-	}
-	hash, err := chainhash.NewHash(bz)
-	if err != nil {
-		panic(err)
-	}
-	return hash
-}
-
 func newNodeForVote(moniker string, broadcaster bcExported.Broadcaster, staker voteTypes.Snapshotter) (fake.Node, btcKeeper.Keeper) {
 	/*
 		Multistore is mocked so we can more easily manipulate existing state and assert that specific state changes happen.
@@ -161,8 +157,8 @@ func newNodeForVote(moniker string, broadcaster bcExported.Broadcaster, staker v
 
 	// We use a fake for the bitcoin rpc client so we can control the responses from the "bitcoin" network
 	btcH := bitcoin.NewHandler(btcK, vK, &btcMock.RPCClientMock{
-		GetOutPointInfoFunc: func(out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
-			return txs[out.Hash.String()], nil
+		GetOutPointInfoFunc: func(bHash *chainhash.Hash, out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
+			return txs[bHash.String()+out.Hash.String()], nil
 		}}, nil, nil, balK)
 
 	broadcastH := broadcast.NewHandler(broadcaster)

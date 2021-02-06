@@ -20,11 +20,8 @@ var _ types.RPCClient = &RPCClientMock{}
 //
 // 		// make and configure a mocked types.RPCClient
 // 		mockedRPCClient := &RPCClientMock{
-// 			GetOutPointInfoFunc: func(out *wire.OutPoint) (types.OutPointInfo, error) {
+// 			GetOutPointInfoFunc: func(blockHash *chainhash.Hash, out *wire.OutPoint) (types.OutPointInfo, error) {
 // 				panic("mock out the GetOutPointInfo method")
-// 			},
-// 			ImportAddressRescanFunc: func(address string, account string, rescan bool) error {
-// 				panic("mock out the ImportAddressRescan method")
 // 			},
 // 			NetworkFunc: func() types.Network {
 // 				panic("mock out the Network method")
@@ -40,10 +37,7 @@ var _ types.RPCClient = &RPCClientMock{}
 // 	}
 type RPCClientMock struct {
 	// GetOutPointInfoFunc mocks the GetOutPointInfo method.
-	GetOutPointInfoFunc func(out *wire.OutPoint) (types.OutPointInfo, error)
-
-	// ImportAddressRescanFunc mocks the ImportAddressRescan method.
-	ImportAddressRescanFunc func(address string, account string, rescan bool) error
+	GetOutPointInfoFunc func(blockHash *chainhash.Hash, out *wire.OutPoint) (types.OutPointInfo, error)
 
 	// NetworkFunc mocks the Network method.
 	NetworkFunc func() types.Network
@@ -55,17 +49,10 @@ type RPCClientMock struct {
 	calls struct {
 		// GetOutPointInfo holds details about calls to the GetOutPointInfo method.
 		GetOutPointInfo []struct {
+			// BlockHash is the blockHash argument value.
+			BlockHash *chainhash.Hash
 			// Out is the out argument value.
 			Out *wire.OutPoint
-		}
-		// ImportAddressRescan holds details about calls to the ImportAddressRescan method.
-		ImportAddressRescan []struct {
-			// Address is the address argument value.
-			Address string
-			// Account is the account argument value.
-			Account string
-			// Rescan is the rescan argument value.
-			Rescan bool
 		}
 		// Network holds details about calls to the Network method.
 		Network []struct {
@@ -78,79 +65,43 @@ type RPCClientMock struct {
 			AllowHighFees bool
 		}
 	}
-	lockGetOutPointInfo     sync.RWMutex
-	lockImportAddressRescan sync.RWMutex
-	lockNetwork             sync.RWMutex
-	lockSendRawTransaction  sync.RWMutex
+	lockGetOutPointInfo    sync.RWMutex
+	lockNetwork            sync.RWMutex
+	lockSendRawTransaction sync.RWMutex
 }
 
 // GetOutPointInfo calls GetOutPointInfoFunc.
-func (mock *RPCClientMock) GetOutPointInfo(out *wire.OutPoint) (types.OutPointInfo, error) {
+func (mock *RPCClientMock) GetOutPointInfo(blockHash *chainhash.Hash, out *wire.OutPoint) (types.OutPointInfo, error) {
 	if mock.GetOutPointInfoFunc == nil {
 		panic("RPCClientMock.GetOutPointInfoFunc: method is nil but RPCClient.GetOutPointInfo was just called")
 	}
 	callInfo := struct {
-		Out *wire.OutPoint
+		BlockHash *chainhash.Hash
+		Out       *wire.OutPoint
 	}{
-		Out: out,
+		BlockHash: blockHash,
+		Out:       out,
 	}
 	mock.lockGetOutPointInfo.Lock()
 	mock.calls.GetOutPointInfo = append(mock.calls.GetOutPointInfo, callInfo)
 	mock.lockGetOutPointInfo.Unlock()
-	return mock.GetOutPointInfoFunc(out)
+	return mock.GetOutPointInfoFunc(blockHash, out)
 }
 
 // GetOutPointInfoCalls gets all the calls that were made to GetOutPointInfo.
 // Check the length with:
 //     len(mockedRPCClient.GetOutPointInfoCalls())
 func (mock *RPCClientMock) GetOutPointInfoCalls() []struct {
-	Out *wire.OutPoint
+	BlockHash *chainhash.Hash
+	Out       *wire.OutPoint
 } {
 	var calls []struct {
-		Out *wire.OutPoint
+		BlockHash *chainhash.Hash
+		Out       *wire.OutPoint
 	}
 	mock.lockGetOutPointInfo.RLock()
 	calls = mock.calls.GetOutPointInfo
 	mock.lockGetOutPointInfo.RUnlock()
-	return calls
-}
-
-// ImportAddressRescan calls ImportAddressRescanFunc.
-func (mock *RPCClientMock) ImportAddressRescan(address string, account string, rescan bool) error {
-	if mock.ImportAddressRescanFunc == nil {
-		panic("RPCClientMock.ImportAddressRescanFunc: method is nil but RPCClient.ImportAddressRescan was just called")
-	}
-	callInfo := struct {
-		Address string
-		Account string
-		Rescan  bool
-	}{
-		Address: address,
-		Account: account,
-		Rescan:  rescan,
-	}
-	mock.lockImportAddressRescan.Lock()
-	mock.calls.ImportAddressRescan = append(mock.calls.ImportAddressRescan, callInfo)
-	mock.lockImportAddressRescan.Unlock()
-	return mock.ImportAddressRescanFunc(address, account, rescan)
-}
-
-// ImportAddressRescanCalls gets all the calls that were made to ImportAddressRescan.
-// Check the length with:
-//     len(mockedRPCClient.ImportAddressRescanCalls())
-func (mock *RPCClientMock) ImportAddressRescanCalls() []struct {
-	Address string
-	Account string
-	Rescan  bool
-} {
-	var calls []struct {
-		Address string
-		Account string
-		Rescan  bool
-	}
-	mock.lockImportAddressRescan.RLock()
-	calls = mock.calls.ImportAddressRescan
-	mock.lockImportAddressRescan.RUnlock()
 	return calls
 }
 
