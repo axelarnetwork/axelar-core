@@ -382,8 +382,8 @@ func newValidator(address sdk.ValAddress, power int64) *snapMock.ValidatorMock {
 }
 
 func calcMajorityLowerLimit(threshold utils.Threshold, minorityPower *snapMock.ValidatorMock) int64 {
-	lowerLimit := threshold.Denominator * minorityPower.GetConsensusPower() / threshold.Numerator
-	for threshold.Numerator*lowerLimit <= threshold.Denominator*minorityPower.GetConsensusPower() {
+	lowerLimit := minorityPower.GetConsensusPower() / (threshold.Denominator - threshold.Numerator) * threshold.Numerator
+	for threshold.Denominator*lowerLimit <= threshold.Numerator*(lowerLimit+minorityPower.GetConsensusPower()) {
 		lowerLimit += 1
 	}
 	return lowerLimit
