@@ -14,6 +14,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
+// Bitcoin network types
 var (
 	Mainnet  = Network{&chaincfg.MainNetParams}
 	Testnet3 = Network{&chaincfg.TestNet3Params}
@@ -24,6 +25,7 @@ var (
 type OutPointInfo struct {
 	OutPoint      *wire.OutPoint
 	Amount        btcutil.Amount
+	BlockHash     *chainhash.Hash
 	DepositAddr   string
 	Confirmations uint64
 }
@@ -32,6 +34,9 @@ type OutPointInfo struct {
 func (i OutPointInfo) Validate() error {
 	if i.OutPoint == nil {
 		return fmt.Errorf("missing outpoint")
+	}
+	if i.BlockHash == nil {
+		return fmt.Errorf("missing block hash")
 	}
 	if i.Amount <= 0 {
 		return fmt.Errorf("amount must be greater than 0")
@@ -60,11 +65,11 @@ type Network struct {
 func NetworkFromStr(net string) (Network, error) {
 	switch net {
 	case "main":
-		return Network{&chaincfg.MainNetParams}, nil
+		return Mainnet, nil
 	case "test":
-		return Network{&chaincfg.TestNet3Params}, nil
+		return Testnet3, nil
 	case "regtest":
-		return Network{&chaincfg.RegressionNetParams}, nil
+		return Regtest, nil
 	default:
 		return Network{}, fmt.Errorf("unknown network: %s", net)
 	}
@@ -78,6 +83,7 @@ func (n Network) Validate() error {
 	return nil
 }
 
+// RawTxParams describe the parameters used to create a raw unsigned transaction for Bitcoin
 type RawTxParams struct {
 	OutPoint    *wire.OutPoint
 	DepositAddr string
@@ -108,6 +114,7 @@ func CreateTx(outPoint *wire.OutPoint, satoshi sdk.Coin, recipient btcutil.Addre
 	return tx, nil
 }
 
+// OutPointFromStr returns the parsed outpoint from a string of the form "txID:voutIdx"
 func OutPointFromStr(outStr string) (*wire.OutPoint, error) {
 	outParams := strings.Split(outStr, ":")
 	if len(outParams) != 2 {

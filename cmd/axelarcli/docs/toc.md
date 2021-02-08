@@ -21,7 +21,7 @@
       - [deposit-addr \[blockchain\] \[recipient addr\]](axelarcli_query_bitcoin_deposit-addr.md)	 - Returns a bitcoin deposit address for a recipient address on another blockchain
       - [rawTx \[txID:voutIdx\] \[amount\] \[recipient\]](axelarcli_query_bitcoin_rawTx.md)	 - Get a raw transaction that spends \[amount\] of the outpoint \[voutIdx\] of \[txID\] to <recipient> or the next master key in rotation
       - [send \[txID:voutIdx\]](axelarcli_query_bitcoin_send.md)	 - Send a transaction to Bitcoin that spends output \[voutIdx\] of tx \[txID\]
-      - [txInfo \[txID:voutIdx\]](axelarcli_query_bitcoin_txInfo.md)	 - Query the info of the outpoint at index \[voutIdx\] of transaction \[txID\] on Bitcoin
+      - [txInfo \[blockHash\] \[txID:voutIdx\]](axelarcli_query_bitcoin_txInfo.md)	 - Query the info of the outpoint at index \[voutIdx\] of transaction \[txID\] on Bitcoin
     - [block \[height\]](axelarcli_query_block.md)	 - Get verified data for a the block at given height
     - [distribution](axelarcli_query_distribution.md)	 - Querying commands for the distribution module
       - [commission \[validator\]](axelarcli_query_distribution_commission.md)	 - Query distribution validator commission
@@ -64,7 +64,6 @@
     - [bitcoin](axelarcli_tx_bitcoin.md)	 - bitcoin transactions subcommands
       - [link \[chain\] \[address\]](axelarcli_tx_bitcoin_link.md)	 - Link a cross chain address to a bitcoin address created by Axelar
       - [signTx \[txID:voutIdx\] \[tx json\]](axelarcli_tx_bitcoin_signTx.md)	 - Sign raw spending transaction with utxo of \[txID\]
-      - [track \[address\]](axelarcli_tx_bitcoin_track.md)	 - Make the axelar network aware of a specific address on Bitcoin
       - [verifyTx \[txInfo json\]](axelarcli_tx_bitcoin_verifyTx.md)	 - Verify a Bitcoin transaction
     - [broadcast](axelarcli_tx_broadcast.md)	 - broadcast transactions subcommands
       - [registerProxy \[proxy\] ](axelarcli_tx_broadcast_registerProxy.md)	 - Register a proxy account for a specific validator principal to broadcast transactions in its stead

@@ -40,6 +40,7 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return btcTxCmd
 }
 
+// GetCmdDepositAddress returns the deposit address command
 func GetCmdDepositAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "deposit-addr [blockchain] [recipient addr]",
@@ -67,6 +68,7 @@ func GetCmdDepositAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return cmd
 }
 
+// GetCmdConsolidationAddress returns the consolidation address command
 func GetCmdConsolidationAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "consolidation-addr [deposit addr]",
@@ -92,18 +94,18 @@ func GetCmdConsolidationAddress(queryRoute string, cdc *codec.Codec) *cobra.Comm
 // GetCmdTxInfo returns the tx info query command
 func GetCmdTxInfo(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "txInfo [txID:voutIdx]",
+		Use:   "txInfo [blockHash] [txID:voutIdx]",
 		Short: "Query the info of the outpoint at index [voutIdx] of transaction [txID] on Bitcoin",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			out, err := types.OutPointFromStr(args[0])
+			out, err := types.OutPointFromStr(args[1])
 			if err != nil {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryOutInfo), cdc.MustMarshalJSON(out))
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryOutInfo, args[0]), cdc.MustMarshalJSON(out))
 			if err != nil {
 				return sdkerrors.Wrapf(err, "could not resolve txID %s and vout index %d", out.Hash.String(), out.Index)
 			}
@@ -111,7 +113,7 @@ func GetCmdTxInfo(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			var info types.OutPointInfo
 			cdc.MustUnmarshalJSON(res, &info)
 			fmt.Println(strings.ReplaceAll(string(res), "\"", "\\\""))
-			return cliCtx.PrintOutput(out)
+			return cliCtx.PrintOutput(info)
 		},
 	}
 }

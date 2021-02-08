@@ -31,37 +31,12 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	}
 
 	btcTxCmd.AddCommand(flags.PostCommands(
-		GetCmdTrackAddress(cdc),
 		GetCmdVerifyTx(cdc),
 		GetCmdSignRawTx(cdc),
 		GetCmdLink(cdc),
 	)...)
 
 	return btcTxCmd
-}
-
-func GetCmdTrackAddress(cdc *codec.Codec) *cobra.Command {
-	var rescan bool
-	addrCmd := &cobra.Command{
-		Use:   "track [address]",
-		Short: "Make the axelar network aware of a specific address on Bitcoin",
-		Long:  "Make the axelar network aware of a specific address on Bitcoin. Use --rescan to rescan the entire Bitcoin history for past transactions",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-
-			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
-
-			msg := types.NewMsgTrackAddress(cliCtx.GetFromAddress(), args[0], rescan)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
-		},
-	}
-
-	addRescanFlag(addrCmd, &rescan)
-	return addrCmd
 }
 
 // GetCmdVerifyTx returns the transaction verification command
@@ -144,9 +119,4 @@ func GetCmdLink(cdc *codec.Codec) *cobra.Command {
 			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
-}
-
-func addRescanFlag(cmd *cobra.Command, rescan *bool) {
-	cmd.Flags().BoolVarP(rescan, "rescan", "r", false,
-		"Rescan the entire Bitcoin blockchain for previous transactions to this address")
 }

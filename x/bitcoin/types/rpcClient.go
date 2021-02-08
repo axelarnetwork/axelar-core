@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
@@ -24,8 +25,7 @@ const (
 
 // RPCClient defines the interface of an rpc client communication with the Bitcoin network
 type RPCClient interface {
-	ImportAddressRescan(address string, account string, rescan bool) error
-	GetOutPointInfo(out *wire.OutPoint) (OutPointInfo, error)
+	GetOutPointInfo(blockHash *chainhash.Hash, out *wire.OutPoint) (OutPointInfo, error)
 	SendRawTransaction(tx *wire.MsgTx, allowHighFees bool) (*chainhash.Hash, error)
 	Network() Network
 }
@@ -145,10 +145,10 @@ func unexpectedError(err error) error {
 }
 
 // GetOutPointInfo returns all relevant information for a specific transaction outpoint
-func (r *RPCClientImpl) GetOutPointInfo(out *wire.OutPoint) (OutPointInfo, error) {
-	tx, err := r.GetRawTransactionVerbose(&out.Hash)
+func (r *RPCClientImpl) GetOutPointInfo(blockHash *chainhash.Hash, out *wire.OutPoint) (OutPointInfo, error) {
+	tx, err := r.getRawTransaction(blockHash, out)
 	if err != nil {
-		return OutPointInfo{}, sdkerrors.Wrap(err, "could not retrieve Bitcoin transaction")
+		return OutPointInfo{}, err
 	}
 
 	if uint32(len(tx.Vout)) <= out.Index {
@@ -168,10 +168,32 @@ func (r *RPCClientImpl) GetOutPointInfo(out *wire.OutPoint) (OutPointInfo, error
 
 	return OutPointInfo{
 		OutPoint:      out,
+		BlockHash:     blockHash,
 		Amount:        amount,
 		DepositAddr:   vout.ScriptPubKey.Addresses[0],
 		Confirmations: tx.Confirmations,
 	}, nil
+}
+
+func (r *RPCClientImpl) getRawTransaction(blockHash *chainhash.Hash, out *wire.OutPoint) (btcjson.TxRawResult, error) {
+	/*
+		Cannot use btcd's predefined GetRawTransactionVerbose because it does not take the block hash as input.
+		Without the block hash, bitcoin nodes must keep a full index to be able to look up a transaction by its ID.
+		Axelar-Core should not rely on that.
+	*/
+
+	txHash, _ := json.Marshal(out.Hash.String())
+	verbose, _ := json.Marshal(true)
+	bHash, _ := json.Marshal(blockHash.String())
+	raw, err := r.RawRequest("getrawtransaction", []json.RawMessage{txHash, verbose, bHash})
+	if err != nil {
+		return btcjson.TxRawResult{}, sdkerrors.Wrap(err, "could not retrieve Bitcoin transaction")
+	}
+	var tx btcjson.TxRawResult
+	if err := json.Unmarshal(raw, &tx); err != nil {
+		return btcjson.TxRawResult{}, err
+	}
+	return tx, nil
 }
 
 type dummyClient struct{}
@@ -181,13 +203,8 @@ func NewDummyRPC() RPCClient {
 	return dummyClient{}
 }
 
-// ImportAddressRescan implements RPCClient
-func (d dummyClient) ImportAddressRescan(string, string, bool) error {
-	return fmt.Errorf("no response")
-}
-
 // GetOutPointInfo implements RPCClient
-func (d dummyClient) GetOutPointInfo(*wire.OutPoint) (OutPointInfo, error) {
+func (d dummyClient) GetOutPointInfo(*chainhash.Hash, *wire.OutPoint) (OutPointInfo, error) {
 	return OutPointInfo{}, fmt.Errorf("no response")
 }
 

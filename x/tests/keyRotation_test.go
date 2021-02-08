@@ -73,20 +73,18 @@ type testMocks struct {
 //  2. Create a key (wait for vote)
 //  3. Designate that key to be the first master key for bitcoin
 //  4. Rotate to the designated master key
-//  5. Track the bitcoin address corresponding to the master key
-//  6. Simulate bitcoin deposit to the current master key
-//  7. Query deposit tx info
-//  8. Verify the deposit is confirmed on bitcoin (wait for vote)
-//  9. Create a second snapshot
-// 10. Create a new key with the second snapshot's validator set (wait for vote)
-// 11. Designate that key to be the next master key for bitcoin
-// 12. Create a raw tx to transfer funds from the first master key address to the second key's address
-// 13. Sign the raw tx with the OLD snapshot's validator set (wait for vote)
-// 14. Send the signed transaction to bitcoin
-// 15. Query transfer tx info
-// 16. Verify the fund transfer is confirmed on bitcoin (wait for vote)
-// 17. Rotate to the new master key
-// 18. Track the bitcoin address corresponding to the new master key
+//  5. Simulate bitcoin deposit to the current master key
+//  6. Query deposit tx info
+//  7. Verify the deposit is confirmed on bitcoin (wait for vote)
+//  8. Create a second snapshot
+//  9. Create a new key with the second snapshot's validator set (wait for vote)
+// 10. Designate that key to be the next master key for bitcoin
+// 11. Create a raw tx to transfer funds from the first master key address to the second key's address
+// 12. Sign the raw tx with the OLD snapshot's validator set (wait for vote)
+// 13. Send the signed transaction to bitcoin
+// 14. Query transfer tx info
+// 15. Verify the fund transfer is confirmed on bitcoin (wait for vote)
+// 16. Rotate to the new master key
 func TestKeyRotation(t *testing.T) {
 	chain := fake.NewBlockchain().WithBlockTimeOut(10 * time.Millisecond)
 
@@ -192,12 +190,12 @@ func TestKeyRotation(t *testing.T) {
 	assert.NoError(t, res.Error)
 	depositAddr := string(res.Data)
 
-	// track bitcoin transactions for address derived from master key
-	res = <-chain.Submit(btcTypes.NewMsgTrackAddress(randomSender(), depositAddr, true))
-	assert.NoError(t, res.Error)
-
 	// simulate deposit to master key address
-	txHash, err := chainhash.NewHash(testutils.RandBytes(32))
+	txHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	if err != nil {
+		panic(err)
+	}
+	blockHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
@@ -206,11 +204,11 @@ func TestKeyRotation(t *testing.T) {
 	expectedOut := wire.NewOutPoint(txHash, voutIdx)
 	amount := btcutil.Amount(testutils.RandIntBetween(1, 10000000))
 	confirmations := uint64(testutils.RandIntBetween(1, 10000))
-
-	mocks.BTC.GetOutPointInfoFunc = func(out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
-		if out.String() == expectedOut.String() {
+	mocks.BTC.GetOutPointInfoFunc = func(bHash *chainhash.Hash, out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
+		if bHash.String() == blockHash.String() && out.String() == expectedOut.String() {
 			return btcTypes.OutPointInfo{
 				OutPoint:      expectedOut,
+				BlockHash:     blockHash,
 				Amount:        amount,
 				DepositAddr:   depositAddr,
 				Confirmations: confirmations,
@@ -221,7 +219,7 @@ func TestKeyRotation(t *testing.T) {
 	}
 
 	// query for deposit info
-	bz, err := nodes[0].Query([]string{btcTypes.QuerierRoute, btcKeeper.QueryOutInfo}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(expectedOut)})
+	bz, err := nodes[0].Query([]string{btcTypes.QuerierRoute, btcKeeper.QueryOutInfo, blockHash.String()}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(expectedOut)})
 	assert.NoError(t, err)
 	var info btcTypes.OutPointInfo
 	testutils.Codec().MustUnmarshalJSON(bz, &info)
@@ -295,10 +293,6 @@ func TestKeyRotation(t *testing.T) {
 	assert.NoError(t, err)
 	consAddr := string(bz)
 
-	// track consolidation address
-	res = <-chain.Submit(btcTypes.NewMsgTrackAddress(randomSender(), consAddr, true))
-	assert.NoError(t, res.Error)
-
 	// create a tx to transfer funds from deposit address to consolidation address
 	amount = btcutil.Amount(int64(amount) - testutils.RandIntBetween(1, int64(amount)-1))
 
@@ -370,13 +364,18 @@ func TestKeyRotation(t *testing.T) {
 	// set up btc mock to return the new tx
 	var transferHash *chainhash.Hash
 	testutils.Codec().MustUnmarshalJSON(bz, &transferHash)
+	blockHash, err = chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	if err != nil {
+		panic(err)
+	}
 	voutIdx = 0
 	confirmations = uint64(testutils.RandIntBetween(1, 10000))
 	transferOut := wire.NewOutPoint(transferHash, voutIdx)
-	mocks.BTC.GetOutPointInfoFunc = func(out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
+	mocks.BTC.GetOutPointInfoFunc = func(_ *chainhash.Hash, out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
 		if out.String() == transferOut.String() {
 			return btcTypes.OutPointInfo{
 				OutPoint:      transferOut,
+				BlockHash:     blockHash,
 				Amount:        amount,
 				DepositAddr:   consAddr,
 				Confirmations: confirmations,
@@ -387,7 +386,7 @@ func TestKeyRotation(t *testing.T) {
 	}
 
 	// query for transfer info
-	bz, err = nodes[0].Query([]string{btcTypes.QuerierRoute, btcKeeper.QueryOutInfo}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(transferOut)})
+	bz, err = nodes[0].Query([]string{btcTypes.QuerierRoute, btcKeeper.QueryOutInfo, blockHash.String()}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(transferOut)})
 	assert.NoError(t, err)
 	testutils.Codec().MustUnmarshalJSON(bz, &info)
 
@@ -481,7 +480,6 @@ func createMocks() testMocks {
 	}
 
 	btcClient := &btcMock.RPCClientMock{
-		ImportAddressRescanFunc: func(string, string, bool) error { return nil },
 		SendRawTransactionFunc: func(tx *wire.MsgTx, _ bool) (*chainhash.Hash, error) {
 			hash := tx.TxHash()
 			return &hash, nil

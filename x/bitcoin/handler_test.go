@@ -1,15 +1,12 @@
 package bitcoin
 
 import (
-	"context"
 	"crypto/ecdsa"
 	"crypto/rand"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
@@ -95,35 +92,6 @@ func TestLink_Success(t *testing.T) {
 	assert.Equal(t, 1, len(s.GetCurrentMasterKeyCalls()))
 }
 
-func TestTrackAddress(t *testing.T) {
-	cdc := testutils.Codec()
-	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k.SetParams(ctx, types.DefaultParams())
-	timeout, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
-	rpc := btcMock.RPCClientMock{ImportAddressRescanFunc: func(address string, _ string, rescan bool) error {
-		cancel()
-		return nil
-	}}
-
-	sk, _ := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
-	pk := btcec.PublicKey(sk.PublicKey)
-	addr, err := btcutil.NewAddressPubKeyHash(btcutil.Hash160(pk.SerializeCompressed()), &chaincfg.MainNetParams)
-	if err != nil {
-		panic(err)
-	}
-
-	handler := NewHandler(k, &btcMock.VoterMock{}, &rpc, &btcMock.SignerMock{}, &btcMock.SnapshotterMock{}, &btcMock.BalancerMock{})
-	_, err = handler(ctx, types.NewMsgTrackAddress(sdk.AccAddress("sender"), addr.EncodeAddress(), false))
-
-	<-timeout.Done()
-	assert.Nil(t, err)
-	assert.Equal(t, 1, len(rpc.ImportAddressRescanCalls()))
-	assert.False(t, rpc.ImportAddressRescanCalls()[0].Rescan)
-	assert.Equal(t, addr.String(), rpc.ImportAddressRescanCalls()[0].Address)
-}
-
 func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 	cdc := testutils.Codec()
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
@@ -131,7 +99,7 @@ func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
 	k.SetParams(ctx, types.DefaultParams())
 	rpc := btcMock.RPCClientMock{
-		GetOutPointInfoFunc: func(out *wire.OutPoint) (types.OutPointInfo, error) {
+		GetOutPointInfoFunc: func(*chainhash.Hash, *wire.OutPoint) (types.OutPointInfo, error) {
 			return types.OutPointInfo{}, fmt.Errorf("not found")
 		},
 	}
@@ -141,13 +109,18 @@ func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 		RecordVoteFunc: func(ctx sdk.Context, vote exported.MsgVote) error { return nil },
 	}
 
-	hash, err := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
+	txHash, err := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
 	if err != nil {
 		panic(err)
 	}
-	outpoint := wire.NewOutPoint(hash, 0)
+	blockHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	if err != nil {
+		panic(err)
+	}
+	outpoint := wire.NewOutPoint(txHash, 0)
 	info := types.OutPointInfo{
 		OutPoint:      outpoint,
+		BlockHash:     blockHash,
 		Amount:        10,
 		DepositAddr:   "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
 		Confirmations: 7,
@@ -178,13 +151,18 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
 	k.SetParams(ctx, types.DefaultParams())
 
-	hash, err := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
+	txHash, err := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
 	if err != nil {
 		panic(err)
 	}
-	outPoint := wire.NewOutPoint(hash, 0)
+	blockHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	if err != nil {
+		panic(err)
+	}
+	outPoint := wire.NewOutPoint(txHash, 0)
 	info := types.OutPointInfo{
 		OutPoint:      outPoint,
+		BlockHash:     blockHash,
 		Amount:        10,
 		DepositAddr:   "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
 		Confirmations: 7,
@@ -194,13 +172,7 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 	}
 
 	rpc := btcMock.RPCClientMock{
-		GetOutPointInfoFunc: func(out *wire.OutPoint) (types.OutPointInfo, error) {
-			if hash.IsEqual(&out.Hash) {
-				return info, nil
-			}
-
-			return types.OutPointInfo{}, fmt.Errorf("not found")
-		},
+		GetOutPointInfoFunc: func(*chainhash.Hash, *wire.OutPoint) (types.OutPointInfo, error) { return info, nil },
 	}
 
 	var poll exported.PollMeta
@@ -215,6 +187,10 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 	_, err = handler(ctx, types.MsgVerifyTx{Sender: sdk.AccAddress("sender"), OutPointInfo: info})
 	assert.Nil(t, err)
 	assert.NoError(t, err)
+
+	assert.Equal(t, 1, len(rpc.GetOutPointInfoCalls()))
+	assert.Equal(t, info.BlockHash, rpc.GetOutPointInfoCalls()[0].BlockHash)
+	assert.Equal(t, info.OutPoint.String(), rpc.GetOutPointInfoCalls()[0].Out.String())
 
 	assert.Equal(t, 1, len(v.InitPollCalls()))
 	assert.Equal(t, outPoint.String(), v.InitPollCalls()[0].Poll.ID)
@@ -257,16 +233,21 @@ func TestVoteVerifiedTx_IncompleteVote(t *testing.T) {
 	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
 	k.SetParams(ctx, types.DefaultParams())
 
-	hash, err := chainhash.NewHash(testutils.RandBytes(32))
+	txHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	if err != nil {
+		panic(err)
+	}
+	blockHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
 	outpoint := &wire.OutPoint{
-		Hash:  *hash,
+		Hash:  *txHash,
 		Index: 0,
 	}
 	outpointInfo := types.OutPointInfo{
 		OutPoint:      outpoint,
+		BlockHash:     blockHash,
 		Amount:        btcutil.Amount(1000000),
 		DepositAddr:   "sender",
 		Confirmations: 100,
@@ -304,16 +285,21 @@ func TestVoteVerifiedTx_KeyIDNotFound(t *testing.T) {
 	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
 	k.SetParams(ctx, types.DefaultParams())
 
-	hash, err := chainhash.NewHash(testutils.RandBytes(32))
+	txHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	if err != nil {
+		panic(err)
+	}
+	blockHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
 	outpoint := &wire.OutPoint{
-		Hash:  *hash,
+		Hash:  *txHash,
 		Index: 0,
 	}
 	outpointInfo := types.OutPointInfo{
 		OutPoint:      outpoint,
+		BlockHash:     blockHash,
 		Amount:        btcutil.Amount(1000000),
 		DepositAddr:   "sender",
 		Confirmations: 100,
@@ -350,16 +336,21 @@ func TestVoteVerifiedTx_SucessNoTransfer(t *testing.T) {
 	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
 	k.SetParams(ctx, types.DefaultParams())
 
-	hash, err := chainhash.NewHash(testutils.RandBytes(32))
+	txHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	if err != nil {
+		panic(err)
+	}
+	blockHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
 	outpoint := &wire.OutPoint{
-		Hash:  *hash,
+		Hash:  *txHash,
 		Index: 0,
 	}
 	outpointInfo := types.OutPointInfo{
 		OutPoint:      outpoint,
+		BlockHash:     blockHash,
 		Amount:        btcutil.Amount(1000000),
 		DepositAddr:   "sender",
 		Confirmations: 100,
@@ -397,16 +388,21 @@ func TestVoteVerifiedTx_SucessAndTransfer(t *testing.T) {
 	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
 	k.SetParams(ctx, types.DefaultParams())
 
-	hash, err := chainhash.NewHash(testutils.RandBytes(32))
+	txHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	if err != nil {
+		panic(err)
+	}
+	blockHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
 	outpoint := &wire.OutPoint{
-		Hash:  *hash,
+		Hash:  *txHash,
 		Index: 0,
 	}
 	outpointInfo := types.OutPointInfo{
 		OutPoint:      outpoint,
+		BlockHash:     blockHash,
 		Amount:        btcutil.Amount(1000000),
 		DepositAddr:   "sender",
 		Confirmations: 100,

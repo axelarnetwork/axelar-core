@@ -23,26 +23,30 @@ func TestQuerier_TxInfo_CorrectMarshalling(t *testing.T) {
 		for _, b := range testutils.RandIntsBetween(0, 256).Take(chainhash.HashSize) {
 			bz = append(bz, byte(b))
 		}
-		hash, err := chainhash.NewHash(bz)
+		txHash, err := chainhash.NewHash(bz)
 		assert.NoError(t, err)
+		blockHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+		assert.NoError(t, err)
+
 		info := types.OutPointInfo{
 			OutPoint: &wire.OutPoint{
-				Hash:  *hash,
+				Hash:  *txHash,
 				Index: uint32(testutils.RandIntBetween(0, 100)),
 			},
+			BlockHash:     blockHash,
 			Amount:        btcutil.Amount(testutils.RandIntBetween(0, 100000000)),
 			DepositAddr:   testutils.RandStrings(5, 20).Take(1)[0],
 			Confirmations: uint64(testutils.RandIntBetween(0, 10000)),
 		}
 
 		query := NewQuerier(Keeper{}, &mock.SignerMock{}, &mock.BalancerMock{}, &mock.RPCClientMock{
-			GetOutPointInfoFunc: func(out *wire.OutPoint) (types.OutPointInfo, error) {
+			GetOutPointInfoFunc: func(_ *chainhash.Hash, out *wire.OutPoint) (types.OutPointInfo, error) {
 				if out.Hash.IsEqual(&info.OutPoint.Hash) {
 					return info, nil
 				}
 				return types.OutPointInfo{}, fmt.Errorf("not found")
 			}})
-		bz, err = query(sdk.Context{}, []string{QueryOutInfo}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(info.OutPoint)})
+		bz, err = query(sdk.Context{}, []string{QueryOutInfo, info.BlockHash.String()}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(info.OutPoint)})
 		assert.NoError(t, err)
 
 		var unmarshaled types.OutPointInfo
