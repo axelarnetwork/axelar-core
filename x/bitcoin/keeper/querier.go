@@ -37,7 +37,7 @@ func NewQuerier(k Keeper, s types.Signer, b types.Balancer, rpc types.RPCClient)
 		case QueryOutInfo:
 			blockHash, err := chainhash.NewHashFromStr(path[1])
 			if err != nil {
-
+				return nil, sdkerrors.Wrapf(types.ErrBitcoin, "could not parse block hash: %s", err.Error())
 			}
 			return queryTxOutInfo(rpc, blockHash, req.Data)
 		case QueryRawTx:

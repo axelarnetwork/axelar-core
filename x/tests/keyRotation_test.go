@@ -85,7 +85,6 @@ type testMocks struct {
 // 14. Query transfer tx info
 // 15. Verify the fund transfer is confirmed on bitcoin (wait for vote)
 // 16. Rotate to the new master key
-// 17. Track the bitcoin address corresponding to the new master key
 func TestKeyRotation(t *testing.T) {
 	chain := fake.NewBlockchain().WithBlockTimeOut(10 * time.Millisecond)
 

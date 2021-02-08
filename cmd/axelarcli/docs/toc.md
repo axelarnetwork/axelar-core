@@ -64,7 +64,6 @@
     - [bitcoin](axelarcli_tx_bitcoin.md)	 - bitcoin transactions subcommands
       - [link \[chain\] \[address\]](axelarcli_tx_bitcoin_link.md)	 - Link a cross chain address to a bitcoin address created by Axelar
       - [signTx \[txID:voutIdx\] \[tx json\]](axelarcli_tx_bitcoin_signTx.md)	 - Sign raw spending transaction with utxo of \[txID\]
-      - [track \[address\]](axelarcli_tx_bitcoin_track.md)	 - Make the axelar network aware of a specific address on Bitcoin
       - [verifyTx \[txInfo json\]](axelarcli_tx_bitcoin_verifyTx.md)	 - Verify a Bitcoin transaction
     - [broadcast](axelarcli_tx_broadcast.md)	 - broadcast transactions subcommands
       - [registerProxy \[proxy\] ](axelarcli_tx_broadcast_registerProxy.md)	 - Register a proxy account for a specific validator principal to broadcast transactions in its stead
