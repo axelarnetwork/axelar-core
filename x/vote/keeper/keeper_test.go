@@ -382,9 +382,12 @@ func newValidator(address sdk.ValAddress, power int64) *snapMock.ValidatorMock {
 }
 
 func calcMajorityLowerLimit(threshold utils.Threshold, minorityPower *snapMock.ValidatorMock) int64 {
-	lowerLimit := minorityPower.GetConsensusPower() / (threshold.Denominator - threshold.Numerator) * threshold.Numerator
-	for threshold.Denominator*lowerLimit <= threshold.Numerator*(lowerLimit+minorityPower.GetConsensusPower()) {
-		lowerLimit += 1
+	minorityShare := threshold.Denominator - threshold.Numerator
+	majorityShare := threshold.Numerator
+	majorityLowerLimit := minorityPower.GetConsensusPower() / minorityShare * majorityShare
+	// Due to integer division the lower limit might be underestimated by up to 2
+	for threshold.IsMet(sdk.NewInt(majorityLowerLimit), sdk.NewInt(majorityLowerLimit+minorityPower.GetConsensusPower())) {
+		majorityLowerLimit += 1
 	}
-	return lowerLimit
+	return majorityLowerLimit
 }
