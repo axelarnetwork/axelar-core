@@ -2,7 +2,6 @@ package types
 
 import (
 	"fmt"
-	"math/rand"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
@@ -12,13 +11,11 @@ import (
 // Default parameter namespace
 const (
 	DefaultParamspace = ModuleName
-	saltSeed          = 47
 )
 
 var (
 	KeyConfirmationHeight = []byte("confirmationHeight")
 	KeyNetwork            = []byte("network")
-	KeySalt               = []byte("salt")
 )
 
 func KeyTable() subspace.KeyTable {
@@ -28,22 +25,12 @@ func KeyTable() subspace.KeyTable {
 type Params struct {
 	ConfirmationHeight uint64
 	Network            Network
-	Salt               [32]byte
 }
 
 func DefaultParams() Params {
-	source := rand.NewSource(saltSeed)
-	r := rand.New(source)
-	slice := make([]byte, 32)
-	r.Read(slice)
-
-	var salt [32]byte
-	copy(salt[:], slice)
-
 	return Params{
 		ConfirmationHeight: 1,
 		Network:            Ganache,
-		Salt:               salt,
 	}
 }
 

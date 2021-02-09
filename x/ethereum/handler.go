@@ -63,8 +63,9 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, b types.Balancer, msg types
 	}
 
 	burnerInitCodeHash := crypto.Keccak256Hash(append(msg.BurneableBC, args...))
+	salt := types.CalculateSalt(msg.Recipient.Address)
+	burnerAddr := crypto.CreateAddress2(common.HexToAddress(msg.TokenAddr), salt, burnerInitCodeHash.Bytes())
 
-	burnerAddr := crypto.CreateAddress2(common.HexToAddress(msg.TokenAddr), k.GetSalt(ctx), burnerInitCodeHash.Bytes())
 	err = b.LinkAddresses(ctx, balance.CrossChainAddress{Chain: balance.Ethereum, Address: burnerAddr.String()}, msg.Recipient)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
