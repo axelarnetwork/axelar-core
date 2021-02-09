@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -20,10 +23,12 @@ import (
 )
 
 // NewHandler returns the handler of the ethereum module
-func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Signer, snap snapshot.Snapshotter, balancer types.Balancer) sdk.Handler {
+func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, b types.Balancer, s types.Signer, snap snapshot.Snapshotter, balancer types.Balancer) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
+		case types.MsgLink:
+			return handleMsgLink(ctx, k, b, msg)
 		case types.MsgVerifyTx:
 			return handleMsgVerifyTx(ctx, k, rpc, v, msg)
 		case *types.MsgVoteVerifiedTx:
@@ -39,6 +44,51 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
 		}
 	}
+}
+
+func handleMsgLink(ctx sdk.Context, k keeper.Keeper, b types.Balancer, msg types.MsgLink) (*sdk.Result, error) {
+
+	addressType, err := abi.NewType("address", "address", nil)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+	}
+	bytesType, err := abi.NewType("bytes", "bytes", nil)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+	}
+	arguments := abi.Arguments{{Type: addressType}, {Type: bytesType}}
+	args, err := arguments.Pack(common.HexToAddress(msg.TokenAddr), msg.Salt)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+	}
+
+	burnerInitCodeHash := crypto.Keccak256Hash(append(msg.BurneableBC, args...))
+
+	burnerAddr := crypto.CreateAddress2(common.HexToAddress(msg.TokenAddr), k.GetSalt(ctx), burnerInitCodeHash.Bytes())
+	err = b.LinkAddresses(ctx, balance.CrossChainAddress{Chain: balance.Ethereum, Address: burnerAddr.String()}, msg.Recipient)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+
+	}
+
+	logMsg := fmt.Sprintf("successfully linked {%s} and {%s}", burnerAddr.String(), msg.Recipient.String())
+	k.Logger(ctx).Info(logMsg)
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+			sdk.NewAttribute(types.AttributeAddress, burnerAddr.String()),
+			sdk.NewAttribute(types.AttributeAddress, msg.Recipient.String()),
+		),
+	)
+
+	return &sdk.Result{
+		Data:   []byte(burnerAddr.String()),
+		Log:    logMsg,
+		Events: ctx.EventManager().Events(),
+	}, nil
 }
 
 func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap snapshot.Snapshotter, balancer types.Balancer, msg types.MsgSignPendingTransfers) (*sdk.Result, error) {

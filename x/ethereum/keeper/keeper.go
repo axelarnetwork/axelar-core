@@ -61,6 +61,12 @@ func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context) uint64 {
 	return h
 }
 
+func (k Keeper) GetSalt(ctx sdk.Context) [32]byte {
+	var s [32]byte
+	k.params.Get(ctx, types.KeySalt, &s)
+	return s
+}
+
 func (k Keeper) SetCommandData(ctx sdk.Context, commandID types.CommandID, commandData []byte) {
 	key := append([]byte(commandPrefix), commandID[:]...)
 
