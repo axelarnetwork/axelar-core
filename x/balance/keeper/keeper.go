@@ -172,17 +172,7 @@ func (k Keeper) getChainTotal(ctx sdk.Context, chain exported.Chain, denom strin
 
 func (k Keeper) addChainTotal(ctx sdk.Context, chain exported.Chain, amount sdk.Coin) {
 	total := k.getChainTotal(ctx, chain, amount.Denom)
-	total = sdk.NewCoin(amount.Denom, total.Amount.Add(amount.Amount))
-<<<<<<< HEAD
-
-	ctx.KVStore(k.storeKey).Set([]byte(totalPrefix+chain.String()+"_"+amount.Denom), k.cdc.MustMarshalBinaryLengthPrefixed(total))
-}
-
-func (k Keeper) subChainTotal(ctx sdk.Context, chain exported.Chain, amount sdk.Coin) {
-	total := k.getChainTotal(ctx, chain, amount.Denom)
-	total = sdk.NewCoin(amount.Denom, total.Amount.Sub(amount.Amount))
-=======
->>>>>>> Applied requested changes
+	total = total.Add(amount)
 
 	ctx.KVStore(k.storeKey).Set([]byte(totalPrefix+chain.String()+"_"+amount.Denom), k.cdc.MustMarshalBinaryLengthPrefixed(total))
 }
