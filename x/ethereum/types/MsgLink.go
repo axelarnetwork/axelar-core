@@ -11,17 +11,13 @@ type MsgLink struct {
 	Sender    sdk.AccAddress
 	Recipient exported.CrossChainAddress
 	Symbol    string
-
-	ContractAddr string
 }
 
-func NewMsgLink(sender sdk.AccAddress, destination exported.CrossChainAddress, contract, symbol string) sdk.Msg {
+func NewMsgLink(sender sdk.AccAddress, destination exported.CrossChainAddress, symbol string) sdk.Msg {
 	return MsgLink{
 		Sender:    sender,
 		Recipient: destination,
 		Symbol:    symbol,
-
-		ContractAddr: contract,
 	}
 }
 

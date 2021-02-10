@@ -59,6 +59,11 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, b types.Balancer, msg types
 		return nil, sdkerrors.Wrap(types.ErrEthereum, "symbol not found/verified")
 
 	}
+	gatewayAddr, ok := k.GetGatewayAddress(ctx)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, "gateway not set")
+
+	}
 
 	addressType, err := abi.NewType("address", "address", nil)
 	if err != nil {
@@ -75,7 +80,7 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, b types.Balancer, msg types
 	}
 
 	burnerInitCodeHash := crypto.Keccak256Hash(append(k.GetBurneable(ctx), args...))
-	burnerAddr := crypto.CreateAddress2(common.HexToAddress(msg.ContractAddr), salt, burnerInitCodeHash.Bytes())
+	burnerAddr := crypto.CreateAddress2(gatewayAddr, salt, burnerInitCodeHash.Bytes())
 
 	err = b.LinkAddresses(ctx, balance.CrossChainAddress{Chain: balance.Ethereum, Address: burnerAddr.String()}, msg.Recipient)
 	if err != nil {

@@ -9,6 +9,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/tendermint/tendermint/libs/log"
 
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -24,6 +25,8 @@ const (
 	pendingSymbolPrefix = "pend_symbol_"
 	pendingTXPrefix     = "pend_tx_"
 	commandPrefix       = "command_"
+
+	gatewayKey = "gateway"
 )
 
 type Keeper struct {
@@ -67,6 +70,15 @@ func (k Keeper) GetBurneable(ctx sdk.Context) []byte {
 	var b []byte
 	k.params.Get(ctx, types.KeyBurneable, &b)
 	return b
+}
+
+func (k Keeper) GetGatewayAddress(ctx sdk.Context) (common.Address, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(gatewayKey))
+	if bz == nil {
+		return common.Address{}, false
+	}
+
+	return common.BytesToAddress(bz), true
 }
 
 func (k Keeper) SetCommandData(ctx sdk.Context, commandID types.CommandID, commandData []byte) {
@@ -130,7 +142,7 @@ func (k Keeper) HasUnverifiedSymbol(ctx sdk.Context, symbol string) bool {
 	return ctx.KVStore(k.storeKey).Has([]byte(pendingSymbolPrefix + symbol))
 }
 
-// ProcessVerificationResult stores the TX permanently if confirmed or discards the data otherwise
+// ProcessTxVerificationResult stores the TX permanently if confirmed or discards the data otherwise
 func (k Keeper) ProcessTxVerificationResult(ctx sdk.Context, txID string, verified bool) error {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingTXPrefix + txID))
 	if bz == nil {
@@ -138,6 +150,24 @@ func (k Keeper) ProcessTxVerificationResult(ctx sdk.Context, txID string, verifi
 	}
 	if verified {
 		ctx.KVStore(k.storeKey).Set([]byte(txPrefix+txID), bz)
+
+		// calculate contract address of the verified tx and store it
+		// as the address for the axelar gateway
+		var tx *ethTypes.Transaction
+		k.cdc.MustUnmarshalJSON(bz, &tx)
+
+		_, r, s := tx.RawSignatureValues()
+		sig := types.Signature{}
+		copy(sig[:32], common.LeftPadBytes(r.Bytes(), 32))
+		copy(sig[32:], common.LeftPadBytes(s.Bytes(), 32))
+
+		pubKey, err := crypto.SigToPub(tx.Hash().Bytes(), sig[:])
+		if err != nil {
+			return err
+		}
+
+		contractAddr := crypto.CreateAddress(crypto.PubkeyToAddress(*pubKey), tx.Nonce())
+		ctx.KVStore(k.storeKey).Set([]byte(gatewayKey+txID), contractAddr.Bytes())
 	}
 	ctx.KVStore(k.storeKey).Delete([]byte(pendingTXPrefix + txID))
 	return nil
