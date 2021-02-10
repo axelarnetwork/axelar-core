@@ -32,7 +32,7 @@ func (msg MsgLink) Route() string {
 }
 
 func (msg MsgLink) Type() string {
-	return "SignPendingTransfersTx"
+	return "Link"
 }
 
 func (msg MsgLink) ValidateBasic() error {

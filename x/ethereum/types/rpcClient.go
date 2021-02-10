@@ -25,6 +25,7 @@ type RPCClient interface {
 	SuggestGasPrice(ctx context.Context) (*big.Int, error)
 	ChainID(ctx context.Context) (*big.Int, error)
 	EstimateGas(ctx context.Context, msg ethereum.CallMsg) (uint64, error)
+	CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error)
 }
 
 // RPCClientImpl implements RPCClient
@@ -136,4 +137,9 @@ func (d dummyClient) ChainID(context.Context) (*big.Int, error) {
 // EstimateGas implements RPCClient
 func (d dummyClient) EstimateGas(context.Context, ethereum.CallMsg) (uint64, error) {
 	return 0, fmt.Errorf("no response")
+}
+
+// CallContext implements RPCClient
+func (d dummyClient) CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
+	return nil, fmt.Errorf("no response")
 }

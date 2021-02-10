@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strconv"
 
+	ethereumRoot "github.com/ethereum/go-ethereum"
+
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 
@@ -18,7 +20,6 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -31,8 +32,12 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, b types.Bal
 			return handleMsgLink(ctx, k, b, msg)
 		case types.MsgVerifyTx:
 			return handleMsgVerifyTx(ctx, k, rpc, v, msg)
+		case types.MsgVerifyToken:
+			return handleMsgVerifyToken(ctx, k, rpc, v, msg)
 		case *types.MsgVoteVerifiedTx:
 			return handleMsgVoteVerifiedTx(ctx, k, v, msg)
+		case *types.MsgVoteVerifiedToken:
+			return handleMsgVoteVerifiedToken(ctx, k, v, msg)
 		case types.MsgSignDeployToken:
 			return handleMsgSignDeployToken(ctx, k, s, snap, msg)
 		case types.MsgSignTx:
@@ -151,6 +156,63 @@ func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer ty
 	}, nil
 }
 
+func handleMsgVerifyToken(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v types.Voter, msg types.MsgVerifyToken) (*sdk.Result, error) {
+	k.Logger(ctx).Debug("verifying ERC20 token")
+
+	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.Symbol}
+	if err := v.InitPoll(ctx, poll); err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+	}
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+			sdk.NewAttribute(types.AttributeSymbol, msg.Symbol),
+		),
+	)
+
+	k.SetUnverifiedSymbol(ctx, msg.Symbol, common.HexToAddress(msg.ContractAddr))
+
+	/*
+	 Anyone not able to verify the symbol will automatically record a negative vote,
+	 but only validators will later send out that vote.
+	*/
+
+	if err := verifyToken(ctx, k, rpc, msg.Symbol, common.HexToAddress(msg.ContractAddr)); err != nil {
+		k.Logger(ctx).Debug(sdkerrors.Wrapf(err, "symbol (%s) could not be verified", msg.Symbol).Error())
+		if err := v.RecordVote(ctx, &types.MsgVoteVerifiedToken{PollMeta: poll, VotingData: false}); err != nil {
+			k.Logger(ctx).Error(sdkerrors.Wrap(err, "voting failed").Error())
+			return &sdk.Result{
+				Log:    err.Error(),
+				Data:   k.Codec().MustMarshalBinaryLengthPrefixed(false),
+				Events: ctx.EventManager().Events(),
+			}, nil
+		}
+		return &sdk.Result{
+			Log:    err.Error(),
+			Data:   k.Codec().MustMarshalBinaryLengthPrefixed(false),
+			Events: ctx.EventManager().Events(),
+		}, nil
+	} else {
+		if err := v.RecordVote(ctx, &types.MsgVoteVerifiedToken{PollMeta: poll, VotingData: true}); err != nil {
+			k.Logger(ctx).Error(sdkerrors.Wrap(err, "voting failed").Error())
+			return &sdk.Result{
+				Log:    err.Error(),
+				Data:   k.Codec().MustMarshalBinaryLengthPrefixed(false),
+				Events: ctx.EventManager().Events(),
+			}, nil
+		}
+		return &sdk.Result{
+			Log:    "successfully verified transaction",
+			Data:   k.Codec().MustMarshalBinaryLengthPrefixed(true),
+			Events: ctx.EventManager().Events(),
+		}, nil
+	}
+
+}
+
 func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v types.Voter, msg types.MsgVerifyTx) (*sdk.Result, error) {
 	k.Logger(ctx).Debug("verifying ethereum transaction")
 	tx := msg.UnmarshaledTx()
@@ -177,7 +239,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v 
 	 but only validators will later send out that vote.
 	*/
 
-	if err := verifyTx(ctx, k, rpc, tx); err != nil {
+	if err := verifyTx(ctx, k, rpc, tx.Hash()); err != nil {
 		k.Logger(ctx).Debug(sdkerrors.Wrapf(err, "expected transaction (%s) could not be verified", txID).Error())
 		if err := v.RecordVote(ctx, &types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false}); err != nil {
 			k.Logger(ctx).Error(sdkerrors.Wrap(err, "voting failed").Error())
@@ -225,7 +287,36 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, ms
 	}
 
 	if confirmed := v.Result(ctx, msg.Poll()); confirmed != nil {
-		if err := k.ProcessVerificationResult(ctx, msg.PollMeta.ID, confirmed.(bool)); err != nil {
+		if err := k.ProcessTxVerificationResult(ctx, msg.PollMeta.ID, confirmed.(bool)); err != nil {
+
+			return nil, err
+		}
+
+		v.DeletePoll(ctx, msg.Poll())
+
+		event = event.AppendAttributes(sdk.NewAttribute(types.AttributePollConfirmed, strconv.FormatBool(confirmed.(bool))))
+	}
+
+	ctx.EventManager().EmitEvent(event)
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+}
+
+// This can be used as a potential hook to immediately act on a poll being decided by the vote
+func handleMsgVoteVerifiedToken(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg *types.MsgVoteVerifiedToken) (*sdk.Result, error) {
+	event := sdk.NewEvent(
+		sdk.EventTypeMessage,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+		sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+		sdk.NewAttribute(types.AttributePoll, msg.PollMeta.String()),
+		sdk.NewAttribute(types.AttributeVotingData, strconv.FormatBool(msg.VotingData)),
+	)
+
+	if err := v.TallyVote(ctx, msg); err != nil {
+		return nil, err
+	}
+
+	if confirmed := v.Result(ctx, msg.Poll()); confirmed != nil {
+		if err := k.ProcessSymbolVerificationResult(ctx, msg.PollMeta.ID, confirmed.(bool)); err != nil {
 
 			return nil, err
 		}
@@ -328,8 +419,7 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 	}, nil
 }
 
-func verifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, expectedTx *ethTypes.Transaction) error {
-	hash := expectedTx.Hash()
+func verifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, hash common.Hash) error {
 	receipt, err := rpc.TransactionReceipt(context.Background(), hash)
 	if err != nil {
 		return sdkerrors.Wrap(err, "could not retrieve Ethereum receipt")
@@ -343,5 +433,24 @@ func verifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, expectedTx 
 	if (blockNumber - receipt.BlockNumber.Uint64()) < k.GetRequiredConfirmationHeight(ctx) {
 		return fmt.Errorf("not enough confirmations yet")
 	}
+	return nil
+}
+
+func verifyToken(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, expectedSymbol string, contract common.Address) error {
+
+	msg := ethereumRoot.CallMsg{
+		From: common.Address{},
+		To:   &contract,
+		Data: crypto.Keccak256([]byte("symbol()")),
+	}
+
+	result, err := rpc.CallContract(context.Background(), msg, nil)
+	if err != nil {
+		return sdkerrors.Wrap(err, "could not query symbol")
+	}
+	if expectedSymbol != string(result) {
+		return sdkerrors.Wrapf(types.ErrEthereum, "symbol mismatch: expected '%s', received '%s'", expectedSymbol, result)
+	}
+
 	return nil
 }
