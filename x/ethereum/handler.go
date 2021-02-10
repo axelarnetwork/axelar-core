@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"strconv"
 
-	ethereumRoot "github.com/ethereum/go-ethereum"
-
 	"github.com/ethereum/go-ethereum/common"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -331,24 +329,5 @@ func verifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, hash common
 	if (blockNumber - receipt.BlockNumber.Uint64()) < k.GetRequiredConfirmationHeight(ctx) {
 		return fmt.Errorf("not enough confirmations yet")
 	}
-	return nil
-}
-
-func verifyToken(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, expectedSymbol string, contract common.Address) error {
-
-	msg := ethereumRoot.CallMsg{
-		From: common.Address{},
-		To:   &contract,
-		Data: crypto.Keccak256([]byte("symbol()")),
-	}
-
-	result, err := rpc.CallContract(context.Background(), msg, nil)
-	if err != nil {
-		return sdkerrors.Wrap(err, "could not query symbol")
-	}
-	if expectedSymbol != string(result) {
-		return sdkerrors.Wrapf(types.ErrEthereum, "symbol mismatch: expected '%s', received '%s'", expectedSymbol, result)
-	}
-
 	return nil
 }
