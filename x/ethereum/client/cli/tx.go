@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"strconv"
 
+	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -30,6 +31,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 	ethTxCmd.AddCommand(
 		flags.PostCommands(
+			GetCmdLink(cdc),
 			GetCmdSignTx(cdc),
 			GetCmdVerifyTx(cdc),
 			GetCmdSignPendingTransfersTx(cdc),
@@ -38,6 +40,33 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	)
 
 	return ethTxCmd
+}
+
+// GetCmdLink links a cross chain address to a bitcoin address created by Axelar
+func GetCmdLink(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "link [chain] [address] [symbol] [gateway address]",
+		Short: "Link a cross chain address to an ethereum address created by Axelar",
+		Args:  cobra.ExactArgs(4),
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
+
+			chain := balance.ChainFromString(args[0])
+			address := balance.CrossChainAddress{Chain: chain, Address: args[1]}
+
+			if err := address.Validate(); err != nil {
+				return err
+			}
+
+			msg := types.MsgLink{Sender: cliCtx.GetFromAddress(), Recipient: address, Symbol: args[2], GatewayAddr: args[3]}
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
 }
 
 // GetCmdSignTx returns the cli command to sign the given transaction
