@@ -6,6 +6,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum/common/math"
 
 	bitcoin "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/types"
@@ -43,6 +44,11 @@ func Codec() *codec.Codec {
 	return cdc
 }
 
+// RandPosInt returns a non-negative pseudo-random integer
+func RandPosInt() int64 {
+	return rand.Int63()
+}
+
 // RandIntBetween returns a random integer between lower (inclusive) and upper (exclusive).
 // It panics if  upper <= lower.
 func RandIntBetween(lower int64, upper int64) int64 {
@@ -68,8 +74,8 @@ type RandIntGen struct {
 	wrapped *RandIntGen
 }
 
-// RandInts returns a random integer generator for positive integers.
-func RandInts() RandIntGen {
+// RandPosInts returns a random integer generator for positive integers.
+func RandPosInts() RandIntGen {
 	return generateInt64(rand.Int63)
 }
 
@@ -184,6 +190,60 @@ func (g RandBoolGen) Stop() {
 	// The underlying generator might be stuck in the default select case trying to push a value into the channel,
 	// so we need to make sure it is unstuck to be able to close the output channel
 	<-g.ch
+}
+
+// RandDistrGen represents a probability distribution that can be sampled
+type RandDistrGen struct {
+	total  int64
+	states []int64
+}
+
+// RandDistr generates a new probability distribution with n states of random probability
+func RandDistr(n int) RandDistrGen {
+	if n < 1 {
+		panic("at least one state necessary")
+	}
+	gen := &RandDistrGen{}
+	// the larger the resolution the higher the potential deviation of probabilities between states
+	var resolution int64 = 10
+
+	// Ensure the total stays in int64
+	if resolution*int64(n) > math.MaxInt32 {
+		panic("decrease either number of states or resolution")
+	}
+	for _, n := range RandIntsBetween(1, resolution*int64(n)).Take(n) {
+		gen.total += n
+		gen.states = append(gen.states, gen.total)
+	}
+	return *gen
+}
+
+// Samples returns n samples drawn from the given distribution
+func (g RandDistrGen) Samples(n int) []int {
+	var samples []int
+	for i := 0; i < n; i++ {
+		samples = append(samples, g.Draw())
+	}
+	return samples
+}
+
+// Draw returns a single sample drawn from the given distribution
+func (g RandDistrGen) Draw() int {
+	return binSearch(g.states, RandIntBetween(0, g.total))
+}
+
+func binSearch(a []int64, search int64) int {
+	mid := len(a) / 2
+	switch {
+	case len(a) == 0:
+		return -1 // not found
+	case a[mid] > search:
+		return binSearch(a[:mid], search)
+	case a[mid] < search:
+		return binSearch(a[mid+1:], search)
+	default:
+		return mid
+	}
 }
 
 // RandStringGen represents an random string generator.

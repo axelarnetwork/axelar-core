@@ -21,7 +21,7 @@ func TestRandBoolGen(t *testing.T) {
 }
 
 func intTake10(t *testing.T) {
-	g := RandInts()
+	g := RandPosInts()
 	defer g.Stop()
 
 	nums := g.Take(10)
@@ -70,7 +70,7 @@ func between0And50GreaterThan25LesserThan30OrExactly45Take20(t *testing.T) {
 }
 
 func intStop(t *testing.T) {
-	g1 := RandInts()
+	g1 := RandPosInts()
 	g2 := g1.Where(func(_ int64) bool { return true })
 	g3 := g2.Where(func(_ int64) bool { return true })
 	g4 := g3.Where(func(_ int64) bool { return true })

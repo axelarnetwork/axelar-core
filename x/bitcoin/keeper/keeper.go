@@ -19,22 +19,24 @@ import (
 )
 
 const (
-	rawPrefix             = "raw_"
-	outPointPrefix        = "out_"
-	pendingPrefix         = "pend_"
-	addrPrefix            = "addr_"
-	scriptPrefix          = "script_"
-	keyIDbyAddrPrefix     = "addrID_"
-	keyIDbyOutPointPrefix = "outID_"
+	pendingPrefix          = "pend_"
+	verifiedOutPointPrefix = "ver_"
+	spentOutPointPrefix    = "spent_"
+	rawPrefix              = "raw_"
+	scriptPrefix           = "script_"
+	keyIDbyAddrPrefix      = "addrID_"
+	keyIDbyOutPointPrefix  = "outID_"
 )
 
+// Keeper provides access to all state changes regarding the Bitcoin module
 type Keeper struct {
 	storeKey sdk.StoreKey
 	cdc      *codec.Codec
 	params   params.Subspace
 }
 
-func NewBtcKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
+// NewKeeper returns a new keeper object
+func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
 	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable())}
 }
 
@@ -55,18 +57,6 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-func (k Keeper) SetTrackedAddress(ctx sdk.Context, address string) {
-	ctx.KVStore(k.storeKey).Set([]byte(addrPrefix+address), []byte{})
-}
-
-func (k Keeper) GetTrackedAddress(ctx sdk.Context, address string) string {
-	val := ctx.KVStore(k.storeKey).Get([]byte(addrPrefix + address))
-	if val == nil {
-		return ""
-	}
-	return address
-}
-
 // GetRequiredConfirmationHeight returns the minimum number of confirmations a transaction must have on Bitcoin
 // before axelar will accept it for verification.
 func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context) uint64 {
@@ -75,14 +65,17 @@ func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context) uint64 {
 	return h
 }
 
+// Codec returns the codec used by the keeper to marshal and unmarshal data
 func (k Keeper) Codec() *codec.Codec {
 	return k.cdc
 }
 
+// SetKeyIDByAddress stores the ID of the key that controls the given address
 func (k Keeper) SetKeyIDByAddress(ctx sdk.Context, address string, keyID string) {
 	ctx.KVStore(k.storeKey).Set([]byte(keyIDbyAddrPrefix+address), []byte(keyID))
 }
 
+// GetKeyIDByAddress returns the ID of the key that was used to create the given address
 func (k Keeper) GetKeyIDByAddress(ctx sdk.Context, address string) (string, bool) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(keyIDbyAddrPrefix + address))
 	if bz == nil {
@@ -91,10 +84,12 @@ func (k Keeper) GetKeyIDByAddress(ctx sdk.Context, address string) (string, bool
 	return string(bz), true
 }
 
+// SetKeyIDByOutpoint stores the ID of the key that controls the address corresponding to the given outpoint
 func (k Keeper) SetKeyIDByOutpoint(ctx sdk.Context, outpoint *wire.OutPoint, keyID string) {
 	ctx.KVStore(k.storeKey).Set([]byte(keyIDbyOutPointPrefix+outpoint.String()), []byte(keyID))
 }
 
+// GetKeyIDByOutpoint returns the ID of the key that controls the address corresponding to the given outpoint
 func (k Keeper) GetKeyIDByOutpoint(ctx sdk.Context, outpoint *wire.OutPoint) (string, bool) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(keyIDbyOutPointPrefix + outpoint.String()))
 	if bz == nil {
@@ -103,6 +98,7 @@ func (k Keeper) GetKeyIDByOutpoint(ctx sdk.Context, outpoint *wire.OutPoint) (st
 	return string(bz), true
 }
 
+// GetRawTx returns a previously created unsigned Bitcoin transaction that spends the given outpoint
 func (k Keeper) GetRawTx(ctx sdk.Context, outpoint *wire.OutPoint) *wire.MsgTx {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(rawPrefix + outpoint.String()))
 	if bz == nil {
@@ -114,17 +110,15 @@ func (k Keeper) GetRawTx(ctx sdk.Context, outpoint *wire.OutPoint) *wire.MsgTx {
 	return tx
 }
 
+// SetRawTx stores an unsigned Bitcoin transaction that spends the given outpoint
 func (k Keeper) SetRawTx(ctx sdk.Context, outpoint *wire.OutPoint, tx *wire.MsgTx) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(tx)
 	ctx.KVStore(k.storeKey).Set([]byte(rawPrefix+outpoint.String()), bz)
 }
 
-func (k Keeper) HasVerifiedOutPoint(ctx sdk.Context, outPoint *wire.OutPoint) bool {
-	return ctx.KVStore(k.storeKey).Has([]byte(outPointPrefix + outPoint.String()))
-}
-
+// GetVerifiedOutPointInfo returns additional information for the given outpoint, if it was verified
 func (k Keeper) GetVerifiedOutPointInfo(ctx sdk.Context, outPoint *wire.OutPoint) (types.OutPointInfo, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(outPointPrefix + outPoint.String()))
+	bz := ctx.KVStore(k.storeKey).Get([]byte(verifiedOutPointPrefix + outPoint.String()))
 	if bz == nil {
 		return types.OutPointInfo{}, false
 	}
@@ -134,11 +128,13 @@ func (k Keeper) GetVerifiedOutPointInfo(ctx sdk.Context, outPoint *wire.OutPoint
 	return out, true
 }
 
+// SetUnverifiedOutpointInfo stores the outpoint information of an unverified Bitcoin transaction
 func (k Keeper) SetUnverifiedOutpointInfo(ctx sdk.Context, info types.OutPointInfo) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(info)
 	ctx.KVStore(k.storeKey).Set([]byte(pendingPrefix+info.OutPoint.String()), bz)
 }
 
+// GetUnverifiedOutPointInfo returns additional information for the given unverified outpoint
 func (k Keeper) GetUnverifiedOutPointInfo(ctx sdk.Context, outpoint *wire.OutPoint) (types.OutPointInfo, bool) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingPrefix + outpoint.String()))
 	if bz == nil {
@@ -150,17 +146,18 @@ func (k Keeper) GetUnverifiedOutPointInfo(ctx sdk.Context, outpoint *wire.OutPoi
 	return info, true
 }
 
-// ProcessVerificationResult stores the info related to the specified outpoint (format txID:voutIdx) permanently if confirmed or discards the data otherwise
-func (k Keeper) ProcessVerificationResult(ctx sdk.Context, outPoint string, verified bool) error {
+// ProcessVerificationResult stores the info related to the specified outpoint (format txID:voutIdx) permanently if confirmed or discards the data otherwise.
+// Does nothing if the outPoint is unknown
+func (k Keeper) ProcessVerificationResult(ctx sdk.Context, outPoint string, verified bool) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingPrefix + outPoint))
 	if bz == nil {
-		return fmt.Errorf("outpoint %s not found", outPoint)
-	}
-	if verified {
-		ctx.KVStore(k.storeKey).Set([]byte(outPointPrefix+outPoint), bz)
+		k.Logger(ctx).Debug(fmt.Sprintf("outpoint %s is not known", outPoint))
+		return
 	}
 	ctx.KVStore(k.storeKey).Delete([]byte(pendingPrefix + outPoint))
-	return nil
+	if verified {
+		ctx.KVStore(k.storeKey).Set([]byte(verifiedOutPointPrefix+outPoint), bz)
+	}
 }
 
 // GenerateDepositAddressAndRedeemScript creates a Bitcoin address to deposit tokens for a transfer to the recipient address,
@@ -178,15 +175,18 @@ func (k Keeper) GenerateDepositAddressAndRedeemScript(ctx sdk.Context, pk btcec.
 	return addr, redeemScript, nil
 }
 
+// SetRedeemScript stores the full redeem script corresponding to the given address (the hash of the script was used to generate the address)
 func (k Keeper) SetRedeemScript(ctx sdk.Context, address btcutil.Address, script []byte) {
 	ctx.KVStore(k.storeKey).Set([]byte(scriptPrefix+address.String()), script)
 }
 
+// GetRedeemScript returns the full redeem script corresponding to the given address (the hash of the script was used to generate the address)
 func (k Keeper) GetRedeemScript(ctx sdk.Context, address btcutil.Address) ([]byte, bool) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(scriptPrefix + address.String()))
 	return bz, bz != nil
 }
 
+// GetHashToSign returns the hash that needs to be signed to create a valid signature for the given unsigned Bitcoin transaction
 func (k Keeper) GetHashToSign(ctx sdk.Context, rawTx *wire.MsgTx) ([]byte, error) {
 	if len(rawTx.TxIn) != 1 {
 		return nil, fmt.Errorf("transaction must have exactly one input")
@@ -197,7 +197,7 @@ func (k Keeper) GetHashToSign(ctx sdk.Context, rawTx *wire.MsgTx) ([]byte, error
 		return nil, fmt.Errorf("transaction ID is not known")
 	}
 
-	addr, err := btcutil.DecodeAddress(prevOutInfo.DepositAddr, k.getNetwork(ctx).Params)
+	addr, err := btcutil.DecodeAddress(prevOutInfo.Address, k.getNetwork(ctx).Params)
 	if err != nil {
 		return nil, err
 	}
@@ -209,13 +209,15 @@ func (k Keeper) GetHashToSign(ctx sdk.Context, rawTx *wire.MsgTx) ([]byte, error
 	return txscript.CalcWitnessSigHash(script, txscript.NewTxSigHashes(rawTx), txscript.SigHashAll, rawTx, 0, int64(prevOutInfo.Amount))
 }
 
+// AssembleBtcTx assembles the unsigned transaction and given signature.
+// Returns a an error the resulting signed Bitcoin transaction is invalid.
 func (k Keeper) AssembleBtcTx(ctx sdk.Context, rawTx *wire.MsgTx, sig btcec.Signature) (*wire.MsgTx, error) {
 	prevOutInfo, ok := k.GetVerifiedOutPointInfo(ctx, &rawTx.TxIn[0].PreviousOutPoint)
 	if !ok {
 		return nil, fmt.Errorf("transaction ID is not known")
 	}
 
-	addr, err := btcutil.DecodeAddress(prevOutInfo.DepositAddr, k.getNetwork(ctx).Params)
+	addr, err := btcutil.DecodeAddress(prevOutInfo.Address, k.getNetwork(ctx).Params)
 	if err != nil {
 		return nil, err
 	}
@@ -250,6 +252,29 @@ func (k Keeper) createWitness(ctx sdk.Context, sig btcec.Signature, address btcu
 		return nil, fmt.Errorf("redeem script for address %s not found", address.String())
 	}
 	return wire.TxWitness{sigBytes, redeemScript}, nil
+}
+
+// GetVerifiedOutPoints returns all unspent verified outpoints controlled by Axelar-Core
+func (k Keeper) GetVerifiedOutPoints(ctx sdk.Context) []*wire.OutPoint {
+	var outs []*wire.OutPoint
+	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(verifiedOutPointPrefix))
+	for ; iter.Valid(); iter.Next() {
+		var info types.OutPointInfo
+		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &info)
+		outs = append(outs, info.OutPoint)
+	}
+	return outs
+}
+
+// SpendVerifiedOutPoint marks the given outpoint as spent
+func (k Keeper) SpendVerifiedOutPoint(ctx sdk.Context, outPoint string) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(verifiedOutPointPrefix + outPoint))
+	if bz == nil {
+		k.Logger(ctx).Debug(fmt.Sprintf("outpoint %s is either unknown, unverified or already spent", outPoint))
+		return
+	}
+	ctx.KVStore(k.storeKey).Delete([]byte(verifiedOutPointPrefix + outPoint))
+	ctx.KVStore(k.storeKey).Set([]byte(spentOutPointPrefix+outPoint), bz)
 }
 
 func validateTxScripts(prevOutInfo types.OutPointInfo, tx *wire.MsgTx, pkScript []byte) error {

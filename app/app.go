@@ -259,7 +259,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 			app.slashingKeeper.Hooks()),
 	)
 
-	app.btcKeeper = btcKeeper.NewBtcKeeper(app.cdc, keys[btcTypes.StoreKey], btcSubspace)
+	app.btcKeeper = btcKeeper.NewKeeper(app.cdc, keys[btcTypes.StoreKey], btcSubspace)
 
 	app.ethKeeper = ethKeeper.NewEthKeeper(app.cdc, keys[ethTypes.StoreKey], ethSubspace)
 

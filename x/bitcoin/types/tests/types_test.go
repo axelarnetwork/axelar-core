@@ -30,14 +30,14 @@ func TestOutPointInfo_Equals(t *testing.T) {
 	op1 := types.OutPointInfo{
 		OutPoint:      wire.NewOutPoint(hash1, 3),
 		Amount:        0,
-		DepositAddr:   "recipient",
+		Address:       "recipient",
 		Confirmations: 16,
 	}
 
 	op2 := types.OutPointInfo{
 		OutPoint:      wire.NewOutPoint(hash2, 3),
 		Amount:        0,
-		DepositAddr:   "recipient",
+		Address:       "recipient",
 		Confirmations: 16,
 	}
 

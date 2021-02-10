@@ -33,7 +33,7 @@ const testReps = 100
 func TestLink_NoMasterKey(t *testing.T) {
 	cdc := testutils.Codec()
 	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
+	k := keeper.NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k.SetParams(ctx, types.DefaultParams())
 
@@ -55,7 +55,7 @@ func TestLink_NoMasterKey(t *testing.T) {
 func TestLink_Success(t *testing.T) {
 	cdc := testutils.Codec()
 	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
+	k := keeper.NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k.SetParams(ctx, types.DefaultParams())
 
@@ -96,7 +96,7 @@ func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 	cdc := testutils.Codec()
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
+	k := keeper.NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
 	k.SetParams(ctx, types.DefaultParams())
 	rpc := btcMock.RPCClientMock{
 		GetOutPointInfoFunc: func(*chainhash.Hash, *wire.OutPoint) (types.OutPointInfo, error) {
@@ -122,7 +122,7 @@ func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 		OutPoint:      outpoint,
 		BlockHash:     blockHash,
 		Amount:        10,
-		DepositAddr:   "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
+		Address:       "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
 		Confirmations: 7,
 	}
 	if err := info.Validate(); err != nil {
@@ -148,7 +148,7 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 	cdc := testutils.Codec()
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
+	k := keeper.NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
 	k.SetParams(ctx, types.DefaultParams())
 
 	txHash, err := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
@@ -164,7 +164,7 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 		OutPoint:      outPoint,
 		BlockHash:     blockHash,
 		Amount:        10,
-		DepositAddr:   "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
+		Address:       "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
 		Confirmations: 7,
 	}
 	if err := info.Validate(); err != nil {
@@ -210,7 +210,7 @@ func TestVoteVerifiedTx_NoUnverifiedOutPointWithVoteResult(t *testing.T) {
 	cdc := testutils.Codec()
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
+	k := keeper.NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
 	k.SetParams(ctx, types.DefaultParams())
 
 	v := &btcMock.VoterMock{
@@ -230,7 +230,7 @@ func TestVoteVerifiedTx_IncompleteVote(t *testing.T) {
 	cdc := testutils.Codec()
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
+	k := keeper.NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
 	k.SetParams(ctx, types.DefaultParams())
 
 	txHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
@@ -249,7 +249,7 @@ func TestVoteVerifiedTx_IncompleteVote(t *testing.T) {
 		OutPoint:      outpoint,
 		BlockHash:     blockHash,
 		Amount:        btcutil.Amount(1000000),
-		DepositAddr:   "sender",
+		Address:       "sender",
 		Confirmations: 100,
 	}
 	k.SetUnverifiedOutpointInfo(ctx, outpointInfo)
@@ -282,7 +282,7 @@ func TestVoteVerifiedTx_KeyIDNotFound(t *testing.T) {
 	cdc := testutils.Codec()
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
+	k := keeper.NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
 	k.SetParams(ctx, types.DefaultParams())
 
 	txHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
@@ -301,7 +301,7 @@ func TestVoteVerifiedTx_KeyIDNotFound(t *testing.T) {
 		OutPoint:      outpoint,
 		BlockHash:     blockHash,
 		Amount:        btcutil.Amount(1000000),
-		DepositAddr:   "sender",
+		Address:       "sender",
 		Confirmations: 100,
 	}
 	k.SetUnverifiedOutpointInfo(ctx, outpointInfo)
@@ -333,7 +333,7 @@ func TestVoteVerifiedTx_SucessNoTransfer(t *testing.T) {
 	cdc := testutils.Codec()
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
+	k := keeper.NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
 	k.SetParams(ctx, types.DefaultParams())
 
 	txHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
@@ -352,7 +352,7 @@ func TestVoteVerifiedTx_SucessNoTransfer(t *testing.T) {
 		OutPoint:      outpoint,
 		BlockHash:     blockHash,
 		Amount:        btcutil.Amount(1000000),
-		DepositAddr:   "sender",
+		Address:       "sender",
 		Confirmations: 100,
 	}
 	k.SetUnverifiedOutpointInfo(ctx, outpointInfo)
@@ -385,7 +385,7 @@ func TestVoteVerifiedTx_SucessAndTransfer(t *testing.T) {
 	cdc := testutils.Codec()
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
+	k := keeper.NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
 	k.SetParams(ctx, types.DefaultParams())
 
 	txHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
@@ -404,7 +404,7 @@ func TestVoteVerifiedTx_SucessAndTransfer(t *testing.T) {
 		OutPoint:      outpoint,
 		BlockHash:     blockHash,
 		Amount:        btcutil.Amount(1000000),
-		DepositAddr:   "sender",
+		Address:       "sender",
 		Confirmations: 100,
 	}
 	k.SetUnverifiedOutpointInfo(ctx, outpointInfo)
@@ -450,7 +450,7 @@ func TestSignTx(t *testing.T) {
 	cdc := testutils.Codec()
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	k := keeper.NewBtcKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
+	k := keeper.NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
 	k.SetParams(ctx, types.DefaultParams())
 
 	var sk, skNext *ecdsa.PrivateKey
@@ -538,13 +538,10 @@ func prepareMsgSign(ctx sdk.Context, k keeper.Keeper, querier sdk.Querier, sk *e
 	k.SetUnverifiedOutpointInfo(ctx, types.OutPointInfo{
 		OutPoint:      outPoint,
 		Amount:        amount,
-		DepositAddr:   addr.EncodeAddress(),
+		Address:       addr.EncodeAddress(),
 		Confirmations: uint64(testutils.RandIntBetween(7, 1000)),
 	})
-	err = k.ProcessVerificationResult(ctx, outPoint.String(), true)
-	if err != nil {
-		panic(err)
-	}
+	k.ProcessVerificationResult(ctx, outPoint.String(), true)
 	sender := sdk.AccAddress(testutils.RandString(int(testutils.RandIntBetween(5, 50))))
 
 	qParams := types.RawTxParams{OutPoint: outPoint, Satoshi: sdk.NewInt64Coin(denom.Satoshi, int64(amount)), DepositAddr: addr.EncodeAddress()}

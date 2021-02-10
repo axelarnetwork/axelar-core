@@ -26,7 +26,7 @@ type OutPointInfo struct {
 	OutPoint      *wire.OutPoint
 	Amount        btcutil.Amount
 	BlockHash     *chainhash.Hash
-	DepositAddr   string
+	Address       string
 	Confirmations uint64
 }
 
@@ -41,7 +41,7 @@ func (i OutPointInfo) Validate() error {
 	if i.Amount <= 0 {
 		return fmt.Errorf("amount must be greater than 0")
 	}
-	if i.DepositAddr == "" {
+	if i.Address == "" {
 		return fmt.Errorf("invalid address to track")
 	}
 	return nil
@@ -52,7 +52,7 @@ func (i OutPointInfo) Equals(other OutPointInfo) bool {
 	return i.OutPoint.Hash.IsEqual(&other.OutPoint.Hash) &&
 		i.OutPoint.Index == other.OutPoint.Index &&
 		i.Amount == other.Amount &&
-		i.DepositAddr == other.DepositAddr
+		i.Address == other.Address
 }
 
 // Network provides additional functionality based on the bitcoin network name

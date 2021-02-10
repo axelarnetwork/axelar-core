@@ -170,7 +170,7 @@ func (r *RPCClientImpl) GetOutPointInfo(blockHash *chainhash.Hash, out *wire.Out
 		OutPoint:      out,
 		BlockHash:     blockHash,
 		Amount:        amount,
-		DepositAddr:   vout.ScriptPubKey.Addresses[0],
+		Address:       vout.ScriptPubKey.Addresses[0],
 		Confirmations: tx.Confirmations,
 	}, nil
 }
