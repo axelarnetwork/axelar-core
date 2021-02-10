@@ -9,6 +9,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/tendermint/tendermint/libs/log"
 
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -18,10 +19,14 @@ import (
 )
 
 const (
-	rawPrefix     = "raw_"
-	txPrefix      = "tx_"
-	pendingPrefix = "pend_"
-	commandPrefix = "command_"
+	rawPrefix           = "raw_"
+	symbolPrefix        = "symbol_"
+	txPrefix            = "tx_"
+	pendingSymbolPrefix = "pend_symbol_"
+	pendingTXPrefix     = "pend_tx_"
+	commandPrefix       = "command_"
+
+	gatewayKey = "gateway"
 )
 
 type Keeper struct {
@@ -61,6 +66,15 @@ func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context) uint64 {
 	return h
 }
 
+func (k Keeper) getGatewayAddress(ctx sdk.Context) (common.Address, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(gatewayKey))
+	if bz == nil {
+		return common.Address{}, false
+	}
+
+	return common.BytesToAddress(bz), true
+}
+
 func (k Keeper) SetCommandData(ctx sdk.Context, commandID types.CommandID, commandData []byte) {
 	key := append([]byte(commandPrefix), commandID[:]...)
 
@@ -94,23 +108,74 @@ func (k Keeper) HasVerifiedTx(ctx sdk.Context, txID string) bool {
 }
 
 func (k Keeper) SetUnverifiedTx(ctx sdk.Context, txID string, tx *ethTypes.Transaction) {
-	ctx.KVStore(k.storeKey).Set([]byte(pendingPrefix+txID), tx.Hash().Bytes())
+	ctx.KVStore(k.storeKey).Set([]byte(pendingTXPrefix+txID), tx.Hash().Bytes())
 }
 
 func (k Keeper) HasUnverifiedTx(ctx sdk.Context, txID string) bool {
-	return ctx.KVStore(k.storeKey).Has([]byte(pendingPrefix + txID))
+	return ctx.KVStore(k.storeKey).Has([]byte(pendingTXPrefix + txID))
 }
 
-// ProcessVerificationResult stores the TX permanently if confirmed or discards the data otherwise
-func (k Keeper) ProcessVerificationResult(ctx sdk.Context, txID string, verified bool) error {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingPrefix + txID))
+func (k Keeper) getContractAddress(ctx sdk.Context, symbol string) (common.Address, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingSymbolPrefix + symbol))
+	if bz == nil {
+		return common.Address{}, false
+	}
+
+	return common.BytesToAddress(bz), true
+}
+
+func (k Keeper) HasVerifiedSymbol(ctx sdk.Context, symbol string) bool {
+	return ctx.KVStore(k.storeKey).Has([]byte(symbolPrefix + symbol))
+}
+
+func (k Keeper) SetUnverifiedSymbol(ctx sdk.Context, symbol string, addr common.Address) {
+	ctx.KVStore(k.storeKey).Set([]byte(pendingSymbolPrefix+symbol), addr.Bytes())
+}
+
+func (k Keeper) HasUnverifiedSymbol(ctx sdk.Context, symbol string) bool {
+	return ctx.KVStore(k.storeKey).Has([]byte(pendingSymbolPrefix + symbol))
+}
+
+// ProcessTxVerificationResult stores the TX permanently if confirmed or discards the data otherwise
+func (k Keeper) ProcessTxVerificationResult(ctx sdk.Context, txID string, verified bool) error {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingTXPrefix + txID))
 	if bz == nil {
 		return fmt.Errorf("tx %s not found", txID)
 	}
 	if verified {
 		ctx.KVStore(k.storeKey).Set([]byte(txPrefix+txID), bz)
+
+		// calculate contract address of the verified tx and store it
+		// as the address for the axelar gateway
+		var tx *ethTypes.Transaction
+		k.cdc.MustUnmarshalJSON(bz, &tx)
+
+		_, r, s := tx.RawSignatureValues()
+		sig := types.Signature{}
+		copy(sig[:32], common.LeftPadBytes(r.Bytes(), 32))
+		copy(sig[32:], common.LeftPadBytes(s.Bytes(), 32))
+
+		pubKey, err := crypto.SigToPub(tx.Hash().Bytes(), sig[:])
+		if err != nil {
+			return err
+		}
+
+		contractAddr := crypto.CreateAddress(crypto.PubkeyToAddress(*pubKey), tx.Nonce())
+		ctx.KVStore(k.storeKey).Set([]byte(gatewayKey+txID), contractAddr.Bytes())
 	}
-	ctx.KVStore(k.storeKey).Delete([]byte(pendingPrefix + txID))
+	ctx.KVStore(k.storeKey).Delete([]byte(pendingTXPrefix + txID))
+	return nil
+}
+
+func (k Keeper) ProcessSymbolVerificationResult(ctx sdk.Context, symbol string, verified bool) error {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingSymbolPrefix + symbol))
+	if bz == nil {
+		return fmt.Errorf("symbol %s not found", symbol)
+	}
+	if verified {
+		ctx.KVStore(k.storeKey).Set([]byte(symbolPrefix+symbol), bz)
+	}
+	ctx.KVStore(k.storeKey).Delete([]byte(pendingSymbolPrefix + symbol))
 	return nil
 }
 
