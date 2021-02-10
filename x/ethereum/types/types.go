@@ -211,15 +211,37 @@ func GetEthereumSignHash(commandData []byte) common.Hash {
 	return crypto.Keccak256Hash([]byte(msg))
 }
 
+func transferIDtoCommandID(transferID uint64) CommandID {
+	var commandID CommandID
+
+	fmt.Printf("transferID: %d\n", transferID)
+
+	bz := make([]byte, 8)
+	binary.BigEndian.PutUint64(bz, transferID)
+
+	copy(commandID[:], common.LeftPadBytes(bz, 32)[:32])
+
+	return commandID
+}
+
 // CreateMintCommandData returns the command data to mint tokens for the specified transfers
-func CreateMintCommandData(chainID *big.Int, commandID CommandID, transfers []balance.CrossChainTransfer) ([]byte, error) {
-	addresses, denoms, amounts := flatTransfers(transfers)
-	mintParams, err := createMintParams(addresses, denoms, amounts)
-	if err != nil {
-		return nil, err
+func CreateMintCommandData(chainID *big.Int, transfers []balance.CrossChainTransfer) ([]byte, error) {
+	var commandIDs []CommandID
+	var commands []string
+	var commandParams [][]byte
+
+	for _, transfer := range transfers {
+		commandParam, err := createMintParams(transfer.Recipient.Address, transfer.Amount.Denom, transfer.Amount.Amount.BigInt())
+		if err != nil {
+			return nil, err
+		}
+
+		commandIDs = append(commandIDs, transferIDtoCommandID(transfer.ID))
+		commands = append(commands, axelarGatewayCommandMint)
+		commandParams = append(commandParams, commandParam)
 	}
 
-	return packArguments(chainID, commandID, axelarGatewayCommandMint, mintParams)
+	return packArguments(chainID, commandIDs, commands, commandParams)
 }
 
 // CreateDeployTokenCommandData returns the command data to deploy the specified token
@@ -229,59 +251,50 @@ func CreateDeployTokenCommandData(chainID *big.Int, commandID CommandID, tokenNa
 		return nil, err
 	}
 
-	return packArguments(chainID, commandID, axelarGatewayCommandDeployToken, deployParams)
+	var commandIDs []CommandID
+	var commands []string
+	var commandParams [][]byte
+
+	commandIDs = append(commandIDs, commandID)
+	commands = append(commands, axelarGatewayCommandDeployToken)
+	commandParams = append(commandParams, deployParams)
+
+	return packArguments(chainID, commandIDs, commands, commandParams)
 }
 
 // CommandID represents the unique command identifier
 type CommandID [32]byte
 
-// CalculateCommandID calculates the unique command ID that is used to protect from replay attacks in the AxelarGateway contract
-// TODO: Remove this function after https://github.com/axelarnetwork/ethereum-bridge/issues/3 is implemented
-func CalculateCommandID(transfers []balance.CrossChainTransfer) CommandID {
-	var result CommandID
-	var hash []byte
-
-	for _, transfer := range transfers {
-		idByte := make([]byte, 8)
-		binary.LittleEndian.PutUint64(idByte, transfer.ID)
-
-		hash = crypto.Keccak256(hash, idByte)
-	}
-	if hash == nil {
-		return CommandID{}
+func packArguments(chainID *big.Int, commandIDs []CommandID, commands []string, commandParams [][]byte) ([]byte, error) {
+	if len(commandIDs) != len(commands) || len(commandIDs) != len(commandParams) {
+		return nil, fmt.Errorf("length mismatch for command arguments")
 	}
 
-	copy(result[:], hash[:32])
-
-	return result
-}
-
-func packArguments(chainID *big.Int, commandID CommandID, command string, commandParams []byte) ([]byte, error) {
 	uint256Type, err := abi.NewType("uint256", "uint256", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	bytes32Type, err := abi.NewType("bytes32", "bytes32", nil)
+	bytes32ArrayType, err := abi.NewType("bytes32[]", "bytes32[]", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	stringType, err := abi.NewType("string", "string", nil)
+	stringArrayType, err := abi.NewType("string[]", "string[]", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	bytesType, err := abi.NewType("bytes", "bytes", nil)
+	bytesArrayType, err := abi.NewType("bytes[]", "bytes[]", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	arguments := abi.Arguments{{Type: uint256Type}, {Type: bytes32Type}, {Type: stringType}, {Type: bytesType}}
+	arguments := abi.Arguments{{Type: uint256Type}, {Type: bytes32ArrayType}, {Type: stringArrayType}, {Type: bytesArrayType}}
 	result, err := arguments.Pack(
 		chainID,
-		commandID,
-		command,
+		commandIDs,
+		commands,
 		commandParams,
 	)
 	if err != nil {
@@ -291,64 +304,32 @@ func packArguments(chainID *big.Int, commandID CommandID, command string, comman
 	return result, nil
 }
 
-/* This function would strip off anything in the strings beyond 32 bytes */
-// TODO: Remove this function after https://github.com/axelarnetwork/ethereum-bridge/issues/3 is implemented
-func stringArrToByte32Arr(stringArr []string) [][32]byte {
-	var result [][32]byte
-
-	for _, str := range stringArr {
-		bz := []byte(str)
-		var byte32 [32]byte
-
-		copy(byte32[:], bz[:32])
-		result = append(result, byte32)
-	}
-
-	return result
-}
-
 /* This function would strip off anything in the hex strings beyond 32 bytes */
-func hexArrToByte32Arr(hexes []string) [][32]byte {
-	var result [][32]byte
-
-	for _, hex := range hexes {
-		var byte32 [32]byte
-
-		copy(byte32[:], common.LeftPadBytes(common.FromHex(hex), 32)[:32])
-		result = append(result, byte32)
-	}
+func hexToByte32(hex string) [32]byte {
+	var result [32]byte
+	copy(result[:], common.LeftPadBytes(common.FromHex(hex), 32)[:32])
 
 	return result
 }
 
-func createMintParams(addresses []string, denoms []string, amounts []*big.Int) ([]byte, error) {
-	length := len(addresses)
-
-	if len(denoms) != length || len(amounts) != length {
-		return nil, fmt.Errorf("addresses, denoms and amounts have different length")
-	}
-
-	bytes32ArrayType, err := abi.NewType("bytes32[]", "bytes32[]", nil)
+func createMintParams(address string, denom string, amount *big.Int) ([]byte, error) {
+	addressType, err := abi.NewType("address", "address", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	addressArrayType, err := abi.NewType("address[]", "address[]", nil)
+	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	uint256ArrayType, err := abi.NewType("uint256[]", "uint256[]", nil)
+	uint256Type, err := abi.NewType("uint256", "uint256", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	arguments := abi.Arguments{{Type: bytes32ArrayType}, {Type: addressArrayType}, {Type: uint256ArrayType}}
-	result, err := arguments.Pack(
-		stringArrToByte32Arr(denoms),
-		hexArrToByte32Arr(addresses),
-		amounts,
-	)
+	arguments := abi.Arguments{{Type: stringType}, {Type: addressType}, {Type: uint256Type}}
+	result, err := arguments.Pack(denom, hexToByte32(address), amount)
 	if err != nil {
 		return nil, err
 	}
@@ -384,18 +365,4 @@ func createDeployTokenParams(tokenName string, symbol string, decimals uint8, ca
 	}
 
 	return result, nil
-}
-
-func flatTransfers(transfers []balance.CrossChainTransfer) ([]string, []string, []*big.Int) {
-	var addresses []string
-	var denoms []string
-	var amounts []*big.Int
-
-	for _, transfer := range transfers {
-		addresses = append(addresses, transfer.Recipient.Address)
-		denoms = append(denoms, transfer.Amount.Denom)
-		amounts = append(amounts, transfer.Amount.Amount.BigInt())
-	}
-
-	return addresses, denoms, amounts
 }
