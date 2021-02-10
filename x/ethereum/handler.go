@@ -31,12 +31,8 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, b types.Bal
 			return handleMsgLink(ctx, k, b, msg)
 		case types.MsgVerifyTx:
 			return handleMsgVerifyTx(ctx, k, rpc, v, msg)
-		case types.MsgVerifyToken:
-			return handleMsgVerifyToken(ctx, k, rpc, v, msg)
 		case *types.MsgVoteVerifiedTx:
 			return handleMsgVoteVerifiedTx(ctx, k, v, msg)
-		case *types.MsgVoteVerifiedToken:
-			return handleMsgVoteVerifiedToken(ctx, k, v, msg)
 		case types.MsgSignDeployToken:
 			return handleMsgSignDeployToken(ctx, k, s, snap, msg)
 		case types.MsgSignTx:
@@ -51,7 +47,7 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, b types.Bal
 }
 
 func handleMsgLink(ctx sdk.Context, k keeper.Keeper, b types.Balancer, msg types.MsgLink) (*sdk.Result, error) {
-	burnerAddr, err := k.GetBurnerAddress(ctx, msg.Symbol, msg.Recipient.Address)
+	burnerAddr, err := k.GetBurnerAddress(ctx, msg.Symbol, msg.Recipient.Address, common.HexToAddress(msg.GatewayAddr))
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 
@@ -142,63 +138,6 @@ func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer ty
 	}, nil
 }
 
-func handleMsgVerifyToken(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v types.Voter, msg types.MsgVerifyToken) (*sdk.Result, error) {
-	k.Logger(ctx).Debug("verifying ERC20 token")
-
-	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.Symbol}
-	if err := v.InitPoll(ctx, poll); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
-	}
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeSymbol, msg.Symbol),
-		),
-	)
-
-	k.SetUnverifiedSymbol(ctx, msg.Symbol, common.HexToAddress(msg.ContractAddr))
-
-	/*
-	 Anyone not able to verify the symbol will automatically record a negative vote,
-	 but only validators will later send out that vote.
-	*/
-
-	if err := verifyToken(ctx, k, rpc, msg.Symbol, common.HexToAddress(msg.ContractAddr)); err != nil {
-		k.Logger(ctx).Debug(sdkerrors.Wrapf(err, "symbol (%s) could not be verified", msg.Symbol).Error())
-		if err := v.RecordVote(ctx, &types.MsgVoteVerifiedToken{PollMeta: poll, VotingData: false}); err != nil {
-			k.Logger(ctx).Error(sdkerrors.Wrap(err, "voting failed").Error())
-			return &sdk.Result{
-				Log:    err.Error(),
-				Data:   k.Codec().MustMarshalBinaryLengthPrefixed(false),
-				Events: ctx.EventManager().Events(),
-			}, nil
-		}
-		return &sdk.Result{
-			Log:    err.Error(),
-			Data:   k.Codec().MustMarshalBinaryLengthPrefixed(false),
-			Events: ctx.EventManager().Events(),
-		}, nil
-	} else {
-		if err := v.RecordVote(ctx, &types.MsgVoteVerifiedToken{PollMeta: poll, VotingData: true}); err != nil {
-			k.Logger(ctx).Error(sdkerrors.Wrap(err, "voting failed").Error())
-			return &sdk.Result{
-				Log:    err.Error(),
-				Data:   k.Codec().MustMarshalBinaryLengthPrefixed(false),
-				Events: ctx.EventManager().Events(),
-			}, nil
-		}
-		return &sdk.Result{
-			Log:    "successfully verified transaction",
-			Data:   k.Codec().MustMarshalBinaryLengthPrefixed(true),
-			Events: ctx.EventManager().Events(),
-		}, nil
-	}
-
-}
-
 func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v types.Voter, msg types.MsgVerifyTx) (*sdk.Result, error) {
 	k.Logger(ctx).Debug("verifying ethereum transaction")
 	tx := msg.UnmarshaledTx()
@@ -273,36 +212,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, ms
 	}
 
 	if confirmed := v.Result(ctx, msg.Poll()); confirmed != nil {
-		if err := k.ProcessTxVerificationResult(ctx, msg.PollMeta.ID, confirmed.(bool)); err != nil {
-
-			return nil, err
-		}
-
-		v.DeletePoll(ctx, msg.Poll())
-
-		event = event.AppendAttributes(sdk.NewAttribute(types.AttributePollConfirmed, strconv.FormatBool(confirmed.(bool))))
-	}
-
-	ctx.EventManager().EmitEvent(event)
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
-}
-
-// This can be used as a potential hook to immediately act on a poll being decided by the vote
-func handleMsgVoteVerifiedToken(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg *types.MsgVoteVerifiedToken) (*sdk.Result, error) {
-	event := sdk.NewEvent(
-		sdk.EventTypeMessage,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-		sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-		sdk.NewAttribute(types.AttributePoll, msg.PollMeta.String()),
-		sdk.NewAttribute(types.AttributeVotingData, strconv.FormatBool(msg.VotingData)),
-	)
-
-	if err := v.TallyVote(ctx, msg); err != nil {
-		return nil, err
-	}
-
-	if confirmed := v.Result(ctx, msg.Poll()); confirmed != nil {
-		if err := k.ProcessSymbolVerificationResult(ctx, msg.PollMeta.ID, confirmed.(bool)); err != nil {
+		if err := k.ProcessVerificationResult(ctx, msg.PollMeta.ID, confirmed.(bool)); err != nil {
 
 			return nil, err
 		}

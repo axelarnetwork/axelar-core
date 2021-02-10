@@ -8,16 +8,18 @@ import (
 )
 
 type MsgLink struct {
-	Sender    sdk.AccAddress
-	Recipient exported.CrossChainAddress
-	Symbol    string
+	Sender      sdk.AccAddress
+	Recipient   exported.CrossChainAddress
+	Symbol      string
+	GatewayAddr string
 }
 
-func NewMsgLink(sender sdk.AccAddress, destination exported.CrossChainAddress, symbol string) sdk.Msg {
+func NewMsgLink(sender sdk.AccAddress, destination exported.CrossChainAddress, symbol, gateway string) sdk.Msg {
 	return MsgLink{
-		Sender:    sender,
-		Recipient: destination,
-		Symbol:    symbol,
+		Sender:      sender,
+		Recipient:   destination,
+		Symbol:      symbol,
+		GatewayAddr: gateway,
 	}
 }
 
