@@ -67,31 +67,51 @@ func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context) uint64 {
 }
 
 func (k Keeper) GetBurnerAddress(ctx sdk.Context, symbol string, recipient string) (common.Address, error) {
-	tokenAddr, ok := k.getContractAddress(ctx, symbol)
-	if !ok {
+	tokenInfo := k.getTokenInfo(ctx, symbol)
+	if tokenInfo == nil {
 		return common.Address{}, sdkerrors.Wrap(types.ErrEthereum, "symbol not found/verified")
 
 	}
+
 	gatewayAddr, ok := k.getGatewayAddress(ctx)
 	if !ok {
 		return common.Address{}, sdkerrors.Wrap(types.ErrEthereum, "gateway not set")
 
 	}
-	var salt [32]byte
-	copy(salt[:], []byte(recipient))
 
-	concat := k.getBurneable(ctx)
-	concat = append(concat, common.LeftPadBytes(tokenAddr.Bytes(), 32)...)
-	concat = append(concat, common.LeftPadBytes(salt[:], 32)...)
+	var saltToken [32]byte
+	copy(saltToken[:], crypto.Keccak256Hash([]byte(symbol)).Bytes())
 
-	burnerInitCodeHash := crypto.Keccak256Hash(concat)
-	return crypto.CreateAddress2(gatewayAddr, salt, burnerInitCodeHash.Bytes()), nil
+	tokenInitCode := k.getTokenBC(ctx)
+	tokenInitCode = append(tokenInitCode, common.LeftPadBytes([]byte(tokenInfo.TokenName), 32)...)
+	tokenInitCode = append(tokenInitCode, common.LeftPadBytes([]byte(symbol), 32)...)
+	tokenInitCode = append(tokenInitCode, common.LeftPadBytes([]byte{tokenInfo.Decimals}, 32)...)
+	tokenInitCode = append(tokenInitCode, common.LeftPadBytes(tokenInfo.Capacity.BigInt().Bytes(), 32)...)
+
+	tokenInitCodeHash := crypto.Keccak256Hash(tokenInitCode)
+	tokenAddr := crypto.CreateAddress2(gatewayAddr, saltToken, tokenInitCodeHash.Bytes())
+
+	var saltBurn [32]byte
+	copy(saltBurn[:], crypto.Keccak256Hash([]byte(recipient)).Bytes())
+
+	burnerInitCode := k.getBurnerBC(ctx)
+	burnerInitCode = append(burnerInitCode, common.LeftPadBytes(tokenAddr.Bytes(), 32)...)
+	burnerInitCode = append(burnerInitCode, common.LeftPadBytes(saltBurn[:], 32)...)
+
+	burnerInitCodeHash := crypto.Keccak256Hash(burnerInitCode)
+	return crypto.CreateAddress2(gatewayAddr, saltBurn, burnerInitCodeHash.Bytes()), nil
 
 }
 
-func (k Keeper) getBurneable(ctx sdk.Context) []byte {
+func (k Keeper) getBurnerBC(ctx sdk.Context) []byte {
 	var b []byte
 	k.params.Get(ctx, types.KeyBurneable, &b)
+	return b
+}
+
+func (k Keeper) getTokenBC(ctx sdk.Context) []byte {
+	var b []byte
+	k.params.Get(ctx, types.KeyToken, &b)
 	return b
 }
 
@@ -102,6 +122,22 @@ func (k Keeper) getGatewayAddress(ctx sdk.Context) (common.Address, bool) {
 	}
 
 	return common.BytesToAddress(bz), true
+}
+
+func (k Keeper) SaveTokenInfo(ctx sdk.Context, msg types.MsgSignDeployToken) {
+	bz := k.cdc.MustMarshalJSON(msg)
+	ctx.KVStore(k.storeKey).Set([]byte(symbolPrefix+msg.Symbol), bz)
+}
+
+func (k Keeper) getTokenInfo(ctx sdk.Context, symbol string) *types.MsgSignDeployToken {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(symbolPrefix + symbol))
+	if bz == nil {
+		return nil
+	}
+	var msg *types.MsgSignDeployToken
+	k.cdc.MustUnmarshalJSON(bz, &msg)
+
+	return msg
 }
 
 func (k Keeper) SetCommandData(ctx sdk.Context, commandID types.CommandID, commandData []byte) {

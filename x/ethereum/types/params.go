@@ -17,7 +17,9 @@ var (
 	KeyConfirmationHeight = []byte("confirmationHeight")
 	KeyNetwork            = []byte("network")
 	KeyBurneable          = []byte("burneable")
+	KeyToken              = []byte("token")
 
+	token     = []byte{} //TODO: ask Sammy for the token contract byte codes
 	burneable = []byte{} //TODO: ask Sammy for the burner contract byte codes
 )
 
@@ -28,6 +30,7 @@ func KeyTable() subspace.KeyTable {
 type Params struct {
 	ConfirmationHeight uint64
 	Network            Network
+	Token              []byte
 	Burneable          []byte
 }
 
@@ -35,6 +38,7 @@ func DefaultParams() Params {
 	return Params{
 		ConfirmationHeight: 1,
 		Network:            Ganache,
+		Token:              token,
 		Burneable:          burneable,
 	}
 }

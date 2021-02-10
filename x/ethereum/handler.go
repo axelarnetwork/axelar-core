@@ -348,6 +348,8 @@ func handleMsgSignDeployToken(ctx sdk.Context, k keeper.Keeper, signer types.Sig
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
 
+	k.SaveTokenInfo(ctx, msg)
+
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
