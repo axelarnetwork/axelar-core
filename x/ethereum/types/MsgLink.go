@@ -12,17 +12,15 @@ type MsgLink struct {
 	Recipient exported.CrossChainAddress
 	Symbol    string
 
-	BurneableBC  []byte
 	ContractAddr string
 }
 
-func NewMsgLink(sender sdk.AccAddress, destination exported.CrossChainAddress, bytecodes []byte, contract, symbol string) sdk.Msg {
+func NewMsgLink(sender sdk.AccAddress, destination exported.CrossChainAddress, contract, symbol string) sdk.Msg {
 	return MsgLink{
 		Sender:    sender,
 		Recipient: destination,
 		Symbol:    symbol,
 
-		BurneableBC:  bytecodes,
 		ContractAddr: contract,
 	}
 }

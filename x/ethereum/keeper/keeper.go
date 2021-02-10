@@ -63,6 +63,12 @@ func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context) uint64 {
 	return h
 }
 
+func (k Keeper) GetBurneable(ctx sdk.Context) []byte {
+	var b []byte
+	k.params.Get(ctx, types.KeyBurneable, &b)
+	return b
+}
+
 func (k Keeper) SetCommandData(ctx sdk.Context, commandID types.CommandID, commandData []byte) {
 	key := append([]byte(commandPrefix), commandID[:]...)
 
