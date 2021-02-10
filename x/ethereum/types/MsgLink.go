@@ -8,22 +8,22 @@ import (
 )
 
 type MsgLink struct {
-	Sender       sdk.AccAddress
-	Recipient    exported.CrossChainAddress
+	Sender    sdk.AccAddress
+	Recipient exported.CrossChainAddress
+	Symbol    string
+
 	BurneableBC  []byte
-	TokenAddr    string
 	ContractAddr string
-	Salt         [32]byte
 }
 
-func NewMsgLink(sender sdk.AccAddress, destination exported.CrossChainAddress, bytecodes []byte, token, contract string, salt [32]byte) sdk.Msg {
+func NewMsgLink(sender sdk.AccAddress, destination exported.CrossChainAddress, bytecodes []byte, contract, symbol string) sdk.Msg {
 	return MsgLink{
-		Sender:       sender,
-		Recipient:    destination,
+		Sender:    sender,
+		Recipient: destination,
+		Symbol:    symbol,
+
 		BurneableBC:  bytecodes,
-		TokenAddr:    token,
 		ContractAddr: contract,
-		Salt:         salt,
 	}
 }
 

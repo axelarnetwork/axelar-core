@@ -52,6 +52,13 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, b types.Bal
 }
 
 func handleMsgLink(ctx sdk.Context, k keeper.Keeper, b types.Balancer, msg types.MsgLink) (*sdk.Result, error) {
+	salt := types.CalculateSalt(msg.Recipient.Address)
+
+	tokenAddr, ok := k.GetContractAddress(ctx, msg.Symbol)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, "symbol not found/verified")
+
+	}
 
 	addressType, err := abi.NewType("address", "address", nil)
 	if err != nil {
@@ -62,14 +69,13 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, b types.Balancer, msg types
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
 	arguments := abi.Arguments{{Type: addressType}, {Type: bytesType}}
-	args, err := arguments.Pack(common.HexToAddress(msg.TokenAddr), msg.Salt)
+	args, err := arguments.Pack(tokenAddr, salt)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
 
 	burnerInitCodeHash := crypto.Keccak256Hash(append(msg.BurneableBC, args...))
-	salt := types.CalculateSalt(msg.Recipient.Address)
-	burnerAddr := crypto.CreateAddress2(common.HexToAddress(msg.TokenAddr), salt, burnerInitCodeHash.Bytes())
+	burnerAddr := crypto.CreateAddress2(common.HexToAddress(msg.ContractAddr), salt, burnerInitCodeHash.Bytes())
 
 	err = b.LinkAddresses(ctx, balance.CrossChainAddress{Chain: balance.Ethereum, Address: burnerAddr.String()}, msg.Recipient)
 	if err != nil {
