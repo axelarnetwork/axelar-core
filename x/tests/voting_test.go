@@ -62,7 +62,7 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 			OutPoint:      outPoints[i],
 			BlockHash:     blockHash,
 			Amount:        btcutil.Amount(amount),
-			DepositAddr:   testutils.RandString(int(testutils.RandIntBetween(5, 20))),
+			Address:       testutils.RandString(int(testutils.RandIntBetween(5, 20))),
 			Confirmations: confirmations,
 		}
 		txs[blockHash.String()+txHash.String()] = info
@@ -123,7 +123,7 @@ func allTxVoteCompleted(nodes []fake.Node, btcKeeper []btcKeeper.Keeper, outPoin
 	allConfirmed := true
 	for i, k := range btcKeeper {
 		for _, out := range outPoints {
-			if ok := k.HasVerifiedOutPoint(nodes[i].Ctx, out); !ok {
+			if _, ok := k.GetVerifiedOutPointInfo(nodes[i].Ctx, out); !ok {
 				allConfirmed = false
 				break
 			}
@@ -148,7 +148,7 @@ func newNodeForVote(moniker string, broadcaster bcExported.Broadcaster, staker v
 	vH := vote.NewHandler()
 
 	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	btcK := btcKeeper.NewBtcKeeper(testutils.Codec(), sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)
+	btcK := btcKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)
 	btcK.SetParams(ctx, btcTypes.DefaultParams())
 
 	balanceSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("balanceKey"), sdk.NewKVStoreKey("tbalanceKey"), "balance")

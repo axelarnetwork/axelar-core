@@ -35,7 +35,7 @@ func TestQuerier_TxInfo_CorrectMarshalling(t *testing.T) {
 			},
 			BlockHash:     blockHash,
 			Amount:        btcutil.Amount(testutils.RandIntBetween(0, 100000000)),
-			DepositAddr:   testutils.RandStrings(5, 20).Take(1)[0],
+			Address:       testutils.RandStrings(5, 20).Take(1)[0],
 			Confirmations: uint64(testutils.RandIntBetween(0, 10000)),
 		}
 

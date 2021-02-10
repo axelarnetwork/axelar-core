@@ -241,7 +241,7 @@ func TestVerifyTx_Mint_Success(t *testing.T) {
 }
 
 func createSignedDeployTx() *ethTypes.Transaction {
-	generator := testutils.RandInts()
+	generator := testutils.RandPosInts()
 
 	nonce := uint64(generator.Next())
 	gasPrice := big.NewInt(generator.Next())
@@ -265,10 +265,10 @@ func sign(tx *ethTypes.Transaction) *ethTypes.Transaction {
 }
 
 func createSignedEthTx() *ethTypes.Transaction {
-	generator := testutils.RandInts()
+	generator := testutils.RandPosInts()
 	contractAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
 	nonce := uint64(generator.Next())
-	gasPrice := big.NewInt(testutils.RandInts().Next())
+	gasPrice := big.NewInt(testutils.RandPosInts().Next())
 	gasLimit := uint64(generator.Next())
 	value := big.NewInt(0)
 

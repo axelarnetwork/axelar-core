@@ -151,16 +151,14 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, b 
 		if err != nil {
 			return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 		}
-		if err := k.ProcessVerificationResult(ctx, msg.PollMeta.ID, confirmed.(bool)); err != nil {
-			return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("utxo for poll %s was not stored", msg.PollMeta.String()))
-		}
+		k.ProcessVerificationResult(ctx, msg.PollMeta.ID, confirmed.(bool))
 		v.DeletePoll(ctx, msg.Poll())
 
 		info, ok := k.GetVerifiedOutPointInfo(ctx, outPoint)
 		if !ok {
 			return nil, sdkerrors.Wrap(types.ErrBitcoin, "outpoint not verified")
 		}
-		id, ok := k.GetKeyIDByAddress(ctx, info.DepositAddr)
+		id, ok := k.GetKeyIDByAddress(ctx, info.Address)
 		if !ok {
 			return nil, sdkerrors.Wrap(types.ErrBitcoin, "key id not found")
 		}
@@ -230,7 +228,7 @@ func verifyTx(rpc types.RPCClient, expectedInfo types.OutPointInfo, requiredConf
 		return sdkerrors.Wrap(err, "could not retrieve Bitcoin transaction")
 	}
 
-	if actualInfo.DepositAddr != expectedInfo.DepositAddr {
+	if actualInfo.Address != expectedInfo.Address {
 		return fmt.Errorf("expected destination address does not match actual destination address")
 	}
 
@@ -246,7 +244,7 @@ func verifyTx(rpc types.RPCClient, expectedInfo types.OutPointInfo, requiredConf
 }
 
 func enqueueForTransfer(ctx sdk.Context, k keeper.Keeper, b types.Balancer, info types.OutPointInfo) error {
-	depositAddr := balance.CrossChainAddress{Address: info.DepositAddr, Chain: balance.Bitcoin}
+	depositAddr := balance.CrossChainAddress{Address: info.Address, Chain: balance.Bitcoin}
 	recipient, ok := b.GetRecipient(ctx, depositAddr)
 	// Do nothing if not linked
 	if !ok {

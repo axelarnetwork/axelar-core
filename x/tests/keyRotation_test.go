@@ -210,7 +210,7 @@ func TestKeyRotation(t *testing.T) {
 				OutPoint:      expectedOut,
 				BlockHash:     blockHash,
 				Amount:        amount,
-				DepositAddr:   depositAddr,
+				Address:       depositAddr,
 				Confirmations: confirmations,
 			}, nil
 		}
@@ -377,7 +377,7 @@ func TestKeyRotation(t *testing.T) {
 				OutPoint:      transferOut,
 				BlockHash:     blockHash,
 				Amount:        amount,
-				DepositAddr:   consAddr,
+				Address:       consAddr,
 				Confirmations: confirmations,
 			}, nil
 		}
@@ -419,7 +419,7 @@ func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *f
 	voter := voteKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(voteTypes.StoreKey), store.NewSubjectiveStore(), snapKeeper, broadcaster)
 
 	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	bitcoinKeeper := btcKeeper.NewBtcKeeper(testutils.Codec(), sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)
+	bitcoinKeeper := btcKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)
 	btcParams := btcTypes.DefaultParams()
 	btcParams.Network = mocks.BTC.Network()
 	bitcoinKeeper.SetParams(ctx, btcParams)
