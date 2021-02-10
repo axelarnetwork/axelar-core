@@ -16,6 +16,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 )
 
 const (
@@ -82,11 +83,29 @@ func (k Keeper) GetBurnerAddress(ctx sdk.Context, symbol string, recipient strin
 	var saltToken [32]byte
 	copy(saltToken[:], crypto.Keccak256Hash([]byte(symbol)).Bytes())
 
+	uint8Type, err := abi.NewType("uint8", "uint8", nil)
+	if err != nil {
+		return common.Address{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+	}
+
+	uint256Type, err := abi.NewType("uint256", "uint256", nil)
+	if err != nil {
+		return common.Address{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+	}
+
+	stringType, err := abi.NewType("string", "string", nil)
+	if err != nil {
+		return common.Address{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+	}
+
+	arguments := abi.Arguments{{Type: stringType}, {Type: stringType}, {Type: uint8Type}, {Type: uint256Type}}
+	packed, err := arguments.Pack(tokenInfo.TokenName, symbol, tokenInfo.Decimals, tokenInfo.Capacity.BigInt())
+	if err != nil {
+		return common.Address{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+	}
+
 	tokenInitCode := k.getTokenBC(ctx)
-	tokenInitCode = append(tokenInitCode, common.LeftPadBytes([]byte(tokenInfo.TokenName), 32)...)
-	tokenInitCode = append(tokenInitCode, common.LeftPadBytes([]byte(symbol), 32)...)
-	tokenInitCode = append(tokenInitCode, common.LeftPadBytes([]byte{tokenInfo.Decimals}, 32)...)
-	tokenInitCode = append(tokenInitCode, common.LeftPadBytes(tokenInfo.Capacity.BigInt().Bytes(), 32)...)
+	tokenInitCode = append(tokenInitCode, packed...)
 
 	tokenInitCodeHash := crypto.Keccak256Hash(tokenInitCode)
 	tokenAddr := crypto.CreateAddress2(gatewayAddr, saltToken, tokenInitCodeHash.Bytes())
