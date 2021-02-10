@@ -8,7 +8,6 @@ import (
 
 	ethereumRoot "github.com/ethereum/go-ethereum"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -52,35 +51,11 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, b types.Bal
 }
 
 func handleMsgLink(ctx sdk.Context, k keeper.Keeper, b types.Balancer, msg types.MsgLink) (*sdk.Result, error) {
-	salt := types.CalculateSalt(msg.Recipient.Address)
-
-	tokenAddr, ok := k.GetContractAddress(ctx, msg.Symbol)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, "symbol not found/verified")
-
-	}
-	gatewayAddr, ok := k.GetGatewayAddress(ctx)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, "gateway not set")
-
-	}
-
-	addressType, err := abi.NewType("address", "address", nil)
+	burnerAddr, err := k.GetBurnerAddress(ctx, msg.Symbol, msg.Recipient.Address)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
-	}
-	bytesType, err := abi.NewType("bytes", "bytes", nil)
-	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
-	}
-	arguments := abi.Arguments{{Type: addressType}, {Type: bytesType}}
-	args, err := arguments.Pack(tokenAddr, salt)
-	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
-	}
 
-	burnerInitCodeHash := crypto.Keccak256Hash(append(k.GetBurneable(ctx), args...))
-	burnerAddr := crypto.CreateAddress2(gatewayAddr, salt, burnerInitCodeHash.Bytes())
+	}
 
 	err = b.LinkAddresses(ctx, balance.CrossChainAddress{Chain: balance.Ethereum, Address: burnerAddr.String()}, msg.Recipient)
 	if err != nil {

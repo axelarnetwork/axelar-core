@@ -165,13 +165,6 @@ type CommandParams struct {
 	ContractAddr string
 }
 
-// CalculateSalt generates the salt value used to obtain the contract address for burning assets
-func CalculateSalt(recipient string) [32]byte {
-	var salt [32]byte
-	copy(salt[:], []byte(recipient))
-	return salt
-}
-
 // CreateExecuteData wraps the specific command data and includes the command signature.
 // Returns the data that goes into the data field of an Ethereum transaction
 func CreateExecuteData(commandData []byte, commandSig Signature) ([]byte, error) {

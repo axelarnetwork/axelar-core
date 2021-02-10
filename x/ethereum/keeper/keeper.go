@@ -66,13 +66,36 @@ func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context) uint64 {
 	return h
 }
 
-func (k Keeper) GetBurneable(ctx sdk.Context) []byte {
+func (k Keeper) GetBurnerAddress(ctx sdk.Context, symbol string, recipient string) (common.Address, error) {
+	tokenAddr, ok := k.getContractAddress(ctx, symbol)
+	if !ok {
+		return common.Address{}, sdkerrors.Wrap(types.ErrEthereum, "symbol not found/verified")
+
+	}
+	gatewayAddr, ok := k.getGatewayAddress(ctx)
+	if !ok {
+		return common.Address{}, sdkerrors.Wrap(types.ErrEthereum, "gateway not set")
+
+	}
+	var salt [32]byte
+	copy(salt[:], []byte(recipient))
+
+	concat := k.getBurneable(ctx)
+	concat = append(concat, common.LeftPadBytes(tokenAddr.Bytes(), 32)...)
+	concat = append(concat, common.LeftPadBytes(salt[:], 32)...)
+
+	burnerInitCodeHash := crypto.Keccak256Hash(concat)
+	return crypto.CreateAddress2(gatewayAddr, salt, burnerInitCodeHash.Bytes()), nil
+
+}
+
+func (k Keeper) getBurneable(ctx sdk.Context) []byte {
 	var b []byte
 	k.params.Get(ctx, types.KeyBurneable, &b)
 	return b
 }
 
-func (k Keeper) GetGatewayAddress(ctx sdk.Context) (common.Address, bool) {
+func (k Keeper) getGatewayAddress(ctx sdk.Context) (common.Address, bool) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(gatewayKey))
 	if bz == nil {
 		return common.Address{}, false
@@ -121,7 +144,7 @@ func (k Keeper) HasUnverifiedTx(ctx sdk.Context, txID string) bool {
 	return ctx.KVStore(k.storeKey).Has([]byte(pendingTXPrefix + txID))
 }
 
-func (k Keeper) GetContractAddress(ctx sdk.Context, symbol string) (common.Address, bool) {
+func (k Keeper) getContractAddress(ctx sdk.Context, symbol string) (common.Address, bool) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingSymbolPrefix + symbol))
 	if bz == nil {
 		return common.Address{}, false
