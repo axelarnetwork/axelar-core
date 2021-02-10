@@ -26,9 +26,6 @@ var _ types.RPCClient = &RPCClientMock{}
 // 			BlockNumberFunc: func(ctx context.Context) (uint64, error) {
 // 				panic("mock out the BlockNumber method")
 // 			},
-// 			CallContractFunc: func(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
-// 				panic("mock out the CallContract method")
-// 			},
 // 			ChainIDFunc: func(ctx context.Context) (*big.Int, error) {
 // 				panic("mock out the ChainID method")
 // 			},
@@ -60,9 +57,6 @@ type RPCClientMock struct {
 	// BlockNumberFunc mocks the BlockNumber method.
 	BlockNumberFunc func(ctx context.Context) (uint64, error)
 
-	// CallContractFunc mocks the CallContract method.
-	CallContractFunc func(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error)
-
 	// ChainIDFunc mocks the ChainID method.
 	ChainIDFunc func(ctx context.Context) (*big.Int, error)
 
@@ -90,15 +84,6 @@ type RPCClientMock struct {
 		BlockNumber []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-		}
-		// CallContract holds details about calls to the CallContract method.
-		CallContract []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// Msg is the msg argument value.
-			Msg ethereum.CallMsg
-			// BlockNumber is the blockNumber argument value.
-			BlockNumber *big.Int
 		}
 		// ChainID holds details about calls to the ChainID method.
 		ChainID []struct {
@@ -147,7 +132,6 @@ type RPCClientMock struct {
 		}
 	}
 	lockBlockNumber            sync.RWMutex
-	lockCallContract           sync.RWMutex
 	lockChainID                sync.RWMutex
 	lockEstimateGas            sync.RWMutex
 	lockPendingNonceAt         sync.RWMutex
@@ -185,45 +169,6 @@ func (mock *RPCClientMock) BlockNumberCalls() []struct {
 	mock.lockBlockNumber.RLock()
 	calls = mock.calls.BlockNumber
 	mock.lockBlockNumber.RUnlock()
-	return calls
-}
-
-// CallContract calls CallContractFunc.
-func (mock *RPCClientMock) CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
-	if mock.CallContractFunc == nil {
-		panic("RPCClientMock.CallContractFunc: method is nil but RPCClient.CallContract was just called")
-	}
-	callInfo := struct {
-		Ctx         context.Context
-		Msg         ethereum.CallMsg
-		BlockNumber *big.Int
-	}{
-		Ctx:         ctx,
-		Msg:         msg,
-		BlockNumber: blockNumber,
-	}
-	mock.lockCallContract.Lock()
-	mock.calls.CallContract = append(mock.calls.CallContract, callInfo)
-	mock.lockCallContract.Unlock()
-	return mock.CallContractFunc(ctx, msg, blockNumber)
-}
-
-// CallContractCalls gets all the calls that were made to CallContract.
-// Check the length with:
-//     len(mockedRPCClient.CallContractCalls())
-func (mock *RPCClientMock) CallContractCalls() []struct {
-	Ctx         context.Context
-	Msg         ethereum.CallMsg
-	BlockNumber *big.Int
-} {
-	var calls []struct {
-		Ctx         context.Context
-		Msg         ethereum.CallMsg
-		BlockNumber *big.Int
-	}
-	mock.lockCallContract.RLock()
-	calls = mock.calls.CallContract
-	mock.lockCallContract.RUnlock()
 	return calls
 }
 

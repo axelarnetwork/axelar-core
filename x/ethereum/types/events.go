@@ -5,7 +5,6 @@ const (
 	AttributeAddress       = "address"
 	AttributeTxID          = "txID"
 	AttributeCommandID     = "commandID"
-	AttributeSymbol        = "symbol"
 	AttributeAmount        = "amount"
 	AttributeDestination   = "destination"
 	AttributePoll          = "poll"
