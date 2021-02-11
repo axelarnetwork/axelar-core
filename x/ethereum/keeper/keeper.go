@@ -78,22 +78,18 @@ func (k Keeper) GetBurnerAddress(ctx sdk.Context, symbol, recipient string, gate
 	if err != nil {
 		return common.Address{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
-
 	uint256Type, err := abi.NewType("uint256", "uint256", nil)
 	if err != nil {
 		return common.Address{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
-
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
 		return common.Address{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
-
 	addressType, err := abi.NewType("address", "address", nil)
 	if err != nil {
 		return common.Address{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
-
 	bytes32Type, err := abi.NewType("bytes32", "bytes32", nil)
 	if err != nil {
 		return common.Address{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
