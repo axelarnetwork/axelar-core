@@ -65,10 +65,10 @@ func TestLink_Success(t *testing.T) {
 	name := testutils.RandString(10)
 	decimals := uint8(testutils.RandBytes(1)[0])
 	capacity := sdk.NewIntFromUint64(uint64(testutils.RandPosInt()))
-	gateway := "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7"
+	gateway := "0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA"
 	k.SaveTokenInfo(ctx, types.MsgSignDeployToken{Sender: account, TokenName: name, Symbol: symbol, Decimals: decimals, Capacity: capacity})
 
-	recipient := balance.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: balance.Bitcoin}
+	recipient := balance.CrossChainAddress{Address: "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L", Chain: balance.Bitcoin}
 	burnAddr, err := k.GetBurnerAddress(ctx, symbol, recipient.Address, common.HexToAddress(gateway))
 	if err != nil {
 		panic(err)
