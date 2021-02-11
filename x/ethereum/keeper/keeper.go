@@ -126,7 +126,7 @@ func (k Keeper) GetBurnerAddress(ctx sdk.Context, symbol, recipient string, gate
 
 func (k Keeper) getBurnerBC(ctx sdk.Context) []byte {
 	var b []byte
-	k.params.Get(ctx, types.KeyBurneable, &b)
+	k.params.Get(ctx, types.KeyBurnable, &b)
 	return b
 }
 

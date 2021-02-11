@@ -380,7 +380,7 @@ func newKeeper(ctx sdk.Context, confHeight int64) keeper.Keeper {
 	cdc := testutils.Codec()
 	subspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
 	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"), subspace)
-	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(confHeight), Token: tokenBC, Burneable: burnerBC})
+	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(confHeight), Token: tokenBC, Burnable: burnerBC})
 	return k
 }
 

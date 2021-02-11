@@ -17,7 +17,7 @@ const (
 var (
 	KeyConfirmationHeight = []byte("confirmationHeight")
 	KeyNetwork            = []byte("network")
-	KeyBurneable          = []byte("burneable")
+	KeyBurnable           = []byte("burneable")
 	KeyToken              = []byte("token")
 )
 
@@ -29,7 +29,7 @@ type Params struct {
 	ConfirmationHeight uint64
 	Network            Network
 	Token              []byte
-	Burneable          []byte
+	Burnable           []byte
 }
 
 func DefaultParams() Params {
@@ -38,7 +38,7 @@ func DefaultParams() Params {
 	if err != nil {
 		panic(err)
 	}
-	bzBurnable, err := hex.DecodeString(burneable)
+	bzBurnable, err := hex.DecodeString(burnable)
 	if err != nil {
 		panic(err)
 	}
@@ -47,7 +47,7 @@ func DefaultParams() Params {
 		ConfirmationHeight: 1,
 		Network:            Ganache,
 		Token:              bzToken,
-		Burneable:          bzBurnable,
+		Burnable:           bzBurnable,
 	}
 }
 
@@ -64,7 +64,7 @@ func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
 		subspace.NewParamSetPair(KeyConfirmationHeight, &p.ConfirmationHeight, validateConfirmationHeight),
 		subspace.NewParamSetPair(KeyNetwork, &p.Network, validateNetwork),
 		subspace.NewParamSetPair(KeyToken, &p.Token, validateByteCodes),
-		subspace.NewParamSetPair(KeyBurneable, &p.Burneable, validateByteCodes),
+		subspace.NewParamSetPair(KeyBurnable, &p.Burnable, validateByteCodes),
 	}
 }
 
