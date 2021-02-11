@@ -122,7 +122,8 @@ func TestBurnerAddress_CorrectData(t *testing.T) {
 
 	axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
 	recipient := "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L"
-	expected := common.HexToAddress("0x7be6ea60DCd9BbC2B88bEF45E419b5E6A9dBc5E1")
+	expectedBurnerAddr := common.HexToAddress("0x7be6ea60DCd9BbC2B88bEF45E419b5E6A9dBc5E1")
+	expectedSalt := common.Hex2Bytes("35f28b34202f4e3de20c1710696e3f294ebe4df686b17be00fedf991190f9654")
 	tokenName := "axelar token"
 	tokenSymbol := "at"
 	decimals := uint8(18)
@@ -135,10 +136,11 @@ func TestBurnerAddress_CorrectData(t *testing.T) {
 	}
 	k.SaveTokenInfo(ctx, types.MsgSignDeployToken{Sender: account, TokenName: tokenName, Symbol: tokenSymbol, Decimals: decimals, Capacity: capacity})
 
-	burnAddr, err := k.GetBurnerAddress(ctx, tokenSymbol, recipient, axelarGateway)
+	actualburnerAddr, actualSalt, err := k.GetBurnerAddressAndSalt(ctx, tokenSymbol, recipient, axelarGateway)
 	if err != nil {
 		panic(err)
 	}
-	assert.Equal(t, expected, burnAddr)
+	assert.Equal(t, expectedBurnerAddr, actualburnerAddr)
+	assert.Equal(t, expectedSalt, actualSalt[:])
 
 }

@@ -25,6 +25,7 @@ const (
 	pendingPrefix = "pend_"
 	commandPrefix = "command_"
 	symbolPrefix  = "symbol_"
+	burnerPrefix  = "burner_"
 )
 
 // Keeper represents the ethereum keeper
@@ -68,12 +69,34 @@ func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context) uint64 {
 	return h
 }
 
-// GetBurnerAddress calculates a burner address for the given symbol and recipient
-func (k Keeper) GetBurnerAddress(ctx sdk.Context, symbol, recipient string, gatewayAddr common.Address) (common.Address, error) {
+// SetBurnerInfo saves the burner info for a given address
+func (k Keeper) SetBurnerInfo(ctx sdk.Context, burnerAddr common.Address, burnerInfo *types.BurnerInfo) {
+	key := append([]byte(burnerPrefix), burnerAddr.Bytes()...)
+	bz := k.cdc.MustMarshalJSON(burnerInfo)
+
+	ctx.KVStore(k.storeKey).Set(key, bz)
+}
+
+// GetBurnerInfo retrieves the burner info for a given address
+func (k Keeper) GetBurnerInfo(ctx sdk.Context, burnerAddr common.Address) *types.BurnerInfo {
+	key := append([]byte(burnerPrefix), burnerAddr.Bytes()...)
+
+	bz := ctx.KVStore(k.storeKey).Get(key)
+	if bz == nil {
+		return nil
+	}
+
+	var result *types.BurnerInfo
+	k.cdc.MustUnmarshalJSON(bz, &result)
+
+	return result
+}
+
+// GetBurnerAddressAndSalt calculates a burner address and the corresponding salt for the given symbol and recipient
+func (k Keeper) GetBurnerAddressAndSalt(ctx sdk.Context, symbol, recipient string, gatewayAddr common.Address) (common.Address, [32]byte, error) {
 	tokenInfo := k.getTokenInfo(ctx, symbol)
 	if tokenInfo == nil {
-		return common.Address{}, sdkerrors.Wrap(types.ErrEthereum, "symbol not found/verified")
-
+		return common.Address{}, [32]byte{}, sdkerrors.Wrap(types.ErrEthereum, "symbol not found/verified")
 	}
 
 	var saltToken [32]byte
@@ -81,29 +104,29 @@ func (k Keeper) GetBurnerAddress(ctx sdk.Context, symbol, recipient string, gate
 
 	uint8Type, err := abi.NewType("uint8", "uint8", nil)
 	if err != nil {
-		return common.Address{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return common.Address{}, [32]byte{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
 	uint256Type, err := abi.NewType("uint256", "uint256", nil)
 	if err != nil {
-		return common.Address{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return common.Address{}, [32]byte{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
-		return common.Address{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return common.Address{}, [32]byte{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
 	addressType, err := abi.NewType("address", "address", nil)
 	if err != nil {
-		return common.Address{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return common.Address{}, [32]byte{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
 	bytes32Type, err := abi.NewType("bytes32", "bytes32", nil)
 	if err != nil {
-		return common.Address{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return common.Address{}, [32]byte{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
 
 	arguments := abi.Arguments{{Type: stringType}, {Type: stringType}, {Type: uint8Type}, {Type: uint256Type}}
 	packed, err := arguments.Pack(tokenInfo.TokenName, symbol, tokenInfo.Decimals, tokenInfo.Capacity.BigInt())
 	if err != nil {
-		return common.Address{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return common.Address{}, [32]byte{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
 
 	tokenInitCode := k.getTokenBC(ctx)
@@ -118,14 +141,14 @@ func (k Keeper) GetBurnerAddress(ctx sdk.Context, symbol, recipient string, gate
 	arguments = abi.Arguments{{Type: addressType}, {Type: bytes32Type}}
 	packed, err = arguments.Pack(tokenAddr, saltBurn)
 	if err != nil {
-		return common.Address{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return common.Address{}, [32]byte{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
 
 	burnerInitCode := k.getBurnerBC(ctx)
 	burnerInitCode = append(burnerInitCode, packed...)
 
 	burnerInitCodeHash := crypto.Keccak256Hash(burnerInitCode)
-	return crypto.CreateAddress2(gatewayAddr, saltBurn, burnerInitCodeHash.Bytes()), nil
+	return crypto.CreateAddress2(gatewayAddr, saltBurn, burnerInitCodeHash.Bytes()), saltBurn, nil
 
 }
 
