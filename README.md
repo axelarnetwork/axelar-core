@@ -9,7 +9,14 @@ Since axelar-core requires tssd to build which is a private module, you will nee
 
 1. Have a SSH key on your machine
 2. Add your public key to your Github account for authentication
-3. Run `ssh-add ~/.ssh/{private key file name}` to add your private key to your ssh agent (**IMPORTANT**: the ssh agent only keeps your priate key in memory so you have to repeat this step every time you restart your machine; alternatively, you can add `ssh-add ~/.ssh/{private key file name} &>/dev/null` in your shell's .rc file so that the key is added automatically)
+3. Run `ssh-add ~/.ssh/{private key file name}` to add your private key to your ssh agent. **IMPORTANT**: the ssh agent only keeps your priate key in memory so you have to repeat this step every time you restart your machine.  You can automate this step in two ways as described [here](https://apple.stackexchange.com/questions/254468/macos-sierra-doesn-t-seem-to-remember-ssh-keys-between-reboots/264974#264974):
+    * Add the following to your `~/.ssh/config` file:
+    ```
+    Host *
+       AddKeysToAgent yes
+       UseKeychain yes     
+    ```
+    * Add `ssh-add ~/.ssh/{private key file name} &>/dev/null` in your shell's .rc file (eg. `~/.bash_profile`).
 4. Run `git config --global url."git@github.com:axelarnetwork".insteadOf https://github.com/axelarnetwork` to force `go get` to authenticate via ssh
 
 ## Building binaries locally
