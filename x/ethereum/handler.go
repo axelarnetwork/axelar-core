@@ -45,17 +45,21 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 }
 
 func handleMsgLink(ctx sdk.Context, k keeper.Keeper, b types.Balancer, msg types.MsgLink) (*sdk.Result, error) {
-	burnerAddr, err := k.GetBurnerAddress(ctx, msg.Symbol, msg.Recipient.Address, common.HexToAddress(msg.GatewayAddr))
+	burnerAddr, salt, err := k.GetBurnerAddressAndSalt(ctx, msg.Symbol, msg.Recipient.Address, common.HexToAddress(msg.GatewayAddr))
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
-
 	}
 
 	err = b.LinkAddresses(ctx, balance.CrossChainAddress{Chain: balance.Ethereum, Address: burnerAddr.String()}, msg.Recipient)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
-
 	}
+
+	burnerInfo := types.BurnerInfo{
+		Symbol: msg.Symbol,
+		Salt:   salt,
+	}
+	k.SetBurnerInfo(ctx, burnerAddr, &burnerInfo)
 
 	logMsg := fmt.Sprintf("successfully linked {%s} and {%s}", burnerAddr.String(), msg.Recipient.String())
 	k.Logger(ctx).Info(logMsg)

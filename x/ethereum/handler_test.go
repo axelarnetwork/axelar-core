@@ -69,10 +69,9 @@ func TestLink_Success(t *testing.T) {
 	k.SaveTokenInfo(ctx, types.MsgSignDeployToken{Sender: account, TokenName: name, Symbol: symbol, Decimals: decimals, Capacity: capacity})
 
 	recipient := balance.CrossChainAddress{Address: "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L", Chain: balance.Bitcoin}
-	burnAddr, err := k.GetBurnerAddress(ctx, symbol, recipient.Address, common.HexToAddress(gateway))
+	burnAddr, salt, err := k.GetBurnerAddressAndSalt(ctx, symbol, recipient.Address, common.HexToAddress(gateway))
 	if err != nil {
 		panic(err)
-
 	}
 	sender := balance.CrossChainAddress{Address: burnAddr.String(), Chain: balance.Ethereum}
 
@@ -83,9 +82,12 @@ func TestLink_Success(t *testing.T) {
 	_, err = handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), Recipient: recipient, Symbol: symbol, GatewayAddr: gateway})
 
 	assert.NoError(t, err)
+
 	assert.Equal(t, 1, len(b.LinkAddressesCalls()))
 	assert.Equal(t, sender, b.LinkAddressesCalls()[0].Sender)
 	assert.Equal(t, recipient, b.LinkAddressesCalls()[0].Recipient)
+
+	assert.Equal(t, types.BurnerInfo{Symbol: symbol, Salt: salt}, *k.GetBurnerInfo(ctx, burnAddr))
 }
 
 func TestDeployTx_DifferentValue_DifferentHash(t *testing.T) {

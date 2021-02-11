@@ -165,6 +165,13 @@ type CommandParams struct {
 	ContractAddr string
 }
 
+// BurnerInfo describes information required to burn token at an burner address
+// that is deposited by an user
+type BurnerInfo struct {
+	Symbol string
+	Salt   [32]byte
+}
+
 // CreateExecuteData wraps the specific command data and includes the command signature.
 // Returns the data that goes into the data field of an Ethereum transaction
 func CreateExecuteData(commandData []byte, commandSig Signature) ([]byte, error) {
