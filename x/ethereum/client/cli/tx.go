@@ -42,7 +42,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	return ethTxCmd
 }
 
-// GetCmdLink links a cross chain address to a bitcoin address created by Axelar
+// GetCmdLink links a cross chain address to an ethereum address created by Axelar
 func GetCmdLink(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "link [chain] [address] [symbol] [gateway address]",
