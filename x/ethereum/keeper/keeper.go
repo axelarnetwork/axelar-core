@@ -27,12 +27,14 @@ const (
 	symbolPrefix  = "symbol_"
 )
 
+// Keeper represents the ethereum keeper
 type Keeper struct {
 	storeKey sdk.StoreKey
 	cdc      *codec.Codec
 	params   params.Subspace
 }
 
+// NewEthKeeper returns a new ethereum keeper
 func NewEthKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
 	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable())}
 }
@@ -49,6 +51,7 @@ func (k Keeper) GetParams(ctx sdk.Context) types.Params {
 	return p
 }
 
+// Codec returns the codec
 func (k Keeper) Codec() *codec.Codec {
 	return k.cdc
 }
@@ -58,12 +61,14 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
+// GetRequiredConfirmationHeight returns the required block confirmation height
 func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context) uint64 {
 	var h uint64
 	k.params.Get(ctx, types.KeyConfirmationHeight, &h)
 	return h
 }
 
+// GetBurnerAddress calculates a burner address for the given symbol and recipient
 func (k Keeper) GetBurnerAddress(ctx sdk.Context, symbol, recipient string, gatewayAddr common.Address) (common.Address, error) {
 	tokenInfo := k.getTokenInfo(ctx, symbol)
 	if tokenInfo == nil {
@@ -136,6 +141,7 @@ func (k Keeper) getTokenBC(ctx sdk.Context) []byte {
 	return b
 }
 
+// SaveTokenInfo stores the token info
 func (k Keeper) SaveTokenInfo(ctx sdk.Context, msg types.MsgSignDeployToken) {
 	bz := k.cdc.MustMarshalJSON(msg)
 	ctx.KVStore(k.storeKey).Set([]byte(symbolPrefix+msg.Symbol), bz)
@@ -152,12 +158,14 @@ func (k Keeper) getTokenInfo(ctx sdk.Context, symbol string) *types.MsgSignDeplo
 	return msg
 }
 
+// SetCommandData stores command data by ID
 func (k Keeper) SetCommandData(ctx sdk.Context, commandID types.CommandID, commandData []byte) {
 	key := append([]byte(commandPrefix), commandID[:]...)
 
 	ctx.KVStore(k.storeKey).Set(key, commandData)
 }
 
+// GetCommandData retrieves command data by ID
 func (k Keeper) GetCommandData(ctx sdk.Context, commandID types.CommandID) []byte {
 	key := append([]byte(commandPrefix), commandID[:]...)
 
@@ -175,19 +183,23 @@ func (k Keeper) getRawTx(ctx sdk.Context, txID string) *ethTypes.Transaction {
 	return tx
 }
 
+// SetRawTx stores a raw transaction by hash
 func (k Keeper) SetRawTx(ctx sdk.Context, txID string, tx *ethTypes.Transaction) {
 	bz := k.cdc.MustMarshalJSON(tx)
 	ctx.KVStore(k.storeKey).Set([]byte(rawPrefix+txID), bz)
 }
 
+// HasVerifiedTx returns true if a raw transaction has been stored
 func (k Keeper) HasVerifiedTx(ctx sdk.Context, txID string) bool {
 	return ctx.KVStore(k.storeKey).Has([]byte(txPrefix + txID))
 }
 
+// SetUnverifiedTx stores and unverified transaction
 func (k Keeper) SetUnverifiedTx(ctx sdk.Context, txID string, tx *ethTypes.Transaction) {
 	ctx.KVStore(k.storeKey).Set([]byte(pendingPrefix+txID), tx.Hash().Bytes())
 }
 
+// HasUnverifiedTx returns true if an unverified transaction has been stored
 func (k Keeper) HasUnverifiedTx(ctx sdk.Context, txID string) bool {
 	return ctx.KVStore(k.storeKey).Has([]byte(pendingPrefix + txID))
 }
@@ -205,6 +217,7 @@ func (k Keeper) ProcessVerificationResult(ctx sdk.Context, txID string, verified
 	return nil
 }
 
+// AssembleEthTx sets a signature for a previously stored raw transaction
 func (k Keeper) AssembleEthTx(ctx sdk.Context, txID string, pk ecdsa.PublicKey, sig tss.Signature) (*ethTypes.Transaction, error) {
 	rawTx := k.getRawTx(ctx, txID)
 	if rawTx == nil {
@@ -221,6 +234,7 @@ func (k Keeper) AssembleEthTx(ctx sdk.Context, txID string, pk ecdsa.PublicKey, 
 	return rawTx.WithSignature(signer, recoverableSig[:])
 }
 
+// GetHashToSign returns the hash to sign of a previously stored raw transaction
 func (k Keeper) GetHashToSign(ctx sdk.Context, txID string) (common.Hash, error) {
 	rawTx := k.getRawTx(ctx, txID)
 	if rawTx == nil {
