@@ -14,6 +14,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	ethMock "github.com/axelarnetwork/axelar-core/x/ethereum/types/mock"
@@ -29,7 +30,63 @@ const (
 	network = types.Network(types.Rinkeby)
 )
 
-var sender = sdk.AccAddress(testutils.RandString(int(testutils.RandIntBetween(5, 20))))
+var (
+	sender   = sdk.AccAddress(testutils.RandString(int(testutils.RandIntBetween(5, 20))))
+	tokenBC  = testutils.RandBytes(64)
+	burnerBC = testutils.RandBytes(64)
+)
+
+func TestLink_NoSymbolSet(t *testing.T) {
+	minConfHeight := testutils.RandIntBetween(1, 10)
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	k := newKeeper(ctx, minConfHeight)
+
+	recipient := balance.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: balance.Bitcoin}
+	symbol := testutils.RandString(3)
+	gateway := "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7"
+
+	handler := NewHandler(k, &ethMock.RPCClientMock{}, &ethMock.VoterMock{}, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.BalancerMock{})
+	_, err := handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), Recipient: recipient, Symbol: symbol, GatewayAddr: gateway})
+
+	assert.Error(t, err)
+}
+
+func TestLink_Success(t *testing.T) {
+	minConfHeight := testutils.RandIntBetween(1, 10)
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	k := newKeeper(ctx, minConfHeight)
+
+	account, err := sdk.AccAddressFromBech32("cosmos1vjyc4qmsdtdl5a4ruymnjqpchm5gyqde63sqdh")
+	if err != nil {
+		panic(err)
+	}
+
+	symbol := testutils.RandString(3)
+	name := testutils.RandString(10)
+	decimals := uint8(testutils.RandBytes(1)[0])
+	capacity := sdk.NewIntFromUint64(uint64(testutils.RandPosInt()))
+	gateway := "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7"
+	k.SaveTokenInfo(ctx, types.MsgSignDeployToken{Sender: account, TokenName: name, Symbol: symbol, Decimals: decimals, Capacity: capacity})
+
+	recipient := balance.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: balance.Bitcoin}
+	burnAddr, err := k.GetBurnerAddress(ctx, symbol, recipient.Address, common.HexToAddress(gateway))
+	if err != nil {
+		panic(err)
+
+	}
+	sender := balance.CrossChainAddress{Address: burnAddr.String(), Chain: balance.Ethereum}
+
+	b := &ethMock.BalancerMock{
+		LinkAddressesFunc: func(ctx sdk.Context, s balance.CrossChainAddress, r balance.CrossChainAddress) error { return nil },
+	}
+	handler := NewHandler(k, &ethMock.RPCClientMock{}, &ethMock.VoterMock{}, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, b)
+	_, err = handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), Recipient: recipient, Symbol: symbol, GatewayAddr: gateway})
+
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(b.LinkAddressesCalls()))
+	assert.Equal(t, sender, b.LinkAddressesCalls()[0].Sender)
+	assert.Equal(t, recipient, b.LinkAddressesCalls()[0].Recipient)
+}
 
 func TestDeployTx_DifferentValue_DifferentHash(t *testing.T) {
 	tx1 := createSignedDeployTx()
@@ -138,7 +195,7 @@ func TestVerifyTx_Deploy_HashNotFound(t *testing.T) {
 		return nil, fmt.Errorf("wrong hash")
 	}
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.BalancerMock{}, &ethMock.SignerMock{}, createSnapshotter(), &ethMock.BalancerMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, createSnapshotter(), &ethMock.BalancerMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyTx(sender, types.ModuleCdc.MustMarshalJSON(signedTx)))
 
@@ -156,7 +213,7 @@ func TestVerifyTx_Deploy_NotConfirmed(t *testing.T) {
 	k := newKeeper(ctx, minConfHeight)
 	rpc := createBasicRPCMock(signedTx, confCount)
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.BalancerMock{}, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.BalancerMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.BalancerMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyTx(sender, types.ModuleCdc.MustMarshalJSON(signedTx)))
 
@@ -174,7 +231,7 @@ func TestVerifyTx_Deploy_Success(t *testing.T) {
 	k := newKeeper(ctx, minConfHeight)
 	rpc := createBasicRPCMock(signedTx, confCount)
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.BalancerMock{}, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.BalancerMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.BalancerMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyTx(sender, types.ModuleCdc.MustMarshalJSON(signedTx)))
 
@@ -195,7 +252,7 @@ func TestVerifyTx_Mint_HashNotFound(t *testing.T) {
 		return nil, fmt.Errorf("wrong hash")
 	}
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.BalancerMock{}, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.BalancerMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.BalancerMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyTx(sender, types.ModuleCdc.MustMarshalJSON(signedTx)))
 
@@ -213,7 +270,7 @@ func TestVerifyTx_Mint_NotConfirmed(t *testing.T) {
 	k := newKeeper(ctx, minConfHeight)
 	rpc := createBasicRPCMock(signedTx, confCount)
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.BalancerMock{}, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.BalancerMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.BalancerMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyTx(sender, types.ModuleCdc.MustMarshalJSON(signedTx)))
 
@@ -231,7 +288,7 @@ func TestVerifyTx_Mint_Success(t *testing.T) {
 	k := newKeeper(ctx, minConfHeight)
 	rpc := createBasicRPCMock(signedTx, confCount)
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.BalancerMock{}, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.BalancerMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.BalancerMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyTx(sender, types.ModuleCdc.MustMarshalJSON(signedTx)))
 
@@ -323,7 +380,7 @@ func newKeeper(ctx sdk.Context, confHeight int64) keeper.Keeper {
 	cdc := testutils.Codec()
 	subspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
 	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"), subspace)
-	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(confHeight)})
+	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(confHeight), Token: tokenBC, Burneable: burnerBC})
 	return k
 }
 

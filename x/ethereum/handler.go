@@ -21,7 +21,7 @@ import (
 )
 
 // NewHandler returns the handler of the ethereum module
-func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, b types.Balancer, s types.Signer, snap snapshot.Snapshotter, balancer types.Balancer) sdk.Handler {
+func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Signer, snap snapshot.Snapshotter, b types.Balancer) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
@@ -36,7 +36,7 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, b types.Bal
 		case types.MsgSignTx:
 			return handleMsgSignTx(ctx, k, s, snap, msg)
 		case types.MsgSignPendingTransfers:
-			return handleMsgSignPendingTransfersTx(ctx, k, s, snap, balancer, msg)
+			return handleMsgSignPendingTransfersTx(ctx, k, s, snap, b, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))

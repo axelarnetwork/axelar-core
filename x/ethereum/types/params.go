@@ -55,6 +55,8 @@ func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
 	return subspace.ParamSetPairs{
 		subspace.NewParamSetPair(KeyConfirmationHeight, &p.ConfirmationHeight, validateConfirmationHeight),
 		subspace.NewParamSetPair(KeyNetwork, &p.Network, validateNetwork),
+		subspace.NewParamSetPair(KeyToken, &p.Token, validateByteCodes),
+		subspace.NewParamSetPair(KeyBurneable, &p.Burneable, validateByteCodes),
 	}
 }
 
@@ -74,6 +76,19 @@ func validateConfirmationHeight(height interface{}) error {
 	if h < 0 {
 		return sdkerrors.Wrap(types.ErrInvalidGenesis, "transaction confirmation height must be greater than 0")
 	}
+	return nil
+}
+
+func validateByteCodes(bytes interface{}) error {
+	b, ok := bytes.([]byte)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for byte codes: %T", bytes)
+	}
+
+	if len(b) == 0 {
+		return fmt.Errorf("byte codes cannot be empty")
+	}
+
 	return nil
 }
 

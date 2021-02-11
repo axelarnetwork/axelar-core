@@ -116,7 +116,7 @@ func (AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper, am.rpc, am.voter, am.balancer, am.signer, am.snap, am.balancer)
+	return NewHandler(am.keeper, am.rpc, am.voter, am.signer, am.snap, am.balancer)
 }
 
 func (AppModule) QuerierRoute() string {
