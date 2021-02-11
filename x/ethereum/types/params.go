@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -16,6 +17,8 @@ const (
 var (
 	KeyConfirmationHeight = []byte("confirmationHeight")
 	KeyNetwork            = []byte("network")
+	KeyBurnable           = []byte("burneable")
+	KeyToken              = []byte("token")
 )
 
 func KeyTable() subspace.KeyTable {
@@ -25,12 +28,26 @@ func KeyTable() subspace.KeyTable {
 type Params struct {
 	ConfirmationHeight uint64
 	Network            Network
+	Token              []byte
+	Burnable           []byte
 }
 
 func DefaultParams() Params {
+
+	bzToken, err := hex.DecodeString(token)
+	if err != nil {
+		panic(err)
+	}
+	bzBurnable, err := hex.DecodeString(burnable)
+	if err != nil {
+		panic(err)
+	}
+
 	return Params{
 		ConfirmationHeight: 1,
 		Network:            Ganache,
+		Token:              bzToken,
+		Burnable:           bzBurnable,
 	}
 }
 
@@ -46,6 +63,8 @@ func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
 	return subspace.ParamSetPairs{
 		subspace.NewParamSetPair(KeyConfirmationHeight, &p.ConfirmationHeight, validateConfirmationHeight),
 		subspace.NewParamSetPair(KeyNetwork, &p.Network, validateNetwork),
+		subspace.NewParamSetPair(KeyToken, &p.Token, validateByteCodes),
+		subspace.NewParamSetPair(KeyBurnable, &p.Burnable, validateByteCodes),
 	}
 }
 
@@ -65,6 +84,19 @@ func validateConfirmationHeight(height interface{}) error {
 	if h < 0 {
 		return sdkerrors.Wrap(types.ErrInvalidGenesis, "transaction confirmation height must be greater than 0")
 	}
+	return nil
+}
+
+func validateByteCodes(bytes interface{}) error {
+	b, ok := bytes.([]byte)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for byte codes: %T", bytes)
+	}
+
+	if len(b) == 0 {
+		return fmt.Errorf("byte codes cannot be empty")
+	}
+
 	return nil
 }
 

@@ -152,12 +152,12 @@ func TestTotalInvalid(t *testing.T) {
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	keeper.SetParams(ctx, types.DefaultParams())
-	btcSender, recipient := makeRandAddressesForChain(exported.Bitcoin, exported.Ethereum)
-	if err := keeper.LinkAddresses(ctx, btcSender, recipient); err != nil {
+	btcSender, btcRecipient := makeRandAddressesForChain(exported.Bitcoin, exported.Ethereum)
+	if err := keeper.LinkAddresses(ctx, btcSender, btcRecipient); err != nil {
 		panic(err)
 	}
-	ethSender, recipient := makeRandAddressesForChain(exported.Ethereum, exported.Bitcoin)
-	if err := keeper.LinkAddresses(ctx, ethSender, recipient); err != nil {
+	ethSender, ethRecipient := makeRandAddressesForChain(exported.Ethereum, exported.Bitcoin)
+	if err := keeper.LinkAddresses(ctx, ethSender, ethRecipient); err != nil {
 		panic(err)
 	}
 
@@ -165,8 +165,8 @@ func TestTotalInvalid(t *testing.T) {
 	assert.NoError(t, err)
 	transfer := keeper.GetPendingTransfersForChain(ctx, exported.Ethereum)[0]
 	keeper.ArchivePendingTransfer(ctx, transfer)
-	total := transfer.Amount.Amount.Uint64()
-	amount := sdk.NewCoin(denom.Satoshi, sdk.Int(sdk.NewUint(total+uint64(testutils.RandIntBetween(1, int64(total))))))
+	total := transfer.Amount.Amount.Int64()
+	amount := sdk.NewCoin(denom.Satoshi, sdk.NewInt(total+testutils.RandIntBetween(1, 100000)))
 	err = keeper.EnqueueForTransfer(ctx, ethSender, amount)
 	assert.Error(t, err)
 }
@@ -175,12 +175,12 @@ func TestTotalSucess(t *testing.T) {
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	keeper.SetParams(ctx, types.DefaultParams())
-	btcSender, recipient := makeRandAddressesForChain(exported.Bitcoin, exported.Ethereum)
-	if err := keeper.LinkAddresses(ctx, btcSender, recipient); err != nil {
+	btcSender, btcRecipient := makeRandAddressesForChain(exported.Bitcoin, exported.Ethereum)
+	if err := keeper.LinkAddresses(ctx, btcSender, btcRecipient); err != nil {
 		panic(err)
 	}
-	ethSender, recipient := makeRandAddressesForChain(exported.Ethereum, exported.Bitcoin)
-	if err := keeper.LinkAddresses(ctx, ethSender, recipient); err != nil {
+	ethSender, ethRecipient := makeRandAddressesForChain(exported.Ethereum, exported.Bitcoin)
+	if err := keeper.LinkAddresses(ctx, ethSender, ethRecipient); err != nil {
 		panic(err)
 	}
 
@@ -188,11 +188,11 @@ func TestTotalSucess(t *testing.T) {
 	assert.NoError(t, err)
 	transfer := keeper.GetPendingTransfersForChain(ctx, exported.Ethereum)[0]
 	keeper.ArchivePendingTransfer(ctx, transfer)
-	total := transfer.Amount.Amount.Uint64()
-	amount := sdk.NewCoin(denom.Satoshi, sdk.Int(sdk.NewUint(uint64(testutils.RandIntBetween(1, int64(total))))))
+	total := transfer.Amount.Amount.Int64()
+	amount := sdk.NewCoin(denom.Satoshi, sdk.NewInt(testutils.RandIntBetween(1, total)))
 	err = keeper.EnqueueForTransfer(ctx, ethSender, amount)
 	assert.NoError(t, err)
-	amount = sdk.NewCoin(denom.Satoshi, sdk.Int(sdk.NewUint(total)))
+	amount = sdk.NewCoin(denom.Satoshi, sdk.NewInt(total))
 	err = keeper.EnqueueForTransfer(ctx, ethSender, amount)
 	assert.Error(t, err)
 }

@@ -172,16 +172,16 @@ func (k Keeper) getChainTotal(ctx sdk.Context, chain exported.Chain, denom strin
 
 func (k Keeper) addChainTotal(ctx sdk.Context, chain exported.Chain, amount sdk.Coin) {
 	total := k.getChainTotal(ctx, chain, amount.Denom)
-	total = sdk.NewCoin(amount.Denom, total.Amount.Add(amount.Amount))
+	total = total.Add(amount)
 
 	ctx.KVStore(k.storeKey).Set([]byte(totalPrefix+chain.String()+"_"+amount.Denom), k.cdc.MustMarshalBinaryLengthPrefixed(total))
 }
 
-func (k Keeper) subChainTotal(ctx sdk.Context, chain exported.Chain, amount sdk.Coin) {
-	total := k.getChainTotal(ctx, chain, amount.Denom)
-	total = sdk.NewCoin(amount.Denom, total.Amount.Sub(amount.Amount))
+func (k Keeper) subChainTotal(ctx sdk.Context, chain exported.Chain, withdrawal sdk.Coin) {
+	total := k.getChainTotal(ctx, chain, withdrawal.Denom)
+	total = total.Sub(withdrawal)
 
-	ctx.KVStore(k.storeKey).Set([]byte(totalPrefix+chain.String()+"_"+amount.Denom), k.cdc.MustMarshalBinaryLengthPrefixed(total))
+	ctx.KVStore(k.storeKey).Set([]byte(totalPrefix+chain.String()+"_"+withdrawal.Denom), k.cdc.MustMarshalBinaryLengthPrefixed(total))
 }
 
 func (k Keeper) setPendingTransfer(ctx sdk.Context, recipient exported.CrossChainAddress, amount sdk.Coin) {

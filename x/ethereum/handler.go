@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/ethereum/go-ethereum/common"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -15,15 +17,16 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // NewHandler returns the handler of the ethereum module
-func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Signer, snap snapshot.Snapshotter, balancer types.Balancer) sdk.Handler {
+func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Signer, snap snapshot.Snapshotter, b types.Balancer) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
+		case types.MsgLink:
+			return handleMsgLink(ctx, k, b, msg)
 		case types.MsgVerifyTx:
 			return handleMsgVerifyTx(ctx, k, rpc, v, msg)
 		case *types.MsgVoteVerifiedTx:
@@ -33,12 +36,45 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 		case types.MsgSignTx:
 			return handleMsgSignTx(ctx, k, s, snap, msg)
 		case types.MsgSignPendingTransfers:
-			return handleMsgSignPendingTransfersTx(ctx, k, s, snap, balancer, msg)
+			return handleMsgSignPendingTransfersTx(ctx, k, s, snap, b, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
 		}
 	}
+}
+
+func handleMsgLink(ctx sdk.Context, k keeper.Keeper, b types.Balancer, msg types.MsgLink) (*sdk.Result, error) {
+	burnerAddr, err := k.GetBurnerAddress(ctx, msg.Symbol, msg.Recipient.Address, common.HexToAddress(msg.GatewayAddr))
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+
+	}
+
+	err = b.LinkAddresses(ctx, balance.CrossChainAddress{Chain: balance.Ethereum, Address: burnerAddr.String()}, msg.Recipient)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+
+	}
+
+	logMsg := fmt.Sprintf("successfully linked {%s} and {%s}", burnerAddr.String(), msg.Recipient.String())
+	k.Logger(ctx).Info(logMsg)
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+			sdk.NewAttribute(types.AttributeAddress, burnerAddr.String()),
+			sdk.NewAttribute(types.AttributeAddress, msg.Recipient.String()),
+		),
+	)
+
+	return &sdk.Result{
+		Data:   []byte(burnerAddr.String()),
+		Log:    logMsg,
+		Events: ctx.EventManager().Events(),
+	}, nil
 }
 
 func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap snapshot.Snapshotter, balancer types.Balancer, msg types.MsgSignPendingTransfers) (*sdk.Result, error) {
@@ -126,7 +162,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v 
 	 but only validators will later send out that vote.
 	*/
 
-	if err := verifyTx(ctx, k, rpc, tx); err != nil {
+	if err := verifyTx(ctx, k, rpc, tx.Hash()); err != nil {
 		k.Logger(ctx).Debug(sdkerrors.Wrapf(err, "expected transaction (%s) could not be verified", txID).Error())
 		if err := v.RecordVote(ctx, &types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false}); err != nil {
 			k.Logger(ctx).Error(sdkerrors.Wrap(err, "voting failed").Error())
@@ -220,6 +256,8 @@ func handleMsgSignDeployToken(ctx sdk.Context, k keeper.Keeper, signer types.Sig
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
 
+	k.SaveTokenInfo(ctx, msg)
+
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
@@ -277,8 +315,7 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 	}, nil
 }
 
-func verifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, expectedTx *ethTypes.Transaction) error {
-	hash := expectedTx.Hash()
+func verifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, hash common.Hash) error {
 	receipt, err := rpc.TransactionReceipt(context.Background(), hash)
 	if err != nil {
 		return sdkerrors.Wrap(err, "could not retrieve Ethereum receipt")

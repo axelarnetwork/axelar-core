@@ -7,10 +7,15 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/axelarnetwork/axelar-core/testutils"
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/x/balance/exported"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
-
+	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/ethereum/go-ethereum/common"
+	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/libs/log"
 )
 
 func TestCreateMintCommandData_SingleMint(t *testing.T) {
@@ -107,4 +112,33 @@ func TestCreateExecuteData_CorrectExecuteData(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, common.Bytes2Hex(actual))
+}
+
+func TestBurnerAddress_CorrectData(t *testing.T) {
+	cdc := testutils.Codec()
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	subspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
+	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"), subspace)
+
+	axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
+	recipient := "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L"
+	expected := common.HexToAddress("0x7be6ea60DCd9BbC2B88bEF45E419b5E6A9dBc5E1")
+	tokenName := "axelar token"
+	tokenSymbol := "at"
+	decimals := uint8(18)
+	capacity := sdk.NewIntFromUint64(uint64(10000))
+
+	k.SetParams(ctx, types.DefaultParams())
+	account, err := sdk.AccAddressFromBech32("cosmos1vjyc4qmsdtdl5a4ruymnjqpchm5gyqde63sqdh")
+	if err != nil {
+		panic(err)
+	}
+	k.SaveTokenInfo(ctx, types.MsgSignDeployToken{Sender: account, TokenName: tokenName, Symbol: tokenSymbol, Decimals: decimals, Capacity: capacity})
+
+	burnAddr, err := k.GetBurnerAddress(ctx, tokenSymbol, recipient, axelarGateway)
+	if err != nil {
+		panic(err)
+	}
+	assert.Equal(t, expected, burnAddr)
+
 }
