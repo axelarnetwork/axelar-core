@@ -92,7 +92,7 @@ func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer ty
 		}, nil
 	}
 
-	chainID := k.GetParams(ctx).Network.Params().ChainID
+	chainID := k.GetNetwork(ctx).Params().ChainID
 
 	data, err := types.CreateMintCommandData(chainID, pendingTransfers)
 	if err != nil {
@@ -100,7 +100,7 @@ func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer ty
 	}
 
 	var commandID types.CommandID
-	copy(commandID[:], crypto.Keccak256([]byte(data))[:32])
+	copy(commandID[:], crypto.Keccak256(data)[:32])
 
 	keyID, ok := signer.GetCurrentMasterKeyID(ctx, balance.Ethereum)
 	if !ok {

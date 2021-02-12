@@ -6,6 +6,8 @@ import (
 	"strconv"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/wire"
+	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -18,7 +20,7 @@ import (
 
 // NewHandler creates an sdk.Handler for all bitcoin type messages
 func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, signer types.Signer, snap types.Snapshotter, b types.Balancer) sdk.Handler {
-	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
+	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
 		case types.MsgVerifyTx:
@@ -29,38 +31,43 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, signer type
 			return handleMsgSignTx(ctx, k, signer, snap, msg)
 		case types.MsgLink:
 			return handleMsgLink(ctx, k, signer, b, msg)
+		case types.MsgSignPendingTransfers:
+			return handleMsgSignPendingTransfers(ctx, k, signer, snap, b, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
 		}
 	}
+
+	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
+		res, err := h(ctx, msg)
+		if err != nil {
+			return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
+		}
+		return res, nil
+	}
 }
 
 func handleMsgLink(ctx sdk.Context, k keeper.Keeper, s types.Signer, b types.Balancer, msg types.MsgLink) (*sdk.Result, error) {
-
 	key, ok := s.GetCurrentMasterKey(ctx, balance.Bitcoin)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrBitcoin, "master key not set")
+		return nil, fmt.Errorf("master key not set")
 	}
 
-	btcAddr, script, err := k.GenerateDepositAddressAndRedeemScript(ctx, btcec.PublicKey(key), msg.Recipient)
+	keyID, ok := s.GetCurrentMasterKeyID(ctx, balance.Bitcoin)
+	if !ok {
+		return nil, fmt.Errorf("master key not set")
+	}
+
+	btcAddr, err := k.CreateDepositAddress(ctx, msg.Recipient, keyID, btcec.PublicKey(key))
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
-
+		return nil, err
 	}
-	k.SetRedeemScript(ctx, btcAddr, script)
 
 	err = b.LinkAddresses(ctx, balance.CrossChainAddress{Chain: balance.Bitcoin, Address: btcAddr.EncodeAddress()}, msg.Recipient)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
-
+		return nil, err
 	}
-
-	id, ok := s.GetCurrentMasterKeyID(ctx, balance.Bitcoin)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrBitcoin, "master key not set")
-	}
-	k.SetKeyIDByAddress(ctx, btcAddr.EncodeAddress(), id)
 
 	logMsg := fmt.Sprintf("successfully linked {%s} and {%s}", btcAddr.EncodeAddress(), msg.Recipient.String())
 	k.Logger(ctx).Info(logMsg)
@@ -88,7 +95,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 	txID := msg.OutPointInfo.OutPoint.Hash.String()
 	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.OutPointInfo.OutPoint.String()}
 	if err := v.InitPoll(ctx, poll); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
+		return nil, err
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -149,24 +156,34 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, b 
 	if confirmed := v.Result(ctx, msg.Poll()); confirmed != nil {
 		outPoint, err := types.OutPointFromStr(msg.PollMeta.ID)
 		if err != nil {
-			return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
+			return nil, err
 		}
 		k.ProcessVerificationResult(ctx, msg.PollMeta.ID, confirmed.(bool))
 		v.DeletePoll(ctx, msg.Poll())
 
 		info, ok := k.GetVerifiedOutPointInfo(ctx, outPoint)
 		if !ok {
-			return nil, sdkerrors.Wrap(types.ErrBitcoin, "outpoint not verified")
+			return nil, fmt.Errorf("outpoint not verified")
 		}
-		id, ok := k.GetKeyIDByAddress(ctx, info.Address)
+		addr, err := btcutil.DecodeAddress(info.Address, k.GetNetwork(ctx).Params)
+		if err != nil {
+			return nil, err
+		}
+		id, ok := k.GetKeyIDByAddress(ctx, addr)
 		if !ok {
-			return nil, sdkerrors.Wrap(types.ErrBitcoin, "key id not found")
+			return nil, fmt.Errorf("key id not found")
 		}
 		k.SetKeyIDByOutpoint(ctx, outPoint, id)
 
-		err = enqueueForTransfer(ctx, k, b, info)
-		if err != nil {
-			return nil, sdkerrors.Wrap(types.ErrBitcoin, fmt.Sprintf("error while preparing transfer: %v", err))
+		depositAddr := balance.CrossChainAddress{Address: info.Address, Chain: balance.Bitcoin}
+		amount := sdk.NewInt64Coin(denom.Satoshi, int64(info.Amount))
+		err = b.EnqueueForTransfer(ctx, depositAddr, amount)
+
+		if err == nil {
+			k.Logger(ctx).Debug(fmt.Sprintf("Transfer of %s from %s in %s successfully prepared",
+				amount.Amount.String(), depositAddr.Address, depositAddr.Chain.String()))
+		} else {
+			k.Logger(ctx).Debug(fmt.Sprintf("prepared no transfer: %s", err))
 		}
 
 		event = event.AppendAttributes(sdk.NewAttribute(types.AttributePollConfirmed, strconv.FormatBool(confirmed.(bool))))
@@ -184,42 +201,145 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
 		),
 	)
-
 	k.SetRawTx(ctx, msg.Outpoint, msg.RawTx)
-
-	// Print out the hash that becomes the input for the threshold signing
-	hash, err := k.GetHashToSign(ctx, msg.RawTx)
+	k.SpendVerifiedOutPoint(ctx, msg.Outpoint.String())
+	err := startSignInputs(ctx, k, signer, snap, msg.RawTx)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
+		return nil, err
 	}
-	serializedHash := hex.EncodeToString(hash)
-	k.Logger(ctx).Info(fmt.Sprintf("bitcoin tx to sign: %s", serializedHash))
-
-	keyID, ok := k.GetKeyIDByOutpoint(ctx, msg.Outpoint)
-	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrBitcoin, "no key ID for chain %s found", balance.Bitcoin)
-	}
-
-	round, ok := signer.GetSnapshotRoundForKeyID(ctx, keyID)
-	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrBitcoin, "no snapshot round for key ID %s registered", keyID)
-	}
-	s, ok := snap.GetSnapshot(ctx, round)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrBitcoin, "no snapshot found")
-	}
-	err = signer.StartSign(ctx, keyID, serializedHash, hash, s.Validators)
-	if err != nil {
-		if !ok {
-			return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
-		}
-	}
-
 	return &sdk.Result{
-		Data:   hash,
 		Log:    fmt.Sprintf("successfully started signing protocol for transaction that spends %s.", msg.Outpoint),
 		Events: ctx.EventManager().Events(),
 	}, nil
+}
+
+func handleMsgSignPendingTransfers(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap types.Snapshotter, balancer types.Balancer, msg types.MsgSignPendingTransfers) (*sdk.Result, error) {
+	pendingTransfers := balancer.GetPendingTransfersForChain(ctx, balance.Bitcoin)
+
+	if len(pendingTransfers) == 0 {
+		return &sdk.Result{
+			Log:    fmt.Sprintf("no pending transfer for chain %s found", balance.Bitcoin),
+			Events: ctx.EventManager().Events(),
+		}, nil
+	}
+
+	var outPuts []types.Output
+	totalWithdrawals := sdk.ZeroInt()
+	for _, transfer := range pendingTransfers {
+		if transfer.Asset.Denom != denom.Satoshi {
+			return nil, fmt.Errorf("expected transfer currency to be %s, got %s", denom.Satoshi, transfer.Asset.Denom)
+		}
+		recipient, err := btcutil.DecodeAddress(transfer.Recipient.Address, k.GetNetwork(ctx).Params)
+		if err != nil {
+			k.Logger(ctx).Error(fmt.Sprintf("%s is not a valid address", transfer.Recipient))
+			continue
+		}
+
+		outPuts = append(outPuts, types.Output{
+			Amount:    btcutil.Amount(transfer.Asset.Amount.Int64()),
+			Recipient: recipient,
+		})
+		totalWithdrawals = totalWithdrawals.Add(transfer.Asset.Amount)
+		balancer.ArchivePendingTransfer(ctx, transfer)
+	}
+
+	var prevOuts []*wire.OutPoint
+	totalDeposits := sdk.ZeroInt()
+	for _, info := range k.GetVerifiedOutPointInfos(ctx) {
+		prevOuts = append(prevOuts, info.OutPoint)
+		totalDeposits = totalDeposits.AddRaw(int64(info.Amount))
+		k.SpendVerifiedOutPoint(ctx, info.OutPoint.String())
+	}
+
+	change := totalDeposits.Sub(totalWithdrawals).SubRaw(int64(msg.Fee))
+	if change.IsNegative() {
+		return nil, fmt.Errorf("not enough deposits (%s) to make all withdrawals (%s) with a transaction fee of %s",
+			totalDeposits.String(),
+			totalWithdrawals.String(),
+			msg.Fee.String(),
+		)
+	}
+
+	if change.IsZero() {
+		k.Logger(ctx).Info("creating a transaction without change")
+	}
+
+	if change.IsPositive() {
+		if !change.IsInt64() {
+			return nil, fmt.Errorf("the calculated change is too large for a single transaction")
+		}
+
+		pk, ok := signer.GetCurrentMasterKey(ctx, balance.Bitcoin)
+		if !ok {
+			return nil, fmt.Errorf("key not found")
+		}
+		masterAddr, script, err := k.GenerateMasterAddressAndRedeemScript(ctx, btcec.PublicKey(pk))
+		if err != nil {
+			return nil, err
+		}
+		k.SetRedeemScript(ctx, masterAddr, script)
+		outPuts = append(outPuts, types.Output{
+			Amount:    btcutil.Amount(change.Int64()),
+			Recipient: masterAddr,
+		})
+	}
+
+	tx, err := types.CreateTx(prevOuts, outPuts)
+	if err != nil {
+		return nil, err
+	}
+	k.SetRawConsolidationTx(ctx, tx)
+
+	err = startSignInputs(ctx, k, signer, snap, tx)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+		),
+	)
+
+	return &sdk.Result{
+		Log:    fmt.Sprintf("successfully started signing protocols to spend pending transfers"),
+		Events: ctx.EventManager().Events(),
+	}, nil
+}
+
+func startSignInputs(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap types.Snapshotter, tx *wire.MsgTx) error {
+	// Print out the hash that becomes the input for the threshold signing
+	hashes, err := k.GetHashesToSign(ctx, tx)
+	if err != nil {
+		return err
+	}
+	for i, hash := range hashes {
+		serializedHash := hex.EncodeToString(hash)
+		k.Logger(ctx).Info(fmt.Sprintf("hash to sign: %s", serializedHash))
+
+		keyID, ok := k.GetKeyIDByOutpoint(ctx, &tx.TxIn[i].PreviousOutPoint)
+		if !ok {
+			return fmt.Errorf("no key ID for chain %s found", balance.Bitcoin)
+		}
+
+		round, ok := signer.GetSnapshotRoundForKeyID(ctx, keyID)
+		if !ok {
+			return fmt.Errorf("no snapshot round for key ID %s registered", keyID)
+		}
+		s, ok := snap.GetSnapshot(ctx, round)
+		if !ok {
+			return fmt.Errorf("no snapshot found")
+		}
+		err = signer.StartSign(ctx, keyID, serializedHash, hash, s.Validators)
+		if err != nil {
+			if !ok {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func verifyTx(rpc types.RPCClient, expectedInfo types.OutPointInfo, requiredConfirmations uint64) error {
@@ -239,26 +359,6 @@ func verifyTx(rpc types.RPCClient, expectedInfo types.OutPointInfo, requiredConf
 	if actualInfo.Confirmations < requiredConfirmations {
 		return fmt.Errorf("not enough confirmations yet")
 	}
-
-	return nil
-}
-
-func enqueueForTransfer(ctx sdk.Context, k keeper.Keeper, b types.Balancer, info types.OutPointInfo) error {
-	depositAddr := balance.CrossChainAddress{Address: info.Address, Chain: balance.Bitcoin}
-	recipient, ok := b.GetRecipient(ctx, depositAddr)
-	// Do nothing if not linked
-	if !ok {
-		return nil
-	}
-
-	amount := sdk.NewInt64Coin(denom.Satoshi, int64(info.Amount))
-
-	err := b.EnqueueForTransfer(ctx, depositAddr, amount)
-	if err != nil {
-		return err
-	}
-	k.Logger(ctx).Info(fmt.Sprintf("Transfer of %s to cross chain address %s in %s successfully prepared",
-		info.Amount.String(), recipient.Address, recipient.Chain.String()))
 
 	return nil
 }

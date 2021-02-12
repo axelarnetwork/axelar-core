@@ -44,9 +44,13 @@ func Codec() *codec.Codec {
 	return cdc
 }
 
-// RandPosInt returns a non-negative pseudo-random integer
+// RandPosInt returns a positive pseudo-random integer
 func RandPosInt() int64 {
-	return rand.Int63()
+	x := rand.Int63()
+	for x == 0 {
+		x = rand.Int63()
+	}
+	return x
 }
 
 // RandIntBetween returns a random integer between lower (inclusive) and upper (exclusive).
@@ -76,13 +80,13 @@ type RandIntGen struct {
 
 // RandPosInts returns a random integer generator for positive integers.
 func RandPosInts() RandIntGen {
-	return generateInt64(rand.Int63)
+	return generateInt64(RandPosInt)
 }
 
 // RandIntsBetween returns a random integer generator for numbers between lower (inclusive) and upper (exclusive).
 // It panics if  upper <= lower.
 func RandIntsBetween(lower int64, upper int64) RandIntGen {
-	return generateInt64(func() int64 { return rand.Int63n(upper-lower) + lower })
+	return generateInt64(func() int64 { return RandIntBetween(lower, upper) })
 }
 
 // Where restricts the output of the underlying generator to adhere to the predicate.

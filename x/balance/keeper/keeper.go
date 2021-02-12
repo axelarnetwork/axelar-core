@@ -7,6 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
+	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/axelar-core/x/balance/types"
@@ -22,7 +23,7 @@ const (
 	sequenceKey = "nextID"
 )
 
-//Keeper represents a ballance keeper
+// Keeper represents a ballance keeper
 type Keeper struct {
 	storeKey sdk.StoreKey
 	cdc      *codec.Codec
@@ -32,6 +33,11 @@ type Keeper struct {
 // NewKeeper returns a new balance keeper
 func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
 	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable())}
+}
+
+// Logger returns a module-specific logger.
+func (k Keeper) Logger(ctx sdk.Context) log.Logger {
+	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
 // SetParams sets the balance module's parameters
@@ -66,10 +72,8 @@ func (k Keeper) GetChainAssetInfo(ctx sdk.Context, chain exported.Chain) (info t
 }
 
 // SetChainAssetInfo sets the specification for a chain's assets
-func (k Keeper) SetChainAssetInfo(ctx sdk.Context, info types.ChainAssetInfo) error {
+func (k Keeper) SetChainAssetInfo(ctx sdk.Context, info types.ChainAssetInfo) {
 	ctx.KVStore(k.storeKey).Set([]byte(infoPrefix+info.Chain.String()), k.cdc.MustMarshalBinaryLengthPrefixed(info))
-
-	return nil
 }
 
 // LinkAddresses links a sender address to a crosschain recipient address
@@ -98,17 +102,17 @@ func (k Keeper) GetRecipient(ctx sdk.Context, sender exported.CrossChainAddress)
 }
 
 // EnqueueForTransfer appoints the amount of tokens to be transfered/minted to the recipient previously linked to the specified sender
-func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error {
+func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, asset sdk.Coin) error {
 	infoSender, ok := k.GetChainAssetInfo(ctx, sender.Chain)
 	if !ok {
 		return fmt.Errorf("no chain asset info available for sender %s", sender.String())
 	}
-	if !infoSender.SupportsForeignAssets && infoSender.NativeAsset != amount.Denom {
+	if !infoSender.SupportsForeignAssets && infoSender.NativeAsset != asset.Denom {
 		return fmt.Errorf("sender's chain %s does not support foreign assets", sender.Chain.String())
 	}
 
-	if infoSender.NativeAsset != amount.Denom && !k.getChainTotal(ctx, sender.Chain, amount.Denom).IsGTE(amount) {
-		return fmt.Errorf("not enough funds available for asset '%s' in chain %s", amount.Denom, sender.Chain)
+	if infoSender.NativeAsset != asset.Denom && !k.getChainTotal(ctx, sender.Chain, asset.Denom).IsGTE(asset) {
+		return fmt.Errorf("not enough funds available for asset '%s' in chain %s", asset.Denom, sender.Chain)
 	}
 
 	recipient, ok := k.GetRecipient(ctx, sender)
@@ -117,14 +121,16 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 	}
 
 	infoRecipient, _ := k.GetChainAssetInfo(ctx, recipient.Chain)
-	if !infoRecipient.SupportsForeignAssets && infoRecipient.NativeAsset != amount.Denom {
+	if !infoRecipient.SupportsForeignAssets && infoRecipient.NativeAsset != asset.Denom {
 		return fmt.Errorf("recipient's chain %s does not support foreign assets", recipient.Chain.String())
 	}
 
-	if infoSender.NativeAsset != amount.Denom {
-		k.subChainTotal(ctx, sender.Chain, amount)
+	if infoSender.NativeAsset != asset.Denom {
+		k.subChainTotal(ctx, sender.Chain, asset)
 	}
-	k.setPendingTransfer(ctx, recipient, amount)
+	k.setPendingTransfer(ctx, recipient, asset)
+	k.Logger(ctx).Info(fmt.Sprintf("Transfer of %s to cross chain address %s in %s successfully prepared",
+		asset.Amount.String(), recipient.Address, recipient.Chain.String()))
 
 	return nil
 }
@@ -154,8 +160,8 @@ func (k Keeper) ArchivePendingTransfer(ctx sdk.Context, transfer exported.CrossC
 	var t exported.CrossChainTransfer
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &t)
 	info, _ := k.GetChainAssetInfo(ctx, t.Recipient.Chain)
-	if info.NativeAsset != t.Amount.Denom {
-		k.addChainTotal(ctx, t.Recipient.Chain, t.Amount)
+	if info.NativeAsset != t.Asset.Denom {
+		k.addChainTotal(ctx, t.Recipient.Chain, t.Asset)
 	}
 }
 
@@ -192,7 +198,7 @@ func (k Keeper) setPendingTransfer(ctx sdk.Context, recipient exported.CrossChai
 		next = binary.LittleEndian.Uint64(bz)
 	}
 
-	transfer := exported.CrossChainTransfer{Recipient: recipient, Amount: amount, ID: next}
+	transfer := exported.CrossChainTransfer{Recipient: recipient, Asset: amount, ID: next}
 	ctx.KVStore(k.storeKey).Set([]byte(pendingPrefix+marshalCrossChainKey(recipient.Chain, next)), k.cdc.MustMarshalBinaryLengthPrefixed(transfer))
 
 	next++

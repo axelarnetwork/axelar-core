@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params/subspace"
 )
 
-// Default parameter namespace
+// DefaultParamspace - default parameter namespace
 const (
 	DefaultParamspace = ModuleName
 )

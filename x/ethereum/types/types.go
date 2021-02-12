@@ -238,7 +238,7 @@ func CreateMintCommandData(chainID *big.Int, transfers []balance.CrossChainTrans
 	var commandParams [][]byte
 
 	for _, transfer := range transfers {
-		commandParam, err := createMintParams(transfer.Recipient.Address, transfer.Amount.Denom, transfer.Amount.Amount.BigInt())
+		commandParam, err := createMintParams(transfer.Recipient.Address, transfer.Asset.Denom, transfer.Asset.Amount.BigInt())
 		if err != nil {
 			return nil, err
 		}

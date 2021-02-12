@@ -28,9 +28,9 @@ func TestKeeper_GetVerifiedOutpoints(t *testing.T) {
 
 	testCases := []struct {
 		label   string
-		prepare func(k Keeper, ctx sdk.Context, infoCount int) (expected []*wire.OutPoint)
+		prepare func(k Keeper, ctx sdk.Context, infoCount int) (expected []types.OutPointInfo)
 	}{
-		{"no outpoints", func(Keeper, sdk.Context, int) []*wire.OutPoint { return nil }},
+		{"no outpoints", func(Keeper, sdk.Context, int) []types.OutPointInfo { return nil }},
 		{"only unverified outpoints", prepareUnverifiedOutPoints},
 		{"only verified outpoints", prepareVerifiedOutPoints},
 		{"only spent outpoints", prepareSpentOutPoints},
@@ -44,13 +44,14 @@ func TestKeeper_GetVerifiedOutpoints(t *testing.T) {
 				k, ctx := init()
 				infoCount := int(testutils.RandIntBetween(1, 200))
 				expectedOuts := testCase.prepare(k, ctx, infoCount)
-				assert.ElementsMatch(t, expectedOuts, k.GetVerifiedOutPoints(ctx))
+				actualOuts := k.GetVerifiedOutPointInfos(ctx)
+				assert.ElementsMatch(t, expectedOuts, actualOuts, "expected: %d elements, got: %d elements", len(expectedOuts), len(actualOuts))
 			}
 		})
 	}
 }
 
-func prepareUnverifiedOutPoints(k Keeper, ctx sdk.Context, infoCount int) []*wire.OutPoint {
+func prepareUnverifiedOutPoints(k Keeper, ctx sdk.Context, infoCount int) []types.OutPointInfo {
 	for i := 0; i < infoCount; i++ {
 		info := randOutPointInfo()
 		k.SetUnverifiedOutpointInfo(ctx, info)
@@ -58,18 +59,18 @@ func prepareUnverifiedOutPoints(k Keeper, ctx sdk.Context, infoCount int) []*wir
 	return nil
 }
 
-func prepareVerifiedOutPoints(k Keeper, ctx sdk.Context, infoCount int) []*wire.OutPoint {
-	var outs []*wire.OutPoint
+func prepareVerifiedOutPoints(k Keeper, ctx sdk.Context, infoCount int) []types.OutPointInfo {
+	var outs []types.OutPointInfo
 	for i := 0; i < infoCount; i++ {
 		info := randOutPointInfo()
 		k.SetUnverifiedOutpointInfo(ctx, info)
 		k.ProcessVerificationResult(ctx, info.OutPoint.String(), true)
-		outs = append(outs, info.OutPoint)
+		outs = append(outs, info)
 	}
 	return outs
 }
 
-func prepareSpentOutPoints(k Keeper, ctx sdk.Context, infoCount int) []*wire.OutPoint {
+func prepareSpentOutPoints(k Keeper, ctx sdk.Context, infoCount int) []types.OutPointInfo {
 	for i := 0; i < infoCount; i++ {
 		info := randOutPointInfo()
 		k.SetUnverifiedOutpointInfo(ctx, info)
@@ -79,7 +80,7 @@ func prepareSpentOutPoints(k Keeper, ctx sdk.Context, infoCount int) []*wire.Out
 	return nil
 }
 
-func prepareRandomOutPointStates(k Keeper, ctx sdk.Context, infoCount int) (expected []*wire.OutPoint) {
+func prepareRandomOutPointStates(k Keeper, ctx sdk.Context, infoCount int) (expected []types.OutPointInfo) {
 	var unverifiedCount, verifiedCount, spentCount int
 	for _, state := range testutils.RandDistr(3).Samples(infoCount) {
 		switch state {

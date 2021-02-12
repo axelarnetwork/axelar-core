@@ -1,16 +1,20 @@
 package types
 
 import (
+	"fmt"
+
+	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 type MsgSignPendingTransfers struct {
 	Sender sdk.AccAddress
+	Fee    btcutil.Amount
 }
 
-func NewMsgSignPendingTransfersTx(sender sdk.AccAddress) sdk.Msg {
-	return MsgSignPendingTransfers{Sender: sender}
+func NewMsgSignPendingTransfers(sender sdk.AccAddress, fee btcutil.Amount) sdk.Msg {
+	return MsgSignPendingTransfers{Sender: sender, Fee: fee}
 }
 
 func (msg MsgSignPendingTransfers) Route() string {
@@ -24,6 +28,9 @@ func (msg MsgSignPendingTransfers) Type() string {
 func (msg MsgSignPendingTransfers) ValidateBasic() error {
 	if msg.Sender.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
+	}
+	if msg.Fee <= 0 {
+		return fmt.Errorf("fee must be a positive amount")
 	}
 
 	return nil

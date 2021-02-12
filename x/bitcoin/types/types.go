@@ -91,26 +91,22 @@ type RawTxParams struct {
 }
 
 // CreateTx returns a new unsigned Bitcoin transaction
-func CreateTx(outPoint *wire.OutPoint, satoshi sdk.Coin, recipient btcutil.Address) (*wire.MsgTx, error) {
-	addrScript, err := txscript.PayToAddrScript(recipient)
-	if err != nil {
-		return nil, sdkerrors.Wrap(err, "could not create pay-to-address script for destination address")
+func CreateTx(prevOuts []*wire.OutPoint, outputs []Output) (*wire.MsgTx, error) {
+	tx := wire.NewMsgTx(wire.TxVersion)
+	for _, outPoint := range prevOuts {
+		// The signature script or witness will be set later
+		txIn := wire.NewTxIn(outPoint, nil, nil)
+		tx.AddTxIn(txIn)
+	}
+	for _, out := range outputs {
+		addrScript, err := txscript.PayToAddrScript(out.Recipient)
+		if err != nil {
+			return nil, sdkerrors.Wrap(err, "could not create pay-to-address script for destination address")
+		}
+		txOut := wire.NewTxOut(int64(out.Amount), addrScript)
+		tx.AddTxOut(txOut)
 	}
 
-	/*
-		Creating a Bitcoin transaction one step at a time:
-			1. Create the transaction message
-			2. Get the output of the deposit transaction and convert it into the transaction input
-			3. Create a new output
-		See https://blog.hlongvu.com/post/t0xx5dejn3-Understanding-btcd-Part-4-Create-and-Sign-a-Bitcoin-transaction-with-btcd
-	*/
-	tx := wire.NewMsgTx(wire.TxVersion)
-
-	// The signature script or witness will be set later
-	txIn := wire.NewTxIn(outPoint, nil, nil)
-	tx.AddTxIn(txIn)
-	txOut := wire.NewTxOut(satoshi.Amount.Int64(), addrScript)
-	tx.AddTxOut(txOut)
 	return tx, nil
 }
 
@@ -132,4 +128,9 @@ func OutPointFromStr(outStr string) (*wire.OutPoint, error) {
 
 	out := wire.NewOutPoint(hash, uint32(v))
 	return out, nil
+}
+
+type Output struct {
+	Amount    btcutil.Amount
+	Recipient btcutil.Address
 }

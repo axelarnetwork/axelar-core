@@ -52,6 +52,13 @@ func (k Keeper) GetParams(ctx sdk.Context) types.Params {
 	return p
 }
 
+// GetNetwork returns the Ethereum network Axelar-Core is expected to connect to
+func (k Keeper) GetNetwork(ctx sdk.Context) types.Network {
+	var network types.Network
+	k.params.Get(ctx, types.KeyNetwork, &network)
+	return network
+}
+
 // Codec returns the codec
 func (k Keeper) Codec() *codec.Codec {
 	return k.cdc
