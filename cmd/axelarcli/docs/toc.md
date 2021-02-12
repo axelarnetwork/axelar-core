@@ -21,7 +21,7 @@
       - [deposit-addr \[blockchain\] \[recipient addr\]](axelarcli_query_bitcoin_deposit-addr.md)	 - Returns a bitcoin deposit address for a recipient address on another blockchain
       - [rawTx \[txID:voutIdx\] \[amount\] \[recipient\]](axelarcli_query_bitcoin_rawTx.md)	 - Get a raw transaction that spends \[amount\] of the outpoint \[voutIdx\] of \[txID\] to <recipient> or the next master key in rotation
       - [send \[txID:voutIdx\]](axelarcli_query_bitcoin_send.md)	 - Send a transaction to Bitcoin that spends output \[voutIdx\] of tx \[txID\]
-      - [sendTransfers](axelarcli_query_bitcoin_sendTransfers.md)	 - Send a transaction to Bitcoin that spends output \[voutIdx\] of tx \[txID\]
+      - [sendTransfers](axelarcli_query_bitcoin_sendTransfers.md)	 - Send a transaction to Bitcoin that consolidates deposits and withdrawals
       - [txInfo \[blockHash\] \[txID:voutIdx\]](axelarcli_query_bitcoin_txInfo.md)	 - Query the info of the outpoint at index \[voutIdx\] of transaction \[txID\] on Bitcoin
     - [block \[height\]](axelarcli_query_block.md)	 - Get verified data for a the block at given height
     - [distribution](axelarcli_query_distribution.md)	 - Querying commands for the distribution module

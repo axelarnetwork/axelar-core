@@ -186,19 +186,14 @@ func GetCmdSendTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 func GetCmdSendTransfers(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "sendTransfers",
-		Short: "Send a transaction to Bitcoin that spends output [voutIdx] of tx [txID]",
-		Args:  cobra.ExactArgs(1),
+		Short: "Send a transaction to Bitcoin that consolidates deposits and withdrawals",
+		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			outpoint, err := types.OutPointFromStr(args[0])
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.SendTransfers), nil)
 			if err != nil {
-				return err
-			}
-
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.SendTx), cdc.MustMarshalJSON(outpoint))
-			if err != nil {
-				return sdkerrors.Wrapf(err, "could not send the transaction spending transaction %s", args[0])
+				return sdkerrors.Wrap(err, "could not send the consolidation transaction")
 			}
 
 			var out string

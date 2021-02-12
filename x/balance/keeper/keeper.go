@@ -129,8 +129,6 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 		k.subChainTotal(ctx, sender.Chain, asset)
 	}
 	k.setPendingTransfer(ctx, recipient, asset)
-	k.Logger(ctx).Info(fmt.Sprintf("Transfer of %s to cross chain address %s in %s successfully prepared",
-		asset.Amount.String(), recipient.Address, recipient.Chain.String()))
 
 	return nil
 }
