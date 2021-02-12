@@ -466,6 +466,7 @@ func TestSignTx(t *testing.T) {
 		},
 		StartSignFunc: func(ctx sdk.Context, keyID string, sID string, msg []byte, validators []snapshot.Validator) error {
 			sigID = sID
+			txHash = msg
 			return nil
 		},
 		GetNextMasterKeyFunc: func(ctx sdk.Context, chain balance.Chain) (ecdsa.PublicKey, bool) {
@@ -516,9 +517,8 @@ func TestSignTx(t *testing.T) {
 
 		signTx := prepareMsgSign(ctx, k, querier, sk, recipient)
 
-		res, err := handler(ctx, signTx)
+		_, err := handler(ctx, signTx)
 		assert.NoError(t, err)
-		txHash = res.Data
 
 		_, err = querier(ctx, []string{keeper.SendTx}, abci.RequestQuery{Data: cdc.MustMarshalJSON(signTx.Outpoint)})
 		assert.NoError(t, err)
