@@ -37,8 +37,8 @@ func TestCreateMintCommandData_SingleMint(t *testing.T) {
 					Chain:   exported.Ethereum,
 					Address: address,
 				},
-				Amount: sdk.NewCoin(denom, amount),
-				ID:     10000,
+				Asset: sdk.NewCoin(denom, amount),
+				ID:    10000,
 			},
 		},
 	)
@@ -62,8 +62,8 @@ func TestCreateMintCommandData_MultipleMint(t *testing.T) {
 	actual, err := types.CreateMintCommandData(
 		chainID,
 		[]exported.CrossChainTransfer{
-			{Recipient: exported.CrossChainAddress{Chain: exported.Ethereum, Address: addressA}, Amount: sdk.NewCoin(denomA, amountA), ID: 1},
-			{Recipient: exported.CrossChainAddress{Chain: exported.Ethereum, Address: addressB}, Amount: sdk.NewCoin(denomB, amountB), ID: 2},
+			{Recipient: exported.CrossChainAddress{Chain: exported.Ethereum, Address: addressA}, Asset: sdk.NewCoin(denomA, amountA), ID: 1},
+			{Recipient: exported.CrossChainAddress{Chain: exported.Ethereum, Address: addressB}, Asset: sdk.NewCoin(denomB, amountB), ID: 2},
 		})
 
 	assert.NoError(t, err)

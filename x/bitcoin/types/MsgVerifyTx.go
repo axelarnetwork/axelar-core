@@ -10,7 +10,7 @@ type MsgVerifyTx struct {
 	OutPointInfo OutPointInfo
 }
 
-func NewMsgVerifyTx(sender sdk.AccAddress, out OutPointInfo) sdk.Msg {
+func NewMsgVerifyTx(sender sdk.AccAddress, out OutPointInfo) MsgVerifyTx {
 	return MsgVerifyTx{
 		Sender:       sender,
 		OutPointInfo: out,

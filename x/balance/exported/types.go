@@ -72,6 +72,6 @@ func (a CrossChainAddress) String() string {
 
 type CrossChainTransfer struct {
 	Recipient CrossChainAddress
-	Amount    sdk.Coin
+	Asset     sdk.Coin
 	ID        uint64
 }

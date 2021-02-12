@@ -1,18 +1,17 @@
 package types
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/balance/exported"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/cosmos/cosmos-sdk/x/params/subspace"
+
+	"github.com/axelarnetwork/axelar-core/utils/denom"
+	"github.com/axelarnetwork/axelar-core/x/balance/exported"
 )
 
-// Default parameter namespace
+// DefaultParamspace - default parameter namespace
 const (
 	DefaultParamspace = ModuleName
-
-	bitcoinDenom  = "satoshi"
-	ethereumDenom = "wei"
 )
 
 var (
@@ -43,8 +42,8 @@ func DefaultParams() Params {
 	return Params{
 
 		ChainsAssetInfo: []ChainAssetInfo{
-			{Chain: exported.Bitcoin, NativeAsset: bitcoinDenom, SupportsForeignAssets: false},
-			{Chain: exported.Ethereum, NativeAsset: ethereumDenom, SupportsForeignAssets: true},
+			{Chain: exported.Bitcoin, NativeAsset: denom.Satoshi, SupportsForeignAssets: false},
+			{Chain: exported.Ethereum, NativeAsset: denom.Wei, SupportsForeignAssets: true},
 		},
 	}
 }

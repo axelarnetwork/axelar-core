@@ -35,6 +35,7 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		GetCmdTxInfo(queryRoute, cdc),
 		GetCmdRawTx(queryRoute, cdc),
 		GetCmdSendTx(queryRoute, cdc),
+		GetCmdSendTransfers(queryRoute, cdc),
 	)...)
 
 	return btcTxCmd
@@ -159,6 +160,32 @@ func GetCmdRawTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 func GetCmdSendTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "send [txID:voutIdx]",
+		Short: "Send a transaction to Bitcoin that spends output [voutIdx] of tx [txID]",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			outpoint, err := types.OutPointFromStr(args[0])
+			if err != nil {
+				return err
+			}
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.SendTx), cdc.MustMarshalJSON(outpoint))
+			if err != nil {
+				return sdkerrors.Wrapf(err, "could not send the transaction spending transaction %s", args[0])
+			}
+
+			var out string
+			cdc.MustUnmarshalJSON(res, &out)
+			return cliCtx.PrintOutput(out)
+		},
+	}
+}
+
+// GetCmdSendTransfers sends a transaction containing all pending transfers to Bitcoin
+func GetCmdSendTransfers(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "sendTransfers",
 		Short: "Send a transaction to Bitcoin that spends output [voutIdx] of tx [txID]",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

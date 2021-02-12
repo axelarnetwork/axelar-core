@@ -4,12 +4,14 @@ import (
 	"fmt"
 
 	"github.com/btcsuite/btcd/wire"
+	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authUtils "github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 
+	"github.com/axelarnetwork/axelar-core/utils/denom"
 	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 
 	"github.com/spf13/cobra"
@@ -34,6 +36,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		GetCmdVerifyTx(cdc),
 		GetCmdSignRawTx(cdc),
 		GetCmdLink(cdc),
+		GetCmdSignPendingTransfersTx(cdc),
 	)...)
 
 	return btcTxCmd
@@ -112,6 +115,29 @@ func GetCmdLink(cdc *codec.Codec) *cobra.Command {
 			}
 
 			msg := types.MsgLink{Sender: cliCtx.GetFromAddress(), Recipient: address}
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+// GetCmdSignPendingTransfersTx returns the cli command to sign all pending token transfers to Ethereum
+func GetCmdSignPendingTransfersTx(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "sign-pending-transfers [fee]",
+		Short: "Create a Bitcoin transaction for all pending transfers and sign it",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
+
+			satoshi, err := denom.ParseSatoshi(args[0])
+			if err != nil {
+				return err
+			}
+			msg := types.NewMsgSignPendingTransfers(cliCtx.GetFromAddress(), btcutil.Amount(satoshi.Amount.Int64()))
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

@@ -63,6 +63,7 @@
   - [tx](axelarcli_tx.md)	 - Transactions subcommands
     - [bitcoin](axelarcli_tx_bitcoin.md)	 - bitcoin transactions subcommands
       - [link \[chain\] \[address\]](axelarcli_tx_bitcoin_link.md)	 - Link a cross chain address to a bitcoin address created by Axelar
+      - [sign-pending-transfers \[fee\]](axelarcli_tx_bitcoin_sign-pending-transfers.md)	 - Create a Bitcoin transaction for all pending transfers and sign it
       - [signTx \[txID:voutIdx\] \[tx json\]](axelarcli_tx_bitcoin_signTx.md)	 - Sign raw spending transaction with utxo of \[txID\]
       - [verifyTx \[txInfo json\]](axelarcli_tx_bitcoin_verifyTx.md)	 - Verify a Bitcoin transaction
     - [broadcast](axelarcli_tx_broadcast.md)	 - broadcast transactions subcommands

@@ -46,7 +46,7 @@ func TestLinkNoForeignAssetSupport(t *testing.T) {
 	keeper.SetParams(ctx, types.DefaultParams())
 
 	sender, recipient := makeRandAddressesForChain(exported.Bitcoin, exported.Ethereum)
-	keeper.LinkAddresses(ctx, sender, recipient)
+	_ = keeper.LinkAddresses(ctx, sender, recipient)
 	err := keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
 	assert.Error(t, err)
 }
@@ -56,7 +56,7 @@ func TestLinkSuccess(t *testing.T) {
 	keeper.SetParams(ctx, types.DefaultParams())
 
 	sender, recipient := makeRandAddressesForChain(exported.Bitcoin, exported.Ethereum)
-	keeper.LinkAddresses(ctx, sender, recipient)
+	_ = keeper.LinkAddresses(ctx, sender, recipient)
 	err := keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(denom.Satoshi))
 	assert.NoError(t, err)
 	recp, ok := keeper.GetRecipient(ctx, sender)
@@ -88,7 +88,7 @@ func TestPrepareSuccess(t *testing.T) {
 	for i := 0; i < linkedAddr; i++ {
 		sender, recipient := makeRandAddressesForChain(exported.Bitcoin, exported.Ethereum)
 		amounts[recipient] = makeRandAmount(denom.Satoshi)
-		keeper.LinkAddresses(ctx, sender, recipient)
+		_ = keeper.LinkAddresses(ctx, sender, recipient)
 		err := keeper.EnqueueForTransfer(ctx, sender, amounts[recipient])
 		assert.NoError(t, err)
 	}
@@ -102,7 +102,7 @@ func TestPrepareSuccess(t *testing.T) {
 		amount, ok := amounts[transfer.Recipient]
 		if ok {
 			count++
-			assert.Equal(t, transfer.Amount, amount)
+			assert.Equal(t, transfer.Asset, amount)
 		}
 	}
 	assert.Equal(t, linkedAddr, count)
@@ -119,7 +119,7 @@ func TestArchive(t *testing.T) {
 	for i := 0; i < linkedAddr; i++ {
 		sender, recipient := makeRandAddressesForChain(exported.Bitcoin, exported.Ethereum)
 		recipients = append(recipients, recipient)
-		keeper.LinkAddresses(ctx, sender, recipient)
+		_ = keeper.LinkAddresses(ctx, sender, recipient)
 		amount := makeRandAmount(denom.Satoshi)
 		err := keeper.EnqueueForTransfer(ctx, sender, amount)
 		assert.NoError(t, err)
@@ -140,7 +140,7 @@ func TestArchive(t *testing.T) {
 		for _, transfer := range transfers {
 			if transfer.Recipient.Address == archive.Recipient.Address {
 				count++
-				assert.Equal(t, archive.Amount, transfer.Amount)
+				assert.Equal(t, archive.Asset, transfer.Asset)
 			}
 		}
 	}
@@ -165,7 +165,7 @@ func TestTotalInvalid(t *testing.T) {
 	assert.NoError(t, err)
 	transfer := keeper.GetPendingTransfersForChain(ctx, exported.Ethereum)[0]
 	keeper.ArchivePendingTransfer(ctx, transfer)
-	total := transfer.Amount.Amount.Int64()
+	total := transfer.Asset.Amount.Int64()
 	amount := sdk.NewCoin(denom.Satoshi, sdk.NewInt(total+testutils.RandIntBetween(1, 100000)))
 	err = keeper.EnqueueForTransfer(ctx, ethSender, amount)
 	assert.Error(t, err)
@@ -188,7 +188,7 @@ func TestTotalSucess(t *testing.T) {
 	assert.NoError(t, err)
 	transfer := keeper.GetPendingTransfersForChain(ctx, exported.Ethereum)[0]
 	keeper.ArchivePendingTransfer(ctx, transfer)
-	total := transfer.Amount.Amount.Int64()
+	total := transfer.Asset.Amount.Int64()
 	amount := sdk.NewCoin(denom.Satoshi, sdk.NewInt(testutils.RandIntBetween(1, total)))
 	err = keeper.EnqueueForTransfer(ctx, ethSender, amount)
 	assert.NoError(t, err)
@@ -198,14 +198,9 @@ func TestTotalSucess(t *testing.T) {
 }
 
 func makeRandomDenom() string {
-
 	alphabet := []rune("abcdefghijklmnopqrstuvwxyz")
-	denom := ""
-	denom = denom + string(alphabet[testutils.RandIntBetween(0, int64(len(alphabet)))])
-	denom = denom + string(alphabet[testutils.RandIntBetween(0, int64(len(alphabet)))])
-	denom = denom + string(alphabet[testutils.RandIntBetween(0, int64(len(alphabet)))])
-
-	return denom
+	d := testutils.RandStringsWithAlphabet(alphabet, 3, 3).Take(1)
+	return d[0]
 }
 
 func makeRandAmount(denom string) sdk.Coin {

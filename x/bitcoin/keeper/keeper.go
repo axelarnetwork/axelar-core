@@ -71,13 +71,13 @@ func (k Keeper) Codec() *codec.Codec {
 }
 
 // SetKeyIDByAddress stores the ID of the key that controls the given address
-func (k Keeper) SetKeyIDByAddress(ctx sdk.Context, address string, keyID string) {
-	ctx.KVStore(k.storeKey).Set([]byte(keyIDbyAddrPrefix+address), []byte(keyID))
+func (k Keeper) SetKeyIDByAddress(ctx sdk.Context, address btcutil.Address, keyID string) {
+	ctx.KVStore(k.storeKey).Set([]byte(keyIDbyAddrPrefix+address.String()), []byte(keyID))
 }
 
 // GetKeyIDByAddress returns the ID of the key that was used to create the given address
-func (k Keeper) GetKeyIDByAddress(ctx sdk.Context, address string) (string, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(keyIDbyAddrPrefix + address))
+func (k Keeper) GetKeyIDByAddress(ctx sdk.Context, address btcutil.Address) (string, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(keyIDbyAddrPrefix + address.String()))
 	if bz == nil {
 		return "", false
 	}
@@ -163,12 +163,25 @@ func (k Keeper) ProcessVerificationResult(ctx sdk.Context, outPoint string, veri
 // GenerateDepositAddressAndRedeemScript creates a Bitcoin address to deposit tokens for a transfer to the recipient address,
 // as well as the corresponding redeem script to spend it. The generated address is unique for each recipient.
 func (k Keeper) GenerateDepositAddressAndRedeemScript(ctx sdk.Context, pk btcec.PublicKey, recipient balance.CrossChainAddress) (btcutil.Address, []byte, error) {
-	redeemScript, err := createRedeemScript(pk, recipient)
+	redeemScript, err := createCrossChainRedeemScript(pk, recipient)
 	if err != nil {
 		return nil, nil, err
 	}
 	hash := sha256.Sum256(redeemScript)
-	addr, err := btcutil.NewAddressWitnessScriptHash(hash[:], k.getNetwork(ctx).Params)
+	addr, err := btcutil.NewAddressWitnessScriptHash(hash[:], k.GetNetwork(ctx).Params)
+	if err != nil {
+		return nil, nil, err
+	}
+	return addr, redeemScript, nil
+}
+
+func (k Keeper) GenerateMasterAddressAndRedeemScript(ctx sdk.Context, pk btcec.PublicKey) (btcutil.Address, []byte, error) {
+	redeemScript, err := createMasterRedeemScript(pk)
+	if err != nil {
+		return nil, nil, err
+	}
+	hash := sha256.Sum256(redeemScript)
+	addr, err := btcutil.NewAddressWitnessScriptHash(hash[:], k.GetNetwork(ctx).Params)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -186,60 +199,67 @@ func (k Keeper) GetRedeemScript(ctx sdk.Context, address btcutil.Address) ([]byt
 	return bz, bz != nil
 }
 
-// GetHashToSign returns the hash that needs to be signed to create a valid signature for the given unsigned Bitcoin transaction
-func (k Keeper) GetHashToSign(ctx sdk.Context, rawTx *wire.MsgTx) ([]byte, error) {
-	if len(rawTx.TxIn) != 1 {
-		return nil, fmt.Errorf("transaction must have exactly one input")
-	}
+// GetHashesToSign returns the hash that needs to be signed to create a valid signature for the given unsigned Bitcoin transaction
+func (k Keeper) GetHashesToSign(ctx sdk.Context, rawTx *wire.MsgTx) ([][]byte, error) {
+	var hashes [][]byte
+	for i, in := range rawTx.TxIn {
+		prevOutInfo, ok := k.GetSpentOutPointInfo(ctx, &in.PreviousOutPoint)
+		if !ok {
+			return nil, fmt.Errorf("transaction ID is not known")
+		}
 
-	prevOutInfo, ok := k.GetVerifiedOutPointInfo(ctx, &rawTx.TxIn[0].PreviousOutPoint)
-	if !ok {
-		return nil, fmt.Errorf("transaction ID is not known")
-	}
+		addr, err := btcutil.DecodeAddress(prevOutInfo.Address, k.GetNetwork(ctx).Params)
+		if err != nil {
+			return nil, err
+		}
 
-	addr, err := btcutil.DecodeAddress(prevOutInfo.Address, k.getNetwork(ctx).Params)
-	if err != nil {
-		return nil, err
+		script, ok := k.GetRedeemScript(ctx, addr)
+		if !ok {
+			return nil, fmt.Errorf("could not find a redeem script for outpoint %s", in.PreviousOutPoint.String())
+		}
+		hash, err := txscript.CalcWitnessSigHash(script, txscript.NewTxSigHashes(rawTx), txscript.SigHashAll, rawTx, i, int64(prevOutInfo.Amount))
+		if err != nil {
+			return nil, err
+		}
+		hashes = append(hashes, hash)
 	}
-
-	script, ok := k.GetRedeemScript(ctx, addr)
-	if !ok {
-		return nil, fmt.Errorf("could not find a redeem script for outpoint %s", rawTx.TxIn[0].PreviousOutPoint.String())
-	}
-	return txscript.CalcWitnessSigHash(script, txscript.NewTxSigHashes(rawTx), txscript.SigHashAll, rawTx, 0, int64(prevOutInfo.Amount))
+	return hashes, nil
 }
 
 // AssembleBtcTx assembles the unsigned transaction and given signature.
 // Returns a an error the resulting signed Bitcoin transaction is invalid.
-func (k Keeper) AssembleBtcTx(ctx sdk.Context, rawTx *wire.MsgTx, sig btcec.Signature) (*wire.MsgTx, error) {
-	prevOutInfo, ok := k.GetVerifiedOutPointInfo(ctx, &rawTx.TxIn[0].PreviousOutPoint)
-	if !ok {
-		return nil, fmt.Errorf("transaction ID is not known")
+func (k Keeper) AssembleBtcTx(ctx sdk.Context, rawTx *wire.MsgTx, sigs []btcec.Signature) (*wire.MsgTx, error) {
+	for i, sig := range sigs {
+		prevOutInfo, ok := k.GetSpentOutPointInfo(ctx, &rawTx.TxIn[i].PreviousOutPoint)
+		if !ok {
+			return nil, fmt.Errorf("transaction ID is not known")
+		}
+
+		addr, err := btcutil.DecodeAddress(prevOutInfo.Address, k.GetNetwork(ctx).Params)
+		if err != nil {
+			return nil, err
+		}
+
+		witness, err := k.createWitness(ctx, sig, addr)
+		if err != nil {
+			return nil, err
+		}
+		rawTx.TxIn[i].Witness = witness
+
+		payScript, err := txscript.PayToAddrScript(addr)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := validateTxScript(prevOutInfo, rawTx, i, payScript); err != nil {
+			return nil, err
+		}
 	}
 
-	addr, err := btcutil.DecodeAddress(prevOutInfo.Address, k.getNetwork(ctx).Params)
-	if err != nil {
-		return nil, err
-	}
-
-	witness, err := k.createWitness(ctx, sig, addr)
-	if err != nil {
-		return nil, err
-	}
-	rawTx.TxIn[0].Witness = witness
-
-	payScript, err := txscript.PayToAddrScript(addr)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := validateTxScripts(prevOutInfo, rawTx, payScript); err != nil {
-		return nil, err
-	}
 	return rawTx, nil
 }
 
-func (k Keeper) getNetwork(ctx sdk.Context) types.Network {
+func (k Keeper) GetNetwork(ctx sdk.Context) types.Network {
 	var network types.Network
 	k.params.Get(ctx, types.KeyNetwork, &network)
 	return network
@@ -254,14 +274,14 @@ func (k Keeper) createWitness(ctx sdk.Context, sig btcec.Signature, address btcu
 	return wire.TxWitness{sigBytes, redeemScript}, nil
 }
 
-// GetVerifiedOutPoints returns all unspent verified outpoints controlled by Axelar-Core
-func (k Keeper) GetVerifiedOutPoints(ctx sdk.Context) []*wire.OutPoint {
-	var outs []*wire.OutPoint
+// GetVerifiedOutPointInfos returns information about all unspent verified outpoints controlled by Axelar-Core
+func (k Keeper) GetVerifiedOutPointInfos(ctx sdk.Context) []types.OutPointInfo {
+	var outs []types.OutPointInfo
 	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(verifiedOutPointPrefix))
 	for ; iter.Valid(); iter.Next() {
 		var info types.OutPointInfo
 		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &info)
-		outs = append(outs, info.OutPoint)
+		outs = append(outs, info)
 	}
 	return outs
 }
@@ -277,11 +297,49 @@ func (k Keeper) SpendVerifiedOutPoint(ctx sdk.Context, outPoint string) {
 	ctx.KVStore(k.storeKey).Set([]byte(spentOutPointPrefix+outPoint), bz)
 }
 
-func validateTxScripts(prevOutInfo types.OutPointInfo, tx *wire.MsgTx, pkScript []byte) error {
+// GetSpentOutPointInfo returns additional information for the given outpoint, if it was verified and used as a transaction input
+func (k Keeper) GetSpentOutPointInfo(ctx sdk.Context, outPoint *wire.OutPoint) (types.OutPointInfo, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(spentOutPointPrefix + outPoint.String()))
+	if bz == nil {
+		return types.OutPointInfo{}, false
+	}
+	var out types.OutPointInfo
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &out)
+
+	return out, true
+}
+
+func (k Keeper) SetRawConsolidationTx(ctx sdk.Context, tx *wire.MsgTx) {
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(tx)
+	ctx.KVStore(k.storeKey).Set([]byte(rawPrefix+"cons"), bz)
+}
+
+func (k Keeper) GetRawConsolidationTx(ctx sdk.Context) *wire.MsgTx {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(rawPrefix + "cons"))
+	if bz == nil {
+		return nil
+	}
+	var tx *wire.MsgTx
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &tx)
+
+	return tx
+}
+
+func (k Keeper) CreateDepositAddress(ctx sdk.Context, recipient balance.CrossChainAddress, keyID string, key btcec.PublicKey) (btcutil.Address, error) {
+	btcAddr, script, err := k.GenerateDepositAddressAndRedeemScript(ctx, key, recipient)
+	if err != nil {
+		return nil, err
+	}
+	k.SetRedeemScript(ctx, btcAddr, script)
+	k.SetKeyIDByAddress(ctx, btcAddr, keyID)
+	return btcAddr, nil
+}
+
+func validateTxScript(prevOutInfo types.OutPointInfo, tx *wire.MsgTx, idx int, pkScript []byte) error {
 	flags := txscript.StandardVerifyFlags
 
 	// execute (dry-run) the public key and signature script to validate them
-	scriptEngine, err := txscript.NewEngine(pkScript, tx, 0, flags, nil, nil, int64(prevOutInfo.Amount))
+	scriptEngine, err := txscript.NewEngine(pkScript, tx, idx, flags, nil, nil, int64(prevOutInfo.Amount))
 	if err != nil {
 		return sdkerrors.Wrap(err, "could not create execution engine, aborting")
 	}
@@ -291,11 +349,21 @@ func validateTxScripts(prevOutInfo types.OutPointInfo, tx *wire.MsgTx, pkScript 
 	return nil
 }
 
-func createRedeemScript(pk btcec.PublicKey, crossAddr balance.CrossChainAddress) ([]byte, error) {
+func createCrossChainRedeemScript(pk btcec.PublicKey, crossAddr balance.CrossChainAddress) ([]byte, error) {
 	keyBz := pk.SerializeCompressed()
 	nonce := btcutil.Hash160([]byte(crossAddr.String()))
 
 	redeemScript, err := txscript.NewScriptBuilder().AddData(keyBz).AddOp(txscript.OP_CHECKSIG).AddData(nonce).AddOp(txscript.OP_DROP).Script()
+	if err != nil {
+		return nil, err
+	}
+	return redeemScript, nil
+}
+
+func createMasterRedeemScript(pk btcec.PublicKey) ([]byte, error) {
+	keyBz := pk.SerializeCompressed()
+
+	redeemScript, err := txscript.NewScriptBuilder().AddData(keyBz).AddOp(txscript.OP_CHECKSIG).Script()
 	if err != nil {
 		return nil, err
 	}

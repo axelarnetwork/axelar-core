@@ -7,15 +7,13 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+// Known denominations (and abbreviations)
 const (
-	// Sat is the allowed abbreviation for the Satoshi denomination label
-	Sat = "sat"
-	// Satoshi denomination label
+	Sat     = "sat"
 	Satoshi = "satoshi"
-	// Btc is the allowed abbreviation for the Bitcoin denomination label
-	Btc = "btc"
-	// Bitcoin denomination label
+	Btc     = "btc"
 	Bitcoin = "bitcoin"
+	Wei     = "wei"
 )
 
 // ParseSatoshi parses a string to Satoshi, returning errors if invalid. Inputs in Bitcoin are automatically converted.
