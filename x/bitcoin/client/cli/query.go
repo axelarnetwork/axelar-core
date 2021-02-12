@@ -59,7 +59,7 @@ func GetCmdDepositAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			res, _, err := cliCtx.QueryWithData(path, cdc.MustMarshalJSON(exported.CrossChainAddress{Chain: chain, Address: args[1]}))
 			if err != nil {
-				return sdkerrors.Wrap(err, "could not resolve master key")
+				return sdkerrors.Wrap(err, types.ErrFDepositAddress)
 			}
 
 			return cliCtx.PrintOutput(string(res))
@@ -82,7 +82,7 @@ func GetCmdConsolidationAddress(queryRoute string, cdc *codec.Codec) *cobra.Comm
 
 			res, _, err := cliCtx.QueryWithData(path, nil)
 			if err != nil {
-				return sdkerrors.Wrap(err, "could not resolve master key")
+				return sdkerrors.Wrap(err, types.ErrFConsolidationAddress)
 			}
 
 			return cliCtx.PrintOutput(string(res))
@@ -108,7 +108,7 @@ func GetCmdTxInfo(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryOutInfo, args[0]), cdc.MustMarshalJSON(out))
 			if err != nil {
-				return sdkerrors.Wrapf(err, "could not resolve txID %s and vout index %d", out.Hash.String(), out.Index)
+				return sdkerrors.Wrapf(err, types.ErrFTxInfo, out.Hash.String(), out.Index)
 			}
 
 			var info types.OutPointInfo
@@ -145,7 +145,7 @@ func GetCmdRawTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryRawTx), cdc.MustMarshalJSON(params))
 			if err != nil {
-				return sdkerrors.Wrapf(err, "could not create a new transaction spending transaction %s", out.String())
+				return sdkerrors.Wrapf(err, types.ErrFRawTx, out.String())
 			}
 
 			var tx *wire.MsgTx
@@ -172,7 +172,7 @@ func GetCmdSendTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.SendTx), cdc.MustMarshalJSON(outpoint))
 			if err != nil {
-				return sdkerrors.Wrapf(err, "could not send the transaction spending transaction %s", args[0])
+				return sdkerrors.Wrapf(err, types.ErrFSendTx, args[0])
 			}
 
 			var out string

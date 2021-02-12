@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"strings"
@@ -51,7 +50,7 @@ func GetCmdMasterAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryMasterAddress), nil)
 			if err != nil {
-				fmt.Printf("could not resolve master key: %s\n", err.Error())
+				fmt.Printf(types.ErrFMasterKey, err.Error())
 
 				return nil
 			}
@@ -86,7 +85,7 @@ func GetCmdCreateDeployTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.CreateDeployTx), cdc.MustMarshalJSON(params))
 			if err != nil {
-				fmt.Printf("could not resolve master key: %s\n", err.Error())
+				fmt.Printf(types.ErrFDeployTx, err.Error())
 
 				return nil
 			}
@@ -112,12 +111,13 @@ func GetCmdSendTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.SendTx, args[0]), nil)
 			if err != nil {
-				return sdkerrors.Wrapf(err, "could not send the transaction spending transaction %s", args[0])
+				return sdkerrors.Wrapf(err, types.ErrFSendTx, args[0])
 			}
 
-			var out string
-			cdc.MustUnmarshalJSON(res, &out)
-			return cliCtx.PrintOutput(out)
+			var result types.SendTxResult
+			cdc.MustUnmarshalJSON(res, &res)
+
+			return cliCtx.PrintOutput(fmt.Sprintf("successfully sent transaction %s to Ethereum", result.SignedTx.Hash().String()))
 		},
 	}
 }
@@ -158,12 +158,4 @@ func parseByteCode(filePath string) ([]byte, error) {
 
 	byteCode := common.FromHex(strings.TrimSuffix(string(content), "\n"))
 	return byteCode, nil
-}
-
-func validAddress(address string) bool {
-	if bytes.Equal(common.HexToAddress(address).Bytes(), make([]byte, common.AddressLength)) {
-		return false
-	}
-
-	return true
 }

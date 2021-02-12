@@ -16,6 +16,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/ethereum/client/cli"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/client/rest"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 )
 
@@ -48,8 +49,8 @@ func (AppModuleBasic) ValidateGenesis(message json.RawMessage) error {
 	return types.ValidateGenesis(data)
 }
 
-func (AppModuleBasic) RegisterRESTRoutes(_ sdkCli.CLIContext, _ *mux.Router) {
-	// TODO: implement rest interface
+func (AppModuleBasic) RegisterRESTRoutes(cliCtx sdkCli.CLIContext, rtr *mux.Router) {
+	rest.RegisterRoutes(cliCtx, rtr)
 }
 
 func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {

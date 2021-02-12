@@ -11,4 +11,6 @@ const (
 	RouterKey = ModuleName
 
 	QuerierRoute = ModuleName
+
+	RestRoute = ModuleName
 )

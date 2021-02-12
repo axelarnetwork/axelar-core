@@ -52,7 +52,7 @@ func NewKeeper(
 	logger log.Logger,
 ) (Keeper, error) {
 	logger.With("module", fmt.Sprintf("x/%s", types.ModuleName)).Debug("creating broadcast keeper")
-	from, fromName, err := getAccountAddress(conf.From, keybase)
+	from, fromName, err := GetAccountAddress(conf.From, keybase)
 	if err != nil {
 		return Keeper{}, err
 	}
@@ -183,7 +183,7 @@ func (k Keeper) getProxyCount(ctx sdk.Context) int {
 	return count
 }
 
-func getAccountAddress(from string, keybase keys.Keybase) (sdk.AccAddress, string, error) {
+func GetAccountAddress(from string, keybase keys.Keybase) (sdk.AccAddress, string, error) {
 	var info keys.Info
 	if addr, err := sdk.AccAddressFromBech32(from); err == nil {
 		info, err = keybase.GetByAddress(addr)
