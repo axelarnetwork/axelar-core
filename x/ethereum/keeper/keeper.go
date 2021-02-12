@@ -20,15 +20,17 @@ import (
 )
 
 const (
-	rawPrefix           = "raw_"
-	verifiedTxPrefix    = "verified_tx_"
-	pendingTxPrefix     = "pending_tx_"
-	verifiedTokenPrefix = "verified_token_"
-	pendingTokenPrefix  = "pending_token_"
-	commandPrefix       = "command_"
-	symbolPrefix        = "symbol_"
-	burnerPrefix        = "burner_"
-	tokenPrefix         = "token_"
+	rawPrefix                  = "raw_"
+	verifiedTxPrefix           = "verified_tx_"
+	pendingTxPrefix            = "pending_tx_"
+	verifiedTokenPrefix        = "verified_token_"
+	pendingTokenPrefix         = "pending_token_"
+	pendingErc20DepositPrefix  = "pending_erc20_deposit_"
+	verifiedErc20DepositPrefix = "verified_erc20_deposit_"
+	commandPrefix              = "command_"
+	symbolPrefix               = "symbol_"
+	burnerPrefix               = "burner_"
+	tokenPrefix                = "token_"
 )
 
 // Keeper represents the ethereum keeper
@@ -116,7 +118,7 @@ func (k Keeper) GetTokenAddress(ctx sdk.Context, symbol string, gatewayAddr comm
 		return common.BytesToAddress(bz), nil
 	}
 
-	tokenInfo := k.getTokenInfo(ctx, symbol)
+	tokenInfo := k.GetTokenInfo(ctx, symbol)
 	if tokenInfo == nil {
 		return common.Address{}, fmt.Errorf("symbol not found/verified")
 	}
@@ -204,7 +206,8 @@ func (k Keeper) SaveTokenInfo(ctx sdk.Context, msg types.MsgSignDeployToken) {
 	ctx.KVStore(k.storeKey).Set([]byte(symbolPrefix+msg.Symbol), bz)
 }
 
-func (k Keeper) getTokenInfo(ctx sdk.Context, symbol string) *types.MsgSignDeployToken {
+// GetTokenInfo retrieves the token info
+func (k Keeper) GetTokenInfo(ctx sdk.Context, symbol string) *types.MsgSignDeployToken {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(symbolPrefix + symbol))
 	if bz == nil {
 		return nil
@@ -246,6 +249,17 @@ func (k Keeper) SetRawTx(ctx sdk.Context, txID string, tx *ethTypes.Transaction)
 	ctx.KVStore(k.storeKey).Set([]byte(rawPrefix+txID), bz)
 }
 
+// HasUnverifiedErc20Deposit returns true if an unverified erc20 deposit has been stored
+func (k Keeper) HasUnverifiedErc20Deposit(ctx sdk.Context, txID string) bool {
+	return ctx.KVStore(k.storeKey).Has([]byte(pendingErc20DepositPrefix + txID))
+}
+
+// SetUnverifiedErc20Deposit stores and unverified erc20 deposit
+func (k Keeper) SetUnverifiedErc20Deposit(ctx sdk.Context, txID string, deposit *types.Erc20Deposit) {
+	bz := k.cdc.MustMarshalJSON(deposit)
+	ctx.KVStore(k.storeKey).Set([]byte(pendingErc20DepositPrefix+txID), bz)
+}
+
 // HasVerifiedTx returns true if a raw transaction has been stored
 func (k Keeper) HasVerifiedTx(ctx sdk.Context, txID string) bool {
 	return ctx.KVStore(k.storeKey).Has([]byte(verifiedTxPrefix + txID))
@@ -279,8 +293,15 @@ func (k Keeper) ProcessVerificationTokenResult(ctx sdk.Context, txID string, ver
 	}
 }
 
-func (k Keeper) processVerificationResult(ctx sdk.Context, pendingKey, verifiedKey []byte, verified bool) bool {
+// ProcessVerificationErc20DepositResult stores the TX permanently if confirmed or discards the data otherwise
+func (k Keeper) ProcessVerificationErc20DepositResult(ctx sdk.Context, txID string, verified bool) {
+	ok := k.processVerificationResult(ctx, []byte(pendingErc20DepositPrefix+txID), []byte(verifiedErc20DepositPrefix+txID), verified)
+	if !ok {
+		k.Logger(ctx).Debug(fmt.Sprintf("tx %s not found", txID))
+	}
+}
 
+func (k Keeper) processVerificationResult(ctx sdk.Context, pendingKey, verifiedKey []byte, verified bool) bool {
 	bz := ctx.KVStore(k.storeKey).Get(pendingKey)
 	if bz == nil {
 		return false

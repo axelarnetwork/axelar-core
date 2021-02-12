@@ -35,6 +35,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 			GetCmdSignTx(cdc),
 			GetCmdVerifyTx(cdc),
 			GetCmdVerifyErc20TokenDeploy(cdc),
+			GetCmdVerifyErc20Deposit(cdc),
 			GetCmdSignPendingTransfersTx(cdc),
 			GetCmdSignDeployToken(cdc),
 		)...,
@@ -138,6 +139,29 @@ func GetCmdVerifyErc20TokenDeploy(cdc *codec.Codec) *cobra.Command {
 			gatewayAddr := common.HexToAddress(args[2])
 
 			msg := types.NewMsgVerifyErc20TokenDeploy(cliCtx.GetFromAddress(), txID, args[1], gatewayAddr)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+// GetCmdVerifyErc20Deposit returns the cli command to verify an ERC20 deposit
+func GetCmdVerifyErc20Deposit(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "verify-erc20-deposit [txID] [amount] [burnerAddr]",
+		Short: "Verify an ERC20 deposit in an Ethereum transaction that sent given amount of token to a burner address",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
+
+			txID := common.HexToHash(args[0])
+			amount := sdk.NewUintFromString(args[1])
+			burnerAddr := common.HexToAddress(args[2])
+
+			msg := types.NewMsgVerifyErc20Deposit(cliCtx.GetFromAddress(), txID, amount, burnerAddr)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

@@ -31,3 +31,4 @@ axelarcli tx ethereum [flags]
 - [axelarcli tx ethereum sign-pending-transfers](axelarcli_tx_ethereum_sign-pending-transfers.md)	 - Sign all pending transfers to Ethereum
 - [axelarcli tx ethereum verify](axelarcli_tx_ethereum_verify.md)	 - Verify an Ethereum transaction
 - [axelarcli tx ethereum verify-erc20-token](axelarcli_tx_ethereum_verify-erc20-token.md)	 - Verify an ERC20 token deployment in an Ethereum transaction for a given symbol of token and gateway address
+- [axelarcli tx ethereum verify-erc20-deposit](axelarcli_tx_ethereum_verify-erc20-deposit.md)	 - Verify an ERC20 deposit in an Ethereum transaction that sent given amount of token to a burner address
