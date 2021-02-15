@@ -16,13 +16,9 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/staking"
-	sdkExported "github.com/cosmos/cosmos-sdk/x/staking/exported"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
-	"google.golang.org/grpc"
 
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
@@ -30,43 +26,14 @@ import (
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 
-	"github.com/axelarnetwork/axelar-core/store"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
-	"github.com/axelarnetwork/axelar-core/x/bitcoin"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	btcMock "github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
-	"github.com/axelarnetwork/axelar-core/x/broadcast"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
-	"github.com/axelarnetwork/axelar-core/x/snapshot"
-	snapshotKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
-	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
-	"github.com/axelarnetwork/axelar-core/x/tss"
-	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
-	tssdMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
-	"github.com/axelarnetwork/axelar-core/x/vote"
-	voteKeeper "github.com/axelarnetwork/axelar-core/x/vote/keeper"
-	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
-
-const nodeCount = 10
-
-// globally available storage variables to control the behaviour of the mocks
-var (
-	// set of validators known to the staking keeper
-	validators = make([]staking.Validator, 0, nodeCount)
-)
-
-type testMocks struct {
-	BTC    *btcMock.RPCClientMock
-	Keygen *tssdMock.TSSDKeyGenClientMock
-	Sign   *tssdMock.TSSDSignClientMock
-	Staker *snapMock.StakingKeeperMock
-	TSSD   *tssdMock.TSSDClientMock
-}
 
 // Testing the key rotation functionality.
 // (0. Register proxies for all validators)
@@ -86,12 +53,16 @@ type testMocks struct {
 // 14. Verify the fund transfer is confirmed on bitcoin (wait for vote)
 // 15. Rotate to the new master key
 func TestKeyRotation(t *testing.T) {
+
+	const nodeCount = 10
+	validators := make([]staking.Validator, 0, nodeCount)
+
 	chain := fake.NewBlockchain().WithBlockTimeOut(10 * time.Millisecond)
 
 	stringGen := testutils.RandStrings(5, 50).Distinct()
 	defer stringGen.Stop()
 
-	mocks := createMocks()
+	mocks := createMocks2(&validators)
 
 	var nodes []fake.Node
 	for i, valAddr := range stringGen.Take(nodeCount) {
@@ -101,7 +72,7 @@ func TestKeyRotation(t *testing.T) {
 			Status:          sdk.Bonded,
 		}
 		validators = append(validators, validator)
-		nodes = append(nodes, newNode("node"+strconv.Itoa(i), validator.OperatorAddress, mocks, chain))
+		nodes = append(nodes, newNode2("node"+strconv.Itoa(i), validator.OperatorAddress, mocks, chain))
 		chain.AddNodes(nodes[i])
 	}
 	// Check to suppress any nil warnings from IDEs
@@ -121,7 +92,7 @@ func TestKeyRotation(t *testing.T) {
 	}
 
 	// take first validator snapshot
-	res := <-chain.Submit(snapTypes.MsgSnapshot{Sender: randomSender()})
+	res := <-chain.Submit(snapTypes.MsgSnapshot{Sender: randomSender2(validators[:], nodeCount)})
 	assert.NoError(t, res.Error)
 
 	// set up tssd mock for first keygen
@@ -154,7 +125,7 @@ func TestKeyRotation(t *testing.T) {
 	// create first key
 	masterKeyID1 := stringGen.Next()
 	res = <-chain.Submit(tssTypes.MsgKeygenStart{
-		Sender:    randomSender(),
+		Sender:    randomSender2(validators[:], nodeCount),
 		NewKeyID:  masterKeyID1,
 		Threshold: int(testutils.RandIntBetween(1, int64(len(validators)))),
 	})
@@ -171,7 +142,7 @@ func TestKeyRotation(t *testing.T) {
 
 	// assign key as bitcoin master key
 	res = <-chain.Submit(tssTypes.MsgAssignNextMasterKey{
-		Sender: randomSender(),
+		Sender: randomSender2(validators[:], nodeCount),
 		Chain:  btc.Bitcoin.Name,
 		KeyID:  masterKeyID1,
 	})
@@ -179,14 +150,14 @@ func TestKeyRotation(t *testing.T) {
 
 	// rotate to the first master key
 	res = <-chain.Submit(tssTypes.MsgRotateMasterKey{
-		Sender: randomSender(),
+		Sender: randomSender2(validators[:], nodeCount),
 		Chain:  btc.Bitcoin.Name,
 	})
 	assert.NoError(t, res.Error)
 
 	// get deposit address for ethereum transfer
 	ethAddr := nexus.CrossChainAddress{Chain: eth.Ethereum, Address: testutils.RandStringBetween(5, 20)}
-	res = <-chain.Submit(btcTypes.NewMsgLink(randomSender(), ethAddr.Address, ethAddr.Chain.Name))
+	res = <-chain.Submit(btcTypes.NewMsgLink(randomSender2(validators[:], nodeCount), ethAddr.Address, ethAddr.Chain.Name))
 	assert.NoError(t, res.Error)
 	depositAddr := string(res.Data)
 
@@ -225,14 +196,14 @@ func TestKeyRotation(t *testing.T) {
 	testutils.Codec().MustUnmarshalJSON(bz, &info)
 
 	// verify deposit to master key
-	res = <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender(), info))
+	res = <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender2(validators[:], nodeCount), info))
 	assert.NoError(t, res.Error)
 
 	// wait for voting to be done
 	chain.WaitNBlocks(12)
 
 	// second snapshot
-	res = <-chain.Submit(snapTypes.MsgSnapshot{Sender: randomSender()})
+	res = <-chain.Submit(snapTypes.MsgSnapshot{Sender: randomSender2(validators[:], nodeCount)})
 	assert.NoError(t, res.Error)
 
 	// set up tssd mock for second keygen
@@ -265,7 +236,7 @@ func TestKeyRotation(t *testing.T) {
 	// second keygen with validator set of second snapshot
 	keyID2 := stringGen.Next()
 	res = <-chain.Submit(tssTypes.MsgKeygenStart{
-		Sender:    randomSender(),
+		Sender:    randomSender2(validators[:], nodeCount),
 		NewKeyID:  keyID2,
 		Threshold: int(testutils.RandIntBetween(1, int64(len(validators)))),
 	})
@@ -282,7 +253,7 @@ func TestKeyRotation(t *testing.T) {
 
 	// assign second key to be the second master key
 	res = <-chain.Submit(tssTypes.MsgAssignNextMasterKey{
-		Sender: randomSender(),
+		Sender: randomSender2(validators[:], nodeCount),
 		Chain:  btc.Bitcoin.Name,
 		KeyID:  keyID2,
 	})
@@ -323,7 +294,7 @@ func TestKeyRotation(t *testing.T) {
 	}
 
 	// sign transfer tx
-	res = <-chain.Submit(btcTypes.NewMsgSign(randomSender(), btcutil.Amount(testutils.RandIntBetween(1, int64(amount)))))
+	res = <-chain.Submit(btcTypes.NewMsgSign(randomSender2(validators[:], nodeCount), btcutil.Amount(testutils.RandIntBetween(1, int64(amount)))))
 	assert.NoError(t, res.Error)
 	// assert tssd was properly called
 	<-closeTimeout.Done()
@@ -370,7 +341,7 @@ func TestKeyRotation(t *testing.T) {
 
 	// verify master key transfer
 	res = <-chain.Submit(
-		btcTypes.NewMsgVerifyTx(randomSender(), info))
+		btcTypes.NewMsgVerifyTx(randomSender2(validators[:], nodeCount), info))
 	assert.NoError(t, res.Error)
 
 	// wait for voting to be done
@@ -378,105 +349,8 @@ func TestKeyRotation(t *testing.T) {
 
 	// rotate master key to key 2
 	res = <-chain.Submit(tssTypes.MsgRotateMasterKey{
-		Sender: randomSender(),
+		Sender: randomSender2(validators[:], nodeCount),
 		Chain:  btc.Bitcoin.Name,
 	})
 	assert.NoError(t, res.Error)
-}
-
-func randomSender() sdk.AccAddress {
-	return sdk.AccAddress(validators[testutils.RandIntBetween(0, nodeCount)].OperatorAddress)
-}
-
-func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *fake.BlockChain) fake.Node {
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-
-	broadcaster := fake.NewBroadcaster(testutils.Codec(), validator, chain.Submit)
-
-	snapSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
-	snapKeeper := snapshotKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(snapTypes.StoreKey), snapSubspace, mocks.Staker)
-	snapKeeper.SetParams(ctx, snapTypes.DefaultParams())
-
-	voter := voteKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(voteTypes.StoreKey), store.NewSubjectiveStore(), snapKeeper, broadcaster)
-
-	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	bitcoinKeeper := btcKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)
-	btcParams := btcTypes.DefaultParams()
-	btcParams.Network = mocks.BTC.Network()
-	bitcoinKeeper.SetParams(ctx, btcParams)
-
-	signer := tssKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(tssTypes.StoreKey), mocks.TSSD,
-		params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), tssTypes.DefaultParamspace),
-		voter, broadcaster,
-	)
-	signer.SetParams(ctx, tssTypes.DefaultParams())
-
-	nexusSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
-	nexusK := nexusKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(nexusTypes.StoreKey), nexusSubspace)
-	nexusK.SetParams(ctx, nexusTypes.DefaultParams())
-
-	voter.SetVotingInterval(ctx, voteTypes.DefaultGenesisState().VotingInterval)
-	voter.SetVotingThreshold(ctx, voteTypes.DefaultGenesisState().VotingThreshold)
-
-	router := fake.NewRouter()
-
-	broadcastHandler := broadcast.NewHandler(broadcaster)
-	btcHandler := bitcoin.NewHandler(bitcoinKeeper, voter, mocks.BTC, signer, snapKeeper, nexusK)
-	snapHandler := snapshot.NewHandler(snapKeeper)
-	tssHandler := tss.NewHandler(signer, snapKeeper, nexusK, voter)
-	voteHandler := vote.NewHandler()
-
-	router = router.
-		AddRoute(broadcastTypes.RouterKey, broadcastHandler).
-		AddRoute(btcTypes.RouterKey, btcHandler).
-		AddRoute(snapTypes.RouterKey, snapHandler).
-		AddRoute(voteTypes.RouterKey, voteHandler).
-		AddRoute(tssTypes.RouterKey, tssHandler)
-
-	queriers := map[string]sdk.Querier{btcTypes.QuerierRoute: btcKeeper.NewQuerier(bitcoinKeeper, signer, nexusK, mocks.BTC)}
-
-	node := fake.NewNode(moniker, ctx, router, queriers).
-		WithEndBlockers(func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-			return vote.EndBlocker(ctx, req, voter)
-		})
-	return node
-}
-
-func createMocks() testMocks {
-	stakingKeeper := &snapMock.StakingKeeperMock{
-		IterateLastValidatorsFunc: func(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool)) {
-			for j, val := range validators {
-				if fn(int64(j), val) {
-					break
-				}
-			}
-		},
-		GetLastTotalPowerFunc: func(ctx sdk.Context) sdk.Int {
-			totalPower := sdk.ZeroInt()
-			for _, val := range validators {
-				totalPower = totalPower.AddRaw(val.ConsensusPower())
-			}
-			return totalPower
-		},
-	}
-
-	btcClient := &btcMock.RPCClientMock{
-		SendRawTransactionFunc: func(tx *wire.MsgTx, _ bool) (*chainhash.Hash, error) {
-			hash := tx.TxHash()
-			return &hash, nil
-		},
-		NetworkFunc: func() btcTypes.Network { return btcTypes.Mainnet }}
-
-	keygen := &tssdMock.TSSDKeyGenClientMock{}
-	sign := &tssdMock.TSSDSignClientMock{}
-	tssdClient := &tssdMock.TSSDClientMock{
-		KeygenFunc: func(context.Context, ...grpc.CallOption) (tssd.GG18_KeygenClient, error) { return keygen, nil },
-		SignFunc:   func(context.Context, ...grpc.CallOption) (tssd.GG18_SignClient, error) { return sign, nil }}
-	return testMocks{
-		BTC:    btcClient,
-		TSSD:   tssdClient,
-		Keygen: keygen,
-		Sign:   sign,
-		Staker: stakingKeeper,
-	}
 }
