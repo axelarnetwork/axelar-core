@@ -278,6 +278,7 @@ func Test_wBTC_mint(t *testing.T) {
 
 	res = <-chain.Submit(ethTypes.NewMsgSignPendingTransfersTx(randomSender2()))
 	assert.NoError(t, res.Error)
+	// commandID := res.Data
 
 	// // TODO: to be changed with random addresses
 	// fromAdderss := "0xE3deF8C6b7E357bf38eC701Ce631f78F2532987A"
