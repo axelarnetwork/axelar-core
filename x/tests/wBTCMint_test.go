@@ -284,6 +284,9 @@ func Test_wBTC_mint(t *testing.T) {
 	// fromAdderss := "0xE3deF8C6b7E357bf38eC701Ce631f78F2532987A"
 	// contractAddress := "0x73ADD47055eba3191fD26285788F8a8b3Fcf9e17"
 
+	// // wait for voting to be done
+	// chain.WaitNBlocks(12)
+
 	// // 8. Submit the minting command from an externally controlled address to AxelarGateway
 	// bz, err = nodes[0].Query(
 	// 	[]string{
