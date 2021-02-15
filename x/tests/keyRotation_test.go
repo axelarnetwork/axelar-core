@@ -62,7 +62,7 @@ func TestKeyRotation(t *testing.T) {
 	stringGen := testutils.RandStrings(5, 50).Distinct()
 	defer stringGen.Stop()
 
-	mocks := createMocks2(&validators)
+	mocks := createMocks(&validators)
 
 	var nodes []fake.Node
 	for i, valAddr := range stringGen.Take(nodeCount) {
@@ -72,7 +72,7 @@ func TestKeyRotation(t *testing.T) {
 			Status:          sdk.Bonded,
 		}
 		validators = append(validators, validator)
-		nodes = append(nodes, newNode2("node"+strconv.Itoa(i), validator.OperatorAddress, mocks, chain))
+		nodes = append(nodes, newNode("node"+strconv.Itoa(i), validator.OperatorAddress, mocks, chain))
 		chain.AddNodes(nodes[i])
 	}
 	// Check to suppress any nil warnings from IDEs
@@ -92,7 +92,7 @@ func TestKeyRotation(t *testing.T) {
 	}
 
 	// take first validator snapshot
-	res := <-chain.Submit(snapTypes.MsgSnapshot{Sender: randomSender2(validators[:], nodeCount)})
+	res := <-chain.Submit(snapTypes.MsgSnapshot{Sender: randomSender(validators[:], nodeCount)})
 	assert.NoError(t, res.Error)
 
 	// set up tssd mock for first keygen
@@ -125,7 +125,7 @@ func TestKeyRotation(t *testing.T) {
 	// create first key
 	masterKeyID1 := stringGen.Next()
 	res = <-chain.Submit(tssTypes.MsgKeygenStart{
-		Sender:    randomSender2(validators[:], nodeCount),
+		Sender:    randomSender(validators[:], nodeCount),
 		NewKeyID:  masterKeyID1,
 		Threshold: int(testutils.RandIntBetween(1, int64(len(validators)))),
 	})
@@ -142,7 +142,7 @@ func TestKeyRotation(t *testing.T) {
 
 	// assign key as bitcoin master key
 	res = <-chain.Submit(tssTypes.MsgAssignNextMasterKey{
-		Sender: randomSender2(validators[:], nodeCount),
+		Sender: randomSender(validators[:], nodeCount),
 		Chain:  btc.Bitcoin.Name,
 		KeyID:  masterKeyID1,
 	})
@@ -150,14 +150,14 @@ func TestKeyRotation(t *testing.T) {
 
 	// rotate to the first master key
 	res = <-chain.Submit(tssTypes.MsgRotateMasterKey{
-		Sender: randomSender2(validators[:], nodeCount),
+		Sender: randomSender(validators[:], nodeCount),
 		Chain:  btc.Bitcoin.Name,
 	})
 	assert.NoError(t, res.Error)
 
 	// get deposit address for ethereum transfer
 	ethAddr := nexus.CrossChainAddress{Chain: eth.Ethereum, Address: testutils.RandStringBetween(5, 20)}
-	res = <-chain.Submit(btcTypes.NewMsgLink(randomSender2(validators[:], nodeCount), ethAddr.Address, ethAddr.Chain.Name))
+	res = <-chain.Submit(btcTypes.NewMsgLink(randomSender(validators[:], nodeCount), ethAddr.Address, ethAddr.Chain.Name))
 	assert.NoError(t, res.Error)
 	depositAddr := string(res.Data)
 
@@ -196,14 +196,14 @@ func TestKeyRotation(t *testing.T) {
 	testutils.Codec().MustUnmarshalJSON(bz, &info)
 
 	// verify deposit to master key
-	res = <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender2(validators[:], nodeCount), info))
+	res = <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender(validators[:], nodeCount), info))
 	assert.NoError(t, res.Error)
 
 	// wait for voting to be done
 	chain.WaitNBlocks(12)
 
 	// second snapshot
-	res = <-chain.Submit(snapTypes.MsgSnapshot{Sender: randomSender2(validators[:], nodeCount)})
+	res = <-chain.Submit(snapTypes.MsgSnapshot{Sender: randomSender(validators[:], nodeCount)})
 	assert.NoError(t, res.Error)
 
 	// set up tssd mock for second keygen
@@ -236,7 +236,7 @@ func TestKeyRotation(t *testing.T) {
 	// second keygen with validator set of second snapshot
 	keyID2 := stringGen.Next()
 	res = <-chain.Submit(tssTypes.MsgKeygenStart{
-		Sender:    randomSender2(validators[:], nodeCount),
+		Sender:    randomSender(validators[:], nodeCount),
 		NewKeyID:  keyID2,
 		Threshold: int(testutils.RandIntBetween(1, int64(len(validators)))),
 	})
@@ -253,7 +253,7 @@ func TestKeyRotation(t *testing.T) {
 
 	// assign second key to be the second master key
 	res = <-chain.Submit(tssTypes.MsgAssignNextMasterKey{
-		Sender: randomSender2(validators[:], nodeCount),
+		Sender: randomSender(validators[:], nodeCount),
 		Chain:  btc.Bitcoin.Name,
 		KeyID:  keyID2,
 	})
@@ -294,7 +294,7 @@ func TestKeyRotation(t *testing.T) {
 	}
 
 	// sign transfer tx
-	res = <-chain.Submit(btcTypes.NewMsgSign(randomSender2(validators[:], nodeCount), btcutil.Amount(testutils.RandIntBetween(1, int64(amount)))))
+	res = <-chain.Submit(btcTypes.NewMsgSign(randomSender(validators[:], nodeCount), btcutil.Amount(testutils.RandIntBetween(1, int64(amount)))))
 	assert.NoError(t, res.Error)
 	// assert tssd was properly called
 	<-closeTimeout.Done()
@@ -341,7 +341,7 @@ func TestKeyRotation(t *testing.T) {
 
 	// verify master key transfer
 	res = <-chain.Submit(
-		btcTypes.NewMsgVerifyTx(randomSender2(validators[:], nodeCount), info))
+		btcTypes.NewMsgVerifyTx(randomSender(validators[:], nodeCount), info))
 	assert.NoError(t, res.Error)
 
 	// wait for voting to be done
@@ -349,7 +349,7 @@ func TestKeyRotation(t *testing.T) {
 
 	// rotate master key to key 2
 	res = <-chain.Submit(tssTypes.MsgRotateMasterKey{
-		Sender: randomSender2(validators[:], nodeCount),
+		Sender: randomSender(validators[:], nodeCount),
 		Chain:  btc.Bitcoin.Name,
 	})
 	assert.NoError(t, res.Error)
