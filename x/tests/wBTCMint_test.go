@@ -121,14 +121,14 @@ func Test_wBTC_mint(t *testing.T) {
 	res := <-chain.Submit(snapTypes.MsgSnapshot{Sender: randomSender2()})
 	assert.NoError(t, res.Error)
 
-	// set up tssd mock for first keygen
-	masterKey, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
+	// set up tssd mock for btc keygen
+	btcMasterKey, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 	if err != nil {
 		panic(err)
 	}
 
 	mocks.Keygen.RecvFunc = func() (*tssd.MessageOut, error) {
-		pk, _ := convert.PubkeyToBytes(masterKey.PublicKey)
+		pk, _ := convert.PubkeyToBytes(btcMasterKey.PublicKey)
 		return &tssd.MessageOut{
 			Data: &tssd.MessageOut_KeygenResult{KeygenResult: pk}}, nil
 	}
@@ -148,12 +148,11 @@ func Test_wBTC_mint(t *testing.T) {
 		}
 		return nil
 	}
-
-	// create first key
-	masterKeyID := stringGen.Next()
+	// create btc key
+	btcMasterKeyID := stringGen.Next()
 	res = <-chain.Submit(tssTypes.MsgKeygenStart{
 		Sender:    randomSender2(),
-		NewKeyID:  masterKeyID,
+		NewKeyID:  btcMasterKeyID,
 		Threshold: int(testutils.RandIntBetween(1, int64(len(validators2)))),
 	})
 	assert.NoError(t, res.Error)
@@ -164,23 +163,64 @@ func Test_wBTC_mint(t *testing.T) {
 	assert.Equal(t, nodeCount2, len(mocks.Keygen.SendCalls()))
 	assert.Equal(t, nodeCount2, len(mocks.Keygen.CloseSendCalls()))
 
+	// set up tssd mock for eth keygen
+	ethMasterKey, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
+	if err != nil {
+		panic(err)
+	}
+	mocks.Keygen.RecvFunc = func() (*tssd.MessageOut, error) {
+		pk, _ := convert.PubkeyToBytes(ethMasterKey.PublicKey)
+		return &tssd.MessageOut{
+			Data: &tssd.MessageOut_KeygenResult{KeygenResult: pk}}, nil
+	}
+	// ensure all nodes call .Send() and .CloseSend()
+	sendTimeout2, sendCancel2 := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	closeTimeout2, closeCancel2 := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	mocks.Keygen.SendFunc = func(_ *tssd.MessageIn) error {
+		// Q: This is never true
+		if len(mocks.Keygen.SendCalls()) == nodeCount2 {
+			sendCancel2()
+		}
+		return nil
+	}
+	mocks.Keygen.CloseSendFunc = func() error {
+		if len(mocks.Keygen.CloseSendCalls()) == nodeCount2 {
+			closeCancel2()
+		}
+		return nil
+	}
+	// create btc key
+	ethMasterKeyID := stringGen.Next()
+	res = <-chain.Submit(tssTypes.MsgKeygenStart{
+		Sender:    randomSender2(),
+		NewKeyID:  ethMasterKeyID,
+		Threshold: int(testutils.RandIntBetween(1, int64(len(validators2)))),
+	})
+	assert.NoError(t, res.Error)
+	// assert tssd was properly called
+	<-sendTimeout2.Done()
+	<-closeTimeout2.Done()
+	// SendCalls and CloseSendCalls has already been called once per validator for btc master key
+	// assert that it is also called for eth master key once from each validator
+	assert.Equal(t, 2*nodeCount2, len(mocks.Keygen.SendCalls()))
+	assert.Equal(t, 2*nodeCount2, len(mocks.Keygen.CloseSendCalls()))
+
 	// wait for voting to be done
 	chain.WaitNBlocks(12)
 
-	// assign key as bitcoin master key
+	// assign bitcoin master key
 	res = <-chain.Submit(tssTypes.MsgAssignNextMasterKey{
 		Sender: randomSender2(),
 		Chain:  balance.Bitcoin,
-		KeyID:  masterKeyID,
+		KeyID:  btcMasterKeyID,
 	})
 	assert.NoError(t, res.Error)
 
 	// assign key as ethereum master key
-	// Q: is this correct? Or distinct masterkeys for different chains need to be created
 	res = <-chain.Submit(tssTypes.MsgAssignNextMasterKey{
 		Sender: randomSender2(),
 		Chain:  balance.Ethereum,
-		KeyID:  masterKeyID,
+		KeyID:  ethMasterKeyID,
 	})
 	assert.NoError(t, res.Error)
 
@@ -251,13 +291,15 @@ func Test_wBTC_mint(t *testing.T) {
 	// set up tssd mock for signing
 	msgToSign := make(chan []byte, nodeCount)
 	mocks.Sign.SendFunc = func(messageIn *tssd.MessageIn) error {
-		assert.Equal(t, masterKeyID, messageIn.GetSignInit().KeyUid)
+		assert.Equal(t, ethMasterKeyID, messageIn.GetSignInit().KeyUid)
 		msgToSign <- messageIn.GetSignInit().MessageToSign
 		return nil
 	}
 	sigChan := make(chan []byte, 1)
 	go func() {
-		r, s, err := ecdsa.Sign(rand.Reader, masterKey, <-msgToSign)
+		// Q: No error are produced even if the btcMasterKey is used here.
+		// Is there any way to assert that the correct master key was provided?
+		r, s, err := ecdsa.Sign(rand.Reader, ethMasterKey, <-msgToSign)
 		if err != nil {
 			panic(err)
 		}
