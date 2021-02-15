@@ -292,7 +292,7 @@ func Test_wBTC_mint(t *testing.T) {
 	// 	[]string{
 	// 		ethTypes.QuerierRoute,
 	// 		ethKeeper.SendMintTx,
-	// 		masterKeyID,
+	// 		commandID,
 	// 		fromAdderss,
 	// 		contractAddress,
 	// 	},
