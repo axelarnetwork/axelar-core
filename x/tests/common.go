@@ -43,11 +43,11 @@ import (
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
-func randomSender2(validators2 []staking.Validator, validatorsCount int64) sdk.AccAddress {
-	return sdk.AccAddress(validators2[testutils.RandIntBetween(0, validatorsCount)].OperatorAddress)
+func randomSender(validators []staking.Validator, validatorsCount int64) sdk.AccAddress {
+	return sdk.AccAddress(validators[testutils.RandIntBetween(0, validatorsCount)].OperatorAddress)
 }
 
-type testMocks2 struct {
+type testMocks struct {
 	BTC    *btcMock.RPCClientMock
 	ETH    *ethMock.RPCClientMock
 	Keygen *tssdMock.TSSDKeyGenClientMock
@@ -56,7 +56,7 @@ type testMocks2 struct {
 	TSSD   *tssdMock.TSSDClientMock
 }
 
-func newNode2(moniker string, validator sdk.ValAddress, mocks testMocks2, chain *fake.BlockChain) fake.Node {
+func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *fake.BlockChain) fake.Node {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 
 	broadcaster := fake.NewBroadcaster(testutils.Codec(), validator, chain.Submit)
@@ -118,10 +118,10 @@ func newNode2(moniker string, validator sdk.ValAddress, mocks testMocks2, chain 
 	return node
 }
 
-func createMocks2(validators2 *[]staking.Validator) testMocks2 {
+func createMocks(validators *[]staking.Validator) testMocks {
 	stakingKeeper := &snapMock.StakingKeeperMock{
 		IterateLastValidatorsFunc: func(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool)) {
-			for j, val := range *validators2 {
+			for j, val := range *validators {
 				if fn(int64(j), val) {
 					break
 				}
@@ -129,7 +129,7 @@ func createMocks2(validators2 *[]staking.Validator) testMocks2 {
 		},
 		GetLastTotalPowerFunc: func(ctx sdk.Context) sdk.Int {
 			totalPower := sdk.ZeroInt()
-			for _, val := range *validators2 {
+			for _, val := range *validators {
 				totalPower = totalPower.AddRaw(val.ConsensusPower())
 			}
 			return totalPower
@@ -153,7 +153,7 @@ func createMocks2(validators2 *[]staking.Validator) testMocks2 {
 		KeygenFunc: func(context.Context, ...grpc.CallOption) (tssd.GG18_KeygenClient, error) { return keygen, nil },
 		SignFunc:   func(context.Context, ...grpc.CallOption) (tssd.GG18_SignClient, error) { return sign, nil },
 	}
-	return testMocks2{
+	return testMocks{
 		BTC:    btcClient,
 		ETH:    ethClient,
 		TSSD:   tssdClient,
