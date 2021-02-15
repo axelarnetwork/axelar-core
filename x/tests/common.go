@@ -22,6 +22,16 @@ import (
 func randomSender2(validators2 []staking.Validator, validatorsCount int64) sdk.AccAddress {
 	return sdk.AccAddress(validators2[testutils.RandIntBetween(0, validatorsCount)].OperatorAddress)
 }
+
+type testMocks2 struct {
+	BTC    *btcMock.RPCClientMock
+	ETH    *ethMock.RPCClientMock
+	Keygen *tssdMock.TSSDKeyGenClientMock
+	Sign   *tssdMock.TSSDSignClientMock
+	Staker *snapMock.StakingKeeperMock
+	TSSD   *tssdMock.TSSDClientMock
+}
+
 func createMocks2(validators2 *[]staking.Validator) testMocks2 {
 	stakingKeeper := &snapMock.StakingKeeperMock{
 		IterateLastValidatorsFunc: func(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool)) {

@@ -55,16 +55,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-
-type testMocks2 struct {
-	BTC    *btcMock.RPCClientMock
-	ETH    *ethMock.RPCClientMock
-	Keygen *tssdMock.TSSDKeyGenClientMock
-	Sign   *tssdMock.TSSDSignClientMock
-	Staker *snapMock.StakingKeeperMock
-	TSSD   *tssdMock.TSSDClientMock
-}
-
 // 0. Create and start a chain
 // 1. Get a deposit address for the given Ethereum recipient address
 // 2. Send BTC to the deposit address and wait until confirmed
