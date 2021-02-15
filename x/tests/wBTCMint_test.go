@@ -55,13 +55,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-const nodeCount2 = 10
-
-// globally available storage variables to control the behaviour of the mocks
-var (
-	// set of validators2 known to the staking keeper
-	validators2 = make([]staking.Validator, 0, nodeCount2)
-)
 
 type testMocks2 struct {
 	BTC    *btcMock.RPCClientMock
@@ -82,13 +75,17 @@ type testMocks2 struct {
 // 7. Submit the minting command from an externally controlled address to AxelarGateway
 
 func Test_wBTC_mint(t *testing.T) {
+
+	const nodeCount2 = 10
+	validators2 := make([]staking.Validator, 0, nodeCount2)
+
 	// 0. Create and start a chain
 	chain := fake.NewBlockchain().WithBlockTimeOut(10 * time.Millisecond)
 
 	stringGen := testutils.RandStrings(5, 50).Distinct()
 	defer stringGen.Stop()
 
-	mocks := createMocks2()
+	mocks := createMocks2(&validators2)
 
 	var nodes []fake.Node
 	for i, valAddr := range stringGen.Take(nodeCount2) {
@@ -118,7 +115,7 @@ func Test_wBTC_mint(t *testing.T) {
 	}
 
 	// take first validator snapshot
-	res := <-chain.Submit(snapTypes.MsgSnapshot{Sender: randomSender2()})
+	res := <-chain.Submit(snapTypes.MsgSnapshot{Sender: randomSender2(validators2[:], nodeCount2)})
 	assert.NoError(t, res.Error)
 
 	// set up tssd mock for btc keygen
@@ -126,7 +123,6 @@ func Test_wBTC_mint(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-
 	mocks.Keygen.RecvFunc = func() (*tssd.MessageOut, error) {
 		pk, _ := convert.PubkeyToBytes(btcMasterKey.PublicKey)
 		return &tssd.MessageOut{
@@ -151,12 +147,11 @@ func Test_wBTC_mint(t *testing.T) {
 	// create btc key
 	btcMasterKeyID := stringGen.Next()
 	res = <-chain.Submit(tssTypes.MsgKeygenStart{
-		Sender:    randomSender2(),
+		Sender:    randomSender2(validators2[:], nodeCount2),
 		NewKeyID:  btcMasterKeyID,
 		Threshold: int(testutils.RandIntBetween(1, int64(len(validators2)))),
 	})
 	assert.NoError(t, res.Error)
-
 	// assert tssd was properly called
 	<-sendTimeout.Done()
 	<-closeTimeout.Done()
@@ -192,7 +187,7 @@ func Test_wBTC_mint(t *testing.T) {
 	// create btc key
 	ethMasterKeyID := stringGen.Next()
 	res = <-chain.Submit(tssTypes.MsgKeygenStart{
-		Sender:    randomSender2(),
+		Sender:    randomSender2(validators2[:], nodeCount2),
 		NewKeyID:  ethMasterKeyID,
 		Threshold: int(testutils.RandIntBetween(1, int64(len(validators2)))),
 	})
@@ -210,7 +205,7 @@ func Test_wBTC_mint(t *testing.T) {
 
 	// assign bitcoin master key
 	res = <-chain.Submit(tssTypes.MsgAssignNextMasterKey{
-		Sender: randomSender2(),
+		Sender: randomSender2(validators2[:], nodeCount2),
 		Chain:  balance.Bitcoin,
 		KeyID:  btcMasterKeyID,
 	})
@@ -218,7 +213,7 @@ func Test_wBTC_mint(t *testing.T) {
 
 	// assign key as ethereum master key
 	res = <-chain.Submit(tssTypes.MsgAssignNextMasterKey{
-		Sender: randomSender2(),
+		Sender: randomSender2(validators2[:], nodeCount2),
 		Chain:  balance.Ethereum,
 		KeyID:  ethMasterKeyID,
 	})
@@ -226,7 +221,7 @@ func Test_wBTC_mint(t *testing.T) {
 
 	// rotate to the first master key
 	res = <-chain.Submit(tssTypes.MsgRotateMasterKey{
-		Sender: randomSender2(),
+		Sender: randomSender2(validators2[:], nodeCount2),
 		Chain:  balance.Bitcoin,
 	})
 	assert.NoError(t, res.Error)
@@ -234,17 +229,16 @@ func Test_wBTC_mint(t *testing.T) {
 	// rotate to the first master key
 	// Q: is this correct?
 	res = <-chain.Submit(tssTypes.MsgRotateMasterKey{
-		Sender: randomSender2(),
+		Sender: randomSender2(validators2[:], nodeCount2),
 		Chain:  balance.Ethereum,
 	})
 	assert.NoError(t, res.Error)
 
 	// 1. Get a deposit address for the given Ethereum recipient address
 	ethAddr := balance.CrossChainAddress{Chain: balance.Ethereum, Address: testutils.RandStringBetween(5, 20)}
-	res = <-chain.Submit(btcTypes.NewMsgLink(randomSender2(), ethAddr))
+	res = <-chain.Submit(btcTypes.NewMsgLink(randomSender2(validators2[:], nodeCount2), ethAddr))
 	assert.NoError(t, res.Error)
 	depositAddr := string(res.Data)
-
 
 	// 2. Send BTC to the deposit address and wait until confirmed
 	txHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
@@ -281,7 +275,7 @@ func Test_wBTC_mint(t *testing.T) {
 	testutils.Codec().MustUnmarshalJSON(bz, &info)
 
 	// 4. Verify the previously received information
-	res = <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender2(), info))
+	res = <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender2(validators2[:], nodeCount2), info))
 	assert.NoError(t, res.Error)
 
 	// 5. Wait until verification is complete
@@ -323,17 +317,16 @@ func Test_wBTC_mint(t *testing.T) {
 		return nil
 	}
 
-	res = <-chain.Submit(ethTypes.NewMsgSignPendingTransfersTx(randomSender2()))
+	res = <-chain.Submit(ethTypes.NewMsgSignPendingTransfersTx(randomSender2(validators2[:], nodeCount2)))
 	assert.NoError(t, res.Error)
 	commandID := common.BytesToHash(res.Data)
 
-	sender := randomSender2()
-	contractAddress := randomSender2()
+	sender := randomSender2(validators2[:], nodeCount2)
+	contractAddress := randomSender2(validators2[:], nodeCount2)
 
 	// wait for voting to be done
 	// Q: Why do we have to wait for 22 blocks instead of 12?
 	chain.WaitNBlocks(22)
-
 
 	// Q: Does SendAndSign need to check anything?
 	mocks.ETH.SendAndSignTransactionFunc = func(_ context.Context, _ goEth.CallMsg) (string, error) {
@@ -358,9 +351,6 @@ func Test_wBTC_mint(t *testing.T) {
 	println("7: ok")
 }
 
-func randomSender2() sdk.AccAddress {
-	return sdk.AccAddress(validators2[testutils.RandIntBetween(0, nodeCount2)].OperatorAddress)
-}
 
 func newNode2(moniker string, validator sdk.ValAddress, mocks testMocks2, chain *fake.BlockChain) fake.Node {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
@@ -422,49 +412,4 @@ func newNode2(moniker string, validator sdk.ValAddress, mocks testMocks2, chain 
 			return vote.EndBlocker(ctx, req, voter)
 		})
 	return node
-}
-
-func createMocks2() testMocks2 {
-	stakingKeeper := &snapMock.StakingKeeperMock{
-		IterateLastValidatorsFunc: func(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool)) {
-			for j, val := range validators2 {
-				if fn(int64(j), val) {
-					break
-				}
-			}
-		},
-		GetLastTotalPowerFunc: func(ctx sdk.Context) sdk.Int {
-			totalPower := sdk.ZeroInt()
-			for _, val := range validators2 {
-				totalPower = totalPower.AddRaw(val.ConsensusPower())
-			}
-			return totalPower
-		},
-	}
-
-	btcClient := &btcMock.RPCClientMock{
-		SendRawTransactionFunc: func(tx *wire.MsgTx, _ bool) (*chainhash.Hash, error) {
-			hash := tx.TxHash()
-			return &hash, nil
-		},
-		NetworkFunc: func() btcTypes.Network { return btcTypes.Mainnet }}
-
-	ethClient := &ethMock.RPCClientMock{
-		// TODO add functions when needed
-	}
-
-	keygen := &tssdMock.TSSDKeyGenClientMock{}
-	sign := &tssdMock.TSSDSignClientMock{}
-	tssdClient := &tssdMock.TSSDClientMock{
-		KeygenFunc: func(context.Context, ...grpc.CallOption) (tssd.GG18_KeygenClient, error) { return keygen, nil },
-		SignFunc:   func(context.Context, ...grpc.CallOption) (tssd.GG18_SignClient, error) { return sign, nil },
-	}
-	return testMocks2{
-		BTC:    btcClient,
-		ETH:    ethClient,
-		TSSD:   tssdClient,
-		Keygen: keygen,
-		Sign:   sign,
-		Staker: stakingKeeper,
-	}
 }
