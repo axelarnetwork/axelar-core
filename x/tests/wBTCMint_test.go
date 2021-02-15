@@ -71,13 +71,12 @@ type testMocks2 struct {
 
 // 0. Create and start a chain
 // 1. Get a deposit address for the given Ethereum recipient address
-// 2. Track the new deposit address
-// 3. Send BTC to the deposit address and wait until confirmed
-// 4. Collect all information that needs to be verified about the deposit
-// 5. Verify the previously received information
-// 6. Wait until verification is complete
-// 7. Sign all pending transfers to Ethereum
-// 8. Submit the minting command from an externally controlled address to AxelarGateway
+// 2. Send BTC to the deposit address and wait until confirmed
+// 3. Collect all information that needs to be verified about the deposit
+// 4. Verify the previously received information
+// 5. Wait until verification is complete
+// 6. Sign all pending transfers to Ethereum
+// 7. Submit the minting command from an externally controlled address to AxelarGateway
 
 func Test_wBTC_mint(t *testing.T) {
 	// 0. Create and start a chain
@@ -203,46 +202,49 @@ func Test_wBTC_mint(t *testing.T) {
 	assert.NoError(t, res.Error)
 	depositAddr := string(res.Data)
 
-	// 2. Track the new deposit address
-	res = <-chain.Submit(btcTypes.NewMsgTrackAddress(randomSender2(), depositAddr, true))
-	assert.NoError(t, res.Error)
 
-	// 3. Send BTC to the deposit address and wait until confirmed
-	txHash, err := chainhash.NewHash(testutils.RandBytes(32))
+	// 2. Send BTC to the deposit address and wait until confirmed
+	txHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
+	blockHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	if err != nil {
+		panic(err)
+	}
+
 	voutIdx := uint32(testutils.RandIntBetween(0, 100))
 	expectedOut := wire.NewOutPoint(txHash, voutIdx)
 	amount := btcutil.Amount(testutils.RandIntBetween(1, 10000000))
 	confirmations := uint64(testutils.RandIntBetween(1, 10000))
 
-	mocks.BTC.GetOutPointInfoFunc = func(out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
-		if out.String() == expectedOut.String() {
+	mocks.BTC.GetOutPointInfoFunc = func(bHash *chainhash.Hash, out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
+		if bHash.String() == blockHash.String() && out.String() == expectedOut.String() {
 			return btcTypes.OutPointInfo{
 				OutPoint:      expectedOut,
+				BlockHash:     blockHash,
 				Amount:        amount,
-				DepositAddr:   depositAddr,
+				Address:       depositAddr,
 				Confirmations: confirmations,
 			}, nil
 		}
 		return btcTypes.OutPointInfo{}, fmt.Errorf("tx %s not found", out.String())
 	}
 
-	// 4. Collect all information that needs to be verified about the deposit
-	bz, err := nodes[0].Query([]string{btcTypes.QuerierRoute, btcKeeper.QueryOutInfo}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(expectedOut)})
+	// 3. Collect all information that needs to be verified about the deposit
+	bz, err := nodes[0].Query([]string{btcTypes.QuerierRoute, btcKeeper.QueryOutInfo, blockHash.String()}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(expectedOut)})
 	assert.NoError(t, err)
 	var info btcTypes.OutPointInfo
 	testutils.Codec().MustUnmarshalJSON(bz, &info)
 
-	// 5. Verify the previously received information
+	// 4. Verify the previously received information
 	res = <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender2(), info))
 	assert.NoError(t, res.Error)
 
-	// 6. Wait until verification is complete
+	// 5. Wait until verification is complete
 	chain.WaitNBlocks(12)
 
-	// 7. Sign all pending transfers to Ethereum
+	// 6. Sign all pending transfers to Ethereum
 	// set up tssd mock for signing
 	msgToSign := make(chan []byte, nodeCount)
 	mocks.Sign.SendFunc = func(messageIn *tssd.MessageIn) error {
@@ -315,7 +317,7 @@ func newNode2(moniker string, validator sdk.ValAddress, mocks testMocks2, chain 
 	voter := voteKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(voteTypes.StoreKey), store.NewSubjectiveStore(), snapKeeper, broadcaster)
 
 	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	bitcoinKeeper := btcKeeper.NewBtcKeeper(testutils.Codec(), sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)
+	bitcoinKeeper := btcKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)
 	btcParams := btcTypes.DefaultParams()
 	btcParams.Network = mocks.BTC.Network()
 	bitcoinKeeper.SetParams(ctx, btcParams)
@@ -331,7 +333,10 @@ func newNode2(moniker string, validator sdk.ValAddress, mocks testMocks2, chain 
 		voter, broadcaster,
 	)
 	signer.SetParams(ctx, tssTypes.DefaultParams())
-	balancer := balanceKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(balanceTypes.StoreKey))
+
+	balanceSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("balanceKey"), sdk.NewKVStoreKey("tbalanceKey"), "balance")
+	balancer := balanceKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(balanceTypes.StoreKey), balanceSubspace)
+	balancer.SetParams(ctx, balanceTypes.DefaultParams())
 
 	voter.SetVotingInterval(ctx, voteTypes.DefaultGenesisState().VotingInterval)
 	voter.SetVotingThreshold(ctx, voteTypes.DefaultGenesisState().VotingThreshold)
@@ -384,7 +389,6 @@ func createMocks2() testMocks2 {
 	}
 
 	btcClient := &btcMock.RPCClientMock{
-		ImportAddressRescanFunc: func(string, string, bool) error { return nil },
 		SendRawTransactionFunc: func(tx *wire.MsgTx, _ bool) (*chainhash.Hash, error) {
 			hash := tx.TxHash()
 			return &hash, nil
