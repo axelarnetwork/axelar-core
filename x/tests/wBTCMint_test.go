@@ -327,7 +327,6 @@ func Test_wBTC_mint(t *testing.T) {
 	assert.NoError(t, res.Error)
 	commandID := common.BytesToHash(res.Data)
 
-	// TODO: to be changed with random addresses
 	sender := randomSender2()
 	contractAddress := randomSender2()
 
@@ -451,7 +450,7 @@ func createMocks2() testMocks2 {
 		NetworkFunc: func() btcTypes.Network { return btcTypes.Mainnet }}
 
 	ethClient := &ethMock.RPCClientMock{
-		// TODO add functions
+		// TODO add functions when needed
 	}
 
 	keygen := &tssdMock.TSSDKeyGenClientMock{}
