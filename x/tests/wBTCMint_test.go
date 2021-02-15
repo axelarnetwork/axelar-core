@@ -300,8 +300,6 @@ func Test_wBTC_mint(t *testing.T) {
 
 	// // Error here: createMintTxAndSend -> GetSig returned an error and bz is nil
 	// testutils.Codec().MustUnmarshalJSON(bz, &info)
-
-	// // 9. Ensure that minting is done
 }
 
 func randomSender2() sdk.AccAddress {
