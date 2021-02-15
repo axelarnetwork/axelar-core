@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	goEth "github.com/ethereum/go-ethereum"
+
 	"github.com/axelarnetwork/axelar-core/store"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -46,6 +48,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	sdkExported "github.com/cosmos/cosmos-sdk/x/staking/exported"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -290,19 +293,28 @@ func Test_wBTC_mint(t *testing.T) {
 	// Q: Why do we have to wait for 22 blocks instead of 12?
 	chain.WaitNBlocks(22)
 
-	// // 8. Submit the minting command from an externally controlled address to AxelarGateway
-	// bz, err = nodes[0].Query(
-	// 	[]string{
-	// 		ethTypes.QuerierRoute,
-	// 		ethKeeper.SendMintTx,
-	// 		commandID,
-	// 		fromAdderss,
-	// 		contractAddress,
-	// 	},
-	// 	abci.RequestQuery{})
 
-	// // Error here: createMintTxAndSend -> GetSig returned an error and bz is nil
-	// testutils.Codec().MustUnmarshalJSON(bz, &info)
+	// Q: Does SendAndSign need to check anything?
+	mocks.ETH.SendAndSignTransactionFunc = func(_ context.Context, _ goEth.CallMsg) (string, error) {
+		return "", nil
+	}
+
+	// 7. Submit the minting command from an externally controlled address to AxelarGateway
+	bz, err = nodes[0].Query(
+		[]string{
+			ethTypes.QuerierRoute,
+			ethKeeper.SendCommand,
+		},
+		abci.RequestQuery{
+			Data: testutils.Codec().MustMarshalJSON(
+				ethTypes.CommandParams{
+					CommandID:    ethTypes.CommandID(commandID),
+					Sender:       sender.String(),
+					ContractAddr: contractAddress.String(),
+				})},
+	)
+	assert.NoError(t, err)
+	println("7: ok")
 }
 
 func randomSender2() sdk.AccAddress {
