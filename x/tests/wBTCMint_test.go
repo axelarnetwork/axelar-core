@@ -5,21 +5,15 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"fmt"
-	"strconv"
 	"testing"
 	"time"
 
-	goEth "github.com/ethereum/go-ethereum"
-
 	"github.com/axelarnetwork/axelar-core/testutils"
-	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	ethKeeper "github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
-	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/axelarnetwork/tssd/convert"
 	tssd "github.com/axelarnetwork/tssd/pb"
@@ -27,8 +21,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/staking"
+	goEth "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -46,52 +39,22 @@ import (
 func Test_wBTC_mint(t *testing.T) {
 
 	const nodeCount = 10
-	validators := make([]staking.Validator, 0, nodeCount)
-
-	// 0. Create and start a chain
-	chain := fake.NewBlockchain().WithBlockTimeOut(10 * time.Millisecond)
 
 	stringGen := testutils.RandStrings(5, 50).Distinct()
 	defer stringGen.Stop()
 
-	mocks := createMocks(&validators)
-
-	var nodes []fake.Node
-	for i, valAddr := range stringGen.Take(nodeCount) {
-		validator := staking.Validator{
-			OperatorAddress: sdk.ValAddress(valAddr),
-			Tokens:          sdk.TokensFromConsensusPower(testutils.RandIntBetween(100, 1000)),
-			Status:          sdk.Bonded,
-		}
-		validators = append(validators, validator)
-		nodes = append(nodes, newNode("node"+strconv.Itoa(i), validator.OperatorAddress, mocks, chain))
-		chain.AddNodes(nodes[i])
-	}
-	// Check to suppress any nil warnings from IDEs
-	if nodes == nil {
-		panic("need at least one node")
-	}
-
-	chain.Start()
-
-	// register proxies
-	for i := 0; i < nodeCount; i++ {
-		res := <-chain.Submit(broadcastTypes.MsgRegisterProxy{
-			Principal: validators[i].OperatorAddress,
-			Proxy:     sdk.AccAddress(stringGen.Next()),
-		})
-		assert.NoError(t, res.Error)
-	}
-
-	// take first validator snapshot
-	res := <-chain.Submit(snapTypes.MsgSnapshot{Sender: randomSender(validators[:], nodeCount)})
-	assert.NoError(t, res.Error)
+	chain, validators, mocks, nodes := createChain(nodeCount, &stringGen)
+	registerProxies(chain, validators[:], nodeCount, &stringGen, t)
+	takeSnapshot(chain, validators[:], nodeCount, t)
 
 	// set up tssd mock for btc keygen
 	btcMasterKey, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 	if err != nil {
 		panic(err)
 	}
+
+	println(btcMasterKey)
+
 	mocks.Keygen.RecvFunc = func() (*tssd.MessageOut, error) {
 		pk, _ := convert.PubkeyToBytes(btcMasterKey.PublicKey)
 		return &tssd.MessageOut{
@@ -115,7 +78,7 @@ func Test_wBTC_mint(t *testing.T) {
 	}
 	// create btc key
 	btcMasterKeyID := stringGen.Next()
-	res = <-chain.Submit(tssTypes.MsgKeygenStart{
+	res := <-chain.Submit(tssTypes.MsgKeygenStart{
 		Sender:    randomSender(validators[:], nodeCount),
 		NewKeyID:  btcMasterKeyID,
 		Threshold: int(testutils.RandIntBetween(1, int64(len(validators)))),
