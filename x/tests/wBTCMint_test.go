@@ -280,14 +280,15 @@ func Test_wBTC_mint(t *testing.T) {
 
 	res = <-chain.Submit(ethTypes.NewMsgSignPendingTransfersTx(randomSender2()))
 	assert.NoError(t, res.Error)
-	// commandID := res.Data
+	commandID := common.BytesToHash(res.Data)
 
-	// // TODO: to be changed with random addresses
-	// fromAdderss := "0xE3deF8C6b7E357bf38eC701Ce631f78F2532987A"
-	// contractAddress := "0x73ADD47055eba3191fD26285788F8a8b3Fcf9e17"
+	// TODO: to be changed with random addresses
+	sender := randomSender2()
+	contractAddress := randomSender2()
 
-	// // wait for voting to be done
-	// chain.WaitNBlocks(12)
+	// wait for voting to be done
+	// Q: Why do we have to wait for 22 blocks instead of 12?
+	chain.WaitNBlocks(22)
 
 	// // 8. Submit the minting command from an externally controlled address to AxelarGateway
 	// bz, err = nodes[0].Query(
