@@ -64,7 +64,6 @@ func Test_wBTC_mint(t *testing.T) {
 	sendTimeout, sendCancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	closeTimeout, closeCancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	mocks.Keygen.SendFunc = func(_ *tssd.MessageIn) error {
-		// Q: This is never true
 		if len(mocks.Keygen.SendCalls()) == nodeCount {
 			sendCancel()
 		}
@@ -104,7 +103,6 @@ func Test_wBTC_mint(t *testing.T) {
 	sendTimeout2, sendCancel2 := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	closeTimeout2, closeCancel2 := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	mocks.Keygen.SendFunc = func(_ *tssd.MessageIn) error {
-		// Q: This is never true
 		if len(mocks.Keygen.SendCalls()) == nodeCount {
 			sendCancel2()
 		}
@@ -159,7 +157,6 @@ func Test_wBTC_mint(t *testing.T) {
 	assert.NoError(t, res.Error)
 
 	// rotate to the first master key
-	// Q: is this correct?
 	res = <-chain.Submit(tssTypes.MsgRotateMasterKey{
 		Sender: randomSender(validators[:], nodeCount),
 		Chain:  balance.Ethereum,
@@ -223,7 +220,7 @@ func Test_wBTC_mint(t *testing.T) {
 	}
 	sigChan := make(chan []byte, 1)
 	go func() {
-		// Q: No error are produced even if the btcMasterKey is used here.
+		// Q: No error is produced even if the btcMasterKey is used here.
 		// Is there any way to assert that the correct master key was provided?
 		r, s, err := ecdsa.Sign(rand.Reader, ethMasterKey, <-msgToSign)
 		if err != nil {
