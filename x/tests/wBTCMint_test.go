@@ -72,7 +72,7 @@ func Test_wBTC_mint(t *testing.T) {
 	depositAddr, _ := getCrossChainAddress(balance.CrossChainAddress{}, balance.Ethereum, chain, validators, nodeCount, t)
 
 	// 2. Send BTC to the deposit address and wait until confirmed
-	blockHash, expectedOut := sendBTCtoDepositAddress(depositAddr, mocks)
+	blockHash, expectedOut, _ := sendBTCtoDepositAddress(depositAddr, mocks)
 
 	// 3. Collect all information that needs to be verified about the deposit
 	info := queryOutPointInfo(nodes, blockHash, expectedOut, t)
@@ -113,7 +113,7 @@ func getCrossChainAddress(
 // sendBTCtoDepositAddress sends a predefined amount to the deposit address
 func sendBTCtoDepositAddress(
 	depositAddr string,
-	mocks testMocks) (*chainhash.Hash, *wire.OutPoint) {
+	mocks testMocks) (*chainhash.Hash, *wire.OutPoint, btcTypes.OutPointInfo) {
 	txHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
@@ -125,23 +125,22 @@ func sendBTCtoDepositAddress(
 
 	voutIdx := uint32(testutils.RandIntBetween(0, 100))
 	expectedOut := wire.NewOutPoint(txHash, voutIdx)
-	amount := btcutil.Amount(testutils.RandIntBetween(1, 10000000))
-	confirmations := uint64(testutils.RandIntBetween(1, 10000))
+	outPointInfo := btcTypes.OutPointInfo{
+		OutPoint:      wire.NewOutPoint(txHash, voutIdx),
+		BlockHash:     blockHash,
+		Amount:        btcutil.Amount(testutils.RandIntBetween(1, 10000000)),
+		Address:       depositAddr,
+		Confirmations: uint64(testutils.RandIntBetween(1, 10000)),
+	}
 
 	mocks.BTC.GetOutPointInfoFunc = func(bHash *chainhash.Hash, out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
 		if bHash.String() == blockHash.String() && out.String() == expectedOut.String() {
-			return btcTypes.OutPointInfo{
-				OutPoint:      expectedOut,
-				BlockHash:     blockHash,
-				Amount:        amount,
-				Address:       depositAddr,
-				Confirmations: confirmations,
-			}, nil
+			return outPointInfo, nil
 		}
 		return btcTypes.OutPointInfo{}, fmt.Errorf("tx %s not found", out.String())
 	}
 
-	return blockHash, expectedOut
+	return blockHash, expectedOut, outPointInfo
 }
 
 // queryOutPointInfo collects all information that needs to be verified about the deposit
