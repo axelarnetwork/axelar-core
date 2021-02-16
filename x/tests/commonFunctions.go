@@ -25,19 +25,27 @@ import (
 // createChain Creates a chain with given number of validators
 func createChain(nodeCount int, stringGen *testutils.RandDistinctStringGen) (*fake.BlockChain, []staking.Validator, testMocks, []fake.Node) {
 
+	// create an empty validator set
 	validators := make([]staking.Validator, 0, nodeCount)
+
+	// create a chain
 	chain := fake.NewBlockchain().WithBlockTimeOut(10 * time.Millisecond)
 
+	// create mocks
 	mocks := createMocks(&validators)
 
+	// create nodes
 	var nodes []fake.Node
 	for i, valAddr := range stringGen.Take(nodeCount) {
+		// assign validators
 		validator := staking.Validator{
 			OperatorAddress: sdk.ValAddress(valAddr),
 			Tokens:          sdk.TokensFromConsensusPower(testutils.RandIntBetween(100, 1000)),
 			Status:          sdk.Bonded,
 		}
 		validators = append(validators, validator)
+
+		// assign nodes
 		nodes = append(nodes, newNode("node"+strconv.Itoa(i), validator.OperatorAddress, mocks, chain))
 		chain.AddNodes(nodes[i])
 	}
@@ -46,11 +54,13 @@ func createChain(nodeCount int, stringGen *testutils.RandDistinctStringGen) (*fa
 		panic("need at least one node")
 	}
 
+	// start chain
 	chain.Start()
+
 	return chain, validators, mocks, nodes
 }
 
-// registerProxies registers
+// registerProxies register validators as proxies
 func registerProxies(chain *fake.BlockChain,
 	validators []staking.Validator,
 	nodeCount int,
@@ -63,7 +73,6 @@ func registerProxies(chain *fake.BlockChain,
 		})
 		assert.NoError(t, res.Error)
 	}
-
 }
 
 // takeSnapshot takes a snapshot of the current validators
@@ -74,7 +83,6 @@ func takeSnapshot(chain *fake.BlockChain, validators []staking.Validator, nodeCo
 
 // setTssdMock sets up tssd mock for btc keygen
 func generateKey() *ecdsa.PrivateKey {
-	// set up tssd mock for btc keygen
 	masterKey, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 	if err != nil {
 		panic(err)
@@ -148,7 +156,7 @@ func assignMasterKey(
 	masterKeyID string,
 	balanceChain balance.Chain,
 	t *testing.T) {
-	// assign bitcoin master key
+
 	res := <-chain.Submit(tssTypes.MsgAssignNextMasterKey{
 		Sender: randomSender(validators, nodeCount),
 		Chain:  balanceChain,
