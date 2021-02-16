@@ -29,3 +29,4 @@ axelarcli query ethereum [flags]
 - [axelarcli query ethereum master-address](axelarcli_query_ethereum_master-address.md)	 - Query an address by key ID
 - [axelarcli query ethereum sendCommand](axelarcli_query_ethereum_sendCommand.md)	 - Send a transaction signed by \[fromAddress\] that executes the command \[commandID\] to Ethereum contract at \[contractAddress\]
 - [axelarcli query ethereum sendTx](axelarcli_query_ethereum_sendTx.md)	 - Send a transaction that spends tx \[txID\] to Ethereum
+- [axelarcli query ethereum txInfo](axelarcli_query_ethereum_txInfo.md)	 - Query the info for the transaction with the provided hash in ethereum

@@ -2,6 +2,10 @@ package rest
 
 import (
 	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
+
 	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -9,8 +13,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gorilla/mux"
-	"net/http"
-	"strconv"
 )
 
 func QueryMasterAddress(cliCtx context.CLIContext) http.HandlerFunc {
@@ -33,6 +35,26 @@ func QueryMasterAddress(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		rest.PostProcessResponse(w, cliCtx, common.BytesToAddress(res).Hex())
+	}
+}
+
+func QueryTxInfo(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		txHash := mux.Vars(r)["txHash"]
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryTxInfo, txHash), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFTxInfo, txHash).Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, strings.ReplaceAll(string(res), "\"", "\\\""))
 	}
 }
 

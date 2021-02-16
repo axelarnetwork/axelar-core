@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -25,6 +26,8 @@ type RPCClient interface {
 	SuggestGasPrice(ctx context.Context) (*big.Int, error)
 	ChainID(ctx context.Context) (*big.Int, error)
 	EstimateGas(ctx context.Context, msg ethereum.CallMsg) (uint64, error)
+	TransactionByHash(ctx context.Context, hash common.Hash) (*types.Transaction, bool, error)
+	GetTransactionInfo(ctx context.Context, hash common.Hash) (TransactionInfo, error)
 }
 
 // RPCClientImpl implements RPCClient
@@ -63,6 +66,38 @@ func (ethRPCClient *RPCClientImpl) SendAndSignTransaction(ctx context.Context, m
 	}
 
 	return txHash.String(), nil
+}
+
+// GetTransactionInfo returns all relevant information for a specific transaction
+func (ethRPCClient *RPCClientImpl) GetTransactionInfo(ctx context.Context, hash common.Hash) (TransactionInfo, error) {
+	tx, isPending, err := ethRPCClient.TransactionByHash(ctx, hash)
+	if err != nil {
+		return TransactionInfo{}, fmt.Errorf("could not retrieve Ethereum transaction")
+	}
+	if isPending {
+		return TransactionInfo{}, fmt.Errorf("Ethereum transaction still pending")
+	}
+
+	receipt, err := ethRPCClient.TransactionReceipt(ctx, hash)
+	if err != nil {
+		return TransactionInfo{}, fmt.Errorf("could not retrieve Ethereum receipt")
+	}
+
+	blockNumber, err := ethRPCClient.BlockNumber(ctx)
+	if err != nil {
+		return TransactionInfo{}, fmt.Errorf("could not retrieve Ethereum block number")
+	}
+
+	height := sdk.NewIntFromUint64(blockNumber)
+	block := sdk.NewIntFromBigInt(receipt.BlockNumber)
+
+	return TransactionInfo{
+		TxHash:        tx.Hash().Bytes(),
+		Value:         sdk.NewIntFromBigInt(tx.Value()),
+		Data:          tx.Data(),
+		To:            tx.To().String(),
+		Confirmations: height.Sub(block),
+	}, nil
 }
 
 /* Copied from https://github.com/ethereum/go-ethereum/blob/053ed9cc847647a9b3ef707d0efe7104c4ab2a4c/ethclient/ethclient.go#L531 */
@@ -136,4 +171,14 @@ func (d dummyClient) ChainID(context.Context) (*big.Int, error) {
 // EstimateGas implements RPCClient
 func (d dummyClient) EstimateGas(context.Context, ethereum.CallMsg) (uint64, error) {
 	return 0, fmt.Errorf("no response")
+}
+
+// TransactionByHash implements RPCClient
+func (d dummyClient) TransactionByHash(ctx context.Context, hash common.Hash) (tx *types.Transaction, isPending bool, err error) {
+	return nil, false, fmt.Errorf("no response")
+}
+
+// GetTransactionInfo implements RPCClient
+func (d dummyClient) GetTransactionInfo(ctx context.Context, hash common.Hash) (TransactionInfo, error) {
+	return TransactionInfo{}, fmt.Errorf("no response")
 }

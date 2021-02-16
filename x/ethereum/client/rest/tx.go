@@ -3,6 +3,9 @@ package rest
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"strconv"
+
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
@@ -12,8 +15,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/gorilla/mux"
-	"net/http"
-	"strconv"
 )
 
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
@@ -24,6 +25,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("/tx/%s/signDeployToken/{symbol}", types.RestRoute), signDeployToken(cliCtx)).Methods("POST")
 
 	r.HandleFunc(fmt.Sprintf("/query/%s/%s", types.RestRoute, keeper.QueryMasterAddress), QueryMasterAddress(cliCtx)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/query/%s/%s/{txHash}", types.RestRoute, keeper.QueryTxInfo), QueryTxInfo(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/query/%s/%s", types.RestRoute, keeper.CreateDeployTx), QueryCreateDeployTx(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/query/%s/%s/{txID}", types.RestRoute, keeper.SendTx), QuerySendTx(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/query/%s/%s/{%s}", types.RestRoute, keeper.SendCommand, QueryParamContractAddress), QuerySendCommandTx(cliCtx)).Methods("GET")
@@ -84,7 +86,7 @@ func signTxHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 
 func verifyTxHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReqSignTx
+		var req ReqVerifyTx
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
 			return
 		}
@@ -97,14 +99,15 @@ func verifyTxHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		json := []byte(req.TxJson)
-		err := types.ValidTxJson(json)
+		err := types.ValidTxInfoJson([]byte(req.TxInfo))
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		msg := types.NewMsgVerifyTx(fromAddr, json)
+		var out types.TransactionInfo
+		cliCtx.Codec.MustUnmarshalJSON([]byte(req.TxInfo), &out)
+		msg := types.NewMsgVerifyTx(fromAddr, out)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

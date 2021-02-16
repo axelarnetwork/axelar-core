@@ -50,6 +50,12 @@ const (
 	axelarGatewayFuncExecute        = "execute"
 )
 
+const (
+
+	//ERC20TransferSel represents the ERC20 selector for token transfers
+	ERC20TransferSel = "0xa9059cbb"
+)
+
 var (
 	networksByID = map[int64]Network{
 		params.MainnetChainConfig.ChainID.Int64():       Mainnet,
@@ -142,6 +148,15 @@ func ToEthSignature(sig tss.Signature, hash common.Hash, pk ecdsa.PublicKey) (Si
 	s[64] = 1
 
 	return s, nil
+}
+
+// TransactionInfo describes all the necessary information to verify the data of a transaction
+type TransactionInfo struct {
+	TxHash        []byte
+	Value         sdk.Int
+	Data          []byte
+	To            string
+	Confirmations sdk.Int
 }
 
 // DeployParams describe the parameters used to create a deploy contract transaction for Ethereum
@@ -276,6 +291,45 @@ func CreateDeployTokenCommandData(chainID *big.Int, commandID CommandID, tokenNa
 	return packArguments(chainID, commandIDs, commands, commandParams)
 }
 
+// IsERC20Transfer returns true if and only if the bytes slice begins with the ERC20 selector for a transfer operation
+func IsERC20Transfer(data []byte) bool {
+	selLength := erc20TransferSelLen()
+	return len(data) >= selLength && "0x"+common.Bytes2Hex(data[:selLength]) == ERC20TransferSel
+}
+
+// UnpackERC20Transfer decodes the arguments of a ERC20 transfer invocation contained in a transaction data field
+func UnpackERC20Transfer(data []byte) (addr string, amount *big.Int, err error) {
+	if !IsERC20Transfer(data) {
+		err = fmt.Errorf("data is not for a ERC20 token transfer (wrong selector)")
+		return
+	}
+
+	addressType, err := abi.NewType("address", "address", nil)
+	if err != nil {
+		return
+	}
+	uint256Type, err := abi.NewType("uint256", "uint256", nil)
+	if err != nil {
+		return
+	}
+
+	paddedArgs := data[erc20TransferSelLen():]
+	arguments := abi.Arguments{{Type: addressType}, {Type: uint256Type}}
+	args, err := arguments.UnpackValues(paddedArgs)
+	if err != nil {
+		return
+	}
+
+	addr = args[0].(common.Address).String()
+	amount = args[1].(*big.Int)
+
+	return
+}
+
+func erc20TransferSelLen() int {
+	return len(common.FromHex(ERC20TransferSel))
+}
+
 // CommandID represents the unique command identifier
 type CommandID [32]byte
 
@@ -318,8 +372,8 @@ func packArguments(chainID *big.Int, commandIDs []CommandID, commands []string, 
 	return result, nil
 }
 
-/* This function would strip off anything in the hex strings beyond 32 bytes */
-func hexToByte32(hex string) [32]byte {
+// HexToByte32 would strip off anything in the hex strings beyond 32 bytes
+func HexToByte32(hex string) [32]byte {
 	var result [32]byte
 	copy(result[:], common.LeftPadBytes(common.FromHex(hex), 32)[:32])
 
@@ -343,7 +397,7 @@ func createMintParams(address string, denom string, amount *big.Int) ([]byte, er
 	}
 
 	arguments := abi.Arguments{{Type: stringType}, {Type: addressType}, {Type: uint256Type}}
-	result, err := arguments.Pack(denom, hexToByte32(address), amount)
+	result, err := arguments.Pack(denom, HexToByte32(address), amount)
 	if err != nil {
 		return nil, err
 	}

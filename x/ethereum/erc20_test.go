@@ -31,12 +31,11 @@ import (
 
 const (
 	// Used to test ERC20 marshalling of invocations
-	erc20TransferSel = "0xa9059cbb"
-	erc20Addr        = "0x337c67618968370907da31daef3020238d01c9de"
-	erc20Val         = "10000000000000000000"
-	erc20PaddedAddr  = "0x000000000000000000000000337c67618968370907da31daef3020238d01c9de"
-	erc20PaddedVal   = "0x0000000000000000000000000000000000000000000000008ac7230489e80000"
-	erc20length      = 68
+	erc20Addr       = "0x337c67618968370907da31daef3020238d01c9de"
+	erc20Val        = "10000000000000000000"
+	erc20PaddedAddr = "0x000000000000000000000000337c67618968370907da31daef3020238d01c9de"
+	erc20PaddedVal  = "0x0000000000000000000000000000000000000000000000008ac7230489e80000"
+	erc20length     = 68
 
 	// This mnemonic must be used when creating a ganache workspace, with at least two addresses with enough balance
 	mnemonic = "invest cloud minimum mirror keen razor husband desert engine actual flower shop"
@@ -68,7 +67,7 @@ func TestERC20Marshal(t *testing.T) {
 	// test total length of the data to be sent
 	var data []byte
 
-	data = append(data, common.FromHex(erc20TransferSel)...)
+	data = append(data, common.FromHex(types.ERC20TransferSel)...)
 	data = append(data, common.FromHex(paddedAddr)...)
 	data = append(data, common.FromHex(paddedVal)...)
 

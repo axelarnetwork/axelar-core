@@ -36,6 +36,7 @@
       - [master-address](axelarcli_query_ethereum_master-address.md)	 - Query an address by key ID
       - [sendCommand \[commandID\] \[fromAddress\] \[contractAddress\]](axelarcli_query_ethereum_sendCommand.md)	 - Send a transaction signed by \[fromAddress\] that executes the command \[commandID\] to Ethereum contract at \[contractAddress\]
       - [sendTx \[txID\]](axelarcli_query_ethereum_sendTx.md)	 - Send a transaction that spends tx \[txID\] to Ethereum
+      - [txInfo \[txHash\]](axelarcli_query_ethereum_txInfo.md)	 - Query the info for the transaction with the provided hash in ethereum
     - [slashing](axelarcli_query_slashing.md)	 - Querying commands for the slashing module
       - [params](axelarcli_query_slashing_params.md)	 - Query the current slashing parameters
       - [signing-info \[validator-conspub\]](axelarcli_query_slashing_signing-info.md)	 - Query a validator's signing information
@@ -82,7 +83,7 @@
       - [sign \[tx json file path\]](axelarcli_tx_ethereum_sign.md)	 - sign a raw Ethereum transaction
       - [sign-deploy-token \[name\] \[symbol\] \[decimals\] \[capacity\]](axelarcli_tx_ethereum_sign-deploy-token.md)	 - Signs the call data to deploy a token with the AxelarGateway contract
       - [sign-pending-transfers](axelarcli_tx_ethereum_sign-pending-transfers.md)	 - Sign all pending transfers to Ethereum
-      - [verify \[tx json file path\]](axelarcli_tx_ethereum_verify.md)	 - Verify an Ethereum transaction
+      - [verify \[txInfo json\]](axelarcli_tx_ethereum_verify.md)	 - Verify am Ethereum transaction
     - [multisign \[file\] \[name\] \[\[signature\]...\]](axelarcli_tx_multisign.md)	 - Generate multisig signatures for transactions generated offline
     - [send \[from_key_or_address\] \[to_address\] \[amount\]](axelarcli_tx_send.md)	 - Create and sign a send tx
     - [sign \[file\]](axelarcli_tx_sign.md)	 - Sign transactions generated offline

@@ -219,14 +219,28 @@ func (k Keeper) SetRawTx(ctx sdk.Context, txID string, tx *ethTypes.Transaction)
 	ctx.KVStore(k.storeKey).Set([]byte(rawPrefix+txID), bz)
 }
 
-// HasVerifiedTx returns true if a raw transaction has been stored
-func (k Keeper) HasVerifiedTx(ctx sdk.Context, txID string) bool {
+// HasVerifiedTxInfo returns true if a raw transaction has been stored
+func (k Keeper) HasVerifiedTxInfo(ctx sdk.Context, txID string) bool {
 	return ctx.KVStore(k.storeKey).Has([]byte(txPrefix + txID))
 }
 
-// SetUnverifiedTx stores and unverified transaction
-func (k Keeper) SetUnverifiedTx(ctx sdk.Context, txID string, tx *ethTypes.Transaction) {
-	ctx.KVStore(k.storeKey).Set([]byte(pendingPrefix+txID), tx.Hash().Bytes())
+// SetUnverifiedTxInfo stores and unverified transaction
+func (k Keeper) SetUnverifiedTxInfo(ctx sdk.Context, txInfo *types.TransactionInfo) {
+	key := []byte(pendingPrefix + common.BytesToHash(txInfo.TxHash).String())
+	bz := k.cdc.MustMarshalJSON(txInfo)
+	ctx.KVStore(k.storeKey).Set(key, bz)
+}
+
+// GetVerifiedTxInfo stores and unverified transaction
+func (k Keeper) GetVerifiedTxInfo(ctx sdk.Context, txHash string) (*types.TransactionInfo, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(txPrefix + txHash))
+	if bz == nil {
+		return nil, false
+	}
+
+	var txInfo *types.TransactionInfo
+	k.cdc.MustUnmarshalJSON(bz, &txInfo)
+	return txInfo, true
 }
 
 // HasUnverifiedTx returns true if an unverified transaction has been stored
@@ -235,16 +249,16 @@ func (k Keeper) HasUnverifiedTx(ctx sdk.Context, txID string) bool {
 }
 
 // ProcessVerificationResult stores the TX permanently if confirmed or discards the data otherwise
-func (k Keeper) ProcessVerificationResult(ctx sdk.Context, txID string, verified bool) error {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingPrefix + txID))
+func (k Keeper) ProcessVerificationResult(ctx sdk.Context, txHash string, verified bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingPrefix + txHash))
 	if bz == nil {
-		return fmt.Errorf("tx %s not found", txID)
+		k.Logger(ctx).Debug(fmt.Sprintf("transaction hash %s is not known", txHash))
+		return
 	}
 	if verified {
-		ctx.KVStore(k.storeKey).Set([]byte(txPrefix+txID), bz)
+		ctx.KVStore(k.storeKey).Set([]byte(txPrefix+txHash), bz)
 	}
-	ctx.KVStore(k.storeKey).Delete([]byte(pendingPrefix + txID))
-	return nil
+	ctx.KVStore(k.storeKey).Delete([]byte(pendingPrefix + txHash))
 }
 
 // AssembleEthTx sets a signature for a previously stored raw transaction

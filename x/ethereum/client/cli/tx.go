@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 )
 
@@ -101,21 +102,20 @@ func GetCmdSignTx(cdc *codec.Codec) *cobra.Command {
 // GetCmdVerifyTx returns the cli command to verify the given transaction
 func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "verify [tx json file path]",
-		Short: "Verify an Ethereum transaction",
-		Args:  cobra.ExactArgs(1),
+		Use:   "verify [txInfo json]",
+		Short: "Verify am Ethereum transaction",
+		Long: fmt.Sprintf(
+			"Verify that a transaction happened on the Ethereum network so it can be processed on axelar. "+
+				"Get the json string by using the %s query", keeper.QueryTxInfo),
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
 
-			json, err := ioutil.ReadFile(args[0])
-			if err != nil {
-				return err
-			}
-			var tx *ethTypes.Transaction
-			cdc.MustUnmarshalJSON(json, &tx)
+			var out types.TransactionInfo
+			cliCtx.Codec.MustUnmarshalJSON([]byte(args[0]), &out)
 
-			msg := types.NewMsgVerifyTx(cliCtx.GetFromAddress(), json)
+			msg := types.NewMsgVerifyTx(cliCtx.GetFromAddress(), out)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

@@ -30,6 +30,7 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 	ethQueryCmd.AddCommand(flags.GetCommands(
 		GetCmdMasterAddress(queryRoute, cdc),
+		GetCmdTxInfo(queryRoute, cdc),
 		GetCmdCreateDeployTx(queryRoute, cdc),
 		GetCmdSendTx(queryRoute, cdc),
 		GetCmdSendCommand(queryRoute, cdc),
@@ -61,6 +62,28 @@ func GetCmdMasterAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	}
 
 	return cmd
+}
+
+// GetCmdTxInfo returns the tx info query command
+func GetCmdTxInfo(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "txInfo [txHash]",
+		Short: "Query the info for the transaction with the provided hash in ethereum",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryTxInfo, args[0]), nil)
+			if err != nil {
+				return sdkerrors.Wrapf(err, types.ErrFTxInfo, args[0])
+			}
+
+			var info types.TransactionInfo
+			cdc.MustUnmarshalJSON(res, &info)
+			fmt.Println(strings.ReplaceAll(string(res), "\"", "\\\""))
+			return cliCtx.PrintOutput(info)
+		},
+	}
 }
 
 // GetCmdCreateDeployTx returns the query for a raw unsigned Ethereum deploy transaction for the smart contract of a given path

@@ -21,6 +21,7 @@ import (
 // Query labels
 const (
 	QueryMasterAddress = "master-address"
+	QueryTxInfo        = "txInfo"
 	CreateDeployTx     = "deploy"
 	SendTx             = "send-tx"
 	SendCommand        = "send-command"
@@ -32,6 +33,8 @@ func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer) sdk.Querier {
 		switch path[0] {
 		case QueryMasterAddress:
 			return queryMasterAddress(ctx, s)
+		case QueryTxInfo:
+			return queryTxInfo(rpc, common.HexToHash(path[1]))
 		case CreateDeployTx:
 			return createDeployTx(ctx, k, rpc, s, req.Data)
 		case SendTx:
@@ -42,6 +45,15 @@ func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer) sdk.Querier {
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown eth-bridge query endpoint: %s", path[0]))
 		}
 	}
+}
+
+func queryTxInfo(rpc types.RPCClient, blockHash common.Hash) ([]byte, error) {
+	info, err := rpc.GetTransactionInfo(context.Background(), blockHash)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+	}
+
+	return types.ModuleCdc.MustMarshalJSON(info), nil
 }
 
 func queryMasterAddress(ctx sdk.Context, s types.Signer) ([]byte, error) {
@@ -129,8 +141,8 @@ func sendSignedTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer
 	}
 
 	result := types.SendTxResult{
-		TxID: txID,
-		SignedTx:              signedTx,
+		TxID:     txID,
+		SignedTx: signedTx,
 	}
 
 	return k.Codec().MustMarshalJSON(result), nil

@@ -1,6 +1,7 @@
 package ethereum
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/axelarnetwork/axelar-core/utils/denom"
 	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
@@ -30,7 +32,7 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 		case types.MsgVerifyTx:
 			return handleMsgVerifyTx(ctx, k, rpc, v, msg)
 		case *types.MsgVoteVerifiedTx:
-			return handleMsgVoteVerifiedTx(ctx, k, v, msg)
+			return handleMsgVoteVerifiedTx(ctx, k, v, b, msg)
 		case types.MsgSignDeployToken:
 			return handleMsgSignDeployToken(ctx, k, s, snap, msg)
 		case types.MsgSignTx:
@@ -142,10 +144,9 @@ func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer ty
 
 func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v types.Voter, msg types.MsgVerifyTx) (*sdk.Result, error) {
 	k.Logger(ctx).Debug("verifying ethereum transaction")
-	tx := msg.UnmarshaledTx()
-	txID := tx.Hash().String()
+	txHash := common.BytesToHash(msg.TxInfo.TxHash).String()
 
-	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: txID}
+	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: txHash}
 	if err := v.InitPoll(ctx, poll); err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
@@ -155,19 +156,19 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v 
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeTxID, txID),
+			sdk.NewAttribute(types.AttributeTxID, txHash),
 		),
 	)
 
-	k.SetUnverifiedTx(ctx, txID, tx)
+	k.SetUnverifiedTxInfo(ctx, &msg.TxInfo)
 
 	/*
 	 Anyone not able to verify the transaction will automatically record a negative vote,
 	 but only validators will later send out that vote.
 	*/
 
-	if err := verifyTx(ctx, k, rpc, tx.Hash()); err != nil {
-		k.Logger(ctx).Debug(sdkerrors.Wrapf(err, "expected transaction (%s) could not be verified", txID).Error())
+	if err := verifyTx(rpc, msg.TxInfo, k.GetRequiredConfirmationHeight(ctx)); err != nil {
+		k.Logger(ctx).Debug(sdkerrors.Wrapf(err, "expected transaction (%s) could not be verified", txHash).Error())
 		if err := v.RecordVote(ctx, &types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false}); err != nil {
 			k.Logger(ctx).Error(sdkerrors.Wrap(err, "voting failed").Error())
 			return &sdk.Result{
@@ -200,7 +201,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v 
 }
 
 // This can be used as a potential hook to immediately act on a poll being decided by the vote
-func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg *types.MsgVoteVerifiedTx) (*sdk.Result, error) {
+func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, b types.Balancer, msg *types.MsgVoteVerifiedTx) (*sdk.Result, error) {
 	event := sdk.NewEvent(
 		sdk.EventTypeMessage,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
@@ -214,12 +215,31 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, ms
 	}
 
 	if confirmed := v.Result(ctx, msg.Poll()); confirmed != nil {
-		if err := k.ProcessVerificationResult(ctx, msg.PollMeta.ID, confirmed.(bool)); err != nil {
+		k.ProcessVerificationResult(ctx, msg.PollMeta.ID, confirmed.(bool))
+		v.DeletePoll(ctx, msg.Poll())
 
-			return nil, err
+		info, ok := k.GetVerifiedTxInfo(ctx, msg.PollMeta.ID)
+		if !ok {
+			return nil, fmt.Errorf("transaction not verified")
 		}
 
-		v.DeletePoll(ctx, msg.Poll())
+		if types.IsERC20Transfer(info.Data) {
+
+			addr, value, err := types.UnpackERC20Transfer(info.Data)
+			if err != nil {
+				return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+			}
+			burnAddr := balance.CrossChainAddress{Address: addr, Chain: balance.Ethereum}
+			amount := sdk.NewInt64Coin(denom.Satoshi, value.Int64())
+
+			err = b.EnqueueForTransfer(ctx, burnAddr, amount)
+			if err == nil {
+				k.Logger(ctx).Debug(fmt.Sprintf("Transfer of %s from %s in %s successfully prepared",
+					amount.Amount.String(), burnAddr.Address, burnAddr.Chain.String()))
+			} else {
+				k.Logger(ctx).Debug(fmt.Sprintf("prepared no transfer: %s", err))
+			}
+		}
 
 		event = event.AppendAttributes(sdk.NewAttribute(types.AttributePollConfirmed, strconv.FormatBool(confirmed.(bool))))
 	}
@@ -319,19 +339,28 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 	}, nil
 }
 
-func verifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, hash common.Hash) error {
-	receipt, err := rpc.TransactionReceipt(context.Background(), hash)
+func verifyTx(rpc types.RPCClient, expectedInfo types.TransactionInfo, requiredConfirmations uint64) error {
+
+	actualInfo, err := rpc.GetTransactionInfo(context.Background(), common.BytesToHash(expectedInfo.TxHash))
 	if err != nil {
-		return sdkerrors.Wrap(err, "could not retrieve Ethereum receipt")
+		return sdkerrors.Wrap(err, "could not retrieve Ethereum transaction")
 	}
 
-	blockNumber, err := rpc.BlockNumber(context.Background())
-	if err != nil {
-		return sdkerrors.Wrap(err, "could not retrieve Ethereum block number")
+	if actualInfo.To != expectedInfo.To {
+		return fmt.Errorf("expected destination address does not match actual destination address")
 	}
 
-	if (blockNumber - receipt.BlockNumber.Uint64()) < k.GetRequiredConfirmationHeight(ctx) {
+	if !actualInfo.Value.Equal(expectedInfo.Value) {
+		return fmt.Errorf("expected value does not match actual value")
+	}
+
+	if !bytes.Equal(actualInfo.Data, expectedInfo.Data) {
+		return fmt.Errorf("expected data does not match actual data")
+	}
+
+	if actualInfo.Confirmations.Uint64() < requiredConfirmations {
 		return fmt.Errorf("not enough confirmations yet")
 	}
+
 	return nil
 }

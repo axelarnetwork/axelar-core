@@ -1,13 +1,13 @@
 ## axelarcli tx ethereum verify
 
-Verify an Ethereum transaction
+Verify am Ethereum transaction
 
 ### Synopsis
 
-Verify an Ethereum transaction
+Verify that a transaction happened on the Ethereum network so it can be processed on axelar. Get the json string by using the txInfo query
 
 ```
-axelarcli tx ethereum verify [tx json file path] [flags]
+axelarcli tx ethereum verify [txInfo json] [flags]
 ```
 
 ### Options

@@ -32,6 +32,9 @@ var _ types.RPCClient = &RPCClientMock{}
 // 			EstimateGasFunc: func(ctx context.Context, msg ethereum.CallMsg) (uint64, error) {
 // 				panic("mock out the EstimateGas method")
 // 			},
+// 			GetTransactionInfoFunc: func(ctx context.Context, hash common.Hash) (types.TransactionInfo, error) {
+// 				panic("mock out the GetTransactionInfo method")
+// 			},
 // 			PendingNonceAtFunc: func(ctx context.Context, account common.Address) (uint64, error) {
 // 				panic("mock out the PendingNonceAt method")
 // 			},
@@ -43,6 +46,9 @@ var _ types.RPCClient = &RPCClientMock{}
 // 			},
 // 			SuggestGasPriceFunc: func(ctx context.Context) (*big.Int, error) {
 // 				panic("mock out the SuggestGasPrice method")
+// 			},
+// 			TransactionByHashFunc: func(ctx context.Context, hash common.Hash) (*ethTypes.Transaction, bool, error) {
+// 				panic("mock out the TransactionByHash method")
 // 			},
 // 			TransactionReceiptFunc: func(ctx context.Context, txHash common.Hash) (*ethTypes.Receipt, error) {
 // 				panic("mock out the TransactionReceipt method")
@@ -63,6 +69,9 @@ type RPCClientMock struct {
 	// EstimateGasFunc mocks the EstimateGas method.
 	EstimateGasFunc func(ctx context.Context, msg ethereum.CallMsg) (uint64, error)
 
+	// GetTransactionInfoFunc mocks the GetTransactionInfo method.
+	GetTransactionInfoFunc func(ctx context.Context, hash common.Hash) (types.TransactionInfo, error)
+
 	// PendingNonceAtFunc mocks the PendingNonceAt method.
 	PendingNonceAtFunc func(ctx context.Context, account common.Address) (uint64, error)
 
@@ -74,6 +83,9 @@ type RPCClientMock struct {
 
 	// SuggestGasPriceFunc mocks the SuggestGasPrice method.
 	SuggestGasPriceFunc func(ctx context.Context) (*big.Int, error)
+
+	// TransactionByHashFunc mocks the TransactionByHash method.
+	TransactionByHashFunc func(ctx context.Context, hash common.Hash) (*ethTypes.Transaction, bool, error)
 
 	// TransactionReceiptFunc mocks the TransactionReceipt method.
 	TransactionReceiptFunc func(ctx context.Context, txHash common.Hash) (*ethTypes.Receipt, error)
@@ -96,6 +108,13 @@ type RPCClientMock struct {
 			Ctx context.Context
 			// Msg is the msg argument value.
 			Msg ethereum.CallMsg
+		}
+		// GetTransactionInfo holds details about calls to the GetTransactionInfo method.
+		GetTransactionInfo []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Hash is the hash argument value.
+			Hash common.Hash
 		}
 		// PendingNonceAt holds details about calls to the PendingNonceAt method.
 		PendingNonceAt []struct {
@@ -123,6 +142,13 @@ type RPCClientMock struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 		}
+		// TransactionByHash holds details about calls to the TransactionByHash method.
+		TransactionByHash []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Hash is the hash argument value.
+			Hash common.Hash
+		}
 		// TransactionReceipt holds details about calls to the TransactionReceipt method.
 		TransactionReceipt []struct {
 			// Ctx is the ctx argument value.
@@ -134,10 +160,12 @@ type RPCClientMock struct {
 	lockBlockNumber            sync.RWMutex
 	lockChainID                sync.RWMutex
 	lockEstimateGas            sync.RWMutex
+	lockGetTransactionInfo     sync.RWMutex
 	lockPendingNonceAt         sync.RWMutex
 	lockSendAndSignTransaction sync.RWMutex
 	lockSendTransaction        sync.RWMutex
 	lockSuggestGasPrice        sync.RWMutex
+	lockTransactionByHash      sync.RWMutex
 	lockTransactionReceipt     sync.RWMutex
 }
 
@@ -235,6 +263,41 @@ func (mock *RPCClientMock) EstimateGasCalls() []struct {
 	mock.lockEstimateGas.RLock()
 	calls = mock.calls.EstimateGas
 	mock.lockEstimateGas.RUnlock()
+	return calls
+}
+
+// GetTransactionInfo calls GetTransactionInfoFunc.
+func (mock *RPCClientMock) GetTransactionInfo(ctx context.Context, hash common.Hash) (types.TransactionInfo, error) {
+	if mock.GetTransactionInfoFunc == nil {
+		panic("RPCClientMock.GetTransactionInfoFunc: method is nil but RPCClient.GetTransactionInfo was just called")
+	}
+	callInfo := struct {
+		Ctx  context.Context
+		Hash common.Hash
+	}{
+		Ctx:  ctx,
+		Hash: hash,
+	}
+	mock.lockGetTransactionInfo.Lock()
+	mock.calls.GetTransactionInfo = append(mock.calls.GetTransactionInfo, callInfo)
+	mock.lockGetTransactionInfo.Unlock()
+	return mock.GetTransactionInfoFunc(ctx, hash)
+}
+
+// GetTransactionInfoCalls gets all the calls that were made to GetTransactionInfo.
+// Check the length with:
+//     len(mockedRPCClient.GetTransactionInfoCalls())
+func (mock *RPCClientMock) GetTransactionInfoCalls() []struct {
+	Ctx  context.Context
+	Hash common.Hash
+} {
+	var calls []struct {
+		Ctx  context.Context
+		Hash common.Hash
+	}
+	mock.lockGetTransactionInfo.RLock()
+	calls = mock.calls.GetTransactionInfo
+	mock.lockGetTransactionInfo.RUnlock()
 	return calls
 }
 
@@ -371,6 +434,41 @@ func (mock *RPCClientMock) SuggestGasPriceCalls() []struct {
 	mock.lockSuggestGasPrice.RLock()
 	calls = mock.calls.SuggestGasPrice
 	mock.lockSuggestGasPrice.RUnlock()
+	return calls
+}
+
+// TransactionByHash calls TransactionByHashFunc.
+func (mock *RPCClientMock) TransactionByHash(ctx context.Context, hash common.Hash) (*ethTypes.Transaction, bool, error) {
+	if mock.TransactionByHashFunc == nil {
+		panic("RPCClientMock.TransactionByHashFunc: method is nil but RPCClient.TransactionByHash was just called")
+	}
+	callInfo := struct {
+		Ctx  context.Context
+		Hash common.Hash
+	}{
+		Ctx:  ctx,
+		Hash: hash,
+	}
+	mock.lockTransactionByHash.Lock()
+	mock.calls.TransactionByHash = append(mock.calls.TransactionByHash, callInfo)
+	mock.lockTransactionByHash.Unlock()
+	return mock.TransactionByHashFunc(ctx, hash)
+}
+
+// TransactionByHashCalls gets all the calls that were made to TransactionByHash.
+// Check the length with:
+//     len(mockedRPCClient.TransactionByHashCalls())
+func (mock *RPCClientMock) TransactionByHashCalls() []struct {
+	Ctx  context.Context
+	Hash common.Hash
+} {
+	var calls []struct {
+		Ctx  context.Context
+		Hash common.Hash
+	}
+	mock.lockTransactionByHash.RLock()
+	calls = mock.calls.TransactionByHash
+	mock.lockTransactionByHash.RUnlock()
 	return calls
 }
 
