@@ -141,16 +141,19 @@ func Test_wBTC_mint(t *testing.T) {
 	}
 
 	closeTimeout, closeCancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer closeCancel()
 	mocks.Sign.CloseSendFunc = func() error {
-		if len(mocks.Sign.CloseSendCalls()) == nodeCount {
-			closeCancel()
-		}
 		return nil
+	}
+	if len(mocks.Sign.CloseSendCalls()) == nodeCount {
+		closeCancel()
 	}
 
 	res = <-chain.Submit(ethTypes.NewMsgSignPendingTransfersTx(randomSender(validators, nodeCount)))
 	assert.NoError(t, res.Error)
 	commandID := common.BytesToHash(res.Data)
+	<-closeTimeout.Done()
+	assert.Equal(t, nodeCount, len(mocks.Sign.CloseSendCalls()))
 
 	sender := randomSender(validators, nodeCount)
 	contractAddress := randomSender(validators, nodeCount)
