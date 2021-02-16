@@ -5,7 +5,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"fmt"
-	"strconv"
 	"testing"
 	"time"
 
@@ -16,7 +15,6 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -27,10 +25,8 @@ import (
 	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
-	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
@@ -55,109 +51,30 @@ import (
 func TestKeyRotation(t *testing.T) {
 
 	const nodeCount = 10
-	validators := make([]staking.Validator, 0, nodeCount)
-
-	chain := fake.NewBlockchain().WithBlockTimeOut(10 * time.Millisecond)
 
 	stringGen := testutils.RandStrings(5, 50).Distinct()
 	defer stringGen.Stop()
 
-	mocks := createMocks(&validators)
+	chain, validators, mocks, nodes := createChain(nodeCount, &stringGen)
 
-	var nodes []fake.Node
-	for i, valAddr := range stringGen.Take(nodeCount) {
-		validator := staking.Validator{
-			OperatorAddress: sdk.ValAddress(valAddr),
-			Tokens:          sdk.TokensFromConsensusPower(testutils.RandIntBetween(100, 1000)),
-			Status:          sdk.Bonded,
-		}
-		validators = append(validators, validator)
-		nodes = append(nodes, newNode("node"+strconv.Itoa(i), validator.OperatorAddress, mocks, chain))
-		chain.AddNodes(nodes[i])
-	}
-	// Check to suppress any nil warnings from IDEs
-	if nodes == nil {
-		panic("need at least one node")
-	}
+	registerProxies(chain, validators, nodeCount, &stringGen, t)
 
-	chain.Start()
+	takeSnapshot(chain, validators, nodeCount, t)
 
-	// register proxies
-	for i := 0; i < nodeCount; i++ {
-		res := <-chain.Submit(broadcastTypes.MsgRegisterProxy{
-			Principal: validators[i].OperatorAddress,
-			Proxy:     sdk.AccAddress(stringGen.Next()),
-		})
-		assert.NoError(t, res.Error)
-	}
-
-	// take first validator snapshot
-	res := <-chain.Submit(snapTypes.MsgSnapshot{Sender: randomSender(validators, nodeCount)})
-	assert.NoError(t, res.Error)
-
-	// set up tssd mock for first keygen
-	masterKey1, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
-	if err != nil {
-		panic(err)
-	}
-
-	mocks.Keygen.RecvFunc = func() (*tssd.MessageOut, error) {
-		pk, _ := convert.PubkeyToBytes(masterKey1.PublicKey)
-		return &tssd.MessageOut{
-			Data: &tssd.MessageOut_KeygenResult{KeygenResult: pk}}, nil
-	}
-	// ensure all nodes call .Send() and .CloseSend()
-	sendTimeout, sendCancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	closeTimeout, closeCancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	mocks.Keygen.SendFunc = func(_ *tssd.MessageIn) error {
-		if len(mocks.Keygen.SendCalls()) == nodeCount {
-			sendCancel()
-		}
-		return nil
-	}
-	mocks.Keygen.CloseSendFunc = func() error {
-		if len(mocks.Keygen.CloseSendCalls()) == nodeCount {
-			closeCancel()
-		}
-		return nil
-	}
-
-	// create first key
-	masterKeyID1 := stringGen.Next()
-	res = <-chain.Submit(tssTypes.MsgKeygenStart{
-		Sender:    randomSender(validators, nodeCount),
-		NewKeyID:  masterKeyID1,
-		Threshold: int(testutils.RandIntBetween(1, int64(len(validators)))),
-	})
-	assert.NoError(t, res.Error)
-
-	// assert tssd was properly called
-	<-sendTimeout.Done()
-	<-closeTimeout.Done()
-	assert.Equal(t, nodeCount, len(mocks.Keygen.SendCalls()))
-	assert.Equal(t, nodeCount, len(mocks.Keygen.CloseSendCalls()))
+	masterKeyID, masterKey := createMasterKeyID(chain, validators, nodeCount, &stringGen, mocks, t)
 
 	// wait for voting to be done
 	chain.WaitNBlocks(12)
 
-	// assign key as bitcoin master key
-	res = <-chain.Submit(tssTypes.MsgAssignNextMasterKey{
-		Sender: randomSender(validators[:], nodeCount),
-		Chain:  btc.Bitcoin.Name,
-		KeyID:  masterKeyID1,
-	})
-	assert.NoError(t, res.Error)
+	// assign bitcoin master key
+	assignMasterKey(chain, validators, nodeCount, masterKeyID, balance.Bitcoin, t)
 
-	// rotate to the first master key
-	res = <-chain.Submit(tssTypes.MsgRotateMasterKey{
-		Sender: randomSender(validators[:], nodeCount),
-		Chain:  btc.Bitcoin.Name,
-	})
-	assert.NoError(t, res.Error)
+	// rotate to the first btc master key
+	rotateMasterKey(chain, validators, nodeCount, balance.Bitcoin, t)
 
 	// get deposit address for ethereum transfer
-	ethAddr := nexus.CrossChainAddress{Chain: eth.Ethereum, Address: testutils.RandStringBetween(5, 20)}
-	res = <-chain.Submit(btcTypes.NewMsgLink(randomSender(validators[:], nodeCount), ethAddr.Address, ethAddr.Chain.Name))
+	ethAddr := balance.CrossChainAddress{Chain: balance.Ethereum, Address: testutils.RandStringBetween(5, 20)}
+	res := <-chain.Submit(btcTypes.NewMsgLink(randomSender(validators, nodeCount), ethAddr))
 	assert.NoError(t, res.Error)
 	depositAddr := string(res.Data)
 
@@ -218,8 +135,8 @@ func TestKeyRotation(t *testing.T) {
 			Data: &tssd.MessageOut_KeygenResult{KeygenResult: pk}}, nil
 	}
 	// ensure all nodes call .Send() and .CloseSend()
-	sendTimeout, sendCancel = context.WithTimeout(context.Background(), 100*time.Millisecond)
-	closeTimeout, closeCancel = context.WithTimeout(context.Background(), 100*time.Millisecond)
+	sendTimeout, sendCancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	closeTimeout, closeCancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	mocks.Keygen.SendFunc = func(_ *tssd.MessageIn) error {
 		if len(mocks.Keygen.SendCalls()) == 2*nodeCount {
 			sendCancel()
@@ -262,13 +179,13 @@ func TestKeyRotation(t *testing.T) {
 	// set up tssd mock for signing
 	msgToSign := make(chan []byte, nodeCount)
 	mocks.Sign.SendFunc = func(messageIn *tssd.MessageIn) error {
-		assert.Equal(t, masterKeyID1, messageIn.GetSignInit().KeyUid)
+		assert.Equal(t, masterKeyID, messageIn.GetSignInit().KeyUid)
 		msgToSign <- messageIn.GetSignInit().MessageToSign
 		return nil
 	}
 	sigChan := make(chan []byte, 1)
 	go func() {
-		r, s, err := ecdsa.Sign(rand.Reader, masterKey1, <-msgToSign)
+		r, s, err := ecdsa.Sign(rand.Reader, masterKey, <-msgToSign)
 		if err != nil {
 			panic(err)
 		}
