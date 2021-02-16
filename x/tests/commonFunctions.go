@@ -60,6 +60,6 @@ func registerProxies(chain *fake.BlockChain,
 
 // takeSnapshot takes a snapshot of the current validators
 func takeSnapshot(chain *fake.BlockChain, validators []staking.Validator, nodeCount int64, t *testing.T) {
-	res := <-chain.Submit(snapTypes.MsgSnapshot{Sender: randomSender(validators[:], nodeCount)})
+	res := <-chain.Submit(snapTypes.MsgSnapshot{Sender: randomSender(validators, nodeCount)})
 	assert.NoError(t, res.Error)
 }

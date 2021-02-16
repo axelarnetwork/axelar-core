@@ -92,7 +92,7 @@ func TestKeyRotation(t *testing.T) {
 	}
 
 	// take first validator snapshot
-	res := <-chain.Submit(snapTypes.MsgSnapshot{Sender: randomSender(validators[:], nodeCount)})
+	res := <-chain.Submit(snapTypes.MsgSnapshot{Sender: randomSender(validators, nodeCount)})
 	assert.NoError(t, res.Error)
 
 	// set up tssd mock for first keygen
@@ -125,7 +125,7 @@ func TestKeyRotation(t *testing.T) {
 	// create first key
 	masterKeyID1 := stringGen.Next()
 	res = <-chain.Submit(tssTypes.MsgKeygenStart{
-		Sender:    randomSender(validators[:], nodeCount),
+		Sender:    randomSender(validators, nodeCount),
 		NewKeyID:  masterKeyID1,
 		Threshold: int(testutils.RandIntBetween(1, int64(len(validators)))),
 	})
@@ -196,14 +196,14 @@ func TestKeyRotation(t *testing.T) {
 	testutils.Codec().MustUnmarshalJSON(bz, &info)
 
 	// verify deposit to master key
-	res = <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender(validators[:], nodeCount), info))
+	res = <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender(validators, nodeCount), info))
 	assert.NoError(t, res.Error)
 
 	// wait for voting to be done
 	chain.WaitNBlocks(12)
 
 	// second snapshot
-	res = <-chain.Submit(snapTypes.MsgSnapshot{Sender: randomSender(validators[:], nodeCount)})
+	res = <-chain.Submit(snapTypes.MsgSnapshot{Sender: randomSender(validators, nodeCount)})
 	assert.NoError(t, res.Error)
 
 	// set up tssd mock for second keygen
@@ -236,7 +236,7 @@ func TestKeyRotation(t *testing.T) {
 	// second keygen with validator set of second snapshot
 	keyID2 := stringGen.Next()
 	res = <-chain.Submit(tssTypes.MsgKeygenStart{
-		Sender:    randomSender(validators[:], nodeCount),
+		Sender:    randomSender(validators, nodeCount),
 		NewKeyID:  keyID2,
 		Threshold: int(testutils.RandIntBetween(1, int64(len(validators)))),
 	})
@@ -341,7 +341,7 @@ func TestKeyRotation(t *testing.T) {
 
 	// verify master key transfer
 	res = <-chain.Submit(
-		btcTypes.NewMsgVerifyTx(randomSender(validators[:], nodeCount), info))
+		btcTypes.NewMsgVerifyTx(randomSender(validators, nodeCount), info))
 	assert.NoError(t, res.Error)
 
 	// wait for voting to be done
