@@ -105,7 +105,7 @@ func createMasterKeyID(
 	prevCloseCount := len(mocks.Keygen.CloseSendCalls())
 
 	// ensure all nodes call .Send()
-	sendTimeout, sendCancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	sendTimeout, sendCancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	mocks.Keygen.SendFunc = func(_ *tssd.MessageIn) error {
 		if len(mocks.Keygen.SendCalls()) == nodeCount {
 			sendCancel()
@@ -114,7 +114,7 @@ func createMasterKeyID(
 	}
 
 	// ensure all nodes call .Close()
-	closeTimeout, closeCancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	closeTimeout, closeCancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	mocks.Keygen.CloseSendFunc = func() error {
 		if len(mocks.Keygen.CloseSendCalls()) == nodeCount {
 			closeCancel()
