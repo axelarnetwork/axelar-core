@@ -44,8 +44,8 @@ func Test_wBTC_mint(t *testing.T) {
 	defer stringGen.Stop()
 
 	chain, validators, mocks, nodes := createChain(nodeCount, &stringGen)
-	registerProxies(chain, validators[:], nodeCount, &stringGen, t)
-	takeSnapshot(chain, validators[:], nodeCount, t)
+	registerProxies(chain, validators, nodeCount, &stringGen, t)
+	takeSnapshot(chain, validators, nodeCount, t)
 
 	// set up tssd mock for btc keygen
 	btcMasterKey, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
@@ -78,7 +78,7 @@ func Test_wBTC_mint(t *testing.T) {
 	// create btc key
 	btcMasterKeyID := stringGen.Next()
 	res := <-chain.Submit(tssTypes.MsgKeygenStart{
-		Sender:    randomSender(validators[:], nodeCount),
+		Sender:    randomSender(validators, nodeCount),
 		NewKeyID:  btcMasterKeyID,
 		Threshold: int(testutils.RandIntBetween(1, int64(len(validators)))),
 	})
@@ -117,7 +117,7 @@ func Test_wBTC_mint(t *testing.T) {
 	// create btc key
 	ethMasterKeyID := stringGen.Next()
 	res = <-chain.Submit(tssTypes.MsgKeygenStart{
-		Sender:    randomSender(validators[:], nodeCount),
+		Sender:    randomSender(validators, nodeCount),
 		NewKeyID:  ethMasterKeyID,
 		Threshold: int(testutils.RandIntBetween(1, int64(len(validators)))),
 	})
@@ -135,7 +135,7 @@ func Test_wBTC_mint(t *testing.T) {
 
 	// assign bitcoin master key
 	res = <-chain.Submit(tssTypes.MsgAssignNextMasterKey{
-		Sender: randomSender(validators[:], nodeCount),
+		Sender: randomSender(validators, nodeCount),
 		Chain:  balance.Bitcoin,
 		KeyID:  btcMasterKeyID,
 	})
@@ -143,7 +143,7 @@ func Test_wBTC_mint(t *testing.T) {
 
 	// assign key as ethereum master key
 	res = <-chain.Submit(tssTypes.MsgAssignNextMasterKey{
-		Sender: randomSender(validators[:], nodeCount),
+		Sender: randomSender(validators, nodeCount),
 		Chain:  balance.Ethereum,
 		KeyID:  ethMasterKeyID,
 	})
@@ -151,21 +151,21 @@ func Test_wBTC_mint(t *testing.T) {
 
 	// rotate to the first master key
 	res = <-chain.Submit(tssTypes.MsgRotateMasterKey{
-		Sender: randomSender(validators[:], nodeCount),
+		Sender: randomSender(validators, nodeCount),
 		Chain:  balance.Bitcoin,
 	})
 	assert.NoError(t, res.Error)
 
 	// rotate to the first master key
 	res = <-chain.Submit(tssTypes.MsgRotateMasterKey{
-		Sender: randomSender(validators[:], nodeCount),
+		Sender: randomSender(validators, nodeCount),
 		Chain:  balance.Ethereum,
 	})
 	assert.NoError(t, res.Error)
 
 	// 1. Get a deposit address for the given Ethereum recipient address
 	ethAddr := balance.CrossChainAddress{Chain: balance.Ethereum, Address: testutils.RandStringBetween(5, 20)}
-	res = <-chain.Submit(btcTypes.NewMsgLink(randomSender(validators[:], nodeCount), ethAddr))
+	res = <-chain.Submit(btcTypes.NewMsgLink(randomSender(validators, nodeCount), ethAddr))
 	assert.NoError(t, res.Error)
 	depositAddr := string(res.Data)
 
@@ -204,7 +204,7 @@ func Test_wBTC_mint(t *testing.T) {
 	testutils.Codec().MustUnmarshalJSON(bz, &info)
 
 	// 4. Verify the previously received information
-	res = <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender(validators[:], nodeCount), info))
+	res = <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender(validators, nodeCount), info))
 	assert.NoError(t, res.Error)
 
 	// 5. Wait until verification is complete
@@ -246,12 +246,12 @@ func Test_wBTC_mint(t *testing.T) {
 		return nil
 	}
 
-	res = <-chain.Submit(ethTypes.NewMsgSignPendingTransfersTx(randomSender(validators[:], nodeCount)))
+	res = <-chain.Submit(ethTypes.NewMsgSignPendingTransfersTx(randomSender(validators, nodeCount)))
 	assert.NoError(t, res.Error)
 	commandID := common.BytesToHash(res.Data)
 
-	sender := randomSender(validators[:], nodeCount)
-	contractAddress := randomSender(validators[:], nodeCount)
+	sender := randomSender(validators, nodeCount)
+	contractAddress := randomSender(validators, nodeCount)
 
 	// wait for voting to be done
 	// Q: Why do we have to wait for 22 blocks instead of 12?
