@@ -73,13 +73,13 @@ func takeSnapshot(chain *fake.BlockChain, validators []staking.Validator, nodeCo
 }
 
 // setTssdMock sets up tssd mock for btc keygen
-func setTssdMock() *ecdsa.PrivateKey {
+func generateKey() *ecdsa.PrivateKey {
 	// set up tssd mock for btc keygen
-	btcMasterKey, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
+	masterKey, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 	if err != nil {
 		panic(err)
 	}
-	return btcMasterKey
+	return masterKey
 }
 
 // createMasterKeyID creates a master key ID and guarantees that .Send and
@@ -92,7 +92,7 @@ func createMasterKeyID(
 	mocks testMocks,
 	t *testing.T) (string, *ecdsa.PrivateKey) {
 
-	masterKey := setTssdMock()
+	masterKey := generateKey()
 
 	mocks.Keygen.RecvFunc = func() (*tssd.MessageOut, error) {
 		pk, _ := convert.PubkeyToBytes(masterKey.PublicKey)
@@ -100,8 +100,9 @@ func createMasterKeyID(
 			Data: &tssd.MessageOut_KeygenResult{KeygenResult: pk}}, nil
 	}
 
-	oldSendCount := len(mocks.Keygen.SendCalls())
-	oldCloseCount := len(mocks.Keygen.CloseSendCalls())
+	// hold the number of times Send and Close has been already called
+	prevSendCount := len(mocks.Keygen.SendCalls())
+	prevCloseCount := len(mocks.Keygen.CloseSendCalls())
 
 	// ensure all nodes call .Send()
 	sendTimeout, sendCancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
@@ -121,7 +122,7 @@ func createMasterKeyID(
 		return nil
 	}
 
-	// create btc key
+	// create and submit master key id
 	masterKeyID := stringGen.Next()
 	res := <-chain.Submit(tssTypes.MsgKeygenStart{
 		Sender:    randomSender(validators, int64(nodeCount)),
@@ -133,8 +134,8 @@ func createMasterKeyID(
 	// assert tssd was properly called
 	<-sendTimeout.Done()
 	<-closeTimeout.Done()
-	assert.Equal(t, nodeCount, len(mocks.Keygen.SendCalls())-oldSendCount)
-	assert.Equal(t, nodeCount, len(mocks.Keygen.CloseSendCalls())-oldCloseCount)
+	assert.Equal(t, nodeCount, len(mocks.Keygen.SendCalls())-prevSendCount)
+	assert.Equal(t, nodeCount, len(mocks.Keygen.CloseSendCalls())-prevCloseCount)
 
 	return masterKeyID, masterKey
 }
