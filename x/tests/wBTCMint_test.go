@@ -14,10 +14,8 @@ import (
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	ethKeeper "github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
-	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/axelarnetwork/tssd/convert"
 	tssd "github.com/axelarnetwork/tssd/pb"
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
@@ -44,128 +42,32 @@ func Test_wBTC_mint(t *testing.T) {
 	defer stringGen.Stop()
 
 	chain, validators, mocks, nodes := createChain(nodeCount, &stringGen)
+
 	registerProxies(chain, validators, nodeCount, &stringGen, t)
+
 	takeSnapshot(chain, validators, nodeCount, t)
 
-	// set up tssd mock for btc keygen
-	btcMasterKey, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
-	if err != nil {
-		panic(err)
-	}
-
-	println(btcMasterKey)
-
-	mocks.Keygen.RecvFunc = func() (*tssd.MessageOut, error) {
-		pk, _ := convert.PubkeyToBytes(btcMasterKey.PublicKey)
-		return &tssd.MessageOut{
-			Data: &tssd.MessageOut_KeygenResult{KeygenResult: pk}}, nil
-	}
-	// ensure all nodes call .Send() and .CloseSend()
-	sendTimeout, sendCancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	closeTimeout, closeCancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	mocks.Keygen.SendFunc = func(_ *tssd.MessageIn) error {
-		if len(mocks.Keygen.SendCalls()) == nodeCount {
-			sendCancel()
-		}
-		return nil
-	}
-	mocks.Keygen.CloseSendFunc = func() error {
-		if len(mocks.Keygen.CloseSendCalls()) == nodeCount {
-			closeCancel()
-		}
-		return nil
-	}
-	// create btc key
-	btcMasterKeyID := stringGen.Next()
-	res := <-chain.Submit(tssTypes.MsgKeygenStart{
-		Sender:    randomSender(validators, nodeCount),
-		NewKeyID:  btcMasterKeyID,
-		Threshold: int(testutils.RandIntBetween(1, int64(len(validators)))),
-	})
-	assert.NoError(t, res.Error)
-	// assert tssd was properly called
-	<-sendTimeout.Done()
-	<-closeTimeout.Done()
-	assert.Equal(t, nodeCount, len(mocks.Keygen.SendCalls()))
-	assert.Equal(t, nodeCount, len(mocks.Keygen.CloseSendCalls()))
-
-	// set up tssd mock for eth keygen
-	ethMasterKey, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
-	if err != nil {
-		panic(err)
-	}
-	mocks.Keygen.RecvFunc = func() (*tssd.MessageOut, error) {
-		pk, _ := convert.PubkeyToBytes(ethMasterKey.PublicKey)
-		return &tssd.MessageOut{
-			Data: &tssd.MessageOut_KeygenResult{KeygenResult: pk}}, nil
-	}
-	// ensure all nodes call .Send() and .CloseSend()
-	sendTimeout2, sendCancel2 := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	closeTimeout2, closeCancel2 := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	mocks.Keygen.SendFunc = func(_ *tssd.MessageIn) error {
-		if len(mocks.Keygen.SendCalls()) == nodeCount {
-			sendCancel2()
-		}
-		return nil
-	}
-	mocks.Keygen.CloseSendFunc = func() error {
-		if len(mocks.Keygen.CloseSendCalls()) == nodeCount {
-			closeCancel2()
-		}
-		return nil
-	}
-	// create btc key
-	ethMasterKeyID := stringGen.Next()
-	res = <-chain.Submit(tssTypes.MsgKeygenStart{
-		Sender:    randomSender(validators, nodeCount),
-		NewKeyID:  ethMasterKeyID,
-		Threshold: int(testutils.RandIntBetween(1, int64(len(validators)))),
-	})
-	assert.NoError(t, res.Error)
-	// assert tssd was properly called
-	<-sendTimeout2.Done()
-	<-closeTimeout2.Done()
-	// SendCalls and CloseSendCalls has already been called once per validator for btc master key
-	// assert that it is also called for eth master key once from each validator
-	assert.Equal(t, 2*nodeCount, len(mocks.Keygen.SendCalls()))
-	assert.Equal(t, 2*nodeCount, len(mocks.Keygen.CloseSendCalls()))
+	btcMasterKeyID, _ := createMasterKeyID(chain, validators, nodeCount, &stringGen, mocks, t)
+	ethMasterKeyID, ethMasterKey := createMasterKeyID(chain, validators, nodeCount, &stringGen, mocks, t)
 
 	// wait for voting to be done
 	chain.WaitNBlocks(12)
 
 	// assign bitcoin master key
-	res = <-chain.Submit(tssTypes.MsgAssignNextMasterKey{
-		Sender: randomSender(validators, nodeCount),
-		Chain:  balance.Bitcoin,
-		KeyID:  btcMasterKeyID,
-	})
-	assert.NoError(t, res.Error)
+	assignMasterKey(chain, validators, nodeCount, btcMasterKeyID, balance.Bitcoin, t)
+
+	// rotate to the first btc master key
+	rotateMasterKey(chain, validators, nodeCount, balance.Bitcoin, t)
 
 	// assign key as ethereum master key
-	res = <-chain.Submit(tssTypes.MsgAssignNextMasterKey{
-		Sender: randomSender(validators, nodeCount),
-		Chain:  balance.Ethereum,
-		KeyID:  ethMasterKeyID,
-	})
-	assert.NoError(t, res.Error)
+	assignMasterKey(chain, validators, nodeCount, ethMasterKeyID, balance.Ethereum, t)
 
-	// rotate to the first master key
-	res = <-chain.Submit(tssTypes.MsgRotateMasterKey{
-		Sender: randomSender(validators, nodeCount),
-		Chain:  balance.Bitcoin,
-	})
-	assert.NoError(t, res.Error)
-
-	// rotate to the first master key
-	res = <-chain.Submit(tssTypes.MsgRotateMasterKey{
-		Sender: randomSender(validators, nodeCount),
-		Chain:  balance.Ethereum,
-	})
-	assert.NoError(t, res.Error)
+	// rotate to the first eth master key
+	rotateMasterKey(chain, validators, nodeCount, balance.Ethereum, t)
 
 	// 1. Get a deposit address for the given Ethereum recipient address
 	ethAddr := balance.CrossChainAddress{Chain: balance.Ethereum, Address: testutils.RandStringBetween(5, 20)}
-	res = <-chain.Submit(btcTypes.NewMsgLink(randomSender(validators, nodeCount), ethAddr))
+	res := <-chain.Submit(btcTypes.NewMsgLink(randomSender(validators, nodeCount), ethAddr))
 	assert.NoError(t, res.Error)
 	depositAddr := string(res.Data)
 
@@ -238,7 +140,7 @@ func Test_wBTC_mint(t *testing.T) {
 		return &tssd.MessageOut{Data: &tssd.MessageOut_SignResult{SignResult: sig}}, nil
 	}
 
-	closeTimeout, closeCancel = context.WithTimeout(context.Background(), 100*time.Millisecond)
+	closeTimeout, closeCancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	mocks.Sign.CloseSendFunc = func() error {
 		if len(mocks.Sign.CloseSendCalls()) == nodeCount {
 			closeCancel()
