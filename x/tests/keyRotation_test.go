@@ -70,6 +70,7 @@ func TestKeyRotation(t *testing.T) {
 
 	// assign bitcoin master key
 	assignMasterKey(chain, validators, nodeCount, masterKeyID, balance.Bitcoin, t)
+
 	// rotate to the first btc master key
 	rotateMasterKey(chain, validators, nodeCount, balance.Bitcoin, t)
 
