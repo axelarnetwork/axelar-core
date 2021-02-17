@@ -9,7 +9,7 @@ require (
 	github.com/cosmos/cosmos-sdk v0.39.1
 	github.com/ethereum/go-ethereum v1.9.25
 	github.com/gorilla/mux v1.7.4
-	github.com/matryer/moq v0.2.0
+	github.com/matryer/moq v0.2.1
 	github.com/miguelmota/go-ethereum-hdwallet v0.0.0-20200123000308-a60dcd172b4c
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.7.1
