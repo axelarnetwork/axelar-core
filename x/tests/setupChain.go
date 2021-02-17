@@ -2,14 +2,11 @@ package tests
 
 import (
 	"context"
-	"crypto/ecdsa"
-	"crypto/rand"
 	"strconv"
 	"testing"
 	"time"
 
 	tssd "github.com/axelarnetwork/tssd/pb"
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -230,13 +227,4 @@ func getChainHash() *chainhash.Hash {
 		panic(err)
 	}
 	return txHash
-}
-
-// setTssdMock sets up tssd mock for btc keygen
-func generateKey() *ecdsa.PrivateKey {
-	masterKey, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
-	if err != nil {
-		panic(err)
-	}
-	return masterKey
 }
