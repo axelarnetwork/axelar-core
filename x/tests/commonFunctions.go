@@ -5,7 +5,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"fmt"
-	"strconv"
 	"testing"
 	"time"
 
@@ -14,7 +13,6 @@ import (
 	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/axelarnetwork/tssd/convert"
@@ -23,64 +21,10 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
-
-// createChain Creates a chain with given number of validators
-func createChain(nodeCount int, stringGen *testutils.RandDistinctStringGen) (*fake.BlockChain, []staking.Validator, testMocks, []fake.Node) {
-
-	// create an empty validator set
-	validators := make([]staking.Validator, 0, nodeCount)
-
-	// create a chain
-	chain := fake.NewBlockchain().WithBlockTimeOut(10 * time.Millisecond)
-
-	// create mocks
-	mocks := createMocks(&validators)
-
-	// create nodes
-	var nodes []fake.Node
-	for i, valAddr := range stringGen.Take(nodeCount) {
-		// assign validators
-		validator := staking.Validator{
-			OperatorAddress: sdk.ValAddress(valAddr),
-			Tokens:          sdk.TokensFromConsensusPower(testutils.RandIntBetween(100, 1000)),
-			Status:          sdk.Bonded,
-		}
-		validators = append(validators, validator)
-
-		// assign nodes
-		nodes = append(nodes, newNode("node"+strconv.Itoa(i), validator.OperatorAddress, mocks, chain))
-		chain.AddNodes(nodes[i])
-	}
-	// Check to suppress any nil warnings from IDEs
-	if nodes == nil {
-		panic("need at least one node")
-	}
-
-	// start chain
-	chain.Start()
-
-	return chain, validators, mocks, nodes
-}
-
-// registerProxies register validators as proxies
-func registerProxies(chain *fake.BlockChain,
-	validators []staking.Validator,
-	nodeCount int,
-	stringGen *testutils.RandDistinctStringGen,
-	t *testing.T) {
-	for i := 0; i < nodeCount; i++ {
-		res := <-chain.Submit(broadcastTypes.MsgRegisterProxy{
-			Principal: validators[i].OperatorAddress,
-			Proxy:     sdk.AccAddress(stringGen.Next()),
-		})
-		assert.NoError(t, res.Error)
-	}
-}
 
 // takeSnapshot takes a snapshot of the current validators
 func takeSnapshot(chain *fake.BlockChain, validators []staking.Validator, nodeCount int64, t *testing.T) {

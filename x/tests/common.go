@@ -2,6 +2,9 @@ package tests
 
 import (
 	"context"
+	"strconv"
+	"testing"
+	"time"
 
 	tssd "github.com/axelarnetwork/tssd/pb"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
@@ -10,6 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	sdkExported "github.com/cosmos/cosmos-sdk/x/staking/exported"
+	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
@@ -160,5 +164,58 @@ func createMocks(validators *[]staking.Validator) testMocks {
 		Keygen: keygen,
 		Sign:   sign,
 		Staker: stakingKeeper,
+	}
+}
+
+// createChain Creates a chain with given number of validators
+func createChain(nodeCount int, stringGen *testutils.RandDistinctStringGen) (*fake.BlockChain, []staking.Validator, testMocks, []fake.Node) {
+
+	// create an empty validator set
+	validators := make([]staking.Validator, 0, nodeCount)
+
+	// create a chain
+	chain := fake.NewBlockchain().WithBlockTimeOut(10 * time.Millisecond)
+
+	// create mocks
+	mocks := createMocks(&validators)
+
+	// create nodes
+	var nodes []fake.Node
+	for i, valAddr := range stringGen.Take(nodeCount) {
+		// assign validators
+		validator := staking.Validator{
+			OperatorAddress: sdk.ValAddress(valAddr),
+			Tokens:          sdk.TokensFromConsensusPower(testutils.RandIntBetween(100, 1000)),
+			Status:          sdk.Bonded,
+		}
+		validators = append(validators, validator)
+
+		// assign nodes
+		nodes = append(nodes, newNode("node"+strconv.Itoa(i), validator.OperatorAddress, mocks, chain))
+		chain.AddNodes(nodes[i])
+	}
+	// Check to suppress any nil warnings from IDEs
+	if nodes == nil {
+		panic("need at least one node")
+	}
+
+	// start chain
+	chain.Start()
+
+	return chain, validators, mocks, nodes
+}
+
+// registerProxies register validators as proxies
+func registerProxies(chain *fake.BlockChain,
+	validators []staking.Validator,
+	nodeCount int,
+	stringGen *testutils.RandDistinctStringGen,
+	t *testing.T) {
+	for i := 0; i < nodeCount; i++ {
+		res := <-chain.Submit(broadcastTypes.MsgRegisterProxy{
+			Principal: validators[i].OperatorAddress,
+			Proxy:     sdk.AccAddress(stringGen.Next()),
+		})
+		assert.NoError(t, res.Error)
 	}
 }
