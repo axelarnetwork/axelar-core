@@ -17,6 +17,7 @@ import (
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/axelarnetwork/tssd/convert"
 	tssd "github.com/axelarnetwork/tssd/pb"
+	"github.com/btcsuite/btcd/btcec"
 	goEth "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
@@ -49,7 +50,10 @@ func Test_wBTC_mint(t *testing.T) {
 	assert.NoError(t, res.Error)
 
 	// create master keys for btc
-	btcMasterKey := generateKey()
+	btcMasterKey, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
+	if err != nil {
+		panic(err)
+	}
 	mocks.Keygen.SendFunc = func(_ *tssd.MessageIn) error {
 		return nil
 	}
@@ -67,7 +71,10 @@ func Test_wBTC_mint(t *testing.T) {
 	assert.Equal(t, nodeCount, len(mocks.Keygen.CloseSendCalls()))
 
 	// create master keys for eth
-	ethMasterKey := generateKey()
+	ethMasterKey, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
+	if err != nil {
+		panic(err)
+	}
 	mocks.Keygen.RecvFunc = func() (*tssd.MessageOut, error) {
 		pk, _ := convert.PubkeyToBytes(ethMasterKey.PublicKey)
 		return &tssd.MessageOut{
