@@ -6,8 +6,11 @@ import (
 	"math/big"
 	"math/rand"
 	"testing"
-	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
+	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -38,11 +41,11 @@ const (
 	erc20PaddedVal   = "0x0000000000000000000000000000000000000000000000008ac7230489e80000"
 	erc20length      = 68
 
-	// This mnemonic must be used when creating a ganache workspace, with at least two addresses with enough balance
+	// This mnemonic creates deterministic wallet accounts
 	mnemonic = "invest cloud minimum mirror keen razor husband desert engine actual flower shop"
 
-	// Used when attempting to retrieve the receipt
-	maxReceiptAttempts = 10
+	// EthereumDerivationPath describes the hierarchical deterministic wallet path to derive Ethereum addresses
+	EthereumDerivationPath = "m/44'/60'/0'/0/0"
 )
 
 /*
@@ -82,6 +85,20 @@ const (
 )
 
 func TestSig(t *testing.T) {
+	wallet, err := hdwallet.NewFromMnemonic(mnemonic)
+	if err != nil {
+		panic(err)
+	}
+
+	path := hdwallet.MustParseDerivationPath(EthereumDerivationPath)
+	account, err := wallet.Derive(path, false)
+	if err != nil {
+		panic(err)
+	}
+	privateKey, err := wallet.PrivateKey(account)
+	if err != nil {
+		panic(err)
+	}
 
 	for i := 0; i < iterations; i++ {
 
@@ -93,8 +110,6 @@ func TestSig(t *testing.T) {
 		data := make([]byte, dataLength)
 		rand.Read(data)
 
-		privateKey, err := getPrivateKey("m/44'/60'/0'/0/0")
-		assert.NoError(t, err)
 		addr := crypto.PubkeyToAddress(privateKey.PublicKey)
 
 		tx1 := ethTypes.NewTransaction(nonce, addr, amount, gasLimit, gasPrice, data)
@@ -149,28 +164,32 @@ func TestSig(t *testing.T) {
 	}
 }
 
-// This test deploys an ERC20 mintable contract and mints tokens for a predetermined wallet.
-// It requires ganache to be executing and initialized with the `mnemonic` constant.
-// If ganache is not running, the test is skipped
-func TestGanache(t *testing.T) {
-	client, err := types.NewRPCClient("http://127.0.0.1:7545")
-	if err != nil {
-		t.Logf("Ganache not running, skipping this test (error: %v)", err)
-		t.SkipNow()
-	}
-
-	deployerKey, err := getPrivateKey("m/44'/60'/0'/0/0")
-	assert.NoError(t, err)
-	_ = testDeploy(t, client, deployerKey)
-}
-
 // Deploys the smart contract available for these tests. It avoids deployment via the contract ABI
 // in favor of creating a raw transaction for the same purpose.
-func testDeploy(t *testing.T, client *types.RPCClientImpl, privateKey *ecdsa.PrivateKey) common.Address {
+func TestDeploy(t *testing.T) {
+	wallet, err := hdwallet.NewFromMnemonic(mnemonic)
+	if err != nil {
+		panic(err)
+	}
 
-	byteCode := common.FromHex(MymintableBin)
+	path := hdwallet.MustParseDerivationPath(EthereumDerivationPath)
+	account, err := wallet.Derive(path, false)
+	if err != nil {
+		panic(err)
+	}
+	privateKey, err := wallet.PrivateKey(account)
+	if err != nil {
+		panic(err)
+	}
 
-	chainID, err := client.ChainID(context.Background())
+	addr, err := wallet.Address(account)
+	if err != nil {
+		panic(err)
+	}
+
+	backend := backends.NewSimulatedBackend(core.GenesisAlloc{addr: {Balance: big.NewInt(1 * params.Ether)}}, 3000000)
+
+	chainID := backend.Blockchain().Config().ChainID
 	assert.NoError(t, err)
 	signer := ethTypes.NewEIP155Signer(chainID)
 	var gasLimit uint64 = 3000000
@@ -178,13 +197,15 @@ func testDeploy(t *testing.T, client *types.RPCClientImpl, privateKey *ecdsa.Pri
 		return privateKey.PublicKey, true
 	}}
 
-	params := types.DeployParams{
+	byteCode := common.FromHex(MymintableBin)
+	deployParams := types.DeployParams{
 		ByteCode: byteCode,
 		GasLimit: gasLimit,
 	}
 
-	query := keeper.NewQuerier(client, keeper.Keeper{}, tssSigner)
-	res, err := query(sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger()), []string{keeper.CreateDeployTx}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(params)})
+	rpc := &mock.RPCClientMock{PendingNonceAtFunc: backend.PendingNonceAt, SuggestGasPriceFunc: backend.SuggestGasPrice}
+	query := keeper.NewQuerier(rpc, keeper.Keeper{}, tssSigner)
+	res, err := query(sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger()), []string{keeper.CreateDeployTx}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(deployParams)})
 	assert.NoError(t, err)
 
 	var result types.DeployResult
@@ -192,56 +213,15 @@ func testDeploy(t *testing.T, client *types.RPCClientImpl, privateKey *ecdsa.Pri
 
 	signedTx, err := ethTypes.SignTx(result.Tx, signer, privateKey)
 	assert.NoError(t, err)
-	err = client.SendTransaction(context.Background(), signedTx)
+	err = backend.SendTransaction(context.Background(), signedTx)
 	assert.NoError(t, err)
+	backend.Commit()
 
-	hash := signedTx.Hash()
-
-	var receipt *ethTypes.Receipt
-
-	// Ganache might not be able to instantly generate the receipt,
-	// so we prepare the test for this possibility and allow it to retry
-	for i := 0; i < maxReceiptAttempts; i++ {
-
-		t.Logf("Trying to fetch receipt for Tx 0x%x", hash.Bytes())
-		time.Sleep(1 * time.Second)
-		receipt, err = client.TransactionReceipt(context.Background(), hash)
-
-		if err == nil {
-
-			t.Logf("Contract address: %s\n", receipt.ContractAddress.Hex())
-
-			return receipt.ContractAddress
-		}
-
+	t.Logf("Trying to fetch receipt for Tx %s", signedTx.Hash().String())
+	contractAddr, err := bind.WaitDeployed(context.Background(), backend, signedTx)
+	if err != nil {
 		t.Logf("Error getting receipt: %v\n", err)
+		t.FailNow()
 	}
-
-	t.FailNow()
-
-	return common.Address{}
-}
-
-func getPrivateKey(derivation string) (*ecdsa.PrivateKey, error) {
-
-	wallet, err := hdwallet.NewFromMnemonic(mnemonic)
-	if err != nil {
-		return nil, err
-	}
-
-	path := hdwallet.MustParseDerivationPath(derivation)
-	account, err := wallet.Derive(path, false)
-
-	if err != nil {
-		return nil, err
-	}
-
-	privateKey, err := wallet.PrivateKey(account)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return privateKey, nil
-
+	t.Logf("Contract address: %s\n", contractAddr.Hex())
 }
