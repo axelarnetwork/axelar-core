@@ -219,12 +219,3 @@ func registerProxies(chain *fake.BlockChain,
 		assert.NoError(t, res.Error)
 	}
 }
-
-// getChainHash returns a chainchash or panics on error
-func getChainHash() *chainhash.Hash {
-	txHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
-	if err != nil {
-		panic(err)
-	}
-	return txHash
-}
