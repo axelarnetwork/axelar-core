@@ -4,38 +4,37 @@ import (
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/x/params/subspace"
-
-	"github.com/axelarnetwork/axelar-core/utils"
 )
 
-// Default parameter namespace
+// DefaultParamspace - default parameter namespace
 const (
 	DefaultParamspace = ModuleName
 )
 
 var (
+	// KeyLockingPeriod defines the key for the locking period
 	KeyLockingPeriod = []byte("lockingPeriod")
-	KeyThreshold     = []byte("threshold")
 )
 
+// KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
 func KeyTable() subspace.KeyTable {
 	return subspace.NewKeyTable().RegisterParamSet(&Params{})
 }
 
+// Params is the parameter set for this module
 type Params struct {
 	LockingPeriod int64
-	Threshold     utils.Threshold
 }
 
+// DefaultParams returns the module's parameter set initialized with default values
 func DefaultParams() Params {
 	return Params{
 		LockingPeriod: 1,
-		Threshold:     utils.Threshold{Numerator: 2, Denominator: 3},
 	}
 }
 
 // ParamSetPairs implements the ParamSet interface and returns all the key/value pairs
-// pairs of tss module's parameters.
+// pairs of tss module's parameters
 func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
 	/*
 		because the subspace package makes liberal use of pointers to set and get values from the store,
@@ -45,27 +44,7 @@ func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
 	*/
 	return subspace.ParamSetPairs{
 		subspace.NewParamSetPair(KeyLockingPeriod, &p.LockingPeriod, validateLockingPeriod),
-		subspace.NewParamSetPair(KeyThreshold, &p.Threshold, validateThreshold),
 	}
-}
-
-func validateThreshold(threshold interface{}) error {
-	val, ok := threshold.(utils.Threshold)
-	if !ok {
-		return fmt.Errorf("invalid parameter type for threshold: %T", threshold)
-	}
-	if val.Denominator <= 0 {
-		return fmt.Errorf("threshold denominator must be a positive integer")
-	}
-
-	if val.Numerator < 0 {
-		return fmt.Errorf("threshold numerator must be a non-negative integer")
-	}
-
-	if val.Numerator >= val.Denominator {
-		return fmt.Errorf("threshold must be <1")
-	}
-	return nil
 }
 
 func validateLockingPeriod(period interface{}) error {
@@ -79,11 +58,9 @@ func validateLockingPeriod(period interface{}) error {
 	return nil
 }
 
+// Validate checks the validity of the values of the parameter set
 func (p Params) Validate() error {
 	if err := validateLockingPeriod(p.LockingPeriod); err != nil {
-		return err
-	}
-	if err := validateThreshold(p.Threshold); err != nil {
 		return err
 	}
 	return nil
