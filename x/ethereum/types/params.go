@@ -7,6 +7,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/cosmos/cosmos-sdk/x/params/subspace"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // Default parameter namespace
@@ -19,6 +20,10 @@ var (
 	KeyNetwork            = []byte("network")
 	KeyBurnable           = []byte("burneable")
 	KeyToken              = []byte("token")
+	KeyTransferSig        = []byte("transfersig")
+
+	// ERC20TokenDeploySig is the signature of the ERC20 transfer method
+	ERC20TokenDeploySig = "TokenDeployed(string,address)"
 )
 
 func KeyTable() subspace.KeyTable {
@@ -30,6 +35,7 @@ type Params struct {
 	Network            Network
 	Token              []byte
 	Burnable           []byte
+	TransferSig        []byte
 }
 
 func DefaultParams() Params {
@@ -43,11 +49,14 @@ func DefaultParams() Params {
 		panic(err)
 	}
 
+	transferSig := crypto.Keccak256Hash([]byte(ERC20TokenDeploySig)).Bytes()
+
 	return Params{
 		ConfirmationHeight: 1,
 		Network:            Ganache,
 		Token:              bzToken,
 		Burnable:           bzBurnable,
+		TransferSig:        transferSig,
 	}
 }
 
@@ -63,8 +72,9 @@ func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
 	return subspace.ParamSetPairs{
 		subspace.NewParamSetPair(KeyConfirmationHeight, &p.ConfirmationHeight, validateConfirmationHeight),
 		subspace.NewParamSetPair(KeyNetwork, &p.Network, validateNetwork),
-		subspace.NewParamSetPair(KeyToken, &p.Token, validateByteCodes),
-		subspace.NewParamSetPair(KeyBurnable, &p.Burnable, validateByteCodes),
+		subspace.NewParamSetPair(KeyToken, &p.Token, validateBytes),
+		subspace.NewParamSetPair(KeyBurnable, &p.Burnable, validateBytes),
+		subspace.NewParamSetPair(KeyTransferSig, &p.TransferSig, validateBytes),
 	}
 }
 
@@ -87,14 +97,14 @@ func validateConfirmationHeight(height interface{}) error {
 	return nil
 }
 
-func validateByteCodes(bytes interface{}) error {
+func validateBytes(bytes interface{}) error {
 	b, ok := bytes.([]byte)
 	if !ok {
-		return fmt.Errorf("invalid parameter type for byte codes: %T", bytes)
+		return fmt.Errorf("invalid parameter type for byte slice: %T", bytes)
 	}
 
 	if len(b) == 0 {
-		return fmt.Errorf("byte codes cannot be empty")
+		return fmt.Errorf("byte slice cannot be empty")
 	}
 
 	return nil

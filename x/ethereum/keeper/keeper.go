@@ -60,6 +60,13 @@ func (k Keeper) GetNetwork(ctx sdk.Context) types.Network {
 	return network
 }
 
+// GetERC20TransferSignature returns the signature of the ERC20 transfer method
+func (k Keeper) GetERC20TransferSignature(ctx sdk.Context) common.Hash {
+	var transferSig []byte
+	k.params.Get(ctx, types.KeyNetwork, &transferSig)
+	return common.BytesToHash(transferSig)
+}
+
 // Codec returns the codec
 func (k Keeper) Codec() *codec.Codec {
 	return k.cdc

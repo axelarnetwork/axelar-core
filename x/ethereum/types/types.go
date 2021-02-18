@@ -48,9 +48,6 @@ const (
 	axelarGatewayCommandMint        = "mintToken"
 	axelarGatewayCommandDeployToken = "deployToken"
 	axelarGatewayFuncExecute        = "execute"
-
-	// GatewayERC20TOkenDeployABI is obtained by computing the keccak256 hash of 'TokenDeployed(string,address)'
-	GatewayERC20TOkenDeployABI = "0xbf90b5a1ec9763e8bf4b9245cef0c28db92bab309fc2c5177f17814f38246938"
 )
 
 var (

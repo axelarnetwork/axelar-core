@@ -371,7 +371,7 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 		}, nil
 	}
 
-	if err := verifyERC20TokenDeploy(receipt, msg.Symbol, msg.GatewayAddr, tokenAddr); err != nil {
+	if err := verifyERC20TokenDeploy(receipt, k.GetERC20TransferSignature(ctx), msg.Symbol, msg.GatewayAddr, tokenAddr); err != nil {
 		k.Logger(ctx).Debug(sdkerrors.Wrapf(err, "expected erc20 token deploy (%s) could not be verified", msg.Symbol).Error())
 
 		if err := v.RecordVote(ctx, &types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false}); err != nil {
@@ -424,7 +424,7 @@ func verifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, hash common
 	return receipt, nil
 }
 
-func verifyERC20TokenDeploy(receipt *ethTypes.Receipt, symbol string, gatewayAddr, tokenAddr common.Address) error {
+func verifyERC20TokenDeploy(receipt *ethTypes.Receipt, transferSig common.Hash, symbol string, gatewayAddr, tokenAddr common.Address) error {
 	for _, log := range receipt.Logs {
 		// Event is not emitted by the axelar gateway
 		if log.Address != gatewayAddr {
@@ -437,7 +437,7 @@ func verifyERC20TokenDeploy(receipt *ethTypes.Receipt, symbol string, gatewayAdd
 		}
 
 		// Event is not about token deployment
-		if log.Topics[0] != common.BytesToHash(common.FromHex(types.GatewayERC20TOkenDeployABI)) {
+		if log.Topics[0] != transferSig {
 			continue
 		}
 
