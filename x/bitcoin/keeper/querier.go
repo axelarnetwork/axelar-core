@@ -77,10 +77,8 @@ func queryDepositAddress(ctx sdk.Context, k Keeper, s types.Signer, b types.Bala
 		return nil, fmt.Errorf("recipient chain not found")
 	}
 
-	addr, _, err := k.GenerateDepositAddressAndRedeemScript(ctx, btcec.PublicKey(pk), balance.CrossChainAddress{
-		Chain:   chain,
-		Address: params.Address,
-	})
+	recipient := balance.CrossChainAddress{Chain: chain, Address: params.Address}
+	addr, _, err := k.GenerateDepositAddressAndRedeemScript(ctx, btcec.PublicKey(pk), recipient)
 	if err != nil {
 		return nil, err
 	}
