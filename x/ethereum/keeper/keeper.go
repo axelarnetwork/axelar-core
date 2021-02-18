@@ -261,6 +261,8 @@ func (k Keeper) ProcessVerificationResult(ctx sdk.Context, txID, pollType string
 
 	switch pollType {
 	case types.PollVerifyToken:
+		pendingKey = []byte(pendingTokenPrefix + txID)
+		verifiedKey = []byte(verifiedTokenPrefix + txID)
 	case types.PollVerifyTx:
 		pendingKey = []byte(pendingTxPrefix + txID)
 		verifiedKey = []byte(verifiedTxPrefix + txID)
