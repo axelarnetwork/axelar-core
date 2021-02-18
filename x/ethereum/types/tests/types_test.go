@@ -122,7 +122,7 @@ func TestBurnerAddress_CorrectData(t *testing.T) {
 
 	axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
 	recipient := "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L"
-	expectedBurnerAddr := common.HexToAddress("0x7be6ea60DCd9BbC2B88bEF45E419b5E6A9dBc5E1")
+	expectedBurnerAddr := common.HexToAddress("0x5f185DAFBD08F00E2826c195087A722B0A094059")
 	expectedSalt := common.Hex2Bytes("35f28b34202f4e3de20c1710696e3f294ebe4df686b17be00fedf991190f9654")
 	tokenName := "axelar token"
 	tokenSymbol := "at"
@@ -142,5 +142,4 @@ func TestBurnerAddress_CorrectData(t *testing.T) {
 	}
 	assert.Equal(t, expectedBurnerAddr, actualburnerAddr)
 	assert.Equal(t, expectedSalt, actualSalt[:])
-
 }

@@ -129,8 +129,8 @@ func sendSignedTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer
 	}
 
 	result := types.SendTxResult{
-		TxID: txID,
-		SignedTx:              signedTx,
+		TxID:     txID,
+		SignedTx: signedTx,
 	}
 
 	return k.Codec().MustMarshalJSON(result), nil
@@ -172,6 +172,7 @@ func createTxAndSend(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Sig
 		From: common.HexToAddress(params.Sender),
 		To:   &contractAddr,
 		Data: executeData,
+		Gas:  uint64(5000000),
 	}
 
 	txHash, err := rpc.SendAndSignTransaction(context.Background(), msg)
