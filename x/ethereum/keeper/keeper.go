@@ -107,49 +107,7 @@ func (k Keeper) GetBurnerInfo(ctx sdk.Context, burnerAddr common.Address) *types
 	return result
 }
 
-<<<<<<< HEAD
 // GetTokenAddress calculates the token address given symbol and axelar gateway address
-=======
-// GetBurnerAddressAndSalt calculates a burner address and the corresponding salt for the given symbol and recipient
-func (k Keeper) GetBurnerAddressAndSalt(ctx sdk.Context, symbol, recipient string, gatewayAddr common.Address) (common.Address, [32]byte, error) {
-	tokenAddr, err := k.GetTokenAddress(ctx, symbol, gatewayAddr)
-	if err != nil {
-		return common.Address{}, [32]byte{}, err
-	}
-
-	addressType, err := abi.NewType("address", "address", nil)
-	if err != nil {
-		return common.Address{}, [32]byte{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
-	}
-	bytes32Type, err := abi.NewType("bytes32", "bytes32", nil)
-	if err != nil {
-		return common.Address{}, [32]byte{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
-	}
-
-	var saltBurn [32]byte
-	copy(saltBurn[:], crypto.Keccak256Hash([]byte(recipient)).Bytes())
-
-	arguments := abi.Arguments{{Type: addressType}, {Type: bytes32Type}}
-	packed, err := arguments.Pack(tokenAddr, saltBurn)
-	if err != nil {
-		return common.Address{}, [32]byte{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
-	}
-
-	burnerInitCode := append(k.getBurnerBC(ctx), packed...)
-
-	burnerInitCodeHash := crypto.Keccak256Hash(burnerInitCode)
-	return crypto.CreateAddress2(gatewayAddr, saltBurn, burnerInitCodeHash.Bytes()), saltBurn, nil
-
-}
-
-// SetUnverifiedErc20TokenDeploy stores and unverified erc20 token
-func (k Keeper) SetUnverifiedErc20TokenDeploy(ctx sdk.Context, token *types.Erc20TokenDeploy) {
-	bz := k.cdc.MustMarshalJSON(token)
-	ctx.KVStore(k.storeKey).Set([]byte(unverifiedErc20TokenPrefix+token.TxID.String()), bz)
-}
-
-// GetTokenAddress calculates the token address for a given symbol and gateway address
->>>>>>> small edit
 func (k Keeper) GetTokenAddress(ctx sdk.Context, symbol string, gatewayAddr common.Address) (common.Address, error) {
 	tokenInfo := k.getTokenInfo(ctx, symbol)
 	if tokenInfo == nil {
@@ -180,12 +138,7 @@ func (k Keeper) GetTokenAddress(ctx sdk.Context, symbol string, gatewayAddr comm
 		return common.Address{}, err
 	}
 
-<<<<<<< HEAD
-	tokenInitCode := k.getTokenBC(ctx)
-	tokenInitCode = append(tokenInitCode, packed...)
-=======
 	tokenInitCode := append(k.getTokenBC(ctx), packed...)
->>>>>>> small edit
 	tokenInitCodeHash := crypto.Keccak256Hash(tokenInitCode)
 
 	return crypto.CreateAddress2(gatewayAddr, saltToken, tokenInitCodeHash.Bytes()), nil
@@ -212,8 +165,7 @@ func (k Keeper) GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr common.Addres
 		return common.Address{}, [32]byte{}, err
 	}
 
-	burnerInitCode := k.getBurnerBC(ctx)
-	burnerInitCode = append(burnerInitCode, packed...)
+	burnerInitCode := append(k.getBurnerBC(ctx), packed...)
 	burnerInitCodeHash := crypto.Keccak256Hash(burnerInitCode)
 
 	return crypto.CreateAddress2(gatewayAddr, saltBurn, burnerInitCodeHash.Bytes()), saltBurn, nil
@@ -229,6 +181,12 @@ func (k Keeper) getTokenBC(ctx sdk.Context) []byte {
 	var b []byte
 	k.params.Get(ctx, types.KeyToken, &b)
 	return b
+}
+
+// SetUnverifiedErc20TokenDeploy stores and unverified erc20 token
+func (k Keeper) SetUnverifiedErc20TokenDeploy(ctx sdk.Context, token *types.Erc20TokenDeploy) {
+	bz := k.cdc.MustMarshalJSON(token)
+	ctx.KVStore(k.storeKey).Set([]byte(unverifiedErc20TokenPrefix+token.TxID.String()), bz)
 }
 
 // SaveTokenInfo stores the token info
