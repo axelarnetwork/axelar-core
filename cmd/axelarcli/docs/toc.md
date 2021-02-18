@@ -18,7 +18,7 @@
       - [account \[address\]](axelarcli_query_auth_account.md)	 - Query account balance
     - [bitcoin](axelarcli_query_bitcoin.md)	 - bitcoin query subcommands
       - [consolidation-addr \[deposit addr\]](axelarcli_query_bitcoin_consolidation-addr.md)	 - Returns a new consolidation address for an old deposit address
-      - [deposit-addr \[blockchain\] \[recipient addr\]](axelarcli_query_bitcoin_deposit-addr.md)	 - Returns a bitcoin deposit address for a recipient address on another blockchain
+      - [deposit-addr \[chain\] \[recipient address\]](axelarcli_query_bitcoin_deposit-addr.md)	 - Returns a bitcoin deposit address for a recipient address on another blockchain
       - [rawTx \[txID:voutIdx\] \[amount\] \[recipient\]](axelarcli_query_bitcoin_rawTx.md)	 - Get a raw transaction that spends \[amount\] of the outpoint \[voutIdx\] of \[txID\] to <recipient> or the next master key in rotation
       - [send \[txID:voutIdx\]](axelarcli_query_bitcoin_send.md)	 - Send a transaction to Bitcoin that spends output \[voutIdx\] of tx \[txID\]
       - [sendTransfers](axelarcli_query_bitcoin_sendTransfers.md)	 - Send a transaction to Bitcoin that consolidates deposits and withdrawals

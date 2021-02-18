@@ -2,60 +2,35 @@ package exported
 
 import (
 	"fmt"
-	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-const (
-	// DO NOT CHANGE THE ORDER OF THE CHAINS. MODULES WOULD ATTRIBUTE TXS TO THE WRONG CHAIN
+// Chain represents the properties of a registered blockchain
+type Chain struct {
+	Name                  string
+	NativeAsset           string
+	SupportsForeignAssets bool
+}
 
-	// NONE is the invalid chain marker
-	NONE Chain = iota
-	// Bitcoin is the bitcoin marker for cross-chain transfers
-	Bitcoin
-	// Ethereum is the bitcoin marker for cross-chain transfers
-	Ethereum
-
-	// ConnectedChainCount shows the total amount of chains (including the invalid chain) that are supported by axelar
-	ConnectedChainCount = 3 // increment when adding a new chain
-)
-
-var (
-	// add labels when new chains are added IN THE CORRECT ORDER
-	labels = [ConnectedChainCount]string{"unknown chain", "Bitcoin", "Ethereum"}
-)
-
-type Chain int
-
+// Validate performs a stateless check to ensure the Chain object has been initialized correctly
 func (c Chain) Validate() error {
-	if c <= 0 || c >= ConnectedChainCount {
-		return fmt.Errorf("unknown chain")
+	if c.Name == "" {
+		return fmt.Errorf("missing chain name")
+	}
+	if c.NativeAsset == "" {
+		return fmt.Errorf("missing native asset name")
 	}
 	return nil
 }
 
-func (c Chain) String() string {
-	if c.Validate() == nil {
-		return labels[c]
-	}
-	return labels[0]
-}
-
-func ChainFromString(chain string) Chain {
-	for i, label := range labels {
-		if strings.EqualFold(chain, label) {
-			return Chain(i)
-		}
-	}
-	return NONE
-}
-
+// CrossChainAddress represents a generalized address on any registered chain
 type CrossChainAddress struct {
 	Chain   Chain
 	Address string
 }
 
+// Validate performs a stateless check to ensure the CrossChainAddress object has been initialized correctly
 func (a CrossChainAddress) Validate() error {
 	if err := a.Chain.Validate(); err != nil {
 		return err
@@ -67,9 +42,10 @@ func (a CrossChainAddress) Validate() error {
 }
 
 func (a CrossChainAddress) String() string {
-	return fmt.Sprintf("chain: %s, address: %s", a.Chain.String(), a.Address)
+	return fmt.Sprintf("chain: %s, address: %s", a.Chain.Name, a.Address)
 }
 
+// CrossChainTransfer represents a generalized transfer of some asset to a registered blockchain
 type CrossChainTransfer struct {
 	Recipient CrossChainAddress
 	Asset     sdk.Coin

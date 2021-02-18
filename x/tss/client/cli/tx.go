@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 
 	cliUtils "github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -77,7 +76,7 @@ func getCmdMasterKeyAssignNext(cdc *codec.Codec) *cobra.Command {
 
 		msg := types.MsgAssignNextMasterKey{
 			Sender: cliCtx.FromAddress,
-			Chain:  exported.ChainFromString(args[0]),
+			Chain:  args[0],
 			KeyID:  args[1],
 		}
 		if err := msg.ValidateBasic(); err != nil {
@@ -100,7 +99,7 @@ func getCmdRotateMasterKey(cdc *codec.Codec) *cobra.Command {
 
 		msg := types.MsgRotateMasterKey{
 			Sender: cliCtx.FromAddress,
-			Chain:  exported.ChainFromString(args[0]),
+			Chain:  args[0],
 		}
 		if err := msg.ValidateBasic(); err != nil {
 			return err

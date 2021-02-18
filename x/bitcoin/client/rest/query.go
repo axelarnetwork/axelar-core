@@ -2,33 +2,30 @@ package rest
 
 import (
 	"fmt"
-	"github.com/axelarnetwork/axelar-core/utils/denom"
-	"github.com/axelarnetwork/axelar-core/x/balance/exported"
-	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	"net/http"
+	"strconv"
+
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
-	"strconv"
+
+	"github.com/axelarnetwork/axelar-core/utils/denom"
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/gorilla/mux"
-	"net/http"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 )
 
-type CrossChainAddress struct {
-	Chain   exported.Chain `json:"chain" yaml:"chain"`
-	Address string         `json:"address" yaml:"address"`
-}
-
+// RespDepositAddress represents the response of a deposit address query
 type RespDepositAddress struct {
 	Address string `json:"address" yaml:"address"`
 }
 
+// QueryDepositAddress returns a query for a deposit address
 func QueryDepositAddress(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -39,8 +36,7 @@ func QueryDepositAddress(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		vars := mux.Vars(r)
-		chain := balance.ChainFromString(vars["chain"])
-		queryData, err := cliCtx.Codec.MarshalJSON(balance.CrossChainAddress{Chain: chain, Address: vars["address"]})
+		queryData, err := cliCtx.Codec.MarshalJSON(types.DepositQueryParams{Chain: vars["chain"], Address: vars["address"]})
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 		}
@@ -62,6 +58,7 @@ func QueryDepositAddress(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
+// QueryConsolidationAddress returns a query for a consolidation address
 func QueryConsolidationAddress(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -92,6 +89,7 @@ func QueryConsolidationAddress(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
+// QueryTxInfo returns a query for transaction info
 func QueryTxInfo(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -130,6 +128,7 @@ func QueryTxInfo(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
+// QueryRawTx returns a query for a raw unsigned Bitcoin transaction
 func QueryRawTx(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -178,6 +177,7 @@ func QueryRawTx(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
+// QuerySendTx returns a query to send a transaction to Bitcoin
 func QuerySendTx(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

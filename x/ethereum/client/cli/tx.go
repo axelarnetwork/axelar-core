@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"strconv"
 
-	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -52,14 +51,13 @@ func GetCmdLink(cdc *codec.Codec) *cobra.Command {
 
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
 
-			chain := balance.ChainFromString(args[0])
-			address := balance.CrossChainAddress{Chain: chain, Address: args[1]}
-
-			if err := address.Validate(); err != nil {
-				return err
+			msg := types.MsgLink{
+				Sender:         cliCtx.GetFromAddress(),
+				RecipientChain: args[0],
+				RecipientAddr:  args[1],
+				Symbol:         args[2],
+				GatewayAddr:    args[3],
 			}
-
-			msg := types.MsgLink{Sender: cliCtx.GetFromAddress(), Recipient: address, Symbol: args[2], GatewayAddr: args[3]}
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

@@ -130,7 +130,14 @@ func OutPointFromStr(outStr string) (*wire.OutPoint, error) {
 	return out, nil
 }
 
+// Output represents a Bitcoin transaction output
 type Output struct {
 	Amount    btcutil.Amount
 	Recipient btcutil.Address
+}
+
+// DepositQueryParams describe the parameters used to query for a Bitcoin deposit address
+type DepositQueryParams struct {
+	Address string
+	Chain   string
 }

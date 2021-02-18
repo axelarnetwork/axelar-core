@@ -15,6 +15,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
+	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	ethMock "github.com/axelarnetwork/axelar-core/x/ethereum/types/mock"
@@ -41,12 +43,12 @@ func TestLink_NoSymbolSet(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
 
-	recipient := balance.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: balance.Bitcoin}
+	recipient := balance.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
 	symbol := testutils.RandString(3)
 	gateway := "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7"
 
 	handler := NewHandler(k, &ethMock.RPCClientMock{}, &ethMock.VoterMock{}, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.BalancerMock{})
-	_, err := handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), Recipient: recipient, Symbol: symbol, GatewayAddr: gateway})
+	_, err := handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, Symbol: symbol, GatewayAddr: gateway, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
 }
@@ -63,23 +65,28 @@ func TestLink_Success(t *testing.T) {
 
 	symbol := testutils.RandString(3)
 	name := testutils.RandString(10)
-	decimals := uint8(testutils.RandBytes(1)[0])
+	decimals := testutils.RandBytes(1)[0]
 	capacity := sdk.NewIntFromUint64(uint64(testutils.RandPosInt()))
 	gateway := "0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA"
 	k.SaveTokenInfo(ctx, types.MsgSignDeployToken{Sender: account, TokenName: name, Symbol: symbol, Decimals: decimals, Capacity: capacity})
 
-	recipient := balance.CrossChainAddress{Address: "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L", Chain: balance.Bitcoin}
+	recipient := balance.CrossChainAddress{Address: "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L", Chain: btc.Bitcoin}
 	burnAddr, salt, err := k.GetBurnerAddressAndSalt(ctx, symbol, recipient.Address, common.HexToAddress(gateway))
 	if err != nil {
 		panic(err)
 	}
-	sender := balance.CrossChainAddress{Address: burnAddr.String(), Chain: balance.Ethereum}
+	sender := balance.CrossChainAddress{Address: burnAddr.String(), Chain: exported.Ethereum}
 
+	chains := map[string]balance.Chain{btc.Bitcoin.Name: btc.Bitcoin, exported.Ethereum.Name: exported.Ethereum}
 	b := &ethMock.BalancerMock{
-		LinkAddressesFunc: func(ctx sdk.Context, s balance.CrossChainAddress, r balance.CrossChainAddress) error { return nil },
+		LinkAddressesFunc: func(ctx sdk.Context, s balance.CrossChainAddress, r balance.CrossChainAddress) {},
+		GetChainFunc: func(ctx sdk.Context, chain string) (balance.Chain, bool) {
+			c, ok := chains[chain]
+			return c, ok
+		},
 	}
 	handler := NewHandler(k, &ethMock.RPCClientMock{}, &ethMock.VoterMock{}, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, b)
-	_, err = handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), Recipient: recipient, Symbol: symbol, GatewayAddr: gateway})
+	_, err = handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Symbol: symbol, GatewayAddr: gateway})
 
 	assert.NoError(t, err)
 

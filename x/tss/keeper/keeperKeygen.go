@@ -119,6 +119,7 @@ func (k Keeper) KeygenMsg(ctx sdk.Context, msg types.MsgKeygenTraffic) error {
 	return nil
 }
 
+// GetKey returns the key for a given ID, if it exists
 func (k Keeper) GetKey(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(pkPrefix + keyID))
 	if bz == nil {
@@ -154,6 +155,7 @@ func (k Keeper) GetCurrentMasterKeyID(ctx sdk.Context, chain exported.Chain) (st
 	return k.getPreviousMasterKeyId(ctx, chain, 0)
 }
 
+// GetNextMasterKey returns the master key for the given chain that will be activated during the next rotation, if it exists
 func (k Keeper) GetNextMasterKey(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool) {
 	return k.GetPreviousMasterKey(ctx, chain, -1)
 }
@@ -194,7 +196,7 @@ func (k Keeper) AssignNextMasterKey(ctx sdk.Context, chain exported.Chain, snaps
 	r := k.getRotationCount(ctx, chain)
 	ctx.KVStore(k.storeKey).Set([]byte(masterKeyStoreKey(r+1, chain)), []byte(keyID))
 
-	k.Logger(ctx).Debug(fmt.Sprintf("prepared master key rotation for chain %s", chain))
+	k.Logger(ctx).Debug(fmt.Sprintf("prepared master key rotation for chain %s", chain.Name))
 	return nil
 }
 
@@ -203,7 +205,7 @@ func (k Keeper) RotateMasterKey(ctx sdk.Context, chain exported.Chain) error {
 	r := k.getRotationCount(ctx, chain)
 	k.setRotationCount(ctx, chain, r+1)
 
-	k.Logger(ctx).Debug(fmt.Sprintf("rotated master key for chain %s", chain))
+	k.Logger(ctx).Debug(fmt.Sprintf("rotated master key for chain %s", chain.Name))
 	return nil
 }
 
@@ -259,7 +261,7 @@ func (k Keeper) prepareKeygen(ctx sdk.Context, keyID string, threshold int, vali
 }
 
 func masterKeyStoreKey(rotation int64, chain exported.Chain) string {
-	return rotationPrefix + strconv.FormatInt(rotation, 10) + chain.String()
+	return rotationPrefix + strconv.FormatInt(rotation, 10) + chain.Name
 }
 
 func (k Keeper) getPreviousMasterKeyId(ctx sdk.Context, chain exported.Chain, offsetFromTop int64) (string, bool) {
@@ -272,7 +274,7 @@ func (k Keeper) getPreviousMasterKeyId(ctx sdk.Context, chain exported.Chain, of
 }
 
 func (k Keeper) getRotationCount(ctx sdk.Context, chain exported.Chain) int64 {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(rotationPrefix + chain.String()))
+	bz := ctx.KVStore(k.storeKey).Get([]byte(rotationPrefix + chain.Name))
 	if bz == nil {
 		return 0
 	}
@@ -282,7 +284,7 @@ func (k Keeper) getRotationCount(ctx sdk.Context, chain exported.Chain) int64 {
 }
 
 func (k Keeper) setRotationCount(ctx sdk.Context, chain exported.Chain, rotation int64) {
-	ctx.KVStore(k.storeKey).Set([]byte(rotationPrefix+chain.String()), k.cdc.MustMarshalBinaryLengthPrefixed(rotation))
+	ctx.KVStore(k.storeKey).Set([]byte(rotationPrefix+chain.Name), k.cdc.MustMarshalBinaryLengthPrefixed(rotation))
 }
 
 func (k Keeper) getLatestMasterKeyHeight(ctx sdk.Context, chain exported.Chain) int64 {
@@ -298,6 +300,7 @@ func (k Keeper) setSnapshotRoundForKeyID(ctx sdk.Context, keyID string, round in
 	ctx.KVStore(k.storeKey).Set([]byte(snapshotForKeyIDPrefix+keyID), k.cdc.MustMarshalBinaryBare(round))
 }
 
+// GetSnapshotRoundForKeyID returns the snapshot round in which the key with the given ID was created, if the key exists
 func (k Keeper) GetSnapshotRoundForKeyID(ctx sdk.Context, keyID string) (int64, bool) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(snapshotForKeyIDPrefix + keyID))
 	if bz == nil {

@@ -13,7 +13,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/utils/denom"
-	"github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
@@ -44,7 +43,7 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 // GetCmdDepositAddress returns the deposit address command
 func GetCmdDepositAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "deposit-addr [blockchain] [recipient addr]",
+		Use:   "deposit-addr [chain] [recipient address]",
 		Short: "Returns a bitcoin deposit address for a recipient address on another blockchain",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -52,12 +51,7 @@ func GetCmdDepositAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryDepositAddress)
 
-			chain := exported.ChainFromString(args[0])
-			if err := chain.Validate(); err != nil {
-				return err
-			}
-
-			res, _, err := cliCtx.QueryWithData(path, cdc.MustMarshalJSON(exported.CrossChainAddress{Chain: chain, Address: args[1]}))
+			res, _, err := cliCtx.QueryWithData(path, cdc.MustMarshalJSON(types.DepositQueryParams{Chain: args[0], Address: args[1]}))
 			if err != nil {
 				return sdkerrors.Wrap(err, types.ErrFDepositAddress)
 			}
