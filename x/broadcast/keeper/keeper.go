@@ -25,6 +25,7 @@ const (
 	seqNoKey      = "seqNo"
 )
 
+// Keeper - the broadcast keeper
 type Keeper struct {
 	snapshotter     types.Snapshotter
 	storeKey        sdk.StoreKey
@@ -52,7 +53,7 @@ func NewKeeper(
 	logger log.Logger,
 ) (Keeper, error) {
 	logger.With("module", fmt.Sprintf("x/%s", types.ModuleName)).Debug("creating broadcast keeper")
-	from, fromName, err := GetAccountAddress(conf.From, keybase)
+	from, fromName, err := types.GetAccountAddress(conf.From, keybase)
 	if err != nil {
 		return Keeper{}, err
 	}
@@ -124,10 +125,14 @@ func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []broadcast.MsgWithSenderSett
 
 // RegisterProxy registers a proxy address for a given principal, which can broadcast messages in the principal's name
 func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy sdk.AccAddress) error {
-	_, ok := k.snapshotter.GetValidator(ctx, principal)
+	s, ok := k.snapshotter.GetLatestSnapshot(ctx)
 	if !ok {
-		k.Logger(ctx).Error("could not find validator")
+		k.Logger(ctx).Error("no snapshot found")
 		return types.ErrInvalidValidator
+	}
+	_, ok = s.GetValidator(principal)
+	if !ok {
+		return fmt.Errorf("validator %s is not part of the current snapshot", principal.String())
 	}
 	k.Logger(ctx).Debug("getting proxy count")
 	count := k.getProxyCount(ctx)
@@ -181,23 +186,6 @@ func (k Keeper) getProxyCount(ctx sdk.Context) int {
 	var count int
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &count)
 	return count
-}
-
-func GetAccountAddress(from string, keybase keys.Keybase) (sdk.AccAddress, string, error) {
-	var info keys.Info
-	if addr, err := sdk.AccAddressFromBech32(from); err == nil {
-		info, err = keybase.GetByAddress(addr)
-		if err != nil {
-			return nil, "", err
-		}
-	} else {
-		info, err = keybase.Get(from)
-		if err != nil {
-			return nil, "", err
-		}
-	}
-
-	return info.GetAddress(), info.GetName(), nil
 }
 
 func (k Keeper) prepareMsgForSigning(ctx sdk.Context, msgs []sdk.Msg) (auth.StdSignMsg, error) {

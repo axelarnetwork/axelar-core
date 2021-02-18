@@ -6,84 +6,85 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/params"
+	"github.com/cosmos/cosmos-sdk/x/params/subspace"
+	sdkExported "github.com/cosmos/cosmos-sdk/x/staking/exported"
+	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-
-	sdkExported "github.com/cosmos/cosmos-sdk/x/staking/exported"
-
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
-
-	"github.com/tendermint/tendermint/libs/log"
 )
 
-const lastRound = "lastRound"
-const roundPrefix = "r-"
-
-// for now, have a small interval between rounds
-// const interval = 7 * 24 * time.Hour
-const interval = 10 * time.Millisecond
+const lastRoundKey = "lastRound"
+const roundPrefix = "round_"
 
 // Make sure the keeper implements the Snapshotter interface
 var _ exported.Snapshotter = Keeper{}
 
+// Keeper represents the snapshot keeper
 type Keeper struct {
 	storeKey sdk.StoreKey
 	staking  types.StakingKeeper
 	cdc      *codec.Codec
+	params   subspace.Subspace
 }
 
 // NewKeeper creates a new keeper for the staking module
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, staking types.StakingKeeper) Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramSpace params.Subspace, staking types.StakingKeeper) Keeper {
 	return Keeper{
 		storeKey: key,
 		cdc:      cdc,
 		staking:  staking,
+		params:   paramSpace.WithKeyTable(types.KeyTable()),
 	}
 }
 
-// GetValidator returns the validator with the given address. Returns false if no validator with that address exists
-func (k Keeper) GetValidator(ctx sdk.Context, address sdk.ValAddress) (exported.Validator, bool) {
-	snapshot, ok := k.GetLatestSnapshot(ctx)
+// Logger returns the logger
+func (k Keeper) Logger(ctx sdk.Context) log.Logger {
+	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
+}
 
-	// only use the underlying staking keeper if there are no snapshots yet
-	if !ok {
-		validator := k.staking.Validator(ctx, address)
-		if validator == nil {
-			return nil, false
-		}
-		return validator, true
-	}
+// SetParams sets the module's parameters
+func (k Keeper) SetParams(ctx sdk.Context, set types.Params) {
+	k.params.SetParamSet(ctx, &set)
+}
 
-	return snapshot.GetValidator(address)
+// GetParams gets the module's parameters
+func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
+	k.params.GetParamSet(ctx, &params)
+	return
 }
 
 // TakeSnapshot attempts to create a new snapshot
 func (k Keeper) TakeSnapshot(ctx sdk.Context) error {
-	r := k.GetLatestRound(ctx)
+	s, ok := k.GetLatestSnapshot(ctx)
 
-	if r != -1 {
-		s, ok := k.GetSnapshot(ctx, r)
-		if !ok {
-
-			return fmt.Errorf("Unable to take snapshot: no snapshot for latest round %d", r)
-		}
-		ts := ctx.BlockTime()
-		if s.Timestamp.Add(interval).After(ts) {
-
-			return fmt.Errorf("Unable to take snapshot: %s", "Too soon to take a snapshot")
-
-		}
+	if !ok {
+		k.executeSnapshot(ctx, 0)
+		k.setLatestRound(ctx, 0)
+		return nil
 	}
 
-	k.executeSnapshot(ctx, r+1)
-	k.setLatestRound(ctx, r+1)
+	lockingPeriod := k.getLockingPeriod(ctx)
+	if s.Timestamp.Add(lockingPeriod).After(ctx.BlockTime()) {
+		return fmt.Errorf("not enough time has passed since last snapshot, need to wait %s longer",
+			s.Timestamp.Add(lockingPeriod).Sub(ctx.BlockTime()).String())
+	}
+
+	k.executeSnapshot(ctx, s.Round+1)
+	k.setLatestRound(ctx, s.Round+1)
 	return nil
+}
+
+func (k Keeper) getLockingPeriod(ctx sdk.Context) time.Duration {
+	var lockingPeriod time.Duration
+	k.params.Get(ctx, types.KeyLockingPeriod, &lockingPeriod)
+	return lockingPeriod
 }
 
 // GetLatestSnapshot retrieves the last created snapshot
 func (k Keeper) GetLatestSnapshot(ctx sdk.Context) (exported.Snapshot, bool) {
 	r := k.GetLatestRound(ctx)
-
 	if r == -1 {
 
 		return exported.Snapshot{}, false
@@ -95,22 +96,20 @@ func (k Keeper) GetLatestSnapshot(ctx sdk.Context) (exported.Snapshot, bool) {
 
 // GetSnapshot retrieves a snapshot by round, if it exists
 func (k Keeper) GetSnapshot(ctx sdk.Context, round int64) (exported.Snapshot, bool) {
-	var snapshot exported.Snapshot
-
 	bz := ctx.KVStore(k.storeKey).Get(roundKey(round))
-
 	if bz == nil {
 
-		return snapshot, false
+		return exported.Snapshot{}, false
 	}
 
+	var snapshot exported.Snapshot
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &snapshot)
-
 	return snapshot, true
 }
 
+// GetLatestRound returns the latest snapshot round
 func (k Keeper) GetLatestRound(ctx sdk.Context) int64 {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(lastRound))
+	bz := ctx.KVStore(k.storeKey).Get([]byte(lastRoundKey))
 
 	if bz == nil {
 
@@ -120,11 +119,6 @@ func (k Keeper) GetLatestRound(ctx sdk.Context) int64 {
 	var i int64
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &i)
 	return i
-}
-
-// Logger returns the logger
-func (k Keeper) Logger(ctx sdk.Context) log.Logger {
-	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
 func (k Keeper) executeSnapshot(ctx sdk.Context, nextRound int64) {
@@ -148,7 +142,7 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, nextRound int64) {
 }
 
 func (k Keeper) setLatestRound(ctx sdk.Context, round int64) {
-	ctx.KVStore(k.storeKey).Set([]byte(lastRound), k.cdc.MustMarshalBinaryLengthPrefixed(round))
+	ctx.KVStore(k.storeKey).Set([]byte(lastRoundKey), k.cdc.MustMarshalBinaryLengthPrefixed(round))
 }
 
 func roundKey(round int64) []byte {

@@ -197,6 +197,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	stakingSubspace := app.paramsKeeper.Subspace(staking.DefaultParamspace)
 	distrSubspace := app.paramsKeeper.Subspace(distr.DefaultParamspace)
 	slashingSubspace := app.paramsKeeper.Subspace(slashing.DefaultParamspace)
+	snapshotSubspace := app.paramsKeeper.Subspace(snapTypes.DefaultParamspace)
 	tssSubspace := app.paramsKeeper.Subspace(tssTypes.DefaultParamspace)
 	btcSubspace := app.paramsKeeper.Subspace(btcTypes.DefaultParamspace)
 	ethSubspace := app.paramsKeeper.Subspace(ethTypes.DefaultParamspace)
@@ -263,7 +264,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 
 	app.ethKeeper = ethKeeper.NewEthKeeper(app.cdc, keys[ethTypes.StoreKey], ethSubspace)
 
-	app.snapKeeper = snapKeeper.NewKeeper(app.cdc, keys[snapTypes.StoreKey], app.stakingKeeper)
+	app.snapKeeper = snapKeeper.NewKeeper(app.cdc, keys[snapTypes.StoreKey], snapshotSubspace, app.stakingKeeper)
 
 	app.balanceKeeper = balanceKeeper.NewKeeper(app.cdc, keys[balanceTypes.StoreKey], balanceSubspace)
 
