@@ -68,7 +68,6 @@ func (k Keeper) TakeSnapshot(ctx sdk.Context) error {
 		}
 
 		round = s.Round + 1
-
 	}
 	k.executeSnapshot(ctx, round)
 	k.setLatestRound(ctx, round)
