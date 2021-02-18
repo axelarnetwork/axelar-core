@@ -115,7 +115,7 @@ func GetCmdSendTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 
 			var result types.SendTxResult
-			cdc.MustUnmarshalJSON(res, &res)
+			cdc.MustUnmarshalJSON(res, &result)
 
 			return cliCtx.PrintOutput(fmt.Sprintf("successfully sent transaction %s to Ethereum", result.SignedTx.Hash().String()))
 		},
