@@ -48,6 +48,9 @@ const (
 	axelarGatewayCommandMint        = "mintToken"
 	axelarGatewayCommandDeployToken = "deployToken"
 	axelarGatewayFuncExecute        = "execute"
+
+	// GatewayERC20TOkenDeployABI is obtained by computing the keccak256 hash of 'TokenDeployed(string,address)'
+	GatewayERC20TOkenDeployABI = "0xbf90b5a1ec9763e8bf4b9245cef0c28db92bab309fc2c5177f17814f38246938"
 )
 
 var (
@@ -170,6 +173,13 @@ type CommandParams struct {
 	CommandID    CommandID
 	Sender       string
 	ContractAddr string
+}
+
+// Erc20TokenDeploy describes information about an ERC20 token
+type Erc20TokenDeploy struct {
+	TxID      common.Hash
+	Symbol    string
+	TokenAddr common.Address
 }
 
 // BurnerInfo describes information required to burn token at an burner address

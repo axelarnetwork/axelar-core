@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	ethTypes "github.com/ethereum/go-ethereum/core/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -32,6 +34,8 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 			return handleMsgVerifyTx(ctx, k, rpc, v, msg)
 		case *types.MsgVoteVerifiedTx:
 			return handleMsgVoteVerifiedTx(ctx, k, v, msg)
+		case types.MsgVerifyErc20TokenDeploy:
+			return handleMsgVerifyErc20TokenDeploy(ctx, k, rpc, v, msg)
 		case types.MsgSignDeployToken:
 			return handleMsgSignDeployToken(ctx, k, s, snap, msg)
 		case types.MsgSignTx:
@@ -180,7 +184,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v 
 	 but only validators will later send out that vote.
 	*/
 
-	if err := verifyTx(ctx, k, rpc, tx.Hash()); err != nil {
+	if _, err := verifyTx(ctx, k, rpc, tx.Hash()); err != nil {
 		k.Logger(ctx).Debug(sdkerrors.Wrapf(err, "expected transaction (%s) could not be verified", txID).Error())
 		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
 		return &sdk.Result{
@@ -319,19 +323,153 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 	}, nil
 }
 
-func verifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, hash common.Hash) error {
+func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v types.Voter, msg types.MsgVerifyErc20TokenDeploy) (*sdk.Result, error) {
+
+	tokenAddr, err := k.GetTokenAddress(ctx, msg.Symbol, msg.GatewayAddr)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+	}
+
+	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.TxID.String()}
+	if err := v.InitPoll(ctx, poll); err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+	}
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+			sdk.NewAttribute(types.AttributeTxID, msg.TxID.String()),
+		),
+	)
+
+	deploy := types.Erc20TokenDeploy{
+		TxID:      msg.TxID,
+		Symbol:    msg.Symbol,
+		TokenAddr: tokenAddr,
+	}
+	k.SetUnverifiedErc20TokenDeploy(ctx, &deploy)
+
+	receipt, err := verifyTx(ctx, k, rpc, msg.TxID)
+	if err != nil {
+		k.Logger(ctx).Debug(sdkerrors.Wrapf(err, "transaction '%s' could not be verified", msg.TxID.String()).Error())
+
+		if err := v.RecordVote(ctx, &types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false}); err != nil {
+			k.Logger(ctx).Error(sdkerrors.Wrap(err, "voting failed").Error())
+			return &sdk.Result{
+				Log:    err.Error(),
+				Data:   k.Codec().MustMarshalBinaryLengthPrefixed(false),
+				Events: ctx.EventManager().Events(),
+			}, nil
+		}
+
+		return &sdk.Result{
+			Log:    err.Error(),
+			Data:   k.Codec().MustMarshalBinaryLengthPrefixed(false),
+			Events: ctx.EventManager().Events(),
+		}, nil
+	}
+
+	if err := verifyERC20TokenDeploy(receipt, msg.Symbol, msg.GatewayAddr, tokenAddr); err != nil {
+		k.Logger(ctx).Debug(sdkerrors.Wrapf(err, "expected erc20 token deploy (%s) could not be verified", msg.Symbol).Error())
+
+		if err := v.RecordVote(ctx, &types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false}); err != nil {
+			k.Logger(ctx).Error(sdkerrors.Wrap(err, "voting failed").Error())
+			return &sdk.Result{
+				Log:    err.Error(),
+				Data:   k.Codec().MustMarshalBinaryLengthPrefixed(false),
+				Events: ctx.EventManager().Events(),
+			}, nil
+		}
+
+		return &sdk.Result{
+			Log:    err.Error(),
+			Data:   k.Codec().MustMarshalBinaryLengthPrefixed(false),
+			Events: ctx.EventManager().Events(),
+		}, nil
+	}
+
+	if err := v.RecordVote(ctx, &types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: true}); err != nil {
+		k.Logger(ctx).Error(sdkerrors.Wrap(err, "voting failed").Error())
+
+		return &sdk.Result{
+			Log:    err.Error(),
+			Data:   k.Codec().MustMarshalBinaryLengthPrefixed(false),
+			Events: ctx.EventManager().Events(),
+		}, nil
+	}
+
+	return &sdk.Result{
+		Log:    "successfully verified erc20 token",
+		Data:   k.Codec().MustMarshalBinaryLengthPrefixed(true),
+		Events: ctx.EventManager().Events(),
+	}, nil
+}
+
+func verifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, hash common.Hash) (*ethTypes.Receipt, error) {
 	receipt, err := rpc.TransactionReceipt(context.Background(), hash)
 	if err != nil {
-		return sdkerrors.Wrap(err, "could not retrieve Ethereum receipt")
+		return nil, sdkerrors.Wrap(err, "could not retrieve Ethereum receipt")
 	}
 
 	blockNumber, err := rpc.BlockNumber(context.Background())
 	if err != nil {
-		return sdkerrors.Wrap(err, "could not retrieve Ethereum block number")
+		return nil, sdkerrors.Wrap(err, "could not retrieve Ethereum block number")
 	}
 
 	if (blockNumber - receipt.BlockNumber.Uint64()) < k.GetRequiredConfirmationHeight(ctx) {
-		return fmt.Errorf("not enough confirmations yet")
+		return nil, fmt.Errorf("not enough confirmations yet")
 	}
-	return nil
+	return receipt, nil
+}
+
+func verifyERC20TokenDeploy(receipt *ethTypes.Receipt, symbol string, gatewayAddr, tokenAddr common.Address) error {
+	for _, log := range receipt.Logs {
+		// Event is not emitted by the axelar gateway
+		if log.Address != gatewayAddr {
+			continue
+		}
+
+		// An ERC20 token deployment event has 1 topic
+		if len(log.Topics) != 1 {
+			continue
+		}
+
+		// Event is not about token deployment
+		if log.Topics[0] != common.BytesToHash(common.FromHex(types.GatewayERC20TOkenDeployABI)) {
+			continue
+		}
+
+		// Decode the data field
+		stringType, err := abi.NewType("string", "string", nil)
+		if err != nil {
+			return err
+		}
+		addressType, err := abi.NewType("address", "address", nil)
+		if err != nil {
+			return err
+		}
+		packedArgs := abi.Arguments{{Type: stringType}, {Type: addressType}}
+		args, err := packedArgs.Unpack(log.Data)
+		if err != nil {
+			return err
+		}
+
+		// Symbol does not match
+		if args[0].(string) != symbol {
+			continue
+		}
+
+		// token address does not match
+		if args[1].(common.Address) != tokenAddr {
+			continue
+		}
+
+		// if we reach this point, it means that the log matches what we want to verify,
+		// so the function can return with no error
+		return nil
+	}
+
+	return fmt.Errorf("failed to verify token deployment for symbol '%s' at contract address '%s'", symbol, tokenAddr.String())
 }

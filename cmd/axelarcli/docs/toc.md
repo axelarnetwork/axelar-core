@@ -79,6 +79,7 @@
       - [sign-deploy-token \[name\] \[symbol\] \[decimals\] \[capacity\]](axelarcli_tx_ethereum_sign-deploy-token.md)	 - Signs the call data to deploy a token with the AxelarGateway contract
       - [sign-pending-transfers](axelarcli_tx_ethereum_sign-pending-transfers.md)	 - Sign all pending transfers to Ethereum
       - [verify \[tx json file path\]](axelarcli_tx_ethereum_verify.md)	 - Verify an Ethereum transaction
+      - [verify-erc20-token \[txID\] \[symbol\] \[gateway address\]](axelarcli_tx_ethereum_verify-erc20-token.md)	 - Verify an ERC20 token deployment in an Ethereum transaction for a given symbol of token and gateway address
     - [multisign \[file\] \[name\] \[\[signature\]...\]](axelarcli_tx_multisign.md)	 - Generate multisig signatures for transactions generated offline
     - [send \[from_key_or_address\] \[to_address\] \[amount\]](axelarcli_tx_send.md)	 - Create and sign a send tx
     - [sign \[file\]](axelarcli_tx_sign.md)	 - Sign transactions generated offline

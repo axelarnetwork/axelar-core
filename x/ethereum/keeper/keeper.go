@@ -20,12 +20,13 @@ import (
 )
 
 const (
-	rawPrefix     = "raw_"
-	txPrefix      = "tx_"
-	pendingPrefix = "pend_"
-	commandPrefix = "command_"
-	symbolPrefix  = "symbol_"
-	burnerPrefix  = "burner_"
+	rawPrefix                  = "raw_"
+	txPrefix                   = "tx_"
+	pendingPrefix              = "pend_"
+	commandPrefix              = "command_"
+	symbolPrefix               = "symbol_"
+	burnerPrefix               = "burner_"
+	unverifiedErc20TokenPrefix = "unverified_erc20_prefix_"
 )
 
 // Keeper represents the ethereum keeper
