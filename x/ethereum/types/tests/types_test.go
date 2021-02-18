@@ -116,7 +116,32 @@ func TestCreateExecuteData_CorrectExecuteData(t *testing.T) {
 	assert.Equal(t, expected, common.Bytes2Hex(actual))
 }
 
-func TestBurnerAddress_CorrectData(t *testing.T) {
+func TestGetTokenAddress_CorrectData(t *testing.T) {
+	cdc := testutils.Codec()
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	subspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
+	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"), subspace)
+
+	axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
+	tokenName := "axelar token"
+	tokenSymbol := "at"
+	decimals := uint8(18)
+	capacity := sdk.NewIntFromUint64(uint64(10000))
+
+	expected := common.HexToAddress("0xE7481ECB61F9C84b91C03414F3D5d48E5436045D")
+
+	k.SetParams(ctx, types.DefaultParams())
+	account, err := sdk.AccAddressFromBech32("cosmos1vjyc4qmsdtdl5a4ruymnjqpchm5gyqde63sqdh")
+	assert.NoError(t, err)
+	k.SaveTokenInfo(ctx, types.MsgSignDeployToken{Sender: account, TokenName: tokenName, Symbol: tokenSymbol, Decimals: decimals, Capacity: capacity})
+
+	actual, err := k.GetTokenAddress(ctx, tokenSymbol, axelarGateway)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expected, actual)
+}
+
+func TestGetBurnerAddressAndSalt_CorrectData(t *testing.T) {
 	cdc := testutils.Codec()
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	subspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
@@ -124,24 +149,15 @@ func TestBurnerAddress_CorrectData(t *testing.T) {
 
 	axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
 	recipient := "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L"
+	tokenAddr := common.HexToAddress("0xE7481ECB61F9C84b91C03414F3D5d48E5436045D")
 	expectedBurnerAddr := common.HexToAddress("0x5f185DAFBD08F00E2826c195087A722B0A094059")
 	expectedSalt := common.Hex2Bytes("35f28b34202f4e3de20c1710696e3f294ebe4df686b17be00fedf991190f9654")
-	tokenName := "axelar token"
-	tokenSymbol := "at"
-	decimals := uint8(18)
-	capacity := sdk.NewIntFromUint64(uint64(10000))
 
 	k.SetParams(ctx, types.DefaultParams())
-	account, err := sdk.AccAddressFromBech32("cosmos1vjyc4qmsdtdl5a4ruymnjqpchm5gyqde63sqdh")
-	if err != nil {
-		panic(err)
-	}
-	k.SaveTokenInfo(ctx, types.MsgSignDeployToken{Sender: account, TokenName: tokenName, Symbol: tokenSymbol, Decimals: decimals, Capacity: capacity})
 
-	actualburnerAddr, actualSalt, err := k.GetBurnerAddressAndSalt(ctx, tokenSymbol, recipient, axelarGateway)
-	if err != nil {
-		panic(err)
-	}
+	actualburnerAddr, actualSalt, err := k.GetBurnerAddressAndSalt(ctx, tokenAddr, recipient, axelarGateway)
+
+	assert.NoError(t, err)
 	assert.Equal(t, expectedBurnerAddr, actualburnerAddr)
 	assert.Equal(t, expectedSalt, actualSalt[:])
 }

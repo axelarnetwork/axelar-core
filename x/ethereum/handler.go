@@ -46,7 +46,13 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 }
 
 func handleMsgLink(ctx sdk.Context, k keeper.Keeper, b types.Balancer, msg types.MsgLink) (*sdk.Result, error) {
-	burnerAddr, salt, err := k.GetBurnerAddressAndSalt(ctx, msg.Symbol, msg.RecipientAddr, common.HexToAddress(msg.GatewayAddr))
+	gatewayAddr := common.HexToAddress(msg.GatewayAddr)
+	tokenAddr, err := k.GetTokenAddress(ctx, msg.Symbol, gatewayAddr)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+	}
+
+	burnerAddr, salt, err := k.GetBurnerAddressAndSalt(ctx, tokenAddr, msg.RecipientAddr, gatewayAddr)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}

@@ -71,7 +71,12 @@ func TestLink_Success(t *testing.T) {
 	k.SaveTokenInfo(ctx, types.MsgSignDeployToken{Sender: account, TokenName: name, Symbol: symbol, Decimals: decimals, Capacity: capacity})
 
 	recipient := balance.CrossChainAddress{Address: "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L", Chain: btc.Bitcoin}
-	burnAddr, salt, err := k.GetBurnerAddressAndSalt(ctx, symbol, recipient.Address, common.HexToAddress(gateway))
+	tokenAddr, err := k.GetTokenAddress(ctx, symbol, common.HexToAddress(gateway))
+	if err != nil {
+		panic(err)
+	}
+
+	burnAddr, salt, err := k.GetBurnerAddressAndSalt(ctx, tokenAddr, recipient.Address, common.HexToAddress(gateway))
 	if err != nil {
 		panic(err)
 	}

@@ -99,11 +99,11 @@ func (k Keeper) GetBurnerInfo(ctx sdk.Context, burnerAddr common.Address) *types
 	return result
 }
 
-// GetBurnerAddressAndSalt calculates a burner address and the corresponding salt for the given symbol and recipient
-func (k Keeper) GetBurnerAddressAndSalt(ctx sdk.Context, symbol, recipient string, gatewayAddr common.Address) (common.Address, [32]byte, error) {
+// GetTokenAddress calculates the token address given symbol and axelar gateway address
+func (k Keeper) GetTokenAddress(ctx sdk.Context, symbol string, gatewayAddr common.Address) (common.Address, error) {
 	tokenInfo := k.getTokenInfo(ctx, symbol)
 	if tokenInfo == nil {
-		return common.Address{}, [32]byte{}, sdkerrors.Wrap(types.ErrEthereum, "symbol not found/verified")
+		return common.Address{}, fmt.Errorf("symbol not found/verified")
 	}
 
 	var saltToken [32]byte
@@ -111,52 +111,58 @@ func (k Keeper) GetBurnerAddressAndSalt(ctx sdk.Context, symbol, recipient strin
 
 	uint8Type, err := abi.NewType("uint8", "uint8", nil)
 	if err != nil {
-		return common.Address{}, [32]byte{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return common.Address{}, err
 	}
+
 	uint256Type, err := abi.NewType("uint256", "uint256", nil)
 	if err != nil {
-		return common.Address{}, [32]byte{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return common.Address{}, err
 	}
+
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
-		return common.Address{}, [32]byte{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
-	}
-	addressType, err := abi.NewType("address", "address", nil)
-	if err != nil {
-		return common.Address{}, [32]byte{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
-	}
-	bytes32Type, err := abi.NewType("bytes32", "bytes32", nil)
-	if err != nil {
-		return common.Address{}, [32]byte{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return common.Address{}, err
 	}
 
 	arguments := abi.Arguments{{Type: stringType}, {Type: stringType}, {Type: uint8Type}, {Type: uint256Type}}
 	packed, err := arguments.Pack(tokenInfo.TokenName, symbol, tokenInfo.Decimals, tokenInfo.Capacity.BigInt())
 	if err != nil {
-		return common.Address{}, [32]byte{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return common.Address{}, err
 	}
 
 	tokenInitCode := k.getTokenBC(ctx)
 	tokenInitCode = append(tokenInitCode, packed...)
-
 	tokenInitCodeHash := crypto.Keccak256Hash(tokenInitCode)
-	tokenAddr := crypto.CreateAddress2(gatewayAddr, saltToken, tokenInitCodeHash.Bytes())
+
+	return crypto.CreateAddress2(gatewayAddr, saltToken, tokenInitCodeHash.Bytes()), nil
+}
+
+// GetBurnerAddressAndSalt calculates a burner address and the corresponding salt for the given token address, recipient and axelar gateway address
+func (k Keeper) GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, [32]byte, error) {
+	addressType, err := abi.NewType("address", "address", nil)
+	if err != nil {
+		return common.Address{}, [32]byte{}, err
+	}
+
+	bytes32Type, err := abi.NewType("bytes32", "bytes32", nil)
+	if err != nil {
+		return common.Address{}, [32]byte{}, err
+	}
 
 	var saltBurn [32]byte
 	copy(saltBurn[:], crypto.Keccak256Hash([]byte(recipient)).Bytes())
 
-	arguments = abi.Arguments{{Type: addressType}, {Type: bytes32Type}}
-	packed, err = arguments.Pack(tokenAddr, saltBurn)
+	arguments := abi.Arguments{{Type: addressType}, {Type: bytes32Type}}
+	packed, err := arguments.Pack(tokenAddr, saltBurn)
 	if err != nil {
-		return common.Address{}, [32]byte{}, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return common.Address{}, [32]byte{}, err
 	}
 
 	burnerInitCode := k.getBurnerBC(ctx)
 	burnerInitCode = append(burnerInitCode, packed...)
-
 	burnerInitCodeHash := crypto.Keccak256Hash(burnerInitCode)
-	return crypto.CreateAddress2(gatewayAddr, saltBurn, burnerInitCodeHash.Bytes()), saltBurn, nil
 
+	return crypto.CreateAddress2(gatewayAddr, saltBurn, burnerInitCodeHash.Bytes()), saltBurn, nil
 }
 
 func (k Keeper) getBurnerBC(ctx sdk.Context) []byte {
