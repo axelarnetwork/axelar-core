@@ -9,11 +9,13 @@ import (
 
 //go:generate moq -out ./mock/types.go -pkg mock . Snapshotter Validator
 
+// Validator is an interface for a Cosmos validator account
 type Validator interface {
 	GetOperator() sdk.ValAddress
 	GetConsensusPower() int64
 }
 
+// Snapshot is a snapshot of the validator set at a given block height.
 type Snapshot struct {
 	Validators []Validator `json:"validators"`
 	Timestamp  time.Time   `json:"timestamp"`
@@ -22,6 +24,7 @@ type Snapshot struct {
 	Round      int64       `json:"round"`
 }
 
+// GetValidator returns the validator for a given address, if it is part of the snapshot
 func (s Snapshot) GetValidator(address sdk.ValAddress) (Validator, bool) {
 	for _, validator := range s.Validators {
 		if bytes.Equal(validator.GetOperator(), address) {
@@ -32,9 +35,8 @@ func (s Snapshot) GetValidator(address sdk.ValAddress) (Validator, bool) {
 	return nil, false
 }
 
+// Snapshotter represents the interface for the snapshot module's functionality
 type Snapshotter interface {
-	// GetValidator returns the validator with the given address. Returns false if no validator with that address exists
-	GetValidator(ctx sdk.Context, address sdk.ValAddress) (Validator, bool)
 	GetLatestSnapshot(ctx sdk.Context) (Snapshot, bool)
 	GetLatestRound(ctx sdk.Context) int64
 	GetSnapshot(ctx sdk.Context, round int64) (Snapshot, bool)

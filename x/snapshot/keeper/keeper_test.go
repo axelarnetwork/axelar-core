@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
@@ -49,21 +50,23 @@ func init() {
 
 // Tests the snapshot functionality
 func TestSnapshots(t *testing.T) {
-	for i, params := range testCases {
+	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("Test-%d", i), func(t *testing.T) {
 			ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 			cdc := testutils.Codec()
-			validators := genValidators(t, params.numValidators, params.totalPower)
+			validators := genValidators(t, testCase.numValidators, testCase.totalPower)
 			staker := newMockStaker(validators...)
 
-			assert.True(t, staker.GetLastTotalPower(ctx).Equal(sdk.NewInt(int64(params.totalPower))))
+			assert.True(t, staker.GetLastTotalPower(ctx).Equal(sdk.NewInt(int64(testCase.totalPower))))
 
-			keeper := NewKeeper(cdc, sdk.NewKVStoreKey("staking"), staker)
+			snapSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
+			keeper := NewKeeper(cdc, sdk.NewKVStoreKey("staking"), snapSubspace, staker)
+			keeper.SetParams(ctx, types.DefaultParams())
 
 			_, ok := keeper.GetSnapshot(ctx, 0)
 
 			assert.False(t, ok)
-			assert.Equal(t, keeper.GetLatestRound(ctx), int64(-1))
+			assert.Equal(t, int64(-1), keeper.GetLatestRound(ctx))
 
 			_, ok = keeper.GetLatestSnapshot(ctx)
 
@@ -76,7 +79,7 @@ func TestSnapshots(t *testing.T) {
 			snapshot, ok := keeper.GetSnapshot(ctx, 0)
 
 			assert.True(t, ok)
-			assert.Equal(t, keeper.GetLatestRound(ctx), int64(0))
+			assert.Equal(t, int64(0), keeper.GetLatestRound(ctx))
 			for i, val := range validators {
 				assert.Equal(t, val.GetConsensusPower(), snapshot.Validators[i].GetConsensusPower())
 				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetOperator())
@@ -86,7 +89,7 @@ func TestSnapshots(t *testing.T) {
 
 			assert.Error(t, err)
 
-			ctx = ctx.WithBlockTime(ctx.BlockTime().Add(interval + 100))
+			ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.DefaultParams().LockingPeriod + 100))
 
 			err = keeper.TakeSnapshot(ctx)
 
