@@ -266,6 +266,9 @@ func (k Keeper) ProcessVerificationResult(ctx sdk.Context, txID, pollType string
 	case types.PollVerifyTx:
 		pendingKey = []byte(pendingTxPrefix + txID)
 		verifiedKey = []byte(verifiedTxPrefix + txID)
+	default:
+		k.Logger(ctx).Debug(fmt.Sprintf("unknown verification type: %s", pollType))
+		return
 	}
 
 	bz := ctx.KVStore(k.storeKey).Get(pendingKey)
