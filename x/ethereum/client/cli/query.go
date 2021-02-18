@@ -142,10 +142,11 @@ func GetCmdSendCommand(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				return sdkerrors.Wrapf(err, "could not send Ethereum transaction executing command %s", commandID)
 			}
 
-			var out string
-			cdc.MustUnmarshalJSON(res, &out)
 
-			return cliCtx.PrintOutput(out)
+			var txHash string
+			cliCtx.Codec.MustUnmarshalJSON(res, &txHash)
+
+			return cliCtx.PrintOutput(fmt.Sprintf("successfully sent transaction %s to Ethereum", txHash))
 		},
 	}
 }
