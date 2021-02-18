@@ -67,18 +67,22 @@ func queryDepositAddress(ctx sdk.Context, k Keeper, s types.Signer, b types.Bala
 		return nil, fmt.Errorf("could not parse the recipient")
 	}
 
-	pk, ok := s.GetCurrentMasterKey(ctx, exported.Bitcoin)
-	if !ok {
-		return nil, fmt.Errorf("key not found")
-	}
-
 	chain, ok := b.GetChain(ctx, params.Chain)
 	if !ok {
 		return nil, fmt.Errorf("recipient chain not found")
 	}
 
 	recipient := balance.CrossChainAddress{Chain: chain, Address: params.Address}
-	addr, _, err := k.GenerateDepositAddressAndRedeemScript(ctx, btcec.PublicKey(pk), recipient)
+
+	pk, ok := s.GetCurrentMasterKey(ctx, exported.Bitcoin)
+	if !ok {
+		return nil, fmt.Errorf("key not found")
+	}
+	script, err := types.CreateCrossChainRedeemScript(btcec.PublicKey(pk), recipient)
+	if err != nil {
+		return nil, err
+	}
+	addr, err := types.CreateDepositAddress(k.GetNetwork(ctx), script)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +101,11 @@ func queryConsolidationAddress(ctx sdk.Context, k Keeper, b types.Balancer, s ty
 		return nil, fmt.Errorf("key not found")
 	}
 
-	addr, _, err := k.GenerateDepositAddressAndRedeemScript(ctx, btcec.PublicKey(pk), recipient)
+	script, err := types.CreateCrossChainRedeemScript(btcec.PublicKey(pk), recipient)
+	if err != nil {
+		return nil, err
+	}
+	addr, err := types.CreateDepositAddress(k.GetNetwork(ctx), script)
 	if err != nil {
 		return nil, err
 	}

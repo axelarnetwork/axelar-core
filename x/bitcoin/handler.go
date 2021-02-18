@@ -50,26 +50,34 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, signer type
 }
 
 func handleMsgLink(ctx sdk.Context, k keeper.Keeper, s types.Signer, b types.Balancer, msg types.MsgLink) (*sdk.Result, error) {
-	key, ok := s.GetCurrentMasterKey(ctx, exported.Bitcoin)
-	if !ok {
-		return nil, fmt.Errorf("master key not set")
-	}
-
 	keyID, ok := s.GetCurrentMasterKeyID(ctx, exported.Bitcoin)
 	if !ok {
 		return nil, fmt.Errorf("master key not set")
 	}
 
-	rcpChain, ok := b.GetChain(ctx, msg.RecipientChain)
+	key, ok := s.GetKey(ctx, keyID)
+	if !ok {
+		return nil, fmt.Errorf("master key not set")
+	}
+
+	recipientChain, ok := b.GetChain(ctx, msg.RecipientChain)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, "unknown recipient chain")
 	}
-	recipient := balance.CrossChainAddress{Chain: rcpChain, Address: msg.RecipientAddr}
-	btcAddr, err := k.CreateDepositAddress(ctx, recipient, keyID, btcec.PublicKey(key))
+
+	recipient := balance.CrossChainAddress{Chain: recipientChain, Address: msg.RecipientAddr}
+
+	redeemScript, err := types.CreateCrossChainRedeemScript(btcec.PublicKey(key), recipient)
+	if err != nil {
+		return nil, err
+	}
+	btcAddr, err := types.CreateDepositAddress(k.GetNetwork(ctx), redeemScript)
 	if err != nil {
 		return nil, err
 	}
 
+	k.SetRedeemScriptByAddress(ctx, btcAddr, redeemScript)
+	k.SetKeyIDByAddress(ctx, btcAddr, keyID)
 	b.LinkAddresses(ctx, balance.CrossChainAddress{Chain: exported.Bitcoin, Address: btcAddr.EncodeAddress()}, recipient)
 
 	logMsg := fmt.Sprintf("successfully linked {%s} and {%s}", btcAddr.EncodeAddress(), msg.RecipientAddr)
@@ -172,11 +180,11 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, b 
 		if err != nil {
 			return nil, err
 		}
-		id, ok := k.GetKeyIDByAddress(ctx, addr)
+		keyID, ok := k.GetKeyIDByAddress(ctx, addr)
 		if !ok {
-			return nil, fmt.Errorf("key id not found")
+			return nil, fmt.Errorf("key ID not found")
 		}
-		k.SetKeyIDByOutpoint(ctx, outPoint, id)
+		k.SetKeyIDByOutpoint(ctx, outPoint, keyID)
 
 		depositAddr := balance.CrossChainAddress{Address: info.Address, Chain: exported.Bitcoin}
 		amount := sdk.NewInt64Coin(denom.Satoshi, int64(info.Amount))
@@ -276,11 +284,16 @@ func handleMsgSignPendingTransfers(ctx sdk.Context, k keeper.Keeper, signer type
 		if !ok {
 			return nil, fmt.Errorf("key not found")
 		}
-		masterAddr, script, err := k.GenerateMasterAddressAndRedeemScript(ctx, btcec.PublicKey(pk))
+
+		redeemScript, err := types.CreateMasterRedeemScript(btcec.PublicKey(pk))
 		if err != nil {
 			return nil, err
 		}
-		k.SetRedeemScript(ctx, masterAddr, script)
+		masterAddr, err := types.CreateDepositAddress(k.GetNetwork(ctx), redeemScript)
+		if err != nil {
+			return nil, err
+		}
+		k.SetRedeemScriptByAddress(ctx, masterAddr, redeemScript)
 		outPuts = append(outPuts, types.Output{
 			Amount:    btcutil.Amount(change.Int64()),
 			Recipient: masterAddr,

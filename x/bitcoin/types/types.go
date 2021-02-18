@@ -1,10 +1,12 @@
 package types
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"strconv"
 	"strings"
 
+	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
@@ -12,6 +14,8 @@ import (
 	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 )
 
 // Bitcoin network types
@@ -140,4 +144,62 @@ type Output struct {
 type DepositQueryParams struct {
 	Address string
 	Chain   string
+}
+
+// RedeemScript represents the script that is used to redeem a transaction that spent to the address derived from the script
+type RedeemScript []byte
+
+// CreateCrossChainRedeemScript generates a redeem script unique to the given key and cross-chain address
+func CreateCrossChainRedeemScript(pk btcec.PublicKey, crossAddr balance.CrossChainAddress) (RedeemScript, error) {
+	keyBz := pk.SerializeCompressed()
+	nonce := btcutil.Hash160([]byte(crossAddr.String()))
+
+	redeemScript, err := txscript.NewScriptBuilder().AddData(keyBz).AddOp(txscript.OP_CHECKSIG).AddData(nonce).AddOp(txscript.OP_DROP).Script()
+	if err != nil {
+		return nil, err
+	}
+	return redeemScript, nil
+}
+
+// CreateMasterRedeemScript generates a redeem script unique to the given key
+func CreateMasterRedeemScript(pk btcec.PublicKey) (RedeemScript, error) {
+	keyBz := pk.SerializeCompressed()
+
+	redeemScript, err := txscript.NewScriptBuilder().AddData(keyBz).AddOp(txscript.OP_CHECKSIG).Script()
+	if err != nil {
+		return nil, err
+	}
+	return redeemScript, nil
+}
+
+// CreateDepositAddress creates a SeqWit script address based on a redeem script
+func CreateDepositAddress(network Network, script RedeemScript) (*btcutil.AddressWitnessScriptHash, error) {
+	hash := sha256.Sum256(script)
+	addr, err := btcutil.NewAddressWitnessScriptHash(hash[:], network.Params)
+	if err != nil {
+		return nil, err
+	}
+	return addr, nil
+}
+
+// CreateTxWitness creates a transaction witness
+func CreateTxWitness(sig btcec.Signature, redeemScript RedeemScript) wire.TxWitness {
+	sigBytes := append(sig.Serialize(), byte(txscript.SigHashAll))
+	return wire.TxWitness{sigBytes, redeemScript}
+}
+
+// ValidateTxScript checks if the input at the given index can be spent with the given script
+func ValidateTxScript(tx *wire.MsgTx, idx int, input OutPointInfo, payScript []byte) error {
+	// make sure the tx is considered standard to increase its chance to be mined
+	flags := txscript.StandardVerifyFlags
+
+	// execute (dry-run) the public key and signature script to validate them
+	scriptEngine, err := txscript.NewEngine(payScript, tx, idx, flags, nil, nil, int64(input.Amount))
+	if err != nil {
+		return sdkerrors.Wrap(err, "could not create execution engine, aborting")
+	}
+	if err := scriptEngine.Execute(); err != nil {
+		return sdkerrors.Wrap(err, "transaction failed to execute, aborting")
+	}
+	return nil
 }

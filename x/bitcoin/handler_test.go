@@ -43,17 +43,13 @@ func TestLink_NoMasterKey(t *testing.T) {
 
 	recipient := balance.CrossChainAddress{Address: "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7", Chain: eth.Ethereum}
 
-	s := &mock.SignerMock{
-		GetCurrentMasterKeyFunc: func(ctx sdk.Context, chain balance.Chain) (ecdsa.PublicKey, bool) {
-			return ecdsa.PublicKey{}, false
-		},
-	}
+	s := &mock.SignerMock{GetCurrentMasterKeyIDFunc: func(sdk.Context, balance.Chain) (string, bool) { return "", false }}
 
 	handler := NewHandler(k, &mock.VoterMock{}, &mock.RPCClientMock{}, s, &mock.SnapshotterMock{}, &mock.BalancerMock{})
 	_, err := handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
-	assert.Equal(t, 1, len(s.GetCurrentMasterKeyCalls()))
+	assert.Equal(t, 1, len(s.GetCurrentMasterKeyIDCalls()))
 }
 
 func TestLink_Success(t *testing.T) {
@@ -68,10 +64,14 @@ func TestLink_Success(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	btcAddr, _, err := k.GenerateDepositAddressAndRedeemScript(ctx, btcec.PublicKey(privKey.PublicKey), recipient)
+
+	redeemScript, err := types.CreateCrossChainRedeemScript(btcec.PublicKey(privKey.PublicKey), recipient)
 	if err != nil {
 		panic(err)
-
+	}
+	btcAddr, err := types.CreateDepositAddress(k.GetNetwork(ctx), redeemScript)
+	if err != nil {
+		panic(err)
 	}
 	sender := balance.CrossChainAddress{Address: btcAddr.EncodeAddress(), Chain: exported.Bitcoin}
 
@@ -85,7 +85,7 @@ func TestLink_Success(t *testing.T) {
 	}
 
 	s := &mock.SignerMock{
-		GetCurrentMasterKeyFunc: func(ctx sdk.Context, chain balance.Chain) (ecdsa.PublicKey, bool) {
+		GetKeyFunc: func(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool) {
 			return privKey.PublicKey, true
 		},
 		GetCurrentMasterKeyIDFunc: func(ctx sdk.Context, chain balance.Chain) (string, bool) { return "testkey", true },
@@ -98,7 +98,7 @@ func TestLink_Success(t *testing.T) {
 	assert.Equal(t, 1, len(b.LinkAddressesCalls()))
 	assert.Equal(t, sender, b.LinkAddressesCalls()[0].Sender)
 	assert.Equal(t, recipient, b.LinkAddressesCalls()[0].Recipient)
-	assert.Equal(t, 1, len(s.GetCurrentMasterKeyCalls()))
+	assert.Equal(t, 1, len(s.GetKeyCalls()))
 }
 
 func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
@@ -573,6 +573,7 @@ func TestNewHandler_SignPendingTransfers(t *testing.T) {
 				DeletePollFunc: func(ctx sdk.Context, poll vote.PollMeta) {},
 				RecordVoteFunc: func(sdk.Context, vote.MsgVote) error { return nil }},
 			&mock.SignerMock{
+				GetKeyFunc: func(sdk.Context, string) (ecdsa.PublicKey, bool) { return sk.PublicKey, true },
 				GetCurrentMasterKeyFunc: func(sdk.Context, balance.Chain) (ecdsa.PublicKey, bool) {
 					return sk.PublicKey, true
 				},
@@ -781,11 +782,15 @@ func prepareMsgSign(ctx sdk.Context, k keeper.Keeper, querier sdk.Querier, sk *e
 	}
 
 	btcPk := btcec.PublicKey(sk.PublicKey)
-	addr, script, err := k.GenerateDepositAddressAndRedeemScript(ctx, btcPk, recipient)
+	script, err := types.CreateCrossChainRedeemScript(btcPk, recipient)
 	if err != nil {
 		panic(err)
 	}
-	k.SetRedeemScript(ctx, addr, script)
+	addr, err := types.CreateDepositAddress(k.GetNetwork(ctx), script)
+	if err != nil {
+		panic(err)
+	}
+	k.SetRedeemScriptByAddress(ctx, addr, script)
 	amount := btcutil.Amount(testutils.RandIntBetween(1, 100000000))
 	outPoint := wire.NewOutPoint(hash, uint32(testutils.RandIntBetween(0, 10)))
 	k.SetUnverifiedOutpointInfo(ctx, types.OutPointInfo{
