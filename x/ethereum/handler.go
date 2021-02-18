@@ -163,7 +163,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v 
 	tx := msg.UnmarshaledTx()
 	txID := tx.Hash().String()
 
-	poll := vote.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: txID}
+	poll := vote.PollMeta{Module: types.ModuleName, Type: types.PollVerifyTx, ID: txID}
 	if err := v.InitPoll(ctx, poll); err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
@@ -215,11 +215,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, ms
 	}
 
 	if confirmed := v.Result(ctx, msg.Poll()); confirmed != nil {
-		if err := k.ProcessVerificationResult(ctx, msg.PollMeta.ID, confirmed.(bool)); err != nil {
-
-			return nil, err
-		}
-
+		k.ProcessVerificationResult(ctx, msg.PollMeta.ID, msg.PollMeta.Type, confirmed.(bool))
 		v.DeletePoll(ctx, msg.Poll())
 
 		event = event.AppendAttributes(sdk.NewAttribute(types.AttributePollConfirmed, strconv.FormatBool(confirmed.(bool))))
@@ -327,7 +323,7 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
 
-	poll := vote.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.TxID.String()}
+	poll := vote.PollMeta{Module: types.ModuleName, Type: types.PollVerifyToken, ID: msg.TxID.String()}
 	if err := v.InitPoll(ctx, poll); err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}

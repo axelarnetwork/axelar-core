@@ -20,13 +20,14 @@ import (
 )
 
 const (
-	rawPrefix                  = "raw_"
-	txPrefix                   = "tx_"
-	pendingPrefix              = "pend_"
-	commandPrefix              = "command_"
-	symbolPrefix               = "symbol_"
-	burnerPrefix               = "burner_"
-	unverifiedErc20TokenPrefix = "unverified_erc20_prefix_"
+	rawPrefix           = "raw_"
+	verifiedTxPrefix    = "verified_tx_"
+	pendingTxPrefix     = "pending_tx_"
+	verifiedTokenPrefix = "verified_token_"
+	pendingTokenPrefix  = "pending_token_"
+	commandPrefix       = "command_"
+	symbolPrefix        = "symbol_"
+	burnerPrefix        = "burner_"
 )
 
 // Keeper represents the ethereum keeper
@@ -186,7 +187,7 @@ func (k Keeper) getTokenBC(ctx sdk.Context) []byte {
 // SetUnverifiedErc20TokenDeploy stores and unverified erc20 token
 func (k Keeper) SetUnverifiedErc20TokenDeploy(ctx sdk.Context, token *types.Erc20TokenDeploy) {
 	bz := k.cdc.MustMarshalJSON(token)
-	ctx.KVStore(k.storeKey).Set([]byte(unverifiedErc20TokenPrefix+token.TxID.String()), bz)
+	ctx.KVStore(k.storeKey).Set([]byte(pendingTokenPrefix+token.TxID.String()), bz)
 }
 
 // SaveTokenInfo stores the token info
@@ -239,30 +240,42 @@ func (k Keeper) SetRawTx(ctx sdk.Context, txID string, tx *ethTypes.Transaction)
 
 // HasVerifiedTx returns true if a raw transaction has been stored
 func (k Keeper) HasVerifiedTx(ctx sdk.Context, txID string) bool {
-	return ctx.KVStore(k.storeKey).Has([]byte(txPrefix + txID))
+	return ctx.KVStore(k.storeKey).Has([]byte(verifiedTxPrefix + txID))
 }
 
 // SetUnverifiedTx stores and unverified transaction
 func (k Keeper) SetUnverifiedTx(ctx sdk.Context, txID string, tx *ethTypes.Transaction) {
-	ctx.KVStore(k.storeKey).Set([]byte(pendingPrefix+txID), tx.Hash().Bytes())
+	ctx.KVStore(k.storeKey).Set([]byte(pendingTxPrefix+txID), tx.Hash().Bytes())
 }
 
 // HasUnverifiedTx returns true if an unverified transaction has been stored
 func (k Keeper) HasUnverifiedTx(ctx sdk.Context, txID string) bool {
-	return ctx.KVStore(k.storeKey).Has([]byte(pendingPrefix + txID))
+	return ctx.KVStore(k.storeKey).Has([]byte(pendingTxPrefix + txID))
 }
 
 // ProcessVerificationResult stores the TX permanently if confirmed or discards the data otherwise
-func (k Keeper) ProcessVerificationResult(ctx sdk.Context, txID string, verified bool) error {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingPrefix + txID))
+func (k Keeper) ProcessVerificationResult(ctx sdk.Context, txID, pollType string, verified bool) {
+
+	var pendingKey []byte
+	var verifiedKey []byte
+
+	switch pollType {
+	case types.PollVerifyToken:
+	case types.PollVerifyTx:
+		pendingKey = []byte(pendingTxPrefix + txID)
+		verifiedKey = []byte(verifiedTxPrefix + txID)
+	}
+
+	bz := ctx.KVStore(k.storeKey).Get(pendingKey)
 	if bz == nil {
-		return fmt.Errorf("tx %s not found", txID)
+		k.Logger(ctx).Debug(fmt.Sprintf("tx %s not found", txID))
+		return
 	}
 	if verified {
-		ctx.KVStore(k.storeKey).Set([]byte(txPrefix+txID), bz)
+		ctx.KVStore(k.storeKey).Set(verifiedKey, bz)
 	}
-	ctx.KVStore(k.storeKey).Delete([]byte(pendingPrefix + txID))
-	return nil
+	ctx.KVStore(k.storeKey).Delete(pendingKey)
+	return
 }
 
 // AssembleEthTx sets a signature for a previously stored raw transaction
