@@ -330,7 +330,7 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
 
-	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.TxID.String()}
+	poll := vote.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.TxID.String()}
 	if err := v.InitPoll(ctx, poll); err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}

@@ -33,9 +33,10 @@ const (
 )
 
 var (
-	sender   = sdk.AccAddress(testutils.RandString(int(testutils.RandIntBetween(5, 20))))
-	tokenBC  = testutils.RandBytes(64)
-	burnerBC = testutils.RandBytes(64)
+	sender      = sdk.AccAddress(testutils.RandString(int(testutils.RandIntBetween(5, 20))))
+	tokenBC     = testutils.RandBytes(64)
+	burnerBC    = testutils.RandBytes(64)
+	transferSig = testutils.RandBytes(64)
 )
 
 func TestLink_NoSymbolSet(t *testing.T) {
@@ -394,7 +395,7 @@ func newKeeper(ctx sdk.Context, confHeight int64) keeper.Keeper {
 	cdc := testutils.Codec()
 	subspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
 	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"), subspace)
-	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(confHeight), Token: tokenBC, Burnable: burnerBC})
+	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(confHeight), Token: tokenBC, Burnable: burnerBC, TransferSig: transferSig})
 	return k
 }
 
