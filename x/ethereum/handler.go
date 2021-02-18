@@ -183,8 +183,11 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v 
 	 Anyone not able to verify the transaction will automatically record a negative vote,
 	 but only validators will later send out that vote.
 	*/
-
-	if _, err := verifyTx(ctx, k, rpc, tx.Hash()); err != nil {
+	receipt, err := rpc.TransactionReceipt(context.Background(), tx.Hash())
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "could not retrieve Ethereum receipt")
+	}
+	if err = verifyTx(ctx, k, rpc, receipt); err != nil {
 		k.Logger(ctx).Debug(sdkerrors.Wrapf(err, "expected transaction (%s) could not be verified", txID).Error())
 		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
 		return &sdk.Result{
@@ -351,7 +354,11 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 	}
 	k.SetUnverifiedErc20TokenDeploy(ctx, &deploy)
 
-	receipt, err := verifyTx(ctx, k, rpc, msg.TxID)
+	receipt, err := rpc.TransactionReceipt(context.Background(), msg.TxID)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "could not retrieve Ethereum receipt")
+	}
+	err = verifyTx(ctx, k, rpc, receipt)
 	if err != nil {
 		k.Logger(ctx).Debug(sdkerrors.Wrapf(err, "transaction '%s' could not be verified", msg.TxID.String()).Error())
 
@@ -407,21 +414,17 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 	}, nil
 }
 
-func verifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, hash common.Hash) (*ethTypes.Receipt, error) {
-	receipt, err := rpc.TransactionReceipt(context.Background(), hash)
-	if err != nil {
-		return nil, sdkerrors.Wrap(err, "could not retrieve Ethereum receipt")
-	}
+func verifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, receipt *ethTypes.Receipt) error {
 
 	blockNumber, err := rpc.BlockNumber(context.Background())
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "could not retrieve Ethereum block number")
+		return sdkerrors.Wrap(err, "could not retrieve Ethereum block number")
 	}
 
 	if (blockNumber - receipt.BlockNumber.Uint64()) < k.GetRequiredConfirmationHeight(ctx) {
-		return nil, fmt.Errorf("not enough confirmations yet")
+		return fmt.Errorf("not enough confirmations yet")
 	}
-	return receipt, nil
+	return nil
 }
 
 func verifyERC20TokenDeploy(receipt *ethTypes.Receipt, transferSig common.Hash, symbol string, gatewayAddr, tokenAddr common.Address) error {
