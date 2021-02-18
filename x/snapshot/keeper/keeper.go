@@ -59,18 +59,19 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 func (k Keeper) TakeSnapshot(ctx sdk.Context) error {
 	s, ok := k.GetLatestSnapshot(ctx)
 
-	var round int64 = 0
-	if ok {
-		lockingPeriod := k.getLockingPeriod(ctx)
-		if s.Timestamp.Add(lockingPeriod).After(ctx.BlockTime()) {
-			return fmt.Errorf("not enough time has passed since last snapshot, need to wait %s longer",
-				s.Timestamp.Add(lockingPeriod).Sub(ctx.BlockTime()).String())
-		}
-
-		round = s.Round + 1
+	if !ok {
+		k.executeSnapshot(ctx, 0)
+		k.setLatestRound(ctx, 0)
 	}
-	k.executeSnapshot(ctx, round)
-	k.setLatestRound(ctx, round)
+
+	lockingPeriod := k.getLockingPeriod(ctx)
+	if s.Timestamp.Add(lockingPeriod).After(ctx.BlockTime()) {
+		return fmt.Errorf("not enough time has passed since last snapshot, need to wait %s longer",
+			s.Timestamp.Add(lockingPeriod).Sub(ctx.BlockTime()).String())
+	}
+
+	k.executeSnapshot(ctx, s.Round+1)
+	k.setLatestRound(ctx, s.Round+1)
 	return nil
 }
 
@@ -84,9 +85,7 @@ func (k Keeper) getLockingPeriod(ctx sdk.Context) time.Duration {
 func (k Keeper) GetLatestSnapshot(ctx sdk.Context) (exported.Snapshot, bool) {
 	r := k.GetLatestRound(ctx)
 	if r == -1 {
-
 		return exported.Snapshot{}, false
-
 	}
 
 	return k.GetSnapshot(ctx, r)
