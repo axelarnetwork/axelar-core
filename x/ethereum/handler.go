@@ -12,10 +12,11 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -45,15 +46,22 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 }
 
 func handleMsgLink(ctx sdk.Context, k keeper.Keeper, b types.Balancer, msg types.MsgLink) (*sdk.Result, error) {
-	burnerAddr, salt, err := k.GetBurnerAddressAndSalt(ctx, msg.Symbol, msg.Recipient.Address, common.HexToAddress(msg.GatewayAddr))
+	burnerAddr, salt, err := k.GetBurnerAddressAndSalt(ctx, msg.Symbol, msg.RecipientAddr, common.HexToAddress(msg.GatewayAddr))
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
 
-	err = b.LinkAddresses(ctx, balance.CrossChainAddress{Chain: balance.Ethereum, Address: burnerAddr.String()}, msg.Recipient)
-	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+	senderChain, ok := b.GetChain(ctx, exported.Ethereum.Name)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrEthereum, "%s is not a registered chain", exported.Ethereum.Name)
 	}
+	recipientChain, ok := b.GetChain(ctx, msg.RecipientChain)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, "unknown recipient chain")
+	}
+	b.LinkAddresses(ctx,
+		balance.CrossChainAddress{Chain: senderChain, Address: burnerAddr.String()},
+		balance.CrossChainAddress{Chain: recipientChain, Address: msg.RecipientAddr})
 
 	burnerInfo := types.BurnerInfo{
 		Symbol: msg.Symbol,
@@ -61,7 +69,7 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, b types.Balancer, msg types
 	}
 	k.SetBurnerInfo(ctx, burnerAddr, &burnerInfo)
 
-	logMsg := fmt.Sprintf("successfully linked {%s} and {%s}", burnerAddr.String(), msg.Recipient.String())
+	logMsg := fmt.Sprintf("successfully linked {%s} and {%s}", burnerAddr.String(), msg.RecipientAddr)
 	k.Logger(ctx).Info(logMsg)
 
 	ctx.EventManager().EmitEvent(
@@ -70,7 +78,7 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, b types.Balancer, msg types
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
 			sdk.NewAttribute(types.AttributeAddress, burnerAddr.String()),
-			sdk.NewAttribute(types.AttributeAddress, msg.Recipient.String()),
+			sdk.NewAttribute(types.AttributeAddress, msg.RecipientAddr),
 		),
 	)
 
@@ -82,12 +90,12 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, b types.Balancer, msg types
 }
 
 func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap snapshot.Snapshotter, balancer types.Balancer, msg types.MsgSignPendingTransfers) (*sdk.Result, error) {
-	pendingTransfers := balancer.GetPendingTransfersForChain(ctx, balance.Ethereum)
+	pendingTransfers := balancer.GetPendingTransfersForChain(ctx, exported.Ethereum)
 
 	if len(pendingTransfers) == 0 {
 		return &sdk.Result{
 			Data:   nil,
-			Log:    fmt.Sprintf("no pending transfer for chain %s found", balance.Ethereum),
+			Log:    fmt.Sprintf("no pending transfer for chain %s found", exported.Ethereum.Name),
 			Events: ctx.EventManager().Events(),
 		}, nil
 	}
@@ -102,9 +110,9 @@ func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer ty
 	var commandID types.CommandID
 	copy(commandID[:], crypto.Keccak256(data)[:32])
 
-	keyID, ok := signer.GetCurrentMasterKeyID(ctx, balance.Ethereum)
+	keyID, ok := signer.GetCurrentMasterKeyID(ctx, exported.Ethereum)
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no master key for chain %s found", balance.Ethereum)
+		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no master key for chain %s found", exported.Ethereum.Name)
 	}
 
 	s, ok := snap.GetLatestSnapshot(ctx)
@@ -116,7 +124,7 @@ func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer ty
 	k.Logger(ctx).Info(fmt.Sprintf("storing data for mint command %s", commandIDHex))
 	k.SetCommandData(ctx, commandID, data)
 
-	k.Logger(ctx).Info(fmt.Sprintf("signing mint command [%s] for pending transfers to chain %s", commandIDHex, balance.Ethereum))
+	k.Logger(ctx).Info(fmt.Sprintf("signing mint command [%s] for pending transfers to chain %s", commandIDHex, exported.Ethereum.Name))
 	signHash := types.GetEthereumSignHash(data)
 
 	err = signer.StartSign(ctx, keyID, commandIDHex, signHash.Bytes(), s.Validators)
@@ -135,7 +143,7 @@ func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer ty
 
 	return &sdk.Result{
 		Data:   commandID[:],
-		Log:    fmt.Sprintf("successfully started signing protocol for %s pending transfers, commandID: %s", balance.Ethereum, commandIDHex),
+		Log:    fmt.Sprintf("successfully started signing protocol for %s pending transfers, commandID: %s", exported.Ethereum.Name, commandIDHex),
 		Events: ctx.EventManager().Events(),
 	}, nil
 }
@@ -145,7 +153,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v 
 	tx := msg.UnmarshaledTx()
 	txID := tx.Hash().String()
 
-	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: txID}
+	poll := vote.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: txID}
 	if err := v.InitPoll(ctx, poll); err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
@@ -239,9 +247,9 @@ func handleMsgSignDeployToken(ctx sdk.Context, k keeper.Keeper, signer types.Sig
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
 
-	keyID, ok := signer.GetCurrentMasterKeyID(ctx, balance.Ethereum)
+	keyID, ok := signer.GetCurrentMasterKeyID(ctx, exported.Ethereum)
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no master key for chain %s found", balance.Ethereum)
+		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no master key for chain %s found", exported.Ethereum.Name)
 	}
 
 	s, ok := snap.GetLatestSnapshot(ctx)
@@ -298,9 +306,9 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 		),
 	)
 
-	keyID, ok := signer.GetCurrentMasterKeyID(ctx, balance.Ethereum)
+	keyID, ok := signer.GetCurrentMasterKeyID(ctx, exported.Ethereum)
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no master key for chain %s found", balance.Ethereum)
+		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no master key for chain %s found", exported.Ethereum.Name)
 	}
 
 	s, ok := snap.GetLatestSnapshot(ctx)

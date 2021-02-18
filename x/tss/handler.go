@@ -14,7 +14,8 @@ import (
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-func NewHandler(k keeper.Keeper, s types.Snapshotter, v types.Voter) sdk.Handler {
+// NewHandler returns the handler for the tss module
+func NewHandler(k keeper.Keeper, s types.Snapshotter, b types.Balancer, v types.Voter) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
@@ -25,9 +26,9 @@ func NewHandler(k keeper.Keeper, s types.Snapshotter, v types.Voter) sdk.Handler
 		case types.MsgKeygenStart:
 			return handleMsgKeygenStart(ctx, k, s, v, msg)
 		case types.MsgAssignNextMasterKey:
-			return handleMsgAssignNextMasterKey(ctx, k, s, msg)
+			return handleMsgAssignNextMasterKey(ctx, k, s, b, msg)
 		case types.MsgRotateMasterKey:
-			return handleMsgRotateMasterKey(ctx, k, msg)
+			return handleMsgRotateMasterKey(ctx, k, b, msg)
 		case *types.MsgVotePubKey:
 			return handleMsgVotePubKey(ctx, k, v, *msg)
 		case *types.MsgVoteSig:
@@ -39,8 +40,13 @@ func NewHandler(k keeper.Keeper, s types.Snapshotter, v types.Voter) sdk.Handler
 	}
 }
 
-func handleMsgRotateMasterKey(ctx sdk.Context, k keeper.Keeper, msg types.MsgRotateMasterKey) (*sdk.Result, error) {
-	if err := k.RotateMasterKey(ctx, msg.Chain); err != nil {
+func handleMsgRotateMasterKey(ctx sdk.Context, k keeper.Keeper, b types.Balancer, msg types.MsgRotateMasterKey) (*sdk.Result, error) {
+	chain, ok := b.GetChain(ctx, msg.Chain)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrTss, "unknown chain")
+	}
+
+	if err := k.RotateMasterKey(ctx, chain); err != nil {
 		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
 	}
 
@@ -49,7 +55,7 @@ func handleMsgRotateMasterKey(ctx sdk.Context, k keeper.Keeper, msg types.MsgRot
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeChain, msg.Chain.String()),
+			sdk.NewAttribute(types.AttributeChain, chain.Name),
 		),
 	)
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
@@ -139,13 +145,16 @@ func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg ty
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func handleMsgAssignNextMasterKey(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, msg types.MsgAssignNextMasterKey) (*sdk.Result, error) {
+func handleMsgAssignNextMasterKey(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, b types.Balancer, msg types.MsgAssignNextMasterKey) (*sdk.Result, error) {
 	snapshot, ok := s.GetLatestSnapshot(ctx)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrTss, "key refresh failed")
 	}
-
-	err := k.AssignNextMasterKey(ctx, msg.Chain, snapshot.Height, msg.KeyID)
+	chain, ok := b.GetChain(ctx, msg.Chain)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrTss, "unknown chain")
+	}
+	err := k.AssignNextMasterKey(ctx, chain, snapshot.Height, msg.KeyID)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
 	}

@@ -6,8 +6,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
+	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	bitcoinTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	ethereumTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
 
 	"github.com/tendermint/tendermint/libs/cli"
@@ -34,11 +35,6 @@ func SetGenesisNetworkCmd(
 			chainStr := args[0]
 			networkStr := args[1]
 
-			chain := balance.ChainFromString(chainStr)
-			if err := chain.Validate(); err != nil {
-				return err
-			}
-
 			genFile := config.GenesisFile()
 			appState, genDoc, err := genutil.GenesisStateFromGenFile(cdc, genFile)
 			if err != nil {
@@ -48,8 +44,8 @@ func SetGenesisNetworkCmd(
 			var genesisStateBz []byte
 			var moduleName string
 
-			switch chain {
-			case balance.Bitcoin:
+			switch chainStr {
+			case btc.Bitcoin.Name:
 				network, err := bitcoinTypes.NetworkFromStr(networkStr)
 				if err != nil {
 					return err
@@ -64,7 +60,7 @@ func SetGenesisNetworkCmd(
 				}
 
 				moduleName = bitcoinTypes.ModuleName
-			case balance.Ethereum:
+			case eth.Ethereum.Name:
 				network, err := ethereumTypes.NetworkFromStr(networkStr)
 				if err != nil {
 					return err
@@ -80,7 +76,7 @@ func SetGenesisNetworkCmd(
 
 				moduleName = ethereumTypes.ModuleName
 			default:
-				return fmt.Errorf("unknown chain: %s", chain.String())
+				return fmt.Errorf("unknown chain: %s", chainStr)
 			}
 
 			appState[moduleName] = genesisStateBz

@@ -38,10 +38,11 @@ type Signer interface {
 
 // Balancer provides functionality to manage cross-chain transfers
 type Balancer interface {
-	LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error
+	LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress)
 	GetRecipient(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool)
 	EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error
 	GetPendingTransfersForChain(ctx sdk.Context, chain exported.Chain) []exported.CrossChainTransfer
 	GetArchivedTransfersForChain(ctx sdk.Context, chain exported.Chain) []exported.CrossChainTransfer
 	ArchivePendingTransfer(ctx sdk.Context, transfer exported.CrossChainTransfer)
+	GetChain(ctx sdk.Context, chain string) (exported.Chain, bool)
 }

@@ -14,6 +14,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
 
@@ -34,7 +35,7 @@ func NewQuerier(k Keeper, s types.Signer, b types.Balancer, rpc types.RPCClient)
 		var err error
 		switch path[0] {
 		case QueryDepositAddress:
-			res, err = queryDepositAddress(ctx, k, s, req.Data)
+			res, err = queryDepositAddress(ctx, k, s, b, req.Data)
 		case QueryConsolidationAddress:
 			return queryConsolidationAddress(ctx, k, b, s, path[1])
 		case QueryOutInfo:
@@ -60,18 +61,26 @@ func NewQuerier(k Keeper, s types.Signer, b types.Balancer, rpc types.RPCClient)
 	}
 }
 
-func queryDepositAddress(ctx sdk.Context, k Keeper, s types.Signer, data []byte) ([]byte, error) {
-	var recipient balance.CrossChainAddress
-	if err := types.ModuleCdc.UnmarshalJSON(data, &recipient); err != nil {
+func queryDepositAddress(ctx sdk.Context, k Keeper, s types.Signer, b types.Balancer, data []byte) ([]byte, error) {
+	var params types.DepositQueryParams
+	if err := types.ModuleCdc.UnmarshalJSON(data, &params); err != nil {
 		return nil, fmt.Errorf("could not parse the recipient")
 	}
 
-	pk, ok := s.GetCurrentMasterKey(ctx, balance.Bitcoin)
+	pk, ok := s.GetCurrentMasterKey(ctx, exported.Bitcoin)
 	if !ok {
 		return nil, fmt.Errorf("key not found")
 	}
 
-	addr, _, err := k.GenerateDepositAddressAndRedeemScript(ctx, btcec.PublicKey(pk), recipient)
+	chain, ok := b.GetChain(ctx, params.Chain)
+	if !ok {
+		return nil, fmt.Errorf("recipient chain not found")
+	}
+
+	addr, _, err := k.GenerateDepositAddressAndRedeemScript(ctx, btcec.PublicKey(pk), balance.CrossChainAddress{
+		Chain:   chain,
+		Address: params.Address,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -80,12 +89,12 @@ func queryDepositAddress(ctx sdk.Context, k Keeper, s types.Signer, data []byte)
 }
 
 func queryConsolidationAddress(ctx sdk.Context, k Keeper, b types.Balancer, s types.Signer, currAddr string) ([]byte, error) {
-	recipient, ok := b.GetRecipient(ctx, balance.CrossChainAddress{Chain: balance.Bitcoin, Address: currAddr})
+	recipient, ok := b.GetRecipient(ctx, balance.CrossChainAddress{Chain: exported.Bitcoin, Address: currAddr})
 	if !ok {
 		return nil, fmt.Errorf("the current address is not linked to any cross-chain recipient")
 	}
 
-	pk, ok := s.GetNextMasterKey(ctx, balance.Bitcoin)
+	pk, ok := s.GetNextMasterKey(ctx, exported.Bitcoin)
 	if !ok {
 		return nil, fmt.Errorf("key not found")
 	}

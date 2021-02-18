@@ -11,10 +11,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authUtils "github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 
-	"github.com/axelarnetwork/axelar-core/utils/denom"
-	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
-
 	"github.com/spf13/cobra"
+
+	"github.com/axelarnetwork/axelar-core/utils/denom"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
@@ -107,14 +106,7 @@ func GetCmdLink(cdc *codec.Codec) *cobra.Command {
 
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
 
-			chain := balance.ChainFromString(args[0])
-			address := balance.CrossChainAddress{Chain: chain, Address: args[1]}
-
-			if err := address.Validate(); err != nil {
-				return err
-			}
-
-			msg := types.MsgLink{Sender: cliCtx.GetFromAddress(), Recipient: address}
+			msg := types.MsgLink{Sender: cliCtx.GetFromAddress(), RecipientAddr: args[1], RecipientChain: args[0]}
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

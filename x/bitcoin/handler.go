@@ -13,9 +13,10 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils/denom"
 	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // NewHandler creates an sdk.Handler for all bitcoin type messages
@@ -49,27 +50,29 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, signer type
 }
 
 func handleMsgLink(ctx sdk.Context, k keeper.Keeper, s types.Signer, b types.Balancer, msg types.MsgLink) (*sdk.Result, error) {
-	key, ok := s.GetCurrentMasterKey(ctx, balance.Bitcoin)
+	key, ok := s.GetCurrentMasterKey(ctx, exported.Bitcoin)
 	if !ok {
 		return nil, fmt.Errorf("master key not set")
 	}
 
-	keyID, ok := s.GetCurrentMasterKeyID(ctx, balance.Bitcoin)
+	keyID, ok := s.GetCurrentMasterKeyID(ctx, exported.Bitcoin)
 	if !ok {
 		return nil, fmt.Errorf("master key not set")
 	}
 
-	btcAddr, err := k.CreateDepositAddress(ctx, msg.Recipient, keyID, btcec.PublicKey(key))
+	rcpChain, ok := b.GetChain(ctx, msg.RecipientChain)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrBitcoin, "unknown recipient chain")
+	}
+	recipient := balance.CrossChainAddress{Chain: rcpChain, Address: msg.RecipientAddr}
+	btcAddr, err := k.CreateDepositAddress(ctx, recipient, keyID, btcec.PublicKey(key))
 	if err != nil {
 		return nil, err
 	}
 
-	err = b.LinkAddresses(ctx, balance.CrossChainAddress{Chain: balance.Bitcoin, Address: btcAddr.EncodeAddress()}, msg.Recipient)
-	if err != nil {
-		return nil, err
-	}
+	b.LinkAddresses(ctx, balance.CrossChainAddress{Chain: exported.Bitcoin, Address: btcAddr.EncodeAddress()}, recipient)
 
-	logMsg := fmt.Sprintf("successfully linked {%s} and {%s}", btcAddr.EncodeAddress(), msg.Recipient.String())
+	logMsg := fmt.Sprintf("successfully linked {%s} and {%s}", btcAddr.EncodeAddress(), msg.RecipientAddr)
 	k.Logger(ctx).Info(logMsg)
 
 	ctx.EventManager().EmitEvent(
@@ -78,7 +81,7 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, s types.Signer, b types.Bal
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
 			sdk.NewAttribute(types.AttributeAddress, btcAddr.String()),
-			sdk.NewAttribute(types.AttributeAddress, msg.Recipient.String()),
+			sdk.NewAttribute(types.AttributeAddress, msg.RecipientAddr),
 		),
 	)
 
@@ -93,7 +96,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 	k.Logger(ctx).Debug("verifying bitcoin transaction")
 
 	txID := msg.OutPointInfo.OutPoint.Hash.String()
-	poll := exported.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.OutPointInfo.OutPoint.String()}
+	poll := vote.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.OutPointInfo.OutPoint.String()}
 	if err := v.InitPoll(ctx, poll); err != nil {
 		return nil, err
 	}
@@ -175,13 +178,13 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, b 
 		}
 		k.SetKeyIDByOutpoint(ctx, outPoint, id)
 
-		depositAddr := balance.CrossChainAddress{Address: info.Address, Chain: balance.Bitcoin}
+		depositAddr := balance.CrossChainAddress{Address: info.Address, Chain: exported.Bitcoin}
 		amount := sdk.NewInt64Coin(denom.Satoshi, int64(info.Amount))
 		err = b.EnqueueForTransfer(ctx, depositAddr, amount)
 
 		if err == nil {
 			k.Logger(ctx).Debug(fmt.Sprintf("Transfer of %s from %s in %s successfully prepared",
-				amount.Amount.String(), depositAddr.Address, depositAddr.Chain.String()))
+				amount.Amount.String(), depositAddr.Address, depositAddr.Chain.Name))
 		} else {
 			k.Logger(ctx).Debug(fmt.Sprintf("prepared no transfer: %s", err))
 		}
@@ -214,11 +217,11 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 }
 
 func handleMsgSignPendingTransfers(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap types.Snapshotter, balancer types.Balancer, msg types.MsgSignPendingTransfers) (*sdk.Result, error) {
-	pendingTransfers := balancer.GetPendingTransfersForChain(ctx, balance.Bitcoin)
+	pendingTransfers := balancer.GetPendingTransfersForChain(ctx, exported.Bitcoin)
 
 	if len(pendingTransfers) == 0 {
 		return &sdk.Result{
-			Log:    fmt.Sprintf("no pending transfer for chain %s found", balance.Bitcoin),
+			Log:    fmt.Sprintf("no pending transfer for chain %s found", exported.Bitcoin.Name),
 			Events: ctx.EventManager().Events(),
 		}, nil
 	}
@@ -269,7 +272,7 @@ func handleMsgSignPendingTransfers(ctx sdk.Context, k keeper.Keeper, signer type
 			return nil, fmt.Errorf("the calculated change is too large for a single transaction")
 		}
 
-		pk, ok := signer.GetCurrentMasterKey(ctx, balance.Bitcoin)
+		pk, ok := signer.GetCurrentMasterKey(ctx, exported.Bitcoin)
 		if !ok {
 			return nil, fmt.Errorf("key not found")
 		}
@@ -321,7 +324,7 @@ func startSignInputs(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 
 		keyID, ok := k.GetKeyIDByOutpoint(ctx, &tx.TxIn[i].PreviousOutPoint)
 		if !ok {
-			return fmt.Errorf("no key ID for chain %s found", balance.Bitcoin)
+			return fmt.Errorf("no key ID for chain %s found", exported.Bitcoin.Name)
 		}
 
 		round, ok := signer.GetSnapshotRoundForKeyID(ctx, keyID)

@@ -4,7 +4,8 @@ import (
 	"crypto/ecdsa"
 	"testing"
 
-	"github.com/axelarnetwork/axelar-core/x/balance/exported"
+	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
+
 	tssd "github.com/axelarnetwork/tssd/pb"
 	"github.com/stretchr/testify/assert"
 
@@ -55,7 +56,7 @@ func TestKeeper_AssignNextMasterKey_StartKeygenDuringLockingPeriod_Locked(t *tes
 		ctx = ctx.WithBlockHeight(ctx.BlockHeight() + testutils.RandIntBetween(0, 2*lockingPeriod))
 
 		s.Keeper.SetKey(ctx, keyID, <-res)
-		chain := exported.Chain(testutils.RandIntBetween(0, 10))
+		chain := eth.Ethereum
 
 		assert.Errorf(
 			t,
@@ -89,7 +90,7 @@ func TestKeeper_AssignNextMasterKey_StartKeygenAfterLockingPeriod_Unlocked(t *te
 		ctx = ctx.WithBlockHeight(ctx.BlockHeight() + testutils.RandIntBetween(0, 2*lockingPeriod))
 
 		s.Keeper.SetKey(ctx, keyID, <-res)
-		chain := exported.Chain(testutils.RandIntBetween(0, 10))
+		chain := eth.Ethereum
 
 		assert.NoError(t, s.Keeper.AssignNextMasterKey(ctx, chain, snapshotHeight, keyID))
 	}
@@ -103,7 +104,7 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_NewKeyIsSet(t *testing.T) {
 	assert.GreaterOrEqual(t, currHeight, snapshotHeight+lockingPeriod)
 
 	for i := 0; i < 100; i++ {
-		chain := exported.Chain(testutils.RandIntBetween(0, 10))
+		chain := eth.Ethereum
 		s := setup(t)
 		ctx := s.Ctx.WithBlockHeight(currHeight)
 		s.SetLockingPeriod(lockingPeriod)
@@ -120,7 +121,7 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_NewKeyIsSet(t *testing.T) {
 
 func TestKeeper_AssignNextMasterKey_RotateMasterKey_MultipleTimes_PreviousKeysStillAvailable(t *testing.T) {
 	for i := 0; i < 100; i++ {
-		chain := exported.Chain(testutils.RandIntBetween(0, 10))
+		chain := eth.Ethereum
 		s := setup(t)
 		s.SetLockingPeriod(0)
 		ctx := s.Ctx

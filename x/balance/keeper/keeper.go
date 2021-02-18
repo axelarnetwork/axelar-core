@@ -15,7 +15,7 @@ import (
 
 const (
 	senderPrefix   = "send_"
-	infoPrefix     = "info_"
+	chainPrefix    = "chain_"
 	pendingPrefix  = "pend_"
 	archivedPrefix = "arch_"
 	totalPrefix    = "total_"
@@ -46,8 +46,8 @@ func (k Keeper) SetParams(ctx sdk.Context, p types.Params) {
 
 	// By copying this data to the KV store, we avoid having to iterate across all element
 	// in the parameters table when a caller needs to fetch information from it
-	for _, info := range p.ChainsAssetInfo {
-		k.SetChainAssetInfo(ctx, info)
+	for _, chain := range p.Chains {
+		k.SetChain(ctx, chain)
 	}
 }
 
@@ -58,40 +58,32 @@ func (k Keeper) GetParams(ctx sdk.Context) types.Params {
 	return p
 }
 
-// GetChainAssetInfo retrieves the specification for a chain's assets
-func (k Keeper) GetChainAssetInfo(ctx sdk.Context, chain exported.Chain) (info types.ChainAssetInfo, found bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(infoPrefix + chain.String()))
+// GetChain retrieves the specification for a supported blockchain
+func (k Keeper) GetChain(ctx sdk.Context, chainName string) (exported.Chain, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(chainPrefix + chainName))
 	if bz == nil {
-		return
+		return exported.Chain{}, false
 	}
 
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &info)
-	found = true
+	var chain exported.Chain
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &chain)
 
-	return
+	return chain, true
 }
 
-// SetChainAssetInfo sets the specification for a chain's assets
-func (k Keeper) SetChainAssetInfo(ctx sdk.Context, info types.ChainAssetInfo) {
-	ctx.KVStore(k.storeKey).Set([]byte(infoPrefix+info.Chain.String()), k.cdc.MustMarshalBinaryLengthPrefixed(info))
+// SetChain sets the specification for a supported chain
+func (k Keeper) SetChain(ctx sdk.Context, chain exported.Chain) {
+	ctx.KVStore(k.storeKey).Set([]byte(chainPrefix+chain.Name), k.cdc.MustMarshalBinaryLengthPrefixed(chain))
 }
 
-// LinkAddresses links a sender address to a crosschain recipient address
-func (k Keeper) LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error {
-	if _, ok := k.GetChainAssetInfo(ctx, sender.Chain); !ok {
-		return fmt.Errorf("no chain asset info available for sender %s", sender.String())
-	}
-	if _, ok := k.GetChainAssetInfo(ctx, recipient.Chain); !ok {
-		return fmt.Errorf("no chain asset info available for recipient %s", recipient.String())
-	}
-
-	ctx.KVStore(k.storeKey).Set([]byte(marshalCrossChainAddress(sender)), k.cdc.MustMarshalBinaryLengthPrefixed(recipient))
-	return nil
+// LinkAddresses links a sender address to a cross-chain recipient address
+func (k Keeper) LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) {
+	ctx.KVStore(k.storeKey).Set([]byte(senderPrefix+sender.String()), k.cdc.MustMarshalBinaryLengthPrefixed(recipient))
 }
 
 // GetRecipient retrieves the cross chain recipient associated to the specified sender
 func (k Keeper) GetRecipient(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(marshalCrossChainAddress(sender)))
+	bz := ctx.KVStore(k.storeKey).Get([]byte(senderPrefix + sender.String()))
 	if bz == nil {
 		return exported.CrossChainAddress{}, false
 	}
@@ -103,16 +95,12 @@ func (k Keeper) GetRecipient(ctx sdk.Context, sender exported.CrossChainAddress)
 
 // EnqueueForTransfer appoints the amount of tokens to be transfered/minted to the recipient previously linked to the specified sender
 func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, asset sdk.Coin) error {
-	infoSender, ok := k.GetChainAssetInfo(ctx, sender.Chain)
-	if !ok {
-		return fmt.Errorf("no chain asset info available for sender %s", sender.String())
-	}
-	if !infoSender.SupportsForeignAssets && infoSender.NativeAsset != asset.Denom {
-		return fmt.Errorf("sender's chain %s does not support foreign assets", sender.Chain.String())
+	if !sender.Chain.SupportsForeignAssets && sender.Chain.NativeAsset != asset.Denom {
+		return fmt.Errorf("sender's chain %s does not support foreign assets", sender.Chain.Name)
 	}
 
-	if infoSender.NativeAsset != asset.Denom && !k.getChainTotal(ctx, sender.Chain, asset.Denom).IsGTE(asset) {
-		return fmt.Errorf("not enough funds available for asset '%s' in chain %s", asset.Denom, sender.Chain)
+	if sender.Chain.NativeAsset != asset.Denom && k.getChainTotal(ctx, sender.Chain, asset.Denom).IsLT(asset) {
+		return fmt.Errorf("not enough funds available for asset '%s' in chain %s", asset.Denom, sender.Chain.Name)
 	}
 
 	recipient, ok := k.GetRecipient(ctx, sender)
@@ -120,17 +108,16 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 		return fmt.Errorf("no recipient linked to sender %s", sender.String())
 	}
 
-	infoRecipient, _ := k.GetChainAssetInfo(ctx, recipient.Chain)
-	if !infoRecipient.SupportsForeignAssets && infoRecipient.NativeAsset != asset.Denom {
-		return fmt.Errorf("recipient's chain %s does not support foreign assets", recipient.Chain.String())
+	if !recipient.Chain.SupportsForeignAssets && recipient.Chain.NativeAsset != asset.Denom {
+		return fmt.Errorf("recipient's chain %s does not support foreign assets", recipient.Chain.Name)
 	}
 
-	if infoSender.NativeAsset != asset.Denom {
-		k.subChainTotal(ctx, sender.Chain, asset)
+	if sender.Chain.NativeAsset != asset.Denom {
+		k.subtractFromChainTotal(ctx, sender.Chain, asset)
 	}
 	k.setPendingTransfer(ctx, recipient, asset)
 	k.Logger(ctx).Info(fmt.Sprintf("Transfer of %s to cross chain address %s in %s successfully prepared",
-		asset.Amount.String(), recipient.Address, recipient.Chain.String()))
+		asset.Amount.String(), recipient.Address, recipient.Chain.Name))
 
 	return nil
 }
@@ -159,14 +146,14 @@ func (k Keeper) ArchivePendingTransfer(ctx sdk.Context, transfer exported.CrossC
 	// Update the total balance for the chain if it is a foreign asset
 	var t exported.CrossChainTransfer
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &t)
-	info, _ := k.GetChainAssetInfo(ctx, t.Recipient.Chain)
+	info, _ := k.GetChain(ctx, t.Recipient.Chain.Name)
 	if info.NativeAsset != t.Asset.Denom {
-		k.addChainTotal(ctx, t.Recipient.Chain, t.Asset)
+		k.addToChainTotal(ctx, t.Recipient.Chain, t.Asset)
 	}
 }
 
 func (k Keeper) getChainTotal(ctx sdk.Context, chain exported.Chain, denom string) sdk.Coin {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(totalPrefix + chain.String() + "_" + denom))
+	bz := ctx.KVStore(k.storeKey).Get([]byte(totalPrefix + chain.Name + "_" + denom))
 	if bz == nil {
 		return sdk.NewCoin(denom, sdk.ZeroInt())
 	}
@@ -176,18 +163,18 @@ func (k Keeper) getChainTotal(ctx sdk.Context, chain exported.Chain, denom strin
 	return total
 }
 
-func (k Keeper) addChainTotal(ctx sdk.Context, chain exported.Chain, amount sdk.Coin) {
+func (k Keeper) addToChainTotal(ctx sdk.Context, chain exported.Chain, amount sdk.Coin) {
 	total := k.getChainTotal(ctx, chain, amount.Denom)
 	total = total.Add(amount)
 
-	ctx.KVStore(k.storeKey).Set([]byte(totalPrefix+chain.String()+"_"+amount.Denom), k.cdc.MustMarshalBinaryLengthPrefixed(total))
+	ctx.KVStore(k.storeKey).Set([]byte(totalPrefix+chain.Name+"_"+amount.Denom), k.cdc.MustMarshalBinaryLengthPrefixed(total))
 }
 
-func (k Keeper) subChainTotal(ctx sdk.Context, chain exported.Chain, withdrawal sdk.Coin) {
+func (k Keeper) subtractFromChainTotal(ctx sdk.Context, chain exported.Chain, withdrawal sdk.Coin) {
 	total := k.getChainTotal(ctx, chain, withdrawal.Denom)
 	total = total.Sub(withdrawal)
 
-	ctx.KVStore(k.storeKey).Set([]byte(totalPrefix+chain.String()+"_"+withdrawal.Denom), k.cdc.MustMarshalBinaryLengthPrefixed(total))
+	ctx.KVStore(k.storeKey).Set([]byte(totalPrefix+chain.Name+"_"+withdrawal.Denom), k.cdc.MustMarshalBinaryLengthPrefixed(total))
 }
 
 func (k Keeper) setPendingTransfer(ctx sdk.Context, recipient exported.CrossChainAddress, amount sdk.Coin) {
@@ -209,7 +196,7 @@ func (k Keeper) setPendingTransfer(ctx sdk.Context, recipient exported.CrossChai
 
 func (k Keeper) getAddresses(ctx sdk.Context, getType string, chain exported.Chain) []exported.CrossChainTransfer {
 	transfers := make([]exported.CrossChainTransfer, 0)
-	prefix := []byte(getType + chain.String() + "_")
+	prefix := []byte(getType + chain.Name + "_")
 
 	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), prefix)
 	for ; iter.Valid(); iter.Next() {
@@ -222,10 +209,6 @@ func (k Keeper) getAddresses(ctx sdk.Context, getType string, chain exported.Cha
 	return transfers
 }
 
-func marshalCrossChainAddress(addr exported.CrossChainAddress) string {
-	return senderPrefix + addr.Chain.String() + "_" + addr.Address
-}
-
 func marshalCrossChainKey(chain exported.Chain, sequence uint64) string {
-	return fmt.Sprintf("%s_%d", chain.String(), sequence)
+	return fmt.Sprintf("%s_%d", chain.Name, sequence)
 }

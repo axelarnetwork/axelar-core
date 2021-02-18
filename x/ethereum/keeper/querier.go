@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -46,7 +46,7 @@ func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer) sdk.Querier {
 
 func queryMasterAddress(ctx sdk.Context, s types.Signer) ([]byte, error) {
 
-	pk, ok := s.GetCurrentMasterKey(ctx, balance.Ethereum)
+	pk, ok := s.GetCurrentMasterKey(ctx, exported.Ethereum)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, "key not found")
 	}
@@ -184,7 +184,7 @@ func createTxAndSend(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Sig
 }
 
 func getContractOwner(ctx sdk.Context, s types.Signer) (common.Address, error) {
-	pk, ok := s.GetCurrentMasterKey(ctx, balance.Ethereum)
+	pk, ok := s.GetCurrentMasterKey(ctx, exported.Ethereum)
 	if !ok {
 		return common.Address{}, fmt.Errorf("key not found")
 	}

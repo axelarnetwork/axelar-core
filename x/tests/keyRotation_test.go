@@ -28,6 +28,8 @@ import (
 	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 	balanceKeeper "github.com/axelarnetwork/axelar-core/x/balance/keeper"
 	balanceTypes "github.com/axelarnetwork/axelar-core/x/balance/types"
+	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
+	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 
 	"github.com/axelarnetwork/axelar-core/store"
 	"github.com/axelarnetwork/axelar-core/testutils"
@@ -172,7 +174,7 @@ func TestKeyRotation(t *testing.T) {
 	// assign key as bitcoin master key
 	res = <-chain.Submit(tssTypes.MsgAssignNextMasterKey{
 		Sender: randomSender(),
-		Chain:  balance.Bitcoin,
+		Chain:  btc.Bitcoin.Name,
 		KeyID:  masterKeyID1,
 	})
 	assert.NoError(t, res.Error)
@@ -180,13 +182,13 @@ func TestKeyRotation(t *testing.T) {
 	// rotate to the first master key
 	res = <-chain.Submit(tssTypes.MsgRotateMasterKey{
 		Sender: randomSender(),
-		Chain:  balance.Bitcoin,
+		Chain:  btc.Bitcoin.Name,
 	})
 	assert.NoError(t, res.Error)
 
 	// get deposit address for ethereum transfer
-	ethAddr := balance.CrossChainAddress{Chain: balance.Ethereum, Address: testutils.RandStringBetween(5, 20)}
-	res = <-chain.Submit(btcTypes.NewMsgLink(randomSender(), ethAddr))
+	ethAddr := balance.CrossChainAddress{Chain: eth.Ethereum, Address: testutils.RandStringBetween(5, 20)}
+	res = <-chain.Submit(btcTypes.NewMsgLink(randomSender(), ethAddr.Address, ethAddr.Chain.Name))
 	assert.NoError(t, res.Error)
 	depositAddr := string(res.Data)
 
@@ -283,7 +285,7 @@ func TestKeyRotation(t *testing.T) {
 	// assign second key to be the second master key
 	res = <-chain.Submit(tssTypes.MsgAssignNextMasterKey{
 		Sender: randomSender(),
-		Chain:  balance.Bitcoin,
+		Chain:  btc.Bitcoin.Name,
 		KeyID:  keyID2,
 	})
 	assert.NoError(t, res.Error)
@@ -401,7 +403,7 @@ func TestKeyRotation(t *testing.T) {
 	// rotate master key to key 2
 	res = <-chain.Submit(tssTypes.MsgRotateMasterKey{
 		Sender: randomSender(),
-		Chain:  balance.Bitcoin,
+		Chain:  btc.Bitcoin.Name,
 	})
 	assert.NoError(t, res.Error)
 }
@@ -445,7 +447,7 @@ func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *f
 	broadcastHandler := broadcast.NewHandler(broadcaster)
 	btcHandler := bitcoin.NewHandler(bitcoinKeeper, voter, mocks.BTC, signer, snapKeeper, balancer)
 	snapHandler := snapshot.NewHandler(snapKeeper)
-	tssHandler := tss.NewHandler(signer, snapKeeper, voter)
+	tssHandler := tss.NewHandler(signer, snapKeeper, balancer, voter)
 	voteHandler := vote.NewHandler()
 
 	router = router.
