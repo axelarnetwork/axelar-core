@@ -66,7 +66,7 @@ func TestSnapshots(t *testing.T) {
 			_, ok := keeper.GetSnapshot(ctx, 0)
 
 			assert.False(t, ok)
-			assert.Equal(t, keeper.GetLatestRound(ctx), int64(-1))
+			assert.Equal(t, int64(-1), keeper.GetLatestRound(ctx))
 
 			_, ok = keeper.GetLatestSnapshot(ctx)
 
@@ -79,7 +79,7 @@ func TestSnapshots(t *testing.T) {
 			snapshot, ok := keeper.GetSnapshot(ctx, 0)
 
 			assert.True(t, ok)
-			assert.Equal(t, keeper.GetLatestRound(ctx), int64(0))
+			assert.Equal(t, int64(0), keeper.GetLatestRound(ctx))
 			for i, val := range validators {
 				assert.Equal(t, val.GetConsensusPower(), snapshot.Validators[i].GetConsensusPower())
 				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetOperator())

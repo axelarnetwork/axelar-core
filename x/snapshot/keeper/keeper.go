@@ -62,6 +62,7 @@ func (k Keeper) TakeSnapshot(ctx sdk.Context) error {
 	if !ok {
 		k.executeSnapshot(ctx, 0)
 		k.setLatestRound(ctx, 0)
+		return nil
 	}
 
 	lockingPeriod := k.getLockingPeriod(ctx)
