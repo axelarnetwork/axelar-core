@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 
@@ -364,7 +363,7 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 		k.Logger(ctx).Debug(sdkerrors.Wrap(err, output).Error())
 		return recordVote(ctx, k, poll, false, output, v), nil
 	}
-	if err := verifyERC20TokenDeploy(receipt, k.GetERC20TokenDeploySignature(ctx), msg.Symbol, msg.GatewayAddr, tokenAddr); err != nil {
+	if err := verifyERC20TokenDeploy(ctx, receipt, k, msg.Symbol, msg.GatewayAddr, tokenAddr); err != nil {
 		output := fmt.Sprintf("expected erc20 token deploy (%s) could not be verified", msg.Symbol)
 		k.Logger(ctx).Debug(sdkerrors.Wrap(err, output).Error())
 		return recordVote(ctx, k, poll, false, output, v), nil
@@ -388,45 +387,27 @@ func verifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, blockNum ui
 	return nil
 }
 
-func verifyERC20TokenDeploy(receipt *ethTypes.Receipt, transferSig common.Hash, symbol string, gatewayAddr, tokenAddr common.Address) error {
+func verifyERC20TokenDeploy(ctx sdk.Context, receipt *ethTypes.Receipt, keeper keeper.Keeper, expectedSymbol string, gatewayAddr, expectedAddr common.Address) error {
 	for _, log := range receipt.Logs {
 		// Event is not emitted by the axelar gateway
 		if log.Address != gatewayAddr {
 			continue
 		}
 
-		// An ERC20 token deployment event has 1 topic
-		if len(log.Topics) != 1 {
+		// Event is not for a ERC20 token deployment
+		symbol, tokenAddr, err := types.DecodeErc20TokenDeployEvent(log, keeper.GetERC20TokenDeploySignature(ctx))
+		if err != nil {
+			keeper.Logger(ctx).Debug(sdkerrors.Wrap(err, "event not for a a token deployment").Error())
 			continue
-		}
-
-		// Event is not about token deployment
-		if log.Topics[0] != transferSig {
-			continue
-		}
-
-		// Decode the data field
-		stringType, err := abi.NewType("string", "string", nil)
-		if err != nil {
-			return err
-		}
-		addressType, err := abi.NewType("address", "address", nil)
-		if err != nil {
-			return err
-		}
-		packedArgs := abi.Arguments{{Type: stringType}, {Type: addressType}}
-		args, err := packedArgs.Unpack(log.Data)
-		if err != nil {
-			return err
 		}
 
 		// Symbol does not match
-		if args[0].(string) != symbol {
+		if symbol != expectedSymbol {
 			continue
 		}
 
 		// token address does not match
-		if args[1].(common.Address) != tokenAddr {
+		if tokenAddr != expectedAddr {
 			continue
 		}
 
@@ -435,7 +416,7 @@ func verifyERC20TokenDeploy(receipt *ethTypes.Receipt, transferSig common.Hash, 
 		return nil
 	}
 
-	return fmt.Errorf("failed to verify token deployment for symbol '%s' at contract address '%s'", symbol, tokenAddr.String())
+	return fmt.Errorf("failed to verify token deployment for symbol '%s' at contract address '%s'", expectedSymbol, expectedAddr.String())
 }
 
 func recordVote(ctx sdk.Context, keeper keeper.Keeper, poll vote.PollMeta, vote bool, msg string, voter vote.Voter) *sdk.Result {

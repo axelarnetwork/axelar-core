@@ -210,7 +210,7 @@ func TestVerifyToken_NoTokenInfo(t *testing.T) {
 	assert.Equal(t, 0, len(voter.RecordVoteCalls()))
 }
 
-func TestVerifyToken_HashNotFound(t *testing.T) {
+func TestVerifyToken_NoReceipt(t *testing.T) {
 	minConfHeight := testutils.RandIntBetween(1, 10)
 	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
 	signedTx := createSignedEthTx()
