@@ -126,7 +126,7 @@ func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []broadcast.MsgWithSenderSett
 // RegisterProxy registers a proxy address for a given principal, which can broadcast messages in the principal's name
 func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy sdk.AccAddress) error {
 	val := k.staker.Validator(ctx, principal)
-	if val != nil {
+	if val == nil {
 		return fmt.Errorf("validator %s is unknown", principal.String())
 	}
 	k.Logger(ctx).Debug("getting proxy count")
