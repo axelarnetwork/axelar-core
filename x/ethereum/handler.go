@@ -189,7 +189,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v 
 		k.Logger(ctx).Debug(sdkerrors.Wrap(err, output).Error())
 		return recordVote(ctx, k, poll, false, output, v), nil
 	}
-	if err = verifyTx(ctx, k, rpc, receipt); err != nil {
+	if err = verifyTx(ctx, k, rpc, receipt.BlockNumber.Uint64()); err != nil {
 		output := fmt.Sprintf("expected transaction (%s) could not be verified: %v", txID, err)
 		k.Logger(ctx).Debug(sdkerrors.Wrap(err, output).Error())
 		return recordVote(ctx, k, poll, false, output, v), nil
@@ -358,7 +358,7 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 		k.Logger(ctx).Debug(sdkerrors.Wrap(err, output).Error())
 		return recordVote(ctx, k, poll, false, output, v), nil
 	}
-	err = verifyTx(ctx, k, rpc, receipt)
+	err = verifyTx(ctx, k, rpc, receipt.BlockNumber.Uint64())
 	if err != nil {
 		output := fmt.Sprintf("transaction '%s' could not be verified", msg.TxID.String())
 		k.Logger(ctx).Debug(sdkerrors.Wrap(err, output).Error())
@@ -375,14 +375,14 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 	return recordVote(ctx, k, poll, true, output, v), nil
 }
 
-func verifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, receipt *ethTypes.Receipt) error {
+func verifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, blockNum uint64) error {
 
-	blockNumber, err := rpc.BlockNumber(context.Background())
+	height, err := rpc.BlockNumber(context.Background())
 	if err != nil {
 		return sdkerrors.Wrap(err, "could not retrieve Ethereum block number")
 	}
 
-	if (blockNumber - receipt.BlockNumber.Uint64()) < k.GetRequiredConfirmationHeight(ctx) {
+	if (height - blockNum) < k.GetRequiredConfirmationHeight(ctx) {
 		return fmt.Errorf("not enough confirmations yet")
 	}
 	return nil
