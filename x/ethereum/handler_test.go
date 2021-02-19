@@ -221,7 +221,30 @@ func TestVerifyToken_NoReceipt(t *testing.T) {
 	k.SaveTokenInfo(ctx, msg)
 	rpc := createBasicRPCMock(signedTx, confCount, nil)
 	rpc.TransactionReceiptFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Receipt, error) {
-		return nil, fmt.Errorf("wrong hash")
+		return nil, fmt.Errorf("no transaction for hash")
+	}
+	voter := createVoterMock()
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, createSnapshotter(), &ethMock.BalancerMock{})
+
+	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol, common.HexToAddress(gateway)))
+
+	assert.NoError(t, err)
+	assert.True(t, k.HasUnverifiedToken(ctx, signedTx.Hash().String()))
+	assertVotedOnPoll(t, voter, signedTx.Hash(), types.MsgVerifyErc20TokenDeploy{}.Type(), false)
+}
+
+func TestVerifyToken_NoBlockNumber(t *testing.T) {
+	minConfHeight := testutils.RandIntBetween(1, 10)
+	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
+	signedTx := createSignedEthTx()
+	msg := createMsgSignDeploy()
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	k := newKeeper(ctx, minConfHeight)
+	k.SaveTokenInfo(ctx, msg)
+	rpc := createBasicRPCMock(signedTx, confCount, nil)
+	rpc.BlockNumberFunc = func(ctx context.Context) (uint64, error) {
+		return 0, fmt.Errorf("no block number")
 	}
 	voter := createVoterMock()
 	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, createSnapshotter(), &ethMock.BalancerMock{})
