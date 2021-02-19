@@ -185,7 +185,7 @@ func handleMsgKeygenTraffic(ctx sdk.Context, k keeper.Keeper, msg types.MsgKeyge
 }
 
 func satisfyMinKeygenThreshold(ctx sdk.Context, k keeper.Keeper, activeStake sdk.Int, totalStake sdk.Int) bool {
-	minthreshold := k.GetMinKeygenThreshold(ctx)
+	minThreshold := k.GetMinKeygenThreshold(ctx)
 	return (activeStake.Int64()*minthreshold.Denominator >= totalStake.Int64()*minthreshold.Numerator)
 }
 
