@@ -60,3 +60,11 @@ func validateLockingPeriod(period interface{}) error {
 	}
 	return nil
 }
+
+// Validate performs a validation check on the parameters
+func (p Params) Validate() error {
+	if err := validateLockingPeriod(p.LockingPeriod); err != nil {
+		return err
+	}
+	return nil
+}
