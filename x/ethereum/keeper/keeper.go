@@ -61,10 +61,10 @@ func (k Keeper) GetNetwork(ctx sdk.Context) types.Network {
 	return network
 }
 
-// GetERC20TransferSignature returns the signature of the ERC20 transfer method
-func (k Keeper) GetERC20TransferSignature(ctx sdk.Context) common.Hash {
+// GetERC20TokenDeploySignature returns the signature of the ERC20 transfer method
+func (k Keeper) GetERC20TokenDeploySignature(ctx sdk.Context) common.Hash {
 	var transferSig []byte
-	k.params.Get(ctx, types.KeyNetwork, &transferSig)
+	k.params.Get(ctx, types.KeyTransferSig, &transferSig)
 	return common.BytesToHash(transferSig)
 }
 
@@ -251,6 +251,11 @@ func (k Keeper) SetUnverifiedTx(ctx sdk.Context, txID string, tx *ethTypes.Trans
 // HasUnverifiedTx returns true if an unverified transaction has been stored
 func (k Keeper) HasUnverifiedTx(ctx sdk.Context, txID string) bool {
 	return ctx.KVStore(k.storeKey).Has([]byte(pendingTxPrefix + txID))
+}
+
+// HasUnverifiedToken returns true if an unverified transaction has been stored
+func (k Keeper) HasUnverifiedToken(ctx sdk.Context, txID string) bool {
+	return ctx.KVStore(k.storeKey).Has([]byte(pendingTokenPrefix + txID))
 }
 
 // ProcessVerificationTxResult stores the TX permanently if confirmed or discards the data otherwise

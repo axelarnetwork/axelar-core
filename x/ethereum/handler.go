@@ -364,7 +364,7 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 		k.Logger(ctx).Debug(sdkerrors.Wrap(err, output).Error())
 		return recordVote(ctx, k, poll, false, output, v), nil
 	}
-	if err := verifyERC20TokenDeploy(receipt, k.GetERC20TransferSignature(ctx), msg.Symbol, msg.GatewayAddr, tokenAddr); err != nil {
+	if err := verifyERC20TokenDeploy(receipt, k.GetERC20TokenDeploySignature(ctx), msg.Symbol, msg.GatewayAddr, tokenAddr); err != nil {
 		output := fmt.Sprintf("expected erc20 token deploy (%s) could not be verified", msg.Symbol)
 		k.Logger(ctx).Debug(sdkerrors.Wrap(err, output).Error())
 		return recordVote(ctx, k, poll, false, output, v), nil

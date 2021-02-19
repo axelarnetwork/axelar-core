@@ -9,6 +9,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	ethCrypto "github.com/ethereum/go-ethereum/crypto"
 
@@ -37,6 +38,7 @@ var (
 	tokenBC     = testutils.RandBytes(64)
 	burnerBC    = testutils.RandBytes(64)
 	transferSig = testutils.RandBytes(64)
+	gateway     = "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7"
 )
 
 func TestLink_NoSymbolSet(t *testing.T) {
@@ -46,7 +48,6 @@ func TestLink_NoSymbolSet(t *testing.T) {
 
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
 	symbol := testutils.RandString(3)
-	gateway := "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7"
 
 	handler := NewHandler(k, &ethMock.RPCClientMock{}, &ethMock.VoterMock{}, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.NexusMock{})
 	_, err := handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, Symbol: symbol, GatewayAddr: gateway, RecipientChain: recipient.Chain.Name})
@@ -58,21 +59,12 @@ func TestLink_Success(t *testing.T) {
 	minConfHeight := testutils.RandIntBetween(1, 10)
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
+	msg := createMsgSignDeploy()
 
-	account, err := sdk.AccAddressFromBech32("cosmos1vjyc4qmsdtdl5a4ruymnjqpchm5gyqde63sqdh")
-	if err != nil {
-		panic(err)
-	}
+	k.SaveTokenInfo(ctx, msg)
 
-	symbol := testutils.RandString(3)
-	name := testutils.RandString(10)
-	decimals := testutils.RandBytes(1)[0]
-	capacity := sdk.NewIntFromUint64(uint64(testutils.RandPosInt()))
-	gateway := "0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA"
-	k.SaveTokenInfo(ctx, types.MsgSignDeployToken{Sender: account, TokenName: name, Symbol: symbol, Decimals: decimals, Capacity: capacity})
-
-	recipient := nexus.CrossChainAddress{Address: "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L", Chain: btc.Bitcoin}
-	tokenAddr, err := k.GetTokenAddress(ctx, symbol, common.HexToAddress(gateway))
+	recipient := balance.CrossChainAddress{Address: "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L", Chain: btc.Bitcoin}
+	tokenAddr, err := k.GetTokenAddress(ctx, msg.Symbol, common.HexToAddress(gateway))
 	if err != nil {
 		panic(err)
 	}
@@ -91,8 +83,8 @@ func TestLink_Success(t *testing.T) {
 			return c, ok
 		},
 	}
-	handler := NewHandler(k, &ethMock.RPCClientMock{}, &ethMock.VoterMock{}, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, n)
-	_, err = handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Symbol: symbol, GatewayAddr: gateway})
+	handler := NewHandler(k, &ethMock.RPCClientMock{}, &ethMock.VoterMock{}, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, b)
+	_, err = handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Symbol: msg.Symbol, GatewayAddr: gateway})
 
 	assert.NoError(t, err)
 
@@ -100,7 +92,7 @@ func TestLink_Success(t *testing.T) {
 	assert.Equal(t, sender, n.LinkAddressesCalls()[0].Sender)
 	assert.Equal(t, recipient, n.LinkAddressesCalls()[0].Recipient)
 
-	assert.Equal(t, types.BurnerInfo{Symbol: symbol, Salt: salt}, *k.GetBurnerInfo(ctx, burnAddr))
+	assert.Equal(t, types.BurnerInfo{Symbol: msg.Symbol, Salt: salt}, *k.GetBurnerInfo(ctx, burnAddr))
 }
 
 func TestDeployTx_DifferentValue_DifferentHash(t *testing.T) {
@@ -198,6 +190,114 @@ func TestMintTx_DifferentRecipient_DifferentHash(t *testing.T) {
 	assert.NotEqual(t, tx1.Hash(), tx2.Hash())
 }
 
+func TestVerifyToken_NoTokenInfo(t *testing.T) {
+	minConfHeight := testutils.RandIntBetween(1, 10)
+	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
+	signedTx := createSignedEthTx()
+	symbol := testutils.RandString(4)
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	k := newKeeper(ctx, minConfHeight)
+	rpc := createBasicRPCMock(signedTx, confCount, nil)
+	voter := createVoterMock()
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, createSnapshotter(), &ethMock.BalancerMock{})
+
+	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), symbol, common.HexToAddress(gateway)))
+
+	assert.Error(t, err)
+	assert.False(t, k.HasUnverifiedToken(ctx, signedTx.Hash().String()))
+	assert.Equal(t, 0, len(voter.InitPollCalls()))
+	assert.Equal(t, 0, len(voter.RecordVoteCalls()))
+}
+
+func TestVerifyToken_HashNotFound(t *testing.T) {
+	minConfHeight := testutils.RandIntBetween(1, 10)
+	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
+	signedTx := createSignedEthTx()
+	msg := createMsgSignDeploy()
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	k := newKeeper(ctx, minConfHeight)
+	k.SaveTokenInfo(ctx, msg)
+	rpc := createBasicRPCMock(signedTx, confCount, nil)
+	rpc.TransactionReceiptFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Receipt, error) {
+		return nil, fmt.Errorf("wrong hash")
+	}
+	voter := createVoterMock()
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, createSnapshotter(), &ethMock.BalancerMock{})
+
+	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol, common.HexToAddress(gateway)))
+
+	assert.NoError(t, err)
+	assert.True(t, k.HasUnverifiedToken(ctx, signedTx.Hash().String()))
+	assertVotedOnPoll(t, voter, signedTx.Hash(), types.MsgVerifyErc20TokenDeploy{}.Type(), false)
+}
+
+func TestVerifyToken_NotConfirmed(t *testing.T) {
+	minConfHeight := testutils.RandIntBetween(1, 10)
+	confCount := testutils.RandIntBetween(0, minConfHeight)
+	signedTx := createSignedEthTx()
+	msg := createMsgSignDeploy()
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	k := newKeeper(ctx, minConfHeight)
+	k.SaveTokenInfo(ctx, msg)
+	rpc := createBasicRPCMock(signedTx, confCount, nil)
+	voter := createVoterMock()
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.BalancerMock{})
+
+	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol, common.HexToAddress(gateway)))
+
+	assert.NoError(t, err)
+	assert.True(t, k.HasUnverifiedToken(ctx, signedTx.Hash().String()))
+	assertVotedOnPoll(t, voter, signedTx.Hash(), types.MsgVerifyErc20TokenDeploy{}.Type(), false)
+}
+
+func TestVerifyToken_NoEvent(t *testing.T) {
+	minConfHeight := testutils.RandIntBetween(1, 10)
+	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
+	signedTx := createSignedEthTx()
+	msg := createMsgSignDeploy()
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	k := newKeeper(ctx, minConfHeight)
+	k.SaveTokenInfo(ctx, msg)
+	logs := createLogs("", common.Address{}, common.Address{}, common.Hash{}, false)
+	rpc := createBasicRPCMock(signedTx, confCount, logs)
+	voter := createVoterMock()
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.BalancerMock{})
+
+	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol, common.HexToAddress(gateway)))
+
+	assert.NoError(t, err)
+	assert.True(t, k.HasUnverifiedToken(ctx, signedTx.Hash().String()))
+	assertVotedOnPoll(t, voter, signedTx.Hash(), types.MsgVerifyErc20TokenDeploy{}.Type(), false)
+}
+func TestVerifyToken_Success(t *testing.T) {
+	minConfHeight := testutils.RandIntBetween(1, 10)
+	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
+	signedTx := createSignedEthTx()
+	msg := createMsgSignDeploy()
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	k := newKeeper(ctx, minConfHeight)
+	k.SaveTokenInfo(ctx, msg)
+	tokenAddr, err := k.GetTokenAddress(ctx, msg.Symbol, common.HexToAddress(gateway))
+	if err != nil {
+		panic(err)
+	}
+	logs := createLogs(msg.Symbol, common.HexToAddress(gateway), tokenAddr, k.GetERC20TokenDeploySignature(ctx), true)
+	rpc := createBasicRPCMock(signedTx, confCount, logs)
+	voter := createVoterMock()
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.BalancerMock{})
+
+	_, err = handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol, common.HexToAddress(gateway)))
+
+	assert.NoError(t, err)
+	assert.True(t, k.HasUnverifiedToken(ctx, signedTx.Hash().String()))
+	assertVotedOnPoll(t, voter, signedTx.Hash(), types.MsgVerifyErc20TokenDeploy{}.Type(), true)
+}
+
 func TestVerifyTx_Deploy_HashNotFound(t *testing.T) {
 	minConfHeight := testutils.RandIntBetween(1, 10)
 	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
@@ -205,7 +305,7 @@ func TestVerifyTx_Deploy_HashNotFound(t *testing.T) {
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
-	rpc := createBasicRPCMock(signedTx, confCount)
+	rpc := createBasicRPCMock(signedTx, confCount, nil)
 	rpc.TransactionReceiptFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Receipt, error) {
 		return nil, fmt.Errorf("wrong hash")
 	}
@@ -216,7 +316,7 @@ func TestVerifyTx_Deploy_HashNotFound(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.True(t, k.HasUnverifiedTx(ctx, signedTx.Hash().String()))
-	assertVotedOnPoll(t, voter, signedTx.Hash(), false)
+	assertVotedOnPoll(t, voter, signedTx.Hash(), types.MsgVerifyTx{}.Type(), false)
 }
 
 func TestVerifyTx_Deploy_NotConfirmed(t *testing.T) {
@@ -226,7 +326,7 @@ func TestVerifyTx_Deploy_NotConfirmed(t *testing.T) {
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
-	rpc := createBasicRPCMock(signedTx, confCount)
+	rpc := createBasicRPCMock(signedTx, confCount, nil)
 	voter := createVoterMock()
 	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.NexusMock{})
 
@@ -234,7 +334,7 @@ func TestVerifyTx_Deploy_NotConfirmed(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.True(t, k.HasUnverifiedTx(ctx, signedTx.Hash().String()))
-	assertVotedOnPoll(t, voter, signedTx.Hash(), false)
+	assertVotedOnPoll(t, voter, signedTx.Hash(), types.MsgVerifyTx{}.Type(), false)
 }
 
 func TestVerifyTx_Deploy_Success(t *testing.T) {
@@ -244,7 +344,7 @@ func TestVerifyTx_Deploy_Success(t *testing.T) {
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
-	rpc := createBasicRPCMock(signedTx, confCount)
+	rpc := createBasicRPCMock(signedTx, confCount, nil)
 	voter := createVoterMock()
 	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.NexusMock{})
 
@@ -252,7 +352,7 @@ func TestVerifyTx_Deploy_Success(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.True(t, k.HasUnverifiedTx(ctx, signedTx.Hash().String()))
-	assertVotedOnPoll(t, voter, signedTx.Hash(), true)
+	assertVotedOnPoll(t, voter, signedTx.Hash(), types.MsgVerifyTx{}.Type(), true)
 }
 
 func TestVerifyTx_Mint_HashNotFound(t *testing.T) {
@@ -262,7 +362,7 @@ func TestVerifyTx_Mint_HashNotFound(t *testing.T) {
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
-	rpc := createBasicRPCMock(signedTx, confCount)
+	rpc := createBasicRPCMock(signedTx, confCount, nil)
 	rpc.TransactionReceiptFunc = func(ctx context.Context, txHash common.Hash) (*ethTypes.Receipt, error) {
 		return nil, fmt.Errorf("wrong hash")
 	}
@@ -273,7 +373,7 @@ func TestVerifyTx_Mint_HashNotFound(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.True(t, k.HasUnverifiedTx(ctx, signedTx.Hash().String()))
-	assertVotedOnPoll(t, voter, signedTx.Hash(), false)
+	assertVotedOnPoll(t, voter, signedTx.Hash(), types.MsgVerifyTx{}.Type(), false)
 }
 
 func TestVerifyTx_Mint_NotConfirmed(t *testing.T) {
@@ -283,7 +383,7 @@ func TestVerifyTx_Mint_NotConfirmed(t *testing.T) {
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
-	rpc := createBasicRPCMock(signedTx, confCount)
+	rpc := createBasicRPCMock(signedTx, confCount, nil)
 	voter := createVoterMock()
 	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.NexusMock{})
 
@@ -291,7 +391,7 @@ func TestVerifyTx_Mint_NotConfirmed(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.True(t, k.HasUnverifiedTx(ctx, signedTx.Hash().String()))
-	assertVotedOnPoll(t, voter, signedTx.Hash(), false)
+	assertVotedOnPoll(t, voter, signedTx.Hash(), types.MsgVerifyTx{}.Type(), false)
 }
 
 func TestVerifyTx_Mint_Success(t *testing.T) {
@@ -301,7 +401,7 @@ func TestVerifyTx_Mint_Success(t *testing.T) {
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
-	rpc := createBasicRPCMock(signedTx, confCount)
+	rpc := createBasicRPCMock(signedTx, confCount, nil)
 	voter := createVoterMock()
 	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.NexusMock{})
 
@@ -309,7 +409,7 @@ func TestVerifyTx_Mint_Success(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.True(t, k.HasUnverifiedTx(ctx, signedTx.Hash().String()))
-	assertVotedOnPoll(t, voter, signedTx.Hash(), true)
+	assertVotedOnPoll(t, voter, signedTx.Hash(), types.MsgVerifyTx{}.Type(), true)
 }
 
 func createSignedDeployTx() *ethTypes.Transaction {
@@ -348,7 +448,7 @@ func createSignedEthTx() *ethTypes.Transaction {
 	return sign(ethTypes.NewTransaction(nonce, contractAddr, value, gasLimit, gasPrice, data))
 }
 
-func createBasicRPCMock(tx *ethTypes.Transaction, confCount int64) *ethMock.RPCClientMock {
+func createBasicRPCMock(tx *ethTypes.Transaction, confCount int64, logs []*ethTypes.Log) *ethMock.RPCClientMock {
 	blockNum := testutils.RandIntBetween(confCount, 100000000)
 
 	rpc := ethMock.RPCClientMock{
@@ -357,7 +457,7 @@ func createBasicRPCMock(tx *ethTypes.Transaction, confCount int64) *ethMock.RPCC
 		},
 		TransactionReceiptFunc: func(ctx context.Context, hash common.Hash) (*ethTypes.Receipt, error) {
 			if bytes.Equal(tx.Hash().Bytes(), hash.Bytes()) {
-				return &ethTypes.Receipt{TxHash: tx.Hash(), BlockNumber: big.NewInt(blockNum - confCount)}, nil
+				return &ethTypes.Receipt{TxHash: tx.Hash(), BlockNumber: big.NewInt(blockNum - confCount), Logs: logs}, nil
 			}
 			return nil, fmt.Errorf("transaction not found")
 		},
@@ -376,11 +476,11 @@ func createVoterMock() *ethMock.VoterMock {
 	}
 }
 
-func assertVotedOnPoll(t *testing.T, voter *ethMock.VoterMock, hash common.Hash, verified bool) {
+func assertVotedOnPoll(t *testing.T, voter *ethMock.VoterMock, hash common.Hash, pollType string, verified bool) {
 
 	assert.Equal(t, 1, len(voter.InitPollCalls()))
 	assert.Equal(t, types.ModuleName, voter.InitPollCalls()[0].Poll.Module)
-	assert.Equal(t, types.MsgVerifyTx{}.Type(), voter.InitPollCalls()[0].Poll.Type)
+	assert.Equal(t, pollType, voter.InitPollCalls()[0].Poll.Type)
 	assert.Equal(t, hash.String(), voter.InitPollCalls()[0].Poll.ID)
 
 	initPoll := voter.InitPollCalls()[0].Poll
@@ -401,4 +501,57 @@ func newKeeper(ctx sdk.Context, confHeight int64) keeper.Keeper {
 
 func createSnapshotter() types.Snapshotter {
 	return &ethMock.SnapshotterMock{}
+}
+
+func createMsgSignDeploy() types.MsgSignDeployToken {
+	account, err := sdk.AccAddressFromBech32("cosmos1vjyc4qmsdtdl5a4ruymnjqpchm5gyqde63sqdh")
+	if err != nil {
+		panic(err)
+	}
+
+	symbol := testutils.RandString(3)
+	name := testutils.RandString(10)
+	decimals := testutils.RandBytes(1)[0]
+	capacity := sdk.NewIntFromUint64(uint64(testutils.RandPosInt()))
+
+	return types.MsgSignDeployToken{Sender: account, TokenName: name, Symbol: symbol, Decimals: decimals, Capacity: capacity}
+}
+
+func createLogs(denom string, gateway, addr common.Address, deploySig common.Hash, contains bool) []*ethTypes.Log {
+	numLogs := testutils.RandIntBetween(1, 100)
+	pos := testutils.RandIntBetween(1, int64(numLogs))
+	var logs []*ethTypes.Log
+
+	for i := int64(0); i < numLogs; i++ {
+		stringType, err := abi.NewType("string", "string", nil)
+		if err != nil {
+			panic(err)
+		}
+		addressType, err := abi.NewType("address", "address", nil)
+		if err != nil {
+			panic(err)
+		}
+		args := abi.Arguments{{Type: stringType}, {Type: addressType}}
+
+		if contains && i == pos {
+			data, err := args.Pack(denom, addr)
+			if err != nil {
+				panic(err)
+			}
+			logs = append(logs, &ethTypes.Log{Address: gateway, Data: data, Topics: []common.Hash{deploySig}})
+			continue
+		}
+
+		randDenom := testutils.RandString(4)
+		randGateway := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+		randAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+		randData, err := args.Pack(randDenom, randAddr)
+		randTopic := common.BytesToHash(testutils.RandBytes(common.HashLength))
+		if err != nil {
+			panic(err)
+		}
+		logs = append(logs, &ethTypes.Log{Address: randGateway, Data: randData, Topics: []common.Hash{randTopic}})
+	}
+
+	return logs
 }
