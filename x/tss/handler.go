@@ -15,7 +15,7 @@ import (
 )
 
 // NewHandler returns the handler for the tss module
-func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Voter) sdk.Handler {
+func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Voter, staker types.StakingKeeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
@@ -24,7 +24,7 @@ func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Vot
 		case types.MsgSignTraffic:
 			return handleMsgSignTraffic(ctx, k, msg)
 		case types.MsgKeygenStart:
-			return handleMsgKeygenStart(ctx, k, s, v, msg)
+			return handleMsgKeygenStart(ctx, k, s, v, staker, msg)
 		case types.MsgAssignNextMasterKey:
 			return handleMsgAssignNextMasterKey(ctx, k, s, n, msg)
 		case types.MsgRotateMasterKey:
@@ -184,12 +184,26 @@ func handleMsgKeygenTraffic(ctx sdk.Context, k keeper.Keeper, msg types.MsgKeyge
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, v types.Voter, msg types.MsgKeygenStart) (*sdk.Result, error) {
+func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, v types.Voter,
+	staker types.StakingKeeper, msg types.MsgKeygenStart) (*sdk.Result, error) {
+
+	// record the snapshot of active validators that we'll use for the key
+	s.TakeSnapshot(ctx)
 	snapshot, ok := s.GetLatestSnapshot(ctx)
+
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrTss, "the system needs to have at least one validator snapshot")
 	}
+	if !k.GetMinKeygenThreshold(ctx).IsMet(snapshot.TotalPower, staker.GetLastTotalPower(ctx)) {
+		msg := fmt.Sprintf("Unable to meet min stake threshold required for keygen: active %s out of %s total",
+			snapshot.TotalPower.String(), staker.GetLastTotalPower(ctx).String())
+		k.Logger(ctx).Info(msg)
 
+		return nil, fmt.Errorf(msg)
+	}
+
+	// TODO: need to figure out how to calculate threshold based on total number of
+	// validators in the system, individual's stake, etc.
 	if msg.Threshold < 1 || msg.Threshold > len(snapshot.Validators) {
 		err := fmt.Errorf("invalid threshold: %d, validators: %d", msg.Threshold, len(snapshot.Validators))
 		k.Logger(ctx).Error(err.Error())

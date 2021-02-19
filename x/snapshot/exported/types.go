@@ -12,6 +12,7 @@ import (
 // Validator is an interface for a Cosmos validator account
 type Validator interface {
 	GetOperator() sdk.ValAddress
+	GetConsAddr() sdk.ConsAddress
 	GetConsensusPower() int64
 }
 
@@ -38,6 +39,7 @@ func (s Snapshot) GetValidator(address sdk.ValAddress) (Validator, bool) {
 // Snapshotter represents the interface for the snapshot module's functionality
 type Snapshotter interface {
 	GetLatestSnapshot(ctx sdk.Context) (Snapshot, bool)
-	GetLatestRound(ctx sdk.Context) int64
+	GetLatestCounter(ctx sdk.Context) int64
 	GetSnapshot(ctx sdk.Context, round int64) (Snapshot, bool)
+	TakeSnapshot(ctx sdk.Context) error
 }

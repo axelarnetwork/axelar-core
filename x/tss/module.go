@@ -70,20 +70,22 @@ func (AppModuleBasic) GetQueryCmd(_ *codec.Codec) *cobra.Command {
 // AppModule implements module.AppModule
 type AppModule struct {
 	AppModuleBasic
-	keeper keeper.Keeper
-	staker types.Snapshotter
-	voter  types.Voter
-	nexus  types.Nexus
+	keeper      keeper.Keeper
+	snapshotter types.Snapshotter
+	voter       types.Voter
+	nexus       types.Nexus
+	staker      types.StakingKeeper
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, s types.Snapshotter, v types.Voter, n types.Nexus) AppModule {
+func NewAppModule(k keeper.Keeper, s types.Snapshotter, v types.Voter, n types.Nexus, sk types.StakingKeeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
-		staker:         s,
+		snapshotter:    s,
 		voter:          v,
 		nexus:          n,
+		staker:         sk,
 	}
 }
 
@@ -113,7 +115,7 @@ func (AppModule) Route() string {
 
 // NewHandler returns a new handler for this module
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper, am.staker, am.nexus, am.voter)
+	return NewHandler(am.keeper, am.snapshotter, am.nexus, am.voter, am.staker)
 }
 
 // QuerierRoute returns this module's query route
