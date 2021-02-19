@@ -291,7 +291,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		store.NewSubjectiveStore(),
 		keybase,
 		app.accountKeeper,
-		app.snapKeeper,
+		app.stakingKeeper,
 		abciClient,
 		axelarCfg.ClientConfig,
 		logger,

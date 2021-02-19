@@ -34,7 +34,7 @@ func handleMsgSnapshot(ctx sdk.Context, k keeper.Keeper, msg types.MsgSnapshot) 
 	// if the snapshot was successful, we can be sure it will be retrieved
 	snapshot, _ := k.GetLatestSnapshot(ctx)
 
-	k.Logger(ctx).Info(fmt.Sprintf("Successfully obtained snapshot for round %d with %d validators holding a total sum of %d voting power",
+	k.Logger(ctx).Info(fmt.Sprintf("Successfully obtained snapshot (counter # %d) with %d validators holding a total sum of %d voting power",
 		k.GetLatestCounter(ctx), len(snapshot.Validators), snapshot.TotalPower.Int64()))
 
 	ctx.EventManager().EmitEvent(
