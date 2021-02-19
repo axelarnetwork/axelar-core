@@ -20,7 +20,7 @@ var (
 	KeyNetwork            = []byte("network")
 	KeyBurnable           = []byte("burneable")
 	KeyToken              = []byte("token")
-	KeyTransferSig        = []byte("transfersig")
+	KeyTokenDeploySig     = []byte("tokendeploysig")
 
 	// ERC20TokenDeploySig is the signature of the ERC20 transfer method
 	ERC20TokenDeploySig = "TokenDeployed(string,address)"
@@ -35,7 +35,7 @@ type Params struct {
 	Network            Network
 	Token              []byte
 	Burnable           []byte
-	TransferSig        []byte
+	TokenDeploySig     []byte
 }
 
 func DefaultParams() Params {
@@ -49,14 +49,14 @@ func DefaultParams() Params {
 		panic(err)
 	}
 
-	transferSig := crypto.Keccak256Hash([]byte(ERC20TokenDeploySig)).Bytes()
+	tokenDeploySig := crypto.Keccak256Hash([]byte(ERC20TokenDeploySig)).Bytes()
 
 	return Params{
 		ConfirmationHeight: 1,
 		Network:            Ganache,
 		Token:              bzToken,
 		Burnable:           bzBurnable,
-		TransferSig:        transferSig,
+		TokenDeploySig:     tokenDeploySig,
 	}
 }
 
@@ -74,7 +74,7 @@ func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
 		subspace.NewParamSetPair(KeyNetwork, &p.Network, validateNetwork),
 		subspace.NewParamSetPair(KeyToken, &p.Token, validateBytes),
 		subspace.NewParamSetPair(KeyBurnable, &p.Burnable, validateBytes),
-		subspace.NewParamSetPair(KeyTransferSig, &p.TransferSig, validateBytes),
+		subspace.NewParamSetPair(KeyTokenDeploySig, &p.TokenDeploySig, validateBytes),
 	}
 }
 

@@ -296,6 +296,31 @@ func TestVerifyToken_NoEvent(t *testing.T) {
 	assert.True(t, k.HasUnverifiedToken(ctx, signedTx.Hash().String()))
 	assertVotedOnPoll(t, voter, signedTx.Hash(), types.MsgVerifyErc20TokenDeploy{}.Type(), false)
 }
+func TestVerifyToken_DifferentEvent(t *testing.T) {
+	minConfHeight := testutils.RandIntBetween(1, 10)
+	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
+	signedTx := createSignedEthTx()
+	msg := createMsgSignDeploy()
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	k := newKeeper(ctx, minConfHeight)
+	k.SaveTokenInfo(ctx, msg)
+	tokenAddr, err := k.GetTokenAddress(ctx, msg.Symbol, common.HexToAddress(gateway))
+	if err != nil {
+		panic(err)
+	}
+	logs := createLogs(testutils.RandString(4), common.HexToAddress(gateway), tokenAddr, k.GetERC20TokenDeploySignature(ctx), true)
+	rpc := createBasicRPCMock(signedTx, confCount, logs)
+	voter := createVoterMock()
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.BalancerMock{})
+
+	_, err = handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol, common.HexToAddress(gateway)))
+
+	assert.NoError(t, err)
+	assert.True(t, k.HasUnverifiedToken(ctx, signedTx.Hash().String()))
+	assertVotedOnPoll(t, voter, signedTx.Hash(), types.MsgVerifyErc20TokenDeploy{}.Type(), false)
+}
+
 func TestVerifyToken_Success(t *testing.T) {
 	minConfHeight := testutils.RandIntBetween(1, 10)
 	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
@@ -518,7 +543,7 @@ func newKeeper(ctx sdk.Context, confHeight int64) keeper.Keeper {
 	cdc := testutils.Codec()
 	subspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
 	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"), subspace)
-	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(confHeight), Token: tokenBC, Burnable: burnerBC, TransferSig: transferSig})
+	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(confHeight), Token: tokenBC, Burnable: burnerBC, TokenDeploySig: transferSig})
 	return k
 }
 
@@ -527,11 +552,7 @@ func createSnapshotter() types.Snapshotter {
 }
 
 func createMsgSignDeploy() types.MsgSignDeployToken {
-	account, err := sdk.AccAddressFromBech32("cosmos1vjyc4qmsdtdl5a4ruymnjqpchm5gyqde63sqdh")
-	if err != nil {
-		panic(err)
-	}
-
+	account := sdk.AccAddress(testutils.RandBytes(sdk.AddrLen))
 	symbol := testutils.RandString(3)
 	name := testutils.RandString(10)
 	decimals := testutils.RandBytes(1)[0]

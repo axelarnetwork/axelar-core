@@ -64,9 +64,9 @@ func (k Keeper) GetNetwork(ctx sdk.Context) types.Network {
 
 // GetERC20TokenDeploySignature returns the signature of the ERC20 transfer method
 func (k Keeper) GetERC20TokenDeploySignature(ctx sdk.Context) common.Hash {
-	var transferSig []byte
-	k.params.Get(ctx, types.KeyTransferSig, &transferSig)
-	return common.BytesToHash(transferSig)
+	var tokenSig []byte
+	k.params.Get(ctx, types.KeyTokenDeploySig, &tokenSig)
+	return common.BytesToHash(tokenSig)
 }
 
 // Codec returns the codec
