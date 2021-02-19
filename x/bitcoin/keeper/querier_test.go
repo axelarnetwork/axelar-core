@@ -39,7 +39,7 @@ func TestQuerier_TxInfo_CorrectMarshalling(t *testing.T) {
 			Confirmations: uint64(testutils.RandIntBetween(0, 10000)),
 		}
 
-		query := NewQuerier(Keeper{}, &mock.SignerMock{}, &mock.BalancerMock{}, &mock.RPCClientMock{
+		query := NewQuerier(Keeper{}, &mock.SignerMock{}, &mock.NexusMock{}, &mock.RPCClientMock{
 			GetOutPointInfoFunc: func(_ *chainhash.Hash, out *wire.OutPoint) (types.OutPointInfo, error) {
 				if out.Hash.IsEqual(&info.OutPoint.Hash) {
 					return info, nil

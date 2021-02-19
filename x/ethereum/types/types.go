@@ -15,7 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
 
-	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
@@ -239,7 +239,7 @@ func transferIDtoCommandID(transferID uint64) CommandID {
 }
 
 // CreateMintCommandData returns the command data to mint tokens for the specified transfers
-func CreateMintCommandData(chainID *big.Int, transfers []balance.CrossChainTransfer) ([]byte, error) {
+func CreateMintCommandData(chainID *big.Int, transfers []nexus.CrossChainTransfer) ([]byte, error) {
 	var commandIDs []CommandID
 	var commands []string
 	var commandParams [][]byte

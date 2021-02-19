@@ -11,10 +11,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 
@@ -22,12 +22,12 @@ import (
 )
 
 // NewHandler returns the handler of the ethereum module
-func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Signer, snap snapshot.Snapshotter, b types.Balancer) sdk.Handler {
+func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Signer, snap snapshot.Snapshotter, n types.Nexus) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
 		case types.MsgLink:
-			return handleMsgLink(ctx, k, b, msg)
+			return handleMsgLink(ctx, k, n, msg)
 		case types.MsgVerifyTx:
 			return handleMsgVerifyTx(ctx, k, rpc, v, msg)
 		case *types.MsgVoteVerifiedTx:
@@ -37,7 +37,7 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 		case types.MsgSignTx:
 			return handleMsgSignTx(ctx, k, s, snap, msg)
 		case types.MsgSignPendingTransfers:
-			return handleMsgSignPendingTransfersTx(ctx, k, s, snap, b, msg)
+			return handleMsgSignPendingTransfersTx(ctx, k, s, snap, n, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
@@ -45,7 +45,7 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 	}
 }
 
-func handleMsgLink(ctx sdk.Context, k keeper.Keeper, b types.Balancer, msg types.MsgLink) (*sdk.Result, error) {
+func handleMsgLink(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg types.MsgLink) (*sdk.Result, error) {
 	gatewayAddr := common.HexToAddress(msg.GatewayAddr)
 	tokenAddr, err := k.GetTokenAddress(ctx, msg.Symbol, gatewayAddr)
 	if err != nil {
@@ -57,17 +57,17 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, b types.Balancer, msg types
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
 
-	senderChain, ok := b.GetChain(ctx, exported.Ethereum.Name)
+	senderChain, ok := n.GetChain(ctx, exported.Ethereum.Name)
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrEthereum, "%s is not a registered chain", exported.Ethereum.Name)
 	}
-	recipientChain, ok := b.GetChain(ctx, msg.RecipientChain)
+	recipientChain, ok := n.GetChain(ctx, msg.RecipientChain)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, "unknown recipient chain")
 	}
-	b.LinkAddresses(ctx,
-		balance.CrossChainAddress{Chain: senderChain, Address: burnerAddr.String()},
-		balance.CrossChainAddress{Chain: recipientChain, Address: msg.RecipientAddr})
+	n.LinkAddresses(ctx,
+		nexus.CrossChainAddress{Chain: senderChain, Address: burnerAddr.String()},
+		nexus.CrossChainAddress{Chain: recipientChain, Address: msg.RecipientAddr})
 
 	burnerInfo := types.BurnerInfo{
 		Symbol: msg.Symbol,
@@ -95,8 +95,8 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, b types.Balancer, msg types
 	}, nil
 }
 
-func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap snapshot.Snapshotter, balancer types.Balancer, msg types.MsgSignPendingTransfers) (*sdk.Result, error) {
-	pendingTransfers := balancer.GetPendingTransfersForChain(ctx, exported.Ethereum)
+func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap snapshot.Snapshotter, n types.Nexus, msg types.MsgSignPendingTransfers) (*sdk.Result, error) {
+	pendingTransfers := n.GetPendingTransfersForChain(ctx, exported.Ethereum)
 
 	if len(pendingTransfers) == 0 {
 		return &sdk.Result{

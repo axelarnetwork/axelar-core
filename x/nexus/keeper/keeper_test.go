@@ -10,10 +10,10 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/utils/denom"
-	"github.com/axelarnetwork/axelar-core/x/balance/exported"
-	"github.com/axelarnetwork/axelar-core/x/balance/types"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 
 	"github.com/stretchr/testify/assert"
 
@@ -30,8 +30,8 @@ var keeper Keeper
 
 func init() {
 	cdc := testutils.Codec()
-	balanceSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("balanceKey"), sdk.NewKVStoreKey("tbalanceKey"), "balance")
-	keeper = NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), balanceSubspace)
+	nexusSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
+	keeper = NewKeeper(cdc, sdk.NewKVStoreKey("nexus"), nexusSubspace)
 }
 
 func TestLinkNoForeignAssetSupport(t *testing.T) {

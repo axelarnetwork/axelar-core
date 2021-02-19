@@ -5,8 +5,8 @@ package mock
 
 import (
 	"crypto/ecdsa"
-	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -285,19 +285,19 @@ var _ types.Signer = &SignerMock{}
 //
 // 		// make and configure a mocked types.Signer
 // 		mockedSigner := &SignerMock{
-// 			GetCurrentMasterKeyFunc: func(ctx sdk.Context, chain balance.Chain) (ecdsa.PublicKey, bool) {
+// 			GetCurrentMasterKeyFunc: func(ctx sdk.Context, chain nexus.Chain) (ecdsa.PublicKey, bool) {
 // 				panic("mock out the GetCurrentMasterKey method")
 // 			},
-// 			GetCurrentMasterKeyIDFunc: func(ctx sdk.Context, chain balance.Chain) (string, bool) {
+// 			GetCurrentMasterKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain) (string, bool) {
 // 				panic("mock out the GetCurrentMasterKeyID method")
 // 			},
 // 			GetKeyFunc: func(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool) {
 // 				panic("mock out the GetKey method")
 // 			},
-// 			GetNextMasterKeyFunc: func(ctx sdk.Context, chain balance.Chain) (ecdsa.PublicKey, bool) {
+// 			GetNextMasterKeyFunc: func(ctx sdk.Context, chain nexus.Chain) (ecdsa.PublicKey, bool) {
 // 				panic("mock out the GetNextMasterKey method")
 // 			},
-// 			GetNextMasterKeyIDFunc: func(ctx sdk.Context, chain balance.Chain) (string, bool) {
+// 			GetNextMasterKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain) (string, bool) {
 // 				panic("mock out the GetNextMasterKeyID method")
 // 			},
 // 			GetSigFunc: func(ctx sdk.Context, sigID string) (tss.Signature, bool) {
@@ -317,19 +317,19 @@ var _ types.Signer = &SignerMock{}
 // 	}
 type SignerMock struct {
 	// GetCurrentMasterKeyFunc mocks the GetCurrentMasterKey method.
-	GetCurrentMasterKeyFunc func(ctx sdk.Context, chain balance.Chain) (ecdsa.PublicKey, bool)
+	GetCurrentMasterKeyFunc func(ctx sdk.Context, chain nexus.Chain) (ecdsa.PublicKey, bool)
 
 	// GetCurrentMasterKeyIDFunc mocks the GetCurrentMasterKeyID method.
-	GetCurrentMasterKeyIDFunc func(ctx sdk.Context, chain balance.Chain) (string, bool)
+	GetCurrentMasterKeyIDFunc func(ctx sdk.Context, chain nexus.Chain) (string, bool)
 
 	// GetKeyFunc mocks the GetKey method.
 	GetKeyFunc func(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool)
 
 	// GetNextMasterKeyFunc mocks the GetNextMasterKey method.
-	GetNextMasterKeyFunc func(ctx sdk.Context, chain balance.Chain) (ecdsa.PublicKey, bool)
+	GetNextMasterKeyFunc func(ctx sdk.Context, chain nexus.Chain) (ecdsa.PublicKey, bool)
 
 	// GetNextMasterKeyIDFunc mocks the GetNextMasterKeyID method.
-	GetNextMasterKeyIDFunc func(ctx sdk.Context, chain balance.Chain) (string, bool)
+	GetNextMasterKeyIDFunc func(ctx sdk.Context, chain nexus.Chain) (string, bool)
 
 	// GetSigFunc mocks the GetSig method.
 	GetSigFunc func(ctx sdk.Context, sigID string) (tss.Signature, bool)
@@ -347,14 +347,14 @@ type SignerMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Chain is the chain argument value.
-			Chain balance.Chain
+			Chain nexus.Chain
 		}
 		// GetCurrentMasterKeyID holds details about calls to the GetCurrentMasterKeyID method.
 		GetCurrentMasterKeyID []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Chain is the chain argument value.
-			Chain balance.Chain
+			Chain nexus.Chain
 		}
 		// GetKey holds details about calls to the GetKey method.
 		GetKey []struct {
@@ -368,14 +368,14 @@ type SignerMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Chain is the chain argument value.
-			Chain balance.Chain
+			Chain nexus.Chain
 		}
 		// GetNextMasterKeyID holds details about calls to the GetNextMasterKeyID method.
 		GetNextMasterKeyID []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Chain is the chain argument value.
-			Chain balance.Chain
+			Chain nexus.Chain
 		}
 		// GetSig holds details about calls to the GetSig method.
 		GetSig []struct {
@@ -416,13 +416,13 @@ type SignerMock struct {
 }
 
 // GetCurrentMasterKey calls GetCurrentMasterKeyFunc.
-func (mock *SignerMock) GetCurrentMasterKey(ctx sdk.Context, chain balance.Chain) (ecdsa.PublicKey, bool) {
+func (mock *SignerMock) GetCurrentMasterKey(ctx sdk.Context, chain nexus.Chain) (ecdsa.PublicKey, bool) {
 	if mock.GetCurrentMasterKeyFunc == nil {
 		panic("SignerMock.GetCurrentMasterKeyFunc: method is nil but Signer.GetCurrentMasterKey was just called")
 	}
 	callInfo := struct {
 		Ctx   sdk.Context
-		Chain balance.Chain
+		Chain nexus.Chain
 	}{
 		Ctx:   ctx,
 		Chain: chain,
@@ -438,11 +438,11 @@ func (mock *SignerMock) GetCurrentMasterKey(ctx sdk.Context, chain balance.Chain
 //     len(mockedSigner.GetCurrentMasterKeyCalls())
 func (mock *SignerMock) GetCurrentMasterKeyCalls() []struct {
 	Ctx   sdk.Context
-	Chain balance.Chain
+	Chain nexus.Chain
 } {
 	var calls []struct {
 		Ctx   sdk.Context
-		Chain balance.Chain
+		Chain nexus.Chain
 	}
 	mock.lockGetCurrentMasterKey.RLock()
 	calls = mock.calls.GetCurrentMasterKey
@@ -451,13 +451,13 @@ func (mock *SignerMock) GetCurrentMasterKeyCalls() []struct {
 }
 
 // GetCurrentMasterKeyID calls GetCurrentMasterKeyIDFunc.
-func (mock *SignerMock) GetCurrentMasterKeyID(ctx sdk.Context, chain balance.Chain) (string, bool) {
+func (mock *SignerMock) GetCurrentMasterKeyID(ctx sdk.Context, chain nexus.Chain) (string, bool) {
 	if mock.GetCurrentMasterKeyIDFunc == nil {
 		panic("SignerMock.GetCurrentMasterKeyIDFunc: method is nil but Signer.GetCurrentMasterKeyID was just called")
 	}
 	callInfo := struct {
 		Ctx   sdk.Context
-		Chain balance.Chain
+		Chain nexus.Chain
 	}{
 		Ctx:   ctx,
 		Chain: chain,
@@ -473,11 +473,11 @@ func (mock *SignerMock) GetCurrentMasterKeyID(ctx sdk.Context, chain balance.Cha
 //     len(mockedSigner.GetCurrentMasterKeyIDCalls())
 func (mock *SignerMock) GetCurrentMasterKeyIDCalls() []struct {
 	Ctx   sdk.Context
-	Chain balance.Chain
+	Chain nexus.Chain
 } {
 	var calls []struct {
 		Ctx   sdk.Context
-		Chain balance.Chain
+		Chain nexus.Chain
 	}
 	mock.lockGetCurrentMasterKeyID.RLock()
 	calls = mock.calls.GetCurrentMasterKeyID
@@ -521,13 +521,13 @@ func (mock *SignerMock) GetKeyCalls() []struct {
 }
 
 // GetNextMasterKey calls GetNextMasterKeyFunc.
-func (mock *SignerMock) GetNextMasterKey(ctx sdk.Context, chain balance.Chain) (ecdsa.PublicKey, bool) {
+func (mock *SignerMock) GetNextMasterKey(ctx sdk.Context, chain nexus.Chain) (ecdsa.PublicKey, bool) {
 	if mock.GetNextMasterKeyFunc == nil {
 		panic("SignerMock.GetNextMasterKeyFunc: method is nil but Signer.GetNextMasterKey was just called")
 	}
 	callInfo := struct {
 		Ctx   sdk.Context
-		Chain balance.Chain
+		Chain nexus.Chain
 	}{
 		Ctx:   ctx,
 		Chain: chain,
@@ -543,11 +543,11 @@ func (mock *SignerMock) GetNextMasterKey(ctx sdk.Context, chain balance.Chain) (
 //     len(mockedSigner.GetNextMasterKeyCalls())
 func (mock *SignerMock) GetNextMasterKeyCalls() []struct {
 	Ctx   sdk.Context
-	Chain balance.Chain
+	Chain nexus.Chain
 } {
 	var calls []struct {
 		Ctx   sdk.Context
-		Chain balance.Chain
+		Chain nexus.Chain
 	}
 	mock.lockGetNextMasterKey.RLock()
 	calls = mock.calls.GetNextMasterKey
@@ -556,13 +556,13 @@ func (mock *SignerMock) GetNextMasterKeyCalls() []struct {
 }
 
 // GetNextMasterKeyID calls GetNextMasterKeyIDFunc.
-func (mock *SignerMock) GetNextMasterKeyID(ctx sdk.Context, chain balance.Chain) (string, bool) {
+func (mock *SignerMock) GetNextMasterKeyID(ctx sdk.Context, chain nexus.Chain) (string, bool) {
 	if mock.GetNextMasterKeyIDFunc == nil {
 		panic("SignerMock.GetNextMasterKeyIDFunc: method is nil but Signer.GetNextMasterKeyID was just called")
 	}
 	callInfo := struct {
 		Ctx   sdk.Context
-		Chain balance.Chain
+		Chain nexus.Chain
 	}{
 		Ctx:   ctx,
 		Chain: chain,
@@ -578,11 +578,11 @@ func (mock *SignerMock) GetNextMasterKeyID(ctx sdk.Context, chain balance.Chain)
 //     len(mockedSigner.GetNextMasterKeyIDCalls())
 func (mock *SignerMock) GetNextMasterKeyIDCalls() []struct {
 	Ctx   sdk.Context
-	Chain balance.Chain
+	Chain nexus.Chain
 } {
 	var calls []struct {
 		Ctx   sdk.Context
-		Chain balance.Chain
+		Chain nexus.Chain
 	}
 	mock.lockGetNextMasterKeyID.RLock()
 	calls = mock.calls.GetNextMasterKeyID
@@ -707,64 +707,64 @@ func (mock *SignerMock) StartSignCalls() []struct {
 	return calls
 }
 
-// Ensure, that BalancerMock does implement types.Balancer.
+// Ensure, that NexusMock does implement types.Nexus.
 // If this is not the case, regenerate this file with moq.
-var _ types.Balancer = &BalancerMock{}
+var _ types.Nexus = &NexusMock{}
 
-// BalancerMock is a mock implementation of types.Balancer.
+// NexusMock is a mock implementation of types.Nexus.
 //
-// 	func TestSomethingThatUsesBalancer(t *testing.T) {
+// 	func TestSomethingThatUsesNexus(t *testing.T) {
 //
-// 		// make and configure a mocked types.Balancer
-// 		mockedBalancer := &BalancerMock{
-// 			ArchivePendingTransferFunc: func(ctx sdk.Context, transfer balance.CrossChainTransfer)  {
+// 		// make and configure a mocked types.Nexus
+// 		mockedNexus := &NexusMock{
+// 			ArchivePendingTransferFunc: func(ctx sdk.Context, transfer nexus.CrossChainTransfer)  {
 // 				panic("mock out the ArchivePendingTransfer method")
 // 			},
-// 			EnqueueForTransferFunc: func(ctx sdk.Context, sender balance.CrossChainAddress, amount sdk.Coin) error {
+// 			EnqueueForTransferFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) error {
 // 				panic("mock out the EnqueueForTransfer method")
 // 			},
-// 			GetArchivedTransfersForChainFunc: func(ctx sdk.Context, chain balance.Chain) []balance.CrossChainTransfer {
+// 			GetArchivedTransfersForChainFunc: func(ctx sdk.Context, chain nexus.Chain) []nexus.CrossChainTransfer {
 // 				panic("mock out the GetArchivedTransfersForChain method")
 // 			},
-// 			GetChainFunc: func(ctx sdk.Context, chain string) (balance.Chain, bool) {
+// 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 // 				panic("mock out the GetChain method")
 // 			},
-// 			GetPendingTransfersForChainFunc: func(ctx sdk.Context, chain balance.Chain) []balance.CrossChainTransfer {
+// 			GetPendingTransfersForChainFunc: func(ctx sdk.Context, chain nexus.Chain) []nexus.CrossChainTransfer {
 // 				panic("mock out the GetPendingTransfersForChain method")
 // 			},
-// 			GetRecipientFunc: func(ctx sdk.Context, sender balance.CrossChainAddress) (balance.CrossChainAddress, bool) {
+// 			GetRecipientFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
 // 				panic("mock out the GetRecipient method")
 // 			},
-// 			LinkAddressesFunc: func(ctx sdk.Context, sender balance.CrossChainAddress, recipient balance.CrossChainAddress)  {
+// 			LinkAddressesFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress)  {
 // 				panic("mock out the LinkAddresses method")
 // 			},
 // 		}
 //
-// 		// use mockedBalancer in code that requires types.Balancer
+// 		// use mockedNexus in code that requires types.Nexus
 // 		// and then make assertions.
 //
 // 	}
-type BalancerMock struct {
+type NexusMock struct {
 	// ArchivePendingTransferFunc mocks the ArchivePendingTransfer method.
-	ArchivePendingTransferFunc func(ctx sdk.Context, transfer balance.CrossChainTransfer)
+	ArchivePendingTransferFunc func(ctx sdk.Context, transfer nexus.CrossChainTransfer)
 
 	// EnqueueForTransferFunc mocks the EnqueueForTransfer method.
-	EnqueueForTransferFunc func(ctx sdk.Context, sender balance.CrossChainAddress, amount sdk.Coin) error
+	EnqueueForTransferFunc func(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) error
 
 	// GetArchivedTransfersForChainFunc mocks the GetArchivedTransfersForChain method.
-	GetArchivedTransfersForChainFunc func(ctx sdk.Context, chain balance.Chain) []balance.CrossChainTransfer
+	GetArchivedTransfersForChainFunc func(ctx sdk.Context, chain nexus.Chain) []nexus.CrossChainTransfer
 
 	// GetChainFunc mocks the GetChain method.
-	GetChainFunc func(ctx sdk.Context, chain string) (balance.Chain, bool)
+	GetChainFunc func(ctx sdk.Context, chain string) (nexus.Chain, bool)
 
 	// GetPendingTransfersForChainFunc mocks the GetPendingTransfersForChain method.
-	GetPendingTransfersForChainFunc func(ctx sdk.Context, chain balance.Chain) []balance.CrossChainTransfer
+	GetPendingTransfersForChainFunc func(ctx sdk.Context, chain nexus.Chain) []nexus.CrossChainTransfer
 
 	// GetRecipientFunc mocks the GetRecipient method.
-	GetRecipientFunc func(ctx sdk.Context, sender balance.CrossChainAddress) (balance.CrossChainAddress, bool)
+	GetRecipientFunc func(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool)
 
 	// LinkAddressesFunc mocks the LinkAddresses method.
-	LinkAddressesFunc func(ctx sdk.Context, sender balance.CrossChainAddress, recipient balance.CrossChainAddress)
+	LinkAddressesFunc func(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -773,14 +773,14 @@ type BalancerMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Transfer is the transfer argument value.
-			Transfer balance.CrossChainTransfer
+			Transfer nexus.CrossChainTransfer
 		}
 		// EnqueueForTransfer holds details about calls to the EnqueueForTransfer method.
 		EnqueueForTransfer []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Sender is the sender argument value.
-			Sender balance.CrossChainAddress
+			Sender nexus.CrossChainAddress
 			// Amount is the amount argument value.
 			Amount sdk.Coin
 		}
@@ -789,7 +789,7 @@ type BalancerMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Chain is the chain argument value.
-			Chain balance.Chain
+			Chain nexus.Chain
 		}
 		// GetChain holds details about calls to the GetChain method.
 		GetChain []struct {
@@ -803,23 +803,23 @@ type BalancerMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Chain is the chain argument value.
-			Chain balance.Chain
+			Chain nexus.Chain
 		}
 		// GetRecipient holds details about calls to the GetRecipient method.
 		GetRecipient []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Sender is the sender argument value.
-			Sender balance.CrossChainAddress
+			Sender nexus.CrossChainAddress
 		}
 		// LinkAddresses holds details about calls to the LinkAddresses method.
 		LinkAddresses []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Sender is the sender argument value.
-			Sender balance.CrossChainAddress
+			Sender nexus.CrossChainAddress
 			// Recipient is the recipient argument value.
-			Recipient balance.CrossChainAddress
+			Recipient nexus.CrossChainAddress
 		}
 	}
 	lockArchivePendingTransfer       sync.RWMutex
@@ -832,13 +832,13 @@ type BalancerMock struct {
 }
 
 // ArchivePendingTransfer calls ArchivePendingTransferFunc.
-func (mock *BalancerMock) ArchivePendingTransfer(ctx sdk.Context, transfer balance.CrossChainTransfer) {
+func (mock *NexusMock) ArchivePendingTransfer(ctx sdk.Context, transfer nexus.CrossChainTransfer) {
 	if mock.ArchivePendingTransferFunc == nil {
-		panic("BalancerMock.ArchivePendingTransferFunc: method is nil but Balancer.ArchivePendingTransfer was just called")
+		panic("NexusMock.ArchivePendingTransferFunc: method is nil but Nexus.ArchivePendingTransfer was just called")
 	}
 	callInfo := struct {
 		Ctx      sdk.Context
-		Transfer balance.CrossChainTransfer
+		Transfer nexus.CrossChainTransfer
 	}{
 		Ctx:      ctx,
 		Transfer: transfer,
@@ -851,14 +851,14 @@ func (mock *BalancerMock) ArchivePendingTransfer(ctx sdk.Context, transfer balan
 
 // ArchivePendingTransferCalls gets all the calls that were made to ArchivePendingTransfer.
 // Check the length with:
-//     len(mockedBalancer.ArchivePendingTransferCalls())
-func (mock *BalancerMock) ArchivePendingTransferCalls() []struct {
+//     len(mockedNexus.ArchivePendingTransferCalls())
+func (mock *NexusMock) ArchivePendingTransferCalls() []struct {
 	Ctx      sdk.Context
-	Transfer balance.CrossChainTransfer
+	Transfer nexus.CrossChainTransfer
 } {
 	var calls []struct {
 		Ctx      sdk.Context
-		Transfer balance.CrossChainTransfer
+		Transfer nexus.CrossChainTransfer
 	}
 	mock.lockArchivePendingTransfer.RLock()
 	calls = mock.calls.ArchivePendingTransfer
@@ -867,13 +867,13 @@ func (mock *BalancerMock) ArchivePendingTransferCalls() []struct {
 }
 
 // EnqueueForTransfer calls EnqueueForTransferFunc.
-func (mock *BalancerMock) EnqueueForTransfer(ctx sdk.Context, sender balance.CrossChainAddress, amount sdk.Coin) error {
+func (mock *NexusMock) EnqueueForTransfer(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) error {
 	if mock.EnqueueForTransferFunc == nil {
-		panic("BalancerMock.EnqueueForTransferFunc: method is nil but Balancer.EnqueueForTransfer was just called")
+		panic("NexusMock.EnqueueForTransferFunc: method is nil but Nexus.EnqueueForTransfer was just called")
 	}
 	callInfo := struct {
 		Ctx    sdk.Context
-		Sender balance.CrossChainAddress
+		Sender nexus.CrossChainAddress
 		Amount sdk.Coin
 	}{
 		Ctx:    ctx,
@@ -888,15 +888,15 @@ func (mock *BalancerMock) EnqueueForTransfer(ctx sdk.Context, sender balance.Cro
 
 // EnqueueForTransferCalls gets all the calls that were made to EnqueueForTransfer.
 // Check the length with:
-//     len(mockedBalancer.EnqueueForTransferCalls())
-func (mock *BalancerMock) EnqueueForTransferCalls() []struct {
+//     len(mockedNexus.EnqueueForTransferCalls())
+func (mock *NexusMock) EnqueueForTransferCalls() []struct {
 	Ctx    sdk.Context
-	Sender balance.CrossChainAddress
+	Sender nexus.CrossChainAddress
 	Amount sdk.Coin
 } {
 	var calls []struct {
 		Ctx    sdk.Context
-		Sender balance.CrossChainAddress
+		Sender nexus.CrossChainAddress
 		Amount sdk.Coin
 	}
 	mock.lockEnqueueForTransfer.RLock()
@@ -906,13 +906,13 @@ func (mock *BalancerMock) EnqueueForTransferCalls() []struct {
 }
 
 // GetArchivedTransfersForChain calls GetArchivedTransfersForChainFunc.
-func (mock *BalancerMock) GetArchivedTransfersForChain(ctx sdk.Context, chain balance.Chain) []balance.CrossChainTransfer {
+func (mock *NexusMock) GetArchivedTransfersForChain(ctx sdk.Context, chain nexus.Chain) []nexus.CrossChainTransfer {
 	if mock.GetArchivedTransfersForChainFunc == nil {
-		panic("BalancerMock.GetArchivedTransfersForChainFunc: method is nil but Balancer.GetArchivedTransfersForChain was just called")
+		panic("NexusMock.GetArchivedTransfersForChainFunc: method is nil but Nexus.GetArchivedTransfersForChain was just called")
 	}
 	callInfo := struct {
 		Ctx   sdk.Context
-		Chain balance.Chain
+		Chain nexus.Chain
 	}{
 		Ctx:   ctx,
 		Chain: chain,
@@ -925,14 +925,14 @@ func (mock *BalancerMock) GetArchivedTransfersForChain(ctx sdk.Context, chain ba
 
 // GetArchivedTransfersForChainCalls gets all the calls that were made to GetArchivedTransfersForChain.
 // Check the length with:
-//     len(mockedBalancer.GetArchivedTransfersForChainCalls())
-func (mock *BalancerMock) GetArchivedTransfersForChainCalls() []struct {
+//     len(mockedNexus.GetArchivedTransfersForChainCalls())
+func (mock *NexusMock) GetArchivedTransfersForChainCalls() []struct {
 	Ctx   sdk.Context
-	Chain balance.Chain
+	Chain nexus.Chain
 } {
 	var calls []struct {
 		Ctx   sdk.Context
-		Chain balance.Chain
+		Chain nexus.Chain
 	}
 	mock.lockGetArchivedTransfersForChain.RLock()
 	calls = mock.calls.GetArchivedTransfersForChain
@@ -941,9 +941,9 @@ func (mock *BalancerMock) GetArchivedTransfersForChainCalls() []struct {
 }
 
 // GetChain calls GetChainFunc.
-func (mock *BalancerMock) GetChain(ctx sdk.Context, chain string) (balance.Chain, bool) {
+func (mock *NexusMock) GetChain(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 	if mock.GetChainFunc == nil {
-		panic("BalancerMock.GetChainFunc: method is nil but Balancer.GetChain was just called")
+		panic("NexusMock.GetChainFunc: method is nil but Nexus.GetChain was just called")
 	}
 	callInfo := struct {
 		Ctx   sdk.Context
@@ -960,8 +960,8 @@ func (mock *BalancerMock) GetChain(ctx sdk.Context, chain string) (balance.Chain
 
 // GetChainCalls gets all the calls that were made to GetChain.
 // Check the length with:
-//     len(mockedBalancer.GetChainCalls())
-func (mock *BalancerMock) GetChainCalls() []struct {
+//     len(mockedNexus.GetChainCalls())
+func (mock *NexusMock) GetChainCalls() []struct {
 	Ctx   sdk.Context
 	Chain string
 } {
@@ -976,13 +976,13 @@ func (mock *BalancerMock) GetChainCalls() []struct {
 }
 
 // GetPendingTransfersForChain calls GetPendingTransfersForChainFunc.
-func (mock *BalancerMock) GetPendingTransfersForChain(ctx sdk.Context, chain balance.Chain) []balance.CrossChainTransfer {
+func (mock *NexusMock) GetPendingTransfersForChain(ctx sdk.Context, chain nexus.Chain) []nexus.CrossChainTransfer {
 	if mock.GetPendingTransfersForChainFunc == nil {
-		panic("BalancerMock.GetPendingTransfersForChainFunc: method is nil but Balancer.GetPendingTransfersForChain was just called")
+		panic("NexusMock.GetPendingTransfersForChainFunc: method is nil but Nexus.GetPendingTransfersForChain was just called")
 	}
 	callInfo := struct {
 		Ctx   sdk.Context
-		Chain balance.Chain
+		Chain nexus.Chain
 	}{
 		Ctx:   ctx,
 		Chain: chain,
@@ -995,14 +995,14 @@ func (mock *BalancerMock) GetPendingTransfersForChain(ctx sdk.Context, chain bal
 
 // GetPendingTransfersForChainCalls gets all the calls that were made to GetPendingTransfersForChain.
 // Check the length with:
-//     len(mockedBalancer.GetPendingTransfersForChainCalls())
-func (mock *BalancerMock) GetPendingTransfersForChainCalls() []struct {
+//     len(mockedNexus.GetPendingTransfersForChainCalls())
+func (mock *NexusMock) GetPendingTransfersForChainCalls() []struct {
 	Ctx   sdk.Context
-	Chain balance.Chain
+	Chain nexus.Chain
 } {
 	var calls []struct {
 		Ctx   sdk.Context
-		Chain balance.Chain
+		Chain nexus.Chain
 	}
 	mock.lockGetPendingTransfersForChain.RLock()
 	calls = mock.calls.GetPendingTransfersForChain
@@ -1011,13 +1011,13 @@ func (mock *BalancerMock) GetPendingTransfersForChainCalls() []struct {
 }
 
 // GetRecipient calls GetRecipientFunc.
-func (mock *BalancerMock) GetRecipient(ctx sdk.Context, sender balance.CrossChainAddress) (balance.CrossChainAddress, bool) {
+func (mock *NexusMock) GetRecipient(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
 	if mock.GetRecipientFunc == nil {
-		panic("BalancerMock.GetRecipientFunc: method is nil but Balancer.GetRecipient was just called")
+		panic("NexusMock.GetRecipientFunc: method is nil but Nexus.GetRecipient was just called")
 	}
 	callInfo := struct {
 		Ctx    sdk.Context
-		Sender balance.CrossChainAddress
+		Sender nexus.CrossChainAddress
 	}{
 		Ctx:    ctx,
 		Sender: sender,
@@ -1030,14 +1030,14 @@ func (mock *BalancerMock) GetRecipient(ctx sdk.Context, sender balance.CrossChai
 
 // GetRecipientCalls gets all the calls that were made to GetRecipient.
 // Check the length with:
-//     len(mockedBalancer.GetRecipientCalls())
-func (mock *BalancerMock) GetRecipientCalls() []struct {
+//     len(mockedNexus.GetRecipientCalls())
+func (mock *NexusMock) GetRecipientCalls() []struct {
 	Ctx    sdk.Context
-	Sender balance.CrossChainAddress
+	Sender nexus.CrossChainAddress
 } {
 	var calls []struct {
 		Ctx    sdk.Context
-		Sender balance.CrossChainAddress
+		Sender nexus.CrossChainAddress
 	}
 	mock.lockGetRecipient.RLock()
 	calls = mock.calls.GetRecipient
@@ -1046,14 +1046,14 @@ func (mock *BalancerMock) GetRecipientCalls() []struct {
 }
 
 // LinkAddresses calls LinkAddressesFunc.
-func (mock *BalancerMock) LinkAddresses(ctx sdk.Context, sender balance.CrossChainAddress, recipient balance.CrossChainAddress) {
+func (mock *NexusMock) LinkAddresses(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) {
 	if mock.LinkAddressesFunc == nil {
-		panic("BalancerMock.LinkAddressesFunc: method is nil but Balancer.LinkAddresses was just called")
+		panic("NexusMock.LinkAddressesFunc: method is nil but Nexus.LinkAddresses was just called")
 	}
 	callInfo := struct {
 		Ctx       sdk.Context
-		Sender    balance.CrossChainAddress
-		Recipient balance.CrossChainAddress
+		Sender    nexus.CrossChainAddress
+		Recipient nexus.CrossChainAddress
 	}{
 		Ctx:       ctx,
 		Sender:    sender,
@@ -1067,16 +1067,16 @@ func (mock *BalancerMock) LinkAddresses(ctx sdk.Context, sender balance.CrossCha
 
 // LinkAddressesCalls gets all the calls that were made to LinkAddresses.
 // Check the length with:
-//     len(mockedBalancer.LinkAddressesCalls())
-func (mock *BalancerMock) LinkAddressesCalls() []struct {
+//     len(mockedNexus.LinkAddressesCalls())
+func (mock *NexusMock) LinkAddressesCalls() []struct {
 	Ctx       sdk.Context
-	Sender    balance.CrossChainAddress
-	Recipient balance.CrossChainAddress
+	Sender    nexus.CrossChainAddress
+	Recipient nexus.CrossChainAddress
 } {
 	var calls []struct {
 		Ctx       sdk.Context
-		Sender    balance.CrossChainAddress
-		Recipient balance.CrossChainAddress
+		Sender    nexus.CrossChainAddress
+		Recipient nexus.CrossChainAddress
 	}
 	mock.lockLinkAddresses.RLock()
 	calls = mock.calls.LinkAddresses

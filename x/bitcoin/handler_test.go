@@ -21,12 +21,12 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/utils/denom"
-	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
 	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -38,11 +38,11 @@ func TestLink_NoMasterKey(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k.SetParams(ctx, types.DefaultParams())
 
-	recipient := balance.CrossChainAddress{Address: "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7", Chain: eth.Ethereum}
+	recipient := nexus.CrossChainAddress{Address: "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7", Chain: eth.Ethereum}
 
-	s := &mock.SignerMock{GetCurrentMasterKeyIDFunc: func(sdk.Context, balance.Chain) (string, bool) { return "", false }}
+	s := &mock.SignerMock{GetCurrentMasterKeyIDFunc: func(sdk.Context, nexus.Chain) (string, bool) { return "", false }}
 
-	handler := NewHandler(k, &mock.VoterMock{}, &mock.RPCClientMock{}, s, &mock.SnapshotterMock{}, &mock.BalancerMock{})
+	handler := NewHandler(k, &mock.VoterMock{}, &mock.RPCClientMock{}, s, &mock.SnapshotterMock{}, &mock.NexusMock{})
 	_, err := handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
@@ -56,7 +56,7 @@ func TestLink_Success(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k.SetParams(ctx, types.DefaultParams())
 
-	recipient := balance.CrossChainAddress{Address: "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7", Chain: eth.Ethereum}
+	recipient := nexus.CrossChainAddress{Address: "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7", Chain: eth.Ethereum}
 	privKey, err := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
 	if err != nil {
 		panic(err)
@@ -70,12 +70,12 @@ func TestLink_Success(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	sender := balance.CrossChainAddress{Address: btcAddr.EncodeAddress(), Chain: exported.Bitcoin}
+	sender := nexus.CrossChainAddress{Address: btcAddr.EncodeAddress(), Chain: exported.Bitcoin}
 
-	chains := map[string]balance.Chain{exported.Bitcoin.Name: exported.Bitcoin, eth.Ethereum.Name: eth.Ethereum}
-	b := &mock.BalancerMock{
-		LinkAddressesFunc: func(ctx sdk.Context, s balance.CrossChainAddress, r balance.CrossChainAddress) {},
-		GetChainFunc: func(ctx sdk.Context, chain string) (balance.Chain, bool) {
+	chains := map[string]nexus.Chain{exported.Bitcoin.Name: exported.Bitcoin, eth.Ethereum.Name: eth.Ethereum}
+	n := &mock.NexusMock{
+		LinkAddressesFunc: func(ctx sdk.Context, s nexus.CrossChainAddress, r nexus.CrossChainAddress) {},
+		GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 			c, ok := chains[chain]
 			return c, ok
 		},
@@ -85,16 +85,16 @@ func TestLink_Success(t *testing.T) {
 		GetKeyFunc: func(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool) {
 			return privKey.PublicKey, true
 		},
-		GetCurrentMasterKeyIDFunc: func(ctx sdk.Context, chain balance.Chain) (string, bool) { return "testkey", true },
+		GetCurrentMasterKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain) (string, bool) { return "testkey", true },
 	}
 
-	handler := NewHandler(k, &mock.VoterMock{}, &mock.RPCClientMock{}, s, &mock.SnapshotterMock{}, b)
+	handler := NewHandler(k, &mock.VoterMock{}, &mock.RPCClientMock{}, s, &mock.SnapshotterMock{}, n)
 	_, err = handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name})
 
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(b.LinkAddressesCalls()))
-	assert.Equal(t, sender, b.LinkAddressesCalls()[0].Sender)
-	assert.Equal(t, recipient, b.LinkAddressesCalls()[0].Recipient)
+	assert.Equal(t, 1, len(n.LinkAddressesCalls()))
+	assert.Equal(t, sender, n.LinkAddressesCalls()[0].Sender)
+	assert.Equal(t, recipient, n.LinkAddressesCalls()[0].Recipient)
 	assert.Equal(t, 1, len(s.GetKeyCalls()))
 }
 
@@ -135,7 +135,7 @@ func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 		panic(err)
 	}
 
-	handler := NewHandler(k, v, &rpc, &mock.SignerMock{}, &mock.SnapshotterMock{}, &mock.BalancerMock{})
+	handler := NewHandler(k, v, &rpc, &mock.SignerMock{}, &mock.SnapshotterMock{}, &mock.NexusMock{})
 
 	_, err = handler(ctx, types.MsgVerifyTx{Sender: sdk.AccAddress("sender"), OutPointInfo: info})
 	assert.Nil(t, err)
@@ -186,7 +186,7 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 		InitPollFunc:   func(_ sdk.Context, p vote.PollMeta) error { poll = p; return nil },
 		RecordVoteFunc: func(vote vote.MsgVote) {},
 	}
-	handler := NewHandler(k, v, &rpc, &mock.SignerMock{}, &mock.SnapshotterMock{}, &mock.BalancerMock{})
+	handler := NewHandler(k, v, &rpc, &mock.SignerMock{}, &mock.SnapshotterMock{}, &mock.NexusMock{})
 
 	_, err = handler(ctx, types.MsgVerifyTx{Sender: sdk.AccAddress("sender"), OutPointInfo: info})
 	assert.Nil(t, err)
@@ -223,7 +223,7 @@ func TestVoteVerifiedTx_NoUnverifiedOutPointWithVoteResult(t *testing.T) {
 		DeletePollFunc: func(ctx sdk.Context, poll vote.PollMeta) {},
 	}
 
-	handler := NewHandler(k, v, &mock.RPCClientMock{}, &mock.SignerMock{}, &mock.SnapshotterMock{}, &mock.BalancerMock{})
+	handler := NewHandler(k, v, &mock.RPCClientMock{}, &mock.SignerMock{}, &mock.SnapshotterMock{}, &mock.NexusMock{})
 	poll := vote.PollMeta{Module: "bitcoin", Type: "verify", ID: "txid"}
 	msg := &types.MsgVoteVerifiedTx{Sender: sdk.AccAddress("sender"), PollMeta: poll, VotingData: true}
 	_, err := handler(ctx, msg)
@@ -265,11 +265,11 @@ func TestVoteVerifiedTx_IncompleteVote(t *testing.T) {
 		DeletePollFunc: func(ctx sdk.Context, p vote.PollMeta) {},
 	}
 
-	b := &mock.BalancerMock{
-		GetRecipientFunc: func(ctx sdk.Context, s balance.CrossChainAddress) (balance.CrossChainAddress, bool) {
-			return balance.CrossChainAddress{}, false
+	b := &mock.NexusMock{
+		GetRecipientFunc: func(ctx sdk.Context, s nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
+			return nexus.CrossChainAddress{}, false
 		},
-		EnqueueForTransferFunc: func(ctx sdk.Context, s balance.CrossChainAddress, amount sdk.Coin) error {
+		EnqueueForTransferFunc: func(ctx sdk.Context, s nexus.CrossChainAddress, amount sdk.Coin) error {
 			return nil
 		},
 	}
@@ -317,11 +317,11 @@ func TestVoteVerifiedTx_KeyIDNotFound(t *testing.T) {
 		DeletePollFunc: func(ctx sdk.Context, p vote.PollMeta) {},
 	}
 
-	b := &mock.BalancerMock{
-		GetRecipientFunc: func(ctx sdk.Context, s balance.CrossChainAddress) (balance.CrossChainAddress, bool) {
-			return balance.CrossChainAddress{}, false
+	b := &mock.NexusMock{
+		GetRecipientFunc: func(ctx sdk.Context, s nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
+			return nexus.CrossChainAddress{}, false
 		},
-		EnqueueForTransferFunc: func(ctx sdk.Context, s balance.CrossChainAddress, amount sdk.Coin) error { return nil },
+		EnqueueForTransferFunc: func(ctx sdk.Context, s nexus.CrossChainAddress, amount sdk.Coin) error { return nil },
 	}
 
 	handler := NewHandler(k, v, &mock.RPCClientMock{}, &mock.SignerMock{}, &mock.SnapshotterMock{}, b)
@@ -371,11 +371,11 @@ func TestVoteVerifiedTx_Success_NotLinked(t *testing.T) {
 		DeletePollFunc: func(ctx sdk.Context, p vote.PollMeta) {},
 	}
 
-	b := &mock.BalancerMock{
-		GetRecipientFunc: func(ctx sdk.Context, s balance.CrossChainAddress) (balance.CrossChainAddress, bool) {
-			return balance.CrossChainAddress{}, false
+	b := &mock.NexusMock{
+		GetRecipientFunc: func(ctx sdk.Context, s nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
+			return nexus.CrossChainAddress{}, false
 		},
-		EnqueueForTransferFunc: func(ctx sdk.Context, s balance.CrossChainAddress, amount sdk.Coin) error {
+		EnqueueForTransferFunc: func(ctx sdk.Context, s nexus.CrossChainAddress, amount sdk.Coin) error {
 			return fmt.Errorf("not linked")
 		},
 	}
@@ -426,15 +426,15 @@ func TestVoteVerifiedTx_SucessAndTransfer(t *testing.T) {
 		DeletePollFunc: func(ctx sdk.Context, p vote.PollMeta) {},
 	}
 
-	sender := balance.CrossChainAddress{Address: btcSender.EncodeAddress(), Chain: exported.Bitcoin}
-	recipient := balance.CrossChainAddress{Address: "recipient", Chain: eth.Ethereum}
+	sender := nexus.CrossChainAddress{Address: btcSender.EncodeAddress(), Chain: exported.Bitcoin}
+	recipient := nexus.CrossChainAddress{Address: "recipient", Chain: eth.Ethereum}
 
-	b := &mock.BalancerMock{
-		GetRecipientFunc: func(ctx sdk.Context, s balance.CrossChainAddress) (balance.CrossChainAddress, bool) {
+	b := &mock.NexusMock{
+		GetRecipientFunc: func(ctx sdk.Context, s nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
 			return recipient, true
 		},
 
-		EnqueueForTransferFunc: func(ctx sdk.Context, s balance.CrossChainAddress, amount sdk.Coin) error {
+		EnqueueForTransferFunc: func(ctx sdk.Context, s nexus.CrossChainAddress, amount sdk.Coin) error {
 			if s.Address != sender.Address {
 				return fmt.Errorf("sender not linked to a recipient")
 			}
@@ -457,7 +457,7 @@ type mocks struct {
 	*mock.VoterMock
 	*mock.SignerMock
 	*mock.SnapshotterMock
-	*mock.BalancerMock
+	*mock.NexusMock
 }
 type expectedResult struct {
 	depositCount  int
@@ -483,7 +483,7 @@ func TestNewHandler_SignPendingTransfers(t *testing.T) {
 
 		sigs = make([]btcec.Signature, 0)
 		sk, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
-		chains := map[string]balance.Chain{exported.Bitcoin.Name: exported.Bitcoin, eth.Ethereum.Name: eth.Ethereum}
+		chains := map[string]nexus.Chain{exported.Bitcoin.Name: exported.Bitcoin, eth.Ethereum.Name: eth.Ethereum}
 		m = mocks{
 			&mock.RPCClientMock{},
 			&mock.VoterMock{
@@ -494,13 +494,13 @@ func TestNewHandler_SignPendingTransfers(t *testing.T) {
 				RecordVoteFunc: func(vote vote.MsgVote) {}},
 			&mock.SignerMock{
 				GetKeyFunc: func(sdk.Context, string) (ecdsa.PublicKey, bool) { return sk.PublicKey, true },
-				GetCurrentMasterKeyFunc: func(sdk.Context, balance.Chain) (ecdsa.PublicKey, bool) {
+				GetCurrentMasterKeyFunc: func(sdk.Context, nexus.Chain) (ecdsa.PublicKey, bool) {
 					return sk.PublicKey, true
 				},
-				GetCurrentMasterKeyIDFunc: func(sdk.Context, balance.Chain) (string, bool) {
+				GetCurrentMasterKeyIDFunc: func(sdk.Context, nexus.Chain) (string, bool) {
 					return testutils.RandStringBetween(5, 20), true
 				},
-				GetNextMasterKeyIDFunc: func(sdk.Context, balance.Chain) (string, bool) { return "", false },
+				GetNextMasterKeyIDFunc: func(sdk.Context, nexus.Chain) (string, bool) { return "", false },
 				GetSnapshotRoundForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
 					return testutils.RandPosInt(), true
 				},
@@ -515,17 +515,17 @@ func TestNewHandler_SignPendingTransfers(t *testing.T) {
 					return snapshot.Snapshot{}, true
 				},
 			},
-			&mock.BalancerMock{
-				LinkAddressesFunc:          func(sdk.Context, balance.CrossChainAddress, balance.CrossChainAddress) {},
-				EnqueueForTransferFunc:     func(sdk.Context, balance.CrossChainAddress, sdk.Coin) error { return nil },
-				ArchivePendingTransferFunc: func(ctx sdk.Context, transfer balance.CrossChainTransfer) {},
-				GetChainFunc: func(ctx sdk.Context, chain string) (balance.Chain, bool) {
+			&mock.NexusMock{
+				LinkAddressesFunc:          func(sdk.Context, nexus.CrossChainAddress, nexus.CrossChainAddress) {},
+				EnqueueForTransferFunc:     func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) error { return nil },
+				ArchivePendingTransferFunc: func(ctx sdk.Context, transfer nexus.CrossChainTransfer) {},
+				GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 					c, ok := chains[chain]
 					return c, ok
 				},
 			},
 		}
-		h = NewHandler(k, m.VoterMock, m.RPCClientMock, m.SignerMock, m.SnapshotterMock, m.BalancerMock)
+		h = NewHandler(k, m.VoterMock, m.RPCClientMock, m.SignerMock, m.SnapshotterMock, m.NexusMock)
 	}
 
 	testCases := []struct {
@@ -549,7 +549,7 @@ func TestNewHandler_SignPendingTransfers(t *testing.T) {
 
 			assert.NoError(t, err)
 			assert.Equal(t, expected.depositCount, len(m.SignerMock.StartSignCalls()))
-			assert.Equal(t, expected.transferCount, len(m.BalancerMock.ArchivePendingTransferCalls()))
+			assert.Equal(t, expected.transferCount, len(m.NexusMock.ArchivePendingTransferCalls()))
 			if expected.transferCount > 0 {
 				_, err = k.AssembleBtcTx(ctx, k.GetRawTx(ctx), sigs)
 				assert.NoError(t, err)
@@ -559,7 +559,7 @@ func TestNewHandler_SignPendingTransfers(t *testing.T) {
 }
 
 func prepareMsgSignPendingTransfersSuccessful(h sdk.Handler, ctx sdk.Context, m mocks) (sdk.Msg, expectedResult) {
-	var transfers []balance.CrossChainTransfer
+	var transfers []nexus.CrossChainTransfer
 	totalAmount := sdk.ZeroInt()
 	transferCount := int(testutils.RandIntBetween(1, 100))
 	for i := 0; i < transferCount; i++ {
@@ -584,7 +584,7 @@ func prepareMsgSignPendingTransfersSuccessful(h sdk.Handler, ctx sdk.Context, m 
 		_, _ = h(ctx, getMsgVoteVerifyTx(msgVerifyTx, true))
 	}
 
-	m.BalancerMock.GetPendingTransfersForChainFunc = func(ctx sdk.Context, chain balance.Chain) []balance.CrossChainTransfer {
+	m.NexusMock.GetPendingTransfersForChainFunc = func(ctx sdk.Context, chain nexus.Chain) []nexus.CrossChainTransfer {
 		return transfers
 	}
 
@@ -612,14 +612,14 @@ func prepareMsgSignPendingTransfersNotEnoughDeposits(h sdk.Handler, ctx sdk.Cont
 
 	fee := btcutil.Amount(testutils.RandPosInt())
 
-	var transfers []balance.CrossChainTransfer
+	var transfers []nexus.CrossChainTransfer
 	totalAmount := sdk.ZeroInt()
 	for totalAmount.AddRaw(int64(fee)).LTE(totalDeposits) {
 		transfer := randomTransfer()
 		totalAmount = totalAmount.Add(transfer.Asset.Amount)
 		transfers = append(transfers, transfer)
 	}
-	m.BalancerMock.GetPendingTransfersForChainFunc = func(ctx sdk.Context, chain balance.Chain) []balance.CrossChainTransfer {
+	m.NexusMock.GetPendingTransfersForChainFunc = func(ctx sdk.Context, chain nexus.Chain) []nexus.CrossChainTransfer {
 		return transfers
 	}
 
@@ -673,16 +673,16 @@ func randomMsgVerifyTx(addr string) types.MsgVerifyTx {
 	})
 }
 
-func randomTransfer() balance.CrossChainTransfer {
-	return balance.CrossChainTransfer{
-		Recipient: balance.CrossChainAddress{Chain: exported.Bitcoin, Address: randomAddress().EncodeAddress()},
+func randomTransfer() nexus.CrossChainTransfer {
+	return nexus.CrossChainTransfer{
+		Recipient: nexus.CrossChainAddress{Chain: exported.Bitcoin, Address: randomAddress().EncodeAddress()},
 		Asset:     sdk.NewInt64Coin(denom.Satoshi, testutils.RandPosInt()),
 		ID:        mathRand.Uint64(),
 	}
 }
 
 func prepareMsgSignPendingTransfersDoNothing(_ sdk.Handler, _ sdk.Context, m mocks) (sdk.Msg, expectedResult) {
-	m.BalancerMock.GetPendingTransfersForChainFunc = func(ctx sdk.Context, chain balance.Chain) []balance.CrossChainTransfer {
+	m.NexusMock.GetPendingTransfersForChainFunc = func(ctx sdk.Context, chain nexus.Chain) []nexus.CrossChainTransfer {
 		return nil
 	}
 
