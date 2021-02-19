@@ -186,17 +186,20 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v 
 	if err != nil {
 		output := fmt.Sprintf("could not retrieve Ethereum receipt for transaction %s: %v", txID, err)
 		k.Logger(ctx).Debug(sdkerrors.Wrap(err, output).Error())
-		return recordVote(ctx, k, poll, false, output, v), nil
+		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
+		return &sdk.Result{Log: output}, nil
 	}
 	if err = verifyTx(ctx, k, rpc, receipt.BlockNumber.Uint64()); err != nil {
 		output := fmt.Sprintf("expected transaction (%s) could not be verified: %v", txID, err)
 		k.Logger(ctx).Debug(sdkerrors.Wrap(err, output).Error())
-		return recordVote(ctx, k, poll, false, output, v), nil
+		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
+		return &sdk.Result{Log: output}, nil
 
 	}
 	output := fmt.Sprintf("successfully verified transaction %s", txID)
 	k.Logger(ctx).Debug(output)
-	return recordVote(ctx, k, poll, true, output, v), nil
+	v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: true})
+	return &sdk.Result{Log: output}, nil
 }
 
 // This can be used as a potential hook to immediately act on a poll being decided by the vote
@@ -355,23 +358,27 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 	if err != nil {
 		output := fmt.Sprintf("could not retrieve Ethereum receipt for transaction %s: %v", msg.TxID.String(), err)
 		k.Logger(ctx).Debug(sdkerrors.Wrap(err, output).Error())
-		return recordVote(ctx, k, poll, false, output, v), nil
+		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
+		return &sdk.Result{Log: output}, nil
 	}
 	err = verifyTx(ctx, k, rpc, receipt.BlockNumber.Uint64())
 	if err != nil {
 		output := fmt.Sprintf("transaction '%s' could not be verified", msg.TxID.String())
 		k.Logger(ctx).Debug(sdkerrors.Wrap(err, output).Error())
-		return recordVote(ctx, k, poll, false, output, v), nil
+		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
+		return &sdk.Result{Log: output}, nil
 	}
 	if err := verifyERC20TokenDeploy(ctx, receipt, k, msg.Symbol, msg.GatewayAddr, tokenAddr); err != nil {
 		output := fmt.Sprintf("expected erc20 token deploy (%s) could not be verified", msg.Symbol)
 		k.Logger(ctx).Debug(sdkerrors.Wrap(err, output).Error())
-		return recordVote(ctx, k, poll, false, output, v), nil
+		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
+		return &sdk.Result{Log: output}, nil
 	}
 
 	output := fmt.Sprintf("successfully verified erc20 token deployment from transaction %s", msg.TxID.String())
 	k.Logger(ctx).Debug(output)
-	return recordVote(ctx, k, poll, true, output, v), nil
+	v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: true})
+	return &sdk.Result{Log: output}, nil
 }
 
 func verifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, blockNum uint64) error {
@@ -417,20 +424,4 @@ func verifyERC20TokenDeploy(ctx sdk.Context, receipt *ethTypes.Receipt, keeper k
 	}
 
 	return fmt.Errorf("failed to verify token deployment for symbol '%s' at contract address '%s'", expectedSymbol, expectedAddr.String())
-}
-
-func recordVote(ctx sdk.Context, keeper keeper.Keeper, poll vote.PollMeta, vote bool, msg string, voter vote.Voter) *sdk.Result {
-	if err := voter.RecordVote(ctx, &types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: vote}); err != nil {
-		keeper.Logger(ctx).Error(sdkerrors.Wrap(err, "voting failed").Error())
-		return &sdk.Result{
-			Log:    err.Error(),
-			Data:   keeper.Codec().MustMarshalBinaryLengthPrefixed(false),
-			Events: ctx.EventManager().Events(),
-		}
-	}
-	return &sdk.Result{
-		Log:    msg,
-		Data:   keeper.Codec().MustMarshalBinaryLengthPrefixed(vote),
-		Events: ctx.EventManager().Events(),
-	}
 }
