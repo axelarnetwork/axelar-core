@@ -25,17 +25,19 @@ var _ exported.Snapshotter = Keeper{}
 type Keeper struct {
 	storeKey sdk.StoreKey
 	staking  types.StakingKeeper
+	slasher  types.Slasher
 	cdc      *codec.Codec
 	params   subspace.Subspace
 }
 
 // NewKeeper creates a new keeper for the staking module
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramSpace params.Subspace, staking types.StakingKeeper) Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramSpace params.Subspace, staking types.StakingKeeper, slasher types.Slasher) Keeper {
 	return Keeper{
 		storeKey: key,
 		cdc:      cdc,
 		staking:  staking,
 		params:   paramSpace.WithKeyTable(types.KeyTable()),
+		slasher:  slasher,
 	}
 }
 
@@ -53,6 +55,35 @@ func (k Keeper) SetParams(ctx sdk.Context, set types.Params) {
 func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	k.params.GetParamSet(ctx, &params)
 	return
+}
+
+// ComputeActiveValidators returns the subset of all validators that bonded and should be declared active
+// and their aggregate staking power
+func ComputeActiveValidators(ctx sdk.Context, validators []exported.Validator, slasher types.Slasher) (*[]exported.Validator, *sdk.Int, error) {
+
+	var activeValidators []exported.Validator
+	activeStake := sdk.NewInt(int64(0))
+
+	for _, validator := range validators {
+
+		addr := sdk.ConsAddress(validator.GetConsAddr().Bytes())
+		signingInfo, found := slasher.GetValidatorSigningInfo(ctx, addr)
+		if found == false {
+			return nil, nil, fmt.Errorf("snapshot: couldn't retrieve signing info for a validator")
+		}
+
+		// check if for any reason the validator should be declared as inactive
+		// e.g., the validator missed to vote on blocks
+		// TODO: check what interval we're checking missedBlocksCounter for.
+		if !(signingInfo.Tombstoned == true || signingInfo.MissedBlocksCounter > 0 ||
+			signingInfo.JailedUntil.After(time.Unix(0, 0))) {
+			activeValidators = append(activeValidators, validator)
+			valstake := sdk.NewInt(validator.GetConsensusPower())
+			activeStake = activeStake.Add(valstake)
+		}
+	}
+
+	return &activeValidators, &activeStake, nil
 }
 
 // TakeSnapshot attempts to create a new snapshot
@@ -84,7 +115,7 @@ func (k Keeper) getLockingPeriod(ctx sdk.Context) time.Duration {
 
 // GetLatestSnapshot retrieves the last created snapshot
 func (k Keeper) GetLatestSnapshot(ctx sdk.Context) (exported.Snapshot, bool) {
-	r := k.GetLatestRound(ctx)
+	r := k.GetLatestCounter(ctx)
 	if r == -1 {
 		return exported.Snapshot{}, false
 	}
@@ -92,7 +123,7 @@ func (k Keeper) GetLatestSnapshot(ctx sdk.Context) (exported.Snapshot, bool) {
 	return k.GetSnapshot(ctx, r)
 }
 
-// GetSnapshot retrieves a snapshot by round, if it exists
+// GetSnapshot retrieves a snapshot by counter, if it exists
 func (k Keeper) GetSnapshot(ctx sdk.Context, round int64) (exported.Snapshot, bool) {
 	bz := ctx.KVStore(k.storeKey).Get(roundKey(round))
 	if bz == nil {
@@ -105,8 +136,8 @@ func (k Keeper) GetSnapshot(ctx sdk.Context, round int64) (exported.Snapshot, bo
 	return snapshot, true
 }
 
-// GetLatestRound returns the latest snapshot round
-func (k Keeper) GetLatestRound(ctx sdk.Context) int64 {
+// GetLatestCounter returns the latest snapshot counter
+func (k Keeper) GetLatestCounter(ctx sdk.Context) int64 {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(lastRoundKey))
 
 	if bz == nil {
@@ -128,11 +159,16 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, nextRound int64) {
 
 	k.staking.IterateLastValidators(ctx, fnAppend)
 
+	activeValidators, activeStake, err := ComputeActiveValidators(ctx, validators, k.slasher)
+	if err != nil {
+		return
+	}
+
 	snapshot := exported.Snapshot{
-		Validators: validators,
+		Validators: *activeValidators,
 		Timestamp:  ctx.BlockTime(),
 		Height:     ctx.BlockHeight(),
-		TotalPower: k.staking.GetLastTotalPower(ctx),
+		TotalPower: *activeStake, // k.staking.GetLastTotalPower(ctx),
 		Round:      nextRound,
 	}
 

@@ -46,7 +46,7 @@ type testSetup struct {
 func setup() *testSetup {
 	setup := &testSetup{Ctx: sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())}
 	setup.Snapshotter = &snapMock.SnapshotterMock{
-		GetLatestRoundFunc: func(sdk.Context) int64 { return testutils.RandIntBetween(1, 10000) },
+		GetLatestCounterFunc: func(sdk.Context) int64 { return testutils.RandIntBetween(1, 10000) },
 		GetSnapshotFunc: func(sdk.Context, int64) (snapshot.Snapshot, bool) {
 			totalPower := sdk.ZeroInt()
 			for _, v := range setup.ValidatorSet {

@@ -45,6 +45,7 @@ type Signer interface {
 type Snapshotter interface {
 	GetValidator(ctx sdk.Context, address sdk.ValAddress) (snapshot.Validator, bool)
 	GetLatestSnapshot(ctx sdk.Context) (snapshot.Snapshot, bool)
-	GetLatestRound(ctx sdk.Context) int64
+	GetLatestCounter(ctx sdk.Context) int64
 	GetSnapshot(ctx sdk.Context, round int64) (snapshot.Snapshot, bool)
+	TakeSnapshot(ctx sdk.Context) error
 }

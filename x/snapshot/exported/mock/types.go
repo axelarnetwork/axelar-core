@@ -19,14 +19,17 @@ var _ exported.Snapshotter = &SnapshotterMock{}
 //
 // 		// make and configure a mocked exported.Snapshotter
 // 		mockedSnapshotter := &SnapshotterMock{
-// 			GetLatestRoundFunc: func(ctx sdk.Context) int64 {
-// 				panic("mock out the GetLatestRound method")
+// 			GetLatestCounterFunc: func(ctx sdk.Context) int64 {
+// 				panic("mock out the GetLatestCounter method")
 // 			},
 // 			GetLatestSnapshotFunc: func(ctx sdk.Context) (exported.Snapshot, bool) {
 // 				panic("mock out the GetLatestSnapshot method")
 // 			},
 // 			GetSnapshotFunc: func(ctx sdk.Context, round int64) (exported.Snapshot, bool) {
 // 				panic("mock out the GetSnapshot method")
+// 			},
+// 			TakeSnapshotFunc: func(ctx sdk.Context) error {
+// 				panic("mock out the TakeSnapshot method")
 // 			},
 // 		}
 //
@@ -35,8 +38,8 @@ var _ exported.Snapshotter = &SnapshotterMock{}
 //
 // 	}
 type SnapshotterMock struct {
-	// GetLatestRoundFunc mocks the GetLatestRound method.
-	GetLatestRoundFunc func(ctx sdk.Context) int64
+	// GetLatestCounterFunc mocks the GetLatestCounter method.
+	GetLatestCounterFunc func(ctx sdk.Context) int64
 
 	// GetLatestSnapshotFunc mocks the GetLatestSnapshot method.
 	GetLatestSnapshotFunc func(ctx sdk.Context) (exported.Snapshot, bool)
@@ -44,10 +47,13 @@ type SnapshotterMock struct {
 	// GetSnapshotFunc mocks the GetSnapshot method.
 	GetSnapshotFunc func(ctx sdk.Context, round int64) (exported.Snapshot, bool)
 
+	// TakeSnapshotFunc mocks the TakeSnapshot method.
+	TakeSnapshotFunc func(ctx sdk.Context) error
+
 	// calls tracks calls to the methods.
 	calls struct {
-		// GetLatestRound holds details about calls to the GetLatestRound method.
-		GetLatestRound []struct {
+		// GetLatestCounter holds details about calls to the GetLatestCounter method.
+		GetLatestCounter []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 		}
@@ -63,40 +69,46 @@ type SnapshotterMock struct {
 			// Round is the round argument value.
 			Round int64
 		}
+		// TakeSnapshot holds details about calls to the TakeSnapshot method.
+		TakeSnapshot []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
 	}
-	lockGetLatestRound    sync.RWMutex
+	lockGetLatestCounter  sync.RWMutex
 	lockGetLatestSnapshot sync.RWMutex
 	lockGetSnapshot       sync.RWMutex
+	lockTakeSnapshot      sync.RWMutex
 }
 
-// GetLatestRound calls GetLatestRoundFunc.
-func (mock *SnapshotterMock) GetLatestRound(ctx sdk.Context) int64 {
-	if mock.GetLatestRoundFunc == nil {
-		panic("SnapshotterMock.GetLatestRoundFunc: method is nil but Snapshotter.GetLatestRound was just called")
+// GetLatestCounter calls GetLatestCounterFunc.
+func (mock *SnapshotterMock) GetLatestCounter(ctx sdk.Context) int64 {
+	if mock.GetLatestCounterFunc == nil {
+		panic("SnapshotterMock.GetLatestCounterFunc: method is nil but Snapshotter.GetLatestCounter was just called")
 	}
 	callInfo := struct {
 		Ctx sdk.Context
 	}{
 		Ctx: ctx,
 	}
-	mock.lockGetLatestRound.Lock()
-	mock.calls.GetLatestRound = append(mock.calls.GetLatestRound, callInfo)
-	mock.lockGetLatestRound.Unlock()
-	return mock.GetLatestRoundFunc(ctx)
+	mock.lockGetLatestCounter.Lock()
+	mock.calls.GetLatestCounter = append(mock.calls.GetLatestCounter, callInfo)
+	mock.lockGetLatestCounter.Unlock()
+	return mock.GetLatestCounterFunc(ctx)
 }
 
-// GetLatestRoundCalls gets all the calls that were made to GetLatestRound.
+// GetLatestCounterCalls gets all the calls that were made to GetLatestCounter.
 // Check the length with:
-//     len(mockedSnapshotter.GetLatestRoundCalls())
-func (mock *SnapshotterMock) GetLatestRoundCalls() []struct {
+//     len(mockedSnapshotter.GetLatestCounterCalls())
+func (mock *SnapshotterMock) GetLatestCounterCalls() []struct {
 	Ctx sdk.Context
 } {
 	var calls []struct {
 		Ctx sdk.Context
 	}
-	mock.lockGetLatestRound.RLock()
-	calls = mock.calls.GetLatestRound
-	mock.lockGetLatestRound.RUnlock()
+	mock.lockGetLatestCounter.RLock()
+	calls = mock.calls.GetLatestCounter
+	mock.lockGetLatestCounter.RUnlock()
 	return calls
 }
 
@@ -166,6 +178,37 @@ func (mock *SnapshotterMock) GetSnapshotCalls() []struct {
 	return calls
 }
 
+// TakeSnapshot calls TakeSnapshotFunc.
+func (mock *SnapshotterMock) TakeSnapshot(ctx sdk.Context) error {
+	if mock.TakeSnapshotFunc == nil {
+		panic("SnapshotterMock.TakeSnapshotFunc: method is nil but Snapshotter.TakeSnapshot was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockTakeSnapshot.Lock()
+	mock.calls.TakeSnapshot = append(mock.calls.TakeSnapshot, callInfo)
+	mock.lockTakeSnapshot.Unlock()
+	return mock.TakeSnapshotFunc(ctx)
+}
+
+// TakeSnapshotCalls gets all the calls that were made to TakeSnapshot.
+// Check the length with:
+//     len(mockedSnapshotter.TakeSnapshotCalls())
+func (mock *SnapshotterMock) TakeSnapshotCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockTakeSnapshot.RLock()
+	calls = mock.calls.TakeSnapshot
+	mock.lockTakeSnapshot.RUnlock()
+	return calls
+}
+
 // Ensure, that ValidatorMock does implement exported.Validator.
 // If this is not the case, regenerate this file with moq.
 var _ exported.Validator = &ValidatorMock{}
@@ -176,6 +219,9 @@ var _ exported.Validator = &ValidatorMock{}
 //
 // 		// make and configure a mocked exported.Validator
 // 		mockedValidator := &ValidatorMock{
+// 			GetConsAddrFunc: func() sdk.ConsAddress {
+// 				panic("mock out the GetConsAddr method")
+// 			},
 // 			GetConsensusPowerFunc: func() int64 {
 // 				panic("mock out the GetConsensusPower method")
 // 			},
@@ -189,6 +235,9 @@ var _ exported.Validator = &ValidatorMock{}
 //
 // 	}
 type ValidatorMock struct {
+	// GetConsAddrFunc mocks the GetConsAddr method.
+	GetConsAddrFunc func() sdk.ConsAddress
+
 	// GetConsensusPowerFunc mocks the GetConsensusPower method.
 	GetConsensusPowerFunc func() int64
 
@@ -197,6 +246,9 @@ type ValidatorMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// GetConsAddr holds details about calls to the GetConsAddr method.
+		GetConsAddr []struct {
+		}
 		// GetConsensusPower holds details about calls to the GetConsensusPower method.
 		GetConsensusPower []struct {
 		}
@@ -204,8 +256,35 @@ type ValidatorMock struct {
 		GetOperator []struct {
 		}
 	}
+	lockGetConsAddr       sync.RWMutex
 	lockGetConsensusPower sync.RWMutex
 	lockGetOperator       sync.RWMutex
+}
+
+// GetConsAddr calls GetConsAddrFunc.
+func (mock *ValidatorMock) GetConsAddr() sdk.ConsAddress {
+	if mock.GetConsAddrFunc == nil {
+		panic("ValidatorMock.GetConsAddrFunc: method is nil but Validator.GetConsAddr was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetConsAddr.Lock()
+	mock.calls.GetConsAddr = append(mock.calls.GetConsAddr, callInfo)
+	mock.lockGetConsAddr.Unlock()
+	return mock.GetConsAddrFunc()
+}
+
+// GetConsAddrCalls gets all the calls that were made to GetConsAddr.
+// Check the length with:
+//     len(mockedValidator.GetConsAddrCalls())
+func (mock *ValidatorMock) GetConsAddrCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetConsAddr.RLock()
+	calls = mock.calls.GetConsAddr
+	mock.lockGetConsAddr.RUnlock()
+	return calls
 }
 
 // GetConsensusPower calls GetConsensusPowerFunc.

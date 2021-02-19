@@ -125,6 +125,10 @@ func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []broadcast.MsgWithSenderSett
 
 // RegisterProxy registers a proxy address for a given principal, which can broadcast messages in the principal's name
 func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy sdk.AccAddress) error {
+	//err := k.snapshotter.TakeSnapshot(ctx)
+	//if err != nil {
+	//	k.Logger(ctx).Error(err.Error())
+	//}
 	s, ok := k.snapshotter.GetLatestSnapshot(ctx)
 	if !ok {
 		k.Logger(ctx).Error("no snapshot found")

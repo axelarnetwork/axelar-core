@@ -46,3 +46,9 @@ type TSSDKeyGenClient interface {
 type TSSDSignClient interface {
 	tssd.GG18_SignClient
 }
+
+// StakingKeeper adopts the methods from "github.com/cosmos/cosmos-sdk/x/staking/exported" that are
+// actually used by this module
+type StakingKeeper interface {
+	GetLastTotalPower(ctx sdk.Context) (power sdk.Int)
+}
