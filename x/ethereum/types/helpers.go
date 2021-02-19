@@ -2,6 +2,7 @@ package types
 
 import (
 	"bytes"
+
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 )

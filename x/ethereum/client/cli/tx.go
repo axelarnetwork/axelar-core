@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authUtils "github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/spf13/cobra"
 
@@ -33,6 +34,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 			GetCmdLink(cdc),
 			GetCmdSignTx(cdc),
 			GetCmdVerifyTx(cdc),
+			GetCmdVerifyErc20TokenDeploy(cdc),
 			GetCmdSignPendingTransfersTx(cdc),
 			GetCmdSignDeployToken(cdc),
 		)...,
@@ -114,6 +116,28 @@ func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
 			cdc.MustUnmarshalJSON(json, &tx)
 
 			msg := types.NewMsgVerifyTx(cliCtx.GetFromAddress(), json)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+// GetCmdVerifyErc20TokenDeploy returns the cli command to verify a ERC20 token deployment
+func GetCmdVerifyErc20TokenDeploy(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "verify-erc20-token [txID] [symbol] [gateway address]",
+		Short: "Verify an ERC20 token deployment in an Ethereum transaction for a given symbol of token and gateway address",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
+
+			txID := common.HexToHash(args[0])
+			gatewayAddr := common.HexToAddress(args[2])
+
+			msg := types.NewMsgVerifyErc20TokenDeploy(cliCtx.GetFromAddress(), txID, args[1], gatewayAddr)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

@@ -20,12 +20,15 @@ import (
 )
 
 const (
-	rawPrefix     = "raw_"
-	txPrefix      = "tx_"
-	pendingPrefix = "pend_"
-	commandPrefix = "command_"
-	symbolPrefix  = "symbol_"
-	burnerPrefix  = "burner_"
+	rawPrefix           = "raw_"
+	verifiedTxPrefix    = "verified_tx_"
+	pendingTxPrefix     = "pending_tx_"
+	verifiedTokenPrefix = "verified_token_"
+	pendingTokenPrefix  = "pending_token_"
+	commandPrefix       = "command_"
+	symbolPrefix        = "symbol_"
+	burnerPrefix        = "burner_"
+	tokenPrefix         = "token_"
 )
 
 // Keeper represents the ethereum keeper
@@ -57,6 +60,13 @@ func (k Keeper) GetNetwork(ctx sdk.Context) types.Network {
 	var network types.Network
 	k.params.Get(ctx, types.KeyNetwork, &network)
 	return network
+}
+
+// GetERC20TokenDeploySignature returns the signature of the ERC20 transfer method
+func (k Keeper) GetERC20TokenDeploySignature(ctx sdk.Context) common.Hash {
+	var tokenSig []byte
+	k.params.Get(ctx, types.KeyTokenDeploySig, &tokenSig)
+	return common.BytesToHash(tokenSig)
 }
 
 // Codec returns the codec
@@ -101,6 +111,11 @@ func (k Keeper) GetBurnerInfo(ctx sdk.Context, burnerAddr common.Address) *types
 
 // GetTokenAddress calculates the token address given symbol and axelar gateway address
 func (k Keeper) GetTokenAddress(ctx sdk.Context, symbol string, gatewayAddr common.Address) (common.Address, error) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(tokenPrefix + symbol))
+	if bz != nil {
+		return common.BytesToAddress(bz), nil
+	}
+
 	tokenInfo := k.getTokenInfo(ctx, symbol)
 	if tokenInfo == nil {
 		return common.Address{}, fmt.Errorf("symbol not found/verified")
@@ -130,11 +145,12 @@ func (k Keeper) GetTokenAddress(ctx sdk.Context, symbol string, gatewayAddr comm
 		return common.Address{}, err
 	}
 
-	tokenInitCode := k.getTokenBC(ctx)
-	tokenInitCode = append(tokenInitCode, packed...)
+	tokenInitCode := append(k.getTokenBC(ctx), packed...)
 	tokenInitCodeHash := crypto.Keccak256Hash(tokenInitCode)
 
-	return crypto.CreateAddress2(gatewayAddr, saltToken, tokenInitCodeHash.Bytes()), nil
+	tokenAddr := crypto.CreateAddress2(gatewayAddr, saltToken, tokenInitCodeHash.Bytes())
+	ctx.KVStore(k.storeKey).Set([]byte(tokenPrefix+symbol), tokenAddr.Bytes())
+	return tokenAddr, nil
 }
 
 // GetBurnerAddressAndSalt calculates a burner address and the corresponding salt for the given token address, recipient and axelar gateway address
@@ -158,8 +174,7 @@ func (k Keeper) GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr common.Addres
 		return common.Address{}, [32]byte{}, err
 	}
 
-	burnerInitCode := k.getBurnerBC(ctx)
-	burnerInitCode = append(burnerInitCode, packed...)
+	burnerInitCode := append(k.getBurnerBC(ctx), packed...)
 	burnerInitCodeHash := crypto.Keccak256Hash(burnerInitCode)
 
 	return crypto.CreateAddress2(gatewayAddr, saltBurn, burnerInitCodeHash.Bytes()), saltBurn, nil
@@ -175,6 +190,12 @@ func (k Keeper) getTokenBC(ctx sdk.Context) []byte {
 	var b []byte
 	k.params.Get(ctx, types.KeyToken, &b)
 	return b
+}
+
+// SetUnverifiedErc20TokenDeploy stores and unverified erc20 token
+func (k Keeper) SetUnverifiedErc20TokenDeploy(ctx sdk.Context, token *types.Erc20TokenDeploy) {
+	bz := k.cdc.MustMarshalJSON(token)
+	ctx.KVStore(k.storeKey).Set([]byte(pendingTokenPrefix+token.TxID.String()), bz)
 }
 
 // SaveTokenInfo stores the token info
@@ -227,30 +248,48 @@ func (k Keeper) SetRawTx(ctx sdk.Context, txID string, tx *ethTypes.Transaction)
 
 // HasVerifiedTx returns true if a raw transaction has been stored
 func (k Keeper) HasVerifiedTx(ctx sdk.Context, txID string) bool {
-	return ctx.KVStore(k.storeKey).Has([]byte(txPrefix + txID))
+	return ctx.KVStore(k.storeKey).Has([]byte(verifiedTxPrefix + txID))
 }
 
 // SetUnverifiedTx stores and unverified transaction
 func (k Keeper) SetUnverifiedTx(ctx sdk.Context, txID string, tx *ethTypes.Transaction) {
-	ctx.KVStore(k.storeKey).Set([]byte(pendingPrefix+txID), tx.Hash().Bytes())
+	ctx.KVStore(k.storeKey).Set([]byte(pendingTxPrefix+txID), tx.Hash().Bytes())
 }
 
 // HasUnverifiedTx returns true if an unverified transaction has been stored
 func (k Keeper) HasUnverifiedTx(ctx sdk.Context, txID string) bool {
-	return ctx.KVStore(k.storeKey).Has([]byte(pendingPrefix + txID))
+	return ctx.KVStore(k.storeKey).Has([]byte(pendingTxPrefix + txID))
 }
 
-// ProcessVerificationResult stores the TX permanently if confirmed or discards the data otherwise
-func (k Keeper) ProcessVerificationResult(ctx sdk.Context, txID string, verified bool) error {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingPrefix + txID))
+// HasUnverifiedToken returns true if an unverified transaction has been stored
+func (k Keeper) HasUnverifiedToken(ctx sdk.Context, txID string) bool {
+	return ctx.KVStore(k.storeKey).Has([]byte(pendingTokenPrefix + txID))
+}
+
+// ProcessVerificationTxResult stores the TX permanently if confirmed or discards the data otherwise
+func (k Keeper) ProcessVerificationTxResult(ctx sdk.Context, txID string, verified bool) {
+	k.processVerificationResult(ctx, []byte(pendingTxPrefix+txID), []byte(verifiedTxPrefix+txID), verified)
+}
+
+// ProcessVerificationTokenResult stores the TX permanently if confirmed or discards the data otherwise
+func (k Keeper) ProcessVerificationTokenResult(ctx sdk.Context, txID string, verified bool) {
+	ok := k.processVerificationResult(ctx, []byte(pendingTokenPrefix+txID), []byte(verifiedTokenPrefix+txID), verified)
+	if !ok {
+		k.Logger(ctx).Debug(fmt.Sprintf("tx %s not found", txID))
+	}
+}
+
+func (k Keeper) processVerificationResult(ctx sdk.Context, pendingKey, verifiedKey []byte, verified bool) bool {
+
+	bz := ctx.KVStore(k.storeKey).Get(pendingKey)
 	if bz == nil {
-		return fmt.Errorf("tx %s not found", txID)
+		return false
 	}
 	if verified {
-		ctx.KVStore(k.storeKey).Set([]byte(txPrefix+txID), bz)
+		ctx.KVStore(k.storeKey).Set(verifiedKey, bz)
 	}
-	ctx.KVStore(k.storeKey).Delete([]byte(pendingPrefix + txID))
-	return nil
+	ctx.KVStore(k.storeKey).Delete(pendingKey)
+	return true
 }
 
 // AssembleEthTx sets a signature for a previously stored raw transaction
