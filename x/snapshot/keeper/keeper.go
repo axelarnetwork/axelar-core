@@ -76,13 +76,12 @@ func ComputeActiveValidators(ctx sdk.Context, validators []exported.Validator, s
 		// e.g., the validator missed to vote on blocks
 		// TODO: check what interval we're checking missedBlocksCounter for.
 		if signingInfo.Tombstoned || signingInfo.MissedBlocksCounter > 0 || signingInfo.JailedUntil.After(time.Unix(0, 0)) {
-		    continue
+			continue
 		}
-			signingInfo.JailedUntil.After(time.Unix(0, 0))) {
-			activeValidators = append(activeValidators, validator)
-			valstake := sdk.NewInt(validator.GetConsensusPower())
-			activeStake = activeStake.Add(valstake)
-		}
+		activeValidators = append(activeValidators, validator)
+		valstake := sdk.NewInt(validator.GetConsensusPower())
+		activeStake = activeStake.Add(valstake)
+
 	}
 
 	return activeValidators, activeStake, nil
