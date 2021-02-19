@@ -28,11 +28,11 @@ type Snapshotter interface {
 type Signer interface {
 	StartSign(ctx sdk.Context, keyID string, sigID string, msg []byte, validators []snapshot.Validator) error
 	GetCurrentMasterKeyID(ctx sdk.Context, chain exported.Chain) (string, bool)
+	GetNextMasterKeyID(ctx sdk.Context, chain exported.Chain) (string, bool)
 	GetSig(ctx sdk.Context, sigID string) (tss.Signature, bool)
 	GetKey(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool)
 	GetCurrentMasterKey(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool)
 	GetNextMasterKey(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool)
-	GetKeyForSigID(ctx sdk.Context, sigID string) (ecdsa.PublicKey, bool)
 	GetSnapshotRoundForKeyID(ctx sdk.Context, keyID string) (int64, bool)
 }
 

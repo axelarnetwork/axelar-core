@@ -371,7 +371,7 @@ func createBasicRPCMock(tx *ethTypes.Transaction, confCount int64) *ethMock.RPCC
 func createVoterMock() *ethMock.VoterMock {
 	return &ethMock.VoterMock{
 		InitPollFunc:   func(sdk.Context, vote.PollMeta) error { return nil },
-		RecordVoteFunc: func(sdk.Context, vote.MsgVote) error { return nil },
+		RecordVoteFunc: func(vote.MsgVote) {},
 	}
 }
 

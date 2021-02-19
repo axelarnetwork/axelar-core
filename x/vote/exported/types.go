@@ -12,6 +12,7 @@ import (
 type VotingData interface {
 }
 
+// PollMeta represents the meta data for a poll
 type PollMeta struct {
 	Module string
 	Type   string
@@ -22,6 +23,7 @@ func (p PollMeta) String() string {
 	return p.Module + p.Type + p.ID
 }
 
+// Validate performs a stateless validity check to ensure PollMeta has been properly initialized
 func (p PollMeta) Validate() error {
 	if p.Module == "" {
 		return fmt.Errorf("missing module")
@@ -35,12 +37,14 @@ func (p PollMeta) Validate() error {
 	return nil
 }
 
+// Vote provides functionality to interact with a vote for a poll
 type Vote interface {
 	Poll() PollMeta
 	// Data returns the data that was voted on. Modules need to ensure they cast it back into the correct type
 	Data() VotingData
 }
 
+// MsgVote defines the message structure accepted by the vote module as a vote
 type MsgVote interface {
 	exported.MsgWithSenderSetter
 	Vote
@@ -50,7 +54,7 @@ type MsgVote interface {
 type Voter interface {
 	InitPoll(ctx sdk.Context, poll PollMeta) error
 	DeletePoll(ctx sdk.Context, poll PollMeta)
-	RecordVote(ctx sdk.Context, vote MsgVote) error
+	RecordVote(vote MsgVote)
 	TallyVote(ctx sdk.Context, vote MsgVote) error
 	Result(ctx sdk.Context, poll PollMeta) VotingData
 }

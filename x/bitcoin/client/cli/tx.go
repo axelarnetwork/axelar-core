@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 
-	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -33,7 +32,6 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 	btcTxCmd.AddCommand(flags.PostCommands(
 		GetCmdVerifyTx(cdc),
-		GetCmdSignRawTx(cdc),
 		GetCmdLink(cdc),
 		GetCmdSignPendingTransfersTx(cdc),
 	)...)
@@ -59,34 +57,6 @@ func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
 
 			msg := types.MsgVerifyTx{Sender: cliCtx.GetFromAddress(), OutPointInfo: out}
 
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
-		},
-	}
-}
-
-// GetCmdSignRawTx returns the command to sign a raw Bitcoin transaction
-func GetCmdSignRawTx(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "signTx [txID:voutIdx] [tx json]",
-		Short: "Sign raw spending transaction with utxo of [txID]",
-		Long:  fmt.Sprintf("Sign raw transaction. Get raw transaction by querying %s", keeper.QueryRawTx),
-		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-
-			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
-			var tx *wire.MsgTx
-			types.ModuleCdc.MustUnmarshalJSON([]byte(args[1]), &tx)
-
-			outpoint, err := types.OutPointFromStr(args[0])
-			if err != nil {
-				return err
-			}
-
-			msg := types.NewMsgSignTx(cliCtx.GetFromAddress(), outpoint, tx)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -129,7 +99,7 @@ func GetCmdSignPendingTransfersTx(cdc *codec.Codec) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			msg := types.NewMsgSignPendingTransfers(cliCtx.GetFromAddress(), btcutil.Amount(satoshi.Amount.Int64()))
+			msg := types.NewMsgSign(cliCtx.GetFromAddress(), btcutil.Amount(satoshi.Amount.Int64()))
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

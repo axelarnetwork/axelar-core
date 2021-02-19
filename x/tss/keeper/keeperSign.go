@@ -84,10 +84,7 @@ func (k Keeper) StartSign(ctx sdk.Context, keyID string, sigID string, msg []byt
 		sig, ok := <-resChan
 		k.Logger(ctx).Info("handler goroutine: received sig from server!")
 		if ok {
-			err := k.voter.RecordVote(ctx, &types.MsgVoteSig{PollMeta: poll, SigBytes: sig})
-			if err != nil {
-				k.Logger(ctx).Error(err.Error())
-			}
+			k.voter.RecordVote(&types.MsgVoteSig{PollMeta: poll, SigBytes: sig})
 		}
 	}()
 	return nil
@@ -132,6 +129,7 @@ func (k Keeper) GetSig(ctx sdk.Context, sigID string) (exported.Signature, bool)
 	return exported.Signature{R: r, S: s}, true
 }
 
+// SetSig stores the given signature by its ID
 func (k Keeper) SetSig(ctx sdk.Context, sigID string, signature exported.Signature) error {
 	// Delete the reference to the signing stream with sigID because entering this function means the tss protocol has completed
 	delete(k.signStreams, sigID)
@@ -179,6 +177,7 @@ func (k Keeper) prepareSign(ctx sdk.Context, keyID, sigID string, msg []byte, va
 	return stream, signInit
 }
 
+// GetKeyForSigID returns the key that produced the signature corresponding to the given ID
 func (k Keeper) GetKeyForSigID(ctx sdk.Context, sigID string) (ecdsa.PublicKey, bool) {
 	keyID, ok := k.getKeyIDForSig(ctx, sigID)
 	if !ok {

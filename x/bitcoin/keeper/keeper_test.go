@@ -64,7 +64,7 @@ func prepareVerifiedOutPoints(k Keeper, ctx sdk.Context, infoCount int) []types.
 	for i := 0; i < infoCount; i++ {
 		info := randOutPointInfo()
 		k.SetUnverifiedOutpointInfo(ctx, info)
-		k.ProcessVerificationResult(ctx, info.OutPoint.String(), true)
+		k.ProcessVerificationResult(ctx, info.OutPoint, true)
 		outs = append(outs, info)
 	}
 	return outs
@@ -74,7 +74,7 @@ func prepareSpentOutPoints(k Keeper, ctx sdk.Context, infoCount int) []types.Out
 	for i := 0; i < infoCount; i++ {
 		info := randOutPointInfo()
 		k.SetUnverifiedOutpointInfo(ctx, info)
-		k.ProcessVerificationResult(ctx, info.OutPoint.String(), true)
+		k.ProcessVerificationResult(ctx, info.OutPoint, true)
 		k.SpendVerifiedOutPoint(ctx, info.OutPoint.String())
 	}
 	return nil
