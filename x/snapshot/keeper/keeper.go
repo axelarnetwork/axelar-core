@@ -165,7 +165,7 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, nextRound int64) {
 	}
 
 	snapshot := exported.Snapshot{
-		Validators: *activeValidators,
+		Validators: activeValidators,
 		Timestamp:  ctx.BlockTime(),
 		Height:     ctx.BlockHeight(),
 		TotalPower: *activeStake, // k.staking.GetLastTotalPower(ctx),
