@@ -27,7 +27,7 @@ const (
 
 // Keeper - the broadcast keeper
 type Keeper struct {
-	snapshotter     types.Snapshotter
+	staker          types.Staker
 	storeKey        sdk.StoreKey
 	from            sdk.AccAddress
 	keybase         keys.Keybase
@@ -47,7 +47,7 @@ func NewKeeper(
 	subjectiveStore store.SubjectiveStore,
 	keybase keys.Keybase,
 	authKeeper auth.AccountKeeper,
-	stakingKeeper types.Snapshotter,
+	stakingKeeper types.Staker,
 	client client.ABCIClient,
 	conf types.ClientConfig,
 	logger log.Logger,
@@ -60,7 +60,7 @@ func NewKeeper(
 	logger.With("module", fmt.Sprintf("x/%s", types.ModuleName)).Debug("broadcast keeper created")
 	return Keeper{
 		subjectiveStore: subjectiveStore,
-		snapshotter:     stakingKeeper,
+		staker:          stakingKeeper,
 		storeKey:        storeKey,
 		from:            from,
 		keybase:         keybase,
@@ -125,14 +125,9 @@ func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []broadcast.MsgWithSenderSett
 
 // RegisterProxy registers a proxy address for a given principal, which can broadcast messages in the principal's name
 func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy sdk.AccAddress) error {
-	s, ok := k.snapshotter.GetLatestSnapshot(ctx)
-	if !ok {
-		k.Logger(ctx).Error("no snapshot found")
-		return types.ErrInvalidValidator
-	}
-	_, ok = s.GetValidator(principal)
-	if !ok {
-		return fmt.Errorf("validator %s is not part of the current snapshot", principal.String())
+	val := k.staker.Validator(ctx, principal)
+	if val != nil {
+		return fmt.Errorf("validator %s is unknown", principal.String())
 	}
 	k.Logger(ctx).Debug("getting proxy count")
 	count := k.getProxyCount(ctx)
