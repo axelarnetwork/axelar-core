@@ -69,7 +69,7 @@ func ComputeActiveValidators(ctx sdk.Context, validators []exported.Validator, s
 		addr := sdk.ConsAddress(validator.GetConsAddr().Bytes())
 		signingInfo, found := slasher.GetValidatorSigningInfo(ctx, addr)
 		if !found {
-			return nil, nil, fmt.Errorf("snapshot: couldn't retrieve signing info for a validator")
+			return nil, sdk.NewInt(int64(0)), fmt.Errorf("snapshot: couldn't retrieve signing info for a validator")
 		}
 
 		// check if for any reason the validator should be declared as inactive
@@ -169,7 +169,7 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, nextRound int64) {
 		Validators: activeValidators,
 		Timestamp:  ctx.BlockTime(),
 		Height:     ctx.BlockHeight(),
-		TotalPower: *activeStake, // k.staking.GetLastTotalPower(ctx),
+		TotalPower: activeStake,
 		Round:      nextRound,
 	}
 
