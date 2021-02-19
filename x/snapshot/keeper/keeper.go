@@ -59,7 +59,7 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 
 // ComputeActiveValidators returns the subset of all validators that bonded and should be declared active
 // and their aggregate staking power
-func ComputeActiveValidators(ctx sdk.Context, validators []exported.Validator, slasher types.Slasher) (*[]exported.Validator, *sdk.Int, error) {
+func ComputeActiveValidators(ctx sdk.Context, validators []exported.Validator, slasher types.Slasher) ([]exported.Validator, sdk.Int, error) {
 
 	var activeValidators []exported.Validator
 	activeStake := sdk.NewInt(int64(0))
