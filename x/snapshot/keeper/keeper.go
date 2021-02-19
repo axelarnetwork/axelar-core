@@ -75,7 +75,9 @@ func ComputeActiveValidators(ctx sdk.Context, validators []exported.Validator, s
 		// check if for any reason the validator should be declared as inactive
 		// e.g., the validator missed to vote on blocks
 		// TODO: check what interval we're checking missedBlocksCounter for.
-		if !(signingInfo.Tombstoned == true || signingInfo.MissedBlocksCounter > 0 ||
+		if signingInfo.Tombstoned || signingInfo.MissedBlocksCounter > 0 || signingInfo.JailedUntil.After(time.Unix(0, 0)) {
+		    continue
+		}
 			signingInfo.JailedUntil.After(time.Unix(0, 0))) {
 			activeValidators = append(activeValidators, validator)
 			valstake := sdk.NewInt(validator.GetConsensusPower())
