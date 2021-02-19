@@ -9,6 +9,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/ethereum/go-ethereum/common"
+	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -160,4 +161,25 @@ func TestGetBurnerAddressAndSalt_CorrectData(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expectedBurnerAddr, actualburnerAddr)
 	assert.Equal(t, expectedSalt, actualSalt[:])
+}
+
+func TestDecodeTokenDeployEvent_CorrectData(t *testing.T) {
+	cdc := testutils.Codec()
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	subspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
+	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"), subspace)
+	k.SetParams(ctx, types.DefaultParams())
+
+	axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
+	tokenDeploySig := k.GetERC20TokenDeploySignature(ctx)
+	expectedAddr := common.HexToAddress("0xE7481ECB61F9C84b91C03414F3D5d48E5436045D")
+	expectedSymbol := "XPTO"
+	data := common.FromHex("0x0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000e7481ecb61f9c84b91c03414f3d5d48e5436045d00000000000000000000000000000000000000000000000000000000000000045850544f00000000000000000000000000000000000000000000000000000000")
+
+	log := &ethTypes.Log{Address: axelarGateway, Data: data, Topics: []common.Hash{tokenDeploySig}}
+
+	symbol, tokenAddr, err := types.DecodeErc20TokenDeployEvent(log, tokenDeploySig)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedSymbol, symbol)
+	assert.Equal(t, expectedAddr, tokenAddr)
 }

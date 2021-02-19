@@ -172,6 +172,13 @@ type CommandParams struct {
 	ContractAddr string
 }
 
+// Erc20TokenDeploy describes information about an ERC20 token
+type Erc20TokenDeploy struct {
+	TxID      common.Hash
+	Symbol    string
+	TokenAddr common.Address
+}
+
 // BurnerInfo describes information required to burn token at an burner address
 // that is deposited by an user
 type BurnerInfo struct {
@@ -379,4 +386,28 @@ func createDeployTokenParams(tokenName string, symbol string, decimals uint8, ca
 	}
 
 	return result, nil
+}
+
+// DecodeErc20TokenDeployEvent decodes the information contained in a ERC"= token deployment event
+func DecodeErc20TokenDeployEvent(log *ethTypes.Log, transferSig common.Hash) (string, common.Address, error) {
+	if len(log.Topics) != 1 || log.Topics[0] != transferSig {
+		return "", common.Address{}, fmt.Errorf("event is not for an ERC20 token deployment")
+	}
+
+	// Decode the data field
+	stringType, err := abi.NewType("string", "string", nil)
+	if err != nil {
+		return "", common.Address{}, err
+	}
+	addressType, err := abi.NewType("address", "address", nil)
+	if err != nil {
+		return "", common.Address{}, err
+	}
+	packedArgs := abi.Arguments{{Type: stringType}, {Type: addressType}}
+	args, err := packedArgs.Unpack(log.Data)
+	if err != nil {
+		return "", common.Address{}, err
+	}
+
+	return args[0].(string), args[1].(common.Address), nil
 }
