@@ -253,34 +253,30 @@ func (k Keeper) HasUnverifiedTx(ctx sdk.Context, txID string) bool {
 	return ctx.KVStore(k.storeKey).Has([]byte(pendingTxPrefix + txID))
 }
 
-// ProcessVerificationResult stores the TX permanently if confirmed or discards the data otherwise
-func (k Keeper) ProcessVerificationResult(ctx sdk.Context, txID, pollType string, verified bool) {
+// ProcessVerificationTxResult stores the TX permanently if confirmed or discards the data otherwise
+func (k Keeper) ProcessVerificationTxResult(ctx sdk.Context, txID string, verified bool) {
+	k.processVerificationResult(ctx, []byte(pendingTxPrefix+txID), []byte(verifiedTxPrefix+txID), verified)
+}
 
-	var pendingKey []byte
-	var verifiedKey []byte
-
-	switch pollType {
-	case types.PollVerifyToken:
-		pendingKey = []byte(pendingTokenPrefix + txID)
-		verifiedKey = []byte(verifiedTokenPrefix + txID)
-	case types.PollVerifyTx:
-		pendingKey = []byte(pendingTxPrefix + txID)
-		verifiedKey = []byte(verifiedTxPrefix + txID)
-	default:
-		k.Logger(ctx).Debug(fmt.Sprintf("unknown verification type: %s", pollType))
-		return
+// ProcessVerificationTokenResult stores the TX permanently if confirmed or discards the data otherwise
+func (k Keeper) ProcessVerificationTokenResult(ctx sdk.Context, txID string, verified bool) {
+	ok := k.processVerificationResult(ctx, []byte(pendingTokenPrefix+txID), []byte(verifiedTokenPrefix+txID), verified)
+	if !ok {
+		k.Logger(ctx).Debug(fmt.Sprintf("tx %s not found", txID))
 	}
+}
+
+func (k Keeper) processVerificationResult(ctx sdk.Context, pendingKey, verifiedKey []byte, verified bool) bool {
 
 	bz := ctx.KVStore(k.storeKey).Get(pendingKey)
 	if bz == nil {
-		k.Logger(ctx).Debug(fmt.Sprintf("tx %s not found", txID))
-		return
+		return false
 	}
 	if verified {
 		ctx.KVStore(k.storeKey).Set(verifiedKey, bz)
 	}
 	ctx.KVStore(k.storeKey).Delete(pendingKey)
-	return
+	return true
 }
 
 // AssembleEthTx sets a signature for a previously stored raw transaction

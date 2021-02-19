@@ -50,14 +50,6 @@ const (
 	axelarGatewayFuncExecute        = "execute"
 )
 
-const (
-	// PollVerifyTx identifies a voting poll for transaction verification
-	PollVerifyTx = "poll_verify_transaction"
-
-	// PollVerifyToken identifies a voting poll for token deployment verification
-	PollVerifyToken = "poll_verify_token_deploy"
-)
-
 var (
 	networksByID = map[int64]Network{
 		params.MainnetChainConfig.ChainID.Int64():       Mainnet,

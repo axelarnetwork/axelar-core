@@ -380,7 +380,7 @@ func assertVotedOnPoll(t *testing.T, voter *ethMock.VoterMock, hash common.Hash,
 
 	assert.Equal(t, 1, len(voter.InitPollCalls()))
 	assert.Equal(t, types.ModuleName, voter.InitPollCalls()[0].Poll.Module)
-	assert.Equal(t, types.PollVerifyTx, voter.InitPollCalls()[0].Poll.Type)
+	assert.Equal(t, types.MsgVerifyTx{}.Type(), voter.InitPollCalls()[0].Poll.Type)
 	assert.Equal(t, hash.String(), voter.InitPollCalls()[0].Poll.ID)
 
 	initPoll := voter.InitPollCalls()[0].Poll
