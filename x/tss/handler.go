@@ -200,11 +200,11 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 		return nil, sdkerrors.Wrap(types.ErrTss, "the system needs to have at least one validator snapshot")
 	}
 	if !satisfyMinKeygenThreshold(ctx, k, snapshot.TotalPower, staker.GetLastTotalPower(ctx)) {
-		k.Logger(ctx).Info("Unable to meet min stake threshold required for keygen: active %s out of %s total",
+		msg := fmt.Sprintf("Unable to meet min stake threshold required for keygen: active %s out of %s total",
 			snapshot.TotalPower.String(), staker.GetLastTotalPower(ctx).String())
+		k.Logger(ctx).Info(msg)
 
-		return nil, fmt.Errorf("Unable to meet min stake threshold required for keygen: active %s out of %s total",
-			snapshot.TotalPower.String(), staker.GetLastTotalPower(ctx).String())
+		return nil, fmt.Errorf(msg)
 	}
 
 	// TODO: need to figure out how to calculate threshold based on total number of
