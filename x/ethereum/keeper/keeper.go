@@ -28,6 +28,7 @@ const (
 	commandPrefix       = "command_"
 	symbolPrefix        = "symbol_"
 	burnerPrefix        = "burner_"
+	tokenPrefix         = "token_"
 )
 
 // Keeper represents the ethereum keeper
@@ -110,6 +111,11 @@ func (k Keeper) GetBurnerInfo(ctx sdk.Context, burnerAddr common.Address) *types
 
 // GetTokenAddress calculates the token address given symbol and axelar gateway address
 func (k Keeper) GetTokenAddress(ctx sdk.Context, symbol string, gatewayAddr common.Address) (common.Address, error) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(tokenPrefix + symbol))
+	if bz != nil {
+		return common.BytesToAddress(bz), nil
+	}
+
 	tokenInfo := k.getTokenInfo(ctx, symbol)
 	if tokenInfo == nil {
 		return common.Address{}, fmt.Errorf("symbol not found/verified")
@@ -142,7 +148,9 @@ func (k Keeper) GetTokenAddress(ctx sdk.Context, symbol string, gatewayAddr comm
 	tokenInitCode := append(k.getTokenBC(ctx), packed...)
 	tokenInitCodeHash := crypto.Keccak256Hash(tokenInitCode)
 
-	return crypto.CreateAddress2(gatewayAddr, saltToken, tokenInitCodeHash.Bytes()), nil
+	tokenAddr := crypto.CreateAddress2(gatewayAddr, saltToken, tokenInitCodeHash.Bytes())
+	ctx.KVStore(k.storeKey).Set([]byte(tokenPrefix+symbol), tokenAddr.Bytes())
+	return tokenAddr, nil
 }
 
 // GetBurnerAddressAndSalt calculates a burner address and the corresponding salt for the given token address, recipient and axelar gateway address
