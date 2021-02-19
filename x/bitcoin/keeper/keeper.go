@@ -16,13 +16,14 @@ import (
 )
 
 const (
-	pendingPrefix          = "pend_"
-	verifiedOutPointPrefix = "ver_"
-	spentOutPointPrefix    = "spent_"
-	rawPrefix              = "raw_"
-	scriptPrefix           = "script_"
-	keyIDbyAddrPrefix      = "addrID_"
-	keyIDbyOutPointPrefix  = "outID_"
+	rawKey = "rawTx"
+
+	unverifiedOutpointPrefix = "unver_"
+	verifiedOutPointPrefix   = "ver_"
+	spentOutPointPrefix      = "spent_"
+	scriptPrefix             = "script_"
+	keyIDByAddrPrefix        = "addrID_"
+	keyIDByOutPointPrefix    = "outID_"
 )
 
 // Keeper provides access to all state changes regarding the Bitcoin module
@@ -69,12 +70,12 @@ func (k Keeper) Codec() *codec.Codec {
 
 // SetKeyIDByAddress stores the ID of the key that controls the given address
 func (k Keeper) SetKeyIDByAddress(ctx sdk.Context, address btcutil.Address, keyID string) {
-	ctx.KVStore(k.storeKey).Set([]byte(keyIDbyAddrPrefix+address.String()), []byte(keyID))
+	ctx.KVStore(k.storeKey).Set([]byte(keyIDByAddrPrefix+address.String()), []byte(keyID))
 }
 
 // GetKeyIDByAddress returns the ID of the key that was used to create the given address
 func (k Keeper) GetKeyIDByAddress(ctx sdk.Context, address btcutil.Address) (string, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(keyIDbyAddrPrefix + address.String()))
+	bz := ctx.KVStore(k.storeKey).Get([]byte(keyIDByAddrPrefix + address.String()))
 	if bz == nil {
 		return "", false
 	}
@@ -83,34 +84,16 @@ func (k Keeper) GetKeyIDByAddress(ctx sdk.Context, address btcutil.Address) (str
 
 // SetKeyIDByOutpoint stores the ID of the key that controls the address corresponding to the given outpoint
 func (k Keeper) SetKeyIDByOutpoint(ctx sdk.Context, outpoint *wire.OutPoint, keyID string) {
-	ctx.KVStore(k.storeKey).Set([]byte(keyIDbyOutPointPrefix+outpoint.String()), []byte(keyID))
+	ctx.KVStore(k.storeKey).Set([]byte(keyIDByOutPointPrefix+outpoint.String()), []byte(keyID))
 }
 
 // GetKeyIDByOutpoint returns the ID of the key that controls the address corresponding to the given outpoint
 func (k Keeper) GetKeyIDByOutpoint(ctx sdk.Context, outpoint *wire.OutPoint) (string, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(keyIDbyOutPointPrefix + outpoint.String()))
+	bz := ctx.KVStore(k.storeKey).Get([]byte(keyIDByOutPointPrefix + outpoint.String()))
 	if bz == nil {
 		return "", false
 	}
 	return string(bz), true
-}
-
-// GetRawTx returns a previously created unsigned Bitcoin transaction that spends the given outpoint
-func (k Keeper) GetRawTx(ctx sdk.Context, outpoint *wire.OutPoint) *wire.MsgTx {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(rawPrefix + outpoint.String()))
-	if bz == nil {
-		return nil
-	}
-	var tx *wire.MsgTx
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &tx)
-
-	return tx
-}
-
-// SetRawTx stores an unsigned Bitcoin transaction that spends the given outpoint
-func (k Keeper) SetRawTx(ctx sdk.Context, outpoint *wire.OutPoint, tx *wire.MsgTx) {
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(tx)
-	ctx.KVStore(k.storeKey).Set([]byte(rawPrefix+outpoint.String()), bz)
 }
 
 // GetVerifiedOutPointInfo returns additional information for the given outpoint, if it was verified
@@ -128,12 +111,12 @@ func (k Keeper) GetVerifiedOutPointInfo(ctx sdk.Context, outPoint *wire.OutPoint
 // SetUnverifiedOutpointInfo stores the outpoint information of an unverified Bitcoin transaction
 func (k Keeper) SetUnverifiedOutpointInfo(ctx sdk.Context, info types.OutPointInfo) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(info)
-	ctx.KVStore(k.storeKey).Set([]byte(pendingPrefix+info.OutPoint.String()), bz)
+	ctx.KVStore(k.storeKey).Set([]byte(unverifiedOutpointPrefix+info.OutPoint.String()), bz)
 }
 
 // GetUnverifiedOutPointInfo returns additional information for the given unverified outpoint
 func (k Keeper) GetUnverifiedOutPointInfo(ctx sdk.Context, outpoint *wire.OutPoint) (types.OutPointInfo, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingPrefix + outpoint.String()))
+	bz := ctx.KVStore(k.storeKey).Get([]byte(unverifiedOutpointPrefix + outpoint.String()))
 	if bz == nil {
 		return types.OutPointInfo{}, false
 	}
@@ -145,15 +128,16 @@ func (k Keeper) GetUnverifiedOutPointInfo(ctx sdk.Context, outpoint *wire.OutPoi
 
 // ProcessVerificationResult stores the info related to the specified outpoint (format txID:voutIdx) permanently if confirmed or discards the data otherwise.
 // Does nothing if the outPoint is unknown
-func (k Keeper) ProcessVerificationResult(ctx sdk.Context, outPoint string, verified bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingPrefix + outPoint))
+func (k Keeper) ProcessVerificationResult(ctx sdk.Context, outPoint *wire.OutPoint, verified bool) {
+	outStr := outPoint.String()
+	bz := ctx.KVStore(k.storeKey).Get([]byte(unverifiedOutpointPrefix + outStr))
 	if bz == nil {
 		k.Logger(ctx).Debug(fmt.Sprintf("outpoint %s is not known", outPoint))
 		return
 	}
-	ctx.KVStore(k.storeKey).Delete([]byte(pendingPrefix + outPoint))
+	ctx.KVStore(k.storeKey).Delete([]byte(unverifiedOutpointPrefix + outStr))
 	if verified {
-		ctx.KVStore(k.storeKey).Set([]byte(verifiedOutPointPrefix+outPoint), bz)
+		ctx.KVStore(k.storeKey).Set([]byte(verifiedOutPointPrefix+outStr), bz)
 	}
 }
 
@@ -271,15 +255,15 @@ func (k Keeper) GetSpentOutPointInfo(ctx sdk.Context, outPoint *wire.OutPoint) (
 	return out, true
 }
 
-// SetRawConsolidationTx stores a raw transaction for outpoint consolidation
-func (k Keeper) SetRawConsolidationTx(ctx sdk.Context, tx *wire.MsgTx) {
+// SetRawTx stores a raw transaction for outpoint consolidation
+func (k Keeper) SetRawTx(ctx sdk.Context, tx *wire.MsgTx) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(tx)
-	ctx.KVStore(k.storeKey).Set([]byte(rawPrefix+"cons"), bz)
+	ctx.KVStore(k.storeKey).Set([]byte(rawKey), bz)
 }
 
-// GetRawConsolidationTx returns a raw transaction for outpoint consolidation
-func (k Keeper) GetRawConsolidationTx(ctx sdk.Context) *wire.MsgTx {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(rawPrefix + "cons"))
+// GetRawTx returns a raw transaction for outpoint consolidation
+func (k Keeper) GetRawTx(ctx sdk.Context) *wire.MsgTx {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(rawKey))
 	if bz == nil {
 		return nil
 	}

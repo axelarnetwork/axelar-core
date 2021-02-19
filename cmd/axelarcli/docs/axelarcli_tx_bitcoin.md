@@ -27,5 +27,4 @@ axelarcli tx bitcoin [flags]
 - [axelarcli tx](axelarcli_tx.md)	 - Transactions subcommands
 - [axelarcli tx bitcoin link](axelarcli_tx_bitcoin_link.md)	 - Link a cross chain address to a bitcoin address created by Axelar
 - [axelarcli tx bitcoin sign-pending-transfers](axelarcli_tx_bitcoin_sign-pending-transfers.md)	 - Create a Bitcoin transaction for all pending transfers and sign it
-- [axelarcli tx bitcoin signTx](axelarcli_tx_bitcoin_signTx.md)	 - Sign raw spending transaction with utxo of \[txID\]
 - [axelarcli tx bitcoin verifyTx](axelarcli_tx_bitcoin_verifyTx.md)	 - Verify a Bitcoin transaction

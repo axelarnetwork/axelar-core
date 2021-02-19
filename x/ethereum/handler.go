@@ -182,28 +182,14 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v 
 
 	if err := verifyTx(ctx, k, rpc, tx.Hash()); err != nil {
 		k.Logger(ctx).Debug(sdkerrors.Wrapf(err, "expected transaction (%s) could not be verified", txID).Error())
-		if err := v.RecordVote(ctx, &types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false}); err != nil {
-			k.Logger(ctx).Error(sdkerrors.Wrap(err, "voting failed").Error())
-			return &sdk.Result{
-				Log:    err.Error(),
-				Data:   k.Codec().MustMarshalBinaryLengthPrefixed(false),
-				Events: ctx.EventManager().Events(),
-			}, nil
-		}
+		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
 		return &sdk.Result{
 			Log:    err.Error(),
 			Data:   k.Codec().MustMarshalBinaryLengthPrefixed(false),
 			Events: ctx.EventManager().Events(),
 		}, nil
 	} else {
-		if err := v.RecordVote(ctx, &types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: true}); err != nil {
-			k.Logger(ctx).Error(sdkerrors.Wrap(err, "voting failed").Error())
-			return &sdk.Result{
-				Log:    err.Error(),
-				Data:   k.Codec().MustMarshalBinaryLengthPrefixed(false),
-				Events: ctx.EventManager().Events(),
-			}, nil
-		}
+		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: true})
 		return &sdk.Result{
 			Log:    "successfully verified transaction",
 			Data:   k.Codec().MustMarshalBinaryLengthPrefixed(true),

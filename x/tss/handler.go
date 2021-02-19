@@ -214,10 +214,7 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 				k.Logger(ctx).Error(err.Error())
 				return
 			}
-			if err := v.RecordVote(ctx, &types.MsgVotePubKey{PollMeta: poll, PubKeyBytes: bz}); err != nil {
-				k.Logger(ctx).Error(err.Error())
-				return
-			}
+			v.RecordVote(&types.MsgVotePubKey{PollMeta: poll, PubKeyBytes: bz})
 		}
 	}()
 	ctx.EventManager().EmitEvent(

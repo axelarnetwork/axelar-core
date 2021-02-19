@@ -1,5 +1,5 @@
 /*
-This package manages second layer voting. It caches votes until they are sent out in a batch and tallies the results.
+Package keeper manages second layer voting. It caches votes until they are sent out in a batch and tallies the results.
 */
 package keeper
 
@@ -33,6 +33,7 @@ const (
 	indexNotFound      = -1
 )
 
+// Keeper - the vote module's keeper
 type Keeper struct {
 	subjectiveStore store.SubjectiveStore
 	storeKey        sdk.StoreKey
@@ -41,6 +42,7 @@ type Keeper struct {
 	snapshotter     types.Snapshotter
 }
 
+// NewKeeper - keeper constructor
 func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, subjectiveStore store.SubjectiveStore, snapshotter types.Snapshotter, broadcaster types.Broadcaster) Keeper {
 	keeper := Keeper{
 		subjectiveStore: subjectiveStore,
@@ -117,22 +119,9 @@ func (k Keeper) DeletePoll(ctx sdk.Context, poll exported.PollMeta) {
 // RecordVote readies a vote to be broadcast to the entire network.
 // Votes are only valid if they correspond to a previously initialized poll.
 // Depending on the voting interval, multiple votes might be batched together when broadcasting.
-func (k Keeper) RecordVote(ctx sdk.Context, vote exported.MsgVote) error {
-	if k.getPoll(ctx, vote.Poll()) == nil {
-		return fmt.Errorf("no poll registered with the given id")
-	}
-
-	votes := k.getPendingVotes()
-	for _, existingVote := range votes {
-		if existingVote.Poll() == vote.Poll() {
-			return fmt.Errorf(fmt.Sprintf("already recorded a vote for poll %s", vote.Poll()))
-		}
-	}
-	votes = append(votes, vote)
-	k.Logger(ctx).Debug(fmt.Sprintf("new vote for poll %s, data hash: %s", vote.Poll().String(), k.hash(vote.Data())))
+func (k Keeper) RecordVote(vote exported.MsgVote) {
+	votes := append(k.getPendingVotes(), vote)
 	k.setPendingVotes(votes)
-
-	return nil
 }
 
 // SendVotes broadcasts all unpublished votes to the entire network.

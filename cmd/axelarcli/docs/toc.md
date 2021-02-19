@@ -17,11 +17,8 @@
     - [auth](axelarcli_query_auth.md)	 - Querying commands for the auth module
       - [account \[address\]](axelarcli_query_auth_account.md)	 - Query account balance
     - [bitcoin](axelarcli_query_bitcoin.md)	 - bitcoin query subcommands
-      - [consolidation-addr \[deposit addr\]](axelarcli_query_bitcoin_consolidation-addr.md)	 - Returns a new consolidation address for an old deposit address
       - [deposit-addr \[chain\] \[recipient address\]](axelarcli_query_bitcoin_deposit-addr.md)	 - Returns a bitcoin deposit address for a recipient address on another blockchain
-      - [rawTx \[txID:voutIdx\] \[amount\] \[recipient\]](axelarcli_query_bitcoin_rawTx.md)	 - Get a raw transaction that spends \[amount\] of the outpoint \[voutIdx\] of \[txID\] to <recipient> or the next master key in rotation
-      - [send \[txID:voutIdx\]](axelarcli_query_bitcoin_send.md)	 - Send a transaction to Bitcoin that spends output \[voutIdx\] of tx \[txID\]
-      - [sendTransfers](axelarcli_query_bitcoin_sendTransfers.md)	 - Send a transaction to Bitcoin that consolidates deposits and withdrawals
+      - [send](axelarcli_query_bitcoin_send.md)	 - Send a transaction to Bitcoin that consolidates deposits and withdrawals
       - [txInfo \[blockHash\] \[txID:voutIdx\]](axelarcli_query_bitcoin_txInfo.md)	 - Query the info of the outpoint at index \[voutIdx\] of transaction \[txID\] on Bitcoin
     - [block \[height\]](axelarcli_query_block.md)	 - Get verified data for a the block at given height
     - [distribution](axelarcli_query_distribution.md)	 - Querying commands for the distribution module
@@ -65,7 +62,6 @@
     - [bitcoin](axelarcli_tx_bitcoin.md)	 - bitcoin transactions subcommands
       - [link \[chain\] \[address\]](axelarcli_tx_bitcoin_link.md)	 - Link a cross chain address to a bitcoin address created by Axelar
       - [sign-pending-transfers \[fee\]](axelarcli_tx_bitcoin_sign-pending-transfers.md)	 - Create a Bitcoin transaction for all pending transfers and sign it
-      - [signTx \[txID:voutIdx\] \[tx json\]](axelarcli_tx_bitcoin_signTx.md)	 - Sign raw spending transaction with utxo of \[txID\]
       - [verifyTx \[txInfo json\]](axelarcli_tx_bitcoin_verifyTx.md)	 - Verify a Bitcoin transaction
     - [broadcast](axelarcli_tx_broadcast.md)	 - broadcast transactions subcommands
       - [registerProxy \[proxy\] ](axelarcli_tx_broadcast_registerProxy.md)	 - Register a proxy account for a specific validator principal to broadcast transactions in its stead

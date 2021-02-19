@@ -1,13 +1,13 @@
 ## axelarcli query bitcoin send
 
-Send a transaction to Bitcoin that spends output \[voutIdx\] of tx \[txID\]
+Send a transaction to Bitcoin that consolidates deposits and withdrawals
 
 ### Synopsis
 
-Send a transaction to Bitcoin that spends output \[voutIdx\] of tx \[txID\]
+Send a transaction to Bitcoin that consolidates deposits and withdrawals
 
 ```
-axelarcli query bitcoin send [txID:voutIdx] [flags]
+axelarcli query bitcoin send [flags]
 ```
 
 ### Options
