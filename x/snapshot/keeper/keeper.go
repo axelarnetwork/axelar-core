@@ -83,7 +83,7 @@ func ComputeActiveValidators(ctx sdk.Context, validators []exported.Validator, s
 		}
 	}
 
-	return &activeValidators, &activeStake, nil
+	return activeValidators, activeStake, nil
 }
 
 // TakeSnapshot attempts to create a new snapshot
