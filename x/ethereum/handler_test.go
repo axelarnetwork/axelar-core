@@ -63,7 +63,7 @@ func TestLink_Success(t *testing.T) {
 
 	k.SaveTokenInfo(ctx, msg)
 
-	recipient := balance.CrossChainAddress{Address: "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L", Chain: btc.Bitcoin}
+	recipient := nexus.CrossChainAddress{Address: "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L", Chain: btc.Bitcoin}
 	tokenAddr, err := k.GetTokenAddress(ctx, msg.Symbol, common.HexToAddress(gateway))
 	if err != nil {
 		panic(err)
@@ -83,7 +83,7 @@ func TestLink_Success(t *testing.T) {
 			return c, ok
 		},
 	}
-	handler := NewHandler(k, &ethMock.RPCClientMock{}, &ethMock.VoterMock{}, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, b)
+	handler := NewHandler(k, &ethMock.RPCClientMock{}, &ethMock.VoterMock{}, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, n)
 	_, err = handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Symbol: msg.Symbol, GatewayAddr: gateway})
 
 	assert.NoError(t, err)
@@ -200,7 +200,7 @@ func TestVerifyToken_NoTokenInfo(t *testing.T) {
 	k := newKeeper(ctx, minConfHeight)
 	rpc := createBasicRPCMock(signedTx, confCount, nil)
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, createSnapshotter(), &ethMock.BalancerMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, createSnapshotter(), &ethMock.NexusMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), symbol, common.HexToAddress(gateway)))
 
@@ -224,7 +224,7 @@ func TestVerifyToken_NoReceipt(t *testing.T) {
 		return nil, fmt.Errorf("no transaction for hash")
 	}
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, createSnapshotter(), &ethMock.BalancerMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, createSnapshotter(), &ethMock.NexusMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol, common.HexToAddress(gateway)))
 
@@ -247,7 +247,7 @@ func TestVerifyToken_NoBlockNumber(t *testing.T) {
 		return 0, fmt.Errorf("no block number")
 	}
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, createSnapshotter(), &ethMock.BalancerMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, createSnapshotter(), &ethMock.NexusMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol, common.HexToAddress(gateway)))
 
@@ -267,7 +267,7 @@ func TestVerifyToken_NotConfirmed(t *testing.T) {
 	k.SaveTokenInfo(ctx, msg)
 	rpc := createBasicRPCMock(signedTx, confCount, nil)
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.BalancerMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.NexusMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol, common.HexToAddress(gateway)))
 
@@ -288,7 +288,7 @@ func TestVerifyToken_NoEvent(t *testing.T) {
 	logs := createLogs("", common.Address{}, common.Address{}, common.Hash{}, false)
 	rpc := createBasicRPCMock(signedTx, confCount, logs)
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.BalancerMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.NexusMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol, common.HexToAddress(gateway)))
 
@@ -312,7 +312,7 @@ func TestVerifyToken_DifferentEvent(t *testing.T) {
 	logs := createLogs(testutils.RandString(4), common.HexToAddress(gateway), tokenAddr, k.GetERC20TokenDeploySignature(ctx), true)
 	rpc := createBasicRPCMock(signedTx, confCount, logs)
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.BalancerMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.NexusMock{})
 
 	_, err = handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol, common.HexToAddress(gateway)))
 
@@ -337,7 +337,7 @@ func TestVerifyToken_Success(t *testing.T) {
 	logs := createLogs(msg.Symbol, common.HexToAddress(gateway), tokenAddr, k.GetERC20TokenDeploySignature(ctx), true)
 	rpc := createBasicRPCMock(signedTx, confCount, logs)
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.BalancerMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.NexusMock{})
 
 	_, err = handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol, common.HexToAddress(gateway)))
 
