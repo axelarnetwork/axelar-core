@@ -15,7 +15,7 @@ const (
 var (
 	// KeyLockingPeriod defines the key for the locking period
 	KeyLockingPeriod   = []byte("lockingPeriod")
-	MinKeygenThreshold = []byte("minkeygenthreshold")
+	MinKeygenThreshold = []byte("minKeygenThreshold")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
