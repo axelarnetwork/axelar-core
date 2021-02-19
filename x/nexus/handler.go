@@ -1,4 +1,4 @@
-package balance
+package nexus
 
 import (
 	"fmt"
@@ -6,9 +6,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/axelarnetwork/axelar-core/x/balance/types"
+	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
+// NewHandler returns a handler for the nexus module
 func NewHandler() sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())

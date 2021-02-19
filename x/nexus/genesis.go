@@ -1,10 +1,10 @@
-package balance
+package nexus
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/axelarnetwork/axelar-core/x/balance/keeper"
-	"github.com/axelarnetwork/axelar-core/x/balance/types"
+	"github.com/axelarnetwork/axelar-core/x/nexus/keeper"
+	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
 // InitGenesis initialize default parameters

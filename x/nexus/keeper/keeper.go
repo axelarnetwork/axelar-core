@@ -9,8 +9,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/axelarnetwork/axelar-core/x/balance/exported"
-	"github.com/axelarnetwork/axelar-core/x/balance/types"
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
 const (
@@ -30,7 +30,7 @@ type Keeper struct {
 	params   params.Subspace
 }
 
-// NewKeeper returns a new balance keeper
+// NewKeeper returns a new nexus keeper
 func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
 	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable())}
 }
@@ -40,7 +40,7 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-// SetParams sets the balance module's parameters
+// SetParams sets the nexus module's parameters
 func (k Keeper) SetParams(ctx sdk.Context, p types.Params) {
 	k.params.SetParamSet(ctx, &p)
 
@@ -51,7 +51,7 @@ func (k Keeper) SetParams(ctx sdk.Context, p types.Params) {
 	}
 }
 
-// GetParams gets the balance module's parameters
+// GetParams gets the nexus module's parameters
 func (k Keeper) GetParams(ctx sdk.Context) types.Params {
 	var p types.Params
 	k.params.GetParamSet(ctx, &p)
@@ -143,7 +143,7 @@ func (k Keeper) ArchivePendingTransfer(ctx sdk.Context, transfer exported.CrossC
 	ctx.KVStore(k.storeKey).Delete([]byte(pendingPrefix + marshalCrossChainKey(transfer.Recipient.Chain, transfer.ID)))
 	ctx.KVStore(k.storeKey).Set([]byte(archivedPrefix+marshalCrossChainKey(transfer.Recipient.Chain, transfer.ID)), bz)
 
-	// Update the total balance for the chain if it is a foreign asset
+	// Update the total nexus for the chain if it is a foreign asset
 	var t exported.CrossChainTransfer
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &t)
 	info, _ := k.GetChain(ctx, t.Recipient.Chain.Name)

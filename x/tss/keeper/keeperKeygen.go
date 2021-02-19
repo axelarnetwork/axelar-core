@@ -10,7 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/axelarnetwork/axelar-core/x/balance/exported"
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"

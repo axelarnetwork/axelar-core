@@ -1,10 +1,10 @@
-package balance
+package nexus
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/axelarnetwork/axelar-core/x/balance/keeper"
+	"github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 )
 
 // BeginBlocker check for infraction evidence or downtime of validators

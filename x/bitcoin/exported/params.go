@@ -1,6 +1,6 @@
 package exported
 
-import "github.com/axelarnetwork/axelar-core/x/balance/exported"
+import "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 
 var (
 	// Bitcoin defines properties of the Bitcoin chain
