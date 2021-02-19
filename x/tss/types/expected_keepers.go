@@ -22,7 +22,7 @@ type Snapshotter interface {
 	snapshot.Snapshotter
 }
 
-// Nexus provides access to the hub functionality
+// Nexus provides access to the nexus functionality
 type Nexus interface {
 	GetChain(ctx sdk.Context, chain string) (exported.Chain, bool)
 }
