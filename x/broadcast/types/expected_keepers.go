@@ -1,9 +1,11 @@
 package types
 
 import (
-	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkExported "github.com/cosmos/cosmos-sdk/x/staking/exported"
 )
 
-type Snapshotter interface {
-	snapshot.Snapshotter
+// Staker gives access to validators of the network
+type Staker interface {
+	Validator(ctx sdk.Context, addr sdk.ValAddress) sdkExported.ValidatorI
 }
