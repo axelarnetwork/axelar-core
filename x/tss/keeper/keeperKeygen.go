@@ -18,7 +18,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
-// getMinKeygenThreshold returns minimum threshold of stake that must be met to execute keygen
+// GetMinKeygenThreshold returns minimum threshold of stake that must be met to execute keygen
 func (k Keeper) GetMinKeygenThreshold(ctx sdk.Context) utils.Threshold {
 	var threshold utils.Threshold
 	k.params.Get(ctx, types.MinKeygenThreshold, &threshold)
