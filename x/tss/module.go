@@ -77,12 +77,13 @@ type AppModule struct {
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, s types.Snapshotter, v types.Voter) AppModule {
+func NewAppModule(k keeper.Keeper, s types.Snapshotter, v types.Voter, n types.Nexus) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
 		staker:         s,
 		voter:          v,
+		nexus:          n,
 	}
 }
 
