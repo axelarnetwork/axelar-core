@@ -362,7 +362,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 
 		snapshot.NewAppModule(app.snapKeeper),
-		tss.NewAppModule(app.tssKeeper, app.snapKeeper, app.votingKeeper, app.stakingKeeper),
+		tss.NewAppModule(app.tssKeeper, app.snapKeeper, app.votingKeeper, app.nexusKeeper, app.stakingKeeper),
 		vote.NewAppModule(app.votingKeeper),
 		broadcast.NewAppModule(app.broadcastKeeper),
 		nexus.NewAppModule(app.nexusKeeper),
