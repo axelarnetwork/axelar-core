@@ -92,7 +92,7 @@ func TestKeeper_Vote_OnNextBroadcast(t *testing.T) {
 	vote := randomVoteForPoll(poll)
 
 	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
-	assert.NoError(t, s.Keeper.RecordVote(s.Ctx, vote))
+	s.Keeper.RecordVote(vote)
 
 	// give go a chance to switch context, because broadcast needs to be done on a different thread
 	s.NewTimeout(10 * time.Millisecond)
@@ -111,7 +111,7 @@ func TestKeeper_Vote_On_NoPolls_ReturnError(t *testing.T) {
 
 	poll := randomPoll()
 	vote := randomVoteForPoll(poll)
-	assert.Error(t, s.Keeper.RecordVote(s.Ctx, vote))
+	s.Keeper.RecordVote(vote)
 }
 
 // error when voting where poll id matches none of the existing polls
@@ -124,7 +124,7 @@ func TestKeeper_Vote_PollIdMismatch_ReturnError(t *testing.T) {
 	notInitializedPoll := randomPoll()
 	vote := randomVoteForPoll(notInitializedPoll)
 
-	assert.Error(t, s.Keeper.RecordVote(s.Ctx, vote))
+	s.Keeper.RecordVote(vote)
 }
 
 // send two votes on first broadcast and one vote on second broadcast
@@ -143,15 +143,15 @@ func TestKeeper_Vote_VotesNotRepeatedInConsecutiveBroadcasts(t *testing.T) {
 	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll2))
 	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll3))
 
-	assert.NoError(t, s.Keeper.RecordVote(s.Ctx, voteForPoll1))
-	assert.NoError(t, s.Keeper.RecordVote(s.Ctx, voteForPoll2))
+	s.Keeper.RecordVote(voteForPoll1)
+	s.Keeper.RecordVote(voteForPoll2)
 
 	// give go a chance to switch context, because broadcast needs to be done on a different thread
 	s.NewTimeout(10 * time.Millisecond)
 	s.Keeper.SendVotes(s.Ctx)
 	<-s.Timeout.Done()
 
-	assert.NoError(t, s.Keeper.RecordVote(s.Ctx, voteForPoll3))
+	s.Keeper.RecordVote(voteForPoll3)
 
 	s.Keeper.SendVotes(s.Ctx)
 
@@ -179,20 +179,20 @@ func TestKeeper_Vote_MultipleTimes_ReturnError(t *testing.T) {
 	vote1 := randomVoteForPoll(poll)
 
 	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
-	assert.NoError(t, s.Keeper.RecordVote(s.Ctx, vote1))
+	s.Keeper.RecordVote(vote1)
 
 	// submit vote1 again
-	assert.Error(t, s.Keeper.RecordVote(s.Ctx, vote1))
+	s.Keeper.RecordVote(vote1)
 
 	// same poll, different data
 	vote2 := vote1
 	vote2.DataVal = stringGen.Next()
-	assert.Error(t, s.Keeper.RecordVote(s.Ctx, vote2))
+	s.Keeper.RecordVote(vote2)
 
 	// same poll, different data
 	vote3 := vote1
 	vote3.DataVal = stringGen.Next()
-	assert.Error(t, s.Keeper.RecordVote(s.Ctx, vote3))
+	s.Keeper.RecordVote(vote3)
 }
 
 // send no broadcast when there are no votes

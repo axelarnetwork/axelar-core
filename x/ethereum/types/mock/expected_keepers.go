@@ -30,7 +30,7 @@ var _ types.Voter = &VoterMock{}
 // 			InitPollFunc: func(ctx sdk.Context, poll voting.PollMeta) error {
 // 				panic("mock out the InitPoll method")
 // 			},
-// 			RecordVoteFunc: func(ctx sdk.Context, vote voting.MsgVote) error {
+// 			RecordVoteFunc: func(vote voting.MsgVote)  {
 // 				panic("mock out the RecordVote method")
 // 			},
 // 			ResultFunc: func(ctx sdk.Context, poll voting.PollMeta) voting.VotingData {
@@ -53,7 +53,7 @@ type VoterMock struct {
 	InitPollFunc func(ctx sdk.Context, poll voting.PollMeta) error
 
 	// RecordVoteFunc mocks the RecordVote method.
-	RecordVoteFunc func(ctx sdk.Context, vote voting.MsgVote) error
+	RecordVoteFunc func(vote voting.MsgVote)
 
 	// ResultFunc mocks the Result method.
 	ResultFunc func(ctx sdk.Context, poll voting.PollMeta) voting.VotingData
@@ -79,8 +79,6 @@ type VoterMock struct {
 		}
 		// RecordVote holds details about calls to the RecordVote method.
 		RecordVote []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
 			// Vote is the vote argument value.
 			Vote voting.MsgVote
 		}
@@ -177,32 +175,28 @@ func (mock *VoterMock) InitPollCalls() []struct {
 }
 
 // RecordVote calls RecordVoteFunc.
-func (mock *VoterMock) RecordVote(ctx sdk.Context, vote voting.MsgVote) error {
+func (mock *VoterMock) RecordVote(vote voting.MsgVote) {
 	if mock.RecordVoteFunc == nil {
 		panic("VoterMock.RecordVoteFunc: method is nil but Voter.RecordVote was just called")
 	}
 	callInfo := struct {
-		Ctx  sdk.Context
 		Vote voting.MsgVote
 	}{
-		Ctx:  ctx,
 		Vote: vote,
 	}
 	mock.lockRecordVote.Lock()
 	mock.calls.RecordVote = append(mock.calls.RecordVote, callInfo)
 	mock.lockRecordVote.Unlock()
-	return mock.RecordVoteFunc(ctx, vote)
+	mock.RecordVoteFunc(vote)
 }
 
 // RecordVoteCalls gets all the calls that were made to RecordVote.
 // Check the length with:
 //     len(mockedVoter.RecordVoteCalls())
 func (mock *VoterMock) RecordVoteCalls() []struct {
-	Ctx  sdk.Context
 	Vote voting.MsgVote
 } {
 	var calls []struct {
-		Ctx  sdk.Context
 		Vote voting.MsgVote
 	}
 	mock.lockRecordVote.RLock()

@@ -28,7 +28,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing"
 
-	"github.com/axelarnetwork/axelar-core/utils/denom"
 	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 	balanceKeeper "github.com/axelarnetwork/axelar-core/x/balance/keeper"
 	balanceTypes "github.com/axelarnetwork/axelar-core/x/balance/types"
@@ -86,12 +85,11 @@ type testMocks struct {
 //  8. Create a second snapshot
 //  9. Create a new key with the second snapshot's validator set (wait for vote)
 // 10. Designate that key to be the next master key for bitcoin
-// 11. Create a raw tx to transfer funds from the first master key address to the second key's address
-// 12. Sign the raw tx with the OLD snapshot's validator set (wait for vote)
-// 13. Send the signed transaction to bitcoin
-// 14. Query transfer tx info
-// 15. Verify the fund transfer is confirmed on bitcoin (wait for vote)
-// 16. Rotate to the new master key
+// 11. Sign a consolidation transaction (wait for vote)
+// 12. Send the signed transaction to bitcoin
+// 13. Query transfer tx info
+// 14. Verify the fund transfer is confirmed on bitcoin (wait for vote)
+// 15. Rotate to the new master key
 func TestKeyRotation(t *testing.T) {
 	chain := fake.NewBlockchain().WithBlockTimeOut(10 * time.Millisecond)
 
@@ -296,27 +294,6 @@ func TestKeyRotation(t *testing.T) {
 	})
 	assert.NoError(t, res.Error)
 
-	// get consolidation address
-	bz, err = nodes[0].Query([]string{btcTypes.QuerierRoute, btcKeeper.QueryConsolidationAddress, depositAddr}, abci.RequestQuery{})
-	assert.NoError(t, err)
-	consAddr := string(bz)
-
-	// create a tx to transfer funds from deposit address to consolidation address
-	amount = btcutil.Amount(int64(amount) - testutils.RandIntBetween(1, int64(amount)-1))
-
-	bz, err = nodes[0].Query(
-		[]string{btcTypes.QuerierRoute, btcKeeper.QueryRawTx},
-		abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(
-			btcTypes.RawTxParams{
-				OutPoint:    expectedOut,
-				DepositAddr: consAddr,
-				Satoshi:     sdk.NewInt64Coin(denom.Sat, int64(amount)),
-			})},
-	)
-	assert.NoError(t, err)
-	var rawTx *wire.MsgTx
-	testutils.Codec().MustUnmarshalJSON(bz, &rawTx)
-
 	// set up tssd mock for signing
 	msgToSign := make(chan []byte, nodeCount)
 	mocks.Sign.SendFunc = func(messageIn *tssd.MessageIn) error {
@@ -352,10 +329,7 @@ func TestKeyRotation(t *testing.T) {
 	}
 
 	// sign transfer tx
-	res = <-chain.Submit(btcTypes.NewMsgSignTx(
-		randomSender(),
-		expectedOut,
-		rawTx))
+	res = <-chain.Submit(btcTypes.NewMsgSign(randomSender(), btcutil.Amount(testutils.RandIntBetween(1, int64(amount)))))
 	assert.NoError(t, res.Error)
 	// assert tssd was properly called
 	<-closeTimeout.Done()
@@ -366,7 +340,7 @@ func TestKeyRotation(t *testing.T) {
 
 	// send tx to Bitcoin
 	bz, err = nodes[0].Query([]string{btcTypes.QuerierRoute, btcKeeper.SendTx},
-		abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(expectedOut)})
+		abci.RequestQuery{Data: nil})
 	assert.NoError(t, err)
 
 	// set up btc mock to return the new tx
@@ -379,13 +353,15 @@ func TestKeyRotation(t *testing.T) {
 	voutIdx = 0
 	confirmations = uint64(testutils.RandIntBetween(1, 10000))
 	transferOut := wire.NewOutPoint(transferHash, voutIdx)
+	script, _ := btcTypes.CreateMasterRedeemScript(btcec.PublicKey(masterKey2.PublicKey))
+	consolidationAddr, _ := btcTypes.CreateDepositAddress(mocks.BTC.Network(), script)
 	mocks.BTC.GetOutPointInfoFunc = func(_ *chainhash.Hash, out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
 		if out.String() == transferOut.String() {
 			return btcTypes.OutPointInfo{
 				OutPoint:      transferOut,
 				BlockHash:     blockHash,
 				Amount:        amount,
-				Address:       consAddr,
+				Address:       consolidationAddr.EncodeAddress(),
 				Confirmations: confirmations,
 			}, nil
 		}
