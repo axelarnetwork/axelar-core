@@ -10,26 +10,26 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // NewHandler creates an sdk.Handler for all bitcoin type messages
-func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, signer types.Signer, snap types.Snapshotter, b types.Balancer) sdk.Handler {
+func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, signer types.Signer, snap types.Snapshotter, n types.Nexus) sdk.Handler {
 	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
 		case types.MsgLink:
-			return handleMsgLink(ctx, k, signer, b, msg)
+			return handleMsgLink(ctx, k, signer, n, msg)
 		case types.MsgVerifyTx:
 			return handleMsgVerifyTx(ctx, k, v, rpc, msg)
 		case *types.MsgVoteVerifiedTx:
-			return handleMsgVoteVerifiedTx(ctx, k, v, b, msg)
+			return handleMsgVoteVerifiedTx(ctx, k, v, n, msg)
 		case types.MsgSign:
-			return handleMsgSign(ctx, k, signer, snap, b, msg)
+			return handleMsgSign(ctx, k, signer, snap, n, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
@@ -47,7 +47,7 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, signer type
 	}
 }
 
-func handleMsgLink(ctx sdk.Context, k keeper.Keeper, s types.Signer, b types.Balancer, msg types.MsgLink) (*sdk.Result, error) {
+func handleMsgLink(ctx sdk.Context, k keeper.Keeper, s types.Signer, n types.Nexus, msg types.MsgLink) (*sdk.Result, error) {
 	keyID, ok := s.GetCurrentMasterKeyID(ctx, exported.Bitcoin)
 	if !ok {
 		return nil, fmt.Errorf("master key not set")
@@ -58,12 +58,12 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, s types.Signer, b types.Bal
 		return nil, fmt.Errorf("master key not set")
 	}
 
-	recipientChain, ok := b.GetChain(ctx, msg.RecipientChain)
+	recipientChain, ok := n.GetChain(ctx, msg.RecipientChain)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, "unknown recipient chain")
 	}
 
-	recipient := balance.CrossChainAddress{Chain: recipientChain, Address: msg.RecipientAddr}
+	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: msg.RecipientAddr}
 	redeemScript, err := types.CreateCrossChainRedeemScript(btcec.PublicKey(masterKey), recipient)
 	if err != nil {
 		return nil, err
@@ -74,9 +74,9 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, s types.Signer, b types.Bal
 	}
 
 	encodedDepositAddr := depositAddr.EncodeAddress()
-	deposit := balance.CrossChainAddress{Chain: exported.Bitcoin, Address: encodedDepositAddr}
+	deposit := nexus.CrossChainAddress{Chain: exported.Bitcoin, Address: encodedDepositAddr}
 
-	b.LinkAddresses(ctx, deposit, recipient)
+	n.LinkAddresses(ctx, deposit, recipient)
 
 	// store script and key used to create the address for later reference
 	k.SetRedeemScriptByAddress(ctx, depositAddr, redeemScript)
@@ -115,7 +115,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 }
 
 // This can be used as a potential hook to immediately act on a poll being decided by the vote
-func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, b types.Balancer, msg *types.MsgVoteVerifiedTx) (*sdk.Result, error) {
+func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n types.Nexus, msg *types.MsgVoteVerifiedTx) (*sdk.Result, error) {
 	// Check if the outpoint has been verified already.
 	// If the voting threshold has been met and additional votes are received they should not return an error
 	outPoint, err := types.OutPointFromStr(msg.PollMeta.ID)
@@ -153,12 +153,12 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, b 
 	}
 	k.SetKeyIDByOutpoint(ctx, outPoint, keyID)
 
-	depositAddr := balance.CrossChainAddress{Address: info.Address, Chain: exported.Bitcoin}
+	depositAddr := nexus.CrossChainAddress{Address: info.Address, Chain: exported.Bitcoin}
 	amount := sdk.NewInt64Coin(exported.Bitcoin.NativeAsset, int64(info.Amount))
 
 	// outpoints that are not used as deposits for cross-chain transfers need to be verified as well (e.g. funds held by the master key).
 	// Therefore, failing to enqueue for transfer is not an error
-	if err = b.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
+	if err = n.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
 		return &sdk.Result{Log: sdkerrors.Wrap(err, "prepared no transfer").Error()}, nil
 	}
 
@@ -167,8 +167,8 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, b 
 	}, nil
 }
 
-func handleMsgSign(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap types.Snapshotter, b types.Balancer, msg types.MsgSign) (*sdk.Result, error) {
-	outPuts, totalWithdrawals := prepareOutputs(ctx, k, b)
+func handleMsgSign(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap types.Snapshotter, n types.Nexus, msg types.MsgSign) (*sdk.Result, error) {
+	outPuts, totalWithdrawals := prepareOutputs(ctx, k, n)
 	prevOuts, totalDeposits := prepareInputs(ctx, k)
 
 	change := totalDeposits.Sub(totalWithdrawals).SubRaw(int64(msg.Fee))
@@ -267,8 +267,8 @@ func prepareInputs(ctx sdk.Context, k keeper.Keeper) ([]*wire.OutPoint, sdk.Int)
 	return prevOuts, totalDeposits
 }
 
-func prepareOutputs(ctx sdk.Context, k keeper.Keeper, b types.Balancer) ([]types.Output, sdk.Int) {
-	pendingTransfers := b.GetPendingTransfersForChain(ctx, exported.Bitcoin)
+func prepareOutputs(ctx sdk.Context, k keeper.Keeper, n types.Nexus) ([]types.Output, sdk.Int) {
+	pendingTransfers := n.GetPendingTransfersForChain(ctx, exported.Bitcoin)
 	var outPuts []types.Output
 	totalOut := sdk.ZeroInt()
 	for _, transfer := range pendingTransfers {
@@ -281,7 +281,7 @@ func prepareOutputs(ctx sdk.Context, k keeper.Keeper, b types.Balancer) ([]types
 		outPuts = append(outPuts,
 			types.Output{Amount: btcutil.Amount(transfer.Asset.Amount.Int64()), Recipient: recipient})
 		totalOut = totalOut.Add(transfer.Asset.Amount)
-		b.ArchivePendingTransfer(ctx, transfer)
+		n.ArchivePendingTransfer(ctx, transfer)
 	}
 	return outPuts, totalOut
 }

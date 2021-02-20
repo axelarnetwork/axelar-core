@@ -4,8 +4,8 @@ import (
 	tssd "github.com/axelarnetwork/tssd/pb"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/axelarnetwork/axelar-core/x/balance/exported"
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -22,8 +22,8 @@ type Snapshotter interface {
 	snapshot.Snapshotter
 }
 
-// Balancer provides access to the hub functionality
-type Balancer interface {
+// Nexus provides access to the nexus functionality
+type Nexus interface {
 	GetChain(ctx sdk.Context, chain string) (exported.Chain, bool)
 }
 

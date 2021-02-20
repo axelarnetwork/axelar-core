@@ -15,7 +15,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // Bitcoin network types
@@ -150,7 +150,7 @@ type DepositQueryParams struct {
 type RedeemScript []byte
 
 // CreateCrossChainRedeemScript generates a redeem script unique to the given key and cross-chain address
-func CreateCrossChainRedeemScript(pk btcec.PublicKey, crossAddr balance.CrossChainAddress) (RedeemScript, error) {
+func CreateCrossChainRedeemScript(pk btcec.PublicKey, crossAddr nexus.CrossChainAddress) (RedeemScript, error) {
 	keyBz := pk.SerializeCompressed()
 	nonce := btcutil.Hash160([]byte(crossAddr.String()))
 

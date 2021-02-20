@@ -34,13 +34,11 @@ import (
 
 	tssd "github.com/axelarnetwork/tssd/pb"
 
-	"github.com/axelarnetwork/axelar-core/x/balance"
+	"github.com/axelarnetwork/axelar-core/x/nexus"
 
 	keyring "github.com/cosmos/cosmos-sdk/crypto/keys"
 
 	"github.com/axelarnetwork/axelar-core/store"
-	balanceKeeper "github.com/axelarnetwork/axelar-core/x/balance/keeper"
-	balanceTypes "github.com/axelarnetwork/axelar-core/x/balance/types"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
@@ -50,6 +48,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/ethereum"
 	ethKeeper "github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
+	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
+	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/axelar-core/x/snapshot"
 	snapKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	"github.com/axelarnetwork/axelar-core/x/tss"
@@ -88,7 +88,7 @@ var (
 		ethereum.AppModuleBasic{},
 		broadcast.AppModuleBasic{},
 		snapshot.AppModuleBasic{},
-		balance.AppModuleBasic{},
+		nexus.AppModuleBasic{},
 	)
 	// account permissions
 	maccPerms = map[string][]string{
@@ -138,7 +138,7 @@ type AxelarApp struct {
 	tssKeeper       tssKeeper.Keeper
 	votingKeeper    voteKeeper.Keeper
 	snapKeeper      snapKeeper.Keeper
-	balanceKeeper   balanceKeeper.Keeper
+	nexusKeeper     nexusKeeper.Keeper
 
 	// Module Manager
 	mm *module.Manager
@@ -176,7 +176,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		ethTypes.StoreKey,
 		snapTypes.StoreKey,
 		tssTypes.StoreKey,
-		balanceTypes.StoreKey,
+		nexusTypes.StoreKey,
 	)
 
 	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
@@ -203,7 +203,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	tssSubspace := app.paramsKeeper.Subspace(tssTypes.DefaultParamspace)
 	btcSubspace := app.paramsKeeper.Subspace(btcTypes.DefaultParamspace)
 	ethSubspace := app.paramsKeeper.Subspace(ethTypes.DefaultParamspace)
-	balanceSubspace := app.paramsKeeper.Subspace(balanceTypes.DefaultParamspace)
+	nexusSubspace := app.paramsKeeper.Subspace(nexusTypes.DefaultParamspace)
 
 	// The AccountKeeper handles address -> account lookups
 	app.accountKeeper = auth.NewAccountKeeper(
@@ -275,7 +275,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 
 	app.snapKeeper = snapKeeper.NewKeeper(app.cdc, keys[snapTypes.StoreKey], snapshotSubspace, app.stakingKeeper, slashingKeeperCast)
 
-	app.balanceKeeper = balanceKeeper.NewKeeper(app.cdc, keys[balanceTypes.StoreKey], balanceSubspace)
+	app.nexusKeeper = nexusKeeper.NewKeeper(app.cdc, keys[nexusTypes.StoreKey], nexusSubspace)
 
 	keybase, err := keyring.NewKeyring(sdk.KeyringServiceName(), axelarCfg.ClientConfig.KeyringBackend, DefaultCLIHome, os.Stdin)
 	if err != nil {
@@ -365,9 +365,9 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		tss.NewAppModule(app.tssKeeper, app.snapKeeper, app.votingKeeper, app.stakingKeeper),
 		vote.NewAppModule(app.votingKeeper),
 		broadcast.NewAppModule(app.broadcastKeeper),
-		balance.NewAppModule(app.balanceKeeper),
-		ethereum.NewAppModule(app.ethKeeper, app.votingKeeper, app.tssKeeper, app.snapKeeper, app.balanceKeeper, rpcEth),
-		bitcoin.NewAppModule(app.btcKeeper, app.votingKeeper, app.tssKeeper, app.snapKeeper, app.balanceKeeper, rpcBTC),
+		nexus.NewAppModule(app.nexusKeeper),
+		ethereum.NewAppModule(app.ethKeeper, app.votingKeeper, app.tssKeeper, app.snapKeeper, app.nexusKeeper, rpcEth),
+		bitcoin.NewAppModule(app.btcKeeper, app.votingKeeper, app.tssKeeper, app.snapKeeper, app.nexusKeeper, rpcBTC),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
@@ -388,7 +388,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		tssTypes.ModuleName,
 		btcTypes.ModuleName,
 		ethTypes.ModuleName,
-		balanceTypes.ModuleName,
+		nexusTypes.ModuleName,
 		broadcastTypes.ModuleName,
 		voteTypes.ModuleName,
 		supply.ModuleName,

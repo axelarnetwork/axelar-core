@@ -1,6 +1,6 @@
 package exported
 
-import "github.com/axelarnetwork/axelar-core/x/balance/exported"
+import "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 
 var (
 	// Ethereum defines properties of the Ethereum chain

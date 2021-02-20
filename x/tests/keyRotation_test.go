@@ -28,11 +28,11 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing"
 
-	balance "github.com/axelarnetwork/axelar-core/x/balance/exported"
-	balanceKeeper "github.com/axelarnetwork/axelar-core/x/balance/keeper"
-	balanceTypes "github.com/axelarnetwork/axelar-core/x/balance/types"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
+	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 
 	"github.com/axelarnetwork/axelar-core/store"
 	"github.com/axelarnetwork/axelar-core/testutils"
@@ -191,7 +191,7 @@ func TestKeyRotation(t *testing.T) {
 	assert.NoError(t, res.Error)
 
 	// get deposit address for ethereum transfer
-	ethAddr := balance.CrossChainAddress{Chain: eth.Ethereum, Address: testutils.RandStringBetween(5, 20)}
+	ethAddr := nexus.CrossChainAddress{Chain: eth.Ethereum, Address: testutils.RandStringBetween(5, 20)}
 	res = <-chain.Submit(btcTypes.NewMsgLink(randomSender(), ethAddr.Address, ethAddr.Chain.Name))
 	assert.NoError(t, res.Error)
 	depositAddr := string(res.Data)
@@ -418,9 +418,9 @@ func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *f
 	)
 	signer.SetParams(ctx, tssTypes.DefaultParams())
 
-	balanceSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("balanceKey"), sdk.NewKVStoreKey("tbalanceKey"), "balance")
-	balancer := balanceKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(balanceTypes.StoreKey), balanceSubspace)
-	balancer.SetParams(ctx, balanceTypes.DefaultParams())
+	nexusSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
+	nexusK := nexusKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(nexusTypes.StoreKey), nexusSubspace)
+	nexusK.SetParams(ctx, nexusTypes.DefaultParams())
 
 	voter.SetVotingInterval(ctx, voteTypes.DefaultGenesisState().VotingInterval)
 	voter.SetVotingThreshold(ctx, voteTypes.DefaultGenesisState().VotingThreshold)
@@ -428,9 +428,9 @@ func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *f
 	router := fake.NewRouter()
 
 	broadcastHandler := broadcast.NewHandler(broadcaster)
-	btcHandler := bitcoin.NewHandler(bitcoinKeeper, voter, mocks.BTC, signer, snapKeeper, balancer)
+	btcHandler := bitcoin.NewHandler(bitcoinKeeper, voter, mocks.BTC, signer, snapKeeper, nexusK)
 	snapHandler := snapshot.NewHandler(snapKeeper)
-	tssHandler := tss.NewHandler(signer, snapKeeper, balancer, voter, mocks.Staker)
+	tssHandler := tss.NewHandler(signer, snapKeeper, nexusK, voter, mocks.Staker)
 	voteHandler := vote.NewHandler()
 
 	router = router.
@@ -440,7 +440,7 @@ func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *f
 		AddRoute(voteTypes.RouterKey, voteHandler).
 		AddRoute(tssTypes.RouterKey, tssHandler)
 
-	queriers := map[string]sdk.Querier{btcTypes.QuerierRoute: btcKeeper.NewQuerier(bitcoinKeeper, signer, balancer, mocks.BTC)}
+	queriers := map[string]sdk.Querier{btcTypes.QuerierRoute: btcKeeper.NewQuerier(bitcoinKeeper, signer, nexusK, mocks.BTC)}
 
 	node := fake.NewNode(moniker, ctx, router, queriers).
 		WithEndBlockers(func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {

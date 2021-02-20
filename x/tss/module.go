@@ -73,7 +73,7 @@ type AppModule struct {
 	keeper      keeper.Keeper
 	snapshotter types.Snapshotter
 	voter       types.Voter
-	balancer    types.Balancer
+	nexus       types.Nexus
 	staker      types.StakingKeeper
 }
 
@@ -114,7 +114,7 @@ func (AppModule) Route() string {
 
 // NewHandler returns a new handler for this module
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper, am.snapshotter, am.balancer, am.voter, am.staker)
+	return NewHandler(am.keeper, am.snapshotter, am.nexus, am.voter, am.staker)
 }
 
 // QuerierRoute returns this module's query route

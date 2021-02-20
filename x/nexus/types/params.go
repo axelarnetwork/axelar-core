@@ -5,9 +5,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/cosmos/cosmos-sdk/x/params/subspace"
 
-	"github.com/axelarnetwork/axelar-core/x/balance/exported"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // DefaultParamspace - default parameter namespace

@@ -16,9 +16,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/store"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
-	balKeeper "github.com/axelarnetwork/axelar-core/x/balance/keeper"
-	balTypes "github.com/axelarnetwork/axelar-core/x/balance/types"
-	balanceTypes "github.com/axelarnetwork/axelar-core/x/balance/types"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
@@ -26,6 +23,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/broadcast"
 	bcExported "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
+	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
+	nexTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
+	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/vote"
@@ -151,15 +151,15 @@ func newNodeForVote(moniker string, broadcaster bcExported.Broadcaster, staker v
 	btcK := btcKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)
 	btcK.SetParams(ctx, btcTypes.DefaultParams())
 
-	balanceSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("balanceKey"), sdk.NewKVStoreKey("tbalanceKey"), "balance")
-	balK := balKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(balTypes.StoreKey), balanceSubspace)
-	balK.SetParams(ctx, balanceTypes.DefaultParams())
+	nexusSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
+	nexK := nexusKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(nexTypes.StoreKey), nexusSubspace)
+	nexK.SetParams(ctx, nexusTypes.DefaultParams())
 
 	// We use a fake for the bitcoin rpc client so we can control the responses from the "bitcoin" network
 	btcH := bitcoin.NewHandler(btcK, vK, &btcMock.RPCClientMock{
 		GetOutPointInfoFunc: func(bHash *chainhash.Hash, out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
 			return txs[bHash.String()+out.Hash.String()], nil
-		}}, nil, nil, balK)
+		}}, nil, nil, nexK)
 
 	broadcastH := broadcast.NewHandler(broadcaster)
 
