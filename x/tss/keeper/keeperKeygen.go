@@ -170,7 +170,7 @@ func (k Keeper) GetNextMasterKey(ctx sdk.Context, chain exported.Chain) (ecdsa.P
 
 // GetNextMasterKeyID returns the ID of the master key for the given chain that will be activated during the next rotation
 func (k Keeper) GetNextMasterKeyID(ctx sdk.Context, chain exported.Chain) (string, bool) {
-	return k.getPreviousMasterKeyId(ctx, chain, 0)
+	return k.getPreviousMasterKeyId(ctx, chain, -1)
 }
 
 /*
