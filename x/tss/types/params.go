@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/cosmos/cosmos-sdk/x/params/subspace"
 )
 
@@ -13,7 +14,8 @@ const (
 
 var (
 	// KeyLockingPeriod defines the key for the locking period
-	KeyLockingPeriod = []byte("lockingPeriod")
+	KeyLockingPeriod   = []byte("lockingPeriod")
+	MinKeygenThreshold = []byte("minKeygenThreshold")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -23,13 +25,15 @@ func KeyTable() subspace.KeyTable {
 
 // Params is the parameter set for this module
 type Params struct {
-	LockingPeriod int64
+	LockingPeriod      int64
+	MinKeygenThreshold utils.Threshold
 }
 
 // DefaultParams returns the module's parameter set initialized with default values
 func DefaultParams() Params {
 	return Params{
-		LockingPeriod: 1,
+		LockingPeriod:      0,
+		MinKeygenThreshold: utils.Threshold{Numerator: 9, Denominator: 10},
 	}
 }
 
@@ -44,6 +48,7 @@ func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
 	*/
 	return subspace.ParamSetPairs{
 		subspace.NewParamSetPair(KeyLockingPeriod, &p.LockingPeriod, validateLockingPeriod),
+		subspace.NewParamSetPair(MinKeygenThreshold, &p.MinKeygenThreshold, validateThreshold),
 	}
 }
 
@@ -62,6 +67,25 @@ func validateLockingPeriod(period interface{}) error {
 func (p Params) Validate() error {
 	if err := validateLockingPeriod(p.LockingPeriod); err != nil {
 		return err
+	}
+	return nil
+}
+
+func validateThreshold(threshold interface{}) error {
+	val, ok := threshold.(utils.Threshold)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for threshold: %T", threshold)
+	}
+	if val.Denominator <= 0 {
+		return fmt.Errorf("threshold denominator must be a positive integer")
+	}
+
+	if val.Numerator < 0 {
+		return fmt.Errorf("threshold numerator must be a non-negative integer")
+	}
+
+	if val.Numerator >= val.Denominator {
+		return fmt.Errorf("threshold must be <1")
 	}
 	return nil
 }

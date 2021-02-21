@@ -21,8 +21,12 @@ import (
 	sdkExported "github.com/cosmos/cosmos-sdk/x/staking/exported"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
+
+	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing"
 
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
@@ -61,11 +65,12 @@ var (
 )
 
 type testMocks struct {
-	BTC    *btcMock.RPCClientMock
-	Keygen *tssdMock.TSSDKeyGenClientMock
-	Sign   *tssdMock.TSSDSignClientMock
-	Staker *snapMock.StakingKeeperMock
-	TSSD   *tssdMock.TSSDClientMock
+	BTC     *btcMock.RPCClientMock
+	Keygen  *tssdMock.TSSDKeyGenClientMock
+	Sign    *tssdMock.TSSDSignClientMock
+	Staker  *snapMock.StakingKeeperMock
+	TSSD    *tssdMock.TSSDClientMock
+	Slasher *snapMock.SlasherMock
 }
 
 // Testing the key rotation functionality.
@@ -99,6 +104,7 @@ func TestKeyRotation(t *testing.T) {
 			OperatorAddress: sdk.ValAddress(valAddr),
 			Tokens:          sdk.TokensFromConsensusPower(testutils.RandIntBetween(100, 1000)),
 			Status:          sdk.Bonded,
+			ConsPubKey:      ed25519.GenPrivKey().PubKey(),
 		}
 		validators = append(validators, validator)
 		nodes = append(nodes, newNode("node"+strconv.Itoa(i), validator.OperatorAddress, mocks, chain))
@@ -394,7 +400,8 @@ func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *f
 	broadcaster := fake.NewBroadcaster(testutils.Codec(), validator, chain.Submit)
 
 	snapSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
-	snapKeeper := snapshotKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(snapTypes.StoreKey), snapSubspace, mocks.Staker)
+
+	snapKeeper := snapshotKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(snapTypes.StoreKey), snapSubspace, mocks.Staker, mocks.Slasher)
 	snapKeeper.SetParams(ctx, snapTypes.DefaultParams())
 
 	voter := voteKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(voteTypes.StoreKey), store.NewSubjectiveStore(), snapKeeper, broadcaster)
@@ -423,7 +430,7 @@ func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *f
 	broadcastHandler := broadcast.NewHandler(broadcaster)
 	btcHandler := bitcoin.NewHandler(bitcoinKeeper, voter, mocks.BTC, signer, snapKeeper, nexusK)
 	snapHandler := snapshot.NewHandler(snapKeeper)
-	tssHandler := tss.NewHandler(signer, snapKeeper, nexusK, voter)
+	tssHandler := tss.NewHandler(signer, snapKeeper, nexusK, voter, mocks.Staker)
 	voteHandler := vote.NewHandler()
 
 	router = router.
@@ -443,6 +450,22 @@ func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *f
 }
 
 func createMocks() testMocks {
+
+	slasher := &snapMock.SlasherMock{
+		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (types.ValidatorInfo, bool) {
+			newInfo := slashingtypes.NewValidatorSigningInfo(
+				address,
+				int64(0),        // height at which validator was first a candidate OR was unjailed
+				int64(3),        // index offset into signed block bit array. TODO: check if needs to be set correctly.
+				time.Unix(0, 0), // jailed until
+				false,           // tomstoned
+				int64(0),        // missed blocks
+			)
+			retinfo := types.ValidatorInfo{newInfo}
+			return retinfo, true
+		},
+	}
+
 	stakingKeeper := &snapMock.StakingKeeperMock{
 		IterateLastValidatorsFunc: func(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool)) {
 			for j, val := range validators {
@@ -473,10 +496,11 @@ func createMocks() testMocks {
 		KeygenFunc: func(context.Context, ...grpc.CallOption) (tssd.GG18_KeygenClient, error) { return keygen, nil },
 		SignFunc:   func(context.Context, ...grpc.CallOption) (tssd.GG18_SignClient, error) { return sign, nil }}
 	return testMocks{
-		BTC:    btcClient,
-		TSSD:   tssdClient,
-		Keygen: keygen,
-		Sign:   sign,
-		Staker: stakingKeeper,
+		BTC:     btcClient,
+		TSSD:    tssdClient,
+		Keygen:  keygen,
+		Sign:    sign,
+		Staker:  stakingKeeper,
+		Slasher: slasher,
 	}
 }

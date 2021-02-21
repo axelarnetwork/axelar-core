@@ -4,13 +4,18 @@ import (
 	"bytes"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/stretchr/testify/assert"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
+
+	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -60,13 +65,28 @@ func TestSnapshots(t *testing.T) {
 			assert.True(t, staker.GetLastTotalPower(ctx).Equal(sdk.NewInt(int64(testCase.totalPower))))
 
 			snapSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
-			keeper := NewKeeper(cdc, sdk.NewKVStoreKey("staking"), snapSubspace, staker)
+
+			slashingKeeper := &snapMock.SlasherMock{
+				GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (types.ValidatorInfo, bool) {
+					newInfo := slashingtypes.NewValidatorSigningInfo(
+						address,
+						int64(0),        // height at which validator was first a candidate OR was unjailed
+						int64(3),        // index offset into signed block bit array. TODO: check if needs to be set correctly.
+						time.Unix(0, 0), // jailed until
+						false,           // tomstoned
+						int64(0),        // missed blocks
+					)
+					retinfo := types.ValidatorInfo{newInfo}
+					return retinfo, true
+				},
+			}
+			keeper := NewKeeper(cdc, sdk.NewKVStoreKey("staking"), snapSubspace, staker, slashingKeeper)
 			keeper.SetParams(ctx, types.DefaultParams())
 
 			_, ok := keeper.GetSnapshot(ctx, 0)
 
 			assert.False(t, ok)
-			assert.Equal(t, int64(-1), keeper.GetLatestRound(ctx))
+			assert.Equal(t, int64(-1), keeper.GetLatestCounter(ctx))
 
 			_, ok = keeper.GetLatestSnapshot(ctx)
 
@@ -79,7 +99,7 @@ func TestSnapshots(t *testing.T) {
 			snapshot, ok := keeper.GetSnapshot(ctx, 0)
 
 			assert.True(t, ok)
-			assert.Equal(t, int64(0), keeper.GetLatestRound(ctx))
+			assert.Equal(t, int64(0), keeper.GetLatestCounter(ctx))
 			for i, val := range validators {
 				assert.Equal(t, val.GetConsensusPower(), snapshot.Validators[i].GetConsensusPower())
 				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetOperator())
@@ -98,7 +118,7 @@ func TestSnapshots(t *testing.T) {
 			snapshot, ok = keeper.GetSnapshot(ctx, 1)
 
 			assert.True(t, ok)
-			assert.Equal(t, keeper.GetLatestRound(ctx), int64(1))
+			assert.Equal(t, keeper.GetLatestCounter(ctx), int64(1))
 			for i, val := range validators {
 				assert.Equal(t, val.GetConsensusPower(), snapshot.Validators[i].GetConsensusPower())
 				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetOperator())
@@ -125,6 +145,7 @@ func genValidators(t *testing.T, numValidators, totalConsPower int) []sdkExporte
 			OperatorAddress: sdk.ValAddress(stringGen.Next()),
 			Tokens:          sdk.TokensFromConsensusPower(int64(power)),
 			Status:          sdk.Bonded,
+			ConsPubKey:      ed25519.GenPrivKey().PubKey(),
 		}
 	}
 

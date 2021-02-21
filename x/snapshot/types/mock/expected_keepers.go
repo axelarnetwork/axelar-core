@@ -172,3 +172,74 @@ func (mock *StakingKeeperMock) ValidatorCalls() []struct {
 	mock.lockValidator.RUnlock()
 	return calls
 }
+
+// Ensure, that SlasherMock does implement types.Slasher.
+// If this is not the case, regenerate this file with moq.
+var _ types.Slasher = &SlasherMock{}
+
+// SlasherMock is a mock implementation of types.Slasher.
+//
+// 	func TestSomethingThatUsesSlasher(t *testing.T) {
+//
+// 		// make and configure a mocked types.Slasher
+// 		mockedSlasher := &SlasherMock{
+// 			GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (types.ValidatorInfo, bool) {
+// 				panic("mock out the GetValidatorSigningInfo method")
+// 			},
+// 		}
+//
+// 		// use mockedSlasher in code that requires types.Slasher
+// 		// and then make assertions.
+//
+// 	}
+type SlasherMock struct {
+	// GetValidatorSigningInfoFunc mocks the GetValidatorSigningInfo method.
+	GetValidatorSigningInfoFunc func(ctx sdk.Context, address sdk.ConsAddress) (types.ValidatorInfo, bool)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetValidatorSigningInfo holds details about calls to the GetValidatorSigningInfo method.
+		GetValidatorSigningInfo []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Address is the address argument value.
+			Address sdk.ConsAddress
+		}
+	}
+	lockGetValidatorSigningInfo sync.RWMutex
+}
+
+// GetValidatorSigningInfo calls GetValidatorSigningInfoFunc.
+func (mock *SlasherMock) GetValidatorSigningInfo(ctx sdk.Context, address sdk.ConsAddress) (types.ValidatorInfo, bool) {
+	if mock.GetValidatorSigningInfoFunc == nil {
+		panic("SlasherMock.GetValidatorSigningInfoFunc: method is nil but Slasher.GetValidatorSigningInfo was just called")
+	}
+	callInfo := struct {
+		Ctx     sdk.Context
+		Address sdk.ConsAddress
+	}{
+		Ctx:     ctx,
+		Address: address,
+	}
+	mock.lockGetValidatorSigningInfo.Lock()
+	mock.calls.GetValidatorSigningInfo = append(mock.calls.GetValidatorSigningInfo, callInfo)
+	mock.lockGetValidatorSigningInfo.Unlock()
+	return mock.GetValidatorSigningInfoFunc(ctx, address)
+}
+
+// GetValidatorSigningInfoCalls gets all the calls that were made to GetValidatorSigningInfo.
+// Check the length with:
+//     len(mockedSlasher.GetValidatorSigningInfoCalls())
+func (mock *SlasherMock) GetValidatorSigningInfoCalls() []struct {
+	Ctx     sdk.Context
+	Address sdk.ConsAddress
+} {
+	var calls []struct {
+		Ctx     sdk.Context
+		Address sdk.ConsAddress
+	}
+	mock.lockGetValidatorSigningInfo.RLock()
+	calls = mock.calls.GetValidatorSigningInfo
+	mock.lockGetValidatorSigningInfo.RUnlock()
+	return calls
+}

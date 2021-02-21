@@ -93,7 +93,7 @@ func (k Keeper) InitPoll(ctx sdk.Context, poll exported.PollMeta) error {
 		return fmt.Errorf("poll with same name already exists")
 	}
 
-	r := k.snapshotter.GetLatestRound(ctx)
+	r := k.snapshotter.GetLatestCounter(ctx)
 	k.setPoll(ctx, types.Poll{Meta: poll, ValidatorSnapshotRound: r})
 	return nil
 }

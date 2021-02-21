@@ -6,6 +6,9 @@ import (
 	"io"
 	"os"
 
+	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
+	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
+
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/simapp"
@@ -49,7 +52,6 @@ import (
 	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/axelar-core/x/snapshot"
 	snapKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
-	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	"github.com/axelarnetwork/axelar-core/x/tss"
 	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -264,7 +266,14 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 
 	app.ethKeeper = ethKeeper.NewEthKeeper(app.cdc, keys[ethTypes.StoreKey], ethSubspace)
 
-	app.snapKeeper = snapKeeper.NewKeeper(app.cdc, keys[snapTypes.StoreKey], snapshotSubspace, app.stakingKeeper)
+	slashingKeeperCast := &snapMock.SlasherMock{
+		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapTypes.ValidatorInfo, bool) {
+			signingInfo, found := app.slashingKeeper.GetValidatorSigningInfo(ctx, address)
+			return snapTypes.ValidatorInfo{signingInfo}, found
+		},
+	}
+
+	app.snapKeeper = snapKeeper.NewKeeper(app.cdc, keys[snapTypes.StoreKey], snapshotSubspace, app.stakingKeeper, slashingKeeperCast)
 
 	app.nexusKeeper = nexusKeeper.NewKeeper(app.cdc, keys[nexusTypes.StoreKey], nexusSubspace)
 
@@ -353,7 +362,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 
 		snapshot.NewAppModule(app.snapKeeper),
-		tss.NewAppModule(app.tssKeeper, app.snapKeeper, app.votingKeeper, app.nexusKeeper),
+		tss.NewAppModule(app.tssKeeper, app.snapKeeper, app.votingKeeper, app.nexusKeeper, app.stakingKeeper),
 		vote.NewAppModule(app.votingKeeper),
 		broadcast.NewAppModule(app.broadcastKeeper),
 		nexus.NewAppModule(app.nexusKeeper),

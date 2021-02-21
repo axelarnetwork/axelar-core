@@ -5,17 +5,24 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/tssd/convert"
 	tssd "github.com/axelarnetwork/tssd/pb"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
-
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
+
+// GetMinKeygenThreshold returns minimum threshold of stake that must be met to execute keygen
+func (k Keeper) GetMinKeygenThreshold(ctx sdk.Context) utils.Threshold {
+	var threshold utils.Threshold
+	k.params.Get(ctx, types.MinKeygenThreshold, &threshold)
+	return threshold
+}
 
 // StartKeygen starts a keygen protocol with the specified parameters
 func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, snapshot snapshot.Snapshot) (<-chan ecdsa.PublicKey, error) {
