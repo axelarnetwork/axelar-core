@@ -66,7 +66,7 @@ func ComputeActiveValidators(ctx sdk.Context, validators []exported.Validator, s
 
 	for _, validator := range validators {
 
-		addr := sdk.ConsAddress(validator.GetConsAddr().Bytes())
+		addr := validator.GetConsAddr()
 		signingInfo, found := slasher.GetValidatorSigningInfo(ctx, addr)
 		if !found {
 			return nil, sdk.NewInt(int64(0)), fmt.Errorf("snapshot: couldn't retrieve signing info for a validator")
