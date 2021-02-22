@@ -182,7 +182,6 @@ func Test_wBTC_mint(t *testing.T) {
 	chain.WaitNBlocks(20)
 
 	// 7. Submit the minting command from an externally controlled address to AxelarGateway
-	// Q: Does SendAndSign need to check anything?
 	nodeData[0].Mocks.ETH.SendAndSignTransactionFunc = func(_ context.Context, _ goEth.CallMsg) (string, error) {
 		return "", nil
 	}
