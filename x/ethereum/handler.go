@@ -7,10 +7,10 @@ import (
 	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	ethTypes "github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
@@ -32,9 +32,11 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 		case types.MsgVerifyTx:
 			return handleMsgVerifyTx(ctx, k, rpc, v, msg)
 		case *types.MsgVoteVerifiedTx:
-			return handleMsgVoteVerifiedTx(ctx, k, v, msg)
+			return handleMsgVoteVerifiedTx(ctx, k, v, n, msg)
 		case types.MsgVerifyErc20TokenDeploy:
 			return handleMsgVerifyErc20TokenDeploy(ctx, k, rpc, v, msg)
+		case types.MsgVerifyErc20Deposit:
+			return handleMsgVerifyErc20Deposit(ctx, k, rpc, v, msg)
 		case types.MsgSignDeployToken:
 			return handleMsgSignDeployToken(ctx, k, s, snap, msg)
 		case types.MsgSignTx:
@@ -46,6 +48,48 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
 		}
 	}
+}
+
+func handleMsgVerifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v types.Voter, msg types.MsgVerifyErc20Deposit) (*sdk.Result, error) {
+	txIDHex := msg.TxID.String()
+
+	burnerInfo := k.GetBurnerInfo(ctx, msg.BurnerAddr)
+	if burnerInfo == nil {
+		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no burner info found for address %s", msg.BurnerAddr)
+	}
+
+	poll := vote.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: txIDHex}
+	if err := v.InitPoll(ctx, poll); err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+	}
+
+	erc20Deposit := types.Erc20Deposit{
+		TxID:       msg.TxID,
+		Amount:     msg.Amount,
+		Symbol:     burnerInfo.Symbol,
+		BurnerAddr: msg.BurnerAddr,
+	}
+	k.SetUnverifiedErc20Deposit(ctx, txIDHex, &erc20Deposit)
+
+	txReceipt, blockNumber, err := getTransactionReceiptAndBlockNumber(ctx, rpc, msg.TxID)
+	if err != nil {
+		k.Logger(ctx).Debug(sdkerrors.Wrapf(err, "cannot get transaction receipt %s or block number", txIDHex).Error())
+		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
+
+		return &sdk.Result{Log: err.Error()}, nil
+	}
+
+	tokenAddr := common.HexToAddress(burnerInfo.TokenAddr)
+	if err := verifyErc20Deposit(ctx, k, txReceipt, blockNumber, msg.TxID, msg.Amount, msg.BurnerAddr, tokenAddr); err != nil {
+		k.Logger(ctx).Debug(sdkerrors.Wrapf(err, "expected erc20 deposit (%s) to burner address %s could not be verified", txIDHex, msg.BurnerAddr.String()).Error())
+		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
+
+		return &sdk.Result{Log: err.Error()}, nil
+	}
+
+	v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: true})
+
+	return &sdk.Result{Log: fmt.Sprintf("successfully verified erc20 deposit %s", txIDHex)}, nil
 }
 
 func handleMsgLink(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg types.MsgLink) (*sdk.Result, error) {
@@ -73,8 +117,9 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg types.Ms
 		nexus.CrossChainAddress{Chain: recipientChain, Address: msg.RecipientAddr})
 
 	burnerInfo := types.BurnerInfo{
-		Symbol: msg.Symbol,
-		Salt:   salt,
+		TokenAddr: tokenAddr.String(),
+		Symbol:    msg.Symbol,
+		Salt:      salt,
 	}
 	k.SetBurnerInfo(ctx, burnerAddr, &burnerInfo)
 
@@ -182,16 +227,17 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v 
 	 Anyone not able to verify the transaction will automatically record a negative vote,
 	 but only validators will later send out that vote.
 	*/
-	receipt, err := rpc.TransactionReceipt(context.Background(), tx.Hash())
+	txReceipt, blockNumber, err := getTransactionReceiptAndBlockNumber(ctx, rpc, tx.Hash())
 	if err != nil {
-		output := fmt.Sprintf("could not retrieve Ethereum receipt for transaction %s: %v", txID, err)
+		output := fmt.Sprintf("cannot get transaction receipt %s or block number: %v", txID, err)
 		k.Logger(ctx).Debug(sdkerrors.Wrap(err, output).Error())
 		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
 		return &sdk.Result{Log: output}, nil
 	}
-	if err = verifyTx(ctx, k, rpc, receipt.BlockNumber.Uint64()); err != nil {
-		output := fmt.Sprintf("expected transaction (%s) could not be verified: %v", txID, err)
-		k.Logger(ctx).Debug(sdkerrors.Wrap(err, output).Error())
+
+	if !isTxFinalized(txReceipt, blockNumber, k.GetRequiredConfirmationHeight(ctx)) {
+		output := fmt.Sprintf("expected transaction (%s) does not have enough confirmations", txID)
+		k.Logger(ctx).Debug(output)
 		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
 		return &sdk.Result{Log: output}, nil
 
@@ -203,7 +249,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v 
 }
 
 // This can be used as a potential hook to immediately act on a poll being decided by the vote
-func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg *types.MsgVoteVerifiedTx) (*sdk.Result, error) {
+func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n types.Nexus, msg *types.MsgVoteVerifiedTx) (*sdk.Result, error) {
 	event := sdk.NewEvent(
 		sdk.EventTypeMessage,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
@@ -217,12 +263,26 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, ms
 	}
 
 	if confirmed := v.Result(ctx, msg.Poll()); confirmed != nil {
-
 		switch msg.PollMeta.Type {
 		case types.MsgVerifyTx{}.Type():
 			k.ProcessVerificationTxResult(ctx, msg.PollMeta.ID, confirmed.(bool))
 		case types.MsgVerifyErc20TokenDeploy{}.Type():
 			k.ProcessVerificationTokenResult(ctx, msg.PollMeta.ID, confirmed.(bool))
+		case types.MsgVerifyErc20Deposit{}.Type():
+			txID := msg.PollMeta.ID
+			k.ProcessVerificationErc20DepositResult(ctx, txID, confirmed.(bool))
+
+			deposit := k.GetVerifiedErc20Deposit(ctx, txID)
+			if deposit == nil {
+				return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("erc20 deposit %s wasn't properly marked as verified", txID))
+			}
+
+			depositAddr := nexus.CrossChainAddress{Address: deposit.BurnerAddr.String(), Chain: exported.Ethereum}
+			amount := sdk.NewInt64Coin(deposit.Symbol, deposit.Amount.BigInt().Int64())
+
+			if err := n.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
+				return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+			}
 		default:
 			k.Logger(ctx).Debug(fmt.Sprintf("unknown verification message type: %s", msg.PollMeta.Type))
 		}
@@ -327,7 +387,6 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 }
 
 func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v types.Voter, msg types.MsgVerifyErc20TokenDeploy) (*sdk.Result, error) {
-
 	tokenAddr, err := k.GetTokenAddress(ctx, msg.Symbol, msg.GatewayAddr)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
@@ -354,21 +413,15 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 	}
 	k.SetUnverifiedErc20TokenDeploy(ctx, &deploy)
 
-	receipt, err := rpc.TransactionReceipt(context.Background(), msg.TxID)
+	txReceipt, blockNumber, err := getTransactionReceiptAndBlockNumber(ctx, rpc, msg.TxID)
 	if err != nil {
-		output := fmt.Sprintf("could not retrieve Ethereum receipt for transaction %s: %v", msg.TxID.String(), err)
+		output := fmt.Sprintf("cannot get transaction receipt %s or block number: %v", msg.TxID.String(), err)
 		k.Logger(ctx).Debug(sdkerrors.Wrap(err, output).Error())
 		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
 		return &sdk.Result{Log: output}, nil
 	}
-	err = verifyTx(ctx, k, rpc, receipt.BlockNumber.Uint64())
-	if err != nil {
-		output := fmt.Sprintf("transaction '%s' could not be verified", msg.TxID.String())
-		k.Logger(ctx).Debug(sdkerrors.Wrap(err, output).Error())
-		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
-		return &sdk.Result{Log: output}, nil
-	}
-	if err := verifyERC20TokenDeploy(ctx, receipt, k, msg.Symbol, msg.GatewayAddr, tokenAddr); err != nil {
+
+	if err := verifyERC20TokenDeploy(ctx, k, txReceipt, blockNumber, msg.Symbol, msg.GatewayAddr, tokenAddr); err != nil {
 		output := fmt.Sprintf("expected erc20 token deploy (%s) could not be verified", msg.Symbol)
 		k.Logger(ctx).Debug(sdkerrors.Wrap(err, output).Error())
 		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
@@ -381,30 +434,21 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 	return &sdk.Result{Log: output}, nil
 }
 
-func verifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, blockNum uint64) error {
-
-	height, err := rpc.BlockNumber(context.Background())
-	if err != nil {
-		return sdkerrors.Wrap(err, "could not retrieve Ethereum block number")
+func verifyERC20TokenDeploy(ctx sdk.Context, k keeper.Keeper, txReceipt *ethTypes.Receipt, blockNumber uint64, expectedSymbol string, gatewayAddr, expectedAddr common.Address) error {
+	if !isTxFinalized(txReceipt, blockNumber, k.GetRequiredConfirmationHeight(ctx)) {
+		return fmt.Errorf("transaction %s does not have enough confirmations yet", txReceipt.TxHash.String())
 	}
 
-	if (height - blockNum) < k.GetRequiredConfirmationHeight(ctx) {
-		return fmt.Errorf("not enough confirmations yet")
-	}
-	return nil
-}
-
-func verifyERC20TokenDeploy(ctx sdk.Context, receipt *ethTypes.Receipt, keeper keeper.Keeper, expectedSymbol string, gatewayAddr, expectedAddr common.Address) error {
-	for _, log := range receipt.Logs {
+	for _, log := range txReceipt.Logs {
 		// Event is not emitted by the axelar gateway
 		if log.Address != gatewayAddr {
 			continue
 		}
 
 		// Event is not for a ERC20 token deployment
-		symbol, tokenAddr, err := types.DecodeErc20TokenDeployEvent(log, keeper.GetERC20TokenDeploySignature(ctx))
+		symbol, tokenAddr, err := types.DecodeErc20TokenDeployEvent(log, k.GetERC20TokenDeploySignature(ctx))
 		if err != nil {
-			keeper.Logger(ctx).Debug(sdkerrors.Wrap(err, "event not for a a token deployment").Error())
+			k.Logger(ctx).Debug(sdkerrors.Wrap(err, "event not for a a token deployment").Error())
 			continue
 		}
 
@@ -424,4 +468,55 @@ func verifyERC20TokenDeploy(ctx sdk.Context, receipt *ethTypes.Receipt, keeper k
 	}
 
 	return fmt.Errorf("failed to verify token deployment for symbol '%s' at contract address '%s'", expectedSymbol, expectedAddr.String())
+}
+
+func verifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, txReceipt *ethTypes.Receipt, blockNumber uint64, txID common.Hash, amount sdk.Uint, burnerAddr common.Address, tokenAddr common.Address) error {
+	if !isTxFinalized(txReceipt, blockNumber, k.GetRequiredConfirmationHeight(ctx)) {
+		return fmt.Errorf("transaction %s does not have enough confirmations yet", txID.String())
+	}
+
+	actualAmount := sdk.ZeroUint()
+	for _, log := range txReceipt.Logs {
+		/* Event is not related to the token */
+		if log.Address != tokenAddr {
+			continue
+		}
+
+		_, to, transferAmount, err := types.DecodeErc20TransferEvent(log)
+		/* Event is not an ERC20 transfer */
+		if err != nil {
+			continue
+		}
+
+		/* Transfer isn't sent to burner */
+		if to != burnerAddr {
+			continue
+		}
+
+		actualAmount = actualAmount.Add(transferAmount)
+	}
+
+	if !actualAmount.Equal(amount) {
+		return fmt.Errorf("deposit amount in transaction %s for token %s and burner %s doesn not match what is expected", txID, tokenAddr.String(), burnerAddr.String())
+	}
+
+	return nil
+}
+
+func getTransactionReceiptAndBlockNumber(ctx sdk.Context, rpc types.RPCClient, txID common.Hash) (*ethTypes.Receipt, uint64, error) {
+	txReceipt, err := rpc.TransactionReceipt(context.Background(), txID)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	blockNumber, err := rpc.BlockNumber(context.Background())
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return txReceipt, blockNumber, nil
+}
+
+func isTxFinalized(txReceipt *ethTypes.Receipt, blockNumber uint64, confirmationHeight uint64) bool {
+	return blockNumber-txReceipt.BlockNumber.Uint64() >= confirmationHeight
 }

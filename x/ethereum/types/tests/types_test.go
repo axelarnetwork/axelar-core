@@ -183,3 +183,57 @@ func TestDecodeTokenDeployEvent_CorrectData(t *testing.T) {
 	assert.Equal(t, expectedSymbol, symbol)
 	assert.Equal(t, expectedAddr, tokenAddr)
 }
+
+func TestDecodeErc20TransferEvent_NotErc20Transfer(t *testing.T) {
+	log := ethTypes.Log{
+		Topics: []common.Hash{
+			common.BytesToHash(testutils.RandBytes(common.HashLength)),
+			common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(testutils.RandBytes(common.AddressLength)).Bytes(), common.HashLength)),
+			common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(testutils.RandBytes(common.AddressLength)).Bytes(), common.HashLength)),
+		},
+		Data: common.LeftPadBytes(big.NewInt(2).Bytes(), common.HashLength),
+	}
+
+	_, _, _, err := types.DecodeErc20TransferEvent(&log)
+
+	assert.Error(t, err)
+}
+
+func TestDecodeErc20TransferEvent_InvalidErc20Transfer(t *testing.T) {
+	erc20TransferEventSig := common.HexToHash("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")
+
+	log := ethTypes.Log{
+		Topics: []common.Hash{
+			erc20TransferEventSig,
+			common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(testutils.RandBytes(common.AddressLength)).Bytes(), common.HashLength)),
+		},
+		Data: common.LeftPadBytes(big.NewInt(2).Bytes(), common.HashLength),
+	}
+
+	_, _, _, err := types.DecodeErc20TransferEvent(&log)
+
+	assert.Error(t, err)
+}
+
+func TestDecodeErc20TransferEvent_CorrectData(t *testing.T) {
+	erc20TransferEventSig := common.HexToHash("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")
+	expectedFrom := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+	expectedTo := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+	expectedAmount := sdk.NewUint(uint64(testutils.RandIntBetween(1, 10000)))
+
+	log := ethTypes.Log{
+		Topics: []common.Hash{
+			erc20TransferEventSig,
+			common.BytesToHash(common.LeftPadBytes(expectedFrom.Bytes(), common.HashLength)),
+			common.BytesToHash(common.LeftPadBytes(expectedTo.Bytes(), common.HashLength)),
+		},
+		Data: common.LeftPadBytes(expectedAmount.BigInt().Bytes(), common.HashLength),
+	}
+
+	actualFrom, actualTo, actualAmount, err := types.DecodeErc20TransferEvent(&log)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedFrom, actualFrom)
+	assert.Equal(t, expectedTo, actualTo)
+	assert.Equal(t, expectedAmount, actualAmount)
+}

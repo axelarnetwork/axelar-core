@@ -92,7 +92,7 @@ func TestLink_Success(t *testing.T) {
 	assert.Equal(t, sender, n.LinkAddressesCalls()[0].Sender)
 	assert.Equal(t, recipient, n.LinkAddressesCalls()[0].Recipient)
 
-	assert.Equal(t, types.BurnerInfo{Symbol: msg.Symbol, Salt: salt}, *k.GetBurnerInfo(ctx, burnAddr))
+	assert.Equal(t, types.BurnerInfo{TokenAddr: tokenAddr.String(), Symbol: msg.Symbol, Salt: salt}, *k.GetBurnerInfo(ctx, burnAddr))
 }
 
 func TestDeployTx_DifferentValue_DifferentHash(t *testing.T) {
@@ -460,6 +460,277 @@ func TestVerifyTx_Mint_Success(t *testing.T) {
 	assertVotedOnPoll(t, voter, signedTx.Hash(), types.MsgVerifyTx{}.Type(), true)
 }
 
+func TestHandleMsgVerifyErc20Deposit_UnknownBurnerAddr(t *testing.T) {
+	minConfHeight := testutils.RandIntBetween(1, 10)
+	txID := common.BytesToHash(testutils.RandBytes(common.HashLength))
+	amount := sdk.NewUint(uint64(testutils.RandIntBetween(1, 10000)))
+	unknownBurnerAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	k := newKeeper(ctx, minConfHeight)
+	rpc := ethMock.RPCClientMock{}
+	v := createVoterMock()
+	handler := NewHandler(k, &rpc, v, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.NexusMock{})
+
+	msg := types.NewMsgVerifyErc20Deposit(sender, txID, amount, unknownBurnerAddr)
+	result, err := handler(ctx, msg)
+
+	assert.Nil(t, result)
+	assert.Error(t, err)
+
+	assert.False(t, k.HasUnverifiedErc20Deposit(ctx, txID.String()))
+	assert.Equal(t, 0, len(v.InitPollCalls()))
+	assert.Equal(t, 0, len(v.RecordVoteCalls()))
+}
+
+func TestHandleMsgVerifyErc20Deposit_FailedGettingTransactionReceipt(t *testing.T) {
+	minConfHeight := testutils.RandIntBetween(1, 10)
+	txID := common.BytesToHash(testutils.RandBytes(common.HashLength))
+	amount := sdk.NewUint(uint64(testutils.RandIntBetween(1, 10000)))
+	tokenAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+	symbol := testutils.RandString(3)
+	salt := common.BytesToHash(testutils.RandBytes(common.HashLength))
+	burnerAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+	burnerInfo := types.BurnerInfo{
+		TokenAddr: tokenAddr.String(),
+		Symbol:    symbol,
+		Salt:      salt,
+	}
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	k := newKeeper(ctx, minConfHeight)
+	k.SetBurnerInfo(ctx, burnerAddr, &burnerInfo)
+	rpc := ethMock.RPCClientMock{}
+	rpc.TransactionReceiptFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Receipt, error) {
+		return nil, fmt.Errorf("sorry")
+	}
+	v := createVoterMock()
+	handler := NewHandler(k, &rpc, v, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.NexusMock{})
+
+	msg := types.NewMsgVerifyErc20Deposit(sender, txID, amount, burnerAddr)
+	result, err := handler(ctx, msg)
+
+	assert.NotNil(t, result)
+	assert.NoError(t, err)
+
+	assert.True(t, k.HasUnverifiedErc20Deposit(ctx, txID.String()))
+	assertVotedOnPoll(t, v, txID, types.MsgVerifyErc20Deposit{}.Type(), false)
+}
+
+func TestHandleMsgVerifyErc20Deposit_FailedGettingBlockNumber(t *testing.T) {
+	minConfHeight := testutils.RandIntBetween(1, 10)
+	txID := common.BytesToHash(testutils.RandBytes(common.HashLength))
+	amount := sdk.NewUint(uint64(testutils.RandIntBetween(1, 10000)))
+	tokenAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+	symbol := testutils.RandString(3)
+	salt := common.BytesToHash(testutils.RandBytes(common.HashLength))
+	burnerAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+	burnerInfo := types.BurnerInfo{
+		TokenAddr: tokenAddr.String(),
+		Symbol:    symbol,
+		Salt:      salt,
+	}
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	k := newKeeper(ctx, minConfHeight)
+	k.SetBurnerInfo(ctx, burnerAddr, &burnerInfo)
+	rpc := ethMock.RPCClientMock{}
+	rpc.TransactionReceiptFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Receipt, error) {
+		return &ethTypes.Receipt{}, nil
+	}
+	rpc.BlockNumberFunc = func(ctx context.Context) (uint64, error) {
+		return 0, fmt.Errorf("sorry")
+	}
+	v := createVoterMock()
+	handler := NewHandler(k, &rpc, v, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.NexusMock{})
+
+	msg := types.NewMsgVerifyErc20Deposit(sender, txID, amount, burnerAddr)
+	result, err := handler(ctx, msg)
+
+	assert.NotNil(t, result)
+	assert.NoError(t, err)
+
+	assert.True(t, k.HasUnverifiedErc20Deposit(ctx, txID.String()))
+	assertVotedOnPoll(t, v, txID, types.MsgVerifyErc20Deposit{}.Type(), false)
+}
+
+func TestHandleMsgVerifyErc20Deposit_NotConfirmed(t *testing.T) {
+	minConfHeight := testutils.RandIntBetween(1, 10)
+	txID := common.BytesToHash(testutils.RandBytes(common.HashLength))
+	amount := sdk.NewUint(uint64(testutils.RandIntBetween(1, 10000)))
+	tokenAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+	symbol := testutils.RandString(3)
+	salt := common.BytesToHash(testutils.RandBytes(common.HashLength))
+	burnerAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+	burnerInfo := types.BurnerInfo{
+		TokenAddr: tokenAddr.String(),
+		Symbol:    symbol,
+		Salt:      salt,
+	}
+	blockNumber := int64(100)
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	k := newKeeper(ctx, minConfHeight)
+	k.SetBurnerInfo(ctx, burnerAddr, &burnerInfo)
+	rpc := ethMock.RPCClientMock{}
+	rpc.TransactionReceiptFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Receipt, error) {
+		return &ethTypes.Receipt{BlockNumber: big.NewInt(blockNumber)}, nil
+	}
+	rpc.BlockNumberFunc = func(ctx context.Context) (uint64, error) {
+		return uint64(blockNumber), nil
+	}
+	v := createVoterMock()
+	handler := NewHandler(k, &rpc, v, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.NexusMock{})
+
+	msg := types.NewMsgVerifyErc20Deposit(sender, txID, amount, burnerAddr)
+	result, err := handler(ctx, msg)
+
+	assert.NotNil(t, result)
+	assert.NoError(t, err)
+
+	assert.True(t, k.HasUnverifiedErc20Deposit(ctx, txID.String()))
+	assertVotedOnPoll(t, v, txID, types.MsgVerifyErc20Deposit{}.Type(), false)
+}
+
+func TestHandleMsgVerifyErc20Deposit_AmountMismatch(t *testing.T) {
+	minConfHeight := testutils.RandIntBetween(1, 10)
+	txID := common.BytesToHash(testutils.RandBytes(common.HashLength))
+	amount := sdk.NewUint(10)
+	tokenAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+	symbol := testutils.RandString(3)
+	salt := common.BytesToHash(testutils.RandBytes(common.HashLength))
+	burnerAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+	burnerInfo := types.BurnerInfo{
+		TokenAddr: tokenAddr.String(),
+		Symbol:    symbol,
+		Salt:      salt,
+	}
+	blockNumber := int64(100)
+	erc20TransferEventSig := common.HexToHash("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	k := newKeeper(ctx, minConfHeight)
+	k.SetBurnerInfo(ctx, burnerAddr, &burnerInfo)
+	rpc := ethMock.RPCClientMock{}
+	rpc.TransactionReceiptFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Receipt, error) {
+		return &ethTypes.Receipt{BlockNumber: big.NewInt(blockNumber), Logs: []*ethTypes.Log{
+			/* ERC20 transfer to burner address of a random token */
+			{
+				Address: common.BytesToAddress(testutils.RandBytes(common.AddressLength)),
+				Topics: []common.Hash{
+					erc20TransferEventSig,
+					common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(testutils.RandBytes(common.AddressLength)).Bytes(), common.HashLength)),
+					common.BytesToHash(common.LeftPadBytes(burnerAddr.Bytes(), common.HashLength)),
+				},
+				Data: common.LeftPadBytes(big.NewInt(2).Bytes(), common.HashLength),
+			},
+			/* not a ERC20 transfer */
+			{
+				Address: tokenAddr,
+				Topics: []common.Hash{
+					common.BytesToHash(testutils.RandBytes(common.HashLength)),
+					common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(testutils.RandBytes(common.AddressLength)).Bytes(), common.HashLength)),
+					common.BytesToHash(common.LeftPadBytes(burnerAddr.Bytes(), common.HashLength)),
+				},
+				Data: common.LeftPadBytes(big.NewInt(2).Bytes(), common.HashLength),
+			},
+			/* an invalid ERC20 transfer */
+			{
+				Address: tokenAddr,
+				Topics: []common.Hash{
+					erc20TransferEventSig,
+					common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(testutils.RandBytes(common.AddressLength)).Bytes(), common.HashLength)),
+				},
+				Data: common.LeftPadBytes(big.NewInt(2).Bytes(), common.HashLength),
+			},
+			/* an ERC20 transfer of our concern */
+			{
+				Address: tokenAddr,
+				Topics: []common.Hash{
+					erc20TransferEventSig,
+					common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(testutils.RandBytes(common.AddressLength)).Bytes(), common.HashLength)),
+					common.BytesToHash(common.LeftPadBytes(burnerAddr.Bytes(), common.HashLength)),
+				},
+				Data: common.LeftPadBytes(big.NewInt(4).Bytes(), common.HashLength),
+			},
+		}}, nil
+	}
+	rpc.BlockNumberFunc = func(ctx context.Context) (uint64, error) {
+		return uint64(blockNumber + minConfHeight*2), nil
+	}
+	v := createVoterMock()
+	handler := NewHandler(k, &rpc, v, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.NexusMock{})
+
+	msg := types.NewMsgVerifyErc20Deposit(sender, txID, amount, burnerAddr)
+	result, err := handler(ctx, msg)
+
+	assert.NotNil(t, result)
+	assert.NoError(t, err)
+
+	assert.True(t, k.HasUnverifiedErc20Deposit(ctx, txID.String()))
+	assertVotedOnPoll(t, v, txID, types.MsgVerifyErc20Deposit{}.Type(), false)
+}
+
+func TestHandleMsgVerifyErc20Deposit_Success(t *testing.T) {
+	minConfHeight := testutils.RandIntBetween(1, 10)
+	txID := common.BytesToHash(testutils.RandBytes(common.HashLength))
+	amount := sdk.NewUint(10)
+	tokenAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+	symbol := testutils.RandString(3)
+	salt := common.BytesToHash(testutils.RandBytes(common.HashLength))
+	burnerAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+	burnerInfo := types.BurnerInfo{
+		TokenAddr: tokenAddr.String(),
+		Symbol:    symbol,
+		Salt:      salt,
+	}
+	blockNumber := int64(100)
+	erc20TransferEventSig := common.HexToHash("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	k := newKeeper(ctx, minConfHeight)
+	k.SetBurnerInfo(ctx, burnerAddr, &burnerInfo)
+	rpc := ethMock.RPCClientMock{}
+	rpc.TransactionReceiptFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Receipt, error) {
+		return &ethTypes.Receipt{BlockNumber: big.NewInt(blockNumber), Logs: []*ethTypes.Log{
+			/* an ERC20 transfer of our concern */
+			{
+				Address: tokenAddr,
+				Topics: []common.Hash{
+					erc20TransferEventSig,
+					common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(testutils.RandBytes(common.AddressLength)).Bytes(), common.HashLength)),
+					common.BytesToHash(common.LeftPadBytes(burnerAddr.Bytes(), common.HashLength)),
+				},
+				Data: common.LeftPadBytes(big.NewInt(3).Bytes(), common.HashLength),
+			},
+			/* another ERC20 transfer of our concern */
+			{
+				Address: tokenAddr,
+				Topics: []common.Hash{
+					erc20TransferEventSig,
+					common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(testutils.RandBytes(common.AddressLength)).Bytes(), common.HashLength)),
+					common.BytesToHash(common.LeftPadBytes(burnerAddr.Bytes(), common.HashLength)),
+				},
+				Data: common.LeftPadBytes(big.NewInt(7).Bytes(), common.HashLength),
+			},
+		}}, nil
+	}
+	rpc.BlockNumberFunc = func(ctx context.Context) (uint64, error) {
+		return uint64(blockNumber + minConfHeight*2), nil
+	}
+	v := createVoterMock()
+	handler := NewHandler(k, &rpc, v, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.NexusMock{})
+
+	msg := types.NewMsgVerifyErc20Deposit(sender, txID, amount, burnerAddr)
+	result, err := handler(ctx, msg)
+
+	assert.NotNil(t, result)
+	assert.NoError(t, err)
+
+	assert.True(t, k.HasUnverifiedErc20Deposit(ctx, txID.String()))
+	assertVotedOnPoll(t, v, txID, types.MsgVerifyErc20Deposit{}.Type(), true)
+}
+
 func createSignedDeployTx() *ethTypes.Transaction {
 	generator := testutils.RandPosInts()
 
@@ -525,7 +796,6 @@ func createVoterMock() *ethMock.VoterMock {
 }
 
 func assertVotedOnPoll(t *testing.T, voter *ethMock.VoterMock, hash common.Hash, pollType string, verified bool) {
-
 	assert.Equal(t, 1, len(voter.InitPollCalls()))
 	assert.Equal(t, types.ModuleName, voter.InitPollCalls()[0].Poll.Module)
 	assert.Equal(t, pollType, voter.InitPollCalls()[0].Poll.Type)
@@ -536,7 +806,6 @@ func assertVotedOnPoll(t *testing.T, voter *ethMock.VoterMock, hash common.Hash,
 	assert.Equal(t, 1, len(voter.RecordVoteCalls()))
 	assert.Equal(t, initPoll, voter.RecordVoteCalls()[0].Vote.Poll())
 	assert.Equal(t, verified, voter.RecordVoteCalls()[0].Vote.Data())
-
 }
 
 func newKeeper(ctx sdk.Context, confHeight int64) keeper.Keeper {

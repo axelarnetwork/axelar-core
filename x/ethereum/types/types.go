@@ -58,6 +58,8 @@ var (
 		params.GoerliChainConfig.ChainID.Int64():        Goerli,
 		params.AllCliqueProtocolChanges.ChainID.Int64(): Ganache,
 	}
+
+	erc20TransferEventSig = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
 )
 
 // Network provides additional functionality based on the ethereum network name
@@ -182,8 +184,17 @@ type Erc20TokenDeploy struct {
 // BurnerInfo describes information required to burn token at an burner address
 // that is deposited by an user
 type BurnerInfo struct {
-	Symbol string
-	Salt   [32]byte
+	TokenAddr string
+	Symbol    string
+	Salt      [32]byte
+}
+
+// Erc20Deposit contains information for an ERC20 deposit
+type Erc20Deposit struct {
+	TxID       common.Hash
+	Amount     sdk.Uint
+	Symbol     string
+	BurnerAddr common.Address
 }
 
 // CreateExecuteData wraps the specific command data and includes the command signature.
@@ -281,6 +292,20 @@ func CreateDeployTokenCommandData(chainID *big.Int, commandID CommandID, tokenNa
 	commandParams = append(commandParams, deployParams)
 
 	return packArguments(chainID, commandIDs, commands, commandParams)
+}
+
+// DecodeErc20TransferEvent decodes the information contained in a ERC20 token transfer event
+func DecodeErc20TransferEvent(log *ethTypes.Log) (common.Address, common.Address, sdk.Uint, error) {
+	if len(log.Topics) != 3 || log.Topics[0] != erc20TransferEventSig {
+		return common.Address{}, common.Address{}, sdk.Uint{}, fmt.Errorf("log is not an ERC20 transfer")
+	}
+
+	from := common.BytesToAddress(log.Topics[1][:])
+	to := common.BytesToAddress(log.Topics[2][:])
+	amount := new(big.Int)
+	amount.SetBytes(log.Data[:32])
+
+	return from, to, sdk.NewUintFromBigInt(amount), nil
 }
 
 // CommandID represents the unique command identifier
@@ -388,7 +413,7 @@ func createDeployTokenParams(tokenName string, symbol string, decimals uint8, ca
 	return result, nil
 }
 
-// DecodeErc20TokenDeployEvent decodes the information contained in a ERC"= token deployment event
+// DecodeErc20TokenDeployEvent decodes the information contained in a ERC20 token deployment event
 func DecodeErc20TokenDeployEvent(log *ethTypes.Log, transferSig common.Hash) (string, common.Address, error) {
 	if len(log.Topics) != 1 || log.Topics[0] != transferSig {
 		return "", common.Address{}, fmt.Errorf("event is not for an ERC20 token deployment")
