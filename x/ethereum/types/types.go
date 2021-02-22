@@ -311,8 +311,6 @@ func CreateBurnCommandData(chainID *big.Int, height int64, burnerInfos []BurnerI
 		// TODO: A sequential ID for burns instead of hashing block height and salt together?
 		commandID := CommandID(crypto.Keccak256Hash(append(burnerInfo.Salt[:], heightBytes...)))
 
-		fmt.Println(common.Bytes2Hex(commandID[:]))
-
 		commandIDs = append(commandIDs, commandID)
 		commands = append(commands, axelarGatewayCommandBurnToken)
 		commandParams = append(commandParams, commandParam)

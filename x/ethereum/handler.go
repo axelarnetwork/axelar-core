@@ -424,14 +424,16 @@ func handleMsgSignBurnTokens(ctx sdk.Context, k keeper.Keeper, signer types.Sign
 }
 
 func getUniqueBurnerAddrs(deposits []types.Erc20Deposit) []common.Address {
-	burnerAddrMap := map[common.Address]bool{}
+	burnerAddrs := []common.Address{}
+	burnerAddrSeen := map[common.Address]bool{}
 
 	for _, deposit := range deposits {
-		burnerAddrMap[deposit.BurnerAddr] = true
-	}
+		burnerAddr := deposit.BurnerAddr
+		if burnerAddrSeen[burnerAddr] {
+			continue
+		}
 
-	burnerAddrs := []common.Address{}
-	for burnerAddr := range burnerAddrMap {
+		burnerAddrSeen[burnerAddr] = true
 		burnerAddrs = append(burnerAddrs, burnerAddr)
 	}
 
