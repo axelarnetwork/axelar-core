@@ -47,6 +47,7 @@ const (
 	]`
 	axelarGatewayCommandMint        = "mintToken"
 	axelarGatewayCommandDeployToken = "deployToken"
+	axelarGatewayCommandBurnToken   = "burnToken"
 	axelarGatewayFuncExecute        = "execute"
 )
 
@@ -246,8 +247,6 @@ func GetEthereumSignHash(commandData []byte) common.Hash {
 func transferIDtoCommandID(transferID uint64) CommandID {
 	var commandID CommandID
 
-	fmt.Printf("transferID: %d\n", transferID)
-
 	bz := make([]byte, 8)
 	binary.BigEndian.PutUint64(bz, transferID)
 
@@ -290,6 +289,34 @@ func CreateDeployTokenCommandData(chainID *big.Int, commandID CommandID, tokenNa
 	commandIDs = append(commandIDs, commandID)
 	commands = append(commands, axelarGatewayCommandDeployToken)
 	commandParams = append(commandParams, deployParams)
+
+	return packArguments(chainID, commandIDs, commands, commandParams)
+}
+
+// CreateBurnCommandData returns the command data to burn tokens given burners' information
+func CreateBurnCommandData(chainID *big.Int, height int64, burnerInfos []BurnerInfo) ([]byte, error) {
+	var commandIDs []CommandID
+	var commands []string
+	var commandParams [][]byte
+
+	heightBytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(heightBytes, uint64(height))
+
+	for _, burnerInfo := range burnerInfos {
+		commandParam, err := createBurnTokenParams(burnerInfo.Symbol, burnerInfo.Salt)
+		if err != nil {
+			return nil, err
+		}
+
+		// TODO: A sequential ID for burns instead of hashing block height and salt together?
+		commandID := CommandID(crypto.Keccak256Hash(append(burnerInfo.Salt[:], heightBytes...)))
+
+		fmt.Println(common.Bytes2Hex(commandID[:]))
+
+		commandIDs = append(commandIDs, commandID)
+		commands = append(commands, axelarGatewayCommandBurnToken)
+		commandParams = append(commandParams, commandParam)
+	}
 
 	return packArguments(chainID, commandIDs, commands, commandParams)
 }
@@ -406,6 +433,26 @@ func createDeployTokenParams(tokenName string, symbol string, decimals uint8, ca
 		decimals,
 		capacity,
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func createBurnTokenParams(symbol string, salt [32]byte) ([]byte, error) {
+	stringType, err := abi.NewType("string", "string", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	bytes32Type, err := abi.NewType("bytes32", "bytes32", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	arguments := abi.Arguments{{Type: stringType}, {Type: bytes32Type}}
+	result, err := arguments.Pack(symbol, salt)
 	if err != nil {
 		return nil, err
 	}

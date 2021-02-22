@@ -76,6 +76,7 @@
     - [ethereum](axelarcli_tx_ethereum.md)	 - ethereum transactions subcommands
       - [link \[chain\] \[address\] \[symbol\] \[gateway address\]](axelarcli_tx_ethereum_link.md)	 - Link a cross chain address to an ethereum address created by Axelar
       - [sign \[tx json file path\]](axelarcli_tx_ethereum_sign.md)	 - sign a raw Ethereum transaction
+      - [sign-burn-tokens](axelarcli_tx_ethereum_sign-burn-tokens.md)	 - Sign burn command for all verified Ethereum token deposits
       - [sign-deploy-token \[name\] \[symbol\] \[decimals\] \[capacity\]](axelarcli_tx_ethereum_sign-deploy-token.md)	 - Signs the call data to deploy a token with the AxelarGateway contract
       - [sign-pending-transfers](axelarcli_tx_ethereum_sign-pending-transfers.md)	 - Sign all pending transfers to Ethereum
       - [verify \[tx json file path\]](axelarcli_tx_ethereum_verify.md)	 - Verify an Ethereum transaction
