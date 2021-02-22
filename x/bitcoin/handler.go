@@ -299,11 +299,11 @@ func startSignInputs(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 			return fmt.Errorf("no key ID for chain %s found", exported.Bitcoin.Name)
 		}
 
-		round, ok := signer.GetSnapshotCounterForKeyID(ctx, keyID)
+		counter, ok := signer.GetSnapshotCounterForKeyID(ctx, keyID)
 		if !ok {
-			return fmt.Errorf("no snapshot round for key ID %s registered", keyID)
+			return fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
 		}
-		s, ok := snap.GetSnapshot(ctx, round)
+		s, ok := snap.GetSnapshot(ctx, counter)
 		if !ok {
 			return fmt.Errorf("no snapshot found")
 		}

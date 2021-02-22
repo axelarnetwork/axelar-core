@@ -40,7 +40,7 @@ var (
 		Timestamp:  time.Now(),
 		Height:     testutils.RandIntBetween(1, 1000000),
 		TotalPower: sdk.NewInt(400),
-		Round:      testutils.RandIntBetween(0, 100000),
+		Counter:    testutils.RandIntBetween(0, 100000),
 	}
 	randPosInt      = testutils.RandIntsBetween(0, 100000000)
 	randDistinctStr = testutils.RandStrings(3, 15).Distinct()

@@ -21,7 +21,7 @@ type Voter interface {
 
 // Snapshotter provides snapshot functionality
 type Snapshotter interface {
-	GetSnapshot(ctx sdk.Context, round int64) (snapshot.Snapshot, bool)
+	GetSnapshot(ctx sdk.Context, counter int64) (snapshot.Snapshot, bool)
 }
 
 // Signer provides keygen and signing functionality

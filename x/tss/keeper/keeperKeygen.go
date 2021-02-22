@@ -46,7 +46,7 @@ func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, snapsh
 	// store block height for this keygen to be able to verify later if the produced key is allowed as a master key
 	k.setKeygenStart(ctx, keyID)
 	// store snapshot round to be able to look up the correct validator set when signing with this key
-	k.setSnapshotRoundForKeyID(ctx, keyID, snapshot.Round)
+	k.setSnapshotCounterForKeyID(ctx, keyID, snapshot.Counter)
 
 	k.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d]", keyID, threshold))
 
@@ -309,8 +309,8 @@ func (k Keeper) getLatestMasterKeyHeight(ctx sdk.Context, chain exported.Chain) 
 	return height
 }
 
-func (k Keeper) setSnapshotRoundForKeyID(ctx sdk.Context, keyID string, round int64) {
-	ctx.KVStore(k.storeKey).Set([]byte(snapshotForKeyIDPrefix+keyID), k.cdc.MustMarshalBinaryBare(round))
+func (k Keeper) setSnapshotCounterForKeyID(ctx sdk.Context, keyID string, counter int64) {
+	ctx.KVStore(k.storeKey).Set([]byte(snapshotForKeyIDPrefix+keyID), k.cdc.MustMarshalBinaryBare(counter))
 }
 
 // GetSnapshotCounterForKeyID returns the snapshot round in which the key with the given ID was created, if the key exists
@@ -319,7 +319,7 @@ func (k Keeper) GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64
 	if bz == nil {
 		return 0, false
 	}
-	var round int64
-	k.cdc.MustUnmarshalBinaryBare(bz, &round)
-	return round, true
+	var counter int64
+	k.cdc.MustUnmarshalBinaryBare(bz, &counter)
+	return counter, true
 }

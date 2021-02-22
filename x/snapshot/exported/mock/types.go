@@ -25,7 +25,7 @@ var _ exported.Snapshotter = &SnapshotterMock{}
 // 			GetLatestSnapshotFunc: func(ctx sdk.Context) (exported.Snapshot, bool) {
 // 				panic("mock out the GetLatestSnapshot method")
 // 			},
-// 			GetSnapshotFunc: func(ctx sdk.Context, round int64) (exported.Snapshot, bool) {
+// 			GetSnapshotFunc: func(ctx sdk.Context, counter int64) (exported.Snapshot, bool) {
 // 				panic("mock out the GetSnapshot method")
 // 			},
 // 			TakeSnapshotFunc: func(ctx sdk.Context) error {
@@ -45,7 +45,7 @@ type SnapshotterMock struct {
 	GetLatestSnapshotFunc func(ctx sdk.Context) (exported.Snapshot, bool)
 
 	// GetSnapshotFunc mocks the GetSnapshot method.
-	GetSnapshotFunc func(ctx sdk.Context, round int64) (exported.Snapshot, bool)
+	GetSnapshotFunc func(ctx sdk.Context, counter int64) (exported.Snapshot, bool)
 
 	// TakeSnapshotFunc mocks the TakeSnapshot method.
 	TakeSnapshotFunc func(ctx sdk.Context) error
@@ -66,8 +66,8 @@ type SnapshotterMock struct {
 		GetSnapshot []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
-			// Round is the round argument value.
-			Round int64
+			// Counter is the counter argument value.
+			Counter int64
 		}
 		// TakeSnapshot holds details about calls to the TakeSnapshot method.
 		TakeSnapshot []struct {
@@ -144,33 +144,33 @@ func (mock *SnapshotterMock) GetLatestSnapshotCalls() []struct {
 }
 
 // GetSnapshot calls GetSnapshotFunc.
-func (mock *SnapshotterMock) GetSnapshot(ctx sdk.Context, round int64) (exported.Snapshot, bool) {
+func (mock *SnapshotterMock) GetSnapshot(ctx sdk.Context, counter int64) (exported.Snapshot, bool) {
 	if mock.GetSnapshotFunc == nil {
 		panic("SnapshotterMock.GetSnapshotFunc: method is nil but Snapshotter.GetSnapshot was just called")
 	}
 	callInfo := struct {
-		Ctx   sdk.Context
-		Round int64
+		Ctx     sdk.Context
+		Counter int64
 	}{
-		Ctx:   ctx,
-		Round: round,
+		Ctx:     ctx,
+		Counter: counter,
 	}
 	mock.lockGetSnapshot.Lock()
 	mock.calls.GetSnapshot = append(mock.calls.GetSnapshot, callInfo)
 	mock.lockGetSnapshot.Unlock()
-	return mock.GetSnapshotFunc(ctx, round)
+	return mock.GetSnapshotFunc(ctx, counter)
 }
 
 // GetSnapshotCalls gets all the calls that were made to GetSnapshot.
 // Check the length with:
 //     len(mockedSnapshotter.GetSnapshotCalls())
 func (mock *SnapshotterMock) GetSnapshotCalls() []struct {
-	Ctx   sdk.Context
-	Round int64
+	Ctx     sdk.Context
+	Counter int64
 } {
 	var calls []struct {
-		Ctx   sdk.Context
-		Round int64
+		Ctx     sdk.Context
+		Counter int64
 	}
 	mock.lockGetSnapshot.RLock()
 	calls = mock.calls.GetSnapshot

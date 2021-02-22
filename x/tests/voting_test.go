@@ -73,11 +73,11 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 	val1 := newValidator(sdk.ValAddress("val1"), 100)
 	val2 := newValidator(sdk.ValAddress("val2"), 80)
 	val3 := newValidator(sdk.ValAddress("val3"), 170)
-	round := testutils.RandIntBetween(1, 10000)
+	counter := testutils.RandIntBetween(1, 10000)
 	validators := []exported.Validator{val1, val2, val3}
 	staker := &snapMock.SnapshotterMock{
-		GetLatestCounterFunc: func(ctx sdk.Context) int64 { return round },
-		GetSnapshotFunc: func(ctx sdk.Context, round int64) (exported.Snapshot, bool) {
+		GetLatestCounterFunc: func(sdk.Context) int64 { return counter },
+		GetSnapshotFunc: func(sdk.Context, int64) (exported.Snapshot, bool) {
 			return exported.Snapshot{Validators: validators, TotalPower: sdk.NewInt(350)}, true
 		},
 	}

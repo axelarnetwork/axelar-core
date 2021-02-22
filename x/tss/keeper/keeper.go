@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	rotationPrefix         = "round_"
+	rotationPrefix         = "rotationCount_"
 	keygenStartHeight      = "blockHeight_"
 	pkPrefix               = "pk_"
 	snapshotForKeyIDPrefix = "sfkid_"

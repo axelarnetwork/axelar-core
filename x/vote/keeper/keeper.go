@@ -94,7 +94,7 @@ func (k Keeper) InitPoll(ctx sdk.Context, poll exported.PollMeta) error {
 	}
 
 	r := k.snapshotter.GetLatestCounter(ctx)
-	k.setPoll(ctx, types.Poll{Meta: poll, ValidatorSnapshotRound: r})
+	k.setPoll(ctx, types.Poll{Meta: poll, ValidatorSnapshotCounter: r})
 	return nil
 }
 
@@ -165,9 +165,9 @@ func (k Keeper) TallyVote(ctx sdk.Context, vote exported.MsgVote) error {
 		return err
 	}
 
-	snap, ok := k.snapshotter.GetSnapshot(ctx, poll.ValidatorSnapshotRound)
+	snap, ok := k.snapshotter.GetSnapshot(ctx, poll.ValidatorSnapshotCounter)
 	if !ok {
-		return fmt.Errorf("no snapshot found for round %d", poll.ValidatorSnapshotRound)
+		return fmt.Errorf("no snapshot found for counter %d", poll.ValidatorSnapshotCounter)
 	}
 
 	validator, ok := snap.GetValidator(valAddress)
