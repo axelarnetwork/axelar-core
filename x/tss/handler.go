@@ -209,10 +209,12 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 		return nil, fmt.Errorf(msg)
 	}
 
+	threshold := k.ComputeCorruptionThreshold(ctx, len(snapshot.Validators))
+
 	// TODO: need to figure out how to calculate threshold based on total number of
 	// validators in the system, individual's stake, etc.
-	if msg.Threshold < 1 || msg.Threshold > len(snapshot.Validators) {
-		err := fmt.Errorf("invalid threshold: %d, validators: %d", msg.Threshold, len(snapshot.Validators))
+	if threshold < 1 || threshold > len(snapshot.Validators) {
+		err := fmt.Errorf("invalid threshold: %d, validators: %d", threshold, len(snapshot.Validators))
 		k.Logger(ctx).Error(err.Error())
 		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
 	}
@@ -222,7 +224,7 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
 	}
 
-	pkChan, err := k.StartKeygen(ctx, msg.NewKeyID, msg.Threshold, snapshot)
+	pkChan, err := k.StartKeygen(ctx, msg.NewKeyID, threshold, snapshot)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
 	}

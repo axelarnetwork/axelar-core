@@ -160,9 +160,8 @@ func TestKeyRotation(t *testing.T) {
 	// create first key
 	masterKeyID1 := stringGen.Next()
 	res = <-chain.Submit(tssTypes.MsgKeygenStart{
-		Sender:    randomSender(),
-		NewKeyID:  masterKeyID1,
-		Threshold: int(testutils.RandIntBetween(1, int64(len(validators)))),
+		Sender:   randomSender(),
+		NewKeyID: masterKeyID1,
 	})
 	assert.NoError(t, res.Error)
 
@@ -271,9 +270,8 @@ func TestKeyRotation(t *testing.T) {
 	// second keygen with validator set of second snapshot
 	keyID2 := stringGen.Next()
 	res = <-chain.Submit(tssTypes.MsgKeygenStart{
-		Sender:    randomSender(),
-		NewKeyID:  keyID2,
-		Threshold: int(testutils.RandIntBetween(1, int64(len(validators)))),
+		Sender:   randomSender(),
+		NewKeyID: keyID2,
 	})
 	assert.NoError(t, res.Error)
 
