@@ -28,23 +28,6 @@ import (
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
 
-const nodeCount = 10
-
-// globally available storage variables to control the behaviour of the mocks
-var (
-	// set of validators known to the staking keeper
-	validators = make([]staking.Validator, 0, nodeCount)
-)
-
-type testMocks struct {
-	BTC     *btcMock.RPCClientMock
-	Keygen  *tssdMock.TSSDKeyGenClientMock
-	Sign    *tssdMock.TSSDSignClientMock
-	Staker  *snapMock.StakingKeeperMock
-	TSSD    *tssdMock.TSSDClientMock
-	Slasher *snapMock.SlasherMock
-}
-
 // Testing the key rotation functionality.
 // (0. Register proxies for all validators)
 //  1. Create an initial validator snapshot

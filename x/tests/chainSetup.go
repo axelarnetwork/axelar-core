@@ -10,9 +10,11 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
+	slashingTypes "github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	sdkExported "github.com/cosmos/cosmos-sdk/x/staking/exported"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
 
@@ -50,12 +52,13 @@ func randomSender() sdk.AccAddress {
 }
 
 type testMocks struct {
-	BTC    *btcMock.RPCClientMock
-	ETH    *ethMock.RPCClientMock
-	Keygen *tssdMock.TSSDKeyGenClientMock
-	Sign   *tssdMock.TSSDSignClientMock
-	Staker *snapMock.StakingKeeperMock
-	TSSD   *tssdMock.TSSDClientMock
+	BTC     *btcMock.RPCClientMock
+	ETH     *ethMock.RPCClientMock
+	Keygen  *tssdMock.TSSDKeyGenClientMock
+	Sign    *tssdMock.TSSDSignClientMock
+	Staker  *snapMock.StakingKeeperMock
+	TSSD    *tssdMock.TSSDClientMock
+	Slasher *snapMock.SlasherMock
 }
 
 type nodeData struct {
@@ -70,7 +73,7 @@ func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *f
 	broadcaster := fake.NewBroadcaster(testutils.Codec(), validator, chain.Submit)
 
 	snapSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
-	snapKeeper := snapshotKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(snapTypes.StoreKey), snapSubspace, mocks.Staker)
+	snapKeeper := snapshotKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(snapTypes.StoreKey), snapSubspace, mocks.Staker, mocks.Slasher)
 	snapKeeper.SetParams(ctx, snapTypes.DefaultParams())
 	voter := voteKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(voteTypes.StoreKey), store.NewSubjectiveStore(), snapKeeper, broadcaster)
 
@@ -82,9 +85,7 @@ func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *f
 
 	ethSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "eth")
 	ethereumKeeper := ethKeeper.NewEthKeeper(testutils.Codec(), sdk.NewKVStoreKey(ethTypes.StoreKey), ethSubspace)
-	ethParams := ethTypes.DefaultParams()
-	// ethParams.Network = mocks.ETH.Network()
-	ethereumKeeper.SetParams(ctx, ethParams)
+	ethereumKeeper.SetParams(ctx, ethTypes.DefaultParams())
 
 	signer := tssKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(tssTypes.StoreKey), mocks.TSSD,
 		params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), tssTypes.DefaultParamspace),
@@ -105,7 +106,7 @@ func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *f
 	btcHandler := bitcoin.NewHandler(bitcoinKeeper, voter, mocks.BTC, signer, snapKeeper, nexusK)
 	ethHandler := ethereum.NewHandler(ethereumKeeper, mocks.ETH, voter, signer, snapKeeper, nexusK)
 	snapHandler := snapshot.NewHandler(snapKeeper)
-	tssHandler := tss.NewHandler(signer, snapKeeper, nexusK, voter)
+	tssHandler := tss.NewHandler(signer, snapKeeper, nexusK, voter, mocks.Staker)
 	voteHandler := vote.NewHandler()
 
 	router = router.
@@ -129,6 +130,21 @@ func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *f
 }
 
 func createMocks(validators []staking.Validator) testMocks {
+
+	slasher := &snapMock.SlasherMock{
+		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapTypes.ValidatorInfo, bool) {
+			newInfo := slashingTypes.NewValidatorSigningInfo(
+				address,
+				int64(0),        // height at which validator was first a candidate OR was unjailed
+				int64(3),        // index offset into signed block bit array. TODO: check if needs to be set correctly.
+				time.Unix(0, 0), // jailed until
+				false,           // tomstoned
+				int64(0),        // missed blocks
+			)
+			return snapTypes.ValidatorInfo{ValidatorSigningInfo: newInfo}, true
+		},
+	}
+
 	stakingKeeper := &snapMock.StakingKeeperMock{
 		IterateLastValidatorsFunc: func(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool)) {
 			for j, val := range validators {
@@ -166,12 +182,13 @@ func createMocks(validators []staking.Validator) testMocks {
 		SignFunc:   func(context.Context, ...grpc.CallOption) (tssd.GG18_SignClient, error) { return sign, nil },
 	}
 	return testMocks{
-		BTC:    btcClient,
-		ETH:    ethClient,
-		TSSD:   tssdClient,
-		Keygen: keygen,
-		Sign:   sign,
-		Staker: stakingKeeper,
+		BTC:     btcClient,
+		ETH:     ethClient,
+		TSSD:    tssdClient,
+		Keygen:  keygen,
+		Sign:    sign,
+		Staker:  stakingKeeper,
+		Slasher: slasher,
 	}
 }
 
@@ -188,6 +205,7 @@ func initChain(nodeCount int) (*fake.BlockChain, []nodeData) {
 			OperatorAddress: sdk.ValAddress(valAddr),
 			Tokens:          sdk.TokensFromConsensusPower(testutils.RandIntBetween(100, 1000)),
 			Status:          sdk.Bonded,
+			ConsPubKey:      ed25519.GenPrivKey().PubKey(),
 		}
 		validators = append(validators, validator)
 	}
