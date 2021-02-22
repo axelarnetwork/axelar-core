@@ -32,7 +32,7 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 		case types.MsgVerifyTx:
 			return handleMsgVerifyTx(ctx, k, rpc, v, msg)
 		case *types.MsgVoteVerifiedTx:
-			return handleMsgVoteVerifiedTx(ctx, k, v, msg)
+			return handleMsgVoteVerifiedTx(ctx, k, v, n, msg)
 		case types.MsgVerifyErc20TokenDeploy:
 			return handleMsgVerifyErc20TokenDeploy(ctx, k, rpc, v, msg)
 		case types.MsgVerifyErc20Deposit:
@@ -66,6 +66,7 @@ func handleMsgVerifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, rpc types.RPC
 	erc20Deposit := types.Erc20Deposit{
 		TxID:       msg.TxID,
 		Amount:     msg.Amount,
+		Symbol:     burnerInfo.Symbol,
 		BurnerAddr: msg.BurnerAddr,
 	}
 	k.SetUnverifiedErc20Deposit(ctx, txIDHex, &erc20Deposit)
@@ -248,7 +249,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v 
 }
 
 // This can be used as a potential hook to immediately act on a poll being decided by the vote
-func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg *types.MsgVoteVerifiedTx) (*sdk.Result, error) {
+func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n types.Nexus, msg *types.MsgVoteVerifiedTx) (*sdk.Result, error) {
 	event := sdk.NewEvent(
 		sdk.EventTypeMessage,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
@@ -268,8 +269,20 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, ms
 		case types.MsgVerifyErc20TokenDeploy{}.Type():
 			k.ProcessVerificationTokenResult(ctx, msg.PollMeta.ID, confirmed.(bool))
 		case types.MsgVerifyErc20Deposit{}.Type():
-			k.ProcessVerificationErc20DepositResult(ctx, msg.PollMeta.ID, confirmed.(bool))
-			// TODO: n.EnqueueForTransfer
+			txID := msg.PollMeta.ID
+			k.ProcessVerificationErc20DepositResult(ctx, txID, confirmed.(bool))
+
+			deposit := k.GetVerifiedErc20Deposit(ctx, txID)
+			if deposit == nil {
+				return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("erc20 deposit %s wasn't properly marked as verified", txID))
+			}
+
+			depositAddr := nexus.CrossChainAddress{Address: deposit.BurnerAddr.String(), Chain: exported.Ethereum}
+			amount := sdk.NewInt64Coin(deposit.Symbol, deposit.Amount.BigInt().Int64())
+
+			if err := n.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
+				return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+			}
 		default:
 			k.Logger(ctx).Debug(fmt.Sprintf("unknown verification message type: %s", msg.PollMeta.Type))
 		}

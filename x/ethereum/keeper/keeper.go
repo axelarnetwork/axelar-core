@@ -260,6 +260,19 @@ func (k Keeper) SetUnverifiedErc20Deposit(ctx sdk.Context, txID string, deposit 
 	ctx.KVStore(k.storeKey).Set([]byte(pendingErc20DepositPrefix+txID), bz)
 }
 
+// GetVerifiedErc20Deposit retrieves the verified erc20 deposit given txID if found
+func (k Keeper) GetVerifiedErc20Deposit(ctx sdk.Context, txID string) *types.Erc20Deposit {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(verifiedErc20DepositPrefix + txID))
+	if bz == nil {
+		return nil
+	}
+
+	var result *types.Erc20Deposit
+	k.cdc.MustUnmarshalJSON(bz, &result)
+
+	return result
+}
+
 // HasVerifiedTx returns true if a raw transaction has been stored
 func (k Keeper) HasVerifiedTx(ctx sdk.Context, txID string) bool {
 	return ctx.KVStore(k.storeKey).Has([]byte(verifiedTxPrefix + txID))

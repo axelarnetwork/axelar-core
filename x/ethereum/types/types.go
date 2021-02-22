@@ -193,6 +193,7 @@ type BurnerInfo struct {
 type Erc20Deposit struct {
 	TxID       common.Hash
 	Amount     sdk.Uint
+	Symbol     string
 	BurnerAddr common.Address
 }
 
