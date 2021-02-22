@@ -33,7 +33,7 @@ type Signer interface {
 	GetKey(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool)
 	GetCurrentMasterKey(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool)
 	GetNextMasterKey(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool)
-	GetSnapshotRoundForKeyID(ctx sdk.Context, keyID string) (int64, bool)
+	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool)
 }
 
 // Nexus provides functionality to manage cross-chain transfers

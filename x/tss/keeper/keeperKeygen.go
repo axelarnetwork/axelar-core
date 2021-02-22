@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/tssd/convert"
 	tssd "github.com/axelarnetwork/tssd/pb"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/utils"
 
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -312,8 +313,8 @@ func (k Keeper) setSnapshotRoundForKeyID(ctx sdk.Context, keyID string, round in
 	ctx.KVStore(k.storeKey).Set([]byte(snapshotForKeyIDPrefix+keyID), k.cdc.MustMarshalBinaryBare(round))
 }
 
-// GetSnapshotRoundForKeyID returns the snapshot round in which the key with the given ID was created, if the key exists
-func (k Keeper) GetSnapshotRoundForKeyID(ctx sdk.Context, keyID string) (int64, bool) {
+// GetSnapshotCounterForKeyID returns the snapshot round in which the key with the given ID was created, if the key exists
+func (k Keeper) GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(snapshotForKeyIDPrefix + keyID))
 	if bz == nil {
 		return 0, false

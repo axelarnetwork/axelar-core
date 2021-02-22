@@ -146,9 +146,13 @@ func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg ty
 }
 
 func handleMsgAssignNextMasterKey(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, n types.Nexus, msg types.MsgAssignNextMasterKey) (*sdk.Result, error) {
-	snapshot, ok := s.GetLatestSnapshot(ctx)
+	counter, ok := k.GetSnapshotCounterForKeyID(ctx, msg.KeyID)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrTss, "key refresh failed")
+		return nil, sdkerrors.Wrap(types.ErrTss, "could not find snapshot counter for given key ID")
+	}
+	snapshot, ok := s.GetSnapshot(ctx, counter)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrTss, "could not find snapshot for given key ID")
 	}
 	chain, ok := n.GetChain(ctx, msg.Chain)
 	if !ok {
@@ -188,7 +192,10 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 	staker types.StakingKeeper, msg types.MsgKeygenStart) (*sdk.Result, error) {
 
 	// record the snapshot of active validators that we'll use for the key
-	s.TakeSnapshot(ctx)
+	if err := s.TakeSnapshot(ctx); err != nil {
+		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
+	}
+
 	snapshot, ok := s.GetLatestSnapshot(ctx)
 
 	if !ok {
