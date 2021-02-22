@@ -61,7 +61,6 @@ func Test_wBTC_mint(t *testing.T) {
 	assert.NoError(t, res.Error)
 
 	// create master key for btc
-	btcThreshold := int(testutils.RandIntBetween(1, int64(nodeCount)))
 	btcMasterKeyID := randStrings.Next()
 	btcMasterKey, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 	if err != nil {
@@ -76,14 +75,13 @@ func Test_wBTC_mint(t *testing.T) {
 
 	// start keygen
 	btcKeygenResult := <-chain.Submit(
-		tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: btcMasterKeyID, Threshold: btcThreshold})
+		tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: btcMasterKeyID})
 	assert.NoError(t, btcKeygenResult.Error)
 	for _, isCorrect := range correctBTCKeygens {
 		assert.True(t, <-isCorrect)
 	}
 
 	// create master key for eth
-	ethThreshold := int(testutils.RandIntBetween(1, int64(nodeCount)))
 	ethMasterKeyID := randStrings.Next()
 	ethMasterKey, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 	if err != nil {
@@ -98,7 +96,7 @@ func Test_wBTC_mint(t *testing.T) {
 
 	// start keygen
 	ethKeygenResult := <-chain.Submit(
-		tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: ethMasterKeyID, Threshold: ethThreshold})
+		tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: ethMasterKeyID})
 	assert.NoError(t, ethKeygenResult.Error)
 	for _, isCorrect := range correctETHKeygens {
 		assert.True(t, <-isCorrect)

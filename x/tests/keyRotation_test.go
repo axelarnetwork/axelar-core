@@ -64,7 +64,6 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, snapshotResult1.Error)
 
 	// create master key for btc
-	threshold1 := int(testutils.RandIntBetween(1, int64(nodeCount)))
 	masterKeyID1 := randStrings.Next()
 	masterKey1, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 	if err != nil {
@@ -79,7 +78,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// start keygen
 	keygenResult1 := <-chain.Submit(
-		tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: masterKeyID1, Threshold: threshold1})
+		tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: masterKeyID1})
 	assert.NoError(t, keygenResult1.Error)
 	for _, isCorrect := range correctKeygens1 {
 		assert.True(t, <-isCorrect)
@@ -137,7 +136,6 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, snapshotResult2.Error)
 
 	// create new master key for btc
-	threshold2 := int(testutils.RandIntBetween(1, int64(nodeCount)))
 	masterKeyID2 := randStrings.Next()
 	masterKey2, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 	if err != nil {
@@ -152,7 +150,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// start new keygen
 	keygenResult2 := <-chain.Submit(
-		tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: masterKeyID2, Threshold: threshold2})
+		tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: masterKeyID2})
 	assert.NoError(t, keygenResult2.Error)
 	for _, isCorrect := range correctKeygens2 {
 		assert.True(t, <-isCorrect)

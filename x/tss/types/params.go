@@ -14,8 +14,13 @@ const (
 
 var (
 	// KeyLockingPeriod defines the key for the locking period
-	KeyLockingPeriod   = []byte("lockingPeriod")
+	KeyLockingPeriod = []byte("lockingPeriod")
+	// MinKeygenThreshold defines the minimum % of stake that must be online
+	// to authorize generation of a new key in the system.
 	MinKeygenThreshold = []byte("minKeygenThreshold")
+	// CorruptionThreshold defines the corruption threshold with which
+	// we'll run keygen protocol.
+	CorruptionThreshold = []byte("corruptionThreshold")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -25,15 +30,19 @@ func KeyTable() subspace.KeyTable {
 
 // Params is the parameter set for this module
 type Params struct {
-	LockingPeriod      int64
-	MinKeygenThreshold utils.Threshold
+	LockingPeriod       int64
+	MinKeygenThreshold  utils.Threshold
+	CorruptionThreshold utils.Threshold
 }
 
 // DefaultParams returns the module's parameter set initialized with default values
 func DefaultParams() Params {
 	return Params{
-		LockingPeriod:      0,
-		MinKeygenThreshold: utils.Threshold{Numerator: 9, Denominator: 10},
+		LockingPeriod: 0,
+		// Set MinKeygenThreshold >= CorruptionThreshold
+		// Warning: dangerous to set it otherwise.
+		MinKeygenThreshold:  utils.Threshold{Numerator: 9, Denominator: 10},
+		CorruptionThreshold: utils.Threshold{Numerator: 2, Denominator: 3},
 	}
 }
 
@@ -49,6 +58,7 @@ func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
 	return subspace.ParamSetPairs{
 		subspace.NewParamSetPair(KeyLockingPeriod, &p.LockingPeriod, validateLockingPeriod),
 		subspace.NewParamSetPair(MinKeygenThreshold, &p.MinKeygenThreshold, validateThreshold),
+		subspace.NewParamSetPair(CorruptionThreshold, &p.CorruptionThreshold, validateThreshold),
 	}
 }
 

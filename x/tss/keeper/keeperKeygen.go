@@ -3,6 +3,7 @@ package keeper
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"math"
 	"strconv"
 
 	"github.com/axelarnetwork/tssd/convert"
@@ -23,6 +24,14 @@ func (k Keeper) GetMinKeygenThreshold(ctx sdk.Context) utils.Threshold {
 	var threshold utils.Threshold
 	k.params.Get(ctx, types.MinKeygenThreshold, &threshold)
 	return threshold
+}
+
+// ComputeCorruptionThreshold returns corruption threshold to be used by tss
+func (k Keeper) ComputeCorruptionThreshold(ctx sdk.Context, totalvalidators int) int {
+	var threshold utils.Threshold
+	k.params.Get(ctx, types.CorruptionThreshold, &threshold)
+	return int(math.Ceil(float64(totalvalidators) * float64(threshold.Numerator) /
+		float64(threshold.Denominator)))
 }
 
 // StartKeygen starts a keygen protocol with the specified parameters
