@@ -63,5 +63,5 @@ prereqs:
 
 # Run all the code generators in the project
 .PHONY: generate
-generate: prereqs
+generate:
 	go generate -x ./...
