@@ -501,7 +501,7 @@ func TestNewHandler_SignPendingTransfers(t *testing.T) {
 					return testutils.RandStringBetween(5, 20), true
 				},
 				GetNextMasterKeyIDFunc: func(sdk.Context, nexus.Chain) (string, bool) { return "", false },
-				GetSnapshotRoundForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
+				GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
 					return testutils.RandPosInt(), true
 				},
 				StartSignFunc: func(_ sdk.Context, _ string, _ string, msg []byte, _ []snapshot.Validator) error {

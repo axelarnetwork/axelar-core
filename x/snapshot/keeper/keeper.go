@@ -15,8 +15,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 )
 
-const lastRoundKey = "lastRound"
-const roundPrefix = "round_"
+const lastCounterKey = "lastcounter"
+const counterPrefix = "counter_"
 
 // Make sure the keeper implements the Snapshotter interface
 var _ exported.Snapshotter = Keeper{}
@@ -93,7 +93,7 @@ func (k Keeper) TakeSnapshot(ctx sdk.Context) error {
 
 	if !ok {
 		k.executeSnapshot(ctx, 0)
-		k.setLatestRound(ctx, 0)
+		k.setLatestCounter(ctx, 0)
 		return nil
 	}
 
@@ -103,8 +103,8 @@ func (k Keeper) TakeSnapshot(ctx sdk.Context) error {
 			s.Timestamp.Add(lockingPeriod).Sub(ctx.BlockTime()).String())
 	}
 
-	k.executeSnapshot(ctx, s.Round+1)
-	k.setLatestRound(ctx, s.Round+1)
+	k.executeSnapshot(ctx, s.Counter+1)
+	k.setLatestCounter(ctx, s.Counter+1)
 	return nil
 }
 
@@ -125,8 +125,8 @@ func (k Keeper) GetLatestSnapshot(ctx sdk.Context) (exported.Snapshot, bool) {
 }
 
 // GetSnapshot retrieves a snapshot by counter, if it exists
-func (k Keeper) GetSnapshot(ctx sdk.Context, round int64) (exported.Snapshot, bool) {
-	bz := ctx.KVStore(k.storeKey).Get(roundKey(round))
+func (k Keeper) GetSnapshot(ctx sdk.Context, counter int64) (exported.Snapshot, bool) {
+	bz := ctx.KVStore(k.storeKey).Get(counterKey(counter))
 	if bz == nil {
 
 		return exported.Snapshot{}, false
@@ -139,7 +139,7 @@ func (k Keeper) GetSnapshot(ctx sdk.Context, round int64) (exported.Snapshot, bo
 
 // GetLatestCounter returns the latest snapshot counter
 func (k Keeper) GetLatestCounter(ctx sdk.Context) int64 {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(lastRoundKey))
+	bz := ctx.KVStore(k.storeKey).Get([]byte(lastCounterKey))
 
 	if bz == nil {
 
@@ -151,7 +151,7 @@ func (k Keeper) GetLatestCounter(ctx sdk.Context) int64 {
 	return i
 }
 
-func (k Keeper) executeSnapshot(ctx sdk.Context, nextRound int64) {
+func (k Keeper) executeSnapshot(ctx sdk.Context, nextCounter int64) {
 	var validators []exported.Validator
 	fnAppend := func(_ int64, v sdkExported.ValidatorI) (stop bool) {
 		validators = append(validators, v)
@@ -170,16 +170,16 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, nextRound int64) {
 		Timestamp:  ctx.BlockTime(),
 		Height:     ctx.BlockHeight(),
 		TotalPower: activeStake,
-		Round:      nextRound,
+		Counter:    nextCounter,
 	}
 
-	ctx.KVStore(k.storeKey).Set(roundKey(nextRound), k.cdc.MustMarshalBinaryLengthPrefixed(snapshot))
+	ctx.KVStore(k.storeKey).Set(counterKey(nextCounter), k.cdc.MustMarshalBinaryLengthPrefixed(snapshot))
 }
 
-func (k Keeper) setLatestRound(ctx sdk.Context, round int64) {
-	ctx.KVStore(k.storeKey).Set([]byte(lastRoundKey), k.cdc.MustMarshalBinaryLengthPrefixed(round))
+func (k Keeper) setLatestCounter(ctx sdk.Context, counter int64) {
+	ctx.KVStore(k.storeKey).Set([]byte(lastCounterKey), k.cdc.MustMarshalBinaryLengthPrefixed(counter))
 }
 
-func roundKey(round int64) []byte {
-	return []byte(fmt.Sprintf("%s%d", roundPrefix, round))
+func counterKey(counter int64) []byte {
+	return []byte(fmt.Sprintf("%s%d", counterPrefix, counter))
 }

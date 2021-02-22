@@ -21,7 +21,7 @@ type Voter interface {
 
 // Snapshotter provides snapshot functionality
 type Snapshotter interface {
-	GetSnapshot(ctx sdk.Context, round int64) (snapshot.Snapshot, bool)
+	GetSnapshot(ctx sdk.Context, counter int64) (snapshot.Snapshot, bool)
 }
 
 // Signer provides keygen and signing functionality
@@ -33,7 +33,7 @@ type Signer interface {
 	GetKey(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool)
 	GetCurrentMasterKey(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool)
 	GetNextMasterKey(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool)
-	GetSnapshotRoundForKeyID(ctx sdk.Context, keyID string) (int64, bool)
+	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool)
 }
 
 // Nexus provides functionality to manage cross-chain transfers

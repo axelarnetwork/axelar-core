@@ -22,7 +22,7 @@ type Snapshot struct {
 	Timestamp  time.Time   `json:"timestamp"`
 	Height     int64       `json:"height"`
 	TotalPower sdk.Int     `json:"totalpower"`
-	Round      int64       `json:"round"`
+	Counter    int64       `json:"counter"`
 }
 
 // GetValidator returns the validator for a given address, if it is part of the snapshot
@@ -40,6 +40,6 @@ func (s Snapshot) GetValidator(address sdk.ValAddress) (Validator, bool) {
 type Snapshotter interface {
 	GetLatestSnapshot(ctx sdk.Context) (Snapshot, bool)
 	GetLatestCounter(ctx sdk.Context) int64
-	GetSnapshot(ctx sdk.Context, round int64) (Snapshot, bool)
+	GetSnapshot(ctx sdk.Context, counter int64) (Snapshot, bool)
 	TakeSnapshot(ctx sdk.Context) error
 }

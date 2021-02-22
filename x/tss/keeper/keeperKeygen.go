@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/tssd/convert"
 	tssd "github.com/axelarnetwork/tssd/pb"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/utils"
 
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -45,7 +46,7 @@ func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, snapsh
 	// store block height for this keygen to be able to verify later if the produced key is allowed as a master key
 	k.setKeygenStart(ctx, keyID)
 	// store snapshot round to be able to look up the correct validator set when signing with this key
-	k.setSnapshotRoundForKeyID(ctx, keyID, snapshot.Round)
+	k.setSnapshotCounterForKeyID(ctx, keyID, snapshot.Counter)
 
 	k.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d]", keyID, threshold))
 
@@ -308,17 +309,17 @@ func (k Keeper) getLatestMasterKeyHeight(ctx sdk.Context, chain exported.Chain) 
 	return height
 }
 
-func (k Keeper) setSnapshotRoundForKeyID(ctx sdk.Context, keyID string, round int64) {
-	ctx.KVStore(k.storeKey).Set([]byte(snapshotForKeyIDPrefix+keyID), k.cdc.MustMarshalBinaryBare(round))
+func (k Keeper) setSnapshotCounterForKeyID(ctx sdk.Context, keyID string, counter int64) {
+	ctx.KVStore(k.storeKey).Set([]byte(snapshotForKeyIDPrefix+keyID), k.cdc.MustMarshalBinaryBare(counter))
 }
 
-// GetSnapshotRoundForKeyID returns the snapshot round in which the key with the given ID was created, if the key exists
-func (k Keeper) GetSnapshotRoundForKeyID(ctx sdk.Context, keyID string) (int64, bool) {
+// GetSnapshotCounterForKeyID returns the snapshot round in which the key with the given ID was created, if the key exists
+func (k Keeper) GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(snapshotForKeyIDPrefix + keyID))
 	if bz == nil {
 		return 0, false
 	}
-	var round int64
-	k.cdc.MustUnmarshalBinaryBare(bz, &round)
-	return round, true
+	var counter int64
+	k.cdc.MustUnmarshalBinaryBare(bz, &counter)
+	return counter, true
 }
