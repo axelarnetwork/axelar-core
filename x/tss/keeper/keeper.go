@@ -84,26 +84,26 @@ func (k Keeper) prepareTrafficIn(ctx sdk.Context, sender sdk.AccAddress, session
 	// deterministic error
 	senderAddress := k.broadcaster.GetPrincipal(ctx, sender)
 	if senderAddress.Empty() {
-		err := fmt.Errorf("Invalid message: sender [%s] is not a validator", sender)
+		err := fmt.Errorf("invalid message: sender [%s] is not a validator", sender)
 		k.Logger(ctx).Error(err.Error())
 		return nil, err
 	}
-	k.Logger(ctx).Debug(fmt.Sprintf("Session [%s] from [%s] to [%s] broadcast? [%t]", sessionID, senderAddress.String(), payload.ToPartyUid, payload.IsBroadcast))
+	k.Logger(ctx).Debug(fmt.Sprintf("session [%s] from [%s] to [%s] broadcast? [%t]", sessionID, senderAddress.String(), payload.ToPartyUid, payload.IsBroadcast))
 
 	// non-deterministic errors must not change behaviour, therefore log error and return nil instead
 	myAddress := k.broadcaster.GetLocalPrincipal(ctx)
 	if myAddress.Empty() {
-		k.Logger(ctx).Info(fmt.Sprintf("Ignore message: my validator address is empty so I must not be a validator"))
+		k.Logger(ctx).Info(fmt.Sprintf("ignore message: my validator address is empty so I must not be a validator"))
 		return nil, nil
 	}
 	toAddress, err := sdk.ValAddressFromBech32(payload.ToPartyUid)
 	if err != nil {
-		k.Logger(ctx).Error(sdkerrors.Wrap(err, fmt.Sprintf("Failed to parse [%s] into a validator address",
+		k.Logger(ctx).Error(sdkerrors.Wrap(err, fmt.Sprintf("failed to parse [%s] into a validator address",
 			payload.ToPartyUid)).Error())
 		return nil, nil
 	}
 	if toAddress.String() != payload.ToPartyUid {
-		k.Logger(ctx).Error("Address parse discrepancy: given [%s] got [%s]", payload.ToPartyUid, toAddress.String())
+		k.Logger(ctx).Error("address parse discrepancy: given [%s] got [%s]", payload.ToPartyUid, toAddress.String())
 	}
 	if !payload.IsBroadcast && !myAddress.Equals(toAddress) {
 		return nil, nil

@@ -3,6 +3,8 @@ package types
 import (
 	"fmt"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/cosmos/cosmos-sdk/x/params/subspace"
 )
@@ -12,15 +14,11 @@ const (
 	DefaultParamspace = ModuleName
 )
 
+// Parameter keys
 var (
-	// KeyLockingPeriod defines the key for the locking period
-	KeyLockingPeriod = []byte("lockingPeriod")
-	// MinKeygenThreshold defines the minimum % of stake that must be online
-	// to authorize generation of a new key in the system.
-	MinKeygenThreshold = []byte("minKeygenThreshold")
-	// CorruptionThreshold defines the corruption threshold with which
-	// we'll run keygen protocol.
-	CorruptionThreshold = []byte("corruptionThreshold")
+	KeyLockingPeriod       = []byte("lockingPeriod")
+	KeyMinKeygenThreshold  = []byte("minKeygenThreshold")
+	KeyCorruptionThreshold = []byte("corruptionThreshold")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -30,8 +28,13 @@ func KeyTable() subspace.KeyTable {
 
 // Params is the parameter set for this module
 type Params struct {
-	LockingPeriod       int64
-	MinKeygenThreshold  utils.Threshold
+	// KeyLockingPeriod defines the key for the locking period
+	LockingPeriod int64
+	// MinKeygenThreshold defines the minimum % of stake that must be online
+	// to authorize generation of a new key in the system.
+	MinKeygenThreshold utils.Threshold
+	// CorruptionThreshold defines the corruption threshold with which
+	// we'll run keygen protocol.
 	CorruptionThreshold utils.Threshold
 }
 
@@ -40,7 +43,6 @@ func DefaultParams() Params {
 	return Params{
 		LockingPeriod: 0,
 		// Set MinKeygenThreshold >= CorruptionThreshold
-		// Warning: dangerous to set it otherwise.
 		MinKeygenThreshold:  utils.Threshold{Numerator: 9, Denominator: 10},
 		CorruptionThreshold: utils.Threshold{Numerator: 2, Denominator: 3},
 	}
@@ -57,8 +59,8 @@ func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
 	*/
 	return subspace.ParamSetPairs{
 		subspace.NewParamSetPair(KeyLockingPeriod, &p.LockingPeriod, validateLockingPeriod),
-		subspace.NewParamSetPair(MinKeygenThreshold, &p.MinKeygenThreshold, validateThreshold),
-		subspace.NewParamSetPair(CorruptionThreshold, &p.CorruptionThreshold, validateThreshold),
+		subspace.NewParamSetPair(KeyMinKeygenThreshold, &p.MinKeygenThreshold, validateThreshold),
+		subspace.NewParamSetPair(KeyCorruptionThreshold, &p.CorruptionThreshold, validateThreshold),
 	}
 }
 
@@ -76,6 +78,15 @@ func validateLockingPeriod(period interface{}) error {
 // Validate checks the validity of the values of the parameter set
 func (p Params) Validate() error {
 	if err := validateLockingPeriod(p.LockingPeriod); err != nil {
+		return err
+	}
+	if err := validateThreshold(p.MinKeygenThreshold); err != nil {
+		return err
+	}
+	if err := validateThreshold(p.CorruptionThreshold); err != nil {
+		return err
+	}
+	if err := validateTssThresholds(p.MinKeygenThreshold, p.CorruptionThreshold); err != nil {
 		return err
 	}
 	return nil
@@ -96,6 +107,20 @@ func validateThreshold(threshold interface{}) error {
 
 	if val.Numerator >= val.Denominator {
 		return fmt.Errorf("threshold must be <1")
+	}
+	return nil
+}
+
+// validateTssThresholds checks that minKeygenThreshold >= corruptionThreshold
+func validateTssThresholds(minKeygenThreshold interface{}, corruptionThreshold interface{}) error {
+	val1, ok1 := minKeygenThreshold.(utils.Threshold)
+	val2, ok2 := corruptionThreshold.(utils.Threshold)
+
+	if !ok1 || !ok2 {
+		return fmt.Errorf("invalid parameter types for tss thresholds")
+	}
+	if !val2.IsMet(sdk.NewInt(val1.Numerator), sdk.NewInt(val1.Denominator)) {
+		return fmt.Errorf("min keygen threshold must >= corruption threshold")
 	}
 	return nil
 }
