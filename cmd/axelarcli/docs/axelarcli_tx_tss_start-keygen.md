@@ -30,7 +30,6 @@ axelarcli tx tss start-keygen [flags]
       --memo string              Memo to send along with transaction
       --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
   -s, --sequence uint            The sequence number of the signing account (offline mode only)
-  -t, --threshold int            number of corruptions to withstand (required) (default 2)
       --trust-node               Trust connected full node (don't verify proofs for responses) (default true)
   -y, --yes                      Skip tx broadcasting prompt confirmation
 ```

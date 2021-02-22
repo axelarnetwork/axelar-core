@@ -23,9 +23,8 @@ var (
 
 // MsgKeygenStart indicate the start of keygen
 type MsgKeygenStart struct {
-	Sender    sdk.AccAddress
-	NewKeyID  string
-	Threshold int
+	Sender   sdk.AccAddress
+	NewKeyID string
 }
 
 // MsgKeygenTraffic protocol message
@@ -56,9 +55,6 @@ func (msg MsgKeygenStart) ValidateBasic() error {
 	}
 	if msg.NewKeyID == "" {
 		return sdkerrors.Wrap(ErrTss, "new key id must be set")
-	}
-	if msg.Threshold < 1 {
-		return sdkerrors.Wrap(ErrTss, fmt.Sprintf("invalid threshold [%d]", msg.Threshold))
 	}
 	// TODO enforce a maximum length for msg.NewKeyID?
 	return nil

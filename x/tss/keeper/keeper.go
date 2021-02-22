@@ -106,14 +106,11 @@ func (k Keeper) prepareTrafficIn(ctx sdk.Context, sender sdk.AccAddress, session
 		k.Logger(ctx).Error("address parse discrepancy: given [%s] got [%s]", payload.ToPartyUid, toAddress.String())
 	}
 	if !payload.IsBroadcast && !myAddress.Equals(toAddress) {
-		k.Logger(ctx).Info(fmt.Sprintf("I should ignore: msg to [%s] not directed to me [%s]", toAddress, myAddress))
 		return nil, nil
 	}
 	if payload.IsBroadcast && myAddress.Equals(senderAddress) {
-		k.Logger(ctx).Info(fmt.Sprintf("I should ignore: broadcast msg from [%s] came from me [%s]", senderAddress, myAddress))
 		return nil, nil
 	}
-	k.Logger(ctx).Info(fmt.Sprintf("I should NOT ignore: msg from [%s] to [%s] broadcast [%t] me [%s]", senderAddress, toAddress, payload.IsBroadcast, myAddress))
 
 	msgIn := &tssd.MessageIn{
 		Data: &tssd.MessageIn_Traffic{

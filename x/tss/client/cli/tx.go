@@ -43,18 +43,13 @@ func getCmdKeygenStart(cdc *codec.Codec) *cobra.Command {
 	if cmd.MarkFlagRequired("id") != nil {
 		panic("flag not set")
 	}
-	threshold := cmd.Flags().IntP("threshold", "t", 2, "number of corruptions to withstand (required)")
-	if cmd.MarkFlagRequired("threshold") != nil {
-		panic("flag not set")
-	}
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
 
 		msg := types.MsgKeygenStart{
-			Sender:    cliCtx.FromAddress,
-			NewKeyID:  *newKeyID,
-			Threshold: *threshold,
+			Sender:   cliCtx.FromAddress,
+			NewKeyID: *newKeyID,
 		}
 		if err := msg.ValidateBasic(); err != nil {
 			return err

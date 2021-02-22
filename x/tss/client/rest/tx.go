@@ -59,9 +59,8 @@ func keygenStartHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		msg := types.MsgKeygenStart{
-			Sender:    sender,
-			NewKeyID:  req.NewKeyId,
-			Threshold: req.Threshold,
+			Sender:   sender,
+			NewKeyID: req.NewKeyId,
 		}
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
