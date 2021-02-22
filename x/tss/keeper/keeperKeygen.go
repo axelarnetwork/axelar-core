@@ -22,14 +22,14 @@ import (
 // GetMinKeygenThreshold returns minimum threshold of stake that must be met to execute keygen
 func (k Keeper) GetMinKeygenThreshold(ctx sdk.Context) utils.Threshold {
 	var threshold utils.Threshold
-	k.params.Get(ctx, types.MinKeygenThreshold, &threshold)
+	k.params.Get(ctx, types.KeyMinKeygenThreshold, &threshold)
 	return threshold
 }
 
 // ComputeCorruptionThreshold returns corruption threshold to be used by tss
 func (k Keeper) ComputeCorruptionThreshold(ctx sdk.Context, totalvalidators int) int {
 	var threshold utils.Threshold
-	k.params.Get(ctx, types.CorruptionThreshold, &threshold)
+	k.params.Get(ctx, types.KeyCorruptionThreshold, &threshold)
 	return int(math.Ceil(float64(totalvalidators) * float64(threshold.Numerator) /
 		float64(threshold.Denominator)))
 }
