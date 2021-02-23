@@ -94,7 +94,7 @@ func handleMsgVerifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, rpc types.RPC
 }
 
 func handleMsgLink(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg types.MsgLink) (*sdk.Result, error) {
-	gatewayAddr, ok := k.GetAxelarGatewayAddress(ctx)
+	gatewayAddr, ok := k.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrEthereum, "Axelar Gateway address not set")
 	}
@@ -435,16 +435,16 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 	}
 
 	// if this is the transaction that is deploying Axelar Gateway, calculate and save address
-	// TODO: this is something that should be done through verification and voting
-	if tx.To() == nil && tx.Nonce() == 0 && bytes.Equal(tx.Data(), k.GetGatewayBytecodes(ctx)) {
+	// TODO: this is something that should be done after the signature has been successfully verified
+	if tx.To() == nil && bytes.Equal(tx.Data(), k.GetGatewayByteCodes(ctx)) {
 
 		pub, ok := signer.GetCurrentMasterKey(ctx, exported.Ethereum)
 		if !ok {
 			return nil, sdkerrors.Wrapf(types.ErrEthereum, "no master key for chain %s found", exported.Ethereum.Name)
 		}
 
-		addr := crypto.CreateAddress(crypto.PubkeyToAddress(pub), 0)
-		k.SetAxelarGatewayAddress(ctx, addr)
+		addr := crypto.CreateAddress(crypto.PubkeyToAddress(pub), tx.Nonce())
+		k.SetGatewayAddress(ctx, addr)
 	}
 
 	return &sdk.Result{
@@ -455,7 +455,7 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 }
 
 func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v types.Voter, msg types.MsgVerifyErc20TokenDeploy) (*sdk.Result, error) {
-	gatewayAddr, ok := k.GetAxelarGatewayAddress(ctx)
+	gatewayAddr, ok := k.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrEthereum, "Axelar Gateway address not set")
 	}

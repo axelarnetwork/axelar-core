@@ -63,7 +63,7 @@ func queryMasterAddress(ctx sdk.Context, s types.Signer) ([]byte, error) {
 
 func queryAxelarGateway(ctx sdk.Context, k Keeper) ([]byte, error) {
 
-	addr, ok := k.GetAxelarGatewayAddress(ctx)
+	addr, ok := k.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, "axelar gateway not set")
 	}
@@ -91,6 +91,11 @@ func createDeployGateway(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types
 		return nil, err
 	}
 
+	nonce, err := rpc.PendingNonceAt(context.Background(), contractOwner)
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve nonce: %s", err)
+	}
+
 	gasPrice := params.GasPrice.BigInt()
 	if params.GasPrice.IsZero() {
 		gasPrice, err = rpc.SuggestGasPrice(context.Background())
@@ -103,7 +108,7 @@ func createDeployGateway(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types
 	if gasLimit == 0 {
 		gasLimit, err = rpc.EstimateGas(context.Background(), ethereumRoot.CallMsg{
 			To:   nil,
-			Data: k.GetGatewayBytecodes(ctx),
+			Data: k.GetGatewayByteCodes(ctx),
 		})
 
 		if err != nil {
@@ -111,10 +116,10 @@ func createDeployGateway(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types
 		}
 	}
 
-	tx := ethTypes.NewContractCreation(0, big.NewInt(0), gasLimit, gasPrice, k.GetGatewayBytecodes(ctx))
+	tx := ethTypes.NewContractCreation(nonce, big.NewInt(0), gasLimit, gasPrice, k.GetGatewayByteCodes(ctx))
 	result := types.DeployResult{
 		Tx:              tx,
-		ContractAddress: crypto.CreateAddress(contractOwner, 0).String(),
+		ContractAddress: crypto.CreateAddress(contractOwner, nonce).String(),
 	}
 	k.Logger(ctx).Debug(fmt.Sprintf("Contract address: %s", result.ContractAddress))
 	return types.ModuleCdc.MustMarshalJSON(result), nil

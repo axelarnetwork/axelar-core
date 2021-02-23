@@ -88,15 +88,14 @@ func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context) uint64 {
 	return h
 }
 
-// SetAxelarGatewayAddress sets the contract address for Axelar Gateway
-func (k Keeper) SetAxelarGatewayAddress(ctx sdk.Context, addr common.Address) error {
-
+// SetGatewayAddress sets the contract address for Axelar Gateway
+func (k Keeper) SetGatewayAddress(ctx sdk.Context, addr common.Address) error {
 	ctx.KVStore(k.storeKey).Set([]byte(gatewayKey), addr.Bytes())
 	return nil
 }
 
-// GetAxelarGatewayAddress gets the contract address for Axelar Gateway
-func (k Keeper) GetAxelarGatewayAddress(ctx sdk.Context) (common.Address, bool) {
+// GetGatewayAddress gets the contract address for Axelar Gateway
+func (k Keeper) GetGatewayAddress(ctx sdk.Context) (common.Address, bool) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(gatewayKey))
 	if bz == nil {
 		return common.Address{}, false
@@ -210,8 +209,8 @@ func (k Keeper) getTokenBC(ctx sdk.Context) []byte {
 	return b
 }
 
-// GetGatewayBytecodes retrieves the byte codes for the Axelar Gateway smart contract
-func (k Keeper) GetGatewayBytecodes(ctx sdk.Context) []byte {
+// GetGatewayByteCodes retrieves the byte codes for the Axelar Gateway smart contract
+func (k Keeper) GetGatewayByteCodes(ctx sdk.Context) []byte {
 	var b []byte
 	k.params.Get(ctx, types.KeyGateway, &b)
 	return b

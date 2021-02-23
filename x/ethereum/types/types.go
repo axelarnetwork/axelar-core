@@ -126,7 +126,7 @@ func (n Network) Params() *params.ChainConfig {
 // Signature encodes the parameters R,S,V in the byte format expected by Ethereum
 type Signature [crypto.SignatureLength]byte
 
-// ToEthSignature transforms a Axelar generated signature into an ethereum recoverable signature
+// ToEthSignature transforms an Axelar generated signature into an ethereum recoverable signature
 func ToEthSignature(sig tss.Signature, hash common.Hash, pk ecdsa.PublicKey) (Signature, error) {
 	s := Signature{}
 	copy(s[:32], common.LeftPadBytes(sig.R.Bytes(), 32))

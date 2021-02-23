@@ -35,7 +35,7 @@ const (
 
 var (
 	sender      = sdk.AccAddress(testutils.RandString(int(testutils.RandIntBetween(5, 20))))
-	gatewayBC   = common.FromHex(MymintableBin)
+	bytecodes   = common.FromHex(MymintableBin)
 	tokenBC     = testutils.RandBytes(64)
 	burnerBC    = testutils.RandBytes(64)
 	transferSig = testutils.RandBytes(64)
@@ -699,8 +699,8 @@ func newKeeper(ctx sdk.Context, confHeight int64) keeper.Keeper {
 	cdc := testutils.Codec()
 	subspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
 	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"), subspace)
-	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(confHeight), Gateway: gatewayBC, Token: tokenBC, Burnable: burnerBC, TokenDeploySig: transferSig})
-	k.SetAxelarGatewayAddress(ctx, common.HexToAddress(gateway))
+	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(confHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, TokenDeploySig: transferSig})
+	k.SetGatewayAddress(ctx, common.HexToAddress(gateway))
 
 	return k
 }
