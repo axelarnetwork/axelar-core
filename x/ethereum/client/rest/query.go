@@ -139,9 +139,9 @@ func QuerySendCommandTx(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		var out string
-		cliCtx.Codec.MustUnmarshalJSON(res, &out)
-		rest.PostProcessResponse(w, cliCtx, out)
+		var txHash string
+		cliCtx.Codec.MustUnmarshalJSON(res, &txHash)
+		rest.PostProcessResponse(w, cliCtx, txHash)
 	}
 }
 

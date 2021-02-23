@@ -180,7 +180,7 @@ func createTxAndSend(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Sig
 		return nil, sdkerrors.Wrapf(types.ErrEthereum, "could not send transaction: %s", err)
 	}
 
-	return k.Codec().MustMarshalJSON(fmt.Sprintf("successfully sent transaction %s to Ethereum", txHash)), nil
+	return k.Codec().MustMarshalJSON(txHash), nil
 }
 
 func getContractOwner(ctx sdk.Context, s types.Signer) (common.Address, error) {
