@@ -3,6 +3,7 @@ package bitcoin
 import (
 	"encoding/hex"
 	"fmt"
+	"strconv"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/wire"
@@ -136,6 +137,12 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 		return &sdk.Result{Log: fmt.Sprintf("not enough votes to verify outpoint %s yet", msg.PollMeta.ID)}, nil
 	}
 
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(sdk.EventTypeMessage, sdk.Attribute{
+			Key:   types.AttributePollConfirmed,
+			Value: strconv.FormatBool(result.(bool)),
+		}))
+
 	k.ProcessVerificationResult(ctx, outPoint, result.(bool))
 	v.DeletePoll(ctx, msg.Poll())
 
@@ -159,11 +166,14 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 	// outpoints that are not used as deposits for cross-chain transfers need to be verified as well (e.g. funds held by the master key).
 	// Therefore, failing to enqueue for transfer is not an error
 	if err = n.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
-		return &sdk.Result{Log: sdkerrors.Wrap(err, "prepared no transfer").Error()}, nil
+		return &sdk.Result{
+			Events: ctx.EventManager().Events(),
+			Log:    sdkerrors.Wrap(err, "prepared no transfer").Error()}, nil
 	}
 
 	return &sdk.Result{
-		Log: fmt.Sprintf("transfer of %s from {%s} successfully prepared", amount.Amount.String(), depositAddr.String()),
+		Events: ctx.EventManager().Events(),
+		Log:    fmt.Sprintf("transfer of %s from {%s} successfully prepared", amount.Amount.String(), depositAddr.String()),
 	}, nil
 }
 

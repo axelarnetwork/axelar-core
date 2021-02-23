@@ -25,7 +25,7 @@ type BlockChain struct {
 		sdk.Msg
 		out chan<- *Result
 	}
-	nodes         []Node
+	nodes         []*Node
 	blockTimeOut  time.Duration
 	currentHeight int64
 	blockListener func(block)
@@ -58,7 +58,7 @@ func NewBlockchain() *BlockChain {
 			sdk.Msg
 			out chan<- *Result
 		}, 1000),
-		nodes:         make([]Node, 0),
+		nodes:         make([]*Node, 0),
 		currentHeight: 0,
 		blockListener: func(block) {},
 	}
@@ -123,7 +123,7 @@ func equals(this Result, other Result) bool {
 }
 
 // AddNodes adds a node to the blockchain. This node will receive blocks from the blockchain.
-func (bc *BlockChain) AddNodes(nodes ...Node) {
+func (bc *BlockChain) AddNodes(nodes ...*Node) {
 	bc.nodes = append(bc.nodes, nodes...)
 }
 
@@ -230,31 +230,41 @@ func deepCopy(bc BlockChain) *BlockChain {
 // Node is a fake that emulates the behaviour of a Cosmos node by retrieving blocks from the network,
 // unpacking the messages and routing them to the correct modules
 type Node struct {
-	in          chan block
-	router      sdk.Router
-	endBlockers []func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate
-	Ctx         sdk.Context
-	moniker     string
-	queriers    map[string]sdk.Querier
+	in             chan block
+	router         sdk.Router
+	endBlockers    []func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate
+	Ctx            sdk.Context
+	moniker        string
+	queriers       map[string]sdk.Querier
+	events         chan sdk.StringEvent
+	eventListeners []struct {
+		predicate func(event sdk.StringEvent) bool
+		emitter   chan sdk.StringEvent
+	}
 }
 
 // NewNode creates a new node that can be added to the blockchain.
 // The moniker is used to differentiate nodes for logging purposes.
 // The context will be passed on to the registered handlers.
-func NewNode(moniker string, ctx sdk.Context, router sdk.Router, queriers map[string]sdk.Querier) Node {
-	return Node{
-		moniker:     moniker,
-		Ctx:         ctx,
+func NewNode(moniker string, ctx sdk.Context, router sdk.Router, queriers map[string]sdk.Querier) *Node {
+	return &Node{
 		in:          make(chan block, 1),
 		router:      router,
 		endBlockers: make([]func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate, 0),
+		Ctx:         ctx,
+		moniker:     moniker,
 		queriers:    queriers,
+		events:      make(chan sdk.StringEvent, 100),
+		eventListeners: []struct {
+			predicate func(event sdk.StringEvent) bool
+			emitter   chan sdk.StringEvent
+		}{{predicate: func(sdk.StringEvent) bool { return false }, emitter: nil}}, // default discard listener
 	}
 }
 
 // WithEndBlockers returns a node with the specified EndBlocker functions.
 // They are executed in the order they are provided.
-func (n Node) WithEndBlockers(endBlockers ...func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate) Node {
+func (n *Node) WithEndBlockers(endBlockers ...func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate) *Node {
 	n.endBlockers = append(n.endBlockers, endBlockers...)
 	return n
 }
@@ -264,7 +274,29 @@ func (n Node) Query(path []string, query abci.RequestQuery) ([]byte, error) {
 	return n.queriers[path[0]](n.Ctx, path[1:], query)
 }
 
-func (n Node) start() {
+// RegisterEventListener registers a listener for events that satisfy the predicate. Events will be dropped if the event channel fills up
+func (n *Node) RegisterEventListener(predicate func(sdk.StringEvent) bool) <-chan sdk.StringEvent {
+	out := make(chan sdk.StringEvent, 100)
+
+	n.eventListeners = append(n.eventListeners, struct {
+		predicate func(event sdk.StringEvent) bool
+		emitter   chan sdk.StringEvent
+	}{predicate: predicate, emitter: out})
+	return out
+}
+
+func (n *Node) start() {
+	defer close(n.events)
+	go func() {
+		for e := range n.events {
+			for _, l := range n.eventListeners {
+				if len(l.emitter) < cap(l.emitter) && l.predicate(e) {
+					l.emitter <- e
+				}
+			}
+		}
+	}()
+
 	for b := range n.in {
 		n.Ctx = n.Ctx.WithBlockHeader(b.header)
 		log.Printf("node %s begins block %v", n.moniker, b.header.Height)
@@ -285,6 +317,18 @@ func (n Node) start() {
 				res, err := h(n.Ctx, msg.Msg)
 				if err != nil {
 					log.Printf("node %s returned an error from handler for route %s: %s", n.moniker, msg.Route(), err.Error())
+				}
+				msgEvents := sdk.Events{
+					sdk.NewEvent(sdk.EventTypeMessage, sdk.NewAttribute(sdk.AttributeKeyAction, msg.Type())),
+				}
+
+				if res != nil {
+					msgEvents = msgEvents.AppendEvents(res.Events)
+				}
+
+				events := sdk.StringifyEvents(msgEvents.ToABCIEvents())
+				for _, event := range events {
+					n.events <- event
 				}
 
 				msg.out <- &Result{res, err}

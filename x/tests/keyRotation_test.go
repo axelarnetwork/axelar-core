@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
@@ -52,6 +53,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	// set up chain
 	const nodeCount = 10
 	chain, nodeData := initChain(nodeCount)
+	keygenDone, verifyDone, signDone := registerEventListeners(nodeData[0].Node)
 
 	// register proxies for all validators
 	for i, proxy := range randStrings.Take(nodeCount) {
@@ -77,15 +79,13 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	// start keygen
-	keygenResult1 := <-chain.Submit(
-		tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: masterKeyID1})
+	keygenResult1 := <-chain.Submit(tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: masterKeyID1})
 	assert.NoError(t, keygenResult1.Error)
 	for _, isCorrect := range correctKeygens1 {
 		assert.True(t, <-isCorrect)
 	}
 
-	// wait for voting to be done
-	chain.WaitNBlocks(12)
+	<-keygenDone
 
 	// assign bitcoin master key
 	assignKeyResult1 := <-chain.Submit(
@@ -93,43 +93,53 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, assignKeyResult1.Error)
 
 	// rotate to the first btc master key
-	rotateResult1 := <-chain.Submit(
-		tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: btc.Bitcoin.Name})
+	rotateResult1 := <-chain.Submit(tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: btc.Bitcoin.Name})
 	assert.NoError(t, rotateResult1.Error)
 
-	// get deposit address for ethereum transfer
-	crossChainAddr := nexus.CrossChainAddress{Chain: eth.Ethereum, Address: randStrings.Next()}
-	linkResult := <-chain.Submit(btcTypes.NewMsgLink(randomSender(), crossChainAddr.Address, crossChainAddr.Chain.Name))
-	assert.NoError(t, linkResult.Error)
-	depositAddr := string(linkResult.Data)
+	totalDepositCount := int(testutils.RandIntBetween(1, 20))
+	var totalDepositAmount int64
+	deposits := make(map[string]btcTypes.OutPointInfo)
+	for i := 0; i < totalDepositCount; i++ {
+		// get deposit address for ethereum transfer
+		crossChainAddr := nexus.CrossChainAddress{Chain: eth.Ethereum, Address: randStrings.Next()}
+		linkResult := <-chain.Submit(btcTypes.NewMsgLink(randomSender(), crossChainAddr.Address, crossChainAddr.Chain.Name))
+		assert.NoError(t, linkResult.Error)
+		depositAddr := string(linkResult.Data)
 
-	// simulate deposit to master key address
-	expectedDepositInfo := randomOutpointInfo(depositAddr)
-	for _, n := range nodeData {
-		n.Mocks.BTC.GetOutPointInfoFunc = func(bHash *chainhash.Hash, out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
-			if bHash.IsEqual(expectedDepositInfo.BlockHash) && out.String() == expectedDepositInfo.OutPoint.String() {
-				return expectedDepositInfo, nil
+		// simulate deposit to master key address
+		expectedDepositInfo := randomOutpointInfo(depositAddr)
+		for _, n := range nodeData {
+			n.Mocks.BTC.GetOutPointInfoFunc = func(bHash *chainhash.Hash, out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
+				if bHash.IsEqual(expectedDepositInfo.BlockHash) && out.String() == expectedDepositInfo.OutPoint.String() {
+					return expectedDepositInfo, nil
+				}
+				return btcTypes.OutPointInfo{}, fmt.Errorf("outpoint info not found")
 			}
-			return btcTypes.OutPointInfo{}, fmt.Errorf("outpoint info not found")
 		}
+
+		// query for deposit info
+		bz, err := nodeData[0].Node.Query(
+			[]string{btcTypes.QuerierRoute, btcKeeper.QueryOutInfo, expectedDepositInfo.BlockHash.String()},
+			abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(expectedDepositInfo.OutPoint)},
+		)
+		assert.NoError(t, err)
+		var actualDepositInfo btcTypes.OutPointInfo
+		testutils.Codec().MustUnmarshalJSON(bz, &actualDepositInfo)
+		assert.Equal(t, expectedDepositInfo, actualDepositInfo)
+
+		// verify deposit to master key
+		verifyResult1 := <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender(), expectedDepositInfo))
+		assert.NoError(t, verifyResult1.Error)
+
+		// store this information for later in the test
+		totalDepositAmount += int64(actualDepositInfo.Amount)
+		deposits[actualDepositInfo.OutPoint.String()] = actualDepositInfo
 	}
 
-	// query for deposit info
-	bz, err := nodeData[0].Node.Query(
-		[]string{btcTypes.QuerierRoute, btcKeeper.QueryOutInfo, expectedDepositInfo.BlockHash.String()},
-		abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(expectedDepositInfo.OutPoint)},
-	)
-	assert.NoError(t, err)
-	var actualDepositInfo btcTypes.OutPointInfo
-	testutils.Codec().MustUnmarshalJSON(bz, &actualDepositInfo)
-	assert.Equal(t, expectedDepositInfo, actualDepositInfo)
-
-	// verify deposit to master key
-	verifyResult1 := <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender(), expectedDepositInfo))
-	assert.NoError(t, verifyResult1.Error)
-
 	// wait for voting to be done
-	chain.WaitNBlocks(12)
+	for i := 0; i < totalDepositCount; i++ {
+		<-verifyDone
+	}
 
 	// second snapshot
 	snapshotResult2 := <-chain.Submit(snapTypes.MsgSnapshot{Sender: randomSender()})
@@ -149,15 +159,14 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	// start new keygen
-	keygenResult2 := <-chain.Submit(
-		tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: masterKeyID2})
+	keygenResult2 := <-chain.Submit(tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: masterKeyID2})
 	assert.NoError(t, keygenResult2.Error)
 	for _, isCorrect := range correctKeygens2 {
 		assert.True(t, <-isCorrect)
 	}
 
 	// wait for voting to be done
-	chain.WaitNBlocks(12)
+	<-keygenDone
 
 	// assign second key to be the new master key
 	assignKeyResult2 := <-chain.Submit(
@@ -166,30 +175,35 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// prepare mocks to sign consolidation transaction with first master key
 	var correctSigns []<-chan bool
-	msgToSign := NewSyncedBytes()
+
+	cache := NewSignatureCache(len(deposits))
 	for _, n := range nodeData {
-		correctSign := prepareSign(n.Mocks.Sign, masterKeyID1, masterKey1, msgToSign)
+		correctSign := prepareSign(n.Mocks.TSSD, masterKeyID1, masterKey1, cache)
 		correctSigns = append(correctSigns, correctSign)
 	}
 
 	// sign the consolidation transaction
-	fee := btcutil.Amount(testutils.RandIntBetween(1, int64(actualDepositInfo.Amount)))
-	signResult := <-chain.Submit(btcTypes.NewMsgSign(randomSender(), fee))
+	fee := testutils.RandIntBetween(1, totalDepositAmount)
+	signResult := <-chain.Submit(btcTypes.NewMsgSign(randomSender(), btcutil.Amount(fee)))
 	assert.NoError(t, signResult.Error)
 	for _, isCorrect := range correctSigns {
-		assert.True(t, <-isCorrect)
+		for range deposits {
+			assert.True(t, <-isCorrect)
+		}
 	}
 
 	// wait for voting to be done (signing takes longer to tally up)
-	chain.WaitNBlocks(20)
+	for i := 0; i < totalDepositCount; i++ {
+		<-signDone
+	}
 
 	// send tx to Bitcoin
-	bz, err = nodeData[0].Node.Query([]string{btcTypes.QuerierRoute, btcKeeper.SendTx}, abci.RequestQuery{})
+	bz, err := nodeData[0].Node.Query([]string{btcTypes.QuerierRoute, btcKeeper.SendTx}, abci.RequestQuery{})
 	assert.NoError(t, err)
 
 	actualTx := nodeData[0].Mocks.BTC.SendRawTransactionCalls()[0].Tx
 	consolidationAddr := createBTCAddress(masterKey2, nodeData[0].Mocks.BTC.Network())
-	assert.True(t, txCorrectlyFormed(actualTx, actualDepositInfo, fee, consolidationAddr))
+	assert.True(t, txCorrectlyFormed(actualTx, deposits, totalDepositAmount-fee, consolidationAddr))
 
 	// simulate confirmed tx to master address 2
 	var consolidationTxHash *chainhash.Hash
@@ -222,22 +236,79 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, verifyResult2.Error)
 
 	// wait for voting to be done
-	chain.WaitNBlocks(12)
+	<-verifyDone
 
 	// rotate master key to key 2
 	rotateResult2 := <-chain.Submit(tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: btc.Bitcoin.Name})
 	assert.NoError(t, rotateResult2.Error)
 }
 
-func txCorrectlyFormed(tx *wire.MsgTx, deposit btcTypes.OutPointInfo, fee btcutil.Amount, addr btcutil.Address) bool {
+func registerEventListeners(node *fake.Node) (<-chan sdk.StringEvent, <-chan sdk.StringEvent, <-chan sdk.StringEvent) {
+	// register listener for keygen completion
+	keygenDone := node.RegisterEventListener(func(event sdk.StringEvent) bool {
+		keyVote := false
+		decided := false
+		for _, a := range event.Attributes {
+			if a.Key == sdk.AttributeKeyAction {
+				keyVote = a.Value == tssTypes.MsgVotePubKey{}.Type()
+			}
+			if a.Key == tssTypes.AttributePollDecided {
+				decided = true
+			}
+		}
+		return keyVote && decided
+	})
+
+	// register listener for btc tx verification
+	verifyDone := node.RegisterEventListener(func(event sdk.StringEvent) bool {
+		txVote := false
+		decided := false
+		for _, a := range event.Attributes {
+			if a.Key == sdk.AttributeKeyAction {
+				txVote = a.Value == btcTypes.MsgVoteVerifiedTx{}.Type()
+			}
+			if a.Key == btcTypes.AttributePollConfirmed {
+				decided = true
+			}
+		}
+		return txVote && decided
+	})
+
+	// register listener for sign completion
+	signDone := node.RegisterEventListener(func(event sdk.StringEvent) bool {
+		sigVote := false
+		decided := false
+		for _, a := range event.Attributes {
+			if a.Key == sdk.AttributeKeyAction {
+				sigVote = a.Value == tssTypes.MsgVoteSig{}.Type()
+			}
+			if a.Key == tssTypes.AttributePollDecided {
+				decided = true
+			}
+		}
+		return sigVote && decided
+	})
+	return keygenDone, verifyDone, signDone
+}
+
+func txCorrectlyFormed(tx *wire.MsgTx, deposits map[string]btcTypes.OutPointInfo, txAmount int64, addr btcutil.Address) bool {
 	script, err := txscript.PayToAddrScript(addr)
 	if err != nil {
 		panic(err)
 	}
+
+	txInsCorrect := true
+	for _, in := range tx.TxIn {
+		if _, ok := deposits[in.PreviousOutPoint.String()]; !ok {
+			txInsCorrect = false
+			break
+		}
+	}
+
 	return len(tx.TxOut) == 1 && // one TxOut
 		bytes.Equal(tx.TxOut[0].PkScript, script) && // address matches
-		btcutil.Amount(tx.TxOut[0].Value) == deposit.Amount-fee && // amount matches
-		tx.TxIn[0].PreviousOutPoint.String() == deposit.OutPoint.String() // input matches
+		tx.TxOut[0].Value == txAmount && // amount matches
+		txInsCorrect // inputs match
 }
 
 func createBTCAddress(key *ecdsa.PrivateKey, network btcTypes.Network) *btcutil.AddressWitnessScriptHash {
