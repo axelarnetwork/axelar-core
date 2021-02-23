@@ -306,7 +306,7 @@ func waitFor(eventDone <-chan sdk.StringEvent, repeats int) error {
 		case <-eventDone:
 			break
 		case <-timeout.Done():
-			return fmt.Errorf("timeout at %d of %d", i, repeats)
+			return fmt.Errorf("timeout at %d of %d", i, repeats-1)
 		}
 	}
 	return nil
