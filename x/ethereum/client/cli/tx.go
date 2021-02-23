@@ -33,7 +33,6 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		flags.PostCommands(
 			GetCmdLink(cdc),
 			GetCmdSignTx(cdc),
-			GetCmdVerifyTx(cdc),
 			GetCmdVerifyErc20TokenDeploy(cdc),
 			GetCmdVerifyErc20Deposit(cdc),
 			GetCmdSignPendingTransfersTx(cdc),
@@ -98,33 +97,6 @@ func GetCmdSignTx(cdc *codec.Codec) *cobra.Command {
 	}
 
 	return cmd
-}
-
-// GetCmdVerifyTx returns the cli command to verify the given transaction
-func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "verify [tx json file path]",
-		Short: "Verify an Ethereum transaction",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-
-			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
-
-			json, err := ioutil.ReadFile(args[0])
-			if err != nil {
-				return err
-			}
-			var tx *ethTypes.Transaction
-			cdc.MustUnmarshalJSON(json, &tx)
-
-			msg := types.NewMsgVerifyTx(cliCtx.GetFromAddress(), json)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
-		},
-	}
 }
 
 // GetCmdVerifyErc20TokenDeploy returns the cli command to verify a ERC20 token deployment

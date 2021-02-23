@@ -21,8 +21,6 @@ import (
 
 const (
 	rawPrefix                  = "raw_"
-	verifiedTxPrefix           = "verified_tx_"
-	pendingTxPrefix            = "pending_tx_"
 	verifiedTokenPrefix        = "verified_token_"
 	pendingTokenPrefix         = "pending_token_"
 	pendingErc20DepositPrefix  = "pending_erc20_deposit_"
@@ -289,29 +287,9 @@ func (k Keeper) GetVerifiedErc20Deposits(ctx sdk.Context) []types.Erc20Deposit {
 	return deposits
 }
 
-// HasVerifiedTx returns true if a raw transaction has been stored
-func (k Keeper) HasVerifiedTx(ctx sdk.Context, txID string) bool {
-	return ctx.KVStore(k.storeKey).Has([]byte(verifiedTxPrefix + txID))
-}
-
-// SetUnverifiedTx stores and unverified transaction
-func (k Keeper) SetUnverifiedTx(ctx sdk.Context, txID string, tx *ethTypes.Transaction) {
-	ctx.KVStore(k.storeKey).Set([]byte(pendingTxPrefix+txID), tx.Hash().Bytes())
-}
-
-// HasUnverifiedTx returns true if an unverified transaction has been stored
-func (k Keeper) HasUnverifiedTx(ctx sdk.Context, txID string) bool {
-	return ctx.KVStore(k.storeKey).Has([]byte(pendingTxPrefix + txID))
-}
-
 // HasUnverifiedToken returns true if an unverified transaction has been stored
 func (k Keeper) HasUnverifiedToken(ctx sdk.Context, txID string) bool {
 	return ctx.KVStore(k.storeKey).Has([]byte(pendingTokenPrefix + txID))
-}
-
-// ProcessVerificationTxResult stores the TX permanently if confirmed or discards the data otherwise
-func (k Keeper) ProcessVerificationTxResult(ctx sdk.Context, txID string, verified bool) {
-	k.processVerificationResult(ctx, []byte(pendingTxPrefix+txID), []byte(verifiedTxPrefix+txID), verified)
 }
 
 // ProcessVerificationTokenResult stores the TX permanently if confirmed or discards the data otherwise

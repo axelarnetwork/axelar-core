@@ -29,8 +29,6 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 		switch msg := msg.(type) {
 		case types.MsgLink:
 			return handleMsgLink(ctx, k, n, msg)
-		case types.MsgVerifyTx:
-			return handleMsgVerifyTx(ctx, k, rpc, v, msg)
 		case *types.MsgVoteVerifiedTx:
 			return handleMsgVoteVerifiedTx(ctx, k, v, n, msg)
 		case types.MsgVerifyErc20TokenDeploy:
@@ -209,52 +207,6 @@ func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer ty
 	}, nil
 }
 
-func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v types.Voter, msg types.MsgVerifyTx) (*sdk.Result, error) {
-	k.Logger(ctx).Debug("verifying ethereum transaction")
-	tx := msg.UnmarshaledTx()
-	txID := tx.Hash().String()
-
-	poll := vote.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: txID}
-	if err := v.InitPoll(ctx, poll); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
-	}
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeTxID, txID),
-		),
-	)
-
-	k.SetUnverifiedTx(ctx, txID, tx)
-
-	/*
-	 Anyone not able to verify the transaction will automatically record a negative vote,
-	 but only validators will later send out that vote.
-	*/
-	txReceipt, blockNumber, err := getTransactionReceiptAndBlockNumber(ctx, rpc, tx.Hash())
-	if err != nil {
-		output := fmt.Sprintf("cannot get transaction receipt %s or block number: %v", txID, err)
-		k.Logger(ctx).Debug(sdkerrors.Wrap(err, output).Error())
-		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
-		return &sdk.Result{Log: output}, nil
-	}
-
-	if !isTxFinalized(txReceipt, blockNumber, k.GetRequiredConfirmationHeight(ctx)) {
-		output := fmt.Sprintf("expected transaction (%s) does not have enough confirmations", txID)
-		k.Logger(ctx).Debug(output)
-		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
-		return &sdk.Result{Log: output}, nil
-
-	}
-	output := fmt.Sprintf("successfully verified transaction %s", txID)
-	k.Logger(ctx).Debug(output)
-	v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: true})
-	return &sdk.Result{Log: output}, nil
-}
-
 // This can be used as a potential hook to immediately act on a poll being decided by the vote
 func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n types.Nexus, msg *types.MsgVoteVerifiedTx) (*sdk.Result, error) {
 	event := sdk.NewEvent(
@@ -271,8 +223,6 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 
 	if confirmed := v.Result(ctx, msg.Poll()); confirmed != nil {
 		switch msg.PollMeta.Type {
-		case types.MsgVerifyTx{}.Type():
-			k.ProcessVerificationTxResult(ctx, msg.PollMeta.ID, confirmed.(bool))
 		case types.MsgVerifyErc20TokenDeploy{}.Type():
 			k.ProcessVerificationTokenResult(ctx, msg.PollMeta.ID, confirmed.(bool))
 		case types.MsgVerifyErc20Deposit{}.Type():
