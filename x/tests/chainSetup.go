@@ -299,7 +299,7 @@ func registerEventListeners(node *fake.Node) (<-chan sdk.StringEvent, <-chan sdk
 }
 
 func waitFor(eventDone <-chan sdk.StringEvent, repeats int) error {
-	timeout, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	timeout, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	for i := 0; i < repeats; i++ {
 		select {
