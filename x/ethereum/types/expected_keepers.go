@@ -39,6 +39,7 @@ type Signer interface {
 	GetCurrentMasterKey(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool)
 	GetNextMasterKey(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool)
 	GetKeyForSigID(ctx sdk.Context, sigID string) (ecdsa.PublicKey, bool)
+	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool)
 }
 
 // Snapshotter provides snapshot functionality

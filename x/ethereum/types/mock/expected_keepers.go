@@ -303,6 +303,9 @@ var _ types.Signer = &SignerMock{}
 // 			GetSigFunc: func(ctx sdk.Context, sigID string) (tss.Signature, bool) {
 // 				panic("mock out the GetSig method")
 // 			},
+// 			GetSnapshotCounterForKeyIDFunc: func(ctx sdk.Context, keyID string) (int64, bool) {
+// 				panic("mock out the GetSnapshotCounterForKeyID method")
+// 			},
 // 			StartSignFunc: func(ctx sdk.Context, keyID string, sigID string, msg []byte, validators []snapshot.Validator) error {
 // 				panic("mock out the StartSign method")
 // 			},
@@ -330,6 +333,9 @@ type SignerMock struct {
 
 	// GetSigFunc mocks the GetSig method.
 	GetSigFunc func(ctx sdk.Context, sigID string) (tss.Signature, bool)
+
+	// GetSnapshotCounterForKeyIDFunc mocks the GetSnapshotCounterForKeyID method.
+	GetSnapshotCounterForKeyIDFunc func(ctx sdk.Context, keyID string) (int64, bool)
 
 	// StartSignFunc mocks the StartSign method.
 	StartSignFunc func(ctx sdk.Context, keyID string, sigID string, msg []byte, validators []snapshot.Validator) error
@@ -378,6 +384,13 @@ type SignerMock struct {
 			// SigID is the sigID argument value.
 			SigID string
 		}
+		// GetSnapshotCounterForKeyID holds details about calls to the GetSnapshotCounterForKeyID method.
+		GetSnapshotCounterForKeyID []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// KeyID is the keyID argument value.
+			KeyID string
+		}
 		// StartSign holds details about calls to the StartSign method.
 		StartSign []struct {
 			// Ctx is the ctx argument value.
@@ -392,13 +405,14 @@ type SignerMock struct {
 			Validators []snapshot.Validator
 		}
 	}
-	lockGetCurrentMasterKey   sync.RWMutex
-	lockGetCurrentMasterKeyID sync.RWMutex
-	lockGetKey                sync.RWMutex
-	lockGetKeyForSigID        sync.RWMutex
-	lockGetNextMasterKey      sync.RWMutex
-	lockGetSig                sync.RWMutex
-	lockStartSign             sync.RWMutex
+	lockGetCurrentMasterKey        sync.RWMutex
+	lockGetCurrentMasterKeyID      sync.RWMutex
+	lockGetKey                     sync.RWMutex
+	lockGetKeyForSigID             sync.RWMutex
+	lockGetNextMasterKey           sync.RWMutex
+	lockGetSig                     sync.RWMutex
+	lockGetSnapshotCounterForKeyID sync.RWMutex
+	lockStartSign                  sync.RWMutex
 }
 
 // GetCurrentMasterKey calls GetCurrentMasterKeyFunc.
@@ -608,6 +622,41 @@ func (mock *SignerMock) GetSigCalls() []struct {
 	mock.lockGetSig.RLock()
 	calls = mock.calls.GetSig
 	mock.lockGetSig.RUnlock()
+	return calls
+}
+
+// GetSnapshotCounterForKeyID calls GetSnapshotCounterForKeyIDFunc.
+func (mock *SignerMock) GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool) {
+	if mock.GetSnapshotCounterForKeyIDFunc == nil {
+		panic("SignerMock.GetSnapshotCounterForKeyIDFunc: method is nil but Signer.GetSnapshotCounterForKeyID was just called")
+	}
+	callInfo := struct {
+		Ctx   sdk.Context
+		KeyID string
+	}{
+		Ctx:   ctx,
+		KeyID: keyID,
+	}
+	mock.lockGetSnapshotCounterForKeyID.Lock()
+	mock.calls.GetSnapshotCounterForKeyID = append(mock.calls.GetSnapshotCounterForKeyID, callInfo)
+	mock.lockGetSnapshotCounterForKeyID.Unlock()
+	return mock.GetSnapshotCounterForKeyIDFunc(ctx, keyID)
+}
+
+// GetSnapshotCounterForKeyIDCalls gets all the calls that were made to GetSnapshotCounterForKeyID.
+// Check the length with:
+//     len(mockedSigner.GetSnapshotCounterForKeyIDCalls())
+func (mock *SignerMock) GetSnapshotCounterForKeyIDCalls() []struct {
+	Ctx   sdk.Context
+	KeyID string
+} {
+	var calls []struct {
+		Ctx   sdk.Context
+		KeyID string
+	}
+	mock.lockGetSnapshotCounterForKeyID.RLock()
+	calls = mock.calls.GetSnapshotCounterForKeyID
+	mock.lockGetSnapshotCounterForKeyID.RUnlock()
 	return calls
 }
 

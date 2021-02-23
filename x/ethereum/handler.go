@@ -169,9 +169,13 @@ func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer ty
 		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no master key for chain %s found", exported.Ethereum.Name)
 	}
 
-	s, ok := snap.GetLatestSnapshot(ctx)
+	counter, ok := signer.GetSnapshotCounterForKeyID(ctx, keyID)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, "no snapshot found")
+		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no snapshot counter for key ID %s registered", keyID)
+	}
+	s, ok := snap.GetSnapshot(ctx, counter)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no snapshot found")
 	}
 
 	commandIDHex := hex.EncodeToString(commandID[:])
@@ -311,9 +315,13 @@ func handleMsgSignDeployToken(ctx sdk.Context, k keeper.Keeper, signer types.Sig
 		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no master key for chain %s found", exported.Ethereum.Name)
 	}
 
-	s, ok := snap.GetLatestSnapshot(ctx)
+	counter, ok := signer.GetSnapshotCounterForKeyID(ctx, keyID)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, "no snapshot found")
+		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no snapshot counter for key ID %s registered", keyID)
+	}
+	s, ok := snap.GetSnapshot(ctx, counter)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no snapshot found")
 	}
 
 	commandIDHex := hex.EncodeToString(commandID[:])
@@ -370,10 +378,15 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no master key for chain %s found", exported.Ethereum.Name)
 	}
 
-	s, ok := snap.GetLatestSnapshot(ctx)
+	counter, ok := signer.GetSnapshotCounterForKeyID(ctx, keyID)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, "no snapshot found")
+		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no snapshot counter for key ID %s registered", keyID)
 	}
+	s, ok := snap.GetSnapshot(ctx, counter)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no snapshot found")
+	}
+
 	err = signer.StartSign(ctx, keyID, txID, hash.Bytes(), s.Validators)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
