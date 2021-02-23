@@ -16,7 +16,7 @@ import (
 
 // ensure all nodes call .Send() , .Recv() and then .CloseSend()
 func prepareKeygen(keygen *tssdMock.TSSDKeyGenClientMock, keyID string, key ecdsa.PublicKey) (successful <-chan bool) {
-	closeTimeout, closeCancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	closeTimeout, closeCancel := context.WithTimeout(context.Background(), 5*time.Second)
 
 	sendSuccessful := false
 	recvSuccessful := false
