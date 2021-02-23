@@ -36,7 +36,7 @@ func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer) sdk.Querier {
 		case QueryAxelarGatewayAddress:
 			return queryAxelarGateway(ctx, k)
 		case CreateDeployTx:
-			return createDeployTx(ctx, k, rpc, s, req.Data)
+			return createDeployGateway(ctx, k, rpc, s, req.Data)
 		case SendTx:
 			return sendSignedTx(ctx, k, rpc, s, path[1])
 		case SendCommand:
@@ -79,7 +79,7 @@ func queryAxelarGateway(ctx sdk.Context, k Keeper) ([]byte, error) {
 
   If gasLimit is set to 0, the function will attempt to estimate the amount of gas needed
 */
-func createDeployTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, data []byte) ([]byte, error) {
+func createDeployGateway(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, data []byte) ([]byte, error) {
 	var params types.DeployParams
 	err := types.ModuleCdc.UnmarshalJSON(data, &params)
 	if err != nil {
@@ -89,10 +89,6 @@ func createDeployTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Sign
 	contractOwner, err := getContractOwner(ctx, s)
 	if err != nil {
 		return nil, err
-	}
-	nonce, err := rpc.PendingNonceAt(context.Background(), contractOwner)
-	if err != nil {
-		return nil, fmt.Errorf("could not create nonce: %s", err)
 	}
 
 	gasPrice := params.GasPrice.BigInt()
@@ -115,10 +111,10 @@ func createDeployTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Sign
 		}
 	}
 
-	tx := ethTypes.NewContractCreation(nonce, big.NewInt(0), gasLimit, gasPrice, k.GetGatewayBytecodes(ctx))
+	tx := ethTypes.NewContractCreation(0, big.NewInt(0), gasLimit, gasPrice, k.GetGatewayBytecodes(ctx))
 	result := types.DeployResult{
 		Tx:              tx,
-		ContractAddress: crypto.CreateAddress(contractOwner, nonce).String(),
+		ContractAddress: crypto.CreateAddress(contractOwner, 0).String(),
 	}
 	k.Logger(ctx).Debug(fmt.Sprintf("Contract address: %s", result.ContractAddress))
 	return types.ModuleCdc.MustMarshalJSON(result), nil
