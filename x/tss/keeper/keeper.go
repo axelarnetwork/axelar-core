@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math"
 	"time"
 
 	tssd "github.com/axelarnetwork/tssd/pb"
@@ -13,6 +14,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
@@ -91,7 +93,7 @@ func (k Keeper) prepareTrafficIn(ctx sdk.Context, sender sdk.AccAddress, session
 		k.Logger(ctx).Error(err.Error())
 		return nil, err
 	}
-	k.Logger(ctx).Debug(fmt.Sprintf("session [%s] from [%s] to [%s] broadcast? [%t]", sessionID, senderAddress.String(), payload.ToPartyUid, payload.IsBroadcast))
+	k.Logger(ctx).Debug(fmt.Sprintf("session [%.20s] from [%.20s] to [%.20s] broadcast? [%t]", sessionID, senderAddress.String(), payload.ToPartyUid, payload.IsBroadcast))
 
 	// non-deterministic errors must not change behaviour, therefore log error and return nil instead
 	myAddress := k.broadcaster.GetLocalPrincipal(ctx)
@@ -126,7 +128,7 @@ func (k Keeper) prepareTrafficIn(ctx sdk.Context, sender sdk.AccAddress, session
 	}
 
 	k.Logger(ctx).Debug(fmt.Sprintf(
-		"forward incoming msg to tssd: session [%s] from [%s] to [%s] broadcast [%t] me [%s]",
+		"incoming msg to tssd: session [%.20s] from [%.20s] to [%.20s] broadcast [%t] me [%.20s]",
 		sessionID,
 		senderAddress.String(),
 		toAddress.String(),
@@ -211,4 +213,20 @@ func (k Keeper) checkProxies(ctx sdk.Context, validators []snapshot.Validator) e
 		}
 	}
 	return nil
+}
+
+// ComputeCorruptionThreshold returns corruption threshold to be used by tss
+func (k Keeper) ComputeCorruptionThreshold(ctx sdk.Context, totalvalidators int) int {
+	var threshold utils.Threshold
+	k.params.Get(ctx, types.KeyCorruptionThreshold, &threshold)
+	// threshold = totalValidators * corruption threshold - 1
+	return int(math.Ceil(float64(totalvalidators)*float64(threshold.Numerator)/
+		float64(threshold.Denominator))) - 1
+}
+
+// GetMinKeygenThreshold returns minimum threshold of stake that must be met to execute keygen
+func (k Keeper) GetMinKeygenThreshold(ctx sdk.Context) utils.Threshold {
+	var threshold utils.Threshold
+	k.params.Get(ctx, types.KeyMinKeygenThreshold, &threshold)
+	return threshold
 }
