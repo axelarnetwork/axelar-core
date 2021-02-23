@@ -27,7 +27,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
 	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -42,7 +41,7 @@ func TestLink_NoMasterKey(t *testing.T) {
 
 	s := &mock.SignerMock{GetCurrentMasterKeyIDFunc: func(sdk.Context, nexus.Chain) (string, bool) { return "", false }}
 
-	handler := NewHandler(k, &mock.VoterMock{}, &mock.RPCClientMock{}, s, &mock.SnapshotterMock{}, &mock.NexusMock{})
+	handler := NewHandler(k, &mock.VoterMock{}, &mock.RPCClientMock{}, s, &mock.NexusMock{})
 	_, err := handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
@@ -88,7 +87,7 @@ func TestLink_Success(t *testing.T) {
 		GetCurrentMasterKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain) (string, bool) { return "testkey", true },
 	}
 
-	handler := NewHandler(k, &mock.VoterMock{}, &mock.RPCClientMock{}, s, &mock.SnapshotterMock{}, n)
+	handler := NewHandler(k, &mock.VoterMock{}, &mock.RPCClientMock{}, s, n)
 	_, err = handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name})
 
 	assert.NoError(t, err)
@@ -135,7 +134,7 @@ func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 		panic(err)
 	}
 
-	handler := NewHandler(k, v, &rpc, &mock.SignerMock{}, &mock.SnapshotterMock{}, &mock.NexusMock{})
+	handler := NewHandler(k, v, &rpc, &mock.SignerMock{}, &mock.NexusMock{})
 
 	_, err = handler(ctx, types.MsgVerifyTx{Sender: sdk.AccAddress("sender"), OutPointInfo: info})
 	assert.Nil(t, err)
@@ -186,7 +185,7 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 		InitPollFunc:   func(_ sdk.Context, p vote.PollMeta) error { poll = p; return nil },
 		RecordVoteFunc: func(vote vote.MsgVote) {},
 	}
-	handler := NewHandler(k, v, &rpc, &mock.SignerMock{}, &mock.SnapshotterMock{}, &mock.NexusMock{})
+	handler := NewHandler(k, v, &rpc, &mock.SignerMock{}, &mock.NexusMock{})
 
 	_, err = handler(ctx, types.MsgVerifyTx{Sender: sdk.AccAddress("sender"), OutPointInfo: info})
 	assert.Nil(t, err)
@@ -223,7 +222,7 @@ func TestVoteVerifiedTx_NoUnverifiedOutPointWithVoteResult(t *testing.T) {
 		DeletePollFunc: func(ctx sdk.Context, poll vote.PollMeta) {},
 	}
 
-	handler := NewHandler(k, v, &mock.RPCClientMock{}, &mock.SignerMock{}, &mock.SnapshotterMock{}, &mock.NexusMock{})
+	handler := NewHandler(k, v, &mock.RPCClientMock{}, &mock.SignerMock{}, &mock.NexusMock{})
 	poll := vote.PollMeta{Module: "bitcoin", Type: "verify", ID: "txid"}
 	msg := &types.MsgVoteVerifiedTx{Sender: sdk.AccAddress("sender"), PollMeta: poll, VotingData: true}
 	_, err := handler(ctx, msg)
@@ -274,7 +273,7 @@ func TestVoteVerifiedTx_IncompleteVote(t *testing.T) {
 		},
 	}
 
-	handler := NewHandler(k, v, &mock.RPCClientMock{}, &mock.SignerMock{}, &mock.SnapshotterMock{}, b)
+	handler := NewHandler(k, v, &mock.RPCClientMock{}, &mock.SignerMock{}, b)
 	msg := &types.MsgVoteVerifiedTx{Sender: sdk.AccAddress("sender"), PollMeta: poll, VotingData: true}
 	_, err = handler(ctx, msg)
 	assert.NoError(t, err)
@@ -324,7 +323,7 @@ func TestVoteVerifiedTx_KeyIDNotFound(t *testing.T) {
 		EnqueueForTransferFunc: func(ctx sdk.Context, s nexus.CrossChainAddress, amount sdk.Coin) error { return nil },
 	}
 
-	handler := NewHandler(k, v, &mock.RPCClientMock{}, &mock.SignerMock{}, &mock.SnapshotterMock{}, b)
+	handler := NewHandler(k, v, &mock.RPCClientMock{}, &mock.SignerMock{}, b)
 	msg := &types.MsgVoteVerifiedTx{Sender: sdk.AccAddress("sender"), PollMeta: poll, VotingData: true}
 	_, err = handler(ctx, msg)
 	assert.Error(t, err)
@@ -380,7 +379,7 @@ func TestVoteVerifiedTx_Success_NotLinked(t *testing.T) {
 		},
 	}
 
-	handler := NewHandler(k, v, &mock.RPCClientMock{}, &mock.SignerMock{}, &mock.SnapshotterMock{}, b)
+	handler := NewHandler(k, v, &mock.RPCClientMock{}, &mock.SignerMock{}, b)
 	msg := &types.MsgVoteVerifiedTx{Sender: sdk.AccAddress("sender"), PollMeta: poll, VotingData: true}
 	_, err = handler(ctx, msg)
 	assert.NoError(t, err)
@@ -442,7 +441,7 @@ func TestVoteVerifiedTx_SucessAndTransfer(t *testing.T) {
 		},
 	}
 
-	handler := NewHandler(k, v, &mock.RPCClientMock{}, &mock.SignerMock{}, &mock.SnapshotterMock{}, b)
+	handler := NewHandler(k, v, &mock.RPCClientMock{}, &mock.SignerMock{}, b)
 	msg := &types.MsgVoteVerifiedTx{Sender: sdk.AccAddress("btcSender"), PollMeta: poll, VotingData: true}
 	_, err = handler(ctx, msg)
 	assert.NoError(t, err)
@@ -456,7 +455,6 @@ type mocks struct {
 	*mock.RPCClientMock
 	*mock.VoterMock
 	*mock.SignerMock
-	*mock.SnapshotterMock
 	*mock.NexusMock
 }
 type expectedResult struct {
@@ -504,15 +502,10 @@ func TestNewHandler_SignPendingTransfers(t *testing.T) {
 				GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
 					return testutils.RandPosInt(), true
 				},
-				StartSignFunc: func(_ sdk.Context, _ string, _ string, msg []byte, _ []snapshot.Validator) error {
+				StartSignFunc: func(_ sdk.Context, _ string, _ string, msg []byte) error {
 					r, s, _ := ecdsa.Sign(cryptoRand.Reader, sk, msg)
 					sigs = append(sigs, btcec.Signature{R: r, S: s})
 					return nil
-				},
-			},
-			&mock.SnapshotterMock{
-				GetSnapshotFunc: func(sdk.Context, int64) (snapshot.Snapshot, bool) {
-					return snapshot.Snapshot{}, true
 				},
 			},
 			&mock.NexusMock{
@@ -525,7 +518,7 @@ func TestNewHandler_SignPendingTransfers(t *testing.T) {
 				},
 			},
 		}
-		h = NewHandler(k, m.VoterMock, m.RPCClientMock, m.SignerMock, m.SnapshotterMock, m.NexusMock)
+		h = NewHandler(k, m.VoterMock, m.RPCClientMock, m.SignerMock, m.NexusMock)
 	}
 
 	testCases := []struct {

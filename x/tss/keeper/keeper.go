@@ -28,6 +28,7 @@ const (
 
 type Keeper struct {
 	broadcaster   types.Broadcaster
+	snapshotter   types.Snapshotter
 	client        tssd.GG18Client
 	keygenStreams map[string]types.Stream
 	signStreams   map[string]types.Stream
@@ -38,9 +39,11 @@ type Keeper struct {
 }
 
 // NewKeeper constructs a tss keeper
-func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, client types.TSSDClient, paramSpace params.Subspace, v types.Voter, broadcaster types.Broadcaster) Keeper {
+func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, client types.TSSDClient,
+	paramSpace params.Subspace, v types.Voter, broadcaster types.Broadcaster, snapshotter types.Snapshotter) Keeper {
 	return Keeper{
 		broadcaster:   broadcaster,
+		snapshotter:   snapshotter,
 		client:        client,
 		cdc:           cdc,
 		keygenStreams: map[string]types.Stream{},

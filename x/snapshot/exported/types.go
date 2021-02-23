@@ -7,7 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-//go:generate moq -out ./mock/types.go -pkg mock . Snapshotter Validator
+//go:generate moq -out ./mock/types.go -pkg mock . Validator Snapshotter
 
 // Validator is an interface for a Cosmos validator account
 type Validator interface {
@@ -41,5 +41,6 @@ type Snapshotter interface {
 	GetLatestSnapshot(ctx sdk.Context) (Snapshot, bool)
 	GetLatestCounter(ctx sdk.Context) int64
 	GetSnapshot(ctx sdk.Context, counter int64) (Snapshot, bool)
+	GetSnapshotActiveValidators(ctx sdk.Context, counter int64) (Snapshot, bool)
 	TakeSnapshot(ctx sdk.Context) error
 }

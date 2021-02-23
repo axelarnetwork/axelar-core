@@ -92,7 +92,7 @@ func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *f
 
 	signer := tssKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(tssTypes.StoreKey), mocks.TSSD,
 		params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), tssTypes.DefaultParamspace),
-		voter, broadcaster,
+		voter, broadcaster, snapKeeper,
 	)
 	signer.SetParams(ctx, tssTypes.DefaultParams())
 
@@ -106,8 +106,8 @@ func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *f
 	router := fake.NewRouter()
 
 	broadcastHandler := broadcast.NewHandler(broadcaster)
-	btcHandler := bitcoin.NewHandler(bitcoinKeeper, voter, mocks.BTC, signer, snapKeeper, nexusK)
-	ethHandler := ethereum.NewHandler(ethereumKeeper, mocks.ETH, voter, signer, snapKeeper, nexusK)
+	btcHandler := bitcoin.NewHandler(bitcoinKeeper, voter, mocks.BTC, signer, nexusK)
+	ethHandler := ethereum.NewHandler(ethereumKeeper, mocks.ETH, voter, signer, nexusK)
 	snapHandler := snapshot.NewHandler(snapKeeper)
 	tssHandler := tss.NewHandler(signer, snapKeeper, nexusK, voter, mocks.Staker)
 	voteHandler := vote.NewHandler()

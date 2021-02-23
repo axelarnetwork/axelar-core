@@ -172,7 +172,7 @@ func newNodeForVote(moniker string, broadcaster bcExported.Broadcaster, staker v
 	btcH := bitcoin.NewHandler(btcK, vK, &btcMock.RPCClientMock{
 		GetOutPointInfoFunc: func(bHash *chainhash.Hash, out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
 			return txs[bHash.String()+out.Hash.String()], nil
-		}}, nil, nil, nexK)
+		}}, nil, nexK)
 
 	broadcastH := broadcast.NewHandler(broadcaster)
 

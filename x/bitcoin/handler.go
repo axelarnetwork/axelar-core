@@ -19,7 +19,7 @@ import (
 )
 
 // NewHandler creates an sdk.Handler for all bitcoin type messages
-func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, signer types.Signer, snap types.Snapshotter, n types.Nexus) sdk.Handler {
+func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, signer types.Signer, n types.Nexus) sdk.Handler {
 	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
@@ -30,7 +30,7 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, signer type
 		case *types.MsgVoteVerifiedTx:
 			return handleMsgVoteVerifiedTx(ctx, k, v, n, msg)
 		case types.MsgSign:
-			return handleMsgSign(ctx, k, signer, snap, n, msg)
+			return handleMsgSign(ctx, k, signer, n, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
@@ -177,7 +177,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 	}, nil
 }
 
-func handleMsgSign(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap types.Snapshotter, n types.Nexus, msg types.MsgSign) (*sdk.Result, error) {
+func handleMsgSign(ctx sdk.Context, k keeper.Keeper, signer types.Signer, n types.Nexus, msg types.MsgSign) (*sdk.Result, error) {
 	outPuts, totalWithdrawals := prepareOutputs(ctx, k, n)
 	prevOuts, totalDeposits := prepareInputs(ctx, k)
 
@@ -205,7 +205,7 @@ func handleMsgSign(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap t
 	}
 	k.SetRawTx(ctx, tx)
 
-	err = startSignInputs(ctx, k, signer, snap, tx)
+	err = startSignInputs(ctx, k, signer, tx)
 	if err != nil {
 		return nil, err
 	}
@@ -296,7 +296,7 @@ func prepareOutputs(ctx sdk.Context, k keeper.Keeper, n types.Nexus) ([]types.Ou
 	return outPuts, totalOut
 }
 
-func startSignInputs(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap types.Snapshotter, tx *wire.MsgTx) error {
+func startSignInputs(ctx sdk.Context, k keeper.Keeper, signer types.Signer, tx *wire.MsgTx) error {
 	hashes, err := k.GetHashesToSign(ctx, tx)
 	if err != nil {
 		return err
@@ -309,15 +309,7 @@ func startSignInputs(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 			return fmt.Errorf("no key ID for chain %s found", exported.Bitcoin.Name)
 		}
 
-		counter, ok := signer.GetSnapshotCounterForKeyID(ctx, keyID)
-		if !ok {
-			return fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
-		}
-		s, ok := snap.GetSnapshot(ctx, counter)
-		if !ok {
-			return fmt.Errorf("no snapshot found")
-		}
-		err = signer.StartSign(ctx, keyID, serializedHash, hash, s.Validators)
+		err = signer.StartSign(ctx, keyID, serializedHash, hash)
 		if err != nil {
 			if !ok {
 				return err

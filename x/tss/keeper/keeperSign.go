@@ -17,10 +17,20 @@ import (
 )
 
 // StartSign starts a tss signing protocol using the specified key for the given chain.
-func (k Keeper) StartSign(ctx sdk.Context, keyID string, sigID string, msg []byte, validators []snapshot.Validator) error {
+func (k Keeper) StartSign(ctx sdk.Context, keyID string, sigID string, msg []byte) error {
 	if _, ok := k.signStreams[sigID]; ok {
 		return fmt.Errorf("signing protocol for ID %s already in progress", sigID)
 	}
+
+	counter, ok := k.GetSnapshotCounterForKeyID(ctx, keyID)
+	if !ok {
+		return fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
+	}
+	snapshot, ok := k.snapshotter.GetSnapshotActiveValidators(ctx, counter)
+	if !ok {
+		return fmt.Errorf("no snapshot found for counter num %d", counter)
+	}
+	validators := snapshot.Validators
 
 	poll := voting.PollMeta{Module: types.ModuleName, Type: "sign", ID: sigID}
 	if err := k.voter.InitPoll(ctx, poll); err != nil {

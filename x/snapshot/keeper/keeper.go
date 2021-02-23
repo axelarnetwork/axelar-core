@@ -137,6 +137,28 @@ func (k Keeper) GetSnapshot(ctx sdk.Context, counter int64) (exported.Snapshot, 
 	return snapshot, true
 }
 
+// GetSnapshotActiveValidators retrieves a snapshot by the counter id,
+// then removes all inactive validators from it.
+func (k Keeper) GetSnapshotActiveValidators(ctx sdk.Context, counter int64) (exported.Snapshot, bool) {
+	bz := ctx.KVStore(k.storeKey).Get(counterKey(counter))
+	if bz == nil {
+
+		return exported.Snapshot{}, false
+	}
+
+	var snapshot exported.Snapshot
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &snapshot)
+
+	activeValidators, activeStake, err := computeActiveValidators(ctx, snapshot.Validators, k.slasher)
+	if err != nil {
+		return exported.Snapshot{}, false
+	}
+	snapshot.Validators = activeValidators
+	snapshot.TotalPower = activeStake
+
+	return snapshot, true
+}
+
 // GetLatestCounter returns the latest snapshot counter
 func (k Keeper) GetLatestCounter(ctx sdk.Context) int64 {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(lastCounterKey))

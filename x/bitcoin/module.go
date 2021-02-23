@@ -75,18 +75,16 @@ type AppModule struct {
 	rpc    types.RPCClient
 	signer types.Signer
 	nexus  types.Nexus
-	snap   types.Snapshotter
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, snapshotter types.Snapshotter, nexus types.Nexus, rpc types.RPCClient) AppModule {
+func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, nexus types.Nexus, rpc types.RPCClient) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
 		voter:          voter,
 		signer:         signer,
 		rpc:            rpc,
-		snap:           snapshotter,
 		nexus:          nexus,
 	}
 }
@@ -125,7 +123,7 @@ func (AppModule) Route() string {
 
 // NewHandler returns a new handler for this module
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper, am.voter, am.rpc, am.signer, am.snap, am.nexus)
+	return NewHandler(am.keeper, am.voter, am.rpc, am.signer, am.nexus)
 }
 
 // QuerierRoute returns this module's query route
