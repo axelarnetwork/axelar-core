@@ -127,7 +127,7 @@ func GetCmdCreateDeployTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	cmd.Flags().Uint64Var(&gasLimit, "gas-limit", 3000000,
 		"Ethereum gas limit to use in the transaction (default value is 3000000). Set to 0 to estimate gas limit at the node.")
 	cmd.Flags().StringVar(&gasPriceStr, "gas-price", "0",
-		"Ethereum gas price to use in the transaction. If falg is omitted (or value set to 0), the gas price will be suggested by the node")
+		"Ethereum gas price to use in the transaction. If flag is omitted (or value set to 0), the gas price will be suggested by the node")
 	return cmd
 }
 
