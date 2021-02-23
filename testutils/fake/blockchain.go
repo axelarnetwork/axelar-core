@@ -290,7 +290,7 @@ func (n *Node) start() {
 		for e := range n.events {
 			for _, l := range n.eventListeners {
 				if len(l.emitter) >= cap(l.emitter) {
-					panic(fmt.Sprintf("node %s event listener ran out of space"))
+					panic(fmt.Sprintf("node %s event listener ran out of space", n.Moniker))
 				}
 				if l.predicate(e) {
 					l.emitter <- e
