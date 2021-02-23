@@ -39,6 +39,8 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 			return handleMsgVerifyErc20Deposit(ctx, k, rpc, v, msg)
 		case types.MsgSignDeployToken:
 			return handleMsgSignDeployToken(ctx, k, s, snap, msg)
+		case types.MsgSignBurnTokens:
+			return handleMsgSignBurnTokens(ctx, k, s, snap, msg)
 		case types.MsgSignTx:
 			return handleMsgSignTx(ctx, k, s, snap, msg)
 		case types.MsgSignPendingTransfers:
@@ -185,6 +187,7 @@ func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer ty
 	k.Logger(ctx).Info(fmt.Sprintf("signing mint command [%s] for pending transfers to chain %s", commandIDHex, exported.Ethereum.Name))
 	signHash := types.GetEthereumSignHash(data)
 
+	// TODO: Archive pending transfers after signing is completed
 	err = signer.StartSign(ctx, keyID, commandIDHex, signHash.Bytes(), s.Validators)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
@@ -351,6 +354,90 @@ func handleMsgSignDeployToken(ctx sdk.Context, k keeper.Keeper, signer types.Sig
 		Log:    fmt.Sprintf("successfully started signing protocol for deploy-token command %s", commandIDHex),
 		Events: ctx.EventManager().Events(),
 	}, nil
+}
+
+func handleMsgSignBurnTokens(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap snapshot.Snapshotter, msg types.MsgSignBurnTokens) (*sdk.Result, error) {
+	deposits := k.GetVerifiedErc20Deposits(ctx)
+
+	if len(deposits) == 0 {
+		return &sdk.Result{Log: fmt.Sprintf("no verified token deposits found to burn")}, nil
+	}
+
+	chainID := k.GetNetwork(ctx).Params().ChainID
+	burnerAddrs := getUniqueBurnerAddrs(deposits)
+
+	burnerInfos := []types.BurnerInfo{}
+	for _, burnerAddr := range burnerAddrs {
+		burnerInfo := k.GetBurnerInfo(ctx, burnerAddr)
+		if burnerInfo == nil {
+			return nil, sdkerrors.Wrapf(types.ErrEthereum, "no burner info found for address %s", burnerAddr)
+		}
+
+		burnerInfos = append(burnerInfos, *burnerInfo)
+	}
+
+	data, err := types.CreateBurnCommandData(chainID, ctx.BlockHeight(), burnerInfos)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+	}
+
+	var commandID types.CommandID
+	copy(commandID[:], crypto.Keccak256(data)[:32])
+
+	keyID, ok := signer.GetCurrentMasterKeyID(ctx, exported.Ethereum)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no master key for chain %s found", exported.Ethereum.Name)
+	}
+
+	s, ok := snap.GetLatestSnapshot(ctx)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, "no snapshot found")
+	}
+
+	commandIDHex := hex.EncodeToString(commandID[:])
+	k.Logger(ctx).Info(fmt.Sprintf("storing data for burn command %s", commandIDHex))
+	k.SetCommandData(ctx, commandID, data)
+
+	k.Logger(ctx).Info(fmt.Sprintf("signing burn command [%s] for token deposits to chain %s", commandIDHex, exported.Ethereum.Name))
+	signHash := types.GetEthereumSignHash(data)
+
+	// TODO: Archive token deposits after signing is completed
+	err = signer.StartSign(ctx, keyID, commandIDHex, signHash.Bytes(), s.Validators)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+	}
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+			sdk.NewAttribute(types.AttributeCommandID, commandIDHex),
+		),
+	)
+
+	return &sdk.Result{
+		Data:   commandID[:],
+		Log:    fmt.Sprintf("successfully started signing protocol for burning %s token deposits, commandID: %s", exported.Ethereum.Name, commandIDHex),
+		Events: ctx.EventManager().Events(),
+	}, nil
+}
+
+func getUniqueBurnerAddrs(deposits []types.Erc20Deposit) []common.Address {
+	burnerAddrs := []common.Address{}
+	burnerAddrSeen := map[common.Address]bool{}
+
+	for _, deposit := range deposits {
+		burnerAddr := deposit.BurnerAddr
+		if burnerAddrSeen[burnerAddr] {
+			continue
+		}
+
+		burnerAddrSeen[burnerAddr] = true
+		burnerAddrs = append(burnerAddrs, burnerAddr)
+	}
+
+	return burnerAddrs
 }
 
 func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap snapshot.Snapshotter, msg types.MsgSignTx) (*sdk.Result, error) {

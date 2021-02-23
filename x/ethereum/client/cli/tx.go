@@ -38,6 +38,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 			GetCmdVerifyErc20Deposit(cdc),
 			GetCmdSignPendingTransfersTx(cdc),
 			GetCmdSignDeployToken(cdc),
+			GetCmdSignBurnTokens(cdc),
 		)...,
 	)
 
@@ -210,6 +211,25 @@ func GetCmdSignDeployToken(cdc *codec.Codec) *cobra.Command {
 			}
 			msg := types.NewMsgSignDeployToken(cliCtx.GetFromAddress(), args[0], args[1], uint8(decs), capacity)
 			if err = msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+// GetCmdSignBurnTokens returns the cli command to sign burn command for all verified Ethereum token deposits
+func GetCmdSignBurnTokens(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "sign-burn-tokens",
+		Short: "Sign burn command for all verified Ethereum token deposits",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
+
+			msg := types.NewMsgSignBurnTokens(cliCtx.GetFromAddress())
+			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
 
