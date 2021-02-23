@@ -62,12 +62,12 @@ type testMocks struct {
 }
 
 type nodeData struct {
-	Node      fake.Node
+	Node      *fake.Node
 	Validator staking.Validator
 	Mocks     testMocks
 }
 
-func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *fake.BlockChain) fake.Node {
+func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *fake.BlockChain) *fake.Node {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 
 	broadcaster := fake.NewBroadcaster(testutils.Codec(), validator, chain.Submit)

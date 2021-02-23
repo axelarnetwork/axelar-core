@@ -9,6 +9,7 @@ import (
 
 	"github.com/axelarnetwork/tssd/convert"
 	tssd "github.com/axelarnetwork/tssd/pb"
+	"google.golang.org/grpc"
 
 	tssdMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
 )
@@ -59,49 +60,52 @@ func prepareKeygen(keygen *tssdMock.TSSDKeyGenClientMock, keyID string, key ecds
 	return allSuccessful
 }
 
-func prepareSign(sign *tssdMock.TSSDSignClientMock, keyID string, key *ecdsa.PrivateKey, syncedSig *syncedBytes) <-chan bool {
-	closeTimeout, closeCancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+func prepareSign(mock *tssdMock.TSSDClientMock, keyID string, key *ecdsa.PrivateKey, signatureCache []*syncedBytes) <-chan bool {
+	allSuccessful := make(chan bool, len(signatureCache))
 
-	sendSuccessful := false
-	recvSuccessful := false
-	closeSuccessful := false
-
-	doneSend := make(chan struct{})
 	var msgToSign []byte
-	sign.SendFunc = func(msg *tssd.MessageIn) error {
-		defer close(doneSend)
+	mock.SignFunc = func(ctx context.Context, opts ...grpc.CallOption) (tssd.GG18_SignClient, error) {
+		closeTimeout, closeCancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+		doneSend := make(chan struct{})
 
-		sendSuccessful = keyID == msg.GetSignInit().KeyUid
-		msgToSign = msg.GetSignInit().MessageToSign
+		sendSuccessful := false
+		recvSuccessful := false
+		closeSuccessful := false
 
-		return nil
+		go func() {
+			// assert sign was properly called
+			<-closeTimeout.Done()
+			allSuccessful <- sendSuccessful && recvSuccessful && closeSuccessful
+		}()
+
+		sig := signatureCache[len(mock.SignCalls())-1]
+		return &tssdMock.TSSDSignClientMock{
+			SendFunc: func(msg *tssd.MessageIn) error {
+				defer close(doneSend)
+
+				sendSuccessful = keyID == msg.GetSignInit().KeyUid
+				msgToSign = msg.GetSignInit().MessageToSign
+
+				sig.Set(createSignature(key, msgToSign))
+
+				return nil
+			},
+			RecvFunc: func() (*tssd.MessageOut, error) {
+				// keygen should only receive a response after sending something
+				<-doneSend
+				recvSuccessful = true
+				return &tssd.MessageOut{Data: &tssd.MessageOut_SignResult{SignResult: sig.Get()}}, nil
+			},
+			CloseSendFunc: func() error {
+				defer closeCancel()
+				// close must be called last
+				if recvSuccessful {
+					closeSuccessful = true
+				}
+
+				return nil
+			}}, nil
 	}
-
-	sign.RecvFunc = func() (*tssd.MessageOut, error) {
-		// keygen should only receive a response after sending something
-		<-doneSend
-
-		syncedSig.Set(createSignature(key, msgToSign))
-		recvSuccessful = true
-		return &tssd.MessageOut{Data: &tssd.MessageOut_SignResult{SignResult: syncedSig.Get()}}, nil
-	}
-
-	sign.CloseSendFunc = func() error {
-		defer closeCancel()
-		// close must be called last
-		if recvSuccessful {
-			closeSuccessful = true
-		}
-
-		return nil
-	}
-
-	allSuccessful := make(chan bool)
-	go func() {
-		// assert tssd was properly called
-		<-closeTimeout.Done()
-		allSuccessful <- sendSuccessful && recvSuccessful && closeSuccessful
-	}()
 
 	return allSuccessful
 }
@@ -118,14 +122,22 @@ func createSignature(key *ecdsa.PrivateKey, msg []byte) []byte {
 	return sig
 }
 
+// NewSignatureCache returns an empty cache of length sigCount. Each entry in the cache can be written once, but read many times.
+func NewSignatureCache(sigCount int) []*syncedBytes {
+	var sigCache []*syncedBytes
+	for i := 0; i < sigCount; i++ {
+		sigCache = append(sigCache, newSyncedBytes())
+	}
+	return sigCache
+}
+
 type syncedBytes struct {
 	once  *sync.Once
 	isSet chan struct{}
 	value []byte
 }
 
-// NewSyncedBytes returns a new syncedBytes object. It is a write once, read many times structure.
-func NewSyncedBytes() *syncedBytes {
+func newSyncedBytes() *syncedBytes {
 	return &syncedBytes{
 		once:  &sync.Once{},
 		isSet: make(chan struct{}, 1),
