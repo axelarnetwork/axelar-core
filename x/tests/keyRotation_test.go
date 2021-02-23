@@ -53,7 +53,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// set up chain
 	const nodeCount = 10
-	chain, nodeData := initChain(nodeCount)
+	chain, nodeData := initChain(nodeCount, "keyRotation")
 	keygenDone, verifyDone, signDone := registerEventListeners(nodeData[0].Node)
 
 	// register proxies for all validators

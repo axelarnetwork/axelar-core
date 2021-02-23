@@ -194,7 +194,7 @@ func createMocks(validators []staking.Validator) testMocks {
 }
 
 // initChain Creates a chain with given number of validators
-func initChain(nodeCount int) (*fake.BlockChain, []nodeData) {
+func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 	stringGen := testutils.RandStrings(5, 50).Distinct()
 	defer stringGen.Stop()
 
@@ -218,7 +218,7 @@ func initChain(nodeCount int) (*fake.BlockChain, []nodeData) {
 		mocks := createMocks(validators)
 
 		// assign nodes
-		node := newNode("node"+strconv.Itoa(i), validator.OperatorAddress, mocks, chain)
+		node := newNode(test+strconv.Itoa(i), validator.OperatorAddress, mocks, chain)
 		chain.AddNodes(node)
 		data = append(data, nodeData{Node: node, Validator: validator, Mocks: mocks})
 	}

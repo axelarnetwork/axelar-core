@@ -48,7 +48,7 @@ func Test_wBTC_mint(t *testing.T) {
 	defer stringGen.Stop()
 
 	// create a chain with nodes and assign them as validators
-	chain, nodeData := initChain(nodeCount)
+	chain, nodeData := initChain(nodeCount, "mint")
 	keygenDone, verifyDone, signDone := registerEventListeners(nodeData[0].Node)
 
 	// register proxies for all validators
