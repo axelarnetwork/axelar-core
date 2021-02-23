@@ -8,6 +8,7 @@ import (
 	tssd "github.com/axelarnetwork/tssd/pb"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
+	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	slashingTypes "github.com/cosmos/cosmos-sdk/x/slashing"
@@ -226,4 +227,72 @@ func initChain(nodeCount int) (*fake.BlockChain, []nodeData) {
 	chain.Start()
 
 	return chain, data
+}
+
+func randomOutpointInfo(recipient string) btcTypes.OutPointInfo {
+	txHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	if err != nil {
+		panic(err)
+	}
+	blockHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	if err != nil {
+		panic(err)
+	}
+
+	voutIdx := uint32(testutils.RandIntBetween(0, 100))
+	return btcTypes.OutPointInfo{
+		OutPoint:      wire.NewOutPoint(txHash, voutIdx),
+		BlockHash:     blockHash,
+		Amount:        btcutil.Amount(testutils.RandIntBetween(1, 10000000)),
+		Address:       recipient,
+		Confirmations: uint64(testutils.RandIntBetween(1, 10000)),
+	}
+}
+
+func registerEventListeners(node *fake.Node) (<-chan sdk.StringEvent, <-chan sdk.StringEvent, <-chan sdk.StringEvent) {
+	// register listener for keygen completion
+	keygenDone := node.RegisterEventListener(func(event sdk.StringEvent) bool {
+		keyVote := false
+		decided := false
+		for _, a := range event.Attributes {
+			if a.Key == sdk.AttributeKeyAction {
+				keyVote = a.Value == tssTypes.MsgVotePubKey{}.Type()
+			}
+			if a.Key == tssTypes.AttributePollDecided {
+				decided = true
+			}
+		}
+		return keyVote && decided
+	})
+
+	// register listener for btc tx verification
+	verifyDone := node.RegisterEventListener(func(event sdk.StringEvent) bool {
+		txVote := false
+		decided := false
+		for _, a := range event.Attributes {
+			if a.Key == sdk.AttributeKeyAction {
+				txVote = a.Value == btcTypes.MsgVoteVerifiedTx{}.Type()
+			}
+			if a.Key == btcTypes.AttributePollConfirmed {
+				decided = true
+			}
+		}
+		return txVote && decided
+	})
+
+	// register listener for sign completion
+	signDone := node.RegisterEventListener(func(event sdk.StringEvent) bool {
+		sigVote := false
+		decided := false
+		for _, a := range event.Attributes {
+			if a.Key == sdk.AttributeKeyAction {
+				sigVote = a.Value == tssTypes.MsgVoteSig{}.Type()
+			}
+			if a.Key == tssTypes.AttributePollDecided {
+				decided = true
+			}
+		}
+		return sigVote && decided
+	})
+	return keygenDone, verifyDone, signDone
 }

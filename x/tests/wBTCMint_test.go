@@ -104,7 +104,9 @@ func Test_wBTC_mint(t *testing.T) {
 	}
 
 	// wait for voting to be done
-	<-keygenDone
+	if err := waitFor(keygenDone, 1); err != nil {
+		assert.FailNow(t, "keygen timout")
+	}
 
 	// assign bitcoin master key
 	assignBTCKeyResult := <-chain.Submit(
@@ -163,8 +165,8 @@ func Test_wBTC_mint(t *testing.T) {
 	}
 
 	// 5. Wait until verification is complete
-	for i := 0; i < totalDepositCount; i++ {
-		<-verifyDone
+	if err := waitFor(verifyDone, totalDepositCount); err != nil {
+		assert.FailNow(t, "verification timout")
 	}
 
 	// 6. Sign all pending transfers to Ethereum
@@ -184,7 +186,9 @@ func Test_wBTC_mint(t *testing.T) {
 	commandID := common.BytesToHash(res.Data)
 
 	// wait for voting to be done (signing takes longer to tally up)
-	<-signDone
+	if err := waitFor(signDone, 1); err != nil {
+		assert.FailNow(t, "signing timout")
+	}
 
 	// 7. Submit the minting command from an externally controlled address to AxelarGateway
 	nodeData[0].Mocks.ETH.SendAndSignTransactionFunc = func(_ context.Context, _ goEth.CallMsg) (string, error) {
