@@ -2,12 +2,10 @@ package tests
 
 import (
 	"bytes"
-	"context"
 	"crypto/ecdsa"
 	"crypto/rand"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
@@ -88,7 +86,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// wait for voting to be done
 	if err := waitFor(keygenDone, 1); err != nil {
-		assert.FailNow(t, "keygen timout")
+		assert.FailNow(t, "keygen: %s", err)
 	}
 
 	// assign bitcoin master key
@@ -142,7 +140,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// wait for voting to be done
 	if err := waitFor(verifyDone, totalDepositCount); err != nil {
-		assert.FailNow(t, "verification timout")
+		assert.FailNow(t, "verification: %s", err)
 	}
 
 	// second snapshot
@@ -171,7 +169,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// wait for voting to be done
 	if err := waitFor(keygenDone, 1); err != nil {
-		assert.FailNow(t, "keygen timout")
+		assert.FailNow(t, "keygen: %s", err)
 	}
 
 	// assign second key to be the new master key
@@ -200,7 +198,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// wait for voting to be done
 	if err := waitFor(signDone, totalDepositCount); err != nil {
-		assert.FailNow(t, "signing timout")
+		assert.FailNow(t, "signing: %s", err)
 	}
 
 	// send tx to Bitcoin
@@ -243,26 +241,12 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// wait for voting to be done
 	if err := waitFor(verifyDone, 1); err != nil {
-		assert.FailNow(t, "verification timout")
+		assert.FailNow(t, "verification: %s", err)
 	}
 
 	// rotate master key to key 2
 	rotateResult2 := <-chain.Submit(tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: btc.Bitcoin.Name})
 	assert.NoError(t, rotateResult2.Error)
-}
-
-func waitFor(eventDone <-chan sdk.StringEvent, repeats int) error {
-	timeout, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	for i := 0; i < repeats; i++ {
-		select {
-		case <-eventDone:
-			break
-		case <-timeout.Done():
-			return fmt.Errorf("timeout")
-		}
-	}
-	return nil
 }
 
 func txCorrectlyFormed(tx *wire.MsgTx, deposits map[string]btcTypes.OutPointInfo, txAmount int64, addr btcutil.Address) bool {

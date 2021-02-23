@@ -105,7 +105,7 @@ func Test_wBTC_mint(t *testing.T) {
 
 	// wait for voting to be done
 	if err := waitFor(keygenDone, 1); err != nil {
-		assert.FailNow(t, "keygen timout")
+		assert.FailNow(t, "keygen: %s", err)
 	}
 
 	// assign bitcoin master key
@@ -166,7 +166,7 @@ func Test_wBTC_mint(t *testing.T) {
 
 	// 5. Wait until verification is complete
 	if err := waitFor(verifyDone, totalDepositCount); err != nil {
-		assert.FailNow(t, "verification timout")
+		assert.FailNow(t, "verification: %s", err)
 	}
 
 	// 6. Sign all pending transfers to Ethereum
@@ -187,7 +187,7 @@ func Test_wBTC_mint(t *testing.T) {
 
 	// wait for voting to be done (signing takes longer to tally up)
 	if err := waitFor(signDone, 1); err != nil {
-		assert.FailNow(t, "signing timout")
+		assert.FailNow(t, "signing: %s", err)
 	}
 
 	// 7. Submit the minting command from an externally controlled address to AxelarGateway

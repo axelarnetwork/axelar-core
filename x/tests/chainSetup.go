@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -295,4 +296,18 @@ func registerEventListeners(node *fake.Node) (<-chan sdk.StringEvent, <-chan sdk
 		return sigVote && decided
 	})
 	return keygenDone, verifyDone, signDone
+}
+
+func waitFor(eventDone <-chan sdk.StringEvent, repeats int) error {
+	timeout, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	for i := 0; i < repeats; i++ {
+		select {
+		case <-eventDone:
+			break
+		case <-timeout.Done():
+			return fmt.Errorf("timeout at %d of %d", i, repeats)
+		}
+	}
+	return nil
 }
