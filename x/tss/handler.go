@@ -16,7 +16,7 @@ import (
 
 // NewHandler returns the handler for the tss module
 func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Voter, staker types.StakingKeeper) sdk.Handler {
-	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
+	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
 		case types.MsgKeygenTraffic:
@@ -38,16 +38,26 @@ func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Vot
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
 		}
 	}
+
+	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
+		res, err := h(ctx, msg)
+		if err != nil {
+			k.Logger(ctx).Debug(err.Error())
+			return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
+		}
+		k.Logger(ctx).Debug(res.Log)
+		return res, nil
+	}
 }
 
 func handleMsgRotateMasterKey(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg types.MsgRotateMasterKey) (*sdk.Result, error) {
 	chain, ok := n.GetChain(ctx, msg.Chain)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrTss, "unknown chain")
+		return nil, fmt.Errorf("unknown chain")
 	}
 
 	if err := k.RotateMasterKey(ctx, chain); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
+		return nil, err
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -77,7 +87,7 @@ func handleMsgVoteSig(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types
 	}
 
 	if err := v.TallyVote(ctx, &msg); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
+		return nil, err
 	}
 
 	if result := v.Result(ctx, msg.PollMeta); result != nil {
@@ -89,10 +99,10 @@ func handleMsgVoteSig(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types
 		case []byte:
 			r, s, err := convert.BytesToSig(sigBytes)
 			if err != nil {
-				return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
+				return nil, err
 			}
 			if err := k.SetSig(ctx, msg.PollMeta.ID, exported.Signature{R: r, S: s}); err != nil {
-				return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
+				return nil, err
 			}
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
@@ -120,7 +130,7 @@ func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg ty
 	}
 
 	if err := v.TallyVote(ctx, &msg); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
+		return nil, err
 	}
 
 	if result := v.Result(ctx, msg.PollMeta); result != nil {
@@ -132,7 +142,7 @@ func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg ty
 			k.Logger(ctx).Debug(fmt.Sprintf("public key with ID %s confirmed", msg.PollMeta.ID))
 			pubKey, err := convert.BytesToPubkey(pkBytes)
 			if err != nil {
-				return nil, sdkerrors.Wrap(types.ErrTss, "could not marshal signature")
+				return nil, fmt.Errorf("could not marshal signature")
 			}
 			k.SetKey(ctx, msg.PollMeta.ID, pubKey)
 		default:
@@ -148,19 +158,19 @@ func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg ty
 func handleMsgAssignNextMasterKey(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, n types.Nexus, msg types.MsgAssignNextMasterKey) (*sdk.Result, error) {
 	counter, ok := k.GetSnapshotCounterForKeyID(ctx, msg.KeyID)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrTss, "could not find snapshot counter for given key ID")
+		return nil, fmt.Errorf("could not find snapshot counter for given key ID")
 	}
 	snapshot, ok := s.GetSnapshot(ctx, counter)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrTss, "could not find snapshot for given key ID")
+		return nil, fmt.Errorf("could not find snapshot for given key ID")
 	}
 	chain, ok := n.GetChain(ctx, msg.Chain)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrTss, "unknown chain")
+		return nil, fmt.Errorf("unknown chain")
 	}
 	err := k.AssignNextMasterKey(ctx, chain, snapshot.Height, msg.KeyID)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
+		return nil, err
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -175,7 +185,7 @@ func handleMsgAssignNextMasterKey(ctx sdk.Context, k keeper.Keeper, s types.Snap
 
 func handleMsgKeygenTraffic(ctx sdk.Context, k keeper.Keeper, msg types.MsgKeygenTraffic) (*sdk.Result, error) {
 	if err := k.KeygenMsg(ctx, msg); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
+		return nil, err
 	}
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -193,13 +203,13 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 
 	// record the snapshot of active validators that we'll use for the key
 	if err := s.TakeSnapshot(ctx); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
+		return nil, err
 	}
 
 	snapshot, ok := s.GetLatestSnapshot(ctx)
 
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrTss, "the system needs to have at least one validator snapshot")
+		return nil, fmt.Errorf("the system needs to have at least one validator snapshot")
 	}
 	if !k.GetMinKeygenThreshold(ctx).IsMet(snapshot.TotalPower, staker.GetLastTotalPower(ctx)) {
 		msg := fmt.Sprintf("Unable to meet min stake threshold required for keygen: active %s out of %s total",
@@ -216,17 +226,17 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 	if threshold < 1 || threshold > len(snapshot.Validators) {
 		err := fmt.Errorf("invalid threshold: %d, validators: %d", threshold, len(snapshot.Validators))
 		k.Logger(ctx).Error(err.Error())
-		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
+		return nil, err
 	}
 
 	poll := voting.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.NewKeyID}
 	if err := v.InitPoll(ctx, poll); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
+		return nil, err
 	}
 
 	pkChan, err := k.StartKeygen(ctx, msg.NewKeyID, threshold, snapshot)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
+		return nil, err
 	}
 
 	go func() {
