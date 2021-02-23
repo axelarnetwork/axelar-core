@@ -3,6 +3,7 @@ package keeper
 import (
 	"encoding/binary"
 	"fmt"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -60,7 +61,7 @@ func (k Keeper) GetParams(ctx sdk.Context) types.Params {
 
 // GetChain retrieves the specification for a supported blockchain
 func (k Keeper) GetChain(ctx sdk.Context, chainName string) (exported.Chain, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(chainPrefix + chainName))
+	bz := ctx.KVStore(k.storeKey).Get([]byte(chainPrefix + strings.ToLower(chainName)))
 	if bz == nil {
 		return exported.Chain{}, false
 	}
@@ -73,7 +74,7 @@ func (k Keeper) GetChain(ctx sdk.Context, chainName string) (exported.Chain, boo
 
 // SetChain sets the specification for a supported chain
 func (k Keeper) SetChain(ctx sdk.Context, chain exported.Chain) {
-	ctx.KVStore(k.storeKey).Set([]byte(chainPrefix+chain.Name), k.cdc.MustMarshalBinaryLengthPrefixed(chain))
+	ctx.KVStore(k.storeKey).Set([]byte(chainPrefix+strings.ToLower(chain.Name)), k.cdc.MustMarshalBinaryLengthPrefixed(chain))
 }
 
 // LinkAddresses links a sender address to a cross-chain recipient address
