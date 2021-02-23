@@ -238,7 +238,7 @@ type Node struct {
 	events         chan sdk.StringEvent
 	eventListeners []struct {
 		predicate func(event sdk.StringEvent) bool
-		emitter   chan sdk.StringEvent
+		emitter   chan<- sdk.StringEvent
 	}
 }
 
@@ -256,7 +256,7 @@ func NewNode(moniker string, ctx sdk.Context, router sdk.Router, queriers map[st
 		events:      make(chan sdk.StringEvent, 100),
 		eventListeners: []struct {
 			predicate func(event sdk.StringEvent) bool
-			emitter   chan sdk.StringEvent
+			emitter   chan<- sdk.StringEvent
 		}{{predicate: func(sdk.StringEvent) bool { return false }, emitter: nil}}, // default discard listener
 	}
 }
@@ -279,7 +279,7 @@ func (n *Node) RegisterEventListener(predicate func(sdk.StringEvent) bool) <-cha
 
 	n.eventListeners = append(n.eventListeners, struct {
 		predicate func(event sdk.StringEvent) bool
-		emitter   chan sdk.StringEvent
+		emitter   chan<- sdk.StringEvent
 	}{predicate: predicate, emitter: out})
 	return out
 }
