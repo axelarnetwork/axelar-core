@@ -72,18 +72,9 @@ func handleMsgRotateMasterKey(ctx sdk.Context, k keeper.Keeper, n types.Nexus, m
 }
 
 func handleMsgVoteSig(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.MsgVoteSig) (*sdk.Result, error) {
-	event := sdk.NewEvent(
-		sdk.EventTypeMessage,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-		sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-		sdk.NewAttribute(types.AttributePoll, msg.PollMeta.String()),
-		sdk.NewAttribute(types.AttributeSigPayload, string(msg.SigBytes)),
-	)
-
 	if _, ok := k.GetSig(ctx, msg.PollMeta.ID); ok {
 		// the signature is already set, no need for further processing of the vote
-		event = event.AppendAttributes(sdk.NewAttribute(types.AttributePollDecided, strconv.FormatBool(true)))
-		return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+		return &sdk.Result{Log: fmt.Sprintf("signature %s already verified", msg.PollMeta.ID)}, nil
 	}
 
 	if err := v.TallyVote(ctx, &msg); err != nil {
@@ -93,7 +84,13 @@ func handleMsgVoteSig(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types
 	if result := v.Result(ctx, msg.PollMeta); result != nil {
 		// the result is not necessarily the same as the msg (the vote could have been decided earlier and now a false vote is cast),
 		// so use result instead of msg
-		event = event.AppendAttributes(sdk.NewAttribute(types.AttributePollDecided, strconv.FormatBool(true)))
+		ctx.EventManager().EmitEvent(sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(types.AttributePoll, msg.PollMeta.String()),
+			sdk.NewAttribute(types.AttributePollDecided, strconv.FormatBool(true)),
+			sdk.NewAttribute(types.AttributeSigPayload, string(msg.SigBytes)),
+		))
 
 		switch sigBytes := result.(type) {
 		case []byte:
@@ -110,7 +107,6 @@ func handleMsgVoteSig(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types
 		}
 	}
 
-	ctx.EventManager().EmitEvent(event)
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
