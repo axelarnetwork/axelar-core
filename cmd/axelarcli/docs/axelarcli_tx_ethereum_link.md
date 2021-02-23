@@ -7,7 +7,7 @@ Link a cross chain address to an ethereum address created by Axelar
 Link a cross chain address to an ethereum address created by Axelar
 
 ```
-axelarcli tx ethereum link [chain] [address] [symbol] [gateway address] [flags]
+axelarcli tx ethereum link [chain] [address] [symbol] [flags]
 ```
 
 ### Options
