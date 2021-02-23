@@ -92,7 +92,7 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 	n1, k1 := newNodeForVote("node1", b1, staker)
 	n2, k2 := newNodeForVote("node2", b2, staker)
 	n3, k3 := newNodeForVote("node3", b3, staker)
-	nodes := []fake.Node{n1, n2, n3}
+	nodes := []*fake.Node{n1, n2, n3}
 	btcKeepers := []btcKeeper.Keeper{k1, k2, k3}
 
 	blockChain.AddNodes(nodes...)
@@ -119,7 +119,7 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 	assert.True(t, allTxVoteCompleted(nodes, btcKeepers, outPoints))
 }
 
-func allTxVoteCompleted(nodes []fake.Node, btcKeeper []btcKeeper.Keeper, outPoints []*wire.OutPoint) bool {
+func allTxVoteCompleted(nodes []*fake.Node, btcKeeper []btcKeeper.Keeper, outPoints []*wire.OutPoint) bool {
 	allConfirmed := true
 	for i, k := range btcKeeper {
 		for _, out := range outPoints {
@@ -132,7 +132,7 @@ func allTxVoteCompleted(nodes []fake.Node, btcKeeper []btcKeeper.Keeper, outPoin
 	return allConfirmed
 }
 
-func newNodeForVote(moniker string, broadcaster bcExported.Broadcaster, staker voteTypes.Snapshotter) (fake.Node, btcKeeper.Keeper) {
+func newNodeForVote(moniker string, broadcaster bcExported.Broadcaster, staker voteTypes.Snapshotter) (*fake.Node, btcKeeper.Keeper) {
 	/*
 		Multistore is mocked so we can more easily manipulate existing state and assert that specific state changes happen.
 		For now, we never use the Header information, so we can just initialize an empty struct.

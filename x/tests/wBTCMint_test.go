@@ -49,6 +49,7 @@ func Test_wBTC_mint(t *testing.T) {
 
 	// create a chain with nodes and assign them as validators
 	chain, nodeData := initChain(nodeCount)
+	keygenDone, verifyDone, signDone := registerEventListeners(nodeData[0].Node)
 
 	// register proxies for all validators
 	for i, proxy := range randStrings.Take(nodeCount) {
@@ -103,7 +104,7 @@ func Test_wBTC_mint(t *testing.T) {
 	}
 
 	// wait for voting to be done
-	chain.WaitNBlocks(12)
+	<-keygenDone
 
 	// assign bitcoin master key
 	assignBTCKeyResult := <-chain.Submit(
@@ -127,44 +128,50 @@ func Test_wBTC_mint(t *testing.T) {
 
 	// steps followed as per https://github.com/axelarnetwork/axelarate#mint-erc20-wrapped-bitcoin-tokens-on-ethereum
 
-	// 1. Get a deposit address for an Ethereum recipient address
-	// we don't provide an actual recipient address, so it is created automatically
-	crosschainAddr := nexus.CrossChainAddress{Chain: eth.Ethereum, Address: testutils.RandStringBetween(5, 20)}
-	res = <-chain.Submit(btcTypes.NewMsgLink(randomSender(), crosschainAddr.Address, crosschainAddr.Chain.Name))
-	assert.NoError(t, res.Error)
-	depositAddr := string(res.Data)
+	totalDepositCount := int(testutils.RandIntBetween(1, 20))
+	for i := 0; i < totalDepositCount; i++ {
+		// 1. Get a deposit address for an Ethereum recipient address
+		// we don't provide an actual recipient address, so it is created automatically
+		crosschainAddr := nexus.CrossChainAddress{Chain: eth.Ethereum, Address: testutils.RandStringBetween(5, 20)}
+		res = <-chain.Submit(btcTypes.NewMsgLink(randomSender(), crosschainAddr.Address, crosschainAddr.Chain.Name))
+		assert.NoError(t, res.Error)
+		depositAddr := string(res.Data)
 
-	// 2. Send BTC to the deposit address and wait until confirmed
-	expectedDepositInfo := randomOutpointInfo(depositAddr)
-	for _, n := range nodeData {
-		n.Mocks.BTC.GetOutPointInfoFunc = func(bHash *chainhash.Hash, out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
-			if bHash.IsEqual(expectedDepositInfo.BlockHash) && out.String() == expectedDepositInfo.OutPoint.String() {
-				return expectedDepositInfo, nil
+		// 2. Send BTC to the deposit address and wait until confirmed
+		expectedDepositInfo := randomOutpointInfo(depositAddr)
+		for _, n := range nodeData {
+			n.Mocks.BTC.GetOutPointInfoFunc = func(bHash *chainhash.Hash, out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
+				if bHash.IsEqual(expectedDepositInfo.BlockHash) && out.String() == expectedDepositInfo.OutPoint.String() {
+					return expectedDepositInfo, nil
+				}
+				return btcTypes.OutPointInfo{}, fmt.Errorf("outpoint info not found")
 			}
-			return btcTypes.OutPointInfo{}, fmt.Errorf("outpoint info not found")
 		}
+
+		// 3. Collect all information that needs to be verified about the deposit
+		bz, err := nodeData[0].Node.Query(
+			[]string{btcTypes.QuerierRoute, btcKeeper.QueryOutInfo, expectedDepositInfo.BlockHash.String()},
+			abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(expectedDepositInfo.OutPoint)})
+		assert.NoError(t, err)
+		var info btcTypes.OutPointInfo
+		testutils.Codec().MustUnmarshalJSON(bz, &info)
+
+		// 4. Verify the previously received information
+		res = <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender(), info))
+		assert.NoError(t, res.Error)
+
 	}
 
-	// 3. Collect all information that needs to be verified about the deposit
-	bz, err := nodeData[0].Node.Query(
-		[]string{btcTypes.QuerierRoute, btcKeeper.QueryOutInfo, expectedDepositInfo.BlockHash.String()},
-		abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(expectedDepositInfo.OutPoint)})
-	assert.NoError(t, err)
-	var info btcTypes.OutPointInfo
-	testutils.Codec().MustUnmarshalJSON(bz, &info)
-
-	// 4. Verify the previously received information
-	res = <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender(), info))
-	assert.NoError(t, res.Error)
-
 	// 5. Wait until verification is complete
-	chain.WaitNBlocks(12)
+	for i := 0; i < totalDepositCount; i++ {
+		<-verifyDone
+	}
 
 	// 6. Sign all pending transfers to Ethereum
 	var correctSigns []<-chan bool
-	msgToSign := NewSyncedBytes()
+	cache := NewSignatureCache(totalDepositCount)
 	for _, n := range nodeData {
-		correctSign := prepareSign(n.Mocks.Sign, ethMasterKeyID, ethMasterKey, msgToSign)
+		correctSign := prepareSign(n.Mocks.TSSD, ethMasterKeyID, ethMasterKey, cache)
 		correctSigns = append(correctSigns, correctSign)
 	}
 
@@ -177,7 +184,7 @@ func Test_wBTC_mint(t *testing.T) {
 	commandID := common.BytesToHash(res.Data)
 
 	// wait for voting to be done (signing takes longer to tally up)
-	chain.WaitNBlocks(20)
+	<-signDone
 
 	// 7. Submit the minting command from an externally controlled address to AxelarGateway
 	nodeData[0].Mocks.ETH.SendAndSignTransactionFunc = func(_ context.Context, _ goEth.CallMsg) (string, error) {
