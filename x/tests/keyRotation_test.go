@@ -86,7 +86,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// wait for voting to be done
 	if err := waitFor(keygenDone, 1); err != nil {
-		assert.FailNow(t, "keygen: %s", err)
+		assert.FailNow(t, "keygen", err)
 	}
 
 	// assign bitcoin master key
@@ -140,7 +140,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// wait for voting to be done
 	if err := waitFor(verifyDone, totalDepositCount); err != nil {
-		assert.FailNow(t, "verification: %s", err)
+		assert.FailNow(t, "verification", err)
 	}
 
 	// second snapshot
@@ -169,7 +169,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// wait for voting to be done
 	if err := waitFor(keygenDone, 1); err != nil {
-		assert.FailNow(t, "keygen: %s", err)
+		assert.FailNow(t, "keygen", err)
 	}
 
 	// assign second key to be the new master key
@@ -198,7 +198,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// wait for voting to be done
 	if err := waitFor(signDone, totalDepositCount); err != nil {
-		assert.FailNow(t, "signing: %s", err)
+		assert.FailNow(t, "signing", err)
 	}
 
 	// send tx to Bitcoin
@@ -241,7 +241,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// wait for voting to be done
 	if err := waitFor(verifyDone, 1); err != nil {
-		assert.FailNow(t, "verification: %s", err)
+		assert.FailNow(t, "verification", err)
 	}
 
 	// rotate master key to key 2
