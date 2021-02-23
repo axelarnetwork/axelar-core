@@ -14,9 +14,10 @@ import (
 
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
+
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 )
 
 const (
@@ -89,9 +90,8 @@ func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context) uint64 {
 }
 
 // SetGatewayAddress sets the contract address for Axelar Gateway
-func (k Keeper) SetGatewayAddress(ctx sdk.Context, addr common.Address) error {
+func (k Keeper) SetGatewayAddress(ctx sdk.Context, addr common.Address) {
 	ctx.KVStore(k.storeKey).Set([]byte(gatewayKey), addr.Bytes())
-	return nil
 }
 
 // GetGatewayAddress gets the contract address for Axelar Gateway
@@ -297,7 +297,7 @@ func (k Keeper) GetVerifiedErc20Deposit(ctx sdk.Context, txID string) *types.Erc
 
 // GetVerifiedErc20Deposits retrieves all the verified erc20 deposits
 func (k Keeper) GetVerifiedErc20Deposits(ctx sdk.Context) []types.Erc20Deposit {
-	deposits := []types.Erc20Deposit{}
+	var deposits []types.Erc20Deposit
 	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(verifiedErc20DepositPrefix))
 
 	for ; iter.Valid(); iter.Next() {
