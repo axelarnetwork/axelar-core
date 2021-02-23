@@ -700,7 +700,7 @@ func newKeeper(ctx sdk.Context, confHeight int64) keeper.Keeper {
 	subspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
 	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"), subspace)
 	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(confHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, TokenDeploySig: transferSig})
-	k.SetGatewayAddress(ctx, common.HexToAddress(gateway))
+	_ = k.SetGatewayAddress(ctx, common.HexToAddress(gateway))
 
 	return k
 }
@@ -721,7 +721,7 @@ func createMsgSignDeploy() types.MsgSignDeployToken {
 
 func createLogs(denom string, gateway, addr common.Address, deploySig common.Hash, contains bool) []*ethTypes.Log {
 	numLogs := testutils.RandIntBetween(1, 100)
-	pos := testutils.RandIntBetween(1, int64(numLogs))
+	pos := testutils.RandIntBetween(0, numLogs)
 	var logs []*ethTypes.Log
 
 	for i := int64(0); i < numLogs; i++ {
