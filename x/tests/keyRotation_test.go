@@ -180,7 +180,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	// prepare mocks to sign consolidation transaction with first master key
 	var correctSigns []<-chan bool
 
-	cache := NewSignatureCache(len(deposits))
+	cache := NewSignatureCache(totalDepositCount)
 	for _, n := range nodeData {
 		correctSign := prepareSign(n.Mocks.TSSD, masterKeyID1, masterKey1, cache)
 		correctSigns = append(correctSigns, correctSign)
@@ -190,9 +190,9 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	fee := testutils.RandIntBetween(1, totalDepositAmount)
 	signResult := <-chain.Submit(btcTypes.NewMsgSign(randomSender(), btcutil.Amount(fee)))
 	assert.NoError(t, signResult.Error)
-	for _, isCorrect := range correctSigns {
-		for range deposits {
-			assert.True(t, <-isCorrect)
+	for i, isCorrect := range correctSigns {
+		for j := 0; j < totalDepositCount; j++ {
+			assert.True(t, <-isCorrect, "node %s failed to sign deposit %d", nodeData[i].Node.Moniker, j)
 		}
 	}
 

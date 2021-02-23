@@ -233,7 +233,7 @@ type Node struct {
 	router         sdk.Router
 	endBlockers    []func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate
 	Ctx            sdk.Context
-	moniker        string
+	Moniker        string
 	queriers       map[string]sdk.Querier
 	events         chan sdk.StringEvent
 	eventListeners []struct {
@@ -251,7 +251,7 @@ func NewNode(moniker string, ctx sdk.Context, router sdk.Router, queriers map[st
 		router:      router,
 		endBlockers: make([]func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate, 0),
 		Ctx:         ctx,
-		moniker:     moniker,
+		Moniker:     moniker,
 		queriers:    queriers,
 		events:      make(chan sdk.StringEvent, 100),
 		eventListeners: []struct {
@@ -298,7 +298,7 @@ func (n *Node) start() {
 
 	for b := range n.in {
 		n.Ctx = n.Ctx.WithBlockHeader(b.header)
-		n.Ctx.Logger().Debug(fmt.Sprintf("node %s begins block %v", n.moniker, b.header.Height))
+		n.Ctx.Logger().Debug(fmt.Sprintf("begin block %v", b.header.Height))
 		/*
 			While Cosmos also has BeginBlockers, so far we implement none.
 			Extend the Node struct analogously to the EndBlockers
@@ -308,14 +308,14 @@ func (n *Node) start() {
 		// handle messages
 		for _, msg := range b.msgs {
 			if err := msg.ValidateBasic(); err != nil {
-				n.Ctx.Logger().Error(fmt.Sprintf("node %s returned an error when validating message %s", n.moniker, msg.Type()))
+				n.Ctx.Logger().Error(fmt.Sprintf("error when validating message %s", msg.Type()))
 
 				msg.out <- &Result{nil, err}
 
 			} else if h := n.router.Route(n.Ctx, msg.Route()); h != nil {
 				res, err := h(n.Ctx, msg.Msg)
 				if err != nil {
-					n.Ctx.Logger().Error(fmt.Sprintf("node %s returned an error from handler for route %s: %s", n.moniker, msg.Route(), err.Error()))
+					n.Ctx.Logger().Error(fmt.Sprintf("error from handler for route %s: %s", msg.Route(), err.Error()))
 				}
 				msgEvents := sdk.Events{
 					sdk.NewEvent(sdk.EventTypeMessage, sdk.NewAttribute(sdk.AttributeKeyAction, msg.Type())),
@@ -337,7 +337,7 @@ func (n *Node) start() {
 			}
 		}
 
-		n.Ctx.Logger().Debug(fmt.Sprintf("node %s ends block %v", n.moniker, b.header.Height))
+		n.Ctx.Logger().Debug(fmt.Sprintf("end block %v", b.header.Height))
 		// end block
 		for _, endBlocker := range n.endBlockers {
 			endBlocker(n.Ctx, abci.RequestEndBlock{Height: b.header.Height})

@@ -70,7 +70,7 @@ type nodeData struct {
 }
 
 func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *fake.BlockChain) *fake.Node {
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger().With("node", moniker))
 
 	broadcaster := fake.NewBroadcaster(testutils.Codec(), validator, chain.Submit)
 
