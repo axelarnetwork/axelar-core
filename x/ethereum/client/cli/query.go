@@ -94,7 +94,7 @@ func GetCmdCreateDeployTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	var gasLimit uint64
 	cmd := &cobra.Command{
 		Use:   "deploy-gateway",
-		Short: "Obtain a raw transaction for the deployment of the Axelar Geteway.",
+		Short: "Obtain a raw transaction for the deployment of Axelar Gateway.",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)

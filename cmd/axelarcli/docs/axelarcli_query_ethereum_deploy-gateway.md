@@ -1,10 +1,10 @@
 ## axelarcli query ethereum deploy-gateway
 
-Obtain a raw transaction for the deployment of the Axelar Geteway.
+Obtain a raw transaction for the deployment of Axelar Gateway.
 
 ### Synopsis
 
-Obtain a raw transaction for the deployment of the Axelar Geteway.
+Obtain a raw transaction for the deployment of Axelar Gateway.
 
 ```
 axelarcli query ethereum deploy-gateway [flags]

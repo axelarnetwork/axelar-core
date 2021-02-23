@@ -29,7 +29,7 @@
       - [slashes \[validator\] \[start-height\] \[end-height\]](axelarcli_query_distribution_slashes.md)	 - Query distribution validator slashes
       - [validator-outstanding-rewards \[validator\]](axelarcli_query_distribution_validator-outstanding-rewards.md)	 - Query distribution outstanding (un-withdrawn) rewards for a validator and all their delegations
     - [ethereum](axelarcli_query_ethereum.md)	 - Querying commands for the ethereum module
-      - [deploy-gateway](axelarcli_query_ethereum_deploy-gateway.md)	 - Obtain a raw transaction for the deployment of the Axelar Geteway.
+      - [deploy-gateway](axelarcli_query_ethereum_deploy-gateway.md)	 - Obtain a raw transaction for the deployment of Axelar Gateway.
       - [master-address](axelarcli_query_ethereum_master-address.md)	 - Query an address by key ID
       - [sendCommand \[commandID\] \[fromAddress\] \[contractAddress\]](axelarcli_query_ethereum_sendCommand.md)	 - Send a transaction signed by \[fromAddress\] that executes the command \[commandID\] to Ethereum contract at \[contractAddress\]
       - [sendTx \[txID\]](axelarcli_query_ethereum_sendTx.md)	 - Send a transaction that spends tx \[txID\] to Ethereum
