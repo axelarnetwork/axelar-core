@@ -43,4 +43,3 @@ func appendPathVars(path string, pathVars []string) string {
 	}
 	return path
 }
-

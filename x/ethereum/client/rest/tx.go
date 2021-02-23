@@ -23,15 +23,19 @@ const (
 	TxMethodSignPending        = "sign-pending"
 	TxMethodSignDeployToken    = "sign-deploy-token"
 
-	PathVarChain = "Chain"
-	PathVarSymbol = "Symbol"
+	QMethodMasterAddress  = keeper.QueryMasterAddress
+	QMethodCreateDeployTx = keeper.CreateDeployTx
+	QMethodSendTx         = keeper.SendTx
+	QMethodSendCommand    = keeper.SendCommand
+
+	PathVarChain       = "Chain"
+	PathVarSymbol      = "Symbol"
 	PathVarGatewayAddr = "GatewayAddr"
-	PathVarTxID = "TxID"
+	PathVarTxID        = "TxID"
 )
 
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	registerTx := clientUtils.RegisterTxHandlerFn(r, types.RestRoute)
-
 	registerTx(GetHandlerLink(cliCtx), TxMethodLink, PathVarChain)
 	registerTx(GetHandlerVerifyErc20Deploy(cliCtx), TxMethodVerifyErc20Deploy, PathVarChain)
 	registerTx(GetHandlerVerifyErc20Deposit(cliCtx), TxMethodVerifyErc20Deposit, PathVarGatewayAddr, PathVarSymbol)
@@ -41,10 +45,10 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	registerTx(GetHandlerSignDeployToken(cliCtx), TxMethodSignDeployToken)
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
-	registerQuery(QueryMasterAddress(cliCtx), keeper.QueryMasterAddress)
-	registerQuery(QueryCreateDeployTx(cliCtx), keeper.CreateDeployTx)
-	registerQuery(QuerySendTx(cliCtx), keeper.SendTx, PathVarTxID)
-	registerQuery(QuerySendCommandTx(cliCtx), keeper.SendTx, PathVarGatewayAddr)
+	registerQuery(GetHandlerQueryMasterAddress(cliCtx), QMethodMasterAddress)
+	registerQuery(GetHandlerQueryCreateDeployTx(cliCtx), QMethodCreateDeployTx)
+	registerQuery(GetHandlerQuerySendTx(cliCtx), QMethodSendTx, PathVarTxID)
+	registerQuery(GetHandlerQuerySendCommandTx(cliCtx), QMethodSendCommand, PathVarGatewayAddr)
 }
 
 type ReqLink struct {

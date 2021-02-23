@@ -22,7 +22,7 @@ const (
  QueryParamCommandID = "command_id"
 )
 
-func QueryMasterAddress(cliCtx context.CLIContext) http.HandlerFunc {
+func GetHandlerQueryMasterAddress(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -68,7 +68,7 @@ func QueryAxelarGatewayAddress(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-func QueryCreateDeployTx(cliCtx context.CLIContext) http.HandlerFunc {
+func GetHandlerQueryCreateDeployTx(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -109,7 +109,7 @@ func QueryCreateDeployTx(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-func QuerySendTx(cliCtx context.CLIContext) http.HandlerFunc {
+func GetHandlerQuerySendTx(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -137,7 +137,7 @@ func QuerySendTx(cliCtx context.CLIContext) http.HandlerFunc {
 }
 
 
-func QuerySendCommandTx(cliCtx context.CLIContext) http.HandlerFunc {
+func GetHandlerQuerySendCommandTx(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)

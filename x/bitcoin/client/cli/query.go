@@ -96,7 +96,7 @@ func GetCmdSendTransfers(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.SendTx), nil)
 			if err != nil {
-				return sdkerrors.Wrap(err, "could not send the consolidation transaction")
+				return sdkerrors.Wrap(err, types.ErrFSendTransfers)
 			}
 
 			var out string

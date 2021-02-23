@@ -1,7 +1,8 @@
 package rest
 
 import (
-	"fmt"
+	"github.com/axelarnetwork/axelar-core/utils/denom"
+	"github.com/btcsuite/btcutil"
 	"net/http"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -15,14 +16,31 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
 
+const (
+	TxMethodLink                   = "link"
+	TxMethodVerifyTx               = "verify"
+	TxMethodSignPendingTransfersTx = "sign"
+
+	QMethodDepositAddress = keeper.QueryDepositAddress
+	QMethodTxInfo         = keeper.QueryOutInfo
+	QMethodSendTransfers  = keeper.SendTx
+
+	PathVarChain           = "Chain"
+	PathVarEthereumAddress = "EthereumAddress"
+	PathVarTxID            = "TxID"
+)
+
 // RegisterRoutes registers this module's REST routes with the given router
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
-	r.HandleFunc(fmt.Sprintf("/tx/%s/link/{chain}", types.RestRoute), linkHandlerFn(cliCtx)).Methods("POST")
-	r.HandleFunc(fmt.Sprintf("/tx/%s/verify", types.RestRoute), verifyTxHandlerFn(cliCtx)).Methods("POST")
+	registerTx := clientUtils.RegisterTxHandlerFn(r, types.RestRoute)
+	registerTx(GetHandlerLink(cliCtx), TxMethodLink, PathVarChain)
+	registerTx(GetHandlerVerifyTx(cliCtx), TxMethodVerifyTx)
+	registerTx(GetHandlerSignPendingTransfersTx(cliCtx), TxMethodSignPendingTransfersTx)
 
-	r.HandleFunc(fmt.Sprintf("/query/%s/%s/{chain}/{address}", types.RestRoute, keeper.QueryDepositAddress), QueryDepositAddress(cliCtx)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/query/%s/%s/{txID}", types.RestRoute, keeper.QueryOutInfo), QueryTxInfo(cliCtx)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/query/%s/%s", types.RestRoute, keeper.SendTx), QuerySendTx(cliCtx)).Methods("GET")
+	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
+	registerQuery(QueryDepositAddress(cliCtx), QMethodDepositAddress, PathVarChain, PathVarEthereumAddress)
+	registerQuery(QueryTxInfo(cliCtx), QMethodTxInfo, PathVarTxID)
+	registerQuery(QuerySendTransfers(cliCtx), QMethodSendTransfers)
 }
 
 // ReqLink represents a request to link a cross-chain address to a Bitcoin address
@@ -37,7 +55,45 @@ type ReqVerifyTx struct {
 	TxInfo  string       `json:"tx_info" yaml:"tx_info"`
 }
 
-func linkHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
+// ReqSignPendingTransfersTx represents a request to sign pending token transfers from Ethereum
+type ReqSignPendingTransfersTx struct {
+	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+	Fee     string       `json:"fee" yaml:"fee"`
+}
+
+func GetHandlerSignPendingTransfersTx(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req ReqSignPendingTransfersTx
+		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+			return
+		}
+		req.BaseReq = req.BaseReq.Sanitize()
+		if !req.BaseReq.ValidateBasic(w) {
+			return
+		}
+
+		fromAddr, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
+		if !ok {
+			return
+		}
+
+		satoshi, err := denom.ParseSatoshi(req.Fee)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		msg := types.NewMsgSign(fromAddr, btcutil.Amount(satoshi.Amount.Int64()))
+		if err := msg.ValidateBasic(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		utils.WriteGenerateStdTxResponse(w, cliCtx, req.BaseReq, []sdk.Msg{msg})
+	}
+}
+
+func GetHandlerLink(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqLink
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
@@ -53,8 +109,7 @@ func linkHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		vars := mux.Vars(r)
-		msg := types.MsgLink{Sender: fromAddr, RecipientChain: vars["chain"], RecipientAddr: req.Address}
+		msg := types.MsgLink{Sender: fromAddr, RecipientChain: mux.Vars(r)[PathVarChain], RecipientAddr: req.Address}
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -64,7 +119,7 @@ func linkHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-func verifyTxHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
+func GetHandlerVerifyTx(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqVerifyTx
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
