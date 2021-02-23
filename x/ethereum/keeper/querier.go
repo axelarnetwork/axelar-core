@@ -20,10 +20,11 @@ import (
 
 // Query labels
 const (
-	QueryMasterAddress = "master-address"
-	CreateDeployTx     = "deploy"
-	SendTx             = "send-tx"
-	SendCommand        = "send-command"
+	QueryMasterAddress        = "master-address"
+	QueryAxelarGatewayAddress = "gateway-address"
+	CreateDeployTx            = "deploy-gateway"
+	SendTx                    = "send-tx"
+	SendCommand               = "send-command"
 )
 
 // NewQuerier returns a new querier for the ethereum module
@@ -32,6 +33,8 @@ func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer) sdk.Querier {
 		switch path[0] {
 		case QueryMasterAddress:
 			return queryMasterAddress(ctx, s)
+		case QueryAxelarGatewayAddress:
+			return queryAxelarGateway(ctx, k)
 		case CreateDeployTx:
 			return createDeployTx(ctx, k, rpc, s, req.Data)
 		case SendTx:
@@ -58,6 +61,16 @@ func queryMasterAddress(ctx sdk.Context, s types.Signer) ([]byte, error) {
 	return bz, nil
 }
 
+func queryAxelarGateway(ctx sdk.Context, k Keeper) ([]byte, error) {
+
+	addr, ok := k.GetAxelarGatewayAddress(ctx)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, "axelar gateway not set")
+	}
+
+	return addr.Bytes(), nil
+}
+
 /*
   Create a transaction for smart contract deployment. See:
 
@@ -82,15 +95,19 @@ func createDeployTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Sign
 		return nil, fmt.Errorf("could not create nonce: %s", err)
 	}
 
-	gasPrice, err := rpc.SuggestGasPrice(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("could not calculate gas price: %s", err)
+	gasPrice := params.GasPrice.BigInt()
+	if params.GasPrice.IsZero() {
+		gasPrice, err = rpc.SuggestGasPrice(context.Background())
+		if err != nil {
+			return nil, fmt.Errorf("could not calculate gas price: %s", err)
+		}
 	}
 
-	if params.GasLimit == 0 {
-		params.GasLimit, err = rpc.EstimateGas(context.Background(), ethereumRoot.CallMsg{
+	gasLimit := params.GasLimit
+	if gasLimit == 0 {
+		gasLimit, err = rpc.EstimateGas(context.Background(), ethereumRoot.CallMsg{
 			To:   nil,
-			Data: params.ByteCode,
+			Data: k.GetGatewayBytecodes(ctx),
 		})
 
 		if err != nil {
@@ -98,7 +115,7 @@ func createDeployTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Sign
 		}
 	}
 
-	tx := ethTypes.NewContractCreation(nonce, big.NewInt(0), params.GasLimit, gasPrice, params.ByteCode)
+	tx := ethTypes.NewContractCreation(nonce, big.NewInt(0), gasLimit, gasPrice, k.GetGatewayBytecodes(ctx))
 	result := types.DeployResult{
 		Tx:              tx,
 		ContractAddress: crypto.CreateAddress(contractOwner, nonce).String(),

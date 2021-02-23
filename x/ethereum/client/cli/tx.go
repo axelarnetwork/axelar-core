@@ -47,9 +47,9 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 // GetCmdLink links a cross chain address to an ethereum address created by Axelar
 func GetCmdLink(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "link [chain] [address] [symbol] [gateway address]",
+		Use:   "link [chain] [address] [symbol]",
 		Short: "Link a cross chain address to an ethereum address created by Axelar",
-		Args:  cobra.ExactArgs(4),
+		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
@@ -59,7 +59,6 @@ func GetCmdLink(cdc *codec.Codec) *cobra.Command {
 				RecipientChain: args[0],
 				RecipientAddr:  args[1],
 				Symbol:         args[2],
-				GatewayAddr:    args[3],
 			}
 			if err := msg.ValidateBasic(); err != nil {
 				return err
@@ -102,16 +101,14 @@ func GetCmdSignTx(cdc *codec.Codec) *cobra.Command {
 // GetCmdVerifyErc20TokenDeploy returns the cli command to verify a ERC20 token deployment
 func GetCmdVerifyErc20TokenDeploy(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "verify-erc20-token [txID] [symbol] [gateway address]",
+		Use:   "verify-erc20-token [txID] [symbol]",
 		Short: "Verify an ERC20 token deployment in an Ethereum transaction for a given symbol of token and gateway address",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
 
 			txID := common.HexToHash(args[0])
-			gatewayAddr := common.HexToAddress(args[2])
-
-			msg := types.NewMsgVerifyErc20TokenDeploy(cliCtx.GetFromAddress(), txID, args[1], gatewayAddr)
+			msg := types.NewMsgVerifyErc20TokenDeploy(cliCtx.GetFromAddress(), txID, args[1])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

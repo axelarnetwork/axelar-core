@@ -12,7 +12,6 @@ type MsgLink struct {
 	Sender         sdk.AccAddress
 	RecipientAddr  string
 	Symbol         string
-	GatewayAddr    string
 	RecipientChain string
 }
 
@@ -42,9 +41,6 @@ func (msg MsgLink) ValidateBasic() error {
 		return fmt.Errorf("missing asset symbol")
 	}
 
-	if msg.GatewayAddr == "" {
-		return fmt.Errorf("missing gateway address")
-	}
 	return nil
 }
 

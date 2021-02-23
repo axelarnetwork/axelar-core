@@ -24,7 +24,8 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("/tx/%s/signDeployToken/{symbol}", types.RestRoute), signDeployToken(cliCtx)).Methods("POST")
 
 	r.HandleFunc(fmt.Sprintf("/query/%s/%s", types.RestRoute, keeper.QueryMasterAddress), QueryMasterAddress(cliCtx)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/query/%s/%s", types.RestRoute, keeper.CreateDeployTx), QueryCreateDeployTx(cliCtx)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/query/%s/%s", types.RestRoute, keeper.QueryAxelarGatewayAddress), QueryAxelarGatewayAddress(cliCtx)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/query/%s/%s/{gasPrice}/{gasLimit}", types.RestRoute, keeper.CreateDeployTx), QueryCreateDeployTx(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/query/%s/%s/{txID}", types.RestRoute, keeper.SendTx), QuerySendTx(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/query/%s/%s/{%s}", types.RestRoute, keeper.SendCommand, QueryParamContractAddress), QuerySendCommandTx(cliCtx)).Methods("GET")
 }

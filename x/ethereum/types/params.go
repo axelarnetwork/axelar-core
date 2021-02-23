@@ -17,10 +17,12 @@ const (
 
 var (
 	KeyConfirmationHeight = []byte("confirmationHeight")
-	KeyNetwork            = []byte("network")
-	KeyBurnable           = []byte("burneable")
-	KeyToken              = []byte("token")
 	KeyTokenDeploySig     = []byte("tokendeploysig")
+	KeyNetwork            = []byte("network")
+
+	KeyGateway  = []byte("gateway")
+	KeyToken    = []byte("token")
+	KeyBurnable = []byte("burneable")
 
 	// ERC20TokenDeploySig is the signature of the ERC20 transfer method
 	ERC20TokenDeploySig = "TokenDeployed(string,address)"
@@ -33,6 +35,7 @@ func KeyTable() subspace.KeyTable {
 type Params struct {
 	ConfirmationHeight uint64
 	Network            Network
+	Gateway            []byte
 	Token              []byte
 	Burnable           []byte
 	TokenDeploySig     []byte
@@ -40,6 +43,10 @@ type Params struct {
 
 func DefaultParams() Params {
 
+	bzGateway, err := hex.DecodeString(gateway)
+	if err != nil {
+		panic(err)
+	}
 	bzToken, err := hex.DecodeString(token)
 	if err != nil {
 		panic(err)
@@ -54,6 +61,7 @@ func DefaultParams() Params {
 	return Params{
 		ConfirmationHeight: 1,
 		Network:            Ganache,
+		Gateway:            bzGateway,
 		Token:              bzToken,
 		Burnable:           bzBurnable,
 		TokenDeploySig:     tokenDeploySig,
@@ -72,6 +80,7 @@ func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
 	return subspace.ParamSetPairs{
 		subspace.NewParamSetPair(KeyConfirmationHeight, &p.ConfirmationHeight, validateConfirmationHeight),
 		subspace.NewParamSetPair(KeyNetwork, &p.Network, validateNetwork),
+		subspace.NewParamSetPair(KeyGateway, &p.Gateway, validateBytes),
 		subspace.NewParamSetPair(KeyToken, &p.Token, validateBytes),
 		subspace.NewParamSetPair(KeyBurnable, &p.Burnable, validateBytes),
 		subspace.NewParamSetPair(KeyTokenDeploySig, &p.TokenDeploySig, validateBytes),

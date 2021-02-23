@@ -197,15 +197,18 @@ func TestDeploy(t *testing.T) {
 		return privateKey.PublicKey, true
 	}}
 
-	byteCode := common.FromHex(MymintableBin)
 	deployParams := types.DeployParams{
-		ByteCode: byteCode,
+		GasPrice: sdk.ZeroInt(),
 		GasLimit: gasLimit,
 	}
 
+	minConfHeight := testutils.RandIntBetween(1, 10)
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	k := newKeeper(ctx, minConfHeight)
+
 	rpc := &mock.RPCClientMock{PendingNonceAtFunc: backend.PendingNonceAt, SuggestGasPriceFunc: backend.SuggestGasPrice}
-	query := keeper.NewQuerier(rpc, keeper.Keeper{}, tssSigner)
-	res, err := query(sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger()), []string{keeper.CreateDeployTx}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(deployParams)})
+	query := keeper.NewQuerier(rpc, k, tssSigner)
+	res, err := query(ctx, []string{keeper.CreateDeployTx}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(deployParams)})
 	assert.NoError(t, err)
 
 	var result types.DeployResult
