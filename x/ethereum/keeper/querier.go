@@ -93,7 +93,7 @@ func createDeployGateway(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types
 
 	nonce, err := rpc.PendingNonceAt(context.Background(), contractOwner)
 	if err != nil {
-		return nil, fmt.Errorf("could not retrieve nonce: %s", err)
+		return nil, fmt.Errorf("could not create nonce: %s", err)
 	}
 
 	gasPrice := params.GasPrice.BigInt()
