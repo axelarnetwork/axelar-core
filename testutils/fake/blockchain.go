@@ -3,7 +3,6 @@ package fake
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
@@ -299,7 +298,7 @@ func (n *Node) start() {
 
 	for b := range n.in {
 		n.Ctx = n.Ctx.WithBlockHeader(b.header)
-		log.Printf("node %s begins block %v", n.moniker, b.header.Height)
+		n.Ctx.Logger().Debug(fmt.Sprintf("node %s begins block %v", n.moniker, b.header.Height))
 		/*
 			While Cosmos also has BeginBlockers, so far we implement none.
 			Extend the Node struct analogously to the EndBlockers
@@ -309,14 +308,14 @@ func (n *Node) start() {
 		// handle messages
 		for _, msg := range b.msgs {
 			if err := msg.ValidateBasic(); err != nil {
-				log.Printf("node %s returned an error when validating message %s", n.moniker, msg.Type())
+				n.Ctx.Logger().Error(fmt.Sprintf("node %s returned an error when validating message %s", n.moniker, msg.Type()))
 
 				msg.out <- &Result{nil, err}
 
 			} else if h := n.router.Route(n.Ctx, msg.Route()); h != nil {
 				res, err := h(n.Ctx, msg.Msg)
 				if err != nil {
-					log.Printf("node %s returned an error from handler for route %s: %s", n.moniker, msg.Route(), err.Error())
+					n.Ctx.Logger().Error(fmt.Sprintf("node %s returned an error from handler for route %s: %s", n.moniker, msg.Route(), err.Error()))
 				}
 				msgEvents := sdk.Events{
 					sdk.NewEvent(sdk.EventTypeMessage, sdk.NewAttribute(sdk.AttributeKeyAction, msg.Type())),
@@ -338,7 +337,7 @@ func (n *Node) start() {
 			}
 		}
 
-		log.Printf("node %s ends block %v", n.moniker, b.header.Height)
+		n.Ctx.Logger().Debug(fmt.Sprintf("node %s ends block %v", n.moniker, b.header.Height))
 		// end block
 		for _, endBlocker := range n.endBlockers {
 			endBlocker(n.Ctx, abci.RequestEndBlock{Height: b.header.Height})
