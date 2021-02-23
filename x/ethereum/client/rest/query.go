@@ -17,6 +17,11 @@ import (
 	"github.com/gorilla/mux"
 )
 
+const (
+ QueryParamFromAddress = "from_address"
+ QueryParamCommandID = "command_id"
+)
+
 func QueryMasterAddress(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -112,7 +117,7 @@ func QuerySendTx(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		txID := mux.Vars(r)["txID"]
+		txID := mux.Vars(r)[PathVarTxID]
 
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.SendTx, txID), nil)
 		if err != nil {
@@ -131,9 +136,6 @@ func QuerySendTx(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-const QueryParamContractAddress = "contract_address"
-const QueryParamFromAddress = "from_address"
-const QueryParamCommandID = "command_id"
 
 func QuerySendCommandTx(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -143,7 +145,7 @@ func QuerySendCommandTx(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		contractAddr := mux.Vars(r)[QueryParamContractAddress]
+		contractAddr := mux.Vars(r)[PathVarGatewayAddr]
 		fromAddr := r.URL.Query().Get(QueryParamFromAddress)
 		commandIDHex := r.URL.Query().Get(QueryParamCommandID)
 
