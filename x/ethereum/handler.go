@@ -1,6 +1,7 @@
 package ethereum
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
@@ -93,7 +94,11 @@ func handleMsgVerifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, rpc types.RPC
 }
 
 func handleMsgLink(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg types.MsgLink) (*sdk.Result, error) {
-	gatewayAddr := common.HexToAddress(msg.GatewayAddr)
+	gatewayAddr, ok := k.GetGatewayAddress(ctx)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrEthereum, "Axelar Gateway address not set")
+	}
+
 	tokenAddr, err := k.GetTokenAddress(ctx, msg.Symbol, gatewayAddr)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
@@ -429,6 +434,19 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
 
+	// if this is the transaction that is deploying Axelar Gateway, calculate and save address
+	// TODO: this is something that should be done after the signature has been successfully verified
+	if tx.To() == nil && bytes.Equal(tx.Data(), k.GetGatewayByteCodes(ctx)) {
+
+		pub, ok := signer.GetCurrentMasterKey(ctx, exported.Ethereum)
+		if !ok {
+			return nil, sdkerrors.Wrapf(types.ErrEthereum, "no master key for chain %s found", exported.Ethereum.Name)
+		}
+
+		addr := crypto.CreateAddress(crypto.PubkeyToAddress(pub), tx.Nonce())
+		k.SetGatewayAddress(ctx, addr)
+	}
+
 	return &sdk.Result{
 		Data:   []byte(txID),
 		Log:    fmt.Sprintf("successfully started signing protocol for transaction with ID %s.", txID),
@@ -437,7 +455,12 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 }
 
 func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v types.Voter, msg types.MsgVerifyErc20TokenDeploy) (*sdk.Result, error) {
-	tokenAddr, err := k.GetTokenAddress(ctx, msg.Symbol, msg.GatewayAddr)
+	gatewayAddr, ok := k.GetGatewayAddress(ctx)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrEthereum, "Axelar Gateway address not set")
+	}
+
+	tokenAddr, err := k.GetTokenAddress(ctx, msg.Symbol, gatewayAddr)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
@@ -471,7 +494,7 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 		return &sdk.Result{Log: output}, nil
 	}
 
-	if err := verifyERC20TokenDeploy(ctx, k, txReceipt, blockNumber, msg.Symbol, msg.GatewayAddr, tokenAddr); err != nil {
+	if err := verifyERC20TokenDeploy(ctx, k, txReceipt, blockNumber, msg.Symbol, gatewayAddr, tokenAddr); err != nil {
 		output := fmt.Sprintf("expected erc20 token deploy (%s) could not be verified", msg.Symbol)
 		k.Logger(ctx).Debug(sdkerrors.Wrap(err, output).Error())
 		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})

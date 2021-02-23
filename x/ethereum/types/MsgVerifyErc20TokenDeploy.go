@@ -8,19 +8,17 @@ import (
 
 // MsgVerifyErc20TokenDeploy represents a token deploy verification message
 type MsgVerifyErc20TokenDeploy struct {
-	Sender      sdk.AccAddress
-	TxID        common.Hash
-	Symbol      string
-	GatewayAddr common.Address
+	Sender sdk.AccAddress
+	TxID   common.Hash
+	Symbol string
 }
 
 // NewMsgVerifyErc20TokenDeploy creates a message of type MsgVerifyErc20TokenDeploy
-func NewMsgVerifyErc20TokenDeploy(sender sdk.AccAddress, txID common.Hash, symbol string, gatewayAddr common.Address) sdk.Msg {
+func NewMsgVerifyErc20TokenDeploy(sender sdk.AccAddress, txID common.Hash, symbol string) sdk.Msg {
 	return MsgVerifyErc20TokenDeploy{
-		Sender:      sender,
-		TxID:        txID,
-		Symbol:      symbol,
-		GatewayAddr: gatewayAddr,
+		Sender: sender,
+		TxID:   txID,
+		Symbol: symbol,
 	}
 }
 

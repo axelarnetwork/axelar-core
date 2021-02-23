@@ -2,6 +2,12 @@ package rest
 
 import (
 	"fmt"
+	"math/big"
+	"net/http"
+	"strconv"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -9,8 +15,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gorilla/mux"
-	"net/http"
-	"strconv"
 )
 
 func QueryMasterAddress(cliCtx context.CLIContext) http.HandlerFunc {
@@ -36,6 +40,29 @@ func QueryMasterAddress(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
+func QueryAxelarGatewayAddress(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryAxelarGatewayAddress), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
+			return
+		}
+
+		if len(res) == 0 {
+			rest.PostProcessResponse(w, cliCtx, "")
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, common.BytesToAddress(res).Hex())
+	}
+}
+
 func QueryCreateDeployTx(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -44,9 +71,11 @@ func QueryCreateDeployTx(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		// @TODO rename query param to bytecode_hex
-		bytecode := r.URL.Query().Get("bytecode")
-		bz := common.FromHex(bytecode)
+		gasPrice, err := parseGasPrice(w, r)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
 
 		gasLimit, err := parseGasLimit(w, r)
 		if err != nil {
@@ -55,7 +84,7 @@ func QueryCreateDeployTx(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		params := types.DeployParams{
-			ByteCode: bz,
+			GasPrice: gasPrice,
 			GasLimit: gasLimit,
 		}
 
@@ -149,9 +178,18 @@ func parseGasLimit(w http.ResponseWriter, r *http.Request) (uint64, error) {
 	glStr := r.URL.Query().Get("gasLimit")
 	gl, err := strconv.ParseUint(glStr, 10, 64)
 	if err != nil {
-		rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "cannot parse ethereum gas limit string: %s", glStr).Error())
 		return 0, err
 	}
 
 	return gl, nil
+}
+
+func parseGasPrice(w http.ResponseWriter, r *http.Request) (sdk.Int, error) {
+	gpStr := r.URL.Query().Get("gasPrice")
+	gpBig, ok := big.NewInt(0).SetString(gpStr, 10)
+	if !ok {
+		return sdk.Int{}, fmt.Errorf("could not parse specified gas price")
+	}
+
+	return sdk.NewIntFromBigInt(gpBig), nil
 }

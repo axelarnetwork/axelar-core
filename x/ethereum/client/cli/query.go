@@ -2,8 +2,9 @@ package cli
 
 import (
 	"fmt"
-	"io/ioutil"
-	"strings"
+	"math/big"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -63,23 +64,50 @@ func GetCmdMasterAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return cmd
 }
 
-// GetCmdCreateDeployTx returns the query for a raw unsigned Ethereum deploy transaction for the smart contract of a given path
-func GetCmdCreateDeployTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	var gasLimit uint64
+// GetCmdAxelarGatewayAddress returns the query for the AxelarGateway contract address
+func GetCmdAxelarGatewayAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "deploy [smart contract file path]",
-		Short: "Receive a raw deploy transaction",
-		Args:  cobra.ExactArgs(1),
+		Use:   "gateway-address",
+		Short: "Query the Axelar Gateway contract address",
+		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			bz, err := parseByteCode(args[0])
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryAxelarGatewayAddress), nil)
 			if err != nil {
-				return err
+				fmt.Printf(types.ErrFMasterKey, err.Error())
+
+				return nil
 			}
 
+			out := common.BytesToAddress(res)
+			return cliCtx.PrintOutput(out.Hex())
+		},
+	}
+
+	return cmd
+}
+
+// GetCmdCreateDeployTx returns the query for a raw unsigned Ethereum deploy transaction for the smart contract of a given path
+func GetCmdCreateDeployTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	var gasPriceStr string
+	var gasLimit uint64
+	cmd := &cobra.Command{
+		Use:   "deploy-gateway",
+		Short: "Obtain a raw transaction for the deployment of Axelar Gateway.",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			gasPriceBig, ok := big.NewInt(0).SetString(gasPriceStr, 10)
+			if !ok {
+				return fmt.Errorf("could not parse specified gas price")
+			}
+
+			gasPrice := sdk.NewIntFromBigInt(gasPriceBig)
+
 			params := types.DeployParams{
-				ByteCode: bz,
+				GasPrice: gasPrice,
 				GasLimit: gasLimit,
 			}
 
@@ -96,7 +124,10 @@ func GetCmdCreateDeployTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().Uint64Var(&gasLimit, "gas-limit", 3000000, "default Ethereum gas limit")
+	cmd.Flags().Uint64Var(&gasLimit, "gas-limit", 3000000,
+		"Ethereum gas limit to use in the transaction (default value is 3000000). Set to 0 to estimate gas limit at the node.")
+	cmd.Flags().StringVar(&gasPriceStr, "gas-price", "0",
+		"Ethereum gas price to use in the transaction. If flag is omitted (or value set to 0), the gas price will be suggested by the node")
 	return cmd
 }
 
@@ -149,14 +180,4 @@ func GetCmdSendCommand(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			return cliCtx.PrintOutput(fmt.Sprintf("successfully sent transaction %s to Ethereum", txHash))
 		},
 	}
-}
-
-func parseByteCode(filePath string) ([]byte, error) {
-	content, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		return nil, err
-	}
-
-	byteCode := common.FromHex(strings.TrimSuffix(string(content), "\n"))
-	return byteCode, nil
 }

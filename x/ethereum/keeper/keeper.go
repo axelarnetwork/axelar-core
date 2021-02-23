@@ -20,6 +20,8 @@ import (
 )
 
 const (
+	gatewayKey = "gateway"
+
 	rawPrefix                  = "raw_"
 	verifiedTokenPrefix        = "verified_token_"
 	pendingTokenPrefix         = "pending_token_"
@@ -84,6 +86,21 @@ func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context) uint64 {
 	var h uint64
 	k.params.Get(ctx, types.KeyConfirmationHeight, &h)
 	return h
+}
+
+// SetGatewayAddress sets the contract address for Axelar Gateway
+func (k Keeper) SetGatewayAddress(ctx sdk.Context, addr common.Address) error {
+	ctx.KVStore(k.storeKey).Set([]byte(gatewayKey), addr.Bytes())
+	return nil
+}
+
+// GetGatewayAddress gets the contract address for Axelar Gateway
+func (k Keeper) GetGatewayAddress(ctx sdk.Context) (common.Address, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(gatewayKey))
+	if bz == nil {
+		return common.Address{}, false
+	}
+	return common.BytesToAddress(bz), true
 }
 
 // SetBurnerInfo saves the burner info for a given address
@@ -189,6 +206,13 @@ func (k Keeper) getBurnerBC(ctx sdk.Context) []byte {
 func (k Keeper) getTokenBC(ctx sdk.Context) []byte {
 	var b []byte
 	k.params.Get(ctx, types.KeyToken, &b)
+	return b
+}
+
+// GetGatewayByteCodes retrieves the byte codes for the Axelar Gateway smart contract
+func (k Keeper) GetGatewayByteCodes(ctx sdk.Context) []byte {
+	var b []byte
+	k.params.Get(ctx, types.KeyGateway, &b)
 	return b
 }
 
