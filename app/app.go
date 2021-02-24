@@ -387,6 +387,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		auth.ModuleName,
 		bank.ModuleName,
 		slashing.ModuleName,
+		snapTypes.ModuleName,
 		tssTypes.ModuleName,
 		btcTypes.ModuleName,
 		ethTypes.ModuleName,
