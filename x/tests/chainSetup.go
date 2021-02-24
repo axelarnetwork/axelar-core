@@ -10,6 +10,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
+	"github.com/cosmos/cosmos-sdk/store/dbadapter"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	slashingTypes "github.com/cosmos/cosmos-sdk/x/slashing"
@@ -18,13 +19,13 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/libs/log"
+	db "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
 
 	"github.com/axelarnetwork/axelar-core/x/ethereum"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 
-	"github.com/axelarnetwork/axelar-core/store"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin"
@@ -77,7 +78,7 @@ func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *f
 	snapSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
 	snapKeeper := snapshotKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(snapTypes.StoreKey), snapSubspace, mocks.Staker, mocks.Slasher)
 	snapKeeper.SetParams(ctx, snapTypes.DefaultParams())
-	voter := voteKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(voteTypes.StoreKey), store.NewSubjectiveStore(), snapKeeper, broadcaster)
+	voter := voteKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(voteTypes.StoreKey), dbadapter.Store{DB: db.NewMemDB()}, snapKeeper, broadcaster)
 
 	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
 	bitcoinKeeper := btcKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)

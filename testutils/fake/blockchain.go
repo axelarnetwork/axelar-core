@@ -2,6 +2,7 @@ package fake
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -156,30 +157,35 @@ func (bc *BlockChain) cutBlocks() <-chan block {
 		nextBlock := newBlock(bc.blockSize, abci.Header{Height: bc.CurrentHeight(), Time: time.Now()})
 		bc.currentHeight += 1
 
-	loop:
 		for {
-			timedOut := reset(bc.blockTimeOut)
+			timeOut, cancel := context.WithTimeout(context.Background(), bc.blockTimeOut)
+		timeOutloop:
+			for {
+				select {
+				case msg, ok := <-bc.in:
+					// channel is closed, send what you have and then stop
+					if !ok {
+						blocks <- nextBlock
+						cancel()
+						return
+					}
 
-			select {
-			case msg, ok := <-bc.in:
-				// channel is closed, send what you have and then stop
-				if !ok {
-					blocks <- nextBlock
-					break loop
-				}
+					nextBlock.msgs = append(nextBlock.msgs, msg)
+					if len(nextBlock.msgs) == bc.blockSize {
+						blocks <- nextBlock
+						nextBlock = newBlock(bc.blockSize, abci.Header{Height: bc.CurrentHeight(), Time: time.Now()})
+						bc.currentHeight += 1
 
-				nextBlock.msgs = append(nextBlock.msgs, msg)
-				if len(nextBlock.msgs) == bc.blockSize {
+					}
+				// timeout happened before receiving a message, cut the block here and start a new one
+				case <-timeOut.Done():
 					blocks <- nextBlock
 					nextBlock = newBlock(bc.blockSize, abci.Header{Height: bc.CurrentHeight(), Time: time.Now()})
 					bc.currentHeight += 1
 
+					cancel()
+					break timeOutloop
 				}
-			// timeout happened before receiving a message, cut the block here and start a new one
-			case <-timedOut:
-				blocks <- nextBlock
-				nextBlock = newBlock(bc.blockSize, abci.Header{Height: bc.CurrentHeight(), Time: time.Now()})
-				bc.currentHeight += 1
 			}
 		}
 	}()
@@ -199,19 +205,6 @@ func (bc *BlockChain) WaitNBlocks(n int64) {
 		}
 	}
 	wg.Wait()
-}
-
-func reset(timeOut time.Duration) chan struct{} {
-	var timedOut chan struct{}
-
-	if timeOut > 0 {
-		timedOut = make(chan struct{})
-		go func() {
-			time.Sleep(timeOut)
-			close(timedOut)
-		}()
-	}
-	return timedOut
 }
 
 func deepCopy(bc BlockChain) *BlockChain {
@@ -342,7 +335,6 @@ func (n *Node) start() {
 			}
 		}
 
-		n.Ctx.Logger().Debug(fmt.Sprintf("end block %v", b.header.Height))
 		// end block
 		for _, endBlocker := range n.endBlockers {
 			endBlocker(n.Ctx, abci.RequestEndBlock{Height: b.header.Height})

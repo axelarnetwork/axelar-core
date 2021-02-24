@@ -5,12 +5,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/store/dbadapter"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
+	db "github.com/tendermint/tm-db"
 
-	"github.com/axelarnetwork/axelar-core/store"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -59,7 +60,7 @@ func setup() *testSetup {
 		setup.cancel()
 		return nil
 	}}
-	setup.Keeper = NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(stringGen.Next()), store.NewSubjectiveStore(),
+	setup.Keeper = NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(stringGen.Next()), dbadapter.Store{DB: db.NewMemDB()},
 		setup.Snapshotter, setup.Broadcaster)
 	return setup
 }
