@@ -63,6 +63,9 @@ func setup(t *testing.T) *testSetup {
 		GetSnapshotActiveValidatorsFunc: func(sdk.Context, int64) (snapshot.Snapshot, bool) {
 			return snapshot.Snapshot{Validators: validators, TotalPower: sdk.NewInt(counter)}, true
 		},
+		GetSnapshotFunc: func(sdk.Context, int64) (snapshot.Snapshot, bool) {
+			return snapshot.Snapshot{Validators: validators, TotalPower: sdk.NewInt(counter)}, true
+		},
 		GetLatestCounterFunc: func(ctx sdk.Context) int64 {
 			return counter
 		},
