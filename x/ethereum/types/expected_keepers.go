@@ -40,12 +40,3 @@ type Signer interface {
 	GetKeyForSigID(ctx sdk.Context, sigID string) (ecdsa.PublicKey, bool)
 	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool)
 }
-
-// Snapshotter provides snapshot functionality
-/*type Snapshotter interface {
-	GetValidator(ctx sdk.Context, address sdk.ValAddress) (snapshot.Validator, bool)
-	GetLatestSnapshot(ctx sdk.Context) (snapshot.Snapshot, bool)
-	GetLatestCounter(ctx sdk.Context) int64
-	GetSnapshot(ctx sdk.Context, counter int64) (snapshot.Snapshot, bool)
-	TakeSnapshot(ctx sdk.Context) error
-}*/
