@@ -6,6 +6,8 @@ import (
 	"io"
 	"os"
 
+	"github.com/cosmos/cosmos-sdk/store/dbadapter"
+
 	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
 
@@ -38,7 +40,6 @@ import (
 
 	keyring "github.com/cosmos/cosmos-sdk/crypto/keys"
 
-	"github.com/axelarnetwork/axelar-core/store"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
@@ -269,7 +270,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	slashingKeeperCast := &snapMock.SlasherMock{
 		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapTypes.ValidatorInfo, bool) {
 			signingInfo, found := app.slashingKeeper.GetValidatorSigningInfo(ctx, address)
-			return snapTypes.ValidatorInfo{signingInfo}, found
+			return snapTypes.ValidatorInfo{ValidatorSigningInfo: signingInfo}, found
 		},
 	}
 
@@ -288,7 +289,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	app.broadcastKeeper, err = broadcastKeeper.NewKeeper(
 		app.cdc,
 		keys[broadcastTypes.StoreKey],
-		store.NewSubjectiveStore(),
+		dbadapter.Store{DB: dbm.NewMemDB()},
 		keybase,
 		app.accountKeeper,
 		app.stakingKeeper,
@@ -310,7 +311,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	}
 	logger.Debug("successful connection to tssd gRPC server")
 
-	app.votingKeeper = voteKeeper.NewKeeper(app.cdc, keys[voteTypes.StoreKey], store.NewSubjectiveStore(), app.snapKeeper, app.broadcastKeeper)
+	app.votingKeeper = voteKeeper.NewKeeper(app.cdc, keys[voteTypes.StoreKey], dbadapter.Store{DB: dbm.NewMemDB()}, app.snapKeeper, app.broadcastKeeper)
 
 	client := tssd.NewGG18Client(conn)
 	app.tssKeeper = tssKeeper.NewKeeper(app.cdc, keys[tssTypes.StoreKey], client, tssSubspace, app.votingKeeper, app.broadcastKeeper)

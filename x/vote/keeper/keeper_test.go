@@ -5,12 +5,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/store/dbadapter"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
+	db "github.com/tendermint/tm-db"
 
-	"github.com/axelarnetwork/axelar-core/store"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -59,7 +60,7 @@ func setup() *testSetup {
 		setup.cancel()
 		return nil
 	}}
-	setup.Keeper = NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(stringGen.Next()), store.NewSubjectiveStore(),
+	setup.Keeper = NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(stringGen.Next()), dbadapter.Store{DB: db.NewMemDB()},
 		setup.Snapshotter, setup.Broadcaster)
 	return setup
 }
@@ -166,8 +167,8 @@ func TestKeeper_Vote_VotesNotRepeatedInConsecutiveBroadcasts(t *testing.T) {
 	assert.Equal(t, 1, len(s.Broadcaster.BroadcastCalls()[1].Msgs))
 
 	// assert correct votes
-	assert.Equal(t, voteForPoll1, s.Broadcaster.BroadcastCalls()[0].Msgs[0])
-	assert.Equal(t, voteForPoll2, s.Broadcaster.BroadcastCalls()[0].Msgs[1])
+	assert.Contains(t, s.Broadcaster.BroadcastCalls()[0].Msgs, voteForPoll1)
+	assert.Contains(t, s.Broadcaster.BroadcastCalls()[0].Msgs, voteForPoll2)
 	assert.Equal(t, voteForPoll3, s.Broadcaster.BroadcastCalls()[1].Msgs[0])
 }
 

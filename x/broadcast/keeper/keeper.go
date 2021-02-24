@@ -13,7 +13,6 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/rpc/client"
 
-	"github.com/axelarnetwork/axelar-core/store"
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/broadcast/types"
 )
@@ -36,7 +35,7 @@ type Keeper struct {
 	config          types.ClientConfig
 	rpc             client.ABCIClient
 	fromName        string
-	subjectiveStore store.SubjectiveStore
+	subjectiveStore sdk.KVStore
 	cdc             *codec.Codec
 }
 
@@ -44,7 +43,7 @@ type Keeper struct {
 func NewKeeper(
 	cdc *codec.Codec,
 	storeKey sdk.StoreKey,
-	subjectiveStore store.SubjectiveStore,
+	subjectiveStore sdk.KVStore,
 	keybase keys.Keybase,
 	authKeeper auth.AccountKeeper,
 	stakingKeeper types.Staker,

@@ -278,7 +278,6 @@ func (k Keeper) prepareKeygen(ctx sdk.Context, keyID string, threshold int, vali
 		},
 	}
 
-	k.Logger(ctx).Debug(fmt.Sprintf("my uid [%s] index %d of %v", myAddress.String(), myIndex, partyUids))
 	return stream, keygenInit
 }
 
