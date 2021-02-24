@@ -3,7 +3,6 @@ package keeper
 import (
 	"crypto/ecdsa"
 	"fmt"
-	"math"
 	"strconv"
 
 	"github.com/axelarnetwork/tssd/convert"
@@ -11,28 +10,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/axelarnetwork/axelar-core/utils"
-
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
-
-// GetMinKeygenThreshold returns minimum threshold of stake that must be met to execute keygen
-func (k Keeper) GetMinKeygenThreshold(ctx sdk.Context) utils.Threshold {
-	var threshold utils.Threshold
-	k.params.Get(ctx, types.KeyMinKeygenThreshold, &threshold)
-	return threshold
-}
-
-// ComputeCorruptionThreshold returns corruption threshold to be used by tss
-func (k Keeper) ComputeCorruptionThreshold(ctx sdk.Context, totalvalidators int) int {
-	var threshold utils.Threshold
-	k.params.Get(ctx, types.KeyCorruptionThreshold, &threshold)
-	return int(math.Ceil(float64(totalvalidators) * float64(threshold.Numerator) /
-		float64(threshold.Denominator)))
-}
 
 // StartKeygen starts a keygen protocol with the specified parameters
 func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, snapshot snapshot.Snapshot) (<-chan ecdsa.PublicKey, error) {
@@ -85,7 +67,7 @@ func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, snapsh
 	go func() {
 		for msg := range broadcastChan {
 			k.Logger(ctx).Debug(fmt.Sprintf(
-				"handler goroutine: outgoing keygen msg: key [%s] from me [%s] to [%s] broadcast [%t]",
+				"outgoing keygen msg: key [%.20s] from me [%.20s] to [%.20s] broadcast [%t]",
 				keyID, keygenInit.KeygenInit.PartyUids[keygenInit.KeygenInit.MyPartyIndex], msg.ToPartyUid, msg.IsBroadcast))
 			// sender is set by broadcaster
 			tssMsg := &types.MsgKeygenTraffic{SessionID: keyID, Payload: msg}

@@ -50,7 +50,7 @@ func TestLink_NoSymbolSet(t *testing.T) {
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
 	symbol := testutils.RandString(3)
 
-	handler := NewHandler(k, &ethMock.RPCClientMock{}, &ethMock.VoterMock{}, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.NexusMock{})
+	handler := NewHandler(k, &ethMock.RPCClientMock{}, &ethMock.VoterMock{}, &ethMock.SignerMock{}, &ethMock.NexusMock{})
 	_, err := handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
@@ -84,7 +84,7 @@ func TestLink_Success(t *testing.T) {
 			return c, ok
 		},
 	}
-	handler := NewHandler(k, &ethMock.RPCClientMock{}, &ethMock.VoterMock{}, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, n)
+	handler := NewHandler(k, &ethMock.RPCClientMock{}, &ethMock.VoterMock{}, &ethMock.SignerMock{}, n)
 	_, err = handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Symbol: msg.Symbol})
 
 	assert.NoError(t, err)
@@ -201,7 +201,7 @@ func TestVerifyToken_NoTokenInfo(t *testing.T) {
 	k := newKeeper(ctx, minConfHeight)
 	rpc := createBasicRPCMock(signedTx, confCount, nil)
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, createSnapshotter(), &ethMock.NexusMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.NexusMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), symbol))
 
@@ -225,7 +225,7 @@ func TestVerifyToken_NoReceipt(t *testing.T) {
 		return nil, fmt.Errorf("no transaction for hash")
 	}
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, createSnapshotter(), &ethMock.NexusMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.NexusMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol))
 
@@ -248,7 +248,7 @@ func TestVerifyToken_NoBlockNumber(t *testing.T) {
 		return 0, fmt.Errorf("no block number")
 	}
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, createSnapshotter(), &ethMock.NexusMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.NexusMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol))
 
@@ -268,7 +268,7 @@ func TestVerifyToken_NotConfirmed(t *testing.T) {
 	k.SaveTokenInfo(ctx, msg)
 	rpc := createBasicRPCMock(signedTx, confCount, nil)
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.NexusMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.NexusMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol))
 
@@ -289,7 +289,7 @@ func TestVerifyToken_NoEvent(t *testing.T) {
 	logs := createLogs("", common.Address{}, common.Address{}, common.Hash{}, false)
 	rpc := createBasicRPCMock(signedTx, confCount, logs)
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.NexusMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.NexusMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol))
 
@@ -313,7 +313,7 @@ func TestVerifyToken_DifferentEvent(t *testing.T) {
 	logs := createLogs(testutils.RandString(4), common.HexToAddress(gateway), tokenAddr, k.GetERC20TokenDeploySignature(ctx), true)
 	rpc := createBasicRPCMock(signedTx, confCount, logs)
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.NexusMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.NexusMock{})
 
 	_, err = handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol))
 
@@ -338,7 +338,7 @@ func TestVerifyToken_Success(t *testing.T) {
 	logs := createLogs(msg.Symbol, common.HexToAddress(gateway), tokenAddr, k.GetERC20TokenDeploySignature(ctx), true)
 	rpc := createBasicRPCMock(signedTx, confCount, logs)
 	voter := createVoterMock()
-	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.NexusMock{})
+	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.NexusMock{})
 
 	_, err = handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol))
 
@@ -357,7 +357,7 @@ func TestHandleMsgVerifyErc20Deposit_UnknownBurnerAddr(t *testing.T) {
 	k := newKeeper(ctx, minConfHeight)
 	rpc := ethMock.RPCClientMock{}
 	v := createVoterMock()
-	handler := NewHandler(k, &rpc, v, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.NexusMock{})
+	handler := NewHandler(k, &rpc, v, &ethMock.SignerMock{}, &ethMock.NexusMock{})
 
 	msg := types.NewMsgVerifyErc20Deposit(sender, txID, amount, unknownBurnerAddr)
 	result, err := handler(ctx, msg)
@@ -392,7 +392,7 @@ func TestHandleMsgVerifyErc20Deposit_FailedGettingTransactionReceipt(t *testing.
 		return nil, fmt.Errorf("sorry")
 	}
 	v := createVoterMock()
-	handler := NewHandler(k, &rpc, v, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.NexusMock{})
+	handler := NewHandler(k, &rpc, v, &ethMock.SignerMock{}, &ethMock.NexusMock{})
 
 	msg := types.NewMsgVerifyErc20Deposit(sender, txID, amount, burnerAddr)
 	result, err := handler(ctx, msg)
@@ -429,7 +429,7 @@ func TestHandleMsgVerifyErc20Deposit_FailedGettingBlockNumber(t *testing.T) {
 		return 0, fmt.Errorf("sorry")
 	}
 	v := createVoterMock()
-	handler := NewHandler(k, &rpc, v, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.NexusMock{})
+	handler := NewHandler(k, &rpc, v, &ethMock.SignerMock{}, &ethMock.NexusMock{})
 
 	msg := types.NewMsgVerifyErc20Deposit(sender, txID, amount, burnerAddr)
 	result, err := handler(ctx, msg)
@@ -467,7 +467,7 @@ func TestHandleMsgVerifyErc20Deposit_NotConfirmed(t *testing.T) {
 		return uint64(blockNumber), nil
 	}
 	v := createVoterMock()
-	handler := NewHandler(k, &rpc, v, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.NexusMock{})
+	handler := NewHandler(k, &rpc, v, &ethMock.SignerMock{}, &ethMock.NexusMock{})
 
 	msg := types.NewMsgVerifyErc20Deposit(sender, txID, amount, burnerAddr)
 	result, err := handler(ctx, msg)
@@ -546,7 +546,7 @@ func TestHandleMsgVerifyErc20Deposit_AmountMismatch(t *testing.T) {
 		return uint64(blockNumber + minConfHeight*2), nil
 	}
 	v := createVoterMock()
-	handler := NewHandler(k, &rpc, v, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.NexusMock{})
+	handler := NewHandler(k, &rpc, v, &ethMock.SignerMock{}, &ethMock.NexusMock{})
 
 	msg := types.NewMsgVerifyErc20Deposit(sender, txID, amount, burnerAddr)
 	result, err := handler(ctx, msg)
@@ -606,7 +606,7 @@ func TestHandleMsgVerifyErc20Deposit_Success(t *testing.T) {
 		return uint64(blockNumber + minConfHeight*2), nil
 	}
 	v := createVoterMock()
-	handler := NewHandler(k, &rpc, v, &ethMock.SignerMock{}, &ethMock.SnapshotterMock{}, &ethMock.NexusMock{})
+	handler := NewHandler(k, &rpc, v, &ethMock.SignerMock{}, &ethMock.NexusMock{})
 
 	msg := types.NewMsgVerifyErc20Deposit(sender, txID, amount, burnerAddr)
 	result, err := handler(ctx, msg)
@@ -703,10 +703,6 @@ func newKeeper(ctx sdk.Context, confHeight int64) keeper.Keeper {
 	k.SetGatewayAddress(ctx, common.HexToAddress(gateway))
 
 	return k
-}
-
-func createSnapshotter() types.Snapshotter {
-	return &ethMock.SnapshotterMock{}
 }
 
 func createMsgSignDeploy() types.MsgSignDeployToken {

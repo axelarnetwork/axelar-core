@@ -314,7 +314,8 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	app.votingKeeper = voteKeeper.NewKeeper(app.cdc, keys[voteTypes.StoreKey], dbadapter.Store{DB: dbm.NewMemDB()}, app.snapKeeper, app.broadcastKeeper)
 
 	client := tssd.NewGG18Client(conn)
-	app.tssKeeper = tssKeeper.NewKeeper(app.cdc, keys[tssTypes.StoreKey], client, tssSubspace, app.votingKeeper, app.broadcastKeeper)
+	app.tssKeeper = tssKeeper.NewKeeper(app.cdc, keys[tssTypes.StoreKey], client, tssSubspace,
+		app.votingKeeper, app.broadcastKeeper, app.snapKeeper)
 
 	// Clean up tss grpc connection on process shutdown
 	tmos.TrapSignal(logger, func() {
@@ -367,8 +368,8 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		vote.NewAppModule(app.votingKeeper),
 		broadcast.NewAppModule(app.broadcastKeeper),
 		nexus.NewAppModule(app.nexusKeeper),
-		ethereum.NewAppModule(app.ethKeeper, app.votingKeeper, app.tssKeeper, app.snapKeeper, app.nexusKeeper, rpcEth),
-		bitcoin.NewAppModule(app.btcKeeper, app.votingKeeper, app.tssKeeper, app.snapKeeper, app.nexusKeeper, rpcBTC),
+		ethereum.NewAppModule(app.ethKeeper, app.votingKeeper, app.tssKeeper, app.nexusKeeper, rpcEth),
+		bitcoin.NewAppModule(app.btcKeeper, app.votingKeeper, app.tssKeeper, app.nexusKeeper, rpcBTC),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that

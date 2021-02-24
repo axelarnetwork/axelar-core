@@ -17,9 +17,31 @@ import (
 )
 
 // StartSign starts a tss signing protocol using the specified key for the given chain.
-func (k Keeper) StartSign(ctx sdk.Context, keyID string, sigID string, msg []byte, validators []snapshot.Validator) error {
+func (k Keeper) StartSign(ctx sdk.Context, keyID string, sigID string, msg []byte) error {
 	if _, ok := k.signStreams[sigID]; ok {
 		return fmt.Errorf("signing protocol for ID %s already in progress", sigID)
+	}
+
+	counter, ok := k.GetSnapshotCounterForKeyID(ctx, keyID)
+	if !ok {
+		return fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
+	}
+	snapshot, ok := k.snapshotter.GetSnapshotActiveValidators(ctx, counter)
+	if !ok {
+		return fmt.Errorf("no snapshot found for counter num %d", counter)
+	}
+	allValidatorsWithShares, ok := k.snapshotter.GetSnapshot(ctx, counter)
+	// for now we recalculate the threshold
+	// might make sense to store it with the snapshot after keygen is done.
+	threshold := k.ComputeCorruptionThreshold(ctx, len(allValidatorsWithShares.Validators))
+	activeValidators := snapshot.Validators
+
+	k.Logger(ctx).Info(fmt.Sprintf("starting sign with threshold [%d] (need [%d]), online validators count [%d]",
+		threshold, threshold+1, len(activeValidators)))
+
+	if len(activeValidators) <= threshold {
+		return fmt.Errorf(fmt.Sprintf("not enough active validators are online: threshold [%d], online [%d]",
+			threshold, len(activeValidators)))
 	}
 
 	poll := voting.PollMeta{Module: types.ModuleName, Type: "sign", ID: sigID}
@@ -32,7 +54,7 @@ func (k Keeper) StartSign(ctx sdk.Context, keyID string, sigID string, msg []byt
 	// BEGIN: validity check
 
 	// sign cannot proceed unless all validators have registered broadcast proxies
-	if err := k.checkProxies(ctx, validators); err != nil {
+	if err := k.checkProxies(ctx, activeValidators); err != nil {
 		return err
 	}
 
@@ -48,7 +70,7 @@ func (k Keeper) StartSign(ctx sdk.Context, keyID string, sigID string, msg []byt
 
 	voteChan := make(chan voting.MsgVote)
 
-	stream, signInit := k.prepareSign(ctx, keyID, sigID, msg, validators)
+	stream, signInit := k.prepareSign(ctx, keyID, sigID, msg, activeValidators)
 	if stream == nil || signInit == nil {
 		close(voteChan)
 		return nil // don't propagate nondeterministic errors
@@ -67,7 +89,7 @@ func (k Keeper) StartSign(ctx sdk.Context, keyID string, sigID string, msg []byt
 	go func() {
 		for msg := range broadcastChan {
 			k.Logger(ctx).Debug(fmt.Sprintf(
-				"handler goroutine: outgoing msg: session id [%s] broadcast? [%t] to [%s]",
+				"handler goroutine: outgoing msg: session id [%.20s] broadcast? [%t] to [%.20s]",
 				sigID, msg.IsBroadcast, msg.ToPartyUid))
 			// sender is set by broadcaster
 			tssMsg := &types.MsgSignTraffic{SessionID: sigID, Payload: msg}

@@ -15,12 +15,17 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 	keyID := "keyID1"
 	msgToSign := []byte("message")
 
-	err := s.Keeper.StartSign(s.Ctx, keyID, sigID, msgToSign, validators)
+	// start keygen to record the snapshot for each key
+	_, err := s.Keeper.StartKeygen(s.Ctx, keyID, 1, snap)
+	assert.NoError(t, err)
+	err = s.Keeper.StartSign(s.Ctx, keyID, sigID, msgToSign)
 	assert.NoError(t, err)
 
 	keyID = "keyID2"
 	msgToSign = []byte("second message")
-	err = s.Keeper.StartSign(s.Ctx, keyID, sigID, msgToSign, validators)
+	_, err = s.Keeper.StartKeygen(s.Ctx, keyID, 1, snap)
+	assert.NoError(t, err)
+	err = s.Keeper.StartSign(s.Ctx, keyID, sigID, msgToSign)
 	assert.Error(t, err)
 }
 
