@@ -130,16 +130,11 @@ func (k Keeper) GetSig(ctx sdk.Context, sigID string) (exported.Signature, bool)
 }
 
 // SetSig stores the given signature by its ID
-func (k Keeper) SetSig(ctx sdk.Context, sigID string, signature exported.Signature) error {
+func (k Keeper) SetSig(ctx sdk.Context, sigID string, signature []byte) {
 	// Delete the reference to the signing stream with sigID because entering this function means the tss protocol has completed
 	delete(k.signStreams, sigID)
 
-	bz, err := convert.SigToBytes(signature.R.Bytes(), signature.S.Bytes())
-	if err != nil {
-		return err
-	}
-	ctx.KVStore(k.storeKey).Set([]byte(sigPrefix+sigID), bz)
-	return nil
+	ctx.KVStore(k.storeKey).Set([]byte(sigPrefix+sigID), signature)
 }
 
 func (k Keeper) prepareSign(ctx sdk.Context, keyID, sigID string, msg []byte, validators []snapshot.Validator) (types.Stream, *tssd.MessageIn_SignInit) {
@@ -173,7 +168,6 @@ func (k Keeper) prepareSign(ctx sdk.Context, keyID, sigID string, msg []byte, va
 		},
 	}
 
-	k.Logger(ctx).Debug(fmt.Sprintf("my uid [%s] of %v", myAddress.String(), partyUids))
 	return stream, signInit
 }
 

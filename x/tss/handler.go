@@ -8,7 +8,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -45,7 +44,9 @@ func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Vot
 			k.Logger(ctx).Debug(err.Error())
 			return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
 		}
-		k.Logger(ctx).Debug(res.Log)
+		if res.Log != "" {
+			k.Logger(ctx).Debug(res.Log)
+		}
 		return res, nil
 	}
 }
@@ -77,6 +78,10 @@ func handleMsgVoteSig(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types
 		return &sdk.Result{Log: fmt.Sprintf("signature %s already verified", msg.PollMeta.ID)}, nil
 	}
 
+	if _, _, err := convert.BytesToSig(msg.SigBytes); err != nil {
+		return nil, sdkerrors.Wrap(err, "discard vote for invalid signature")
+	}
+
 	if err := v.TallyVote(ctx, &msg); err != nil {
 		return nil, err
 	}
@@ -94,13 +99,7 @@ func handleMsgVoteSig(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types
 
 		switch sigBytes := result.(type) {
 		case []byte:
-			r, s, err := convert.BytesToSig(sigBytes)
-			if err != nil {
-				return nil, err
-			}
-			if err := k.SetSig(ctx, msg.PollMeta.ID, exported.Signature{R: r, S: s}); err != nil {
-				return nil, err
-			}
+			k.SetSig(ctx, msg.PollMeta.ID, sigBytes)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized voting result type: %T", result))
