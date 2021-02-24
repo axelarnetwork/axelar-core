@@ -561,5 +561,5 @@ func getTransactionReceiptAndBlockNumber(rpc types.RPCClient, txID common.Hash) 
 }
 
 func isTxFinalized(txReceipt *ethTypes.Receipt, blockNumber uint64, confirmationHeight uint64) bool {
-	return blockNumber-txReceipt.BlockNumber.Uint64() >= confirmationHeight
+	return blockNumber-txReceipt.BlockNumber.Uint64()+1 >= confirmationHeight
 }
