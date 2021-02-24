@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -44,8 +45,8 @@ func SetGenesisNetworkCmd(
 			var genesisStateBz []byte
 			var moduleName string
 
-			switch chainStr {
-			case btc.Bitcoin.Name:
+			switch strings.ToLower(chainStr) {
+			case strings.ToLower(btc.Bitcoin.Name):
 				network, err := bitcoinTypes.NetworkFromStr(networkStr)
 				if err != nil {
 					return err
@@ -60,7 +61,7 @@ func SetGenesisNetworkCmd(
 				}
 
 				moduleName = bitcoinTypes.ModuleName
-			case eth.Ethereum.Name:
+			case strings.ToLower(eth.Ethereum.Name):
 				network, err := ethereumTypes.NetworkFromStr(networkStr)
 				if err != nil {
 					return err
