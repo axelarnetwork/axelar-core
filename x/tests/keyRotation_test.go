@@ -16,7 +16,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
@@ -52,7 +51,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// set up chain
 	const nodeCount = 10
-	chain, nodeData := initChain(nodeCount)
+	chain, nodeData := initChain(nodeCount, "keyRotation")
 	keygenDone, verifyDone, signDone := registerEventListeners(nodeData[0].Node)
 
 	// register proxies for all validators
@@ -85,7 +84,10 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		assert.True(t, <-isCorrect)
 	}
 
-	<-keygenDone
+	// wait for voting to be done
+	if err := waitFor(keygenDone, 1); err != nil {
+		assert.FailNow(t, "keygen", err)
+	}
 
 	// assign bitcoin master key
 	assignKeyResult1 := <-chain.Submit(
@@ -137,8 +139,8 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	// wait for voting to be done
-	for i := 0; i < totalDepositCount; i++ {
-		<-verifyDone
+	if err := waitFor(verifyDone, totalDepositCount); err != nil {
+		assert.FailNow(t, "verification", err)
 	}
 
 	// second snapshot
@@ -166,7 +168,9 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	// wait for voting to be done
-	<-keygenDone
+	if err := waitFor(keygenDone, 1); err != nil {
+		assert.FailNow(t, "keygen", err)
+	}
 
 	// assign second key to be the new master key
 	assignKeyResult2 := <-chain.Submit(
@@ -176,7 +180,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	// prepare mocks to sign consolidation transaction with first master key
 	var correctSigns []<-chan bool
 
-	cache := NewSignatureCache(len(deposits))
+	cache := NewSignatureCache(totalDepositCount)
 	for _, n := range nodeData {
 		correctSign := prepareSign(n.Mocks.TSSD, masterKeyID1, masterKey1, cache)
 		correctSigns = append(correctSigns, correctSign)
@@ -186,15 +190,15 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	fee := testutils.RandIntBetween(1, totalDepositAmount)
 	signResult := <-chain.Submit(btcTypes.NewMsgSign(randomSender(), btcutil.Amount(fee)))
 	assert.NoError(t, signResult.Error)
-	for _, isCorrect := range correctSigns {
-		for range deposits {
-			assert.True(t, <-isCorrect)
+	for i, isCorrect := range correctSigns {
+		for j := 0; j < totalDepositCount; j++ {
+			assert.True(t, <-isCorrect, "node %s failed to sign deposit %d", nodeData[i].Node.Moniker, j)
 		}
 	}
 
-	// wait for voting to be done (signing takes longer to tally up)
-	for i := 0; i < totalDepositCount; i++ {
-		<-signDone
+	// wait for voting to be done
+	if err := waitFor(signDone, totalDepositCount); err != nil {
+		assert.FailNow(t, "signing", err)
 	}
 
 	// send tx to Bitcoin
@@ -236,59 +240,13 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, verifyResult2.Error)
 
 	// wait for voting to be done
-	<-verifyDone
+	if err := waitFor(verifyDone, 1); err != nil {
+		assert.FailNow(t, "verification", err)
+	}
 
 	// rotate master key to key 2
 	rotateResult2 := <-chain.Submit(tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: btc.Bitcoin.Name})
 	assert.NoError(t, rotateResult2.Error)
-}
-
-func registerEventListeners(node *fake.Node) (<-chan sdk.StringEvent, <-chan sdk.StringEvent, <-chan sdk.StringEvent) {
-	// register listener for keygen completion
-	keygenDone := node.RegisterEventListener(func(event sdk.StringEvent) bool {
-		keyVote := false
-		decided := false
-		for _, a := range event.Attributes {
-			if a.Key == sdk.AttributeKeyAction {
-				keyVote = a.Value == tssTypes.MsgVotePubKey{}.Type()
-			}
-			if a.Key == tssTypes.AttributePollDecided {
-				decided = true
-			}
-		}
-		return keyVote && decided
-	})
-
-	// register listener for btc tx verification
-	verifyDone := node.RegisterEventListener(func(event sdk.StringEvent) bool {
-		txVote := false
-		decided := false
-		for _, a := range event.Attributes {
-			if a.Key == sdk.AttributeKeyAction {
-				txVote = a.Value == btcTypes.MsgVoteVerifiedTx{}.Type()
-			}
-			if a.Key == btcTypes.AttributePollConfirmed {
-				decided = true
-			}
-		}
-		return txVote && decided
-	})
-
-	// register listener for sign completion
-	signDone := node.RegisterEventListener(func(event sdk.StringEvent) bool {
-		sigVote := false
-		decided := false
-		for _, a := range event.Attributes {
-			if a.Key == sdk.AttributeKeyAction {
-				sigVote = a.Value == tssTypes.MsgVoteSig{}.Type()
-			}
-			if a.Key == tssTypes.AttributePollDecided {
-				decided = true
-			}
-		}
-		return sigVote && decided
-	})
-	return keygenDone, verifyDone, signDone
 }
 
 func txCorrectlyFormed(tx *wire.MsgTx, deposits map[string]btcTypes.OutPointInfo, txAmount int64, addr btcutil.Address) bool {
@@ -322,24 +280,4 @@ func createBTCAddress(key *ecdsa.PrivateKey, network btcTypes.Network) *btcutil.
 	}
 
 	return consolidationAddr
-}
-
-func randomOutpointInfo(recipient string) btcTypes.OutPointInfo {
-	txHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
-	if err != nil {
-		panic(err)
-	}
-	blockHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
-	if err != nil {
-		panic(err)
-	}
-
-	voutIdx := uint32(testutils.RandIntBetween(0, 100))
-	return btcTypes.OutPointInfo{
-		OutPoint:      wire.NewOutPoint(txHash, voutIdx),
-		BlockHash:     blockHash,
-		Amount:        btcutil.Amount(testutils.RandIntBetween(1, 10000000)),
-		Address:       recipient,
-		Confirmations: uint64(testutils.RandIntBetween(1, 10000)),
-	}
 }

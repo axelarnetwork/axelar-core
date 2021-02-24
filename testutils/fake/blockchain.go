@@ -2,8 +2,8 @@ package fake
 
 import (
 	"bytes"
+	"context"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
@@ -157,30 +157,35 @@ func (bc *BlockChain) cutBlocks() <-chan block {
 		nextBlock := newBlock(bc.blockSize, abci.Header{Height: bc.CurrentHeight(), Time: time.Now()})
 		bc.currentHeight += 1
 
-	loop:
 		for {
-			timedOut := reset(bc.blockTimeOut)
+			timeOut, cancel := context.WithTimeout(context.Background(), bc.blockTimeOut)
+		timeOutloop:
+			for {
+				select {
+				case msg, ok := <-bc.in:
+					// channel is closed, send what you have and then stop
+					if !ok {
+						blocks <- nextBlock
+						cancel()
+						return
+					}
 
-			select {
-			case msg, ok := <-bc.in:
-				// channel is closed, send what you have and then stop
-				if !ok {
-					blocks <- nextBlock
-					break loop
-				}
+					nextBlock.msgs = append(nextBlock.msgs, msg)
+					if len(nextBlock.msgs) == bc.blockSize {
+						blocks <- nextBlock
+						nextBlock = newBlock(bc.blockSize, abci.Header{Height: bc.CurrentHeight(), Time: time.Now()})
+						bc.currentHeight += 1
 
-				nextBlock.msgs = append(nextBlock.msgs, msg)
-				if len(nextBlock.msgs) == bc.blockSize {
+					}
+				// timeout happened before receiving a message, cut the block here and start a new one
+				case <-timeOut.Done():
 					blocks <- nextBlock
 					nextBlock = newBlock(bc.blockSize, abci.Header{Height: bc.CurrentHeight(), Time: time.Now()})
 					bc.currentHeight += 1
 
+					cancel()
+					break timeOutloop
 				}
-			// timeout happened before receiving a message, cut the block here and start a new one
-			case <-timedOut:
-				blocks <- nextBlock
-				nextBlock = newBlock(bc.blockSize, abci.Header{Height: bc.CurrentHeight(), Time: time.Now()})
-				bc.currentHeight += 1
 			}
 		}
 	}()
@@ -202,19 +207,6 @@ func (bc *BlockChain) WaitNBlocks(n int64) {
 	wg.Wait()
 }
 
-func reset(timeOut time.Duration) chan struct{} {
-	var timedOut chan struct{}
-
-	if timeOut > 0 {
-		timedOut = make(chan struct{})
-		go func() {
-			time.Sleep(timeOut)
-			close(timedOut)
-		}()
-	}
-	return timedOut
-}
-
 func deepCopy(bc BlockChain) *BlockChain {
 	newChain := NewBlockchain()
 	newChain.blockSize = bc.blockSize
@@ -234,12 +226,12 @@ type Node struct {
 	router         sdk.Router
 	endBlockers    []func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate
 	Ctx            sdk.Context
-	moniker        string
+	Moniker        string
 	queriers       map[string]sdk.Querier
 	events         chan sdk.StringEvent
 	eventListeners []struct {
 		predicate func(event sdk.StringEvent) bool
-		emitter   chan sdk.StringEvent
+		emitter   chan<- sdk.StringEvent
 	}
 }
 
@@ -252,12 +244,12 @@ func NewNode(moniker string, ctx sdk.Context, router sdk.Router, queriers map[st
 		router:      router,
 		endBlockers: make([]func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate, 0),
 		Ctx:         ctx,
-		moniker:     moniker,
+		Moniker:     moniker,
 		queriers:    queriers,
 		events:      make(chan sdk.StringEvent, 100),
 		eventListeners: []struct {
 			predicate func(event sdk.StringEvent) bool
-			emitter   chan sdk.StringEvent
+			emitter   chan<- sdk.StringEvent
 		}{{predicate: func(sdk.StringEvent) bool { return false }, emitter: nil}}, // default discard listener
 	}
 }
@@ -280,7 +272,7 @@ func (n *Node) RegisterEventListener(predicate func(sdk.StringEvent) bool) <-cha
 
 	n.eventListeners = append(n.eventListeners, struct {
 		predicate func(event sdk.StringEvent) bool
-		emitter   chan sdk.StringEvent
+		emitter   chan<- sdk.StringEvent
 	}{predicate: predicate, emitter: out})
 	return out
 }
@@ -290,7 +282,10 @@ func (n *Node) start() {
 	go func() {
 		for e := range n.events {
 			for _, l := range n.eventListeners {
-				if len(l.emitter) < cap(l.emitter) && l.predicate(e) {
+				if l.predicate(e) {
+					if len(l.emitter) >= cap(l.emitter) {
+						panic(fmt.Sprintf("node %s event listener ran out of space", n.Moniker))
+					}
 					l.emitter <- e
 				}
 			}
@@ -299,7 +294,7 @@ func (n *Node) start() {
 
 	for b := range n.in {
 		n.Ctx = n.Ctx.WithBlockHeader(b.header)
-		log.Printf("node %s begins block %v", n.moniker, b.header.Height)
+		n.Ctx.Logger().Debug(fmt.Sprintf("begin block %v", b.header.Height))
 		/*
 			While Cosmos also has BeginBlockers, so far we implement none.
 			Extend the Node struct analogously to the EndBlockers
@@ -309,14 +304,16 @@ func (n *Node) start() {
 		// handle messages
 		for _, msg := range b.msgs {
 			if err := msg.ValidateBasic(); err != nil {
-				log.Printf("node %s returned an error when validating message %s", n.moniker, msg.Type())
+				n.Ctx.Logger().Error(fmt.Sprintf("error when validating message %s", msg.Type()))
 
 				msg.out <- &Result{nil, err}
 
 			} else if h := n.router.Route(n.Ctx, msg.Route()); h != nil {
 				res, err := h(n.Ctx, msg.Msg)
 				if err != nil {
-					log.Printf("node %s returned an error from handler for route %s: %s", n.moniker, msg.Route(), err.Error())
+					n.Ctx.Logger().Error(fmt.Sprintf("error from handler for route %s: %s", msg.Route(), err.Error()))
+					// to allow failed messages we need to implement a cache for the multistore to revert in case of failure
+					panic("no failing messages allowed for now")
 				}
 				msgEvents := sdk.Events{
 					sdk.NewEvent(sdk.EventTypeMessage, sdk.NewAttribute(sdk.AttributeKeyAction, msg.Type())),
@@ -338,7 +335,6 @@ func (n *Node) start() {
 			}
 		}
 
-		log.Printf("node %s ends block %v", n.moniker, b.header.Height)
 		// end block
 		for _, endBlocker := range n.endBlockers {
 			endBlocker(n.Ctx, abci.RequestEndBlock{Height: b.header.Height})

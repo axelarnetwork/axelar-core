@@ -7,13 +7,11 @@ import (
 	"crypto/sha256"
 	"fmt"
 
+	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	"github.com/axelarnetwork/axelar-core/store"
 	"github.com/axelarnetwork/axelar-core/utils"
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -21,9 +19,9 @@ import (
 )
 
 const (
-	pendingVotes       = "pending"
 	votingIntervalKey  = "votingInterval"
 	votingThresholdKey = "votingThreshold"
+	pendingVotePrefix  = "pending_"
 	pollPrefix         = "poll_"
 	talliedPrefix      = "tallied_"
 	addrPrefix         = "addr_"
@@ -35,7 +33,7 @@ const (
 
 // Keeper - the vote module's keeper
 type Keeper struct {
-	subjectiveStore store.SubjectiveStore
+	subjectiveStore sdk.KVStore
 	storeKey        sdk.StoreKey
 	cdc             *codec.Codec
 	broadcaster     types.Broadcaster
@@ -43,7 +41,7 @@ type Keeper struct {
 }
 
 // NewKeeper - keeper constructor
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, subjectiveStore store.SubjectiveStore, snapshotter types.Snapshotter, broadcaster types.Broadcaster) Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, subjectiveStore sdk.KVStore, snapshotter types.Snapshotter, broadcaster types.Broadcaster) Keeper {
 	keeper := Keeper{
 		subjectiveStore: subjectiveStore,
 		storeKey:        key,
@@ -120,21 +118,18 @@ func (k Keeper) DeletePoll(ctx sdk.Context, poll exported.PollMeta) {
 // Votes are only valid if they correspond to a previously initialized poll.
 // Depending on the voting interval, multiple votes might be batched together when broadcasting.
 func (k Keeper) RecordVote(vote exported.MsgVote) {
-	votes := append(k.getPendingVotes(), vote)
-	k.setPendingVotes(votes)
+	k.subjectiveStore.Set([]byte(pendingVotePrefix+vote.Poll().String()), k.cdc.MustMarshalBinaryLengthPrefixed(vote))
 }
 
 // SendVotes broadcasts all unpublished votes to the entire network.
 func (k Keeper) SendVotes(ctx sdk.Context) {
 	votes := k.getPendingVotes()
+	defer k.deletePendingVotes(votes)
 	k.Logger(ctx).Debug(fmt.Sprintf("unpublished votes:%v", len(votes)))
 
 	if len(votes) == 0 {
 		return
 	}
-
-	// Reset votes for the next round
-	k.setPendingVotes(nil)
 
 	var msgs []broadcast.MsgWithSenderSetter
 	for _, vote := range votes {
@@ -228,18 +223,20 @@ func (k Keeper) Result(ctx sdk.Context, pollMeta exported.PollMeta) exported.Vot
 // Because votes may differ between nodes they need to be stored outside the regular kvstore
 // (whose hash becomes part of the Merkle tree)
 func (k Keeper) getPendingVotes() []exported.MsgVote {
-	bz := k.subjectiveStore.Get([]byte(pendingVotes))
-	if bz == nil {
-		return nil
-	}
 	var votes []exported.MsgVote
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &votes)
+	iter := sdk.KVStorePrefixIterator(k.subjectiveStore, []byte(pendingVotePrefix))
+	for ; iter.Valid(); iter.Next() {
+		var vote exported.MsgVote
+		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &vote)
+		votes = append(votes, vote)
+	}
 	return votes
 }
 
-// See getPendingVotes
-func (k Keeper) setPendingVotes(votes []exported.MsgVote) {
-	k.subjectiveStore.Set([]byte(pendingVotes), k.cdc.MustMarshalBinaryLengthPrefixed(votes))
+func (k Keeper) deletePendingVotes(votes []exported.MsgVote) {
+	for _, vote := range votes {
+		k.subjectiveStore.Delete([]byte(pendingVotePrefix + vote.Poll().String()))
+	}
 }
 
 // using a pointer reference to adhere to the pattern of returning nil if value is not found

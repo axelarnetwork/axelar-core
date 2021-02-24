@@ -7,13 +7,15 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
+	"github.com/cosmos/cosmos-sdk/store/dbadapter"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
+	db "github.com/tendermint/tm-db"
+	"golang.org/x/crypto/ripemd160"
 
-	"github.com/axelarnetwork/axelar-core/store"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin"
@@ -44,7 +46,7 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 	// test data
 	txCount := 5
 	var outPoints []*wire.OutPoint
-	var verifyMsgs []sdk.Msg
+	var verifyMsgs []btcTypes.MsgVerifyTx
 	for i := 0; i < txCount; i++ {
 		txHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
 		if err != nil {
@@ -62,7 +64,7 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 			OutPoint:      outPoints[i],
 			BlockHash:     blockHash,
 			Amount:        btcutil.Amount(amount),
-			Address:       testutils.RandString(int(testutils.RandIntBetween(5, 20))),
+			Address:       randomAddress().EncodeAddress(),
 			Confirmations: confirmations,
 		}
 		txs[blockHash.String()+txHash.String()] = info
@@ -94,6 +96,17 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 	n3, k3 := newNodeForVote("node3", b3, staker)
 	nodes := []*fake.Node{n1, n2, n3}
 	btcKeepers := []btcKeeper.Keeper{k1, k2, k3}
+
+	for _, msg := range verifyMsgs {
+		address, err := btcutil.DecodeAddress(msg.OutPointInfo.Address, k1.GetNetwork(n1.Ctx).Params)
+		if err != nil {
+			panic(err)
+		}
+		keyID := testutils.RandString(10)
+		k1.SetKeyIDByAddress(n1.Ctx, address, keyID)
+		k2.SetKeyIDByAddress(n2.Ctx, address, keyID)
+		k3.SetKeyIDByAddress(n3.Ctx, address, keyID)
+	}
 
 	blockChain.AddNodes(nodes...)
 	blockChain.Start()
@@ -143,7 +156,7 @@ func newNodeForVote(moniker string, broadcaster bcExported.Broadcaster, staker v
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 
 	// Initialize all keepers and handlers you want to involve in the test
-	vK := keeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(voteTypes.StoreKey), store.NewSubjectiveStore(), staker, broadcaster)
+	vK := keeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(voteTypes.StoreKey), dbadapter.Store{DB: db.NewMemDB()}, staker, broadcaster)
 	r := fake.NewRouter()
 	vH := vote.NewHandler()
 
@@ -183,4 +196,12 @@ func newValidator(address sdk.ValAddress, power int64) *snapMock.ValidatorMock {
 	return &snapMock.ValidatorMock{
 		GetOperatorFunc:       func() sdk.ValAddress { return address },
 		GetConsensusPowerFunc: func() int64 { return power }}
+}
+
+func randomAddress() btcutil.Address {
+	addr, err := btcutil.NewAddressScriptHashFromHash(testutils.RandBytes(ripemd160.Size), btcTypes.DefaultParams().Network.Params)
+	if err != nil {
+		panic(err)
+	}
+	return addr
 }
