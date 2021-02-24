@@ -8,8 +8,6 @@ import (
 	"testing"
 	"time"
 
-	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	"github.com/axelarnetwork/tssd/convert"
 	tssd "github.com/axelarnetwork/tssd/pb"
 	"github.com/btcsuite/btcd/btcec"
@@ -20,6 +18,9 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
+
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -112,9 +113,10 @@ func setup(t *testing.T) *testSetup {
 				CloseSendFunc: func() error { return nil },
 			}, nil
 		}}
-	voter := &mock.VoterMock{InitPollFunc: func(ctx sdk.Context, poll exported.PollMeta) error {
-		return nil
-	}}
+	voter := &mock.VoterMock{
+		InitPollFunc:   func(ctx sdk.Context, poll exported.PollMeta) error { return nil },
+		RecordVoteFunc: func(exported.MsgVote) {},
+	}
 	k := NewKeeper(testutils.Codec(), sdk.NewKVStoreKey("tss"), client, subspace, voter, broadcaster, snapshotter)
 	k.SetParams(ctx, types.DefaultParams())
 
