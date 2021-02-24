@@ -100,7 +100,7 @@ func validateConfirmationHeight(height interface{}) error {
 	if !ok {
 		return fmt.Errorf("invalid parameter type for confirmation height: %T", height)
 	}
-	if h < 0 {
+	if h < 1 {
 		return sdkerrors.Wrap(types.ErrInvalidGenesis, "transaction confirmation height must be greater than 0")
 	}
 	return nil
