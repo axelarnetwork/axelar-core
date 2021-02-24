@@ -2,12 +2,15 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"time"
 
 	tssd "github.com/axelarnetwork/tssd/pb"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
+	"github.com/btcsuite/btcutil"
+	"github.com/cosmos/cosmos-sdk/store/dbadapter"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	slashingTypes "github.com/cosmos/cosmos-sdk/x/slashing"
@@ -16,13 +19,13 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/libs/log"
+	db "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
 
 	"github.com/axelarnetwork/axelar-core/x/ethereum"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 
-	"github.com/axelarnetwork/axelar-core/store"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin"
@@ -68,14 +71,14 @@ type nodeData struct {
 }
 
 func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *fake.BlockChain) *fake.Node {
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger().With("node", moniker))
 
 	broadcaster := fake.NewBroadcaster(testutils.Codec(), validator, chain.Submit)
 
 	snapSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
 	snapKeeper := snapshotKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(snapTypes.StoreKey), snapSubspace, mocks.Staker, mocks.Slasher)
 	snapKeeper.SetParams(ctx, snapTypes.DefaultParams())
-	voter := voteKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(voteTypes.StoreKey), store.NewSubjectiveStore(), snapKeeper, broadcaster)
+	voter := voteKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(voteTypes.StoreKey), dbadapter.Store{DB: db.NewMemDB()}, snapKeeper, broadcaster)
 
 	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
 	bitcoinKeeper := btcKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)
@@ -193,7 +196,7 @@ func createMocks(validators []staking.Validator) testMocks {
 }
 
 // initChain Creates a chain with given number of validators
-func initChain(nodeCount int) (*fake.BlockChain, []nodeData) {
+func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 	stringGen := testutils.RandStrings(5, 50).Distinct()
 	defer stringGen.Stop()
 
@@ -217,7 +220,7 @@ func initChain(nodeCount int) (*fake.BlockChain, []nodeData) {
 		mocks := createMocks(validators)
 
 		// assign nodes
-		node := newNode("node"+strconv.Itoa(i), validator.OperatorAddress, mocks, chain)
+		node := newNode(test+strconv.Itoa(i), validator.OperatorAddress, mocks, chain)
 		chain.AddNodes(node)
 		data = append(data, nodeData{Node: node, Validator: validator, Mocks: mocks})
 	}
@@ -226,4 +229,86 @@ func initChain(nodeCount int) (*fake.BlockChain, []nodeData) {
 	chain.Start()
 
 	return chain, data
+}
+
+func randomOutpointInfo(recipient string) btcTypes.OutPointInfo {
+	txHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	if err != nil {
+		panic(err)
+	}
+	blockHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	if err != nil {
+		panic(err)
+	}
+
+	voutIdx := uint32(testutils.RandIntBetween(0, 100))
+	return btcTypes.OutPointInfo{
+		OutPoint:      wire.NewOutPoint(txHash, voutIdx),
+		BlockHash:     blockHash,
+		Amount:        btcutil.Amount(testutils.RandIntBetween(1, 10000000)),
+		Address:       recipient,
+		Confirmations: uint64(testutils.RandIntBetween(1, 10000)),
+	}
+}
+
+func registerEventListeners(node *fake.Node) (<-chan sdk.StringEvent, <-chan sdk.StringEvent, <-chan sdk.StringEvent) {
+	// register listener for keygen completion
+	keygenDone := node.RegisterEventListener(func(event sdk.StringEvent) bool {
+		keyVote := false
+		decided := false
+		for _, a := range event.Attributes {
+			if a.Key == sdk.AttributeKeyAction {
+				keyVote = a.Value == tssTypes.MsgVotePubKey{}.Type()
+			}
+			if a.Key == tssTypes.AttributePollDecided {
+				decided = true
+			}
+		}
+		return keyVote && decided
+	})
+
+	// register listener for btc tx verification
+	verifyDone := node.RegisterEventListener(func(event sdk.StringEvent) bool {
+		txVote := false
+		decided := false
+		for _, a := range event.Attributes {
+			if a.Key == sdk.AttributeKeyAction {
+				txVote = a.Value == btcTypes.MsgVoteVerifiedTx{}.Type()
+			}
+			if a.Key == btcTypes.AttributePollConfirmed {
+				decided = true
+			}
+		}
+		return txVote && decided
+	})
+
+	// register listener for sign completion
+	signDone := node.RegisterEventListener(func(event sdk.StringEvent) bool {
+		sigVote := false
+		decided := false
+		for _, a := range event.Attributes {
+			if a.Key == sdk.AttributeKeyAction {
+				sigVote = a.Value == tssTypes.MsgVoteSig{}.Type()
+			}
+			if a.Key == tssTypes.AttributePollDecided {
+				decided = true
+			}
+		}
+		return sigVote && decided
+	})
+	return keygenDone, verifyDone, signDone
+}
+
+func waitFor(eventDone <-chan sdk.StringEvent, repeats int) error {
+	timeout, cancel := context.WithTimeout(context.Background(), time.Duration(repeats)*10*time.Second)
+	defer cancel()
+	for i := 0; i < repeats; i++ {
+		select {
+		case <-eventDone:
+			break
+		case <-timeout.Done():
+			return fmt.Errorf("timeout at %d of %d", i, repeats-1)
+		}
+	}
+	return nil
 }

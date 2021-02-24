@@ -24,18 +24,16 @@ func NewHandler(k keeper.Keeper) sdk.Handler {
 }
 
 func handleMsgSnapshot(ctx sdk.Context, k keeper.Keeper, msg types.MsgSnapshot) (*sdk.Result, error) {
-
 	if err := k.TakeSnapshot(ctx); err != nil {
-
 		return nil, err
-
 	}
 
 	// if the snapshot was successful, we can be sure it will be retrieved
 	snapshot, _ := k.GetLatestSnapshot(ctx)
 
-	k.Logger(ctx).Info(fmt.Sprintf("Successfully obtained snapshot for counter %d with %d validators holding a total sum of %d voting power",
-		k.GetLatestCounter(ctx), len(snapshot.Validators), snapshot.TotalPower.Int64()))
+	k.Logger(ctx).Info(
+		fmt.Sprintf("Successfully obtained snapshot for counter %d with %d validators holding a total sum of %d voting power",
+			k.GetLatestCounter(ctx), len(snapshot.Validators), snapshot.TotalPower.Int64()))
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(

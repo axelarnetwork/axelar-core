@@ -16,7 +16,7 @@ import (
 
 // ensure all nodes call .Send() , .Recv() and then .CloseSend()
 func prepareKeygen(keygen *tssdMock.TSSDKeyGenClientMock, keyID string, key ecdsa.PublicKey) (successful <-chan bool) {
-	closeTimeout, closeCancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	closeTimeout, closeCancel := context.WithTimeout(context.Background(), 5*time.Second)
 
 	sendSuccessful := false
 	recvSuccessful := false
@@ -65,7 +65,7 @@ func prepareSign(mock *tssdMock.TSSDClientMock, keyID string, key *ecdsa.Private
 
 	var msgToSign []byte
 	mock.SignFunc = func(ctx context.Context, opts ...grpc.CallOption) (tssd.GG18_SignClient, error) {
-		closeTimeout, closeCancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+		closeTimeout, closeCancel := context.WithTimeout(context.Background(), 5*time.Second)
 		doneSend := make(chan struct{})
 
 		sendSuccessful := false
