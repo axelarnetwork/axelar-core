@@ -25,7 +25,7 @@ import (
 
 // NewHandler returns the handler of the ethereum module
 func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Signer, snap snapshot.Snapshotter, n types.Nexus) sdk.Handler {
-	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
+	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
 		case types.MsgLink:
@@ -49,6 +49,16 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
 		}
 	}
+
+	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
+		res, err := h(ctx, msg)
+		if err != nil {
+			k.Logger(ctx).Debug(err.Error())
+			return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		}
+		k.Logger(ctx).Debug(res.Log)
+		return res, nil
+	}
 }
 
 func handleMsgVerifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v types.Voter, msg types.MsgVerifyErc20Deposit) (*sdk.Result, error) {
@@ -56,12 +66,12 @@ func handleMsgVerifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, rpc types.RPC
 
 	burnerInfo := k.GetBurnerInfo(ctx, msg.BurnerAddr)
 	if burnerInfo == nil {
-		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no burner info found for address %s", msg.BurnerAddr)
+		return nil, fmt.Errorf("no burner info found for address %s", msg.BurnerAddr)
 	}
 
 	poll := vote.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: txIDHex}
 	if err := v.InitPoll(ctx, poll); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return nil, err
 	}
 
 	erc20Deposit := types.Erc20Deposit{
@@ -72,20 +82,18 @@ func handleMsgVerifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, rpc types.RPC
 	}
 	k.SetUnverifiedErc20Deposit(ctx, txIDHex, &erc20Deposit)
 
-	txReceipt, blockNumber, err := getTransactionReceiptAndBlockNumber(ctx, rpc, msg.TxID)
+	txReceipt, blockNumber, err := getTransactionReceiptAndBlockNumber(rpc, msg.TxID)
 	if err != nil {
-		k.Logger(ctx).Debug(sdkerrors.Wrapf(err, "cannot get transaction receipt %s or block number", txIDHex).Error())
 		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
 
-		return &sdk.Result{Log: err.Error()}, nil
+		return &sdk.Result{Log: sdkerrors.Wrapf(err, "cannot get transaction receipt %s or block number", txIDHex).Error()}, nil
 	}
 
 	tokenAddr := common.HexToAddress(burnerInfo.TokenAddr)
 	if err := verifyErc20Deposit(ctx, k, txReceipt, blockNumber, msg.TxID, msg.Amount, msg.BurnerAddr, tokenAddr); err != nil {
-		k.Logger(ctx).Debug(sdkerrors.Wrapf(err, "expected erc20 deposit (%s) to burner address %s could not be verified", txIDHex, msg.BurnerAddr.String()).Error())
 		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
-
-		return &sdk.Result{Log: err.Error()}, nil
+		log := sdkerrors.Wrapf(err, "expected erc20 deposit (%s) to burner address %s could not be verified", txIDHex, msg.BurnerAddr.String()).Error()
+		return &sdk.Result{Log: log}, nil
 	}
 
 	v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: true})
@@ -96,26 +104,26 @@ func handleMsgVerifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, rpc types.RPC
 func handleMsgLink(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg types.MsgLink) (*sdk.Result, error) {
 	gatewayAddr, ok := k.GetGatewayAddress(ctx)
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrEthereum, "Axelar Gateway address not set")
+		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
 	tokenAddr, err := k.GetTokenAddress(ctx, msg.Symbol, gatewayAddr)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return nil, err
 	}
 
 	burnerAddr, salt, err := k.GetBurnerAddressAndSalt(ctx, tokenAddr, msg.RecipientAddr, gatewayAddr)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return nil, err
 	}
 
 	senderChain, ok := n.GetChain(ctx, exported.Ethereum.Name)
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrEthereum, "%s is not a registered chain", exported.Ethereum.Name)
+		return nil, fmt.Errorf("%s is not a registered chain", exported.Ethereum.Name)
 	}
 	recipientChain, ok := n.GetChain(ctx, msg.RecipientChain)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, "unknown recipient chain")
+		return nil, fmt.Errorf("unknown recipient chain")
 	}
 	n.LinkAddresses(ctx,
 		nexus.CrossChainAddress{Chain: senderChain, Address: burnerAddr.String()},
@@ -129,7 +137,6 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg types.Ms
 	k.SetBurnerInfo(ctx, burnerAddr, &burnerInfo)
 
 	logMsg := fmt.Sprintf("successfully linked {%s} and {%s}", burnerAddr.String(), msg.RecipientAddr)
-	k.Logger(ctx).Info(logMsg)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -153,7 +160,6 @@ func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer ty
 
 	if len(pendingTransfers) == 0 {
 		return &sdk.Result{
-			Data:   nil,
 			Log:    fmt.Sprintf("no pending transfer for chain %s found", exported.Ethereum.Name),
 			Events: ctx.EventManager().Events(),
 		}, nil
@@ -163,7 +169,7 @@ func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer ty
 
 	data, err := types.CreateMintCommandData(chainID, pendingTransfers)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return nil, err
 	}
 
 	var commandID types.CommandID
@@ -171,16 +177,16 @@ func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer ty
 
 	keyID, ok := signer.GetCurrentMasterKeyID(ctx, exported.Ethereum)
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no master key for chain %s found", exported.Ethereum.Name)
+		return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
 	}
 
 	counter, ok := signer.GetSnapshotCounterForKeyID(ctx, keyID)
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no snapshot counter for key ID %s registered", keyID)
+		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
 	}
 	s, ok := snap.GetSnapshot(ctx, counter)
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no snapshot found")
+		return nil, fmt.Errorf("no snapshot found")
 	}
 
 	commandIDHex := hex.EncodeToString(commandID[:])
@@ -193,7 +199,7 @@ func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer ty
 	// TODO: Archive pending transfers after signing is completed
 	err = signer.StartSign(ctx, keyID, commandIDHex, signHash.Bytes(), s.Validators)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return nil, err
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -236,14 +242,14 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 
 			deposit := k.GetVerifiedErc20Deposit(ctx, txID)
 			if deposit == nil {
-				return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("erc20 deposit %s wasn't properly marked as verified", txID))
+				return nil, fmt.Errorf("erc20 deposit %s wasn't properly marked as verified", txID)
 			}
 
 			depositAddr := nexus.CrossChainAddress{Address: deposit.BurnerAddr.String(), Chain: exported.Ethereum}
 			amount := sdk.NewInt64Coin(deposit.Symbol, deposit.Amount.BigInt().Int64())
 
 			if err := n.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
-				return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+				return nil, err
 			}
 		default:
 			k.Logger(ctx).Debug(fmt.Sprintf("unknown verification message type: %s", msg.PollMeta.Type))
@@ -265,21 +271,21 @@ func handleMsgSignDeployToken(ctx sdk.Context, k keeper.Keeper, signer types.Sig
 
 	data, err := types.CreateDeployTokenCommandData(chainID, commandID, msg.TokenName, msg.Symbol, msg.Decimals, msg.Capacity)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return nil, err
 	}
 
 	keyID, ok := signer.GetCurrentMasterKeyID(ctx, exported.Ethereum)
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no master key for chain %s found", exported.Ethereum.Name)
+		return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
 	}
 
 	counter, ok := signer.GetSnapshotCounterForKeyID(ctx, keyID)
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no snapshot counter for key ID %s registered", keyID)
+		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
 	}
 	s, ok := snap.GetSnapshot(ctx, counter)
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no snapshot found")
+		return nil, fmt.Errorf("no snapshot found")
 	}
 
 	commandIDHex := hex.EncodeToString(commandID[:])
@@ -290,7 +296,7 @@ func handleMsgSignDeployToken(ctx sdk.Context, k keeper.Keeper, signer types.Sig
 
 	err = signer.StartSign(ctx, keyID, commandIDHex, signHash.Bytes(), s.Validators)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return nil, err
 	}
 
 	k.SaveTokenInfo(ctx, msg)
@@ -321,11 +327,11 @@ func handleMsgSignBurnTokens(ctx sdk.Context, k keeper.Keeper, signer types.Sign
 	chainID := k.GetNetwork(ctx).Params().ChainID
 	burnerAddrs := getUniqueBurnerAddrs(deposits)
 
-	burnerInfos := []types.BurnerInfo{}
+	var burnerInfos []types.BurnerInfo
 	for _, burnerAddr := range burnerAddrs {
 		burnerInfo := k.GetBurnerInfo(ctx, burnerAddr)
 		if burnerInfo == nil {
-			return nil, sdkerrors.Wrapf(types.ErrEthereum, "no burner info found for address %s", burnerAddr)
+			return nil, fmt.Errorf("no burner info found for address %s", burnerAddr)
 		}
 
 		burnerInfos = append(burnerInfos, *burnerInfo)
@@ -333,7 +339,7 @@ func handleMsgSignBurnTokens(ctx sdk.Context, k keeper.Keeper, signer types.Sign
 
 	data, err := types.CreateBurnCommandData(chainID, ctx.BlockHeight(), burnerInfos)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return nil, err
 	}
 
 	var commandID types.CommandID
@@ -341,12 +347,12 @@ func handleMsgSignBurnTokens(ctx sdk.Context, k keeper.Keeper, signer types.Sign
 
 	keyID, ok := signer.GetCurrentMasterKeyID(ctx, exported.Ethereum)
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no master key for chain %s found", exported.Ethereum.Name)
+		return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
 	}
 
 	s, ok := snap.GetLatestSnapshot(ctx)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, "no snapshot found")
+		return nil, fmt.Errorf("no snapshot found")
 	}
 
 	commandIDHex := hex.EncodeToString(commandID[:])
@@ -359,7 +365,7 @@ func handleMsgSignBurnTokens(ctx sdk.Context, k keeper.Keeper, signer types.Sign
 	// TODO: Archive token deposits after signing is completed
 	err = signer.StartSign(ctx, keyID, commandIDHex, signHash.Bytes(), s.Validators)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return nil, err
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -379,7 +385,7 @@ func handleMsgSignBurnTokens(ctx sdk.Context, k keeper.Keeper, signer types.Sign
 }
 
 func getUniqueBurnerAddrs(deposits []types.Erc20Deposit) []common.Address {
-	burnerAddrs := []common.Address{}
+	var burnerAddrs []common.Address
 	burnerAddrSeen := map[common.Address]bool{}
 
 	for _, deposit := range deposits {
@@ -402,7 +408,7 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 	k.Logger(ctx).Info(fmt.Sprintf("storing raw tx %s", txID))
 	hash, err := k.GetHashToSign(ctx, txID)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return nil, err
 	}
 
 	k.Logger(ctx).Info(fmt.Sprintf("ethereum tx [%s] to sign: %s", txID, k.Codec().MustMarshalJSON(hash)))
@@ -417,21 +423,21 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 
 	keyID, ok := signer.GetCurrentMasterKeyID(ctx, exported.Ethereum)
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no master key for chain %s found", exported.Ethereum.Name)
+		return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
 	}
 
 	counter, ok := signer.GetSnapshotCounterForKeyID(ctx, keyID)
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no snapshot counter for key ID %s registered", keyID)
+		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
 	}
 	s, ok := snap.GetSnapshot(ctx, counter)
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrEthereum, "no snapshot found")
+		return nil, fmt.Errorf("no snapshot found")
 	}
 
 	err = signer.StartSign(ctx, keyID, txID, hash.Bytes(), s.Validators)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return nil, err
 	}
 
 	// if this is the transaction that is deploying Axelar Gateway, calculate and save address
@@ -440,7 +446,7 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 
 		pub, ok := signer.GetCurrentMasterKey(ctx, exported.Ethereum)
 		if !ok {
-			return nil, sdkerrors.Wrapf(types.ErrEthereum, "no master key for chain %s found", exported.Ethereum.Name)
+			return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
 		}
 
 		addr := crypto.CreateAddress(crypto.PubkeyToAddress(pub), tx.Nonce())
@@ -457,17 +463,17 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v types.Voter, msg types.MsgVerifyErc20TokenDeploy) (*sdk.Result, error) {
 	gatewayAddr, ok := k.GetGatewayAddress(ctx)
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrEthereum, "Axelar Gateway address not set")
+		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
 	tokenAddr, err := k.GetTokenAddress(ctx, msg.Symbol, gatewayAddr)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return nil, err
 	}
 
 	poll := vote.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.TxID.String()}
 	if err := v.InitPoll(ctx, poll); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return nil, err
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -486,24 +492,21 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 	}
 	k.SetUnverifiedErc20TokenDeploy(ctx, &deploy)
 
-	txReceipt, blockNumber, err := getTransactionReceiptAndBlockNumber(ctx, rpc, msg.TxID)
+	txReceipt, blockNumber, err := getTransactionReceiptAndBlockNumber(rpc, msg.TxID)
 	if err != nil {
-		output := fmt.Sprintf("cannot get transaction receipt %s or block number: %v", msg.TxID.String(), err)
-		k.Logger(ctx).Debug(sdkerrors.Wrap(err, output).Error())
 		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
+		output := sdkerrors.Wrapf(err, "cannot get transaction receipt %s or block number", msg.TxID.String()).Error()
 		return &sdk.Result{Log: output}, nil
 	}
 
 	if err := verifyERC20TokenDeploy(ctx, k, txReceipt, blockNumber, msg.Symbol, gatewayAddr, tokenAddr); err != nil {
-		output := fmt.Sprintf("expected erc20 token deploy (%s) could not be verified", msg.Symbol)
-		k.Logger(ctx).Debug(sdkerrors.Wrap(err, output).Error())
 		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
+		output := sdkerrors.Wrapf(err, "expected erc20 token deploy (%s) could not be verified", msg.Symbol).Error()
 		return &sdk.Result{Log: output}, nil
 	}
 
-	output := fmt.Sprintf("successfully verified erc20 token deployment from transaction %s", msg.TxID.String())
-	k.Logger(ctx).Debug(output)
 	v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: true})
+	output := fmt.Sprintf("successfully verified erc20 token deployment from transaction %s", msg.TxID.String())
 	return &sdk.Result{Log: output}, nil
 }
 
@@ -576,7 +579,7 @@ func verifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, txReceipt *ethTypes.Re
 	return nil
 }
 
-func getTransactionReceiptAndBlockNumber(ctx sdk.Context, rpc types.RPCClient, txID common.Hash) (*ethTypes.Receipt, uint64, error) {
+func getTransactionReceiptAndBlockNumber(rpc types.RPCClient, txID common.Hash) (*ethTypes.Receipt, uint64, error) {
 	txReceipt, err := rpc.TransactionReceipt(context.Background(), txID)
 	if err != nil {
 		return nil, 0, err

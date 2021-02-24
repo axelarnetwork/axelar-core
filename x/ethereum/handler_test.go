@@ -700,7 +700,7 @@ func newKeeper(ctx sdk.Context, confHeight int64) keeper.Keeper {
 	subspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
 	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"), subspace)
 	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(confHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, TokenDeploySig: transferSig})
-	_ = k.SetGatewayAddress(ctx, common.HexToAddress(gateway))
+	k.SetGatewayAddress(ctx, common.HexToAddress(gateway))
 
 	return k
 }
