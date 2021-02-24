@@ -20,21 +20,21 @@ var _ types.TSSDClient = &TSSDClientMock{}
 //
 // 	func TestSomethingThatUsesTSSDClient(t *testing.T) {
 //
-//         // make and configure a mocked types.TSSDClient
-//         mockedTSSDClient := &TSSDClientMock{
-//             GetKeyFunc: func(ctx context.Context, in *tofnd.Uid, opts ...grpc.CallOption) (*tofnd.Bytes, error) {
-// 	               panic("mock out the GetKey method")
-//             },
-//             GetSigFunc: func(ctx context.Context, in *tofnd.Uid, opts ...grpc.CallOption) (*tofnd.Bytes, error) {
-// 	               panic("mock out the GetSig method")
-//             },
-//             KeygenFunc: func(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_KeygenClient, error) {
-// 	               panic("mock out the Keygen method")
-//             },
-//             SignFunc: func(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_SignClient, error) {
-// 	               panic("mock out the Sign method")
-//             },
-//         }
+// 		// make and configure a mocked types.TSSDClient
+// 		mockedTSSDClient := &TSSDClientMock{
+// 			GetKeyFunc: func(ctx context.Context, in *tofnd.Uid, opts ...grpc.CallOption) (*tofnd.Bytes, error) {
+// 				panic("mock out the GetKey method")
+// 			},
+// 			GetSigFunc: func(ctx context.Context, in *tofnd.Uid, opts ...grpc.CallOption) (*tofnd.Bytes, error) {
+// 				panic("mock out the GetSig method")
+// 			},
+// 			KeygenFunc: func(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_KeygenClient, error) {
+// 				panic("mock out the Keygen method")
+// 			},
+// 			SignFunc: func(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_SignClient, error) {
+// 				panic("mock out the Sign method")
+// 			},
+// 		}
 //
 // 		// use mockedTSSDClient in code that requires types.TSSDClient
 // 		// and then make assertions.
@@ -250,33 +250,33 @@ var _ types.TSSDKeyGenClient = &TSSDKeyGenClientMock{}
 //
 // 	func TestSomethingThatUsesTSSDKeyGenClient(t *testing.T) {
 //
-//         // make and configure a mocked types.TSSDKeyGenClient
-//         mockedTSSDKeyGenClient := &TSSDKeyGenClientMock{
-//             CloseSendFunc: func() error {
-// 	               panic("mock out the CloseSend method")
-//             },
-//             ContextFunc: func() context.Context {
-// 	               panic("mock out the Context method")
-//             },
-//             HeaderFunc: func() (metadata.MD, error) {
-// 	               panic("mock out the Header method")
-//             },
-//             RecvFunc: func() (*tofnd.MessageOut, error) {
-// 	               panic("mock out the Recv method")
-//             },
-//             RecvMsgFunc: func(m interface{}) error {
-// 	               panic("mock out the RecvMsg method")
-//             },
-//             SendFunc: func(messageIn *tofnd.MessageIn) error {
-// 	               panic("mock out the Send method")
-//             },
-//             SendMsgFunc: func(m interface{}) error {
-// 	               panic("mock out the SendMsg method")
-//             },
-//             TrailerFunc: func() metadata.MD {
-// 	               panic("mock out the Trailer method")
-//             },
-//         }
+// 		// make and configure a mocked types.TSSDKeyGenClient
+// 		mockedTSSDKeyGenClient := &TSSDKeyGenClientMock{
+// 			CloseSendFunc: func() error {
+// 				panic("mock out the CloseSend method")
+// 			},
+// 			ContextFunc: func() context.Context {
+// 				panic("mock out the Context method")
+// 			},
+// 			HeaderFunc: func() (metadata.MD, error) {
+// 				panic("mock out the Header method")
+// 			},
+// 			RecvFunc: func() (*tofnd.MessageOut, error) {
+// 				panic("mock out the Recv method")
+// 			},
+// 			RecvMsgFunc: func(m interface{}) error {
+// 				panic("mock out the RecvMsg method")
+// 			},
+// 			SendFunc: func(messageIn *tofnd.MessageIn) error {
+// 				panic("mock out the Send method")
+// 			},
+// 			SendMsgFunc: func(m interface{}) error {
+// 				panic("mock out the SendMsg method")
+// 			},
+// 			TrailerFunc: func() metadata.MD {
+// 				panic("mock out the Trailer method")
+// 			},
+// 		}
 //
 // 		// use mockedTSSDKeyGenClient in code that requires types.TSSDKeyGenClient
 // 		// and then make assertions.
@@ -581,33 +581,33 @@ var _ types.TSSDSignClient = &TSSDSignClientMock{}
 //
 // 	func TestSomethingThatUsesTSSDSignClient(t *testing.T) {
 //
-//         // make and configure a mocked types.TSSDSignClient
-//         mockedTSSDSignClient := &TSSDSignClientMock{
-//             CloseSendFunc: func() error {
-// 	               panic("mock out the CloseSend method")
-//             },
-//             ContextFunc: func() context.Context {
-// 	               panic("mock out the Context method")
-//             },
-//             HeaderFunc: func() (metadata.MD, error) {
-// 	               panic("mock out the Header method")
-//             },
-//             RecvFunc: func() (*tofnd.MessageOut, error) {
-// 	               panic("mock out the Recv method")
-//             },
-//             RecvMsgFunc: func(m interface{}) error {
-// 	               panic("mock out the RecvMsg method")
-//             },
-//             SendFunc: func(messageIn *tofnd.MessageIn) error {
-// 	               panic("mock out the Send method")
-//             },
-//             SendMsgFunc: func(m interface{}) error {
-// 	               panic("mock out the SendMsg method")
-//             },
-//             TrailerFunc: func() metadata.MD {
-// 	               panic("mock out the Trailer method")
-//             },
-//         }
+// 		// make and configure a mocked types.TSSDSignClient
+// 		mockedTSSDSignClient := &TSSDSignClientMock{
+// 			CloseSendFunc: func() error {
+// 				panic("mock out the CloseSend method")
+// 			},
+// 			ContextFunc: func() context.Context {
+// 				panic("mock out the Context method")
+// 			},
+// 			HeaderFunc: func() (metadata.MD, error) {
+// 				panic("mock out the Header method")
+// 			},
+// 			RecvFunc: func() (*tofnd.MessageOut, error) {
+// 				panic("mock out the Recv method")
+// 			},
+// 			RecvMsgFunc: func(m interface{}) error {
+// 				panic("mock out the RecvMsg method")
+// 			},
+// 			SendFunc: func(messageIn *tofnd.MessageIn) error {
+// 				panic("mock out the Send method")
+// 			},
+// 			SendMsgFunc: func(m interface{}) error {
+// 				panic("mock out the SendMsg method")
+// 			},
+// 			TrailerFunc: func() metadata.MD {
+// 				panic("mock out the Trailer method")
+// 			},
+// 		}
 //
 // 		// use mockedTSSDSignClient in code that requires types.TSSDSignClient
 // 		// and then make assertions.
