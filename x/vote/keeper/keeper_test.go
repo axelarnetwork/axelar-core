@@ -167,8 +167,8 @@ func TestKeeper_Vote_VotesNotRepeatedInConsecutiveBroadcasts(t *testing.T) {
 	assert.Equal(t, 1, len(s.Broadcaster.BroadcastCalls()[1].Msgs))
 
 	// assert correct votes
-	assert.Equal(t, voteForPoll1, s.Broadcaster.BroadcastCalls()[0].Msgs[0])
-	assert.Equal(t, voteForPoll2, s.Broadcaster.BroadcastCalls()[0].Msgs[1])
+	assert.Contains(t, s.Broadcaster.BroadcastCalls()[0].Msgs, voteForPoll1)
+	assert.Contains(t, s.Broadcaster.BroadcastCalls()[0].Msgs, voteForPoll2)
 	assert.Equal(t, voteForPoll3, s.Broadcaster.BroadcastCalls()[1].Msgs[0])
 }
 
