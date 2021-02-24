@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"strings"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -102,7 +103,6 @@ func TestPrepareSuccess(t *testing.T) {
 }
 
 func TestArchive(t *testing.T) {
-
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	keeper.SetParams(ctx, types.DefaultParams())
 
@@ -142,7 +142,6 @@ func TestArchive(t *testing.T) {
 }
 
 func TestTotalInvalid(t *testing.T) {
-
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	keeper.SetParams(ctx, types.DefaultParams())
 	btcSender, btcRecipient := makeRandAddressesForChain(btc.Bitcoin, eth.Ethereum)
@@ -161,7 +160,6 @@ func TestTotalInvalid(t *testing.T) {
 }
 
 func TestTotalSucess(t *testing.T) {
-
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	keeper.SetParams(ctx, types.DefaultParams())
 	btcSender, btcRecipient := makeRandAddressesForChain(btc.Bitcoin, eth.Ethereum)
@@ -181,6 +179,72 @@ func TestTotalSucess(t *testing.T) {
 	amount = sdk.NewCoin(denom.Satoshi, sdk.NewInt(total))
 	err = keeper.EnqueueForTransfer(ctx, ethSender, amount)
 	assert.Error(t, err)
+}
+
+func TestSetChainGetChain_MixCaseChainName(t *testing.T) {
+	chainName := strings.ToUpper(testutils.RandStringBetween(5, 10)) + strings.ToLower(testutils.RandStringBetween(5, 10))
+	chain := exported.Chain{
+		Name:                  chainName,
+		NativeAsset:           testutils.RandString(3),
+		SupportsForeignAssets: true,
+	}
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	keeper.SetChain(ctx, chain)
+
+	actual, ok := keeper.GetChain(ctx, strings.ToUpper(chainName))
+
+	assert.True(t, ok)
+	assert.Equal(t, chain, actual)
+
+	actual, ok = keeper.GetChain(ctx, strings.ToLower(chainName))
+
+	assert.True(t, ok)
+	assert.Equal(t, chain, actual)
+}
+
+func TestSetChainGetChain_UpperCaseChainName(t *testing.T) {
+	chainName := strings.ToUpper(testutils.RandStringBetween(5, 10))
+	chain := exported.Chain{
+		Name:                  chainName,
+		NativeAsset:           testutils.RandString(3),
+		SupportsForeignAssets: true,
+	}
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	keeper.SetChain(ctx, chain)
+
+	actual, ok := keeper.GetChain(ctx, strings.ToUpper(chainName))
+
+	assert.True(t, ok)
+	assert.Equal(t, chain, actual)
+
+	actual, ok = keeper.GetChain(ctx, strings.ToLower(chainName))
+
+	assert.True(t, ok)
+	assert.Equal(t, chain, actual)
+}
+
+func TestSetChainGetChain_LowerCaseChainName(t *testing.T) {
+	chainName := strings.ToLower(testutils.RandStringBetween(5, 10))
+	chain := exported.Chain{
+		Name:                  chainName,
+		NativeAsset:           testutils.RandString(3),
+		SupportsForeignAssets: true,
+	}
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	keeper.SetChain(ctx, chain)
+
+	actual, ok := keeper.GetChain(ctx, strings.ToUpper(chainName))
+
+	assert.True(t, ok)
+	assert.Equal(t, chain, actual)
+
+	actual, ok = keeper.GetChain(ctx, strings.ToLower(chainName))
+
+	assert.True(t, ok)
+	assert.Equal(t, chain, actual)
 }
 
 func makeRandomDenom() string {
