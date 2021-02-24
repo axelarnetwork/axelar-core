@@ -319,6 +319,7 @@ func (n *Node) start() {
 				res, err := h(n.Ctx, msg.Msg)
 				if err != nil {
 					n.Ctx.Logger().Error(fmt.Sprintf("error from handler for route %s: %s", msg.Route(), err.Error()))
+					panic("no failing messages allowed for now")
 				}
 				msgEvents := sdk.Events{
 					sdk.NewEvent(sdk.EventTypeMessage, sdk.NewAttribute(sdk.AttributeKeyAction, msg.Type())),
