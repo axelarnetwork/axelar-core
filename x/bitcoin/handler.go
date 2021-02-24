@@ -311,9 +311,7 @@ func startSignInputs(ctx sdk.Context, k keeper.Keeper, signer types.Signer, tx *
 
 		err = signer.StartSign(ctx, keyID, serializedHash, hash)
 		if err != nil {
-			if !ok {
-				return err
-			}
+			return err
 		}
 	}
 	return nil
