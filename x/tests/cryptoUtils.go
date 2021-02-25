@@ -15,7 +15,7 @@ import (
 )
 
 // ensure all nodes call .Send() , .Recv() and then .CloseSend()
-func prepareKeygen(keygen *tssdMock.TSSDKeyGenClientMock, keyID string, key ecdsa.PublicKey) (successful <-chan bool) {
+func prepareKeygen(keygen *tssdMock.TofndKeyGenClientMock, keyID string, key ecdsa.PublicKey) (successful <-chan bool) {
 	closeTimeout, closeCancel := context.WithTimeout(context.Background(), 5*time.Second)
 
 	sendSuccessful := false
@@ -58,7 +58,7 @@ func prepareKeygen(keygen *tssdMock.TSSDKeyGenClientMock, keyID string, key ecds
 	return allSuccessful
 }
 
-func prepareSign(mock *tssdMock.TSSDClientMock, keyID string, key *ecdsa.PrivateKey, signatureCache []*syncedBytes) <-chan bool {
+func prepareSign(mock *tssdMock.TofndClientMock, keyID string, key *ecdsa.PrivateKey, signatureCache []*syncedBytes) <-chan bool {
 	allSuccessful := make(chan bool, len(signatureCache))
 
 	var msgToSign []byte
@@ -77,7 +77,7 @@ func prepareSign(mock *tssdMock.TSSDClientMock, keyID string, key *ecdsa.Private
 		}()
 
 		sig := signatureCache[len(mock.SignCalls())-1]
-		return &tssdMock.TSSDSignClientMock{
+		return &tssdMock.TofndSignClientMock{
 			SendFunc: func(msg *tofnd.MessageIn) error {
 				defer close(doneSend)
 

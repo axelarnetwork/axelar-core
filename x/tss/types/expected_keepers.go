@@ -10,7 +10,7 @@ import (
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-//go:generate moq -pkg mock -out ./mock/expected_keepers.go . TSSDClient TSSDKeyGenClient TSSDSignClient
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . TofndClient TofndKeyGenClient TofndSignClient
 
 // Broadcaster provides broadcasting functionality
 type Broadcaster interface {
@@ -32,18 +32,18 @@ type Voter interface {
 	vote.Voter
 }
 
-// TSSDClient wraps around TSSDKeyGenClient and TSSDSignClient
-type TSSDClient interface {
+// TofndClient wraps around TofndKeyGenClient and TofndSignClient
+type TofndClient interface {
 	tofnd.GG20Client
 }
 
-// TSSDKeyGenClient provides keygen functionality
-type TSSDKeyGenClient interface {
+// TofndKeyGenClient provides keygen functionality
+type TofndKeyGenClient interface {
 	tofnd.GG20_KeygenClient
 }
 
-// TSSDSignClient provides signing functionality
-type TSSDSignClient interface {
+// TofndSignClient provides signing functionality
+type TofndSignClient interface {
 	tofnd.GG20_SignClient
 }
 

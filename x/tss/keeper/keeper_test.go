@@ -80,9 +80,9 @@ func setup(t *testing.T) *testSetup {
 		Signature:   make(chan []byte, 1),
 	}
 
-	client := &tssdMock.TSSDClientMock{
+	client := &tssdMock.TofndClientMock{
 		KeygenFunc: func(context.Context, ...grpc.CallOption) (tofnd.GG20_KeygenClient, error) {
-			return &tssdMock.TSSDKeyGenClientMock{
+			return &tssdMock.TofndKeyGenClientMock{
 				SendFunc: func(*tofnd.MessageIn) error {
 					k, _ := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 					setup.PrivateKey <- k
@@ -99,7 +99,7 @@ func setup(t *testing.T) *testSetup {
 			}, nil
 		},
 		SignFunc: func(context.Context, ...grpc.CallOption) (tofnd.GG20_SignClient, error) {
-			return &tssdMock.TSSDSignClientMock{
+			return &tssdMock.TofndSignClientMock{
 				SendFunc: func(in *tofnd.MessageIn) error {
 					k := <-setup.PrivateKey
 					r, s, _ := ecdsa.Sign(rand.Reader, k, in.Data.(*tofnd.MessageIn_SignInit).SignInit.MessageToSign)

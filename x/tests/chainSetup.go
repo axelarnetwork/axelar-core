@@ -57,10 +57,10 @@ func randomSender() sdk.AccAddress {
 type testMocks struct {
 	BTC     *btcMock.RPCClientMock
 	ETH     *ethMock.RPCClientMock
-	Keygen  *tssdMock.TSSDKeyGenClientMock
-	Sign    *tssdMock.TSSDSignClientMock
+	Keygen  *tssdMock.TofndKeyGenClientMock
+	Sign    *tssdMock.TofndSignClientMock
 	Staker  *snapMock.StakingKeeperMock
-	TSSD    *tssdMock.TSSDClientMock
+	Tofnd   *tssdMock.TofndClientMock
 	Slasher *snapMock.SlasherMock
 }
 
@@ -90,7 +90,7 @@ func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *f
 	ethereumKeeper := ethKeeper.NewEthKeeper(testutils.Codec(), sdk.NewKVStoreKey(ethTypes.StoreKey), ethSubspace)
 	ethereumKeeper.SetParams(ctx, ethTypes.DefaultParams())
 
-	signer := tssKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(tssTypes.StoreKey), mocks.TSSD,
+	signer := tssKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(tssTypes.StoreKey), mocks.Tofnd,
 		params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), tssTypes.DefaultParamspace),
 		voter, broadcaster, snapKeeper,
 	)
@@ -176,18 +176,18 @@ func createMocks(validators []staking.Validator) testMocks {
 		// TODO add functions when needed
 	}
 
-	keygen := &tssdMock.TSSDKeyGenClientMock{
+	keygen := &tssdMock.TofndKeyGenClientMock{
 		SendFunc:      func(*tofnd.MessageIn) error { return nil },
 		CloseSendFunc: func() error { return nil }}
-	sign := &tssdMock.TSSDSignClientMock{}
-	tssdClient := &tssdMock.TSSDClientMock{
+	sign := &tssdMock.TofndSignClientMock{}
+	tssdClient := &tssdMock.TofndClientMock{
 		KeygenFunc: func(context.Context, ...grpc.CallOption) (tofnd.GG20_KeygenClient, error) { return keygen, nil },
 		SignFunc:   func(context.Context, ...grpc.CallOption) (tofnd.GG20_SignClient, error) { return sign, nil },
 	}
 	return testMocks{
 		BTC:     btcClient,
 		ETH:     ethClient,
-		TSSD:    tssdClient,
+		Tofnd:   tssdClient,
 		Keygen:  keygen,
 		Sign:    sign,
 		Staker:  stakingKeeper,

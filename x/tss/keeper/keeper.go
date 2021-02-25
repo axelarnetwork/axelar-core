@@ -41,7 +41,7 @@ type Keeper struct {
 }
 
 // NewKeeper constructs a tss keeper
-func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, client types.TSSDClient,
+func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, client types.TofndClient,
 	paramSpace params.Subspace, v types.Voter, broadcaster types.Broadcaster, snapshotter types.Snapshotter) Keeper {
 	return Keeper{
 		broadcaster:   broadcaster,
