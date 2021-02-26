@@ -39,7 +39,7 @@ isGenesisInitialized() {
 initGenesis() {
   if [ -n "$INIT_SCRIPT" ] && [ -f "$INIT_SCRIPT" ]; then
     echo "Running script at $INIT_SCRIPT to create the genesis file"
-    $INIT_SCRIPT $(hostname) $CHAIN_ID
+    "$INIT_SCRIPT" "$(hostname)" "$CHAIN_ID"
   else
     axelard init $(hostname) --chain-id $CHAIN_ID
   fi
@@ -62,11 +62,12 @@ if ! isGenesisInitialized; then
 fi
 
 if [ -n "$CONFIG_PATH" ] && [ -f "$CONFIG_PATH" ]; then
-  cp $CONFIG_PATH "$D_HOME_DIR/config/config.toml"
+  cp "$CONFIG_PATH" "$D_HOME_DIR/config/config.toml"
 fi
 
-if [ -n "$PEERS" ]; then
-  addPeers $PEERS
+if [ -n "$PEERS_FILE" ]; then
+  PEERS=$(cat "$PEERS_FILE")
+  addPeers "$PEERS"
 fi
 
 if [ -n "$TOFND_HOST" ]; then
@@ -75,11 +76,22 @@ else
   TOFND_HOST_SWITCH="" # An axelar-core node without tofnd is a non-validator
 fi
 
-if [ "$START_REST" = true ]; then
-    # REST endpoint must be bound to 0.0.0.0 for availability on docker host
-    dlv --listen=:2347 --headless=true --api-version=2 $REST_CONTINUE --accept-multiclient exec \
-      /root/axelarcli -- rest-server --chain-id=axelarcli --laddr=tcp://0.0.0.0:1317 --node tcp://0.0.0.0:26657 --unsafe-cors &
+if [ "$REST_CONTINUE" = true ]; then
+  CONTINUE_SWITCH="--continue"
+else
+  CONTINUE_SWITCH=""
 fi
 
-exec dlv --listen=:2345 --headless=true $CORE_CONTINUE --api-version=2 --accept-multiclient exec \
-  /root/axelard -- start $TOFND_HOST_SWITCH
+if [ "$START_REST" = true ]; then
+    # REST endpoint must be bound to 0.0.0.0 for availability on docker host
+    dlv --listen=:2347 --headless=true --api-version=2 $CONTINUE_SWITCH --accept-multiclient exec \
+      /usr/local/bin/axelarcli -- rest-server --chain-id=axelarcli --laddr=tcp://0.0.0.0:1317 --node tcp://0.0.0.0:26657 --unsafe-cors &
+fi
+
+if [ "$CORE_CONTINUE" = true ]; then
+  CONTINUE_SWITCH="--continue"
+else
+  CONTINUE_SWITCH=""
+fi
+
+dlv --listen=:2345 --headless=true $CONTINUE_SWITCH --api-version=2 --accept-multiclient exec /usr/local/bin/axelard -- start $TOFND_HOST_SWITCH

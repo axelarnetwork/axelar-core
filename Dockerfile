@@ -36,8 +36,8 @@ ENV TOFND_HOST ""
 ENV KEYRING_BACKEND test
 # The chain ID
 ENV CHAIN_ID axelar
-# The peer list to connect to the network
-ENV PEERS ""
+# The file with the peer list to connect to the network
+ENV PEERS_FILE ""
 # Path of an existing configuration file to use (optional)
 ENV CONFIG_PATH ""
 # A initialization script to create the genesis file (optional)

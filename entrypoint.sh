@@ -6,7 +6,7 @@ fileCount() {
 }
 
 addPeers() {
-  sed "s/^seeds =.*/seeds = \"$1\"/g" $D_HOME_DIR/config/config.toml >$D_HOME_DIR/config/config.toml.tmp &&
+  sed "s/^seeds =.*/seeds = \"$1\"/g" "$D_HOME_DIR/config/config.toml" >"$D_HOME_DIR/config/config.toml.tmp" &&
   mv $D_HOME_DIR/config/config.toml.tmp $D_HOME_DIR/config/config.toml
 }
 
@@ -39,7 +39,7 @@ isGenesisInitialized() {
 initGenesis() {
   if [ -n "$INIT_SCRIPT" ] && [ -f "$INIT_SCRIPT" ]; then
     echo "Running script at $INIT_SCRIPT to create the genesis file"
-    $INIT_SCRIPT $(hostname) $CHAIN_ID
+    "$INIT_SCRIPT" "$(hostname)" "$CHAIN_ID"
   else
     axelard init $(hostname) --chain-id $CHAIN_ID
   fi
@@ -65,7 +65,8 @@ if [ -n "$CONFIG_PATH" ] && [ -f "$CONFIG_PATH" ]; then
   cp "$CONFIG_PATH" "$D_HOME_DIR/config/config.toml"
 fi
 
-if [ -n "$PEERS" ]; then
+if [ -n "$PEERS_FILE" ]; then
+  PEERS=$(cat "$PEERS_FILE")
   addPeers "$PEERS"
 fi
 
@@ -84,5 +85,4 @@ if [ "$START_REST" = true ]; then
     --unsafe-cors &
 fi
 
-exec axelard start \
-  "$TOFND_HOST_SWITCH"
+exec axelard start $TOFND_HOST_SWITCH
