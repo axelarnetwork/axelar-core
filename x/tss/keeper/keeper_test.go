@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -18,6 +17,8 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
 
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
+
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 
@@ -25,7 +26,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
-	tssdMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
+	tssMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -80,9 +81,9 @@ func setup(t *testing.T) *testSetup {
 		Signature:   make(chan []byte, 1),
 	}
 
-	client := &tssdMock.TofndClientMock{
+	client := &tssMock.TofndClientMock{
 		KeygenFunc: func(context.Context, ...grpc.CallOption) (tofnd.GG20_KeygenClient, error) {
-			return &tssdMock.TofndKeyGenClientMock{
+			return &tssMock.TofndKeyGenClientMock{
 				SendFunc: func(*tofnd.MessageIn) error {
 					k, _ := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 					setup.PrivateKey <- k
@@ -99,7 +100,7 @@ func setup(t *testing.T) *testSetup {
 			}, nil
 		},
 		SignFunc: func(context.Context, ...grpc.CallOption) (tofnd.GG20_SignClient, error) {
-			return &tssdMock.TofndSignClientMock{
+			return &tssMock.TofndSignClientMock{
 				SendFunc: func(in *tofnd.MessageIn) error {
 					k := <-setup.PrivateKey
 					r, s, _ := ecdsa.Sign(rand.Reader, k, in.Data.(*tofnd.MessageIn_SignInit).SignInit.MessageToSign)

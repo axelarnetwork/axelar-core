@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -56,7 +57,7 @@ func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, snapsh
 
 	go func() {
 		if err := stream.Send(&tofnd.MessageIn{Data: keygenInit}); err != nil {
-			k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tssd gRPC keygen send keygen init data").Error())
+			k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tofnd gRPC keygen send keygen init data").Error())
 		}
 	}()
 
@@ -245,7 +246,7 @@ func (k Keeper) prepareKeygen(ctx sdk.Context, keyID string, threshold int, vali
 	grpcCtx, _ := k.newGrpcContext()
 	stream, err := k.client.Keygen(grpcCtx)
 	if err != nil {
-		k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tssd gRPC call Keygen").Error())
+		k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tofnd gRPC call Keygen").Error())
 		return nil, nil
 	}
 	k.keygenStreams[keyID] = stream

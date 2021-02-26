@@ -317,13 +317,13 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 
 	// TODO don't start gRPC unless I'm a validator?
 	// start a gRPC client
-	tssdServerAddress := axelarCfg.Host + ":" + axelarCfg.Port
-	logger.Info(fmt.Sprintf("initiate connection to tssd gRPC server: %s", tssdServerAddress))
-	conn, err := grpc.Dial(tssdServerAddress, grpc.WithInsecure(), grpc.WithBlock())
+	tofndServerAddress := axelarCfg.TssConfig.Host + ":" + axelarCfg.TssConfig.Port
+	logger.Info(fmt.Sprintf("initiate connection to tofnd gRPC server: %s", tofndServerAddress))
+	conn, err := grpc.Dial(tofndServerAddress, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
-	logger.Debug("successful connection to tssd gRPC server")
+	logger.Debug("successful connection to tofnd gRPC server")
 
 	app.votingKeeper = voteKeeper.NewKeeper(app.cdc, keys[voteTypes.StoreKey], dbadapter.Store{DB: dbm.NewMemDB()}, app.snapKeeper, app.broadcastKeeper)
 

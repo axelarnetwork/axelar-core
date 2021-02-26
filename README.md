@@ -5,7 +5,6 @@ This repository is used to build the necessary binaries and docker image to run 
 See the axelarnetwork/axelarate repo for instructions to run a node.
 
 ## Prerequisites for building binaries and docker images
-Since axelar-core requires tssd to build which is a private module, you will need to
 
 1. Have a SSH key on your machine
 2. Add your public key to your Github account for authentication

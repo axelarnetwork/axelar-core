@@ -95,11 +95,11 @@ func addAdditionalFlags(rootCmd *cobra.Command) {
 	rootCmd.PersistentFlags().String(CliHomeFlag, app.DefaultCLIHome, "directory for cli config and data")
 	_ = viper.BindPFlag(CliHomeFlag, rootCmd.Flags().Lookup(CliHomeFlag))
 
-	rootCmd.PersistentFlags().String("tssd-host", "", "host name for tss daemon")
-	_ = viper.BindPFlag("tssd_host", rootCmd.PersistentFlags().Lookup("tssd-host"))
+	rootCmd.PersistentFlags().String("tofnd-host", "", "host name for tss daemon")
+	_ = viper.BindPFlag("tofnd_host", rootCmd.PersistentFlags().Lookup("tofnd-host"))
 
-	rootCmd.PersistentFlags().String("tssd-port", "50051", "port for tss daemon")
-	_ = viper.BindPFlag("tssd_port", rootCmd.PersistentFlags().Lookup("tssd-port"))
+	rootCmd.PersistentFlags().String("tofnd-port", "50051", "port for tss daemon")
+	_ = viper.BindPFlag("tofnd_port", rootCmd.PersistentFlags().Lookup("tofnd-port"))
 }
 
 func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application {

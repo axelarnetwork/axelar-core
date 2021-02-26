@@ -44,7 +44,7 @@ import (
 	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
-	tssdMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
+	tssMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/vote"
 	voteKeeper "github.com/axelarnetwork/axelar-core/x/vote/keeper"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
@@ -57,10 +57,10 @@ func randomSender() sdk.AccAddress {
 type testMocks struct {
 	BTC     *btcMock.RPCClientMock
 	ETH     *ethMock.RPCClientMock
-	Keygen  *tssdMock.TofndKeyGenClientMock
-	Sign    *tssdMock.TofndSignClientMock
+	Keygen  *tssMock.TofndKeyGenClientMock
+	Sign    *tssMock.TofndSignClientMock
 	Staker  *snapMock.StakingKeeperMock
-	Tofnd   *tssdMock.TofndClientMock
+	Tofnd   *tssMock.TofndClientMock
 	Slasher *snapMock.SlasherMock
 }
 
@@ -176,18 +176,18 @@ func createMocks(validators []staking.Validator) testMocks {
 		// TODO add functions when needed
 	}
 
-	keygen := &tssdMock.TofndKeyGenClientMock{
+	keygen := &tssMock.TofndKeyGenClientMock{
 		SendFunc:      func(*tofnd.MessageIn) error { return nil },
 		CloseSendFunc: func() error { return nil }}
-	sign := &tssdMock.TofndSignClientMock{}
-	tssdClient := &tssdMock.TofndClientMock{
+	sign := &tssMock.TofndSignClientMock{}
+	tssClient := &tssMock.TofndClientMock{
 		KeygenFunc: func(context.Context, ...grpc.CallOption) (tofnd.GG20_KeygenClient, error) { return keygen, nil },
 		SignFunc:   func(context.Context, ...grpc.CallOption) (tofnd.GG20_SignClient, error) { return sign, nil },
 	}
 	return testMocks{
 		BTC:     btcClient,
 		ETH:     ethClient,
-		Tofnd:   tssdClient,
+		Tofnd:   tssClient,
 		Keygen:  keygen,
 		Sign:    sign,
 		Staker:  stakingKeeper,

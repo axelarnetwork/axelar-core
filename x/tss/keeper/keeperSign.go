@@ -4,10 +4,11 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -79,7 +80,7 @@ func (k Keeper) StartSign(ctx sdk.Context, keyID string, sigID string, msg []byt
 
 	go func() {
 		if err := stream.Send(&tofnd.MessageIn{Data: signInit}); err != nil {
-			k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tssd gRPC sign send sign init data").Error())
+			k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tofnd gRPC sign send sign init data").Error())
 		}
 	}()
 
@@ -176,7 +177,7 @@ func (k Keeper) prepareSign(ctx sdk.Context, keyID, sigID string, msg []byte, va
 	grpcCtx, _ := k.newGrpcContext()
 	stream, err := k.client.Sign(grpcCtx)
 	if err != nil {
-		k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tssd gRPC call Sign").Error())
+		k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tofnd gRPC call Sign").Error())
 		return nil, nil
 	}
 	k.signStreams[sigID] = stream

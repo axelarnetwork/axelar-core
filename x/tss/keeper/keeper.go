@@ -7,12 +7,13 @@ import (
 	"math"
 	"time"
 
-	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/tendermint/tendermint/libs/log"
+
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -128,7 +129,7 @@ func (k Keeper) prepareTrafficIn(ctx sdk.Context, sender sdk.AccAddress, session
 	}
 
 	k.Logger(ctx).Debug(fmt.Sprintf(
-		"incoming msg to tssd: session [%.20s] from [%.20s] to [%.20s] broadcast [%t] me [%.20s]",
+		"incoming msg to tofnd: session [%.20s] from [%.20s] to [%.20s] broadcast [%t] me [%.20s]",
 		sessionID,
 		senderAddress.String(),
 		toAddress.String(),

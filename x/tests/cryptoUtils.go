@@ -11,11 +11,11 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
-	tssdMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
+	tssMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
 )
 
 // ensure all nodes call .Send() , .Recv() and then .CloseSend()
-func prepareKeygen(keygen *tssdMock.TofndKeyGenClientMock, keyID string, key ecdsa.PublicKey) (successful <-chan bool) {
+func prepareKeygen(keygen *tssMock.TofndKeyGenClientMock, keyID string, key ecdsa.PublicKey) (successful <-chan bool) {
 	closeTimeout, closeCancel := context.WithTimeout(context.Background(), 5*time.Second)
 
 	sendSuccessful := false
@@ -58,7 +58,7 @@ func prepareKeygen(keygen *tssdMock.TofndKeyGenClientMock, keyID string, key ecd
 	return allSuccessful
 }
 
-func prepareSign(mock *tssdMock.TofndClientMock, keyID string, key *ecdsa.PrivateKey, signatureCache []*syncedBytes) <-chan bool {
+func prepareSign(mock *tssMock.TofndClientMock, keyID string, key *ecdsa.PrivateKey, signatureCache []*syncedBytes) <-chan bool {
 	allSuccessful := make(chan bool, len(signatureCache))
 
 	var msgToSign []byte
@@ -77,7 +77,7 @@ func prepareSign(mock *tssdMock.TofndClientMock, keyID string, key *ecdsa.Privat
 		}()
 
 		sig := signatureCache[len(mock.SignCalls())-1]
-		return &tssdMock.TofndSignClientMock{
+		return &tssMock.TofndSignClientMock{
 			SendFunc: func(msg *tofnd.MessageIn) error {
 				defer close(doneSend)
 
