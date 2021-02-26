@@ -7,15 +7,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/axelarnetwork/tssd/convert"
-	tssd "github.com/axelarnetwork/tssd/pb"
+	"github.com/btcsuite/btcd/btcec"
 	"google.golang.org/grpc"
 
-	tssdMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
+	tssMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
 )
 
 // ensure all nodes call .Send() , .Recv() and then .CloseSend()
-func prepareKeygen(keygen *tssdMock.TSSDKeyGenClientMock, keyID string, key ecdsa.PublicKey) (successful <-chan bool) {
+func prepareKeygen(keygen *tssMock.TofndKeyGenClientMock, keyID string, key ecdsa.PublicKey) (successful <-chan bool) {
 	closeTimeout, closeCancel := context.WithTimeout(context.Background(), 5*time.Second)
 
 	sendSuccessful := false
@@ -23,22 +23,20 @@ func prepareKeygen(keygen *tssdMock.TSSDKeyGenClientMock, keyID string, key ecds
 	closeSuccessful := false
 
 	doneSend := make(chan struct{})
-	keygen.SendFunc = func(in *tssd.MessageIn) error {
+	keygen.SendFunc = func(in *tofnd.MessageIn) error {
 		defer close(doneSend)
 		sendSuccessful = keyID == in.GetKeygenInit().NewKeyUid
 		return nil
 	}
 
-	keygen.RecvFunc = func() (*tssd.MessageOut, error) {
+	keygen.RecvFunc = func() (*tofnd.MessageOut, error) {
 		// keygen should only receive a response after sending something
 		<-doneSend
 
-		pk, err := convert.PubkeyToBytes(key)
-		if err != nil {
-			panic(err)
-		}
+		btcecPK := btcec.PublicKey(key)
+		pk := btcecPK.SerializeCompressed()
 		recvSuccessful = true
-		return &tssd.MessageOut{Data: &tssd.MessageOut_KeygenResult{KeygenResult: pk}}, nil
+		return &tofnd.MessageOut{Data: &tofnd.MessageOut_KeygenResult{KeygenResult: pk}}, nil
 	}
 
 	keygen.CloseSendFunc = func() error {
@@ -60,11 +58,11 @@ func prepareKeygen(keygen *tssdMock.TSSDKeyGenClientMock, keyID string, key ecds
 	return allSuccessful
 }
 
-func prepareSign(mock *tssdMock.TSSDClientMock, keyID string, key *ecdsa.PrivateKey, signatureCache []*syncedBytes) <-chan bool {
+func prepareSign(mock *tssMock.TofndClientMock, keyID string, key *ecdsa.PrivateKey, signatureCache []*syncedBytes) <-chan bool {
 	allSuccessful := make(chan bool, len(signatureCache))
 
 	var msgToSign []byte
-	mock.SignFunc = func(ctx context.Context, opts ...grpc.CallOption) (tssd.GG18_SignClient, error) {
+	mock.SignFunc = func(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_SignClient, error) {
 		closeTimeout, closeCancel := context.WithTimeout(context.Background(), 5*time.Second)
 		doneSend := make(chan struct{})
 
@@ -79,8 +77,8 @@ func prepareSign(mock *tssdMock.TSSDClientMock, keyID string, key *ecdsa.Private
 		}()
 
 		sig := signatureCache[len(mock.SignCalls())-1]
-		return &tssdMock.TSSDSignClientMock{
-			SendFunc: func(msg *tssd.MessageIn) error {
+		return &tssMock.TofndSignClientMock{
+			SendFunc: func(msg *tofnd.MessageIn) error {
 				defer close(doneSend)
 
 				sendSuccessful = keyID == msg.GetSignInit().KeyUid
@@ -90,11 +88,11 @@ func prepareSign(mock *tssdMock.TSSDClientMock, keyID string, key *ecdsa.Private
 
 				return nil
 			},
-			RecvFunc: func() (*tssd.MessageOut, error) {
+			RecvFunc: func() (*tofnd.MessageOut, error) {
 				// keygen should only receive a response after sending something
 				<-doneSend
 				recvSuccessful = true
-				return &tssd.MessageOut{Data: &tssd.MessageOut_SignResult{SignResult: sig.Get()}}, nil
+				return &tofnd.MessageOut{Data: &tofnd.MessageOut_SignResult{SignResult: sig.Get()}}, nil
 			},
 			CloseSendFunc: func() error {
 				defer closeCancel()
@@ -115,10 +113,8 @@ func createSignature(key *ecdsa.PrivateKey, msg []byte) []byte {
 	if err != nil {
 		panic(err)
 	}
-	sig, err := convert.SigToBytes(r.Bytes(), s.Bytes())
-	if err != nil {
-		panic(err)
-	}
+	btcecSig := btcec.Signature{R: r, S: s}
+	sig := btcecSig.Serialize()
 	return sig
 }
 

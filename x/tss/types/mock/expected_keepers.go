@@ -5,53 +5,53 @@ package mock
 
 import (
 	"context"
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
-	tssd "github.com/axelarnetwork/tssd/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"sync"
 )
 
-// Ensure, that TSSDClientMock does implement types.TSSDClient.
+// Ensure, that TofndClientMock does implement types.TofndClient.
 // If this is not the case, regenerate this file with moq.
-var _ types.TSSDClient = &TSSDClientMock{}
+var _ types.TofndClient = &TofndClientMock{}
 
-// TSSDClientMock is a mock implementation of types.TSSDClient.
+// TofndClientMock is a mock implementation of types.TofndClient.
 //
-// 	func TestSomethingThatUsesTSSDClient(t *testing.T) {
+// 	func TestSomethingThatUsesTofndClient(t *testing.T) {
 //
-// 		// make and configure a mocked types.TSSDClient
-// 		mockedTSSDClient := &TSSDClientMock{
-// 			GetKeyFunc: func(ctx context.Context, in *tssd.Uid, opts ...grpc.CallOption) (*tssd.Bytes, error) {
+// 		// make and configure a mocked types.TofndClient
+// 		mockedTofndClient := &TofndClientMock{
+// 			GetKeyFunc: func(ctx context.Context, in *tofnd.Uid, opts ...grpc.CallOption) (*tofnd.Bytes, error) {
 // 				panic("mock out the GetKey method")
 // 			},
-// 			GetSigFunc: func(ctx context.Context, in *tssd.Uid, opts ...grpc.CallOption) (*tssd.Bytes, error) {
+// 			GetSigFunc: func(ctx context.Context, in *tofnd.Uid, opts ...grpc.CallOption) (*tofnd.Bytes, error) {
 // 				panic("mock out the GetSig method")
 // 			},
-// 			KeygenFunc: func(ctx context.Context, opts ...grpc.CallOption) (tssd.GG18_KeygenClient, error) {
+// 			KeygenFunc: func(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_KeygenClient, error) {
 // 				panic("mock out the Keygen method")
 // 			},
-// 			SignFunc: func(ctx context.Context, opts ...grpc.CallOption) (tssd.GG18_SignClient, error) {
+// 			SignFunc: func(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_SignClient, error) {
 // 				panic("mock out the Sign method")
 // 			},
 // 		}
 //
-// 		// use mockedTSSDClient in code that requires types.TSSDClient
+// 		// use mockedTofndClient in code that requires types.TofndClient
 // 		// and then make assertions.
 //
 // 	}
-type TSSDClientMock struct {
+type TofndClientMock struct {
 	// GetKeyFunc mocks the GetKey method.
-	GetKeyFunc func(ctx context.Context, in *tssd.Uid, opts ...grpc.CallOption) (*tssd.Bytes, error)
+	GetKeyFunc func(ctx context.Context, in *tofnd.Uid, opts ...grpc.CallOption) (*tofnd.Bytes, error)
 
 	// GetSigFunc mocks the GetSig method.
-	GetSigFunc func(ctx context.Context, in *tssd.Uid, opts ...grpc.CallOption) (*tssd.Bytes, error)
+	GetSigFunc func(ctx context.Context, in *tofnd.Uid, opts ...grpc.CallOption) (*tofnd.Bytes, error)
 
 	// KeygenFunc mocks the Keygen method.
-	KeygenFunc func(ctx context.Context, opts ...grpc.CallOption) (tssd.GG18_KeygenClient, error)
+	KeygenFunc func(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_KeygenClient, error)
 
 	// SignFunc mocks the Sign method.
-	SignFunc func(ctx context.Context, opts ...grpc.CallOption) (tssd.GG18_SignClient, error)
+	SignFunc func(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_SignClient, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -60,7 +60,7 @@ type TSSDClientMock struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// In is the in argument value.
-			In *tssd.Uid
+			In *tofnd.Uid
 			// Opts is the opts argument value.
 			Opts []grpc.CallOption
 		}
@@ -69,7 +69,7 @@ type TSSDClientMock struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// In is the in argument value.
-			In *tssd.Uid
+			In *tofnd.Uid
 			// Opts is the opts argument value.
 			Opts []grpc.CallOption
 		}
@@ -95,13 +95,13 @@ type TSSDClientMock struct {
 }
 
 // GetKey calls GetKeyFunc.
-func (mock *TSSDClientMock) GetKey(ctx context.Context, in *tssd.Uid, opts ...grpc.CallOption) (*tssd.Bytes, error) {
+func (mock *TofndClientMock) GetKey(ctx context.Context, in *tofnd.Uid, opts ...grpc.CallOption) (*tofnd.Bytes, error) {
 	if mock.GetKeyFunc == nil {
-		panic("TSSDClientMock.GetKeyFunc: method is nil but TSSDClient.GetKey was just called")
+		panic("TofndClientMock.GetKeyFunc: method is nil but TofndClient.GetKey was just called")
 	}
 	callInfo := struct {
 		Ctx  context.Context
-		In   *tssd.Uid
+		In   *tofnd.Uid
 		Opts []grpc.CallOption
 	}{
 		Ctx:  ctx,
@@ -116,15 +116,15 @@ func (mock *TSSDClientMock) GetKey(ctx context.Context, in *tssd.Uid, opts ...gr
 
 // GetKeyCalls gets all the calls that were made to GetKey.
 // Check the length with:
-//     len(mockedTSSDClient.GetKeyCalls())
-func (mock *TSSDClientMock) GetKeyCalls() []struct {
+//     len(mockedTofndClient.GetKeyCalls())
+func (mock *TofndClientMock) GetKeyCalls() []struct {
 	Ctx  context.Context
-	In   *tssd.Uid
+	In   *tofnd.Uid
 	Opts []grpc.CallOption
 } {
 	var calls []struct {
 		Ctx  context.Context
-		In   *tssd.Uid
+		In   *tofnd.Uid
 		Opts []grpc.CallOption
 	}
 	mock.lockGetKey.RLock()
@@ -134,13 +134,13 @@ func (mock *TSSDClientMock) GetKeyCalls() []struct {
 }
 
 // GetSig calls GetSigFunc.
-func (mock *TSSDClientMock) GetSig(ctx context.Context, in *tssd.Uid, opts ...grpc.CallOption) (*tssd.Bytes, error) {
+func (mock *TofndClientMock) GetSig(ctx context.Context, in *tofnd.Uid, opts ...grpc.CallOption) (*tofnd.Bytes, error) {
 	if mock.GetSigFunc == nil {
-		panic("TSSDClientMock.GetSigFunc: method is nil but TSSDClient.GetSig was just called")
+		panic("TofndClientMock.GetSigFunc: method is nil but TofndClient.GetSig was just called")
 	}
 	callInfo := struct {
 		Ctx  context.Context
-		In   *tssd.Uid
+		In   *tofnd.Uid
 		Opts []grpc.CallOption
 	}{
 		Ctx:  ctx,
@@ -155,15 +155,15 @@ func (mock *TSSDClientMock) GetSig(ctx context.Context, in *tssd.Uid, opts ...gr
 
 // GetSigCalls gets all the calls that were made to GetSig.
 // Check the length with:
-//     len(mockedTSSDClient.GetSigCalls())
-func (mock *TSSDClientMock) GetSigCalls() []struct {
+//     len(mockedTofndClient.GetSigCalls())
+func (mock *TofndClientMock) GetSigCalls() []struct {
 	Ctx  context.Context
-	In   *tssd.Uid
+	In   *tofnd.Uid
 	Opts []grpc.CallOption
 } {
 	var calls []struct {
 		Ctx  context.Context
-		In   *tssd.Uid
+		In   *tofnd.Uid
 		Opts []grpc.CallOption
 	}
 	mock.lockGetSig.RLock()
@@ -173,9 +173,9 @@ func (mock *TSSDClientMock) GetSigCalls() []struct {
 }
 
 // Keygen calls KeygenFunc.
-func (mock *TSSDClientMock) Keygen(ctx context.Context, opts ...grpc.CallOption) (tssd.GG18_KeygenClient, error) {
+func (mock *TofndClientMock) Keygen(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_KeygenClient, error) {
 	if mock.KeygenFunc == nil {
-		panic("TSSDClientMock.KeygenFunc: method is nil but TSSDClient.Keygen was just called")
+		panic("TofndClientMock.KeygenFunc: method is nil but TofndClient.Keygen was just called")
 	}
 	callInfo := struct {
 		Ctx  context.Context
@@ -192,8 +192,8 @@ func (mock *TSSDClientMock) Keygen(ctx context.Context, opts ...grpc.CallOption)
 
 // KeygenCalls gets all the calls that were made to Keygen.
 // Check the length with:
-//     len(mockedTSSDClient.KeygenCalls())
-func (mock *TSSDClientMock) KeygenCalls() []struct {
+//     len(mockedTofndClient.KeygenCalls())
+func (mock *TofndClientMock) KeygenCalls() []struct {
 	Ctx  context.Context
 	Opts []grpc.CallOption
 } {
@@ -208,9 +208,9 @@ func (mock *TSSDClientMock) KeygenCalls() []struct {
 }
 
 // Sign calls SignFunc.
-func (mock *TSSDClientMock) Sign(ctx context.Context, opts ...grpc.CallOption) (tssd.GG18_SignClient, error) {
+func (mock *TofndClientMock) Sign(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_SignClient, error) {
 	if mock.SignFunc == nil {
-		panic("TSSDClientMock.SignFunc: method is nil but TSSDClient.Sign was just called")
+		panic("TofndClientMock.SignFunc: method is nil but TofndClient.Sign was just called")
 	}
 	callInfo := struct {
 		Ctx  context.Context
@@ -227,8 +227,8 @@ func (mock *TSSDClientMock) Sign(ctx context.Context, opts ...grpc.CallOption) (
 
 // SignCalls gets all the calls that were made to Sign.
 // Check the length with:
-//     len(mockedTSSDClient.SignCalls())
-func (mock *TSSDClientMock) SignCalls() []struct {
+//     len(mockedTofndClient.SignCalls())
+func (mock *TofndClientMock) SignCalls() []struct {
 	Ctx  context.Context
 	Opts []grpc.CallOption
 } {
@@ -242,16 +242,16 @@ func (mock *TSSDClientMock) SignCalls() []struct {
 	return calls
 }
 
-// Ensure, that TSSDKeyGenClientMock does implement types.TSSDKeyGenClient.
+// Ensure, that TofndKeyGenClientMock does implement types.TofndKeyGenClient.
 // If this is not the case, regenerate this file with moq.
-var _ types.TSSDKeyGenClient = &TSSDKeyGenClientMock{}
+var _ types.TofndKeyGenClient = &TofndKeyGenClientMock{}
 
-// TSSDKeyGenClientMock is a mock implementation of types.TSSDKeyGenClient.
+// TofndKeyGenClientMock is a mock implementation of types.TofndKeyGenClient.
 //
-// 	func TestSomethingThatUsesTSSDKeyGenClient(t *testing.T) {
+// 	func TestSomethingThatUsesTofndKeyGenClient(t *testing.T) {
 //
-// 		// make and configure a mocked types.TSSDKeyGenClient
-// 		mockedTSSDKeyGenClient := &TSSDKeyGenClientMock{
+// 		// make and configure a mocked types.TofndKeyGenClient
+// 		mockedTofndKeyGenClient := &TofndKeyGenClientMock{
 // 			CloseSendFunc: func() error {
 // 				panic("mock out the CloseSend method")
 // 			},
@@ -261,13 +261,13 @@ var _ types.TSSDKeyGenClient = &TSSDKeyGenClientMock{}
 // 			HeaderFunc: func() (metadata.MD, error) {
 // 				panic("mock out the Header method")
 // 			},
-// 			RecvFunc: func() (*tssd.MessageOut, error) {
+// 			RecvFunc: func() (*tofnd.MessageOut, error) {
 // 				panic("mock out the Recv method")
 // 			},
 // 			RecvMsgFunc: func(m interface{}) error {
 // 				panic("mock out the RecvMsg method")
 // 			},
-// 			SendFunc: func(messageIn *tssd.MessageIn) error {
+// 			SendFunc: func(messageIn *tofnd.MessageIn) error {
 // 				panic("mock out the Send method")
 // 			},
 // 			SendMsgFunc: func(m interface{}) error {
@@ -278,11 +278,11 @@ var _ types.TSSDKeyGenClient = &TSSDKeyGenClientMock{}
 // 			},
 // 		}
 //
-// 		// use mockedTSSDKeyGenClient in code that requires types.TSSDKeyGenClient
+// 		// use mockedTofndKeyGenClient in code that requires types.TofndKeyGenClient
 // 		// and then make assertions.
 //
 // 	}
-type TSSDKeyGenClientMock struct {
+type TofndKeyGenClientMock struct {
 	// CloseSendFunc mocks the CloseSend method.
 	CloseSendFunc func() error
 
@@ -293,13 +293,13 @@ type TSSDKeyGenClientMock struct {
 	HeaderFunc func() (metadata.MD, error)
 
 	// RecvFunc mocks the Recv method.
-	RecvFunc func() (*tssd.MessageOut, error)
+	RecvFunc func() (*tofnd.MessageOut, error)
 
 	// RecvMsgFunc mocks the RecvMsg method.
 	RecvMsgFunc func(m interface{}) error
 
 	// SendFunc mocks the Send method.
-	SendFunc func(messageIn *tssd.MessageIn) error
+	SendFunc func(messageIn *tofnd.MessageIn) error
 
 	// SendMsgFunc mocks the SendMsg method.
 	SendMsgFunc func(m interface{}) error
@@ -329,7 +329,7 @@ type TSSDKeyGenClientMock struct {
 		// Send holds details about calls to the Send method.
 		Send []struct {
 			// MessageIn is the messageIn argument value.
-			MessageIn *tssd.MessageIn
+			MessageIn *tofnd.MessageIn
 		}
 		// SendMsg holds details about calls to the SendMsg method.
 		SendMsg []struct {
@@ -351,9 +351,9 @@ type TSSDKeyGenClientMock struct {
 }
 
 // CloseSend calls CloseSendFunc.
-func (mock *TSSDKeyGenClientMock) CloseSend() error {
+func (mock *TofndKeyGenClientMock) CloseSend() error {
 	if mock.CloseSendFunc == nil {
-		panic("TSSDKeyGenClientMock.CloseSendFunc: method is nil but TSSDKeyGenClient.CloseSend was just called")
+		panic("TofndKeyGenClientMock.CloseSendFunc: method is nil but TofndKeyGenClient.CloseSend was just called")
 	}
 	callInfo := struct {
 	}{}
@@ -365,8 +365,8 @@ func (mock *TSSDKeyGenClientMock) CloseSend() error {
 
 // CloseSendCalls gets all the calls that were made to CloseSend.
 // Check the length with:
-//     len(mockedTSSDKeyGenClient.CloseSendCalls())
-func (mock *TSSDKeyGenClientMock) CloseSendCalls() []struct {
+//     len(mockedTofndKeyGenClient.CloseSendCalls())
+func (mock *TofndKeyGenClientMock) CloseSendCalls() []struct {
 } {
 	var calls []struct {
 	}
@@ -377,9 +377,9 @@ func (mock *TSSDKeyGenClientMock) CloseSendCalls() []struct {
 }
 
 // Context calls ContextFunc.
-func (mock *TSSDKeyGenClientMock) Context() context.Context {
+func (mock *TofndKeyGenClientMock) Context() context.Context {
 	if mock.ContextFunc == nil {
-		panic("TSSDKeyGenClientMock.ContextFunc: method is nil but TSSDKeyGenClient.Context was just called")
+		panic("TofndKeyGenClientMock.ContextFunc: method is nil but TofndKeyGenClient.Context was just called")
 	}
 	callInfo := struct {
 	}{}
@@ -391,8 +391,8 @@ func (mock *TSSDKeyGenClientMock) Context() context.Context {
 
 // ContextCalls gets all the calls that were made to Context.
 // Check the length with:
-//     len(mockedTSSDKeyGenClient.ContextCalls())
-func (mock *TSSDKeyGenClientMock) ContextCalls() []struct {
+//     len(mockedTofndKeyGenClient.ContextCalls())
+func (mock *TofndKeyGenClientMock) ContextCalls() []struct {
 } {
 	var calls []struct {
 	}
@@ -403,9 +403,9 @@ func (mock *TSSDKeyGenClientMock) ContextCalls() []struct {
 }
 
 // Header calls HeaderFunc.
-func (mock *TSSDKeyGenClientMock) Header() (metadata.MD, error) {
+func (mock *TofndKeyGenClientMock) Header() (metadata.MD, error) {
 	if mock.HeaderFunc == nil {
-		panic("TSSDKeyGenClientMock.HeaderFunc: method is nil but TSSDKeyGenClient.Header was just called")
+		panic("TofndKeyGenClientMock.HeaderFunc: method is nil but TofndKeyGenClient.Header was just called")
 	}
 	callInfo := struct {
 	}{}
@@ -417,8 +417,8 @@ func (mock *TSSDKeyGenClientMock) Header() (metadata.MD, error) {
 
 // HeaderCalls gets all the calls that were made to Header.
 // Check the length with:
-//     len(mockedTSSDKeyGenClient.HeaderCalls())
-func (mock *TSSDKeyGenClientMock) HeaderCalls() []struct {
+//     len(mockedTofndKeyGenClient.HeaderCalls())
+func (mock *TofndKeyGenClientMock) HeaderCalls() []struct {
 } {
 	var calls []struct {
 	}
@@ -429,9 +429,9 @@ func (mock *TSSDKeyGenClientMock) HeaderCalls() []struct {
 }
 
 // Recv calls RecvFunc.
-func (mock *TSSDKeyGenClientMock) Recv() (*tssd.MessageOut, error) {
+func (mock *TofndKeyGenClientMock) Recv() (*tofnd.MessageOut, error) {
 	if mock.RecvFunc == nil {
-		panic("TSSDKeyGenClientMock.RecvFunc: method is nil but TSSDKeyGenClient.Recv was just called")
+		panic("TofndKeyGenClientMock.RecvFunc: method is nil but TofndKeyGenClient.Recv was just called")
 	}
 	callInfo := struct {
 	}{}
@@ -443,8 +443,8 @@ func (mock *TSSDKeyGenClientMock) Recv() (*tssd.MessageOut, error) {
 
 // RecvCalls gets all the calls that were made to Recv.
 // Check the length with:
-//     len(mockedTSSDKeyGenClient.RecvCalls())
-func (mock *TSSDKeyGenClientMock) RecvCalls() []struct {
+//     len(mockedTofndKeyGenClient.RecvCalls())
+func (mock *TofndKeyGenClientMock) RecvCalls() []struct {
 } {
 	var calls []struct {
 	}
@@ -455,9 +455,9 @@ func (mock *TSSDKeyGenClientMock) RecvCalls() []struct {
 }
 
 // RecvMsg calls RecvMsgFunc.
-func (mock *TSSDKeyGenClientMock) RecvMsg(m interface{}) error {
+func (mock *TofndKeyGenClientMock) RecvMsg(m interface{}) error {
 	if mock.RecvMsgFunc == nil {
-		panic("TSSDKeyGenClientMock.RecvMsgFunc: method is nil but TSSDKeyGenClient.RecvMsg was just called")
+		panic("TofndKeyGenClientMock.RecvMsgFunc: method is nil but TofndKeyGenClient.RecvMsg was just called")
 	}
 	callInfo := struct {
 		M interface{}
@@ -472,8 +472,8 @@ func (mock *TSSDKeyGenClientMock) RecvMsg(m interface{}) error {
 
 // RecvMsgCalls gets all the calls that were made to RecvMsg.
 // Check the length with:
-//     len(mockedTSSDKeyGenClient.RecvMsgCalls())
-func (mock *TSSDKeyGenClientMock) RecvMsgCalls() []struct {
+//     len(mockedTofndKeyGenClient.RecvMsgCalls())
+func (mock *TofndKeyGenClientMock) RecvMsgCalls() []struct {
 	M interface{}
 } {
 	var calls []struct {
@@ -486,12 +486,12 @@ func (mock *TSSDKeyGenClientMock) RecvMsgCalls() []struct {
 }
 
 // Send calls SendFunc.
-func (mock *TSSDKeyGenClientMock) Send(messageIn *tssd.MessageIn) error {
+func (mock *TofndKeyGenClientMock) Send(messageIn *tofnd.MessageIn) error {
 	if mock.SendFunc == nil {
-		panic("TSSDKeyGenClientMock.SendFunc: method is nil but TSSDKeyGenClient.Send was just called")
+		panic("TofndKeyGenClientMock.SendFunc: method is nil but TofndKeyGenClient.Send was just called")
 	}
 	callInfo := struct {
-		MessageIn *tssd.MessageIn
+		MessageIn *tofnd.MessageIn
 	}{
 		MessageIn: messageIn,
 	}
@@ -503,12 +503,12 @@ func (mock *TSSDKeyGenClientMock) Send(messageIn *tssd.MessageIn) error {
 
 // SendCalls gets all the calls that were made to Send.
 // Check the length with:
-//     len(mockedTSSDKeyGenClient.SendCalls())
-func (mock *TSSDKeyGenClientMock) SendCalls() []struct {
-	MessageIn *tssd.MessageIn
+//     len(mockedTofndKeyGenClient.SendCalls())
+func (mock *TofndKeyGenClientMock) SendCalls() []struct {
+	MessageIn *tofnd.MessageIn
 } {
 	var calls []struct {
-		MessageIn *tssd.MessageIn
+		MessageIn *tofnd.MessageIn
 	}
 	mock.lockSend.RLock()
 	calls = mock.calls.Send
@@ -517,9 +517,9 @@ func (mock *TSSDKeyGenClientMock) SendCalls() []struct {
 }
 
 // SendMsg calls SendMsgFunc.
-func (mock *TSSDKeyGenClientMock) SendMsg(m interface{}) error {
+func (mock *TofndKeyGenClientMock) SendMsg(m interface{}) error {
 	if mock.SendMsgFunc == nil {
-		panic("TSSDKeyGenClientMock.SendMsgFunc: method is nil but TSSDKeyGenClient.SendMsg was just called")
+		panic("TofndKeyGenClientMock.SendMsgFunc: method is nil but TofndKeyGenClient.SendMsg was just called")
 	}
 	callInfo := struct {
 		M interface{}
@@ -534,8 +534,8 @@ func (mock *TSSDKeyGenClientMock) SendMsg(m interface{}) error {
 
 // SendMsgCalls gets all the calls that were made to SendMsg.
 // Check the length with:
-//     len(mockedTSSDKeyGenClient.SendMsgCalls())
-func (mock *TSSDKeyGenClientMock) SendMsgCalls() []struct {
+//     len(mockedTofndKeyGenClient.SendMsgCalls())
+func (mock *TofndKeyGenClientMock) SendMsgCalls() []struct {
 	M interface{}
 } {
 	var calls []struct {
@@ -548,9 +548,9 @@ func (mock *TSSDKeyGenClientMock) SendMsgCalls() []struct {
 }
 
 // Trailer calls TrailerFunc.
-func (mock *TSSDKeyGenClientMock) Trailer() metadata.MD {
+func (mock *TofndKeyGenClientMock) Trailer() metadata.MD {
 	if mock.TrailerFunc == nil {
-		panic("TSSDKeyGenClientMock.TrailerFunc: method is nil but TSSDKeyGenClient.Trailer was just called")
+		panic("TofndKeyGenClientMock.TrailerFunc: method is nil but TofndKeyGenClient.Trailer was just called")
 	}
 	callInfo := struct {
 	}{}
@@ -562,8 +562,8 @@ func (mock *TSSDKeyGenClientMock) Trailer() metadata.MD {
 
 // TrailerCalls gets all the calls that were made to Trailer.
 // Check the length with:
-//     len(mockedTSSDKeyGenClient.TrailerCalls())
-func (mock *TSSDKeyGenClientMock) TrailerCalls() []struct {
+//     len(mockedTofndKeyGenClient.TrailerCalls())
+func (mock *TofndKeyGenClientMock) TrailerCalls() []struct {
 } {
 	var calls []struct {
 	}
@@ -573,16 +573,16 @@ func (mock *TSSDKeyGenClientMock) TrailerCalls() []struct {
 	return calls
 }
 
-// Ensure, that TSSDSignClientMock does implement types.TSSDSignClient.
+// Ensure, that TofndSignClientMock does implement types.TofndSignClient.
 // If this is not the case, regenerate this file with moq.
-var _ types.TSSDSignClient = &TSSDSignClientMock{}
+var _ types.TofndSignClient = &TofndSignClientMock{}
 
-// TSSDSignClientMock is a mock implementation of types.TSSDSignClient.
+// TofndSignClientMock is a mock implementation of types.TofndSignClient.
 //
-// 	func TestSomethingThatUsesTSSDSignClient(t *testing.T) {
+// 	func TestSomethingThatUsesTofndSignClient(t *testing.T) {
 //
-// 		// make and configure a mocked types.TSSDSignClient
-// 		mockedTSSDSignClient := &TSSDSignClientMock{
+// 		// make and configure a mocked types.TofndSignClient
+// 		mockedTofndSignClient := &TofndSignClientMock{
 // 			CloseSendFunc: func() error {
 // 				panic("mock out the CloseSend method")
 // 			},
@@ -592,13 +592,13 @@ var _ types.TSSDSignClient = &TSSDSignClientMock{}
 // 			HeaderFunc: func() (metadata.MD, error) {
 // 				panic("mock out the Header method")
 // 			},
-// 			RecvFunc: func() (*tssd.MessageOut, error) {
+// 			RecvFunc: func() (*tofnd.MessageOut, error) {
 // 				panic("mock out the Recv method")
 // 			},
 // 			RecvMsgFunc: func(m interface{}) error {
 // 				panic("mock out the RecvMsg method")
 // 			},
-// 			SendFunc: func(messageIn *tssd.MessageIn) error {
+// 			SendFunc: func(messageIn *tofnd.MessageIn) error {
 // 				panic("mock out the Send method")
 // 			},
 // 			SendMsgFunc: func(m interface{}) error {
@@ -609,11 +609,11 @@ var _ types.TSSDSignClient = &TSSDSignClientMock{}
 // 			},
 // 		}
 //
-// 		// use mockedTSSDSignClient in code that requires types.TSSDSignClient
+// 		// use mockedTofndSignClient in code that requires types.TofndSignClient
 // 		// and then make assertions.
 //
 // 	}
-type TSSDSignClientMock struct {
+type TofndSignClientMock struct {
 	// CloseSendFunc mocks the CloseSend method.
 	CloseSendFunc func() error
 
@@ -624,13 +624,13 @@ type TSSDSignClientMock struct {
 	HeaderFunc func() (metadata.MD, error)
 
 	// RecvFunc mocks the Recv method.
-	RecvFunc func() (*tssd.MessageOut, error)
+	RecvFunc func() (*tofnd.MessageOut, error)
 
 	// RecvMsgFunc mocks the RecvMsg method.
 	RecvMsgFunc func(m interface{}) error
 
 	// SendFunc mocks the Send method.
-	SendFunc func(messageIn *tssd.MessageIn) error
+	SendFunc func(messageIn *tofnd.MessageIn) error
 
 	// SendMsgFunc mocks the SendMsg method.
 	SendMsgFunc func(m interface{}) error
@@ -660,7 +660,7 @@ type TSSDSignClientMock struct {
 		// Send holds details about calls to the Send method.
 		Send []struct {
 			// MessageIn is the messageIn argument value.
-			MessageIn *tssd.MessageIn
+			MessageIn *tofnd.MessageIn
 		}
 		// SendMsg holds details about calls to the SendMsg method.
 		SendMsg []struct {
@@ -682,9 +682,9 @@ type TSSDSignClientMock struct {
 }
 
 // CloseSend calls CloseSendFunc.
-func (mock *TSSDSignClientMock) CloseSend() error {
+func (mock *TofndSignClientMock) CloseSend() error {
 	if mock.CloseSendFunc == nil {
-		panic("TSSDSignClientMock.CloseSendFunc: method is nil but TSSDSignClient.CloseSend was just called")
+		panic("TofndSignClientMock.CloseSendFunc: method is nil but TofndSignClient.CloseSend was just called")
 	}
 	callInfo := struct {
 	}{}
@@ -696,8 +696,8 @@ func (mock *TSSDSignClientMock) CloseSend() error {
 
 // CloseSendCalls gets all the calls that were made to CloseSend.
 // Check the length with:
-//     len(mockedTSSDSignClient.CloseSendCalls())
-func (mock *TSSDSignClientMock) CloseSendCalls() []struct {
+//     len(mockedTofndSignClient.CloseSendCalls())
+func (mock *TofndSignClientMock) CloseSendCalls() []struct {
 } {
 	var calls []struct {
 	}
@@ -708,9 +708,9 @@ func (mock *TSSDSignClientMock) CloseSendCalls() []struct {
 }
 
 // Context calls ContextFunc.
-func (mock *TSSDSignClientMock) Context() context.Context {
+func (mock *TofndSignClientMock) Context() context.Context {
 	if mock.ContextFunc == nil {
-		panic("TSSDSignClientMock.ContextFunc: method is nil but TSSDSignClient.Context was just called")
+		panic("TofndSignClientMock.ContextFunc: method is nil but TofndSignClient.Context was just called")
 	}
 	callInfo := struct {
 	}{}
@@ -722,8 +722,8 @@ func (mock *TSSDSignClientMock) Context() context.Context {
 
 // ContextCalls gets all the calls that were made to Context.
 // Check the length with:
-//     len(mockedTSSDSignClient.ContextCalls())
-func (mock *TSSDSignClientMock) ContextCalls() []struct {
+//     len(mockedTofndSignClient.ContextCalls())
+func (mock *TofndSignClientMock) ContextCalls() []struct {
 } {
 	var calls []struct {
 	}
@@ -734,9 +734,9 @@ func (mock *TSSDSignClientMock) ContextCalls() []struct {
 }
 
 // Header calls HeaderFunc.
-func (mock *TSSDSignClientMock) Header() (metadata.MD, error) {
+func (mock *TofndSignClientMock) Header() (metadata.MD, error) {
 	if mock.HeaderFunc == nil {
-		panic("TSSDSignClientMock.HeaderFunc: method is nil but TSSDSignClient.Header was just called")
+		panic("TofndSignClientMock.HeaderFunc: method is nil but TofndSignClient.Header was just called")
 	}
 	callInfo := struct {
 	}{}
@@ -748,8 +748,8 @@ func (mock *TSSDSignClientMock) Header() (metadata.MD, error) {
 
 // HeaderCalls gets all the calls that were made to Header.
 // Check the length with:
-//     len(mockedTSSDSignClient.HeaderCalls())
-func (mock *TSSDSignClientMock) HeaderCalls() []struct {
+//     len(mockedTofndSignClient.HeaderCalls())
+func (mock *TofndSignClientMock) HeaderCalls() []struct {
 } {
 	var calls []struct {
 	}
@@ -760,9 +760,9 @@ func (mock *TSSDSignClientMock) HeaderCalls() []struct {
 }
 
 // Recv calls RecvFunc.
-func (mock *TSSDSignClientMock) Recv() (*tssd.MessageOut, error) {
+func (mock *TofndSignClientMock) Recv() (*tofnd.MessageOut, error) {
 	if mock.RecvFunc == nil {
-		panic("TSSDSignClientMock.RecvFunc: method is nil but TSSDSignClient.Recv was just called")
+		panic("TofndSignClientMock.RecvFunc: method is nil but TofndSignClient.Recv was just called")
 	}
 	callInfo := struct {
 	}{}
@@ -774,8 +774,8 @@ func (mock *TSSDSignClientMock) Recv() (*tssd.MessageOut, error) {
 
 // RecvCalls gets all the calls that were made to Recv.
 // Check the length with:
-//     len(mockedTSSDSignClient.RecvCalls())
-func (mock *TSSDSignClientMock) RecvCalls() []struct {
+//     len(mockedTofndSignClient.RecvCalls())
+func (mock *TofndSignClientMock) RecvCalls() []struct {
 } {
 	var calls []struct {
 	}
@@ -786,9 +786,9 @@ func (mock *TSSDSignClientMock) RecvCalls() []struct {
 }
 
 // RecvMsg calls RecvMsgFunc.
-func (mock *TSSDSignClientMock) RecvMsg(m interface{}) error {
+func (mock *TofndSignClientMock) RecvMsg(m interface{}) error {
 	if mock.RecvMsgFunc == nil {
-		panic("TSSDSignClientMock.RecvMsgFunc: method is nil but TSSDSignClient.RecvMsg was just called")
+		panic("TofndSignClientMock.RecvMsgFunc: method is nil but TofndSignClient.RecvMsg was just called")
 	}
 	callInfo := struct {
 		M interface{}
@@ -803,8 +803,8 @@ func (mock *TSSDSignClientMock) RecvMsg(m interface{}) error {
 
 // RecvMsgCalls gets all the calls that were made to RecvMsg.
 // Check the length with:
-//     len(mockedTSSDSignClient.RecvMsgCalls())
-func (mock *TSSDSignClientMock) RecvMsgCalls() []struct {
+//     len(mockedTofndSignClient.RecvMsgCalls())
+func (mock *TofndSignClientMock) RecvMsgCalls() []struct {
 	M interface{}
 } {
 	var calls []struct {
@@ -817,12 +817,12 @@ func (mock *TSSDSignClientMock) RecvMsgCalls() []struct {
 }
 
 // Send calls SendFunc.
-func (mock *TSSDSignClientMock) Send(messageIn *tssd.MessageIn) error {
+func (mock *TofndSignClientMock) Send(messageIn *tofnd.MessageIn) error {
 	if mock.SendFunc == nil {
-		panic("TSSDSignClientMock.SendFunc: method is nil but TSSDSignClient.Send was just called")
+		panic("TofndSignClientMock.SendFunc: method is nil but TofndSignClient.Send was just called")
 	}
 	callInfo := struct {
-		MessageIn *tssd.MessageIn
+		MessageIn *tofnd.MessageIn
 	}{
 		MessageIn: messageIn,
 	}
@@ -834,12 +834,12 @@ func (mock *TSSDSignClientMock) Send(messageIn *tssd.MessageIn) error {
 
 // SendCalls gets all the calls that were made to Send.
 // Check the length with:
-//     len(mockedTSSDSignClient.SendCalls())
-func (mock *TSSDSignClientMock) SendCalls() []struct {
-	MessageIn *tssd.MessageIn
+//     len(mockedTofndSignClient.SendCalls())
+func (mock *TofndSignClientMock) SendCalls() []struct {
+	MessageIn *tofnd.MessageIn
 } {
 	var calls []struct {
-		MessageIn *tssd.MessageIn
+		MessageIn *tofnd.MessageIn
 	}
 	mock.lockSend.RLock()
 	calls = mock.calls.Send
@@ -848,9 +848,9 @@ func (mock *TSSDSignClientMock) SendCalls() []struct {
 }
 
 // SendMsg calls SendMsgFunc.
-func (mock *TSSDSignClientMock) SendMsg(m interface{}) error {
+func (mock *TofndSignClientMock) SendMsg(m interface{}) error {
 	if mock.SendMsgFunc == nil {
-		panic("TSSDSignClientMock.SendMsgFunc: method is nil but TSSDSignClient.SendMsg was just called")
+		panic("TofndSignClientMock.SendMsgFunc: method is nil but TofndSignClient.SendMsg was just called")
 	}
 	callInfo := struct {
 		M interface{}
@@ -865,8 +865,8 @@ func (mock *TSSDSignClientMock) SendMsg(m interface{}) error {
 
 // SendMsgCalls gets all the calls that were made to SendMsg.
 // Check the length with:
-//     len(mockedTSSDSignClient.SendMsgCalls())
-func (mock *TSSDSignClientMock) SendMsgCalls() []struct {
+//     len(mockedTofndSignClient.SendMsgCalls())
+func (mock *TofndSignClientMock) SendMsgCalls() []struct {
 	M interface{}
 } {
 	var calls []struct {
@@ -879,9 +879,9 @@ func (mock *TSSDSignClientMock) SendMsgCalls() []struct {
 }
 
 // Trailer calls TrailerFunc.
-func (mock *TSSDSignClientMock) Trailer() metadata.MD {
+func (mock *TofndSignClientMock) Trailer() metadata.MD {
 	if mock.TrailerFunc == nil {
-		panic("TSSDSignClientMock.TrailerFunc: method is nil but TSSDSignClient.Trailer was just called")
+		panic("TofndSignClientMock.TrailerFunc: method is nil but TofndSignClient.Trailer was just called")
 	}
 	callInfo := struct {
 	}{}
@@ -893,8 +893,8 @@ func (mock *TSSDSignClientMock) Trailer() metadata.MD {
 
 // TrailerCalls gets all the calls that were made to Trailer.
 // Check the length with:
-//     len(mockedTSSDSignClient.TrailerCalls())
-func (mock *TSSDSignClientMock) TrailerCalls() []struct {
+//     len(mockedTofndSignClient.TrailerCalls())
+func (mock *TofndSignClientMock) TrailerCalls() []struct {
 } {
 	var calls []struct {
 	}

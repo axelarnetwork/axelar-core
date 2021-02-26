@@ -1,11 +1,11 @@
 package types
 
 import (
-	"github.com/axelarnetwork/tssd/pb"
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 )
 
 type Stream interface {
-	Send(in *pb.MessageIn) error
-	Recv() (*pb.MessageOut, error)
+	Send(in *tofnd.MessageIn) error
+	Recv() (*tofnd.MessageOut, error)
 	CloseSend() error
 }

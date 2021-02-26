@@ -6,7 +6,7 @@ import (
 
 	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 
-	tssd "github.com/axelarnetwork/tssd/pb"
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
@@ -31,7 +31,7 @@ func TestKeeper_KeygenMsg_NoSessionWithGivenID_Return(t *testing.T) {
 		assert.NoError(t, s.Keeper.KeygenMsg(s.Ctx, types.MsgKeygenTraffic{
 			Sender:    s.Broadcaster.GetProxy(s.Ctx, s.Broadcaster.LocalPrincipal),
 			SessionID: keyID,
-			Payload:   &tssd.TrafficOut{},
+			Payload:   &tofnd.TrafficOut{},
 		}))
 	}
 }

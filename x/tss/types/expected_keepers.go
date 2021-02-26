@@ -1,7 +1,7 @@
 package types
 
 import (
-	tssd "github.com/axelarnetwork/tssd/pb"
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
@@ -10,7 +10,7 @@ import (
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-//go:generate moq -pkg mock -out ./mock/expected_keepers.go . TSSDClient TSSDKeyGenClient TSSDSignClient
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . TofndClient TofndKeyGenClient TofndSignClient
 
 // Broadcaster provides broadcasting functionality
 type Broadcaster interface {
@@ -32,19 +32,19 @@ type Voter interface {
 	vote.Voter
 }
 
-// TSSDClient wraps around TSSDKeyGenClient and TSSDSignClient
-type TSSDClient interface {
-	tssd.GG18Client
+// TofndClient wraps around TofndKeyGenClient and TofndSignClient
+type TofndClient interface {
+	tofnd.GG20Client
 }
 
-// TSSDKeyGenClient provides keygen functionality
-type TSSDKeyGenClient interface {
-	tssd.GG18_KeygenClient
+// TofndKeyGenClient provides keygen functionality
+type TofndKeyGenClient interface {
+	tofnd.GG20_KeygenClient
 }
 
-// TSSDSignClient provides signing functionality
-type TSSDSignClient interface {
-	tssd.GG18_SignClient
+// TofndSignClient provides signing functionality
+type TofndSignClient interface {
+	tofnd.GG20_SignClient
 }
 
 // StakingKeeper adopts the methods from "github.com/cosmos/cosmos-sdk/x/staking/exported" that are

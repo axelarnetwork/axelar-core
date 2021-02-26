@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/axelarnetwork/tssd/convert"
-	tssd "github.com/axelarnetwork/tssd/pb"
+	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -55,8 +56,8 @@ func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, snapsh
 	}
 
 	go func() {
-		if err := stream.Send(&tssd.MessageIn{Data: keygenInit}); err != nil {
-			k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tssd gRPC keygen send keygen init data").Error())
+		if err := stream.Send(&tofnd.MessageIn{Data: keygenInit}); err != nil {
+			k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tofnd gRPC keygen send keygen init data").Error())
 		}
 	}()
 
@@ -82,14 +83,15 @@ func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, snapsh
 	go func() {
 		defer close(pubkeyChan)
 		bz := <-resChan
-		pubkey, err := convert.BytesToPubkey(bz)
+		btcecPK, err := btcec.ParsePubKey(bz, btcec.S256())
 		if err != nil {
 			k.Logger(ctx).Error(sdkerrors.Wrap(err, "handler goroutine: failure to deserialize pubkey").Error())
 			return
 		}
+		pubkey := btcecPK.ToECDSA()
 
 		k.Logger(ctx).Info(fmt.Sprintf("handler goroutine: received pubkey from server! [%v]", pubkey))
-		pubkeyChan <- pubkey
+		pubkeyChan <- *pubkey
 	}()
 
 	return pubkeyChan, nil
@@ -124,12 +126,13 @@ func (k Keeper) GetKey(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool) {
 	if bz == nil {
 		return ecdsa.PublicKey{}, false
 	}
-	pk, err := convert.BytesToPubkey(bz)
+	btcecPK, err := btcec.ParsePubKey(bz, btcec.S256())
 	// the setter is controlled by the keeper alone, so an error here should be a catastrophic failure
 	if err != nil {
 		panic(err)
 	}
-	return pk, true
+	pk := btcecPK.ToECDSA()
+	return *pk, true
 }
 
 // SetKey stores the given public key under the given key ID
@@ -137,11 +140,8 @@ func (k Keeper) SetKey(ctx sdk.Context, keyID string, key ecdsa.PublicKey) {
 	// Delete the reference to the keygen stream with keyID because entering this function means the tss protocol has completed
 	delete(k.keygenStreams, keyID)
 
-	bz, err := convert.PubkeyToBytes(key)
-	if err != nil {
-		panic(err)
-	}
-	ctx.KVStore(k.storeKey).Set([]byte(pkPrefix+keyID), bz)
+	btcecPK := btcec.PublicKey(key)
+	ctx.KVStore(k.storeKey).Set([]byte(pkPrefix+keyID), btcecPK.SerializeCompressed())
 }
 
 // GetCurrentMasterKey returns the latest master key that was set for the given chain
@@ -227,7 +227,7 @@ func (k Keeper) getKeygenStart(ctx sdk.Context, keyID string) (int64, bool) {
 	return blockHeight, true
 }
 
-func (k Keeper) prepareKeygen(ctx sdk.Context, keyID string, threshold int, validators []snapshot.Validator) (types.Stream, *tssd.MessageIn_KeygenInit) {
+func (k Keeper) prepareKeygen(ctx sdk.Context, keyID string, threshold int, validators []snapshot.Validator) (types.Stream, *tofnd.MessageIn_KeygenInit) {
 	// TODO call GetLocalPrincipal only once at launch? need to wait until someone pushes a RegisterProxy message on chain...
 	myAddress := k.broadcaster.GetLocalPrincipal(ctx)
 	if myAddress.Empty() {
@@ -246,13 +246,13 @@ func (k Keeper) prepareKeygen(ctx sdk.Context, keyID string, threshold int, vali
 	grpcCtx, _ := k.newGrpcContext()
 	stream, err := k.client.Keygen(grpcCtx)
 	if err != nil {
-		k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tssd gRPC call Keygen").Error())
+		k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tofnd gRPC call Keygen").Error())
 		return nil, nil
 	}
 	k.keygenStreams[keyID] = stream
 	// TODO refactor
-	keygenInit := &tssd.MessageIn_KeygenInit{
-		KeygenInit: &tssd.KeygenInit{
+	keygenInit := &tofnd.MessageIn_KeygenInit{
+		KeygenInit: &tofnd.KeygenInit{
 			NewKeyUid:    keyID,
 			Threshold:    int32(threshold),
 			PartyUids:    partyUids,

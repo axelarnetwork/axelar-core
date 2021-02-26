@@ -69,10 +69,10 @@ if [ -n "$PEERS" ]; then
   addPeers $PEERS
 fi
 
-if [ -n "$TSSD_HOST" ]; then
-  TSSD_HOST_SWITCH="--tssd-host $TSSD_HOST"
+if [ -n "$TOFND_HOST" ]; then
+  TOFND_HOST_SWITCH="--tofnd-host $TOFND"
 else
-  TSSD_HOST_SWITCH="" # An axelar-core node without tssd is a non-validator
+  TOFND_HOST_SWITCH="" # An axelar-core node without tofnd is a non-validator
 fi
 
 if [ "$START_REST" = true ]; then
@@ -85,4 +85,4 @@ if [ "$START_REST" = true ]; then
 fi
 
 exec axelard start \
-  $TSSD_HOST_SWITCH
+  $TOFND_HOST_SWITCH

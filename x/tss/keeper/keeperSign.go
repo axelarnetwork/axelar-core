@@ -4,10 +4,11 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 
-	"github.com/axelarnetwork/tssd/convert"
-	tssd "github.com/axelarnetwork/tssd/pb"
+	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -78,8 +79,8 @@ func (k Keeper) StartSign(ctx sdk.Context, keyID string, sigID string, msg []byt
 	k.signStreams[sigID] = stream
 
 	go func() {
-		if err := stream.Send(&tssd.MessageIn{Data: signInit}); err != nil {
-			k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tssd gRPC sign send sign init data").Error())
+		if err := stream.Send(&tofnd.MessageIn{Data: signInit}); err != nil {
+			k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tofnd gRPC sign send sign init data").Error())
 		}
 	}()
 
@@ -142,13 +143,13 @@ func (k Keeper) GetSig(ctx sdk.Context, sigID string) (exported.Signature, bool)
 	if bz == nil {
 		return exported.Signature{}, false
 	}
-	r, s, err := convert.BytesToSig(bz)
+	btcecSig, err := btcec.ParseDERSignature(bz, btcec.S256())
 	if err != nil {
 		// the setter is controlled by the keeper alone, so an error here should be a catastrophic failure
 		panic(err)
 	}
 
-	return exported.Signature{R: r, S: s}, true
+	return exported.Signature{R: btcecSig.R, S: btcecSig.S}, true
 }
 
 // SetSig stores the given signature by its ID
@@ -159,7 +160,7 @@ func (k Keeper) SetSig(ctx sdk.Context, sigID string, signature []byte) {
 	ctx.KVStore(k.storeKey).Set([]byte(sigPrefix+sigID), signature)
 }
 
-func (k Keeper) prepareSign(ctx sdk.Context, keyID, sigID string, msg []byte, validators []snapshot.Validator) (types.Stream, *tssd.MessageIn_SignInit) {
+func (k Keeper) prepareSign(ctx sdk.Context, keyID, sigID string, msg []byte, validators []snapshot.Validator) (types.Stream, *tofnd.MessageIn_SignInit) {
 	// TODO call GetLocalPrincipal only once at launch? need to wait until someone pushes a RegisterProxy message on chain...
 	myAddress := k.broadcaster.GetLocalPrincipal(ctx)
 	if myAddress.Empty() {
@@ -176,13 +177,13 @@ func (k Keeper) prepareSign(ctx sdk.Context, keyID, sigID string, msg []byte, va
 	grpcCtx, _ := k.newGrpcContext()
 	stream, err := k.client.Sign(grpcCtx)
 	if err != nil {
-		k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tssd gRPC call Sign").Error())
+		k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tofnd gRPC call Sign").Error())
 		return nil, nil
 	}
 	k.signStreams[sigID] = stream
 	// TODO refactor
-	signInit := &tssd.MessageIn_SignInit{
-		SignInit: &tssd.SignInit{
+	signInit := &tofnd.MessageIn_SignInit{
+		SignInit: &tofnd.SignInit{
 			NewSigUid:     sigID,
 			KeyUid:        keyID,
 			PartyUids:     partyUids,
