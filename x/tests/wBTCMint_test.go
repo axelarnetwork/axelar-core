@@ -146,7 +146,7 @@ func Test_wBTC_mint(t *testing.T) {
 	var correctSigns []<-chan bool
 	cache := NewSignatureCache(1)
 	for _, n := range nodeData {
-		correctSign := prepareSign(n.Mocks.TSSD, ethMasterKeyID, ethMasterKey, cache, 0)
+		correctSign := prepareSign(n.Mocks.Tofnd, ethMasterKeyID, ethMasterKey, cache, 0)
 		correctSigns = append(correctSigns, correctSign)
 	}
 
