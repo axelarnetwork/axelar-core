@@ -58,7 +58,7 @@ func prepareKeygen(keygen *tssMock.TofndKeyGenClientMock, keyID string, key ecds
 	return allSuccessful
 }
 
-func prepareSign(mock *tssMock.TofndClientMock, keyID string, key *ecdsa.PrivateKey, signatureCache []*syncedBytes) <-chan bool {
+func prepareSign(mock *tssMock.TofndClientMock, keyID string, key *ecdsa.PrivateKey, signatureCache []*syncedBytes, offset int) <-chan bool {
 	allSuccessful := make(chan bool, len(signatureCache))
 
 	var msgToSign []byte
@@ -76,7 +76,7 @@ func prepareSign(mock *tssMock.TofndClientMock, keyID string, key *ecdsa.Private
 			allSuccessful <- sendSuccessful && recvSuccessful && closeSuccessful
 		}()
 
-		sig := signatureCache[len(mock.SignCalls())-1]
+		sig := signatureCache[len(mock.SignCalls())-1-offset]
 		return &tssMock.TofndSignClientMock{
 			SendFunc: func(msg *tofnd.MessageIn) error {
 				defer close(doneSend)
