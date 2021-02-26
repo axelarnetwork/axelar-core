@@ -152,9 +152,8 @@ func GetHandlerQuerySendCommandTx(cliCtx context.CLIContext) http.HandlerFunc {
 		copy(commandID[:], common.Hex2Bytes(commandIDHex))
 
 		params := types.CommandParams{
-			CommandID:    commandID,
-			Sender:       fromAddr,
-			ContractAddr: contractAddr,
+			CommandID: commandID,
+			Sender:    fromAddr,
 		}
 
 		json, err := cliCtx.Codec.MarshalJSON(params)

@@ -23,6 +23,7 @@ import (
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	ethKeeper "github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
@@ -128,6 +129,45 @@ func Test_wBTC_mint(t *testing.T) {
 		tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: eth.Ethereum.Name})
 	assert.NoError(t, ethRotateResult.Error)
 
+	// setup axelar gateway
+	bz, err := nodeData[0].Node.Query(
+		[]string{ethTypes.QuerierRoute, ethKeeper.CreateDeployTx},
+		abci.RequestQuery{
+			Data: testutils.Codec().MustMarshalJSON(
+				ethTypes.DeployParams{
+					GasPrice: sdk.NewInt(1),
+					GasLimit: 3000000,
+				})},
+	)
+	assert.NoError(t, err)
+	var result types.DeployResult
+	testutils.Codec().MustUnmarshalJSON(bz, &result)
+
+	var correctSigns []<-chan bool
+	cache := NewSignatureCache(1)
+	for _, n := range nodeData {
+		correctSign := prepareSign(n.Mocks.TSSD, ethMasterKeyID, ethMasterKey, cache)
+		correctSigns = append(correctSigns, correctSign)
+	}
+
+	deployGatewayResult := <-chain.Submit(
+		ethTypes.MsgSignTx{Sender: randomSender(), Tx: testutils.Codec().MustMarshalJSON(result.Tx)})
+	assert.NoError(t, deployGatewayResult.Error)
+
+	for _, isCorrect := range correctSigns {
+		assert.True(t, <-isCorrect)
+	}
+
+	// wait for voting to be done (signing takes longer to tally up)
+	if err := waitFor(signDone, 1); err != nil {
+		assert.FailNow(t, "signing", err)
+	}
+
+	bz, err = nodeData[0].Node.Query(
+		[]string{ethTypes.QuerierRoute, ethKeeper.SendTx, string(deployGatewayResult.Data)},
+		abci.RequestQuery{Data: nil},
+	)
+
 	// steps followed as per https://github.com/axelarnetwork/axelarate#mint-erc20-wrapped-bitcoin-tokens-on-ethereum
 
 	totalDepositCount := int(testutils.RandIntBetween(1, 20))
@@ -170,8 +210,8 @@ func Test_wBTC_mint(t *testing.T) {
 	}
 
 	// 6. Sign all pending transfers to Ethereum
-	var correctSigns []<-chan bool
-	cache := NewSignatureCache(totalDepositCount)
+	correctSigns = make([]<-chan bool, 0)
+	cache = NewSignatureCache(totalDepositCount)
 	for _, n := range nodeData {
 		correctSign := prepareSign(n.Mocks.Tofnd, ethMasterKeyID, ethMasterKey, cache)
 		correctSigns = append(correctSigns, correctSign)
@@ -196,16 +236,14 @@ func Test_wBTC_mint(t *testing.T) {
 	}
 
 	sender := randomSender()
-	contractAddress := randomSender()
 
 	_, err = nodeData[0].Node.Query(
 		[]string{ethTypes.QuerierRoute, ethKeeper.SendCommand},
 		abci.RequestQuery{
 			Data: testutils.Codec().MustMarshalJSON(
 				ethTypes.CommandParams{
-					CommandID:    ethTypes.CommandID(commandID),
-					Sender:       sender.String(),
-					ContractAddr: contractAddress.String(),
+					CommandID: ethTypes.CommandID(commandID),
+					Sender:    sender.String(),
 				})},
 	)
 	assert.NoError(t, err)
