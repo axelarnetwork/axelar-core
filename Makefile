@@ -58,14 +58,25 @@ docker-image-debug:
 # Install all generate prerequisites
 .Phony: prereqs
 prereqs:
+ifeq (which moq,)
 	go get github.com/matryer/moq
+endif
+ifeq (which mdformat,)
 	pip3 install mdformat
+endif
+ifeq (which protoc,)
+	@echo "Please install protoc for grpc (https://grpc.io/docs/languages/go/quickstart/)"
+endif
 
 # Run all the code generators in the project
 .PHONY: generate
 generate:
 	go generate -x ./...
-	
+
+
 .PHONE: tofnd-client
 tofnd-client:
+	@echo -n Generating protobufs...
 	@protoc --go_out=. --go-grpc_out=. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative x/tss/tofnd/tofnd.proto
+	@echo done
+
