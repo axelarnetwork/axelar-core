@@ -6,84 +6,67 @@ import (
 	"sort"
 	"sync"
 
-	sdkTypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/store/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/axelarnetwork/axelar-core/testutils/fake/interfaces"
+	"github.com/axelarnetwork/axelar-core/testutils/fake/interfaces/mock"
 )
 
-func NewMultiStore() sdkTypes.MultiStore {
-	return TestMultiStore{kvstore: make(map[string]sdkTypes.KVStore)}
+// MultiStore is a simple multistore used for testing
+type MultiStore struct {
+	kvstore map[string]interfaces.KVStore
+	*mock.MultiStoreMock
 }
 
-type TestMultiStore struct {
-	kvstore map[string]sdkTypes.KVStore
-}
-
-func (t TestMultiStore) GetStoreType() sdkTypes.StoreType {
-	panic("implement me")
-}
-
-func (t TestMultiStore) CacheWrap() sdkTypes.CacheWrap {
-	panic("implement me")
-}
-
-func (t TestMultiStore) CacheWrapWithTrace(_ io.Writer, _ sdkTypes.TraceContext) sdkTypes.CacheWrap {
-	panic("implement me")
-}
-
-func (t TestMultiStore) CacheMultiStore() sdkTypes.CacheMultiStore {
-	panic("implement me")
-}
-
-func (t TestMultiStore) CacheMultiStoreWithVersion(_ int64) (sdkTypes.CacheMultiStore, error) {
-	panic("implement me")
-}
-
-func (t TestMultiStore) GetStore(_ sdkTypes.StoreKey) sdkTypes.Store {
-	panic("implement me")
-}
-
-func (t TestMultiStore) GetKVStore(key sdkTypes.StoreKey) sdkTypes.KVStore {
-	if store, ok := t.kvstore[key.String()]; ok {
-		return store
-	} else {
-		store := NewTestKVStore()
-		t.kvstore[key.String()] = store
-		return store
+// NewMultiStore returns a new Multistore instance used for testing
+func NewMultiStore() sdk.MultiStore {
+	ms := MultiStore{
+		kvstore:        map[string]interfaces.KVStore{},
+		MultiStoreMock: &mock.MultiStoreMock{},
 	}
+	ms.GetKVStoreFunc = func(storeKey types.StoreKey) types.KVStore {
+		if store, ok := ms.kvstore[storeKey.String()]; ok {
+			return store
+		} else {
+			store := NewTestKVStore()
+			ms.kvstore[storeKey.String()] = store
+			return store
+		}
+	}
+	return ms
 }
 
-func (t TestMultiStore) TracingEnabled() bool {
-	panic("implement me")
-}
-
-func (t TestMultiStore) SetTracer(_ io.Writer) sdkTypes.MultiStore {
-	panic("implement me")
-}
-
-func (t TestMultiStore) SetTracingContext(_ sdkTypes.TraceContext) sdkTypes.MultiStore {
-	panic("implement me")
-}
-
-func NewTestKVStore() sdkTypes.KVStore {
-	return TestKVStore{mutex: &sync.RWMutex{}, store: make(map[string][]byte)}
-}
-
+// TestKVStore is a kv store for testing
 type TestKVStore struct {
 	mutex *sync.RWMutex
 	store map[string][]byte
 }
 
-func (t TestKVStore) GetStoreType() sdkTypes.StoreType {
+// NewTestKVStore returns a new kv store instance for testing
+func NewTestKVStore() interfaces.KVStore {
+	return TestKVStore{
+		mutex: &sync.RWMutex{},
+		store: map[string][]byte{},
+	}
+}
+
+// GetStoreType is not implemented
+func (t TestKVStore) GetStoreType() sdk.StoreType {
 	panic("implement me")
 }
 
-func (t TestKVStore) CacheWrap() sdkTypes.CacheWrap {
+// CacheWrap is not implemented
+func (t TestKVStore) CacheWrap() sdk.CacheWrap {
 	panic("implement me")
 }
 
-func (t TestKVStore) CacheWrapWithTrace(_ io.Writer, _ sdkTypes.TraceContext) sdkTypes.CacheWrap {
+// CacheWrapWithTrace is not implemented
+func (t TestKVStore) CacheWrapWithTrace(_ io.Writer, _ sdk.TraceContext) sdk.CacheWrap {
 	panic("implement me")
 }
 
+// Get returns the value of the given key, nil if it does not exist
 func (t TestKVStore) Get(key []byte) []byte {
 	t.mutex.RLock()
 	defer t.mutex.RUnlock()
@@ -96,6 +79,7 @@ func (t TestKVStore) Get(key []byte) []byte {
 	}
 }
 
+// Has checks if an entry for the given key exists
 func (t TestKVStore) Has(key []byte) bool {
 	t.mutex.RLock()
 	defer t.mutex.RUnlock()
@@ -103,12 +87,14 @@ func (t TestKVStore) Has(key []byte) bool {
 	return ok
 }
 
+// Set stores the given key value pair
 func (t TestKVStore) Set(key, value []byte) {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 	t.store[string(key)] = value
 }
 
+// Delete deletes a key if it exists
 func (t TestKVStore) Delete(key []byte) {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
@@ -116,7 +102,8 @@ func (t TestKVStore) Delete(key []byte) {
 	delete(t.store, string(key))
 }
 
-func (t TestKVStore) Iterator(start, end []byte) sdkTypes.Iterator {
+// Iterator returns an interator over the given key domain
+func (t TestKVStore) Iterator(start, end []byte) sdk.Iterator {
 
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
@@ -124,25 +111,26 @@ func (t TestKVStore) Iterator(start, end []byte) sdkTypes.Iterator {
 	return newMockIterator(start, end, t.store)
 }
 
-func (t TestKVStore) ReverseIterator(start, end []byte) sdkTypes.Iterator {
+// ReverseIterator returns an iterator that iterates over all keys in the given domain in reverse order
+func (t TestKVStore) ReverseIterator(start, end []byte) sdk.Iterator {
 
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 
-	mock := newMockIterator(start, end, t.store)
+	iter := newMockIterator(start, end, t.store)
 
 	// reverse the order of the iterator, which is returned already
 	// sorted in ascending order
-	for i, j := 0, len(mock.keys)-1; i < j; i, j = i+1, j-1 {
-		mock.keys[i], mock.keys[j] = mock.keys[j], mock.keys[i]
-		mock.values[i], mock.values[j] = mock.values[j], mock.values[i]
+	for i, j := 0, len(iter.keys)-1; i < j; i, j = i+1, j-1 {
+		iter.keys[i], iter.keys[j] = iter.keys[j], iter.keys[i]
+		iter.values[i], iter.values[j] = iter.values[j], iter.values[i]
 
 	}
 
-	mock.start = end
-	mock.end = start
+	iter.start = end
+	iter.end = start
 
-	return mock
+	return iter
 }
 
 // fake iterator
@@ -166,7 +154,7 @@ func newMockIterator(start, end []byte, content map[string][]byte) *mockIterator
 
 			// make sure data is a copy so that there is no concurrent writing
 			temp := make([]byte, len(k))
-			copy(temp, []byte(k))
+			copy(temp, k)
 			keys = append(keys, temp)
 		}
 	}
@@ -200,6 +188,7 @@ func newMockIterator(start, end []byte, content map[string][]byte) *mockIterator
 	}
 }
 
+// Domain returns the key domain of the iterator.
 // The start & end (exclusive) limits to iterate over.
 // If end < start, then the Iterator goes in reverse order.
 //
@@ -209,7 +198,6 @@ func newMockIterator(start, end []byte, content map[string][]byte) *mockIterator
 // The smallest key is the empty byte array []byte{} - see BeginningKey().
 // The largest key is the nil byte array []byte(nil) - see EndingKey().
 // CONTRACT: start, end readonly []byte
-
 func (mi mockIterator) Domain() (start []byte, end []byte) {
 	return mi.start, mi.end
 }
