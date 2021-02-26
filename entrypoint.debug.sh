@@ -6,7 +6,7 @@ fileCount() {
 }
 
 addPeers() {
-  sed "s/^seeds =.*/seeds = \"$1\"/g" $D_HOME_DIR/config/config.toml >$D_HOME_DIR/config/config.toml.tmp &&
+  sed "s/^seeds =.*/seeds = \"$1\"/g" "$D_HOME_DIR/config/config.toml" >"$D_HOME_DIR/config/config.toml.tmp" &&
   mv $D_HOME_DIR/config/config.toml.tmp $D_HOME_DIR/config/config.toml
 }
 
@@ -62,11 +62,11 @@ if ! isGenesisInitialized; then
 fi
 
 if [ -n "$CONFIG_PATH" ] && [ -f "$CONFIG_PATH" ]; then
-  cp "$CONFIG_PATH" "$D_HOME_DIR/config/config.toml"
+  cp $CONFIG_PATH "$D_HOME_DIR/config/config.toml"
 fi
 
 if [ -n "$PEERS" ]; then
-  addPeers "$PEERS"
+  addPeers $PEERS
 fi
 
 if [ -n "$TOFND_HOST" ]; then
@@ -76,13 +76,10 @@ else
 fi
 
 if [ "$START_REST" = true ]; then
-  # REST endpoint must be bound to 0.0.0.0 for availability on docker host
-  axelarcli rest-server \
-    --chain-id=axelarcli \
-    --laddr=tcp://0.0.0.0:1317 \
-    --node tcp://0.0.0.0:26657 \
-    --unsafe-cors &
+    # REST endpoint must be bound to 0.0.0.0 for availability on docker host
+    dlv --listen=:2347 --headless=true --api-version=2 $REST_CONTINUE --accept-multiclient exec \
+      /root/axelarcli -- rest-server --chain-id=axelarcli --laddr=tcp://0.0.0.0:1317 --node tcp://0.0.0.0:26657 --unsafe-cors &
 fi
 
-exec axelard start \
-  "$TOFND_HOST_SWITCH"
+exec dlv --listen=:2345 --headless=true $CORE_CONTINUE --api-version=2 --accept-multiclient exec \
+  /root/axelard -- start $TOFND_HOST_SWITCH
