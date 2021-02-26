@@ -31,6 +31,7 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 	ethQueryCmd.AddCommand(flags.GetCommands(
 		GetCmdMasterAddress(queryRoute, cdc),
+		GetCmdAxelarGatewayAddress(queryRoute, cdc),
 		GetCmdCreateDeployTx(queryRoute, cdc),
 		GetCmdSendTx(queryRoute, cdc),
 		GetCmdSendCommand(queryRoute, cdc),
@@ -172,7 +173,6 @@ func GetCmdSendCommand(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			if err != nil {
 				return sdkerrors.Wrapf(err, "could not send Ethereum transaction executing command %s", commandID)
 			}
-
 
 			var txHash string
 			cliCtx.Codec.MustUnmarshalJSON(res, &txHash)
