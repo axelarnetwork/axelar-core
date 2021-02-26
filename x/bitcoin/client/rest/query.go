@@ -21,7 +21,8 @@ type RespDepositAddress struct {
 	Address string `json:"address" yaml:"address"`
 }
 
-const PathQueryVOutIdx = "VOutIdx"
+const QParamVOutIdx = "vout_idx"
+const QParamBlockHash = "block_hash"
 
 // QueryDepositAddress returns a query for a deposit address
 func QueryDepositAddress(cliCtx context.CLIContext) http.HandlerFunc {
@@ -70,7 +71,7 @@ func QueryTxInfo(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		blockHash := r.URL.Query().Get("block_hash")
+		blockHash := r.URL.Query().Get(QParamBlockHash)
 
 		queryData, err := cliCtx.Codec.MarshalJSON(out)
 		if err != nil {
@@ -119,6 +120,6 @@ func QuerySendTransfers(cliCtx context.CLIContext) http.HandlerFunc {
 
 func outPointFromParams(r *http.Request) (*wire.OutPoint, error) {
 	txId := mux.Vars(r)[PathVarTxID]
-	idx := r.URL.Query().Get(PathQueryVOutIdx)
+	idx := r.URL.Query().Get(QParamVOutIdx)
 	return types.OutPointFromStr(txId + ":" + idx)
 }

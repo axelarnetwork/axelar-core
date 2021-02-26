@@ -12,6 +12,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/gorilla/mux"
+	"net/http"
+	"strconv"
 )
 
 const (
@@ -19,7 +21,6 @@ const (
 	TxMethodVerifyErc20Deploy  = "verify-erc20-deploy"
 	TxMethodVerifyErc20Deposit = "verify-erc20-deposit"
 	TxMethodSignTx             = "sign-tx"
-	TxMethodVerifyTx           = "verify-tx"
 	TxMethodSignPending        = "sign-pending"
 	TxMethodSignDeployToken    = "sign-deploy-token"
 
@@ -37,10 +38,9 @@ const (
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	registerTx := clientUtils.RegisterTxHandlerFn(r, types.RestRoute)
 	registerTx(GetHandlerLink(cliCtx), TxMethodLink, PathVarChain)
-	registerTx(GetHandlerVerifyErc20Deploy(cliCtx), TxMethodVerifyErc20Deploy, PathVarChain)
-	registerTx(GetHandlerVerifyErc20Deposit(cliCtx), TxMethodVerifyErc20Deposit, PathVarGatewayAddr, PathVarSymbol)
+	registerTx(GetHandlerVerifyErc20Deploy(cliCtx), TxMethodVerifyErc20Deploy, PathVarSymbol)
+	registerTx(GetHandlerVerifyErc20Deposit(cliCtx), TxMethodVerifyErc20Deposit)
 	registerTx(GetHandlerSignTx(cliCtx), TxMethodSignTx)
-	registerTx(GetHandlerVerifyTx(cliCtx), TxMethodVerifyTx)
 	registerTx(GetHandlerSignPendingTransfers(cliCtx), TxMethodSignPending)
 	registerTx(GetHandlerSignDeployToken(cliCtx), TxMethodSignDeployToken)
 
@@ -55,7 +55,6 @@ type ReqLink struct {
 	BaseReq       rest.BaseReq `json:"base_req" yaml:"base_req"`
 	RecipientAddr string       `json:"recipient" yaml:"recipient"`
 	Symbol        string       `json:"symbol" yaml:"symbol"`
-	GatewayAddr   string       `json:"gateway_address" yaml:"gateway_address"`
 }
 
 type ReqVerifyErc20TokenDeploy struct {
@@ -106,7 +105,6 @@ func GetHandlerLink(cliCtx context.CLIContext) http.HandlerFunc {
 			RecipientChain: mux.Vars(r)[PathVarChain],
 			RecipientAddr:  req.RecipientAddr,
 			Symbol:         req.Symbol,
-			GatewayAddr:    req.GatewayAddr,
 		}
 
 		if err := msg.ValidateBasic(); err != nil {
@@ -133,11 +131,8 @@ func GetHandlerVerifyErc20Deploy(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		vars := mux.Vars(r)
-		gatewayAddr := common.HexToAddress(vars[PathVarGatewayAddr])
 		txID := common.HexToHash(req.TxID)
-
-		msg := types.NewMsgVerifyErc20TokenDeploy(fromAddr, txID, vars[PathVarSymbol], gatewayAddr)
+		msg := types.NewMsgVerifyErc20TokenDeploy(fromAddr, txID, mux.Vars(r)[PathVarSymbol])
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -200,38 +195,6 @@ func GetHandlerSignTx(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		msg := types.NewMsgSignTx(fromAddr, txJson)
-		if err := msg.ValidateBasic(); err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		utils.WriteGenerateStdTxResponse(w, cliCtx, req.BaseReq, []sdk.Msg{msg})
-	}
-}
-
-func GetHandlerVerifyTx(cliCtx context.CLIContext) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReqSignTx
-		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
-			return
-		}
-		req.BaseReq = req.BaseReq.Sanitize()
-		if !req.BaseReq.ValidateBasic(w) {
-			return
-		}
-		fromAddr, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
-		if !ok {
-			return
-		}
-
-		json := []byte(req.TxJson)
-		err := types.ValidTxJson(json)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		msg := types.NewMsgVerifyTx(fromAddr, json)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

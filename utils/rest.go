@@ -36,7 +36,7 @@ func RegisterQueryHandlerFn(r *mux.Router, moduleRoute string) func(http.Handler
 
 func appendPathVars(path string, pathVars []string) string {
 	for _, v := range pathVars {
-		path += "/" + v
+		path += fmt.Sprintf("/{%s}", v)
 	}
 	if len(strings.Fields(path)) > 1 {
 		panic(fmt.Errorf("cannot register REST path containing whitespace: %s", path))
