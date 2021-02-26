@@ -185,9 +185,9 @@ type Erc20TokenDeploy struct {
 // BurnerInfo describes information required to burn token at an burner address
 // that is deposited by an user
 type BurnerInfo struct {
-	TokenAddr string
+	TokenAddr common.Address
 	Symbol    string
-	Salt      [32]byte
+	Salt      common.Hash
 }
 
 // Erc20Deposit contains information for an ERC20 deposit

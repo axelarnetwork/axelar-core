@@ -188,7 +188,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// sign the consolidation transaction
 	fee := testutils.RandIntBetween(1, totalDepositAmount)
-	signResult := <-chain.Submit(btcTypes.NewMsgSign(randomSender(), btcutil.Amount(fee)))
+	signResult := <-chain.Submit(btcTypes.NewMsgSignPendingTransfers(randomSender(), btcutil.Amount(fee)))
 	assert.NoError(t, signResult.Error)
 	for i, isCorrect := range correctSigns {
 		for j := 0; j < totalDepositCount; j++ {

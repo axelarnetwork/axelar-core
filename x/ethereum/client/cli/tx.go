@@ -150,7 +150,7 @@ func GetCmdSignPendingTransfersTx(cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
 
-			msg := types.NewMsgSignPendingTransfersTx(cliCtx.GetFromAddress())
+			msg := types.NewMsgSignPendingTransfers(cliCtx.GetFromAddress())
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

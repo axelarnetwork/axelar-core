@@ -1,53 +1,46 @@
 package types
 
 import (
-	"fmt"
-
-	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// MsgSign represents a message to trigger the signing of a consolidation transaction
-type MsgSign struct {
+// MsgSignPendingTransfers represents a message to trigger the signing of all pending transfers
+type MsgSignPendingTransfers struct {
 	Sender sdk.AccAddress
-	Fee    btcutil.Amount
 }
 
-// NewMsgSign - MsgSign constructor
-func NewMsgSign(sender sdk.AccAddress, fee btcutil.Amount) sdk.Msg {
-	return MsgSign{Sender: sender, Fee: fee}
+// NewMsgSignPendingTransfers - MsgSignPendingTransfers constructor
+func NewMsgSignPendingTransfers(sender sdk.AccAddress) sdk.Msg {
+	return MsgSignPendingTransfers{Sender: sender}
 }
 
 // Route returns the route for this message
-func (msg MsgSign) Route() string {
+func (msg MsgSignPendingTransfers) Route() string {
 	return RouterKey
 }
 
 // Type returns the type of the message
-func (msg MsgSign) Type() string {
-	return "Sign"
+func (msg MsgSignPendingTransfers) Type() string {
+	return "SignPendingTransfers"
 }
 
 // ValidateBasic executes a stateless message validation
-func (msg MsgSign) ValidateBasic() error {
+func (msg MsgSignPendingTransfers) ValidateBasic() error {
 	if msg.Sender.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
-	}
-	if msg.Fee <= 0 {
-		return fmt.Errorf("fee must be a positive amount")
 	}
 
 	return nil
 }
 
 // GetSignBytes returns the message bytes that need to be signed
-func (msg MsgSign) GetSignBytes() []byte {
+func (msg MsgSignPendingTransfers) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
 // GetSigners returns the set of signers for this message
-func (msg MsgSign) GetSigners() []sdk.AccAddress {
+func (msg MsgSignPendingTransfers) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }

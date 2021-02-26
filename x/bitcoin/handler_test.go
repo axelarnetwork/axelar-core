@@ -581,7 +581,7 @@ func prepareMsgSignPendingTransfersSuccessful(h sdk.Handler, ctx sdk.Context, m 
 		return transfers
 	}
 
-	return types.NewMsgSign(sdk.AccAddress(testutils.RandStringBetween(5, 20)), fee),
+	return types.NewMsgSignPendingTransfers(sdk.AccAddress(testutils.RandStringBetween(5, 20)), fee),
 		expectedResult{
 			depositCount:  depositCount,
 			transferCount: transferCount,
@@ -616,7 +616,7 @@ func prepareMsgSignPendingTransfersNotEnoughDeposits(h sdk.Handler, ctx sdk.Cont
 		return transfers
 	}
 
-	return types.NewMsgSign(sdk.AccAddress(testutils.RandStringBetween(5, 20)), fee),
+	return types.NewMsgSignPendingTransfers(sdk.AccAddress(testutils.RandStringBetween(5, 20)), fee),
 		expectedResult{
 			depositCount:  0,
 			transferCount: 0,
@@ -679,7 +679,7 @@ func prepareMsgSignPendingTransfersDoNothing(_ sdk.Handler, _ sdk.Context, m moc
 		return nil
 	}
 
-	return types.NewMsgSign(
+	return types.NewMsgSignPendingTransfers(
 			sdk.AccAddress(testutils.RandStringBetween(5, 20)),
 			btcutil.Amount(testutils.RandPosInt()),
 		), expectedResult{

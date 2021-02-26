@@ -93,7 +93,7 @@ func signPendingTransfersHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewMsgSignPendingTransfersTx(fromAddr)
+		msg := types.NewMsgSignPendingTransfers(fromAddr)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

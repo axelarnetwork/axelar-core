@@ -42,7 +42,7 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 		case types.MsgSignTx:
 			return handleMsgSignTx(ctx, k, s, msg)
 		case types.MsgSignPendingTransfers:
-			return handleMsgSignPendingTransfersTx(ctx, k, s, n, msg)
+			return handleMsgSignPendingTransfers(ctx, k, s, n, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
@@ -88,8 +88,7 @@ func handleMsgVerifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, rpc types.RPC
 		return &sdk.Result{Log: sdkerrors.Wrapf(err, "cannot get transaction receipt %s or block number", txIDHex).Error()}, nil
 	}
 
-	tokenAddr := common.HexToAddress(burnerInfo.TokenAddr)
-	if err := verifyErc20Deposit(ctx, k, txReceipt, blockNumber, msg.TxID, msg.Amount, msg.BurnerAddr, tokenAddr); err != nil {
+	if err := verifyErc20Deposit(ctx, k, txReceipt, blockNumber, msg.TxID, msg.Amount, msg.BurnerAddr, burnerInfo.TokenAddr); err != nil {
 		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
 		log := sdkerrors.Wrapf(err, "expected erc20 deposit (%s) to burner address %s could not be verified", txIDHex, msg.BurnerAddr.String()).Error()
 		return &sdk.Result{Log: log}, nil
@@ -129,7 +128,7 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg types.Ms
 		nexus.CrossChainAddress{Chain: recipientChain, Address: msg.RecipientAddr})
 
 	burnerInfo := types.BurnerInfo{
-		TokenAddr: tokenAddr.String(),
+		TokenAddr: tokenAddr,
 		Symbol:    msg.Symbol,
 		Salt:      salt,
 	}
@@ -154,7 +153,7 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg types.Ms
 	}, nil
 }
 
-func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, n types.Nexus, msg types.MsgSignPendingTransfers) (*sdk.Result, error) {
+func handleMsgSignPendingTransfers(ctx sdk.Context, k keeper.Keeper, signer types.Signer, n types.Nexus, msg types.MsgSignPendingTransfers) (*sdk.Result, error) {
 	pendingTransfers := n.GetPendingTransfersForChain(ctx, exported.Ethereum)
 
 	if len(pendingTransfers) == 0 {
@@ -186,10 +185,14 @@ func handleMsgSignPendingTransfersTx(ctx sdk.Context, k keeper.Keeper, signer ty
 	k.Logger(ctx).Info(fmt.Sprintf("signing mint command [%s] for pending transfers to chain %s", commandIDHex, exported.Ethereum.Name))
 	signHash := types.GetEthereumSignHash(data)
 
-	// TODO: Archive pending transfers after signing is completed
 	err = signer.StartSign(ctx, keyID, commandIDHex, signHash.Bytes())
 	if err != nil {
 		return nil, err
+	}
+
+	// TODO: Archive pending transfers after signing is completed
+	for _, pendingTransfer := range pendingTransfers {
+		n.ArchivePendingTransfer(ctx, pendingTransfer)
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -280,7 +283,7 @@ func handleMsgSignDeployToken(ctx sdk.Context, k keeper.Keeper, signer types.Sig
 		return nil, err
 	}
 
-	k.SaveTokenInfo(ctx, msg)
+	k.SetTokenInfo(ctx, msg)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -338,10 +341,14 @@ func handleMsgSignBurnTokens(ctx sdk.Context, k keeper.Keeper, signer types.Sign
 	k.Logger(ctx).Info(fmt.Sprintf("signing burn command [%s] for token deposits to chain %s", commandIDHex, exported.Ethereum.Name))
 	signHash := types.GetEthereumSignHash(data)
 
-	// TODO: Archive token deposits after signing is completed
 	err = signer.StartSign(ctx, keyID, commandIDHex, signHash.Bytes())
 	if err != nil {
 		return nil, err
+	}
+
+	// TODO: Archive token deposits after signing is completed
+	for _, deposit := range deposits {
+		k.ArchiveErc20Depsit(ctx, deposit.TxID.String())
 	}
 
 	ctx.EventManager().EmitEvent(
