@@ -11,16 +11,16 @@ import (
 	"sync"
 )
 
-// Ensure, that MultistoreMock does implement interfaces.Multistore.
+// Ensure, that MultiStoreMock does implement interfaces.MultiStore.
 // If this is not the case, regenerate this file with moq.
-var _ interfaces.Multistore = &MultistoreMock{}
+var _ interfaces.MultiStore = &MultiStoreMock{}
 
-// MultistoreMock is a mock implementation of interfaces.Multistore.
+// MultiStoreMock is a mock implementation of interfaces.MultiStore.
 //
-// 	func TestSomethingThatUsesMultistore(t *testing.T) {
+// 	func TestSomethingThatUsesMultiStore(t *testing.T) {
 //
-// 		// make and configure a mocked interfaces.Multistore
-// 		mockedMultistore := &MultistoreMock{
+// 		// make and configure a mocked interfaces.MultiStore
+// 		mockedMultiStore := &MultiStoreMock{
 // 			CacheMultiStoreFunc: func() types.CacheMultiStore {
 // 				panic("mock out the CacheMultiStore method")
 // 			},
@@ -53,11 +53,11 @@ var _ interfaces.Multistore = &MultistoreMock{}
 // 			},
 // 		}
 //
-// 		// use mockedMultistore in code that requires interfaces.Multistore
+// 		// use mockedMultiStore in code that requires interfaces.MultiStore
 // 		// and then make assertions.
 //
 // 	}
-type MultistoreMock struct {
+type MultiStoreMock struct {
 	// CacheMultiStoreFunc mocks the CacheMultiStore method.
 	CacheMultiStoreFunc func() types.CacheMultiStore
 
@@ -148,9 +148,9 @@ type MultistoreMock struct {
 }
 
 // CacheMultiStore calls CacheMultiStoreFunc.
-func (mock *MultistoreMock) CacheMultiStore() types.CacheMultiStore {
+func (mock *MultiStoreMock) CacheMultiStore() types.CacheMultiStore {
 	if mock.CacheMultiStoreFunc == nil {
-		panic("MultistoreMock.CacheMultiStoreFunc: method is nil but Multistore.CacheMultiStore was just called")
+		panic("MultiStoreMock.CacheMultiStoreFunc: method is nil but MultiStore.CacheMultiStore was just called")
 	}
 	callInfo := struct {
 	}{}
@@ -162,8 +162,8 @@ func (mock *MultistoreMock) CacheMultiStore() types.CacheMultiStore {
 
 // CacheMultiStoreCalls gets all the calls that were made to CacheMultiStore.
 // Check the length with:
-//     len(mockedMultistore.CacheMultiStoreCalls())
-func (mock *MultistoreMock) CacheMultiStoreCalls() []struct {
+//     len(mockedMultiStore.CacheMultiStoreCalls())
+func (mock *MultiStoreMock) CacheMultiStoreCalls() []struct {
 } {
 	var calls []struct {
 	}
@@ -174,9 +174,9 @@ func (mock *MultistoreMock) CacheMultiStoreCalls() []struct {
 }
 
 // CacheMultiStoreWithVersion calls CacheMultiStoreWithVersionFunc.
-func (mock *MultistoreMock) CacheMultiStoreWithVersion(version int64) (types.CacheMultiStore, error) {
+func (mock *MultiStoreMock) CacheMultiStoreWithVersion(version int64) (types.CacheMultiStore, error) {
 	if mock.CacheMultiStoreWithVersionFunc == nil {
-		panic("MultistoreMock.CacheMultiStoreWithVersionFunc: method is nil but Multistore.CacheMultiStoreWithVersion was just called")
+		panic("MultiStoreMock.CacheMultiStoreWithVersionFunc: method is nil but MultiStore.CacheMultiStoreWithVersion was just called")
 	}
 	callInfo := struct {
 		Version int64
@@ -191,8 +191,8 @@ func (mock *MultistoreMock) CacheMultiStoreWithVersion(version int64) (types.Cac
 
 // CacheMultiStoreWithVersionCalls gets all the calls that were made to CacheMultiStoreWithVersion.
 // Check the length with:
-//     len(mockedMultistore.CacheMultiStoreWithVersionCalls())
-func (mock *MultistoreMock) CacheMultiStoreWithVersionCalls() []struct {
+//     len(mockedMultiStore.CacheMultiStoreWithVersionCalls())
+func (mock *MultiStoreMock) CacheMultiStoreWithVersionCalls() []struct {
 	Version int64
 } {
 	var calls []struct {
@@ -205,9 +205,9 @@ func (mock *MultistoreMock) CacheMultiStoreWithVersionCalls() []struct {
 }
 
 // CacheWrap calls CacheWrapFunc.
-func (mock *MultistoreMock) CacheWrap() types.CacheWrap {
+func (mock *MultiStoreMock) CacheWrap() types.CacheWrap {
 	if mock.CacheWrapFunc == nil {
-		panic("MultistoreMock.CacheWrapFunc: method is nil but Multistore.CacheWrap was just called")
+		panic("MultiStoreMock.CacheWrapFunc: method is nil but MultiStore.CacheWrap was just called")
 	}
 	callInfo := struct {
 	}{}
@@ -219,8 +219,8 @@ func (mock *MultistoreMock) CacheWrap() types.CacheWrap {
 
 // CacheWrapCalls gets all the calls that were made to CacheWrap.
 // Check the length with:
-//     len(mockedMultistore.CacheWrapCalls())
-func (mock *MultistoreMock) CacheWrapCalls() []struct {
+//     len(mockedMultiStore.CacheWrapCalls())
+func (mock *MultiStoreMock) CacheWrapCalls() []struct {
 } {
 	var calls []struct {
 	}
@@ -231,9 +231,9 @@ func (mock *MultistoreMock) CacheWrapCalls() []struct {
 }
 
 // CacheWrapWithTrace calls CacheWrapWithTraceFunc.
-func (mock *MultistoreMock) CacheWrapWithTrace(w io.Writer, tc types.TraceContext) types.CacheWrap {
+func (mock *MultiStoreMock) CacheWrapWithTrace(w io.Writer, tc types.TraceContext) types.CacheWrap {
 	if mock.CacheWrapWithTraceFunc == nil {
-		panic("MultistoreMock.CacheWrapWithTraceFunc: method is nil but Multistore.CacheWrapWithTrace was just called")
+		panic("MultiStoreMock.CacheWrapWithTraceFunc: method is nil but MultiStore.CacheWrapWithTrace was just called")
 	}
 	callInfo := struct {
 		W  io.Writer
@@ -250,8 +250,8 @@ func (mock *MultistoreMock) CacheWrapWithTrace(w io.Writer, tc types.TraceContex
 
 // CacheWrapWithTraceCalls gets all the calls that were made to CacheWrapWithTrace.
 // Check the length with:
-//     len(mockedMultistore.CacheWrapWithTraceCalls())
-func (mock *MultistoreMock) CacheWrapWithTraceCalls() []struct {
+//     len(mockedMultiStore.CacheWrapWithTraceCalls())
+func (mock *MultiStoreMock) CacheWrapWithTraceCalls() []struct {
 	W  io.Writer
 	Tc types.TraceContext
 } {
@@ -266,9 +266,9 @@ func (mock *MultistoreMock) CacheWrapWithTraceCalls() []struct {
 }
 
 // GetKVStore calls GetKVStoreFunc.
-func (mock *MultistoreMock) GetKVStore(storeKey types.StoreKey) types.KVStore {
+func (mock *MultiStoreMock) GetKVStore(storeKey types.StoreKey) types.KVStore {
 	if mock.GetKVStoreFunc == nil {
-		panic("MultistoreMock.GetKVStoreFunc: method is nil but Multistore.GetKVStore was just called")
+		panic("MultiStoreMock.GetKVStoreFunc: method is nil but MultiStore.GetKVStore was just called")
 	}
 	callInfo := struct {
 		StoreKey types.StoreKey
@@ -283,8 +283,8 @@ func (mock *MultistoreMock) GetKVStore(storeKey types.StoreKey) types.KVStore {
 
 // GetKVStoreCalls gets all the calls that were made to GetKVStore.
 // Check the length with:
-//     len(mockedMultistore.GetKVStoreCalls())
-func (mock *MultistoreMock) GetKVStoreCalls() []struct {
+//     len(mockedMultiStore.GetKVStoreCalls())
+func (mock *MultiStoreMock) GetKVStoreCalls() []struct {
 	StoreKey types.StoreKey
 } {
 	var calls []struct {
@@ -297,9 +297,9 @@ func (mock *MultistoreMock) GetKVStoreCalls() []struct {
 }
 
 // GetStore calls GetStoreFunc.
-func (mock *MultistoreMock) GetStore(storeKey types.StoreKey) types.Store {
+func (mock *MultiStoreMock) GetStore(storeKey types.StoreKey) types.Store {
 	if mock.GetStoreFunc == nil {
-		panic("MultistoreMock.GetStoreFunc: method is nil but Multistore.GetStore was just called")
+		panic("MultiStoreMock.GetStoreFunc: method is nil but MultiStore.GetStore was just called")
 	}
 	callInfo := struct {
 		StoreKey types.StoreKey
@@ -314,8 +314,8 @@ func (mock *MultistoreMock) GetStore(storeKey types.StoreKey) types.Store {
 
 // GetStoreCalls gets all the calls that were made to GetStore.
 // Check the length with:
-//     len(mockedMultistore.GetStoreCalls())
-func (mock *MultistoreMock) GetStoreCalls() []struct {
+//     len(mockedMultiStore.GetStoreCalls())
+func (mock *MultiStoreMock) GetStoreCalls() []struct {
 	StoreKey types.StoreKey
 } {
 	var calls []struct {
@@ -328,9 +328,9 @@ func (mock *MultistoreMock) GetStoreCalls() []struct {
 }
 
 // GetStoreType calls GetStoreTypeFunc.
-func (mock *MultistoreMock) GetStoreType() types.StoreType {
+func (mock *MultiStoreMock) GetStoreType() types.StoreType {
 	if mock.GetStoreTypeFunc == nil {
-		panic("MultistoreMock.GetStoreTypeFunc: method is nil but Multistore.GetStoreType was just called")
+		panic("MultiStoreMock.GetStoreTypeFunc: method is nil but MultiStore.GetStoreType was just called")
 	}
 	callInfo := struct {
 	}{}
@@ -342,8 +342,8 @@ func (mock *MultistoreMock) GetStoreType() types.StoreType {
 
 // GetStoreTypeCalls gets all the calls that were made to GetStoreType.
 // Check the length with:
-//     len(mockedMultistore.GetStoreTypeCalls())
-func (mock *MultistoreMock) GetStoreTypeCalls() []struct {
+//     len(mockedMultiStore.GetStoreTypeCalls())
+func (mock *MultiStoreMock) GetStoreTypeCalls() []struct {
 } {
 	var calls []struct {
 	}
@@ -354,9 +354,9 @@ func (mock *MultistoreMock) GetStoreTypeCalls() []struct {
 }
 
 // SetTracer calls SetTracerFunc.
-func (mock *MultistoreMock) SetTracer(w io.Writer) types.MultiStore {
+func (mock *MultiStoreMock) SetTracer(w io.Writer) types.MultiStore {
 	if mock.SetTracerFunc == nil {
-		panic("MultistoreMock.SetTracerFunc: method is nil but Multistore.SetTracer was just called")
+		panic("MultiStoreMock.SetTracerFunc: method is nil but MultiStore.SetTracer was just called")
 	}
 	callInfo := struct {
 		W io.Writer
@@ -371,8 +371,8 @@ func (mock *MultistoreMock) SetTracer(w io.Writer) types.MultiStore {
 
 // SetTracerCalls gets all the calls that were made to SetTracer.
 // Check the length with:
-//     len(mockedMultistore.SetTracerCalls())
-func (mock *MultistoreMock) SetTracerCalls() []struct {
+//     len(mockedMultiStore.SetTracerCalls())
+func (mock *MultiStoreMock) SetTracerCalls() []struct {
 	W io.Writer
 } {
 	var calls []struct {
@@ -385,9 +385,9 @@ func (mock *MultistoreMock) SetTracerCalls() []struct {
 }
 
 // SetTracingContext calls SetTracingContextFunc.
-func (mock *MultistoreMock) SetTracingContext(traceContext types.TraceContext) types.MultiStore {
+func (mock *MultiStoreMock) SetTracingContext(traceContext types.TraceContext) types.MultiStore {
 	if mock.SetTracingContextFunc == nil {
-		panic("MultistoreMock.SetTracingContextFunc: method is nil but Multistore.SetTracingContext was just called")
+		panic("MultiStoreMock.SetTracingContextFunc: method is nil but MultiStore.SetTracingContext was just called")
 	}
 	callInfo := struct {
 		TraceContext types.TraceContext
@@ -402,8 +402,8 @@ func (mock *MultistoreMock) SetTracingContext(traceContext types.TraceContext) t
 
 // SetTracingContextCalls gets all the calls that were made to SetTracingContext.
 // Check the length with:
-//     len(mockedMultistore.SetTracingContextCalls())
-func (mock *MultistoreMock) SetTracingContextCalls() []struct {
+//     len(mockedMultiStore.SetTracingContextCalls())
+func (mock *MultiStoreMock) SetTracingContextCalls() []struct {
 	TraceContext types.TraceContext
 } {
 	var calls []struct {
@@ -416,9 +416,9 @@ func (mock *MultistoreMock) SetTracingContextCalls() []struct {
 }
 
 // TracingEnabled calls TracingEnabledFunc.
-func (mock *MultistoreMock) TracingEnabled() bool {
+func (mock *MultiStoreMock) TracingEnabled() bool {
 	if mock.TracingEnabledFunc == nil {
-		panic("MultistoreMock.TracingEnabledFunc: method is nil but Multistore.TracingEnabled was just called")
+		panic("MultiStoreMock.TracingEnabledFunc: method is nil but MultiStore.TracingEnabled was just called")
 	}
 	callInfo := struct {
 	}{}
@@ -430,8 +430,8 @@ func (mock *MultistoreMock) TracingEnabled() bool {
 
 // TracingEnabledCalls gets all the calls that were made to TracingEnabled.
 // Check the length with:
-//     len(mockedMultistore.TracingEnabledCalls())
-func (mock *MultistoreMock) TracingEnabledCalls() []struct {
+//     len(mockedMultiStore.TracingEnabledCalls())
+func (mock *MultiStoreMock) TracingEnabledCalls() []struct {
 } {
 	var calls []struct {
 	}

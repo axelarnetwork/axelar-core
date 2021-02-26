@@ -9,20 +9,21 @@ import (
 	"github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/axelarnetwork/axelar-core/testutils/fake/interfaces"
 	"github.com/axelarnetwork/axelar-core/testutils/fake/interfaces/mock"
 )
 
-// Multistore is a simple multistore used for testing
-type Multistore struct {
-	kvstore map[string]sdk.KVStore
-	*mock.MultistoreMock
+// MultiStore is a simple multistore used for testing
+type MultiStore struct {
+	kvstore map[string]interfaces.KVStore
+	*mock.MultiStoreMock
 }
 
 // NewMultiStore returns a new Multistore instance used for testing
 func NewMultiStore() sdk.MultiStore {
-	ms := Multistore{
-		kvstore:        map[string]sdk.KVStore{},
-		MultistoreMock: &mock.MultistoreMock{},
+	ms := MultiStore{
+		kvstore:        map[string]interfaces.KVStore{},
+		MultiStoreMock: &mock.MultiStoreMock{},
 	}
 	ms.GetKVStoreFunc = func(storeKey types.StoreKey) types.KVStore {
 		if store, ok := ms.kvstore[storeKey.String()]; ok {
@@ -43,7 +44,7 @@ type TestKVStore struct {
 }
 
 // NewTestKVStore returns a new kv store instance for testing
-func NewTestKVStore() sdk.KVStore {
+func NewTestKVStore() interfaces.KVStore {
 	return TestKVStore{
 		mutex: &sync.RWMutex{},
 		store: map[string][]byte{},
