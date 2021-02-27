@@ -177,7 +177,7 @@ func Test_wBTC_mint(t *testing.T) {
 		correctSigns = append(correctSigns, correctSign)
 	}
 
-	res = <-chain.Submit(ethTypes.NewMsgSignPendingTransfersTx(randomSender()))
+	res = <-chain.Submit(ethTypes.NewMsgSignPendingTransfers(randomSender()))
 	assert.NoError(t, res.Error)
 	for _, isCorrect := range correctSigns {
 		assert.True(t, <-isCorrect)

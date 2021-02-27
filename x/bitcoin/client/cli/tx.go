@@ -99,7 +99,7 @@ func GetCmdSignPendingTransfersTx(cdc *codec.Codec) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			msg := types.NewMsgSign(cliCtx.GetFromAddress(), btcutil.Amount(satoshi.Amount.Int64()))
+			msg := types.NewMsgSignPendingTransfers(cliCtx.GetFromAddress(), btcutil.Amount(satoshi.Amount.Int64()))
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

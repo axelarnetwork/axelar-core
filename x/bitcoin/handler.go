@@ -29,8 +29,8 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, signer type
 			return handleMsgVerifyTx(ctx, k, v, rpc, msg)
 		case *types.MsgVoteVerifiedTx:
 			return handleMsgVoteVerifiedTx(ctx, k, v, n, msg)
-		case types.MsgSign:
-			return handleMsgSign(ctx, k, signer, n, msg)
+		case types.MsgSignPendingTransfers:
+			return handleMsgSignPendingTransfers(ctx, k, signer, n, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
@@ -177,7 +177,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 	}, nil
 }
 
-func handleMsgSign(ctx sdk.Context, k keeper.Keeper, signer types.Signer, n types.Nexus, msg types.MsgSign) (*sdk.Result, error) {
+func handleMsgSignPendingTransfers(ctx sdk.Context, k keeper.Keeper, signer types.Signer, n types.Nexus, msg types.MsgSignPendingTransfers) (*sdk.Result, error) {
 	outPuts, totalWithdrawals := prepareOutputs(ctx, k, n)
 	prevOuts, totalDeposits := prepareInputs(ctx, k)
 

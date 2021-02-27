@@ -28,6 +28,7 @@ const (
 	pendingTokenPrefix         = "pending_token_"
 	pendingErc20DepositPrefix  = "pending_erc20_deposit_"
 	verifiedErc20DepositPrefix = "verified_erc20_deposit_"
+	archivedErc20DepositPrefix = "archived_erc20_deposit_"
 	commandPrefix              = "command_"
 	symbolPrefix               = "symbol_"
 	burnerPrefix               = "burner_"
@@ -106,7 +107,7 @@ func (k Keeper) GetGatewayAddress(ctx sdk.Context) (common.Address, bool) {
 // SetBurnerInfo saves the burner info for a given address
 func (k Keeper) SetBurnerInfo(ctx sdk.Context, burnerAddr common.Address, burnerInfo *types.BurnerInfo) {
 	key := append([]byte(burnerPrefix), burnerAddr.Bytes()...)
-	bz := k.cdc.MustMarshalJSON(burnerInfo)
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(burnerInfo)
 
 	ctx.KVStore(k.storeKey).Set(key, bz)
 }
@@ -121,7 +122,7 @@ func (k Keeper) GetBurnerInfo(ctx sdk.Context, burnerAddr common.Address) *types
 	}
 
 	var result *types.BurnerInfo
-	k.cdc.MustUnmarshalJSON(bz, &result)
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &result)
 
 	return result
 }
@@ -171,24 +172,23 @@ func (k Keeper) GetTokenAddress(ctx sdk.Context, symbol string, gatewayAddr comm
 }
 
 // GetBurnerAddressAndSalt calculates a burner address and the corresponding salt for the given token address, recipient and axelar gateway address
-func (k Keeper) GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, [32]byte, error) {
+func (k Keeper) GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error) {
 	addressType, err := abi.NewType("address", "address", nil)
 	if err != nil {
-		return common.Address{}, [32]byte{}, err
+		return common.Address{}, common.Hash{}, err
 	}
 
 	bytes32Type, err := abi.NewType("bytes32", "bytes32", nil)
 	if err != nil {
-		return common.Address{}, [32]byte{}, err
+		return common.Address{}, common.Hash{}, err
 	}
 
-	var saltBurn [32]byte
-	copy(saltBurn[:], crypto.Keccak256Hash([]byte(recipient)).Bytes())
+	saltBurn := common.BytesToHash(crypto.Keccak256Hash([]byte(recipient)).Bytes())
 
 	arguments := abi.Arguments{{Type: addressType}, {Type: bytes32Type}}
 	packed, err := arguments.Pack(tokenAddr, saltBurn)
 	if err != nil {
-		return common.Address{}, [32]byte{}, err
+		return common.Address{}, common.Hash{}, err
 	}
 
 	burnerInitCode := append(k.getBurnerBC(ctx), packed...)
@@ -218,13 +218,13 @@ func (k Keeper) GetGatewayByteCodes(ctx sdk.Context) []byte {
 
 // SetUnverifiedErc20TokenDeploy stores and unverified erc20 token
 func (k Keeper) SetUnverifiedErc20TokenDeploy(ctx sdk.Context, token *types.Erc20TokenDeploy) {
-	bz := k.cdc.MustMarshalJSON(token)
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(token)
 	ctx.KVStore(k.storeKey).Set([]byte(pendingTokenPrefix+token.TxID.String()), bz)
 }
 
-// SaveTokenInfo stores the token info
-func (k Keeper) SaveTokenInfo(ctx sdk.Context, msg types.MsgSignDeployToken) {
-	bz := k.cdc.MustMarshalJSON(msg)
+// SetTokenInfo stores the token info
+func (k Keeper) SetTokenInfo(ctx sdk.Context, msg types.MsgSignDeployToken) {
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(msg)
 	ctx.KVStore(k.storeKey).Set([]byte(symbolPrefix+msg.Symbol), bz)
 }
 
@@ -235,7 +235,7 @@ func (k Keeper) GetTokenInfo(ctx sdk.Context, symbol string) *types.MsgSignDeplo
 		return nil
 	}
 	var msg *types.MsgSignDeployToken
-	k.cdc.MustUnmarshalJSON(bz, &msg)
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &msg)
 
 	return msg
 }
@@ -278,7 +278,7 @@ func (k Keeper) HasUnverifiedErc20Deposit(ctx sdk.Context, txID string) bool {
 
 // SetUnverifiedErc20Deposit stores and unverified erc20 deposit
 func (k Keeper) SetUnverifiedErc20Deposit(ctx sdk.Context, txID string, deposit *types.Erc20Deposit) {
-	bz := k.cdc.MustMarshalJSON(deposit)
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(deposit)
 	ctx.KVStore(k.storeKey).Set([]byte(pendingErc20DepositPrefix+txID), bz)
 }
 
@@ -290,7 +290,7 @@ func (k Keeper) GetVerifiedErc20Deposit(ctx sdk.Context, txID string) *types.Erc
 	}
 
 	var result *types.Erc20Deposit
-	k.cdc.MustUnmarshalJSON(bz, &result)
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &result)
 
 	return result
 }
@@ -304,11 +304,21 @@ func (k Keeper) GetVerifiedErc20Deposits(ctx sdk.Context) []types.Erc20Deposit {
 		bz := iter.Value()
 
 		var deposit types.Erc20Deposit
-		k.cdc.MustUnmarshalJSON(bz, &deposit)
+		k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &deposit)
 		deposits = append(deposits, deposit)
 	}
 
 	return deposits
+}
+
+func (k Keeper) ArchiveErc20Depsit(ctx sdk.Context, txID string) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(verifiedErc20DepositPrefix + txID))
+	if bz == nil {
+		return
+	}
+
+	ctx.KVStore(k.storeKey).Delete([]byte(verifiedErc20DepositPrefix + txID))
+	ctx.KVStore(k.storeKey).Set([]byte(archivedErc20DepositPrefix+txID), bz)
 }
 
 // HasUnverifiedToken returns true if an unverified transaction has been stored

@@ -62,7 +62,7 @@ func TestLink_Success(t *testing.T) {
 	k := newKeeper(ctx, minConfHeight)
 	msg := createMsgSignDeploy()
 
-	k.SaveTokenInfo(ctx, msg)
+	k.SetTokenInfo(ctx, msg)
 
 	recipient := nexus.CrossChainAddress{Address: "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L", Chain: btc.Bitcoin}
 	tokenAddr, err := k.GetTokenAddress(ctx, msg.Symbol, common.HexToAddress(gateway))
@@ -93,7 +93,7 @@ func TestLink_Success(t *testing.T) {
 	assert.Equal(t, sender, n.LinkAddressesCalls()[0].Sender)
 	assert.Equal(t, recipient, n.LinkAddressesCalls()[0].Recipient)
 
-	assert.Equal(t, types.BurnerInfo{TokenAddr: tokenAddr.String(), Symbol: msg.Symbol, Salt: salt}, *k.GetBurnerInfo(ctx, burnAddr))
+	assert.Equal(t, types.BurnerInfo{TokenAddr: tokenAddr, Symbol: msg.Symbol, Salt: salt}, *k.GetBurnerInfo(ctx, burnAddr))
 }
 
 func TestDeployTx_DifferentValue_DifferentHash(t *testing.T) {
@@ -219,7 +219,7 @@ func TestVerifyToken_NoReceipt(t *testing.T) {
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
-	k.SaveTokenInfo(ctx, msg)
+	k.SetTokenInfo(ctx, msg)
 	rpc := createBasicRPCMock(signedTx, confCount, nil)
 	rpc.TransactionReceiptFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Receipt, error) {
 		return nil, fmt.Errorf("no transaction for hash")
@@ -242,7 +242,7 @@ func TestVerifyToken_NoBlockNumber(t *testing.T) {
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
-	k.SaveTokenInfo(ctx, msg)
+	k.SetTokenInfo(ctx, msg)
 	rpc := createBasicRPCMock(signedTx, confCount, nil)
 	rpc.BlockNumberFunc = func(ctx context.Context) (uint64, error) {
 		return 0, fmt.Errorf("no block number")
@@ -265,7 +265,7 @@ func TestVerifyToken_NotConfirmed(t *testing.T) {
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
-	k.SaveTokenInfo(ctx, msg)
+	k.SetTokenInfo(ctx, msg)
 	rpc := createBasicRPCMock(signedTx, confCount, nil)
 	voter := createVoterMock()
 	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.NexusMock{})
@@ -285,7 +285,7 @@ func TestVerifyToken_NoEvent(t *testing.T) {
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
-	k.SaveTokenInfo(ctx, msg)
+	k.SetTokenInfo(ctx, msg)
 	logs := createLogs("", common.Address{}, common.Address{}, common.Hash{}, false)
 	rpc := createBasicRPCMock(signedTx, confCount, logs)
 	voter := createVoterMock()
@@ -305,7 +305,7 @@ func TestVerifyToken_DifferentEvent(t *testing.T) {
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
-	k.SaveTokenInfo(ctx, msg)
+	k.SetTokenInfo(ctx, msg)
 	tokenAddr, err := k.GetTokenAddress(ctx, msg.Symbol, common.HexToAddress(gateway))
 	if err != nil {
 		panic(err)
@@ -330,7 +330,7 @@ func TestVerifyToken_Success(t *testing.T) {
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
-	k.SaveTokenInfo(ctx, msg)
+	k.SetTokenInfo(ctx, msg)
 	tokenAddr, err := k.GetTokenAddress(ctx, msg.Symbol, common.HexToAddress(gateway))
 	if err != nil {
 		panic(err)
@@ -379,7 +379,7 @@ func TestHandleMsgVerifyErc20Deposit_FailedGettingTransactionReceipt(t *testing.
 	salt := common.BytesToHash(testutils.RandBytes(common.HashLength))
 	burnerAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
 	burnerInfo := types.BurnerInfo{
-		TokenAddr: tokenAddr.String(),
+		TokenAddr: tokenAddr,
 		Symbol:    symbol,
 		Salt:      salt,
 	}
@@ -413,7 +413,7 @@ func TestHandleMsgVerifyErc20Deposit_FailedGettingBlockNumber(t *testing.T) {
 	salt := common.BytesToHash(testutils.RandBytes(common.HashLength))
 	burnerAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
 	burnerInfo := types.BurnerInfo{
-		TokenAddr: tokenAddr.String(),
+		TokenAddr: tokenAddr,
 		Symbol:    symbol,
 		Salt:      salt,
 	}
@@ -450,7 +450,7 @@ func TestHandleMsgVerifyErc20Deposit_NotConfirmed(t *testing.T) {
 	salt := common.BytesToHash(testutils.RandBytes(common.HashLength))
 	burnerAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
 	burnerInfo := types.BurnerInfo{
-		TokenAddr: tokenAddr.String(),
+		TokenAddr: tokenAddr,
 		Symbol:    symbol,
 		Salt:      salt,
 	}
@@ -488,7 +488,7 @@ func TestHandleMsgVerifyErc20Deposit_AmountMismatch(t *testing.T) {
 	salt := common.BytesToHash(testutils.RandBytes(common.HashLength))
 	burnerAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
 	burnerInfo := types.BurnerInfo{
-		TokenAddr: tokenAddr.String(),
+		TokenAddr: tokenAddr,
 		Symbol:    symbol,
 		Salt:      salt,
 	}
@@ -567,7 +567,7 @@ func TestHandleMsgVerifyErc20Deposit_Success(t *testing.T) {
 	salt := common.BytesToHash(testutils.RandBytes(common.HashLength))
 	burnerAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
 	burnerInfo := types.BurnerInfo{
-		TokenAddr: tokenAddr.String(),
+		TokenAddr: tokenAddr,
 		Symbol:    symbol,
 		Salt:      salt,
 	}
