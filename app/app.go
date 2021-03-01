@@ -323,7 +323,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
-	logger.Debug("successful connection to tofnd gRPC server")
+	logger.With("module", fmt.Sprintf("x/%s", tssTypes.ModuleName)).Debug("successful connection to tofnd gRPC server")
 
 	app.votingKeeper = voteKeeper.NewKeeper(app.cdc, keys[voteTypes.StoreKey], dbadapter.Store{DB: dbm.NewMemDB()}, app.snapKeeper, app.broadcastKeeper)
 
@@ -347,7 +347,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		if err != nil {
 			tmos.Exit(err.Error())
 		}
-		logger.Debug("Successfully connected to ethereum node")
+		logger.With("module", fmt.Sprintf("x/%s", ethTypes.ModuleName)).Debug("Successfully connected to ethereum node")
 	} else {
 		rpcEth = ethTypes.NewDummyRPC()
 	}

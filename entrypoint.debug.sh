@@ -76,13 +76,22 @@ else
   TOFND_HOST_SWITCH="" # An axelar-core node without tofnd is a non-validator
 fi
 
-if [ "$START_REST" = true ]; then
-  # REST endpoint must be bound to 0.0.0.0 for availability on docker host
-  axelarcli rest-server \
-    --chain-id=axelarcli \
-    --laddr=tcp://0.0.0.0:1317 \
-    --node tcp://0.0.0.0:26657 \
-    --unsafe-cors &
+if [ "$REST_CONTINUE" = true ]; then
+  CONTINUE_SWITCH="--continue"
+else
+  CONTINUE_SWITCH=""
 fi
 
-exec axelard start $TOFND_HOST_SWITCH
+if [ "$START_REST" = true ]; then
+    # REST endpoint must be bound to 0.0.0.0 for availability on docker host
+    dlv --listen=:2347 --headless=true --api-version=2 $CONTINUE_SWITCH --accept-multiclient exec \
+      /usr/local/bin/axelarcli -- rest-server --chain-id=axelarcli --laddr=tcp://0.0.0.0:1317 --node tcp://0.0.0.0:26657 --unsafe-cors &
+fi
+
+if [ "$CORE_CONTINUE" = true ]; then
+  CONTINUE_SWITCH="--continue"
+else
+  CONTINUE_SWITCH=""
+fi
+
+dlv --listen=:2345 --headless=true $CONTINUE_SWITCH --api-version=2 --accept-multiclient exec /usr/local/bin/axelard -- start $TOFND_HOST_SWITCH

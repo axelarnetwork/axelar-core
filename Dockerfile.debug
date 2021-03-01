@@ -2,7 +2,7 @@
 
 FROM golang:1.15 as debug
 
-WORKDIR axelar
+WORKDIR /axelar
 
 RUN go get github.com/go-delve/delve/cmd/dlv
 
@@ -15,5 +15,30 @@ RUN --mount=type=ssh go mod download
 
 COPY . .
 RUN make debug
-RUN cp /go/axelar/bin/axelar* /root/
-ENV PATH="/root:${PATH}"
+RUN cp /axelar/bin/axelar* /usr/local/bin
+
+# The home directory of axelar-core where configuration/genesis/data are stored
+ENV HOME_DIR /root
+# Whether or not to start the REST server
+ENV START_REST false
+# Host name for tss daemon (only necessary for validator nodes)
+ENV TOFND_HOST ""
+# The keyring backend type https://docs.cosmos.network/master/run-node/keyring.html
+ENV KEYRING_BACKEND test
+# The chain ID
+ENV CHAIN_ID axelar
+# The file with the peer list to connect to the network
+ENV PEERS_FILE ""
+# Path of an existing configuration file to use (optional)
+ENV CONFIG_PATH ""
+# A initialization script to create the genesis file (optional)
+ENV INIT_SCRIPT ""
+# Should dlv wait for a debugger to attach to the rest server process before starting it?
+ENV REST_CONTINUE true
+# Should dlv wait for a debugger to attach to the axelard process before starting it?
+ENV CORE_CONTINUE true
+
+RUN mkdir "${HOME_DIR}/.axelard"
+RUN mkdir "${HOME_DIR}/.axelarcli"
+
+ENTRYPOINT ["/axelar/entrypoint.debug.sh"]
