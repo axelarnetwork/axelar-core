@@ -83,7 +83,7 @@ func GetHandlerSignPendingTransfersTx(cliCtx context.CLIContext) http.HandlerFun
 			return
 		}
 
-		msg := types.NewMsgSign(fromAddr, btcutil.Amount(satoshi.Amount.Int64()))
+		msg := types.NewMsgSignPendingTransfers(fromAddr, btcutil.Amount(satoshi.Amount.Int64()))
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
