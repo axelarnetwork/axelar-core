@@ -19,22 +19,23 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 )
 
-// SetGenesisNetworkCmd returns set-genesis-network cobra Command.
-func SetGenesisNetworkCmd(
+// SetGenesisChainParamsCmd returns set-genesis-chain-params cobra Command.
+func SetGenesisChainParamsCmd(
 	ctx *server.Context, cdc *codec.Codec, defaultNodeHome, defaultClientHome string,
 ) *cobra.Command {
+	var networkStr string
+	var confirmationHeight uint64
 
 	cmd := &cobra.Command{
-		Use:   "set-genesis-network [chain] [network]",
-		Short: "Set the chain's network in genesis.json",
-		Long:  "Set the chain's network in genesis.json. The provided chain must be one of those axelar supports, as well as the given network.",
-		Args:  cobra.ExactArgs(2),
+		Use:   "set-genesis-chain-params [chain]",
+		Short: "Set the chain's parameters in genesis.json",
+		Long:  "Set the chain's parameters in genesis.json. The provided chain must be one of those axelar supports.",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
 			config := ctx.Config
 			config.SetRoot(viper.GetString(cli.HomeFlag))
 
 			chainStr := args[0]
-			networkStr := args[1]
 
 			genFile := config.GenesisFile()
 			appState, genDoc, err := genutil.GenesisStateFromGenFile(cdc, genFile)
@@ -47,35 +48,47 @@ func SetGenesisNetworkCmd(
 
 			switch strings.ToLower(chainStr) {
 			case strings.ToLower(btc.Bitcoin.Name):
-				network, err := bitcoinTypes.NetworkFromStr(networkStr)
-				if err != nil {
-					return err
+				genesisState := bitcoinTypes.GetGenesisStateFromAppState(cdc, appState)
+				moduleName = bitcoinTypes.ModuleName
+
+				if networkStr != "" {
+					network, err := bitcoinTypes.NetworkFromStr(networkStr)
+					if err != nil {
+						return err
+					}
+
+					genesisState.Params.Network = network
 				}
 
-				genesisState := bitcoinTypes.GetGenesisStateFromAppState(cdc, appState)
+				if confirmationHeight > 0 {
+					genesisState.Params.ConfirmationHeight = confirmationHeight
+				}
 
-				genesisState.Params.Network = network
 				genesisStateBz, err = cdc.MarshalJSON(genesisState)
 				if err != nil {
 					return fmt.Errorf("failed to marshal bitcoin genesis state: %w", err)
 				}
-
-				moduleName = bitcoinTypes.ModuleName
 			case strings.ToLower(eth.Ethereum.Name):
-				network, err := ethereumTypes.NetworkFromStr(networkStr)
-				if err != nil {
-					return err
+				genesisState := ethereumTypes.GetGenesisStateFromAppState(cdc, appState)
+				moduleName = ethereumTypes.ModuleName
+
+				if networkStr != "" {
+					network, err := ethereumTypes.NetworkFromStr(networkStr)
+					if err != nil {
+						return err
+					}
+
+					genesisState.Params.Network = network
 				}
 
-				genesisState := ethereumTypes.GetGenesisStateFromAppState(cdc, appState)
+				if confirmationHeight > 0 {
+					genesisState.Params.ConfirmationHeight = confirmationHeight
+				}
 
-				genesisState.Params.Network = network
 				genesisStateBz, err = cdc.MarshalJSON(genesisState)
 				if err != nil {
 					return fmt.Errorf("failed to marshal ethereum genesis state: %w", err)
 				}
-
-				moduleName = ethereumTypes.ModuleName
 			default:
 				return fmt.Errorf("unknown chain: %s", chainStr)
 			}
@@ -91,6 +104,9 @@ func SetGenesisNetworkCmd(
 
 			return genutil.ExportGenesisFile(genDoc, genFile)
 		}}
+
+	cmd.Flags().StringVar(&networkStr, "network", "", "Name of the network to set for the given chain.")
+	cmd.Flags().Uint64Var(&confirmationHeight, "confirmation-height", 0, "Confirmation height to set for the given chain.")
 
 	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
 	cmd.Flags().String(CliHomeFlag, defaultClientHome, "client's home directory")
