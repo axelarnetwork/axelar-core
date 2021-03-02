@@ -129,6 +129,15 @@ func Test_wBTC_mint(t *testing.T) {
 		tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: eth.Ethereum.Name})
 	assert.NoError(t, ethRotateResult.Error)
 
+	// prepare caches for upcoming signatures
+	totalDepositCount := int(testutils.RandIntBetween(1, 20))
+	var correctSigns []<-chan bool
+	cache := NewSignatureCache(totalDepositCount + 1)
+	for _, n := range nodeData {
+		correctSign := prepareSign(n.Mocks.Tofnd, ethMasterKeyID, ethMasterKey, cache)
+		correctSigns = append(correctSigns, correctSign)
+	}
+
 	// setup axelar gateway
 	bz, err := nodeData[0].Node.Query(
 		[]string{ethTypes.QuerierRoute, ethKeeper.CreateDeployTx},
@@ -142,14 +151,6 @@ func Test_wBTC_mint(t *testing.T) {
 	assert.NoError(t, err)
 	var result types.DeployResult
 	testutils.Codec().MustUnmarshalJSON(bz, &result)
-
-	totalDepositCount := int(testutils.RandIntBetween(1, 20))
-	var correctSigns []<-chan bool
-	cache := NewSignatureCache(totalDepositCount + 1)
-	for _, n := range nodeData {
-		correctSign := prepareSign(n.Mocks.Tofnd, ethMasterKeyID, ethMasterKey, cache)
-		correctSigns = append(correctSigns, correctSign)
-	}
 
 	deployGatewayResult := <-chain.Submit(
 		ethTypes.MsgSignTx{Sender: randomSender(), Tx: testutils.Codec().MustMarshalJSON(result.Tx)})
