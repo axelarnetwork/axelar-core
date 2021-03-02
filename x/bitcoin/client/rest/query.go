@@ -21,18 +21,20 @@ type RespDepositAddress struct {
 	Address string `json:"address" yaml:"address"`
 }
 
+const QParamVOutIdx = "vout_idx"
+const QParamBlockHash = "block_hash"
+
 // QueryDepositAddress returns a query for a deposit address
 func QueryDepositAddress(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
 		if !ok {
 			return
 		}
 
 		vars := mux.Vars(r)
-		queryData, err := cliCtx.Codec.MarshalJSON(types.DepositQueryParams{Chain: vars["chain"], Address: vars["address"]})
+		queryData, err := cliCtx.Codec.MarshalJSON(types.DepositQueryParams{Chain: vars[PathVarChain], Address: vars[PathVarEthereumAddress]})
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 		}
@@ -58,7 +60,6 @@ func QueryDepositAddress(cliCtx context.CLIContext) http.HandlerFunc {
 func QueryTxInfo(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
 		if !ok {
 			return
@@ -70,7 +71,7 @@ func QueryTxInfo(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		blockHash := r.URL.Query().Get("block_hash")
+		blockHash := r.URL.Query().Get(QParamBlockHash)
 
 		queryData, err := cliCtx.Codec.MarshalJSON(out)
 		if err != nil {
@@ -93,11 +94,10 @@ func QueryTxInfo(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-// QuerySendTx returns a query to send a transaction to Bitcoin
-func QuerySendTx(cliCtx context.CLIContext) http.HandlerFunc {
+// QuerySendTransfers returns a query to send a transaction to Bitcoin
+func QuerySendTransfers(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
 		if !ok {
 			return
@@ -105,7 +105,7 @@ func QuerySendTx(cliCtx context.CLIContext) http.HandlerFunc {
 
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.SendTx), nil)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, types.ErrFSendTx)
+			rest.WriteErrorResponse(w, http.StatusBadRequest, types.ErrFSendTransfers)
 			return
 		}
 
@@ -119,7 +119,7 @@ func QuerySendTx(cliCtx context.CLIContext) http.HandlerFunc {
 }
 
 func outPointFromParams(r *http.Request) (*wire.OutPoint, error) {
-	txId := mux.Vars(r)["txID"]
-	idx := r.URL.Query().Get("voutIdx")
+	txId := mux.Vars(r)[PathVarTxID]
+	idx := r.URL.Query().Get(QParamVOutIdx)
 	return types.OutPointFromStr(txId + ":" + idx)
 }

@@ -86,7 +86,7 @@ func GetCmdLink(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-// GetCmdSignPendingTransfersTx returns the cli command to sign all pending token transfers to Ethereum
+// GetCmdSignPendingTransfersTx returns the cli command to sign all pending token transfers from Ethereum
 func GetCmdSignPendingTransfersTx(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "sign-pending-transfers [fee]",

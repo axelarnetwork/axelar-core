@@ -17,7 +17,14 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func QueryMasterAddress(cliCtx context.CLIContext) http.HandlerFunc {
+const (
+	QParamFromAddress = "from_address"
+	QParamCommandID   = "command_id"
+	QParamGasPrice    = "gas_price"
+	QParamGasLimit    = "gas_limit"
+)
+
+func GetHandlerQueryMasterAddress(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -40,7 +47,7 @@ func QueryMasterAddress(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-func QueryAxelarGatewayAddress(cliCtx context.CLIContext) http.HandlerFunc {
+func GetHandlerQueryAxelarGatewayAddress(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -63,7 +70,7 @@ func QueryAxelarGatewayAddress(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-func QueryCreateDeployTx(cliCtx context.CLIContext) http.HandlerFunc {
+func GetHandlerQueryCreateDeployTx(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -71,15 +78,13 @@ func QueryCreateDeployTx(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		gasPrice, err := parseGasPrice(w, r)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+		gasPrice, ok := parseGasPrice(w, r)
+		if !ok {
 			return
 		}
 
-		gasLimit, err := parseGasLimit(w, r)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+		gasLimit, ok := parseGasLimit(w, r)
+		if !ok {
 			return
 		}
 
@@ -104,7 +109,7 @@ func QueryCreateDeployTx(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-func QuerySendTx(cliCtx context.CLIContext) http.HandlerFunc {
+func GetHandlerQuerySendTx(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -112,7 +117,7 @@ func QuerySendTx(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		txID := mux.Vars(r)["txID"]
+		txID := mux.Vars(r)[PathVarTxID]
 
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.SendTx, txID), nil)
 		if err != nil {
@@ -131,11 +136,7 @@ func QuerySendTx(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-const QueryParamContractAddress = "contract_address"
-const QueryParamFromAddress = "from_address"
-const QueryParamCommandID = "command_id"
-
-func QuerySendCommandTx(cliCtx context.CLIContext) http.HandlerFunc {
+func GetHandlerQuerySendCommandTx(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -143,9 +144,9 @@ func QuerySendCommandTx(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		contractAddr := mux.Vars(r)[QueryParamContractAddress]
-		fromAddr := r.URL.Query().Get(QueryParamFromAddress)
-		commandIDHex := r.URL.Query().Get(QueryParamCommandID)
+		contractAddr := mux.Vars(r)[PathVarGatewayAddr]
+		fromAddr := r.URL.Query().Get(QParamFromAddress)
+		commandIDHex := r.URL.Query().Get(QParamCommandID)
 
 		var commandID types.CommandID
 		copy(commandID[:], common.Hex2Bytes(commandIDHex))
@@ -174,22 +175,24 @@ func QuerySendCommandTx(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-func parseGasLimit(w http.ResponseWriter, r *http.Request) (uint64, error) {
-	glStr := r.URL.Query().Get("gasLimit")
+func parseGasLimit(w http.ResponseWriter, r *http.Request) (uint64, bool) {
+	glStr := r.URL.Query().Get(QParamGasLimit)
 	gl, err := strconv.ParseUint(glStr, 10, 64)
 	if err != nil {
-		return 0, err
+		rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "could not parse gas limit").Error())
+		return 0, false
 	}
 
-	return gl, nil
+	return gl, true
 }
 
-func parseGasPrice(w http.ResponseWriter, r *http.Request) (sdk.Int, error) {
-	gpStr := r.URL.Query().Get("gasPrice")
+func parseGasPrice(w http.ResponseWriter, r *http.Request) (sdk.Int, bool) {
+	gpStr := r.URL.Query().Get(QParamGasPrice)
 	gpBig, ok := big.NewInt(0).SetString(gpStr, 10)
 	if !ok {
-		return sdk.Int{}, fmt.Errorf("could not parse specified gas price")
+		rest.WriteErrorResponse(w, http.StatusBadRequest, "could not parse gas price")
+		return sdk.Int{}, false
 	}
 
-	return sdk.NewIntFromBigInt(gpBig), nil
+	return sdk.NewIntFromBigInt(gpBig), true
 }
