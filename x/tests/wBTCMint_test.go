@@ -143,10 +143,11 @@ func Test_wBTC_mint(t *testing.T) {
 	var result types.DeployResult
 	testutils.Codec().MustUnmarshalJSON(bz, &result)
 
+	totalDepositCount := int(testutils.RandIntBetween(1, 20))
 	var correctSigns []<-chan bool
-	cache := NewSignatureCache(1)
+	cache := NewSignatureCache(totalDepositCount + 1)
 	for _, n := range nodeData {
-		correctSign := prepareSign(n.Mocks.Tofnd, ethMasterKeyID, ethMasterKey, cache, 0)
+		correctSign := prepareSign(n.Mocks.Tofnd, ethMasterKeyID, ethMasterKey, cache)
 		correctSigns = append(correctSigns, correctSign)
 	}
 
@@ -170,7 +171,6 @@ func Test_wBTC_mint(t *testing.T) {
 
 	// steps followed as per https://github.com/axelarnetwork/axelarate#mint-erc20-wrapped-bitcoin-tokens-on-ethereum
 
-	totalDepositCount := int(testutils.RandIntBetween(1, 20))
 	for i := 0; i < totalDepositCount; i++ {
 		// 1. Get a deposit address for an Ethereum recipient address
 		// we don't provide an actual recipient address, so it is created automatically
@@ -210,13 +210,6 @@ func Test_wBTC_mint(t *testing.T) {
 	}
 
 	// 6. Sign all pending transfers to Ethereum
-	correctSigns = make([]<-chan bool, 0)
-	cache = NewSignatureCache(totalDepositCount)
-	for _, n := range nodeData {
-		correctSign := prepareSign(n.Mocks.Tofnd, ethMasterKeyID, ethMasterKey, cache, 1)
-		correctSigns = append(correctSigns, correctSign)
-	}
-
 	res = <-chain.Submit(ethTypes.NewMsgSignPendingTransfers(randomSender()))
 	assert.NoError(t, res.Error)
 	for _, isCorrect := range correctSigns {

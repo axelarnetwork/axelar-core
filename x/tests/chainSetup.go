@@ -177,11 +177,11 @@ func createMocks(validators []staking.Validator) testMocks {
 
 	ethClient := &ethMock.RPCClientMock{
 
-		PendingNonceAtFunc: func(_ context.Context, _ common.Address) (uint64, error) {
+		PendingNonceAtFunc: func(context.Context, common.Address) (uint64, error) {
 
 			return rand.Uint64(), nil
 		},
-		SendTransactionFunc: func(_ context.Context, _ *gethTypes.Transaction) error { return nil },
+		SendTransactionFunc: func(context.Context, *gethTypes.Transaction) error { return nil },
 	}
 
 	keygen := &tssMock.TofndKeyGenClientMock{

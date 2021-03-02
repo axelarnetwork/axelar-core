@@ -182,7 +182,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	cache := NewSignatureCache(totalDepositCount)
 	for _, n := range nodeData {
-		correctSign := prepareSign(n.Mocks.Tofnd, masterKeyID1, masterKey1, cache, 0)
+		correctSign := prepareSign(n.Mocks.Tofnd, masterKeyID1, masterKey1, cache)
 		correctSigns = append(correctSigns, correctSign)
 	}
 
