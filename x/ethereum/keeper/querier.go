@@ -185,7 +185,11 @@ func createTxAndSend(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Sig
 
 	k.Logger(ctx).Debug(common.Bytes2Hex(executeData))
 
-	contractAddr := common.HexToAddress(params.ContractAddr)
+	contractAddr, ok := k.GetGatewayAddress(ctx)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrEthereum, "axelar gateway not deployed yet")
+	}
+
 	msg := ethereumRoot.CallMsg{
 		From: common.HexToAddress(params.Sender),
 		To:   &contractAddr,

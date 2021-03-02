@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"strconv"
 	"time"
 
@@ -15,6 +16,8 @@ import (
 	slashingTypes "github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	sdkExported "github.com/cosmos/cosmos-sdk/x/staking/exported"
+	"github.com/ethereum/go-ethereum/common"
+	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/libs/log"
@@ -173,7 +176,12 @@ func createMocks(validators []staking.Validator) testMocks {
 		NetworkFunc: func() btcTypes.Network { return btcTypes.Mainnet }}
 
 	ethClient := &ethMock.RPCClientMock{
-		// TODO add functions when needed
+
+		PendingNonceAtFunc: func(context.Context, common.Address) (uint64, error) {
+
+			return rand.Uint64(), nil
+		},
+		SendTransactionFunc: func(context.Context, *gethTypes.Transaction) error { return nil },
 	}
 
 	keygen := &tssMock.TofndKeyGenClientMock{

@@ -157,17 +157,16 @@ func GetCmdSendTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 // GetCmdSendCommand returns the query to send a signed command from an externally controlled address to the specified contract
 func GetCmdSendCommand(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "sendCommand [commandID] [fromAddress] [contractAddress]",
-		Short: "Send a transaction signed by [fromAddress] that executes the command [commandID] to Ethereum contract at [contractAddress]",
-		Args:  cobra.ExactArgs(3),
+		Use:   "sendCommand [commandID] [fromAddress]",
+		Short: "Send a transaction signed by [fromAddress] that executes the command [commandID] to Axelar Gateway",
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			var commandID types.CommandID
 			copy(commandID[:], common.Hex2Bytes(args[0]))
 			params := types.CommandParams{
-				CommandID:    commandID,
-				Sender:       args[1],
-				ContractAddr: args[2],
+				CommandID: commandID,
+				Sender:    args[1],
 			}
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.SendCommand), cdc.MustMarshalJSON(params))
 			if err != nil {

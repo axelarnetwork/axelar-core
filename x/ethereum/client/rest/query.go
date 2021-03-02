@@ -144,7 +144,6 @@ func GetHandlerQuerySendCommandTx(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		contractAddr := mux.Vars(r)[PathVarGatewayAddr]
 		fromAddr := r.URL.Query().Get(QParamFromAddress)
 		commandIDHex := r.URL.Query().Get(QParamCommandID)
 
@@ -152,9 +151,8 @@ func GetHandlerQuerySendCommandTx(cliCtx context.CLIContext) http.HandlerFunc {
 		copy(commandID[:], common.Hex2Bytes(commandIDHex))
 
 		params := types.CommandParams{
-			CommandID:    commandID,
-			Sender:       fromAddr,
-			ContractAddr: contractAddr,
+			CommandID: commandID,
+			Sender:    fromAddr,
 		}
 
 		json, err := cliCtx.Codec.MarshalJSON(params)

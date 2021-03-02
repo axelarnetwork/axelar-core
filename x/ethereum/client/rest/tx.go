@@ -2,6 +2,9 @@ package rest
 
 import (
 	"errors"
+	"net/http"
+	"strconv"
+
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
@@ -12,8 +15,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/gorilla/mux"
-	"net/http"
-	"strconv"
 )
 
 const (
@@ -24,16 +25,15 @@ const (
 	TxMethodSignPending        = "sign-pending"
 	TxMethodSignDeployToken    = "sign-deploy-token"
 
-	QMethodMasterAddress  = keeper.QueryMasterAddress
-	QMethodAxelarGatewayAddress  = keeper.QueryAxelarGatewayAddress
-	QMethodCreateDeployTx = keeper.CreateDeployTx
-	QMethodSendTx         = keeper.SendTx
-	QMethodSendCommand    = keeper.SendCommand
+	QMethodMasterAddress        = keeper.QueryMasterAddress
+	QMethodAxelarGatewayAddress = keeper.QueryAxelarGatewayAddress
+	QMethodCreateDeployTx       = keeper.CreateDeployTx
+	QMethodSendTx               = keeper.SendTx
+	QMethodSendCommand          = keeper.SendCommand
 
-	PathVarChain       = "Chain"
-	PathVarSymbol      = "Symbol"
-	PathVarGatewayAddr = "GatewayAddr"
-	PathVarTxID        = "TxID"
+	PathVarChain  = "Chain"
+	PathVarSymbol = "Symbol"
+	PathVarTxID   = "TxID"
 )
 
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
@@ -50,7 +50,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	registerQuery(GetHandlerQueryAxelarGatewayAddress(cliCtx), QMethodAxelarGatewayAddress)
 	registerQuery(GetHandlerQueryCreateDeployTx(cliCtx), QMethodCreateDeployTx)
 	registerQuery(GetHandlerQuerySendTx(cliCtx), QMethodSendTx, PathVarTxID)
-	registerQuery(GetHandlerQuerySendCommandTx(cliCtx), QMethodSendCommand, PathVarGatewayAddr)
+	registerQuery(GetHandlerQuerySendCommandTx(cliCtx), QMethodSendCommand)
 }
 
 type ReqLink struct {
