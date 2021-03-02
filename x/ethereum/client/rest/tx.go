@@ -43,7 +43,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	registerTx(GetHandlerVerifyErc20Deposit(cliCtx), TxMethodVerifyErc20Deposit)
 	registerTx(GetHandlerSignTx(cliCtx), TxMethodSignTx)
 	registerTx(GetHandlerSignPendingTransfers(cliCtx), TxMethodSignPending)
-	registerTx(GetHandlerSignDeployToken(cliCtx), TxMethodSignDeployToken)
+	registerTx(GetHandlerSignDeployToken(cliCtx), TxMethodSignDeployToken, PathVarSymbol)
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
 	registerQuery(GetHandlerQueryMasterAddress(cliCtx), QMethodMasterAddress)
@@ -245,6 +245,7 @@ func GetHandlerSignDeployToken(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
+		symbol := mux.Vars(r)[PathVarSymbol]
 		decs, err := strconv.ParseUint(req.Decimals, 10, 8)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, errors.New("could not parse decimals").Error())
@@ -253,8 +254,6 @@ func GetHandlerSignDeployToken(cliCtx context.CLIContext) http.HandlerFunc {
 		if !ok {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, errors.New("could not parse capacity").Error())
 		}
-
-		symbol := mux.Vars(r)[PathVarSymbol]
 
 		msg := types.NewMsgSignDeployToken(fromAddr, req.Name, symbol, uint8(decs), capacity)
 		if err := msg.ValidateBasic(); err != nil {
