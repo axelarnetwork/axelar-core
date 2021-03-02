@@ -25,6 +25,7 @@ const (
 	TxMethodSignDeployToken    = "sign-deploy-token"
 
 	QMethodMasterAddress  = keeper.QueryMasterAddress
+	QMethodAxelarGatewayAddress  = keeper.QueryAxelarGatewayAddress
 	QMethodCreateDeployTx = keeper.CreateDeployTx
 	QMethodSendTx         = keeper.SendTx
 	QMethodSendCommand    = keeper.SendCommand
@@ -46,6 +47,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
 	registerQuery(GetHandlerQueryMasterAddress(cliCtx), QMethodMasterAddress)
+	registerQuery(GetHandlerQueryAxelarGatewayAddress(cliCtx), QMethodAxelarGatewayAddress)
 	registerQuery(GetHandlerQueryCreateDeployTx(cliCtx), QMethodCreateDeployTx)
 	registerQuery(GetHandlerQuerySendTx(cliCtx), QMethodSendTx, PathVarTxID)
 	registerQuery(GetHandlerQuerySendCommandTx(cliCtx), QMethodSendCommand, PathVarGatewayAddr)

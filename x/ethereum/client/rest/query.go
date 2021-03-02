@@ -47,7 +47,7 @@ func GetHandlerQueryMasterAddress(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-func QueryAxelarGatewayAddress(cliCtx context.CLIContext) http.HandlerFunc {
+func GetHandlerQueryAxelarGatewayAddress(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
