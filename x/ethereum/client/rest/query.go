@@ -144,7 +144,6 @@ func GetHandlerQuerySendCommandTx(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		contractAddr := mux.Vars(r)[PathVarGatewayAddr]
 		fromAddr := r.URL.Query().Get(QParamFromAddress)
 		commandIDHex := r.URL.Query().Get(QParamCommandID)
 

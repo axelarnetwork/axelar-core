@@ -31,10 +31,9 @@ const (
 	QMethodSendTx               = keeper.SendTx
 	QMethodSendCommand          = keeper.SendCommand
 
-	PathVarChain       = "Chain"
-	PathVarSymbol      = "Symbol"
-	PathVarGatewayAddr = "GatewayAddr"
-	PathVarTxID        = "TxID"
+	PathVarChain  = "Chain"
+	PathVarSymbol = "Symbol"
+	PathVarTxID   = "TxID"
 )
 
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
@@ -51,7 +50,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	registerQuery(GetHandlerQueryAxelarGatewayAddress(cliCtx), QMethodAxelarGatewayAddress)
 	registerQuery(GetHandlerQueryCreateDeployTx(cliCtx), QMethodCreateDeployTx)
 	registerQuery(GetHandlerQuerySendTx(cliCtx), QMethodSendTx, PathVarTxID)
-	registerQuery(GetHandlerQuerySendCommandTx(cliCtx), QMethodSendCommand, PathVarGatewayAddr)
+	registerQuery(GetHandlerQuerySendCommandTx(cliCtx), QMethodSendCommand)
 }
 
 type ReqLink struct {
