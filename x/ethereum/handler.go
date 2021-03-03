@@ -141,7 +141,7 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg types.Ms
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeAddress, burnerAddr.String()),
+			sdk.NewAttribute(types.AttributeBurnAddress, burnerAddr.String()),
 			sdk.NewAttribute(types.AttributeAddress, msg.RecipientAddr),
 		),
 	)
