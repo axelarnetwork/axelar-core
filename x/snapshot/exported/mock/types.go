@@ -28,6 +28,9 @@ var _ exported.Validator = &ValidatorMock{}
 // 			GetOperatorFunc: func() sdk.ValAddress {
 // 				panic("mock out the GetOperator method")
 // 			},
+// 			IsJailedFunc: func() bool {
+// 				panic("mock out the IsJailed method")
+// 			},
 // 		}
 //
 // 		// use mockedValidator in code that requires exported.Validator
@@ -44,6 +47,9 @@ type ValidatorMock struct {
 	// GetOperatorFunc mocks the GetOperator method.
 	GetOperatorFunc func() sdk.ValAddress
 
+	// IsJailedFunc mocks the IsJailed method.
+	IsJailedFunc func() bool
+
 	// calls tracks calls to the methods.
 	calls struct {
 		// GetConsAddr holds details about calls to the GetConsAddr method.
@@ -55,10 +61,14 @@ type ValidatorMock struct {
 		// GetOperator holds details about calls to the GetOperator method.
 		GetOperator []struct {
 		}
+		// IsJailed holds details about calls to the IsJailed method.
+		IsJailed []struct {
+		}
 	}
 	lockGetConsAddr       sync.RWMutex
 	lockGetConsensusPower sync.RWMutex
 	lockGetOperator       sync.RWMutex
+	lockIsJailed          sync.RWMutex
 }
 
 // GetConsAddr calls GetConsAddrFunc.
@@ -136,6 +146,32 @@ func (mock *ValidatorMock) GetOperatorCalls() []struct {
 	mock.lockGetOperator.RLock()
 	calls = mock.calls.GetOperator
 	mock.lockGetOperator.RUnlock()
+	return calls
+}
+
+// IsJailed calls IsJailedFunc.
+func (mock *ValidatorMock) IsJailed() bool {
+	if mock.IsJailedFunc == nil {
+		panic("ValidatorMock.IsJailedFunc: method is nil but Validator.IsJailed was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockIsJailed.Lock()
+	mock.calls.IsJailed = append(mock.calls.IsJailed, callInfo)
+	mock.lockIsJailed.Unlock()
+	return mock.IsJailedFunc()
+}
+
+// IsJailedCalls gets all the calls that were made to IsJailed.
+// Check the length with:
+//     len(mockedValidator.IsJailedCalls())
+func (mock *ValidatorMock) IsJailedCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockIsJailed.RLock()
+	calls = mock.calls.IsJailed
+	mock.lockIsJailed.RUnlock()
 	return calls
 }
 
