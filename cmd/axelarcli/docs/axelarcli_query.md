@@ -2,10 +2,6 @@
 
 Querying subcommands
 
-### Synopsis
-
-Querying subcommands
-
 ### Options
 
 ```

@@ -2,10 +2,6 @@
 
 bitcoin query subcommands
 
-### Synopsis
-
-bitcoin query subcommands
-
 ```
 axelarcli query bitcoin [flags]
 ```

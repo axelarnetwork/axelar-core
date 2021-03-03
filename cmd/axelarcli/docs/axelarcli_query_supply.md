@@ -2,10 +2,6 @@
 
 Querying commands for the supply module
 
-### Synopsis
-
-Querying commands for the supply module
-
 ```
 axelarcli query supply [flags]
 ```

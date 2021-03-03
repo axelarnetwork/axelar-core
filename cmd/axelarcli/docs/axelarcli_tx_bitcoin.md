@@ -2,10 +2,6 @@
 
 bitcoin transactions subcommands
 
-### Synopsis
-
-bitcoin transactions subcommands
-
 ```
 axelarcli tx bitcoin [flags]
 ```

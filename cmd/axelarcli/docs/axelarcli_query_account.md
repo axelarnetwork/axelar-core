@@ -2,10 +2,6 @@
 
 Query account balance
 
-### Synopsis
-
-Query account balance
-
 ```
 axelarcli query account [address] [flags]
 ```

@@ -2,10 +2,6 @@
 
 broadcast transactions subcommands
 
-### Synopsis
-
-broadcast transactions subcommands
-
 ```
 axelarcli tx broadcast [flags]
 ```

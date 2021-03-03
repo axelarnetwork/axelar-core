@@ -2,10 +2,6 @@
 
 Create a Bitcoin transaction for all pending transfers and sign it
 
-### Synopsis
-
-Create a Bitcoin transaction for all pending transfers and sign it
-
 ```
 axelarcli tx bitcoin sign-pending-transfers [fee] [flags]
 ```

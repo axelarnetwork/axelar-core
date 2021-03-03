@@ -2,10 +2,6 @@
 
 Create or query an application CLI configuration file
 
-### Synopsis
-
-Create or query an application CLI configuration file
-
 ```
 axelarcli config <key> [value] [flags]
 ```

@@ -2,10 +2,6 @@
 
 Get the full tendermint validator set at given height
 
-### Synopsis
-
-Get the full tendermint validator set at given height
-
 ```
 axelarcli query tendermint-validator-set [height] [flags]
 ```

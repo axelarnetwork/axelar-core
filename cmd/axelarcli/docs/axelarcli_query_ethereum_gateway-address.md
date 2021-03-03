@@ -2,10 +2,6 @@
 
 Query the Axelar Gateway contract address
 
-### Synopsis
-
-Query the Axelar Gateway contract address
-
 ```
 axelarcli query ethereum gateway-address [flags]
 ```

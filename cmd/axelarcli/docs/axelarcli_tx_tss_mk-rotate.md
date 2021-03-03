@@ -2,10 +2,6 @@
 
 Rotate the given chain from the old master key to the previously created one (see mk-refresh)
 
-### Synopsis
-
-Rotate the given chain from the old master key to the previously created one (see mk-refresh)
-
 ```
 axelarcli tx tss mk-rotate [chain] [flags]
 ```

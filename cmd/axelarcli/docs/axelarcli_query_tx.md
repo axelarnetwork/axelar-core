@@ -2,10 +2,6 @@
 
 Query for a transaction by hash in a committed block
 
-### Synopsis
-
-Query for a transaction by hash in a committed block
-
 ```
 axelarcli query tx [hash] [flags]
 ```

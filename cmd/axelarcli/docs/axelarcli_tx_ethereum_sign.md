@@ -2,10 +2,6 @@
 
 sign a raw Ethereum transaction
 
-### Synopsis
-
-sign a raw Ethereum transaction
-
 ```
 axelarcli tx ethereum sign [tx json file path] [flags]
 ```

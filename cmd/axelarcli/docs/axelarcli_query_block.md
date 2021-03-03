@@ -2,10 +2,6 @@
 
 Get verified data for a the block at given height
 
-### Synopsis
-
-Get verified data for a the block at given height
-
 ```
 axelarcli query block [height] [flags]
 ```

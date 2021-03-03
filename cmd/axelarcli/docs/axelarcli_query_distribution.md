@@ -2,10 +2,6 @@
 
 Querying commands for the distribution module
 
-### Synopsis
-
-Querying commands for the distribution module
-
 ```
 axelarcli query distribution [flags]
 ```

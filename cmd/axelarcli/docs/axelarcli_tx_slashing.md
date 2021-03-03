@@ -2,10 +2,6 @@
 
 Slashing transactions subcommands
 
-### Synopsis
-
-Slashing transactions subcommands
-
 ```
 axelarcli tx slashing [flags]
 ```

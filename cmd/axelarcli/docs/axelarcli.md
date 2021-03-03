@@ -2,10 +2,6 @@
 
 Axelar Client
 
-### Synopsis
-
-Axelar Client
-
 ### Options
 
 ```

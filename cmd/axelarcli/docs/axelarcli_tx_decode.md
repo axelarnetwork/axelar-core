@@ -2,10 +2,6 @@
 
 Decode an amino-encoded transaction string.
 
-### Synopsis
-
-Decode an amino-encoded transaction string.
-
 ```
 axelarcli tx decode [amino-byte-string] [flags]
 ```
