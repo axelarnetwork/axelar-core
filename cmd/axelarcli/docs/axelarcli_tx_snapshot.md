@@ -2,10 +2,6 @@
 
 snapshot transactions subcommands
 
-### Synopsis
-
-snapshot transactions subcommands
-
 ```
 axelarcli tx snapshot [flags]
 ```

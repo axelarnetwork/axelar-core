@@ -2,10 +2,6 @@
 
 Sign all pending transfers to Ethereum
 
-### Synopsis
-
-Sign all pending transfers to Ethereum
-
 ```
 axelarcli tx ethereum sign-pending-transfers [flags]
 ```

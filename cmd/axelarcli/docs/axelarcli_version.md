@@ -2,10 +2,6 @@
 
 Print the app version
 
-### Synopsis
-
-Print the app version
-
 ```
 axelarcli version [flags]
 ```

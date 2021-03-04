@@ -2,10 +2,6 @@
 
 Sign burn command for all verified Ethereum token deposits
 
-### Synopsis
-
-Sign burn command for all verified Ethereum token deposits
-
 ```
 axelarcli tx ethereum sign-burn-tokens [flags]
 ```

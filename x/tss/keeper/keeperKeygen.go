@@ -19,6 +19,11 @@ import (
 
 // StartKeygen starts a keygen protocol with the specified parameters
 func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, snapshot snapshot.Snapshot) (<-chan ecdsa.PublicKey, error) {
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeKeygen,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart)))
+
 	// BEGIN: validity check
 
 	// keygen cannot proceed unless all validators have registered broadcast proxies

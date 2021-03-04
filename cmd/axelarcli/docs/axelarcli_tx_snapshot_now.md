@@ -2,10 +2,6 @@
 
 Trigger a new snapshot of the current validator set
 
-### Synopsis
-
-Trigger a new snapshot of the current validator set
-
 ```
 axelarcli tx snapshot now [flags]
 ```

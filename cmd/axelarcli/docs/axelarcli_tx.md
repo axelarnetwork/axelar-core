@@ -2,10 +2,6 @@
 
 Transactions subcommands
 
-### Synopsis
-
-Transactions subcommands
-
 ### Options
 
 ```

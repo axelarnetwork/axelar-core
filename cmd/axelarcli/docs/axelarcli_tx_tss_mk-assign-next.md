@@ -2,10 +2,6 @@
 
 Assigns a previously created key with \[keyID\] as the next master key for \[chain\]
 
-### Synopsis
-
-Assigns a previously created key with \[keyID\] as the next master key for \[chain\]
-
 ```
 axelarcli tx tss mk-assign-next [chain] [keyID] [flags]
 ```

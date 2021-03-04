@@ -2,10 +2,6 @@
 
 Querying commands for the ethereum module
 
-### Synopsis
-
-Querying commands for the ethereum module
-
 ```
 axelarcli query ethereum [flags]
 ```

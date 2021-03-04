@@ -2,10 +2,6 @@
 
 Initiate threshold key generation protocol
 
-### Synopsis
-
-Initiate threshold key generation protocol
-
 ```
 axelarcli tx tss start-keygen [flags]
 ```

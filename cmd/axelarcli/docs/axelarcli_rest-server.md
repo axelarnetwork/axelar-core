@@ -2,10 +2,6 @@
 
 Start LCD (light-client daemon), a local REST server
 
-### Synopsis
-
-Start LCD (light-client daemon), a local REST server
-
 ```
 axelarcli rest-server [flags]
 ```

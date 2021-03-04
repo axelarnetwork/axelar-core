@@ -2,10 +2,6 @@
 
 Link a cross chain address to an ethereum address created by Axelar
 
-### Synopsis
-
-Link a cross chain address to an ethereum address created by Axelar
-
 ```
 axelarcli tx ethereum link [chain] [address] [symbol] [flags]
 ```

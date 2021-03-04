@@ -19,6 +19,11 @@ import (
 
 // StartSign starts a tss signing protocol using the specified key for the given chain.
 func (k Keeper) StartSign(ctx sdk.Context, keyID string, sigID string, msg []byte) error {
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeSign,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart)))
+
 	if _, ok := k.signStreams[sigID]; ok {
 		return fmt.Errorf("signing protocol for ID %s already in progress", sigID)
 	}

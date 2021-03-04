@@ -2,10 +2,6 @@
 
 Query the info of the outpoint at index \[voutIdx\] of transaction \[txID\] on Bitcoin
 
-### Synopsis
-
-Query the info of the outpoint at index \[voutIdx\] of transaction \[txID\] on Bitcoin
-
 ```
 axelarcli query bitcoin txInfo [blockHash] [txID:voutIdx] [flags]
 ```

@@ -2,10 +2,6 @@
 
 Query remote node for status
 
-### Synopsis
-
-Query remote node for status
-
 ```
 axelarcli status [flags]
 ```

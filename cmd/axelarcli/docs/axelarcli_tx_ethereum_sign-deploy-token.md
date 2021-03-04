@@ -2,10 +2,6 @@
 
 Signs the call data to deploy a token with the AxelarGateway contract
 
-### Synopsis
-
-Signs the call data to deploy a token with the AxelarGateway contract
-
 ```
 axelarcli tx ethereum sign-deploy-token [name] [symbol] [decimals] [capacity] [flags]
 ```

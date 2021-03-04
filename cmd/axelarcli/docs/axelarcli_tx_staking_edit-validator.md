@@ -2,10 +2,6 @@
 
 edit an existing validator account
 
-### Synopsis
-
-edit an existing validator account
-
 ```
 axelarcli tx staking edit-validator [flags]
 ```

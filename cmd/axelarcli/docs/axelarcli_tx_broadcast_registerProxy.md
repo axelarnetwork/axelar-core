@@ -2,10 +2,6 @@
 
 Register a proxy account for a specific validator principal to broadcast transactions in its stead
 
-### Synopsis
-
-Register a proxy account for a specific validator principal to broadcast transactions in its stead
-
 ```
 axelarcli tx broadcast registerProxy [proxy]  [flags]
 ```
