@@ -7,121 +7,74 @@ import (
 
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
+	"github.com/axelarnetwork/axelar-core/utils"
+	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 
-	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 // StartKeygen starts a keygen protocol with the specified parameters
-func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, snapshot snapshot.Snapshot) (<-chan ecdsa.PublicKey, error) {
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeKeygen,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart)))
-
-	// BEGIN: validity check
+func (k Keeper) StartKeygen(ctx sdk.Context, keyID string, threshold int, snapshot snapshot.Snapshot) error {
+	if ctx.KVStore(k.storeKey).Has([]byte(keygenStartHeight + keyID)) {
+		return fmt.Errorf("keyID %s is already in use", keyID)
+	}
 
 	// keygen cannot proceed unless all validators have registered broadcast proxies
-	if err := k.checkProxies(ctx, snapshot.Validators); err != nil {
-		return nil, err
+	var participants []string
+	for _, v := range snapshot.Validators {
+		proxy := k.broadcaster.GetProxy(ctx, v.GetOperator())
+		if proxy == nil {
+			return fmt.Errorf("validator %s has not registered a proxy", v.GetOperator().String())
+		}
+		participants = append(participants, v.GetOperator().String())
+		k.setParticipatesInKeygen(ctx, keyID, v.GetOperator())
 	}
-
-	if ctx.KVStore(k.storeKey).Has([]byte(keygenStartHeight + keyID)) {
-		return nil, fmt.Errorf("keyID %s is already in use", keyID)
-	}
-
-	/*
-		END: validity check -- any error below this point is local to the specific validator,
-		so do not return an error but simply close the result channel
-	*/
 
 	// store block height for this keygen to be able to verify later if the produced key is allowed as a master key
 	k.setKeygenStart(ctx, keyID)
 	// store snapshot round to be able to look up the correct validator set when signing with this key
 	k.setSnapshotCounterForKeyID(ctx, keyID, snapshot.Counter)
 
+	poll := voting.PollMeta{Module: types.ModuleName, Type: types.EventTypeKeygen, ID: keyID}
+	if err := k.voter.InitPoll(ctx, poll); err != nil {
+		return err
+	}
+
 	k.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d]", keyID, threshold))
 
-	pubkeyChan := make(chan ecdsa.PublicKey)
-	if _, ok := k.keygenStreams[keyID]; ok {
-		k.Logger(ctx).Info(fmt.Sprintf("keygen protocol for ID %s already in progress", keyID))
-		return pubkeyChan, nil
-	}
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeKeygen,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
+			sdk.NewAttribute(types.AttributeKeyKeyID, keyID),
+			sdk.NewAttribute(types.AttributeKeyThreshold, strconv.Itoa(threshold)),
+			sdk.NewAttribute(types.AttributeKeyParticipants, string(k.cdc.MustMarshalJSON(participants)))))
 
-	stream, keygenInit := k.prepareKeygen(ctx, keyID, threshold, snapshot.Validators)
-	k.keygenStreams[keyID] = stream
-	if stream == nil || keygenInit == nil {
-		close(pubkeyChan)
-		return pubkeyChan, nil // don't propagate nondeterministic errors
-	}
-
-	go func() {
-		if err := stream.Send(&tofnd.MessageIn{Data: keygenInit}); err != nil {
-			k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tofnd gRPC keygen send keygen init data").Error())
-		}
-	}()
-
-	// server handler https://grpc.io/docs/languages/go/basics/#bidirectional-streaming-rpc-1
-	broadcastChan, resChan := k.handleStream(ctx, stream)
-
-	// handle intermediate messages
-	go func() {
-		for msg := range broadcastChan {
-			k.Logger(ctx).Debug(fmt.Sprintf(
-				"outgoing keygen msg: key [%.20s] from me [%.20s] to [%.20s] broadcast [%t]",
-				keyID, keygenInit.KeygenInit.PartyUids[keygenInit.KeygenInit.MyPartyIndex], msg.ToPartyUid, msg.IsBroadcast))
-			// sender is set by broadcaster
-			tssMsg := &types.MsgKeygenTraffic{SessionID: keyID, Payload: msg}
-			if err := k.broadcaster.Broadcast(ctx, []broadcast.MsgWithSenderSetter{tssMsg}); err != nil {
-				k.Logger(ctx).Error(sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing sign msg").Error())
-				return
-			}
-		}
-	}()
-
-	// handle result
-	go func() {
-		defer close(pubkeyChan)
-		bz := <-resChan
-		btcecPK, err := btcec.ParsePubKey(bz, btcec.S256())
-		if err != nil {
-			k.Logger(ctx).Error(sdkerrors.Wrap(err, "handler goroutine: failure to deserialize pubkey").Error())
-			return
-		}
-		pubkey := btcecPK.ToECDSA()
-
-		k.Logger(ctx).Info(fmt.Sprintf("handler goroutine: received pubkey from server! [%v]", pubkey))
-		pubkeyChan <- *pubkey
-	}()
-
-	return pubkeyChan, nil
+	return nil
 }
 
 // KeygenMsg takes a types.MsgKeygenTraffic from the chain and relays it to the keygen protocol
 func (k Keeper) KeygenMsg(ctx sdk.Context, msg types.MsgKeygenTraffic) error {
-	msgIn, err := k.prepareTrafficIn(ctx, msg.Sender, msg.SessionID, msg.Payload)
-	if err != nil {
-		return err
-	}
-	if msgIn == nil {
-		return nil
+	senderAddress := k.broadcaster.GetPrincipal(ctx, msg.Sender)
+	if senderAddress.Empty() {
+		return fmt.Errorf("invalid message: sender [%s] is not a validator", msg.Sender)
 	}
 
-	stream, ok := k.keygenStreams[msg.SessionID]
-	if !ok {
-		k.Logger(ctx).Error(fmt.Sprintf("no keygen session with id %s", msg.SessionID))
-		return nil // don't propagate nondeterministic errors
+	if !k.participatesInKeygen(ctx, msg.SessionID, senderAddress) {
+		return fmt.Errorf("invalid message: sender [%.20s] does not participate in keygen [%s] ", senderAddress, msg.SessionID)
 	}
 
-	if err := stream.Send(msgIn); err != nil {
-		k.Logger(ctx).Error(sdkerrors.Wrap(err, "failure to send incoming msg to gRPC server").Error())
-		return nil // don't propagate nondeterministic errors
-	}
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeKeygen,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueMsg),
+			sdk.NewAttribute(types.AttributeKeySessionID, msg.SessionID),
+			sdk.NewAttribute(sdk.AttributeKeySender, senderAddress.String()),
+			sdk.NewAttribute(types.AttributeKeyPayload, string(k.cdc.MustMarshalJSON(msg.Payload)))))
+
 	return nil
 }
 
@@ -142,9 +95,6 @@ func (k Keeper) GetKey(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool) {
 
 // SetKey stores the given public key under the given key ID
 func (k Keeper) SetKey(ctx sdk.Context, keyID string, key ecdsa.PublicKey) {
-	// Delete the reference to the keygen stream with keyID because entering this function means the tss protocol has completed
-	delete(k.keygenStreams, keyID)
-
 	btcecPK := btcec.PublicKey(key)
 	ctx.KVStore(k.storeKey).Set([]byte(pkPrefix+keyID), btcecPK.SerializeCompressed())
 }
@@ -232,42 +182,6 @@ func (k Keeper) getKeygenStart(ctx sdk.Context, keyID string) (int64, bool) {
 	return blockHeight, true
 }
 
-func (k Keeper) prepareKeygen(ctx sdk.Context, keyID string, threshold int, validators []snapshot.Validator) (types.Stream, *tofnd.MessageIn_KeygenInit) {
-	// TODO call GetLocalPrincipal only once at launch? need to wait until someone pushes a RegisterProxy message on chain...
-	myAddress := k.broadcaster.GetLocalPrincipal(ctx)
-	if myAddress.Empty() {
-		k.Logger(ctx).Info("ignore Keygen: my validator address is empty so I must not be a validator")
-		return nil, nil
-	}
-
-	partyUids, myIndex, err := addrToUids(validators, myAddress)
-	if err != nil {
-		k.Logger(ctx).Error(err.Error())
-		return nil, nil
-	}
-
-	// only nodes in the validator set reach past this point
-
-	grpcCtx, _ := k.newGrpcContext()
-	stream, err := k.client.Keygen(grpcCtx)
-	if err != nil {
-		k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tofnd gRPC call Keygen").Error())
-		return nil, nil
-	}
-	k.keygenStreams[keyID] = stream
-	// TODO refactor
-	keygenInit := &tofnd.MessageIn_KeygenInit{
-		KeygenInit: &tofnd.KeygenInit{
-			NewKeyUid:    keyID,
-			Threshold:    int32(threshold),
-			PartyUids:    partyUids,
-			MyPartyIndex: myIndex,
-		},
-	}
-
-	return stream, keygenInit
-}
-
 func masterKeyStoreKey(rotation int64, chain exported.Chain) string {
 	return rotationPrefix + strconv.FormatInt(rotation, 10) + chain.Name
 }
@@ -317,4 +231,19 @@ func (k Keeper) GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64
 	var counter int64
 	k.cdc.MustUnmarshalBinaryBare(bz, &counter)
 	return counter, true
+}
+
+func (k Keeper) setParticipatesInKeygen(ctx sdk.Context, keyID string, validator sdk.ValAddress) {
+	ctx.KVStore(k.storeKey).Set([]byte(participatePrefix+"key_"+keyID+validator.String()), []byte{})
+}
+
+func (k Keeper) participatesInKeygen(ctx sdk.Context, keyID string, validator sdk.ValAddress) bool {
+	return ctx.KVStore(k.storeKey).Has([]byte(participatePrefix + "key_" + keyID + validator.String()))
+}
+
+// GetMinKeygenThreshold returns minimum threshold of stake that must be met to execute keygen
+func (k Keeper) GetMinKeygenThreshold(ctx sdk.Context) utils.Threshold {
+	var threshold utils.Threshold
+	k.params.Get(ctx, types.KeyMinKeygenThreshold, &threshold)
+	return threshold
 }

@@ -45,6 +45,11 @@ initGenesis() {
   fi
 }
 
+startValProc() {
+  sleep 10s
+  vald start $TOFND_HOST_SWITCH
+}
+
 CLI_HOME_DIR="$HOME_DIR/.axelarcli"
 D_HOME_DIR="$HOME_DIR/.axelard"
 
@@ -84,5 +89,7 @@ if [ "$START_REST" = true ]; then
     --node tcp://0.0.0.0:26657 \
     --unsafe-cors &
 fi
+
+startValProc &
 
 exec axelard start $TOFND_HOST_SWITCH

@@ -15,7 +15,7 @@ RUN --mount=type=ssh go mod download
 
 COPY . .
 RUN make debug
-RUN cp /axelar/bin/axelar* /usr/local/bin
+RUN cp /axelar/bin/* /usr/local/bin
 
 # The home directory of axelar-core where configuration/genesis/data are stored
 ENV HOME_DIR /root

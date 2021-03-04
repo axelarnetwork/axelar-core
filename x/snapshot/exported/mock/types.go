@@ -149,6 +149,9 @@ var _ exported.Snapshotter = &SnapshotterMock{}
 //
 // 		// make and configure a mocked exported.Snapshotter
 // 		mockedSnapshotter := &SnapshotterMock{
+// 			FilterActiveValidatorsFunc: func(ctx sdk.Context, validators []exported.Validator) ([]exported.Validator, error) {
+// 				panic("mock out the FilterActiveValidators method")
+// 			},
 // 			GetLatestCounterFunc: func(ctx sdk.Context) int64 {
 // 				panic("mock out the GetLatestCounter method")
 // 			},
@@ -157,9 +160,6 @@ var _ exported.Snapshotter = &SnapshotterMock{}
 // 			},
 // 			GetSnapshotFunc: func(ctx sdk.Context, counter int64) (exported.Snapshot, bool) {
 // 				panic("mock out the GetSnapshot method")
-// 			},
-// 			GetSnapshotActiveValidatorsFunc: func(ctx sdk.Context, counter int64) (exported.Snapshot, bool) {
-// 				panic("mock out the GetSnapshotActiveValidators method")
 // 			},
 // 			TakeSnapshotFunc: func(ctx sdk.Context) error {
 // 				panic("mock out the TakeSnapshot method")
@@ -171,6 +171,9 @@ var _ exported.Snapshotter = &SnapshotterMock{}
 //
 // 	}
 type SnapshotterMock struct {
+	// FilterActiveValidatorsFunc mocks the FilterActiveValidators method.
+	FilterActiveValidatorsFunc func(ctx sdk.Context, validators []exported.Validator) ([]exported.Validator, error)
+
 	// GetLatestCounterFunc mocks the GetLatestCounter method.
 	GetLatestCounterFunc func(ctx sdk.Context) int64
 
@@ -180,14 +183,18 @@ type SnapshotterMock struct {
 	// GetSnapshotFunc mocks the GetSnapshot method.
 	GetSnapshotFunc func(ctx sdk.Context, counter int64) (exported.Snapshot, bool)
 
-	// GetSnapshotActiveValidatorsFunc mocks the GetSnapshotActiveValidators method.
-	GetSnapshotActiveValidatorsFunc func(ctx sdk.Context, counter int64) (exported.Snapshot, bool)
-
 	// TakeSnapshotFunc mocks the TakeSnapshot method.
 	TakeSnapshotFunc func(ctx sdk.Context) error
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// FilterActiveValidators holds details about calls to the FilterActiveValidators method.
+		FilterActiveValidators []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Validators is the validators argument value.
+			Validators []exported.Validator
+		}
 		// GetLatestCounter holds details about calls to the GetLatestCounter method.
 		GetLatestCounter []struct {
 			// Ctx is the ctx argument value.
@@ -205,24 +212,52 @@ type SnapshotterMock struct {
 			// Counter is the counter argument value.
 			Counter int64
 		}
-		// GetSnapshotActiveValidators holds details about calls to the GetSnapshotActiveValidators method.
-		GetSnapshotActiveValidators []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Counter is the counter argument value.
-			Counter int64
-		}
 		// TakeSnapshot holds details about calls to the TakeSnapshot method.
 		TakeSnapshot []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 		}
 	}
-	lockGetLatestCounter            sync.RWMutex
-	lockGetLatestSnapshot           sync.RWMutex
-	lockGetSnapshot                 sync.RWMutex
-	lockGetSnapshotActiveValidators sync.RWMutex
-	lockTakeSnapshot                sync.RWMutex
+	lockFilterActiveValidators sync.RWMutex
+	lockGetLatestCounter       sync.RWMutex
+	lockGetLatestSnapshot      sync.RWMutex
+	lockGetSnapshot            sync.RWMutex
+	lockTakeSnapshot           sync.RWMutex
+}
+
+// FilterActiveValidators calls FilterActiveValidatorsFunc.
+func (mock *SnapshotterMock) FilterActiveValidators(ctx sdk.Context, validators []exported.Validator) ([]exported.Validator, error) {
+	if mock.FilterActiveValidatorsFunc == nil {
+		panic("SnapshotterMock.FilterActiveValidatorsFunc: method is nil but Snapshotter.FilterActiveValidators was just called")
+	}
+	callInfo := struct {
+		Ctx        sdk.Context
+		Validators []exported.Validator
+	}{
+		Ctx:        ctx,
+		Validators: validators,
+	}
+	mock.lockFilterActiveValidators.Lock()
+	mock.calls.FilterActiveValidators = append(mock.calls.FilterActiveValidators, callInfo)
+	mock.lockFilterActiveValidators.Unlock()
+	return mock.FilterActiveValidatorsFunc(ctx, validators)
+}
+
+// FilterActiveValidatorsCalls gets all the calls that were made to FilterActiveValidators.
+// Check the length with:
+//     len(mockedSnapshotter.FilterActiveValidatorsCalls())
+func (mock *SnapshotterMock) FilterActiveValidatorsCalls() []struct {
+	Ctx        sdk.Context
+	Validators []exported.Validator
+} {
+	var calls []struct {
+		Ctx        sdk.Context
+		Validators []exported.Validator
+	}
+	mock.lockFilterActiveValidators.RLock()
+	calls = mock.calls.FilterActiveValidators
+	mock.lockFilterActiveValidators.RUnlock()
+	return calls
 }
 
 // GetLatestCounter calls GetLatestCounterFunc.
@@ -319,41 +354,6 @@ func (mock *SnapshotterMock) GetSnapshotCalls() []struct {
 	mock.lockGetSnapshot.RLock()
 	calls = mock.calls.GetSnapshot
 	mock.lockGetSnapshot.RUnlock()
-	return calls
-}
-
-// GetSnapshotActiveValidators calls GetSnapshotActiveValidatorsFunc.
-func (mock *SnapshotterMock) GetSnapshotActiveValidators(ctx sdk.Context, counter int64) (exported.Snapshot, bool) {
-	if mock.GetSnapshotActiveValidatorsFunc == nil {
-		panic("SnapshotterMock.GetSnapshotActiveValidatorsFunc: method is nil but Snapshotter.GetSnapshotActiveValidators was just called")
-	}
-	callInfo := struct {
-		Ctx     sdk.Context
-		Counter int64
-	}{
-		Ctx:     ctx,
-		Counter: counter,
-	}
-	mock.lockGetSnapshotActiveValidators.Lock()
-	mock.calls.GetSnapshotActiveValidators = append(mock.calls.GetSnapshotActiveValidators, callInfo)
-	mock.lockGetSnapshotActiveValidators.Unlock()
-	return mock.GetSnapshotActiveValidatorsFunc(ctx, counter)
-}
-
-// GetSnapshotActiveValidatorsCalls gets all the calls that were made to GetSnapshotActiveValidators.
-// Check the length with:
-//     len(mockedSnapshotter.GetSnapshotActiveValidatorsCalls())
-func (mock *SnapshotterMock) GetSnapshotActiveValidatorsCalls() []struct {
-	Ctx     sdk.Context
-	Counter int64
-} {
-	var calls []struct {
-		Ctx     sdk.Context
-		Counter int64
-	}
-	mock.lockGetSnapshotActiveValidators.RLock()
-	calls = mock.calls.GetSnapshotActiveValidators
-	mock.lockGetSnapshotActiveValidators.RUnlock()
 	return calls
 }
 

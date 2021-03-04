@@ -45,6 +45,11 @@ initGenesis() {
   fi
 }
 
+startValProc() {
+  sleep 10s
+  dlv --listen=:2346 --headless=true --continue --api-version=2 --accept-multiclient exec /usr/local/bin/vald -- start $TOFND_HOST_SWITCH
+}
+
 CLI_HOME_DIR="$HOME_DIR/.axelarcli"
 D_HOME_DIR="$HOME_DIR/.axelard"
 
@@ -93,5 +98,7 @@ if [ "$CORE_CONTINUE" = true ]; then
 else
   CONTINUE_SWITCH=""
 fi
+
+startValProc &
 
 dlv --listen=:2345 --headless=true $CONTINUE_SWITCH --api-version=2 --accept-multiclient exec /usr/local/bin/axelard -- start $TOFND_HOST_SWITCH

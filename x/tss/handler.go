@@ -10,7 +10,6 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
-	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // NewHandler returns the handler for the tss module
@@ -23,7 +22,7 @@ func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Vot
 		case types.MsgSignTraffic:
 			return handleMsgSignTraffic(ctx, k, msg)
 		case types.MsgKeygenStart:
-			return handleMsgKeygenStart(ctx, k, s, v, staker, msg)
+			return handleMsgKeygenStart(ctx, k, s, staker, msg)
 		case types.MsgAssignNextMasterKey:
 			return handleMsgAssignNextMasterKey(ctx, k, s, n, msg)
 		case types.MsgRotateMasterKey:
@@ -64,7 +63,7 @@ func handleMsgRotateMasterKey(ctx sdk.Context, k keeper.Keeper, n types.Nexus, m
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
 			sdk.NewAttribute(types.AttributeChain, chain.Name),
 		),
@@ -91,10 +90,10 @@ func handleMsgVoteSig(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types
 		// so use result instead of msg
 		ctx.EventManager().EmitEvent(sdk.NewEvent(
 			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(types.AttributePoll, msg.PollMeta.String()),
 			sdk.NewAttribute(types.AttributePollDecided, strconv.FormatBool(true)),
-			sdk.NewAttribute(types.AttributeSigPayload, string(msg.SigBytes)),
+			sdk.NewAttribute(types.AttributeKeyPayload, string(msg.SigBytes)),
 		))
 
 		switch sigBytes := result.(type) {
@@ -125,7 +124,7 @@ func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg ty
 
 		ctx.EventManager().EmitEvent(sdk.NewEvent(
 			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(types.AttributePoll, msg.PollMeta.String()),
 			sdk.NewAttribute(types.AttributePollDecided, strconv.FormatBool(true)),
 			sdk.NewAttribute(types.AttributeKeyPayload, string(msg.PubKeyBytes)),
@@ -169,7 +168,7 @@ func handleMsgAssignNextMasterKey(ctx sdk.Context, k keeper.Keeper, s types.Snap
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
 		),
 	)
@@ -180,19 +179,11 @@ func handleMsgKeygenTraffic(ctx sdk.Context, k keeper.Keeper, msg types.MsgKeyge
 	if err := k.KeygenMsg(ctx, msg); err != nil {
 		return nil, err
 	}
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeKeyPayload, msg.Payload.String()),
-		),
-	)
+
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, v types.Voter,
-	staker types.StakingKeeper, msg types.MsgKeygenStart) (*sdk.Result, error) {
+func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, staker types.StakingKeeper, msg types.MsgKeygenStart) (*sdk.Result, error) {
 
 	// record the snapshot of active validators that we'll use for the key
 	if err := s.TakeSnapshot(ctx); err != nil {
@@ -222,31 +213,11 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 		return nil, err
 	}
 
-	poll := voting.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.NewKeyID}
-	if err := v.InitPoll(ctx, poll); err != nil {
-		return nil, err
-	}
-
-	pkChan, err := k.StartKeygen(ctx, msg.NewKeyID, threshold, snapshot)
+	err := k.StartKeygen(ctx, msg.NewKeyID, threshold, snapshot)
 	if err != nil {
 		return nil, err
 	}
 
-	go func() {
-		pk, ok := <-pkChan
-		if ok {
-			btcecPK := btcec.PublicKey(pk)
-			bz := btcecPK.SerializeCompressed()
-			v.RecordVote(&types.MsgVotePubKey{PollMeta: poll, PubKeyBytes: bz})
-		}
-	}()
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-		),
-	)
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
@@ -254,13 +225,6 @@ func handleMsgSignTraffic(ctx sdk.Context, k keeper.Keeper, msg types.MsgSignTra
 	if err := k.SignMsg(ctx, msg); err != nil {
 		return nil, err
 	}
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeKeyPayload, msg.Payload.String()),
-		),
-	)
+
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
