@@ -74,9 +74,9 @@ func SetGenesisTSSCmd(
 		},
 	}
 
-	cmd.Flags().Int64Var(&period, "locking-period", 0, "Locking period for the TSS module.")
-	cmd.Flags().StringVar(&keygen, "keygen", "", "The minimum % of stake that must be online to authorize generation of a new key in the system.")
-	cmd.Flags().StringVar(&corruption, "corruption", "", "The corruption threshold with which Axelar Core will run the keygen protocol.")
+	cmd.Flags().Int64Var(&period, "locking-period", 0, "A positive integer representing the locking period for validators in terms of number of blocks")
+	cmd.Flags().StringVar(&keygen, "keygen", "", "The minimum % of stake that must be online to authorize generation of a new key in the system (e.g., \"9/10\").")
+	cmd.Flags().StringVar(&corruption, "corruption", "", "The corruption threshold with which Axelar Core will run the keygen protocol (e.g., \"2/3\").")
 
 	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
 	cmd.Flags().String(CliHomeFlag, defaultClientHome, "client's home directory")

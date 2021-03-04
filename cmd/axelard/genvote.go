@@ -65,8 +65,8 @@ func SetGenesisVoteCmd(
 		},
 	}
 
-	cmd.Flags().StringVar(&threshold, "threshold", "", "The % of stake that is required for a voting poll to conclude.")
-	cmd.Flags().Int64Var(&interval, "interval", 0, "The number of blocks between tallying votes.")
+	cmd.Flags().StringVar(&threshold, "threshold", "", "The % of stake that is required for a voting poll to conclude (e.g., \"2/3\").")
+	cmd.Flags().Int64Var(&interval, "interval", 0, "A positive integer representing the number of blocks between tallying votes.")
 
 	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
 	cmd.Flags().String(CliHomeFlag, defaultClientHome, "client's home directory")

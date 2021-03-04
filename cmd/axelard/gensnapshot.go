@@ -61,7 +61,7 @@ func SetGenesisSnapshotCmd(
 		},
 	}
 
-	cmd.Flags().StringVar(&period, "locking-period", "", "Locking period for the snapshot module.")
+	cmd.Flags().StringVar(&period, "locking-period", "", "Locking period for the snapshot module (e.g., \"6h\").")
 
 	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
 	cmd.Flags().String(CliHomeFlag, defaultClientHome, "client's home directory")

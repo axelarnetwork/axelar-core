@@ -84,7 +84,7 @@ func SetGenesisEthContractsCmd(
 	cmd.Flags().StringVar(&gatewayFile, "gateway", "", "Path to the Axelar Gateway contract ABI.")
 	cmd.Flags().StringVar(&tokenFile, "token", "", "Path to the tokens contract ABI.")
 	cmd.Flags().StringVar(&burnableFile, "burnable", "", "Path to the burner contract ABI.")
-	cmd.Flags().StringVar(&tokenDeploySig, "token-deploy-sig", "", "The signature of Axelar Gateway token deployment method.")
+	cmd.Flags().StringVar(&tokenDeploySig, "token-deploy-sig", "", "The signature of Axelar Gateway token deployment method (e.g.,\"TokenDeployed(string,address)\").")
 
 	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
 	cmd.Flags().String(CliHomeFlag, defaultClientHome, "client's home directory")
