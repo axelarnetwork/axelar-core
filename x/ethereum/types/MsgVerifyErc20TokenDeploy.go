@@ -9,7 +9,7 @@ import (
 // MsgVerifyErc20TokenDeploy represents a token deploy verification message
 type MsgVerifyErc20TokenDeploy struct {
 	Sender sdk.AccAddress
-	TxID   common.Hash
+	TxID   []byte
 	Symbol string
 }
 
@@ -17,7 +17,7 @@ type MsgVerifyErc20TokenDeploy struct {
 func NewMsgVerifyErc20TokenDeploy(sender sdk.AccAddress, txID common.Hash, symbol string) sdk.Msg {
 	return MsgVerifyErc20TokenDeploy{
 		Sender: sender,
-		TxID:   txID,
+		TxID:   txID.Bytes(),
 		Symbol: symbol,
 	}
 }

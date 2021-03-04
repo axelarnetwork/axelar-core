@@ -93,7 +93,7 @@ func TestLink_Success(t *testing.T) {
 	assert.Equal(t, sender, n.LinkAddressesCalls()[0].Sender)
 	assert.Equal(t, recipient, n.LinkAddressesCalls()[0].Recipient)
 
-	assert.Equal(t, types.BurnerInfo{TokenAddr: tokenAddr, Symbol: msg.Symbol, Salt: salt}, *k.GetBurnerInfo(ctx, burnAddr))
+	assert.Equal(t, types.BurnerInfo{TokenAddr: tokenAddr, Symbol: msg.Symbol, Salt: salt.Bytes()}, *k.GetBurnerInfo(ctx, burnAddr))
 }
 
 func TestDeployTx_DifferentValue_DifferentHash(t *testing.T) {
@@ -376,7 +376,7 @@ func TestHandleMsgVerifyErc20Deposit_FailedGettingTransactionReceipt(t *testing.
 	amount := sdk.NewUint(uint64(testutils.RandIntBetween(1, 10000)))
 	tokenAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
 	symbol := testutils.RandString(3)
-	salt := common.BytesToHash(testutils.RandBytes(common.HashLength))
+	salt := common.BytesToHash(testutils.RandBytes(common.HashLength)).Bytes()
 	burnerAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
 	burnerInfo := types.BurnerInfo{
 		TokenAddr: tokenAddr,
@@ -410,7 +410,7 @@ func TestHandleMsgVerifyErc20Deposit_FailedGettingBlockNumber(t *testing.T) {
 	amount := sdk.NewUint(uint64(testutils.RandIntBetween(1, 10000)))
 	tokenAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
 	symbol := testutils.RandString(3)
-	salt := common.BytesToHash(testutils.RandBytes(common.HashLength))
+	salt := common.BytesToHash(testutils.RandBytes(common.HashLength)).Bytes()
 	burnerAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
 	burnerInfo := types.BurnerInfo{
 		TokenAddr: tokenAddr,
@@ -447,7 +447,7 @@ func TestHandleMsgVerifyErc20Deposit_NotConfirmed(t *testing.T) {
 	amount := sdk.NewUint(uint64(testutils.RandIntBetween(1, 10000)))
 	tokenAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
 	symbol := testutils.RandString(3)
-	salt := common.BytesToHash(testutils.RandBytes(common.HashLength))
+	salt := common.BytesToHash(testutils.RandBytes(common.HashLength)).Bytes()
 	burnerAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
 	burnerInfo := types.BurnerInfo{
 		TokenAddr: tokenAddr,
@@ -485,7 +485,7 @@ func TestHandleMsgVerifyErc20Deposit_AmountMismatch(t *testing.T) {
 	amount := sdk.NewUint(10)
 	tokenAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
 	symbol := testutils.RandString(3)
-	salt := common.BytesToHash(testutils.RandBytes(common.HashLength))
+	salt := common.BytesToHash(testutils.RandBytes(common.HashLength)).Bytes()
 	burnerAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
 	burnerInfo := types.BurnerInfo{
 		TokenAddr: tokenAddr,
@@ -564,7 +564,7 @@ func TestHandleMsgVerifyErc20Deposit_Success(t *testing.T) {
 	amount := sdk.NewUint(10)
 	tokenAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
 	symbol := testutils.RandString(3)
-	salt := common.BytesToHash(testutils.RandBytes(common.HashLength))
+	salt := common.BytesToHash(testutils.RandBytes(common.HashLength)).Bytes()
 	burnerAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
 	burnerInfo := types.BurnerInfo{
 		TokenAddr: tokenAddr,
