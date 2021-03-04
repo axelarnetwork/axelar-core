@@ -14,8 +14,9 @@ const (
 )
 
 var (
-	KeyConfirmationHeight = []byte("confirmationHeight")
-	KeyNetwork            = []byte("network")
+	KeyConfirmationHeight  = []byte("confirmationHeight")
+	KeyNetwork             = []byte("network")
+	KeyRevoteLockingPeriod = []byte("RevoteLockingPeriod")
 )
 
 func KeyTable() subspace.KeyTable {
@@ -23,14 +24,16 @@ func KeyTable() subspace.KeyTable {
 }
 
 type Params struct {
-	ConfirmationHeight uint64
-	Network            Network
+	ConfirmationHeight  uint64
+	Network             Network
+	RevoteLockingPeriod int64
 }
 
 func DefaultParams() Params {
 	return Params{
-		ConfirmationHeight: 1,
-		Network:            Regtest,
+		ConfirmationHeight:  1,
+		Network:             Regtest,
+		RevoteLockingPeriod: 50,
 	}
 }
 
@@ -46,6 +49,7 @@ func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
 	return subspace.ParamSetPairs{
 		subspace.NewParamSetPair(KeyConfirmationHeight, &p.ConfirmationHeight, validateConfirmationHeight),
 		subspace.NewParamSetPair(KeyNetwork, &p.Network, validateNetwork),
+		subspace.NewParamSetPair(KeyRevoteLockingPeriod, &p.RevoteLockingPeriod, validateRevoteLockingPeriod),
 	}
 }
 
@@ -68,12 +72,31 @@ func validateNetwork(network interface{}) error {
 	return n.Validate()
 }
 
+func validateRevoteLockingPeriod(RevoteLockingPeriod interface{}) error {
+	r, ok := RevoteLockingPeriod.(int64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for revote lock period: %T", r)
+	}
+
+	if r <= 0 {
+		return sdkerrors.Wrap(types.ErrInvalidGenesis, "revote lock period be greater than 0")
+	}
+
+	return nil
+}
+
 func (p Params) Validate() error {
 	if err := validateConfirmationHeight(p.ConfirmationHeight); err != nil {
 		return err
 	}
+
 	if err := validateNetwork(p.Network); err != nil {
 		return err
 	}
+
+	if err := validateRevoteLockingPeriod(p.RevoteLockingPeriod); err != nil {
+		return err
+	}
+
 	return nil
 }

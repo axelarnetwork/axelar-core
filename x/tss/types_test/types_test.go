@@ -18,12 +18,8 @@ func TestMsgVotePubKey_Marshaling(t *testing.T) {
 		sender[i] = 0
 	}
 	vote := &tss.MsgVotePubKey{
-		Sender: sender,
-		PollMeta: exported.PollMeta{
-			Module: "test",
-			Type:   "test",
-			ID:     "test",
-		},
+		Sender:      sender,
+		PollMeta:    exported.NewPollMeta("test", "test", "test"),
 		PubKeyBytes: []byte("some bytes"),
 	}
 	cdc := testutils.Codec()

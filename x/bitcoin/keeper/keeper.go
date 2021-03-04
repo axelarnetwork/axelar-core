@@ -63,6 +63,14 @@ func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context) uint64 {
 	return h
 }
 
+// GetRevoteLockingPeriod returns the lock period for revoting
+func (k Keeper) GetRevoteLockingPeriod(ctx sdk.Context) int64 {
+	var result int64
+	k.params.Get(ctx, types.KeyRevoteLockingPeriod, &result)
+
+	return result
+}
+
 // Codec returns the codec used by the keeper to marshal and unmarshal data
 func (k Keeper) Codec() *codec.Codec {
 	return k.cdc
