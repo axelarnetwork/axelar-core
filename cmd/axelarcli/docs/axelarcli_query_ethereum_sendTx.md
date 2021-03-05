@@ -2,10 +2,6 @@
 
 Send a transaction that spends tx \[txID\] to Ethereum
 
-### Synopsis
-
-Send a transaction that spends tx \[txID\] to Ethereum
-
 ```
 axelarcli query ethereum sendTx [txID] [flags]
 ```

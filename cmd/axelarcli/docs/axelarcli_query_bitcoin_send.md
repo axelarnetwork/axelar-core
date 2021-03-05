@@ -2,10 +2,6 @@
 
 Send a transaction to Bitcoin that consolidates deposits and withdrawals
 
-### Synopsis
-
-Send a transaction to Bitcoin that consolidates deposits and withdrawals
-
 ```
 axelarcli query bitcoin send [flags]
 ```

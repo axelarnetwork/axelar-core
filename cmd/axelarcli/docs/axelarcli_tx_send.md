@@ -2,10 +2,6 @@
 
 Create and sign a send tx
 
-### Synopsis
-
-Create and sign a send tx
-
 ```
 axelarcli tx send [from_key_or_address] [to_address] [amount] [flags]
 ```

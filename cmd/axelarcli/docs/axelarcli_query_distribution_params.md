@@ -2,10 +2,6 @@
 
 Query distribution params
 
-### Synopsis
-
-Query distribution params
-
 ```
 axelarcli query distribution params [flags]
 ```

@@ -2,10 +2,6 @@
 
 Send a transaction signed by \[fromAddress\] that executes the command \[commandID\] to Axelar Gateway
 
-### Synopsis
-
-Send a transaction signed by \[fromAddress\] that executes the command \[commandID\] to Axelar Gateway
-
 ```
 axelarcli query ethereum sendCommand [commandID] [fromAddress] [flags]
 ```

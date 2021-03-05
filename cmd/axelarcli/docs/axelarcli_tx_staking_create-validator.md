@@ -2,10 +2,6 @@
 
 create new validator initialized with a self-delegation to it
 
-### Synopsis
-
-create new validator initialized with a self-delegation to it
-
 ```
 axelarcli tx staking create-validator [flags]
 ```

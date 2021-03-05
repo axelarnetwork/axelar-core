@@ -176,25 +176,25 @@ type CommandParams struct {
 
 // Erc20TokenDeploy describes information about an ERC20 token
 type Erc20TokenDeploy struct {
-	TxID      common.Hash
+	TxID      [common.HashLength]byte
 	Symbol    string
-	TokenAddr common.Address
+	TokenAddr string
 }
 
 // BurnerInfo describes information required to burn token at an burner address
 // that is deposited by an user
 type BurnerInfo struct {
-	TokenAddr common.Address
+	TokenAddr string
 	Symbol    string
-	Salt      common.Hash
+	Salt      [common.HashLength]byte
 }
 
 // Erc20Deposit contains information for an ERC20 deposit
 type Erc20Deposit struct {
-	TxID       common.Hash
+	TxID       [common.HashLength]byte
 	Amount     sdk.Uint
 	Symbol     string
-	BurnerAddr common.Address
+	BurnerAddr string
 }
 
 // CreateExecuteData wraps the specific command data and includes the command signature.
@@ -302,7 +302,7 @@ func CreateBurnCommandData(chainID *big.Int, height int64, burnerInfos []BurnerI
 	binary.LittleEndian.PutUint64(heightBytes, uint64(height))
 
 	for _, burnerInfo := range burnerInfos {
-		commandParam, err := createBurnTokenParams(burnerInfo.Symbol, burnerInfo.Salt)
+		commandParam, err := createBurnTokenParams(burnerInfo.Symbol, common.BytesToHash(burnerInfo.Salt[:]))
 		if err != nil {
 			return nil, err
 		}

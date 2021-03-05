@@ -2,10 +2,6 @@
 
 Verify an ERC20 token deployment in an Ethereum transaction for a given symbol of token and gateway address
 
-### Synopsis
-
-Verify an ERC20 token deployment in an Ethereum transaction for a given symbol of token and gateway address
-
 ```
 axelarcli tx ethereum verify-erc20-token [txID] [symbol] [flags]
 ```

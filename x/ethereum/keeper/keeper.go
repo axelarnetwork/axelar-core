@@ -218,8 +218,9 @@ func (k Keeper) GetGatewayByteCodes(ctx sdk.Context) []byte {
 
 // SetUnverifiedErc20TokenDeploy stores and unverified erc20 token
 func (k Keeper) SetUnverifiedErc20TokenDeploy(ctx sdk.Context, token *types.Erc20TokenDeploy) {
+	txID := common.BytesToHash(token.TxID[:]).String()
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(token)
-	ctx.KVStore(k.storeKey).Set([]byte(pendingTokenPrefix+token.TxID.String()), bz)
+	ctx.KVStore(k.storeKey).Set([]byte(pendingTokenPrefix+txID), bz)
 }
 
 // SetTokenInfo stores the token info
@@ -311,7 +312,8 @@ func (k Keeper) GetVerifiedErc20Deposits(ctx sdk.Context) []types.Erc20Deposit {
 	return deposits
 }
 
-func (k Keeper) ArchiveErc20Depsit(ctx sdk.Context, txID string) {
+// ArchiveErc20Deposit marks a deposit as archived
+func (k Keeper) ArchiveErc20Deposit(ctx sdk.Context, txID string) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(verifiedErc20DepositPrefix + txID))
 	if bz == nil {
 		return

@@ -2,10 +2,6 @@
 
 ethereum transactions subcommands
 
-### Synopsis
-
-ethereum transactions subcommands
-
 ```
 axelarcli tx ethereum [flags]
 ```

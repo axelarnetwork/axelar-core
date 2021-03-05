@@ -2,10 +2,6 @@
 
 Distribution transactions subcommands
 
-### Synopsis
-
-Distribution transactions subcommands
-
 ```
 axelarcli tx distribution [flags]
 ```

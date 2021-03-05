@@ -2,10 +2,6 @@
 
 tss transactions subcommands
 
-### Synopsis
-
-tss transactions subcommands
-
 ```
 axelarcli tx tss [flags]
 ```

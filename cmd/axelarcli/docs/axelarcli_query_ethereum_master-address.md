@@ -2,10 +2,6 @@
 
 Query an address by key ID
 
-### Synopsis
-
-Query an address by key ID
-
 ```
 axelarcli query ethereum master-address [flags]
 ```

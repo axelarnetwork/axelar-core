@@ -2,10 +2,6 @@
 
 Querying commands for the auth module
 
-### Synopsis
-
-Querying commands for the auth module
-
 ```
 axelarcli query auth [flags]
 ```

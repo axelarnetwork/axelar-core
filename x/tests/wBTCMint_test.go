@@ -26,7 +26,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -57,10 +56,6 @@ func Test_wBTC_mint(t *testing.T) {
 		res := <-chain.Submit(broadcastTypes.MsgRegisterProxy{Principal: nodeData[i].Validator.OperatorAddress, Proxy: sdk.AccAddress(proxy)})
 		assert.NoError(t, res.Error)
 	}
-
-	// take snapshot
-	res := <-chain.Submit(snapTypes.MsgSnapshot{Sender: randomSender()})
-	assert.NoError(t, res.Error)
 
 	// create master key for btc
 	btcMasterKeyID := randStrings.Next()
@@ -176,7 +171,7 @@ func Test_wBTC_mint(t *testing.T) {
 		// 1. Get a deposit address for an Ethereum recipient address
 		// we don't provide an actual recipient address, so it is created automatically
 		crosschainAddr := nexus.CrossChainAddress{Chain: eth.Ethereum, Address: testutils.RandStringBetween(5, 20)}
-		res = <-chain.Submit(btcTypes.NewMsgLink(randomSender(), crosschainAddr.Address, crosschainAddr.Chain.Name))
+		res := <-chain.Submit(btcTypes.NewMsgLink(randomSender(), crosschainAddr.Address, crosschainAddr.Chain.Name))
 		assert.NoError(t, res.Error)
 		depositAddr := string(res.Data)
 
@@ -211,7 +206,7 @@ func Test_wBTC_mint(t *testing.T) {
 	}
 
 	// 6. Sign all pending transfers to Ethereum
-	res = <-chain.Submit(ethTypes.NewMsgSignPendingTransfers(randomSender()))
+	res := <-chain.Submit(ethTypes.NewMsgSignPendingTransfers(randomSender()))
 	assert.NoError(t, res.Error)
 	for _, isCorrect := range correctSigns {
 		assert.True(t, <-isCorrect)

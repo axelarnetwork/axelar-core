@@ -2,10 +2,6 @@
 
 Staking transaction subcommands
 
-### Synopsis
-
-Staking transaction subcommands
-
 ```
 axelarcli tx staking [flags]
 ```

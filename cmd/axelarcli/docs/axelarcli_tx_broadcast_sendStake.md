@@ -2,10 +2,6 @@
 
 Sends the specified amount of stake to the designated addresses
 
-### Synopsis
-
-Sends the specified amount of stake to the designated addresses
-
 ```
 axelarcli tx broadcast sendStake [amount] [address 1] ... [address n] [flags]
 ```

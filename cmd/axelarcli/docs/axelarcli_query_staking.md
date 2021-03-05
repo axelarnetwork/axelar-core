@@ -2,10 +2,6 @@
 
 Querying commands for the staking module
 
-### Synopsis
-
-Querying commands for the staking module
-
 ```
 axelarcli query staking [flags]
 ```

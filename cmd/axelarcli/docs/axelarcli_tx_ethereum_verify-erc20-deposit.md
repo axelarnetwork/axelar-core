@@ -2,10 +2,6 @@
 
 Verify an ERC20 deposit in an Ethereum transaction that sent given amount of token to a burner address
 
-### Synopsis
-
-Verify an ERC20 deposit in an Ethereum transaction that sent given amount of token to a burner address
-
 ```
 axelarcli tx ethereum verify-erc20-deposit [txID] [amount] [burnerAddr] [flags]
 ```

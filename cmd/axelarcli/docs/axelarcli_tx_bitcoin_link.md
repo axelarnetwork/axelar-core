@@ -2,10 +2,6 @@
 
 Link a cross chain address to a bitcoin address created by Axelar
 
-### Synopsis
-
-Link a cross chain address to a bitcoin address created by Axelar
-
 ```
 axelarcli tx bitcoin link [chain] [address] [flags]
 ```

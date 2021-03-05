@@ -2,10 +2,6 @@
 
 Returns a bitcoin deposit address for a recipient address on another blockchain
 
-### Synopsis
-
-Returns a bitcoin deposit address for a recipient address on another blockchain
-
 ```
 axelarcli query bitcoin deposit-addr [chain] [recipient address] [flags]
 ```

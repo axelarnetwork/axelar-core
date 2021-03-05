@@ -2,10 +2,6 @@
 
 Querying commands for the slashing module
 
-### Synopsis
-
-Querying commands for the slashing module
-
 ```
 axelarcli query slashing [flags]
 ```
