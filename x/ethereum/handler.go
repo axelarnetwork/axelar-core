@@ -64,7 +64,7 @@ func handleMsgVerifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, rpc types.RPC
 	txID := common.BytesToHash(msg.TxID[:])
 	txIDHex := txID.String()
 
-	burnerInfo := k.GetBurnerInfo(ctx, msg.BurnerAddr)
+	burnerInfo := k.GetBurnerInfo(ctx, common.HexToAddress(msg.BurnerAddr))
 	if burnerInfo == nil {
 		return nil, fmt.Errorf("no burner info found for address %s", msg.BurnerAddr)
 	}
@@ -78,7 +78,7 @@ func handleMsgVerifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, rpc types.RPC
 		TxID:       msg.TxID,
 		Amount:     msg.Amount,
 		Symbol:     burnerInfo.Symbol,
-		BurnerAddr: msg.BurnerAddr.Hex(),
+		BurnerAddr: msg.BurnerAddr,
 	}
 	k.SetUnverifiedErc20Deposit(ctx, txIDHex, &erc20Deposit)
 
@@ -89,9 +89,9 @@ func handleMsgVerifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, rpc types.RPC
 		return &sdk.Result{Log: sdkerrors.Wrapf(err, "cannot get transaction receipt %s or block number", txIDHex).Error()}, nil
 	}
 
-	if err := verifyErc20Deposit(ctx, k, txReceipt, blockNumber, txID, msg.Amount, msg.BurnerAddr, common.HexToAddress(burnerInfo.TokenAddr)); err != nil {
+	if err := verifyErc20Deposit(ctx, k, txReceipt, blockNumber, txID, msg.Amount, common.HexToAddress(msg.BurnerAddr), common.HexToAddress(burnerInfo.TokenAddr)); err != nil {
 		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
-		log := sdkerrors.Wrapf(err, "expected erc20 deposit (%s) to burner address %s could not be verified", txIDHex, msg.BurnerAddr.String()).Error()
+		log := sdkerrors.Wrapf(err, "expected erc20 deposit (%s) to burner address %s could not be verified", txIDHex, msg.BurnerAddr).Error()
 		return &sdk.Result{Log: log}, nil
 	}
 
