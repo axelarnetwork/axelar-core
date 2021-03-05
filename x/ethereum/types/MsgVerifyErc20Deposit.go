@@ -9,16 +9,19 @@ import (
 // MsgVerifyErc20Deposit represents an erc20 deposit verification message
 type MsgVerifyErc20Deposit struct {
 	Sender     sdk.AccAddress
-	TxID       []byte
+	TxID       [common.HashLength]byte
 	Amount     sdk.Uint
 	BurnerAddr common.Address
 }
 
 // NewMsgVerifyErc20Deposit creates a message of type MsgVerifyErc20Deposit
 func NewMsgVerifyErc20Deposit(sender sdk.AccAddress, txID common.Hash, amount sdk.Uint, burnerAddr common.Address) sdk.Msg {
+	var array [common.HashLength]byte
+	copy(array[:], txID.Bytes())
+
 	return MsgVerifyErc20Deposit{
 		Sender:     sender,
-		TxID:       txID.Bytes(),
+		TxID:       array,
 		Amount:     amount,
 		BurnerAddr: burnerAddr,
 	}

@@ -61,7 +61,7 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 }
 
 func handleMsgVerifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v types.Voter, msg types.MsgVerifyErc20Deposit) (*sdk.Result, error) {
-	txID := common.BytesToHash(msg.TxID)
+	txID := common.BytesToHash(msg.TxID[:])
 	txIDHex := txID.String()
 
 	burnerInfo := k.GetBurnerInfo(ctx, msg.BurnerAddr)
@@ -78,7 +78,7 @@ func handleMsgVerifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, rpc types.RPC
 		TxID:       msg.TxID,
 		Amount:     msg.Amount,
 		Symbol:     burnerInfo.Symbol,
-		BurnerAddr: msg.BurnerAddr,
+		BurnerAddr: msg.BurnerAddr.Hex(),
 	}
 	k.SetUnverifiedErc20Deposit(ctx, txIDHex, &erc20Deposit)
 
@@ -89,7 +89,7 @@ func handleMsgVerifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, rpc types.RPC
 		return &sdk.Result{Log: sdkerrors.Wrapf(err, "cannot get transaction receipt %s or block number", txIDHex).Error()}, nil
 	}
 
-	if err := verifyErc20Deposit(ctx, k, txReceipt, blockNumber, txID, msg.Amount, msg.BurnerAddr, burnerInfo.TokenAddr); err != nil {
+	if err := verifyErc20Deposit(ctx, k, txReceipt, blockNumber, txID, msg.Amount, msg.BurnerAddr, common.HexToAddress(burnerInfo.TokenAddr)); err != nil {
 		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
 		log := sdkerrors.Wrapf(err, "expected erc20 deposit (%s) to burner address %s could not be verified", txIDHex, msg.BurnerAddr.String()).Error()
 		return &sdk.Result{Log: log}, nil
@@ -128,10 +128,12 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg types.Ms
 		nexus.CrossChainAddress{Chain: senderChain, Address: burnerAddr.String()},
 		nexus.CrossChainAddress{Chain: recipientChain, Address: msg.RecipientAddr})
 
+	var array [common.HashLength]byte
+	copy(array[:], salt.Bytes())
 	burnerInfo := types.BurnerInfo{
-		TokenAddr: tokenAddr,
+		TokenAddr: tokenAddr.Hex(),
 		Symbol:    msg.Symbol,
-		Salt:      salt.Bytes(),
+		Salt:      array,
 	}
 	k.SetBurnerInfo(ctx, burnerAddr, &burnerInfo)
 
@@ -239,7 +241,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 				return nil, fmt.Errorf("erc20 deposit %s wasn't properly marked as verified", txID)
 			}
 
-			depositAddr := nexus.CrossChainAddress{Address: deposit.BurnerAddr.String(), Chain: exported.Ethereum}
+			depositAddr := nexus.CrossChainAddress{Address: deposit.BurnerAddr, Chain: exported.Ethereum}
 			amount := sdk.NewInt64Coin(deposit.Symbol, deposit.Amount.BigInt().Int64())
 
 			if err := n.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
@@ -349,7 +351,7 @@ func handleMsgSignBurnTokens(ctx sdk.Context, k keeper.Keeper, signer types.Sign
 
 	// TODO: Archive token deposits after signing is completed
 	for _, deposit := range deposits {
-		k.ArchiveErc20Depsit(ctx, common.BytesToHash(deposit.TxID).String())
+		k.ArchiveErc20Depsit(ctx, common.BytesToHash(deposit.TxID[:]).String())
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -373,7 +375,7 @@ func getUniqueBurnerAddrs(deposits []types.Erc20Deposit) []common.Address {
 	burnerAddrSeen := map[common.Address]bool{}
 
 	for _, deposit := range deposits {
-		burnerAddr := deposit.BurnerAddr
+		burnerAddr := common.HexToAddress(deposit.BurnerAddr)
 		if burnerAddrSeen[burnerAddr] {
 			continue
 		}
@@ -436,7 +438,7 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, msg 
 }
 
 func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v types.Voter, msg types.MsgVerifyErc20TokenDeploy) (*sdk.Result, error) {
-	txID := common.BytesToHash(msg.TxID)
+	txID := common.BytesToHash(msg.TxID[:])
 	txHex := txID.String()
 
 	gatewayAddr, ok := k.GetGatewayAddress(ctx)
@@ -466,7 +468,7 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 	deploy := types.Erc20TokenDeploy{
 		TxID:      msg.TxID,
 		Symbol:    msg.Symbol,
-		TokenAddr: tokenAddr,
+		TokenAddr: tokenAddr.Hex(),
 	}
 	k.SetUnverifiedErc20TokenDeploy(ctx, &deploy)
 

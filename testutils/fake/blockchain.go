@@ -313,7 +313,7 @@ func (n *Node) start() {
 				if err != nil {
 					n.Ctx.Logger().Error(fmt.Sprintf("error from handler for route %s: %s", msg.Route(), err.Error()))
 					// to allow failed messages we need to implement a cache for the multistore to revert in case of failure
-					panic("no failing messages allowed for now")
+					panic(fmt.Sprintf("no failing messages allowed for now: error from handler for route %s: %s", msg.Route(), err.Error()))
 				}
 				msgEvents := sdk.Events{
 					sdk.NewEvent(sdk.EventTypeMessage, sdk.NewAttribute(sdk.AttributeKeyAction, msg.Type())),

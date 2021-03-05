@@ -218,7 +218,7 @@ func (k Keeper) GetGatewayByteCodes(ctx sdk.Context) []byte {
 
 // SetUnverifiedErc20TokenDeploy stores and unverified erc20 token
 func (k Keeper) SetUnverifiedErc20TokenDeploy(ctx sdk.Context, token *types.Erc20TokenDeploy) {
-	txID := common.BytesToHash(token.TxID).String()
+	txID := common.BytesToHash(token.TxID[:]).String()
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(token)
 	ctx.KVStore(k.storeKey).Set([]byte(pendingTokenPrefix+txID), bz)
 }
