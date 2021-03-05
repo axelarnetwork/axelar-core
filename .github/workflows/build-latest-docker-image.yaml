@@ -1,4 +1,4 @@
-name: Build and push docker image
+name: Build and push latest docker image
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - master
 
 jobs:
-  build-and-push-docker-image:
+  build-and-push-latest-docker-image:
     strategy:
       matrix:
         os:
