@@ -210,7 +210,10 @@ func handleMsgSignPendingTransfers(ctx sdk.Context, k keeper.Keeper, signer type
 		return nil, err
 	}
 
-	return &sdk.Result{Log: fmt.Sprintf("successfully started signing protocols to consolidate pending transfers")}, nil
+	return &sdk.Result{
+		Events: ctx.EventManager().Events(),
+		Log:    fmt.Sprintf("successfully started signing protocols to consolidate pending transfers"),
+	}, nil
 }
 
 func verifyTx(rpc types.RPCClient, expectedInfo types.OutPointInfo, requiredConfirmations uint64) error {
