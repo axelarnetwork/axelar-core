@@ -14,6 +14,7 @@ type Validator interface {
 	GetOperator() sdk.ValAddress
 	GetConsAddr() sdk.ConsAddress
 	GetConsensusPower() int64
+	IsJailed() bool
 }
 
 // Snapshot is a snapshot of the validator set at a given block height.
