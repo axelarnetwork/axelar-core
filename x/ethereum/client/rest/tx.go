@@ -24,6 +24,7 @@ const (
 	TxMethodSignTx             = "sign-tx"
 	TxMethodSignPending        = "sign-pending"
 	TxMethodSignDeployToken    = "sign-deploy-token"
+	TxMethodSignBurnTokens     = "sign-burn"
 
 	QMethodMasterAddress        = keeper.QueryMasterAddress
 	QMethodAxelarGatewayAddress = keeper.QueryAxelarGatewayAddress
@@ -44,6 +45,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	registerTx(GetHandlerSignTx(cliCtx), TxMethodSignTx)
 	registerTx(GetHandlerSignPendingTransfers(cliCtx), TxMethodSignPending)
 	registerTx(GetHandlerSignDeployToken(cliCtx), TxMethodSignDeployToken, PathVarSymbol)
+	registerTx(GetHandlerSignBurnTokens(cliCtx), TxMethodSignBurnTokens)
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
 	registerQuery(GetHandlerQueryMasterAddress(cliCtx), QMethodMasterAddress)
@@ -85,6 +87,10 @@ type ReqSignDeployToken struct {
 	Name     string       `json:"name" yaml:"name"`
 	Decimals string       `json:"decimals" yaml:"decimals"`
 	Capacity string       `json:"capacity" yaml:"capacity"`
+}
+
+type ReqSignBurnTokens struct {
+	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 }
 
 func GetHandlerLink(cliCtx context.CLIContext) http.HandlerFunc {
@@ -256,6 +262,30 @@ func GetHandlerSignDeployToken(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		msg := types.NewMsgSignDeployToken(fromAddr, req.Name, symbol, uint8(decs), capacity)
+		if err := msg.ValidateBasic(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		utils.WriteGenerateStdTxResponse(w, cliCtx, req.BaseReq, []sdk.Msg{msg})
+	}
+}
+
+func GetHandlerSignBurnTokens(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req ReqSignBurnTokens
+		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+			return
+		}
+		req.BaseReq = req.BaseReq.Sanitize()
+		if !req.BaseReq.ValidateBasic(w) {
+			return
+		}
+		fromAddr, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
+		if !ok {
+			return
+		}
+
+		msg := types.NewMsgSignBurnTokens(fromAddr)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
