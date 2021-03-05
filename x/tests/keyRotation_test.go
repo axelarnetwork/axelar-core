@@ -20,7 +20,6 @@ import (
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
@@ -59,10 +58,6 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		res := <-chain.Submit(broadcastTypes.MsgRegisterProxy{Principal: nodeData[i].Validator.OperatorAddress, Proxy: sdk.AccAddress(proxy)})
 		assert.NoError(t, res.Error)
 	}
-
-	// take the first snapshot
-	snapshotResult1 := <-chain.Submit(snapTypes.MsgSnapshot{Sender: randomSender()})
-	assert.NoError(t, snapshotResult1.Error)
 
 	// create master key for btc
 	masterKeyID1 := randStrings.Next()
@@ -142,10 +137,6 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	if err := waitFor(verifyDone, totalDepositCount); err != nil {
 		assert.FailNow(t, "verification", err)
 	}
-
-	// second snapshot
-	snapshotResult2 := <-chain.Submit(snapTypes.MsgSnapshot{Sender: randomSender()})
-	assert.NoError(t, snapshotResult2.Error)
 
 	// create new master key for btc
 	masterKeyID2 := randStrings.Next()
