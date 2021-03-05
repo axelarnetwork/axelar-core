@@ -312,7 +312,8 @@ func (k Keeper) GetVerifiedErc20Deposits(ctx sdk.Context) []types.Erc20Deposit {
 	return deposits
 }
 
-func (k Keeper) ArchiveErc20Depsit(ctx sdk.Context, txID string) {
+// ArchiveErc20Deposit marks a deposit as archived
+func (k Keeper) ArchiveErc20Deposit(ctx sdk.Context, txID string) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(verifiedErc20DepositPrefix + txID))
 	if bz == nil {
 		return

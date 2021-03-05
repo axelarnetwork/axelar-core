@@ -351,7 +351,7 @@ func handleMsgSignBurnTokens(ctx sdk.Context, k keeper.Keeper, signer types.Sign
 
 	// TODO: Archive token deposits after signing is completed
 	for _, deposit := range deposits {
-		k.ArchiveErc20Depsit(ctx, common.BytesToHash(deposit.TxID[:]).String())
+		k.ArchiveErc20Deposit(ctx, common.BytesToHash(deposit.TxID[:]).String())
 	}
 
 	ctx.EventManager().EmitEvent(
