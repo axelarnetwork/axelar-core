@@ -64,6 +64,12 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, s types.Signer, n types.Nex
 		return nil, sdkerrors.Wrap(types.ErrBitcoin, "unknown recipient chain")
 	}
 
+	found := n.HasRegisterAsset(ctx, recipientChain.Name, exported.Bitcoin.NativeAsset)
+	if !found {
+		return nil, sdkerrors.Wrap(types.ErrBitcoin,
+			fmt.Sprintf("asset '%s' not registered for chain '%s'", exported.Bitcoin.NativeAsset, recipientChain.Name))
+	}
+
 	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: msg.RecipientAddr}
 	redeemScript, err := types.CreateCrossChainRedeemScript(btcec.PublicKey(masterKey), recipient)
 	if err != nil {

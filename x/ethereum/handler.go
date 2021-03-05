@@ -101,6 +101,21 @@ func handleMsgVerifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, rpc types.RPC
 }
 
 func handleMsgLink(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg types.MsgLink) (*sdk.Result, error) {
+	senderChain, ok := n.GetChain(ctx, exported.Ethereum.Name)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", exported.Ethereum.Name)
+	}
+	recipientChain, ok := n.GetChain(ctx, msg.RecipientChain)
+	if !ok {
+		return nil, fmt.Errorf("unknown recipient chain")
+	}
+
+	found := n.HasRegisterAsset(ctx, recipientChain.Name, msg.Symbol)
+	if !found {
+		return nil, sdkerrors.Wrap(types.ErrEthereum,
+			fmt.Sprintf("asset '%s' not registered for chain '%s'", exported.Ethereum.NativeAsset, recipientChain.Name))
+	}
+
 	gatewayAddr, ok := k.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, fmt.Errorf("axelar gateway address not set")
@@ -116,14 +131,6 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg types.Ms
 		return nil, err
 	}
 
-	senderChain, ok := n.GetChain(ctx, exported.Ethereum.Name)
-	if !ok {
-		return nil, fmt.Errorf("%s is not a registered chain", exported.Ethereum.Name)
-	}
-	recipientChain, ok := n.GetChain(ctx, msg.RecipientChain)
-	if !ok {
-		return nil, fmt.Errorf("unknown recipient chain")
-	}
 	n.LinkAddresses(ctx,
 		nexus.CrossChainAddress{Chain: senderChain, Address: burnerAddr.String()},
 		nexus.CrossChainAddress{Chain: recipientChain, Address: msg.RecipientAddr})
@@ -228,12 +235,16 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 		return nil, err
 	}
 
+	txID := msg.PollMeta.ID
 	if confirmed := v.Result(ctx, msg.Poll()); confirmed != nil {
 		switch msg.PollMeta.Type {
 		case types.MsgVerifyErc20TokenDeploy{}.Type():
-			k.ProcessVerificationTokenResult(ctx, msg.PollMeta.ID, confirmed.(bool))
+			k.ProcessVerificationTokenResult(ctx, txID, confirmed.(bool))
+
+			token := k.GetVerifiedToken(ctx, txID)
+			n.RegisterAsset(ctx, exported.Ethereum.Name, token.Symbol)
+
 		case types.MsgVerifyErc20Deposit{}.Type():
-			txID := msg.PollMeta.ID
 			k.ProcessVerificationErc20DepositResult(ctx, txID, confirmed.(bool))
 
 			deposit := k.GetVerifiedErc20Deposit(ctx, txID)

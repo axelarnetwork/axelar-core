@@ -39,4 +39,5 @@ type Nexus interface {
 	GetArchivedTransfersForChain(ctx sdk.Context, chain exported.Chain) []exported.CrossChainTransfer
 	ArchivePendingTransfer(ctx sdk.Context, transfer exported.CrossChainTransfer)
 	GetChain(ctx sdk.Context, chain string) (exported.Chain, bool)
+	HasRegisterAsset(ctx sdk.Context, chainName, denom string) bool
 }

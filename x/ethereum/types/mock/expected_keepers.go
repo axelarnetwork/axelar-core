@@ -728,8 +728,14 @@ var _ types.Nexus = &NexusMock{}
 // 			GetRecipientFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
 // 				panic("mock out the GetRecipient method")
 // 			},
+// 			HasRegisterAssetFunc: func(ctx sdk.Context, chainName string, denom string) bool {
+// 				panic("mock out the HasRegisterAsset method")
+// 			},
 // 			LinkAddressesFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress)  {
 // 				panic("mock out the LinkAddresses method")
+// 			},
+// 			RegisterAssetFunc: func(ctx sdk.Context, chainName string, denom string)  {
+// 				panic("mock out the RegisterAsset method")
 // 			},
 // 		}
 //
@@ -756,8 +762,14 @@ type NexusMock struct {
 	// GetRecipientFunc mocks the GetRecipient method.
 	GetRecipientFunc func(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool)
 
+	// HasRegisterAssetFunc mocks the HasRegisterAsset method.
+	HasRegisterAssetFunc func(ctx sdk.Context, chainName string, denom string) bool
+
 	// LinkAddressesFunc mocks the LinkAddresses method.
 	LinkAddressesFunc func(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress)
+
+	// RegisterAssetFunc mocks the RegisterAsset method.
+	RegisterAssetFunc func(ctx sdk.Context, chainName string, denom string)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -805,6 +817,15 @@ type NexusMock struct {
 			// Sender is the sender argument value.
 			Sender nexus.CrossChainAddress
 		}
+		// HasRegisterAsset holds details about calls to the HasRegisterAsset method.
+		HasRegisterAsset []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// ChainName is the chainName argument value.
+			ChainName string
+			// Denom is the denom argument value.
+			Denom string
+		}
 		// LinkAddresses holds details about calls to the LinkAddresses method.
 		LinkAddresses []struct {
 			// Ctx is the ctx argument value.
@@ -814,6 +835,15 @@ type NexusMock struct {
 			// Recipient is the recipient argument value.
 			Recipient nexus.CrossChainAddress
 		}
+		// RegisterAsset holds details about calls to the RegisterAsset method.
+		RegisterAsset []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// ChainName is the chainName argument value.
+			ChainName string
+			// Denom is the denom argument value.
+			Denom string
+		}
 	}
 	lockArchivePendingTransfer       sync.RWMutex
 	lockEnqueueForTransfer           sync.RWMutex
@@ -821,7 +851,9 @@ type NexusMock struct {
 	lockGetChain                     sync.RWMutex
 	lockGetPendingTransfersForChain  sync.RWMutex
 	lockGetRecipient                 sync.RWMutex
+	lockHasRegisterAsset             sync.RWMutex
 	lockLinkAddresses                sync.RWMutex
+	lockRegisterAsset                sync.RWMutex
 }
 
 // ArchivePendingTransfer calls ArchivePendingTransferFunc.
@@ -1038,6 +1070,45 @@ func (mock *NexusMock) GetRecipientCalls() []struct {
 	return calls
 }
 
+// HasRegisterAsset calls HasRegisterAssetFunc.
+func (mock *NexusMock) HasRegisterAsset(ctx sdk.Context, chainName string, denom string) bool {
+	if mock.HasRegisterAssetFunc == nil {
+		panic("NexusMock.HasRegisterAssetFunc: method is nil but Nexus.HasRegisterAsset was just called")
+	}
+	callInfo := struct {
+		Ctx       sdk.Context
+		ChainName string
+		Denom     string
+	}{
+		Ctx:       ctx,
+		ChainName: chainName,
+		Denom:     denom,
+	}
+	mock.lockHasRegisterAsset.Lock()
+	mock.calls.HasRegisterAsset = append(mock.calls.HasRegisterAsset, callInfo)
+	mock.lockHasRegisterAsset.Unlock()
+	return mock.HasRegisterAssetFunc(ctx, chainName, denom)
+}
+
+// HasRegisterAssetCalls gets all the calls that were made to HasRegisterAsset.
+// Check the length with:
+//     len(mockedNexus.HasRegisterAssetCalls())
+func (mock *NexusMock) HasRegisterAssetCalls() []struct {
+	Ctx       sdk.Context
+	ChainName string
+	Denom     string
+} {
+	var calls []struct {
+		Ctx       sdk.Context
+		ChainName string
+		Denom     string
+	}
+	mock.lockHasRegisterAsset.RLock()
+	calls = mock.calls.HasRegisterAsset
+	mock.lockHasRegisterAsset.RUnlock()
+	return calls
+}
+
 // LinkAddresses calls LinkAddressesFunc.
 func (mock *NexusMock) LinkAddresses(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) {
 	if mock.LinkAddressesFunc == nil {
@@ -1074,5 +1145,44 @@ func (mock *NexusMock) LinkAddressesCalls() []struct {
 	mock.lockLinkAddresses.RLock()
 	calls = mock.calls.LinkAddresses
 	mock.lockLinkAddresses.RUnlock()
+	return calls
+}
+
+// RegisterAsset calls RegisterAssetFunc.
+func (mock *NexusMock) RegisterAsset(ctx sdk.Context, chainName string, denom string) {
+	if mock.RegisterAssetFunc == nil {
+		panic("NexusMock.RegisterAssetFunc: method is nil but Nexus.RegisterAsset was just called")
+	}
+	callInfo := struct {
+		Ctx       sdk.Context
+		ChainName string
+		Denom     string
+	}{
+		Ctx:       ctx,
+		ChainName: chainName,
+		Denom:     denom,
+	}
+	mock.lockRegisterAsset.Lock()
+	mock.calls.RegisterAsset = append(mock.calls.RegisterAsset, callInfo)
+	mock.lockRegisterAsset.Unlock()
+	mock.RegisterAssetFunc(ctx, chainName, denom)
+}
+
+// RegisterAssetCalls gets all the calls that were made to RegisterAsset.
+// Check the length with:
+//     len(mockedNexus.RegisterAssetCalls())
+func (mock *NexusMock) RegisterAssetCalls() []struct {
+	Ctx       sdk.Context
+	ChainName string
+	Denom     string
+} {
+	var calls []struct {
+		Ctx       sdk.Context
+		ChainName string
+		Denom     string
+	}
+	mock.lockRegisterAsset.RLock()
+	calls = mock.calls.RegisterAsset
+	mock.lockRegisterAsset.RUnlock()
 	return calls
 }

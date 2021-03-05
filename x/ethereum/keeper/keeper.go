@@ -336,6 +336,17 @@ func (k Keeper) GetArchivedErc20Deposit(ctx sdk.Context, txID string) *types.Erc
 	return result
 }
 
+// GetVerifiedToken returns a verified token
+func (k Keeper) GetVerifiedToken(ctx sdk.Context, txID string) *types.Erc20TokenDeploy {
+	var token *types.Erc20TokenDeploy
+	bz := ctx.KVStore(k.storeKey).Get([]byte(verifiedTokenPrefix + txID))
+	if bz == nil {
+		return nil
+	}
+	k.cdc.MustUnmarshalJSON(bz, &token)
+	return token
+}
+
 // HasUnverifiedToken returns true if an unverified transaction has been stored
 func (k Keeper) HasUnverifiedToken(ctx sdk.Context, txID string) bool {
 	return ctx.KVStore(k.storeKey).Has([]byte(pendingTokenPrefix + txID))
