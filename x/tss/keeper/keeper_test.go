@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"context"
 	"crypto/ecdsa"
 	"crypto/rand"
 	"strconv"
@@ -15,9 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
-	"google.golang.org/grpc"
-
-	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
@@ -26,7 +22,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
-	tssMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -61,9 +56,6 @@ func setup(t *testing.T) *testSetup {
 	counter := int64(350)
 
 	snapshotter := &snapMock.SnapshotterMock{
-		GetSnapshotActiveValidatorsFunc: func(sdk.Context, int64) (snapshot.Snapshot, bool) {
-			return snapshot.Snapshot{Validators: validators, TotalPower: sdk.NewInt(counter)}, true
-		},
 		GetSnapshotFunc: func(sdk.Context, int64) (snapshot.Snapshot, bool) {
 			return snapshot.Snapshot{Validators: validators, TotalPower: sdk.NewInt(counter)}, true
 		},
@@ -81,45 +73,11 @@ func setup(t *testing.T) *testSetup {
 		Signature:   make(chan []byte, 1),
 	}
 
-	client := &tssMock.TofndClientMock{
-		KeygenFunc: func(context.Context, ...grpc.CallOption) (tofnd.GG20_KeygenClient, error) {
-			return &tssMock.TofndKeyGenClientMock{
-				SendFunc: func(*tofnd.MessageIn) error {
-					k, _ := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
-					setup.PrivateKey <- k
-					return nil
-				},
-				RecvFunc: func() (*tofnd.MessageOut, error) {
-					key := <-setup.PrivateKey
-					btcecPK := btcec.PublicKey(key.PublicKey)
-					bz := btcecPK.SerializeCompressed()
-					setup.PrivateKey <- key
-					return &tofnd.MessageOut{Data: &tofnd.MessageOut_KeygenResult{KeygenResult: bz}}, nil
-				},
-				CloseSendFunc: func() error { return nil },
-			}, nil
-		},
-		SignFunc: func(context.Context, ...grpc.CallOption) (tofnd.GG20_SignClient, error) {
-			return &tssMock.TofndSignClientMock{
-				SendFunc: func(in *tofnd.MessageIn) error {
-					k := <-setup.PrivateKey
-					r, s, _ := ecdsa.Sign(rand.Reader, k, in.Data.(*tofnd.MessageIn_SignInit).SignInit.MessageToSign)
-					btcecSig := btcec.Signature{R: r, S: s}
-					bz := btcecSig.Serialize()
-					setup.Signature <- bz
-					return nil
-				},
-				RecvFunc: func() (*tofnd.MessageOut, error) {
-					return &tofnd.MessageOut{Data: &tofnd.MessageOut_SignResult{SignResult: <-setup.Signature}}, nil
-				},
-				CloseSendFunc: func() error { return nil },
-			}, nil
-		}}
 	voter := &mock.VoterMock{
 		InitPollFunc:   func(ctx sdk.Context, poll exported.PollMeta) error { return nil },
 		RecordVoteFunc: func(exported.MsgVote) {},
 	}
-	k := NewKeeper(testutils.Codec(), sdk.NewKVStoreKey("tss"), client, subspace, voter, broadcaster, snapshotter)
+	k := NewKeeper(testutils.Codec(), sdk.NewKVStoreKey("tss"), subspace, voter, broadcaster, snapshotter)
 	k.SetParams(ctx, types.DefaultParams())
 
 	setup.Keeper = k
@@ -135,12 +93,15 @@ func (s *testSetup) SetLockingPeriod(lockingPeriod int64) {
 func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context) (keyID string, keyChan ecdsa.PublicKey) {
 	keyID = randDistinctStr.Next()
 	s.PrivateKey = make(chan *ecdsa.PrivateKey, 1)
-	res, err := s.Keeper.StartKeygen(ctx, keyID, len(validators)-1, snap)
+	err := s.Keeper.StartKeygen(ctx, keyID, len(validators)-1, snap)
 	assert.NoError(t, err)
 
-	publicKey := <-res
-	s.Keeper.SetKey(ctx, keyID, publicKey)
-	return keyID, publicKey
+	sk, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
+	if err != nil {
+		panic(err)
+	}
+	s.Keeper.SetKey(ctx, keyID, sk.PublicKey)
+	return keyID, sk.PublicKey
 }
 
 func prepareBroadcaster(t *testing.T, ctx sdk.Context, cdc *codec.Codec, validators []snapshot.Validator) fake.Broadcaster {

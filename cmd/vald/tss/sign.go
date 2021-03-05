@@ -29,29 +29,34 @@ func (mgr *TSSMgr) ProcessSign(subscriber pubsub.Subscriber, errChan chan<- erro
 				switch e.Action {
 				case tss.AttributeValueStart:
 					keyID, sigID, participants, payload := parseSignStartParams(e.Attributes)
+					_, ok := mgr.findMyIndex(participants)
+					if !ok {
+						// do not participate
+						continue
+					}
 					stream, cancel, err := mgr.startSign(keyID, sigID, participants, payload)
 					if err != nil {
 						errChan <- err
-						return
+						continue
 					}
 					mgr.signStreams[sigID] = stream
 
 					intermediateMsgs, result := handleStream(stream, cancel, errChan, mgr.Logger)
 					go func() {
-						err := mgr.handleIntermediateSignMsgs(keyID, intermediateMsgs)
+						err := mgr.handleIntermediateSignMsgs(sigID, intermediateMsgs)
 						if err != nil {
 							errChan <- err
 						}
 					}()
 					go func() {
-						err := mgr.handleSignResult(keyID, result)
+						err := mgr.handleSignResult(sigID, result)
 						if err != nil {
 							errChan <- err
 						}
 					}()
 				case tss.AttributeValueMsg:
-					keyID, from, payload := parseMsgParams(e.Attributes)
-					err := mgr.processSignMsg(keyID, from, payload)
+					sigID, from, payload := parseMsgParams(e.Attributes)
+					err := mgr.processSignMsg(sigID, from, payload)
 					if err != nil {
 						errChan <- err
 					}
@@ -65,8 +70,26 @@ func (mgr *TSSMgr) ProcessSign(subscriber pubsub.Subscriber, errChan chan<- erro
 	}
 }
 
+func parseSignStartParams(attributes []sdk.Attribute) (keyID string, sigID string, participants []string, payload []byte) {
+	for _, attribute := range attributes {
+		switch attribute.Key {
+		case tss.AttributeKeyKeyID:
+			keyID = attribute.Value
+		case tss.AttributeKeySigID:
+			sigID = attribute.Value
+		case tss.AttributeKeyParticipants:
+			codec.Cdc.MustUnmarshalJSON([]byte(attribute.Value), &participants)
+		case tss.AttributeKeyPayload:
+			payload = []byte(attribute.Value)
+		default:
+		}
+	}
+
+	return keyID, sigID, participants, payload
+}
+
 func (mgr *TSSMgr) startSign(keyID string, sigID string, participants []string, payload []byte) (tss.Stream, context.CancelFunc, error) {
-	if _, ok := mgr.signStreams[keyID]; ok {
+	if _, ok := mgr.signStreams[sigID]; ok {
 		return nil, nil, fmt.Errorf("sign protocol for ID %s already in progress", sigID)
 	}
 
@@ -92,24 +115,6 @@ func (mgr *TSSMgr) startSign(keyID string, sigID string, participants []string, 
 	}
 
 	return stream, cancel, nil
-}
-
-func parseSignStartParams(attributes []sdk.Attribute) (keyID string, sigID string, participants []string, payload []byte) {
-	for _, attribute := range attributes {
-		switch attribute.Key {
-		case tss.AttributeKeyKeyID:
-			keyID = attribute.Value
-		case tss.AttributeKeySigID:
-			sigID = attribute.Value
-		case tss.AttributeKeyParticipants:
-			codec.Cdc.MustUnmarshalJSON([]byte(attribute.Value), &participants)
-		case tss.AttributeKeyPayload:
-			payload = []byte(attribute.Value)
-		default:
-		}
-	}
-
-	return keyID, sigID, participants, payload
 }
 
 func (mgr *TSSMgr) handleIntermediateSignMsgs(sigID string, intermediate <-chan *tofnd.TrafficOut) error {
@@ -149,7 +154,8 @@ func (mgr *TSSMgr) processSignMsg(sigID string, from string, payload *tofnd.Traf
 
 	stream, ok := mgr.signStreams[sigID]
 	if !ok {
-		return fmt.Errorf("no sign session with id %s", sigID)
+		mgr.Logger.Info(fmt.Sprintf("no sign session with id %s. This process does not participate", sigID))
+		return nil
 	}
 
 	if err := stream.Send(msgIn); err != nil {

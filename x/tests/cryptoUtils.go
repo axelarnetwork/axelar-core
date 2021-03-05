@@ -155,3 +155,11 @@ func (s *syncedBytes) Get() []byte {
 	s.isSet <- struct{}{}
 	return s.value
 }
+
+// Reset resets the object to its inital state
+func (s *syncedBytes) Reset() {
+	<-s.isSet
+	s.once = &sync.Once{}
+	s.value = nil
+	s.isSet <- struct{}{}
+}

@@ -55,12 +55,8 @@ func main() {
 	rootCmd.PersistentFlags().String("tofnd-port", "50051", "port for tss daemon")
 	_ = viper.BindPFlag("tofnd_port", rootCmd.PersistentFlags().Lookup("tofnd-port"))
 
-	// rootCmd.PersistentFlags().String(flags.FlagNode, "tcp://localhost:26657", "<host>:<port> to Tendermint RPC interface for this chain")
-	// _ = viper.BindPFlag(flags.FlagNode, rootCmd.PersistentFlags().Lookup(flags.FlagNode))
-
-	// rootCmd.PersistentFlags().Uint64("gas", uint64(flags.DefaultGasLimit),
-	// 	fmt.Sprintf("gas limit to set per-transaction (default %d)", flags.DefaultGasLimit))
-	// _ = viper.BindPFlag("gas", rootCmd.PersistentFlags().Lookup("gas"))
+	rootCmd.PersistentFlags().String("validator-addr", "", "the address of the validator operator")
+	_ = viper.BindPFlag("validator-addr", rootCmd.PersistentFlags().Lookup("validator-addr"))
 
 	startCommand := getStartCommand()
 	rootCmd.AddCommand(flags.PostCommands(startCommand)...)
@@ -81,31 +77,32 @@ func getStartCommand() *cobra.Command {
 				Address:  client.DefaultAddress,
 				Endpoint: client.DefaultWSEndpoint,
 			}
-			logger := log.NewTMLogger(os.Stdout).With("external", "main")
+			l := log.NewTMLogger(os.Stdout).With("external", "main")
 
 			c, err := client.NewConnectedClient(conf)
 			if err != nil {
-				logger.Error(err.Error())
-				os.Exit(1)
+				tmos.Exit(err.Error())
 			}
 			hub := events.NewHub(c)
 
-			logger.Info("Start listening to events")
-			axConf := loadConfig()
-
-			err = listen(&hub, axConf, logger)
-			if err != nil {
-				logger.Error(err.Error())
-				os.Exit(1)
+			l.Info("Start listening to events")
+			axConf, valAddr := loadConfig()
+			if valAddr == "" {
+				tmos.Exit("validator address not set")
 			}
 
-			logger.Info("Shutting down")
+			err = listen(&hub, axConf, valAddr, l)
+			if err != nil {
+				tmos.Exit(err.Error())
+			}
+
+			l.Info("Shutting down")
 			return nil
 		},
 	}
 }
 
-func loadConfig() app.Config {
+func loadConfig() (app.Config, string) {
 	// need to merge in cli config because axelard now has its own broadcasting client
 	conf := app.DefaultConfig()
 	homeDir := viper.GetString(cli.HomeFlag)
@@ -124,10 +121,10 @@ func loadConfig() app.Config {
 	// for some reason gas is not being filled
 	conf.Gas = viper.GetInt("gas")
 
-	return conf
+	return conf, viper.GetString("validator-addr")
 }
 
-func listen(hub *events.Hub, axelarCfg app.Config, logger log.Logger) error {
+func listen(hub *events.Hub, axelarCfg app.Config, valAddr string, logger log.Logger) error {
 	// start a gRPC client
 	tofndServerAddress := axelarCfg.TssConfig.Host + ":" + axelarCfg.TssConfig.Port
 	logger.Info(fmt.Sprintf("initiate connection to tofnd gRPC server: %s", tofndServerAddress))
@@ -152,7 +149,7 @@ func listen(hub *events.Hub, axelarCfg app.Config, logger log.Logger) error {
 		tmos.Exit(err.Error())
 	}
 
-	tssMgr := tss2.NewTSSMgr(gg20client, 2*time.Hour, axelarCfg.BroadcastConfig.From, b, logger)
+	tssMgr := tss2.NewTSSMgr(gg20client, 2*time.Hour, valAddr, b, logger)
 
 	keygen, err := subscribeToEvent(hub, tss.EventTypeKeygen, tss.ModuleName)
 	if err != nil {

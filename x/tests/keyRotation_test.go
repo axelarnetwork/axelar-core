@@ -12,15 +12,18 @@ import (
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
+	"github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
@@ -53,6 +56,86 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	chain, nodeData := initChain(nodeCount, "keyRotation")
 	keygenDone, verifyDone, signDone := registerEventListeners(nodeData[0].Node)
 
+	// register keygen simulation
+	var masterKey *ecdsa.PrivateKey
+	var masterKeyID string
+	for _, n := range nodeData {
+		n.Node.RegisterEventListener(func(event sdk.StringEvent) bool {
+			// check is keygen start event
+			if event.Type != tssTypes.EventTypeKeygen {
+				return false
+			}
+			m := map[string]string{}
+			for _, attribute := range event.Attributes {
+				m[attribute.Key] = attribute.Value
+			}
+			if m[sdk.AttributeKeyAction] != tssTypes.AttributeValueStart {
+				return false
+			}
+
+			assert.Equal(t, masterKeyID, m[tssTypes.AttributeKeyKeyID])
+			var participants []string
+			codec.Cdc.MustUnmarshalJSON([]byte(m[tssTypes.AttributeKeyParticipants]), &participants)
+			assert.Equal(t, len(nodeData), len(participants))
+
+			// simulate correct keygen + vote
+			pk := btcec.PublicKey(masterKey.PublicKey)
+			err := n.Broadcaster.Broadcast(n.Node.Ctx, []exported.MsgWithSenderSetter{
+				&tssTypes.MsgVotePubKey{PubKeyBytes: (&pk).SerializeCompressed(), PollMeta: vote.PollMeta{
+					Module: tssTypes.ModuleName,
+					Type:   tssTypes.EventTypeKeygen,
+					ID:     masterKeyID,
+				}}})
+			assert.NoError(t, err)
+
+			return true
+		})
+	}
+
+	// register sign simulation
+	sigs := make(chan map[string]*syncedBytes, 1)
+	sigs <- map[string]*syncedBytes{}
+	for _, n := range nodeData {
+		n.Node.RegisterEventListener(func(event sdk.StringEvent) bool {
+			// check is keygen start event
+			if event.Type != tssTypes.EventTypeSign {
+				return false
+			}
+			m := map[string]string{}
+			for _, attribute := range event.Attributes {
+				m[attribute.Key] = attribute.Value
+			}
+			if m[sdk.AttributeKeyAction] != tssTypes.AttributeValueStart {
+				return false
+			}
+			var participants []string
+			codec.Cdc.MustUnmarshalJSON([]byte(m[tssTypes.AttributeKeyParticipants]), &participants)
+			assert.Equal(t, len(nodeData), len(participants))
+
+			// thread-safe signature lookup (one signature across all nodes for each sigID)
+			sigID := m[tssTypes.AttributeKeySigID]
+			sigMap := <-sigs
+			sig, ok := sigMap[sigID]
+			if !ok {
+				sig = newSyncedBytes()
+				sig.Set(createSignature(masterKey, []byte(m[tssTypes.AttributeKeyPayload])))
+				sigMap[sigID] = sig
+			}
+			sigs <- sigMap
+
+			// simulate correct signing + vote
+			err := n.Broadcaster.Broadcast(n.Node.Ctx, []exported.MsgWithSenderSetter{
+				&tssTypes.MsgVoteSig{SigBytes: sig.Get(), PollMeta: vote.PollMeta{
+					Module: tssTypes.ModuleName,
+					Type:   tssTypes.EventTypeSign,
+					ID:     sigID,
+				}}})
+			assert.NoError(t, err)
+
+			return true
+		})
+	}
+
 	// register proxies for all validators
 	for i, proxy := range randStrings.Take(nodeCount) {
 		res := <-chain.Submit(broadcastTypes.MsgRegisterProxy{Principal: nodeData[i].Validator.OperatorAddress, Proxy: sdk.AccAddress(proxy)})
@@ -65,19 +148,13 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-
-	// prepare mocks with the master key
-	var correctKeygens1 []<-chan bool
-	for _, n := range nodeData {
-		correctKeygens1 = append(correctKeygens1, prepareKeygen(n.Mocks.Keygen, masterKeyID1, masterKey1.PublicKey))
-	}
+	// set master key for simulation
+	masterKey = masterKey1
+	masterKeyID = masterKeyID1
 
 	// start keygen
 	keygenResult1 := <-chain.Submit(tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: masterKeyID1})
 	assert.NoError(t, keygenResult1.Error)
-	for _, isCorrect := range correctKeygens1 {
-		assert.True(t, <-isCorrect)
-	}
 
 	// wait for voting to be done
 	if err := waitFor(keygenDone, 1); err != nil {
@@ -144,19 +221,13 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-
-	// prepare mocks with new master key
-	var correctKeygens2 []<-chan bool
-	for _, n := range nodeData {
-		correctKeygens2 = append(correctKeygens2, prepareKeygen(n.Mocks.Keygen, masterKeyID2, masterKey2.PublicKey))
-	}
+	// set master key for simulation
+	masterKey = masterKey2
+	masterKeyID = masterKeyID2
 
 	// start new keygen
 	keygenResult2 := <-chain.Submit(tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: masterKeyID2})
 	assert.NoError(t, keygenResult2.Error)
-	for _, isCorrect := range correctKeygens2 {
-		assert.True(t, <-isCorrect)
-	}
 
 	// wait for voting to be done
 	if err := waitFor(keygenDone, 1); err != nil {
@@ -168,24 +239,10 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		tssTypes.MsgAssignNextMasterKey{Sender: randomSender(), Chain: btc.Bitcoin.Name, KeyID: masterKeyID2})
 	assert.NoError(t, assignKeyResult2.Error)
 
-	// prepare mocks to sign consolidation transaction with first master key
-	var correctSigns []<-chan bool
-
-	cache := NewSignatureCache(totalDepositCount)
-	for _, n := range nodeData {
-		correctSign := prepareSign(n.Mocks.Tofnd, masterKeyID1, masterKey1, cache)
-		correctSigns = append(correctSigns, correctSign)
-	}
-
 	// sign the consolidation transaction
 	fee := testutils.RandIntBetween(1, totalDepositAmount)
 	signResult := <-chain.Submit(btcTypes.NewMsgSignPendingTransfers(randomSender(), btcutil.Amount(fee)))
 	assert.NoError(t, signResult.Error)
-	for i, isCorrect := range correctSigns {
-		for j := 0; j < totalDepositCount; j++ {
-			assert.True(t, <-isCorrect, "node %s failed to sign deposit %d", nodeData[i].Node.Moniker, j)
-		}
-	}
 
 	// wait for voting to be done
 	if err := waitFor(signDone, totalDepositCount); err != nil {

@@ -6,6 +6,8 @@ import (
 	"io"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -81,6 +83,23 @@ func handleStream(stream tss.Stream, cancel context.CancelFunc, errChan chan<- e
 	return broadcastChan, resChan
 }
 
+func parseMsgParams(attributes []sdk.Attribute) (sessionID string, from string, payload *tofnd.TrafficOut) {
+	for _, attribute := range attributes {
+		switch attribute.Key {
+		case tss.AttributeKeySessionID:
+			sessionID = attribute.Value
+		case sdk.AttributeKeySender:
+			from = attribute.Value
+		case tss.AttributeKeyPayload:
+
+			codec.Cdc.MustUnmarshalJSON([]byte(attribute.Value), &payload)
+		default:
+		}
+	}
+
+	return sessionID, from, payload
+}
+
 func prepareTrafficIn(myAddress string, from string, sessionID string, payload *tofnd.TrafficOut, logger log.Logger) (*tofnd.MessageIn, error) {
 	if myAddress == from {
 		return nil, nil
@@ -103,4 +122,20 @@ func prepareTrafficIn(myAddress string, from string, sessionID string, payload *
 	logger.Debug(fmt.Sprintf("incoming msg to tofnd: session [%.20s] from [%.20s] to [%.20s] broadcast [%t] me [%.20s]",
 		sessionID, from, payload.ToPartyUid, payload.IsBroadcast, myAddress))
 	return msgIn, nil
+}
+
+func (mgr *TSSMgr) findMyIndex(participants []string) (int32, bool) {
+	var myIndex int32 = -1
+	for i, participant := range participants {
+		if mgr.myAddress == participant {
+			myIndex = int32(i)
+			break
+		}
+	}
+	// not participating
+	if myIndex == -1 {
+		return -1, false
+	}
+
+	return myIndex, true
 }

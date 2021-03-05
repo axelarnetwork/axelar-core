@@ -31,10 +31,16 @@ func (mgr *TSSMgr) ProcessKeygen(subscriber pubsub.Subscriber, errChan chan<- er
 				switch e.Action {
 				case tss.AttributeValueStart:
 					keyID, threshold, participants := parseKeygenStartParams(e.Attributes)
-					stream, cancel, err := mgr.startKeygen(keyID, threshold, participants)
+					myIndex, ok := mgr.findMyIndex(participants)
+					if !ok {
+						// do not participate
+						continue
+					}
+
+					stream, cancel, err := mgr.startKeygen(keyID, threshold, myIndex, participants)
 					if err != nil {
 						errChan <- err
-						return
+						continue
 					}
 					mgr.keygenStreams[keyID] = stream
 
@@ -67,34 +73,17 @@ func (mgr *TSSMgr) ProcessKeygen(subscriber pubsub.Subscriber, errChan chan<- er
 	}
 }
 
-func parseMsgParams(attributes []sdk.Attribute) (sessionID string, from string, payload *tofnd.TrafficOut) {
-	for _, attribute := range attributes {
-		switch attribute.Key {
-		case tss.AttributeKeySessionID:
-			sessionID = attribute.Value
-		case sdk.AttributeKeySender:
-			from = attribute.Value
-		case tss.AttributeKeyPayload:
-
-			codec.Cdc.MustUnmarshalJSON([]byte(attribute.Value), &payload)
-		default:
-		}
-	}
-
-	return sessionID, from, payload
-}
-
-func parseKeygenStartParams(attributes []sdk.Attribute) (keyID string, threshold int, participants []string) {
+func parseKeygenStartParams(attributes []sdk.Attribute) (keyID string, threshold int32, participants []string) {
 	for _, attribute := range attributes {
 		switch attribute.Key {
 		case tss.AttributeKeyKeyID:
 			keyID = attribute.Value
 		case tss.AttributeKeyThreshold:
-			var err error
-			threshold, err = strconv.Atoi(attribute.Value)
+			t, err := strconv.Atoi(attribute.Value)
 			if err != nil {
 				panic(err)
 			}
+			threshold = int32(t)
 		case tss.AttributeKeyParticipants:
 			codec.Cdc.MustUnmarshalJSON([]byte(attribute.Value), &participants)
 		default:
@@ -104,7 +93,7 @@ func parseKeygenStartParams(attributes []sdk.Attribute) (keyID string, threshold
 	return keyID, threshold, participants
 }
 
-func (mgr *TSSMgr) startKeygen(keyID string, threshold int, participants []string) (tss.Stream, context.CancelFunc, error) {
+func (mgr *TSSMgr) startKeygen(keyID string, threshold int32, myIndex int32, participants []string) (tss.Stream, context.CancelFunc, error) {
 	if _, ok := mgr.keygenStreams[keyID]; ok {
 		return nil, nil, fmt.Errorf("keygen protocol for ID %s already in progress", keyID)
 	}
@@ -116,18 +105,10 @@ func (mgr *TSSMgr) startKeygen(keyID string, threshold int, participants []strin
 		return nil, nil, sdkerrors.Wrap(err, "failed tofnd gRPC call Keygen")
 	}
 
-	var myIndex int32
-	for i, participant := range participants {
-		if mgr.myAddress == participant {
-			myIndex = int32(i)
-			break
-		}
-	}
-
 	keygenInit := &tofnd.MessageIn_KeygenInit{
 		KeygenInit: &tofnd.KeygenInit{
 			NewKeyUid:    keyID,
-			Threshold:    int32(threshold),
+			Threshold:    threshold,
 			PartyUids:    participants,
 			MyPartyIndex: myIndex,
 		},
@@ -184,7 +165,8 @@ func (mgr *TSSMgr) processKeygenMsg(keyID string, from string, payload *tofnd.Tr
 
 	stream, ok := mgr.keygenStreams[keyID]
 	if !ok {
-		return fmt.Errorf("no keygen session with id %s", keyID)
+		mgr.Logger.Info(fmt.Sprintf("no keygen session with id %s. This process does not participate", keyID))
+		return nil
 	}
 
 	if err := stream.Send(msgIn); err != nil {

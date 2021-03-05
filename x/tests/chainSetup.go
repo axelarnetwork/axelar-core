@@ -68,15 +68,14 @@ type testMocks struct {
 }
 
 type nodeData struct {
-	Node      *fake.Node
-	Validator staking.Validator
-	Mocks     testMocks
+	Node        *fake.Node
+	Validator   staking.Validator
+	Mocks       testMocks
+	Broadcaster fake.Broadcaster
 }
 
-func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *fake.BlockChain) *fake.Node {
+func newNode(moniker string, broadcaster fake.Broadcaster, mocks testMocks) *fake.Node {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger().With("node", moniker))
-
-	broadcaster := fake.NewBroadcaster(testutils.Codec(), validator, chain.Submit)
 
 	snapSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
 	snapKeeper := snapshotKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(snapTypes.StoreKey), snapSubspace, mocks.Staker, mocks.Slasher)
@@ -93,7 +92,7 @@ func newNode(moniker string, validator sdk.ValAddress, mocks testMocks, chain *f
 	ethereumKeeper := ethKeeper.NewEthKeeper(testutils.Codec(), sdk.NewKVStoreKey(ethTypes.StoreKey), ethSubspace)
 	ethereumKeeper.SetParams(ctx, ethTypes.DefaultParams())
 
-	signer := tssKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(tssTypes.StoreKey), mocks.Tofnd,
+	signer := tssKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(tssTypes.StoreKey),
 		params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), tssTypes.DefaultParamspace),
 		voter, broadcaster, snapKeeper,
 	)
@@ -228,9 +227,12 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 		mocks := createMocks(validators)
 
 		// assign nodes
-		node := newNode(test+strconv.Itoa(i), validator.OperatorAddress, mocks, chain)
+		broadcaster := fake.NewBroadcaster(testutils.Codec(), validator.OperatorAddress, chain.Submit)
+
+		node := newNode(test+strconv.Itoa(i), broadcaster, mocks)
 		chain.AddNodes(node)
-		data = append(data, nodeData{Node: node, Validator: validator, Mocks: mocks})
+		n := nodeData{Node: node, Validator: validator, Mocks: mocks, Broadcaster: broadcaster}
+		data = append(data, n)
 	}
 
 	// start chain

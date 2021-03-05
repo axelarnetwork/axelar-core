@@ -1,13 +1,15 @@
 #!/bin/sh
 set -e
 
+HOME_DIR=${HOME_DIR:?home directory not set}
+
 fileCount() {
   find "$1" -maxdepth 1 ! -iname ".*" ! -iname "$(basename "$1")" | wc -l
 }
 
 addPeers() {
   sed "s/^seeds =.*/seeds = \"$1\"/g" "$D_HOME_DIR/config/config.toml" >"$D_HOME_DIR/config/config.toml.tmp" &&
-  mv $D_HOME_DIR/config/config.toml.tmp $D_HOME_DIR/config/config.toml
+  mv "$D_HOME_DIR/config/config.toml.tmp" "$D_HOME_DIR/config/config.toml"
 }
 
 prepareCli() {
@@ -41,13 +43,13 @@ initGenesis() {
     echo "Running script at $INIT_SCRIPT to create the genesis file"
     "$INIT_SCRIPT" "$(hostname)" "$CHAIN_ID"
   else
-    axelard init $(hostname) --chain-id $CHAIN_ID
+    axelard init "$(hostname)" --chain-id "$CHAIN_ID"
   fi
 }
 
 startValProc() {
   sleep 10s
-  vald start $TOFND_HOST_SWITCH
+  vald start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} --validator-addr "$(axelarcli keys show validator -a --bech val)"
 }
 
 CLI_HOME_DIR="$HOME_DIR/.axelarcli"
@@ -75,12 +77,6 @@ if [ -n "$PEERS_FILE" ]; then
   addPeers "$PEERS"
 fi
 
-if [ -n "$TOFND_HOST" ]; then
-  TOFND_HOST_SWITCH="--tofnd-host $TOFND_HOST"
-else
-  TOFND_HOST_SWITCH="" # An axelar-core node without tofnd is a non-validator
-fi
-
 if [ "$START_REST" = true ]; then
   # REST endpoint must be bound to 0.0.0.0 for availability on docker host
   axelarcli rest-server \
@@ -92,4 +88,4 @@ fi
 
 startValProc &
 
-exec axelard start $TOFND_HOST_SWITCH
+exec axelard start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"}

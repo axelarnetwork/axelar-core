@@ -76,7 +76,7 @@ func (k Keeper) SignMsg(ctx sdk.Context, msg types.MsgSignTraffic) error {
 		return fmt.Errorf("invalid message: sender [%s] is not a validator", msg.Sender)
 	}
 
-	if !k.participatesInKeygen(ctx, msg.SessionID, senderAddress) {
+	if !k.participatesInSign(ctx, msg.SessionID, senderAddress) {
 		return fmt.Errorf("invalid message: sender [%.20s] does not participate in sign [%s] ", senderAddress, msg.SessionID)
 	}
 
