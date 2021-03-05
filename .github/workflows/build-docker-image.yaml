@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - master
+  pull_request:
+    branches:
+      - master
 
 jobs:
   build-and-push-docker-image:
@@ -33,7 +36,7 @@ jobs:
           secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           region: us-east-2
           local-image: axelar/core
-          image: axelar-core:latest
+          image: axelar-core:temp
 
       - name: Push to ECR (latest-debug)
         uses: jwalton/gh-ecr-push@v1
