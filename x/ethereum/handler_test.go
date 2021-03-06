@@ -42,7 +42,28 @@ var (
 	gateway     = "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7"
 )
 
-func TestLink_NoSymbolSet(t *testing.T) {
+func TestLink_NoGateway(t *testing.T) {
+	minConfHeight := testutils.RandIntBetween(1, 10)
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	cdc := testutils.Codec()
+	subspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
+	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"), subspace)
+	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(minConfHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, TokenDeploySig: transferSig})
+
+	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
+	symbol := testutils.RandString(3)
+
+	n := &ethMock.NexusMock{}
+	handler := NewHandler(k, &ethMock.RPCClientMock{}, &ethMock.VoterMock{}, &ethMock.SignerMock{}, n)
+	_, err := handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
+
+	assert.Error(t, err)
+	assert.Equal(t, 0, len(n.HasRegisterAssetCalls()))
+	assert.Equal(t, 0, len(n.GetChainCalls()))
+	assert.Equal(t, 0, len(n.LinkAddressesCalls()))
+}
+
+func TestLink_NoRecipientChain(t *testing.T) {
 	minConfHeight := testutils.RandIntBetween(1, 10)
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
@@ -50,10 +71,47 @@ func TestLink_NoSymbolSet(t *testing.T) {
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
 	symbol := testutils.RandString(3)
 
-	handler := NewHandler(k, &ethMock.RPCClientMock{}, &ethMock.VoterMock{}, &ethMock.SignerMock{}, &ethMock.NexusMock{})
+	chains := map[string]nexus.Chain{exported.Ethereum.Name: exported.Ethereum}
+	n := &ethMock.NexusMock{
+		GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+			c, ok := chains[chain]
+			return c, ok
+		},
+	}
+
+	handler := NewHandler(k, &ethMock.RPCClientMock{}, &ethMock.VoterMock{}, &ethMock.SignerMock{}, n)
 	_, err := handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
+	assert.Equal(t, 0, len(n.HasRegisterAssetCalls()))
+	assert.Equal(t, 2, len(n.GetChainCalls()))
+	assert.Equal(t, 0, len(n.LinkAddressesCalls()))
+}
+
+func TestLink_NoRegisteredAsset(t *testing.T) {
+	minConfHeight := testutils.RandIntBetween(1, 10)
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	k := newKeeper(ctx, minConfHeight)
+
+	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
+	symbol := testutils.RandString(3)
+
+	chains := map[string]nexus.Chain{btc.Bitcoin.Name: btc.Bitcoin, exported.Ethereum.Name: exported.Ethereum}
+	n := &ethMock.NexusMock{
+		GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+			c, ok := chains[chain]
+			return c, ok
+		},
+		HasRegisterAssetFunc: func(_ sdk.Context, chainName, denom string) bool { return false },
+	}
+
+	handler := NewHandler(k, &ethMock.RPCClientMock{}, &ethMock.VoterMock{}, &ethMock.SignerMock{}, n)
+	_, err := handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
+
+	assert.Error(t, err)
+	assert.Equal(t, 1, len(n.HasRegisterAssetCalls()))
+	assert.Equal(t, 2, len(n.GetChainCalls()))
+	assert.Equal(t, 0, len(n.LinkAddressesCalls()))
 }
 
 func TestLink_Success(t *testing.T) {
@@ -83,12 +141,14 @@ func TestLink_Success(t *testing.T) {
 			c, ok := chains[chain]
 			return c, ok
 		},
+		HasRegisterAssetFunc: func(_ sdk.Context, chainName, denom string) bool { return true },
 	}
 	handler := NewHandler(k, &ethMock.RPCClientMock{}, &ethMock.VoterMock{}, &ethMock.SignerMock{}, n)
 	_, err = handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Symbol: msg.Symbol})
 
 	assert.NoError(t, err)
-
+	assert.Equal(t, 1, len(n.HasRegisterAssetCalls()))
+	assert.Equal(t, 2, len(n.GetChainCalls()))
 	assert.Equal(t, 1, len(n.LinkAddressesCalls()))
 	assert.Equal(t, sender, n.LinkAddressesCalls()[0].Sender)
 	assert.Equal(t, recipient, n.LinkAddressesCalls()[0].Recipient)

@@ -1,11 +1,21 @@
 package tests
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"math/big"
 	"math/rand"
 	"strconv"
+	"testing"
 	"time"
+
+	goEth "github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	goEthTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
@@ -39,6 +49,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/broadcast"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	ethKeeper "github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	ethMock "github.com/axelarnetwork/axelar-core/x/ethereum/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/snapshot"
@@ -56,6 +67,11 @@ import (
 
 func randomSender() sdk.AccAddress {
 	return testutils.RandBytes(int(testutils.RandIntBetween(5, 50)))
+}
+func randomEthSender() common.Address {
+	bytes := make([]byte, common.AddressLength)
+	rand.Read(bytes)
+	return common.BytesToAddress(bytes)
 }
 
 type testMocks struct {
@@ -352,4 +368,146 @@ func mapifyAttributes(event abci.Event) map[string]string {
 		m[attribute.Key] = attribute.Value
 	}
 	return m
+}
+
+func setupContracts(t *testing.T, chain *fake.BlockChain, nodeData []nodeData, signDone, verifyDone <-chan sdk.StringEvent, correctSigns []<-chan bool) {
+	// setup axelar gateway
+	bz, err := nodeData[0].Node.Query(
+		[]string{ethTypes.QuerierRoute, ethKeeper.CreateDeployTx},
+		abci.RequestQuery{
+			Data: testutils.Codec().MustMarshalJSON(
+				ethTypes.DeployParams{
+					GasPrice: sdk.NewInt(1),
+					GasLimit: 3000000,
+				})},
+	)
+	assert.NoError(t, err)
+	var result types.DeployResult
+	testutils.Codec().MustUnmarshalJSON(bz, &result)
+
+	deployGatewayResult := <-chain.Submit(
+		ethTypes.MsgSignTx{Sender: randomSender(), Tx: testutils.Codec().MustMarshalJSON(result.Tx)})
+	assert.NoError(t, deployGatewayResult.Error)
+
+	for _, isCorrect := range correctSigns {
+		assert.True(t, <-isCorrect)
+	}
+
+	// wait for voting to be done (signing takes longer to tally up)
+	if err := waitFor(signDone, 1); err != nil {
+		assert.FailNow(t, "signing", err)
+	}
+
+	bz, err = nodeData[0].Node.Query(
+		[]string{ethTypes.QuerierRoute, ethKeeper.SendTx, string(deployGatewayResult.Data)},
+		abci.RequestQuery{Data: nil},
+	)
+
+	// deploy token
+	deployTokenResult := <-chain.Submit(
+		ethTypes.MsgSignDeployToken{Sender: randomSender(), Capacity: sdk.NewInt(100000), Decimals: 8, Symbol: "satoshi", TokenName: "Satoshi"})
+	assert.NoError(t, deployTokenResult.Error)
+
+	// wait for voting to be done (signing takes longer to tally up)
+	if err := waitFor(signDone, 1); err != nil {
+		assert.FailNow(t, "signing", err)
+	}
+
+	// send token deployment tx to ethereum
+	commandID := common.BytesToHash(deployTokenResult.Data)
+	nodeData[0].Mocks.ETH.SendAndSignTransactionFunc = func(_ context.Context, _ goEth.CallMsg) (string, error) {
+		return "", nil
+	}
+
+	sender := randomEthSender()
+	bz, err = nodeData[0].Node.Query(
+		[]string{ethTypes.QuerierRoute, ethKeeper.SendCommand},
+		abci.RequestQuery{
+			Data: testutils.Codec().MustMarshalJSON(
+				ethTypes.CommandParams{
+					CommandID: ethTypes.CommandID(commandID),
+					Sender:    sender.String(),
+				})},
+	)
+	assert.NoError(t, err)
+
+	// verify the token deployment
+	var txHashHex string
+	testutils.Codec().MustUnmarshalJSON(bz, &txHashHex)
+	txHash := common.HexToHash(txHashHex)
+
+	bz, err = nodeData[0].Node.Query(
+		[]string{ethTypes.QuerierRoute, ethKeeper.QueryTokenAddress, "satoshi"},
+		abci.RequestQuery{Data: nil},
+	)
+	tokenAddr := common.BytesToAddress(bz)
+	bz, err = nodeData[0].Node.Query(
+		[]string{ethTypes.QuerierRoute, ethKeeper.QueryAxelarGatewayAddress},
+		abci.RequestQuery{Data: nil},
+	)
+	gatewayAddr := common.BytesToAddress(bz)
+	logs := createTokenDeployLogs(gatewayAddr, tokenAddr)
+	var ethBlock int64
+	ethBlock = testutils.RandIntBetween(10, 100)
+
+	for _, node := range nodeData {
+
+		node.Mocks.ETH.BlockNumberFunc = func(ctx context.Context) (uint64, error) {
+			return uint64(ethBlock), nil
+		}
+		node.Mocks.ETH.TransactionReceiptFunc = func(ctx context.Context, hash common.Hash) (*goEthTypes.Receipt, error) {
+
+			if bytes.Equal(txHash.Bytes(), hash.Bytes()) {
+				return &goEthTypes.Receipt{TxHash: hash, BlockNumber: big.NewInt(ethBlock - 5), Logs: logs}, nil
+			}
+			return &goEthTypes.Receipt{}, fmt.Errorf("tx not found")
+		}
+	}
+
+	verifyResult := <-chain.Submit(ethTypes.NewMsgVerifyErc20TokenDeploy(randomSender(), txHash, "satoshi"))
+	assert.NoError(t, verifyResult.Error)
+
+	if err := waitFor(verifyDone, 1); err != nil {
+		assert.FailNow(t, "verification", err)
+	}
+
+}
+
+func createTokenDeployLogs(gateway, addr common.Address) []*goEthTypes.Log {
+	numLogs := testutils.RandIntBetween(1, 100)
+	pos := testutils.RandIntBetween(0, numLogs)
+	var logs []*goEthTypes.Log
+
+	for i := int64(0); i < numLogs; i++ {
+		stringType, err := abi.NewType("string", "string", nil)
+		if err != nil {
+			panic(err)
+		}
+		addressType, err := abi.NewType("address", "address", nil)
+		if err != nil {
+			panic(err)
+		}
+		args := abi.Arguments{{Type: stringType}, {Type: addressType}}
+
+		if i == pos {
+			data, err := args.Pack("satoshi", addr)
+			if err != nil {
+				panic(err)
+			}
+			logs = append(logs, &goEthTypes.Log{Address: gateway, Data: data, Topics: []common.Hash{crypto.Keccak256Hash([]byte(ethTypes.ERC20TokenDeploySig))}})
+			continue
+		}
+
+		randDenom := testutils.RandString(4)
+		randGateway := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+		randAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+		randData, err := args.Pack(randDenom, randAddr)
+		randTopic := common.BytesToHash(testutils.RandBytes(common.HashLength))
+		if err != nil {
+			panic(err)
+		}
+		logs = append(logs, &goEthTypes.Log{Address: randGateway, Data: randData, Topics: []common.Hash{randTopic}})
+	}
+
+	return logs
 }

@@ -101,6 +101,11 @@ func handleMsgVerifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, rpc types.RPC
 }
 
 func handleMsgLink(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg types.MsgLink) (*sdk.Result, error) {
+	gatewayAddr, ok := k.GetGatewayAddress(ctx)
+	if !ok {
+		return nil, fmt.Errorf("axelar gateway address not set")
+	}
+
 	senderChain, ok := n.GetChain(ctx, exported.Ethereum.Name)
 	if !ok {
 		return nil, fmt.Errorf("%s is not a registered chain", exported.Ethereum.Name)
@@ -114,11 +119,6 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg types.Ms
 	if !found {
 		return nil, sdkerrors.Wrap(types.ErrEthereum,
 			fmt.Sprintf("asset '%s' not registered for chain '%s'", exported.Ethereum.NativeAsset, recipientChain.Name))
-	}
-
-	gatewayAddr, ok := k.GetGatewayAddress(ctx)
-	if !ok {
-		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
 	tokenAddr, err := k.GetTokenAddress(ctx, msg.Symbol, gatewayAddr)
@@ -231,11 +231,15 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 		sdk.NewAttribute(types.AttributeVotingData, strconv.FormatBool(msg.VotingData)),
 	)
 
+	txID := msg.PollMeta.ID
+	if token := k.GetVerifiedToken(ctx, txID); token != nil {
+		return &sdk.Result{Log: fmt.Sprintf("token %s already verified", token.Symbol)}, nil
+	}
+
 	if err := v.TallyVote(ctx, msg); err != nil {
 		return nil, err
 	}
 
-	txID := msg.PollMeta.ID
 	if confirmed := v.Result(ctx, msg.Poll()); confirmed != nil {
 		switch msg.PollMeta.Type {
 		case types.MsgVerifyErc20TokenDeploy{}.Type():

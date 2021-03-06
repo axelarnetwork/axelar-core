@@ -8,6 +8,7 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -84,33 +85,16 @@ func Test_wBTC_mint(t *testing.T) {
 	ethRotateResult := <-chain.Submit(tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: eth.Ethereum.Name})
 	assert.NoError(t, ethRotateResult.Error)
 
-	// setup axelar gateway
-	bz, err := nodeData[0].Node.Query(
-		[]string{ethTypes.QuerierRoute, ethKeeper.CreateDeployTx},
-		abci.RequestQuery{
-			Data: testutils.Codec().MustMarshalJSON(
-				ethTypes.DeployParams{
-					GasPrice: sdk.NewInt(1),
-					GasLimit: 3000000,
-				})},
-	)
-	assert.NoError(t, err)
-	var result ethTypes.DeployResult
-	testutils.Codec().MustUnmarshalJSON(bz, &result)
-
-	deployGatewayResult := <-chain.Submit(
-		ethTypes.MsgSignTx{Sender: randomSender(), Tx: testutils.Codec().MustMarshalJSON(result.Tx)})
-	assert.NoError(t, deployGatewayResult.Error)
-
-	// wait for voting to be done (signing takes longer to tally up)
-	if err := waitFor(signDone, 1); err != nil {
-		assert.FailNow(t, "signing", err)
+	// prepare caches for upcoming signatures
+	totalDepositCount := int(testutils.RandIntBetween(1, 20))
+	var correctSigns []<-chan bool
+	cache := NewSignatureCache(totalDepositCount + 2)
+	for _, n := range nodeData {
+		correctSign := prepareSign(n.Mocks.Tofnd, ethMasterKeyID, ethMasterKey, cache)
+		correctSigns = append(correctSigns, correctSign)
 	}
 
-	bz, err = nodeData[0].Node.Query(
-		[]string{ethTypes.QuerierRoute, ethKeeper.SendTx, string(deployGatewayResult.Data)},
-		abci.RequestQuery{Data: nil},
-	)
+	setupContracts(t, chain, nodeData, signDone, verifyDone, correctSigns)
 
 	// steps followed as per https://github.com/axelarnetwork/axelarate#mint-erc20-wrapped-bitcoin-tokens-on-ethereum
 	totalDepositCount := int(testutils.RandIntBetween(1, 20))
@@ -164,7 +148,8 @@ func Test_wBTC_mint(t *testing.T) {
 	}
 
 	// 7. Submit the minting command from an externally controlled address to AxelarGateway
-	sender := randomSender()
+	sender := randomEthSender()
+
 	_, err = nodeData[0].Node.Query(
 		[]string{ethTypes.QuerierRoute, ethKeeper.SendCommand},
 		abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(

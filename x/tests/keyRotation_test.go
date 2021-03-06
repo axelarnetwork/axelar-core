@@ -73,14 +73,35 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		tssTypes.MsgAssignNextMasterKey{Sender: randomSender(), Chain: btc.Bitcoin.Name, KeyID: masterKeyID1})
 	assert.NoError(t, assignKeyResult1.Error)
 
+	// assign ethereum master key
+	assignEthKeyResult := <-chain.Submit(
+		tssTypes.MsgAssignNextMasterKey{Sender: randomSender(), Chain: eth.Ethereum.Name, KeyID: masterKeyID1})
+	assert.NoError(t, assignEthKeyResult.Error)
+
 	// rotate to the first btc master key
 	rotateResult1 := <-chain.Submit(tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: btc.Bitcoin.Name})
 	assert.NoError(t, rotateResult1.Error)
+
+	// rotate eth master key
+	rotateEthResult := <-chain.Submit(tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: eth.Ethereum.Name})
+	assert.NoError(t, rotateEthResult.Error)
 
 	// simulate deposits
 	totalDepositCount := int(testutils.RandIntBetween(1, 20))
 	var totalDepositAmount int64
 	deposits := make(map[string]btcTypes.OutPointInfo)
+
+	// prepare mocks to sign consolidation transaction with first master key
+	var correctSigns []<-chan bool
+
+	cache := NewSignatureCache(totalDepositCount + 2)
+	for _, n := range nodeData {
+		correctSign := prepareSign(n.Mocks.Tofnd, masterKeyID1, masterKey1, cache)
+		correctSigns = append(correctSigns, correctSign)
+	}
+
+	setupContracts(t, chain, nodeData, signDone, verifyDone, correctSigns)
+
 	for i := 0; i < totalDepositCount; i++ {
 		// get deposit address for ethereum transfer
 		crossChainAddr := nexus.CrossChainAddress{Chain: eth.Ethereum, Address: randStrings.Next()}
