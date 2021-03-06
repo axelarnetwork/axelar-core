@@ -1,17 +1,12 @@
 package tests
 
 import (
-	"context"
-	"crypto/ecdsa"
-	"crypto/rand"
 	"fmt"
 	"testing"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	goEth "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -23,7 +18,6 @@ import (
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	ethKeeper "github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
-	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -49,7 +43,7 @@ func Test_wBTC_mint(t *testing.T) {
 
 	// create a chain with nodes and assign them as validators
 	chain, nodeData := initChain(nodeCount, "mint")
-	keygenDone, verifyDone, signDone := registerEventListeners(nodeData[0].Node)
+	keygenDone, verifyDone, signDone := registerWaitEventListeners(nodeData[0])
 
 	// register proxies for all validators
 	for i, proxy := range randStrings.Take(nodeCount) {
@@ -57,50 +51,18 @@ func Test_wBTC_mint(t *testing.T) {
 		assert.NoError(t, res.Error)
 	}
 
-	// create master key for btc
+	// start keygen
 	btcMasterKeyID := randStrings.Next()
-	btcMasterKey, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
-	if err != nil {
-		panic(err)
-	}
-
-	// prepare mocks with the btc master key
-	var correctBTCKeygens []<-chan bool
-	for _, n := range nodeData {
-		correctBTCKeygens = append(correctBTCKeygens, prepareKeygen(n.Mocks.Keygen, btcMasterKeyID, btcMasterKey.PublicKey))
-	}
-
-	// start keygen
-	btcKeygenResult := <-chain.Submit(
-		tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: btcMasterKeyID})
+	btcKeygenResult := <-chain.Submit(tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: btcMasterKeyID})
 	assert.NoError(t, btcKeygenResult.Error)
-	for _, isCorrect := range correctBTCKeygens {
-		assert.True(t, <-isCorrect)
-	}
-
-	// create master key for eth
-	ethMasterKeyID := randStrings.Next()
-	ethMasterKey, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
-	if err != nil {
-		panic(err)
-	}
-
-	// prepare mocks with the eth master key
-	var correctETHKeygens []<-chan bool
-	for _, n := range nodeData {
-		correctETHKeygens = append(correctETHKeygens, prepareKeygen(n.Mocks.Keygen, ethMasterKeyID, ethMasterKey.PublicKey))
-	}
 
 	// start keygen
-	ethKeygenResult := <-chain.Submit(
-		tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: ethMasterKeyID})
+	ethMasterKeyID := randStrings.Next()
+	ethKeygenResult := <-chain.Submit(tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: ethMasterKeyID})
 	assert.NoError(t, ethKeygenResult.Error)
-	for _, isCorrect := range correctETHKeygens {
-		assert.True(t, <-isCorrect)
-	}
 
 	// wait for voting to be done
-	if err := waitFor(keygenDone, 1); err != nil {
+	if err := waitFor(keygenDone, 2); err != nil {
 		assert.FailNow(t, "keygen", err)
 	}
 
@@ -115,23 +77,12 @@ func Test_wBTC_mint(t *testing.T) {
 	assert.NoError(t, assignETHKeyResult.Error)
 
 	// rotate to the btc master key
-	btcRotateResult := <-chain.Submit(
-		tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: btc.Bitcoin.Name})
+	btcRotateResult := <-chain.Submit(tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: btc.Bitcoin.Name})
 	assert.NoError(t, btcRotateResult.Error)
 
 	// rotate to the eth master key
-	ethRotateResult := <-chain.Submit(
-		tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: eth.Ethereum.Name})
+	ethRotateResult := <-chain.Submit(tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: eth.Ethereum.Name})
 	assert.NoError(t, ethRotateResult.Error)
-
-	// prepare caches for upcoming signatures
-	totalDepositCount := int(testutils.RandIntBetween(1, 20))
-	var correctSigns []<-chan bool
-	cache := NewSignatureCache(totalDepositCount + 1)
-	for _, n := range nodeData {
-		correctSign := prepareSign(n.Mocks.Tofnd, ethMasterKeyID, ethMasterKey, cache)
-		correctSigns = append(correctSigns, correctSign)
-	}
 
 	// setup axelar gateway
 	bz, err := nodeData[0].Node.Query(
@@ -144,16 +95,12 @@ func Test_wBTC_mint(t *testing.T) {
 				})},
 	)
 	assert.NoError(t, err)
-	var result types.DeployResult
+	var result ethTypes.DeployResult
 	testutils.Codec().MustUnmarshalJSON(bz, &result)
 
 	deployGatewayResult := <-chain.Submit(
 		ethTypes.MsgSignTx{Sender: randomSender(), Tx: testutils.Codec().MustMarshalJSON(result.Tx)})
 	assert.NoError(t, deployGatewayResult.Error)
-
-	for _, isCorrect := range correctSigns {
-		assert.True(t, <-isCorrect)
-	}
 
 	// wait for voting to be done (signing takes longer to tally up)
 	if err := waitFor(signDone, 1); err != nil {
@@ -166,7 +113,7 @@ func Test_wBTC_mint(t *testing.T) {
 	)
 
 	// steps followed as per https://github.com/axelarnetwork/axelarate#mint-erc20-wrapped-bitcoin-tokens-on-ethereum
-
+	totalDepositCount := int(testutils.RandIntBetween(1, 20))
 	for i := 0; i < totalDepositCount; i++ {
 		// 1. Get a deposit address for an Ethereum recipient address
 		// we don't provide an actual recipient address, so it is created automatically
@@ -175,14 +122,14 @@ func Test_wBTC_mint(t *testing.T) {
 		assert.NoError(t, res.Error)
 		depositAddr := string(res.Data)
 
-		// 2. Send BTC to the deposit address and wait until confirmed
+		// Prepare btc mocks for verification
 		expectedDepositInfo := randomOutpointInfo(depositAddr)
 		for _, n := range nodeData {
 			n.Mocks.BTC.GetOutPointInfoFunc = func(bHash *chainhash.Hash, out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
-				if bHash.IsEqual(expectedDepositInfo.BlockHash) && out.String() == expectedDepositInfo.OutPoint.String() {
-					return expectedDepositInfo, nil
+				if !bHash.IsEqual(expectedDepositInfo.BlockHash) || out.String() != expectedDepositInfo.OutPoint.String() {
+					return btcTypes.OutPointInfo{}, fmt.Errorf("outpoint info not found")
 				}
-				return btcTypes.OutPointInfo{}, fmt.Errorf("outpoint info not found")
+				return expectedDepositInfo, nil
 			}
 		}
 
@@ -208,9 +155,6 @@ func Test_wBTC_mint(t *testing.T) {
 	// 6. Sign all pending transfers to Ethereum
 	res := <-chain.Submit(ethTypes.NewMsgSignPendingTransfers(randomSender()))
 	assert.NoError(t, res.Error)
-	for _, isCorrect := range correctSigns {
-		assert.True(t, <-isCorrect)
-	}
 
 	commandID := common.BytesToHash(res.Data)
 
@@ -220,20 +164,11 @@ func Test_wBTC_mint(t *testing.T) {
 	}
 
 	// 7. Submit the minting command from an externally controlled address to AxelarGateway
-	nodeData[0].Mocks.ETH.SendAndSignTransactionFunc = func(_ context.Context, _ goEth.CallMsg) (string, error) {
-		return "", nil
-	}
-
 	sender := randomSender()
-
 	_, err = nodeData[0].Node.Query(
 		[]string{ethTypes.QuerierRoute, ethKeeper.SendCommand},
-		abci.RequestQuery{
-			Data: testutils.Codec().MustMarshalJSON(
-				ethTypes.CommandParams{
-					CommandID: ethTypes.CommandID(commandID),
-					Sender:    sender.String(),
-				})},
+		abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(
+			ethTypes.CommandParams{CommandID: ethTypes.CommandID(commandID), Sender: sender.String()})},
 	)
 	assert.NoError(t, err)
 }

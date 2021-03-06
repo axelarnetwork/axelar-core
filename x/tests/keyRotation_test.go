@@ -1,52 +1,48 @@
 package tests
 
 import (
-	"bytes"
-	"crypto/ecdsa"
-	"crypto/rand"
 	"fmt"
 	"testing"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/axelarnetwork/axelar-core/testutils"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
-	"github.com/axelarnetwork/axelar-core/x/broadcast/exported"
+	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
+	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
-	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
-
-	"github.com/axelarnetwork/axelar-core/testutils"
-	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
-	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
 
 // Testing the key rotation functionality.
 // (0. Register proxies for all validators)
-//  1. Create an initial validator snapshot
-//  2. Create a key (wait for vote)
+//  2. Create a key (creates a snapshot automatically
+//  2. Wait for vote
 //  3. Designate that key to be the first master key for bitcoin
 //  4. Rotate to the designated master key
 //  5. Simulate bitcoin deposit to the current master key
 //  6. Query deposit tx info
-//  7. Verify the deposit is confirmed on bitcoin (wait for vote)
-//  8. Create a second snapshot
-//  9. Create a new key with the second snapshot's validator set (wait for vote)
-// 10. Designate that key to be the next master key for bitcoin
-// 11. Sign a consolidation transaction (wait for vote)
-// 12. Send the signed transaction to bitcoin
-// 13. Query transfer tx info
-// 14. Verify the fund transfer is confirmed on bitcoin (wait for vote)
-// 15. Rotate to the new master key
+//  7. Verify the deposit is confirmed on bitcoin
+//  8. Wait for vote
+//  9. Create a new key (with the second snapshot)
+// 10. Wait for vote
+// 11. Designate that key to be the next master key for bitcoin
+// 12. Sign a consolidation transaction
+// 13. Wait for vote
+// 14. Send the signed transaction to bitcoin
+// 15. Query transfer tx info
+// 16. Verify the consolidation transfer is confirmed on bitcoin
+// 17. Wait for vote
+// 18. Rotate to the new master key
 func TestBitcoinKeyRotation(t *testing.T) {
 	randStrings := testutils.RandStrings(5, 50)
 	defer randStrings.Stop()
@@ -54,87 +50,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	// set up chain
 	const nodeCount = 10
 	chain, nodeData := initChain(nodeCount, "keyRotation")
-	keygenDone, verifyDone, signDone := registerEventListeners(nodeData[0].Node)
-
-	// register keygen simulation
-	var masterKey *ecdsa.PrivateKey
-	var masterKeyID string
-	for _, n := range nodeData {
-		n.Node.RegisterEventListener(func(event sdk.StringEvent) bool {
-			// check is keygen start event
-			if event.Type != tssTypes.EventTypeKeygen {
-				return false
-			}
-			m := map[string]string{}
-			for _, attribute := range event.Attributes {
-				m[attribute.Key] = attribute.Value
-			}
-			if m[sdk.AttributeKeyAction] != tssTypes.AttributeValueStart {
-				return false
-			}
-
-			assert.Equal(t, masterKeyID, m[tssTypes.AttributeKeyKeyID])
-			var participants []string
-			codec.Cdc.MustUnmarshalJSON([]byte(m[tssTypes.AttributeKeyParticipants]), &participants)
-			assert.Equal(t, len(nodeData), len(participants))
-
-			// simulate correct keygen + vote
-			pk := btcec.PublicKey(masterKey.PublicKey)
-			err := n.Broadcaster.Broadcast(n.Node.Ctx, []exported.MsgWithSenderSetter{
-				&tssTypes.MsgVotePubKey{PubKeyBytes: (&pk).SerializeCompressed(), PollMeta: vote.PollMeta{
-					Module: tssTypes.ModuleName,
-					Type:   tssTypes.EventTypeKeygen,
-					ID:     masterKeyID,
-				}}})
-			assert.NoError(t, err)
-
-			return true
-		})
-	}
-
-	// register sign simulation
-	sigs := make(chan map[string]*syncedBytes, 1)
-	sigs <- map[string]*syncedBytes{}
-	for _, n := range nodeData {
-		n.Node.RegisterEventListener(func(event sdk.StringEvent) bool {
-			// check is keygen start event
-			if event.Type != tssTypes.EventTypeSign {
-				return false
-			}
-			m := map[string]string{}
-			for _, attribute := range event.Attributes {
-				m[attribute.Key] = attribute.Value
-			}
-			if m[sdk.AttributeKeyAction] != tssTypes.AttributeValueStart {
-				return false
-			}
-			var participants []string
-			codec.Cdc.MustUnmarshalJSON([]byte(m[tssTypes.AttributeKeyParticipants]), &participants)
-			assert.Equal(t, len(nodeData), len(participants))
-
-			// thread-safe signature lookup (one signature across all nodes for each sigID)
-			sigID := m[tssTypes.AttributeKeySigID]
-			sigMap := <-sigs
-			sig, ok := sigMap[sigID]
-			if !ok {
-				sig = newSyncedBytes()
-				sig.Set(createSignature(masterKey, []byte(m[tssTypes.AttributeKeyPayload])))
-				sigMap[sigID] = sig
-			}
-			sigs <- sigMap
-
-			// simulate correct signing + vote
-			err := n.Broadcaster.Broadcast(n.Node.Ctx, []exported.MsgWithSenderSetter{
-				&tssTypes.MsgVoteSig{SigBytes: sig.Get(), PollMeta: vote.PollMeta{
-					Module: tssTypes.ModuleName,
-					Type:   tssTypes.EventTypeSign,
-					ID:     sigID,
-				}}})
-			assert.NoError(t, err)
-
-			return true
-		})
-	}
+	keygenDone, verifyDone, signDone := registerWaitEventListeners(nodeData[0])
 
 	// register proxies for all validators
 	for i, proxy := range randStrings.Take(nodeCount) {
@@ -142,17 +58,8 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		assert.NoError(t, res.Error)
 	}
 
-	// create master key for btc
-	masterKeyID1 := randStrings.Next()
-	masterKey1, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
-	if err != nil {
-		panic(err)
-	}
-	// set master key for simulation
-	masterKey = masterKey1
-	masterKeyID = masterKeyID1
-
 	// start keygen
+	masterKeyID1 := randStrings.Next()
 	keygenResult1 := <-chain.Submit(tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: masterKeyID1})
 	assert.NoError(t, keygenResult1.Error)
 
@@ -170,6 +77,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	rotateResult1 := <-chain.Submit(tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: btc.Bitcoin.Name})
 	assert.NoError(t, rotateResult1.Error)
 
+	// simulate deposits
 	totalDepositCount := int(testutils.RandIntBetween(1, 20))
 	var totalDepositAmount int64
 	deposits := make(map[string]btcTypes.OutPointInfo)
@@ -178,16 +86,16 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		crossChainAddr := nexus.CrossChainAddress{Chain: eth.Ethereum, Address: randStrings.Next()}
 		linkResult := <-chain.Submit(btcTypes.NewMsgLink(randomSender(), crossChainAddr.Address, crossChainAddr.Chain.Name))
 		assert.NoError(t, linkResult.Error)
-		depositAddr := string(linkResult.Data)
 
 		// simulate deposit to master key address
+		depositAddr := string(linkResult.Data)
 		expectedDepositInfo := randomOutpointInfo(depositAddr)
 		for _, n := range nodeData {
 			n.Mocks.BTC.GetOutPointInfoFunc = func(bHash *chainhash.Hash, out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
-				if bHash.IsEqual(expectedDepositInfo.BlockHash) && out.String() == expectedDepositInfo.OutPoint.String() {
-					return expectedDepositInfo, nil
+				if !bHash.IsEqual(expectedDepositInfo.BlockHash) || out.String() != expectedDepositInfo.OutPoint.String() {
+					return btcTypes.OutPointInfo{}, fmt.Errorf("outpoint info not found")
 				}
-				return btcTypes.OutPointInfo{}, fmt.Errorf("outpoint info not found")
+				return expectedDepositInfo, nil
 			}
 		}
 
@@ -215,17 +123,8 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		assert.FailNow(t, "verification", err)
 	}
 
-	// create new master key for btc
-	masterKeyID2 := randStrings.Next()
-	masterKey2, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
-	if err != nil {
-		panic(err)
-	}
-	// set master key for simulation
-	masterKey = masterKey2
-	masterKeyID = masterKeyID2
-
 	// start new keygen
+	masterKeyID2 := randStrings.Next()
 	keygenResult2 := <-chain.Submit(tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: masterKeyID2})
 	assert.NoError(t, keygenResult2.Error)
 
@@ -254,22 +153,23 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, err)
 
 	actualTx := nodeData[0].Mocks.BTC.SendRawTransactionCalls()[0].Tx
-	consolidationAddr := createBTCAddress(masterKey2, nodeData[0].Mocks.BTC.Network())
-	assert.True(t, txCorrectlyFormed(actualTx, deposits, totalDepositAmount-fee, consolidationAddr))
+	assert.True(t, txCorrectlyFormed(actualTx, deposits, totalDepositAmount-fee))
 
-	// simulate confirmed tx to master address 2
+	// expected consolidation info
+	consAddr := getAddress(actualTx.TxOut[0], nodeData[0].Mocks.BTC.Network().Params)
+	eConsolidationInfo := randomOutpointInfo(consAddr.EncodeAddress())
+	eConsolidationInfo.Amount = btcutil.Amount(actualTx.TxOut[0].Value)
 	var consolidationTxHash *chainhash.Hash
 	testutils.Codec().MustUnmarshalJSON(bz, &consolidationTxHash)
-
-	eConsolidationInfo := randomOutpointInfo(consolidationAddr.EncodeAddress())
-	eConsolidationInfo.Amount = btcutil.Amount(actualTx.TxOut[0].Value)
 	eConsolidationInfo.OutPoint = wire.NewOutPoint(consolidationTxHash, 0)
+
+	// simulate confirmed tx to master address 2
 	for _, n := range nodeData {
 		n.Mocks.BTC.GetOutPointInfoFunc = func(blockHash *chainhash.Hash, out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
-			if blockHash.IsEqual(eConsolidationInfo.BlockHash) && out.String() == eConsolidationInfo.OutPoint.String() {
-				return eConsolidationInfo, nil
+			if !blockHash.IsEqual(eConsolidationInfo.BlockHash) || out.String() != eConsolidationInfo.OutPoint.String() {
+				return btcTypes.OutPointInfo{}, fmt.Errorf("outpoint info not found")
 			}
-			return btcTypes.OutPointInfo{}, fmt.Errorf("outpoint info not found")
+			return eConsolidationInfo, nil
 		}
 	}
 
@@ -297,12 +197,19 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, rotateResult2.Error)
 }
 
-func txCorrectlyFormed(tx *wire.MsgTx, deposits map[string]btcTypes.OutPointInfo, txAmount int64, addr btcutil.Address) bool {
-	script, err := txscript.PayToAddrScript(addr)
+func getAddress(txOut *wire.TxOut, chainParams *chaincfg.Params) btcutil.Address {
+	script, err := txscript.ParsePkScript(txOut.PkScript)
 	if err != nil {
 		panic(err)
 	}
+	consAddr, err := script.Address(chainParams)
+	if err != nil {
+		panic(err)
+	}
+	return consAddr
+}
 
+func txCorrectlyFormed(tx *wire.MsgTx, deposits map[string]btcTypes.OutPointInfo, txAmount int64) bool {
 	txInsCorrect := true
 	for _, in := range tx.TxIn {
 		if _, ok := deposits[in.PreviousOutPoint.String()]; !ok {
@@ -312,20 +219,6 @@ func txCorrectlyFormed(tx *wire.MsgTx, deposits map[string]btcTypes.OutPointInfo
 	}
 
 	return len(tx.TxOut) == 1 && // one TxOut
-		bytes.Equal(tx.TxOut[0].PkScript, script) && // address matches
 		tx.TxOut[0].Value == txAmount && // amount matches
 		txInsCorrect // inputs match
-}
-
-func createBTCAddress(key *ecdsa.PrivateKey, network btcTypes.Network) *btcutil.AddressWitnessScriptHash {
-	script, err := btcTypes.CreateMasterRedeemScript(btcec.PublicKey(key.PublicKey))
-	if err != nil {
-		panic(err)
-	}
-	consolidationAddr, err := btcTypes.CreateDepositAddress(network, script)
-	if err != nil {
-		panic(err)
-	}
-
-	return consolidationAddr
 }

@@ -2,7 +2,6 @@ package tss
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -89,10 +88,9 @@ func handleMsgVoteSig(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types
 		// the result is not necessarily the same as the msg (the vote could have been decided earlier and now a false vote is cast),
 		// so use result instead of msg
 		ctx.EventManager().EmitEvent(sdk.NewEvent(
-			sdk.EventTypeMessage,
+			types.EventTypeSigDecided,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributePoll, msg.PollMeta.String()),
-			sdk.NewAttribute(types.AttributePollDecided, strconv.FormatBool(true)),
+			sdk.NewAttribute(types.AttributeKeyPoll, msg.PollMeta.String()),
 			sdk.NewAttribute(types.AttributeKeyPayload, string(msg.SigBytes)),
 		))
 
@@ -121,12 +119,10 @@ func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg ty
 	if result := v.Result(ctx, msg.PollMeta); result != nil {
 		// the result is not necessarily the same as the msg (the vote could have been decided earlier and now a false vote is cast),
 		// so use result instead of msg
-
 		ctx.EventManager().EmitEvent(sdk.NewEvent(
-			sdk.EventTypeMessage,
+			types.EventTypePubKeyDecided,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributePoll, msg.PollMeta.String()),
-			sdk.NewAttribute(types.AttributePollDecided, strconv.FormatBool(true)),
+			sdk.NewAttribute(types.AttributeKeyPoll, msg.PollMeta.String()),
 			sdk.NewAttribute(types.AttributeKeyPayload, string(msg.PubKeyBytes)),
 		))
 		switch pkBytes := result.(type) {

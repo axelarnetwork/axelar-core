@@ -16,17 +16,19 @@ import (
 	slashingTypes "github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	sdkExported "github.com/cosmos/cosmos-sdk/x/staking/exported"
+	geth "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/libs/log"
 	db "github.com/tendermint/tm-db"
-	"google.golang.org/grpc"
 
+	"github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
+	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -45,7 +47,6 @@ import (
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/tss"
 	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
-	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	tssMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/vote"
@@ -175,28 +176,18 @@ func createMocks(validators []staking.Validator) testMocks {
 		NetworkFunc: func() btcTypes.Network { return btcTypes.Mainnet }}
 
 	ethClient := &ethMock.RPCClientMock{
-
+		SendAndSignTransactionFunc: func(context.Context, geth.CallMsg) (string, error) {
+			return "", nil
+		},
 		PendingNonceAtFunc: func(context.Context, common.Address) (uint64, error) {
-
 			return rand.Uint64(), nil
 		},
 		SendTransactionFunc: func(context.Context, *gethTypes.Transaction) error { return nil },
 	}
 
-	keygen := &tssMock.TofndKeyGenClientMock{
-		SendFunc:      func(*tofnd.MessageIn) error { return nil },
-		CloseSendFunc: func() error { return nil }}
-	sign := &tssMock.TofndSignClientMock{}
-	tssClient := &tssMock.TofndClientMock{
-		KeygenFunc: func(context.Context, ...grpc.CallOption) (tofnd.GG20_KeygenClient, error) { return keygen, nil },
-		SignFunc:   func(context.Context, ...grpc.CallOption) (tofnd.GG20_SignClient, error) { return sign, nil },
-	}
 	return testMocks{
 		BTC:     btcClient,
 		ETH:     ethClient,
-		Tofnd:   tssClient,
-		Keygen:  keygen,
-		Sign:    sign,
 		Staker:  stakingKeeper,
 		Slasher: slasher,
 	}
@@ -207,7 +198,6 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 	stringGen := testutils.RandStrings(5, 50).Distinct()
 	defer stringGen.Stop()
 
-	// create nodes
 	var validators []staking.Validator
 	for _, valAddr := range stringGen.Take(nodeCount) {
 		// assign validators
@@ -221,6 +211,8 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 	}
 	// create a chain
 	chain := fake.NewBlockchain().WithBlockTimeOut(10 * time.Millisecond)
+
+	t := fake.NewTofnd()
 	var data []nodeData
 	for i, validator := range validators {
 		// create mocks
@@ -232,6 +224,8 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 		node := newNode(test+strconv.Itoa(i), broadcaster, mocks)
 		chain.AddNodes(node)
 		n := nodeData{Node: node, Validator: validator, Mocks: mocks, Broadcaster: broadcaster}
+
+		registerTSSEventListeners(n, t)
 		data = append(data, n)
 	}
 
@@ -261,55 +255,84 @@ func randomOutpointInfo(recipient string) btcTypes.OutPointInfo {
 	}
 }
 
-func registerEventListeners(node *fake.Node) (<-chan sdk.StringEvent, <-chan sdk.StringEvent, <-chan sdk.StringEvent) {
-	// register listener for keygen completion
-	keygenDone := node.RegisterEventListener(func(event sdk.StringEvent) bool {
-		keyVote := false
-		decided := false
-		for _, a := range event.Attributes {
-			if a.Key == sdk.AttributeKeyAction {
-				keyVote = a.Value == tssTypes.MsgVotePubKey{}.Type()
-			}
-			if a.Key == tssTypes.AttributePollDecided {
-				decided = true
-			}
+func registerTSSEventListeners(n nodeData, t *fake.Tofnd) {
+	// register listener for keygen start
+	n.Node.RegisterEventListener(func(event abci.Event) bool {
+		if event.Type != tssTypes.EventTypeKeygen {
+			return false
 		}
-		return keyVote && decided
+
+		m := mapifyAttributes(event)
+		if m[sdk.AttributeKeyAction] != tssTypes.AttributeValueStart {
+			return false
+		}
+		if m[tssTypes.AttributeKeyKeyID] == "" {
+			return false
+		}
+
+		pk := t.KeyGen(m[tssTypes.AttributeKeyKeyID]) // simulate correct keygen + vote
+		err := n.Broadcaster.Broadcast(n.Node.Ctx, []exported.MsgWithSenderSetter{
+			&tssTypes.MsgVotePubKey{PubKeyBytes: pk, PollMeta: voting.PollMeta{
+				Module: tssTypes.ModuleName,
+				Type:   tssTypes.EventTypeKeygen,
+				ID:     m[tssTypes.AttributeKeyKeyID],
+			}}})
+		if err != nil {
+			panic(err)
+		}
+
+		return true
+	})
+
+	// register listener for sign start
+	n.Node.RegisterEventListener(func(event abci.Event) bool {
+		if event.Type != tssTypes.EventTypeSign {
+			return false
+		}
+
+		m := mapifyAttributes(event)
+		if m[sdk.AttributeKeyAction] != tssTypes.AttributeValueStart {
+			return false
+		}
+		if m[tssTypes.AttributeKeySigID] == "" {
+			return false
+		}
+
+		sig := t.Sign(m[tssTypes.AttributeKeySigID], m[tssTypes.AttributeKeyKeyID], []byte(m[tssTypes.AttributeKeyPayload]))
+
+		err := n.Broadcaster.Broadcast(n.Node.Ctx, []exported.MsgWithSenderSetter{
+			&tssTypes.MsgVoteSig{SigBytes: sig, PollMeta: voting.PollMeta{
+				Module: tssTypes.ModuleName,
+				Type:   tssTypes.EventTypeSign,
+				ID:     m[tssTypes.AttributeKeySigID],
+			}}})
+		if err != nil {
+			panic(err)
+		}
+
+		return true
+	})
+}
+
+func registerWaitEventListeners(n nodeData) (<-chan abci.Event, <-chan abci.Event, <-chan abci.Event) {
+	// register listener for keygen completion
+	keygenDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
+		return event.Type == tssTypes.EventTypePubKeyDecided
 	})
 
 	// register listener for btc tx verification
-	verifyDone := node.RegisterEventListener(func(event sdk.StringEvent) bool {
-		txVote := false
-		decided := false
-		for _, a := range event.Attributes {
-			if a.Key == sdk.AttributeKeyAction {
-				txVote = a.Value == btcTypes.MsgVoteVerifiedTx{}.Type()
-			}
-			if a.Key == btcTypes.AttributePollConfirmed {
-				decided = true
-			}
-		}
-		return txVote && decided
+	verifyDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
+		return event.Type == btcTypes.EventTypeVerificationResult
 	})
 
 	// register listener for sign completion
-	signDone := node.RegisterEventListener(func(event sdk.StringEvent) bool {
-		sigVote := false
-		decided := false
-		for _, a := range event.Attributes {
-			if a.Key == sdk.AttributeKeyAction {
-				sigVote = a.Value == tssTypes.MsgVoteSig{}.Type()
-			}
-			if a.Key == tssTypes.AttributePollDecided {
-				decided = true
-			}
-		}
-		return sigVote && decided
+	signDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
+		return event.Type == tssTypes.EventTypeSigDecided
 	})
 	return keygenDone, verifyDone, signDone
 }
 
-func waitFor(eventDone <-chan sdk.StringEvent, repeats int) error {
+func waitFor(eventDone <-chan abci.Event, repeats int) error {
 	timeout, cancel := context.WithTimeout(context.Background(), time.Duration(repeats)*10*time.Second)
 	defer cancel()
 	for i := 0; i < repeats; i++ {
@@ -321,4 +344,12 @@ func waitFor(eventDone <-chan sdk.StringEvent, repeats int) error {
 		}
 	}
 	return nil
+}
+
+func mapifyAttributes(event abci.Event) map[string]string {
+	m := map[string]string{}
+	for _, attribute := range sdk.StringifyEvent(event).Attributes {
+		m[attribute.Key] = attribute.Value
+	}
+	return m
 }
