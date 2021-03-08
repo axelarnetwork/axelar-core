@@ -1,0 +1,42 @@
+name: Build and push release docker image
+
+on:
+  push:
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+
+
+jobs:
+  build-and-push-release-docker-image:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-18.04
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Get tag
+        id: tag
+        uses: dawidd6/action-get-tag@v1
+
+      - name: Install SSH key
+        uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: ${{ secrets.CICD_RSA_KEY }}
+
+      - name: Build docker image
+        run: |
+          make docker-image
+          make docker-image-debug
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Push to DockerHub (release)
+        run: |
+          docker tag axelar/core:latest axelarnet/axelar-core:${{ steps.tag.outputs.tag }}
+          docker push axelarnet/axelar-core:${{ steps.tag.outputs.tag }}

@@ -72,8 +72,7 @@ func (k Keeper) FilterActiveValidators(ctx sdk.Context, validators []exported.Va
 
 		// check if for any reason the validator should be declared as inactive
 		// e.g., the validator missed to vote on blocks
-		// TODO: check what interval we're checking missedBlocksCounter for.
-		if signingInfo.Tombstoned || signingInfo.MissedBlocksCounter > 0 || signingInfo.JailedUntil.After(time.Unix(0, 0)) {
+		if signingInfo.Tombstoned || signingInfo.MissedBlocksCounter > 0 || validator.IsJailed() {
 			continue
 		}
 		activeValidators = append(activeValidators, validator)
