@@ -441,6 +441,13 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 	txID := common.BytesToHash(msg.TxID[:])
 	txHex := txID.String()
 
+	if res := k.GetVerifiedErc20Deposit(ctx, txHex); res != nil {
+		return nil, fmt.Errorf("already verified")
+	}
+	if res := k.GetArchivedErc20Deposit(ctx, txHex); res != nil {
+		return nil, fmt.Errorf("already spent")
+	}
+
 	gatewayAddr, ok := k.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, fmt.Errorf("axelar gateway address not set")

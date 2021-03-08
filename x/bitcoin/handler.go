@@ -90,6 +90,13 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, s types.Signer, n types.Nex
 }
 
 func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc types.RPCClient, msg types.MsgVerifyTx) (*sdk.Result, error) {
+	if _, ok := k.GetVerifiedOutPointInfo(ctx, msg.OutPointInfo.OutPoint); ok {
+		return nil, fmt.Errorf("already verified")
+	}
+	if _, ok := k.GetSpentOutPointInfo(ctx, msg.OutPointInfo.OutPoint); ok {
+		return nil, fmt.Errorf("already spent")
+	}
+
 	poll := vote.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.OutPointInfo.OutPoint.String()}
 	if err := v.InitPoll(ctx, poll); err != nil {
 		return nil, err

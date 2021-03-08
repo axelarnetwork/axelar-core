@@ -323,6 +323,19 @@ func (k Keeper) ArchiveErc20Deposit(ctx sdk.Context, txID string) {
 	ctx.KVStore(k.storeKey).Set([]byte(archivedErc20DepositPrefix+txID), bz)
 }
 
+// GetArchivedErc20Deposit returns the archived deposit for the given txID if exists
+func (k Keeper) GetArchivedErc20Deposit(ctx sdk.Context, txID string) *types.Erc20Deposit {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(archivedErc20DepositPrefix + txID))
+	if bz == nil {
+		return nil
+	}
+
+	var result *types.Erc20Deposit
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &result)
+
+	return result
+}
+
 // HasUnverifiedToken returns true if an unverified transaction has been stored
 func (k Keeper) HasUnverifiedToken(ctx sdk.Context, txID string) bool {
 	return ctx.KVStore(k.storeKey).Has([]byte(pendingTokenPrefix + txID))
