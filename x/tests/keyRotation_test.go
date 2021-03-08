@@ -112,8 +112,8 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	// start new keygen
-	masterKeyID2 := randStrings.Next()
-	keygenResult := <-chain.Submit(tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: masterKeyID2})
+	newMasterKeyID := randStrings.Next()
+	keygenResult := <-chain.Submit(tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: newMasterKeyID})
 	assert.NoError(t, keygenResult.Error)
 
 	// wait for voting to be done
@@ -122,9 +122,9 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	// assign second key to be the new master key
-	assignKeyResult2 := <-chain.Submit(
-		tssTypes.MsgAssignNextMasterKey{Sender: randomSender(), Chain: btc.Bitcoin.Name, KeyID: masterKeyID2})
-	assert.NoError(t, assignKeyResult2.Error)
+	assignKeyResult := <-chain.Submit(
+		tssTypes.MsgAssignNextMasterKey{Sender: randomSender(), Chain: btc.Bitcoin.Name, KeyID: newMasterKeyID})
+	assert.NoError(t, assignKeyResult.Error)
 
 	// sign the consolidation transaction
 	fee := testutils.RandIntBetween(1, totalDepositAmount)
@@ -172,17 +172,17 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.Equal(t, eConsolidationInfo, aConsolidationInfo)
 
 	// verify master key transfer
-	verifyResult2 := <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender(), aConsolidationInfo))
-	assert.NoError(t, verifyResult2.Error)
+	verifyResult := <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender(), aConsolidationInfo))
+	assert.NoError(t, verifyResult.Error)
 
 	// wait for voting to be done
 	if err := waitFor(verifyDone, 1); err != nil {
 		assert.FailNow(t, "verification", err)
 	}
 
-	// rotate master key to key 2
-	rotateResult2 := <-chain.Submit(tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: btc.Bitcoin.Name})
-	assert.NoError(t, rotateResult2.Error)
+	// rotate master key to new key
+	rotateResult := <-chain.Submit(tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: btc.Bitcoin.Name})
+	assert.NoError(t, rotateResult.Error)
 }
 
 func getAddress(txOut *wire.TxOut, chainParams *chaincfg.Params) btcutil.Address {
