@@ -61,13 +61,13 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	// initialize chain keys
 	initKeys(t, chain, randStrings, []string{btc.Bitcoin.Name, eth.Ethereum.Name}, keygenDone)
 
+	// setup all required contracts on ethereum
+	setupContracts(t, chain, nodeData, signDone, verifyDone)
+
 	// simulate deposits
 	totalDepositCount := int(testutils.RandIntBetween(1, 20))
 	var totalDepositAmount int64
 	deposits := make(map[string]btcTypes.OutPointInfo)
-
-	// setup all required contracts on ethereum
-	setupContracts(t, chain, nodeData, signDone, verifyDone)
 
 	for i := 0; i < totalDepositCount; i++ {
 		// get deposit address for ethereum transfer
