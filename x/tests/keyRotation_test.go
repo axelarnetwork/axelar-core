@@ -58,39 +58,15 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		assert.NoError(t, res.Error)
 	}
 
-	// start keygen
-	masterKeyID1 := randStrings.Next()
-	keygenResult1 := <-chain.Submit(tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: masterKeyID1})
-	assert.NoError(t, keygenResult1.Error)
-
-	// wait for voting to be done
-	if err := waitFor(keygenDone, 1); err != nil {
-		assert.FailNow(t, "keygen", err)
-	}
-
-	// assign bitcoin master key
-	assignKeyResult1 := <-chain.Submit(
-		tssTypes.MsgAssignNextMasterKey{Sender: randomSender(), Chain: btc.Bitcoin.Name, KeyID: masterKeyID1})
-	assert.NoError(t, assignKeyResult1.Error)
-
-	// assign ethereum master key
-	assignEthKeyResult := <-chain.Submit(
-		tssTypes.MsgAssignNextMasterKey{Sender: randomSender(), Chain: eth.Ethereum.Name, KeyID: masterKeyID1})
-	assert.NoError(t, assignEthKeyResult.Error)
-
-	// rotate to the first btc master key
-	rotateResult1 := <-chain.Submit(tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: btc.Bitcoin.Name})
-	assert.NoError(t, rotateResult1.Error)
-
-	// rotate eth master key
-	rotateEthResult := <-chain.Submit(tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: eth.Ethereum.Name})
-	assert.NoError(t, rotateEthResult.Error)
+	// initialize chain keys
+	initKeys(t, chain, randStrings, []string{btc.Bitcoin.Name, eth.Ethereum.Name}, keygenDone)
 
 	// simulate deposits
 	totalDepositCount := int(testutils.RandIntBetween(1, 20))
 	var totalDepositAmount int64
 	deposits := make(map[string]btcTypes.OutPointInfo)
 
+	// setup all required contracts on ethereum
 	setupContracts(t, chain, nodeData, signDone, verifyDone)
 
 	for i := 0; i < totalDepositCount; i++ {
@@ -137,8 +113,8 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// start new keygen
 	masterKeyID2 := randStrings.Next()
-	keygenResult2 := <-chain.Submit(tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: masterKeyID2})
-	assert.NoError(t, keygenResult2.Error)
+	keygenResult := <-chain.Submit(tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: masterKeyID2})
+	assert.NoError(t, keygenResult.Error)
 
 	// wait for voting to be done
 	if err := waitFor(keygenDone, 1); err != nil {

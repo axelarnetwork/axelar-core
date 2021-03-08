@@ -67,24 +67,10 @@ func Test_wBTC_mint(t *testing.T) {
 		assert.FailNow(t, "keygen", err)
 	}
 
-	// assign bitcoin master key
-	assignBTCKeyResult := <-chain.Submit(
-		tssTypes.MsgAssignNextMasterKey{Sender: randomSender(), Chain: btc.Bitcoin.Name, KeyID: btcMasterKeyID})
-	assert.NoError(t, assignBTCKeyResult.Error)
+	// initialize chain keys
+	initKeys(t, chain, randStrings, []string{btc.Bitcoin.Name, eth.Ethereum.Name}, keygenDone)
 
-	// assign ethereum master key
-	assignETHKeyResult := <-chain.Submit(
-		tssTypes.MsgAssignNextMasterKey{Sender: randomSender(), Chain: eth.Ethereum.Name, KeyID: ethMasterKeyID})
-	assert.NoError(t, assignETHKeyResult.Error)
-
-	// rotate to the btc master key
-	btcRotateResult := <-chain.Submit(tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: btc.Bitcoin.Name})
-	assert.NoError(t, btcRotateResult.Error)
-
-	// rotate to the eth master key
-	ethRotateResult := <-chain.Submit(tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: eth.Ethereum.Name})
-	assert.NoError(t, ethRotateResult.Error)
-
+	// setup all required contracts on ethereum
 	setupContracts(t, chain, nodeData, signDone, verifyDone)
 
 	// steps followed as per https://github.com/axelarnetwork/axelarate#mint-erc20-wrapped-bitcoin-tokens-on-ethereum

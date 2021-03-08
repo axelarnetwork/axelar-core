@@ -369,6 +369,32 @@ func mapifyAttributes(event abci.Event) map[string]string {
 	return m
 }
 
+func initKeys(t *testing.T, chain *fake.BlockChain, randStrings testutils.RandStringGen, chains []string, keygenDone <-chan abci.Event) {
+
+	// start keygen
+	masterKeyID1 := randStrings.Next()
+	keygenResult1 := <-chain.Submit(tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: masterKeyID1})
+	assert.NoError(t, keygenResult1.Error)
+
+	// wait for voting to be done
+	if err := waitFor(keygenDone, 1); err != nil {
+		assert.FailNow(t, "keygen", err)
+	}
+	// assign chain master key
+	for _, c := range chains {
+		assignKeyResult := <-chain.Submit(
+			tssTypes.MsgAssignNextMasterKey{Sender: randomSender(), Chain: c, KeyID: masterKeyID1})
+		assert.NoError(t, assignKeyResult.Error)
+
+	}
+
+	// rotate chain master key
+	for _, c := range chains {
+		rotateEthResult := <-chain.Submit(tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: c})
+		assert.NoError(t, rotateEthResult.Error)
+	}
+}
+
 func setupContracts(t *testing.T, chain *fake.BlockChain, nodeData []nodeData, signDone, verifyDone <-chan abci.Event) {
 	// setup axelar gateway
 	bz, err := nodeData[0].Node.Query(
