@@ -236,9 +236,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 		switch msg.PollMeta.Type {
 		case types.MsgVerifyErc20TokenDeploy{}.Type():
 			k.ProcessVerificationTokenResult(ctx, txID, result.(bool))
-
-			token := k.GetVerifiedToken(ctx, txID)
-			n.RegisterAsset(ctx, exported.Ethereum.Name, token.Symbol)
+			n.RegisterAsset(ctx, exported.Ethereum.Name, k.GetVerifiedToken(ctx, txID).Symbol)
 
 		case types.MsgVerifyErc20Deposit{}.Type():
 			k.ProcessVerificationErc20DepositResult(ctx, txID, result.(bool))
