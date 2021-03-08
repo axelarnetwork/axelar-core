@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/cosmos/cosmos-sdk/store/dbadapter"
+	"github.com/spf13/viper"
 
 	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
@@ -15,7 +16,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/simapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -32,9 +32,6 @@ import (
 	tmos "github.com/tendermint/tendermint/libs/os"
 	"github.com/tendermint/tendermint/rpc/client/http"
 	dbm "github.com/tendermint/tm-db"
-	"google.golang.org/grpc"
-
-	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 
 	"github.com/axelarnetwork/axelar-core/x/nexus"
 
@@ -292,7 +289,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 
 	app.nexusKeeper = nexusKeeper.NewKeeper(app.cdc, keys[nexusTypes.StoreKey], nexusSubspace)
 
-	keybase, err := keyring.NewKeyring(sdk.KeyringServiceName(), axelarCfg.ClientConfig.KeyringBackend, DefaultCLIHome, os.Stdin)
+	keybase, err := keyring.NewKeyring(sdk.KeyringServiceName(), axelarCfg.ClientConfig.KeyringBackend, viper.GetString("clihome"), os.Stdin)
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
@@ -315,31 +312,10 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		tmos.Exit(err.Error())
 	}
 
-	// TODO don't start gRPC unless I'm a validator?
-	// start a gRPC client
-	tofndServerAddress := axelarCfg.TssConfig.Host + ":" + axelarCfg.TssConfig.Port
-	logger.Info(fmt.Sprintf("initiate connection to tofnd gRPC server: %s", tofndServerAddress))
-	conn, err := grpc.Dial(tofndServerAddress, grpc.WithInsecure(), grpc.WithBlock())
-	if err != nil {
-		tmos.Exit(err.Error())
-	}
-	logger.With("module", fmt.Sprintf("x/%s", tssTypes.ModuleName)).Debug("successful connection to tofnd gRPC server")
-
 	app.votingKeeper = voteKeeper.NewKeeper(app.cdc, keys[voteTypes.StoreKey], dbadapter.Store{DB: dbm.NewMemDB()}, app.snapKeeper, app.broadcastKeeper)
 
-	client := tofnd.NewGG20Client(conn)
-	app.tssKeeper = tssKeeper.NewKeeper(app.cdc, keys[tssTypes.StoreKey], client, tssSubspace,
+	app.tssKeeper = tssKeeper.NewKeeper(app.cdc, keys[tssTypes.StoreKey], tssSubspace,
 		app.votingKeeper, app.broadcastKeeper, app.snapKeeper)
-
-	// Clean up tss grpc connection on process shutdown
-	tmos.TrapSignal(logger, func() {
-		logger.Debug("initiate Close")
-		if err := conn.Close(); err != nil {
-			logger.Error(sdkerrors.Wrap(err, "failure to close connection to server").Error())
-			return
-		}
-		logger.Debug("successful Close")
-	})
 
 	var rpcEth ethTypes.RPCClient
 	if axelarCfg.WithEthBridge {

@@ -57,19 +57,17 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	return
 }
 
-// ComputeActiveValidators returns the subset of all validators that bonded and should be declared active
+// FilterActiveValidators returns the subset of all validators that bonded and should be declared active
 // and their aggregate staking power
-func computeActiveValidators(ctx sdk.Context, validators []exported.Validator, slasher types.Slasher) ([]exported.Validator, sdk.Int, error) {
-
+func (k Keeper) FilterActiveValidators(ctx sdk.Context, validators []exported.Validator) ([]exported.Validator, error) {
 	var activeValidators []exported.Validator
-	activeStake := sdk.NewInt(int64(0))
 
 	for _, validator := range validators {
 
 		addr := validator.GetConsAddr()
-		signingInfo, found := slasher.GetValidatorSigningInfo(ctx, addr)
+		signingInfo, found := k.slasher.GetValidatorSigningInfo(ctx, addr)
 		if !found {
-			return nil, sdk.NewInt(int64(0)), fmt.Errorf("snapshot: couldn't retrieve signing info for a validator")
+			return nil, fmt.Errorf("snapshot: couldn't retrieve signing info for a validator")
 		}
 
 		// check if for any reason the validator should be declared as inactive
@@ -78,12 +76,9 @@ func computeActiveValidators(ctx sdk.Context, validators []exported.Validator, s
 			continue
 		}
 		activeValidators = append(activeValidators, validator)
-		valstake := sdk.NewInt(validator.GetConsensusPower())
-		activeStake = activeStake.Add(valstake)
-
 	}
 
-	return activeValidators, activeStake, nil
+	return activeValidators, nil
 }
 
 // TakeSnapshot attempts to create a new snapshot
@@ -136,28 +131,6 @@ func (k Keeper) GetSnapshot(ctx sdk.Context, counter int64) (exported.Snapshot, 
 	return snapshot, true
 }
 
-// GetSnapshotActiveValidators retrieves a snapshot by the counter id,
-// then removes all inactive validators from it.
-func (k Keeper) GetSnapshotActiveValidators(ctx sdk.Context, counter int64) (exported.Snapshot, bool) {
-	bz := ctx.KVStore(k.storeKey).Get(counterKey(counter))
-	if bz == nil {
-
-		return exported.Snapshot{}, false
-	}
-
-	var snapshot exported.Snapshot
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &snapshot)
-
-	activeValidators, activeStake, err := computeActiveValidators(ctx, snapshot.Validators, k.slasher)
-	if err != nil {
-		return exported.Snapshot{}, false
-	}
-	snapshot.Validators = activeValidators
-	snapshot.TotalPower = activeStake
-
-	return snapshot, true
-}
-
 // GetLatestCounter returns the latest snapshot counter
 func (k Keeper) GetLatestCounter(ctx sdk.Context) int64 {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(lastCounterKey))
@@ -181,9 +154,14 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, nextCounter int64) {
 
 	k.staking.IterateLastValidators(ctx, fnAppend)
 
-	activeValidators, activeStake, err := computeActiveValidators(ctx, validators, k.slasher)
+	activeValidators, err := k.FilterActiveValidators(ctx, validators)
 	if err != nil {
 		return
+	}
+
+	activeStake := sdk.ZeroInt()
+	for _, validator := range validators {
+		activeStake = activeStake.AddRaw(validator.GetConsensusPower())
 	}
 
 	snapshot := exported.Snapshot{

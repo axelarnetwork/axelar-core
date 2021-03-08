@@ -4,6 +4,7 @@ type BroadcastConfig struct {
 	From              string  `mapstructure:"broadcaster-account"`
 	KeyringPassphrase string  `mapstructure:"keyring-passphrase"`
 	GasAdjustment     float64 `mapstructure:"gas-adjustment"`
+	Gas               int     `mapstructure:"gas"`
 }
 
 type ClientConfig struct {

@@ -42,6 +42,6 @@ type Snapshotter interface {
 	GetLatestSnapshot(ctx sdk.Context) (Snapshot, bool)
 	GetLatestCounter(ctx sdk.Context) int64
 	GetSnapshot(ctx sdk.Context, counter int64) (Snapshot, bool)
-	GetSnapshotActiveValidators(ctx sdk.Context, counter int64) (Snapshot, bool)
+	FilterActiveValidators(ctx sdk.Context, validators []Validator) ([]Validator, error)
 	TakeSnapshot(ctx sdk.Context) error
 }
