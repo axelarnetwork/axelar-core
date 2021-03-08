@@ -223,14 +223,6 @@ func handleMsgSignPendingTransfers(ctx sdk.Context, k keeper.Keeper, signer type
 
 // This can be used as a potential hook to immediately act on a poll being decided by the vote
 func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n types.Nexus, msg *types.MsgVoteVerifiedTx) (*sdk.Result, error) {
-	event := sdk.NewEvent(
-		sdk.EventTypeMessage,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-		sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-		sdk.NewAttribute(types.AttributePoll, msg.PollMeta.String()),
-		sdk.NewAttribute(types.AttributeVotingData, strconv.FormatBool(msg.VotingData)),
-	)
-
 	txID := msg.PollMeta.ID
 	if token := k.GetVerifiedToken(ctx, txID); token != nil {
 		return &sdk.Result{Log: fmt.Sprintf("token %s already verified", token.Symbol)}, nil
@@ -266,11 +258,14 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 			k.Logger(ctx).Debug(fmt.Sprintf("unknown verification message type: %s", msg.PollMeta.Type))
 		}
 
+		ctx.EventManager().EmitEvent(
+			sdk.NewEvent(types.EventTypeVerificationResult,
+				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+				sdk.NewAttribute(types.AttributeKeyResult, strconv.FormatBool(confirmed.(bool)))))
+
 		v.DeletePoll(ctx, msg.Poll())
-		event = event.AppendAttributes(sdk.NewAttribute(types.AttributePollConfirmed, strconv.FormatBool(confirmed.(bool))))
 	}
 
-	ctx.EventManager().EmitEvent(event)
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 

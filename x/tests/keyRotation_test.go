@@ -91,16 +91,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	var totalDepositAmount int64
 	deposits := make(map[string]btcTypes.OutPointInfo)
 
-	// prepare mocks to sign consolidation transaction with first master key
-	var correctSigns []<-chan bool
-
-	cache := NewSignatureCache(totalDepositCount + 2)
-	for _, n := range nodeData {
-		correctSign := prepareSign(n.Mocks.Tofnd, masterKeyID1, masterKey1, cache)
-		correctSigns = append(correctSigns, correctSign)
-	}
-
-	setupContracts(t, chain, nodeData, signDone, verifyDone, correctSigns)
+	setupContracts(t, chain, nodeData, signDone, verifyDone)
 
 	for i := 0; i < totalDepositCount; i++ {
 		// get deposit address for ethereum transfer

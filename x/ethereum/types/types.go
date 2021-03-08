@@ -63,6 +63,16 @@ var (
 	erc20TransferEventSig = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
 )
 
+// EventTypeVerificationResult is an event type
+const (
+	EventTypeVerificationResult = "verificationResult"
+)
+
+// AttributeKeyResult is an event attribute key
+const (
+	AttributeKeyResult = "result"
+)
+
 // Network provides additional functionality based on the ethereum network name
 type Network string
 

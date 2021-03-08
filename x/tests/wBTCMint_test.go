@@ -85,16 +85,7 @@ func Test_wBTC_mint(t *testing.T) {
 	ethRotateResult := <-chain.Submit(tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: eth.Ethereum.Name})
 	assert.NoError(t, ethRotateResult.Error)
 
-	// prepare caches for upcoming signatures
-	totalDepositCount := int(testutils.RandIntBetween(1, 20))
-	var correctSigns []<-chan bool
-	cache := NewSignatureCache(totalDepositCount + 2)
-	for _, n := range nodeData {
-		correctSign := prepareSign(n.Mocks.Tofnd, ethMasterKeyID, ethMasterKey, cache)
-		correctSigns = append(correctSigns, correctSign)
-	}
-
-	setupContracts(t, chain, nodeData, signDone, verifyDone, correctSigns)
+	setupContracts(t, chain, nodeData, signDone, verifyDone)
 
 	// steps followed as per https://github.com/axelarnetwork/axelarate#mint-erc20-wrapped-bitcoin-tokens-on-ethereum
 	totalDepositCount := int(testutils.RandIntBetween(1, 20))
@@ -150,7 +141,7 @@ func Test_wBTC_mint(t *testing.T) {
 	// 7. Submit the minting command from an externally controlled address to AxelarGateway
 	sender := randomEthSender()
 
-	_, err = nodeData[0].Node.Query(
+	_, err := nodeData[0].Node.Query(
 		[]string{ethTypes.QuerierRoute, ethKeeper.SendCommand},
 		abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(
 			ethTypes.CommandParams{CommandID: ethTypes.CommandID(commandID), Sender: sender.String()})},
