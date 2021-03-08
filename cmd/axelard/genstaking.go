@@ -18,7 +18,7 @@ import (
 func SetGenesisStakingCmd(
 	ctx *server.Context, cdc *codec.Codec, defaultNodeHome, defaultClientHome string,
 ) *cobra.Command {
-	var period string
+	var unbond string
 	var max uint16
 
 	cmd := &cobra.Command{
@@ -41,8 +41,8 @@ func SetGenesisStakingCmd(
 				cdc.MustUnmarshalJSON(appState[stakingTypes.ModuleName], &genesisStaking)
 			}
 
-			if period != "" {
-				period, err := time.ParseDuration(period)
+			if unbond != "" {
+				period, err := time.ParseDuration(unbond)
 				if err != nil {
 					return err
 				}
@@ -70,7 +70,7 @@ func SetGenesisStakingCmd(
 		},
 	}
 
-	cmd.Flags().StringVar(&period, "locking-period", "", "Time duration of unbonding (e.g., \"6h\").")
+	cmd.Flags().StringVar(&unbond, "unbonding-period", "", "Time duration of unbonding (e.g., \"6h\").")
 	cmd.Flags().Uint16Var(&max, "max-validators", 0, "A positive integer representing the maximum number of validators (max uint16 = 65535)")
 
 	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
