@@ -23,7 +23,7 @@ RUN make build
 
 FROM alpine:3.12
 
-COPY --from=build /go/axelar/bin/axelar* /usr/local/bin/
+COPY --from=build /go/axelar/bin/* /usr/local/bin/
 COPY ./entrypoint.sh /entrypoint.sh
 
 # The home directory of axelar-core where configuration/genesis/data are stored

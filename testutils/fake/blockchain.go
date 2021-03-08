@@ -228,10 +228,10 @@ type Node struct {
 	Ctx            sdk.Context
 	Moniker        string
 	queriers       map[string]sdk.Querier
-	events         chan sdk.StringEvent
+	events         chan abci.Event
 	eventListeners []struct {
-		predicate func(event sdk.StringEvent) bool
-		emitter   chan<- sdk.StringEvent
+		predicate func(event abci.Event) bool
+		emitter   chan<- abci.Event
 	}
 }
 
@@ -246,11 +246,11 @@ func NewNode(moniker string, ctx sdk.Context, router sdk.Router, queriers map[st
 		Ctx:         ctx,
 		Moniker:     moniker,
 		queriers:    queriers,
-		events:      make(chan sdk.StringEvent, 100),
+		events:      make(chan abci.Event, 100),
 		eventListeners: []struct {
-			predicate func(event sdk.StringEvent) bool
-			emitter   chan<- sdk.StringEvent
-		}{{predicate: func(sdk.StringEvent) bool { return false }, emitter: nil}}, // default discard listener
+			predicate func(event abci.Event) bool
+			emitter   chan<- abci.Event
+		}{{predicate: func(event abci.Event) bool { return false }, emitter: nil}}, // default discard listener
 	}
 }
 
@@ -267,12 +267,12 @@ func (n Node) Query(path []string, query abci.RequestQuery) ([]byte, error) {
 }
 
 // RegisterEventListener registers a listener for events that satisfy the predicate. Events will be dropped if the event channel fills up
-func (n *Node) RegisterEventListener(predicate func(sdk.StringEvent) bool) <-chan sdk.StringEvent {
-	out := make(chan sdk.StringEvent, 100)
+func (n *Node) RegisterEventListener(predicate func(event abci.Event) bool) <-chan abci.Event {
+	out := make(chan abci.Event, 100)
 
 	n.eventListeners = append(n.eventListeners, struct {
-		predicate func(event sdk.StringEvent) bool
-		emitter   chan<- sdk.StringEvent
+		predicate func(event abci.Event) bool
+		emitter   chan<- abci.Event
 	}{predicate: predicate, emitter: out})
 	return out
 }
@@ -324,7 +324,7 @@ func (n *Node) start() {
 					msgEvents = msgEvents.AppendEvents(res.Events)
 				}
 
-				events := sdk.StringifyEvents(msgEvents.ToABCIEvents())
+				events := msgEvents.ToABCIEvents()
 				for _, event := range events {
 					n.events <- event
 				}

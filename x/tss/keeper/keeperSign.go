@@ -6,12 +6,7 @@ import (
 
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
-
-	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
-	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -19,125 +14,80 @@ import (
 
 // StartSign starts a tss signing protocol using the specified key for the given chain.
 func (k Keeper) StartSign(ctx sdk.Context, keyID string, sigID string, msg []byte) error {
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeSign,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart)))
-
-	if _, ok := k.signStreams[sigID]; ok {
-		return fmt.Errorf("signing protocol for ID %s already in progress", sigID)
+	if _, ok := k.getKeyIDForSig(ctx, sigID); ok {
+		return fmt.Errorf("sigID %s has been used before", sigID)
 	}
+	k.setKeyIDForSig(ctx, sigID, keyID)
 
 	counter, ok := k.GetSnapshotCounterForKeyID(ctx, keyID)
 	if !ok {
 		return fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
 	}
-	snapshot, ok := k.snapshotter.GetSnapshotActiveValidators(ctx, counter)
+	snshot, ok := k.snapshotter.GetSnapshot(ctx, counter)
 	if !ok {
 		return fmt.Errorf("no snapshot found for counter num %d", counter)
 	}
-	allValidatorsWithShares, ok := k.snapshotter.GetSnapshot(ctx, counter)
+
 	// for now we recalculate the threshold
 	// might make sense to store it with the snapshot after keygen is done.
-	threshold := k.ComputeCorruptionThreshold(ctx, len(allValidatorsWithShares.Validators))
-	activeValidators := snapshot.Validators
+	threshold := k.ComputeCorruptionThreshold(ctx, len(snshot.Validators))
 
 	k.Logger(ctx).Info(fmt.Sprintf("starting sign with threshold [%d] (need [%d]), online validators count [%d]",
-		threshold, threshold+1, len(activeValidators)))
+		threshold, threshold+1, len(snshot.Validators)))
 
-	if len(activeValidators) <= threshold {
+	if len(snshot.Validators) <= threshold {
 		return fmt.Errorf(fmt.Sprintf("not enough active validators are online: threshold [%d], online [%d]",
-			threshold, len(activeValidators)))
+			threshold, len(snshot.Validators)))
+	}
+	// sign cannot proceed unless all validators have registered broadcast proxies
+	var participants []string
+	for _, v := range snshot.Validators {
+		proxy := k.broadcaster.GetProxy(ctx, v.GetOperator())
+		if proxy == nil {
+			return fmt.Errorf("validator %s has not registered a proxy", v.GetOperator().String())
+		}
+		participants = append(participants, v.GetOperator().String())
+		k.setParticipateInSign(ctx, sigID, v.GetOperator())
 	}
 
-	poll := voting.PollMeta{Module: types.ModuleName, Type: "sign", ID: sigID}
+	poll := voting.PollMeta{Module: types.ModuleName, Type: types.EventTypeSign, ID: sigID}
 	if err := k.voter.InitPoll(ctx, poll); err != nil {
 		return err
 	}
 
 	k.Logger(ctx).Info(fmt.Sprintf("new Sign: sig_id [%s] key_id [%s] message [%s]", sigID, keyID, string(msg)))
 
-	// BEGIN: validity check
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeSign,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
+			sdk.NewAttribute(types.AttributeKeyKeyID, keyID),
+			sdk.NewAttribute(types.AttributeKeySigID, sigID),
+			sdk.NewAttribute(types.AttributeKeyParticipants, string(k.cdc.MustMarshalJSON(participants))),
+			sdk.NewAttribute(types.AttributeKeyPayload, string(msg))))
 
-	// sign cannot proceed unless all validators have registered broadcast proxies
-	if err := k.checkProxies(ctx, activeValidators); err != nil {
-		return err
-	}
-
-	/*
-		END: validity check -- any error below this point is local to the specific validator,
-		so do not return an error but simply close the result channel
-	*/
-
-	if _, ok := k.getKeyIDForSig(ctx, sigID); ok {
-		return fmt.Errorf("sigID %s has been used before", sigID)
-	}
-	k.setKeyIDForSig(ctx, sigID, keyID)
-
-	voteChan := make(chan voting.MsgVote)
-
-	stream, signInit := k.prepareSign(ctx, keyID, sigID, msg, activeValidators)
-	if stream == nil || signInit == nil {
-		close(voteChan)
-		return nil // don't propagate nondeterministic errors
-	}
-	k.signStreams[sigID] = stream
-
-	go func() {
-		if err := stream.Send(&tofnd.MessageIn{Data: signInit}); err != nil {
-			k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tofnd gRPC sign send sign init data").Error())
-		}
-	}()
-
-	broadcastChan, resChan := k.handleStream(ctx, stream)
-
-	// handle intermediate messages
-	go func() {
-		for msg := range broadcastChan {
-			k.Logger(ctx).Debug(fmt.Sprintf(
-				"handler goroutine: outgoing msg: session id [%.20s] broadcast? [%t] to [%.20s]",
-				sigID, msg.IsBroadcast, msg.ToPartyUid))
-			// sender is set by broadcaster
-			tssMsg := &types.MsgSignTraffic{SessionID: sigID, Payload: msg}
-			if err := k.broadcaster.Broadcast(ctx, []broadcast.MsgWithSenderSetter{tssMsg}); err != nil {
-				k.Logger(ctx).Error(sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing sign msg").Error())
-				return
-			}
-		}
-	}()
-
-	// handle result
-	go func() {
-		defer close(voteChan)
-		sig, ok := <-resChan
-		k.Logger(ctx).Info("handler goroutine: received sig from server!")
-		if ok {
-			k.voter.RecordVote(&types.MsgVoteSig{PollMeta: poll, SigBytes: sig})
-		}
-	}()
 	return nil
 }
 
 // SignMsg takes a types.MsgSignTraffic from the chain and relays it to the keygen protocol
 func (k Keeper) SignMsg(ctx sdk.Context, msg types.MsgSignTraffic) error {
-	msgIn, err := k.prepareTrafficIn(ctx, msg.Sender, msg.SessionID, msg.Payload)
-	if err != nil {
-		return err
-	}
-	if msgIn == nil {
-		return nil // don't propagate nondeterministic errors
+	senderAddress := k.broadcaster.GetPrincipal(ctx, msg.Sender)
+	if senderAddress.Empty() {
+		return fmt.Errorf("invalid message: sender [%s] is not a validator", msg.Sender)
 	}
 
-	stream, ok := k.signStreams[msg.SessionID]
-	if !ok {
-		k.Logger(ctx).Error(fmt.Sprintf("no signature session with id %s", msg.SessionID))
-		return nil // don't propagate nondeterministic errors
+	if !k.participatesInSign(ctx, msg.SessionID, senderAddress) {
+		return fmt.Errorf("invalid message: sender [%.20s] does not participate in sign [%s] ", senderAddress, msg.SessionID)
 	}
 
-	if err := stream.Send(msgIn); err != nil {
-		k.Logger(ctx).Error(sdkerrors.Wrap(err, "failure to send incoming msg to gRPC server").Error())
-		return nil // don't propagate nondeterministic errors
-	}
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeSign,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueMsg),
+			sdk.NewAttribute(types.AttributeKeySessionID, msg.SessionID),
+			sdk.NewAttribute(sdk.AttributeKeySender, senderAddress.String()),
+			sdk.NewAttribute(types.AttributeKeyPayload, string(k.cdc.MustMarshalJSON(msg.Payload)))))
+
 	return nil
 }
 
@@ -159,44 +109,7 @@ func (k Keeper) GetSig(ctx sdk.Context, sigID string) (exported.Signature, bool)
 
 // SetSig stores the given signature by its ID
 func (k Keeper) SetSig(ctx sdk.Context, sigID string, signature []byte) {
-	// Delete the reference to the signing stream with sigID because entering this function means the tss protocol has completed
-	delete(k.signStreams, sigID)
-
 	ctx.KVStore(k.storeKey).Set([]byte(sigPrefix+sigID), signature)
-}
-
-func (k Keeper) prepareSign(ctx sdk.Context, keyID, sigID string, msg []byte, validators []snapshot.Validator) (types.Stream, *tofnd.MessageIn_SignInit) {
-	// TODO call GetLocalPrincipal only once at launch? need to wait until someone pushes a RegisterProxy message on chain...
-	myAddress := k.broadcaster.GetLocalPrincipal(ctx)
-	if myAddress.Empty() {
-		k.Logger(ctx).Info("ignore Sign: my validator address is empty so I must not be a validator")
-		return nil, nil
-	}
-
-	partyUids, _, err := addrToUids(validators, myAddress)
-	if err != nil {
-		k.Logger(ctx).Error(err.Error())
-		return nil, nil
-	}
-
-	grpcCtx, _ := k.newGrpcContext()
-	stream, err := k.client.Sign(grpcCtx)
-	if err != nil {
-		k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed tofnd gRPC call Sign").Error())
-		return nil, nil
-	}
-	k.signStreams[sigID] = stream
-	// TODO refactor
-	signInit := &tofnd.MessageIn_SignInit{
-		SignInit: &tofnd.SignInit{
-			NewSigUid:     sigID,
-			KeyUid:        keyID,
-			PartyUids:     partyUids,
-			MessageToSign: msg,
-		},
-	}
-
-	return stream, signInit
 }
 
 // GetKeyForSigID returns the key that produced the signature corresponding to the given ID
@@ -218,4 +131,12 @@ func (k Keeper) getKeyIDForSig(ctx sdk.Context, sigID string) (string, bool) {
 		return "", false
 	}
 	return string(bz), true
+}
+
+func (k Keeper) setParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) {
+	ctx.KVStore(k.storeKey).Set([]byte(participatePrefix+"sign_"+sigID+validator.String()), []byte{})
+}
+
+func (k Keeper) participatesInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) bool {
+	return ctx.KVStore(k.storeKey).Has([]byte(participatePrefix + "sign_" + sigID + validator.String()))
 }

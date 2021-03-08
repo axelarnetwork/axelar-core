@@ -1,13 +1,11 @@
 package types
 
+// EventTypeVerificationResult is an event type
 const (
-	AttributeModule        = ModuleName
-	AttributeAddress       = "address"
-	AttributeTxID          = "txID"
-	AttributeSigId         = "sigId"
-	AttributeKeyId         = "keyId"
-	AttributeAmount        = "amount"
-	AttributePoll          = "poll"
-	AttributeVotingData    = "data"
-	AttributePollConfirmed = "confirmed"
+	EventTypeVerificationResult = "verificationResult"
+)
+
+// AttributeKeyResult is an event attribute key
+const (
+	AttributeKeyResult = "result"
 )

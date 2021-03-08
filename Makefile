@@ -33,12 +33,15 @@ lint:
 build: go.sum
 		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) ./cmd/axelard
 		go build -o ./bin/axelarcli -mod=readonly $(BUILD_FLAGS) ./cmd/axelarcli
+		go build -o ./bin/vald -mod=readonly $(BUILD_FLAGS) ./cmd/vald
+
 
 # Build the project with debug flags
 .PHONY: debug
 debug: go.sum
 		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) -gcflags="all=-N -l" ./cmd/axelard
 		go build -o ./bin/axelarcli -mod=readonly $(BUILD_FLAGS) -gcflags="all=-N -l" ./cmd/axelarcli
+		go build -o ./bin/vald -mod=readonly $(BUILD_FLAGS) -gcflags="all=-N -l" ./cmd/vald
 
 # Build axelarcli with release flags for alpine architecture
 .PHONY: alpine-axelarcli
