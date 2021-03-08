@@ -232,16 +232,16 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 		return nil, err
 	}
 
-	if confirmed := v.Result(ctx, msg.Poll()); confirmed != nil {
+	if result := v.Result(ctx, msg.Poll()); result != nil {
 		switch msg.PollMeta.Type {
 		case types.MsgVerifyErc20TokenDeploy{}.Type():
-			k.ProcessVerificationTokenResult(ctx, txID, confirmed.(bool))
+			k.ProcessVerificationTokenResult(ctx, txID, result.(bool))
 
 			token := k.GetVerifiedToken(ctx, txID)
 			n.RegisterAsset(ctx, exported.Ethereum.Name, token.Symbol)
 
 		case types.MsgVerifyErc20Deposit{}.Type():
-			k.ProcessVerificationErc20DepositResult(ctx, txID, confirmed.(bool))
+			k.ProcessVerificationErc20DepositResult(ctx, txID, result.(bool))
 
 			deposit := k.GetVerifiedErc20Deposit(ctx, txID)
 			if deposit == nil {
@@ -261,7 +261,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent(types.EventTypeVerificationResult,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-				sdk.NewAttribute(types.AttributeKeyResult, strconv.FormatBool(confirmed.(bool)))))
+				sdk.NewAttribute(types.AttributeKeyResult, strconv.FormatBool(result.(bool)))))
 
 		v.DeletePoll(ctx, msg.Poll())
 	}
