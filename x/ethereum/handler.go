@@ -233,6 +233,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 
 	var eventType string
 	var content []byte
+	var err error
 	if result := v.Result(ctx, msg.Poll()); result != nil {
 		switch msg.PollMeta.Type {
 		case types.MsgVerifyErc20TokenDeploy{}.Type():
@@ -245,9 +246,11 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 
 			n.RegisterAsset(ctx, exported.Ethereum.Name, token.Symbol)
 
-			// if we were able to retrieve the verified token, we should also be able to re-marshal it with no issue
-			content, _ = k.Codec().MarshalBinaryLengthPrefixed(token)
 			eventType = types.EventTypeDepositVerificationResult
+			content, err = k.Codec().MarshalBinaryLengthPrefixed(token)
+			if err != nil {
+				return nil, fmt.Errorf("unable to remarshal token information with symbol %s", token.Symbol)
+			}
 
 		case types.MsgVerifyErc20Deposit{}.Type():
 			k.ProcessVerificationErc20DepositResult(ctx, txID, result.(bool))
@@ -263,9 +266,12 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 				return nil, err
 			}
 
-			// if we were able to retrieve the verified deposit, we should also be able to re-marshal it with no issue
-			content, _ = k.Codec().MarshalBinaryLengthPrefixed(deposit)
 			eventType = types.EventTypeTokenVerificationResult
+			content, err = k.Codec().MarshalBinaryLengthPrefixed(deposit)
+			if err != nil {
+				return nil, fmt.Errorf("unable to remarshal deposit information for symbol %s", deposit.Symbol)
+			}
+
 		default:
 			k.Logger(ctx).Debug(fmt.Sprintf("unknown verification message type: %s", msg.PollMeta.Type))
 		}
