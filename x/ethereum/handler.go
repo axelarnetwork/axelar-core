@@ -232,8 +232,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 	}
 
 	var eventType string
-	var content []byte
-	var err error
+	var content string
 	if result := v.Result(ctx, msg.Poll()); result != nil {
 		switch msg.PollMeta.Type {
 		case types.MsgVerifyErc20TokenDeploy{}.Type():
@@ -247,10 +246,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 			n.RegisterAsset(ctx, exported.Ethereum.Name, token.Symbol)
 
 			eventType = types.EventTypeDepositVerificationResult
-			content, err = k.Codec().MarshalBinaryLengthPrefixed(token)
-			if err != nil {
-				return nil, fmt.Errorf("unable to remarshal token information with symbol %s", token.Symbol)
-			}
+			content = common.Bytes2Hex(token.TxID[:])
 
 		case types.MsgVerifyErc20Deposit{}.Type():
 			k.ProcessVerificationErc20DepositResult(ctx, txID, result.(bool))
@@ -267,10 +263,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 			}
 
 			eventType = types.EventTypeTokenVerificationResult
-			content, err = k.Codec().MarshalBinaryLengthPrefixed(deposit)
-			if err != nil {
-				return nil, fmt.Errorf("unable to remarshal deposit information for symbol %s", deposit.Symbol)
-			}
+			content = common.Bytes2Hex(deposit.TxID[:])
 
 		default:
 			k.Logger(ctx).Debug(fmt.Sprintf("unknown verification message type: %s", msg.PollMeta.Type))
