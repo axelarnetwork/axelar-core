@@ -152,7 +152,9 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeVerificationResult,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeyResult, strconv.FormatBool(result.(bool)))))
+			sdk.NewAttribute(types.AttributeKeyResult, strconv.FormatBool(result.(bool))),
+			sdk.NewAttribute(types.AttributeKeyOutput, msg.PollMeta.ID),
+		))
 
 	k.ProcessVerificationResult(ctx, outPoint, result.(bool))
 	v.DeletePoll(ctx, msg.Poll())

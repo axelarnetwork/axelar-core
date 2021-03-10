@@ -231,11 +231,21 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 		return nil, err
 	}
 
+	var content []byte
 	if result := v.Result(ctx, msg.Poll()); result != nil {
 		switch msg.PollMeta.Type {
 		case types.MsgVerifyErc20TokenDeploy{}.Type():
 			k.ProcessVerificationTokenResult(ctx, txID, result.(bool))
-			n.RegisterAsset(ctx, exported.Ethereum.Name, k.GetVerifiedToken(ctx, txID).Symbol)
+
+			token := k.GetVerifiedToken(ctx, txID)
+			if token == nil {
+				return nil, fmt.Errorf("token %s wasn't properly marked as verified", txID)
+			}
+
+			n.RegisterAsset(ctx, exported.Ethereum.Name, token.Symbol)
+
+			// if we were able to retrieve the verified token, we should also be able to re-marshal it with no issue
+			content, _ = k.Codec().MarshalBinaryLengthPrefixed(token)
 
 		case types.MsgVerifyErc20Deposit{}.Type():
 			k.ProcessVerificationErc20DepositResult(ctx, txID, result.(bool))
@@ -247,10 +257,12 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 
 			depositAddr := nexus.CrossChainAddress{Address: deposit.BurnerAddr, Chain: exported.Ethereum}
 			amount := sdk.NewInt64Coin(deposit.Symbol, deposit.Amount.BigInt().Int64())
-
 			if err := n.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
 				return nil, err
 			}
+
+			// if we were able to retrieve the verified deposit, we should also be able to re-marshal it with no issue
+			content, _ = k.Codec().MarshalBinaryLengthPrefixed(deposit)
 		default:
 			k.Logger(ctx).Debug(fmt.Sprintf("unknown verification message type: %s", msg.PollMeta.Type))
 		}
@@ -258,6 +270,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent(types.EventTypeVerificationResult,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+				sdk.NewAttribute(types.AttributeKeyContent, string(content)),
 				sdk.NewAttribute(types.AttributeKeyResult, strconv.FormatBool(result.(bool)))))
 
 		v.DeletePoll(ctx, msg.Poll())
