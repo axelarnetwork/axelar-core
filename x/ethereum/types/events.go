@@ -26,6 +26,6 @@ const (
 	// AttributeKeyResult is an event attribute key
 	AttributeKeyResult = "result"
 
-	// AttributeKeyContent is an event attribute key
-	AttributeKeyContent = "content"
+	// AttributeKeyTxID is an event attribute key
+	AttributeKeyTxID = "txID"
 )

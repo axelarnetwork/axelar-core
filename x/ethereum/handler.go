@@ -232,7 +232,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 	}
 
 	var eventType string
-	var content string
+	var eventTxID string
 	if result := v.Result(ctx, msg.Poll()); result != nil {
 		switch msg.PollMeta.Type {
 		case types.MsgVerifyErc20TokenDeploy{}.Type():
@@ -246,7 +246,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 			n.RegisterAsset(ctx, exported.Ethereum.Name, token.Symbol)
 
 			eventType = types.EventTypeDepositVerificationResult
-			content = common.Bytes2Hex(token.TxID[:])
+			eventTxID = common.Bytes2Hex(token.TxID[:])
 
 		case types.MsgVerifyErc20Deposit{}.Type():
 			k.ProcessVerificationErc20DepositResult(ctx, txID, result.(bool))
@@ -263,7 +263,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 			}
 
 			eventType = types.EventTypeTokenVerificationResult
-			content = common.Bytes2Hex(deposit.TxID[:])
+			eventTxID = common.Bytes2Hex(deposit.TxID[:])
 
 		default:
 			k.Logger(ctx).Debug(fmt.Sprintf("unknown verification message type: %s", msg.PollMeta.Type))
@@ -272,7 +272,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent(eventType,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-				sdk.NewAttribute(types.AttributeKeyContent, string(content)),
+				sdk.NewAttribute(types.AttributeKeyTxID, string(eventTxID)),
 				sdk.NewAttribute(types.AttributeKeyResult, strconv.FormatBool(result.(bool)))))
 
 		v.DeletePoll(ctx, msg.Poll())
