@@ -18,7 +18,8 @@ import (
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-func (mgr *TSSMgr) ProcessKeygen(subscriber pubsub.Subscriber, errChan chan<- error) {
+// ProcessKeygen manages all communication for keygen protocols between axelar and the external tss process
+func (mgr *Mgr) ProcessKeygen(subscriber pubsub.Subscriber, errChan chan<- error) {
 	for {
 		select {
 		case event := <-subscriber.Events():
@@ -59,7 +60,7 @@ func (mgr *TSSMgr) ProcessKeygen(subscriber pubsub.Subscriber, errChan chan<- er
 					}()
 				case tss.AttributeValueMsg:
 					keyID, from, payload := parseMsgParams(e.Attributes)
-					err := mgr.processKeygenMsg(keyID, from, payload)
+					err := mgr.forwardKeygenMsg(keyID, from, payload)
 					if err != nil {
 						errChan <- err
 					}
@@ -93,7 +94,7 @@ func parseKeygenStartParams(attributes []sdk.Attribute) (keyID string, threshold
 	return keyID, threshold, participants
 }
 
-func (mgr *TSSMgr) startKeygen(keyID string, threshold int32, myIndex int32, participants []string) (tss.Stream, context.CancelFunc, error) {
+func (mgr *Mgr) startKeygen(keyID string, threshold int32, myIndex int32, participants []string) (tss.Stream, context.CancelFunc, error) {
 	if _, ok := mgr.keygenStreams[keyID]; ok {
 		return nil, nil, fmt.Errorf("keygen protocol for ID %s already in progress", keyID)
 	}
@@ -122,7 +123,7 @@ func (mgr *TSSMgr) startKeygen(keyID string, threshold int32, myIndex int32, par
 	return stream, cancel, nil
 }
 
-func (mgr *TSSMgr) handleIntermediateKeygenMsgs(keyID string, intermediate <-chan *tofnd.TrafficOut) error {
+func (mgr *Mgr) handleIntermediateKeygenMsgs(keyID string, intermediate <-chan *tofnd.TrafficOut) error {
 	for msg := range intermediate {
 		mgr.Logger.Debug(fmt.Sprintf("outgoing keygen msg: key [%.20s] from me [%.20s] to [%.20s] broadcast [%t]\n",
 			keyID, mgr.myAddress, msg.ToPartyUid, msg.IsBroadcast))
@@ -135,7 +136,7 @@ func (mgr *TSSMgr) handleIntermediateKeygenMsgs(keyID string, intermediate <-cha
 	return nil
 }
 
-func (mgr *TSSMgr) handleKeygenResult(keyID string, result <-chan []byte) error {
+func (mgr *Mgr) handleKeygenResult(keyID string, result <-chan []byte) error {
 	// Delete the reference to the keygen stream with keyID because entering this function means the tss protocol has completed
 	defer delete(mgr.keygenStreams, keyID)
 
@@ -153,7 +154,7 @@ func (mgr *TSSMgr) handleKeygenResult(keyID string, result <-chan []byte) error 
 	return mgr.broadcaster.Broadcast([]exported.MsgWithSenderSetter{vote})
 }
 
-func (mgr *TSSMgr) processKeygenMsg(keyID string, from string, payload *tofnd.TrafficOut) error {
+func (mgr *Mgr) forwardKeygenMsg(keyID string, from string, payload *tofnd.TrafficOut) error {
 	msgIn, err := prepareTrafficIn(mgr.myAddress, from, keyID, payload, mgr.Logger)
 	if err != nil {
 		return err

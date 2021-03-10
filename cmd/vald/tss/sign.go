@@ -16,7 +16,8 @@ import (
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-func (mgr *TSSMgr) ProcessSign(subscriber pubsub.Subscriber, errChan chan<- error) {
+// ProcessSign manages all communication for sign protocols between axelar and the external tss process
+func (mgr *Mgr) ProcessSign(subscriber pubsub.Subscriber, errChan chan<- error) {
 	for {
 		select {
 		case event := <-subscriber.Events():
@@ -56,7 +57,7 @@ func (mgr *TSSMgr) ProcessSign(subscriber pubsub.Subscriber, errChan chan<- erro
 					}()
 				case tss.AttributeValueMsg:
 					sigID, from, payload := parseMsgParams(e.Attributes)
-					err := mgr.processSignMsg(sigID, from, payload)
+					err := mgr.forwardSignMsg(sigID, from, payload)
 					if err != nil {
 						errChan <- err
 					}
@@ -88,7 +89,7 @@ func parseSignStartParams(attributes []sdk.Attribute) (keyID string, sigID strin
 	return keyID, sigID, participants, payload
 }
 
-func (mgr *TSSMgr) startSign(keyID string, sigID string, participants []string, payload []byte) (tss.Stream, context.CancelFunc, error) {
+func (mgr *Mgr) startSign(keyID string, sigID string, participants []string, payload []byte) (tss.Stream, context.CancelFunc, error) {
 	if _, ok := mgr.signStreams[sigID]; ok {
 		return nil, nil, fmt.Errorf("sign protocol for ID %s already in progress", sigID)
 	}
@@ -117,7 +118,7 @@ func (mgr *TSSMgr) startSign(keyID string, sigID string, participants []string, 
 	return stream, cancel, nil
 }
 
-func (mgr *TSSMgr) handleIntermediateSignMsgs(sigID string, intermediate <-chan *tofnd.TrafficOut) error {
+func (mgr *Mgr) handleIntermediateSignMsgs(sigID string, intermediate <-chan *tofnd.TrafficOut) error {
 	for msg := range intermediate {
 		mgr.Logger.Debug(fmt.Sprintf("outgoing sign msg: sig [%.20s] from me [%.20s] to [%.20s] broadcast [%t]\n",
 			sigID, mgr.myAddress, msg.ToPartyUid, msg.IsBroadcast))
@@ -130,7 +131,7 @@ func (mgr *TSSMgr) handleIntermediateSignMsgs(sigID string, intermediate <-chan 
 	return nil
 }
 
-func (mgr *TSSMgr) handleSignResult(sigID string, result <-chan []byte) error {
+func (mgr *Mgr) handleSignResult(sigID string, result <-chan []byte) error {
 	// Delete the reference to the signing stream with sigID because entering this function means the tss protocol has completed
 	defer delete(mgr.signStreams, sigID)
 
@@ -142,7 +143,7 @@ func (mgr *TSSMgr) handleSignResult(sigID string, result <-chan []byte) error {
 	return mgr.broadcaster.Broadcast([]exported.MsgWithSenderSetter{vote})
 }
 
-func (mgr *TSSMgr) processSignMsg(sigID string, from string, payload *tofnd.TrafficOut) error {
+func (mgr *Mgr) forwardSignMsg(sigID string, from string, payload *tofnd.TrafficOut) error {
 	msgIn, err := prepareTrafficIn(mgr.myAddress, from, sigID, payload, mgr.Logger)
 	if err != nil {
 		return err
