@@ -15,6 +15,9 @@ const (
 
 const (
 
+	// EventTypeUnknownVerificationResult is an event type
+	EventTypeUnknownVerificationResult = "unknownVerificationResult"
+
 	// EventTypeTokenVerificationResult is an event type
 	EventTypeTokenVerificationResult = "tokenVerificationResult"
 
