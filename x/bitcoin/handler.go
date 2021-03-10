@@ -152,9 +152,19 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 	k.ProcessVerificationResult(ctx, outPoint, result.(bool))
 	v.DeletePoll(ctx, msg.Poll())
 
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeVerificationResult,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(types.AttributeKeyResult, strconv.FormatBool(result.(bool))),
+			sdk.NewAttribute(types.AttributeKeyOutpoint, outPoint.String()),
+		))
+
 	info, ok = k.GetVerifiedOutPointInfo(ctx, outPoint)
 	if !ok {
-		return &sdk.Result{Log: fmt.Sprintf("outpoint %s was discarded", msg.PollMeta.ID)}, nil
+		return &sdk.Result{
+			Events: ctx.EventManager().Events(),
+			Log:    fmt.Sprintf("outpoint %s was discarded", msg.PollMeta.ID),
+		}, nil
 	}
 	addr, err := btcutil.DecodeAddress(info.Address, k.GetNetwork(ctx).Params)
 	if err != nil {
@@ -165,13 +175,6 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 		return nil, fmt.Errorf("key ID not found")
 	}
 	k.SetKeyIDByOutpoint(ctx, outPoint, keyID)
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeVerificationResult,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeyResult, strconv.FormatBool(result.(bool))),
-			sdk.NewAttribute(types.AttributeKeyOutpoint, info.OutPoint.String()),
-		))
 
 	depositAddr := nexus.CrossChainAddress{Address: info.Address, Chain: exported.Bitcoin}
 	amount := sdk.NewInt64Coin(exported.Bitcoin.NativeAsset, int64(info.Amount))
