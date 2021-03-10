@@ -10,13 +10,15 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
+	"google.golang.org/grpc"
 
 	"github.com/axelarnetwork/axelar-core/cmd/vald/broadcast"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
-type TSSMgr struct {
+// Mgr represents an object that manages all communication with the external tss process
+type Mgr struct {
 	client        tofnd.GG20Client
 	keygenStreams map[string]tss.Stream
 	signStreams   map[string]tss.Stream
@@ -26,8 +28,22 @@ type TSSMgr struct {
 	broadcaster   broadcast.Broadcaster
 }
 
-func NewTSSMgr(client tofnd.GG20Client, timeout time.Duration, myAddress string, broadcaster broadcast.Broadcaster, logger log.Logger) *TSSMgr {
-	return &TSSMgr{
+// CreateTOFNDClient creates a client to communicate with the external tofnd process
+func CreateTOFNDClient(host string, port string, logger log.Logger) (tofnd.GG20Client, error) {
+	tofndServerAddress := host + ":" + port
+	logger.Info(fmt.Sprintf("initiate connection to tofnd gRPC server: %s", tofndServerAddress))
+	conn, err := grpc.Dial(tofndServerAddress, grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		return nil, err
+	}
+	logger.Debug("successful connection to tofnd gRPC server")
+	gg20client := tofnd.NewGG20Client(conn)
+	return gg20client, nil
+}
+
+// NewMgr returns a new tss manager instance
+func NewMgr(client tofnd.GG20Client, timeout time.Duration, myAddress string, broadcaster broadcast.Broadcaster, logger log.Logger) *Mgr {
+	return &Mgr{
 		client:        client,
 		keygenStreams: map[string]tss.Stream{},
 		signStreams:   map[string]tss.Stream{},
@@ -124,7 +140,7 @@ func prepareTrafficIn(myAddress string, from string, sessionID string, payload *
 	return msgIn, nil
 }
 
-func (mgr *TSSMgr) findMyIndex(participants []string) (int32, bool) {
+func (mgr *Mgr) findMyIndex(participants []string) (int32, bool) {
 	var myIndex int32 = -1
 	for i, participant := range participants {
 		if mgr.myAddress == participant {
