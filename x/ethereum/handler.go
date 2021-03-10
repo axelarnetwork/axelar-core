@@ -231,8 +231,9 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 	}
 
 	if result := v.Result(ctx, msg.Poll()); result != nil {
-		eventAction := types.AttributeKeyActionUnknown
-		eventTxID := ""
+		event := sdk.NewEvent(types.EventTypeVerificationResult,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(types.AttributeKeyResult, strconv.FormatBool(result.(bool))))
 
 		switch msg.PollMeta.Type {
 		case types.MsgVerifyErc20TokenDeploy{}.Type():
@@ -240,19 +241,22 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 
 			token := k.GetVerifiedToken(ctx, msg.PollMeta.ID)
 			if token == nil {
-				return nil, fmt.Errorf("poll %s wasn't properly marked as verified", msg.PollMeta.ID)
+				k.Logger(ctx).Info(fmt.Sprintf("poll %s could not be verified by the validators", msg.PollMeta.ID))
+				break
 			}
 
 			n.RegisterAsset(ctx, exported.Ethereum.Name, token.Symbol)
-			eventAction = types.AttributeKeyActionToken
-			eventTxID = common.Bytes2Hex(token.TxID[:])
+			event = event.AppendAttributes(
+				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeKeyActionToken),
+				sdk.NewAttribute(types.AttributeKeyTxID, common.Bytes2Hex(token.TxID[:])))
 
 		case types.MsgVerifyErc20Deposit{}.Type():
 			k.ProcessVerificationErc20DepositResult(ctx, msg.PollMeta.ID, result.(bool))
 
 			deposit := k.GetVerifiedErc20Deposit(ctx, msg.PollMeta.ID)
 			if deposit == nil {
-				return nil, fmt.Errorf("poll %s wasn't properly marked as verified", msg.PollMeta.ID)
+				k.Logger(ctx).Info(fmt.Sprintf("poll %s could not be verified by the validators", msg.PollMeta.ID))
+				break
 			}
 
 			depositAddr := nexus.CrossChainAddress{Address: deposit.BurnerAddr, Chain: exported.Ethereum}
@@ -260,20 +264,16 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 			if err := n.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
 				return nil, err
 			}
-			eventAction = types.AttributeKeyActionDeposit
-			eventTxID = common.Bytes2Hex(deposit.TxID[:])
+			event = event.AppendAttributes(
+				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeKeyActionDeposit),
+				sdk.NewAttribute(types.AttributeKeyTxID, common.Bytes2Hex(deposit.TxID[:])))
 
 		default:
 			k.Logger(ctx).Debug(fmt.Sprintf("unknown verification message type: %s", msg.PollMeta.Type))
+			event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeKeyActionUnknown))
 		}
 
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(types.EventTypeVerificationResult,
-				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-				sdk.NewAttribute(sdk.AttributeKeyAction, eventAction),
-				sdk.NewAttribute(types.AttributeKeyTxID, eventTxID),
-				sdk.NewAttribute(types.AttributeKeyResult, strconv.FormatBool(result.(bool)))))
-
+		ctx.EventManager().EmitEvent(event)
 		v.DeletePoll(ctx, msg.Poll())
 	}
 
