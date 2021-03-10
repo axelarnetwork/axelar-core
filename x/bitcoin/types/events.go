@@ -5,7 +5,8 @@ const (
 	EventTypeVerificationResult = "verificationResult"
 )
 
-// AttributeKeyResult is an event attribute key
+// Event attribute keys
 const (
-	AttributeKeyResult = "result"
+	AttributeKeyResult   = "result"
+	AttributeKeyOutpoint = "outpoint"
 )

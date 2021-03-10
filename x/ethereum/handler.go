@@ -106,6 +106,20 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg types.Ms
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
+	senderChain, ok := n.GetChain(ctx, exported.Ethereum.Name)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", exported.Ethereum.Name)
+	}
+	recipientChain, ok := n.GetChain(ctx, msg.RecipientChain)
+	if !ok {
+		return nil, fmt.Errorf("unknown recipient chain")
+	}
+
+	found := n.IsAssetRegistered(ctx, recipientChain.Name, msg.Symbol)
+	if !found {
+		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", exported.Ethereum.NativeAsset, recipientChain.Name)
+	}
+
 	tokenAddr, err := k.GetTokenAddress(ctx, msg.Symbol, gatewayAddr)
 	if err != nil {
 		return nil, err
@@ -116,14 +130,6 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg types.Ms
 		return nil, err
 	}
 
-	senderChain, ok := n.GetChain(ctx, exported.Ethereum.Name)
-	if !ok {
-		return nil, fmt.Errorf("%s is not a registered chain", exported.Ethereum.Name)
-	}
-	recipientChain, ok := n.GetChain(ctx, msg.RecipientChain)
-	if !ok {
-		return nil, fmt.Errorf("unknown recipient chain")
-	}
 	n.LinkAddresses(ctx,
 		nexus.CrossChainAddress{Chain: senderChain, Address: burnerAddr.String()},
 		nexus.CrossChainAddress{Chain: recipientChain, Address: msg.RecipientAddr})
@@ -216,46 +222,61 @@ func handleMsgSignPendingTransfers(ctx sdk.Context, k keeper.Keeper, signer type
 
 // This can be used as a potential hook to immediately act on a poll being decided by the vote
 func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n types.Nexus, msg *types.MsgVoteVerifiedTx) (*sdk.Result, error) {
-	event := sdk.NewEvent(
-		sdk.EventTypeMessage,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-		sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-		sdk.NewAttribute(types.AttributePoll, msg.PollMeta.String()),
-		sdk.NewAttribute(types.AttributeVotingData, strconv.FormatBool(msg.VotingData)),
-	)
+	if token := k.GetVerifiedToken(ctx, msg.PollMeta.ID); token != nil {
+		return &sdk.Result{Log: fmt.Sprintf("token %s already verified", token.Symbol)}, nil
+	}
 
 	if err := v.TallyVote(ctx, msg); err != nil {
 		return nil, err
 	}
 
-	if confirmed := v.Result(ctx, msg.Poll()); confirmed != nil {
+	if result := v.Result(ctx, msg.Poll()); result != nil {
+		event := sdk.NewEvent(types.EventTypeVerificationResult,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(types.AttributeKeyResult, strconv.FormatBool(result.(bool))))
+
 		switch msg.PollMeta.Type {
 		case types.MsgVerifyErc20TokenDeploy{}.Type():
-			k.ProcessVerificationTokenResult(ctx, msg.PollMeta.ID, confirmed.(bool))
-		case types.MsgVerifyErc20Deposit{}.Type():
-			txID := msg.PollMeta.ID
-			k.ProcessVerificationErc20DepositResult(ctx, txID, confirmed.(bool))
+			k.ProcessVerificationTokenResult(ctx, msg.PollMeta.ID, result.(bool))
 
-			deposit := k.GetVerifiedErc20Deposit(ctx, txID)
+			token := k.GetVerifiedToken(ctx, msg.PollMeta.ID)
+			if token == nil {
+				k.Logger(ctx).Info(fmt.Sprintf("poll %s could not be verified by the validators", msg.PollMeta.ID))
+				break
+			}
+
+			n.RegisterAsset(ctx, exported.Ethereum.Name, token.Symbol)
+			event = event.AppendAttributes(
+				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeKeyActionToken),
+				sdk.NewAttribute(types.AttributeKeyTxID, common.Bytes2Hex(token.TxID[:])))
+
+		case types.MsgVerifyErc20Deposit{}.Type():
+			k.ProcessVerificationErc20DepositResult(ctx, msg.PollMeta.ID, result.(bool))
+
+			deposit := k.GetVerifiedErc20Deposit(ctx, msg.PollMeta.ID)
 			if deposit == nil {
-				return nil, fmt.Errorf("erc20 deposit %s wasn't properly marked as verified", txID)
+				k.Logger(ctx).Info(fmt.Sprintf("poll %s could not be verified by the validators", msg.PollMeta.ID))
+				break
 			}
 
 			depositAddr := nexus.CrossChainAddress{Address: deposit.BurnerAddr, Chain: exported.Ethereum}
 			amount := sdk.NewInt64Coin(deposit.Symbol, deposit.Amount.BigInt().Int64())
-
 			if err := n.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
 				return nil, err
 			}
+			event = event.AppendAttributes(
+				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeKeyActionDeposit),
+				sdk.NewAttribute(types.AttributeKeyTxID, common.Bytes2Hex(deposit.TxID[:])))
+
 		default:
 			k.Logger(ctx).Debug(fmt.Sprintf("unknown verification message type: %s", msg.PollMeta.Type))
+			event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeKeyActionUnknown))
 		}
 
+		ctx.EventManager().EmitEvent(event)
 		v.DeletePoll(ctx, msg.Poll())
-		event = event.AppendAttributes(sdk.NewAttribute(types.AttributePollConfirmed, strconv.FormatBool(confirmed.(bool))))
 	}
 
-	ctx.EventManager().EmitEvent(event)
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 

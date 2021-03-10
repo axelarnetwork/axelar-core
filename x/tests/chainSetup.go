@@ -7,6 +7,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	goEthTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
@@ -56,6 +60,11 @@ import (
 
 func randomSender() sdk.AccAddress {
 	return testutils.RandBytes(int(testutils.RandIntBetween(5, 50)))
+}
+func randomEthSender() common.Address {
+	bytes := make([]byte, common.AddressLength)
+	rand.Read(bytes)
+	return common.BytesToAddress(bytes)
 }
 
 type testMocks struct {
@@ -320,9 +329,10 @@ func registerWaitEventListeners(n nodeData) (<-chan abci.Event, <-chan abci.Even
 		return event.Type == tssTypes.EventTypePubKeyDecided
 	})
 
-	// register listener for btc tx verification
+	// register listener for tx verification
 	verifyDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
-		return event.Type == btcTypes.EventTypeVerificationResult
+		return event.Type == btcTypes.EventTypeVerificationResult ||
+			event.Type == ethTypes.EventTypeVerificationResult
 	})
 
 	// register listener for sign completion
@@ -352,4 +362,43 @@ func mapifyAttributes(event abci.Event) map[string]string {
 		m[attribute.Key] = attribute.Value
 	}
 	return m
+}
+
+func createTokenDeployLogs(gateway, addr common.Address) []*goEthTypes.Log {
+	numLogs := testutils.RandIntBetween(1, 100)
+	pos := testutils.RandIntBetween(0, numLogs)
+	var logs []*goEthTypes.Log
+
+	for i := int64(0); i < numLogs; i++ {
+		stringType, err := abi.NewType("string", "string", nil)
+		if err != nil {
+			panic(err)
+		}
+		addressType, err := abi.NewType("address", "address", nil)
+		if err != nil {
+			panic(err)
+		}
+		args := abi.Arguments{{Type: stringType}, {Type: addressType}}
+
+		if i == pos {
+			data, err := args.Pack("satoshi", addr)
+			if err != nil {
+				panic(err)
+			}
+			logs = append(logs, &goEthTypes.Log{Address: gateway, Data: data, Topics: []common.Hash{crypto.Keccak256Hash([]byte(ethTypes.ERC20TokenDeploySig))}})
+			continue
+		}
+
+		randDenom := testutils.RandString(4)
+		randGateway := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+		randAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+		randData, err := args.Pack(randDenom, randAddr)
+		randTopic := common.BytesToHash(testutils.RandBytes(common.HashLength))
+		if err != nil {
+			panic(err)
+		}
+		logs = append(logs, &goEthTypes.Log{Address: randGateway, Data: randData, Topics: []common.Hash{randTopic}})
+	}
+
+	return logs
 }

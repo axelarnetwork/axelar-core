@@ -20,6 +20,7 @@ import (
 
 // Query labels
 const (
+	QueryTokenAddress         = "token-address"
 	QueryMasterAddress        = "master-address"
 	QueryAxelarGatewayAddress = "gateway-address"
 	CreateDeployTx            = "deploy-gateway"
@@ -35,6 +36,8 @@ func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer) sdk.Querier {
 			return queryMasterAddress(ctx, s)
 		case QueryAxelarGatewayAddress:
 			return queryAxelarGateway(ctx, k)
+		case QueryTokenAddress:
+			return queryTokenAddress(ctx, k, path[1])
 		case CreateDeployTx:
 			return createDeployGateway(ctx, k, rpc, s, req.Data)
 		case SendTx:
@@ -66,6 +69,21 @@ func queryAxelarGateway(ctx sdk.Context, k Keeper) ([]byte, error) {
 	addr, ok := k.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, "axelar gateway not set")
+	}
+
+	return addr.Bytes(), nil
+}
+
+func queryTokenAddress(ctx sdk.Context, k Keeper, symbol string) ([]byte, error) {
+
+	gateway, ok := k.GetGatewayAddress(ctx)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, "axelar gateway not set")
+	}
+
+	addr, err := k.GetTokenAddress(ctx, symbol, gateway)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
 
 	return addr.Bytes(), nil

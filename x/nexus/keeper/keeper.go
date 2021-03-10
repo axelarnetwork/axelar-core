@@ -15,11 +15,12 @@ import (
 )
 
 const (
-	senderPrefix   = "send_"
-	chainPrefix    = "chain_"
-	pendingPrefix  = "pend_"
-	archivedPrefix = "arch_"
-	totalPrefix    = "total_"
+	senderPrefix     = "send_"
+	chainPrefix      = "chain_"
+	pendingPrefix    = "pend_"
+	archivedPrefix   = "arch_"
+	totalPrefix      = "total_"
+	registeredPrefix = "registered_"
 
 	sequenceKey = "nextID"
 )
@@ -45,10 +46,13 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 func (k Keeper) SetParams(ctx sdk.Context, p types.Params) {
 	k.params.SetParamSet(ctx, &p)
 
-	// By copying this data to the KV store, we avoid having to iterate across all element
-	// in the parameters table when a caller needs to fetch information from it
 	for _, chain := range p.Chains {
+		// By copying this data to the KV store, we avoid having to iterate across all element
+		// in the parameters table when a caller needs to fetch information from it
 		k.SetChain(ctx, chain)
+
+		// Native assets can be registered at start up
+		k.RegisterAsset(ctx, chain.Name, chain.NativeAsset)
 	}
 }
 
@@ -57,6 +61,20 @@ func (k Keeper) GetParams(ctx sdk.Context) types.Params {
 	var p types.Params
 	k.params.GetParamSet(ctx, &p)
 	return p
+}
+
+// RegisterAsset indicates that the specified asset is supported by the given chain
+func (k Keeper) RegisterAsset(ctx sdk.Context, chainName, denom string) {
+	ctx.KVStore(k.storeKey).Set([]byte(registeredPrefix+strings.ToLower(chainName)+denom), k.cdc.MustMarshalBinaryLengthPrefixed(true))
+}
+
+// IsAssetRegistered returns true if the specified asset is suppported by the given chain
+func (k Keeper) IsAssetRegistered(ctx sdk.Context, chainName, denom string) bool {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(registeredPrefix + strings.ToLower(chainName) + denom))
+	if bz == nil {
+		return false
+	}
+	return true
 }
 
 // GetChain retrieves the specification for a supported blockchain

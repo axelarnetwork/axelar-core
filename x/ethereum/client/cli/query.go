@@ -32,6 +32,7 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	ethQueryCmd.AddCommand(flags.GetCommands(
 		GetCmdMasterAddress(queryRoute, cdc),
 		GetCmdAxelarGatewayAddress(queryRoute, cdc),
+		GetCmdTokenAddress(queryRoute, cdc),
 		GetCmdCreateDeployTx(queryRoute, cdc),
 		GetCmdSendTx(queryRoute, cdc),
 		GetCmdSendCommand(queryRoute, cdc),
@@ -65,6 +66,30 @@ func GetCmdMasterAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return cmd
 }
 
+// GetCmdTokenAddress returns the query for the ethereum master address that owns the AxelarGateway contract
+func GetCmdTokenAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "token-address [symbol]",
+		Short: "Query a token address by symbol",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryTokenAddress, args[0]), nil)
+			if err != nil {
+				fmt.Printf(types.ErrFTokenAddress, err.Error())
+
+				return nil
+			}
+
+			out := common.BytesToAddress(res)
+			return cliCtx.PrintOutput(out.Hex())
+		},
+	}
+
+	return cmd
+}
+
 // GetCmdAxelarGatewayAddress returns the query for the AxelarGateway contract address
 func GetCmdAxelarGatewayAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
@@ -76,7 +101,7 @@ func GetCmdAxelarGatewayAddress(queryRoute string, cdc *codec.Codec) *cobra.Comm
 
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryAxelarGatewayAddress), nil)
 			if err != nil {
-				fmt.Printf(types.ErrFMasterKey, err.Error())
+				fmt.Printf(types.ErrFGatewayAddress, err.Error())
 
 				return nil
 			}

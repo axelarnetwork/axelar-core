@@ -134,7 +134,7 @@ func (k Keeper) GetTokenAddress(ctx sdk.Context, symbol string, gatewayAddr comm
 		return common.BytesToAddress(bz), nil
 	}
 
-	tokenInfo := k.GetTokenInfo(ctx, symbol)
+	tokenInfo := k.getTokenInfo(ctx, symbol)
 	if tokenInfo == nil {
 		return common.Address{}, fmt.Errorf("symbol not found/verified")
 	}
@@ -229,8 +229,8 @@ func (k Keeper) SetTokenInfo(ctx sdk.Context, msg types.MsgSignDeployToken) {
 	ctx.KVStore(k.storeKey).Set([]byte(symbolPrefix+msg.Symbol), bz)
 }
 
-// GetTokenInfo retrieves the token info
-func (k Keeper) GetTokenInfo(ctx sdk.Context, symbol string) *types.MsgSignDeployToken {
+// getTokenInfo retrieves the token info
+func (k Keeper) getTokenInfo(ctx sdk.Context, symbol string) *types.MsgSignDeployToken {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(symbolPrefix + symbol))
 	if bz == nil {
 		return nil
@@ -334,6 +334,17 @@ func (k Keeper) GetArchivedErc20Deposit(ctx sdk.Context, txID string) *types.Erc
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &result)
 
 	return result
+}
+
+// GetVerifiedToken returns a verified token
+func (k Keeper) GetVerifiedToken(ctx sdk.Context, txID string) *types.Erc20TokenDeploy {
+	var token *types.Erc20TokenDeploy
+	bz := ctx.KVStore(k.storeKey).Get([]byte(verifiedTokenPrefix + txID))
+	if bz == nil {
+		return nil
+	}
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &token)
+	return token
 }
 
 // HasUnverifiedToken returns true if an unverified transaction has been stored

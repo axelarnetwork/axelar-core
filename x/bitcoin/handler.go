@@ -61,7 +61,12 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, s types.Signer, n types.Nex
 
 	recipientChain, ok := n.GetChain(ctx, msg.RecipientChain)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrBitcoin, "unknown recipient chain")
+		return nil, fmt.Errorf("unknown recipient chain")
+	}
+
+	found := n.IsAssetRegistered(ctx, recipientChain.Name, exported.Bitcoin.NativeAsset)
+	if !found {
+		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", exported.Bitcoin.NativeAsset, recipientChain.Name)
 	}
 
 	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: msg.RecipientAddr}
@@ -144,17 +149,22 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 		return &sdk.Result{Log: fmt.Sprintf("not enough votes to verify outpoint %s yet", msg.PollMeta.ID)}, nil
 	}
 
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeVerificationResult,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeyResult, strconv.FormatBool(result.(bool)))))
-
 	k.ProcessVerificationResult(ctx, outPoint, result.(bool))
 	v.DeletePoll(ctx, msg.Poll())
 
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeVerificationResult,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(types.AttributeKeyResult, strconv.FormatBool(result.(bool))),
+			sdk.NewAttribute(types.AttributeKeyOutpoint, outPoint.String()),
+		))
+
 	info, ok = k.GetVerifiedOutPointInfo(ctx, outPoint)
 	if !ok {
-		return &sdk.Result{Log: fmt.Sprintf("outpoint %s was discarded", msg.PollMeta.ID)}, nil
+		return &sdk.Result{
+			Events: ctx.EventManager().Events(),
+			Log:    fmt.Sprintf("outpoint %s was discarded", msg.PollMeta.ID),
+		}, nil
 	}
 	addr, err := btcutil.DecodeAddress(info.Address, k.GetNetwork(ctx).Params)
 	if err != nil {
