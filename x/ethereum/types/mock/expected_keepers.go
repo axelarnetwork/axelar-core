@@ -728,8 +728,8 @@ var _ types.Nexus = &NexusMock{}
 // 			GetRecipientFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
 // 				panic("mock out the GetRecipient method")
 // 			},
-// 			HasRegisterAssetFunc: func(ctx sdk.Context, chainName string, denom string) bool {
-// 				panic("mock out the HasRegisterAsset method")
+// 			IsAssetRegisteredFunc: func(ctx sdk.Context, chainName string, denom string) bool {
+// 				panic("mock out the IsAssetRegistered method")
 // 			},
 // 			LinkAddressesFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress)  {
 // 				panic("mock out the LinkAddresses method")
@@ -762,8 +762,8 @@ type NexusMock struct {
 	// GetRecipientFunc mocks the GetRecipient method.
 	GetRecipientFunc func(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool)
 
-	// HasRegisterAssetFunc mocks the HasRegisterAsset method.
-	HasRegisterAssetFunc func(ctx sdk.Context, chainName string, denom string) bool
+	// IsAssetRegisteredFunc mocks the IsAssetRegistered method.
+	IsAssetRegisteredFunc func(ctx sdk.Context, chainName string, denom string) bool
 
 	// LinkAddressesFunc mocks the LinkAddresses method.
 	LinkAddressesFunc func(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress)
@@ -817,8 +817,8 @@ type NexusMock struct {
 			// Sender is the sender argument value.
 			Sender nexus.CrossChainAddress
 		}
-		// HasRegisterAsset holds details about calls to the HasRegisterAsset method.
-		HasRegisterAsset []struct {
+		// IsAssetRegistered holds details about calls to the IsAssetRegistered method.
+		IsAssetRegistered []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// ChainName is the chainName argument value.
@@ -851,7 +851,7 @@ type NexusMock struct {
 	lockGetChain                     sync.RWMutex
 	lockGetPendingTransfersForChain  sync.RWMutex
 	lockGetRecipient                 sync.RWMutex
-	lockHasRegisterAsset             sync.RWMutex
+	lockIsAssetRegistered            sync.RWMutex
 	lockLinkAddresses                sync.RWMutex
 	lockRegisterAsset                sync.RWMutex
 }
@@ -1070,10 +1070,10 @@ func (mock *NexusMock) GetRecipientCalls() []struct {
 	return calls
 }
 
-// HasRegisterAsset calls HasRegisterAssetFunc.
-func (mock *NexusMock) HasRegisterAsset(ctx sdk.Context, chainName string, denom string) bool {
-	if mock.HasRegisterAssetFunc == nil {
-		panic("NexusMock.HasRegisterAssetFunc: method is nil but Nexus.HasRegisterAsset was just called")
+// IsAssetRegistered calls IsAssetRegisteredFunc.
+func (mock *NexusMock) IsAssetRegistered(ctx sdk.Context, chainName string, denom string) bool {
+	if mock.IsAssetRegisteredFunc == nil {
+		panic("NexusMock.IsAssetRegisteredFunc: method is nil but Nexus.IsAssetRegistered was just called")
 	}
 	callInfo := struct {
 		Ctx       sdk.Context
@@ -1084,16 +1084,16 @@ func (mock *NexusMock) HasRegisterAsset(ctx sdk.Context, chainName string, denom
 		ChainName: chainName,
 		Denom:     denom,
 	}
-	mock.lockHasRegisterAsset.Lock()
-	mock.calls.HasRegisterAsset = append(mock.calls.HasRegisterAsset, callInfo)
-	mock.lockHasRegisterAsset.Unlock()
-	return mock.HasRegisterAssetFunc(ctx, chainName, denom)
+	mock.lockIsAssetRegistered.Lock()
+	mock.calls.IsAssetRegistered = append(mock.calls.IsAssetRegistered, callInfo)
+	mock.lockIsAssetRegistered.Unlock()
+	return mock.IsAssetRegisteredFunc(ctx, chainName, denom)
 }
 
-// HasRegisterAssetCalls gets all the calls that were made to HasRegisterAsset.
+// IsAssetRegisteredCalls gets all the calls that were made to IsAssetRegistered.
 // Check the length with:
-//     len(mockedNexus.HasRegisterAssetCalls())
-func (mock *NexusMock) HasRegisterAssetCalls() []struct {
+//     len(mockedNexus.IsAssetRegisteredCalls())
+func (mock *NexusMock) IsAssetRegisteredCalls() []struct {
 	Ctx       sdk.Context
 	ChainName string
 	Denom     string
@@ -1103,9 +1103,9 @@ func (mock *NexusMock) HasRegisterAssetCalls() []struct {
 		ChainName string
 		Denom     string
 	}
-	mock.lockHasRegisterAsset.RLock()
-	calls = mock.calls.HasRegisterAsset
-	mock.lockHasRegisterAsset.RUnlock()
+	mock.lockIsAssetRegistered.RLock()
+	calls = mock.calls.IsAssetRegistered
+	mock.lockIsAssetRegistered.RUnlock()
 	return calls
 }
 

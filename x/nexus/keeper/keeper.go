@@ -68,8 +68,8 @@ func (k Keeper) RegisterAsset(ctx sdk.Context, chainName, denom string) {
 	ctx.KVStore(k.storeKey).Set([]byte(registeredPrefix+strings.ToLower(chainName)+denom), k.cdc.MustMarshalBinaryLengthPrefixed(true))
 }
 
-// HasRegisterAsset returns true if the specified asset is suppported by the given chain
-func (k Keeper) HasRegisterAsset(ctx sdk.Context, chainName, denom string) bool {
+// IsAssetRegistered returns true if the specified asset is suppported by the given chain
+func (k Keeper) IsAssetRegistered(ctx sdk.Context, chainName, denom string) bool {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(registeredPrefix + strings.ToLower(chainName) + denom))
 	if bz == nil {
 		return false

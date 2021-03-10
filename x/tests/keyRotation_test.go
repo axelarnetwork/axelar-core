@@ -1,7 +1,10 @@
 package tests
 
 import (
+	"bytes"
+	"context"
 	"fmt"
+	"math/big"
 	"testing"
 
 	"github.com/btcsuite/btcd/chaincfg"
@@ -10,6 +13,9 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	goEth "github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
+	goEthTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -19,6 +25,8 @@ import (
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
+	ethKeeper "github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
+	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
@@ -58,11 +66,126 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		assert.NoError(t, res.Error)
 	}
 
-	// initialize chain keys
-	initKeys(t, chain, randStrings, []string{btc.Bitcoin.Name, eth.Ethereum.Name}, keygenDone)
+	chains := []string{btc.Bitcoin.Name, eth.Ethereum.Name}
 
-	// setup all required contracts on ethereum
-	setupContracts(t, chain, nodeData, signDone, verifyDone)
+	// start keygen
+	masterKeyID1 := randStrings.Next()
+	keygenResult1 := <-chain.Submit(tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: masterKeyID1})
+	assert.NoError(t, keygenResult1.Error)
+
+	// wait for voting to be done
+	if err := waitFor(keygenDone, 1); err != nil {
+		assert.FailNow(t, "keygen", err)
+	}
+	// assign chain master key
+	for _, c := range chains {
+		assignKeyResult := <-chain.Submit(
+			tssTypes.MsgAssignNextMasterKey{Sender: randomSender(), Chain: c, KeyID: masterKeyID1})
+		assert.NoError(t, assignKeyResult.Error)
+
+	}
+
+	// rotate chain master key
+	for _, c := range chains {
+		rotateEthResult := <-chain.Submit(tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: c})
+		assert.NoError(t, rotateEthResult.Error)
+	}
+
+	// setup axelar gateway
+	bz, err := nodeData[0].Node.Query(
+		[]string{ethTypes.QuerierRoute, ethKeeper.CreateDeployTx},
+		abci.RequestQuery{
+			Data: testutils.Codec().MustMarshalJSON(
+				ethTypes.DeployParams{
+					GasPrice: sdk.NewInt(1),
+					GasLimit: 3000000,
+				})},
+	)
+	assert.NoError(t, err)
+	var result ethTypes.DeployResult
+	testutils.Codec().MustUnmarshalJSON(bz, &result)
+
+	deployGatewayResult := <-chain.Submit(
+		ethTypes.MsgSignTx{Sender: randomSender(), Tx: testutils.Codec().MustMarshalJSON(result.Tx)})
+	assert.NoError(t, deployGatewayResult.Error)
+
+	// wait for voting to be done (signing takes longer to tally up)
+	if err := waitFor(signDone, 1); err != nil {
+		assert.FailNow(t, "signing", err)
+	}
+
+	bz, err = nodeData[0].Node.Query(
+		[]string{ethTypes.QuerierRoute, ethKeeper.SendTx, string(deployGatewayResult.Data)},
+		abci.RequestQuery{Data: nil},
+	)
+
+	// deploy token
+	deployTokenResult := <-chain.Submit(
+		ethTypes.MsgSignDeployToken{Sender: randomSender(), Capacity: sdk.NewInt(100000), Decimals: 8, Symbol: "satoshi", TokenName: "Satoshi"})
+	assert.NoError(t, deployTokenResult.Error)
+
+	// wait for voting to be done (signing takes longer to tally up)
+	if err := waitFor(signDone, 1); err != nil {
+		assert.FailNow(t, "signing", err)
+	}
+
+	// send token deployment tx to ethereum
+	commandID := common.BytesToHash(deployTokenResult.Data)
+	nodeData[0].Mocks.ETH.SendAndSignTransactionFunc = func(_ context.Context, _ goEth.CallMsg) (string, error) {
+		return "", nil
+	}
+
+	sender := randomEthSender()
+	bz, err = nodeData[0].Node.Query(
+		[]string{ethTypes.QuerierRoute, ethKeeper.SendCommand},
+		abci.RequestQuery{
+			Data: testutils.Codec().MustMarshalJSON(
+				ethTypes.CommandParams{
+					CommandID: ethTypes.CommandID(commandID),
+					Sender:    sender.String(),
+				})},
+	)
+	assert.NoError(t, err)
+
+	// verify the token deployment
+	var txHashHex string
+	testutils.Codec().MustUnmarshalJSON(bz, &txHashHex)
+	txHash := common.HexToHash(txHashHex)
+
+	bz, err = nodeData[0].Node.Query(
+		[]string{ethTypes.QuerierRoute, ethKeeper.QueryTokenAddress, "satoshi"},
+		abci.RequestQuery{Data: nil},
+	)
+	tokenAddr := common.BytesToAddress(bz)
+	bz, err = nodeData[0].Node.Query(
+		[]string{ethTypes.QuerierRoute, ethKeeper.QueryAxelarGatewayAddress},
+		abci.RequestQuery{Data: nil},
+	)
+	gatewayAddr := common.BytesToAddress(bz)
+	logs := createTokenDeployLogs(gatewayAddr, tokenAddr)
+	var ethBlock int64
+	ethBlock = testutils.RandIntBetween(10, 100)
+
+	for _, node := range nodeData {
+
+		node.Mocks.ETH.BlockNumberFunc = func(ctx context.Context) (uint64, error) {
+			return uint64(ethBlock), nil
+		}
+		node.Mocks.ETH.TransactionReceiptFunc = func(ctx context.Context, hash common.Hash) (*goEthTypes.Receipt, error) {
+
+			if bytes.Equal(txHash.Bytes(), hash.Bytes()) {
+				return &goEthTypes.Receipt{TxHash: hash, BlockNumber: big.NewInt(ethBlock - 5), Logs: logs}, nil
+			}
+			return &goEthTypes.Receipt{}, fmt.Errorf("tx not found")
+		}
+	}
+
+	verifyResult1 := <-chain.Submit(ethTypes.NewMsgVerifyErc20TokenDeploy(randomSender(), txHash, "satoshi"))
+	assert.NoError(t, verifyResult1.Error)
+
+	if err := waitFor(verifyDone, 1); err != nil {
+		assert.FailNow(t, "verification", err)
+	}
 
 	// simulate deposits
 	totalDepositCount := int(testutils.RandIntBetween(1, 20))
@@ -112,9 +235,9 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	// start new keygen
-	newMasterKeyID := randStrings.Next()
-	keygenResult := <-chain.Submit(tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: newMasterKeyID})
-	assert.NoError(t, keygenResult.Error)
+	masterKeyID2 := randStrings.Next()
+	keygenResult2 := <-chain.Submit(tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: masterKeyID2})
+	assert.NoError(t, keygenResult2.Error)
 
 	// wait for voting to be done
 	if err := waitFor(keygenDone, 1); err != nil {
@@ -123,7 +246,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// assign second key to be the new master key
 	assignKeyResult := <-chain.Submit(
-		tssTypes.MsgAssignNextMasterKey{Sender: randomSender(), Chain: btc.Bitcoin.Name, KeyID: newMasterKeyID})
+		tssTypes.MsgAssignNextMasterKey{Sender: randomSender(), Chain: btc.Bitcoin.Name, KeyID: masterKeyID2})
 	assert.NoError(t, assignKeyResult.Error)
 
 	// sign the consolidation transaction
@@ -137,7 +260,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	// send tx to Bitcoin
-	bz, err := nodeData[0].Node.Query([]string{btcTypes.QuerierRoute, btcKeeper.SendTx}, abci.RequestQuery{})
+	bz, err = nodeData[0].Node.Query([]string{btcTypes.QuerierRoute, btcKeeper.SendTx}, abci.RequestQuery{})
 	assert.NoError(t, err)
 
 	actualTx := nodeData[0].Mocks.BTC.SendRawTransactionCalls()[0].Tx
@@ -172,8 +295,8 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.Equal(t, eConsolidationInfo, aConsolidationInfo)
 
 	// verify master key transfer
-	verifyResult := <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender(), aConsolidationInfo))
-	assert.NoError(t, verifyResult.Error)
+	verifyResult2 := <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender(), aConsolidationInfo))
+	assert.NoError(t, verifyResult2.Error)
 
 	// wait for voting to be done
 	if err := waitFor(verifyDone, 1); err != nil {

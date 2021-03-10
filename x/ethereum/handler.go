@@ -115,10 +115,9 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg types.Ms
 		return nil, fmt.Errorf("unknown recipient chain")
 	}
 
-	found := n.HasRegisterAsset(ctx, recipientChain.Name, msg.Symbol)
+	found := n.IsAssetRegistered(ctx, recipientChain.Name, msg.Symbol)
 	if !found {
-		return nil, sdkerrors.Wrap(types.ErrEthereum,
-			fmt.Sprintf("asset '%s' not registered for chain '%s'", exported.Ethereum.NativeAsset, recipientChain.Name))
+		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", exported.Ethereum.NativeAsset, recipientChain.Name)
 	}
 
 	tokenAddr, err := k.GetTokenAddress(ctx, msg.Symbol, gatewayAddr)

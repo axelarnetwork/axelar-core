@@ -55,7 +55,6 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k.SetParams(ctx, types.DefaultParams())
 
-	recipient := nexus.CrossChainAddress{Address: "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7", Chain: eth.Ethereum}
 	privKey, err := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
 	if err != nil {
 		panic(err)
@@ -68,7 +67,7 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 			c, ok := chains[chain]
 			return c, ok
 		},
-		HasRegisterAssetFunc: func(sdk.Context, string, string) bool { return false },
+		IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return false },
 	}
 
 	s := &mock.SignerMock{
@@ -79,11 +78,12 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 	}
 
 	handler := NewHandler(k, &mock.VoterMock{}, &mock.RPCClientMock{}, s, n)
+	recipient := nexus.CrossChainAddress{Address: "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7", Chain: eth.Ethereum}
 	_, err = handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
 	assert.Equal(t, 1, len(s.GetCurrentMasterKeyIDCalls()))
-	assert.Equal(t, 1, len(n.HasRegisterAssetCalls()))
+	assert.Equal(t, 1, len(n.IsAssetRegisteredCalls()))
 }
 
 func TestLink_Success(t *testing.T) {
@@ -116,7 +116,7 @@ func TestLink_Success(t *testing.T) {
 			c, ok := chains[chain]
 			return c, ok
 		},
-		HasRegisterAssetFunc: func(_ sdk.Context, chainName, denom string) bool { return true },
+		IsAssetRegisteredFunc: func(_ sdk.Context, chainName, denom string) bool { return true },
 	}
 
 	s := &mock.SignerMock{
@@ -130,8 +130,8 @@ func TestLink_Success(t *testing.T) {
 	_, err = handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name})
 
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(n.HasRegisterAssetCalls()))
-	assert.Equal(t, recipient.Chain.Name, n.HasRegisterAssetCalls()[0].ChainName)
+	assert.Equal(t, 1, len(n.IsAssetRegisteredCalls()))
+	assert.Equal(t, recipient.Chain.Name, n.IsAssetRegisteredCalls()[0].ChainName)
 	assert.Equal(t, 1, len(n.LinkAddressesCalls()))
 	assert.Equal(t, sender, n.LinkAddressesCalls()[0].Sender)
 	assert.Equal(t, recipient, n.LinkAddressesCalls()[0].Recipient)
@@ -557,7 +557,7 @@ func TestNewHandler_SignPendingTransfers(t *testing.T) {
 					c, ok := chains[chain]
 					return c, ok
 				},
-				HasRegisterAssetFunc: func(_ sdk.Context, chainName, denom string) bool { return true },
+				IsAssetRegisteredFunc: func(_ sdk.Context, chainName, denom string) bool { return true },
 			},
 		}
 		h = NewHandler(k, m.VoterMock, m.RPCClientMock, m.SignerMock, m.NexusMock)
