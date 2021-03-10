@@ -13,9 +13,13 @@ const (
 	AttributePollConfirmed = "confirmed"
 )
 
-// EventTypeVerificationResult is an event type
 const (
-	EventTypeVerificationResult = "verificationResult"
+
+	// EventTypeTokenVerificationResult is an event type
+	EventTypeTokenVerificationResult = "tokenVerificationResult"
+
+	// EventTypeDepositVerificationResult is an event type
+	EventTypeDepositVerificationResult = "depositVerificationResult"
 )
 
 const (

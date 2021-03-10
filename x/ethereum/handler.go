@@ -231,6 +231,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 		return nil, err
 	}
 
+	var eventType string
 	var content []byte
 	if result := v.Result(ctx, msg.Poll()); result != nil {
 		switch msg.PollMeta.Type {
@@ -246,6 +247,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 
 			// if we were able to retrieve the verified token, we should also be able to re-marshal it with no issue
 			content, _ = k.Codec().MarshalBinaryLengthPrefixed(token)
+			eventType = types.EventTypeDepositVerificationResult
 
 		case types.MsgVerifyErc20Deposit{}.Type():
 			k.ProcessVerificationErc20DepositResult(ctx, txID, result.(bool))
@@ -263,12 +265,13 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 
 			// if we were able to retrieve the verified deposit, we should also be able to re-marshal it with no issue
 			content, _ = k.Codec().MarshalBinaryLengthPrefixed(deposit)
+			eventType = types.EventTypeTokenVerificationResult
 		default:
 			k.Logger(ctx).Debug(fmt.Sprintf("unknown verification message type: %s", msg.PollMeta.Type))
 		}
 
 		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(types.EventTypeVerificationResult,
+			sdk.NewEvent(eventType,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 				sdk.NewAttribute(types.AttributeKeyContent, string(content)),
 				sdk.NewAttribute(types.AttributeKeyResult, strconv.FormatBool(result.(bool)))))
