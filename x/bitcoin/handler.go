@@ -149,13 +149,6 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 		return &sdk.Result{Log: fmt.Sprintf("not enough votes to verify outpoint %s yet", msg.PollMeta.ID)}, nil
 	}
 
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeVerificationResult,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeyResult, strconv.FormatBool(result.(bool))),
-			sdk.NewAttribute(types.AttributeKeyOutput, msg.PollMeta.ID),
-		))
-
 	k.ProcessVerificationResult(ctx, outPoint, result.(bool))
 	v.DeletePoll(ctx, msg.Poll())
 
@@ -172,6 +165,13 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 		return nil, fmt.Errorf("key ID not found")
 	}
 	k.SetKeyIDByOutpoint(ctx, outPoint, keyID)
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeVerificationResult,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(types.AttributeKeyResult, strconv.FormatBool(result.(bool))),
+			sdk.NewAttribute(types.AttributeKeyOutpoint, info.OutPoint.String()),
+		))
 
 	depositAddr := nexus.CrossChainAddress{Address: info.Address, Chain: exported.Bitcoin}
 	amount := sdk.NewInt64Coin(exported.Bitcoin.NativeAsset, int64(info.Amount))

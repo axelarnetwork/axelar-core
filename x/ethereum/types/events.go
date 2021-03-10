@@ -1,5 +1,6 @@
 package types
 
+// Attributes
 const (
 	AttributeModule        = ModuleName
 	AttributeAddress       = "address"
@@ -13,22 +14,20 @@ const (
 	AttributePollConfirmed = "confirmed"
 )
 
+// EventTypeVerificationResult describes an event type
 const (
-
-	// EventTypeUnknownVerificationResult is an event type
-	EventTypeUnknownVerificationResult = "unknownVerificationResult"
-
-	// EventTypeTokenVerificationResult is an event type
-	EventTypeTokenVerificationResult = "tokenVerificationResult"
-
-	// EventTypeDepositVerificationResult is an event type
-	EventTypeDepositVerificationResult = "depositVerificationResult"
+	EventTypeVerificationResult = "verificationResult"
 )
 
+// Event attribute keys
 const (
-	// AttributeKeyResult is an event attribute key
 	AttributeKeyResult = "result"
+	AttributeKeyTxID   = "txID"
+)
 
-	// AttributeKeyTxID is an event attribute key
-	AttributeKeyTxID = "txID"
+// Event attribute values
+const (
+	AttributeKeyActionToken   = "tokenVerify"
+	AttributeKeyActionDeposit = "depositVerify"
+	AttributeKeyActionUnknown = "unknownVerify"
 )

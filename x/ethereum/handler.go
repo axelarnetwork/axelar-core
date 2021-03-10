@@ -222,8 +222,7 @@ func handleMsgSignPendingTransfers(ctx sdk.Context, k keeper.Keeper, signer type
 
 // This can be used as a potential hook to immediately act on a poll being decided by the vote
 func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n types.Nexus, msg *types.MsgVoteVerifiedTx) (*sdk.Result, error) {
-	txID := msg.PollMeta.ID
-	if token := k.GetVerifiedToken(ctx, txID); token != nil {
+	if token := k.GetVerifiedToken(ctx, msg.PollMeta.ID); token != nil {
 		return &sdk.Result{Log: fmt.Sprintf("token %s already verified", token.Symbol)}, nil
 	}
 
@@ -232,26 +231,28 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 	}
 
 	if result := v.Result(ctx, msg.Poll()); result != nil {
-		eventType := types.EventTypeUnknownVerificationResult
+		eventAction := types.AttributeKeyActionUnknown
+		eventTxID := ""
 
 		switch msg.PollMeta.Type {
 		case types.MsgVerifyErc20TokenDeploy{}.Type():
-			k.ProcessVerificationTokenResult(ctx, txID, result.(bool))
+			k.ProcessVerificationTokenResult(ctx, msg.PollMeta.ID, result.(bool))
 
-			token := k.GetVerifiedToken(ctx, txID)
+			token := k.GetVerifiedToken(ctx, msg.PollMeta.ID)
 			if token == nil {
-				return nil, fmt.Errorf("token %s wasn't properly marked as verified", txID)
+				return nil, fmt.Errorf("poll %s wasn't properly marked as verified", msg.PollMeta.ID)
 			}
 
 			n.RegisterAsset(ctx, exported.Ethereum.Name, token.Symbol)
-			eventType = types.EventTypeDepositVerificationResult
+			eventAction = types.AttributeKeyActionToken
+			eventTxID = common.Bytes2Hex(token.TxID[:])
 
 		case types.MsgVerifyErc20Deposit{}.Type():
-			k.ProcessVerificationErc20DepositResult(ctx, txID, result.(bool))
+			k.ProcessVerificationErc20DepositResult(ctx, msg.PollMeta.ID, result.(bool))
 
-			deposit := k.GetVerifiedErc20Deposit(ctx, txID)
+			deposit := k.GetVerifiedErc20Deposit(ctx, msg.PollMeta.ID)
 			if deposit == nil {
-				return nil, fmt.Errorf("erc20 deposit %s wasn't properly marked as verified", txID)
+				return nil, fmt.Errorf("poll %s wasn't properly marked as verified", msg.PollMeta.ID)
 			}
 
 			depositAddr := nexus.CrossChainAddress{Address: deposit.BurnerAddr, Chain: exported.Ethereum}
@@ -259,16 +260,18 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 			if err := n.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
 				return nil, err
 			}
-			eventType = types.EventTypeTokenVerificationResult
+			eventAction = types.AttributeKeyActionDeposit
+			eventTxID = common.Bytes2Hex(deposit.TxID[:])
 
 		default:
 			k.Logger(ctx).Debug(fmt.Sprintf("unknown verification message type: %s", msg.PollMeta.Type))
 		}
 
 		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(eventType,
+			sdk.NewEvent(types.EventTypeVerificationResult,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-				sdk.NewAttribute(types.AttributeKeyTxID, txID),
+				sdk.NewAttribute(sdk.AttributeKeyAction, eventAction),
+				sdk.NewAttribute(types.AttributeKeyTxID, eventTxID),
 				sdk.NewAttribute(types.AttributeKeyResult, strconv.FormatBool(result.(bool)))))
 
 		v.DeletePoll(ctx, msg.Poll())

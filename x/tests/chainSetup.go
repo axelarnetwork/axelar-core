@@ -332,8 +332,7 @@ func registerWaitEventListeners(n nodeData) (<-chan abci.Event, <-chan abci.Even
 	// register listener for tx verification
 	verifyDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
 		return event.Type == btcTypes.EventTypeVerificationResult ||
-			event.Type == ethTypes.EventTypeTokenVerificationResult ||
-			event.Type == ethTypes.EventTypeDepositVerificationResult
+			event.Type == ethTypes.EventTypeVerificationResult
 	})
 
 	// register listener for sign completion
