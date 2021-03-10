@@ -34,6 +34,7 @@
       - [master-address](axelarcli_query_ethereum_master-address.md)	 - Query an address by key ID
       - [sendCommand \[commandID\] \[fromAddress\]](axelarcli_query_ethereum_sendCommand.md)	 - Send a transaction signed by \[fromAddress\] that executes the command \[commandID\] to Axelar Gateway
       - [sendTx \[txID\]](axelarcli_query_ethereum_sendTx.md)	 - Send a transaction that spends tx \[txID\] to Ethereum
+      - [token-address \[symbol\]](axelarcli_query_ethereum_token-address.md)	 - Query a token address by symbol
     - [slashing](axelarcli_query_slashing.md)	 - Querying commands for the slashing module
       - [params](axelarcli_query_slashing_params.md)	 - Query the current slashing parameters
       - [signing-info \[validator-conspub\]](axelarcli_query_slashing_signing-info.md)	 - Query a validator's signing information
