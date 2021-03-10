@@ -231,8 +231,9 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 		return nil, err
 	}
 
-	eventType := types.EventTypeUnknownVerificationResult
 	if result := v.Result(ctx, msg.Poll()); result != nil {
+		eventType := types.EventTypeUnknownVerificationResult
+
 		switch msg.PollMeta.Type {
 		case types.MsgVerifyErc20TokenDeploy{}.Type():
 			k.ProcessVerificationTokenResult(ctx, txID, result.(bool))
