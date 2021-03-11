@@ -64,6 +64,14 @@ func handleMsgVerifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, rpc types.RPC
 	txID := common.BytesToHash(msg.TxID[:])
 	txIDHex := txID.String()
 
+	if res := k.GetVerifiedErc20Deposit(ctx, txIDHex); res != nil {
+		return nil, fmt.Errorf("already verified")
+	}
+
+	if res := k.GetArchivedErc20Deposit(ctx, txIDHex); res != nil {
+		return nil, fmt.Errorf("already spent")
+	}
+
 	burnerInfo := k.GetBurnerInfo(ctx, common.HexToAddress(msg.BurnerAddr))
 	if burnerInfo == nil {
 		return nil, fmt.Errorf("no burner info found for address %s", msg.BurnerAddr)
@@ -439,14 +447,7 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, msg 
 
 func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v types.Voter, msg types.MsgVerifyErc20TokenDeploy) (*sdk.Result, error) {
 	txID := common.BytesToHash(msg.TxID[:])
-	txHex := txID.String()
-
-	if res := k.GetVerifiedErc20Deposit(ctx, txHex); res != nil {
-		return nil, fmt.Errorf("already verified")
-	}
-	if res := k.GetArchivedErc20Deposit(ctx, txHex); res != nil {
-		return nil, fmt.Errorf("already spent")
-	}
+	txIDHex := txID.String()
 
 	gatewayAddr, ok := k.GetGatewayAddress(ctx)
 	if !ok {
@@ -458,7 +459,7 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 		return nil, err
 	}
 
-	poll := vote.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: txHex}
+	poll := vote.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: txIDHex}
 	if err := v.InitPoll(ctx, poll); err != nil {
 		return nil, err
 	}
@@ -468,7 +469,7 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeTxID, txHex),
+			sdk.NewAttribute(types.AttributeTxID, txIDHex),
 		),
 	)
 
@@ -482,7 +483,7 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 	txReceipt, blockNumber, err := getTransactionReceiptAndBlockNumber(rpc, txID)
 	if err != nil {
 		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
-		output := sdkerrors.Wrapf(err, "cannot get transaction receipt %s or block number", txHex).Error()
+		output := sdkerrors.Wrapf(err, "cannot get transaction receipt %s or block number", txIDHex).Error()
 		return &sdk.Result{Log: output}, nil
 	}
 
@@ -493,7 +494,7 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 	}
 
 	v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: true})
-	output := fmt.Sprintf("successfully verified erc20 token deployment from transaction %s", txHex)
+	output := fmt.Sprintf("successfully verified erc20 token deployment from transaction %s", txIDHex)
 	return &sdk.Result{Log: output}, nil
 }
 
