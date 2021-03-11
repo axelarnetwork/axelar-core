@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"path"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -9,7 +8,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/cli"
-	"github.com/tendermint/tendermint/libs/log"
 	tmos "github.com/tendermint/tendermint/libs/os"
 
 	"github.com/axelarnetwork/axelar-core/app"
@@ -25,17 +23,10 @@ func main() {
 		Short: "Validator Daemon ",
 	}
 
-	setPersistentFlags(rootCmd)
-
-	axConf, valAddr := loadConfig()
-	if valAddr == "" {
-		tmos.Exit("validator address not set")
-	}
-
-	l := log.NewTMLogger(os.Stdout).With("external", "main")
-
-	startCommand := getStartCommand(axConf, valAddr, l)
+	startCommand := getStartCommand()
 	rootCmd.AddCommand(flags.PostCommands(startCommand)...)
+
+	setPersistentFlags(rootCmd)
 
 	executor := cli.PrepareMainCmd(rootCmd, "AX", app.DefaultNodeHome)
 	err := executor.Execute()

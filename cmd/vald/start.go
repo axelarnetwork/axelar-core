@@ -27,7 +27,7 @@ import (
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
-func getStartCommand(axConf app.Config, valAddr string, logger log.Logger) *cobra.Command {
+func getStartCommand() *cobra.Command {
 	return &cobra.Command{
 		Use: "start",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -35,6 +35,13 @@ func getStartCommand(axConf app.Config, valAddr string, logger log.Logger) *cobr
 			if err != nil {
 				return err
 			}
+
+			axConf, valAddr := loadConfig()
+			if valAddr == "" {
+				tmos.Exit("validator address not set")
+			}
+
+			logger := log.NewTMLogger(os.Stdout).With("external", "main")
 
 			logger.Info("Start listening to events")
 			err = listen(hub, axConf, valAddr, logger)
