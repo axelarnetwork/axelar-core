@@ -6,7 +6,7 @@ on:
       bumpType:
         description: Semver bump type to use ("major"/"minor"/"patch")
         required: true
-        default: major
+        default: patch
 
 jobs:
   release:
@@ -80,3 +80,23 @@ jobs:
           TAG_CONTEXT: branch
           RELEASE_BRANCHES: master,releases.*
           WITH_V: true
+
+      - name: Install SSH key
+        uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: ${{ secrets.CICD_RSA_KEY }}
+
+      - name: Build docker image
+        run: |
+          make docker-image
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Push to DockerHub (release)
+        run: |
+          docker tag axelar/core:latest axelarnet/axelar-core:${{ steps.release.outputs.new_tag }}
+          docker push axelarnet/axelar-core:${{ steps.release.outputs.new_tag }}
