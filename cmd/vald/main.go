@@ -25,17 +25,10 @@ func main() {
 		Short: "Validator Daemon ",
 	}
 
-	setPersistentFlags(rootCmd)
-
-	axConf, valAddr := loadConfig()
-	if valAddr == "" {
-		tmos.Exit("validator address not set")
-	}
-
-	l := log.NewTMLogger(os.Stdout).With("external", "main")
-
-	startCommand := getStartCommand(axConf, valAddr, l)
+	startCommand := getStartCommand(log.NewTMLogger(os.Stdout).With("external", "main"))
 	rootCmd.AddCommand(flags.PostCommands(startCommand)...)
+
+	setPersistentFlags(rootCmd)
 
 	executor := cli.PrepareMainCmd(rootCmd, "AX", app.DefaultNodeHome)
 	err := executor.Execute()
@@ -54,7 +47,7 @@ func configurate() {
 
 func setPersistentFlags(rootCmd *cobra.Command) {
 	rootCmd.PersistentFlags().String(cliHomeFlag, app.DefaultCLIHome, "directory for cli config and data")
-	_ = viper.BindPFlag(cliHomeFlag, rootCmd.Flags().Lookup(cliHomeFlag))
+	_ = viper.BindPFlag(cliHomeFlag, rootCmd.PersistentFlags().Lookup(cliHomeFlag))
 
 	rootCmd.PersistentFlags().String("tofnd-host", "", "host name for tss daemon")
 	_ = viper.BindPFlag("tofnd_host", rootCmd.PersistentFlags().Lookup("tofnd-host"))
