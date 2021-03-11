@@ -111,7 +111,7 @@ func handleMsgVerifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, rpc types.RPC
 
 	if err := verifyErc20Deposit(ctx, k, txReceipt, blockNumber, txID, msg.Amount, common.HexToAddress(msg.BurnerAddr), common.HexToAddress(burnerInfo.TokenAddr)); err != nil {
 		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
-		log := sdkerrors.Wrapf(err, "expected erc20 deposit (%s) to burner address %s could not be verified", txIDHex, msg.BurnerAddr.String()).Error()
+		log := sdkerrors.Wrapf(err, "expected erc20 deposit (%s) to burner address %s could not be verified", txIDHex, msg.BurnerAddr).Error()
 
 		return &sdk.Result{
 			Log:    log,
@@ -499,7 +499,7 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 		return nil, err
 	}
 
-	poll := vote.NewPollMetaWithNonce(types.ModuleName, msg.Type(), msg.TxID.String(), ctx.BlockHeight(), k.GetRevoteLockingPeriod(ctx))
+	poll := vote.NewPollMetaWithNonce(types.ModuleName, msg.Type(), txIDHex, ctx.BlockHeight(), k.GetRevoteLockingPeriod(ctx))
 	if err := v.InitPoll(ctx, poll); err != nil {
 		return nil, err
 	}
@@ -524,7 +524,7 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 	txReceipt, blockNumber, err := getTransactionReceiptAndBlockNumber(rpc, txID)
 	if err != nil {
 		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
-		output := sdkerrors.Wrapf(err, "cannot get transaction receipt %s or block number", msg.TxID.String()).Error()
+		output := sdkerrors.Wrapf(err, "cannot get transaction receipt %s or block number", txIDHex).Error()
 
 		return &sdk.Result{
 			Log:    output,
@@ -543,7 +543,7 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 	}
 
 	v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: true})
-	output := fmt.Sprintf("successfully verified erc20 token deployment from transaction %s", msg.TxID.String())
+	output := fmt.Sprintf("successfully verified erc20 token deployment from transaction %s", txIDHex)
 
 	return &sdk.Result{
 		Log:    output,

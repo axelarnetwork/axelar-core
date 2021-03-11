@@ -279,11 +279,11 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd) {
 
 		pk := t.KeyGen(m[tssTypes.AttributeKeyKeyID]) // simulate correct keygen + vote
 		err := n.Broadcaster.Broadcast(n.Node.Ctx, []exported.MsgWithSenderSetter{
-			&tssTypes.MsgVotePubKey{PubKeyBytes: pk, PollMeta: voting.PollMeta{
-				Module: tssTypes.ModuleName,
-				Type:   tssTypes.EventTypeKeygen,
-				ID:     m[tssTypes.AttributeKeyKeyID],
-			}}})
+			&tssTypes.MsgVotePubKey{PubKeyBytes: pk, PollMeta: voting.NewPollMeta(
+				tssTypes.ModuleName,
+				tssTypes.EventTypeKeygen,
+				m[tssTypes.AttributeKeyKeyID],
+			)}})
 		if err != nil {
 			panic(err)
 		}
@@ -308,11 +308,11 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd) {
 		sig := t.Sign(m[tssTypes.AttributeKeySigID], m[tssTypes.AttributeKeyKeyID], []byte(m[tssTypes.AttributeKeyPayload]))
 
 		err := n.Broadcaster.Broadcast(n.Node.Ctx, []exported.MsgWithSenderSetter{
-			&tssTypes.MsgVoteSig{SigBytes: sig, PollMeta: voting.PollMeta{
-				Module: tssTypes.ModuleName,
-				Type:   tssTypes.EventTypeSign,
-				ID:     m[tssTypes.AttributeKeySigID],
-			}}})
+			&tssTypes.MsgVoteSig{SigBytes: sig, PollMeta: voting.NewPollMeta(
+				tssTypes.ModuleName,
+				tssTypes.EventTypeSign,
+				m[tssTypes.AttributeKeySigID],
+			)}})
 		if err != nil {
 			panic(err)
 		}
