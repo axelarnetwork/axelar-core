@@ -6,7 +6,7 @@ on:
       bumpType:
         description: Semver bump type to use ("major"/"minor"/"patch")
         required: true
-        default: major
+        default: patch
 
 jobs:
   release:
@@ -98,5 +98,5 @@ jobs:
 
       - name: Push to DockerHub (release)
         run: |
-          docker tag axelar/core:latest axelarnet/axelar-core:${{ steps.release.outputs.tag }}
-          docker push axelarnet/axelar-core:${{ steps.release.outputs.tag }}
+          docker tag axelar/core:latest axelarnet/axelar-core:${{ steps.release.outputs.new_tag }}
+          docker push axelarnet/axelar-core:${{ steps.release.outputs.new_tag }}
