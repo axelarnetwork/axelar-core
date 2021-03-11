@@ -20,6 +20,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils/denom"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
@@ -159,7 +160,7 @@ func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	blockHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	blockHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
@@ -201,7 +202,7 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	blockHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	blockHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
@@ -277,11 +278,11 @@ func TestVoteVerifiedTx_IncompleteVote(t *testing.T) {
 	k := keeper.NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
 	k.SetParams(ctx, types.DefaultParams())
 
-	txHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	txHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
-	blockHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	blockHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
@@ -329,11 +330,11 @@ func TestVoteVerifiedTx_KeyIDNotFound(t *testing.T) {
 	k := keeper.NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
 	k.SetParams(ctx, types.DefaultParams())
 
-	txHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	txHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
-	blockHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	blockHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
@@ -380,11 +381,11 @@ func TestVoteVerifiedTx_Success_NotLinked(t *testing.T) {
 	k := keeper.NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
 	k.SetParams(ctx, types.DefaultParams())
 
-	txHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	txHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
-	blockHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	blockHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
@@ -436,11 +437,11 @@ func TestVoteVerifiedTx_SucessAndTransfer(t *testing.T) {
 	k := keeper.NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
 	k.SetParams(ctx, types.DefaultParams())
 
-	txHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	txHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
-	blockHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	blockHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
@@ -537,11 +538,11 @@ func TestNewHandler_SignPendingTransfers(t *testing.T) {
 					return sk.PublicKey, true
 				},
 				GetCurrentMasterKeyIDFunc: func(sdk.Context, nexus.Chain) (string, bool) {
-					return testutils.RandStringBetween(5, 20), true
+					return rand.StrBetween(5, 20), true
 				},
 				GetNextMasterKeyIDFunc: func(sdk.Context, nexus.Chain) (string, bool) { return "", false },
 				GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
-					return testutils.RandPosInt(), true
+					return rand.PosI64(), true
 				},
 				StartSignFunc: func(_ sdk.Context, _ string, _ string, msg []byte) error {
 					r, s, _ := ecdsa.Sign(cryptoRand.Reader, sk, msg)
@@ -596,14 +597,14 @@ func TestNewHandler_SignPendingTransfers(t *testing.T) {
 func prepareMsgSignPendingTransfersSuccessful(h sdk.Handler, ctx sdk.Context, m mocks) (sdk.Msg, expectedResult) {
 	var transfers []nexus.CrossChainTransfer
 	totalAmount := sdk.ZeroInt()
-	transferCount := int(testutils.RandIntBetween(1, 100))
+	transferCount := int(rand.I64Between(1, 100))
 	for i := 0; i < transferCount; i++ {
 		transfer := randomTransfer()
 		totalAmount = totalAmount.Add(transfer.Asset.Amount)
 		transfers = append(transfers, transfer)
 	}
 
-	fee := btcutil.Amount(testutils.RandPosInt())
+	fee := btcutil.Amount(rand.PosI64())
 
 	totalDeposits := sdk.ZeroInt()
 	depositCount := 0
@@ -623,7 +624,7 @@ func prepareMsgSignPendingTransfersSuccessful(h sdk.Handler, ctx sdk.Context, m 
 		return transfers
 	}
 
-	return types.NewMsgSignPendingTransfers(sdk.AccAddress(testutils.RandStringBetween(5, 20)), fee),
+	return types.NewMsgSignPendingTransfers(sdk.AccAddress(rand.StrBetween(5, 20)), fee),
 		expectedResult{
 			depositCount:  depositCount,
 			transferCount: transferCount,
@@ -633,7 +634,7 @@ func prepareMsgSignPendingTransfersSuccessful(h sdk.Handler, ctx sdk.Context, m 
 
 func prepareMsgSignPendingTransfersNotEnoughDeposits(h sdk.Handler, ctx sdk.Context, m mocks) (sdk.Msg, expectedResult) {
 	totalDeposits := sdk.ZeroInt()
-	depositCount := int(testutils.RandIntBetween(1, 100))
+	depositCount := int(rand.I64Between(1, 100))
 	for i := 0; i < depositCount; i++ {
 		res, _ := h(ctx, randomMsgLink())
 		msgVerifyTx := randomMsgVerifyTx(string(res.Data))
@@ -645,7 +646,7 @@ func prepareMsgSignPendingTransfersNotEnoughDeposits(h sdk.Handler, ctx sdk.Cont
 		_, _ = h(ctx, getMsgVoteVerifyTx(msgVerifyTx, true))
 	}
 
-	fee := btcutil.Amount(testutils.RandPosInt())
+	fee := btcutil.Amount(rand.PosI64())
 
 	var transfers []nexus.CrossChainTransfer
 	totalAmount := sdk.ZeroInt()
@@ -658,7 +659,7 @@ func prepareMsgSignPendingTransfersNotEnoughDeposits(h sdk.Handler, ctx sdk.Cont
 		return transfers
 	}
 
-	return types.NewMsgSignPendingTransfers(sdk.AccAddress(testutils.RandStringBetween(5, 20)), fee),
+	return types.NewMsgSignPendingTransfers(sdk.AccAddress(rand.StrBetween(5, 20)), fee),
 		expectedResult{
 			depositCount:  0,
 			transferCount: 0,
@@ -668,15 +669,15 @@ func prepareMsgSignPendingTransfersNotEnoughDeposits(h sdk.Handler, ctx sdk.Cont
 
 func randomMsgLink() types.MsgLink {
 	return types.MsgLink{
-		Sender:         sdk.AccAddress(testutils.RandStringBetween(5, 20)),
-		RecipientAddr:  testutils.RandStringBetween(5, 100),
+		Sender:         sdk.AccAddress(rand.StrBetween(5, 20)),
+		RecipientAddr:  rand.StrBetween(5, 100),
 		RecipientChain: eth.Ethereum.Name,
 	}
 }
 
 func getMsgVoteVerifyTx(msgVerifyTx types.MsgVerifyTx, result bool) *types.MsgVoteVerifiedTx {
 	return &types.MsgVoteVerifiedTx{
-		Sender: sdk.AccAddress(testutils.RandStringBetween(5, 20)),
+		Sender: sdk.AccAddress(rand.StrBetween(5, 20)),
 		PollMeta: vote.PollMeta{
 			Module: types.ModuleName,
 			Type:   msgVerifyTx.Type(),
@@ -687,11 +688,11 @@ func getMsgVoteVerifyTx(msgVerifyTx types.MsgVerifyTx, result bool) *types.MsgVo
 }
 
 func randomMsgVerifyTx(addr string) types.MsgVerifyTx {
-	txHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	txHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
-	blockHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	blockHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
@@ -699,9 +700,9 @@ func randomMsgVerifyTx(addr string) types.MsgVerifyTx {
 	if conf == 0 {
 		conf += 1
 	}
-	return types.NewMsgVerifyTx(sdk.AccAddress(testutils.RandStringBetween(5, 20)), types.OutPointInfo{
+	return types.NewMsgVerifyTx(sdk.AccAddress(rand.StrBetween(5, 20)), types.OutPointInfo{
 		OutPoint:      wire.NewOutPoint(txHash, mathRand.Uint32()),
-		Amount:        btcutil.Amount(testutils.RandPosInt()),
+		Amount:        btcutil.Amount(rand.PosI64()),
 		BlockHash:     blockHash,
 		Address:       addr,
 		Confirmations: conf,
@@ -711,7 +712,7 @@ func randomMsgVerifyTx(addr string) types.MsgVerifyTx {
 func randomTransfer() nexus.CrossChainTransfer {
 	return nexus.CrossChainTransfer{
 		Recipient: nexus.CrossChainAddress{Chain: exported.Bitcoin, Address: randomAddress().EncodeAddress()},
-		Asset:     sdk.NewInt64Coin(denom.Satoshi, testutils.RandPosInt()),
+		Asset:     sdk.NewInt64Coin(denom.Satoshi, rand.PosI64()),
 		ID:        mathRand.Uint64(),
 	}
 }
@@ -722,8 +723,8 @@ func prepareMsgSignPendingTransfersDoNothing(_ sdk.Handler, _ sdk.Context, m moc
 	}
 
 	return types.NewMsgSignPendingTransfers(
-			sdk.AccAddress(testutils.RandStringBetween(5, 20)),
-			btcutil.Amount(testutils.RandPosInt()),
+			sdk.AccAddress(rand.StrBetween(5, 20)),
+			btcutil.Amount(rand.PosI64()),
 		), expectedResult{
 			depositCount:  0,
 			transferCount: 0,
@@ -732,7 +733,7 @@ func prepareMsgSignPendingTransfersDoNothing(_ sdk.Handler, _ sdk.Context, m moc
 }
 
 func randomAddress() btcutil.Address {
-	addr, err := btcutil.NewAddressScriptHashFromHash(testutils.RandBytes(ripemd160.Size), types.DefaultParams().Network.Params)
+	addr, err := btcutil.NewAddressScriptHashFromHash(rand.Bytes(ripemd160.Size), types.DefaultParams().Network.Params)
 	if err != nil {
 		panic(err)
 	}

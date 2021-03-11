@@ -28,6 +28,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	db "github.com/tendermint/tm-db"
 
+	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
@@ -59,7 +60,7 @@ import (
 )
 
 func randomSender() sdk.AccAddress {
-	return testutils.RandBytes(int(testutils.RandIntBetween(5, 50)))
+	return rand2.Bytes(int(rand2.I64Between(5, 50)))
 }
 func randomEthSender() common.Address {
 	bytes := make([]byte, common.AddressLength)
@@ -204,15 +205,14 @@ func createMocks(validators []staking.Validator) testMocks {
 
 // initChain Creates a chain with given number of validators
 func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
-	stringGen := testutils.RandStrings(5, 50).Distinct()
-	defer stringGen.Stop()
+	stringGen := rand2.Strings(5, 50).Distinct()
 
 	var validators []staking.Validator
 	for _, valAddr := range stringGen.Take(nodeCount) {
 		// assign validators
 		validator := staking.Validator{
 			OperatorAddress: sdk.ValAddress(valAddr),
-			Tokens:          sdk.TokensFromConsensusPower(testutils.RandIntBetween(100, 1000)),
+			Tokens:          sdk.TokensFromConsensusPower(rand2.I64Between(100, 1000)),
 			Status:          sdk.Bonded,
 			ConsPubKey:      ed25519.GenPrivKey().PubKey(),
 		}
@@ -245,22 +245,22 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 }
 
 func randomOutpointInfo(recipient string) btcTypes.OutPointInfo {
-	txHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	txHash, err := chainhash.NewHash(rand2.Bytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
-	blockHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	blockHash, err := chainhash.NewHash(rand2.Bytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
 
-	voutIdx := uint32(testutils.RandIntBetween(0, 100))
+	voutIdx := uint32(rand2.I64Between(0, 100))
 	return btcTypes.OutPointInfo{
 		OutPoint:      wire.NewOutPoint(txHash, voutIdx),
 		BlockHash:     blockHash,
-		Amount:        btcutil.Amount(testutils.RandIntBetween(1, 10000000)),
+		Amount:        btcutil.Amount(rand2.I64Between(1, 10000000)),
 		Address:       recipient,
-		Confirmations: uint64(testutils.RandIntBetween(1, 10000)),
+		Confirmations: uint64(rand2.I64Between(1, 10000)),
 	}
 }
 

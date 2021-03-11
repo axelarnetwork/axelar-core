@@ -15,6 +15,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 
+	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 
@@ -34,12 +35,12 @@ var (
 	snap       = snapshot.Snapshot{
 		Validators: validators,
 		Timestamp:  time.Now(),
-		Height:     testutils.RandIntBetween(1, 1000000),
+		Height:     rand2.I64Between(1, 1000000),
 		TotalPower: sdk.NewInt(400),
-		Counter:    testutils.RandIntBetween(0, 100000),
+		Counter:    rand2.I64Between(0, 100000),
 	}
-	randPosInt      = testutils.RandIntsBetween(0, 100000000)
-	randDistinctStr = testutils.RandStrings(3, 15).Distinct()
+	randPosInt      = rand2.I64GenBetween(0, 100000000)
+	randDistinctStr = rand2.Strings(3, 15).Distinct()
 )
 
 type testSetup struct {

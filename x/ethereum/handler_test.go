@@ -15,6 +15,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
@@ -34,16 +35,16 @@ const (
 )
 
 var (
-	sender      = sdk.AccAddress(testutils.RandString(int(testutils.RandIntBetween(5, 20))))
+	sender      = sdk.AccAddress(rand.Str(int(rand.I64Between(5, 20))))
 	bytecodes   = common.FromHex(MymintableBin)
-	tokenBC     = testutils.RandBytes(64)
-	burnerBC    = testutils.RandBytes(64)
-	transferSig = testutils.RandBytes(64)
+	tokenBC     = rand.Bytes(64)
+	burnerBC    = rand.Bytes(64)
+	transferSig = rand.Bytes(64)
 	gateway     = "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7"
 )
 
 func TestLink_NoGateway(t *testing.T) {
-	minConfHeight := testutils.RandIntBetween(1, 10)
+	minConfHeight := rand.I64Between(1, 10)
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	cdc := testutils.Codec()
 	subspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
@@ -51,7 +52,7 @@ func TestLink_NoGateway(t *testing.T) {
 	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(minConfHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, TokenDeploySig: transferSig})
 
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
-	symbol := testutils.RandString(3)
+	symbol := rand.Str(3)
 
 	n := &ethMock.NexusMock{}
 	handler := NewHandler(k, &ethMock.RPCClientMock{}, &ethMock.VoterMock{}, &ethMock.SignerMock{}, n)
@@ -64,12 +65,12 @@ func TestLink_NoGateway(t *testing.T) {
 }
 
 func TestLink_NoRecipientChain(t *testing.T) {
-	minConfHeight := testutils.RandIntBetween(1, 10)
+	minConfHeight := rand.I64Between(1, 10)
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
 
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
-	symbol := testutils.RandString(3)
+	symbol := rand.Str(3)
 
 	chains := map[string]nexus.Chain{exported.Ethereum.Name: exported.Ethereum}
 	n := &ethMock.NexusMock{
@@ -115,7 +116,7 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 }
 
 func TestLink_Success(t *testing.T) {
-	minConfHeight := testutils.RandIntBetween(1, 10)
+	minConfHeight := rand.I64Between(1, 10)
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
 	msg := createMsgSignDeploy()
@@ -153,7 +154,7 @@ func TestLink_Success(t *testing.T) {
 	assert.Equal(t, sender, n.LinkAddressesCalls()[0].Sender)
 	assert.Equal(t, recipient, n.LinkAddressesCalls()[0].Recipient)
 
-	assert.Equal(t, types.BurnerInfo{TokenAddr: tokenAddr.Hex(), Symbol: msg.Symbol, Salt: [common.HashLength]byte(salt)}, *k.GetBurnerInfo(ctx, burnAddr))
+	assert.Equal(t, types.BurnerInfo{TokenAddr: tokenAddr.Hex(), Symbol: msg.Symbol, Salt: salt}, *k.GetBurnerInfo(ctx, burnAddr))
 }
 
 func TestDeployTx_DifferentValue_DifferentHash(t *testing.T) {
@@ -166,7 +167,7 @@ func TestDeployTx_DifferentValue_DifferentHash(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	newValue := big.NewInt(testutils.RandIntBetween(1, 10000))
+	newValue := big.NewInt(rand.I64Between(1, 10000))
 	tx2 := sign(ethTypes.NewContractCreation(tx1.Nonce(), newValue, tx1.Gas(), tx1.GasPrice(), tx1.Data()))
 	tx2, err = ethTypes.SignTx(tx2, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
 	if err != nil {
@@ -185,7 +186,7 @@ func TestDeployTx_DifferentData_DifferentHash(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	newData := testutils.RandBytes(int(testutils.RandIntBetween(1, 10000)))
+	newData := rand.Bytes(int(rand.I64Between(1, 10000)))
 	tx2 := sign(ethTypes.NewContractCreation(tx1.Nonce(), tx1.Value(), tx1.Gas(), tx1.GasPrice(), newData))
 	tx2, err = ethTypes.SignTx(tx2, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
 	if err != nil {
@@ -204,7 +205,7 @@ func TestMintTx_DifferentValue_DifferentHash(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	newValue := big.NewInt(testutils.RandIntBetween(1, 10000))
+	newValue := big.NewInt(rand.I64Between(1, 10000))
 	tx2 := sign(ethTypes.NewTransaction(tx1.Nonce(), *tx1.To(), newValue, tx1.Gas(), tx1.GasPrice(), tx1.Data()))
 	tx2, err = ethTypes.SignTx(tx2, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
 	if err != nil {
@@ -223,7 +224,7 @@ func TestMintTx_DifferentData_DifferentHash(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	newData := testutils.RandBytes(int(testutils.RandIntBetween(1, 10000)))
+	newData := rand.Bytes(int(rand.I64Between(1, 10000)))
 	tx2 := sign(ethTypes.NewTransaction(tx1.Nonce(), *tx1.To(), tx1.Value(), tx1.Gas(), tx1.GasPrice(), newData))
 	tx2, err = ethTypes.SignTx(tx2, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
 	if err != nil {
@@ -242,7 +243,7 @@ func TestMintTx_DifferentRecipient_DifferentHash(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	newTo := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+	newTo := common.BytesToAddress(rand.Bytes(common.AddressLength))
 	tx2 := sign(ethTypes.NewTransaction(tx1.Nonce(), newTo, tx1.Value(), tx1.Gas(), tx1.GasPrice(), tx1.Data()))
 	tx2, err = ethTypes.SignTx(tx2, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
 	if err != nil {
@@ -252,10 +253,10 @@ func TestMintTx_DifferentRecipient_DifferentHash(t *testing.T) {
 }
 
 func TestVerifyToken_NoTokenInfo(t *testing.T) {
-	minConfHeight := testutils.RandIntBetween(1, 10)
-	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
+	minConfHeight := rand.I64Between(1, 10)
+	confCount := rand.I64Between(minConfHeight, 10*minConfHeight)
 	signedTx := createSignedEthTx()
-	symbol := testutils.RandString(4)
+	symbol := rand.Str(4)
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
@@ -272,8 +273,8 @@ func TestVerifyToken_NoTokenInfo(t *testing.T) {
 }
 
 func TestVerifyToken_NoReceipt(t *testing.T) {
-	minConfHeight := testutils.RandIntBetween(1, 10)
-	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
+	minConfHeight := rand.I64Between(1, 10)
+	confCount := rand.I64Between(minConfHeight, 10*minConfHeight)
 	signedTx := createSignedEthTx()
 	msg := createMsgSignDeploy()
 
@@ -295,8 +296,8 @@ func TestVerifyToken_NoReceipt(t *testing.T) {
 }
 
 func TestVerifyToken_NoBlockNumber(t *testing.T) {
-	minConfHeight := testutils.RandIntBetween(1, 10)
-	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
+	minConfHeight := rand.I64Between(1, 10)
+	confCount := rand.I64Between(minConfHeight, 10*minConfHeight)
 	signedTx := createSignedEthTx()
 	msg := createMsgSignDeploy()
 
@@ -318,8 +319,8 @@ func TestVerifyToken_NoBlockNumber(t *testing.T) {
 }
 
 func TestVerifyToken_NotConfirmed(t *testing.T) {
-	minConfHeight := testutils.RandIntBetween(1, 10)
-	confCount := testutils.RandIntBetween(0, minConfHeight)
+	minConfHeight := rand.I64Between(1, 10)
+	confCount := rand.I64Between(0, minConfHeight)
 	signedTx := createSignedEthTx()
 	msg := createMsgSignDeploy()
 
@@ -338,8 +339,8 @@ func TestVerifyToken_NotConfirmed(t *testing.T) {
 }
 
 func TestVerifyToken_NoEvent(t *testing.T) {
-	minConfHeight := testutils.RandIntBetween(1, 10)
-	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
+	minConfHeight := rand.I64Between(1, 10)
+	confCount := rand.I64Between(minConfHeight, 10*minConfHeight)
 	signedTx := createSignedEthTx()
 	msg := createMsgSignDeploy()
 
@@ -358,8 +359,8 @@ func TestVerifyToken_NoEvent(t *testing.T) {
 	assertVotedOnPoll(t, voter, signedTx.Hash(), types.MsgVerifyErc20TokenDeploy{}.Type(), false)
 }
 func TestVerifyToken_DifferentEvent(t *testing.T) {
-	minConfHeight := testutils.RandIntBetween(1, 10)
-	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
+	minConfHeight := rand.I64Between(1, 10)
+	confCount := rand.I64Between(minConfHeight, 10*minConfHeight)
 	signedTx := createSignedEthTx()
 	msg := createMsgSignDeploy()
 
@@ -370,7 +371,7 @@ func TestVerifyToken_DifferentEvent(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	logs := createLogs(testutils.RandString(4), common.HexToAddress(gateway), tokenAddr, k.GetERC20TokenDeploySignature(ctx), true)
+	logs := createLogs(rand.Str(4), common.HexToAddress(gateway), tokenAddr, k.GetERC20TokenDeploySignature(ctx), true)
 	rpc := createBasicRPCMock(signedTx, confCount, logs)
 	voter := createVoterMock()
 	handler := NewHandler(k, rpc, voter, &ethMock.SignerMock{}, &ethMock.NexusMock{})
@@ -383,8 +384,8 @@ func TestVerifyToken_DifferentEvent(t *testing.T) {
 }
 
 func TestVerifyToken_Success(t *testing.T) {
-	minConfHeight := testutils.RandIntBetween(1, 10)
-	confCount := testutils.RandIntBetween(minConfHeight, 10*minConfHeight)
+	minConfHeight := rand.I64Between(1, 10)
+	confCount := rand.I64Between(minConfHeight, 10*minConfHeight)
 	signedTx := createSignedEthTx()
 	msg := createMsgSignDeploy()
 
@@ -408,10 +409,10 @@ func TestVerifyToken_Success(t *testing.T) {
 }
 
 func TestHandleMsgVerifyErc20Deposit_UnknownBurnerAddr(t *testing.T) {
-	minConfHeight := testutils.RandIntBetween(1, 10)
-	txID := common.BytesToHash(testutils.RandBytes(common.HashLength))
-	amount := sdk.NewUint(uint64(testutils.RandIntBetween(1, 10000)))
-	unknownBurnerAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+	minConfHeight := rand.I64Between(1, 10)
+	txID := common.BytesToHash(rand.Bytes(common.HashLength))
+	amount := sdk.NewUint(uint64(rand.I64Between(1, 10000)))
+	unknownBurnerAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
@@ -431,13 +432,13 @@ func TestHandleMsgVerifyErc20Deposit_UnknownBurnerAddr(t *testing.T) {
 }
 
 func TestHandleMsgVerifyErc20Deposit_FailedGettingTransactionReceipt(t *testing.T) {
-	minConfHeight := testutils.RandIntBetween(1, 10)
-	txID := common.BytesToHash(testutils.RandBytes(common.HashLength))
-	amount := sdk.NewUint(uint64(testutils.RandIntBetween(1, 10000)))
-	tokenAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
-	symbol := testutils.RandString(3)
-	salt := [common.HashLength]byte(common.BytesToHash(testutils.RandBytes(common.HashLength)))
-	burnerAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+	minConfHeight := rand.I64Between(1, 10)
+	txID := common.BytesToHash(rand.Bytes(common.HashLength))
+	amount := sdk.NewUint(uint64(rand.I64Between(1, 10000)))
+	tokenAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
+	symbol := rand.Str(3)
+	salt := [common.HashLength]byte(common.BytesToHash(rand.Bytes(common.HashLength)))
+	burnerAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
 	burnerInfo := types.BurnerInfo{
 		TokenAddr: tokenAddr.Hex(),
 		Symbol:    symbol,
@@ -465,13 +466,13 @@ func TestHandleMsgVerifyErc20Deposit_FailedGettingTransactionReceipt(t *testing.
 }
 
 func TestHandleMsgVerifyErc20Deposit_FailedGettingBlockNumber(t *testing.T) {
-	minConfHeight := testutils.RandIntBetween(1, 10)
-	txID := common.BytesToHash(testutils.RandBytes(common.HashLength))
-	amount := sdk.NewUint(uint64(testutils.RandIntBetween(1, 10000)))
-	tokenAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
-	symbol := testutils.RandString(3)
-	salt := [common.HashLength]byte(common.BytesToHash(testutils.RandBytes(common.HashLength)))
-	burnerAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+	minConfHeight := rand.I64Between(1, 10)
+	txID := common.BytesToHash(rand.Bytes(common.HashLength))
+	amount := sdk.NewUint(uint64(rand.I64Between(1, 10000)))
+	tokenAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
+	symbol := rand.Str(3)
+	salt := [common.HashLength]byte(common.BytesToHash(rand.Bytes(common.HashLength)))
+	burnerAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
 	burnerInfo := types.BurnerInfo{
 		TokenAddr: tokenAddr.Hex(),
 		Symbol:    symbol,
@@ -502,13 +503,13 @@ func TestHandleMsgVerifyErc20Deposit_FailedGettingBlockNumber(t *testing.T) {
 }
 
 func TestHandleMsgVerifyErc20Deposit_NotConfirmed(t *testing.T) {
-	minConfHeight := testutils.RandIntBetween(1, 10)
-	txID := common.BytesToHash(testutils.RandBytes(common.HashLength))
-	amount := sdk.NewUint(uint64(testutils.RandIntBetween(1, 10000)))
-	tokenAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
-	symbol := testutils.RandString(3)
-	salt := [common.HashLength]byte(common.BytesToHash(testutils.RandBytes(common.HashLength)))
-	burnerAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+	minConfHeight := rand.I64Between(1, 10)
+	txID := common.BytesToHash(rand.Bytes(common.HashLength))
+	amount := sdk.NewUint(uint64(rand.I64Between(1, 10000)))
+	tokenAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
+	symbol := rand.Str(3)
+	salt := [common.HashLength]byte(common.BytesToHash(rand.Bytes(common.HashLength)))
+	burnerAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
 	burnerInfo := types.BurnerInfo{
 		TokenAddr: tokenAddr.Hex(),
 		Symbol:    symbol,
@@ -540,13 +541,13 @@ func TestHandleMsgVerifyErc20Deposit_NotConfirmed(t *testing.T) {
 }
 
 func TestHandleMsgVerifyErc20Deposit_AmountMismatch(t *testing.T) {
-	minConfHeight := testutils.RandIntBetween(1, 10)
-	txID := common.BytesToHash(testutils.RandBytes(common.HashLength))
+	minConfHeight := rand.I64Between(1, 10)
+	txID := common.BytesToHash(rand.Bytes(common.HashLength))
 	amount := sdk.NewUint(10)
-	tokenAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
-	symbol := testutils.RandString(3)
-	salt := [common.HashLength]byte(common.BytesToHash(testutils.RandBytes(common.HashLength)))
-	burnerAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+	tokenAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
+	symbol := rand.Str(3)
+	salt := [common.HashLength]byte(common.BytesToHash(rand.Bytes(common.HashLength)))
+	burnerAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
 	burnerInfo := types.BurnerInfo{
 		TokenAddr: tokenAddr.Hex(),
 		Symbol:    symbol,
@@ -563,10 +564,10 @@ func TestHandleMsgVerifyErc20Deposit_AmountMismatch(t *testing.T) {
 		return &ethTypes.Receipt{BlockNumber: big.NewInt(blockNumber), Logs: []*ethTypes.Log{
 			/* ERC20 transfer to burner address of a random token */
 			{
-				Address: common.BytesToAddress(testutils.RandBytes(common.AddressLength)),
+				Address: common.BytesToAddress(rand.Bytes(common.AddressLength)),
 				Topics: []common.Hash{
 					erc20TransferEventSig,
-					common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(testutils.RandBytes(common.AddressLength)).Bytes(), common.HashLength)),
+					common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(rand.Bytes(common.AddressLength)).Bytes(), common.HashLength)),
 					common.BytesToHash(common.LeftPadBytes(burnerAddr.Bytes(), common.HashLength)),
 				},
 				Data: common.LeftPadBytes(big.NewInt(2).Bytes(), common.HashLength),
@@ -575,8 +576,8 @@ func TestHandleMsgVerifyErc20Deposit_AmountMismatch(t *testing.T) {
 			{
 				Address: tokenAddr,
 				Topics: []common.Hash{
-					common.BytesToHash(testutils.RandBytes(common.HashLength)),
-					common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(testutils.RandBytes(common.AddressLength)).Bytes(), common.HashLength)),
+					common.BytesToHash(rand.Bytes(common.HashLength)),
+					common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(rand.Bytes(common.AddressLength)).Bytes(), common.HashLength)),
 					common.BytesToHash(common.LeftPadBytes(burnerAddr.Bytes(), common.HashLength)),
 				},
 				Data: common.LeftPadBytes(big.NewInt(2).Bytes(), common.HashLength),
@@ -586,7 +587,7 @@ func TestHandleMsgVerifyErc20Deposit_AmountMismatch(t *testing.T) {
 				Address: tokenAddr,
 				Topics: []common.Hash{
 					erc20TransferEventSig,
-					common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(testutils.RandBytes(common.AddressLength)).Bytes(), common.HashLength)),
+					common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(rand.Bytes(common.AddressLength)).Bytes(), common.HashLength)),
 				},
 				Data: common.LeftPadBytes(big.NewInt(2).Bytes(), common.HashLength),
 			},
@@ -595,7 +596,7 @@ func TestHandleMsgVerifyErc20Deposit_AmountMismatch(t *testing.T) {
 				Address: tokenAddr,
 				Topics: []common.Hash{
 					erc20TransferEventSig,
-					common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(testutils.RandBytes(common.AddressLength)).Bytes(), common.HashLength)),
+					common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(rand.Bytes(common.AddressLength)).Bytes(), common.HashLength)),
 					common.BytesToHash(common.LeftPadBytes(burnerAddr.Bytes(), common.HashLength)),
 				},
 				Data: common.LeftPadBytes(big.NewInt(4).Bytes(), common.HashLength),
@@ -619,13 +620,13 @@ func TestHandleMsgVerifyErc20Deposit_AmountMismatch(t *testing.T) {
 }
 
 func TestHandleMsgVerifyErc20Deposit_Success(t *testing.T) {
-	minConfHeight := testutils.RandIntBetween(1, 10)
-	txID := common.BytesToHash(testutils.RandBytes(common.HashLength))
+	minConfHeight := rand.I64Between(1, 10)
+	txID := common.BytesToHash(rand.Bytes(common.HashLength))
 	amount := sdk.NewUint(10)
-	tokenAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
-	symbol := testutils.RandString(3)
-	salt := [common.HashLength]byte(common.BytesToHash(testutils.RandBytes(common.HashLength)))
-	burnerAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+	tokenAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
+	symbol := rand.Str(3)
+	salt := [common.HashLength]byte(common.BytesToHash(rand.Bytes(common.HashLength)))
+	burnerAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
 	burnerInfo := types.BurnerInfo{
 		TokenAddr: tokenAddr.Hex(),
 		Symbol:    symbol,
@@ -645,7 +646,7 @@ func TestHandleMsgVerifyErc20Deposit_Success(t *testing.T) {
 				Address: tokenAddr,
 				Topics: []common.Hash{
 					erc20TransferEventSig,
-					common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(testutils.RandBytes(common.AddressLength)).Bytes(), common.HashLength)),
+					common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(rand.Bytes(common.AddressLength)).Bytes(), common.HashLength)),
 					common.BytesToHash(common.LeftPadBytes(burnerAddr.Bytes(), common.HashLength)),
 				},
 				Data: common.LeftPadBytes(big.NewInt(3).Bytes(), common.HashLength),
@@ -655,7 +656,7 @@ func TestHandleMsgVerifyErc20Deposit_Success(t *testing.T) {
 				Address: tokenAddr,
 				Topics: []common.Hash{
 					erc20TransferEventSig,
-					common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(testutils.RandBytes(common.AddressLength)).Bytes(), common.HashLength)),
+					common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(rand.Bytes(common.AddressLength)).Bytes(), common.HashLength)),
 					common.BytesToHash(common.LeftPadBytes(burnerAddr.Bytes(), common.HashLength)),
 				},
 				Data: common.LeftPadBytes(big.NewInt(7).Bytes(), common.HashLength),
@@ -679,13 +680,13 @@ func TestHandleMsgVerifyErc20Deposit_Success(t *testing.T) {
 }
 
 func createSignedDeployTx() *ethTypes.Transaction {
-	generator := testutils.RandPosInts()
+	generator := rand.PInt64Gen()
 
 	nonce := uint64(generator.Next())
 	gasPrice := big.NewInt(generator.Next())
 	gasLimit := uint64(generator.Next())
 	value := big.NewInt(0)
-	byteCode := testutils.RandBytes(int(testutils.RandIntBetween(1, 10000)))
+	byteCode := rand.Bytes(int(rand.I64Between(1, 10000)))
 
 	return sign(ethTypes.NewContractCreation(nonce, value, gasLimit, gasPrice, byteCode))
 }
@@ -703,19 +704,19 @@ func sign(tx *ethTypes.Transaction) *ethTypes.Transaction {
 }
 
 func createSignedEthTx() *ethTypes.Transaction {
-	generator := testutils.RandPosInts()
-	contractAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+	generator := rand.PInt64Gen()
+	contractAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
 	nonce := uint64(generator.Next())
-	gasPrice := big.NewInt(testutils.RandPosInts().Next())
+	gasPrice := big.NewInt(rand.PInt64Gen().Next())
 	gasLimit := uint64(generator.Next())
 	value := big.NewInt(0)
 
-	data := testutils.RandBytes(int(testutils.RandIntBetween(0, 1000)))
+	data := rand.Bytes(int(rand.I64Between(0, 1000)))
 	return sign(ethTypes.NewTransaction(nonce, contractAddr, value, gasLimit, gasPrice, data))
 }
 
 func createBasicRPCMock(tx *ethTypes.Transaction, confCount int64, logs []*ethTypes.Log) *ethMock.RPCClientMock {
-	blockNum := testutils.RandIntBetween(confCount, 100000000)
+	blockNum := rand.I64Between(confCount, 100000000)
 
 	rpc := ethMock.RPCClientMock{
 		ChainIDFunc: func(ctx context.Context) (*big.Int, error) {
@@ -766,18 +767,18 @@ func newKeeper(ctx sdk.Context, confHeight int64) keeper.Keeper {
 }
 
 func createMsgSignDeploy() types.MsgSignDeployToken {
-	account := sdk.AccAddress(testutils.RandBytes(sdk.AddrLen))
-	symbol := testutils.RandString(3)
-	name := testutils.RandString(10)
-	decimals := testutils.RandBytes(1)[0]
-	capacity := sdk.NewIntFromUint64(uint64(testutils.RandPosInt()))
+	account := sdk.AccAddress(rand.Bytes(sdk.AddrLen))
+	symbol := rand.Str(3)
+	name := rand.Str(10)
+	decimals := rand.Bytes(1)[0]
+	capacity := sdk.NewIntFromUint64(uint64(rand.PosI64()))
 
 	return types.MsgSignDeployToken{Sender: account, TokenName: name, Symbol: symbol, Decimals: decimals, Capacity: capacity}
 }
 
 func createLogs(denom string, gateway, addr common.Address, deploySig common.Hash, contains bool) []*ethTypes.Log {
-	numLogs := testutils.RandIntBetween(1, 100)
-	pos := testutils.RandIntBetween(0, numLogs)
+	numLogs := rand.I64Between(1, 100)
+	pos := rand.I64Between(0, numLogs)
 	var logs []*ethTypes.Log
 
 	for i := int64(0); i < numLogs; i++ {
@@ -800,11 +801,11 @@ func createLogs(denom string, gateway, addr common.Address, deploySig common.Has
 			continue
 		}
 
-		randDenom := testutils.RandString(4)
-		randGateway := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
-		randAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+		randDenom := rand.Str(4)
+		randGateway := common.BytesToAddress(rand.Bytes(common.AddressLength))
+		randAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
 		randData, err := args.Pack(randDenom, randAddr)
-		randTopic := common.BytesToHash(testutils.RandBytes(common.HashLength))
+		randTopic := common.BytesToHash(rand.Bytes(common.HashLength))
 		if err != nil {
 			panic(err)
 		}

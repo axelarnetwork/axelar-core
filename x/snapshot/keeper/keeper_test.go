@@ -12,10 +12,12 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 
-	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing"
+
+	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -25,7 +27,7 @@ import (
 	staking "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
-var stringGen = testutils.RandStrings(5, 50).Distinct()
+var stringGen = rand.Strings(5, 50).Distinct()
 
 // Cases to test
 var testCases = []struct {
@@ -76,7 +78,7 @@ func TestSnapshots(t *testing.T) {
 						false,           // tomstoned
 						int64(0),        // missed blocks
 					)
-					retinfo := types.ValidatorInfo{newInfo}
+					retinfo := types.ValidatorInfo{ValidatorSigningInfo: newInfo}
 					return retinfo, true
 				},
 			}

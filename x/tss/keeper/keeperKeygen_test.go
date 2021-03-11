@@ -7,13 +7,13 @@ import (
 
 	"github.com/btcsuite/btcd/btcec"
 
+	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 
-	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -44,8 +44,8 @@ func TestKeeper_AssignNextMasterKey_StartKeygenDuringLockingPeriod_Locked(t *tes
 		ctx := s.Ctx.WithBlockHeight(currHeight)
 
 		// snapshotHeight + lockingPeriod > currHeight
-		lockingPeriod := testutils.RandIntBetween(0, currHeight+1)
-		snapshotHeight := testutils.RandIntBetween(currHeight-lockingPeriod+1, currHeight+1)
+		lockingPeriod := rand2.I64Between(0, currHeight+1)
+		snapshotHeight := rand2.I64Between(currHeight-lockingPeriod+1, currHeight+1)
 		assert.Less(t, currHeight, snapshotHeight+lockingPeriod)
 
 		s.SetLockingPeriod(lockingPeriod)
@@ -55,7 +55,7 @@ func TestKeeper_AssignNextMasterKey_StartKeygenDuringLockingPeriod_Locked(t *tes
 		assert.NoError(t, err)
 
 		// time passes
-		ctx = ctx.WithBlockHeight(ctx.BlockHeight() + testutils.RandIntBetween(0, 2*lockingPeriod))
+		ctx = ctx.WithBlockHeight(ctx.BlockHeight() + rand2.I64Between(0, 2*lockingPeriod))
 
 		sk, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 		if err != nil {
@@ -82,8 +82,8 @@ func TestKeeper_AssignNextMasterKey_StartKeygenAfterLockingPeriod_Unlocked(t *te
 		ctx := s.Ctx.WithBlockHeight(currHeight)
 
 		// snapshotHeight + lockingPeriod <= currHeight
-		lockingPeriod := testutils.RandIntBetween(0, currHeight+1)
-		snapshotHeight := testutils.RandIntBetween(0, currHeight-lockingPeriod+1)
+		lockingPeriod := rand2.I64Between(0, currHeight+1)
+		snapshotHeight := rand2.I64Between(0, currHeight-lockingPeriod+1)
 		assert.GreaterOrEqual(t, currHeight, snapshotHeight+lockingPeriod)
 
 		s.SetLockingPeriod(lockingPeriod)
@@ -93,7 +93,7 @@ func TestKeeper_AssignNextMasterKey_StartKeygenAfterLockingPeriod_Unlocked(t *te
 		assert.NoError(t, err)
 
 		// time passes
-		ctx = ctx.WithBlockHeight(ctx.BlockHeight() + testutils.RandIntBetween(0, 2*lockingPeriod))
+		ctx = ctx.WithBlockHeight(ctx.BlockHeight() + rand2.I64Between(0, 2*lockingPeriod))
 
 		sk, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 		if err != nil {
@@ -108,9 +108,9 @@ func TestKeeper_AssignNextMasterKey_StartKeygenAfterLockingPeriod_Unlocked(t *te
 
 func TestKeeper_AssignNextMasterKey_RotateMasterKey_NewKeyIsSet(t *testing.T) {
 	// snapshotHeight + lockingPeriod <= currHeight
-	currHeight := testutils.RandIntBetween(0, 10000000)
-	lockingPeriod := testutils.RandIntBetween(0, currHeight+1)
-	snapshotHeight := testutils.RandIntBetween(0, currHeight-lockingPeriod+1)
+	currHeight := rand2.I64Between(0, 10000000)
+	lockingPeriod := rand2.I64Between(0, currHeight+1)
+	snapshotHeight := rand2.I64Between(0, currHeight-lockingPeriod+1)
 	assert.GreaterOrEqual(t, currHeight, snapshotHeight+lockingPeriod)
 
 	for i := 0; i < 100; i++ {
@@ -138,8 +138,8 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_MultipleTimes_PreviousKeysSt
 		masterKeys := make([]ecdsa.PublicKey, 10)
 		for i := range masterKeys {
 
-			snapshotHeight := ctx.BlockHeight() + testutils.RandIntBetween(0, 100)
-			ctx = ctx.WithBlockHeight(snapshotHeight + testutils.RandIntBetween(0, 100))
+			snapshotHeight := ctx.BlockHeight() + rand2.I64Between(0, 100)
+			ctx = ctx.WithBlockHeight(snapshotHeight + rand2.I64Between(0, 100))
 
 			keyID, pk := s.SetKey(t, ctx)
 			masterKeys[i] = pk

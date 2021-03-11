@@ -15,6 +15,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
@@ -215,25 +216,25 @@ func TestDecodeTokenDeployEvent_CorrectData(t *testing.T) {
 	expectedSymbol := "XPTO"
 	data := common.FromHex("0x0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000e7481ecb61f9c84b91c03414f3d5d48e5436045d00000000000000000000000000000000000000000000000000000000000000045850544f00000000000000000000000000000000000000000000000000000000")
 
-	log := &ethTypes.Log{Address: axelarGateway, Data: data, Topics: []common.Hash{tokenDeploySig}}
+	l := &ethTypes.Log{Address: axelarGateway, Data: data, Topics: []common.Hash{tokenDeploySig}}
 
-	symbol, tokenAddr, err := types.DecodeErc20TokenDeployEvent(log, tokenDeploySig)
+	symbol, tokenAddr, err := types.DecodeErc20TokenDeployEvent(l, tokenDeploySig)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedSymbol, symbol)
 	assert.Equal(t, expectedAddr, tokenAddr)
 }
 
 func TestDecodeErc20TransferEvent_NotErc20Transfer(t *testing.T) {
-	log := ethTypes.Log{
+	l := ethTypes.Log{
 		Topics: []common.Hash{
-			common.BytesToHash(testutils.RandBytes(common.HashLength)),
-			common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(testutils.RandBytes(common.AddressLength)).Bytes(), common.HashLength)),
-			common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(testutils.RandBytes(common.AddressLength)).Bytes(), common.HashLength)),
+			common.BytesToHash(rand.Bytes(common.HashLength)),
+			common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(rand.Bytes(common.AddressLength)).Bytes(), common.HashLength)),
+			common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(rand.Bytes(common.AddressLength)).Bytes(), common.HashLength)),
 		},
 		Data: common.LeftPadBytes(big.NewInt(2).Bytes(), common.HashLength),
 	}
 
-	_, _, _, err := types.DecodeErc20TransferEvent(&log)
+	_, _, _, err := types.DecodeErc20TransferEvent(&l)
 
 	assert.Error(t, err)
 }
@@ -241,26 +242,26 @@ func TestDecodeErc20TransferEvent_NotErc20Transfer(t *testing.T) {
 func TestDecodeErc20TransferEvent_InvalidErc20Transfer(t *testing.T) {
 	erc20TransferEventSig := common.HexToHash("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")
 
-	log := ethTypes.Log{
+	l := ethTypes.Log{
 		Topics: []common.Hash{
 			erc20TransferEventSig,
-			common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(testutils.RandBytes(common.AddressLength)).Bytes(), common.HashLength)),
+			common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(rand.Bytes(common.AddressLength)).Bytes(), common.HashLength)),
 		},
 		Data: common.LeftPadBytes(big.NewInt(2).Bytes(), common.HashLength),
 	}
 
-	_, _, _, err := types.DecodeErc20TransferEvent(&log)
+	_, _, _, err := types.DecodeErc20TransferEvent(&l)
 
 	assert.Error(t, err)
 }
 
 func TestDecodeErc20TransferEvent_CorrectData(t *testing.T) {
 	erc20TransferEventSig := common.HexToHash("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")
-	expectedFrom := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
-	expectedTo := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
-	expectedAmount := sdk.NewUint(uint64(testutils.RandIntBetween(1, 10000)))
+	expectedFrom := common.BytesToAddress(rand.Bytes(common.AddressLength))
+	expectedTo := common.BytesToAddress(rand.Bytes(common.AddressLength))
+	expectedAmount := sdk.NewUint(uint64(rand.I64Between(1, 10000)))
 
-	log := ethTypes.Log{
+	l := ethTypes.Log{
 		Topics: []common.Hash{
 			erc20TransferEventSig,
 			common.BytesToHash(common.LeftPadBytes(expectedFrom.Bytes(), common.HashLength)),
@@ -269,7 +270,7 @@ func TestDecodeErc20TransferEvent_CorrectData(t *testing.T) {
 		Data: common.LeftPadBytes(expectedAmount.BigInt().Bytes(), common.HashLength),
 	}
 
-	actualFrom, actualTo, actualAmount, err := types.DecodeErc20TransferEvent(&log)
+	actualFrom, actualTo, actualAmount, err := types.DecodeErc20TransferEvent(&l)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedFrom, actualFrom)
