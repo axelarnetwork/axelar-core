@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"path"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -8,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/cli"
+	"github.com/tendermint/tendermint/libs/log"
 	tmos "github.com/tendermint/tendermint/libs/os"
 
 	"github.com/axelarnetwork/axelar-core/app"
@@ -23,7 +25,7 @@ func main() {
 		Short: "Validator Daemon ",
 	}
 
-	startCommand := getStartCommand()
+	startCommand := getStartCommand(log.NewTMLogger(os.Stdout).With("external", "main"))
 	rootCmd.AddCommand(flags.PostCommands(startCommand)...)
 
 	setPersistentFlags(rootCmd)
@@ -45,7 +47,7 @@ func configurate() {
 
 func setPersistentFlags(rootCmd *cobra.Command) {
 	rootCmd.PersistentFlags().String(cliHomeFlag, app.DefaultCLIHome, "directory for cli config and data")
-	_ = viper.BindPFlag(cliHomeFlag, rootCmd.Flags().Lookup(cliHomeFlag))
+	_ = viper.BindPFlag(cliHomeFlag, rootCmd.PersistentFlags().Lookup(cliHomeFlag))
 
 	rootCmd.PersistentFlags().String("tofnd-host", "", "host name for tss daemon")
 	_ = viper.BindPFlag("tofnd_host", rootCmd.PersistentFlags().Lookup("tofnd-host"))
