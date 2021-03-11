@@ -164,7 +164,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	gatewayAddr := common.BytesToAddress(bz)
 	logs := createTokenDeployLogs(gatewayAddr, tokenAddr)
 	var ethBlock int64
-	ethBlock = testutils.RandIntBetween(10, 100)
+	ethBlock = rand.I64Between(10, 100)
 
 	for _, node := range nodeData {
 

@@ -3,7 +3,7 @@ package tests
 import (
 	"context"
 	"fmt"
-	"math/rand"
+	mathRand "math/rand"
 	"strconv"
 	"time"
 
@@ -28,7 +28,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	db "github.com/tendermint/tm-db"
 
-	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
@@ -60,12 +60,10 @@ import (
 )
 
 func randomSender() sdk.AccAddress {
-	return rand2.Bytes(int(rand2.I64Between(5, 50)))
+	return rand.Bytes(int(rand.I64Between(5, 50)))
 }
 func randomEthSender() common.Address {
-	bytes := make([]byte, common.AddressLength)
-	rand.Read(bytes)
-	return common.BytesToAddress(bytes)
+	return common.BytesToAddress(rand.Bytes(common.AddressLength))
 }
 
 type testMocks struct {
@@ -190,7 +188,7 @@ func createMocks(validators []staking.Validator) testMocks {
 			return "", nil
 		},
 		PendingNonceAtFunc: func(context.Context, common.Address) (uint64, error) {
-			return rand.Uint64(), nil
+			return mathRand.Uint64(), nil
 		},
 		SendTransactionFunc: func(context.Context, *gethTypes.Transaction) error { return nil },
 	}
@@ -205,14 +203,14 @@ func createMocks(validators []staking.Validator) testMocks {
 
 // initChain Creates a chain with given number of validators
 func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
-	stringGen := rand2.Strings(5, 50).Distinct()
+	stringGen := rand.Strings(5, 50).Distinct()
 
 	var validators []staking.Validator
 	for _, valAddr := range stringGen.Take(nodeCount) {
 		// assign validators
 		validator := staking.Validator{
 			OperatorAddress: sdk.ValAddress(valAddr),
-			Tokens:          sdk.TokensFromConsensusPower(rand2.I64Between(100, 1000)),
+			Tokens:          sdk.TokensFromConsensusPower(rand.I64Between(100, 1000)),
 			Status:          sdk.Bonded,
 			ConsPubKey:      ed25519.GenPrivKey().PubKey(),
 		}
@@ -245,22 +243,22 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 }
 
 func randomOutpointInfo(recipient string) btcTypes.OutPointInfo {
-	txHash, err := chainhash.NewHash(rand2.Bytes(chainhash.HashSize))
+	txHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
-	blockHash, err := chainhash.NewHash(rand2.Bytes(chainhash.HashSize))
+	blockHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
 
-	voutIdx := uint32(rand2.I64Between(0, 100))
+	voutIdx := uint32(rand.I64Between(0, 100))
 	return btcTypes.OutPointInfo{
 		OutPoint:      wire.NewOutPoint(txHash, voutIdx),
 		BlockHash:     blockHash,
-		Amount:        btcutil.Amount(rand2.I64Between(1, 10000000)),
+		Amount:        btcutil.Amount(rand.I64Between(1, 10000000)),
 		Address:       recipient,
-		Confirmations: uint64(rand2.I64Between(1, 10000)),
+		Confirmations: uint64(rand.I64Between(1, 10000)),
 	}
 }
 
@@ -331,8 +329,7 @@ func registerWaitEventListeners(n nodeData) (<-chan abci.Event, <-chan abci.Even
 
 	// register listener for tx verification
 	verifyDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
-		return event.Type == btcTypes.EventTypeVerificationResult ||
-			event.Type == ethTypes.EventTypeVerificationResult
+		return event.Type == ethTypes.EventTypeVerificationResult
 	})
 
 	// register listener for sign completion
@@ -365,8 +362,8 @@ func mapifyAttributes(event abci.Event) map[string]string {
 }
 
 func createTokenDeployLogs(gateway, addr common.Address) []*goEthTypes.Log {
-	numLogs := testutils.RandIntBetween(1, 100)
-	pos := testutils.RandIntBetween(0, numLogs)
+	numLogs := rand.I64Between(1, 100)
+	pos := rand.I64Between(0, numLogs)
 	var logs []*goEthTypes.Log
 
 	for i := int64(0); i < numLogs; i++ {
@@ -389,11 +386,11 @@ func createTokenDeployLogs(gateway, addr common.Address) []*goEthTypes.Log {
 			continue
 		}
 
-		randDenom := testutils.RandString(4)
-		randGateway := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
-		randAddr := common.BytesToAddress(testutils.RandBytes(common.AddressLength))
+		randDenom := rand.Str(4)
+		randGateway := common.BytesToAddress(rand.Bytes(common.AddressLength))
+		randAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
 		randData, err := args.Pack(randDenom, randAddr)
-		randTopic := common.BytesToHash(testutils.RandBytes(common.HashLength))
+		randTopic := common.BytesToHash(rand.Bytes(common.HashLength))
 		if err != nil {
 			panic(err)
 		}

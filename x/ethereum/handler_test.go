@@ -90,11 +90,11 @@ func TestLink_NoRecipientChain(t *testing.T) {
 }
 
 func TestLink_NoRegisteredAsset(t *testing.T) {
-	minConfHeight := testutils.RandIntBetween(1, 10)
+	minConfHeight := rand.I64Between(1, 10)
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
 
-	symbol := testutils.RandString(3)
+	symbol := rand.Str(3)
 
 	chains := map[string]nexus.Chain{btc.Bitcoin.Name: btc.Bitcoin, exported.Ethereum.Name: exported.Ethereum}
 	n := &ethMock.NexusMock{
