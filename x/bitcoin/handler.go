@@ -113,7 +113,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributePoll, poll.String()),
+			sdk.NewAttribute(types.AttributePoll, string(k.Codec().MustMarshalJSON(poll))),
 		),
 	)
 

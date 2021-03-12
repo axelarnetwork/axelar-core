@@ -87,7 +87,7 @@ func handleMsgVerifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, rpc types.RPC
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributePoll, poll.String()),
+			sdk.NewAttribute(types.AttributePoll, string(k.Codec().MustMarshalJSON(poll))),
 		),
 	)
 
@@ -510,7 +510,7 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
 			sdk.NewAttribute(types.AttributeTxID, txIDHex),
-			sdk.NewAttribute(types.AttributePoll, poll.String()),
+			sdk.NewAttribute(types.AttributePoll, string(k.Codec().MustMarshalJSON(poll))),
 		),
 	)
 

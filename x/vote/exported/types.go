@@ -41,10 +41,6 @@ func NewPollMetaWithNonce(module string, pollType string, id string, blockHeight
 }
 
 func (p PollMeta) String() string {
-	if p.Nonce == 0 {
-		return fmt.Sprintf("%s_%s_%s", p.Module, p.Type, p.ID)
-	}
-
 	return fmt.Sprintf("%s_%s_%s_%d", p.Module, p.Type, p.ID, p.Nonce)
 }
 
