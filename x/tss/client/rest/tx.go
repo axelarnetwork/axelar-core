@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -15,33 +14,39 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
+const (
+	TxMethodKeygenStart         = "start"
+	TxMethodMasterKeyAssignNext = "assign"
+	TxMethodMasterKeyRotate     = "rotate"
+)
+
 // ReqKeygenStart represents a key-gen request
 type ReqKeygenStart struct {
-	BaseReq   rest.BaseReq `json:"base_req" yaml:"base_req"`
-	NewKeyId  string       `json:"key_id" yaml:"key_id"`
-	Threshold int          `json:"threshold" yaml:"threshold"`
+	BaseReq  rest.BaseReq `json:"base_req" yaml:"base_req"`
+	NewKeyId string       `json:"key_id" yaml:"key_id"`
 }
 
-// ReqMasterkeyAssign represents a request to assign a new master key
-type ReqMasterkeyAssign struct {
-	BaseReq   rest.BaseReq `json:"base_req" yaml:"base_req"`
-	KeyId     string       `json:"key_id" yaml:"key_id"`
-	Threshold int          `json:"threshold" yaml:"threshold"`
-}
-
-// ReqMasterkeyRotate represents a request to rotate a master key
-type ReqMasterkeyRotate struct {
+// ReqMasterkeyAssignNext represents a request to assign a new master key
+type ReqMasterkeyAssignNext struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+	KeyId   string       `json:"key_id" yaml:"key_id"`
+}
+
+// ReqMasterKeyRotate represents a request to rotate a master key
+type ReqMasterKeyRotate struct {
+	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+	Chain   string       `json:"chain" yaml:"chain"`
 }
 
 // RegisterRoutes registers all REST routes with the given router
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
-	r.HandleFunc(fmt.Sprintf("/tx/%s/keygen/start", types.ModuleName), keygenStartHandlerFn(cliCtx)).Methods("POST")
-	r.HandleFunc(fmt.Sprintf("/tx/%s/masterkey/assign/{chain}", types.ModuleName), masterkeyAssignHandlerFn(cliCtx)).Methods("POST")
-	r.HandleFunc(fmt.Sprintf("/tx/%s/masterkey/rotate/{chain}", types.ModuleName), masterkeyRotateHandlerFn(cliCtx)).Methods("POST")
+	registerTx := clientUtils.RegisterTxHandlerFn(r, types.RestRoute)
+	registerTx(GetHandlerKeygenStart(cliCtx), TxMethodKeygenStart)
+	registerTx(GetHandlerMasterKeyAssignNext(cliCtx), TxMethodMasterKeyAssignNext, clientUtils.PathVarChain)
+	registerTx(GetHandlerMasterKeyRotate(cliCtx), TxMethodMasterKeyRotate, clientUtils.PathVarChain)
 }
 
-func keygenStartHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
+func GetHandlerKeygenStart(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqKeygenStart
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
@@ -71,9 +76,9 @@ func keygenStartHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-func masterkeyAssignHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
+func GetHandlerMasterKeyAssignNext(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReqMasterkeyAssign
+		var req ReqMasterkeyAssignNext
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
 			return
 		}
@@ -89,7 +94,7 @@ func masterkeyAssignHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 
 		msg := types.MsgAssignNextMasterKey{
 			Sender: sender,
-			Chain:  mux.Vars(r)["chain"],
+			Chain:  mux.Vars(r)[clientUtils.PathVarChain],
 			KeyID:  req.KeyId,
 		}
 		if err := msg.ValidateBasic(); err != nil {
@@ -100,9 +105,9 @@ func masterkeyAssignHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-func masterkeyRotateHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
+func GetHandlerMasterKeyRotate(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReqMasterkeyRotate
+		var req ReqMasterKeyRotate
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
 			return
 		}
@@ -118,7 +123,7 @@ func masterkeyRotateHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 
 		msg := types.MsgRotateMasterKey{
 			Sender: sender,
-			Chain:  mux.Vars(r)["chain"],
+			Chain:  mux.Vars(r)[clientUtils.PathVarChain],
 		}
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())

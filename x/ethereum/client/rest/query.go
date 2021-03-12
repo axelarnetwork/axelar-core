@@ -2,6 +2,7 @@ package rest
 
 import (
 	"fmt"
+	"github.com/axelarnetwork/axelar-core/utils"
 	"math/big"
 	"net/http"
 	"strconv"
@@ -117,7 +118,7 @@ func GetHandlerQuerySendTx(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		txID := mux.Vars(r)[PathVarTxID]
+		txID := mux.Vars(r)[utils.PathVarTxID]
 
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.SendTx, txID), nil)
 		if err != nil {

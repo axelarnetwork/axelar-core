@@ -2,6 +2,7 @@ package rest
 
 import (
 	"fmt"
+	"github.com/axelarnetwork/axelar-core/utils"
 	"net/http"
 
 	"github.com/btcsuite/btcd/wire"
@@ -34,7 +35,7 @@ func QueryDepositAddress(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		vars := mux.Vars(r)
-		queryData, err := cliCtx.Codec.MarshalJSON(types.DepositQueryParams{Chain: vars[PathVarChain], Address: vars[PathVarEthereumAddress]})
+		queryData, err := cliCtx.Codec.MarshalJSON(types.DepositQueryParams{Chain: vars[utils.PathVarChain], Address: vars[utils.PathVarEthereumAddress]})
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 		}
@@ -119,7 +120,7 @@ func QuerySendTransfers(cliCtx context.CLIContext) http.HandlerFunc {
 }
 
 func outPointFromParams(r *http.Request) (*wire.OutPoint, error) {
-	txId := mux.Vars(r)[PathVarTxID]
+	txId := mux.Vars(r)[utils.PathVarTxID]
 	idx := r.URL.Query().Get(QParamVOutIdx)
 	return types.OutPointFromStr(txId + ":" + idx)
 }

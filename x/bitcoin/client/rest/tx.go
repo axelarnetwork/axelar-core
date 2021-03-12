@@ -24,22 +24,18 @@ const (
 	QMethodDepositAddress = keeper.QueryDepositAddress
 	QMethodTxInfo         = keeper.QueryOutInfo
 	QMethodSendTransfers  = keeper.SendTx
-
-	PathVarChain           = "Chain"
-	PathVarEthereumAddress = "EthereumAddress"
-	PathVarTxID            = "TxID"
 )
 
 // RegisterRoutes registers this module's REST routes with the given router
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	registerTx := clientUtils.RegisterTxHandlerFn(r, types.RestRoute)
-	registerTx(GetHandlerLink(cliCtx), TxMethodLink, PathVarChain)
+	registerTx(GetHandlerLink(cliCtx), TxMethodLink, clientUtils.PathVarChain)
 	registerTx(GetHandlerVerifyTx(cliCtx), TxMethodVerifyTx)
 	registerTx(GetHandlerSignPendingTransfersTx(cliCtx), TxMethodSignPendingTransfersTx)
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
-	registerQuery(QueryDepositAddress(cliCtx), QMethodDepositAddress, PathVarChain, PathVarEthereumAddress)
-	registerQuery(QueryTxInfo(cliCtx), QMethodTxInfo, PathVarTxID)
+	registerQuery(QueryDepositAddress(cliCtx), QMethodDepositAddress, clientUtils.PathVarChain, clientUtils.PathVarEthereumAddress)
+	registerQuery(QueryTxInfo(cliCtx), QMethodTxInfo, clientUtils.PathVarTxID)
 	registerQuery(QuerySendTransfers(cliCtx), QMethodSendTransfers)
 }
 
@@ -109,7 +105,7 @@ func GetHandlerLink(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		msg := types.MsgLink{Sender: fromAddr, RecipientChain: mux.Vars(r)[PathVarChain], RecipientAddr: req.Address}
+		msg := types.MsgLink{Sender: fromAddr, RecipientChain: mux.Vars(r)[clientUtils.PathVarChain], RecipientAddr: req.Address}
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

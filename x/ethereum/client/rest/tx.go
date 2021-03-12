@@ -31,27 +31,23 @@ const (
 	QMethodCreateDeployTx       = keeper.CreateDeployTx
 	QMethodSendTx               = keeper.SendTx
 	QMethodSendCommand          = keeper.SendCommand
-
-	PathVarChain  = "Chain"
-	PathVarSymbol = "Symbol"
-	PathVarTxID   = "TxID"
 )
 
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	registerTx := clientUtils.RegisterTxHandlerFn(r, types.RestRoute)
-	registerTx(GetHandlerLink(cliCtx), TxMethodLink, PathVarChain)
-	registerTx(GetHandlerVerifyErc20Deploy(cliCtx), TxMethodVerifyErc20Deploy, PathVarSymbol)
+	registerTx(GetHandlerLink(cliCtx), TxMethodLink, clientUtils.PathVarChain)
+	registerTx(GetHandlerVerifyErc20Deploy(cliCtx), TxMethodVerifyErc20Deploy, clientUtils.PathVarSymbol)
 	registerTx(GetHandlerVerifyErc20Deposit(cliCtx), TxMethodVerifyErc20Deposit)
 	registerTx(GetHandlerSignTx(cliCtx), TxMethodSignTx)
 	registerTx(GetHandlerSignPendingTransfers(cliCtx), TxMethodSignPending)
-	registerTx(GetHandlerSignDeployToken(cliCtx), TxMethodSignDeployToken, PathVarSymbol)
+	registerTx(GetHandlerSignDeployToken(cliCtx), TxMethodSignDeployToken, clientUtils.PathVarSymbol)
 	registerTx(GetHandlerSignBurnTokens(cliCtx), TxMethodSignBurnTokens)
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
 	registerQuery(GetHandlerQueryMasterAddress(cliCtx), QMethodMasterAddress)
 	registerQuery(GetHandlerQueryAxelarGatewayAddress(cliCtx), QMethodAxelarGatewayAddress)
 	registerQuery(GetHandlerQueryCreateDeployTx(cliCtx), QMethodCreateDeployTx)
-	registerQuery(GetHandlerQuerySendTx(cliCtx), QMethodSendTx, PathVarTxID)
+	registerQuery(GetHandlerQuerySendTx(cliCtx), QMethodSendTx, clientUtils.PathVarTxID)
 	registerQuery(GetHandlerQuerySendCommandTx(cliCtx), QMethodSendCommand)
 }
 
@@ -110,7 +106,7 @@ func GetHandlerLink(cliCtx context.CLIContext) http.HandlerFunc {
 
 		msg := types.MsgLink{
 			Sender:         fromAddr,
-			RecipientChain: mux.Vars(r)[PathVarChain],
+			RecipientChain: mux.Vars(r)[clientUtils.PathVarChain],
 			RecipientAddr:  req.RecipientAddr,
 			Symbol:         req.Symbol,
 		}
@@ -140,7 +136,7 @@ func GetHandlerVerifyErc20Deploy(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		txID := common.HexToHash(req.TxID)
-		msg := types.NewMsgVerifyErc20TokenDeploy(fromAddr, txID, mux.Vars(r)[PathVarSymbol])
+		msg := types.NewMsgVerifyErc20TokenDeploy(fromAddr, txID, mux.Vars(r)[clientUtils.PathVarSymbol])
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -251,7 +247,7 @@ func GetHandlerSignDeployToken(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		symbol := mux.Vars(r)[PathVarSymbol]
+		symbol := mux.Vars(r)[clientUtils.PathVarSymbol]
 		decs, err := strconv.ParseUint(req.Decimals, 10, 8)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, errors.New("could not parse decimals").Error())
