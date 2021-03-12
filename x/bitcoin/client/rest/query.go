@@ -25,7 +25,7 @@ const (
 	QParamBlockHash = "block_hash"
 )
 
-// QueryDepositAddress returns a query for a deposit address
+// QueryDepositAddress returns a handler to query a deposit address
 func QueryDepositAddress(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -57,7 +57,7 @@ func QueryDepositAddress(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-// QuerySendTransfers returns a query to send a transaction to Bitcoin
+// QuerySendTransfers returns a handler to send a transaction to Bitcoin
 func QuerySendTransfers(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -67,6 +67,30 @@ func QuerySendTransfers(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.SendTx), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, types.ErrFSendTransfers)
+			return
+		}
+
+		if len(res) == 0 {
+			rest.PostProcessResponse(w, cliCtx, "")
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}
+
+// QueryGetConsolidationTx returns a handler to build a consolidation transaction
+func QueryGetConsolidationTx(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.GetTx), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, types.ErrFSendTransfers)
 			return
