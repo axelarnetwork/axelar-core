@@ -22,7 +22,6 @@ const (
 	TxMethodSignPendingTransfersTx = "sign"
 
 	QMethodDepositAddress = keeper.QueryDepositAddress
-	QMethodTxInfo         = keeper.QueryOutInfo
 	QMethodSendTransfers  = keeper.SendTx
 )
 
@@ -35,7 +34,6 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
 	registerQuery(QueryDepositAddress(cliCtx), QMethodDepositAddress, clientUtils.PathVarChain, clientUtils.PathVarEthereumAddress)
-	registerQuery(QueryTxInfo(cliCtx), QMethodTxInfo, clientUtils.PathVarTxID)
 	registerQuery(QuerySendTransfers(cliCtx), QMethodSendTransfers)
 }
 

@@ -5,8 +5,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"net/http"
 
-	"github.com/btcsuite/btcd/wire"
-
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 
@@ -22,8 +20,10 @@ type RespDepositAddress struct {
 	Address string `json:"address" yaml:"address"`
 }
 
-const QParamVOutIdx = "vout_idx"
-const QParamBlockHash = "block_hash"
+const (
+	QParamVOutIdx   = "vout_idx"
+	QParamBlockHash = "block_hash"
+)
 
 // QueryDepositAddress returns a query for a deposit address
 func QueryDepositAddress(cliCtx context.CLIContext) http.HandlerFunc {
@@ -57,44 +57,6 @@ func QueryDepositAddress(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-// QueryTxInfo returns a query for transaction info
-func QueryTxInfo(cliCtx context.CLIContext) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
-
-		out, err := outPointFromParams(r)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		blockHash := r.URL.Query().Get(QParamBlockHash)
-
-		queryData, err := cliCtx.Codec.MarshalJSON(out)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryOutInfo, blockHash), queryData)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFTxInfo, out.Hash.String(), out.Index).Error())
-			return
-		}
-
-		if len(res) == 0 {
-			rest.PostProcessResponse(w, cliCtx, "")
-			return
-		}
-
-		rest.PostProcessResponse(w, cliCtx, res)
-	}
-}
-
 // QuerySendTransfers returns a query to send a transaction to Bitcoin
 func QuerySendTransfers(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -117,10 +79,4 @@ func QuerySendTransfers(cliCtx context.CLIContext) http.HandlerFunc {
 
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
-}
-
-func outPointFromParams(r *http.Request) (*wire.OutPoint, error) {
-	txId := mux.Vars(r)[utils.PathVarTxID]
-	idx := r.URL.Query().Get(QParamVOutIdx)
-	return types.OutPointFromStr(txId + ":" + idx)
 }
