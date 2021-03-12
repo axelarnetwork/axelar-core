@@ -265,7 +265,7 @@ func TestVoteVerifiedTx_NoUnverifiedOutPointWithVoteResult(t *testing.T) {
 	}
 
 	handler := NewHandler(k, v, &mock.RPCClientMock{}, &mock.SignerMock{}, &mock.NexusMock{})
-	poll := vote.PollMeta{Module: "bitcoin", Type: "verify", ID: "txid"}
+	poll := vote.NewPollMeta("bitcoin", "verify", "txid")
 	msg := &types.MsgVoteVerifiedTx{Sender: sdk.AccAddress("sender"), PollMeta: poll, VotingData: true}
 	_, err := handler(ctx, msg)
 	assert.Error(t, err)
@@ -299,7 +299,7 @@ func TestVoteVerifiedTx_IncompleteVote(t *testing.T) {
 	}
 	k.SetUnverifiedOutpointInfo(ctx, outpointInfo)
 
-	poll := vote.PollMeta{Module: "bitcoin", Type: "verify", ID: outpoint.String()}
+	poll := vote.NewPollMeta("bitcoin", "verify", outpoint.String())
 	v := &mock.VoterMock{
 		TallyVoteFunc:  func(ctx sdk.Context, vote vote.MsgVote) error { return nil },
 		ResultFunc:     func(ctx sdk.Context, poll vote.PollMeta) vote.VotingData { return nil },
@@ -351,7 +351,7 @@ func TestVoteVerifiedTx_KeyIDNotFound(t *testing.T) {
 	}
 	k.SetUnverifiedOutpointInfo(ctx, outpointInfo)
 
-	poll := vote.PollMeta{Module: "bitcoin", Type: "verify", ID: outpoint.String()}
+	poll := vote.NewPollMeta("bitcoin", "verify", outpoint.String())
 	v := &mock.VoterMock{
 		TallyVoteFunc:  func(ctx sdk.Context, vote vote.MsgVote) error { return nil },
 		ResultFunc:     func(ctx sdk.Context, poll vote.PollMeta) vote.VotingData { return true },
@@ -405,7 +405,7 @@ func TestVoteVerifiedTx_Success_NotLinked(t *testing.T) {
 
 	k.SetKeyIDByAddress(ctx, sender, "testkey")
 
-	poll := vote.PollMeta{Module: "bitcoin", Type: "verify", ID: outpoint.String()}
+	poll := vote.NewPollMeta("bitcoin", "verify", outpoint.String())
 	v := &mock.VoterMock{
 		TallyVoteFunc:  func(ctx sdk.Context, vote vote.MsgVote) error { return nil },
 		ResultFunc:     func(ctx sdk.Context, poll vote.PollMeta) vote.VotingData { return true },
@@ -460,7 +460,7 @@ func TestVoteVerifiedTx_SucessAndTransfer(t *testing.T) {
 	k.SetUnverifiedOutpointInfo(ctx, outpointInfo)
 	k.SetKeyIDByAddress(ctx, btcSender, "testkey")
 
-	poll := vote.PollMeta{Module: "bitcoin", Type: "verify", ID: outpoint.String()}
+	poll := vote.NewPollMeta("bitcoin", "verify", outpoint.String())
 	v := &mock.VoterMock{
 		TallyVoteFunc:  func(ctx sdk.Context, v vote.MsgVote) error { return nil },
 		ResultFunc:     func(ctx sdk.Context, p vote.PollMeta) vote.VotingData { return true },
@@ -678,11 +678,11 @@ func randomMsgLink() types.MsgLink {
 func getMsgVoteVerifyTx(msgVerifyTx types.MsgVerifyTx, result bool) *types.MsgVoteVerifiedTx {
 	return &types.MsgVoteVerifiedTx{
 		Sender: sdk.AccAddress(rand.StrBetween(5, 20)),
-		PollMeta: vote.PollMeta{
-			Module: types.ModuleName,
-			Type:   msgVerifyTx.Type(),
-			ID:     msgVerifyTx.OutPointInfo.OutPoint.String(),
-		},
+		PollMeta: vote.NewPollMeta(
+			types.ModuleName,
+			msgVerifyTx.Type(),
+			msgVerifyTx.OutPointInfo.OutPoint.String(),
+		),
 		VotingData: result,
 	}
 }

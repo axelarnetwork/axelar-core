@@ -90,6 +90,14 @@ func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context) uint64 {
 	return h
 }
 
+// GetRevoteLockingPeriod returns the lock period for revoting
+func (k Keeper) GetRevoteLockingPeriod(ctx sdk.Context) int64 {
+	var result int64
+	k.params.Get(ctx, types.KeyRevoteLockingPeriod, &result)
+
+	return result
+}
+
 // SetGatewayAddress sets the contract address for Axelar Gateway
 func (k Keeper) SetGatewayAddress(ctx sdk.Context, addr common.Address) {
 	ctx.KVStore(k.storeKey).Set([]byte(gatewayKey), addr.Bytes())

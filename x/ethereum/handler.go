@@ -77,10 +77,19 @@ func handleMsgVerifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, rpc types.RPC
 		return nil, fmt.Errorf("no burner info found for address %s", msg.BurnerAddr)
 	}
 
-	poll := vote.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: txIDHex}
+	poll := vote.NewPollMetaWithNonce(types.ModuleName, msg.Type(), txIDHex, ctx.BlockHeight(), k.GetRevoteLockingPeriod(ctx))
 	if err := v.InitPoll(ctx, poll); err != nil {
 		return nil, err
 	}
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+			sdk.NewAttribute(types.AttributePoll, string(k.Codec().MustMarshalJSON(poll))),
+		),
+	)
 
 	erc20Deposit := types.Erc20Deposit{
 		TxID:       msg.TxID,
@@ -94,18 +103,28 @@ func handleMsgVerifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, rpc types.RPC
 	if err != nil {
 		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
 
-		return &sdk.Result{Log: sdkerrors.Wrapf(err, "cannot get transaction receipt %s or block number", txIDHex).Error()}, nil
+		return &sdk.Result{
+			Log:    sdkerrors.Wrapf(err, "cannot get transaction receipt %s or block number", txIDHex).Error(),
+			Events: ctx.EventManager().Events(),
+		}, nil
 	}
 
 	if err := verifyErc20Deposit(ctx, k, txReceipt, blockNumber, txID, msg.Amount, common.HexToAddress(msg.BurnerAddr), common.HexToAddress(burnerInfo.TokenAddr)); err != nil {
 		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
 		log := sdkerrors.Wrapf(err, "expected erc20 deposit (%s) to burner address %s could not be verified", txIDHex, msg.BurnerAddr).Error()
-		return &sdk.Result{Log: log}, nil
+
+		return &sdk.Result{
+			Log:    log,
+			Events: ctx.EventManager().Events(),
+		}, nil
 	}
 
 	v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: true})
 
-	return &sdk.Result{Log: fmt.Sprintf("successfully verified erc20 deposit %s", txIDHex)}, nil
+	return &sdk.Result{
+		Log:    fmt.Sprintf("successfully verified erc20 deposit %s", txIDHex),
+		Events: ctx.EventManager().Events(),
+	}, nil
 }
 
 func handleMsgLink(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg types.MsgLink) (*sdk.Result, error) {
@@ -480,7 +499,7 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 		return nil, err
 	}
 
-	poll := vote.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: txIDHex}
+	poll := vote.NewPollMetaWithNonce(types.ModuleName, msg.Type(), txIDHex, ctx.BlockHeight(), k.GetRevoteLockingPeriod(ctx))
 	if err := v.InitPoll(ctx, poll); err != nil {
 		return nil, err
 	}
@@ -491,6 +510,7 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
 			sdk.NewAttribute(types.AttributeTxID, txIDHex),
+			sdk.NewAttribute(types.AttributePoll, string(k.Codec().MustMarshalJSON(poll))),
 		),
 	)
 
@@ -505,18 +525,30 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 	if err != nil {
 		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
 		output := sdkerrors.Wrapf(err, "cannot get transaction receipt %s or block number", txIDHex).Error()
-		return &sdk.Result{Log: output}, nil
+
+		return &sdk.Result{
+			Log:    output,
+			Events: ctx.EventManager().Events(),
+		}, nil
 	}
 
 	if err := verifyERC20TokenDeploy(ctx, k, txReceipt, blockNumber, msg.Symbol, gatewayAddr, tokenAddr); err != nil {
 		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
 		output := sdkerrors.Wrapf(err, "expected erc20 token deploy (%s) could not be verified", msg.Symbol).Error()
-		return &sdk.Result{Log: output}, nil
+
+		return &sdk.Result{
+			Log:    output,
+			Events: ctx.EventManager().Events(),
+		}, nil
 	}
 
 	v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: true})
 	output := fmt.Sprintf("successfully verified erc20 token deployment from transaction %s", txIDHex)
-	return &sdk.Result{Log: output}, nil
+
+	return &sdk.Result{
+		Log:    output,
+		Events: ctx.EventManager().Events(),
+	}, nil
 }
 
 func verifyERC20TokenDeploy(ctx sdk.Context, k keeper.Keeper, txReceipt *ethTypes.Receipt, blockNumber uint64, expectedSymbol string, gatewayAddr, expectedAddr common.Address) error {

@@ -372,7 +372,7 @@ func randomVote() *mock.MsgVoteMock {
 }
 
 func randomPoll() exported.PollMeta {
-	return exported.PollMeta{Module: stringGen.Next(), Type: stringGen.Next(), ID: stringGen.Next()}
+	return exported.NewPollMeta(stringGen.Next(), stringGen.Next(), stringGen.Next())
 }
 
 func newValidator(address sdk.ValAddress, power int64) *snapMock.ValidatorMock {

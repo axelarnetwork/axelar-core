@@ -16,9 +16,10 @@ const (
 )
 
 var (
-	KeyConfirmationHeight = []byte("confirmationHeight")
-	KeyTokenDeploySig     = []byte("tokendeploysig")
-	KeyNetwork            = []byte("network")
+	KeyConfirmationHeight  = []byte("confirmationHeight")
+	KeyTokenDeploySig      = []byte("tokenDeploySig")
+	KeyNetwork             = []byte("network")
+	KeyRevoteLockingPeriod = []byte("RevoteLockingPeriod")
 
 	KeyGateway  = []byte("gateway")
 	KeyToken    = []byte("token")
@@ -33,16 +34,16 @@ func KeyTable() subspace.KeyTable {
 }
 
 type Params struct {
-	ConfirmationHeight uint64
-	Network            Network
-	Gateway            []byte
-	Token              []byte
-	Burnable           []byte
-	TokenDeploySig     []byte
+	ConfirmationHeight  uint64
+	Network             Network
+	Gateway             []byte
+	Token               []byte
+	Burnable            []byte
+	TokenDeploySig      []byte
+	RevoteLockingPeriod int64
 }
 
 func DefaultParams() Params {
-
 	bzGateway, err := hex.DecodeString(gateway)
 	if err != nil {
 		panic(err)
@@ -59,12 +60,13 @@ func DefaultParams() Params {
 	tokenDeploySig := crypto.Keccak256Hash([]byte(ERC20TokenDeploySig)).Bytes()
 
 	return Params{
-		ConfirmationHeight: 1,
-		Network:            Ganache,
-		Gateway:            bzGateway,
-		Token:              bzToken,
-		Burnable:           bzBurnable,
-		TokenDeploySig:     tokenDeploySig,
+		ConfirmationHeight:  1,
+		Network:             Ganache,
+		Gateway:             bzGateway,
+		Token:               bzToken,
+		Burnable:            bzBurnable,
+		TokenDeploySig:      tokenDeploySig,
+		RevoteLockingPeriod: 50,
 	}
 }
 
@@ -84,6 +86,7 @@ func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
 		subspace.NewParamSetPair(KeyToken, &p.Token, validateBytes),
 		subspace.NewParamSetPair(KeyBurnable, &p.Burnable, validateBytes),
 		subspace.NewParamSetPair(KeyTokenDeploySig, &p.TokenDeploySig, validateBytes),
+		subspace.NewParamSetPair(KeyRevoteLockingPeriod, &p.RevoteLockingPeriod, validateRevoteLockingPeriod),
 	}
 }
 
@@ -119,12 +122,31 @@ func validateBytes(bytes interface{}) error {
 	return nil
 }
 
+func validateRevoteLockingPeriod(RevoteLockingPeriod interface{}) error {
+	r, ok := RevoteLockingPeriod.(int64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for revote lock period: %T", r)
+	}
+
+	if r <= 0 {
+		return sdkerrors.Wrap(types.ErrInvalidGenesis, "revote lock period be greater than 0")
+	}
+
+	return nil
+}
+
 func (p Params) Validate() error {
 	if err := validateConfirmationHeight(p.ConfirmationHeight); err != nil {
 		return err
 	}
+
 	if err := validateNetwork(p.Network); err != nil {
 		return err
 	}
+
+	if err := validateRevoteLockingPeriod(p.RevoteLockingPeriod); err != nil {
+		return err
+	}
+
 	return nil
 }

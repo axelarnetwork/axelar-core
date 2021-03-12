@@ -98,14 +98,24 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 	if _, ok := k.GetVerifiedOutPointInfo(ctx, msg.OutPointInfo.OutPoint); ok {
 		return nil, fmt.Errorf("already verified")
 	}
+
 	if _, ok := k.GetSpentOutPointInfo(ctx, msg.OutPointInfo.OutPoint); ok {
 		return nil, fmt.Errorf("already spent")
 	}
 
-	poll := vote.PollMeta{Module: types.ModuleName, Type: msg.Type(), ID: msg.OutPointInfo.OutPoint.String()}
+	poll := vote.NewPollMetaWithNonce(types.ModuleName, msg.Type(), msg.OutPointInfo.OutPoint.String(), ctx.BlockHeight(), k.GetRevoteLockingPeriod(ctx))
 	if err := v.InitPoll(ctx, poll); err != nil {
 		return nil, err
 	}
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+			sdk.NewAttribute(types.AttributePoll, string(k.Codec().MustMarshalJSON(poll))),
+		),
+	)
 
 	// store outpoint for later reference
 	k.SetUnverifiedOutpointInfo(ctx, msg.OutPointInfo)
@@ -119,11 +129,19 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 	// verification successful
 	case nil:
 		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: true})
-		return &sdk.Result{Log: fmt.Sprintf("successfully verified outpoint %s", msg.OutPointInfo.OutPoint.String())}, nil
+
+		return &sdk.Result{
+			Log:    fmt.Sprintf("successfully verified outpoint %s", msg.OutPointInfo.OutPoint.String()),
+			Events: ctx.EventManager().Events(),
+		}, nil
 	// verification unsuccessful
 	default:
 		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
-		return &sdk.Result{Log: sdkerrors.Wrapf(err, "outpoint %s not verified", msg.OutPointInfo.OutPoint.String()).Error()}, nil
+
+		return &sdk.Result{
+			Log:    sdkerrors.Wrapf(err, "outpoint %s not verified", msg.OutPointInfo.OutPoint.String()).Error(),
+			Events: ctx.EventManager().Events(),
+		}, nil
 	}
 }
 
