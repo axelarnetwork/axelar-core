@@ -71,6 +71,40 @@ func GetHandlerQueryAxelarGatewayAddress(cliCtx context.CLIContext) http.Handler
 	}
 }
 
+func GetHandlerQueryCommandData(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		commandIDHex := mux.Vars(r)[utils.PathVarCommandID]
+		var commandID types.CommandID
+		copy(commandID[:], common.Hex2Bytes(commandIDHex))
+
+		params := types.CommandDataParams{
+			CommandID: commandID,
+		}
+
+		json, err := cliCtx.Codec.MarshalJSON(params)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryCommandData), json)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSendCommandTx, commandIDHex).Error())
+			return
+		}
+
+		var data []byte
+		cliCtx.Codec.MustUnmarshalJSON(res, &data)
+		rest.PostProcessResponse(w, cliCtx, common.Bytes2Hex(data))
+	}
+}
+
 func GetHandlerQueryCreateDeployTx(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

@@ -28,6 +28,7 @@ const (
 
 	QMethodMasterAddress        = keeper.QueryMasterAddress
 	QMethodAxelarGatewayAddress = keeper.QueryAxelarGatewayAddress
+	QMethodCommandData          = keeper.QueryCommandData
 	QMethodCreateDeployTx       = keeper.CreateDeployTx
 	QMethodSendTx               = keeper.SendTx
 	QMethodSendCommand          = keeper.SendCommand
@@ -46,6 +47,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
 	registerQuery(GetHandlerQueryMasterAddress(cliCtx), QMethodMasterAddress)
 	registerQuery(GetHandlerQueryAxelarGatewayAddress(cliCtx), QMethodAxelarGatewayAddress)
+	registerQuery(GetHandlerQueryCommandData(cliCtx), QMethodCommandData, clientUtils.PathVarCommandID)
 	registerQuery(GetHandlerQueryCreateDeployTx(cliCtx), QMethodCreateDeployTx)
 	registerQuery(GetHandlerQuerySendTx(cliCtx), QMethodSendTx, clientUtils.PathVarTxID)
 	registerQuery(GetHandlerQuerySendCommandTx(cliCtx), QMethodSendCommand)
