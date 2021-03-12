@@ -15,6 +15,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
 
@@ -42,7 +43,7 @@ func TestKeeper_GetVerifiedOutpoints(t *testing.T) {
 		t.Run(testCase.label, func(t *testing.T) {
 			for i := 0; i < repetitions; i++ {
 				k, ctx := init()
-				infoCount := int(testutils.RandIntBetween(1, 200))
+				infoCount := int(rand2.I64Between(1, 200))
 				expectedOuts := testCase.prepare(k, ctx, infoCount)
 				actualOuts := k.GetVerifiedOutPointInfos(ctx)
 				assert.ElementsMatch(t, expectedOuts, actualOuts, "expected: %d elements, got: %d elements", len(expectedOuts), len(actualOuts))
@@ -82,7 +83,7 @@ func prepareSpentOutPoints(k Keeper, ctx sdk.Context, infoCount int) []types.Out
 
 func prepareRandomOutPointStates(k Keeper, ctx sdk.Context, infoCount int) (expected []types.OutPointInfo) {
 	var unverifiedCount, verifiedCount, spentCount int
-	for _, state := range testutils.RandDistr(3).Samples(infoCount) {
+	for _, state := range rand2.Distr(3).Samples(infoCount) {
 		switch state {
 		case 0: // unverified
 			unverifiedCount++
@@ -98,19 +99,19 @@ func prepareRandomOutPointStates(k Keeper, ctx sdk.Context, infoCount int) (expe
 }
 
 func randOutPointInfo() types.OutPointInfo {
-	txHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	txHash, err := chainhash.NewHash(rand2.Bytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
-	blockHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+	blockHash, err := chainhash.NewHash(rand2.Bytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
 	info := types.OutPointInfo{
 		OutPoint:      wire.NewOutPoint(txHash, rand.Uint32()),
-		Amount:        btcutil.Amount(testutils.RandPosInt()),
+		Amount:        btcutil.Amount(rand2.PosI64()),
 		BlockHash:     blockHash,
-		Address:       testutils.RandStringBetween(20, 60),
+		Address:       rand2.StrBetween(20, 60),
 		Confirmations: rand.Uint64(),
 	}
 	return info

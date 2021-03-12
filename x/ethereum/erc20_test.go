@@ -14,6 +14,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -202,7 +203,7 @@ func TestDeploy(t *testing.T) {
 		GasLimit: gasLimit,
 	}
 
-	minConfHeight := testutils.RandIntBetween(1, 10)
+	minConfHeight := rand2.I64Between(1, 10)
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
 

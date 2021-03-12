@@ -18,6 +18,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
@@ -39,13 +40,10 @@ import (
 // 7. Submit the minting command from an externally controlled address to AxelarGateway
 
 func Test_wBTC_mint(t *testing.T) {
-	randStrings := testutils.RandStrings(5, 50)
-	defer randStrings.Stop()
+	randStrings := rand.Strings(5, 50)
 
 	// 0. Set up chain
 	const nodeCount = 10
-	stringGen := testutils.RandStrings(5, 50).Distinct()
-	defer stringGen.Stop()
 
 	// create a chain with nodes and assign them as validators
 	chain, nodeData := initChain(nodeCount, "mint")
@@ -170,7 +168,7 @@ func Test_wBTC_mint(t *testing.T) {
 	gatewayAddr := common.BytesToAddress(bz)
 	logs := createTokenDeployLogs(gatewayAddr, tokenAddr)
 	var ethBlock int64
-	ethBlock = testutils.RandIntBetween(10, 100)
+	ethBlock = rand.I64Between(10, 100)
 
 	for _, node := range nodeData {
 
@@ -194,11 +192,11 @@ func Test_wBTC_mint(t *testing.T) {
 	}
 
 	// steps followed as per https://github.com/axelarnetwork/axelarate#mint-erc20-wrapped-bitcoin-tokens-on-ethereum
-	totalDepositCount := int(testutils.RandIntBetween(1, 20))
+	totalDepositCount := int(rand.I64Between(1, 20))
 	for i := 0; i < totalDepositCount; i++ {
 		// 1. Get a deposit address for an Ethereum recipient address
 		// we don't provide an actual recipient address, so it is created automatically
-		crosschainAddr := nexus.CrossChainAddress{Chain: eth.Ethereum, Address: testutils.RandStringBetween(5, 20)}
+		crosschainAddr := nexus.CrossChainAddress{Chain: eth.Ethereum, Address: rand.StrBetween(5, 20)}
 		res := <-chain.Submit(btcTypes.NewMsgLink(randomSender(), crosschainAddr.Address, crosschainAddr.Chain.Name))
 		assert.NoError(t, res.Error)
 		depositAddr := string(res.Data)

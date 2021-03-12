@@ -20,6 +20,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
@@ -52,8 +53,7 @@ import (
 // 17. Wait for vote
 // 18. Rotate to the new master key
 func TestBitcoinKeyRotation(t *testing.T) {
-	randStrings := testutils.RandStrings(5, 50)
-	defer randStrings.Stop()
+	randStrings := rand.Strings(5, 50)
 
 	// set up chain
 	const nodeCount = 10
@@ -164,7 +164,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	gatewayAddr := common.BytesToAddress(bz)
 	logs := createTokenDeployLogs(gatewayAddr, tokenAddr)
 	var ethBlock int64
-	ethBlock = testutils.RandIntBetween(10, 100)
+	ethBlock = rand.I64Between(10, 100)
 
 	for _, node := range nodeData {
 
@@ -188,7 +188,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	// simulate deposits
-	totalDepositCount := int(testutils.RandIntBetween(1, 20))
+	totalDepositCount := int(rand.I64Between(1, 20))
 	var totalDepositAmount int64
 	deposits := make(map[string]btcTypes.OutPointInfo)
 
@@ -250,7 +250,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, assignKeyResult.Error)
 
 	// sign the consolidation transaction
-	fee := testutils.RandIntBetween(1, totalDepositAmount)
+	fee := rand.I64Between(1, totalDepositAmount)
 	signResult := <-chain.Submit(btcTypes.NewMsgSignPendingTransfers(randomSender(), btcutil.Amount(fee)))
 	assert.NoError(t, signResult.Error)
 

@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
 )
 
 func TestGetCmdSignStart_UnmarshalJSONTxHash(t *testing.T) {
@@ -19,7 +20,7 @@ func TestGetCmdSignStart_UnmarshalJSONTxHash(t *testing.T) {
 }
 
 func TestGetCmdSignStart_MarshalJSONTxHash(t *testing.T) {
-	realMsg := []byte(testutils.RandString(chainhash.HashSize))
+	realMsg := []byte(rand.Str(chainhash.HashSize))
 	cdc := testutils.Codec()
 	bz := cdc.MustMarshalJSON(&realMsg)
 	assert.NotNil(t, bz)

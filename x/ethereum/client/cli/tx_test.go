@@ -19,6 +19,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 )
 
@@ -70,8 +71,8 @@ func TestMsgSignTx_CorrectCosmosSigning(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	accountName := testutils.RandString(10)
-	pw := testutils.RandString(20)
+	accountName := rand.Str(10)
+	pw := rand.Str(20)
 	info, _, err := keybase.CreateMnemonic(accountName, keys.English, pw, keys.Secp256k1)
 	if err != nil {
 		panic(err)
@@ -79,11 +80,11 @@ func TestMsgSignTx_CorrectCosmosSigning(t *testing.T) {
 	txBldr = txBldr.WithKeybase(keybase)
 
 	ethTx := ethTypes.NewContractCreation(
-		uint64(testutils.RandIntBetween(0, 10000000)),
-		big.NewInt(testutils.RandIntBetween(0, 10000000)),
-		uint64(testutils.RandIntBetween(0, 1000000)),
-		big.NewInt(testutils.RandIntBetween(0, 10000000)),
-		testutils.RandBytes(1000))
+		uint64(rand.I64Between(0, 10000000)),
+		big.NewInt(rand.I64Between(0, 10000000)),
+		uint64(rand.I64Between(0, 1000000)),
+		big.NewInt(rand.I64Between(0, 10000000)),
+		rand.Bytes(1000))
 	json, err := ethTx.MarshalJSON()
 	if err != nil {
 		panic(err)
@@ -122,7 +123,7 @@ func TestMsgSignTx_CorrectCosmosSigning(t *testing.T) {
 	accountKeeper := auth.NewAccountKeeper(cdc, sdk.NewKVStoreKey("auth"), authSubspace, auth.ProtoBaseAccount)
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{
 		ChainID: chainID,
-		Height:  testutils.RandIntBetween(1, 1000000),
+		Height:  rand.I64Between(1, 1000000),
 	}, false, log.TestingLogger())
 	acc := accountKeeper.NewAccountWithAddress(ctx, info.GetAddress())
 	err = acc.SetSequence(seq)

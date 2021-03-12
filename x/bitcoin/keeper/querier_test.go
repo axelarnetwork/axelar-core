@@ -12,6 +12,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
 )
@@ -20,23 +21,23 @@ import (
 func TestQuerier_TxInfo_CorrectMarshalling(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		var bz []byte
-		for _, b := range testutils.RandIntsBetween(0, 256).Take(chainhash.HashSize) {
+		for _, b := range rand.I64GenBetween(0, 256).Take(chainhash.HashSize) {
 			bz = append(bz, byte(b))
 		}
 		txHash, err := chainhash.NewHash(bz)
 		assert.NoError(t, err)
-		blockHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+		blockHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
 		assert.NoError(t, err)
 
 		info := types.OutPointInfo{
 			OutPoint: &wire.OutPoint{
 				Hash:  *txHash,
-				Index: uint32(testutils.RandIntBetween(0, 100)),
+				Index: uint32(rand.I64Between(0, 100)),
 			},
 			BlockHash:     blockHash,
-			Amount:        btcutil.Amount(testutils.RandIntBetween(0, 100000000)),
-			Address:       testutils.RandStrings(5, 20).Take(1)[0],
-			Confirmations: uint64(testutils.RandIntBetween(0, 10000)),
+			Amount:        btcutil.Amount(rand.I64Between(0, 100000000)),
+			Address:       rand.Strings(5, 20).Take(1)[0],
+			Confirmations: uint64(rand.I64Between(0, 10000)),
 		}
 
 		query := NewQuerier(Keeper{}, &mock.SignerMock{}, &mock.NexusMock{}, &mock.RPCClientMock{

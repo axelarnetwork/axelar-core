@@ -7,14 +7,14 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/axelarnetwork/axelar-core/testutils"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
 
 func TestOutPointInfo_Equals(t *testing.T) {
 	// Take care to have identical slices with different pointers
 	var bz1, bz2 []byte
-	for _, b := range testutils.RandIntsBetween(0, 256).Take(chainhash.HashSize) {
+	for _, b := range rand.I64GenBetween(0, 256).Take(chainhash.HashSize) {
 		bz1 = append(bz1, byte(b))
 		bz2 = append(bz2, byte(b))
 	}

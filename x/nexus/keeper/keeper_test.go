@@ -10,6 +10,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils/denom"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
@@ -57,7 +58,7 @@ func TestLinkSuccess(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, recipient, recp)
 
-	sender.Address = testutils.RandString(20)
+	sender.Address = rand.Str(20)
 	err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(denom.Satoshi))
 	assert.Error(t, err)
 	recp, ok = keeper.GetRecipient(ctx, sender)
@@ -154,7 +155,7 @@ func TestTotalInvalid(t *testing.T) {
 	transfer := keeper.GetPendingTransfersForChain(ctx, eth.Ethereum)[0]
 	keeper.ArchivePendingTransfer(ctx, transfer)
 	total := transfer.Asset.Amount.Int64()
-	amount := sdk.NewCoin(denom.Satoshi, sdk.NewInt(total+testutils.RandIntBetween(1, 100000)))
+	amount := sdk.NewCoin(denom.Satoshi, sdk.NewInt(total+rand.I64Between(1, 100000)))
 	err = keeper.EnqueueForTransfer(ctx, ethSender, amount)
 	assert.Error(t, err)
 }
@@ -173,7 +174,7 @@ func TestTotalSucess(t *testing.T) {
 	transfer := keeper.GetPendingTransfersForChain(ctx, eth.Ethereum)[0]
 	keeper.ArchivePendingTransfer(ctx, transfer)
 	total := transfer.Asset.Amount.Int64()
-	amount := sdk.NewCoin(denom.Satoshi, sdk.NewInt(testutils.RandIntBetween(1, total)))
+	amount := sdk.NewCoin(denom.Satoshi, sdk.NewInt(rand.I64Between(1, total)))
 	err = keeper.EnqueueForTransfer(ctx, ethSender, amount)
 	assert.NoError(t, err)
 	amount = sdk.NewCoin(denom.Satoshi, sdk.NewInt(total))
@@ -182,10 +183,10 @@ func TestTotalSucess(t *testing.T) {
 }
 
 func TestSetChainGetChain_MixCaseChainName(t *testing.T) {
-	chainName := strings.ToUpper(testutils.RandStringBetween(5, 10)) + strings.ToLower(testutils.RandStringBetween(5, 10))
+	chainName := strings.ToUpper(rand.StrBetween(5, 10)) + strings.ToLower(rand.StrBetween(5, 10))
 	chain := exported.Chain{
 		Name:                  chainName,
-		NativeAsset:           testutils.RandString(3),
+		NativeAsset:           rand.Str(3),
 		SupportsForeignAssets: true,
 	}
 
@@ -204,10 +205,10 @@ func TestSetChainGetChain_MixCaseChainName(t *testing.T) {
 }
 
 func TestSetChainGetChain_UpperCaseChainName(t *testing.T) {
-	chainName := strings.ToUpper(testutils.RandStringBetween(5, 10))
+	chainName := strings.ToUpper(rand.StrBetween(5, 10))
 	chain := exported.Chain{
 		Name:                  chainName,
-		NativeAsset:           testutils.RandString(3),
+		NativeAsset:           rand.Str(3),
 		SupportsForeignAssets: true,
 	}
 
@@ -226,10 +227,10 @@ func TestSetChainGetChain_UpperCaseChainName(t *testing.T) {
 }
 
 func TestSetChainGetChain_LowerCaseChainName(t *testing.T) {
-	chainName := strings.ToLower(testutils.RandStringBetween(5, 10))
+	chainName := strings.ToLower(rand.StrBetween(5, 10))
 	chain := exported.Chain{
 		Name:                  chainName,
-		NativeAsset:           testutils.RandString(3),
+		NativeAsset:           rand.Str(3),
 		SupportsForeignAssets: true,
 	}
 
@@ -248,23 +249,22 @@ func TestSetChainGetChain_LowerCaseChainName(t *testing.T) {
 }
 
 func makeRandomDenom() string {
-	alphabet := []rune("abcdefghijklmnopqrstuvwxyz")
-	d := testutils.RandStringsWithAlphabet(alphabet, 3, 3).Take(1)
+	d := rand.Strings(3, 3).WithAlphabet([]rune("abcdefghijklmnopqrstuvwxyz")).Take(1)
 	return d[0]
 }
 
 func makeRandAmount(denom string) sdk.Coin {
 
-	return sdk.NewCoin(denom, sdk.NewInt(testutils.RandIntBetween(1, maxAmount)))
+	return sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(1, maxAmount)))
 }
 
 func makeRandAddressesForChain(origin, distination exported.Chain) (exported.CrossChainAddress, exported.CrossChainAddress) {
 	sender := exported.CrossChainAddress{
-		Address: testutils.RandString(addrMaxLength),
+		Address: rand.Str(addrMaxLength),
 		Chain:   origin,
 	}
 	recipient := exported.CrossChainAddress{
-		Address: testutils.RandString(addrMaxLength),
+		Address: rand.Str(addrMaxLength),
 		Chain:   distination,
 	}
 

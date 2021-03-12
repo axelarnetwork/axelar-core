@@ -18,6 +18,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
@@ -48,17 +49,17 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 	var outPoints []*wire.OutPoint
 	var verifyMsgs []btcTypes.MsgVerifyTx
 	for i := 0; i < txCount; i++ {
-		txHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+		txHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
 		if err != nil {
 			panic(err)
 		}
-		blockHash, err := chainhash.NewHash(testutils.RandBytes(chainhash.HashSize))
+		blockHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
 		if err != nil {
 			panic(err)
 		}
 		outPoints = append(outPoints, wire.NewOutPoint(txHash, 0))
-		amount := testutils.RandIntBetween(0, 100000)
-		confirmations := uint64(testutils.RandIntBetween(7, 10000))
+		amount := rand.I64Between(0, 100000)
+		confirmations := uint64(rand.I64Between(7, 10000))
 		// deposit tx
 		info := btcTypes.OutPointInfo{
 			OutPoint:      outPoints[i],
@@ -75,7 +76,7 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 	val1 := newValidator(sdk.ValAddress("val1"), 100)
 	val2 := newValidator(sdk.ValAddress("val2"), 80)
 	val3 := newValidator(sdk.ValAddress("val3"), 170)
-	counter := testutils.RandIntBetween(1, 10000)
+	counter := rand.I64Between(1, 10000)
 	validators := []exported.Validator{val1, val2, val3}
 	staker := &snapMock.SnapshotterMock{
 		GetLatestCounterFunc: func(sdk.Context) int64 { return counter },
@@ -102,7 +103,7 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
-		keyID := testutils.RandString(10)
+		keyID := rand.Str(10)
 		k1.SetKeyIDByAddress(n1.Ctx, address, keyID)
 		k2.SetKeyIDByAddress(n2.Ctx, address, keyID)
 		k3.SetKeyIDByAddress(n3.Ctx, address, keyID)
@@ -199,7 +200,7 @@ func newValidator(address sdk.ValAddress, power int64) *snapMock.ValidatorMock {
 }
 
 func randomAddress() btcutil.Address {
-	addr, err := btcutil.NewAddressScriptHashFromHash(testutils.RandBytes(ripemd160.Size), btcTypes.DefaultParams().Network.Params)
+	addr, err := btcutil.NewAddressScriptHashFromHash(rand.Bytes(ripemd160.Size), btcTypes.DefaultParams().Network.Params)
 	if err != nil {
 		panic(err)
 	}
