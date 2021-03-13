@@ -14,7 +14,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/log"
-	tmos "github.com/tendermint/tendermint/libs/os"
 	"github.com/tendermint/tendermint/libs/pubsub/query"
 	tm "github.com/tendermint/tendermint/types"
 
@@ -36,13 +35,15 @@ func getStartCommand(logger log.Logger) *cobra.Command {
 
 			axConf, valAddr := loadConfig()
 			if valAddr == "" {
-				tmos.Exit("validator address not set")
+				logger.Error("validator address not set")
+				os.Exit(1)
 			}
 
 			logger.Info("Start listening to events")
 			err = listen(hub, axConf, valAddr, logger)
 			if err != nil {
-				tmos.Exit(err.Error())
+				logger.Error(err.Error())
+				os.Exit(1)
 			}
 			logger.Info("Shutting down")
 			return nil
