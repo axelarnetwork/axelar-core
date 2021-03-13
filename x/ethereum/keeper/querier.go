@@ -40,7 +40,7 @@ func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer) sdk.Querier {
 		case QueryTokenAddress:
 			return queryTokenAddress(ctx, k, path[1])
 		case QueryCommandData:
-			return queryCommandData(ctx, k, s, req.Data)
+			return queryCommandData(ctx, k, s, path[1])
 		case CreateDeployTx:
 			return createDeployGateway(ctx, k, rpc, s, req.Data)
 		case SendTx:
@@ -226,14 +226,7 @@ func createTxAndSend(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Sig
 	return k.Codec().MustMarshalJSON(txHash), nil
 }
 
-func queryCommandData(ctx sdk.Context, k Keeper, s types.Signer, data []byte) ([]byte, error) {
-	var params types.CommandParams
-	err := types.ModuleCdc.UnmarshalJSON(data, &params)
-	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
-	}
-
-	commandIDHex := common.Bytes2Hex(params.CommandID[:])
+func queryCommandData(ctx sdk.Context, k Keeper, s types.Signer, commandIDHex string) ([]byte, error) {
 	sig, ok := s.GetSig(ctx, commandIDHex)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not find a corresponding signature for sig ID %s", commandIDHex))
@@ -244,13 +237,15 @@ func queryCommandData(ctx sdk.Context, k Keeper, s types.Signer, data []byte) ([
 		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not find a corresponding key for sig ID %s", commandIDHex))
 	}
 
-	commandData := k.GetCommandData(ctx, params.CommandID)
+	var commandID types.CommandID
+	copy(commandID[:], common.Hex2Bytes(commandIDHex))
+
+	commandData := k.GetCommandData(ctx, commandID)
 	commandSig, err := types.ToEthSignature(sig, types.GetEthereumSignHash(commandData), pk)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not create recoverable signature: %v", err))
 	}
 
-	// TODO: execute data implements ethereum tx spec so it should be implemented in c2d2
 	executeData, err := types.CreateExecuteData(commandData, commandSig)
 	if err != nil {
 		return nil, sdkerrors.Wrapf(types.ErrEthereum, "could not create transaction data: %s", err)

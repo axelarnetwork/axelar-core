@@ -78,24 +78,11 @@ func GetHandlerQueryCommandData(cliCtx context.CLIContext) http.HandlerFunc {
 		if !ok {
 			return
 		}
+		commandID := mux.Vars(r)[utils.PathVarCommandID]
 
-		commandIDHex := mux.Vars(r)[utils.PathVarCommandID]
-		var commandID types.CommandID
-		copy(commandID[:], common.Hex2Bytes(commandIDHex))
-
-		params := types.CommandDataParams{
-			CommandID: commandID,
-		}
-
-		json, err := cliCtx.Codec.MarshalJSON(params)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryCommandData, commandID), nil)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryCommandData), json)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSendCommandTx, commandIDHex).Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSendCommandTx, commandID).Error())
 			return
 		}
 

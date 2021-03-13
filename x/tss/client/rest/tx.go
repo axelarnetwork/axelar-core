@@ -26,8 +26,8 @@ type ReqKeygenStart struct {
 	NewKeyId string       `json:"key_id" yaml:"key_id"`
 }
 
-// ReqMasterkeyAssignNext represents a request to assign a new master key
-type ReqMasterkeyAssignNext struct {
+// ReqMasterKeyAssignNext represents a request to assign a new master key
+type ReqMasterKeyAssignNext struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	KeyId   string       `json:"key_id" yaml:"key_id"`
 }
@@ -78,7 +78,7 @@ func GetHandlerKeygenStart(cliCtx context.CLIContext) http.HandlerFunc {
 
 func GetHandlerMasterKeyAssignNext(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReqMasterkeyAssignNext
+		var req ReqMasterKeyAssignNext
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
 			return
 		}
