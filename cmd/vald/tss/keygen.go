@@ -127,7 +127,7 @@ func (mgr *Mgr) handleIntermediateKeygenMsgs(keyID string, intermediate <-chan *
 		mgr.Logger.Debug(fmt.Sprintf("outgoing keygen msg: key [%.20s] from me [%.20s] to [%.20s] broadcast [%t]\n",
 			keyID, mgr.myAddress, msg.ToPartyUid, msg.IsBroadcast))
 		// sender is set by broadcaster
-		tssMsg := tss.MsgKeygenTraffic{Sender: mgr.sender, SessionID: keyID, Payload: msg}
+		tssMsg := &tss.MsgKeygenTraffic{Sender: mgr.sender, SessionID: keyID, Payload: msg}
 		if err := <-mgr.broadcaster.Broadcast(tssMsg); err != nil {
 			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing keygen msg")
 		}

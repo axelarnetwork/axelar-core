@@ -23,7 +23,7 @@ import (
 type Broadcaster struct {
 	rpc        types.Client
 	logger     log.Logger
-	seqNo      uint64
+	seqNo      chan uint64
 	broadcasts chan func()
 	signer     types.Sign
 	chainID    string
@@ -37,19 +37,22 @@ func NewBroadcaster(signer types.Sign, client types.Client, conf broadcastTypes.
 		return nil, sdkerrors.Wrap(broadcastTypes.ErrInvalidChain, "chain ID required but not specified")
 	}
 
+	seqNo := make(chan uint64, 1)
+	seqNo <- 0
 	broadcaster := &Broadcaster{
 		signer:     signer,
 		chainID:    conf.ChainID,
 		gas:        conf.Gas,
 		rpc:        client,
 		logger:     logger,
-		seqNo:      0,
+		seqNo:      seqNo,
 		broadcasts: make(chan func(), 1000),
 	}
 
 	go func() {
 		// this is expected to run for the full life time of the process, so there is no need to be able to escape the loop
 		for b := range broadcaster.broadcasts {
+			broadcaster.logger.Debug("calling broadcast")
 			b()
 		}
 	}()
@@ -58,15 +61,15 @@ func NewBroadcaster(signer types.Sign, client types.Client, conf broadcastTypes.
 }
 
 // Broadcast sends the passed messages to the network
-func (b Broadcaster) Broadcast(msgs ...sdk.Msg) error {
-	errChan := make(chan error)
+func (b *Broadcaster) Broadcast(msgs ...sdk.Msg) error {
+	errChan := make(chan error, 1)
 	// ensure that broadcasts are called sequentially (so the sequence number fits) and each call to Broadcast still returns the
 	// correct error for the corresponding call
 	b.broadcasts <- func() { errChan <- b.broadcast(msgs) }
 	return <-errChan
 }
 
-func (b Broadcaster) broadcast(msgs []sdk.Msg) error {
+func (b *Broadcaster) broadcast(msgs []sdk.Msg) error {
 	if len(msgs) == 0 {
 		return fmt.Errorf("call broadcast with at least one message")
 	}
@@ -105,19 +108,31 @@ func (b Broadcaster) broadcast(msgs []sdk.Msg) error {
 		return fmt.Errorf(res.Log)
 	}
 	// broadcast has been successful, so increment sequence number
-	b.seqNo = stdSignMsg.Sequence + 1
+	b.setSeqNo(seqNo + 1)
+	b.logger.Debug(fmt.Sprintf("incrementing sequence number to %d", seqNo+1))
 	return nil
 }
 
-func (b Broadcaster) updateAccountNumberSequence(addr sdk.AccAddress) (uint64, uint64, error) {
+func (b *Broadcaster) setSeqNo(seqNo uint64) {
+	<-b.seqNo
+	b.seqNo <- seqNo
+}
+
+func (b *Broadcaster) updateAccountNumberSequence(addr sdk.AccAddress) (uint64, uint64, error) {
 	accNo, seqNo, err := b.rpc.GetAccountNumberSequence(addr)
 	if err != nil {
 		return 0, 0, err
 	}
-	if seqNo > b.seqNo {
-		b.seqNo = seqNo
+	if seqNo > b.getSeqNo() {
+		b.setSeqNo(seqNo)
 	}
 	return accNo, seqNo, nil
+}
+
+func (b *Broadcaster) getSeqNo() uint64 {
+	localSeqNo := <-b.seqNo
+	b.seqNo <- localSeqNo
+	return localSeqNo
 }
 
 func sign(sign types.Sign, msg auth.StdSignMsg) (auth.StdTx, error) {
@@ -215,7 +230,7 @@ func WithExponentialBackoff(b *Broadcaster, minTimeout time.Duration, maxRetries
 }
 
 // Broadcast submits messages synchronously and retries with exponential backoff
-func (b XBOBroadcaster) Broadcast(msgs ...sdk.Msg) <-chan error {
+func (b *XBOBroadcaster) Broadcast(msgs ...sdk.Msg) <-chan error {
 	errChan := make(chan error)
 	go func() {
 		defer close(errChan)
