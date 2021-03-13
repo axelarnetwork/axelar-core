@@ -149,7 +149,7 @@ func (mgr *Mgr) handleKeygenResult(keyID string, result <-chan []byte) error {
 	mgr.Logger.Info(fmt.Sprintf("handler goroutine: received pubkey from server! [%v]", pubkey))
 
 	poll := voting.NewPollMeta(tss.ModuleName, tss.EventTypeKeygen, keyID)
-	vote := &tss.MsgVotePubKey{PollMeta: poll, PubKeyBytes: bz}
+	vote := &tss.MsgVotePubKey{Sender: mgr.sender, PollMeta: poll, PubKeyBytes: bz}
 	return <-mgr.broadcaster.Broadcast(vote)
 }
 
