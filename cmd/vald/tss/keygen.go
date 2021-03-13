@@ -128,7 +128,7 @@ func (mgr *Mgr) handleIntermediateKeygenMsgs(keyID string, intermediate <-chan *
 			keyID, mgr.myAddress, msg.ToPartyUid, msg.IsBroadcast))
 		// sender is set by broadcaster
 		tssMsg := &tss.MsgKeygenTraffic{Sender: mgr.sender, SessionID: keyID, Payload: msg}
-		if err := <-mgr.broadcaster.Broadcast(tssMsg); err != nil {
+		if err := mgr.broadcaster.Broadcast(tssMsg); err != nil {
 			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing keygen msg")
 		}
 	}
@@ -150,7 +150,7 @@ func (mgr *Mgr) handleKeygenResult(keyID string, result <-chan []byte) error {
 
 	poll := voting.NewPollMeta(tss.ModuleName, tss.EventTypeKeygen, keyID)
 	vote := &tss.MsgVotePubKey{Sender: mgr.sender, PollMeta: poll, PubKeyBytes: bz}
-	return <-mgr.broadcaster.Broadcast(vote)
+	return mgr.broadcaster.Broadcast(vote)
 }
 
 func (mgr *Mgr) forwardKeygenMsg(keyID string, from string, payload *tofnd.TrafficOut) error {

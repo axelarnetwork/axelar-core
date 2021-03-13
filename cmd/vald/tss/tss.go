@@ -12,7 +12,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
 
-	"github.com/axelarnetwork/axelar-core/cmd/vald/broadcast"
+	"github.com/axelarnetwork/axelar-core/cmd/vald/tss/types"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
@@ -25,7 +25,7 @@ type Mgr struct {
 	Timeout       time.Duration
 	myAddress     string
 	Logger        log.Logger
-	broadcaster   *broadcast.XBOBroadcaster
+	broadcaster   types.Broadcaster
 	sender        sdk.AccAddress
 }
 
@@ -43,7 +43,7 @@ func CreateTOFNDClient(host string, port string, logger log.Logger) (tofnd.GG20C
 }
 
 // NewMgr returns a new tss manager instance
-func NewMgr(client tofnd.GG20Client, timeout time.Duration, myAddress string, broadcaster *broadcast.XBOBroadcaster, sender sdk.AccAddress, logger log.Logger) *Mgr {
+func NewMgr(client tofnd.GG20Client, timeout time.Duration, myAddress string, broadcaster types.Broadcaster, sender sdk.AccAddress, logger log.Logger) *Mgr {
 	return &Mgr{
 		client:        client,
 		keygenStreams: map[string]tss.Stream{},

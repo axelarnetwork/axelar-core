@@ -23,7 +23,7 @@ import (
 type Broadcaster struct {
 	rpc        types.Client
 	logger     log.Logger
-	seqNo      chan uint64
+	seqNo      uint64
 	broadcasts chan func()
 	signer     types.Sign
 	chainID    string
@@ -37,35 +37,34 @@ func NewBroadcaster(signer types.Sign, client types.Client, conf broadcastTypes.
 		return nil, sdkerrors.Wrap(broadcastTypes.ErrInvalidChain, "chain ID required but not specified")
 	}
 
-	seqNo := make(chan uint64, 1)
-	seqNo <- 0
 	broadcaster := &Broadcaster{
 		signer:     signer,
 		chainID:    conf.ChainID,
 		gas:        conf.Gas,
 		rpc:        client,
 		logger:     logger,
-		seqNo:      seqNo,
+		seqNo:      0,
 		broadcasts: make(chan func(), 1000),
 	}
 
+	// call broadcast functions sequentially
 	go func() {
 		// this is expected to run for the full life time of the process, so there is no need to be able to escape the loop
-		for b := range broadcaster.broadcasts {
-			broadcaster.logger.Debug("calling broadcast")
-			b()
+		for broadcast := range broadcaster.broadcasts {
+			broadcast()
 		}
 	}()
 
 	return broadcaster, nil
 }
 
-// Broadcast sends the passed messages to the network
+// Broadcast sends the passed messages to the network. This function in thread-safe.
 func (b *Broadcaster) Broadcast(msgs ...sdk.Msg) error {
 	errChan := make(chan error, 1)
-	// ensure that broadcasts are called sequentially (so the sequence number fits) and each call to Broadcast still returns the
-	// correct error for the corresponding call
+	// push the "intent to run broadcast" into a channel so it can be executed sequentially,
+	// even if the public Broadcast function is called concurrently
 	b.broadcasts <- func() { errChan <- b.broadcast(msgs) }
+	// block until the broadcast call has actually been run
 	return <-errChan
 }
 
@@ -108,14 +107,8 @@ func (b *Broadcaster) broadcast(msgs []sdk.Msg) error {
 		return fmt.Errorf(res.Log)
 	}
 	// broadcast has been successful, so increment sequence number
-	b.setSeqNo(seqNo + 1)
-	b.logger.Debug(fmt.Sprintf("incrementing sequence number to %d", seqNo+1))
+	b.seqNo += 1
 	return nil
-}
-
-func (b *Broadcaster) setSeqNo(seqNo uint64) {
-	<-b.seqNo
-	b.seqNo <- seqNo
 }
 
 func (b *Broadcaster) updateAccountNumberSequence(addr sdk.AccAddress) (uint64, uint64, error) {
@@ -123,16 +116,10 @@ func (b *Broadcaster) updateAccountNumberSequence(addr sdk.AccAddress) (uint64, 
 	if err != nil {
 		return 0, 0, err
 	}
-	if seqNo > b.getSeqNo() {
-		b.setSeqNo(seqNo)
+	if seqNo > b.seqNo {
+		b.seqNo = seqNo
 	}
-	return accNo, seqNo, nil
-}
-
-func (b *Broadcaster) getSeqNo() uint64 {
-	localSeqNo := <-b.seqNo
-	b.seqNo <- localSeqNo
-	return localSeqNo
+	return accNo, b.seqNo, nil
 }
 
 func sign(sign types.Sign, msg auth.StdSignMsg) (auth.StdTx, error) {
@@ -229,31 +216,33 @@ func WithExponentialBackoff(b *Broadcaster, minTimeout time.Duration, maxRetries
 	}
 }
 
-// Broadcast submits messages synchronously and retries with exponential backoff
-func (b *XBOBroadcaster) Broadcast(msgs ...sdk.Msg) <-chan error {
+// Broadcast submits messages synchronously and retries with exponential backoff.
+// This function is thread-safe but might block for a long time depending on the exponential backoff parameters.
+func (b *XBOBroadcaster) Broadcast(msgs ...sdk.Msg) error {
 	errChan := make(chan error)
 	go func() {
 		defer close(errChan)
+		errChan <- b.broadcastWithBackoff(msgs)
+	}()
+	return <-errChan
+}
 
-		for i := 0; i <= b.maxRetries; i++ {
-			err := b.broadcaster.Broadcast(msgs...)
-			if err == nil {
-				errChan <- nil
-				return
-			}
-
-			if i == b.maxRetries {
-				errChan <- sdkerrors.Wrap(err, fmt.Sprintf("aborting broadcast after %d retries", b.maxRetries))
-				return
-			}
-
-			// exponential backoff
-			timeout := time.Duration(math.Pow(2, float64(i))) * b.timeout
-			b.broadcaster.logger.Error(sdkerrors.Wrapf(err, "exponentially backing off (retry in %v )", timeout).Error())
-			time.Sleep(timeout)
-			continue
+func (b *XBOBroadcaster) broadcastWithBackoff(msgs []sdk.Msg) error {
+	for i := 0; i <= b.maxRetries; i++ {
+		err := b.broadcaster.Broadcast(msgs...)
+		if err == nil {
+			return nil
 		}
 
-	}()
-	return errChan
+		if i >= b.maxRetries {
+			return sdkerrors.Wrap(err, fmt.Sprintf("aborting broadcast after %d retries", b.maxRetries))
+		}
+
+		// exponential backoff
+		timeout := time.Duration(math.Pow(2, float64(i))) * b.timeout
+		b.broadcaster.logger.Error(sdkerrors.Wrapf(err, "exponentially backing off (retry in %v )", timeout).Error())
+		time.Sleep(timeout)
+	}
+
+	panic("this should be unreachable")
 }

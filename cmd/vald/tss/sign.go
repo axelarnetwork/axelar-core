@@ -123,7 +123,7 @@ func (mgr *Mgr) handleIntermediateSignMsgs(sigID string, intermediate <-chan *to
 			sigID, mgr.myAddress, msg.ToPartyUid, msg.IsBroadcast))
 		// sender is set by broadcaster
 		tssMsg := &tss.MsgSignTraffic{Sender: mgr.sender, SessionID: sigID, Payload: msg}
-		if err := <-mgr.broadcaster.Broadcast(tssMsg); err != nil {
+		if err := mgr.broadcaster.Broadcast(tssMsg); err != nil {
 			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing sign msg")
 		}
 	}
@@ -139,7 +139,7 @@ func (mgr *Mgr) handleSignResult(sigID string, result <-chan []byte) error {
 
 	poll := voting.NewPollMeta(tss.ModuleName, tss.EventTypeSign, sigID)
 	vote := &tss.MsgVoteSig{Sender: mgr.sender, PollMeta: poll, SigBytes: bz}
-	return <-mgr.broadcaster.Broadcast(vote)
+	return mgr.broadcaster.Broadcast(vote)
 }
 
 func (mgr *Mgr) forwardSignMsg(sigID string, from string, payload *tofnd.TrafficOut) error {

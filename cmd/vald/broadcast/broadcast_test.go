@@ -4,6 +4,7 @@ import (
 	"fmt"
 	rand2 "math/rand"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -86,6 +87,101 @@ func TestBroadcaster_Broadcast(t *testing.T) {
 		wg.Wait()
 		assert.Equal(t, len(rpc.BroadcastTxSyncCalls()), callCounter)
 	})
+
+	t.Run("sequence number updated correctly", func(t *testing.T) {
+		accNo := rand2.Uint64()
+		seqNo := uint64(1)
+		prevSeqNo := uint64(0)
+		rpc := &mock.ClientMock{
+			GetAccountNumberSequenceFunc: func(sdk.AccAddress) (uint64, uint64, error) {
+				return accNo, seqNo, nil
+			},
+			BroadcastTxSyncFunc: func(tx auth.StdTx) (*coretypes.ResultBroadcastTx, error) {
+				seqNo++
+				return &coretypes.ResultBroadcastTx{Code: abci.CodeTypeOK}, nil
+			}}
+		config := types.ClientConfig{
+			ChainID:         rand.StrBetween(5, 20),
+			BroadcastConfig: types.BroadcastConfig{},
+		}
+
+		seen := map[string]bool{}
+		s := func(from sdk.AccAddress, msg auth.StdSignMsg) (authtypes.StdSignature, error) {
+			bz := string(msg.Bytes())
+			if !seen[bz] {
+				assert.Equal(t, prevSeqNo+1, msg.Sequence)
+				atomic.StoreUint64(&prevSeqNo, msg.Sequence)
+				seen[bz] = true
+			}
+
+			return authtypes.StdSignature{Signature: rand.Bytes(int(rand.I64Between(5, 100)))}, nil
+		}
+
+		b, err := NewBroadcaster(s, rpc, config, log.TestingLogger())
+		if err != nil {
+			panic(err)
+		}
+
+		iterations := int(rand.I64Between(200, 1000))
+		wg := &sync.WaitGroup{}
+		wg.Add(iterations)
+		for i := 0; i < iterations; i++ {
+			go func(broadcaster *Broadcaster) {
+				defer wg.Done()
+				msgs := createMsgsWithRandomSigners()
+				err := broadcaster.Broadcast(msgs...)
+				assert.NoError(t, err)
+			}(b)
+		}
+		wg.Wait()
+	})
+
+	t.Run("sequence number on blockchain trailing behind", func(t *testing.T) {
+		accNo := rand2.Uint64()
+		seqNo := uint64(1)
+		prevSeqNo := uint64(0)
+		rpc := &mock.ClientMock{
+			GetAccountNumberSequenceFunc: func(sdk.AccAddress) (uint64, uint64, error) {
+				return accNo, seqNo, nil
+			},
+			BroadcastTxSyncFunc: func(tx auth.StdTx) (*coretypes.ResultBroadcastTx, error) {
+				return &coretypes.ResultBroadcastTx{Code: abci.CodeTypeOK}, nil
+			}}
+		config := types.ClientConfig{
+			ChainID:         rand.StrBetween(5, 20),
+			BroadcastConfig: types.BroadcastConfig{},
+		}
+
+		seen := map[string]bool{}
+		s := func(from sdk.AccAddress, msg auth.StdSignMsg) (authtypes.StdSignature, error) {
+			bz := string(msg.Bytes())
+			if !seen[bz] {
+				assert.Equal(t, prevSeqNo+1, msg.Sequence)
+				atomic.StoreUint64(&prevSeqNo, msg.Sequence)
+				seen[bz] = true
+			}
+
+			return authtypes.StdSignature{Signature: rand.Bytes(int(rand.I64Between(5, 100)))}, nil
+		}
+
+		b, err := NewBroadcaster(s, rpc, config, log.TestingLogger())
+		if err != nil {
+			panic(err)
+		}
+
+		iterations := int(rand.I64Between(200, 1000))
+		wg := &sync.WaitGroup{}
+		wg.Add(iterations)
+		for i := 0; i < iterations; i++ {
+			go func(broadcaster *Broadcaster) {
+				defer wg.Done()
+				msgs := createMsgsWithRandomSigners()
+				err := broadcaster.Broadcast(msgs...)
+				assert.NoError(t, err)
+			}(b)
+		}
+		wg.Wait()
+	})
 }
 
 func TestXBOBroadcaster_Broadcast(t *testing.T) {
@@ -106,7 +202,7 @@ func TestXBOBroadcaster_Broadcast(t *testing.T) {
 			go func() {
 				defer wg.Done()
 				msgs := createMsgsWithRandomSigners()
-				err := <-xbo.Broadcast(msgs...)
+				err := xbo.Broadcast(msgs...)
 				assert.Error(t, err)
 				t.Log(err)
 			}()
@@ -114,6 +210,55 @@ func TestXBOBroadcaster_Broadcast(t *testing.T) {
 		wg.Wait()
 
 		assert.Len(t, rpc.BroadcastTxSyncCalls(), iterations*(retries+1))
+	})
+
+	t.Run("sequence number updated correctly", func(t *testing.T) {
+		accNo := rand2.Uint64()
+		seqNo := uint64(1)
+		prevSeqNo := uint64(0)
+		rpc := &mock.ClientMock{
+			GetAccountNumberSequenceFunc: func(sdk.AccAddress) (uint64, uint64, error) {
+				return accNo, seqNo, nil
+			},
+			BroadcastTxSyncFunc: func(tx auth.StdTx) (*coretypes.ResultBroadcastTx, error) {
+				seqNo++
+				return &coretypes.ResultBroadcastTx{Code: abci.CodeTypeOK}, nil
+			}}
+		config := types.ClientConfig{
+			ChainID:         rand.StrBetween(5, 20),
+			BroadcastConfig: types.BroadcastConfig{},
+		}
+
+		seen := map[string]bool{}
+		s := func(from sdk.AccAddress, msg auth.StdSignMsg) (authtypes.StdSignature, error) {
+			bz := string(msg.Bytes())
+			if !seen[bz] {
+				assert.Equal(t, prevSeqNo+1, msg.Sequence)
+				atomic.StoreUint64(&prevSeqNo, msg.Sequence)
+				seen[bz] = true
+			}
+
+			return authtypes.StdSignature{Signature: rand.Bytes(int(rand.I64Between(5, 100)))}, nil
+		}
+
+		b, err := NewBroadcaster(s, rpc, config, log.TestingLogger())
+		if err != nil {
+			panic(err)
+		}
+		retries := int(rand.I64Between(1, 20))
+		xbo := WithExponentialBackoff(b, 20*time.Microsecond, retries)
+
+		iterations := int(rand.I64Between(200, 1000))
+		wg := &sync.WaitGroup{}
+		wg.Add(iterations)
+		for i := 0; i < iterations; i++ {
+			go func(broadcaster *XBOBroadcaster) {
+				defer wg.Done()
+				msgs := createMsgsWithRandomSigners()
+				assert.NoError(t, broadcaster.Broadcast(msgs...))
+			}(xbo)
+		}
+		wg.Wait()
 	})
 }
 
