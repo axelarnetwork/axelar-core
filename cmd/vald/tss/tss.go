@@ -25,7 +25,8 @@ type Mgr struct {
 	Timeout       time.Duration
 	myAddress     string
 	Logger        log.Logger
-	broadcaster   broadcast.Broadcaster
+	broadcaster   *broadcast.XBOBroadcaster
+	sender        sdk.AccAddress
 }
 
 // CreateTOFNDClient creates a client to communicate with the external tofnd process
@@ -42,7 +43,7 @@ func CreateTOFNDClient(host string, port string, logger log.Logger) (tofnd.GG20C
 }
 
 // NewMgr returns a new tss manager instance
-func NewMgr(client tofnd.GG20Client, timeout time.Duration, myAddress string, broadcaster broadcast.Broadcaster, logger log.Logger) *Mgr {
+func NewMgr(client tofnd.GG20Client, timeout time.Duration, myAddress string, broadcaster *broadcast.XBOBroadcaster, sender sdk.AccAddress, logger log.Logger) *Mgr {
 	return &Mgr{
 		client:        client,
 		keygenStreams: map[string]tss.Stream{},
@@ -51,6 +52,7 @@ func NewMgr(client tofnd.GG20Client, timeout time.Duration, myAddress string, br
 		myAddress:     myAddress,
 		Logger:        logger.With("listener", "tss"),
 		broadcaster:   broadcaster,
+		sender:        sender,
 	}
 }
 
