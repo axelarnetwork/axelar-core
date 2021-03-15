@@ -11,7 +11,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/axelarnetwork/axelar-core/cmd/vald/broadcast"
+	"github.com/axelarnetwork/axelar-core/cmd/vald/tss/types"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
@@ -23,10 +23,11 @@ type TSSMgr struct {
 	Timeout       time.Duration
 	myAddress     string
 	Logger        log.Logger
-	broadcaster   broadcast.Broadcaster
+	broadcaster   types.Broadcaster
+	sender        sdk.AccAddress
 }
 
-func NewTSSMgr(client tofnd.GG20Client, timeout time.Duration, myAddress string, broadcaster broadcast.Broadcaster, logger log.Logger) *TSSMgr {
+func NewTSSMgr(client tofnd.GG20Client, timeout time.Duration, myAddress string, broadcaster types.Broadcaster, sender sdk.AccAddress, logger log.Logger) *TSSMgr {
 	return &TSSMgr{
 		client:        client,
 		keygenStreams: map[string]tss.Stream{},
@@ -35,6 +36,7 @@ func NewTSSMgr(client tofnd.GG20Client, timeout time.Duration, myAddress string,
 		myAddress:     myAddress,
 		Logger:        logger.With("listener", "tss"),
 		broadcaster:   broadcaster,
+		sender:        sender,
 	}
 }
 

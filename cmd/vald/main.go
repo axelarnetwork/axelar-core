@@ -119,7 +119,7 @@ func loadConfig() (app.Config, string) {
 		panic(err)
 	}
 	// for some reason gas is not being filled
-	conf.Gas = viper.GetInt("gas")
+	conf.Gas = viper.GetUint64("gas")
 
 	return conf, viper.GetString("validator-addr")
 }

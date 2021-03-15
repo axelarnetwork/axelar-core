@@ -10,7 +10,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -122,8 +121,8 @@ func (mgr *TSSMgr) handleIntermediateSignMsgs(sigID string, intermediate <-chan 
 		mgr.Logger.Debug(fmt.Sprintf("outgoing sign msg: sig [%.20s] from me [%.20s] to [%.20s] broadcast [%t]\n",
 			sigID, mgr.myAddress, msg.ToPartyUid, msg.IsBroadcast))
 		// sender is set by broadcaster
-		tssMsg := &tss.MsgSignTraffic{SessionID: sigID, Payload: msg}
-		if err := mgr.broadcaster.Broadcast([]exported.MsgWithSenderSetter{tssMsg}); err != nil {
+		tssMsg := &tss.MsgSignTraffic{Sender: mgr.sender, SessionID: sigID, Payload: msg}
+		if err := mgr.broadcaster.Broadcast(tssMsg); err != nil {
 			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing sign msg")
 		}
 	}
@@ -138,8 +137,8 @@ func (mgr *TSSMgr) handleSignResult(sigID string, result <-chan []byte) error {
 	mgr.Logger.Info(fmt.Sprintf("handler goroutine: received sig from server! [%.20s]", bz))
 
 	poll := voting.PollMeta{Module: tss.ModuleName, Type: tss.EventTypeSign, ID: sigID}
-	vote := &tss.MsgVoteSig{PollMeta: poll, SigBytes: bz}
-	return mgr.broadcaster.Broadcast([]exported.MsgWithSenderSetter{vote})
+	vote := &tss.MsgVoteSig{Sender: mgr.sender, PollMeta: poll, SigBytes: bz}
+	return mgr.broadcaster.Broadcast(vote)
 }
 
 func (mgr *TSSMgr) processSignMsg(sigID string, from string, payload *tofnd.TrafficOut) error {
