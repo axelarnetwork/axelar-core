@@ -183,13 +183,12 @@ func (c client) QueryWithData(path string, data []byte) ([]byte, int64, error) {
 }
 
 // NewSigner unlocks the given keybase, so messages can be signed by the returned sign function
-func NewSigner(keybase keys.Keybase, passphrase string) types.Sign {
+func NewSigner(keybase keys.Keybase, accountInfo keys.Info, passphrase string) (types.Sign, error) {
 	return func(from sdk.AccAddress, msg auth.StdSignMsg) (auth.StdSignature, error) {
-		info, err := keybase.GetByAddress(from)
-		if err != nil {
-			return auth.StdSignature{}, err
+		if !from.Equals(accountInfo.GetAddress()) {
+			return auth.StdSignature{}, fmt.Errorf("could not sign, expected address %.20s, got %.20s", accountInfo.GetAddress(), from)
 		}
-		sig, pk, err := keybase.Sign(info.GetName(), passphrase, msg.Bytes())
+		sig, pk, err := keybase.Sign(accountInfo.GetName(), passphrase, msg.Bytes())
 		if err != nil {
 			return auth.StdSignature{}, err
 		}
@@ -197,7 +196,7 @@ func NewSigner(keybase keys.Keybase, passphrase string) types.Sign {
 			PubKey:    pk,
 			Signature: sig,
 		}, nil
-	}
+	}, nil
 }
 
 // XBOBroadcaster is a broadcast wrapper that adds retries with exponential backoff
@@ -224,26 +223,23 @@ func (b *XBOBroadcaster) Broadcast(msgs ...sdk.Msg) error {
 		defer close(errChan)
 		errChan <- b.broadcastWithBackoff(msgs)
 	}()
-
 	return <-errChan
 }
 
-func (b *XBOBroadcaster) broadcastWithBackoff(msgs []sdk.Msg) error {
+func (b *XBOBroadcaster) broadcastWithBackoff(msgs []sdk.Msg) (err error) {
 	for i := 0; i <= b.maxRetries; i++ {
-		err := b.broadcaster.Broadcast(msgs...)
+		err = b.broadcaster.Broadcast(msgs...)
 		if err == nil {
 			return nil
 		}
 
-		if i >= b.maxRetries {
-			return sdkerrors.Wrap(err, fmt.Sprintf("aborting broadcast after %d retries", b.maxRetries))
-		}
-
 		// exponential backoff
-		timeout := time.Duration(math.Pow(2, float64(i))) * b.timeout
-		b.broadcaster.logger.Error(sdkerrors.Wrapf(err, "exponentially backing off (retry in %v )", timeout).Error())
-		time.Sleep(timeout)
+		if i < b.maxRetries {
+			timeout := time.Duration(math.Pow(2, float64(i))) * b.timeout
+			b.broadcaster.logger.Error(sdkerrors.Wrapf(err, "exponentially backing off (retry in %v )", timeout).Error())
+			time.Sleep(timeout)
+		}
 	}
 
-	panic("this should be unreachable")
+	return sdkerrors.Wrap(err, fmt.Sprintf("aborting broadcast after %d retries", b.maxRetries))
 }

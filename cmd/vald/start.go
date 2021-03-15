@@ -113,7 +113,10 @@ func createBroadcaster(axelarCfg app.Config, logger log.Logger) (*broadcast.Broa
 	if err != nil {
 		return nil, sdk.AccAddress{}, err
 	}
-	signer := broadcast.NewSigner(keybase, axelarCfg.BroadcastConfig.KeyringPassphrase)
+	signer, err := broadcast.NewSigner(keybase, info, axelarCfg.BroadcastConfig.KeyringPassphrase)
+	if err != nil {
+		return nil, sdk.AccAddress{}, err
+	}
 	b, err := broadcast.NewBroadcaster(signer, rpc, axelarCfg.ClientConfig, logger)
 	if err != nil {
 		return nil, sdk.AccAddress{}, err
