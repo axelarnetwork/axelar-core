@@ -155,7 +155,7 @@ func listen(hub *events.Hub, axelarCfg app.Config, valAddr string, logger log.Lo
 	if err != nil {
 		return err
 	}
-	xboBroadcaster := broadcast.WithExponentialBackoff(b, axelarCfg.MinTimeout, axelarCfg.MaxRetries)
+	xboBroadcaster := broadcast.WithBackoff(b, broadcast.Linear, axelarCfg.MinTimeout, axelarCfg.MaxRetries)
 	tssMgr := tss2.NewTSSMgr(gg20client, 2*time.Hour, valAddr, xboBroadcaster, info.GetAddress(), logger)
 
 	keygen, err := subscribeToEvent(hub, tss.EventTypeKeygen, tss.ModuleName)
