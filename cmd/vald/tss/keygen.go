@@ -12,7 +12,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -128,8 +127,8 @@ func (mgr *Mgr) handleIntermediateKeygenMsgs(keyID string, intermediate <-chan *
 		mgr.Logger.Debug(fmt.Sprintf("outgoing keygen msg: key [%.20s] from me [%.20s] to [%.20s] broadcast [%t]\n",
 			keyID, mgr.myAddress, msg.ToPartyUid, msg.IsBroadcast))
 		// sender is set by broadcaster
-		tssMsg := &tss.MsgKeygenTraffic{SessionID: keyID, Payload: msg}
-		if err := mgr.broadcaster.Broadcast([]exported.MsgWithSenderSetter{tssMsg}); err != nil {
+		tssMsg := &tss.MsgKeygenTraffic{Sender: mgr.sender, SessionID: keyID, Payload: msg}
+		if err := mgr.broadcaster.Broadcast(tssMsg); err != nil {
 			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing keygen msg")
 		}
 	}
@@ -150,8 +149,8 @@ func (mgr *Mgr) handleKeygenResult(keyID string, result <-chan []byte) error {
 	mgr.Logger.Info(fmt.Sprintf("handler goroutine: received pubkey from server! [%v]", pubkey))
 
 	poll := voting.NewPollMeta(tss.ModuleName, tss.EventTypeKeygen, keyID)
-	vote := &tss.MsgVotePubKey{PollMeta: poll, PubKeyBytes: bz}
-	return mgr.broadcaster.Broadcast([]exported.MsgWithSenderSetter{vote})
+	vote := &tss.MsgVotePubKey{Sender: mgr.sender, PollMeta: poll, PubKeyBytes: bz}
+	return mgr.broadcaster.Broadcast(vote)
 }
 
 func (mgr *Mgr) forwardKeygenMsg(keyID string, from string, payload *tofnd.TrafficOut) error {

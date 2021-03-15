@@ -9,16 +9,13 @@ import (
 	"github.com/axelarnetwork/c2d2/pkg/tendermint/client"
 	"github.com/axelarnetwork/c2d2/pkg/tendermint/events"
 	keyring "github.com/cosmos/cosmos-sdk/crypto/keys"
-	"github.com/cosmos/cosmos-sdk/store/dbadapter"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/log"
-	tmos "github.com/tendermint/tendermint/libs/os"
 	"github.com/tendermint/tendermint/libs/pubsub/query"
-	"github.com/tendermint/tendermint/rpc/client/http"
 	tm "github.com/tendermint/tendermint/types"
-	dbm "github.com/tendermint/tm-db"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/cmd/vald/broadcast"
@@ -38,13 +35,15 @@ func getStartCommand(logger log.Logger) *cobra.Command {
 
 			axConf, valAddr := loadConfig()
 			if valAddr == "" {
-				tmos.Exit("validator address not set")
+				logger.Error("validator address not set")
+				os.Exit(1)
 			}
 
 			logger.Info("Start listening to events")
 			err = listen(hub, axConf, valAddr, logger)
 			if err != nil {
-				return err
+				logger.Error(err.Error())
+				os.Exit(1)
 			}
 			logger.Info("Shutting down")
 			return nil
@@ -68,9 +67,14 @@ func newHub() (*events.Hub, error) {
 }
 
 func listen(hub *events.Hub, axelarCfg app.Config, valAddr string, logger log.Logger) error {
-	tssMgr, err := createTSSMgr(axelarCfg, logger, valAddr)
+	broadcaster, sender, err := createBroadcaster(axelarCfg, logger)
 	if err != nil {
-		tmos.Exit(err.Error())
+		return err
+	}
+
+	tssMgr, err := createTSSMgr(broadcaster, sender, axelarCfg, logger, valAddr)
+	if err != nil {
+		return err
 	}
 
 	keygen, err := subscribeToEvent(hub, tss.EventTypeKeygen, tss.ModuleName)
@@ -96,25 +100,38 @@ func listen(hub *events.Hub, axelarCfg app.Config, valAddr string, logger log.Lo
 	return nil
 }
 
-func createTSSMgr(axelarCfg app.Config, logger log.Logger, valAddr string) (*tss2.Mgr, error) {
+func createBroadcaster(axelarCfg app.Config, logger log.Logger) (*broadcast.Broadcaster, sdk.AccAddress, error) {
+	rpc, err := broadcast.NewClient(utils.GetTxEncoder(app.MakeCodec()), axelarCfg.TendermintNodeUri)
+	if err != nil {
+		return nil, sdk.AccAddress{}, err
+	}
+	keybase, err := keyring.NewKeyring(sdk.KeyringServiceName(), axelarCfg.ClientConfig.KeyringBackend, viper.GetString(cliHomeFlag), os.Stdin)
+	if err != nil {
+		return nil, sdk.AccAddress{}, err
+	}
+	info, err := keybase.Get(axelarCfg.BroadcastConfig.From)
+	if err != nil {
+		return nil, sdk.AccAddress{}, err
+	}
+	signer, err := broadcast.NewSigner(keybase, info, axelarCfg.BroadcastConfig.KeyringPassphrase)
+	if err != nil {
+		return nil, sdk.AccAddress{}, err
+	}
+	b, err := broadcast.NewBroadcaster(signer, rpc, axelarCfg.ClientConfig, logger)
+	if err != nil {
+		return nil, sdk.AccAddress{}, err
+	}
+	return b, info.GetAddress(), nil
+}
+
+func createTSSMgr(broadcaster *broadcast.Broadcaster, defaultSender sdk.AccAddress, axelarCfg app.Config, logger log.Logger, valAddr string) (*tss2.Mgr, error) {
 	gg20client, err := tss2.CreateTOFNDClient(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, logger)
 	if err != nil {
 		return nil, err
 	}
-	keybase, err := keyring.NewKeyring(sdk.KeyringServiceName(), axelarCfg.ClientConfig.KeyringBackend, viper.GetString(cliHomeFlag), os.Stdin)
-	if err != nil {
-		return nil, err
-	}
-	abciClient, err := http.New(axelarCfg.TendermintNodeUri, "/websocket")
-	if err != nil {
-		return nil, err
-	}
-	b, err := broadcast.NewBroadcaster(app.MakeCodec(), keybase, dbadapter.Store{DB: dbm.NewMemDB()}, abciClient, axelarCfg.ClientConfig, logger)
-	if err != nil {
-		return nil, err
-	}
 
-	tssMgr := tss2.NewMgr(gg20client, 2*time.Hour, valAddr, b, logger)
+	xboBroadcaster := broadcast.WithExponentialBackoff(broadcaster, axelarCfg.MinTimeout, axelarCfg.MaxRetries)
+	tssMgr := tss2.NewMgr(gg20client, 2*time.Hour, valAddr, xboBroadcaster, defaultSender, logger)
 	return tssMgr, nil
 }
 
