@@ -174,12 +174,6 @@ type CommandParams struct {
 	Sender    string
 }
 
-// CommandParams describe the parameters used to send a pre-signed command to the given contract,
-// with the sender signing the transaction on the Ethereum node
-type CommandDataParams struct {
-	CommandID CommandID
-}
-
 // Erc20TokenDeploy describes information about an ERC20 token
 type Erc20TokenDeploy struct {
 	TxID      [common.HashLength]byte
