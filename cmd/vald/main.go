@@ -12,17 +12,15 @@ import (
 	"github.com/axelarnetwork/c2d2/pkg/tendermint/events"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	keyring "github.com/cosmos/cosmos-sdk/crypto/keys"
-	"github.com/cosmos/cosmos-sdk/store/dbadapter"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/log"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	"github.com/tendermint/tendermint/libs/pubsub/query"
-	"github.com/tendermint/tendermint/rpc/client/http"
 	tm "github.com/tendermint/tendermint/types"
-	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
 
 	"github.com/axelarnetwork/axelar-core/app"
@@ -139,17 +137,26 @@ func listen(hub *events.Hub, axelarCfg app.Config, valAddr string, logger log.Lo
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
-	abciClient, err := http.New(axelarCfg.TendermintNodeUri, "/websocket")
+
+	rpc, err := broadcast.NewClient(utils.GetTxEncoder(app.MakeCodec()), axelarCfg.TendermintNodeUri)
 	if err != nil {
-		tmos.Exit(err.Error())
+		return err
 	}
 
-	b, err := broadcast.NewBroadcaster(app.MakeCodec(), keybase, dbadapter.Store{DB: dbm.NewMemDB()}, abciClient, axelarCfg.ClientConfig, logger)
+	info, err := keybase.Get(axelarCfg.BroadcastConfig.From)
 	if err != nil {
-		tmos.Exit(err.Error())
+		return err
 	}
-
-	tssMgr := tss2.NewTSSMgr(gg20client, 2*time.Hour, valAddr, b, logger)
+	signer, err := broadcast.NewSigner(keybase, info, axelarCfg.BroadcastConfig.KeyringPassphrase)
+	if err != nil {
+		return err
+	}
+	b, err := broadcast.NewBroadcaster(signer, rpc, axelarCfg.ClientConfig, logger)
+	if err != nil {
+		return err
+	}
+	xboBroadcaster := broadcast.WithExponentialBackoff(b, axelarCfg.MinTimeout, axelarCfg.MaxRetries)
+	tssMgr := tss2.NewTSSMgr(gg20client, 2*time.Hour, valAddr, xboBroadcaster, info.GetAddress(), logger)
 
 	keygen, err := subscribeToEvent(hub, tss.EventTypeKeygen, tss.ModuleName)
 	if err != nil {
