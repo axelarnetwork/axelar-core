@@ -79,14 +79,15 @@ func (b *Broadcaster) broadcast(msgs []sdk.Msg) error {
 	}
 
 	accNo, seqNo, err := b.updateAccountNumberSequence(msgs[0].GetSigners()[0])
-	defer func() { 
-	        if err != nil {
-	                b.seqNo += 1
-	        }
-	}()
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err != nil {
+			// broadcast has been successful, so increment sequence number
+			b.seqNo += 1
+		}
+	}()
 
 	stdSignMsg := auth.StdSignMsg{
 		ChainID:       b.chainID,
@@ -111,8 +112,7 @@ func (b *Broadcaster) broadcast(msgs []sdk.Msg) error {
 	if res.Code != abci.CodeTypeOK {
 		return fmt.Errorf(res.Log)
 	}
-	// broadcast has been successful, so increment sequence number
-	b.seqNo += 1
+
 	return nil
 }
 
@@ -166,7 +166,7 @@ func (c client) BroadcastTxSync(tx auth.StdTx) (*coretypes.ResultBroadcastTx, er
 	if err != nil {
 		return nil, err
 	}
-	return c.BroadcastTxAsync(txBytes)
+	return c.ABCIClient.BroadcastTxSync(txBytes)
 }
 
 // GetAccountNumberSequence returns the account and sequence number of the given address
