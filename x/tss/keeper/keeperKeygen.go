@@ -139,6 +139,9 @@ func (k Keeper) GetPreviousMasterKey(ctx sdk.Context, chain exported.Chain, offs
 
 // AssignNextMasterKey stores a new master key for a given chain which will become the default once RotateMasterKey is called
 func (k Keeper) AssignNextMasterKey(ctx sdk.Context, chain exported.Chain, snapshotHeight int64, keyID string) error {
+	if _, ok := k.GetKey(ctx, keyID); !ok {
+		return fmt.Errorf("key %s does not exist (yet)", keyID)
+	}
 	keyGenHeight, ok := k.getKeygenStart(ctx, keyID)
 	if !ok {
 		return fmt.Errorf("there is no key with ID %s", keyID)
@@ -162,6 +165,10 @@ func (k Keeper) AssignNextMasterKey(ctx sdk.Context, chain exported.Chain, snaps
 // RotateMasterKey rotates to the next stored master key. Returns an error if no new master key has been prepared
 func (k Keeper) RotateMasterKey(ctx sdk.Context, chain exported.Chain) error {
 	r := k.getRotationCount(ctx, chain)
+	if bz := ctx.KVStore(k.storeKey).Get([]byte(masterKeyStoreKey(r+1, chain))); bz == nil {
+		return fmt.Errorf("next master key for chain %s not set", chain.Name)
+	}
+
 	k.setRotationCount(ctx, chain, r+1)
 
 	k.Logger(ctx).Debug(fmt.Sprintf("rotated master key for chain %s", chain.Name))
