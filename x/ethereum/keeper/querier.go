@@ -23,6 +23,7 @@ const (
 	QueryTokenAddress         = "token-address"
 	QueryMasterAddress        = "master-address"
 	QueryAxelarGatewayAddress = "gateway-address"
+	QueryCommandData          = "command-data"
 	CreateDeployTx            = "deploy-gateway"
 	SendTx                    = "send-tx"
 	SendCommand               = "send-command"
@@ -38,6 +39,8 @@ func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer) sdk.Querier {
 			return queryAxelarGateway(ctx, k)
 		case QueryTokenAddress:
 			return queryTokenAddress(ctx, k, path[1])
+		case QueryCommandData:
+			return queryCommandData(ctx, k, s, path[1])
 		case CreateDeployTx:
 			return createDeployGateway(ctx, k, rpc, s, req.Data)
 		case SendTx:
@@ -221,6 +224,36 @@ func createTxAndSend(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Sig
 	}
 
 	return k.Codec().MustMarshalJSON(txHash), nil
+}
+
+func queryCommandData(ctx sdk.Context, k Keeper, s types.Signer, commandIDHex string) ([]byte, error) {
+	sig, ok := s.GetSig(ctx, commandIDHex)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not find a corresponding signature for sig ID %s", commandIDHex))
+	}
+
+	pk, ok := s.GetKeyForSigID(ctx, commandIDHex)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not find a corresponding key for sig ID %s", commandIDHex))
+	}
+
+	var commandID types.CommandID
+	copy(commandID[:], common.Hex2Bytes(commandIDHex))
+
+	commandData := k.GetCommandData(ctx, commandID)
+	commandSig, err := types.ToEthSignature(sig, types.GetEthereumSignHash(commandData), pk)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not create recoverable signature: %v", err))
+	}
+
+	executeData, err := types.CreateExecuteData(commandData, commandSig)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(types.ErrEthereum, "could not create transaction data: %s", err)
+	}
+
+	k.Logger(ctx).Debug(common.Bytes2Hex(executeData))
+
+	return k.Codec().MustMarshalJSON(executeData), nil
 }
 
 func getContractOwner(ctx sdk.Context, s types.Signer) (common.Address, error) {
