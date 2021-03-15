@@ -224,6 +224,7 @@ func (b *XBOBroadcaster) Broadcast(msgs ...sdk.Msg) error {
 		defer close(errChan)
 		errChan <- b.broadcastWithBackoff(msgs)
 	}()
+
 	return <-errChan
 }
 
