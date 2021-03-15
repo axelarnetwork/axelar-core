@@ -79,6 +79,11 @@ func (b *Broadcaster) broadcast(msgs []sdk.Msg) error {
 	}
 
 	accNo, seqNo, err := b.updateAccountNumberSequence(msgs[0].GetSigners()[0])
+	defer func() { 
+	        if err != nil {
+	                b.seqNo += 1
+	        }
+	}()
 	if err != nil {
 		return err
 	}
