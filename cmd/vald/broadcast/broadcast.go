@@ -3,6 +3,7 @@ package broadcast
 import (
 	"fmt"
 	"math"
+	"math/rand"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys"
@@ -199,25 +200,27 @@ func NewSigner(keybase keys.Keybase, accountInfo keys.Info, passphrase string) (
 	}, nil
 }
 
-// XBOBroadcaster is a broadcast wrapper that adds retries with exponential backoff
-type XBOBroadcaster struct {
+// BackOffBroadcaster is a broadcast wrapper that adds retries with backoff
+type BackOffBroadcaster struct {
 	broadcaster *Broadcaster
 	timeout     time.Duration
 	maxRetries  int
+	backOff     func(retryCount int, minTimeout time.Duration) time.Duration
 }
 
-// WithExponentialBackoff wraps a broadcaster so that failed broadcasts are retried with exponential backoff
-func WithExponentialBackoff(b *Broadcaster, minTimeout time.Duration, maxRetries int) *XBOBroadcaster {
-	return &XBOBroadcaster{
+// WithBackoff wraps a broadcaster so that failed broadcasts are retried with the given back-off strategy
+func WithBackoff(b *Broadcaster, strategy BackOff, minTimeout time.Duration, maxRetries int) *BackOffBroadcaster {
+	return &BackOffBroadcaster{
 		broadcaster: b,
 		timeout:     minTimeout,
 		maxRetries:  maxRetries,
+		backOff:     strategy,
 	}
 }
 
 // Broadcast submits messages synchronously and retries with exponential backoff.
 // This function is thread-safe but might block for a long time depending on the exponential backoff parameters.
-func (b *XBOBroadcaster) Broadcast(msgs ...sdk.Msg) error {
+func (b *BackOffBroadcaster) Broadcast(msgs ...sdk.Msg) error {
 	errChan := make(chan error)
 	go func() {
 		defer close(errChan)
@@ -226,7 +229,7 @@ func (b *XBOBroadcaster) Broadcast(msgs ...sdk.Msg) error {
 	return <-errChan
 }
 
-func (b *XBOBroadcaster) broadcastWithBackoff(msgs []sdk.Msg) (err error) {
+func (b *BackOffBroadcaster) broadcastWithBackoff(msgs []sdk.Msg) (err error) {
 	for i := 0; i <= b.maxRetries; i++ {
 		err = b.broadcaster.Broadcast(msgs...)
 		if err == nil {
@@ -235,11 +238,32 @@ func (b *XBOBroadcaster) broadcastWithBackoff(msgs []sdk.Msg) (err error) {
 
 		// exponential backoff
 		if i < b.maxRetries {
-			timeout := time.Duration(math.Pow(2, float64(i))) * b.timeout
-			b.broadcaster.logger.Error(sdkerrors.Wrapf(err, "exponentially backing off (retry in %v )", timeout).Error())
+			timeout := b.backOff(i, b.timeout)
+			b.broadcaster.logger.Error(sdkerrors.Wrapf(err, "backing off (retry in %v )", timeout).Error())
 			time.Sleep(timeout)
 		}
 	}
 
 	return sdkerrors.Wrap(err, fmt.Sprintf("aborting broadcast after %d retries", b.maxRetries))
 }
+
+// BackOff computes the next back-off duration
+type BackOff func(retryCount int, minTimeout time.Duration) time.Duration
+
+//goland:noinspection GoUnusedGlobalVariable
+var (
+	// Exponential computes an exponential back-off
+	Exponential = func(i int, minTimeout time.Duration) time.Duration {
+		jitter := rand.Float64()
+		strategy := math.Pow(2, float64(i))
+		n := time.Duration(math.Max(strategy*jitter, minTimeout.Seconds()))
+		return n * minTimeout
+	}
+
+	// Linear computes a linear back-off
+	Linear = func(i int, minTimeout time.Duration) time.Duration {
+		jitter := rand.Float64()
+		strategy := float64(i)
+		return time.Duration(math.Max(strategy*jitter, minTimeout.Seconds())) * time.Second
+	}
+)
