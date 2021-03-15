@@ -82,12 +82,6 @@ func (b *Broadcaster) broadcast(msgs []sdk.Msg) error {
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if err != nil {
-			// broadcast has been successful, so increment sequence number
-			b.seqNo += 1
-		}
-	}()
 
 	stdSignMsg := auth.StdSignMsg{
 		ChainID:       b.chainID,
@@ -112,7 +106,8 @@ func (b *Broadcaster) broadcast(msgs []sdk.Msg) error {
 	if res.Code != abci.CodeTypeOK {
 		return fmt.Errorf(res.Log)
 	}
-
+	// broadcast has been successful, so increment sequence number
+	b.seqNo += 1
 	return nil
 }
 
