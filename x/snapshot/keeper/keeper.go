@@ -125,10 +125,9 @@ func (k Keeper) filterParticipants(ctx sdk.Context, s exported.Snapshot) exporte
 	var participants []exported.Validator
 	for _, v := range s.Validators {
 		proxy := k.broadcaster.GetProxy(ctx, v.GetOperator())
-		if proxy == nil {
-			continue
+		if proxy != nil {
+			participants = append(participants, v)
 		}
-		participants = append(participants, v)
 	}
 
 	s.Validators = participants
