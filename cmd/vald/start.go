@@ -130,7 +130,7 @@ func createTSSMgr(broadcaster *broadcast.Broadcaster, defaultSender sdk.AccAddre
 		return nil, err
 	}
 
-	xboBroadcaster := broadcast.WithExponentialBackoff(broadcaster, axelarCfg.MinTimeout, axelarCfg.MaxRetries)
+	xboBroadcaster := broadcast.WithBackoff(broadcaster, broadcast.Linear, axelarCfg.MinTimeout, axelarCfg.MaxRetries)
 	tssMgr := tss2.NewMgr(gg20client, 2*time.Hour, valAddr, xboBroadcaster, defaultSender, logger)
 	return tssMgr, nil
 }
