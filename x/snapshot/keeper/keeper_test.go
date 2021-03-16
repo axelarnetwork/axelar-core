@@ -82,7 +82,19 @@ func TestSnapshots(t *testing.T) {
 					return retinfo, true
 				},
 			}
-			keeper := NewKeeper(cdc, sdk.NewKVStoreKey("staking"), snapSubspace, staker, slashingKeeper)
+
+			broadcasterMock := &snapMock.BroadcasterMock{
+				GetProxyFunc: func(_ sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
+					for _, v := range validators {
+						if bytes.Equal(principal.Bytes(), v.GetOperator()) {
+							return sdk.AccAddress(stringGen.Next())
+						}
+					}
+					return nil
+				},
+			}
+
+			keeper := NewKeeper(cdc, sdk.NewKVStoreKey("staking"), snapSubspace, broadcasterMock, staker, slashingKeeper)
 			keeper.SetParams(ctx, types.DefaultParams())
 
 			_, ok := keeper.GetSnapshot(ctx, 0)

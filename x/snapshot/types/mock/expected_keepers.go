@@ -243,3 +243,74 @@ func (mock *SlasherMock) GetValidatorSigningInfoCalls() []struct {
 	mock.lockGetValidatorSigningInfo.RUnlock()
 	return calls
 }
+
+// Ensure, that BroadcasterMock does implement types.Broadcaster.
+// If this is not the case, regenerate this file with moq.
+var _ types.Broadcaster = &BroadcasterMock{}
+
+// BroadcasterMock is a mock implementation of types.Broadcaster.
+//
+// 	func TestSomethingThatUsesBroadcaster(t *testing.T) {
+//
+// 		// make and configure a mocked types.Broadcaster
+// 		mockedBroadcaster := &BroadcasterMock{
+// 			GetProxyFunc: func(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
+// 				panic("mock out the GetProxy method")
+// 			},
+// 		}
+//
+// 		// use mockedBroadcaster in code that requires types.Broadcaster
+// 		// and then make assertions.
+//
+// 	}
+type BroadcasterMock struct {
+	// GetProxyFunc mocks the GetProxy method.
+	GetProxyFunc func(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetProxy holds details about calls to the GetProxy method.
+		GetProxy []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Principal is the principal argument value.
+			Principal sdk.ValAddress
+		}
+	}
+	lockGetProxy sync.RWMutex
+}
+
+// GetProxy calls GetProxyFunc.
+func (mock *BroadcasterMock) GetProxy(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
+	if mock.GetProxyFunc == nil {
+		panic("BroadcasterMock.GetProxyFunc: method is nil but Broadcaster.GetProxy was just called")
+	}
+	callInfo := struct {
+		Ctx       sdk.Context
+		Principal sdk.ValAddress
+	}{
+		Ctx:       ctx,
+		Principal: principal,
+	}
+	mock.lockGetProxy.Lock()
+	mock.calls.GetProxy = append(mock.calls.GetProxy, callInfo)
+	mock.lockGetProxy.Unlock()
+	return mock.GetProxyFunc(ctx, principal)
+}
+
+// GetProxyCalls gets all the calls that were made to GetProxy.
+// Check the length with:
+//     len(mockedBroadcaster.GetProxyCalls())
+func (mock *BroadcasterMock) GetProxyCalls() []struct {
+	Ctx       sdk.Context
+	Principal sdk.ValAddress
+} {
+	var calls []struct {
+		Ctx       sdk.Context
+		Principal sdk.ValAddress
+	}
+	mock.lockGetProxy.RLock()
+	calls = mock.calls.GetProxy
+	mock.lockGetProxy.RUnlock()
+	return calls
+}

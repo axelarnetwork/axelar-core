@@ -23,21 +23,23 @@ var _ exported.Snapshotter = Keeper{}
 
 // Keeper represents the snapshot keeper
 type Keeper struct {
-	storeKey sdk.StoreKey
-	staking  types.StakingKeeper
-	slasher  types.Slasher
-	cdc      *codec.Codec
-	params   subspace.Subspace
+	storeKey    sdk.StoreKey
+	staking     types.StakingKeeper
+	slasher     types.Slasher
+	broadcaster types.Broadcaster
+	cdc         *codec.Codec
+	params      subspace.Subspace
 }
 
 // NewKeeper creates a new keeper for the staking module
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramSpace params.Subspace, staking types.StakingKeeper, slasher types.Slasher) Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramSpace params.Subspace, broadcaster types.Broadcaster, staking types.StakingKeeper, slasher types.Slasher) Keeper {
 	return Keeper{
-		storeKey: key,
-		cdc:      cdc,
-		staking:  staking,
-		params:   paramSpace.WithKeyTable(types.KeyTable()),
-		slasher:  slasher,
+		storeKey:    key,
+		cdc:         cdc,
+		staking:     staking,
+		params:      paramSpace.WithKeyTable(types.KeyTable()),
+		slasher:     slasher,
+		broadcaster: broadcaster,
 	}
 }
 
@@ -95,6 +97,16 @@ func (k Keeper) TakeSnapshot(ctx sdk.Context) error {
 	if s.Timestamp.Add(lockingPeriod).After(ctx.BlockTime()) {
 		return fmt.Errorf("not enough time has passed since last snapshot, need to wait %s longer",
 			s.Timestamp.Add(lockingPeriod).Sub(ctx.BlockTime()).String())
+	}
+
+	// select only validators that have registered broadcast proxies
+	var participants []string
+	for _, v := range s.Validators {
+		proxy := k.broadcaster.GetProxy(ctx, v.GetOperator())
+		if proxy == nil {
+			return fmt.Errorf("validator %s has not registered a proxy", v.GetOperator().String())
+		}
+		participants = append(participants, v.GetOperator().String())
 	}
 
 	k.executeSnapshot(ctx, s.Counter+1)

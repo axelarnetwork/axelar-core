@@ -31,13 +31,9 @@ func (k Keeper) StartSign(ctx sdk.Context, voter types.Voter, keyID string, sigI
 		return fmt.Errorf(fmt.Sprintf("not enough active validators are online: threshold [%d], online [%d]",
 			threshold, len(snapshot.Validators)))
 	}
-	// sign cannot proceed unless all validators have registered broadcast proxies
+	// set sign participates
 	var participants []string
 	for _, v := range snapshot.Validators {
-		proxy := k.broadcaster.GetProxy(ctx, v.GetOperator())
-		if proxy == nil {
-			return fmt.Errorf("validator %s has not registered a proxy", v.GetOperator().String())
-		}
 		participants = append(participants, v.GetOperator().String())
 		k.setParticipateInSign(ctx, sigID, v.GetOperator())
 	}
