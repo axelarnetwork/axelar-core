@@ -9,6 +9,14 @@ import (
 	"strings"
 )
 
+const (
+	PathVarChain           = "Chain"
+	PathVarEthereumAddress = "EthereumAddress"
+	PathVarSymbol          = "Symbol"
+	PathVarTxID            = "TxID"
+	PathVarCommandID       = "CommandID"
+)
+
 // Extract the sender address from an SDK base request
 func ExtractReqSender(w http.ResponseWriter, req rest.BaseReq) (sdk.AccAddress, bool) {
 	sender, err := sdk.AccAddressFromBech32(req.From)
