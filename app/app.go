@@ -285,10 +285,6 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		},
 	}
 
-	app.snapKeeper = snapKeeper.NewKeeper(app.cdc, keys[snapTypes.StoreKey], snapshotSubspace, app.broadcastKeeper, app.stakingKeeper, slashingKeeperCast)
-
-	app.nexusKeeper = nexusKeeper.NewKeeper(app.cdc, keys[nexusTypes.StoreKey], nexusSubspace)
-
 	keybase, err := keyring.NewKeyring(sdk.KeyringServiceName(), axelarCfg.ClientConfig.KeyringBackend, viper.GetString("clihome"), os.Stdin)
 	if err != nil {
 		tmos.Exit(err.Error())
@@ -297,6 +293,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
+
 	app.broadcastKeeper, err = broadcastKeeper.NewKeeper(
 		app.cdc,
 		keys[broadcastTypes.StoreKey],
@@ -308,6 +305,11 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		axelarCfg.ClientConfig,
 		logger,
 	)
+
+	app.snapKeeper = snapKeeper.NewKeeper(app.cdc, keys[snapTypes.StoreKey], snapshotSubspace, app.broadcastKeeper, app.stakingKeeper, slashingKeeperCast)
+
+	app.nexusKeeper = nexusKeeper.NewKeeper(app.cdc, keys[nexusTypes.StoreKey], nexusSubspace)
+
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
@@ -324,6 +326,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		keys[tssTypes.StoreKey],
 		tssSubspace,
 		app.broadcastKeeper,
+		app.snapKeeper,
 	)
 
 	var rpcEth ethTypes.RPCClient

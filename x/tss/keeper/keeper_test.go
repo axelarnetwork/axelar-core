@@ -68,7 +68,13 @@ func setup(t *testing.T) *testSetup {
 		Signature:   make(chan []byte, 1),
 	}
 
-	k := NewKeeper(testutils.Codec(), sdk.NewKVStoreKey("tss"), subspace, broadcaster)
+	snapMock := &snapMock.SnapshotterMock{
+		FilterActiveValidatorsFunc: func(_ sdk.Context, validators []snapshot.Validator) ([]snapshot.Validator, error) {
+			return validators, nil
+		},
+	}
+
+	k := NewKeeper(testutils.Codec(), sdk.NewKVStoreKey("tss"), subspace, broadcaster, snapMock)
 	k.SetParams(ctx, types.DefaultParams())
 
 	setup.Keeper = k

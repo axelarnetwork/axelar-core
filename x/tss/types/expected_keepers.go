@@ -18,7 +18,10 @@ type Broadcaster interface {
 
 // Snapshotter provides validator snapshot functionality
 type Snapshotter interface {
-	snapshot.Snapshotter
+	FilterActiveValidators(ctx sdk.Context, validators []snapshot.Validator) ([]snapshot.Validator, error)
+	GetLatestSnapshot(ctx sdk.Context) (snapshot.Snapshot, bool)
+	GetSnapshot(ctx sdk.Context, counter int64) (snapshot.Snapshot, bool)
+	TakeSnapshot(ctx sdk.Context) error
 }
 
 // Nexus provides access to the nexus functionality

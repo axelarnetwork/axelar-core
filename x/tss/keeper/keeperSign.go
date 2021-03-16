@@ -24,13 +24,19 @@ func (k Keeper) StartSign(ctx sdk.Context, voter types.Voter, keyID string, sigI
 	// might make sense to store it with the snapshot after keygen is done.
 	threshold := k.ComputeCorruptionThreshold(ctx, len(snapshot.Validators))
 
-	k.Logger(ctx).Info(fmt.Sprintf("starting sign with threshold [%d] (need [%d]), online validators count [%d]",
-		threshold, threshold+1, len(snapshot.Validators)))
+	activeValidators, err := k.snapshotter.FilterActiveValidators(ctx, snapshot.Validators)
+	if err != nil {
+		return err
+	}
 
-	if len(snapshot.Validators) <= threshold {
+	if len(activeValidators) <= threshold {
 		return fmt.Errorf(fmt.Sprintf("not enough active validators are online: threshold [%d], online [%d]",
 			threshold, len(snapshot.Validators)))
 	}
+
+	k.Logger(ctx).Info(fmt.Sprintf("starting sign with threshold [%d] (need [%d]), online validators count [%d]",
+		threshold, threshold+1, len(activeValidators)))
+
 	// set sign participants
 	var participants []string
 	for _, v := range snapshot.Validators {
