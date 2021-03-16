@@ -29,6 +29,7 @@ import (
 	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -546,7 +547,7 @@ func TestNewHandler_SignPendingTransfers(t *testing.T) {
 				GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
 					return rand.PosI64(), true
 				},
-				StartSignFunc: func(_ sdk.Context, _ string, _ string, msg []byte, snapshot snapshot.Snapshot) error {
+				StartSignFunc: func(_ sdk.Context, _ tssTypes.Voter, _ string, _ string, msg []byte, _ snapshot.Snapshot) error {
 					r, s, _ := ecdsa.Sign(cryptoRand.Reader, sk, msg)
 					sigs = append(sigs, btcec.Signature{R: r, S: s})
 					return nil

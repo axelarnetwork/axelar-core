@@ -14,7 +14,7 @@ import (
 )
 
 // StartSign starts a tss signing protocol using the specified key for the given chain.
-func (k Keeper) StartSign(ctx sdk.Context, keyID string, sigID string, msg []byte, snapshot snapshot.Snapshot) error {
+func (k Keeper) StartSign(ctx sdk.Context, voter types.Voter, keyID string, sigID string, msg []byte, snapshot snapshot.Snapshot) error {
 	if _, ok := k.getKeyIDForSig(ctx, sigID); ok {
 		return fmt.Errorf("sigID %s has been used before", sigID)
 	}
@@ -43,7 +43,7 @@ func (k Keeper) StartSign(ctx sdk.Context, keyID string, sigID string, msg []byt
 	}
 
 	poll := voting.NewPollMeta(types.ModuleName, types.EventTypeSign, sigID)
-	if err := k.voter.InitPoll(ctx, poll); err != nil {
+	if err := voter.InitPoll(ctx, poll); err != nil {
 		return err
 	}
 

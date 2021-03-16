@@ -9,6 +9,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"sync"
@@ -306,7 +307,7 @@ var _ types.Signer = &SignerMock{}
 // 			GetSnapshotCounterForKeyIDFunc: func(ctx sdk.Context, keyID string) (int64, bool) {
 // 				panic("mock out the GetSnapshotCounterForKeyID method")
 // 			},
-// 			StartSignFunc: func(ctx sdk.Context, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
+// 			StartSignFunc: func(ctx sdk.Context, voter tssTypes.Voter, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
 // 				panic("mock out the StartSign method")
 // 			},
 // 		}
@@ -338,7 +339,7 @@ type SignerMock struct {
 	GetSnapshotCounterForKeyIDFunc func(ctx sdk.Context, keyID string) (int64, bool)
 
 	// StartSignFunc mocks the StartSign method.
-	StartSignFunc func(ctx sdk.Context, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error
+	StartSignFunc func(ctx sdk.Context, voter tssTypes.Voter, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -395,6 +396,8 @@ type SignerMock struct {
 		StartSign []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
+			// Voter is the voter argument value.
+			Voter tssTypes.Voter
 			// KeyID is the keyID argument value.
 			KeyID string
 			// SigID is the sigID argument value.
@@ -661,18 +664,20 @@ func (mock *SignerMock) GetSnapshotCounterForKeyIDCalls() []struct {
 }
 
 // StartSign calls StartSignFunc.
-func (mock *SignerMock) StartSign(ctx sdk.Context, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
+func (mock *SignerMock) StartSign(ctx sdk.Context, voter tssTypes.Voter, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
 	if mock.StartSignFunc == nil {
 		panic("SignerMock.StartSignFunc: method is nil but Signer.StartSign was just called")
 	}
 	callInfo := struct {
 		Ctx              sdk.Context
+		Voter            tssTypes.Voter
 		KeyID            string
 		SigID            string
 		Msg              []byte
 		SnapshotMoqParam snapshot.Snapshot
 	}{
 		Ctx:              ctx,
+		Voter:            voter,
 		KeyID:            keyID,
 		SigID:            sigID,
 		Msg:              msg,
@@ -681,7 +686,7 @@ func (mock *SignerMock) StartSign(ctx sdk.Context, keyID string, sigID string, m
 	mock.lockStartSign.Lock()
 	mock.calls.StartSign = append(mock.calls.StartSign, callInfo)
 	mock.lockStartSign.Unlock()
-	return mock.StartSignFunc(ctx, keyID, sigID, msg, snapshotMoqParam)
+	return mock.StartSignFunc(ctx, voter, keyID, sigID, msg, snapshotMoqParam)
 }
 
 // StartSignCalls gets all the calls that were made to StartSign.
@@ -689,6 +694,7 @@ func (mock *SignerMock) StartSign(ctx sdk.Context, keyID string, sigID string, m
 //     len(mockedSigner.StartSignCalls())
 func (mock *SignerMock) StartSignCalls() []struct {
 	Ctx              sdk.Context
+	Voter            tssTypes.Voter
 	KeyID            string
 	SigID            string
 	Msg              []byte
@@ -696,6 +702,7 @@ func (mock *SignerMock) StartSignCalls() []struct {
 } {
 	var calls []struct {
 		Ctx              sdk.Context
+		Voter            tssTypes.Voter
 		KeyID            string
 		SigID            string
 		Msg              []byte

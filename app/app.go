@@ -312,12 +312,17 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		tmos.Exit(err.Error())
 	}
 
-	app.votingKeeper = voteKeeper.NewKeeper(app.cdc, keys[voteTypes.StoreKey], dbadapter.Store{DB: dbm.NewMemDB()}, app.snapKeeper, app.broadcastKeeper)
+	app.votingKeeper = voteKeeper.NewKeeper(
+		app.cdc,
+		keys[voteTypes.StoreKey],
+		dbadapter.Store{DB: dbm.NewMemDB()},
+		app.snapKeeper,
+		app.broadcastKeeper,
+	)
 	app.tssKeeper = tssKeeper.NewKeeper(
 		app.cdc,
 		keys[tssTypes.StoreKey],
 		tssSubspace,
-		app.votingKeeper,
 		app.broadcastKeeper,
 	)
 

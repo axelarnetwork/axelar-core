@@ -110,7 +110,7 @@ func newNode(moniker string, broadcaster fake.Broadcaster, mocks testMocks) *fak
 			sdk.NewKVStoreKey("tstorekey"),
 			tssTypes.DefaultParamspace,
 		),
-		voter, broadcaster,
+		broadcaster,
 	)
 	signer.SetParams(ctx, tssTypes.DefaultParams())
 

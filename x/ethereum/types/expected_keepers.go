@@ -8,6 +8,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -34,7 +35,7 @@ type Nexus interface {
 
 // Signer provides keygen and signing functionality
 type Signer interface {
-	StartSign(ctx sdk.Context, keyID string, sigID string, msg []byte, snapshot snapshot.Snapshot) error
+	StartSign(ctx sdk.Context, voter tssTypes.Voter, keyID string, sigID string, msg []byte, snapshot snapshot.Snapshot) error
 	GetCurrentMasterKeyID(ctx sdk.Context, chain exported.Chain) (string, bool)
 	GetSig(ctx sdk.Context, sigID string) (tss.Signature, bool)
 	GetKey(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool)

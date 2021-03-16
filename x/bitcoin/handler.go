@@ -30,7 +30,7 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, signer type
 		case *types.MsgVoteVerifiedTx:
 			return handleMsgVoteVerifiedTx(ctx, k, v, n, msg)
 		case types.MsgSignPendingTransfers:
-			return handleMsgSignPendingTransfers(ctx, k, signer, n, snapshotter, msg)
+			return handleMsgSignPendingTransfers(ctx, k, signer, n, snapshotter, v, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
@@ -211,7 +211,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 	}, nil
 }
 
-func handleMsgSignPendingTransfers(ctx sdk.Context, k keeper.Keeper, signer types.Signer, n types.Nexus, snapshotter types.Snapshotter, msg types.MsgSignPendingTransfers) (*sdk.Result, error) {
+func handleMsgSignPendingTransfers(ctx sdk.Context, k keeper.Keeper, signer types.Signer, n types.Nexus, snapshotter types.Snapshotter, v types.Voter, msg types.MsgSignPendingTransfers) (*sdk.Result, error) {
 	outPuts, totalWithdrawals := prepareOutputs(ctx, k, n)
 	prevOuts, totalDeposits := prepareInputs(ctx, k)
 
@@ -239,7 +239,7 @@ func handleMsgSignPendingTransfers(ctx sdk.Context, k keeper.Keeper, signer type
 	}
 	k.SetRawTx(ctx, tx)
 
-	err = startSignInputs(ctx, k, signer, snapshotter, tx)
+	err = startSignInputs(ctx, k, signer, snapshotter, v, tx)
 	if err != nil {
 		return nil, err
 	}
@@ -333,7 +333,7 @@ func prepareOutputs(ctx sdk.Context, k keeper.Keeper, n types.Nexus) ([]types.Ou
 	return outPuts, totalOut
 }
 
-func startSignInputs(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snapshotter types.Snapshotter, tx *wire.MsgTx) error {
+func startSignInputs(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snapshotter types.Snapshotter, v types.Voter, tx *wire.MsgTx) error {
 	hashes, err := k.GetHashesToSign(ctx, tx)
 	if err != nil {
 		return err
@@ -356,7 +356,7 @@ func startSignInputs(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 			return fmt.Errorf("no snapshot found for counter num %d", counter)
 		}
 
-		err = signer.StartSign(ctx, keyID, serializedHash, hash, snapshot)
+		err = signer.StartSign(ctx, v, keyID, serializedHash, hash, snapshot)
 		if err != nil {
 			return err
 		}
