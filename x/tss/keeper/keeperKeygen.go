@@ -22,13 +22,9 @@ func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID string, th
 		return fmt.Errorf("keyID %s is already in use", keyID)
 	}
 
-	// keygen cannot proceed unless all validators have registered broadcast proxies
+	// set keygen participants
 	var participants []string
 	for _, v := range snapshot.Validators {
-		proxy := k.broadcaster.GetProxy(ctx, v.GetOperator())
-		if proxy == nil {
-			return fmt.Errorf("validator %s has not registered a proxy", v.GetOperator().String())
-		}
 		participants = append(participants, v.GetOperator().String())
 		k.setParticipatesInKeygen(ctx, keyID, v.GetOperator())
 	}

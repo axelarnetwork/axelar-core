@@ -54,7 +54,6 @@ type testSetup struct {
 
 func setup(t *testing.T) *testSetup {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-
 	broadcaster := prepareBroadcaster(t, ctx, testutils.Codec(), validators)
 	voter := &mock.VoterMock{
 		InitPollFunc:   func(ctx sdk.Context, poll exported.PollMeta) error { return nil },
