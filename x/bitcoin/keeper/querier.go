@@ -22,6 +22,7 @@ const (
 	QueryDepositAddress = "depositAddr"
 	QueryOutInfo        = "outPointInfo"
 	SendTx              = "sendTransfers"
+	GetTx               = "getTransferTx"
 )
 
 // NewQuerier returns a new querier for the Bitcoin module
@@ -40,6 +41,8 @@ func NewQuerier(k Keeper, s types.Signer, n types.Nexus, rpc types.RPCClient) sd
 			res, err = queryTxOutInfo(rpc, blockHash, req.Data)
 		case SendTx:
 			res, err = sendTx(ctx, k, rpc, s)
+		case GetTx:
+			res, err = getConsolidationTx(ctx, k, rpc, s)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown btc-bridge query endpoint: %s", path[1]))
 		}
@@ -128,4 +131,33 @@ func sendTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer) ([]b
 	}
 
 	return k.Codec().MustMarshalJSON(hash), nil
+}
+
+func getConsolidationTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer) ([]byte, error) {
+	rawTx := k.GetRawTx(ctx)
+	if rawTx == nil {
+		return nil, fmt.Errorf("no consolidation transaction found")
+	}
+
+	hashes, err := k.GetHashesToSign(ctx, rawTx)
+	if err != nil {
+		return nil, err
+	}
+
+	var sigs []btcec.Signature
+	for _, hash := range hashes {
+		sigID := hex.EncodeToString(hash)
+		sig, ok := s.GetSig(ctx, sigID)
+		if !ok {
+			return nil, fmt.Errorf("signature not found")
+		}
+		sigs = append(sigs, btcec.Signature{R: sig.R, S: sig.S})
+	}
+
+	tx, err := k.AssembleBtcTx(ctx, rawTx, sigs)
+	if err != nil {
+		return nil, err
+	}
+
+	return k.Codec().MustMarshalJSON(tx), nil
 }

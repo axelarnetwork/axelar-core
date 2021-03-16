@@ -2,6 +2,7 @@ package rest
 
 import (
 	"fmt"
+	"github.com/axelarnetwork/axelar-core/utils"
 	"math/big"
 	"net/http"
 	"strconv"
@@ -70,6 +71,27 @@ func GetHandlerQueryAxelarGatewayAddress(cliCtx context.CLIContext) http.Handler
 	}
 }
 
+func GetHandlerQueryCommandData(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+		commandID := mux.Vars(r)[utils.PathVarCommandID]
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryCommandData, commandID), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSendCommandTx, commandID).Error())
+			return
+		}
+
+		var data []byte
+		cliCtx.Codec.MustUnmarshalJSON(res, &data)
+		rest.PostProcessResponse(w, cliCtx, common.Bytes2Hex(data))
+	}
+}
+
 func GetHandlerQueryCreateDeployTx(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -117,7 +139,7 @@ func GetHandlerQuerySendTx(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		txID := mux.Vars(r)[PathVarTxID]
+		txID := mux.Vars(r)[utils.PathVarTxID]
 
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.SendTx, txID), nil)
 		if err != nil {
