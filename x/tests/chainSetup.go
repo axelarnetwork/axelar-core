@@ -101,9 +101,16 @@ func newNode(moniker string, broadcaster fake.Broadcaster, mocks testMocks) *fak
 	ethereumKeeper := ethKeeper.NewEthKeeper(testutils.Codec(), sdk.NewKVStoreKey(ethTypes.StoreKey), ethSubspace)
 	ethereumKeeper.SetParams(ctx, ethTypes.DefaultParams())
 
-	signer := tssKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(tssTypes.StoreKey),
-		params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), tssTypes.DefaultParamspace),
-		voter, broadcaster, snapKeeper,
+	signer := tssKeeper.NewKeeper(
+		testutils.Codec(),
+		sdk.NewKVStoreKey(tssTypes.StoreKey),
+		params.NewSubspace(
+			testutils.Codec(),
+			sdk.NewKVStoreKey("storeKey"),
+			sdk.NewKVStoreKey("tstorekey"),
+			tssTypes.DefaultParamspace,
+		),
+		voter, broadcaster,
 	)
 	signer.SetParams(ctx, tssTypes.DefaultParams())
 
@@ -117,8 +124,8 @@ func newNode(moniker string, broadcaster fake.Broadcaster, mocks testMocks) *fak
 	router := fake.NewRouter()
 
 	broadcastHandler := broadcast.NewHandler(broadcaster)
-	btcHandler := bitcoin.NewHandler(bitcoinKeeper, voter, mocks.BTC, signer, nexusK)
-	ethHandler := ethereum.NewHandler(ethereumKeeper, mocks.ETH, voter, signer, nexusK)
+	btcHandler := bitcoin.NewHandler(bitcoinKeeper, voter, mocks.BTC, signer, nexusK, snapKeeper)
+	ethHandler := ethereum.NewHandler(ethereumKeeper, mocks.ETH, voter, signer, nexusK, snapKeeper)
 	snapHandler := snapshot.NewHandler(snapKeeper)
 	tssHandler := tss.NewHandler(signer, snapKeeper, nexusK, voter, mocks.Staker)
 	voteHandler := vote.NewHandler()

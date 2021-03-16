@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -19,14 +20,14 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 	// start keygen to record the snapshot for each key
 	err := s.Keeper.StartKeygen(s.Ctx, keyID, 1, snap)
 	assert.NoError(t, err)
-	err = s.Keeper.StartSign(s.Ctx, keyID, sigID, msgToSign)
+	err = s.Keeper.StartSign(s.Ctx, keyID, sigID, msgToSign, exported.Snapshot{})
 	assert.NoError(t, err)
 
 	keyID = "keyID2"
 	msgToSign = []byte("second message")
 	err = s.Keeper.StartKeygen(s.Ctx, keyID, 1, snap)
 	assert.NoError(t, err)
-	err = s.Keeper.StartSign(s.Ctx, keyID, sigID, msgToSign)
+	err = s.Keeper.StartSign(s.Ctx, keyID, sigID, msgToSign, exported.Snapshot{})
 	assert.Error(t, err)
 }
 

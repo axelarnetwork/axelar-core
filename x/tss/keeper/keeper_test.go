@@ -46,7 +46,6 @@ var (
 type testSetup struct {
 	Keeper      Keeper
 	Broadcaster fake.Broadcaster
-	Snapshotter *snapMock.SnapshotterMock
 	Ctx         sdk.Context
 	PrivateKey  chan *ecdsa.PrivateKey
 	Signature   chan []byte
@@ -54,21 +53,11 @@ type testSetup struct {
 
 func setup(t *testing.T) *testSetup {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	counter := int64(350)
 
-	snapshotter := &snapMock.SnapshotterMock{
-		GetSnapshotFunc: func(sdk.Context, int64) (snapshot.Snapshot, bool) {
-			return snapshot.Snapshot{Validators: validators, TotalPower: sdk.NewInt(counter)}, true
-		},
-		GetLatestCounterFunc: func(ctx sdk.Context) int64 {
-			return counter
-		},
-	}
 	broadcaster := prepareBroadcaster(t, ctx, testutils.Codec(), validators)
 	subspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), "tss")
 	setup := &testSetup{
 		Broadcaster: broadcaster,
-		Snapshotter: snapshotter,
 		Ctx:         ctx,
 		PrivateKey:  make(chan *ecdsa.PrivateKey, 1),
 		Signature:   make(chan []byte, 1),
@@ -78,7 +67,7 @@ func setup(t *testing.T) *testSetup {
 		InitPollFunc:   func(ctx sdk.Context, poll exported.PollMeta) error { return nil },
 		RecordVoteFunc: func(exported.MsgVote) {},
 	}
-	k := NewKeeper(testutils.Codec(), sdk.NewKVStoreKey("tss"), subspace, voter, broadcaster, snapshotter)
+	k := NewKeeper(testutils.Codec(), sdk.NewKVStoreKey("tss"), subspace, voter, broadcaster)
 	k.SetParams(ctx, types.DefaultParams())
 
 	setup.Keeper = k
