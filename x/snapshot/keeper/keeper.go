@@ -121,20 +121,16 @@ func (k Keeper) GetLatestSnapshot(ctx sdk.Context) (exported.Snapshot, bool) {
 }
 
 // selects only validators that have registered broadcast proxies
-func (k Keeper) filterNonProxies(ctx sdk.Context, s exported.Snapshot) exported.Snapshot {
+func (k Keeper) filterProxies(ctx sdk.Context, validators []exported.Validator) []exported.Validator {
 	var withProxies []exported.Validator
-	activeStake := sdk.ZeroInt()
-	for _, v := range s.Validators {
+	for _, v := range validators {
 		proxy := k.broadcaster.GetProxy(ctx, v.GetOperator())
 		if proxy != nil {
-			activeStake = activeStake.AddRaw(v.GetConsensusPower())
 			withProxies = append(withProxies, v)
 		}
 	}
 
-	s.Validators = withProxies
-	s.TotalPower = activeStake
-	return s
+	return withProxies
 }
 
 // GetSnapshot retrieves a snapshot by counter, if it exists
@@ -148,7 +144,7 @@ func (k Keeper) GetSnapshot(ctx sdk.Context, counter int64) (exported.Snapshot, 
 	var snapshot exported.Snapshot
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &snapshot)
 
-	return k.filterNonProxies(ctx, snapshot), true
+	return snapshot, true
 }
 
 // GetLatestCounter returns the latest snapshot counter
@@ -179,13 +175,15 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, nextCounter int64) {
 		return
 	}
 
+	withProxies := k.filterProxies(ctx, activeValidators)
+
 	activeStake := sdk.ZeroInt()
-	for _, validator := range validators {
+	for _, validator := range withProxies {
 		activeStake = activeStake.AddRaw(validator.GetConsensusPower())
 	}
 
 	snapshot := exported.Snapshot{
-		Validators: activeValidators,
+		Validators: withProxies,
 		Timestamp:  ctx.BlockTime(),
 		Height:     ctx.BlockHeight(),
 		TotalPower: activeStake,
