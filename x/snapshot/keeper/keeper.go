@@ -99,16 +99,6 @@ func (k Keeper) TakeSnapshot(ctx sdk.Context) error {
 			s.Timestamp.Add(lockingPeriod).Sub(ctx.BlockTime()).String())
 	}
 
-	// select only validators that have registered broadcast proxies
-	var participants []string
-	for _, v := range s.Validators {
-		proxy := k.broadcaster.GetProxy(ctx, v.GetOperator())
-		if proxy == nil {
-			return fmt.Errorf("validator %s has not registered a proxy", v.GetOperator().String())
-		}
-		participants = append(participants, v.GetOperator().String())
-	}
-
 	k.executeSnapshot(ctx, s.Counter+1)
 	k.setLatestCounter(ctx, s.Counter+1)
 	return nil
@@ -127,7 +117,27 @@ func (k Keeper) GetLatestSnapshot(ctx sdk.Context) (exported.Snapshot, bool) {
 		return exported.Snapshot{}, false
 	}
 
-	return k.GetSnapshot(ctx, r)
+	s, ok := k.GetSnapshot(ctx, r)
+	if !ok {
+		return exported.Snapshot{}, false
+	}
+
+	return k.filterParticipants(ctx, s), true
+}
+
+func (k Keeper) filterParticipants(ctx sdk.Context, s exported.Snapshot) exported.Snapshot {
+	// select only validators that have registered broadcast proxies
+	var participants []exported.Validator
+	for _, v := range s.Validators {
+		proxy := k.broadcaster.GetProxy(ctx, v.GetOperator())
+		if proxy == nil {
+			continue
+		}
+		participants = append(participants, v)
+	}
+
+	s.Validators = participants
+	return s
 }
 
 // GetSnapshot retrieves a snapshot by counter, if it exists
@@ -140,7 +150,7 @@ func (k Keeper) GetSnapshot(ctx sdk.Context, counter int64) (exported.Snapshot, 
 
 	var snapshot exported.Snapshot
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &snapshot)
-	return snapshot, true
+	return k.filterParticipants(ctx, snapshot), true
 }
 
 // GetLatestCounter returns the latest snapshot counter
