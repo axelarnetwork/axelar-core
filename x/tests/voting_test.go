@@ -80,7 +80,7 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 	validators := []exported.Validator{val1, val2, val3}
 	staker := &snapMock.SnapshotterMock{
 		GetLatestCounterFunc: func(sdk.Context) int64 { return counter },
-		GetSnapshotFunc: func(sdk.Context, int64, bool) (exported.Snapshot, bool) {
+		GetSnapshotFunc: func(sdk.Context, int64) (exported.Snapshot, bool) {
 			return exported.Snapshot{Validators: validators, TotalPower: sdk.NewInt(350)}, true
 		},
 	}

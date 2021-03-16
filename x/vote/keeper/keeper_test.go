@@ -47,7 +47,7 @@ func setup() *testSetup {
 	setup := &testSetup{Ctx: sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())}
 	setup.Snapshotter = &snapMock.SnapshotterMock{
 		GetLatestCounterFunc: func(sdk.Context) int64 { return rand.I64Between(1, 10000) },
-		GetSnapshotFunc: func(sdk.Context, int64, bool) (snapshot.Snapshot, bool) {
+		GetSnapshotFunc: func(sdk.Context, int64) (snapshot.Snapshot, bool) {
 			totalPower := sdk.ZeroInt()
 			for _, v := range setup.ValidatorSet {
 				totalPower = totalPower.AddRaw(v.GetConsensusPower())

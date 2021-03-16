@@ -97,12 +97,12 @@ func TestSnapshots(t *testing.T) {
 			keeper := NewKeeper(cdc, sdk.NewKVStoreKey("staking"), snapSubspace, broadcasterMock, staker, slashingKeeper)
 			keeper.SetParams(ctx, types.DefaultParams())
 
-			_, ok := keeper.GetSnapshot(ctx, 0, false)
+			_, ok := keeper.GetSnapshot(ctx, 0)
 
 			assert.False(t, ok)
 			assert.Equal(t, int64(-1), keeper.GetLatestCounter(ctx))
 
-			_, ok = keeper.GetLatestSnapshot(ctx, false)
+			_, ok = keeper.GetLatestSnapshot(ctx)
 
 			assert.False(t, ok)
 
@@ -110,7 +110,7 @@ func TestSnapshots(t *testing.T) {
 
 			assert.NoError(t, err)
 
-			snapshot, ok := keeper.GetSnapshot(ctx, 0, false)
+			snapshot, ok := keeper.GetSnapshot(ctx, 0)
 
 			assert.True(t, ok)
 			assert.Equal(t, int64(0), keeper.GetLatestCounter(ctx))
@@ -129,7 +129,7 @@ func TestSnapshots(t *testing.T) {
 
 			assert.NoError(t, err)
 
-			snapshot, ok = keeper.GetSnapshot(ctx, 1, false)
+			snapshot, ok = keeper.GetSnapshot(ctx, 1)
 
 			assert.True(t, ok)
 			assert.Equal(t, keeper.GetLatestCounter(ctx), int64(1))

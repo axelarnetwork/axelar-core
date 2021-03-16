@@ -31,7 +31,7 @@ func (k Keeper) StartSign(ctx sdk.Context, voter types.Voter, keyID string, sigI
 		return fmt.Errorf(fmt.Sprintf("not enough active validators are online: threshold [%d], online [%d]",
 			threshold, len(snapshot.Validators)))
 	}
-	// set sign participates
+	// set sign participants
 	var participants []string
 	for _, v := range snapshot.Validators {
 		participants = append(participants, v.GetOperator().String())

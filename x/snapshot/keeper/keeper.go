@@ -85,7 +85,7 @@ func (k Keeper) FilterActiveValidators(ctx sdk.Context, validators []exported.Va
 
 // TakeSnapshot attempts to create a new snapshot
 func (k Keeper) TakeSnapshot(ctx sdk.Context) error {
-	s, ok := k.GetLatestSnapshot(ctx, false)
+	s, ok := k.GetLatestSnapshot(ctx)
 
 	if !ok {
 		k.executeSnapshot(ctx, 0)
@@ -111,34 +111,34 @@ func (k Keeper) getLockingPeriod(ctx sdk.Context) time.Duration {
 }
 
 // GetLatestSnapshot retrieves the last created snapshot
-func (k Keeper) GetLatestSnapshot(ctx sdk.Context, proxiesOnly bool) (exported.Snapshot, bool) {
+func (k Keeper) GetLatestSnapshot(ctx sdk.Context) (exported.Snapshot, bool) {
 	r := k.GetLatestCounter(ctx)
 	if r == -1 {
 		return exported.Snapshot{}, false
 	}
 
-	return k.GetSnapshot(ctx, r, proxiesOnly)
+	return k.GetSnapshot(ctx, r)
 }
 
-func (k Keeper) filterParticipants(ctx sdk.Context, s exported.Snapshot) exported.Snapshot {
-	// select only validators that have registered broadcast proxies
-	var participants []exported.Validator
+// selects only validators that have registered broadcast proxies
+func (k Keeper) filterNonProxies(ctx sdk.Context, s exported.Snapshot) exported.Snapshot {
+	var withProxies []exported.Validator
 	activeStake := sdk.ZeroInt()
 	for _, v := range s.Validators {
 		proxy := k.broadcaster.GetProxy(ctx, v.GetOperator())
 		if proxy != nil {
 			activeStake = activeStake.AddRaw(v.GetConsensusPower())
-			participants = append(participants, v)
+			withProxies = append(withProxies, v)
 		}
 	}
 
-	s.Validators = participants
+	s.Validators = withProxies
 	s.TotalPower = activeStake
 	return s
 }
 
 // GetSnapshot retrieves a snapshot by counter, if it exists
-func (k Keeper) GetSnapshot(ctx sdk.Context, counter int64, proxiesOnly bool) (exported.Snapshot, bool) {
+func (k Keeper) GetSnapshot(ctx sdk.Context, counter int64) (exported.Snapshot, bool) {
 	bz := ctx.KVStore(k.storeKey).Get(counterKey(counter))
 	if bz == nil {
 
@@ -148,10 +148,7 @@ func (k Keeper) GetSnapshot(ctx sdk.Context, counter int64, proxiesOnly bool) (e
 	var snapshot exported.Snapshot
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &snapshot)
 
-	if proxiesOnly {
-		return k.filterParticipants(ctx, snapshot), true
-	}
-	return snapshot, true
+	return k.filterNonProxies(ctx, snapshot), true
 }
 
 // GetLatestCounter returns the latest snapshot counter

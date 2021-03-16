@@ -22,7 +22,7 @@ func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID string, th
 		return fmt.Errorf("keyID %s is already in use", keyID)
 	}
 
-	// set keygen participates
+	// set keygen participants
 	var participants []string
 	for _, v := range snapshot.Validators {
 		participants = append(participants, v.GetOperator().String())
