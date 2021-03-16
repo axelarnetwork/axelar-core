@@ -123,14 +123,17 @@ func (k Keeper) GetLatestSnapshot(ctx sdk.Context, proxiesOnly bool) (exported.S
 func (k Keeper) filterParticipants(ctx sdk.Context, s exported.Snapshot) exported.Snapshot {
 	// select only validators that have registered broadcast proxies
 	var participants []exported.Validator
+	activeStake := sdk.ZeroInt()
 	for _, v := range s.Validators {
 		proxy := k.broadcaster.GetProxy(ctx, v.GetOperator())
 		if proxy != nil {
+			activeStake = activeStake.AddRaw(v.GetConsensusPower())
 			participants = append(participants, v)
 		}
 	}
 
 	s.Validators = participants
+	s.TotalPower = activeStake
 	return s
 }
 
