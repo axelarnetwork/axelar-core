@@ -21,7 +21,7 @@ func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Vot
 		case types.MsgSignTraffic:
 			return handleMsgSignTraffic(ctx, k, msg)
 		case types.MsgKeygenStart:
-			return handleMsgKeygenStart(ctx, k, s, staker, msg)
+			return handleMsgKeygenStart(ctx, k, s, staker, v, msg)
 		case types.MsgAssignNextMasterKey:
 			return handleMsgAssignNextMasterKey(ctx, k, s, n, msg)
 		case types.MsgRotateMasterKey:
@@ -179,7 +179,7 @@ func handleMsgKeygenTraffic(ctx sdk.Context, k keeper.Keeper, msg types.MsgKeyge
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, staker types.StakingKeeper, msg types.MsgKeygenStart) (*sdk.Result, error) {
+func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, staker types.StakingKeeper, v types.Voter, msg types.MsgKeygenStart) (*sdk.Result, error) {
 
 	// record the snapshot of active validators that we'll use for the key
 	if err := s.TakeSnapshot(ctx); err != nil {
@@ -209,7 +209,7 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 		return nil, err
 	}
 
-	err := k.StartKeygen(ctx, msg.NewKeyID, threshold, snapshot)
+	err := k.StartKeygen(ctx, v, msg.NewKeyID, threshold, snapshot)
 	if err != nil {
 		return nil, err
 	}

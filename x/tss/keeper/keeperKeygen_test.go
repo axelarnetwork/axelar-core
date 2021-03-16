@@ -13,16 +13,15 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
-
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 func TestKeeper_StartKeygen_IdAlreadyInUse_ReturnError(t *testing.T) {
 	for _, keyID := range randDistinctStr.Distinct().Take(100) {
 		s := setup(t)
-		err := s.Keeper.StartKeygen(s.Ctx, keyID, 1, snap)
+		err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, 1, snap)
 		assert.NoError(t, err)
-		err = s.Keeper.StartKeygen(s.Ctx, keyID, 1, snap)
+		err = s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, 1, snap)
 		assert.Error(t, err)
 	}
 }
@@ -51,7 +50,7 @@ func TestKeeper_AssignNextMasterKey_StartKeygenDuringLockingPeriod_Locked(t *tes
 		s.SetLockingPeriod(lockingPeriod)
 
 		keyID := randDistinctStr.Next()
-		err := s.Keeper.StartKeygen(ctx, keyID, len(validators)-1, snap)
+		err := s.Keeper.StartKeygen(ctx, s.Voter, keyID, len(validators)-1, snap)
 		assert.NoError(t, err)
 
 		// time passes
@@ -89,7 +88,7 @@ func TestKeeper_AssignNextMasterKey_StartKeygenAfterLockingPeriod_Unlocked(t *te
 		s.SetLockingPeriod(lockingPeriod)
 
 		keyID := randDistinctStr.Next()
-		err := s.Keeper.StartKeygen(ctx, keyID, len(validators)-1, snap)
+		err := s.Keeper.StartKeygen(ctx, s.Voter, keyID, len(validators)-1, snap)
 		assert.NoError(t, err)
 
 		// time passes
