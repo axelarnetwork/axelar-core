@@ -160,7 +160,7 @@ func (k Keeper) TallyVote(ctx sdk.Context, vote exported.MsgVote) error {
 		return err
 	}
 
-	snap, ok := k.snapshotter.GetSnapshot(ctx, poll.ValidatorSnapshotCounter)
+	snap, ok := k.snapshotter.GetSnapshot(ctx, poll.ValidatorSnapshotCounter, true)
 	if !ok {
 		return fmt.Errorf("no snapshot found for counter %d", poll.ValidatorSnapshotCounter)
 	}

@@ -85,7 +85,7 @@ func (k Keeper) FilterActiveValidators(ctx sdk.Context, validators []exported.Va
 
 // TakeSnapshot attempts to create a new snapshot
 func (k Keeper) TakeSnapshot(ctx sdk.Context) error {
-	s, ok := k.GetLatestSnapshot(ctx)
+	s, ok := k.GetLatestSnapshot(ctx, false)
 
 	if !ok {
 		k.executeSnapshot(ctx, 0)
@@ -111,18 +111,13 @@ func (k Keeper) getLockingPeriod(ctx sdk.Context) time.Duration {
 }
 
 // GetLatestSnapshot retrieves the last created snapshot
-func (k Keeper) GetLatestSnapshot(ctx sdk.Context) (exported.Snapshot, bool) {
+func (k Keeper) GetLatestSnapshot(ctx sdk.Context, proxiesOnly bool) (exported.Snapshot, bool) {
 	r := k.GetLatestCounter(ctx)
 	if r == -1 {
 		return exported.Snapshot{}, false
 	}
 
-	s, ok := k.GetSnapshot(ctx, r)
-	if !ok {
-		return exported.Snapshot{}, false
-	}
-
-	return k.filterParticipants(ctx, s), true
+	return k.GetSnapshot(ctx, r, proxiesOnly)
 }
 
 func (k Keeper) filterParticipants(ctx sdk.Context, s exported.Snapshot) exported.Snapshot {
@@ -141,7 +136,7 @@ func (k Keeper) filterParticipants(ctx sdk.Context, s exported.Snapshot) exporte
 }
 
 // GetSnapshot retrieves a snapshot by counter, if it exists
-func (k Keeper) GetSnapshot(ctx sdk.Context, counter int64) (exported.Snapshot, bool) {
+func (k Keeper) GetSnapshot(ctx sdk.Context, counter int64, proxiesOnly bool) (exported.Snapshot, bool) {
 	bz := ctx.KVStore(k.storeKey).Get(counterKey(counter))
 	if bz == nil {
 
@@ -150,7 +145,11 @@ func (k Keeper) GetSnapshot(ctx sdk.Context, counter int64) (exported.Snapshot, 
 
 	var snapshot exported.Snapshot
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &snapshot)
-	return k.filterParticipants(ctx, snapshot), true
+
+	if proxiesOnly {
+		return k.filterParticipants(ctx, snapshot), true
+	}
+	return snapshot, true
 }
 
 // GetLatestCounter returns the latest snapshot counter

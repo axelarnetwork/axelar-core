@@ -39,9 +39,9 @@ func (s Snapshot) GetValidator(address sdk.ValAddress) (Validator, bool) {
 
 // Snapshotter represents the interface for the snapshot module's functionality
 type Snapshotter interface {
-	GetLatestSnapshot(ctx sdk.Context) (Snapshot, bool)
+	GetLatestSnapshot(ctx sdk.Context, proxiesOnly bool) (Snapshot, bool)
 	GetLatestCounter(ctx sdk.Context) int64
-	GetSnapshot(ctx sdk.Context, counter int64) (Snapshot, bool)
+	GetSnapshot(ctx sdk.Context, counter int64, proxiesOnly bool) (Snapshot, bool)
 	FilterActiveValidators(ctx sdk.Context, validators []Validator) ([]Validator, error)
 	TakeSnapshot(ctx sdk.Context) error
 }

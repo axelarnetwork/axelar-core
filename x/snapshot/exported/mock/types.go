@@ -191,10 +191,10 @@ var _ exported.Snapshotter = &SnapshotterMock{}
 // 			GetLatestCounterFunc: func(ctx sdk.Context) int64 {
 // 				panic("mock out the GetLatestCounter method")
 // 			},
-// 			GetLatestSnapshotFunc: func(ctx sdk.Context) (exported.Snapshot, bool) {
+// 			GetLatestSnapshotFunc: func(ctx sdk.Context, proxiesOnly bool) (exported.Snapshot, bool) {
 // 				panic("mock out the GetLatestSnapshot method")
 // 			},
-// 			GetSnapshotFunc: func(ctx sdk.Context, counter int64) (exported.Snapshot, bool) {
+// 			GetSnapshotFunc: func(ctx sdk.Context, counter int64, proxiesOnly bool) (exported.Snapshot, bool) {
 // 				panic("mock out the GetSnapshot method")
 // 			},
 // 			TakeSnapshotFunc: func(ctx sdk.Context) error {
@@ -214,10 +214,10 @@ type SnapshotterMock struct {
 	GetLatestCounterFunc func(ctx sdk.Context) int64
 
 	// GetLatestSnapshotFunc mocks the GetLatestSnapshot method.
-	GetLatestSnapshotFunc func(ctx sdk.Context) (exported.Snapshot, bool)
+	GetLatestSnapshotFunc func(ctx sdk.Context, proxiesOnly bool) (exported.Snapshot, bool)
 
 	// GetSnapshotFunc mocks the GetSnapshot method.
-	GetSnapshotFunc func(ctx sdk.Context, counter int64) (exported.Snapshot, bool)
+	GetSnapshotFunc func(ctx sdk.Context, counter int64, proxiesOnly bool) (exported.Snapshot, bool)
 
 	// TakeSnapshotFunc mocks the TakeSnapshot method.
 	TakeSnapshotFunc func(ctx sdk.Context) error
@@ -240,6 +240,8 @@ type SnapshotterMock struct {
 		GetLatestSnapshot []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
+			// ProxiesOnly is the proxiesOnly argument value.
+			ProxiesOnly bool
 		}
 		// GetSnapshot holds details about calls to the GetSnapshot method.
 		GetSnapshot []struct {
@@ -247,6 +249,8 @@ type SnapshotterMock struct {
 			Ctx sdk.Context
 			// Counter is the counter argument value.
 			Counter int64
+			// ProxiesOnly is the proxiesOnly argument value.
+			ProxiesOnly bool
 		}
 		// TakeSnapshot holds details about calls to the TakeSnapshot method.
 		TakeSnapshot []struct {
@@ -328,29 +332,33 @@ func (mock *SnapshotterMock) GetLatestCounterCalls() []struct {
 }
 
 // GetLatestSnapshot calls GetLatestSnapshotFunc.
-func (mock *SnapshotterMock) GetLatestSnapshot(ctx sdk.Context) (exported.Snapshot, bool) {
+func (mock *SnapshotterMock) GetLatestSnapshot(ctx sdk.Context, proxiesOnly bool) (exported.Snapshot, bool) {
 	if mock.GetLatestSnapshotFunc == nil {
 		panic("SnapshotterMock.GetLatestSnapshotFunc: method is nil but Snapshotter.GetLatestSnapshot was just called")
 	}
 	callInfo := struct {
-		Ctx sdk.Context
+		Ctx         sdk.Context
+		ProxiesOnly bool
 	}{
-		Ctx: ctx,
+		Ctx:         ctx,
+		ProxiesOnly: proxiesOnly,
 	}
 	mock.lockGetLatestSnapshot.Lock()
 	mock.calls.GetLatestSnapshot = append(mock.calls.GetLatestSnapshot, callInfo)
 	mock.lockGetLatestSnapshot.Unlock()
-	return mock.GetLatestSnapshotFunc(ctx)
+	return mock.GetLatestSnapshotFunc(ctx, proxiesOnly)
 }
 
 // GetLatestSnapshotCalls gets all the calls that were made to GetLatestSnapshot.
 // Check the length with:
 //     len(mockedSnapshotter.GetLatestSnapshotCalls())
 func (mock *SnapshotterMock) GetLatestSnapshotCalls() []struct {
-	Ctx sdk.Context
+	Ctx         sdk.Context
+	ProxiesOnly bool
 } {
 	var calls []struct {
-		Ctx sdk.Context
+		Ctx         sdk.Context
+		ProxiesOnly bool
 	}
 	mock.lockGetLatestSnapshot.RLock()
 	calls = mock.calls.GetLatestSnapshot
@@ -359,33 +367,37 @@ func (mock *SnapshotterMock) GetLatestSnapshotCalls() []struct {
 }
 
 // GetSnapshot calls GetSnapshotFunc.
-func (mock *SnapshotterMock) GetSnapshot(ctx sdk.Context, counter int64) (exported.Snapshot, bool) {
+func (mock *SnapshotterMock) GetSnapshot(ctx sdk.Context, counter int64, proxiesOnly bool) (exported.Snapshot, bool) {
 	if mock.GetSnapshotFunc == nil {
 		panic("SnapshotterMock.GetSnapshotFunc: method is nil but Snapshotter.GetSnapshot was just called")
 	}
 	callInfo := struct {
-		Ctx     sdk.Context
-		Counter int64
+		Ctx         sdk.Context
+		Counter     int64
+		ProxiesOnly bool
 	}{
-		Ctx:     ctx,
-		Counter: counter,
+		Ctx:         ctx,
+		Counter:     counter,
+		ProxiesOnly: proxiesOnly,
 	}
 	mock.lockGetSnapshot.Lock()
 	mock.calls.GetSnapshot = append(mock.calls.GetSnapshot, callInfo)
 	mock.lockGetSnapshot.Unlock()
-	return mock.GetSnapshotFunc(ctx, counter)
+	return mock.GetSnapshotFunc(ctx, counter, proxiesOnly)
 }
 
 // GetSnapshotCalls gets all the calls that were made to GetSnapshot.
 // Check the length with:
 //     len(mockedSnapshotter.GetSnapshotCalls())
 func (mock *SnapshotterMock) GetSnapshotCalls() []struct {
-	Ctx     sdk.Context
-	Counter int64
+	Ctx         sdk.Context
+	Counter     int64
+	ProxiesOnly bool
 } {
 	var calls []struct {
-		Ctx     sdk.Context
-		Counter int64
+		Ctx         sdk.Context
+		Counter     int64
+		ProxiesOnly bool
 	}
 	mock.lockGetSnapshot.RLock()
 	calls = mock.calls.GetSnapshot

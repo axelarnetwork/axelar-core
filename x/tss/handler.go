@@ -148,7 +148,7 @@ func handleMsgAssignNextMasterKey(ctx sdk.Context, k keeper.Keeper, s types.Snap
 	if !ok {
 		return nil, fmt.Errorf("could not find snapshot counter for given key ID")
 	}
-	snapshot, ok := s.GetSnapshot(ctx, counter)
+	snapshot, ok := s.GetSnapshot(ctx, counter, true)
 	if !ok {
 		return nil, fmt.Errorf("could not find snapshot for given key ID")
 	}
@@ -186,7 +186,7 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 		return nil, err
 	}
 
-	snapshot, ok := s.GetLatestSnapshot(ctx)
+	snapshot, ok := s.GetLatestSnapshot(ctx, true)
 
 	if !ok {
 		return nil, fmt.Errorf("the system needs to have at least one validator snapshot")
