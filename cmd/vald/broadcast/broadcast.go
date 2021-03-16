@@ -250,20 +250,24 @@ func (b *BackOffBroadcaster) broadcastWithBackoff(msgs []sdk.Msg) (err error) {
 // BackOff computes the next back-off duration
 type BackOff func(retryCount int, minTimeout time.Duration) time.Duration
 
-//goland:noinspection GoUnusedGlobalVariable
 var (
 	// Exponential computes an exponential back-off
 	Exponential = func(i int, minTimeout time.Duration) time.Duration {
 		jitter := rand.Float64()
 		strategy := math.Pow(2, float64(i))
-		n := time.Duration(math.Max(strategy*jitter, minTimeout.Seconds()))
-		return n * minTimeout
+		// casting a float <1 to time.Duration ==0, so need normalize by multiplying with float64(time.Second) first
+		backoff := math.Max(strategy*jitter, 1) * minTimeout.Seconds() * float64(time.Second)
+
+		return time.Duration(backoff)
 	}
 
 	// Linear computes a linear back-off
 	Linear = func(i int, minTimeout time.Duration) time.Duration {
 		jitter := rand.Float64()
 		strategy := float64(i)
-		return time.Duration(math.Max(strategy*jitter, minTimeout.Seconds())) * time.Second
+
+		// casting a float <1 to time.Duration ==0, so need normalize by multiplying with float64(time.Second) first
+		backoff := math.Max(strategy*jitter, 1) * minTimeout.Seconds() * float64(time.Second)
+		return time.Duration(backoff)
 	}
 )
