@@ -285,7 +285,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		},
 	}
 
-	app.snapKeeper = snapKeeper.NewKeeper(app.cdc, keys[snapTypes.StoreKey], snapshotSubspace, app.stakingKeeper, slashingKeeperCast)
+	app.snapKeeper = snapKeeper.NewKeeper(app.cdc, keys[snapTypes.StoreKey], snapshotSubspace, app.broadcastKeeper, app.stakingKeeper, slashingKeeperCast)
 
 	app.nexusKeeper = nexusKeeper.NewKeeper(app.cdc, keys[nexusTypes.StoreKey], nexusSubspace)
 
@@ -312,10 +312,19 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		tmos.Exit(err.Error())
 	}
 
-	app.votingKeeper = voteKeeper.NewKeeper(app.cdc, keys[voteTypes.StoreKey], dbadapter.Store{DB: dbm.NewMemDB()}, app.snapKeeper, app.broadcastKeeper)
-
-	app.tssKeeper = tssKeeper.NewKeeper(app.cdc, keys[tssTypes.StoreKey], tssSubspace,
-		app.votingKeeper, app.broadcastKeeper, app.snapKeeper)
+	app.votingKeeper = voteKeeper.NewKeeper(
+		app.cdc,
+		keys[voteTypes.StoreKey],
+		dbadapter.Store{DB: dbm.NewMemDB()},
+		app.snapKeeper,
+		app.broadcastKeeper,
+	)
+	app.tssKeeper = tssKeeper.NewKeeper(
+		app.cdc,
+		keys[tssTypes.StoreKey],
+		tssSubspace,
+		app.broadcastKeeper,
+	)
 
 	var rpcEth ethTypes.RPCClient
 	if axelarCfg.WithEthBridge {
@@ -358,8 +367,8 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		vote.NewAppModule(app.votingKeeper),
 		broadcast.NewAppModule(app.broadcastKeeper),
 		nexus.NewAppModule(app.nexusKeeper),
-		ethereum.NewAppModule(app.ethKeeper, app.votingKeeper, app.tssKeeper, app.nexusKeeper, rpcEth),
-		bitcoin.NewAppModule(app.btcKeeper, app.votingKeeper, app.tssKeeper, app.nexusKeeper, rpcBTC),
+		ethereum.NewAppModule(app.ethKeeper, app.votingKeeper, app.tssKeeper, app.nexusKeeper, app.snapKeeper, rpcEth),
+		bitcoin.NewAppModule(app.btcKeeper, app.votingKeeper, app.tssKeeper, app.nexusKeeper, app.snapKeeper, rpcBTC),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that

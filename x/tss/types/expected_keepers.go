@@ -4,17 +4,16 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-//go:generate moq -pkg mock -out ./mock/expected_keepers.go . TofndClient TofndKeyGenClient TofndSignClient
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . TofndClient TofndKeyGenClient TofndSignClient Voter
 
 // Broadcaster provides broadcasting functionality
 type Broadcaster interface {
-	broadcast.Broadcaster
+	GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
 }
 
 // Snapshotter provides validator snapshot functionality

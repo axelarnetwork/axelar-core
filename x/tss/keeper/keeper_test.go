@@ -46,7 +46,7 @@ var (
 type testSetup struct {
 	Keeper      Keeper
 	Broadcaster fake.Broadcaster
-	Snapshotter *snapMock.SnapshotterMock
+	Voter       types.Voter
 	Ctx         sdk.Context
 	PrivateKey  chan *ecdsa.PrivateKey
 	Signature   chan []byte
@@ -54,31 +54,21 @@ type testSetup struct {
 
 func setup(t *testing.T) *testSetup {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	counter := int64(350)
-
-	snapshotter := &snapMock.SnapshotterMock{
-		GetSnapshotFunc: func(sdk.Context, int64) (snapshot.Snapshot, bool) {
-			return snapshot.Snapshot{Validators: validators, TotalPower: sdk.NewInt(counter)}, true
-		},
-		GetLatestCounterFunc: func(ctx sdk.Context) int64 {
-			return counter
-		},
-	}
 	broadcaster := prepareBroadcaster(t, ctx, testutils.Codec(), validators)
+	voter := &mock.VoterMock{
+		InitPollFunc:   func(ctx sdk.Context, poll exported.PollMeta) error { return nil },
+		RecordVoteFunc: func(exported.MsgVote) {},
+	}
 	subspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), "tss")
 	setup := &testSetup{
 		Broadcaster: broadcaster,
-		Snapshotter: snapshotter,
+		Voter:       voter,
 		Ctx:         ctx,
 		PrivateKey:  make(chan *ecdsa.PrivateKey, 1),
 		Signature:   make(chan []byte, 1),
 	}
 
-	voter := &mock.VoterMock{
-		InitPollFunc:   func(ctx sdk.Context, poll exported.PollMeta) error { return nil },
-		RecordVoteFunc: func(exported.MsgVote) {},
-	}
-	k := NewKeeper(testutils.Codec(), sdk.NewKVStoreKey("tss"), subspace, voter, broadcaster, snapshotter)
+	k := NewKeeper(testutils.Codec(), sdk.NewKVStoreKey("tss"), subspace, broadcaster)
 	k.SetParams(ctx, types.DefaultParams())
 
 	setup.Keeper = k
@@ -94,7 +84,7 @@ func (s *testSetup) SetLockingPeriod(lockingPeriod int64) {
 func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context) (keyID string, keyChan ecdsa.PublicKey) {
 	keyID = randDistinctStr.Next()
 	s.PrivateKey = make(chan *ecdsa.PrivateKey, 1)
-	err := s.Keeper.StartKeygen(ctx, keyID, len(validators)-1, snap)
+	err := s.Keeper.StartKeygen(ctx, s.Voter, keyID, len(validators)-1, snap)
 	assert.NoError(t, err)
 
 	sk, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)

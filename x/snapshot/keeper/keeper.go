@@ -23,21 +23,23 @@ var _ exported.Snapshotter = Keeper{}
 
 // Keeper represents the snapshot keeper
 type Keeper struct {
-	storeKey sdk.StoreKey
-	staking  types.StakingKeeper
-	slasher  types.Slasher
-	cdc      *codec.Codec
-	params   subspace.Subspace
+	storeKey    sdk.StoreKey
+	staking     types.StakingKeeper
+	slasher     types.Slasher
+	broadcaster types.Broadcaster
+	cdc         *codec.Codec
+	params      subspace.Subspace
 }
 
 // NewKeeper creates a new keeper for the staking module
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramSpace params.Subspace, staking types.StakingKeeper, slasher types.Slasher) Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramSpace params.Subspace, broadcaster types.Broadcaster, staking types.StakingKeeper, slasher types.Slasher) Keeper {
 	return Keeper{
-		storeKey: key,
-		cdc:      cdc,
-		staking:  staking,
-		params:   paramSpace.WithKeyTable(types.KeyTable()),
-		slasher:  slasher,
+		storeKey:    key,
+		cdc:         cdc,
+		staking:     staking,
+		params:      paramSpace.WithKeyTable(types.KeyTable()),
+		slasher:     slasher,
+		broadcaster: broadcaster,
 	}
 }
 
@@ -118,6 +120,19 @@ func (k Keeper) GetLatestSnapshot(ctx sdk.Context) (exported.Snapshot, bool) {
 	return k.GetSnapshot(ctx, r)
 }
 
+// selects only validators that have registered broadcast proxies
+func (k Keeper) filterProxies(ctx sdk.Context, validators []exported.Validator) []exported.Validator {
+	var withProxies []exported.Validator
+	for _, v := range validators {
+		proxy := k.broadcaster.GetProxy(ctx, v.GetOperator())
+		if proxy != nil {
+			withProxies = append(withProxies, v)
+		}
+	}
+
+	return withProxies
+}
+
 // GetSnapshot retrieves a snapshot by counter, if it exists
 func (k Keeper) GetSnapshot(ctx sdk.Context, counter int64) (exported.Snapshot, bool) {
 	bz := ctx.KVStore(k.storeKey).Get(counterKey(counter))
@@ -128,6 +143,7 @@ func (k Keeper) GetSnapshot(ctx sdk.Context, counter int64) (exported.Snapshot, 
 
 	var snapshot exported.Snapshot
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &snapshot)
+
 	return snapshot, true
 }
 
@@ -159,13 +175,15 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, nextCounter int64) {
 		return
 	}
 
+	withProxies := k.filterProxies(ctx, activeValidators)
+
 	activeStake := sdk.ZeroInt()
-	for _, validator := range validators {
+	for _, validator := range withProxies {
 		activeStake = activeStake.AddRaw(validator.GetConsensusPower())
 	}
 
 	snapshot := exported.Snapshot{
-		Validators: activeValidators,
+		Validators: withProxies,
 		Timestamp:  ctx.BlockTime(),
 		Height:     ctx.BlockHeight(),
 		TotalPower: activeStake,

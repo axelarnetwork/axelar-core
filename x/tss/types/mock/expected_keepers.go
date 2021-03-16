@@ -7,6 +7,8 @@ import (
 	"context"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
+	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"sync"
@@ -901,5 +903,266 @@ func (mock *TofndSignClientMock) TrailerCalls() []struct {
 	mock.lockTrailer.RLock()
 	calls = mock.calls.Trailer
 	mock.lockTrailer.RUnlock()
+	return calls
+}
+
+// Ensure, that VoterMock does implement types.Voter.
+// If this is not the case, regenerate this file with moq.
+var _ types.Voter = &VoterMock{}
+
+// VoterMock is a mock implementation of types.Voter.
+//
+// 	func TestSomethingThatUsesVoter(t *testing.T) {
+//
+// 		// make and configure a mocked types.Voter
+// 		mockedVoter := &VoterMock{
+// 			DeletePollFunc: func(ctx sdk.Context, poll voting.PollMeta)  {
+// 				panic("mock out the DeletePoll method")
+// 			},
+// 			InitPollFunc: func(ctx sdk.Context, poll voting.PollMeta) error {
+// 				panic("mock out the InitPoll method")
+// 			},
+// 			RecordVoteFunc: func(vote voting.MsgVote)  {
+// 				panic("mock out the RecordVote method")
+// 			},
+// 			ResultFunc: func(ctx sdk.Context, poll voting.PollMeta) voting.VotingData {
+// 				panic("mock out the Result method")
+// 			},
+// 			TallyVoteFunc: func(ctx sdk.Context, vote voting.MsgVote) error {
+// 				panic("mock out the TallyVote method")
+// 			},
+// 		}
+//
+// 		// use mockedVoter in code that requires types.Voter
+// 		// and then make assertions.
+//
+// 	}
+type VoterMock struct {
+	// DeletePollFunc mocks the DeletePoll method.
+	DeletePollFunc func(ctx sdk.Context, poll voting.PollMeta)
+
+	// InitPollFunc mocks the InitPoll method.
+	InitPollFunc func(ctx sdk.Context, poll voting.PollMeta) error
+
+	// RecordVoteFunc mocks the RecordVote method.
+	RecordVoteFunc func(vote voting.MsgVote)
+
+	// ResultFunc mocks the Result method.
+	ResultFunc func(ctx sdk.Context, poll voting.PollMeta) voting.VotingData
+
+	// TallyVoteFunc mocks the TallyVote method.
+	TallyVoteFunc func(ctx sdk.Context, vote voting.MsgVote) error
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// DeletePoll holds details about calls to the DeletePoll method.
+		DeletePoll []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Poll is the poll argument value.
+			Poll voting.PollMeta
+		}
+		// InitPoll holds details about calls to the InitPoll method.
+		InitPoll []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Poll is the poll argument value.
+			Poll voting.PollMeta
+		}
+		// RecordVote holds details about calls to the RecordVote method.
+		RecordVote []struct {
+			// Vote is the vote argument value.
+			Vote voting.MsgVote
+		}
+		// Result holds details about calls to the Result method.
+		Result []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Poll is the poll argument value.
+			Poll voting.PollMeta
+		}
+		// TallyVote holds details about calls to the TallyVote method.
+		TallyVote []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Vote is the vote argument value.
+			Vote voting.MsgVote
+		}
+	}
+	lockDeletePoll sync.RWMutex
+	lockInitPoll   sync.RWMutex
+	lockRecordVote sync.RWMutex
+	lockResult     sync.RWMutex
+	lockTallyVote  sync.RWMutex
+}
+
+// DeletePoll calls DeletePollFunc.
+func (mock *VoterMock) DeletePoll(ctx sdk.Context, poll voting.PollMeta) {
+	if mock.DeletePollFunc == nil {
+		panic("VoterMock.DeletePollFunc: method is nil but Voter.DeletePoll was just called")
+	}
+	callInfo := struct {
+		Ctx  sdk.Context
+		Poll voting.PollMeta
+	}{
+		Ctx:  ctx,
+		Poll: poll,
+	}
+	mock.lockDeletePoll.Lock()
+	mock.calls.DeletePoll = append(mock.calls.DeletePoll, callInfo)
+	mock.lockDeletePoll.Unlock()
+	mock.DeletePollFunc(ctx, poll)
+}
+
+// DeletePollCalls gets all the calls that were made to DeletePoll.
+// Check the length with:
+//     len(mockedVoter.DeletePollCalls())
+func (mock *VoterMock) DeletePollCalls() []struct {
+	Ctx  sdk.Context
+	Poll voting.PollMeta
+} {
+	var calls []struct {
+		Ctx  sdk.Context
+		Poll voting.PollMeta
+	}
+	mock.lockDeletePoll.RLock()
+	calls = mock.calls.DeletePoll
+	mock.lockDeletePoll.RUnlock()
+	return calls
+}
+
+// InitPoll calls InitPollFunc.
+func (mock *VoterMock) InitPoll(ctx sdk.Context, poll voting.PollMeta) error {
+	if mock.InitPollFunc == nil {
+		panic("VoterMock.InitPollFunc: method is nil but Voter.InitPoll was just called")
+	}
+	callInfo := struct {
+		Ctx  sdk.Context
+		Poll voting.PollMeta
+	}{
+		Ctx:  ctx,
+		Poll: poll,
+	}
+	mock.lockInitPoll.Lock()
+	mock.calls.InitPoll = append(mock.calls.InitPoll, callInfo)
+	mock.lockInitPoll.Unlock()
+	return mock.InitPollFunc(ctx, poll)
+}
+
+// InitPollCalls gets all the calls that were made to InitPoll.
+// Check the length with:
+//     len(mockedVoter.InitPollCalls())
+func (mock *VoterMock) InitPollCalls() []struct {
+	Ctx  sdk.Context
+	Poll voting.PollMeta
+} {
+	var calls []struct {
+		Ctx  sdk.Context
+		Poll voting.PollMeta
+	}
+	mock.lockInitPoll.RLock()
+	calls = mock.calls.InitPoll
+	mock.lockInitPoll.RUnlock()
+	return calls
+}
+
+// RecordVote calls RecordVoteFunc.
+func (mock *VoterMock) RecordVote(vote voting.MsgVote) {
+	if mock.RecordVoteFunc == nil {
+		panic("VoterMock.RecordVoteFunc: method is nil but Voter.RecordVote was just called")
+	}
+	callInfo := struct {
+		Vote voting.MsgVote
+	}{
+		Vote: vote,
+	}
+	mock.lockRecordVote.Lock()
+	mock.calls.RecordVote = append(mock.calls.RecordVote, callInfo)
+	mock.lockRecordVote.Unlock()
+	mock.RecordVoteFunc(vote)
+}
+
+// RecordVoteCalls gets all the calls that were made to RecordVote.
+// Check the length with:
+//     len(mockedVoter.RecordVoteCalls())
+func (mock *VoterMock) RecordVoteCalls() []struct {
+	Vote voting.MsgVote
+} {
+	var calls []struct {
+		Vote voting.MsgVote
+	}
+	mock.lockRecordVote.RLock()
+	calls = mock.calls.RecordVote
+	mock.lockRecordVote.RUnlock()
+	return calls
+}
+
+// Result calls ResultFunc.
+func (mock *VoterMock) Result(ctx sdk.Context, poll voting.PollMeta) voting.VotingData {
+	if mock.ResultFunc == nil {
+		panic("VoterMock.ResultFunc: method is nil but Voter.Result was just called")
+	}
+	callInfo := struct {
+		Ctx  sdk.Context
+		Poll voting.PollMeta
+	}{
+		Ctx:  ctx,
+		Poll: poll,
+	}
+	mock.lockResult.Lock()
+	mock.calls.Result = append(mock.calls.Result, callInfo)
+	mock.lockResult.Unlock()
+	return mock.ResultFunc(ctx, poll)
+}
+
+// ResultCalls gets all the calls that were made to Result.
+// Check the length with:
+//     len(mockedVoter.ResultCalls())
+func (mock *VoterMock) ResultCalls() []struct {
+	Ctx  sdk.Context
+	Poll voting.PollMeta
+} {
+	var calls []struct {
+		Ctx  sdk.Context
+		Poll voting.PollMeta
+	}
+	mock.lockResult.RLock()
+	calls = mock.calls.Result
+	mock.lockResult.RUnlock()
+	return calls
+}
+
+// TallyVote calls TallyVoteFunc.
+func (mock *VoterMock) TallyVote(ctx sdk.Context, vote voting.MsgVote) error {
+	if mock.TallyVoteFunc == nil {
+		panic("VoterMock.TallyVoteFunc: method is nil but Voter.TallyVote was just called")
+	}
+	callInfo := struct {
+		Ctx  sdk.Context
+		Vote voting.MsgVote
+	}{
+		Ctx:  ctx,
+		Vote: vote,
+	}
+	mock.lockTallyVote.Lock()
+	mock.calls.TallyVote = append(mock.calls.TallyVote, callInfo)
+	mock.lockTallyVote.Unlock()
+	return mock.TallyVoteFunc(ctx, vote)
+}
+
+// TallyVoteCalls gets all the calls that were made to TallyVote.
+// Check the length with:
+//     len(mockedVoter.TallyVoteCalls())
+func (mock *VoterMock) TallyVoteCalls() []struct {
+	Ctx  sdk.Context
+	Vote voting.MsgVote
+} {
+	var calls []struct {
+		Ctx  sdk.Context
+		Vote voting.MsgVote
+	}
+	mock.lockTallyVote.RLock()
+	calls = mock.calls.TallyVote
+	mock.lockTallyVote.RUnlock()
 	return calls
 }

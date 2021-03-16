@@ -7,7 +7,9 @@ import (
 	"crypto/ecdsa"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"sync"
@@ -305,7 +307,7 @@ var _ types.Signer = &SignerMock{}
 // 			GetSnapshotCounterForKeyIDFunc: func(ctx sdk.Context, keyID string) (int64, bool) {
 // 				panic("mock out the GetSnapshotCounterForKeyID method")
 // 			},
-// 			StartSignFunc: func(ctx sdk.Context, keyID string, sigID string, msg []byte) error {
+// 			StartSignFunc: func(ctx sdk.Context, voter tssTypes.Voter, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
 // 				panic("mock out the StartSign method")
 // 			},
 // 		}
@@ -337,7 +339,7 @@ type SignerMock struct {
 	GetSnapshotCounterForKeyIDFunc func(ctx sdk.Context, keyID string) (int64, bool)
 
 	// StartSignFunc mocks the StartSign method.
-	StartSignFunc func(ctx sdk.Context, keyID string, sigID string, msg []byte) error
+	StartSignFunc func(ctx sdk.Context, voter tssTypes.Voter, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -394,12 +396,16 @@ type SignerMock struct {
 		StartSign []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
+			// Voter is the voter argument value.
+			Voter tssTypes.Voter
 			// KeyID is the keyID argument value.
 			KeyID string
 			// SigID is the sigID argument value.
 			SigID string
 			// Msg is the msg argument value.
 			Msg []byte
+			// SnapshotMoqParam is the snapshotMoqParam argument value.
+			SnapshotMoqParam snapshot.Snapshot
 		}
 	}
 	lockGetCurrentMasterKey        sync.RWMutex
@@ -658,41 +664,49 @@ func (mock *SignerMock) GetSnapshotCounterForKeyIDCalls() []struct {
 }
 
 // StartSign calls StartSignFunc.
-func (mock *SignerMock) StartSign(ctx sdk.Context, keyID string, sigID string, msg []byte) error {
+func (mock *SignerMock) StartSign(ctx sdk.Context, voter tssTypes.Voter, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
 	if mock.StartSignFunc == nil {
 		panic("SignerMock.StartSignFunc: method is nil but Signer.StartSign was just called")
 	}
 	callInfo := struct {
-		Ctx   sdk.Context
-		KeyID string
-		SigID string
-		Msg   []byte
+		Ctx              sdk.Context
+		Voter            tssTypes.Voter
+		KeyID            string
+		SigID            string
+		Msg              []byte
+		SnapshotMoqParam snapshot.Snapshot
 	}{
-		Ctx:   ctx,
-		KeyID: keyID,
-		SigID: sigID,
-		Msg:   msg,
+		Ctx:              ctx,
+		Voter:            voter,
+		KeyID:            keyID,
+		SigID:            sigID,
+		Msg:              msg,
+		SnapshotMoqParam: snapshotMoqParam,
 	}
 	mock.lockStartSign.Lock()
 	mock.calls.StartSign = append(mock.calls.StartSign, callInfo)
 	mock.lockStartSign.Unlock()
-	return mock.StartSignFunc(ctx, keyID, sigID, msg)
+	return mock.StartSignFunc(ctx, voter, keyID, sigID, msg, snapshotMoqParam)
 }
 
 // StartSignCalls gets all the calls that were made to StartSign.
 // Check the length with:
 //     len(mockedSigner.StartSignCalls())
 func (mock *SignerMock) StartSignCalls() []struct {
-	Ctx   sdk.Context
-	KeyID string
-	SigID string
-	Msg   []byte
+	Ctx              sdk.Context
+	Voter            tssTypes.Voter
+	KeyID            string
+	SigID            string
+	Msg              []byte
+	SnapshotMoqParam snapshot.Snapshot
 } {
 	var calls []struct {
-		Ctx   sdk.Context
-		KeyID string
-		SigID string
-		Msg   []byte
+		Ctx              sdk.Context
+		Voter            tssTypes.Voter
+		KeyID            string
+		SigID            string
+		Msg              []byte
+		SnapshotMoqParam snapshot.Snapshot
 	}
 	mock.lockStartSign.RLock()
 	calls = mock.calls.StartSign
@@ -1184,5 +1198,76 @@ func (mock *NexusMock) RegisterAssetCalls() []struct {
 	mock.lockRegisterAsset.RLock()
 	calls = mock.calls.RegisterAsset
 	mock.lockRegisterAsset.RUnlock()
+	return calls
+}
+
+// Ensure, that SnapshotterMock does implement types.Snapshotter.
+// If this is not the case, regenerate this file with moq.
+var _ types.Snapshotter = &SnapshotterMock{}
+
+// SnapshotterMock is a mock implementation of types.Snapshotter.
+//
+// 	func TestSomethingThatUsesSnapshotter(t *testing.T) {
+//
+// 		// make and configure a mocked types.Snapshotter
+// 		mockedSnapshotter := &SnapshotterMock{
+// 			GetSnapshotFunc: func(ctx sdk.Context, counter int64) (snapshot.Snapshot, bool) {
+// 				panic("mock out the GetSnapshot method")
+// 			},
+// 		}
+//
+// 		// use mockedSnapshotter in code that requires types.Snapshotter
+// 		// and then make assertions.
+//
+// 	}
+type SnapshotterMock struct {
+	// GetSnapshotFunc mocks the GetSnapshot method.
+	GetSnapshotFunc func(ctx sdk.Context, counter int64) (snapshot.Snapshot, bool)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetSnapshot holds details about calls to the GetSnapshot method.
+		GetSnapshot []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Counter is the counter argument value.
+			Counter int64
+		}
+	}
+	lockGetSnapshot sync.RWMutex
+}
+
+// GetSnapshot calls GetSnapshotFunc.
+func (mock *SnapshotterMock) GetSnapshot(ctx sdk.Context, counter int64) (snapshot.Snapshot, bool) {
+	if mock.GetSnapshotFunc == nil {
+		panic("SnapshotterMock.GetSnapshotFunc: method is nil but Snapshotter.GetSnapshot was just called")
+	}
+	callInfo := struct {
+		Ctx     sdk.Context
+		Counter int64
+	}{
+		Ctx:     ctx,
+		Counter: counter,
+	}
+	mock.lockGetSnapshot.Lock()
+	mock.calls.GetSnapshot = append(mock.calls.GetSnapshot, callInfo)
+	mock.lockGetSnapshot.Unlock()
+	return mock.GetSnapshotFunc(ctx, counter)
+}
+
+// GetSnapshotCalls gets all the calls that were made to GetSnapshot.
+// Check the length with:
+//     len(mockedSnapshotter.GetSnapshotCalls())
+func (mock *SnapshotterMock) GetSnapshotCalls() []struct {
+	Ctx     sdk.Context
+	Counter int64
+} {
+	var calls []struct {
+		Ctx     sdk.Context
+		Counter int64
+	}
+	mock.lockGetSnapshot.RLock()
+	calls = mock.calls.GetSnapshot
+	mock.lockGetSnapshot.RUnlock()
 	return calls
 }

@@ -6,11 +6,13 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Voter Signer Nexus
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Voter Signer Nexus Snapshotter
 
 // Voter wraps around the existing exported.Voter interface to adhere to the Cosmos convention of keeping all
 // expected keepers from other modules in the expected_keepers.go file
@@ -33,7 +35,7 @@ type Nexus interface {
 
 // Signer provides keygen and signing functionality
 type Signer interface {
-	StartSign(ctx sdk.Context, keyID string, sigID string, msg []byte) error
+	StartSign(ctx sdk.Context, voter tssTypes.Voter, keyID string, sigID string, msg []byte, snapshot snapshot.Snapshot) error
 	GetCurrentMasterKeyID(ctx sdk.Context, chain exported.Chain) (string, bool)
 	GetSig(ctx sdk.Context, sigID string) (tss.Signature, bool)
 	GetKey(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool)
@@ -41,4 +43,8 @@ type Signer interface {
 	GetNextMasterKey(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool)
 	GetKeyForSigID(ctx sdk.Context, sigID string) (ecdsa.PublicKey, bool)
 	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool)
+}
+
+type Snapshotter interface {
+	GetSnapshot(ctx sdk.Context, counter int64) (snapshot.Snapshot, bool)
 }
