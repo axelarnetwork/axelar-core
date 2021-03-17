@@ -185,9 +185,6 @@ var _ exported.Snapshotter = &SnapshotterMock{}
 //
 // 		// make and configure a mocked exported.Snapshotter
 // 		mockedSnapshotter := &SnapshotterMock{
-// 			FilterActiveValidatorsFunc: func(ctx sdk.Context, validators []exported.Validator) ([]exported.Validator, error) {
-// 				panic("mock out the FilterActiveValidators method")
-// 			},
 // 			GetLatestCounterFunc: func(ctx sdk.Context) int64 {
 // 				panic("mock out the GetLatestCounter method")
 // 			},
@@ -207,9 +204,6 @@ var _ exported.Snapshotter = &SnapshotterMock{}
 //
 // 	}
 type SnapshotterMock struct {
-	// FilterActiveValidatorsFunc mocks the FilterActiveValidators method.
-	FilterActiveValidatorsFunc func(ctx sdk.Context, validators []exported.Validator) ([]exported.Validator, error)
-
 	// GetLatestCounterFunc mocks the GetLatestCounter method.
 	GetLatestCounterFunc func(ctx sdk.Context) int64
 
@@ -224,13 +218,6 @@ type SnapshotterMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// FilterActiveValidators holds details about calls to the FilterActiveValidators method.
-		FilterActiveValidators []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Validators is the validators argument value.
-			Validators []exported.Validator
-		}
 		// GetLatestCounter holds details about calls to the GetLatestCounter method.
 		GetLatestCounter []struct {
 			// Ctx is the ctx argument value.
@@ -254,46 +241,10 @@ type SnapshotterMock struct {
 			Ctx sdk.Context
 		}
 	}
-	lockFilterActiveValidators sync.RWMutex
-	lockGetLatestCounter       sync.RWMutex
-	lockGetLatestSnapshot      sync.RWMutex
-	lockGetSnapshot            sync.RWMutex
-	lockTakeSnapshot           sync.RWMutex
-}
-
-// FilterActiveValidators calls FilterActiveValidatorsFunc.
-func (mock *SnapshotterMock) FilterActiveValidators(ctx sdk.Context, validators []exported.Validator) ([]exported.Validator, error) {
-	if mock.FilterActiveValidatorsFunc == nil {
-		panic("SnapshotterMock.FilterActiveValidatorsFunc: method is nil but Snapshotter.FilterActiveValidators was just called")
-	}
-	callInfo := struct {
-		Ctx        sdk.Context
-		Validators []exported.Validator
-	}{
-		Ctx:        ctx,
-		Validators: validators,
-	}
-	mock.lockFilterActiveValidators.Lock()
-	mock.calls.FilterActiveValidators = append(mock.calls.FilterActiveValidators, callInfo)
-	mock.lockFilterActiveValidators.Unlock()
-	return mock.FilterActiveValidatorsFunc(ctx, validators)
-}
-
-// FilterActiveValidatorsCalls gets all the calls that were made to FilterActiveValidators.
-// Check the length with:
-//     len(mockedSnapshotter.FilterActiveValidatorsCalls())
-func (mock *SnapshotterMock) FilterActiveValidatorsCalls() []struct {
-	Ctx        sdk.Context
-	Validators []exported.Validator
-} {
-	var calls []struct {
-		Ctx        sdk.Context
-		Validators []exported.Validator
-	}
-	mock.lockFilterActiveValidators.RLock()
-	calls = mock.calls.FilterActiveValidators
-	mock.lockFilterActiveValidators.RUnlock()
-	return calls
+	lockGetLatestCounter  sync.RWMutex
+	lockGetLatestSnapshot sync.RWMutex
+	lockGetSnapshot       sync.RWMutex
+	lockTakeSnapshot      sync.RWMutex
 }
 
 // GetLatestCounter calls GetLatestCounterFunc.

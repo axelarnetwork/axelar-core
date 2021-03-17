@@ -111,7 +111,7 @@ func newNode(moniker string, broadcaster fake.Broadcaster, mocks testMocks) *fak
 			tssTypes.DefaultParamspace,
 		),
 		broadcaster,
-		snapKeeper,
+		mocks.Slasher,
 	)
 	signer.SetParams(ctx, tssTypes.DefaultParams())
 

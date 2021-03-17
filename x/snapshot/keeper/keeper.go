@@ -11,6 +11,7 @@ import (
 	sdkExported "github.com/cosmos/cosmos-sdk/x/staking/exported"
 	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 )
@@ -59,30 +60,6 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	return
 }
 
-// FilterActiveValidators returns the subset of all validators that bonded and should be declared active
-// and their aggregate staking power
-func (k Keeper) FilterActiveValidators(ctx sdk.Context, validators []exported.Validator) ([]exported.Validator, error) {
-	var activeValidators []exported.Validator
-
-	for _, validator := range validators {
-
-		addr := validator.GetConsAddr()
-		signingInfo, found := k.slasher.GetValidatorSigningInfo(ctx, addr)
-		if !found {
-			return nil, fmt.Errorf("snapshot: couldn't retrieve signing info for a validator")
-		}
-
-		// check if for any reason the validator should be declared as inactive
-		// e.g., the validator missed to vote on blocks
-		if signingInfo.Tombstoned || signingInfo.MissedBlocksCounter > 0 || validator.IsJailed() {
-			continue
-		}
-		activeValidators = append(activeValidators, validator)
-	}
-
-	return activeValidators, nil
-}
-
 // TakeSnapshot attempts to create a new snapshot
 func (k Keeper) TakeSnapshot(ctx sdk.Context) error {
 	s, ok := k.GetLatestSnapshot(ctx)
@@ -118,19 +95,6 @@ func (k Keeper) GetLatestSnapshot(ctx sdk.Context) (exported.Snapshot, bool) {
 	}
 
 	return k.GetSnapshot(ctx, r)
-}
-
-// selects only validators that have registered broadcast proxies
-func (k Keeper) filterProxies(ctx sdk.Context, validators []exported.Validator) []exported.Validator {
-	var withProxies []exported.Validator
-	for _, v := range validators {
-		proxy := k.broadcaster.GetProxy(ctx, v.GetOperator())
-		if proxy != nil {
-			withProxies = append(withProxies, v)
-		}
-	}
-
-	return withProxies
 }
 
 // GetSnapshot retrieves a snapshot by counter, if it exists
@@ -170,27 +134,36 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, nextCounter int64) {
 
 	k.staking.IterateLastValidators(ctx, fnAppend)
 
-	activeValidators, err := k.FilterActiveValidators(ctx, validators)
-	if err != nil {
-		return
-	}
-
-	withProxies := k.filterProxies(ctx, activeValidators)
-
 	activeStake := sdk.ZeroInt()
-	for _, validator := range withProxies {
+	for _, validator := range validators {
 		activeStake = activeStake.AddRaw(validator.GetConsensusPower())
 	}
 
 	snapshot := exported.Snapshot{
-		Validators: withProxies,
+		Validators: validators,
 		Timestamp:  ctx.BlockTime(),
 		Height:     ctx.BlockHeight(),
 		TotalPower: activeStake,
 		Counter:    nextCounter,
 	}
 
-	ctx.KVStore(k.storeKey).Set(counterKey(nextCounter), k.cdc.MustMarshalBinaryLengthPrefixed(snapshot))
+	// filters
+	filterActive := func(vals []exported.Validator) ([]exported.Validator, error) {
+		return utils.FilterActiveValidators(ctx, k.slasher, vals)
+	}
+	filterProxies := func(vals []exported.Validator) ([]exported.Validator, error) {
+		return utils.FilterProxies(ctx, k.broadcaster, vals), nil
+	}
+	filteredSnapshot, err := snapshot.Filter(filterActive)
+	if err != nil {
+		return
+	}
+	filteredSnapshot, err = filteredSnapshot.Filter(filterProxies)
+	if err != nil {
+		return
+	}
+
+	ctx.KVStore(k.storeKey).Set(counterKey(nextCounter), k.cdc.MustMarshalBinaryLengthPrefixed(filteredSnapshot))
 }
 
 func (k Keeper) setLatestCounter(ctx sdk.Context, counter int64) {

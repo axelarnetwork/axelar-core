@@ -10,6 +10,8 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -25,17 +27,17 @@ const (
 
 type Keeper struct {
 	broadcaster types.Broadcaster
-	snapshotter types.Snapshotter
+	slasher     snapTypes.Slasher
 	params      params.Subspace
 	storeKey    sdk.StoreKey
 	cdc         *codec.Codec
 }
 
 // NewKeeper constructs a tss keeper
-func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace, broadcaster types.Broadcaster, snapshotter types.Snapshotter) Keeper {
+func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace, broadcaster types.Broadcaster, slasher snapTypes.Slasher) Keeper {
 	return Keeper{
 		broadcaster: broadcaster,
-		snapshotter: snapshotter,
+		slasher:     slasher,
 		cdc:         cdc,
 		params:      paramSpace.WithKeyTable(types.KeyTable()),
 		storeKey:    storeKey,
@@ -72,4 +74,28 @@ func (k Keeper) ComputeCorruptionThreshold(ctx sdk.Context, totalvalidators int)
 	// threshold = totalValidators * corruption threshold - 1
 	return int(math.Ceil(float64(totalvalidators)*float64(threshold.Numerator)/
 		float64(threshold.Denominator))) - 1
+}
+
+// filterActiveValidators returns the subset of all validators that bonded and should be declared active
+// and their aggregate staking power
+func (k Keeper) filterActiveValidators(ctx sdk.Context, validators []snapshot.Validator) ([]snapshot.Validator, error) {
+	var activeValidators []snapshot.Validator
+
+	for _, validator := range validators {
+
+		addr := validator.GetConsAddr()
+		signingInfo, found := k.slasher.GetValidatorSigningInfo(ctx, addr)
+		if !found {
+			return nil, fmt.Errorf("snapshot: couldn't retrieve signing info for a validator")
+		}
+
+		// check if for any reason the validator should be declared as inactive
+		// e.g., the validator missed to vote on blocks
+		if signingInfo.Tombstoned || signingInfo.MissedBlocksCounter > 0 || validator.IsJailed() {
+			continue
+		}
+		activeValidators = append(activeValidators, validator)
+	}
+
+	return activeValidators, nil
 }
