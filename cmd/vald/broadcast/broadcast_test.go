@@ -184,34 +184,42 @@ func TestBroadcaster_Broadcast(t *testing.T) {
 	})
 }
 
-func TestXBOBroadcaster_Broadcast(t *testing.T) {
-	t.Run("failed broadcast with exponential backoff", func(t *testing.T) {
-		b, rpc := setup()
-		retries := int(rand.I64Between(1, 20))
-		xbo := WithExponentialBackoff(b, 20*time.Microsecond, retries)
+func TestBackoffBroadcaster_Broadcast(t *testing.T) {
+	testCases := []struct {
+		label    string
+		strategy BackOff
+	}{
+		{"exponential", Exponential},
+		{"linear", Linear}}
 
-		rpc.BroadcastTxSyncFunc = func(authtypes.StdTx) (*coretypes.ResultBroadcastTx, error) {
-			return nil, fmt.Errorf("some error")
-		}
+	for _, testCase := range testCases {
+		t.Run(fmt.Sprintf("failed broadcast with %s backoff", testCase.label), func(t *testing.T) {
+			b, rpc := setup()
+			retries := int(rand.I64Between(1, 20))
+			xbo := WithBackoff(b, testCase.strategy, 20*time.Microsecond, retries)
 
-		iterations := int(rand.I64Between(20, 100))
+			rpc.BroadcastTxSyncFunc = func(authtypes.StdTx) (*coretypes.ResultBroadcastTx, error) {
+				return nil, fmt.Errorf("some error")
+			}
 
-		wg := &sync.WaitGroup{}
-		wg.Add(iterations)
-		for i := 0; i < iterations; i++ {
-			go func() {
-				defer wg.Done()
-				msgs := createMsgsWithRandomSigners()
-				err := xbo.Broadcast(msgs...)
-				assert.Error(t, err)
-				t.Log(err)
-			}()
-		}
-		wg.Wait()
+			iterations := int(rand.I64Between(20, 100))
 
-		assert.Len(t, rpc.BroadcastTxSyncCalls(), iterations*(retries+1))
-	})
+			wg := &sync.WaitGroup{}
+			wg.Add(iterations)
+			for i := 0; i < iterations; i++ {
+				go func() {
+					defer wg.Done()
+					msgs := createMsgsWithRandomSigners()
+					err := xbo.Broadcast(msgs...)
+					assert.Error(t, err)
+					t.Log(err)
+				}()
+			}
+			wg.Wait()
 
+			assert.Len(t, rpc.BroadcastTxSyncCalls(), iterations*(retries+1))
+		})
+	}
 	t.Run("sequence number updated correctly", func(t *testing.T) {
 		accNo := rand2.Uint64()
 		seqNo := uint64(1)
@@ -246,13 +254,13 @@ func TestXBOBroadcaster_Broadcast(t *testing.T) {
 			panic(err)
 		}
 		retries := int(rand.I64Between(1, 20))
-		xbo := WithExponentialBackoff(b, 20*time.Microsecond, retries)
+		xbo := WithBackoff(b, Exponential, 20*time.Microsecond, retries)
 
 		iterations := int(rand.I64Between(200, 1000))
 		wg := &sync.WaitGroup{}
 		wg.Add(iterations)
 		for i := 0; i < iterations; i++ {
-			go func(broadcaster *XBOBroadcaster) {
+			go func(broadcaster *BackOffBroadcaster) {
 				defer wg.Done()
 				msgs := createMsgsWithRandomSigners()
 				assert.NoError(t, broadcaster.Broadcast(msgs...))
