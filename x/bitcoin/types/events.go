@@ -9,5 +9,5 @@ const (
 const (
 	AttributeKeyResult   = "result"
 	AttributeKeyOutpoint = "outpoint"
-	AttributePoll        = "poll"
+	AttributeKeyPoll     = "poll"
 )
