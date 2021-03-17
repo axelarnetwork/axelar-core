@@ -39,7 +39,7 @@ func (k Keeper) StartSign(ctx sdk.Context, voter types.Voter, keyID string, sigI
 
 	// set sign participants
 	var participants []string
-	for _, v := range snapshot.Validators {
+	for _, v := range activeValidators {
 		participants = append(participants, v.GetOperator().String())
 		k.setParticipateInSign(ctx, sigID, v.GetOperator())
 	}
