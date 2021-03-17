@@ -314,3 +314,74 @@ func (mock *BroadcasterMock) GetProxyCalls() []struct {
 	mock.lockGetProxy.RUnlock()
 	return calls
 }
+
+// Ensure, that TssMock does implement types.Tss.
+// If this is not the case, regenerate this file with moq.
+var _ types.Tss = &TssMock{}
+
+// TssMock is a mock implementation of types.Tss.
+//
+// 	func TestSomethingThatUsesTss(t *testing.T) {
+//
+// 		// make and configure a mocked types.Tss
+// 		mockedTss := &TssMock{
+// 			GetValidatorDeregisteredBlockHeightFunc: func(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
+// 				panic("mock out the GetValidatorDeregisteredBlockHeight method")
+// 			},
+// 		}
+//
+// 		// use mockedTss in code that requires types.Tss
+// 		// and then make assertions.
+//
+// 	}
+type TssMock struct {
+	// GetValidatorDeregisteredBlockHeightFunc mocks the GetValidatorDeregisteredBlockHeight method.
+	GetValidatorDeregisteredBlockHeightFunc func(ctx sdk.Context, valAddr sdk.ValAddress) int64
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetValidatorDeregisteredBlockHeight holds details about calls to the GetValidatorDeregisteredBlockHeight method.
+		GetValidatorDeregisteredBlockHeight []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// ValAddr is the valAddr argument value.
+			ValAddr sdk.ValAddress
+		}
+	}
+	lockGetValidatorDeregisteredBlockHeight sync.RWMutex
+}
+
+// GetValidatorDeregisteredBlockHeight calls GetValidatorDeregisteredBlockHeightFunc.
+func (mock *TssMock) GetValidatorDeregisteredBlockHeight(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
+	if mock.GetValidatorDeregisteredBlockHeightFunc == nil {
+		panic("TssMock.GetValidatorDeregisteredBlockHeightFunc: method is nil but Tss.GetValidatorDeregisteredBlockHeight was just called")
+	}
+	callInfo := struct {
+		Ctx     sdk.Context
+		ValAddr sdk.ValAddress
+	}{
+		Ctx:     ctx,
+		ValAddr: valAddr,
+	}
+	mock.lockGetValidatorDeregisteredBlockHeight.Lock()
+	mock.calls.GetValidatorDeregisteredBlockHeight = append(mock.calls.GetValidatorDeregisteredBlockHeight, callInfo)
+	mock.lockGetValidatorDeregisteredBlockHeight.Unlock()
+	return mock.GetValidatorDeregisteredBlockHeightFunc(ctx, valAddr)
+}
+
+// GetValidatorDeregisteredBlockHeightCalls gets all the calls that were made to GetValidatorDeregisteredBlockHeight.
+// Check the length with:
+//     len(mockedTss.GetValidatorDeregisteredBlockHeightCalls())
+func (mock *TssMock) GetValidatorDeregisteredBlockHeightCalls() []struct {
+	Ctx     sdk.Context
+	ValAddr sdk.ValAddress
+} {
+	var calls []struct {
+		Ctx     sdk.Context
+		ValAddr sdk.ValAddress
+	}
+	mock.lockGetValidatorDeregisteredBlockHeight.RLock()
+	calls = mock.calls.GetValidatorDeregisteredBlockHeight
+	mock.lockGetValidatorDeregisteredBlockHeight.RUnlock()
+	return calls
+}

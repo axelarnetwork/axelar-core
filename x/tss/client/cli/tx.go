@@ -28,6 +28,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		getCmdKeygenStart(cdc),
 		getCmdMasterKeyAssignNext(cdc),
 		getCmdRotateMasterKey(cdc),
+		getCmdDeregister(cdc),
 	)...)
 
 	return tssTxCmd
@@ -101,5 +102,25 @@ func getCmdRotateMasterKey(cdc *codec.Codec) *cobra.Command {
 		}
 		return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 	}
+	return cmd
+}
+
+func getCmdDeregister(cdc *codec.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "deregister",
+		Short: "Deregister from participating in any future key generation",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
+
+			msg := types.NewMsgDeregister(cliCtx.GetFromAddress())
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+
 	return cmd
 }

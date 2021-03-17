@@ -6,7 +6,7 @@ import (
 	sdkExported "github.com/cosmos/cosmos-sdk/x/staking/exported"
 )
 
-//go:generate moq -pkg mock -out ./mock/expected_keepers.go . StakingKeeper Slasher Broadcaster
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . StakingKeeper Slasher Broadcaster Tss
 
 // Broadcaster provides broadcasting functionality
 type Broadcaster interface {
@@ -30,4 +30,9 @@ type ValidatorInfo struct {
 // Slasher provides functionality to manage slashing info for a validator
 type Slasher interface {
 	GetValidatorSigningInfo(ctx sdk.Context, address sdk.ConsAddress) (info ValidatorInfo, found bool)
+}
+
+// Tss provides functionality to tss module
+type Tss interface {
+	GetValidatorDeregisteredBlockHeight(ctx sdk.Context, valAddr sdk.ValAddress) int64
 }

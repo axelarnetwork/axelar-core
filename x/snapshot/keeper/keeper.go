@@ -28,12 +28,13 @@ type Keeper struct {
 	staking     types.StakingKeeper
 	slasher     types.Slasher
 	broadcaster types.Broadcaster
+	tss         types.Tss
 	cdc         *codec.Codec
 	params      subspace.Subspace
 }
 
 // NewKeeper creates a new keeper for the staking module
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramSpace params.Subspace, broadcaster types.Broadcaster, staking types.StakingKeeper, slasher types.Slasher) Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramSpace params.Subspace, broadcaster types.Broadcaster, staking types.StakingKeeper, slasher types.Slasher, tss types.Tss) Keeper {
 	return Keeper{
 		storeKey:    key,
 		cdc:         cdc,
@@ -41,6 +42,7 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramSpace params.Subspace, b
 		params:      paramSpace.WithKeyTable(types.KeyTable()),
 		slasher:     slasher,
 		broadcaster: broadcaster,
+		tss:         tss,
 	}
 }
 
@@ -152,11 +154,19 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, nextCounter int64) error {
 	filterProxies := func(vals []exported.Validator) ([]exported.Validator, error) {
 		return utils.FilterProxies(ctx, k.broadcaster, vals), nil
 	}
+	filterTssRegistered := func(vals []exported.Validator) ([]exported.Validator, error) {
+		return utils.FilterTssRegistered(ctx, k.tss, vals), nil
+	}
+
 	filteredSnapshot, err := snapshot.Filter(filterActive)
 	if err != nil {
 		return err
 	}
 	filteredSnapshot, err = filteredSnapshot.Filter(filterProxies)
+	if err != nil {
+		return err
+	}
+	filteredSnapshot, err = filteredSnapshot.Filter(filterTssRegistered)
 	if err != nil {
 		return err
 	}
