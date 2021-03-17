@@ -65,9 +65,8 @@ func (k Keeper) TakeSnapshot(ctx sdk.Context) error {
 	s, ok := k.GetLatestSnapshot(ctx)
 
 	if !ok {
-		k.executeSnapshot(ctx, 0)
 		k.setLatestCounter(ctx, 0)
-		return nil
+		return k.executeSnapshot(ctx, 0)
 	}
 
 	lockingPeriod := k.getLockingPeriod(ctx)
@@ -76,9 +75,8 @@ func (k Keeper) TakeSnapshot(ctx sdk.Context) error {
 			s.Timestamp.Add(lockingPeriod).Sub(ctx.BlockTime()).String())
 	}
 
-	k.executeSnapshot(ctx, s.Counter+1)
 	k.setLatestCounter(ctx, s.Counter+1)
-	return nil
+	return k.executeSnapshot(ctx, s.Counter+1)
 }
 
 func (k Keeper) getLockingPeriod(ctx sdk.Context) time.Duration {
@@ -125,7 +123,7 @@ func (k Keeper) GetLatestCounter(ctx sdk.Context) int64 {
 	return i
 }
 
-func (k Keeper) executeSnapshot(ctx sdk.Context, nextCounter int64) {
+func (k Keeper) executeSnapshot(ctx sdk.Context, nextCounter int64) error {
 	var validators []exported.Validator
 	fnAppend := func(_ int64, v sdkExported.ValidatorI) (stop bool) {
 		validators = append(validators, v)
@@ -156,14 +154,16 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, nextCounter int64) {
 	}
 	filteredSnapshot, err := snapshot.Filter(filterActive)
 	if err != nil {
-		return
+		return err
 	}
 	filteredSnapshot, err = filteredSnapshot.Filter(filterProxies)
 	if err != nil {
-		return
+		return err
 	}
 
 	ctx.KVStore(k.storeKey).Set(counterKey(nextCounter), k.cdc.MustMarshalBinaryLengthPrefixed(filteredSnapshot))
+
+	return nil
 }
 
 func (k Keeper) setLatestCounter(ctx sdk.Context, counter int64) {

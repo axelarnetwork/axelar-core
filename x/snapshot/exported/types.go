@@ -39,18 +39,18 @@ func (s Snapshot) GetValidator(address sdk.ValAddress) (Validator, bool) {
 
 // Filter filters the validators according to the specified filter and returns a new snapshot
 func (s Snapshot) Filter(filter func([]Validator) ([]Validator, error)) (Snapshot, error) {
-	filtered, err := filter(s.Validators)
+	filteredValidators, err := filter(s.Validators)
 	if err != nil {
 		return Snapshot{}, err
 	}
 
 	activeStake := sdk.ZeroInt()
-	for _, f := range filtered {
+	for _, f := range filteredValidators {
 		activeStake = activeStake.AddRaw(f.GetConsensusPower())
 	}
 
 	return Snapshot{
-		Validators: filtered,
+		Validators: filteredValidators,
 		Timestamp:  s.Timestamp,
 		Height:     s.Height,
 		TotalPower: activeStake,
