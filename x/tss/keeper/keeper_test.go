@@ -18,6 +18,9 @@ import (
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
+	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
+	snapMock2 "github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
+	slashingTypes "github.com/cosmos/cosmos-sdk/x/slashing"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -68,13 +71,21 @@ func setup(t *testing.T) *testSetup {
 		Signature:   make(chan []byte, 1),
 	}
 
-	snapMock := &snapMock.SnapshotterMock{
-		FilterActiveValidatorsFunc: func(_ sdk.Context, validators []snapshot.Validator) ([]snapshot.Validator, error) {
-			return validators, nil
+	slasher := &snapMock2.SlasherMock{
+		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapTypes.ValidatorInfo, bool) {
+			newInfo := slashingTypes.NewValidatorSigningInfo(
+				address,
+				int64(0),        // height at which validator was first a candidate OR was unjailed
+				int64(3),        // index offset into signed block bit array. TODO: check if needs to be set correctly.
+				time.Unix(0, 0), // jailed until
+				false,           // tomstoned
+				int64(0),        // missed blocks
+			)
+			return snapTypes.ValidatorInfo{ValidatorSigningInfo: newInfo}, true
 		},
 	}
 
-	k := NewKeeper(testutils.Codec(), sdk.NewKVStoreKey("tss"), subspace, broadcaster, snapMock)
+	k := NewKeeper(testutils.Codec(), sdk.NewKVStoreKey("tss"), subspace, broadcaster, slasher)
 	k.SetParams(ctx, types.DefaultParams())
 
 	setup.Keeper = k

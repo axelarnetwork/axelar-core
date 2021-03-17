@@ -7,6 +7,7 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -14,7 +15,7 @@ import (
 )
 
 // StartSign starts a tss signing protocol using the specified key for the given chain.
-func (k Keeper) StartSign(ctx sdk.Context, voter types.Voter, keyID string, sigID string, msg []byte, snapshot snapshot.Snapshot) error {
+func (k Keeper) StartSign(ctx sdk.Context, voter types.Voter, keyID string, sigID string, msg []byte, s snapshot.Snapshot) error {
 	if _, ok := k.getKeyIDForSig(ctx, sigID); ok {
 		return fmt.Errorf("sigID %s has been used before", sigID)
 	}
@@ -22,24 +23,28 @@ func (k Keeper) StartSign(ctx sdk.Context, voter types.Voter, keyID string, sigI
 
 	// for now we recalculate the threshold
 	// might make sense to store it with the snapshot after keygen is done.
-	threshold := k.ComputeCorruptionThreshold(ctx, len(snapshot.Validators))
+	threshold := k.ComputeCorruptionThreshold(ctx, len(s.Validators))
 
-	activeValidators, err := k.snapshotter.FilterActiveValidators(ctx, snapshot.Validators)
+	// filter active validators
+	filterActive := func(vals []snapshot.Validator) ([]snapshot.Validator, error) {
+		return utils.FilterActiveValidators(ctx, k.slasher, vals)
+	}
+	filteredSnapshot, err := s.Filter(filterActive)
 	if err != nil {
 		return err
 	}
 
-	if len(activeValidators) <= threshold {
+	if len(filteredSnapshot.Validators) <= threshold {
 		return fmt.Errorf(fmt.Sprintf("not enough active validators are online: threshold [%d], online [%d]",
-			threshold, len(snapshot.Validators)))
+			threshold, len(filteredSnapshot.Validators)))
 	}
 
 	k.Logger(ctx).Info(fmt.Sprintf("starting sign with threshold [%d] (need [%d]), online validators count [%d]",
-		threshold, threshold+1, len(activeValidators)))
+		threshold, threshold+1, len(filteredSnapshot.Validators)))
 
 	// set sign participants
 	var participants []string
-	for _, v := range activeValidators {
+	for _, v := range filteredSnapshot.Validators {
 		participants = append(participants, v.GetOperator().String())
 		k.setParticipateInSign(ctx, sigID, v.GetOperator())
 	}

@@ -37,11 +37,31 @@ func (s Snapshot) GetValidator(address sdk.ValAddress) (Validator, bool) {
 	return nil, false
 }
 
+// Filter filters the validators according to the specified filter and returns a new snapshot
+func (s Snapshot) Filter(filter func([]Validator) ([]Validator, error)) (Snapshot, error) {
+	filteredValidators, err := filter(s.Validators)
+	if err != nil {
+		return Snapshot{}, err
+	}
+
+	activeStake := sdk.ZeroInt()
+	for _, f := range filteredValidators {
+		activeStake = activeStake.AddRaw(f.GetConsensusPower())
+	}
+
+	return Snapshot{
+		Validators: filteredValidators,
+		Timestamp:  s.Timestamp,
+		Height:     s.Height,
+		TotalPower: activeStake,
+		Counter:    s.Counter,
+	}, nil
+}
+
 // Snapshotter represents the interface for the snapshot module's functionality
 type Snapshotter interface {
 	GetLatestSnapshot(ctx sdk.Context) (Snapshot, bool)
 	GetLatestCounter(ctx sdk.Context) int64
 	GetSnapshot(ctx sdk.Context, counter int64) (Snapshot, bool)
-	FilterActiveValidators(ctx sdk.Context, validators []Validator) ([]Validator, error)
 	TakeSnapshot(ctx sdk.Context) error
 }
