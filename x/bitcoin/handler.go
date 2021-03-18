@@ -113,7 +113,7 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributePoll, string(k.Codec().MustMarshalJSON(poll))),
+			sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(poll))),
 		),
 	)
 
@@ -173,6 +173,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeVerificationResult,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(msg.Poll()))),
 			sdk.NewAttribute(types.AttributeKeyResult, strconv.FormatBool(result.(bool))),
 			sdk.NewAttribute(types.AttributeKeyOutpoint, outPoint.String()),
 		))

@@ -9,7 +9,6 @@ const (
 	AttributeCommandID     = "commandID"
 	AttributeAmount        = "amount"
 	AttributeDestination   = "destination"
-	AttributePoll          = "poll"
 	AttributeVotingData    = "data"
 	AttributePollConfirmed = "confirmed"
 )
@@ -21,6 +20,7 @@ const (
 
 // Event attribute keys
 const (
+	AttributeKeyPoll   = "poll"
 	AttributeKeyResult = "result"
 	AttributeKeyTxID   = "txID"
 )

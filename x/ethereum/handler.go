@@ -87,7 +87,7 @@ func handleMsgVerifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, rpc types.RPC
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributePoll, string(k.Codec().MustMarshalJSON(poll))),
+			sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(poll))),
 		),
 	)
 
@@ -270,6 +270,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 	if result := v.Result(ctx, msg.Poll()); result != nil {
 		event := sdk.NewEvent(types.EventTypeVerificationResult,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(msg.Poll()))),
 			sdk.NewAttribute(types.AttributeKeyResult, strconv.FormatBool(result.(bool))))
 
 		switch msg.PollMeta.Type {
@@ -285,6 +286,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 			n.RegisterAsset(ctx, exported.Ethereum.Name, token.Symbol)
 			event = event.AppendAttributes(
 				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeKeyActionToken),
+				sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(msg.Poll()))),
 				sdk.NewAttribute(types.AttributeKeyTxID, common.Bytes2Hex(token.TxID[:])))
 
 		case types.MsgVerifyErc20Deposit{}.Type():
@@ -303,11 +305,15 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 			}
 			event = event.AppendAttributes(
 				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeKeyActionDeposit),
+				sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(msg.Poll()))),
 				sdk.NewAttribute(types.AttributeKeyTxID, common.Bytes2Hex(deposit.TxID[:])))
 
 		default:
 			k.Logger(ctx).Debug(fmt.Sprintf("unknown verification message type: %s", msg.PollMeta.Type))
-			event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeKeyActionUnknown))
+			event = event.AppendAttributes(
+				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeKeyActionUnknown),
+				sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(msg.Poll()))),
+			)
 		}
 
 		ctx.EventManager().EmitEvent(event)
@@ -550,7 +556,7 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
 			sdk.NewAttribute(types.AttributeTxID, txIDHex),
-			sdk.NewAttribute(types.AttributePoll, string(k.Codec().MustMarshalJSON(poll))),
+			sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(poll))),
 		),
 	)
 
