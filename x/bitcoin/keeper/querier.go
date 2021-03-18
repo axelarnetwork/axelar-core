@@ -62,14 +62,8 @@ func queryDepositAddress(ctx sdk.Context, k Keeper, s types.Signer, n types.Nexu
 	if !ok {
 		return nil, fmt.Errorf("key not found")
 	}
-	script, err := types.CreateCrossChainRedeemScript(btcec.PublicKey(pk), recipient)
-	if err != nil {
-		return nil, err
-	}
-	addr, err := types.CreateDepositAddress(k.GetNetwork(ctx), script)
-	if err != nil {
-		return nil, err
-	}
+
+	addr := types.NewLinkedAddress(pk, k.GetNetwork(ctx), recipient)
 
 	return []byte(addr.EncodeAddress()), nil
 }

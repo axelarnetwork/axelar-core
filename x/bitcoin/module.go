@@ -125,7 +125,7 @@ func (AppModule) Route() string {
 
 // NewHandler returns a new handler for this module
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper, am.voter, am.rpc, am.signer, am.nexus, am.snapshotter)
+	return NewHandler(am.keeper, am.voter, am.signer, am.nexus, am.snapshotter)
 }
 
 // QuerierRoute returns this module's query route

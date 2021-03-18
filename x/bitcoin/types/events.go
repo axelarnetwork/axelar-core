@@ -1,8 +1,8 @@
 package types
 
-// EventTypeVerificationResult is an event type
+// EventTypeVerification is an event type
 const (
-	EventTypeVerificationResult = "verificationResult"
+	EventTypeVerification = "verification"
 )
 
 // Event attribute keys

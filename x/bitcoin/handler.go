@@ -1,11 +1,11 @@
 package bitcoin
 
 import (
+	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
 	"strconv"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -19,14 +19,14 @@ import (
 )
 
 // NewHandler creates an sdk.Handler for all bitcoin type messages
-func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, signer types.Signer, n types.Nexus, snapshotter types.Snapshotter) sdk.Handler {
+func NewHandler(k keeper.Keeper, v types.Voter, signer types.Signer, n types.Nexus, snapshotter types.Snapshotter) sdk.Handler {
 	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
 		case types.MsgLink:
 			return handleMsgLink(ctx, k, signer, n, msg)
 		case types.MsgVerifyTx:
-			return handleMsgVerifyTx(ctx, k, v, rpc, msg)
+			return handleMsgVerifyTx(ctx, k, v, msg)
 		case *types.MsgVoteVerifiedTx:
 			return handleMsgVoteVerifiedTx(ctx, k, v, n, msg)
 		case types.MsgSignPendingTransfers:
@@ -127,39 +127,20 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg type
 		sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(poll))),
 	))
 
-	/*
-	 Anyone not able to verify the transaction will automatically record a negative vote,
-	 but only validators will later send out that vote.
-	*/
-	err := verifyTx(rpc, msg.OutPointInfo, k.GetRequiredConfirmationHeight(ctx))
-	switch err {
-	// verification successful
-	case nil:
-		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: true})
-
-		return &sdk.Result{
-			Log:    fmt.Sprintf("successfully verified outpoint %s", msg.OutPointInfo.OutPoint.String()),
-			Events: ctx.EventManager().Events(),
-		}, nil
-	// verification unsuccessful
-	default:
-		v.RecordVote(&types.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false})
-
-		return &sdk.Result{
-			Log:    sdkerrors.Wrapf(err, "outpoint %s not verified", msg.OutPointInfo.OutPoint.String()).Error(),
-			Events: ctx.EventManager().Events(),
-		}, nil
-	}
+	return &sdk.Result{
+		Log:    fmt.Sprintf("votes on verification of %s started", msg.OutPointInfo.OutPoint.String()),
+		Events: ctx.EventManager().Events(),
+	}, nil
 }
 
-// This can be used as a potential hook to immediately act on a poll being decided by the vote
 func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n types.Nexus, msg *types.MsgVoteVerifiedTx) (*sdk.Result, error) {
-	// Check if the outpoint has been verified already.
-	// If the voting threshold has been met and additional votes are received they should not return an error
 	outPoint, err := types.OutPointFromStr(msg.PollMeta.ID)
 	if err != nil {
 		return nil, err
 	}
+
+	// Check if the outpoint has been verified already.
+	// If the voting threshold has been met and additional votes are received they should not return an error
 	info, ok := k.GetVerifiedOutPointInfo(ctx, outPoint)
 	if ok {
 		return &sdk.Result{Log: fmt.Sprintf("outpoint %s already verified", info.OutPoint.String())}, nil
@@ -178,11 +159,11 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 	v.DeletePoll(ctx, msg.Poll())
 
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeVerificationResult,
+		sdk.NewEvent(types.EventTypeVerification,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(msg.Poll()))),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueResult),
 			sdk.NewAttribute(types.AttributeKeyResult, strconv.FormatBool(result.(bool))),
-			sdk.NewAttribute(types.AttributeKeyOutpoint, outPoint.String()),
+			sdk.NewAttribute(types.AttributeKeyOutPoint, string(k.Codec().MustMarshalJSON(outPoint))),
 		))
 
 	info, ok = k.GetVerifiedOutPointInfo(ctx, outPoint)
@@ -192,11 +173,9 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 			Log:    fmt.Sprintf("outpoint %s was discarded", msg.PollMeta.ID),
 		}, nil
 	}
-	addr, err := btcutil.DecodeAddress(info.Address, k.GetNetwork(ctx).Params)
-	if err != nil {
-		return nil, err
-	}
-	keyID, ok := k.GetKeyIDByAddress(ctx, addr)
+
+	// associate the key with the specific outpoint
+	keyID, ok := k.GetKeyIDByAddress(ctx, info.Address)
 	if !ok {
 		return nil, fmt.Errorf("key ID not found")
 	}
@@ -258,25 +237,33 @@ func handleMsgSignPendingTransfers(ctx sdk.Context, k keeper.Keeper, signer type
 	}, nil
 }
 
-func verifyTx(rpc types.RPCClient, expectedInfo types.OutPointInfo, requiredConfirmations uint64) error {
-	actualInfo, err := rpc.GetOutPointInfo(expectedInfo.BlockHash, expectedInfo.OutPoint)
-	if err != nil {
-		return sdkerrors.Wrap(err, "could not retrieve Bitcoin transaction")
-	}
+func prepareOutputs(ctx sdk.Context, k keeper.Keeper, n types.Nexus) ([]types.Output, sdk.Int) {
+	pendingTransfers := n.GetPendingTransfersForChain(ctx, exported.Bitcoin)
+	var outPuts []types.Output
+	totalOut := sdk.ZeroInt()
+	for _, transfer := range pendingTransfers {
+		recipient, err := btcutil.DecodeAddress(transfer.Recipient.Address, k.GetNetwork(ctx).Params)
+		if err != nil {
+			k.Logger(ctx).Error(fmt.Sprintf("%s is not a valid address", transfer.Recipient))
+			continue
+		}
 
-	if actualInfo.Address != expectedInfo.Address {
-		return fmt.Errorf("expected destination address does not match actual destination address")
+		outPuts = append(outPuts,
+			types.Output{Amount: btcutil.Amount(transfer.Asset.Amount.Int64()), Recipient: recipient})
+		totalOut = totalOut.Add(transfer.Asset.Amount)
+		n.ArchivePendingTransfer(ctx, transfer)
 	}
-
-	if actualInfo.Amount != expectedInfo.Amount {
-		return fmt.Errorf("expected amount does not match actual amount")
+	return outPuts, totalOut
+}
+func prepareInputs(ctx sdk.Context, k keeper.Keeper) ([]*wire.OutPoint, sdk.Int) {
+	var prevOuts []*wire.OutPoint
+	totalDeposits := sdk.ZeroInt()
+	for _, info := range k.GetVerifiedOutPointInfos(ctx) {
+		prevOuts = append(prevOuts, info.OutPoint)
+		totalDeposits = totalDeposits.AddRaw(int64(info.Amount))
+		k.SpendVerifiedOutPoint(ctx, info.OutPoint.String())
 	}
-
-	if actualInfo.Confirmations < requiredConfirmations {
-		return fmt.Errorf("not enough confirmations yet")
-	}
-
-	return nil
+	return prevOuts, totalDeposits
 }
 
 func prepareChange(ctx sdk.Context, k keeper.Keeper, signer types.Signer, change sdk.Int) (types.Output, error) {
@@ -298,47 +285,11 @@ func prepareChange(ctx sdk.Context, k keeper.Keeper, signer types.Signer, change
 		return types.Output{}, fmt.Errorf("key not found")
 	}
 
-	redeemScript, err := types.CreateMasterRedeemScript(btcec.PublicKey(pk))
-	if err != nil {
-		return types.Output{}, err
-	}
-	masterAddr, err := types.CreateDepositAddress(k.GetNetwork(ctx), redeemScript)
-	if err != nil {
-		return types.Output{}, err
-	}
-	k.SetRedeemScriptByAddress(ctx, masterAddr, redeemScript)
-	k.SetKeyIDByAddress(ctx, masterAddr, keyID)
-	return types.Output{Amount: btcutil.Amount(change.Int64()), Recipient: masterAddr}, nil
-}
+	addr := types.NewConsolidationAddress(pk, k.GetNetwork(ctx))
 
-func prepareInputs(ctx sdk.Context, k keeper.Keeper) ([]*wire.OutPoint, sdk.Int) {
-	var prevOuts []*wire.OutPoint
-	totalDeposits := sdk.ZeroInt()
-	for _, info := range k.GetVerifiedOutPointInfos(ctx) {
-		prevOuts = append(prevOuts, info.OutPoint)
-		totalDeposits = totalDeposits.AddRaw(int64(info.Amount))
-		k.SpendVerifiedOutPoint(ctx, info.OutPoint.String())
-	}
-	return prevOuts, totalDeposits
-}
-
-func prepareOutputs(ctx sdk.Context, k keeper.Keeper, n types.Nexus) ([]types.Output, sdk.Int) {
-	pendingTransfers := n.GetPendingTransfersForChain(ctx, exported.Bitcoin)
-	var outPuts []types.Output
-	totalOut := sdk.ZeroInt()
-	for _, transfer := range pendingTransfers {
-		recipient, err := btcutil.DecodeAddress(transfer.Recipient.Address, k.GetNetwork(ctx).Params)
-		if err != nil {
-			k.Logger(ctx).Error(fmt.Sprintf("%s is not a valid address", transfer.Recipient))
-			continue
-		}
-
-		outPuts = append(outPuts,
-			types.Output{Amount: btcutil.Amount(transfer.Asset.Amount.Int64()), Recipient: recipient})
-		totalOut = totalOut.Add(transfer.Asset.Amount)
-		n.ArchivePendingTransfer(ctx, transfer)
-	}
-	return outPuts, totalOut
+	k.SetRedeemScriptByAddress(ctx, addr, addr.RedeemScript)
+	k.SetKeyIDByAddress(ctx, addr, keyID)
+	return types.Output{Amount: btcutil.Amount(change.Int64()), Recipient: addr.AddressWitnessScriptHash}, nil
 }
 
 func startSignInputs(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snapshotter types.Snapshotter, v types.Voter, tx *wire.MsgTx) error {

@@ -82,8 +82,8 @@ func (k Keeper) SetKeyIDByAddress(ctx sdk.Context, address btcutil.Address, keyI
 }
 
 // GetKeyIDByAddress returns the ID of the key that was used to create the given address
-func (k Keeper) GetKeyIDByAddress(ctx sdk.Context, address btcutil.Address) (string, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(keyIDByAddrPrefix + address.String()))
+func (k Keeper) GetKeyIDByAddress(ctx sdk.Context, address string) (string, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(keyIDByAddrPrefix + address))
 	if bz == nil {
 		return "", false
 	}

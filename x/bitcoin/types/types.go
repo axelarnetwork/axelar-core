@@ -1,6 +1,7 @@
 package types
 
 import (
+	"crypto/ecdsa"
 	"crypto/sha256"
 	"fmt"
 	"strconv"
@@ -16,6 +17,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
