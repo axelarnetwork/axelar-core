@@ -83,10 +83,8 @@ func (k Keeper) GetChains(ctx sdk.Context) []exported.Chain {
 	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(chainPrefix))
 
 	for ; iter.Valid(); iter.Next() {
-		bz := iter.Value()
-
 		var chain exported.Chain
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &chain)
+		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &chain)
 		results = append(results, chain)
 	}
 
