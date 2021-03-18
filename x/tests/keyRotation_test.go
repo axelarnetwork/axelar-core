@@ -270,8 +270,12 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	consAddr := getAddress(actualTx.TxOut[0], nodeData[0].Mocks.BTC.Network().Params)
 	eConsolidationInfo := randomOutpointInfo(consAddr.EncodeAddress())
 	eConsolidationInfo.Amount = btcutil.Amount(actualTx.TxOut[0].Value)
-	var consolidationTxHash *chainhash.Hash
-	testutils.Codec().MustUnmarshalJSON(bz, &consolidationTxHash)
+	var consolidationTxString string
+	testutils.Codec().MustUnmarshalJSON(bz, &consolidationTxString)
+	consolidationTxHash, err := chainhash.NewHashFromStr(consolidationTxString)
+	if err != nil {
+		assert.FailNow(t, "btc tx hash", err)
+	}
 	eConsolidationInfo.OutPoint = wire.NewOutPoint(consolidationTxHash, 0)
 
 	// simulate confirmed tx to master address 2
