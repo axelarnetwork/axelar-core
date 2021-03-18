@@ -4,6 +4,7 @@
 package mock
 
 import (
+	"github.com/axelarnetwork/axelar-core/cmd/vald/btc/rpc"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
@@ -11,16 +12,16 @@ import (
 	"sync"
 )
 
-// Ensure, that RPCClientMock does implement types.RPCClient.
+// Ensure, that ClientMock does implement rpc.Client.
 // If this is not the case, regenerate this file with moq.
-var _ types.RPCClient = &RPCClientMock{}
+var _ rpc.Client = &ClientMock{}
 
-// RPCClientMock is a mock implementation of types.RPCClient.
+// ClientMock is a mock implementation of rpc.Client.
 //
-// 	func TestSomethingThatUsesRPCClient(t *testing.T) {
+// 	func TestSomethingThatUsesClient(t *testing.T) {
 //
-// 		// make and configure a mocked types.RPCClient
-// 		mockedRPCClient := &RPCClientMock{
+// 		// make and configure a mocked rpc.Client
+// 		mockedClient := &ClientMock{
 // 			GetTxOutFunc: func(txHash *chainhash.Hash, voutIdx uint32, mempool bool) (*btcjson.GetTxOutResult, error) {
 // 				panic("mock out the GetTxOut method")
 // 			},
@@ -32,11 +33,11 @@ var _ types.RPCClient = &RPCClientMock{}
 // 			},
 // 		}
 //
-// 		// use mockedRPCClient in code that requires types.RPCClient
+// 		// use mockedClient in code that requires rpc.Client
 // 		// and then make assertions.
 //
 // 	}
-type RPCClientMock struct {
+type ClientMock struct {
 	// GetTxOutFunc mocks the GetTxOut method.
 	GetTxOutFunc func(txHash *chainhash.Hash, voutIdx uint32, mempool bool) (*btcjson.GetTxOutResult, error)
 
@@ -74,9 +75,9 @@ type RPCClientMock struct {
 }
 
 // GetTxOut calls GetTxOutFunc.
-func (mock *RPCClientMock) GetTxOut(txHash *chainhash.Hash, voutIdx uint32, mempool bool) (*btcjson.GetTxOutResult, error) {
+func (mock *ClientMock) GetTxOut(txHash *chainhash.Hash, voutIdx uint32, mempool bool) (*btcjson.GetTxOutResult, error) {
 	if mock.GetTxOutFunc == nil {
-		panic("RPCClientMock.GetTxOutFunc: method is nil but RPCClient.GetTxOut was just called")
+		panic("ClientMock.GetTxOutFunc: method is nil but Client.GetTxOut was just called")
 	}
 	callInfo := struct {
 		TxHash  *chainhash.Hash
@@ -95,8 +96,8 @@ func (mock *RPCClientMock) GetTxOut(txHash *chainhash.Hash, voutIdx uint32, memp
 
 // GetTxOutCalls gets all the calls that were made to GetTxOut.
 // Check the length with:
-//     len(mockedRPCClient.GetTxOutCalls())
-func (mock *RPCClientMock) GetTxOutCalls() []struct {
+//     len(mockedClient.GetTxOutCalls())
+func (mock *ClientMock) GetTxOutCalls() []struct {
 	TxHash  *chainhash.Hash
 	VoutIdx uint32
 	Mempool bool
@@ -113,9 +114,9 @@ func (mock *RPCClientMock) GetTxOutCalls() []struct {
 }
 
 // Network calls NetworkFunc.
-func (mock *RPCClientMock) Network() types.Network {
+func (mock *ClientMock) Network() types.Network {
 	if mock.NetworkFunc == nil {
-		panic("RPCClientMock.NetworkFunc: method is nil but RPCClient.Network was just called")
+		panic("ClientMock.NetworkFunc: method is nil but Client.Network was just called")
 	}
 	callInfo := struct {
 	}{}
@@ -127,8 +128,8 @@ func (mock *RPCClientMock) Network() types.Network {
 
 // NetworkCalls gets all the calls that were made to Network.
 // Check the length with:
-//     len(mockedRPCClient.NetworkCalls())
-func (mock *RPCClientMock) NetworkCalls() []struct {
+//     len(mockedClient.NetworkCalls())
+func (mock *ClientMock) NetworkCalls() []struct {
 } {
 	var calls []struct {
 	}
@@ -139,9 +140,9 @@ func (mock *RPCClientMock) NetworkCalls() []struct {
 }
 
 // SendRawTransaction calls SendRawTransactionFunc.
-func (mock *RPCClientMock) SendRawTransaction(tx *wire.MsgTx, allowHighFees bool) (*chainhash.Hash, error) {
+func (mock *ClientMock) SendRawTransaction(tx *wire.MsgTx, allowHighFees bool) (*chainhash.Hash, error) {
 	if mock.SendRawTransactionFunc == nil {
-		panic("RPCClientMock.SendRawTransactionFunc: method is nil but RPCClient.SendRawTransaction was just called")
+		panic("ClientMock.SendRawTransactionFunc: method is nil but Client.SendRawTransaction was just called")
 	}
 	callInfo := struct {
 		Tx            *wire.MsgTx
@@ -158,8 +159,8 @@ func (mock *RPCClientMock) SendRawTransaction(tx *wire.MsgTx, allowHighFees bool
 
 // SendRawTransactionCalls gets all the calls that were made to SendRawTransaction.
 // Check the length with:
-//     len(mockedRPCClient.SendRawTransactionCalls())
-func (mock *RPCClientMock) SendRawTransactionCalls() []struct {
+//     len(mockedClient.SendRawTransactionCalls())
+func (mock *ClientMock) SendRawTransactionCalls() []struct {
 	Tx            *wire.MsgTx
 	AllowHighFees bool
 } {

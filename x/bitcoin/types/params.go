@@ -13,27 +13,34 @@ const (
 	DefaultParamspace = ModuleName
 )
 
+// parameter keys
 var (
 	KeyConfirmationHeight  = []byte("confirmationHeight")
 	KeyNetwork             = []byte("network")
 	KeyRevoteLockingPeriod = []byte("RevoteLockingPeriod")
+	KeySigCheckInterval    = []byte("KeySigCheckInterval")
 )
 
+// KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
 func KeyTable() subspace.KeyTable {
 	return subspace.NewKeyTable().RegisterParamSet(&Params{})
 }
 
+// Params is the parameter set for this module
 type Params struct {
 	ConfirmationHeight  uint64
 	Network             Network
 	RevoteLockingPeriod int64
+	SigCheckInterval    int64
 }
 
+// DefaultParams returns the module's parameter set initialized with default values
 func DefaultParams() Params {
 	return Params{
 		ConfirmationHeight:  1,
 		Network:             Regtest,
 		RevoteLockingPeriod: 50,
+		SigCheckInterval:    10,
 	}
 }
 
@@ -50,6 +57,7 @@ func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
 		subspace.NewParamSetPair(KeyConfirmationHeight, &p.ConfirmationHeight, validateConfirmationHeight),
 		subspace.NewParamSetPair(KeyNetwork, &p.Network, validateNetwork),
 		subspace.NewParamSetPair(KeyRevoteLockingPeriod, &p.RevoteLockingPeriod, validateRevoteLockingPeriod),
+		subspace.NewParamSetPair(KeySigCheckInterval, &p.SigCheckInterval, validateSigCheckInterval),
 	}
 }
 
@@ -72,19 +80,33 @@ func validateNetwork(network interface{}) error {
 	return n.Validate()
 }
 
-func validateRevoteLockingPeriod(RevoteLockingPeriod interface{}) error {
-	r, ok := RevoteLockingPeriod.(int64)
+func validateRevoteLockingPeriod(period interface{}) error {
+	r, ok := period.(int64)
 	if !ok {
 		return fmt.Errorf("invalid parameter type for revote lock period: %T", r)
 	}
 
 	if r <= 0 {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, "revote lock period be greater than 0")
+		return sdkerrors.Wrap(types.ErrInvalidGenesis, "revote lock period must be greater than 0")
 	}
 
 	return nil
 }
 
+func validateSigCheckInterval(interval interface{}) error {
+	i, ok := interval.(int64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for signature check interval: %T", i)
+	}
+
+	if i <= 0 {
+		return sdkerrors.Wrap(types.ErrInvalidGenesis, "signature check interval must be greater than 0")
+	}
+
+	return nil
+}
+
+// Validate checks the validity of the values of the parameter set
 func (p Params) Validate() error {
 	if err := validateConfirmationHeight(p.ConfirmationHeight); err != nil {
 		return err
@@ -95,6 +117,9 @@ func (p Params) Validate() error {
 	}
 
 	if err := validateRevoteLockingPeriod(p.RevoteLockingPeriod); err != nil {
+		return err
+	}
+	if err := validateSigCheckInterval(p.SigCheckInterval); err != nil {
 		return err
 	}
 

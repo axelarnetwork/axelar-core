@@ -27,7 +27,7 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 	btcTxCmd.AddCommand(flags.GetCommands(
 		GetCmdDepositAddress(queryRoute, cdc),
-		GetCmdSendTransfers(queryRoute, cdc),
+		GetCmdConsolidationTx(queryRoute, cdc),
 	)...)
 
 	return btcTxCmd
@@ -56,18 +56,18 @@ func GetCmdDepositAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return cmd
 }
 
-// GetCmdSendTransfers sends a transaction containing all pending transfers to Bitcoin
-func GetCmdSendTransfers(queryRoute string, cdc *codec.Codec) *cobra.Command {
+// GetCmdConsolidationTx sends a transaction containing all pending transfers to Bitcoin
+func GetCmdConsolidationTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "send",
-		Short: "Send a transaction to Bitcoin that consolidates deposits and withdrawals",
+		Use:   "transfer-tx",
+		Short: "Returns a fully signed transfer and consolidation transaction",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.SendTx), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.GetTx), nil)
 			if err != nil {
-				return sdkerrors.Wrap(err, types.ErrFSendTransfers)
+				return sdkerrors.Wrap(err, types.ErrFGetTransfers)
 			}
 
 			var out string

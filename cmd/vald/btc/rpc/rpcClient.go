@@ -1,4 +1,4 @@
-package types
+package rpc
 
 import (
 	"fmt"
@@ -12,6 +12,8 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
+
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
 
 const (
@@ -19,30 +21,30 @@ const (
 	errRpcInWarmup = btcjson.RPCErrorCode(-28)
 )
 
-//go:generate moq -pkg mock -out ./mock/rpcClient.go . RPCClient
+//go:generate moq -pkg mock -out ./mock/rpcClient.go . Client
 
-// RPCClient defines the interface of an rpc client communication with the Bitcoin network
-type RPCClient interface {
+// Client defines the interface of an rpc client communication with the Bitcoin network
+type Client interface {
 	GetTxOut(txHash *chainhash.Hash, voutIdx uint32, mempool bool) (*btcjson.GetTxOutResult, error)
 	SendRawTransaction(tx *wire.MsgTx, allowHighFees bool) (*chainhash.Hash, error)
-	Network() Network
+	Network() types.Network
 }
 
-// RPCClientImpl implements the RPCClient interface
-type RPCClientImpl struct {
+// ClientImpl implements the Client interface
+type ClientImpl struct {
 	*rpcclient.Client
 	Timeout time.Duration
-	network Network
+	network types.Network
 }
 
 // Network returns the Bitcoin network the client is connected to
-func (r *RPCClientImpl) Network() Network {
+func (r *ClientImpl) Network() types.Network {
 	return r.network
 }
 
-// NewRPCClient creates a new instance of RPCClientImpl
-func NewRPCClient(cfg BtcConfig, logger log.Logger) (*RPCClientImpl, error) {
-	logger = logger.With("module", fmt.Sprintf("x/%s", ModuleName))
+// NewRPCClient creates a new instance of ClientImpl
+func NewRPCClient(cfg types.BtcConfig, logger log.Logger) (*ClientImpl, error) {
+	logger = logger.With("module", fmt.Sprintf("x/%s", types.ModuleName))
 
 	// Make sure there are authentication parameters
 	if cfg.CookiePath != "" {
@@ -77,9 +79,9 @@ func NewRPCClient(cfg BtcConfig, logger log.Logger) (*RPCClientImpl, error) {
 	// not supported in HTTP POST mode.
 	client, err := rpcclient.New(rpcCfg, nil)
 	if err != nil {
-		return nil, sdkerrors.Wrap(ErrConnFailed, "could not start the bitcoin rpc client")
+		return nil, sdkerrors.Wrap(types.ErrConnFailed, "could not start the bitcoin rpc client")
 	}
-	r := &RPCClientImpl{Client: client, Timeout: cfg.RPCTimeout}
+	r := &ClientImpl{Client: client, Timeout: cfg.RPCTimeout}
 	if err = r.setNetwork(logger); err != nil {
 		return nil, err
 	}
@@ -99,11 +101,11 @@ func waitForAuthCookie(cookiePath string, timeout time.Duration, logger log.Logg
 	if t < timeout {
 		return nil
 	} else {
-		return sdkerrors.Wrap(ErrInvalidConfig, fmt.Sprintf("bitcoin auth cookie could not be found at %s", cookiePath))
+		return sdkerrors.Wrap(types.ErrInvalidConfig, fmt.Sprintf("bitcoin auth cookie could not be found at %s", cookiePath))
 	}
 }
 
-func (r *RPCClientImpl) setNetwork(logger log.Logger) error {
+func (r *ClientImpl) setNetwork(logger log.Logger) error {
 	maxRetries := int(r.Timeout / sleep)
 
 	var info *btcjson.GetBlockChainInfoResult
@@ -131,35 +133,13 @@ func (r *RPCClientImpl) setNetwork(logger log.Logger) error {
 		if info == nil {
 			return fmt.Errorf("bitcoin blockchain info is nil")
 		}
-		r.network, err = NetworkFromStr(info.Chain)
+		r.network, err = types.NetworkFromStr(info.Chain)
 		return err
 	} else {
-		return sdkerrors.Wrap(ErrTimeOut, "could not establish a connection to the bitcoin node")
+		return sdkerrors.Wrap(types.ErrTimeOut, "could not establish a connection to the bitcoin node")
 	}
 }
 
 func unexpectedError(err error) error {
-	return sdkerrors.Wrap(ErrConnFailed, fmt.Sprintf("unexpected error when waiting for bitcoin node warmup: %s", err.Error()))
-}
-
-type dummyClient struct{}
-
-// NewDummyRPC returns a placeholder for an rpc client. It does not make any rpc calls
-func NewDummyRPC() RPCClient {
-	return dummyClient{}
-}
-
-// GetTxOut implements RPCClient
-func (d dummyClient) GetTxOut(*chainhash.Hash, uint32, bool) (*btcjson.GetTxOutResult, error) {
-	return &btcjson.GetTxOutResult{}, fmt.Errorf("no response")
-}
-
-// SendRawTransaction implements RPCClient
-func (d dummyClient) SendRawTransaction(*wire.MsgTx, bool) (*chainhash.Hash, error) {
-	return nil, fmt.Errorf("no response")
-}
-
-// Network implements RPCClient
-func (d dummyClient) Network() Network {
-	return DefaultParams().Network
+	return sdkerrors.Wrap(types.ErrConnFailed, fmt.Sprintf("unexpected error when waiting for bitcoin node warmup: %s", err.Error()))
 }

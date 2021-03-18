@@ -20,6 +20,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/vald/broadcast"
 	"github.com/axelarnetwork/axelar-core/cmd/vald/broadcast/types"
 	"github.com/axelarnetwork/axelar-core/cmd/vald/btc"
+	rpc2 "github.com/axelarnetwork/axelar-core/cmd/vald/btc/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/vald/events"
 	"github.com/axelarnetwork/axelar-core/cmd/vald/jobs"
 	tss2 "github.com/axelarnetwork/axelar-core/cmd/vald/tss"
@@ -143,12 +144,12 @@ func createTSSMgr(broadcaster types.Broadcaster, defaultSender sdk.AccAddress, a
 }
 
 func createBTCMgr(axelarCfg app.Config, b types.Broadcaster, logger log.Logger, valAddr string) *btc.Mgr {
-	rpc, err := btcTypes.NewRPCClient(axelarCfg.BtcConfig, logger)
+	rpc, err := rpc2.NewRPCClient(axelarCfg.BtcConfig, logger)
 	if err != nil {
 		logger.Error(err.Error())
 		panic(err)
 	}
-	// BTC bridge opens a grpc connection. Clean it up on process shutdown
+	// clean up rpc connection on process shutdown
 	tmos.TrapSignal(logger, rpc.Shutdown)
 
 	btcMgr := btc.NewMgr(rpc, valAddr, b, logger)

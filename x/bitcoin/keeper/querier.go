@@ -1,10 +1,8 @@
 package keeper
 
 import (
-	"encoding/hex"
 	"fmt"
 
-	"github.com/btcsuite/btcd/btcec"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -18,22 +16,19 @@ import (
 // Query paths
 const (
 	QueryDepositAddress = "depositAddr"
-	SendTx              = "sendTransfers"
 	GetTx               = "getTransferTx"
 )
 
 // NewQuerier returns a new querier for the Bitcoin module
-func NewQuerier(k Keeper, s types.Signer, n types.Nexus, rpc types.RPCClient) sdk.Querier {
+func NewQuerier(k Keeper, s types.Signer, n types.Nexus) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		var res []byte
 		var err error
 		switch path[0] {
 		case QueryDepositAddress:
 			res, err = queryDepositAddress(ctx, k, s, n, req.Data)
-		case SendTx:
-			res, err = sendTx(ctx, k, rpc, s)
 		case GetTx:
-			res, err = getConsolidationTx(ctx, k, s)
+			res, err = getConsolidationTx(ctx, k)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown btc-bridge query endpoint: %s", path[1]))
 		}
@@ -68,67 +63,10 @@ func queryDepositAddress(ctx sdk.Context, k Keeper, s types.Signer, n types.Nexu
 	return []byte(addr.EncodeAddress()), nil
 }
 
-func sendTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer) ([]byte, error) {
-	rawTx := k.GetRawTx(ctx)
-	if rawTx == nil {
-		return nil, fmt.Errorf("no consolidation transaction found")
+func getConsolidationTx(ctx sdk.Context, k Keeper) ([]byte, error) {
+	tx := k.GetSignedTx(ctx)
+	if tx == nil {
+		return nil, fmt.Errorf("no signed consolidation transaction ready")
 	}
-
-	hashes, err := k.GetHashesToSign(ctx, rawTx)
-	if err != nil {
-		return nil, err
-	}
-
-	var sigs []btcec.Signature
-	for _, hash := range hashes {
-		sigID := hex.EncodeToString(hash)
-		sig, ok := s.GetSig(ctx, sigID)
-		if !ok {
-			return nil, fmt.Errorf("signature not found")
-		}
-		sigs = append(sigs, btcec.Signature{R: sig.R, S: sig.S})
-	}
-
-	tx, err := k.AssembleBtcTx(ctx, rawTx, sigs)
-	if err != nil {
-		return nil, err
-	}
-
-	// This is beyond axelar's control, so we can only log the error and move on regardless
-	hash, err := rpc.SendRawTransaction(tx, false)
-	if err != nil {
-		k.Logger(ctx).Error(sdkerrors.Wrap(err, "sending transaction to Bitcoin failed").Error())
-		return nil, err
-	}
-
-	return k.Codec().MustMarshalJSON(hash.String()), nil
-}
-
-func getConsolidationTx(ctx sdk.Context, k Keeper, s types.Signer) ([]byte, error) {
-	rawTx := k.GetRawTx(ctx)
-	if rawTx == nil {
-		return nil, fmt.Errorf("no consolidation transaction found")
-	}
-
-	hashes, err := k.GetHashesToSign(ctx, rawTx)
-	if err != nil {
-		return nil, err
-	}
-
-	var sigs []btcec.Signature
-	for _, hash := range hashes {
-		sigID := hex.EncodeToString(hash)
-		sig, ok := s.GetSig(ctx, sigID)
-		if !ok {
-			return nil, fmt.Errorf("signature not found")
-		}
-		sigs = append(sigs, btcec.Signature{R: sig.R, S: sig.S})
-	}
-
-	tx, err := k.AssembleBtcTx(ctx, rawTx, sigs)
-	if err != nil {
-		return nil, err
-	}
-
 	return k.Codec().MustMarshalJSON(tx), nil
 }

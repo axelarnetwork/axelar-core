@@ -158,6 +158,15 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 	k.ProcessVerificationResult(ctx, outPoint, result.(bool))
 	v.DeletePoll(ctx, msg.Poll())
 
+	tx := k.GetSignedTx(ctx)
+	if tx != nil {
+		// previous consolidation tx has been sent to Bitcoin, is no longer blocking
+		txHash := tx.TxHash()
+		if txHash.IsEqual(&outPoint.Hash) {
+			k.DeleteSignedTx(ctx)
+		}
+	}
+
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeVerification,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
@@ -199,6 +208,13 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 }
 
 func handleMsgSignPendingTransfers(ctx sdk.Context, k keeper.Keeper, signer types.Signer, n types.Nexus, snapshotter types.Snapshotter, v types.Voter, msg types.MsgSignPendingTransfers) (*sdk.Result, error) {
+	if tx := k.GetRawTx(ctx); tx != nil {
+		return nil, fmt.Errorf("consolidation in progress")
+	}
+	if tx := k.GetSignedTx(ctx); tx != nil {
+		return nil, fmt.Errorf("previous consolidation transaction must be verified first")
+	}
+
 	outPuts, totalWithdrawals := prepareOutputs(ctx, k, n)
 	prevOuts, totalDeposits := prepareInputs(ctx, k)
 

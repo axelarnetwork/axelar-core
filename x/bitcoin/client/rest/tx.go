@@ -1,9 +1,11 @@
 package rest
 
 import (
-	"github.com/axelarnetwork/axelar-core/utils/denom"
-	"github.com/btcsuite/btcutil"
 	"net/http"
+
+	"github.com/btcsuite/btcutil"
+
+	"github.com/axelarnetwork/axelar-core/utils/denom"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -16,13 +18,13 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
 
+// rest routes
 const (
 	TxMethodLink                   = "link"
 	TxMethodVerifyTx               = "verify"
 	TxMethodSignPendingTransfersTx = "sign"
 
 	QMethodDepositAddress     = keeper.QueryDepositAddress
-	QMethodSendTransfers      = keeper.SendTx
 	QMethodGetConsolidationTx = keeper.GetTx
 )
 
@@ -35,7 +37,6 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
 	registerQuery(QueryDepositAddress(cliCtx), QMethodDepositAddress, clientUtils.PathVarChain, clientUtils.PathVarEthereumAddress)
-	registerQuery(QuerySendTransfers(cliCtx), QMethodSendTransfers)
 	registerQuery(QueryGetConsolidationTx(cliCtx), QMethodGetConsolidationTx)
 }
 
@@ -57,6 +58,7 @@ type ReqSignPendingTransfersTx struct {
 	Fee     string       `json:"fee" yaml:"fee"`
 }
 
+// GetHandlerSignPendingTransfersTx returns the handler to sign pending transfers to Bitcoin
 func GetHandlerSignPendingTransfersTx(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqSignPendingTransfersTx
@@ -89,6 +91,7 @@ func GetHandlerSignPendingTransfersTx(cliCtx context.CLIContext) http.HandlerFun
 	}
 }
 
+// GetHandlerLink returns the handler to link a Bitcoin address to a cross-chain address
 func GetHandlerLink(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqLink
@@ -115,6 +118,7 @@ func GetHandlerLink(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
+// GetHandlerVerifyTx returns the handler to verify a tx outpoint
 func GetHandlerVerifyTx(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqVerifyTx

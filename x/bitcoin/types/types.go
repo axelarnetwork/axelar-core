@@ -172,7 +172,7 @@ func CreateCrossChainRedeemScript(pk btcec.PublicKey, crossAddr nexus.CrossChain
 	nonce := btcutil.Hash160([]byte(crossAddr.String()))
 
 	redeemScript, err := txscript.NewScriptBuilder().AddData(keyBz).AddOp(txscript.OP_CHECKSIG).AddData(nonce).AddOp(txscript.OP_DROP).Script()
-	// the script builder only returns an error of the script is non-canonical.
+	// the script builder only returns an error if the script is non-canonical.
 	// Since we want to build canonical scripts and the template is predefined, an error here means the template is wrong,
 	// i.e. it's a bug.
 	if err != nil {

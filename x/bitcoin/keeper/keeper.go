@@ -24,6 +24,7 @@ const (
 	scriptPrefix             = "script_"
 	keyIDByAddrPrefix        = "addrID_"
 	keyIDByOutPointPrefix    = "outID_"
+	signedTxKey              = "signedTx_"
 )
 
 // Keeper provides access to all state changes regarding the Bitcoin module
@@ -67,6 +68,14 @@ func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context) uint64 {
 func (k Keeper) GetRevoteLockingPeriod(ctx sdk.Context) int64 {
 	var result int64
 	k.params.Get(ctx, types.KeyRevoteLockingPeriod, &result)
+
+	return result
+}
+
+// GetSigCheckInterval returns the block interval after which to check for completed signatures
+func (k Keeper) GetSigCheckInterval(ctx sdk.Context) int64 {
+	var result int64
+	k.params.Get(ctx, types.KeySigCheckInterval, &result)
 
 	return result
 }
@@ -269,7 +278,7 @@ func (k Keeper) SetRawTx(ctx sdk.Context, tx *wire.MsgTx) {
 	ctx.KVStore(k.storeKey).Set([]byte(rawKey), bz)
 }
 
-// GetRawTx returns a raw transaction for outpoint consolidation
+// GetRawTx returns the raw unsigned transaction for outpoint consolidation
 func (k Keeper) GetRawTx(ctx sdk.Context) *wire.MsgTx {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(rawKey))
 	if bz == nil {
@@ -279,4 +288,30 @@ func (k Keeper) GetRawTx(ctx sdk.Context) *wire.MsgTx {
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &tx)
 
 	return tx
+}
+
+// DeleteRawTx deletes the raw unsigned transaction for outpoint consolidation
+func (k Keeper) DeleteRawTx(ctx sdk.Context) {
+	ctx.KVStore(k.storeKey).Delete([]byte(rawKey))
+}
+
+// SetSignedTx stores the signed transaction for outpoint consolidation
+func (k Keeper) SetSignedTx(ctx sdk.Context, tx *wire.MsgTx) {
+	ctx.KVStore(k.storeKey).Set([]byte(signedTxKey), k.cdc.MustMarshalBinaryLengthPrefixed(tx))
+}
+
+// GetSignedTx returns the signed transaction for outpoint consolidation
+func (k Keeper) GetSignedTx(ctx sdk.Context) *wire.MsgTx {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(signedTxKey))
+	if bz == nil {
+		return nil
+	}
+	var tx *wire.MsgTx
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &tx)
+	return tx
+}
+
+// DeleteSignedTx deletes the signed transaction for outpoint consolidation
+func (k Keeper) DeleteSignedTx(ctx sdk.Context) {
+	ctx.KVStore(k.storeKey).Delete([]byte(signedTxKey))
 }

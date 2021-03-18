@@ -14,17 +14,17 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	mock2 "github.com/axelarnetwork/axelar-core/cmd/vald/broadcast/types/mock"
+	"github.com/axelarnetwork/axelar-core/cmd/vald/btc/rpc/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 func TestMgr_ProcessVerification(t *testing.T) {
 	var (
 		mgr         *Mgr
-		rpc         *mock.RPCClientMock
+		rpc         *mock.ClientMock
 		broadcaster *mock2.BroadcasterMock
 		attributes  []sdk.Attribute
 		info        btc.OutPointInfo
@@ -32,7 +32,7 @@ func TestMgr_ProcessVerification(t *testing.T) {
 	)
 
 	setup := func() {
-		rpc = &mock.RPCClientMock{}
+		rpc = &mock.ClientMock{}
 		broadcaster = &mock2.BroadcasterMock{}
 		mgr = NewMgr(rpc, rand.StrBetween(5, 20), broadcaster, log.TestingLogger())
 

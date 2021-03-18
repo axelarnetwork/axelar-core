@@ -40,7 +40,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/bitcoin"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	btcMock "github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/broadcast"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	ethKeeper "github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
@@ -67,7 +66,6 @@ func randomEthSender() common.Address {
 }
 
 type testMocks struct {
-	BTC     *btcMock.RPCClientMock
 	ETH     *ethMock.RPCClientMock
 	Keygen  *tssMock.TofndKeyGenClientMock
 	Sign    *tssMock.TofndSignClientMock
@@ -95,7 +93,6 @@ func newNode(moniker string, broadcaster fake.Broadcaster, mocks testMocks) *fak
 	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
 	bitcoinKeeper := btcKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)
 	btcParams := btcTypes.DefaultParams()
-	btcParams.Network = mocks.BTC.Network()
 	bitcoinKeeper.SetParams(ctx, btcParams)
 
 	ethSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "eth")
@@ -143,14 +140,19 @@ func newNode(moniker string, broadcaster fake.Broadcaster, mocks testMocks) *fak
 		AddRoute(tssTypes.RouterKey, tssHandler)
 
 	queriers := map[string]sdk.Querier{
-		btcTypes.QuerierRoute: btcKeeper.NewQuerier(bitcoinKeeper, signer, nexusK, mocks.BTC),
+		btcTypes.QuerierRoute: btcKeeper.NewQuerier(bitcoinKeeper, signer, nexusK),
 		ethTypes.QuerierRoute: ethKeeper.NewQuerier(mocks.ETH, ethereumKeeper, signer),
 	}
 
 	node := fake.NewNode(moniker, ctx, router, queriers).
-		WithEndBlockers(func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-			return vote.EndBlocker(ctx, req, voter)
-		})
+		WithEndBlockers(
+			func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
+				return vote.EndBlocker(ctx, req, voter)
+			},
+			func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
+				return bitcoin.EndBlocker(ctx, req, bitcoinKeeper, signer)
+			},
+		)
 	return node
 }
 
@@ -192,13 +194,6 @@ func createMocks(validators []staking.Validator) testMocks {
 		},
 	}
 
-	btcClient := &btcMock.RPCClientMock{
-		SendRawTransactionFunc: func(tx *wire.MsgTx, _ bool) (*chainhash.Hash, error) {
-			hash := tx.TxHash()
-			return &hash, nil
-		},
-		NetworkFunc: func() btcTypes.Network { return btcTypes.Mainnet }}
-
 	ethClient := &ethMock.RPCClientMock{
 		SendAndSignTransactionFunc: func(context.Context, geth.CallMsg) (string, error) {
 			return "", nil
@@ -210,7 +205,6 @@ func createMocks(validators []staking.Validator) testMocks {
 	}
 
 	return testMocks{
-		BTC:     btcClient,
 		ETH:     ethClient,
 		Staker:  stakingKeeper,
 		Slasher: slasher,

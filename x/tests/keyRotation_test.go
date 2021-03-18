@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
@@ -241,20 +240,23 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		assert.FailNow(t, "signing", err)
 	}
 
-	// send tx to Bitcoin
-	bz, err = nodeData[0].Node.Query([]string{btcTypes.QuerierRoute, btcKeeper.SendTx}, abci.RequestQuery{})
+	// wait for the end-block trigger to match signatures with the tx
+	chain.WaitNBlocks(btcTypes.DefaultParams().SigCheckInterval)
+
+	// get signed tx to Bitcoin
+	bz, err = nodeData[0].Node.Query([]string{btcTypes.QuerierRoute, btcKeeper.GetTx}, abci.RequestQuery{})
 	assert.NoError(t, err)
 
-	actualTx := nodeData[0].Mocks.BTC.SendRawTransactionCalls()[0].Tx
-	assert.True(t, txCorrectlyFormed(actualTx, deposits, totalDepositAmount-fee))
+	var signedTx *wire.MsgTx
+	testutils.Codec().MustUnmarshalJSON(bz, &signedTx)
+	assert.True(t, txCorrectlyFormed(signedTx, deposits, totalDepositAmount-fee))
 
 	// expected consolidation info
-	consAddr := getAddress(actualTx.TxOut[0], nodeData[0].Mocks.BTC.Network().Params)
+	consAddr := getAddress(signedTx.TxOut[0], btcTypes.DefaultParams().Network.Params)
 	consolidationInfo := randomOutpointInfo(consAddr.EncodeAddress())
-	consolidationInfo.Amount = btcutil.Amount(actualTx.TxOut[0].Value)
-	var consolidationTxHash *chainhash.Hash
-	testutils.Codec().MustUnmarshalJSON(bz, &consolidationTxHash)
-	consolidationInfo.OutPoint = wire.NewOutPoint(consolidationTxHash, 0)
+	consolidationInfo.Amount = btcutil.Amount(signedTx.TxOut[0].Value)
+	hash := signedTx.TxHash()
+	consolidationInfo.OutPoint = wire.NewOutPoint(&hash, 0)
 
 	// verify master key transfer
 	verifyResult2 := <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender(), consolidationInfo))
@@ -285,7 +287,7 @@ func getAddress(txOut *wire.TxOut, chainParams *chaincfg.Params) btcutil.Address
 func txCorrectlyFormed(tx *wire.MsgTx, deposits map[string]btcTypes.OutPointInfo, txAmount int64) bool {
 	txInsCorrect := true
 	for _, in := range tx.TxIn {
-		if _, ok := deposits[in.PreviousOutPoint.String()]; !ok {
+		if _, ok := deposits[in.PreviousOutPoint.String()]; !ok || in.Witness == nil {
 			txInsCorrect = false
 			break
 		}

@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
@@ -442,7 +441,6 @@ func TestVoteVerifiedTx_SucessAndTransfer(t *testing.T) {
 }
 
 type mocks struct {
-	*mock.RPCClientMock
 	*mock.VoterMock
 	*mock.SignerMock
 	*mock.NexusMock
@@ -474,7 +472,6 @@ func TestNewHandler_SignPendingTransfers(t *testing.T) {
 		sk, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
 		chains := map[string]nexus.Chain{exported.Bitcoin.Name: exported.Bitcoin, eth.Ethereum.Name: eth.Ethereum}
 		m = mocks{
-			&mock.RPCClientMock{},
 			&mock.VoterMock{
 				InitPollFunc:   func(ctx sdk.Context, poll vote.PollMeta) error { return nil },
 				TallyVoteFunc:  func(sdk.Context, vote.MsgVote) error { return nil },
@@ -565,13 +562,6 @@ func prepareMsgSignPendingTransfersSuccessful(h sdk.Handler, ctx sdk.Context, m 
 		res, _ := h(ctx, randomMsgLink())
 		msgVerifyTx := randomMsgVerifyTx(string(res.Data))
 		totalDeposits = totalDeposits.AddRaw(int64(msgVerifyTx.OutPointInfo.Amount))
-		m.RPCClientMock.GetTxOutFunc = func(txHash *chainhash.Hash, voutIdx uint32, mempool bool) (*btcjson.GetTxOutResult, error) {
-			return &btcjson.GetTxOutResult{
-				Confirmations: msgVerifyTx.OutPointInfo.Confirmations,
-				Value:         msgVerifyTx.OutPointInfo.Amount.ToBTC(),
-				ScriptPubKey:  btcjson.ScriptPubKeyResult{Addresses: []string{msgVerifyTx.OutPointInfo.Address}},
-			}, nil
-		}
 
 		_, _ = h(ctx, msgVerifyTx)
 		_, _ = h(ctx, getMsgVoteVerifyTx(msgVerifyTx, true))
@@ -596,13 +586,7 @@ func prepareMsgSignPendingTransfersNotEnoughDeposits(h sdk.Handler, ctx sdk.Cont
 		res, _ := h(ctx, randomMsgLink())
 		msgVerifyTx := randomMsgVerifyTx(string(res.Data))
 		totalDeposits = totalDeposits.AddRaw(int64(msgVerifyTx.OutPointInfo.Amount))
-		m.RPCClientMock.GetTxOutFunc = func(txHash *chainhash.Hash, voutIdx uint32, mempool bool) (*btcjson.GetTxOutResult, error) {
-			return &btcjson.GetTxOutResult{
-				Confirmations: msgVerifyTx.OutPointInfo.Confirmations,
-				Value:         msgVerifyTx.OutPointInfo.Amount.ToBTC(),
-				ScriptPubKey:  btcjson.ScriptPubKeyResult{Addresses: []string{msgVerifyTx.OutPointInfo.Address}},
-			}, nil
-		}
+
 		_, _ = h(ctx, msgVerifyTx)
 		_, _ = h(ctx, getMsgVoteVerifyTx(msgVerifyTx, true))
 	}

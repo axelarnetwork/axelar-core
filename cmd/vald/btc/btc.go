@@ -11,6 +11,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	broadcast "github.com/axelarnetwork/axelar-core/cmd/vald/broadcast/types"
+	rpc2 "github.com/axelarnetwork/axelar-core/cmd/vald/btc/rpc"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -20,11 +21,11 @@ type Mgr struct {
 	myAddress   string
 	Logger      log.Logger
 	broadcaster broadcast.Broadcaster
-	rpc         btc.RPCClient
+	rpc         rpc2.Client
 }
 
 // NewMgr returns a new Mgr instance
-func NewMgr(rpc btc.RPCClient, myAddress string, broadcaster broadcast.Broadcaster, logger log.Logger) *Mgr {
+func NewMgr(rpc rpc2.Client, myAddress string, broadcaster broadcast.Broadcaster, logger log.Logger) *Mgr {
 	return &Mgr{
 		rpc:         rpc,
 		myAddress:   myAddress,
@@ -79,13 +80,13 @@ func parseVerificationStartParams(attributes []sdk.Attribute) (outPoint btc.OutP
 	return outPoint, confHeight, poll, nil
 }
 
-func verifyTx(rpc btc.RPCClient, outPointInfo btc.OutPointInfo, requiredConfirmations int64) error {
+func verifyTx(rpc rpc2.Client, outPointInfo btc.OutPointInfo, requiredConfirmations int64) error {
 	actualTxOut, err := rpc.GetTxOut(&outPointInfo.OutPoint.Hash, outPointInfo.OutPoint.Index, false)
-	if actualTxOut == nil {
-		return fmt.Errorf("tx {%s} not found", outPointInfo.OutPoint.String())
-	}
 	if err != nil {
 		return sdkerrors.Wrap(err, "call to Bitcoin rpc failed")
+	}
+	if actualTxOut == nil {
+		return fmt.Errorf("tx {%s} not found", outPointInfo.OutPoint.String())
 	}
 
 	if len(actualTxOut.ScriptPubKey.Addresses) != 1 {
@@ -103,7 +104,7 @@ func verifyTx(rpc btc.RPCClient, outPointInfo btc.OutPointInfo, requiredConfirma
 	}
 
 	if actualTxOut.Confirmations < requiredConfirmations {
-		return fmt.Errorf("not enough confirmations yet")
+		return fmt.Errorf("not enough confirmations yet, expected at least %d, got %d", requiredConfirmations, actualTxOut.Confirmations)
 	}
 
 	return nil

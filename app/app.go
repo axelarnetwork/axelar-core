@@ -340,20 +340,6 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		rpcEth = ethTypes.NewDummyRPC()
 	}
 
-	// Enable running a node with or without a Bitcoin bridge
-	var rpcBTC btcTypes.RPCClient
-	if axelarCfg.WithBtcBridge {
-		rpc, err := btcTypes.NewRPCClient(axelarCfg.BtcConfig, logger)
-		if err != nil {
-			tmos.Exit(err.Error())
-		}
-		// BTC bridge opens a grpc connection. Clean it up on process shutdown
-		tmos.TrapSignal(logger, rpc.Shutdown)
-		rpcBTC = rpc
-	} else {
-		rpcBTC = btcTypes.NewDummyRPC()
-	}
-
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
 	app.mm = module.NewManager(
@@ -371,7 +357,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		broadcast.NewAppModule(broadcastK),
 		nexus.NewAppModule(nexusK),
 		ethereum.NewAppModule(ethK, votingK, tssK, nexusK, snapK, rpcEth),
-		bitcoin.NewAppModule(btcK, votingK, tssK, nexusK, snapK, rpcBTC),
+		bitcoin.NewAppModule(btcK, votingK, tssK, nexusK, snapK),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
