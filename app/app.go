@@ -137,20 +137,9 @@ type AxelarApp struct {
 	tkeys map[string]*sdk.TransientStoreKey
 
 	// Keepers
-	accountKeeper   auth.AccountKeeper
-	bankKeeper      bank.Keeper
-	stakingKeeper   staking.Keeper
-	slashingKeeper  slashing.Keeper
-	distrKeeper     distr.Keeper
-	supplyKeeper    supply.Keeper
-	paramsKeeper    params.Keeper
-	btcKeeper       btcKeeper.Keeper
-	ethKeeper       ethKeeper.Keeper
-	broadcastKeeper broadcastKeeper.Keeper
-	tssKeeper       tssKeeper.Keeper
-	votingKeeper    voteKeeper.Keeper
-	snapKeeper      snapKeeper.Keeper
-	nexusKeeper     nexusKeeper.Keeper
+	stakingKeeper  staking.Keeper
+	slashingKeeper slashing.Keeper
+	distrKeeper    distr.Keeper
 
 	// Module Manager
 	mm *module.Manager
@@ -203,87 +192,78 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	}
 
 	// The ParamsKeeper handles parameter storage for the application
-	app.paramsKeeper = params.NewKeeper(app.cdc, keys[params.StoreKey], tkeys[params.TStoreKey])
-
+	paramsK := params.NewKeeper(app.cdc, keys[params.StoreKey], tkeys[params.TStoreKey])
 	// Set specific subspaces
-	authSubspace := app.paramsKeeper.Subspace(auth.DefaultParamspace)
-	bankSubspace := app.paramsKeeper.Subspace(bank.DefaultParamspace)
-	stakingSubspace := app.paramsKeeper.Subspace(staking.DefaultParamspace)
-	distrSubspace := app.paramsKeeper.Subspace(distr.DefaultParamspace)
-	slashingSubspace := app.paramsKeeper.Subspace(slashing.DefaultParamspace)
-	snapshotSubspace := app.paramsKeeper.Subspace(snapTypes.DefaultParamspace)
-	tssSubspace := app.paramsKeeper.Subspace(tssTypes.DefaultParamspace)
-	btcSubspace := app.paramsKeeper.Subspace(btcTypes.DefaultParamspace)
-	ethSubspace := app.paramsKeeper.Subspace(ethTypes.DefaultParamspace)
-	nexusSubspace := app.paramsKeeper.Subspace(nexusTypes.DefaultParamspace)
+	authSubspace := paramsK.Subspace(auth.DefaultParamspace)
+	bankSubspace := paramsK.Subspace(bank.DefaultParamspace)
+	stakingSubspace := paramsK.Subspace(staking.DefaultParamspace)
+	distrSubspace := paramsK.Subspace(distr.DefaultParamspace)
+	slashingSubspace := paramsK.Subspace(slashing.DefaultParamspace)
+	snapshotSubspace := paramsK.Subspace(snapTypes.DefaultParamspace)
+	tssSubspace := paramsK.Subspace(tssTypes.DefaultParamspace)
+	btcSubspace := paramsK.Subspace(btcTypes.DefaultParamspace)
+	ethSubspace := paramsK.Subspace(ethTypes.DefaultParamspace)
+	nexusSubspace := paramsK.Subspace(nexusTypes.DefaultParamspace)
 
 	// The AccountKeeper handles address -> account lookups
-	app.accountKeeper = auth.NewAccountKeeper(
+	accountK := auth.NewAccountKeeper(
 		app.cdc,
 		keys[auth.StoreKey],
 		authSubspace,
 		auth.ProtoBaseAccount,
 	)
-
 	// The BankKeeper allows you perform sdk.Coins interactions
-	app.bankKeeper = bank.NewBaseKeeper(
-		app.accountKeeper,
+	bankK := bank.NewBaseKeeper(
+		accountK,
 		bankSubspace,
 		app.ModuleAccountAddrs(),
 	)
-
 	// The SupplyKeeper collects transaction fees and renders them to the fee distribution module
-	app.supplyKeeper = supply.NewKeeper(
+	supplyK := supply.NewKeeper(
 		app.cdc,
 		keys[supply.StoreKey],
-		app.accountKeeper,
-		app.bankKeeper,
+		accountK,
+		bankK,
 		maccPerms,
 	)
-
-	// The staking keeper
-	stakingKeeper := staking.NewKeeper(
+	stakingK := staking.NewKeeper(
 		app.cdc,
 		keys[staking.StoreKey],
-		app.supplyKeeper,
+		supplyK,
 		stakingSubspace,
 	)
-
-	app.distrKeeper = distr.NewKeeper(
+	distrK := distr.NewKeeper(
 		app.cdc,
 		keys[distr.StoreKey],
 		distrSubspace,
-		&stakingKeeper,
-		app.supplyKeeper,
+		&stakingK,
+		supplyK,
 		auth.FeeCollectorName,
 		app.ModuleAccountAddrs(),
 	)
-
-	app.slashingKeeper = slashing.NewKeeper(
+	slashingK := slashing.NewKeeper(
 		app.cdc,
 		keys[slashing.StoreKey],
-		&stakingKeeper,
+		&stakingK,
 		slashingSubspace,
 	)
-
 	// register the staking hooks
 	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks
-	app.stakingKeeper = *stakingKeeper.SetHooks(
+	stakingK = *stakingK.SetHooks(
 		staking.NewMultiStakingHooks(
-			app.distrKeeper.Hooks(),
-			app.slashingKeeper.Hooks()),
+			distrK.Hooks(),
+			slashingK.Hooks()),
 	)
-
-	app.btcKeeper = btcKeeper.NewKeeper(app.cdc, keys[btcTypes.StoreKey], btcSubspace)
-
-	app.ethKeeper = ethKeeper.NewEthKeeper(app.cdc, keys[ethTypes.StoreKey], ethSubspace)
-
-	slashingKeeperCast := &snapMock.SlasherMock{
-		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapTypes.ValidatorInfo, bool) {
-			signingInfo, found := app.slashingKeeper.GetValidatorSigningInfo(ctx, address)
-			return snapTypes.ValidatorInfo{ValidatorSigningInfo: signingInfo}, found
-		},
-	}
+	btcK := btcKeeper.NewKeeper(
+		app.cdc,
+		keys[btcTypes.StoreKey],
+		btcSubspace,
+	)
+	ethK := ethKeeper.NewEthKeeper(
+		app.cdc,
+		keys[ethTypes.StoreKey],
+		ethSubspace,
+	)
 
 	keybase, err := keyring.NewKeyring(sdk.KeyringServiceName(), axelarCfg.ClientConfig.KeyringBackend, viper.GetString("clihome"), os.Stdin)
 	if err != nil {
@@ -293,41 +273,59 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
-
-	app.broadcastKeeper, err = broadcastKeeper.NewKeeper(
+	broadcastK, err := broadcastKeeper.NewKeeper(
 		app.cdc,
 		keys[broadcastTypes.StoreKey],
 		dbadapter.Store{DB: dbm.NewMemDB()},
 		keybase,
-		app.accountKeeper,
-		app.stakingKeeper,
+		accountK,
+		stakingK,
 		abciClient,
 		axelarCfg.ClientConfig,
 		logger,
 	)
-
-	app.snapKeeper = snapKeeper.NewKeeper(app.cdc, keys[snapTypes.StoreKey], snapshotSubspace, app.broadcastKeeper, app.stakingKeeper, slashingKeeperCast)
-
-	app.nexusKeeper = nexusKeeper.NewKeeper(app.cdc, keys[nexusTypes.StoreKey], nexusSubspace)
-
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
 
-	app.votingKeeper = voteKeeper.NewKeeper(
+	slashingKCast := &snapMock.SlasherMock{
+		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapTypes.ValidatorInfo, bool) {
+			signingInfo, found := slashingK.GetValidatorSigningInfo(ctx, address)
+
+			return snapTypes.ValidatorInfo{ValidatorSigningInfo: signingInfo}, found
+		},
+	}
+	snapK := snapKeeper.NewKeeper(
+		app.cdc,
+		keys[snapTypes.StoreKey],
+		snapshotSubspace,
+		broadcastK,
+		stakingK,
+		slashingKCast,
+	)
+	nexusK := nexusKeeper.NewKeeper(
+		app.cdc,
+		keys[nexusTypes.StoreKey],
+		nexusSubspace,
+	)
+	votingK := voteKeeper.NewKeeper(
 		app.cdc,
 		keys[voteTypes.StoreKey],
 		dbadapter.Store{DB: dbm.NewMemDB()},
-		app.snapKeeper,
-		app.broadcastKeeper,
+		snapK,
+		broadcastK,
 	)
-	app.tssKeeper = tssKeeper.NewKeeper(
+	tssK := tssKeeper.NewKeeper(
 		app.cdc,
 		keys[tssTypes.StoreKey],
 		tssSubspace,
-		app.broadcastKeeper,
-		slashingKeeperCast,
+		broadcastK,
+		slashingKCast,
 	)
+
+	app.stakingKeeper = stakingK
+	app.distrKeeper = distrK
+	app.slashingKeeper = slashingK
 
 	var rpcEth ethTypes.RPCClient
 	if axelarCfg.WithEthBridge {
@@ -357,21 +355,21 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
 	app.mm = module.NewManager(
-		genutil.NewAppModule(app.accountKeeper, app.stakingKeeper, app.BaseApp.DeliverTx),
-		auth.NewAppModule(app.accountKeeper),
-		bank.NewAppModule(app.bankKeeper, app.accountKeeper),
-		supply.NewAppModule(app.supplyKeeper, app.accountKeeper),
-		distr.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
-		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
-		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
+		genutil.NewAppModule(accountK, stakingK, app.BaseApp.DeliverTx),
+		auth.NewAppModule(accountK),
+		bank.NewAppModule(bankK, accountK),
+		supply.NewAppModule(supplyK, accountK),
+		distr.NewAppModule(distrK, accountK, supplyK, stakingK),
+		slashing.NewAppModule(slashingK, accountK, stakingK),
+		staking.NewAppModule(stakingK, accountK, supplyK),
 
-		snapshot.NewAppModule(app.snapKeeper),
-		tss.NewAppModule(app.tssKeeper, app.snapKeeper, app.votingKeeper, app.nexusKeeper, app.stakingKeeper),
-		vote.NewAppModule(app.votingKeeper),
-		broadcast.NewAppModule(app.broadcastKeeper),
-		nexus.NewAppModule(app.nexusKeeper),
-		ethereum.NewAppModule(app.ethKeeper, app.votingKeeper, app.tssKeeper, app.nexusKeeper, app.snapKeeper, rpcEth),
-		bitcoin.NewAppModule(app.btcKeeper, app.votingKeeper, app.tssKeeper, app.nexusKeeper, app.snapKeeper, rpcBTC),
+		snapshot.NewAppModule(snapK),
+		tss.NewAppModule(tssK, snapK, votingK, nexusK, stakingK),
+		vote.NewAppModule(votingK),
+		broadcast.NewAppModule(broadcastK),
+		nexus.NewAppModule(nexusK),
+		ethereum.NewAppModule(ethK, votingK, tssK, nexusK, snapK, rpcEth),
+		bitcoin.NewAppModule(btcK, votingK, tssK, nexusK, snapK, rpcBTC),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
@@ -411,8 +409,8 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	// The AnteHandler handles signature verification and transaction pre-processing
 	app.SetAnteHandler(
 		auth.NewAnteHandler(
-			app.accountKeeper,
-			app.supplyKeeper,
+			accountK,
+			supplyK,
 			auth.DefaultSigVerificationGasConsumer,
 		),
 	)
