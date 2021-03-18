@@ -130,7 +130,7 @@ func sendTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer) ([]b
 		return nil, err
 	}
 
-	return k.Codec().MustMarshalJSON(hash), nil
+	return k.Codec().MustMarshalJSON(hash.String()), nil
 }
 
 func getConsolidationTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer) ([]byte, error) {
