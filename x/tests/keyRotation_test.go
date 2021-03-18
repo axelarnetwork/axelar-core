@@ -273,9 +273,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	var consolidationTxString string
 	testutils.Codec().MustUnmarshalJSON(bz, &consolidationTxString)
 	consolidationTxHash, err := chainhash.NewHashFromStr(consolidationTxString)
-	if err != nil {
-		assert.FailNow(t, "btc tx hash", err)
-	}
+	assert.NoError(t, err)
 	eConsolidationInfo.OutPoint = wire.NewOutPoint(consolidationTxHash, 0)
 
 	// simulate confirmed tx to master address 2
