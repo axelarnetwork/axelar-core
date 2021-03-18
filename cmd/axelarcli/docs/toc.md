@@ -18,7 +18,7 @@
       - [account \[address\]](axelarcli_query_auth_account.md)	 - Query account balance
     - [bitcoin](axelarcli_query_bitcoin.md)	 - bitcoin query subcommands
       - [deposit-addr \[chain\] \[recipient address\]](axelarcli_query_bitcoin_deposit-addr.md)	 - Returns a bitcoin deposit address for a recipient address on another blockchain
-      - [send](axelarcli_query_bitcoin_send.md)	 - Send a transaction to Bitcoin that consolidates deposits and withdrawals
+      - [transfer-tx](axelarcli_query_bitcoin_transfer-tx.md)	 - Returns a fully signed transfer and consolidation transaction
     - [block \[height\]](axelarcli_query_block.md)	 - Get verified data for a the block at given height
     - [distribution](axelarcli_query_distribution.md)	 - Querying commands for the distribution module
       - [commission \[validator\]](axelarcli_query_distribution_commission.md)	 - Query distribution validator commission
