@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/log"
-	tmos "github.com/tendermint/tendermint/libs/os"
 
 	"github.com/axelarnetwork/axelar-core/app"
 )
@@ -25,7 +24,8 @@ func main() {
 		Short: "Validator Daemon ",
 	}
 
-	startCommand := getStartCommand(log.NewTMLogger(os.Stdout).With("external", "main"))
+	logger := log.NewTMLogger(os.Stdout).With("external", "main")
+	startCommand := getStartCommand(logger)
 	rootCmd.AddCommand(flags.PostCommands(startCommand)...)
 
 	setPersistentFlags(rootCmd)
@@ -33,7 +33,8 @@ func main() {
 	executor := cli.PrepareMainCmd(rootCmd, "AX", app.DefaultNodeHome)
 	err := executor.Execute()
 	if err != nil {
-		tmos.Exit(err.Error())
+		logger.Error(err.Error())
+		os.Exit(1)
 	}
 }
 

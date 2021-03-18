@@ -5,8 +5,6 @@ import (
 	"fmt"
 
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcd/wire"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -20,7 +18,6 @@ import (
 // Query paths
 const (
 	QueryDepositAddress = "depositAddr"
-	QueryOutInfo        = "outPointInfo"
 	SendTx              = "sendTransfers"
 	GetTx               = "getTransferTx"
 )
@@ -33,16 +30,10 @@ func NewQuerier(k Keeper, s types.Signer, n types.Nexus, rpc types.RPCClient) sd
 		switch path[0] {
 		case QueryDepositAddress:
 			res, err = queryDepositAddress(ctx, k, s, n, req.Data)
-		case QueryOutInfo:
-			blockHash, err := chainhash.NewHashFromStr(path[1])
-			if err != nil {
-				return nil, sdkerrors.Wrapf(types.ErrBitcoin, "could not parse block hash: %s", err.Error())
-			}
-			res, err = queryTxOutInfo(rpc, blockHash, req.Data)
 		case SendTx:
 			res, err = sendTx(ctx, k, rpc, s)
 		case GetTx:
-			res, err = getConsolidationTx(ctx, k, rpc, s)
+			res, err = getConsolidationTx(ctx, k, s)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown btc-bridge query endpoint: %s", path[1]))
 		}
@@ -83,20 +74,6 @@ func queryDepositAddress(ctx sdk.Context, k Keeper, s types.Signer, n types.Nexu
 	return []byte(addr.EncodeAddress()), nil
 }
 
-func queryTxOutInfo(rpc types.RPCClient, blockHash *chainhash.Hash, data []byte) ([]byte, error) {
-	var out *wire.OutPoint
-	err := types.ModuleCdc.UnmarshalJSON(data, &out)
-	if err != nil {
-		return nil, sdkerrors.Wrap(err, "could not parse the outpoint")
-	}
-	info, err := rpc.GetOutPointInfo(blockHash, out)
-	if err != nil {
-		return nil, err
-	}
-
-	return types.ModuleCdc.MustMarshalJSON(info), nil
-}
-
 func sendTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer) ([]byte, error) {
 	rawTx := k.GetRawTx(ctx)
 	if rawTx == nil {
@@ -133,7 +110,7 @@ func sendTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer) ([]b
 	return k.Codec().MustMarshalJSON(hash.String()), nil
 }
 
-func getConsolidationTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer) ([]byte, error) {
+func getConsolidationTx(ctx sdk.Context, k Keeper, s types.Signer) ([]byte, error) {
 	rawTx := k.GetRawTx(ctx)
 	if rawTx == nil {
 		return nil, fmt.Errorf("no consolidation transaction found")

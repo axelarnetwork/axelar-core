@@ -7,8 +7,6 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcd/wire"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	goEth "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -20,7 +18,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
-	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
@@ -47,7 +44,7 @@ func Test_wBTC_mint(t *testing.T) {
 
 	// create a chain with nodes and assign them as validators
 	chain, nodeData := initChain(nodeCount, "mint")
-	keygenDone, verifyDone, signDone := registerWaitEventListeners(nodeData[0])
+	keygenDone, btcVerifyDone, ethVerifyDone, signDone := registerWaitEventListeners(nodeData[0])
 
 	// register proxies for all validators
 	for i, proxy := range randStrings.Take(nodeCount) {
@@ -187,51 +184,35 @@ func Test_wBTC_mint(t *testing.T) {
 	verifyResult := <-chain.Submit(ethTypes.NewMsgVerifyErc20TokenDeploy(randomSender(), txHash, "satoshi"))
 	assert.NoError(t, verifyResult.Error)
 
-	if err := waitFor(verifyDone, 1); err != nil {
+	if err := waitFor(ethVerifyDone, 1); err != nil {
 		assert.FailNow(t, "verification", err)
 	}
 
 	// steps followed as per https://github.com/axelarnetwork/axelarate#mint-erc20-wrapped-bitcoin-tokens-on-ethereum
 	totalDepositCount := int(rand.I64Between(1, 20))
 	for i := 0; i < totalDepositCount; i++ {
-		// 1. Get a deposit address for an Ethereum recipient address
+		// Get a deposit address for an Ethereum recipient address
 		// we don't provide an actual recipient address, so it is created automatically
 		crosschainAddr := nexus.CrossChainAddress{Chain: eth.Ethereum, Address: rand.StrBetween(5, 20)}
 		res := <-chain.Submit(btcTypes.NewMsgLink(randomSender(), crosschainAddr.Address, crosschainAddr.Chain.Name))
 		assert.NoError(t, res.Error)
 		depositAddr := string(res.Data)
 
-		// Prepare btc mocks for verification
-		expectedDepositInfo := randomOutpointInfo(depositAddr)
-		for _, n := range nodeData {
-			n.Mocks.BTC.GetOutPointInfoFunc = func(bHash *chainhash.Hash, out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
-				if !bHash.IsEqual(expectedDepositInfo.BlockHash) || out.String() != expectedDepositInfo.OutPoint.String() {
-					return btcTypes.OutPointInfo{}, fmt.Errorf("outpoint info not found")
-				}
-				return expectedDepositInfo, nil
-			}
-		}
+		// Simulate deposit
+		depositInfo := randomOutpointInfo(depositAddr)
 
-		// 3. Collect all information that needs to be verified about the deposit
-		bz, err := nodeData[0].Node.Query(
-			[]string{btcTypes.QuerierRoute, btcKeeper.QueryOutInfo, expectedDepositInfo.BlockHash.String()},
-			abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(expectedDepositInfo.OutPoint)})
-		assert.NoError(t, err)
-		var info btcTypes.OutPointInfo
-		testutils.Codec().MustUnmarshalJSON(bz, &info)
-
-		// 4. Verify the previously received information
-		res = <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender(), info))
+		// Verify the previously received information
+		res = <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender(), depositInfo))
 		assert.NoError(t, res.Error)
 
 	}
 
-	// 5. Wait until verification is complete
-	if err := waitFor(verifyDone, totalDepositCount); err != nil {
+	// Wait until verification is complete
+	if err := waitFor(btcVerifyDone, totalDepositCount); err != nil {
 		assert.FailNow(t, "verification", err)
 	}
 
-	// 6. Sign all pending transfers to Ethereum
+	// Sign all pending transfers to Ethereum
 	res := <-chain.Submit(ethTypes.NewMsgSignPendingTransfers(randomSender()))
 	assert.NoError(t, res.Error)
 
@@ -242,7 +223,7 @@ func Test_wBTC_mint(t *testing.T) {
 		assert.FailNow(t, "signing", err)
 	}
 
-	// 7. Submit the minting command from an externally controlled address to AxelarGateway
+	// Submit the minting command from an externally controlled address to AxelarGateway
 	sender2 := randomEthSender()
 
 	_, err = nodeData[0].Node.Query(

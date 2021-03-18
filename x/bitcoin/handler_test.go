@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
@@ -44,7 +45,7 @@ func TestLink_NoMasterKey(t *testing.T) {
 
 	s := &mock.SignerMock{GetCurrentMasterKeyIDFunc: func(sdk.Context, nexus.Chain) (string, bool) { return "", false }}
 
-	handler := NewHandler(k, &mock.VoterMock{}, &mock.RPCClientMock{}, s, &mock.NexusMock{}, &mock.SnapshotterMock{})
+	handler := NewHandler(k, &mock.VoterMock{}, s, &mock.NexusMock{}, &mock.SnapshotterMock{})
 	_, err := handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
@@ -80,7 +81,7 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 		GetCurrentMasterKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain) (string, bool) { return "testkey", true },
 	}
 
-	handler := NewHandler(k, &mock.VoterMock{}, &mock.RPCClientMock{}, s, n, &mock.SnapshotterMock{})
+	handler := NewHandler(k, &mock.VoterMock{}, s, n, &mock.SnapshotterMock{})
 	recipient := nexus.CrossChainAddress{Address: "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7", Chain: eth.Ethereum}
 	_, err = handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name})
 
@@ -102,14 +103,8 @@ func TestLink_Success(t *testing.T) {
 		panic(err)
 	}
 
-	redeemScript, err := types.CreateCrossChainRedeemScript(btcec.PublicKey(privKey.PublicKey), recipient)
-	if err != nil {
-		panic(err)
-	}
-	btcAddr, err := types.CreateDepositAddress(k.GetNetwork(ctx), redeemScript)
-	if err != nil {
-		panic(err)
-	}
+	redeemScript := types.CreateCrossChainRedeemScript(btcec.PublicKey(privKey.PublicKey), recipient)
+	btcAddr := types.CreateDepositAddress(k.GetNetwork(ctx), redeemScript)
 	sender := nexus.CrossChainAddress{Address: btcAddr.EncodeAddress(), Chain: exported.Bitcoin}
 
 	chains := map[string]nexus.Chain{exported.Bitcoin.Name: exported.Bitcoin, eth.Ethereum.Name: eth.Ethereum}
@@ -129,7 +124,7 @@ func TestLink_Success(t *testing.T) {
 		GetCurrentMasterKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain) (string, bool) { return "testkey", true },
 	}
 
-	handler := NewHandler(k, &mock.VoterMock{}, &mock.RPCClientMock{}, s, n, &mock.SnapshotterMock{})
+	handler := NewHandler(k, &mock.VoterMock{}, s, n, &mock.SnapshotterMock{})
 	_, err = handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name})
 
 	assert.NoError(t, err)
@@ -147,38 +142,29 @@ func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
 	k := keeper.NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
 	k.SetParams(ctx, types.DefaultParams())
-	rpc := mock.RPCClientMock{
-		GetOutPointInfoFunc: func(*chainhash.Hash, *wire.OutPoint) (types.OutPointInfo, error) {
-			return types.OutPointInfo{}, fmt.Errorf("not found")
-		},
-	}
-	var poll vote.PollMeta
 	v := &mock.VoterMock{
-		InitPollFunc:   func(_ sdk.Context, p vote.PollMeta) error { poll = p; return nil },
+		InitPollFunc:   func(_ sdk.Context, p vote.PollMeta) error { return nil },
 		RecordVoteFunc: func(vote vote.MsgVote) {},
 	}
+	depositAddr := randomAddress()
+	k.SetKeyIDByAddress(ctx, depositAddr, "someKey")
 
 	txHash, err := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
-	if err != nil {
-		panic(err)
-	}
-	blockHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
 	outpoint := wire.NewOutPoint(txHash, 0)
 	info := types.OutPointInfo{
 		OutPoint:      outpoint,
-		BlockHash:     blockHash,
 		Amount:        10,
-		Address:       "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
+		Address:       depositAddr.EncodeAddress(),
 		Confirmations: 7,
 	}
 	if err := info.Validate(); err != nil {
 		panic(err)
 	}
 
-	handler := NewHandler(k, v, &rpc, &mock.SignerMock{}, &mock.NexusMock{}, &mock.SnapshotterMock{})
+	handler := NewHandler(k, v, &mock.SignerMock{}, &mock.NexusMock{}, &mock.SnapshotterMock{})
 
 	_, err = handler(ctx, types.MsgVerifyTx{Sender: sdk.AccAddress("sender"), OutPointInfo: info})
 	assert.Nil(t, err)
@@ -187,10 +173,6 @@ func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
 	assert.Equal(t, outpoint.String(), v.InitPollCalls()[0].Poll.ID)
 	assert.Equal(t, types.MsgVerifyTx{}.Type(), v.InitPollCalls()[0].Poll.Type)
 	assert.Equal(t, types.ModuleName, v.InitPollCalls()[0].Poll.Module)
-
-	assert.Equal(t, 1, len(v.RecordVoteCalls()))
-	assert.Equal(t, poll, v.RecordVoteCalls()[0].Vote.Poll())
-	assert.Equal(t, false, v.RecordVoteCalls()[0].Vote.Data())
 }
 
 func TestVerifyTx_ValidUTXO(t *testing.T) {
@@ -204,49 +186,33 @@ func TestVerifyTx_ValidUTXO(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	blockHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
-	if err != nil {
-		panic(err)
-	}
+	depositAddr := randomAddress()
+	k.SetKeyIDByAddress(ctx, depositAddr, "someKey")
 	outPoint := wire.NewOutPoint(txHash, 0)
 	info := types.OutPointInfo{
 		OutPoint:      outPoint,
-		BlockHash:     blockHash,
 		Amount:        10,
-		Address:       "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
+		Address:       depositAddr.EncodeAddress(),
 		Confirmations: 7,
 	}
 	if err := info.Validate(); err != nil {
 		panic(err)
 	}
 
-	rpc := mock.RPCClientMock{
-		GetOutPointInfoFunc: func(*chainhash.Hash, *wire.OutPoint) (types.OutPointInfo, error) { return info, nil },
-	}
-
-	var poll vote.PollMeta
 	v := &mock.VoterMock{
-		InitPollFunc:   func(_ sdk.Context, p vote.PollMeta) error { poll = p; return nil },
+		InitPollFunc:   func(_ sdk.Context, p vote.PollMeta) error { return nil },
 		RecordVoteFunc: func(vote vote.MsgVote) {},
 	}
-	handler := NewHandler(k, v, &rpc, &mock.SignerMock{}, &mock.NexusMock{}, &mock.SnapshotterMock{})
+	handler := NewHandler(k, v, &mock.SignerMock{}, &mock.NexusMock{}, &mock.SnapshotterMock{})
 
 	_, err = handler(ctx, types.MsgVerifyTx{Sender: sdk.AccAddress("sender"), OutPointInfo: info})
 	assert.Nil(t, err)
 	assert.NoError(t, err)
 
-	assert.Equal(t, 1, len(rpc.GetOutPointInfoCalls()))
-	assert.Equal(t, info.BlockHash, rpc.GetOutPointInfoCalls()[0].BlockHash)
-	assert.Equal(t, info.OutPoint.String(), rpc.GetOutPointInfoCalls()[0].Out.String())
-
 	assert.Equal(t, 1, len(v.InitPollCalls()))
 	assert.Equal(t, outPoint.String(), v.InitPollCalls()[0].Poll.ID)
 	assert.Equal(t, types.MsgVerifyTx{}.Type(), v.InitPollCalls()[0].Poll.Type)
 	assert.Equal(t, types.ModuleName, v.InitPollCalls()[0].Poll.Module)
-
-	assert.Equal(t, 1, len(v.RecordVoteCalls()))
-	assert.Equal(t, poll, v.RecordVoteCalls()[0].Vote.Poll())
-	assert.Equal(t, true, v.RecordVoteCalls()[0].Vote.Data())
 
 	actualOutPoint, ok := k.GetUnverifiedOutPointInfo(ctx, info.OutPoint)
 	assert.True(t, ok)
@@ -266,7 +232,7 @@ func TestVoteVerifiedTx_NoUnverifiedOutPointWithVoteResult(t *testing.T) {
 		DeletePollFunc: func(ctx sdk.Context, poll vote.PollMeta) {},
 	}
 
-	handler := NewHandler(k, v, &mock.RPCClientMock{}, &mock.SignerMock{}, &mock.NexusMock{}, &mock.SnapshotterMock{})
+	handler := NewHandler(k, v, &mock.SignerMock{}, &mock.NexusMock{}, &mock.SnapshotterMock{})
 	poll := vote.NewPollMeta("bitcoin", "verify", "txid")
 	msg := &types.MsgVoteVerifiedTx{Sender: sdk.AccAddress("sender"), PollMeta: poll, VotingData: true}
 	_, err := handler(ctx, msg)
@@ -284,17 +250,12 @@ func TestVoteVerifiedTx_IncompleteVote(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	blockHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
-	if err != nil {
-		panic(err)
-	}
 	outpoint := &wire.OutPoint{
 		Hash:  *txHash,
 		Index: 0,
 	}
 	outpointInfo := types.OutPointInfo{
 		OutPoint:      outpoint,
-		BlockHash:     blockHash,
 		Amount:        btcutil.Amount(1000000),
 		Address:       "sender",
 		Confirmations: 100,
@@ -317,7 +278,7 @@ func TestVoteVerifiedTx_IncompleteVote(t *testing.T) {
 		},
 	}
 
-	handler := NewHandler(k, v, &mock.RPCClientMock{}, &mock.SignerMock{}, b, &mock.SnapshotterMock{})
+	handler := NewHandler(k, v, &mock.SignerMock{}, b, &mock.SnapshotterMock{})
 	msg := &types.MsgVoteVerifiedTx{Sender: sdk.AccAddress("sender"), PollMeta: poll, VotingData: true}
 	_, err = handler(ctx, msg)
 	assert.NoError(t, err)
@@ -336,17 +297,12 @@ func TestVoteVerifiedTx_KeyIDNotFound(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	blockHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
-	if err != nil {
-		panic(err)
-	}
 	outpoint := &wire.OutPoint{
 		Hash:  *txHash,
 		Index: 0,
 	}
 	outpointInfo := types.OutPointInfo{
 		OutPoint:      outpoint,
-		BlockHash:     blockHash,
 		Amount:        btcutil.Amount(1000000),
 		Address:       "sender",
 		Confirmations: 100,
@@ -367,7 +323,7 @@ func TestVoteVerifiedTx_KeyIDNotFound(t *testing.T) {
 		EnqueueForTransferFunc: func(ctx sdk.Context, s nexus.CrossChainAddress, amount sdk.Coin) error { return nil },
 	}
 
-	handler := NewHandler(k, v, &mock.RPCClientMock{}, &mock.SignerMock{}, b, &mock.SnapshotterMock{})
+	handler := NewHandler(k, v, &mock.SignerMock{}, b, &mock.SnapshotterMock{})
 	msg := &types.MsgVoteVerifiedTx{Sender: sdk.AccAddress("sender"), PollMeta: poll, VotingData: true}
 	_, err = handler(ctx, msg)
 	assert.Error(t, err)
@@ -387,10 +343,6 @@ func TestVoteVerifiedTx_Success_NotLinked(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	blockHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
-	if err != nil {
-		panic(err)
-	}
 	outpoint := &wire.OutPoint{
 		Hash:  *txHash,
 		Index: 0,
@@ -398,7 +350,6 @@ func TestVoteVerifiedTx_Success_NotLinked(t *testing.T) {
 	sender := randomAddress()
 	outpointInfo := types.OutPointInfo{
 		OutPoint:      outpoint,
-		BlockHash:     blockHash,
 		Amount:        btcutil.Amount(1000000),
 		Address:       sender.EncodeAddress(),
 		Confirmations: 100,
@@ -423,7 +374,7 @@ func TestVoteVerifiedTx_Success_NotLinked(t *testing.T) {
 		},
 	}
 
-	handler := NewHandler(k, v, &mock.RPCClientMock{}, &mock.SignerMock{}, b, &mock.SnapshotterMock{})
+	handler := NewHandler(k, v, &mock.SignerMock{}, b, &mock.SnapshotterMock{})
 	msg := &types.MsgVoteVerifiedTx{Sender: sdk.AccAddress("sender"), PollMeta: poll, VotingData: true}
 	_, err = handler(ctx, msg)
 	assert.NoError(t, err)
@@ -443,10 +394,6 @@ func TestVoteVerifiedTx_SucessAndTransfer(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	blockHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
-	if err != nil {
-		panic(err)
-	}
 	outpoint := &wire.OutPoint{
 		Hash:  *txHash,
 		Index: 0,
@@ -454,7 +401,6 @@ func TestVoteVerifiedTx_SucessAndTransfer(t *testing.T) {
 	btcSender := randomAddress()
 	outpointInfo := types.OutPointInfo{
 		OutPoint:      outpoint,
-		BlockHash:     blockHash,
 		Amount:        btcutil.Amount(1000000),
 		Address:       btcSender.EncodeAddress(),
 		Confirmations: 100,
@@ -485,7 +431,7 @@ func TestVoteVerifiedTx_SucessAndTransfer(t *testing.T) {
 		},
 	}
 
-	handler := NewHandler(k, v, &mock.RPCClientMock{}, &mock.SignerMock{}, b, &mock.SnapshotterMock{})
+	handler := NewHandler(k, v, &mock.SignerMock{}, b, &mock.SnapshotterMock{})
 	msg := &types.MsgVoteVerifiedTx{Sender: sdk.AccAddress("btcSender"), PollMeta: poll, VotingData: true}
 	_, err = handler(ctx, msg)
 	assert.NoError(t, err)
@@ -568,7 +514,7 @@ func TestNewHandler_SignPendingTransfers(t *testing.T) {
 			},
 		}
 
-		h = NewHandler(k, m.VoterMock, m.RPCClientMock, m.SignerMock, m.NexusMock, m.SnapshotterMock)
+		h = NewHandler(k, m.VoterMock, m.SignerMock, m.NexusMock, m.SnapshotterMock)
 	}
 
 	testCases := []struct {
@@ -619,8 +565,12 @@ func prepareMsgSignPendingTransfersSuccessful(h sdk.Handler, ctx sdk.Context, m 
 		res, _ := h(ctx, randomMsgLink())
 		msgVerifyTx := randomMsgVerifyTx(string(res.Data))
 		totalDeposits = totalDeposits.AddRaw(int64(msgVerifyTx.OutPointInfo.Amount))
-		m.RPCClientMock.GetOutPointInfoFunc = func(*chainhash.Hash, *wire.OutPoint) (types.OutPointInfo, error) {
-			return msgVerifyTx.OutPointInfo, nil
+		m.RPCClientMock.GetTxOutFunc = func(txHash *chainhash.Hash, voutIdx uint32, mempool bool) (*btcjson.GetTxOutResult, error) {
+			return &btcjson.GetTxOutResult{
+				Confirmations: msgVerifyTx.OutPointInfo.Confirmations,
+				Value:         msgVerifyTx.OutPointInfo.Amount.ToBTC(),
+				ScriptPubKey:  btcjson.ScriptPubKeyResult{Addresses: []string{msgVerifyTx.OutPointInfo.Address}},
+			}, nil
 		}
 
 		_, _ = h(ctx, msgVerifyTx)
@@ -646,8 +596,12 @@ func prepareMsgSignPendingTransfersNotEnoughDeposits(h sdk.Handler, ctx sdk.Cont
 		res, _ := h(ctx, randomMsgLink())
 		msgVerifyTx := randomMsgVerifyTx(string(res.Data))
 		totalDeposits = totalDeposits.AddRaw(int64(msgVerifyTx.OutPointInfo.Amount))
-		m.RPCClientMock.GetOutPointInfoFunc = func(*chainhash.Hash, *wire.OutPoint) (types.OutPointInfo, error) {
-			return msgVerifyTx.OutPointInfo, nil
+		m.RPCClientMock.GetTxOutFunc = func(txHash *chainhash.Hash, voutIdx uint32, mempool bool) (*btcjson.GetTxOutResult, error) {
+			return &btcjson.GetTxOutResult{
+				Confirmations: msgVerifyTx.OutPointInfo.Confirmations,
+				Value:         msgVerifyTx.OutPointInfo.Amount.ToBTC(),
+				ScriptPubKey:  btcjson.ScriptPubKeyResult{Addresses: []string{msgVerifyTx.OutPointInfo.Address}},
+			}, nil
 		}
 		_, _ = h(ctx, msgVerifyTx)
 		_, _ = h(ctx, getMsgVoteVerifyTx(msgVerifyTx, true))
@@ -699,20 +653,11 @@ func randomMsgVerifyTx(addr string) types.MsgVerifyTx {
 	if err != nil {
 		panic(err)
 	}
-	blockHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
-	if err != nil {
-		panic(err)
-	}
-	conf := mathRand.Uint64()
-	if conf == 0 {
-		conf += 1
-	}
 	return types.NewMsgVerifyTx(sdk.AccAddress(rand.StrBetween(5, 20)), types.OutPointInfo{
 		OutPoint:      wire.NewOutPoint(txHash, mathRand.Uint32()),
 		Amount:        btcutil.Amount(rand.PosI64()),
-		BlockHash:     blockHash,
 		Address:       addr,
-		Confirmations: conf,
+		Confirmations: rand.PosI64(),
 	})
 }
 

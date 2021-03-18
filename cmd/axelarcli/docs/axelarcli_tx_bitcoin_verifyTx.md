@@ -4,10 +4,10 @@ Verify a Bitcoin transaction
 
 ### Synopsis
 
-Verify that a transaction happened on the Bitcoin network so it can be processed on axelar. Get the json string by using the outPointInfo query
+Verify that a transaction happened on the Bitcoin network so it can be processed on axelar.
 
 ```
-axelarcli tx bitcoin verifyTx [txInfo json] [flags]
+axelarcli tx bitcoin verifyTx [txID:voutIdx] [txOut json] [flags]
 ```
 
 ### Options

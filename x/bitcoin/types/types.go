@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
@@ -29,18 +30,32 @@ var (
 type OutPointInfo struct {
 	OutPoint      *wire.OutPoint
 	Amount        btcutil.Amount
-	BlockHash     *chainhash.Hash
 	Address       string
-	Confirmations uint64
+	Confirmations int64
+}
+
+// NewOutPointInfo returns a new OutPointInfo instance
+func NewOutPointInfo(outPoint *wire.OutPoint, txOut btcjson.GetTxOutResult) (OutPointInfo, error) {
+	amount, err := btcutil.NewAmount(txOut.Value)
+	if err != nil {
+		return OutPointInfo{}, err
+	}
+
+	if len(txOut.ScriptPubKey.Addresses) != 1 {
+		return OutPointInfo{}, fmt.Errorf("only txOuts with single spendable address allowed")
+	}
+	return OutPointInfo{
+		OutPoint:      outPoint,
+		Amount:        amount,
+		Address:       txOut.ScriptPubKey.Addresses[0],
+		Confirmations: txOut.Confirmations,
+	}, nil
 }
 
 // Validate ensures that all fields are filled with sensible values
 func (i OutPointInfo) Validate() error {
 	if i.OutPoint == nil {
 		return fmt.Errorf("missing outpoint")
-	}
-	if i.BlockHash == nil {
-		return fmt.Errorf("missing block hash")
 	}
 	if i.Amount <= 0 {
 		return fmt.Errorf("amount must be greater than 0")
@@ -150,36 +165,77 @@ type DepositQueryParams struct {
 type RedeemScript []byte
 
 // CreateCrossChainRedeemScript generates a redeem script unique to the given key and cross-chain address
-func CreateCrossChainRedeemScript(pk btcec.PublicKey, crossAddr nexus.CrossChainAddress) (RedeemScript, error) {
+func CreateCrossChainRedeemScript(pk btcec.PublicKey, crossAddr nexus.CrossChainAddress) RedeemScript {
 	keyBz := pk.SerializeCompressed()
 	nonce := btcutil.Hash160([]byte(crossAddr.String()))
 
 	redeemScript, err := txscript.NewScriptBuilder().AddData(keyBz).AddOp(txscript.OP_CHECKSIG).AddData(nonce).AddOp(txscript.OP_DROP).Script()
+	// the script builder only returns an error of the script is non-canonical.
+	// Since we want to build canonical scripts and the template is predefined, an error here means the template is wrong,
+	// i.e. it's a bug.
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	return redeemScript, nil
+	return redeemScript
 }
 
 // CreateMasterRedeemScript generates a redeem script unique to the given key
-func CreateMasterRedeemScript(pk btcec.PublicKey) (RedeemScript, error) {
+func CreateMasterRedeemScript(pk btcec.PublicKey) RedeemScript {
 	keyBz := pk.SerializeCompressed()
 
 	redeemScript, err := txscript.NewScriptBuilder().AddData(keyBz).AddOp(txscript.OP_CHECKSIG).Script()
+	// the script builder only returns an error of the script is non-canonical.
+	// Since we want to build canonical scripts and the template is predefined, an error here means the template is wrong,
+	// i.e. it's a bug.
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	return redeemScript, nil
+	return redeemScript
 }
 
 // CreateDepositAddress creates a SeqWit script address based on a redeem script
-func CreateDepositAddress(network Network, script RedeemScript) (*btcutil.AddressWitnessScriptHash, error) {
+func CreateDepositAddress(network Network, script RedeemScript) *btcutil.AddressWitnessScriptHash {
 	hash := sha256.Sum256(script)
+	// hash is 32 bit long, so this cannot throw an error if there is no bug
 	addr, err := btcutil.NewAddressWitnessScriptHash(hash[:], network.Params)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	return addr, nil
+	return addr
+}
+
+// ScriptAddress is a wrapper containing both Bitcoin P2WSH address and corresponding script
+type ScriptAddress struct {
+	*btcutil.AddressWitnessScriptHash
+	RedeemScript RedeemScript
+}
+
+// NewConsolidationAddress creates a new address used to consolidate all unspent outpoints
+func NewConsolidationAddress(pk ecdsa.PublicKey, network Network) ScriptAddress {
+	script := CreateMasterRedeemScript(btcec.PublicKey(pk))
+	addr := CreateDepositAddress(network, script)
+	return ScriptAddress{
+		RedeemScript:             script,
+		AddressWitnessScriptHash: addr,
+	}
+}
+
+// NewLinkedAddress creates a new address to make a deposit which can be transfered to another blockchain
+func NewLinkedAddress(pk ecdsa.PublicKey, network Network, recipient nexus.CrossChainAddress) ScriptAddress {
+	script := CreateCrossChainRedeemScript(btcec.PublicKey(pk), recipient)
+	addr := CreateDepositAddress(network, script)
+	return ScriptAddress{
+		RedeemScript:             script,
+		AddressWitnessScriptHash: addr,
+	}
+}
+
+// ToCrossChainAddr returns the corresponding cross-chain address
+func (addr ScriptAddress) ToCrossChainAddr() nexus.CrossChainAddress {
+	return nexus.CrossChainAddress{
+		Chain:   exported.Bitcoin,
+		Address: addr.EncodeAddress(),
+	}
 }
 
 // CreateTxWitness creates a transaction witness

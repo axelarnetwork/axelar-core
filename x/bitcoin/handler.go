@@ -49,52 +49,56 @@ func NewHandler(k keeper.Keeper, v types.Voter, rpc types.RPCClient, signer type
 }
 
 func handleMsgLink(ctx sdk.Context, k keeper.Keeper, s types.Signer, n types.Nexus, msg types.MsgLink) (*sdk.Result, error) {
+	params, err := checkLinkRequesites(ctx, s, n, msg)
+	if err != nil {
+		return nil, err
+	}
+
+	recipient := nexus.CrossChainAddress{Chain: params.recipientChain, Address: msg.RecipientAddr}
+	depositAddr := types.NewLinkedAddress(params.key, k.GetNetwork(ctx), recipient)
+	n.LinkAddresses(ctx, depositAddr.ToCrossChainAddr(), recipient)
+
+	// store script and key used to create the address for later reference
+	k.SetRedeemScriptByAddress(ctx, depositAddr, depositAddr.RedeemScript)
+	k.SetKeyIDByAddress(ctx, depositAddr, params.keyID)
+
+	return &sdk.Result{
+		Data: []byte(depositAddr.EncodeAddress()),
+		Log:  fmt.Sprintf("successfully linked {%s} and {%s}", depositAddr.ToCrossChainAddr().String(), recipient.String()),
+	}, nil
+}
+
+type linkParams struct {
+	keyID          string
+	key            ecdsa.PublicKey
+	recipientChain nexus.Chain
+}
+
+func checkLinkRequesites(ctx sdk.Context, s types.Signer, n types.Nexus, msg types.MsgLink) (linkParams, error) {
 	keyID, ok := s.GetCurrentMasterKeyID(ctx, exported.Bitcoin)
 	if !ok {
-		return nil, fmt.Errorf("master key not set")
+		return linkParams{}, fmt.Errorf("master key not set")
 	}
 
 	masterKey, ok := s.GetKey(ctx, keyID)
 	if !ok {
-		return nil, fmt.Errorf("master key not set")
+		return linkParams{}, fmt.Errorf("master key not set")
 	}
 
 	recipientChain, ok := n.GetChain(ctx, msg.RecipientChain)
 	if !ok {
-		return nil, fmt.Errorf("unknown recipient chain")
+		return linkParams{}, fmt.Errorf("unknown recipient chain")
 	}
 
 	found := n.IsAssetRegistered(ctx, recipientChain.Name, exported.Bitcoin.NativeAsset)
 	if !found {
-		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", exported.Bitcoin.NativeAsset, recipientChain.Name)
+		return linkParams{}, fmt.Errorf("asset '%s' not registered for chain '%s'", exported.Bitcoin.NativeAsset, recipientChain.Name)
 	}
 
-	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: msg.RecipientAddr}
-	redeemScript, err := types.CreateCrossChainRedeemScript(btcec.PublicKey(masterKey), recipient)
-	if err != nil {
-		return nil, err
-	}
-	depositAddr, err := types.CreateDepositAddress(k.GetNetwork(ctx), redeemScript)
-	if err != nil {
-		return nil, err
-	}
-
-	encodedDepositAddr := depositAddr.EncodeAddress()
-	deposit := nexus.CrossChainAddress{Chain: exported.Bitcoin, Address: encodedDepositAddr}
-
-	n.LinkAddresses(ctx, deposit, recipient)
-
-	// store script and key used to create the address for later reference
-	k.SetRedeemScriptByAddress(ctx, depositAddr, redeemScript)
-	k.SetKeyIDByAddress(ctx, depositAddr, keyID)
-
-	return &sdk.Result{
-		Data: []byte(encodedDepositAddr),
-		Log:  fmt.Sprintf("successfully linked {%s} and {%s}", deposit.String(), recipient.String()),
-	}, nil
+	return linkParams{keyID: keyID, key: masterKey, recipientChain: recipientChain}, nil
 }
 
-func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc types.RPCClient, msg types.MsgVerifyTx) (*sdk.Result, error) {
+func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.MsgVerifyTx) (*sdk.Result, error) {
 	if _, ok := k.GetVerifiedOutPointInfo(ctx, msg.OutPointInfo.OutPoint); ok {
 		return nil, fmt.Errorf("already verified")
 	}
@@ -103,22 +107,25 @@ func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, rpc type
 		return nil, fmt.Errorf("already spent")
 	}
 
+	if _, ok := k.GetKeyIDByAddress(ctx, msg.OutPointInfo.Address); !ok {
+		return nil, fmt.Errorf("outpoint address unknown, ignoring verification")
+	}
+
 	poll := vote.NewPollMetaWithNonce(types.ModuleName, msg.Type(), msg.OutPointInfo.OutPoint.String(), ctx.BlockHeight(), k.GetRevoteLockingPeriod(ctx))
 	if err := v.InitPoll(ctx, poll); err != nil {
 		return nil, err
 	}
 
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(poll))),
-		),
-	)
-
 	// store outpoint for later reference
 	k.SetUnverifiedOutpointInfo(ctx, msg.OutPointInfo)
+
+	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeVerification,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
+		sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(k.GetRequiredConfirmationHeight(ctx), 10)),
+		sdk.NewAttribute(types.AttributeKeyOutPoint, string(k.Codec().MustMarshalJSON(msg.OutPointInfo))),
+		sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(poll))),
+	))
 
 	/*
 	 Anyone not able to verify the transaction will automatically record a negative vote,

@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -15,7 +16,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils/denom"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
 
@@ -42,20 +42,26 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 // GetCmdVerifyTx returns the transaction verification command
 func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "verifyTx [txInfo json]",
+		Use:   "verifyTx [txID:voutIdx] [txOut json]",
 		Short: "Verify a Bitcoin transaction",
 		Long: fmt.Sprintf(
-			"Verify that a transaction happened on the Bitcoin network so it can be processed on axelar. "+
-				"Get the json string by using the %s query", keeper.QueryOutInfo),
+			"Verify that a transaction happened on the Bitcoin network so it can be processed on axelar."),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
 
-			var out types.OutPointInfo
-			cliCtx.Codec.MustUnmarshalJSON([]byte(args[0]), &out)
+			outPoint, err := types.OutPointFromStr(args[0])
+			if err != nil {
+				return err
+			}
 
-			msg := types.MsgVerifyTx{Sender: cliCtx.GetFromAddress(), OutPointInfo: out}
+			var txOut btcjson.GetTxOutResult
+			cliCtx.Codec.MustUnmarshalJSON([]byte(args[1]), &txOut)
+
+			outInfo, err := types.NewOutPointInfo(outPoint, txOut)
+
+			msg := types.MsgVerifyTx{Sender: cliCtx.GetFromAddress(), OutPointInfo: outInfo}
 
 			if err := msg.ValidateBasic(); err != nil {
 				return err

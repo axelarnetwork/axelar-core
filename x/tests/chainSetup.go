@@ -126,7 +126,7 @@ func newNode(moniker string, broadcaster fake.Broadcaster, mocks testMocks) *fak
 	router := fake.NewRouter()
 
 	broadcastHandler := broadcast.NewHandler(broadcaster)
-	btcHandler := bitcoin.NewHandler(bitcoinKeeper, voter, mocks.BTC, signer, nexusK, snapKeeper)
+	btcHandler := bitcoin.NewHandler(bitcoinKeeper, voter, signer, nexusK, snapKeeper)
 	ethHandler := ethereum.NewHandler(ethereumKeeper, mocks.ETH, voter, signer, nexusK, snapKeeper)
 	snapHandler := snapshot.NewHandler(snapKeeper)
 	tssHandler := tss.NewHandler(signer, snapKeeper, nexusK, voter, &tssMock.StakingKeeperMock{
@@ -250,6 +250,7 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 		n := nodeData{Node: node, Validator: validator, Mocks: mocks, Broadcaster: broadcaster}
 
 		registerTSSEventListeners(n, t)
+		registerBTCEventListener(n)
 		data = append(data, n)
 	}
 
@@ -259,12 +260,35 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 	return chain, data
 }
 
+func registerBTCEventListener(n nodeData) {
+	// register listener for verification
+	n.Node.RegisterEventListener(func(event abci.Event) bool {
+		if event.Type != btcTypes.EventTypeVerification {
+			return false
+		}
+
+		m := mapifyAttributes(event)
+		if m[sdk.AttributeKeyAction] != btcTypes.AttributeValueStart {
+			return false
+		}
+
+		poll := voting.PollMeta{}
+		testutils.Codec().MustUnmarshalJSON([]byte(m[btcTypes.AttributeKeyPoll]), &poll)
+		err := n.Broadcaster.Broadcast(n.Node.Ctx, []exported.MsgWithSenderSetter{
+			&btcTypes.MsgVoteVerifiedTx{
+				PollMeta:   poll,
+				VotingData: true,
+			}})
+		if err != nil {
+			panic(err)
+		}
+
+		return true
+	})
+}
+
 func randomOutpointInfo(recipient string) btcTypes.OutPointInfo {
 	txHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
-	if err != nil {
-		panic(err)
-	}
-	blockHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
@@ -272,10 +296,9 @@ func randomOutpointInfo(recipient string) btcTypes.OutPointInfo {
 	voutIdx := uint32(rand.I64Between(0, 100))
 	return btcTypes.OutPointInfo{
 		OutPoint:      wire.NewOutPoint(txHash, voutIdx),
-		BlockHash:     blockHash,
 		Amount:        btcutil.Amount(rand.I64Between(1, 10000000)),
 		Address:       recipient,
-		Confirmations: uint64(rand.I64Between(1, 10000)),
+		Confirmations: rand.I64Between(1, 10000),
 	}
 }
 
@@ -338,14 +361,19 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd) {
 	})
 }
 
-func registerWaitEventListeners(n nodeData) (<-chan abci.Event, <-chan abci.Event, <-chan abci.Event) {
+func registerWaitEventListeners(n nodeData) (<-chan abci.Event, <-chan abci.Event, <-chan abci.Event, <-chan abci.Event) {
 	// register listener for keygen completion
 	keygenDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
 		return event.Type == tssTypes.EventTypePubKeyDecided
 	})
 
-	// register listener for tx verification
-	verifyDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
+	// register btc listener for verification
+	btcVerifyDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
+		return event.Type == btcTypes.EventTypeVerification && mapifyAttributes(event)[sdk.AttributeKeyAction] == btcTypes.AttributeKeyResult
+	})
+
+	// register eth listener for verification
+	ethVerifyDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
 		return event.Type == ethTypes.EventTypeVerificationResult
 	})
 
@@ -353,7 +381,7 @@ func registerWaitEventListeners(n nodeData) (<-chan abci.Event, <-chan abci.Even
 	signDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
 		return event.Type == tssTypes.EventTypeSigDecided
 	})
-	return keygenDone, verifyDone, signDone
+	return keygenDone, btcVerifyDone, ethVerifyDone, signDone
 }
 
 func waitFor(eventDone <-chan abci.Event, repeats int) error {

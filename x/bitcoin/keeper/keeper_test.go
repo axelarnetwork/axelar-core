@@ -103,16 +103,11 @@ func randOutPointInfo() types.OutPointInfo {
 	if err != nil {
 		panic(err)
 	}
-	blockHash, err := chainhash.NewHash(rand2.Bytes(chainhash.HashSize))
-	if err != nil {
-		panic(err)
-	}
 	info := types.OutPointInfo{
 		OutPoint:      wire.NewOutPoint(txHash, rand.Uint32()),
 		Amount:        btcutil.Amount(rand2.PosI64()),
-		BlockHash:     blockHash,
 		Address:       rand2.StrBetween(20, 60),
-		Confirmations: rand.Uint64(),
+		Confirmations: rand2.PosI64(),
 	}
 	return info
 }

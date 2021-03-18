@@ -6,8 +6,8 @@ import (
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
-//go:generate moq -out ./mock/broadcast.go -pkg mock -stub . Client Msg
-// go:generate moq -out ./mock/expected_interfaces.go -pkg mock -stub . Keybase Client KVStore Info Msg
+//go:generate moq -out ./mock/broadcast.go -pkg mock -stub . Client Msg Broadcaster
+// go:generate moq -out ./mock/interfaces.go -pkg mock -stub . Keybase Client KVStore Info Msg
 
 // Msg is a wrapped interface for moq generation
 type (
@@ -22,3 +22,8 @@ type Client interface {
 
 // Sign returns a signature for the given message from the account associated with the given address
 type Sign func(from sdk.AccAddress, msg auth.StdSignMsg) (auth.StdSignature, error)
+
+// Broadcaster interface allows the submission of messages to the axelar network
+type Broadcaster interface {
+	Broadcast(msgs ...sdk.Msg) error
+}

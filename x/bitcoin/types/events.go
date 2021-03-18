@@ -7,7 +7,14 @@ const (
 
 // Event attribute keys
 const (
-	AttributeKeyResult   = "result"
-	AttributeKeyOutpoint = "outpoint"
-	AttributeKeyPoll     = "poll"
+	AttributeKeyResult     = "result"
+	AttributeKeyConfHeight = "confHeight"
+	AttributeKeyOutPoint   = "outPoint"
+	AttributeKeyPoll       = "poll"
+)
+
+// Event attribute values
+const (
+	AttributeValueStart  = "start"
+	AttributeValueResult = "result"
 )

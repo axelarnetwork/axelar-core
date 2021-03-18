@@ -22,7 +22,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/bitcoin"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	btcMock "github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/broadcast"
 	bcExported "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
@@ -53,22 +52,16 @@ func Test_3Validators_VoteOn5Tx_Agree(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
-		blockHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
-		if err != nil {
-			panic(err)
-		}
 		outPoints = append(outPoints, wire.NewOutPoint(txHash, 0))
 		amount := rand.I64Between(0, 100000)
-		confirmations := uint64(rand.I64Between(7, 10000))
 		// deposit tx
 		info := btcTypes.OutPointInfo{
 			OutPoint:      outPoints[i],
-			BlockHash:     blockHash,
 			Amount:        btcutil.Amount(amount),
 			Address:       randomAddress().EncodeAddress(),
-			Confirmations: confirmations,
+			Confirmations: rand.I64Between(7, 10000),
 		}
-		txs[blockHash.String()+txHash.String()] = info
+		txs[txHash.String()] = info
 		verifyMsgs = append(verifyMsgs, btcTypes.MsgVerifyTx{Sender: sdk.AccAddress("user1"), OutPointInfo: info})
 	}
 
@@ -170,10 +163,7 @@ func newNodeForVote(moniker string, broadcaster bcExported.Broadcaster, staker v
 	nexK.SetParams(ctx, nexusTypes.DefaultParams())
 
 	// We use a fake for the bitcoin rpc client so we can control the responses from the "bitcoin" network
-	btcH := bitcoin.NewHandler(btcK, vK, &btcMock.RPCClientMock{
-		GetOutPointInfoFunc: func(bHash *chainhash.Hash, out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
-			return txs[bHash.String()+out.Hash.String()], nil
-		}}, nil, nexK, nil)
+	btcH := bitcoin.NewHandler(btcK, vK, nil, nexK, nil)
 
 	broadcastH := broadcast.NewHandler(broadcaster)
 

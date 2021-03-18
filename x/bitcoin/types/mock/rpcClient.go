@@ -5,6 +5,7 @@ package mock
 
 import (
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"sync"
@@ -20,8 +21,8 @@ var _ types.RPCClient = &RPCClientMock{}
 //
 // 		// make and configure a mocked types.RPCClient
 // 		mockedRPCClient := &RPCClientMock{
-// 			GetOutPointInfoFunc: func(blockHash *chainhash.Hash, out *wire.OutPoint) (types.OutPointInfo, error) {
-// 				panic("mock out the GetOutPointInfo method")
+// 			GetTxOutFunc: func(txHash *chainhash.Hash, voutIdx uint32, mempool bool) (*btcjson.GetTxOutResult, error) {
+// 				panic("mock out the GetTxOut method")
 // 			},
 // 			NetworkFunc: func() types.Network {
 // 				panic("mock out the Network method")
@@ -36,8 +37,8 @@ var _ types.RPCClient = &RPCClientMock{}
 //
 // 	}
 type RPCClientMock struct {
-	// GetOutPointInfoFunc mocks the GetOutPointInfo method.
-	GetOutPointInfoFunc func(blockHash *chainhash.Hash, out *wire.OutPoint) (types.OutPointInfo, error)
+	// GetTxOutFunc mocks the GetTxOut method.
+	GetTxOutFunc func(txHash *chainhash.Hash, voutIdx uint32, mempool bool) (*btcjson.GetTxOutResult, error)
 
 	// NetworkFunc mocks the Network method.
 	NetworkFunc func() types.Network
@@ -47,12 +48,14 @@ type RPCClientMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// GetOutPointInfo holds details about calls to the GetOutPointInfo method.
-		GetOutPointInfo []struct {
-			// BlockHash is the blockHash argument value.
-			BlockHash *chainhash.Hash
-			// Out is the out argument value.
-			Out *wire.OutPoint
+		// GetTxOut holds details about calls to the GetTxOut method.
+		GetTxOut []struct {
+			// TxHash is the txHash argument value.
+			TxHash *chainhash.Hash
+			// VoutIdx is the voutIdx argument value.
+			VoutIdx uint32
+			// Mempool is the mempool argument value.
+			Mempool bool
 		}
 		// Network holds details about calls to the Network method.
 		Network []struct {
@@ -65,43 +68,47 @@ type RPCClientMock struct {
 			AllowHighFees bool
 		}
 	}
-	lockGetOutPointInfo    sync.RWMutex
+	lockGetTxOut           sync.RWMutex
 	lockNetwork            sync.RWMutex
 	lockSendRawTransaction sync.RWMutex
 }
 
-// GetOutPointInfo calls GetOutPointInfoFunc.
-func (mock *RPCClientMock) GetOutPointInfo(blockHash *chainhash.Hash, out *wire.OutPoint) (types.OutPointInfo, error) {
-	if mock.GetOutPointInfoFunc == nil {
-		panic("RPCClientMock.GetOutPointInfoFunc: method is nil but RPCClient.GetOutPointInfo was just called")
+// GetTxOut calls GetTxOutFunc.
+func (mock *RPCClientMock) GetTxOut(txHash *chainhash.Hash, voutIdx uint32, mempool bool) (*btcjson.GetTxOutResult, error) {
+	if mock.GetTxOutFunc == nil {
+		panic("RPCClientMock.GetTxOutFunc: method is nil but RPCClient.GetTxOut was just called")
 	}
 	callInfo := struct {
-		BlockHash *chainhash.Hash
-		Out       *wire.OutPoint
+		TxHash  *chainhash.Hash
+		VoutIdx uint32
+		Mempool bool
 	}{
-		BlockHash: blockHash,
-		Out:       out,
+		TxHash:  txHash,
+		VoutIdx: voutIdx,
+		Mempool: mempool,
 	}
-	mock.lockGetOutPointInfo.Lock()
-	mock.calls.GetOutPointInfo = append(mock.calls.GetOutPointInfo, callInfo)
-	mock.lockGetOutPointInfo.Unlock()
-	return mock.GetOutPointInfoFunc(blockHash, out)
+	mock.lockGetTxOut.Lock()
+	mock.calls.GetTxOut = append(mock.calls.GetTxOut, callInfo)
+	mock.lockGetTxOut.Unlock()
+	return mock.GetTxOutFunc(txHash, voutIdx, mempool)
 }
 
-// GetOutPointInfoCalls gets all the calls that were made to GetOutPointInfo.
+// GetTxOutCalls gets all the calls that were made to GetTxOut.
 // Check the length with:
-//     len(mockedRPCClient.GetOutPointInfoCalls())
-func (mock *RPCClientMock) GetOutPointInfoCalls() []struct {
-	BlockHash *chainhash.Hash
-	Out       *wire.OutPoint
+//     len(mockedRPCClient.GetTxOutCalls())
+func (mock *RPCClientMock) GetTxOutCalls() []struct {
+	TxHash  *chainhash.Hash
+	VoutIdx uint32
+	Mempool bool
 } {
 	var calls []struct {
-		BlockHash *chainhash.Hash
-		Out       *wire.OutPoint
+		TxHash  *chainhash.Hash
+		VoutIdx uint32
+		Mempool bool
 	}
-	mock.lockGetOutPointInfo.RLock()
-	calls = mock.calls.GetOutPointInfo
-	mock.lockGetOutPointInfo.RUnlock()
+	mock.lockGetTxOut.RLock()
+	calls = mock.calls.GetTxOut
+	mock.lockGetTxOut.RUnlock()
 	return calls
 }
 

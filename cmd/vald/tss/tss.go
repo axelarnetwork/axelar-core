@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -12,7 +13,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
 
-	"github.com/axelarnetwork/axelar-core/cmd/vald/tss/types"
+	"github.com/axelarnetwork/axelar-core/cmd/vald/broadcast/types"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
@@ -20,6 +21,8 @@ import (
 // Mgr represents an object that manages all communication with the external tss process
 type Mgr struct {
 	client        tofnd.GG20Client
+	keygen        *sync.RWMutex
+	sign          *sync.RWMutex
 	keygenStreams map[string]tss.Stream
 	signStreams   map[string]tss.Stream
 	Timeout       time.Duration
@@ -46,6 +49,8 @@ func CreateTOFNDClient(host string, port string, logger log.Logger) (tofnd.GG20C
 func NewMgr(client tofnd.GG20Client, timeout time.Duration, myAddress string, broadcaster types.Broadcaster, sender sdk.AccAddress, logger log.Logger) *Mgr {
 	return &Mgr{
 		client:        client,
+		keygen:        &sync.RWMutex{},
+		sign:          &sync.RWMutex{},
 		keygenStreams: map[string]tss.Stream{},
 		signStreams:   map[string]tss.Stream{},
 		Timeout:       timeout,
@@ -56,13 +61,15 @@ func NewMgr(client tofnd.GG20Client, timeout time.Duration, myAddress string, br
 	}
 }
 
-func handleStream(stream tss.Stream, cancel context.CancelFunc, errChan chan<- error, logger log.Logger) (broadcast <-chan *tofnd.TrafficOut, result <-chan []byte) {
+func handleStream(stream tss.Stream, cancel context.CancelFunc, logger log.Logger) (broadcast <-chan *tofnd.TrafficOut, result <-chan []byte, err <-chan error) {
 	broadcastChan := make(chan *tofnd.TrafficOut)
 	resChan := make(chan []byte)
+	errChan := make(chan error, 2)
 
 	// server handler https://grpc.io/docs/languages/go/basics/#bidirectional-streaming-rpc-1
 	go func() {
 		defer cancel()
+		defer close(errChan)
 		defer close(broadcastChan)
 		defer close(resChan)
 		defer func() {
@@ -98,7 +105,7 @@ func handleStream(stream tss.Stream, cancel context.CancelFunc, errChan chan<- e
 			}
 		}
 	}()
-	return broadcastChan, resChan
+	return broadcastChan, resChan, errChan
 }
 
 func parseMsgParams(attributes []sdk.Attribute) (sessionID string, from string, payload *tofnd.TrafficOut) {
@@ -142,10 +149,10 @@ func prepareTrafficIn(myAddress string, from string, sessionID string, payload *
 	return msgIn, nil
 }
 
-func (mgr *Mgr) findMyIndex(participants []string) (int32, bool) {
+func findMyIndex(participants []string, myAddress string) (int32, bool) {
 	var myIndex int32 = -1
 	for i, participant := range participants {
-		if mgr.myAddress == participant {
+		if myAddress == participant {
 			myIndex = int32(i)
 			break
 		}
