@@ -94,7 +94,13 @@ func TestSnapshots(t *testing.T) {
 				},
 			}
 
-			keeper := NewKeeper(cdc, sdk.NewKVStoreKey("staking"), snapSubspace, broadcasterMock, staker, slashingKeeper)
+			tssMock := &snapMock.TssMock{
+				GetValidatorDeregisteredBlockHeightFunc: func(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
+					return 0
+				},
+			}
+
+			keeper := NewKeeper(cdc, sdk.NewKVStoreKey("staking"), snapSubspace, broadcasterMock, staker, slashingKeeper, tssMock)
 			keeper.SetParams(ctx, types.DefaultParams())
 
 			_, ok := keeper.GetSnapshot(ctx, 0)

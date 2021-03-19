@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/store/dbadapter"
 	"github.com/spf13/viper"
 
+	"github.com/axelarnetwork/axelar-core/x/ante"
 	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
 
@@ -295,6 +296,13 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 			return snapTypes.ValidatorInfo{ValidatorSigningInfo: signingInfo}, found
 		},
 	}
+	tssK := tssKeeper.NewKeeper(
+		app.cdc,
+		keys[tssTypes.StoreKey],
+		tssSubspace,
+		broadcastK,
+		slashingKCast,
+	)
 	snapK := snapKeeper.NewKeeper(
 		app.cdc,
 		keys[snapTypes.StoreKey],
@@ -302,6 +310,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		broadcastK,
 		stakingK,
 		slashingKCast,
+		tssK,
 	)
 	nexusK := nexusKeeper.NewKeeper(
 		app.cdc,
@@ -314,13 +323,6 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		dbadapter.Store{DB: dbm.NewMemDB()},
 		snapK,
 		broadcastK,
-	)
-	tssK := tssKeeper.NewKeeper(
-		app.cdc,
-		keys[tssTypes.StoreKey],
-		tssSubspace,
-		broadcastK,
-		slashingKCast,
 	)
 
 	app.stakingKeeper = stakingK
@@ -406,14 +408,17 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetEndBlocker(app.EndBlocker)
 
-	// The AnteHandler handles signature verification and transaction pre-processing
-	app.SetAnteHandler(
-		auth.NewAnteHandler(
-			accountK,
-			supplyK,
-			auth.DefaultSigVerificationGasConsumer,
-		),
+	// The baseAnteHandler handles signature verification and transaction pre-processing
+	baseAnteHandler := auth.NewAnteHandler(
+		accountK,
+		supplyK,
+		auth.DefaultSigVerificationGasConsumer,
 	)
+	anteHandler := sdk.ChainAnteDecorators(
+		ante.NewAnteHandlerDecorator(baseAnteHandler),
+		ante.NewValidateValidatorDeregisteredTssDecorator(tssK, nexusK, snapK),
+	)
+	app.SetAnteHandler(anteHandler)
 
 	// initialize stores
 	app.MountKVStores(keys)

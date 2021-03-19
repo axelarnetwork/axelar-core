@@ -6,23 +6,24 @@ package mock
 import (
 	"context"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
-	"github.com/axelarnetwork/axelar-core/x/tss/types"
+	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"sync"
 )
 
-// Ensure, that TofndClientMock does implement types.TofndClient.
+// Ensure, that TofndClientMock does implement tsstypes.TofndClient.
 // If this is not the case, regenerate this file with moq.
-var _ types.TofndClient = &TofndClientMock{}
+var _ tsstypes.TofndClient = &TofndClientMock{}
 
-// TofndClientMock is a mock implementation of types.TofndClient.
+// TofndClientMock is a mock implementation of tsstypes.TofndClient.
 //
 // 	func TestSomethingThatUsesTofndClient(t *testing.T) {
 //
-// 		// make and configure a mocked types.TofndClient
+// 		// make and configure a mocked tsstypes.TofndClient
 // 		mockedTofndClient := &TofndClientMock{
 // 			GetKeyFunc: func(ctx context.Context, in *tofnd.Uid, opts ...grpc.CallOption) (*tofnd.Bytes, error) {
 // 				panic("mock out the GetKey method")
@@ -38,7 +39,7 @@ var _ types.TofndClient = &TofndClientMock{}
 // 			},
 // 		}
 //
-// 		// use mockedTofndClient in code that requires types.TofndClient
+// 		// use mockedTofndClient in code that requires tsstypes.TofndClient
 // 		// and then make assertions.
 //
 // 	}
@@ -244,15 +245,15 @@ func (mock *TofndClientMock) SignCalls() []struct {
 	return calls
 }
 
-// Ensure, that TofndKeyGenClientMock does implement types.TofndKeyGenClient.
+// Ensure, that TofndKeyGenClientMock does implement tsstypes.TofndKeyGenClient.
 // If this is not the case, regenerate this file with moq.
-var _ types.TofndKeyGenClient = &TofndKeyGenClientMock{}
+var _ tsstypes.TofndKeyGenClient = &TofndKeyGenClientMock{}
 
-// TofndKeyGenClientMock is a mock implementation of types.TofndKeyGenClient.
+// TofndKeyGenClientMock is a mock implementation of tsstypes.TofndKeyGenClient.
 //
 // 	func TestSomethingThatUsesTofndKeyGenClient(t *testing.T) {
 //
-// 		// make and configure a mocked types.TofndKeyGenClient
+// 		// make and configure a mocked tsstypes.TofndKeyGenClient
 // 		mockedTofndKeyGenClient := &TofndKeyGenClientMock{
 // 			CloseSendFunc: func() error {
 // 				panic("mock out the CloseSend method")
@@ -280,7 +281,7 @@ var _ types.TofndKeyGenClient = &TofndKeyGenClientMock{}
 // 			},
 // 		}
 //
-// 		// use mockedTofndKeyGenClient in code that requires types.TofndKeyGenClient
+// 		// use mockedTofndKeyGenClient in code that requires tsstypes.TofndKeyGenClient
 // 		// and then make assertions.
 //
 // 	}
@@ -575,15 +576,15 @@ func (mock *TofndKeyGenClientMock) TrailerCalls() []struct {
 	return calls
 }
 
-// Ensure, that TofndSignClientMock does implement types.TofndSignClient.
+// Ensure, that TofndSignClientMock does implement tsstypes.TofndSignClient.
 // If this is not the case, regenerate this file with moq.
-var _ types.TofndSignClient = &TofndSignClientMock{}
+var _ tsstypes.TofndSignClient = &TofndSignClientMock{}
 
-// TofndSignClientMock is a mock implementation of types.TofndSignClient.
+// TofndSignClientMock is a mock implementation of tsstypes.TofndSignClient.
 //
 // 	func TestSomethingThatUsesTofndSignClient(t *testing.T) {
 //
-// 		// make and configure a mocked types.TofndSignClient
+// 		// make and configure a mocked tsstypes.TofndSignClient
 // 		mockedTofndSignClient := &TofndSignClientMock{
 // 			CloseSendFunc: func() error {
 // 				panic("mock out the CloseSend method")
@@ -611,7 +612,7 @@ var _ types.TofndSignClient = &TofndSignClientMock{}
 // 			},
 // 		}
 //
-// 		// use mockedTofndSignClient in code that requires types.TofndSignClient
+// 		// use mockedTofndSignClient in code that requires tsstypes.TofndSignClient
 // 		// and then make assertions.
 //
 // 	}
@@ -906,15 +907,15 @@ func (mock *TofndSignClientMock) TrailerCalls() []struct {
 	return calls
 }
 
-// Ensure, that VoterMock does implement types.Voter.
+// Ensure, that VoterMock does implement tsstypes.Voter.
 // If this is not the case, regenerate this file with moq.
-var _ types.Voter = &VoterMock{}
+var _ tsstypes.Voter = &VoterMock{}
 
-// VoterMock is a mock implementation of types.Voter.
+// VoterMock is a mock implementation of tsstypes.Voter.
 //
 // 	func TestSomethingThatUsesVoter(t *testing.T) {
 //
-// 		// make and configure a mocked types.Voter
+// 		// make and configure a mocked tsstypes.Voter
 // 		mockedVoter := &VoterMock{
 // 			DeletePollFunc: func(ctx sdk.Context, poll voting.PollMeta)  {
 // 				panic("mock out the DeletePoll method")
@@ -933,7 +934,7 @@ var _ types.Voter = &VoterMock{}
 // 			},
 // 		}
 //
-// 		// use mockedVoter in code that requires types.Voter
+// 		// use mockedVoter in code that requires tsstypes.Voter
 // 		// and then make assertions.
 //
 // 	}
@@ -1164,5 +1165,119 @@ func (mock *VoterMock) TallyVoteCalls() []struct {
 	mock.lockTallyVote.RLock()
 	calls = mock.calls.TallyVote
 	mock.lockTallyVote.RUnlock()
+	return calls
+}
+
+// Ensure, that StakingKeeperMock does implement tsstypes.StakingKeeper.
+// If this is not the case, regenerate this file with moq.
+var _ tsstypes.StakingKeeper = &StakingKeeperMock{}
+
+// StakingKeeperMock is a mock implementation of tsstypes.StakingKeeper.
+//
+// 	func TestSomethingThatUsesStakingKeeper(t *testing.T) {
+//
+// 		// make and configure a mocked tsstypes.StakingKeeper
+// 		mockedStakingKeeper := &StakingKeeperMock{
+// 			GetLastTotalPowerFunc: func(ctx sdk.Context) sdk.Int {
+// 				panic("mock out the GetLastTotalPower method")
+// 			},
+// 			GetValidatorFunc: func(ctx sdk.Context, addr sdk.ValAddress) (stakingtypes.Validator, bool) {
+// 				panic("mock out the GetValidator method")
+// 			},
+// 		}
+//
+// 		// use mockedStakingKeeper in code that requires tsstypes.StakingKeeper
+// 		// and then make assertions.
+//
+// 	}
+type StakingKeeperMock struct {
+	// GetLastTotalPowerFunc mocks the GetLastTotalPower method.
+	GetLastTotalPowerFunc func(ctx sdk.Context) sdk.Int
+
+	// GetValidatorFunc mocks the GetValidator method.
+	GetValidatorFunc func(ctx sdk.Context, addr sdk.ValAddress) (stakingtypes.Validator, bool)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetLastTotalPower holds details about calls to the GetLastTotalPower method.
+		GetLastTotalPower []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
+		// GetValidator holds details about calls to the GetValidator method.
+		GetValidator []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Addr is the addr argument value.
+			Addr sdk.ValAddress
+		}
+	}
+	lockGetLastTotalPower sync.RWMutex
+	lockGetValidator      sync.RWMutex
+}
+
+// GetLastTotalPower calls GetLastTotalPowerFunc.
+func (mock *StakingKeeperMock) GetLastTotalPower(ctx sdk.Context) sdk.Int {
+	if mock.GetLastTotalPowerFunc == nil {
+		panic("StakingKeeperMock.GetLastTotalPowerFunc: method is nil but StakingKeeper.GetLastTotalPower was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetLastTotalPower.Lock()
+	mock.calls.GetLastTotalPower = append(mock.calls.GetLastTotalPower, callInfo)
+	mock.lockGetLastTotalPower.Unlock()
+	return mock.GetLastTotalPowerFunc(ctx)
+}
+
+// GetLastTotalPowerCalls gets all the calls that were made to GetLastTotalPower.
+// Check the length with:
+//     len(mockedStakingKeeper.GetLastTotalPowerCalls())
+func (mock *StakingKeeperMock) GetLastTotalPowerCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockGetLastTotalPower.RLock()
+	calls = mock.calls.GetLastTotalPower
+	mock.lockGetLastTotalPower.RUnlock()
+	return calls
+}
+
+// GetValidator calls GetValidatorFunc.
+func (mock *StakingKeeperMock) GetValidator(ctx sdk.Context, addr sdk.ValAddress) (stakingtypes.Validator, bool) {
+	if mock.GetValidatorFunc == nil {
+		panic("StakingKeeperMock.GetValidatorFunc: method is nil but StakingKeeper.GetValidator was just called")
+	}
+	callInfo := struct {
+		Ctx  sdk.Context
+		Addr sdk.ValAddress
+	}{
+		Ctx:  ctx,
+		Addr: addr,
+	}
+	mock.lockGetValidator.Lock()
+	mock.calls.GetValidator = append(mock.calls.GetValidator, callInfo)
+	mock.lockGetValidator.Unlock()
+	return mock.GetValidatorFunc(ctx, addr)
+}
+
+// GetValidatorCalls gets all the calls that were made to GetValidator.
+// Check the length with:
+//     len(mockedStakingKeeper.GetValidatorCalls())
+func (mock *StakingKeeperMock) GetValidatorCalls() []struct {
+	Ctx  sdk.Context
+	Addr sdk.ValAddress
+} {
+	var calls []struct {
+		Ctx  sdk.Context
+		Addr sdk.ValAddress
+	}
+	mock.lockGetValidator.RLock()
+	calls = mock.calls.GetValidator
+	mock.lockGetValidator.RUnlock()
 	return calls
 }

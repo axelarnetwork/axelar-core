@@ -45,6 +45,7 @@ type Signer interface {
 	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool)
 }
 
+// Snapshotter provides access to the snapshot functionality
 type Snapshotter interface {
 	GetSnapshot(ctx sdk.Context, counter int64) (snapshot.Snapshot, bool)
 }

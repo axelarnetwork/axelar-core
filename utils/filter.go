@@ -44,3 +44,18 @@ func FilterProxies(ctx sdk.Context, broadcaster snapTypes.Broadcaster, validator
 
 	return withProxies
 }
+
+// FilterTssRegistered filters out validators that have deregistered for participating in tss
+func FilterTssRegistered(ctx sdk.Context, tss snapTypes.Tss, validators []snapshot.Validator) []snapshot.Validator {
+	var results []snapshot.Validator
+
+	for _, validator := range validators {
+		if deregisteredBlockHeight := tss.GetValidatorDeregisteredBlockHeight(ctx, validator.GetOperator()); deregisteredBlockHeight > 0 {
+			continue
+		}
+
+		results = append(results, validator)
+	}
+
+	return results
+}

@@ -30,6 +30,8 @@ func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Vot
 			return handleMsgVotePubKey(ctx, k, v, *msg)
 		case *types.MsgVoteSig:
 			return handleMsgVoteSig(ctx, k, v, *msg)
+		case types.MsgDeregister:
+			return handleMsgDeregister(ctx, k, staker, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
@@ -180,7 +182,6 @@ func handleMsgKeygenTraffic(ctx sdk.Context, k keeper.Keeper, msg types.MsgKeyge
 }
 
 func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, staker types.StakingKeeper, v types.Voter, msg types.MsgKeygenStart) (*sdk.Result, error) {
-
 	// record the snapshot of active validators that we'll use for the key
 	if err := s.TakeSnapshot(ctx); err != nil {
 		return nil, err
@@ -204,9 +205,7 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 	// TODO: need to figure out how to calculate threshold based on total number of
 	// validators in the system, individual's stake, etc.
 	if threshold < 1 || threshold > len(snapshot.Validators) {
-		err := fmt.Errorf("invalid threshold: %d, validators: %d", threshold, len(snapshot.Validators))
-		k.Logger(ctx).Error(err.Error())
-		return nil, err
+		return nil, fmt.Errorf("invalid threshold: %d, validators: %d", threshold, len(snapshot.Validators))
 	}
 
 	err := k.StartKeygen(ctx, v, msg.NewKeyID, threshold, snapshot)
@@ -221,6 +220,18 @@ func handleMsgSignTraffic(ctx sdk.Context, k keeper.Keeper, msg types.MsgSignTra
 	if err := k.SignMsg(ctx, msg); err != nil {
 		return nil, err
 	}
+
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+}
+
+func handleMsgDeregister(ctx sdk.Context, k keeper.Keeper, staker types.StakingKeeper, msg types.MsgDeregister) (*sdk.Result, error) {
+	valAddr := sdk.ValAddress(msg.Sender)
+
+	if _, found := staker.GetValidator(ctx, valAddr); !found {
+		return nil, fmt.Errorf("sender %s is not a validator and cannot deregister for tss keygen", valAddr.String())
+	}
+
+	k.SetValidatorDeregisteredBlockHeight(ctx, valAddr, ctx.BlockHeight())
 
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }

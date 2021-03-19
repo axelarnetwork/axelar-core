@@ -74,6 +74,7 @@ type testMocks struct {
 	Staker  *snapMock.StakingKeeperMock
 	Tofnd   *tssMock.TofndClientMock
 	Slasher *snapMock.SlasherMock
+	Tss     *snapMock.TssMock
 }
 
 type nodeData struct {
@@ -87,7 +88,7 @@ func newNode(moniker string, broadcaster fake.Broadcaster, mocks testMocks) *fak
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger().With("node", moniker))
 
 	snapSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
-	snapKeeper := snapshotKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(snapTypes.StoreKey), snapSubspace, broadcaster, mocks.Staker, mocks.Slasher)
+	snapKeeper := snapshotKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(snapTypes.StoreKey), snapSubspace, broadcaster, mocks.Staker, mocks.Slasher, mocks.Tss)
 	snapKeeper.SetParams(ctx, snapTypes.DefaultParams())
 	voter := voteKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(voteTypes.StoreKey), dbadapter.Store{DB: db.NewMemDB()}, snapKeeper, broadcaster)
 
@@ -128,7 +129,9 @@ func newNode(moniker string, broadcaster fake.Broadcaster, mocks testMocks) *fak
 	btcHandler := bitcoin.NewHandler(bitcoinKeeper, voter, mocks.BTC, signer, nexusK, snapKeeper)
 	ethHandler := ethereum.NewHandler(ethereumKeeper, mocks.ETH, voter, signer, nexusK, snapKeeper)
 	snapHandler := snapshot.NewHandler(snapKeeper)
-	tssHandler := tss.NewHandler(signer, snapKeeper, nexusK, voter, mocks.Staker)
+	tssHandler := tss.NewHandler(signer, snapKeeper, nexusK, voter, &tssMock.StakingKeeperMock{
+		GetLastTotalPowerFunc: mocks.Staker.GetLastTotalPowerFunc,
+	})
 	voteHandler := vote.NewHandler()
 
 	router = router.
@@ -152,7 +155,6 @@ func newNode(moniker string, broadcaster fake.Broadcaster, mocks testMocks) *fak
 }
 
 func createMocks(validators []staking.Validator) testMocks {
-
 	slasher := &snapMock.SlasherMock{
 		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapTypes.ValidatorInfo, bool) {
 			newInfo := slashingTypes.NewValidatorSigningInfo(
@@ -184,6 +186,12 @@ func createMocks(validators []staking.Validator) testMocks {
 		},
 	}
 
+	tssKeeper := &snapMock.TssMock{
+		GetValidatorDeregisteredBlockHeightFunc: func(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
+			return 0
+		},
+	}
+
 	btcClient := &btcMock.RPCClientMock{
 		SendRawTransactionFunc: func(tx *wire.MsgTx, _ bool) (*chainhash.Hash, error) {
 			hash := tx.TxHash()
@@ -206,6 +214,7 @@ func createMocks(validators []staking.Validator) testMocks {
 		ETH:     ethClient,
 		Staker:  stakingKeeper,
 		Slasher: slasher,
+		Tss:     tssKeeper,
 	}
 }
 
