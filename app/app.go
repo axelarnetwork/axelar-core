@@ -9,7 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/store/dbadapter"
 	"github.com/spf13/viper"
 
-	"github.com/axelarnetwork/axelar-core/app/ante"
+	"github.com/axelarnetwork/axelar-core/x/ante"
 	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
 

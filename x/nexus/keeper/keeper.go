@@ -80,9 +80,8 @@ func (k Keeper) IsAssetRegistered(ctx sdk.Context, chainName, denom string) bool
 // GetChains retrieves the specification for all supported blockchains
 func (k Keeper) GetChains(ctx sdk.Context) []exported.Chain {
 	var results []exported.Chain
-	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(chainPrefix))
 
-	for ; iter.Valid(); iter.Next() {
+	for iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(chainPrefix)); iter.Valid(); iter.Next() {
 		var chain exported.Chain
 		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &chain)
 		results = append(results, chain)
