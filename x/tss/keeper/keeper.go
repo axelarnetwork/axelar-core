@@ -67,6 +67,7 @@ func (k Keeper) getLockingPeriod(ctx sdk.Context) int64 {
 	return period
 }
 
+// SetValidatorDeregisteredBlockHeight sets the validator's deregistration block height
 func (k Keeper) SetValidatorDeregisteredBlockHeight(ctx sdk.Context, valAddr sdk.ValAddress, blockHeight int64) {
 	key := []byte(validatorDeregisteredPrefix + valAddr.String())
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(blockHeight)
@@ -74,6 +75,7 @@ func (k Keeper) SetValidatorDeregisteredBlockHeight(ctx sdk.Context, valAddr sdk
 	ctx.KVStore(k.storeKey).Set(key, bz)
 }
 
+// GetValidatorDeregisteredBlockHeight gets the validator's deregistration block height; 0 if the validator has never deregistered
 func (k Keeper) GetValidatorDeregisteredBlockHeight(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
 	key := []byte(validatorDeregisteredPrefix + valAddr.String())
 	bz := ctx.KVStore(k.storeKey).Get(key)

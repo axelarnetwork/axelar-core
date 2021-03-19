@@ -14,14 +14,17 @@ func logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
+// AnteHandlerDecorator is an ante decorator wrapper for an ante handler
 type AnteHandlerDecorator struct {
 	handler sdk.AnteHandler
 }
 
+// NewAnteHandlerDecorator constructor for AnteHandlerDecorator
 func NewAnteHandlerDecorator(handler sdk.AnteHandler) AnteHandlerDecorator {
 	return AnteHandlerDecorator{handler}
 }
 
+// AnteHandle wraps the next AnteHandler to perform custom pre- and post-processing
 func (decorator AnteHandlerDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
 	if newCtx, err = decorator.handler(ctx, tx, simulate); err != nil {
 		return newCtx, err
@@ -30,12 +33,14 @@ func (decorator AnteHandlerDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, sim
 	return next(newCtx, tx, simulate)
 }
 
+// ValidateValidatorDeregisteredTssDecorator checks if the unbonding validator holds any tss share of active crypto keys
 type ValidateValidatorDeregisteredTssDecorator struct {
 	tss         types.Tss
 	nexus       types.Nexus
 	snapshotter types.Snapshotter
 }
 
+// NewValidateValidatorDeregisteredTssDecorator constructor for ValidateValidatorDeregisteredTssDecorator
 func NewValidateValidatorDeregisteredTssDecorator(tss types.Tss, nexus types.Nexus, snapshotter types.Snapshotter) ValidateValidatorDeregisteredTssDecorator {
 	return ValidateValidatorDeregisteredTssDecorator{
 		tss,
@@ -44,6 +49,7 @@ func NewValidateValidatorDeregisteredTssDecorator(tss types.Tss, nexus types.Nex
 	}
 }
 
+// AnteHandle fails the transaction if it finds any validator holding tss share of active keys is trying to unbond
 func (d ValidateValidatorDeregisteredTssDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	msgs := tx.GetMsgs()
 
