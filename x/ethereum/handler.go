@@ -263,7 +263,7 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 		return &sdk.Result{Log: fmt.Sprintf("token %s already verified", token.Symbol)}, nil
 	}
 
-	if err := v.TallyVote(ctx, msg); err != nil {
+	if err := v.TallyVote(ctx, msg.Sender, msg.PollMeta, msg.VotingData); err != nil {
 		return nil, err
 	}
 
@@ -520,7 +520,7 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 			return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
 		}
 
-		addr := crypto.CreateAddress(crypto.PubkeyToAddress(pub), tx.Nonce())
+		addr := crypto.CreateAddress(crypto.PubkeyToAddress(pub.Value), tx.Nonce())
 		k.SetGatewayAddress(ctx, addr)
 	}
 

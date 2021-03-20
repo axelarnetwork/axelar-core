@@ -75,7 +75,7 @@ func listen(hub *tmEvents.Hub, axelarCfg app.Config, valAddr string, logger log.
 	signStart := events.MustSubscribe(hub, tss.EventTypeSign, tss.ModuleName, tss.AttributeValueStart)
 	signMsg := events.MustSubscribe(hub, tss.EventTypeSign, tss.ModuleName, tss.AttributeValueMsg)
 
-	btcVer := events.MustSubscribe(hub, btcTypes.EventTypeVerification, btcTypes.ModuleName, btcTypes.AttributeValueStart)
+	btcVer := events.MustSubscribe(hub, btcTypes.EventTypeOutpointConfirmation, btcTypes.ModuleName, btcTypes.AttributeValueStart)
 
 	js := []jobs.Job{
 		events.NewJob(keygenStart, tssMgr.ProcessKeygenStart),

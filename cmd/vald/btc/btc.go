@@ -42,22 +42,22 @@ func (mgr *Mgr) ProcessVerification(attributes []sdk.Attribute) error {
 	}
 
 	err = verifyTx(mgr.rpc, outPointInfo, confHeight)
-	var v btc.MsgVoteVerifiedTx
+	var msg btc.MsgVoteConfirmOutpoint
 	if err != nil {
 		mgr.Logger.Debug(sdkerrors.Wrap(err, "verification failed").Error())
-		v = btc.MsgVoteVerifiedTx{PollMeta: poll, VotingData: false}
+		msg = btc.MsgVoteConfirmOutpoint{PollMeta: poll, Confirmed: false, Outpoint: *outPointInfo.OutPoint}
 	} else {
-		v = btc.MsgVoteVerifiedTx{PollMeta: poll, VotingData: true}
+		msg = btc.MsgVoteConfirmOutpoint{PollMeta: poll, Confirmed: true, Outpoint: *outPointInfo.OutPoint}
 	}
-	mgr.Logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", v.VotingData, poll.String()))
-	return mgr.broadcaster.Broadcast(v)
+	mgr.Logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, poll.String()))
+	return mgr.broadcaster.Broadcast(msg)
 }
 
 func parseVerificationStartParams(attributes []sdk.Attribute) (outPoint btc.OutPointInfo, confHeight int64, poll vote.PollMeta, err error) {
 	found := 0
 	for _, attribute := range attributes {
 		switch attribute.Key {
-		case btc.AttributeKeyOutPoint:
+		case btc.AttributeKeyOutPointInfo:
 			codec.Cdc.MustUnmarshalJSON([]byte(attribute.Value), &outPoint)
 			found++
 		case btc.AttributeKeyConfHeight:

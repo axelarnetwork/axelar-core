@@ -69,7 +69,7 @@ func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 // AppModule implements module.AppModule
 type AppModule struct {
 	AppModuleBasic
-	keeper      keeper.Keeper
+	keeper      types.BTCKeeper
 	voter       types.Voter
 	signer      types.Signer
 	nexus       types.Nexus
@@ -77,7 +77,7 @@ type AppModule struct {
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, nexus types.Nexus, snapshotter types.Snapshotter) AppModule {
+func NewAppModule(k types.BTCKeeper, voter types.Voter, signer types.Signer, nexus types.Nexus, snapshotter types.Snapshotter) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,

@@ -28,17 +28,15 @@ func TestOutPointInfo_Equals(t *testing.T) {
 	}
 
 	op1 := types.OutPointInfo{
-		OutPoint:      wire.NewOutPoint(hash1, 3),
-		Amount:        0,
-		Address:       "recipient",
-		Confirmations: 16,
+		OutPoint: wire.NewOutPoint(hash1, 3),
+		Amount:   0,
+		Address:  "recipient",
 	}
 
 	op2 := types.OutPointInfo{
-		OutPoint:      wire.NewOutPoint(hash2, 3),
-		Amount:        0,
-		Address:       "recipient",
-		Confirmations: 16,
+		OutPoint: wire.NewOutPoint(hash2, 3),
+		Amount:   0,
+		Address:  "recipient",
 	}
 
 	assert.True(t, op1.Equals(op2))

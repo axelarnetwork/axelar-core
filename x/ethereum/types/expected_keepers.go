@@ -1,15 +1,12 @@
 package types
 
 import (
-	"crypto/ecdsa"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
-	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 //go:generate moq -out ./mock/expected_keepers.go -pkg mock . Voter Signer Nexus Snapshotter
@@ -17,7 +14,11 @@ import (
 // Voter wraps around the existing exported.Voter interface to adhere to the Cosmos convention of keeping all
 // expected keepers from other modules in the expected_keepers.go file
 type Voter interface {
-	voting.Voter
+	InitPoll(ctx sdk.Context, poll vote.PollMeta) error
+	DeletePoll(ctx sdk.Context, poll vote.PollMeta)
+	RecordVote(vote vote.MsgVote)
+	TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta vote.PollMeta, data vote.VotingData) error
+	Result(ctx sdk.Context, poll vote.PollMeta) vote.VotingData
 }
 
 // Nexus provides functionality to manage cross-chain transfers
@@ -33,15 +34,20 @@ type Nexus interface {
 	RegisterAsset(ctx sdk.Context, chainName, denom string)
 }
 
+// InitPoller is a minimal interface to start a poll
+type InitPoller = interface {
+	InitPoll(ctx sdk.Context, poll vote.PollMeta) error
+}
+
 // Signer provides keygen and signing functionality
 type Signer interface {
-	StartSign(ctx sdk.Context, voter tssTypes.Voter, keyID string, sigID string, msg []byte, snapshot snapshot.Snapshot) error
+	StartSign(ctx sdk.Context, initPoll InitPoller, keyID string, sigID string, msg []byte, snapshot snapshot.Snapshot) error
 	GetCurrentMasterKeyID(ctx sdk.Context, chain exported.Chain) (string, bool)
 	GetSig(ctx sdk.Context, sigID string) (tss.Signature, bool)
-	GetKey(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool)
-	GetCurrentMasterKey(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool)
-	GetNextMasterKey(ctx sdk.Context, chain exported.Chain) (ecdsa.PublicKey, bool)
-	GetKeyForSigID(ctx sdk.Context, sigID string) (ecdsa.PublicKey, bool)
+	GetKey(ctx sdk.Context, keyID string) (tss.Key, bool)
+	GetCurrentMasterKey(ctx sdk.Context, chain exported.Chain) (tss.Key, bool)
+	GetNextMasterKey(ctx sdk.Context, chain exported.Chain) (tss.Key, bool)
+	GetKeyForSigID(ctx sdk.Context, sigID string) (tss.Key, bool)
 	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool)
 }
 

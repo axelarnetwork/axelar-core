@@ -223,7 +223,7 @@ func TestKeeper_TallyVote_NonExistingPoll_ReturnError(t *testing.T) {
 	vote := randomVote()
 
 	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
-	assert.Error(t, s.Keeper.TallyVote(s.Ctx, vote))
+	assert.Error(t, s.Keeper.TallyVote(s.Ctx, vote.Sender, vote.Poll(), vote.Data()))
 }
 
 // error when tallied vote comes from unauthorized voter
@@ -236,7 +236,7 @@ func TestKeeper_TallyVote_UnknownVoter_ReturnError(t *testing.T) {
 	vote := randomVoteForPoll(poll)
 
 	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
-	assert.Error(t, s.Keeper.TallyVote(s.Ctx, vote))
+	assert.Error(t, s.Keeper.TallyVote(s.Ctx, vote.Sender, vote.Poll(), vote.Data()))
 }
 
 // tally vote no winner
@@ -254,7 +254,7 @@ func TestKeeper_TallyVote_NoWinner(t *testing.T) {
 	vote := randomVoteForPoll(poll)
 
 	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
-	err := s.Keeper.TallyVote(s.Ctx, vote)
+	err := s.Keeper.TallyVote(s.Ctx, vote.Sender, vote.Poll(), vote.Data())
 	res := s.Keeper.Result(s.Ctx, poll)
 	assert.NoError(t, err)
 	assert.Nil(t, res)
@@ -274,7 +274,7 @@ func TestKeeper_TallyVote_WithWinner(t *testing.T) {
 	vote := randomVoteForPoll(poll)
 
 	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
-	err := s.Keeper.TallyVote(s.Ctx, vote)
+	err := s.Keeper.TallyVote(s.Ctx, vote.Sender, vote.Poll(), vote.Data())
 	res := s.Keeper.Result(s.Ctx, poll)
 	assert.NoError(t, err)
 	assert.Equal(t, vote.Data(), res)
@@ -295,9 +295,9 @@ func TestKeeper_TallyVote_TwoVotesFromSameValidator_ReturnError(t *testing.T) {
 	vote3 := randomVoteForPoll(poll)
 
 	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
-	assert.NoError(t, s.Keeper.TallyVote(s.Ctx, vote1))
-	assert.Error(t, s.Keeper.TallyVote(s.Ctx, vote2))
-	assert.Error(t, s.Keeper.TallyVote(s.Ctx, vote3))
+	assert.NoError(t, s.Keeper.TallyVote(s.Ctx, vote1.Sender, vote1.Poll(), vote1.Data()))
+	assert.Error(t, s.Keeper.TallyVote(s.Ctx, vote2.Sender, vote2.Poll(), vote2.Data()))
+	assert.Error(t, s.Keeper.TallyVote(s.Ctx, vote3.Sender, vote3.Poll(), vote3.Data()))
 }
 
 // tally multiple votes until poll is decided
@@ -319,7 +319,7 @@ func TestKeeper_TallyVote_MultipleVotesUntilDecision(t *testing.T) {
 	vote := randomVoteForPoll(poll)
 	s.Broadcaster.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return s.ValidatorSet[0].GetOperator() }
 
-	assert.NoError(t, s.Keeper.TallyVote(s.Ctx, vote))
+	assert.NoError(t, s.Keeper.TallyVote(s.Ctx, vote.Sender, vote.Poll(), vote.Data()))
 	assert.Nil(t, s.Keeper.Result(s.Ctx, poll))
 
 	var pollDecided bool
@@ -328,7 +328,7 @@ func TestKeeper_TallyVote_MultipleVotesUntilDecision(t *testing.T) {
 			continue
 		}
 		s.Broadcaster.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return val.GetOperator() }
-		assert.NoError(t, s.Keeper.TallyVote(s.Ctx, vote))
+		assert.NoError(t, s.Keeper.TallyVote(s.Ctx, vote.Sender, vote.Poll(), vote.Data()))
 		pollDecided = pollDecided || s.Keeper.Result(s.Ctx, poll) != nil
 	}
 
@@ -350,14 +350,14 @@ func TestKeeper_TallyVote_ForDecidedPoll(t *testing.T) {
 	vote1 := randomVoteForPoll(poll)
 	s.Broadcaster.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return majorityPower.GetOperator() }
 
-	assert.NoError(t, s.Keeper.TallyVote(s.Ctx, vote1))
+	assert.NoError(t, s.Keeper.TallyVote(s.Ctx, vote1.Sender, vote1.Poll(), vote1.Data()))
 	assert.Equal(t, vote1.Data(), s.Keeper.Result(s.Ctx, poll))
 
 	vote2 := randomVoteForPoll(poll)
 	assert.NotEqual(t, vote1.Data(), vote2.Data())
 	s.Broadcaster.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return minorityPower.GetOperator() }
 
-	assert.NoError(t, s.Keeper.TallyVote(s.Ctx, vote2))
+	assert.NoError(t, s.Keeper.TallyVote(s.Ctx, vote2.Sender, vote2.Poll(), vote2.Data()))
 	assert.Equal(t, vote1.Data(), s.Keeper.Result(s.Ctx, poll))
 }
 

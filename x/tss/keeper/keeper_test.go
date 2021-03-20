@@ -20,11 +20,13 @@ import (
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	snapMock2 "github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	mock2 "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
+
 	slashingTypes "github.com/cosmos/cosmos-sdk/x/slashing"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -58,7 +60,7 @@ type testSetup struct {
 func setup(t *testing.T) *testSetup {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	broadcaster := prepareBroadcaster(t, ctx, testutils.Codec(), validators)
-	voter := &mock.VoterMock{
+	voter := &mock2.VoterMock{
 		InitPollFunc:   func(ctx sdk.Context, poll exported.PollMeta) error { return nil },
 		RecordVoteFunc: func(exported.MsgVote) {},
 	}
@@ -98,8 +100,8 @@ func (s *testSetup) SetLockingPeriod(lockingPeriod int64) {
 	s.Keeper.SetParams(s.Ctx, p)
 }
 
-func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context) (keyID string, keyChan ecdsa.PublicKey) {
-	keyID = randDistinctStr.Next()
+func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context) tss.Key {
+	keyID := randDistinctStr.Next()
 	s.PrivateKey = make(chan *ecdsa.PrivateKey, 1)
 	err := s.Keeper.StartKeygen(ctx, s.Voter, keyID, len(validators)-1, snap)
 	assert.NoError(t, err)
@@ -109,7 +111,10 @@ func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context) (keyID string, keyChan
 		panic(err)
 	}
 	s.Keeper.SetKey(ctx, keyID, sk.PublicKey)
-	return keyID, sk.PublicKey
+	return tss.Key{
+		ID:    keyID,
+		Value: sk.PublicKey,
+	}
 }
 
 func prepareBroadcaster(t *testing.T, ctx sdk.Context, cdc *codec.Codec, validators []snapshot.Validator) fake.Broadcaster {

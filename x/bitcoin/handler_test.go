@@ -6,670 +6,619 @@ import (
 	"fmt"
 	mathRand "math/rand"
 	"testing"
+	"time"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/stretchr/testify/assert"
+	"github.com/tendermint/go-amino"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
-	"golang.org/x/crypto/ripemd160"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
-	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	"github.com/axelarnetwork/axelar-core/utils/denom"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
-	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-func TestLink_NoMasterKey(t *testing.T) {
-	cdc := testutils.Codec()
-	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	k := keeper.NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k.SetParams(ctx, types.DefaultParams())
-
-	recipient := nexus.CrossChainAddress{Address: "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7", Chain: eth.Ethereum}
-
-	s := &mock.SignerMock{GetCurrentMasterKeyIDFunc: func(sdk.Context, nexus.Chain) (string, bool) { return "", false }}
-
-	handler := NewHandler(k, &mock.VoterMock{}, s, &mock.NexusMock{}, &mock.SnapshotterMock{})
-	_, err := handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name})
-
-	assert.Error(t, err)
-	assert.Equal(t, 1, len(s.GetCurrentMasterKeyIDCalls()))
-}
-
-func TestLink_NoRegisteredAsset(t *testing.T) {
-	cdc := testutils.Codec()
-	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	k := keeper.NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k.SetParams(ctx, types.DefaultParams())
-
-	privKey, err := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
-	if err != nil {
-		panic(err)
-	}
-
-	chains := map[string]nexus.Chain{exported.Bitcoin.Name: exported.Bitcoin, eth.Ethereum.Name: eth.Ethereum}
-	n := &mock.NexusMock{
-		LinkAddressesFunc: func(ctx sdk.Context, s nexus.CrossChainAddress, r nexus.CrossChainAddress) {},
-		GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
-			c, ok := chains[chain]
-			return c, ok
-		},
-		IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return false },
-	}
-
-	s := &mock.SignerMock{
-		GetKeyFunc: func(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool) {
-			return privKey.PublicKey, true
-		},
-		GetCurrentMasterKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain) (string, bool) { return "testkey", true },
-	}
-
-	handler := NewHandler(k, &mock.VoterMock{}, s, n, &mock.SnapshotterMock{})
-	recipient := nexus.CrossChainAddress{Address: "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7", Chain: eth.Ethereum}
-	_, err = handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name})
-
-	assert.Error(t, err)
-	assert.Equal(t, 1, len(s.GetCurrentMasterKeyIDCalls()))
-	assert.Equal(t, 1, len(n.IsAssetRegisteredCalls()))
-}
-
-func TestLink_Success(t *testing.T) {
-	cdc := testutils.Codec()
-	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	k := keeper.NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k.SetParams(ctx, types.DefaultParams())
-
-	recipient := nexus.CrossChainAddress{Address: "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7", Chain: eth.Ethereum}
-	privKey, err := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
-	if err != nil {
-		panic(err)
-	}
-
-	redeemScript := types.CreateCrossChainRedeemScript(btcec.PublicKey(privKey.PublicKey), recipient)
-	btcAddr := types.CreateDepositAddress(k.GetNetwork(ctx), redeemScript)
-	sender := nexus.CrossChainAddress{Address: btcAddr.EncodeAddress(), Chain: exported.Bitcoin}
-
-	chains := map[string]nexus.Chain{exported.Bitcoin.Name: exported.Bitcoin, eth.Ethereum.Name: eth.Ethereum}
-	n := &mock.NexusMock{
-		LinkAddressesFunc: func(ctx sdk.Context, s nexus.CrossChainAddress, r nexus.CrossChainAddress) {},
-		GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
-			c, ok := chains[chain]
-			return c, ok
-		},
-		IsAssetRegisteredFunc: func(_ sdk.Context, chainName, denom string) bool { return true },
-	}
-
-	s := &mock.SignerMock{
-		GetKeyFunc: func(ctx sdk.Context, keyID string) (ecdsa.PublicKey, bool) {
-			return privKey.PublicKey, true
-		},
-		GetCurrentMasterKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain) (string, bool) { return "testkey", true },
-	}
-
-	handler := NewHandler(k, &mock.VoterMock{}, s, n, &mock.SnapshotterMock{})
-	_, err = handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name})
-
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(n.IsAssetRegisteredCalls()))
-	assert.Equal(t, recipient.Chain.Name, n.IsAssetRegisteredCalls()[0].ChainName)
-	assert.Equal(t, 1, len(n.LinkAddressesCalls()))
-	assert.Equal(t, sender, n.LinkAddressesCalls()[0].Sender)
-	assert.Equal(t, recipient, n.LinkAddressesCalls()[0].Recipient)
-	assert.Equal(t, 1, len(s.GetKeyCalls()))
-}
-
-func TestVerifyTx_InvalidHash_VoteDiscard(t *testing.T) {
-	cdc := testutils.Codec()
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	k := keeper.NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
-	k.SetParams(ctx, types.DefaultParams())
-	v := &mock.VoterMock{
-		InitPollFunc:   func(_ sdk.Context, p vote.PollMeta) error { return nil },
-		RecordVoteFunc: func(vote vote.MsgVote) {},
-	}
-	depositAddr := randomAddress()
-	k.SetKeyIDByAddress(ctx, depositAddr, "someKey")
-
-	txHash, err := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
-	if err != nil {
-		panic(err)
-	}
-	outpoint := wire.NewOutPoint(txHash, 0)
-	info := types.OutPointInfo{
-		OutPoint:      outpoint,
-		Amount:        10,
-		Address:       depositAddr.EncodeAddress(),
-		Confirmations: 7,
-	}
-	if err := info.Validate(); err != nil {
-		panic(err)
-	}
-
-	handler := NewHandler(k, v, &mock.SignerMock{}, &mock.NexusMock{}, &mock.SnapshotterMock{})
-
-	_, err = handler(ctx, types.MsgVerifyTx{Sender: sdk.AccAddress("sender"), OutPointInfo: info})
-	assert.Nil(t, err)
-
-	assert.Equal(t, 1, len(v.InitPollCalls()))
-	assert.Equal(t, outpoint.String(), v.InitPollCalls()[0].Poll.ID)
-	assert.Equal(t, types.MsgVerifyTx{}.Type(), v.InitPollCalls()[0].Poll.Type)
-	assert.Equal(t, types.ModuleName, v.InitPollCalls()[0].Poll.Module)
-}
-
-func TestVerifyTx_ValidUTXO(t *testing.T) {
-	cdc := testutils.Codec()
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	k := keeper.NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
-	k.SetParams(ctx, types.DefaultParams())
-
-	txHash, err := chainhash.NewHashFromStr("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
-	if err != nil {
-		panic(err)
-	}
-	depositAddr := randomAddress()
-	k.SetKeyIDByAddress(ctx, depositAddr, "someKey")
-	outPoint := wire.NewOutPoint(txHash, 0)
-	info := types.OutPointInfo{
-		OutPoint:      outPoint,
-		Amount:        10,
-		Address:       depositAddr.EncodeAddress(),
-		Confirmations: 7,
-	}
-	if err := info.Validate(); err != nil {
-		panic(err)
-	}
-
-	v := &mock.VoterMock{
-		InitPollFunc:   func(_ sdk.Context, p vote.PollMeta) error { return nil },
-		RecordVoteFunc: func(vote vote.MsgVote) {},
-	}
-	handler := NewHandler(k, v, &mock.SignerMock{}, &mock.NexusMock{}, &mock.SnapshotterMock{})
-
-	_, err = handler(ctx, types.MsgVerifyTx{Sender: sdk.AccAddress("sender"), OutPointInfo: info})
-	assert.Nil(t, err)
-	assert.NoError(t, err)
-
-	assert.Equal(t, 1, len(v.InitPollCalls()))
-	assert.Equal(t, outPoint.String(), v.InitPollCalls()[0].Poll.ID)
-	assert.Equal(t, types.MsgVerifyTx{}.Type(), v.InitPollCalls()[0].Poll.Type)
-	assert.Equal(t, types.ModuleName, v.InitPollCalls()[0].Poll.Module)
-
-	actualOutPoint, ok := k.GetUnverifiedOutPointInfo(ctx, info.OutPoint)
-	assert.True(t, ok)
-	assert.True(t, info.Equals(actualOutPoint))
-}
-
-func TestVoteVerifiedTx_NoUnverifiedOutPointWithVoteResult(t *testing.T) {
-	cdc := testutils.Codec()
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	k := keeper.NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
-	k.SetParams(ctx, types.DefaultParams())
-
-	v := &mock.VoterMock{
-		TallyVoteFunc:  func(ctx sdk.Context, vote vote.MsgVote) error { return nil },
-		ResultFunc:     func(ctx sdk.Context, poll vote.PollMeta) vote.VotingData { return true },
-		DeletePollFunc: func(ctx sdk.Context, poll vote.PollMeta) {},
-	}
-
-	handler := NewHandler(k, v, &mock.SignerMock{}, &mock.NexusMock{}, &mock.SnapshotterMock{})
-	poll := vote.NewPollMeta("bitcoin", "verify", "txid")
-	msg := &types.MsgVoteVerifiedTx{Sender: sdk.AccAddress("sender"), PollMeta: poll, VotingData: true}
-	_, err := handler(ctx, msg)
-	assert.Error(t, err)
-}
-
-func TestVoteVerifiedTx_IncompleteVote(t *testing.T) {
-	cdc := testutils.Codec()
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	k := keeper.NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
-	k.SetParams(ctx, types.DefaultParams())
-
-	txHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
-	if err != nil {
-		panic(err)
-	}
-	outpoint := &wire.OutPoint{
-		Hash:  *txHash,
-		Index: 0,
-	}
-	outpointInfo := types.OutPointInfo{
-		OutPoint:      outpoint,
-		Amount:        btcutil.Amount(1000000),
-		Address:       "sender",
-		Confirmations: 100,
-	}
-	k.SetUnverifiedOutpointInfo(ctx, outpointInfo)
-
-	poll := vote.NewPollMeta("bitcoin", "verify", outpoint.String())
-	v := &mock.VoterMock{
-		TallyVoteFunc:  func(ctx sdk.Context, vote vote.MsgVote) error { return nil },
-		ResultFunc:     func(ctx sdk.Context, poll vote.PollMeta) vote.VotingData { return nil },
-		DeletePollFunc: func(ctx sdk.Context, p vote.PollMeta) {},
-	}
-
-	b := &mock.NexusMock{
-		GetRecipientFunc: func(ctx sdk.Context, s nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
-			return nexus.CrossChainAddress{}, false
-		},
-		EnqueueForTransferFunc: func(ctx sdk.Context, s nexus.CrossChainAddress, amount sdk.Coin) error {
-			return nil
-		},
-	}
-
-	handler := NewHandler(k, v, &mock.SignerMock{}, b, &mock.SnapshotterMock{})
-	msg := &types.MsgVoteVerifiedTx{Sender: sdk.AccAddress("sender"), PollMeta: poll, VotingData: true}
-	_, err = handler(ctx, msg)
-	assert.NoError(t, err)
-	assert.Equal(t, 0, len(v.DeletePollCalls()))
-	assert.Equal(t, 0, len(b.EnqueueForTransferCalls()))
-}
-
-func TestVoteVerifiedTx_KeyIDNotFound(t *testing.T) {
-	cdc := testutils.Codec()
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	k := keeper.NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
-	k.SetParams(ctx, types.DefaultParams())
-
-	txHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
-	if err != nil {
-		panic(err)
-	}
-	outpoint := &wire.OutPoint{
-		Hash:  *txHash,
-		Index: 0,
-	}
-	outpointInfo := types.OutPointInfo{
-		OutPoint:      outpoint,
-		Amount:        btcutil.Amount(1000000),
-		Address:       "sender",
-		Confirmations: 100,
-	}
-	k.SetUnverifiedOutpointInfo(ctx, outpointInfo)
-
-	poll := vote.NewPollMeta("bitcoin", "verify", outpoint.String())
-	v := &mock.VoterMock{
-		TallyVoteFunc:  func(ctx sdk.Context, vote vote.MsgVote) error { return nil },
-		ResultFunc:     func(ctx sdk.Context, poll vote.PollMeta) vote.VotingData { return true },
-		DeletePollFunc: func(ctx sdk.Context, p vote.PollMeta) {},
-	}
-
-	b := &mock.NexusMock{
-		GetRecipientFunc: func(ctx sdk.Context, s nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
-			return nexus.CrossChainAddress{}, false
-		},
-		EnqueueForTransferFunc: func(ctx sdk.Context, s nexus.CrossChainAddress, amount sdk.Coin) error { return nil },
-	}
-
-	handler := NewHandler(k, v, &mock.SignerMock{}, b, &mock.SnapshotterMock{})
-	msg := &types.MsgVoteVerifiedTx{Sender: sdk.AccAddress("sender"), PollMeta: poll, VotingData: true}
-	_, err = handler(ctx, msg)
-	assert.Error(t, err)
-	assert.Equal(t, 1, len(v.DeletePollCalls()))
-	assert.Equal(t, poll, v.DeletePollCalls()[0].Poll)
-	assert.Equal(t, 0, len(b.EnqueueForTransferCalls()))
-}
-
-func TestVoteVerifiedTx_Success_NotLinked(t *testing.T) {
-	cdc := testutils.Codec()
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	k := keeper.NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
-	k.SetParams(ctx, types.DefaultParams())
-
-	txHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
-	if err != nil {
-		panic(err)
-	}
-	outpoint := &wire.OutPoint{
-		Hash:  *txHash,
-		Index: 0,
-	}
-	sender := randomAddress()
-	outpointInfo := types.OutPointInfo{
-		OutPoint:      outpoint,
-		Amount:        btcutil.Amount(1000000),
-		Address:       sender.EncodeAddress(),
-		Confirmations: 100,
-	}
-	k.SetUnverifiedOutpointInfo(ctx, outpointInfo)
-
-	k.SetKeyIDByAddress(ctx, sender, "testkey")
-
-	poll := vote.NewPollMeta("bitcoin", "verify", outpoint.String())
-	v := &mock.VoterMock{
-		TallyVoteFunc:  func(ctx sdk.Context, vote vote.MsgVote) error { return nil },
-		ResultFunc:     func(ctx sdk.Context, poll vote.PollMeta) vote.VotingData { return true },
-		DeletePollFunc: func(ctx sdk.Context, p vote.PollMeta) {},
-	}
-
-	b := &mock.NexusMock{
-		GetRecipientFunc: func(ctx sdk.Context, s nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
-			return nexus.CrossChainAddress{}, false
-		},
-		EnqueueForTransferFunc: func(ctx sdk.Context, s nexus.CrossChainAddress, amount sdk.Coin) error {
-			return fmt.Errorf("not linked")
-		},
-	}
-
-	handler := NewHandler(k, v, &mock.SignerMock{}, b, &mock.SnapshotterMock{})
-	msg := &types.MsgVoteVerifiedTx{Sender: sdk.AccAddress("sender"), PollMeta: poll, VotingData: true}
-	_, err = handler(ctx, msg)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(v.DeletePollCalls()))
-	assert.Equal(t, poll, v.DeletePollCalls()[0].Poll)
-	assert.Equal(t, 1, len(b.EnqueueForTransferCalls()))
-}
-
-func TestVoteVerifiedTx_SucessAndTransfer(t *testing.T) {
-	cdc := testutils.Codec()
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	k := keeper.NewKeeper(cdc, sdk.NewKVStoreKey("testKey"), btcSubspace)
-	k.SetParams(ctx, types.DefaultParams())
-
-	txHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
-	if err != nil {
-		panic(err)
-	}
-	outpoint := &wire.OutPoint{
-		Hash:  *txHash,
-		Index: 0,
-	}
-	btcSender := randomAddress()
-	outpointInfo := types.OutPointInfo{
-		OutPoint:      outpoint,
-		Amount:        btcutil.Amount(1000000),
-		Address:       btcSender.EncodeAddress(),
-		Confirmations: 100,
-	}
-	k.SetUnverifiedOutpointInfo(ctx, outpointInfo)
-	k.SetKeyIDByAddress(ctx, btcSender, "testkey")
-
-	poll := vote.NewPollMeta("bitcoin", "verify", outpoint.String())
-	v := &mock.VoterMock{
-		TallyVoteFunc:  func(ctx sdk.Context, v vote.MsgVote) error { return nil },
-		ResultFunc:     func(ctx sdk.Context, p vote.PollMeta) vote.VotingData { return true },
-		DeletePollFunc: func(ctx sdk.Context, p vote.PollMeta) {},
-	}
-
-	sender := nexus.CrossChainAddress{Address: btcSender.EncodeAddress(), Chain: exported.Bitcoin}
-	recipient := nexus.CrossChainAddress{Address: "recipient", Chain: eth.Ethereum}
-
-	b := &mock.NexusMock{
-		GetRecipientFunc: func(ctx sdk.Context, s nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
-			return recipient, true
-		},
-
-		EnqueueForTransferFunc: func(ctx sdk.Context, s nexus.CrossChainAddress, amount sdk.Coin) error {
-			if s.Address != sender.Address {
-				return fmt.Errorf("sender not linked to a recipient")
-			}
-			return nil
-		},
-	}
-
-	handler := NewHandler(k, v, &mock.SignerMock{}, b, &mock.SnapshotterMock{})
-	msg := &types.MsgVoteVerifiedTx{Sender: sdk.AccAddress("btcSender"), PollMeta: poll, VotingData: true}
-	_, err = handler(ctx, msg)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(v.DeletePollCalls()))
-	assert.Equal(t, poll, v.DeletePollCalls()[0].Poll)
-	assert.Equal(t, 1, len(b.EnqueueForTransferCalls()))
-	assert.Equal(t, sender, b.EnqueueForTransferCalls()[0].Sender)
-}
-
-type mocks struct {
-	*mock.VoterMock
-	*mock.SignerMock
-	*mock.NexusMock
-	*mock.SnapshotterMock
-}
-type expectedResult struct {
-	depositCount  int
-	transferCount int
-	hasError      bool
-}
-
-func TestNewHandler_SignPendingTransfers(t *testing.T) {
+func TestHandleMsgLink(t *testing.T) {
 	var (
-		ctx  sdk.Context
-		k    keeper.Keeper
-		m    mocks
-		h    sdk.Handler
-		sigs []btcec.Signature
+		btcKeeper   *mock.BTCKeeperMock
+		signer      *mock.SignerMock
+		nexusKeeper *mock.NexusMock
+		ctx         sdk.Context
+		msg         types.MsgLink
 	)
-
 	init := func() {
-		cdc := testutils.Codec()
-		btcSubspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"), "btc")
-		ctx = sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-		k = keeper.NewKeeper(cdc, sdk.NewKVStoreKey("btc"), btcSubspace)
-		k.SetParams(ctx, types.DefaultParams())
+		btcKeeper = &mock.BTCKeeperMock{
+			GetNetworkFunc: func(ctx sdk.Context) types.Network { return types.Mainnet },
+			SetAddressFunc: func(sdk.Context, types.ScriptAddress) {},
+			LoggerFunc:     func(sdk.Context) log.Logger { return log.TestingLogger() },
+		}
+		signer = &mock.SignerMock{GetCurrentMasterKeyFunc: func(sdk.Context, nexus.Chain) (tss.Key, bool) {
+			sk, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
+			return tss.Key{Value: sk.PublicKey, ID: rand.StrBetween(5, 20)}, true
+		}}
+		nexusKeeper = &mock.NexusMock{
+			GetChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
+				return nexus.Chain{
+					Name:                  chain,
+					NativeAsset:           rand.StrBetween(5, 20),
+					SupportsForeignAssets: true,
+				}, true
+			},
+			IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return true },
+			LinkAddressesFunc:     func(sdk.Context, nexus.CrossChainAddress, nexus.CrossChainAddress) {},
+		}
+		ctx = sdk.NewContext(nil, abci.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		msg = randomMsgLink()
+	}
+	repeats := 20
 
-		sigs = make([]btcec.Signature, 0)
-		sk, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
-		chains := map[string]nexus.Chain{exported.Bitcoin.Name: exported.Bitcoin, eth.Ethereum.Name: eth.Ethereum}
-		m = mocks{
-			&mock.VoterMock{
-				InitPollFunc:   func(ctx sdk.Context, poll vote.PollMeta) error { return nil },
-				TallyVoteFunc:  func(sdk.Context, vote.MsgVote) error { return nil },
-				ResultFunc:     func(sdk.Context, vote.PollMeta) vote.VotingData { return true },
-				DeletePollFunc: func(ctx sdk.Context, poll vote.PollMeta) {},
-				RecordVoteFunc: func(vote vote.MsgVote) {}},
-			&mock.SignerMock{
-				GetKeyFunc: func(sdk.Context, string) (ecdsa.PublicKey, bool) { return sk.PublicKey, true },
-				GetCurrentMasterKeyFunc: func(sdk.Context, nexus.Chain) (ecdsa.PublicKey, bool) {
-					return sk.PublicKey, true
-				},
-				GetCurrentMasterKeyIDFunc: func(sdk.Context, nexus.Chain) (string, bool) {
-					return rand.StrBetween(5, 20), true
-				},
-				GetNextMasterKeyIDFunc: func(sdk.Context, nexus.Chain) (string, bool) { return "", false },
-				GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
-					return rand.PosI64(), true
-				},
-				StartSignFunc: func(_ sdk.Context, _ tssTypes.Voter, _ string, _ string, msg []byte, _ snapshot.Snapshot) error {
-					r, s, _ := ecdsa.Sign(cryptoRand.Reader, sk, msg)
-					sigs = append(sigs, btcec.Signature{R: r, S: s})
-					return nil
-				},
+	t.Run("happy path", testutils.Func(func(t *testing.T) {
+		init()
+		res, err := HandleMsgLink(ctx, btcKeeper, signer, nexusKeeper, msg)
+		assert.NoError(t, err)
+		assert.Len(t, btcKeeper.SetAddressCalls(), 1)
+		assert.Len(t, nexusKeeper.LinkAddressesCalls(), 1)
+		assert.Equal(t, exported.Bitcoin, signer.GetCurrentMasterKeyCalls()[0].Chain)
+		assert.Equal(t, msg.RecipientChain, nexusKeeper.GetChainCalls()[0].Chain)
+		assert.Equal(t, btcKeeper.SetAddressCalls()[0].Address.AddressWitnessScriptHash.EncodeAddress(), string(res.Data))
+	}).Repeat(repeats))
+	t.Run("no master key", testutils.Func(func(t *testing.T) {
+		init()
+		signer.GetCurrentMasterKeyFunc = func(sdk.Context, nexus.Chain) (tss.Key, bool) { return tss.Key{}, false }
+		_, err := HandleMsgLink(ctx, btcKeeper, signer, nexusKeeper, msg)
+		assert.Error(t, err)
+	}).Repeat(repeats))
+	t.Run("unknown chain", testutils.Func(func(t *testing.T) {
+		init()
+		nexusKeeper.GetChainFunc = func(sdk.Context, string) (nexus.Chain, bool) { return nexus.Chain{}, false }
+		_, err := HandleMsgLink(ctx, btcKeeper, signer, nexusKeeper, msg)
+		assert.Error(t, err)
+	}).Repeat(repeats))
+	t.Run("asset not registered", testutils.Func(func(t *testing.T) {
+		init()
+		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, string, string) bool { return false }
+		_, err := HandleMsgLink(ctx, btcKeeper, signer, nexusKeeper, msg)
+		assert.Error(t, err)
+	}).Repeat(repeats))
+}
+
+func TestHandleMsgConfirmOutpoint(t *testing.T) {
+	var (
+		btcKeeper *mock.BTCKeeperMock
+		voter     *mock.VoterMock
+		ctx       sdk.Context
+		msg       types.MsgConfirmOutpoint
+	)
+	init := func() {
+		address := randomAddress()
+		btcKeeper = &mock.BTCKeeperMock{
+			GetOutPointInfoFunc: func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
+				return types.OutPointInfo{}, 0, false
 			},
-			&mock.NexusMock{
-				LinkAddressesFunc:          func(sdk.Context, nexus.CrossChainAddress, nexus.CrossChainAddress) {},
-				EnqueueForTransferFunc:     func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) error { return nil },
-				ArchivePendingTransferFunc: func(ctx sdk.Context, transfer nexus.CrossChainTransfer) {},
-				GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
-					c, ok := chains[chain]
-					return c, ok
-				},
-				IsAssetRegisteredFunc: func(_ sdk.Context, chainName, denom string) bool { return true },
+			GetAddressFunc: func(sdk.Context, string) (types.ScriptAddress, bool) {
+				return types.ScriptAddress{
+					AddressWitnessScriptHash: address,
+					RedeemScript:             rand.Bytes(200),
+					Key: tss.Key{
+						ID:    rand.StrBetween(5, 20),
+						Value: ecdsa.PublicKey{},
+					},
+				}, true
 			},
-			&mock.SnapshotterMock{
-				GetSnapshotFunc: func(ctx sdk.Context, counter int64) (snapshot.Snapshot, bool) { return snapshot.Snapshot{}, true },
+			GetRevoteLockingPeriodFunc:        func(sdk.Context) int64 { return int64(mathRand.Uint32()) },
+			GetRequiredConfirmationHeightFunc: func(sdk.Context) uint64 { return mathRand.Uint64() },
+			SetUnconfirmedOutpointInfoFunc:    func(sdk.Context, vote.PollMeta, types.OutPointInfo) {},
+			CodecFunc:                         func() *amino.Codec { return testutils.Codec() },
+		}
+		voter = &mock.VoterMock{
+			InitPollFunc: func(sdk.Context, vote.PollMeta) error { return nil },
+		}
+		ctx = sdk.NewContext(nil, abci.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		msg = randomMsgConfirmOutpoint()
+		msg.OutPointInfo.Address = address.EncodeAddress()
+	}
+
+	repeats := 20
+	t.Run("happy path outpoint unknown", testutils.Func(func(t *testing.T) {
+		init()
+		res, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, msg)
+		assert.NoError(t, err)
+		assert.Len(t, filter(res.Events, func(event sdk.Event) bool { return event.Type == types.EventTypeOutpointConfirmation }), 1)
+		assert.Equal(t, msg.OutPointInfo, btcKeeper.SetUnconfirmedOutpointInfoCalls()[0].Info)
+		assert.Equal(t, voter.InitPollCalls()[0].Poll, btcKeeper.SetUnconfirmedOutpointInfoCalls()[0].Poll)
+	}).Repeat(repeats))
+	t.Run("happy path outpoint unconfirmed", testutils.Func(func(t *testing.T) {
+		init()
+		res, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, msg)
+		assert.NoError(t, err)
+		assert.Len(t, filter(res.Events, func(event sdk.Event) bool { return event.Type == types.EventTypeOutpointConfirmation }), 1)
+		assert.Equal(t, msg.OutPointInfo, btcKeeper.SetUnconfirmedOutpointInfoCalls()[0].Info)
+		assert.Equal(t, voter.InitPollCalls()[0].Poll, btcKeeper.SetUnconfirmedOutpointInfoCalls()[0].Poll)
+	}).Repeat(repeats))
+	t.Run("already confirmed", testutils.Func(func(t *testing.T) {
+		init()
+		btcKeeper.GetOutPointInfoFunc = func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
+			return msg.OutPointInfo, types.CONFIRMED, true
+		}
+		_, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, msg)
+		assert.Error(t, err)
+	}).Repeat(repeats))
+	t.Run("already spent", testutils.Func(func(t *testing.T) {
+		init()
+		btcKeeper.GetOutPointInfoFunc = func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
+			return msg.OutPointInfo, types.SPENT, true
+		}
+		_, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, msg)
+		assert.Error(t, err)
+	}).Repeat(repeats))
+	t.Run("address unknown", testutils.Func(func(t *testing.T) {
+		init()
+		btcKeeper.GetAddressFunc = func(sdk.Context, string) (types.ScriptAddress, bool) { return types.ScriptAddress{}, false }
+		_, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, msg)
+		assert.Error(t, err)
+	}).Repeat(repeats))
+	t.Run("poll init failed", testutils.Func(func(t *testing.T) {
+		init()
+		voter.InitPollFunc = func(sdk.Context, vote.PollMeta) error { return fmt.Errorf("poll init failed") }
+		_, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, msg)
+		assert.Error(t, err)
+	}).Repeat(repeats))
+}
+
+func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
+	var (
+		btcKeeper   *mock.BTCKeeperMock
+		voter       *mock.VoterMock
+		nexusKeeper *mock.NexusMock
+		ctx         sdk.Context
+		msg         types.MsgVoteConfirmOutpoint
+		info        types.OutPointInfo
+	)
+	init := func() {
+		msg = randomMsgVoteConfirmOutpoint()
+		info = randomOutpointInfo()
+		btcKeeper = &mock.BTCKeeperMock{
+			GetOutPointInfoFunc: func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
+				return types.OutPointInfo{}, 0, false
+			},
+			SetOutpointInfoFunc:               func(sdk.Context, types.OutPointInfo, types.OutPointState) {},
+			GetUnconfirmedOutPointInfoFunc:    func(sdk.Context, vote.PollMeta) (types.OutPointInfo, bool) { return info, true },
+			DeleteUnconfirmedOutPointInfoFunc: func(sdk.Context, vote.PollMeta) {},
+			CodecFunc:                         func() *amino.Codec { return testutils.Codec() },
+			GetSignedTxFunc:                   func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
+		}
+		voter = &mock.VoterMock{
+			TallyVoteFunc:  func(sdk.Context, sdk.AccAddress, vote.PollMeta, vote.VotingData) error { return nil },
+			ResultFunc:     func(sdk.Context, vote.PollMeta) vote.VotingData { return true },
+			DeletePollFunc: func(sdk.Context, vote.PollMeta) {},
+		}
+		nexusKeeper = &mock.NexusMock{
+			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) error { return nil },
+		}
+
+		ctx = sdk.NewContext(nil, abci.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+	}
+
+	repeats := 20
+	t.Run("happy path confirm deposit", testutils.Func(func(t *testing.T) {
+		init()
+
+		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		assert.NoError(t, err)
+		assert.Len(t, voter.DeletePollCalls(), 1)
+		assert.Len(t, btcKeeper.DeleteUnconfirmedOutPointInfoCalls(), 1)
+		assert.Equal(t, info, btcKeeper.SetOutpointInfoCalls()[0].Info)
+		assert.Equal(t, types.CONFIRMED, btcKeeper.SetOutpointInfoCalls()[0].State)
+		assert.Len(t, btcKeeper.DeleteSignedTxCalls(), 0)
+		assert.Equal(t, info.Address, nexusKeeper.EnqueueForTransferCalls()[0].Sender.Address)
+		assert.Equal(t, int64(info.Amount), nexusKeeper.EnqueueForTransferCalls()[0].Amount.Amount.Int64())
+	}).Repeat(repeats))
+	t.Run("happy path confirm consolidation", testutils.Func(func(t *testing.T) {
+		init()
+		tx := wire.NewMsgTx(wire.TxVersion)
+		info.OutPoint.Hash = tx.TxHash()
+		btcKeeper.GetSignedTxFunc = func(sdk.Context) (*wire.MsgTx, bool) { return tx, true }
+		btcKeeper.DeleteSignedTxFunc = func(sdk.Context) {}
+
+		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		assert.NoError(t, err)
+		assert.Len(t, voter.DeletePollCalls(), 1)
+		assert.Len(t, btcKeeper.DeleteUnconfirmedOutPointInfoCalls(), 1)
+		assert.Equal(t, info, btcKeeper.SetOutpointInfoCalls()[0].Info)
+		assert.Equal(t, types.CONFIRMED, btcKeeper.SetOutpointInfoCalls()[0].State)
+		assert.Len(t, btcKeeper.DeleteSignedTxCalls(), 1)
+		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
+	}).Repeat(repeats))
+	t.Run("happy path reject", testutils.Func(func(t *testing.T) {
+		init()
+		voter.ResultFunc = func(sdk.Context, vote.PollMeta) vote.VotingData { return false }
+
+		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		assert.NoError(t, err)
+		assert.Len(t, voter.DeletePollCalls(), 1)
+		assert.Len(t, btcKeeper.DeleteUnconfirmedOutPointInfoCalls(), 1)
+		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), 0)
+		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
+		assert.Len(t, btcKeeper.DeleteSignedTxCalls(), 0)
+	}).Repeat(repeats))
+	t.Run("happy path no result yet", testutils.Func(func(t *testing.T) {
+		init()
+		voter.ResultFunc = func(sdk.Context, vote.PollMeta) vote.VotingData { return nil }
+
+		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		assert.NoError(t, err)
+		assert.Len(t, voter.DeletePollCalls(), 0)
+		assert.Len(t, btcKeeper.DeleteUnconfirmedOutPointInfoCalls(), 0)
+		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), 0)
+		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
+		assert.Len(t, btcKeeper.DeleteSignedTxCalls(), 0)
+	}).Repeat(repeats))
+	t.Run("happy path poll already completed", testutils.Func(func(t *testing.T) {
+		init()
+		btcKeeper.GetUnconfirmedOutPointInfoFunc = func(sdk.Context, vote.PollMeta) (types.OutPointInfo, bool) {
+			return types.OutPointInfo{}, false
+		}
+		btcKeeper.GetOutPointInfoFunc = func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
+			return info, types.CONFIRMED, true
+		}
+
+		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		assert.NoError(t, err)
+		assert.Len(t, voter.DeletePollCalls(), 1)
+		assert.Len(t, btcKeeper.DeleteUnconfirmedOutPointInfoCalls(), 1)
+		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), 0)
+		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
+		assert.Len(t, btcKeeper.DeleteSignedTxCalls(), 0)
+	}).Repeat(repeats))
+	t.Run("happy path second poll (outpoint already confirmed)", testutils.Func(func(t *testing.T) {
+		init()
+		btcKeeper.GetOutPointInfoFunc = func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
+			return info, types.CONFIRMED, true
+		}
+
+		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		assert.NoError(t, err)
+		assert.Len(t, voter.DeletePollCalls(), 1)
+		assert.Len(t, btcKeeper.DeleteUnconfirmedOutPointInfoCalls(), 1)
+		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), 0)
+		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
+		assert.Len(t, btcKeeper.DeleteSignedTxCalls(), 0)
+	}).Repeat(repeats))
+	t.Run("happy path already spent", testutils.Func(func(t *testing.T) {
+		init()
+		btcKeeper.GetOutPointInfoFunc = func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
+			return info, types.SPENT, true
+		}
+
+		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		assert.NoError(t, err)
+		assert.Len(t, voter.DeletePollCalls(), 1)
+		assert.Len(t, btcKeeper.DeleteUnconfirmedOutPointInfoCalls(), 1)
+		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), 0)
+		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
+		assert.Len(t, btcKeeper.DeleteSignedTxCalls(), 0)
+	}).Repeat(repeats))
+	t.Run("unknown outpoint", testutils.Func(func(t *testing.T) {
+		init()
+		btcKeeper.GetUnconfirmedOutPointInfoFunc =
+			func(sdk.Context, vote.PollMeta) (types.OutPointInfo, bool) { return types.OutPointInfo{}, false }
+
+		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		assert.Error(t, err)
+	}).Repeat(repeats))
+	t.Run("tally failed", testutils.Func(func(t *testing.T) {
+		init()
+		voter.TallyVoteFunc = func(sdk.Context, sdk.AccAddress, vote.PollMeta, vote.VotingData) error {
+			return fmt.Errorf("failed")
+		}
+
+		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		assert.Error(t, err)
+	}).Repeat(repeats))
+	t.Run("enqueue transfer failed", testutils.Func(func(t *testing.T) {
+		init()
+		nexusKeeper.EnqueueForTransferFunc = func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) error {
+			return fmt.Errorf("failed")
+		}
+
+		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		assert.Error(t, err)
+	}).Repeat(repeats))
+}
+
+func TestHandleMsgSignPendingTransfers(t *testing.T) {
+	var (
+		btcKeeper   *mock.BTCKeeperMock
+		signer      *mock.SignerMock
+		voter       *mock.VoterMock
+		nexusKeeper *mock.NexusMock
+		snapshotter *mock.SnapshotterMock
+		ctx         sdk.Context
+		msg         types.MsgSignPendingTransfers
+
+		transfers      []nexus.CrossChainTransfer
+		transferAmount int64
+		deposits       []types.OutPointInfo
+		depositAmount  int64
+	)
+	init := func() {
+		ctx = sdk.NewContext(nil, abci.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		msg = types.MsgSignPendingTransfers{
+			Fee: btcutil.Amount(rand.I64Between(0, 1000000)),
+		}
+
+		transferAmount = 0
+		transfers = []nexus.CrossChainTransfer{}
+		for i := int64(0); i < rand.I64Between(0, 50); i++ {
+			transfers = append(transfers, randomTransfer())
+			transferAmount += transfers[i].Asset.Amount.Int64()
+		}
+		depositAmount = 0
+		deposits = []types.OutPointInfo{}
+		for depositAmount <= transferAmount+int64(msg.Fee) {
+			deposit := randomOutpointInfo()
+			deposits = append(deposits, deposit)
+			depositAmount += int64(deposit.Amount)
+		}
+
+		btcKeeper = &mock.BTCKeeperMock{
+			GetUnsignedTxFunc:             func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
+			GetSignedTxFunc:               func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
+			GetNetworkFunc:                func(sdk.Context) types.Network { return types.Mainnet },
+			LoggerFunc:                    func(sdk.Context) log.Logger { return log.TestingLogger() },
+			GetConfirmedOutPointInfosFunc: func(sdk.Context) []types.OutPointInfo { return deposits },
+			DeleteOutpointInfoFunc:        func(sdk.Context, wire.OutPoint) {},
+			SetOutpointInfoFunc:           func(sdk.Context, types.OutPointInfo, types.OutPointState) {},
+			GetAddressFunc: func(_ sdk.Context, encodedAddress string) (types.ScriptAddress, bool) {
+				sk, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
+				return types.ScriptAddress{
+					AddressWitnessScriptHash: nil,
+					RedeemScript:             nil,
+					Key: tss.Key{
+						ID:    rand.StrBetween(5, 20),
+						Value: sk.PublicKey,
+					},
+				}, true
+			},
+			SetAddressFunc:    func(sdk.Context, types.ScriptAddress) {},
+			SetUnsignedTxFunc: func(sdk.Context, *wire.MsgTx) {},
+		}
+		nexusKeeper = &mock.NexusMock{
+			GetPendingTransfersForChainFunc: func(sdk.Context, nexus.Chain) []nexus.CrossChainTransfer { return transfers },
+			ArchivePendingTransferFunc:      func(sdk.Context, nexus.CrossChainTransfer) {},
+		}
+		signer = &mock.SignerMock{
+			GetNextMasterKeyFunc: func(sdk.Context, nexus.Chain) (tss.Key, bool) {
+				return tss.Key{}, false
+			},
+			GetCurrentMasterKeyFunc: func(sdk.Context, nexus.Chain) (tss.Key, bool) {
+				sk, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
+				return tss.Key{ID: rand.StrBetween(5, 20), Value: sk.PublicKey}, true
+			},
+			GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
+				return rand.PosI64(), true
+			},
+			StartSignFunc: func(sdk.Context, types.InitPoller, string, string, []byte, snapshot.Snapshot) error { return nil },
+		}
+		snapshotter = &mock.SnapshotterMock{
+			GetSnapshotFunc: func(_ sdk.Context, counter int64) (snapshot.Snapshot, bool) {
+				return snapshot.Snapshot{
+					Validators: []snapshot.Validator{},
+					Timestamp:  time.Now(),
+					Height:     rand.PosI64(),
+					TotalPower: sdk.NewInt(rand.PosI64()),
+					Counter:    counter,
+				}, true
 			},
 		}
 
-		h = NewHandler(k, m.VoterMock, m.SignerMock, m.NexusMock, m.SnapshotterMock)
 	}
 
-	testCases := []struct {
-		label   string
-		prepare func(sdk.Handler, sdk.Context, mocks) (sdk.Msg, expectedResult)
-	}{
-		{"nothing pending", prepareMsgSignPendingTransfersDoNothing},
-		{"not enough deposits", prepareMsgSignPendingTransfersNotEnoughDeposits},
-		{"successful completion", prepareMsgSignPendingTransfersSuccessful},
-	}
-	for _, testCase := range testCases {
-		t.Run(testCase.label, func(t *testing.T) {
-			init()
-			msg, expected := testCase.prepare(h, ctx, m)
-			_, err := h(ctx, msg)
+	repeats := 20
+	t.Run("happy path more deposits than transfers", testutils.Func(func(t *testing.T) {
+		init()
 
-			if expected.hasError {
-				assert.Error(t, err)
-				return
-			}
+		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		assert.NoError(t, err)
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)+1) // + consolidation outpoint
+		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
+		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(deposits))
+		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), len(deposits))
+		mapi(len(btcKeeper.SetOutpointInfoCalls()), func(i int) { assert.Equal(t, types.SPENT, btcKeeper.SetOutpointInfoCalls()[i].State) })
+		assert.Len(t, signer.StartSignCalls(), len(deposits))
 
-			assert.NoError(t, err)
-			assert.Equal(t, expected.depositCount, len(m.SignerMock.StartSignCalls()))
-			assert.Equal(t, expected.transferCount, len(m.NexusMock.ArchivePendingTransferCalls()))
-			if expected.transferCount > 0 {
-				_, err = k.AssembleBtcTx(ctx, k.GetRawTx(ctx), sigs)
-				assert.NoError(t, err)
+	}).Repeat(repeats))
+	t.Run("happy path consolidation to next master key", testutils.Func(func(t *testing.T) {
+		init()
+		signer.GetNextMasterKeyFunc = signer.GetCurrentMasterKeyFunc
+
+		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		assert.NoError(t, err)
+		assert.Len(t, signer.GetCurrentMasterKeyCalls(), 0)
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)+1) // + 1 consolidation outpoint
+		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
+		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(deposits))
+		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), len(deposits))
+		mapi(len(btcKeeper.SetOutpointInfoCalls()), func(i int) { assert.Equal(t, types.SPENT, btcKeeper.SetOutpointInfoCalls()[i].State) })
+		assert.Len(t, signer.StartSignCalls(), len(deposits))
+
+	}).Repeat(repeats))
+	t.Run("happy path deposits == transfers", testutils.Func(func(t *testing.T) {
+		init()
+		// equalize deposits and transfers
+		transfer := randomTransfer()
+		transfer.Asset.Amount = sdk.NewInt(depositAmount - transferAmount - int64(msg.Fee))
+		transfers = append(transfers, transfer)
+		transferAmount += transfer.Asset.Amount.Int64()
+
+		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		assert.NoError(t, err)
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers))
+		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
+		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(deposits))
+		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), len(deposits))
+		mapi(len(btcKeeper.SetOutpointInfoCalls()), func(i int) { assert.Equal(t, types.SPENT, btcKeeper.SetOutpointInfoCalls()[i].State) })
+		assert.Len(t, signer.StartSignCalls(), len(deposits))
+	}).Repeat(repeats))
+	t.Run("happy path some wrong recipient addresses", testutils.Func(func(t *testing.T) {
+		init()
+		var wrongAddressCount int
+		if len(transfers) > 0 {
+			wrongAddressCount = int(rand.I64Between(0, int64(len(transfers))))
+			for i := 0; i < wrongAddressCount; i++ {
+				transfers[i].Recipient.Address = rand.StrBetween(5, 100)
 			}
-		})
+		}
+
+		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		assert.NoError(t, err)
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)-wrongAddressCount+1) // + 1 consolidation outpoint
+		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers)-wrongAddressCount)
+		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(deposits))
+		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), len(deposits))
+		mapi(len(btcKeeper.SetOutpointInfoCalls()), func(i int) { assert.Equal(t, types.SPENT, btcKeeper.SetOutpointInfoCalls()[i].State) })
+		assert.Len(t, signer.StartSignCalls(), len(deposits))
+	}).Repeat(repeats))
+	t.Run("signing already in progress", testutils.Func(func(t *testing.T) {
+		init()
+		btcKeeper.GetUnsignedTxFunc = func(sdk.Context) (*wire.MsgTx, bool) { return wire.NewMsgTx(wire.TxVersion), true }
+
+		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		assert.Error(t, err)
+	}).Repeat(repeats))
+	t.Run("previous tx not confirmed", testutils.Func(func(t *testing.T) {
+		init()
+		btcKeeper.GetSignedTxFunc = func(sdk.Context) (*wire.MsgTx, bool) { return wire.NewMsgTx(wire.TxVersion), true }
+
+		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		assert.Error(t, err)
+	}).Repeat(repeats))
+	t.Run("unknown outpoint address", testutils.Func(func(t *testing.T) {
+		init()
+		btcKeeper.GetAddressFunc = func(sdk.Context, string) (types.ScriptAddress, bool) { return types.ScriptAddress{}, false }
+
+		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		assert.Error(t, err)
+	}).Repeat(repeats))
+	t.Run("not enough deposits", testutils.Func(func(t *testing.T) {
+		init()
+		deposits = deposits[:len(deposits)-1]
+
+		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		assert.Error(t, err)
+	}).Repeat(repeats))
+	t.Run("no master keys", testutils.Func(func(t *testing.T) {
+		init()
+		signer.GetNextMasterKeyFunc = func(sdk.Context, nexus.Chain) (tss.Key, bool) { return tss.Key{}, false }
+		signer.GetCurrentMasterKeyFunc = func(sdk.Context, nexus.Chain) (tss.Key, bool) { return tss.Key{}, false }
+
+		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		assert.Error(t, err)
+	}).Repeat(repeats))
+	t.Run("no snapshot counter", testutils.Func(func(t *testing.T) {
+		init()
+		signer.GetSnapshotCounterForKeyIDFunc = func(sdk.Context, string) (int64, bool) { return 0, false }
+
+		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		assert.Error(t, err)
+	}).Repeat(repeats))
+	t.Run("no snapshot", testutils.Func(func(t *testing.T) {
+		init()
+		snapshotter.GetSnapshotFunc = func(sdk.Context, int64) (snapshot.Snapshot, bool) { return snapshot.Snapshot{}, false }
+
+		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		assert.Error(t, err)
+	}).Repeat(repeats))
+	t.Run("sign fails", testutils.Func(func(t *testing.T) {
+		init()
+		signer.StartSignFunc = func(sdk.Context, types.InitPoller, string, string, []byte, snapshot.Snapshot) error {
+			return fmt.Errorf("failed")
+		}
+
+		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+}
+
+func mapi(n int, f func(i int)) {
+	for i := 0; i < n; i++ {
+		f(i)
 	}
 }
 
-func prepareMsgSignPendingTransfersSuccessful(h sdk.Handler, ctx sdk.Context, m mocks) (sdk.Msg, expectedResult) {
-	var transfers []nexus.CrossChainTransfer
-	totalAmount := sdk.ZeroInt()
-	transferCount := int(rand.I64Between(1, 100))
-	for i := 0; i < transferCount; i++ {
-		transfer := randomTransfer()
-		totalAmount = totalAmount.Add(transfer.Asset.Amount)
-		transfers = append(transfers, transfer)
-	}
-
-	fee := btcutil.Amount(rand.PosI64())
-
-	totalDeposits := sdk.ZeroInt()
-	depositCount := 0
-	for ; totalDeposits.SubRaw(int64(fee)).LT(totalAmount); depositCount++ {
-		res, _ := h(ctx, randomMsgLink())
-		msgVerifyTx := randomMsgVerifyTx(string(res.Data))
-		totalDeposits = totalDeposits.AddRaw(int64(msgVerifyTx.OutPointInfo.Amount))
-
-		_, _ = h(ctx, msgVerifyTx)
-		_, _ = h(ctx, getMsgVoteVerifyTx(msgVerifyTx, true))
-	}
-
-	m.NexusMock.GetPendingTransfersForChainFunc = func(ctx sdk.Context, chain nexus.Chain) []nexus.CrossChainTransfer {
-		return transfers
-	}
-
-	return types.NewMsgSignPendingTransfers(sdk.AccAddress(rand.StrBetween(5, 20)), fee),
-		expectedResult{
-			depositCount:  depositCount,
-			transferCount: transferCount,
-			hasError:      false,
+func filter(events sdk.Events, predicate func(event sdk.Event) bool) sdk.Events {
+	var filtered sdk.Events
+	for _, event := range events {
+		if predicate(event) {
+			filtered = append(filtered, event)
 		}
-}
-
-func prepareMsgSignPendingTransfersNotEnoughDeposits(h sdk.Handler, ctx sdk.Context, m mocks) (sdk.Msg, expectedResult) {
-	totalDeposits := sdk.ZeroInt()
-	depositCount := int(rand.I64Between(1, 100))
-	for i := 0; i < depositCount; i++ {
-		res, _ := h(ctx, randomMsgLink())
-		msgVerifyTx := randomMsgVerifyTx(string(res.Data))
-		totalDeposits = totalDeposits.AddRaw(int64(msgVerifyTx.OutPointInfo.Amount))
-
-		_, _ = h(ctx, msgVerifyTx)
-		_, _ = h(ctx, getMsgVoteVerifyTx(msgVerifyTx, true))
 	}
-
-	fee := btcutil.Amount(rand.PosI64())
-
-	var transfers []nexus.CrossChainTransfer
-	totalAmount := sdk.ZeroInt()
-	for totalAmount.AddRaw(int64(fee)).LTE(totalDeposits) {
-		transfer := randomTransfer()
-		totalAmount = totalAmount.Add(transfer.Asset.Amount)
-		transfers = append(transfers, transfer)
-	}
-	m.NexusMock.GetPendingTransfersForChainFunc = func(ctx sdk.Context, chain nexus.Chain) []nexus.CrossChainTransfer {
-		return transfers
-	}
-
-	return types.NewMsgSignPendingTransfers(sdk.AccAddress(rand.StrBetween(5, 20)), fee),
-		expectedResult{
-			depositCount:  0,
-			transferCount: 0,
-			hasError:      true,
-		}
+	return filtered
 }
 
 func randomMsgLink() types.MsgLink {
 	return types.MsgLink{
 		Sender:         sdk.AccAddress(rand.StrBetween(5, 20)),
 		RecipientAddr:  rand.StrBetween(5, 100),
-		RecipientChain: eth.Ethereum.Name,
+		RecipientChain: rand.StrBetween(5, 100),
 	}
 }
 
-func getMsgVoteVerifyTx(msgVerifyTx types.MsgVerifyTx, result bool) *types.MsgVoteVerifiedTx {
-	return &types.MsgVoteVerifiedTx{
+func randomMsgConfirmOutpoint() types.MsgConfirmOutpoint {
+	return types.NewMsgConfirmOutpoint(sdk.AccAddress(rand.StrBetween(5, 20)), randomOutpointInfo())
+}
+
+func randomMsgVoteConfirmOutpoint() types.MsgVoteConfirmOutpoint {
+	return types.MsgVoteConfirmOutpoint{
 		Sender: sdk.AccAddress(rand.StrBetween(5, 20)),
-		PollMeta: vote.NewPollMeta(
-			types.ModuleName,
-			msgVerifyTx.Type(),
-			msgVerifyTx.OutPointInfo.OutPoint.String(),
-		),
-		VotingData: result,
+		PollMeta: vote.PollMeta{
+			Module: types.ModuleName,
+			Type:   rand.StrBetween(5, 20),
+			ID:     rand.StrBetween(5, 20),
+		},
+		Outpoint:  *randomOutpointInfo().OutPoint,
+		Confirmed: rand.Bools(0.5).Next(),
 	}
 }
 
-func randomMsgVerifyTx(addr string) types.MsgVerifyTx {
+func randomOutpointInfo() types.OutPointInfo {
 	txHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
-	return types.NewMsgVerifyTx(sdk.AccAddress(rand.StrBetween(5, 20)), types.OutPointInfo{
-		OutPoint:      wire.NewOutPoint(txHash, mathRand.Uint32()),
-		Amount:        btcutil.Amount(rand.PosI64()),
-		Address:       addr,
-		Confirmations: rand.PosI64(),
-	})
+	return types.OutPointInfo{
+		OutPoint: wire.NewOutPoint(txHash, mathRand.Uint32()),
+		Amount:   btcutil.Amount(rand.I64Between(1, 10000000000)),
+		Address:  randomAddress().EncodeAddress(),
+	}
 }
 
 func randomTransfer() nexus.CrossChainTransfer {
 	return nexus.CrossChainTransfer{
 		Recipient: nexus.CrossChainAddress{Chain: exported.Bitcoin, Address: randomAddress().EncodeAddress()},
-		Asset:     sdk.NewInt64Coin(denom.Satoshi, rand.PosI64()),
+		Asset:     sdk.NewInt64Coin(exported.Bitcoin.NativeAsset, rand.I64Between(1, 100000000)),
 		ID:        mathRand.Uint64(),
 	}
 }
 
-func prepareMsgSignPendingTransfersDoNothing(_ sdk.Handler, _ sdk.Context, m mocks) (sdk.Msg, expectedResult) {
-	m.NexusMock.GetPendingTransfersForChainFunc = func(ctx sdk.Context, chain nexus.Chain) []nexus.CrossChainTransfer {
-		return nil
-	}
-
-	return types.NewMsgSignPendingTransfers(
-			sdk.AccAddress(rand.StrBetween(5, 20)),
-			btcutil.Amount(rand.PosI64()),
-		), expectedResult{
-			depositCount:  0,
-			transferCount: 0,
-			hasError:      true,
-		}
-}
-
-func randomAddress() btcutil.Address {
-	addr, err := btcutil.NewAddressScriptHashFromHash(rand.Bytes(ripemd160.Size), types.DefaultParams().Network.Params)
+func randomAddress() *btcutil.AddressWitnessScriptHash {
+	addr, err := btcutil.NewAddressWitnessScriptHash(rand.Bytes(32), types.DefaultParams().Network.Params())
 	if err != nil {
 		panic(err)
 	}

@@ -79,6 +79,6 @@ type Voter interface {
 	InitPoll(ctx sdk.Context, poll PollMeta) error
 	DeletePoll(ctx sdk.Context, poll PollMeta)
 	RecordVote(vote MsgVote)
-	TallyVote(ctx sdk.Context, vote MsgVote) error
+	TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta PollMeta, data VotingData) error
 	Result(ctx sdk.Context, poll PollMeta) VotingData
 }

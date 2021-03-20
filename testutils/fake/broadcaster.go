@@ -11,6 +11,7 @@ import (
 
 var _ exported.Broadcaster = Broadcaster{}
 
+// Broadcaster for module integration tests
 type Broadcaster struct {
 	submitMsg      func(msg sdk.Msg) (result <-chan *Result)
 	val2Proxy      map[string]sdk.AccAddress
@@ -30,6 +31,7 @@ func NewBroadcaster(cdc *codec.Codec, localPrincipal sdk.ValAddress, submitMsg f
 	}
 }
 
+// Broadcast submits the given messages to the blockchain
 func (b Broadcaster) Broadcast(ctx sdk.Context, msgs []exported.MsgWithSenderSetter) error {
 	for _, msg := range msgs {
 		proxy := b.GetProxy(ctx, b.LocalPrincipal)
@@ -53,24 +55,29 @@ func (b Broadcaster) Broadcast(ctx sdk.Context, msgs []exported.MsgWithSenderSet
 	return nil
 }
 
+// RegisterProxy registers the given proxy for the given validator principal
 func (b Broadcaster) RegisterProxy(_ sdk.Context, principal sdk.ValAddress, proxy sdk.AccAddress) error {
 	b.val2Proxy[principal.String()] = proxy
 	b.proxy2Val[proxy.String()] = principal
 	return nil
 }
 
+// GetPrincipal returns the principal validator associated with the given proxy
 func (b Broadcaster) GetPrincipal(_ sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
 	return b.proxy2Val[proxy.String()]
 }
 
+// GetProxy returns the proxy associated with the given principal validator
 func (b Broadcaster) GetProxy(_ sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
 	return b.val2Proxy[principal.String()]
 }
 
+// GetProxyCount returns the proxy count
 func (b Broadcaster) GetProxyCount(_ sdk.Context) uint32 {
 	return uint32(len(b.val2Proxy))
 }
 
+// GetLocalPrincipal returns the principal validator associated with this broadcaster instance
 func (b Broadcaster) GetLocalPrincipal(_ sdk.Context) sdk.ValAddress {
 	return b.LocalPrincipal
 }

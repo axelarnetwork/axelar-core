@@ -20,7 +20,7 @@ const (
 )
 
 // NewQuerier returns a new querier for the Bitcoin module
-func NewQuerier(k Keeper, s types.Signer, n types.Nexus) sdk.Querier {
+func NewQuerier(k types.BTCKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		var res []byte
 		var err error
@@ -40,7 +40,7 @@ func NewQuerier(k Keeper, s types.Signer, n types.Nexus) sdk.Querier {
 	}
 }
 
-func queryDepositAddress(ctx sdk.Context, k Keeper, s types.Signer, n types.Nexus, data []byte) ([]byte, error) {
+func queryDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n types.Nexus, data []byte) ([]byte, error) {
 	var params types.DepositQueryParams
 	if err := types.ModuleCdc.UnmarshalJSON(data, &params); err != nil {
 		return nil, fmt.Errorf("could not parse the recipient")
@@ -63,9 +63,9 @@ func queryDepositAddress(ctx sdk.Context, k Keeper, s types.Signer, n types.Nexu
 	return []byte(addr.EncodeAddress()), nil
 }
 
-func getConsolidationTx(ctx sdk.Context, k Keeper) ([]byte, error) {
-	tx := k.GetSignedTx(ctx)
-	if tx == nil {
+func getConsolidationTx(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {
+	tx, ok := k.GetSignedTx(ctx)
+	if !ok {
 		return nil, fmt.Errorf("no signed consolidation transaction ready")
 	}
 	return k.Codec().MustMarshalJSON(tx), nil

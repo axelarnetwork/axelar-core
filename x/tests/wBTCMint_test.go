@@ -202,7 +202,7 @@ func Test_wBTC_mint(t *testing.T) {
 		depositInfo := randomOutpointInfo(depositAddr)
 
 		// Verify the previously received information
-		res = <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender(), depositInfo))
+		res = <-chain.Submit(btcTypes.NewMsgConfirmOutpoint(randomSender(), depositInfo))
 		assert.NoError(t, res.Error)
 
 	}

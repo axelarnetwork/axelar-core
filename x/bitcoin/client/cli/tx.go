@@ -61,7 +61,7 @@ func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
 
 			outInfo, err := types.NewOutPointInfo(outPoint, txOut)
 
-			msg := types.MsgVerifyTx{Sender: cliCtx.GetFromAddress(), OutPointInfo: outInfo}
+			msg := types.MsgConfirmOutpoint{Sender: cliCtx.GetFromAddress(), OutPointInfo: outInfo}
 
 			if err := msg.ValidateBasic(); err != nil {
 				return err

@@ -752,8 +752,8 @@ func assertVotedOnPoll(t *testing.T, voter *ethMock.VoterMock, hash common.Hash,
 	initPoll := voter.InitPollCalls()[0].Poll
 
 	assert.Equal(t, 1, len(voter.RecordVoteCalls()))
-	assert.Equal(t, initPoll, voter.RecordVoteCalls()[0].Vote.Poll())
-	assert.Equal(t, verified, voter.RecordVoteCalls()[0].Vote.Data())
+	assert.Equal(t, initPoll, voter.RecordVoteCalls()[0].VoteMoqParam.Poll())
+	assert.Equal(t, verified, voter.RecordVoteCalls()[0].VoteMoqParam.Data())
 }
 
 func newKeeper(ctx sdk.Context, confHeight int64) keeper.Keeper {

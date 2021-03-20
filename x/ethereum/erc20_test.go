@@ -2,7 +2,6 @@ package ethereum
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"math/big"
 	"math/rand"
 	"testing"
@@ -30,7 +29,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types/mock"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	"github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 const (
@@ -125,7 +124,7 @@ func TestSig(t *testing.T) {
 
 		hash := signer.Hash(tx1)
 
-		sig, err := types.ToEthSignature(exported.Signature{R: R1, S: S1}, hash, privateKey.PublicKey)
+		sig, err := types.ToEthSignature(tss.Signature{R: R1, S: S1}, hash, privateKey.PublicKey)
 		assert.NoError(t, err)
 
 		recoveredPK, err := crypto.SigToPub(hash.Bytes(), sig[:])
@@ -194,8 +193,11 @@ func TestDeploy(t *testing.T) {
 	assert.NoError(t, err)
 	signer := ethTypes.NewEIP155Signer(chainID)
 	var gasLimit uint64 = 3000000
-	tssSigner := &mock.SignerMock{GetCurrentMasterKeyFunc: func(sdk.Context, nexus.Chain) (ecdsa.PublicKey, bool) {
-		return privateKey.PublicKey, true
+	tssSigner := &mock.SignerMock{GetCurrentMasterKeyFunc: func(_ sdk.Context, _ nexus.Chain) (tss.Key, bool) {
+		return tss.Key{
+			ID:    rand2.StrBetween(5, 20),
+			Value: privateKey.PublicKey,
+		}, true
 	}}
 
 	deployParams := types.DeployParams{

@@ -1,36 +1,36 @@
 package bitcoin
 
 import (
-	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
 	"strconv"
 
+	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // NewHandler creates an sdk.Handler for all bitcoin type messages
-func NewHandler(k keeper.Keeper, v types.Voter, signer types.Signer, n types.Nexus, snapshotter types.Snapshotter) sdk.Handler {
+func NewHandler(k types.BTCKeeper, v types.Voter, signer types.Signer, n types.Nexus, snapshotter types.Snapshotter) sdk.Handler {
 	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
 		case types.MsgLink:
-			return handleMsgLink(ctx, k, signer, n, msg)
-		case types.MsgVerifyTx:
-			return handleMsgVerifyTx(ctx, k, v, msg)
-		case *types.MsgVoteVerifiedTx:
-			return handleMsgVoteVerifiedTx(ctx, k, v, n, msg)
+			return HandleMsgLink(ctx, k, signer, n, msg)
+		case types.MsgConfirmOutpoint:
+			return HandleMsgConfirmOutpoint(ctx, k, v, msg)
+		case types.MsgVoteConfirmOutpoint:
+			return HandleMsgVoteConfirmOutpoint(ctx, k, v, n, msg)
 		case types.MsgSignPendingTransfers:
-			return handleMsgSignPendingTransfers(ctx, k, signer, n, snapshotter, v, msg)
+			return HandleMsgSignPendingTransfers(ctx, k, signer, n, snapshotter, v, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
@@ -48,157 +48,134 @@ func NewHandler(k keeper.Keeper, v types.Voter, signer types.Signer, n types.Nex
 	}
 }
 
-func handleMsgLink(ctx sdk.Context, k keeper.Keeper, s types.Signer, n types.Nexus, msg types.MsgLink) (*sdk.Result, error) {
-	params, err := checkLinkRequesites(ctx, s, n, msg)
+// HandleMsgLink handles address linking
+func HandleMsgLink(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n types.Nexus, msg types.MsgLink) (*sdk.Result, error) {
+	key, recipientChain, err := checkLinkRequisites(ctx, s, n, msg.RecipientChain)
 	if err != nil {
 		return nil, err
 	}
 
-	recipient := nexus.CrossChainAddress{Chain: params.recipientChain, Address: msg.RecipientAddr}
-	depositAddr := types.NewLinkedAddress(params.key, k.GetNetwork(ctx), recipient)
+	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: msg.RecipientAddr}
+	depositAddr := types.NewLinkedAddress(key, k.GetNetwork(ctx), recipient)
 	n.LinkAddresses(ctx, depositAddr.ToCrossChainAddr(), recipient)
-
-	// store script and key used to create the address for later reference
-	k.SetRedeemScriptByAddress(ctx, depositAddr, depositAddr.RedeemScript)
-	k.SetKeyIDByAddress(ctx, depositAddr, params.keyID)
+	k.SetAddress(ctx, depositAddr)
 
 	return &sdk.Result{
-		Data: []byte(depositAddr.EncodeAddress()),
-		Log:  fmt.Sprintf("successfully linked {%s} and {%s}", depositAddr.ToCrossChainAddr().String(), recipient.String()),
-	}, nil
-}
-
-type linkParams struct {
-	keyID          string
-	key            ecdsa.PublicKey
-	recipientChain nexus.Chain
-}
-
-func checkLinkRequesites(ctx sdk.Context, s types.Signer, n types.Nexus, msg types.MsgLink) (linkParams, error) {
-	keyID, ok := s.GetCurrentMasterKeyID(ctx, exported.Bitcoin)
-	if !ok {
-		return linkParams{}, fmt.Errorf("master key not set")
-	}
-
-	masterKey, ok := s.GetKey(ctx, keyID)
-	if !ok {
-		return linkParams{}, fmt.Errorf("master key not set")
-	}
-
-	recipientChain, ok := n.GetChain(ctx, msg.RecipientChain)
-	if !ok {
-		return linkParams{}, fmt.Errorf("unknown recipient chain")
-	}
-
-	found := n.IsAssetRegistered(ctx, recipientChain.Name, exported.Bitcoin.NativeAsset)
-	if !found {
-		return linkParams{}, fmt.Errorf("asset '%s' not registered for chain '%s'", exported.Bitcoin.NativeAsset, recipientChain.Name)
-	}
-
-	return linkParams{keyID: keyID, key: masterKey, recipientChain: recipientChain}, nil
-}
-
-func handleMsgVerifyTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.MsgVerifyTx) (*sdk.Result, error) {
-	if _, ok := k.GetVerifiedOutPointInfo(ctx, msg.OutPointInfo.OutPoint); ok {
-		return nil, fmt.Errorf("already verified")
-	}
-
-	if _, ok := k.GetSpentOutPointInfo(ctx, msg.OutPointInfo.OutPoint); ok {
-		return nil, fmt.Errorf("already spent")
-	}
-
-	if _, ok := k.GetKeyIDByAddress(ctx, msg.OutPointInfo.Address); !ok {
-		return nil, fmt.Errorf("outpoint address unknown, ignoring verification")
-	}
-
-	poll := vote.NewPollMetaWithNonce(types.ModuleName, msg.Type(), msg.OutPointInfo.OutPoint.String(), ctx.BlockHeight(), k.GetRevoteLockingPeriod(ctx))
-	if err := v.InitPoll(ctx, poll); err != nil {
-		return nil, err
-	}
-
-	// store outpoint for later reference
-	k.SetUnverifiedOutpointInfo(ctx, msg.OutPointInfo)
-
-	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeVerification,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
-		sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(k.GetRequiredConfirmationHeight(ctx), 10)),
-		sdk.NewAttribute(types.AttributeKeyOutPoint, string(k.Codec().MustMarshalJSON(msg.OutPointInfo))),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(poll))),
-	))
-
-	return &sdk.Result{
-		Log:    fmt.Sprintf("votes on verification of %s started", msg.OutPointInfo.OutPoint.String()),
+		Data:   []byte(depositAddr.EncodeAddress()),
+		Log:    fmt.Sprintf("successfully linked {%s} and {%s}", depositAddr.ToCrossChainAddr().String(), recipient.String()),
 		Events: ctx.EventManager().Events(),
 	}, nil
 }
 
-func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n types.Nexus, msg *types.MsgVoteVerifiedTx) (*sdk.Result, error) {
-	outPoint, err := types.OutPointFromStr(msg.PollMeta.ID)
-	if err != nil {
+// HandleMsgConfirmOutpoint handles the confirmation of a Bitcoin outpoint
+func HandleMsgConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, voter types.InitPoller, msg types.MsgConfirmOutpoint) (*sdk.Result, error) {
+	_, state, ok := k.GetOutPointInfo(ctx, *msg.OutPointInfo.OutPoint)
+	switch {
+	case !ok:
+		break
+	case state == types.CONFIRMED:
+		return nil, fmt.Errorf("already confirmed")
+	case state == types.SPENT:
+		return nil, fmt.Errorf("already spent")
+	}
+
+	if _, ok := k.GetAddress(ctx, msg.OutPointInfo.Address); !ok {
+		return nil, fmt.Errorf("outpoint address unknown, aborting deposit confirmation")
+	}
+
+	poll := vote.NewPollMetaWithNonce(types.ModuleName, msg.Type(), msg.OutPointInfo.OutPoint.String(), ctx.BlockHeight(), k.GetRevoteLockingPeriod(ctx))
+	if err := voter.InitPoll(ctx, poll); err != nil {
 		return nil, err
 	}
+	k.SetUnconfirmedOutpointInfo(ctx, poll, msg.OutPointInfo)
 
-	// Check if the outpoint has been verified already.
-	// If the voting threshold has been met and additional votes are received they should not return an error
-	info, ok := k.GetVerifiedOutPointInfo(ctx, outPoint)
-	if ok {
-		return &sdk.Result{Log: fmt.Sprintf("outpoint %s already verified", info.OutPoint.String())}, nil
-	}
+	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeOutpointConfirmation,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
+		sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(k.GetRequiredConfirmationHeight(ctx), 10)),
+		sdk.NewAttribute(types.AttributeKeyOutPointInfo, string(k.Codec().MustMarshalJSON(msg.OutPointInfo))),
+		sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(poll))),
+	))
 
-	if err := v.TallyVote(ctx, msg); err != nil {
-		return nil, err
-	}
+	return &sdk.Result{
+		Log:    fmt.Sprintf("votes on confirmation of %s started", msg.OutPointInfo.OutPoint.String()),
+		Events: ctx.EventManager().Events(),
+	}, nil
+}
 
-	result := v.Result(ctx, msg.Poll())
-	if result == nil {
-		return &sdk.Result{Log: fmt.Sprintf("not enough votes to verify outpoint %s yet", msg.PollMeta.ID)}, nil
-	}
+// HandleMsgVoteConfirmOutpoint handles the votes on an outpoint confirmation
+func HandleMsgVoteConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, v types.Voter, n types.Nexus, msg types.MsgVoteConfirmOutpoint) (*sdk.Result, error) {
+	// has the outpoint been confirmed before?
+	confirmedOutpoint, state, confirmedBefore := k.GetOutPointInfo(ctx, msg.Outpoint)
+	if confirmedBefore {
 
-	k.ProcessVerificationResult(ctx, outPoint, result.(bool))
-	v.DeletePoll(ctx, msg.Poll())
+		defer v.DeletePoll(ctx, msg.PollMeta)
+		defer k.DeleteUnconfirmedOutPointInfo(ctx, msg.PollMeta)
 
-	tx := k.GetSignedTx(ctx)
-	if tx != nil {
-		// previous consolidation tx has been sent to Bitcoin, is no longer blocking
-		txHash := tx.TxHash()
-		if txHash.IsEqual(&outPoint.Hash) {
-			k.DeleteSignedTx(ctx)
+		// If the voting threshold has been met and additional votes are received they should not return an error
+		switch {
+		case state == types.CONFIRMED:
+			return &sdk.Result{Log: fmt.Sprintf("outpoint %s already confirmed", confirmedOutpoint.OutPoint.String())}, nil
+		case state == types.SPENT:
+			return &sdk.Result{Log: fmt.Sprintf("outpoint %s already spent", confirmedOutpoint.OutPoint.String())}, nil
+		default:
+			panic(fmt.Sprintf("invalid outpoint state %v", state))
 		}
 	}
+	// is there an ongoing poll?
+	outPointInfo, pollFound := k.GetUnconfirmedOutPointInfo(ctx, msg.PollMeta)
+	if !pollFound {
+		return nil, fmt.Errorf("no outpoint found for poll %s", msg.PollMeta.String())
+	}
 
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeVerification,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueResult),
-			sdk.NewAttribute(types.AttributeKeyResult, strconv.FormatBool(result.(bool))),
-			sdk.NewAttribute(types.AttributeKeyOutPoint, string(k.Codec().MustMarshalJSON(outPoint))),
-		))
+	// assert: the outpoint is known and has not been confirmed before
 
-	info, ok = k.GetVerifiedOutPointInfo(ctx, outPoint)
-	if !ok {
+	if err := v.TallyVote(ctx, msg.Sender, msg.PollMeta, msg.Confirmed); err != nil {
+		return nil, err
+	}
+
+	result := v.Result(ctx, msg.PollMeta)
+	if result == nil {
+		return &sdk.Result{Log: fmt.Sprintf("not enough votes to confirm outpoint %s yet", msg.PollMeta.ID)}, nil
+	}
+
+	// assert: the poll has completed
+	confirmed := result.(bool)
+
+	v.DeletePoll(ctx, msg.PollMeta)
+	k.DeleteUnconfirmedOutPointInfo(ctx, msg.PollMeta)
+
+	// handle poll result
+	event := sdk.NewEvent(types.EventTypeOutpointConfirmation,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(types.AttributeKeyOutPointInfo, string(k.Codec().MustMarshalJSON(outPointInfo))))
+
+	if !confirmed {
+		ctx.EventManager().EmitEvent(
+			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueRejected)))
 		return &sdk.Result{
+			Log:    fmt.Sprintf("outpoint %s was discarded ", msg.PollMeta.ID),
 			Events: ctx.EventManager().Events(),
-			Log:    fmt.Sprintf("outpoint %s was discarded", msg.PollMeta.ID),
 		}, nil
 	}
+	ctx.EventManager().EmitEvent(
+		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirmed)))
 
-	// associate the key with the specific outpoint
-	keyID, ok := k.GetKeyIDByAddress(ctx, info.Address)
-	if !ok {
-		return nil, fmt.Errorf("key ID not found")
-	}
-	k.SetKeyIDByOutpoint(ctx, outPoint, keyID)
+	k.SetOutpointInfo(ctx, outPointInfo, types.CONFIRMED)
 
-	depositAddr := nexus.CrossChainAddress{Address: info.Address, Chain: exported.Bitcoin}
-	amount := sdk.NewInt64Coin(exported.Bitcoin.NativeAsset, int64(info.Amount))
-
-	// outpoints that are not used as deposits for cross-chain transfers need to be verified as well (e.g. funds held by the master key).
-	// Therefore, failing to enqueue for transfer is not an error
-	if err = n.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
+	// if this is the consolidation outpoint it means the latest consolidation transaction is confirmed on Bitcoin
+	if tx, ok := k.GetSignedTx(ctx); ok && tx.TxHash() == outPointInfo.OutPoint.Hash {
+		k.DeleteSignedTx(ctx)
 		return &sdk.Result{
 			Events: ctx.EventManager().Events(),
-			Log:    sdkerrors.Wrap(err, "prepared no transfer").Error()}, nil
+			Log:    "confirmed consolidation transaction"}, nil
+	}
+
+	// handle cross-chain transfer
+	depositAddr := nexus.CrossChainAddress{Address: outPointInfo.Address, Chain: exported.Bitcoin}
+	amount := sdk.NewInt64Coin(exported.Bitcoin.NativeAsset, int64(outPointInfo.Amount))
+	if err := n.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
+		return nil, sdkerrors.Wrap(err, "cross-chain transfer failed")
 	}
 
 	return &sdk.Result{
@@ -207,16 +184,20 @@ func handleMsgVoteVerifiedTx(ctx sdk.Context, k keeper.Keeper, v types.Voter, n 
 	}, nil
 }
 
-func handleMsgSignPendingTransfers(ctx sdk.Context, k keeper.Keeper, signer types.Signer, n types.Nexus, snapshotter types.Snapshotter, v types.Voter, msg types.MsgSignPendingTransfers) (*sdk.Result, error) {
-	if tx := k.GetRawTx(ctx); tx != nil {
+// HandleMsgSignPendingTransfers handles the signing of a consolidation transaction (consolidate confirmed outpoints and pay out transfers)
+func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, n types.Nexus, snapshotter types.Snapshotter, v types.Voter, msg types.MsgSignPendingTransfers) (*sdk.Result, error) {
+	if _, ok := k.GetUnsignedTx(ctx); ok {
 		return nil, fmt.Errorf("consolidation in progress")
 	}
-	if tx := k.GetSignedTx(ctx); tx != nil {
-		return nil, fmt.Errorf("previous consolidation transaction must be verified first")
+	if _, ok := k.GetSignedTx(ctx); ok {
+		return nil, fmt.Errorf("previous consolidation transaction must be confirmed first")
 	}
 
 	outPuts, totalWithdrawals := prepareOutputs(ctx, k, n)
-	prevOuts, totalDeposits := prepareInputs(ctx, k)
+	prevOuts, totalDeposits, err := prepareInputs(ctx, k)
+	if err != nil {
+		return nil, err
+	}
 
 	change := totalDeposits.Sub(totalWithdrawals).SubRaw(int64(msg.Fee))
 	switch change.Sign() {
@@ -240,9 +221,9 @@ func handleMsgSignPendingTransfers(ctx sdk.Context, k keeper.Keeper, signer type
 	if err != nil {
 		return nil, err
 	}
-	k.SetRawTx(ctx, tx)
+	k.SetUnsignedTx(ctx, tx)
 
-	err = startSignInputs(ctx, k, signer, snapshotter, v, tx)
+	err = startSignInputs(ctx, signer, snapshotter, v, tx, prevOuts)
 	if err != nil {
 		return nil, err
 	}
@@ -253,12 +234,12 @@ func handleMsgSignPendingTransfers(ctx sdk.Context, k keeper.Keeper, signer type
 	}, nil
 }
 
-func prepareOutputs(ctx sdk.Context, k keeper.Keeper, n types.Nexus) ([]types.Output, sdk.Int) {
+func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.Output, sdk.Int) {
 	pendingTransfers := n.GetPendingTransfersForChain(ctx, exported.Bitcoin)
 	var outPuts []types.Output
 	totalOut := sdk.ZeroInt()
 	for _, transfer := range pendingTransfers {
-		recipient, err := btcutil.DecodeAddress(transfer.Recipient.Address, k.GetNetwork(ctx).Params)
+		recipient, err := btcutil.DecodeAddress(transfer.Recipient.Address, k.GetNetwork(ctx).Params())
 		if err != nil {
 			k.Logger(ctx).Error(fmt.Sprintf("%s is not a valid address", transfer.Recipient))
 			continue
@@ -271,59 +252,53 @@ func prepareOutputs(ctx sdk.Context, k keeper.Keeper, n types.Nexus) ([]types.Ou
 	}
 	return outPuts, totalOut
 }
-func prepareInputs(ctx sdk.Context, k keeper.Keeper) ([]*wire.OutPoint, sdk.Int) {
-	var prevOuts []*wire.OutPoint
+
+func prepareInputs(ctx sdk.Context, k types.BTCKeeper) ([]types.OutPointToSign, sdk.Int, error) {
+	var prevOuts []types.OutPointToSign
 	totalDeposits := sdk.ZeroInt()
-	for _, info := range k.GetVerifiedOutPointInfos(ctx) {
-		prevOuts = append(prevOuts, info.OutPoint)
+	for _, info := range k.GetConfirmedOutPointInfos(ctx) {
+		addr, ok := k.GetAddress(ctx, info.Address)
+		if !ok {
+			return nil, sdk.ZeroInt(), fmt.Errorf("address for confirmed outpoint %s must be known", info.OutPoint.String())
+		}
+		prevOuts = append(prevOuts, types.OutPointToSign{OutPointInfo: info, ScriptAddress: addr})
 		totalDeposits = totalDeposits.AddRaw(int64(info.Amount))
-		k.SpendVerifiedOutPoint(ctx, info.OutPoint.String())
+		k.DeleteOutpointInfo(ctx, *info.OutPoint)
+		k.SetOutpointInfo(ctx, info, types.SPENT)
 	}
-	return prevOuts, totalDeposits
+	return prevOuts, totalDeposits, nil
 }
 
-func prepareChange(ctx sdk.Context, k keeper.Keeper, signer types.Signer, change sdk.Int) (types.Output, error) {
+func prepareChange(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, change sdk.Int) (types.Output, error) {
 	if !change.IsInt64() {
 		return types.Output{}, fmt.Errorf("the calculated change is too large for a single transaction")
 	}
 
 	// if a new master key has been assigned for rotation spend change to that address, otherwise use the current one
-	keyID, ok := signer.GetNextMasterKeyID(ctx, exported.Bitcoin)
+	key, ok := signer.GetNextMasterKey(ctx, exported.Bitcoin)
 	if !ok {
-		keyID, ok = signer.GetCurrentMasterKeyID(ctx, exported.Bitcoin)
+		key, ok = signer.GetCurrentMasterKey(ctx, exported.Bitcoin)
 		if !ok {
 			return types.Output{}, fmt.Errorf("key not found")
 		}
 	}
 
-	pk, ok := signer.GetKey(ctx, keyID)
-	if !ok {
-		return types.Output{}, fmt.Errorf("key not found")
-	}
+	addr := types.NewConsolidationAddress(key, k.GetNetwork(ctx))
+	k.SetAddress(ctx, addr)
 
-	addr := types.NewConsolidationAddress(pk, k.GetNetwork(ctx))
-
-	k.SetRedeemScriptByAddress(ctx, addr, addr.RedeemScript)
-	k.SetKeyIDByAddress(ctx, addr, keyID)
 	return types.Output{Amount: btcutil.Amount(change.Int64()), Recipient: addr.AddressWitnessScriptHash}, nil
 }
 
-func startSignInputs(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snapshotter types.Snapshotter, v types.Voter, tx *wire.MsgTx) error {
-	hashes, err := k.GetHashesToSign(ctx, tx)
-	if err != nil {
-		return err
-	}
-	for i, hash := range hashes {
-		serializedHash := hex.EncodeToString(hash)
-
-		keyID, ok := k.GetKeyIDByOutpoint(ctx, &tx.TxIn[i].PreviousOutPoint)
-		if !ok {
-			return fmt.Errorf("no key ID for chain %s found", exported.Bitcoin.Name)
+func startSignInputs(ctx sdk.Context, signer types.Signer, snapshotter types.Snapshotter, v types.Voter, tx *wire.MsgTx, outpointsToSign []types.OutPointToSign) error {
+	for i, in := range outpointsToSign {
+		hash, err := txscript.CalcWitnessSigHash(in.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, i, int64(in.Amount))
+		if err != nil {
+			return err
 		}
 
-		counter, ok := signer.GetSnapshotCounterForKeyID(ctx, keyID)
+		counter, ok := signer.GetSnapshotCounterForKeyID(ctx, in.Key.ID)
 		if !ok {
-			return fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
+			return fmt.Errorf("no snapshot counter for key ID %s registered", in.Key.ID)
 		}
 
 		snapshot, ok := snapshotter.GetSnapshot(ctx, counter)
@@ -331,10 +306,29 @@ func startSignInputs(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 			return fmt.Errorf("no snapshot found for counter num %d", counter)
 		}
 
-		err = signer.StartSign(ctx, v, keyID, serializedHash, hash, snapshot)
+		sigID := hex.EncodeToString(hash)
+		err = signer.StartSign(ctx, v, in.Key.ID, sigID, hash, snapshot)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func checkLinkRequisites(ctx sdk.Context, s types.Signer, n types.Nexus, recipientChainName string) (tss.Key, nexus.Chain, error) {
+	key, ok := s.GetCurrentMasterKey(ctx, exported.Bitcoin)
+	if !ok {
+		return tss.Key{}, nexus.Chain{}, fmt.Errorf("master key not set")
+	}
+
+	recipientChain, ok := n.GetChain(ctx, recipientChainName)
+	if !ok {
+		return tss.Key{}, nexus.Chain{}, fmt.Errorf("unknown recipient chain")
+	}
+
+	found := n.IsAssetRegistered(ctx, recipientChain.Name, exported.Bitcoin.NativeAsset)
+	if !found {
+		return tss.Key{}, nexus.Chain{}, fmt.Errorf("asset '%s' not registered for chain '%s'", exported.Bitcoin.NativeAsset, recipientChain.Name)
+	}
+	return key, recipientChain, nil
 }

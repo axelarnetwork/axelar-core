@@ -929,7 +929,7 @@ var _ tsstypes.Voter = &VoterMock{}
 // 			ResultFunc: func(ctx sdk.Context, poll voting.PollMeta) voting.VotingData {
 // 				panic("mock out the Result method")
 // 			},
-// 			TallyVoteFunc: func(ctx sdk.Context, vote voting.MsgVote) error {
+// 			TallyVoteFunc: func(ctx sdk.Context, sender sdk.AccAddress, pollMeta voting.PollMeta, data voting.VotingData) error {
 // 				panic("mock out the TallyVote method")
 // 			},
 // 		}
@@ -952,7 +952,7 @@ type VoterMock struct {
 	ResultFunc func(ctx sdk.Context, poll voting.PollMeta) voting.VotingData
 
 	// TallyVoteFunc mocks the TallyVote method.
-	TallyVoteFunc func(ctx sdk.Context, vote voting.MsgVote) error
+	TallyVoteFunc func(ctx sdk.Context, sender sdk.AccAddress, pollMeta voting.PollMeta, data voting.VotingData) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -986,8 +986,12 @@ type VoterMock struct {
 		TallyVote []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
-			// Vote is the vote argument value.
-			Vote voting.MsgVote
+			// Sender is the sender argument value.
+			Sender sdk.AccAddress
+			// PollMeta is the pollMeta argument value.
+			PollMeta voting.PollMeta
+			// Data is the data argument value.
+			Data voting.VotingData
 		}
 	}
 	lockDeletePoll sync.RWMutex
@@ -1134,33 +1138,41 @@ func (mock *VoterMock) ResultCalls() []struct {
 }
 
 // TallyVote calls TallyVoteFunc.
-func (mock *VoterMock) TallyVote(ctx sdk.Context, vote voting.MsgVote) error {
+func (mock *VoterMock) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta voting.PollMeta, data voting.VotingData) error {
 	if mock.TallyVoteFunc == nil {
 		panic("VoterMock.TallyVoteFunc: method is nil but Voter.TallyVote was just called")
 	}
 	callInfo := struct {
-		Ctx  sdk.Context
-		Vote voting.MsgVote
+		Ctx      sdk.Context
+		Sender   sdk.AccAddress
+		PollMeta voting.PollMeta
+		Data     voting.VotingData
 	}{
-		Ctx:  ctx,
-		Vote: vote,
+		Ctx:      ctx,
+		Sender:   sender,
+		PollMeta: pollMeta,
+		Data:     data,
 	}
 	mock.lockTallyVote.Lock()
 	mock.calls.TallyVote = append(mock.calls.TallyVote, callInfo)
 	mock.lockTallyVote.Unlock()
-	return mock.TallyVoteFunc(ctx, vote)
+	return mock.TallyVoteFunc(ctx, sender, pollMeta, data)
 }
 
 // TallyVoteCalls gets all the calls that were made to TallyVote.
 // Check the length with:
 //     len(mockedVoter.TallyVoteCalls())
 func (mock *VoterMock) TallyVoteCalls() []struct {
-	Ctx  sdk.Context
-	Vote voting.MsgVote
+	Ctx      sdk.Context
+	Sender   sdk.AccAddress
+	PollMeta voting.PollMeta
+	Data     voting.VotingData
 } {
 	var calls []struct {
-		Ctx  sdk.Context
-		Vote voting.MsgVote
+		Ctx      sdk.Context
+		Sender   sdk.AccAddress
+		PollMeta voting.PollMeta
+		Data     voting.VotingData
 	}
 	mock.lockTallyVote.RLock()
 	calls = mock.calls.TallyVote

@@ -1,18 +1,23 @@
 package types
 
 import (
+	"crypto/elliptic"
+
+	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/codec"
 )
 
 // RegisterCodec registers concrete types on codec
 func RegisterCodec(cdc *codec.Codec) {
-	cdc.RegisterConcrete(&MsgVoteVerifiedTx{}, "bitcoin/VoteVerifiedTx", nil)
-	cdc.RegisterConcrete(MsgVerifyTx{}, "bitcoin/VerifyTx", nil)
+	cdc.RegisterConcrete(MsgVoteConfirmOutpoint{}, "bitcoin/VoteVerifiedTx", nil)
+	cdc.RegisterConcrete(MsgConfirmOutpoint{}, "bitcoin/VerifyTx", nil)
 	cdc.RegisterConcrete(MsgLink{}, "bitcoin/Link", nil)
 	cdc.RegisterConcrete(MsgSignPendingTransfers{}, "bitcoin/SignPendingTransfers", nil)
 	cdc.RegisterInterface((*btcutil.Address)(nil), nil)
 	cdc.RegisterConcrete(&btcutil.AddressPubKeyHash{}, "bitcoin/pkhash", nil)
+	cdc.RegisterInterface((*elliptic.Curve)(nil), nil)
+	cdc.RegisterConcrete(btcec.S256(), "bitcoin/curve", nil)
 }
 
 // ModuleCdc defines the module codec

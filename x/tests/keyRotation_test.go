@@ -57,7 +57,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	// set up chain
 	const nodeCount = 10
 	chain, nodeData := initChain(nodeCount, "keyRotation")
-	keygenDone, btcVerifyDone, ethVerifyDone, signDone := registerWaitEventListeners(nodeData[0])
+	keygenDone, btcConfirmationDone, ethVerifyDone, signDone := registerWaitEventListeners(nodeData[0])
 
 	// register proxies for all validators
 	for i, proxy := range randStrings.Take(nodeCount) {
@@ -202,7 +202,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		depositInfo := randomOutpointInfo(depositAddr)
 
 		// verify deposit to master key
-		verifyResult1 := <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender(), depositInfo))
+		verifyResult1 := <-chain.Submit(btcTypes.NewMsgConfirmOutpoint(randomSender(), depositInfo))
 		assert.NoError(t, verifyResult1.Error)
 
 		// store this information for later in the test
@@ -211,7 +211,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	// wait for voting to be done
-	if err := waitFor(btcVerifyDone, totalDepositCount); err != nil {
+	if err := waitFor(btcConfirmationDone, totalDepositCount); err != nil {
 		assert.FailNow(t, "verification", err)
 	}
 
@@ -241,7 +241,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	// wait for the end-block trigger to match signatures with the tx
-	chain.WaitNBlocks(btcTypes.DefaultParams().SigCheckInterval)
+	chain.WaitNBlocks(2 * btcTypes.DefaultParams().SigCheckInterval)
 
 	// get signed tx to Bitcoin
 	bz, err = nodeData[0].Node.Query([]string{btcTypes.QuerierRoute, btcKeeper.GetTx}, abci.RequestQuery{})
@@ -252,18 +252,18 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.True(t, txCorrectlyFormed(signedTx, deposits, totalDepositAmount-fee))
 
 	// expected consolidation info
-	consAddr := getAddress(signedTx.TxOut[0], btcTypes.DefaultParams().Network.Params)
+	consAddr := getAddress(signedTx.TxOut[0], btcTypes.DefaultParams().Network.Params())
 	consolidationInfo := randomOutpointInfo(consAddr.EncodeAddress())
 	consolidationInfo.Amount = btcutil.Amount(signedTx.TxOut[0].Value)
 	hash := signedTx.TxHash()
 	consolidationInfo.OutPoint = wire.NewOutPoint(&hash, 0)
 
 	// verify master key transfer
-	verifyResult2 := <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender(), consolidationInfo))
+	verifyResult2 := <-chain.Submit(btcTypes.NewMsgConfirmOutpoint(randomSender(), consolidationInfo))
 	assert.NoError(t, verifyResult2.Error)
 
 	// wait for voting to be done
-	if err := waitFor(btcVerifyDone, 1); err != nil {
+	if err := waitFor(btcConfirmationDone, 1); err != nil {
 		assert.FailNow(t, "verification", err)
 	}
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/axelarnetwork/c2d2/pkg/pubsub"
-	tmEvents "github.com/axelarnetwork/c2d2/pkg/tendermint/events"
+	"github.com/axelarnetwork/c2d2/pkg/tendermint/events"
 	"github.com/axelarnetwork/c2d2/pkg/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -64,7 +64,7 @@ func NewJob(subscriber FilteredSubscriber, process func(attributes []sdk.Attribu
 }
 
 // MustSubscribe panics if Subscribe fails
-func MustSubscribe(hub *tmEvents.Hub, eventType string, module string, action string) FilteredSubscriber {
+func MustSubscribe(hub *events.Hub, eventType string, module string, action string) FilteredSubscriber {
 	subscriber, err := Subscribe(hub, eventType, module, action)
 	if err != nil {
 		panic(sdkerrors.Wrapf(err, "subscription to event {type %s, module %s, action %s} failed", eventType, module, action))
@@ -73,7 +73,7 @@ func MustSubscribe(hub *tmEvents.Hub, eventType string, module string, action st
 }
 
 // Subscribe returns a filtered subscriber that only streams events of the given type, module and action
-func Subscribe(hub *tmEvents.Hub, eventType string, module string, action string) (FilteredSubscriber, error) {
+func Subscribe(hub *events.Hub, eventType string, module string, action string) (FilteredSubscriber, error) {
 	bus, err := hub.Subscribe(query.MustParse(fmt.Sprintf("%s='%s' AND %s.%s='%s'",
 		tm.EventTypeKey, tm.EventTx, eventType, sdk.AttributeKeyModule, module)))
 	if err != nil {

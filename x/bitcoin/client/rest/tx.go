@@ -140,7 +140,7 @@ func GetHandlerVerifyTx(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		msg := types.MsgVerifyTx{Sender: fromAddr, OutPointInfo: out}
+		msg := types.MsgConfirmOutpoint{Sender: fromAddr, OutPointInfo: out}
 
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
