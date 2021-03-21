@@ -41,8 +41,8 @@ type BTCKeeper interface {
 	GetSignedTx(ctx sdk.Context) (*wire.MsgTx, bool)
 	DeleteSignedTx(ctx sdk.Context)
 
-	SetAddress(ctx sdk.Context, address ScriptAddress)
-	GetAddress(ctx sdk.Context, encodedAddress string) (ScriptAddress, bool)
+	SetAddress(ctx sdk.Context, address AddressInfo)
+	GetAddress(ctx sdk.Context, encodedAddress string) (AddressInfo, bool)
 }
 
 // Voter is the interface that provides voting functionality

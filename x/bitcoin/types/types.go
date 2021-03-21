@@ -238,37 +238,37 @@ func CreateDepositAddress(script RedeemScript, network Network) *btcutil.Address
 	return addr
 }
 
-// ScriptAddress is a wrapper containing the Bitcoin P2WSH address, it's corresponding script and the underlying key
-type ScriptAddress struct {
-	*btcutil.AddressWitnessScriptHash
+// AddressInfo is a wrapper containing the Bitcoin P2WSH address, it's corresponding script and the underlying key
+type AddressInfo struct {
+	btcutil.Address
 	RedeemScript RedeemScript
 	Key          tss.Key
 }
 
 // NewConsolidationAddress creates a new address used to consolidate all unspent outpoints
-func NewConsolidationAddress(pk tss.Key, network Network) ScriptAddress {
+func NewConsolidationAddress(pk tss.Key, network Network) AddressInfo {
 	script := CreateMasterRedeemScript(btcec.PublicKey(pk.Value))
 	addr := CreateDepositAddress(script, network)
-	return ScriptAddress{
-		RedeemScript:             script,
-		AddressWitnessScriptHash: addr,
-		Key:                      pk,
+	return AddressInfo{
+		RedeemScript: script,
+		Address:      addr,
+		Key:          pk,
 	}
 }
 
 // NewLinkedAddress creates a new address to make a deposit which can be transfered to another blockchain
-func NewLinkedAddress(pk tss.Key, network Network, recipient nexus.CrossChainAddress) ScriptAddress {
+func NewLinkedAddress(pk tss.Key, network Network, recipient nexus.CrossChainAddress) AddressInfo {
 	script := CreateCrossChainRedeemScript(btcec.PublicKey(pk.Value), recipient)
 	addr := CreateDepositAddress(script, network)
-	return ScriptAddress{
-		RedeemScript:             script,
-		AddressWitnessScriptHash: addr,
-		Key:                      pk,
+	return AddressInfo{
+		RedeemScript: script,
+		Address:      addr,
+		Key:          pk,
 	}
 }
 
 // ToCrossChainAddr returns the corresponding cross-chain address
-func (addr ScriptAddress) ToCrossChainAddr() nexus.CrossChainAddress {
+func (addr AddressInfo) ToCrossChainAddr() nexus.CrossChainAddress {
 	return nexus.CrossChainAddress{
 		Chain:   exported.Bitcoin,
 		Address: addr.EncodeAddress(),
@@ -294,7 +294,7 @@ func ValidateTxScript(tx *wire.MsgTx, idx int, amount int64, payScript []byte) e
 // OutPointToSign gathers all information needed to sign an outpoint
 type OutPointToSign struct {
 	OutPointInfo
-	ScriptAddress
+	AddressInfo
 }
 
 // AssembleBtcTx assembles the unsigned transaction and given signature.
@@ -305,7 +305,7 @@ func AssembleBtcTx(rawTx *wire.MsgTx, outpointsToSign []OutPointToSign, sigs []b
 		sigBytes := append(sigs[i].Serialize(), byte(txscript.SigHashAll))
 		rawTx.TxIn[i].Witness = wire.TxWitness{sigBytes, in.RedeemScript}
 
-		payScript, err := txscript.PayToAddrScript(in.AddressWitnessScriptHash)
+		payScript, err := txscript.PayToAddrScript(in.AddressInfo.Address)
 		if err != nil {
 			return nil, err
 		}

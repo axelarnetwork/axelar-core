@@ -1077,7 +1077,7 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			DeleteUnsignedTxFunc: func(ctx sdk.Context)  {
 // 				panic("mock out the DeleteUnsignedTx method")
 // 			},
-// 			GetAddressFunc: func(ctx sdk.Context, encodedAddress string) (types.ScriptAddress, bool) {
+// 			GetAddressFunc: func(ctx sdk.Context, encodedAddress string) (types.AddressInfo, bool) {
 // 				panic("mock out the GetAddress method")
 // 			},
 // 			GetConfirmedOutPointInfosFunc: func(ctx sdk.Context) []types.OutPointInfo {
@@ -1113,7 +1113,7 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			LoggerFunc: func(ctx sdk.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
-// 			SetAddressFunc: func(ctx sdk.Context, address types.ScriptAddress)  {
+// 			SetAddressFunc: func(ctx sdk.Context, address types.AddressInfo)  {
 // 				panic("mock out the SetAddress method")
 // 			},
 // 			SetOutpointInfoFunc: func(ctx sdk.Context, info types.OutPointInfo, state types.OutPointState)  {
@@ -1154,7 +1154,7 @@ type BTCKeeperMock struct {
 	DeleteUnsignedTxFunc func(ctx sdk.Context)
 
 	// GetAddressFunc mocks the GetAddress method.
-	GetAddressFunc func(ctx sdk.Context, encodedAddress string) (types.ScriptAddress, bool)
+	GetAddressFunc func(ctx sdk.Context, encodedAddress string) (types.AddressInfo, bool)
 
 	// GetConfirmedOutPointInfosFunc mocks the GetConfirmedOutPointInfos method.
 	GetConfirmedOutPointInfosFunc func(ctx sdk.Context) []types.OutPointInfo
@@ -1190,7 +1190,7 @@ type BTCKeeperMock struct {
 	LoggerFunc func(ctx sdk.Context) log.Logger
 
 	// SetAddressFunc mocks the SetAddress method.
-	SetAddressFunc func(ctx sdk.Context, address types.ScriptAddress)
+	SetAddressFunc func(ctx sdk.Context, address types.AddressInfo)
 
 	// SetOutpointInfoFunc mocks the SetOutpointInfo method.
 	SetOutpointInfoFunc func(ctx sdk.Context, info types.OutPointInfo, state types.OutPointState)
@@ -1307,7 +1307,7 @@ type BTCKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Address is the address argument value.
-			Address types.ScriptAddress
+			Address types.AddressInfo
 		}
 		// SetOutpointInfo holds details about calls to the SetOutpointInfo method.
 		SetOutpointInfo []struct {
@@ -1533,7 +1533,7 @@ func (mock *BTCKeeperMock) DeleteUnsignedTxCalls() []struct {
 }
 
 // GetAddress calls GetAddressFunc.
-func (mock *BTCKeeperMock) GetAddress(ctx sdk.Context, encodedAddress string) (types.ScriptAddress, bool) {
+func (mock *BTCKeeperMock) GetAddress(ctx sdk.Context, encodedAddress string) (types.AddressInfo, bool) {
 	if mock.GetAddressFunc == nil {
 		panic("BTCKeeperMock.GetAddressFunc: method is nil but BTCKeeper.GetAddress was just called")
 	}
@@ -1917,13 +1917,13 @@ func (mock *BTCKeeperMock) LoggerCalls() []struct {
 }
 
 // SetAddress calls SetAddressFunc.
-func (mock *BTCKeeperMock) SetAddress(ctx sdk.Context, address types.ScriptAddress) {
+func (mock *BTCKeeperMock) SetAddress(ctx sdk.Context, address types.AddressInfo) {
 	if mock.SetAddressFunc == nil {
 		panic("BTCKeeperMock.SetAddressFunc: method is nil but BTCKeeper.SetAddress was just called")
 	}
 	callInfo := struct {
 		Ctx     sdk.Context
-		Address types.ScriptAddress
+		Address types.AddressInfo
 	}{
 		Ctx:     ctx,
 		Address: address,
@@ -1939,11 +1939,11 @@ func (mock *BTCKeeperMock) SetAddress(ctx sdk.Context, address types.ScriptAddre
 //     len(mockedBTCKeeper.SetAddressCalls())
 func (mock *BTCKeeperMock) SetAddressCalls() []struct {
 	Ctx     sdk.Context
-	Address types.ScriptAddress
+	Address types.AddressInfo
 } {
 	var calls []struct {
 		Ctx     sdk.Context
-		Address types.ScriptAddress
+		Address types.AddressInfo
 	}
 	mock.lockSetAddress.RLock()
 	calls = mock.calls.SetAddress

@@ -55,7 +55,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	randStrings := rand.Strings(5, 50)
 
 	// set up chain
-	const nodeCount = 10
+	const nodeCount = 3
 	chain, nodeData := initChain(nodeCount, "keyRotation")
 	keygenDone, btcConfirmationDone, ethVerifyDone, signDone := registerWaitEventListeners(nodeData[0])
 

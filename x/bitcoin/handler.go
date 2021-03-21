@@ -261,7 +261,7 @@ func prepareInputs(ctx sdk.Context, k types.BTCKeeper) ([]types.OutPointToSign, 
 		if !ok {
 			return nil, sdk.ZeroInt(), fmt.Errorf("address for confirmed outpoint %s must be known", info.OutPoint.String())
 		}
-		prevOuts = append(prevOuts, types.OutPointToSign{OutPointInfo: info, ScriptAddress: addr})
+		prevOuts = append(prevOuts, types.OutPointToSign{OutPointInfo: info, AddressInfo: addr})
 		totalDeposits = totalDeposits.AddRaw(int64(info.Amount))
 		k.DeleteOutpointInfo(ctx, *info.OutPoint)
 		k.SetOutpointInfo(ctx, info, types.SPENT)
@@ -286,7 +286,7 @@ func prepareChange(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, chan
 	addr := types.NewConsolidationAddress(key, k.GetNetwork(ctx))
 	k.SetAddress(ctx, addr)
 
-	return types.Output{Amount: btcutil.Amount(change.Int64()), Recipient: addr.AddressWitnessScriptHash}, nil
+	return types.Output{Amount: btcutil.Amount(change.Int64()), Recipient: addr.Address}, nil
 }
 
 func startSignInputs(ctx sdk.Context, signer types.Signer, snapshotter types.Snapshotter, v types.Voter, tx *wire.MsgTx, outpointsToSign []types.OutPointToSign) error {

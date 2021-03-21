@@ -83,8 +83,8 @@ func getOutPointsToSign(ctx sdk.Context, tx *wire.MsgTx, k types.BTCKeeper) ([]t
 		}
 
 		toSign = append(toSign, types.OutPointToSign{
-			OutPointInfo:  prevOutInfo,
-			ScriptAddress: addr,
+			OutPointInfo: prevOutInfo,
+			AddressInfo:  addr,
 		})
 	}
 	return toSign, nil

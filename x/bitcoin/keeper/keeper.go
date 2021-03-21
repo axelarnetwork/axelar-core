@@ -4,12 +4,14 @@ import (
 	"fmt"
 
 	"github.com/btcsuite/btcd/wire"
+	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -90,20 +92,42 @@ func (k Keeper) Codec() *codec.Codec {
 }
 
 // SetAddress stores the given address information
-func (k Keeper) SetAddress(ctx sdk.Context, address types.ScriptAddress) {
-	ctx.KVStore(k.storeKey).Set([]byte(addrPrefix+address.EncodeAddress()), k.Codec().MustMarshalBinaryLengthPrefixed(address))
+func (k Keeper) SetAddress(ctx sdk.Context, address types.AddressInfo) {
+	// btcutil.Address (and it's implementations) can't be serialized with amino,
+	// so we use a helper struct to get around that problem
+	a := struct {
+		Addr   string
+		Script types.RedeemScript
+		Key    tss.Key
+	}{
+		Addr:   address.EncodeAddress(),
+		Script: address.RedeemScript,
+		Key:    address.Key,
+	}
+	ctx.KVStore(k.storeKey).Set([]byte(addrPrefix+address.EncodeAddress()), k.Codec().MustMarshalBinaryLengthPrefixed(a))
 }
 
 // GetAddress returns the address information for the given encoded address
-func (k Keeper) GetAddress(ctx sdk.Context, encodedAddress string) (types.ScriptAddress, bool) {
+func (k Keeper) GetAddress(ctx sdk.Context, encodedAddress string) (types.AddressInfo, bool) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(addrPrefix + encodedAddress))
 	if bz == nil {
-		return types.ScriptAddress{}, false
+		return types.AddressInfo{}, false
 	}
 
-	var addr types.ScriptAddress
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &addr)
-	return addr, true
+	// btcutil.Address (and it's implementations) can't be serialized with amino,
+	// so we use a helper struct to get around that problem
+	var a struct {
+		Addr   string
+		Script types.RedeemScript
+		Key    tss.Key
+	}
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &a)
+	addr, _ := btcutil.DecodeAddress(a.Addr, k.GetNetwork(ctx).Params())
+	return types.AddressInfo{
+		Address:      addr,
+		RedeemScript: a.Script,
+		Key:          a.Key,
+	}, true
 }
 
 // DeleteOutpointInfo deletes a the given outpoint if known

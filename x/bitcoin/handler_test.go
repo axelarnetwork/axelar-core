@@ -40,7 +40,7 @@ func TestHandleMsgLink(t *testing.T) {
 	init := func() {
 		btcKeeper = &mock.BTCKeeperMock{
 			GetNetworkFunc: func(ctx sdk.Context) types.Network { return types.Mainnet },
-			SetAddressFunc: func(sdk.Context, types.ScriptAddress) {},
+			SetAddressFunc: func(sdk.Context, types.AddressInfo) {},
 			LoggerFunc:     func(sdk.Context) log.Logger { return log.TestingLogger() },
 		}
 		signer = &mock.SignerMock{GetCurrentMasterKeyFunc: func(sdk.Context, nexus.Chain) (tss.Key, bool) {
@@ -71,7 +71,7 @@ func TestHandleMsgLink(t *testing.T) {
 		assert.Len(t, nexusKeeper.LinkAddressesCalls(), 1)
 		assert.Equal(t, exported.Bitcoin, signer.GetCurrentMasterKeyCalls()[0].Chain)
 		assert.Equal(t, msg.RecipientChain, nexusKeeper.GetChainCalls()[0].Chain)
-		assert.Equal(t, btcKeeper.SetAddressCalls()[0].Address.AddressWitnessScriptHash.EncodeAddress(), string(res.Data))
+		assert.Equal(t, btcKeeper.SetAddressCalls()[0].Address.Address.EncodeAddress(), string(res.Data))
 	}).Repeat(repeats))
 	t.Run("no master key", testutils.Func(func(t *testing.T) {
 		init()
@@ -106,10 +106,10 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 			GetOutPointInfoFunc: func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
 				return types.OutPointInfo{}, 0, false
 			},
-			GetAddressFunc: func(sdk.Context, string) (types.ScriptAddress, bool) {
-				return types.ScriptAddress{
-					AddressWitnessScriptHash: address,
-					RedeemScript:             rand.Bytes(200),
+			GetAddressFunc: func(sdk.Context, string) (types.AddressInfo, bool) {
+				return types.AddressInfo{
+					Address:      address,
+					RedeemScript: rand.Bytes(200),
 					Key: tss.Key{
 						ID:    rand.StrBetween(5, 20),
 						Value: ecdsa.PublicKey{},
@@ -164,7 +164,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 	}).Repeat(repeats))
 	t.Run("address unknown", testutils.Func(func(t *testing.T) {
 		init()
-		btcKeeper.GetAddressFunc = func(sdk.Context, string) (types.ScriptAddress, bool) { return types.ScriptAddress{}, false }
+		btcKeeper.GetAddressFunc = func(sdk.Context, string) (types.AddressInfo, bool) { return types.AddressInfo{}, false }
 		_, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, msg)
 		assert.Error(t, err)
 	}).Repeat(repeats))
@@ -380,18 +380,18 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 			GetConfirmedOutPointInfosFunc: func(sdk.Context) []types.OutPointInfo { return deposits },
 			DeleteOutpointInfoFunc:        func(sdk.Context, wire.OutPoint) {},
 			SetOutpointInfoFunc:           func(sdk.Context, types.OutPointInfo, types.OutPointState) {},
-			GetAddressFunc: func(_ sdk.Context, encodedAddress string) (types.ScriptAddress, bool) {
+			GetAddressFunc: func(_ sdk.Context, encodedAddress string) (types.AddressInfo, bool) {
 				sk, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
-				return types.ScriptAddress{
-					AddressWitnessScriptHash: nil,
-					RedeemScript:             nil,
+				return types.AddressInfo{
+					Address:      nil,
+					RedeemScript: nil,
 					Key: tss.Key{
 						ID:    rand.StrBetween(5, 20),
 						Value: sk.PublicKey,
 					},
 				}, true
 			},
-			SetAddressFunc:    func(sdk.Context, types.ScriptAddress) {},
+			SetAddressFunc:    func(sdk.Context, types.AddressInfo) {},
 			SetUnsignedTxFunc: func(sdk.Context, *wire.MsgTx) {},
 		}
 		nexusKeeper = &mock.NexusMock{
@@ -510,7 +510,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 	}).Repeat(repeats))
 	t.Run("unknown outpoint address", testutils.Func(func(t *testing.T) {
 		init()
-		btcKeeper.GetAddressFunc = func(sdk.Context, string) (types.ScriptAddress, bool) { return types.ScriptAddress{}, false }
+		btcKeeper.GetAddressFunc = func(sdk.Context, string) (types.AddressInfo, bool) { return types.AddressInfo{}, false }
 
 		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
 		assert.Error(t, err)
