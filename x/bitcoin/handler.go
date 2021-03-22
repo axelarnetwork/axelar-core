@@ -167,6 +167,9 @@ func HandleMsgVoteConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, v types.Vo
 
 	k.SetOutpointInfo(ctx, outPointInfo, types.CONFIRMED)
 
+	// TODO: handle withdrawals to deposit or consolidation addresses (this is currently undefined behaviour),
+	//  i.e. multiple outpoints in the SignedTx need to be confirmed
+
 	// if this is the consolidation outpoint it means the latest consolidation transaction is confirmed on Bitcoin
 	if tx, ok := k.GetSignedTx(ctx); ok && tx.TxHash() == outPointInfo.OutPoint.Hash {
 		k.DeleteSignedTx(ctx)
