@@ -194,8 +194,9 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		info        types.OutPointInfo
 	)
 	setup := func() {
-		msg = randomMsgVoteConfirmOutpoint()
 		info = randomOutpointInfo()
+		msg = randomMsgVoteConfirmOutpoint()
+		msg.Outpoint = *info.OutPoint
 		btcKeeper = &mock.BTCKeeperMock{
 			GetOutPointInfoFunc: func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
 				return types.OutPointInfo{}, 0, false
@@ -237,6 +238,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		setup()
 		tx := wire.NewMsgTx(wire.TxVersion)
 		info.OutPoint.Hash = tx.TxHash()
+		msg.Outpoint.Hash = tx.TxHash()
 		btcKeeper.GetSignedTxFunc = func(sdk.Context) (*wire.MsgTx, bool) { return tx, true }
 		btcKeeper.DeleteSignedTxFunc = func(sdk.Context) {}
 
@@ -348,6 +350,13 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		nexusKeeper.EnqueueForTransferFunc = func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) error {
 			return fmt.Errorf("failed")
 		}
+
+		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		assert.Error(t, err)
+	}).Repeat(repeats))
+	t.Run("outpoint does not match poll", testutils.Func(func(t *testing.T) {
+		setup()
+		info = randomOutpointInfo()
 
 		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
 		assert.Error(t, err)
