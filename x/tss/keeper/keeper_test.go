@@ -21,7 +21,7 @@ import (
 	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	snapMock2 "github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	mock2 "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
+	tssMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
 
 	slashingTypes "github.com/cosmos/cosmos-sdk/x/slashing"
 
@@ -60,7 +60,7 @@ type testSetup struct {
 func setup(t *testing.T) *testSetup {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	broadcaster := prepareBroadcaster(t, ctx, testutils.Codec(), validators)
-	voter := &mock2.VoterMock{
+	voter := &tssMock.VoterMock{
 		InitPollFunc:   func(ctx sdk.Context, poll exported.PollMeta) error { return nil },
 		RecordVoteFunc: func(exported.MsgVote) {},
 	}

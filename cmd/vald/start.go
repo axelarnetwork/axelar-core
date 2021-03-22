@@ -78,11 +78,11 @@ func listen(hub *tmEvents.Hub, axelarCfg app.Config, valAddr string, logger log.
 	btcVer := events.MustSubscribe(hub, btcTypes.EventTypeOutpointConfirmation, btcTypes.ModuleName, btcTypes.AttributeValueStart)
 
 	js := []jobs.Job{
-		events.NewJob(keygenStart, tssMgr.ProcessKeygenStart),
-		events.NewJob(keygenMsg, tssMgr.ProcessKeygenMsg),
-		events.NewJob(signStart, tssMgr.ProcessSignStart),
-		events.NewJob(signMsg, tssMgr.ProcessSignMsg),
-		events.NewJob(btcVer, btcMgr.ProcessVerification),
+		events.Consume(keygenStart, tssMgr.ProcessKeygenStart),
+		events.Consume(keygenMsg, tssMgr.ProcessKeygenMsg),
+		events.Consume(signStart, tssMgr.ProcessSignStart),
+		events.Consume(signMsg, tssMgr.ProcessSignMsg),
+		events.Consume(btcVer, btcMgr.ProcessVerification),
 	}
 
 	// errGroup runs async processes and cancels their context if ANY of them returns an error.

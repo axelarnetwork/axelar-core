@@ -44,8 +44,9 @@ func (s FilteredSubscriber) Events() <-chan types.Event {
 	return s.eventChan
 }
 
-// NewJob creates a job that processes incoming events concurrently
-func NewJob(subscriber FilteredSubscriber, process func(attributes []sdk.Attribute) error) jobs.Job {
+// Consume processes all events from the given subscriber with the given function.
+// Do not consume the same subscriber multiple times.
+func Consume(subscriber FilteredSubscriber, process func(attributes []sdk.Attribute) error) jobs.Job {
 	return func(errChan chan<- error) {
 	loop:
 		for {

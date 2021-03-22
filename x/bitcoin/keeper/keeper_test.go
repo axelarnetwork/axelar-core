@@ -21,7 +21,7 @@ import (
 )
 
 func TestKeeper_GetConfirmedOutPointInfos(t *testing.T) {
-	init := func() (Keeper, sdk.Context) {
+	setup := func() (Keeper, sdk.Context) {
 		cdc := testutils.Codec()
 		btcSubspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"), "btc")
 		ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
@@ -39,18 +39,18 @@ func TestKeeper_GetConfirmedOutPointInfos(t *testing.T) {
 		{"random assortment of outpoint states", prepareRandomOutPointStates},
 	}
 
-	repetitions := 10
+	repeatCount := 10
 	for _, testCase := range testCases {
-		t.Run(testCase.label, func(t *testing.T) {
-			for i := 0; i < repetitions; i++ {
-				k, ctx := init()
-				infoCount := int(rand2.I64Between(1, 200))
-				expectedOuts := testCase.prepare(k, ctx, infoCount)
-				actualConfirmedOuts := k.GetConfirmedOutPointInfos(ctx)
-				assert.ElementsMatch(t, expectedOuts, actualConfirmedOuts,
-					"expected: %d elements, got: %d elements", len(expectedOuts), len(actualConfirmedOuts))
-			}
-		})
+		t.Run(testCase.label, testutils.Func(func(t *testing.T) {
+
+			k, ctx := setup()
+			infoCount := int(rand2.I64Between(1, 200))
+			expectedOuts := testCase.prepare(k, ctx, infoCount)
+			actualConfirmedOuts := k.GetConfirmedOutPointInfos(ctx)
+			assert.ElementsMatch(t, expectedOuts, actualConfirmedOuts,
+				"expected: %d elements, got: %d elements", len(expectedOuts), len(actualConfirmedOuts))
+
+		}).Repeat(repeatCount))
 	}
 }
 

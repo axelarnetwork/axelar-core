@@ -26,7 +26,7 @@ type Mgr struct {
 	keygenStreams map[string]tss.Stream
 	signStreams   map[string]tss.Stream
 	Timeout       time.Duration
-	myAddress     string
+	principalAddr string
 	Logger        log.Logger
 	broadcaster   types.Broadcaster
 	sender        sdk.AccAddress
@@ -46,7 +46,7 @@ func CreateTOFNDClient(host string, port string, logger log.Logger) (tofnd.GG20C
 }
 
 // NewMgr returns a new tss manager instance
-func NewMgr(client tofnd.GG20Client, timeout time.Duration, myAddress string, broadcaster types.Broadcaster, sender sdk.AccAddress, logger log.Logger) *Mgr {
+func NewMgr(client tofnd.GG20Client, timeout time.Duration, principalAddr string, broadcaster types.Broadcaster, sender sdk.AccAddress, logger log.Logger) *Mgr {
 	return &Mgr{
 		client:        client,
 		keygen:        &sync.RWMutex{},
@@ -54,7 +54,7 @@ func NewMgr(client tofnd.GG20Client, timeout time.Duration, myAddress string, br
 		keygenStreams: map[string]tss.Stream{},
 		signStreams:   map[string]tss.Stream{},
 		Timeout:       timeout,
-		myAddress:     myAddress,
+		principalAddr: principalAddr,
 		Logger:        logger.With("listener", "tss"),
 		broadcaster:   broadcaster,
 		sender:        sender,
@@ -125,12 +125,12 @@ func parseMsgParams(attributes []sdk.Attribute) (sessionID string, from string, 
 	return sessionID, from, payload
 }
 
-func prepareTrafficIn(myAddress string, from string, sessionID string, payload *tofnd.TrafficOut, logger log.Logger) (*tofnd.MessageIn, error) {
-	if myAddress == from {
+func prepareTrafficIn(principalAddr string, from string, sessionID string, payload *tofnd.TrafficOut, logger log.Logger) (*tofnd.MessageIn, error) {
+	if principalAddr == from {
 		return nil, nil
 	}
 
-	if !payload.IsBroadcast && myAddress != payload.ToPartyUid {
+	if !payload.IsBroadcast && principalAddr != payload.ToPartyUid {
 		return nil, nil
 	}
 
@@ -145,22 +145,22 @@ func prepareTrafficIn(myAddress string, from string, sessionID string, payload *
 	}
 
 	logger.Debug(fmt.Sprintf("incoming msg to tofnd: session [%.20s] from [%.20s] to [%.20s] broadcast [%t] me [%.20s]",
-		sessionID, from, payload.ToPartyUid, payload.IsBroadcast, myAddress))
+		sessionID, from, payload.ToPartyUid, payload.IsBroadcast, principalAddr))
 	return msgIn, nil
 }
 
-func findMyIndex(participants []string, myAddress string) (int32, bool) {
-	var myIndex int32 = -1
+func indexOf(participants []string, address string) (int32, bool) {
+	var index int32 = -1
 	for i, participant := range participants {
-		if myAddress == participant {
-			myIndex = int32(i)
+		if address == participant {
+			index = int32(i)
 			break
 		}
 	}
 	// not participating
-	if myIndex == -1 {
+	if index == -1 {
 		return -1, false
 	}
 
-	return myIndex, true
+	return index, true
 }

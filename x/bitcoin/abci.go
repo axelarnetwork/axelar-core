@@ -61,6 +61,7 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, k types.BTCKeeper, si
 
 	k.DeleteUnsignedTx(ctx)
 	k.SetSignedTx(ctx, tx)
+	k.Logger(ctx).Debug(fmt.Sprintf("transaction %s is fully signed", tx.TxHash().String()))
 
 	return nil
 }

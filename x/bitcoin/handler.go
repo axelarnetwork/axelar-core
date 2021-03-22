@@ -109,8 +109,8 @@ func HandleMsgVoteConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, v types.Vo
 	confirmedOutpoint, state, confirmedBefore := k.GetOutPointInfo(ctx, msg.Outpoint)
 	if confirmedBefore {
 
-		defer v.DeletePoll(ctx, msg.PollMeta)
-		defer k.DeleteUnconfirmedOutPointInfo(ctx, msg.PollMeta)
+		v.DeletePoll(ctx, msg.PollMeta)
+		k.DeleteUnconfirmedOutPointInfo(ctx, msg.PollMeta)
 
 		// If the voting threshold has been met and additional votes are received they should not return an error
 		switch {
@@ -126,6 +126,10 @@ func HandleMsgVoteConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, v types.Vo
 	outPointInfo, pollFound := k.GetUnconfirmedOutPointInfo(ctx, msg.PollMeta)
 	if !pollFound {
 		return nil, fmt.Errorf("no outpoint found for poll %s", msg.PollMeta.String())
+	}
+
+	if outPointInfo.OutPoint.String() != msg.Outpoint.String() {
+		return nil, fmt.Errorf("outpoint %s does not match poll %s", msg.Outpoint.String(), msg.PollMeta.String())
 	}
 
 	// assert: the outpoint is known and has not been confirmed before

@@ -18,7 +18,7 @@ import (
 // ProcessKeygenStart starts the communication with the keygen protocol
 func (mgr *Mgr) ProcessKeygenStart(attributes []sdk.Attribute) error {
 	keyID, threshold, participants := parseKeygenStartParams(attributes)
-	myIndex, ok := findMyIndex(participants, mgr.myAddress)
+	myIndex, ok := indexOf(participants, mgr.principalAddr)
 	if !ok {
 		// do not participate
 		return nil
@@ -60,7 +60,7 @@ func (mgr *Mgr) ProcessKeygenStart(attributes []sdk.Attribute) error {
 // ProcessKeygenMsg forwards blockchain messages to the keygen protocol
 func (mgr *Mgr) ProcessKeygenMsg(attributes []sdk.Attribute) error {
 	keyID, from, payload := parseMsgParams(attributes)
-	msgIn, err := prepareTrafficIn(mgr.myAddress, from, keyID, payload, mgr.Logger)
+	msgIn, err := prepareTrafficIn(mgr.principalAddr, from, keyID, payload, mgr.Logger)
 	if err != nil {
 		return err
 	}
@@ -133,7 +133,7 @@ func (mgr *Mgr) startKeygen(keyID string, threshold int32, myIndex int32, partic
 func (mgr *Mgr) handleIntermediateKeygenMsgs(keyID string, intermediate <-chan *tofnd.TrafficOut) error {
 	for msg := range intermediate {
 		mgr.Logger.Debug(fmt.Sprintf("outgoing keygen msg: key [%.20s] from me [%.20s] to [%.20s] broadcast [%t]\n",
-			keyID, mgr.myAddress, msg.ToPartyUid, msg.IsBroadcast))
+			keyID, mgr.principalAddr, msg.ToPartyUid, msg.IsBroadcast))
 		// sender is set by broadcaster
 		tssMsg := &tss.MsgKeygenTraffic{Sender: mgr.sender, SessionID: keyID, Payload: msg}
 		if err := mgr.broadcaster.Broadcast(tssMsg); err != nil {

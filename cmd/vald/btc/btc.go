@@ -18,19 +18,19 @@ import (
 
 // Mgr manages all communication with Bitcoin
 type Mgr struct {
-	myAddress   string
-	Logger      log.Logger
-	broadcaster broadcast.Broadcaster
-	rpc         rpc2.Client
+	principalAddr string
+	Logger        log.Logger
+	broadcaster   broadcast.Broadcaster
+	rpc           rpc2.Client
 }
 
 // NewMgr returns a new Mgr instance
-func NewMgr(rpc rpc2.Client, myAddress string, broadcaster broadcast.Broadcaster, logger log.Logger) *Mgr {
+func NewMgr(rpc rpc2.Client, principalAddr string, broadcaster broadcast.Broadcaster, logger log.Logger) *Mgr {
 	return &Mgr{
-		rpc:         rpc,
-		myAddress:   myAddress,
-		Logger:      logger.With("listener", "btc"),
-		broadcaster: broadcaster,
+		rpc:           rpc,
+		principalAddr: principalAddr,
+		Logger:        logger.With("listener", "btc"),
+		broadcaster:   broadcaster,
 	}
 }
 
@@ -45,35 +45,33 @@ func (mgr *Mgr) ProcessVerification(attributes []sdk.Attribute) error {
 	var msg btc.MsgVoteConfirmOutpoint
 	if err != nil {
 		mgr.Logger.Debug(sdkerrors.Wrap(err, "verification failed").Error())
-		msg = btc.MsgVoteConfirmOutpoint{PollMeta: poll, Confirmed: false, Outpoint: *outPointInfo.OutPoint}
-	} else {
-		msg = btc.MsgVoteConfirmOutpoint{PollMeta: poll, Confirmed: true, Outpoint: *outPointInfo.OutPoint}
 	}
+	msg = btc.MsgVoteConfirmOutpoint{PollMeta: poll, Confirmed: err == nil, Outpoint: *outPointInfo.OutPoint}
 	mgr.Logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, poll.String()))
 	return mgr.broadcaster.Broadcast(msg)
 }
 
 func parseVerificationStartParams(attributes []sdk.Attribute) (outPoint btc.OutPointInfo, confHeight int64, poll vote.PollMeta, err error) {
-	found := 0
+	var outPointFound, confHeightFound, pollFound bool
 	for _, attribute := range attributes {
 		switch attribute.Key {
 		case btc.AttributeKeyOutPointInfo:
 			codec.Cdc.MustUnmarshalJSON([]byte(attribute.Value), &outPoint)
-			found++
+			outPointFound = true
 		case btc.AttributeKeyConfHeight:
 			h, err := strconv.Atoi(attribute.Value)
 			if err != nil {
 				return btc.OutPointInfo{}, 0, vote.PollMeta{}, sdkerrors.Wrap(err, "could not parse confirmation height")
 			}
 			confHeight = int64(h)
-			found++
+			confHeightFound = true
 		case btc.AttributeKeyPoll:
 			codec.Cdc.MustUnmarshalJSON([]byte(attribute.Value), &poll)
-			found++
+			pollFound = true
 		default:
 		}
 	}
-	if found != 3 {
+	if !outPointFound || !confHeightFound || !pollFound {
 		return btc.OutPointInfo{}, 0, vote.PollMeta{}, fmt.Errorf("insufficient event attributes")
 	}
 

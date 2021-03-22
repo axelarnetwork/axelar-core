@@ -56,7 +56,7 @@ func GetCmdDepositAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return cmd
 }
 
-// GetCmdConsolidationTx sends a transaction containing all pending transfers to Bitcoin
+// GetCmdConsolidationTx returns a transaction containing all pending transfers to Bitcoin
 func GetCmdConsolidationTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "transfer-tx",

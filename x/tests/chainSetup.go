@@ -188,7 +188,7 @@ func createMocks(validators []staking.Validator) testMocks {
 		},
 	}
 
-	tssKeeper := &snapMock.TssMock{
+	tssK := &snapMock.TssMock{
 		GetValidatorDeregisteredBlockHeightFunc: func(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
 			return 0
 		},
@@ -208,7 +208,7 @@ func createMocks(validators []staking.Validator) testMocks {
 		ETH:     ethClient,
 		Staker:  stakingKeeper,
 		Slasher: slasher,
-		Tss:     tssKeeper,
+		Tss:     tssK,
 	}
 }
 
@@ -394,7 +394,7 @@ func registerWaitEventListeners(n nodeData) (<-chan abci.Event, <-chan abci.Even
 }
 
 func waitFor(eventDone <-chan abci.Event, repeats int) error {
-	timeout, cancel := context.WithTimeout(context.Background(), time.Duration(repeats)*2*time.Hour)
+	timeout, cancel := context.WithTimeout(context.Background(), time.Duration(repeats)*2*time.Second)
 	defer cancel()
 	for i := 0; i < repeats; i++ {
 		select {

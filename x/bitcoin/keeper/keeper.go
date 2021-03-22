@@ -133,7 +133,6 @@ func (k Keeper) GetAddress(ctx sdk.Context, encodedAddress string) (types.Addres
 // DeleteOutpointInfo deletes a the given outpoint if known
 func (k Keeper) DeleteOutpointInfo(ctx sdk.Context, outPoint wire.OutPoint) {
 	// delete is a noop if key does not exist
-	ctx.KVStore(k.storeKey).Delete([]byte(unconfirmedOutpointPrefix + outPoint.String()))
 	ctx.KVStore(k.storeKey).Delete([]byte(confirmedOutPointPrefix + outPoint.String()))
 	ctx.KVStore(k.storeKey).Delete([]byte(spentOutPointPrefix + outPoint.String()))
 }

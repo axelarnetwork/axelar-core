@@ -55,7 +55,8 @@ func TestMgr_ProcessVerification(t *testing.T) {
 
 	// Test cases
 
-	t.Run("missing attributes", func(t *testing.T) {
+	repetitionCount := 20
+	t.Run("missing attributes", testutils.Func(func(t *testing.T) {
 		setup()
 		for i := 0; i < len(attributes); i++ {
 			// remove one attribute at a time
@@ -66,9 +67,9 @@ func TestMgr_ProcessVerification(t *testing.T) {
 			err := mgr.ProcessVerification(wrongAttributes)
 			assert.Error(t, err)
 		}
-	})
+	}).Repeat(repetitionCount))
 
-	t.Run("RPC unavailable", func(t *testing.T) {
+	t.Run("RPC unavailable", testutils.Func(func(t *testing.T) {
 		setup()
 		rpc.GetTxOutFunc = func(*chainhash.Hash, uint32, bool) (*btcjson.GetTxOutResult, error) {
 			return nil, fmt.Errorf("some error")
@@ -78,9 +79,9 @@ func TestMgr_ProcessVerification(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(btc.MsgVoteConfirmOutpoint).Confirmed)
-	})
+	}).Repeat(repetitionCount))
 
-	t.Run("tx out not found", func(t *testing.T) {
+	t.Run("tx out not found", testutils.Func(func(t *testing.T) {
 		setup()
 		rpc.GetTxOutFunc = func(*chainhash.Hash, uint32, bool) (*btcjson.GetTxOutResult, error) {
 			return nil, nil
@@ -90,9 +91,9 @@ func TestMgr_ProcessVerification(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(btc.MsgVoteConfirmOutpoint).Confirmed)
-	})
+	}).Repeat(repetitionCount))
 
-	t.Run("not enough confirmations", func(t *testing.T) {
+	t.Run("not enough confirmations", testutils.Func(func(t *testing.T) {
 		setup()
 		rpc.GetTxOutFunc = func(*chainhash.Hash, uint32, bool) (*btcjson.GetTxOutResult, error) {
 			return &btcjson.GetTxOutResult{
@@ -106,7 +107,7 @@ func TestMgr_ProcessVerification(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(btc.MsgVoteConfirmOutpoint).Confirmed)
-	})
+	}).Repeat(repetitionCount))
 
 	t.Run("wrong expected data", func(t *testing.T) {
 		setup()
@@ -125,7 +126,7 @@ func TestMgr_ProcessVerification(t *testing.T) {
 		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(btc.MsgVoteConfirmOutpoint).Confirmed)
 	})
 
-	t.Run("happy path", func(t *testing.T) {
+	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 		rpc.GetTxOutFunc = func(*chainhash.Hash, uint32, bool) (*btcjson.GetTxOutResult, error) {
 			return &btcjson.GetTxOutResult{
@@ -139,7 +140,7 @@ func TestMgr_ProcessVerification(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		assert.True(t, broadcaster.BroadcastCalls()[0].Msgs[0].(btc.MsgVoteConfirmOutpoint).Confirmed)
-	})
+	}).Repeat(repetitionCount))
 }
 
 func randomOutpointInfo() btc.OutPointInfo {

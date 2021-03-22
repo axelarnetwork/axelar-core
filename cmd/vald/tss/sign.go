@@ -16,7 +16,7 @@ import (
 // ProcessSignStart starts the communication with the sign protocol
 func (mgr *Mgr) ProcessSignStart(attributes []sdk.Attribute) error {
 	keyID, sigID, participants, payload := parseSignStartParams(attributes)
-	_, ok := findMyIndex(participants, mgr.myAddress)
+	_, ok := indexOf(participants, mgr.principalAddr)
 	if !ok {
 		// do not participate
 		return nil
@@ -58,7 +58,7 @@ func (mgr *Mgr) ProcessSignStart(attributes []sdk.Attribute) error {
 // ProcessSignMsg forwards blockchain messages to the sign protocol
 func (mgr *Mgr) ProcessSignMsg(attributes []sdk.Attribute) error {
 	sigID, from, payload := parseMsgParams(attributes)
-	msgIn, err := prepareTrafficIn(mgr.myAddress, from, sigID, payload, mgr.Logger)
+	msgIn, err := prepareTrafficIn(mgr.principalAddr, from, sigID, payload, mgr.Logger)
 	if err != nil {
 		return err
 	}
@@ -129,7 +129,7 @@ func (mgr *Mgr) startSign(keyID string, sigID string, participants []string, pay
 func (mgr *Mgr) handleIntermediateSignMsgs(sigID string, intermediate <-chan *tofnd.TrafficOut) error {
 	for msg := range intermediate {
 		mgr.Logger.Debug(fmt.Sprintf("outgoing sign msg: sig [%.20s] from me [%.20s] to [%.20s] broadcast [%t]\n",
-			sigID, mgr.myAddress, msg.ToPartyUid, msg.IsBroadcast))
+			sigID, mgr.principalAddr, msg.ToPartyUid, msg.IsBroadcast))
 		// sender is set by broadcaster
 		tssMsg := &tss.MsgSignTraffic{Sender: mgr.sender, SessionID: sigID, Payload: msg}
 		if err := mgr.broadcaster.Broadcast(tssMsg); err != nil {

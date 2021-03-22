@@ -53,7 +53,9 @@ type Voter interface {
 	Result(ctx sdk.Context, poll vote.PollMeta) vote.VotingData
 }
 
-// InitPoller is a minimal interface to start a poll
+// InitPoller is a minimal interface to start a poll. This must be a type alias instead of a type definition,
+// because the concrete implementation of Signer (specifically StartSign) is defined in a different package using another (identical)
+// InitPoller interface. Go cannot match the types otherwise
 type InitPoller = interface {
 	InitPoll(ctx sdk.Context, poll vote.PollMeta) error
 }

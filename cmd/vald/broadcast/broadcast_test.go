@@ -220,6 +220,7 @@ func TestBackoffBroadcaster_Broadcast(t *testing.T) {
 			assert.Len(t, rpc.BroadcastTxSyncCalls(), iterations*(retries+1))
 		})
 	}
+
 	t.Run("sequence number updated correctly", func(t *testing.T) {
 		accNo := rand2.Uint64()
 		seqNo := uint64(1)
