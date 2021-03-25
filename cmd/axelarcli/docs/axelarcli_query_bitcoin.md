@@ -22,4 +22,4 @@ axelarcli query bitcoin [flags]
 
 - [axelarcli query](axelarcli_query.md)	 - Querying subcommands
 - [axelarcli query bitcoin deposit-addr](axelarcli_query_bitcoin_deposit-addr.md)	 - Returns a bitcoin deposit address for a recipient address on another blockchain
-- [axelarcli query bitcoin transfer-tx](axelarcli_query_bitcoin_transfer-tx.md)	 - Returns a fully signed transfer and consolidation transaction
+- [axelarcli query bitcoin rawTx](axelarcli_query_bitcoin_rawTx.md)	 - Returns the encoded hex string of a fully signed transfer and consolidation transaction

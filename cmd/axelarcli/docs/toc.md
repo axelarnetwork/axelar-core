@@ -18,7 +18,7 @@
       - [account \[address\]](axelarcli_query_auth_account.md)	 - Query account balance
     - [bitcoin](axelarcli_query_bitcoin.md)	 - bitcoin query subcommands
       - [deposit-addr \[chain\] \[recipient address\]](axelarcli_query_bitcoin_deposit-addr.md)	 - Returns a bitcoin deposit address for a recipient address on another blockchain
-      - [transfer-tx](axelarcli_query_bitcoin_transfer-tx.md)	 - Returns a fully signed transfer and consolidation transaction
+      - [rawTx](axelarcli_query_bitcoin_rawTx.md)	 - Returns the encoded hex string of a fully signed transfer and consolidation transaction
     - [block \[height\]](axelarcli_query_block.md)	 - Get verified data for a the block at given height
     - [distribution](axelarcli_query_distribution.md)	 - Querying commands for the distribution module
       - [commission \[validator\]](axelarcli_query_distribution_commission.md)	 - Query distribution validator commission
@@ -61,9 +61,9 @@
   - [status](axelarcli_status.md)	 - Query remote node for status
   - [tx](axelarcli_tx.md)	 - Transactions subcommands
     - [bitcoin](axelarcli_tx_bitcoin.md)	 - bitcoin transactions subcommands
+      - [confirmTxOut \[txID:voutIdx\] \[amount\] \[address\]](axelarcli_tx_bitcoin_confirmTxOut.md)	 - Confirm a Bitcoin transaction
       - [link \[chain\] \[address\]](axelarcli_tx_bitcoin_link.md)	 - Link a cross chain address to a bitcoin address created by Axelar
       - [sign-pending-transfers \[fee\]](axelarcli_tx_bitcoin_sign-pending-transfers.md)	 - Create a Bitcoin transaction for all pending transfers and sign it
-      - [verifyTx \[txID:voutIdx\] \[txOut json\]](axelarcli_tx_bitcoin_verifyTx.md)	 - Verify a Bitcoin transaction
     - [broadcast](axelarcli_tx_broadcast.md)	 - broadcast transactions subcommands
       - [registerProxy \[proxy\] ](axelarcli_tx_broadcast_registerProxy.md)	 - Register a proxy account for a specific validator principal to broadcast transactions in its stead
       - [sendStake \[amount\] \[address 1\] ... \[address n\]](axelarcli_tx_broadcast_sendStake.md)	 - Sends the specified amount of stake to the designated addresses
