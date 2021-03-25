@@ -183,16 +183,16 @@ func handleMsgKeygenTraffic(ctx sdk.Context, k keeper.Keeper, msg types.MsgKeyge
 
 func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, staker types.StakingKeeper, v types.Voter, msg types.MsgKeygenStart) (*sdk.Result, error) {
 	// record the snapshot of active validators that we'll use for the key
-	if err := s.TakeSnapshot(ctx); err != nil {
+	if err := s.TakeSnapshot(ctx, msg.ValidatorCount); err != nil {
 		return nil, err
 	}
 
 	snapshot, ok := s.GetLatestSnapshot(ctx)
-
 	if !ok {
 		return nil, fmt.Errorf("the system needs to have at least one validator snapshot")
 	}
-	if !k.GetMinKeygenThreshold(ctx).IsMet(snapshot.TotalPower, staker.GetLastTotalPower(ctx)) {
+
+	if !k.GetMinKeygenThreshold(ctx).IsMet(snapshot.TotalPower, snapshot.ValidatorsTotalPower) {
 		msg := fmt.Sprintf("Unable to meet min stake threshold required for keygen: active %s out of %s total",
 			snapshot.TotalPower.String(), staker.GetLastTotalPower(ctx).String())
 		k.Logger(ctx).Info(msg)

@@ -48,10 +48,7 @@ func getCmdKeygenStart(cdc *codec.Codec) *cobra.Command {
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
 
-		msg := types.MsgKeygenStart{
-			Sender:   cliCtx.FromAddress,
-			NewKeyID: *newKeyID,
-		}
+		msg := types.NewMsgKeygenStart(cliCtx.FromAddress, *newKeyID, 0)
 		if err := msg.ValidateBasic(); err != nil {
 			return err
 		}

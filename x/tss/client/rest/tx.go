@@ -63,10 +63,7 @@ func GetHandlerKeygenStart(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		msg := types.MsgKeygenStart{
-			Sender:   sender,
-			NewKeyID: req.NewKeyId,
-		}
+		msg := types.NewMsgKeygenStart(sender, req.NewKeyId, 0)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

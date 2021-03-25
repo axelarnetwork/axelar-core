@@ -112,7 +112,7 @@ func TestSnapshots(t *testing.T) {
 
 			assert.False(t, ok)
 
-			err := keeper.TakeSnapshot(ctx)
+			err := keeper.TakeSnapshot(ctx, 0)
 
 			assert.NoError(t, err)
 
@@ -125,13 +125,13 @@ func TestSnapshots(t *testing.T) {
 				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetOperator())
 			}
 
-			err = keeper.TakeSnapshot(ctx)
+			err = keeper.TakeSnapshot(ctx, 0)
 
 			assert.Error(t, err)
 
 			ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.DefaultParams().LockingPeriod + 100))
 
-			err = keeper.TakeSnapshot(ctx)
+			err = keeper.TakeSnapshot(ctx, 0)
 
 			assert.NoError(t, err)
 

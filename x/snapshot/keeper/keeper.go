@@ -11,7 +11,6 @@ import (
 	sdkExported "github.com/cosmos/cosmos-sdk/x/staking/exported"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 )
@@ -63,12 +62,12 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 }
 
 // TakeSnapshot attempts to create a new snapshot
-func (k Keeper) TakeSnapshot(ctx sdk.Context) error {
+func (k Keeper) TakeSnapshot(ctx sdk.Context, validatorCount int64) error {
 	s, ok := k.GetLatestSnapshot(ctx)
 
 	if !ok {
 		k.setLatestCounter(ctx, 0)
-		return k.executeSnapshot(ctx, 0)
+		return k.executeSnapshot(ctx, 0, validatorCount)
 	}
 
 	lockingPeriod := k.getLockingPeriod(ctx)
@@ -78,7 +77,7 @@ func (k Keeper) TakeSnapshot(ctx sdk.Context) error {
 	}
 
 	k.setLatestCounter(ctx, s.Counter+1)
-	return k.executeSnapshot(ctx, s.Counter+1)
+	return k.executeSnapshot(ctx, s.Counter+1, validatorCount)
 }
 
 func (k Keeper) getLockingPeriod(ctx sdk.Context) time.Duration {
@@ -125,53 +124,56 @@ func (k Keeper) GetLatestCounter(ctx sdk.Context) int64 {
 	return i
 }
 
-func (k Keeper) executeSnapshot(ctx sdk.Context, nextCounter int64) error {
+func isActive(ctx sdk.Context, slasher types.Slasher, validator exported.Validator) bool {
+	signingInfo, found := slasher.GetValidatorSigningInfo(ctx, validator.GetConsAddr())
+
+	return found && !signingInfo.Tombstoned && signingInfo.MissedBlocksCounter <= 0 && !validator.IsJailed()
+}
+
+func hasProxyRegistered(ctx sdk.Context, broadcaster types.Broadcaster, validator exported.Validator) bool {
+	return broadcaster.GetProxy(ctx, validator.GetOperator()) != nil
+}
+
+func isTssRegistered(ctx sdk.Context, tss types.Tss, validator exported.Validator) bool {
+	return tss.GetValidatorDeregisteredBlockHeight(ctx, validator.GetOperator()) <= 0
+}
+
+func (k Keeper) executeSnapshot(ctx sdk.Context, nextCounter int64, validatorCount int64) error {
 	var validators []exported.Validator
-	fnAppend := func(_ int64, v sdkExported.ValidatorI) (stop bool) {
-		validators = append(validators, v)
-		return false
-	}
+	snapshotTotalPower, validatorsTotalPower := sdk.ZeroInt(), sdk.ZeroInt()
 
-	k.staking.IterateLastValidators(ctx, fnAppend)
+	validatorIter := func(_ int64, validator sdkExported.ValidatorI) (stop bool) {
+		validatorsTotalPower = validatorsTotalPower.AddRaw(validator.GetConsensusPower())
 
-	activeStake := sdk.ZeroInt()
-	for _, validator := range validators {
-		activeStake = activeStake.AddRaw(validator.GetConsensusPower())
+		if !isActive(ctx, k.slasher, validator) {
+			return false
+		}
+
+		if !hasProxyRegistered(ctx, k.broadcaster, validator) {
+			return false
+		}
+
+		if !isTssRegistered(ctx, k.tss, validator) {
+			return false
+		}
+
+		snapshotTotalPower = snapshotTotalPower.AddRaw(validator.GetConsensusPower())
+		validators = append(validators, validator)
+
+		return len(validators) == int(validatorCount)
 	}
+	k.staking.IterateLastValidators(ctx, validatorIter)
 
 	snapshot := exported.Snapshot{
-		Validators: validators,
-		Timestamp:  ctx.BlockTime(),
-		Height:     ctx.BlockHeight(),
-		TotalPower: activeStake,
-		Counter:    nextCounter,
+		Validators:           validators,
+		Timestamp:            ctx.BlockTime(),
+		Height:               ctx.BlockHeight(),
+		TotalPower:           snapshotTotalPower,
+		ValidatorsTotalPower: validatorsTotalPower,
+		Counter:              nextCounter,
 	}
 
-	// filters
-	filterActive := func(vals []exported.Validator) ([]exported.Validator, error) {
-		return utils.FilterActiveValidators(ctx, k.slasher, vals)
-	}
-	filterProxies := func(vals []exported.Validator) ([]exported.Validator, error) {
-		return utils.FilterProxies(ctx, k.broadcaster, vals), nil
-	}
-	filterTssRegistered := func(vals []exported.Validator) ([]exported.Validator, error) {
-		return utils.FilterTssRegistered(ctx, k.tss, vals), nil
-	}
-
-	filteredSnapshot, err := snapshot.Filter(filterActive)
-	if err != nil {
-		return err
-	}
-	filteredSnapshot, err = filteredSnapshot.Filter(filterProxies)
-	if err != nil {
-		return err
-	}
-	filteredSnapshot, err = filteredSnapshot.Filter(filterTssRegistered)
-	if err != nil {
-		return err
-	}
-
-	ctx.KVStore(k.storeKey).Set(counterKey(nextCounter), k.cdc.MustMarshalBinaryLengthPrefixed(filteredSnapshot))
+	ctx.KVStore(k.storeKey).Set(counterKey(nextCounter), k.cdc.MustMarshalBinaryLengthPrefixed(snapshot))
 
 	return nil
 }

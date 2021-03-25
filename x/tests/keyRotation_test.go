@@ -70,7 +70,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// start keygen
 	masterKeyID1 := randStrings.Next()
-	keygenResult1 := <-chain.Submit(tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: masterKeyID1})
+	keygenResult1 := <-chain.Submit(tssTypes.NewMsgKeygenStart(randomSender(), masterKeyID1, 0))
 	assert.NoError(t, keygenResult1.Error)
 
 	// wait for voting to be done
@@ -218,7 +218,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// start new keygen
 	masterKeyID2 := randStrings.Next()
-	keygenResult2 := <-chain.Submit(tssTypes.MsgKeygenStart{Sender: randomSender(), NewKeyID: masterKeyID2})
+	keygenResult2 := <-chain.Submit(tssTypes.NewMsgKeygenStart(randomSender(), masterKeyID2, 0))
 	assert.NoError(t, keygenResult2.Error)
 
 	// wait for voting to be done
