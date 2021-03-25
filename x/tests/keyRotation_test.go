@@ -3,6 +3,7 @@ package tests
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"testing"
@@ -247,8 +248,14 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	bz, err = nodeData[0].Node.Query([]string{btcTypes.QuerierRoute, btcKeeper.GetTx}, abci.RequestQuery{})
 	assert.NoError(t, err)
 
-	var signedTx *wire.MsgTx
-	testutils.Codec().MustUnmarshalJSON(bz, &signedTx)
+	var rawSignedTx string
+	testutils.Codec().MustUnmarshalJSON(bz, &rawSignedTx)
+	signedTx := wire.NewMsgTx(wire.TxVersion)
+	buf, err := hex.DecodeString(rawSignedTx)
+	assert.NoError(t, err)
+
+	err = signedTx.BtcDecode(bytes.NewReader(buf), wire.FeeFilterVersion, wire.WitnessEncoding)
+	assert.NoError(t, err)
 	assert.True(t, txCorrectlyFormed(signedTx, deposits, totalDepositAmount-fee))
 
 	// expected consolidation info
