@@ -68,7 +68,7 @@ func newHub() (*tmEvents.Hub, error) {
 func listen(hub *tmEvents.Hub, axelarCfg app.Config, valAddr string, logger log.Logger) {
 	broadcaster, sender := createBroadcaster(axelarCfg, logger)
 	tssMgr := createTSSMgr(broadcaster, sender, axelarCfg, logger, valAddr)
-	btcMgr := createBTCMgr(axelarCfg, broadcaster, logger, valAddr)
+	btcMgr := createBTCMgr(axelarCfg, broadcaster, sender, logger, valAddr)
 
 	keygenStart := events.MustSubscribe(hub, tss.EventTypeKeygen, tss.ModuleName, tss.AttributeValueStart)
 	keygenMsg := events.MustSubscribe(hub, tss.EventTypeKeygen, tss.ModuleName, tss.AttributeValueMsg)
@@ -82,7 +82,7 @@ func listen(hub *tmEvents.Hub, axelarCfg app.Config, valAddr string, logger log.
 		events.Consume(keygenMsg, tssMgr.ProcessKeygenMsg),
 		events.Consume(signStart, tssMgr.ProcessSignStart),
 		events.Consume(signMsg, tssMgr.ProcessSignMsg),
-		events.Consume(btcVer, btcMgr.ProcessVerification),
+		events.Consume(btcVer, btcMgr.ProcessConfirmation),
 	}
 
 	// errGroup runs async processes and cancels their context if ANY of them returns an error.
@@ -143,7 +143,7 @@ func createTSSMgr(broadcaster types.Broadcaster, defaultSender sdk.AccAddress, a
 	return mgr
 }
 
-func createBTCMgr(axelarCfg app.Config, b types.Broadcaster, logger log.Logger, valAddr string) *btc.Mgr {
+func createBTCMgr(axelarCfg app.Config, b types.Broadcaster, defaultSender sdk.AccAddress, logger log.Logger, valAddr string) *btc.Mgr {
 	rpc, err := rpc2.NewRPCClient(axelarCfg.BtcConfig, logger)
 	if err != nil {
 		logger.Error(err.Error())
@@ -152,6 +152,6 @@ func createBTCMgr(axelarCfg app.Config, b types.Broadcaster, logger log.Logger, 
 	// clean up rpc connection on process shutdown
 	tmos.TrapSignal(logger, rpc.Shutdown)
 
-	btcMgr := btc.NewMgr(rpc, valAddr, b, logger)
+	btcMgr := btc.NewMgr(rpc, valAddr, b, defaultSender, logger)
 	return btcMgr
 }

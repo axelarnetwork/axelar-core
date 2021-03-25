@@ -21,7 +21,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-func TestMgr_ProcessVerification(t *testing.T) {
+func TestMgr_ProcessConfirmation(t *testing.T) {
 	var (
 		mgr         *Mgr
 		rpc         *mock.ClientMock
@@ -34,7 +34,7 @@ func TestMgr_ProcessVerification(t *testing.T) {
 	setup := func() {
 		rpc = &mock.ClientMock{}
 		broadcaster = &mock2.BroadcasterMock{}
-		mgr = NewMgr(rpc, rand.StrBetween(5, 20), broadcaster, log.TestingLogger())
+		mgr = NewMgr(rpc, rand.StrBetween(5, 20), broadcaster, nil, log.TestingLogger())
 
 		confHeight = rand.PosI64()
 		poll := exported.NewPollMetaWithNonce(
@@ -64,7 +64,7 @@ func TestMgr_ProcessVerification(t *testing.T) {
 			copy(wrongAttributes, attributes)
 			wrongAttributes = append(wrongAttributes[:i], wrongAttributes[(i+1):]...)
 
-			err := mgr.ProcessVerification(wrongAttributes)
+			err := mgr.ProcessConfirmation(wrongAttributes)
 			assert.Error(t, err)
 		}
 	}).Repeat(repetitionCount))
@@ -75,7 +75,7 @@ func TestMgr_ProcessVerification(t *testing.T) {
 			return nil, fmt.Errorf("some error")
 		}
 
-		err := mgr.ProcessVerification(attributes)
+		err := mgr.ProcessConfirmation(attributes)
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(btc.MsgVoteConfirmOutpoint).Confirmed)
@@ -87,7 +87,7 @@ func TestMgr_ProcessVerification(t *testing.T) {
 			return nil, nil
 		}
 
-		err := mgr.ProcessVerification(attributes)
+		err := mgr.ProcessConfirmation(attributes)
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(btc.MsgVoteConfirmOutpoint).Confirmed)
@@ -103,7 +103,7 @@ func TestMgr_ProcessVerification(t *testing.T) {
 			}, nil
 		}
 
-		err := mgr.ProcessVerification(attributes)
+		err := mgr.ProcessConfirmation(attributes)
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(btc.MsgVoteConfirmOutpoint).Confirmed)
@@ -120,7 +120,7 @@ func TestMgr_ProcessVerification(t *testing.T) {
 			}, nil
 		}
 
-		err := mgr.ProcessVerification(attributes)
+		err := mgr.ProcessConfirmation(attributes)
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(btc.MsgVoteConfirmOutpoint).Confirmed)
@@ -136,7 +136,7 @@ func TestMgr_ProcessVerification(t *testing.T) {
 			}, nil
 		}
 
-		err := mgr.ProcessVerification(attributes)
+		err := mgr.ProcessConfirmation(attributes)
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		assert.True(t, broadcaster.BroadcastCalls()[0].Msgs[0].(btc.MsgVoteConfirmOutpoint).Confirmed)

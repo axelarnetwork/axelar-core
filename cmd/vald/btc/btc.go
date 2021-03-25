@@ -22,36 +22,43 @@ type Mgr struct {
 	Logger        log.Logger
 	broadcaster   broadcast.Broadcaster
 	rpc           rpc2.Client
+	sender        sdk.AccAddress
 }
 
 // NewMgr returns a new Mgr instance
-func NewMgr(rpc rpc2.Client, principalAddr string, broadcaster broadcast.Broadcaster, logger log.Logger) *Mgr {
+func NewMgr(rpc rpc2.Client, principalAddr string, broadcaster broadcast.Broadcaster, defaultSender sdk.AccAddress, logger log.Logger) *Mgr {
 	return &Mgr{
 		rpc:           rpc,
 		principalAddr: principalAddr,
 		Logger:        logger.With("listener", "btc"),
 		broadcaster:   broadcaster,
+		sender:        defaultSender,
 	}
 }
 
-// ProcessVerification votes on the correctness of a Bitcoin transaction
-func (mgr *Mgr) ProcessVerification(attributes []sdk.Attribute) error {
-	outPointInfo, confHeight, poll, err := parseVerificationStartParams(attributes)
+// ProcessConfirmation votes on the correctness of a Bitcoin transaction
+func (mgr *Mgr) ProcessConfirmation(attributes []sdk.Attribute) error {
+	outPointInfo, confHeight, poll, err := parseConfirmationStartParams(attributes)
 	if err != nil {
-		return sdkerrors.Wrap(err, "failed Bitcoin transaction verification")
+		return sdkerrors.Wrap(err, "failed Bitcoin transaction confirmation")
 	}
 
-	err = verifyTx(mgr.rpc, outPointInfo, confHeight)
+	err = confirmTx(mgr.rpc, outPointInfo, confHeight)
 	var msg btc.MsgVoteConfirmOutpoint
 	if err != nil {
-		mgr.Logger.Debug(sdkerrors.Wrap(err, "verification failed").Error())
+		mgr.Logger.Debug(sdkerrors.Wrap(err, "tx outpoint confirmation failed").Error())
 	}
-	msg = btc.MsgVoteConfirmOutpoint{PollMeta: poll, Confirmed: err == nil, Outpoint: *outPointInfo.OutPoint}
+	msg = btc.MsgVoteConfirmOutpoint{
+		Sender:    mgr.sender,
+		PollMeta:  poll,
+		Confirmed: err == nil,
+		Outpoint:  *outPointInfo.OutPoint,
+	}
 	mgr.Logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, poll.String()))
 	return mgr.broadcaster.Broadcast(msg)
 }
 
-func parseVerificationStartParams(attributes []sdk.Attribute) (outPoint btc.OutPointInfo, confHeight int64, poll vote.PollMeta, err error) {
+func parseConfirmationStartParams(attributes []sdk.Attribute) (outPoint btc.OutPointInfo, confHeight int64, poll vote.PollMeta, err error) {
 	var outPointFound, confHeightFound, pollFound bool
 	for _, attribute := range attributes {
 		switch attribute.Key {
@@ -78,7 +85,7 @@ func parseVerificationStartParams(attributes []sdk.Attribute) (outPoint btc.OutP
 	return outPoint, confHeight, poll, nil
 }
 
-func verifyTx(rpc rpc2.Client, outPointInfo btc.OutPointInfo, requiredConfirmations int64) error {
+func confirmTx(rpc rpc2.Client, outPointInfo btc.OutPointInfo, requiredConfirmations int64) error {
 	actualTxOut, err := rpc.GetTxOut(&outPointInfo.OutPoint.Hash, outPointInfo.OutPoint.Index, false)
 	if err != nil {
 		return sdkerrors.Wrap(err, "call to Bitcoin rpc failed")

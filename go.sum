@@ -82,8 +82,15 @@ github.com/aws/aws-sdk-go v1.25.48/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpi
 github.com/aws/aws-sdk-go v1.27.0/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN924inxo=
 github.com/aws/aws-sdk-go-v2 v0.18.0/go.mod h1:JWVYvqSMppoMJC0x5wdwiImzgXTI9FuZwxzkQq9wy+g=
 github.com/axelarnetwork/axelar-core v0.0.2-0.20210302093357-f2f67692d1ba/go.mod h1:JDzy4mE0MHSdMcSRRcttESUyQ8a1YWFWDWaLJ5/gJbA=
+github.com/axelarnetwork/axelar-core v0.2.0/go.mod h1:vaXQReZJ1ZunnmWD2r2XMncW4JK0pMnFZs82za0qonI=
 github.com/axelarnetwork/c2d2 v0.0.0-20210302225045-2f24e9ea1116 h1:zegF+1j6qph5URd0bnIMJ6uI3pV95xLgjX1e5VbMe9c=
 github.com/axelarnetwork/c2d2 v0.0.0-20210302225045-2f24e9ea1116/go.mod h1:wPKBFS06EN2PTjk3QUJK9sakL2NAUhGhhTfWAaq+kL0=
+github.com/axelarnetwork/c2d2 v0.0.0-20210322011526-cf631cda06eb h1:Iz4mFGlG0/9dA5B3devh855jyAZoukoCXR2zaxzdOog=
+github.com/axelarnetwork/c2d2 v0.0.0-20210322011526-cf631cda06eb/go.mod h1:DOerMaF4n54XS6HmcBSgcFcZhRbGZDEgEr6oH40iqD4=
+github.com/axelarnetwork/c2d2 v0.0.0-20210324065940-dbfb0dbc0214 h1:0enrp5LorUMxsjPUi6AUXwYFqe54h1dKk/6xQSI654Y=
+github.com/axelarnetwork/c2d2 v0.0.0-20210324065940-dbfb0dbc0214/go.mod h1:DOerMaF4n54XS6HmcBSgcFcZhRbGZDEgEr6oH40iqD4=
+github.com/axelarnetwork/c2d2 v0.0.0-20210325005703-59a659974b75 h1:sSKfare2BHTbJgVVQQOuSJWw1T/gdf71Jer6cTJCDTE=
+github.com/axelarnetwork/c2d2 v0.0.0-20210325005703-59a659974b75/go.mod h1:g2Wj6hklfrEcUfT8cyyOqynRBZl4JlaWWwLQQeTtfpw=
 github.com/bartekn/go-bip39 v0.0.0-20171116152956-a05967ea095d h1:1aAija9gr0Hyv4KfQcRcwlmFIrhkDmIj2dz5bkg/s/8=
 github.com/bartekn/go-bip39 v0.0.0-20171116152956-a05967ea095d/go.mod h1:icNx/6QdFblhsEjZehARqbNumymUT/ydwlLojFdv7Sk=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
@@ -504,6 +511,9 @@ github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FI
 github.com/pborman/uuid v0.0.0-20170112150404-1b00554d8222/go.mod h1:VyrYX9gd7irzKovcSS6BIIEwPRkP2Wm2m9ufcdFSJ34=
 github.com/pborman/uuid v1.2.0 h1:J7Q5mO4ysT1dv8hyrUGHb9+ooztCXu1D8MY8DZYsu3g=
 github.com/pborman/uuid v1.2.0/go.mod h1:X/NO0urCmaxf9VXbdlT7C2Yzkj2IKimNn4k+gtPdI/k=
+github.com/pborman/uuid v1.2.1 h1:+ZZIw58t/ozdjRaXh/3awHfmWRbzYxJoAdNJxe/3pvw=
+github.com/pborman/uuid v1.2.1/go.mod h1:X/NO0urCmaxf9VXbdlT7C2Yzkj2IKimNn4k+gtPdI/k=
+github.com/pebbe/zmq4 v1.2.5/go.mod h1:3+LG+02U+ToKtxF9avLo17NGTVDhWtRhsdU3spikK8o=
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
 github.com/pelletier/go-toml v1.6.0 h1:aetoXYr0Tv7xRU/V4B4IZJ2QcbtMUFoNb3ORp7TzIK4=
 github.com/pelletier/go-toml v1.6.0/go.mod h1:5N711Q9dKgbdkxHL+MEfF31hpT7l0S0s/t2kKREewys=

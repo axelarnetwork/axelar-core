@@ -22,7 +22,7 @@ type FilteredSubscriber struct {
 }
 
 func newFilteredSubscriber(subscriber pubsub.Subscriber, predicate func(event types.Event) bool) FilteredSubscriber {
-	s := FilteredSubscriber{Subscriber: subscriber, predicate: predicate}
+	s := FilteredSubscriber{Subscriber: subscriber, predicate: predicate, eventChan: make(chan types.Event)}
 
 	go func() {
 		for event := range s.Subscriber.Events() {
@@ -75,8 +75,8 @@ func MustSubscribe(hub *events.Hub, eventType string, module string, action stri
 
 // Subscribe returns a filtered subscriber that only streams events of the given type, module and action
 func Subscribe(hub *events.Hub, eventType string, module string, action string) (FilteredSubscriber, error) {
-	bus, err := hub.Subscribe(query.MustParse(fmt.Sprintf("%s='%s' AND %s.%s='%s'",
-		tm.EventTypeKey, tm.EventTx, eventType, sdk.AttributeKeyModule, module)))
+	bus, err := hub.Subscribe(query.MustParse(fmt.Sprintf("%s='%s' AND %s.%s='%s' AND %s.%s='%s'",
+		tm.EventTypeKey, tm.EventTx, eventType, sdk.AttributeKeyModule, module, eventType, sdk.AttributeKeyAction, action)))
 	if err != nil {
 		return FilteredSubscriber{}, err
 	}

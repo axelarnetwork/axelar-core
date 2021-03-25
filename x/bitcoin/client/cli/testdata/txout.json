@@ -1,0 +1,15 @@
+{
+  "bestblock": "45539078712765fb16eaac3661f29f653af54de493d12d6a274ade67d2ff846d",
+  "confirmations": 15,
+  "value": 1.00000000,
+  "scriptPubKey": {
+    "asm": "0 72a037f93999496fa92e289d4edaa72d2f2900254f5c4c990649d75b79392924",
+    "hex": "002072a037f93999496fa92e289d4edaa72d2f2900254f5c4c990649d75b79392924",
+    "reqSigs": 1,
+    "type": "witness_v0_scripthash",
+    "addresses": [
+      "bcrt1qw2sr07fen9ykl2fw9zw5ak4895hjjqp9fawyexgxf8t4k7fe9yjqjy7k9e"
+    ]
+  },
+  "coinbase": false
+}

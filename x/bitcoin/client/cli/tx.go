@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/btcsuite/btcd/btcjson"
@@ -31,7 +32,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	}
 
 	btcTxCmd.AddCommand(flags.PostCommands(
-		GetCmdVerifyTx(cdc),
+		GetCmdConfirmTxOut(cdc),
 		GetCmdLink(cdc),
 		GetCmdSignPendingTransfersTx(cdc),
 	)...)
@@ -39,14 +40,14 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	return btcTxCmd
 }
 
-// GetCmdVerifyTx returns the transaction verification command
-func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
+// GetCmdConfirmTxOut returns the transaction confirmation command
+func GetCmdConfirmTxOut(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "verifyTx [txID:voutIdx] [txOut json]",
-		Short: "Verify a Bitcoin transaction",
+		Use:   "confirmTxOut [txID:voutIdx] [txOut json]",
+		Short: "Confirm a Bitcoin transaction",
 		Long: fmt.Sprintf(
-			"Verify that a transaction happened on the Bitcoin network so it can be processed on axelar."),
-		Args: cobra.ExactArgs(1),
+			"Confirm that a transaction happened on the Bitcoin network so it can be processed on axelar."),
+		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
@@ -57,7 +58,10 @@ func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
 			}
 
 			var txOut btcjson.GetTxOutResult
-			cliCtx.Codec.MustUnmarshalJSON([]byte(args[1]), &txOut)
+			// need to use json cdc instead of amino because amino cannot deal with floats
+			if err = json.Unmarshal([]byte(args[1]), &txOut); err != nil {
+				panic(err)
+			}
 
 			outInfo, err := types.NewOutPointInfo(outPoint, txOut)
 

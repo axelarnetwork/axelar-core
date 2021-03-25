@@ -113,10 +113,10 @@ func HandleMsgVoteConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, v types.Vo
 		k.DeleteUnconfirmedOutPointInfo(ctx, msg.PollMeta)
 
 		// If the voting threshold has been met and additional votes are received they should not return an error
-		switch {
-		case state == types.CONFIRMED:
+		switch state {
+		case types.CONFIRMED:
 			return &sdk.Result{Log: fmt.Sprintf("outpoint %s already confirmed", confirmedOutpoint.OutPoint.String())}, nil
-		case state == types.SPENT:
+		case types.SPENT:
 			return &sdk.Result{Log: fmt.Sprintf("outpoint %s already spent", confirmedOutpoint.OutPoint.String())}, nil
 		default:
 			panic(fmt.Sprintf("invalid outpoint state %v", state))

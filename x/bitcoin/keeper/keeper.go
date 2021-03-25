@@ -56,7 +56,7 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 }
 
 // GetRequiredConfirmationHeight returns the minimum number of confirmations a transaction must have on Bitcoin
-// before axelar will accept it for verification.
+// before axelar will accept it as confirmed.
 func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context) uint64 {
 	var h uint64
 	k.params.Get(ctx, types.KeyConfirmationHeight, &h)
