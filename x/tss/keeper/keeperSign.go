@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"crypto/ecdsa"
 	"fmt"
 
 	"github.com/btcsuite/btcd/btcec"
@@ -11,11 +10,11 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
-	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // StartSign starts a tss signing protocol using the specified key for the given chain.
-func (k Keeper) StartSign(ctx sdk.Context, voter types.Voter, keyID string, sigID string, msg []byte, s snapshot.Snapshot) error {
+func (k Keeper) StartSign(ctx sdk.Context, voter types.InitPoller, keyID string, sigID string, msg []byte, s snapshot.Snapshot) error {
 	if _, ok := k.getKeyIDForSig(ctx, sigID); ok {
 		return fmt.Errorf("sigID %s has been used before", sigID)
 	}
@@ -49,7 +48,7 @@ func (k Keeper) StartSign(ctx sdk.Context, voter types.Voter, keyID string, sigI
 		k.setParticipateInSign(ctx, sigID, v.GetOperator())
 	}
 
-	poll := voting.NewPollMeta(types.ModuleName, types.EventTypeSign, sigID)
+	poll := vote.NewPollMeta(types.ModuleName, types.EventTypeSign, sigID)
 	if err := voter.InitPoll(ctx, poll); err != nil {
 		return err
 	}
@@ -112,10 +111,10 @@ func (k Keeper) SetSig(ctx sdk.Context, sigID string, signature []byte) {
 }
 
 // GetKeyForSigID returns the key that produced the signature corresponding to the given ID
-func (k Keeper) GetKeyForSigID(ctx sdk.Context, sigID string) (ecdsa.PublicKey, bool) {
+func (k Keeper) GetKeyForSigID(ctx sdk.Context, sigID string) (exported.Key, bool) {
 	keyID, ok := k.getKeyIDForSig(ctx, sigID)
 	if !ok {
-		return ecdsa.PublicKey{}, false
+		return exported.Key{}, false
 	}
 	return k.GetKey(ctx, keyID)
 }

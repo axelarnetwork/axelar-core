@@ -11,8 +11,8 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	"github.com/axelarnetwork/axelar-core/utils/denom"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
+	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
@@ -52,14 +52,14 @@ func TestLinkSuccess(t *testing.T) {
 
 	sender, recipient := makeRandAddressesForChain(btc.Bitcoin, eth.Ethereum)
 	keeper.LinkAddresses(ctx, sender, recipient)
-	err := keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(denom.Satoshi))
+	err := keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(btcTypes.Satoshi))
 	assert.NoError(t, err)
 	recp, ok := keeper.GetRecipient(ctx, sender)
 	assert.True(t, ok)
 	assert.Equal(t, recipient, recp)
 
 	sender.Address = rand.Str(20)
-	err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(denom.Satoshi))
+	err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(btcTypes.Satoshi))
 	assert.Error(t, err)
 	recp, ok = keeper.GetRecipient(ctx, sender)
 	assert.False(t, ok)
@@ -71,7 +71,7 @@ func TestPrepareNoLink(t *testing.T) {
 	keeper.SetParams(ctx, types.DefaultParams())
 
 	sender, _ := makeRandAddressesForChain(btc.Bitcoin, eth.Ethereum)
-	err := keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(denom.Satoshi))
+	err := keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(btcTypes.Satoshi))
 	assert.Error(t, err)
 }
 
@@ -82,7 +82,7 @@ func TestPrepareSuccess(t *testing.T) {
 	amounts := make(map[exported.CrossChainAddress]sdk.Coin)
 	for i := 0; i < linkedAddr; i++ {
 		sender, recipient := makeRandAddressesForChain(btc.Bitcoin, eth.Ethereum)
-		amounts[recipient] = makeRandAmount(denom.Satoshi)
+		amounts[recipient] = makeRandAmount(btcTypes.Satoshi)
 		keeper.LinkAddresses(ctx, sender, recipient)
 		err := keeper.EnqueueForTransfer(ctx, sender, amounts[recipient])
 		assert.NoError(t, err)
@@ -114,7 +114,7 @@ func TestArchive(t *testing.T) {
 		sender, recipient := makeRandAddressesForChain(btc.Bitcoin, eth.Ethereum)
 		recipients = append(recipients, recipient)
 		keeper.LinkAddresses(ctx, sender, recipient)
-		amount := makeRandAmount(denom.Satoshi)
+		amount := makeRandAmount(btcTypes.Satoshi)
 		err := keeper.EnqueueForTransfer(ctx, sender, amount)
 		assert.NoError(t, err)
 		total += amount.Amount.Uint64()
@@ -150,12 +150,12 @@ func TestTotalInvalid(t *testing.T) {
 	ethSender, ethRecipient := makeRandAddressesForChain(eth.Ethereum, btc.Bitcoin)
 	keeper.LinkAddresses(ctx, ethSender, ethRecipient)
 
-	err := keeper.EnqueueForTransfer(ctx, btcSender, makeRandAmount(denom.Satoshi))
+	err := keeper.EnqueueForTransfer(ctx, btcSender, makeRandAmount(btcTypes.Satoshi))
 	assert.NoError(t, err)
 	transfer := keeper.GetPendingTransfersForChain(ctx, eth.Ethereum)[0]
 	keeper.ArchivePendingTransfer(ctx, transfer)
 	total := transfer.Asset.Amount.Int64()
-	amount := sdk.NewCoin(denom.Satoshi, sdk.NewInt(total+rand.I64Between(1, 100000)))
+	amount := sdk.NewCoin(btcTypes.Satoshi, sdk.NewInt(total+rand.I64Between(1, 100000)))
 	err = keeper.EnqueueForTransfer(ctx, ethSender, amount)
 	assert.Error(t, err)
 }
@@ -169,15 +169,15 @@ func TestTotalSucess(t *testing.T) {
 	ethSender, ethRecipient := makeRandAddressesForChain(eth.Ethereum, btc.Bitcoin)
 	keeper.LinkAddresses(ctx, ethSender, ethRecipient)
 
-	err := keeper.EnqueueForTransfer(ctx, btcSender, makeRandAmount(denom.Satoshi))
+	err := keeper.EnqueueForTransfer(ctx, btcSender, makeRandAmount(btcTypes.Satoshi))
 	assert.NoError(t, err)
 	transfer := keeper.GetPendingTransfersForChain(ctx, eth.Ethereum)[0]
 	keeper.ArchivePendingTransfer(ctx, transfer)
 	total := transfer.Asset.Amount.Int64()
-	amount := sdk.NewCoin(denom.Satoshi, sdk.NewInt(rand.I64Between(1, total)))
+	amount := sdk.NewCoin(btcTypes.Satoshi, sdk.NewInt(rand.I64Between(1, total)))
 	err = keeper.EnqueueForTransfer(ctx, ethSender, amount)
 	assert.NoError(t, err)
-	amount = sdk.NewCoin(denom.Satoshi, sdk.NewInt(total))
+	amount = sdk.NewCoin(btcTypes.Satoshi, sdk.NewInt(total))
 	err = keeper.EnqueueForTransfer(ctx, ethSender, amount)
 	assert.Error(t, err)
 }

@@ -2,7 +2,6 @@ package bitcoin
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -70,22 +69,20 @@ func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 // AppModule implements module.AppModule
 type AppModule struct {
 	AppModuleBasic
-	keeper      keeper.Keeper
+	keeper      types.BTCKeeper
 	voter       types.Voter
-	rpc         types.RPCClient
 	signer      types.Signer
 	nexus       types.Nexus
 	snapshotter types.Snapshotter
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, nexus types.Nexus, snapshotter types.Snapshotter, rpc types.RPCClient) AppModule {
+func NewAppModule(k types.BTCKeeper, voter types.Voter, signer types.Signer, nexus types.Nexus, snapshotter types.Snapshotter) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
 		voter:          voter,
 		signer:         signer,
-		rpc:            rpc,
 		nexus:          nexus,
 		snapshotter:    snapshotter,
 	}
@@ -100,14 +97,6 @@ func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {
 func (am AppModule) InitGenesis(ctx sdk.Context, message json.RawMessage) []abci.ValidatorUpdate {
 	var genesisState types.GenesisState
 	types.ModuleCdc.MustUnmarshalJSON(message, &genesisState)
-	actualNetwork := am.rpc.Network()
-	if genesisState.Params.Network.Params.Name != actualNetwork.Params.Name {
-		panic(fmt.Sprintf(
-			"local bitcoin client not configured correctly: expected network %s, got %s",
-			genesisState.Params.Network.Params.Name,
-			actualNetwork.Params.Name,
-		))
-	}
 	InitGenesis(ctx, am.keeper, genesisState)
 	return []abci.ValidatorUpdate{}
 }
@@ -125,7 +114,7 @@ func (AppModule) Route() string {
 
 // NewHandler returns a new handler for this module
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper, am.voter, am.rpc, am.signer, am.nexus, am.snapshotter)
+	return NewHandler(am.keeper, am.voter, am.signer, am.nexus, am.snapshotter)
 }
 
 // QuerierRoute returns this module's query route
@@ -135,7 +124,7 @@ func (AppModule) QuerierRoute() string {
 
 // NewQuerierHandler returns a new query handler for this module
 func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return keeper.NewQuerier(am.keeper, am.signer, am.nexus, am.rpc)
+	return keeper.NewQuerier(am.keeper, am.signer, am.nexus)
 }
 
 // BeginBlock executes all state transitions this module requires at the beginning of each new block
@@ -145,5 +134,5 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 
 // EndBlock executes all state transitions this module requires at the end of each new block
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return EndBlocker(ctx, req, am.keeper)
+	return EndBlocker(ctx, req, am.keeper, am.signer)
 }

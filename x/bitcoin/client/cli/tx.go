@@ -12,10 +12,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/axelarnetwork/axelar-core/utils/denom"
-
 	"github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
 
@@ -31,7 +28,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	}
 
 	btcTxCmd.AddCommand(flags.PostCommands(
-		GetCmdVerifyTx(cdc),
+		GetCmdConfirmTxOut(cdc),
 		GetCmdLink(cdc),
 		GetCmdSignPendingTransfersTx(cdc),
 	)...)
@@ -39,23 +36,31 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	return btcTxCmd
 }
 
-// GetCmdVerifyTx returns the transaction verification command
-func GetCmdVerifyTx(cdc *codec.Codec) *cobra.Command {
+// GetCmdConfirmTxOut returns the transaction confirmation command
+func GetCmdConfirmTxOut(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "verifyTx [txInfo json]",
-		Short: "Verify a Bitcoin transaction",
+		Use:   "confirmTxOut [txID:voutIdx] [amount] [address]",
+		Short: "Confirm a Bitcoin transaction",
 		Long: fmt.Sprintf(
-			"Verify that a transaction happened on the Bitcoin network so it can be processed on axelar. "+
-				"Get the json string by using the %s query", keeper.QueryOutInfo),
-		Args: cobra.ExactArgs(1),
+			"Confirm that a transaction happened on the Bitcoin network so it can be processed on axelar."),
+		Args: cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
 
-			var out types.OutPointInfo
-			cliCtx.Codec.MustUnmarshalJSON([]byte(args[0]), &out)
+			outPoint, err := types.OutPointFromStr(args[0])
+			if err != nil {
+				return err
+			}
 
-			msg := types.MsgVerifyTx{Sender: cliCtx.GetFromAddress(), OutPointInfo: out}
+			satoshi, err := types.ParseSatoshi(args[1])
+			if err != nil {
+				return err
+			}
+
+			outInfo, err := types.NewOutPointInfo(outPoint, btcutil.Amount(satoshi.Amount.Int64()), args[2])
+
+			msg := types.MsgConfirmOutpoint{Sender: cliCtx.GetFromAddress(), OutPointInfo: outInfo}
 
 			if err := msg.ValidateBasic(); err != nil {
 				return err
@@ -95,7 +100,7 @@ func GetCmdSignPendingTransfersTx(cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
 
-			satoshi, err := denom.ParseSatoshi(args[0])
+			satoshi, err := types.ParseSatoshi(args[0])
 			if err != nil {
 				return err
 			}

@@ -1,13 +1,13 @@
-## axelarcli tx bitcoin verifyTx
+## axelarcli tx bitcoin confirmTxOut
 
-Verify a Bitcoin transaction
+Confirm a Bitcoin transaction
 
 ### Synopsis
 
-Verify that a transaction happened on the Bitcoin network so it can be processed on axelar. Get the json string by using the outPointInfo query
+Confirm that a transaction happened on the Bitcoin network so it can be processed on axelar.
 
 ```
-axelarcli tx bitcoin verifyTx [txInfo json] [flags]
+axelarcli tx bitcoin confirmTxOut [txID:voutIdx] [amount] [address] [flags]
 ```
 
 ### Options
@@ -22,7 +22,7 @@ axelarcli tx bitcoin verifyTx [txInfo json] [flags]
       --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
       --gas-prices string        Gas prices to determine the transaction fee (e.g. 10uatom)
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible and the node operates offline)
-  -h, --help                     help for verifyTx
+  -h, --help                     help for confirmTxOut
       --indent                   Add indent to JSON response
       --keyring-backend string   Select keyring's backend (os|file|test) (default "os")
       --ledger                   Use a connected Ledger device

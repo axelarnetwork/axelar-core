@@ -4,24 +4,26 @@
 package mock
 
 import (
+	"github.com/axelarnetwork/axelar-core/cmd/vald/btc/rpc"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"sync"
 )
 
-// Ensure, that RPCClientMock does implement types.RPCClient.
+// Ensure, that ClientMock does implement rpc.Client.
 // If this is not the case, regenerate this file with moq.
-var _ types.RPCClient = &RPCClientMock{}
+var _ rpc.Client = &ClientMock{}
 
-// RPCClientMock is a mock implementation of types.RPCClient.
+// ClientMock is a mock implementation of rpc.Client.
 //
-// 	func TestSomethingThatUsesRPCClient(t *testing.T) {
+// 	func TestSomethingThatUsesClient(t *testing.T) {
 //
-// 		// make and configure a mocked types.RPCClient
-// 		mockedRPCClient := &RPCClientMock{
-// 			GetOutPointInfoFunc: func(blockHash *chainhash.Hash, out *wire.OutPoint) (types.OutPointInfo, error) {
-// 				panic("mock out the GetOutPointInfo method")
+// 		// make and configure a mocked rpc.Client
+// 		mockedClient := &ClientMock{
+// 			GetTxOutFunc: func(txHash *chainhash.Hash, voutIdx uint32, mempool bool) (*btcjson.GetTxOutResult, error) {
+// 				panic("mock out the GetTxOut method")
 // 			},
 // 			NetworkFunc: func() types.Network {
 // 				panic("mock out the Network method")
@@ -31,13 +33,13 @@ var _ types.RPCClient = &RPCClientMock{}
 // 			},
 // 		}
 //
-// 		// use mockedRPCClient in code that requires types.RPCClient
+// 		// use mockedClient in code that requires rpc.Client
 // 		// and then make assertions.
 //
 // 	}
-type RPCClientMock struct {
-	// GetOutPointInfoFunc mocks the GetOutPointInfo method.
-	GetOutPointInfoFunc func(blockHash *chainhash.Hash, out *wire.OutPoint) (types.OutPointInfo, error)
+type ClientMock struct {
+	// GetTxOutFunc mocks the GetTxOut method.
+	GetTxOutFunc func(txHash *chainhash.Hash, voutIdx uint32, mempool bool) (*btcjson.GetTxOutResult, error)
 
 	// NetworkFunc mocks the Network method.
 	NetworkFunc func() types.Network
@@ -47,12 +49,14 @@ type RPCClientMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// GetOutPointInfo holds details about calls to the GetOutPointInfo method.
-		GetOutPointInfo []struct {
-			// BlockHash is the blockHash argument value.
-			BlockHash *chainhash.Hash
-			// Out is the out argument value.
-			Out *wire.OutPoint
+		// GetTxOut holds details about calls to the GetTxOut method.
+		GetTxOut []struct {
+			// TxHash is the txHash argument value.
+			TxHash *chainhash.Hash
+			// VoutIdx is the voutIdx argument value.
+			VoutIdx uint32
+			// Mempool is the mempool argument value.
+			Mempool bool
 		}
 		// Network holds details about calls to the Network method.
 		Network []struct {
@@ -65,50 +69,54 @@ type RPCClientMock struct {
 			AllowHighFees bool
 		}
 	}
-	lockGetOutPointInfo    sync.RWMutex
+	lockGetTxOut           sync.RWMutex
 	lockNetwork            sync.RWMutex
 	lockSendRawTransaction sync.RWMutex
 }
 
-// GetOutPointInfo calls GetOutPointInfoFunc.
-func (mock *RPCClientMock) GetOutPointInfo(blockHash *chainhash.Hash, out *wire.OutPoint) (types.OutPointInfo, error) {
-	if mock.GetOutPointInfoFunc == nil {
-		panic("RPCClientMock.GetOutPointInfoFunc: method is nil but RPCClient.GetOutPointInfo was just called")
+// GetTxOut calls GetTxOutFunc.
+func (mock *ClientMock) GetTxOut(txHash *chainhash.Hash, voutIdx uint32, mempool bool) (*btcjson.GetTxOutResult, error) {
+	if mock.GetTxOutFunc == nil {
+		panic("ClientMock.GetTxOutFunc: method is nil but Client.GetTxOut was just called")
 	}
 	callInfo := struct {
-		BlockHash *chainhash.Hash
-		Out       *wire.OutPoint
+		TxHash  *chainhash.Hash
+		VoutIdx uint32
+		Mempool bool
 	}{
-		BlockHash: blockHash,
-		Out:       out,
+		TxHash:  txHash,
+		VoutIdx: voutIdx,
+		Mempool: mempool,
 	}
-	mock.lockGetOutPointInfo.Lock()
-	mock.calls.GetOutPointInfo = append(mock.calls.GetOutPointInfo, callInfo)
-	mock.lockGetOutPointInfo.Unlock()
-	return mock.GetOutPointInfoFunc(blockHash, out)
+	mock.lockGetTxOut.Lock()
+	mock.calls.GetTxOut = append(mock.calls.GetTxOut, callInfo)
+	mock.lockGetTxOut.Unlock()
+	return mock.GetTxOutFunc(txHash, voutIdx, mempool)
 }
 
-// GetOutPointInfoCalls gets all the calls that were made to GetOutPointInfo.
+// GetTxOutCalls gets all the calls that were made to GetTxOut.
 // Check the length with:
-//     len(mockedRPCClient.GetOutPointInfoCalls())
-func (mock *RPCClientMock) GetOutPointInfoCalls() []struct {
-	BlockHash *chainhash.Hash
-	Out       *wire.OutPoint
+//     len(mockedClient.GetTxOutCalls())
+func (mock *ClientMock) GetTxOutCalls() []struct {
+	TxHash  *chainhash.Hash
+	VoutIdx uint32
+	Mempool bool
 } {
 	var calls []struct {
-		BlockHash *chainhash.Hash
-		Out       *wire.OutPoint
+		TxHash  *chainhash.Hash
+		VoutIdx uint32
+		Mempool bool
 	}
-	mock.lockGetOutPointInfo.RLock()
-	calls = mock.calls.GetOutPointInfo
-	mock.lockGetOutPointInfo.RUnlock()
+	mock.lockGetTxOut.RLock()
+	calls = mock.calls.GetTxOut
+	mock.lockGetTxOut.RUnlock()
 	return calls
 }
 
 // Network calls NetworkFunc.
-func (mock *RPCClientMock) Network() types.Network {
+func (mock *ClientMock) Network() types.Network {
 	if mock.NetworkFunc == nil {
-		panic("RPCClientMock.NetworkFunc: method is nil but RPCClient.Network was just called")
+		panic("ClientMock.NetworkFunc: method is nil but Client.Network was just called")
 	}
 	callInfo := struct {
 	}{}
@@ -120,8 +128,8 @@ func (mock *RPCClientMock) Network() types.Network {
 
 // NetworkCalls gets all the calls that were made to Network.
 // Check the length with:
-//     len(mockedRPCClient.NetworkCalls())
-func (mock *RPCClientMock) NetworkCalls() []struct {
+//     len(mockedClient.NetworkCalls())
+func (mock *ClientMock) NetworkCalls() []struct {
 } {
 	var calls []struct {
 	}
@@ -132,9 +140,9 @@ func (mock *RPCClientMock) NetworkCalls() []struct {
 }
 
 // SendRawTransaction calls SendRawTransactionFunc.
-func (mock *RPCClientMock) SendRawTransaction(tx *wire.MsgTx, allowHighFees bool) (*chainhash.Hash, error) {
+func (mock *ClientMock) SendRawTransaction(tx *wire.MsgTx, allowHighFees bool) (*chainhash.Hash, error) {
 	if mock.SendRawTransactionFunc == nil {
-		panic("RPCClientMock.SendRawTransactionFunc: method is nil but RPCClient.SendRawTransaction was just called")
+		panic("ClientMock.SendRawTransactionFunc: method is nil but Client.SendRawTransaction was just called")
 	}
 	callInfo := struct {
 		Tx            *wire.MsgTx
@@ -151,8 +159,8 @@ func (mock *RPCClientMock) SendRawTransaction(tx *wire.MsgTx, allowHighFees bool
 
 // SendRawTransactionCalls gets all the calls that were made to SendRawTransaction.
 // Check the length with:
-//     len(mockedRPCClient.SendRawTransactionCalls())
-func (mock *RPCClientMock) SendRawTransactionCalls() []struct {
+//     len(mockedClient.SendRawTransactionCalls())
+func (mock *ClientMock) SendRawTransactionCalls() []struct {
 	Tx            *wire.MsgTx
 	AllowHighFees bool
 } {

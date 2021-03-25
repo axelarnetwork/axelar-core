@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -28,8 +27,7 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 	btcTxCmd.AddCommand(flags.GetCommands(
 		GetCmdDepositAddress(queryRoute, cdc),
-		GetCmdTxInfo(queryRoute, cdc),
-		GetCmdSendTransfers(queryRoute, cdc),
+		GetCmdConsolidationTx(queryRoute, cdc),
 	)...)
 
 	return btcTxCmd
@@ -58,49 +56,23 @@ func GetCmdDepositAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return cmd
 }
 
-// GetCmdTxInfo returns the tx info query command
-func GetCmdTxInfo(queryRoute string, cdc *codec.Codec) *cobra.Command {
+// GetCmdConsolidationTx returns a transaction containing all pending transfers to Bitcoin
+func GetCmdConsolidationTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "txInfo [blockHash] [txID:voutIdx]",
-		Short: "Query the info of the outpoint at index [voutIdx] of transaction [txID] on Bitcoin",
-		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			out, err := types.OutPointFromStr(args[1])
-			if err != nil {
-				return err
-			}
-
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryOutInfo, args[0]), cdc.MustMarshalJSON(out))
-			if err != nil {
-				return sdkerrors.Wrapf(err, types.ErrFTxInfo, out.Hash.String(), out.Index)
-			}
-
-			var info types.OutPointInfo
-			cdc.MustUnmarshalJSON(res, &info)
-			fmt.Println(strings.ReplaceAll(string(res), "\"", "\\\""))
-			return cliCtx.PrintOutput(info)
-		},
-	}
-}
-
-// GetCmdSendTransfers sends a transaction containing all pending transfers to Bitcoin
-func GetCmdSendTransfers(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "send",
-		Short: "Send a transaction to Bitcoin that consolidates deposits and withdrawals",
+		Use:   "rawTx",
+		Short: "Returns the encoded hex string of a fully signed transfer and consolidation transaction",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.SendTx), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.GetTx), nil)
 			if err != nil {
-				return sdkerrors.Wrap(err, types.ErrFSendTransfers)
+				return sdkerrors.Wrap(err, types.ErrFGetTransfers)
 			}
 
 			var out string
 			cdc.MustUnmarshalJSON(res, &out)
+
 			return cliCtx.PrintOutput(out)
 		},
 	}

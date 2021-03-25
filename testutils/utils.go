@@ -2,6 +2,8 @@
 package testutils
 
 import (
+	"testing"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -39,4 +41,16 @@ func Codec() *codec.Codec {
 	ethereum.RegisterCodec(cdc)
 
 	return cdc
+}
+
+// Func wraps a regular testing function so it can be used as a pointer function receiver
+type Func func(t *testing.T)
+
+// Repeat executes the testing function n times
+func (f Func) Repeat(n int) Func {
+	return func(t *testing.T) {
+		for i := 0; i < n; i++ {
+			f(t)
+		}
+	}
 }

@@ -3,12 +3,12 @@ package tests
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"testing"
 
 	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
@@ -58,7 +58,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	// set up chain
 	const nodeCount = 10
 	chain, nodeData := initChain(nodeCount, "keyRotation")
-	keygenDone, verifyDone, signDone := registerWaitEventListeners(nodeData[0])
+	keygenDone, btcConfirmationDone, ethVerifyDone, signDone := registerWaitEventListeners(nodeData[0])
 
 	// register proxies for all validators
 	for i, proxy := range randStrings.Take(nodeCount) {
@@ -183,7 +183,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	verifyResult1 := <-chain.Submit(ethTypes.NewMsgVerifyErc20TokenDeploy(randomSender(), txHash, "satoshi"))
 	assert.NoError(t, verifyResult1.Error)
 
-	if err := waitFor(verifyDone, 1); err != nil {
+	if err := waitFor(ethVerifyDone, 1); err != nil {
 		assert.FailNow(t, "verification", err)
 	}
 
@@ -200,37 +200,19 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 		// simulate deposit to master key address
 		depositAddr := string(linkResult.Data)
-		expectedDepositInfo := randomOutpointInfo(depositAddr)
-		for _, n := range nodeData {
-			n.Mocks.BTC.GetOutPointInfoFunc = func(bHash *chainhash.Hash, out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
-				if !bHash.IsEqual(expectedDepositInfo.BlockHash) || out.String() != expectedDepositInfo.OutPoint.String() {
-					return btcTypes.OutPointInfo{}, fmt.Errorf("outpoint info not found")
-				}
-				return expectedDepositInfo, nil
-			}
-		}
-
-		// query for deposit info
-		bz, err := nodeData[0].Node.Query(
-			[]string{btcTypes.QuerierRoute, btcKeeper.QueryOutInfo, expectedDepositInfo.BlockHash.String()},
-			abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(expectedDepositInfo.OutPoint)},
-		)
-		assert.NoError(t, err)
-		var actualDepositInfo btcTypes.OutPointInfo
-		testutils.Codec().MustUnmarshalJSON(bz, &actualDepositInfo)
-		assert.Equal(t, expectedDepositInfo, actualDepositInfo)
+		depositInfo := randomOutpointInfo(depositAddr)
 
 		// verify deposit to master key
-		verifyResult1 := <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender(), expectedDepositInfo))
+		verifyResult1 := <-chain.Submit(btcTypes.NewMsgConfirmOutpoint(randomSender(), depositInfo))
 		assert.NoError(t, verifyResult1.Error)
 
 		// store this information for later in the test
-		totalDepositAmount += int64(actualDepositInfo.Amount)
-		deposits[actualDepositInfo.OutPoint.String()] = actualDepositInfo
+		totalDepositAmount += int64(depositInfo.Amount)
+		deposits[depositInfo.OutPoint.String()] = depositInfo
 	}
 
 	// wait for voting to be done
-	if err := waitFor(verifyDone, totalDepositCount); err != nil {
+	if err := waitFor(btcConfirmationDone, totalDepositCount); err != nil {
 		assert.FailNow(t, "verification", err)
 	}
 
@@ -259,49 +241,36 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		assert.FailNow(t, "signing", err)
 	}
 
-	// send tx to Bitcoin
-	bz, err = nodeData[0].Node.Query([]string{btcTypes.QuerierRoute, btcKeeper.SendTx}, abci.RequestQuery{})
+	// wait for the end-block trigger to match signatures with the tx
+	chain.WaitNBlocks(2 * btcTypes.DefaultParams().SigCheckInterval)
+
+	// get signed tx to Bitcoin
+	bz, err = nodeData[0].Node.Query([]string{btcTypes.QuerierRoute, btcKeeper.GetTx}, abci.RequestQuery{})
 	assert.NoError(t, err)
 
-	actualTx := nodeData[0].Mocks.BTC.SendRawTransactionCalls()[0].Tx
-	assert.True(t, txCorrectlyFormed(actualTx, deposits, totalDepositAmount-fee))
+	var rawSignedTx string
+	testutils.Codec().MustUnmarshalJSON(bz, &rawSignedTx)
+	signedTx := wire.NewMsgTx(wire.TxVersion)
+	buf, err := hex.DecodeString(rawSignedTx)
+	assert.NoError(t, err)
+
+	err = signedTx.BtcDecode(bytes.NewReader(buf), wire.FeeFilterVersion, wire.WitnessEncoding)
+	assert.NoError(t, err)
+	assert.True(t, txCorrectlyFormed(signedTx, deposits, totalDepositAmount-fee))
 
 	// expected consolidation info
-	consAddr := getAddress(actualTx.TxOut[0], nodeData[0].Mocks.BTC.Network().Params)
-	eConsolidationInfo := randomOutpointInfo(consAddr.EncodeAddress())
-	eConsolidationInfo.Amount = btcutil.Amount(actualTx.TxOut[0].Value)
-	var consolidationTxString string
-	testutils.Codec().MustUnmarshalJSON(bz, &consolidationTxString)
-	consolidationTxHash, err := chainhash.NewHashFromStr(consolidationTxString)
-	assert.NoError(t, err)
-	eConsolidationInfo.OutPoint = wire.NewOutPoint(consolidationTxHash, 0)
-
-	// simulate confirmed tx to master address 2
-	for _, n := range nodeData {
-		n.Mocks.BTC.GetOutPointInfoFunc = func(blockHash *chainhash.Hash, out *wire.OutPoint) (btcTypes.OutPointInfo, error) {
-			if !blockHash.IsEqual(eConsolidationInfo.BlockHash) || out.String() != eConsolidationInfo.OutPoint.String() {
-				return btcTypes.OutPointInfo{}, fmt.Errorf("outpoint info not found")
-			}
-			return eConsolidationInfo, nil
-		}
-	}
-
-	// query for consolidation info
-	bz, err = nodeData[0].Node.Query(
-		[]string{btcTypes.QuerierRoute, btcKeeper.QueryOutInfo, eConsolidationInfo.BlockHash.String()},
-		abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(eConsolidationInfo.OutPoint)},
-	)
-	assert.NoError(t, err)
-	var aConsolidationInfo btcTypes.OutPointInfo
-	testutils.Codec().MustUnmarshalJSON(bz, &aConsolidationInfo)
-	assert.Equal(t, eConsolidationInfo, aConsolidationInfo)
+	consAddr := getAddress(signedTx.TxOut[0], btcTypes.DefaultParams().Network.Params())
+	consolidationInfo := randomOutpointInfo(consAddr.EncodeAddress())
+	consolidationInfo.Amount = btcutil.Amount(signedTx.TxOut[0].Value)
+	hash := signedTx.TxHash()
+	consolidationInfo.OutPoint = wire.NewOutPoint(&hash, 0)
 
 	// verify master key transfer
-	verifyResult2 := <-chain.Submit(btcTypes.NewMsgVerifyTx(randomSender(), aConsolidationInfo))
+	verifyResult2 := <-chain.Submit(btcTypes.NewMsgConfirmOutpoint(randomSender(), consolidationInfo))
 	assert.NoError(t, verifyResult2.Error)
 
 	// wait for voting to be done
-	if err := waitFor(verifyDone, 1); err != nil {
+	if err := waitFor(btcConfirmationDone, 1); err != nil {
 		assert.FailNow(t, "verification", err)
 	}
 
@@ -325,7 +294,7 @@ func getAddress(txOut *wire.TxOut, chainParams *chaincfg.Params) btcutil.Address
 func txCorrectlyFormed(tx *wire.MsgTx, deposits map[string]btcTypes.OutPointInfo, txAmount int64) bool {
 	txInsCorrect := true
 	for _, in := range tx.TxIn {
-		if _, ok := deposits[in.PreviousOutPoint.String()]; !ok {
+		if _, ok := deposits[in.PreviousOutPoint.String()]; !ok || in.Witness == nil {
 			txInsCorrect = false
 			break
 		}

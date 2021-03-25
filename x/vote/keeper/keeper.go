@@ -148,15 +148,15 @@ func (k Keeper) SendVotes(ctx sdk.Context) {
 }
 
 // TallyVote tallies votes that have been broadcast. Each validator can only vote once per poll.
-func (k Keeper) TallyVote(ctx sdk.Context, vote exported.MsgVote) error {
-	poll := k.getPoll(ctx, vote.Poll())
+func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data exported.VotingData) error {
+	poll := k.getPoll(ctx, pollMeta)
 	if poll == nil {
 		return fmt.Errorf("poll does not exist or is closed")
 	}
 
-	valAddress := k.broadcaster.GetPrincipal(ctx, vote.GetSigners()[0])
+	valAddress := k.broadcaster.GetPrincipal(ctx, sender)
 	if valAddress == nil {
-		err := fmt.Errorf("account %v is not registered as a validator proxy", vote.GetSigners()[0])
+		err := fmt.Errorf("account %v is not registered as a validator proxy", sender)
 		return err
 	}
 
@@ -170,7 +170,7 @@ func (k Keeper) TallyVote(ctx sdk.Context, vote exported.MsgVote) error {
 		return fmt.Errorf("address %s is not eligible to vote in this poll", valAddress.String())
 	}
 
-	if k.getHasVoted(ctx, vote.Poll(), valAddress) {
+	if k.getHasVoted(ctx, pollMeta, valAddress) {
 		return fmt.Errorf("each validator can only vote once")
 	}
 
@@ -179,18 +179,18 @@ func (k Keeper) TallyVote(ctx sdk.Context, vote exported.MsgVote) error {
 		return nil
 	}
 
-	k.setHasVoted(ctx, vote.Poll(), valAddress)
+	k.setHasVoted(ctx, pollMeta, valAddress)
 	var talliedVote types.TalliedVote
 	// check if others match this vote, create a new unique entry if not, simply add voting power if match is found
-	i := k.getTalliedVoteIdx(ctx, vote)
+	i := k.getTalliedVoteIdx(ctx, pollMeta, data)
 	if i == indexNotFound {
 		talliedVote = types.TalliedVote{
 			Tally: sdk.NewInt(validator.GetConsensusPower()),
-			Data:  vote.Data(),
+			Data:  data,
 		}
 
 		poll.Votes = append(poll.Votes, talliedVote)
-		k.setTalliedVoteIdx(ctx, vote, len(poll.Votes)-1)
+		k.setTalliedVoteIdx(ctx, pollMeta, data, len(poll.Votes)-1)
 	} else {
 		// this assignment copies the value, so we need to write it back into the array
 		talliedVote = poll.Votes[i]
@@ -201,7 +201,7 @@ func (k Keeper) TallyVote(ctx sdk.Context, vote exported.MsgVote) error {
 	threshold := k.GetVotingThreshold(ctx)
 	if threshold.IsMet(talliedVote.Tally, snap.TotalPower) {
 		k.Logger(ctx).Debug(fmt.Sprintf("threshold of %d/%d has been met for %s: %s/%s",
-			threshold.Numerator, threshold.Denominator, vote.Poll(), talliedVote.Tally.String(), snap.TotalPower.String()))
+			threshold.Numerator, threshold.Denominator, pollMeta, talliedVote.Tally.String(), snap.TotalPower.String()))
 		poll.Result = talliedVote.Data
 	}
 
@@ -257,9 +257,9 @@ func (k Keeper) setPoll(ctx sdk.Context, poll types.Poll) {
 
 // To adhere to the same one-return-value pattern as the other getters return a marker value if not found
 // (returning an int with a pointer reference to be able to return nil instead seems bizarre)
-func (k Keeper) getTalliedVoteIdx(ctx sdk.Context, vote exported.MsgVote) int {
+func (k Keeper) getTalliedVoteIdx(ctx sdk.Context, poll exported.PollMeta, data exported.VotingData) int {
 	// check if there have been identical votes
-	bz := ctx.KVStore(k.storeKey).Get(k.talliedVoteKey(vote))
+	bz := ctx.KVStore(k.storeKey).Get(k.talliedVoteKey(poll, data))
 	if bz == nil {
 		return indexNotFound
 	}
@@ -268,8 +268,8 @@ func (k Keeper) getTalliedVoteIdx(ctx sdk.Context, vote exported.MsgVote) int {
 	return i
 }
 
-func (k Keeper) setTalliedVoteIdx(ctx sdk.Context, vote exported.MsgVote, i int) {
-	voteKey := k.talliedVoteKey(vote)
+func (k Keeper) setTalliedVoteIdx(ctx sdk.Context, poll exported.PollMeta, data exported.VotingData, i int) {
+	voteKey := k.talliedVoteKey(poll, data)
 	ctx.KVStore(k.storeKey).Set(voteKey, k.cdc.MustMarshalBinaryLengthPrefixed(i))
 }
 
@@ -281,8 +281,8 @@ func (k Keeper) setHasVoted(ctx sdk.Context, poll exported.PollMeta, address sdk
 	ctx.KVStore(k.storeKey).Set([]byte(addrPrefix+poll.String()+address.String()), []byte{voted})
 }
 
-func (k Keeper) talliedVoteKey(vote exported.MsgVote) []byte {
-	return []byte(talliedPrefix + vote.Poll().String() + k.hash(vote.Data()))
+func (k Keeper) talliedVoteKey(poll exported.PollMeta, data exported.VotingData) []byte {
+	return []byte(talliedPrefix + poll.String() + k.hash(data))
 }
 
 func (k Keeper) hash(data exported.VotingData) string {

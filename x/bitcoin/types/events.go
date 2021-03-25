@@ -1,13 +1,20 @@
 package types
 
-// EventTypeVerificationResult is an event type
+// EventTypeOutpointConfirmation is an event type
 const (
-	EventTypeVerificationResult = "verificationResult"
+	EventTypeOutpointConfirmation = "outpointConfirmation"
 )
 
 // Event attribute keys
 const (
-	AttributeKeyResult   = "result"
-	AttributeKeyOutpoint = "outpoint"
-	AttributeKeyPoll     = "poll"
+	AttributeKeyConfHeight   = "confHeight"
+	AttributeKeyOutPointInfo = "outPointInfo"
+	AttributeKeyPoll         = "poll"
+)
+
+// Event attribute values
+const (
+	AttributeValueStart     = "start"
+	AttributeValueConfirmed = "confirmed"
+	AttributeValueRejected  = "rejected"
 )

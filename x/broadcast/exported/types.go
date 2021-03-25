@@ -4,6 +4,7 @@ import sdk "github.com/cosmos/cosmos-sdk/types"
 
 //go:generate moq -out ./mock/types.go -pkg mock . Broadcaster
 
+// Broadcaster -
 // This interface is exposed for convenience, otherwise all other modules would have to reimplement it.
 // Recommended pattern: In other modules, define a keeper interface in the respective expected_keepers.go file and
 // embed this interface into it
@@ -26,6 +27,8 @@ type Broadcaster interface {
 	GetLocalPrincipal(ctx sdk.Context) sdk.ValAddress
 }
 
+// MsgWithSenderSetter
+// Deprecated: do not use for new messages
 type MsgWithSenderSetter interface {
 	sdk.Msg
 	SetSender(address sdk.AccAddress)

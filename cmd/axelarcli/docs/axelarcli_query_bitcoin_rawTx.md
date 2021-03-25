@@ -1,16 +1,16 @@
-## axelarcli query bitcoin send
+## axelarcli query bitcoin rawTx
 
-Send a transaction to Bitcoin that consolidates deposits and withdrawals
+Returns the encoded hex string of a fully signed transfer and consolidation transaction
 
 ```
-axelarcli query bitcoin send [flags]
+axelarcli query bitcoin rawTx [flags]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for send
+  -h, --help          help for rawTx
       --indent        Add indent to JSON response
       --ledger        Use a connected Ledger device
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")

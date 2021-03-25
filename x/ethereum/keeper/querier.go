@@ -60,7 +60,7 @@ func queryMasterAddress(ctx sdk.Context, s types.Signer) ([]byte, error) {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, "key not found")
 	}
 
-	fromAddress := crypto.PubkeyToAddress(pk)
+	fromAddress := crypto.PubkeyToAddress(pk.Value)
 
 	bz := fromAddress.Bytes()
 
@@ -157,7 +157,7 @@ func sendSignedTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer
 		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not find a corresponding signature for sig ID %s", txID))
 	}
 
-	signedTx, err := k.AssembleEthTx(ctx, txID, pk, sig)
+	signedTx, err := k.AssembleEthTx(ctx, txID, pk.Value, sig)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not insert generated signature: %v", err))
 	}
@@ -194,7 +194,7 @@ func createTxAndSend(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Sig
 	}
 
 	commandData := k.GetCommandData(ctx, params.CommandID)
-	commandSig, err := types.ToEthSignature(sig, types.GetEthereumSignHash(commandData), pk)
+	commandSig, err := types.ToEthSignature(sig, types.GetEthereumSignHash(commandData), pk.Value)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not create recoverable signature: %v", err))
 	}
@@ -241,7 +241,7 @@ func queryCommandData(ctx sdk.Context, k Keeper, s types.Signer, commandIDHex st
 	copy(commandID[:], common.Hex2Bytes(commandIDHex))
 
 	commandData := k.GetCommandData(ctx, commandID)
-	commandSig, err := types.ToEthSignature(sig, types.GetEthereumSignHash(commandData), pk)
+	commandSig, err := types.ToEthSignature(sig, types.GetEthereumSignHash(commandData), pk.Value)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not create recoverable signature: %v", err))
 	}
@@ -262,6 +262,6 @@ func getContractOwner(ctx sdk.Context, s types.Signer) (common.Address, error) {
 		return common.Address{}, fmt.Errorf("key not found")
 	}
 
-	fromAddress := crypto.PubkeyToAddress(pk)
+	fromAddress := crypto.PubkeyToAddress(pk.Value)
 	return fromAddress, nil
 }

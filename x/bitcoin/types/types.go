@@ -15,32 +15,96 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // Bitcoin network types
 var (
-	Mainnet  = Network{&chaincfg.MainNetParams}
-	Testnet3 = Network{&chaincfg.TestNet3Params}
-	Regtest  = Network{&chaincfg.RegressionNetParams}
+	Mainnet  = Network{"main"}
+	Testnet3 = Network{"test"}
+	Regtest  = Network{"regtest"}
 )
+
+// Network provides additional functionality based on the bitcoin network name
+type Network struct {
+	Name string
+}
+
+const (
+	main    = "main"
+	test    = "test"
+	regtest = "regtest"
+)
+
+// Params returns the network parameters
+func (n Network) Params() *chaincfg.Params {
+	switch n.Name {
+	case main:
+		return &chaincfg.MainNetParams
+	case test:
+		return &chaincfg.TestNet3Params
+	case regtest:
+		return &chaincfg.RegressionNetParams
+	default:
+		panic("invalid network")
+	}
+}
+
+// NetworkFromStr returns network given string
+func NetworkFromStr(networkName string) (Network, error) {
+	switch networkName {
+	case main:
+		return Mainnet, nil
+	case test:
+		return Testnet3, nil
+	case regtest:
+		return Regtest, nil
+	default:
+		return Network{}, fmt.Errorf("unknown network: %s", networkName)
+	}
+}
+
+// Validate validates the network type
+func (n Network) Validate() error {
+	switch n.Name {
+	case main, test, regtest:
+		return nil
+	default:
+		return fmt.Errorf("unknown network: %s", n)
+	}
+}
 
 // OutPointInfo describes all the necessary information to verify the outPoint of a transaction
 type OutPointInfo struct {
-	OutPoint      *wire.OutPoint
-	Amount        btcutil.Amount
-	BlockHash     *chainhash.Hash
-	Address       string
-	Confirmations uint64
+	OutPoint *wire.OutPoint
+	Amount   btcutil.Amount
+	Address  string
+}
+
+// OutPointState is an enum for the state of an outpoint
+type OutPointState int
+
+// States of confirmed out points
+const (
+	CONFIRMED OutPointState = iota
+	SPENT
+)
+
+// NewOutPointInfo returns a new OutPointInfo instance
+func NewOutPointInfo(outPoint *wire.OutPoint, amount btcutil.Amount, address string) (OutPointInfo, error) {
+	return OutPointInfo{
+		OutPoint: outPoint,
+		Amount:   amount,
+		Address:  address,
+	}, nil
 }
 
 // Validate ensures that all fields are filled with sensible values
 func (i OutPointInfo) Validate() error {
 	if i.OutPoint == nil {
 		return fmt.Errorf("missing outpoint")
-	}
-	if i.BlockHash == nil {
-		return fmt.Errorf("missing block hash")
 	}
 	if i.Amount <= 0 {
 		return fmt.Errorf("amount must be greater than 0")
@@ -59,32 +123,8 @@ func (i OutPointInfo) Equals(other OutPointInfo) bool {
 		i.Address == other.Address
 }
 
-// Network provides additional functionality based on the bitcoin network name
-type Network struct {
-	// Params returns the configuration parameters associated with the chain
-	Params *chaincfg.Params
-}
-
-// NetworkFromStr returns network given string
-func NetworkFromStr(net string) (Network, error) {
-	switch net {
-	case "main":
-		return Mainnet, nil
-	case "test":
-		return Testnet3, nil
-	case "regtest":
-		return Regtest, nil
-	default:
-		return Network{}, fmt.Errorf("unknown network: %s", net)
-	}
-}
-
-// Validate checks if the object is a valid chain
-func (n Network) Validate() error {
-	if n.Params == nil {
-		return fmt.Errorf("network could not be parsed, choose main, test, or regtest")
-	}
-	return nil
+func (i OutPointInfo) String() string {
+	return i.OutPoint.String() + "_" + i.Address + "_" + i.Amount.String()
 }
 
 // RawTxParams describe the parameters used to create a raw unsigned transaction for Bitcoin
@@ -95,11 +135,11 @@ type RawTxParams struct {
 }
 
 // CreateTx returns a new unsigned Bitcoin transaction
-func CreateTx(prevOuts []*wire.OutPoint, outputs []Output) (*wire.MsgTx, error) {
+func CreateTx(prevOuts []OutPointToSign, outputs []Output) (*wire.MsgTx, error) {
 	tx := wire.NewMsgTx(wire.TxVersion)
-	for _, outPoint := range prevOuts {
+	for _, in := range prevOuts {
 		// The signature script or witness will be set later
-		txIn := wire.NewTxIn(outPoint, nil, nil)
+		txIn := wire.NewTxIn(in.OutPoint, nil, nil)
 		tx.AddTxIn(txIn)
 	}
 	for _, out := range outputs {
@@ -150,51 +190,89 @@ type DepositQueryParams struct {
 type RedeemScript []byte
 
 // CreateCrossChainRedeemScript generates a redeem script unique to the given key and cross-chain address
-func CreateCrossChainRedeemScript(pk btcec.PublicKey, crossAddr nexus.CrossChainAddress) (RedeemScript, error) {
+func CreateCrossChainRedeemScript(pk btcec.PublicKey, crossAddr nexus.CrossChainAddress) RedeemScript {
 	keyBz := pk.SerializeCompressed()
 	nonce := btcutil.Hash160([]byte(crossAddr.String()))
 
 	redeemScript, err := txscript.NewScriptBuilder().AddData(keyBz).AddOp(txscript.OP_CHECKSIG).AddData(nonce).AddOp(txscript.OP_DROP).Script()
+	// the script builder only returns an error if the script is non-canonical.
+	// Since we want to build canonical scripts and the template is predefined, an error here means the template is wrong,
+	// i.e. it's a bug.
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	return redeemScript, nil
+	return redeemScript
 }
 
 // CreateMasterRedeemScript generates a redeem script unique to the given key
-func CreateMasterRedeemScript(pk btcec.PublicKey) (RedeemScript, error) {
+func CreateMasterRedeemScript(pk btcec.PublicKey) RedeemScript {
 	keyBz := pk.SerializeCompressed()
 
 	redeemScript, err := txscript.NewScriptBuilder().AddData(keyBz).AddOp(txscript.OP_CHECKSIG).Script()
+	// the script builder only returns an error of the script is non-canonical.
+	// Since we want to build canonical scripts and the template is predefined, an error here means the template is wrong,
+	// i.e. it's a bug.
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	return redeemScript, nil
+	return redeemScript
 }
 
 // CreateDepositAddress creates a SeqWit script address based on a redeem script
-func CreateDepositAddress(network Network, script RedeemScript) (*btcutil.AddressWitnessScriptHash, error) {
+func CreateDepositAddress(script RedeemScript, network Network) *btcutil.AddressWitnessScriptHash {
 	hash := sha256.Sum256(script)
-	addr, err := btcutil.NewAddressWitnessScriptHash(hash[:], network.Params)
+	// hash is 32 bit long, so this cannot throw an error if there is no bug
+	addr, err := btcutil.NewAddressWitnessScriptHash(hash[:], network.Params())
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	return addr, nil
+	return addr
 }
 
-// CreateTxWitness creates a transaction witness
-func CreateTxWitness(sig btcec.Signature, redeemScript RedeemScript) wire.TxWitness {
-	sigBytes := append(sig.Serialize(), byte(txscript.SigHashAll))
-	return wire.TxWitness{sigBytes, redeemScript}
+// AddressInfo is a wrapper containing the Bitcoin P2WSH address, it's corresponding script and the underlying key
+type AddressInfo struct {
+	btcutil.Address
+	RedeemScript RedeemScript
+	Key          tss.Key
+}
+
+// NewConsolidationAddress creates a new address used to consolidate all unspent outpoints
+func NewConsolidationAddress(pk tss.Key, network Network) AddressInfo {
+	script := CreateMasterRedeemScript(btcec.PublicKey(pk.Value))
+	addr := CreateDepositAddress(script, network)
+	return AddressInfo{
+		RedeemScript: script,
+		Address:      addr,
+		Key:          pk,
+	}
+}
+
+// NewLinkedAddress creates a new address to make a deposit which can be transfered to another blockchain
+func NewLinkedAddress(pk tss.Key, network Network, recipient nexus.CrossChainAddress) AddressInfo {
+	script := CreateCrossChainRedeemScript(btcec.PublicKey(pk.Value), recipient)
+	addr := CreateDepositAddress(script, network)
+	return AddressInfo{
+		RedeemScript: script,
+		Address:      addr,
+		Key:          pk,
+	}
+}
+
+// ToCrossChainAddr returns the corresponding cross-chain address
+func (addr AddressInfo) ToCrossChainAddr() nexus.CrossChainAddress {
+	return nexus.CrossChainAddress{
+		Chain:   exported.Bitcoin,
+		Address: addr.EncodeAddress(),
+	}
 }
 
 // ValidateTxScript checks if the input at the given index can be spent with the given script
-func ValidateTxScript(tx *wire.MsgTx, idx int, input OutPointInfo, payScript []byte) error {
+func ValidateTxScript(tx *wire.MsgTx, idx int, amount int64, payScript []byte) error {
 	// make sure the tx is considered standard to increase its chance to be mined
 	flags := txscript.StandardVerifyFlags
 
 	// execute (dry-run) the public key and signature script to validate them
-	scriptEngine, err := txscript.NewEngine(payScript, tx, idx, flags, nil, nil, int64(input.Amount))
+	scriptEngine, err := txscript.NewEngine(payScript, tx, idx, flags, nil, nil, amount)
 	if err != nil {
 		return sdkerrors.Wrap(err, "could not create execution engine, aborting")
 	}
@@ -202,4 +280,69 @@ func ValidateTxScript(tx *wire.MsgTx, idx int, input OutPointInfo, payScript []b
 		return sdkerrors.Wrap(err, "transaction failed to execute, aborting")
 	}
 	return nil
+}
+
+// OutPointToSign gathers all information needed to sign an outpoint
+type OutPointToSign struct {
+	OutPointInfo
+	AddressInfo
+}
+
+// AssembleBtcTx assembles the unsigned transaction and given signature.
+// Returns an error if the resulting signed Bitcoin transaction is invalid.
+func AssembleBtcTx(rawTx *wire.MsgTx, outpointsToSign []OutPointToSign, sigs []btcec.Signature) (*wire.MsgTx, error) {
+	for i, in := range outpointsToSign {
+
+		sigBytes := append(sigs[i].Serialize(), byte(txscript.SigHashAll))
+		rawTx.TxIn[i].Witness = wire.TxWitness{sigBytes, in.RedeemScript}
+
+		payScript, err := txscript.PayToAddrScript(in.AddressInfo.Address)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := ValidateTxScript(rawTx, i, int64(in.OutPointInfo.Amount), payScript); err != nil {
+			return nil, err
+		}
+	}
+
+	return rawTx, nil
+}
+
+// Native asset denominations
+const (
+	Sat     = "sat"
+	Satoshi = "satoshi"
+	Btc     = "btc"
+	Bitcoin = "bitcoin"
+)
+
+// ParseSatoshi parses a string to Satoshi, returning errors if invalid. Inputs in Bitcoin are automatically converted.
+// This returns an error on an empty string as well.
+func ParseSatoshi(rawCoin string) (sdk.Coin, error) {
+	var coin sdk.DecCoin
+
+	if intCoin, err := sdk.ParseCoin(rawCoin); err == nil {
+		coin = sdk.NewDecCoinFromCoin(intCoin)
+	} else {
+		coin, err = sdk.ParseDecCoin(rawCoin)
+		if err != nil {
+			return sdk.Coin{}, fmt.Errorf("could not parse coin string")
+		}
+	}
+
+	switch coin.Denom {
+	case Sat, Satoshi:
+		break
+	case Btc, Bitcoin:
+		coin = sdk.NewDecCoinFromDec(Sat, coin.Amount.MulInt64(btcutil.SatoshiPerBitcoin))
+	default:
+		return sdk.Coin{}, fmt.Errorf("choose a correct denomination: %s (%s), %s (%s)", Satoshi, Sat, Bitcoin, Btc)
+	}
+
+	sat, remainder := coin.TruncateDecimal()
+	if !remainder.Amount.IsZero() {
+		return sdk.Coin{}, fmt.Errorf("amount in satoshi must be an integer value")
+	}
+	return sat, nil
 }

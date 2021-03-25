@@ -11,6 +11,7 @@ import (
 )
 
 func TestJobManager_Wait(t *testing.T) {
+	// setup
 	jobCount := rand.I64Between(0, 100)
 	var jobs []Job
 	var expectedErrCount int64
@@ -24,12 +25,13 @@ func TestJobManager_Wait(t *testing.T) {
 	errHandler := func(err error) { actualErrCount++ }
 	mgr := NewMgr(errHandler)
 
+	// test
 	mgr.AddJobs(jobs...)
 	mgr.Wait()
 	assert.Equal(t, expectedErrCount, actualErrCount)
 }
 
-// this extraction is needed to close over the loop counter i
+// this extracted function is needed to close over the loop counter i
 func randomJob(errCount int64, i int64) Job {
 	return func(e chan<- error) {
 		for j := int64(0); j < errCount; j++ {

@@ -1,9 +1,10 @@
 package types
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
+
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -32,6 +33,11 @@ type Nexus interface {
 // Voter provides voting functionality
 type Voter interface {
 	vote.Voter
+}
+
+// InitPoller is a minimal interface to start a poll
+type InitPoller = interface {
+	InitPoll(ctx sdk.Context, poll vote.PollMeta) error
 }
 
 // TofndClient wraps around TofndKeyGenClient and TofndSignClient

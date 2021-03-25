@@ -344,3 +344,71 @@ func (mock *MsgMock) ValidateBasicCalls() []struct {
 	mock.lockValidateBasic.RUnlock()
 	return calls
 }
+
+// Ensure, that BroadcasterMock does implement broadcasttypes.Broadcaster.
+// If this is not the case, regenerate this file with moq.
+var _ broadcasttypes.Broadcaster = &BroadcasterMock{}
+
+// BroadcasterMock is a mock implementation of broadcasttypes.Broadcaster.
+//
+// 	func TestSomethingThatUsesBroadcaster(t *testing.T) {
+//
+// 		// make and configure a mocked broadcasttypes.Broadcaster
+// 		mockedBroadcaster := &BroadcasterMock{
+// 			BroadcastFunc: func(msgs ...sdk.Msg) error {
+// 				panic("mock out the Broadcast method")
+// 			},
+// 		}
+//
+// 		// use mockedBroadcaster in code that requires broadcasttypes.Broadcaster
+// 		// and then make assertions.
+//
+// 	}
+type BroadcasterMock struct {
+	// BroadcastFunc mocks the Broadcast method.
+	BroadcastFunc func(msgs ...sdk.Msg) error
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// Broadcast holds details about calls to the Broadcast method.
+		Broadcast []struct {
+			// Msgs is the msgs argument value.
+			Msgs []sdk.Msg
+		}
+	}
+	lockBroadcast sync.RWMutex
+}
+
+// Broadcast calls BroadcastFunc.
+func (mock *BroadcasterMock) Broadcast(msgs ...sdk.Msg) error {
+	callInfo := struct {
+		Msgs []sdk.Msg
+	}{
+		Msgs: msgs,
+	}
+	mock.lockBroadcast.Lock()
+	mock.calls.Broadcast = append(mock.calls.Broadcast, callInfo)
+	mock.lockBroadcast.Unlock()
+	if mock.BroadcastFunc == nil {
+		var (
+			errOut error
+		)
+		return errOut
+	}
+	return mock.BroadcastFunc(msgs...)
+}
+
+// BroadcastCalls gets all the calls that were made to Broadcast.
+// Check the length with:
+//     len(mockedBroadcaster.BroadcastCalls())
+func (mock *BroadcasterMock) BroadcastCalls() []struct {
+	Msgs []sdk.Msg
+} {
+	var calls []struct {
+		Msgs []sdk.Msg
+	}
+	mock.lockBroadcast.RLock()
+	calls = mock.calls.Broadcast
+	mock.lockBroadcast.RUnlock()
+	return calls
+}

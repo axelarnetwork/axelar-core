@@ -17,10 +17,11 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-func TestKeeper_GetVerifiedOutpoints(t *testing.T) {
-	init := func() (Keeper, sdk.Context) {
+func TestKeeper_GetConfirmedOutPointInfos(t *testing.T) {
+	setup := func() (Keeper, sdk.Context) {
 		cdc := testutils.Codec()
 		btcSubspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"), "btc")
 		ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
@@ -31,71 +32,76 @@ func TestKeeper_GetVerifiedOutpoints(t *testing.T) {
 		label   string
 		prepare func(k Keeper, ctx sdk.Context, infoCount int) (expected []types.OutPointInfo)
 	}{
-		{"no outpoints", func(Keeper, sdk.Context, int) []types.OutPointInfo { return nil }},
-		{"only unverified outpoints", prepareUnverifiedOutPoints},
-		{"only verified outpoints", prepareVerifiedOutPoints},
+		{"no outpoints", prepareNoOutpoints},
+		{"only unconfirmed outpoints", prepareUnconfirmedOutPoints},
+		{"only confirmed outpoints", prepareConfirmedOutPoints},
 		{"only spent outpoints", prepareSpentOutPoints},
 		{"random assortment of outpoint states", prepareRandomOutPointStates},
 	}
 
-	repetitions := 10
+	repeatCount := 10
 	for _, testCase := range testCases {
-		t.Run(testCase.label, func(t *testing.T) {
-			for i := 0; i < repetitions; i++ {
-				k, ctx := init()
-				infoCount := int(rand2.I64Between(1, 200))
-				expectedOuts := testCase.prepare(k, ctx, infoCount)
-				actualOuts := k.GetVerifiedOutPointInfos(ctx)
-				assert.ElementsMatch(t, expectedOuts, actualOuts, "expected: %d elements, got: %d elements", len(expectedOuts), len(actualOuts))
-			}
-		})
+		t.Run(testCase.label, testutils.Func(func(t *testing.T) {
+
+			k, ctx := setup()
+			infoCount := int(rand2.I64Between(1, 200))
+			expectedOuts := testCase.prepare(k, ctx, infoCount)
+			actualConfirmedOuts := k.GetConfirmedOutPointInfos(ctx)
+			assert.ElementsMatch(t, expectedOuts, actualConfirmedOuts,
+				"expected: %d elements, got: %d elements", len(expectedOuts), len(actualConfirmedOuts))
+
+		}).Repeat(repeatCount))
 	}
 }
 
-func prepareUnverifiedOutPoints(k Keeper, ctx sdk.Context, infoCount int) []types.OutPointInfo {
+func prepareNoOutpoints(Keeper, sdk.Context, int) []types.OutPointInfo {
+	return nil
+}
+
+func prepareUnconfirmedOutPoints(k Keeper, ctx sdk.Context, infoCount int) []types.OutPointInfo {
+	var outs []types.OutPointInfo
 	for i := 0; i < infoCount; i++ {
 		info := randOutPointInfo()
-		k.SetUnverifiedOutpointInfo(ctx, info)
+		k.SetUnconfirmedOutpointInfo(ctx, exported.PollMeta{ID: rand2.StrBetween(5, 20)}, info)
+		outs = append(outs, info)
 	}
 	return nil
 }
 
-func prepareVerifiedOutPoints(k Keeper, ctx sdk.Context, infoCount int) []types.OutPointInfo {
+func prepareConfirmedOutPoints(k Keeper, ctx sdk.Context, infoCount int) []types.OutPointInfo {
+	return prepareOutPoints(k, ctx, infoCount, types.CONFIRMED)
+}
+
+func prepareSpentOutPoints(k Keeper, ctx sdk.Context, infoCount int) []types.OutPointInfo {
+	_ = prepareOutPoints(k, ctx, infoCount, types.SPENT)
+	return nil
+}
+
+func prepareOutPoints(k Keeper, ctx sdk.Context, infoCount int, state types.OutPointState) []types.OutPointInfo {
 	var outs []types.OutPointInfo
 	for i := 0; i < infoCount; i++ {
 		info := randOutPointInfo()
-		k.SetUnverifiedOutpointInfo(ctx, info)
-		k.ProcessVerificationResult(ctx, info.OutPoint, true)
+		k.SetOutpointInfo(ctx, info, state)
 		outs = append(outs, info)
 	}
 	return outs
 }
 
-func prepareSpentOutPoints(k Keeper, ctx sdk.Context, infoCount int) []types.OutPointInfo {
-	for i := 0; i < infoCount; i++ {
-		info := randOutPointInfo()
-		k.SetUnverifiedOutpointInfo(ctx, info)
-		k.ProcessVerificationResult(ctx, info.OutPoint, true)
-		k.SpendVerifiedOutPoint(ctx, info.OutPoint.String())
-	}
-	return nil
-}
-
-func prepareRandomOutPointStates(k Keeper, ctx sdk.Context, infoCount int) (expected []types.OutPointInfo) {
-	var unverifiedCount, verifiedCount, spentCount int
+func prepareRandomOutPointStates(k Keeper, ctx sdk.Context, infoCount int) []types.OutPointInfo {
+	var unconfirmedCount, confirmedCount, spentCount int
 	for _, state := range rand2.Distr(3).Samples(infoCount) {
-		switch state {
-		case 0: // unverified
-			unverifiedCount++
-		case 1: // verified
-			verifiedCount++
-		case 2: // spent
+		switch types.OutPointState(state) {
+		case 2: // unconfirmed
+			unconfirmedCount++
+		case types.CONFIRMED:
+			confirmedCount++
+		case types.SPENT:
 			spentCount++
 		}
 	}
-	prepareUnverifiedOutPoints(k, ctx, unverifiedCount)
-	prepareSpentOutPoints(k, ctx, spentCount)
-	return prepareVerifiedOutPoints(k, ctx, verifiedCount)
+	_ = prepareUnconfirmedOutPoints(k, ctx, unconfirmedCount)
+	_ = prepareOutPoints(k, ctx, spentCount, types.SPENT)
+	return prepareOutPoints(k, ctx, confirmedCount, types.CONFIRMED)
 }
 
 func randOutPointInfo() types.OutPointInfo {
@@ -103,16 +109,10 @@ func randOutPointInfo() types.OutPointInfo {
 	if err != nil {
 		panic(err)
 	}
-	blockHash, err := chainhash.NewHash(rand2.Bytes(chainhash.HashSize))
-	if err != nil {
-		panic(err)
-	}
 	info := types.OutPointInfo{
-		OutPoint:      wire.NewOutPoint(txHash, rand.Uint32()),
-		Amount:        btcutil.Amount(rand2.PosI64()),
-		BlockHash:     blockHash,
-		Address:       rand2.StrBetween(20, 60),
-		Confirmations: rand.Uint64(),
+		OutPoint: wire.NewOutPoint(txHash, rand.Uint32()),
+		Amount:   btcutil.Amount(rand2.PosI64()),
+		Address:  rand2.StrBetween(20, 60),
 	}
 	return info
 }

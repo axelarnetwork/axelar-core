@@ -82,7 +82,7 @@ func handleMsgVoteSig(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types
 		return nil, sdkerrors.Wrap(err, "discard vote for invalid signature")
 	}
 
-	if err := v.TallyVote(ctx, &msg); err != nil {
+	if err := v.TallyVote(ctx, msg.Sender, msg.PollMeta, msg.SigBytes); err != nil {
 		return nil, err
 	}
 
@@ -114,7 +114,7 @@ func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg ty
 		return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 	}
 
-	if err := v.TallyVote(ctx, &msg); err != nil {
+	if err := v.TallyVote(ctx, msg.Sender, msg.PollMeta, msg.PubKeyBytes); err != nil {
 		return nil, err
 	}
 
