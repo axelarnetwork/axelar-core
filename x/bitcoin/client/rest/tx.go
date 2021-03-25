@@ -5,8 +5,6 @@ import (
 
 	"github.com/btcsuite/btcutil"
 
-	"github.com/axelarnetwork/axelar-core/utils/denom"
-
 	"github.com/cosmos/cosmos-sdk/client/context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
@@ -75,7 +73,7 @@ func GetHandlerSignPendingTransfersTx(cliCtx context.CLIContext) http.HandlerFun
 			return
 		}
 
-		satoshi, err := denom.ParseSatoshi(req.Fee)
+		satoshi, err := types.ParseSatoshi(req.Fee)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

@@ -59,8 +59,8 @@ func GetCmdDepositAddress(queryRoute string, cdc *codec.Codec) *cobra.Command {
 // GetCmdConsolidationTx returns a transaction containing all pending transfers to Bitcoin
 func GetCmdConsolidationTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "transfer-tx",
-		Short: "Returns a fully signed transfer and consolidation transaction",
+		Use:   "rawTx",
+		Short: "Returns the encoded hex string of a fully signed transfer and consolidation transaction",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
@@ -72,6 +72,7 @@ func GetCmdConsolidationTx(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			var out string
 			cdc.MustUnmarshalJSON(res, &out)
+
 			return cliCtx.PrintOutput(out)
 		},
 	}

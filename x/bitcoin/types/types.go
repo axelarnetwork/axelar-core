@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
@@ -94,19 +93,11 @@ const (
 )
 
 // NewOutPointInfo returns a new OutPointInfo instance
-func NewOutPointInfo(outPoint *wire.OutPoint, txOut btcjson.GetTxOutResult) (OutPointInfo, error) {
-	amount, err := btcutil.NewAmount(txOut.Value)
-	if err != nil {
-		return OutPointInfo{}, err
-	}
-
-	if len(txOut.ScriptPubKey.Addresses) != 1 {
-		return OutPointInfo{}, fmt.Errorf("only txOuts with single spendable address allowed")
-	}
+func NewOutPointInfo(outPoint *wire.OutPoint, amount btcutil.Amount, address string) (OutPointInfo, error) {
 	return OutPointInfo{
 		OutPoint: outPoint,
 		Amount:   amount,
-		Address:  txOut.ScriptPubKey.Addresses[0],
+		Address:  address,
 	}, nil
 }
 
@@ -316,4 +307,42 @@ func AssembleBtcTx(rawTx *wire.MsgTx, outpointsToSign []OutPointToSign, sigs []b
 	}
 
 	return rawTx, nil
+}
+
+// Native asset denominations
+const (
+	Sat     = "sat"
+	Satoshi = "satoshi"
+	Btc     = "btc"
+	Bitcoin = "bitcoin"
+)
+
+// ParseSatoshi parses a string to Satoshi, returning errors if invalid. Inputs in Bitcoin are automatically converted.
+// This returns an error on an empty string as well.
+func ParseSatoshi(rawCoin string) (sdk.Coin, error) {
+	var coin sdk.DecCoin
+
+	if intCoin, err := sdk.ParseCoin(rawCoin); err == nil {
+		coin = sdk.NewDecCoinFromCoin(intCoin)
+	} else {
+		coin, err = sdk.ParseDecCoin(rawCoin)
+		if err != nil {
+			return sdk.Coin{}, fmt.Errorf("could not parse coin string")
+		}
+	}
+
+	switch coin.Denom {
+	case Sat, Satoshi:
+		break
+	case Btc, Bitcoin:
+		coin = sdk.NewDecCoinFromDec(Sat, coin.Amount.MulInt64(btcutil.SatoshiPerBitcoin))
+	default:
+		return sdk.Coin{}, fmt.Errorf("choose a correct denomination: %s (%s), %s (%s)", Satoshi, Sat, Bitcoin, Btc)
+	}
+
+	sat, remainder := coin.TruncateDecimal()
+	if !remainder.Amount.IsZero() {
+		return sdk.Coin{}, fmt.Errorf("amount in satoshi must be an integer value")
+	}
+	return sat, nil
 }

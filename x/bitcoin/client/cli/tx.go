@@ -1,10 +1,8 @@
 package cli
 
 import (
-	"encoding/json"
 	"fmt"
 
-	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -13,8 +11,6 @@ import (
 	authUtils "github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 
 	"github.com/spf13/cobra"
-
-	"github.com/axelarnetwork/axelar-core/utils/denom"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
@@ -43,11 +39,11 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 // GetCmdConfirmTxOut returns the transaction confirmation command
 func GetCmdConfirmTxOut(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "confirmTxOut [txID:voutIdx] [txOut json]",
+		Use:   "confirmTxOut [txID:voutIdx] [amount] [address]",
 		Short: "Confirm a Bitcoin transaction",
 		Long: fmt.Sprintf(
 			"Confirm that a transaction happened on the Bitcoin network so it can be processed on axelar."),
-		Args: cobra.ExactArgs(2),
+		Args: cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
@@ -57,13 +53,12 @@ func GetCmdConfirmTxOut(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			var txOut btcjson.GetTxOutResult
-			// need to use json cdc instead of amino because amino cannot deal with floats
-			if err = json.Unmarshal([]byte(args[1]), &txOut); err != nil {
-				panic(err)
+			satoshi, err := types.ParseSatoshi(args[1])
+			if err != nil {
+				return err
 			}
 
-			outInfo, err := types.NewOutPointInfo(outPoint, txOut)
+			outInfo, err := types.NewOutPointInfo(outPoint, btcutil.Amount(satoshi.Amount.Int64()), args[2])
 
 			msg := types.MsgConfirmOutpoint{Sender: cliCtx.GetFromAddress(), OutPointInfo: outInfo}
 
@@ -105,7 +100,7 @@ func GetCmdSignPendingTransfersTx(cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
 
-			satoshi, err := denom.ParseSatoshi(args[0])
+			satoshi, err := types.ParseSatoshi(args[0])
 			if err != nil {
 				return err
 			}

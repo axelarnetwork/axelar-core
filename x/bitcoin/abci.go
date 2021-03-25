@@ -26,6 +26,7 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, k types.BTCKeeper, si
 
 	tx, ok := k.GetUnsignedTx(ctx)
 	if !ok {
+		k.Logger(ctx).Debug("no unsigned transaction ready")
 		return nil
 	}
 

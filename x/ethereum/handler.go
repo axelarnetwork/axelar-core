@@ -660,7 +660,7 @@ func verifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, txReceipt *ethTypes.Re
 	}
 
 	if !actualAmount.Equal(amount) {
-		return fmt.Errorf("deposit amount in transaction %s for token %s and burner %s doesn not match what is expected", txID, tokenAddr.String(), burnerAddr.String())
+		return fmt.Errorf("given deposit amount: %d, actual amount: %d", amount.Uint64(), actualAmount.Uint64())
 	}
 
 	return nil

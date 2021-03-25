@@ -1,8 +1,11 @@
 package keeper
 
 import (
+	"bytes"
+	"encoding/hex"
 	"fmt"
 
+	"github.com/btcsuite/btcd/wire"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -16,7 +19,7 @@ import (
 // Query paths
 const (
 	QueryDepositAddress = "depositAddr"
-	GetTx               = "getTransferTx"
+	GetTx               = "getTx"
 )
 
 // NewQuerier returns a new querier for the Bitcoin module
@@ -28,7 +31,7 @@ func NewQuerier(k types.BTCKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 		case QueryDepositAddress:
 			res, err = queryDepositAddress(ctx, k, s, n, req.Data)
 		case GetTx:
-			res, err = getConsolidationTx(ctx, k)
+			res, err = getRawConsolidationTx(ctx, k)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown btc-bridge query endpoint: %s", path[1]))
 		}
@@ -63,10 +66,15 @@ func queryDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n t
 	return []byte(addr.EncodeAddress()), nil
 }
 
-func getConsolidationTx(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {
+func getRawConsolidationTx(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {
 	tx, ok := k.GetSignedTx(ctx)
 	if !ok {
 		return nil, fmt.Errorf("no signed consolidation transaction ready")
 	}
-	return k.Codec().MustMarshalJSON(tx), nil
+
+	var buf bytes.Buffer
+	if err := tx.BtcEncode(&buf, wire.FeeFilterVersion, wire.WitnessEncoding); err != nil {
+		return nil, err
+	}
+	return k.Codec().MustMarshalJSON(hex.EncodeToString(buf.Bytes())), nil
 }
