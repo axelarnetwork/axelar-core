@@ -18,6 +18,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 const (
@@ -225,7 +226,7 @@ func (k Keeper) GetGatewayByteCodes(ctx sdk.Context) []byte {
 }
 
 // SetUnverifiedErc20TokenDeploy stores and unverified erc20 token
-func (k Keeper) SetUnverifiedErc20TokenDeploy(ctx sdk.Context, token *types.Erc20TokenDeploy) {
+func (k Keeper) SetUnverifiedErc20TokenDeploy(ctx sdk.Context, token *types.ERC20TokenDeploy) {
 	txID := common.BytesToHash(token.TxID[:]).String()
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(token)
 	ctx.KVStore(k.storeKey).Set([]byte(pendingTokenPrefix+txID), bz)
@@ -285,34 +286,34 @@ func (k Keeper) HasUnverifiedErc20Deposit(ctx sdk.Context, txID string) bool {
 	return ctx.KVStore(k.storeKey).Has([]byte(pendingErc20DepositPrefix + txID))
 }
 
-// SetUnverifiedErc20Deposit stores and unverified erc20 deposit
-func (k Keeper) SetUnverifiedErc20Deposit(ctx sdk.Context, txID string, deposit *types.Erc20Deposit) {
+// SetUnconfirmedERC20Deposit stores and unverified erc20 deposit
+func (k Keeper) SetUnconfirmedERC20Deposit(ctx sdk.Context, poll exported.PollMeta, deposit *types.ERC20Deposit) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(deposit)
-	ctx.KVStore(k.storeKey).Set([]byte(pendingErc20DepositPrefix+txID), bz)
+	ctx.KVStore(k.storeKey).Set([]byte(pendingErc20DepositPrefix+poll.String()), bz)
 }
 
 // GetVerifiedErc20Deposit retrieves the verified erc20 deposit given txID if found
-func (k Keeper) GetVerifiedErc20Deposit(ctx sdk.Context, txID string) *types.Erc20Deposit {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(verifiedErc20DepositPrefix + txID))
+func (k Keeper) GetVerifiedErc20Deposit(ctx sdk.Context, txID string, burnAddr string) *types.ERC20Deposit {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(verifiedErc20DepositPrefix + txID + "_" + burnAddr))
 	if bz == nil {
 		return nil
 	}
 
-	var result *types.Erc20Deposit
+	var result *types.ERC20Deposit
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &result)
 
 	return result
 }
 
 // GetVerifiedErc20Deposits retrieves all the verified erc20 deposits
-func (k Keeper) GetVerifiedErc20Deposits(ctx sdk.Context) []types.Erc20Deposit {
-	var deposits []types.Erc20Deposit
+func (k Keeper) GetVerifiedErc20Deposits(ctx sdk.Context) []types.ERC20Deposit {
+	var deposits []types.ERC20Deposit
 	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(verifiedErc20DepositPrefix))
 
 	for ; iter.Valid(); iter.Next() {
 		bz := iter.Value()
 
-		var deposit types.Erc20Deposit
+		var deposit types.ERC20Deposit
 		k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &deposit)
 		deposits = append(deposits, deposit)
 	}
@@ -332,21 +333,21 @@ func (k Keeper) ArchiveErc20Deposit(ctx sdk.Context, txID string) {
 }
 
 // GetArchivedErc20Deposit returns the archived deposit for the given txID if exists
-func (k Keeper) GetArchivedErc20Deposit(ctx sdk.Context, txID string) *types.Erc20Deposit {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(archivedErc20DepositPrefix + txID))
+func (k Keeper) GetArchivedErc20Deposit(ctx sdk.Context, txID string, burnAddr string) *types.ERC20Deposit {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(archivedErc20DepositPrefix + txID + "_" + burnAddr))
 	if bz == nil {
 		return nil
 	}
 
-	var result *types.Erc20Deposit
+	var result *types.ERC20Deposit
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &result)
 
 	return result
 }
 
 // GetVerifiedToken returns a verified token
-func (k Keeper) GetVerifiedToken(ctx sdk.Context, txID string) *types.Erc20TokenDeploy {
-	var token *types.Erc20TokenDeploy
+func (k Keeper) GetVerifiedToken(ctx sdk.Context, txID string) *types.ERC20TokenDeploy {
+	var token *types.ERC20TokenDeploy
 	bz := ctx.KVStore(k.storeKey).Get([]byte(verifiedTokenPrefix + txID))
 	if bz == nil {
 		return nil

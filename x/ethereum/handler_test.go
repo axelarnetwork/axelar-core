@@ -65,7 +65,7 @@ func TestLink_NoGateway(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	handler := NewHandler(k, &ethMock.RPCClientMock{}, &ethMock.VoterMock{}, signer, n, &ethMock.SnapshotterMock{})
+	handler := NewHandler(k, &ethMock.VoterMock{}, signer, n, &ethMock.SnapshotterMock{})
 	_, err := handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
@@ -98,7 +98,7 @@ func TestLink_NoRecipientChain(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	handler := NewHandler(k, &ethMock.RPCClientMock{}, &ethMock.VoterMock{}, signer, n, &ethMock.SnapshotterMock{})
+	handler := NewHandler(k, &ethMock.VoterMock{}, signer, n, &ethMock.SnapshotterMock{})
 	_, err := handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
@@ -131,7 +131,7 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	handler := NewHandler(k, &ethMock.RPCClientMock{}, &ethMock.VoterMock{}, signer, n, &ethMock.SnapshotterMock{})
+	handler := NewHandler(k, &ethMock.VoterMock{}, signer, n, &ethMock.SnapshotterMock{})
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
 	_, err := handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
 
@@ -178,7 +178,7 @@ func TestLink_Success(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	handler := NewHandler(k, &ethMock.RPCClientMock{}, &ethMock.VoterMock{}, signer, n, &ethMock.SnapshotterMock{})
+	handler := NewHandler(k, &ethMock.VoterMock{}, signer, n, &ethMock.SnapshotterMock{})
 	_, err = handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Symbol: msg.Symbol})
 
 	assert.NoError(t, err)
@@ -288,13 +288,11 @@ func TestMintTx_DifferentRecipient_DifferentHash(t *testing.T) {
 
 func TestVerifyToken_NoTokenInfo(t *testing.T) {
 	minConfHeight := rand.I64Between(1, 10)
-	confCount := rand.I64Between(minConfHeight, 10*minConfHeight)
 	signedTx := createSignedEthTx()
 	symbol := rand.Str(4)
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
-	rpc := createBasicRPCMock(signedTx, confCount, nil)
 	voter := createVoterMock()
 	signer := &mock.SignerMock{
 		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
@@ -304,7 +302,7 @@ func TestVerifyToken_NoTokenInfo(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	handler := NewHandler(k, rpc, voter, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
+	handler := NewHandler(k, voter, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), symbol))
 
@@ -336,7 +334,7 @@ func TestVerifyToken_NoReceipt(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	handler := NewHandler(k, rpc, voter, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
+	handler := NewHandler(k, voter, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol))
 
@@ -367,7 +365,7 @@ func TestVerifyToken_NoBlockNumber(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	handler := NewHandler(k, rpc, voter, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
+	handler := NewHandler(k, voter, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol))
 
@@ -378,14 +376,12 @@ func TestVerifyToken_NoBlockNumber(t *testing.T) {
 
 func TestVerifyToken_NotConfirmed(t *testing.T) {
 	minConfHeight := rand.I64Between(1, 10)
-	confCount := rand.I64Between(0, minConfHeight)
 	signedTx := createSignedEthTx()
 	msg := createMsgSignDeploy()
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
 	k.SetTokenInfo(ctx, msg)
-	rpc := createBasicRPCMock(signedTx, confCount, nil)
 	voter := createVoterMock()
 	signer := &mock.SignerMock{
 		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
@@ -395,7 +391,7 @@ func TestVerifyToken_NotConfirmed(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	handler := NewHandler(k, rpc, voter, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
+	handler := NewHandler(k, voter, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol))
 
@@ -406,15 +402,12 @@ func TestVerifyToken_NotConfirmed(t *testing.T) {
 
 func TestVerifyToken_NoEvent(t *testing.T) {
 	minConfHeight := rand.I64Between(1, 10)
-	confCount := rand.I64Between(minConfHeight, 10*minConfHeight)
 	signedTx := createSignedEthTx()
 	msg := createMsgSignDeploy()
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
 	k.SetTokenInfo(ctx, msg)
-	logs := createLogs("", common.Address{}, common.Address{}, common.Hash{}, false)
-	rpc := createBasicRPCMock(signedTx, confCount, logs)
 	voter := createVoterMock()
 	signer := &mock.SignerMock{
 		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
@@ -424,7 +417,7 @@ func TestVerifyToken_NoEvent(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	handler := NewHandler(k, rpc, voter, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
+	handler := NewHandler(k, voter, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
 
 	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol))
 
@@ -434,19 +427,12 @@ func TestVerifyToken_NoEvent(t *testing.T) {
 }
 func TestVerifyToken_DifferentEvent(t *testing.T) {
 	minConfHeight := rand.I64Between(1, 10)
-	confCount := rand.I64Between(minConfHeight, 10*minConfHeight)
 	signedTx := createSignedEthTx()
 	msg := createMsgSignDeploy()
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
 	k.SetTokenInfo(ctx, msg)
-	tokenAddr, err := k.GetTokenAddress(ctx, msg.Symbol, common.HexToAddress(gateway))
-	if err != nil {
-		panic(err)
-	}
-	logs := createLogs(rand.Str(4), common.HexToAddress(gateway), tokenAddr, k.GetERC20TokenDeploySignature(ctx), true)
-	rpc := createBasicRPCMock(signedTx, confCount, logs)
 	voter := createVoterMock()
 	signer := &mock.SignerMock{
 		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
@@ -456,9 +442,9 @@ func TestVerifyToken_DifferentEvent(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	handler := NewHandler(k, rpc, voter, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
+	handler := NewHandler(k, voter, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
 
-	_, err = handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol))
+	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol))
 
 	assert.NoError(t, err)
 	assert.True(t, k.HasUnverifiedToken(ctx, signedTx.Hash().String()))
@@ -467,19 +453,12 @@ func TestVerifyToken_DifferentEvent(t *testing.T) {
 
 func TestVerifyToken_Success(t *testing.T) {
 	minConfHeight := rand.I64Between(1, 10)
-	confCount := rand.I64Between(minConfHeight, 10*minConfHeight)
 	signedTx := createSignedEthTx()
 	msg := createMsgSignDeploy()
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
 	k.SetTokenInfo(ctx, msg)
-	tokenAddr, err := k.GetTokenAddress(ctx, msg.Symbol, common.HexToAddress(gateway))
-	if err != nil {
-		panic(err)
-	}
-	logs := createLogs(msg.Symbol, common.HexToAddress(gateway), tokenAddr, k.GetERC20TokenDeploySignature(ctx), true)
-	rpc := createBasicRPCMock(signedTx, confCount, logs)
 	voter := createVoterMock()
 	signer := &mock.SignerMock{
 		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
@@ -489,9 +468,9 @@ func TestVerifyToken_Success(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	handler := NewHandler(k, rpc, voter, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
+	handler := NewHandler(k,  voter, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
 
-	_, err = handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol))
+	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol))
 
 	assert.NoError(t, err)
 	assert.True(t, k.HasUnverifiedToken(ctx, signedTx.Hash().String()))
@@ -506,7 +485,6 @@ func TestHandleMsgVerifyErc20Deposit_UnknownBurnerAddr(t *testing.T) {
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
-	rpc := ethMock.RPCClientMock{}
 	v := createVoterMock()
 	signer := &mock.SignerMock{
 		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
@@ -516,7 +494,7 @@ func TestHandleMsgVerifyErc20Deposit_UnknownBurnerAddr(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	handler := NewHandler(k, &rpc, v, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
+	handler := NewHandler(k, v, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
 
 	msg := types.NewMsgVerifyErc20Deposit(sender, txID, amount, unknownBurnerAddr)
 	result, err := handler(ctx, msg)
@@ -559,7 +537,7 @@ func TestHandleMsgVerifyErc20Deposit_FailedGettingTransactionReceipt(t *testing.
 			return rand.PosI64(), true
 		},
 	}
-	handler := NewHandler(k, &rpc, v, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
+	handler := NewHandler(k, v, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
 
 	msg := types.NewMsgVerifyErc20Deposit(sender, txID, amount, burnerAddr)
 	result, err := handler(ctx, msg)
@@ -604,7 +582,7 @@ func TestHandleMsgVerifyErc20Deposit_FailedGettingBlockNumber(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	handler := NewHandler(k, &rpc, v, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
+	handler := NewHandler(k, v, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
 
 	msg := types.NewMsgVerifyErc20Deposit(sender, txID, amount, burnerAddr)
 	result, err := handler(ctx, msg)
@@ -650,7 +628,7 @@ func TestHandleMsgVerifyErc20Deposit_NotConfirmed(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	handler := NewHandler(k, &rpc, v, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
+	handler := NewHandler(k, v, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
 
 	msg := types.NewMsgVerifyErc20Deposit(sender, txID, amount, burnerAddr)
 	result, err := handler(ctx, msg)
@@ -737,7 +715,7 @@ func TestHandleMsgVerifyErc20Deposit_AmountMismatch(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	handler := NewHandler(k, &rpc, v, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
+	handler := NewHandler(k, v, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
 
 	msg := types.NewMsgVerifyErc20Deposit(sender, txID, amount, burnerAddr)
 	result, err := handler(ctx, msg)
@@ -805,7 +783,7 @@ func TestHandleMsgVerifyErc20Deposit_Success(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	handler := NewHandler(k, &rpc, v, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
+	handler := NewHandler(k, v, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
 
 	msg := types.NewMsgVerifyErc20Deposit(sender, txID, amount, burnerAddr)
 	result, err := handler(ctx, msg)

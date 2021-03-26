@@ -126,7 +126,7 @@ func newNode(moniker string, broadcaster fake.Broadcaster, mocks testMocks) *fak
 
 	broadcastHandler := broadcast.NewHandler(broadcaster)
 	btcHandler := bitcoin.NewHandler(bitcoinKeeper, voter, signer, nexusK, snapKeeper)
-	ethHandler := ethereum.NewHandler(ethereumKeeper, mocks.ETH, voter, signer, nexusK, snapKeeper)
+	ethHandler := ethereum.NewHandler(ethereumKeeper, voter, signer, nexusK, snapKeeper)
 	snapHandler := snapshot.NewHandler(snapKeeper)
 	tssHandler := tss.NewHandler(signer, snapKeeper, nexusK, voter, &tssMock.StakingKeeperMock{
 		GetLastTotalPowerFunc: mocks.Staker.GetLastTotalPowerFunc,
@@ -379,13 +379,13 @@ func registerWaitEventListeners(n nodeData) (<-chan abci.Event, <-chan abci.Even
 	btcConfirmationDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
 		attributes := mapifyAttributes(event)
 		return event.Type == btcTypes.EventTypeOutpointConfirmation &&
-			(attributes[sdk.AttributeKeyAction] == btcTypes.AttributeValueConfirmed ||
-				attributes[sdk.AttributeKeyAction] == btcTypes.AttributeValueRejected)
+			(attributes[sdk.AttributeKeyAction] == btcTypes.AttributeValueConfirm ||
+				attributes[sdk.AttributeKeyAction] == btcTypes.AttributeValueReject)
 	})
 
 	// register eth listener for verification
 	ethVerifyDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
-		return event.Type == ethTypes.EventTypeVerificationResult
+		return event.Type == ethTypes.EventTypeDepositConfirmation
 	})
 
 	// register listener for sign completion

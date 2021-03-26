@@ -9,11 +9,9 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
 )
@@ -112,39 +110,6 @@ func (k Keeper) DeletePoll(ctx sdk.Context, poll exported.PollMeta) {
 	for ; iter.Valid(); iter.Next() {
 		ctx.KVStore(k.storeKey).Delete(iter.Key())
 	}
-}
-
-// RecordVote readies a vote to be broadcast to the entire network.
-// Votes are only valid if they correspond to a previously initialized poll.
-// Depending on the voting interval, multiple votes might be batched together when broadcasting.
-func (k Keeper) RecordVote(vote exported.MsgVote) {
-	k.subjectiveStore.Set([]byte(pendingVotePrefix+vote.Poll().String()), k.cdc.MustMarshalBinaryLengthPrefixed(vote))
-}
-
-// SendVotes broadcasts all unpublished votes to the entire network.
-func (k Keeper) SendVotes(ctx sdk.Context) {
-	votes := k.getPendingVotes()
-	defer k.deletePendingVotes(votes)
-	k.Logger(ctx).Debug(fmt.Sprintf("unpublished votes:%v", len(votes)))
-
-	if len(votes) == 0 {
-		return
-	}
-
-	var msgs []broadcast.MsgWithSenderSetter
-	for _, vote := range votes {
-		msgs = append(msgs, vote)
-	}
-
-	// Broadcast is a subjective action, so it must not cause non-deterministic changes to the tx execution.
-	// Because of this and to prevent a deadlock it needs to run in its own goroutine without any callbacks.
-	go func() {
-		k.Logger(ctx).Debug("broadcasting votes")
-		err := k.broadcaster.Broadcast(ctx, msgs)
-		if err != nil {
-			k.Logger(ctx).Error(sdkerrors.Wrap(err, "broadcasting votes failed").Error())
-		}
-	}()
 }
 
 // TallyVote tallies votes that have been broadcast. Each validator can only vote once per poll.

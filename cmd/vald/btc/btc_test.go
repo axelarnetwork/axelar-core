@@ -34,7 +34,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 	setup := func() {
 		rpc = &mock.ClientMock{}
 		broadcaster = &mock2.BroadcasterMock{}
-		mgr = NewMgr(rpc, rand.StrBetween(5, 20), broadcaster, nil, log.TestingLogger())
+		mgr = NewMgr(rpc, broadcaster, nil, log.TestingLogger())
 
 		confHeight = rand.PosI64()
 		poll := exported.NewPollMetaWithNonce(

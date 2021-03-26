@@ -166,14 +166,14 @@ func HandleMsgVoteConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, v types.Vo
 
 	if !confirmed {
 		ctx.EventManager().EmitEvent(
-			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueRejected)))
+			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
 		return &sdk.Result{
 			Log:    fmt.Sprintf("outpoint %s was discarded ", msg.PollMeta.ID),
 			Events: ctx.EventManager().Events(),
 		}, nil
 	}
 	ctx.EventManager().EmitEvent(
-		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirmed)))
+		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
 	k.SetOutpointInfo(ctx, outPointInfo, types.CONFIRMED)
 

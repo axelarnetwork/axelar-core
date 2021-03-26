@@ -20,11 +20,14 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/vald/broadcast"
 	"github.com/axelarnetwork/axelar-core/cmd/vald/broadcast/types"
 	"github.com/axelarnetwork/axelar-core/cmd/vald/btc"
-	rpc2 "github.com/axelarnetwork/axelar-core/cmd/vald/btc/rpc"
+	btcRPC "github.com/axelarnetwork/axelar-core/cmd/vald/btc/rpc"
+	"github.com/axelarnetwork/axelar-core/cmd/vald/eth"
+	ethRPC "github.com/axelarnetwork/axelar-core/cmd/vald/eth/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/vald/events"
 	"github.com/axelarnetwork/axelar-core/cmd/vald/jobs"
 	tss2 "github.com/axelarnetwork/axelar-core/cmd/vald/tss"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -68,21 +71,27 @@ func newHub() (*tmEvents.Hub, error) {
 func listen(hub *tmEvents.Hub, axelarCfg app.Config, valAddr string, logger log.Logger) {
 	broadcaster, sender := createBroadcaster(axelarCfg, logger)
 	tssMgr := createTSSMgr(broadcaster, sender, axelarCfg, logger, valAddr)
-	btcMgr := createBTCMgr(axelarCfg, broadcaster, sender, logger, valAddr)
+	btcMgr := createBTCMgr(axelarCfg, broadcaster, sender, logger)
+	ethMgr := createETHMgr(axelarCfg, broadcaster, sender, logger)
 
 	keygenStart := events.MustSubscribe(hub, tss.EventTypeKeygen, tss.ModuleName, tss.AttributeValueStart)
 	keygenMsg := events.MustSubscribe(hub, tss.EventTypeKeygen, tss.ModuleName, tss.AttributeValueMsg)
 	signStart := events.MustSubscribe(hub, tss.EventTypeSign, tss.ModuleName, tss.AttributeValueStart)
 	signMsg := events.MustSubscribe(hub, tss.EventTypeSign, tss.ModuleName, tss.AttributeValueMsg)
 
-	btcVer := events.MustSubscribe(hub, btcTypes.EventTypeOutpointConfirmation, btcTypes.ModuleName, btcTypes.AttributeValueStart)
+	btcConf := events.MustSubscribe(hub, btcTypes.EventTypeOutpointConfirmation, btcTypes.ModuleName, btcTypes.AttributeValueStart)
+
+	ethDepConf := events.MustSubscribe(hub, ethTypes.EventTypeDepositConfirmation, ethTypes.ModuleName, ethTypes.AttributeValueStart)
+	ethTokConf := events.MustSubscribe(hub, ethTypes.EventTypeTokenConfirmation, ethTypes.ModuleName, ethTypes.AttributeValueStart)
 
 	js := []jobs.Job{
 		events.Consume(keygenStart, tssMgr.ProcessKeygenStart),
 		events.Consume(keygenMsg, tssMgr.ProcessKeygenMsg),
 		events.Consume(signStart, tssMgr.ProcessSignStart),
 		events.Consume(signMsg, tssMgr.ProcessSignMsg),
-		events.Consume(btcVer, btcMgr.ProcessConfirmation),
+		events.Consume(btcConf, btcMgr.ProcessConfirmation),
+		events.Consume(ethDepConf, ethMgr.ProccessDepositConfirmation),
+		events.Consume(ethTokConf, ethMgr.ProccessTokenConfirmation),
 	}
 
 	// errGroup runs async processes and cancels their context if ANY of them returns an error.
@@ -143,15 +152,28 @@ func createTSSMgr(broadcaster types.Broadcaster, defaultSender sdk.AccAddress, a
 	return mgr
 }
 
-func createBTCMgr(axelarCfg app.Config, b types.Broadcaster, defaultSender sdk.AccAddress, logger log.Logger, valAddr string) *btc.Mgr {
-	rpc, err := rpc2.NewRPCClient(axelarCfg.BtcConfig, logger)
+func createBTCMgr(axelarCfg app.Config, b types.Broadcaster, defaultSender sdk.AccAddress, logger log.Logger) *btc.Mgr {
+	rpc, err := btcRPC.NewRPCClient(axelarCfg.BtcConfig, logger)
 	if err != nil {
 		logger.Error(err.Error())
 		panic(err)
 	}
-	// clean up rpc connection on process shutdown
+	// clean up btcRPC connection on process shutdown
 	tmos.TrapSignal(logger, rpc.Shutdown)
 
-	btcMgr := btc.NewMgr(rpc, valAddr, b, defaultSender, logger)
+	btcMgr := btc.NewMgr(rpc, b, defaultSender, logger)
 	return btcMgr
+}
+
+func createETHMgr(axelarCfg app.Config, b types.Broadcaster, defaultSender sdk.AccAddress, logger log.Logger) *eth.Mgr {
+	rpc, err := ethRPC.NewRPCClient(axelarCfg.EthRpcAddr)
+	if err != nil {
+		logger.Error(err.Error())
+		panic(err)
+	}
+	// clean up ethRPC connection on process shutdown
+	tmos.TrapSignal(logger, rpc.Close)
+
+	ethMgr := eth.NewMgr(rpc, b, defaultSender, logger)
+	return ethMgr
 }
