@@ -7,17 +7,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
-
-func isActive(ctx sdk.Context, slasher snapTypes.Slasher, validator snapshot.Validator) bool {
-	signingInfo, found := slasher.GetValidatorSigningInfo(ctx, validator.GetConsAddr())
-
-	return found && !signingInfo.Tombstoned && signingInfo.MissedBlocksCounter <= 0 && !validator.IsJailed()
-}
 
 // StartSign starts a tss signing protocol using the specified key for the given chain.
 func (k Keeper) StartSign(ctx sdk.Context, voter types.InitPoller, keyID string, sigID string, msg []byte, s snapshot.Snapshot) error {
@@ -32,7 +25,7 @@ func (k Keeper) StartSign(ctx sdk.Context, voter types.InitPoller, keyID string,
 
 	var activeValidators []snapshot.Validator
 	for _, validator := range s.Validators {
-		if isActive(ctx, k.slasher, validator) {
+		if snapshot.IsValidatorActive(ctx, k.slasher, validator) {
 			activeValidators = append(activeValidators, validator)
 		}
 	}

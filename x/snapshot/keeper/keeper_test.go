@@ -55,6 +55,55 @@ func init() {
 
 }
 
+func TestTakeSnapshot_WithValidatorCount(t *testing.T) {
+	validatorCount := int64(3)
+	validators := genValidators(t, 5, 500)
+	staker := newMockStaker(validators...)
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	cdc := testutils.Codec()
+	snapSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
+	slashingKeeper := &snapMock.SlasherMock{
+		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (types.ValidatorInfo, bool) {
+			newInfo := slashingtypes.NewValidatorSigningInfo(
+				address,
+				int64(0),        // height at which validator was first a candidate OR was unjailed
+				int64(3),        // index offset into signed block bit array. TODO: check if needs to be set correctly.
+				time.Unix(0, 0), // jailed until
+				false,           // tomstoned
+				int64(0),        // missed blocks
+			)
+			retinfo := types.ValidatorInfo{ValidatorSigningInfo: newInfo}
+			return retinfo, true
+		},
+	}
+	broadcasterMock := &snapMock.BroadcasterMock{
+		GetProxyFunc: func(_ sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
+			for _, v := range validators {
+				if bytes.Equal(principal.Bytes(), v.GetOperator()) {
+					return sdk.AccAddress(stringGen.Next())
+				}
+			}
+			return nil
+		},
+	}
+	tssMock := &snapMock.TssMock{
+		GetValidatorDeregisteredBlockHeightFunc: func(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
+			return 0
+		},
+	}
+
+	keeper := NewKeeper(cdc, sdk.NewKVStoreKey("staking"), snapSubspace, broadcasterMock, staker, slashingKeeper, tssMock)
+	keeper.SetParams(ctx, types.DefaultParams())
+
+	err := keeper.TakeSnapshot(ctx, validatorCount)
+	assert.NoError(t, err)
+
+	actual, ok := keeper.GetSnapshot(ctx, 0)
+	assert.True(t, ok)
+	assert.Equal(t, int(validatorCount), len(actual.Validators))
+}
+
 // Tests the snapshot functionality
 func TestSnapshots(t *testing.T) {
 	for i, testCase := range testCases {
@@ -199,7 +248,9 @@ func (k mockStaker) GetLastTotalPower(_ sdk.Context) (power sdk.Int) {
 
 func (k mockStaker) IterateLastValidators(_ sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool)) {
 	for i, val := range k.validators {
-		fn(int64(i), val)
+		if fn(int64(i), val) {
+			return
+		}
 	}
 }
 

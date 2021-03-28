@@ -22,8 +22,9 @@ const (
 
 // ReqKeygenStart represents a key-gen request
 type ReqKeygenStart struct {
-	BaseReq  rest.BaseReq `json:"base_req" yaml:"base_req"`
-	NewKeyId string       `json:"key_id" yaml:"key_id"`
+	BaseReq        rest.BaseReq `json:"base_req" yaml:"base_req"`
+	NewKeyId       string       `json:"key_id" yaml:"key_id"`
+	ValidatorCount int64        `json:"validator_count" yaml:"validator_count"`
 }
 
 // ReqMasterKeyAssignNext represents a request to assign a new master key
@@ -63,7 +64,7 @@ func GetHandlerKeygenStart(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewMsgKeygenStart(sender, req.NewKeyId, 0)
+		msg := types.NewMsgKeygenStart(sender, req.NewKeyId, req.ValidatorCount)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

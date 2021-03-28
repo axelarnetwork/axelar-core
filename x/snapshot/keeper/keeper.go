@@ -124,20 +124,6 @@ func (k Keeper) GetLatestCounter(ctx sdk.Context) int64 {
 	return i
 }
 
-func isActive(ctx sdk.Context, slasher types.Slasher, validator exported.Validator) bool {
-	signingInfo, found := slasher.GetValidatorSigningInfo(ctx, validator.GetConsAddr())
-
-	return found && !signingInfo.Tombstoned && signingInfo.MissedBlocksCounter <= 0 && !validator.IsJailed()
-}
-
-func hasProxyRegistered(ctx sdk.Context, broadcaster types.Broadcaster, validator exported.Validator) bool {
-	return broadcaster.GetProxy(ctx, validator.GetOperator()) != nil
-}
-
-func isTssRegistered(ctx sdk.Context, tss types.Tss, validator exported.Validator) bool {
-	return tss.GetValidatorDeregisteredBlockHeight(ctx, validator.GetOperator()) <= 0
-}
-
 func (k Keeper) executeSnapshot(ctx sdk.Context, nextCounter int64, validatorCount int64) error {
 	var validators []exported.Validator
 	snapshotTotalPower, validatorsTotalPower := sdk.ZeroInt(), sdk.ZeroInt()
@@ -145,15 +131,15 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, nextCounter int64, validatorCou
 	validatorIter := func(_ int64, validator sdkExported.ValidatorI) (stop bool) {
 		validatorsTotalPower = validatorsTotalPower.AddRaw(validator.GetConsensusPower())
 
-		if !isActive(ctx, k.slasher, validator) {
+		if !exported.IsValidatorActive(ctx, k.slasher, validator) {
 			return false
 		}
 
-		if !hasProxyRegistered(ctx, k.broadcaster, validator) {
+		if !exported.DoesValidatorHasProxyRegistered(ctx, k.broadcaster, validator) {
 			return false
 		}
 
-		if !isTssRegistered(ctx, k.tss, validator) {
+		if !exported.IsValidatorTssRegistered(ctx, k.tss, validator) {
 			return false
 		}
 

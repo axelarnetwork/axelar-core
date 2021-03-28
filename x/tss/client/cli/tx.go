@@ -40,20 +40,24 @@ func getCmdKeygenStart(cdc *codec.Codec) *cobra.Command {
 		Short: "Initiate threshold key generation protocol",
 		Args:  cobra.NoArgs,
 	}
+
 	newKeyID := cmd.Flags().String("id", "", "unique ID for new key (required)")
 	if cmd.MarkFlagRequired("id") != nil {
 		panic("flag not set")
 	}
 
+	validatorCount := cmd.Flags().Int64("validator-count", 0, "number of top validators to participate in the key generation")
+
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
 
-		msg := types.NewMsgKeygenStart(cliCtx.FromAddress, *newKeyID, 0)
+		msg := types.NewMsgKeygenStart(cliCtx.FromAddress, *newKeyID, *validatorCount)
 		if err := msg.ValidateBasic(); err != nil {
 			return err
 		}
 		return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 	}
+
 	return cmd
 }
 

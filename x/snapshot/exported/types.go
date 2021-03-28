@@ -4,17 +4,30 @@ import (
 	"bytes"
 	"time"
 
+	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 //go:generate moq -out ./mock/types.go -pkg mock . Validator Snapshotter
 
 // Validator is an interface for a Cosmos validator account
-type Validator interface {
-	GetOperator() sdk.ValAddress
-	GetConsAddr() sdk.ConsAddress
-	GetConsensusPower() int64
-	IsJailed() bool
+type Validator = types.Validator
+
+// IsValidatorActive returns true if the validator is active; otherwise, false
+func IsValidatorActive(ctx sdk.Context, slasher types.Slasher, validator Validator) bool {
+	signingInfo, found := slasher.GetValidatorSigningInfo(ctx, validator.GetConsAddr())
+
+	return found && !signingInfo.Tombstoned && signingInfo.MissedBlocksCounter <= 0 && !validator.IsJailed()
+}
+
+// DoesValidatorHasProxyRegistered returns true if the validator has broadcast proxy registered; otherwise, false
+func DoesValidatorHasProxyRegistered(ctx sdk.Context, broadcaster types.Broadcaster, validator Validator) bool {
+	return broadcaster.GetProxy(ctx, validator.GetOperator()) != nil
+}
+
+// IsValidatorTssRegistered returns true if the validator is registered to participate in tss key generation; otherwise, false
+func IsValidatorTssRegistered(ctx sdk.Context, tss types.Tss, validator Validator) bool {
+	return tss.GetValidatorDeregisteredBlockHeight(ctx, validator.GetOperator()) <= 0
 }
 
 // Snapshot is a snapshot of the validator set at a given block height.
