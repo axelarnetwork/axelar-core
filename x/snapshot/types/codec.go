@@ -1,13 +1,14 @@
 package types
 
 import (
+	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 )
 
 // RegisterCodec registers concrete types on codec
 func RegisterCodec(cdc *codec.Codec) {
-	cdc.RegisterInterface((*Validator)(nil), nil)
+	cdc.RegisterInterface((*exported.Validator)(nil), nil)
 	/* The snapshot keeper is dependent on the StakingKeeper interface, which returns validators through interfaces.
 	However, the snapshot keeper has to marshal the validators, so it must register the actual concrete type that is returned. */
 	cdc.RegisterConcrete(&staking.Validator{}, "snapshot/Validator", nil)

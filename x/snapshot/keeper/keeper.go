@@ -25,15 +25,15 @@ var _ exported.Snapshotter = Keeper{}
 type Keeper struct {
 	storeKey    sdk.StoreKey
 	staking     types.StakingKeeper
-	slasher     types.Slasher
-	broadcaster types.Broadcaster
-	tss         types.Tss
+	slasher     exported.Slasher
+	broadcaster exported.Broadcaster
+	tss         exported.Tss
 	cdc         *codec.Codec
 	params      subspace.Subspace
 }
 
 // NewKeeper creates a new keeper for the staking module
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramSpace params.Subspace, broadcaster types.Broadcaster, staking types.StakingKeeper, slasher types.Slasher, tss types.Tss) Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramSpace params.Subspace, broadcaster exported.Broadcaster, staking types.StakingKeeper, slasher exported.Slasher, tss exported.Tss) Keeper {
 	return Keeper{
 		storeKey:    key,
 		cdc:         cdc,

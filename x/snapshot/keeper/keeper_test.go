@@ -13,11 +13,12 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing"
 
-	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
+	snapshotMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -63,8 +64,8 @@ func TestTakeSnapshot_WithValidatorCount(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	cdc := testutils.Codec()
 	snapSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
-	slashingKeeper := &snapMock.SlasherMock{
-		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (types.ValidatorInfo, bool) {
+	slashingKeeper := &snapshotMock.SlasherMock{
+		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (exported.ValidatorInfo, bool) {
 			newInfo := slashingtypes.NewValidatorSigningInfo(
 				address,
 				int64(0),        // height at which validator was first a candidate OR was unjailed
@@ -73,11 +74,11 @@ func TestTakeSnapshot_WithValidatorCount(t *testing.T) {
 				false,           // tomstoned
 				int64(0),        // missed blocks
 			)
-			retinfo := types.ValidatorInfo{ValidatorSigningInfo: newInfo}
+			retinfo := exported.ValidatorInfo{ValidatorSigningInfo: newInfo}
 			return retinfo, true
 		},
 	}
-	broadcasterMock := &snapMock.BroadcasterMock{
+	broadcasterMock := &snapshotMock.BroadcasterMock{
 		GetProxyFunc: func(_ sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
 			for _, v := range validators {
 				if bytes.Equal(principal.Bytes(), v.GetOperator()) {
@@ -87,7 +88,7 @@ func TestTakeSnapshot_WithValidatorCount(t *testing.T) {
 			return nil
 		},
 	}
-	tssMock := &snapMock.TssMock{
+	tssMock := &snapshotMock.TssMock{
 		GetValidatorDeregisteredBlockHeightFunc: func(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
 			return 0
 		},
@@ -117,8 +118,8 @@ func TestSnapshots(t *testing.T) {
 
 			snapSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
 
-			slashingKeeper := &snapMock.SlasherMock{
-				GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (types.ValidatorInfo, bool) {
+			slashingKeeper := &snapshotMock.SlasherMock{
+				GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (exported.ValidatorInfo, bool) {
 					newInfo := slashingtypes.NewValidatorSigningInfo(
 						address,
 						int64(0),        // height at which validator was first a candidate OR was unjailed
@@ -127,12 +128,12 @@ func TestSnapshots(t *testing.T) {
 						false,           // tomstoned
 						int64(0),        // missed blocks
 					)
-					retinfo := types.ValidatorInfo{ValidatorSigningInfo: newInfo}
+					retinfo := exported.ValidatorInfo{ValidatorSigningInfo: newInfo}
 					return retinfo, true
 				},
 			}
 
-			broadcasterMock := &snapMock.BroadcasterMock{
+			broadcasterMock := &snapshotMock.BroadcasterMock{
 				GetProxyFunc: func(_ sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
 					for _, v := range validators {
 						if bytes.Equal(principal.Bytes(), v.GetOperator()) {
@@ -143,7 +144,7 @@ func TestSnapshots(t *testing.T) {
 				},
 			}
 
-			tssMock := &snapMock.TssMock{
+			tssMock := &snapshotMock.TssMock{
 				GetValidatorDeregisteredBlockHeightFunc: func(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
 					return 0
 				},

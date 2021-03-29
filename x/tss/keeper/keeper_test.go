@@ -18,8 +18,6 @@ import (
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
-	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
-	snapMock2 "github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
 
@@ -74,8 +72,8 @@ func setup(t *testing.T) *testSetup {
 		Signature:   make(chan []byte, 1),
 	}
 
-	slasher := &snapMock2.SlasherMock{
-		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapTypes.ValidatorInfo, bool) {
+	slasher := &snapMock.SlasherMock{
+		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapshot.ValidatorInfo, bool) {
 			newInfo := slashingTypes.NewValidatorSigningInfo(
 				address,
 				int64(0),        // height at which validator was first a candidate OR was unjailed
@@ -84,7 +82,7 @@ func setup(t *testing.T) *testSetup {
 				false,           // tomstoned
 				int64(0),        // missed blocks
 			)
-			return snapTypes.ValidatorInfo{ValidatorSigningInfo: newInfo}, true
+			return snapshot.ValidatorInfo{ValidatorSigningInfo: newInfo}, true
 		},
 	}
 

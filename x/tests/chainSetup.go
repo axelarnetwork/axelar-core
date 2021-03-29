@@ -46,9 +46,11 @@ import (
 	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	ethMock "github.com/axelarnetwork/axelar-core/x/ethereum/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/snapshot"
+	snapshotExported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	snapshotExportedMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	snapshotKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
-	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
-	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
+	snapshotTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
+	snapshotTypesMock "github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/tss"
 	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -69,10 +71,10 @@ type testMocks struct {
 	ETH     *ethMock.RPCClientMock
 	Keygen  *tssMock.TofndKeyGenClientMock
 	Sign    *tssMock.TofndSignClientMock
-	Staker  *snapMock.StakingKeeperMock
+	Staker  *snapshotTypesMock.StakingKeeperMock
 	Tofnd   *tssMock.TofndClientMock
-	Slasher *snapMock.SlasherMock
-	Tss     *snapMock.TssMock
+	Slasher *snapshotExportedMock.SlasherMock
+	Tss     *snapshotExportedMock.TssMock
 }
 
 type nodeData struct {
@@ -86,8 +88,8 @@ func newNode(moniker string, broadcaster fake.Broadcaster, mocks testMocks) *fak
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger().With("node", moniker))
 
 	snapSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
-	snapKeeper := snapshotKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(snapTypes.StoreKey), snapSubspace, broadcaster, mocks.Staker, mocks.Slasher, mocks.Tss)
-	snapKeeper.SetParams(ctx, snapTypes.DefaultParams())
+	snapKeeper := snapshotKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(snapshotTypes.StoreKey), snapSubspace, broadcaster, mocks.Staker, mocks.Slasher, mocks.Tss)
+	snapKeeper.SetParams(ctx, snapshotTypes.DefaultParams())
 	voter := voteKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(voteTypes.StoreKey), dbadapter.Store{DB: db.NewMemDB()}, snapKeeper, broadcaster)
 
 	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
@@ -135,7 +137,7 @@ func newNode(moniker string, broadcaster fake.Broadcaster, mocks testMocks) *fak
 		AddRoute(broadcastTypes.RouterKey, broadcastHandler).
 		AddRoute(btcTypes.RouterKey, btcHandler).
 		AddRoute(ethTypes.RouterKey, ethHandler).
-		AddRoute(snapTypes.RouterKey, snapHandler).
+		AddRoute(snapshotTypes.RouterKey, snapHandler).
 		AddRoute(voteTypes.RouterKey, voteHandler).
 		AddRoute(tssTypes.RouterKey, tssHandler)
 
@@ -157,8 +159,8 @@ func newNode(moniker string, broadcaster fake.Broadcaster, mocks testMocks) *fak
 }
 
 func createMocks(validators []staking.Validator) testMocks {
-	slasher := &snapMock.SlasherMock{
-		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapTypes.ValidatorInfo, bool) {
+	slasher := &snapshotExportedMock.SlasherMock{
+		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapshotExported.ValidatorInfo, bool) {
 			newInfo := slashingTypes.NewValidatorSigningInfo(
 				address,
 				int64(0),        // height at which validator was first a candidate OR was unjailed
@@ -167,11 +169,11 @@ func createMocks(validators []staking.Validator) testMocks {
 				false,           // tomstoned
 				int64(0),        // missed blocks
 			)
-			return snapTypes.ValidatorInfo{ValidatorSigningInfo: newInfo}, true
+			return snapshotExported.ValidatorInfo{ValidatorSigningInfo: newInfo}, true
 		},
 	}
 
-	stakingKeeper := &snapMock.StakingKeeperMock{
+	stakingKeeper := &snapshotTypesMock.StakingKeeperMock{
 		IterateLastValidatorsFunc: func(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool)) {
 			for j, val := range validators {
 				if fn(int64(j), val) {
@@ -188,7 +190,7 @@ func createMocks(validators []staking.Validator) testMocks {
 		},
 	}
 
-	tssK := &snapMock.TssMock{
+	tssK := &snapshotExportedMock.TssMock{
 		GetValidatorDeregisteredBlockHeightFunc: func(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
 			return 0
 		},
