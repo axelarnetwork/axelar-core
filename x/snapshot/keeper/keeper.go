@@ -146,6 +146,7 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, nextCounter int64, validatorCou
 		snapshotTotalPower = snapshotTotalPower.AddRaw(validator.GetConsensusPower())
 		validators = append(validators, validator)
 
+		// if validatorCount equals 0, we will iterate through all validators and potentially put them all into the snapshot
 		return len(validators) == int(validatorCount)
 	}
 	k.staking.IterateLastValidators(ctx, validatorIter)
