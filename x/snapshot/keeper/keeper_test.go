@@ -56,8 +56,8 @@ func init() {
 
 }
 
-func TestTakeSnapshot_WithValidatorCount(t *testing.T) {
-	validatorCount := int64(3)
+func TestTakeSnapshot_WithSubsetSize(t *testing.T) {
+	subsetSize := int64(3)
 	validators := genValidators(t, 5, 500)
 	staker := newMockStaker(validators...)
 
@@ -97,12 +97,12 @@ func TestTakeSnapshot_WithValidatorCount(t *testing.T) {
 	keeper := NewKeeper(cdc, sdk.NewKVStoreKey("staking"), snapSubspace, broadcasterMock, staker, slashingKeeper, tssMock)
 	keeper.SetParams(ctx, types.DefaultParams())
 
-	err := keeper.TakeSnapshot(ctx, validatorCount)
+	err := keeper.TakeSnapshot(ctx, subsetSize)
 	assert.NoError(t, err)
 
 	actual, ok := keeper.GetSnapshot(ctx, 0)
 	assert.True(t, ok)
-	assert.Equal(t, int(validatorCount), len(actual.Validators))
+	assert.Equal(t, int(subsetSize), len(actual.Validators))
 }
 
 // Tests the snapshot functionality
@@ -247,7 +247,7 @@ func (k mockStaker) GetLastTotalPower(_ sdk.Context) (power sdk.Int) {
 	return k.totalPower
 }
 
-func (k mockStaker) IterateLastValidators(_ sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool)) {
+func (k mockStaker) IterateBondedValidatorsByPower(_ sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool)) {
 	for i, val := range k.validators {
 		if fn(int64(i), val) {
 			return

@@ -174,7 +174,7 @@ func createMocks(validators []staking.Validator) testMocks {
 	}
 
 	stakingKeeper := &snapshotTypesMock.StakingKeeperMock{
-		IterateLastValidatorsFunc: func(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool)) {
+		IterateBondedValidatorsByPowerFunc: func(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool)) {
 			for j, val := range validators {
 				if fn(int64(j), val) {
 					break

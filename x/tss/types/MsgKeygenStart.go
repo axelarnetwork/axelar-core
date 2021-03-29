@@ -7,17 +7,17 @@ import (
 
 // MsgKeygenStart indicate the start of keygen
 type MsgKeygenStart struct {
-	Sender         sdk.AccAddress
-	NewKeyID       string
-	ValidatorCount int64
+	Sender     sdk.AccAddress
+	NewKeyID   string
+	SubsetSize int64
 }
 
 // NewMsgKeygenStart constructor for MsgKeygenStart
-func NewMsgKeygenStart(sender sdk.AccAddress, newKeyID string, validatorCount int64) sdk.Msg {
+func NewMsgKeygenStart(sender sdk.AccAddress, newKeyID string, subsetSize int64) sdk.Msg {
 	return MsgKeygenStart{
-		Sender:         sender,
-		NewKeyID:       newKeyID,
-		ValidatorCount: validatorCount,
+		Sender:     sender,
+		NewKeyID:   newKeyID,
+		SubsetSize: subsetSize,
 	}
 }
 
@@ -38,8 +38,8 @@ func (msg MsgKeygenStart) ValidateBasic() error {
 		return sdkerrors.Wrap(ErrTss, "new key id must be set")
 	}
 
-	if msg.ValidatorCount < 0 {
-		return sdkerrors.Wrap(ErrTss, "required validator count has to be greater than or equal to 0")
+	if msg.SubsetSize < 0 {
+		return sdkerrors.Wrap(ErrTss, "subset size has to be greater than or equal to 0")
 	}
 
 	// TODO enforce a maximum length for msg.NewKeyID?

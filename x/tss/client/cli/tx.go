@@ -46,12 +46,12 @@ func getCmdKeygenStart(cdc *codec.Codec) *cobra.Command {
 		panic("flag not set")
 	}
 
-	validatorCount := cmd.Flags().Int64("validator-count", 0, "number of top validators to participate in the key generation")
+	subsetSize := cmd.Flags().Int64("subset-size", 0, "number of top validators to participate in the key generation")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
 
-		msg := types.NewMsgKeygenStart(cliCtx.FromAddress, *newKeyID, *validatorCount)
+		msg := types.NewMsgKeygenStart(cliCtx.FromAddress, *newKeyID, *subsetSize)
 		if err := msg.ValidateBasic(); err != nil {
 			return err
 		}

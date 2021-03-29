@@ -61,13 +61,13 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	return
 }
 
-// TakeSnapshot attempts to create a new snapshot
-func (k Keeper) TakeSnapshot(ctx sdk.Context, validatorCount int64) error {
+// TakeSnapshot attempts to create a new snapshot; if subsetSize equals 0, snapshot will be created with all validators
+func (k Keeper) TakeSnapshot(ctx sdk.Context, subsetSize int64) error {
 	s, ok := k.GetLatestSnapshot(ctx)
 
 	if !ok {
 		k.setLatestCounter(ctx, 0)
-		return k.executeSnapshot(ctx, 0, validatorCount)
+		return k.executeSnapshot(ctx, 0, subsetSize)
 	}
 
 	lockingPeriod := k.getLockingPeriod(ctx)
@@ -77,7 +77,7 @@ func (k Keeper) TakeSnapshot(ctx sdk.Context, validatorCount int64) error {
 	}
 
 	k.setLatestCounter(ctx, s.Counter+1)
-	return k.executeSnapshot(ctx, s.Counter+1, validatorCount)
+	return k.executeSnapshot(ctx, s.Counter+1, subsetSize)
 }
 
 func (k Keeper) getLockingPeriod(ctx sdk.Context) time.Duration {
@@ -124,7 +124,7 @@ func (k Keeper) GetLatestCounter(ctx sdk.Context) int64 {
 	return i
 }
 
-func (k Keeper) executeSnapshot(ctx sdk.Context, nextCounter int64, validatorCount int64) error {
+func (k Keeper) executeSnapshot(ctx sdk.Context, nextCounter int64, subsetSize int64) error {
 	var validators []exported.Validator
 	snapshotTotalPower, validatorsTotalPower := sdk.ZeroInt(), sdk.ZeroInt()
 
@@ -146,10 +146,15 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, nextCounter int64, validatorCou
 		snapshotTotalPower = snapshotTotalPower.AddRaw(validator.GetConsensusPower())
 		validators = append(validators, validator)
 
-		// if validatorCount equals 0, we will iterate through all validators and potentially put them all into the snapshot
-		return len(validators) == int(validatorCount)
+		// if subsetSize equals 0, we will iterate through all validators and potentially put them all into the snapshot
+		return len(validators) == int(subsetSize)
 	}
-	k.staking.IterateLastValidators(ctx, validatorIter)
+	// IterateBondedValidatorsByPower(https://github.com/cosmos/cosmos-sdk/blob/7fc7b3f6ff82eb5ede52881778114f6b38bd7dfa/x/staking/keeper/alias_functions.go#L33) iterates validators by power in descending order
+	k.staking.IterateBondedValidatorsByPower(ctx, validatorIter)
+
+	if subsetSize > 0 && len(validators) != int(subsetSize) {
+		return fmt.Errorf("only %d validators are eligible for keygen which is less than desired subset size %d", len(validators), subsetSize)
+	}
 
 	snapshot := exported.Snapshot{
 		Validators:           validators,

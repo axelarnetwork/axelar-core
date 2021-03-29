@@ -183,7 +183,7 @@ func handleMsgKeygenTraffic(ctx sdk.Context, k keeper.Keeper, msg types.MsgKeyge
 
 func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, staker types.StakingKeeper, v types.Voter, msg types.MsgKeygenStart) (*sdk.Result, error) {
 	// record the snapshot of active validators that we'll use for the key
-	if err := s.TakeSnapshot(ctx, msg.ValidatorCount); err != nil {
+	if err := s.TakeSnapshot(ctx, msg.SubsetSize); err != nil {
 		return nil, err
 	}
 

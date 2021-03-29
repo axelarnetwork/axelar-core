@@ -11,6 +11,6 @@ import (
 // actually used by this module
 type StakingKeeper interface {
 	GetLastTotalPower(ctx sdk.Context) (power sdk.Int)
-	IterateLastValidators(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool))
+	IterateBondedValidatorsByPower(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool))
 	Validator(ctx sdk.Context, addr sdk.ValAddress) sdkExported.ValidatorI
 }
