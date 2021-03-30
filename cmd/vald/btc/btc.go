@@ -49,7 +49,7 @@ func (mgr *Mgr) ProcessConfirmation(attributes []sdk.Attribute) error {
 		Sender:    mgr.sender,
 		PollMeta:  poll,
 		Confirmed: err == nil,
-		Outpoint:  *outPointInfo.OutPoint,
+		OutPoint:  *outPointInfo.OutPoint,
 	}
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, poll.String()))
 	return mgr.broadcaster.Broadcast(msg)

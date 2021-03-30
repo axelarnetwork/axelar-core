@@ -30,7 +30,7 @@ func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID string, th
 		k.setParticipatesInKeygen(ctx, keyID, v.GetOperator())
 	}
 
-	// store block height for this keygen to be able to verify later if the produced key is allowed as a master key
+	// store block height for this keygen to be able to confirm later if the produced key is allowed as a master key
 	k.setKeygenStart(ctx, keyID)
 
 	// store snapshot round to be able to look up the correct validator set when signing with this key

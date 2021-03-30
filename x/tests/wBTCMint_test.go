@@ -31,9 +31,9 @@ import (
 // 0. Create and start a chain
 // 1. Get a deposit address for the given Ethereum recipient address
 // 2. Send BTC to the deposit address and wait until confirmed
-// 3. Collect all information that needs to be verified about the deposit
-// 4. Verify the previously received information
-// 5. Wait until verification is complete
+// 3. Collect all information that needs to be confirmed about the deposit
+// 4. Confirm the previously received information
+// 5. Wait until confirmation is complete
 // 6. Sign all pending transfers to Ethereum
 // 7. Submit the minting command from an externally controlled address to AxelarGateway
 
@@ -45,7 +45,7 @@ func Test_wBTC_mint(t *testing.T) {
 
 	// create a chain with nodes and assign them as validators
 	chain, nodeData := initChain(nodeCount, "mint")
-	keygenDone, btcVerifyDone, ethVerifyDone, signDone := registerWaitEventListeners(nodeData[0])
+	keygenDone, btcConfirmDone, ethConfirmDone, signDone := registerWaitEventListeners(nodeData[0])
 
 	// register proxies for all validators
 	for i, proxy := range randStrings.Take(nodeCount) {
@@ -148,7 +148,7 @@ func Test_wBTC_mint(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	// verify the token deployment
+	// confirm the token deployment
 	var txHashHex string
 	testutils.Codec().MustUnmarshalJSON(bz, &txHashHex)
 	txHash := common.HexToHash(txHashHex)
@@ -181,11 +181,11 @@ func Test_wBTC_mint(t *testing.T) {
 		}
 	}
 
-	verifyResult := <-chain.Submit(ethTypes.NewMsgVerifyErc20TokenDeploy(randomSender(), txHash, "satoshi"))
-	assert.NoError(t, verifyResult.Error)
+	confirmResult := <-chain.Submit(ethTypes.NewMsgConfirmERC20TokenDeploy(randomSender(), txHash, "satoshi"))
+	assert.NoError(t, confirmResult.Error)
 
-	if err := waitFor(ethVerifyDone, 1); err != nil {
-		assert.FailNow(t, "verification", err)
+	if err := waitFor(ethConfirmDone, 1); err != nil {
+		assert.FailNow(t, "confirmation", err)
 	}
 
 	// steps followed as per https://github.com/axelarnetwork/axelarate#mint-erc20-wrapped-bitcoin-tokens-on-ethereum
@@ -201,15 +201,15 @@ func Test_wBTC_mint(t *testing.T) {
 		// Simulate deposit
 		depositInfo := randomOutpointInfo(depositAddr)
 
-		// Verify the previously received information
+		// confirm the previously received information
 		res = <-chain.Submit(btcTypes.NewMsgConfirmOutpoint(randomSender(), depositInfo))
 		assert.NoError(t, res.Error)
 
 	}
 
-	// Wait until verification is complete
-	if err := waitFor(btcVerifyDone, totalDepositCount); err != nil {
-		assert.FailNow(t, "verification", err)
+	// Wait until confirm is complete
+	if err := waitFor(btcConfirmDone, totalDepositCount); err != nil {
+		assert.FailNow(t, "confirmation", err)
 	}
 
 	// Sign all pending transfers to Ethereum

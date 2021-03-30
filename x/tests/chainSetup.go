@@ -14,7 +14,6 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
-	"github.com/cosmos/cosmos-sdk/store/dbadapter"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	slashingTypes "github.com/cosmos/cosmos-sdk/x/slashing"
@@ -26,10 +25,8 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/libs/log"
-	db "github.com/tendermint/tm-db"
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	"github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
@@ -90,7 +87,7 @@ func newNode(moniker string, broadcaster fake.Broadcaster, mocks testMocks) *fak
 	snapSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
 	snapKeeper := snapshotKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(snapshotTypes.StoreKey), snapSubspace, broadcaster, mocks.Staker, mocks.Slasher, mocks.Tss)
 	snapKeeper.SetParams(ctx, snapshotTypes.DefaultParams())
-	voter := voteKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(voteTypes.StoreKey), dbadapter.Store{DB: db.NewMemDB()}, snapKeeper, broadcaster)
+	voter := voteKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(voteTypes.StoreKey), snapKeeper, broadcaster)
 
 	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
 	bitcoinKeeper := btcKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)
@@ -257,7 +254,7 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 }
 
 func registerBTCEventListener(n nodeData) {
-	// register listener for verification
+	// register listener for confirmation
 	n.Node.RegisterEventListener(func(event abci.Event) bool {
 		if event.Type != btcTypes.EventTypeOutpointConfirmation {
 			return false
@@ -273,13 +270,13 @@ func registerBTCEventListener(n nodeData) {
 
 		var out btcTypes.OutPointInfo
 		testutils.Codec().MustUnmarshalJSON([]byte(m[btcTypes.AttributeKeyOutPointInfo]), &out)
-		err := n.Broadcaster.Broadcast(n.Node.Ctx, []exported.MsgWithSenderSetter{
+		err := n.Broadcaster.Broadcast(n.Node.Ctx,
 			&btcTypes.MsgVoteConfirmOutpoint{
 				Sender:    n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal),
 				PollMeta:  poll,
 				Confirmed: true,
-				Outpoint:  *out.OutPoint,
-			}})
+				OutPoint:  *out.OutPoint,
+			})
 		if err != nil {
 			panic(err)
 		}
@@ -319,15 +316,14 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd) {
 
 		pk := t.KeyGen(m[tssTypes.AttributeKeyKeyID]) // simulate correct keygen + vote
 		err := n.Broadcaster.Broadcast(n.Node.Ctx,
-			[]exported.MsgWithSenderSetter{
-				&tssTypes.MsgVotePubKey{
-					Sender:      n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal),
-					PubKeyBytes: pk,
-					PollMeta: voting.NewPollMeta(
-						tssTypes.ModuleName,
-						tssTypes.EventTypeKeygen,
-						m[tssTypes.AttributeKeyKeyID],
-					)}})
+			&tssTypes.MsgVotePubKey{
+				Sender:      n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal),
+				PubKeyBytes: pk,
+				PollMeta: voting.NewPollMeta(
+					tssTypes.ModuleName,
+					tssTypes.EventTypeKeygen,
+					m[tssTypes.AttributeKeyKeyID],
+				)})
 		if err != nil {
 			panic(err)
 		}
@@ -352,15 +348,14 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd) {
 		sig := t.Sign(m[tssTypes.AttributeKeySigID], m[tssTypes.AttributeKeyKeyID], []byte(m[tssTypes.AttributeKeyPayload]))
 
 		err := n.Broadcaster.Broadcast(n.Node.Ctx,
-			[]exported.MsgWithSenderSetter{
-				&tssTypes.MsgVoteSig{
-					Sender:   n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal),
-					SigBytes: sig,
-					PollMeta: voting.NewPollMeta(
-						tssTypes.ModuleName,
-						tssTypes.EventTypeSign,
-						m[tssTypes.AttributeKeySigID],
-					)}})
+			&tssTypes.MsgVoteSig{
+				Sender:   n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal),
+				SigBytes: sig,
+				PollMeta: voting.NewPollMeta(
+					tssTypes.ModuleName,
+					tssTypes.EventTypeSign,
+					m[tssTypes.AttributeKeySigID],
+				)})
 		if err != nil {
 			panic(err)
 		}
@@ -383,8 +378,8 @@ func registerWaitEventListeners(n nodeData) (<-chan abci.Event, <-chan abci.Even
 				attributes[sdk.AttributeKeyAction] == btcTypes.AttributeValueReject)
 	})
 
-	// register eth listener for verification
-	ethVerifyDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
+	// register eth listener for confirmation
+	ethConfirmDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
 		return event.Type == ethTypes.EventTypeDepositConfirmation
 	})
 
@@ -392,7 +387,7 @@ func registerWaitEventListeners(n nodeData) (<-chan abci.Event, <-chan abci.Even
 	signDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
 		return event.Type == tssTypes.EventTypeSigDecided
 	})
-	return keygenDone, btcConfirmationDone, ethVerifyDone, signDone
+	return keygenDone, btcConfirmationDone, ethConfirmDone, signDone
 }
 
 func waitFor(eventDone <-chan abci.Event, repeats int) error {

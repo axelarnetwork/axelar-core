@@ -9,13 +9,11 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/ethereum/go-ethereum/common"
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
-	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
@@ -201,79 +199,4 @@ func TestGetBurnerAddressAndSalt_CorrectData(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expectedBurnerAddr, actualburnerAddr)
 	assert.Equal(t, expectedSalt, actualSalt[:])
-}
-
-func TestDecodeTokenDeployEvent_CorrectData(t *testing.T) {
-	cdc := testutils.Codec()
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	subspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
-	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"), subspace)
-	k.SetParams(ctx, types.DefaultParams())
-
-	axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
-	tokenDeploySig := k.GetERC20TokenDeploySignature(ctx)
-	expectedAddr := common.HexToAddress("0xE7481ECB61F9C84b91C03414F3D5d48E5436045D")
-	expectedSymbol := "XPTO"
-	data := common.FromHex("0x0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000e7481ecb61f9c84b91c03414f3d5d48e5436045d00000000000000000000000000000000000000000000000000000000000000045850544f00000000000000000000000000000000000000000000000000000000")
-
-	l := &ethTypes.Log{Address: axelarGateway, Data: data, Topics: []common.Hash{tokenDeploySig}}
-
-	symbol, tokenAddr, err := types.DecodeErc20TokenDeployEvent(l, tokenDeploySig)
-	assert.NoError(t, err)
-	assert.Equal(t, expectedSymbol, symbol)
-	assert.Equal(t, expectedAddr, tokenAddr)
-}
-
-func TestDecodeErc20TransferEvent_NotErc20Transfer(t *testing.T) {
-	l := ethTypes.Log{
-		Topics: []common.Hash{
-			common.BytesToHash(rand.Bytes(common.HashLength)),
-			common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(rand.Bytes(common.AddressLength)).Bytes(), common.HashLength)),
-			common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(rand.Bytes(common.AddressLength)).Bytes(), common.HashLength)),
-		},
-		Data: common.LeftPadBytes(big.NewInt(2).Bytes(), common.HashLength),
-	}
-
-	_, _, _, err := types.DecodeErc20TransferEvent(&l)
-
-	assert.Error(t, err)
-}
-
-func TestDecodeErc20TransferEvent_InvalidErc20Transfer(t *testing.T) {
-	erc20TransferEventSig := common.HexToHash("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")
-
-	l := ethTypes.Log{
-		Topics: []common.Hash{
-			erc20TransferEventSig,
-			common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(rand.Bytes(common.AddressLength)).Bytes(), common.HashLength)),
-		},
-		Data: common.LeftPadBytes(big.NewInt(2).Bytes(), common.HashLength),
-	}
-
-	_, _, _, err := types.DecodeErc20TransferEvent(&l)
-
-	assert.Error(t, err)
-}
-
-func TestDecodeErc20TransferEvent_CorrectData(t *testing.T) {
-	erc20TransferEventSig := common.HexToHash("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")
-	expectedFrom := common.BytesToAddress(rand.Bytes(common.AddressLength))
-	expectedTo := common.BytesToAddress(rand.Bytes(common.AddressLength))
-	expectedAmount := sdk.NewUint(uint64(rand.I64Between(1, 10000)))
-
-	l := ethTypes.Log{
-		Topics: []common.Hash{
-			erc20TransferEventSig,
-			common.BytesToHash(common.LeftPadBytes(expectedFrom.Bytes(), common.HashLength)),
-			common.BytesToHash(common.LeftPadBytes(expectedTo.Bytes(), common.HashLength)),
-		},
-		Data: common.LeftPadBytes(expectedAmount.BigInt().Bytes(), common.HashLength),
-	}
-
-	actualFrom, actualTo, actualAmount, err := types.DecodeErc20TransferEvent(&l)
-
-	assert.NoError(t, err)
-	assert.Equal(t, expectedFrom, actualFrom)
-	assert.Equal(t, expectedTo, actualTo)
-	assert.Equal(t, expectedAmount, actualAmount)
 }

@@ -1,6 +1,6 @@
 ## axelarcli tx ethereum sign-burn-tokens
 
-Sign burn command for all verified Ethereum token deposits
+Sign burn command for all confirmed Ethereum token deposits
 
 ```
 axelarcli tx ethereum sign-burn-tokens [flags]

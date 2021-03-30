@@ -174,7 +174,6 @@ type CommandParams struct {
 
 // ERC20TokenDeploy describes information about an ERC20 token
 type ERC20TokenDeploy struct {
-	TxID      [common.HashLength]byte
 	Symbol    string
 	TokenAddr string
 }
@@ -189,11 +188,20 @@ type BurnerInfo struct {
 
 // ERC20Deposit contains information for an ERC20 deposit
 type ERC20Deposit struct {
-	TxID       [common.HashLength]byte
+	TxID       common.Hash
 	Amount     sdk.Uint
 	Symbol     string
 	BurnerAddr string
 }
+
+// DepositState is an enum for the state of a deposit
+type DepositState int
+
+// States of confirmed deposits
+const (
+	CONFIRMED DepositState = iota
+	BURNED
+)
 
 // CreateExecuteData wraps the specific command data and includes the command signature.
 // Returns the data that goes into the data field of an Ethereum transaction

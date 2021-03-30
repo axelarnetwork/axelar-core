@@ -9,9 +9,6 @@ import sdk "github.com/cosmos/cosmos-sdk/types"
 // Recommended pattern: In other modules, define a keeper interface in the respective expected_keepers.go file and
 // embed this interface into it
 type Broadcaster interface {
-	// Broadcast sends the passed messages to the network.
-	Broadcast(ctx sdk.Context, msgs []MsgWithSenderSetter) error
-
 	// RegisterProxy registers a proxy address for a given principal, which can broadcast messages in the principal's name
 	RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy sdk.AccAddress) error
 
@@ -25,11 +22,4 @@ type Broadcaster interface {
 	//
 	// WARNING: Handle with care, this call is non-deterministic because it exposes local information that is DIFFERENT for each validator
 	GetLocalPrincipal(ctx sdk.Context) sdk.ValAddress
-}
-
-// MsgWithSenderSetter
-// Deprecated: do not use for new messages
-type MsgWithSenderSetter interface {
-	sdk.Msg
-	SetSender(address sdk.AccAddress)
 }

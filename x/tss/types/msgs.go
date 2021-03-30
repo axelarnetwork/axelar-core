@@ -3,20 +3,13 @@ package types
 import (
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
-	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
-)
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 
-// golang stupidity: ensure interface compliance at compile time
-var (
-	_ broadcast.MsgWithSenderSetter = &MsgKeygenTraffic{}
-	_ broadcast.MsgWithSenderSetter = &MsgSignTraffic{}
-	_ voting.MsgVote                = &MsgVotePubKey{}
+	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // MsgKeygenTraffic protocol message

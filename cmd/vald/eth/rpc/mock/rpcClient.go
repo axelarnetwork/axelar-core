@@ -13,16 +13,16 @@ import (
 	"sync"
 )
 
-// Ensure, that RPCClientMock does implement rpc.Client.
+// Ensure, that ClientMock does implement rpc.Client.
 // If this is not the case, regenerate this file with moq.
-var _ rpc.Client = &RPCClientMock{}
+var _ rpc.Client = &ClientMock{}
 
-// RPCClientMock is a mock implementation of rpc.Client.
+// ClientMock is a mock implementation of rpc.Client.
 //
-// 	func TestSomethingThatUsesRPCClient(t *testing.T) {
+// 	func TestSomethingThatUsesClient(t *testing.T) {
 //
 // 		// make and configure a mocked rpc.Client
-// 		mockedRPCClient := &RPCClientMock{
+// 		mockedClient := &ClientMock{
 // 			BlockNumberFunc: func(ctx context.Context) (uint64, error) {
 // 				panic("mock out the BlockNumber method")
 // 			},
@@ -49,11 +49,11 @@ var _ rpc.Client = &RPCClientMock{}
 // 			},
 // 		}
 //
-// 		// use mockedRPCClient in code that requires rpc.Client
+// 		// use mockedClient in code that requires rpc.Client
 // 		// and then make assertions.
 //
 // 	}
-type RPCClientMock struct {
+type ClientMock struct {
 	// BlockNumberFunc mocks the BlockNumber method.
 	BlockNumberFunc func(ctx context.Context) (uint64, error)
 
@@ -142,9 +142,9 @@ type RPCClientMock struct {
 }
 
 // BlockNumber calls BlockNumberFunc.
-func (mock *RPCClientMock) BlockNumber(ctx context.Context) (uint64, error) {
+func (mock *ClientMock) BlockNumber(ctx context.Context) (uint64, error) {
 	if mock.BlockNumberFunc == nil {
-		panic("RPCClientMock.BlockNumberFunc: method is nil but Client.BlockNumber was just called")
+		panic("ClientMock.BlockNumberFunc: method is nil but Client.BlockNumber was just called")
 	}
 	callInfo := struct {
 		Ctx context.Context
@@ -159,8 +159,8 @@ func (mock *RPCClientMock) BlockNumber(ctx context.Context) (uint64, error) {
 
 // BlockNumberCalls gets all the calls that were made to BlockNumber.
 // Check the length with:
-//     len(mockedRPCClient.BlockNumberCalls())
-func (mock *RPCClientMock) BlockNumberCalls() []struct {
+//     len(mockedClient.BlockNumberCalls())
+func (mock *ClientMock) BlockNumberCalls() []struct {
 	Ctx context.Context
 } {
 	var calls []struct {
@@ -173,9 +173,9 @@ func (mock *RPCClientMock) BlockNumberCalls() []struct {
 }
 
 // ChainID calls ChainIDFunc.
-func (mock *RPCClientMock) ChainID(ctx context.Context) (*big.Int, error) {
+func (mock *ClientMock) ChainID(ctx context.Context) (*big.Int, error) {
 	if mock.ChainIDFunc == nil {
-		panic("RPCClientMock.ChainIDFunc: method is nil but Client.ChainID was just called")
+		panic("ClientMock.ChainIDFunc: method is nil but Client.ChainID was just called")
 	}
 	callInfo := struct {
 		Ctx context.Context
@@ -190,8 +190,8 @@ func (mock *RPCClientMock) ChainID(ctx context.Context) (*big.Int, error) {
 
 // ChainIDCalls gets all the calls that were made to ChainID.
 // Check the length with:
-//     len(mockedRPCClient.ChainIDCalls())
-func (mock *RPCClientMock) ChainIDCalls() []struct {
+//     len(mockedClient.ChainIDCalls())
+func (mock *ClientMock) ChainIDCalls() []struct {
 	Ctx context.Context
 } {
 	var calls []struct {
@@ -204,9 +204,9 @@ func (mock *RPCClientMock) ChainIDCalls() []struct {
 }
 
 // EstimateGas calls EstimateGasFunc.
-func (mock *RPCClientMock) EstimateGas(ctx context.Context, msg ethereum.CallMsg) (uint64, error) {
+func (mock *ClientMock) EstimateGas(ctx context.Context, msg ethereum.CallMsg) (uint64, error) {
 	if mock.EstimateGasFunc == nil {
-		panic("RPCClientMock.EstimateGasFunc: method is nil but Client.EstimateGas was just called")
+		panic("ClientMock.EstimateGasFunc: method is nil but Client.EstimateGas was just called")
 	}
 	callInfo := struct {
 		Ctx context.Context
@@ -223,8 +223,8 @@ func (mock *RPCClientMock) EstimateGas(ctx context.Context, msg ethereum.CallMsg
 
 // EstimateGasCalls gets all the calls that were made to EstimateGas.
 // Check the length with:
-//     len(mockedRPCClient.EstimateGasCalls())
-func (mock *RPCClientMock) EstimateGasCalls() []struct {
+//     len(mockedClient.EstimateGasCalls())
+func (mock *ClientMock) EstimateGasCalls() []struct {
 	Ctx context.Context
 	Msg ethereum.CallMsg
 } {
@@ -239,9 +239,9 @@ func (mock *RPCClientMock) EstimateGasCalls() []struct {
 }
 
 // PendingNonceAt calls PendingNonceAtFunc.
-func (mock *RPCClientMock) PendingNonceAt(ctx context.Context, account common.Address) (uint64, error) {
+func (mock *ClientMock) PendingNonceAt(ctx context.Context, account common.Address) (uint64, error) {
 	if mock.PendingNonceAtFunc == nil {
-		panic("RPCClientMock.PendingNonceAtFunc: method is nil but Client.PendingNonceAt was just called")
+		panic("ClientMock.PendingNonceAtFunc: method is nil but Client.PendingNonceAt was just called")
 	}
 	callInfo := struct {
 		Ctx     context.Context
@@ -258,8 +258,8 @@ func (mock *RPCClientMock) PendingNonceAt(ctx context.Context, account common.Ad
 
 // PendingNonceAtCalls gets all the calls that were made to PendingNonceAt.
 // Check the length with:
-//     len(mockedRPCClient.PendingNonceAtCalls())
-func (mock *RPCClientMock) PendingNonceAtCalls() []struct {
+//     len(mockedClient.PendingNonceAtCalls())
+func (mock *ClientMock) PendingNonceAtCalls() []struct {
 	Ctx     context.Context
 	Account common.Address
 } {
@@ -274,9 +274,9 @@ func (mock *RPCClientMock) PendingNonceAtCalls() []struct {
 }
 
 // SendAndSignTransaction calls SendAndSignTransactionFunc.
-func (mock *RPCClientMock) SendAndSignTransaction(ctx context.Context, msg ethereum.CallMsg) (string, error) {
+func (mock *ClientMock) SendAndSignTransaction(ctx context.Context, msg ethereum.CallMsg) (string, error) {
 	if mock.SendAndSignTransactionFunc == nil {
-		panic("RPCClientMock.SendAndSignTransactionFunc: method is nil but Client.SendAndSignTransaction was just called")
+		panic("ClientMock.SendAndSignTransactionFunc: method is nil but Client.SendAndSignTransaction was just called")
 	}
 	callInfo := struct {
 		Ctx context.Context
@@ -293,8 +293,8 @@ func (mock *RPCClientMock) SendAndSignTransaction(ctx context.Context, msg ether
 
 // SendAndSignTransactionCalls gets all the calls that were made to SendAndSignTransaction.
 // Check the length with:
-//     len(mockedRPCClient.SendAndSignTransactionCalls())
-func (mock *RPCClientMock) SendAndSignTransactionCalls() []struct {
+//     len(mockedClient.SendAndSignTransactionCalls())
+func (mock *ClientMock) SendAndSignTransactionCalls() []struct {
 	Ctx context.Context
 	Msg ethereum.CallMsg
 } {
@@ -309,9 +309,9 @@ func (mock *RPCClientMock) SendAndSignTransactionCalls() []struct {
 }
 
 // SendTransaction calls SendTransactionFunc.
-func (mock *RPCClientMock) SendTransaction(ctx context.Context, tx *types.Transaction) error {
+func (mock *ClientMock) SendTransaction(ctx context.Context, tx *types.Transaction) error {
 	if mock.SendTransactionFunc == nil {
-		panic("RPCClientMock.SendTransactionFunc: method is nil but Client.SendTransaction was just called")
+		panic("ClientMock.SendTransactionFunc: method is nil but Client.SendTransaction was just called")
 	}
 	callInfo := struct {
 		Ctx context.Context
@@ -328,8 +328,8 @@ func (mock *RPCClientMock) SendTransaction(ctx context.Context, tx *types.Transa
 
 // SendTransactionCalls gets all the calls that were made to SendTransaction.
 // Check the length with:
-//     len(mockedRPCClient.SendTransactionCalls())
-func (mock *RPCClientMock) SendTransactionCalls() []struct {
+//     len(mockedClient.SendTransactionCalls())
+func (mock *ClientMock) SendTransactionCalls() []struct {
 	Ctx context.Context
 	Tx  *types.Transaction
 } {
@@ -344,9 +344,9 @@ func (mock *RPCClientMock) SendTransactionCalls() []struct {
 }
 
 // SuggestGasPrice calls SuggestGasPriceFunc.
-func (mock *RPCClientMock) SuggestGasPrice(ctx context.Context) (*big.Int, error) {
+func (mock *ClientMock) SuggestGasPrice(ctx context.Context) (*big.Int, error) {
 	if mock.SuggestGasPriceFunc == nil {
-		panic("RPCClientMock.SuggestGasPriceFunc: method is nil but Client.SuggestGasPrice was just called")
+		panic("ClientMock.SuggestGasPriceFunc: method is nil but Client.SuggestGasPrice was just called")
 	}
 	callInfo := struct {
 		Ctx context.Context
@@ -361,8 +361,8 @@ func (mock *RPCClientMock) SuggestGasPrice(ctx context.Context) (*big.Int, error
 
 // SuggestGasPriceCalls gets all the calls that were made to SuggestGasPrice.
 // Check the length with:
-//     len(mockedRPCClient.SuggestGasPriceCalls())
-func (mock *RPCClientMock) SuggestGasPriceCalls() []struct {
+//     len(mockedClient.SuggestGasPriceCalls())
+func (mock *ClientMock) SuggestGasPriceCalls() []struct {
 	Ctx context.Context
 } {
 	var calls []struct {
@@ -375,9 +375,9 @@ func (mock *RPCClientMock) SuggestGasPriceCalls() []struct {
 }
 
 // TransactionReceipt calls TransactionReceiptFunc.
-func (mock *RPCClientMock) TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
+func (mock *ClientMock) TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
 	if mock.TransactionReceiptFunc == nil {
-		panic("RPCClientMock.TransactionReceiptFunc: method is nil but Client.TransactionReceipt was just called")
+		panic("ClientMock.TransactionReceiptFunc: method is nil but Client.TransactionReceipt was just called")
 	}
 	callInfo := struct {
 		Ctx    context.Context
@@ -394,8 +394,8 @@ func (mock *RPCClientMock) TransactionReceipt(ctx context.Context, txHash common
 
 // TransactionReceiptCalls gets all the calls that were made to TransactionReceipt.
 // Check the length with:
-//     len(mockedRPCClient.TransactionReceiptCalls())
-func (mock *RPCClientMock) TransactionReceiptCalls() []struct {
+//     len(mockedClient.TransactionReceiptCalls())
+func (mock *ClientMock) TransactionReceiptCalls() []struct {
 	Ctx    context.Context
 	TxHash common.Hash
 } {

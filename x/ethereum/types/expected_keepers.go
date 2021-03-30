@@ -1,7 +1,9 @@
 package types
 
 import (
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum/common"
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -9,7 +11,18 @@ import (
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Voter Signer Nexus Snapshotter
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Voter Signer Nexus Snapshotter EthKeeper
+
+// EthKeeper is implemented by this module's keeper
+type EthKeeper interface {
+	GetGatewayAddress(ctx sdk.Context) (common.Address, bool)
+	GetTokenAddress(ctx sdk.Context, symbol string, gatewayAddr common.Address) (common.Address, error)
+	GetRevoteLockingPeriod(ctx sdk.Context) int64
+	SetPendingTokenDeploy(ctx sdk.Context, poll vote.PollMeta, tokenDeploy ERC20TokenDeploy)
+	GetRequiredConfirmationHeight(ctx sdk.Context) uint64
+	GetTokenDeploySignature(ctx sdk.Context) common.Hash
+	Codec() *codec.Codec
+}
 
 // Voter wraps around the existing vote.Voter interface to adhere to the Cosmos convention of keeping all
 // expected keepers from other modules in the expected_keepers.go file

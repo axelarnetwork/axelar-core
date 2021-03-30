@@ -321,7 +321,6 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	votingK := voteKeeper.NewKeeper(
 		app.cdc,
 		keys[voteTypes.StoreKey],
-		dbadapter.Store{DB: dbm.NewMemDB()},
 		snapK,
 		broadcastK,
 	)

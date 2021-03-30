@@ -12,7 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
-//go:generate moq -out ./mock/rpcClient.go -pkg mock . RPCClient
+//go:generate moq -out ./mock/rpcClient.go -pkg mock . Client
 
 // Client provides calls to an Ethereum RPC endpoint
 type Client interface {

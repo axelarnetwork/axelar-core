@@ -4,54 +4,60 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-// MsgVoteConfirmation represents a message to that votes on a tx confirmation
-type MsgVoteConfirmation struct {
+// MsgVoteConfirmDeposit represents a message that votes on a deposit
+type MsgVoteConfirmDeposit struct {
 	Sender    sdk.AccAddress
 	PollMeta  exported.PollMeta
-	TxID      common.Hash
+	TxID      string
+	BurnAddr  string
 	Confirmed bool
 }
 
 // Poll returns the poll this message votes on
-func (msg MsgVoteConfirmation) Poll() exported.PollMeta {
+func (msg MsgVoteConfirmDeposit) Poll() exported.PollMeta {
 	return msg.PollMeta
 }
 
 // Data returns the data this message is voting for
-func (msg *MsgVoteConfirmation) Data() exported.VotingData {
+func (msg *MsgVoteConfirmDeposit) Data() exported.VotingData {
 	return msg.Confirmed
 }
 
 // Route returns the route for this message
-func (msg MsgVoteConfirmation) Route() string {
+func (msg MsgVoteConfirmDeposit) Route() string {
 	return RouterKey
 }
 
 // Type returns the type of the message
-func (msg MsgVoteConfirmation) Type() string {
-	return "VoteConfirmation"
+func (msg MsgVoteConfirmDeposit) Type() string {
+	return "VoteConfirmDeposit"
 }
 
 // ValidateBasic executes a stateless message validation
-func (msg MsgVoteConfirmation) ValidateBasic() error {
+func (msg MsgVoteConfirmDeposit) ValidateBasic() error {
 	if msg.Sender == nil {
 		return fmt.Errorf("missing sender")
+	}
+	if msg.TxID == "" {
+		return fmt.Errorf("tx ID missing")
+	}
+	if msg.BurnAddr == "" {
+		return fmt.Errorf("burn address missing")
 	}
 	return msg.PollMeta.Validate()
 }
 
 // GetSignBytes returns the message bytes that need to be signed
-func (msg MsgVoteConfirmation) GetSignBytes() []byte {
+func (msg MsgVoteConfirmDeposit) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
 // GetSigners returns the set of signers for this message
-func (msg MsgVoteConfirmation) GetSigners() []sdk.AccAddress {
+func (msg MsgVoteConfirmDeposit) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }

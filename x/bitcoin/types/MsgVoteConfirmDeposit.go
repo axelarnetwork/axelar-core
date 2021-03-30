@@ -6,17 +6,14 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	exported2 "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
-
-var _ exported2.MsgWithSenderSetter = &MsgVoteConfirmOutpoint{}
 
 // MsgVoteConfirmOutpoint represents a message to that votes on an outpoint
 type MsgVoteConfirmOutpoint struct {
 	Sender    sdk.AccAddress
 	PollMeta  exported.PollMeta
-	Outpoint  wire.OutPoint
+	OutPoint  wire.OutPoint
 	Confirmed bool
 }
 

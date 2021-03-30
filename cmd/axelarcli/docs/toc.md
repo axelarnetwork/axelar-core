@@ -75,13 +75,13 @@
       - [withdraw-rewards \[validator-addr\]](axelarcli_tx_distribution_withdraw-rewards.md)	 - Withdraw rewards from a given delegation address, and optionally withdraw validator commission if the delegation address given is a validator operator
     - [encode \[file\]](axelarcli_tx_encode.md)	 - Encode transactions generated offline
     - [ethereum](axelarcli_tx_ethereum.md)	 - ethereum transactions subcommands
+      - [confirm-erc20-deposit \[txID\] \[amount\] \[burnerAddr\]](axelarcli_tx_ethereum_confirm-erc20-deposit.md)	 - Confirm an ERC20 deposit in an Ethereum transaction that sent given amount of token to a burner address
+      - [confirm-erc20-token \[txID\] \[symbol\]](axelarcli_tx_ethereum_confirm-erc20-token.md)	 - Confirm an ERC20 token deployment in an Ethereum transaction for a given symbol of token and gateway address
       - [link \[chain\] \[address\] \[symbol\]](axelarcli_tx_ethereum_link.md)	 - Link a cross chain address to an ethereum address created by Axelar
       - [sign \[tx json file path\]](axelarcli_tx_ethereum_sign.md)	 - sign a raw Ethereum transaction
-      - [sign-burn-tokens](axelarcli_tx_ethereum_sign-burn-tokens.md)	 - Sign burn command for all verified Ethereum token deposits
+      - [sign-burn-tokens](axelarcli_tx_ethereum_sign-burn-tokens.md)	 - Sign burn command for all confirmed Ethereum token deposits
       - [sign-deploy-token \[name\] \[symbol\] \[decimals\] \[capacity\]](axelarcli_tx_ethereum_sign-deploy-token.md)	 - Signs the call data to deploy a token with the AxelarGateway contract
       - [sign-pending-transfers](axelarcli_tx_ethereum_sign-pending-transfers.md)	 - Sign all pending transfers to Ethereum
-      - [verify-erc20-deposit \[txID\] \[amount\] \[burnerAddr\]](axelarcli_tx_ethereum_verify-erc20-deposit.md)	 - Verify an ERC20 deposit in an Ethereum transaction that sent given amount of token to a burner address
-      - [verify-erc20-token \[txID\] \[symbol\]](axelarcli_tx_ethereum_verify-erc20-token.md)	 - Verify an ERC20 token deployment in an Ethereum transaction for a given symbol of token and gateway address
     - [multisign \[file\] \[name\] \[\[signature\]...\]](axelarcli_tx_multisign.md)	 - Generate multisig signatures for transactions generated offline
     - [send \[from_key_or_address\] \[to_address\] \[amount\]](axelarcli_tx_send.md)	 - Create and sign a send tx
     - [sign \[file\]](axelarcli_tx_sign.md)	 - Sign transactions generated offline

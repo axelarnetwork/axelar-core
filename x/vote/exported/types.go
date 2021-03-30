@@ -63,9 +63,3 @@ type Vote interface {
 	// Data returns the data that was voted on. Modules need to ensure they cast it back into the correct type
 	Data() VotingData
 }
-
-// MsgVote
-// Deprecated
-type MsgVote interface {
-	Vote
-}

@@ -19,7 +19,6 @@ import (
 const (
 	votingIntervalKey  = "votingInterval"
 	votingThresholdKey = "votingThreshold"
-	pendingVotePrefix  = "pending_"
 	pollPrefix         = "poll_"
 	talliedPrefix      = "tallied_"
 	addrPrefix         = "addr_"
@@ -31,21 +30,19 @@ const (
 
 // Keeper - the vote module's keeper
 type Keeper struct {
-	subjectiveStore sdk.KVStore
-	storeKey        sdk.StoreKey
-	cdc             *codec.Codec
-	broadcaster     types.Broadcaster
-	snapshotter     types.Snapshotter
+	storeKey    sdk.StoreKey
+	cdc         *codec.Codec
+	broadcaster types.Broadcaster
+	snapshotter types.Snapshotter
 }
 
 // NewKeeper - keeper constructor
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, subjectiveStore sdk.KVStore, snapshotter types.Snapshotter, broadcaster types.Broadcaster) Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, snapshotter types.Snapshotter, broadcaster types.Broadcaster) Keeper {
 	keeper := Keeper{
-		subjectiveStore: subjectiveStore,
-		storeKey:        key,
-		cdc:             cdc,
-		broadcaster:     broadcaster,
-		snapshotter:     snapshotter,
+		storeKey:    key,
+		cdc:         cdc,
+		broadcaster: broadcaster,
+		snapshotter: snapshotter,
 	}
 	return keeper
 }
@@ -183,25 +180,6 @@ func (k Keeper) Result(ctx sdk.Context, pollMeta exported.PollMeta) exported.Vot
 		return nil
 	}
 	return poll.Result
-}
-
-// Because votes may differ between nodes they need to be stored outside the regular kvstore
-// (whose hash becomes part of the Merkle tree)
-func (k Keeper) getPendingVotes() []exported.MsgVote {
-	var votes []exported.MsgVote
-	iter := sdk.KVStorePrefixIterator(k.subjectiveStore, []byte(pendingVotePrefix))
-	for ; iter.Valid(); iter.Next() {
-		var vote exported.MsgVote
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &vote)
-		votes = append(votes, vote)
-	}
-	return votes
-}
-
-func (k Keeper) deletePendingVotes(votes []exported.MsgVote) {
-	for _, vote := range votes {
-		k.subjectiveStore.Delete([]byte(pendingVotePrefix + vote.Poll().String()))
-	}
 }
 
 // using a pointer reference to adhere to the pattern of returning nil if value is not found

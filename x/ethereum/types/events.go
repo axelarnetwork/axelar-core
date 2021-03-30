@@ -6,17 +6,11 @@ const (
 	EventTypeTokenConfirmation   = "tokenConfirmation"
 )
 
-// Attributes
-const (
-	AttributeModule    = ModuleName
-	AttributeAddress   = "address"
-	AttributeCommandID = "commandID"
-)
-
 // Event attribute keys
 const (
+	AttributeKeyCommandID      = "commandID"
+	AttributeKeyAddress        = "address"
 	AttributeKeyPoll           = "poll"
-	AttributeKeyResult         = "result"
 	AttributeKeyTxID           = "txID"
 	AttributeKeyAmount         = "amount"
 	AttributeKeyBurnAddress    = "burnAddress"
@@ -29,8 +23,7 @@ const (
 
 // Event attribute values
 const (
-	AttributeKeyActionToken   = "tokenVerify"
-	AttributeKeyActionDeposit = "depositVerify"
-	AttributeKeyActionUnknown = "unknownVerify"
-	AttributeValueStart       = "start"
+	AttributeValueStart   = "start"
+	AttributeValueReject  = "reject"
+	AttributeValueConfirm = "confirm"
 )

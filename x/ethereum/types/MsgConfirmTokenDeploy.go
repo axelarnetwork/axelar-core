@@ -6,16 +6,16 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-// MsgVerifyErc20TokenDeploy represents a token deploy verification message
-type MsgVerifyErc20TokenDeploy struct {
+// MsgConfirmERC20TokenDeploy represents a token deploy confirmation message
+type MsgConfirmERC20TokenDeploy struct {
 	Sender sdk.AccAddress
 	TxID   string
 	Symbol string
 }
 
-// NewMsgVerifyErc20TokenDeploy creates a message of type MsgVerifyErc20TokenDeploy
-func NewMsgVerifyErc20TokenDeploy(sender sdk.AccAddress, txID common.Hash, symbol string) sdk.Msg {
-	return MsgVerifyErc20TokenDeploy{
+// NewMsgConfirmERC20TokenDeploy creates a message of type MsgConfirmERC20TokenDeploy
+func NewMsgConfirmERC20TokenDeploy(sender sdk.AccAddress, txID common.Hash, symbol string) sdk.Msg {
+	return MsgConfirmERC20TokenDeploy{
 		Sender: sender,
 		TxID:   txID.Hex(),
 		Symbol: symbol,
@@ -23,17 +23,17 @@ func NewMsgVerifyErc20TokenDeploy(sender sdk.AccAddress, txID common.Hash, symbo
 }
 
 // Route implements sdk.Msg
-func (msg MsgVerifyErc20TokenDeploy) Route() string {
+func (msg MsgConfirmERC20TokenDeploy) Route() string {
 	return RouterKey
 }
 
 // Type implements sdk.Msg
-func (msg MsgVerifyErc20TokenDeploy) Type() string {
-	return "VerifyErc20TokenDeploy"
+func (msg MsgConfirmERC20TokenDeploy) Type() string {
+	return "ConfirmERC20TokenDeploy"
 }
 
 // ValidateBasic implements sdk.Msg
-func (msg MsgVerifyErc20TokenDeploy) ValidateBasic() error {
+func (msg MsgConfirmERC20TokenDeploy) ValidateBasic() error {
 	if msg.Sender.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
@@ -42,12 +42,12 @@ func (msg MsgVerifyErc20TokenDeploy) ValidateBasic() error {
 }
 
 // GetSignBytes implements sdk.Msg
-func (msg MsgVerifyErc20TokenDeploy) GetSignBytes() []byte {
+func (msg MsgConfirmERC20TokenDeploy) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
 // GetSigners implements sdk.Msg
-func (msg MsgVerifyErc20TokenDeploy) GetSigners() []sdk.AccAddress {
+func (msg MsgConfirmERC20TokenDeploy) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }

@@ -56,10 +56,11 @@ func (mgr Mgr) ProccessDepositConfirmation(attributes []sdk.Attribute) (err erro
 		return true
 	})
 
-	msg := ethTypes.MsgVoteConfirmation{
+	msg := ethTypes.MsgVoteConfirmDeposit{
 		Sender:    mgr.sender,
 		PollMeta:  poll,
-		TxID:      txID,
+		TxID:      txID.Hex(),
+		BurnAddr:  burnAddr.Hex(),
 		Confirmed: confirmed,
 	}
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, poll.String()))
@@ -79,10 +80,10 @@ func (mgr Mgr) ProccessTokenConfirmation(attributes []sdk.Attribute) error {
 		return true
 	})
 
-	msg := ethTypes.MsgVoteConfirmation{
+	msg := ethTypes.MsgVoteConfirmToken{
 		Sender:    mgr.sender,
 		PollMeta:  poll,
-		TxID:      txID,
+		TxID:      txID.Hex(),
 		Confirmed: confirmed,
 	}
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, poll.String()))
@@ -263,7 +264,7 @@ func confirmERC20TokenDeploy(txReceipt *geth.Receipt, expectedSymbol string, gat
 		return nil
 	}
 
-	return fmt.Errorf("failed to verify token deployment for symbol '%s' at contract address '%s'", expectedSymbol, expectedAddr.String())
+	return fmt.Errorf("failed to confirm token deployment for symbol '%s' at contract address '%s'", expectedSymbol, expectedAddr.String())
 }
 
 func isTxFinalized(txReceipt *geth.Receipt, blockNumber uint64, confirmationHeight uint64) bool {
@@ -285,8 +286,8 @@ func decodeErc20TransferEvent(log *geth.Log) (common.Address, sdk.Uint, error) {
 }
 
 // DecodeErc20TokenDeployEvent decodes the information contained in a ERC20 token deployment event
-func decodeErc20TokenDeployEvent(log *geth.Log, transferSig common.Hash) (string, common.Address, error) {
-	if len(log.Topics) != 1 || log.Topics[0] != transferSig {
+func decodeErc20TokenDeployEvent(log *geth.Log, tokenDeploySig common.Hash) (string, common.Address, error) {
+	if len(log.Topics) != 1 || log.Topics[0] != tokenDeploySig {
 		return "", common.Address{}, fmt.Errorf("event is not for an ERC20 token deployment")
 	}
 
