@@ -7,14 +7,14 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/cosmos/cosmos-sdk/x/params/subspace"
-	"github.com/ethereum/go-ethereum/crypto"
 )
 
-// Default parameter namespace
+// DefaultParamspace - default parameter namespace
 const (
 	DefaultParamspace = ModuleName
 )
 
+// Parameter keys
 var (
 	KeyConfirmationHeight  = []byte("confirmationHeight")
 	KeyTokenDeploySig      = []byte("tokenDeploySig")
@@ -24,15 +24,14 @@ var (
 	KeyGateway  = []byte("gateway")
 	KeyToken    = []byte("token")
 	KeyBurnable = []byte("burneable")
-
-	// ERC20TokenDeploySig is the signature of the ERC20 transfer method
-	ERC20TokenDeploySig = "TokenDeployed(string,address)"
 )
 
+// KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
 func KeyTable() subspace.KeyTable {
 	return subspace.NewKeyTable().RegisterParamSet(&Params{})
 }
 
+// Params is the parameter set for this module
 type Params struct {
 	ConfirmationHeight  uint64
 	Network             Network
@@ -43,6 +42,7 @@ type Params struct {
 	RevoteLockingPeriod int64
 }
 
+// DefaultParams returns the module's parameter set initialized with default values
 func DefaultParams() Params {
 	bzGateway, err := hex.DecodeString(gateway)
 	if err != nil {
@@ -57,15 +57,13 @@ func DefaultParams() Params {
 		panic(err)
 	}
 
-	tokenDeploySig := crypto.Keccak256Hash([]byte(ERC20TokenDeploySig)).Bytes()
-
 	return Params{
 		ConfirmationHeight:  1,
 		Network:             Ganache,
 		Gateway:             bzGateway,
 		Token:               bzToken,
 		Burnable:            bzBurnable,
-		TokenDeploySig:      tokenDeploySig,
+		TokenDeploySig:      ERC20TokenDeploySig.Bytes(),
 		RevoteLockingPeriod: 50,
 	}
 }
@@ -135,6 +133,7 @@ func validateRevoteLockingPeriod(RevoteLockingPeriod interface{}) error {
 	return nil
 }
 
+// Validate checks the validity of the values of the parameter set
 func (p Params) Validate() error {
 	if err := validateConfirmationHeight(p.ConfirmationHeight); err != nil {
 		return err

@@ -7,10 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	goEthTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
@@ -20,8 +16,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	sdkExported "github.com/cosmos/cosmos-sdk/x/staking/exported"
 	geth "github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
+	goEthTypes "github.com/ethereum/go-ethereum/core/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/libs/log"
@@ -520,7 +518,7 @@ func createTokenDeployLogs(gateway, addr common.Address) []*goEthTypes.Log {
 			if err != nil {
 				panic(err)
 			}
-			logs = append(logs, &goEthTypes.Log{Address: gateway, Data: data, Topics: []common.Hash{crypto.Keccak256Hash([]byte(ethTypes.ERC20TokenDeploySig))}})
+			logs = append(logs, &goEthTypes.Log{Address: gateway, Data: data, Topics: []common.Hash{ethTypes.ERC20TokenDeploySig}})
 			continue
 		}
 

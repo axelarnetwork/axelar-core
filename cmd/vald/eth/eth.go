@@ -12,7 +12,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	geth "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	tmLog "github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/cmd/vald/broadcast/types"
@@ -25,13 +24,13 @@ import (
 // Mgr manages all communication with Ethereum
 type Mgr struct {
 	logger      tmLog.Logger
-	rpc         *ethRPC.ClientImpl
+	rpc         ethRPC.Client
 	broadcaster types.Broadcaster
 	sender      sdk.AccAddress
 }
 
 // NewMgr returns a new Mgr instance
-func NewMgr(rpc *ethRPC.ClientImpl, broadcaster types.Broadcaster, sender sdk.AccAddress, logger tmLog.Logger) *Mgr {
+func NewMgr(rpc ethRPC.Client, broadcaster types.Broadcaster, sender sdk.AccAddress, logger tmLog.Logger) *Mgr {
 	return &Mgr{
 		rpc:         rpc,
 		broadcaster: broadcaster,
@@ -70,6 +69,9 @@ func (mgr Mgr) ProccessDepositConfirmation(attributes []sdk.Attribute) (err erro
 // ProccessTokenConfirmation votes on the correctness of an Ethereum token deployment
 func (mgr Mgr) ProccessTokenConfirmation(attributes []sdk.Attribute) error {
 	txID, gatewayAddr, tokenAddr, symbol, confHeight, deploySig, poll, err := parseTokenConfirmationParams(attributes)
+	if err != nil {
+		return sdkerrors.Wrap(err, "Ethereum token deployment confirmation failed")
+	}
 
 	confirmed := mgr.validate(txID, confHeight, func(txReceipt *geth.Receipt) bool {
 		err = confirmERC20TokenDeploy(txReceipt, symbol, gatewayAddr, tokenAddr, deploySig)
@@ -118,14 +120,13 @@ func parseDepositConfirmationParams(attributes []sdk.Attribute) (
 			tokenAddr = common.HexToAddress(attribute.Value)
 			tokenAddrFound = true
 		case ethTypes.AttributeKeyConfHeight:
-			h, err := strconv.Atoi(attribute.Value)
+			confHeight, err = strconv.ParseUint(attribute.Value, 10, 64)
 			if err != nil {
-				return [32]byte{}, sdk.Uint{}, [20]byte{}, [20]byte{}, 0, vote.PollMeta{},
+				return common.Hash{}, sdk.Uint{}, common.Address{}, common.Address{}, 0, vote.PollMeta{},
 					sdkerrors.Wrap(err, "parsing confirmation height failed")
 			}
-			confHeight = uint64(h)
 			confHeightFound = true
-		case btc.AttributeKeyPoll:
+		case ethTypes.AttributeKeyPoll:
 			codec.Cdc.MustUnmarshalJSON([]byte(attribute.Value), &poll)
 			pollFound = true
 		default:
@@ -215,7 +216,7 @@ func confirmERC20Deposit(txReceipt *geth.Receipt, amount sdk.Uint, burnAddr comm
 			continue
 		}
 
-		to, transferAmount, err := decodeErc20TransferEvent(log)
+		to, transferAmount, err := decodeERC20TransferEvent(log)
 		/* Event is not an ERC20 transfer */
 		if err != nil {
 			continue
@@ -244,7 +245,7 @@ func confirmERC20TokenDeploy(txReceipt *geth.Receipt, expectedSymbol string, gat
 		}
 
 		// Event is not for a ERC20 token deployment
-		symbol, tokenAddr, err := decodeErc20TokenDeployEvent(log, deploySig)
+		symbol, tokenAddr, err := decodeERC20TokenDeployEvent(log, deploySig)
 		if err != nil {
 			continue
 		}
@@ -272,9 +273,9 @@ func isTxFinalized(txReceipt *geth.Receipt, blockNumber uint64, confirmationHeig
 }
 
 // DecodeErc20TransferEvent decodes the information contained in a ERC20 token transfer event
-func decodeErc20TransferEvent(log *geth.Log) (common.Address, sdk.Uint, error) {
-	erc20TransferEventSig := crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
-	if len(log.Topics) != 3 || log.Topics[0] != erc20TransferEventSig {
+func decodeERC20TransferEvent(log *geth.Log) (common.Address, sdk.Uint, error) {
+
+	if len(log.Topics) != 3 || log.Topics[0] != ethTypes.ERC20TransferSig {
 		return common.Address{}, sdk.Uint{}, fmt.Errorf("log is not an ERC20 transfer")
 	}
 
@@ -286,7 +287,7 @@ func decodeErc20TransferEvent(log *geth.Log) (common.Address, sdk.Uint, error) {
 }
 
 // DecodeErc20TokenDeployEvent decodes the information contained in a ERC20 token deployment event
-func decodeErc20TokenDeployEvent(log *geth.Log, tokenDeploySig common.Hash) (string, common.Address, error) {
+func decodeERC20TokenDeployEvent(log *geth.Log, tokenDeploySig common.Hash) (string, common.Address, error) {
 	if len(log.Topics) != 1 || log.Topics[0] != tokenDeploySig {
 		return "", common.Address{}, fmt.Errorf("event is not for an ERC20 token deployment")
 	}

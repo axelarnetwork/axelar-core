@@ -66,6 +66,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 
 			err := mgr.ProcessConfirmation(wrongAttributes)
 			assert.Error(t, err)
+			assert.Len(t, broadcaster.BroadcastCalls(), 0)
 		}
 	}).Repeat(repetitionCount))
 
