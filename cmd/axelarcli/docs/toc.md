@@ -88,7 +88,6 @@
     - [slashing](axelarcli_tx_slashing.md)	 - Slashing transactions subcommands
       - [unjail](axelarcli_tx_slashing_unjail.md)	 - unjail validator previously jailed for downtime
     - [snapshot](axelarcli_tx_snapshot.md)	 - snapshot transactions subcommands
-      - [now](axelarcli_tx_snapshot_now.md)	 - Trigger a new snapshot of the current validator set
     - [staking](axelarcli_tx_staking.md)	 - Staking transaction subcommands
       - [create-validator](axelarcli_tx_staking_create-validator.md)	 - create new validator initialized with a self-delegation to it
       - [delegate \[validator-addr\] \[amount\]](axelarcli_tx_staking_delegate.md)	 - Delegate liquid tokens to a validator

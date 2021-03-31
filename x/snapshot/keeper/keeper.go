@@ -11,7 +11,6 @@ import (
 	sdkExported "github.com/cosmos/cosmos-sdk/x/staking/exported"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 )
@@ -26,15 +25,15 @@ var _ exported.Snapshotter = Keeper{}
 type Keeper struct {
 	storeKey    sdk.StoreKey
 	staking     types.StakingKeeper
-	slasher     types.Slasher
-	broadcaster types.Broadcaster
-	tss         types.Tss
+	slasher     exported.Slasher
+	broadcaster exported.Broadcaster
+	tss         exported.Tss
 	cdc         *codec.Codec
 	params      subspace.Subspace
 }
 
 // NewKeeper creates a new keeper for the staking module
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramSpace params.Subspace, broadcaster types.Broadcaster, staking types.StakingKeeper, slasher types.Slasher, tss types.Tss) Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramSpace params.Subspace, broadcaster exported.Broadcaster, staking types.StakingKeeper, slasher exported.Slasher, tss exported.Tss) Keeper {
 	return Keeper{
 		storeKey:    key,
 		cdc:         cdc,
@@ -62,13 +61,13 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	return
 }
 
-// TakeSnapshot attempts to create a new snapshot
-func (k Keeper) TakeSnapshot(ctx sdk.Context) error {
+// TakeSnapshot attempts to create a new snapshot; if subsetSize equals 0, snapshot will be created with all validators
+func (k Keeper) TakeSnapshot(ctx sdk.Context, subsetSize int64) error {
 	s, ok := k.GetLatestSnapshot(ctx)
 
 	if !ok {
 		k.setLatestCounter(ctx, 0)
-		return k.executeSnapshot(ctx, 0)
+		return k.executeSnapshot(ctx, 0, subsetSize)
 	}
 
 	lockingPeriod := k.getLockingPeriod(ctx)
@@ -78,7 +77,7 @@ func (k Keeper) TakeSnapshot(ctx sdk.Context) error {
 	}
 
 	k.setLatestCounter(ctx, s.Counter+1)
-	return k.executeSnapshot(ctx, s.Counter+1)
+	return k.executeSnapshot(ctx, s.Counter+1, subsetSize)
 }
 
 func (k Keeper) getLockingPeriod(ctx sdk.Context) time.Duration {
@@ -125,53 +124,48 @@ func (k Keeper) GetLatestCounter(ctx sdk.Context) int64 {
 	return i
 }
 
-func (k Keeper) executeSnapshot(ctx sdk.Context, nextCounter int64) error {
+func (k Keeper) executeSnapshot(ctx sdk.Context, nextCounter int64, subsetSize int64) error {
 	var validators []exported.Validator
-	fnAppend := func(_ int64, v sdkExported.ValidatorI) (stop bool) {
-		validators = append(validators, v)
-		return false
+	snapshotTotalPower, validatorsTotalPower := sdk.ZeroInt(), sdk.ZeroInt()
+
+	validatorIter := func(_ int64, validator sdkExported.ValidatorI) (stop bool) {
+		validatorsTotalPower = validatorsTotalPower.AddRaw(validator.GetConsensusPower())
+
+		if !exported.IsValidatorActive(ctx, k.slasher, validator) {
+			return false
+		}
+
+		if !exported.DoesValidatorHasProxyRegistered(ctx, k.broadcaster, validator) {
+			return false
+		}
+
+		if !exported.IsValidatorTssRegistered(ctx, k.tss, validator) {
+			return false
+		}
+
+		snapshotTotalPower = snapshotTotalPower.AddRaw(validator.GetConsensusPower())
+		validators = append(validators, validator)
+
+		// if subsetSize equals 0, we will iterate through all validators and potentially put them all into the snapshot
+		return len(validators) == int(subsetSize)
 	}
+	// IterateBondedValidatorsByPower(https://github.com/cosmos/cosmos-sdk/blob/7fc7b3f6ff82eb5ede52881778114f6b38bd7dfa/x/staking/keeper/alias_functions.go#L33) iterates validators by power in descending order
+	k.staking.IterateBondedValidatorsByPower(ctx, validatorIter)
 
-	k.staking.IterateLastValidators(ctx, fnAppend)
-
-	activeStake := sdk.ZeroInt()
-	for _, validator := range validators {
-		activeStake = activeStake.AddRaw(validator.GetConsensusPower())
+	if subsetSize > 0 && len(validators) != int(subsetSize) {
+		return fmt.Errorf("only %d validators are eligible for keygen which is less than desired subset size %d", len(validators), subsetSize)
 	}
 
 	snapshot := exported.Snapshot{
-		Validators: validators,
-		Timestamp:  ctx.BlockTime(),
-		Height:     ctx.BlockHeight(),
-		TotalPower: activeStake,
-		Counter:    nextCounter,
+		Validators:           validators,
+		Timestamp:            ctx.BlockTime(),
+		Height:               ctx.BlockHeight(),
+		TotalPower:           snapshotTotalPower,
+		ValidatorsTotalPower: validatorsTotalPower,
+		Counter:              nextCounter,
 	}
 
-	// filters
-	filterActive := func(vals []exported.Validator) ([]exported.Validator, error) {
-		return utils.FilterActiveValidators(ctx, k.slasher, vals)
-	}
-	filterProxies := func(vals []exported.Validator) ([]exported.Validator, error) {
-		return utils.FilterProxies(ctx, k.broadcaster, vals), nil
-	}
-	filterTssRegistered := func(vals []exported.Validator) ([]exported.Validator, error) {
-		return utils.FilterTssRegistered(ctx, k.tss, vals), nil
-	}
-
-	filteredSnapshot, err := snapshot.Filter(filterActive)
-	if err != nil {
-		return err
-	}
-	filteredSnapshot, err = filteredSnapshot.Filter(filterProxies)
-	if err != nil {
-		return err
-	}
-	filteredSnapshot, err = filteredSnapshot.Filter(filterTssRegistered)
-	if err != nil {
-		return err
-	}
-
-	ctx.KVStore(k.storeKey).Set(counterKey(nextCounter), k.cdc.MustMarshalBinaryLengthPrefixed(filteredSnapshot))
+	ctx.KVStore(k.storeKey).Set(counterKey(nextCounter), k.cdc.MustMarshalBinaryLengthPrefixed(snapshot))
 
 	return nil
 }

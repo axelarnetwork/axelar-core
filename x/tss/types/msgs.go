@@ -14,18 +14,11 @@ import (
 
 // golang stupidity: ensure interface compliance at compile time
 var (
-	_ sdk.Msg                       = &MsgKeygenStart{}
 	_ sdk.Msg                       = MsgAssignNextMasterKey{}
 	_ broadcast.MsgWithSenderSetter = &MsgKeygenTraffic{}
 	_ broadcast.MsgWithSenderSetter = &MsgSignTraffic{}
 	_ voting.MsgVote                = &MsgVotePubKey{}
 )
-
-// MsgKeygenStart indicate the start of keygen
-type MsgKeygenStart struct {
-	Sender   sdk.AccAddress
-	NewKeyID string
-}
 
 // MsgKeygenTraffic protocol message
 type MsgKeygenTraffic struct {
@@ -39,36 +32,6 @@ type MsgSignTraffic struct {
 	Sender    sdk.AccAddress
 	SessionID string
 	Payload   *tofnd.TrafficOut // pointer because it contains a mutex
-}
-
-// Route implements the sdk.Msg interface.
-func (msg MsgKeygenStart) Route() string { return RouterKey }
-
-// Type implements the sdk.Msg interface.
-// naming convention follows x/staking/types/msgs.go
-func (msg MsgKeygenStart) Type() string { return "KeyGenStart" }
-
-// ValidateBasic implements the sdk.Msg interface.
-func (msg MsgKeygenStart) ValidateBasic() error {
-	if msg.Sender == nil {
-		return sdkerrors.Wrap(ErrTss, "sender must be set")
-	}
-	if msg.NewKeyID == "" {
-		return sdkerrors.Wrap(ErrTss, "new key id must be set")
-	}
-	// TODO enforce a maximum length for msg.NewKeyID?
-	return nil
-}
-
-// GetSignBytes implements the sdk.Msg interface.
-func (msg MsgKeygenStart) GetSignBytes() []byte {
-	bz := ModuleCdc.MustMarshalJSON(msg)
-	return sdk.MustSortJSON(bz)
-}
-
-// GetSigners implements the sdk.Msg interface.
-func (msg MsgKeygenStart) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Sender}
 }
 
 // Route implements the sdk.Msg interface.

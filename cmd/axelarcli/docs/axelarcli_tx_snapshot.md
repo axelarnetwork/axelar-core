@@ -21,4 +21,3 @@ axelarcli tx snapshot [flags]
 ### SEE ALSO
 
 - [axelarcli tx](axelarcli_tx.md)	 - Transactions subcommands
-- [axelarcli tx snapshot now](axelarcli_tx_snapshot_now.md)	 - Trigger a new snapshot of the current validator set

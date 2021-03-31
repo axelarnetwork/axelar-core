@@ -18,8 +18,6 @@ import (
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
-	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
-	snapMock2 "github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
 
@@ -38,11 +36,12 @@ var (
 	val4       = newValidator(sdk.ValAddress("validator4"), 100)
 	validators = []snapshot.Validator{val1, val2, val3, val4}
 	snap       = snapshot.Snapshot{
-		Validators: validators,
-		Timestamp:  time.Now(),
-		Height:     rand2.I64Between(1, 1000000),
-		TotalPower: sdk.NewInt(400),
-		Counter:    rand2.I64Between(0, 100000),
+		Validators:           validators,
+		Timestamp:            time.Now(),
+		Height:               rand2.I64Between(1, 1000000),
+		TotalPower:           sdk.NewInt(400),
+		ValidatorsTotalPower: sdk.NewInt(400),
+		Counter:              rand2.I64Between(0, 100000),
 	}
 	randPosInt      = rand2.I64GenBetween(0, 100000000)
 	randDistinctStr = rand2.Strings(3, 15).Distinct()
@@ -73,8 +72,8 @@ func setup(t *testing.T) *testSetup {
 		Signature:   make(chan []byte, 1),
 	}
 
-	slasher := &snapMock2.SlasherMock{
-		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapTypes.ValidatorInfo, bool) {
+	slasher := &snapMock.SlasherMock{
+		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapshot.ValidatorInfo, bool) {
 			newInfo := slashingTypes.NewValidatorSigningInfo(
 				address,
 				int64(0),        // height at which validator was first a candidate OR was unjailed
@@ -83,7 +82,7 @@ func setup(t *testing.T) *testSetup {
 				false,           // tomstoned
 				int64(0),        // missed blocks
 			)
-			return snapTypes.ValidatorInfo{ValidatorSigningInfo: newInfo}, true
+			return snapshot.ValidatorInfo{ValidatorSigningInfo: newInfo}, true
 		},
 	}
 
@@ -132,5 +131,7 @@ func prepareBroadcaster(t *testing.T, ctx sdk.Context, cdc *codec.Codec, validat
 func newValidator(address sdk.ValAddress, power int64) *snapMock.ValidatorMock {
 	return &snapMock.ValidatorMock{
 		GetOperatorFunc:       func() sdk.ValAddress { return address },
-		GetConsensusPowerFunc: func() int64 { return power }}
+		GetConsensusPowerFunc: func() int64 { return power },
+		GetConsAddrFunc:       func() sdk.ConsAddress { return address.Bytes() },
+	}
 }

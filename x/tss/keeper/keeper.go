@@ -10,7 +10,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -27,14 +27,14 @@ const (
 
 type Keeper struct {
 	broadcaster types.Broadcaster
-	slasher     snapTypes.Slasher
+	slasher     snapshot.Slasher
 	params      params.Subspace
 	storeKey    sdk.StoreKey
 	cdc         *codec.Codec
 }
 
 // NewKeeper constructs a tss keeper
-func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace, broadcaster types.Broadcaster, slasher snapTypes.Slasher) Keeper {
+func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace, broadcaster types.Broadcaster, slasher snapshot.Slasher) Keeper {
 	return Keeper{
 		broadcaster: broadcaster,
 		slasher:     slasher,

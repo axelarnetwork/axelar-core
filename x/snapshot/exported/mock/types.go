@@ -194,7 +194,7 @@ var _ exported.Snapshotter = &SnapshotterMock{}
 // 			GetSnapshotFunc: func(ctx sdk.Context, counter int64) (exported.Snapshot, bool) {
 // 				panic("mock out the GetSnapshot method")
 // 			},
-// 			TakeSnapshotFunc: func(ctx sdk.Context) error {
+// 			TakeSnapshotFunc: func(ctx sdk.Context, subsetSize int64) error {
 // 				panic("mock out the TakeSnapshot method")
 // 			},
 // 		}
@@ -214,7 +214,7 @@ type SnapshotterMock struct {
 	GetSnapshotFunc func(ctx sdk.Context, counter int64) (exported.Snapshot, bool)
 
 	// TakeSnapshotFunc mocks the TakeSnapshot method.
-	TakeSnapshotFunc func(ctx sdk.Context) error
+	TakeSnapshotFunc func(ctx sdk.Context, subsetSize int64) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -239,6 +239,8 @@ type SnapshotterMock struct {
 		TakeSnapshot []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
+			// SubsetSize is the subsetSize argument value.
+			SubsetSize int64
 		}
 	}
 	lockGetLatestCounter  sync.RWMutex
@@ -345,32 +347,249 @@ func (mock *SnapshotterMock) GetSnapshotCalls() []struct {
 }
 
 // TakeSnapshot calls TakeSnapshotFunc.
-func (mock *SnapshotterMock) TakeSnapshot(ctx sdk.Context) error {
+func (mock *SnapshotterMock) TakeSnapshot(ctx sdk.Context, subsetSize int64) error {
 	if mock.TakeSnapshotFunc == nil {
 		panic("SnapshotterMock.TakeSnapshotFunc: method is nil but Snapshotter.TakeSnapshot was just called")
 	}
 	callInfo := struct {
-		Ctx sdk.Context
+		Ctx        sdk.Context
+		SubsetSize int64
 	}{
-		Ctx: ctx,
+		Ctx:        ctx,
+		SubsetSize: subsetSize,
 	}
 	mock.lockTakeSnapshot.Lock()
 	mock.calls.TakeSnapshot = append(mock.calls.TakeSnapshot, callInfo)
 	mock.lockTakeSnapshot.Unlock()
-	return mock.TakeSnapshotFunc(ctx)
+	return mock.TakeSnapshotFunc(ctx, subsetSize)
 }
 
 // TakeSnapshotCalls gets all the calls that were made to TakeSnapshot.
 // Check the length with:
 //     len(mockedSnapshotter.TakeSnapshotCalls())
 func (mock *SnapshotterMock) TakeSnapshotCalls() []struct {
-	Ctx sdk.Context
+	Ctx        sdk.Context
+	SubsetSize int64
 } {
 	var calls []struct {
-		Ctx sdk.Context
+		Ctx        sdk.Context
+		SubsetSize int64
 	}
 	mock.lockTakeSnapshot.RLock()
 	calls = mock.calls.TakeSnapshot
 	mock.lockTakeSnapshot.RUnlock()
+	return calls
+}
+
+// Ensure, that SlasherMock does implement exported.Slasher.
+// If this is not the case, regenerate this file with moq.
+var _ exported.Slasher = &SlasherMock{}
+
+// SlasherMock is a mock implementation of exported.Slasher.
+//
+// 	func TestSomethingThatUsesSlasher(t *testing.T) {
+//
+// 		// make and configure a mocked exported.Slasher
+// 		mockedSlasher := &SlasherMock{
+// 			GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (exported.ValidatorInfo, bool) {
+// 				panic("mock out the GetValidatorSigningInfo method")
+// 			},
+// 		}
+//
+// 		// use mockedSlasher in code that requires exported.Slasher
+// 		// and then make assertions.
+//
+// 	}
+type SlasherMock struct {
+	// GetValidatorSigningInfoFunc mocks the GetValidatorSigningInfo method.
+	GetValidatorSigningInfoFunc func(ctx sdk.Context, address sdk.ConsAddress) (exported.ValidatorInfo, bool)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetValidatorSigningInfo holds details about calls to the GetValidatorSigningInfo method.
+		GetValidatorSigningInfo []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Address is the address argument value.
+			Address sdk.ConsAddress
+		}
+	}
+	lockGetValidatorSigningInfo sync.RWMutex
+}
+
+// GetValidatorSigningInfo calls GetValidatorSigningInfoFunc.
+func (mock *SlasherMock) GetValidatorSigningInfo(ctx sdk.Context, address sdk.ConsAddress) (exported.ValidatorInfo, bool) {
+	if mock.GetValidatorSigningInfoFunc == nil {
+		panic("SlasherMock.GetValidatorSigningInfoFunc: method is nil but Slasher.GetValidatorSigningInfo was just called")
+	}
+	callInfo := struct {
+		Ctx     sdk.Context
+		Address sdk.ConsAddress
+	}{
+		Ctx:     ctx,
+		Address: address,
+	}
+	mock.lockGetValidatorSigningInfo.Lock()
+	mock.calls.GetValidatorSigningInfo = append(mock.calls.GetValidatorSigningInfo, callInfo)
+	mock.lockGetValidatorSigningInfo.Unlock()
+	return mock.GetValidatorSigningInfoFunc(ctx, address)
+}
+
+// GetValidatorSigningInfoCalls gets all the calls that were made to GetValidatorSigningInfo.
+// Check the length with:
+//     len(mockedSlasher.GetValidatorSigningInfoCalls())
+func (mock *SlasherMock) GetValidatorSigningInfoCalls() []struct {
+	Ctx     sdk.Context
+	Address sdk.ConsAddress
+} {
+	var calls []struct {
+		Ctx     sdk.Context
+		Address sdk.ConsAddress
+	}
+	mock.lockGetValidatorSigningInfo.RLock()
+	calls = mock.calls.GetValidatorSigningInfo
+	mock.lockGetValidatorSigningInfo.RUnlock()
+	return calls
+}
+
+// Ensure, that BroadcasterMock does implement exported.Broadcaster.
+// If this is not the case, regenerate this file with moq.
+var _ exported.Broadcaster = &BroadcasterMock{}
+
+// BroadcasterMock is a mock implementation of exported.Broadcaster.
+//
+// 	func TestSomethingThatUsesBroadcaster(t *testing.T) {
+//
+// 		// make and configure a mocked exported.Broadcaster
+// 		mockedBroadcaster := &BroadcasterMock{
+// 			GetProxyFunc: func(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
+// 				panic("mock out the GetProxy method")
+// 			},
+// 		}
+//
+// 		// use mockedBroadcaster in code that requires exported.Broadcaster
+// 		// and then make assertions.
+//
+// 	}
+type BroadcasterMock struct {
+	// GetProxyFunc mocks the GetProxy method.
+	GetProxyFunc func(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetProxy holds details about calls to the GetProxy method.
+		GetProxy []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Principal is the principal argument value.
+			Principal sdk.ValAddress
+		}
+	}
+	lockGetProxy sync.RWMutex
+}
+
+// GetProxy calls GetProxyFunc.
+func (mock *BroadcasterMock) GetProxy(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
+	if mock.GetProxyFunc == nil {
+		panic("BroadcasterMock.GetProxyFunc: method is nil but Broadcaster.GetProxy was just called")
+	}
+	callInfo := struct {
+		Ctx       sdk.Context
+		Principal sdk.ValAddress
+	}{
+		Ctx:       ctx,
+		Principal: principal,
+	}
+	mock.lockGetProxy.Lock()
+	mock.calls.GetProxy = append(mock.calls.GetProxy, callInfo)
+	mock.lockGetProxy.Unlock()
+	return mock.GetProxyFunc(ctx, principal)
+}
+
+// GetProxyCalls gets all the calls that were made to GetProxy.
+// Check the length with:
+//     len(mockedBroadcaster.GetProxyCalls())
+func (mock *BroadcasterMock) GetProxyCalls() []struct {
+	Ctx       sdk.Context
+	Principal sdk.ValAddress
+} {
+	var calls []struct {
+		Ctx       sdk.Context
+		Principal sdk.ValAddress
+	}
+	mock.lockGetProxy.RLock()
+	calls = mock.calls.GetProxy
+	mock.lockGetProxy.RUnlock()
+	return calls
+}
+
+// Ensure, that TssMock does implement exported.Tss.
+// If this is not the case, regenerate this file with moq.
+var _ exported.Tss = &TssMock{}
+
+// TssMock is a mock implementation of exported.Tss.
+//
+// 	func TestSomethingThatUsesTss(t *testing.T) {
+//
+// 		// make and configure a mocked exported.Tss
+// 		mockedTss := &TssMock{
+// 			GetValidatorDeregisteredBlockHeightFunc: func(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
+// 				panic("mock out the GetValidatorDeregisteredBlockHeight method")
+// 			},
+// 		}
+//
+// 		// use mockedTss in code that requires exported.Tss
+// 		// and then make assertions.
+//
+// 	}
+type TssMock struct {
+	// GetValidatorDeregisteredBlockHeightFunc mocks the GetValidatorDeregisteredBlockHeight method.
+	GetValidatorDeregisteredBlockHeightFunc func(ctx sdk.Context, valAddr sdk.ValAddress) int64
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetValidatorDeregisteredBlockHeight holds details about calls to the GetValidatorDeregisteredBlockHeight method.
+		GetValidatorDeregisteredBlockHeight []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// ValAddr is the valAddr argument value.
+			ValAddr sdk.ValAddress
+		}
+	}
+	lockGetValidatorDeregisteredBlockHeight sync.RWMutex
+}
+
+// GetValidatorDeregisteredBlockHeight calls GetValidatorDeregisteredBlockHeightFunc.
+func (mock *TssMock) GetValidatorDeregisteredBlockHeight(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
+	if mock.GetValidatorDeregisteredBlockHeightFunc == nil {
+		panic("TssMock.GetValidatorDeregisteredBlockHeightFunc: method is nil but Tss.GetValidatorDeregisteredBlockHeight was just called")
+	}
+	callInfo := struct {
+		Ctx     sdk.Context
+		ValAddr sdk.ValAddress
+	}{
+		Ctx:     ctx,
+		ValAddr: valAddr,
+	}
+	mock.lockGetValidatorDeregisteredBlockHeight.Lock()
+	mock.calls.GetValidatorDeregisteredBlockHeight = append(mock.calls.GetValidatorDeregisteredBlockHeight, callInfo)
+	mock.lockGetValidatorDeregisteredBlockHeight.Unlock()
+	return mock.GetValidatorDeregisteredBlockHeightFunc(ctx, valAddr)
+}
+
+// GetValidatorDeregisteredBlockHeightCalls gets all the calls that were made to GetValidatorDeregisteredBlockHeight.
+// Check the length with:
+//     len(mockedTss.GetValidatorDeregisteredBlockHeightCalls())
+func (mock *TssMock) GetValidatorDeregisteredBlockHeightCalls() []struct {
+	Ctx     sdk.Context
+	ValAddr sdk.ValAddress
+} {
+	var calls []struct {
+		Ctx     sdk.Context
+		ValAddr sdk.ValAddress
+	}
+	mock.lockGetValidatorDeregisteredBlockHeight.RLock()
+	calls = mock.calls.GetValidatorDeregisteredBlockHeight
+	mock.lockGetValidatorDeregisteredBlockHeight.RUnlock()
 	return calls
 }

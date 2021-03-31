@@ -6,7 +6,6 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -24,26 +23,24 @@ func (k Keeper) StartSign(ctx sdk.Context, voter types.InitPoller, keyID string,
 	// might make sense to store it with the snapshot after keygen is done.
 	threshold := k.ComputeCorruptionThreshold(ctx, len(s.Validators))
 
-	// filter active validators
-	filterActive := func(vals []snapshot.Validator) ([]snapshot.Validator, error) {
-		return utils.FilterActiveValidators(ctx, k.slasher, vals)
-	}
-	filteredSnapshot, err := s.Filter(filterActive)
-	if err != nil {
-		return err
+	var activeValidators []snapshot.Validator
+	for _, validator := range s.Validators {
+		if snapshot.IsValidatorActive(ctx, k.slasher, validator) {
+			activeValidators = append(activeValidators, validator)
+		}
 	}
 
-	if len(filteredSnapshot.Validators) <= threshold {
+	if len(activeValidators) <= threshold {
 		return fmt.Errorf(fmt.Sprintf("not enough active validators are online: threshold [%d], online [%d]",
-			threshold, len(filteredSnapshot.Validators)))
+			threshold, len(activeValidators)))
 	}
 
 	k.Logger(ctx).Info(fmt.Sprintf("starting sign with threshold [%d] (need [%d]), online validators count [%d]",
-		threshold, threshold+1, len(filteredSnapshot.Validators)))
+		threshold, threshold+1, len(activeValidators)))
 
 	// set sign participants
 	var participants []string
-	for _, v := range filteredSnapshot.Validators {
+	for _, v := range activeValidators {
 		participants = append(participants, v.GetOperator().String())
 		k.setParticipateInSign(ctx, sigID, v.GetOperator())
 	}

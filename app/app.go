@@ -10,8 +10,9 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/axelarnetwork/axelar-core/x/ante"
+	snapshotExported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	snapshotExportedMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
-	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
 
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -289,11 +290,11 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		tmos.Exit(err.Error())
 	}
 
-	slashingKCast := &snapMock.SlasherMock{
-		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapTypes.ValidatorInfo, bool) {
+	slashingKCast := &snapshotExportedMock.SlasherMock{
+		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapshotExported.ValidatorInfo, bool) {
 			signingInfo, found := slashingK.GetValidatorSigningInfo(ctx, address)
 
-			return snapTypes.ValidatorInfo{ValidatorSigningInfo: signingInfo}, found
+			return snapshotExported.ValidatorInfo{ValidatorSigningInfo: signingInfo}, found
 		},
 	}
 	tssK := tssKeeper.NewKeeper(
