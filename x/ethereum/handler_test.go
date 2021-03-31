@@ -1,17 +1,21 @@
 package ethereum
 
 import (
-	"bytes"
-	"context"
 	"fmt"
 	"math/big"
+	mathRand "math/rand"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	ethCrypto "github.com/ethereum/go-ethereum/crypto"
+	"github.com/tendermint/go-amino"
+
+	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/stretchr/testify/assert"
+	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -25,11 +29,6 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
-
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/stretchr/testify/assert"
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
 )
 
 const (
@@ -37,7 +36,6 @@ const (
 )
 
 var (
-	sender      = sdk.AccAddress(rand.Str(int(rand.I64Between(5, 20))))
 	bytecodes   = common.FromHex(MymintableBin)
 	tokenBC     = rand.Bytes(64)
 	burnerBC    = rand.Bytes(64)
@@ -286,513 +284,182 @@ func TestMintTx_DifferentRecipient_DifferentHash(t *testing.T) {
 	assert.NotEqual(t, tx1.Hash(), tx2.Hash())
 }
 
-func TestVerifyToken_NoTokenInfo(t *testing.T) {
-	minConfHeight := rand.I64Between(1, 10)
-	signedTx := createSignedEthTx()
-	symbol := rand.Str(4)
-
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k := newKeeper(ctx, minConfHeight)
-	voter := createVoterMock()
-	signer := &mock.SignerMock{
-		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
-			return rand.StrBetween(5, 20), true
-		},
-		GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
-			return rand.PosI64(), true
-		},
-	}
-	handler := NewHandler(k, voter, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
-
-	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), symbol))
-
-	assert.Error(t, err)
-	assert.False(t, k.HasUnverifiedToken(ctx, signedTx.Hash().String()))
-	assert.Equal(t, 0, len(voter.InitPollCalls()))
-	assert.Equal(t, 0, len(voter.RecordVoteCalls()))
-}
-
-func TestVerifyToken_NoReceipt(t *testing.T) {
-	minConfHeight := rand.I64Between(1, 10)
-	confCount := rand.I64Between(minConfHeight, 10*minConfHeight)
-	signedTx := createSignedEthTx()
-	msg := createMsgSignDeploy()
-
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k := newKeeper(ctx, minConfHeight)
-	k.SetTokenInfo(ctx, msg)
-	rpc := createBasicRPCMock(signedTx, confCount, nil)
-	rpc.TransactionReceiptFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Receipt, error) {
-		return nil, fmt.Errorf("no transaction for hash")
-	}
-	voter := createVoterMock()
-	signer := &mock.SignerMock{
-		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
-			return rand.StrBetween(5, 20), true
-		},
-		GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
-			return rand.PosI64(), true
-		},
-	}
-	handler := NewHandler(k, voter, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
-
-	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol))
-
-	assert.NoError(t, err)
-	assert.True(t, k.HasUnverifiedToken(ctx, signedTx.Hash().String()))
-	assertVotedOnPoll(t, voter, signedTx.Hash(), types.MsgVerifyErc20TokenDeploy{}.Type(), false)
-}
-
-func TestVerifyToken_NoBlockNumber(t *testing.T) {
-	minConfHeight := rand.I64Between(1, 10)
-	confCount := rand.I64Between(minConfHeight, 10*minConfHeight)
-	signedTx := createSignedEthTx()
-	msg := createMsgSignDeploy()
-
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k := newKeeper(ctx, minConfHeight)
-	k.SetTokenInfo(ctx, msg)
-	rpc := createBasicRPCMock(signedTx, confCount, nil)
-	rpc.BlockNumberFunc = func(ctx context.Context) (uint64, error) {
-		return 0, fmt.Errorf("no block number")
-	}
-	voter := createVoterMock()
-	signer := &mock.SignerMock{
-		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
-			return rand.StrBetween(5, 20), true
-		},
-		GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
-			return rand.PosI64(), true
-		},
-	}
-	handler := NewHandler(k, voter, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
-
-	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol))
-
-	assert.NoError(t, err)
-	assert.True(t, k.HasUnverifiedToken(ctx, signedTx.Hash().String()))
-	assertVotedOnPoll(t, voter, signedTx.Hash(), types.MsgVerifyErc20TokenDeploy{}.Type(), false)
-}
-
-func TestVerifyToken_NotConfirmed(t *testing.T) {
-	minConfHeight := rand.I64Between(1, 10)
-	signedTx := createSignedEthTx()
-	msg := createMsgSignDeploy()
-
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k := newKeeper(ctx, minConfHeight)
-	k.SetTokenInfo(ctx, msg)
-	voter := createVoterMock()
-	signer := &mock.SignerMock{
-		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
-			return rand.StrBetween(5, 20), true
-		},
-		GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
-			return rand.PosI64(), true
-		},
-	}
-	handler := NewHandler(k, voter, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
-
-	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol))
-
-	assert.NoError(t, err)
-	assert.True(t, k.HasUnverifiedToken(ctx, signedTx.Hash().String()))
-	assertVotedOnPoll(t, voter, signedTx.Hash(), types.MsgVerifyErc20TokenDeploy{}.Type(), false)
-}
-
-func TestVerifyToken_NoEvent(t *testing.T) {
-	minConfHeight := rand.I64Between(1, 10)
-	signedTx := createSignedEthTx()
-	msg := createMsgSignDeploy()
-
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k := newKeeper(ctx, minConfHeight)
-	k.SetTokenInfo(ctx, msg)
-	voter := createVoterMock()
-	signer := &mock.SignerMock{
-		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
-			return rand.StrBetween(5, 20), true
-		},
-		GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
-			return rand.PosI64(), true
-		},
-	}
-	handler := NewHandler(k, voter, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
-
-	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol))
-
-	assert.NoError(t, err)
-	assert.True(t, k.HasUnverifiedToken(ctx, signedTx.Hash().String()))
-	assertVotedOnPoll(t, voter, signedTx.Hash(), types.MsgVerifyErc20TokenDeploy{}.Type(), false)
-}
-func TestVerifyToken_DifferentEvent(t *testing.T) {
-	minConfHeight := rand.I64Between(1, 10)
-	signedTx := createSignedEthTx()
-	msg := createMsgSignDeploy()
-
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k := newKeeper(ctx, minConfHeight)
-	k.SetTokenInfo(ctx, msg)
-	voter := createVoterMock()
-	signer := &mock.SignerMock{
-		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
-			return rand.StrBetween(5, 20), true
-		},
-		GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
-			return rand.PosI64(), true
-		},
-	}
-	handler := NewHandler(k, voter, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
-
-	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol))
-
-	assert.NoError(t, err)
-	assert.True(t, k.HasUnverifiedToken(ctx, signedTx.Hash().String()))
-	assertVotedOnPoll(t, voter, signedTx.Hash(), types.MsgVerifyErc20TokenDeploy{}.Type(), false)
-}
-
-func TestVerifyToken_Success(t *testing.T) {
-	minConfHeight := rand.I64Between(1, 10)
-	signedTx := createSignedEthTx()
-	msg := createMsgSignDeploy()
-
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k := newKeeper(ctx, minConfHeight)
-	k.SetTokenInfo(ctx, msg)
-	voter := createVoterMock()
-	signer := &mock.SignerMock{
-		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
-			return rand.StrBetween(5, 20), true
-		},
-		GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
-			return rand.PosI64(), true
-		},
-	}
-	handler := NewHandler(k,  voter, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
-
-	_, err := handler(ctx, types.NewMsgVerifyErc20TokenDeploy(sender, signedTx.Hash(), msg.Symbol))
-
-	assert.NoError(t, err)
-	assert.True(t, k.HasUnverifiedToken(ctx, signedTx.Hash().String()))
-	assertVotedOnPoll(t, voter, signedTx.Hash(), types.MsgVerifyErc20TokenDeploy{}.Type(), true)
-}
-
-func TestHandleMsgVerifyErc20Deposit_UnknownBurnerAddr(t *testing.T) {
-	minConfHeight := rand.I64Between(1, 10)
-	txID := common.BytesToHash(rand.Bytes(common.HashLength))
-	amount := sdk.NewUint(uint64(rand.I64Between(1, 10000)))
-	unknownBurnerAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
-
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k := newKeeper(ctx, minConfHeight)
-	v := createVoterMock()
-	signer := &mock.SignerMock{
-		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
-			return rand.StrBetween(5, 20), true
-		},
-		GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
-			return rand.PosI64(), true
-		},
-	}
-	handler := NewHandler(k, v, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
-
-	msg := types.NewMsgVerifyErc20Deposit(sender, txID, amount, unknownBurnerAddr)
-	result, err := handler(ctx, msg)
-
-	assert.Nil(t, result)
-	assert.Error(t, err)
-
-	assert.False(t, k.HasUnverifiedErc20Deposit(ctx, txID.String()))
-	assert.Equal(t, 0, len(v.InitPollCalls()))
-	assert.Equal(t, 0, len(v.RecordVoteCalls()))
-}
-
-func TestHandleMsgVerifyErc20Deposit_FailedGettingTransactionReceipt(t *testing.T) {
-	minConfHeight := rand.I64Between(1, 10)
-	txID := common.BytesToHash(rand.Bytes(common.HashLength))
-	amount := sdk.NewUint(uint64(rand.I64Between(1, 10000)))
-	tokenAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
-	symbol := rand.Str(3)
-	salt := [common.HashLength]byte(common.BytesToHash(rand.Bytes(common.HashLength)))
-	burnerAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
-	burnerInfo := types.BurnerInfo{
-		TokenAddr: tokenAddr.Hex(),
-		Symbol:    symbol,
-		Salt:      salt,
-	}
-
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k := newKeeper(ctx, minConfHeight)
-	k.SetBurnerInfo(ctx, burnerAddr, &burnerInfo)
-	rpc := ethMock.RPCClientMock{}
-	rpc.TransactionReceiptFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Receipt, error) {
-		return nil, fmt.Errorf("sorry")
-	}
-	v := createVoterMock()
-	signer := &mock.SignerMock{
-		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
-			return rand.StrBetween(5, 20), true
-		},
-		GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
-			return rand.PosI64(), true
-		},
-	}
-	handler := NewHandler(k, v, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
-
-	msg := types.NewMsgVerifyErc20Deposit(sender, txID, amount, burnerAddr)
-	result, err := handler(ctx, msg)
-
-	assert.NotNil(t, result)
-	assert.NoError(t, err)
-
-	assert.True(t, k.HasUnverifiedErc20Deposit(ctx, txID.String()))
-	assertVotedOnPoll(t, v, txID, types.MsgVerifyErc20Deposit{}.Type(), false)
-}
-
-func TestHandleMsgVerifyErc20Deposit_FailedGettingBlockNumber(t *testing.T) {
-	minConfHeight := rand.I64Between(1, 10)
-	txID := common.BytesToHash(rand.Bytes(common.HashLength))
-	amount := sdk.NewUint(uint64(rand.I64Between(1, 10000)))
-	tokenAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
-	symbol := rand.Str(3)
-	salt := [common.HashLength]byte(common.BytesToHash(rand.Bytes(common.HashLength)))
-	burnerAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
-	burnerInfo := types.BurnerInfo{
-		TokenAddr: tokenAddr.Hex(),
-		Symbol:    symbol,
-		Salt:      salt,
-	}
-
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k := newKeeper(ctx, minConfHeight)
-	k.SetBurnerInfo(ctx, burnerAddr, &burnerInfo)
-	rpc := ethMock.RPCClientMock{}
-	rpc.TransactionReceiptFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Receipt, error) {
-		return &ethTypes.Receipt{}, nil
-	}
-	rpc.BlockNumberFunc = func(ctx context.Context) (uint64, error) {
-		return 0, fmt.Errorf("sorry")
-	}
-	v := createVoterMock()
-	signer := &mock.SignerMock{
-		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
-			return rand.StrBetween(5, 20), true
-		},
-		GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
-			return rand.PosI64(), true
-		},
-	}
-	handler := NewHandler(k, v, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
-
-	msg := types.NewMsgVerifyErc20Deposit(sender, txID, amount, burnerAddr)
-	result, err := handler(ctx, msg)
-
-	assert.NotNil(t, result)
-	assert.NoError(t, err)
-
-	assert.True(t, k.HasUnverifiedErc20Deposit(ctx, txID.String()))
-	assertVotedOnPoll(t, v, txID, types.MsgVerifyErc20Deposit{}.Type(), false)
-}
-
-func TestHandleMsgVerifyErc20Deposit_NotConfirmed(t *testing.T) {
-	minConfHeight := rand.I64Between(1, 10)
-	txID := common.BytesToHash(rand.Bytes(common.HashLength))
-	amount := sdk.NewUint(uint64(rand.I64Between(1, 10000)))
-	tokenAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
-	symbol := rand.Str(3)
-	salt := [common.HashLength]byte(common.BytesToHash(rand.Bytes(common.HashLength)))
-	burnerAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
-	burnerInfo := types.BurnerInfo{
-		TokenAddr: tokenAddr.Hex(),
-		Symbol:    symbol,
-		Salt:      salt,
-	}
-	blockNumber := int64(100)
-
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k := newKeeper(ctx, minConfHeight)
-	k.SetBurnerInfo(ctx, burnerAddr, &burnerInfo)
-	rpc := ethMock.RPCClientMock{}
-	rpc.TransactionReceiptFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Receipt, error) {
-		return &ethTypes.Receipt{BlockNumber: big.NewInt(blockNumber)}, nil
-	}
-	rpc.BlockNumberFunc = func(ctx context.Context) (uint64, error) {
-		return uint64(blockNumber), nil
-	}
-	v := createVoterMock()
-	signer := &mock.SignerMock{
-		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
-			return rand.StrBetween(5, 20), true
-		},
-		GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
-			return rand.PosI64(), true
-		},
-	}
-	handler := NewHandler(k, v, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
-
-	msg := types.NewMsgVerifyErc20Deposit(sender, txID, amount, burnerAddr)
-	result, err := handler(ctx, msg)
-
-	assert.NotNil(t, result)
-	assert.NoError(t, err)
-
-	assert.True(t, k.HasUnverifiedErc20Deposit(ctx, txID.String()))
-	assertVotedOnPoll(t, v, txID, types.MsgVerifyErc20Deposit{}.Type(), false)
-}
-
-func TestHandleMsgVerifyErc20Deposit_AmountMismatch(t *testing.T) {
-	minConfHeight := rand.I64Between(1, 10)
-	txID := common.BytesToHash(rand.Bytes(common.HashLength))
-	amount := sdk.NewUint(10)
-	tokenAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
-	symbol := rand.Str(3)
-	salt := [common.HashLength]byte(common.BytesToHash(rand.Bytes(common.HashLength)))
-	burnerAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
-	burnerInfo := types.BurnerInfo{
-		TokenAddr: tokenAddr.Hex(),
-		Symbol:    symbol,
-		Salt:      salt,
-	}
-	blockNumber := int64(100)
-	erc20TransferEventSig := common.HexToHash("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")
-
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k := newKeeper(ctx, minConfHeight)
-	k.SetBurnerInfo(ctx, burnerAddr, &burnerInfo)
-	rpc := ethMock.RPCClientMock{}
-	rpc.TransactionReceiptFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Receipt, error) {
-		return &ethTypes.Receipt{BlockNumber: big.NewInt(blockNumber), Logs: []*ethTypes.Log{
-			/* ERC20 transfer to burner address of a random token */
-			{
-				Address: common.BytesToAddress(rand.Bytes(common.AddressLength)),
-				Topics: []common.Hash{
-					erc20TransferEventSig,
-					common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(rand.Bytes(common.AddressLength)).Bytes(), common.HashLength)),
-					common.BytesToHash(common.LeftPadBytes(burnerAddr.Bytes(), common.HashLength)),
-				},
-				Data: common.LeftPadBytes(big.NewInt(2).Bytes(), common.HashLength),
+func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
+	var (
+		ctx sdk.Context
+		k   *ethMock.EthKeeperMock
+		v   *ethMock.VoterMock
+		n   *ethMock.NexusMock
+		msg types.MsgConfirmERC20TokenDeploy
+	)
+	setup := func() {
+		ctx = sdk.NewContext(nil, abci.Header{}, false, log.TestingLogger())
+		k = &ethMock.EthKeeperMock{
+			GetGatewayAddressFunc: func(sdk.Context) (common.Address, bool) {
+				return common.BytesToAddress(rand.Bytes(common.AddressLength)), true
 			},
-			/* not a ERC20 transfer */
-			{
-				Address: tokenAddr,
-				Topics: []common.Hash{
-					common.BytesToHash(rand.Bytes(common.HashLength)),
-					common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(rand.Bytes(common.AddressLength)).Bytes(), common.HashLength)),
-					common.BytesToHash(common.LeftPadBytes(burnerAddr.Bytes(), common.HashLength)),
-				},
-				Data: common.LeftPadBytes(big.NewInt(2).Bytes(), common.HashLength),
+			GetTokenAddressFunc: func(sdk.Context, string, common.Address) (common.Address, error) {
+				return common.BytesToAddress(rand.Bytes(common.AddressLength)), nil
 			},
-			/* an invalid ERC20 transfer */
-			{
-				Address: tokenAddr,
-				Topics: []common.Hash{
-					erc20TransferEventSig,
-					common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(rand.Bytes(common.AddressLength)).Bytes(), common.HashLength)),
-				},
-				Data: common.LeftPadBytes(big.NewInt(2).Bytes(), common.HashLength),
-			},
-			/* an ERC20 transfer of our concern */
-			{
-				Address: tokenAddr,
-				Topics: []common.Hash{
-					erc20TransferEventSig,
-					common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(rand.Bytes(common.AddressLength)).Bytes(), common.HashLength)),
-					common.BytesToHash(common.LeftPadBytes(burnerAddr.Bytes(), common.HashLength)),
-				},
-				Data: common.LeftPadBytes(big.NewInt(4).Bytes(), common.HashLength),
-			},
-		}}, nil
+			GetRevoteLockingPeriodFunc:        func(ctx sdk.Context) int64 { return rand.PosI64() },
+			GetRequiredConfirmationHeightFunc: func(sdk.Context) uint64 { return mathRand.Uint64() },
+			SetPendingTokenDeployFunc:         func(sdk.Context, vote.PollMeta, types.ERC20TokenDeploy) {},
+			GetTokenDeploySignatureFunc:       func(sdk.Context) common.Hash { return common.BytesToHash(rand.Bytes(common.HashLength)) },
+			CodecFunc:                         func() *amino.Codec { return testutils.Codec() },
+		}
+		v = &ethMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta) error { return nil }}
+		n = &ethMock.NexusMock{IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return false }}
+		msg = types.MsgConfirmERC20TokenDeploy{
+			Sender: rand.Bytes(20),
+			TxID:   common.BytesToHash(rand.Bytes(common.HashLength)).Hex(),
+			Symbol: rand.StrBetween(5, 10),
+		}
 	}
-	rpc.BlockNumberFunc = func(ctx context.Context) (uint64, error) {
-		return uint64(blockNumber + minConfHeight*2), nil
-	}
-	v := createVoterMock()
-	signer := &mock.SignerMock{
-		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
-			return rand.StrBetween(5, 20), true
-		},
-		GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
-			return rand.PosI64(), true
-		},
-	}
-	handler := NewHandler(k, v, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
 
-	msg := types.NewMsgVerifyErc20Deposit(sender, txID, amount, burnerAddr)
-	result, err := handler(ctx, msg)
+	repeats := 20
+	t.Run("happy path", testutils.Func(func(t *testing.T) {
+		setup()
 
-	assert.NotNil(t, result)
-	assert.NoError(t, err)
+		result, err := HandleMsgConfirmTokenDeploy(ctx, k, v, n, msg)
 
-	assert.True(t, k.HasUnverifiedErc20Deposit(ctx, txID.String()))
-	assertVotedOnPoll(t, v, txID, types.MsgVerifyErc20Deposit{}.Type(), false)
+		assert.NoError(t, err)
+		assert.Len(t, testutils.Events(result.Events).Filter(func(event sdk.Event) bool { return event.Type == types.EventTypeTokenConfirmation }), 1)
+		assert.Equal(t, v.InitPollCalls()[0].Poll, k.SetPendingTokenDeployCalls()[0].Poll)
+	}).Repeat(repeats))
+
+	t.Run("no gateway", testutils.Func(func(t *testing.T) {
+		setup()
+		k.GetGatewayAddressFunc = func(sdk.Context) (common.Address, bool) { return common.Address{}, false }
+
+		_, err := HandleMsgConfirmTokenDeploy(ctx, k, v, n, msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("token unknown", testutils.Func(func(t *testing.T) {
+		setup()
+		k.GetTokenAddressFunc = func(sdk.Context, string, common.Address) (common.Address, error) {
+			return common.Address{}, fmt.Errorf("failed")
+		}
+
+		_, err := HandleMsgConfirmTokenDeploy(ctx, k, v, n, msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("already registered", testutils.Func(func(t *testing.T) {
+		setup()
+		n.IsAssetRegisteredFunc = func(sdk.Context, string, string) bool { return true }
+
+		_, err := HandleMsgConfirmTokenDeploy(ctx, k, v, n, msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
+		setup()
+		v.InitPollFunc = func(sdk.Context, vote.PollMeta) error { return fmt.Errorf("poll setup failed") }
+
+		_, err := HandleMsgConfirmTokenDeploy(ctx, k, v, n, msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
 }
 
-func TestHandleMsgVerifyErc20Deposit_Success(t *testing.T) {
-	minConfHeight := rand.I64Between(1, 10)
-	txID := common.BytesToHash(rand.Bytes(common.HashLength))
-	amount := sdk.NewUint(10)
-	tokenAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
-	symbol := rand.Str(3)
-	salt := [common.HashLength]byte(common.BytesToHash(rand.Bytes(common.HashLength)))
-	burnerAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
-	burnerInfo := types.BurnerInfo{
-		TokenAddr: tokenAddr.Hex(),
-		Symbol:    symbol,
-		Salt:      salt,
-	}
-	blockNumber := int64(100)
-	erc20TransferEventSig := common.HexToHash("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")
-
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	k := newKeeper(ctx, minConfHeight)
-	k.SetBurnerInfo(ctx, burnerAddr, &burnerInfo)
-	rpc := ethMock.RPCClientMock{}
-	rpc.TransactionReceiptFunc = func(ctx context.Context, hash common.Hash) (*ethTypes.Receipt, error) {
-		return &ethTypes.Receipt{BlockNumber: big.NewInt(blockNumber), Logs: []*ethTypes.Log{
-			/* an ERC20 transfer of our concern */
-			{
-				Address: tokenAddr,
-				Topics: []common.Hash{
-					erc20TransferEventSig,
-					common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(rand.Bytes(common.AddressLength)).Bytes(), common.HashLength)),
-					common.BytesToHash(common.LeftPadBytes(burnerAddr.Bytes(), common.HashLength)),
-				},
-				Data: common.LeftPadBytes(big.NewInt(3).Bytes(), common.HashLength),
+func TestHandleMsgConfirmDeposit(t *testing.T) {
+	var (
+		ctx sdk.Context
+		k   *ethMock.EthKeeperMock
+		v   *ethMock.VoterMock
+		msg types.MsgConfirmERC20Deposit
+	)
+	setup := func() {
+		ctx = sdk.NewContext(nil, abci.Header{}, false, log.TestingLogger())
+		k = &ethMock.EthKeeperMock{
+			GetDepositFunc: func(sdk.Context, string, string) (types.ERC20Deposit, types.DepositState, bool) {
+				return types.ERC20Deposit{}, 0, false
 			},
-			/* another ERC20 transfer of our concern */
-			{
-				Address: tokenAddr,
-				Topics: []common.Hash{
-					erc20TransferEventSig,
-					common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(rand.Bytes(common.AddressLength)).Bytes(), common.HashLength)),
-					common.BytesToHash(common.LeftPadBytes(burnerAddr.Bytes(), common.HashLength)),
-				},
-				Data: common.LeftPadBytes(big.NewInt(7).Bytes(), common.HashLength),
+			GetBurnerInfoFunc: func(sdk.Context, common.Address) *types.BurnerInfo {
+				return &types.BurnerInfo{
+					TokenAddr: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex(),
+					Symbol:    rand.StrBetween(5, 10),
+					Salt:      common.BytesToHash(rand.Bytes(common.HashLength)),
+				}
 			},
-		}}, nil
+			GetRevoteLockingPeriodFunc:        func(sdk.Context) int64 { return rand.PosI64() },
+			SetPendingDepositFunc:             func(sdk.Context, vote.PollMeta, *types.ERC20Deposit) {},
+			GetRequiredConfirmationHeightFunc: func(sdk.Context) uint64 { return mathRand.Uint64() },
+			CodecFunc:                         func() *amino.Codec { return testutils.Codec() },
+		}
+		v = &ethMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta) error { return nil }}
+		msg = types.MsgConfirmERC20Deposit{
+			Sender:     rand.Bytes(20),
+			TxID:       common.BytesToHash(rand.Bytes(common.HashLength)).Hex(),
+			Amount:     sdk.NewUint(mathRand.Uint64()),
+			BurnerAddr: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex(),
+		}
 	}
-	rpc.BlockNumberFunc = func(ctx context.Context) (uint64, error) {
-		return uint64(blockNumber + minConfHeight*2), nil
-	}
-	v := createVoterMock()
-	signer := &mock.SignerMock{
-		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
-			return rand.StrBetween(5, 20), true
-		},
-		GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
-			return rand.PosI64(), true
-		},
-	}
-	handler := NewHandler(k, v, signer, &ethMock.NexusMock{}, &ethMock.SnapshotterMock{})
 
-	msg := types.NewMsgVerifyErc20Deposit(sender, txID, amount, burnerAddr)
-	result, err := handler(ctx, msg)
+	repeats := 20
+	t.Run("happy path", testutils.Func(func(t *testing.T) {
+		setup()
 
-	assert.NotNil(t, result)
-	assert.NoError(t, err)
+		result, err := HandleMsgConfirmDeposit(ctx, k, v, msg)
 
-	assert.True(t, k.HasUnverifiedErc20Deposit(ctx, txID.String()))
-	assertVotedOnPoll(t, v, txID, types.MsgVerifyErc20Deposit{}.Type(), true)
+		assert.NoError(t, err)
+		assert.Len(t, testutils.Events(result.Events).Filter(func(event sdk.Event) bool { return event.Type == types.EventTypeDepositConfirmation }), 1)
+		assert.Equal(t, v.InitPollCalls()[0].Poll, k.SetPendingDepositCalls()[0].Poll)
+	}).Repeat(repeats))
+
+	t.Run("deposit confirmed", testutils.Func(func(t *testing.T) {
+		setup()
+		k.GetDepositFunc = func(sdk.Context, string, string) (types.ERC20Deposit, types.DepositState, bool) {
+			return types.ERC20Deposit{
+				TxID:       common.BytesToHash(rand.Bytes(common.HashLength)),
+				Amount:     sdk.NewUint(mathRand.Uint64()),
+				Symbol:     rand.StrBetween(5, 10),
+				BurnerAddr: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex(),
+			}, types.CONFIRMED, true
+		}
+
+		_, err := HandleMsgConfirmDeposit(ctx, k, v, msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("deposit burned", testutils.Func(func(t *testing.T) {
+		setup()
+		k.GetDepositFunc = func(sdk.Context, string, string) (types.ERC20Deposit, types.DepositState, bool) {
+			return types.ERC20Deposit{
+				TxID:       common.BytesToHash(rand.Bytes(common.HashLength)),
+				Amount:     sdk.NewUint(mathRand.Uint64()),
+				Symbol:     rand.StrBetween(5, 10),
+				BurnerAddr: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex(),
+			}, types.BURNED, true
+		}
+
+		_, err := HandleMsgConfirmDeposit(ctx, k, v, msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("burner address unknown", testutils.Func(func(t *testing.T) {
+		setup()
+		k.GetBurnerInfoFunc = func(sdk.Context, common.Address) *types.BurnerInfo { return nil }
+
+		_, err := HandleMsgConfirmDeposit(ctx, k, v, msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
+		setup()
+		v.InitPollFunc = func(sdk.Context, vote.PollMeta) error { return fmt.Errorf("failed") }
+
+		_, err := HandleMsgConfirmDeposit(ctx, k, v, msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
 }
 
 func createSignedDeployTx() *ethTypes.Transaction {
@@ -831,47 +498,6 @@ func createSignedEthTx() *ethTypes.Transaction {
 	return sign(ethTypes.NewTransaction(nonce, contractAddr, value, gasLimit, gasPrice, data))
 }
 
-func createBasicRPCMock(tx *ethTypes.Transaction, confCount int64, logs []*ethTypes.Log) *ethMock.RPCClientMock {
-	blockNum := rand.I64Between(confCount, 100000000)
-
-	rpc := ethMock.RPCClientMock{
-		ChainIDFunc: func(ctx context.Context) (*big.Int, error) {
-			return network.Params().ChainID, nil
-		},
-		TransactionReceiptFunc: func(ctx context.Context, hash common.Hash) (*ethTypes.Receipt, error) {
-			if bytes.Equal(tx.Hash().Bytes(), hash.Bytes()) {
-				return &ethTypes.Receipt{TxHash: tx.Hash(), BlockNumber: big.NewInt(blockNum - confCount), Logs: logs}, nil
-			}
-			return nil, fmt.Errorf("transaction not found")
-		},
-		BlockNumberFunc: func(ctx context.Context) (uint64, error) {
-			return big.NewInt(blockNum).Uint64(), nil
-		},
-	}
-
-	return &rpc
-}
-
-func createVoterMock() *ethMock.VoterMock {
-	return &ethMock.VoterMock{
-		InitPollFunc:   func(sdk.Context, vote.PollMeta, int64) error { return nil },
-		RecordVoteFunc: func(vote.MsgVote) {},
-	}
-}
-
-func assertVotedOnPoll(t *testing.T, voter *ethMock.VoterMock, hash common.Hash, pollType string, verified bool) {
-	assert.Equal(t, 1, len(voter.InitPollCalls()))
-	assert.Equal(t, types.ModuleName, voter.InitPollCalls()[0].Poll.Module)
-	assert.Equal(t, pollType, voter.InitPollCalls()[0].Poll.Type)
-	assert.Equal(t, hash.String(), voter.InitPollCalls()[0].Poll.ID)
-
-	initPoll := voter.InitPollCalls()[0].Poll
-
-	assert.Equal(t, 1, len(voter.RecordVoteCalls()))
-	assert.Equal(t, initPoll, voter.RecordVoteCalls()[0].VoteMoqParam.Poll())
-	assert.Equal(t, verified, voter.RecordVoteCalls()[0].VoteMoqParam.Data())
-}
-
 func newKeeper(ctx sdk.Context, confHeight int64) keeper.Keeper {
 	cdc := testutils.Codec()
 	subspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
@@ -890,43 +516,4 @@ func createMsgSignDeploy() types.MsgSignDeployToken {
 	capacity := sdk.NewIntFromUint64(uint64(rand.PosI64()))
 
 	return types.MsgSignDeployToken{Sender: account, TokenName: name, Symbol: symbol, Decimals: decimals, Capacity: capacity}
-}
-
-func createLogs(denom string, gateway, addr common.Address, deploySig common.Hash, contains bool) []*ethTypes.Log {
-	numLogs := rand.I64Between(1, 100)
-	pos := rand.I64Between(0, numLogs)
-	var logs []*ethTypes.Log
-
-	for i := int64(0); i < numLogs; i++ {
-		stringType, err := abi.NewType("string", "string", nil)
-		if err != nil {
-			panic(err)
-		}
-		addressType, err := abi.NewType("address", "address", nil)
-		if err != nil {
-			panic(err)
-		}
-		args := abi.Arguments{{Type: stringType}, {Type: addressType}}
-
-		if contains && i == pos {
-			data, err := args.Pack(denom, addr)
-			if err != nil {
-				panic(err)
-			}
-			logs = append(logs, &ethTypes.Log{Address: gateway, Data: data, Topics: []common.Hash{deploySig}})
-			continue
-		}
-
-		randDenom := rand.Str(4)
-		randGateway := common.BytesToAddress(rand.Bytes(common.AddressLength))
-		randAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
-		randData, err := args.Pack(randDenom, randAddr)
-		randTopic := common.BytesToHash(rand.Bytes(common.HashLength))
-		if err != nil {
-			panic(err)
-		}
-		logs = append(logs, &ethTypes.Log{Address: randGateway, Data: randData, Topics: []common.Hash{randTopic}})
-	}
-
-	return logs
 }

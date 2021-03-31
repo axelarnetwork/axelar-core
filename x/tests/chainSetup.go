@@ -244,6 +244,7 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 
 		registerTSSEventListeners(n, t)
 		registerBTCEventListener(n)
+		registerETHEventListener(n)
 		data = append(data, n)
 	}
 
@@ -273,9 +274,69 @@ func registerBTCEventListener(n nodeData) {
 		err := n.Broadcaster.Broadcast(n.Node.Ctx,
 			&btcTypes.MsgVoteConfirmOutpoint{
 				Sender:    n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal),
-				PollMeta:  poll,
+				Poll:      poll,
 				Confirmed: true,
 				OutPoint:  *out.OutPoint,
+			})
+		if err != nil {
+			panic(err)
+		}
+
+		return true
+	})
+}
+
+func registerETHEventListener(n nodeData) {
+	// register listener for deposit confirmation
+	n.Node.RegisterEventListener(func(event abci.Event) bool {
+		if event.Type != ethTypes.EventTypeDepositConfirmation {
+			return false
+		}
+
+		m := mapifyAttributes(event)
+		if m[sdk.AttributeKeyAction] != ethTypes.AttributeValueStart {
+			return false
+		}
+
+		var poll voting.PollMeta
+		testutils.Codec().MustUnmarshalJSON([]byte(m[ethTypes.AttributeKeyPoll]), &poll)
+
+		err := n.Broadcaster.Broadcast(n.Node.Ctx,
+			ethTypes.MsgVoteConfirmDeposit{
+				Sender:    n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal),
+				Poll:      poll,
+				Confirmed: true,
+				TxID:      m[ethTypes.AttributeKeyTxID],
+				BurnAddr:  m[ethTypes.AttributeKeyBurnAddress],
+			})
+		if err != nil {
+			panic(err)
+		}
+
+		return true
+	})
+
+	// register listener for token deploy confirmation
+	n.Node.RegisterEventListener(func(event abci.Event) bool {
+		if event.Type != ethTypes.EventTypeTokenConfirmation {
+			return false
+		}
+
+		m := mapifyAttributes(event)
+		if m[sdk.AttributeKeyAction] != ethTypes.AttributeValueStart {
+			return false
+		}
+
+		var poll voting.PollMeta
+		testutils.Codec().MustUnmarshalJSON([]byte(m[ethTypes.AttributeKeyPoll]), &poll)
+
+		err := n.Broadcaster.Broadcast(n.Node.Ctx,
+			ethTypes.MsgVoteConfirmToken{
+				Sender:    n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal),
+				Poll:      poll,
+				Confirmed: true,
+				TxID:      m[ethTypes.AttributeKeyTxID],
+				Symbol:    m[ethTypes.AttributeKeySymbol],
 			})
 		if err != nil {
 			panic(err)
@@ -316,7 +377,7 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd) {
 
 		pk := t.KeyGen(m[tssTypes.AttributeKeyKeyID]) // simulate correct keygen + vote
 		err := n.Broadcaster.Broadcast(n.Node.Ctx,
-			&tssTypes.MsgVotePubKey{
+			tssTypes.MsgVotePubKey{
 				Sender:      n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal),
 				PubKeyBytes: pk,
 				PollMeta: voting.NewPollMeta(
@@ -348,7 +409,7 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd) {
 		sig := t.Sign(m[tssTypes.AttributeKeySigID], m[tssTypes.AttributeKeyKeyID], []byte(m[tssTypes.AttributeKeyPayload]))
 
 		err := n.Broadcaster.Broadcast(n.Node.Ctx,
-			&tssTypes.MsgVoteSig{
+			tssTypes.MsgVoteSig{
 				Sender:   n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal),
 				SigBytes: sig,
 				PollMeta: voting.NewPollMeta(
@@ -364,7 +425,15 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd) {
 	})
 }
 
-func registerWaitEventListeners(n nodeData) (<-chan abci.Event, <-chan abci.Event, <-chan abci.Event, <-chan abci.Event) {
+type listeners struct {
+	keygenDone     <-chan abci.Event
+	signDone       <-chan abci.Event
+	btcDone        <-chan abci.Event
+	ethDepositDone <-chan abci.Event
+	ethTokenDone   <-chan abci.Event
+}
+
+func registerWaitEventListeners(n nodeData) listeners {
 	// register listener for keygen completion
 	keygenDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
 		return event.Type == tssTypes.EventTypePubKeyDecided
@@ -379,15 +448,33 @@ func registerWaitEventListeners(n nodeData) (<-chan abci.Event, <-chan abci.Even
 	})
 
 	// register eth listener for confirmation
-	ethConfirmDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
-		return event.Type == ethTypes.EventTypeDepositConfirmation
+	ethDepositDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
+		attributes := mapifyAttributes(event)
+		return event.Type == ethTypes.EventTypeDepositConfirmation &&
+			(attributes[sdk.AttributeKeyAction] == ethTypes.AttributeValueConfirm ||
+				attributes[sdk.AttributeKeyAction] == ethTypes.AttributeValueReject)
+	})
+
+	// register eth listener for confirmation
+	ethTokenDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
+		attributes := mapifyAttributes(event)
+		return event.Type == ethTypes.EventTypeTokenConfirmation &&
+			(attributes[sdk.AttributeKeyAction] == ethTypes.AttributeValueConfirm ||
+				attributes[sdk.AttributeKeyAction] == ethTypes.AttributeValueReject)
 	})
 
 	// register listener for sign completion
 	signDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
 		return event.Type == tssTypes.EventTypeSigDecided
 	})
-	return keygenDone, btcConfirmationDone, ethConfirmDone, signDone
+
+	return listeners{
+		keygenDone:     keygenDone,
+		signDone:       signDone,
+		btcDone:        btcConfirmationDone,
+		ethDepositDone: ethDepositDone,
+		ethTokenDone:   ethTokenDone,
+	}
 }
 
 func waitFor(eventDone <-chan abci.Event, repeats int) error {

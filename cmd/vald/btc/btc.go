@@ -47,7 +47,7 @@ func (mgr *Mgr) ProcessConfirmation(attributes []sdk.Attribute) error {
 	}
 	msg := btc.MsgVoteConfirmOutpoint{
 		Sender:    mgr.sender,
-		PollMeta:  poll,
+		Poll:      poll,
 		Confirmed: err == nil,
 		OutPoint:  *outPointInfo.OutPoint,
 	}

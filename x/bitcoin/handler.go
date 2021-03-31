@@ -118,14 +118,14 @@ func HandleMsgVoteConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, v types.Vo
 	// has the outpoint been confirmed before?
 	confirmedOutPointInfo, state, confirmedBefore := k.GetOutPointInfo(ctx, msg.OutPoint)
 	// is there an ongoing poll?
-	pendingOutPointInfo, pollFound := k.GetPendingOutPointInfo(ctx, msg.PollMeta)
+	pendingOutPointInfo, pollFound := k.GetPendingOutPointInfo(ctx, msg.Poll)
 
 	switch {
 	// a malicious user could try to delete an ongoing poll by providing an already confirmed outpoint,
 	// so we need to check that it matches the poll before deleting
 	case confirmedBefore && pollFound && pendingOutPointInfo.OutPoint.String() == confirmedOutPointInfo.OutPoint.String():
-		v.DeletePoll(ctx, msg.PollMeta)
-		k.DeletePendingOutPointInfo(ctx, msg.PollMeta)
+		v.DeletePoll(ctx, msg.Poll)
+		k.DeletePendingOutPointInfo(ctx, msg.Poll)
 		fallthrough
 	// If the voting threshold has been met and additional votes are received they should not return an error
 	case confirmedBefore:
@@ -138,18 +138,18 @@ func HandleMsgVoteConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, v types.Vo
 			panic(fmt.Sprintf("invalid outpoint state %v", state))
 		}
 	case !pollFound:
-		return nil, fmt.Errorf("no outpoint found for poll %s", msg.PollMeta.String())
+		return nil, fmt.Errorf("no outpoint found for poll %s", msg.Poll.String())
 	case pendingOutPointInfo.OutPoint.String() != msg.OutPoint.String():
-		return nil, fmt.Errorf("outpoint %s does not match poll %s", msg.OutPoint.String(), msg.PollMeta.String())
+		return nil, fmt.Errorf("outpoint %s does not match poll %s", msg.OutPoint.String(), msg.Poll.String())
 	default:
 		// assert: the outpoint is known and has not been confirmed before
 	}
 
-	if err := v.TallyVote(ctx, msg.Sender, msg.PollMeta, msg.Confirmed); err != nil {
+	if err := v.TallyVote(ctx, msg.Sender, msg.Poll, msg.Confirmed); err != nil {
 		return nil, err
 	}
 
-	result := v.Result(ctx, msg.PollMeta)
+	result := v.Result(ctx, msg.Poll)
 	if result == nil {
 		return &sdk.Result{Log: fmt.Sprintf("not enough votes to confirm outpoint %s yet", msg.OutPoint.String())}, nil
 	}
@@ -157,16 +157,16 @@ func HandleMsgVoteConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, v types.Vo
 	// assert: the poll has completed
 	confirmed, ok := result.(bool)
 	if !ok {
-		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", msg.PollMeta.String(), result)
+		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", msg.Poll.String(), result)
 	}
 
-	v.DeletePoll(ctx, msg.PollMeta)
-	k.DeletePendingOutPointInfo(ctx, msg.PollMeta)
+	v.DeletePoll(ctx, msg.Poll)
+	k.DeletePendingOutPointInfo(ctx, msg.Poll)
 
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeOutpointConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(msg.PollMeta))),
+		sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(msg.Poll))),
 		sdk.NewAttribute(types.AttributeKeyOutPointInfo, string(k.Codec().MustMarshalJSON(pendingOutPointInfo))))
 
 	if !confirmed {

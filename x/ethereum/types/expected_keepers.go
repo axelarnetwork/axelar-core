@@ -22,6 +22,9 @@ type EthKeeper interface {
 	GetRequiredConfirmationHeight(ctx sdk.Context) uint64
 	GetTokenDeploySignature(ctx sdk.Context) common.Hash
 	Codec() *codec.Codec
+	GetDeposit(ctx sdk.Context, txID string, burnerAddr string) (ERC20Deposit, DepositState, bool)
+	GetBurnerInfo(ctx sdk.Context, address common.Address) *BurnerInfo
+	SetPendingDeposit(ctx sdk.Context, poll vote.PollMeta, deposit *ERC20Deposit)
 }
 
 // Voter wraps around the existing vote.Voter interface to adhere to the Cosmos convention of keeping all

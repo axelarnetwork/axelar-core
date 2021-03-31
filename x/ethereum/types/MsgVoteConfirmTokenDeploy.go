@@ -11,20 +11,10 @@ import (
 // MsgVoteConfirmToken represents a message that votes on a token deploy
 type MsgVoteConfirmToken struct {
 	Sender    sdk.AccAddress
-	PollMeta  exported.PollMeta
+	Poll      exported.PollMeta
 	TxID      string
 	Symbol    string
 	Confirmed bool
-}
-
-// Poll returns the poll this message votes on
-func (msg MsgVoteConfirmToken) Poll() exported.PollMeta {
-	return msg.PollMeta
-}
-
-// Data returns the data this message is voting for
-func (msg *MsgVoteConfirmToken) Data() exported.VotingData {
-	return msg.Confirmed
 }
 
 // Route returns the route for this message
@@ -45,7 +35,7 @@ func (msg MsgVoteConfirmToken) ValidateBasic() error {
 	if msg.TxID == "" {
 		return fmt.Errorf("tx ID missing")
 	}
-	return msg.PollMeta.Validate()
+	return msg.Poll.Validate()
 }
 
 // GetSignBytes returns the message bytes that need to be signed

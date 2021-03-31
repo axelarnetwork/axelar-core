@@ -151,21 +151,6 @@ func (msg MsgVotePubKey) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }
 
-// SetSender sets the sender of this message
-func (msg *MsgVotePubKey) SetSender(address sdk.AccAddress) {
-	msg.Sender = address
-}
-
-// Poll returns the poll this message votes on
-func (msg MsgVotePubKey) Poll() voting.PollMeta {
-	return msg.PollMeta
-}
-
-// Data represents the data value this message votes for
-func (msg MsgVotePubKey) Data() voting.VotingData {
-	return msg.PubKeyBytes
-}
-
 // MsgVoteSig represents a message to vote for a signature
 type MsgVoteSig struct {
 	Sender   sdk.AccAddress
@@ -207,19 +192,4 @@ func (msg MsgVoteSig) GetSignBytes() []byte {
 // GetSigners returns the set of signers for this message
 func (msg MsgVoteSig) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
-}
-
-// SetSender sets the sender of this message
-func (msg *MsgVoteSig) SetSender(address sdk.AccAddress) {
-	msg.Sender = address
-}
-
-// Poll returns the poll this message votes on
-func (msg MsgVoteSig) Poll() voting.PollMeta {
-	return msg.PollMeta
-}
-
-// Data returns the data value this message votes for
-func (msg MsgVoteSig) Data() voting.VotingData {
-	return msg.SigBytes
 }

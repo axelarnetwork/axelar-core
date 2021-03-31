@@ -12,7 +12,7 @@ import (
 // MsgVoteConfirmOutpoint represents a message to that votes on an outpoint
 type MsgVoteConfirmOutpoint struct {
 	Sender    sdk.AccAddress
-	PollMeta  exported.PollMeta
+	Poll      exported.PollMeta
 	OutPoint  wire.OutPoint
 	Confirmed bool
 }
@@ -32,7 +32,7 @@ func (msg MsgVoteConfirmOutpoint) ValidateBasic() error {
 	if msg.Sender == nil {
 		return fmt.Errorf("missing sender")
 	}
-	return msg.PollMeta.Validate()
+	return msg.Poll.Validate()
 }
 
 // GetSignBytes returns the message bytes that need to be signed

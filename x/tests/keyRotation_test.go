@@ -59,7 +59,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	// set up chain
 	const nodeCount = 10
 	chain, nodeData := initChain(nodeCount, "keyRotation")
-	keygenDone, btcConfirmDone, ethConfirmDone, signDone := registerWaitEventListeners(nodeData[0])
+	listeners := registerWaitEventListeners(nodeData[0])
 
 	// register proxies for all validators
 	for i, proxy := range randStrings.Take(nodeCount) {
@@ -75,7 +75,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, keygenResult1.Error)
 
 	// wait for voting to be done
-	if err := waitFor(keygenDone, 1); err != nil {
+	if err := waitFor(listeners.keygenDone, 1); err != nil {
 		assert.FailNow(t, "keygen", err)
 	}
 	// assign chain master key
@@ -110,7 +110,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, deployGatewayResult.Error)
 
 	// wait for voting to be done (signing takes longer to tally up)
-	if err := waitFor(signDone, 1); err != nil {
+	if err := waitFor(listeners.signDone, 1); err != nil {
 		assert.FailNow(t, "signing", err)
 	}
 
@@ -125,7 +125,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, deployTokenResult.Error)
 
 	// wait for voting to be done (signing takes longer to tally up)
-	if err := waitFor(signDone, 1); err != nil {
+	if err := waitFor(listeners.signDone, 1); err != nil {
 		assert.FailNow(t, "signing", err)
 	}
 
@@ -183,7 +183,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	confirmResult1 := <-chain.Submit(ethTypes.NewMsgConfirmERC20TokenDeploy(randomSender(), txHash, "satoshi"))
 	assert.NoError(t, confirmResult1.Error)
 
-	if err := waitFor(ethConfirmDone, 1); err != nil {
+	if err := waitFor(listeners.ethTokenDone, 1); err != nil {
 		assert.FailNow(t, "confirmation", err)
 	}
 
@@ -212,7 +212,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	// wait for voting to be done
-	if err := waitFor(btcConfirmDone, totalDepositCount); err != nil {
+	if err := waitFor(listeners.btcDone, totalDepositCount); err != nil {
 		assert.FailNow(t, "confirmation", err)
 	}
 
@@ -222,7 +222,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, keygenResult2.Error)
 
 	// wait for voting to be done
-	if err := waitFor(keygenDone, 1); err != nil {
+	if err := waitFor(listeners.keygenDone, 1); err != nil {
 		assert.FailNow(t, "keygen", err)
 	}
 
@@ -236,7 +236,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, signResult.Error)
 
 	// wait for voting to be done
-	if err := waitFor(signDone, totalDepositCount); err != nil {
+	if err := waitFor(listeners.signDone, totalDepositCount); err != nil {
 		assert.FailNow(t, "signing", err)
 	}
 
@@ -269,7 +269,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, confirmResult2.Error)
 
 	// wait for voting to be done
-	if err := waitFor(btcConfirmDone, 1); err != nil {
+	if err := waitFor(listeners.btcDone, 1); err != nil {
 		assert.FailNow(t, "confirmation", err)
 	}
 

@@ -180,7 +180,7 @@ func HandleMsgConfirmTokenDeploy(ctx sdk.Context, k types.EthKeeper, v types.Vot
 }
 
 // HandleMsgConfirmDeposit handles deposit confirmations
-func HandleMsgConfirmDeposit(ctx sdk.Context, k keeper.Keeper, v types.Voter, signer types.Signer, msg types.MsgConfirmERC20Deposit) (*sdk.Result, error) {
+func HandleMsgConfirmDeposit(ctx sdk.Context, k types.EthKeeper, v types.Voter, signer types.Signer,msg types.MsgConfirmERC20Deposit) (*sdk.Result, error) {
 	_, state, ok := k.GetDeposit(ctx, msg.TxID, msg.BurnerAddr)
 	switch {
 	case !ok:
@@ -240,15 +240,15 @@ func HandleMsgConfirmDeposit(ctx sdk.Context, k keeper.Keeper, v types.Voter, si
 
 // HandleMsgVoteConfirmDeposit handles votes for deposit confirmations
 func HandleMsgVoteConfirmDeposit(ctx sdk.Context, k keeper.Keeper, v types.Voter, n types.Nexus, msg types.MsgVoteConfirmDeposit) (*sdk.Result, error) {
-	pendingDeposit, pollFound := k.GetPendingDeposit(ctx, msg.PollMeta)
+	pendingDeposit, pollFound := k.GetPendingDeposit(ctx, msg.Poll)
 	confirmedDeposit, state, confirmed := k.GetDeposit(ctx, msg.TxID, msg.BurnAddr)
 
 	switch {
 	// a malicious user could try to delete an ongoing poll by providing an already confirmed token,
 	// so we need to check that it matches the poll before deleting
 	case confirmed && pollFound && confirmedDeposit == pendingDeposit:
-		v.DeletePoll(ctx, msg.PollMeta)
-		k.DeletePendingDeposit(ctx, msg.PollMeta)
+		v.DeletePoll(ctx, msg.Poll)
+		k.DeletePendingDeposit(ctx, msg.Poll)
 		fallthrough
 	// If the voting threshold has been met and additional votes are received they should not return an error
 	case confirmed:
@@ -259,18 +259,18 @@ func HandleMsgVoteConfirmDeposit(ctx sdk.Context, k keeper.Keeper, v types.Voter
 			return &sdk.Result{Log: fmt.Sprintf("deposit in %s to address %s already spent", pendingDeposit.TxID, pendingDeposit.BurnerAddr)}, nil
 		}
 	case !pollFound:
-		return nil, fmt.Errorf("no deposit found for poll %s", msg.PollMeta.String())
+		return nil, fmt.Errorf("no deposit found for poll %s", msg.Poll.String())
 	case pendingDeposit.BurnerAddr != msg.BurnAddr || pendingDeposit.TxID.Hex() != msg.TxID:
-		return nil, fmt.Errorf("deposit in %s to address %s does not match poll %s", msg.TxID, msg.BurnAddr, msg.PollMeta.String())
+		return nil, fmt.Errorf("deposit in %s to address %s does not match poll %s", msg.TxID, msg.BurnAddr, msg.Poll.String())
 	default:
 		// assert: the deposit is known and has not been confirmed before
 	}
 
-	if err := v.TallyVote(ctx, msg.Sender, msg.PollMeta, msg.Confirmed); err != nil {
+	if err := v.TallyVote(ctx, msg.Sender, msg.Poll, msg.Confirmed); err != nil {
 		return nil, err
 	}
 
-	result := v.Result(ctx, msg.PollMeta)
+	result := v.Result(ctx, msg.Poll)
 	if result == nil {
 		return &sdk.Result{Log: fmt.Sprintf("not enough votes to confirm deposit in %s to %s yet", msg.TxID, msg.BurnAddr)}, nil
 	}
@@ -278,16 +278,16 @@ func HandleMsgVoteConfirmDeposit(ctx sdk.Context, k keeper.Keeper, v types.Voter
 	// assert: the poll has completed
 	confirmed, ok := result.(bool)
 	if !ok {
-		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", msg.PollMeta.String(), result)
+		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", msg.Poll.String(), result)
 	}
 
-	v.DeletePoll(ctx, msg.PollMeta)
-	k.DeletePendingDeposit(ctx, msg.PollMeta)
+	v.DeletePoll(ctx, msg.Poll)
+	k.DeletePendingDeposit(ctx, msg.Poll)
 
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeDepositConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(msg.PollMeta))))
+		sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(msg.Poll))))
 
 	if !confirmed {
 		ctx.EventManager().EmitEvent(
@@ -313,31 +313,31 @@ func HandleMsgVoteConfirmDeposit(ctx sdk.Context, k keeper.Keeper, v types.Voter
 // HandleMsgVoteConfirmToken handles votes for token deployment confirmations
 func HandleMsgVoteConfirmToken(ctx sdk.Context, k keeper.Keeper, v types.Voter, n types.Nexus, msg types.MsgVoteConfirmToken) (*sdk.Result, error) {
 	// is there an ongoing poll?
-	token, pollFound := k.GetPendingTokenDeploy(ctx, msg.PollMeta)
+	token, pollFound := k.GetPendingTokenDeploy(ctx, msg.Poll)
 	registered := n.IsAssetRegistered(ctx, exported.Ethereum.Name, msg.Symbol)
 	switch {
 	// a malicious user could try to delete an ongoing poll by providing an already confirmed token,
 	// so we need to check that it matches the poll before deleting
 	case registered && pollFound && token.Symbol == msg.Symbol:
-		v.DeletePoll(ctx, msg.PollMeta)
-		k.DeletePendingToken(ctx, msg.PollMeta)
+		v.DeletePoll(ctx, msg.Poll)
+		k.DeletePendingToken(ctx, msg.Poll)
 		fallthrough
 	// If the voting threshold has been met and additional votes are received they should not return an error
 	case registered:
 		return &sdk.Result{Log: fmt.Sprintf("token %s already confirmed", msg.Symbol)}, nil
 	case !pollFound:
-		return nil, fmt.Errorf("no token found for poll %s", msg.PollMeta.String())
+		return nil, fmt.Errorf("no token found for poll %s", msg.Poll.String())
 	case token.Symbol != msg.Symbol:
-		return nil, fmt.Errorf("token %s does not match poll %s", msg.Symbol, msg.PollMeta.String())
+		return nil, fmt.Errorf("token %s does not match poll %s", msg.Symbol, msg.Poll.String())
 	default:
 		// assert: the token is known and has not been confirmed before
 	}
 
-	if err := v.TallyVote(ctx, msg.Sender, msg.PollMeta, msg.Confirmed); err != nil {
+	if err := v.TallyVote(ctx, msg.Sender, msg.Poll, msg.Confirmed); err != nil {
 		return nil, err
 	}
 
-	result := v.Result(ctx, msg.PollMeta)
+	result := v.Result(ctx, msg.Poll)
 	if result == nil {
 		return &sdk.Result{Log: fmt.Sprintf("not enough votes to confirm token %s yet", msg.Symbol)}, nil
 	}
@@ -345,16 +345,16 @@ func HandleMsgVoteConfirmToken(ctx sdk.Context, k keeper.Keeper, v types.Voter, 
 	// assert: the poll has completed
 	confirmed, ok := result.(bool)
 	if !ok {
-		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", msg.PollMeta.String(), result)
+		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", msg.Poll.String(), result)
 	}
 
-	v.DeletePoll(ctx, msg.PollMeta)
-	k.DeletePendingToken(ctx, msg.PollMeta)
+	v.DeletePoll(ctx, msg.Poll)
+	k.DeletePendingToken(ctx, msg.Poll)
 
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeTokenConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(msg.PollMeta))))
+		sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(msg.Poll))))
 
 	if !confirmed {
 		ctx.EventManager().EmitEvent(

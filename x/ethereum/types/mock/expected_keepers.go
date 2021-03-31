@@ -1235,6 +1235,12 @@ var _ types.EthKeeper = &EthKeeperMock{}
 // 			CodecFunc: func() *amino.Codec {
 // 				panic("mock out the Codec method")
 // 			},
+// 			GetBurnerInfoFunc: func(ctx sdk.Context, address common.Address) *types.BurnerInfo {
+// 				panic("mock out the GetBurnerInfo method")
+// 			},
+// 			GetDepositFunc: func(ctx sdk.Context, txID string, burnerAddr string) (types.ERC20Deposit, types.DepositState, bool) {
+// 				panic("mock out the GetDeposit method")
+// 			},
 // 			GetGatewayAddressFunc: func(ctx sdk.Context) (common.Address, bool) {
 // 				panic("mock out the GetGatewayAddress method")
 // 			},
@@ -1250,6 +1256,9 @@ var _ types.EthKeeper = &EthKeeperMock{}
 // 			GetTokenDeploySignatureFunc: func(ctx sdk.Context) common.Hash {
 // 				panic("mock out the GetTokenDeploySignature method")
 // 			},
+// 			SetPendingDepositFunc: func(ctx sdk.Context, poll vote.PollMeta, deposit *types.ERC20Deposit)  {
+// 				panic("mock out the SetPendingDeposit method")
+// 			},
 // 			SetPendingTokenDeployFunc: func(ctx sdk.Context, poll vote.PollMeta, tokenDeploy types.ERC20TokenDeploy)  {
 // 				panic("mock out the SetPendingTokenDeploy method")
 // 			},
@@ -1262,6 +1271,12 @@ var _ types.EthKeeper = &EthKeeperMock{}
 type EthKeeperMock struct {
 	// CodecFunc mocks the Codec method.
 	CodecFunc func() *amino.Codec
+
+	// GetBurnerInfoFunc mocks the GetBurnerInfo method.
+	GetBurnerInfoFunc func(ctx sdk.Context, address common.Address) *types.BurnerInfo
+
+	// GetDepositFunc mocks the GetDeposit method.
+	GetDepositFunc func(ctx sdk.Context, txID string, burnerAddr string) (types.ERC20Deposit, types.DepositState, bool)
 
 	// GetGatewayAddressFunc mocks the GetGatewayAddress method.
 	GetGatewayAddressFunc func(ctx sdk.Context) (common.Address, bool)
@@ -1278,6 +1293,9 @@ type EthKeeperMock struct {
 	// GetTokenDeploySignatureFunc mocks the GetTokenDeploySignature method.
 	GetTokenDeploySignatureFunc func(ctx sdk.Context) common.Hash
 
+	// SetPendingDepositFunc mocks the SetPendingDeposit method.
+	SetPendingDepositFunc func(ctx sdk.Context, poll vote.PollMeta, deposit *types.ERC20Deposit)
+
 	// SetPendingTokenDeployFunc mocks the SetPendingTokenDeploy method.
 	SetPendingTokenDeployFunc func(ctx sdk.Context, poll vote.PollMeta, tokenDeploy types.ERC20TokenDeploy)
 
@@ -1285,6 +1303,22 @@ type EthKeeperMock struct {
 	calls struct {
 		// Codec holds details about calls to the Codec method.
 		Codec []struct {
+		}
+		// GetBurnerInfo holds details about calls to the GetBurnerInfo method.
+		GetBurnerInfo []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Address is the address argument value.
+			Address common.Address
+		}
+		// GetDeposit holds details about calls to the GetDeposit method.
+		GetDeposit []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// TxID is the txID argument value.
+			TxID string
+			// BurnerAddr is the burnerAddr argument value.
+			BurnerAddr string
 		}
 		// GetGatewayAddress holds details about calls to the GetGatewayAddress method.
 		GetGatewayAddress []struct {
@@ -1315,6 +1349,15 @@ type EthKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 		}
+		// SetPendingDeposit holds details about calls to the SetPendingDeposit method.
+		SetPendingDeposit []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Poll is the poll argument value.
+			Poll vote.PollMeta
+			// Deposit is the deposit argument value.
+			Deposit *types.ERC20Deposit
+		}
 		// SetPendingTokenDeploy holds details about calls to the SetPendingTokenDeploy method.
 		SetPendingTokenDeploy []struct {
 			// Ctx is the ctx argument value.
@@ -1326,11 +1369,14 @@ type EthKeeperMock struct {
 		}
 	}
 	lockCodec                         sync.RWMutex
+	lockGetBurnerInfo                 sync.RWMutex
+	lockGetDeposit                    sync.RWMutex
 	lockGetGatewayAddress             sync.RWMutex
 	lockGetRequiredConfirmationHeight sync.RWMutex
 	lockGetRevoteLockingPeriod        sync.RWMutex
 	lockGetTokenAddress               sync.RWMutex
 	lockGetTokenDeploySignature       sync.RWMutex
+	lockSetPendingDeposit             sync.RWMutex
 	lockSetPendingTokenDeploy         sync.RWMutex
 }
 
@@ -1357,6 +1403,80 @@ func (mock *EthKeeperMock) CodecCalls() []struct {
 	mock.lockCodec.RLock()
 	calls = mock.calls.Codec
 	mock.lockCodec.RUnlock()
+	return calls
+}
+
+// GetBurnerInfo calls GetBurnerInfoFunc.
+func (mock *EthKeeperMock) GetBurnerInfo(ctx sdk.Context, address common.Address) *types.BurnerInfo {
+	if mock.GetBurnerInfoFunc == nil {
+		panic("EthKeeperMock.GetBurnerInfoFunc: method is nil but EthKeeper.GetBurnerInfo was just called")
+	}
+	callInfo := struct {
+		Ctx     sdk.Context
+		Address common.Address
+	}{
+		Ctx:     ctx,
+		Address: address,
+	}
+	mock.lockGetBurnerInfo.Lock()
+	mock.calls.GetBurnerInfo = append(mock.calls.GetBurnerInfo, callInfo)
+	mock.lockGetBurnerInfo.Unlock()
+	return mock.GetBurnerInfoFunc(ctx, address)
+}
+
+// GetBurnerInfoCalls gets all the calls that were made to GetBurnerInfo.
+// Check the length with:
+//     len(mockedEthKeeper.GetBurnerInfoCalls())
+func (mock *EthKeeperMock) GetBurnerInfoCalls() []struct {
+	Ctx     sdk.Context
+	Address common.Address
+} {
+	var calls []struct {
+		Ctx     sdk.Context
+		Address common.Address
+	}
+	mock.lockGetBurnerInfo.RLock()
+	calls = mock.calls.GetBurnerInfo
+	mock.lockGetBurnerInfo.RUnlock()
+	return calls
+}
+
+// GetDeposit calls GetDepositFunc.
+func (mock *EthKeeperMock) GetDeposit(ctx sdk.Context, txID string, burnerAddr string) (types.ERC20Deposit, types.DepositState, bool) {
+	if mock.GetDepositFunc == nil {
+		panic("EthKeeperMock.GetDepositFunc: method is nil but EthKeeper.GetDeposit was just called")
+	}
+	callInfo := struct {
+		Ctx        sdk.Context
+		TxID       string
+		BurnerAddr string
+	}{
+		Ctx:        ctx,
+		TxID:       txID,
+		BurnerAddr: burnerAddr,
+	}
+	mock.lockGetDeposit.Lock()
+	mock.calls.GetDeposit = append(mock.calls.GetDeposit, callInfo)
+	mock.lockGetDeposit.Unlock()
+	return mock.GetDepositFunc(ctx, txID, burnerAddr)
+}
+
+// GetDepositCalls gets all the calls that were made to GetDeposit.
+// Check the length with:
+//     len(mockedEthKeeper.GetDepositCalls())
+func (mock *EthKeeperMock) GetDepositCalls() []struct {
+	Ctx        sdk.Context
+	TxID       string
+	BurnerAddr string
+} {
+	var calls []struct {
+		Ctx        sdk.Context
+		TxID       string
+		BurnerAddr string
+	}
+	mock.lockGetDeposit.RLock()
+	calls = mock.calls.GetDeposit
+	mock.lockGetDeposit.RUnlock()
 	return calls
 }
 
@@ -1520,6 +1640,45 @@ func (mock *EthKeeperMock) GetTokenDeploySignatureCalls() []struct {
 	mock.lockGetTokenDeploySignature.RLock()
 	calls = mock.calls.GetTokenDeploySignature
 	mock.lockGetTokenDeploySignature.RUnlock()
+	return calls
+}
+
+// SetPendingDeposit calls SetPendingDepositFunc.
+func (mock *EthKeeperMock) SetPendingDeposit(ctx sdk.Context, poll vote.PollMeta, deposit *types.ERC20Deposit) {
+	if mock.SetPendingDepositFunc == nil {
+		panic("EthKeeperMock.SetPendingDepositFunc: method is nil but EthKeeper.SetPendingDeposit was just called")
+	}
+	callInfo := struct {
+		Ctx     sdk.Context
+		Poll    vote.PollMeta
+		Deposit *types.ERC20Deposit
+	}{
+		Ctx:     ctx,
+		Poll:    poll,
+		Deposit: deposit,
+	}
+	mock.lockSetPendingDeposit.Lock()
+	mock.calls.SetPendingDeposit = append(mock.calls.SetPendingDeposit, callInfo)
+	mock.lockSetPendingDeposit.Unlock()
+	mock.SetPendingDepositFunc(ctx, poll, deposit)
+}
+
+// SetPendingDepositCalls gets all the calls that were made to SetPendingDeposit.
+// Check the length with:
+//     len(mockedEthKeeper.SetPendingDepositCalls())
+func (mock *EthKeeperMock) SetPendingDepositCalls() []struct {
+	Ctx     sdk.Context
+	Poll    vote.PollMeta
+	Deposit *types.ERC20Deposit
+} {
+	var calls []struct {
+		Ctx     sdk.Context
+		Poll    vote.PollMeta
+		Deposit *types.ERC20Deposit
+	}
+	mock.lockSetPendingDeposit.RLock()
+	calls = mock.calls.SetPendingDeposit
+	mock.lockSetPendingDeposit.RUnlock()
 	return calls
 }
 

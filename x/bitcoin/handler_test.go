@@ -616,7 +616,7 @@ func randomMsgConfirmOutpoint() types.MsgConfirmOutpoint {
 func randomMsgVoteConfirmOutpoint() types.MsgVoteConfirmOutpoint {
 	return types.MsgVoteConfirmOutpoint{
 		Sender: sdk.AccAddress(rand.StrBetween(5, 20)),
-		PollMeta: vote.PollMeta{
+		Poll: vote.PollMeta{
 			Module: types.ModuleName,
 			Type:   rand.StrBetween(5, 20),
 			ID:     rand.StrBetween(5, 20),

@@ -45,7 +45,7 @@ func Test_wBTC_mint(t *testing.T) {
 
 	// create a chain with nodes and assign them as validators
 	chain, nodeData := initChain(nodeCount, "mint")
-	keygenDone, btcConfirmDone, ethConfirmDone, signDone := registerWaitEventListeners(nodeData[0])
+	listeners := registerWaitEventListeners(nodeData[0])
 
 	// register proxies for all validators
 	for i, proxy := range randStrings.Take(nodeCount) {
@@ -64,7 +64,7 @@ func Test_wBTC_mint(t *testing.T) {
 	assert.NoError(t, ethKeygenResult.Error)
 
 	// wait for voting to be done
-	if err := waitFor(keygenDone, 2); err != nil {
+	if err := waitFor(listeners.keygenDone, 2); err != nil {
 		assert.FailNow(t, "keygen", err)
 	}
 
@@ -76,7 +76,7 @@ func Test_wBTC_mint(t *testing.T) {
 	assert.NoError(t, keygenResult1.Error)
 
 	// wait for voting to be done
-	if err := waitFor(keygenDone, 1); err != nil {
+	if err := waitFor(listeners.keygenDone, 1); err != nil {
 		assert.FailNow(t, "keygen", err)
 	}
 	// assign chain master key
@@ -111,7 +111,7 @@ func Test_wBTC_mint(t *testing.T) {
 	assert.NoError(t, deployGatewayResult.Error)
 
 	// wait for voting to be done (signing takes longer to tally up)
-	if err := waitFor(signDone, 1); err != nil {
+	if err := waitFor(listeners.signDone, 1); err != nil {
 		assert.FailNow(t, "signing", err)
 	}
 
@@ -126,7 +126,7 @@ func Test_wBTC_mint(t *testing.T) {
 	assert.NoError(t, deployTokenResult.Error)
 
 	// wait for voting to be done (signing takes longer to tally up)
-	if err := waitFor(signDone, 1); err != nil {
+	if err := waitFor(listeners.signDone, 1); err != nil {
 		assert.FailNow(t, "signing", err)
 	}
 
@@ -184,7 +184,7 @@ func Test_wBTC_mint(t *testing.T) {
 	confirmResult := <-chain.Submit(ethTypes.NewMsgConfirmERC20TokenDeploy(randomSender(), txHash, "satoshi"))
 	assert.NoError(t, confirmResult.Error)
 
-	if err := waitFor(ethConfirmDone, 1); err != nil {
+	if err := waitFor(listeners.ethTokenDone, 1); err != nil {
 		assert.FailNow(t, "confirmation", err)
 	}
 
@@ -208,7 +208,7 @@ func Test_wBTC_mint(t *testing.T) {
 	}
 
 	// Wait until confirm is complete
-	if err := waitFor(btcConfirmDone, totalDepositCount); err != nil {
+	if err := waitFor(listeners.btcDone, totalDepositCount); err != nil {
 		assert.FailNow(t, "confirmation", err)
 	}
 
@@ -219,7 +219,7 @@ func Test_wBTC_mint(t *testing.T) {
 	commandID2 := common.BytesToHash(res.Data)
 
 	// wait for voting to be done (signing takes longer to tally up)
-	if err := waitFor(signDone, 1); err != nil {
+	if err := waitFor(listeners.signDone, 1); err != nil {
 		assert.FailNow(t, "signing", err)
 	}
 

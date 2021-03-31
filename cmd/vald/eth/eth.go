@@ -58,7 +58,7 @@ func (mgr Mgr) ProccessDepositConfirmation(attributes []sdk.Attribute) (err erro
 
 	msg := ethTypes.MsgVoteConfirmDeposit{
 		Sender:    mgr.sender,
-		PollMeta:  poll,
+		Poll:      poll,
 		TxID:      txID.Hex(),
 		BurnAddr:  burnAddr.Hex(),
 		Confirmed: confirmed,
@@ -82,7 +82,7 @@ func (mgr Mgr) ProccessTokenConfirmation(attributes []sdk.Attribute) error {
 
 	msg := ethTypes.MsgVoteConfirmToken{
 		Sender:    mgr.sender,
-		PollMeta:  poll,
+		Poll:      poll,
 		TxID:      txID.Hex(),
 		Confirmed: confirmed,
 	}

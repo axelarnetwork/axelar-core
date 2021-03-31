@@ -56,10 +56,3 @@ func (p PollMeta) Validate() error {
 
 	return nil
 }
-
-// Vote provides functionality to interact with a vote for a poll
-type Vote interface {
-	Poll() PollMeta
-	// Data returns the data that was voted on. Modules need to ensure they cast it back into the correct type
-	Data() VotingData
-}

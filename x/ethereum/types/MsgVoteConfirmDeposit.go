@@ -11,20 +11,10 @@ import (
 // MsgVoteConfirmDeposit represents a message that votes on a deposit
 type MsgVoteConfirmDeposit struct {
 	Sender    sdk.AccAddress
-	PollMeta  exported.PollMeta
+	Poll      exported.PollMeta
 	TxID      string
 	BurnAddr  string
 	Confirmed bool
-}
-
-// Poll returns the poll this message votes on
-func (msg MsgVoteConfirmDeposit) Poll() exported.PollMeta {
-	return msg.PollMeta
-}
-
-// Data returns the data this message is voting for
-func (msg *MsgVoteConfirmDeposit) Data() exported.VotingData {
-	return msg.Confirmed
 }
 
 // Route returns the route for this message
@@ -48,7 +38,7 @@ func (msg MsgVoteConfirmDeposit) ValidateBasic() error {
 	if msg.BurnAddr == "" {
 		return fmt.Errorf("burn address missing")
 	}
-	return msg.PollMeta.Validate()
+	return msg.Poll.Validate()
 }
 
 // GetSignBytes returns the message bytes that need to be signed
