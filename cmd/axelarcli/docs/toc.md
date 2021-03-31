@@ -95,8 +95,8 @@
       - [redelegate \[src-validator-addr\] \[dst-validator-addr\] \[amount\]](axelarcli_tx_staking_redelegate.md)	 - Redelegate illiquid tokens from one validator to another
       - [unbond \[validator-addr\] \[amount\]](axelarcli_tx_staking_unbond.md)	 - Unbond shares from a validator
     - [tss](axelarcli_tx_tss.md)	 - tss transactions subcommands
+      - [assign-next \[chain\] \[role\] \[keyID\]](axelarcli_tx_tss_assign-next.md)	 - Assigns a previously created key with \[keyID\] as the next key for \[chain\]
       - [deregister](axelarcli_tx_tss_deregister.md)	 - Deregister from participating in any future key generation
-      - [mk-assign-next \[chain\] \[keyID\]](axelarcli_tx_tss_mk-assign-next.md)	 - Assigns a previously created key with \[keyID\] as the next master key for \[chain\]
-      - [mk-rotate \[chain\]](axelarcli_tx_tss_mk-rotate.md)	 - Rotate the given chain from the old master key to the previously created one (see mk-refresh)
+      - [rotate \[chain\] \[role\]](axelarcli_tx_tss_rotate.md)	 - Rotate the given chain from the old key to the previously assigned one
       - [start-keygen](axelarcli_tx_tss_start-keygen.md)	 - Initiate threshold key generation protocol
   - [version](axelarcli_version.md)	 - Print the app version

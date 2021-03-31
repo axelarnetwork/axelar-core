@@ -110,6 +110,7 @@ func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context) tss.Key {
 		panic(err)
 	}
 	s.Keeper.SetKey(ctx, keyID, sk.PublicKey)
+
 	return tss.Key{
 		ID:    keyID,
 		Value: sk.PublicKey,
