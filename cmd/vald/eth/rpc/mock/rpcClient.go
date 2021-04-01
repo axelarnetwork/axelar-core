@@ -6,10 +6,8 @@ package mock
 import (
 	"context"
 	"github.com/axelarnetwork/axelar-core/cmd/vald/eth/rpc"
-	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"math/big"
 	"sync"
 )
 
@@ -26,24 +24,6 @@ var _ rpc.Client = &ClientMock{}
 // 			BlockNumberFunc: func(ctx context.Context) (uint64, error) {
 // 				panic("mock out the BlockNumber method")
 // 			},
-// 			ChainIDFunc: func(ctx context.Context) (*big.Int, error) {
-// 				panic("mock out the ChainID method")
-// 			},
-// 			EstimateGasFunc: func(ctx context.Context, msg ethereum.CallMsg) (uint64, error) {
-// 				panic("mock out the EstimateGas method")
-// 			},
-// 			PendingNonceAtFunc: func(ctx context.Context, account common.Address) (uint64, error) {
-// 				panic("mock out the PendingNonceAt method")
-// 			},
-// 			SendAndSignTransactionFunc: func(ctx context.Context, msg ethereum.CallMsg) (string, error) {
-// 				panic("mock out the SendAndSignTransaction method")
-// 			},
-// 			SendTransactionFunc: func(ctx context.Context, tx *types.Transaction) error {
-// 				panic("mock out the SendTransaction method")
-// 			},
-// 			SuggestGasPriceFunc: func(ctx context.Context) (*big.Int, error) {
-// 				panic("mock out the SuggestGasPrice method")
-// 			},
 // 			TransactionReceiptFunc: func(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
 // 				panic("mock out the TransactionReceipt method")
 // 			},
@@ -57,24 +37,6 @@ type ClientMock struct {
 	// BlockNumberFunc mocks the BlockNumber method.
 	BlockNumberFunc func(ctx context.Context) (uint64, error)
 
-	// ChainIDFunc mocks the ChainID method.
-	ChainIDFunc func(ctx context.Context) (*big.Int, error)
-
-	// EstimateGasFunc mocks the EstimateGas method.
-	EstimateGasFunc func(ctx context.Context, msg ethereum.CallMsg) (uint64, error)
-
-	// PendingNonceAtFunc mocks the PendingNonceAt method.
-	PendingNonceAtFunc func(ctx context.Context, account common.Address) (uint64, error)
-
-	// SendAndSignTransactionFunc mocks the SendAndSignTransaction method.
-	SendAndSignTransactionFunc func(ctx context.Context, msg ethereum.CallMsg) (string, error)
-
-	// SendTransactionFunc mocks the SendTransaction method.
-	SendTransactionFunc func(ctx context.Context, tx *types.Transaction) error
-
-	// SuggestGasPriceFunc mocks the SuggestGasPrice method.
-	SuggestGasPriceFunc func(ctx context.Context) (*big.Int, error)
-
 	// TransactionReceiptFunc mocks the TransactionReceipt method.
 	TransactionReceiptFunc func(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
 
@@ -82,44 +44,6 @@ type ClientMock struct {
 	calls struct {
 		// BlockNumber holds details about calls to the BlockNumber method.
 		BlockNumber []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-		}
-		// ChainID holds details about calls to the ChainID method.
-		ChainID []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-		}
-		// EstimateGas holds details about calls to the EstimateGas method.
-		EstimateGas []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// Msg is the msg argument value.
-			Msg ethereum.CallMsg
-		}
-		// PendingNonceAt holds details about calls to the PendingNonceAt method.
-		PendingNonceAt []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// Account is the account argument value.
-			Account common.Address
-		}
-		// SendAndSignTransaction holds details about calls to the SendAndSignTransaction method.
-		SendAndSignTransaction []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// Msg is the msg argument value.
-			Msg ethereum.CallMsg
-		}
-		// SendTransaction holds details about calls to the SendTransaction method.
-		SendTransaction []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// Tx is the tx argument value.
-			Tx *types.Transaction
-		}
-		// SuggestGasPrice holds details about calls to the SuggestGasPrice method.
-		SuggestGasPrice []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 		}
@@ -131,14 +55,8 @@ type ClientMock struct {
 			TxHash common.Hash
 		}
 	}
-	lockBlockNumber            sync.RWMutex
-	lockChainID                sync.RWMutex
-	lockEstimateGas            sync.RWMutex
-	lockPendingNonceAt         sync.RWMutex
-	lockSendAndSignTransaction sync.RWMutex
-	lockSendTransaction        sync.RWMutex
-	lockSuggestGasPrice        sync.RWMutex
-	lockTransactionReceipt     sync.RWMutex
+	lockBlockNumber        sync.RWMutex
+	lockTransactionReceipt sync.RWMutex
 }
 
 // BlockNumber calls BlockNumberFunc.
@@ -169,208 +87,6 @@ func (mock *ClientMock) BlockNumberCalls() []struct {
 	mock.lockBlockNumber.RLock()
 	calls = mock.calls.BlockNumber
 	mock.lockBlockNumber.RUnlock()
-	return calls
-}
-
-// ChainID calls ChainIDFunc.
-func (mock *ClientMock) ChainID(ctx context.Context) (*big.Int, error) {
-	if mock.ChainIDFunc == nil {
-		panic("ClientMock.ChainIDFunc: method is nil but Client.ChainID was just called")
-	}
-	callInfo := struct {
-		Ctx context.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockChainID.Lock()
-	mock.calls.ChainID = append(mock.calls.ChainID, callInfo)
-	mock.lockChainID.Unlock()
-	return mock.ChainIDFunc(ctx)
-}
-
-// ChainIDCalls gets all the calls that were made to ChainID.
-// Check the length with:
-//     len(mockedClient.ChainIDCalls())
-func (mock *ClientMock) ChainIDCalls() []struct {
-	Ctx context.Context
-} {
-	var calls []struct {
-		Ctx context.Context
-	}
-	mock.lockChainID.RLock()
-	calls = mock.calls.ChainID
-	mock.lockChainID.RUnlock()
-	return calls
-}
-
-// EstimateGas calls EstimateGasFunc.
-func (mock *ClientMock) EstimateGas(ctx context.Context, msg ethereum.CallMsg) (uint64, error) {
-	if mock.EstimateGasFunc == nil {
-		panic("ClientMock.EstimateGasFunc: method is nil but Client.EstimateGas was just called")
-	}
-	callInfo := struct {
-		Ctx context.Context
-		Msg ethereum.CallMsg
-	}{
-		Ctx: ctx,
-		Msg: msg,
-	}
-	mock.lockEstimateGas.Lock()
-	mock.calls.EstimateGas = append(mock.calls.EstimateGas, callInfo)
-	mock.lockEstimateGas.Unlock()
-	return mock.EstimateGasFunc(ctx, msg)
-}
-
-// EstimateGasCalls gets all the calls that were made to EstimateGas.
-// Check the length with:
-//     len(mockedClient.EstimateGasCalls())
-func (mock *ClientMock) EstimateGasCalls() []struct {
-	Ctx context.Context
-	Msg ethereum.CallMsg
-} {
-	var calls []struct {
-		Ctx context.Context
-		Msg ethereum.CallMsg
-	}
-	mock.lockEstimateGas.RLock()
-	calls = mock.calls.EstimateGas
-	mock.lockEstimateGas.RUnlock()
-	return calls
-}
-
-// PendingNonceAt calls PendingNonceAtFunc.
-func (mock *ClientMock) PendingNonceAt(ctx context.Context, account common.Address) (uint64, error) {
-	if mock.PendingNonceAtFunc == nil {
-		panic("ClientMock.PendingNonceAtFunc: method is nil but Client.PendingNonceAt was just called")
-	}
-	callInfo := struct {
-		Ctx     context.Context
-		Account common.Address
-	}{
-		Ctx:     ctx,
-		Account: account,
-	}
-	mock.lockPendingNonceAt.Lock()
-	mock.calls.PendingNonceAt = append(mock.calls.PendingNonceAt, callInfo)
-	mock.lockPendingNonceAt.Unlock()
-	return mock.PendingNonceAtFunc(ctx, account)
-}
-
-// PendingNonceAtCalls gets all the calls that were made to PendingNonceAt.
-// Check the length with:
-//     len(mockedClient.PendingNonceAtCalls())
-func (mock *ClientMock) PendingNonceAtCalls() []struct {
-	Ctx     context.Context
-	Account common.Address
-} {
-	var calls []struct {
-		Ctx     context.Context
-		Account common.Address
-	}
-	mock.lockPendingNonceAt.RLock()
-	calls = mock.calls.PendingNonceAt
-	mock.lockPendingNonceAt.RUnlock()
-	return calls
-}
-
-// SendAndSignTransaction calls SendAndSignTransactionFunc.
-func (mock *ClientMock) SendAndSignTransaction(ctx context.Context, msg ethereum.CallMsg) (string, error) {
-	if mock.SendAndSignTransactionFunc == nil {
-		panic("ClientMock.SendAndSignTransactionFunc: method is nil but Client.SendAndSignTransaction was just called")
-	}
-	callInfo := struct {
-		Ctx context.Context
-		Msg ethereum.CallMsg
-	}{
-		Ctx: ctx,
-		Msg: msg,
-	}
-	mock.lockSendAndSignTransaction.Lock()
-	mock.calls.SendAndSignTransaction = append(mock.calls.SendAndSignTransaction, callInfo)
-	mock.lockSendAndSignTransaction.Unlock()
-	return mock.SendAndSignTransactionFunc(ctx, msg)
-}
-
-// SendAndSignTransactionCalls gets all the calls that were made to SendAndSignTransaction.
-// Check the length with:
-//     len(mockedClient.SendAndSignTransactionCalls())
-func (mock *ClientMock) SendAndSignTransactionCalls() []struct {
-	Ctx context.Context
-	Msg ethereum.CallMsg
-} {
-	var calls []struct {
-		Ctx context.Context
-		Msg ethereum.CallMsg
-	}
-	mock.lockSendAndSignTransaction.RLock()
-	calls = mock.calls.SendAndSignTransaction
-	mock.lockSendAndSignTransaction.RUnlock()
-	return calls
-}
-
-// SendTransaction calls SendTransactionFunc.
-func (mock *ClientMock) SendTransaction(ctx context.Context, tx *types.Transaction) error {
-	if mock.SendTransactionFunc == nil {
-		panic("ClientMock.SendTransactionFunc: method is nil but Client.SendTransaction was just called")
-	}
-	callInfo := struct {
-		Ctx context.Context
-		Tx  *types.Transaction
-	}{
-		Ctx: ctx,
-		Tx:  tx,
-	}
-	mock.lockSendTransaction.Lock()
-	mock.calls.SendTransaction = append(mock.calls.SendTransaction, callInfo)
-	mock.lockSendTransaction.Unlock()
-	return mock.SendTransactionFunc(ctx, tx)
-}
-
-// SendTransactionCalls gets all the calls that were made to SendTransaction.
-// Check the length with:
-//     len(mockedClient.SendTransactionCalls())
-func (mock *ClientMock) SendTransactionCalls() []struct {
-	Ctx context.Context
-	Tx  *types.Transaction
-} {
-	var calls []struct {
-		Ctx context.Context
-		Tx  *types.Transaction
-	}
-	mock.lockSendTransaction.RLock()
-	calls = mock.calls.SendTransaction
-	mock.lockSendTransaction.RUnlock()
-	return calls
-}
-
-// SuggestGasPrice calls SuggestGasPriceFunc.
-func (mock *ClientMock) SuggestGasPrice(ctx context.Context) (*big.Int, error) {
-	if mock.SuggestGasPriceFunc == nil {
-		panic("ClientMock.SuggestGasPriceFunc: method is nil but Client.SuggestGasPrice was just called")
-	}
-	callInfo := struct {
-		Ctx context.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockSuggestGasPrice.Lock()
-	mock.calls.SuggestGasPrice = append(mock.calls.SuggestGasPrice, callInfo)
-	mock.lockSuggestGasPrice.Unlock()
-	return mock.SuggestGasPriceFunc(ctx)
-}
-
-// SuggestGasPriceCalls gets all the calls that were made to SuggestGasPrice.
-// Check the length with:
-//     len(mockedClient.SuggestGasPriceCalls())
-func (mock *ClientMock) SuggestGasPriceCalls() []struct {
-	Ctx context.Context
-} {
-	var calls []struct {
-		Ctx context.Context
-	}
-	mock.lockSuggestGasPrice.RLock()
-	calls = mock.calls.SuggestGasPrice
-	mock.lockSuggestGasPrice.RUnlock()
 	return calls
 }
 

@@ -36,11 +36,10 @@ const (
 )
 
 var (
-	bytecodes   = common.FromHex(MymintableBin)
-	tokenBC     = rand.Bytes(64)
-	burnerBC    = rand.Bytes(64)
-	transferSig = rand.Bytes(64)
-	gateway     = "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7"
+	bytecodes = common.FromHex(MymintableBin)
+	tokenBC   = rand.Bytes(64)
+	burnerBC  = rand.Bytes(64)
+	gateway   = "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7"
 )
 
 func TestLink_NoGateway(t *testing.T) {
@@ -49,7 +48,7 @@ func TestLink_NoGateway(t *testing.T) {
 	cdc := testutils.Codec()
 	subspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
 	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"), subspace)
-	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(minConfHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, TokenDeploySig: transferSig, RevoteLockingPeriod: 50})
+	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(minConfHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, RevoteLockingPeriod: 50})
 
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
 	symbol := rand.Str(3)
@@ -290,7 +289,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		k   *ethMock.EthKeeperMock
 		v   *ethMock.VoterMock
 		n   *ethMock.NexusMock
-		msg types.MsgConfirmERC20TokenDeploy
+		msg types.MsgConfirmToken
 	)
 	setup := func() {
 		ctx = sdk.NewContext(nil, abci.Header{}, false, log.TestingLogger())
@@ -304,12 +303,11 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			GetRevoteLockingPeriodFunc:        func(ctx sdk.Context) int64 { return rand.PosI64() },
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) uint64 { return mathRand.Uint64() },
 			SetPendingTokenDeployFunc:         func(sdk.Context, vote.PollMeta, types.ERC20TokenDeploy) {},
-			GetTokenDeploySignatureFunc:       func(sdk.Context) common.Hash { return common.BytesToHash(rand.Bytes(common.HashLength)) },
 			CodecFunc:                         func() *amino.Codec { return testutils.Codec() },
 		}
 		v = &ethMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta) error { return nil }}
 		n = &ethMock.NexusMock{IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return false }}
-		msg = types.MsgConfirmERC20TokenDeploy{
+		msg = types.MsgConfirmToken{
 			Sender: rand.Bytes(20),
 			TxID:   common.BytesToHash(rand.Bytes(common.HashLength)).Hex(),
 			Symbol: rand.StrBetween(5, 10),
@@ -371,7 +369,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		ctx sdk.Context
 		k   *ethMock.EthKeeperMock
 		v   *ethMock.VoterMock
-		msg types.MsgConfirmERC20Deposit
+		msg types.MsgConfirmDeposit
 	)
 	setup := func() {
 		ctx = sdk.NewContext(nil, abci.Header{}, false, log.TestingLogger())
@@ -392,7 +390,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			CodecFunc:                         func() *amino.Codec { return testutils.Codec() },
 		}
 		v = &ethMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta) error { return nil }}
-		msg = types.MsgConfirmERC20Deposit{
+		msg = types.MsgConfirmDeposit{
 			Sender:     rand.Bytes(20),
 			TxID:       common.BytesToHash(rand.Bytes(common.HashLength)).Hex(),
 			Amount:     sdk.NewUint(mathRand.Uint64()),
@@ -502,7 +500,7 @@ func newKeeper(ctx sdk.Context, confHeight int64) keeper.Keeper {
 	cdc := testutils.Codec()
 	subspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
 	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"), subspace)
-	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(confHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, TokenDeploySig: transferSig, RevoteLockingPeriod: 50})
+	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(confHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, RevoteLockingPeriod: 50})
 	k.SetGatewayAddress(ctx, common.HexToAddress(gateway))
 
 	return k

@@ -8,8 +8,9 @@ import (
 func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgLink{}, "ethereum/MsgLink", nil)
 	cdc.RegisterConcrete(MsgVoteConfirmToken{}, "ethereum/VoteConfirmToken", nil)
-	cdc.RegisterConcrete(MsgConfirmERC20TokenDeploy{}, "ethereum/ConfirmERC20TokenDeploy", nil)
-	cdc.RegisterConcrete(MsgConfirmERC20Deposit{}, "ethereum/ConfirmERC20Deposit", nil)
+	cdc.RegisterConcrete(MsgVoteConfirmDeposit{}, "ethereum/VoteConfirmDeposit", nil)
+	cdc.RegisterConcrete(MsgConfirmToken{}, "ethereum/ConfirmToken", nil)
+	cdc.RegisterConcrete(MsgConfirmDeposit{}, "ethereum/ConfirmDeposit", nil)
 	cdc.RegisterConcrete(MsgSignTx{}, "ethereum/SignTx", nil)
 	cdc.RegisterConcrete(MsgSignPendingTransfers{}, "ethereum/SignPendingTransfers", nil)
 	cdc.RegisterConcrete(MsgSignDeployToken{}, "ethereum/SignDeployToken", nil)

@@ -24,6 +24,7 @@ import (
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/axelarnetwork/axelar-core/cmd/vald/eth"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/ethereum"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
@@ -378,11 +379,7 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd) {
 			tssTypes.MsgVotePubKey{
 				Sender:      n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal),
 				PubKeyBytes: pk,
-				PollMeta: voting.NewPollMeta(
-					tssTypes.ModuleName,
-					tssTypes.EventTypeKeygen,
-					m[tssTypes.AttributeKeyKeyID],
-				)})
+				PollMeta:    voting.NewPollMeta(tssTypes.ModuleName, m[tssTypes.AttributeKeyKeyID])})
 		if err != nil {
 			panic(err)
 		}
@@ -412,7 +409,6 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd) {
 				SigBytes: sig,
 				PollMeta: voting.NewPollMeta(
 					tssTypes.ModuleName,
-					tssTypes.EventTypeSign,
 					m[tssTypes.AttributeKeySigID],
 				)})
 		if err != nil {
@@ -518,7 +514,7 @@ func createTokenDeployLogs(gateway, addr common.Address) []*goEthTypes.Log {
 			if err != nil {
 				panic(err)
 			}
-			logs = append(logs, &goEthTypes.Log{Address: gateway, Data: data, Topics: []common.Hash{ethTypes.ERC20TokenDeploySig}})
+			logs = append(logs, &goEthTypes.Log{Address: gateway, Data: data, Topics: []common.Hash{eth.ERC20TokenDeploySig}})
 			continue
 		}
 

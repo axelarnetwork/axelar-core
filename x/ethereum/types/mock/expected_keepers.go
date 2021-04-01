@@ -1253,9 +1253,6 @@ var _ types.EthKeeper = &EthKeeperMock{}
 // 			GetTokenAddressFunc: func(ctx sdk.Context, symbol string, gatewayAddr common.Address) (common.Address, error) {
 // 				panic("mock out the GetTokenAddress method")
 // 			},
-// 			GetTokenDeploySignatureFunc: func(ctx sdk.Context) common.Hash {
-// 				panic("mock out the GetTokenDeploySignature method")
-// 			},
 // 			SetPendingDepositFunc: func(ctx sdk.Context, poll vote.PollMeta, deposit *types.ERC20Deposit)  {
 // 				panic("mock out the SetPendingDeposit method")
 // 			},
@@ -1289,9 +1286,6 @@ type EthKeeperMock struct {
 
 	// GetTokenAddressFunc mocks the GetTokenAddress method.
 	GetTokenAddressFunc func(ctx sdk.Context, symbol string, gatewayAddr common.Address) (common.Address, error)
-
-	// GetTokenDeploySignatureFunc mocks the GetTokenDeploySignature method.
-	GetTokenDeploySignatureFunc func(ctx sdk.Context) common.Hash
 
 	// SetPendingDepositFunc mocks the SetPendingDeposit method.
 	SetPendingDepositFunc func(ctx sdk.Context, poll vote.PollMeta, deposit *types.ERC20Deposit)
@@ -1344,11 +1338,6 @@ type EthKeeperMock struct {
 			// GatewayAddr is the gatewayAddr argument value.
 			GatewayAddr common.Address
 		}
-		// GetTokenDeploySignature holds details about calls to the GetTokenDeploySignature method.
-		GetTokenDeploySignature []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-		}
 		// SetPendingDeposit holds details about calls to the SetPendingDeposit method.
 		SetPendingDeposit []struct {
 			// Ctx is the ctx argument value.
@@ -1375,7 +1364,6 @@ type EthKeeperMock struct {
 	lockGetRequiredConfirmationHeight sync.RWMutex
 	lockGetRevoteLockingPeriod        sync.RWMutex
 	lockGetTokenAddress               sync.RWMutex
-	lockGetTokenDeploySignature       sync.RWMutex
 	lockSetPendingDeposit             sync.RWMutex
 	lockSetPendingTokenDeploy         sync.RWMutex
 }
@@ -1609,37 +1597,6 @@ func (mock *EthKeeperMock) GetTokenAddressCalls() []struct {
 	mock.lockGetTokenAddress.RLock()
 	calls = mock.calls.GetTokenAddress
 	mock.lockGetTokenAddress.RUnlock()
-	return calls
-}
-
-// GetTokenDeploySignature calls GetTokenDeploySignatureFunc.
-func (mock *EthKeeperMock) GetTokenDeploySignature(ctx sdk.Context) common.Hash {
-	if mock.GetTokenDeploySignatureFunc == nil {
-		panic("EthKeeperMock.GetTokenDeploySignatureFunc: method is nil but EthKeeper.GetTokenDeploySignature was just called")
-	}
-	callInfo := struct {
-		Ctx sdk.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockGetTokenDeploySignature.Lock()
-	mock.calls.GetTokenDeploySignature = append(mock.calls.GetTokenDeploySignature, callInfo)
-	mock.lockGetTokenDeploySignature.Unlock()
-	return mock.GetTokenDeploySignatureFunc(ctx)
-}
-
-// GetTokenDeploySignatureCalls gets all the calls that were made to GetTokenDeploySignature.
-// Check the length with:
-//     len(mockedEthKeeper.GetTokenDeploySignatureCalls())
-func (mock *EthKeeperMock) GetTokenDeploySignatureCalls() []struct {
-	Ctx sdk.Context
-} {
-	var calls []struct {
-		Ctx sdk.Context
-	}
-	mock.lockGetTokenDeploySignature.RLock()
-	calls = mock.calls.GetTokenDeploySignature
-	mock.lockGetTokenDeploySignature.RUnlock()
 	return calls
 }
 

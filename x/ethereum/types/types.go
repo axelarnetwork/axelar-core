@@ -448,9 +448,3 @@ func createBurnTokenParams(symbol string, salt [32]byte) ([]byte, error) {
 
 	return result, nil
 }
-
-// Smart contract method signatures
-var (
-	ERC20TokenDeploySig = crypto.Keccak256Hash([]byte("TokenDeployed(string,address)"))
-	ERC20TransferSig    = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
-)

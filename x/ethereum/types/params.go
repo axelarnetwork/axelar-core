@@ -17,7 +17,6 @@ const (
 // Parameter keys
 var (
 	KeyConfirmationHeight  = []byte("confirmationHeight")
-	KeyTokenDeploySig      = []byte("tokenDeploySig")
 	KeyNetwork             = []byte("network")
 	KeyRevoteLockingPeriod = []byte("RevoteLockingPeriod")
 
@@ -38,7 +37,6 @@ type Params struct {
 	Gateway             []byte
 	Token               []byte
 	Burnable            []byte
-	TokenDeploySig      []byte
 	RevoteLockingPeriod int64
 }
 
@@ -63,7 +61,6 @@ func DefaultParams() Params {
 		Gateway:             bzGateway,
 		Token:               bzToken,
 		Burnable:            bzBurnable,
-		TokenDeploySig:      ERC20TokenDeploySig.Bytes(),
 		RevoteLockingPeriod: 50,
 	}
 }
@@ -83,7 +80,6 @@ func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
 		subspace.NewParamSetPair(KeyGateway, &p.Gateway, validateBytes),
 		subspace.NewParamSetPair(KeyToken, &p.Token, validateBytes),
 		subspace.NewParamSetPair(KeyBurnable, &p.Burnable, validateBytes),
-		subspace.NewParamSetPair(KeyTokenDeploySig, &p.TokenDeploySig, validateBytes),
 		subspace.NewParamSetPair(KeyRevoteLockingPeriod, &p.RevoteLockingPeriod, validateRevoteLockingPeriod),
 	}
 }

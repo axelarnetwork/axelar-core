@@ -6,16 +6,16 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-// MsgConfirmERC20TokenDeploy represents a token deploy confirmation message
-type MsgConfirmERC20TokenDeploy struct {
+// MsgConfirmToken represents a token deploy confirmation message
+type MsgConfirmToken struct {
 	Sender sdk.AccAddress
 	TxID   string
 	Symbol string
 }
 
-// NewMsgConfirmERC20TokenDeploy creates a message of type MsgConfirmERC20TokenDeploy
+// NewMsgConfirmERC20TokenDeploy creates a message of type MsgConfirmToken
 func NewMsgConfirmERC20TokenDeploy(sender sdk.AccAddress, txID common.Hash, symbol string) sdk.Msg {
-	return MsgConfirmERC20TokenDeploy{
+	return MsgConfirmToken{
 		Sender: sender,
 		TxID:   txID.Hex(),
 		Symbol: symbol,
@@ -23,17 +23,17 @@ func NewMsgConfirmERC20TokenDeploy(sender sdk.AccAddress, txID common.Hash, symb
 }
 
 // Route implements sdk.Msg
-func (msg MsgConfirmERC20TokenDeploy) Route() string {
+func (msg MsgConfirmToken) Route() string {
 	return RouterKey
 }
 
 // Type implements sdk.Msg
-func (msg MsgConfirmERC20TokenDeploy) Type() string {
+func (msg MsgConfirmToken) Type() string {
 	return "ConfirmERC20TokenDeploy"
 }
 
 // ValidateBasic implements sdk.Msg
-func (msg MsgConfirmERC20TokenDeploy) ValidateBasic() error {
+func (msg MsgConfirmToken) ValidateBasic() error {
 	if msg.Sender.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
@@ -42,12 +42,12 @@ func (msg MsgConfirmERC20TokenDeploy) ValidateBasic() error {
 }
 
 // GetSignBytes implements sdk.Msg
-func (msg MsgConfirmERC20TokenDeploy) GetSignBytes() []byte {
+func (msg MsgConfirmToken) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
 // GetSigners implements sdk.Msg
-func (msg MsgConfirmERC20TokenDeploy) GetSigners() []sdk.AccAddress {
+func (msg MsgConfirmToken) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }

@@ -618,7 +618,6 @@ func randomMsgVoteConfirmOutpoint() types.MsgVoteConfirmOutpoint {
 		Sender: sdk.AccAddress(rand.StrBetween(5, 20)),
 		Poll: vote.PollMeta{
 			Module: types.ModuleName,
-			Type:   rand.StrBetween(5, 20),
 			ID:     rand.StrBetween(5, 20),
 		},
 		OutPoint:  *randomOutpointInfo().OutPoint,

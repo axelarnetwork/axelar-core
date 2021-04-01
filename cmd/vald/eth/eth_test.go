@@ -25,14 +25,14 @@ import (
 
 func TestDecodeTokenDeployEvent_CorrectData(t *testing.T) {
 	axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
-	tokenDeploySig := common.BytesToHash(ethTypes.DefaultParams().TokenDeploySig)
+	tokenDeploySig := ERC20TokenDeploySig
 	expectedAddr := common.HexToAddress("0xE7481ECB61F9C84b91C03414F3D5d48E5436045D")
 	expectedSymbol := "XPTO"
 	data := common.FromHex("0x0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000e7481ecb61f9c84b91c03414f3d5d48e5436045d00000000000000000000000000000000000000000000000000000000000000045850544f00000000000000000000000000000000000000000000000000000000")
 
 	l := &geth.Log{Address: axelarGateway, Data: data, Topics: []common.Hash{tokenDeploySig}}
 
-	symbol, tokenAddr, err := decodeERC20TokenDeployEvent(l, tokenDeploySig)
+	symbol, tokenAddr, err := decodeERC20TokenDeployEvent(l)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedSymbol, symbol)
 	assert.Equal(t, expectedAddr, tokenAddr)
@@ -99,11 +99,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		broadcaster *mock.BroadcasterMock
 	)
 	setup := func() {
-		poll := exported.NewPollMetaWithNonce(ethTypes.ModuleName,
-			rand.StrBetween(5, 20),
-			rand.StrBetween(5, 20),
-			rand.PosI64(),
-			rand.I64Between(0, 1000))
+		poll := exported.NewPollMetaWithNonce(ethTypes.ModuleName, rand.StrBetween(5, 20), rand.PosI64(), rand.I64Between(0, 1000))
 
 		burnAddrBytes := rand.Bytes(common.AddressLength)
 		tokenAddrBytes := rand.Bytes(common.AddressLength)
@@ -131,7 +127,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 						{
 							Address: common.BytesToAddress(rand.Bytes(common.AddressLength)),
 							Topics: []common.Hash{
-								ethTypes.ERC20TransferSig,
+								ERC20TransferSig,
 								common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
 								common.BytesToHash(common.LeftPadBytes(burnAddrBytes, common.HashLength)),
 							},
@@ -151,7 +147,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 						{
 							Address: common.BytesToAddress(tokenAddrBytes),
 							Topics: []common.Hash{
-								ethTypes.ERC20TransferSig,
+								ERC20TransferSig,
 								common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
 							},
 							Data: common.LeftPadBytes(big.NewInt(rand.PosI64()).Bytes(), common.HashLength),
@@ -160,7 +156,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 						{
 							Address: common.BytesToAddress(tokenAddrBytes),
 							Topics: []common.Hash{
-								ethTypes.ERC20TransferSig,
+								ERC20TransferSig,
 								common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
 								common.BytesToHash(common.LeftPadBytes(burnAddrBytes, common.HashLength)),
 							},
@@ -250,11 +246,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		gatewayAddrBytes []byte
 	)
 	setup := func() {
-		poll := exported.NewPollMetaWithNonce(ethTypes.ModuleName,
-			rand.StrBetween(5, 20),
-			rand.StrBetween(5, 20),
-			rand.PosI64(),
-			rand.I64Between(0, 1000))
+		poll := exported.NewPollMetaWithNonce(ethTypes.ModuleName, rand.StrBetween(5, 20), rand.PosI64(), rand.I64Between(0, 1000))
 
 		gatewayAddrBytes = rand.Bytes(common.AddressLength)
 		tokenAddrBytes := rand.Bytes(common.AddressLength)
@@ -268,7 +260,6 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 			sdk.NewAttribute(ethTypes.AttributeKeyTokenAddress, common.Bytes2Hex(tokenAddrBytes)),
 			sdk.NewAttribute(ethTypes.AttributeKeySymbol, symbol),
 			sdk.NewAttribute(ethTypes.AttributeKeyConfHeight, strconv.FormatUint(uint64(confHeight), 10)),
-			sdk.NewAttribute(ethTypes.AttributeKeyDeploySig, ethTypes.ERC20TokenDeploySig.Hex()),
 			sdk.NewAttribute(ethTypes.AttributeKeyPoll, string(testutils.Codec().MustMarshalJSON(poll))),
 		}
 
@@ -283,7 +274,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 						symbol,
 						common.BytesToAddress(gatewayAddrBytes),
 						common.BytesToAddress(tokenAddrBytes),
-						ethTypes.ERC20TokenDeploySig,
+						ERC20TokenDeploySig,
 						true,
 					),
 				}

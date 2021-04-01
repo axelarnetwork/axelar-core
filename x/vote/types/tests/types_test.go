@@ -51,7 +51,7 @@ func TestTalliedVote_Marshaling(t *testing.T) {
 
 func TestPoll_TallyNewVote(t *testing.T) {
 	poll := types.Poll{
-		Meta:                     exported.NewPollMeta("test", "test", "test"),
+		Meta:                     exported.NewPollMeta("test", "test"),
 		ValidatorSnapshotCounter: 0,
 		Votes: []types.TalliedVote{{
 			Tally: sdk.NewInt(23),

@@ -20,7 +20,6 @@ type EthKeeper interface {
 	GetRevoteLockingPeriod(ctx sdk.Context) int64
 	SetPendingTokenDeploy(ctx sdk.Context, poll vote.PollMeta, tokenDeploy ERC20TokenDeploy)
 	GetRequiredConfirmationHeight(ctx sdk.Context) uint64
-	GetTokenDeploySignature(ctx sdk.Context) common.Hash
 	Codec() *codec.Codec
 	GetDeposit(ctx sdk.Context, txID string, burnerAddr string) (ERC20Deposit, DepositState, bool)
 	GetBurnerInfo(ctx sdk.Context, address common.Address) *BurnerInfo

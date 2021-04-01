@@ -66,13 +66,6 @@ func (k Keeper) GetNetwork(ctx sdk.Context) types.Network {
 	return network
 }
 
-// GetTokenDeploySignature returns the function signature of the gateway call to deploy a new token
-func (k Keeper) GetTokenDeploySignature(ctx sdk.Context) common.Hash {
-	var tokenSig []byte
-	k.params.Get(ctx, types.KeyTokenDeploySig, &tokenSig)
-	return common.BytesToHash(tokenSig)
-}
-
 // Codec returns the codec
 func (k Keeper) Codec() *codec.Codec {
 	return k.cdc

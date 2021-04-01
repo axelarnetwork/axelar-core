@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	geth "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	tmLog "github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/cmd/vald/broadcast/types"
@@ -19,6 +20,12 @@ import (
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+)
+
+// Smart contract event signatures
+var (
+	ERC20TransferSig    = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
+	ERC20TokenDeploySig = crypto.Keccak256Hash([]byte("TokenDeployed(string,address)"))
 )
 
 // Mgr manages all communication with Ethereum
@@ -68,13 +75,13 @@ func (mgr Mgr) ProccessDepositConfirmation(attributes []sdk.Attribute) (err erro
 
 // ProccessTokenConfirmation votes on the correctness of an Ethereum token deployment
 func (mgr Mgr) ProccessTokenConfirmation(attributes []sdk.Attribute) error {
-	txID, gatewayAddr, tokenAddr, symbol, confHeight, deploySig, poll, err := parseTokenConfirmationParams(attributes)
+	txID, gatewayAddr, tokenAddr, symbol, confHeight, poll, err := parseTokenConfirmationParams(attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "Ethereum token deployment confirmation failed")
 	}
 
 	confirmed := mgr.validate(txID, confHeight, func(txReceipt *geth.Receipt) bool {
-		err = confirmERC20TokenDeploy(txReceipt, symbol, gatewayAddr, tokenAddr, deploySig)
+		err = confirmERC20TokenDeploy(txReceipt, symbol, gatewayAddr, tokenAddr)
 		if err != nil {
 			mgr.logger.Debug(sdkerrors.Wrap(err, "token confirmation failed").Error())
 			return false
@@ -144,11 +151,10 @@ func parseTokenConfirmationParams(attributes []sdk.Attribute) (
 	gatewayAddr, tokenAddr common.Address,
 	symbol string,
 	confHeight uint64,
-	deploySig common.Hash,
 	poll vote.PollMeta,
 	err error,
 ) {
-	var txIDFound, gatewayAddrFound, tokenAddrFound, symbolFound, confHeightFound, deploySigFound, pollFound bool
+	var txIDFound, gatewayAddrFound, tokenAddrFound, symbolFound, confHeightFound, pollFound bool
 	for _, attribute := range attributes {
 		switch attribute.Key {
 		case ethTypes.AttributeKeyTxID:
@@ -166,25 +172,22 @@ func parseTokenConfirmationParams(attributes []sdk.Attribute) (
 		case ethTypes.AttributeKeyConfHeight:
 			h, err := strconv.Atoi(attribute.Value)
 			if err != nil {
-				return common.Hash{}, common.Address{}, common.Address{}, "", 0, common.Hash{}, vote.PollMeta{},
+				return common.Hash{}, common.Address{}, common.Address{}, "", 0, vote.PollMeta{},
 					sdkerrors.Wrap(err, "parsing confirmation height failed")
 			}
 			confHeight = uint64(h)
 			confHeightFound = true
-		case ethTypes.AttributeKeyDeploySig:
-			deploySig = common.HexToHash(attribute.Value)
-			deploySigFound = true
 		case btc.AttributeKeyPoll:
 			codec.Cdc.MustUnmarshalJSON([]byte(attribute.Value), &poll)
 			pollFound = true
 		default:
 		}
 	}
-	if !txIDFound || !gatewayAddrFound || !tokenAddrFound || !symbolFound || !confHeightFound || !deploySigFound || !pollFound {
-		return common.Hash{}, common.Address{}, common.Address{}, "", 0, common.Hash{}, vote.PollMeta{},
+	if !txIDFound || !gatewayAddrFound || !tokenAddrFound || !symbolFound || !confHeightFound || !pollFound {
+		return common.Hash{}, common.Address{}, common.Address{}, "", 0, vote.PollMeta{},
 			fmt.Errorf("insufficient event attributes")
 	}
-	return txID, gatewayAddr, tokenAddr, symbol, confHeight, deploySig, poll, nil
+	return txID, gatewayAddr, tokenAddr, symbol, confHeight, poll, nil
 }
 
 func (mgr Mgr) validate(txID common.Hash, confHeight uint64, validateLogs func(txReceipt *geth.Receipt) bool) bool {
@@ -237,7 +240,7 @@ func confirmERC20Deposit(txReceipt *geth.Receipt, amount sdk.Uint, burnAddr comm
 	return nil
 }
 
-func confirmERC20TokenDeploy(txReceipt *geth.Receipt, expectedSymbol string, gatewayAddr, expectedAddr common.Address, deploySig common.Hash) error {
+func confirmERC20TokenDeploy(txReceipt *geth.Receipt, expectedSymbol string, gatewayAddr, expectedAddr common.Address) error {
 	for _, log := range txReceipt.Logs {
 		// Event is not emitted by the axelar gateway
 		if log.Address != gatewayAddr {
@@ -245,7 +248,7 @@ func confirmERC20TokenDeploy(txReceipt *geth.Receipt, expectedSymbol string, gat
 		}
 
 		// Event is not for a ERC20 token deployment
-		symbol, tokenAddr, err := decodeERC20TokenDeployEvent(log, deploySig)
+		symbol, tokenAddr, err := decodeERC20TokenDeployEvent(log)
 		if err != nil {
 			continue
 		}
@@ -272,10 +275,9 @@ func isTxFinalized(txReceipt *geth.Receipt, blockNumber uint64, confirmationHeig
 	return blockNumber-txReceipt.BlockNumber.Uint64()+1 >= confirmationHeight
 }
 
-// DecodeErc20TransferEvent decodes the information contained in a ERC20 token transfer event
 func decodeERC20TransferEvent(log *geth.Log) (common.Address, sdk.Uint, error) {
 
-	if len(log.Topics) != 3 || log.Topics[0] != ethTypes.ERC20TransferSig {
+	if len(log.Topics) != 3 || log.Topics[0] != ERC20TransferSig {
 		return common.Address{}, sdk.Uint{}, fmt.Errorf("log is not an ERC20 transfer")
 	}
 
@@ -286,9 +288,8 @@ func decodeERC20TransferEvent(log *geth.Log) (common.Address, sdk.Uint, error) {
 	return to, sdk.NewUintFromBigInt(amount), nil
 }
 
-// DecodeErc20TokenDeployEvent decodes the information contained in a ERC20 token deployment event
-func decodeERC20TokenDeployEvent(log *geth.Log, tokenDeploySig common.Hash) (string, common.Address, error) {
-	if len(log.Topics) != 1 || log.Topics[0] != tokenDeploySig {
+func decodeERC20TokenDeployEvent(log *geth.Log) (string, common.Address, error) {
+	if len(log.Topics) != 1 || log.Topics[0] != ERC20TokenDeploySig {
 		return "", common.Address{}, fmt.Errorf("event is not for an ERC20 token deployment")
 	}
 

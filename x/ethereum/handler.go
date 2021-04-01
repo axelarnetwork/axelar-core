@@ -28,9 +28,9 @@ func NewHandler(k keeper.Keeper, v types.Voter, s types.Signer, n types.Nexus, s
 		switch msg := msg.(type) {
 		case types.MsgLink:
 			return handleMsgLink(ctx, k, n, msg)
-		case types.MsgConfirmERC20TokenDeploy:
+		case types.MsgConfirmToken:
 			return HandleMsgConfirmTokenDeploy(ctx, k, v,s, n, msg)
-		case types.MsgConfirmERC20Deposit:
+		case types.MsgConfirmDeposit:
 			return HandleMsgConfirmDeposit(ctx, k, v,s, msg)
 		case types.MsgVoteConfirmDeposit:
 			return HandleMsgVoteConfirmDeposit(ctx, k, v, n, msg)
@@ -123,7 +123,7 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg types.Ms
 }
 
 // HandleMsgConfirmTokenDeploy handles token deployment confirmation
-func HandleMsgConfirmTokenDeploy(ctx sdk.Context, k types.EthKeeper, v types.Voter, signer types.Signer, n types.Nexus, msg types.MsgConfirmERC20TokenDeploy) (*sdk.Result, error) {
+func HandleMsgConfirmTokenDeploy(ctx sdk.Context, k types.EthKeeper, v types.Voter, signer types.Signer, n types.Nexus, msg types.MsgConfirmToken) (*sdk.Result, error) {
 	if n.IsAssetRegistered(ctx, exported.Ethereum.Name, msg.Symbol) {
 		return nil, fmt.Errorf("token %s is already registered", msg.Symbol)
 	}
@@ -148,7 +148,7 @@ func HandleMsgConfirmTokenDeploy(ctx sdk.Context, k types.EthKeeper, v types.Vot
 		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
 	}
 
-	poll := vote.NewPollMetaWithNonce(types.ModuleName, msg.Type(), msg.TxID+msg.Symbol, ctx.BlockHeight(), k.GetRevoteLockingPeriod(ctx))
+	poll := vote.NewPollMetaWithNonce(types.ModuleName, msg.TxID+"_"+msg.Symbol, ctx.BlockHeight(), k.GetRevoteLockingPeriod(ctx))
 	if err := v.InitPoll(ctx, poll, counter); err != nil {
 		return nil, err
 	}
@@ -168,7 +168,6 @@ func HandleMsgConfirmTokenDeploy(ctx sdk.Context, k types.EthKeeper, v types.Vot
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),
 			sdk.NewAttribute(types.AttributeKeySymbol, msg.Symbol),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(k.GetRequiredConfirmationHeight(ctx), 10)),
-			sdk.NewAttribute(types.AttributeKeyDeploySig, k.GetTokenDeploySignature(ctx).Hex()),
 			sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(poll))),
 		),
 	)
@@ -180,7 +179,7 @@ func HandleMsgConfirmTokenDeploy(ctx sdk.Context, k types.EthKeeper, v types.Vot
 }
 
 // HandleMsgConfirmDeposit handles deposit confirmations
-func HandleMsgConfirmDeposit(ctx sdk.Context, k types.EthKeeper, v types.Voter, signer types.Signer,msg types.MsgConfirmERC20Deposit) (*sdk.Result, error) {
+func HandleMsgConfirmDeposit(ctx sdk.Context, k types.EthKeeper, v types.Voter, signer types.Signer, msg types.MsgConfirmDeposit) (*sdk.Result, error) {
 	_, state, ok := k.GetDeposit(ctx, msg.TxID, msg.BurnerAddr)
 	switch {
 	case !ok:
@@ -206,7 +205,7 @@ func HandleMsgConfirmDeposit(ctx sdk.Context, k types.EthKeeper, v types.Voter, 
 		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
 	}
 
-	poll := vote.NewPollMetaWithNonce(types.ModuleName, msg.Type(), msg.TxID+msg.BurnerAddr, ctx.BlockHeight(), k.GetRevoteLockingPeriod(ctx))
+	poll := vote.NewPollMetaWithNonce(types.ModuleName, msg.TxID+"_"+msg.BurnerAddr, ctx.BlockHeight(), k.GetRevoteLockingPeriod(ctx))
 	if err := v.InitPoll(ctx, poll, counter); err != nil {
 		return nil, err
 	}
@@ -241,17 +240,17 @@ func HandleMsgConfirmDeposit(ctx sdk.Context, k types.EthKeeper, v types.Voter, 
 // HandleMsgVoteConfirmDeposit handles votes for deposit confirmations
 func HandleMsgVoteConfirmDeposit(ctx sdk.Context, k keeper.Keeper, v types.Voter, n types.Nexus, msg types.MsgVoteConfirmDeposit) (*sdk.Result, error) {
 	pendingDeposit, pollFound := k.GetPendingDeposit(ctx, msg.Poll)
-	confirmedDeposit, state, confirmed := k.GetDeposit(ctx, msg.TxID, msg.BurnAddr)
+	confirmedDeposit, state, depositFound := k.GetDeposit(ctx, msg.TxID, msg.BurnAddr)
 
 	switch {
 	// a malicious user could try to delete an ongoing poll by providing an already confirmed token,
 	// so we need to check that it matches the poll before deleting
-	case confirmed && pollFound && confirmedDeposit == pendingDeposit:
+	case depositFound && pollFound && confirmedDeposit == pendingDeposit:
 		v.DeletePoll(ctx, msg.Poll)
 		k.DeletePendingDeposit(ctx, msg.Poll)
 		fallthrough
 	// If the voting threshold has been met and additional votes are received they should not return an error
-	case confirmed:
+	case depositFound:
 		switch state {
 		case types.CONFIRMED:
 			return &sdk.Result{Log: fmt.Sprintf("deposit in %s to address %s already confirmed", pendingDeposit.TxID, pendingDeposit.BurnerAddr)}, nil
@@ -276,7 +275,7 @@ func HandleMsgVoteConfirmDeposit(ctx sdk.Context, k keeper.Keeper, v types.Voter
 	}
 
 	// assert: the poll has completed
-	confirmed, ok := result.(bool)
+	depositFound, ok := result.(bool)
 	if !ok {
 		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", msg.Poll.String(), result)
 	}
@@ -289,7 +288,7 @@ func HandleMsgVoteConfirmDeposit(ctx sdk.Context, k keeper.Keeper, v types.Voter
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(msg.Poll))))
 
-	if !confirmed {
+	if !depositFound {
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
 		return &sdk.Result{

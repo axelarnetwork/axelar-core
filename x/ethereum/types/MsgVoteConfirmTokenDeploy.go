@@ -35,6 +35,9 @@ func (msg MsgVoteConfirmToken) ValidateBasic() error {
 	if msg.TxID == "" {
 		return fmt.Errorf("tx ID missing")
 	}
+	if msg.Symbol == "" {
+		return fmt.Errorf("symbol missing")
+	}
 	return msg.Poll.Validate()
 }
 

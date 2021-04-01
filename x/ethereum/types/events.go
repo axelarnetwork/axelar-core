@@ -18,7 +18,6 @@ const (
 	AttributeKeyGatewayAddress = "gatewayAddress"
 	AttributeKeyConfHeight     = "confHeight"
 	AttributeKeySymbol         = "symbol"
-	AttributeKeyDeploySig      = "deploySig"
 )
 
 // Event attribute values

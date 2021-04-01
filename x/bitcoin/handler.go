@@ -93,7 +93,7 @@ func HandleMsgConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, voter types.In
 		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
 	}
 
-	poll := vote.NewPollMetaWithNonce(types.ModuleName, msg.Type(), msg.OutPointInfo.OutPoint.String(), ctx.BlockHeight(), k.GetRevoteLockingPeriod(ctx))
+	poll := vote.NewPollMetaWithNonce(types.ModuleName, msg.OutPointInfo.OutPoint.String(), ctx.BlockHeight(), k.GetRevoteLockingPeriod(ctx))
 	if err := voter.InitPoll(ctx, poll, counter); err != nil {
 		return nil, err
 	}
