@@ -28,7 +28,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	tssTxCmd.AddCommand(flags.PostCommands(
 		getCmdKeygenStart(cdc),
 		getCmdAssignNextKey(cdc),
-		getCmdRotateMasterKey(cdc),
+		getCmdRotateKey(cdc),
 		getCmdDeregister(cdc),
 	)...)
 
@@ -91,7 +91,7 @@ func getCmdAssignNextKey(cdc *codec.Codec) *cobra.Command {
 	return cmd
 }
 
-func getCmdRotateMasterKey(cdc *codec.Codec) *cobra.Command {
+func getCmdRotateKey(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "rotate [chain] [role]",
 		Short: "Rotate the given chain from the old key to the previously assigned one",
