@@ -256,11 +256,11 @@ var _ types.Signer = &SignerMock{}
 //
 // 		// make and configure a mocked types.Signer
 // 		mockedSigner := &SignerMock{
-// 			GetCurrentMasterKeyFunc: func(ctx sdk.Context, chain nexus.Chain) (tss.Key, bool) {
-// 				panic("mock out the GetCurrentMasterKey method")
+// 			GetCurrentKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+// 				panic("mock out the GetCurrentKey method")
 // 			},
-// 			GetNextMasterKeyFunc: func(ctx sdk.Context, chain nexus.Chain) (tss.Key, bool) {
-// 				panic("mock out the GetNextMasterKey method")
+// 			GetNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+// 				panic("mock out the GetNextKey method")
 // 			},
 // 			GetSigFunc: func(ctx sdk.Context, sigID string) (tss.Signature, bool) {
 // 				panic("mock out the GetSig method")
@@ -278,11 +278,11 @@ var _ types.Signer = &SignerMock{}
 //
 // 	}
 type SignerMock struct {
-	// GetCurrentMasterKeyFunc mocks the GetCurrentMasterKey method.
-	GetCurrentMasterKeyFunc func(ctx sdk.Context, chain nexus.Chain) (tss.Key, bool)
+	// GetCurrentKeyFunc mocks the GetCurrentKey method.
+	GetCurrentKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 
-	// GetNextMasterKeyFunc mocks the GetNextMasterKey method.
-	GetNextMasterKeyFunc func(ctx sdk.Context, chain nexus.Chain) (tss.Key, bool)
+	// GetNextKeyFunc mocks the GetNextKey method.
+	GetNextKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 
 	// GetSigFunc mocks the GetSig method.
 	GetSigFunc func(ctx sdk.Context, sigID string) (tss.Signature, bool)
@@ -297,19 +297,23 @@ type SignerMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// GetCurrentMasterKey holds details about calls to the GetCurrentMasterKey method.
-		GetCurrentMasterKey []struct {
+		// GetCurrentKey holds details about calls to the GetCurrentKey method.
+		GetCurrentKey []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Chain is the chain argument value.
 			Chain nexus.Chain
+			// KeyRole is the keyRole argument value.
+			KeyRole tss.KeyRole
 		}
-		// GetNextMasterKey holds details about calls to the GetNextMasterKey method.
-		GetNextMasterKey []struct {
+		// GetNextKey holds details about calls to the GetNextKey method.
+		GetNextKey []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Chain is the chain argument value.
 			Chain nexus.Chain
+			// KeyRole is the keyRole argument value.
+			KeyRole tss.KeyRole
 		}
 		// GetSig holds details about calls to the GetSig method.
 		GetSig []struct {
@@ -343,80 +347,88 @@ type SignerMock struct {
 			SnapshotMoqParam snapshot.Snapshot
 		}
 	}
-	lockGetCurrentMasterKey        sync.RWMutex
-	lockGetNextMasterKey           sync.RWMutex
+	lockGetCurrentKey              sync.RWMutex
+	lockGetNextKey                 sync.RWMutex
 	lockGetSig                     sync.RWMutex
 	lockGetSnapshotCounterForKeyID sync.RWMutex
 	lockStartSign                  sync.RWMutex
 }
 
-// GetCurrentMasterKey calls GetCurrentMasterKeyFunc.
-func (mock *SignerMock) GetCurrentMasterKey(ctx sdk.Context, chain nexus.Chain) (tss.Key, bool) {
-	if mock.GetCurrentMasterKeyFunc == nil {
-		panic("SignerMock.GetCurrentMasterKeyFunc: method is nil but Signer.GetCurrentMasterKey was just called")
+// GetCurrentKey calls GetCurrentKeyFunc.
+func (mock *SignerMock) GetCurrentKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+	if mock.GetCurrentKeyFunc == nil {
+		panic("SignerMock.GetCurrentKeyFunc: method is nil but Signer.GetCurrentKey was just called")
 	}
 	callInfo := struct {
-		Ctx   sdk.Context
-		Chain nexus.Chain
+		Ctx     sdk.Context
+		Chain   nexus.Chain
+		KeyRole tss.KeyRole
 	}{
-		Ctx:   ctx,
-		Chain: chain,
+		Ctx:     ctx,
+		Chain:   chain,
+		KeyRole: keyRole,
 	}
-	mock.lockGetCurrentMasterKey.Lock()
-	mock.calls.GetCurrentMasterKey = append(mock.calls.GetCurrentMasterKey, callInfo)
-	mock.lockGetCurrentMasterKey.Unlock()
-	return mock.GetCurrentMasterKeyFunc(ctx, chain)
+	mock.lockGetCurrentKey.Lock()
+	mock.calls.GetCurrentKey = append(mock.calls.GetCurrentKey, callInfo)
+	mock.lockGetCurrentKey.Unlock()
+	return mock.GetCurrentKeyFunc(ctx, chain, keyRole)
 }
 
-// GetCurrentMasterKeyCalls gets all the calls that were made to GetCurrentMasterKey.
+// GetCurrentKeyCalls gets all the calls that were made to GetCurrentKey.
 // Check the length with:
-//     len(mockedSigner.GetCurrentMasterKeyCalls())
-func (mock *SignerMock) GetCurrentMasterKeyCalls() []struct {
-	Ctx   sdk.Context
-	Chain nexus.Chain
+//     len(mockedSigner.GetCurrentKeyCalls())
+func (mock *SignerMock) GetCurrentKeyCalls() []struct {
+	Ctx     sdk.Context
+	Chain   nexus.Chain
+	KeyRole tss.KeyRole
 } {
 	var calls []struct {
-		Ctx   sdk.Context
-		Chain nexus.Chain
+		Ctx     sdk.Context
+		Chain   nexus.Chain
+		KeyRole tss.KeyRole
 	}
-	mock.lockGetCurrentMasterKey.RLock()
-	calls = mock.calls.GetCurrentMasterKey
-	mock.lockGetCurrentMasterKey.RUnlock()
+	mock.lockGetCurrentKey.RLock()
+	calls = mock.calls.GetCurrentKey
+	mock.lockGetCurrentKey.RUnlock()
 	return calls
 }
 
-// GetNextMasterKey calls GetNextMasterKeyFunc.
-func (mock *SignerMock) GetNextMasterKey(ctx sdk.Context, chain nexus.Chain) (tss.Key, bool) {
-	if mock.GetNextMasterKeyFunc == nil {
-		panic("SignerMock.GetNextMasterKeyFunc: method is nil but Signer.GetNextMasterKey was just called")
+// GetNextKey calls GetNextKeyFunc.
+func (mock *SignerMock) GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+	if mock.GetNextKeyFunc == nil {
+		panic("SignerMock.GetNextKeyFunc: method is nil but Signer.GetNextKey was just called")
 	}
 	callInfo := struct {
-		Ctx   sdk.Context
-		Chain nexus.Chain
+		Ctx     sdk.Context
+		Chain   nexus.Chain
+		KeyRole tss.KeyRole
 	}{
-		Ctx:   ctx,
-		Chain: chain,
+		Ctx:     ctx,
+		Chain:   chain,
+		KeyRole: keyRole,
 	}
-	mock.lockGetNextMasterKey.Lock()
-	mock.calls.GetNextMasterKey = append(mock.calls.GetNextMasterKey, callInfo)
-	mock.lockGetNextMasterKey.Unlock()
-	return mock.GetNextMasterKeyFunc(ctx, chain)
+	mock.lockGetNextKey.Lock()
+	mock.calls.GetNextKey = append(mock.calls.GetNextKey, callInfo)
+	mock.lockGetNextKey.Unlock()
+	return mock.GetNextKeyFunc(ctx, chain, keyRole)
 }
 
-// GetNextMasterKeyCalls gets all the calls that were made to GetNextMasterKey.
+// GetNextKeyCalls gets all the calls that were made to GetNextKey.
 // Check the length with:
-//     len(mockedSigner.GetNextMasterKeyCalls())
-func (mock *SignerMock) GetNextMasterKeyCalls() []struct {
-	Ctx   sdk.Context
-	Chain nexus.Chain
+//     len(mockedSigner.GetNextKeyCalls())
+func (mock *SignerMock) GetNextKeyCalls() []struct {
+	Ctx     sdk.Context
+	Chain   nexus.Chain
+	KeyRole tss.KeyRole
 } {
 	var calls []struct {
-		Ctx   sdk.Context
-		Chain nexus.Chain
+		Ctx     sdk.Context
+		Chain   nexus.Chain
+		KeyRole tss.KeyRole
 	}
-	mock.lockGetNextMasterKey.RLock()
-	calls = mock.calls.GetNextMasterKey
-	mock.lockGetNextMasterKey.RUnlock()
+	mock.lockGetNextKey.RLock()
+	calls = mock.calls.GetNextKey
+	mock.lockGetNextKey.RUnlock()
 	return calls
 }
 

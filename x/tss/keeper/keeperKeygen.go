@@ -97,32 +97,32 @@ func (k Keeper) SetKey(ctx sdk.Context, keyID string, key ecdsa.PublicKey) {
 	ctx.KVStore(k.storeKey).Set([]byte(pkPrefix+keyID), btcecPK.SerializeCompressed())
 }
 
-// GetCurrentMasterKey returns the latest master key that was set for the given chain
-func (k Keeper) GetCurrentMasterKey(ctx sdk.Context, chain nexus.Chain) (exported.Key, bool) {
-	if keyID, found := k.GetCurrentMasterKeyID(ctx, chain); found {
+// GetCurrentKeyID returns the current key ID for given chain and role
+func (k Keeper) GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (string, bool) {
+	return k.getKeyID(ctx, chain, k.getRotationCount(ctx, chain), keyRole)
+}
+
+// GetCurrentKey returns the current key for given chain and role
+func (k Keeper) GetCurrentKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.Key, bool) {
+	if keyID, found := k.GetCurrentKeyID(ctx, chain, keyRole); found {
 		return k.GetKey(ctx, keyID)
 	}
 
 	return exported.Key{}, false
 }
 
-// GetCurrentMasterKeyID returns the ID of the latest master key that was set for the given chain
-func (k Keeper) GetCurrentMasterKeyID(ctx sdk.Context, chain nexus.Chain) (string, bool) {
-	return k.getKeyID(ctx, chain, k.getRotationCount(ctx, chain), exported.MasterKey)
+// GetNextKeyID returns the next key ID for given chain and role
+func (k Keeper) GetNextKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (string, bool) {
+	return k.getKeyID(ctx, chain, k.getRotationCount(ctx, chain)+1, keyRole)
 }
 
-// GetNextMasterKey returns the master key for the given chain that will be activated during the next rotation
-func (k Keeper) GetNextMasterKey(ctx sdk.Context, chain nexus.Chain) (exported.Key, bool) {
-	if keyID, found := k.GetNextMasterKeyID(ctx, chain); found {
+// GetNextKey returns the next key for given chain and role
+func (k Keeper) GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.Key, bool) {
+	if keyID, found := k.GetNextKeyID(ctx, chain, keyRole); found {
 		return k.GetKey(ctx, keyID)
 	}
 
 	return exported.Key{}, false
-}
-
-// GetNextMasterKeyID returns the ID of the master key for the given chain that will be activated during the next rotation
-func (k Keeper) GetNextMasterKeyID(ctx sdk.Context, chain nexus.Chain) (string, bool) {
-	return k.getKeyID(ctx, chain, k.getRotationCount(ctx, chain)+1, exported.MasterKey)
 }
 
 // AssignNextKey stores a new key for a given chain which will become the default once RotateKey is called

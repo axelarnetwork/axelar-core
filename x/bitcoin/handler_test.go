@@ -43,7 +43,7 @@ func TestHandleMsgLink(t *testing.T) {
 			SetAddressFunc: func(sdk.Context, types.AddressInfo) {},
 			LoggerFunc:     func(sdk.Context) log.Logger { return log.TestingLogger() },
 		}
-		signer = &mock.SignerMock{GetCurrentMasterKeyFunc: func(sdk.Context, nexus.Chain) (tss.Key, bool) {
+		signer = &mock.SignerMock{GetCurrentKeyFunc: func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) {
 			sk, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
 			return tss.Key{Value: sk.PublicKey, ID: rand.StrBetween(5, 20)}, true
 		}}
@@ -69,14 +69,14 @@ func TestHandleMsgLink(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, btcKeeper.SetAddressCalls(), 1)
 		assert.Len(t, nexusKeeper.LinkAddressesCalls(), 1)
-		assert.Equal(t, exported.Bitcoin, signer.GetCurrentMasterKeyCalls()[0].Chain)
+		assert.Equal(t, exported.Bitcoin, signer.GetCurrentKeyCalls()[0].Chain)
 		assert.Equal(t, msg.RecipientChain, nexusKeeper.GetChainCalls()[0].Chain)
 		assert.Equal(t, btcKeeper.SetAddressCalls()[0].Address.Address.EncodeAddress(), string(res.Data))
 	}).Repeat(repeatCount))
 
 	t.Run("no master key", testutils.Func(func(t *testing.T) {
 		setup()
-		signer.GetCurrentMasterKeyFunc = func(sdk.Context, nexus.Chain) (tss.Key, bool) { return tss.Key{}, false }
+		signer.GetCurrentKeyFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) { return tss.Key{}, false }
 		_, err := HandleMsgLink(ctx, btcKeeper, signer, nexusKeeper, msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
@@ -425,10 +425,10 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 			ArchivePendingTransferFunc:      func(sdk.Context, nexus.CrossChainTransfer) {},
 		}
 		signer = &mock.SignerMock{
-			GetNextMasterKeyFunc: func(sdk.Context, nexus.Chain) (tss.Key, bool) {
+			GetNextKeyFunc: func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) {
 				return tss.Key{}, false
 			},
-			GetCurrentMasterKeyFunc: func(sdk.Context, nexus.Chain) (tss.Key, bool) {
+			GetCurrentKeyFunc: func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) {
 				sk, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
 				return tss.Key{ID: rand.StrBetween(5, 20), Value: sk.PublicKey}, true
 			},
@@ -469,11 +469,11 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 
 	t.Run("happy path consolidation to next master key", testutils.Func(func(t *testing.T) {
 		setup()
-		signer.GetNextMasterKeyFunc = signer.GetCurrentMasterKeyFunc
+		signer.GetNextKeyFunc = signer.GetCurrentKeyFunc
 
 		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
 		assert.NoError(t, err)
-		assert.Len(t, signer.GetCurrentMasterKeyCalls(), 0)
+		assert.Len(t, signer.GetCurrentKeyCalls(), 0)
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)+1) // + 1 consolidation outpoint
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
@@ -558,8 +558,8 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 
 	t.Run("no master keys", testutils.Func(func(t *testing.T) {
 		setup()
-		signer.GetNextMasterKeyFunc = func(sdk.Context, nexus.Chain) (tss.Key, bool) { return tss.Key{}, false }
-		signer.GetCurrentMasterKeyFunc = func(sdk.Context, nexus.Chain) (tss.Key, bool) { return tss.Key{}, false }
+		signer.GetNextKeyFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) { return tss.Key{}, false }
+		signer.GetCurrentKeyFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) { return tss.Key{}, false }
 
 		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
 		assert.Error(t, err)

@@ -282,9 +282,9 @@ func prepareChange(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, chan
 	}
 
 	// if a new master key has been assigned for rotation spend change to that address, otherwise use the current one
-	key, ok := signer.GetNextMasterKey(ctx, exported.Bitcoin)
+	key, ok := signer.GetNextKey(ctx, exported.Bitcoin, tss.MasterKey)
 	if !ok {
-		key, ok = signer.GetCurrentMasterKey(ctx, exported.Bitcoin)
+		key, ok = signer.GetCurrentKey(ctx, exported.Bitcoin, tss.MasterKey)
 		if !ok {
 			return types.Output{}, fmt.Errorf("key not found")
 		}
@@ -323,7 +323,7 @@ func startSignInputs(ctx sdk.Context, signer types.Signer, snapshotter types.Sna
 }
 
 func checkLinkRequisites(ctx sdk.Context, s types.Signer, n types.Nexus, recipientChainName string) (tss.Key, nexus.Chain, error) {
-	key, ok := s.GetCurrentMasterKey(ctx, exported.Bitcoin)
+	key, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.MasterKey)
 	if !ok {
 		return tss.Key{}, nexus.Chain{}, fmt.Errorf("master key not set")
 	}

@@ -27,6 +27,11 @@ const (
 	SecondaryKey
 )
 
+// GetKeyRoles returns an array of all types of key role
+func GetKeyRoles() []KeyRole {
+	return []KeyRole{MasterKey, SecondaryKey}
+}
+
 // KeyRoleFromStr creates a KeyRole from string
 func KeyRoleFromStr(str string) (KeyRole, error) {
 	switch strings.ToLower(str) {

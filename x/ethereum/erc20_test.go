@@ -193,7 +193,7 @@ func TestDeploy(t *testing.T) {
 	assert.NoError(t, err)
 	signer := ethTypes.NewEIP155Signer(chainID)
 	var gasLimit uint64 = 3000000
-	tssSigner := &mock.SignerMock{GetCurrentMasterKeyFunc: func(_ sdk.Context, _ nexus.Chain) (tss.Key, bool) {
+	tssSigner := &mock.SignerMock{GetCurrentKeyFunc: func(_ sdk.Context, _ nexus.Chain, _ tss.KeyRole) (tss.Key, bool) {
 		return tss.Key{
 			ID:    rand2.StrBetween(5, 20),
 			Value: privateKey.PublicKey,

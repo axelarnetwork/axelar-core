@@ -13,6 +13,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -55,7 +56,7 @@ func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer) sdk.Querier {
 
 func queryMasterAddress(ctx sdk.Context, s types.Signer) ([]byte, error) {
 
-	pk, ok := s.GetCurrentMasterKey(ctx, exported.Ethereum)
+	pk, ok := s.GetCurrentKey(ctx, exported.Ethereum, tss.MasterKey)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, "key not found")
 	}
@@ -257,7 +258,7 @@ func queryCommandData(ctx sdk.Context, k Keeper, s types.Signer, commandIDHex st
 }
 
 func getContractOwner(ctx sdk.Context, s types.Signer) (common.Address, error) {
-	pk, ok := s.GetCurrentMasterKey(ctx, exported.Ethereum)
+	pk, ok := s.GetCurrentKey(ctx, exported.Ethereum, tss.MasterKey)
 	if !ok {
 		return common.Address{}, fmt.Errorf("key not found")
 	}
