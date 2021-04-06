@@ -216,7 +216,7 @@ func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer ty
 	}
 
 	outPuts, totalWithdrawals := prepareOutputs(ctx, k, n)
-	prevOuts, totalDeposits, err := prepareInputs(ctx, k)
+	prevOuts, totalDeposits, err := prepareInputs(ctx, k, signer)
 	if err != nil {
 		return nil, err
 	}
@@ -228,6 +228,7 @@ func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer ty
 			totalDeposits.String(), totalWithdrawals.String(), msg.Fee.String(),
 		)
 	case 0:
+		k.SetMasterKeyUtxoExists(ctx, false)
 		k.Logger(ctx).Info("creating a transaction without change")
 	case 1:
 		changeOutput, err := prepareChange(ctx, k, signer, change)
@@ -235,6 +236,7 @@ func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer ty
 			return nil, err
 		}
 		outPuts = append(outPuts, changeOutput)
+		k.SetMasterKeyUtxoExists(ctx, true)
 	default:
 		return nil, fmt.Errorf("sign value of change for consolidation transaction unexpected: %d", change.Sign())
 	}
@@ -275,19 +277,38 @@ func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.
 	return outPuts, totalOut
 }
 
-func prepareInputs(ctx sdk.Context, k types.BTCKeeper) ([]types.OutPointToSign, sdk.Int, error) {
+func prepareInputs(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) ([]types.OutPointToSign, sdk.Int, error) {
 	var prevOuts []types.OutPointToSign
 	totalDeposits := sdk.ZeroInt()
+
+	masterKeyUtxoExists := k.DoesMasterKeyUtxoExist(ctx)
+	masterKeyUtxoFound := false
+
 	for _, info := range k.GetConfirmedOutPointInfos(ctx) {
 		addr, ok := k.GetAddress(ctx, info.Address)
 		if !ok {
 			return nil, sdk.ZeroInt(), fmt.Errorf("address for confirmed outpoint %s must be known", info.OutPoint.String())
 		}
+
+		keyRole, found := signer.GetKeyRole(ctx, addr.Key.ID)
+		if !found {
+			return nil, sdk.ZeroInt(), fmt.Errorf("key role not found for key %s", addr.Key.ID)
+		}
+
+		if keyRole == tss.MasterKey {
+			masterKeyUtxoFound = true
+		}
+
 		prevOuts = append(prevOuts, types.OutPointToSign{OutPointInfo: info, AddressInfo: addr})
 		totalDeposits = totalDeposits.AddRaw(int64(info.Amount))
 		k.DeleteOutpointInfo(ctx, *info.OutPoint)
 		k.SetOutpointInfo(ctx, info, types.SPENT)
 	}
+
+	if masterKeyUtxoExists != masterKeyUtxoFound {
+		return nil, sdk.ZeroInt(), fmt.Errorf("expect to spend UTXO of master key but not found")
+	}
+
 	return prevOuts, totalDeposits, nil
 }
 
@@ -338,9 +359,9 @@ func startSignInputs(ctx sdk.Context, signer types.Signer, snapshotter types.Sna
 }
 
 func checkLinkRequisites(ctx sdk.Context, s types.Signer, n types.Nexus, recipientChainName string) (tss.Key, nexus.Chain, error) {
-	key, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.MasterKey)
+	key, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.SecondaryKey)
 	if !ok {
-		return tss.Key{}, nexus.Chain{}, fmt.Errorf("master key not set")
+		return tss.Key{}, nexus.Chain{}, fmt.Errorf("secondary key not set")
 	}
 
 	recipientChain, ok := n.GetChain(ctx, recipientChainName)
@@ -348,9 +369,9 @@ func checkLinkRequisites(ctx sdk.Context, s types.Signer, n types.Nexus, recipie
 		return tss.Key{}, nexus.Chain{}, fmt.Errorf("unknown recipient chain")
 	}
 
-	found := n.IsAssetRegistered(ctx, recipientChain.Name, exported.Bitcoin.NativeAsset)
-	if !found {
+	if !n.IsAssetRegistered(ctx, recipientChain.Name, exported.Bitcoin.NativeAsset) {
 		return tss.Key{}, nexus.Chain{}, fmt.Errorf("asset '%s' not registered for chain '%s'", exported.Bitcoin.NativeAsset, recipientChain.Name)
 	}
+
 	return key, recipientChain, nil
 }

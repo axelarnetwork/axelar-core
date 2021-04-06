@@ -103,6 +103,14 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_AssignNextSecondaryKey_Rotat
 	actualSecondaryKey, ok := s.Keeper.GetCurrentKey(s.Ctx, chain, exported.SecondaryKey)
 	assert.True(t, ok)
 	assert.Equal(t, expectedSecondaryKey, actualSecondaryKey)
+
+	actualMasterKeyRole, found := s.Keeper.GetKeyRole(ctx, expectedMasterKey.ID)
+	assert.True(t, found)
+	assert.Equal(t, exported.MasterKey, actualMasterKeyRole)
+
+	actualSecondaryKeyRole, found := s.Keeper.GetKeyRole(ctx, expectedSecondaryKey.ID)
+	assert.True(t, found)
+	assert.Equal(t, exported.SecondaryKey, actualSecondaryKeyRole)
 }
 
 func TestKeeper_AssignNextMasterKey_RotateMasterKey_MultipleTimes_PreviousKeysStillAvailable(t *testing.T) {

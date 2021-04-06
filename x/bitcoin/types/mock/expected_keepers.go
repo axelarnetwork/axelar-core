@@ -268,6 +268,9 @@ var _ types.Signer = &SignerMock{}
 // 			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
 // 				panic("mock out the GetCurrentKeyID method")
 // 			},
+// 			GetKeyRoleFunc: func(ctx sdk.Context, keyID string) (tss.KeyRole, bool) {
+// 				panic("mock out the GetKeyRole method")
+// 			},
 // 			GetNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
 // 				panic("mock out the GetNextKey method")
 // 			},
@@ -292,6 +295,9 @@ type SignerMock struct {
 
 	// GetCurrentKeyIDFunc mocks the GetCurrentKeyID method.
 	GetCurrentKeyIDFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool)
+
+	// GetKeyRoleFunc mocks the GetKeyRole method.
+	GetKeyRoleFunc func(ctx sdk.Context, keyID string) (tss.KeyRole, bool)
 
 	// GetNextKeyFunc mocks the GetNextKey method.
 	GetNextKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
@@ -326,6 +332,13 @@ type SignerMock struct {
 			Chain nexus.Chain
 			// KeyRole is the keyRole argument value.
 			KeyRole tss.KeyRole
+		}
+		// GetKeyRole holds details about calls to the GetKeyRole method.
+		GetKeyRole []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// KeyID is the keyID argument value.
+			KeyID string
 		}
 		// GetNextKey holds details about calls to the GetNextKey method.
 		GetNextKey []struct {
@@ -370,6 +383,7 @@ type SignerMock struct {
 	}
 	lockGetCurrentKey              sync.RWMutex
 	lockGetCurrentKeyID            sync.RWMutex
+	lockGetKeyRole                 sync.RWMutex
 	lockGetNextKey                 sync.RWMutex
 	lockGetSig                     sync.RWMutex
 	lockGetSnapshotCounterForKeyID sync.RWMutex
@@ -451,6 +465,41 @@ func (mock *SignerMock) GetCurrentKeyIDCalls() []struct {
 	mock.lockGetCurrentKeyID.RLock()
 	calls = mock.calls.GetCurrentKeyID
 	mock.lockGetCurrentKeyID.RUnlock()
+	return calls
+}
+
+// GetKeyRole calls GetKeyRoleFunc.
+func (mock *SignerMock) GetKeyRole(ctx sdk.Context, keyID string) (tss.KeyRole, bool) {
+	if mock.GetKeyRoleFunc == nil {
+		panic("SignerMock.GetKeyRoleFunc: method is nil but Signer.GetKeyRole was just called")
+	}
+	callInfo := struct {
+		Ctx   sdk.Context
+		KeyID string
+	}{
+		Ctx:   ctx,
+		KeyID: keyID,
+	}
+	mock.lockGetKeyRole.Lock()
+	mock.calls.GetKeyRole = append(mock.calls.GetKeyRole, callInfo)
+	mock.lockGetKeyRole.Unlock()
+	return mock.GetKeyRoleFunc(ctx, keyID)
+}
+
+// GetKeyRoleCalls gets all the calls that were made to GetKeyRole.
+// Check the length with:
+//     len(mockedSigner.GetKeyRoleCalls())
+func (mock *SignerMock) GetKeyRoleCalls() []struct {
+	Ctx   sdk.Context
+	KeyID string
+} {
+	var calls []struct {
+		Ctx   sdk.Context
+		KeyID string
+	}
+	mock.lockGetKeyRole.RLock()
+	calls = mock.calls.GetKeyRole
+	mock.lockGetKeyRole.RUnlock()
 	return calls
 }
 
@@ -1150,6 +1199,9 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			DeleteUnsignedTxFunc: func(ctx sdk.Context)  {
 // 				panic("mock out the DeleteUnsignedTx method")
 // 			},
+// 			DoesMasterKeyUtxoExistFunc: func(ctx sdk.Context) bool {
+// 				panic("mock out the DoesMasterKeyUtxoExist method")
+// 			},
 // 			GetAddressFunc: func(ctx sdk.Context, encodedAddress string) (types.AddressInfo, bool) {
 // 				panic("mock out the GetAddress method")
 // 			},
@@ -1189,6 +1241,9 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			SetAddressFunc: func(ctx sdk.Context, address types.AddressInfo)  {
 // 				panic("mock out the SetAddress method")
 // 			},
+// 			SetMasterKeyUtxoExistsFunc: func(ctx sdk.Context, exists bool)  {
+// 				panic("mock out the SetMasterKeyUtxoExists method")
+// 			},
 // 			SetOutpointInfoFunc: func(ctx sdk.Context, info types.OutPointInfo, state types.OutPointState)  {
 // 				panic("mock out the SetOutpointInfo method")
 // 			},
@@ -1225,6 +1280,9 @@ type BTCKeeperMock struct {
 
 	// DeleteUnsignedTxFunc mocks the DeleteUnsignedTx method.
 	DeleteUnsignedTxFunc func(ctx sdk.Context)
+
+	// DoesMasterKeyUtxoExistFunc mocks the DoesMasterKeyUtxoExist method.
+	DoesMasterKeyUtxoExistFunc func(ctx sdk.Context) bool
 
 	// GetAddressFunc mocks the GetAddress method.
 	GetAddressFunc func(ctx sdk.Context, encodedAddress string) (types.AddressInfo, bool)
@@ -1264,6 +1322,9 @@ type BTCKeeperMock struct {
 
 	// SetAddressFunc mocks the SetAddress method.
 	SetAddressFunc func(ctx sdk.Context, address types.AddressInfo)
+
+	// SetMasterKeyUtxoExistsFunc mocks the SetMasterKeyUtxoExists method.
+	SetMasterKeyUtxoExistsFunc func(ctx sdk.Context, exists bool)
 
 	// SetOutpointInfoFunc mocks the SetOutpointInfo method.
 	SetOutpointInfoFunc func(ctx sdk.Context, info types.OutPointInfo, state types.OutPointState)
@@ -1306,6 +1367,11 @@ type BTCKeeperMock struct {
 		}
 		// DeleteUnsignedTx holds details about calls to the DeleteUnsignedTx method.
 		DeleteUnsignedTx []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
+		// DoesMasterKeyUtxoExist holds details about calls to the DoesMasterKeyUtxoExist method.
+		DoesMasterKeyUtxoExist []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 		}
@@ -1382,6 +1448,13 @@ type BTCKeeperMock struct {
 			// Address is the address argument value.
 			Address types.AddressInfo
 		}
+		// SetMasterKeyUtxoExists holds details about calls to the SetMasterKeyUtxoExists method.
+		SetMasterKeyUtxoExists []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Exists is the exists argument value.
+			Exists bool
+		}
 		// SetOutpointInfo holds details about calls to the SetOutpointInfo method.
 		SetOutpointInfo []struct {
 			// Ctx is the ctx argument value.
@@ -1427,6 +1500,7 @@ type BTCKeeperMock struct {
 	lockDeletePendingOutPointInfo     sync.RWMutex
 	lockDeleteSignedTx                sync.RWMutex
 	lockDeleteUnsignedTx              sync.RWMutex
+	lockDoesMasterKeyUtxoExist        sync.RWMutex
 	lockGetAddress                    sync.RWMutex
 	lockGetConfirmedOutPointInfos     sync.RWMutex
 	lockGetNetwork                    sync.RWMutex
@@ -1440,6 +1514,7 @@ type BTCKeeperMock struct {
 	lockGetUnsignedTx                 sync.RWMutex
 	lockLogger                        sync.RWMutex
 	lockSetAddress                    sync.RWMutex
+	lockSetMasterKeyUtxoExists        sync.RWMutex
 	lockSetOutpointInfo               sync.RWMutex
 	lockSetParams                     sync.RWMutex
 	lockSetPendingOutpointInfo        sync.RWMutex
@@ -1602,6 +1677,37 @@ func (mock *BTCKeeperMock) DeleteUnsignedTxCalls() []struct {
 	mock.lockDeleteUnsignedTx.RLock()
 	calls = mock.calls.DeleteUnsignedTx
 	mock.lockDeleteUnsignedTx.RUnlock()
+	return calls
+}
+
+// DoesMasterKeyUtxoExist calls DoesMasterKeyUtxoExistFunc.
+func (mock *BTCKeeperMock) DoesMasterKeyUtxoExist(ctx sdk.Context) bool {
+	if mock.DoesMasterKeyUtxoExistFunc == nil {
+		panic("BTCKeeperMock.DoesMasterKeyUtxoExistFunc: method is nil but BTCKeeper.DoesMasterKeyUtxoExist was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockDoesMasterKeyUtxoExist.Lock()
+	mock.calls.DoesMasterKeyUtxoExist = append(mock.calls.DoesMasterKeyUtxoExist, callInfo)
+	mock.lockDoesMasterKeyUtxoExist.Unlock()
+	return mock.DoesMasterKeyUtxoExistFunc(ctx)
+}
+
+// DoesMasterKeyUtxoExistCalls gets all the calls that were made to DoesMasterKeyUtxoExist.
+// Check the length with:
+//     len(mockedBTCKeeper.DoesMasterKeyUtxoExistCalls())
+func (mock *BTCKeeperMock) DoesMasterKeyUtxoExistCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockDoesMasterKeyUtxoExist.RLock()
+	calls = mock.calls.DoesMasterKeyUtxoExist
+	mock.lockDoesMasterKeyUtxoExist.RUnlock()
 	return calls
 }
 
@@ -2021,6 +2127,41 @@ func (mock *BTCKeeperMock) SetAddressCalls() []struct {
 	mock.lockSetAddress.RLock()
 	calls = mock.calls.SetAddress
 	mock.lockSetAddress.RUnlock()
+	return calls
+}
+
+// SetMasterKeyUtxoExists calls SetMasterKeyUtxoExistsFunc.
+func (mock *BTCKeeperMock) SetMasterKeyUtxoExists(ctx sdk.Context, exists bool) {
+	if mock.SetMasterKeyUtxoExistsFunc == nil {
+		panic("BTCKeeperMock.SetMasterKeyUtxoExistsFunc: method is nil but BTCKeeper.SetMasterKeyUtxoExists was just called")
+	}
+	callInfo := struct {
+		Ctx    sdk.Context
+		Exists bool
+	}{
+		Ctx:    ctx,
+		Exists: exists,
+	}
+	mock.lockSetMasterKeyUtxoExists.Lock()
+	mock.calls.SetMasterKeyUtxoExists = append(mock.calls.SetMasterKeyUtxoExists, callInfo)
+	mock.lockSetMasterKeyUtxoExists.Unlock()
+	mock.SetMasterKeyUtxoExistsFunc(ctx, exists)
+}
+
+// SetMasterKeyUtxoExistsCalls gets all the calls that were made to SetMasterKeyUtxoExists.
+// Check the length with:
+//     len(mockedBTCKeeper.SetMasterKeyUtxoExistsCalls())
+func (mock *BTCKeeperMock) SetMasterKeyUtxoExistsCalls() []struct {
+	Ctx    sdk.Context
+	Exists bool
+} {
+	var calls []struct {
+		Ctx    sdk.Context
+		Exists bool
+	}
+	mock.lockSetMasterKeyUtxoExists.RLock()
+	calls = mock.calls.SetMasterKeyUtxoExists
+	mock.lockSetMasterKeyUtxoExists.RUnlock()
 	return calls
 }
 

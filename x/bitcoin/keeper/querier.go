@@ -57,7 +57,7 @@ func queryDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n t
 
 	recipient := nexus.CrossChainAddress{Chain: chain, Address: params.Address}
 
-	pk, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.MasterKey)
+	pk, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.SecondaryKey)
 	if !ok {
 		return nil, fmt.Errorf("key not found")
 	}

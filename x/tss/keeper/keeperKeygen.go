@@ -92,6 +92,26 @@ func (k Keeper) GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.
 	return exported.Key{}, false
 }
 
+func (k Keeper) setKeyRole(ctx sdk.Context, keyID string, keyRole exported.KeyRole) {
+	storageKey := fmt.Sprintf("%s%s", keyRolePrefix, keyID)
+
+	ctx.KVStore(k.storeKey).Set([]byte(storageKey), k.cdc.MustMarshalBinaryLengthPrefixed(keyRole))
+}
+
+func (k Keeper) GetKeyRole(ctx sdk.Context, keyID string) (exported.KeyRole, bool) {
+	storageKey := fmt.Sprintf("%s%s", keyRolePrefix, keyID)
+
+	bz := ctx.KVStore(k.storeKey).Get([]byte(storageKey))
+	if bz == nil {
+		return -1, false
+	}
+
+	var keyRole exported.KeyRole
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &keyRole)
+
+	return keyRole, true
+}
+
 // AssignNextKey stores a new key for a given chain which will become the default once RotateKey is called
 func (k Keeper) AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole, keyID string) error {
 	if _, ok := k.GetKey(ctx, keyID); !ok {
@@ -101,6 +121,7 @@ func (k Keeper) AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole export
 	// The key entry needs to store the keyID instead of the public key, because the keyID is needed whenever
 	// the keeper calls the secure private key store (e.g. for signing) and we would lose the keyID information otherwise
 	k.setKeyID(ctx, chain, k.getRotationCount(ctx, chain, keyRole)+1, keyRole, keyID)
+	k.setKeyRole(ctx, keyID, keyRole)
 
 	return nil
 }

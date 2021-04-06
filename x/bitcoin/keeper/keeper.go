@@ -21,8 +21,9 @@ const (
 	spentOutPointPrefix     = "spent_"
 	addrPrefix              = "addr_"
 
-	unsignedTxKey = "unsignedTx"
-	signedTxKey   = "signedTx"
+	unsignedTxKey          = "unsignedTx"
+	signedTxKey            = "signedTx"
+	masterKeyUtxoExistsKey = "master_key_utxo_exists"
 )
 
 var _ types.BTCKeeper = Keeper{}
@@ -253,4 +254,20 @@ func (k Keeper) GetSignedTx(ctx sdk.Context) (*wire.MsgTx, bool) {
 // DeleteSignedTx deletes the signed transaction for outpoint consolidation
 func (k Keeper) DeleteSignedTx(ctx sdk.Context) {
 	ctx.KVStore(k.storeKey).Delete([]byte(signedTxKey))
+}
+
+func (k Keeper) SetMasterKeyUtxoExists(ctx sdk.Context, exists bool) {
+	ctx.KVStore(k.storeKey).Set([]byte(masterKeyUtxoExistsKey), k.cdc.MustMarshalBinaryLengthPrefixed(exists))
+}
+
+func (k Keeper) DoesMasterKeyUtxoExist(ctx sdk.Context) bool {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(masterKeyUtxoExistsKey))
+	if bz == nil {
+		return false
+	}
+
+	var exists bool
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &exists)
+
+	return exists
 }
