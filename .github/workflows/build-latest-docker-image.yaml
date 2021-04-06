@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - master
+  workflow_dispatch:
+    inputs:
+      buildDebug:
+        description: Whether or build the debug image ("true"/"false")
+        required: true
+        default: "false"
 
 jobs:
   build-and-push-latest-docker-image:
@@ -16,30 +22,48 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - uses: nelonoel/branch-name@v1.0.1
+
+      - id: set-tag
+        name: Set image tag
+        run: |
+          TAG="latest"
+
+          if [[ "$BRANCH_NAME" != "master" ]]; then
+            TAG=$(echo $BRANCH_NAME | tr "/" "-")
+          fi
+
+          echo '::set-output name=TAG::'$TAG
+
       - name: Install SSH key
         uses: webfactory/ssh-agent@v0.4.1
         with:
           ssh-private-key: ${{ secrets.CICD_RSA_KEY }}
 
-      - name: Build docker image
+      - name: Build docker image (normal)
         run: |
           make docker-image
-          make docker-image-debug
 
-      - name: Push to ECR (latest)
+      - name: Push to ECR (normal)
         uses: jwalton/gh-ecr-push@v1
         with:
           access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           region: us-east-2
           local-image: axelar/core
-          image: axelar-core:latest
+          image: axelar-core:${{ steps.set-tag.outputs.TAG }}
 
-      - name: Push to ECR (latest-debug)
+      - name: Build docker image (debug)
+        if: github.event.inputs.buildDebug != 'false'
+        run: |
+          make docker-image-debug
+
+      - name: Push to ECR (debug)
         uses: jwalton/gh-ecr-push@v1
+        if: github.event.inputs.buildDebug != 'false'
         with:
           access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           region: us-east-2
           local-image: axelar/core-debug
-          image: axelar-core:latest-debug
+          image: axelar-core:${{ steps.set-tag.outputs.TAG }}-debug
