@@ -26,7 +26,7 @@ func NewHandler(k types.BTCKeeper, v types.Voter, signer types.Signer, n types.N
 		case types.MsgLink:
 			return HandleMsgLink(ctx, k, signer, n, msg)
 		case types.MsgConfirmOutpoint:
-			return HandleMsgConfirmOutpoint(ctx, k, v, msg)
+			return HandleMsgConfirmOutpoint(ctx, k, v, signer, msg)
 		case types.MsgVoteConfirmOutpoint:
 			return HandleMsgVoteConfirmOutpoint(ctx, k, v, n, msg)
 		case types.MsgSignPendingTransfers:
@@ -68,7 +68,7 @@ func HandleMsgLink(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n types.N
 }
 
 // HandleMsgConfirmOutpoint handles the confirmation of a Bitcoin outpoint
-func HandleMsgConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, voter types.InitPoller, msg types.MsgConfirmOutpoint) (*sdk.Result, error) {
+func HandleMsgConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, voter types.InitPoller, signer types.Signer, msg types.MsgConfirmOutpoint) (*sdk.Result, error) {
 	_, state, ok := k.GetOutPointInfo(ctx, *msg.OutPointInfo.OutPoint)
 	switch {
 	case !ok:
@@ -83,8 +83,18 @@ func HandleMsgConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, voter types.In
 		return nil, fmt.Errorf("outpoint address unknown, aborting deposit confirmation")
 	}
 
+	keyID, ok := signer.GetCurrentKeyID(ctx, exported.Bitcoin, tss.MasterKey)
+	if !ok {
+		return nil, fmt.Errorf("no master key for chain %s found", exported.Bitcoin.Name)
+	}
+
+	counter, ok := signer.GetSnapshotCounterForKeyID(ctx, keyID)
+	if !ok {
+		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
+	}
+
 	poll := vote.NewPollMetaWithNonce(types.ModuleName, msg.Type(), msg.OutPointInfo.OutPoint.String(), ctx.BlockHeight(), k.GetRevoteLockingPeriod(ctx))
-	if err := voter.InitPoll(ctx, poll); err != nil {
+	if err := voter.InitPoll(ctx, poll, counter); err != nil {
 		return nil, err
 	}
 	k.SetUnconfirmedOutpointInfo(ctx, poll, msg.OutPointInfo)

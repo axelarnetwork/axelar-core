@@ -71,7 +71,7 @@ func (s *testSetup) NewTimeout(t time.Duration) {
 // no error on initializing new poll
 func TestKeeper_InitPoll_NoError(t *testing.T) {
 	s := setup()
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, randomPoll()))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, randomPoll(), 100))
 }
 
 // error when initializing poll with same id as existing poll
@@ -80,8 +80,8 @@ func TestKeeper_InitPoll_SameIdReturnError(t *testing.T) {
 
 	poll := randomPoll()
 
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
-	assert.Error(t, s.Keeper.InitPoll(s.Ctx, poll))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, 100))
+	assert.Error(t, s.Keeper.InitPoll(s.Ctx, poll, 100))
 }
 
 // vote for existing poll is broadcast exactly once
@@ -91,7 +91,7 @@ func TestKeeper_Vote_OnNextBroadcast(t *testing.T) {
 	poll := randomPoll()
 	vote := randomVoteForPoll(poll)
 
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, 100))
 	s.Keeper.RecordVote(vote)
 
 	// give go a chance to switch context, because broadcast needs to be done on a different thread
@@ -119,7 +119,7 @@ func TestKeeper_Vote_PollIdMismatch_ReturnError(t *testing.T) {
 	s := setup()
 
 	initializedPoll := randomPoll()
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, initializedPoll))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, initializedPoll, 100))
 
 	notInitializedPoll := randomPoll()
 	vote := randomVoteForPoll(notInitializedPoll)
@@ -139,9 +139,9 @@ func TestKeeper_Vote_VotesNotRepeatedInConsecutiveBroadcasts(t *testing.T) {
 	voteForPoll2 := randomVoteForPoll(poll2)
 	voteForPoll3 := randomVoteForPoll(poll3)
 
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll1))
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll2))
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll3))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll1, 100))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll2, 100))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll3, 100))
 
 	s.Keeper.RecordVote(voteForPoll1)
 	s.Keeper.RecordVote(voteForPoll2)
@@ -178,7 +178,7 @@ func TestKeeper_Vote_MultipleTimes_ReturnError(t *testing.T) {
 	poll := randomPoll()
 	vote1 := randomVoteForPoll(poll)
 
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, 100))
 	s.Keeper.RecordVote(vote1)
 
 	// submit vote1 again
@@ -203,9 +203,9 @@ func TestKeeper_Vote_noVotes_NoBroadcast(t *testing.T) {
 	poll2 := randomPoll()
 	poll3 := randomPoll()
 
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll1))
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll2))
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll3))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll1, 100))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll2, 100))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll3, 100))
 
 	// give go a chance to switch context, because broadcast needs to be done on a different thread
 	s.NewTimeout(10 * time.Millisecond)
@@ -222,7 +222,7 @@ func TestKeeper_TallyVote_NonExistingPoll_ReturnError(t *testing.T) {
 	poll := randomPoll()
 	vote := randomVote()
 
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, 100))
 	assert.Error(t, s.Keeper.TallyVote(s.Ctx, vote.Sender, vote.Poll(), vote.Data()))
 }
 
@@ -235,7 +235,7 @@ func TestKeeper_TallyVote_UnknownVoter_ReturnError(t *testing.T) {
 	poll := randomPoll()
 	vote := randomVoteForPoll(poll)
 
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, 100))
 	assert.Error(t, s.Keeper.TallyVote(s.Ctx, vote.Sender, vote.Poll(), vote.Data()))
 }
 
@@ -253,7 +253,7 @@ func TestKeeper_TallyVote_NoWinner(t *testing.T) {
 	poll := randomPoll()
 	vote := randomVoteForPoll(poll)
 
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, 100))
 	err := s.Keeper.TallyVote(s.Ctx, vote.Sender, vote.Poll(), vote.Data())
 	res := s.Keeper.Result(s.Ctx, poll)
 	assert.NoError(t, err)
@@ -273,7 +273,7 @@ func TestKeeper_TallyVote_WithWinner(t *testing.T) {
 	poll := randomPoll()
 	vote := randomVoteForPoll(poll)
 
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, 100))
 	err := s.Keeper.TallyVote(s.Ctx, vote.Sender, vote.Poll(), vote.Data())
 	res := s.Keeper.Result(s.Ctx, poll)
 	assert.NoError(t, err)
@@ -294,7 +294,7 @@ func TestKeeper_TallyVote_TwoVotesFromSameValidator_ReturnError(t *testing.T) {
 	vote2 := randomVoteForPoll(poll)
 	vote3 := randomVoteForPoll(poll)
 
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, 100))
 	assert.NoError(t, s.Keeper.TallyVote(s.Ctx, vote1.Sender, vote1.Poll(), vote1.Data()))
 	assert.Error(t, s.Keeper.TallyVote(s.Ctx, vote2.Sender, vote2.Poll(), vote2.Data()))
 	assert.Error(t, s.Keeper.TallyVote(s.Ctx, vote3.Sender, vote3.Poll(), vote3.Data()))
@@ -314,7 +314,7 @@ func TestKeeper_TallyVote_MultipleVotesUntilDecision(t *testing.T) {
 	}
 
 	poll := randomPoll()
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, 100))
 
 	vote := randomVoteForPoll(poll)
 	s.Broadcaster.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return s.ValidatorSet[0].GetOperator() }
@@ -345,7 +345,7 @@ func TestKeeper_TallyVote_ForDecidedPoll(t *testing.T) {
 	s.ValidatorSet = []snapshot.Validator{minorityPower, majorityPower}
 
 	poll := randomPoll()
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, 100))
 
 	vote1 := randomVoteForPoll(poll)
 	s.Broadcaster.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return majorityPower.GetOperator() }

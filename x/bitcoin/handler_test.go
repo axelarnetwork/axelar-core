@@ -100,6 +100,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 	var (
 		btcKeeper *mock.BTCKeeperMock
 		voter     *mock.VoterMock
+		signer    *mock.SignerMock
 		ctx       sdk.Context
 		msg       types.MsgConfirmOutpoint
 	)
@@ -125,8 +126,18 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 			CodecFunc:                         func() *amino.Codec { return testutils.Codec() },
 		}
 		voter = &mock.VoterMock{
-			InitPollFunc: func(sdk.Context, vote.PollMeta) error { return nil },
+			InitPollFunc: func(sdk.Context, vote.PollMeta, int64) error { return nil },
 		}
+
+		signer = &mock.SignerMock{
+			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
+				return rand.StrBetween(5, 20), true
+			},
+			GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
+				return rand.PosI64(), true
+			},
+		}
+
 		ctx = sdk.NewContext(nil, abci.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		msg = randomMsgConfirmOutpoint()
 		msg.OutPointInfo.Address = address.EncodeAddress()
@@ -135,19 +146,21 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 	repeatCount := 20
 	t.Run("happy path outpoint unknown", testutils.Func(func(t *testing.T) {
 		setup()
-		res, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, msg)
+		res, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, signer, msg)
 		assert.NoError(t, err)
 		assert.Len(t, filter(res.Events, func(event sdk.Event) bool { return event.Type == types.EventTypeOutpointConfirmation }), 1)
 		assert.Equal(t, msg.OutPointInfo, btcKeeper.SetUnconfirmedOutpointInfoCalls()[0].Info)
+		assert.Equal(t, tss.MasterKey, signer.GetCurrentKeyIDCalls()[0].KeyRole)
 		assert.Equal(t, voter.InitPollCalls()[0].Poll, btcKeeper.SetUnconfirmedOutpointInfoCalls()[0].Poll)
 	}).Repeat(repeatCount))
 
 	t.Run("happy path outpoint unconfirmed", testutils.Func(func(t *testing.T) {
 		setup()
-		res, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, msg)
+		res, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, signer, msg)
 		assert.NoError(t, err)
 		assert.Len(t, filter(res.Events, func(event sdk.Event) bool { return event.Type == types.EventTypeOutpointConfirmation }), 1)
 		assert.Equal(t, msg.OutPointInfo, btcKeeper.SetUnconfirmedOutpointInfoCalls()[0].Info)
+		assert.Equal(t, tss.MasterKey, signer.GetCurrentKeyIDCalls()[0].KeyRole)
 		assert.Equal(t, voter.InitPollCalls()[0].Poll, btcKeeper.SetUnconfirmedOutpointInfoCalls()[0].Poll)
 	}).Repeat(repeatCount))
 
@@ -156,7 +169,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 		btcKeeper.GetOutPointInfoFunc = func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
 			return msg.OutPointInfo, types.CONFIRMED, true
 		}
-		_, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, msg)
+		_, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, signer, msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
 
@@ -165,21 +178,21 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 		btcKeeper.GetOutPointInfoFunc = func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
 			return msg.OutPointInfo, types.SPENT, true
 		}
-		_, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, msg)
+		_, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, signer, msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
 
 	t.Run("address unknown", testutils.Func(func(t *testing.T) {
 		setup()
 		btcKeeper.GetAddressFunc = func(sdk.Context, string) (types.AddressInfo, bool) { return types.AddressInfo{}, false }
-		_, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, msg)
+		_, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, signer, msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
 
 	t.Run("poll setup failed", testutils.Func(func(t *testing.T) {
 		setup()
-		voter.InitPollFunc = func(sdk.Context, vote.PollMeta) error { return fmt.Errorf("poll setup failed") }
-		_, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, msg)
+		voter.InitPollFunc = func(sdk.Context, vote.PollMeta, int64) error { return fmt.Errorf("poll setup failed") }
+		_, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, signer, msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
 }

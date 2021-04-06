@@ -8,6 +8,7 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
+	bitcoin "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 
 	"github.com/stretchr/testify/assert"
@@ -91,6 +92,30 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_NewKeyIsSet(t *testing.T) {
 		assert.True(t, ok)
 		assert.Equal(t, expectedKey, actualKey)
 	}
+}
+
+func TestKeeper_AssignNextMasterKey_RotateMasterKey_AssignNextSecondaryKey_RotateSecondaryKey(t *testing.T) {
+	currHeight := rand2.I64Between(0, 10000000)
+
+	chain := bitcoin.Bitcoin
+	s := setup(t)
+	ctx := s.Ctx.WithBlockHeight(currHeight)
+	expectedMasterKey := s.SetKey(t, ctx)
+	expectedSecondaryKey := s.SetKey(t, ctx)
+
+	assert.NoError(t, s.Keeper.AssignNextKey(ctx, chain, exported.MasterKey, expectedMasterKey.ID))
+	assert.NoError(t, s.Keeper.RotateKey(s.Ctx, chain, exported.MasterKey))
+
+	assert.NoError(t, s.Keeper.AssignNextKey(ctx, chain, exported.SecondaryKey, expectedSecondaryKey.ID))
+	assert.NoError(t, s.Keeper.RotateKey(s.Ctx, chain, exported.SecondaryKey))
+
+	actualMasterKey, ok := s.Keeper.GetCurrentKey(s.Ctx, chain, exported.MasterKey)
+	assert.True(t, ok)
+	assert.Equal(t, expectedMasterKey, actualMasterKey)
+
+	actualSecondaryKey, ok := s.Keeper.GetCurrentKey(s.Ctx, chain, exported.SecondaryKey)
+	assert.True(t, ok)
+	assert.Equal(t, expectedSecondaryKey, actualSecondaryKey)
 }
 
 func TestKeeper_AssignNextMasterKey_RotateMasterKey_MultipleTimes_PreviousKeysStillAvailable(t *testing.T) {

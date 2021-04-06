@@ -37,7 +37,7 @@ type Voter interface {
 
 // InitPoller is a minimal interface to start a poll
 type InitPoller = interface {
-	InitPoll(ctx sdk.Context, poll vote.PollMeta) error
+	InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error
 }
 
 // TofndClient wraps around TofndKeyGenClient and TofndSignClient

@@ -86,13 +86,13 @@ func (k Keeper) GetVotingThreshold(ctx sdk.Context) utils.Threshold {
 
 // InitPoll initializes a new poll. This is the first step of the voting protocol.
 // The Keeper only accepts votes for initialized polls.
-func (k Keeper) InitPoll(ctx sdk.Context, poll exported.PollMeta) error {
+func (k Keeper) InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64) error {
 	if k.getPoll(ctx, poll) != nil {
 		return fmt.Errorf("poll with same name already exists")
 	}
 
-	r := k.snapshotter.GetLatestCounter(ctx)
-	k.setPoll(ctx, types.Poll{Meta: poll, ValidatorSnapshotCounter: r})
+	k.setPoll(ctx, types.Poll{Meta: poll, ValidatorSnapshotCounter: snapshotCounter})
+
 	return nil
 }
 

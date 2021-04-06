@@ -60,7 +60,7 @@ func setup(t *testing.T) *testSetup {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 	broadcaster := prepareBroadcaster(t, ctx, testutils.Codec(), validators)
 	voter := &tssMock.VoterMock{
-		InitPollFunc:   func(ctx sdk.Context, poll exported.PollMeta) error { return nil },
+		InitPollFunc:   func(ctx sdk.Context, poll exported.PollMeta, _ int64) error { return nil },
 		RecordVoteFunc: func(exported.MsgVote) {},
 	}
 	subspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), "tss")
