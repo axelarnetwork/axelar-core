@@ -50,13 +50,13 @@ func NewHandler(k types.BTCKeeper, v types.Voter, signer types.Signer, n types.N
 
 // HandleMsgLink handles address linking
 func HandleMsgLink(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n types.Nexus, msg types.MsgLink) (*sdk.Result, error) {
-	key, recipientChain, err := checkLinkRequisites(ctx, s, n, msg.RecipientChain)
+	masterKey, secondaryKey, recipientChain, err := checkLinkRequisites(ctx, s, n, msg.RecipientChain)
 	if err != nil {
 		return nil, err
 	}
 
 	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: msg.RecipientAddr}
-	depositAddr := types.NewLinkedAddress(key, k.GetNetwork(ctx), recipient)
+	depositAddr := types.NewLinkedAddress(masterKey, secondaryKey, k.GetNetwork(ctx), recipient)
 	n.LinkAddresses(ctx, depositAddr.ToCrossChainAddr(), recipient)
 	k.SetAddress(ctx, depositAddr)
 
@@ -215,39 +215,36 @@ func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer ty
 		return nil, fmt.Errorf("previous consolidation transaction must be confirmed first")
 	}
 
-	outPuts, totalWithdrawals := prepareOutputs(ctx, k, n)
-	prevOuts, totalDeposits, err := prepareInputs(ctx, k, signer)
+	outputs, totalWithdrawals := prepareOutputs(ctx, k, n)
+	inputs, totalDeposits, err := prepareInputs(ctx, k, signer)
 	if err != nil {
 		return nil, err
 	}
 
 	change := totalDeposits.Sub(totalWithdrawals).SubRaw(int64(msg.Fee))
 	switch change.Sign() {
-	case -1:
+	case -1, 0:
 		return nil, fmt.Errorf("not enough deposits (%s) to make all withdrawals (%s) with a transaction fee of %s",
 			totalDeposits.String(), totalWithdrawals.String(), msg.Fee.String(),
 		)
-	case 0:
-		k.SetMasterKeyUtxoExists(ctx, false)
-		k.Logger(ctx).Info("creating a transaction without change")
 	case 1:
 		changeOutput, err := prepareChange(ctx, k, signer, change)
 		if err != nil {
 			return nil, err
 		}
-		outPuts = append(outPuts, changeOutput)
+		outputs = append(outputs, changeOutput)
 		k.SetMasterKeyUtxoExists(ctx, true)
 	default:
 		return nil, fmt.Errorf("sign value of change for consolidation transaction unexpected: %d", change.Sign())
 	}
 
-	tx, err := types.CreateTx(prevOuts, outPuts)
+	tx, err := types.CreateTx(inputs, outputs)
 	if err != nil {
 		return nil, err
 	}
 	k.SetUnsignedTx(ctx, tx)
 
-	err = startSignInputs(ctx, signer, snapshotter, v, tx, prevOuts)
+	err = startSignInputs(ctx, signer, snapshotter, v, tx, inputs)
 	if err != nil {
 		return nil, err
 	}
@@ -358,20 +355,25 @@ func startSignInputs(ctx sdk.Context, signer types.Signer, snapshotter types.Sna
 	return nil
 }
 
-func checkLinkRequisites(ctx sdk.Context, s types.Signer, n types.Nexus, recipientChainName string) (tss.Key, nexus.Chain, error) {
-	key, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.SecondaryKey)
+func checkLinkRequisites(ctx sdk.Context, s types.Signer, n types.Nexus, recipientChainName string) (tss.Key, tss.Key, nexus.Chain, error) {
+	masterKey, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.MasterKey)
 	if !ok {
-		return tss.Key{}, nexus.Chain{}, fmt.Errorf("secondary key not set")
+		return tss.Key{}, tss.Key{}, nexus.Chain{}, fmt.Errorf("master key not set")
+	}
+
+	secondaryKey, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.SecondaryKey)
+	if !ok {
+		return tss.Key{}, tss.Key{}, nexus.Chain{}, fmt.Errorf("secondary key not set")
 	}
 
 	recipientChain, ok := n.GetChain(ctx, recipientChainName)
 	if !ok {
-		return tss.Key{}, nexus.Chain{}, fmt.Errorf("unknown recipient chain")
+		return tss.Key{}, tss.Key{}, nexus.Chain{}, fmt.Errorf("unknown recipient chain")
 	}
 
 	if !n.IsAssetRegistered(ctx, recipientChain.Name, exported.Bitcoin.NativeAsset) {
-		return tss.Key{}, nexus.Chain{}, fmt.Errorf("asset '%s' not registered for chain '%s'", exported.Bitcoin.NativeAsset, recipientChain.Name)
+		return tss.Key{}, tss.Key{}, nexus.Chain{}, fmt.Errorf("asset '%s' not registered for chain '%s'", exported.Bitcoin.NativeAsset, recipientChain.Name)
 	}
 
-	return key, recipientChain, nil
+	return masterKey, secondaryKey, recipientChain, nil
 }

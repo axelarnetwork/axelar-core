@@ -93,12 +93,12 @@ const (
 )
 
 // NewOutPointInfo returns a new OutPointInfo instance
-func NewOutPointInfo(outPoint *wire.OutPoint, amount btcutil.Amount, address string) (OutPointInfo, error) {
+func NewOutPointInfo(outPoint *wire.OutPoint, amount btcutil.Amount, address string) OutPointInfo {
 	return OutPointInfo{
 		OutPoint: outPoint,
 		Amount:   amount,
 		Address:  address,
-	}, nil
+	}
 }
 
 // Validate ensures that all fields are filled with sensible values
@@ -189,12 +189,25 @@ type DepositQueryParams struct {
 // RedeemScript represents the script that is used to redeem a transaction that spent to the address derived from the script
 type RedeemScript []byte
 
-// CreateCrossChainRedeemScript generates a redeem script unique to the given key and cross-chain address
-func CreateCrossChainRedeemScript(pk btcec.PublicKey, crossAddr nexus.CrossChainAddress) RedeemScript {
-	keyBz := pk.SerializeCompressed()
+// createCrossChainRedeemScript generates a redeem script unique to the given key and cross-chain address
+func createCrossChainRedeemScript(pk1 btcec.PublicKey, pk2 btcec.PublicKey, crossAddr nexus.CrossChainAddress) RedeemScript {
 	nonce := btcutil.Hash160([]byte(crossAddr.String()))
 
-	redeemScript, err := txscript.NewScriptBuilder().AddData(keyBz).AddOp(txscript.OP_CHECKSIG).AddData(nonce).AddOp(txscript.OP_DROP).Script()
+	// the UTXOs sent to deposit addresses can be spent by both the master and secondary keys
+	// therefore the redeem script requires a 1-of-2 multisig
+	redeemScript, err := txscript.NewScriptBuilder().
+		// Push a zero onto the stack and then swap it with the signature due to a bug in OP_CHECKMULTISIG that pops a dummy argument in the end and ignores it.
+		// For more details, check out https://bitcoin.stackexchange.com/questions/40669/checkmultisig-a-worked-out-example/40673#40673
+		AddOp(txscript.OP_0).
+		AddOp(txscript.OP_SWAP).
+		AddOp(txscript.OP_1).
+		AddData(pk1.SerializeCompressed()).
+		AddData(pk2.SerializeCompressed()).
+		AddOp(txscript.OP_2).
+		AddOp(txscript.OP_CHECKMULTISIG).
+		AddData(nonce).
+		AddOp(txscript.OP_DROP).
+		Script()
 	// the script builder only returns an error if the script is non-canonical.
 	// Since we want to build canonical scripts and the template is predefined, an error here means the template is wrong,
 	// i.e. it's a bug.
@@ -204,11 +217,12 @@ func CreateCrossChainRedeemScript(pk btcec.PublicKey, crossAddr nexus.CrossChain
 	return redeemScript
 }
 
-// CreateMasterRedeemScript generates a redeem script unique to the given key
-func CreateMasterRedeemScript(pk btcec.PublicKey) RedeemScript {
-	keyBz := pk.SerializeCompressed()
-
-	redeemScript, err := txscript.NewScriptBuilder().AddData(keyBz).AddOp(txscript.OP_CHECKSIG).Script()
+// createMasterRedeemScript generates a redeem script unique to the given key
+func createMasterRedeemScript(pk btcec.PublicKey) RedeemScript {
+	redeemScript, err := txscript.NewScriptBuilder().
+		AddData(pk.SerializeCompressed()).
+		AddOp(txscript.OP_CHECKSIG).
+		Script()
 	// the script builder only returns an error of the script is non-canonical.
 	// Since we want to build canonical scripts and the template is predefined, an error here means the template is wrong,
 	// i.e. it's a bug.
@@ -218,8 +232,8 @@ func CreateMasterRedeemScript(pk btcec.PublicKey) RedeemScript {
 	return redeemScript
 }
 
-// CreateDepositAddress creates a SeqWit script address based on a redeem script
-func CreateDepositAddress(script RedeemScript, network Network) *btcutil.AddressWitnessScriptHash {
+// createP2wshAddress creates a SeqWit script address based on a redeem script
+func createP2wshAddress(script RedeemScript, network Network) *btcutil.AddressWitnessScriptHash {
 	hash := sha256.Sum256(script)
 	// hash is 32 bit long, so this cannot throw an error if there is no bug
 	addr, err := btcutil.NewAddressWitnessScriptHash(hash[:], network.Params())
@@ -238,8 +252,9 @@ type AddressInfo struct {
 
 // NewConsolidationAddress creates a new address used to consolidate all unspent outpoints
 func NewConsolidationAddress(pk tss.Key, network Network) AddressInfo {
-	script := CreateMasterRedeemScript(btcec.PublicKey(pk.Value))
-	addr := CreateDepositAddress(script, network)
+	script := createMasterRedeemScript(btcec.PublicKey(pk.Value))
+	addr := createP2wshAddress(script, network)
+
 	return AddressInfo{
 		RedeemScript: script,
 		Address:      addr,
@@ -248,13 +263,18 @@ func NewConsolidationAddress(pk tss.Key, network Network) AddressInfo {
 }
 
 // NewLinkedAddress creates a new address to make a deposit which can be transfered to another blockchain
-func NewLinkedAddress(pk tss.Key, network Network, recipient nexus.CrossChainAddress) AddressInfo {
-	script := CreateCrossChainRedeemScript(btcec.PublicKey(pk.Value), recipient)
-	addr := CreateDepositAddress(script, network)
+func NewLinkedAddress(masterKey tss.Key, secondaryKey tss.Key, network Network, recipient nexus.CrossChainAddress) AddressInfo {
+	script := createCrossChainRedeemScript(
+		btcec.PublicKey(masterKey.Value),
+		btcec.PublicKey(secondaryKey.Value),
+		recipient,
+	)
+	addr := createP2wshAddress(script, network)
+
 	return AddressInfo{
 		RedeemScript: script,
 		Address:      addr,
-		Key:          pk,
+		Key:          secondaryKey,
 	}
 }
 
@@ -266,8 +286,8 @@ func (addr AddressInfo) ToCrossChainAddr() nexus.CrossChainAddress {
 	}
 }
 
-// ValidateTxScript checks if the input at the given index can be spent with the given script
-func ValidateTxScript(tx *wire.MsgTx, idx int, amount int64, payScript []byte) error {
+// validateTxScript checks if the input at the given index can be spent with the given script
+func validateTxScript(tx *wire.MsgTx, idx int, amount int64, payScript []byte) error {
 	// make sure the tx is considered standard to increase its chance to be mined
 	flags := txscript.StandardVerifyFlags
 
@@ -292,7 +312,6 @@ type OutPointToSign struct {
 // Returns an error if the resulting signed Bitcoin transaction is invalid.
 func AssembleBtcTx(rawTx *wire.MsgTx, outpointsToSign []OutPointToSign, sigs []btcec.Signature) (*wire.MsgTx, error) {
 	for i, in := range outpointsToSign {
-
 		sigBytes := append(sigs[i].Serialize(), byte(txscript.SigHashAll))
 		rawTx.TxIn[i].Witness = wire.TxWitness{sigBytes, in.RedeemScript}
 
@@ -301,7 +320,7 @@ func AssembleBtcTx(rawTx *wire.MsgTx, outpointsToSign []OutPointToSign, sigs []b
 			return nil, err
 		}
 
-		if err := ValidateTxScript(rawTx, i, int64(in.OutPointInfo.Amount), payScript); err != nil {
+		if err := validateTxScript(rawTx, i, int64(in.OutPointInfo.Amount), payScript); err != nil {
 			return nil, err
 		}
 	}

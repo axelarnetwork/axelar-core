@@ -98,6 +98,7 @@ func (k Keeper) setKeyRole(ctx sdk.Context, keyID string, keyRole exported.KeyRo
 	ctx.KVStore(k.storeKey).Set([]byte(storageKey), k.cdc.MustMarshalBinaryLengthPrefixed(keyRole))
 }
 
+// GetKeyRole retrieves the key role for a given key ID
 func (k Keeper) GetKeyRole(ctx sdk.Context, keyID string) (exported.KeyRole, bool) {
 	storageKey := fmt.Sprintf("%s%s", keyRolePrefix, keyID)
 
