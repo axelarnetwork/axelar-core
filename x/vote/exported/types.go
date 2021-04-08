@@ -76,7 +76,7 @@ type MsgVote interface {
 
 // Voter is the interface that provides voting functionality to other modules
 type Voter interface {
-	InitPoll(ctx sdk.Context, poll PollMeta) error
+	InitPoll(ctx sdk.Context, poll PollMeta, snapshotCounter int64) error
 	DeletePoll(ctx sdk.Context, poll PollMeta)
 	RecordVote(vote MsgVote)
 	TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta PollMeta, data VotingData) error

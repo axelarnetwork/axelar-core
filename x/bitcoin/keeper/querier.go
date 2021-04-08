@@ -14,6 +14,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // Query paths
@@ -56,7 +57,7 @@ func queryDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n t
 
 	recipient := nexus.CrossChainAddress{Chain: chain, Address: params.Address}
 
-	pk, ok := s.GetCurrentMasterKey(ctx, exported.Bitcoin)
+	pk, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.MasterKey)
 	if !ok {
 		return nil, fmt.Errorf("key not found")
 	}

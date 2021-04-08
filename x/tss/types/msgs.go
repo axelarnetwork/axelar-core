@@ -14,7 +14,6 @@ import (
 
 // golang stupidity: ensure interface compliance at compile time
 var (
-	_ sdk.Msg                       = MsgAssignNextMasterKey{}
 	_ broadcast.MsgWithSenderSetter = &MsgKeygenTraffic{}
 	_ broadcast.MsgWithSenderSetter = &MsgSignTraffic{}
 	_ voting.MsgVote                = &MsgVotePubKey{}
@@ -114,44 +113,6 @@ func (msg MsgSignTraffic) GetSigners() []sdk.AccAddress {
 // SetSender implements the broadcast.MsgWithSenderSetter interface
 func (msg *MsgSignTraffic) SetSender(sender sdk.AccAddress) {
 	msg.Sender = sender
-}
-
-// MsgAssignNextMasterKey represents a message to assign a new master key
-type MsgAssignNextMasterKey struct {
-	Sender sdk.AccAddress
-	Chain  string
-	KeyID  string
-}
-
-// Route returns the route for this message
-func (msg MsgAssignNextMasterKey) Route() string { return RouterKey }
-
-// Type returns the type of this message
-func (msg MsgAssignNextMasterKey) Type() string { return "AssignNextMasterKey" }
-
-// ValidateBasic performs a stateless validation of this message
-func (msg MsgAssignNextMasterKey) ValidateBasic() error {
-	if msg.Sender == nil {
-		return sdkerrors.ErrInvalidAddress
-	}
-	if msg.KeyID == "" {
-		return fmt.Errorf("missing key ID")
-	}
-	if msg.Chain == "" {
-		return fmt.Errorf("missing chain")
-	}
-	return nil
-}
-
-// GetSignBytes returns the bytes to sign for this message
-func (msg MsgAssignNextMasterKey) GetSignBytes() []byte {
-	bz := ModuleCdc.MustMarshalJSON(msg)
-	return sdk.MustSortJSON(bz)
-}
-
-// GetSigners returns the set of signers for this message
-func (msg MsgAssignNextMasterKey) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Sender}
 }
 
 // MsgVotePubKey represents the message to vote on a public key
@@ -268,43 +229,4 @@ func (msg MsgVoteSig) Poll() voting.PollMeta {
 // Data returns the data value this message votes for
 func (msg MsgVoteSig) Data() voting.VotingData {
 	return msg.SigBytes
-}
-
-// MsgRotateMasterKey represents a message to rotate a master key
-type MsgRotateMasterKey struct {
-	Sender sdk.AccAddress
-	Chain  string
-}
-
-// Route returns the route for this message
-func (msg MsgRotateMasterKey) Route() string {
-	return RouterKey
-}
-
-// Type returns the type of this message
-func (msg MsgRotateMasterKey) Type() string {
-	return "RotateMasterKey"
-}
-
-// ValidateBasic performs a stateless validation of this message
-func (msg MsgRotateMasterKey) ValidateBasic() error {
-	if msg.Sender == nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
-	}
-	if msg.Chain == "" {
-		return fmt.Errorf("missing chain")
-	}
-
-	return nil
-}
-
-// GetSignBytes returns the bytes to sign for this message
-func (msg MsgRotateMasterKey) GetSignBytes() []byte {
-	bz := ModuleCdc.MustMarshalJSON(msg)
-	return sdk.MustSortJSON(bz)
-}
-
-// GetSigners returns the set of signers for this message
-func (msg MsgRotateMasterKey) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Sender}
 }

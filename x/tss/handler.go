@@ -22,10 +22,10 @@ func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Vot
 			return handleMsgSignTraffic(ctx, k, msg)
 		case types.MsgKeygenStart:
 			return handleMsgKeygenStart(ctx, k, s, staker, v, msg)
-		case types.MsgAssignNextMasterKey:
-			return handleMsgAssignNextMasterKey(ctx, k, s, n, msg)
-		case types.MsgRotateMasterKey:
-			return handleMsgRotateMasterKey(ctx, k, n, msg)
+		case types.MsgAssignNextKey:
+			return handleMsgAssignNextKey(ctx, k, s, n, msg)
+		case types.MsgRotateKey:
+			return handleMsgRotateKey(ctx, k, n, msg)
 		case *types.MsgVotePubKey:
 			return handleMsgVotePubKey(ctx, k, v, *msg)
 		case *types.MsgVoteSig:
@@ -51,15 +51,17 @@ func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Vot
 	}
 }
 
-func handleMsgRotateMasterKey(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg types.MsgRotateMasterKey) (*sdk.Result, error) {
+func handleMsgRotateKey(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg types.MsgRotateKey) (*sdk.Result, error) {
 	chain, ok := n.GetChain(ctx, msg.Chain)
 	if !ok {
 		return nil, fmt.Errorf("unknown chain")
 	}
 
-	if err := k.RotateMasterKey(ctx, chain); err != nil {
+	if err := k.RotateKey(ctx, chain, msg.KeyRole); err != nil {
 		return nil, err
 	}
+
+	k.Logger(ctx).Debug(fmt.Sprintf("rotated %s key for chain %s", msg.KeyRole.String(), chain.Name))
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -69,6 +71,7 @@ func handleMsgRotateMasterKey(ctx sdk.Context, k keeper.Keeper, n types.Nexus, m
 			sdk.NewAttribute(types.AttributeChain, chain.Name),
 		),
 	)
+
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
@@ -145,23 +148,43 @@ func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg ty
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func handleMsgAssignNextMasterKey(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, n types.Nexus, msg types.MsgAssignNextMasterKey) (*sdk.Result, error) {
-	counter, ok := k.GetSnapshotCounterForKeyID(ctx, msg.KeyID)
-	if !ok {
-		return nil, fmt.Errorf("could not find snapshot counter for given key ID")
-	}
-	snapshot, ok := s.GetSnapshot(ctx, counter)
-	if !ok {
-		return nil, fmt.Errorf("could not find snapshot for given key ID")
-	}
+func handleMsgAssignNextKey(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, n types.Nexus, msg types.MsgAssignNextKey) (*sdk.Result, error) {
 	chain, ok := n.GetChain(ctx, msg.Chain)
 	if !ok {
 		return nil, fmt.Errorf("unknown chain")
 	}
-	err := k.AssignNextMasterKey(ctx, chain, snapshot.Height, msg.KeyID)
+
+	counter, ok := k.GetSnapshotCounterForKeyID(ctx, msg.KeyID)
+	if !ok {
+		return nil, fmt.Errorf("could not find snapshot counter for given key ID")
+	}
+
+	snapshot, ok := s.GetSnapshot(ctx, counter)
+	if !ok {
+		return nil, fmt.Errorf("could not find snapshot for given key ID")
+	}
+
+	keyRequirement, found := k.GetKeyRequirement(ctx, chain, msg.KeyRole)
+	if !found {
+		return nil, fmt.Errorf("%s key is not required for chain %s", msg.KeyRole.String(), chain.Name)
+	}
+
+	if len(snapshot.Validators) < int(keyRequirement.MinValidatorSubsetSize) {
+		return nil, fmt.Errorf(
+			"expected %s's %s key to be generated with at least %d validators, actual %d",
+			chain.Name,
+			msg.KeyRole.String(),
+			keyRequirement.MinValidatorSubsetSize,
+			len(snapshot.Validators),
+		)
+	}
+
+	err := k.AssignNextKey(ctx, chain, msg.KeyRole, msg.KeyID)
 	if err != nil {
 		return nil, err
 	}
+
+	k.Logger(ctx).Debug(fmt.Sprintf("prepared %s key rotation for chain %s", msg.KeyRole.String(), chain.Name))
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -170,6 +193,7 @@ func handleMsgAssignNextMasterKey(ctx sdk.Context, k keeper.Keeper, s types.Snap
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
 		),
 	)
+
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 

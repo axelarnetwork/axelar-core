@@ -29,6 +29,7 @@ import (
 	ethKeeper "github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -79,15 +80,14 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 	// assign chain master key
 	for _, c := range chains {
-		assignKeyResult := <-chain.Submit(
-			tssTypes.MsgAssignNextMasterKey{Sender: randomSender(), Chain: c, KeyID: masterKeyID1})
+		assignKeyResult := <-chain.Submit(tssTypes.NewMsgAssignNextKey(randomSender(), c, masterKeyID1, tss.MasterKey))
 		assert.NoError(t, assignKeyResult.Error)
 
 	}
 
 	// rotate chain master key
 	for _, c := range chains {
-		rotateEthResult := <-chain.Submit(tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: c})
+		rotateEthResult := <-chain.Submit(tssTypes.NewMsgRotateKey(randomSender(), c, tss.MasterKey))
 		assert.NoError(t, rotateEthResult.Error)
 	}
 
@@ -227,8 +227,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	// assign second key to be the new master key
-	assignKeyResult := <-chain.Submit(
-		tssTypes.MsgAssignNextMasterKey{Sender: randomSender(), Chain: btc.Bitcoin.Name, KeyID: masterKeyID2})
+	assignKeyResult := <-chain.Submit(tssTypes.NewMsgAssignNextKey(randomSender(), btc.Bitcoin.Name, masterKeyID2, tss.MasterKey))
 	assert.NoError(t, assignKeyResult.Error)
 
 	// sign the consolidation transaction
@@ -275,7 +274,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	// rotate master key to new key
-	rotateResult := <-chain.Submit(tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: btc.Bitcoin.Name})
+	rotateResult := <-chain.Submit(tssTypes.NewMsgRotateKey(randomSender(), btc.Bitcoin.Name, tss.MasterKey))
 	assert.NoError(t, rotateResult.Error)
 }
 

@@ -26,7 +26,7 @@ var _ types.Voter = &VoterMock{}
 // 			DeletePollFunc: func(ctx sdk.Context, poll vote.PollMeta)  {
 // 				panic("mock out the DeletePoll method")
 // 			},
-// 			InitPollFunc: func(ctx sdk.Context, poll vote.PollMeta) error {
+// 			InitPollFunc: func(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error {
 // 				panic("mock out the InitPoll method")
 // 			},
 // 			RecordVoteFunc: func(voteMoqParam vote.MsgVote)  {
@@ -49,7 +49,7 @@ type VoterMock struct {
 	DeletePollFunc func(ctx sdk.Context, poll vote.PollMeta)
 
 	// InitPollFunc mocks the InitPoll method.
-	InitPollFunc func(ctx sdk.Context, poll vote.PollMeta) error
+	InitPollFunc func(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error
 
 	// RecordVoteFunc mocks the RecordVote method.
 	RecordVoteFunc func(voteMoqParam vote.MsgVote)
@@ -75,6 +75,8 @@ type VoterMock struct {
 			Ctx sdk.Context
 			// Poll is the poll argument value.
 			Poll vote.PollMeta
+			// SnapshotCounter is the snapshotCounter argument value.
+			SnapshotCounter int64
 		}
 		// RecordVote holds details about calls to the RecordVote method.
 		RecordVote []struct {
@@ -143,33 +145,37 @@ func (mock *VoterMock) DeletePollCalls() []struct {
 }
 
 // InitPoll calls InitPollFunc.
-func (mock *VoterMock) InitPoll(ctx sdk.Context, poll vote.PollMeta) error {
+func (mock *VoterMock) InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error {
 	if mock.InitPollFunc == nil {
 		panic("VoterMock.InitPollFunc: method is nil but Voter.InitPoll was just called")
 	}
 	callInfo := struct {
-		Ctx  sdk.Context
-		Poll vote.PollMeta
+		Ctx             sdk.Context
+		Poll            vote.PollMeta
+		SnapshotCounter int64
 	}{
-		Ctx:  ctx,
-		Poll: poll,
+		Ctx:             ctx,
+		Poll:            poll,
+		SnapshotCounter: snapshotCounter,
 	}
 	mock.lockInitPoll.Lock()
 	mock.calls.InitPoll = append(mock.calls.InitPoll, callInfo)
 	mock.lockInitPoll.Unlock()
-	return mock.InitPollFunc(ctx, poll)
+	return mock.InitPollFunc(ctx, poll, snapshotCounter)
 }
 
 // InitPollCalls gets all the calls that were made to InitPoll.
 // Check the length with:
 //     len(mockedVoter.InitPollCalls())
 func (mock *VoterMock) InitPollCalls() []struct {
-	Ctx  sdk.Context
-	Poll vote.PollMeta
+	Ctx             sdk.Context
+	Poll            vote.PollMeta
+	SnapshotCounter int64
 } {
 	var calls []struct {
-		Ctx  sdk.Context
-		Poll vote.PollMeta
+		Ctx             sdk.Context
+		Poll            vote.PollMeta
+		SnapshotCounter int64
 	}
 	mock.lockInitPoll.RLock()
 	calls = mock.calls.InitPoll
@@ -296,11 +302,11 @@ var _ types.Signer = &SignerMock{}
 //
 // 		// make and configure a mocked types.Signer
 // 		mockedSigner := &SignerMock{
-// 			GetCurrentMasterKeyFunc: func(ctx sdk.Context, chain nexus.Chain) (tss.Key, bool) {
-// 				panic("mock out the GetCurrentMasterKey method")
+// 			GetCurrentKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+// 				panic("mock out the GetCurrentKey method")
 // 			},
-// 			GetCurrentMasterKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain) (string, bool) {
-// 				panic("mock out the GetCurrentMasterKeyID method")
+// 			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
+// 				panic("mock out the GetCurrentKeyID method")
 // 			},
 // 			GetKeyFunc: func(ctx sdk.Context, keyID string) (tss.Key, bool) {
 // 				panic("mock out the GetKey method")
@@ -308,16 +314,13 @@ var _ types.Signer = &SignerMock{}
 // 			GetKeyForSigIDFunc: func(ctx sdk.Context, sigID string) (tss.Key, bool) {
 // 				panic("mock out the GetKeyForSigID method")
 // 			},
-// 			GetNextMasterKeyFunc: func(ctx sdk.Context, chain nexus.Chain) (tss.Key, bool) {
-// 				panic("mock out the GetNextMasterKey method")
-// 			},
 // 			GetSigFunc: func(ctx sdk.Context, sigID string) (tss.Signature, bool) {
 // 				panic("mock out the GetSig method")
 // 			},
 // 			GetSnapshotCounterForKeyIDFunc: func(ctx sdk.Context, keyID string) (int64, bool) {
 // 				panic("mock out the GetSnapshotCounterForKeyID method")
 // 			},
-// 			StartSignFunc: func(ctx sdk.Context, initPoll interface{InitPoll(ctx sdk.Context, poll vote.PollMeta) error}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
+// 			StartSignFunc: func(ctx sdk.Context, initPoll interface{InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
 // 				panic("mock out the StartSign method")
 // 			},
 // 		}
@@ -327,20 +330,17 @@ var _ types.Signer = &SignerMock{}
 //
 // 	}
 type SignerMock struct {
-	// GetCurrentMasterKeyFunc mocks the GetCurrentMasterKey method.
-	GetCurrentMasterKeyFunc func(ctx sdk.Context, chain nexus.Chain) (tss.Key, bool)
+	// GetCurrentKeyFunc mocks the GetCurrentKey method.
+	GetCurrentKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 
-	// GetCurrentMasterKeyIDFunc mocks the GetCurrentMasterKeyID method.
-	GetCurrentMasterKeyIDFunc func(ctx sdk.Context, chain nexus.Chain) (string, bool)
+	// GetCurrentKeyIDFunc mocks the GetCurrentKeyID method.
+	GetCurrentKeyIDFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool)
 
 	// GetKeyFunc mocks the GetKey method.
 	GetKeyFunc func(ctx sdk.Context, keyID string) (tss.Key, bool)
 
 	// GetKeyForSigIDFunc mocks the GetKeyForSigID method.
 	GetKeyForSigIDFunc func(ctx sdk.Context, sigID string) (tss.Key, bool)
-
-	// GetNextMasterKeyFunc mocks the GetNextMasterKey method.
-	GetNextMasterKeyFunc func(ctx sdk.Context, chain nexus.Chain) (tss.Key, bool)
 
 	// GetSigFunc mocks the GetSig method.
 	GetSigFunc func(ctx sdk.Context, sigID string) (tss.Signature, bool)
@@ -350,24 +350,28 @@ type SignerMock struct {
 
 	// StartSignFunc mocks the StartSign method.
 	StartSignFunc func(ctx sdk.Context, initPoll interface {
-		InitPoll(ctx sdk.Context, poll vote.PollMeta) error
+		InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error
 	}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// GetCurrentMasterKey holds details about calls to the GetCurrentMasterKey method.
-		GetCurrentMasterKey []struct {
+		// GetCurrentKey holds details about calls to the GetCurrentKey method.
+		GetCurrentKey []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Chain is the chain argument value.
 			Chain nexus.Chain
+			// KeyRole is the keyRole argument value.
+			KeyRole tss.KeyRole
 		}
-		// GetCurrentMasterKeyID holds details about calls to the GetCurrentMasterKeyID method.
-		GetCurrentMasterKeyID []struct {
+		// GetCurrentKeyID holds details about calls to the GetCurrentKeyID method.
+		GetCurrentKeyID []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Chain is the chain argument value.
 			Chain nexus.Chain
+			// KeyRole is the keyRole argument value.
+			KeyRole tss.KeyRole
 		}
 		// GetKey holds details about calls to the GetKey method.
 		GetKey []struct {
@@ -382,13 +386,6 @@ type SignerMock struct {
 			Ctx sdk.Context
 			// SigID is the sigID argument value.
 			SigID string
-		}
-		// GetNextMasterKey holds details about calls to the GetNextMasterKey method.
-		GetNextMasterKey []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Chain is the chain argument value.
-			Chain nexus.Chain
 		}
 		// GetSig holds details about calls to the GetSig method.
 		GetSig []struct {
@@ -410,7 +407,7 @@ type SignerMock struct {
 			Ctx sdk.Context
 			// InitPoll is the initPoll argument value.
 			InitPoll interface {
-				InitPoll(ctx sdk.Context, poll vote.PollMeta) error
+				InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error
 			}
 			// KeyID is the keyID argument value.
 			KeyID string
@@ -422,83 +419,90 @@ type SignerMock struct {
 			SnapshotMoqParam snapshot.Snapshot
 		}
 	}
-	lockGetCurrentMasterKey        sync.RWMutex
-	lockGetCurrentMasterKeyID      sync.RWMutex
+	lockGetCurrentKey              sync.RWMutex
+	lockGetCurrentKeyID            sync.RWMutex
 	lockGetKey                     sync.RWMutex
 	lockGetKeyForSigID             sync.RWMutex
-	lockGetNextMasterKey           sync.RWMutex
 	lockGetSig                     sync.RWMutex
 	lockGetSnapshotCounterForKeyID sync.RWMutex
 	lockStartSign                  sync.RWMutex
 }
 
-// GetCurrentMasterKey calls GetCurrentMasterKeyFunc.
-func (mock *SignerMock) GetCurrentMasterKey(ctx sdk.Context, chain nexus.Chain) (tss.Key, bool) {
-	if mock.GetCurrentMasterKeyFunc == nil {
-		panic("SignerMock.GetCurrentMasterKeyFunc: method is nil but Signer.GetCurrentMasterKey was just called")
+// GetCurrentKey calls GetCurrentKeyFunc.
+func (mock *SignerMock) GetCurrentKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+	if mock.GetCurrentKeyFunc == nil {
+		panic("SignerMock.GetCurrentKeyFunc: method is nil but Signer.GetCurrentKey was just called")
 	}
 	callInfo := struct {
-		Ctx   sdk.Context
-		Chain nexus.Chain
+		Ctx     sdk.Context
+		Chain   nexus.Chain
+		KeyRole tss.KeyRole
 	}{
-		Ctx:   ctx,
-		Chain: chain,
+		Ctx:     ctx,
+		Chain:   chain,
+		KeyRole: keyRole,
 	}
-	mock.lockGetCurrentMasterKey.Lock()
-	mock.calls.GetCurrentMasterKey = append(mock.calls.GetCurrentMasterKey, callInfo)
-	mock.lockGetCurrentMasterKey.Unlock()
-	return mock.GetCurrentMasterKeyFunc(ctx, chain)
+	mock.lockGetCurrentKey.Lock()
+	mock.calls.GetCurrentKey = append(mock.calls.GetCurrentKey, callInfo)
+	mock.lockGetCurrentKey.Unlock()
+	return mock.GetCurrentKeyFunc(ctx, chain, keyRole)
 }
 
-// GetCurrentMasterKeyCalls gets all the calls that were made to GetCurrentMasterKey.
+// GetCurrentKeyCalls gets all the calls that were made to GetCurrentKey.
 // Check the length with:
-//     len(mockedSigner.GetCurrentMasterKeyCalls())
-func (mock *SignerMock) GetCurrentMasterKeyCalls() []struct {
-	Ctx   sdk.Context
-	Chain nexus.Chain
+//     len(mockedSigner.GetCurrentKeyCalls())
+func (mock *SignerMock) GetCurrentKeyCalls() []struct {
+	Ctx     sdk.Context
+	Chain   nexus.Chain
+	KeyRole tss.KeyRole
 } {
 	var calls []struct {
-		Ctx   sdk.Context
-		Chain nexus.Chain
+		Ctx     sdk.Context
+		Chain   nexus.Chain
+		KeyRole tss.KeyRole
 	}
-	mock.lockGetCurrentMasterKey.RLock()
-	calls = mock.calls.GetCurrentMasterKey
-	mock.lockGetCurrentMasterKey.RUnlock()
+	mock.lockGetCurrentKey.RLock()
+	calls = mock.calls.GetCurrentKey
+	mock.lockGetCurrentKey.RUnlock()
 	return calls
 }
 
-// GetCurrentMasterKeyID calls GetCurrentMasterKeyIDFunc.
-func (mock *SignerMock) GetCurrentMasterKeyID(ctx sdk.Context, chain nexus.Chain) (string, bool) {
-	if mock.GetCurrentMasterKeyIDFunc == nil {
-		panic("SignerMock.GetCurrentMasterKeyIDFunc: method is nil but Signer.GetCurrentMasterKeyID was just called")
+// GetCurrentKeyID calls GetCurrentKeyIDFunc.
+func (mock *SignerMock) GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
+	if mock.GetCurrentKeyIDFunc == nil {
+		panic("SignerMock.GetCurrentKeyIDFunc: method is nil but Signer.GetCurrentKeyID was just called")
 	}
 	callInfo := struct {
-		Ctx   sdk.Context
-		Chain nexus.Chain
+		Ctx     sdk.Context
+		Chain   nexus.Chain
+		KeyRole tss.KeyRole
 	}{
-		Ctx:   ctx,
-		Chain: chain,
+		Ctx:     ctx,
+		Chain:   chain,
+		KeyRole: keyRole,
 	}
-	mock.lockGetCurrentMasterKeyID.Lock()
-	mock.calls.GetCurrentMasterKeyID = append(mock.calls.GetCurrentMasterKeyID, callInfo)
-	mock.lockGetCurrentMasterKeyID.Unlock()
-	return mock.GetCurrentMasterKeyIDFunc(ctx, chain)
+	mock.lockGetCurrentKeyID.Lock()
+	mock.calls.GetCurrentKeyID = append(mock.calls.GetCurrentKeyID, callInfo)
+	mock.lockGetCurrentKeyID.Unlock()
+	return mock.GetCurrentKeyIDFunc(ctx, chain, keyRole)
 }
 
-// GetCurrentMasterKeyIDCalls gets all the calls that were made to GetCurrentMasterKeyID.
+// GetCurrentKeyIDCalls gets all the calls that were made to GetCurrentKeyID.
 // Check the length with:
-//     len(mockedSigner.GetCurrentMasterKeyIDCalls())
-func (mock *SignerMock) GetCurrentMasterKeyIDCalls() []struct {
-	Ctx   sdk.Context
-	Chain nexus.Chain
+//     len(mockedSigner.GetCurrentKeyIDCalls())
+func (mock *SignerMock) GetCurrentKeyIDCalls() []struct {
+	Ctx     sdk.Context
+	Chain   nexus.Chain
+	KeyRole tss.KeyRole
 } {
 	var calls []struct {
-		Ctx   sdk.Context
-		Chain nexus.Chain
+		Ctx     sdk.Context
+		Chain   nexus.Chain
+		KeyRole tss.KeyRole
 	}
-	mock.lockGetCurrentMasterKeyID.RLock()
-	calls = mock.calls.GetCurrentMasterKeyID
-	mock.lockGetCurrentMasterKeyID.RUnlock()
+	mock.lockGetCurrentKeyID.RLock()
+	calls = mock.calls.GetCurrentKeyID
+	mock.lockGetCurrentKeyID.RUnlock()
 	return calls
 }
 
@@ -569,41 +573,6 @@ func (mock *SignerMock) GetKeyForSigIDCalls() []struct {
 	mock.lockGetKeyForSigID.RLock()
 	calls = mock.calls.GetKeyForSigID
 	mock.lockGetKeyForSigID.RUnlock()
-	return calls
-}
-
-// GetNextMasterKey calls GetNextMasterKeyFunc.
-func (mock *SignerMock) GetNextMasterKey(ctx sdk.Context, chain nexus.Chain) (tss.Key, bool) {
-	if mock.GetNextMasterKeyFunc == nil {
-		panic("SignerMock.GetNextMasterKeyFunc: method is nil but Signer.GetNextMasterKey was just called")
-	}
-	callInfo := struct {
-		Ctx   sdk.Context
-		Chain nexus.Chain
-	}{
-		Ctx:   ctx,
-		Chain: chain,
-	}
-	mock.lockGetNextMasterKey.Lock()
-	mock.calls.GetNextMasterKey = append(mock.calls.GetNextMasterKey, callInfo)
-	mock.lockGetNextMasterKey.Unlock()
-	return mock.GetNextMasterKeyFunc(ctx, chain)
-}
-
-// GetNextMasterKeyCalls gets all the calls that were made to GetNextMasterKey.
-// Check the length with:
-//     len(mockedSigner.GetNextMasterKeyCalls())
-func (mock *SignerMock) GetNextMasterKeyCalls() []struct {
-	Ctx   sdk.Context
-	Chain nexus.Chain
-} {
-	var calls []struct {
-		Ctx   sdk.Context
-		Chain nexus.Chain
-	}
-	mock.lockGetNextMasterKey.RLock()
-	calls = mock.calls.GetNextMasterKey
-	mock.lockGetNextMasterKey.RUnlock()
 	return calls
 }
 
@@ -679,7 +648,7 @@ func (mock *SignerMock) GetSnapshotCounterForKeyIDCalls() []struct {
 
 // StartSign calls StartSignFunc.
 func (mock *SignerMock) StartSign(ctx sdk.Context, initPoll interface {
-	InitPoll(ctx sdk.Context, poll vote.PollMeta) error
+	InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error
 }, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
 	if mock.StartSignFunc == nil {
 		panic("SignerMock.StartSignFunc: method is nil but Signer.StartSign was just called")
@@ -687,7 +656,7 @@ func (mock *SignerMock) StartSign(ctx sdk.Context, initPoll interface {
 	callInfo := struct {
 		Ctx      sdk.Context
 		InitPoll interface {
-			InitPoll(ctx sdk.Context, poll vote.PollMeta) error
+			InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error
 		}
 		KeyID            string
 		SigID            string
@@ -713,7 +682,7 @@ func (mock *SignerMock) StartSign(ctx sdk.Context, initPoll interface {
 func (mock *SignerMock) StartSignCalls() []struct {
 	Ctx      sdk.Context
 	InitPoll interface {
-		InitPoll(ctx sdk.Context, poll vote.PollMeta) error
+		InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error
 	}
 	KeyID            string
 	SigID            string
@@ -723,7 +692,7 @@ func (mock *SignerMock) StartSignCalls() []struct {
 	var calls []struct {
 		Ctx      sdk.Context
 		InitPoll interface {
-			InitPoll(ctx sdk.Context, poll vote.PollMeta) error
+			InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error
 		}
 		KeyID            string
 		SigID            string

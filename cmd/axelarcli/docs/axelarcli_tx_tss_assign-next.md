@@ -1,9 +1,9 @@
-## axelarcli tx tss mk-assign-next
+## axelarcli tx tss assign-next
 
-Assigns a previously created key with \[keyID\] as the next master key for \[chain\]
+Assigns a previously created key with \[keyID\] as the next key for \[chain\]
 
 ```
-axelarcli tx tss mk-assign-next [chain] [keyID] [flags]
+axelarcli tx tss assign-next [chain] [role] [keyID] [flags]
 ```
 
 ### Options
@@ -18,7 +18,7 @@ axelarcli tx tss mk-assign-next [chain] [keyID] [flags]
       --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
       --gas-prices string        Gas prices to determine the transaction fee (e.g. 10uatom)
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible and the node operates offline)
-  -h, --help                     help for mk-assign-next
+  -h, --help                     help for assign-next
       --indent                   Add indent to JSON response
       --keyring-backend string   Select keyring's backend (os|file|test) (default "os")
       --ledger                   Use a connected Ledger device

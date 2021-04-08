@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 
 	cliUtils "github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -26,8 +27,8 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 	tssTxCmd.AddCommand(flags.PostCommands(
 		getCmdKeygenStart(cdc),
-		getCmdMasterKeyAssignNext(cdc),
-		getCmdRotateMasterKey(cdc),
+		getCmdAssignNextKey(cdc),
+		getCmdRotateKey(cdc),
 		getCmdDeregister(cdc),
 	)...)
 
@@ -61,46 +62,56 @@ func getCmdKeygenStart(cdc *codec.Codec) *cobra.Command {
 	return cmd
 }
 
-func getCmdMasterKeyAssignNext(cdc *codec.Codec) *cobra.Command {
+func getCmdAssignNextKey(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "mk-assign-next [chain] [keyID]",
-		Short: "Assigns a previously created key with [keyID] as the next master key for [chain]",
+		Use:   "assign-next [chain] [role] [keyID]",
+		Short: "Assigns a previously created key with [keyID] as the next key for [chain]",
+		Args:  cobra.ExactArgs(3),
+	}
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
+
+		chain := args[0]
+		keyRole, err := exported.KeyRoleFromStr(args[1])
+		if err != nil {
+			return err
+		}
+		keyID := args[2]
+
+		msg := types.NewMsgAssignNextKey(cliCtx.FromAddress, chain, keyID, keyRole)
+
+		if err := msg.ValidateBasic(); err != nil {
+			return err
+		}
+
+		return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+	}
+
+	return cmd
+}
+
+func getCmdRotateKey(cdc *codec.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "rotate [chain] [role]",
+		Short: "Rotate the given chain from the old key to the previously assigned one",
 		Args:  cobra.ExactArgs(2),
 	}
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
 
-		msg := types.MsgAssignNextMasterKey{
-			Sender: cliCtx.FromAddress,
-			Chain:  args[0],
-			KeyID:  args[1],
+		chain := args[0]
+		keyRole, err := exported.KeyRoleFromStr(args[1])
+		if err != nil {
+			return err
 		}
+
+		msg := types.NewMsgRotateKey(cliCtx.FromAddress, chain, keyRole)
 		if err := msg.ValidateBasic(); err != nil {
 			return err
 		}
-		return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
-	}
-	return cmd
-}
 
-func getCmdRotateMasterKey(cdc *codec.Codec) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "mk-rotate [chain]",
-		Short: "Rotate the given chain from the old master key to the previously created one (see mk-refresh)",
-		Args:  cobra.ExactArgs(1),
-	}
-
-	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
-
-		msg := types.MsgRotateMasterKey{
-			Sender: cliCtx.FromAddress,
-			Chain:  args[0],
-		}
-		if err := msg.ValidateBasic(); err != nil {
-			return err
-		}
 		return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 	}
 	return cmd

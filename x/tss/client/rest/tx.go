@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -27,24 +28,26 @@ type ReqKeygenStart struct {
 	SubsetSize int64        `json:"validator_count" yaml:"validator_count"`
 }
 
-// ReqMasterKeyAssignNext represents a request to assign a new master key
-type ReqMasterKeyAssignNext struct {
+// ReqKeyAssignNext represents a request to assign a new key
+type ReqKeyAssignNext struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	KeyId   string       `json:"key_id" yaml:"key_id"`
+	KeyRole string       `json:"key_role" yaml:"key_role"`
 }
 
-// ReqMasterKeyRotate represents a request to rotate a master key
-type ReqMasterKeyRotate struct {
+// ReqKeyRotate represents a request to rotate a key
+type ReqKeyRotate struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	Chain   string       `json:"chain" yaml:"chain"`
+	KeyRole string       `json:"key_role" yaml:"key_role"`
 }
 
 // RegisterRoutes registers all REST routes with the given router
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	registerTx := clientUtils.RegisterTxHandlerFn(r, types.RestRoute)
 	registerTx(GetHandlerKeygenStart(cliCtx), TxMethodKeygenStart)
-	registerTx(GetHandlerMasterKeyAssignNext(cliCtx), TxMethodMasterKeyAssignNext, clientUtils.PathVarChain)
-	registerTx(GetHandlerMasterKeyRotate(cliCtx), TxMethodMasterKeyRotate, clientUtils.PathVarChain)
+	registerTx(GetHandlerKeyAssignNext(cliCtx), TxMethodMasterKeyAssignNext, clientUtils.PathVarChain)
+	registerTx(GetHandlerKeyRotate(cliCtx), TxMethodMasterKeyRotate, clientUtils.PathVarChain)
 }
 
 func GetHandlerKeygenStart(cliCtx context.CLIContext) http.HandlerFunc {
@@ -74,9 +77,9 @@ func GetHandlerKeygenStart(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-func GetHandlerMasterKeyAssignNext(cliCtx context.CLIContext) http.HandlerFunc {
+func GetHandlerKeyAssignNext(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReqMasterKeyAssignNext
+		var req ReqKeyAssignNext
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
 			return
 		}
@@ -90,22 +93,25 @@ func GetHandlerMasterKeyAssignNext(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		msg := types.MsgAssignNextMasterKey{
-			Sender: sender,
-			Chain:  mux.Vars(r)[clientUtils.PathVarChain],
-			KeyID:  req.KeyId,
+		keyRole, err := exported.KeyRoleFromStr(req.KeyRole)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
 		}
+
+		msg := types.NewMsgAssignNextKey(sender, mux.Vars(r)[clientUtils.PathVarChain], req.KeyId, keyRole)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
+
 		utils.WriteGenerateStdTxResponse(w, cliCtx, req.BaseReq, []sdk.Msg{msg})
 	}
 }
 
-func GetHandlerMasterKeyRotate(cliCtx context.CLIContext) http.HandlerFunc {
+func GetHandlerKeyRotate(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReqMasterKeyRotate
+		var req ReqKeyRotate
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
 			return
 		}
@@ -119,14 +125,18 @@ func GetHandlerMasterKeyRotate(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		msg := types.MsgRotateMasterKey{
-			Sender: sender,
-			Chain:  mux.Vars(r)[clientUtils.PathVarChain],
+		keyRole, err := exported.KeyRoleFromStr(req.KeyRole)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
 		}
+
+		msg := types.NewMsgRotateKey(sender, mux.Vars(r)[clientUtils.PathVarChain], keyRole)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
+
 		utils.WriteGenerateStdTxResponse(w, cliCtx, req.BaseReq, []sdk.Msg{msg})
 	}
 }

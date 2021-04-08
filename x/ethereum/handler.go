@@ -17,6 +17,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 
 	"github.com/ethereum/go-ethereum/crypto"
@@ -32,9 +33,9 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 		case *types.MsgVoteVerifiedTx:
 			return handleMsgVoteVerifiedTx(ctx, k, v, n, msg)
 		case types.MsgVerifyErc20TokenDeploy:
-			return handleMsgVerifyErc20TokenDeploy(ctx, k, rpc, v, msg)
+			return handleMsgVerifyErc20TokenDeploy(ctx, k, rpc, v, s, msg)
 		case types.MsgVerifyErc20Deposit:
-			return handleMsgVerifyErc20Deposit(ctx, k, rpc, v, msg)
+			return handleMsgVerifyErc20Deposit(ctx, k, rpc, v, s, msg)
 		case types.MsgSignDeployToken:
 			return handleMsgSignDeployToken(ctx, k, s, snapshotter, v, msg)
 		case types.MsgSignBurnTokens:
@@ -60,7 +61,7 @@ func NewHandler(k keeper.Keeper, rpc types.RPCClient, v types.Voter, s types.Sig
 	}
 }
 
-func handleMsgVerifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v types.Voter, msg types.MsgVerifyErc20Deposit) (*sdk.Result, error) {
+func handleMsgVerifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v types.Voter, signer types.Signer, msg types.MsgVerifyErc20Deposit) (*sdk.Result, error) {
 	txID := common.BytesToHash(msg.TxID[:])
 	txIDHex := txID.String()
 
@@ -77,8 +78,18 @@ func handleMsgVerifyErc20Deposit(ctx sdk.Context, k keeper.Keeper, rpc types.RPC
 		return nil, fmt.Errorf("no burner info found for address %s", msg.BurnerAddr)
 	}
 
+	keyID, ok := signer.GetCurrentKeyID(ctx, exported.Ethereum, tss.MasterKey)
+	if !ok {
+		return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
+	}
+
+	counter, ok := signer.GetSnapshotCounterForKeyID(ctx, keyID)
+	if !ok {
+		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
+	}
+
 	poll := vote.NewPollMetaWithNonce(types.ModuleName, msg.Type(), txIDHex, ctx.BlockHeight(), k.GetRevoteLockingPeriod(ctx))
-	if err := v.InitPoll(ctx, poll); err != nil {
+	if err := v.InitPoll(ctx, poll, counter); err != nil {
 		return nil, err
 	}
 
@@ -209,7 +220,7 @@ func handleMsgSignPendingTransfers(ctx sdk.Context, k keeper.Keeper, signer type
 	var commandID types.CommandID
 	copy(commandID[:], crypto.Keccak256(data)[:32])
 
-	keyID, ok := signer.GetCurrentMasterKeyID(ctx, exported.Ethereum)
+	keyID, ok := signer.GetCurrentKeyID(ctx, exported.Ethereum, tss.MasterKey)
 	if !ok {
 		return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
 	}
@@ -334,7 +345,7 @@ func handleMsgSignDeployToken(ctx sdk.Context, k keeper.Keeper, signer types.Sig
 		return nil, err
 	}
 
-	keyID, ok := signer.GetCurrentMasterKeyID(ctx, exported.Ethereum)
+	keyID, ok := signer.GetCurrentKeyID(ctx, exported.Ethereum, tss.MasterKey)
 	if !ok {
 		return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
 	}
@@ -406,7 +417,7 @@ func handleMsgSignBurnTokens(ctx sdk.Context, k keeper.Keeper, signer types.Sign
 	var commandID types.CommandID
 	copy(commandID[:], crypto.Keccak256(data)[:32])
 
-	keyID, ok := signer.GetCurrentMasterKeyID(ctx, exported.Ethereum)
+	keyID, ok := signer.GetCurrentKeyID(ctx, exported.Ethereum, tss.MasterKey)
 	if !ok {
 		return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
 	}
@@ -491,7 +502,7 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 		),
 	)
 
-	keyID, ok := signer.GetCurrentMasterKeyID(ctx, exported.Ethereum)
+	keyID, ok := signer.GetCurrentKeyID(ctx, exported.Ethereum, tss.MasterKey)
 	if !ok {
 		return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
 	}
@@ -515,7 +526,7 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 	// TODO: this is something that should be done after the signature has been successfully verified
 	if tx.To() == nil && bytes.Equal(tx.Data(), k.GetGatewayByteCodes(ctx)) {
 
-		pub, ok := signer.GetCurrentMasterKey(ctx, exported.Ethereum)
+		pub, ok := signer.GetCurrentKey(ctx, exported.Ethereum, tss.MasterKey)
 		if !ok {
 			return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
 		}
@@ -531,7 +542,7 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 	}, nil
 }
 
-func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v types.Voter, msg types.MsgVerifyErc20TokenDeploy) (*sdk.Result, error) {
+func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types.RPCClient, v types.Voter, signer types.Signer, msg types.MsgVerifyErc20TokenDeploy) (*sdk.Result, error) {
 	txID := common.BytesToHash(msg.TxID[:])
 	txIDHex := txID.String()
 
@@ -545,8 +556,18 @@ func handleMsgVerifyErc20TokenDeploy(ctx sdk.Context, k keeper.Keeper, rpc types
 		return nil, err
 	}
 
+	keyID, ok := signer.GetCurrentKeyID(ctx, exported.Ethereum, tss.MasterKey)
+	if !ok {
+		return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
+	}
+
+	counter, ok := signer.GetSnapshotCounterForKeyID(ctx, keyID)
+	if !ok {
+		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
+	}
+
 	poll := vote.NewPollMetaWithNonce(types.ModuleName, msg.Type(), txIDHex, ctx.BlockHeight(), k.GetRevoteLockingPeriod(ctx))
-	if err := v.InitPoll(ctx, poll); err != nil {
+	if err := v.InitPoll(ctx, poll, counter); err != nil {
 		return nil, err
 	}
 
