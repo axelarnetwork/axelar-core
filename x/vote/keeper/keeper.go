@@ -91,7 +91,6 @@ func (k Keeper) InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounte
 		return fmt.Errorf("poll with same name already exists")
 	}
 
-	// TODO: Remove ValidatorSnapshotCounter from Poll and move it into PollMeta
 	k.setPoll(ctx, types.Poll{Meta: poll, ValidatorSnapshotCounter: snapshotCounter})
 
 	return nil
