@@ -38,6 +38,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 			GetCmdSignPendingTransfersTx(cdc),
 			GetCmdSignDeployToken(cdc),
 			GetCmdSignBurnTokens(cdc),
+			GetCmdSignTransferOwnership(cdc),
 		)...,
 	)
 
@@ -198,6 +199,26 @@ func GetCmdSignBurnTokens(cdc *codec.Codec) *cobra.Command {
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
 
 			msg := types.NewMsgSignBurnTokens(cliCtx.GetFromAddress())
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+// GetCmdSignTransferOwnership returns the cli command to sign transfer-ownership command for Ethereum contract
+func GetCmdSignTransferOwnership(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "transfer-ownership [newOwnerAddr]",
+		Short: "Sign transfer ownership command for Ethereum contract",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
+			newOwnerAddr := common.HexToAddress(args[0])
+
+			msg := types.NewMsgSignTransferOwnership(cliCtx.GetFromAddress(), newOwnerAddr)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
