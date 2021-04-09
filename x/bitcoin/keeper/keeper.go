@@ -16,12 +16,13 @@ import (
 )
 
 const (
-	unconfirmedOutpointPrefix = "unconf_"
-	confirmedOutPointPrefix   = "conf_"
-	spentOutPointPrefix       = "spent_"
-	addrPrefix                = "addr_"
-	unsignedTxKey             = "unsignedTx"
-	signedTxKey               = "signedTx_"
+	pendingOutpointPrefix   = "pend_"
+	confirmedOutPointPrefix = "conf_"
+	spentOutPointPrefix     = "spent_"
+	addrPrefix              = "addr_"
+
+	unsignedTxKey = "unsignedTx"
+	signedTxKey   = "signedTx"
 )
 
 var _ types.BTCKeeper = Keeper{}
@@ -137,9 +138,9 @@ func (k Keeper) DeleteOutpointInfo(ctx sdk.Context, outPoint wire.OutPoint) {
 	ctx.KVStore(k.storeKey).Delete([]byte(spentOutPointPrefix + outPoint.String()))
 }
 
-// GetUnconfirmedOutPointInfo returns outpoint information associated with the given poll
-func (k Keeper) GetUnconfirmedOutPointInfo(ctx sdk.Context, poll exported.PollMeta) (types.OutPointInfo, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(unconfirmedOutpointPrefix + poll.String()))
+// GetPendingOutPointInfo returns outpoint information associated with the given poll
+func (k Keeper) GetPendingOutPointInfo(ctx sdk.Context, poll exported.PollMeta) (types.OutPointInfo, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingOutpointPrefix + poll.String()))
 	if bz == nil {
 		return types.OutPointInfo{}, false
 	}
@@ -171,17 +172,17 @@ func (k Keeper) GetOutPointInfo(ctx sdk.Context, outPoint wire.OutPoint) (types.
 	return types.OutPointInfo{}, 0, false
 }
 
-// SetUnconfirmedOutpointInfo stores an unconfirmed outpoint.
+// SetPendingOutpointInfo stores an unconfirmed outpoint.
 // Since the information is not yet confirmed the outpoint info is not necessarily unique.
 // Therefore we need to store by the poll that confirms/rejects it
-func (k Keeper) SetUnconfirmedOutpointInfo(ctx sdk.Context, poll exported.PollMeta, info types.OutPointInfo) {
+func (k Keeper) SetPendingOutpointInfo(ctx sdk.Context, poll exported.PollMeta, info types.OutPointInfo) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(info)
-	ctx.KVStore(k.storeKey).Set([]byte(unconfirmedOutpointPrefix+poll.String()), bz)
+	ctx.KVStore(k.storeKey).Set([]byte(pendingOutpointPrefix+poll.String()), bz)
 }
 
-// DeleteUnconfirmedOutPointInfo deletes the outpoint information associated with the given poll
-func (k Keeper) DeleteUnconfirmedOutPointInfo(ctx sdk.Context, poll exported.PollMeta) {
-	ctx.KVStore(k.storeKey).Delete([]byte(unconfirmedOutpointPrefix + poll.String()))
+// DeletePendingOutPointInfo deletes the outpoint information associated with the given poll
+func (k Keeper) DeletePendingOutPointInfo(ctx sdk.Context, poll exported.PollMeta) {
+	ctx.KVStore(k.storeKey).Delete([]byte(pendingOutpointPrefix + poll.String()))
 }
 
 // SetOutpointInfo stores confirmed or spent outpoints

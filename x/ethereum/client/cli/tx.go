@@ -33,8 +33,8 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		flags.PostCommands(
 			GetCmdLink(cdc),
 			GetCmdSignTx(cdc),
-			GetCmdVerifyErc20TokenDeploy(cdc),
-			GetCmdVerifyErc20Deposit(cdc),
+			GetCmdConfirmERC20TokenDeploy(cdc),
+			GetCmdConfirmERC20Deposit(cdc),
 			GetCmdSignPendingTransfersTx(cdc),
 			GetCmdSignDeployToken(cdc),
 			GetCmdSignBurnTokens(cdc),
@@ -98,17 +98,17 @@ func GetCmdSignTx(cdc *codec.Codec) *cobra.Command {
 	return cmd
 }
 
-// GetCmdVerifyErc20TokenDeploy returns the cli command to verify a ERC20 token deployment
-func GetCmdVerifyErc20TokenDeploy(cdc *codec.Codec) *cobra.Command {
+// GetCmdConfirmERC20TokenDeploy returns the cli command to confirm a ERC20 token deployment
+func GetCmdConfirmERC20TokenDeploy(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "verify-erc20-token [txID] [symbol]",
-		Short: "Verify an ERC20 token deployment in an Ethereum transaction for a given symbol of token and gateway address",
+		Use:   "confirm-erc20-token [txID] [symbol]",
+		Short: "Confirm an ERC20 token deployment in an Ethereum transaction for a given symbol of token and gateway address",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
 
 			txID := common.HexToHash(args[0])
-			msg := types.NewMsgVerifyErc20TokenDeploy(cliCtx.GetFromAddress(), txID, args[1])
+			msg := types.NewMsgConfirmERC20TokenDeploy(cliCtx.GetFromAddress(), txID, args[1])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -118,11 +118,11 @@ func GetCmdVerifyErc20TokenDeploy(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-// GetCmdVerifyErc20Deposit returns the cli command to verify an ERC20 deposit
-func GetCmdVerifyErc20Deposit(cdc *codec.Codec) *cobra.Command {
+// GetCmdConfirmERC20Deposit returns the cli command to confirm an ERC20 deposit
+func GetCmdConfirmERC20Deposit(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "verify-erc20-deposit [txID] [amount] [burnerAddr]",
-		Short: "Verify an ERC20 deposit in an Ethereum transaction that sent given amount of token to a burner address",
+		Use:   "confirm-erc20-deposit [txID] [amount] [burnerAddr]",
+		Short: "Confirm an ERC20 deposit in an Ethereum transaction that sent given amount of token to a burner address",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
@@ -131,7 +131,7 @@ func GetCmdVerifyErc20Deposit(cdc *codec.Codec) *cobra.Command {
 			amount := sdk.NewUintFromString(args[1])
 			burnerAddr := common.HexToAddress(args[2])
 
-			msg := types.NewMsgVerifyErc20Deposit(cliCtx.GetFromAddress(), txID, amount, burnerAddr)
+			msg := types.NewMsgConfirmERC20Deposit(cliCtx.GetFromAddress(), txID, amount, burnerAddr)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -188,11 +188,11 @@ func GetCmdSignDeployToken(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-// GetCmdSignBurnTokens returns the cli command to sign burn command for all verified Ethereum token deposits
+// GetCmdSignBurnTokens returns the cli command to sign burn command for all confirmed Ethereum token deposits
 func GetCmdSignBurnTokens(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "sign-burn-tokens",
-		Short: "Sign burn command for all verified Ethereum token deposits",
+		Short: "Sign burn command for all confirmed Ethereum token deposits",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)

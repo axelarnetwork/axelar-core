@@ -923,9 +923,6 @@ var _ tsstypes.Voter = &VoterMock{}
 // 			InitPollFunc: func(ctx sdk.Context, poll voting.PollMeta, snapshotCounter int64) error {
 // 				panic("mock out the InitPoll method")
 // 			},
-// 			RecordVoteFunc: func(vote voting.MsgVote)  {
-// 				panic("mock out the RecordVote method")
-// 			},
 // 			ResultFunc: func(ctx sdk.Context, poll voting.PollMeta) voting.VotingData {
 // 				panic("mock out the Result method")
 // 			},
@@ -944,9 +941,6 @@ type VoterMock struct {
 
 	// InitPollFunc mocks the InitPoll method.
 	InitPollFunc func(ctx sdk.Context, poll voting.PollMeta, snapshotCounter int64) error
-
-	// RecordVoteFunc mocks the RecordVote method.
-	RecordVoteFunc func(vote voting.MsgVote)
 
 	// ResultFunc mocks the Result method.
 	ResultFunc func(ctx sdk.Context, poll voting.PollMeta) voting.VotingData
@@ -972,11 +966,6 @@ type VoterMock struct {
 			// SnapshotCounter is the snapshotCounter argument value.
 			SnapshotCounter int64
 		}
-		// RecordVote holds details about calls to the RecordVote method.
-		RecordVote []struct {
-			// Vote is the vote argument value.
-			Vote voting.MsgVote
-		}
 		// Result holds details about calls to the Result method.
 		Result []struct {
 			// Ctx is the ctx argument value.
@@ -998,7 +987,6 @@ type VoterMock struct {
 	}
 	lockDeletePoll sync.RWMutex
 	lockInitPoll   sync.RWMutex
-	lockRecordVote sync.RWMutex
 	lockResult     sync.RWMutex
 	lockTallyVote  sync.RWMutex
 }
@@ -1074,37 +1062,6 @@ func (mock *VoterMock) InitPollCalls() []struct {
 	mock.lockInitPoll.RLock()
 	calls = mock.calls.InitPoll
 	mock.lockInitPoll.RUnlock()
-	return calls
-}
-
-// RecordVote calls RecordVoteFunc.
-func (mock *VoterMock) RecordVote(vote voting.MsgVote) {
-	if mock.RecordVoteFunc == nil {
-		panic("VoterMock.RecordVoteFunc: method is nil but Voter.RecordVote was just called")
-	}
-	callInfo := struct {
-		Vote voting.MsgVote
-	}{
-		Vote: vote,
-	}
-	mock.lockRecordVote.Lock()
-	mock.calls.RecordVote = append(mock.calls.RecordVote, callInfo)
-	mock.lockRecordVote.Unlock()
-	mock.RecordVoteFunc(vote)
-}
-
-// RecordVoteCalls gets all the calls that were made to RecordVote.
-// Check the length with:
-//     len(mockedVoter.RecordVoteCalls())
-func (mock *VoterMock) RecordVoteCalls() []struct {
-	Vote voting.MsgVote
-} {
-	var calls []struct {
-		Vote voting.MsgVote
-	}
-	mock.lockRecordVote.RLock()
-	calls = mock.calls.RecordVote
-	mock.lockRecordVote.RUnlock()
 	return calls
 }
 

@@ -18,21 +18,21 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 const (
 	gatewayKey = "gateway"
 
-	rawPrefix                  = "raw_"
-	verifiedTokenPrefix        = "verified_token_"
-	pendingTokenPrefix         = "pending_token_"
-	pendingErc20DepositPrefix  = "pending_erc20_deposit_"
-	verifiedErc20DepositPrefix = "verified_erc20_deposit_"
-	archivedErc20DepositPrefix = "archived_erc20_deposit_"
-	commandPrefix              = "command_"
-	symbolPrefix               = "symbol_"
-	burnerPrefix               = "burner_"
-	tokenPrefix                = "token_"
+	unsignedPrefix         = "unsigned_"
+	pendingTokenPrefix     = "pending_token_"
+	pendingDepositPrefix   = "pending_deposit_"
+	confirmedDepositPrefix = "confirmed_deposit_"
+	burnedDepositPrefix    = "burned_deposit_"
+	commandPrefix          = "command_"
+	symbolPrefix           = "symbol_"
+	burnerAddrPrefix       = "burnerAddr_"
+	tokenAddrPrefix        = "tokenAddr_"
 )
 
 // Keeper represents the ethereum keeper
@@ -64,13 +64,6 @@ func (k Keeper) GetNetwork(ctx sdk.Context) types.Network {
 	var network types.Network
 	k.params.Get(ctx, types.KeyNetwork, &network)
 	return network
-}
-
-// GetERC20TokenDeploySignature returns the signature of the ERC20 transfer method
-func (k Keeper) GetERC20TokenDeploySignature(ctx sdk.Context) common.Hash {
-	var tokenSig []byte
-	k.params.Get(ctx, types.KeyTokenDeploySig, &tokenSig)
-	return common.BytesToHash(tokenSig)
 }
 
 // Codec returns the codec
@@ -114,7 +107,7 @@ func (k Keeper) GetGatewayAddress(ctx sdk.Context) (common.Address, bool) {
 
 // SetBurnerInfo saves the burner info for a given address
 func (k Keeper) SetBurnerInfo(ctx sdk.Context, burnerAddr common.Address, burnerInfo *types.BurnerInfo) {
-	key := append([]byte(burnerPrefix), burnerAddr.Bytes()...)
+	key := append([]byte(burnerAddrPrefix), burnerAddr.Bytes()...)
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(burnerInfo)
 
 	ctx.KVStore(k.storeKey).Set(key, bz)
@@ -122,7 +115,7 @@ func (k Keeper) SetBurnerInfo(ctx sdk.Context, burnerAddr common.Address, burner
 
 // GetBurnerInfo retrieves the burner info for a given address
 func (k Keeper) GetBurnerInfo(ctx sdk.Context, burnerAddr common.Address) *types.BurnerInfo {
-	key := append([]byte(burnerPrefix), burnerAddr.Bytes()...)
+	key := append([]byte(burnerAddrPrefix), burnerAddr.Bytes()...)
 
 	bz := ctx.KVStore(k.storeKey).Get(key)
 	if bz == nil {
@@ -137,14 +130,14 @@ func (k Keeper) GetBurnerInfo(ctx sdk.Context, burnerAddr common.Address) *types
 
 // GetTokenAddress calculates the token address given symbol and axelar gateway address
 func (k Keeper) GetTokenAddress(ctx sdk.Context, symbol string, gatewayAddr common.Address) (common.Address, error) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(tokenPrefix + symbol))
+	bz := ctx.KVStore(k.storeKey).Get([]byte(tokenAddrPrefix + symbol))
 	if bz != nil {
 		return common.BytesToAddress(bz), nil
 	}
 
 	tokenInfo := k.getTokenInfo(ctx, symbol)
 	if tokenInfo == nil {
-		return common.Address{}, fmt.Errorf("symbol not found/verified")
+		return common.Address{}, fmt.Errorf("symbol not found/confirmed")
 	}
 
 	var saltToken [32]byte
@@ -175,7 +168,7 @@ func (k Keeper) GetTokenAddress(ctx sdk.Context, symbol string, gatewayAddr comm
 	tokenInitCodeHash := crypto.Keccak256Hash(tokenInitCode)
 
 	tokenAddr := crypto.CreateAddress2(gatewayAddr, saltToken, tokenInitCodeHash.Bytes())
-	ctx.KVStore(k.storeKey).Set([]byte(tokenPrefix+symbol), tokenAddr.Bytes())
+	ctx.KVStore(k.storeKey).Set([]byte(tokenAddrPrefix+symbol), tokenAddr.Bytes())
 	return tokenAddr, nil
 }
 
@@ -224,11 +217,10 @@ func (k Keeper) GetGatewayByteCodes(ctx sdk.Context) []byte {
 	return b
 }
 
-// SetUnverifiedErc20TokenDeploy stores and unverified erc20 token
-func (k Keeper) SetUnverifiedErc20TokenDeploy(ctx sdk.Context, token *types.Erc20TokenDeploy) {
-	txID := common.BytesToHash(token.TxID[:]).String()
+// SetPendingTokenDeploy stores a pending ERC20 token deployment
+func (k Keeper) SetPendingTokenDeploy(ctx sdk.Context, poll exported.PollMeta, token types.ERC20TokenDeploy) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(token)
-	ctx.KVStore(k.storeKey).Set([]byte(pendingTokenPrefix+txID), bz)
+	ctx.KVStore(k.storeKey).Set([]byte(pendingTokenPrefix+poll.String()), bz)
 }
 
 // SetTokenInfo stores the token info
@@ -263,8 +255,8 @@ func (k Keeper) GetCommandData(ctx sdk.Context, commandID types.CommandID) []byt
 	return ctx.KVStore(k.storeKey).Get(key)
 }
 
-func (k Keeper) getRawTx(ctx sdk.Context, txID string) *ethTypes.Transaction {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(rawPrefix + txID))
+func (k Keeper) getUnsignedTx(ctx sdk.Context, txID string) *ethTypes.Transaction {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(unsignedPrefix + txID))
 	if bz == nil {
 		return nil
 	}
@@ -274,45 +266,49 @@ func (k Keeper) getRawTx(ctx sdk.Context, txID string) *ethTypes.Transaction {
 	return tx
 }
 
-// SetRawTx stores a raw transaction by hash
-func (k Keeper) SetRawTx(ctx sdk.Context, txID string, tx *ethTypes.Transaction) {
+// SetUnsignedTx stores an unsigned transaction by hash
+func (k Keeper) SetUnsignedTx(ctx sdk.Context, txID string, tx *ethTypes.Transaction) {
 	bz := k.cdc.MustMarshalJSON(tx)
-	ctx.KVStore(k.storeKey).Set([]byte(rawPrefix+txID), bz)
+	ctx.KVStore(k.storeKey).Set([]byte(unsignedPrefix+txID), bz)
 }
 
-// HasUnverifiedErc20Deposit returns true if an unverified erc20 deposit has been stored
-func (k Keeper) HasUnverifiedErc20Deposit(ctx sdk.Context, txID string) bool {
-	return ctx.KVStore(k.storeKey).Has([]byte(pendingErc20DepositPrefix + txID))
-}
-
-// SetUnverifiedErc20Deposit stores and unverified erc20 deposit
-func (k Keeper) SetUnverifiedErc20Deposit(ctx sdk.Context, txID string, deposit *types.Erc20Deposit) {
+// SetPendingDeposit stores a pending deposit
+func (k Keeper) SetPendingDeposit(ctx sdk.Context, poll exported.PollMeta, deposit *types.ERC20Deposit) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(deposit)
-	ctx.KVStore(k.storeKey).Set([]byte(pendingErc20DepositPrefix+txID), bz)
+	ctx.KVStore(k.storeKey).Set([]byte(pendingDepositPrefix+poll.String()), bz)
 }
 
-// GetVerifiedErc20Deposit retrieves the verified erc20 deposit given txID if found
-func (k Keeper) GetVerifiedErc20Deposit(ctx sdk.Context, txID string) *types.Erc20Deposit {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(verifiedErc20DepositPrefix + txID))
-	if bz == nil {
-		return nil
+// GetDeposit retrieves a confirmed/burned deposit
+func (k Keeper) GetDeposit(ctx sdk.Context, txID string, burnAddr string) (types.ERC20Deposit, types.DepositState, bool) {
+	var deposit types.ERC20Deposit
+	prefixes := map[types.DepositState]string{
+		types.CONFIRMED: confirmedDepositPrefix,
+		types.BURNED:    burnedDepositPrefix,
 	}
 
-	var result *types.Erc20Deposit
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &result)
+	// the order of this iteration is non-deterministic,
+	// the only reason this is correct is because exactly one of the cases is true
+	for state, prefix := range prefixes {
+		bz := ctx.KVStore(k.storeKey).Get([]byte(prefix + txID + "_" + burnAddr))
+		if bz != nil {
+			k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &deposit)
+			return deposit, state, true
+		}
 
-	return result
+	}
+
+	return types.ERC20Deposit{}, 0, false
 }
 
-// GetVerifiedErc20Deposits retrieves all the verified erc20 deposits
-func (k Keeper) GetVerifiedErc20Deposits(ctx sdk.Context) []types.Erc20Deposit {
-	var deposits []types.Erc20Deposit
-	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(verifiedErc20DepositPrefix))
+// GetConfirmedDeposits retrieves all the confirmed ERC20 deposits
+func (k Keeper) GetConfirmedDeposits(ctx sdk.Context) []types.ERC20Deposit {
+	var deposits []types.ERC20Deposit
+	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(confirmedDepositPrefix))
 
 	for ; iter.Valid(); iter.Next() {
 		bz := iter.Value()
 
-		var deposit types.Erc20Deposit
+		var deposit types.ERC20Deposit
 		k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &deposit)
 		deposits = append(deposits, deposit)
 	}
@@ -320,77 +316,9 @@ func (k Keeper) GetVerifiedErc20Deposits(ctx sdk.Context) []types.Erc20Deposit {
 	return deposits
 }
 
-// ArchiveErc20Deposit marks a deposit as archived
-func (k Keeper) ArchiveErc20Deposit(ctx sdk.Context, txID string) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(verifiedErc20DepositPrefix + txID))
-	if bz == nil {
-		return
-	}
-
-	ctx.KVStore(k.storeKey).Delete([]byte(verifiedErc20DepositPrefix + txID))
-	ctx.KVStore(k.storeKey).Set([]byte(archivedErc20DepositPrefix+txID), bz)
-}
-
-// GetArchivedErc20Deposit returns the archived deposit for the given txID if exists
-func (k Keeper) GetArchivedErc20Deposit(ctx sdk.Context, txID string) *types.Erc20Deposit {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(archivedErc20DepositPrefix + txID))
-	if bz == nil {
-		return nil
-	}
-
-	var result *types.Erc20Deposit
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &result)
-
-	return result
-}
-
-// GetVerifiedToken returns a verified token
-func (k Keeper) GetVerifiedToken(ctx sdk.Context, txID string) *types.Erc20TokenDeploy {
-	var token *types.Erc20TokenDeploy
-	bz := ctx.KVStore(k.storeKey).Get([]byte(verifiedTokenPrefix + txID))
-	if bz == nil {
-		return nil
-	}
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &token)
-	return token
-}
-
-// HasUnverifiedToken returns true if an unverified transaction has been stored
-func (k Keeper) HasUnverifiedToken(ctx sdk.Context, txID string) bool {
-	return ctx.KVStore(k.storeKey).Has([]byte(pendingTokenPrefix + txID))
-}
-
-// ProcessVerificationTokenResult stores the TX permanently if confirmed or discards the data otherwise
-func (k Keeper) ProcessVerificationTokenResult(ctx sdk.Context, txID string, verified bool) {
-	ok := k.processVerificationResult(ctx, []byte(pendingTokenPrefix+txID), []byte(verifiedTokenPrefix+txID), verified)
-	if !ok {
-		k.Logger(ctx).Debug(fmt.Sprintf("tx %s not found", txID))
-	}
-}
-
-// ProcessVerificationErc20DepositResult stores the TX permanently if confirmed or discards the data otherwise
-func (k Keeper) ProcessVerificationErc20DepositResult(ctx sdk.Context, txID string, verified bool) {
-	ok := k.processVerificationResult(ctx, []byte(pendingErc20DepositPrefix+txID), []byte(verifiedErc20DepositPrefix+txID), verified)
-	if !ok {
-		k.Logger(ctx).Debug(fmt.Sprintf("tx %s not found", txID))
-	}
-}
-
-func (k Keeper) processVerificationResult(ctx sdk.Context, pendingKey, verifiedKey []byte, verified bool) bool {
-	bz := ctx.KVStore(k.storeKey).Get(pendingKey)
-	if bz == nil {
-		return false
-	}
-	if verified {
-		ctx.KVStore(k.storeKey).Set(verifiedKey, bz)
-	}
-	ctx.KVStore(k.storeKey).Delete(pendingKey)
-	return true
-}
-
 // AssembleEthTx sets a signature for a previously stored raw transaction
 func (k Keeper) AssembleEthTx(ctx sdk.Context, txID string, pk ecdsa.PublicKey, sig tss.Signature) (*ethTypes.Transaction, error) {
-	rawTx := k.getRawTx(ctx, txID)
+	rawTx := k.getUnsignedTx(ctx, txID)
 	if rawTx == nil {
 		return nil, fmt.Errorf("raw tx for ID %s has not been prepared yet", txID)
 	}
@@ -407,7 +335,7 @@ func (k Keeper) AssembleEthTx(ctx sdk.Context, txID string, pk ecdsa.PublicKey, 
 
 // GetHashToSign returns the hash to sign of a previously stored raw transaction
 func (k Keeper) GetHashToSign(ctx sdk.Context, txID string) (common.Hash, error) {
-	rawTx := k.getRawTx(ctx, txID)
+	rawTx := k.getUnsignedTx(ctx, txID)
 	if rawTx == nil {
 		return common.Hash{}, fmt.Errorf("raw tx with id %s not found", txID)
 	}
@@ -419,4 +347,58 @@ func (k Keeper) getSigner(ctx sdk.Context) ethTypes.EIP155Signer {
 	var network types.Network
 	k.params.Get(ctx, types.KeyNetwork, &network)
 	return ethTypes.NewEIP155Signer(network.Params().ChainID)
+}
+
+// DeletePendingToken deletes the token associated with the given poll
+func (k Keeper) DeletePendingToken(ctx sdk.Context, poll exported.PollMeta) {
+	ctx.KVStore(k.storeKey).Delete([]byte(pendingTokenPrefix + poll.String()))
+}
+
+// GetPendingTokenDeploy returns the token associated with the given poll
+func (k Keeper) GetPendingTokenDeploy(ctx sdk.Context, poll exported.PollMeta) (types.ERC20TokenDeploy, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingTokenPrefix + poll.String()))
+	if bz == nil {
+		return types.ERC20TokenDeploy{}, false
+	}
+	var tokenDeploy types.ERC20TokenDeploy
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &tokenDeploy)
+
+	return tokenDeploy, true
+}
+
+// DeletePendingDeposit deletes the deposit associated with the given poll
+func (k Keeper) DeletePendingDeposit(ctx sdk.Context, poll exported.PollMeta) {
+	ctx.KVStore(k.storeKey).Delete([]byte(pendingTokenPrefix + poll.String()))
+}
+
+// GetPendingDeposit returns the deposit associated with the given poll
+func (k Keeper) GetPendingDeposit(ctx sdk.Context, poll exported.PollMeta) (types.ERC20Deposit, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingDepositPrefix + poll.String()))
+	if bz == nil {
+		return types.ERC20Deposit{}, false
+	}
+	var deposit types.ERC20Deposit
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &deposit)
+
+	return deposit, true
+}
+
+// SetDeposit stores confirmed or burned deposits
+func (k Keeper) SetDeposit(ctx sdk.Context, deposit types.ERC20Deposit, state types.DepositState) {
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(deposit)
+
+	switch state {
+	case types.CONFIRMED:
+		ctx.KVStore(k.storeKey).Set([]byte(confirmedDepositPrefix+deposit.TxID.Hex()+"_"+deposit.BurnerAddr), bz)
+	case types.BURNED:
+		ctx.KVStore(k.storeKey).Set([]byte(burnedDepositPrefix+deposit.TxID.Hex()+"_"+deposit.BurnerAddr), bz)
+	default:
+		panic("invalid deposit state")
+	}
+}
+
+// DeleteDeposit deletes the given deposit
+func (k Keeper) DeleteDeposit(ctx sdk.Context, deposit types.ERC20Deposit) {
+	ctx.KVStore(k.storeKey).Delete([]byte(confirmedDepositPrefix + deposit.TxID.Hex() + "_" + deposit.BurnerAddr))
+	ctx.KVStore(k.storeKey).Delete([]byte(burnedDepositPrefix + deposit.TxID.Hex() + "_" + deposit.BurnerAddr))
 }

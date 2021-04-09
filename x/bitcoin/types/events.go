@@ -14,7 +14,7 @@ const (
 
 // Event attribute values
 const (
-	AttributeValueStart     = "start"
-	AttributeValueConfirmed = "confirmed"
-	AttributeValueRejected  = "rejected"
+	AttributeValueStart   = "start"
+	AttributeValueConfirm = "confirm"
+	AttributeValueReject  = "reject"
 )

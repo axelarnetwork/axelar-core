@@ -77,51 +77,6 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-// Broadcast sends the passed message to the network. Needs to be called asynchronously or it will block
-func (k Keeper) Broadcast(ctx sdk.Context, valMsgs []broadcast.MsgWithSenderSetter) error {
-	if k.GetLocalPrincipal(ctx) == nil {
-		return fmt.Errorf("broadcaster is not registered as a proxy")
-	}
-
-	k.Logger(ctx).Debug("setting sender")
-	msgs := make([]sdk.Msg, 0, len(valMsgs))
-	for _, msg := range valMsgs {
-		k.Logger(ctx).Debug(fmt.Sprintf("k.from: %v", k.from))
-		msg.SetSender(k.from)
-		msgs = append(msgs, msg)
-	}
-	k.Logger(ctx).Debug(fmt.Sprintf("preparing to sign:%v", msgs))
-	stdSignMsg, err := k.prepareMsgForSigning(ctx, msgs)
-	if err != nil {
-		return err
-	}
-
-	k.Logger(ctx).Debug("signing")
-	tx, err := k.sign(stdSignMsg)
-	if err != nil {
-		return err
-	}
-
-	k.Logger(ctx).Debug(fmt.Sprintf("from address: %v, acc no.: %d, seq no.: %d, chainId: %s", k.from, stdSignMsg.AccountNumber, stdSignMsg.Sequence, stdSignMsg.ChainID))
-
-	k.Logger(ctx).Debug("encoding tx")
-	txBytes, err := k.encodeTx(tx)
-	if err != nil {
-		k.Logger(ctx).Info(err.Error())
-		return err
-	}
-	k.Logger(ctx).Debug("broadcasting")
-	k.setSeqNo(stdSignMsg.Sequence + 1)
-	res, err := k.rpc.BroadcastTxAsync(txBytes)
-	if err != nil {
-		k.Logger(ctx).Error(err.Error())
-	}
-	if res != nil && res.Log != "" && res.Log != "[]" {
-		k.Logger(ctx).Info("broadcast msg log: " + res.Log)
-	}
-	return nil
-}
-
 // RegisterProxy registers a proxy address for a given principal, which can broadcast messages in the principal's name
 func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy sdk.AccAddress) error {
 	val := k.staker.Validator(ctx, principal)

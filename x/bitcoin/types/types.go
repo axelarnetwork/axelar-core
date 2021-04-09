@@ -76,7 +76,7 @@ func (n Network) Validate() error {
 	}
 }
 
-// OutPointInfo describes all the necessary information to verify the outPoint of a transaction
+// OutPointInfo describes all the necessary information to confirm the outPoint of a transaction
 type OutPointInfo struct {
 	OutPoint *wire.OutPoint
 	Amount   btcutil.Amount

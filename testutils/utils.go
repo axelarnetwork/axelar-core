@@ -54,3 +54,17 @@ func (f Func) Repeat(n int) Func {
 		}
 	}
 }
+
+// Events wraps sdk.Events
+type Events sdk.Events
+
+// Filter returns a collection of events filtered by the predicate
+func (fe Events) Filter(predicate func(events sdk.Event) bool) Events {
+	var filtered Events
+	for _, event := range fe {
+		if predicate(event) {
+			filtered = append(filtered, event)
+		}
+	}
+	return filtered
+}

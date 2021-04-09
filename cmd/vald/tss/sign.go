@@ -150,8 +150,8 @@ func (mgr *Mgr) handleSignResult(sigID string, result <-chan []byte) error {
 	bz := <-result
 	mgr.Logger.Info(fmt.Sprintf("handler goroutine: received sig from server! [%.20s]", bz))
 
-	poll := voting.NewPollMeta(tss.ModuleName, tss.EventTypeSign, sigID)
-	vote := &tss.MsgVoteSig{Sender: mgr.sender, PollMeta: poll, SigBytes: bz}
+	poll := voting.NewPollMeta(tss.ModuleName, sigID)
+	vote := tss.MsgVoteSig{Sender: mgr.sender, PollMeta: poll, SigBytes: bz}
 	return mgr.broadcaster.Broadcast(vote)
 }
 

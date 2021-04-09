@@ -10,8 +10,8 @@ import (
 
 // RegisterCodec registers concrete types on codec
 func RegisterCodec(cdc *codec.Codec) {
-	cdc.RegisterConcrete(MsgVoteConfirmOutpoint{}, "bitcoin/VoteVerifiedTx", nil)
-	cdc.RegisterConcrete(MsgConfirmOutpoint{}, "bitcoin/VerifyTx", nil)
+	cdc.RegisterConcrete(MsgVoteConfirmOutpoint{}, "bitcoin/VoteConfirmOutpoint", nil)
+	cdc.RegisterConcrete(MsgConfirmOutpoint{}, "bitcoin/ConfirmOutpoint", nil)
 	cdc.RegisterConcrete(MsgLink{}, "bitcoin/Link", nil)
 	cdc.RegisterConcrete(MsgSignPendingTransfers{}, "bitcoin/SignPendingTransfers", nil)
 	cdc.RegisterInterface((*btcutil.Address)(nil), nil)

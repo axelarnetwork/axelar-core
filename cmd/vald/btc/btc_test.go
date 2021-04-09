@@ -34,16 +34,10 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 	setup := func() {
 		rpc = &mock.ClientMock{}
 		broadcaster = &mock2.BroadcasterMock{}
-		mgr = NewMgr(rpc, rand.StrBetween(5, 20), broadcaster, nil, log.TestingLogger())
+		mgr = NewMgr(rpc, broadcaster, nil, log.TestingLogger())
 
 		confHeight = rand.PosI64()
-		poll := exported.NewPollMetaWithNonce(
-			btc.ModuleName,
-			btc.EventTypeOutpointConfirmation,
-			rand.StrBetween(1, 100),
-			rand.PosI64(),
-			rand.PosI64(),
-		)
+		poll := exported.NewPollMetaWithNonce(btc.ModuleName, rand.StrBetween(1, 100), rand.PosI64(), rand.PosI64())
 
 		info = randomOutpointInfo()
 		attributes = []sdk.Attribute{
@@ -66,6 +60,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 
 			err := mgr.ProcessConfirmation(wrongAttributes)
 			assert.Error(t, err)
+			assert.Len(t, broadcaster.BroadcastCalls(), 0)
 		}
 	}).Repeat(repetitionCount))
 

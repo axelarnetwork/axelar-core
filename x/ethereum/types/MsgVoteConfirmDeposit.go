@@ -3,51 +3,51 @@ package types
 import (
 	"fmt"
 
-	"github.com/btcsuite/btcd/wire"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-// MsgVoteConfirmOutpoint represents a message to that votes on an outpoint
-type MsgVoteConfirmOutpoint struct {
+// MsgVoteConfirmDeposit represents a message that votes on a deposit
+type MsgVoteConfirmDeposit struct {
 	Sender    sdk.AccAddress
 	Poll      exported.PollMeta
-	OutPoint  wire.OutPoint
+	TxID      string
+	BurnAddr  string
 	Confirmed bool
 }
 
 // Route returns the route for this message
-func (msg MsgVoteConfirmOutpoint) Route() string {
+func (msg MsgVoteConfirmDeposit) Route() string {
 	return RouterKey
 }
 
 // Type returns the type of the message
-func (msg MsgVoteConfirmOutpoint) Type() string {
+func (msg MsgVoteConfirmDeposit) Type() string {
 	return "VoteConfirmDeposit"
 }
 
 // ValidateBasic executes a stateless message validation
-func (msg MsgVoteConfirmOutpoint) ValidateBasic() error {
+func (msg MsgVoteConfirmDeposit) ValidateBasic() error {
 	if msg.Sender == nil {
 		return fmt.Errorf("missing sender")
+	}
+	if msg.TxID == "" {
+		return fmt.Errorf("tx ID missing")
+	}
+	if msg.BurnAddr == "" {
+		return fmt.Errorf("burn address missing")
 	}
 	return msg.Poll.Validate()
 }
 
 // GetSignBytes returns the message bytes that need to be signed
-func (msg MsgVoteConfirmOutpoint) GetSignBytes() []byte {
+func (msg MsgVoteConfirmDeposit) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
 // GetSigners returns the set of signers for this message
-func (msg MsgVoteConfirmOutpoint) GetSigners() []sdk.AccAddress {
+func (msg MsgVoteConfirmDeposit) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
-}
-
-// SetSender sets the message sender
-// Deprecated
-func (msg *MsgVoteConfirmOutpoint) SetSender(address sdk.AccAddress) {
-	msg.Sender = address
 }

@@ -26,10 +26,10 @@ func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Vot
 			return handleMsgAssignNextKey(ctx, k, s, n, msg)
 		case types.MsgRotateKey:
 			return handleMsgRotateKey(ctx, k, n, msg)
-		case *types.MsgVotePubKey:
-			return handleMsgVotePubKey(ctx, k, v, *msg)
-		case *types.MsgVoteSig:
-			return handleMsgVoteSig(ctx, k, v, *msg)
+		case types.MsgVotePubKey:
+			return handleMsgVotePubKey(ctx, k, v, msg)
+		case types.MsgVoteSig:
+			return handleMsgVoteSig(ctx, k, v, msg)
 		case types.MsgDeregister:
 			return handleMsgDeregister(ctx, k, staker, msg)
 		default:

@@ -1,9 +1,9 @@
-## axelarcli tx ethereum verify-erc20-deposit
+## axelarcli tx ethereum confirm-erc20-deposit
 
-Verify an ERC20 deposit in an Ethereum transaction that sent given amount of token to a burner address
+Confirm an ERC20 deposit in an Ethereum transaction that sent given amount of token to a burner address
 
 ```
-axelarcli tx ethereum verify-erc20-deposit [txID] [amount] [burnerAddr] [flags]
+axelarcli tx ethereum confirm-erc20-deposit [txID] [amount] [burnerAddr] [flags]
 ```
 
 ### Options
@@ -18,7 +18,7 @@ axelarcli tx ethereum verify-erc20-deposit [txID] [amount] [burnerAddr] [flags]
       --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
       --gas-prices string        Gas prices to determine the transaction fee (e.g. 10uatom)
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible and the node operates offline)
-  -h, --help                     help for verify-erc20-deposit
+  -h, --help                     help for confirm-erc20-deposit
       --indent                   Add indent to JSON response
       --keyring-backend string   Select keyring's backend (os|file|test) (default "os")
       --ledger                   Use a connected Ledger device

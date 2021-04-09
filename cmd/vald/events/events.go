@@ -3,6 +3,7 @@ package events
 import (
 	"fmt"
 
+	"github.com/axelarnetwork/axelar-core/cmd/vald/jobs"
 	"github.com/axelarnetwork/c2d2/pkg/pubsub"
 	"github.com/axelarnetwork/c2d2/pkg/tendermint/events"
 	"github.com/axelarnetwork/c2d2/pkg/tendermint/types"
@@ -10,8 +11,6 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/pubsub/query"
 	tm "github.com/tendermint/tendermint/types"
-
-	"github.com/axelarnetwork/axelar-core/cmd/vald/jobs"
 )
 
 // FilteredSubscriber filters events of a subscriber according to a predicate
@@ -75,8 +74,9 @@ func MustSubscribe(hub *events.Hub, eventType string, module string, action stri
 
 // Subscribe returns a filtered subscriber that only streams events of the given type, module and action
 func Subscribe(hub *events.Hub, eventType string, module string, action string) (FilteredSubscriber, error) {
-	bus, err := hub.Subscribe(query.MustParse(fmt.Sprintf("%s='%s' AND %s.%s='%s' AND %s.%s='%s'",
-		tm.EventTypeKey, tm.EventTx, eventType, sdk.AttributeKeyModule, module, eventType, sdk.AttributeKeyAction, action)))
+	qString := fmt.Sprintf("%s='%s' AND %s.%s='%s'",
+		tm.EventTypeKey, tm.EventTx, eventType, sdk.AttributeKeyModule, module)
+	bus, err := hub.Subscribe(query.MustParse(qString))
 	if err != nil {
 		return FilteredSubscriber{}, err
 	}
@@ -86,6 +86,8 @@ func Subscribe(hub *events.Hub, eventType string, module string, action string) 
 	}
 	return newFilteredSubscriber(
 		subscriber,
-		func(e types.Event) bool { return e.Type == eventType && e.Module == module && e.Action == action },
+		func(e types.Event) bool {
+			return e.Type == eventType && e.Module == module && e.Action == action
+		},
 	), nil
 }

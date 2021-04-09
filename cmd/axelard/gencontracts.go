@@ -3,14 +3,14 @@ package main
 import (
 	"fmt"
 
-	ethereumTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/cli"
+
+	ethereumTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
 )
 
 // SetGenesisEthContractsCmd returns set-genesis-chain-params cobra Command.
@@ -21,7 +21,6 @@ func SetGenesisEthContractsCmd(
 	var gatewayFile string
 	var tokenFile string
 	var burnableFile string
-	var tokenDeploySig string
 
 	cmd := &cobra.Command{
 		Use:   "set-genesis-ethereum-contracts",
@@ -62,10 +61,6 @@ func SetGenesisEthContractsCmd(
 				genesisState.Params.Burnable = burnable
 			}
 
-			if tokenDeploySig != "" {
-				genesisState.Params.TokenDeploySig = crypto.Keccak256Hash([]byte(tokenDeploySig)).Bytes()
-			}
-
 			genesisStateBz, err := cdc.MarshalJSON(genesisState)
 			if err != nil {
 				return fmt.Errorf("failed to marshal ethereum genesis state: %w", err)
@@ -84,7 +79,6 @@ func SetGenesisEthContractsCmd(
 	cmd.Flags().StringVar(&gatewayFile, "gateway", "", "Path to the Axelar Gateway contract ABI.")
 	cmd.Flags().StringVar(&tokenFile, "token", "", "Path to the tokens contract ABI.")
 	cmd.Flags().StringVar(&burnableFile, "burnable", "", "Path to the burner contract ABI.")
-	cmd.Flags().StringVar(&tokenDeploySig, "token-deploy-sig", "", "The signature of Axelar Gateway token deployment method (e.g.,\"TokenDeployed(string,address)\").")
 
 	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
 	cmd.Flags().String(CliHomeFlag, defaultClientHome, "client's home directory")

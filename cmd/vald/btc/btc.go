@@ -18,47 +18,44 @@ import (
 
 // Mgr manages all communication with Bitcoin
 type Mgr struct {
-	principalAddr string
-	Logger        log.Logger
-	broadcaster   broadcast.Broadcaster
-	rpc           rpc2.Client
-	sender        sdk.AccAddress
+	logger      log.Logger
+	broadcaster broadcast.Broadcaster
+	rpc         rpc2.Client
+	sender      sdk.AccAddress
 }
 
 // NewMgr returns a new Mgr instance
-func NewMgr(rpc rpc2.Client, principalAddr string, broadcaster broadcast.Broadcaster, defaultSender sdk.AccAddress, logger log.Logger) *Mgr {
+func NewMgr(rpc rpc2.Client, broadcaster broadcast.Broadcaster, defaultSender sdk.AccAddress, logger log.Logger) *Mgr {
 	return &Mgr{
-		rpc:           rpc,
-		principalAddr: principalAddr,
-		Logger:        logger.With("listener", "btc"),
-		broadcaster:   broadcaster,
-		sender:        defaultSender,
+		rpc:         rpc,
+		logger:      logger.With("listener", "btc"),
+		broadcaster: broadcaster,
+		sender:      defaultSender,
 	}
 }
 
-// ProcessConfirmation votes on the correctness of a Bitcoin transaction
+// ProcessConfirmation votes on the correctness of a Bitcoin deposit
 func (mgr *Mgr) ProcessConfirmation(attributes []sdk.Attribute) error {
-	outPointInfo, confHeight, poll, err := parseConfirmationStartParams(attributes)
+	outPointInfo, confHeight, poll, err := parseConfirmationParams(attributes)
 	if err != nil {
-		return sdkerrors.Wrap(err, "failed Bitcoin transaction confirmation")
+		return sdkerrors.Wrap(err, "Bitcoin transaction confirmation failed")
 	}
 
 	err = confirmTx(mgr.rpc, outPointInfo, confHeight)
-	var msg btc.MsgVoteConfirmOutpoint
 	if err != nil {
-		mgr.Logger.Debug(sdkerrors.Wrap(err, "tx outpoint confirmation failed").Error())
+		mgr.logger.Debug(sdkerrors.Wrap(err, "tx outpoint confirmation failed").Error())
 	}
-	msg = btc.MsgVoteConfirmOutpoint{
+	msg := btc.MsgVoteConfirmOutpoint{
 		Sender:    mgr.sender,
-		PollMeta:  poll,
+		Poll:      poll,
 		Confirmed: err == nil,
-		Outpoint:  *outPointInfo.OutPoint,
+		OutPoint:  *outPointInfo.OutPoint,
 	}
-	mgr.Logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, poll.String()))
+	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, poll.String()))
 	return mgr.broadcaster.Broadcast(msg)
 }
 
-func parseConfirmationStartParams(attributes []sdk.Attribute) (outPoint btc.OutPointInfo, confHeight int64, poll vote.PollMeta, err error) {
+func parseConfirmationParams(attributes []sdk.Attribute) (outPoint btc.OutPointInfo, confHeight int64, poll vote.PollMeta, err error) {
 	var outPointFound, confHeightFound, pollFound bool
 	for _, attribute := range attributes {
 		switch attribute.Key {

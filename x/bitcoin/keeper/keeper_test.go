@@ -33,7 +33,7 @@ func TestKeeper_GetConfirmedOutPointInfos(t *testing.T) {
 		prepare func(k Keeper, ctx sdk.Context, infoCount int) (expected []types.OutPointInfo)
 	}{
 		{"no outpoints", prepareNoOutpoints},
-		{"only unconfirmed outpoints", prepareUnconfirmedOutPoints},
+		{"only pending outpoints", preparePendingOutPoints},
 		{"only confirmed outpoints", prepareConfirmedOutPoints},
 		{"only spent outpoints", prepareSpentOutPoints},
 		{"random assortment of outpoint states", prepareRandomOutPointStates},
@@ -58,11 +58,11 @@ func prepareNoOutpoints(Keeper, sdk.Context, int) []types.OutPointInfo {
 	return nil
 }
 
-func prepareUnconfirmedOutPoints(k Keeper, ctx sdk.Context, infoCount int) []types.OutPointInfo {
+func preparePendingOutPoints(k Keeper, ctx sdk.Context, infoCount int) []types.OutPointInfo {
 	var outs []types.OutPointInfo
 	for i := 0; i < infoCount; i++ {
 		info := randOutPointInfo()
-		k.SetUnconfirmedOutpointInfo(ctx, exported.PollMeta{ID: rand2.StrBetween(5, 20)}, info)
+		k.SetPendingOutpointInfo(ctx, exported.PollMeta{ID: rand2.StrBetween(5, 20)}, info)
 		outs = append(outs, info)
 	}
 	return nil
@@ -88,18 +88,18 @@ func prepareOutPoints(k Keeper, ctx sdk.Context, infoCount int, state types.OutP
 }
 
 func prepareRandomOutPointStates(k Keeper, ctx sdk.Context, infoCount int) []types.OutPointInfo {
-	var unconfirmedCount, confirmedCount, spentCount int
+	var pendingCount, confirmedCount, spentCount int
 	for _, state := range rand2.Distr(3).Samples(infoCount) {
 		switch types.OutPointState(state) {
-		case 2: // unconfirmed
-			unconfirmedCount++
+		case 2: // pending
+			pendingCount++
 		case types.CONFIRMED:
 			confirmedCount++
 		case types.SPENT:
 			spentCount++
 		}
 	}
-	_ = prepareUnconfirmedOutPoints(k, ctx, unconfirmedCount)
+	_ = preparePendingOutPoints(k, ctx, pendingCount)
 	_ = prepareOutPoints(k, ctx, spentCount, types.SPENT)
 	return prepareOutPoints(k, ctx, confirmedCount, types.CONFIRMED)
 }

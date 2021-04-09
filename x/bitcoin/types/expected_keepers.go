@@ -26,9 +26,9 @@ type BTCKeeper interface {
 	GetSigCheckInterval(ctx sdk.Context) int64
 	GetNetwork(ctx sdk.Context) Network
 
-	SetUnconfirmedOutpointInfo(ctx sdk.Context, poll vote.PollMeta, info OutPointInfo)
-	GetUnconfirmedOutPointInfo(ctx sdk.Context, poll vote.PollMeta) (OutPointInfo, bool)
-	DeleteUnconfirmedOutPointInfo(ctx sdk.Context, poll vote.PollMeta)
+	SetPendingOutpointInfo(ctx sdk.Context, poll vote.PollMeta, info OutPointInfo)
+	GetPendingOutPointInfo(ctx sdk.Context, poll vote.PollMeta) (OutPointInfo, bool)
+	DeletePendingOutPointInfo(ctx sdk.Context, poll vote.PollMeta)
 	SetOutpointInfo(ctx sdk.Context, info OutPointInfo, state OutPointState)
 	GetOutPointInfo(ctx sdk.Context, outPoint wire.OutPoint) (OutPointInfo, OutPointState, bool)
 	DeleteOutpointInfo(ctx sdk.Context, outPoint wire.OutPoint)

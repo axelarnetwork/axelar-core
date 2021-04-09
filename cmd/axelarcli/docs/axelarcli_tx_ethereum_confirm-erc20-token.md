@@ -1,9 +1,9 @@
-## axelarcli tx ethereum verify-erc20-token
+## axelarcli tx ethereum confirm-erc20-token
 
-Verify an ERC20 token deployment in an Ethereum transaction for a given symbol of token and gateway address
+Confirm an ERC20 token deployment in an Ethereum transaction for a given symbol of token and gateway address
 
 ```
-axelarcli tx ethereum verify-erc20-token [txID] [symbol] [flags]
+axelarcli tx ethereum confirm-erc20-token [txID] [symbol] [flags]
 ```
 
 ### Options
@@ -18,7 +18,7 @@ axelarcli tx ethereum verify-erc20-token [txID] [symbol] [flags]
       --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
       --gas-prices string        Gas prices to determine the transaction fee (e.g. 10uatom)
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible and the node operates offline)
-  -h, --help                     help for verify-erc20-token
+  -h, --help                     help for confirm-erc20-token
       --indent                   Add indent to JSON response
       --keyring-backend string   Select keyring's backend (os|file|test) (default "os")
       --ledger                   Use a connected Ledger device

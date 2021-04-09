@@ -3,20 +3,13 @@ package types
 import (
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
-	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
-)
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 
-// golang stupidity: ensure interface compliance at compile time
-var (
-	_ broadcast.MsgWithSenderSetter = &MsgKeygenTraffic{}
-	_ broadcast.MsgWithSenderSetter = &MsgSignTraffic{}
-	_ voting.MsgVote                = &MsgVotePubKey{}
+	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // MsgKeygenTraffic protocol message
@@ -158,21 +151,6 @@ func (msg MsgVotePubKey) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }
 
-// SetSender sets the sender of this message
-func (msg *MsgVotePubKey) SetSender(address sdk.AccAddress) {
-	msg.Sender = address
-}
-
-// Poll returns the poll this message votes on
-func (msg MsgVotePubKey) Poll() voting.PollMeta {
-	return msg.PollMeta
-}
-
-// Data represents the data value this message votes for
-func (msg MsgVotePubKey) Data() voting.VotingData {
-	return msg.PubKeyBytes
-}
-
 // MsgVoteSig represents a message to vote for a signature
 type MsgVoteSig struct {
 	Sender   sdk.AccAddress
@@ -214,19 +192,4 @@ func (msg MsgVoteSig) GetSignBytes() []byte {
 // GetSigners returns the set of signers for this message
 func (msg MsgVoteSig) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
-}
-
-// SetSender sets the sender of this message
-func (msg *MsgVoteSig) SetSender(address sdk.AccAddress) {
-	msg.Sender = address
-}
-
-// Poll returns the poll this message votes on
-func (msg MsgVoteSig) Poll() voting.PollMeta {
-	return msg.PollMeta
-}
-
-// Data returns the data value this message votes for
-func (msg MsgVoteSig) Data() voting.VotingData {
-	return msg.SigBytes
 }

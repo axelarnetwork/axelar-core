@@ -13,7 +13,7 @@ const (
 	DefaultParamspace = ModuleName
 )
 
-// parameter keys
+// Parameter keys
 var (
 	KeyConfirmationHeight  = []byte("confirmationHeight")
 	KeyNetwork             = []byte("network")
