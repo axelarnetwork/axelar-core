@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/axelarnetwork/axelar-core/x/ante/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	sdkStaking "github.com/cosmos/cosmos-sdk/x/staking"
@@ -60,14 +61,16 @@ func (d ValidateValidatorDeregisteredTssDecorator) AnteHandle(ctx sdk.Context, t
 			chains := d.nexus.GetChains(ctx)
 
 			for _, chain := range chains {
-				currentMasterKeyId, found := d.tss.GetCurrentMasterKeyID(ctx, chain)
-				if found && isValidatorHoldingTssShareOf(ctx, d.tss, d.snapshotter, valAddress, currentMasterKeyId) {
-					return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding tss share of %s's current master key ", valAddress.String(), chain.Name)
-				}
+				for _, keyRole := range tss.GetKeyRoles() {
+					currentKeyId, found := d.tss.GetCurrentKeyID(ctx, chain, keyRole)
+					if found && isValidatorHoldingTssShareOf(ctx, d.tss, d.snapshotter, valAddress, currentKeyId) {
+						return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding tss share of %s's current %s key ", valAddress.String(), chain.Name, keyRole.String())
+					}
 
-				nextMasterKeyId, found := d.tss.GetNextMasterKeyID(ctx, chain)
-				if found && isValidatorHoldingTssShareOf(ctx, d.tss, d.snapshotter, valAddress, nextMasterKeyId) {
-					return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding tss share of %s's current master key ", valAddress.String(), chain.Name)
+					nextKeyId, found := d.tss.GetNextKeyID(ctx, chain, keyRole)
+					if found && isValidatorHoldingTssShareOf(ctx, d.tss, d.snapshotter, valAddress, nextKeyId) {
+						return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding tss share of %s's current %s key ", valAddress.String(), chain.Name, keyRole.String())
+					}
 				}
 			}
 		default:

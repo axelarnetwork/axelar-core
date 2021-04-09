@@ -91,6 +91,8 @@ github.com/axelarnetwork/c2d2 v0.0.0-20210324065940-dbfb0dbc0214 h1:0enrp5LorUMx
 github.com/axelarnetwork/c2d2 v0.0.0-20210324065940-dbfb0dbc0214/go.mod h1:DOerMaF4n54XS6HmcBSgcFcZhRbGZDEgEr6oH40iqD4=
 github.com/axelarnetwork/c2d2 v0.0.0-20210325005703-59a659974b75 h1:sSKfare2BHTbJgVVQQOuSJWw1T/gdf71Jer6cTJCDTE=
 github.com/axelarnetwork/c2d2 v0.0.0-20210325005703-59a659974b75/go.mod h1:g2Wj6hklfrEcUfT8cyyOqynRBZl4JlaWWwLQQeTtfpw=
+github.com/axelarnetwork/c2d2 v0.0.0-20210330235528-2fe5a04ab3dd h1:TFFUucN+vdIL3B5ka+0ESyoZScLTvTEvxgPICz4gPbo=
+github.com/axelarnetwork/c2d2 v0.0.0-20210330235528-2fe5a04ab3dd/go.mod h1:g2Wj6hklfrEcUfT8cyyOqynRBZl4JlaWWwLQQeTtfpw=
 github.com/bartekn/go-bip39 v0.0.0-20171116152956-a05967ea095d h1:1aAija9gr0Hyv4KfQcRcwlmFIrhkDmIj2dz5bkg/s/8=
 github.com/bartekn/go-bip39 v0.0.0-20171116152956-a05967ea095d/go.mod h1:icNx/6QdFblhsEjZehARqbNumymUT/ydwlLojFdv7Sk=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=

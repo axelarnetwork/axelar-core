@@ -321,7 +321,6 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	votingK := voteKeeper.NewKeeper(
 		app.cdc,
 		keys[voteTypes.StoreKey],
-		dbadapter.Store{DB: dbm.NewMemDB()},
 		snapK,
 		broadcastK,
 	)
@@ -365,7 +364,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	// there is nothing left over in the validator fee pool, so as to keep the
 	// CanWithdrawInvariant invariant.
 	app.mm.SetOrderBeginBlockers(distr.ModuleName, slashing.ModuleName)
-	app.mm.SetOrderEndBlockers(staking.ModuleName, voteTypes.ModuleName, btcTypes.ModuleName)
+	app.mm.SetOrderEndBlockers(staking.ModuleName, btcTypes.ModuleName)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	// NOTE: The genutils moodule must occur after staking so that pools are

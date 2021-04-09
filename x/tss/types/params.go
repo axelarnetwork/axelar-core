@@ -6,6 +6,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	bitcoin "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
+	ethereum "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/cosmos/cosmos-sdk/x/params/subspace"
 )
 
@@ -19,6 +22,7 @@ var (
 	KeyLockingPeriod       = []byte("lockingPeriod")
 	KeyMinKeygenThreshold  = []byte("minKeygenThreshold")
 	KeyCorruptionThreshold = []byte("corruptionThreshold")
+	KeyKeyRequirements     = []byte("keyRequirements")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -36,6 +40,8 @@ type Params struct {
 	// CorruptionThreshold defines the corruption threshold with which
 	// we'll run keygen protocol.
 	CorruptionThreshold utils.Threshold
+	// KeyRequirements defines the requirement of each key for each chain
+	KeyRequirements []exported.KeyRequirement
 }
 
 // DefaultParams returns the module's parameter set initialized with default values
@@ -45,6 +51,11 @@ func DefaultParams() Params {
 		// Set MinKeygenThreshold >= CorruptionThreshold
 		MinKeygenThreshold:  utils.Threshold{Numerator: 9, Denominator: 10},
 		CorruptionThreshold: utils.Threshold{Numerator: 2, Denominator: 3},
+		KeyRequirements: []exported.KeyRequirement{
+			{ChainName: bitcoin.Bitcoin.Name, KeyRole: exported.MasterKey, MinValidatorSubsetSize: 5},
+			{ChainName: bitcoin.Bitcoin.Name, KeyRole: exported.SecondaryKey, MinValidatorSubsetSize: 3},
+			{ChainName: ethereum.Ethereum.Name, KeyRole: exported.MasterKey, MinValidatorSubsetSize: 5},
+		},
 	}
 }
 
@@ -61,6 +72,7 @@ func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
 		subspace.NewParamSetPair(KeyLockingPeriod, &p.LockingPeriod, validateLockingPeriod),
 		subspace.NewParamSetPair(KeyMinKeygenThreshold, &p.MinKeygenThreshold, validateThreshold),
 		subspace.NewParamSetPair(KeyCorruptionThreshold, &p.CorruptionThreshold, validateThreshold),
+		subspace.NewParamSetPair(KeyKeyRequirements, &p.KeyRequirements, validateKeyRequirements),
 	}
 }
 
@@ -80,15 +92,23 @@ func (p Params) Validate() error {
 	if err := validateLockingPeriod(p.LockingPeriod); err != nil {
 		return err
 	}
+
 	if err := validateThreshold(p.MinKeygenThreshold); err != nil {
 		return err
 	}
+
 	if err := validateThreshold(p.CorruptionThreshold); err != nil {
 		return err
 	}
+
 	if err := validateTssThresholds(p.MinKeygenThreshold, p.CorruptionThreshold); err != nil {
 		return err
 	}
+
+	if err := validateKeyRequirements(p.KeyRequirements); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -122,5 +142,20 @@ func validateTssThresholds(minKeygenThreshold interface{}, corruptionThreshold i
 	if !val2.IsMet(sdk.NewInt(val1.Numerator), sdk.NewInt(val1.Denominator)) {
 		return fmt.Errorf("min keygen threshold must >= corruption threshold")
 	}
+	return nil
+}
+
+func validateKeyRequirements(keyRequirements interface{}) error {
+	val, ok := keyRequirements.([]exported.KeyRequirement)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for keyRequirements: %T", keyRequirements)
+	}
+
+	for _, keyRequirement := range val {
+		if err := keyRequirement.Validate(); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }

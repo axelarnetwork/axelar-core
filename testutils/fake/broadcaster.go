@@ -32,14 +32,12 @@ func NewBroadcaster(cdc *codec.Codec, localPrincipal sdk.ValAddress, submitMsg f
 }
 
 // Broadcast submits the given messages to the blockchain
-func (b Broadcaster) Broadcast(ctx sdk.Context, msgs []exported.MsgWithSenderSetter) error {
+func (b Broadcaster) Broadcast(ctx sdk.Context, msgs ...sdk.Msg) error {
 	for _, msg := range msgs {
 		proxy := b.GetProxy(ctx, b.LocalPrincipal)
 		if proxy == nil {
 			return fmt.Errorf("proxy not set")
 		}
-		msg.SetSender(proxy)
-
 		/*
 			exported.MsgWithSenderSetter is usually implemented by a pointer.
 			However, handlers expect to receive the message by value and do a switch on the message type.

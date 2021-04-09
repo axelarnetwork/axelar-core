@@ -7,9 +7,10 @@ import (
 // RegisterCodec registers concrete types on codec
 func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgLink{}, "ethereum/MsgLink", nil)
-	cdc.RegisterConcrete(&MsgVoteVerifiedTx{}, "ethereum/VoteVerifyTx", nil)
-	cdc.RegisterConcrete(MsgVerifyErc20TokenDeploy{}, "ethereum/VerifyErc20TokenDeploy", nil)
-	cdc.RegisterConcrete(MsgVerifyErc20Deposit{}, "ethereum/VerifyErc20Deposit", nil)
+	cdc.RegisterConcrete(MsgVoteConfirmToken{}, "ethereum/VoteConfirmToken", nil)
+	cdc.RegisterConcrete(MsgVoteConfirmDeposit{}, "ethereum/VoteConfirmDeposit", nil)
+	cdc.RegisterConcrete(MsgConfirmToken{}, "ethereum/ConfirmToken", nil)
+	cdc.RegisterConcrete(MsgConfirmDeposit{}, "ethereum/ConfirmDeposit", nil)
 	cdc.RegisterConcrete(MsgSignTx{}, "ethereum/SignTx", nil)
 	cdc.RegisterConcrete(MsgSignPendingTransfers{}, "ethereum/SignPendingTransfers", nil)
 	cdc.RegisterConcrete(MsgSignDeployToken{}, "ethereum/SignDeployToken", nil)

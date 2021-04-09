@@ -24,7 +24,7 @@ func main() {
 		Short: "Validator Daemon ",
 	}
 
-	logger := log.NewTMLogger(os.Stdout).With("external", "main")
+	logger := log.NewTMLogger(os.Stdout).With("process", "vald")
 	startCommand := getStartCommand(logger)
 	rootCmd.AddCommand(flags.PostCommands(startCommand)...)
 

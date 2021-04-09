@@ -29,7 +29,7 @@ var _ types.Voter = &VoterMock{}
 // 			DeletePollFunc: func(ctx sdk.Context, poll vote.PollMeta)  {
 // 				panic("mock out the DeletePoll method")
 // 			},
-// 			InitPollFunc: func(ctx sdk.Context, poll vote.PollMeta) error {
+// 			InitPollFunc: func(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error {
 // 				panic("mock out the InitPoll method")
 // 			},
 // 			ResultFunc: func(ctx sdk.Context, poll vote.PollMeta) vote.VotingData {
@@ -49,7 +49,7 @@ type VoterMock struct {
 	DeletePollFunc func(ctx sdk.Context, poll vote.PollMeta)
 
 	// InitPollFunc mocks the InitPoll method.
-	InitPollFunc func(ctx sdk.Context, poll vote.PollMeta) error
+	InitPollFunc func(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error
 
 	// ResultFunc mocks the Result method.
 	ResultFunc func(ctx sdk.Context, poll vote.PollMeta) vote.VotingData
@@ -72,6 +72,8 @@ type VoterMock struct {
 			Ctx sdk.Context
 			// Poll is the poll argument value.
 			Poll vote.PollMeta
+			// SnapshotCounter is the snapshotCounter argument value.
+			SnapshotCounter int64
 		}
 		// Result holds details about calls to the Result method.
 		Result []struct {
@@ -134,33 +136,37 @@ func (mock *VoterMock) DeletePollCalls() []struct {
 }
 
 // InitPoll calls InitPollFunc.
-func (mock *VoterMock) InitPoll(ctx sdk.Context, poll vote.PollMeta) error {
+func (mock *VoterMock) InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error {
 	if mock.InitPollFunc == nil {
 		panic("VoterMock.InitPollFunc: method is nil but Voter.InitPoll was just called")
 	}
 	callInfo := struct {
-		Ctx  sdk.Context
-		Poll vote.PollMeta
+		Ctx             sdk.Context
+		Poll            vote.PollMeta
+		SnapshotCounter int64
 	}{
-		Ctx:  ctx,
-		Poll: poll,
+		Ctx:             ctx,
+		Poll:            poll,
+		SnapshotCounter: snapshotCounter,
 	}
 	mock.lockInitPoll.Lock()
 	mock.calls.InitPoll = append(mock.calls.InitPoll, callInfo)
 	mock.lockInitPoll.Unlock()
-	return mock.InitPollFunc(ctx, poll)
+	return mock.InitPollFunc(ctx, poll, snapshotCounter)
 }
 
 // InitPollCalls gets all the calls that were made to InitPoll.
 // Check the length with:
 //     len(mockedVoter.InitPollCalls())
 func (mock *VoterMock) InitPollCalls() []struct {
-	Ctx  sdk.Context
-	Poll vote.PollMeta
+	Ctx             sdk.Context
+	Poll            vote.PollMeta
+	SnapshotCounter int64
 } {
 	var calls []struct {
-		Ctx  sdk.Context
-		Poll vote.PollMeta
+		Ctx             sdk.Context
+		Poll            vote.PollMeta
+		SnapshotCounter int64
 	}
 	mock.lockInitPoll.RLock()
 	calls = mock.calls.InitPoll
@@ -256,11 +262,14 @@ var _ types.Signer = &SignerMock{}
 //
 // 		// make and configure a mocked types.Signer
 // 		mockedSigner := &SignerMock{
-// 			GetCurrentMasterKeyFunc: func(ctx sdk.Context, chain nexus.Chain) (tss.Key, bool) {
-// 				panic("mock out the GetCurrentMasterKey method")
+// 			GetCurrentKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+// 				panic("mock out the GetCurrentKey method")
 // 			},
-// 			GetNextMasterKeyFunc: func(ctx sdk.Context, chain nexus.Chain) (tss.Key, bool) {
-// 				panic("mock out the GetNextMasterKey method")
+// 			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
+// 				panic("mock out the GetCurrentKeyID method")
+// 			},
+// 			GetNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+// 				panic("mock out the GetNextKey method")
 // 			},
 // 			GetSigFunc: func(ctx sdk.Context, sigID string) (tss.Signature, bool) {
 // 				panic("mock out the GetSig method")
@@ -268,7 +277,7 @@ var _ types.Signer = &SignerMock{}
 // 			GetSnapshotCounterForKeyIDFunc: func(ctx sdk.Context, keyID string) (int64, bool) {
 // 				panic("mock out the GetSnapshotCounterForKeyID method")
 // 			},
-// 			StartSignFunc: func(ctx sdk.Context, initPoll interface{InitPoll(ctx sdk.Context, poll vote.PollMeta) error}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
+// 			StartSignFunc: func(ctx sdk.Context, initPoll interface{InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
 // 				panic("mock out the StartSign method")
 // 			},
 // 		}
@@ -278,11 +287,14 @@ var _ types.Signer = &SignerMock{}
 //
 // 	}
 type SignerMock struct {
-	// GetCurrentMasterKeyFunc mocks the GetCurrentMasterKey method.
-	GetCurrentMasterKeyFunc func(ctx sdk.Context, chain nexus.Chain) (tss.Key, bool)
+	// GetCurrentKeyFunc mocks the GetCurrentKey method.
+	GetCurrentKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 
-	// GetNextMasterKeyFunc mocks the GetNextMasterKey method.
-	GetNextMasterKeyFunc func(ctx sdk.Context, chain nexus.Chain) (tss.Key, bool)
+	// GetCurrentKeyIDFunc mocks the GetCurrentKeyID method.
+	GetCurrentKeyIDFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool)
+
+	// GetNextKeyFunc mocks the GetNextKey method.
+	GetNextKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 
 	// GetSigFunc mocks the GetSig method.
 	GetSigFunc func(ctx sdk.Context, sigID string) (tss.Signature, bool)
@@ -292,24 +304,37 @@ type SignerMock struct {
 
 	// StartSignFunc mocks the StartSign method.
 	StartSignFunc func(ctx sdk.Context, initPoll interface {
-		InitPoll(ctx sdk.Context, poll vote.PollMeta) error
+		InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error
 	}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// GetCurrentMasterKey holds details about calls to the GetCurrentMasterKey method.
-		GetCurrentMasterKey []struct {
+		// GetCurrentKey holds details about calls to the GetCurrentKey method.
+		GetCurrentKey []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Chain is the chain argument value.
 			Chain nexus.Chain
+			// KeyRole is the keyRole argument value.
+			KeyRole tss.KeyRole
 		}
-		// GetNextMasterKey holds details about calls to the GetNextMasterKey method.
-		GetNextMasterKey []struct {
+		// GetCurrentKeyID holds details about calls to the GetCurrentKeyID method.
+		GetCurrentKeyID []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Chain is the chain argument value.
 			Chain nexus.Chain
+			// KeyRole is the keyRole argument value.
+			KeyRole tss.KeyRole
+		}
+		// GetNextKey holds details about calls to the GetNextKey method.
+		GetNextKey []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+			// KeyRole is the keyRole argument value.
+			KeyRole tss.KeyRole
 		}
 		// GetSig holds details about calls to the GetSig method.
 		GetSig []struct {
@@ -331,7 +356,7 @@ type SignerMock struct {
 			Ctx sdk.Context
 			// InitPoll is the initPoll argument value.
 			InitPoll interface {
-				InitPoll(ctx sdk.Context, poll vote.PollMeta) error
+				InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error
 			}
 			// KeyID is the keyID argument value.
 			KeyID string
@@ -343,80 +368,128 @@ type SignerMock struct {
 			SnapshotMoqParam snapshot.Snapshot
 		}
 	}
-	lockGetCurrentMasterKey        sync.RWMutex
-	lockGetNextMasterKey           sync.RWMutex
+	lockGetCurrentKey              sync.RWMutex
+	lockGetCurrentKeyID            sync.RWMutex
+	lockGetNextKey                 sync.RWMutex
 	lockGetSig                     sync.RWMutex
 	lockGetSnapshotCounterForKeyID sync.RWMutex
 	lockStartSign                  sync.RWMutex
 }
 
-// GetCurrentMasterKey calls GetCurrentMasterKeyFunc.
-func (mock *SignerMock) GetCurrentMasterKey(ctx sdk.Context, chain nexus.Chain) (tss.Key, bool) {
-	if mock.GetCurrentMasterKeyFunc == nil {
-		panic("SignerMock.GetCurrentMasterKeyFunc: method is nil but Signer.GetCurrentMasterKey was just called")
+// GetCurrentKey calls GetCurrentKeyFunc.
+func (mock *SignerMock) GetCurrentKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+	if mock.GetCurrentKeyFunc == nil {
+		panic("SignerMock.GetCurrentKeyFunc: method is nil but Signer.GetCurrentKey was just called")
 	}
 	callInfo := struct {
-		Ctx   sdk.Context
-		Chain nexus.Chain
+		Ctx     sdk.Context
+		Chain   nexus.Chain
+		KeyRole tss.KeyRole
 	}{
-		Ctx:   ctx,
-		Chain: chain,
+		Ctx:     ctx,
+		Chain:   chain,
+		KeyRole: keyRole,
 	}
-	mock.lockGetCurrentMasterKey.Lock()
-	mock.calls.GetCurrentMasterKey = append(mock.calls.GetCurrentMasterKey, callInfo)
-	mock.lockGetCurrentMasterKey.Unlock()
-	return mock.GetCurrentMasterKeyFunc(ctx, chain)
+	mock.lockGetCurrentKey.Lock()
+	mock.calls.GetCurrentKey = append(mock.calls.GetCurrentKey, callInfo)
+	mock.lockGetCurrentKey.Unlock()
+	return mock.GetCurrentKeyFunc(ctx, chain, keyRole)
 }
 
-// GetCurrentMasterKeyCalls gets all the calls that were made to GetCurrentMasterKey.
+// GetCurrentKeyCalls gets all the calls that were made to GetCurrentKey.
 // Check the length with:
-//     len(mockedSigner.GetCurrentMasterKeyCalls())
-func (mock *SignerMock) GetCurrentMasterKeyCalls() []struct {
-	Ctx   sdk.Context
-	Chain nexus.Chain
+//     len(mockedSigner.GetCurrentKeyCalls())
+func (mock *SignerMock) GetCurrentKeyCalls() []struct {
+	Ctx     sdk.Context
+	Chain   nexus.Chain
+	KeyRole tss.KeyRole
 } {
 	var calls []struct {
-		Ctx   sdk.Context
-		Chain nexus.Chain
+		Ctx     sdk.Context
+		Chain   nexus.Chain
+		KeyRole tss.KeyRole
 	}
-	mock.lockGetCurrentMasterKey.RLock()
-	calls = mock.calls.GetCurrentMasterKey
-	mock.lockGetCurrentMasterKey.RUnlock()
+	mock.lockGetCurrentKey.RLock()
+	calls = mock.calls.GetCurrentKey
+	mock.lockGetCurrentKey.RUnlock()
 	return calls
 }
 
-// GetNextMasterKey calls GetNextMasterKeyFunc.
-func (mock *SignerMock) GetNextMasterKey(ctx sdk.Context, chain nexus.Chain) (tss.Key, bool) {
-	if mock.GetNextMasterKeyFunc == nil {
-		panic("SignerMock.GetNextMasterKeyFunc: method is nil but Signer.GetNextMasterKey was just called")
+// GetCurrentKeyID calls GetCurrentKeyIDFunc.
+func (mock *SignerMock) GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
+	if mock.GetCurrentKeyIDFunc == nil {
+		panic("SignerMock.GetCurrentKeyIDFunc: method is nil but Signer.GetCurrentKeyID was just called")
 	}
 	callInfo := struct {
-		Ctx   sdk.Context
-		Chain nexus.Chain
+		Ctx     sdk.Context
+		Chain   nexus.Chain
+		KeyRole tss.KeyRole
 	}{
-		Ctx:   ctx,
-		Chain: chain,
+		Ctx:     ctx,
+		Chain:   chain,
+		KeyRole: keyRole,
 	}
-	mock.lockGetNextMasterKey.Lock()
-	mock.calls.GetNextMasterKey = append(mock.calls.GetNextMasterKey, callInfo)
-	mock.lockGetNextMasterKey.Unlock()
-	return mock.GetNextMasterKeyFunc(ctx, chain)
+	mock.lockGetCurrentKeyID.Lock()
+	mock.calls.GetCurrentKeyID = append(mock.calls.GetCurrentKeyID, callInfo)
+	mock.lockGetCurrentKeyID.Unlock()
+	return mock.GetCurrentKeyIDFunc(ctx, chain, keyRole)
 }
 
-// GetNextMasterKeyCalls gets all the calls that were made to GetNextMasterKey.
+// GetCurrentKeyIDCalls gets all the calls that were made to GetCurrentKeyID.
 // Check the length with:
-//     len(mockedSigner.GetNextMasterKeyCalls())
-func (mock *SignerMock) GetNextMasterKeyCalls() []struct {
-	Ctx   sdk.Context
-	Chain nexus.Chain
+//     len(mockedSigner.GetCurrentKeyIDCalls())
+func (mock *SignerMock) GetCurrentKeyIDCalls() []struct {
+	Ctx     sdk.Context
+	Chain   nexus.Chain
+	KeyRole tss.KeyRole
 } {
 	var calls []struct {
-		Ctx   sdk.Context
-		Chain nexus.Chain
+		Ctx     sdk.Context
+		Chain   nexus.Chain
+		KeyRole tss.KeyRole
 	}
-	mock.lockGetNextMasterKey.RLock()
-	calls = mock.calls.GetNextMasterKey
-	mock.lockGetNextMasterKey.RUnlock()
+	mock.lockGetCurrentKeyID.RLock()
+	calls = mock.calls.GetCurrentKeyID
+	mock.lockGetCurrentKeyID.RUnlock()
+	return calls
+}
+
+// GetNextKey calls GetNextKeyFunc.
+func (mock *SignerMock) GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+	if mock.GetNextKeyFunc == nil {
+		panic("SignerMock.GetNextKeyFunc: method is nil but Signer.GetNextKey was just called")
+	}
+	callInfo := struct {
+		Ctx     sdk.Context
+		Chain   nexus.Chain
+		KeyRole tss.KeyRole
+	}{
+		Ctx:     ctx,
+		Chain:   chain,
+		KeyRole: keyRole,
+	}
+	mock.lockGetNextKey.Lock()
+	mock.calls.GetNextKey = append(mock.calls.GetNextKey, callInfo)
+	mock.lockGetNextKey.Unlock()
+	return mock.GetNextKeyFunc(ctx, chain, keyRole)
+}
+
+// GetNextKeyCalls gets all the calls that were made to GetNextKey.
+// Check the length with:
+//     len(mockedSigner.GetNextKeyCalls())
+func (mock *SignerMock) GetNextKeyCalls() []struct {
+	Ctx     sdk.Context
+	Chain   nexus.Chain
+	KeyRole tss.KeyRole
+} {
+	var calls []struct {
+		Ctx     sdk.Context
+		Chain   nexus.Chain
+		KeyRole tss.KeyRole
+	}
+	mock.lockGetNextKey.RLock()
+	calls = mock.calls.GetNextKey
+	mock.lockGetNextKey.RUnlock()
 	return calls
 }
 
@@ -492,7 +565,7 @@ func (mock *SignerMock) GetSnapshotCounterForKeyIDCalls() []struct {
 
 // StartSign calls StartSignFunc.
 func (mock *SignerMock) StartSign(ctx sdk.Context, initPoll interface {
-	InitPoll(ctx sdk.Context, poll vote.PollMeta) error
+	InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error
 }, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
 	if mock.StartSignFunc == nil {
 		panic("SignerMock.StartSignFunc: method is nil but Signer.StartSign was just called")
@@ -500,7 +573,7 @@ func (mock *SignerMock) StartSign(ctx sdk.Context, initPoll interface {
 	callInfo := struct {
 		Ctx      sdk.Context
 		InitPoll interface {
-			InitPoll(ctx sdk.Context, poll vote.PollMeta) error
+			InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error
 		}
 		KeyID            string
 		SigID            string
@@ -526,7 +599,7 @@ func (mock *SignerMock) StartSign(ctx sdk.Context, initPoll interface {
 func (mock *SignerMock) StartSignCalls() []struct {
 	Ctx      sdk.Context
 	InitPoll interface {
-		InitPoll(ctx sdk.Context, poll vote.PollMeta) error
+		InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error
 	}
 	KeyID            string
 	SigID            string
@@ -536,7 +609,7 @@ func (mock *SignerMock) StartSignCalls() []struct {
 	var calls []struct {
 		Ctx      sdk.Context
 		InitPoll interface {
-			InitPoll(ctx sdk.Context, poll vote.PollMeta) error
+			InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error
 		}
 		KeyID            string
 		SigID            string
@@ -1068,11 +1141,11 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			DeleteOutpointInfoFunc: func(ctx sdk.Context, outPoint wire.OutPoint)  {
 // 				panic("mock out the DeleteOutpointInfo method")
 // 			},
+// 			DeletePendingOutPointInfoFunc: func(ctx sdk.Context, poll vote.PollMeta)  {
+// 				panic("mock out the DeletePendingOutPointInfo method")
+// 			},
 // 			DeleteSignedTxFunc: func(ctx sdk.Context)  {
 // 				panic("mock out the DeleteSignedTx method")
-// 			},
-// 			DeleteUnconfirmedOutPointInfoFunc: func(ctx sdk.Context, poll vote.PollMeta)  {
-// 				panic("mock out the DeleteUnconfirmedOutPointInfo method")
 // 			},
 // 			DeleteUnsignedTxFunc: func(ctx sdk.Context)  {
 // 				panic("mock out the DeleteUnsignedTx method")
@@ -1092,6 +1165,9 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			GetParamsFunc: func(ctx sdk.Context) types.Params {
 // 				panic("mock out the GetParams method")
 // 			},
+// 			GetPendingOutPointInfoFunc: func(ctx sdk.Context, poll vote.PollMeta) (types.OutPointInfo, bool) {
+// 				panic("mock out the GetPendingOutPointInfo method")
+// 			},
 // 			GetRequiredConfirmationHeightFunc: func(ctx sdk.Context) uint64 {
 // 				panic("mock out the GetRequiredConfirmationHeight method")
 // 			},
@@ -1103,9 +1179,6 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			},
 // 			GetSignedTxFunc: func(ctx sdk.Context) (*wire.MsgTx, bool) {
 // 				panic("mock out the GetSignedTx method")
-// 			},
-// 			GetUnconfirmedOutPointInfoFunc: func(ctx sdk.Context, poll vote.PollMeta) (types.OutPointInfo, bool) {
-// 				panic("mock out the GetUnconfirmedOutPointInfo method")
 // 			},
 // 			GetUnsignedTxFunc: func(ctx sdk.Context) (*wire.MsgTx, bool) {
 // 				panic("mock out the GetUnsignedTx method")
@@ -1122,11 +1195,11 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			SetParamsFunc: func(ctx sdk.Context, p types.Params)  {
 // 				panic("mock out the SetParams method")
 // 			},
+// 			SetPendingOutpointInfoFunc: func(ctx sdk.Context, poll vote.PollMeta, info types.OutPointInfo)  {
+// 				panic("mock out the SetPendingOutpointInfo method")
+// 			},
 // 			SetSignedTxFunc: func(ctx sdk.Context, tx *wire.MsgTx)  {
 // 				panic("mock out the SetSignedTx method")
-// 			},
-// 			SetUnconfirmedOutpointInfoFunc: func(ctx sdk.Context, poll vote.PollMeta, info types.OutPointInfo)  {
-// 				panic("mock out the SetUnconfirmedOutpointInfo method")
 // 			},
 // 			SetUnsignedTxFunc: func(ctx sdk.Context, tx *wire.MsgTx)  {
 // 				panic("mock out the SetUnsignedTx method")
@@ -1144,11 +1217,11 @@ type BTCKeeperMock struct {
 	// DeleteOutpointInfoFunc mocks the DeleteOutpointInfo method.
 	DeleteOutpointInfoFunc func(ctx sdk.Context, outPoint wire.OutPoint)
 
+	// DeletePendingOutPointInfoFunc mocks the DeletePendingOutPointInfo method.
+	DeletePendingOutPointInfoFunc func(ctx sdk.Context, poll vote.PollMeta)
+
 	// DeleteSignedTxFunc mocks the DeleteSignedTx method.
 	DeleteSignedTxFunc func(ctx sdk.Context)
-
-	// DeleteUnconfirmedOutPointInfoFunc mocks the DeleteUnconfirmedOutPointInfo method.
-	DeleteUnconfirmedOutPointInfoFunc func(ctx sdk.Context, poll vote.PollMeta)
 
 	// DeleteUnsignedTxFunc mocks the DeleteUnsignedTx method.
 	DeleteUnsignedTxFunc func(ctx sdk.Context)
@@ -1168,6 +1241,9 @@ type BTCKeeperMock struct {
 	// GetParamsFunc mocks the GetParams method.
 	GetParamsFunc func(ctx sdk.Context) types.Params
 
+	// GetPendingOutPointInfoFunc mocks the GetPendingOutPointInfo method.
+	GetPendingOutPointInfoFunc func(ctx sdk.Context, poll vote.PollMeta) (types.OutPointInfo, bool)
+
 	// GetRequiredConfirmationHeightFunc mocks the GetRequiredConfirmationHeight method.
 	GetRequiredConfirmationHeightFunc func(ctx sdk.Context) uint64
 
@@ -1179,9 +1255,6 @@ type BTCKeeperMock struct {
 
 	// GetSignedTxFunc mocks the GetSignedTx method.
 	GetSignedTxFunc func(ctx sdk.Context) (*wire.MsgTx, bool)
-
-	// GetUnconfirmedOutPointInfoFunc mocks the GetUnconfirmedOutPointInfo method.
-	GetUnconfirmedOutPointInfoFunc func(ctx sdk.Context, poll vote.PollMeta) (types.OutPointInfo, bool)
 
 	// GetUnsignedTxFunc mocks the GetUnsignedTx method.
 	GetUnsignedTxFunc func(ctx sdk.Context) (*wire.MsgTx, bool)
@@ -1198,11 +1271,11 @@ type BTCKeeperMock struct {
 	// SetParamsFunc mocks the SetParams method.
 	SetParamsFunc func(ctx sdk.Context, p types.Params)
 
+	// SetPendingOutpointInfoFunc mocks the SetPendingOutpointInfo method.
+	SetPendingOutpointInfoFunc func(ctx sdk.Context, poll vote.PollMeta, info types.OutPointInfo)
+
 	// SetSignedTxFunc mocks the SetSignedTx method.
 	SetSignedTxFunc func(ctx sdk.Context, tx *wire.MsgTx)
-
-	// SetUnconfirmedOutpointInfoFunc mocks the SetUnconfirmedOutpointInfo method.
-	SetUnconfirmedOutpointInfoFunc func(ctx sdk.Context, poll vote.PollMeta, info types.OutPointInfo)
 
 	// SetUnsignedTxFunc mocks the SetUnsignedTx method.
 	SetUnsignedTxFunc func(ctx sdk.Context, tx *wire.MsgTx)
@@ -1219,17 +1292,17 @@ type BTCKeeperMock struct {
 			// OutPoint is the outPoint argument value.
 			OutPoint wire.OutPoint
 		}
-		// DeleteSignedTx holds details about calls to the DeleteSignedTx method.
-		DeleteSignedTx []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-		}
-		// DeleteUnconfirmedOutPointInfo holds details about calls to the DeleteUnconfirmedOutPointInfo method.
-		DeleteUnconfirmedOutPointInfo []struct {
+		// DeletePendingOutPointInfo holds details about calls to the DeletePendingOutPointInfo method.
+		DeletePendingOutPointInfo []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Poll is the poll argument value.
 			Poll vote.PollMeta
+		}
+		// DeleteSignedTx holds details about calls to the DeleteSignedTx method.
+		DeleteSignedTx []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
 		}
 		// DeleteUnsignedTx holds details about calls to the DeleteUnsignedTx method.
 		DeleteUnsignedTx []struct {
@@ -1265,6 +1338,13 @@ type BTCKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 		}
+		// GetPendingOutPointInfo holds details about calls to the GetPendingOutPointInfo method.
+		GetPendingOutPointInfo []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Poll is the poll argument value.
+			Poll vote.PollMeta
+		}
 		// GetRequiredConfirmationHeight holds details about calls to the GetRequiredConfirmationHeight method.
 		GetRequiredConfirmationHeight []struct {
 			// Ctx is the ctx argument value.
@@ -1284,13 +1364,6 @@ type BTCKeeperMock struct {
 		GetSignedTx []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
-		}
-		// GetUnconfirmedOutPointInfo holds details about calls to the GetUnconfirmedOutPointInfo method.
-		GetUnconfirmedOutPointInfo []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Poll is the poll argument value.
-			Poll vote.PollMeta
 		}
 		// GetUnsignedTx holds details about calls to the GetUnsignedTx method.
 		GetUnsignedTx []struct {
@@ -1325,21 +1398,21 @@ type BTCKeeperMock struct {
 			// P is the p argument value.
 			P types.Params
 		}
-		// SetSignedTx holds details about calls to the SetSignedTx method.
-		SetSignedTx []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Tx is the tx argument value.
-			Tx *wire.MsgTx
-		}
-		// SetUnconfirmedOutpointInfo holds details about calls to the SetUnconfirmedOutpointInfo method.
-		SetUnconfirmedOutpointInfo []struct {
+		// SetPendingOutpointInfo holds details about calls to the SetPendingOutpointInfo method.
+		SetPendingOutpointInfo []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Poll is the poll argument value.
 			Poll vote.PollMeta
 			// Info is the info argument value.
 			Info types.OutPointInfo
+		}
+		// SetSignedTx holds details about calls to the SetSignedTx method.
+		SetSignedTx []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Tx is the tx argument value.
+			Tx *wire.MsgTx
 		}
 		// SetUnsignedTx holds details about calls to the SetUnsignedTx method.
 		SetUnsignedTx []struct {
@@ -1351,26 +1424,26 @@ type BTCKeeperMock struct {
 	}
 	lockCodec                         sync.RWMutex
 	lockDeleteOutpointInfo            sync.RWMutex
+	lockDeletePendingOutPointInfo     sync.RWMutex
 	lockDeleteSignedTx                sync.RWMutex
-	lockDeleteUnconfirmedOutPointInfo sync.RWMutex
 	lockDeleteUnsignedTx              sync.RWMutex
 	lockGetAddress                    sync.RWMutex
 	lockGetConfirmedOutPointInfos     sync.RWMutex
 	lockGetNetwork                    sync.RWMutex
 	lockGetOutPointInfo               sync.RWMutex
 	lockGetParams                     sync.RWMutex
+	lockGetPendingOutPointInfo        sync.RWMutex
 	lockGetRequiredConfirmationHeight sync.RWMutex
 	lockGetRevoteLockingPeriod        sync.RWMutex
 	lockGetSigCheckInterval           sync.RWMutex
 	lockGetSignedTx                   sync.RWMutex
-	lockGetUnconfirmedOutPointInfo    sync.RWMutex
 	lockGetUnsignedTx                 sync.RWMutex
 	lockLogger                        sync.RWMutex
 	lockSetAddress                    sync.RWMutex
 	lockSetOutpointInfo               sync.RWMutex
 	lockSetParams                     sync.RWMutex
+	lockSetPendingOutpointInfo        sync.RWMutex
 	lockSetSignedTx                   sync.RWMutex
-	lockSetUnconfirmedOutpointInfo    sync.RWMutex
 	lockSetUnsignedTx                 sync.RWMutex
 }
 
@@ -1435,6 +1508,41 @@ func (mock *BTCKeeperMock) DeleteOutpointInfoCalls() []struct {
 	return calls
 }
 
+// DeletePendingOutPointInfo calls DeletePendingOutPointInfoFunc.
+func (mock *BTCKeeperMock) DeletePendingOutPointInfo(ctx sdk.Context, poll vote.PollMeta) {
+	if mock.DeletePendingOutPointInfoFunc == nil {
+		panic("BTCKeeperMock.DeletePendingOutPointInfoFunc: method is nil but BTCKeeper.DeletePendingOutPointInfo was just called")
+	}
+	callInfo := struct {
+		Ctx  sdk.Context
+		Poll vote.PollMeta
+	}{
+		Ctx:  ctx,
+		Poll: poll,
+	}
+	mock.lockDeletePendingOutPointInfo.Lock()
+	mock.calls.DeletePendingOutPointInfo = append(mock.calls.DeletePendingOutPointInfo, callInfo)
+	mock.lockDeletePendingOutPointInfo.Unlock()
+	mock.DeletePendingOutPointInfoFunc(ctx, poll)
+}
+
+// DeletePendingOutPointInfoCalls gets all the calls that were made to DeletePendingOutPointInfo.
+// Check the length with:
+//     len(mockedBTCKeeper.DeletePendingOutPointInfoCalls())
+func (mock *BTCKeeperMock) DeletePendingOutPointInfoCalls() []struct {
+	Ctx  sdk.Context
+	Poll vote.PollMeta
+} {
+	var calls []struct {
+		Ctx  sdk.Context
+		Poll vote.PollMeta
+	}
+	mock.lockDeletePendingOutPointInfo.RLock()
+	calls = mock.calls.DeletePendingOutPointInfo
+	mock.lockDeletePendingOutPointInfo.RUnlock()
+	return calls
+}
+
 // DeleteSignedTx calls DeleteSignedTxFunc.
 func (mock *BTCKeeperMock) DeleteSignedTx(ctx sdk.Context) {
 	if mock.DeleteSignedTxFunc == nil {
@@ -1463,41 +1571,6 @@ func (mock *BTCKeeperMock) DeleteSignedTxCalls() []struct {
 	mock.lockDeleteSignedTx.RLock()
 	calls = mock.calls.DeleteSignedTx
 	mock.lockDeleteSignedTx.RUnlock()
-	return calls
-}
-
-// DeleteUnconfirmedOutPointInfo calls DeleteUnconfirmedOutPointInfoFunc.
-func (mock *BTCKeeperMock) DeleteUnconfirmedOutPointInfo(ctx sdk.Context, poll vote.PollMeta) {
-	if mock.DeleteUnconfirmedOutPointInfoFunc == nil {
-		panic("BTCKeeperMock.DeleteUnconfirmedOutPointInfoFunc: method is nil but BTCKeeper.DeleteUnconfirmedOutPointInfo was just called")
-	}
-	callInfo := struct {
-		Ctx  sdk.Context
-		Poll vote.PollMeta
-	}{
-		Ctx:  ctx,
-		Poll: poll,
-	}
-	mock.lockDeleteUnconfirmedOutPointInfo.Lock()
-	mock.calls.DeleteUnconfirmedOutPointInfo = append(mock.calls.DeleteUnconfirmedOutPointInfo, callInfo)
-	mock.lockDeleteUnconfirmedOutPointInfo.Unlock()
-	mock.DeleteUnconfirmedOutPointInfoFunc(ctx, poll)
-}
-
-// DeleteUnconfirmedOutPointInfoCalls gets all the calls that were made to DeleteUnconfirmedOutPointInfo.
-// Check the length with:
-//     len(mockedBTCKeeper.DeleteUnconfirmedOutPointInfoCalls())
-func (mock *BTCKeeperMock) DeleteUnconfirmedOutPointInfoCalls() []struct {
-	Ctx  sdk.Context
-	Poll vote.PollMeta
-} {
-	var calls []struct {
-		Ctx  sdk.Context
-		Poll vote.PollMeta
-	}
-	mock.lockDeleteUnconfirmedOutPointInfo.RLock()
-	calls = mock.calls.DeleteUnconfirmedOutPointInfo
-	mock.lockDeleteUnconfirmedOutPointInfo.RUnlock()
 	return calls
 }
 
@@ -1695,6 +1768,41 @@ func (mock *BTCKeeperMock) GetParamsCalls() []struct {
 	return calls
 }
 
+// GetPendingOutPointInfo calls GetPendingOutPointInfoFunc.
+func (mock *BTCKeeperMock) GetPendingOutPointInfo(ctx sdk.Context, poll vote.PollMeta) (types.OutPointInfo, bool) {
+	if mock.GetPendingOutPointInfoFunc == nil {
+		panic("BTCKeeperMock.GetPendingOutPointInfoFunc: method is nil but BTCKeeper.GetPendingOutPointInfo was just called")
+	}
+	callInfo := struct {
+		Ctx  sdk.Context
+		Poll vote.PollMeta
+	}{
+		Ctx:  ctx,
+		Poll: poll,
+	}
+	mock.lockGetPendingOutPointInfo.Lock()
+	mock.calls.GetPendingOutPointInfo = append(mock.calls.GetPendingOutPointInfo, callInfo)
+	mock.lockGetPendingOutPointInfo.Unlock()
+	return mock.GetPendingOutPointInfoFunc(ctx, poll)
+}
+
+// GetPendingOutPointInfoCalls gets all the calls that were made to GetPendingOutPointInfo.
+// Check the length with:
+//     len(mockedBTCKeeper.GetPendingOutPointInfoCalls())
+func (mock *BTCKeeperMock) GetPendingOutPointInfoCalls() []struct {
+	Ctx  sdk.Context
+	Poll vote.PollMeta
+} {
+	var calls []struct {
+		Ctx  sdk.Context
+		Poll vote.PollMeta
+	}
+	mock.lockGetPendingOutPointInfo.RLock()
+	calls = mock.calls.GetPendingOutPointInfo
+	mock.lockGetPendingOutPointInfo.RUnlock()
+	return calls
+}
+
 // GetRequiredConfirmationHeight calls GetRequiredConfirmationHeightFunc.
 func (mock *BTCKeeperMock) GetRequiredConfirmationHeight(ctx sdk.Context) uint64 {
 	if mock.GetRequiredConfirmationHeightFunc == nil {
@@ -1816,41 +1924,6 @@ func (mock *BTCKeeperMock) GetSignedTxCalls() []struct {
 	mock.lockGetSignedTx.RLock()
 	calls = mock.calls.GetSignedTx
 	mock.lockGetSignedTx.RUnlock()
-	return calls
-}
-
-// GetUnconfirmedOutPointInfo calls GetUnconfirmedOutPointInfoFunc.
-func (mock *BTCKeeperMock) GetUnconfirmedOutPointInfo(ctx sdk.Context, poll vote.PollMeta) (types.OutPointInfo, bool) {
-	if mock.GetUnconfirmedOutPointInfoFunc == nil {
-		panic("BTCKeeperMock.GetUnconfirmedOutPointInfoFunc: method is nil but BTCKeeper.GetUnconfirmedOutPointInfo was just called")
-	}
-	callInfo := struct {
-		Ctx  sdk.Context
-		Poll vote.PollMeta
-	}{
-		Ctx:  ctx,
-		Poll: poll,
-	}
-	mock.lockGetUnconfirmedOutPointInfo.Lock()
-	mock.calls.GetUnconfirmedOutPointInfo = append(mock.calls.GetUnconfirmedOutPointInfo, callInfo)
-	mock.lockGetUnconfirmedOutPointInfo.Unlock()
-	return mock.GetUnconfirmedOutPointInfoFunc(ctx, poll)
-}
-
-// GetUnconfirmedOutPointInfoCalls gets all the calls that were made to GetUnconfirmedOutPointInfo.
-// Check the length with:
-//     len(mockedBTCKeeper.GetUnconfirmedOutPointInfoCalls())
-func (mock *BTCKeeperMock) GetUnconfirmedOutPointInfoCalls() []struct {
-	Ctx  sdk.Context
-	Poll vote.PollMeta
-} {
-	var calls []struct {
-		Ctx  sdk.Context
-		Poll vote.PollMeta
-	}
-	mock.lockGetUnconfirmedOutPointInfo.RLock()
-	calls = mock.calls.GetUnconfirmedOutPointInfo
-	mock.lockGetUnconfirmedOutPointInfo.RUnlock()
 	return calls
 }
 
@@ -2025,6 +2098,45 @@ func (mock *BTCKeeperMock) SetParamsCalls() []struct {
 	return calls
 }
 
+// SetPendingOutpointInfo calls SetPendingOutpointInfoFunc.
+func (mock *BTCKeeperMock) SetPendingOutpointInfo(ctx sdk.Context, poll vote.PollMeta, info types.OutPointInfo) {
+	if mock.SetPendingOutpointInfoFunc == nil {
+		panic("BTCKeeperMock.SetPendingOutpointInfoFunc: method is nil but BTCKeeper.SetPendingOutpointInfo was just called")
+	}
+	callInfo := struct {
+		Ctx  sdk.Context
+		Poll vote.PollMeta
+		Info types.OutPointInfo
+	}{
+		Ctx:  ctx,
+		Poll: poll,
+		Info: info,
+	}
+	mock.lockSetPendingOutpointInfo.Lock()
+	mock.calls.SetPendingOutpointInfo = append(mock.calls.SetPendingOutpointInfo, callInfo)
+	mock.lockSetPendingOutpointInfo.Unlock()
+	mock.SetPendingOutpointInfoFunc(ctx, poll, info)
+}
+
+// SetPendingOutpointInfoCalls gets all the calls that were made to SetPendingOutpointInfo.
+// Check the length with:
+//     len(mockedBTCKeeper.SetPendingOutpointInfoCalls())
+func (mock *BTCKeeperMock) SetPendingOutpointInfoCalls() []struct {
+	Ctx  sdk.Context
+	Poll vote.PollMeta
+	Info types.OutPointInfo
+} {
+	var calls []struct {
+		Ctx  sdk.Context
+		Poll vote.PollMeta
+		Info types.OutPointInfo
+	}
+	mock.lockSetPendingOutpointInfo.RLock()
+	calls = mock.calls.SetPendingOutpointInfo
+	mock.lockSetPendingOutpointInfo.RUnlock()
+	return calls
+}
+
 // SetSignedTx calls SetSignedTxFunc.
 func (mock *BTCKeeperMock) SetSignedTx(ctx sdk.Context, tx *wire.MsgTx) {
 	if mock.SetSignedTxFunc == nil {
@@ -2057,45 +2169,6 @@ func (mock *BTCKeeperMock) SetSignedTxCalls() []struct {
 	mock.lockSetSignedTx.RLock()
 	calls = mock.calls.SetSignedTx
 	mock.lockSetSignedTx.RUnlock()
-	return calls
-}
-
-// SetUnconfirmedOutpointInfo calls SetUnconfirmedOutpointInfoFunc.
-func (mock *BTCKeeperMock) SetUnconfirmedOutpointInfo(ctx sdk.Context, poll vote.PollMeta, info types.OutPointInfo) {
-	if mock.SetUnconfirmedOutpointInfoFunc == nil {
-		panic("BTCKeeperMock.SetUnconfirmedOutpointInfoFunc: method is nil but BTCKeeper.SetUnconfirmedOutpointInfo was just called")
-	}
-	callInfo := struct {
-		Ctx  sdk.Context
-		Poll vote.PollMeta
-		Info types.OutPointInfo
-	}{
-		Ctx:  ctx,
-		Poll: poll,
-		Info: info,
-	}
-	mock.lockSetUnconfirmedOutpointInfo.Lock()
-	mock.calls.SetUnconfirmedOutpointInfo = append(mock.calls.SetUnconfirmedOutpointInfo, callInfo)
-	mock.lockSetUnconfirmedOutpointInfo.Unlock()
-	mock.SetUnconfirmedOutpointInfoFunc(ctx, poll, info)
-}
-
-// SetUnconfirmedOutpointInfoCalls gets all the calls that were made to SetUnconfirmedOutpointInfo.
-// Check the length with:
-//     len(mockedBTCKeeper.SetUnconfirmedOutpointInfoCalls())
-func (mock *BTCKeeperMock) SetUnconfirmedOutpointInfoCalls() []struct {
-	Ctx  sdk.Context
-	Poll vote.PollMeta
-	Info types.OutPointInfo
-} {
-	var calls []struct {
-		Ctx  sdk.Context
-		Poll vote.PollMeta
-		Info types.OutPointInfo
-	}
-	mock.lockSetUnconfirmedOutpointInfo.RLock()
-	calls = mock.calls.SetUnconfirmedOutpointInfo
-	mock.lockSetUnconfirmedOutpointInfo.RUnlock()
 	return calls
 }
 

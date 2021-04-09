@@ -26,7 +26,7 @@ func NewHandler(k types.BTCKeeper, v types.Voter, signer types.Signer, n types.N
 		case types.MsgLink:
 			return HandleMsgLink(ctx, k, signer, n, msg)
 		case types.MsgConfirmOutpoint:
-			return HandleMsgConfirmOutpoint(ctx, k, v, msg)
+			return HandleMsgConfirmOutpoint(ctx, k, v, signer, msg)
 		case types.MsgVoteConfirmOutpoint:
 			return HandleMsgVoteConfirmOutpoint(ctx, k, v, n, msg)
 		case types.MsgSignPendingTransfers:
@@ -68,7 +68,7 @@ func HandleMsgLink(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n types.N
 }
 
 // HandleMsgConfirmOutpoint handles the confirmation of a Bitcoin outpoint
-func HandleMsgConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, voter types.InitPoller, msg types.MsgConfirmOutpoint) (*sdk.Result, error) {
+func HandleMsgConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, voter types.InitPoller, signer types.Signer, msg types.MsgConfirmOutpoint) (*sdk.Result, error) {
 	_, state, ok := k.GetOutPointInfo(ctx, *msg.OutPointInfo.OutPoint)
 	switch {
 	case !ok:
@@ -83,11 +83,21 @@ func HandleMsgConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, voter types.In
 		return nil, fmt.Errorf("outpoint address unknown, aborting deposit confirmation")
 	}
 
-	poll := vote.NewPollMetaWithNonce(types.ModuleName, msg.Type(), msg.OutPointInfo.OutPoint.String(), ctx.BlockHeight(), k.GetRevoteLockingPeriod(ctx))
-	if err := voter.InitPoll(ctx, poll); err != nil {
+	keyID, ok := signer.GetCurrentKeyID(ctx, exported.Bitcoin, tss.MasterKey)
+	if !ok {
+		return nil, fmt.Errorf("no master key for chain %s found", exported.Bitcoin.Name)
+	}
+
+	counter, ok := signer.GetSnapshotCounterForKeyID(ctx, keyID)
+	if !ok {
+		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
+	}
+
+	poll := vote.NewPollMetaWithNonce(types.ModuleName, msg.OutPointInfo.OutPoint.String(), ctx.BlockHeight(), k.GetRevoteLockingPeriod(ctx))
+	if err := voter.InitPoll(ctx, poll, counter); err != nil {
 		return nil, err
 	}
-	k.SetUnconfirmedOutpointInfo(ctx, poll, msg.OutPointInfo)
+	k.SetPendingOutpointInfo(ctx, poll, msg.OutPointInfo)
 
 	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeOutpointConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
@@ -106,72 +116,77 @@ func HandleMsgConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, voter types.In
 // HandleMsgVoteConfirmOutpoint handles the votes on an outpoint confirmation
 func HandleMsgVoteConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, v types.Voter, n types.Nexus, msg types.MsgVoteConfirmOutpoint) (*sdk.Result, error) {
 	// has the outpoint been confirmed before?
-	confirmedOutpoint, state, confirmedBefore := k.GetOutPointInfo(ctx, msg.Outpoint)
-	if confirmedBefore {
+	confirmedOutPointInfo, state, confirmedBefore := k.GetOutPointInfo(ctx, msg.OutPoint)
+	// is there an ongoing poll?
+	pendingOutPointInfo, pollFound := k.GetPendingOutPointInfo(ctx, msg.Poll)
 
-		v.DeletePoll(ctx, msg.PollMeta)
-		k.DeleteUnconfirmedOutPointInfo(ctx, msg.PollMeta)
-
-		// If the voting threshold has been met and additional votes are received they should not return an error
+	switch {
+	// a malicious user could try to delete an ongoing poll by providing an already confirmed outpoint,
+	// so we need to check that it matches the poll before deleting
+	case confirmedBefore && pollFound && pendingOutPointInfo.OutPoint.String() == confirmedOutPointInfo.OutPoint.String():
+		v.DeletePoll(ctx, msg.Poll)
+		k.DeletePendingOutPointInfo(ctx, msg.Poll)
+		fallthrough
+	// If the voting threshold has been met and additional votes are received they should not return an error
+	case confirmedBefore:
 		switch state {
 		case types.CONFIRMED:
-			return &sdk.Result{Log: fmt.Sprintf("outpoint %s already confirmed", confirmedOutpoint.OutPoint.String())}, nil
+			return &sdk.Result{Log: fmt.Sprintf("outpoint %s already confirmed", msg.OutPoint.String())}, nil
 		case types.SPENT:
-			return &sdk.Result{Log: fmt.Sprintf("outpoint %s already spent", confirmedOutpoint.OutPoint.String())}, nil
+			return &sdk.Result{Log: fmt.Sprintf("outpoint %s already spent", msg.OutPoint.String())}, nil
 		default:
 			panic(fmt.Sprintf("invalid outpoint state %v", state))
 		}
-	}
-	// is there an ongoing poll?
-	outPointInfo, pollFound := k.GetUnconfirmedOutPointInfo(ctx, msg.PollMeta)
-	if !pollFound {
-		return nil, fmt.Errorf("no outpoint found for poll %s", msg.PollMeta.String())
-	}
-
-	if outPointInfo.OutPoint.String() != msg.Outpoint.String() {
-		return nil, fmt.Errorf("outpoint %s does not match poll %s", msg.Outpoint.String(), msg.PollMeta.String())
+	case !pollFound:
+		return nil, fmt.Errorf("no outpoint found for poll %s", msg.Poll.String())
+	case pendingOutPointInfo.OutPoint.String() != msg.OutPoint.String():
+		return nil, fmt.Errorf("outpoint %s does not match poll %s", msg.OutPoint.String(), msg.Poll.String())
+	default:
+		// assert: the outpoint is known and has not been confirmed before
 	}
 
-	// assert: the outpoint is known and has not been confirmed before
-
-	if err := v.TallyVote(ctx, msg.Sender, msg.PollMeta, msg.Confirmed); err != nil {
+	if err := v.TallyVote(ctx, msg.Sender, msg.Poll, msg.Confirmed); err != nil {
 		return nil, err
 	}
 
-	result := v.Result(ctx, msg.PollMeta)
+	result := v.Result(ctx, msg.Poll)
 	if result == nil {
-		return &sdk.Result{Log: fmt.Sprintf("not enough votes to confirm outpoint %s yet", msg.PollMeta.ID)}, nil
+		return &sdk.Result{Log: fmt.Sprintf("not enough votes to confirm outpoint %s yet", msg.OutPoint.String())}, nil
 	}
 
 	// assert: the poll has completed
-	confirmed := result.(bool)
+	confirmed, ok := result.(bool)
+	if !ok {
+		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", msg.Poll.String(), result)
+	}
 
-	v.DeletePoll(ctx, msg.PollMeta)
-	k.DeleteUnconfirmedOutPointInfo(ctx, msg.PollMeta)
+	v.DeletePoll(ctx, msg.Poll)
+	k.DeletePendingOutPointInfo(ctx, msg.Poll)
 
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeOutpointConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyOutPointInfo, string(k.Codec().MustMarshalJSON(outPointInfo))))
+		sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(msg.Poll))),
+		sdk.NewAttribute(types.AttributeKeyOutPointInfo, string(k.Codec().MustMarshalJSON(pendingOutPointInfo))))
 
 	if !confirmed {
 		ctx.EventManager().EmitEvent(
-			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueRejected)))
+			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
 		return &sdk.Result{
-			Log:    fmt.Sprintf("outpoint %s was discarded ", msg.PollMeta.ID),
+			Log:    fmt.Sprintf("outpoint %s was discarded ", msg.OutPoint.String()),
 			Events: ctx.EventManager().Events(),
 		}, nil
 	}
 	ctx.EventManager().EmitEvent(
-		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirmed)))
+		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
-	k.SetOutpointInfo(ctx, outPointInfo, types.CONFIRMED)
+	k.SetOutpointInfo(ctx, pendingOutPointInfo, types.CONFIRMED)
 
 	// TODO: handle withdrawals to deposit or consolidation addresses (this is currently undefined behaviour),
 	//  i.e. multiple outpoints in the SignedTx need to be confirmed
 
 	// if this is the consolidation outpoint it means the latest consolidation transaction is confirmed on Bitcoin
-	if tx, ok := k.GetSignedTx(ctx); ok && tx.TxHash() == outPointInfo.OutPoint.Hash {
+	if tx, ok := k.GetSignedTx(ctx); ok && tx.TxHash() == pendingOutPointInfo.OutPoint.Hash {
 		k.DeleteSignedTx(ctx)
 		return &sdk.Result{
 			Events: ctx.EventManager().Events(),
@@ -179,8 +194,8 @@ func HandleMsgVoteConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, v types.Vo
 	}
 
 	// handle cross-chain transfer
-	depositAddr := nexus.CrossChainAddress{Address: outPointInfo.Address, Chain: exported.Bitcoin}
-	amount := sdk.NewInt64Coin(exported.Bitcoin.NativeAsset, int64(outPointInfo.Amount))
+	depositAddr := nexus.CrossChainAddress{Address: pendingOutPointInfo.Address, Chain: exported.Bitcoin}
+	amount := sdk.NewInt64Coin(exported.Bitcoin.NativeAsset, int64(pendingOutPointInfo.Amount))
 	if err := n.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
 		return nil, sdkerrors.Wrap(err, "cross-chain transfer failed")
 	}
@@ -282,9 +297,9 @@ func prepareChange(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, chan
 	}
 
 	// if a new master key has been assigned for rotation spend change to that address, otherwise use the current one
-	key, ok := signer.GetNextMasterKey(ctx, exported.Bitcoin)
+	key, ok := signer.GetNextKey(ctx, exported.Bitcoin, tss.MasterKey)
 	if !ok {
-		key, ok = signer.GetCurrentMasterKey(ctx, exported.Bitcoin)
+		key, ok = signer.GetCurrentKey(ctx, exported.Bitcoin, tss.MasterKey)
 		if !ok {
 			return types.Output{}, fmt.Errorf("key not found")
 		}
@@ -323,7 +338,7 @@ func startSignInputs(ctx sdk.Context, signer types.Signer, snapshotter types.Sna
 }
 
 func checkLinkRequisites(ctx sdk.Context, s types.Signer, n types.Nexus, recipientChainName string) (tss.Key, nexus.Chain, error) {
-	key, ok := s.GetCurrentMasterKey(ctx, exported.Bitcoin)
+	key, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.MasterKey)
 	if !ok {
 		return tss.Key{}, nexus.Chain{}, fmt.Errorf("master key not set")
 	}

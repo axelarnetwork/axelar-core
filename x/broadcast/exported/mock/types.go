@@ -19,9 +19,6 @@ var _ exported.Broadcaster = &BroadcasterMock{}
 //
 // 		// make and configure a mocked exported.Broadcaster
 // 		mockedBroadcaster := &BroadcasterMock{
-// 			BroadcastFunc: func(ctx sdk.Context, msgs []exported.MsgWithSenderSetter) error {
-// 				panic("mock out the Broadcast method")
-// 			},
 // 			GetLocalPrincipalFunc: func(ctx sdk.Context) sdk.ValAddress {
 // 				panic("mock out the GetLocalPrincipal method")
 // 			},
@@ -41,9 +38,6 @@ var _ exported.Broadcaster = &BroadcasterMock{}
 //
 // 	}
 type BroadcasterMock struct {
-	// BroadcastFunc mocks the Broadcast method.
-	BroadcastFunc func(ctx sdk.Context, msgs []exported.MsgWithSenderSetter) error
-
 	// GetLocalPrincipalFunc mocks the GetLocalPrincipal method.
 	GetLocalPrincipalFunc func(ctx sdk.Context) sdk.ValAddress
 
@@ -58,13 +52,6 @@ type BroadcasterMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// Broadcast holds details about calls to the Broadcast method.
-		Broadcast []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Msgs is the msgs argument value.
-			Msgs []exported.MsgWithSenderSetter
-		}
 		// GetLocalPrincipal holds details about calls to the GetLocalPrincipal method.
 		GetLocalPrincipal []struct {
 			// Ctx is the ctx argument value.
@@ -94,46 +81,10 @@ type BroadcasterMock struct {
 			Proxy sdk.AccAddress
 		}
 	}
-	lockBroadcast         sync.RWMutex
 	lockGetLocalPrincipal sync.RWMutex
 	lockGetPrincipal      sync.RWMutex
 	lockGetProxy          sync.RWMutex
 	lockRegisterProxy     sync.RWMutex
-}
-
-// Broadcast calls BroadcastFunc.
-func (mock *BroadcasterMock) Broadcast(ctx sdk.Context, msgs []exported.MsgWithSenderSetter) error {
-	if mock.BroadcastFunc == nil {
-		panic("BroadcasterMock.BroadcastFunc: method is nil but Broadcaster.Broadcast was just called")
-	}
-	callInfo := struct {
-		Ctx  sdk.Context
-		Msgs []exported.MsgWithSenderSetter
-	}{
-		Ctx:  ctx,
-		Msgs: msgs,
-	}
-	mock.lockBroadcast.Lock()
-	mock.calls.Broadcast = append(mock.calls.Broadcast, callInfo)
-	mock.lockBroadcast.Unlock()
-	return mock.BroadcastFunc(ctx, msgs)
-}
-
-// BroadcastCalls gets all the calls that were made to Broadcast.
-// Check the length with:
-//     len(mockedBroadcaster.BroadcastCalls())
-func (mock *BroadcasterMock) BroadcastCalls() []struct {
-	Ctx  sdk.Context
-	Msgs []exported.MsgWithSenderSetter
-} {
-	var calls []struct {
-		Ctx  sdk.Context
-		Msgs []exported.MsgWithSenderSetter
-	}
-	mock.lockBroadcast.RLock()
-	calls = mock.calls.Broadcast
-	mock.lockBroadcast.RUnlock()
-	return calls
 }
 
 // GetLocalPrincipal calls GetLocalPrincipalFunc.

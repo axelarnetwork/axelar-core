@@ -5,9 +5,6 @@ import (
 	"net/http"
 	"strconv"
 
-	clientUtils "github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
-	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
@@ -15,12 +12,17 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/gorilla/mux"
+
+	clientUtils "github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 )
 
+// rest routes
 const (
 	TxMethodLink               = "link"
-	TxMethodVerifyErc20Deploy  = "verify-erc20-deploy"
-	TxMethodVerifyErc20Deposit = "verify-erc20-deposit"
+	TxMethodConfirmTokenDeploy = "confirm-erc20-deploy"
+	TxMethodConfirmDeposit     = "confirm-erc20-deposit"
 	TxMethodSignTx             = "sign-tx"
 	TxMethodSignPending        = "sign-pending"
 	TxMethodSignDeployToken    = "sign-deploy-token"
@@ -34,11 +36,12 @@ const (
 	QMethodSendCommand          = keeper.SendCommand
 )
 
+// RegisterRoutes registers this module's REST routes with the given router
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	registerTx := clientUtils.RegisterTxHandlerFn(r, types.RestRoute)
 	registerTx(GetHandlerLink(cliCtx), TxMethodLink, clientUtils.PathVarChain)
-	registerTx(GetHandlerVerifyErc20Deploy(cliCtx), TxMethodVerifyErc20Deploy, clientUtils.PathVarSymbol)
-	registerTx(GetHandlerVerifyErc20Deposit(cliCtx), TxMethodVerifyErc20Deposit)
+	registerTx(GetHandlerConfirmTokenDeploy(cliCtx), TxMethodConfirmTokenDeploy, clientUtils.PathVarSymbol)
+	registerTx(GetHandlerConfirmDeposit(cliCtx), TxMethodConfirmDeposit)
 	registerTx(GetHandlerSignTx(cliCtx), TxMethodSignTx)
 	registerTx(GetHandlerSignPendingTransfers(cliCtx), TxMethodSignPending)
 	registerTx(GetHandlerSignDeployToken(cliCtx), TxMethodSignDeployToken, clientUtils.PathVarSymbol)
@@ -53,33 +56,39 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	registerQuery(GetHandlerQuerySendCommandTx(cliCtx), QMethodSendCommand)
 }
 
+// ReqLink represents a request to link a cross-chain address to an Ethereum address
 type ReqLink struct {
 	BaseReq       rest.BaseReq `json:"base_req" yaml:"base_req"`
 	RecipientAddr string       `json:"recipient" yaml:"recipient"`
 	Symbol        string       `json:"symbol" yaml:"symbol"`
 }
 
-type ReqVerifyErc20TokenDeploy struct {
+// ReqConfirmTokenDeploy represents a request to confirm a token deployment
+type ReqConfirmTokenDeploy struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	TxID    string       `json:"tx_id" yaml:"tx_id"`
 }
 
-type ReqVerifyErc20Deposit struct {
+// ReqConfirmDeposit represents a request to confirm a deposit
+type ReqConfirmDeposit struct {
 	BaseReq       rest.BaseReq `json:"base_req" yaml:"base_req"`
 	TxID          string       `json:"tx_id" yaml:"tx_id"`
 	Amount        string       `json:"amount" yaml:"amount"`
 	BurnerAddress string       `json:"burner_address" yaml:"burner_address"`
 }
 
+// ReqSignTx represents a request to sign a transaction
 type ReqSignTx struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	TxJson  string       `json:"tx_json" yaml:"tx_json"`
 }
 
+// ReqSignPendingTransfers represents a request to sign all pending transfers
 type ReqSignPendingTransfers struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 }
 
+// ReqSignDeployToken represents a request to sign a deploy token command
 type ReqSignDeployToken struct {
 	BaseReq  rest.BaseReq `json:"base_req" yaml:"base_req"`
 	Name     string       `json:"name" yaml:"name"`
@@ -87,10 +96,12 @@ type ReqSignDeployToken struct {
 	Capacity string       `json:"capacity" yaml:"capacity"`
 }
 
+// ReqSignBurnTokens represents a request to sign all outstanding burn commands
 type ReqSignBurnTokens struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 }
 
+// GetHandlerLink returns the handler to link addresses
 func GetHandlerLink(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqLink
@@ -122,9 +133,10 @@ func GetHandlerLink(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-func GetHandlerVerifyErc20Deploy(cliCtx context.CLIContext) http.HandlerFunc {
+// GetHandlerConfirmTokenDeploy returns a handler to confirm a token deployment
+func GetHandlerConfirmTokenDeploy(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReqVerifyErc20TokenDeploy
+		var req ReqConfirmTokenDeploy
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
 			return
 		}
@@ -138,7 +150,7 @@ func GetHandlerVerifyErc20Deploy(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		txID := common.HexToHash(req.TxID)
-		msg := types.NewMsgVerifyErc20TokenDeploy(fromAddr, txID, mux.Vars(r)[clientUtils.PathVarSymbol])
+		msg := types.NewMsgConfirmERC20TokenDeploy(fromAddr, txID, mux.Vars(r)[clientUtils.PathVarSymbol])
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -148,9 +160,10 @@ func GetHandlerVerifyErc20Deploy(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-func GetHandlerVerifyErc20Deposit(cliCtx context.CLIContext) http.HandlerFunc {
+// GetHandlerConfirmDeposit returns a handler to confirm a deposit
+func GetHandlerConfirmDeposit(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReqVerifyErc20Deposit
+		var req ReqConfirmDeposit
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
 			return
 		}
@@ -167,7 +180,7 @@ func GetHandlerVerifyErc20Deposit(cliCtx context.CLIContext) http.HandlerFunc {
 		amount := sdk.NewUintFromString(req.Amount)
 		burnerAddr := common.HexToAddress(req.BurnerAddress)
 
-		msg := types.NewMsgVerifyErc20Deposit(fromAddr, txID, amount, burnerAddr)
+		msg := types.NewMsgConfirmERC20Deposit(fromAddr, txID, amount, burnerAddr)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -177,6 +190,7 @@ func GetHandlerVerifyErc20Deposit(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
+// GetHandlerSignTx returns a handler to sign a transaction
 func GetHandlerSignTx(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqSignTx
@@ -210,6 +224,7 @@ func GetHandlerSignTx(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
+// GetHandlerSignPendingTransfers returns a handler to sign all pending transfers
 func GetHandlerSignPendingTransfers(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqSignTx
@@ -234,6 +249,7 @@ func GetHandlerSignPendingTransfers(cliCtx context.CLIContext) http.HandlerFunc 
 	}
 }
 
+// GetHandlerSignDeployToken returns a handler to sign a deploy token command
 func GetHandlerSignDeployToken(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqSignDeployToken
@@ -268,6 +284,7 @@ func GetHandlerSignDeployToken(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
+// GetHandlerSignBurnTokens returns a handler to sign all outstanding burn commands
 func GetHandlerSignBurnTokens(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqSignBurnTokens

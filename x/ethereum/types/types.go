@@ -60,8 +60,6 @@ var (
 		params.GoerliChainConfig.ChainID.Int64():        Goerli,
 		params.AllCliqueProtocolChanges.ChainID.Int64(): Ganache,
 	}
-
-	erc20TransferEventSig = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
 )
 
 // Network provides additional functionality based on the ethereum network name
@@ -175,9 +173,8 @@ type CommandParams struct {
 	Sender    string
 }
 
-// Erc20TokenDeploy describes information about an ERC20 token
-type Erc20TokenDeploy struct {
-	TxID      [common.HashLength]byte
+// ERC20TokenDeploy describes information about an ERC20 token
+type ERC20TokenDeploy struct {
 	Symbol    string
 	TokenAddr string
 }
@@ -190,13 +187,22 @@ type BurnerInfo struct {
 	Salt      [common.HashLength]byte
 }
 
-// Erc20Deposit contains information for an ERC20 deposit
-type Erc20Deposit struct {
-	TxID       [common.HashLength]byte
+// ERC20Deposit contains information for an ERC20 deposit
+type ERC20Deposit struct {
+	TxID       common.Hash
 	Amount     sdk.Uint
 	Symbol     string
 	BurnerAddr string
 }
+
+// DepositState is an enum for the state of a deposit
+type DepositState int
+
+// States of confirmed deposits
+const (
+	CONFIRMED DepositState = iota
+	BURNED
+)
 
 // CreateExecuteData wraps the specific command data and includes the command signature.
 // Returns the data that goes into the data field of an Ethereum transaction
@@ -334,20 +340,6 @@ func CreateTransferOwnershipCommandData(chainID *big.Int, commandID CommandID, n
 	commandParams = append(commandParams, transferOwnershipParams)
 
 	return packArguments(chainID, commandIDs, commands, commandParams)
-}
-
-// DecodeErc20TransferEvent decodes the information contained in a ERC20 token transfer event
-func DecodeErc20TransferEvent(log *ethTypes.Log) (common.Address, common.Address, sdk.Uint, error) {
-	if len(log.Topics) != 3 || log.Topics[0] != erc20TransferEventSig {
-		return common.Address{}, common.Address{}, sdk.Uint{}, fmt.Errorf("log is not an ERC20 transfer")
-	}
-
-	from := common.BytesToAddress(log.Topics[1][:])
-	to := common.BytesToAddress(log.Topics[2][:])
-	amount := new(big.Int)
-	amount.SetBytes(log.Data[:32])
-
-	return from, to, sdk.NewUintFromBigInt(amount), nil
 }
 
 // CommandID represents the unique command identifier
@@ -490,28 +482,4 @@ func createTransferOwnershipParams(newOwnerAddr string) ([]byte, error) {
 	}
 
 	return result, nil
-}
-
-// DecodeErc20TokenDeployEvent decodes the information contained in a ERC20 token deployment event
-func DecodeErc20TokenDeployEvent(log *ethTypes.Log, transferSig common.Hash) (string, common.Address, error) {
-	if len(log.Topics) != 1 || log.Topics[0] != transferSig {
-		return "", common.Address{}, fmt.Errorf("event is not for an ERC20 token deployment")
-	}
-
-	// Decode the data field
-	stringType, err := abi.NewType("string", "string", nil)
-	if err != nil {
-		return "", common.Address{}, err
-	}
-	addressType, err := abi.NewType("address", "address", nil)
-	if err != nil {
-		return "", common.Address{}, err
-	}
-	packedArgs := abi.Arguments{{Type: stringType}, {Type: addressType}}
-	args, err := packedArgs.Unpack(log.Data)
-	if err != nil {
-		return "", common.Address{}, err
-	}
-
-	return args[0].(string), args[1].(common.Address), nil
 }

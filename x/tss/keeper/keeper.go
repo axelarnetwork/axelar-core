@@ -10,7 +10,9 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -23,6 +25,7 @@ const (
 	keyIDForSigPrefix           = "kidfs_"
 	participatePrefix           = "part_"
 	validatorDeregisteredPrefix = "validator_deregistered_block_height_"
+	keyRequirementPrefix        = "key_requirement_"
 )
 
 type Keeper struct {
@@ -50,14 +53,42 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 }
 
 // SetParams sets the tss module's parameters
-func (k Keeper) SetParams(ctx sdk.Context, set types.Params) {
-	k.params.SetParamSet(ctx, &set)
+func (k Keeper) SetParams(ctx sdk.Context, p types.Params) {
+	k.params.SetParamSet(ctx, &p)
+
+	for _, keyRequirement := range p.KeyRequirements {
+		// By copying this data to the KV store, we avoid having to iterate across all element
+		// in the parameters table when a caller needs to fetch information from it
+		k.setKeyRequirement(ctx, keyRequirement)
+	}
 }
 
 // GetParams gets the tss module's parameters
 func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	k.params.GetParamSet(ctx, &params)
 	return
+}
+
+func (k Keeper) setKeyRequirement(ctx sdk.Context, keyRequirement exported.KeyRequirement) {
+	key := fmt.Sprintf("%s%s_%s", keyRequirementPrefix, keyRequirement.ChainName, keyRequirement.KeyRole.String())
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(keyRequirement)
+
+	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
+}
+
+// GetKeyRequirement gets the key requirement for a given chain of a given role
+func (k Keeper) GetKeyRequirement(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyRequirement, bool) {
+	key := fmt.Sprintf("%s%s_%s", keyRequirementPrefix, chain.Name, keyRole.String())
+	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
+
+	if bz == nil {
+		return exported.KeyRequirement{}, false
+	}
+
+	var keyRequirement exported.KeyRequirement
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &keyRequirement)
+
+	return keyRequirement, true
 }
 
 // getLockingPeriod returns the period of blocks that keygen is locked after a new snapshot has been created

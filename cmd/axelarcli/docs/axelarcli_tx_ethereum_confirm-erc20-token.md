@@ -1,9 +1,9 @@
-## axelarcli tx tss mk-rotate
+## axelarcli tx ethereum confirm-erc20-token
 
-Rotate the given chain from the old master key to the previously created one (see mk-refresh)
+Confirm an ERC20 token deployment in an Ethereum transaction for a given symbol of token and gateway address
 
 ```
-axelarcli tx tss mk-rotate [chain] [flags]
+axelarcli tx ethereum confirm-erc20-token [txID] [symbol] [flags]
 ```
 
 ### Options
@@ -18,7 +18,7 @@ axelarcli tx tss mk-rotate [chain] [flags]
       --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
       --gas-prices string        Gas prices to determine the transaction fee (e.g. 10uatom)
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible and the node operates offline)
-  -h, --help                     help for mk-rotate
+  -h, --help                     help for confirm-erc20-token
       --indent                   Add indent to JSON response
       --keyring-backend string   Select keyring's backend (os|file|test) (default "os")
       --ledger                   Use a connected Ledger device
@@ -37,4 +37,4 @@ axelarcli tx tss mk-rotate [chain] [flags]
 
 ### SEE ALSO
 
-- [axelarcli tx tss](axelarcli_tx_tss.md)	 - tss transactions subcommands
+- [axelarcli tx ethereum](axelarcli_tx_ethereum.md)	 - ethereum transactions subcommands

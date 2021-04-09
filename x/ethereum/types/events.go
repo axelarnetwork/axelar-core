@@ -1,33 +1,28 @@
 package types
 
-// Attributes
+// Event types
 const (
-	AttributeModule        = ModuleName
-	AttributeAddress       = "address"
-	AttributeBurnAddress   = "burnAddress"
-	AttributeTxID          = "txID"
-	AttributeCommandID     = "commandID"
-	AttributeAmount        = "amount"
-	AttributeDestination   = "destination"
-	AttributeVotingData    = "data"
-	AttributePollConfirmed = "confirmed"
-)
-
-// EventTypeVerificationResult describes an event type
-const (
-	EventTypeVerificationResult = "verificationResult"
+	EventTypeDepositConfirmation = "depositConfirmation"
+	EventTypeTokenConfirmation   = "tokenConfirmation"
 )
 
 // Event attribute keys
 const (
-	AttributeKeyPoll   = "poll"
-	AttributeKeyResult = "result"
-	AttributeKeyTxID   = "txID"
+	AttributeKeyCommandID      = "commandID"
+	AttributeKeyAddress        = "address"
+	AttributeKeyPoll           = "poll"
+	AttributeKeyTxID           = "txID"
+	AttributeKeyAmount         = "amount"
+	AttributeKeyBurnAddress    = "burnAddress"
+	AttributeKeyTokenAddress   = "tokenAddress"
+	AttributeKeyGatewayAddress = "gatewayAddress"
+	AttributeKeyConfHeight     = "confHeight"
+	AttributeKeySymbol         = "symbol"
 )
 
 // Event attribute values
 const (
-	AttributeKeyActionToken   = "tokenVerify"
-	AttributeKeyActionDeposit = "depositVerify"
-	AttributeKeyActionUnknown = "unknownVerify"
+	AttributeValueStart   = "start"
+	AttributeValueReject  = "reject"
+	AttributeValueConfirm = "confirm"
 )

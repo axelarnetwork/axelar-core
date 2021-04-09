@@ -29,6 +29,7 @@ import (
 	ethKeeper "github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -40,7 +41,7 @@ import (
 //  4. Rotate to the designated master key
 //  5. Simulate bitcoin deposit to the current master key
 //  6. Query deposit tx info
-//  7. Verify the deposit is confirmed on bitcoin
+//  7. Confirm the deposit is confirmed on bitcoin
 //  8. Wait for vote
 //  9. Create a new key (with the second snapshot)
 // 10. Wait for vote
@@ -49,7 +50,7 @@ import (
 // 13. Wait for vote
 // 14. Send the signed transaction to bitcoin
 // 15. Query transfer tx info
-// 16. Verify the consolidation transfer is confirmed on bitcoin
+// 16. Confirm the consolidation transfer is confirmed on bitcoin
 // 17. Wait for vote
 // 18. Rotate to the new master key
 func TestBitcoinKeyRotation(t *testing.T) {
@@ -58,7 +59,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	// set up chain
 	const nodeCount = 10
 	chain, nodeData := initChain(nodeCount, "keyRotation")
-	keygenDone, btcConfirmationDone, ethVerifyDone, signDone := registerWaitEventListeners(nodeData[0])
+	listeners := registerWaitEventListeners(nodeData[0])
 
 	// register proxies for all validators
 	for i, proxy := range randStrings.Take(nodeCount) {
@@ -74,20 +75,19 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, keygenResult1.Error)
 
 	// wait for voting to be done
-	if err := waitFor(keygenDone, 1); err != nil {
+	if err := waitFor(listeners.keygenDone, 1); err != nil {
 		assert.FailNow(t, "keygen", err)
 	}
 	// assign chain master key
 	for _, c := range chains {
-		assignKeyResult := <-chain.Submit(
-			tssTypes.MsgAssignNextMasterKey{Sender: randomSender(), Chain: c, KeyID: masterKeyID1})
+		assignKeyResult := <-chain.Submit(tssTypes.NewMsgAssignNextKey(randomSender(), c, masterKeyID1, tss.MasterKey))
 		assert.NoError(t, assignKeyResult.Error)
 
 	}
 
 	// rotate chain master key
 	for _, c := range chains {
-		rotateEthResult := <-chain.Submit(tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: c})
+		rotateEthResult := <-chain.Submit(tssTypes.NewMsgRotateKey(randomSender(), c, tss.MasterKey))
 		assert.NoError(t, rotateEthResult.Error)
 	}
 
@@ -110,7 +110,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, deployGatewayResult.Error)
 
 	// wait for voting to be done (signing takes longer to tally up)
-	if err := waitFor(signDone, 1); err != nil {
+	if err := waitFor(listeners.signDone, 1); err != nil {
 		assert.FailNow(t, "signing", err)
 	}
 
@@ -125,7 +125,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, deployTokenResult.Error)
 
 	// wait for voting to be done (signing takes longer to tally up)
-	if err := waitFor(signDone, 1); err != nil {
+	if err := waitFor(listeners.signDone, 1); err != nil {
 		assert.FailNow(t, "signing", err)
 	}
 
@@ -147,7 +147,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	// verify the token deployment
+	// confirm the token deployment
 	var txHashHex string
 	testutils.Codec().MustUnmarshalJSON(bz, &txHashHex)
 	txHash := common.HexToHash(txHashHex)
@@ -180,11 +180,11 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		}
 	}
 
-	verifyResult1 := <-chain.Submit(ethTypes.NewMsgVerifyErc20TokenDeploy(randomSender(), txHash, "satoshi"))
-	assert.NoError(t, verifyResult1.Error)
+	confirmResult1 := <-chain.Submit(ethTypes.NewMsgConfirmERC20TokenDeploy(randomSender(), txHash, "satoshi"))
+	assert.NoError(t, confirmResult1.Error)
 
-	if err := waitFor(ethVerifyDone, 1); err != nil {
-		assert.FailNow(t, "verification", err)
+	if err := waitFor(listeners.ethTokenDone, 1); err != nil {
+		assert.FailNow(t, "confirmation", err)
 	}
 
 	// simulate deposits
@@ -202,9 +202,9 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		depositAddr := string(linkResult.Data)
 		depositInfo := randomOutpointInfo(depositAddr)
 
-		// verify deposit to master key
-		verifyResult1 := <-chain.Submit(btcTypes.NewMsgConfirmOutpoint(randomSender(), depositInfo))
-		assert.NoError(t, verifyResult1.Error)
+		// confirm deposit to master key
+		confirmResult1 := <-chain.Submit(btcTypes.NewMsgConfirmOutpoint(randomSender(), depositInfo))
+		assert.NoError(t, confirmResult1.Error)
 
 		// store this information for later in the test
 		totalDepositAmount += int64(depositInfo.Amount)
@@ -212,8 +212,8 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	// wait for voting to be done
-	if err := waitFor(btcConfirmationDone, totalDepositCount); err != nil {
-		assert.FailNow(t, "verification", err)
+	if err := waitFor(listeners.btcDone, totalDepositCount); err != nil {
+		assert.FailNow(t, "confirmation", err)
 	}
 
 	// start new keygen
@@ -222,13 +222,12 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, keygenResult2.Error)
 
 	// wait for voting to be done
-	if err := waitFor(keygenDone, 1); err != nil {
+	if err := waitFor(listeners.keygenDone, 1); err != nil {
 		assert.FailNow(t, "keygen", err)
 	}
 
 	// assign second key to be the new master key
-	assignKeyResult := <-chain.Submit(
-		tssTypes.MsgAssignNextMasterKey{Sender: randomSender(), Chain: btc.Bitcoin.Name, KeyID: masterKeyID2})
+	assignKeyResult := <-chain.Submit(tssTypes.NewMsgAssignNextKey(randomSender(), btc.Bitcoin.Name, masterKeyID2, tss.MasterKey))
 	assert.NoError(t, assignKeyResult.Error)
 
 	// sign the consolidation transaction
@@ -237,7 +236,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, signResult.Error)
 
 	// wait for voting to be done
-	if err := waitFor(signDone, totalDepositCount); err != nil {
+	if err := waitFor(listeners.signDone, totalDepositCount); err != nil {
 		assert.FailNow(t, "signing", err)
 	}
 
@@ -265,17 +264,17 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	hash := signedTx.TxHash()
 	consolidationInfo.OutPoint = wire.NewOutPoint(&hash, 0)
 
-	// verify master key transfer
-	verifyResult2 := <-chain.Submit(btcTypes.NewMsgConfirmOutpoint(randomSender(), consolidationInfo))
-	assert.NoError(t, verifyResult2.Error)
+	// confirm master key transfer
+	confirmResult2 := <-chain.Submit(btcTypes.NewMsgConfirmOutpoint(randomSender(), consolidationInfo))
+	assert.NoError(t, confirmResult2.Error)
 
 	// wait for voting to be done
-	if err := waitFor(btcConfirmationDone, 1); err != nil {
-		assert.FailNow(t, "verification", err)
+	if err := waitFor(listeners.btcDone, 1); err != nil {
+		assert.FailNow(t, "confirmation", err)
 	}
 
 	// rotate master key to new key
-	rotateResult := <-chain.Submit(tssTypes.MsgRotateMasterKey{Sender: randomSender(), Chain: btc.Bitcoin.Name})
+	rotateResult := <-chain.Submit(tssTypes.NewMsgRotateKey(randomSender(), btc.Bitcoin.Name, tss.MasterKey))
 	assert.NoError(t, rotateResult.Error)
 }
 

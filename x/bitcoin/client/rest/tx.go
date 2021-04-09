@@ -19,7 +19,7 @@ import (
 // rest routes
 const (
 	TxMethodLink                   = "link"
-	TxMethodVerifyTx               = "verify"
+	TxMethodConfirmTx              = "confirm"
 	TxMethodSignPendingTransfersTx = "sign"
 
 	QMethodDepositAddress     = keeper.QueryDepositAddress
@@ -30,7 +30,7 @@ const (
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	registerTx := clientUtils.RegisterTxHandlerFn(r, types.RestRoute)
 	registerTx(GetHandlerLink(cliCtx), TxMethodLink, clientUtils.PathVarChain)
-	registerTx(GetHandlerVerifyTx(cliCtx), TxMethodVerifyTx)
+	registerTx(GetHandlerConfirmTx(cliCtx), TxMethodConfirmTx)
 	registerTx(GetHandlerSignPendingTransfersTx(cliCtx), TxMethodSignPendingTransfersTx)
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
@@ -44,8 +44,8 @@ type ReqLink struct {
 	Address string       `json:"address" yaml:"address"`
 }
 
-// ReqVerifyTx represents a request to verify a Bitcoin transaction
-type ReqVerifyTx struct {
+// ReqConfirmOutPoint represents a request to confirm a Bitcoin outpoint
+type ReqConfirmOutPoint struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	TxInfo  string       `json:"tx_info" yaml:"tx_info"`
 }
@@ -116,10 +116,10 @@ func GetHandlerLink(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-// GetHandlerVerifyTx returns the handler to verify a tx outpoint
-func GetHandlerVerifyTx(cliCtx context.CLIContext) http.HandlerFunc {
+// GetHandlerConfirmTx returns the handler to confirm a tx outpoint
+func GetHandlerConfirmTx(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReqVerifyTx
+		var req ReqConfirmOutPoint
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
 			return
 		}

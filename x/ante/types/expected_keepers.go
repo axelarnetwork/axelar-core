@@ -3,13 +3,14 @@ package types
 import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // Tss provides access to the tss functionality
 type Tss interface {
-	GetCurrentMasterKeyID(ctx sdk.Context, chain nexus.Chain) (string, bool)
-	GetNextMasterKeyID(ctx sdk.Context, chain nexus.Chain) (string, bool)
+	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool)
+	GetNextKeyID(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool)
 	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool)
 }
 
