@@ -289,6 +289,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		k   *ethMock.EthKeeperMock
 		v   *ethMock.VoterMock
 		n   *ethMock.NexusMock
+		s   *ethMock.SignerMock
 		msg types.MsgConfirmToken
 	)
 	setup := func() {
@@ -305,8 +306,17 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			SetPendingTokenDeployFunc:         func(sdk.Context, vote.PollMeta, types.ERC20TokenDeploy) {},
 			CodecFunc:                         func() *amino.Codec { return testutils.Codec() },
 		}
-		v = &ethMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta) error { return nil }}
+		v = &ethMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta, int64) error { return nil }}
 		n = &ethMock.NexusMock{IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return false }}
+		s = &mock.SignerMock{
+			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
+				return rand.StrBetween(5, 20), true
+			},
+			GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
+				return rand.PosI64(), true
+			},
+		}
+
 		msg = types.MsgConfirmToken{
 			Sender: rand.Bytes(20),
 			TxID:   common.BytesToHash(rand.Bytes(common.HashLength)).Hex(),
@@ -318,7 +328,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		result, err := HandleMsgConfirmTokenDeploy(ctx, k, v, n, msg)
+		result, err := HandleMsgConfirmTokenDeploy(ctx, k, v, s, n, msg)
 
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(result.Events).Filter(func(event sdk.Event) bool { return event.Type == types.EventTypeTokenConfirmation }), 1)
@@ -329,7 +339,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		setup()
 		k.GetGatewayAddressFunc = func(sdk.Context) (common.Address, bool) { return common.Address{}, false }
 
-		_, err := HandleMsgConfirmTokenDeploy(ctx, k, v, n, msg)
+		_, err := HandleMsgConfirmTokenDeploy(ctx, k, v, s, n, msg)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))
@@ -340,7 +350,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			return common.Address{}, fmt.Errorf("failed")
 		}
 
-		_, err := HandleMsgConfirmTokenDeploy(ctx, k, v, n, msg)
+		_, err := HandleMsgConfirmTokenDeploy(ctx, k, v, s, n, msg)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))
@@ -349,16 +359,34 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		setup()
 		n.IsAssetRegisteredFunc = func(sdk.Context, string, string) bool { return true }
 
-		_, err := HandleMsgConfirmTokenDeploy(ctx, k, v, n, msg)
+		_, err := HandleMsgConfirmTokenDeploy(ctx, k, v, s, n, msg)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))
 
 	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
 		setup()
-		v.InitPollFunc = func(sdk.Context, vote.PollMeta) error { return fmt.Errorf("poll setup failed") }
+		v.InitPollFunc = func(sdk.Context, vote.PollMeta, int64) error { return fmt.Errorf("poll setup failed") }
 
-		_, err := HandleMsgConfirmTokenDeploy(ctx, k, v, n, msg)
+		_, err := HandleMsgConfirmTokenDeploy(ctx, k, v, s, n, msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("no key", testutils.Func(func(t *testing.T) {
+		setup()
+		s.GetCurrentKeyIDFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (string, bool) { return "", false }
+
+		_, err := HandleMsgConfirmTokenDeploy(ctx, k, v, s, n, msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("no snapshot counter", testutils.Func(func(t *testing.T) {
+		setup()
+		s.GetSnapshotCounterForKeyIDFunc = func(sdk.Context, string) (int64, bool) { return 0, false }
+
+		_, err := HandleMsgConfirmTokenDeploy(ctx, k, v, s, n, msg)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))
@@ -369,6 +397,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		ctx sdk.Context
 		k   *ethMock.EthKeeperMock
 		v   *ethMock.VoterMock
+		s   *ethMock.SignerMock
 		msg types.MsgConfirmDeposit
 	)
 	setup := func() {
@@ -389,7 +418,16 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) uint64 { return mathRand.Uint64() },
 			CodecFunc:                         func() *amino.Codec { return testutils.Codec() },
 		}
-		v = &ethMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta) error { return nil }}
+		v = &ethMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta, int64) error { return nil }}
+		s = &mock.SignerMock{
+			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
+				return rand.StrBetween(5, 20), true
+			},
+			GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
+				return rand.PosI64(), true
+			},
+		}
+
 		msg = types.MsgConfirmDeposit{
 			Sender:     rand.Bytes(20),
 			TxID:       common.BytesToHash(rand.Bytes(common.HashLength)).Hex(),
@@ -402,7 +440,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		result, err := HandleMsgConfirmDeposit(ctx, k, v, msg)
+		result, err := HandleMsgConfirmDeposit(ctx, k, v, s, msg)
 
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(result.Events).Filter(func(event sdk.Event) bool { return event.Type == types.EventTypeDepositConfirmation }), 1)
@@ -420,7 +458,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			}, types.CONFIRMED, true
 		}
 
-		_, err := HandleMsgConfirmDeposit(ctx, k, v, msg)
+		_, err := HandleMsgConfirmDeposit(ctx, k, v, s, msg)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))
@@ -436,7 +474,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			}, types.BURNED, true
 		}
 
-		_, err := HandleMsgConfirmDeposit(ctx, k, v, msg)
+		_, err := HandleMsgConfirmDeposit(ctx, k, v, s, msg)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))
@@ -445,16 +483,34 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		setup()
 		k.GetBurnerInfoFunc = func(sdk.Context, common.Address) *types.BurnerInfo { return nil }
 
-		_, err := HandleMsgConfirmDeposit(ctx, k, v, msg)
+		_, err := HandleMsgConfirmDeposit(ctx, k, v, s, msg)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))
 
 	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
 		setup()
-		v.InitPollFunc = func(sdk.Context, vote.PollMeta) error { return fmt.Errorf("failed") }
+		v.InitPollFunc = func(sdk.Context, vote.PollMeta, int64) error { return fmt.Errorf("failed") }
 
-		_, err := HandleMsgConfirmDeposit(ctx, k, v, msg)
+		_, err := HandleMsgConfirmDeposit(ctx, k, v, s, msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("no key", testutils.Func(func(t *testing.T) {
+		setup()
+		s.GetCurrentKeyIDFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (string, bool) { return "", false }
+
+		_, err := HandleMsgConfirmDeposit(ctx, k, v, s, msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("no snapshot counter", testutils.Func(func(t *testing.T) {
+		setup()
+		s.GetSnapshotCounterForKeyIDFunc = func(sdk.Context, string) (int64, bool) { return 0, false }
+
+		_, err := HandleMsgConfirmDeposit(ctx, k, v, s, msg)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))

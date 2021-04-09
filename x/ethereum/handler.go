@@ -29,9 +29,9 @@ func NewHandler(k keeper.Keeper, v types.Voter, s types.Signer, n types.Nexus, s
 		case types.MsgLink:
 			return handleMsgLink(ctx, k, n, msg)
 		case types.MsgConfirmToken:
-			return HandleMsgConfirmTokenDeploy(ctx, k, v,s, n, msg)
+			return HandleMsgConfirmTokenDeploy(ctx, k, v, s, n, msg)
 		case types.MsgConfirmDeposit:
-			return HandleMsgConfirmDeposit(ctx, k, v,s, msg)
+			return HandleMsgConfirmDeposit(ctx, k, v, s, msg)
 		case types.MsgVoteConfirmDeposit:
 			return HandleMsgVoteConfirmDeposit(ctx, k, v, n, msg)
 		case types.MsgVoteConfirmToken:
@@ -527,7 +527,7 @@ func handleMsgSignPendingTransfers(ctx sdk.Context, k keeper.Keeper, signer type
 	var commandID types.CommandID
 	copy(commandID[:], crypto.Keccak256(data)[:32])
 
-	keyID, ok := signer.GetCurrentMasterKeyID(ctx, exported.Ethereum)
+	keyID, ok := signer.GetCurrentKeyID(ctx, exported.Ethereum, tss.MasterKey)
 	if !ok {
 		return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
 	}
