@@ -127,11 +127,7 @@ func parseMsgParams(attributes []sdk.Attribute) (sessionID string, from string, 
 
 func prepareTrafficIn(principalAddr string, from string, sessionID string, payload *tofnd.TrafficOut, logger log.Logger) (*tofnd.MessageIn, error) {
 	if principalAddr == from {
-		return nil, nil
-	}
-
-	if !payload.IsBroadcast && principalAddr != payload.ToPartyUid {
-		return nil, nil
+		return nil, nil // don't deliver to myself
 	}
 
 	msgIn := &tofnd.MessageIn{
