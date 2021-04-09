@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"fmt"
@@ -79,7 +79,7 @@ func SetGenesisTSSCmd(
 	cmd.Flags().StringVar(&corruption, "corruption", "", "The corruption threshold with which Axelar Core will run the keygen protocol (e.g., \"2/3\").")
 
 	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
-	cmd.Flags().String(CliHomeFlag, defaultClientHome, "client's home directory")
+	cmd.Flags().String(cliHomeFlag, defaultClientHome, "client's home directory")
 
 	return cmd
 }

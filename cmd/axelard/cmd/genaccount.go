@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"fmt"
@@ -38,7 +38,7 @@ contain valid denominations. Accounts may optionally be supplied with vesting pa
 			addr, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
 				// attempt to lookup address from Keybase if no address was provided
-				kb, err := keys.NewKeyBaseFromDir(viper.GetString(CliHomeFlag))
+				kb, err := keys.NewKeyBaseFromDir(viper.GetString(cliHomeFlag))
 				if err != nil {
 					return err
 				}
@@ -102,7 +102,7 @@ contain valid denominations. Accounts may optionally be supplied with vesting pa
 	}
 
 	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
-	cmd.Flags().String(CliHomeFlag, defaultClientHome, "client's home directory")
+	cmd.Flags().String(cliHomeFlag, defaultClientHome, "client's home directory")
 
 	return cmd
 }

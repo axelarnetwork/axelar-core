@@ -60,9 +60,8 @@ import (
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
-const (
-	appName = "axelar"
-)
+// Name is the name of the application
+const Name = "axelar"
 
 var (
 	// DefaultCLIHome sets the default home directories for the application CLI
@@ -147,7 +146,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	cdc := MakeCodec()
 
 	// BaseApp handles interactions with Tendermint through the ABCI protocol
-	bApp := bam.NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc), baseAppOptions...)
+	bApp := bam.NewBaseApp(Name, logger, db, auth.DefaultTxDecoder(cdc), baseAppOptions...)
 	bApp.SetCommitMultiStoreTracer(traceStore)
 	bApp.SetAppVersion(version.Version)
 
