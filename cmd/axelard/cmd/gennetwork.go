@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"fmt"
@@ -109,7 +109,7 @@ func SetGenesisChainParamsCmd(
 	cmd.Flags().Uint64Var(&confirmationHeight, "confirmation-height", 0, "Confirmation height to set for the given chain.")
 
 	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
-	cmd.Flags().String(CliHomeFlag, defaultClientHome, "client's home directory")
+	cmd.Flags().String(cliHomeFlag, defaultClientHome, "client's home directory")
 
 	return cmd
 }

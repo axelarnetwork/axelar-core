@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"fmt"
@@ -69,7 +69,7 @@ func SetGenesisVoteCmd(
 	cmd.Flags().Int64Var(&interval, "interval", 0, "A positive integer representing the number of blocks between tallying votes.")
 
 	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
-	cmd.Flags().String(CliHomeFlag, defaultClientHome, "client's home directory")
+	cmd.Flags().String(cliHomeFlag, defaultClientHome, "client's home directory")
 
 	return cmd
 }

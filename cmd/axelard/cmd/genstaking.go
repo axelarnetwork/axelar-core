@@ -1,10 +1,10 @@
-package main
+package cmd
 
 import (
 	"fmt"
 	"time"
 
-	snapshotTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
+	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -14,15 +14,16 @@ import (
 	"github.com/tendermint/tendermint/libs/cli"
 )
 
-// SetGenesisSnapshotCmd returns set-genesis-chain-params cobra Command.
-func SetGenesisSnapshotCmd(
+// SetGenesisStakingCmd returns set-genesis-chain-params cobra Command.
+func SetGenesisStakingCmd(
 	ctx *server.Context, cdc *codec.Codec, defaultNodeHome, defaultClientHome string,
 ) *cobra.Command {
-	var period string
+	var unbond string
+	var max uint16
 
 	cmd := &cobra.Command{
-		Use:   "set-genesis-snapshot",
-		Short: "Set the genesis parameters for the snapshot module",
+		Use:   "set-genesis-staking",
+		Short: "Set the genesis parameters for the staking module",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(_ *cobra.Command, args []string) error {
 
@@ -34,22 +35,30 @@ func SetGenesisSnapshotCmd(
 			if err != nil {
 				return fmt.Errorf("failed to unmarshal genesis state: %w", err)
 			}
-			genesisSnapshot := snapshotTypes.GetGenesisStateFromAppState(cdc, appState)
 
-			if period != "" {
-				period, err := time.ParseDuration(period)
+			var genesisStaking stakingTypes.GenesisState
+			if appState[stakingTypes.ModuleName] != nil {
+				cdc.MustUnmarshalJSON(appState[stakingTypes.ModuleName], &genesisStaking)
+			}
+
+			if unbond != "" {
+				period, err := time.ParseDuration(unbond)
 				if err != nil {
 					return err
 				}
-				genesisSnapshot.Params.LockingPeriod = period
+				genesisStaking.Params.UnbondingTime = period
 			}
 
-			genesisSnapshotBz, err := cdc.MarshalJSON(genesisSnapshot)
+			if max > 0 {
+				genesisStaking.Params.MaxValidators = max
+			}
+
+			genesisSnapshotBz, err := cdc.MarshalJSON(genesisStaking)
 			if err != nil {
 				return fmt.Errorf("failed to marshal snapshot genesis state: %w", err)
 			}
 
-			appState[snapshotTypes.ModuleName] = genesisSnapshotBz
+			appState[stakingTypes.ModuleName] = genesisSnapshotBz
 
 			appStateJSON, err := cdc.MarshalJSON(appState)
 			if err != nil {
@@ -61,10 +70,11 @@ func SetGenesisSnapshotCmd(
 		},
 	}
 
-	cmd.Flags().StringVar(&period, "locking-period", "", "Locking period for the snapshot module (e.g., \"6h\").")
+	cmd.Flags().StringVar(&unbond, "unbonding-period", "", "Time duration of unbonding (e.g., \"6h\").")
+	cmd.Flags().Uint16Var(&max, "max-validators", 0, "A positive integer representing the maximum number of validators (max uint16 = 65535)")
 
 	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
-	cmd.Flags().String(CliHomeFlag, defaultClientHome, "client's home directory")
+	cmd.Flags().String(cliHomeFlag, defaultClientHome, "client's home directory")
 
 	return cmd
 }
