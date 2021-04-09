@@ -12,6 +12,7 @@ var (
 	ConsNodePubKeyPrefix   = AccountAddressPrefix + sdk.PrefixValidator + sdk.PrefixConsensus + sdk.PrefixPublic
 )
 
+// SetConfig sets the prefix config for the bech32 encoding
 func SetConfig() {
 	config := sdk.GetConfig()
 	config.SetBech32PrefixForAccount(AccountAddressPrefix, AccountPubKeyPrefix)
