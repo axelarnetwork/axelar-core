@@ -24,7 +24,7 @@ func (msg MsgVoteConfirmToken) Route() string {
 
 // Type returns the type of the message
 func (msg MsgVoteConfirmToken) Type() string {
-	return "VoteConfirmation"
+	return "VoteConfirmToken"
 }
 
 // ValidateBasic executes a stateless message validation

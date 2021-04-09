@@ -94,6 +94,7 @@ func (mgr Mgr) ProccessTokenConfirmation(attributes []sdk.Attribute) error {
 		Poll:      poll,
 		TxID:      txID.Hex(),
 		Confirmed: confirmed,
+		Symbol:    symbol,
 	}
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, poll.String()))
 	return mgr.broadcaster.Broadcast(msg)
