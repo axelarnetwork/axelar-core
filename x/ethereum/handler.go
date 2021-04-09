@@ -649,7 +649,7 @@ func handleMsgSignTransferOwnership(ctx sdk.Context, k keeper.Keeper, signer typ
 		return nil, err
 	}
 
-	keyID, ok := signer.GetCurrentMasterKeyID(ctx, exported.Ethereum)
+	keyID, ok := signer.GetCurrentKeyID(ctx, exported.Ethereum, tss.MasterKey)
 	if !ok {
 		return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
 	}
@@ -678,9 +678,9 @@ func handleMsgSignTransferOwnership(ctx sdk.Context, k keeper.Keeper, signer typ
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeCommandID, commandIDHex),
+			sdk.NewAttribute(types.AttributeKeyCommandID, commandIDHex),
 		),
 	)
 
