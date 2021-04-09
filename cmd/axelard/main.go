@@ -38,12 +38,7 @@ var invCheckPeriod uint
 
 func main() {
 	cdc := app.MakeCodec()
-
-	config := sdk.GetConfig()
-	config.SetBech32PrefixForAccount(app.Bech32PrefixAccAddr, app.Bech32PrefixAccPub)
-	config.SetBech32PrefixForValidator(app.Bech32PrefixValAddr, app.Bech32PrefixValPub)
-	config.SetBech32PrefixForConsensusNode(app.Bech32PrefixConsAddr, app.Bech32PrefixConsPub)
-	config.Seal()
+	app.SetConfig()
 
 	ctx := server.NewDefaultContext()
 	cobra.EnableCommandSorting = false
