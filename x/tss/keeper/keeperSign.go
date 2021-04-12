@@ -64,28 +64,6 @@ func (k Keeper) StartSign(ctx sdk.Context, voter types.InitPoller, keyID string,
 	return nil
 }
 
-// SignMsg takes a types.MsgSignTraffic from the chain and relays it to the keygen protocol
-func (k Keeper) SignMsg(ctx sdk.Context, msg types.MsgSignTraffic) error {
-	senderAddress := k.broadcaster.GetPrincipal(ctx, msg.Sender)
-	if senderAddress.Empty() {
-		return fmt.Errorf("invalid message: sender [%s] is not a validator", msg.Sender)
-	}
-
-	if !k.participatesInSign(ctx, msg.SessionID, senderAddress) {
-		return fmt.Errorf("invalid message: sender [%.20s] does not participate in sign [%s] ", senderAddress, msg.SessionID)
-	}
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeSign,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueMsg),
-			sdk.NewAttribute(types.AttributeKeySessionID, msg.SessionID),
-			sdk.NewAttribute(sdk.AttributeKeySender, senderAddress.String()),
-			sdk.NewAttribute(types.AttributeKeyPayload, string(k.cdc.MustMarshalJSON(msg.Payload)))))
-
-	return nil
-}
-
 // GetSig returns the signature associated with sigID
 // or nil, nil if no such signature exists
 func (k Keeper) GetSig(ctx sdk.Context, sigID string) (exported.Signature, bool) {
@@ -132,6 +110,7 @@ func (k Keeper) setParticipateInSign(ctx sdk.Context, sigID string, validator sd
 	ctx.KVStore(k.storeKey).Set([]byte(participatePrefix+"sign_"+sigID+validator.String()), []byte{})
 }
 
-func (k Keeper) participatesInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) bool {
+// DoesValidatorParticipateInKeygen returns true if given validator participates in signing for the given sig ID; otherwise, false
+func (k Keeper) DoesValidatorParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) bool {
 	return ctx.KVStore(k.storeKey).Has([]byte(participatePrefix + "sign_" + sigID + validator.String()))
 }

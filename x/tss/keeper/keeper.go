@@ -29,21 +29,19 @@ const (
 )
 
 type Keeper struct {
-	broadcaster types.Broadcaster
-	slasher     snapshot.Slasher
-	params      params.Subspace
-	storeKey    sdk.StoreKey
-	cdc         *codec.Codec
+	slasher  snapshot.Slasher
+	params   params.Subspace
+	storeKey sdk.StoreKey
+	cdc      *codec.Codec
 }
 
 // NewKeeper constructs a tss keeper
-func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace, broadcaster types.Broadcaster, slasher snapshot.Slasher) Keeper {
+func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace, slasher snapshot.Slasher) Keeper {
 	return Keeper{
-		broadcaster: broadcaster,
-		slasher:     slasher,
-		cdc:         cdc,
-		params:      paramSpace.WithKeyTable(types.KeyTable()),
-		storeKey:    storeKey,
+		slasher:  slasher,
+		cdc:      cdc,
+		params:   paramSpace.WithKeyTable(types.KeyTable()),
+		storeKey: storeKey,
 	}
 }
 

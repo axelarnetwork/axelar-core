@@ -14,8 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
-	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
-	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 func TestKeeper_StartKeygen_IdAlreadyInUse_ReturnError(t *testing.T) {
@@ -27,17 +25,6 @@ func TestKeeper_StartKeygen_IdAlreadyInUse_ReturnError(t *testing.T) {
 
 		err = s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, 1, snap)
 		assert.Error(t, err)
-	}
-}
-
-func TestKeeper_KeygenMsg_NoSessionWithGivenID_Error(t *testing.T) {
-	for _, keyID := range randDistinctStr.Take(100) {
-		s := setup(t)
-		assert.Error(t, s.Keeper.KeygenMsg(s.Ctx, types.MsgKeygenTraffic{
-			Sender:    s.Broadcaster.GetProxy(s.Ctx, s.Broadcaster.LocalPrincipal),
-			SessionID: keyID,
-			Payload:   &tofnd.TrafficOut{},
-		}))
 	}
 }
 

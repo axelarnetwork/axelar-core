@@ -75,10 +75,11 @@ type AppModule struct {
 	voter       types.Voter
 	nexus       types.Nexus
 	staker      types.StakingKeeper
+	broadcaster types.Broadcaster
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, s types.Snapshotter, v types.Voter, n types.Nexus, sk types.StakingKeeper) AppModule {
+func NewAppModule(k keeper.Keeper, s types.Snapshotter, v types.Voter, n types.Nexus, sk types.StakingKeeper, broadcaster types.Broadcaster) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
@@ -86,6 +87,7 @@ func NewAppModule(k keeper.Keeper, s types.Snapshotter, v types.Voter, n types.N
 		voter:          v,
 		nexus:          n,
 		staker:         sk,
+		broadcaster:    broadcaster,
 	}
 }
 
@@ -115,7 +117,7 @@ func (AppModule) Route() string {
 
 // NewHandler returns a new handler for this module
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper, am.snapshotter, am.nexus, am.voter, am.staker)
+	return NewHandler(am.keeper, am.snapshotter, am.nexus, am.voter, am.staker, am.broadcaster)
 }
 
 // QuerierRoute returns this module's query route
