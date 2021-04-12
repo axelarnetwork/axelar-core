@@ -20,7 +20,7 @@ func SetGenesisStakingCmd(
 ) *cobra.Command {
 	var unbond string
 	var max uint16
-
+	var bondDenom string
 	cmd := &cobra.Command{
 		Use:   "set-genesis-staking",
 		Short: "Set the genesis parameters for the staking module",
@@ -53,6 +53,10 @@ func SetGenesisStakingCmd(
 				genesisStaking.Params.MaxValidators = max
 			}
 
+			if bondDenom != "" {
+				genesisStaking.Params.BondDenom = bondDenom
+			}
+
 			genesisSnapshotBz, err := cdc.MarshalJSON(genesisStaking)
 			if err != nil {
 				return fmt.Errorf("failed to marshal snapshot genesis state: %w", err)
@@ -72,6 +76,7 @@ func SetGenesisStakingCmd(
 
 	cmd.Flags().StringVar(&unbond, "unbonding-period", "", "Time duration of unbonding (e.g., \"6h\").")
 	cmd.Flags().Uint16Var(&max, "max-validators", 0, "A positive integer representing the maximum number of validators (max uint16 = 65535)")
+	cmd.Flags().StringVar(&bondDenom, "bond-denom", "", "A string representing bondable coin denomination")
 
 	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
 	cmd.Flags().String(cliHomeFlag, defaultClientHome, "client's home directory")
