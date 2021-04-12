@@ -45,10 +45,11 @@ const (
 			"type": "function"
 		}
 	]`
-	axelarGatewayCommandMint        = "mintToken"
-	axelarGatewayCommandDeployToken = "deployToken"
-	axelarGatewayCommandBurnToken   = "burnToken"
-	axelarGatewayFuncExecute        = "execute"
+	axelarGatewayCommandMint              = "mintToken"
+	axelarGatewayCommandDeployToken       = "deployToken"
+	axelarGatewayCommandBurnToken         = "burnToken"
+	axelarGatewayCommandTransferOwnership = "transferOwnership"
+	axelarGatewayFuncExecute              = "execute"
 )
 
 var (
@@ -324,6 +325,23 @@ func CreateBurnCommandData(chainID *big.Int, height int64, burnerInfos []BurnerI
 	return packArguments(chainID, commandIDs, commands, commandParams)
 }
 
+// CreateTransferOwnershipCommandData returns the command data to transfer ownership of the contract
+func CreateTransferOwnershipCommandData(chainID *big.Int, commandID CommandID, newOwnerAddr string) ([]byte, error) {
+	transferOwnershipParams, err := createTransferOwnershipParams(newOwnerAddr)
+	if err != nil {
+		return nil, err
+	}
+	var commandIDs []CommandID
+	var commands []string
+	var commandParams [][]byte
+
+	commandIDs = append(commandIDs, commandID)
+	commands = append(commands, axelarGatewayCommandTransferOwnership)
+	commandParams = append(commandParams, transferOwnershipParams)
+
+	return packArguments(chainID, commandIDs, commands, commandParams)
+}
+
 // CommandID represents the unique command identifier
 type CommandID [32]byte
 
@@ -442,6 +460,23 @@ func createBurnTokenParams(symbol string, salt [32]byte) ([]byte, error) {
 
 	arguments := abi.Arguments{{Type: stringType}, {Type: bytes32Type}}
 	result, err := arguments.Pack(symbol, salt)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func createTransferOwnershipParams(newOwnerAddr string) ([]byte, error) {
+	addressType, err := abi.NewType("address", "address", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	arguments := abi.Arguments{{Type: addressType}}
+	result, err := arguments.Pack(
+		hexToByte32(newOwnerAddr),
+	)
 	if err != nil {
 		return nil, err
 	}

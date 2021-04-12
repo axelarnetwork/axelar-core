@@ -44,6 +44,8 @@ func NewHandler(k keeper.Keeper, v types.Voter, s types.Signer, n types.Nexus, s
 			return handleMsgSignTx(ctx, k, s, snapshotter, v, msg)
 		case types.MsgSignPendingTransfers:
 			return handleMsgSignPendingTransfers(ctx, k, s, n, snapshotter, v, msg)
+		case types.MsgSignTransferOwnership:
+			return handleMsgSignTransferOwnership(ctx, k, s, snapshotter, v, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
@@ -631,6 +633,60 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 	return &sdk.Result{
 		Data:   []byte(txID),
 		Log:    fmt.Sprintf("successfully started signing protocol for transaction with ID %s.", txID),
+		Events: ctx.EventManager().Events(),
+	}, nil
+}
+
+func handleMsgSignTransferOwnership(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snapshotter types.Snapshotter, v types.Voter, msg types.MsgSignTransferOwnership) (*sdk.Result, error) {
+
+	chainID := k.GetNetwork(ctx).Params().ChainID
+
+	var commandID types.CommandID
+	copy(commandID[:], crypto.Keccak256([]byte(msg.NewOwner))[:32])
+
+	data, err := types.CreateTransferOwnershipCommandData(chainID, commandID, msg.NewOwner)
+	if err != nil {
+		return nil, err
+	}
+
+	keyID, ok := signer.GetCurrentKeyID(ctx, exported.Ethereum, tss.MasterKey)
+	if !ok {
+		return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
+	}
+
+	commandIDHex := hex.EncodeToString(commandID[:])
+	k.Logger(ctx).Info(fmt.Sprintf("storing data for transfer-ownership command %s", commandIDHex))
+	k.SetCommandData(ctx, commandID, data)
+
+	signHash := types.GetEthereumSignHash(data)
+
+	counter, ok := signer.GetSnapshotCounterForKeyID(ctx, keyID)
+	if !ok {
+		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
+	}
+
+	snapshot, ok := snapshotter.GetSnapshot(ctx, counter)
+	if !ok {
+		return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
+	}
+
+	err = signer.StartSign(ctx, v, keyID, commandIDHex, signHash.Bytes(), snapshot)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+			sdk.NewAttribute(types.AttributeKeyCommandID, commandIDHex),
+		),
+	)
+
+	return &sdk.Result{
+		Data:   commandID[:],
+		Log:    fmt.Sprintf("successfully started signing protocol for transfer-ownership command %s", commandIDHex),
 		Events: ctx.EventManager().Events(),
 	}, nil
 }

@@ -82,6 +82,7 @@
       - [sign-burn-tokens](axelarcli_tx_ethereum_sign-burn-tokens.md)	 - Sign burn command for all confirmed Ethereum token deposits
       - [sign-deploy-token \[name\] \[symbol\] \[decimals\] \[capacity\]](axelarcli_tx_ethereum_sign-deploy-token.md)	 - Signs the call data to deploy a token with the AxelarGateway contract
       - [sign-pending-transfers](axelarcli_tx_ethereum_sign-pending-transfers.md)	 - Sign all pending transfers to Ethereum
+      - [transfer-ownership \[newOwnerAddr\]](axelarcli_tx_ethereum_transfer-ownership.md)	 - Sign transfer ownership command for Ethereum contract
     - [multisign \[file\] \[name\] \[\[signature\]...\]](axelarcli_tx_multisign.md)	 - Generate multisig signatures for transactions generated offline
     - [send \[from_key_or_address\] \[to_address\] \[amount\]](axelarcli_tx_send.md)	 - Create and sign a send tx
     - [sign \[file\]](axelarcli_tx_sign.md)	 - Sign transactions generated offline
