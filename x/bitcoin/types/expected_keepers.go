@@ -44,7 +44,7 @@ type BTCKeeper interface {
 	SetAddress(ctx sdk.Context, address AddressInfo)
 	GetAddress(ctx sdk.Context, encodedAddress string) (AddressInfo, bool)
 
-	SetMasterKeyUtxoExists(ctx sdk.Context, exists bool)
+	SetMasterKeyUtxoExists(ctx sdk.Context)
 	DoesMasterKeyUtxoExist(ctx sdk.Context) bool
 }
 

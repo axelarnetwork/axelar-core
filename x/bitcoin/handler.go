@@ -233,7 +233,7 @@ func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer ty
 			return nil, err
 		}
 		outputs = append(outputs, changeOutput)
-		k.SetMasterKeyUtxoExists(ctx, true)
+		k.SetMasterKeyUtxoExists(ctx)
 	default:
 		return nil, fmt.Errorf("sign value of change for consolidation transaction unexpected: %d", change.Sign())
 	}
