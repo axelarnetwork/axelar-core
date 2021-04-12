@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"encoding/hex"
@@ -35,7 +35,10 @@ func getByteCodes(file string) ([]byte, error) {
 	}
 
 	table := make(map[string]interface{})
-	json.Unmarshal([]byte(jsonStr), &table)
+	err = json.Unmarshal(jsonStr, &table)
+	if err != nil {
+		return nil, err
+	}
 
 	str, ok := table["bytecode"].(string)
 	if !ok {

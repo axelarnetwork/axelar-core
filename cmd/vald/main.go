@@ -5,7 +5,6 @@ import (
 	"path"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/cli"
@@ -17,7 +16,7 @@ import (
 const cliHomeFlag = "clihome"
 
 func main() {
-	configurate()
+	app.SetConfig()
 
 	rootCmd := &cobra.Command{
 		Use:   "vald",
@@ -36,14 +35,6 @@ func main() {
 		logger.Error(err.Error())
 		os.Exit(1)
 	}
-}
-
-func configurate() {
-	config := sdk.GetConfig()
-	config.SetBech32PrefixForAccount(app.Bech32PrefixAccAddr, app.Bech32PrefixAccPub)
-	config.SetBech32PrefixForValidator(app.Bech32PrefixValAddr, app.Bech32PrefixValPub)
-	config.SetBech32PrefixForConsensusNode(app.Bech32PrefixConsAddr, app.Bech32PrefixConsPub)
-	config.Seal()
 }
 
 func setPersistentFlags(rootCmd *cobra.Command) {
