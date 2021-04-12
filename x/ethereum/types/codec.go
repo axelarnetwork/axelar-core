@@ -15,6 +15,7 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgSignPendingTransfers{}, "ethereum/SignPendingTransfers", nil)
 	cdc.RegisterConcrete(MsgSignDeployToken{}, "ethereum/SignDeployToken", nil)
 	cdc.RegisterConcrete(MsgSignBurnTokens{}, "ethereum/SignBurnTokens", nil)
+	cdc.RegisterConcrete(MsgSignTransferOwnership{}, "ethereum/SignTransferOwnership", nil)
 }
 
 // ModuleCdc defines the module codec
