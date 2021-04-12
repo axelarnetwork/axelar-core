@@ -106,7 +106,6 @@ func newNode(moniker string, broadcaster fake.Broadcaster, mocks testMocks) *fak
 			sdk.NewKVStoreKey("tstorekey"),
 			tssTypes.DefaultParamspace,
 		),
-		broadcaster,
 		mocks.Slasher,
 	)
 	signer.SetParams(ctx, tssTypes.DefaultParams())
@@ -126,7 +125,7 @@ func newNode(moniker string, broadcaster fake.Broadcaster, mocks testMocks) *fak
 	snapHandler := snapshot.NewHandler(snapKeeper)
 	tssHandler := tss.NewHandler(signer, snapKeeper, nexusK, voter, &tssMock.StakingKeeperMock{
 		GetLastTotalPowerFunc: mocks.Staker.GetLastTotalPowerFunc,
-	})
+	}, broadcaster)
 	voteHandler := vote.NewHandler()
 
 	router = router.

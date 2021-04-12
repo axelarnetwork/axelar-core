@@ -85,7 +85,7 @@ func setup(t *testing.T) *testSetup {
 		},
 	}
 
-	k := NewKeeper(testutils.Codec(), sdk.NewKVStoreKey("tss"), subspace, broadcaster, slasher)
+	k := NewKeeper(testutils.Codec(), sdk.NewKVStoreKey("tss"), subspace, slasher)
 	k.SetParams(ctx, types.DefaultParams())
 
 	setup.Keeper = k

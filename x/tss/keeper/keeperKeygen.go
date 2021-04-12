@@ -3,7 +3,6 @@ package keeper
 import (
 	"crypto/ecdsa"
 	"fmt"
-	"strconv"
 
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -40,38 +39,6 @@ func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID string, th
 	if err := voter.InitPoll(ctx, poll, snapshot.Counter); err != nil {
 		return err
 	}
-
-	k.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d]", keyID, threshold))
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeKeygen,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
-			sdk.NewAttribute(types.AttributeKeyKeyID, keyID),
-			sdk.NewAttribute(types.AttributeKeyThreshold, strconv.Itoa(threshold)),
-			sdk.NewAttribute(types.AttributeKeyParticipants, string(k.cdc.MustMarshalJSON(participants)))))
-
-	return nil
-}
-
-// KeygenMsg takes a types.MsgKeygenTraffic from the chain and relays it to the keygen protocol
-func (k Keeper) KeygenMsg(ctx sdk.Context, msg types.MsgKeygenTraffic) error {
-	senderAddress := k.broadcaster.GetPrincipal(ctx, msg.Sender)
-	if senderAddress.Empty() {
-		return fmt.Errorf("invalid message: sender [%s] is not a validator", msg.Sender)
-	}
-
-	if !k.getParticipatesInKeygen(ctx, msg.SessionID, senderAddress) {
-		return fmt.Errorf("invalid message: sender [%.20s] does not participate in keygen [%s] ", senderAddress, msg.SessionID)
-	}
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeKeygen,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueMsg),
-			sdk.NewAttribute(types.AttributeKeySessionID, msg.SessionID),
-			sdk.NewAttribute(sdk.AttributeKeySender, senderAddress.String()),
-			sdk.NewAttribute(types.AttributeKeyPayload, string(k.cdc.MustMarshalJSON(msg.Payload)))))
 
 	return nil
 }
@@ -220,7 +187,8 @@ func (k Keeper) setParticipatesInKeygen(ctx sdk.Context, keyID string, validator
 	ctx.KVStore(k.storeKey).Set([]byte(participatePrefix+"key_"+keyID+validator.String()), []byte{})
 }
 
-func (k Keeper) getParticipatesInKeygen(ctx sdk.Context, keyID string, validator sdk.ValAddress) bool {
+// DoesValidatorParticipateInKeygen returns true if given validator participates in key gen for the given key ID; otherwise, false
+func (k Keeper) DoesValidatorParticipateInKeygen(ctx sdk.Context, keyID string, validator sdk.ValAddress) bool {
 	return ctx.KVStore(k.storeKey).Has([]byte(participatePrefix + "key_" + keyID + validator.String()))
 }
 

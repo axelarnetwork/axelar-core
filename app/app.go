@@ -286,7 +286,6 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		app.cdc,
 		keys[tssTypes.StoreKey],
 		tssSubspace,
-		broadcastK,
 		slashingKCast,
 	)
 	snapK := snapKeeper.NewKeeper(
@@ -337,7 +336,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		staking.NewAppModule(stakingK, accountK, supplyK),
 
 		snapshot.NewAppModule(snapK),
-		tss.NewAppModule(tssK, snapK, votingK, nexusK, stakingK),
+		tss.NewAppModule(tssK, snapK, votingK, nexusK, stakingK, broadcastK),
 		vote.NewAppModule(votingK),
 		broadcast.NewAppModule(broadcastK),
 		nexus.NewAppModule(nexusK),

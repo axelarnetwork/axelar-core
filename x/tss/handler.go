@@ -2,6 +2,7 @@ package tss
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -12,14 +13,14 @@ import (
 )
 
 // NewHandler returns the handler for the tss module
-func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Voter, staker types.StakingKeeper) sdk.Handler {
+func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Voter, staker types.StakingKeeper, broadcaster types.Broadcaster) sdk.Handler {
 	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
 		case types.MsgKeygenTraffic:
-			return handleMsgKeygenTraffic(ctx, k, msg)
+			return handleMsgKeygenTraffic(ctx, k, msg, broadcaster)
 		case types.MsgSignTraffic:
-			return handleMsgSignTraffic(ctx, k, msg)
+			return handleMsgSignTraffic(ctx, k, msg, broadcaster)
 		case types.MsgKeygenStart:
 			return handleMsgKeygenStart(ctx, k, s, staker, v, msg)
 		case types.MsgAssignNextKey:
@@ -197,10 +198,23 @@ func handleMsgAssignNextKey(ctx sdk.Context, k keeper.Keeper, s types.Snapshotte
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func handleMsgKeygenTraffic(ctx sdk.Context, k keeper.Keeper, msg types.MsgKeygenTraffic) (*sdk.Result, error) {
-	if err := k.KeygenMsg(ctx, msg); err != nil {
-		return nil, err
+func handleMsgKeygenTraffic(ctx sdk.Context, k keeper.Keeper, msg types.MsgKeygenTraffic, broadcaster types.Broadcaster) (*sdk.Result, error) {
+	senderAddress := broadcaster.GetPrincipal(ctx, msg.Sender)
+	if senderAddress.Empty() {
+		return nil, fmt.Errorf("invalid message: sender [%s] is not a validator", msg.Sender)
 	}
+
+	if !k.DoesValidatorParticipateInKeygen(ctx, msg.SessionID, senderAddress) {
+		return nil, fmt.Errorf("invalid message: sender [%.20s] does not participate in keygen [%s] ", senderAddress, msg.SessionID)
+	}
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeKeygen,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueMsg),
+			sdk.NewAttribute(types.AttributeKeySessionID, msg.SessionID),
+			sdk.NewAttribute(sdk.AttributeKeySender, senderAddress.String()),
+			sdk.NewAttribute(types.AttributeKeyPayload, string(types.ModuleCdc.MustMarshalJSON(msg.Payload)))))
 
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
@@ -237,13 +251,41 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 		return nil, err
 	}
 
+	var participants []string
+	for _, v := range snapshot.Validators {
+		participants = append(participants, v.GetOperator().String())
+	}
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeKeygen,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
+			sdk.NewAttribute(types.AttributeKeyKeyID, msg.NewKeyID),
+			sdk.NewAttribute(types.AttributeKeyThreshold, strconv.Itoa(threshold)),
+			sdk.NewAttribute(types.AttributeKeyParticipants, string(types.ModuleCdc.MustMarshalJSON(participants)))))
+
+	k.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d]", msg.NewKeyID, threshold))
+
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func handleMsgSignTraffic(ctx sdk.Context, k keeper.Keeper, msg types.MsgSignTraffic) (*sdk.Result, error) {
-	if err := k.SignMsg(ctx, msg); err != nil {
-		return nil, err
+func handleMsgSignTraffic(ctx sdk.Context, k keeper.Keeper, msg types.MsgSignTraffic, broadcaster types.Broadcaster) (*sdk.Result, error) {
+	senderAddress := broadcaster.GetPrincipal(ctx, msg.Sender)
+	if senderAddress.Empty() {
+		return nil, fmt.Errorf("invalid message: sender [%s] is not a validator", msg.Sender)
 	}
+
+	if !k.DoesValidatorParticipateInSign(ctx, msg.SessionID, senderAddress) {
+		return nil, fmt.Errorf("invalid message: sender [%.20s] does not participate in sign [%s] ", senderAddress, msg.SessionID)
+	}
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeSign,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueMsg),
+			sdk.NewAttribute(types.AttributeKeySessionID, msg.SessionID),
+			sdk.NewAttribute(sdk.AttributeKeySender, senderAddress.String()),
+			sdk.NewAttribute(types.AttributeKeyPayload, string(types.ModuleCdc.MustMarshalJSON(msg.Payload)))))
 
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }

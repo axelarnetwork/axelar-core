@@ -11,9 +11,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
-	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
-
-	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
@@ -69,14 +66,4 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 	assert.NoError(t, err)
 	err = s.Keeper.StartSign(s.Ctx, s.Voter, keyID, sigID, msgToSign, exported.Snapshot{})
 	assert.Error(t, err)
-}
-
-func TestKeeper_SignMsg_NoSessionWithGivenID_Error(t *testing.T) {
-	s := setup(t)
-
-	assert.Error(t, s.Keeper.SignMsg(s.Ctx, types.MsgSignTraffic{
-		Sender:    s.Broadcaster.GetProxy(s.Ctx, s.Broadcaster.LocalPrincipal),
-		SessionID: "sigID",
-		Payload:   &tofnd.TrafficOut{},
-	}))
 }
