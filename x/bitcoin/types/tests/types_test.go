@@ -64,8 +64,8 @@ func TestNewLinkedAddress_SpendableByMasterKey(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	masterKey := tss.Key{ID: rand.Str(10), Value: masterPrivateKey.PublicKey}
-	secondaryKey := tss.Key{ID: rand.Str(10), Value: secondaryPrivateKey.PublicKey}
+	masterKey := tss.Key{ID: rand.Str(10), Value: masterPrivateKey.PublicKey, Role: tss.MasterKey}
+	secondaryKey := tss.Key{ID: rand.Str(10), Value: secondaryPrivateKey.PublicKey, Role: tss.SecondaryKey}
 
 	inputAmount := btcutil.Amount(100000000) // 1btc
 	outputAmount := btcutil.Amount(10000000) // 0.1btc
@@ -113,8 +113,8 @@ func TestNewLinkedAddress_SpendableBySecondaryKey(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	masterKey := tss.Key{ID: rand.Str(10), Value: masterPrivateKey.PublicKey}
-	secondaryKey := tss.Key{ID: rand.Str(10), Value: secondaryPrivateKey.PublicKey}
+	masterKey := tss.Key{ID: rand.Str(10), Value: masterPrivateKey.PublicKey, Role: tss.MasterKey}
+	secondaryKey := tss.Key{ID: rand.Str(10), Value: secondaryPrivateKey.PublicKey, Role: tss.SecondaryKey}
 
 	inputAmount := btcutil.Amount(100000000) // 1btc
 	outputAmount := btcutil.Amount(10000000) // 0.1btc
@@ -166,8 +166,8 @@ func TestNewLinkedAddress_NotSpendableByRandomKey(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	masterKey := tss.Key{ID: rand.Str(10), Value: masterPrivateKey.PublicKey}
-	secondaryKey := tss.Key{ID: rand.Str(10), Value: secondaryPrivateKey.PublicKey}
+	masterKey := tss.Key{ID: rand.Str(10), Value: masterPrivateKey.PublicKey, Role: tss.MasterKey}
+	secondaryKey := tss.Key{ID: rand.Str(10), Value: secondaryPrivateKey.PublicKey, Role: tss.SecondaryKey}
 
 	inputAmount := btcutil.Amount(100000000) // 1btc
 	outputAmount := btcutil.Amount(10000000) // 0.1btc

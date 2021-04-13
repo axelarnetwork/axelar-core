@@ -268,8 +268,8 @@ var _ types.Signer = &SignerMock{}
 // 			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
 // 				panic("mock out the GetCurrentKeyID method")
 // 			},
-// 			GetKeyRoleFunc: func(ctx sdk.Context, keyID string) (tss.KeyRole, bool) {
-// 				panic("mock out the GetKeyRole method")
+// 			GetKeyFunc: func(ctx sdk.Context, keyID string) (tss.Key, bool) {
+// 				panic("mock out the GetKey method")
 // 			},
 // 			GetNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
 // 				panic("mock out the GetNextKey method")
@@ -296,8 +296,8 @@ type SignerMock struct {
 	// GetCurrentKeyIDFunc mocks the GetCurrentKeyID method.
 	GetCurrentKeyIDFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool)
 
-	// GetKeyRoleFunc mocks the GetKeyRole method.
-	GetKeyRoleFunc func(ctx sdk.Context, keyID string) (tss.KeyRole, bool)
+	// GetKeyFunc mocks the GetKey method.
+	GetKeyFunc func(ctx sdk.Context, keyID string) (tss.Key, bool)
 
 	// GetNextKeyFunc mocks the GetNextKey method.
 	GetNextKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
@@ -333,8 +333,8 @@ type SignerMock struct {
 			// KeyRole is the keyRole argument value.
 			KeyRole tss.KeyRole
 		}
-		// GetKeyRole holds details about calls to the GetKeyRole method.
-		GetKeyRole []struct {
+		// GetKey holds details about calls to the GetKey method.
+		GetKey []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// KeyID is the keyID argument value.
@@ -383,7 +383,7 @@ type SignerMock struct {
 	}
 	lockGetCurrentKey              sync.RWMutex
 	lockGetCurrentKeyID            sync.RWMutex
-	lockGetKeyRole                 sync.RWMutex
+	lockGetKey                     sync.RWMutex
 	lockGetNextKey                 sync.RWMutex
 	lockGetSig                     sync.RWMutex
 	lockGetSnapshotCounterForKeyID sync.RWMutex
@@ -468,10 +468,10 @@ func (mock *SignerMock) GetCurrentKeyIDCalls() []struct {
 	return calls
 }
 
-// GetKeyRole calls GetKeyRoleFunc.
-func (mock *SignerMock) GetKeyRole(ctx sdk.Context, keyID string) (tss.KeyRole, bool) {
-	if mock.GetKeyRoleFunc == nil {
-		panic("SignerMock.GetKeyRoleFunc: method is nil but Signer.GetKeyRole was just called")
+// GetKey calls GetKeyFunc.
+func (mock *SignerMock) GetKey(ctx sdk.Context, keyID string) (tss.Key, bool) {
+	if mock.GetKeyFunc == nil {
+		panic("SignerMock.GetKeyFunc: method is nil but Signer.GetKey was just called")
 	}
 	callInfo := struct {
 		Ctx   sdk.Context
@@ -480,16 +480,16 @@ func (mock *SignerMock) GetKeyRole(ctx sdk.Context, keyID string) (tss.KeyRole, 
 		Ctx:   ctx,
 		KeyID: keyID,
 	}
-	mock.lockGetKeyRole.Lock()
-	mock.calls.GetKeyRole = append(mock.calls.GetKeyRole, callInfo)
-	mock.lockGetKeyRole.Unlock()
-	return mock.GetKeyRoleFunc(ctx, keyID)
+	mock.lockGetKey.Lock()
+	mock.calls.GetKey = append(mock.calls.GetKey, callInfo)
+	mock.lockGetKey.Unlock()
+	return mock.GetKeyFunc(ctx, keyID)
 }
 
-// GetKeyRoleCalls gets all the calls that were made to GetKeyRole.
+// GetKeyCalls gets all the calls that were made to GetKey.
 // Check the length with:
-//     len(mockedSigner.GetKeyRoleCalls())
-func (mock *SignerMock) GetKeyRoleCalls() []struct {
+//     len(mockedSigner.GetKeyCalls())
+func (mock *SignerMock) GetKeyCalls() []struct {
 	Ctx   sdk.Context
 	KeyID string
 } {
@@ -497,9 +497,9 @@ func (mock *SignerMock) GetKeyRoleCalls() []struct {
 		Ctx   sdk.Context
 		KeyID string
 	}
-	mock.lockGetKeyRole.RLock()
-	calls = mock.calls.GetKeyRole
-	mock.lockGetKeyRole.RUnlock()
+	mock.lockGetKey.RLock()
+	calls = mock.calls.GetKey
+	mock.lockGetKey.RUnlock()
 	return calls
 }
 

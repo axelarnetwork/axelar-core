@@ -189,7 +189,7 @@ type DepositQueryParams struct {
 // RedeemScript represents the script that is used to redeem a transaction that spent to the address derived from the script
 type RedeemScript []byte
 
-// createCrossChainRedeemScript generates a redeem script unique to the given key and cross-chain address
+// createCrossChainRedeemScript generates a redeem script unique to the given keys and cross-chain address
 func createCrossChainRedeemScript(pk1 btcec.PublicKey, pk2 btcec.PublicKey, crossAddr nexus.CrossChainAddress) RedeemScript {
 	nonce := btcutil.Hash160([]byte(crossAddr.String()))
 
@@ -232,8 +232,8 @@ func createMasterRedeemScript(pk btcec.PublicKey) RedeemScript {
 	return redeemScript
 }
 
-// createP2wshAddress creates a SeqWit script address based on a redeem script
-func createP2wshAddress(script RedeemScript, network Network) *btcutil.AddressWitnessScriptHash {
+// createP2WSHAddress creates a SeqWit script address based on a redeem script
+func createP2WSHAddress(script RedeemScript, network Network) *btcutil.AddressWitnessScriptHash {
 	hash := sha256.Sum256(script)
 	// hash is 32 bit long, so this cannot throw an error if there is no bug
 	addr, err := btcutil.NewAddressWitnessScriptHash(hash[:], network.Params())
@@ -253,7 +253,7 @@ type AddressInfo struct {
 // NewConsolidationAddress creates a new address used to consolidate all unspent outpoints
 func NewConsolidationAddress(pk tss.Key, network Network) AddressInfo {
 	script := createMasterRedeemScript(btcec.PublicKey(pk.Value))
-	addr := createP2wshAddress(script, network)
+	addr := createP2WSHAddress(script, network)
 
 	return AddressInfo{
 		RedeemScript: script,
@@ -269,7 +269,7 @@ func NewLinkedAddress(masterKey tss.Key, secondaryKey tss.Key, network Network, 
 		btcec.PublicKey(secondaryKey.Value),
 		recipient,
 	)
-	addr := createP2wshAddress(script, network)
+	addr := createP2WSHAddress(script, network)
 
 	return AddressInfo{
 		RedeemScript: script,

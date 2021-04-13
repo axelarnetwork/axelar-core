@@ -50,9 +50,23 @@ func NewHandler(k types.BTCKeeper, v types.Voter, signer types.Signer, n types.N
 
 // HandleMsgLink handles address linking
 func HandleMsgLink(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n types.Nexus, msg types.MsgLink) (*sdk.Result, error) {
-	masterKey, secondaryKey, recipientChain, err := checkLinkRequisites(ctx, s, n, msg.RecipientChain)
-	if err != nil {
-		return nil, err
+	masterKey, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.MasterKey)
+	if !ok {
+		return nil, fmt.Errorf("master key not set")
+	}
+
+	secondaryKey, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.SecondaryKey)
+	if !ok {
+		return nil, fmt.Errorf("secondary key not set")
+	}
+
+	recipientChain, ok := n.GetChain(ctx, msg.RecipientChain)
+	if !ok {
+		return nil, fmt.Errorf("unknown recipient chain")
+	}
+
+	if !n.IsAssetRegistered(ctx, recipientChain.Name, exported.Bitcoin.NativeAsset) {
+		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", exported.Bitcoin.NativeAsset, recipientChain.Name)
 	}
 
 	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: msg.RecipientAddr}
@@ -287,12 +301,16 @@ func prepareInputs(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) ([]t
 			return nil, sdk.ZeroInt(), fmt.Errorf("address for confirmed outpoint %s must be known", info.OutPoint.String())
 		}
 
-		keyRole, found := signer.GetKeyRole(ctx, addr.Key.ID)
+		key, found := signer.GetKey(ctx, addr.Key.ID)
 		if !found {
-			return nil, sdk.ZeroInt(), fmt.Errorf("key role not found for key %s", addr.Key.ID)
+			return nil, sdk.ZeroInt(), fmt.Errorf("key %s cannot be found", addr.Key.ID)
 		}
 
-		if keyRole == tss.MasterKey {
+		if key.Role == tss.Unknown {
+			return nil, sdk.ZeroInt(), fmt.Errorf("key role not set for key %s", addr.Key.ID)
+		}
+
+		if key.Role == tss.MasterKey {
 			masterKeyUtxoFound = true
 		}
 
@@ -353,27 +371,4 @@ func startSignInputs(ctx sdk.Context, signer types.Signer, snapshotter types.Sna
 		}
 	}
 	return nil
-}
-
-func checkLinkRequisites(ctx sdk.Context, s types.Signer, n types.Nexus, recipientChainName string) (tss.Key, tss.Key, nexus.Chain, error) {
-	masterKey, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.MasterKey)
-	if !ok {
-		return tss.Key{}, tss.Key{}, nexus.Chain{}, fmt.Errorf("master key not set")
-	}
-
-	secondaryKey, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.SecondaryKey)
-	if !ok {
-		return tss.Key{}, tss.Key{}, nexus.Chain{}, fmt.Errorf("secondary key not set")
-	}
-
-	recipientChain, ok := n.GetChain(ctx, recipientChainName)
-	if !ok {
-		return tss.Key{}, tss.Key{}, nexus.Chain{}, fmt.Errorf("unknown recipient chain")
-	}
-
-	if !n.IsAssetRegistered(ctx, recipientChain.Name, exported.Bitcoin.NativeAsset) {
-		return tss.Key{}, tss.Key{}, nexus.Chain{}, fmt.Errorf("asset '%s' not registered for chain '%s'", exported.Bitcoin.NativeAsset, recipientChain.Name)
-	}
-
-	return masterKey, secondaryKey, recipientChain, nil
 }

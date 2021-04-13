@@ -43,9 +43,9 @@ func TestHandleMsgLink(t *testing.T) {
 			SetAddressFunc: func(sdk.Context, types.AddressInfo) {},
 			LoggerFunc:     func(sdk.Context) log.Logger { return log.TestingLogger() },
 		}
-		signer = &mock.SignerMock{GetCurrentKeyFunc: func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) {
+		signer = &mock.SignerMock{GetCurrentKeyFunc: func(_ sdk.Context, _ nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
 			sk, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
-			return tss.Key{Value: sk.PublicKey, ID: rand.StrBetween(5, 20)}, true
+			return tss.Key{Value: sk.PublicKey, ID: rand.StrBetween(5, 20), Role: keyRole}, true
 		}}
 		nexusKeeper = &mock.NexusMock{
 			GetChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
@@ -117,6 +117,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 					Key: tss.Key{
 						ID:    rand.StrBetween(5, 20),
 						Value: ecdsa.PublicKey{},
+						Role:  tss.SecondaryKey,
 					},
 				}, true
 			},
@@ -402,9 +403,9 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		}
 
 		masterPrivateKey, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
-		masterKey := tss.Key{ID: rand.StrBetween(5, 20), Value: masterPrivateKey.PublicKey}
+		masterKey := tss.Key{ID: rand.StrBetween(5, 20), Value: masterPrivateKey.PublicKey, Role: tss.MasterKey}
 		secondaryPrivateKey, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
-		secondaryKey := tss.Key{ID: rand.StrBetween(5, 20), Value: secondaryPrivateKey.PublicKey}
+		secondaryKey := tss.Key{ID: rand.StrBetween(5, 20), Value: secondaryPrivateKey.PublicKey, Role: tss.SecondaryKey}
 
 		btcKeeper = &mock.BTCKeeperMock{
 			GetUnsignedTxFunc:             func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
@@ -424,6 +425,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 					Key: tss.Key{
 						ID:    secondaryKey.ID,
 						Value: sk.PublicKey,
+						Role:  tss.SecondaryKey,
 					},
 				}, true
 			},
@@ -438,14 +440,14 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 			GetNextKeyFunc: func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) {
 				return tss.Key{}, false
 			},
-			GetKeyRoleFunc: func(ctx sdk.Context, keyID string) (tss.KeyRole, bool) {
+			GetKeyFunc: func(ctx sdk.Context, keyID string) (tss.Key, bool) {
 				switch keyID {
 				case masterKey.ID:
-					return tss.MasterKey, true
+					return masterKey, true
 				case secondaryKey.ID:
-					return tss.SecondaryKey, true
+					return secondaryKey, true
 				default:
-					return -1, false
+					return tss.Key{}, false
 				}
 			},
 			GetCurrentKeyFunc: func(_ sdk.Context, _ nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
