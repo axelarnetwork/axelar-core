@@ -22,7 +22,7 @@ import (
 
 // Broadcaster submits transactions to a tendermint node
 type Broadcaster struct {
-	rpc        types.Client
+	client     types.Client
 	logger     log.Logger
 	seqNo      uint64
 	broadcasts chan func()
@@ -42,7 +42,7 @@ func NewBroadcaster(signer types.Sign, client types.Client, conf broadcastTypes.
 		signer:     signer,
 		chainID:    conf.ChainID,
 		gas:        conf.Gas,
-		rpc:        client,
+		client:     client,
 		logger:     logger,
 		seqNo:      0,
 		broadcasts: make(chan func(), 1000),
@@ -92,28 +92,67 @@ func (b *Broadcaster) broadcast(msgs []sdk.Msg) error {
 		Fee:           auth.NewStdFee(b.gas, nil),
 	}
 
-	tx, err := sign(b.signer, stdSignMsg)
+	return b.signAndBroadcast(stdSignMsg)
+}
+
+func (b *Broadcaster) signAndBroadcast(msg auth.StdSignMsg) error {
+	tx, err := sign(b.signer, msg)
 	if err != nil {
 		return err
 	}
 
 	b.logger.Debug(fmt.Sprintf("broadcasting %d messages from address: %.20s, acc no.: %d, seq no.: %d, chainId: %s",
-		len(msgs), msgs[0].GetSigners()[0], stdSignMsg.AccountNumber, stdSignMsg.Sequence, stdSignMsg.ChainID))
+		len(tx.Msgs), tx.Msgs[0].GetSigners()[0], msg.AccountNumber, msg.Sequence, msg.ChainID))
 
-	res, err := b.rpc.BroadcastTxSync(tx)
+	res, err := b.client.BroadcastTxSync(tx)
 	if err != nil {
 		return err
 	}
 	if res.Code != abci.CodeTypeOK {
 		return fmt.Errorf(res.Log)
 	}
+
 	// broadcast has been successful, so increment sequence number
 	b.seqNo += 1
 	return nil
 }
 
+// BroadcastTx signs a pre-built tx and submits it to the network. This function in thread-safe.
+func (b *Broadcaster) BroadcastTx(tx auth.StdTx) error {
+	errChan := make(chan error, 1)
+	b.broadcasts <- func() { errChan <- b.broadcastTx(tx) }
+	return <-errChan
+}
+
+// broadcastTx signs a standard tx object and broadcasts it to the network
+func (b *Broadcaster) broadcastTx(stdTx auth.StdTx) error {
+	if len(stdTx.Msgs) == 0 {
+		return fmt.Errorf("call broadcast with at least one message")
+	}
+
+	// By convention the first signer of a tx pays the fees
+	if len(stdTx.Msgs[0].GetSigners()) == 0 {
+		return fmt.Errorf("messages must have at least one signer")
+	}
+
+	accNo, seqNo, err := b.updateAccountNumberSequence(stdTx.Msgs[0].GetSigners()[0])
+	if err != nil {
+		return err
+	}
+
+	stdSignMsg := auth.StdSignMsg{
+		ChainID:       b.chainID,
+		AccountNumber: accNo,
+		Sequence:      seqNo,
+		Msgs:          stdTx.Msgs,
+		Fee:           stdTx.Fee,
+	}
+
+	return b.signAndBroadcast(stdSignMsg)
+}
+
 func (b *Broadcaster) updateAccountNumberSequence(addr sdk.AccAddress) (uint64, uint64, error) {
-	accNo, seqNo, err := b.rpc.GetAccountNumberSequence(addr)
+	accNo, seqNo, err := b.client.GetAccountNumberSequence(addr)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -146,7 +185,7 @@ type client struct {
 	encodeTx sdk.TxEncoder
 }
 
-// NewClient returns a new rpc client to a tendermint node
+// NewClient returns a new client client to a tendermint node
 func NewClient(encoder sdk.TxEncoder, tendermintURI string) (types.Client, error) {
 	abciClient, err := http.New(tendermintURI, "/websocket")
 	if err != nil {
