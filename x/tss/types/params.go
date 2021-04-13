@@ -20,10 +20,11 @@ const (
 
 // Parameter keys
 var (
-	KeyLockingPeriod       = []byte("lockingPeriod")
-	KeyMinKeygenThreshold  = []byte("minKeygenThreshold")
-	KeyCorruptionThreshold = []byte("corruptionThreshold")
-	KeyKeyRequirements     = []byte("keyRequirements")
+	KeyLockingPeriod           = []byte("lockingPeriod")
+	KeyMinKeygenThreshold      = []byte("minKeygenThreshold")
+	KeyCorruptionThreshold     = []byte("corruptionThreshold")
+	KeyKeyRequirements         = []byte("keyRequirements")
+	KeyMinBondFractionPerShare = []byte("MinBondFractionPerShare")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -43,6 +44,7 @@ func DefaultParams() Params {
 			{ChainName: bitcoin.Bitcoin.Name, KeyRole: exported.SecondaryKey, MinValidatorSubsetSize: 3},
 			{ChainName: ethereum.Ethereum.Name, KeyRole: exported.MasterKey, MinValidatorSubsetSize: 5},
 		},
+		MinBondFractionPerShare: utils.Threshold{Numerator: 1, Denominator: 200},
 	}
 }
 
@@ -60,6 +62,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyMinKeygenThreshold, &m.MinKeygenThreshold, validateThreshold),
 		params.NewParamSetPair(KeyCorruptionThreshold, &m.CorruptionThreshold, validateThreshold),
 		params.NewParamSetPair(KeyKeyRequirements, &m.KeyRequirements, validateKeyRequirements),
+		params.NewParamSetPair(KeyMinBondFractionPerShare, &p.MinBondFractionPerShare, validateMinBondFractionPerShare),
 	}
 }
 
@@ -93,6 +96,10 @@ func (m Params) Validate() error {
 	}
 
 	if err := validateKeyRequirements(m.KeyRequirements); err != nil {
+		return err
+	}
+
+	if err := validateMinBondFractionPerShare(p.MinBondFractionPerShare); err != nil {
 		return err
 	}
 
@@ -142,6 +149,27 @@ func validateKeyRequirements(keyRequirements interface{}) error {
 		if err := keyRequirement.Validate(); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func validateMinBondFractionPerShare(MinBondFractionPerShare interface{}) error {
+	val, ok := MinBondFractionPerShare.(utils.Threshold)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for MinBondFractionPerShare: %T", MinBondFractionPerShare)
+	}
+
+	if val.Numerator <= 0 {
+		return fmt.Errorf("threshold numerator must be a positive integer for MinBondFractionPerShare")
+	}
+
+	if val.Denominator <= 0 {
+		return fmt.Errorf("threshold denominator must be a positive integer for MinBondFractionPerShare")
+	}
+
+	if val.Numerator >= val.Denominator {
+		return fmt.Errorf("threshold must be <1 for MinBondFractionPerShare")
 	}
 
 	return nil

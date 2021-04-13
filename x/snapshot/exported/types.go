@@ -5,19 +5,29 @@ import (
 	"time"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 )
 
-//go:generate moq -out ./mock/types.go -pkg mock . Validator Snapshotter Slasher Broadcaster Tss
+//go:generate moq -out ./mock/types.go -pkg mock . SDKValidator Snapshotter Slasher Broadcaster Tss
 
-// Validator is an interface for a Cosmos validator account
-type Validator interface {
+// SDKValidator is an interface for a Cosmos validator account
+type SDKValidator interface {
 	GetOperator() sdk.ValAddress
 	GetConsAddr() (sdk.ConsAddress, error)
 	GetConsensusPower() int64
 	IsJailed() bool
 	UnpackInterfaces(c codectypes.AnyUnpacker) error
+}
+
+type Validator struct {
+	SDKValidator
+	Power sdk.Int
+}
+
+func NewValidator(sdkValidator SDKValidator, power sdk.Int) Validator {
+	return Validator{SDKValidator: sdkValidator, Power: power}
 }
 
 // ValidatorInfo adopts the methods from "github.com/cosmos/cosmos-sdk/x/slashing" that are
@@ -39,38 +49,38 @@ type Broadcaster interface {
 // Tss provides functionality to tss module
 type Tss interface {
 	GetValidatorDeregisteredBlockHeight(ctx sdk.Context, valAddr sdk.ValAddress) int64
+	GetMinBondFractionPerShare(ctx sdk.Context) utils.Threshold
 }
 
 // IsValidatorActive returns true if the validator is active; otherwise, false
-func IsValidatorActive(ctx sdk.Context, slasher Slasher, validator Validator) bool {
-	consAdd, err := validator.GetConsAddr()
+func IsValidatorActive(ctx sdk.Context, slasher Slasher, validator SDKValidator) bool {
+	consAddr, err := validator.GetConsAddr()
 	if err != nil {
 		return false
 	}
 
-	signingInfo, found := slasher.GetValidatorSigningInfo(ctx, consAdd)
+	signingInfo, found := slasher.GetValidatorSigningInfo(ctx, consAddr)
 
 	return found && !signingInfo.Tombstoned && signingInfo.MissedBlocksCounter <= 0 && !validator.IsJailed()
 }
 
 // HasProxyRegistered returns true if the validator has broadcast proxy registered; otherwise, false
-func HasProxyRegistered(ctx sdk.Context, broadcaster Broadcaster, validator Validator) bool {
+func HasProxyRegistered(ctx sdk.Context, broadcaster Broadcaster, validator SDKValidator) bool {
 	return broadcaster.GetProxy(ctx, validator.GetOperator()) != nil
 }
 
 // IsValidatorTssRegistered returns true if the validator is registered to participate in tss key generation; otherwise, false
-func IsValidatorTssRegistered(ctx sdk.Context, tss Tss, validator Validator) bool {
+func IsValidatorTssRegistered(ctx sdk.Context, tss Tss, validator SDKValidator) bool {
 	return tss.GetValidatorDeregisteredBlockHeight(ctx, validator.GetOperator()) <= 0
 }
 
 // Snapshot is a snapshot of the validator set at a given block height.
 type Snapshot struct {
-	Validators           []Validator `json:"validators"`
-	Timestamp            time.Time   `json:"timestamp"`
-	Height               int64       `json:"height"`
-	TotalPower           sdk.Int     `json:"totalpower"`
-	ValidatorsTotalPower sdk.Int     `json:"validatorstotalpower"`
-	Counter              int64       `json:"counter"`
+	Validators []Validator `json:"validators"`
+	Timestamp  time.Time   `json:"timestamp"`
+	Height     int64       `json:"height"`
+	TotalPower sdk.Int     `json:"totalpower"`
+	Counter    int64       `json:"counter"`
 }
 
 // GetValidator returns the validator for a given address, if it is part of the snapshot
@@ -81,7 +91,7 @@ func (s Snapshot) GetValidator(address sdk.ValAddress) (Validator, bool) {
 		}
 	}
 
-	return nil, false
+	return Validator{}, false
 }
 
 // UnpackInterfaces implements UnpackInterfacesMessage.UnpackInterfaces
@@ -99,5 +109,5 @@ type Snapshotter interface {
 	GetLatestSnapshot(ctx sdk.Context) (Snapshot, bool)
 	GetLatestCounter(ctx sdk.Context) int64
 	GetSnapshot(ctx sdk.Context, counter int64) (Snapshot, bool)
-	TakeSnapshot(ctx sdk.Context, subsetSize int64) error
+	TakeSnapshot(ctx sdk.Context, subsetSize int64) (sdk.Int, sdk.Int, error)
 }

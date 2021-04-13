@@ -13,12 +13,13 @@ const (
 	AttributeKeyPoll = "poll"
 	AttributeChain   = "chain"
 
-	AttributeKeyKeyID        = "keyID"
-	AttributeKeySigID        = "sigID"
-	AttributeKeySessionID    = "sessionID"
-	AttributeKeyThreshold    = "threshold"
-	AttributeKeyParticipants = "participants"
-	AttributeKeyPayload      = "payload"
+	AttributeKeyKeyID                  = "keyID"
+	AttributeKeySigID                  = "sigID"
+	AttributeKeySessionID              = "sessionID"
+	AttributeKeyThreshold              = "threshold"
+	AttributeKeyParticipants           = "participants"
+	AttributeKeyParticipantShareCounts = "participantShareCounts"
+	AttributeKeyPayload                = "payload"
 )
 
 // Event attribute values

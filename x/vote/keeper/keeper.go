@@ -147,7 +147,7 @@ func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta expor
 	i := k.getTalliedVoteIdx(ctx, pollMeta, data)
 	if i == indexNotFound {
 		talliedVote = types.TalliedVote{
-			Tally: sdk.NewInt(validator.GetConsensusPower()),
+			Tally: validator.Power,
 			Data:  data,
 		}
 
@@ -156,7 +156,7 @@ func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta expor
 	} else {
 		// this assignment copies the value, so we need to write it back into the array
 		talliedVote = poll.Votes[i]
-		talliedVote.Tally = talliedVote.Tally.AddRaw(validator.GetConsensusPower())
+		talliedVote.Tally = talliedVote.Tally.Add(validator.Power)
 		poll.Votes[i] = talliedVote
 	}
 

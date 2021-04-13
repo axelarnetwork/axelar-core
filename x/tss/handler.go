@@ -221,7 +221,8 @@ func handleMsgKeygenTraffic(ctx sdk.Context, k keeper.Keeper, broadcaster types.
 
 func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, staker types.StakingKeeper, v types.Voter, msg *types.MsgKeygenStart) (*sdk.Result, error) {
 	// record the snapshot of active validators that we'll use for the key
-	if err := s.TakeSnapshot(ctx, msg.SubsetSize); err != nil {
+	snapshotConsensusPower, totalConsensusPower, err := s.TakeSnapshot(ctx, msg.SubsetSize)
+	if err != nil {
 		return nil, err
 	}
 
@@ -230,30 +231,31 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 		return nil, fmt.Errorf("the system needs to have at least one validator snapshot")
 	}
 
-	if !k.GetMinKeygenThreshold(ctx).IsMet(snapshot.TotalPower, snapshot.ValidatorsTotalPower) {
-		msg := fmt.Sprintf("Unable to meet min stake threshold required for keygen: active %s out of %s total",
-			snapshot.TotalPower.String(), staker.GetLastTotalPower(ctx).String())
+	if !k.GetMinKeygenThreshold(ctx).IsMet(snapshotConsensusPower, totalConsensusPower) {
+		msg := fmt.Sprintf(
+			"Unable to meet min stake threshold required for keygen: active %s out of %s total",
+			snapshotConsensusPower.String(),
+			totalConsensusPower.String(),
+		)
 		k.Logger(ctx).Info(msg)
 
 		return nil, fmt.Errorf(msg)
 	}
 
-	threshold := k.ComputeCorruptionThreshold(ctx, len(snapshot.Validators))
-
-	// TODO: need to figure out how to calculate threshold based on total number of
-	// validators in the system, individual's stake, etc.
-	if threshold < 1 || threshold > len(snapshot.Validators) {
-		return nil, fmt.Errorf("invalid threshold: %d, validators: %d", threshold, len(snapshot.Validators))
+	threshold := k.ComputeCorruptionThreshold(ctx, int(snapshot.TotalPower.Int64()))
+	if threshold < 1 || threshold > int(snapshot.TotalPower.Int64()) {
+		return nil, fmt.Errorf("invalid threshold: %d, total power: %d", threshold, snapshot.TotalPower.Int64())
 	}
 
-	err := k.StartKeygen(ctx, v, msg.NewKeyID, threshold, snapshot)
-	if err != nil {
+	if err := k.StartKeygen(ctx, v, msg.NewKeyID, snapshot); err != nil {
 		return nil, err
 	}
 
 	var participants []string
-	for _, v := range snapshot.Validators {
-		participants = append(participants, v.GetOperator().String())
+	var participantShareCounts []int64
+	for _, validator := range snapshot.Validators {
+		participants = append(participants, validator.GetOperator().String())
+		participantShareCounts = append(participantShareCounts, validator.Power.Int64())
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -263,6 +265,9 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 			sdk.NewAttribute(types.AttributeKeyKeyID, msg.NewKeyID),
 			sdk.NewAttribute(types.AttributeKeyThreshold, strconv.Itoa(threshold)),
 			sdk.NewAttribute(types.AttributeKeyParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participants)))))
+			sdk.NewAttribute(types.AttributeKeyParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participantShareCounts))),
+		),
+	)
 
 	k.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d]", msg.NewKeyID, threshold))
 

@@ -17,14 +17,14 @@ import (
 
 // ProcessKeygenStart starts the communication with the keygen protocol
 func (mgr *Mgr) ProcessKeygenStart(attributes []sdk.Attribute) error {
-	keyID, threshold, participants := parseKeygenStartParams(mgr.cdc, attributes)
+	keyID, threshold, participants, participantShareCounts := parseKeygenStartParams(mgr.cdc, attributes)
 	myIndex, ok := indexOf(participants, mgr.principalAddr)
 	if !ok {
 		// do not participate
 		return nil
 	}
 
-	stream, cancel, err := mgr.startKeygen(keyID, threshold, myIndex, participants)
+	stream, cancel, err := mgr.startKeygen(keyID, threshold, myIndex, participants, participantShareCounts)
 	if err != nil {
 		return err
 	}
@@ -81,7 +81,8 @@ func (mgr *Mgr) ProcessKeygenMsg(attributes []sdk.Attribute) error {
 	return nil
 }
 
-func parseKeygenStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, threshold int32, participants []string) {
+func parseKeygenStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, threshold int32, participants []string, participantShareCounts []int64) {
+func parseKeygenStartParams(attributes []sdk.Attribute) (keyID string, threshold int32, participants []string, participantShareCounts []int64) {
 	for _, attribute := range attributes {
 		switch attribute.Key {
 		case tss.AttributeKeyKeyID:
@@ -93,15 +94,17 @@ func parseKeygenStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) 
 			}
 			threshold = int32(t)
 		case tss.AttributeKeyParticipants:
-			cdc.MustUnmarshalJSON([]byte(attribute.Value), &participants)
+			codec.MustUnmarshalJSON([]byte(attribute.Value), &participants)
+		case tss.AttributeKeyParticipantShareCounts:
+			codec.MustUnmarshalJSON([]byte(attribute.Value), &participantShareCounts)
 		default:
 		}
 	}
 
-	return keyID, threshold, participants
+	return keyID, threshold, participants, participantShareCounts
 }
 
-func (mgr *Mgr) startKeygen(keyID string, threshold int32, myIndex int32, participants []string) (tss.Stream, context.CancelFunc, error) {
+func (mgr *Mgr) startKeygen(keyID string, threshold int32, myIndex int32, participants []string, participantShareCounts []int64) (tss.Stream, context.CancelFunc, error) {
 	if _, ok := mgr.getKeygenStream(keyID); ok {
 		return nil, nil, fmt.Errorf("keygen protocol for ID %s already in progress", keyID)
 	}
@@ -113,12 +116,21 @@ func (mgr *Mgr) startKeygen(keyID string, threshold int32, myIndex int32, partic
 		return nil, nil, sdkerrors.Wrap(err, "failed tofnd gRPC call Keygen")
 	}
 
+	var shareCountsUin32 []uint32
+	for _, participantShareCount := range participantShareCounts {
+		// Do we need to check for overflow?
+		shareCountsUin32 = append(shareCountsUin32, uint32(participantShareCount))
+	}
+
+	fmt.Printf("shareCountsUin32: %v", shareCountsUin32)
+
 	keygenInit := &tofnd.MessageIn_KeygenInit{
 		KeygenInit: &tofnd.KeygenInit{
-			NewKeyUid:    keyID,
-			Threshold:    threshold,
-			PartyUids:    participants,
-			MyPartyIndex: myIndex,
+			NewKeyUid:        keyID,
+			Threshold:        threshold,
+			PartyUids:        participants,
+			PartyShareCounts: shareCountsUin32,
+			MyPartyIndex:     myIndex,
 		},
 	}
 

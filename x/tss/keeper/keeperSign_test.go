@@ -21,28 +21,27 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 
 	snap := snapshot.Snapshot{
 		Validators: []snapshot.Validator{
-			&snapMock.ValidatorMock{
+			snapshot.NewValidator(&snapMock.SDKValidatorMock{
 				GetOperatorFunc:       func() sdk.ValAddress { return sdk.ValAddress("validator1") },
 				GetConsensusPowerFunc: func() int64 { return 100 },
 				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return sdk.ValAddress("validator1").Bytes(), nil },
 				IsJailedFunc:          func() bool { return true },
-			},
-			&snapMock.ValidatorMock{
+			}, sdk.NewInt(100)),
+			snapshot.NewValidator(&snapMock.SDKValidatorMock{
 				GetOperatorFunc:       func() sdk.ValAddress { return sdk.ValAddress("validator2") },
 				GetConsensusPowerFunc: func() int64 { return 100 },
 				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return sdk.ValAddress("validator2").Bytes(), nil },
 				IsJailedFunc:          func() bool { return false },
-			},
+			}, sdk.NewInt(100)),
 		},
-		Timestamp:            time.Now(),
-		Height:               rand2.I64Between(1, 1000000),
-		TotalPower:           sdk.NewInt(200),
-		ValidatorsTotalPower: sdk.NewInt(200),
-		Counter:              rand2.I64Between(0, 100000),
+		Timestamp:  time.Now(),
+		Height:     rand2.I64Between(1, 1000000),
+		TotalPower: sdk.NewInt(200),
+		Counter:    rand2.I64Between(0, 100000),
 	}
 
 	// start keygen to record the snapshot for each key
-	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, 1, snap)
+	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, snap)
 	assert.NoError(t, err)
 	err = s.Keeper.StartSign(s.Ctx, s.Voter, keyID, sigID, msg, snap)
 	assert.EqualError(t, err, "not enough active validators are online: threshold [1], online [1]")
@@ -55,14 +54,14 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 	msgToSign := []byte("message")
 
 	// start keygen to record the snapshot for each key
-	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, 1, snap)
+	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, snap)
 	assert.NoError(t, err)
 	err = s.Keeper.StartSign(s.Ctx, s.Voter, keyID, sigID, msgToSign, exported.Snapshot{})
 	assert.NoError(t, err)
 
 	keyID = "keyID2"
 	msgToSign = []byte("second message")
-	err = s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, 1, snap)
+	err = s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, snap)
 	assert.NoError(t, err)
 	err = s.Keeper.StartSign(s.Ctx, s.Voter, keyID, sigID, msgToSign, exported.Snapshot{})
 	assert.Error(t, err)

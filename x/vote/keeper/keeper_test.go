@@ -43,7 +43,7 @@ func setup() *testSetup {
 		GetSnapshotFunc: func(sdk.Context, int64) (snapshot.Snapshot, bool) {
 			totalPower := sdk.ZeroInt()
 			for _, v := range setup.ValidatorSet {
-				totalPower = totalPower.AddRaw(v.GetConsensusPower())
+				totalPower = totalPower.Add(v.Power)
 			}
 			return snapshot.Snapshot{Validators: setup.ValidatorSet, TotalPower: totalPower}, true
 		},
@@ -228,19 +228,21 @@ func randomPoll() exported.PollMeta {
 	return exported.NewPollMeta(stringGen.Next(), stringGen.Next())
 }
 
-func newValidator(address sdk.ValAddress, power int64) *snapMock.ValidatorMock {
-	return &snapMock.ValidatorMock{
-		GetOperatorFunc:       func() sdk.ValAddress { return address },
-		GetConsensusPowerFunc: func() int64 { return power }}
+func newValidator(address sdk.ValAddress, power int64) snapshot.Validator {
+	sdkValidator := &snapMock.SDKValidatorMock{
+		GetOperatorFunc: func() sdk.ValAddress { return address },
+	}
+
+	return snapshot.NewValidator(sdkValidator, sdk.NewInt(power))
 }
 
-func calcMajorityLowerLimit(threshold utils.Threshold, minorityPower *snapMock.ValidatorMock) int64 {
+func calcMajorityLowerLimit(threshold utils.Threshold, minorityPower snapshot.Validator) int64 {
 	minorityShare := threshold.Denominator - threshold.Numerator
 	majorityShare := threshold.Numerator
-	majorityLowerLimit := minorityPower.GetConsensusPower() / minorityShare * majorityShare
+	majorityLowerLimit := minorityPower.Power.Int64() / minorityShare * majorityShare
 	// Due to integer division the lower limit might be underestimated by up to 2
-	for threshold.IsMet(sdk.NewInt(majorityLowerLimit), sdk.NewInt(majorityLowerLimit+minorityPower.GetConsensusPower())) {
-		majorityLowerLimit++
+	for threshold.IsMet(sdk.NewInt(majorityLowerLimit), sdk.NewInt(majorityLowerLimit).Add(minorityPower.Power)) {
+		majorityLowerLimit += 1
 	}
 	return majorityLowerLimit
 }

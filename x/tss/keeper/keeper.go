@@ -115,10 +115,10 @@ func (k Keeper) GetValidatorDeregisteredBlockHeight(ctx sdk.Context, valAddr sdk
 }
 
 // ComputeCorruptionThreshold returns corruption threshold to be used by tss
-func (k Keeper) ComputeCorruptionThreshold(ctx sdk.Context, totalvalidators int) int {
+func (k Keeper) ComputeCorruptionThreshold(ctx sdk.Context, totalShareCount int) int {
 	var threshold utils.Threshold
 	k.params.Get(ctx, types.KeyCorruptionThreshold, &threshold)
 	// threshold = totalValidators * corruption threshold - 1
-	return int(math.Ceil(float64(totalvalidators)*float64(threshold.Numerator)/
+	return int(math.Ceil(float64(totalShareCount)*float64(threshold.Numerator)/
 		float64(threshold.Denominator))) - 1
 }

@@ -21,3 +21,15 @@ enum KeyRole {
   KEY_ROLE_SECONDARY_KEY = 2
       [ (gogoproto.enumvalue_customname) = "SecondaryKey" ];
 }
+
+enum KeyShareDistributionPolicy {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  KEY_SHARE_DISTRIBUTION_POLICY_UNSPECIFIED = 0
+      [ (gogoproto.enumvalue_customname) = "unspecified" ];
+  KEY_SHARE_DISTRIBUTION_POLICY_WEIGHTED_BY_STAKE = 1
+      [ (gogoproto.enumvalue_customname) = "weighted-by-stake" ];
+  KEY_SHARE_DISTRIBUTION_POLICY_ONE_PER_VALIDATOR = 2
+      [ (gogoproto.enumvalue_customname) = "one-per-validator" ];
+}

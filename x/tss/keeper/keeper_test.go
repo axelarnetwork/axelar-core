@@ -36,12 +36,11 @@ var (
 	val4       = newValidator(sdk.ValAddress("validator4"), 100)
 	validators = []snapshot.Validator{val1, val2, val3, val4}
 	snap       = snapshot.Snapshot{
-		Validators:           validators,
-		Timestamp:            time.Now(),
-		Height:               rand2.I64Between(1, 1000000),
-		TotalPower:           sdk.NewInt(400),
-		ValidatorsTotalPower: sdk.NewInt(400),
-		Counter:              rand2.I64Between(0, 100000),
+		Validators: validators,
+		Timestamp:  time.Now(),
+		Height:     rand2.I64Between(1, 1000000),
+		TotalPower: sdk.NewInt(400),
+		Counter:    rand2.I64Between(0, 100000),
 	}
 	randPosInt      = rand2.I64GenBetween(0, 100000000)
 	randDistinctStr = rand2.Strings(3, 15).Distinct()
@@ -103,7 +102,7 @@ func (s *testSetup) SetLockingPeriod(lockingPeriod int64) {
 func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context) tss.Key {
 	keyID := randDistinctStr.Next()
 	s.PrivateKey = make(chan *ecdsa.PrivateKey, 1)
-	err := s.Keeper.StartKeygen(ctx, s.Voter, keyID, len(validators)-1, snap)
+	err := s.Keeper.StartKeygen(ctx, s.Voter, keyID, snap)
 	assert.NoError(t, err)
 
 	sk, err := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
@@ -130,10 +129,10 @@ func prepareBroadcaster(t *testing.T, ctx sdk.Context, cdc *codec.LegacyAmino, v
 	return broadcaster
 }
 
-func newValidator(address sdk.ValAddress, power int64) *snapMock.ValidatorMock {
-	return &snapMock.ValidatorMock{
+func newValidator(address sdk.ValAddress, power int64) snapshot.Validator {
+	return snapshot.NewValidator(&snapMock.SDKValidatorMock{
 		GetOperatorFunc:       func() sdk.ValAddress { return address },
 		GetConsensusPowerFunc: func() int64 { return power },
-		GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return address.Bytes(), nil },
-	}
+		GetConsAddrFunc:       func() (sdk.ConsAddress, , error) { return address.Bytes(), nil },
+	}, sdk.NewInt(power))
 }

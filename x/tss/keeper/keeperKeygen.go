@@ -17,7 +17,7 @@ import (
 )
 
 // StartKeygen starts a keygen protocol with the specified parameters
-func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID string, threshold int, snapshot snapshot.Snapshot) error {
+func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID string, snapshot snapshot.Snapshot) error {
 	if _, found := k.getKeygenStart(ctx, keyID); found {
 		return fmt.Errorf("keyID %s is already in use", keyID)
 	}
@@ -217,5 +217,13 @@ func (k Keeper) DoesValidatorParticipateInKeygen(ctx sdk.Context, keyID string, 
 func (k Keeper) GetMinKeygenThreshold(ctx sdk.Context) utils.Threshold {
 	var threshold utils.Threshold
 	k.params.Get(ctx, types.KeyMinKeygenThreshold, &threshold)
+	return threshold
+}
+
+// GetMinBondFractionPerShare returns the % of stake validators have to bond per key share
+func (k Keeper) GetMinBondFractionPerShare(ctx sdk.Context) utils.Threshold {
+	var threshold utils.Threshold
+	k.params.Get(ctx, types.KeyMinBondFractionPerShare, &threshold)
+
 	return threshold
 }

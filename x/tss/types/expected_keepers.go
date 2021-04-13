@@ -22,7 +22,7 @@ type Broadcaster interface {
 type Snapshotter interface {
 	GetLatestSnapshot(ctx sdk.Context) (snapshot.Snapshot, bool)
 	GetSnapshot(ctx sdk.Context, counter int64) (snapshot.Snapshot, bool)
-	TakeSnapshot(ctx sdk.Context, subsetSize int64) error
+	TakeSnapshot(ctx sdk.Context, subsetSize int64) (sdk.Int, sdk.Int, error)
 }
 
 // Nexus provides access to the nexus functionality
