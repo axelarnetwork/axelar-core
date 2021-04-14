@@ -59,46 +59,49 @@ func NewBroadcaster(signer types.Sign, client types.Client, conf broadcastTypes.
 	return broadcaster, nil
 }
 
-// Broadcast sends the passed messages to the network. This function in thread-safe.
+// Broadcast sends the passed messages to the network. This function is thread-safe.
 func (b *Broadcaster) Broadcast(msgs ...sdk.Msg) error {
 	errChan := make(chan error, 1)
 	// push the "intent to run broadcast" into a channel so it can be executed sequentially,
 	// even if the public Broadcast function is called concurrently
-	b.broadcasts <- func() { errChan <- b.broadcast(msgs) }
+	b.broadcasts <- func() {
+		_, err := b.broadcast(msgs)
+		errChan <- err
+	}
 	// block until the broadcast call has actually been run
 	return <-errChan
 }
 
-func (b *Broadcaster) broadcast(msgs []sdk.Msg) error {
+func (b *Broadcaster) broadcast(msgs []sdk.Msg) (*coretypes.ResultBroadcastTx, error) {
 	if len(msgs) == 0 {
-		return fmt.Errorf("call broadcast with at least one message")
+		return nil, fmt.Errorf("call broadcast with at least one message")
 	}
 
 	// By convention the first signer of a tx pays the fees
 	if len(msgs[0].GetSigners()) == 0 {
-		return fmt.Errorf("messages must have at least one signer")
-	}
-
-	accNo, seqNo, err := b.updateAccountNumberSequence(msgs[0].GetSigners()[0])
-	if err != nil {
-		return err
+		return nil, fmt.Errorf("messages must have at least one signer")
 	}
 
 	stdSignMsg := auth.StdSignMsg{
-		ChainID:       b.chainID,
-		AccountNumber: accNo,
-		Sequence:      seqNo,
-		Msgs:          msgs,
-		Fee:           auth.NewStdFee(b.gas, nil),
+		ChainID: b.chainID,
+		Msgs:    msgs,
+		Fee:     auth.NewStdFee(b.gas, nil),
 	}
 
 	return b.signAndBroadcast(stdSignMsg)
 }
 
-func (b *Broadcaster) signAndBroadcast(msg auth.StdSignMsg) error {
+func (b *Broadcaster) signAndBroadcast(msg auth.StdSignMsg) (*coretypes.ResultBroadcastTx, error) {
+	accNo, seqNo, err := b.updateAccountNumberSequence(msg.Msgs[0].GetSigners()[0])
+	if err != nil {
+		return nil, err
+	}
+	msg.AccountNumber = accNo
+	msg.Sequence = seqNo
+
 	tx, err := sign(b.signer, msg)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	b.logger.Debug(fmt.Sprintf("broadcasting %d messages from address: %.20s, acc no.: %d, seq no.: %d, chainId: %s",
@@ -106,46 +109,51 @@ func (b *Broadcaster) signAndBroadcast(msg auth.StdSignMsg) error {
 
 	res, err := b.client.BroadcastTxSync(tx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if res.Code != abci.CodeTypeOK {
-		return fmt.Errorf(res.Log)
+		return nil, fmt.Errorf(res.Log)
 	}
 
 	// broadcast has been successful, so increment sequence number
 	b.seqNo += 1
-	return nil
+	return res, nil
 }
 
-// BroadcastTx signs a pre-built tx and submits it to the network. This function in thread-safe.
-func (b *Broadcaster) BroadcastTx(tx auth.StdTx) error {
+// BroadcastTx signs a pre-built tx and submits it to the network. This function is thread-safe.
+func (b *Broadcaster) BroadcastTx(tx auth.StdTx) (*coretypes.ResultBroadcastTx, error) {
 	errChan := make(chan error, 1)
-	b.broadcasts <- func() { errChan <- b.broadcastTx(tx) }
-	return <-errChan
+	resChan := make(chan *coretypes.ResultBroadcastTx, 1)
+
+	// push the "intent to run broadcast" into a channel so it can be executed sequentially,
+	// even if the public Broadcast function is called concurrently
+	b.broadcasts <- func() {
+		result, err := b.broadcastTx(tx)
+		errChan <- err
+		resChan <- result
+	}
+	// block until the broadcast call has actually been run
+	err := <-errChan
+	res := <-resChan
+
+	return res, err
 }
 
 // broadcastTx signs a standard tx object and broadcasts it to the network
-func (b *Broadcaster) broadcastTx(stdTx auth.StdTx) error {
+func (b *Broadcaster) broadcastTx(stdTx auth.StdTx) (*coretypes.ResultBroadcastTx, error) {
 	if len(stdTx.Msgs) == 0 {
-		return fmt.Errorf("call broadcast with at least one message")
+		return nil, fmt.Errorf("call broadcast with at least one message")
 	}
 
 	// By convention the first signer of a tx pays the fees
 	if len(stdTx.Msgs[0].GetSigners()) == 0 {
-		return fmt.Errorf("messages must have at least one signer")
-	}
-
-	accNo, seqNo, err := b.updateAccountNumberSequence(stdTx.Msgs[0].GetSigners()[0])
-	if err != nil {
-		return err
+		return nil, fmt.Errorf("messages must have at least one signer")
 	}
 
 	stdSignMsg := auth.StdSignMsg{
-		ChainID:       b.chainID,
-		AccountNumber: accNo,
-		Sequence:      seqNo,
-		Msgs:          stdTx.Msgs,
-		Fee:           stdTx.Fee,
+		ChainID: b.chainID,
+		Msgs:    stdTx.Msgs,
+		Fee:     stdTx.Fee,
 	}
 
 	return b.signAndBroadcast(stdSignMsg)
