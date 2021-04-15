@@ -408,15 +408,15 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		secondaryKey := tss.Key{ID: rand.StrBetween(5, 20), Value: secondaryPrivateKey.PublicKey, Role: tss.SecondaryKey}
 
 		btcKeeper = &mock.BTCKeeperMock{
-			GetUnsignedTxFunc:             func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
-			GetSignedTxFunc:               func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
-			GetNetworkFunc:                func(sdk.Context) types.Network { return types.Mainnet },
-			LoggerFunc:                    func(sdk.Context) log.Logger { return log.TestingLogger() },
-			GetConfirmedOutPointInfosFunc: func(sdk.Context) []types.OutPointInfo { return deposits },
-			DeleteOutpointInfoFunc:        func(sdk.Context, wire.OutPoint) {},
-			SetOutpointInfoFunc:           func(sdk.Context, types.OutPointInfo, types.OutPointState) {},
-			DoesMasterKeyUtxoExistFunc:    func(sdk.Context) bool { return false },
-			SetMasterKeyUtxoExistsFunc:    func(sdk.Context) {},
+			GetUnsignedTxFunc:              func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
+			GetSignedTxFunc:                func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
+			GetNetworkFunc:                 func(sdk.Context) types.Network { return types.Mainnet },
+			LoggerFunc:                     func(sdk.Context) log.Logger { return log.TestingLogger() },
+			GetConfirmedOutPointInfosFunc:  func(sdk.Context) []types.OutPointInfo { return deposits },
+			DeleteOutpointInfoFunc:         func(sdk.Context, wire.OutPoint) {},
+			SetOutpointInfoFunc:            func(sdk.Context, types.OutPointInfo, types.OutPointState) {},
+			DoesMasterKeyOutpointExistFunc: func(sdk.Context) bool { return false },
+			SetMasterKeyOutpointExistsFunc: func(sdk.Context) {},
 			GetAddressFunc: func(_ sdk.Context, encodedAddress string) (types.AddressInfo, bool) {
 				sk, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
 				return types.AddressInfo{
@@ -487,7 +487,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(deposits))
 		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), len(deposits))
-		assert.Len(t, btcKeeper.SetMasterKeyUtxoExistsCalls(), 1)
+		assert.Len(t, btcKeeper.SetMasterKeyOutpointExistsCalls(), 1)
 		mapi(len(btcKeeper.SetOutpointInfoCalls()), func(i int) { assert.Equal(t, types.SPENT, btcKeeper.SetOutpointInfoCalls()[i].State) })
 		assert.Len(t, signer.StartSignCalls(), len(deposits))
 
@@ -505,7 +505,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(deposits))
 		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), len(deposits))
-		assert.Len(t, btcKeeper.SetMasterKeyUtxoExistsCalls(), 1)
+		assert.Len(t, btcKeeper.SetMasterKeyOutpointExistsCalls(), 1)
 		mapi(len(btcKeeper.SetOutpointInfoCalls()), func(i int) { assert.Equal(t, types.SPENT, btcKeeper.SetOutpointInfoCalls()[i].State) })
 		assert.Len(t, signer.StartSignCalls(), len(deposits))
 
@@ -528,7 +528,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers)-wrongAddressCount)
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(deposits))
 		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), len(deposits))
-		assert.Len(t, btcKeeper.SetMasterKeyUtxoExistsCalls(), 1)
+		assert.Len(t, btcKeeper.SetMasterKeyOutpointExistsCalls(), 1)
 		mapi(len(btcKeeper.SetOutpointInfoCalls()), func(i int) { assert.Equal(t, types.SPENT, btcKeeper.SetOutpointInfoCalls()[i].State) })
 		assert.Len(t, signer.StartSignCalls(), len(deposits))
 	}).Repeat(repeatCount))

@@ -256,12 +256,12 @@ func (k Keeper) DeleteSignedTx(ctx sdk.Context) {
 	ctx.KVStore(k.storeKey).Delete([]byte(signedTxKey))
 }
 
-// SetMasterKeyUtxoExists sets existence for UTXO controlled by the master key
-func (k Keeper) SetMasterKeyUtxoExists(ctx sdk.Context) {
+// SetMasterKeyOutpointExists sets existence for UTXO controlled by the master key
+func (k Keeper) SetMasterKeyOutpointExists(ctx sdk.Context) {
 	ctx.KVStore(k.storeKey).Set([]byte(masterKeyUtxoExistsKey), []byte{})
 }
 
-// DoesMasterKeyUtxoExist returns true if there is any UTXO controlled by the master key; otherwise, false
-func (k Keeper) DoesMasterKeyUtxoExist(ctx sdk.Context) bool {
+// DoesMasterKeyOutpointExist returns true if there is any UTXO controlled by the master key; otherwise, false
+func (k Keeper) DoesMasterKeyOutpointExist(ctx sdk.Context) bool {
 	return ctx.KVStore(k.storeKey).Has([]byte(masterKeyUtxoExistsKey))
 }

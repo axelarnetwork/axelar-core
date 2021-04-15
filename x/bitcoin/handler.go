@@ -247,7 +247,7 @@ func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer ty
 			return nil, err
 		}
 		outputs = append(outputs, changeOutput)
-		k.SetMasterKeyUtxoExists(ctx)
+		k.SetMasterKeyOutpointExists(ctx)
 	default:
 		return nil, fmt.Errorf("sign value of change for consolidation transaction unexpected: %d", change.Sign())
 	}
@@ -292,7 +292,7 @@ func prepareInputs(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) ([]t
 	var prevOuts []types.OutPointToSign
 	totalDeposits := sdk.ZeroInt()
 
-	masterKeyUtxoExists := k.DoesMasterKeyUtxoExist(ctx)
+	masterKeyUtxoExists := k.DoesMasterKeyOutpointExist(ctx)
 	masterKeyUtxoFound := false
 
 	for _, info := range k.GetConfirmedOutPointInfos(ctx) {
