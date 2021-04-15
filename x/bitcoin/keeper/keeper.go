@@ -92,15 +92,18 @@ func (k Keeper) Codec() *codec.Codec {
 	return k.cdc
 }
 
+// addrHelper represents a intermediate struct which helps with serilization.
+// btcutil.Address (and it's implementations) can't be serialized with amino,
+// so we use a helper struct to get around that problem
+type addrHelper struct {
+	Addr   string
+	Script types.RedeemScript
+	Key    tss.Key
+}
+
 // SetAddress stores the given address information
 func (k Keeper) SetAddress(ctx sdk.Context, address types.AddressInfo) {
-	// btcutil.Address (and it's implementations) can't be serialized with amino,
-	// so we use a helper struct to get around that problem
-	a := struct {
-		Addr   string
-		Script types.RedeemScript
-		Key    tss.Key
-	}{
+	a := addrHelper{
 		Addr:   address.EncodeAddress(),
 		Script: address.RedeemScript,
 		Key:    address.Key,
@@ -117,11 +120,7 @@ func (k Keeper) GetAddress(ctx sdk.Context, encodedAddress string) (types.Addres
 
 	// btcutil.Address (and it's implementations) can't be serialized with amino,
 	// so we use a helper struct to get around that problem
-	var a struct {
-		Addr   string
-		Script types.RedeemScript
-		Key    tss.Key
-	}
+	var a addrHelper
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &a)
 	addr, _ := btcutil.DecodeAddress(a.Addr, k.GetNetwork(ctx).Params())
 	return types.AddressInfo{
@@ -129,6 +128,27 @@ func (k Keeper) GetAddress(ctx sdk.Context, encodedAddress string) (types.Addres
 		RedeemScript: a.Script,
 		Key:          a.Key,
 	}, true
+}
+
+// ListAddresses lists all the addresses stored in the keeper
+func (k Keeper) ListAddresses(ctx sdk.Context) ([]types.AddressInfo, bool) {
+	var addresses []types.AddressInfo
+	store := ctx.KVStore(k.storeKey)
+	iterator := sdk.KVStoreReversePrefixIterator(store, []byte(addrPrefix))
+	defer iterator.Close()
+
+	var a addrHelper
+	for ; iterator.Valid(); iterator.Next() {
+		k.cdc.MustUnmarshalBinaryLengthPrefixed(iterator.Value(), &a)
+		addrInfo, _ := btcutil.DecodeAddress(a.Addr, k.GetNetwork(ctx).Params())
+		addresses = append(addresses, types.AddressInfo{
+			Address:      addrInfo,
+			RedeemScript: a.Script,
+			Key:          a.Key,
+		})
+	}
+
+	return addresses, true
 }
 
 // DeleteOutpointInfo deletes a the given outpoint if known

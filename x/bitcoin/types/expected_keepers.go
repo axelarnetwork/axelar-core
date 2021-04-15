@@ -43,6 +43,7 @@ type BTCKeeper interface {
 
 	SetAddress(ctx sdk.Context, address AddressInfo)
 	GetAddress(ctx sdk.Context, encodedAddress string) (AddressInfo, bool)
+	ListAddresses(ctx sdk.Context) ([]AddressInfo, bool)
 }
 
 // Voter is the interface that provides voting functionality

@@ -180,10 +180,15 @@ type Output struct {
 	Recipient btcutil.Address
 }
 
-// DepositQueryParams describe the parameters used to query for a Bitcoin deposit address
+// DepositQueryParams describes the parameters used to query for a Bitcoin deposit address
 type DepositQueryParams struct {
 	Address string
 	Chain   string
+}
+
+// DepositListParams descrbes the parameters used for list all Bitcoin deposit addresses
+type DepositListParams struct {
+	Chain string
 }
 
 // RedeemScript represents the script that is used to redeem a transaction that spent to the address derived from the script

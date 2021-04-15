@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"bytes"
+	"encoding/gob"
 	"encoding/hex"
 	"fmt"
 
@@ -19,8 +20,9 @@ import (
 
 // Query paths
 const (
-	QueryDepositAddress = "depositAddr"
-	GetTx               = "getTx"
+	QueryDepositAddress   = "depositAddr"
+	ListDepositeAddresses = "depositAddrList"
+	GetTx                 = "getTx"
 )
 
 // NewQuerier returns a new querier for the Bitcoin module
@@ -65,6 +67,29 @@ func queryDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n t
 	addr := types.NewLinkedAddress(pk, k.GetNetwork(ctx), recipient)
 
 	return []byte(addr.EncodeAddress()), nil
+}
+
+func listDepositeAddresses(ctx sdk.Context, k types.BTCKeeper, n types.Nexus, data []byte) ([]byte, error) {
+	var params types.DepositListParams
+	if err := types.ModuleCdc.UnmarshalJSON(data, &params); err != nil {
+		return nil, fmt.Errorf("could not parse the params")
+	}
+
+	_, ok := n.GetChain(ctx, params.Chain)
+	if !ok {
+		return nil, fmt.Errorf("recipient chain not found")
+	}
+
+	addresses, _ := k.ListAddresses(ctx)
+	var res []string
+	for k, v := range addresses {
+		res = append(res, v.EncodeAddress())
+	}
+
+	buf := &bytes.Buffer{}
+	gob.NewEncoder(buf).Encode(res)
+
+	return buf.Bytes(), nil
 }
 
 func getRawConsolidationTx(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {
