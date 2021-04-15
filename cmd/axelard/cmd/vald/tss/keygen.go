@@ -122,8 +122,6 @@ func (mgr *Mgr) startKeygen(keyID string, threshold int32, myIndex int32, partic
 		shareCountsUin32 = append(shareCountsUin32, uint32(participantShareCount))
 	}
 
-	fmt.Printf("shareCountsUin32: %v", shareCountsUin32)
-
 	keygenInit := &tofnd.MessageIn_KeygenInit{
 		KeygenInit: &tofnd.KeygenInit{
 			NewKeyUid:        keyID,

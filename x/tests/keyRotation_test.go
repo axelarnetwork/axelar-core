@@ -76,7 +76,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	for _, c := range chains {
 		masterKeyID := randStrings.Next()
-		masterKeygenResult := <-chain.Submit(tssTypes.NewMsgKeygenStart(randomSender(), masterKeyID, 0))
+		masterKeygenResult := <-chain.Submit(tssTypes.NewMsgKeygenStart(randomSender(), masterKeyID, 0, tss.WeightedByStake))
 		assert.NoError(t, masterKeygenResult.Error)
 
 		// wait for voting to be done
@@ -92,7 +92,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 		if c == btc.Bitcoin.Name {
 			secondaryKeyID := randStrings.Next()
-			secondaryKeygenResult := <-chain.Submit(tssTypes.NewMsgKeygenStart(randomSender(), secondaryKeyID, 0))
+			secondaryKeygenResult := <-chain.Submit(tssTypes.NewMsgKeygenStart(randomSender(), secondaryKeyID, 0, tss.OnePerValidator))
 			assert.NoError(t, secondaryKeygenResult.Error)
 
 			// wait for voting to be done
@@ -237,7 +237,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// start new keygen
 	masterKeyID := randStrings.Next()
-	keygenResult := <-chain.Submit(tssTypes.NewMsgKeygenStart(randomSender(), masterKeyID, 0))
+	keygenResult := <-chain.Submit(tssTypes.NewMsgKeygenStart(randomSender(), masterKeyID, 0, tss.WeightedByStake))
 	assert.NoError(t, keygenResult.Error)
 
 	// wait for voting to be done

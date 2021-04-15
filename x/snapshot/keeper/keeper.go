@@ -12,6 +12,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	staking "github.com/cosmos/cosmos-sdk/x/staking/exported"
 )
 
@@ -62,12 +63,12 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 }
 
 // TakeSnapshot attempts to create a new snapshot; if subsetSize equals 0, snapshot will be created with all validators
-func (k Keeper) TakeSnapshot(ctx sdk.Context, subsetSize int64) (sdk.Int, sdk.Int, error) {
+func (k Keeper) TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error) {
 	s, ok := k.GetLatestSnapshot(ctx)
 
 	if !ok {
 		k.setLatestCounter(ctx, 0)
-		return k.executeSnapshot(ctx, 0, subsetSize)
+		return k.executeSnapshot(ctx, 0, subsetSize, keyShareDistributionPolicy)
 	}
 
 	lockingPeriod := k.getLockingPeriod(ctx)
@@ -77,7 +78,7 @@ func (k Keeper) TakeSnapshot(ctx sdk.Context, subsetSize int64) (sdk.Int, sdk.In
 	}
 
 	k.setLatestCounter(ctx, s.Counter+1)
-	return k.executeSnapshot(ctx, s.Counter+1, subsetSize)
+	return k.executeSnapshot(ctx, s.Counter+1, subsetSize, keyShareDistributionPolicy)
 }
 
 func (k Keeper) getLockingPeriod(ctx sdk.Context) time.Duration {
@@ -124,7 +125,7 @@ func (k Keeper) GetLatestCounter(ctx sdk.Context) int64 {
 	return i
 }
 
-func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64) (sdk.Int, sdk.Int, error) {
+func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error) {
 	var validators []staking.ValidatorI
 	snapshotConsensusPower, totalConsensusPower := sdk.ZeroInt(), sdk.ZeroInt()
 
@@ -185,16 +186,25 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64
 	bondPerShare := participants[len(participants)-1].GetConsensusPower()
 	totalPower := sdk.ZeroInt()
 	for i := range participants {
-		participants[i].Power = sdk.NewInt(participants[i].GetConsensusPower()).QuoRaw(bondPerShare)
+		switch keyShareDistributionPolicy {
+		case tss.WeightedByStake:
+			participants[i].Power = sdk.NewInt(participants[i].GetConsensusPower()).QuoRaw(bondPerShare)
+		case tss.OnePerValidator:
+			participants[i].Power = sdk.OneInt()
+		default:
+			return sdk.ZeroInt(), sdk.ZeroInt(), fmt.Errorf("invalid key share distribution policy %d", keyShareDistributionPolicy)
+		}
+
 		totalPower = totalPower.Add(participants[i].Power)
 	}
 
 	snapshot := exported.Snapshot{
-		Validators: participants,
-		Timestamp:  ctx.BlockTime(),
-		Height:     ctx.BlockHeight(),
-		TotalPower: totalPower,
-		Counter:    counter,
+		Validators:                 participants,
+		Timestamp:                  ctx.BlockTime(),
+		Height:                     ctx.BlockHeight(),
+		TotalPower:                 totalPower,
+		Counter:                    counter,
+		KeyShareDistributionPolicy: keyShareDistributionPolicy,
 	}
 
 	ctx.KVStore(k.storeKey).Set(counterKey(counter), k.cdc.MustMarshalBinaryLengthPrefixed(snapshot))

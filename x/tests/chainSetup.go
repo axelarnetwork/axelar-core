@@ -28,6 +28,7 @@ import (
 
 	eth2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/eth"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/ethereum"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
@@ -182,6 +183,9 @@ func createMocks(validators []stakingtypes.Validator) testMocks {
 	tssK := &snapshotExportedMock.TssMock{
 		GetValidatorDeregisteredBlockHeightFunc: func(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
 			return 0
+		},
+		GetMinBondFractionPerShareFunc: func(sdk.Context) utils.Threshold {
+			return utils.Threshold{Numerator: 1, Denominator: 200}
 		},
 	}
 

@@ -40,9 +40,9 @@ func DefaultParams() Params {
 		MinKeygenThreshold:  utils.Threshold{Numerator: 9, Denominator: 10},
 		CorruptionThreshold: utils.Threshold{Numerator: 2, Denominator: 3},
 		KeyRequirements: []exported.KeyRequirement{
-			{ChainName: bitcoin.Bitcoin.Name, KeyRole: exported.MasterKey, MinValidatorSubsetSize: 5},
-			{ChainName: bitcoin.Bitcoin.Name, KeyRole: exported.SecondaryKey, MinValidatorSubsetSize: 3},
-			{ChainName: ethereum.Ethereum.Name, KeyRole: exported.MasterKey, MinValidatorSubsetSize: 5},
+			{ChainName: bitcoin.Bitcoin.Name, KeyRole: exported.MasterKey, MinValidatorSubsetSize: 5, KeyShareDistributionPolicy: exported.WeightedByStake},
+			{ChainName: bitcoin.Bitcoin.Name, KeyRole: exported.SecondaryKey, MinValidatorSubsetSize: 3, KeyShareDistributionPolicy: exported.OnePerValidator},
+			{ChainName: ethereum.Ethereum.Name, KeyRole: exported.MasterKey, MinValidatorSubsetSize: 5, KeyShareDistributionPolicy: exported.WeightedByStake},
 		},
 		MinBondFractionPerShare: utils.Threshold{Numerator: 1, Denominator: 200},
 	}
@@ -169,7 +169,7 @@ func validateMinBondFractionPerShare(MinBondFractionPerShare interface{}) error 
 	}
 
 	if val.Numerator >= val.Denominator {
-		return fmt.Errorf("threshold must be <1 for MinBondFractionPerShare")
+		return fmt.Errorf("threshold must be <=1 for MinBondFractionPerShare")
 	}
 
 	return nil

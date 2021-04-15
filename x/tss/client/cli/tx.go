@@ -45,6 +45,11 @@ func getCmdKeygenStart() *cobra.Command {
 	}
 
 	subsetSize := cmd.Flags().Int64("subset-size", 0, "number of top validators to participate in the key generation")
+	keyShareDistributionPolicy := cmd.Flags().String(
+		"key-share-distribution-policy",
+		exported.WeightedByStake.String(),
+		fmt.Sprintf("policy for distributing key shares; available options: %s, %s", exported.WeightedByStake.String(), exported.OnePerValidator.String()),
+	)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		clientCtx, err := client.GetClientTxContext(cmd)
@@ -52,7 +57,12 @@ func getCmdKeygenStart() *cobra.Command {
 			return err
 		}
 
-		msg := types.NewMsgKeygenStart(clientCtx.FromAddress, *newKeyID, *subsetSize)
+		keyShareDistributionPolicy, err := exported.KeyShareDistributionPolicyFromStr(*keyShareDistributionPolicy)
+		if err != nil {
+			return err
+		}
+
+		msg := types.NewMsgKeygenStart(clientCtx.FromAddress, *newKeyID, *subsetSize, keyShareDistributionPolicy)
 		if err := msg.ValidateBasic(); err != nil {
 			return err
 		}

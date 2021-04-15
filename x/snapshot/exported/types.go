@@ -6,6 +6,7 @@ import (
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/axelarnetwork/axelar-core/utils"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 )
@@ -76,11 +77,12 @@ func IsValidatorTssRegistered(ctx sdk.Context, tss Tss, validator SDKValidator) 
 
 // Snapshot is a snapshot of the validator set at a given block height.
 type Snapshot struct {
-	Validators []Validator `json:"validators"`
-	Timestamp  time.Time   `json:"timestamp"`
-	Height     int64       `json:"height"`
-	TotalPower sdk.Int     `json:"totalpower"`
-	Counter    int64       `json:"counter"`
+	Validators                 []Validator                    `json:"validators"`
+	Timestamp                  time.Time                      `json:"timestamp"`
+	Height                     int64                          `json:"height"`
+	TotalPower                 sdk.Int                        `json:"totalpower"`
+	Counter                    int64                          `json:"counter"`
+	KeyShareDistributionPolicy tss.KeyShareDistributionPolicy `json:"keysharedistributionpolicy"`
 }
 
 // GetValidator returns the validator for a given address, if it is part of the snapshot
@@ -109,5 +111,5 @@ type Snapshotter interface {
 	GetLatestSnapshot(ctx sdk.Context) (Snapshot, bool)
 	GetLatestCounter(ctx sdk.Context) int64
 	GetSnapshot(ctx sdk.Context, counter int64) (Snapshot, bool)
-	TakeSnapshot(ctx sdk.Context, subsetSize int64) (sdk.Int, sdk.Int, error)
+	TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error)
 }

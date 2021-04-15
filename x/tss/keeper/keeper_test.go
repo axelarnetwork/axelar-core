@@ -133,6 +133,6 @@ func newValidator(address sdk.ValAddress, power int64) snapshot.Validator {
 	return snapshot.NewValidator(&snapMock.SDKValidatorMock{
 		GetOperatorFunc:       func() sdk.ValAddress { return address },
 		GetConsensusPowerFunc: func() int64 { return power },
-		GetConsAddrFunc:       func() (sdk.ConsAddress, , error) { return address.Bytes(), nil },
+		GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return address.Bytes(), nil },
 	}, sdk.NewInt(power))
 }

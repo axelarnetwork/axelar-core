@@ -180,6 +180,16 @@ func handleMsgAssignNextKey(ctx sdk.Context, k keeper.Keeper, s types.Snapshotte
 		)
 	}
 
+	if snapshot.KeyShareDistributionPolicy != keyRequirement.KeyShareDistributionPolicy {
+		return nil, fmt.Errorf(
+			"expected %s's %s key to have tss shares distributed with policy %s, actual %s",
+			chain.Name,
+			msg.KeyRole.String(),
+			keyRequirement.KeyShareDistributionPolicy.String(),
+			snapshot.KeyShareDistributionPolicy.String(),
+		)
+	}
+
 	err := k.AssignNextKey(ctx, chain, msg.KeyRole, msg.KeyID)
 	if err != nil {
 		return nil, err
@@ -221,7 +231,7 @@ func handleMsgKeygenTraffic(ctx sdk.Context, k keeper.Keeper, broadcaster types.
 
 func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, staker types.StakingKeeper, v types.Voter, msg *types.MsgKeygenStart) (*sdk.Result, error) {
 	// record the snapshot of active validators that we'll use for the key
-	snapshotConsensusPower, totalConsensusPower, err := s.TakeSnapshot(ctx, msg.SubsetSize)
+	snapshotConsensusPower, totalConsensusPower, err := s.TakeSnapshot(ctx, msg.SubsetSize, msg.KeyShareDistributionPolicy)
 	if err != nil {
 		return nil, err
 	}
@@ -269,7 +279,7 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 		),
 	)
 
-	k.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d]", msg.NewKeyID, threshold))
+	k.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d] key_share_distribution_policy [%s]", msg.NewKeyID, threshold, msg.KeyShareDistributionPolicy.String()))
 
 	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }

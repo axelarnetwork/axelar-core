@@ -17,6 +17,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 
@@ -27,7 +28,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
-
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	sdkExported "github.com/cosmos/cosmos-sdk/x/staking/exported"
 	staking "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
@@ -94,12 +96,15 @@ func TestTakeSnapshot_WithSubsetSize(t *testing.T) {
 		GetValidatorDeregisteredBlockHeightFunc: func(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
 			return 0
 		},
+		GetMinBondFractionPerShareFunc: func(sdk.Context) utils.Threshold {
+			return utils.Threshold{Numerator: 1, Denominator: 200}
+		},
 	}
 
 	keeper := NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("staking"), snapSubspace, broadcasterMock, staker, slashingKeeper, tssMock)
 	keeper.SetParams(ctx, types.DefaultParams())
 
-	_, _, err := keeper.TakeSnapshot(ctx, subsetSize)
+	_, _, err := keeper.TakeSnapshot(ctx, subsetSize, tss.WeightedByStake)
 	assert.NoError(t, err)
 
 	actual, ok := keeper.GetSnapshot(ctx, 0)
@@ -149,6 +154,9 @@ func TestSnapshots(t *testing.T) {
 				GetValidatorDeregisteredBlockHeightFunc: func(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
 					return 0
 				},
+				GetMinBondFractionPerShareFunc: func(sdk.Context) utils.Threshold {
+					return utils.Threshold{Numerator: 1, Denominator: 200}
+				},
 			}
 
 			keeper := NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("staking"), snapSubspace, broadcasterMock, staker, slashingKeeper, tssMock)
@@ -163,7 +171,7 @@ func TestSnapshots(t *testing.T) {
 
 			assert.False(t, ok)
 
-			_, _, err := keeper.TakeSnapshot(ctx, 0)
+			_, _, err := keeper.TakeSnapshot(ctx, 0, tss.WeightedByStake)
 
 			assert.NoError(t, err)
 
@@ -176,13 +184,13 @@ func TestSnapshots(t *testing.T) {
 				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetOperator())
 			}
 
-			_, _, err = keeper.TakeSnapshot(ctx, 0)
+			_, _, err = keeper.TakeSnapshot(ctx, 0, tss.WeightedByStake)
 
 			assert.Error(t, err)
 
 			ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.DefaultParams().LockingPeriod + 100))
 
-			_, _, err = keeper.TakeSnapshot(ctx, 0)
+			_, _, err = keeper.TakeSnapshot(ctx, 0, tss.WeightedByStake)
 
 			assert.NoError(t, err)
 
