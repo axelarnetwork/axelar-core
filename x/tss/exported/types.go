@@ -89,7 +89,14 @@ func (r KeyShareDistributionPolicy) Validate() error {
 
 // String converts the KeyShareDistributionPolicy to a string
 func (r KeyShareDistributionPolicy) String() string {
-	return [...]string{"weighted-by-stake", "one-per-validator"}[r]
+	switch r {
+	case WeightedByStake:
+		return "weighted-by-stake"
+	case OnePerValidator:
+		return "one-per-validator"
+	default:
+		panic(fmt.Errorf("invalid KeyShareDistributionPolicy %d", r))
+	}
 }
 
 // KeyRequirement defines requirements for keys
