@@ -1,12 +1,11 @@
 package types
 
-type GenesisState struct {
+// DefaultGenesisState represents the default genesis state
+func DefaultGenesisState() *GenesisState {
+	return &GenesisState{}
 }
 
-func DefaultGenesisState() GenesisState {
-	return GenesisState{}
-}
-
-func ValidateGenesis(_ GenesisState) error {
+// Validate validates the genesis state
+func (g GenesisState) Validate() error {
 	return nil
 }

@@ -4,13 +4,12 @@
 package utils
 
 import (
-	"fmt"
-	"io"
-	"math"
-	math_bits "math/bits"
-
+	fmt "fmt"
 	_ "github.com/gogo/protobuf/gogoproto"
-	"github.com/gogo/protobuf/proto"
+	proto "github.com/gogo/protobuf/proto"
+	io "io"
+	math "math"
+	math_bits "math/bits"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

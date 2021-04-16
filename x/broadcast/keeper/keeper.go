@@ -6,11 +6,10 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/rpc/client"
 
@@ -30,30 +29,29 @@ type Keeper struct {
 	staker          types.Staker
 	storeKey        sdk.StoreKey
 	from            sdk.AccAddress
-	keybase         keys.Keybase
-	authKeeper      auth.AccountKeeper
-	encodeTx        sdk.TxEncoder
+	kr              keyring.Keyring
+	authKeeper      authkeeper.AccountKeeper
 	config          types.ClientConfig
 	rpc             client.ABCIClient
 	fromName        string
 	subjectiveStore sdk.KVStore
-	cdc             *codec.Codec
+	cdc             *codec.LegacyAmino
 }
 
 // NewKeeper constructs a broadcast keeper
 func NewKeeper(
-	cdc *codec.Codec,
+	cdc *codec.LegacyAmino,
 	storeKey sdk.StoreKey,
 	subjectiveStore sdk.KVStore,
-	keybase keyring.Keyring,
-	authKeeper auth.AccountKeeper,
+	kr keyring.Keyring,
+	authKeeper authkeeper.AccountKeeper,
 	stakingKeeper types.Staker,
 	client client.ABCIClient,
 	conf types.ClientConfig,
 	logger log.Logger,
 ) (Keeper, error) {
 	logger.With("module", fmt.Sprintf("x/%s", types.ModuleName)).Debug("creating broadcast keeper")
-	from, fromName, err := types.GetAccountAddress(conf.From, keybase)
+	from, fromName, err := types.GetAccountAddress(conf.From, kr)
 	if err != nil {
 		return Keeper{}, err
 	}
@@ -63,9 +61,8 @@ func NewKeeper(
 		staker:          stakingKeeper,
 		storeKey:        storeKey,
 		from:            from,
-		keybase:         keybase,
+		kr:              kr,
 		authKeeper:      authKeeper,
-		encodeTx:        utils.GetTxEncoder(cdc),
 		cdc:             cdc,
 		config:          conf,
 		rpc:             client,
@@ -138,9 +135,9 @@ func (k Keeper) getProxyCount(ctx sdk.Context) int {
 	return count
 }
 
-func (k Keeper) prepareMsgForSigning(ctx sdk.Context, msgs []sdk.Msg) (auth.StdSignMsg, error) {
+func (k Keeper) prepareMsgForSigning(ctx sdk.Context, msgs []sdk.Msg) (legacytx.StdSignMsg, error) {
 	if k.config.ChainID == "" {
-		return auth.StdSignMsg{}, sdkerrors.Wrap(types.ErrInvalidChain, "chain ID required but not specified")
+		return legacytx.StdSignMsg{}, sdkerrors.Wrap(types.ErrInvalidChain, "chain ID required but not specified")
 	}
 
 	acc := k.authKeeper.GetAccount(ctx, k.from)
@@ -149,31 +146,31 @@ func (k Keeper) prepareMsgForSigning(ctx sdk.Context, msgs []sdk.Msg) (auth.StdS
 		seqNo = acc.GetSequence()
 	}
 
-	return auth.StdSignMsg{
+	return legacytx.StdSignMsg{
 		ChainID:       k.config.ChainID,
 		AccountNumber: acc.GetAccountNumber(),
 		Sequence:      seqNo,
 		Msgs:          msgs,
-		Fee:           auth.NewStdFee(10000000, nil),
+		Fee:           legacytx.NewStdFee(10000000, nil),
 	}, nil
 }
 
-func (k Keeper) sign(msg auth.StdSignMsg) (auth.StdTx, error) {
+func (k Keeper) sign(msg legacytx.StdSignMsg) (legacytx.StdTx, error) {
 	sig, err := k.makeSignature(msg)
 	if err != nil {
-		return auth.StdTx{}, err
+		return legacytx.StdTx{}, err
 	}
 
-	return auth.NewStdTx(msg.Msgs, msg.Fee, []auth.StdSignature{sig}, msg.Memo), nil
+	return legacytx.NewStdTx(msg.Msgs, msg.Fee, []legacytx.StdSignature{sig}, msg.Memo), nil
 }
 
-func (k Keeper) makeSignature(msg auth.StdSignMsg) (auth.StdSignature, error) {
-	sigBytes, pubkey, err := k.keybase.Sign(k.fromName, k.config.KeyringPassphrase, msg.Bytes())
+func (k Keeper) makeSignature(msg legacytx.StdSignMsg) (legacytx.StdSignature, error) {
+	sigBytes, pubkey, err := k.kr.Sign(k.fromName, msg.Bytes())
 	if err != nil {
-		return auth.StdSignature{}, err
+		return legacytx.StdSignature{}, err
 	}
 
-	return auth.StdSignature{
+	return legacytx.StdSignature{
 		PubKey:    pubkey,
 		Signature: sigBytes,
 	}, nil

@@ -1,0 +1,13 @@
+syntax = "proto3";
+package broadcast.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/broadcast/types";
+
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message MsgRegisterProxy {
+  string principal_addr = 1;
+  string proxy_addr = 2;
+}

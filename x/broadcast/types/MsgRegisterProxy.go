@@ -5,18 +5,10 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// Ensure MsgTrackAddress implements sdk.Msg interface
-var _ sdk.Msg = &MsgRegisterProxy{}
-
-type MsgRegisterProxy struct {
-	Principal sdk.ValAddress
-	Proxy     sdk.AccAddress
-}
-
-func NewMsgRegisterProxy(principal sdk.ValAddress, proxy sdk.AccAddress) MsgRegisterProxy {
-	return MsgRegisterProxy{
-		Principal: principal,
-		Proxy:     proxy,
+func NewMsgRegisterProxy(principal sdk.ValAddress, proxy sdk.AccAddress) *MsgRegisterProxy {
+	return &MsgRegisterProxy{
+		PrincipalAddr: principal.String(),
+		ProxyAddr:     proxy.String(),
 	}
 }
 
@@ -29,21 +21,36 @@ func (msg MsgRegisterProxy) Type() string {
 }
 
 func (msg MsgRegisterProxy) ValidateBasic() error {
-	if msg.Principal.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing validator principal")
+	if _, err := sdk.ValAddressFromBech32(msg.PrincipalAddr); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "malformed principal address")
 	}
-	if msg.Proxy.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing broadcast proxy")
+	if _, err := sdk.AccAddressFromBech32(msg.ProxyAddr); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "malformed proxy address")
 	}
 
 	return nil
 }
 
+func (msg MsgRegisterProxy) GetPrincipal() sdk.ValAddress {
+	addr, err := sdk.ValAddressFromBech32(msg.PrincipalAddr)
+	if err != nil {
+		panic(err)
+	}
+	return addr
+}
+
+func (msg MsgRegisterProxy) GetProxy() sdk.AccAddress {
+	addr, err := sdk.AccAddressFromBech32(msg.ProxyAddr)
+	if err != nil {
+		panic(err)
+	}
+	return addr
+}
+
 func (msg MsgRegisterProxy) GetSignBytes() []byte {
-	bz := ModuleCdc.MustMarshalJSON(msg)
-	return sdk.MustSortJSON(bz)
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
 }
 
 func (msg MsgRegisterProxy) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{sdk.AccAddress(msg.Principal)}
+	return []sdk.AccAddress{msg.GetProxy()}
 }
