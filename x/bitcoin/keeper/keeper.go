@@ -21,8 +21,9 @@ const (
 	spentOutPointPrefix     = "spent_"
 	addrPrefix              = "addr_"
 
-	unsignedTxKey = "unsignedTx"
-	signedTxKey   = "signedTx"
+	unsignedTxKey          = "unsignedTx"
+	signedTxKey            = "signedTx"
+	masterKeyUtxoExistsKey = "master_key_utxo_exists"
 )
 
 var _ types.BTCKeeper = Keeper{}
@@ -253,4 +254,14 @@ func (k Keeper) GetSignedTx(ctx sdk.Context) (*wire.MsgTx, bool) {
 // DeleteSignedTx deletes the signed transaction for outpoint consolidation
 func (k Keeper) DeleteSignedTx(ctx sdk.Context) {
 	ctx.KVStore(k.storeKey).Delete([]byte(signedTxKey))
+}
+
+// SetMasterKeyOutpointExists sets existence for UTXO controlled by the master key
+func (k Keeper) SetMasterKeyOutpointExists(ctx sdk.Context) {
+	ctx.KVStore(k.storeKey).Set([]byte(masterKeyUtxoExistsKey), []byte{})
+}
+
+// DoesMasterKeyOutpointExist returns true if there is any UTXO controlled by the master key; otherwise, false
+func (k Keeper) DoesMasterKeyOutpointExist(ctx sdk.Context) bool {
+	return ctx.KVStore(k.storeKey).Has([]byte(masterKeyUtxoExistsKey))
 }

@@ -17,6 +17,7 @@ type Signature struct {
 type Key struct {
 	ID    string
 	Value ecdsa.PublicKey
+	Role  KeyRole
 }
 
 // KeyRole is an enum for the role of the key
@@ -25,6 +26,7 @@ type KeyRole int
 const (
 	MasterKey KeyRole = iota
 	SecondaryKey
+	Unknown
 )
 
 // GetKeyRoles returns an array of all types of key role

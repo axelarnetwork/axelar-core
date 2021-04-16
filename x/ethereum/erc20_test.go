@@ -197,6 +197,7 @@ func TestDeploy(t *testing.T) {
 		return tss.Key{
 			ID:    rand2.StrBetween(5, 20),
 			Value: privateKey.PublicKey,
+			Role:  tss.MasterKey,
 		}, true
 	}}
 

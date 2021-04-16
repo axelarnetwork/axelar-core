@@ -43,6 +43,9 @@ type BTCKeeper interface {
 
 	SetAddress(ctx sdk.Context, address AddressInfo)
 	GetAddress(ctx sdk.Context, encodedAddress string) (AddressInfo, bool)
+
+	SetMasterKeyOutpointExists(ctx sdk.Context)
+	DoesMasterKeyOutpointExist(ctx sdk.Context) bool
 }
 
 // Voter is the interface that provides voting functionality
@@ -68,6 +71,7 @@ type Signer interface {
 	GetCurrentKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool)
+	GetKey(ctx sdk.Context, keyID string) (tss.Key, bool)
 }
 
 // Nexus provides functionality to manage cross-chain transfers

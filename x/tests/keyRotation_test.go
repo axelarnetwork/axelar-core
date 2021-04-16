@@ -69,26 +69,38 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	chains := []string{btc.Bitcoin.Name, eth.Ethereum.Name}
 
-	// start keygen
-	masterKeyID1 := randStrings.Next()
-	keygenResult1 := <-chain.Submit(tssTypes.NewMsgKeygenStart(randomSender(), masterKeyID1, 0))
-	assert.NoError(t, keygenResult1.Error)
-
-	// wait for voting to be done
-	if err := waitFor(listeners.keygenDone, 1); err != nil {
-		assert.FailNow(t, "keygen", err)
-	}
-	// assign chain master key
 	for _, c := range chains {
-		assignKeyResult := <-chain.Submit(tssTypes.NewMsgAssignNextKey(randomSender(), c, masterKeyID1, tss.MasterKey))
-		assert.NoError(t, assignKeyResult.Error)
+		masterKeyID := randStrings.Next()
+		masterKeygenResult := <-chain.Submit(tssTypes.NewMsgKeygenStart(randomSender(), masterKeyID, 0))
+		assert.NoError(t, masterKeygenResult.Error)
 
-	}
+		// wait for voting to be done
+		if err := waitFor(listeners.keygenDone, 1); err != nil {
+			assert.FailNow(t, "keygen", err)
+		}
 
-	// rotate chain master key
-	for _, c := range chains {
-		rotateEthResult := <-chain.Submit(tssTypes.NewMsgRotateKey(randomSender(), c, tss.MasterKey))
-		assert.NoError(t, rotateEthResult.Error)
+		assignMasterKeyResult := <-chain.Submit(tssTypes.NewMsgAssignNextKey(randomSender(), c, masterKeyID, tss.MasterKey))
+		assert.NoError(t, assignMasterKeyResult.Error)
+
+		rotateMasterKeyResult := <-chain.Submit(tssTypes.NewMsgRotateKey(randomSender(), c, tss.MasterKey))
+		assert.NoError(t, rotateMasterKeyResult.Error)
+
+		if c == btc.Bitcoin.Name {
+			secondaryKeyID := randStrings.Next()
+			secondaryKeygenResult := <-chain.Submit(tssTypes.NewMsgKeygenStart(randomSender(), secondaryKeyID, 0))
+			assert.NoError(t, secondaryKeygenResult.Error)
+
+			// wait for voting to be done
+			if err := waitFor(listeners.keygenDone, 1); err != nil {
+				assert.FailNow(t, "keygen", err)
+			}
+
+			assignSecondaryKeyResult := <-chain.Submit(tssTypes.NewMsgAssignNextKey(randomSender(), c, secondaryKeyID, tss.SecondaryKey))
+			assert.NoError(t, assignSecondaryKeyResult.Error)
+
+			rotateSecondaryKeyResult := <-chain.Submit(tssTypes.NewMsgRotateKey(randomSender(), c, tss.SecondaryKey))
+			assert.NoError(t, rotateSecondaryKeyResult.Error)
+		}
 	}
 
 	// setup axelar gateway
@@ -217,9 +229,9 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	// start new keygen
-	masterKeyID2 := randStrings.Next()
-	keygenResult2 := <-chain.Submit(tssTypes.NewMsgKeygenStart(randomSender(), masterKeyID2, 0))
-	assert.NoError(t, keygenResult2.Error)
+	masterKeyID := randStrings.Next()
+	keygenResult := <-chain.Submit(tssTypes.NewMsgKeygenStart(randomSender(), masterKeyID, 0))
+	assert.NoError(t, keygenResult.Error)
 
 	// wait for voting to be done
 	if err := waitFor(listeners.keygenDone, 1); err != nil {
@@ -227,7 +239,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	// assign second key to be the new master key
-	assignKeyResult := <-chain.Submit(tssTypes.NewMsgAssignNextKey(randomSender(), btc.Bitcoin.Name, masterKeyID2, tss.MasterKey))
+	assignKeyResult := <-chain.Submit(tssTypes.NewMsgAssignNextKey(randomSender(), btc.Bitcoin.Name, masterKeyID, tss.MasterKey))
 	assert.NoError(t, assignKeyResult.Error)
 
 	// sign the consolidation transaction

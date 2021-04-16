@@ -57,12 +57,17 @@ func queryDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n t
 
 	recipient := nexus.CrossChainAddress{Chain: chain, Address: params.Address}
 
-	pk, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.MasterKey)
+	masterKey, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.MasterKey)
 	if !ok {
-		return nil, fmt.Errorf("key not found")
+		return nil, fmt.Errorf("master key not set")
 	}
 
-	addr := types.NewLinkedAddress(pk, k.GetNetwork(ctx), recipient)
+	secondaryKey, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.SecondaryKey)
+	if !ok {
+		return nil, fmt.Errorf("secondary key not set")
+	}
+
+	addr := types.NewLinkedAddress(masterKey, secondaryKey, k.GetNetwork(ctx), recipient)
 
 	return []byte(addr.EncodeAddress()), nil
 }

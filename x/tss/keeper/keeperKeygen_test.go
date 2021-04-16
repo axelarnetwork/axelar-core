@@ -96,6 +96,9 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_AssignNextSecondaryKey_Rotat
 	assert.NoError(t, s.Keeper.AssignNextKey(ctx, chain, exported.SecondaryKey, expectedSecondaryKey.ID))
 	assert.NoError(t, s.Keeper.RotateKey(s.Ctx, chain, exported.SecondaryKey))
 
+	expectedMasterKey.Role = exported.MasterKey
+	expectedSecondaryKey.Role = exported.SecondaryKey
+
 	actualMasterKey, ok := s.Keeper.GetCurrentKey(s.Ctx, chain, exported.MasterKey)
 	assert.True(t, ok)
 	assert.Equal(t, expectedMasterKey, actualMasterKey)
