@@ -4,16 +4,18 @@
 package mock
 
 import (
+	"sync"
+
+	"github.com/btcsuite/btcd/wire"
+	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/tendermint/tendermint/libs/log"
+
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
-	"github.com/btcsuite/btcd/wire"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/tendermint/go-amino"
-	"github.com/tendermint/tendermint/libs/log"
-	"sync"
 )
 
 // Ensure, that VoterMock does implement types.Voter.
@@ -1267,7 +1269,7 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 	}
 type BTCKeeperMock struct {
 	// CodecFunc mocks the Codec method.
-	CodecFunc func() *amino.Codec
+	CodecFunc func() *codec.LegacyAmino
 
 	// DeleteOutpointInfoFunc mocks the DeleteOutpointInfo method.
 	DeleteOutpointInfoFunc func(ctx sdk.Context, outPoint wire.OutPoint)
@@ -1521,7 +1523,7 @@ type BTCKeeperMock struct {
 }
 
 // Codec calls CodecFunc.
-func (mock *BTCKeeperMock) Codec() *amino.Codec {
+func (mock *BTCKeeperMock) Codec() *codec.LegacyAmino {
 	if mock.CodecFunc == nil {
 		panic("BTCKeeperMock.CodecFunc: method is nil but BTCKeeper.Codec was just called")
 	}

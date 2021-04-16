@@ -242,5 +242,6 @@ func (mi mockIterator) Error() error {
 }
 
 // Close releases the Iterator.
-func (mi mockIterator) Close() {
+func (mi mockIterator) Close() error {
+	return nil
 }

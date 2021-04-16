@@ -1,37 +1,46 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
+	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"github.com/tendermint/tendermint/libs/cli"
 
 	ethereumTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
 )
 
-// SetGenesisEthContractsCmd returns set-genesis-chain-params cobra Command.
-func SetGenesisEthContractsCmd(
-	ctx *server.Context, cdc *codec.Codec, defaultNodeHome, defaultClientHome string,
-) *cobra.Command {
+const (
+	flagGateway  = "gateway"
+	flagToken    = "token"
+	flagBurnable = "burnable"
+)
 
-	var gatewayFile string
-	var tokenFile string
-	var burnableFile string
+// SetGenesisEthContractsCmd returns set-genesis-chain-params cobra Command.
+func SetGenesisEthContractsCmd(defaultNodeHome string) *cobra.Command {
+	var gatewayFile, tokenFile, burnableFile string
 
 	cmd := &cobra.Command{
 		Use:   "set-genesis-ethereum-contracts",
 		Short: "Set the ethereum's contract parameters in genesis.json",
 		Args:  cobra.ExactArgs(0),
-		RunE: func(_ *cobra.Command, args []string) error {
-			config := ctx.Config
-			config.SetRoot(viper.GetString(cli.HomeFlag))
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx := client.GetClientContextFromCmd(cmd)
+			depCdc := clientCtx.JSONMarshaler
+			cdc := depCdc.(codec.Marshaler)
+
+			serverCtx := server.GetServerContextFromCmd(cmd)
+			config := serverCtx.Config
+
+			config.SetRoot(clientCtx.HomeDir)
 
 			genFile := config.GenesisFile()
-			appState, genDoc, err := genutil.GenesisStateFromGenFile(cdc, genFile)
+			appState, genDoc, err := genutiltypes.GenesisStateFromGenFile(genFile)
 			if err != nil {
 				return fmt.Errorf("failed to unmarshal genesis state: %w", err)
 			}
@@ -66,7 +75,7 @@ func SetGenesisEthContractsCmd(
 				return fmt.Errorf("failed to marshal ethereum genesis state: %w", err)
 			}
 			appState[ethereumTypes.ModuleName] = genesisStateBz
-			appStateJSON, err := cdc.MarshalJSON(appState)
+			appStateJSON, err := json.Marshal(appState)
 			if err != nil {
 				return fmt.Errorf("failed to marshal application genesis state: %w", err)
 			}
@@ -76,12 +85,11 @@ func SetGenesisEthContractsCmd(
 		},
 	}
 
-	cmd.Flags().StringVar(&gatewayFile, "gateway", "", "Path to the Axelar Gateway contract ABI.")
-	cmd.Flags().StringVar(&tokenFile, "token", "", "Path to the tokens contract ABI.")
-	cmd.Flags().StringVar(&burnableFile, "burnable", "", "Path to the burner contract ABI.")
+	cmd.Flags().String(flags.FlagHome, defaultNodeHome, "node's home directory")
 
-	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
-	cmd.Flags().String(cliHomeFlag, defaultClientHome, "client's home directory")
+	cmd.Flags().StringVar(&gatewayFile, flagGateway, "", "Path to the Axelar Gateway contract ABI.")
+	cmd.Flags().StringVar(&tokenFile, flagToken, "", "Path to the tokens contract ABI.")
+	cmd.Flags().StringVar(&burnableFile, flagBurnable, "", "Path to the burner contract ABI.")
 
 	return cmd
 }

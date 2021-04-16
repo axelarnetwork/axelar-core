@@ -1,0 +1,40 @@
+syntax = "proto3";
+package bitcoin.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/bitcoin/types";
+
+import "bitcoin/v1beta1/types.proto";
+import "vote/exported/v1beta1/types.proto";
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// MsgConfirmOutpoint represents a message to trigger the confirmation of a
+// Bitcoin outpoint
+message MsgConfirmOutpoint {
+  string sender = 1;
+  OutPointInfo out_point_info = 2 [ (gogoproto.nullable) = false ];
+}
+
+// MsgLink represents a message to link an cross-chain address to a Bitcoin
+// address
+message MsgLink {
+  string sender = 1;
+  string recipient_addr = 2;
+  string recipient_chain = 3;
+}
+
+// MsgSignPendingTransfers represents a message to trigger the signing of a
+// consolidation transaction
+message MsgSignPendingTransfers {
+  string sender = 1;
+  int64 fee = 2;
+}
+
+// MsgVoteConfirmOutpoint represents a message to that votes on an outpoint
+message MsgVoteConfirmOutpoint {
+  string sender = 1;
+  vote.exported.v1beta1.PollMeta poll = 2 [ (gogoproto.nullable) = false ];
+  string out_point = 3;
+  bool confirmed = 4;
+}

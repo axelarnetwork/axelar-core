@@ -39,9 +39,9 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, k types.BTCKeeper, si
 
 	var sigs []btcec.Signature
 	for i, in := range outpointsToSign {
-		hash, err := txscript.CalcWitnessSigHash(in.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, i, int64(in.Amount))
+		hash, err := txscript.CalcWitnessSigHash(in.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, i, in.Amount)
 		if err != nil {
-			k.Logger(ctx).Error(fmt.Sprintf("could not calculate sig hash for outpoint %s", in.OutPoint.String()))
+			k.Logger(ctx).Error(fmt.Sprintf("could not calculate sig hash for outpoint %s", in.OutPoint))
 			return nil
 		}
 

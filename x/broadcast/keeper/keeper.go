@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -44,7 +45,7 @@ func NewKeeper(
 	cdc *codec.Codec,
 	storeKey sdk.StoreKey,
 	subjectiveStore sdk.KVStore,
-	keybase keys.Keybase,
+	keybase keyring.Keyring,
 	authKeeper auth.AccountKeeper,
 	stakingKeeper types.Staker,
 	client client.ABCIClient,

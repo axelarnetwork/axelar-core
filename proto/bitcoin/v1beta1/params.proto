@@ -1,0 +1,15 @@
+syntax = "proto3";
+package bitcoin.v1beta1;
+option go_package = "github.com/axelarnetwork/axelar-core/x/bitcoin/types";
+
+import "gogoproto/gogo.proto";
+import "bitcoin/v1beta1/types.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message Params {
+  Network network = 1 [ (gogoproto.nullable) = false ];
+  uint64 confirmation_height = 2;
+  int64 revote_locking_period = 3;
+  int64 sig_check_interval = 4;
+}

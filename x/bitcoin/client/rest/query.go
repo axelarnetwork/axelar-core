@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/cosmos/cosmos-sdk/client"
+
 	"github.com/axelarnetwork/axelar-core/utils"
 
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
@@ -12,7 +14,6 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/gorilla/mux"
 
-	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 )
 
@@ -22,7 +23,7 @@ type RespDepositAddress struct {
 }
 
 // QueryDepositAddress returns a handler to query a deposit address
-func QueryDepositAddress(cliCtx context.CLIContext) http.HandlerFunc {
+func QueryDepositAddress(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -31,7 +32,7 @@ func QueryDepositAddress(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		vars := mux.Vars(r)
-		queryData, err := cliCtx.Codec.MarshalJSON(types.DepositQueryParams{Chain: vars[utils.PathVarChain], Address: vars[utils.PathVarEthereumAddress]})
+		queryData, err := cliCtx.LegacyAmino.MarshalJSON(types.DepositQueryParams{Chain: vars[utils.PathVarChain], Address: vars[utils.PathVarEthereumAddress]})
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 		}
@@ -54,7 +55,7 @@ func QueryDepositAddress(cliCtx context.CLIContext) http.HandlerFunc {
 }
 
 // QueryGetConsolidationTx returns a handler to build a consolidation transaction
-func QueryGetConsolidationTx(cliCtx context.CLIContext) http.HandlerFunc {
+func QueryGetConsolidationTx(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)

@@ -17,11 +17,11 @@ type Broadcaster struct {
 	val2Proxy      map[string]sdk.AccAddress
 	proxy2Val      map[string]sdk.ValAddress
 	LocalPrincipal sdk.ValAddress
-	cdc            *codec.Codec
+	cdc            *codec.LegacyAmino
 }
 
 // NewBroadcaster creates a new broadcaster fake that sends messages to the blockchainIn channel.
-func NewBroadcaster(cdc *codec.Codec, localPrincipal sdk.ValAddress, submitMsg func(msg sdk.Msg) (result <-chan *Result)) Broadcaster {
+func NewBroadcaster(cdc *codec.LegacyAmino, localPrincipal sdk.ValAddress, submitMsg func(msg sdk.Msg) (result <-chan *Result)) Broadcaster {
 	return Broadcaster{
 		cdc:            cdc,
 		submitMsg:      submitMsg,

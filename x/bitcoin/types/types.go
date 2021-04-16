@@ -22,15 +22,10 @@ import (
 
 // Bitcoin network types
 var (
-	Mainnet  = Network{"main"}
-	Testnet3 = Network{"test"}
-	Regtest  = Network{"regtest"}
+	Mainnet  = Network{Name: "main"}
+	Testnet3 = Network{Name: "test"}
+	Regtest  = Network{Name: "regtest"}
 )
-
-// Network provides additional functionality based on the bitcoin network name
-type Network struct {
-	Name string
-}
 
 const (
 	main    = "main"
@@ -39,8 +34,8 @@ const (
 )
 
 // Params returns the network parameters
-func (n Network) Params() *chaincfg.Params {
-	switch n.Name {
+func (m Network) Params() *chaincfg.Params {
+	switch m.Name {
 	case main:
 		return &chaincfg.MainNetParams
 	case test:
@@ -67,20 +62,13 @@ func NetworkFromStr(networkName string) (Network, error) {
 }
 
 // Validate validates the network type
-func (n Network) Validate() error {
-	switch n.Name {
+func (m *Network) Validate() error {
+	switch m.Name {
 	case main, test, regtest:
 		return nil
 	default:
-		return fmt.Errorf("unknown network: %s", n)
+		return fmt.Errorf("unknown network: %s", m)
 	}
-}
-
-// OutPointInfo describes all the necessary information to confirm the outPoint of a transaction
-type OutPointInfo struct {
-	OutPoint *wire.OutPoint
-	Amount   btcutil.Amount
-	Address  string
 }
 
 // OutPointState is an enum for the state of an outpoint
@@ -95,36 +83,40 @@ const (
 // NewOutPointInfo returns a new OutPointInfo instance
 func NewOutPointInfo(outPoint *wire.OutPoint, amount btcutil.Amount, address string) OutPointInfo {
 	return OutPointInfo{
-		OutPoint: outPoint,
-		Amount:   amount,
+		OutPoint: outPoint.String(),
+		Amount:   int64(amount),
 		Address:  address,
 	}
 }
 
 // Validate ensures that all fields are filled with sensible values
-func (i OutPointInfo) Validate() error {
-	if i.OutPoint == nil {
-		return fmt.Errorf("missing outpoint")
+func (m OutPointInfo) Validate() error {
+	if _, err := OutPointFromStr(m.OutPoint); err != nil {
+		return sdkerrors.Wrap(err, "outpoint malformed")
 	}
-	if i.Amount <= 0 {
+	if m.Amount <= 0 {
 		return fmt.Errorf("amount must be greater than 0")
 	}
-	if i.Address == "" {
+	if m.Address == "" {
 		return fmt.Errorf("invalid address to track")
 	}
 	return nil
 }
 
 // Equals checks if two OutPointInfo objects are semantically equal
-func (i OutPointInfo) Equals(other OutPointInfo) bool {
-	return i.OutPoint.Hash.IsEqual(&other.OutPoint.Hash) &&
-		i.OutPoint.Index == other.OutPoint.Index &&
-		i.Amount == other.Amount &&
-		i.Address == other.Address
+func (m OutPointInfo) Equals(other OutPointInfo) bool {
+	return m.OutPoint == other.OutPoint &&
+		m.Amount == other.Amount &&
+		m.Address == other.Address
 }
 
-func (i OutPointInfo) String() string {
-	return i.OutPoint.String() + "_" + i.Address + "_" + i.Amount.String()
+func (m OutPointInfo) String() string {
+	return m.OutPoint + "_" + m.Address + "_" + btcutil.Amount(m.Amount).String()
+}
+
+// GetOutPoint returns the outpoint as a struct instead of a string
+func (m OutPointInfo) GetOutPoint() wire.OutPoint {
+	return *MustConvertOutPointFromStr(m.OutPoint)
 }
 
 // RawTxParams describe the parameters used to create a raw unsigned transaction for Bitcoin
@@ -138,8 +130,12 @@ type RawTxParams struct {
 func CreateTx(prevOuts []OutPointToSign, outputs []Output) (*wire.MsgTx, error) {
 	tx := wire.NewMsgTx(wire.TxVersion)
 	for _, in := range prevOuts {
+		outPoint, err := OutPointFromStr(in.OutPoint)
+		if err != nil {
+			return nil, err
+		}
 		// The signature script or witness will be set later
-		txIn := wire.NewTxIn(in.OutPoint, nil, nil)
+		txIn := wire.NewTxIn(outPoint, nil, nil)
 		tx.AddTxIn(txIn)
 	}
 	for _, out := range outputs {
@@ -174,16 +170,19 @@ func OutPointFromStr(outStr string) (*wire.OutPoint, error) {
 	return out, nil
 }
 
+// MustConvertOutPointFromStr returns the parsed outpoint from a string of the form "txID:voutIdx". Panics if the string is malformed
+func MustConvertOutPointFromStr(outStr string) *wire.OutPoint {
+	o, err := OutPointFromStr(outStr)
+	if err != nil {
+		panic(err)
+	}
+	return o
+}
+
 // Output represents a Bitcoin transaction output
 type Output struct {
 	Amount    btcutil.Amount
 	Recipient btcutil.Address
-}
-
-// DepositQueryParams describe the parameters used to query for a Bitcoin deposit address
-type DepositQueryParams struct {
-	Address string
-	Chain   string
 }
 
 // RedeemScript represents the script that is used to redeem a transaction that spent to the address derived from the script
@@ -341,7 +340,7 @@ const (
 func ParseSatoshi(rawCoin string) (sdk.Coin, error) {
 	var coin sdk.DecCoin
 
-	if intCoin, err := sdk.ParseCoin(rawCoin); err == nil {
+	if intCoin, err := sdk.ParseCoinNormalized(rawCoin); err == nil {
 		coin = sdk.NewDecCoinFromCoin(intCoin)
 	} else {
 		coin, err = sdk.ParseDecCoin(rawCoin)

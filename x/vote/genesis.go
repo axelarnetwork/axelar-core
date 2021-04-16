@@ -20,8 +20,8 @@ func InitGenesis(ctx sdk.Context, k keeper.Keeper, state types.GenesisState) {
 // ExportGenesis writes the current store values
 // to a genesis file, which can be imported again
 // with InitGenesis
-func ExportGenesis(ctx sdk.Context, k keeper.Keeper) types.GenesisState {
-	state := types.GenesisState{
+func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
+	state := &types.GenesisState{
 		VotingInterval:  k.GetVotingInterval(ctx),
 		VotingThreshold: k.GetVotingThreshold(ctx),
 	}
@@ -31,10 +31,10 @@ func ExportGenesis(ctx sdk.Context, k keeper.Keeper) types.GenesisState {
 
 // GetGenesisStateFromAppState returns x/vote GenesisState given raw application
 // genesis state.
-func GetGenesisStateFromAppState(cdc *codec.Codec, appState map[string]json.RawMessage) types.GenesisState {
-	var genesisState types.GenesisState
+func GetGenesisStateFromAppState(cdc codec.Marshaler, appState map[string]json.RawMessage) *types.GenesisState {
+	var genesisState *types.GenesisState
 	if appState[types.ModuleName] != nil {
-		cdc.MustUnmarshalJSON(appState[types.ModuleName], &genesisState)
+		cdc.MustUnmarshalJSON(appState[types.ModuleName], genesisState)
 	}
 
 	return genesisState

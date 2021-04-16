@@ -4,41 +4,87 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	stdlog "log"
+	"net/http"
 	"os"
+	"path/filepath"
 
-	"github.com/cosmos/cosmos-sdk/store/dbadapter"
-	"github.com/spf13/viper"
-
-	"github.com/axelarnetwork/axelar-core/x/ante"
-	snapshotExported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	snapshotExportedMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
-	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
-
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
+	"github.com/cosmos/cosmos-sdk/client/rpc"
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/simapp"
+	"github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/server/api"
+	"github.com/cosmos/cosmos-sdk/server/config"
+	servertypes "github.com/cosmos/cosmos-sdk/server/types"
+	"github.com/cosmos/cosmos-sdk/store/dbadapter"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	authAnte "github.com/cosmos/cosmos-sdk/x/auth/ante"
+	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
 	"github.com/cosmos/cosmos-sdk/x/bank"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"github.com/cosmos/cosmos-sdk/x/capability"
+	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
+	"github.com/cosmos/cosmos-sdk/x/crisis"
+	crisiskeeper "github.com/cosmos/cosmos-sdk/x/crisis/keeper"
+	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
+	distrclient "github.com/cosmos/cosmos-sdk/x/distribution/client"
+	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
+	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	"github.com/cosmos/cosmos-sdk/x/evidence"
+	evidencekeeper "github.com/cosmos/cosmos-sdk/x/evidence/keeper"
+	evidencetypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
+	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
+	"github.com/cosmos/cosmos-sdk/x/gov"
+	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	"github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer"
+	ibctransfertypes "github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer/types"
+	ibc "github.com/cosmos/cosmos-sdk/x/ibc/core"
+	"github.com/cosmos/cosmos-sdk/x/mint"
+	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
+	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
+	paramsclient "github.com/cosmos/cosmos-sdk/x/params/client"
+	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
+	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	paramproposal "github.com/cosmos/cosmos-sdk/x/params/types/proposal"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
+	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
-	"github.com/cosmos/cosmos-sdk/x/supply"
+	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/cosmos/cosmos-sdk/x/upgrade"
+	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
+	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
+	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+	"github.com/gorilla/mux"
+	"github.com/rakyll/statik/fs"
+	"github.com/spf13/cast"
+	"github.com/spf13/viper"
 	abci "github.com/tendermint/tendermint/abci/types"
+	tmjson "github.com/tendermint/tendermint/libs/json"
 	"github.com/tendermint/tendermint/libs/log"
 	tmos "github.com/tendermint/tendermint/libs/os"
-	"github.com/tendermint/tendermint/rpc/client/http"
+	tmHTTP "github.com/tendermint/tendermint/rpc/client/http"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/axelarnetwork/axelar-core/x/nexus"
-
-	keyring "github.com/cosmos/cosmos-sdk/crypto/keys"
-
+	axelarParams "github.com/axelarnetwork/axelar-core/app/params"
+	"github.com/axelarnetwork/axelar-core/x/ante"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
@@ -48,10 +94,14 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/ethereum"
 	ethKeeper "github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
+	"github.com/axelarnetwork/axelar-core/x/nexus"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/axelar-core/x/snapshot"
+	snapshotExported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	snapshotExportedMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	snapKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
+	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	"github.com/axelarnetwork/axelar-core/x/tss"
 	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -64,22 +114,31 @@ import (
 const Name = "axelar"
 
 var (
-	// DefaultCLIHome sets the default home directories for the application CLI
-	DefaultCLIHome = os.ExpandEnv("$HOME/.axelarcli")
+	// DefaultNodeHome default home directories for the application daemon
+	DefaultNodeHome string
 
-	// DefaultNodeHome sets the folder where the applcation data and configuration will be stored
-	DefaultNodeHome = os.ExpandEnv("$HOME/.axelard")
-
-	// ModuleBasics is in charge of setting up basic module elements
+	// ModuleBasics defines the module BasicManager is in charge of setting up basic,
+	// non-dependant module elements, such as codec registration
+	// and genesis verification.
 	ModuleBasics = module.NewBasicManager(
-		genutil.AppModuleBasic{},
 		auth.AppModuleBasic{},
+		genutil.AppModuleBasic{},
 		bank.AppModuleBasic{},
+		capability.AppModuleBasic{},
 		staking.AppModuleBasic{},
+		mint.AppModuleBasic{},
 		distr.AppModuleBasic{},
+		gov.NewAppModuleBasic(
+			paramsclient.ProposalHandler, distrclient.ProposalHandler, upgradeclient.ProposalHandler, upgradeclient.CancelProposalHandler,
+		),
 		params.AppModuleBasic{},
+		crisis.AppModuleBasic{},
 		slashing.AppModuleBasic{},
-		supply.AppModuleBasic{},
+		ibc.AppModuleBasic{},
+		upgrade.AppModuleBasic{},
+		evidence.AppModuleBasic{},
+		transfer.AppModuleBasic{},
+		vesting.AppModuleBasic{},
 
 		tss.AppModuleBasic{},
 		vote.AppModuleBasic{},
@@ -89,75 +148,88 @@ var (
 		snapshot.AppModuleBasic{},
 		nexus.AppModuleBasic{},
 	)
-	// account permissions
+
+	// module account permissions
 	maccPerms = map[string][]string{
-		auth.FeeCollectorName:     nil,
-		distr.ModuleName:          nil,
-		staking.BondedPoolName:    {supply.Burner, supply.Staking},
-		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
+		authtypes.FeeCollectorName:     nil,
+		distrtypes.ModuleName:          nil,
+		minttypes.ModuleName:           {authtypes.Minter},
+		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
+		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
+		govtypes.ModuleName:            {authtypes.Burner},
+		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
 	}
 )
 
-// MakeCodec generates the necessary codecs for Amino
-func MakeCodec() *codec.Codec {
-	var cdc = codec.New()
+var (
+	_ servertypes.Application = (*AxelarApp)(nil)
+)
 
-	ModuleBasics.RegisterCodec(cdc)
-	vesting.RegisterCodec(cdc)
-	sdk.RegisterCodec(cdc)
-	codec.RegisterCrypto(cdc)
+func init() {
+	userHomeDir, err := os.UserHomeDir()
+	if err != nil {
+		stdlog.Println("Failed to get home dir %2", err)
+	}
 
-	cdc = cdc.Seal()
-
-	return cdc
+	DefaultNodeHome = filepath.Join(userHomeDir, "."+Name)
 }
 
 // AxelarApp defines the axelar Cosmos app that runs all modules
 type AxelarApp struct {
-	*bam.BaseApp
-	cdc *codec.Codec
+	*baseapp.BaseApp
+
+	legacyAmino       *codec.LegacyAmino
+	appCodec          codec.Marshaler
+	interfaceRegistry types.InterfaceRegistry
 
 	invCheckPeriod uint
 
+	// necessery keepers for export
+	stakingKeeper  stakingkeeper.Keeper
+	crisisKeeper   crisiskeeper.Keeper
+	distrKeeper    distrkeeper.Keeper
+	slashingKeeper slashingkeeper.Keeper
+
 	// keys to access the substores
-	keys  map[string]*sdk.KVStoreKey
-	tkeys map[string]*sdk.TransientStoreKey
+	keys    map[string]*sdk.KVStoreKey
+	tkeys   map[string]*sdk.TransientStoreKey
+	memKeys map[string]*sdk.MemoryStoreKey
 
-	// Keepers
-	stakingKeeper  staking.Keeper
-	slashingKeeper slashing.Keeper
-	distrKeeper    distr.Keeper
-
-	// Module Manager
 	mm *module.Manager
-
-	// simulation manager
-	sm *module.SimulationManager
 }
 
-// verify app interface at compile time
-var _ simapp.App = &AxelarApp{}
+// NewAxelarApp is a constructor function for axelar
+func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool, skipUpgradeHeights map[int64]bool,
+	homePath string, invCheckPeriod uint, encodingConfig axelarParams.EncodingConfig,
+	appOpts servertypes.AppOptions, baseAppOptions ...func(*bam.BaseApp)) *AxelarApp {
 
-// NewInitApp is a constructor function for axelarApp
-func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool,
-	invCheckPeriod uint, axelarCfg Config, baseAppOptions ...func(*bam.BaseApp)) *AxelarApp {
+	axelarCfg := DefaultConfig()
+	if err := appOpts.(*viper.Viper).Unmarshal(axelarCfg); err != nil {
+		tmos.Exit(err.Error())
+	}
 
-	// First define the top level codec that will be shared by the different modules
-	cdc := MakeCodec()
+	appCodec := encodingConfig.Marshaler
+	legacyAmino := encodingConfig.Amino
+	interfaceRegistry := encodingConfig.InterfaceRegistry
 
 	// BaseApp handles interactions with Tendermint through the ABCI protocol
-	bApp := bam.NewBaseApp(Name, logger, db, auth.DefaultTxDecoder(cdc), baseAppOptions...)
+	bApp := bam.NewBaseApp(Name, logger, db, encodingConfig.TxConfig.TxDecoder(), baseAppOptions...)
 	bApp.SetCommitMultiStoreTracer(traceStore)
 	bApp.SetAppVersion(version.Version)
+	bApp.SetInterfaceRegistry(interfaceRegistry)
 
 	keys := sdk.NewKVStoreKeys(
-		bam.MainStoreKey,
-		auth.StoreKey,
-		staking.StoreKey,
-		supply.StoreKey,
-		distr.StoreKey,
-		slashing.StoreKey,
-		params.StoreKey,
+		authtypes.StoreKey,
+		banktypes.StoreKey,
+		stakingtypes.StoreKey,
+		minttypes.StoreKey,
+		distrtypes.StoreKey,
+		slashingtypes.StoreKey,
+		govtypes.StoreKey,
+		paramstypes.StoreKey,
+		upgradetypes.StoreKey,
+		evidencetypes.StoreKey,
+
 		voteTypes.StoreKey,
 		broadcastTypes.StoreKey,
 		btcTypes.StoreKey,
@@ -167,106 +239,96 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		nexusTypes.StoreKey,
 	)
 
-	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
+	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
+	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 
-	// Here you initialize your application with the store keys it requires
 	var app = &AxelarApp{
-		BaseApp:        bApp,
-		cdc:            cdc,
-		keys:           keys,
-		tkeys:          tkeys,
-		invCheckPeriod: invCheckPeriod,
+		BaseApp:           bApp,
+		legacyAmino:       legacyAmino,
+		appCodec:          appCodec,
+		interfaceRegistry: interfaceRegistry,
+		invCheckPeriod:    invCheckPeriod,
+		keys:              keys,
+		tkeys:             tkeys,
+		memKeys:           memKeys,
 	}
 
-	// The ParamsKeeper handles parameter storage for the application
-	paramsK := params.NewKeeper(app.cdc, keys[params.StoreKey], tkeys[params.TStoreKey])
-	// Set specific subspaces
-	authSubspace := paramsK.Subspace(auth.DefaultParamspace)
-	bankSubspace := paramsK.Subspace(bank.DefaultParamspace)
-	stakingSubspace := paramsK.Subspace(staking.DefaultParamspace)
-	distrSubspace := paramsK.Subspace(distr.DefaultParamspace)
-	slashingSubspace := paramsK.Subspace(slashing.DefaultParamspace)
-	snapshotSubspace := paramsK.Subspace(snapTypes.DefaultParamspace)
-	tssSubspace := paramsK.Subspace(tssTypes.DefaultParamspace)
-	btcSubspace := paramsK.Subspace(btcTypes.DefaultParamspace)
-	ethSubspace := paramsK.Subspace(ethTypes.DefaultParamspace)
-	nexusSubspace := paramsK.Subspace(nexusTypes.DefaultParamspace)
+	paramsK := initParamsKeeper(appCodec, legacyAmino, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey])
 
-	// The AccountKeeper handles address -> account lookups
-	accountK := auth.NewAccountKeeper(
-		app.cdc,
-		keys[auth.StoreKey],
-		authSubspace,
-		auth.ProtoBaseAccount,
+	// set the BaseApp's parameter store
+	bApp.SetParamStore(paramsK.Subspace(baseapp.Paramspace).WithKeyTable(paramskeeper.ConsensusParamsKeyTable()))
+
+	// add keepers
+	accountK := authkeeper.NewAccountKeeper(
+		appCodec, keys[authtypes.StoreKey], paramsK.Subspace(authtypes.ModuleName), authtypes.ProtoBaseAccount, maccPerms,
 	)
-	// The BankKeeper allows you perform sdk.Coins interactions
-	bankK := bank.NewBaseKeeper(
-		accountK,
-		bankSubspace,
-		app.ModuleAccountAddrs(),
+	bankK := bankkeeper.NewBaseKeeper(
+		appCodec, keys[banktypes.StoreKey], accountK, paramsK.Subspace(banktypes.ModuleName), app.ModuleAccountAddrs(),
 	)
-	// The SupplyKeeper collects transaction fees and renders them to the fee distribution module
-	supplyK := supply.NewKeeper(
-		app.cdc,
-		keys[supply.StoreKey],
-		accountK,
-		bankK,
-		maccPerms,
+	app.stakingKeeper = stakingkeeper.NewKeeper(
+		appCodec, keys[stakingtypes.StoreKey], accountK, bankK, paramsK.Subspace(stakingtypes.ModuleName),
 	)
-	stakingK := staking.NewKeeper(
-		app.cdc,
-		keys[staking.StoreKey],
-		supplyK,
-		stakingSubspace,
+
+	mintK := mintkeeper.NewKeeper(
+		appCodec, keys[minttypes.StoreKey], paramsK.Subspace(minttypes.ModuleName), &app.stakingKeeper,
+		accountK, bankK, authtypes.FeeCollectorName,
 	)
-	distrK := distr.NewKeeper(
-		app.cdc,
-		keys[distr.StoreKey],
-		distrSubspace,
-		&stakingK,
-		supplyK,
-		auth.FeeCollectorName,
-		app.ModuleAccountAddrs(),
+	app.distrKeeper = distrkeeper.NewKeeper(
+		appCodec, keys[distrtypes.StoreKey], paramsK.Subspace(distrtypes.ModuleName), accountK, bankK,
+		&app.stakingKeeper, authtypes.FeeCollectorName, app.ModuleAccountAddrs(),
 	)
-	slashingK := slashing.NewKeeper(
-		app.cdc,
-		keys[slashing.StoreKey],
-		&stakingK,
-		slashingSubspace,
+	app.slashingKeeper = slashingkeeper.NewKeeper(
+		appCodec, keys[slashingtypes.StoreKey], &app.stakingKeeper, paramsK.Subspace(slashingtypes.ModuleName),
 	)
+	app.crisisKeeper = crisiskeeper.NewKeeper(
+		paramsK.Subspace(crisistypes.ModuleName), invCheckPeriod, bankK, authtypes.FeeCollectorName,
+	)
+	upgradeK := upgradekeeper.NewKeeper(skipUpgradeHeights, keys[upgradetypes.StoreKey], appCodec, homePath)
+
+	evidenceK := evidencekeeper.NewKeeper(
+		appCodec, keys[evidencetypes.StoreKey], &app.stakingKeeper, app.slashingKeeper,
+	)
+	// register the proposal types
+	govRouter := govtypes.NewRouter()
+	govRouter.AddRoute(govtypes.RouterKey, govtypes.ProposalHandler).
+		AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(paramsK)).
+		AddRoute(distrtypes.RouterKey, distr.NewCommunityPoolSpendProposalHandler(app.distrKeeper)).
+		AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(upgradeK))
+
+	govK := govkeeper.NewKeeper(
+		appCodec, keys[govtypes.StoreKey], paramsK.Subspace(govtypes.ModuleName), accountK, bankK,
+		&app.stakingKeeper, govRouter,
+	)
+
 	// register the staking hooks
 	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks
-	stakingK = *stakingK.SetHooks(
-		staking.NewMultiStakingHooks(
-			distrK.Hooks(),
-			slashingK.Hooks()),
-	)
-	btcK := btcKeeper.NewKeeper(
-		app.cdc,
-		keys[btcTypes.StoreKey],
-		btcSubspace,
-	)
-	ethK := ethKeeper.NewEthKeeper(
-		app.cdc,
-		keys[ethTypes.StoreKey],
-		ethSubspace,
+	app.stakingKeeper = *app.stakingKeeper.SetHooks(
+		stakingtypes.NewMultiStakingHooks(app.distrKeeper.Hooks(), app.slashingKeeper.Hooks()),
 	)
 
-	keybase, err := keyring.NewKeyring(sdk.KeyringServiceName(), axelarCfg.ClientConfig.KeyringBackend, viper.GetString("clihome"), os.Stdin)
+	// axelar custom keepers
+	btcK := btcKeeper.NewKeeper(
+		app.legacyAmino, keys[btcTypes.StoreKey], paramsK.Subspace(btcTypes.ModuleName),
+	)
+	ethK := ethKeeper.NewEthKeeper(
+		app.legacyAmino, keys[ethTypes.StoreKey], paramsK.Subspace(ethTypes.ModuleName),
+	)
+
+	kr, err := keyring.New(sdk.KeyringServiceName(), axelarCfg.ClientConfig.KeyringBackend, viper.GetString("clihome"), os.Stdin)
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
-	abciClient, err := http.New(axelarCfg.TendermintNodeUri, "/websocket")
+	abciClient, err := tmHTTP.New(axelarCfg.TendermintNodeUri, "/websocket")
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
 	broadcastK, err := broadcastKeeper.NewKeeper(
-		app.cdc,
+		app.legacyAmino,
 		keys[broadcastTypes.StoreKey],
 		dbadapter.Store{DB: dbm.NewMemDB()},
-		keybase,
+		kr,
 		accountK,
-		stakingK,
+		app.stakingKeeper,
 		abciClient,
 		axelarCfg.ClientConfig,
 		logger,
@@ -277,41 +339,24 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 
 	slashingKCast := &snapshotExportedMock.SlasherMock{
 		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapshotExported.ValidatorInfo, bool) {
-			signingInfo, found := slashingK.GetValidatorSigningInfo(ctx, address)
+			signingInfo, found := app.slashingKeeper.GetValidatorSigningInfo(ctx, address)
 
 			return snapshotExported.ValidatorInfo{ValidatorSigningInfo: signingInfo}, found
 		},
 	}
 	tssK := tssKeeper.NewKeeper(
-		app.cdc,
-		keys[tssTypes.StoreKey],
-		tssSubspace,
-		slashingKCast,
+		app.legacyAmino, keys[tssTypes.StoreKey], paramsK.Subspace(tssTypes.ModuleName), slashingKCast,
 	)
 	snapK := snapKeeper.NewKeeper(
-		app.cdc,
-		keys[snapTypes.StoreKey],
-		snapshotSubspace,
-		broadcastK,
-		stakingK,
-		slashingKCast,
-		tssK,
+		app.legacyAmino, keys[snapTypes.StoreKey], paramsK.Subspace(snapTypes.ModuleName), broadcastK, app.stakingKeeper,
+		slashingKCast, tssK,
 	)
 	nexusK := nexusKeeper.NewKeeper(
-		app.cdc,
-		keys[nexusTypes.StoreKey],
-		nexusSubspace,
+		app.legacyAmino, keys[nexusTypes.StoreKey], paramsK.Subspace(nexusTypes.ModuleName),
 	)
 	votingK := voteKeeper.NewKeeper(
-		app.cdc,
-		keys[voteTypes.StoreKey],
-		snapK,
-		broadcastK,
+		app.legacyAmino, keys[voteTypes.StoreKey], snapK, broadcastK,
 	)
-
-	app.stakingKeeper = stakingK
-	app.distrKeeper = distrK
-	app.slashingKeeper = slashingK
 
 	var rpcEth ethTypes.RPCClient
 	if axelarCfg.WithEthBridge {
@@ -324,19 +369,31 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		rpcEth = ethTypes.NewDummyRPC()
 	}
 
+	/****  Module Options ****/
+
+	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment
+	// we prefer to be more strict in what arguments the modules expect.
+	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
+
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
 	app.mm = module.NewManager(
-		genutil.NewAppModule(accountK, stakingK, app.BaseApp.DeliverTx),
-		auth.NewAppModule(accountK),
-		bank.NewAppModule(bankK, accountK),
-		supply.NewAppModule(supplyK, accountK),
-		distr.NewAppModule(distrK, accountK, supplyK, stakingK),
-		slashing.NewAppModule(slashingK, accountK, stakingK),
-		staking.NewAppModule(stakingK, accountK, supplyK),
+		genutil.NewAppModule(accountK, app.stakingKeeper, app.BaseApp.DeliverTx, encodingConfig.TxConfig),
+		auth.NewAppModule(appCodec, accountK, nil),
+		vesting.NewAppModule(accountK, bankK),
+		bank.NewAppModule(appCodec, bankK, accountK),
+		crisis.NewAppModule(&app.crisisKeeper, skipGenesisInvariants),
+		gov.NewAppModule(appCodec, govK, accountK, bankK),
+		mint.NewAppModule(appCodec, mintK, accountK),
+		slashing.NewAppModule(appCodec, app.slashingKeeper, accountK, bankK, app.stakingKeeper),
+		distr.NewAppModule(appCodec, app.distrKeeper, accountK, bankK, app.stakingKeeper),
+		staking.NewAppModule(appCodec, app.stakingKeeper, accountK, bankK),
+		upgrade.NewAppModule(upgradeK),
+		evidence.NewAppModule(*evidenceK),
+		params.NewAppModule(paramsK),
 
 		snapshot.NewAppModule(snapK),
-		tss.NewAppModule(tssK, snapK, votingK, nexusK, stakingK, broadcastK),
+		tss.NewAppModule(tssK, snapK, votingK, nexusK, app.stakingKeeper, broadcastK),
 		vote.NewAppModule(votingK),
 		broadcast.NewAppModule(broadcastK),
 		nexus.NewAppModule(nexusK),
@@ -347,18 +404,26 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	// During begin block slashing happens after distr.BeginBlocker so that
 	// there is nothing left over in the validator fee pool, so as to keep the
 	// CanWithdrawInvariant invariant.
-	app.mm.SetOrderBeginBlockers(distr.ModuleName, slashing.ModuleName)
-	app.mm.SetOrderEndBlockers(staking.ModuleName, btcTypes.ModuleName)
+	// NOTE: staking module is required if HistoricalEntries param > 0
+	app.mm.SetOrderBeginBlockers(upgradetypes.ModuleName, minttypes.ModuleName, distrtypes.ModuleName, slashingtypes.ModuleName,
+		evidencetypes.ModuleName, stakingtypes.ModuleName)
+	app.mm.SetOrderEndBlockers(crisistypes.ModuleName, govtypes.ModuleName, stakingtypes.ModuleName, btcTypes.ModuleName)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
-	// NOTE: The genutils moodule must occur after staking so that pools are
+	// NOTE: The genutils module must occur after staking so that pools are
 	// properly initialized with tokens from genesis accounts.
 	app.mm.SetOrderInitGenesis(
-		distr.ModuleName,
-		staking.ModuleName,
-		auth.ModuleName,
-		bank.ModuleName,
-		slashing.ModuleName,
+		authtypes.ModuleName,
+		banktypes.ModuleName,
+		distrtypes.ModuleName,
+		stakingtypes.ModuleName,
+		slashingtypes.ModuleName,
+		govtypes.ModuleName,
+		minttypes.ModuleName,
+		crisistypes.ModuleName,
+		genutiltypes.ModuleName,
+		evidencetypes.ModuleName,
+
 		snapTypes.ModuleName,
 		tssTypes.ModuleName,
 		btcTypes.ModuleName,
@@ -366,12 +431,19 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		nexusTypes.ModuleName,
 		broadcastTypes.ModuleName,
 		voteTypes.ModuleName,
-		supply.ModuleName,
-		genutil.ModuleName,
 	)
 
+	app.mm.RegisterInvariants(&app.crisisKeeper)
+	app.mm.RegisterInvariants(&app.crisisKeeper)
+
 	// register all module routes and module queriers
-	app.mm.RegisterRoutes(app.Router(), app.QueryRouter())
+	app.mm.RegisterRoutes(app.Router(), app.QueryRouter(), legacyAmino)
+	app.mm.RegisterServices(module.NewConfigurator(app.MsgServiceRouter(), app.GRPCQueryRouter()))
+
+	// initialize stores
+	app.MountKVStores(keys)
+	app.MountTransientStores(tkeys)
+	app.MountMemoryStores(memKeys)
 
 	// The initChainer handles translating the genesis.json file into initial state for the network
 	app.SetInitChainer(app.InitChainer)
@@ -379,29 +451,45 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	app.SetEndBlocker(app.EndBlocker)
 
 	// The baseAnteHandler handles signature verification and transaction pre-processing
-	baseAnteHandler := auth.NewAnteHandler(
-		accountK,
-		supplyK,
-		auth.DefaultSigVerificationGasConsumer,
+	baseAnteHandler := authAnte.NewAnteHandler(
+		accountK, bankK, authAnte.DefaultSigVerificationGasConsumer,
+		encodingConfig.TxConfig.SignModeHandler(),
 	)
+
 	anteHandler := sdk.ChainAnteDecorators(
 		ante.NewAnteHandlerDecorator(baseAnteHandler),
 		ante.NewValidateValidatorDeregisteredTssDecorator(tssK, nexusK, snapK),
 	)
 	app.SetAnteHandler(anteHandler)
 
-	// initialize stores
-	app.MountKVStores(keys)
-	app.MountTransientStores(tkeys)
-
 	if loadLatest {
-		err := app.LoadLatestVersion(app.keys[bam.MainStoreKey])
-		if err != nil {
+		if err := app.LoadLatestVersion(); err != nil {
 			tmos.Exit(err.Error())
 		}
 	}
 
 	return app
+}
+
+func initParamsKeeper(appCodec codec.Marshaler, legacyAmino *codec.LegacyAmino, key, tkey sdk.StoreKey) paramskeeper.Keeper {
+	paramsKeeper := paramskeeper.NewKeeper(appCodec, legacyAmino, key, tkey)
+
+	paramsKeeper.Subspace(authtypes.ModuleName)
+	paramsKeeper.Subspace(banktypes.ModuleName)
+	paramsKeeper.Subspace(stakingtypes.ModuleName)
+	paramsKeeper.Subspace(minttypes.ModuleName)
+	paramsKeeper.Subspace(distrtypes.ModuleName)
+	paramsKeeper.Subspace(slashingtypes.ModuleName)
+	paramsKeeper.Subspace(govtypes.ModuleName).WithKeyTable(govtypes.ParamKeyTable())
+	paramsKeeper.Subspace(crisistypes.ModuleName)
+
+	paramsKeeper.Subspace(snapTypes.ModuleName)
+	paramsKeeper.Subspace(tssTypes.ModuleName)
+	paramsKeeper.Subspace(btcTypes.ModuleName)
+	paramsKeeper.Subspace(ethTypes.ModuleName)
+	paramsKeeper.Subspace(nexusTypes.ModuleName)
+
+	return paramsKeeper
 }
 
 // GenesisState represents chain state at the start of the chain. Any initial state (account balances) are stored here.
@@ -411,12 +499,10 @@ type GenesisState map[string]json.RawMessage
 func (app *AxelarApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 	var genesisState GenesisState
 
-	err := app.cdc.UnmarshalJSON(req.AppStateBytes, &genesisState)
-	if err != nil {
+	if err := tmjson.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
 		panic(err)
 	}
-
-	return app.mm.InitGenesis(ctx, genesisState)
+	return app.mm.InitGenesis(ctx, app.appCodec, genesisState)
 }
 
 // BeginBlocker calls the BeginBlock() function of every module at the beginning of a new block
@@ -432,25 +518,74 @@ func (app *AxelarApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci
 // LoadHeight loads the application version at a given height. It will panic if called
 // more than once on a running baseapp.
 func (app *AxelarApp) LoadHeight(height int64) error {
-	return app.LoadVersion(height, app.keys[bam.MainStoreKey])
+	return app.LoadVersion(height)
 }
 
-// Codec returns simapp's codec
-func (app *AxelarApp) Codec() *codec.Codec {
-	return app.cdc
+// LegacyAmino returns AxelarApp's amino codec.
+//
+// NOTE: This is solely to be used for testing purposes as it may be desirable
+// for modules to register their own custom testing types.
+func (app *AxelarApp) LegacyAmino() *codec.LegacyAmino {
+	return app.legacyAmino
 }
 
-// SimulationManager implements the SimulationApp interface
-func (app *AxelarApp) SimulationManager() *module.SimulationManager {
-	return app.sm
+// AppCodec returns AxelarApp's app codec.
+//
+// NOTE: This is solely to be used for testing purposes as it may be desirable
+// for modules to register their own custom testing types.
+func (app *AxelarApp) AppCodec() codec.Marshaler {
+	return app.appCodec
 }
 
 // ModuleAccountAddrs returns all the app's module account addresses.
 func (app *AxelarApp) ModuleAccountAddrs() map[string]bool {
 	modAccAddrs := make(map[string]bool)
 	for acc := range maccPerms {
-		modAccAddrs[supply.NewModuleAddress(acc).String()] = true
+		modAccAddrs[authtypes.NewModuleAddress(acc).String()] = true
 	}
 
 	return modAccAddrs
+}
+
+// RegisterAPIRoutes registers all application module routes with the provided
+// API server.
+func (app *AxelarApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIConfig) {
+	clientCtx := apiSvr.ClientCtx
+	rpc.RegisterRoutes(clientCtx, apiSvr.Router)
+	// Register legacy tx routes.
+	authrest.RegisterTxRoutes(clientCtx, apiSvr.Router)
+	// Register new tx routes from grpc-gateway.
+	authtx.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
+	// Register new tendermint queries routes from grpc-gateway.
+	tmservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
+
+	// Register legacy and grpc-gateway routes for all modules.
+	ModuleBasics.RegisterRESTRoutes(clientCtx, apiSvr.Router)
+	ModuleBasics.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
+
+	// register swagger API from root so that other applications can override easily
+	if apiConfig.Swagger {
+		RegisterSwaggerAPI(apiSvr.Router)
+	}
+}
+
+// RegisterSwaggerAPI registers swagger route with API Server
+func RegisterSwaggerAPI(rtr *mux.Router) {
+	statikFS, err := fs.New()
+	if err != nil {
+		panic(err)
+	}
+
+	staticServer := http.FileServer(statikFS)
+	rtr.PathPrefix("/swagger/").Handler(http.StripPrefix("/swagger/", staticServer))
+}
+
+// RegisterTxService implements the Application.RegisterTxService method.
+func (app *AxelarApp) RegisterTxService(clientCtx client.Context) {
+	authtx.RegisterTxService(app.BaseApp.GRPCQueryRouter(), clientCtx, app.BaseApp.Simulate, app.interfaceRegistry)
+}
+
+// RegisterTendermintService implements the Application.RegisterTendermintService method.
+func (app *AxelarApp) RegisterTendermintService(clientCtx client.Context) {
+	tmservice.RegisterTendermintService(app.BaseApp.GRPCQueryRouter(), clientCtx, app.interfaceRegistry)
 }

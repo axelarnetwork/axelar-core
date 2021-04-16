@@ -5,7 +5,8 @@ import (
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/std"
+	abci "github.com/tendermint/tendermint/abci/types"
 
 	bitcoin "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/types"
@@ -16,25 +17,24 @@ import (
 )
 
 var (
-	cdc *codec.Codec
+	cdc *codec.LegacyAmino
 )
 
 // Codec creates a codec for testing with all necessary types registered.
 // This codec is not sealed so tests can add their own mock types.
-func Codec() *codec.Codec {
+func Codec() *codec.LegacyAmino {
 	// Use cache if initialized before
 	if cdc != nil {
 		return cdc
 	}
 
-	cdc = codec.New()
+	cdc = codec.NewLegacyAmino()
 
-	sdk.RegisterCodec(cdc)
-	codec.RegisterCrypto(cdc)
+	std.RegisterLegacyAminoCodec(cdc)
 
 	// Add new modules here so tests have access to marshalling the registered ethereum
 	vote.RegisterCodec(cdc)
-	bitcoin.RegisterCodec(cdc)
+	bitcoin.RegisterLegacyAminoCodec(cdc)
 	tss.RegisterCodec(cdc)
 	broadcast.RegisterCodec(cdc)
 	snapshot.RegisterCodec(cdc)
@@ -56,10 +56,10 @@ func (f Func) Repeat(n int) Func {
 }
 
 // Events wraps sdk.Events
-type Events sdk.Events
+type Events []abci.Event
 
 // Filter returns a collection of events filtered by the predicate
-func (fe Events) Filter(predicate func(events sdk.Event) bool) Events {
+func (fe Events) Filter(predicate func(events abci.Event) bool) Events {
 	var filtered Events
 	for _, event := range fe {
 		if predicate(event) {

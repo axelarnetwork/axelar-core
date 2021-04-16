@@ -6,10 +6,11 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/codec"
+	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 )
 
-// RegisterCodec registers concrete types on codec
-func RegisterCodec(cdc *codec.Codec) {
+// RegisterLegacyAminoCodec registers concrete types on codec
+func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(MsgVoteConfirmOutpoint{}, "bitcoin/VoteConfirmOutpoint", nil)
 	cdc.RegisterConcrete(MsgConfirmOutpoint{}, "bitcoin/ConfirmOutpoint", nil)
 	cdc.RegisterConcrete(MsgLink{}, "bitcoin/Link", nil)
@@ -20,12 +21,13 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(btcec.S256(), "bitcoin/curve", nil)
 }
 
+var amino = codec.NewLegacyAmino()
+
 // ModuleCdc defines the module codec
-var ModuleCdc *codec.Codec
+var ModuleCdc = codec.NewAminoCodec(amino)
 
 func init() {
-	ModuleCdc = codec.New()
-	RegisterCodec(ModuleCdc)
-	codec.RegisterCrypto(ModuleCdc)
-	ModuleCdc.Seal()
+	RegisterLegacyAminoCodec(amino)
+	cryptocodec.RegisterCrypto(amino)
+	amino.Seal()
 }

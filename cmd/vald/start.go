@@ -108,7 +108,7 @@ func createBroadcaster(axelarCfg app.Config, logger log.Logger) (types.Broadcast
 		if err != nil {
 			return nil, sdk.AccAddress{}, err
 		}
-		keybase, err := keyring.NewKeyring(sdk.KeyringServiceName(), axelarCfg.ClientConfig.KeyringBackend, viper.GetString(cliHomeFlag), os.Stdin)
+		keybase, err := keyring.New(sdk.KeyringServiceName(), axelarCfg.ClientConfig.KeyringBackend, viper.GetString(cliHomeFlag), os.Stdin)
 		if err != nil {
 			return nil, sdk.AccAddress{}, err
 		}

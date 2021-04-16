@@ -4,11 +4,10 @@ import (
 	"net/http"
 
 	"github.com/btcsuite/btcutil"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/tx"
 
-	"github.com/cosmos/cosmos-sdk/client/context"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/gorilla/mux"
 
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
@@ -27,7 +26,7 @@ const (
 )
 
 // RegisterRoutes registers this module's REST routes with the given router
-func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
+func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx := clientUtils.RegisterTxHandlerFn(r, types.RestRoute)
 	registerTx(GetHandlerLink(cliCtx), TxMethodLink, clientUtils.PathVarChain)
 	registerTx(GetHandlerConfirmTx(cliCtx), TxMethodConfirmTx)
@@ -57,10 +56,10 @@ type ReqSignPendingTransfersTx struct {
 }
 
 // GetHandlerSignPendingTransfersTx returns the handler to sign pending transfers to Bitcoin
-func GetHandlerSignPendingTransfersTx(cliCtx context.CLIContext) http.HandlerFunc {
+func GetHandlerSignPendingTransfersTx(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqSignPendingTransfersTx
-		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
 			return
 		}
 		req.BaseReq = req.BaseReq.Sanitize()
@@ -85,15 +84,15 @@ func GetHandlerSignPendingTransfersTx(cliCtx context.CLIContext) http.HandlerFun
 			return
 		}
 
-		utils.WriteGenerateStdTxResponse(w, cliCtx, req.BaseReq, []sdk.Msg{msg})
+		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
 	}
 }
 
 // GetHandlerLink returns the handler to link a Bitcoin address to a cross-chain address
-func GetHandlerLink(cliCtx context.CLIContext) http.HandlerFunc {
+func GetHandlerLink(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqLink
-		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
 			return
 		}
 		req.BaseReq = req.BaseReq.Sanitize()
@@ -106,21 +105,21 @@ func GetHandlerLink(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		msg := types.MsgLink{Sender: fromAddr, RecipientChain: mux.Vars(r)[clientUtils.PathVarChain], RecipientAddr: req.Address}
+		msg := types.NewMsgLink(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], req.Address)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		utils.WriteGenerateStdTxResponse(w, cliCtx, req.BaseReq, []sdk.Msg{msg})
+		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
 	}
 }
 
 // GetHandlerConfirmTx returns the handler to confirm a tx outpoint
-func GetHandlerConfirmTx(cliCtx context.CLIContext) http.HandlerFunc {
+func GetHandlerConfirmTx(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqConfirmOutPoint
-		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
 			return
 		}
 		req.BaseReq = req.BaseReq.Sanitize()
@@ -133,17 +132,17 @@ func GetHandlerConfirmTx(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		var out types.OutPointInfo
-		if err := cliCtx.Codec.UnmarshalJSON([]byte(req.TxInfo), &out); err != nil {
+		if err := cliCtx.LegacyAmino.UnmarshalJSON([]byte(req.TxInfo), &out); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		msg := types.MsgConfirmOutpoint{Sender: fromAddr, OutPointInfo: out}
+		msg := types.NewMsgConfirmOutpoint(fromAddr, out)
 
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
-		utils.WriteGenerateStdTxResponse(w, cliCtx, req.BaseReq, []sdk.Msg{msg})
+		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
 	}
 }

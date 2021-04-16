@@ -1,0 +1,11 @@
+version: v1beta1
+build:
+  roots:
+    - ./proto
+    - ./third_party/proto
+lint:
+  ignore:
+    - tendermint
+    - confio
+    - cosmos_proto
+    - gogoproto

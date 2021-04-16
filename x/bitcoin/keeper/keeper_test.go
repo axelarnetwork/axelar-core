@@ -6,13 +6,13 @@ import (
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/assert"
-	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
+	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
@@ -22,10 +22,10 @@ import (
 
 func TestKeeper_GetConfirmedOutPointInfos(t *testing.T) {
 	setup := func() (Keeper, sdk.Context) {
-		cdc := testutils.Codec()
-		btcSubspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"), "btc")
-		ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-		return NewKeeper(cdc, sdk.NewKVStoreKey("btc"), btcSubspace), ctx
+		encCfg := app.MakeEncodingConfig()
+		btcSubspace := params.NewSubspace(encCfg.Marshaler,encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"), "btc")
+		ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		return NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("btc"), btcSubspace), ctx
 	}
 
 	testCases := []struct {
@@ -110,8 +110,8 @@ func randOutPointInfo() types.OutPointInfo {
 		panic(err)
 	}
 	info := types.OutPointInfo{
-		OutPoint: wire.NewOutPoint(txHash, rand.Uint32()),
-		Amount:   btcutil.Amount(rand2.PosI64()),
+		OutPoint: wire.NewOutPoint(txHash, rand.Uint32()).String(),
+		Amount:   rand2.PosI64(),
 		Address:  rand2.StrBetween(20, 60),
 	}
 	return info
