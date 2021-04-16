@@ -5,11 +5,12 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
+
 	"github.com/axelarnetwork/axelar-core/utils"
 	bitcoin "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	ethereum "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
-	"github.com/cosmos/cosmos-sdk/x/params/subspace"
 )
 
 // DefaultParamspace - default parameter namespace
@@ -26,22 +27,8 @@ var (
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
-func KeyTable() subspace.KeyTable {
-	return subspace.NewKeyTable().RegisterParamSet(&Params{})
-}
-
-// Params is the parameter set for this module
-type Params struct {
-	// KeyLockingPeriod defines the key for the locking period
-	LockingPeriod int64
-	// MinKeygenThreshold defines the minimum % of stake that must be online
-	// to authorize generation of a new key in the system.
-	MinKeygenThreshold utils.Threshold
-	// CorruptionThreshold defines the corruption threshold with which
-	// we'll run keygen protocol.
-	CorruptionThreshold utils.Threshold
-	// KeyRequirements defines the requirement of each key for each chain
-	KeyRequirements []exported.KeyRequirement
+func KeyTable() params.KeyTable {
+	return params.NewKeyTable().RegisterParamSet(&Params{})
 }
 
 // DefaultParams returns the module's parameter set initialized with default values
@@ -61,18 +48,18 @@ func DefaultParams() Params {
 
 // ParamSetPairs implements the ParamSet interface and returns all the key/value pairs
 // pairs of tss module's parameters
-func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
+func (m *Params) ParamSetPairs() params.ParamSetPairs {
 	/*
 		because the subspace package makes liberal use of pointers to set and get values from the store,
 		this method needs to have a pointer receiver AND NewParamSetPair needs to receive the
 		parameter values as pointer arguments, otherwise either the internal type reflection panics or the value will not be
 		set on the correct Params data struct
 	*/
-	return subspace.ParamSetPairs{
-		subspace.NewParamSetPair(KeyLockingPeriod, &p.LockingPeriod, validateLockingPeriod),
-		subspace.NewParamSetPair(KeyMinKeygenThreshold, &p.MinKeygenThreshold, validateThreshold),
-		subspace.NewParamSetPair(KeyCorruptionThreshold, &p.CorruptionThreshold, validateThreshold),
-		subspace.NewParamSetPair(KeyKeyRequirements, &p.KeyRequirements, validateKeyRequirements),
+	return params.ParamSetPairs{
+		params.NewParamSetPair(KeyLockingPeriod, &m.LockingPeriod, validateLockingPeriod),
+		params.NewParamSetPair(KeyMinKeygenThreshold, &m.MinKeygenThreshold, validateThreshold),
+		params.NewParamSetPair(KeyCorruptionThreshold, &m.CorruptionThreshold, validateThreshold),
+		params.NewParamSetPair(KeyKeyRequirements, &m.KeyRequirements, validateKeyRequirements),
 	}
 }
 
@@ -88,24 +75,24 @@ func validateLockingPeriod(period interface{}) error {
 }
 
 // Validate checks the validity of the values of the parameter set
-func (p Params) Validate() error {
-	if err := validateLockingPeriod(p.LockingPeriod); err != nil {
+func (m Params) Validate() error {
+	if err := validateLockingPeriod(m.LockingPeriod); err != nil {
 		return err
 	}
 
-	if err := validateThreshold(p.MinKeygenThreshold); err != nil {
+	if err := validateThreshold(m.MinKeygenThreshold); err != nil {
 		return err
 	}
 
-	if err := validateThreshold(p.CorruptionThreshold); err != nil {
+	if err := validateThreshold(m.CorruptionThreshold); err != nil {
 		return err
 	}
 
-	if err := validateTssThresholds(p.MinKeygenThreshold, p.CorruptionThreshold); err != nil {
+	if err := validateTssThresholds(m.MinKeygenThreshold, m.CorruptionThreshold); err != nil {
 		return err
 	}
 
-	if err := validateKeyRequirements(p.KeyRequirements); err != nil {
+	if err := validateKeyRequirements(m.KeyRequirements); err != nil {
 		return err
 	}
 

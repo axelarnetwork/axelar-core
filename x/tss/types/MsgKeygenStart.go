@@ -5,55 +5,55 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// MsgKeygenStart indicate the start of keygen
-type MsgKeygenStart struct {
-	Sender     sdk.AccAddress
-	NewKeyID   string
-	SubsetSize int64
-}
-
 // NewMsgKeygenStart constructor for MsgKeygenStart
-func NewMsgKeygenStart(sender sdk.AccAddress, newKeyID string, subsetSize int64) sdk.Msg {
-	return MsgKeygenStart{
-		Sender:     sender,
+func NewMsgKeygenStart(sender sdk.AccAddress, newKeyID string, subsetSize int64) *MsgKeygenStart {
+	return &MsgKeygenStart{
+		Sender:     sender.String(),
 		NewKeyID:   newKeyID,
 		SubsetSize: subsetSize,
 	}
 }
 
 // Route implements the sdk.Msg interface.
-func (msg MsgKeygenStart) Route() string { return RouterKey }
+func (m MsgKeygenStart) Route() string { return RouterKey }
 
 // Type implements the sdk.Msg interface.
 // naming convention follows x/staking/types/msgs.go
-func (msg MsgKeygenStart) Type() string { return "KeyGenStart" }
+func (m MsgKeygenStart) Type() string { return "KeyGenStart" }
 
 // ValidateBasic implements the sdk.Msg interface.
-func (msg MsgKeygenStart) ValidateBasic() error {
-	if msg.Sender == nil {
-		return sdkerrors.Wrap(ErrTss, "sender must be set")
+func (m MsgKeygenStart) ValidateBasic() error {
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "malformed sender address")
 	}
 
-	if msg.NewKeyID == "" {
+	if m.NewKeyID == "" {
 		return sdkerrors.Wrap(ErrTss, "new key id must be set")
 	}
 
-	if msg.SubsetSize < 0 {
+	if m.SubsetSize < 0 {
 		return sdkerrors.Wrap(ErrTss, "subset size has to be greater than or equal to 0")
 	}
 
-	// TODO enforce a maximum length for msg.NewKeyID?
+	// TODO enforce a maximum length for m.NewKeyID?
 	return nil
 }
 
 // GetSignBytes implements the sdk.Msg interface.
-func (msg MsgKeygenStart) GetSignBytes() []byte {
-	bz := ModuleCdc.MustMarshalJSON(msg)
-
-	return sdk.MustSortJSON(bz)
+func (m MsgKeygenStart) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
-// GetSigners implements the sdk.Msg interface.
-func (msg MsgKeygenStart) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Sender}
+// GetSigners implements sdk.Msg
+func (m MsgKeygenStart) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{m.GetSender()}
+}
+
+// GetSender returns the sender object
+func (m MsgKeygenStart) GetSender() sdk.AccAddress {
+	addr, err := sdk.AccAddressFromBech32(m.Sender)
+	if err != nil {
+		panic(err)
+	}
+	return addr
 }

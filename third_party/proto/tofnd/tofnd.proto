@@ -1,9 +1,9 @@
 // File copied from golang tofnd with minor tweaks
 syntax = "proto3";
 
-option go_package = "tofnd;tofnd";
-
 package tofnd;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/tss/tofnd";
 
 // GG20 is the protocol https://eprint.iacr.org/2020/540
 // rpc definitions intended to wrap the API for this library:

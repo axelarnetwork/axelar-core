@@ -3,18 +3,18 @@ package rest
 import (
 	"net/http"
 
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/gorilla/mux"
 
-	"github.com/cosmos/cosmos-sdk/client/context"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
+// rest routes
 const (
 	TxMethodKeygenStart         = "start"
 	TxMethodMasterKeyAssignNext = "assign"
@@ -43,17 +43,18 @@ type ReqKeyRotate struct {
 }
 
 // RegisterRoutes registers all REST routes with the given router
-func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
+func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx := clientUtils.RegisterTxHandlerFn(r, types.RestRoute)
 	registerTx(GetHandlerKeygenStart(cliCtx), TxMethodKeygenStart)
 	registerTx(GetHandlerKeyAssignNext(cliCtx), TxMethodMasterKeyAssignNext, clientUtils.PathVarChain)
 	registerTx(GetHandlerKeyRotate(cliCtx), TxMethodMasterKeyRotate, clientUtils.PathVarChain)
 }
 
-func GetHandlerKeygenStart(cliCtx context.CLIContext) http.HandlerFunc {
+// GetHandlerKeygenStart returns the handler to start a keygen
+func GetHandlerKeygenStart(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqKeygenStart
-		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
 			return
 		}
@@ -73,14 +74,15 @@ func GetHandlerKeygenStart(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		utils.WriteGenerateStdTxResponse(w, cliCtx, req.BaseReq, []sdk.Msg{msg})
+		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
 	}
 }
 
-func GetHandlerKeyAssignNext(cliCtx context.CLIContext) http.HandlerFunc {
+// GetHandlerKeyAssignNext returns the handler to assign a role to an existing key
+func GetHandlerKeyAssignNext(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqKeyAssignNext
-		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
 			return
 		}
 		req.BaseReq = req.BaseReq.Sanitize()
@@ -105,14 +107,15 @@ func GetHandlerKeyAssignNext(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		utils.WriteGenerateStdTxResponse(w, cliCtx, req.BaseReq, []sdk.Msg{msg})
+		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
 	}
 }
 
-func GetHandlerKeyRotate(cliCtx context.CLIContext) http.HandlerFunc {
+// GetHandlerKeyRotate returns a handler that rotates the active keys to the next assigned ones
+func GetHandlerKeyRotate(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqKeyRotate
-		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
 			return
 		}
 		req.BaseReq = req.BaseReq.Sanitize()
@@ -137,6 +140,6 @@ func GetHandlerKeyRotate(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		utils.WriteGenerateStdTxResponse(w, cliCtx, req.BaseReq, []sdk.Msg{msg})
+		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
 	}
 }

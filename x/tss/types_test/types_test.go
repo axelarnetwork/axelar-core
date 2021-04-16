@@ -18,21 +18,21 @@ func TestMsgVotePubKey_Marshaling(t *testing.T) {
 		sender[i] = 0
 	}
 	vote := tss.MsgVotePubKey{
-		Sender:      sender,
+		Sender:      string(sender),
 		PollMeta:    exported.NewPollMeta("test", "test"),
 		PubKeyBytes: []byte("some bytes"),
 	}
-	cdc := testutils.Codec()
+	encCfg := testutils.MakeEncodingConfig()
 
-	bz := cdc.MustMarshalBinaryLengthPrefixed(vote)
+	bz := encCfg.Amino.MustMarshalBinaryLengthPrefixed(vote)
 	var msg sdk.Msg
-	cdc.MustUnmarshalBinaryLengthPrefixed(bz, &msg)
+	encCfg.Amino.MustUnmarshalBinaryLengthPrefixed(bz, &msg)
 
 	assert.Equal(t, vote, msg)
 
-	bz = cdc.MustMarshalJSON(vote)
+	bz = encCfg.Amino.MustMarshalJSON(vote)
 	var msg2 sdk.Msg
-	cdc.MustUnmarshalJSON(bz, &msg2)
+	encCfg.Amino.MustUnmarshalJSON(bz, &msg2)
 
 	assert.Equal(t, vote, msg2)
 }

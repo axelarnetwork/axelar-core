@@ -9,3 +9,4 @@ lint:
     - confio
     - cosmos_proto
     - gogoproto
+    - tofnd

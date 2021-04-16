@@ -20,15 +20,6 @@ type Key struct {
 	Role  KeyRole
 }
 
-// KeyRole is an enum for the role of the key
-type KeyRole int
-
-const (
-	MasterKey KeyRole = iota
-	SecondaryKey
-	Unknown
-)
-
 // GetKeyRoles returns an array of all types of key role
 func GetKeyRoles() []KeyRole {
 	return []KeyRole{MasterKey, SecondaryKey}
@@ -58,27 +49,27 @@ func (r KeyRole) Validate() error {
 
 // String converts the KeyRole to a string
 func (r KeyRole) String() string {
-	return [...]string{"master", "secondary"}[r]
-}
-
-// KeyRequirement defines requirements for keys
-type KeyRequirement struct {
-	ChainName              string
-	KeyRole                KeyRole
-	MinValidatorSubsetSize int64
+	switch r {
+	case MasterKey:
+		return "master"
+	case SecondaryKey:
+		return "secondary"
+	default:
+		return "unknown"
+	}
 }
 
 // Validate validates the KeyRequirement
-func (r KeyRequirement) Validate() error {
-	if r.ChainName == "" {
-		return fmt.Errorf("invalid ChainName %s", r.ChainName)
+func (m KeyRequirement) Validate() error {
+	if m.ChainName == "" {
+		return fmt.Errorf("invalid ChainName %s", m.ChainName)
 	}
 
-	if err := r.KeyRole.Validate(); err != nil {
+	if err := m.KeyRole.Validate(); err != nil {
 		return err
 	}
 
-	if r.MinValidatorSubsetSize <= 0 {
+	if m.MinValidatorSubsetSize <= 0 {
 		return fmt.Errorf("MinValidatorSubsetSize has to be greater than 0 when the key is required")
 	}
 

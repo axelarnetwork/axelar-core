@@ -10,20 +10,20 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/assert"
-	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
+	"github.com/axelarnetwork/axelar-core/app"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
 
-	slashingTypes "github.com/cosmos/cosmos-sdk/x/slashing"
+	slashingTypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 
-	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -57,12 +57,14 @@ type testSetup struct {
 }
 
 func setup(t *testing.T) *testSetup {
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	broadcaster := prepareBroadcaster(t, ctx, testutils.Codec(), validators)
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	encCfg:= app.MakeEncodingConfig()
+	broadcaster := prepareBroadcaster(t, ctx, encCfg.Amino, validators)
 	voter := &tssMock.VoterMock{
 		InitPollFunc: func(sdk.Context, exported.PollMeta, int64) error { return nil },
 	}
-	subspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), "tss")
+
+	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), "tss")
 	setup := &testSetup{
 		Broadcaster: broadcaster,
 		Voter:       voter,
@@ -85,7 +87,7 @@ func setup(t *testing.T) *testSetup {
 		},
 	}
 
-	k := NewKeeper(testutils.Codec(), sdk.NewKVStoreKey("tss"), subspace, slasher)
+	k := NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("tss"), subspace, slasher)
 	k.SetParams(ctx, types.DefaultParams())
 
 	setup.Keeper = k
@@ -116,7 +118,7 @@ func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context) tss.Key {
 	}
 }
 
-func prepareBroadcaster(t *testing.T, ctx sdk.Context, cdc *codec.Codec, validators []snapshot.Validator) fake.Broadcaster {
+func prepareBroadcaster(t *testing.T, ctx sdk.Context, cdc *codec.LegacyAmino, validators []snapshot.Validator) fake.Broadcaster {
 	broadcaster := fake.NewBroadcaster(cdc, validators[0].GetOperator(), func(msg sdk.Msg) (result <-chan *fake.Result) {
 		return make(chan *fake.Result)
 	})

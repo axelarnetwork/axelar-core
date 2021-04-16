@@ -8,16 +8,14 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-type GenesisState struct {
-	Params Params
-}
-
+// DefaultGenesis represents the default genesis state
 func DefaultGenesis() *GenesisState {
 	return &GenesisState{DefaultParams()}
 }
 
-func (g GenesisState) Validate() error {
-	if err := g.Params.Validate(); err != nil {
+// Validate validates the genesis state
+func (m GenesisState) Validate() error {
+	if err := m.Params.Validate(); err != nil {
 		return sdkerrors.Wrap(err, fmt.Sprintf("genesis state for module %s is invalid", ModuleName))
 	}
 	return nil

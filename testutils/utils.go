@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/std"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/axelarnetwork/axelar-core/app/params"
 	bitcoin "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	ethereum "github.com/axelarnetwork/axelar-core/x/ethereum/types"
@@ -20,27 +21,21 @@ var (
 	cdc *codec.LegacyAmino
 )
 
-// Codec creates a codec for testing with all necessary types registered.
-// This codec is not sealed so tests can add their own mock types.
-func Codec() *codec.LegacyAmino {
-	// Use cache if initialized before
-	if cdc != nil {
-		return cdc
-	}
-
-	cdc = codec.NewLegacyAmino()
-
-	std.RegisterLegacyAminoCodec(cdc)
+// MakeEncodingConfig creates an EncodingConfig for testing
+func MakeEncodingConfig() params.EncodingConfig {
+	encodingConfig := params.MakeEncodingConfig()
+	std.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 
 	// Add new modules here so tests have access to marshalling the registered ethereum
 	vote.RegisterCodec(cdc)
 	bitcoin.RegisterLegacyAminoCodec(cdc)
-	tss.RegisterCodec(cdc)
-	broadcast.RegisterCodec(cdc)
+	tss.RegisterLegacyAminoCodec(cdc)
+	broadcast.RegisterLegacyAminoCodec(cdc)
 	snapshot.RegisterCodec(cdc)
 	ethereum.RegisterCodec(cdc)
 
-	return cdc
+	return encodingConfig
 }
 
 // Func wraps a regular testing function so it can be used as a pointer function receiver
