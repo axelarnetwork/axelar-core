@@ -13,7 +13,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	staking "github.com/cosmos/cosmos-sdk/x/staking/exported"
 )
 
 const lastCounterKey = "lastcounter"
@@ -126,15 +125,15 @@ func (k Keeper) GetLatestCounter(ctx sdk.Context) int64 {
 }
 
 func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error) {
-	var validators []staking.ValidatorI
+	var validators []exported.SDKValidator
 	snapshotConsensusPower, totalConsensusPower := sdk.ZeroInt(), sdk.ZeroInt()
 
-	validatorIter := func(_ int64, validator staking.ValidatorI) (stop bool) {
+	validatorIter := func(_ int64, validator stakingtypes.ValidatorI) (stop bool) {
 		totalConsensusPower = totalConsensusPower.AddRaw(validator.GetConsensusPower())
 
 		// this explicit type cast is necessary, because snapshot needs to call UnpackInterfaces() on the validator
 		// and it is not exposed in the ValidatorI interface
-		v, ok := validator.(exported.Validator)
+		v, ok := validator.(exported.SDKValidator)
 		if !ok {
 			k.Logger(ctx).Error(fmt.Sprintf("unexpected validator type: expected %T, got %T", stakingtypes.Validator{}, validator))
 			return false
@@ -161,11 +160,11 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64
 	// IterateBondedValidatorsByPower(https://github.com/cosmos/cosmos-sdk/blob/7fc7b3f6ff82eb5ede52881778114f6b38bd7dfa/x/staking/keeper/alias_functions.go#L33) iterates validators by power in descending order
 	k.staking.IterateBondedValidatorsByPower(ctx, validatorIter)
 
-	minMinBondFractionPerShare := k.tss.GetMinBondFractionPerShare(ctx)
+	minBondFractionPerShare := k.tss.GetMinBondFractionPerShare(ctx)
 
 	var participants []exported.Validator
 	for _, validator := range validators {
-		if !minMinBondFractionPerShare.IsMet(sdk.NewInt(validator.GetConsensusPower()), totalConsensusPower) {
+		if !minBondFractionPerShare.IsMet(sdk.NewInt(validator.GetConsensusPower()), totalConsensusPower) {
 			snapshotConsensusPower = snapshotConsensusPower.SubRaw(validator.GetConsensusPower())
 			continue
 		}

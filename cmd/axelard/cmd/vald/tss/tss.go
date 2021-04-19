@@ -124,7 +124,6 @@ func parseMsgParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (session
 		case sdk.AttributeKeySender:
 			from = attribute.Value
 		case tss.AttributeKeyPayload:
-
 			cdc.MustUnmarshalJSON([]byte(attribute.Value), &payload)
 		default:
 		}
@@ -133,7 +132,7 @@ func parseMsgParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (session
 	return sessionID, from, payload
 }
 
-func prepareTrafficIn(principalAddr string, from string, sessionID string, payload *tofnd.TrafficOut, logger log.Logger) (*tofnd.MessageIn, error) {
+func prepareTrafficIn(principalAddr string, from string, sessionID string, payload *tofnd.TrafficOut, logger log.Logger) *tofnd.MessageIn {
 	msgIn := &tofnd.MessageIn{
 		Data: &tofnd.MessageIn_Traffic{
 			Traffic: &tofnd.TrafficIn{
@@ -147,7 +146,7 @@ func prepareTrafficIn(principalAddr string, from string, sessionID string, paylo
 	logger.Debug(fmt.Sprintf("incoming msg to tofnd: session [%.20s] from [%.20s] to [%.20s] broadcast [%t] me [%.20s]",
 		sessionID, from, payload.ToPartyUid, payload.IsBroadcast, principalAddr))
 
-	return msgIn, nil
+	return msgIn
 }
 
 func indexOf(participants []string, address string) (int32, bool) {

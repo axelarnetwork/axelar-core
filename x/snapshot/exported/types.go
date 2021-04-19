@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"time"
 
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/axelarnetwork/axelar-core/utils"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 )
@@ -27,8 +27,8 @@ type Validator struct {
 	Power sdk.Int
 }
 
-func NewValidator(sdkValidator SDKValidator, power sdk.Int) Validator {
-	return Validator{SDKValidator: sdkValidator, Power: power}
+func NewValidator(validator SDKValidator, power sdk.Int) Validator {
+	return Validator{SDKValidator: validator, Power: power}
 }
 
 // ValidatorInfo adopts the methods from "github.com/cosmos/cosmos-sdk/x/slashing" that are

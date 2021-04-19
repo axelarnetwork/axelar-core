@@ -58,10 +58,7 @@ func (mgr *Mgr) ProcessSignStart(attributes []sdk.Attribute) error {
 // ProcessSignMsg forwards blockchain messages to the sign protocol
 func (mgr *Mgr) ProcessSignMsg(attributes []sdk.Attribute) error {
 	sigID, from, payload := parseMsgParams(mgr.cdc, attributes)
-	msgIn, err := prepareTrafficIn(mgr.principalAddr, from, sigID, payload, mgr.Logger)
-	if err != nil {
-		return err
-	}
+	msgIn := prepareTrafficIn(mgr.principalAddr, from, sigID, payload, mgr.Logger)
 	// this message is not meant for this tofnd instance
 	if msgIn == nil {
 		return nil

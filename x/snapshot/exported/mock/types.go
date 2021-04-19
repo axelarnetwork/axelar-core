@@ -6,8 +6,8 @@ package mock
 import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"sync"
 )
@@ -20,8 +20,8 @@ var _ exported.SDKValidator = &SDKValidatorMock{}
 //
 // 	func TestSomethingThatUsesSDKValidator(t *testing.T) {
 //
-// 		// make and configure a mocked exported.Validator
-// 		mockedValidator := &ValidatorMock{
+// 		// make and configure a mocked exported.SDKValidator
+// 		mockedSDKValidator := &SDKValidatorMock{
 // 			GetConsAddrFunc: func() (sdk.ConsAddress, error) {
 // 				panic("mock out the GetConsAddr method")
 // 			},
@@ -87,7 +87,7 @@ type SDKValidatorMock struct {
 }
 
 // GetConsAddr calls GetConsAddrFunc.
-func (mock *ValidatorMock) GetConsAddr() (sdk.ConsAddress, error) {
+func (mock *SDKValidatorMock) GetConsAddr() (sdk.ConsAddress, error) {
 	if mock.GetConsAddrFunc == nil {
 		panic("SDKValidatorMock.GetConsAddrFunc: method is nil but SDKValidator.GetConsAddr was just called")
 	}
@@ -191,9 +191,9 @@ func (mock *SDKValidatorMock) IsJailedCalls() []struct {
 }
 
 // UnpackInterfaces calls UnpackInterfacesFunc.
-func (mock *ValidatorMock) UnpackInterfaces(c codectypes.AnyUnpacker) error {
+func (mock *SDKValidatorMock) UnpackInterfaces(c codectypes.AnyUnpacker) error {
 	if mock.UnpackInterfacesFunc == nil {
-		panic("ValidatorMock.UnpackInterfacesFunc: method is nil but Validator.UnpackInterfaces was just called")
+		panic("SDKValidatorMock.UnpackInterfacesFunc: method is nil but SDKValidator.UnpackInterfaces was just called")
 	}
 	callInfo := struct {
 		C codectypes.AnyUnpacker
@@ -208,8 +208,8 @@ func (mock *ValidatorMock) UnpackInterfaces(c codectypes.AnyUnpacker) error {
 
 // UnpackInterfacesCalls gets all the calls that were made to UnpackInterfaces.
 // Check the length with:
-//     len(mockedValidator.UnpackInterfacesCalls())
-func (mock *ValidatorMock) UnpackInterfacesCalls() []struct {
+//     len(mockedSDKValidator.UnpackInterfacesCalls())
+func (mock *SDKValidatorMock) UnpackInterfacesCalls() []struct {
 	C codectypes.AnyUnpacker
 } {
 	var calls []struct {

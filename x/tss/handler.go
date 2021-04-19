@@ -167,7 +167,7 @@ func handleMsgAssignNextKey(ctx sdk.Context, k keeper.Keeper, s types.Snapshotte
 
 	keyRequirement, found := k.GetKeyRequirement(ctx, chain, msg.KeyRole)
 	if !found {
-		return nil, fmt.Errorf("%s key is not required for chain %s", msg.KeyRole.SimpleString(), chain.Name)
+		return nil, fmt.Errorf("%s key is not required for chain %s", msg.KeyRole.String(), chain.Name)
 	}
 
 	if len(snapshot.Validators) < int(keyRequirement.MinValidatorSubsetSize) {
@@ -274,7 +274,7 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 			sdk.NewAttribute(types.AttributeKeyKeyID, msg.NewKeyID),
 			sdk.NewAttribute(types.AttributeKeyThreshold, strconv.Itoa(threshold)),
-			sdk.NewAttribute(types.AttributeKeyParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participants)))))
+			sdk.NewAttribute(types.AttributeKeyParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participants))),
 			sdk.NewAttribute(types.AttributeKeyParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participantShareCounts))),
 		),
 	)

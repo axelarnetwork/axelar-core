@@ -47,8 +47,8 @@ func getCmdKeygenStart() *cobra.Command {
 	subsetSize := cmd.Flags().Int64("subset-size", 0, "number of top validators to participate in the key generation")
 	keyShareDistributionPolicy := cmd.Flags().String(
 		"key-share-distribution-policy",
-		exported.WeightedByStake.String(),
-		fmt.Sprintf("policy for distributing key shares; available options: %s, %s", exported.WeightedByStake.String(), exported.OnePerValidator.String()),
+		"weighted-by-stake",
+		fmt.Sprintf("policy for distributing key shares; available options: weighted-by-stake, one-per-validator"),
 	)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {

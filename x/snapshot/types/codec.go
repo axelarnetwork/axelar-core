@@ -13,7 +13,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterInterface((*exported.SDKValidator)(nil), nil)
 	/* The snapshot keeper is dependent on the StakingKeeper interface, which returns validators through interfaces.
 	However, the snapshot keeper has to marshal the validators, so it must register the actual concrete type that is returned. */
-	cdc.RegisterConcrete(&staking.Validator{}, "snapshot/SDKValidator", nil)
+	cdc.RegisterConcrete(&stakingtypes.Validator{}, "snapshot/SDKValidator", nil)
 	cdc.RegisterConcrete(&exported.Validator{}, "snapshot/Validator", nil)
 }
 

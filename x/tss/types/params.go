@@ -62,7 +62,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyMinKeygenThreshold, &m.MinKeygenThreshold, validateThreshold),
 		params.NewParamSetPair(KeyCorruptionThreshold, &m.CorruptionThreshold, validateThreshold),
 		params.NewParamSetPair(KeyKeyRequirements, &m.KeyRequirements, validateKeyRequirements),
-		params.NewParamSetPair(KeyMinBondFractionPerShare, &p.MinBondFractionPerShare, validateMinBondFractionPerShare),
+		params.NewParamSetPair(KeyMinBondFractionPerShare, &m.MinBondFractionPerShare, validateMinBondFractionPerShare),
 	}
 }
 
@@ -99,7 +99,7 @@ func (m Params) Validate() error {
 		return err
 	}
 
-	if err := validateMinBondFractionPerShare(p.MinBondFractionPerShare); err != nil {
+	if err := validateMinBondFractionPerShare(m.MinBondFractionPerShare); err != nil {
 		return err
 	}
 

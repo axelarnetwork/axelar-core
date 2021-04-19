@@ -26,11 +26,10 @@ import (
 
 	snapshotMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/tendermint/tendermint/libs/log"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	sdkExported "github.com/cosmos/cosmos-sdk/x/staking/exported"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	staking "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/tendermint/tendermint/libs/log"
 )
 
 var encCfg appParams.EncodingConfig

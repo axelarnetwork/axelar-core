@@ -28,9 +28,9 @@ func GetKeyRoles() []KeyRole {
 // KeyRoleFromStr creates a KeyRole from string
 func KeyRoleFromStr(str string) (KeyRole, error) {
 	switch strings.ToLower(str) {
-	case MasterKey.SimpleString():
+	case "master":
 		return MasterKey, nil
-	case SecondaryKey.SimpleString():
+	case "secondary":
 		return SecondaryKey, nil
 	default:
 		return -1, fmt.Errorf("invalid key role %s", str)
@@ -47,30 +47,12 @@ func (x KeyRole) Validate() error {
 	}
 }
 
-// SimpleString converts the KeyRole to a string
-func (x KeyRole) SimpleString() string {
-	switch x {
-	case MasterKey:
-		return "master"
-	case SecondaryKey:
-		return "secondary"
-	default:
-		return "unknown"
-	}
-
-type KeyShareDistributionPolicy int
-
-const (
-	WeightedByStake KeyShareDistributionPolicy = iota
-	OnePerValidator
-)
-
 // KeyShareDistributionPolicyFromStr creates a KeyShareDistributionPolicy from string
 func KeyShareDistributionPolicyFromStr(str string) (KeyShareDistributionPolicy, error) {
 	switch strings.ToLower(str) {
-	case WeightedByStake.String():
+	case "weighted-by-stake":
 		return WeightedByStake, nil
-	case OnePerValidator.String():
+	case "one-per-validator":
 		return OnePerValidator, nil
 	default:
 		return -1, fmt.Errorf("invalid key share distribution policy %s", str)
@@ -83,28 +65,8 @@ func (r KeyShareDistributionPolicy) Validate() error {
 	case WeightedByStake, OnePerValidator:
 		return nil
 	default:
-		return fmt.Errorf("invalid key role %d", r)
+		return fmt.Errorf("invalid key share distribution policy %d", r)
 	}
-}
-
-// String converts the KeyShareDistributionPolicy to a string
-func (r KeyShareDistributionPolicy) String() string {
-	switch r {
-	case WeightedByStake:
-		return "weighted-by-stake"
-	case OnePerValidator:
-		return "one-per-validator"
-	default:
-		panic(fmt.Errorf("invalid KeyShareDistributionPolicy %d", r))
-	}
-}
-
-// KeyRequirement defines requirements for keys
-type KeyRequirement struct {
-	ChainName                  string
-	KeyRole                    KeyRole
-	MinValidatorSubsetSize     int64
-	KeyShareDistributionPolicy KeyShareDistributionPolicy
 }
 
 // Validate validates the KeyRequirement
@@ -121,7 +83,7 @@ func (m KeyRequirement) Validate() error {
 		return fmt.Errorf("MinValidatorSubsetSize has to be greater than 0 when the key is required")
 	}
 
-	if err := r.KeyShareDistributionPolicy.Validate(); err != nil {
+	if err := m.KeyShareDistributionPolicy.Validate(); err != nil {
 		return err
 	}
 

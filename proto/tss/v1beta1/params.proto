@@ -23,7 +23,8 @@ message Params {
   // KeyRequirements defines the requirement of each key for each chain
   repeated exported.v1beta1.KeyRequirement key_requirements = 4
       [ (gogoproto.nullable) = false ];
-  // MinBondFractionPerShare defines the % of stake validators have to bond per key share
+  // MinBondFractionPerShare defines the % of stake validators have to bond per
+  // key share
   utils.v1beta1.Threshold min_bond_fraction_per_share = 5
       [ (gogoproto.nullable) = false ];
 }

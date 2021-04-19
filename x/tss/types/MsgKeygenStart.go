@@ -6,30 +6,13 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-<<<<<<< HEAD
 // NewMsgKeygenStart constructor for MsgKeygenStart
-func NewMsgKeygenStart(sender sdk.AccAddress, newKeyID string, subsetSize int64) *MsgKeygenStart {
+func NewMsgKeygenStart(sender sdk.AccAddress, newKeyID string, subsetSize int64, keyShareDistributionPolicy exported.KeyShareDistributionPolicy) *MsgKeygenStart {
 	return &MsgKeygenStart{
-		Sender:     sender,
-		NewKeyID:   newKeyID,
-		SubsetSize: subsetSize,
-=======
-// MsgKeygenStart indicate the start of keygen
-type MsgKeygenStart struct {
-	Sender                     sdk.AccAddress
-	NewKeyID                   string
-	SubsetSize                 int64
-	KeyShareDistributionPolicy exported.KeyShareDistributionPolicy
-}
-
-// NewMsgKeygenStart constructor for MsgKeygenStart
-func NewMsgKeygenStart(sender sdk.AccAddress, newKeyID string, subsetSize int64, keyShareDistributionPolicy exported.KeyShareDistributionPolicy) sdk.Msg {
-	return MsgKeygenStart{
 		Sender:                     sender,
 		NewKeyID:                   newKeyID,
 		SubsetSize:                 subsetSize,
 		KeyShareDistributionPolicy: keyShareDistributionPolicy,
->>>>>>> 3760186... add KeyShareDistributionPolicy to keygen
 	}
 }
 
@@ -54,15 +37,11 @@ func (m MsgKeygenStart) ValidateBasic() error {
 		return sdkerrors.Wrap(ErrTss, "subset size has to be greater than or equal to 0")
 	}
 
-<<<<<<< HEAD
-	// TODO enforce a maximum length for m.NewKeyID?
-=======
-	if err := msg.KeyShareDistributionPolicy.Validate(); err != nil {
-		return nil
+	if err := m.KeyShareDistributionPolicy.Validate(); err != nil {
+		return err
 	}
 
-	// TODO enforce a maximum length for msg.NewKeyID?
->>>>>>> 3760186... add KeyShareDistributionPolicy to keygen
+	// TODO enforce a maximum length for m.NewKeyID?
 	return nil
 }
 
