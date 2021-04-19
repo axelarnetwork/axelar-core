@@ -6,15 +6,16 @@ import (
 	mathRand "math/rand"
 	"testing"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethCrypto "github.com/ethereum/go-ethereum/crypto"
-	"github.com/tendermint/go-amino"
+	abci "github.com/tendermint/tendermint/abci/types"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/assert"
-	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
@@ -44,10 +45,11 @@ var (
 
 func TestLink_NoGateway(t *testing.T) {
 	minConfHeight := rand.I64Between(1, 10)
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	cdc := testutils.Codec()
-	subspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
-	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"), subspace)
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	encCfg := testutils.MakeEncodingConfig()
+
+	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
+	k := keeper.NewEthKeeper(encCfg.Amino, sdk.NewKVStoreKey("testKey"), subspace)
 	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(minConfHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, RevoteLockingPeriod: 50})
 
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
@@ -63,7 +65,7 @@ func TestLink_NoGateway(t *testing.T) {
 		},
 	}
 	handler := NewHandler(k, &ethMock.VoterMock{}, signer, n, &ethMock.SnapshotterMock{})
-	_, err := handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
+	_, err := handler(ctx, &types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
 	assert.Equal(t, 0, len(n.IsAssetRegisteredCalls()))
@@ -73,7 +75,7 @@ func TestLink_NoGateway(t *testing.T) {
 
 func TestLink_NoRecipientChain(t *testing.T) {
 	minConfHeight := rand.I64Between(1, 10)
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
 
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
@@ -96,7 +98,7 @@ func TestLink_NoRecipientChain(t *testing.T) {
 		},
 	}
 	handler := NewHandler(k, &ethMock.VoterMock{}, signer, n, &ethMock.SnapshotterMock{})
-	_, err := handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
+	_, err := handler(ctx, &types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
 	assert.Equal(t, 0, len(n.IsAssetRegisteredCalls()))
@@ -106,7 +108,7 @@ func TestLink_NoRecipientChain(t *testing.T) {
 
 func TestLink_NoRegisteredAsset(t *testing.T) {
 	minConfHeight := rand.I64Between(1, 10)
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
 
 	symbol := rand.Str(3)
@@ -130,7 +132,7 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 	}
 	handler := NewHandler(k, &ethMock.VoterMock{}, signer, n, &ethMock.SnapshotterMock{})
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
-	_, err := handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
+	_, err := handler(ctx, &types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
 	assert.Equal(t, 1, len(n.IsAssetRegisteredCalls()))
@@ -140,7 +142,7 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 
 func TestLink_Success(t *testing.T) {
 	minConfHeight := rand.I64Between(1, 10)
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
 	msg := createMsgSignDeploy()
 
@@ -176,7 +178,7 @@ func TestLink_Success(t *testing.T) {
 		},
 	}
 	handler := NewHandler(k, &ethMock.VoterMock{}, signer, n, &ethMock.SnapshotterMock{})
-	_, err = handler(ctx, types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Symbol: msg.Symbol})
+	_, err = handler(ctx, &types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Symbol: msg.Symbol})
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(n.IsAssetRegisteredCalls()))
@@ -290,10 +292,12 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		v   *ethMock.VoterMock
 		n   *ethMock.NexusMock
 		s   *ethMock.SignerMock
-		msg types.MsgConfirmToken
+		msg *types.MsgConfirmToken
 	)
 	setup := func() {
-		ctx = sdk.NewContext(nil, abci.Header{}, false, log.TestingLogger())
+		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
+		encCfg := testutils.MakeEncodingConfig()
+
 		k = &ethMock.EthKeeperMock{
 			GetGatewayAddressFunc: func(sdk.Context) (common.Address, bool) {
 				return common.BytesToAddress(rand.Bytes(common.AddressLength)), true
@@ -304,7 +308,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			GetRevoteLockingPeriodFunc:        func(ctx sdk.Context) int64 { return rand.PosI64() },
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) uint64 { return mathRand.Uint64() },
 			SetPendingTokenDeployFunc:         func(sdk.Context, vote.PollMeta, types.ERC20TokenDeploy) {},
-			CodecFunc:                         func() *amino.Codec { return testutils.Codec() },
+			CodecFunc:                         func() *codec.LegacyAmino { return encCfg.Amino },
 		}
 		v = &ethMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta, int64) error { return nil }}
 		n = &ethMock.NexusMock{IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return false }}
@@ -317,7 +321,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			},
 		}
 
-		msg = types.MsgConfirmToken{
+		msg = &types.MsgConfirmToken{
 			Sender: rand.Bytes(20),
 			TxID:   common.BytesToHash(rand.Bytes(common.HashLength)).Hex(),
 			Symbol: rand.StrBetween(5, 10),
@@ -331,7 +335,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		result, err := HandleMsgConfirmTokenDeploy(ctx, k, v, s, n, msg)
 
 		assert.NoError(t, err)
-		assert.Len(t, testutils.Events(result.Events).Filter(func(event sdk.Event) bool { return event.Type == types.EventTypeTokenConfirmation }), 1)
+		assert.Len(t, testutils.Events(result.Events).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeTokenConfirmation }), 1)
 		assert.Equal(t, v.InitPollCalls()[0].Poll, k.SetPendingTokenDeployCalls()[0].Poll)
 	}).Repeat(repeats))
 
@@ -398,10 +402,11 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		k   *ethMock.EthKeeperMock
 		v   *ethMock.VoterMock
 		s   *ethMock.SignerMock
-		msg types.MsgConfirmDeposit
+		msg *types.MsgConfirmDeposit
 	)
 	setup := func() {
-		ctx = sdk.NewContext(nil, abci.Header{}, false, log.TestingLogger())
+		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
+		encCfg := testutils.MakeEncodingConfig()
 		k = &ethMock.EthKeeperMock{
 			GetDepositFunc: func(sdk.Context, string, string) (types.ERC20Deposit, types.DepositState, bool) {
 				return types.ERC20Deposit{}, 0, false
@@ -416,7 +421,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			GetRevoteLockingPeriodFunc:        func(sdk.Context) int64 { return rand.PosI64() },
 			SetPendingDepositFunc:             func(sdk.Context, vote.PollMeta, *types.ERC20Deposit) {},
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) uint64 { return mathRand.Uint64() },
-			CodecFunc:                         func() *amino.Codec { return testutils.Codec() },
+			CodecFunc:                         func() *codec.LegacyAmino { return encCfg.Amino },
 		}
 		v = &ethMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta, int64) error { return nil }}
 		s = &mock.SignerMock{
@@ -428,7 +433,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			},
 		}
 
-		msg = types.MsgConfirmDeposit{
+		msg = &types.MsgConfirmDeposit{
 			Sender:     rand.Bytes(20),
 			TxID:       common.BytesToHash(rand.Bytes(common.HashLength)).Hex(),
 			Amount:     sdk.NewUint(mathRand.Uint64()),
@@ -443,7 +448,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		result, err := HandleMsgConfirmDeposit(ctx, k, v, s, msg)
 
 		assert.NoError(t, err)
-		assert.Len(t, testutils.Events(result.Events).Filter(func(event sdk.Event) bool { return event.Type == types.EventTypeDepositConfirmation }), 1)
+		assert.Len(t, testutils.Events(result.Events).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeDepositConfirmation }), 1)
 		assert.Equal(t, v.InitPollCalls()[0].Poll, k.SetPendingDepositCalls()[0].Poll)
 	}).Repeat(repeats))
 
@@ -553,21 +558,21 @@ func createSignedEthTx() *ethTypes.Transaction {
 }
 
 func newKeeper(ctx sdk.Context, confHeight int64) keeper.Keeper {
-	cdc := testutils.Codec()
-	subspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
-	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"), subspace)
+	encCfg := testutils.MakeEncodingConfig()
+	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
+	k := keeper.NewEthKeeper(encCfg.Amino, sdk.NewKVStoreKey("testKey"), subspace)
 	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(confHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, RevoteLockingPeriod: 50})
 	k.SetGatewayAddress(ctx, common.HexToAddress(gateway))
 
 	return k
 }
 
-func createMsgSignDeploy() types.MsgSignDeployToken {
+func createMsgSignDeploy() *types.MsgSignDeployToken {
 	account := sdk.AccAddress(rand.Bytes(sdk.AddrLen))
 	symbol := rand.Str(3)
 	name := rand.Str(10)
 	decimals := rand.Bytes(1)[0]
 	capacity := sdk.NewIntFromUint64(uint64(rand.PosI64()))
 
-	return types.MsgSignDeployToken{Sender: account, TokenName: name, Symbol: symbol, Decimals: decimals, Capacity: capacity}
+	return &types.MsgSignDeployToken{Sender: account, TokenName: name, Symbol: symbol, Decimals: decimals, Capacity: capacity}
 }

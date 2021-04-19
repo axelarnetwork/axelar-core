@@ -7,36 +7,36 @@ import (
 )
 
 // Route returns the route for this message
-func (m MsgVoteConfirmDeposit) Route() string {
+func (m MsgVoteConfirmToken) Route() string {
 	return RouterKey
 }
 
 // Type returns the type of the message
-func (m MsgVoteConfirmDeposit) Type() string {
-	return "VoteConfirmDeposit"
+func (m MsgVoteConfirmToken) Type() string {
+	return "VoteConfirmToken"
 }
 
 // ValidateBasic executes a stateless message validation
-func (m MsgVoteConfirmDeposit) ValidateBasic() error {
+func (m MsgVoteConfirmToken) ValidateBasic() error {
 	if m.Sender == nil {
 		return fmt.Errorf("missing sender")
 	}
 	if m.TxID == "" {
 		return fmt.Errorf("tx ID missing")
 	}
-	if m.BurnAddr == "" {
-		return fmt.Errorf("burn address missing")
+	if m.Symbol == "" {
+		return fmt.Errorf("symbol missing")
 	}
 	return m.Poll.Validate()
 }
 
 // GetSignBytes returns the message bytes that need to be signed
-func (m MsgVoteConfirmDeposit) GetSignBytes() []byte {
+func (m MsgVoteConfirmToken) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
 }
 
 // GetSigners returns the set of signers for this message
-func (m MsgVoteConfirmDeposit) GetSigners() []sdk.AccAddress {
+func (m MsgVoteConfirmToken) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }

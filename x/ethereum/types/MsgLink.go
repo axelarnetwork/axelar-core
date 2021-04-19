@@ -7,37 +7,29 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// MsgLink represents the message that links a cross chain address to a burner address
-type MsgLink struct {
-	Sender         sdk.AccAddress
-	RecipientAddr  string
-	Symbol         string
-	RecipientChain string
-}
-
 // Route implements sdk.Msg
-func (msg MsgLink) Route() string {
+func (m MsgLink) Route() string {
 	return RouterKey
 }
 
 // Type  implements sdk.Msg
-func (msg MsgLink) Type() string {
+func (m MsgLink) Type() string {
 	return "Link"
 }
 
 // ValidateBasic implements sdk.Msg
-func (msg MsgLink) ValidateBasic() error {
-	if msg.Sender.Empty() {
+func (m MsgLink) ValidateBasic() error {
+	if m.Sender.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
-	if msg.RecipientAddr == "" {
+	if m.RecipientAddr == "" {
 		return fmt.Errorf("missing recipient address")
 	}
-	if msg.RecipientChain == "" {
+	if m.RecipientChain == "" {
 		return fmt.Errorf("missing recipient chain")
 	}
 
-	if msg.Symbol == "" {
+	if m.Symbol == "" {
 		return fmt.Errorf("missing asset symbol")
 	}
 
@@ -45,12 +37,12 @@ func (msg MsgLink) ValidateBasic() error {
 }
 
 // GetSignBytes implements sdk.Msg
-func (msg MsgLink) GetSignBytes() []byte {
-	bz := ModuleCdc.MustMarshalJSON(msg)
+func (m MsgLink) GetSignBytes() []byte {
+	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
 }
 
 // GetSigners implements sdk.Msg
-func (msg MsgLink) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Sender}
+func (m MsgLink) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{m.Sender}
 }

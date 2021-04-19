@@ -4,15 +4,13 @@
 package types
 
 import (
-	"fmt"
-	"math"
-
-	_ "github.com/gogo/protobuf/gogoproto"
-	"github.com/gogo/protobuf/proto"
-
-	"github.com/axelarnetwork/axelar-core/x/tss/exported"
-	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
+	fmt "fmt"
+	exported "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tofnd "github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	exported1 "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	_ "github.com/gogo/protobuf/gogoproto"
+	proto "github.com/gogo/protobuf/proto"
+	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

@@ -26,23 +26,23 @@ func NewHandler(k keeper.Keeper, v types.Voter, s types.Signer, n types.Nexus, s
 	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
-		case types.MsgLink:
+		case *types.MsgLink:
 			return handleMsgLink(ctx, k, n, msg)
-		case types.MsgConfirmToken:
+		case *types.MsgConfirmToken:
 			return HandleMsgConfirmTokenDeploy(ctx, k, v, s, n, msg)
-		case types.MsgConfirmDeposit:
+		case *types.MsgConfirmDeposit:
 			return HandleMsgConfirmDeposit(ctx, k, v, s, msg)
-		case types.MsgVoteConfirmDeposit:
+		case *types.MsgVoteConfirmDeposit:
 			return HandleMsgVoteConfirmDeposit(ctx, k, v, n, msg)
-		case types.MsgVoteConfirmToken:
+		case *types.MsgVoteConfirmToken:
 			return HandleMsgVoteConfirmToken(ctx, k, v, n, msg)
-		case types.MsgSignDeployToken:
+		case *types.MsgSignDeployToken:
 			return handleMsgSignDeployToken(ctx, k, s, snapshotter, v, msg)
-		case types.MsgSignBurnTokens:
+		case *types.MsgSignBurnTokens:
 			return handleMsgSignBurnTokens(ctx, k, s, snapshotter, v, msg)
-		case types.MsgSignTx:
+		case *types.MsgSignTx:
 			return handleMsgSignTx(ctx, k, s, snapshotter, v, msg)
-		case types.MsgSignPendingTransfers:
+		case *types.MsgSignPendingTransfers:
 			return handleMsgSignPendingTransfers(ctx, k, s, n, snapshotter, v, msg)
 		case types.MsgSignTransferOwnership:
 			return handleMsgSignTransferOwnership(ctx, k, s, snapshotter, v, msg)
@@ -63,7 +63,7 @@ func NewHandler(k keeper.Keeper, v types.Voter, s types.Signer, n types.Nexus, s
 	}
 }
 
-func handleMsgLink(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg types.MsgLink) (*sdk.Result, error) {
+func handleMsgLink(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg *types.MsgLink) (*sdk.Result, error) {
 	gatewayAddr, ok := k.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, fmt.Errorf("axelar gateway address not set")
@@ -120,12 +120,12 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg types.Ms
 	return &sdk.Result{
 		Data:   []byte(burnerAddr.String()),
 		Log:    logMsg,
-		Events: ctx.EventManager().Events(),
+		Events: ctx.EventManager().ABCIEvents(),
 	}, nil
 }
 
 // HandleMsgConfirmTokenDeploy handles token deployment confirmation
-func HandleMsgConfirmTokenDeploy(ctx sdk.Context, k types.EthKeeper, v types.Voter, signer types.Signer, n types.Nexus, msg types.MsgConfirmToken) (*sdk.Result, error) {
+func HandleMsgConfirmTokenDeploy(ctx sdk.Context, k types.EthKeeper, v types.Voter, signer types.Signer, n types.Nexus, msg *types.MsgConfirmToken) (*sdk.Result, error) {
 	if n.IsAssetRegistered(ctx, exported.Ethereum.Name, msg.Symbol) {
 		return nil, fmt.Errorf("token %s is already registered", msg.Symbol)
 	}
@@ -176,12 +176,12 @@ func HandleMsgConfirmTokenDeploy(ctx sdk.Context, k types.EthKeeper, v types.Vot
 
 	return &sdk.Result{
 		Log:    fmt.Sprintf("votes on confirmation of token deployment %s started", msg.TxID),
-		Events: ctx.EventManager().Events(),
+		Events: ctx.EventManager().ABCIEvents(),
 	}, nil
 }
 
 // HandleMsgConfirmDeposit handles deposit confirmations
-func HandleMsgConfirmDeposit(ctx sdk.Context, k types.EthKeeper, v types.Voter, signer types.Signer, msg types.MsgConfirmDeposit) (*sdk.Result, error) {
+func HandleMsgConfirmDeposit(ctx sdk.Context, k types.EthKeeper, v types.Voter, signer types.Signer, msg *types.MsgConfirmDeposit) (*sdk.Result, error) {
 	_, state, ok := k.GetDeposit(ctx, msg.TxID, msg.BurnerAddr)
 	switch {
 	case !ok:
@@ -235,12 +235,12 @@ func HandleMsgConfirmDeposit(ctx sdk.Context, k types.EthKeeper, v types.Voter, 
 
 	return &sdk.Result{
 		Log:    fmt.Sprintf("votes on confirmation of deposit %s started", msg.TxID),
-		Events: ctx.EventManager().Events(),
+		Events: ctx.EventManager().ABCIEvents(),
 	}, nil
 }
 
 // HandleMsgVoteConfirmDeposit handles votes for deposit confirmations
-func HandleMsgVoteConfirmDeposit(ctx sdk.Context, k keeper.Keeper, v types.Voter, n types.Nexus, msg types.MsgVoteConfirmDeposit) (*sdk.Result, error) {
+func HandleMsgVoteConfirmDeposit(ctx sdk.Context, k keeper.Keeper, v types.Voter, n types.Nexus, msg *types.MsgVoteConfirmDeposit) (*sdk.Result, error) {
 	pendingDeposit, pollFound := k.GetPendingDeposit(ctx, msg.Poll)
 	confirmedDeposit, state, depositFound := k.GetDeposit(ctx, msg.TxID, msg.BurnAddr)
 
@@ -295,7 +295,7 @@ func HandleMsgVoteConfirmDeposit(ctx sdk.Context, k keeper.Keeper, v types.Voter
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
 		return &sdk.Result{
 			Log:    fmt.Sprintf("deposit in %s to %s was discarded", msg.TxID, msg.BurnAddr),
-			Events: ctx.EventManager().Events(),
+			Events: ctx.EventManager().ABCIEvents(),
 		}, nil
 	}
 	ctx.EventManager().EmitEvent(
@@ -308,11 +308,11 @@ func HandleMsgVoteConfirmDeposit(ctx sdk.Context, k keeper.Keeper, v types.Voter
 	}
 	k.SetDeposit(ctx, pendingDeposit, types.CONFIRMED)
 
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
 // HandleMsgVoteConfirmToken handles votes for token deployment confirmations
-func HandleMsgVoteConfirmToken(ctx sdk.Context, k keeper.Keeper, v types.Voter, n types.Nexus, msg types.MsgVoteConfirmToken) (*sdk.Result, error) {
+func HandleMsgVoteConfirmToken(ctx sdk.Context, k keeper.Keeper, v types.Voter, n types.Nexus, msg *types.MsgVoteConfirmToken) (*sdk.Result, error) {
 	// is there an ongoing poll?
 	token, pollFound := k.GetPendingTokenDeploy(ctx, msg.Poll)
 	registered := n.IsAssetRegistered(ctx, exported.Ethereum.Name, msg.Symbol)
@@ -362,7 +362,7 @@ func HandleMsgVoteConfirmToken(ctx sdk.Context, k keeper.Keeper, v types.Voter, 
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
 		return &sdk.Result{
 			Log:    fmt.Sprintf("token %s was discarded", msg.Symbol),
-			Events: ctx.EventManager().Events(),
+			Events: ctx.EventManager().ABCIEvents(),
 		}, nil
 	}
 	ctx.EventManager().EmitEvent(
@@ -372,10 +372,10 @@ func HandleMsgVoteConfirmToken(ctx sdk.Context, k keeper.Keeper, v types.Voter, 
 
 	return &sdk.Result{
 		Log:    fmt.Sprintf("token %s deployment confirmed", token.Symbol),
-		Events: ctx.EventManager().Events()}, nil
+		Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
-func handleMsgSignDeployToken(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snapshotter types.Snapshotter, v types.Voter, msg types.MsgSignDeployToken) (*sdk.Result, error) {
+func handleMsgSignDeployToken(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snapshotter types.Snapshotter, v types.Voter, msg *types.MsgSignDeployToken) (*sdk.Result, error) {
 	chainID := k.GetParams(ctx).Network.Params().ChainID
 
 	var commandID types.CommandID
@@ -426,11 +426,11 @@ func handleMsgSignDeployToken(ctx sdk.Context, k keeper.Keeper, signer types.Sig
 	return &sdk.Result{
 		Data:   commandID[:],
 		Log:    fmt.Sprintf("successfully started signing protocol for deploy-token command %s", commandIDHex),
-		Events: ctx.EventManager().Events(),
+		Events: ctx.EventManager().ABCIEvents(),
 	}, nil
 }
 
-func handleMsgSignBurnTokens(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snapshotter types.Snapshotter, v types.Voter, msg types.MsgSignBurnTokens) (*sdk.Result, error) {
+func handleMsgSignBurnTokens(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snapshotter types.Snapshotter, v types.Voter, msg *types.MsgSignBurnTokens) (*sdk.Result, error) {
 	deposits := k.GetConfirmedDeposits(ctx)
 
 	if len(deposits) == 0 {
@@ -505,17 +505,17 @@ func handleMsgSignBurnTokens(ctx sdk.Context, k keeper.Keeper, signer types.Sign
 	return &sdk.Result{
 		Data:   commandID[:],
 		Log:    fmt.Sprintf("successfully started signing protocol for burning %s token deposits, commandID: %s", exported.Ethereum.Name, commandIDHex),
-		Events: ctx.EventManager().Events(),
+		Events: ctx.EventManager().ABCIEvents(),
 	}, nil
 }
 
-func handleMsgSignPendingTransfers(ctx sdk.Context, k keeper.Keeper, signer types.Signer, n types.Nexus, snapshotter types.Snapshotter, v types.Voter, msg types.MsgSignPendingTransfers) (*sdk.Result, error) {
+func handleMsgSignPendingTransfers(ctx sdk.Context, k keeper.Keeper, signer types.Signer, n types.Nexus, snapshotter types.Snapshotter, v types.Voter, msg *types.MsgSignPendingTransfers) (*sdk.Result, error) {
 	pendingTransfers := n.GetPendingTransfersForChain(ctx, exported.Ethereum)
 
 	if len(pendingTransfers) == 0 {
 		return &sdk.Result{
 			Log:    fmt.Sprintf("no pending transfer for chain %s found", exported.Ethereum.Name),
-			Events: ctx.EventManager().Events(),
+			Events: ctx.EventManager().ABCIEvents(),
 		}, nil
 	}
 
@@ -573,11 +573,11 @@ func handleMsgSignPendingTransfers(ctx sdk.Context, k keeper.Keeper, signer type
 	return &sdk.Result{
 		Data:   commandID[:],
 		Log:    fmt.Sprintf("successfully started signing protocol for %s pending transfers, commandID: %s", exported.Ethereum.Name, commandIDHex),
-		Events: ctx.EventManager().Events(),
+		Events: ctx.EventManager().ABCIEvents(),
 	}, nil
 }
 
-func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snapshotter types.Snapshotter, v types.Voter, msg types.MsgSignTx) (*sdk.Result, error) {
+func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snapshotter types.Snapshotter, v types.Voter, msg *types.MsgSignTx) (*sdk.Result, error) {
 	tx := msg.UnmarshaledTx()
 	txID := tx.Hash().String()
 	k.SetUnsignedTx(ctx, txID, tx)
@@ -633,7 +633,7 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 	return &sdk.Result{
 		Data:   []byte(txID),
 		Log:    fmt.Sprintf("successfully started signing protocol for transaction with ID %s.", txID),
-		Events: ctx.EventManager().Events(),
+		Events: ctx.EventManager().ABCIEvents(),
 	}, nil
 }
 

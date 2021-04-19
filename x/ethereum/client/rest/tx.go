@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/gorilla/mux"
@@ -37,7 +37,7 @@ const (
 )
 
 // RegisterRoutes registers this module's REST routes with the given router
-func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
+func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx := clientUtils.RegisterTxHandlerFn(r, types.RestRoute)
 	registerTx(GetHandlerLink(cliCtx), TxMethodLink, clientUtils.PathVarChain)
 	registerTx(GetHandlerConfirmTokenDeploy(cliCtx), TxMethodConfirmTokenDeploy, clientUtils.PathVarSymbol)
@@ -102,10 +102,10 @@ type ReqSignBurnTokens struct {
 }
 
 // GetHandlerLink returns the handler to link addresses
-func GetHandlerLink(cliCtx context.CLIContext) http.HandlerFunc {
+func GetHandlerLink(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqLink
-		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
 			return
 		}
 		req.BaseReq = req.BaseReq.Sanitize()
@@ -117,7 +117,7 @@ func GetHandlerLink(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		msg := types.MsgLink{
+		msg := &types.MsgLink{
 			Sender:         fromAddr,
 			RecipientChain: mux.Vars(r)[clientUtils.PathVarChain],
 			RecipientAddr:  req.RecipientAddr,
@@ -129,15 +129,15 @@ func GetHandlerLink(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		utils.WriteGenerateStdTxResponse(w, cliCtx, req.BaseReq, []sdk.Msg{msg})
+		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
 	}
 }
 
 // GetHandlerConfirmTokenDeploy returns a handler to confirm a token deployment
-func GetHandlerConfirmTokenDeploy(cliCtx context.CLIContext) http.HandlerFunc {
+func GetHandlerConfirmTokenDeploy(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqConfirmTokenDeploy
-		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
 			return
 		}
 		req.BaseReq = req.BaseReq.Sanitize()
@@ -156,15 +156,15 @@ func GetHandlerConfirmTokenDeploy(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		utils.WriteGenerateStdTxResponse(w, cliCtx, req.BaseReq, []sdk.Msg{msg})
+		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
 	}
 }
 
 // GetHandlerConfirmDeposit returns a handler to confirm a deposit
-func GetHandlerConfirmDeposit(cliCtx context.CLIContext) http.HandlerFunc {
+func GetHandlerConfirmDeposit(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqConfirmDeposit
-		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
 			return
 		}
 		req.BaseReq = req.BaseReq.Sanitize()
@@ -186,15 +186,15 @@ func GetHandlerConfirmDeposit(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		utils.WriteGenerateStdTxResponse(w, cliCtx, req.BaseReq, []sdk.Msg{msg})
+		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
 	}
 }
 
 // GetHandlerSignTx returns a handler to sign a transaction
-func GetHandlerSignTx(cliCtx context.CLIContext) http.HandlerFunc {
+func GetHandlerSignTx(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqSignTx
-		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
 			return
 		}
 		req.BaseReq = req.BaseReq.Sanitize()
@@ -207,8 +207,8 @@ func GetHandlerSignTx(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		txJson := []byte(req.TxJson)
-		var tx *ethTypes.Transaction
-		err := cliCtx.Codec.UnmarshalJSON(txJson, &tx)
+		var ethtx *ethTypes.Transaction
+		err := cliCtx.LegacyAmino.UnmarshalJSON(txJson, &ethtx)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -220,15 +220,15 @@ func GetHandlerSignTx(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		utils.WriteGenerateStdTxResponse(w, cliCtx, req.BaseReq, []sdk.Msg{msg})
+		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
 	}
 }
 
 // GetHandlerSignPendingTransfers returns a handler to sign all pending transfers
-func GetHandlerSignPendingTransfers(cliCtx context.CLIContext) http.HandlerFunc {
+func GetHandlerSignPendingTransfers(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqSignTx
-		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
 			return
 		}
 		req.BaseReq = req.BaseReq.Sanitize()
@@ -245,15 +245,15 @@ func GetHandlerSignPendingTransfers(cliCtx context.CLIContext) http.HandlerFunc 
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
-		utils.WriteGenerateStdTxResponse(w, cliCtx, req.BaseReq, []sdk.Msg{msg})
+		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
 	}
 }
 
 // GetHandlerSignDeployToken returns a handler to sign a deploy token command
-func GetHandlerSignDeployToken(cliCtx context.CLIContext) http.HandlerFunc {
+func GetHandlerSignDeployToken(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqSignDeployToken
-		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
 			return
 		}
 		req.BaseReq = req.BaseReq.Sanitize()
@@ -280,15 +280,15 @@ func GetHandlerSignDeployToken(cliCtx context.CLIContext) http.HandlerFunc {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
-		utils.WriteGenerateStdTxResponse(w, cliCtx, req.BaseReq, []sdk.Msg{msg})
+		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
 	}
 }
 
 // GetHandlerSignBurnTokens returns a handler to sign all outstanding burn commands
-func GetHandlerSignBurnTokens(cliCtx context.CLIContext) http.HandlerFunc {
+func GetHandlerSignBurnTokens(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqSignBurnTokens
-		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
 			return
 		}
 		req.BaseReq = req.BaseReq.Sanitize()
@@ -305,6 +305,6 @@ func GetHandlerSignBurnTokens(cliCtx context.CLIContext) http.HandlerFunc {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
-		utils.WriteGenerateStdTxResponse(w, cliCtx, req.BaseReq, []sdk.Msg{msg})
+		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
 	}
 }

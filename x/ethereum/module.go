@@ -37,17 +37,16 @@ func (AppModuleBasic) Name() string {
 
 // RegisterLegacyAminoCodec registers the types necessary in this module with the given codec
 func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	types.RegisterCodec(cdc)
+	types.RegisterLegacyAminoCodec(cdc)
 }
 
 // RegisterInterfaces registers the module's interface types
-func (a AppModuleBasic) RegisterInterfaces(reg cdctypes.InterfaceRegistry) {
-	types.RegisterInterfaces(reg)
+func (a AppModuleBasic) RegisterInterfaces(cdctypes.InterfaceRegistry) {
 }
 
 // DefaultGenesis returns the default genesis state
 func (AppModuleBasic) DefaultGenesis(cdc codec.JSONMarshaler) json.RawMessage {
-	return cdc.MustMarshalJSON(types.DefaultGenesis())
+	return cdc.MustMarshalJSON(types.DefaultGenesisState())
 }
 
 // ValidateGenesis checks the given genesis state for validity
@@ -133,7 +132,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 // ExportGenesis exports a genesis state from the module's keeper
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json.RawMessage {
 	genState := ExportGenesis(ctx, am.keeper)
-	return cdc.MustMarshalJSON(genState)
+	return cdc.MustMarshalJSON(&genState)
 }
 
 // Route returns the module's route
@@ -153,8 +152,7 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
-func (am AppModule) RegisterServices(cfg module.Configurator) {
-	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
+func (am AppModule) RegisterServices(module.Configurator) {
 }
 
 // BeginBlock executes all state transitions this module requires at the beginning of each new block

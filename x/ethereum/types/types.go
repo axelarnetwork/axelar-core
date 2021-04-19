@@ -65,24 +65,6 @@ var (
 // Network provides additional functionality based on the ethereum network name
 type Network string
 
-// NetworkFromStr returns network given string
-func NetworkFromStr(net string) (Network, error) {
-	switch net {
-	case "main":
-		return Mainnet, nil
-	case "ropsten":
-		return Ropsten, nil
-	case "rinkeby":
-		return Rinkeby, nil
-	case "goerli":
-		return Goerli, nil
-	case "ganache":
-		return Ganache, nil
-	default:
-		return "", fmt.Errorf("unknown network: %s", net)
-	}
-}
-
 // NetworkByID looks up the Ethereum network corresponding to the given chain ID
 func NetworkByID(id *big.Int) Network {
 	return networksByID[id.Int64()]
