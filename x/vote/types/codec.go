@@ -7,20 +7,21 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-// RegisterCodec registers concrete types on codec
-func RegisterCodec(cdc *codec.LegacyAmino) {
+// RegisterLegacyAminoCodec registers concrete types on codec
+func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterInterface((*exported.VotingData)(nil), nil)
 
 	// Default type for voting, i.e. yes/no vote. Modules need to register their own types if they need more elaborate VotingData
 	cdc.RegisterConcrete(true, "vote/VotingData", nil)
 }
 
+var amino = codec.NewLegacyAmino()
+
 // ModuleCdc defines the module codec
-var ModuleCdc *codec.LegacyAmino
+var ModuleCdc = codec.NewAminoCodec(amino)
 
 func init() {
-	ModuleCdc = codec.NewLegacyAmino()
-	RegisterCodec(ModuleCdc)
-	cryptocodec.RegisterCrypto(ModuleCdc)
-	ModuleCdc.Seal()
+	RegisterLegacyAminoCodec(amino)
+	cryptocodec.RegisterCrypto(amino)
+	amino.Seal()
 }

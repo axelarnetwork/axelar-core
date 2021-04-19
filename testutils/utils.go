@@ -28,12 +28,12 @@ func MakeEncodingConfig() params.EncodingConfig {
 	std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 
 	// Add new modules here so tests have access to marshalling the registered ethereum
-	vote.RegisterCodec(cdc)
+	vote.RegisterLegacyAminoCodec(cdc)
 	bitcoin.RegisterLegacyAminoCodec(cdc)
 	tss.RegisterLegacyAminoCodec(cdc)
 	broadcast.RegisterLegacyAminoCodec(cdc)
-	snapshot.RegisterCodec(cdc)
-	ethereum.RegisterCodec(cdc)
+	snapshot.RegisterLegacyAminoCodec(cdc)
+	ethereum.RegisterLegacyAminoCodec(cdc)
 
 	return encodingConfig
 }

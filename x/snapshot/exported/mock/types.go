@@ -19,7 +19,7 @@ var _ exported.Validator = &ValidatorMock{}
 //
 // 		// make and configure a mocked exported.Validator
 // 		mockedValidator := &ValidatorMock{
-// 			GetConsAddrFunc: func() sdk.ConsAddress {
+// 			GetConsAddrFunc: func() (sdk.ConsAddress, error) {
 // 				panic("mock out the GetConsAddr method")
 // 			},
 // 			GetConsensusPowerFunc: func() int64 {
@@ -39,7 +39,7 @@ var _ exported.Validator = &ValidatorMock{}
 // 	}
 type ValidatorMock struct {
 	// GetConsAddrFunc mocks the GetConsAddr method.
-	GetConsAddrFunc func() sdk.ConsAddress
+	GetConsAddrFunc func() (sdk.ConsAddress, error)
 
 	// GetConsensusPowerFunc mocks the GetConsensusPower method.
 	GetConsensusPowerFunc func() int64
@@ -72,7 +72,7 @@ type ValidatorMock struct {
 }
 
 // GetConsAddr calls GetConsAddrFunc.
-func (mock *ValidatorMock) GetConsAddr() sdk.ConsAddress {
+func (mock *ValidatorMock) GetConsAddr() (sdk.ConsAddress, error) {
 	if mock.GetConsAddrFunc == nil {
 		panic("ValidatorMock.GetConsAddrFunc: method is nil but Validator.GetConsAddr was just called")
 	}

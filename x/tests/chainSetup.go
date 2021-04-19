@@ -9,12 +9,12 @@ import (
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
-	slashingTypes "github.com/cosmos/cosmos-sdk/x/slashing"
-	"github.com/cosmos/cosmos-sdk/x/staking"
-	sdkExported "github.com/cosmos/cosmos-sdk/x/staking/exported"
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	geth "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -23,6 +23,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/cmd/vald/eth"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
@@ -75,43 +76,35 @@ type testMocks struct {
 
 type nodeData struct {
 	Node        *fake.Node
-	Validator   staking.Validator
+	Validator   stakingtypes.Validator
 	Mocks       testMocks
 	Broadcaster fake.Broadcaster
 }
 
 func newNode(moniker string, broadcaster fake.Broadcaster, mocks testMocks) *fake.Node {
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger().With("node", moniker))
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger().With("node", moniker))
+	encCfg := testutils.MakeEncodingConfig()
 
-	snapSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
-	snapKeeper := snapshotKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(snapshotTypes.StoreKey), snapSubspace, broadcaster, mocks.Staker, mocks.Slasher, mocks.Tss)
+	snapSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
+	snapKeeper := snapshotKeeper.NewKeeper(encCfg.Amino, sdk.NewKVStoreKey(snapshotTypes.StoreKey), snapSubspace, broadcaster, mocks.Staker, mocks.Slasher, mocks.Tss)
 	snapKeeper.SetParams(ctx, snapshotTypes.DefaultParams())
-	voter := voteKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(voteTypes.StoreKey), snapKeeper, broadcaster)
+	voter := voteKeeper.NewKeeper(encCfg.Amino, sdk.NewKVStoreKey(voteTypes.StoreKey), snapKeeper, broadcaster)
 
-	btcSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	bitcoinKeeper := btcKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)
+	btcSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
+	bitcoinKeeper := btcKeeper.NewKeeper(encCfg.Amino, sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)
 	btcParams := btcTypes.DefaultParams()
 	bitcoinKeeper.SetParams(ctx, btcParams)
 
-	ethSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "eth")
-	ethereumKeeper := ethKeeper.NewEthKeeper(testutils.Codec(), sdk.NewKVStoreKey(ethTypes.StoreKey), ethSubspace)
+	ethSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "eth")
+	ethereumKeeper := ethKeeper.NewEthKeeper(encCfg.Amino, sdk.NewKVStoreKey(ethTypes.StoreKey), ethSubspace)
 	ethereumKeeper.SetParams(ctx, ethTypes.DefaultParams())
 
-	signer := tssKeeper.NewKeeper(
-		testutils.Codec(),
-		sdk.NewKVStoreKey(tssTypes.StoreKey),
-		params.NewSubspace(
-			testutils.Codec(),
-			sdk.NewKVStoreKey("storeKey"),
-			sdk.NewKVStoreKey("tstorekey"),
-			tssTypes.DefaultParamspace,
-		),
-		mocks.Slasher,
-	)
+	tssSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), tssTypes.DefaultParamspace)
+	signer := tssKeeper.NewKeeper(encCfg.Amino, sdk.NewKVStoreKey(tssTypes.StoreKey), tssSubspace, mocks.Slasher)
 	signer.SetParams(ctx, tssTypes.DefaultParams())
 
-	nexusSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("balanceKey"), sdk.NewKVStoreKey("tbalanceKey"), "balance")
-	nexusK := nexusKeeper.NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(nexusTypes.StoreKey), nexusSubspace)
+	nexusSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("balanceKey"), sdk.NewKVStoreKey("tbalanceKey"), "balance")
+	nexusK := nexusKeeper.NewKeeper(encCfg.Amino, sdk.NewKVStoreKey(nexusTypes.StoreKey), nexusSubspace)
 	nexusK.SetParams(ctx, nexusTypes.DefaultParams())
 
 	voter.SetVotingInterval(ctx, voteTypes.DefaultGenesisState().VotingInterval)
@@ -122,19 +115,19 @@ func newNode(moniker string, broadcaster fake.Broadcaster, mocks testMocks) *fak
 	broadcastHandler := broadcast.NewHandler(broadcaster)
 	btcHandler := bitcoin.NewHandler(bitcoinKeeper, voter, signer, nexusK, snapKeeper)
 	ethHandler := ethereum.NewHandler(ethereumKeeper, voter, signer, nexusK, snapKeeper)
-	snapHandler := snapshot.NewHandler(snapKeeper)
+	snapHandler := snapshot.NewHandler()
 	tssHandler := tss.NewHandler(signer, snapKeeper, nexusK, voter, &tssMock.StakingKeeperMock{
 		GetLastTotalPowerFunc: mocks.Staker.GetLastTotalPowerFunc,
 	}, broadcaster)
 	voteHandler := vote.NewHandler()
 
 	router = router.
-		AddRoute(broadcastTypes.RouterKey, broadcastHandler).
-		AddRoute(btcTypes.RouterKey, btcHandler).
-		AddRoute(ethTypes.RouterKey, ethHandler).
-		AddRoute(snapshotTypes.RouterKey, snapHandler).
-		AddRoute(voteTypes.RouterKey, voteHandler).
-		AddRoute(tssTypes.RouterKey, tssHandler)
+		AddRoute(sdk.NewRoute(broadcastTypes.RouterKey, broadcastHandler)).
+		AddRoute(sdk.NewRoute(btcTypes.RouterKey, btcHandler)).
+		AddRoute(sdk.NewRoute(ethTypes.RouterKey, ethHandler)).
+		AddRoute(sdk.NewRoute(snapshotTypes.RouterKey, snapHandler)).
+		AddRoute(sdk.NewRoute(voteTypes.RouterKey, voteHandler)).
+		AddRoute(sdk.NewRoute(tssTypes.RouterKey, tssHandler))
 
 	queriers := map[string]sdk.Querier{
 		btcTypes.QuerierRoute: btcKeeper.NewQuerier(bitcoinKeeper, signer, nexusK),
@@ -153,10 +146,10 @@ func newNode(moniker string, broadcaster fake.Broadcaster, mocks testMocks) *fak
 	return node
 }
 
-func createMocks(validators []staking.Validator) testMocks {
+func createMocks(validators []stakingtypes.Validator) testMocks {
 	slasher := &snapshotExportedMock.SlasherMock{
 		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapshotExported.ValidatorInfo, bool) {
-			newInfo := slashingTypes.NewValidatorSigningInfo(
+			newInfo := slashingtypes.NewValidatorSigningInfo(
 				address,
 				int64(0),        // height at which validator was first a candidate OR was unjailed
 				int64(3),        // index offset into signed block bit array. TODO: check if needs to be set correctly.
@@ -169,7 +162,7 @@ func createMocks(validators []staking.Validator) testMocks {
 	}
 
 	stakingKeeper := &snapshotTypesMock.StakingKeeperMock{
-		IterateBondedValidatorsByPowerFunc: func(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool)) {
+		IterateBondedValidatorsByPowerFunc: func(ctx sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) {
 			for j, val := range validators {
 				if fn(int64(j), val) {
 					break
@@ -212,15 +205,25 @@ func createMocks(validators []staking.Validator) testMocks {
 // initChain Creates a chain with given number of validators
 func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 	stringGen := rand.Strings(5, 50).Distinct()
+	encCfg := testutils.MakeEncodingConfig()
 
-	var validators []staking.Validator
+	protoPK, err := cryptocodec.FromTmPubKeyInterface(ed25519.GenPrivKey().PubKey())
+	if err != nil {
+		panic(err)
+	}
+	consPK, err := codectypes.NewAnyWithValue(protoPK)
+	if err != nil {
+		panic(err)
+	}
+
+	var validators []stakingtypes.Validator
 	for _, valAddr := range stringGen.Take(nodeCount) {
 		// assign validators
-		validator := staking.Validator{
-			OperatorAddress: sdk.ValAddress(valAddr),
+		validator := stakingtypes.Validator{
+			OperatorAddress: valAddr,
 			Tokens:          sdk.TokensFromConsensusPower(rand.I64Between(100, 1000)),
-			Status:          sdk.Bonded,
-			ConsPubKey:      ed25519.GenPrivKey().PubKey(),
+			Status:          stakingtypes.Bonded,
+			ConsensusPubkey: consPK,
 		}
 		validators = append(validators, validator)
 	}
@@ -234,7 +237,11 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 		mocks := createMocks(validators)
 
 		// assign nodes
-		broadcaster := fake.NewBroadcaster(testutils.Codec(), validator.OperatorAddress, chain.Submit)
+		oppAddr, err := sdk.ValAddressFromBech32(validator.OperatorAddress)
+		if err != nil {
+			panic(err)
+		}
+		broadcaster := fake.NewBroadcaster(encCfg.Amino, oppAddr, chain.Submit)
 
 		node := newNode(test+strconv.Itoa(i), broadcaster, mocks)
 		chain.AddNodes(node)
@@ -253,6 +260,8 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 }
 
 func registerBTCEventListener(n nodeData) {
+	encCfg := testutils.MakeEncodingConfig()
+
 	// register listener for confirmation
 	n.Node.RegisterEventListener(func(event abci.Event) bool {
 		if event.Type != btcTypes.EventTypeOutpointConfirmation {
@@ -265,16 +274,16 @@ func registerBTCEventListener(n nodeData) {
 		}
 
 		var poll voting.PollMeta
-		testutils.Codec().MustUnmarshalJSON([]byte(m[btcTypes.AttributeKeyPoll]), &poll)
+		encCfg.Amino.MustUnmarshalJSON([]byte(m[btcTypes.AttributeKeyPoll]), &poll)
 
 		var out btcTypes.OutPointInfo
-		testutils.Codec().MustUnmarshalJSON([]byte(m[btcTypes.AttributeKeyOutPointInfo]), &out)
+		encCfg.Amino.MustUnmarshalJSON([]byte(m[btcTypes.AttributeKeyOutPointInfo]), &out)
 		err := n.Broadcaster.Broadcast(n.Node.Ctx,
 			&btcTypes.MsgVoteConfirmOutpoint{
-				Sender:    n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal),
+				Sender:    n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal).String(),
 				Poll:      poll,
 				Confirmed: true,
-				OutPoint:  *out.OutPoint,
+				OutPoint:  out.OutPoint,
 			})
 		if err != nil {
 			panic(err)
@@ -285,6 +294,7 @@ func registerBTCEventListener(n nodeData) {
 }
 
 func registerETHEventListener(n nodeData) {
+	encCfg := testutils.MakeEncodingConfig()
 	// register listener for deposit confirmation
 	n.Node.RegisterEventListener(func(event abci.Event) bool {
 		if event.Type != ethTypes.EventTypeDepositConfirmation {
@@ -297,10 +307,10 @@ func registerETHEventListener(n nodeData) {
 		}
 
 		var poll voting.PollMeta
-		testutils.Codec().MustUnmarshalJSON([]byte(m[ethTypes.AttributeKeyPoll]), &poll)
+		encCfg.Amino.MustUnmarshalJSON([]byte(m[ethTypes.AttributeKeyPoll]), &poll)
 
 		err := n.Broadcaster.Broadcast(n.Node.Ctx,
-			ethTypes.MsgVoteConfirmDeposit{
+			&ethTypes.MsgVoteConfirmDeposit{
 				Sender:    n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal),
 				Poll:      poll,
 				Confirmed: true,
@@ -326,10 +336,10 @@ func registerETHEventListener(n nodeData) {
 		}
 
 		var poll voting.PollMeta
-		testutils.Codec().MustUnmarshalJSON([]byte(m[ethTypes.AttributeKeyPoll]), &poll)
+		encCfg.Amino.MustUnmarshalJSON([]byte(m[ethTypes.AttributeKeyPoll]), &poll)
 
 		err := n.Broadcaster.Broadcast(n.Node.Ctx,
-			ethTypes.MsgVoteConfirmToken{
+			&ethTypes.MsgVoteConfirmToken{
 				Sender:    n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal),
 				Poll:      poll,
 				Confirmed: true,
@@ -352,8 +362,8 @@ func randomOutpointInfo(recipient string) btcTypes.OutPointInfo {
 
 	voutIdx := uint32(rand.I64Between(0, 100))
 	return btcTypes.OutPointInfo{
-		OutPoint: wire.NewOutPoint(txHash, voutIdx),
-		Amount:   btcutil.Amount(rand.I64Between(1, 10000000)),
+		OutPoint: wire.NewOutPoint(txHash, voutIdx).String(),
+		Amount:   rand.I64Between(1, 10000000),
 		Address:  recipient,
 	}
 }
@@ -375,8 +385,8 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd) {
 
 		pk := t.KeyGen(m[tssTypes.AttributeKeyKeyID]) // simulate correct keygen + vote
 		err := n.Broadcaster.Broadcast(n.Node.Ctx,
-			tssTypes.MsgVotePubKey{
-				Sender:      n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal),
+			&tssTypes.MsgVotePubKey{
+				Sender:      n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal).String(),
 				PubKeyBytes: pk,
 				PollMeta:    voting.NewPollMeta(tssTypes.ModuleName, m[tssTypes.AttributeKeyKeyID])})
 		if err != nil {
@@ -403,8 +413,8 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd) {
 		sig := t.Sign(m[tssTypes.AttributeKeySigID], m[tssTypes.AttributeKeyKeyID], []byte(m[tssTypes.AttributeKeyPayload]))
 
 		err := n.Broadcaster.Broadcast(n.Node.Ctx,
-			tssTypes.MsgVoteSig{
-				Sender:   n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal),
+			&tssTypes.MsgVoteSig{
+				Sender:   n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal).String(),
 				SigBytes: sig,
 				PollMeta: voting.NewPollMeta(
 					tssTypes.ModuleName,

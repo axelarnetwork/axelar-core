@@ -4,17 +4,15 @@
 package mock
 
 import (
-	"sync"
-
-	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/ethereum/go-ethereum/common"
-
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	exported "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum/common"
+	"sync"
 )
 
 // Ensure, that VoterMock does implement types.Voter.

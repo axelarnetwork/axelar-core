@@ -6,7 +6,7 @@ package mock
 import (
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkExported "github.com/cosmos/cosmos-sdk/x/staking/exported"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"sync"
 )
 
@@ -23,10 +23,10 @@ var _ types.StakingKeeper = &StakingKeeperMock{}
 // 			GetLastTotalPowerFunc: func(ctx sdk.Context) sdk.Int {
 // 				panic("mock out the GetLastTotalPower method")
 // 			},
-// 			IterateBondedValidatorsByPowerFunc: func(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool))  {
+// 			IterateBondedValidatorsByPowerFunc: func(ctx sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))  {
 // 				panic("mock out the IterateBondedValidatorsByPower method")
 // 			},
-// 			ValidatorFunc: func(ctx sdk.Context, addr sdk.ValAddress) sdkExported.ValidatorI {
+// 			ValidatorFunc: func(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI {
 // 				panic("mock out the Validator method")
 // 			},
 // 		}
@@ -40,10 +40,10 @@ type StakingKeeperMock struct {
 	GetLastTotalPowerFunc func(ctx sdk.Context) sdk.Int
 
 	// IterateBondedValidatorsByPowerFunc mocks the IterateBondedValidatorsByPower method.
-	IterateBondedValidatorsByPowerFunc func(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool))
+	IterateBondedValidatorsByPowerFunc func(ctx sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))
 
 	// ValidatorFunc mocks the Validator method.
-	ValidatorFunc func(ctx sdk.Context, addr sdk.ValAddress) sdkExported.ValidatorI
+	ValidatorFunc func(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -57,7 +57,7 @@ type StakingKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Fn is the fn argument value.
-			Fn func(index int64, validator sdkExported.ValidatorI) (stop bool)
+			Fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)
 		}
 		// Validator holds details about calls to the Validator method.
 		Validator []struct {
@@ -104,13 +104,13 @@ func (mock *StakingKeeperMock) GetLastTotalPowerCalls() []struct {
 }
 
 // IterateBondedValidatorsByPower calls IterateBondedValidatorsByPowerFunc.
-func (mock *StakingKeeperMock) IterateBondedValidatorsByPower(ctx sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool)) {
+func (mock *StakingKeeperMock) IterateBondedValidatorsByPower(ctx sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) {
 	if mock.IterateBondedValidatorsByPowerFunc == nil {
 		panic("StakingKeeperMock.IterateBondedValidatorsByPowerFunc: method is nil but StakingKeeper.IterateBondedValidatorsByPower was just called")
 	}
 	callInfo := struct {
 		Ctx sdk.Context
-		Fn  func(index int64, validator sdkExported.ValidatorI) (stop bool)
+		Fn  func(index int64, validator stakingtypes.ValidatorI) (stop bool)
 	}{
 		Ctx: ctx,
 		Fn:  fn,
@@ -126,11 +126,11 @@ func (mock *StakingKeeperMock) IterateBondedValidatorsByPower(ctx sdk.Context, f
 //     len(mockedStakingKeeper.IterateBondedValidatorsByPowerCalls())
 func (mock *StakingKeeperMock) IterateBondedValidatorsByPowerCalls() []struct {
 	Ctx sdk.Context
-	Fn  func(index int64, validator sdkExported.ValidatorI) (stop bool)
+	Fn  func(index int64, validator stakingtypes.ValidatorI) (stop bool)
 } {
 	var calls []struct {
 		Ctx sdk.Context
-		Fn  func(index int64, validator sdkExported.ValidatorI) (stop bool)
+		Fn  func(index int64, validator stakingtypes.ValidatorI) (stop bool)
 	}
 	mock.lockIterateBondedValidatorsByPower.RLock()
 	calls = mock.calls.IterateBondedValidatorsByPower
@@ -139,7 +139,7 @@ func (mock *StakingKeeperMock) IterateBondedValidatorsByPowerCalls() []struct {
 }
 
 // Validator calls ValidatorFunc.
-func (mock *StakingKeeperMock) Validator(ctx sdk.Context, addr sdk.ValAddress) sdkExported.ValidatorI {
+func (mock *StakingKeeperMock) Validator(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI {
 	if mock.ValidatorFunc == nil {
 		panic("StakingKeeperMock.ValidatorFunc: method is nil but StakingKeeper.Validator was just called")
 	}

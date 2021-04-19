@@ -5,7 +5,7 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/slashing"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 )
 
 //go:generate moq -out ./mock/types.go -pkg mock . Validator Snapshotter Slasher Broadcaster Tss
@@ -13,7 +13,7 @@ import (
 // Validator is an interface for a Cosmos validator account
 type Validator interface {
 	GetOperator() sdk.ValAddress
-	GetConsAddr() sdk.ConsAddress
+	GetConsAddr() (sdk.ConsAddress, error)
 	GetConsensusPower() int64
 	IsJailed() bool
 }
@@ -21,7 +21,7 @@ type Validator interface {
 // ValidatorInfo adopts the methods from "github.com/cosmos/cosmos-sdk/x/slashing" that are
 // actually used by this module
 type ValidatorInfo struct {
-	slashing.ValidatorSigningInfo
+	slashingtypes.ValidatorSigningInfo
 }
 
 // Slasher provides functionality to manage slashing info for a validator
@@ -41,7 +41,12 @@ type Tss interface {
 
 // IsValidatorActive returns true if the validator is active; otherwise, false
 func IsValidatorActive(ctx sdk.Context, slasher Slasher, validator Validator) bool {
-	signingInfo, found := slasher.GetValidatorSigningInfo(ctx, validator.GetConsAddr())
+	consAdd, err := validator.GetConsAddr()
+	if err != nil {
+		return false
+	}
+
+	signingInfo, found := slasher.GetValidatorSigningInfo(ctx, consAdd)
 
 	return found && !signingInfo.Tombstoned && signingInfo.MissedBlocksCounter <= 0 && !validator.IsJailed()
 }

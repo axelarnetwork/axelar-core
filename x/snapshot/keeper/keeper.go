@@ -6,9 +6,8 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
-	"github.com/cosmos/cosmos-sdk/x/params/subspace"
-	sdkExported "github.com/cosmos/cosmos-sdk/x/staking/exported"
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -28,12 +27,12 @@ type Keeper struct {
 	slasher     exported.Slasher
 	broadcaster exported.Broadcaster
 	tss         exported.Tss
-	cdc         *codec.Codec
-	params      subspace.Subspace
+	cdc         *codec.LegacyAmino
+	params      params.Subspace
 }
 
 // NewKeeper creates a new keeper for the staking module
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramSpace params.Subspace, broadcaster exported.Broadcaster, staking types.StakingKeeper, slasher exported.Slasher, tss exported.Tss) Keeper {
+func NewKeeper(cdc *codec.LegacyAmino, key sdk.StoreKey, paramSpace params.Subspace, broadcaster exported.Broadcaster, staking types.StakingKeeper, slasher exported.Slasher, tss exported.Tss) Keeper {
 	return Keeper{
 		storeKey:    key,
 		cdc:         cdc,
@@ -128,7 +127,7 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, nextCounter int64, subsetSize i
 	var validators []exported.Validator
 	snapshotTotalPower, validatorsTotalPower := sdk.ZeroInt(), sdk.ZeroInt()
 
-	validatorIter := func(_ int64, validator sdkExported.ValidatorI) (stop bool) {
+	validatorIter := func(_ int64, validator stakingtypes.ValidatorI) (stop bool) {
 		validatorsTotalPower = validatorsTotalPower.AddRaw(validator.GetConsensusPower())
 
 		if !exported.IsValidatorActive(ctx, k.slasher, validator) {
