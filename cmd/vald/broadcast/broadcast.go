@@ -132,11 +132,9 @@ func (b *Broadcaster) BroadcastTx(tx auth.StdTx) (*coretypes.ResultBroadcastTx, 
 		errChan <- err
 		resChan <- result
 	}
-	// block until the broadcast call has actually been run
-	err := <-errChan
-	res := <-resChan
 
-	return res, err
+	// block until the broadcast call has actually been run
+	return <-resChan, <-errChan
 }
 
 // broadcastTx signs a standard tx object and broadcasts it to the network
@@ -269,18 +267,41 @@ func WithBackoff(b *Broadcaster, strategy BackOff, minTimeout time.Duration, max
 // This function is thread-safe but might block for a long time depending on the exponential backoff parameters.
 func (b *BackOffBroadcaster) Broadcast(msgs ...sdk.Msg) error {
 	errChan := make(chan error)
+
+	broadcast := func() (*coretypes.ResultBroadcastTx, error) { return nil, b.broadcaster.Broadcast(msgs...) }
+
 	go func() {
 		defer close(errChan)
-		errChan <- b.broadcastWithBackoff(msgs)
+		_, err := b.broadcastWithBackoff(broadcast)
+		errChan <- err
 	}()
 	return <-errChan
 }
 
-func (b *BackOffBroadcaster) broadcastWithBackoff(msgs []sdk.Msg) (err error) {
+// BroadcastTx submits messages synchronously and retries with exponential backoff.
+// This function is thread-safe but might block for a long time depending on the exponential backoff parameters.
+func (b *BackOffBroadcaster) BroadcastTx(tx auth.StdTx) (*coretypes.ResultBroadcastTx, error) {
+	errChan := make(chan error)
+	resChan := make(chan *coretypes.ResultBroadcastTx, 1)
+
+	broadcast := func() (*coretypes.ResultBroadcastTx, error) { return b.broadcaster.BroadcastTx(tx) }
+
+	go func() {
+		defer close(errChan)
+		defer close(resChan)
+		res, err := b.broadcastWithBackoff(broadcast)
+		errChan <- err
+		resChan <- res
+	}()
+
+	return <-resChan, <-errChan
+}
+
+func (b *BackOffBroadcaster) broadcastWithBackoff(broadcast func() (*coretypes.ResultBroadcastTx, error)) (res *coretypes.ResultBroadcastTx, err error) {
 	for i := 0; i <= b.maxRetries; i++ {
-		err = b.broadcaster.Broadcast(msgs...)
+		res, err = broadcast()
 		if err == nil {
-			return nil
+			return res, nil
 		}
 
 		// exponential backoff
@@ -291,7 +312,7 @@ func (b *BackOffBroadcaster) broadcastWithBackoff(msgs []sdk.Msg) (err error) {
 		}
 	}
 
-	return sdkerrors.Wrap(err, fmt.Sprintf("aborting broadcast after %d retries", b.maxRetries))
+	return res, sdkerrors.Wrap(err, fmt.Sprintf("aborting broadcast after %d retries", b.maxRetries))
 }
 
 // BackOff computes the next back-off duration
