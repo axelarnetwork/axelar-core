@@ -12,8 +12,16 @@ axelard set-genesis-ethereum-contracts [flags]
       --burnable string   Path to the burner contract ABI.
       --gateway string    Path to the Axelar Gateway contract ABI.
   -h, --help              help for set-genesis-ethereum-contracts
-      --home string       node's home directory (default "/Users/chris/.axelar")
       --token string      Path to the tokens contract ABI.
+```
+
+### Options inherited from parent commands
+
+```
+      --home string         directory for config and data (default "$HOME/.axelar")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
 ```
 
 ### SEE ALSO

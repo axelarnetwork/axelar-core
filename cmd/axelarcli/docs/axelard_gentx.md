@@ -50,7 +50,6 @@ axelard gentx [key_name] [amount] [flags]
       --gas-prices string                   Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)
       --generate-only                       Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
   -h, --help                                help for gentx
-      --home string                         The application home directory (default "/Users/chris/.axelar")
       --identity string                     The (optional) identity signature (ex. UPort or Keybase)
       --ip string                           The node's public IP (default "10.6.206.80")
       --keyring-backend string              Select keyring's backend (os|file|kwallet|pass|test|memory) (default "test")
@@ -70,6 +69,15 @@ axelard gentx [key_name] [amount] [flags]
       --timeout-height uint                 Set a block timeout height to prevent the tx from being committed past a certain height
       --website string                      The validator's (optional) website
   -y, --yes                                 Skip tx broadcasting prompt confirmation
+```
+
+### Options inherited from parent commands
+
+```
+      --home string         directory for config and data (default "$HOME/.axelar")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
 ```
 
 ### SEE ALSO

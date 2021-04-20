@@ -48,7 +48,6 @@ axelard start [flags]
       --halt-height uint                                Block height at which to gracefully halt the chain and shutdown the node
       --halt-time uint                                  Minimum block time (in Unix seconds) at which to gracefully halt the chain and shutdown the node
   -h, --help                                            help for start
-      --home string                                     The application home directory (default "/Users/chris/.axelar")
       --inter-block-cache                               Enable inter-block caching (default true)
       --inv-check-period uint                           Assert registered invariants every N blocks
       --min-retain-blocks uint                          Minimum block height offset during ABCI commit to prune Tendermint blocks
@@ -76,12 +75,20 @@ axelard start [flags]
       --state-sync.snapshot-keep-recent uint32          State sync snapshot to keep (default 2)
       --tofnd-host string                               host name for tss daemon
       --tofnd-port string                               port for tss daemon (default "50051")
-      --trace                                           Provide full stack traces for errors in ABCI Log
       --trace-store string                              Enable KVStore tracing to an output file
       --transport string                                Transport protocol: socket, grpc (default "socket")
       --unsafe-skip-upgrades ints                       Skip a set of upgrade heights to continue the old binary
       --with-tendermint                                 Run abci app embedded in-process with tendermint (default true)
       --x-crisis-skip-assert-invariants                 Skip x/crisis invariants check on startup
+```
+
+### Options inherited from parent commands
+
+```
+      --home string         directory for config and data (default "$HOME/.axelar")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
 ```
 
 ### SEE ALSO
