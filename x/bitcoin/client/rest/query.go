@@ -21,8 +21,39 @@ type RespDepositAddress struct {
 	Address string `json:"address" yaml:"address"`
 }
 
-// QueryDepositAddress returns a handler to query a deposit address
-func QueryDepositAddress(cliCtx context.CLIContext) http.HandlerFunc {
+// RespKeyAddress represents the response of a key address query
+type RespKeyAddress struct {
+	Address string `json:"address" yaml:"address"`
+}
+
+// HandlerQueryDepositAddress returns a handler to query a the bitcoin address for key with a given role
+func HandlerQueryKeyAddress(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		role := mux.Vars(r)[utils.PathVarKeyRole]
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryKeyAddress), []byte(role))
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		if len(res) == 0 {
+			rest.PostProcessResponse(w, cliCtx, "")
+			return
+		}
+
+		resp := RespDepositAddress{Address: string(res)}
+		rest.PostProcessResponse(w, cliCtx, resp)
+	}
+}
+
+// HandlerQueryDepositAddress returns a handler to query a deposit address
+func HandlerQueryDepositAddress(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -53,8 +84,8 @@ func QueryDepositAddress(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-// QueryGetConsolidationTx returns a handler to build a consolidation transaction
-func QueryGetConsolidationTx(cliCtx context.CLIContext) http.HandlerFunc {
+// HandlerQueryGetConsolidationTx returns a handler to build a consolidation transaction
+func HandlerQueryGetConsolidationTx(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)

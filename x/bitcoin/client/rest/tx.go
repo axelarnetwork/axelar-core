@@ -22,20 +22,22 @@ const (
 	TxMethodConfirmTx              = "confirm"
 	TxMethodSignPendingTransfersTx = "sign"
 
-	QMethodDepositAddress     = keeper.QueryDepositAddress
-	QMethodGetConsolidationTx = keeper.GetTx
+	QueryMethodDepositAddress     = keeper.QueryDepositAddress
+	QueryMethodKeyAddress         = keeper.QueryKeyAddress
+	QueryMethodGetConsolidationTx = keeper.GetTx
 )
 
 // RegisterRoutes registers this module's REST routes with the given router
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	registerTx := clientUtils.RegisterTxHandlerFn(r, types.RestRoute)
-	registerTx(GetHandlerLink(cliCtx), TxMethodLink, clientUtils.PathVarChain)
-	registerTx(GetHandlerConfirmTx(cliCtx), TxMethodConfirmTx)
-	registerTx(GetHandlerSignPendingTransfersTx(cliCtx), TxMethodSignPendingTransfersTx)
+	registerTx(HandlerLink(cliCtx), TxMethodLink, clientUtils.PathVarChain)
+	registerTx(HandlerConfirmTx(cliCtx), TxMethodConfirmTx)
+	registerTx(HandlerSignPendingTransfersTx(cliCtx), TxMethodSignPendingTransfersTx)
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
-	registerQuery(QueryDepositAddress(cliCtx), QMethodDepositAddress, clientUtils.PathVarChain, clientUtils.PathVarEthereumAddress)
-	registerQuery(QueryGetConsolidationTx(cliCtx), QMethodGetConsolidationTx)
+	registerQuery(HandlerQueryDepositAddress(cliCtx), QueryMethodDepositAddress, clientUtils.PathVarChain, clientUtils.PathVarEthereumAddress)
+	registerQuery(HandlerQueryKeyAddress(cliCtx), QueryMethodKeyAddress, clientUtils.PathVarKeyRole)
+	registerQuery(HandlerQueryGetConsolidationTx(cliCtx), QueryMethodGetConsolidationTx)
 }
 
 // ReqLink represents a request to link a cross-chain address to a Bitcoin address
@@ -56,8 +58,8 @@ type ReqSignPendingTransfersTx struct {
 	Fee     string       `json:"fee" yaml:"fee"`
 }
 
-// GetHandlerSignPendingTransfersTx returns the handler to sign pending transfers to Bitcoin
-func GetHandlerSignPendingTransfersTx(cliCtx context.CLIContext) http.HandlerFunc {
+// HandlerSignPendingTransfersTx returns the handler to sign pending transfers to Bitcoin
+func HandlerSignPendingTransfersTx(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqSignPendingTransfersTx
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
@@ -89,8 +91,8 @@ func GetHandlerSignPendingTransfersTx(cliCtx context.CLIContext) http.HandlerFun
 	}
 }
 
-// GetHandlerLink returns the handler to link a Bitcoin address to a cross-chain address
-func GetHandlerLink(cliCtx context.CLIContext) http.HandlerFunc {
+// HandlerLink returns the handler to link a Bitcoin address to a cross-chain address
+func HandlerLink(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqLink
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
@@ -116,8 +118,8 @@ func GetHandlerLink(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-// GetHandlerConfirmTx returns the handler to confirm a tx outpoint
-func GetHandlerConfirmTx(cliCtx context.CLIContext) http.HandlerFunc {
+// HandlerConfirmTx returns the handler to confirm a tx outpoint
+func HandlerConfirmTx(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqConfirmOutPoint
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {

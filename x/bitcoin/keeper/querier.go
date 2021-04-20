@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-
 	"github.com/btcsuite/btcd/wire"
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -20,6 +19,7 @@ import (
 // Query paths
 const (
 	QueryDepositAddress = "depositAddr"
+	QueryKeyAddress     = "keyAddr"
 	GetTx               = "getTx"
 )
 
@@ -31,6 +31,8 @@ func NewQuerier(k types.BTCKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 		switch path[0] {
 		case QueryDepositAddress:
 			res, err = queryDepositAddress(ctx, k, s, n, req.Data)
+		case QueryKeyAddress:
+			res, err = queryKeyAddress(ctx, k, s, n, req.Data)
 		case GetTx:
 			res, err = getRawConsolidationTx(ctx, k)
 		default:
@@ -68,6 +70,26 @@ func queryDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n t
 	}
 
 	addr := types.NewLinkedAddress(masterKey, secondaryKey, k.GetNetwork(ctx), recipient)
+
+	return []byte(addr.EncodeAddress()), nil
+}
+
+func queryKeyAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n types.Nexus, data []byte) ([]byte, error) {
+	keyRole, err := tss.KeyRoleFromStr(string(data))
+	if err != nil {
+		return nil, err
+	}
+
+	key, ok := s.GetCurrentKey(ctx, exported.Bitcoin, keyRole)
+	if !ok {
+		return nil, fmt.Errorf("key not found")
+	}
+
+	addr := types.NewConsolidationAddress(key, k.GetNetwork(ctx))
+
+	if _, ok := k.GetAddress(ctx, addr.EncodeAddress()); !ok {
+		return nil, fmt.Errorf("no address found for current %s key", keyRole.String())
+	}
 
 	return []byte(addr.EncodeAddress()), nil
 }

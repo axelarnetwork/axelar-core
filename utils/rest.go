@@ -11,6 +11,7 @@ import (
 
 const (
 	PathVarChain           = "Chain"
+	PathVarKeyRole         = "KeyRole"
 	PathVarEthereumAddress = "EthereumAddress"
 	PathVarSymbol          = "Symbol"
 	PathVarTxID            = "TxID"
