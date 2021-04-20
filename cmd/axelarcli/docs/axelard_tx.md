@@ -27,8 +27,8 @@ axelard tx [flags]
 - [axelard](axelard.md)	 - Axelar App
 - [axelard tx bank](axelard_tx_bank.md)	 - Bank transaction subcommands
 - [axelard tx bitcoin](axelard_tx_bitcoin.md)	 - bitcoin transactions subcommands
-- [axelard tx broadcast](axelard_tx_broadcast.md)	 - Broadcast transactions generated offline
 - [axelard tx broadcast](axelard_tx_broadcast.md)	 - broadcast transactions subcommands
+- [axelard tx broadcast](axelard_tx_broadcast.md)	 - Broadcast transactions generated offline
 - [axelard tx crisis](axelard_tx_crisis.md)	 - Crisis transactions subcommands
 - [axelard tx decode](axelard_tx_decode.md)	 - Decode an binary encoded transaction string.
 - [axelard tx distribution](axelard_tx_distribution.md)	 - Distribution transactions subcommands

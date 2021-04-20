@@ -55,8 +55,8 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		WithHomeDir(app.DefaultNodeHome)
 
 	rootCmd := &cobra.Command{
-		Use:               app.Name + "d",
-		Short:             "Axelar App",
+		Use:   app.Name + "d",
+		Short: "Axelar App",
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 			if err := client.SetCmdClientContextHandler(initClientCtx, cmd); err != nil {
 				return err
@@ -68,7 +68,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 
 	initRootCmd(rootCmd, encodingConfig)
 
-	overwriteFlagDefaults(rootCmd, map[string]string{
+	OverwriteFlagDefaults(rootCmd, map[string]string{
 		flags.FlagChainID:        app.Name,
 		flags.FlagKeyringBackend: "test",
 	})
@@ -83,7 +83,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		genutilcli.InitCmd(app.ModuleBasics, app.DefaultNodeHome),
 		genutilcli.CollectGenTxsCmd(banktypes.GenesisBalancesIterator{}, app.DefaultNodeHome),
 		genutilcli.MigrateGenesisCmd(),
-		genutilcli.GenTxCmd(		app.ModuleBasics, encodingConfig.TxConfig, banktypes.GenesisBalancesIterator{}, app.DefaultNodeHome	),
+		genutilcli.GenTxCmd(app.ModuleBasics, encodingConfig.TxConfig, banktypes.GenesisBalancesIterator{}, app.DefaultNodeHome),
 		genutilcli.ValidateGenesisCmd(app.ModuleBasics),
 		AddGenesisAccountCmd(app.DefaultNodeHome),
 		tmcli.NewCompletionCmd(rootCmd, true),
@@ -94,9 +94,9 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		SetGenesisSnapshotCmd(app.DefaultNodeHome),
 		SetGenesisEthContractsCmd(app.DefaultNodeHome),
 		SetGenesisChainParamsCmd(app.DefaultNodeHome),
-		)
+	)
 
-	server.AddCommands(rootCmd,app.DefaultNodeHome, newApp, export(encodingConfig), addAdditionalFlags)
+	server.AddCommands(rootCmd, app.DefaultNodeHome, newApp, export(encodingConfig), addAdditionalFlags)
 
 	// add keybase, auxiliary RPC, query, and tx child commands
 	rootCmd.AddCommand(
@@ -161,7 +161,7 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, appOpts serverty
 
 func export(encCfg params.EncodingConfig) servertypes.AppExporter {
 	return func(logger log.Logger, db dbm.DB, traceStore io.Writer, height int64, forZeroHeight bool, jailAllowedAddrs []string,
-		appOpts servertypes.AppOptions) (servertypes.ExportedApp, error)  {
+		appOpts servertypes.AppOptions) (servertypes.ExportedApp, error) {
 
 		homePath := cast.ToString(appOpts.Get(flags.FlagHome))
 		if homePath == "" {
@@ -232,12 +232,11 @@ func txCommand() *cobra.Command {
 	return cmd
 }
 
-
-func overwriteFlagDefaults(c *cobra.Command, defaults map[string]string) {
+func OverwriteFlagDefaults(c *cobra.Command, defaults map[string]string) {
 	set := func(s *pflag.FlagSet, key, val string) {
 		if f := s.Lookup(key); f != nil {
 			f.DefValue = val
-			_=f.Value.Set(val)
+			_ = f.Value.Set(val)
 		}
 	}
 	for key, val := range defaults {
@@ -245,6 +244,6 @@ func overwriteFlagDefaults(c *cobra.Command, defaults map[string]string) {
 		set(c.PersistentFlags(), key, val)
 	}
 	for _, c := range c.Commands() {
-		overwriteFlagDefaults(c, defaults)
+		OverwriteFlagDefaults(c, defaults)
 	}
 }

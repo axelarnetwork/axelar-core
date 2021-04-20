@@ -27,7 +27,7 @@ axelard tx staking edit-validator [flags]
       --ledger                       Use a connected Ledger device
       --memo string                  Memo to send along with transaction
       --min-self-delegation string   The minimum self delegation required on the validator
-      --moniker string               The validator's name (default "[do-not-modify]")
+      --moniker string               The validator's name (default "node")
       --node string                  <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
       --offline                      Offline mode (does not allow any online functionality
       --security-contact string      The validator's (optional) security contact email (default "[do-not-modify]")

@@ -26,7 +26,7 @@ axelard keys show [name_or_address [name_or_address...]] [flags]
 ### Options inherited from parent commands
 
 ```
-      --home string              The application home directory (default "/Users/chris/.axelar")
+      --home string              The application home directory (default "$HOME/.axelar")
       --keyring-backend string   Select keyring's backend (os|file|test) (default "test")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --log_format string        The logging format (json|plain) (default "plain")

@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/server"
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
+	"github.com/cosmos/cosmos-sdk/x/staking/client/cli"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
@@ -34,10 +35,16 @@ func main() {
 		// add flags from svrcmd.Execute()
 		rootCmd.PersistentFlags().String(flags.FlagLogLevel, zerolog.InfoLevel.String(), "The logging level (trace|debug|info|warn|error|fatal|panic)")
 		rootCmd.PersistentFlags().String(flags.FlagLogFormat, tmcfg.LogFormatPlain, "The logging format (json|plain)")
+		home := filepath.Join("$HOME", "."+app.Name)
+		executor := tmcli.PrepareBaseCmd(rootCmd, "", home)
+		rootCmd = executor.Root()
 
-		// set the home directory to a static string for the documentation
-		executor := tmcli.PrepareBaseCmd(rootCmd, "", filepath.Join("$HOME", "."+app.Name))
-		rootCmd = executor.Command
+		// set static values for dynamic (system-dependent) flag defaults
+		cmd.OverwriteFlagDefaults(rootCmd, map[string]string{
+			flags.FlagHome:  home,
+			cli.FlagIP:      "127.0.0.1",
+			cli.FlagMoniker: "node",
+		})
 
 		// The AutoGen tag includes a date, so when the time zone of the local machine is different from the time zone
 		// of the github host the date could be different and the PR check fail. Therefore we disable it

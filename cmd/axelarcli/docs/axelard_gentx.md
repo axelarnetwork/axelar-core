@@ -51,13 +51,13 @@ axelard gentx [key_name] [amount] [flags]
       --generate-only                       Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
   -h, --help                                help for gentx
       --identity string                     The (optional) identity signature (ex. UPort or Keybase)
-      --ip string                           The node's public IP (default "10.6.206.80")
+      --ip string                           The node's public IP (default "127.0.0.1")
       --keyring-backend string              Select keyring's backend (os|file|kwallet|pass|test|memory) (default "test")
       --keyring-dir string                  The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                              Use a connected Ledger device
       --memo string                         Memo to send along with transaction
       --min-self-delegation string          The minimum self delegation required on the validator
-      --moniker string                      The validator's (optional) moniker
+      --moniker string                      The validator's (optional) moniker (default "node")
       --node string                         <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
       --node-id string                      The node's NodeID
       --offline                             Offline mode (does not allow any online functionality
