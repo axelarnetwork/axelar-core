@@ -23,7 +23,7 @@ const (
 )
 
 // SetGenesisVoteCmd returns set-genesis-chain-params cobra Command.
-func SetGenesisVoteCmd( defaultNodeHome string) *cobra.Command {
+func SetGenesisVoteCmd(defaultNodeHome string) *cobra.Command {
 	var (
 		threshold string
 		interval  int64
@@ -62,7 +62,7 @@ func SetGenesisVoteCmd( defaultNodeHome string) *cobra.Command {
 				genesisVote.VotingInterval = interval
 			}
 
-			genesisVoteBz, err := cdc.MarshalJSON(genesisVote)
+			genesisVoteBz, err := cdc.MarshalJSON(&genesisVote)
 			if err != nil {
 				return fmt.Errorf("failed to marshal vote genesis state: %w", err)
 			}
@@ -82,7 +82,6 @@ func SetGenesisVoteCmd( defaultNodeHome string) *cobra.Command {
 
 	cmd.Flags().StringVar(&threshold, flagThreshold, "", "The % of stake that is required for a voting poll to conclude (e.g., \"2/3\").")
 	cmd.Flags().Int64Var(&interval, flagInterval, 0, "A positive integer representing the number of blocks between tallying votes.")
-
 
 	return cmd
 }

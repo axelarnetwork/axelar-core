@@ -6,6 +6,6 @@ func DefaultGenesisState() *GenesisState {
 }
 
 // Validate validates the genesis state
-func (g GenesisState) Validate() error {
+func (m GenesisState) Validate() error {
 	return nil
 }

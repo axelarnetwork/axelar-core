@@ -25,7 +25,7 @@ func NewHandler(b exported.Broadcaster) sdk.Handler {
 }
 
 func handleMsgRegisterProxy(ctx sdk.Context, b exported.Broadcaster, msg *types.MsgRegisterProxy) (*sdk.Result, error) {
-	if err := b.RegisterProxy(ctx, msg.GetPrincipal(), msg.GetProxy()); err != nil {
+	if err := b.RegisterProxy(ctx, msg.PrincipalAddr, msg.ProxyAddr); err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBroadcast, err.Error())
 	}
 
@@ -33,8 +33,8 @@ func handleMsgRegisterProxy(ctx sdk.Context, b exported.Broadcaster, msg *types.
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.PrincipalAddr),
-			sdk.NewAttribute(types.AttributeAddress, msg.ProxyAddr),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.PrincipalAddr.String()),
+			sdk.NewAttribute(types.AttributeAddress, msg.ProxyAddr.String()),
 		),
 	)
 	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil

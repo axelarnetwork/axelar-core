@@ -22,21 +22,23 @@ type Mgr struct {
 	broadcaster broadcast.Broadcaster
 	rpc         rpc2.Client
 	sender      sdk.AccAddress
+	cdc         *codec.LegacyAmino
 }
 
 // NewMgr returns a new Mgr instance
-func NewMgr(rpc rpc2.Client, broadcaster broadcast.Broadcaster, defaultSender sdk.AccAddress, logger log.Logger) *Mgr {
+func NewMgr(rpc rpc2.Client, broadcaster broadcast.Broadcaster, defaultSender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
 		rpc:         rpc,
 		logger:      logger.With("listener", "btc"),
 		broadcaster: broadcaster,
 		sender:      defaultSender,
+		cdc:         cdc,
 	}
 }
 
 // ProcessConfirmation votes on the correctness of a Bitcoin deposit
 func (mgr *Mgr) ProcessConfirmation(attributes []sdk.Attribute) error {
-	outPointInfo, confHeight, poll, err := parseConfirmationParams(attributes)
+	outPointInfo, confHeight, poll, err := parseConfirmationParams(mgr.cdc, attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "Bitcoin transaction confirmation failed")
 	}
@@ -45,22 +47,22 @@ func (mgr *Mgr) ProcessConfirmation(attributes []sdk.Attribute) error {
 	if err != nil {
 		mgr.logger.Debug(sdkerrors.Wrap(err, "tx outpoint confirmation failed").Error())
 	}
-	msg := btc.MsgVoteConfirmOutpoint{
+	msg := &btc.MsgVoteConfirmOutpoint{
 		Sender:    mgr.sender,
 		Poll:      poll,
 		Confirmed: err == nil,
-		OutPoint:  *outPointInfo.OutPoint,
+		OutPoint:  outPointInfo.OutPoint,
 	}
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, poll.String()))
 	return mgr.broadcaster.Broadcast(msg)
 }
 
-func parseConfirmationParams(attributes []sdk.Attribute) (outPoint btc.OutPointInfo, confHeight int64, poll vote.PollMeta, err error) {
+func parseConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (outPoint btc.OutPointInfo, confHeight int64, poll vote.PollMeta, err error) {
 	var outPointFound, confHeightFound, pollFound bool
 	for _, attribute := range attributes {
 		switch attribute.Key {
 		case btc.AttributeKeyOutPointInfo:
-			codec.Cdc.MustUnmarshalJSON([]byte(attribute.Value), &outPoint)
+			cdc.MustUnmarshalJSON([]byte(attribute.Value), &outPoint)
 			outPointFound = true
 		case btc.AttributeKeyConfHeight:
 			h, err := strconv.Atoi(attribute.Value)
@@ -70,7 +72,7 @@ func parseConfirmationParams(attributes []sdk.Attribute) (outPoint btc.OutPointI
 			confHeight = int64(h)
 			confHeightFound = true
 		case btc.AttributeKeyPoll:
-			codec.Cdc.MustUnmarshalJSON([]byte(attribute.Value), &poll)
+			cdc.MustUnmarshalJSON([]byte(attribute.Value), &poll)
 			pollFound = true
 		default:
 		}
@@ -83,12 +85,13 @@ func parseConfirmationParams(attributes []sdk.Attribute) (outPoint btc.OutPointI
 }
 
 func confirmTx(rpc rpc2.Client, outPointInfo btc.OutPointInfo, requiredConfirmations int64) error {
-	actualTxOut, err := rpc.GetTxOut(&outPointInfo.OutPoint.Hash, outPointInfo.OutPoint.Index, false)
+	outPoint := outPointInfo.GetOutPoint()
+	actualTxOut, err := rpc.GetTxOut(&outPoint.Hash, outPoint.Index, false)
 	if err != nil {
 		return sdkerrors.Wrap(err, "call to Bitcoin rpc failed")
 	}
 	if actualTxOut == nil {
-		return fmt.Errorf("tx {%s} not found", outPointInfo.OutPoint.String())
+		return fmt.Errorf("tx {%s} not found", outPointInfo.OutPoint)
 	}
 
 	if len(actualTxOut.ScriptPubKey.Addresses) != 1 {

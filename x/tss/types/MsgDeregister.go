@@ -8,7 +8,7 @@ import (
 // NewMsgDeregister creates a message of type MsgDeregister
 func NewMsgDeregister(sender sdk.AccAddress) *MsgDeregister {
 	return &MsgDeregister{
-		Sender: sender.String(),
+		Sender: sender,
 	}
 }
 
@@ -24,8 +24,8 @@ func (m MsgDeregister) Type() string {
 
 // ValidateBasic implements sdk.Msg
 func (m MsgDeregister) ValidateBasic() error {
-	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "malformed sender address")
+	if m.Sender == nil || len(m.Sender) != sdk.AddrLen {
+		return sdkerrors.Wrap(ErrTss, "sender must be set")
 	}
 
 	return nil
@@ -38,14 +38,5 @@ func (m MsgDeregister) GetSignBytes() []byte {
 
 // GetSigners implements sdk.Msg
 func (m MsgDeregister) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.GetSender()}
-}
-
-// GetSender returns the sender object
-func (m MsgDeregister) GetSender() sdk.AccAddress {
-	addr, err := sdk.AccAddressFromBech32(m.Sender)
-	if err != nil {
-		panic(err)
-	}
-	return addr
+	return []sdk.AccAddress{m.Sender}
 }

@@ -31,7 +31,6 @@ import (
 	staking "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
-var stringGen = rand.Strings(5, 50).Distinct()
 var encCfg appParams.EncodingConfig
 
 // Cases to test
@@ -85,7 +84,7 @@ func TestTakeSnapshot_WithSubsetSize(t *testing.T) {
 		GetProxyFunc: func(_ sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
 			for _, v := range validators {
 				if bytes.Equal(principal.Bytes(), v.GetOperator()) {
-					return sdk.AccAddress(stringGen.Next())
+					return rand.Bytes(sdk.AddrLen)
 				}
 			}
 			return nil
@@ -139,7 +138,7 @@ func TestSnapshots(t *testing.T) {
 				GetProxyFunc: func(_ sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
 					for _, v := range validators {
 						if bytes.Equal(principal.Bytes(), v.GetOperator()) {
-							return sdk.AccAddress(stringGen.Next())
+							return rand.Bytes(sdk.AddrLen)
 						}
 					}
 					return nil
@@ -224,7 +223,7 @@ func genValidators(t *testing.T, numValidators, totalConsPower int) []stakingtyp
 		}
 
 		validators[i] = staking.Validator{
-			OperatorAddress: stringGen.Next(),
+			OperatorAddress: sdk.ValAddress(rand.Bytes(sdk.AddrLen)).String(),
 			Tokens:          sdk.TokensFromConsensusPower(int64(power)),
 			Status:          stakingtypes.Bonded,
 			ConsensusPubkey: pk,

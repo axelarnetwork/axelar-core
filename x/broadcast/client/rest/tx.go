@@ -19,6 +19,7 @@ type ReqRegisterProxy struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 }
 
+// RegisterRoutes registers rest routes for this module
 func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("/tx/%s/registerProxy/{voter}", types.ModuleName), registerProxyHandlerFn(cliCtx)).Methods("POST")
 }

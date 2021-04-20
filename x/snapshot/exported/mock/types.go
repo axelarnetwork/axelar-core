@@ -5,6 +5,7 @@ package mock
 
 import (
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"sync"
 )
@@ -31,6 +32,9 @@ var _ exported.Validator = &ValidatorMock{}
 // 			IsJailedFunc: func() bool {
 // 				panic("mock out the IsJailed method")
 // 			},
+// 			UnpackInterfacesFunc: func(c codectypes.AnyUnpacker) error {
+// 				panic("mock out the UnpackInterfaces method")
+// 			},
 // 		}
 //
 // 		// use mockedValidator in code that requires exported.Validator
@@ -50,6 +54,9 @@ type ValidatorMock struct {
 	// IsJailedFunc mocks the IsJailed method.
 	IsJailedFunc func() bool
 
+	// UnpackInterfacesFunc mocks the UnpackInterfaces method.
+	UnpackInterfacesFunc func(c codectypes.AnyUnpacker) error
+
 	// calls tracks calls to the methods.
 	calls struct {
 		// GetConsAddr holds details about calls to the GetConsAddr method.
@@ -64,11 +71,17 @@ type ValidatorMock struct {
 		// IsJailed holds details about calls to the IsJailed method.
 		IsJailed []struct {
 		}
+		// UnpackInterfaces holds details about calls to the UnpackInterfaces method.
+		UnpackInterfaces []struct {
+			// C is the c argument value.
+			C codectypes.AnyUnpacker
+		}
 	}
 	lockGetConsAddr       sync.RWMutex
 	lockGetConsensusPower sync.RWMutex
 	lockGetOperator       sync.RWMutex
 	lockIsJailed          sync.RWMutex
+	lockUnpackInterfaces  sync.RWMutex
 }
 
 // GetConsAddr calls GetConsAddrFunc.
@@ -172,6 +185,37 @@ func (mock *ValidatorMock) IsJailedCalls() []struct {
 	mock.lockIsJailed.RLock()
 	calls = mock.calls.IsJailed
 	mock.lockIsJailed.RUnlock()
+	return calls
+}
+
+// UnpackInterfaces calls UnpackInterfacesFunc.
+func (mock *ValidatorMock) UnpackInterfaces(c codectypes.AnyUnpacker) error {
+	if mock.UnpackInterfacesFunc == nil {
+		panic("ValidatorMock.UnpackInterfacesFunc: method is nil but Validator.UnpackInterfaces was just called")
+	}
+	callInfo := struct {
+		C codectypes.AnyUnpacker
+	}{
+		C: c,
+	}
+	mock.lockUnpackInterfaces.Lock()
+	mock.calls.UnpackInterfaces = append(mock.calls.UnpackInterfaces, callInfo)
+	mock.lockUnpackInterfaces.Unlock()
+	return mock.UnpackInterfacesFunc(c)
+}
+
+// UnpackInterfacesCalls gets all the calls that were made to UnpackInterfaces.
+// Check the length with:
+//     len(mockedValidator.UnpackInterfacesCalls())
+func (mock *ValidatorMock) UnpackInterfacesCalls() []struct {
+	C codectypes.AnyUnpacker
+} {
+	var calls []struct {
+		C codectypes.AnyUnpacker
+	}
+	mock.lockUnpackInterfaces.RLock()
+	calls = mock.calls.UnpackInterfaces
+	mock.lockUnpackInterfaces.RUnlock()
 	return calls
 }
 

@@ -5,52 +5,42 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
+// NewMsgRegisterProxy - MsgRegisterProxy constructor
 func NewMsgRegisterProxy(principal sdk.ValAddress, proxy sdk.AccAddress) *MsgRegisterProxy {
 	return &MsgRegisterProxy{
-		PrincipalAddr: principal.String(),
-		ProxyAddr:     proxy.String(),
+		PrincipalAddr: principal,
+		ProxyAddr:     proxy,
 	}
 }
 
-func (msg MsgRegisterProxy) Route() string {
+// Route returns the route for this message
+func (m MsgRegisterProxy) Route() string {
 	return RouterKey
 }
 
-func (msg MsgRegisterProxy) Type() string {
+// Type returns the type of the message
+func (m MsgRegisterProxy) Type() string {
 	return "RegisterProxy"
 }
 
-func (msg MsgRegisterProxy) ValidateBasic() error {
-	if _, err := sdk.ValAddressFromBech32(msg.PrincipalAddr); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "malformed principal address")
+// ValidateBasic executes a stateless message validation
+func (m MsgRegisterProxy) ValidateBasic() error {
+	if err := sdk.VerifyAddressFormat(m.PrincipalAddr); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "principal").Error())
 	}
-	if _, err := sdk.AccAddressFromBech32(msg.ProxyAddr); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "malformed proxy address")
+	if err := sdk.VerifyAddressFormat(m.ProxyAddr); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "proxy").Error())
 	}
 
 	return nil
 }
 
-func (msg MsgRegisterProxy) GetPrincipal() sdk.ValAddress {
-	addr, err := sdk.ValAddressFromBech32(msg.PrincipalAddr)
-	if err != nil {
-		panic(err)
-	}
-	return addr
+// GetSignBytes returns the message bytes that need to be signed
+func (m MsgRegisterProxy) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
-func (msg MsgRegisterProxy) GetProxy() sdk.AccAddress {
-	addr, err := sdk.AccAddressFromBech32(msg.ProxyAddr)
-	if err != nil {
-		panic(err)
-	}
-	return addr
-}
-
-func (msg MsgRegisterProxy) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
-}
-
-func (msg MsgRegisterProxy) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.GetProxy()}
+// GetSigners returns the set of signers for this message
+func (m MsgRegisterProxy) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{m.ProxyAddr}
 }

@@ -4,51 +4,54 @@
 package mock
 
 import (
-	broadcasttypes "github.com/axelarnetwork/axelar-core/cmd/vald/broadcast/types"
+	"github.com/axelarnetwork/axelar-core/cmd/vald/broadcast/types"
+	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 	"sync"
 )
 
-// Ensure, that ClientMock does implement broadcasttypes.Client.
+// Ensure, that ClientMock does implement types.Client.
 // If this is not the case, regenerate this file with moq.
-var _ broadcasttypes.Client = &ClientMock{}
+var _ types.Client = &ClientMock{}
 
-// ClientMock is a mock implementation of broadcasttypes.Client.
+// ClientMock is a mock implementation of types.Client.
 //
 // 	func TestSomethingThatUsesClient(t *testing.T) {
 //
-// 		// make and configure a mocked broadcasttypes.Client
+// 		// make and configure a mocked types.Client
 // 		mockedClient := &ClientMock{
-// 			BroadcastTxSyncFunc: func(tx authtypes.StdTx) (*coretypes.ResultBroadcastTx, error) {
+// 			BroadcastTxSyncFunc: func(tx legacytx.StdTx) (*coretypes.ResultBroadcastTx, error) {
 // 				panic("mock out the BroadcastTxSync method")
 // 			},
-// 			GetAccountNumberSequenceFunc: func(addr sdk.AccAddress) (uint64, uint64, error) {
+// 			GetAccountNumberSequenceFunc: func(clientCtx client.Context, addr sdk.AccAddress) (uint64, uint64, error) {
 // 				panic("mock out the GetAccountNumberSequence method")
 // 			},
 // 		}
 //
-// 		// use mockedClient in code that requires broadcasttypes.Client
+// 		// use mockedClient in code that requires types.Client
 // 		// and then make assertions.
 //
 // 	}
 type ClientMock struct {
 	// BroadcastTxSyncFunc mocks the BroadcastTxSync method.
-	BroadcastTxSyncFunc func(tx authtypes.StdTx) (*coretypes.ResultBroadcastTx, error)
+	BroadcastTxSyncFunc func(tx legacytx.StdTx) (*coretypes.ResultBroadcastTx, error)
 
 	// GetAccountNumberSequenceFunc mocks the GetAccountNumberSequence method.
-	GetAccountNumberSequenceFunc func(addr sdk.AccAddress) (uint64, uint64, error)
+	GetAccountNumberSequenceFunc func(clientCtx client.Context, addr sdk.AccAddress) (uint64, uint64, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// BroadcastTxSync holds details about calls to the BroadcastTxSync method.
 		BroadcastTxSync []struct {
 			// Tx is the tx argument value.
-			Tx authtypes.StdTx
+			Tx legacytx.StdTx
 		}
 		// GetAccountNumberSequence holds details about calls to the GetAccountNumberSequence method.
 		GetAccountNumberSequence []struct {
+			// ClientCtx is the clientCtx argument value.
+			ClientCtx client.Context
 			// Addr is the addr argument value.
 			Addr sdk.AccAddress
 		}
@@ -58,9 +61,9 @@ type ClientMock struct {
 }
 
 // BroadcastTxSync calls BroadcastTxSyncFunc.
-func (mock *ClientMock) BroadcastTxSync(tx authtypes.StdTx) (*coretypes.ResultBroadcastTx, error) {
+func (mock *ClientMock) BroadcastTxSync(tx legacytx.StdTx) (*coretypes.ResultBroadcastTx, error) {
 	callInfo := struct {
-		Tx authtypes.StdTx
+		Tx legacytx.StdTx
 	}{
 		Tx: tx,
 	}
@@ -81,10 +84,10 @@ func (mock *ClientMock) BroadcastTxSync(tx authtypes.StdTx) (*coretypes.ResultBr
 // Check the length with:
 //     len(mockedClient.BroadcastTxSyncCalls())
 func (mock *ClientMock) BroadcastTxSyncCalls() []struct {
-	Tx authtypes.StdTx
+	Tx legacytx.StdTx
 } {
 	var calls []struct {
-		Tx authtypes.StdTx
+		Tx legacytx.StdTx
 	}
 	mock.lockBroadcastTxSync.RLock()
 	calls = mock.calls.BroadcastTxSync
@@ -93,34 +96,38 @@ func (mock *ClientMock) BroadcastTxSyncCalls() []struct {
 }
 
 // GetAccountNumberSequence calls GetAccountNumberSequenceFunc.
-func (mock *ClientMock) GetAccountNumberSequence(addr sdk.AccAddress) (uint64, uint64, error) {
+func (mock *ClientMock) GetAccountNumberSequence(clientCtx client.Context, addr sdk.AccAddress) (uint64, uint64, error) {
 	callInfo := struct {
-		Addr sdk.AccAddress
+		ClientCtx client.Context
+		Addr      sdk.AccAddress
 	}{
-		Addr: addr,
+		ClientCtx: clientCtx,
+		Addr:      addr,
 	}
 	mock.lockGetAccountNumberSequence.Lock()
 	mock.calls.GetAccountNumberSequence = append(mock.calls.GetAccountNumberSequence, callInfo)
 	mock.lockGetAccountNumberSequence.Unlock()
 	if mock.GetAccountNumberSequenceFunc == nil {
 		var (
-			vOut1  uint64
-			vOut2  uint64
-			errOut error
+			accNumOut uint64
+			accSeqOut uint64
+			errOut    error
 		)
-		return vOut1, vOut2, errOut
+		return accNumOut, accSeqOut, errOut
 	}
-	return mock.GetAccountNumberSequenceFunc(addr)
+	return mock.GetAccountNumberSequenceFunc(clientCtx, addr)
 }
 
 // GetAccountNumberSequenceCalls gets all the calls that were made to GetAccountNumberSequence.
 // Check the length with:
 //     len(mockedClient.GetAccountNumberSequenceCalls())
 func (mock *ClientMock) GetAccountNumberSequenceCalls() []struct {
-	Addr sdk.AccAddress
+	ClientCtx client.Context
+	Addr      sdk.AccAddress
 } {
 	var calls []struct {
-		Addr sdk.AccAddress
+		ClientCtx client.Context
+		Addr      sdk.AccAddress
 	}
 	mock.lockGetAccountNumberSequence.RLock()
 	calls = mock.calls.GetAccountNumberSequence
@@ -128,15 +135,15 @@ func (mock *ClientMock) GetAccountNumberSequenceCalls() []struct {
 	return calls
 }
 
-// Ensure, that MsgMock does implement broadcasttypes.Msg.
+// Ensure, that MsgMock does implement types.Msg.
 // If this is not the case, regenerate this file with moq.
-var _ broadcasttypes.Msg = &MsgMock{}
+var _ types.Msg = &MsgMock{}
 
-// MsgMock is a mock implementation of broadcasttypes.Msg.
+// MsgMock is a mock implementation of types.Msg.
 //
 // 	func TestSomethingThatUsesMsg(t *testing.T) {
 //
-// 		// make and configure a mocked broadcasttypes.Msg
+// 		// make and configure a mocked types.Msg
 // 		mockedMsg := &MsgMock{
 // 			GetSignBytesFunc: func() []byte {
 // 				panic("mock out the GetSignBytes method")
@@ -144,8 +151,17 @@ var _ broadcasttypes.Msg = &MsgMock{}
 // 			GetSignersFunc: func() []sdk.AccAddress {
 // 				panic("mock out the GetSigners method")
 // 			},
+// 			ProtoMessageFunc: func()  {
+// 				panic("mock out the ProtoMessage method")
+// 			},
+// 			ResetFunc: func()  {
+// 				panic("mock out the Reset method")
+// 			},
 // 			RouteFunc: func() string {
 // 				panic("mock out the Route method")
+// 			},
+// 			StringFunc: func() string {
+// 				panic("mock out the String method")
 // 			},
 // 			TypeFunc: func() string {
 // 				panic("mock out the Type method")
@@ -155,7 +171,7 @@ var _ broadcasttypes.Msg = &MsgMock{}
 // 			},
 // 		}
 //
-// 		// use mockedMsg in code that requires broadcasttypes.Msg
+// 		// use mockedMsg in code that requires types.Msg
 // 		// and then make assertions.
 //
 // 	}
@@ -166,8 +182,17 @@ type MsgMock struct {
 	// GetSignersFunc mocks the GetSigners method.
 	GetSignersFunc func() []sdk.AccAddress
 
+	// ProtoMessageFunc mocks the ProtoMessage method.
+	ProtoMessageFunc func()
+
+	// ResetFunc mocks the Reset method.
+	ResetFunc func()
+
 	// RouteFunc mocks the Route method.
 	RouteFunc func() string
+
+	// StringFunc mocks the String method.
+	StringFunc func() string
 
 	// TypeFunc mocks the Type method.
 	TypeFunc func() string
@@ -183,8 +208,17 @@ type MsgMock struct {
 		// GetSigners holds details about calls to the GetSigners method.
 		GetSigners []struct {
 		}
+		// ProtoMessage holds details about calls to the ProtoMessage method.
+		ProtoMessage []struct {
+		}
+		// Reset holds details about calls to the Reset method.
+		Reset []struct {
+		}
 		// Route holds details about calls to the Route method.
 		Route []struct {
+		}
+		// String holds details about calls to the String method.
+		String []struct {
 		}
 		// Type holds details about calls to the Type method.
 		Type []struct {
@@ -195,7 +229,10 @@ type MsgMock struct {
 	}
 	lockGetSignBytes  sync.RWMutex
 	lockGetSigners    sync.RWMutex
+	lockProtoMessage  sync.RWMutex
+	lockReset         sync.RWMutex
 	lockRoute         sync.RWMutex
+	lockString        sync.RWMutex
 	lockType          sync.RWMutex
 	lockValidateBasic sync.RWMutex
 }
@@ -258,6 +295,58 @@ func (mock *MsgMock) GetSignersCalls() []struct {
 	return calls
 }
 
+// ProtoMessage calls ProtoMessageFunc.
+func (mock *MsgMock) ProtoMessage() {
+	callInfo := struct {
+	}{}
+	mock.lockProtoMessage.Lock()
+	mock.calls.ProtoMessage = append(mock.calls.ProtoMessage, callInfo)
+	mock.lockProtoMessage.Unlock()
+	if mock.ProtoMessageFunc == nil {
+		return
+	}
+	mock.ProtoMessageFunc()
+}
+
+// ProtoMessageCalls gets all the calls that were made to ProtoMessage.
+// Check the length with:
+//     len(mockedMsg.ProtoMessageCalls())
+func (mock *MsgMock) ProtoMessageCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockProtoMessage.RLock()
+	calls = mock.calls.ProtoMessage
+	mock.lockProtoMessage.RUnlock()
+	return calls
+}
+
+// Reset calls ResetFunc.
+func (mock *MsgMock) Reset() {
+	callInfo := struct {
+	}{}
+	mock.lockReset.Lock()
+	mock.calls.Reset = append(mock.calls.Reset, callInfo)
+	mock.lockReset.Unlock()
+	if mock.ResetFunc == nil {
+		return
+	}
+	mock.ResetFunc()
+}
+
+// ResetCalls gets all the calls that were made to Reset.
+// Check the length with:
+//     len(mockedMsg.ResetCalls())
+func (mock *MsgMock) ResetCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockReset.RLock()
+	calls = mock.calls.Reset
+	mock.lockReset.RUnlock()
+	return calls
+}
+
 // Route calls RouteFunc.
 func (mock *MsgMock) Route() string {
 	callInfo := struct {
@@ -284,6 +373,35 @@ func (mock *MsgMock) RouteCalls() []struct {
 	mock.lockRoute.RLock()
 	calls = mock.calls.Route
 	mock.lockRoute.RUnlock()
+	return calls
+}
+
+// String calls StringFunc.
+func (mock *MsgMock) String() string {
+	callInfo := struct {
+	}{}
+	mock.lockString.Lock()
+	mock.calls.String = append(mock.calls.String, callInfo)
+	mock.lockString.Unlock()
+	if mock.StringFunc == nil {
+		var (
+			sOut string
+		)
+		return sOut
+	}
+	return mock.StringFunc()
+}
+
+// StringCalls gets all the calls that were made to String.
+// Check the length with:
+//     len(mockedMsg.StringCalls())
+func (mock *MsgMock) StringCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockString.RLock()
+	calls = mock.calls.String
+	mock.lockString.RUnlock()
 	return calls
 }
 
@@ -345,22 +463,22 @@ func (mock *MsgMock) ValidateBasicCalls() []struct {
 	return calls
 }
 
-// Ensure, that BroadcasterMock does implement broadcasttypes.Broadcaster.
+// Ensure, that BroadcasterMock does implement types.Broadcaster.
 // If this is not the case, regenerate this file with moq.
-var _ broadcasttypes.Broadcaster = &BroadcasterMock{}
+var _ types.Broadcaster = &BroadcasterMock{}
 
-// BroadcasterMock is a mock implementation of broadcasttypes.Broadcaster.
+// BroadcasterMock is a mock implementation of types.Broadcaster.
 //
 // 	func TestSomethingThatUsesBroadcaster(t *testing.T) {
 //
-// 		// make and configure a mocked broadcasttypes.Broadcaster
+// 		// make and configure a mocked types.Broadcaster
 // 		mockedBroadcaster := &BroadcasterMock{
 // 			BroadcastFunc: func(msgs ...sdk.Msg) error {
 // 				panic("mock out the Broadcast method")
 // 			},
 // 		}
 //
-// 		// use mockedBroadcaster in code that requires broadcasttypes.Broadcaster
+// 		// use mockedBroadcaster in code that requires types.Broadcaster
 // 		// and then make assertions.
 //
 // 	}

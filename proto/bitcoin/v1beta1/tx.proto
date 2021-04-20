@@ -12,14 +12,16 @@ option (gogoproto.goproto_getters_all) = false;
 // MsgConfirmOutpoint represents a message to trigger the confirmation of a
 // Bitcoin outpoint
 message MsgConfirmOutpoint {
-  string sender = 1;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   OutPointInfo out_point_info = 2 [ (gogoproto.nullable) = false ];
 }
 
 // MsgLink represents a message to link an cross-chain address to a Bitcoin
 // address
 message MsgLink {
-  string sender = 1;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string recipient_addr = 2;
   string recipient_chain = 3;
 }
@@ -27,13 +29,15 @@ message MsgLink {
 // MsgSignPendingTransfers represents a message to trigger the signing of a
 // consolidation transaction
 message MsgSignPendingTransfers {
-  string sender = 1;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   int64 fee = 2;
 }
 
 // MsgVoteConfirmOutpoint represents a message to that votes on an outpoint
 message MsgVoteConfirmOutpoint {
-  string sender = 1;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   vote.exported.v1beta1.PollMeta poll = 2 [ (gogoproto.nullable) = false ];
   string out_point = 3;
   bool confirmed = 4;

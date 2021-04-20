@@ -9,6 +9,7 @@ import (
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
+	"github.com/btcsuite/btcutil"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -58,7 +59,7 @@ import (
 )
 
 func randomSender() sdk.AccAddress {
-	return rand.Bytes(int(rand.I64Between(5, 50)))
+	return rand.Bytes(sdk.AddrLen)
 }
 func randomEthSender() common.Address {
 	return common.BytesToAddress(rand.Bytes(common.AddressLength))
@@ -204,7 +205,6 @@ func createMocks(validators []stakingtypes.Validator) testMocks {
 
 // initChain Creates a chain with given number of validators
 func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
-	stringGen := rand.Strings(5, 50).Distinct()
 	encCfg := testutils.MakeEncodingConfig()
 
 	protoPK, err := cryptocodec.FromTmPubKeyInterface(ed25519.GenPrivKey().PubKey())
@@ -217,10 +217,10 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 	}
 
 	var validators []stakingtypes.Validator
-	for _, valAddr := range stringGen.Take(nodeCount) {
+	for i := 0; i < nodeCount; i++ {
 		// assign validators
 		validator := stakingtypes.Validator{
-			OperatorAddress: valAddr,
+			OperatorAddress: sdk.ValAddress(rand.Bytes(sdk.AddrLen)).String(),
 			Tokens:          sdk.TokensFromConsensusPower(rand.I64Between(100, 1000)),
 			Status:          stakingtypes.Bonded,
 			ConsensusPubkey: consPK,
@@ -280,7 +280,7 @@ func registerBTCEventListener(n nodeData) {
 		encCfg.Amino.MustUnmarshalJSON([]byte(m[btcTypes.AttributeKeyOutPointInfo]), &out)
 		err := n.Broadcaster.Broadcast(n.Node.Ctx,
 			&btcTypes.MsgVoteConfirmOutpoint{
-				Sender:    n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal).String(),
+				Sender:    n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal),
 				Poll:      poll,
 				Confirmed: true,
 				OutPoint:  out.OutPoint,
@@ -363,7 +363,7 @@ func randomOutpointInfo(recipient string) btcTypes.OutPointInfo {
 	voutIdx := uint32(rand.I64Between(0, 100))
 	return btcTypes.OutPointInfo{
 		OutPoint: wire.NewOutPoint(txHash, voutIdx).String(),
-		Amount:   rand.I64Between(1, 10000000),
+		Amount:   btcutil.Amount(rand.I64Between(1, 10000000)),
 		Address:  recipient,
 	}
 }
@@ -386,7 +386,7 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd) {
 		pk := t.KeyGen(m[tssTypes.AttributeKeyKeyID]) // simulate correct keygen + vote
 		err := n.Broadcaster.Broadcast(n.Node.Ctx,
 			&tssTypes.MsgVotePubKey{
-				Sender:      n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal).String(),
+				Sender:      n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal),
 				PubKeyBytes: pk,
 				PollMeta:    voting.NewPollMeta(tssTypes.ModuleName, m[tssTypes.AttributeKeyKeyID])})
 		if err != nil {
@@ -414,7 +414,7 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd) {
 
 		err := n.Broadcaster.Broadcast(n.Node.Ctx,
 			&tssTypes.MsgVoteSig{
-				Sender:   n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal).String(),
+				Sender:   n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal),
 				SigBytes: sig,
 				PollMeta: voting.NewPollMeta(
 					tssTypes.ModuleName,

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"time"
 
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 )
@@ -16,6 +17,7 @@ type Validator interface {
 	GetConsAddr() (sdk.ConsAddress, error)
 	GetConsensusPower() int64
 	IsJailed() bool
+	UnpackInterfaces(c codectypes.AnyUnpacker) error
 }
 
 // ValidatorInfo adopts the methods from "github.com/cosmos/cosmos-sdk/x/slashing" that are
@@ -51,8 +53,8 @@ func IsValidatorActive(ctx sdk.Context, slasher Slasher, validator Validator) bo
 	return found && !signingInfo.Tombstoned && signingInfo.MissedBlocksCounter <= 0 && !validator.IsJailed()
 }
 
-// DoesValidatorHasProxyRegistered returns true if the validator has broadcast proxy registered; otherwise, false
-func DoesValidatorHasProxyRegistered(ctx sdk.Context, broadcaster Broadcaster, validator Validator) bool {
+// HasProxyRegistered returns true if the validator has broadcast proxy registered; otherwise, false
+func HasProxyRegistered(ctx sdk.Context, broadcaster Broadcaster, validator Validator) bool {
 	return broadcaster.GetProxy(ctx, validator.GetOperator()) != nil
 }
 
@@ -80,6 +82,16 @@ func (s Snapshot) GetValidator(address sdk.ValAddress) (Validator, bool) {
 	}
 
 	return nil, false
+}
+
+// UnpackInterfaces implements UnpackInterfacesMessage.UnpackInterfaces
+func (s Snapshot) UnpackInterfaces(c codectypes.AnyUnpacker) error {
+	for _, v := range s.Validators {
+		if err := v.UnpackInterfaces(c); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Snapshotter represents the interface for the snapshot module's functionality

@@ -12,7 +12,7 @@ import (
 // NewMsgAssignNextKey constructor for MsgAssignNextKey
 func NewMsgAssignNextKey(sender sdk.AccAddress, chain string, keyID string, keyRole exported.KeyRole) *MsgAssignNextKey {
 	return &MsgAssignNextKey{
-		Sender:  sender.String(),
+		Sender:  sender,
 		Chain:   chain,
 		KeyID:   keyID,
 		KeyRole: keyRole,
@@ -27,8 +27,8 @@ func (m MsgAssignNextKey) Type() string { return "AssignNextKey" }
 
 // ValidateBasic performs a stateless validation of this message
 func (m MsgAssignNextKey) ValidateBasic() error {
-	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "malformed sender address")
+	if m.Sender == nil || len(m.Sender) != sdk.AddrLen {
+		return sdkerrors.Wrap(ErrTss, "sender must be set")
 	}
 
 	if m.Chain == "" {
@@ -53,14 +53,5 @@ func (m MsgAssignNextKey) GetSignBytes() []byte {
 
 // GetSigners returns the set of signers for this message
 func (m MsgAssignNextKey) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.GetSender()}
-}
-
-// GetSender returns the sender object
-func (m MsgAssignNextKey) GetSender() sdk.AccAddress {
-	addr, err := sdk.AccAddressFromBech32(m.Sender)
-	if err != nil {
-		panic(err)
-	}
-	return addr
+	return []sdk.AccAddress{m.Sender}
 }

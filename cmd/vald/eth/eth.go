@@ -34,21 +34,23 @@ type Mgr struct {
 	rpc         ethRPC.Client
 	broadcaster types.Broadcaster
 	sender      sdk.AccAddress
+	cdc         *codec.LegacyAmino
 }
 
 // NewMgr returns a new Mgr instance
-func NewMgr(rpc ethRPC.Client, broadcaster types.Broadcaster, sender sdk.AccAddress, logger tmLog.Logger) *Mgr {
+func NewMgr(rpc ethRPC.Client, broadcaster types.Broadcaster, sender sdk.AccAddress, logger tmLog.Logger, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
 		rpc:         rpc,
 		broadcaster: broadcaster,
 		sender:      sender,
 		logger:      logger.With("listener", "eth"),
+		cdc:         cdc,
 	}
 }
 
 // ProccessDepositConfirmation votes on the correctness of an Ethereum token deposit
 func (mgr Mgr) ProccessDepositConfirmation(attributes []sdk.Attribute) (err error) {
-	txID, amount, burnAddr, tokenAddr, confHeight, poll, err := parseDepositConfirmationParams(attributes)
+	txID, amount, burnAddr, tokenAddr, confHeight, poll, err := parseDepositConfirmationParams(mgr.cdc, attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "Ethereum deposit confirmation failed")
 	}
@@ -62,7 +64,7 @@ func (mgr Mgr) ProccessDepositConfirmation(attributes []sdk.Attribute) (err erro
 		return true
 	})
 
-	msg := ethTypes.MsgVoteConfirmDeposit{
+	msg := &ethTypes.MsgVoteConfirmDeposit{
 		Sender:    mgr.sender,
 		Poll:      poll,
 		TxID:      txID.Hex(),
@@ -75,7 +77,7 @@ func (mgr Mgr) ProccessDepositConfirmation(attributes []sdk.Attribute) (err erro
 
 // ProccessTokenConfirmation votes on the correctness of an Ethereum token deployment
 func (mgr Mgr) ProccessTokenConfirmation(attributes []sdk.Attribute) error {
-	txID, gatewayAddr, tokenAddr, symbol, confHeight, poll, err := parseTokenConfirmationParams(attributes)
+	txID, gatewayAddr, tokenAddr, symbol, confHeight, poll, err := parseTokenConfirmationParams(mgr.cdc, attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "Ethereum token deployment confirmation failed")
 	}
@@ -89,7 +91,7 @@ func (mgr Mgr) ProccessTokenConfirmation(attributes []sdk.Attribute) error {
 		return true
 	})
 
-	msg := ethTypes.MsgVoteConfirmToken{
+	msg := &ethTypes.MsgVoteConfirmToken{
 		Sender:    mgr.sender,
 		Poll:      poll,
 		TxID:      txID.Hex(),
@@ -100,7 +102,7 @@ func (mgr Mgr) ProccessTokenConfirmation(attributes []sdk.Attribute) error {
 	return mgr.broadcaster.Broadcast(msg)
 }
 
-func parseDepositConfirmationParams(attributes []sdk.Attribute) (
+func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (
 	txID common.Hash,
 	amount sdk.Uint,
 	burnAddr, tokenAddr common.Address,
@@ -135,7 +137,7 @@ func parseDepositConfirmationParams(attributes []sdk.Attribute) (
 			}
 			confHeightFound = true
 		case ethTypes.AttributeKeyPoll:
-			codec.Cdc.MustUnmarshalJSON([]byte(attribute.Value), &poll)
+			cdc.MustUnmarshalJSON([]byte(attribute.Value), &poll)
 			pollFound = true
 		default:
 		}
@@ -147,7 +149,7 @@ func parseDepositConfirmationParams(attributes []sdk.Attribute) (
 	return txID, amount, burnAddr, tokenAddr, confHeight, poll, nil
 }
 
-func parseTokenConfirmationParams(attributes []sdk.Attribute) (
+func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (
 	txID common.Hash,
 	gatewayAddr, tokenAddr common.Address,
 	symbol string,
@@ -179,7 +181,7 @@ func parseTokenConfirmationParams(attributes []sdk.Attribute) (
 			confHeight = uint64(h)
 			confHeightFound = true
 		case btc.AttributeKeyPoll:
-			codec.Cdc.MustUnmarshalJSON([]byte(attribute.Value), &poll)
+			cdc.MustUnmarshalJSON([]byte(attribute.Value), &poll)
 			pollFound = true
 		default:
 		}

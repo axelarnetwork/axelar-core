@@ -8,7 +8,7 @@ import (
 // NewMsgConfirmOutpoint - MsgConfirmOutpoint constructor
 func NewMsgConfirmOutpoint(sender sdk.AccAddress, out OutPointInfo) *MsgConfirmOutpoint {
 	return &MsgConfirmOutpoint{
-		Sender:       sender.String(),
+		Sender:       sender,
 		OutPointInfo: out,
 	}
 }
@@ -25,9 +25,8 @@ func (m MsgConfirmOutpoint) Type() string {
 
 // ValidateBasic executes a stateless message validation
 func (m MsgConfirmOutpoint) ValidateBasic() error {
-	_, err := sdk.AccAddressFromBech32(m.Sender)
-	if err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "Invalid sender address (%s)", err)
+	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
 	if err := m.OutPointInfo.Validate(); err != nil {
@@ -44,9 +43,5 @@ func (m MsgConfirmOutpoint) GetSignBytes() []byte {
 
 // GetSigners returns the set of signers for this message
 func (m MsgConfirmOutpoint) GetSigners() []sdk.AccAddress {
-	from, err := sdk.AccAddressFromBech32(m.Sender)
-	if err != nil {
-		panic(err)
-	}
-	return []sdk.AccAddress{from}
+	return []sdk.AccAddress{m.Sender}
 }

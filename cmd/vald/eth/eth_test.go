@@ -99,6 +99,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		broadcaster *mock.BroadcasterMock
 	)
 	setup := func() {
+		cdc := testutils.MakeEncodingConfig().Amino
 		poll := exported.NewPollMetaWithNonce(ethTypes.ModuleName, rand.StrBetween(5, 20), rand.PosI64(), rand.I64Between(0, 1000))
 
 		burnAddrBytes := rand.Bytes(common.AddressLength)
@@ -112,7 +113,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 			sdk.NewAttribute(ethTypes.AttributeKeyBurnAddress, common.Bytes2Hex(burnAddrBytes)),
 			sdk.NewAttribute(ethTypes.AttributeKeyTokenAddress, common.Bytes2Hex(tokenAddrBytes)),
 			sdk.NewAttribute(ethTypes.AttributeKeyConfHeight, strconv.FormatUint(uint64(confHeight), 10)),
-			sdk.NewAttribute(ethTypes.AttributeKeyPoll, string(testutils.Codec().MustMarshalJSON(poll))),
+			sdk.NewAttribute(ethTypes.AttributeKeyPoll, string(cdc.MustMarshalJSON(poll))),
 		}
 
 		rpc = &ethMock.ClientMock{
@@ -168,7 +169,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 			},
 		}
 		broadcaster = &mock.BroadcasterMock{}
-		mgr = NewMgr(rpc, broadcaster, rand.Bytes(sdk.AddrLen), log.TestingLogger())
+		mgr = NewMgr(rpc, broadcaster, rand.Bytes(sdk.AddrLen), log.TestingLogger(), cdc)
 	}
 	repeats := 20
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
@@ -178,7 +179,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.True(t, broadcaster.BroadcastCalls()[0].Msgs[0].(ethTypes.MsgVoteConfirmDeposit).Confirmed)
+		assert.True(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.MsgVoteConfirmDeposit).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("missing attributes", testutils.Func(func(t *testing.T) {
@@ -203,7 +204,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(ethTypes.MsgVoteConfirmDeposit).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.MsgVoteConfirmDeposit).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("no block number", testutils.Func(func(t *testing.T) {
@@ -216,7 +217,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(ethTypes.MsgVoteConfirmDeposit).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.MsgVoteConfirmDeposit).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("amount mismatch", testutils.Func(func(t *testing.T) {
@@ -233,7 +234,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(ethTypes.MsgVoteConfirmDeposit).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.MsgVoteConfirmDeposit).Confirmed)
 	}).Repeat(repeats))
 }
 
@@ -246,6 +247,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		gatewayAddrBytes []byte
 	)
 	setup := func() {
+		cdc := testutils.MakeEncodingConfig().Amino
 		poll := exported.NewPollMetaWithNonce(ethTypes.ModuleName, rand.StrBetween(5, 20), rand.PosI64(), rand.I64Between(0, 1000))
 
 		gatewayAddrBytes = rand.Bytes(common.AddressLength)
@@ -260,7 +262,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 			sdk.NewAttribute(ethTypes.AttributeKeyTokenAddress, common.Bytes2Hex(tokenAddrBytes)),
 			sdk.NewAttribute(ethTypes.AttributeKeySymbol, symbol),
 			sdk.NewAttribute(ethTypes.AttributeKeyConfHeight, strconv.FormatUint(uint64(confHeight), 10)),
-			sdk.NewAttribute(ethTypes.AttributeKeyPoll, string(testutils.Codec().MustMarshalJSON(poll))),
+			sdk.NewAttribute(ethTypes.AttributeKeyPoll, string(cdc.MustMarshalJSON(poll))),
 		}
 
 		rpc = &ethMock.ClientMock{
@@ -282,7 +284,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 			},
 		}
 		broadcaster = &mock.BroadcasterMock{}
-		mgr = NewMgr(rpc, broadcaster, rand.Bytes(sdk.AddrLen), log.TestingLogger())
+		mgr = NewMgr(rpc, broadcaster, rand.Bytes(sdk.AddrLen), log.TestingLogger(), cdc)
 	}
 
 	repeats := 20
@@ -293,7 +295,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.True(t, broadcaster.BroadcastCalls()[0].Msgs[0].(ethTypes.MsgVoteConfirmToken).Confirmed)
+		assert.True(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.MsgVoteConfirmToken).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("missing attributes", testutils.Func(func(t *testing.T) {
@@ -318,7 +320,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(ethTypes.MsgVoteConfirmToken).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.MsgVoteConfirmToken).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("no block number", testutils.Func(func(t *testing.T) {
@@ -331,7 +333,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(ethTypes.MsgVoteConfirmToken).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.MsgVoteConfirmToken).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("no deploy event", testutils.Func(func(t *testing.T) {
@@ -352,7 +354,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(ethTypes.MsgVoteConfirmToken).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.MsgVoteConfirmToken).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("wrong deploy event", testutils.Func(func(t *testing.T) {
@@ -370,7 +372,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(ethTypes.MsgVoteConfirmToken).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.MsgVoteConfirmToken).Confirmed)
 	}).Repeat(repeats))
 }
 

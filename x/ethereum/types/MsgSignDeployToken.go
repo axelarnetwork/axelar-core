@@ -30,8 +30,8 @@ func (m MsgSignDeployToken) GetSigners() []sdk.AccAddress {
 
 // ValidateBasic implements sdk.Msg
 func (m MsgSignDeployToken) ValidateBasic() error {
-	if m.Sender.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
+	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 	if m.TokenName == "" {
 		return fmt.Errorf("missing token name")

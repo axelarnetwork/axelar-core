@@ -2,13 +2,15 @@ package utils
 
 import (
 	"fmt"
+	"net/http"
+	"strings"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
-	"net/http"
-	"strings"
 )
 
+// routes
 const (
 	PathVarChain           = "Chain"
 	PathVarEthereumAddress = "EthereumAddress"
@@ -17,7 +19,7 @@ const (
 	PathVarCommandID       = "CommandID"
 )
 
-// Extract the sender address from an SDK base request
+// ExtractReqSender extracts the sender address from an SDK base request
 func ExtractReqSender(w http.ResponseWriter, req rest.BaseReq) (sdk.AccAddress, bool) {
 	sender, err := sdk.AccAddressFromBech32(req.From)
 	if err != nil {
@@ -28,6 +30,7 @@ func ExtractReqSender(w http.ResponseWriter, req rest.BaseReq) (sdk.AccAddress, 
 	return sender, true
 }
 
+// RegisterTxHandlerFn returns a function to register rest routes with the given router
 func RegisterTxHandlerFn(r *mux.Router, moduleRoute string) func(http.HandlerFunc, string, ...string) {
 	return func(handler http.HandlerFunc, method string, pathVars ...string) {
 		path := appendPathVars(fmt.Sprintf("/tx/%s/%s", moduleRoute, method), pathVars)
@@ -35,6 +38,7 @@ func RegisterTxHandlerFn(r *mux.Router, moduleRoute string) func(http.HandlerFun
 	}
 }
 
+// RegisterQueryHandlerFn returns a function to register query routes with the given router
 func RegisterQueryHandlerFn(r *mux.Router, moduleRoute string) func(http.HandlerFunc, string, ...string) {
 	return func(handler http.HandlerFunc, method string, pathVars ...string) {
 		path := appendPathVars(fmt.Sprintf("/query/%s/%s", moduleRoute, method), pathVars)

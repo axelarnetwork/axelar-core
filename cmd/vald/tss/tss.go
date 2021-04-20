@@ -30,6 +30,7 @@ type Mgr struct {
 	Logger        log.Logger
 	broadcaster   types.Broadcaster
 	sender        sdk.AccAddress
+	cdc           *codec.LegacyAmino
 }
 
 // CreateTOFNDClient creates a client to communicate with the external tofnd process
@@ -46,7 +47,7 @@ func CreateTOFNDClient(host string, port string, logger log.Logger) (tofnd.GG20C
 }
 
 // NewMgr returns a new tss manager instance
-func NewMgr(client tofnd.GG20Client, timeout time.Duration, principalAddr string, broadcaster types.Broadcaster, sender sdk.AccAddress, logger log.Logger) *Mgr {
+func NewMgr(client tofnd.GG20Client, timeout time.Duration, principalAddr string, broadcaster types.Broadcaster, sender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
 		client:        client,
 		keygen:        &sync.RWMutex{},
@@ -58,6 +59,7 @@ func NewMgr(client tofnd.GG20Client, timeout time.Duration, principalAddr string
 		Logger:        logger.With("listener", "tss"),
 		broadcaster:   broadcaster,
 		sender:        sender,
+		cdc:           cdc,
 	}
 }
 
@@ -108,7 +110,7 @@ func handleStream(stream tss.Stream, cancel context.CancelFunc, logger log.Logge
 	return broadcastChan, resChan, errChan
 }
 
-func parseMsgParams(attributes []sdk.Attribute) (sessionID string, from string, payload *tofnd.TrafficOut) {
+func parseMsgParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (sessionID string, from string, payload *tofnd.TrafficOut) {
 	for _, attribute := range attributes {
 		switch attribute.Key {
 		case tss.AttributeKeySessionID:
@@ -117,7 +119,7 @@ func parseMsgParams(attributes []sdk.Attribute) (sessionID string, from string, 
 			from = attribute.Value
 		case tss.AttributeKeyPayload:
 
-			codec.Cdc.MustUnmarshalJSON([]byte(attribute.Value), &payload)
+			cdc.MustUnmarshalJSON([]byte(attribute.Value), &payload)
 		default:
 		}
 	}

@@ -17,7 +17,7 @@ import (
 
 // ProcessKeygenStart starts the communication with the keygen protocol
 func (mgr *Mgr) ProcessKeygenStart(attributes []sdk.Attribute) error {
-	keyID, threshold, participants := parseKeygenStartParams(attributes)
+	keyID, threshold, participants := parseKeygenStartParams(mgr.cdc, attributes)
 	myIndex, ok := indexOf(participants, mgr.principalAddr)
 	if !ok {
 		// do not participate
@@ -59,7 +59,7 @@ func (mgr *Mgr) ProcessKeygenStart(attributes []sdk.Attribute) error {
 
 // ProcessKeygenMsg forwards blockchain messages to the keygen protocol
 func (mgr *Mgr) ProcessKeygenMsg(attributes []sdk.Attribute) error {
-	keyID, from, payload := parseMsgParams(attributes)
+	keyID, from, payload := parseMsgParams(mgr.cdc, attributes)
 	msgIn, err := prepareTrafficIn(mgr.principalAddr, from, keyID, payload, mgr.Logger)
 	if err != nil {
 		return err
@@ -81,7 +81,7 @@ func (mgr *Mgr) ProcessKeygenMsg(attributes []sdk.Attribute) error {
 	return nil
 }
 
-func parseKeygenStartParams(attributes []sdk.Attribute) (keyID string, threshold int32, participants []string) {
+func parseKeygenStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, threshold int32, participants []string) {
 	for _, attribute := range attributes {
 		switch attribute.Key {
 		case tss.AttributeKeyKeyID:
@@ -93,7 +93,7 @@ func parseKeygenStartParams(attributes []sdk.Attribute) (keyID string, threshold
 			}
 			threshold = int32(t)
 		case tss.AttributeKeyParticipants:
-			codec.Cdc.MustUnmarshalJSON([]byte(attribute.Value), &participants)
+			cdc.MustUnmarshalJSON([]byte(attribute.Value), &participants)
 		default:
 		}
 	}
@@ -161,7 +161,7 @@ func (mgr *Mgr) handleKeygenResult(keyID string, result <-chan []byte) error {
 	mgr.Logger.Info(fmt.Sprintf("handler goroutine: received pubkey from server! [%v]", pubkey))
 
 	poll := voting.NewPollMeta(tss.ModuleName, keyID)
-	vote := tss.MsgVotePubKey{Sender: mgr.sender, PollMeta: poll, PubKeyBytes: bz}
+	vote := &tss.MsgVotePubKey{Sender: mgr.sender, PollMeta: poll, PubKeyBytes: bz}
 	return mgr.broadcaster.Broadcast(vote)
 }
 

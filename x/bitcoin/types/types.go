@@ -84,7 +84,7 @@ const (
 func NewOutPointInfo(outPoint *wire.OutPoint, amount btcutil.Amount, address string) OutPointInfo {
 	return OutPointInfo{
 		OutPoint: outPoint.String(),
-		Amount:   int64(amount),
+		Amount:   amount,
 		Address:  address,
 	}
 }
@@ -111,7 +111,7 @@ func (m OutPointInfo) Equals(other OutPointInfo) bool {
 }
 
 func (m OutPointInfo) String() string {
-	return m.OutPoint + "_" + m.Address + "_" + btcutil.Amount(m.Amount).String()
+	return m.OutPoint + "_" + m.Address + "_" + m.Amount.String()
 }
 
 // GetOutPoint returns the outpoint as a struct instead of a string

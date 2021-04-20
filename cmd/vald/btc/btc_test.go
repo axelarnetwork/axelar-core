@@ -32,9 +32,10 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 	)
 
 	setup := func() {
+		cdc := testutils.MakeEncodingConfig().Amino
 		rpc = &mock.ClientMock{}
 		broadcaster = &mock2.BroadcasterMock{}
-		mgr = NewMgr(rpc, broadcaster, nil, log.TestingLogger())
+		mgr = NewMgr(rpc, broadcaster, nil, log.TestingLogger(), cdc)
 
 		confHeight = rand.PosI64()
 		poll := exported.NewPollMetaWithNonce(btc.ModuleName, rand.StrBetween(1, 100), rand.PosI64(), rand.PosI64())
@@ -42,8 +43,8 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 		info = randomOutpointInfo()
 		attributes = []sdk.Attribute{
 			sdk.NewAttribute(btc.AttributeKeyConfHeight, strconv.FormatInt(confHeight, 10)),
-			sdk.NewAttribute(btc.AttributeKeyOutPointInfo, string(testutils.Codec().MustMarshalJSON(info))),
-			sdk.NewAttribute(btc.AttributeKeyPoll, string(testutils.Codec().MustMarshalJSON(poll))),
+			sdk.NewAttribute(btc.AttributeKeyOutPointInfo, string(mgr.cdc.MustMarshalJSON(info))),
+			sdk.NewAttribute(btc.AttributeKeyPoll, string(mgr.cdc.MustMarshalJSON(poll))),
 		}
 	}
 
@@ -73,7 +74,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 		err := mgr.ProcessConfirmation(attributes)
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(btc.MsgVoteConfirmOutpoint).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*btc.MsgVoteConfirmOutpoint).Confirmed)
 	}).Repeat(repetitionCount))
 
 	t.Run("tx out not found", testutils.Func(func(t *testing.T) {
@@ -85,7 +86,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 		err := mgr.ProcessConfirmation(attributes)
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(btc.MsgVoteConfirmOutpoint).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*btc.MsgVoteConfirmOutpoint).Confirmed)
 	}).Repeat(repetitionCount))
 
 	t.Run("not enough confirmations", testutils.Func(func(t *testing.T) {
@@ -101,7 +102,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 		err := mgr.ProcessConfirmation(attributes)
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(btc.MsgVoteConfirmOutpoint).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*btc.MsgVoteConfirmOutpoint).Confirmed)
 	}).Repeat(repetitionCount))
 
 	t.Run("wrong expected data", func(t *testing.T) {
@@ -118,7 +119,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 		err := mgr.ProcessConfirmation(attributes)
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(btc.MsgVoteConfirmOutpoint).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*btc.MsgVoteConfirmOutpoint).Confirmed)
 	})
 
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
@@ -134,7 +135,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 		err := mgr.ProcessConfirmation(attributes)
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.True(t, broadcaster.BroadcastCalls()[0].Msgs[0].(btc.MsgVoteConfirmOutpoint).Confirmed)
+		assert.True(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*btc.MsgVoteConfirmOutpoint).Confirmed)
 	}).Repeat(repetitionCount))
 }
 
@@ -146,7 +147,7 @@ func randomOutpointInfo() btc.OutPointInfo {
 
 	voutIdx := uint32(rand.I64Between(0, 100))
 	return btc.OutPointInfo{
-		OutPoint: wire.NewOutPoint(txHash, voutIdx),
+		OutPoint: wire.NewOutPoint(txHash, voutIdx).String(),
 		Amount:   btcutil.Amount(rand.I64Between(1, 10000000)),
 		Address:  rand.StrBetween(1, 100),
 	}

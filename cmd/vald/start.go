@@ -7,10 +7,11 @@ import (
 
 	"github.com/axelarnetwork/c2d2/pkg/tendermint/client"
 	tmEvents "github.com/axelarnetwork/c2d2/pkg/tendermint/events"
-	keyring "github.com/cosmos/cosmos-sdk/crypto/keys"
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/log"
@@ -32,7 +33,7 @@ import (
 )
 
 func getStartCommand(logger log.Logger) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use: "start",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			hub, err := newHub()
@@ -51,6 +52,9 @@ func getStartCommand(logger log.Logger) *cobra.Command {
 			return nil
 		},
 	}
+
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
 }
 
 func newHub() (*tmEvents.Hub, error) {
@@ -69,10 +73,11 @@ func newHub() (*tmEvents.Hub, error) {
 }
 
 func listen(hub *tmEvents.Hub, axelarCfg app.Config, valAddr string, logger log.Logger) {
+	cdc := app.MakeEncodingConfig().Amino
 	broadcaster, sender := createBroadcaster(axelarCfg, logger)
-	tssMgr := createTSSMgr(broadcaster, sender, axelarCfg, logger, valAddr)
-	btcMgr := createBTCMgr(axelarCfg, broadcaster, sender, logger)
-	ethMgr := createETHMgr(axelarCfg, broadcaster, sender, logger)
+	tssMgr := createTSSMgr(broadcaster, sender, axelarCfg, logger, valAddr, cdc)
+	btcMgr := createBTCMgr(axelarCfg, broadcaster, sender, logger, cdc)
+	ethMgr := createETHMgr(axelarCfg, broadcaster, sender, logger, cdc)
 
 	keygenStart := events.MustSubscribe(hub, tss.EventTypeKeygen, tss.ModuleName, tss.AttributeValueStart)
 	keygenMsg := events.MustSubscribe(hub, tss.EventTypeKeygen, tss.ModuleName, tss.AttributeValueMsg)
@@ -103,8 +108,9 @@ func listen(hub *tmEvents.Hub, axelarCfg app.Config, valAddr string, logger log.
 }
 
 func createBroadcaster(axelarCfg app.Config, logger log.Logger) (types.Broadcaster, sdk.AccAddress) {
+	encCfg := app.MakeEncodingConfig()
 	create := func() (types.Broadcaster, sdk.AccAddress, error) {
-		rpc, err := broadcast.NewClient(utils.GetTxEncoder(app.MakeCodec()), axelarCfg.TendermintNodeUri)
+		rpc, err := broadcast.NewClient(encCfg.TxConfig.TxEncoder(), axelarCfg.TendermintNodeUri)
 		if err != nil {
 			return nil, sdk.AccAddress{}, err
 		}
@@ -112,11 +118,11 @@ func createBroadcaster(axelarCfg app.Config, logger log.Logger) (types.Broadcast
 		if err != nil {
 			return nil, sdk.AccAddress{}, err
 		}
-		info, err := keybase.Get(axelarCfg.BroadcastConfig.From)
+		info, err := keybase.Key(axelarCfg.BroadcastConfig.From)
 		if err != nil {
 			return nil, sdk.AccAddress{}, err
 		}
-		signer, err := broadcast.NewSigner(keybase, info, axelarCfg.BroadcastConfig.KeyringPassphrase)
+		signer, err := broadcast.NewSigner(keybase, info)
 		if err != nil {
 			return nil, sdk.AccAddress{}, err
 		}
@@ -135,14 +141,14 @@ func createBroadcaster(axelarCfg app.Config, logger log.Logger) (types.Broadcast
 	return b, addr
 }
 
-func createTSSMgr(broadcaster types.Broadcaster, defaultSender sdk.AccAddress, axelarCfg app.Config, logger log.Logger, valAddr string) *tss2.Mgr {
+func createTSSMgr(broadcaster types.Broadcaster, defaultSender sdk.AccAddress, axelarCfg app.Config, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss2.Mgr {
 	create := func() (*tss2.Mgr, error) {
 		gg20client, err := tss2.CreateTOFNDClient(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, logger)
 		if err != nil {
 			return nil, err
 		}
 
-		tssMgr := tss2.NewMgr(gg20client, 2*time.Hour, valAddr, broadcaster, defaultSender, logger)
+		tssMgr := tss2.NewMgr(gg20client, 2*time.Hour, valAddr, broadcaster, defaultSender, logger, cdc)
 		return tssMgr, nil
 	}
 	mgr, err := create()
@@ -152,7 +158,7 @@ func createTSSMgr(broadcaster types.Broadcaster, defaultSender sdk.AccAddress, a
 	return mgr
 }
 
-func createBTCMgr(axelarCfg app.Config, b types.Broadcaster, defaultSender sdk.AccAddress, logger log.Logger) *btc.Mgr {
+func createBTCMgr(axelarCfg app.Config, b types.Broadcaster, defaultSender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *btc.Mgr {
 	rpc, err := btcRPC.NewRPCClient(axelarCfg.BtcConfig, logger)
 	if err != nil {
 		logger.Error(err.Error())
@@ -161,11 +167,11 @@ func createBTCMgr(axelarCfg app.Config, b types.Broadcaster, defaultSender sdk.A
 	// clean up btcRPC connection on process shutdown
 	tmos.TrapSignal(logger, rpc.Shutdown)
 
-	btcMgr := btc.NewMgr(rpc, b, defaultSender, logger)
+	btcMgr := btc.NewMgr(rpc, b, defaultSender, logger, cdc)
 	return btcMgr
 }
 
-func createETHMgr(axelarCfg app.Config, b types.Broadcaster, defaultSender sdk.AccAddress, logger log.Logger) *eth.Mgr {
+func createETHMgr(axelarCfg app.Config, b types.Broadcaster, defaultSender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *eth.Mgr {
 	rpc, err := ethRPC.NewClient(axelarCfg.EthRpcAddr)
 	if err != nil {
 		logger.Error(err.Error())
@@ -174,6 +180,6 @@ func createETHMgr(axelarCfg app.Config, b types.Broadcaster, defaultSender sdk.A
 	// clean up ethRPC connection on process shutdown
 	tmos.TrapSignal(logger, rpc.Close)
 
-	ethMgr := eth.NewMgr(rpc, b, defaultSender, logger)
+	ethMgr := eth.NewMgr(rpc, b, defaultSender, logger, cdc)
 	return ethMgr
 }

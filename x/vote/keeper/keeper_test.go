@@ -7,8 +7,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
-	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -22,11 +22,6 @@ import (
 
 var stringGen = rand.Strings(5, 50).Distinct()
 
-func init() {
-	cdc := testutils.Codec()
-	cdc.RegisterConcrete("", "string", nil)
-}
-
 type testSetup struct {
 	Keeper      Keeper
 	Ctx         sdk.Context
@@ -39,7 +34,10 @@ type testSetup struct {
 }
 
 func setup() *testSetup {
-	setup := &testSetup{Ctx: sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())}
+	cdc := testutils.MakeEncodingConfig().Amino
+	cdc.RegisterConcrete("", "string", nil)
+
+	setup := &testSetup{Ctx: sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())}
 	setup.Snapshotter = &snapMock.SnapshotterMock{
 		GetLatestCounterFunc: func(sdk.Context) int64 { return rand.I64Between(1, 10000) },
 		GetSnapshotFunc: func(sdk.Context, int64) (snapshot.Snapshot, bool) {
@@ -51,9 +49,9 @@ func setup() *testSetup {
 		},
 	}
 	setup.Broadcaster = &bcMock.BroadcasterMock{
-		GetPrincipalFunc: func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return sdk.ValAddress(stringGen.Next()) },
+		GetPrincipalFunc: func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return rand.Bytes(sdk.AddrLen) },
 	}
-	setup.Keeper = NewKeeper(testutils.Codec(), sdk.NewKVStoreKey(stringGen.Next()), setup.Snapshotter, setup.Broadcaster)
+	setup.Keeper = NewKeeper(cdc, sdk.NewKVStoreKey(stringGen.Next()), setup.Snapshotter, setup.Broadcaster)
 	return setup
 }
 
@@ -104,8 +102,8 @@ func TestKeeper_TallyVote_NoWinner(t *testing.T) {
 	s := setup()
 	threshold := utils.Threshold{Numerator: 2, Denominator: 3}
 	s.Keeper.SetVotingThreshold(s.Ctx, threshold)
-	minorityPower := newValidator(sdk.ValAddress(stringGen.Next()), rand.I64Between(1, 200))
-	majorityPower := newValidator(sdk.ValAddress(stringGen.Next()), rand.I64Between(calcMajorityLowerLimit(threshold, minorityPower), 1000))
+	minorityPower := newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(1, 200))
+	majorityPower := newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(calcMajorityLowerLimit(threshold, minorityPower), 1000))
 	s.ValidatorSet = []snapshot.Validator{minorityPower, majorityPower}
 
 	s.Broadcaster.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return minorityPower.GetOperator() }
@@ -122,8 +120,8 @@ func TestKeeper_TallyVote_WithWinner(t *testing.T) {
 	s := setup()
 	threshold := utils.Threshold{Numerator: 2, Denominator: 3}
 	s.Keeper.SetVotingThreshold(s.Ctx, threshold)
-	minorityPower := newValidator(sdk.ValAddress(stringGen.Next()), rand.I64Between(1, 200))
-	majorityPower := newValidator(sdk.ValAddress(stringGen.Next()), rand.I64Between(calcMajorityLowerLimit(threshold, minorityPower), 1000))
+	minorityPower := newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(1, 200))
+	majorityPower := newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(calcMajorityLowerLimit(threshold, minorityPower), 1000))
 	s.ValidatorSet = []snapshot.Validator{minorityPower, majorityPower}
 
 	s.Broadcaster.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return majorityPower.GetOperator() }
@@ -141,7 +139,7 @@ func TestKeeper_TallyVote_WithWinner(t *testing.T) {
 func TestKeeper_TallyVote_TwoVotesFromSameValidator_ReturnError(t *testing.T) {
 	s := setup()
 	s.Keeper.SetVotingThreshold(s.Ctx, utils.Threshold{Numerator: 2, Denominator: 3})
-	s.ValidatorSet = []snapshot.Validator{newValidator(sdk.ValAddress(stringGen.Next()), rand.I64Between(1, 1000))}
+	s.ValidatorSet = []snapshot.Validator{newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(1, 1000))}
 
 	// return same validator for all votes
 	s.Broadcaster.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return s.ValidatorSet[0].GetOperator() }
@@ -161,11 +159,11 @@ func TestKeeper_TallyVote_MultipleVotesUntilDecision(t *testing.T) {
 	s.Keeper.SetVotingThreshold(s.Ctx, utils.Threshold{Numerator: 2, Denominator: 3})
 	s.ValidatorSet = []snapshot.Validator{
 		// ensure first validator does not have majority voting power
-		newValidator(sdk.ValAddress(stringGen.Next()), rand.I64Between(1, 100)),
-		newValidator(sdk.ValAddress(stringGen.Next()), rand.I64Between(100, 200)),
-		newValidator(sdk.ValAddress(stringGen.Next()), rand.I64Between(100, 200)),
-		newValidator(sdk.ValAddress(stringGen.Next()), rand.I64Between(100, 200)),
-		newValidator(sdk.ValAddress(stringGen.Next()), rand.I64Between(100, 200)),
+		newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(1, 100)),
+		newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(100, 200)),
+		newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(100, 200)),
+		newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(100, 200)),
+		newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(100, 200)),
 	}
 
 	poll := randomPoll()
@@ -197,8 +195,8 @@ func TestKeeper_TallyVote_ForDecidedPoll(t *testing.T) {
 	s := setup()
 	threshold := utils.Threshold{Numerator: 2, Denominator: 3}
 	s.Keeper.SetVotingThreshold(s.Ctx, threshold)
-	minorityPower := newValidator(sdk.ValAddress(stringGen.Next()), rand.I64Between(1, 200))
-	majorityPower := newValidator(sdk.ValAddress(stringGen.Next()), rand.I64Between(calcMajorityLowerLimit(threshold, minorityPower), 1000))
+	minorityPower := newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(1, 200))
+	majorityPower := newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(calcMajorityLowerLimit(threshold, minorityPower), 1000))
 	s.ValidatorSet = []snapshot.Validator{minorityPower, majorityPower}
 
 	poll := randomPoll()
@@ -223,7 +221,7 @@ func randomData() string {
 }
 
 func randomSender() sdk.AccAddress {
-	return sdk.AccAddress(stringGen.Next())
+	return rand.Bytes(sdk.AddrLen)
 }
 
 func randomPoll() exported.PollMeta {

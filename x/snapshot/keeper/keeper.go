@@ -130,20 +130,29 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, nextCounter int64, subsetSize i
 	validatorIter := func(_ int64, validator stakingtypes.ValidatorI) (stop bool) {
 		validatorsTotalPower = validatorsTotalPower.AddRaw(validator.GetConsensusPower())
 
-		if !exported.IsValidatorActive(ctx, k.slasher, validator) {
+		// this explicit type cast is necessary, because snapshot needs to call UnpackInterfaces() on the validator
+		// and it is not exposed in the ValidatorI interface
+		v, ok := validator.(exported.Validator)
+		if !ok {
+			k.Logger(ctx).Error(fmt.Sprintf("unexpected validator type: expected %T, got %T", stakingtypes.Validator{}, validator))
 			return false
 		}
 
-		if !exported.DoesValidatorHasProxyRegistered(ctx, k.broadcaster, validator) {
+		if !exported.IsValidatorActive(ctx, k.slasher, v) {
 			return false
 		}
 
-		if !exported.IsValidatorTssRegistered(ctx, k.tss, validator) {
+		if !exported.HasProxyRegistered(ctx, k.broadcaster, v) {
 			return false
 		}
 
-		snapshotTotalPower = snapshotTotalPower.AddRaw(validator.GetConsensusPower())
-		validators = append(validators, validator)
+		if !exported.IsValidatorTssRegistered(ctx, k.tss, v) {
+			return false
+		}
+
+		snapshotTotalPower = snapshotTotalPower.AddRaw(v.GetConsensusPower())
+
+		validators = append(validators, v)
 
 		// if subsetSize equals 0, we will iterate through all validators and potentially put them all into the snapshot
 		return len(validators) == int(subsetSize)

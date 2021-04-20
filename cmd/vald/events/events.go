@@ -3,7 +3,6 @@ package events
 import (
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/cmd/vald/jobs"
 	"github.com/axelarnetwork/c2d2/pkg/pubsub"
 	"github.com/axelarnetwork/c2d2/pkg/tendermint/events"
 	"github.com/axelarnetwork/c2d2/pkg/tendermint/types"
@@ -11,6 +10,8 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/pubsub/query"
 	tm "github.com/tendermint/tendermint/types"
+
+	"github.com/axelarnetwork/axelar-core/cmd/vald/jobs"
 )
 
 // FilteredSubscriber filters events of a subscriber according to a predicate

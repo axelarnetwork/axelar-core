@@ -68,7 +68,7 @@ func handleMsgRotateKey(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg *ty
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
 			sdk.NewAttribute(types.AttributeChain, chain.Name),
 		),
 	)
@@ -86,7 +86,7 @@ func handleMsgVoteSig(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg *type
 		return nil, sdkerrors.Wrap(err, "discard vote for invalid signature")
 	}
 
-	if err := v.TallyVote(ctx, msg.GetSender(), msg.PollMeta, msg.SigBytes); err != nil {
+	if err := v.TallyVote(ctx, msg.Sender, msg.PollMeta, msg.SigBytes); err != nil {
 		return nil, err
 	}
 
@@ -118,7 +118,7 @@ func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg *t
 		return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 	}
 
-	if err := v.TallyVote(ctx, msg.GetSender(), msg.PollMeta, msg.PubKeyBytes); err != nil {
+	if err := v.TallyVote(ctx, msg.Sender, msg.PollMeta, msg.PubKeyBytes); err != nil {
 		return nil, err
 	}
 
@@ -191,7 +191,7 @@ func handleMsgAssignNextKey(ctx sdk.Context, k keeper.Keeper, s types.Snapshotte
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
 		),
 	)
 

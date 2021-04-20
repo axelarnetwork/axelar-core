@@ -4,16 +4,15 @@
 package types
 
 import (
-	"fmt"
-	"io"
-	"math"
-	math_bits "math/bits"
-	"time"
-
+	fmt "fmt"
 	_ "github.com/gogo/protobuf/gogoproto"
-	"github.com/gogo/protobuf/proto"
+	proto "github.com/gogo/protobuf/proto"
 	github_com_gogo_protobuf_types "github.com/gogo/protobuf/types"
 	_ "google.golang.org/protobuf/types/known/durationpb"
+	io "io"
+	math "math"
+	math_bits "math/bits"
+	time "time"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

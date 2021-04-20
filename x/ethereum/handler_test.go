@@ -65,7 +65,7 @@ func TestLink_NoGateway(t *testing.T) {
 		},
 	}
 	handler := NewHandler(k, &ethMock.VoterMock{}, signer, n, &ethMock.SnapshotterMock{})
-	_, err := handler(ctx, &types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
+	_, err := handler(ctx, &types.MsgLink{Sender: rand.Bytes(sdk.AddrLen), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
 	assert.Equal(t, 0, len(n.IsAssetRegisteredCalls()))
@@ -98,7 +98,7 @@ func TestLink_NoRecipientChain(t *testing.T) {
 		},
 	}
 	handler := NewHandler(k, &ethMock.VoterMock{}, signer, n, &ethMock.SnapshotterMock{})
-	_, err := handler(ctx, &types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
+	_, err := handler(ctx, &types.MsgLink{Sender: rand.Bytes(sdk.AddrLen), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
 	assert.Equal(t, 0, len(n.IsAssetRegisteredCalls()))
@@ -132,7 +132,7 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 	}
 	handler := NewHandler(k, &ethMock.VoterMock{}, signer, n, &ethMock.SnapshotterMock{})
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
-	_, err := handler(ctx, &types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
+	_, err := handler(ctx, &types.MsgLink{Sender: rand.Bytes(sdk.AddrLen), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
 	assert.Equal(t, 1, len(n.IsAssetRegisteredCalls()))
@@ -178,7 +178,7 @@ func TestLink_Success(t *testing.T) {
 		},
 	}
 	handler := NewHandler(k, &ethMock.VoterMock{}, signer, n, &ethMock.SnapshotterMock{})
-	_, err = handler(ctx, &types.MsgLink{Sender: sdk.AccAddress("sender"), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Symbol: msg.Symbol})
+	_, err = handler(ctx, &types.MsgLink{Sender: rand.Bytes(sdk.AddrLen), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Symbol: msg.Symbol})
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(n.IsAssetRegisteredCalls()))

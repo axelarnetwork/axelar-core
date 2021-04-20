@@ -15,7 +15,8 @@ option (gogoproto.sizer_all) = false;
 
 // MsgAssignNextKey represents a message to assign a new key
 message MsgAssignNextKey {
-  string sender = 1;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
   string key_id = 3 [ (gogoproto.customname) = "KeyID" ];
   exported.v1beta1.KeyRole key_role = 4;
@@ -23,17 +24,22 @@ message MsgAssignNextKey {
 
 // MsgDeregister to deregister so that the validator will not participate in any
 // future keygen
-message MsgDeregister { string sender = 1; }
+message MsgDeregister {
+  string sender = 1 [ (gogoproto.casttype) =
+                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+}
 
 // MsgKeygenStart indicate the start of keygen
 message MsgKeygenStart {
-  string sender = 1;
+  string sender = 1 [ (gogoproto.casttype) =
+                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string new_key_id = 2 [ (gogoproto.customname) = "NewKeyID" ];
   int64 subset_size = 3;
 }
 
 message MsgRotateKey {
-  string sender = 1;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
   int64 subset_size = 3;
   exported.v1beta1.KeyRole key_role = 4;
@@ -41,21 +47,24 @@ message MsgRotateKey {
 
 // MsgKeygenTraffic protocol message
 message MsgKeygenTraffic {
-  string sender = 1;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string session_id = 2 [ (gogoproto.customname) = "SessionID" ];
   tofnd.TrafficOut payload = 3;
 }
 
 // MsgSignTraffic protocol message
 message MsgSignTraffic {
-  string sender = 1;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string session_id = 2 [ (gogoproto.customname) = "SessionID" ];
   tofnd.TrafficOut payload = 3;
 }
 
 // MsgVotePubKey represents the message to vote on a public key
 message MsgVotePubKey {
-  string sender = 1;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   vote.exported.v1beta1.PollMeta poll_meta = 2 [ (gogoproto.nullable) = false ];
   // need to vote on the bytes instead of ecdsa.PublicKey, otherwise we lose the
   // elliptic curve information
@@ -64,7 +73,8 @@ message MsgVotePubKey {
 
 // MsgVoteSig represents a message to vote for a signature
 message MsgVoteSig {
-  string sender = 1;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   vote.exported.v1beta1.PollMeta poll_meta = 2 [ (gogoproto.nullable) = false ];
   // need to vote on the bytes instead of r, s, because Go cannot deserialize
   // private fields using reflection (so *big.Int does not work)

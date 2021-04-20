@@ -46,7 +46,7 @@ func SetGenesisSnapshotCmd(defaultNodeHome string) *cobra.Command {
 
 			genesisSnapshot.Params.LockingPeriod = lockingPeriod
 
-			genesisSnapshotBz, err := cdc.MarshalJSON(genesisSnapshot)
+			genesisSnapshotBz, err := cdc.MarshalJSON(&genesisSnapshot)
 			if err != nil {
 				return fmt.Errorf("failed to marshal snapshot genesis state: %w", err)
 			}

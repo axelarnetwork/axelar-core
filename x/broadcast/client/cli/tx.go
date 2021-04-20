@@ -32,6 +32,7 @@ func GetTxCmd() *cobra.Command {
 	return broadcastTxCmd
 }
 
+// GetCmdRegisterProxy returns the command to register a proxy
 func GetCmdRegisterProxy() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "registerProxy [proxy] ",
@@ -56,6 +57,7 @@ func GetCmdRegisterProxy() *cobra.Command {
 	return cmd
 }
 
+// GetCmdSendStake returns the command to send stake to a number of addresses
 func GetCmdSendStake() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "sendStake [amount] [address 1] ... [address n]",

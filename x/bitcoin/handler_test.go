@@ -125,7 +125,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 			GetRevoteLockingPeriodFunc:        func(sdk.Context) int64 { return int64(mathRand.Uint32()) },
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) uint64 { return mathRand.Uint64() },
 			SetPendingOutpointInfoFunc:        func(sdk.Context, vote.PollMeta, types.OutPointInfo) {},
-			CodecFunc:                         func() *codec.LegacyAmino { return testutils.Codec() },
+			CodecFunc:                         func() *codec.LegacyAmino { return types.ModuleCdc.LegacyAmino },
 		}
 		voter = &mock.VoterMock{
 			InitPollFunc: func(sdk.Context, vote.PollMeta, int64) error { return nil },
@@ -208,7 +208,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			SetOutpointInfoFunc:           func(sdk.Context, types.OutPointInfo, types.OutPointState) {},
 			GetPendingOutPointInfoFunc:    func(sdk.Context, vote.PollMeta) (types.OutPointInfo, bool) { return info, true },
 			DeletePendingOutPointInfoFunc: func(sdk.Context, vote.PollMeta) {},
-			CodecFunc:                     func() *codec.LegacyAmino { return testutils.Codec() },
+			CodecFunc:                     func() *codec.LegacyAmino { return types.ModuleCdc.LegacyAmino },
 			GetSignedTxFunc:               func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
 		}
 		voter = &mock.VoterMock{
@@ -235,7 +235,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		assert.Equal(t, types.CONFIRMED, btcKeeper.SetOutpointInfoCalls()[0].State)
 		assert.Len(t, btcKeeper.DeleteSignedTxCalls(), 0)
 		assert.Equal(t, info.Address, nexusKeeper.EnqueueForTransferCalls()[0].Sender.Address)
-		assert.Equal(t, info.Amount, nexusKeeper.EnqueueForTransferCalls()[0].Amount.Amount.Int64())
+		assert.Equal(t, int64(info.Amount), nexusKeeper.EnqueueForTransferCalls()[0].Amount.Amount.Int64())
 	}).Repeat(repeats))
 
 	t.Run("happy path confirm consolidation", testutils.Func(func(t *testing.T) {
@@ -387,7 +387,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		msg = types.NewMsgSignPendingTransfers(sdk.AccAddress(rand.StrBetween(5, 20)),
+		msg = types.NewMsgSignPendingTransfers(rand.Bytes(sdk.AddrLen),
 			btcutil.Amount(rand.I64Between(0, 1000000)),
 		)
 
@@ -402,7 +402,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		for depositAmount <= transferAmount+msg.Fee {
 			deposit := randomOutpointInfo()
 			deposits = append(deposits, deposit)
-			depositAmount += deposit.Amount
+			depositAmount += int64(deposit.Amount)
 		}
 
 		masterPrivateKey, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
@@ -625,18 +625,18 @@ func mapi(n int, f func(i int)) {
 
 func randomMsgLink() *types.MsgLink {
 	return types.NewMsgLink(
-		sdk.AccAddress(rand.StrBetween(5, 20)),
+		rand.Bytes(sdk.AddrLen),
 		rand.StrBetween(5, 100),
 		rand.StrBetween(5, 100))
 }
 
 func randomMsgConfirmOutpoint() *types.MsgConfirmOutpoint {
-	return types.NewMsgConfirmOutpoint(sdk.AccAddress(rand.StrBetween(5, 20)), randomOutpointInfo())
+	return types.NewMsgConfirmOutpoint(rand.Bytes(sdk.AddrLen), randomOutpointInfo())
 }
 
 func randomMsgVoteConfirmOutpoint() *types.MsgVoteConfirmOutpoint {
 	return types.NewMsgVoteConfirmOutpoint(
-		sdk.AccAddress(rand.StrBetween(5, 20)),
+		rand.Bytes(sdk.AddrLen),
 		vote.PollMeta{
 			Module: types.ModuleName,
 			ID:     rand.StrBetween(5, 20),
@@ -653,7 +653,7 @@ func randomOutpointInfo() types.OutPointInfo {
 	}
 	return types.OutPointInfo{
 		OutPoint: wire.NewOutPoint(txHash, mathRand.Uint32()).String(),
-		Amount:   rand.I64Between(1, 10000000000),
+		Amount:   btcutil.Amount(rand.I64Between(1, 10000000000)),
 		Address:  randomAddress().EncodeAddress(),
 	}
 }

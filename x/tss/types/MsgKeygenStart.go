@@ -8,7 +8,7 @@ import (
 // NewMsgKeygenStart constructor for MsgKeygenStart
 func NewMsgKeygenStart(sender sdk.AccAddress, newKeyID string, subsetSize int64) *MsgKeygenStart {
 	return &MsgKeygenStart{
-		Sender:     sender.String(),
+		Sender:     sender,
 		NewKeyID:   newKeyID,
 		SubsetSize: subsetSize,
 	}
@@ -23,8 +23,8 @@ func (m MsgKeygenStart) Type() string { return "KeyGenStart" }
 
 // ValidateBasic implements the sdk.Msg interface.
 func (m MsgKeygenStart) ValidateBasic() error {
-	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "malformed sender address")
+	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
 	if m.NewKeyID == "" {
@@ -46,14 +46,5 @@ func (m MsgKeygenStart) GetSignBytes() []byte {
 
 // GetSigners implements sdk.Msg
 func (m MsgKeygenStart) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.GetSender()}
-}
-
-// GetSender returns the sender object
-func (m MsgKeygenStart) GetSender() sdk.AccAddress {
-	addr, err := sdk.AccAddressFromBech32(m.Sender)
-	if err != nil {
-		panic(err)
-	}
-	return addr
+	return []sdk.AccAddress{m.Sender}
 }

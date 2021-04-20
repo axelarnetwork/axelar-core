@@ -18,7 +18,7 @@ func (m MsgVoteConfirmDeposit) Type() string {
 
 // ValidateBasic executes a stateless message validation
 func (m MsgVoteConfirmDeposit) ValidateBasic() error {
-	if m.Sender == nil {
+	if m.Sender == nil || len(m.Sender) != sdk.AddrLen {
 		return fmt.Errorf("missing sender")
 	}
 	if m.TxID == "" {

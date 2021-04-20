@@ -17,8 +17,8 @@ func (m MsgKeygenTraffic) Type() string { return "KeygenTraffic" }
 
 // ValidateBasic implements the sdk.Msg interface.
 func (m MsgKeygenTraffic) ValidateBasic() error {
-	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "malformed sender address")
+	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 	if m.SessionID == "" {
 		return sdkerrors.Wrap(ErrTss, "session id must be set")
@@ -40,21 +40,7 @@ func (m MsgKeygenTraffic) GetSignBytes() []byte {
 
 // GetSigners implements the sdk.Msg interface
 func (m MsgKeygenTraffic) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.GetSender()}
-}
-
-// SetSender implements the broadcast.MsgWithSenderSetter interface
-func (m *MsgKeygenTraffic) SetSender(sender sdk.AccAddress) {
-	m.Sender = sender.String()
-}
-
-// GetSender returns the sender object
-func (m MsgKeygenTraffic) GetSender() sdk.AccAddress {
-	addr, err := sdk.AccAddressFromBech32(m.Sender)
-	if err != nil {
-		panic(err)
-	}
-	return addr
+	return []sdk.AccAddress{m.Sender}
 }
 
 // Route implements the sdk.Msg interface.
@@ -66,8 +52,8 @@ func (m MsgSignTraffic) Type() string { return "SignTraffic" }
 
 // ValidateBasic implements the sdk.Msg interface.
 func (m MsgSignTraffic) ValidateBasic() error {
-	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "malformed sender address")
+	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 	if m.SessionID == "" {
 		return sdkerrors.Wrap(ErrTss, "session id must be set")
@@ -89,21 +75,7 @@ func (m MsgSignTraffic) GetSignBytes() []byte {
 
 // GetSigners implements the sdk.Msg interface
 func (m MsgSignTraffic) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.GetSender()}
-}
-
-// SetSender implements the broadcast.MsgWithSenderSetter interface
-func (m *MsgSignTraffic) SetSender(sender sdk.AccAddress) {
-	m.Sender = sender.String()
-}
-
-// GetSender returns the sender object
-func (m MsgSignTraffic) GetSender() sdk.AccAddress {
-	addr, err := sdk.AccAddressFromBech32(m.Sender)
-	if err != nil {
-		panic(err)
-	}
-	return addr
+	return []sdk.AccAddress{m.Sender}
 }
 
 // Route returns the route for this message
@@ -118,8 +90,8 @@ func (m MsgVotePubKey) Type() string {
 
 // ValidateBasic performs a stateless validation of this message
 func (m MsgVotePubKey) ValidateBasic() error {
-	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "malformed sender address")
+	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 	if m.PubKeyBytes == nil {
 		return fmt.Errorf("missing public key data")
@@ -137,16 +109,7 @@ func (m MsgVotePubKey) GetSignBytes() []byte {
 
 // GetSigners returns the set of signers for this message
 func (m MsgVotePubKey) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.GetSender()}
-}
-
-// GetSender returns the sender object
-func (m MsgVotePubKey) GetSender() sdk.AccAddress {
-	addr, err := sdk.AccAddressFromBech32(m.Sender)
-	if err != nil {
-		panic(err)
-	}
-	return addr
+	return []sdk.AccAddress{m.Sender}
 }
 
 // Route returns the route for this message
@@ -161,8 +124,8 @@ func (m MsgVoteSig) Type() string {
 
 // ValidateBasic performs a stateless validation of this message
 func (m MsgVoteSig) ValidateBasic() error {
-	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "malformed sender address")
+	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 	if m.SigBytes == nil {
 		return fmt.Errorf("missing signature data")
@@ -180,14 +143,5 @@ func (m MsgVoteSig) GetSignBytes() []byte {
 
 // GetSigners returns the set of signers for this message
 func (m MsgVoteSig) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.GetSender()}
-}
-
-// GetSender returns the sender object
-func (m MsgVoteSig) GetSender() sdk.AccAddress {
-	addr, err := sdk.AccAddressFromBech32(m.Sender)
-	if err != nil {
-		panic(err)
-	}
-	return addr
+	return []sdk.AccAddress{m.Sender}
 }

@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
+	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -63,7 +63,7 @@ func TestBroadcaster_Broadcast(t *testing.T) {
 
 		// if the call to broadcast is not correctly sequenced the callCounter should be lower than the actual call count (data race)
 		callCounter := 0
-		rpc.BroadcastTxSyncFunc = func(tx authtypes.StdTx) (*coretypes.ResultBroadcastTx, error) {
+		rpc.BroadcastTxSyncFunc = func(tx legacytx.StdTx) (*coretypes.ResultBroadcastTx, error) {
 			c := callCounter
 
 			// simulate blocking
@@ -93,10 +93,10 @@ func TestBroadcaster_Broadcast(t *testing.T) {
 		seqNo := uint64(1)
 		prevSeqNo := uint64(0)
 		rpc := &mock.ClientMock{
-			GetAccountNumberSequenceFunc: func(sdk.AccAddress) (uint64, uint64, error) {
+			GetAccountNumberSequenceFunc: func(sdkClient.Context, sdk.AccAddress) (uint64, uint64, error) {
 				return accNo, seqNo, nil
 			},
-			BroadcastTxSyncFunc: func(tx auth.StdTx) (*coretypes.ResultBroadcastTx, error) {
+			BroadcastTxSyncFunc: func(tx legacytx.StdTx) (*coretypes.ResultBroadcastTx, error) {
 				seqNo++
 				return &coretypes.ResultBroadcastTx{Code: abci.CodeTypeOK}, nil
 			}}
@@ -106,7 +106,7 @@ func TestBroadcaster_Broadcast(t *testing.T) {
 		}
 
 		seen := map[string]bool{}
-		s := func(from sdk.AccAddress, msg auth.StdSignMsg) (authtypes.StdSignature, error) {
+		s := func(from sdk.AccAddress, msg legacytx.StdSignMsg) (legacytx.StdSignature, error) {
 			bz := string(msg.Bytes())
 			if !seen[bz] {
 				assert.Equal(t, prevSeqNo+1, msg.Sequence)
@@ -114,7 +114,7 @@ func TestBroadcaster_Broadcast(t *testing.T) {
 				seen[bz] = true
 			}
 
-			return authtypes.StdSignature{Signature: rand.Bytes(int(rand.I64Between(5, 100)))}, nil
+			return legacytx.StdSignature{Signature: rand.Bytes(int(rand.I64Between(5, 100)))}, nil
 		}
 
 		b, err := NewBroadcaster(s, rpc, config, log.TestingLogger())
@@ -141,10 +141,10 @@ func TestBroadcaster_Broadcast(t *testing.T) {
 		seqNo := uint64(1)
 		prevSeqNo := uint64(0)
 		rpc := &mock.ClientMock{
-			GetAccountNumberSequenceFunc: func(sdk.AccAddress) (uint64, uint64, error) {
+			GetAccountNumberSequenceFunc: func(sdkClient.Context, sdk.AccAddress) (uint64, uint64, error) {
 				return accNo, seqNo, nil
 			},
-			BroadcastTxSyncFunc: func(tx auth.StdTx) (*coretypes.ResultBroadcastTx, error) {
+			BroadcastTxSyncFunc: func(tx legacytx.StdTx) (*coretypes.ResultBroadcastTx, error) {
 				return &coretypes.ResultBroadcastTx{Code: abci.CodeTypeOK}, nil
 			}}
 		config := types.ClientConfig{
@@ -153,7 +153,7 @@ func TestBroadcaster_Broadcast(t *testing.T) {
 		}
 
 		seen := map[string]bool{}
-		s := func(from sdk.AccAddress, msg auth.StdSignMsg) (authtypes.StdSignature, error) {
+		s := func(from sdk.AccAddress, msg legacytx.StdSignMsg) (legacytx.StdSignature, error) {
 			bz := string(msg.Bytes())
 			if !seen[bz] {
 				assert.Equal(t, prevSeqNo+1, msg.Sequence)
@@ -161,7 +161,7 @@ func TestBroadcaster_Broadcast(t *testing.T) {
 				seen[bz] = true
 			}
 
-			return authtypes.StdSignature{Signature: rand.Bytes(int(rand.I64Between(5, 100)))}, nil
+			return legacytx.StdSignature{Signature: rand.Bytes(int(rand.I64Between(5, 100)))}, nil
 		}
 
 		b, err := NewBroadcaster(s, rpc, config, log.TestingLogger())
@@ -198,7 +198,7 @@ func TestBackoffBroadcaster_Broadcast(t *testing.T) {
 			retries := int(rand.I64Between(1, 20))
 			xbo := WithBackoff(b, testCase.strategy, 20*time.Microsecond, retries)
 
-			rpc.BroadcastTxSyncFunc = func(authtypes.StdTx) (*coretypes.ResultBroadcastTx, error) {
+			rpc.BroadcastTxSyncFunc = func(legacytx.StdTx) (*coretypes.ResultBroadcastTx, error) {
 				return nil, fmt.Errorf("some error")
 			}
 
@@ -226,10 +226,10 @@ func TestBackoffBroadcaster_Broadcast(t *testing.T) {
 		seqNo := uint64(1)
 		prevSeqNo := uint64(0)
 		rpc := &mock.ClientMock{
-			GetAccountNumberSequenceFunc: func(sdk.AccAddress) (uint64, uint64, error) {
+			GetAccountNumberSequenceFunc: func(sdkClient.Context, sdk.AccAddress) (uint64, uint64, error) {
 				return accNo, seqNo, nil
 			},
-			BroadcastTxSyncFunc: func(tx auth.StdTx) (*coretypes.ResultBroadcastTx, error) {
+			BroadcastTxSyncFunc: func(tx legacytx.StdTx) (*coretypes.ResultBroadcastTx, error) {
 				seqNo++
 				return &coretypes.ResultBroadcastTx{Code: abci.CodeTypeOK}, nil
 			}}
@@ -239,7 +239,7 @@ func TestBackoffBroadcaster_Broadcast(t *testing.T) {
 		}
 
 		seen := map[string]bool{}
-		s := func(from sdk.AccAddress, msg auth.StdSignMsg) (authtypes.StdSignature, error) {
+		s := func(from sdk.AccAddress, msg legacytx.StdSignMsg) (legacytx.StdSignature, error) {
 			bz := string(msg.Bytes())
 			if !seen[bz] {
 				assert.Equal(t, prevSeqNo+1, msg.Sequence)
@@ -247,7 +247,7 @@ func TestBackoffBroadcaster_Broadcast(t *testing.T) {
 				seen[bz] = true
 			}
 
-			return authtypes.StdSignature{Signature: rand.Bytes(int(rand.I64Between(5, 100)))}, nil
+			return legacytx.StdSignature{Signature: rand.Bytes(int(rand.I64Between(5, 100)))}, nil
 		}
 
 		b, err := NewBroadcaster(s, rpc, config, log.TestingLogger())
@@ -273,18 +273,18 @@ func TestBackoffBroadcaster_Broadcast(t *testing.T) {
 
 func setup() (*Broadcaster, *mock.ClientMock) {
 	rpc := &mock.ClientMock{
-		GetAccountNumberSequenceFunc: func(sdk.AccAddress) (uint64, uint64, error) {
+		GetAccountNumberSequenceFunc: func(sdkClient.Context, sdk.AccAddress) (uint64, uint64, error) {
 			return rand2.Uint64(), rand2.Uint64(), nil
 		},
-		BroadcastTxSyncFunc: func(tx auth.StdTx) (*coretypes.ResultBroadcastTx, error) {
+		BroadcastTxSyncFunc: func(tx legacytx.StdTx) (*coretypes.ResultBroadcastTx, error) {
 			return &coretypes.ResultBroadcastTx{Code: abci.CodeTypeOK}, nil
 		}}
 	config := types.ClientConfig{
 		ChainID:         rand.StrBetween(5, 20),
 		BroadcastConfig: types.BroadcastConfig{},
 	}
-	s := func(from sdk.AccAddress, msg auth.StdSignMsg) (authtypes.StdSignature, error) {
-		return authtypes.StdSignature{Signature: rand.Bytes(int(rand.I64Between(5, 100)))}, nil
+	s := func(from sdk.AccAddress, msg legacytx.StdSignMsg) (legacytx.StdSignature, error) {
+		return legacytx.StdSignature{Signature: rand.Bytes(int(rand.I64Between(5, 100)))}, nil
 	}
 
 	b, err := NewBroadcaster(s, rpc, config, log.TestingLogger())
@@ -299,7 +299,7 @@ func createMsgsWithRandomSigners() []sdk.Msg {
 	for i := int64(0); i < rand.I64Between(1, 20); i++ {
 		var signers []sdk.AccAddress
 		for j := int64(0); j < rand.I64Between(1, 5); j++ {
-			signers = append(signers, sdk.AccAddress(rand.Str(sdk.AddrLen)))
+			signers = append(signers, rand.Bytes(sdk.AddrLen))
 		}
 		msg := &mock.MsgMock{GetSignersFunc: func() []sdk.AccAddress { return signers }}
 		msgs = append(msgs, msg)

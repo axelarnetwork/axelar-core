@@ -1,15 +1,18 @@
 package broadcast
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"math/rand"
 	"time"
 
-	"github.com/cosmos/cosmos-sdk/crypto/keys"
+	sdkClient "github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	rpc "github.com/tendermint/tendermint/rpc/client"
@@ -84,12 +87,12 @@ func (b *Broadcaster) broadcast(msgs []sdk.Msg) error {
 		return err
 	}
 
-	stdSignMsg := auth.StdSignMsg{
+	stdSignMsg := legacytx.StdSignMsg{
 		ChainID:       b.chainID,
 		AccountNumber: accNo,
 		Sequence:      seqNo,
 		Msgs:          msgs,
-		Fee:           auth.NewStdFee(b.gas, nil),
+		Fee:           legacytx.NewStdFee(b.gas, nil),
 	}
 
 	tx, err := sign(b.signer, stdSignMsg)
@@ -113,7 +116,7 @@ func (b *Broadcaster) broadcast(msgs []sdk.Msg) error {
 }
 
 func (b *Broadcaster) updateAccountNumberSequence(addr sdk.AccAddress) (uint64, uint64, error) {
-	accNo, seqNo, err := b.rpc.GetAccountNumberSequence(addr)
+	accNo, seqNo, err := b.rpc.GetAccountNumberSequence(sdkClient.Context{}, addr)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -123,27 +126,28 @@ func (b *Broadcaster) updateAccountNumberSequence(addr sdk.AccAddress) (uint64, 
 	return accNo, b.seqNo, nil
 }
 
-func sign(sign types.Sign, msg auth.StdSignMsg) (auth.StdTx, error) {
-	var sigs []auth.StdSignature
+func sign(sign types.Sign, msg legacytx.StdSignMsg) (legacytx.StdTx, error) {
+	var sigs []legacytx.StdSignature
 	for i, m := range msg.Msgs {
 		if len(m.GetSigners()) == 0 {
-			return auth.StdTx{}, fmt.Errorf("signing failed: msg at idx [%d] without signers", i)
+			return legacytx.StdTx{}, fmt.Errorf("signing failed: msg at idx [%d] without signers", i)
 		}
 		for _, s := range m.GetSigners() {
 			sig, err := sign(s, msg)
 			if err != nil {
-				return auth.StdTx{}, err
+				return legacytx.StdTx{}, err
 			}
 			sigs = append(sigs, sig)
 		}
 	}
 
-	return auth.NewStdTx(msg.Msgs, msg.Fee, sigs, msg.Memo), nil
+	return legacytx.NewStdTx(msg.Msgs, msg.Fee, sigs, msg.Memo), nil
 }
 
 type client struct {
 	rpc.ABCIClient
 	encodeTx sdk.TxEncoder
+	sdkClient.AccountRetriever
 }
 
 // NewClient returns a new rpc client to a tendermint node
@@ -153,47 +157,29 @@ func NewClient(encoder sdk.TxEncoder, tendermintURI string) (types.Client, error
 		return nil, err
 	}
 
-	return client{ABCIClient: abciClient, encodeTx: encoder}, nil
+	return client{ABCIClient: abciClient, encodeTx: encoder, AccountRetriever: authtypes.AccountRetriever{}}, nil
 }
 
 // BroadcastTxSync submits a transaction synchronously
-func (c client) BroadcastTxSync(tx auth.StdTx) (*coretypes.ResultBroadcastTx, error) {
+func (c client) BroadcastTxSync(tx legacytx.StdTx) (*coretypes.ResultBroadcastTx, error) {
 	txBytes, err := c.encodeTx(tx)
 	if err != nil {
 		return nil, err
 	}
-	return c.ABCIClient.BroadcastTxSync(txBytes)
-}
-
-// GetAccountNumberSequence returns the account and sequence number of the given address
-func (c client) GetAccountNumberSequence(addr sdk.AccAddress) (uint64, uint64, error) {
-	return auth.NewAccountRetriever(c).GetAccountNumberSequence(addr)
-}
-
-// QueryWithData submits a generic abci query
-func (c client) QueryWithData(path string, data []byte) ([]byte, int64, error) {
-	res, err := c.ABCIClient.ABCIQuery(path, data)
-	if err != nil {
-		return nil, 0, err
-	}
-	if !res.Response.IsOK() {
-		return nil, 0, fmt.Errorf(res.Response.Log)
-	}
-
-	return res.Response.Value, res.Response.Height, nil
+	return c.ABCIClient.BroadcastTxSync(context.Background(), txBytes)
 }
 
 // NewSigner unlocks the given keybase, so messages can be signed by the returned sign function
-func NewSigner(keybase keys.Keybase, accountInfo keys.Info, passphrase string) (types.Sign, error) {
-	return func(from sdk.AccAddress, msg auth.StdSignMsg) (auth.StdSignature, error) {
+func NewSigner(keybase keyring.Keyring, accountInfo keyring.Info) (types.Sign, error) {
+	return func(from sdk.AccAddress, msg legacytx.StdSignMsg) (legacytx.StdSignature, error) {
 		if !from.Equals(accountInfo.GetAddress()) {
-			return auth.StdSignature{}, fmt.Errorf("could not sign, expected address %.20s, got %.20s", accountInfo.GetAddress(), from)
+			return legacytx.StdSignature{}, fmt.Errorf("could not sign, expected address %.20s, got %.20s", accountInfo.GetAddress(), from)
 		}
-		sig, pk, err := keybase.Sign(accountInfo.GetName(), passphrase, msg.Bytes())
+		sig, pk, err := keybase.Sign(accountInfo.GetName(), msg.Bytes())
 		if err != nil {
-			return auth.StdSignature{}, err
+			return legacytx.StdSignature{}, err
 		}
-		return auth.StdSignature{
+		return legacytx.StdSignature{
 			PubKey:    pk,
 			Signature: sig,
 		}, nil

@@ -27,8 +27,8 @@ func (m MsgConfirmToken) Type() string {
 
 // ValidateBasic implements sdk.Msg
 func (m MsgConfirmToken) ValidateBasic() error {
-	if m.Sender.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
+	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
 	return nil

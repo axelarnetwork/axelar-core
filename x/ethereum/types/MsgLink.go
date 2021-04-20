@@ -19,8 +19,8 @@ func (m MsgLink) Type() string {
 
 // ValidateBasic implements sdk.Msg
 func (m MsgLink) ValidateBasic() error {
-	if m.Sender.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
+	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 	if m.RecipientAddr == "" {
 		return fmt.Errorf("missing recipient address")

@@ -10,7 +10,7 @@ import (
 // NewMsgLink - MsgLink constructor
 func NewMsgLink(sender sdk.AccAddress, recipientAddr string, recipientChain string) *MsgLink {
 	return &MsgLink{
-		Sender:         sender.String(),
+		Sender:         sender,
 		RecipientAddr:  recipientAddr,
 		RecipientChain: recipientChain,
 	}
@@ -28,9 +28,8 @@ func (m MsgLink) Type() string {
 
 // ValidateBasic executes a stateless message validation
 func (m MsgLink) ValidateBasic() error {
-	_, err := sdk.AccAddressFromBech32(m.Sender)
-	if err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "Invalid sender address (%s)", err)
+	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
 	if m.RecipientAddr == "" {
@@ -49,9 +48,5 @@ func (m MsgLink) GetSignBytes() []byte {
 
 // GetSigners returns the set of signers for this message
 func (m MsgLink) GetSigners() []sdk.AccAddress {
-	from, err := sdk.AccAddressFromBech32(m.Sender)
-	if err != nil {
-		panic(err)
-	}
-	return []sdk.AccAddress{from}
+	return []sdk.AccAddress{m.Sender}
 }

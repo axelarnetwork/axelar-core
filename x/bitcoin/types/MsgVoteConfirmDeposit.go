@@ -11,7 +11,7 @@ import (
 // NewMsgVoteConfirmOutpoint - MsgVoteConfirmOutpoint constructor
 func NewMsgVoteConfirmOutpoint(sender sdk.AccAddress, poll exported.PollMeta, outPoint wire.OutPoint, confirmed bool) *MsgVoteConfirmOutpoint {
 	return &MsgVoteConfirmOutpoint{
-		Sender:    sender.String(),
+		Sender:    sender,
 		Poll:      poll,
 		OutPoint:  outPoint.String(),
 		Confirmed: confirmed,
@@ -30,9 +30,8 @@ func (m MsgVoteConfirmOutpoint) Type() string {
 
 // ValidateBasic executes a stateless message validation
 func (m MsgVoteConfirmOutpoint) ValidateBasic() error {
-	_, err := sdk.AccAddressFromBech32(m.Sender)
-	if err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "Invalid sender address (%s)", err)
+	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
 	if _, err := OutPointFromStr(m.OutPoint); err != nil {
@@ -48,14 +47,5 @@ func (m MsgVoteConfirmOutpoint) GetSignBytes() []byte {
 
 // GetSigners returns the set of signers for this message
 func (m MsgVoteConfirmOutpoint) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.GetSender()}
-}
-
-// GetSender returns decoded sender Address
-func (m MsgVoteConfirmOutpoint) GetSender() sdk.AccAddress {
-	from, err := sdk.AccAddressFromBech32(m.Sender)
-	if err != nil {
-		panic(err)
-	}
-	return from
+	return []sdk.AccAddress{m.Sender}
 }

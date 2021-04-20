@@ -83,9 +83,9 @@ func (k Keeper) GetSigCheckInterval(ctx sdk.Context) int64 {
 
 // GetNetwork returns the connected Bitcoin network (main, test, regtest)
 func (k Keeper) GetNetwork(ctx sdk.Context) types.Network {
-	var network *types.Network
+	var network types.Network
 	k.params.Get(ctx, types.KeyNetwork, &network)
-	return *network
+	return network
 }
 
 // Codec returns the codec used by the keeper to marshal and unmarshal data

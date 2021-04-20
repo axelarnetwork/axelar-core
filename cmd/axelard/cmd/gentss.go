@@ -71,7 +71,7 @@ func SetGenesisTSSCmd(defaultNodeHome string,
 				genesisTSS.Params.CorruptionThreshold = threshold
 			}
 
-			genesisTSSBz, err := cdc.MarshalJSON(genesisTSS)
+			genesisTSSBz, err := cdc.MarshalJSON(&genesisTSS)
 			if err != nil {
 				return fmt.Errorf("failed to marshal tss genesis state: %w", err)
 			}
@@ -92,7 +92,6 @@ func SetGenesisTSSCmd(defaultNodeHome string,
 	cmd.Flags().Int64Var(&period, flagLockingPeriod, 0, "A positive integer representing the locking period for validators in terms of number of blocks")
 	cmd.Flags().StringVar(&keygen, flagKeygen, "", "The minimum % of stake that must be online to authorize generation of a new key in the system (e.g., \"9/10\").")
 	cmd.Flags().StringVar(&corruption, flagCorruption, "", "The corruption threshold with which Axelar Core will run the keygen protocol (e.g., \"2/3\").")
-
 
 	return cmd
 }

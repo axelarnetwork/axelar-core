@@ -22,8 +22,8 @@ func (m MsgSignPendingTransfers) Type() string {
 
 // ValidateBasic executes a stateless message validation
 func (m MsgSignPendingTransfers) ValidateBasic() error {
-	if m.Sender.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
+	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
 	return nil

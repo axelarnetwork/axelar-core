@@ -5,10 +5,10 @@ package mock
 
 import (
 	"context"
-	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
+	tofnd "github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
-	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	exported1 "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -917,16 +917,16 @@ var _ tsstypes.Voter = &VoterMock{}
 //
 // 		// make and configure a mocked tsstypes.Voter
 // 		mockedVoter := &VoterMock{
-// 			DeletePollFunc: func(ctx sdk.Context, poll voting.PollMeta)  {
+// 			DeletePollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta)  {
 // 				panic("mock out the DeletePoll method")
 // 			},
-// 			InitPollFunc: func(ctx sdk.Context, poll voting.PollMeta, snapshotCounter int64) error {
+// 			InitPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta, snapshotCounter int64) error {
 // 				panic("mock out the InitPoll method")
 // 			},
-// 			ResultFunc: func(ctx sdk.Context, poll voting.PollMeta) voting.VotingData {
+// 			ResultFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta) exported1.VotingData {
 // 				panic("mock out the Result method")
 // 			},
-// 			TallyVoteFunc: func(ctx sdk.Context, sender sdk.AccAddress, pollMeta voting.PollMeta, data voting.VotingData) error {
+// 			TallyVoteFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.AccAddress, pollMeta exported1.PollMeta, data exported1.VotingData) error {
 // 				panic("mock out the TallyVote method")
 // 			},
 // 		}
@@ -937,52 +937,52 @@ var _ tsstypes.Voter = &VoterMock{}
 // 	}
 type VoterMock struct {
 	// DeletePollFunc mocks the DeletePoll method.
-	DeletePollFunc func(ctx sdk.Context, poll voting.PollMeta)
+	DeletePollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta)
 
 	// InitPollFunc mocks the InitPoll method.
-	InitPollFunc func(ctx sdk.Context, poll voting.PollMeta, snapshotCounter int64) error
+	InitPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta, snapshotCounter int64) error
 
 	// ResultFunc mocks the Result method.
-	ResultFunc func(ctx sdk.Context, poll voting.PollMeta) voting.VotingData
+	ResultFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta) exported1.VotingData
 
 	// TallyVoteFunc mocks the TallyVote method.
-	TallyVoteFunc func(ctx sdk.Context, sender sdk.AccAddress, pollMeta voting.PollMeta, data voting.VotingData) error
+	TallyVoteFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.AccAddress, pollMeta exported1.PollMeta, data exported1.VotingData) error
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// DeletePoll holds details about calls to the DeletePoll method.
 		DeletePoll []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Poll is the poll argument value.
-			Poll voting.PollMeta
+			Poll exported1.PollMeta
 		}
 		// InitPoll holds details about calls to the InitPoll method.
 		InitPoll []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Poll is the poll argument value.
-			Poll voting.PollMeta
+			Poll exported1.PollMeta
 			// SnapshotCounter is the snapshotCounter argument value.
 			SnapshotCounter int64
 		}
 		// Result holds details about calls to the Result method.
 		Result []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Poll is the poll argument value.
-			Poll voting.PollMeta
+			Poll exported1.PollMeta
 		}
 		// TallyVote holds details about calls to the TallyVote method.
 		TallyVote []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Sender is the sender argument value.
-			Sender sdk.AccAddress
+			Sender github_com_cosmos_cosmos_sdk_types.AccAddress
 			// PollMeta is the pollMeta argument value.
-			PollMeta voting.PollMeta
+			PollMeta exported1.PollMeta
 			// Data is the data argument value.
-			Data voting.VotingData
+			Data exported1.VotingData
 		}
 	}
 	lockDeletePoll sync.RWMutex
@@ -992,13 +992,13 @@ type VoterMock struct {
 }
 
 // DeletePoll calls DeletePollFunc.
-func (mock *VoterMock) DeletePoll(ctx sdk.Context, poll voting.PollMeta) {
+func (mock *VoterMock) DeletePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta) {
 	if mock.DeletePollFunc == nil {
 		panic("VoterMock.DeletePollFunc: method is nil but Voter.DeletePoll was just called")
 	}
 	callInfo := struct {
-		Ctx  sdk.Context
-		Poll voting.PollMeta
+		Ctx  github_com_cosmos_cosmos_sdk_types.Context
+		Poll exported1.PollMeta
 	}{
 		Ctx:  ctx,
 		Poll: poll,
@@ -1013,12 +1013,12 @@ func (mock *VoterMock) DeletePoll(ctx sdk.Context, poll voting.PollMeta) {
 // Check the length with:
 //     len(mockedVoter.DeletePollCalls())
 func (mock *VoterMock) DeletePollCalls() []struct {
-	Ctx  sdk.Context
-	Poll voting.PollMeta
+	Ctx  github_com_cosmos_cosmos_sdk_types.Context
+	Poll exported1.PollMeta
 } {
 	var calls []struct {
-		Ctx  sdk.Context
-		Poll voting.PollMeta
+		Ctx  github_com_cosmos_cosmos_sdk_types.Context
+		Poll exported1.PollMeta
 	}
 	mock.lockDeletePoll.RLock()
 	calls = mock.calls.DeletePoll
@@ -1027,13 +1027,13 @@ func (mock *VoterMock) DeletePollCalls() []struct {
 }
 
 // InitPoll calls InitPollFunc.
-func (mock *VoterMock) InitPoll(ctx sdk.Context, poll voting.PollMeta, snapshotCounter int64) error {
+func (mock *VoterMock) InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta, snapshotCounter int64) error {
 	if mock.InitPollFunc == nil {
 		panic("VoterMock.InitPollFunc: method is nil but Voter.InitPoll was just called")
 	}
 	callInfo := struct {
-		Ctx             sdk.Context
-		Poll            voting.PollMeta
+		Ctx             github_com_cosmos_cosmos_sdk_types.Context
+		Poll            exported1.PollMeta
 		SnapshotCounter int64
 	}{
 		Ctx:             ctx,
@@ -1050,13 +1050,13 @@ func (mock *VoterMock) InitPoll(ctx sdk.Context, poll voting.PollMeta, snapshotC
 // Check the length with:
 //     len(mockedVoter.InitPollCalls())
 func (mock *VoterMock) InitPollCalls() []struct {
-	Ctx             sdk.Context
-	Poll            voting.PollMeta
+	Ctx             github_com_cosmos_cosmos_sdk_types.Context
+	Poll            exported1.PollMeta
 	SnapshotCounter int64
 } {
 	var calls []struct {
-		Ctx             sdk.Context
-		Poll            voting.PollMeta
+		Ctx             github_com_cosmos_cosmos_sdk_types.Context
+		Poll            exported1.PollMeta
 		SnapshotCounter int64
 	}
 	mock.lockInitPoll.RLock()
@@ -1066,13 +1066,13 @@ func (mock *VoterMock) InitPollCalls() []struct {
 }
 
 // Result calls ResultFunc.
-func (mock *VoterMock) Result(ctx sdk.Context, poll voting.PollMeta) voting.VotingData {
+func (mock *VoterMock) Result(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta) exported1.VotingData {
 	if mock.ResultFunc == nil {
 		panic("VoterMock.ResultFunc: method is nil but Voter.Result was just called")
 	}
 	callInfo := struct {
-		Ctx  sdk.Context
-		Poll voting.PollMeta
+		Ctx  github_com_cosmos_cosmos_sdk_types.Context
+		Poll exported1.PollMeta
 	}{
 		Ctx:  ctx,
 		Poll: poll,
@@ -1087,12 +1087,12 @@ func (mock *VoterMock) Result(ctx sdk.Context, poll voting.PollMeta) voting.Voti
 // Check the length with:
 //     len(mockedVoter.ResultCalls())
 func (mock *VoterMock) ResultCalls() []struct {
-	Ctx  sdk.Context
-	Poll voting.PollMeta
+	Ctx  github_com_cosmos_cosmos_sdk_types.Context
+	Poll exported1.PollMeta
 } {
 	var calls []struct {
-		Ctx  sdk.Context
-		Poll voting.PollMeta
+		Ctx  github_com_cosmos_cosmos_sdk_types.Context
+		Poll exported1.PollMeta
 	}
 	mock.lockResult.RLock()
 	calls = mock.calls.Result
@@ -1101,15 +1101,15 @@ func (mock *VoterMock) ResultCalls() []struct {
 }
 
 // TallyVote calls TallyVoteFunc.
-func (mock *VoterMock) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta voting.PollMeta, data voting.VotingData) error {
+func (mock *VoterMock) TallyVote(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.AccAddress, pollMeta exported1.PollMeta, data exported1.VotingData) error {
 	if mock.TallyVoteFunc == nil {
 		panic("VoterMock.TallyVoteFunc: method is nil but Voter.TallyVote was just called")
 	}
 	callInfo := struct {
-		Ctx      sdk.Context
-		Sender   sdk.AccAddress
-		PollMeta voting.PollMeta
-		Data     voting.VotingData
+		Ctx      github_com_cosmos_cosmos_sdk_types.Context
+		Sender   github_com_cosmos_cosmos_sdk_types.AccAddress
+		PollMeta exported1.PollMeta
+		Data     exported1.VotingData
 	}{
 		Ctx:      ctx,
 		Sender:   sender,
@@ -1126,16 +1126,16 @@ func (mock *VoterMock) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMet
 // Check the length with:
 //     len(mockedVoter.TallyVoteCalls())
 func (mock *VoterMock) TallyVoteCalls() []struct {
-	Ctx      sdk.Context
-	Sender   sdk.AccAddress
-	PollMeta voting.PollMeta
-	Data     voting.VotingData
+	Ctx      github_com_cosmos_cosmos_sdk_types.Context
+	Sender   github_com_cosmos_cosmos_sdk_types.AccAddress
+	PollMeta exported1.PollMeta
+	Data     exported1.VotingData
 } {
 	var calls []struct {
-		Ctx      sdk.Context
-		Sender   sdk.AccAddress
-		PollMeta voting.PollMeta
-		Data     voting.VotingData
+		Ctx      github_com_cosmos_cosmos_sdk_types.Context
+		Sender   github_com_cosmos_cosmos_sdk_types.AccAddress
+		PollMeta exported1.PollMeta
+		Data     exported1.VotingData
 	}
 	mock.lockTallyVote.RLock()
 	calls = mock.calls.TallyVote
@@ -1153,10 +1153,10 @@ var _ tsstypes.StakingKeeper = &StakingKeeperMock{}
 //
 // 		// make and configure a mocked tsstypes.StakingKeeper
 // 		mockedStakingKeeper := &StakingKeeperMock{
-// 			GetLastTotalPowerFunc: func(ctx sdk.Context) sdk.Int {
+// 			GetLastTotalPowerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) github_com_cosmos_cosmos_sdk_types.Int {
 // 				panic("mock out the GetLastTotalPower method")
 // 			},
-// 			GetValidatorFunc: func(ctx sdk.Context, addr sdk.ValAddress) (stakingtypes.Validator, bool) {
+// 			GetValidatorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.ValAddress) (stakingtypes.Validator, bool) {
 // 				panic("mock out the GetValidator method")
 // 			},
 // 		}
@@ -1167,24 +1167,24 @@ var _ tsstypes.StakingKeeper = &StakingKeeperMock{}
 // 	}
 type StakingKeeperMock struct {
 	// GetLastTotalPowerFunc mocks the GetLastTotalPower method.
-	GetLastTotalPowerFunc func(ctx sdk.Context) sdk.Int
+	GetLastTotalPowerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) github_com_cosmos_cosmos_sdk_types.Int
 
 	// GetValidatorFunc mocks the GetValidator method.
-	GetValidatorFunc func(ctx sdk.Context, addr sdk.ValAddress) (stakingtypes.Validator, bool)
+	GetValidatorFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.ValAddress) (stakingtypes.Validator, bool)
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// GetLastTotalPower holds details about calls to the GetLastTotalPower method.
 		GetLastTotalPower []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
 		// GetValidator holds details about calls to the GetValidator method.
 		GetValidator []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Addr is the addr argument value.
-			Addr sdk.ValAddress
+			Addr github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
 	}
 	lockGetLastTotalPower sync.RWMutex
@@ -1192,12 +1192,12 @@ type StakingKeeperMock struct {
 }
 
 // GetLastTotalPower calls GetLastTotalPowerFunc.
-func (mock *StakingKeeperMock) GetLastTotalPower(ctx sdk.Context) sdk.Int {
+func (mock *StakingKeeperMock) GetLastTotalPower(ctx github_com_cosmos_cosmos_sdk_types.Context) github_com_cosmos_cosmos_sdk_types.Int {
 	if mock.GetLastTotalPowerFunc == nil {
 		panic("StakingKeeperMock.GetLastTotalPowerFunc: method is nil but StakingKeeper.GetLastTotalPower was just called")
 	}
 	callInfo := struct {
-		Ctx sdk.Context
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
 	}{
 		Ctx: ctx,
 	}
@@ -1211,10 +1211,10 @@ func (mock *StakingKeeperMock) GetLastTotalPower(ctx sdk.Context) sdk.Int {
 // Check the length with:
 //     len(mockedStakingKeeper.GetLastTotalPowerCalls())
 func (mock *StakingKeeperMock) GetLastTotalPowerCalls() []struct {
-	Ctx sdk.Context
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
 	var calls []struct {
-		Ctx sdk.Context
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
 	}
 	mock.lockGetLastTotalPower.RLock()
 	calls = mock.calls.GetLastTotalPower
@@ -1223,13 +1223,13 @@ func (mock *StakingKeeperMock) GetLastTotalPowerCalls() []struct {
 }
 
 // GetValidator calls GetValidatorFunc.
-func (mock *StakingKeeperMock) GetValidator(ctx sdk.Context, addr sdk.ValAddress) (stakingtypes.Validator, bool) {
+func (mock *StakingKeeperMock) GetValidator(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.ValAddress) (stakingtypes.Validator, bool) {
 	if mock.GetValidatorFunc == nil {
 		panic("StakingKeeperMock.GetValidatorFunc: method is nil but StakingKeeper.GetValidator was just called")
 	}
 	callInfo := struct {
-		Ctx  sdk.Context
-		Addr sdk.ValAddress
+		Ctx  github_com_cosmos_cosmos_sdk_types.Context
+		Addr github_com_cosmos_cosmos_sdk_types.ValAddress
 	}{
 		Ctx:  ctx,
 		Addr: addr,
@@ -1244,12 +1244,12 @@ func (mock *StakingKeeperMock) GetValidator(ctx sdk.Context, addr sdk.ValAddress
 // Check the length with:
 //     len(mockedStakingKeeper.GetValidatorCalls())
 func (mock *StakingKeeperMock) GetValidatorCalls() []struct {
-	Ctx  sdk.Context
-	Addr sdk.ValAddress
+	Ctx  github_com_cosmos_cosmos_sdk_types.Context
+	Addr github_com_cosmos_cosmos_sdk_types.ValAddress
 } {
 	var calls []struct {
-		Ctx  sdk.Context
-		Addr sdk.ValAddress
+		Ctx  github_com_cosmos_cosmos_sdk_types.Context
+		Addr github_com_cosmos_cosmos_sdk_types.ValAddress
 	}
 	mock.lockGetValidator.RLock()
 	calls = mock.calls.GetValidator

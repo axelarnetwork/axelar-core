@@ -8,6 +8,9 @@ import "gogoproto/gogo.proto";
 option (gogoproto.goproto_getters_all) = false;
 
 message MsgRegisterProxy {
-  string principal_addr = 1;
-  string proxy_addr = 2;
+  bytes principal_addr = 1
+      [ (gogoproto.casttype) =
+            "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
+  bytes proxy_addr = 2 [ (gogoproto.casttype) =
+                             "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
 }

@@ -24,13 +24,13 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 			&snapMock.ValidatorMock{
 				GetOperatorFunc:       func() sdk.ValAddress { return sdk.ValAddress("validator1") },
 				GetConsensusPowerFunc: func() int64 { return 100 },
-				GetConsAddrFunc:       func() sdk.ConsAddress { return sdk.ValAddress("validator1").Bytes() },
+				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return sdk.ValAddress("validator1").Bytes(), nil },
 				IsJailedFunc:          func() bool { return true },
 			},
 			&snapMock.ValidatorMock{
 				GetOperatorFunc:       func() sdk.ValAddress { return sdk.ValAddress("validator2") },
 				GetConsensusPowerFunc: func() int64 { return 100 },
-				GetConsAddrFunc:       func() sdk.ConsAddress { return sdk.ValAddress("validator2").Bytes() },
+				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return sdk.ValAddress("validator2").Bytes(), nil },
 				IsJailedFunc:          func() bool { return false },
 			},
 		},

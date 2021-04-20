@@ -1,8 +1,9 @@
 package types
 
 import (
+	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
@@ -16,12 +17,12 @@ type (
 
 // Client represents a tendermint/Cosmos client
 type Client interface {
-	BroadcastTxSync(tx auth.StdTx) (*coretypes.ResultBroadcastTx, error)
-	GetAccountNumberSequence(addr sdk.AccAddress) (uint64, uint64, error)
+	BroadcastTxSync(tx legacytx.StdTx) (*coretypes.ResultBroadcastTx, error)
+	GetAccountNumberSequence(clientCtx client.Context, addr sdk.AccAddress) (accNum uint64, accSeq uint64, err error)
 }
 
 // Sign returns a signature for the given message from the account associated with the given address
-type Sign func(from sdk.AccAddress, msg auth.StdSignMsg) (auth.StdSignature, error)
+type Sign func(from sdk.AccAddress, msg legacytx.StdSignMsg) (legacytx.StdSignature, error)
 
 // Broadcaster interface allows the submission of messages to the axelar network
 type Broadcaster interface {

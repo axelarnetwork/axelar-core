@@ -9,6 +9,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
+// NewHandler returns a new vote handler
 func NewHandler() sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())

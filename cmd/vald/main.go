@@ -4,7 +4,6 @@ import (
 	"os"
 	"path"
 
-	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/cli"
@@ -24,8 +23,7 @@ func main() {
 	}
 
 	logger := log.NewTMLogger(os.Stdout).With("process", "vald")
-	startCommand := getStartCommand(logger)
-	rootCmd.AddCommand(flags.PostCommands(startCommand)...)
+	rootCmd.AddCommand(getStartCommand(logger))
 
 	setPersistentFlags(rootCmd)
 
@@ -38,7 +36,7 @@ func main() {
 }
 
 func setPersistentFlags(rootCmd *cobra.Command) {
-	rootCmd.PersistentFlags().String(cliHomeFlag, app.DefaultCLIHome, "directory for cli config and data")
+	rootCmd.PersistentFlags().String(cliHomeFlag, app.DefaultNodeHome, "directory for cli config and data")
 	_ = viper.BindPFlag(cliHomeFlag, rootCmd.PersistentFlags().Lookup(cliHomeFlag))
 
 	rootCmd.PersistentFlags().String("tofnd-host", "", "host name for tss daemon")

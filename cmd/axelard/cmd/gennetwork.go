@@ -22,13 +22,13 @@ import (
 
 const (
 	flagConfHeight = "confirmation-height"
-	flagNetwork = "network"
+	flagNetwork    = "network"
 )
 
 // SetGenesisChainParamsCmd returns set-genesis-chain-params cobra Command.
 func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
-	var(
-		networkStr string
+	var (
+		networkStr         string
 		confirmationHeight uint64
 	)
 	cmd := &cobra.Command{
@@ -54,7 +54,7 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 				return fmt.Errorf("failed to unmarshal genesis state: %w", err)
 			}
 
-						var genesisStateBz []byte
+			var genesisStateBz []byte
 			var moduleName string
 
 			switch strings.ToLower(chainStr) {
@@ -75,7 +75,7 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 					genesisState.Params.ConfirmationHeight = confirmationHeight
 				}
 
-				genesisStateBz, err = cdc.MarshalJSON(genesisState)
+				genesisStateBz, err = cdc.MarshalJSON(&genesisState)
 				if err != nil {
 					return fmt.Errorf("failed to marshal bitcoin genesis state: %w", err)
 				}
@@ -96,7 +96,7 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 					genesisState.Params.ConfirmationHeight = confirmationHeight
 				}
 
-				genesisStateBz, err = cdc.MarshalJSON(genesisState)
+				genesisStateBz, err = cdc.MarshalJSON(&genesisState)
 				if err != nil {
 					return fmt.Errorf("failed to marshal ethereum genesis state: %w", err)
 				}
@@ -116,9 +116,8 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 			return genutil.ExportGenesisFile(genDoc, genFile)
 		}}
 
-
-	cmd.Flags().String (flags.FlagHome, defaultNodeHome, "node's home directory")
-	cmd.Flags().StringVar(&networkStr,flagNetwork, "", "Name of the network to set for the given chain.")
+	cmd.Flags().String(flags.FlagHome, defaultNodeHome, "node's home directory")
+	cmd.Flags().StringVar(&networkStr, flagNetwork, "", "Name of the network to set for the given chain.")
 	cmd.Flags().Uint64Var(&confirmationHeight, flagConfHeight, 0, "Confirmation height to set for the given chain.")
 
 	return cmd

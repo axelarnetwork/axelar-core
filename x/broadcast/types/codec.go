@@ -7,7 +7,7 @@ import (
 
 // RegisterLegacyAminoCodec registers concrete types on codec
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	cdc.RegisterConcrete(MsgRegisterProxy{}, "broadcast/RegisterProxy", nil)
+	cdc.RegisterConcrete(&MsgRegisterProxy{}, "broadcast/RegisterProxy", nil)
 }
 
 var amino = codec.NewLegacyAmino()

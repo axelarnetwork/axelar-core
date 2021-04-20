@@ -349,7 +349,7 @@ func prepareChange(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, chan
 
 func startSignInputs(ctx sdk.Context, signer types.Signer, snapshotter types.Snapshotter, v types.Voter, tx *wire.MsgTx, outpointsToSign []types.OutPointToSign) error {
 	for i, in := range outpointsToSign {
-		hash, err := txscript.CalcWitnessSigHash(in.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, i, in.Amount)
+		hash, err := txscript.CalcWitnessSigHash(in.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, i, int64(in.Amount))
 		if err != nil {
 			return err
 		}

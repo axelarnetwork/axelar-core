@@ -13,7 +13,8 @@ message OutPointInfo {
   option (gogoproto.goproto_stringer) = false;
 
   string out_point = 1;
-  int64 amount = 2;
+  int64 amount = 2
+      [ (gogoproto.casttype) = "github.com/btcsuite/btcutil.Amount" ];
   string address = 3;
 }
 

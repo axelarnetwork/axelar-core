@@ -70,7 +70,7 @@ func SetGenesisEthContractsCmd(defaultNodeHome string) *cobra.Command {
 				genesisState.Params.Burnable = burnable
 			}
 
-			genesisStateBz, err := cdc.MarshalJSON(genesisState)
+			genesisStateBz, err := cdc.MarshalJSON(&genesisState)
 			if err != nil {
 				return fmt.Errorf("failed to marshal ethereum genesis state: %w", err)
 			}

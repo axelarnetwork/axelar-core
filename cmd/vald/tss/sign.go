@@ -15,7 +15,7 @@ import (
 
 // ProcessSignStart starts the communication with the sign protocol
 func (mgr *Mgr) ProcessSignStart(attributes []sdk.Attribute) error {
-	keyID, sigID, participants, payload := parseSignStartParams(attributes)
+	keyID, sigID, participants, payload := parseSignStartParams(mgr.cdc, attributes)
 	_, ok := indexOf(participants, mgr.principalAddr)
 	if !ok {
 		// do not participate
@@ -57,7 +57,7 @@ func (mgr *Mgr) ProcessSignStart(attributes []sdk.Attribute) error {
 
 // ProcessSignMsg forwards blockchain messages to the sign protocol
 func (mgr *Mgr) ProcessSignMsg(attributes []sdk.Attribute) error {
-	sigID, from, payload := parseMsgParams(attributes)
+	sigID, from, payload := parseMsgParams(mgr.cdc, attributes)
 	msgIn, err := prepareTrafficIn(mgr.principalAddr, from, sigID, payload, mgr.Logger)
 	if err != nil {
 		return err
@@ -79,7 +79,7 @@ func (mgr *Mgr) ProcessSignMsg(attributes []sdk.Attribute) error {
 	return nil
 }
 
-func parseSignStartParams(attributes []sdk.Attribute) (keyID string, sigID string, participants []string, payload []byte) {
+func parseSignStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, sigID string, participants []string, payload []byte) {
 	for _, attribute := range attributes {
 		switch attribute.Key {
 		case tss.AttributeKeyKeyID:
@@ -87,7 +87,7 @@ func parseSignStartParams(attributes []sdk.Attribute) (keyID string, sigID strin
 		case tss.AttributeKeySigID:
 			sigID = attribute.Value
 		case tss.AttributeKeyParticipants:
-			codec.Cdc.MustUnmarshalJSON([]byte(attribute.Value), &participants)
+			cdc.MustUnmarshalJSON([]byte(attribute.Value), &participants)
 		case tss.AttributeKeyPayload:
 			payload = []byte(attribute.Value)
 		default:
@@ -151,7 +151,7 @@ func (mgr *Mgr) handleSignResult(sigID string, result <-chan []byte) error {
 	mgr.Logger.Info(fmt.Sprintf("handler goroutine: received sig from server! [%.20s]", bz))
 
 	poll := voting.NewPollMeta(tss.ModuleName, sigID)
-	vote := tss.MsgVoteSig{Sender: mgr.sender, PollMeta: poll, SigBytes: bz}
+	vote := &tss.MsgVoteSig{Sender: mgr.sender, PollMeta: poll, SigBytes: bz}
 	return mgr.broadcaster.Broadcast(vote)
 }
 

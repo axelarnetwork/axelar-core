@@ -62,8 +62,8 @@ message MsgSignDeployToken {
 // MsgSignPendingTransfers represents a message to trigger the signing of all
 // pending transfers
 message MsgSignPendingTransfers {
-  string sender = 1 [ (gogoproto.casttype) =
-                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
 }
 
 message MsgSignTx {
@@ -89,7 +89,6 @@ message MsgVoteConfirmToken {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   vote.exported.v1beta1.PollMeta poll = 2 [ (gogoproto.nullable) = false ];
-  ;
   string tx_id = 3 [ (gogoproto.customname) = "TxID" ];
   string symbol = 4;
   bool confirmed = 5;

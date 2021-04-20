@@ -34,7 +34,7 @@ func (AppModuleBasic) Name() string {
 
 // RegisterLegacyAminoCodec registers this module's types on the LegacyAmino codec.
 func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	types.RegisterCodec(cdc)
+	types.RegisterLegacyAminoCodec(cdc)
 }
 
 // DefaultGenesis returns the default genesis state

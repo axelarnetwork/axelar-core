@@ -2,8 +2,7 @@ package keeper
 
 import (
 	"crypto/ecdsa"
-	"crypto/rand"
-	"strconv"
+	cryptoRand "crypto/rand"
 	"testing"
 	"time"
 
@@ -13,9 +12,10 @@ import (
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
+	"github.com/tendermint/tendermint/libs/rand"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/axelarnetwork/axelar-core/app"
+	appParams "github.com/axelarnetwork/axelar-core/app/params"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
@@ -58,7 +58,7 @@ type testSetup struct {
 
 func setup(t *testing.T) *testSetup {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-	encCfg:= app.MakeEncodingConfig()
+	encCfg := appParams.MakeEncodingConfig()
 	broadcaster := prepareBroadcaster(t, ctx, encCfg.Amino, validators)
 	voter := &tssMock.VoterMock{
 		InitPollFunc: func(sdk.Context, exported.PollMeta, int64) error { return nil },
@@ -106,7 +106,7 @@ func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context) tss.Key {
 	err := s.Keeper.StartKeygen(ctx, s.Voter, keyID, len(validators)-1, snap)
 	assert.NoError(t, err)
 
-	sk, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
+	sk, err := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
 	if err != nil {
 		panic(err)
 	}
@@ -123,8 +123,8 @@ func prepareBroadcaster(t *testing.T, ctx sdk.Context, cdc *codec.LegacyAmino, v
 		return make(chan *fake.Result)
 	})
 
-	for i, v := range validators {
-		assert.NoError(t, broadcaster.RegisterProxy(ctx, v.GetOperator(), sdk.AccAddress("proxy"+strconv.Itoa(i))))
+	for _, v := range validators {
+		assert.NoError(t, broadcaster.RegisterProxy(ctx, v.GetOperator(), rand.Bytes(sdk.AddrLen)))
 	}
 
 	return broadcaster
@@ -134,6 +134,6 @@ func newValidator(address sdk.ValAddress, power int64) *snapMock.ValidatorMock {
 	return &snapMock.ValidatorMock{
 		GetOperatorFunc:       func() sdk.ValAddress { return address },
 		GetConsensusPowerFunc: func() int64 { return power },
-		GetConsAddrFunc:       func() sdk.ConsAddress { return address.Bytes() },
+		GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return address.Bytes(), nil },
 	}
 }
