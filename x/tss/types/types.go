@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
+	"github.com/axelarnetwork/axelar-core/third_party/proto/tofnd"
 )
 
 // TODO: move to vald

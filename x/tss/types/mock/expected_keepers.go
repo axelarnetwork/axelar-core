@@ -5,7 +5,7 @@ package mock
 
 import (
 	"context"
-	tofnd "github.com/axelarnetwork/axelar-core/x/tss/tofnd"
+	tofnd "github.com/axelarnetwork/axelar-core/third_party/proto/tofnd"
 	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	exported1 "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"

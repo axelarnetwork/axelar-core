@@ -3,7 +3,7 @@ syntax = "proto3";
 
 package tofnd;
 
-option go_package = "github.com/axelarnetwork/axelar-core/x/tss/tofnd";
+option go_package = "github.com/axelarnetwork/axelar-core/third_party/proto/tofnd";
 
 // GG20 is the protocol https://eprint.iacr.org/2020/540
 // rpc definitions intended to wrap the API for this library:
