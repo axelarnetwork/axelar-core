@@ -20,8 +20,6 @@ const _ = grpc.SupportPackageIsVersion7
 type GG20Client interface {
 	Keygen(ctx context.Context, opts ...grpc.CallOption) (GG20_KeygenClient, error)
 	Sign(ctx context.Context, opts ...grpc.CallOption) (GG20_SignClient, error)
-	GetKey(ctx context.Context, in *Uid, opts ...grpc.CallOption) (*Bytes, error)
-	GetSig(ctx context.Context, in *Uid, opts ...grpc.CallOption) (*Bytes, error)
 }
 
 type gG20Client struct {
@@ -94,32 +92,12 @@ func (x *gG20SignClient) Recv() (*MessageOut, error) {
 	return m, nil
 }
 
-func (c *gG20Client) GetKey(ctx context.Context, in *Uid, opts ...grpc.CallOption) (*Bytes, error) {
-	out := new(Bytes)
-	err := c.cc.Invoke(ctx, "/tofnd.GG20/GetKey", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *gG20Client) GetSig(ctx context.Context, in *Uid, opts ...grpc.CallOption) (*Bytes, error) {
-	out := new(Bytes)
-	err := c.cc.Invoke(ctx, "/tofnd.GG20/GetSig", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // GG20Server is the server API for GG20 service.
 // All implementations must embed UnimplementedGG20Server
 // for forward compatibility
 type GG20Server interface {
 	Keygen(GG20_KeygenServer) error
 	Sign(GG20_SignServer) error
-	GetKey(context.Context, *Uid) (*Bytes, error)
-	GetSig(context.Context, *Uid) (*Bytes, error)
 	mustEmbedUnimplementedGG20Server()
 }
 
@@ -132,12 +110,6 @@ func (UnimplementedGG20Server) Keygen(GG20_KeygenServer) error {
 }
 func (UnimplementedGG20Server) Sign(GG20_SignServer) error {
 	return status.Errorf(codes.Unimplemented, "method Sign not implemented")
-}
-func (UnimplementedGG20Server) GetKey(context.Context, *Uid) (*Bytes, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetKey not implemented")
-}
-func (UnimplementedGG20Server) GetSig(context.Context, *Uid) (*Bytes, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetSig not implemented")
 }
 func (UnimplementedGG20Server) mustEmbedUnimplementedGG20Server() {}
 
@@ -204,55 +176,10 @@ func (x *gG20SignServer) Recv() (*MessageIn, error) {
 	return m, nil
 }
 
-func _GG20_GetKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Uid)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GG20Server).GetKey(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/tofnd.GG20/GetKey",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GG20Server).GetKey(ctx, req.(*Uid))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _GG20_GetSig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Uid)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GG20Server).GetSig(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/tofnd.GG20/GetSig",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GG20Server).GetSig(ctx, req.(*Uid))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 var _GG20_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "tofnd.GG20",
 	HandlerType: (*GG20Server)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetKey",
-			Handler:    _GG20_GetKey_Handler,
-		},
-		{
-			MethodName: "GetSig",
-			Handler:    _GG20_GetSig_Handler,
-		},
-	},
+	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "Keygen",

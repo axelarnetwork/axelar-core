@@ -98,9 +98,15 @@ func handleStream(stream tss.Stream, cancel context.CancelFunc, logger log.Logge
 			case *tofnd.MessageOut_KeygenResult:
 				resChan <- msg.KeygenResult
 				return
-			case *tofnd.MessageOut_SignResult:
-				resChan <- msg.SignResult
-				return
+			case *tofnd.MessageOut_SignResult_:
+				switch signResult := msg.SignResult.GetSignResultData().(type) {
+				case *tofnd.MessageOut_SignResult_Signature:
+					resChan <- signResult.Signature
+					return
+				default:
+					// TODO handle failure: vote on criminals
+					panic("not implemented: support for sign failure")
+				}
 			default:
 				errChan <- fmt.Errorf("handler goroutine: server stream should send only msg type")
 				return
