@@ -8,39 +8,32 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-// MsgSignDeployToken represents the message to sign a deploy token command for AxelarGateway
-type MsgSignTransferOwnership struct {
-	Sender   sdk.AccAddress
-	NewOwner string
-}
-
 // Route implements sdk.Msg
-func (msg MsgSignTransferOwnership) Route() string {
+func (m MsgSignTransferOwnership) Route() string {
 	return RouterKey
 }
 
 // Type implements sdk.Msg
-func (msg MsgSignTransferOwnership) Type() string {
+func (m MsgSignTransferOwnership) Type() string {
 	return "SignTransferOwnership"
 }
 
 // GetSignBytes  implements sdk.Msg
-func (msg MsgSignTransferOwnership) GetSignBytes() []byte {
-	bz := ModuleCdc.MustMarshalJSON(msg)
-	return sdk.MustSortJSON(bz)
+func (m MsgSignTransferOwnership) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
 // GetSigners implements sdk.Msg
-func (msg MsgSignTransferOwnership) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Sender}
+func (m MsgSignTransferOwnership) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{m.Sender}
 }
 
 // ValidateBasic implements sdk.Msg
-func (msg MsgSignTransferOwnership) ValidateBasic() error {
-	if msg.Sender.Empty() {
+func (m MsgSignTransferOwnership) ValidateBasic() error {
+	if m.Sender.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
-	if msg.NewOwner == "" {
+	if m.NewOwner == "" {
 		return fmt.Errorf("missing new owner address")
 	}
 
@@ -48,6 +41,6 @@ func (msg MsgSignTransferOwnership) ValidateBasic() error {
 }
 
 // NewMsgSignTransferOwnership is the constructor for MsgSignTransferOwnership
-func NewMsgSignTransferOwnership(sender sdk.AccAddress, newOwner common.Address) sdk.Msg {
-	return MsgSignTransferOwnership{Sender: sender, NewOwner: newOwner.Hex()}
+func NewMsgSignTransferOwnership(sender sdk.AccAddress, newOwner common.Address) *MsgSignTransferOwnership {
+	return &MsgSignTransferOwnership{Sender: sender, NewOwner: newOwner.Hex()}
 }

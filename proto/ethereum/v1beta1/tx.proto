@@ -93,3 +93,11 @@ message MsgVoteConfirmToken {
   string symbol = 4;
   bool confirmed = 5;
 }
+
+// MsgSignDeployToken represents the message to sign a deploy token command for
+// AxelarGateway
+message MsgSignTransferOwnership {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string new_owner = 2;
+}

@@ -71,6 +71,7 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_NewKeyIsSet(t *testing.T) {
 		ctx := s.Ctx.WithBlockHeight(currHeight)
 		s.SetLockingPeriod(lockingPeriod)
 		expectedKey := s.SetKey(t, ctx)
+		expectedKey.Role = exported.MasterKey
 
 		assert.NoError(t, s.Keeper.AssignNextKey(ctx, chain, exported.MasterKey, expectedKey.ID))
 		assert.NoError(t, s.Keeper.RotateKey(s.Ctx, chain, exported.MasterKey))

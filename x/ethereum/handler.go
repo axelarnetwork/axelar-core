@@ -44,7 +44,7 @@ func NewHandler(k keeper.Keeper, v types.Voter, s types.Signer, n types.Nexus, s
 			return handleMsgSignTx(ctx, k, s, snapshotter, v, msg)
 		case *types.MsgSignPendingTransfers:
 			return handleMsgSignPendingTransfers(ctx, k, s, n, snapshotter, v, msg)
-		case types.MsgSignTransferOwnership:
+		case *types.MsgSignTransferOwnership:
 			return handleMsgSignTransferOwnership(ctx, k, s, snapshotter, v, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
@@ -637,7 +637,7 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 	}, nil
 }
 
-func handleMsgSignTransferOwnership(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snapshotter types.Snapshotter, v types.Voter, msg types.MsgSignTransferOwnership) (*sdk.Result, error) {
+func handleMsgSignTransferOwnership(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snapshotter types.Snapshotter, v types.Voter, msg *types.MsgSignTransferOwnership) (*sdk.Result, error) {
 
 	chainID := k.GetNetwork(ctx).Params().ChainID
 
@@ -687,6 +687,6 @@ func handleMsgSignTransferOwnership(ctx sdk.Context, k keeper.Keeper, signer typ
 	return &sdk.Result{
 		Data:   commandID[:],
 		Log:    fmt.Sprintf("successfully started signing protocol for transfer-ownership command %s", commandIDHex),
-		Events: ctx.EventManager().Events(),
+		Events: ctx.EventManager().ABCIEvents(),
 	}, nil
 }

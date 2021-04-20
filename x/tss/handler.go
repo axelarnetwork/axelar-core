@@ -18,7 +18,7 @@ func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Vot
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
 		case *types.MsgKeygenTraffic:
-			return handleMsgKeygenTraffic(ctx, k,broadcaster, msg)
+			return handleMsgKeygenTraffic(ctx, k, broadcaster, msg)
 		case *types.MsgSignTraffic:
 			return handleMsgSignTraffic(ctx, k, broadcaster, msg)
 		case *types.MsgKeygenStart:
@@ -262,7 +262,7 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 			sdk.NewAttribute(types.AttributeKeyKeyID, msg.NewKeyID),
 			sdk.NewAttribute(types.AttributeKeyThreshold, strconv.Itoa(threshold)),
-			sdk.NewAttribute(types.AttributeKeyParticipants, string(types.ModuleCdc.MustMarshalJSON(participants)))))
+			sdk.NewAttribute(types.AttributeKeyParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participants)))))
 
 	k.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d]", msg.NewKeyID, threshold))
 

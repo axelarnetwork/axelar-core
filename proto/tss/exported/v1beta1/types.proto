@@ -16,7 +16,7 @@ enum KeyRole {
   option (gogoproto.goproto_enum_prefix) = false;
   option (gogoproto.goproto_enum_stringer) = false;
 
-  KEY_ROLE_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "Unkown" ];
+  KEY_ROLE_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "Unknown" ];
   KEY_ROLE_MASTER_KEY = 1 [ (gogoproto.enumvalue_customname) = "MasterKey" ];
   KEY_ROLE_SECONDARY_KEY = 2
       [ (gogoproto.enumvalue_customname) = "SecondaryKey" ];

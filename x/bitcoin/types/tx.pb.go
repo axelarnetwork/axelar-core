@@ -4,16 +4,14 @@
 package types
 
 import (
-	"fmt"
-	"io"
-	"math"
-	math_bits "math/bits"
-
+	fmt "fmt"
+	exported "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/gogo/protobuf/gogoproto"
-	"github.com/gogo/protobuf/proto"
-
-	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	proto "github.com/gogo/protobuf/proto"
+	io "io"
+	math "math"
+	math_bits "math/bits"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
