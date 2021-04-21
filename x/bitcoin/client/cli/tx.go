@@ -58,7 +58,7 @@ func GetCmdConfirmTxOut(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			outInfo, err := types.NewOutPointInfo(outPoint, btcutil.Amount(satoshi.Amount.Int64()), args[2])
+			outInfo := types.NewOutPointInfo(outPoint, btcutil.Amount(satoshi.Amount.Int64()), args[2])
 
 			msg := types.MsgConfirmOutpoint{Sender: cliCtx.GetFromAddress(), OutPointInfo: outInfo}
 

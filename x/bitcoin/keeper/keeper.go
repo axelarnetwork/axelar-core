@@ -22,8 +22,9 @@ const (
 	addrPrefix              = "addr_"
 	dustAmtPrefix           = "dust_"
 
-	unsignedTxKey = "unsignedTx"
-	signedTxKey   = "signedTx"
+	unsignedTxKey          = "unsignedTx"
+	signedTxKey            = "signedTx"
+	masterKeyUtxoExistsKey = "master_key_utxo_exists"
 )
 
 var _ types.BTCKeeper = Keeper{}
@@ -284,4 +285,14 @@ func (k Keeper) GetDustAmount(ctx sdk.Context, encodedAddress string) (sdk.Int, 
 // DeleteDustAmount deletes the dust amount for a destination bitcoin address
 func (k Keeper) DeleteDustAmount(ctx sdk.Context, encodedAddress string) {
 	ctx.KVStore(k.storeKey).Delete([]byte(dustAmtPrefix + encodedAddress))
+}
+
+// SetMasterKeyOutpointExists sets existence for UTXO controlled by the master key
+func (k Keeper) SetMasterKeyOutpointExists(ctx sdk.Context) {
+	ctx.KVStore(k.storeKey).Set([]byte(masterKeyUtxoExistsKey), []byte{})
+}
+
+// DoesMasterKeyOutpointExist returns true if there is any UTXO controlled by the master key; otherwise, false
+func (k Keeper) DoesMasterKeyOutpointExist(ctx sdk.Context) bool {
+	return ctx.KVStore(k.storeKey).Has([]byte(masterKeyUtxoExistsKey))
 }

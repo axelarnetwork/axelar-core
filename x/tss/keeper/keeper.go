@@ -26,6 +26,7 @@ const (
 	participatePrefix           = "part_"
 	validatorDeregisteredPrefix = "validator_deregistered_block_height_"
 	keyRequirementPrefix        = "key_requirement_"
+	keyRolePrefix               = "key_role_"
 )
 
 type Keeper struct {
