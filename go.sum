@@ -83,6 +83,7 @@ github.com/aws/aws-sdk-go v1.27.0/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN
 github.com/aws/aws-sdk-go-v2 v0.18.0/go.mod h1:JWVYvqSMppoMJC0x5wdwiImzgXTI9FuZwxzkQq9wy+g=
 github.com/axelarnetwork/axelar-core v0.0.2-0.20210302093357-f2f67692d1ba/go.mod h1:JDzy4mE0MHSdMcSRRcttESUyQ8a1YWFWDWaLJ5/gJbA=
 github.com/axelarnetwork/axelar-core v0.2.0/go.mod h1:vaXQReZJ1ZunnmWD2r2XMncW4JK0pMnFZs82za0qonI=
+github.com/axelarnetwork/axelar-core v0.2.1-0.20210420090019-80d67305ddbd/go.mod h1:HSFbr2Mvr1TSFepBa2bzmSImbv0MHCZYYxwOE0++XZQ=
 github.com/axelarnetwork/c2d2 v0.0.0-20210302225045-2f24e9ea1116 h1:zegF+1j6qph5URd0bnIMJ6uI3pV95xLgjX1e5VbMe9c=
 github.com/axelarnetwork/c2d2 v0.0.0-20210302225045-2f24e9ea1116/go.mod h1:wPKBFS06EN2PTjk3QUJK9sakL2NAUhGhhTfWAaq+kL0=
 github.com/axelarnetwork/c2d2 v0.0.0-20210322011526-cf631cda06eb h1:Iz4mFGlG0/9dA5B3devh855jyAZoukoCXR2zaxzdOog=
@@ -93,6 +94,8 @@ github.com/axelarnetwork/c2d2 v0.0.0-20210325005703-59a659974b75 h1:sSKfare2BHTb
 github.com/axelarnetwork/c2d2 v0.0.0-20210325005703-59a659974b75/go.mod h1:g2Wj6hklfrEcUfT8cyyOqynRBZl4JlaWWwLQQeTtfpw=
 github.com/axelarnetwork/c2d2 v0.0.0-20210330235528-2fe5a04ab3dd h1:TFFUucN+vdIL3B5ka+0ESyoZScLTvTEvxgPICz4gPbo=
 github.com/axelarnetwork/c2d2 v0.0.0-20210330235528-2fe5a04ab3dd/go.mod h1:g2Wj6hklfrEcUfT8cyyOqynRBZl4JlaWWwLQQeTtfpw=
+github.com/axelarnetwork/c2d2 v0.0.0-20210421090436-d4b33584a58e h1:tFzqHliErvTJahTHx8gKm5H0Q+YXK8IaW/LrEx1jDbE=
+github.com/axelarnetwork/c2d2 v0.0.0-20210421090436-d4b33584a58e/go.mod h1:jn5OqnZRu1WjfwHAVvooJQJ0fEtCfJVezF2bLJ18Llo=
 github.com/bartekn/go-bip39 v0.0.0-20171116152956-a05967ea095d h1:1aAija9gr0Hyv4KfQcRcwlmFIrhkDmIj2dz5bkg/s/8=
 github.com/bartekn/go-bip39 v0.0.0-20171116152956-a05967ea095d/go.mod h1:icNx/6QdFblhsEjZehARqbNumymUT/ydwlLojFdv7Sk=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
