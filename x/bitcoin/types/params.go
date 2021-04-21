@@ -15,10 +15,11 @@ const (
 
 // Parameter keys
 var (
-	KeyConfirmationHeight  = []byte("confirmationHeight")
-	KeyNetwork             = []byte("network")
-	KeyRevoteLockingPeriod = []byte("RevoteLockingPeriod")
-	KeySigCheckInterval    = []byte("KeySigCheckInterval")
+	KeyConfirmationHeight    = []byte("confirmationHeight")
+	KeyNetwork               = []byte("network")
+	KeyRevoteLockingPeriod   = []byte("RevoteLockingPeriod")
+	KeySigCheckInterval      = []byte("KeySigCheckInterval")
+	KeyMinimumWithdralAmount = []byte("KeyMinimumWithdralAmount")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -28,19 +29,21 @@ func KeyTable() subspace.KeyTable {
 
 // Params is the parameter set for this module
 type Params struct {
-	ConfirmationHeight  uint64
-	Network             Network
-	RevoteLockingPeriod int64
-	SigCheckInterval    int64
+	ConfirmationHeight    uint64
+	Network               Network
+	RevoteLockingPeriod   int64
+	SigCheckInterval      int64
+	MinimumWithdralAmount int64
 }
 
 // DefaultParams returns the module's parameter set initialized with default values
 func DefaultParams() Params {
 	return Params{
-		ConfirmationHeight:  1,
-		Network:             Regtest,
-		RevoteLockingPeriod: 50,
-		SigCheckInterval:    10,
+		ConfirmationHeight:    1,
+		Network:               Regtest,
+		RevoteLockingPeriod:   50,
+		SigCheckInterval:      10,
+		MinimumWithdralAmount: 5000,
 	}
 }
 
@@ -58,6 +61,7 @@ func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
 		subspace.NewParamSetPair(KeyNetwork, &p.Network, validateNetwork),
 		subspace.NewParamSetPair(KeyRevoteLockingPeriod, &p.RevoteLockingPeriod, validateRevoteLockingPeriod),
 		subspace.NewParamSetPair(KeySigCheckInterval, &p.SigCheckInterval, validateSigCheckInterval),
+		subspace.NewParamSetPair(KeyMinimumWithdralAmount, &p.MinimumWithdralAmount, validateMinimumWithdralAmount),
 	}
 }
 
@@ -93,6 +97,19 @@ func validateRevoteLockingPeriod(period interface{}) error {
 	return nil
 }
 
+func validateMinimumWithdralAmount(amount interface{}) error {
+	i, ok := amount.(int64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for minimum withdrawal amount: %T", i)
+	}
+
+	if i <= 0 {
+		return sdkerrors.Wrap(types.ErrInvalidGenesis, " minimum withdrawal amount must be greater than 0")
+	}
+
+	return nil
+}
+
 func validateSigCheckInterval(interval interface{}) error {
 	i, ok := interval.(int64)
 	if !ok {
@@ -119,7 +136,12 @@ func (p Params) Validate() error {
 	if err := validateRevoteLockingPeriod(p.RevoteLockingPeriod); err != nil {
 		return err
 	}
+
 	if err := validateSigCheckInterval(p.SigCheckInterval); err != nil {
+		return err
+	}
+
+	if err := validateMinimumWithdralAmount(p.MinimumWithdralAmount); err != nil {
 		return err
 	}
 

@@ -257,9 +257,14 @@ func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer ty
 }
 
 func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.Output, sdk.Int) {
+	MIN_AMOUNT := sdk.NewInt(k.GetMinimumWithdrawalAmount(ctx))
+
 	pendingTransfers := n.GetPendingTransfersForChain(ctx, exported.Bitcoin)
 	var outPuts []types.Output
 	totalOut := sdk.ZeroInt()
+
+	addrWithdrawal := make(map[btcutil.Address]sdk.Int)
+	// Combine output to same destination address
 	for _, transfer := range pendingTransfers {
 		recipient, err := btcutil.DecodeAddress(transfer.Recipient.Address, k.GetNetwork(ctx).Params())
 		if err != nil {
@@ -267,11 +272,51 @@ func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.
 			continue
 		}
 
-		outPuts = append(outPuts,
-			types.Output{Amount: btcutil.Amount(transfer.Asset.Amount.Int64()), Recipient: recipient})
-		totalOut = totalOut.Add(transfer.Asset.Amount)
+		if _, ok := addrWithdrawal[recipient]; ok {
+			addrWithdrawal[recipient] = addrWithdrawal[recipient].Add(transfer.Asset.Amount)
+		} else {
+			addrWithdrawal[recipient] = transfer.Asset.Amount
+		}
+
 		n.ArchivePendingTransfer(ctx, transfer)
 	}
+
+	for recipient, amount := range addrWithdrawal {
+		// Check if the recipient has unsent dust amount
+		unSentDust, found := k.GetDustAmount(ctx, recipient.EncodeAddress())
+
+		if found {
+			amount = amount.Add(unSentDust)
+		}
+
+		if amount.LT(MIN_AMOUNT) {
+			// Set and continue
+			k.SetDustAmount(ctx, recipient.EncodeAddress(), amount)
+
+			event := sdk.NewEvent(types.EventTypeWithdrawalFailed,
+				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+				sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.EncodeAddress()),
+				sdk.NewAttribute(types.AttributeKeyAmount, amount.String()),
+				sdk.NewAttribute(sdk.EventTypeMessage, fmt.Sprintf("Withdrawal below minmum amount %s", MIN_AMOUNT)),
+			)
+
+			ctx.EventManager().EmitEvent(event)
+
+			continue
+		}
+
+		if found {
+			// Delete the dustAmount
+			k.DeleteDustAmount(ctx, recipient.EncodeAddress())
+		}
+
+		outPuts = append(outPuts,
+			types.Output{Amount: btcutil.Amount(amount.Int64()), Recipient: recipient})
+
+		totalOut = totalOut.Add(amount)
+
+	}
+
 	return outPuts, totalOut
 }
 

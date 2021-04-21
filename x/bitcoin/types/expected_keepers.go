@@ -25,6 +25,7 @@ type BTCKeeper interface {
 	GetRevoteLockingPeriod(ctx sdk.Context) int64
 	GetSigCheckInterval(ctx sdk.Context) int64
 	GetNetwork(ctx sdk.Context) Network
+	GetMinimumWithdrawalAmount(ctx sdk.Context) int64
 
 	SetPendingOutpointInfo(ctx sdk.Context, poll vote.PollMeta, info OutPointInfo)
 	GetPendingOutPointInfo(ctx sdk.Context, poll vote.PollMeta) (OutPointInfo, bool)
@@ -43,6 +44,10 @@ type BTCKeeper interface {
 
 	SetAddress(ctx sdk.Context, address AddressInfo)
 	GetAddress(ctx sdk.Context, encodedAddress string) (AddressInfo, bool)
+
+	GetDustAmount(ctx sdk.Context, encodedAddress string) (sdk.Int, bool)
+	SetDustAmount(ctx sdk.Context, encodedAddress string, amount sdk.Int)
+	DeleteDustAmount(ctx sdk.Context, encodedAddress string)
 }
 
 // Voter is the interface that provides voting functionality

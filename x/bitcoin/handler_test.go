@@ -401,13 +401,14 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		}
 
 		btcKeeper = &mock.BTCKeeperMock{
-			GetUnsignedTxFunc:             func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
-			GetSignedTxFunc:               func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
-			GetNetworkFunc:                func(sdk.Context) types.Network { return types.Mainnet },
-			LoggerFunc:                    func(sdk.Context) log.Logger { return log.TestingLogger() },
-			GetConfirmedOutPointInfosFunc: func(sdk.Context) []types.OutPointInfo { return deposits },
-			DeleteOutpointInfoFunc:        func(sdk.Context, wire.OutPoint) {},
-			SetOutpointInfoFunc:           func(sdk.Context, types.OutPointInfo, types.OutPointState) {},
+			GetUnsignedTxFunc:              func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
+			GetSignedTxFunc:                func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
+			GetNetworkFunc:                 func(sdk.Context) types.Network { return types.Mainnet },
+			GetMinimumWithdrawalAmountFunc: func(sdk.Context) int64 { return 5000 },
+			LoggerFunc:                     func(sdk.Context) log.Logger { return log.TestingLogger() },
+			GetConfirmedOutPointInfosFunc:  func(sdk.Context) []types.OutPointInfo { return deposits },
+			DeleteOutpointInfoFunc:         func(sdk.Context, wire.OutPoint) {},
+			SetOutpointInfoFunc:            func(sdk.Context, types.OutPointInfo, types.OutPointState) {},
 			GetAddressFunc: func(_ sdk.Context, encodedAddress string) (types.AddressInfo, bool) {
 				sk, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
 				return types.AddressInfo{
@@ -421,6 +422,9 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 			},
 			SetAddressFunc:    func(sdk.Context, types.AddressInfo) {},
 			SetUnsignedTxFunc: func(sdk.Context, *wire.MsgTx) {},
+			GetDustAmountFunc: func(ctx sdk.Context, encodedAddress string) (sdk.Int, bool) {
+				return sdk.ZeroInt(), false
+			},
 		}
 		nexusKeeper = &mock.NexusMock{
 			GetPendingTransfersForChainFunc: func(sdk.Context, nexus.Chain) []nexus.CrossChainTransfer { return transfers },
