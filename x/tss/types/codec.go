@@ -2,7 +2,9 @@ package types
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
+	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // RegisterLegacyAminoCodec registers concrete types on codec
@@ -18,6 +20,20 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 
 	// this module's votes contain byte slices and for the VotingData interface
 	cdc.RegisterConcrete([]byte{}, "tss/bytes", nil)
+}
+
+// RegisterInterfaces registers types and interfaces with the given registry
+func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
+	registry.RegisterImplementations((*sdk.Msg)(nil),
+		&MsgKeygenStart{},
+		&MsgKeygenTraffic{},
+		&MsgSignTraffic{},
+		&MsgAssignNextKey{},
+		&MsgRotateKey{},
+		&MsgVoteSig{},
+		&MsgVotePubKey{},
+		&MsgDeregister{},
+	)
 }
 
 var amino = codec.NewLegacyAmino()

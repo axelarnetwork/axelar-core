@@ -34,6 +34,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/app/params"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald"
 	"github.com/axelarnetwork/axelar-core/x/tss"
 )
 
@@ -73,6 +74,8 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		flags.FlagKeyringBackend: "test",
 	})
 
+	rootCmd.PersistentFlags().String(tmcli.OutputFlag, "text", "Output format (text|json)")
+
 	return rootCmd, encodingConfig
 }
 
@@ -94,6 +97,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		SetGenesisSnapshotCmd(app.DefaultNodeHome),
 		SetGenesisEthContractsCmd(app.DefaultNodeHome),
 		SetGenesisChainParamsCmd(app.DefaultNodeHome),
+		vald.GetValdCommand(),
 	)
 
 	server.AddCommands(rootCmd, app.DefaultNodeHome, newApp, export(encodingConfig), addAdditionalFlags)
@@ -219,7 +223,6 @@ func txCommand() *cobra.Command {
 		authcmd.GetMultiSignCommand(),
 		authcmd.GetValidateSignaturesCommand(),
 		flags.LineBreak,
-		authcmd.GetBroadcastCommand(),
 		authcmd.GetEncodeCommand(),
 		authcmd.GetDecodeCommand(),
 		flags.LineBreak,
@@ -232,6 +235,7 @@ func txCommand() *cobra.Command {
 	return cmd
 }
 
+// OverwriteFlagDefaults overwrites the default values for already defined flags
 func OverwriteFlagDefaults(c *cobra.Command, defaults map[string]string) {
 	set := func(s *pflag.FlagSet, key, val string) {
 		if f := s.Lookup(key); f != nil {

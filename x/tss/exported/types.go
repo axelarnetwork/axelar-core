@@ -28,9 +28,9 @@ func GetKeyRoles() []KeyRole {
 // KeyRoleFromStr creates a KeyRole from string
 func KeyRoleFromStr(str string) (KeyRole, error) {
 	switch strings.ToLower(str) {
-	case MasterKey.String():
+	case MasterKey.string():
 		return MasterKey, nil
-	case SecondaryKey.String():
+	case SecondaryKey.string():
 		return SecondaryKey, nil
 	default:
 		return -1, fmt.Errorf("invalid key role %s", str)
@@ -38,20 +38,20 @@ func KeyRoleFromStr(str string) (KeyRole, error) {
 }
 
 // Validate validates the KeyRole
-func (r KeyRole) Validate() error {
-	switch r {
+func (x KeyRole) Validate() error {
+	switch x {
 	case MasterKey, SecondaryKey:
 		return nil
 	default:
-		return fmt.Errorf("invalid key role %d", r)
+		return fmt.Errorf("invalid key role %d", x)
 	}
 }
 
 // String converts the KeyRole to a string
-func (r KeyRole) String() string {
-	switch r {
+func (x KeyRole) string() string {
+	switch x {
 	case MasterKey:
-		return "master"
+		return KeyRole_name[int32(x)]
 	case SecondaryKey:
 		return "secondary"
 	default:

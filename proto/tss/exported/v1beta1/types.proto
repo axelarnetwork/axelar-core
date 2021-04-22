@@ -14,7 +14,7 @@ message KeyRequirement {
 
 enum KeyRole {
   option (gogoproto.goproto_enum_prefix) = false;
-  option (gogoproto.goproto_enum_stringer) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
 
   KEY_ROLE_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "Unknown" ];
   KEY_ROLE_MASTER_KEY = 1 [ (gogoproto.enumvalue_customname) = "MasterKey" ];

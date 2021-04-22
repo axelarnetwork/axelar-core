@@ -15,8 +15,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	tmLog "github.com/tendermint/tendermint/libs/log"
 
-	"github.com/axelarnetwork/axelar-core/cmd/vald/broadcast/types"
-	ethRPC "github.com/axelarnetwork/axelar-core/cmd/vald/eth/rpc"
+	types2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
+	rpc2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/eth/rpc"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -31,14 +31,14 @@ var (
 // Mgr manages all communication with Ethereum
 type Mgr struct {
 	logger      tmLog.Logger
-	rpc         ethRPC.Client
-	broadcaster types.Broadcaster
+	rpc         rpc2.Client
+	broadcaster types2.Broadcaster
 	sender      sdk.AccAddress
 	cdc         *codec.LegacyAmino
 }
 
 // NewMgr returns a new Mgr instance
-func NewMgr(rpc ethRPC.Client, broadcaster types.Broadcaster, sender sdk.AccAddress, logger tmLog.Logger, cdc *codec.LegacyAmino) *Mgr {
+func NewMgr(rpc rpc2.Client, broadcaster types2.Broadcaster, sender sdk.AccAddress, logger tmLog.Logger, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
 		rpc:         rpc,
 		broadcaster: broadcaster,

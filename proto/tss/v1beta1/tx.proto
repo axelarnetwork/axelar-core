@@ -5,7 +5,7 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/tss/types";
 
 import "gogoproto/gogo.proto";
 import "tss/exported/v1beta1/types.proto";
-import "tofnd/tofnd.proto";
+import "tss/tofnd/v1beta1/tofnd.proto";
 import "vote/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
@@ -50,7 +50,7 @@ message MsgKeygenTraffic {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string session_id = 2 [ (gogoproto.customname) = "SessionID" ];
-  tofnd.TrafficOut payload = 3;
+  tofnd.v1beta1.TrafficOut payload = 3;
 }
 
 // MsgSignTraffic protocol message
@@ -58,7 +58,7 @@ message MsgSignTraffic {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string session_id = 2 [ (gogoproto.customname) = "SessionID" ];
-  tofnd.TrafficOut payload = 3;
+  tofnd.v1beta1.TrafficOut payload = 3;
 }
 
 // MsgVotePubKey represents the message to vote on a public key

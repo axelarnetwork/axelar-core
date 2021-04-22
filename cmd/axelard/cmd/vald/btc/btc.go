@@ -10,8 +10,8 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
 
-	broadcast "github.com/axelarnetwork/axelar-core/cmd/vald/broadcast/types"
-	rpc2 "github.com/axelarnetwork/axelar-core/cmd/vald/btc/rpc"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
+	rpc3 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -19,14 +19,14 @@ import (
 // Mgr manages all communication with Bitcoin
 type Mgr struct {
 	logger      log.Logger
-	broadcaster broadcast.Broadcaster
-	rpc         rpc2.Client
+	broadcaster types.Broadcaster
+	rpc         rpc3.Client
 	sender      sdk.AccAddress
 	cdc         *codec.LegacyAmino
 }
 
 // NewMgr returns a new Mgr instance
-func NewMgr(rpc rpc2.Client, broadcaster broadcast.Broadcaster, defaultSender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
+func NewMgr(rpc rpc3.Client, broadcaster types.Broadcaster, defaultSender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
 		rpc:         rpc,
 		logger:      logger.With("listener", "btc"),
@@ -84,7 +84,7 @@ func parseConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute)
 	return outPoint, confHeight, poll, nil
 }
 
-func confirmTx(rpc rpc2.Client, outPointInfo btc.OutPointInfo, requiredConfirmations int64) error {
+func confirmTx(rpc rpc3.Client, outPointInfo btc.OutPointInfo, requiredConfirmations int64) error {
 	outPoint := outPointInfo.GetOutPoint()
 	actualTxOut, err := rpc.GetTxOut(&outPoint.Hash, outPoint.Index, false)
 	if err != nil {

@@ -37,7 +37,7 @@ func NewKeeper(cdc *codec.LegacyAmino, key sdk.StoreKey, paramSpace params.Subsp
 		storeKey:    key,
 		cdc:         cdc,
 		staking:     staking,
-		params:      paramSpace.WithKeyTable(types.KeyTable()),
+		params:      paramSpace,
 		slasher:     slasher,
 		broadcaster: broadcaster,
 		tss:         tss,

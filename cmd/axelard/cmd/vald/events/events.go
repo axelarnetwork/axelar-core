@@ -11,7 +11,7 @@ import (
 	"github.com/tendermint/tendermint/libs/pubsub/query"
 	tm "github.com/tendermint/tendermint/types"
 
-	"github.com/axelarnetwork/axelar-core/cmd/vald/jobs"
+	jobs2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/jobs"
 )
 
 // FilteredSubscriber filters events of a subscriber according to a predicate
@@ -46,7 +46,7 @@ func (s FilteredSubscriber) Events() <-chan types.Event {
 
 // Consume processes all events from the given subscriber with the given function.
 // Do not consume the same subscriber multiple times.
-func Consume(subscriber FilteredSubscriber, process func(attributes []sdk.Attribute) error) jobs.Job {
+func Consume(subscriber FilteredSubscriber, process func(attributes []sdk.Attribute) error) jobs2.Job {
 	return func(errChan chan<- error) {
 	loop:
 		for {

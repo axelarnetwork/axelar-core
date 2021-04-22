@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 
-	mock2 "github.com/axelarnetwork/axelar-core/cmd/vald/broadcast/types/mock"
-	"github.com/axelarnetwork/axelar-core/cmd/vald/btc/rpc/mock"
+	mock3 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types/mock"
+	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
@@ -24,8 +24,8 @@ import (
 func TestMgr_ProcessConfirmation(t *testing.T) {
 	var (
 		mgr         *Mgr
-		rpc         *mock.ClientMock
-		broadcaster *mock2.BroadcasterMock
+		rpc         *mock2.ClientMock
+		broadcaster *mock3.BroadcasterMock
 		attributes  []sdk.Attribute
 		info        btc.OutPointInfo
 		confHeight  int64
@@ -33,8 +33,8 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 
 	setup := func() {
 		cdc := testutils.MakeEncodingConfig().Amino
-		rpc = &mock.ClientMock{}
-		broadcaster = &mock2.BroadcasterMock{}
+		rpc = &mock2.ClientMock{}
+		broadcaster = &mock3.BroadcasterMock{}
 		mgr = NewMgr(rpc, broadcaster, nil, log.TestingLogger(), cdc)
 
 		confHeight = rand.PosI64()

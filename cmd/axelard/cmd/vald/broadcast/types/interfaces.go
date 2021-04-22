@@ -1,7 +1,6 @@
 package types
 
 import (
-	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -18,7 +17,7 @@ type (
 // Client represents a tendermint/Cosmos client
 type Client interface {
 	BroadcastTxSync(tx legacytx.StdTx) (*coretypes.ResultBroadcastTx, error)
-	GetAccountNumberSequence(clientCtx client.Context, addr sdk.AccAddress) (accNum uint64, accSeq uint64, err error)
+	GetAccountNumberSequence(addr sdk.AccAddress) (accNum uint64, accSeq uint64, err error)
 }
 
 // Sign returns a signature for the given message from the account associated with the given address

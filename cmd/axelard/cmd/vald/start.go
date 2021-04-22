@@ -1,15 +1,18 @@
-package main
+package vald
 
 import (
 	"fmt"
 	"os"
+	"path"
 	"time"
 
 	"github.com/axelarnetwork/c2d2/pkg/tendermint/client"
 	tmEvents "github.com/axelarnetwork/c2d2/pkg/tendermint/events"
+	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/spf13/cobra"
@@ -18,24 +21,32 @@ import (
 	tmos "github.com/tendermint/tendermint/libs/os"
 
 	"github.com/axelarnetwork/axelar-core/app"
-	"github.com/axelarnetwork/axelar-core/cmd/vald/broadcast"
-	"github.com/axelarnetwork/axelar-core/cmd/vald/broadcast/types"
-	"github.com/axelarnetwork/axelar-core/cmd/vald/btc"
-	btcRPC "github.com/axelarnetwork/axelar-core/cmd/vald/btc/rpc"
-	"github.com/axelarnetwork/axelar-core/cmd/vald/eth"
-	ethRPC "github.com/axelarnetwork/axelar-core/cmd/vald/eth/rpc"
-	"github.com/axelarnetwork/axelar-core/cmd/vald/events"
-	"github.com/axelarnetwork/axelar-core/cmd/vald/jobs"
-	tss2 "github.com/axelarnetwork/axelar-core/cmd/vald/tss"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast"
+	bcTypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc"
+	btcRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/eth"
+	ethRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/eth/rpc"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/events"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/jobs"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
+	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
-func getStartCommand(logger log.Logger) *cobra.Command {
+// GetValdCommand returns the command to start vald
+func GetValdCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "start",
+		Use: "vald-start",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := sdkClient.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+			serverCtx := server.GetServerContextFromCmd(cmd)
+			logger := serverCtx.Logger.With("module", "vald")
+
 			hub, err := newHub()
 			if err != nil {
 				return err
@@ -47,14 +58,29 @@ func getStartCommand(logger log.Logger) *cobra.Command {
 			}
 
 			logger.Info("Start listening to events")
-			listen(hub, axConf, valAddr, logger)
+			listen(hub, clientCtx, axConf, valAddr, logger)
 			logger.Info("Shutting down")
 			return nil
 		},
 	}
+	setPersistentFlags(cmd)
 
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
+}
+
+func setPersistentFlags(rootCmd *cobra.Command) {
+	rootCmd.PersistentFlags().String("tofnd-host", "", "host name for tss daemon")
+	_ = viper.BindPFlag("tofnd_host", rootCmd.PersistentFlags().Lookup("tofnd-host"))
+
+	rootCmd.PersistentFlags().String("tofnd-port", "50051", "port for tss daemon")
+	_ = viper.BindPFlag("tofnd_port", rootCmd.PersistentFlags().Lookup("tofnd-port"))
+
+	rootCmd.PersistentFlags().String("validator-addr", "", "the address of the validator operator")
+	_ = viper.BindPFlag("validator-addr", rootCmd.PersistentFlags().Lookup("validator-addr"))
+
+	rootCmd.PersistentFlags().String(flags.FlagChainID, "", "The network chain ID")
+	_ = viper.BindPFlag(flags.FlagChainID, rootCmd.PersistentFlags().Lookup(flags.FlagChainID))
 }
 
 func newHub() (*tmEvents.Hub, error) {
@@ -72,17 +98,35 @@ func newHub() (*tmEvents.Hub, error) {
 	return &hub, nil
 }
 
-func listen(hub *tmEvents.Hub, axelarCfg app.Config, valAddr string, logger log.Logger) {
+func loadConfig() (app.Config, string) {
+	// need to merge in cli config because axelard now has its own broadcasting client
+	conf := app.DefaultConfig()
+	cliCfgFile := path.Join(app.DefaultNodeHome, "config", "config.toml")
+	viper.SetConfigFile(cliCfgFile)
+	if err := viper.MergeInConfig(); err != nil {
+		panic(err)
+	}
+
+	if err := viper.Unmarshal(&conf); err != nil {
+		panic(err)
+	}
+	// for some reason gas is not being filled
+	conf.Gas = viper.GetUint64("gas")
+
+	return conf, viper.GetString("validator-addr")
+}
+
+func listen(hub *tmEvents.Hub, ctx sdkClient.Context, axelarCfg app.Config, valAddr string, logger log.Logger) {
 	cdc := app.MakeEncodingConfig().Amino
-	broadcaster, sender := createBroadcaster(axelarCfg, logger)
+	broadcaster, sender := createBroadcaster(ctx, axelarCfg, logger)
 	tssMgr := createTSSMgr(broadcaster, sender, axelarCfg, logger, valAddr, cdc)
 	btcMgr := createBTCMgr(axelarCfg, broadcaster, sender, logger, cdc)
 	ethMgr := createETHMgr(axelarCfg, broadcaster, sender, logger, cdc)
 
-	keygenStart := events.MustSubscribe(hub, tss.EventTypeKeygen, tss.ModuleName, tss.AttributeValueStart)
-	keygenMsg := events.MustSubscribe(hub, tss.EventTypeKeygen, tss.ModuleName, tss.AttributeValueMsg)
-	signStart := events.MustSubscribe(hub, tss.EventTypeSign, tss.ModuleName, tss.AttributeValueStart)
-	signMsg := events.MustSubscribe(hub, tss.EventTypeSign, tss.ModuleName, tss.AttributeValueMsg)
+	keygenStart := events.MustSubscribe(hub, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
+	keygenMsg := events.MustSubscribe(hub, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
+	signStart := events.MustSubscribe(hub, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueStart)
+	signMsg := events.MustSubscribe(hub, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
 
 	btcConf := events.MustSubscribe(hub, btcTypes.EventTypeOutpointConfirmation, btcTypes.ModuleName, btcTypes.AttributeValueStart)
 
@@ -107,14 +151,14 @@ func listen(hub *tmEvents.Hub, axelarCfg app.Config, valAddr string, logger log.
 	mgr.Wait()
 }
 
-func createBroadcaster(axelarCfg app.Config, logger log.Logger) (types.Broadcaster, sdk.AccAddress) {
+func createBroadcaster(ctx sdkClient.Context, axelarCfg app.Config, logger log.Logger) (bcTypes.Broadcaster, sdk.AccAddress) {
 	encCfg := app.MakeEncodingConfig()
-	create := func() (types.Broadcaster, sdk.AccAddress, error) {
-		rpc, err := broadcast.NewClient(encCfg.TxConfig.TxEncoder(), axelarCfg.TendermintNodeUri)
+	create := func() (bcTypes.Broadcaster, sdk.AccAddress, error) {
+		rpc, err := broadcast.NewClient(ctx, encCfg.TxConfig, axelarCfg.TendermintNodeUri)
 		if err != nil {
 			return nil, sdk.AccAddress{}, err
 		}
-		keybase, err := keyring.New(sdk.KeyringServiceName(), axelarCfg.ClientConfig.KeyringBackend, viper.GetString(cliHomeFlag), os.Stdin)
+		keybase, err := keyring.New(sdk.KeyringServiceName(), axelarCfg.ClientConfig.KeyringBackend, app.DefaultNodeHome, os.Stdin)
 		if err != nil {
 			return nil, sdk.AccAddress{}, err
 		}
@@ -141,14 +185,14 @@ func createBroadcaster(axelarCfg app.Config, logger log.Logger) (types.Broadcast
 	return b, addr
 }
 
-func createTSSMgr(broadcaster types.Broadcaster, defaultSender sdk.AccAddress, axelarCfg app.Config, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss2.Mgr {
-	create := func() (*tss2.Mgr, error) {
-		gg20client, err := tss2.CreateTOFNDClient(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, logger)
+func createTSSMgr(broadcaster bcTypes.Broadcaster, defaultSender sdk.AccAddress, axelarCfg app.Config, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
+	create := func() (*tss.Mgr, error) {
+		gg20client, err := tss.CreateTOFNDClient(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, logger)
 		if err != nil {
 			return nil, err
 		}
 
-		tssMgr := tss2.NewMgr(gg20client, 2*time.Hour, valAddr, broadcaster, defaultSender, logger, cdc)
+		tssMgr := tss.NewMgr(gg20client, 2*time.Hour, valAddr, broadcaster, defaultSender, logger, cdc)
 		return tssMgr, nil
 	}
 	mgr, err := create()
@@ -158,7 +202,7 @@ func createTSSMgr(broadcaster types.Broadcaster, defaultSender sdk.AccAddress, a
 	return mgr
 }
 
-func createBTCMgr(axelarCfg app.Config, b types.Broadcaster, defaultSender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *btc.Mgr {
+func createBTCMgr(axelarCfg app.Config, b bcTypes.Broadcaster, defaultSender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *btc.Mgr {
 	rpc, err := btcRPC.NewRPCClient(axelarCfg.BtcConfig, logger)
 	if err != nil {
 		logger.Error(err.Error())
@@ -171,7 +215,7 @@ func createBTCMgr(axelarCfg app.Config, b types.Broadcaster, defaultSender sdk.A
 	return btcMgr
 }
 
-func createETHMgr(axelarCfg app.Config, b types.Broadcaster, defaultSender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *eth.Mgr {
+func createETHMgr(axelarCfg app.Config, b bcTypes.Broadcaster, defaultSender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *eth.Mgr {
 	rpc, err := ethRPC.NewClient(axelarCfg.EthRpcAddr)
 	if err != nil {
 		logger.Error(err.Error())

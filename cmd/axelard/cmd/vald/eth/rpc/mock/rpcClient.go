@@ -5,7 +5,7 @@ package mock
 
 import (
 	"context"
-	"github.com/axelarnetwork/axelar-core/cmd/vald/eth/rpc"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/eth/rpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"sync"

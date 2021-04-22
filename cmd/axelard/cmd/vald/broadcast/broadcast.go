@@ -8,18 +8,18 @@ import (
 	"time"
 
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
+	tx2 "github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	rpc "github.com/tendermint/tendermint/rpc/client"
 	"github.com/tendermint/tendermint/rpc/client/http"
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 
-	"github.com/axelarnetwork/axelar-core/cmd/vald/broadcast/types"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 )
 
@@ -116,7 +116,7 @@ func (b *Broadcaster) broadcast(msgs []sdk.Msg) error {
 }
 
 func (b *Broadcaster) updateAccountNumberSequence(addr sdk.AccAddress) (uint64, uint64, error) {
-	accNo, seqNo, err := b.rpc.GetAccountNumberSequence(sdkClient.Context{}, addr)
+	accNo, seqNo, err := b.rpc.GetAccountNumberSequence(addr)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -146,23 +146,29 @@ func sign(sign types.Sign, msg legacytx.StdSignMsg) (legacytx.StdTx, error) {
 
 type client struct {
 	rpc.ABCIClient
-	encodeTx sdk.TxEncoder
-	sdkClient.AccountRetriever
+	ctx      sdkClient.Context
+	txConfig sdkClient.TxConfig
+}
+
+// GetAccountNumberSequence returns sequence and account number for the given address.
+// It returns an error if the account couldn't be retrieved from the state.
+func (c client) GetAccountNumberSequence(addr sdk.AccAddress) (accNum uint64, accSeq uint64, err error) {
+	return c.ctx.AccountRetriever.GetAccountNumberSequence(c.ctx, addr)
 }
 
 // NewClient returns a new rpc client to a tendermint node
-func NewClient(encoder sdk.TxEncoder, tendermintURI string) (types.Client, error) {
+func NewClient(ctx sdkClient.Context, txConfig sdkClient.TxConfig, tendermintURI string) (types.Client, error) {
 	abciClient, err := http.New(tendermintURI, "/websocket")
 	if err != nil {
 		return nil, err
 	}
 
-	return client{ABCIClient: abciClient, encodeTx: encoder, AccountRetriever: authtypes.AccountRetriever{}}, nil
+	return client{ABCIClient: abciClient, ctx: ctx, txConfig: txConfig}, nil
 }
 
 // BroadcastTxSync submits a transaction synchronously
-func (c client) BroadcastTxSync(tx legacytx.StdTx) (*coretypes.ResultBroadcastTx, error) {
-	txBytes, err := c.encodeTx(tx)
+func (c client) BroadcastTxSync(stdTx legacytx.StdTx) (*coretypes.ResultBroadcastTx, error) {
+	txBytes, err := tx2.ConvertAndEncodeStdTx(c.txConfig, stdTx)
 	if err != nil {
 		return nil, err
 	}

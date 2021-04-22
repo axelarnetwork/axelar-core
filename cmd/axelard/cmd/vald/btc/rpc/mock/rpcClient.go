@@ -4,7 +4,7 @@
 package mock
 
 import (
-	"github.com/axelarnetwork/axelar-core/cmd/vald/btc/rpc"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"

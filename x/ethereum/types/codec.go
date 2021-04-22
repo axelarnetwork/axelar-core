@@ -2,7 +2,9 @@ package types
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
+	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // RegisterLegacyAminoCodec registers concrete types on codec
@@ -17,6 +19,22 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&MsgSignDeployToken{}, "ethereum/SignDeployToken", nil)
 	cdc.RegisterConcrete(&MsgSignBurnTokens{}, "ethereum/SignBurnTokens", nil)
 	cdc.RegisterConcrete(&MsgSignTransferOwnership{}, "ethereum/SignTransferOwnership", nil)
+}
+
+// RegisterInterfaces registers types and interfaces with the given registry
+func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
+	registry.RegisterImplementations((*sdk.Msg)(nil),
+		&MsgLink{},
+		&MsgVoteConfirmToken{},
+		&MsgVoteConfirmDeposit{},
+		&MsgConfirmToken{},
+		&MsgConfirmDeposit{},
+		&MsgSignTx{},
+		&MsgSignPendingTransfers{},
+		&MsgSignDeployToken{},
+		&MsgSignBurnTokens{},
+		&MsgSignTransferOwnership{},
+	)
 }
 
 var amino = codec.NewLegacyAmino()

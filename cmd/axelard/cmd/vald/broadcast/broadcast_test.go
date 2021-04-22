@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
 	"github.com/stretchr/testify/assert"
@@ -16,7 +15,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/rpc/core/types"
 
-	"github.com/axelarnetwork/axelar-core/cmd/vald/broadcast/types/mock"
+	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types/mock"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/broadcast/types"
 )
@@ -92,8 +91,8 @@ func TestBroadcaster_Broadcast(t *testing.T) {
 		accNo := rand2.Uint64()
 		seqNo := uint64(1)
 		prevSeqNo := uint64(0)
-		rpc := &mock.ClientMock{
-			GetAccountNumberSequenceFunc: func(sdkClient.Context, sdk.AccAddress) (uint64, uint64, error) {
+		rpc := &mock2.ClientMock{
+			GetAccountNumberSequenceFunc: func(sdk.AccAddress) (uint64, uint64, error) {
 				return accNo, seqNo, nil
 			},
 			BroadcastTxSyncFunc: func(tx legacytx.StdTx) (*coretypes.ResultBroadcastTx, error) {
@@ -140,8 +139,8 @@ func TestBroadcaster_Broadcast(t *testing.T) {
 		accNo := rand2.Uint64()
 		seqNo := uint64(1)
 		prevSeqNo := uint64(0)
-		rpc := &mock.ClientMock{
-			GetAccountNumberSequenceFunc: func(sdkClient.Context, sdk.AccAddress) (uint64, uint64, error) {
+		rpc := &mock2.ClientMock{
+			GetAccountNumberSequenceFunc: func(sdk.AccAddress) (uint64, uint64, error) {
 				return accNo, seqNo, nil
 			},
 			BroadcastTxSyncFunc: func(tx legacytx.StdTx) (*coretypes.ResultBroadcastTx, error) {
@@ -225,8 +224,8 @@ func TestBackoffBroadcaster_Broadcast(t *testing.T) {
 		accNo := rand2.Uint64()
 		seqNo := uint64(1)
 		prevSeqNo := uint64(0)
-		rpc := &mock.ClientMock{
-			GetAccountNumberSequenceFunc: func(sdkClient.Context, sdk.AccAddress) (uint64, uint64, error) {
+		rpc := &mock2.ClientMock{
+			GetAccountNumberSequenceFunc: func(sdk.AccAddress) (uint64, uint64, error) {
 				return accNo, seqNo, nil
 			},
 			BroadcastTxSyncFunc: func(tx legacytx.StdTx) (*coretypes.ResultBroadcastTx, error) {
@@ -271,9 +270,9 @@ func TestBackoffBroadcaster_Broadcast(t *testing.T) {
 	})
 }
 
-func setup() (*Broadcaster, *mock.ClientMock) {
-	rpc := &mock.ClientMock{
-		GetAccountNumberSequenceFunc: func(sdkClient.Context, sdk.AccAddress) (uint64, uint64, error) {
+func setup() (*Broadcaster, *mock2.ClientMock) {
+	rpc := &mock2.ClientMock{
+		GetAccountNumberSequenceFunc: func(sdk.AccAddress) (uint64, uint64, error) {
 			return rand2.Uint64(), rand2.Uint64(), nil
 		},
 		BroadcastTxSyncFunc: func(tx legacytx.StdTx) (*coretypes.ResultBroadcastTx, error) {
@@ -301,7 +300,7 @@ func createMsgsWithRandomSigners() []sdk.Msg {
 		for j := int64(0); j < rand.I64Between(1, 5); j++ {
 			signers = append(signers, rand.Bytes(sdk.AddrLen))
 		}
-		msg := &mock.MsgMock{GetSignersFunc: func() []sdk.AccAddress { return signers }}
+		msg := &mock2.MsgMock{GetSignersFunc: func() []sdk.AccAddress { return signers }}
 		msgs = append(msgs, msg)
 	}
 	return msgs

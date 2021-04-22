@@ -3,10 +3,11 @@
 package tofnd
 
 import (
-	context "context"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
+	"context"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -38,7 +39,7 @@ var gG20KeygenStreamDesc = &grpc.StreamDesc{
 }
 
 func (c *gG20Client) Keygen(ctx context.Context, opts ...grpc.CallOption) (GG20_KeygenClient, error) {
-	stream, err := c.cc.NewStream(ctx, gG20KeygenStreamDesc, "/tofnd.GG20/Keygen", opts...)
+	stream, err := c.cc.NewStream(ctx, gG20KeygenStreamDesc, "/tss.tofnd.v1beta1.GG20/Keygen", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +76,7 @@ var gG20SignStreamDesc = &grpc.StreamDesc{
 }
 
 func (c *gG20Client) Sign(ctx context.Context, opts ...grpc.CallOption) (GG20_SignClient, error) {
-	stream, err := c.cc.NewStream(ctx, gG20SignStreamDesc, "/tofnd.GG20/Sign", opts...)
+	stream, err := c.cc.NewStream(ctx, gG20SignStreamDesc, "/tss.tofnd.v1beta1.GG20/Sign", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +112,7 @@ var gG20GetKeyStreamDesc = &grpc.StreamDesc{
 
 func (c *gG20Client) GetKey(ctx context.Context, in *Uid, opts ...grpc.CallOption) (*Bytes, error) {
 	out := new(Bytes)
-	err := c.cc.Invoke(ctx, "/tofnd.GG20/GetKey", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/tss.tofnd.v1beta1.GG20/GetKey", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +125,7 @@ var gG20GetSigStreamDesc = &grpc.StreamDesc{
 
 func (c *gG20Client) GetSig(ctx context.Context, in *Uid, opts ...grpc.CallOption) (*Bytes, error) {
 	out := new(Bytes)
-	err := c.cc.Invoke(ctx, "/tofnd.GG20/GetSig", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/tss.tofnd.v1beta1.GG20/GetSig", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +159,7 @@ func (s *GG20Service) getKey(_ interface{}, ctx context.Context, dec func(interf
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     s,
-		FullMethod: "/tofnd.GG20/GetKey",
+		FullMethod: "/tss.tofnd.v1beta1.GG20/GetKey",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return s.GetKey(ctx, req.(*Uid))
@@ -175,7 +176,7 @@ func (s *GG20Service) getSig(_ interface{}, ctx context.Context, dec func(interf
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     s,
-		FullMethod: "/tofnd.GG20/GetSig",
+		FullMethod: "/tss.tofnd.v1beta1.GG20/GetSig",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return s.GetSig(ctx, req.(*Uid))
@@ -251,7 +252,7 @@ func RegisterGG20Service(s grpc.ServiceRegistrar, srv *GG20Service) {
 		}
 	}
 	sd := grpc.ServiceDesc{
-		ServiceName: "tofnd.GG20",
+		ServiceName: "tss.tofnd.v1beta1.GG20",
 		Methods: []grpc.MethodDesc{
 			{
 				MethodName: "GetKey",
@@ -276,7 +277,7 @@ func RegisterGG20Service(s grpc.ServiceRegistrar, srv *GG20Service) {
 				ClientStreams: true,
 			},
 		},
-		Metadata: "x/tss/tofnd/tofnd.proto",
+		Metadata: "proto/tss/tofnd/v1beta1/tofnd.proto",
 	}
 
 	s.RegisterService(&sd, nil)

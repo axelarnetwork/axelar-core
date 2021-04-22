@@ -15,8 +15,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/axelarnetwork/axelar-core/cmd/vald/broadcast/types/mock"
-	ethMock "github.com/axelarnetwork/axelar-core/cmd/vald/eth/rpc/mock"
+	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types/mock"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/eth/rpc/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
@@ -95,8 +95,8 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 	var (
 		mgr         *Mgr
 		attributes  []sdk.Attribute
-		rpc         *ethMock.ClientMock
-		broadcaster *mock.BroadcasterMock
+		rpc         *mock.ClientMock
+		broadcaster *mock2.BroadcasterMock
 	)
 	setup := func() {
 		cdc := testutils.MakeEncodingConfig().Amino
@@ -116,7 +116,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 			sdk.NewAttribute(ethTypes.AttributeKeyPoll, string(cdc.MustMarshalJSON(poll))),
 		}
 
-		rpc = &ethMock.ClientMock{
+		rpc = &mock.ClientMock{
 			BlockNumberFunc: func(context.Context) (uint64, error) {
 				return uint64(blockNumber), nil
 			},
@@ -168,7 +168,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 				return receipt, nil
 			},
 		}
-		broadcaster = &mock.BroadcasterMock{}
+		broadcaster = &mock2.BroadcasterMock{}
 		mgr = NewMgr(rpc, broadcaster, rand.Bytes(sdk.AddrLen), log.TestingLogger(), cdc)
 	}
 	repeats := 20
@@ -242,8 +242,8 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 	var (
 		mgr              *Mgr
 		attributes       []sdk.Attribute
-		rpc              *ethMock.ClientMock
-		broadcaster      *mock.BroadcasterMock
+		rpc              *mock.ClientMock
+		broadcaster      *mock2.BroadcasterMock
 		gatewayAddrBytes []byte
 	)
 	setup := func() {
@@ -265,7 +265,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 			sdk.NewAttribute(ethTypes.AttributeKeyPoll, string(cdc.MustMarshalJSON(poll))),
 		}
 
-		rpc = &ethMock.ClientMock{
+		rpc = &mock.ClientMock{
 			BlockNumberFunc: func(context.Context) (uint64, error) {
 				return uint64(blockNumber), nil
 			},
@@ -283,7 +283,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 				return receipt, nil
 			},
 		}
-		broadcaster = &mock.BroadcasterMock{}
+		broadcaster = &mock2.BroadcasterMock{}
 		mgr = NewMgr(rpc, broadcaster, rand.Bytes(sdk.AddrLen), log.TestingLogger(), cdc)
 	}
 

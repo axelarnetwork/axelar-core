@@ -4,8 +4,7 @@
 package mock
 
 import (
-	"github.com/axelarnetwork/axelar-core/cmd/vald/broadcast/types"
-	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -25,7 +24,7 @@ var _ types.Client = &ClientMock{}
 // 			BroadcastTxSyncFunc: func(tx legacytx.StdTx) (*coretypes.ResultBroadcastTx, error) {
 // 				panic("mock out the BroadcastTxSync method")
 // 			},
-// 			GetAccountNumberSequenceFunc: func(clientCtx client.Context, addr sdk.AccAddress) (uint64, uint64, error) {
+// 			GetAccountNumberSequenceFunc: func(addr sdk.AccAddress) (uint64, uint64, error) {
 // 				panic("mock out the GetAccountNumberSequence method")
 // 			},
 // 		}
@@ -39,7 +38,7 @@ type ClientMock struct {
 	BroadcastTxSyncFunc func(tx legacytx.StdTx) (*coretypes.ResultBroadcastTx, error)
 
 	// GetAccountNumberSequenceFunc mocks the GetAccountNumberSequence method.
-	GetAccountNumberSequenceFunc func(clientCtx client.Context, addr sdk.AccAddress) (uint64, uint64, error)
+	GetAccountNumberSequenceFunc func(addr sdk.AccAddress) (uint64, uint64, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -50,8 +49,6 @@ type ClientMock struct {
 		}
 		// GetAccountNumberSequence holds details about calls to the GetAccountNumberSequence method.
 		GetAccountNumberSequence []struct {
-			// ClientCtx is the clientCtx argument value.
-			ClientCtx client.Context
 			// Addr is the addr argument value.
 			Addr sdk.AccAddress
 		}
@@ -96,13 +93,11 @@ func (mock *ClientMock) BroadcastTxSyncCalls() []struct {
 }
 
 // GetAccountNumberSequence calls GetAccountNumberSequenceFunc.
-func (mock *ClientMock) GetAccountNumberSequence(clientCtx client.Context, addr sdk.AccAddress) (uint64, uint64, error) {
+func (mock *ClientMock) GetAccountNumberSequence(addr sdk.AccAddress) (uint64, uint64, error) {
 	callInfo := struct {
-		ClientCtx client.Context
-		Addr      sdk.AccAddress
+		Addr sdk.AccAddress
 	}{
-		ClientCtx: clientCtx,
-		Addr:      addr,
+		Addr: addr,
 	}
 	mock.lockGetAccountNumberSequence.Lock()
 	mock.calls.GetAccountNumberSequence = append(mock.calls.GetAccountNumberSequence, callInfo)
@@ -115,19 +110,17 @@ func (mock *ClientMock) GetAccountNumberSequence(clientCtx client.Context, addr 
 		)
 		return accNumOut, accSeqOut, errOut
 	}
-	return mock.GetAccountNumberSequenceFunc(clientCtx, addr)
+	return mock.GetAccountNumberSequenceFunc(addr)
 }
 
 // GetAccountNumberSequenceCalls gets all the calls that were made to GetAccountNumberSequence.
 // Check the length with:
 //     len(mockedClient.GetAccountNumberSequenceCalls())
 func (mock *ClientMock) GetAccountNumberSequenceCalls() []struct {
-	ClientCtx client.Context
-	Addr      sdk.AccAddress
+	Addr sdk.AccAddress
 } {
 	var calls []struct {
-		ClientCtx client.Context
-		Addr      sdk.AccAddress
+		Addr sdk.AccAddress
 	}
 	mock.lockGetAccountNumberSequence.RLock()
 	calls = mock.calls.GetAccountNumberSequence

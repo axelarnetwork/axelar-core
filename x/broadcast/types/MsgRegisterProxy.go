@@ -42,5 +42,5 @@ func (m MsgRegisterProxy) GetSignBytes() []byte {
 
 // GetSigners returns the set of signers for this message
 func (m MsgRegisterProxy) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.ProxyAddr}
+	return []sdk.AccAddress{sdk.AccAddress(m.PrincipalAddr)}
 }

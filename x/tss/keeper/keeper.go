@@ -31,10 +31,10 @@ const (
 
 // Keeper allows access to the broadcast state
 type Keeper struct {
-	slasher     snapshot.Slasher
-	params      params.Subspace
-	storeKey    sdk.StoreKey
-	cdc         *codec.LegacyAmino
+	slasher  snapshot.Slasher
+	params   params.Subspace
+	storeKey sdk.StoreKey
+	cdc      *codec.LegacyAmino
 }
 
 // NewKeeper constructs a tss keeper
@@ -42,7 +42,7 @@ func NewKeeper(cdc *codec.LegacyAmino, storeKey sdk.StoreKey, paramSpace params.
 	return Keeper{
 		slasher:  slasher,
 		cdc:      cdc,
-		params:   paramSpace.WithKeyTable(types.KeyTable()),
+		params:   paramSpace,
 		storeKey: storeKey,
 	}
 }

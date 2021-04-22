@@ -16,11 +16,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/rpc"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/codec/types"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/server/api"
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
-	"github.com/cosmos/cosmos-sdk/store/dbadapter"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
@@ -80,7 +78,6 @@ import (
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	"github.com/tendermint/tendermint/libs/log"
 	tmos "github.com/tendermint/tendermint/libs/os"
-	tmHTTP "github.com/tendermint/tendermint/rpc/client/http"
 	dbm "github.com/tendermint/tm-db"
 
 	axelarParams "github.com/axelarnetwork/axelar-core/app/params"
@@ -195,7 +192,8 @@ type AxelarApp struct {
 	tkeys   map[string]*sdk.TransientStoreKey
 	memKeys map[string]*sdk.MemoryStoreKey
 
-	mm *module.Manager
+	mm           *module.Manager
+	paramsKeeper paramskeeper.Keeper
 }
 
 // NewAxelarApp is a constructor function for axelar
@@ -204,7 +202,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	appOpts servertypes.AppOptions, baseAppOptions ...func(*bam.BaseApp)) *AxelarApp {
 
 	axelarCfg := DefaultConfig()
-	if err := appOpts.(*viper.Viper).Unmarshal(axelarCfg); err != nil {
+	if err := appOpts.(*viper.Viper).Unmarshal(&axelarCfg); err != nil {
 		tmos.Exit(err.Error())
 	}
 
@@ -253,35 +251,35 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		memKeys:           memKeys,
 	}
 
-	paramsK := initParamsKeeper(appCodec, legacyAmino, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey])
+	app.paramsKeeper = initParamsKeeper(appCodec, legacyAmino, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey])
 
 	// set the BaseApp's parameter store
-	bApp.SetParamStore(paramsK.Subspace(baseapp.Paramspace).WithKeyTable(paramskeeper.ConsensusParamsKeyTable()))
+	bApp.SetParamStore(app.getSubspace(baseapp.Paramspace))
 
 	// add keepers
 	accountK := authkeeper.NewAccountKeeper(
-		appCodec, keys[authtypes.StoreKey], paramsK.Subspace(authtypes.ModuleName), authtypes.ProtoBaseAccount, maccPerms,
+		appCodec, keys[authtypes.StoreKey], app.getSubspace(authtypes.ModuleName), authtypes.ProtoBaseAccount, maccPerms,
 	)
 	bankK := bankkeeper.NewBaseKeeper(
-		appCodec, keys[banktypes.StoreKey], accountK, paramsK.Subspace(banktypes.ModuleName), app.ModuleAccountAddrs(),
+		appCodec, keys[banktypes.StoreKey], accountK, app.getSubspace(banktypes.ModuleName), app.ModuleAccountAddrs(),
 	)
 	app.stakingKeeper = stakingkeeper.NewKeeper(
-		appCodec, keys[stakingtypes.StoreKey], accountK, bankK, paramsK.Subspace(stakingtypes.ModuleName),
+		appCodec, keys[stakingtypes.StoreKey], accountK, bankK, app.getSubspace(stakingtypes.ModuleName),
 	)
 
 	mintK := mintkeeper.NewKeeper(
-		appCodec, keys[minttypes.StoreKey], paramsK.Subspace(minttypes.ModuleName), &app.stakingKeeper,
+		appCodec, keys[minttypes.StoreKey], app.getSubspace(minttypes.ModuleName), &app.stakingKeeper,
 		accountK, bankK, authtypes.FeeCollectorName,
 	)
 	app.distrKeeper = distrkeeper.NewKeeper(
-		appCodec, keys[distrtypes.StoreKey], paramsK.Subspace(distrtypes.ModuleName), accountK, bankK,
+		appCodec, keys[distrtypes.StoreKey], app.getSubspace(distrtypes.ModuleName), accountK, bankK,
 		&app.stakingKeeper, authtypes.FeeCollectorName, app.ModuleAccountAddrs(),
 	)
 	app.slashingKeeper = slashingkeeper.NewKeeper(
-		appCodec, keys[slashingtypes.StoreKey], &app.stakingKeeper, paramsK.Subspace(slashingtypes.ModuleName),
+		appCodec, keys[slashingtypes.StoreKey], &app.stakingKeeper, app.getSubspace(slashingtypes.ModuleName),
 	)
 	app.crisisKeeper = crisiskeeper.NewKeeper(
-		paramsK.Subspace(crisistypes.ModuleName), invCheckPeriod, bankK, authtypes.FeeCollectorName,
+		app.getSubspace(crisistypes.ModuleName), invCheckPeriod, bankK, authtypes.FeeCollectorName,
 	)
 	upgradeK := upgradekeeper.NewKeeper(skipUpgradeHeights, keys[upgradetypes.StoreKey], appCodec, homePath)
 
@@ -291,12 +289,12 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	// register the proposal types
 	govRouter := govtypes.NewRouter()
 	govRouter.AddRoute(govtypes.RouterKey, govtypes.ProposalHandler).
-		AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(paramsK)).
+		AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(app.paramsKeeper)).
 		AddRoute(distrtypes.RouterKey, distr.NewCommunityPoolSpendProposalHandler(app.distrKeeper)).
 		AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(upgradeK))
 
 	govK := govkeeper.NewKeeper(
-		appCodec, keys[govtypes.StoreKey], paramsK.Subspace(govtypes.ModuleName), accountK, bankK,
+		appCodec, keys[govtypes.StoreKey], app.getSubspace(govtypes.ModuleName), accountK, bankK,
 		&app.stakingKeeper, govRouter,
 	)
 
@@ -308,31 +306,13 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 	// axelar custom keepers
 	btcK := btcKeeper.NewKeeper(
-		app.legacyAmino, keys[btcTypes.StoreKey], paramsK.Subspace(btcTypes.ModuleName),
+		app.legacyAmino, keys[btcTypes.StoreKey], app.getSubspace(btcTypes.ModuleName),
 	)
 	ethK := ethKeeper.NewEthKeeper(
-		app.legacyAmino, keys[ethTypes.StoreKey], paramsK.Subspace(ethTypes.ModuleName),
+		app.legacyAmino, keys[ethTypes.StoreKey], app.getSubspace(ethTypes.ModuleName),
 	)
 
-	kr, err := keyring.New(sdk.KeyringServiceName(), axelarCfg.ClientConfig.KeyringBackend, viper.GetString("clihome"), os.Stdin)
-	if err != nil {
-		tmos.Exit(err.Error())
-	}
-	abciClient, err := tmHTTP.New(axelarCfg.TendermintNodeUri, "/websocket")
-	if err != nil {
-		tmos.Exit(err.Error())
-	}
-	broadcastK, err := broadcastKeeper.NewKeeper(
-		app.legacyAmino,
-		keys[broadcastTypes.StoreKey],
-		dbadapter.Store{DB: dbm.NewMemDB()},
-		kr,
-		accountK,
-		app.stakingKeeper,
-		abciClient,
-		axelarCfg.ClientConfig,
-		logger,
-	)
+	broadcastK, err := broadcastKeeper.NewKeeper(app.legacyAmino, keys[broadcastTypes.StoreKey], app.stakingKeeper)
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
@@ -345,14 +325,14 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		},
 	}
 	tssK := tssKeeper.NewKeeper(
-		app.legacyAmino, keys[tssTypes.StoreKey], paramsK.Subspace(tssTypes.ModuleName), slashingKCast,
+		app.legacyAmino, keys[tssTypes.StoreKey], app.getSubspace(tssTypes.ModuleName), slashingKCast,
 	)
 	snapK := snapKeeper.NewKeeper(
-		app.legacyAmino, keys[snapTypes.StoreKey], paramsK.Subspace(snapTypes.ModuleName), broadcastK, app.stakingKeeper,
+		app.legacyAmino, keys[snapTypes.StoreKey], app.getSubspace(snapTypes.ModuleName), broadcastK, app.stakingKeeper,
 		slashingKCast, tssK,
 	)
 	nexusK := nexusKeeper.NewKeeper(
-		app.legacyAmino, keys[nexusTypes.StoreKey], paramsK.Subspace(nexusTypes.ModuleName),
+		app.legacyAmino, keys[nexusTypes.StoreKey], app.getSubspace(nexusTypes.ModuleName),
 	)
 	votingK := voteKeeper.NewKeeper(
 		app.legacyAmino, keys[voteTypes.StoreKey], snapK, broadcastK,
@@ -390,7 +370,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		staking.NewAppModule(appCodec, app.stakingKeeper, accountK, bankK),
 		upgrade.NewAppModule(upgradeK),
 		evidence.NewAppModule(*evidenceK),
-		params.NewAppModule(paramsK),
+		params.NewAppModule(app.paramsKeeper),
 
 		snapshot.NewAppModule(snapK),
 		tss.NewAppModule(tssK, snapK, votingK, nexusK, app.stakingKeeper, broadcastK),
@@ -474,6 +454,8 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 func initParamsKeeper(appCodec codec.Marshaler, legacyAmino *codec.LegacyAmino, key, tkey sdk.StoreKey) paramskeeper.Keeper {
 	paramsKeeper := paramskeeper.NewKeeper(appCodec, legacyAmino, key, tkey)
 
+	paramsKeeper.Subspace(baseapp.Paramspace).WithKeyTable(paramskeeper.ConsensusParamsKeyTable())
+
 	paramsKeeper.Subspace(authtypes.ModuleName)
 	paramsKeeper.Subspace(banktypes.ModuleName)
 	paramsKeeper.Subspace(stakingtypes.ModuleName)
@@ -483,11 +465,11 @@ func initParamsKeeper(appCodec codec.Marshaler, legacyAmino *codec.LegacyAmino, 
 	paramsKeeper.Subspace(govtypes.ModuleName).WithKeyTable(govtypes.ParamKeyTable())
 	paramsKeeper.Subspace(crisistypes.ModuleName)
 
-	paramsKeeper.Subspace(snapTypes.ModuleName)
-	paramsKeeper.Subspace(tssTypes.ModuleName)
-	paramsKeeper.Subspace(btcTypes.ModuleName)
-	paramsKeeper.Subspace(ethTypes.ModuleName)
-	paramsKeeper.Subspace(nexusTypes.ModuleName)
+	paramsKeeper.Subspace(snapTypes.ModuleName).WithKeyTable(snapTypes.KeyTable())
+	paramsKeeper.Subspace(tssTypes.ModuleName).WithKeyTable(tssTypes.KeyTable())
+	paramsKeeper.Subspace(btcTypes.ModuleName).WithKeyTable(btcTypes.KeyTable())
+	paramsKeeper.Subspace(ethTypes.ModuleName).WithKeyTable(ethTypes.KeyTable())
+	paramsKeeper.Subspace(nexusTypes.ModuleName).WithKeyTable(nexusTypes.KeyTable())
 
 	return paramsKeeper
 }
@@ -588,4 +570,9 @@ func (app *AxelarApp) RegisterTxService(clientCtx client.Context) {
 // RegisterTendermintService implements the Application.RegisterTendermintService method.
 func (app *AxelarApp) RegisterTendermintService(clientCtx client.Context) {
 	tmservice.RegisterTendermintService(app.BaseApp.GRPCQueryRouter(), clientCtx, app.interfaceRegistry)
+}
+
+func (app *AxelarApp) getSubspace(moduleName string) paramstypes.Subspace {
+	subspace, _ := app.paramsKeeper.GetSubspace(moduleName)
+	return subspace
 }

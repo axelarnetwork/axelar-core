@@ -37,7 +37,6 @@ lint:
 build: go.sum
 		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) ./cmd/axelard
 		go build -o ./bin/axelarcli -mod=readonly $(BUILD_FLAGS) ./cmd/axelarcli
-		go build -o ./bin/vald -mod=readonly $(BUILD_FLAGS) ./cmd/vald
 
 
 # Build the project with debug flags
@@ -45,7 +44,6 @@ build: go.sum
 debug: go.sum
 		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) -gcflags="all=-N -l" ./cmd/axelard
 		go build -o ./bin/axelarcli -mod=readonly $(BUILD_FLAGS) -gcflags="all=-N -l" ./cmd/axelarcli
-		go build -o ./bin/vald -mod=readonly $(BUILD_FLAGS) -gcflags="all=-N -l" ./cmd/vald
 
 # Build axelarcli with release flags for alpine architecture
 .PHONY: alpine-axelarcli
@@ -84,7 +82,7 @@ generate:
 .PHONE: tofnd-client
 tofnd-client:
 	@echo -n Generating protobufs...
-	@protoc --go_out=. --go-grpc_out=. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative x/tss/tofnd/tofnd.proto
+	@protoc --go_out=. --go-grpc_out=. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative proto/tss/tofnd/v1beta1/tofnd.proto
 	@echo done
 
 ###############################################################################
