@@ -3,7 +3,7 @@ module github.com/axelarnetwork/axelar-core
 go 1.13
 
 require (
-	github.com/axelarnetwork/c2d2 v0.0.0-20210422075704-6276803063d9
+	github.com/axelarnetwork/c2d2 v0.0.0-20210422080636-ebd5e616388a
 	github.com/btcsuite/btcd v0.21.0-beta
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/cosmos/cosmos-sdk v0.39.1
