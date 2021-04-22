@@ -8,7 +8,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	exported "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -25,16 +25,16 @@ var _ types.Voter = &VoterMock{}
 //
 // 		// make and configure a mocked types.Voter
 // 		mockedVoter := &VoterMock{
-// 			DeletePollFunc: func(ctx sdk.Context, poll vote.PollMeta)  {
+// 			DeletePollFunc: func(ctx sdk.Context, poll exported.PollMeta)  {
 // 				panic("mock out the DeletePoll method")
 // 			},
-// 			InitPollFunc: func(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error {
+// 			InitPollFunc: func(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64) error {
 // 				panic("mock out the InitPoll method")
 // 			},
-// 			ResultFunc: func(ctx sdk.Context, poll vote.PollMeta) vote.VotingData {
+// 			ResultFunc: func(ctx sdk.Context, poll exported.PollMeta) exported.VotingData {
 // 				panic("mock out the Result method")
 // 			},
-// 			TallyVoteFunc: func(ctx sdk.Context, sender sdk.AccAddress, pollMeta vote.PollMeta, data vote.VotingData) error {
+// 			TallyVoteFunc: func(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data exported.VotingData) error {
 // 				panic("mock out the TallyVote method")
 // 			},
 // 		}
@@ -45,16 +45,16 @@ var _ types.Voter = &VoterMock{}
 // 	}
 type VoterMock struct {
 	// DeletePollFunc mocks the DeletePoll method.
-	DeletePollFunc func(ctx sdk.Context, poll vote.PollMeta)
+	DeletePollFunc func(ctx sdk.Context, poll exported.PollMeta)
 
 	// InitPollFunc mocks the InitPoll method.
-	InitPollFunc func(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error
+	InitPollFunc func(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64) error
 
 	// ResultFunc mocks the Result method.
-	ResultFunc func(ctx sdk.Context, poll vote.PollMeta) vote.VotingData
+	ResultFunc func(ctx sdk.Context, poll exported.PollMeta) exported.VotingData
 
 	// TallyVoteFunc mocks the TallyVote method.
-	TallyVoteFunc func(ctx sdk.Context, sender sdk.AccAddress, pollMeta vote.PollMeta, data vote.VotingData) error
+	TallyVoteFunc func(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data exported.VotingData) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -63,14 +63,14 @@ type VoterMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Poll is the poll argument value.
-			Poll vote.PollMeta
+			Poll exported.PollMeta
 		}
 		// InitPoll holds details about calls to the InitPoll method.
 		InitPoll []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Poll is the poll argument value.
-			Poll vote.PollMeta
+			Poll exported.PollMeta
 			// SnapshotCounter is the snapshotCounter argument value.
 			SnapshotCounter int64
 		}
@@ -79,7 +79,7 @@ type VoterMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Poll is the poll argument value.
-			Poll vote.PollMeta
+			Poll exported.PollMeta
 		}
 		// TallyVote holds details about calls to the TallyVote method.
 		TallyVote []struct {
@@ -88,9 +88,9 @@ type VoterMock struct {
 			// Sender is the sender argument value.
 			Sender sdk.AccAddress
 			// PollMeta is the pollMeta argument value.
-			PollMeta vote.PollMeta
+			PollMeta exported.PollMeta
 			// Data is the data argument value.
-			Data vote.VotingData
+			Data exported.VotingData
 		}
 	}
 	lockDeletePoll sync.RWMutex
@@ -100,13 +100,13 @@ type VoterMock struct {
 }
 
 // DeletePoll calls DeletePollFunc.
-func (mock *VoterMock) DeletePoll(ctx sdk.Context, poll vote.PollMeta) {
+func (mock *VoterMock) DeletePoll(ctx sdk.Context, poll exported.PollMeta) {
 	if mock.DeletePollFunc == nil {
 		panic("VoterMock.DeletePollFunc: method is nil but Voter.DeletePoll was just called")
 	}
 	callInfo := struct {
 		Ctx  sdk.Context
-		Poll vote.PollMeta
+		Poll exported.PollMeta
 	}{
 		Ctx:  ctx,
 		Poll: poll,
@@ -122,11 +122,11 @@ func (mock *VoterMock) DeletePoll(ctx sdk.Context, poll vote.PollMeta) {
 //     len(mockedVoter.DeletePollCalls())
 func (mock *VoterMock) DeletePollCalls() []struct {
 	Ctx  sdk.Context
-	Poll vote.PollMeta
+	Poll exported.PollMeta
 } {
 	var calls []struct {
 		Ctx  sdk.Context
-		Poll vote.PollMeta
+		Poll exported.PollMeta
 	}
 	mock.lockDeletePoll.RLock()
 	calls = mock.calls.DeletePoll
@@ -135,13 +135,13 @@ func (mock *VoterMock) DeletePollCalls() []struct {
 }
 
 // InitPoll calls InitPollFunc.
-func (mock *VoterMock) InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error {
+func (mock *VoterMock) InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64) error {
 	if mock.InitPollFunc == nil {
 		panic("VoterMock.InitPollFunc: method is nil but Voter.InitPoll was just called")
 	}
 	callInfo := struct {
 		Ctx             sdk.Context
-		Poll            vote.PollMeta
+		Poll            exported.PollMeta
 		SnapshotCounter int64
 	}{
 		Ctx:             ctx,
@@ -159,12 +159,12 @@ func (mock *VoterMock) InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCou
 //     len(mockedVoter.InitPollCalls())
 func (mock *VoterMock) InitPollCalls() []struct {
 	Ctx             sdk.Context
-	Poll            vote.PollMeta
+	Poll            exported.PollMeta
 	SnapshotCounter int64
 } {
 	var calls []struct {
 		Ctx             sdk.Context
-		Poll            vote.PollMeta
+		Poll            exported.PollMeta
 		SnapshotCounter int64
 	}
 	mock.lockInitPoll.RLock()
@@ -174,13 +174,13 @@ func (mock *VoterMock) InitPollCalls() []struct {
 }
 
 // Result calls ResultFunc.
-func (mock *VoterMock) Result(ctx sdk.Context, poll vote.PollMeta) vote.VotingData {
+func (mock *VoterMock) Result(ctx sdk.Context, poll exported.PollMeta) exported.VotingData {
 	if mock.ResultFunc == nil {
 		panic("VoterMock.ResultFunc: method is nil but Voter.Result was just called")
 	}
 	callInfo := struct {
 		Ctx  sdk.Context
-		Poll vote.PollMeta
+		Poll exported.PollMeta
 	}{
 		Ctx:  ctx,
 		Poll: poll,
@@ -196,11 +196,11 @@ func (mock *VoterMock) Result(ctx sdk.Context, poll vote.PollMeta) vote.VotingDa
 //     len(mockedVoter.ResultCalls())
 func (mock *VoterMock) ResultCalls() []struct {
 	Ctx  sdk.Context
-	Poll vote.PollMeta
+	Poll exported.PollMeta
 } {
 	var calls []struct {
 		Ctx  sdk.Context
-		Poll vote.PollMeta
+		Poll exported.PollMeta
 	}
 	mock.lockResult.RLock()
 	calls = mock.calls.Result
@@ -209,15 +209,15 @@ func (mock *VoterMock) ResultCalls() []struct {
 }
 
 // TallyVote calls TallyVoteFunc.
-func (mock *VoterMock) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta vote.PollMeta, data vote.VotingData) error {
+func (mock *VoterMock) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data exported.VotingData) error {
 	if mock.TallyVoteFunc == nil {
 		panic("VoterMock.TallyVoteFunc: method is nil but Voter.TallyVote was just called")
 	}
 	callInfo := struct {
 		Ctx      sdk.Context
 		Sender   sdk.AccAddress
-		PollMeta vote.PollMeta
-		Data     vote.VotingData
+		PollMeta exported.PollMeta
+		Data     exported.VotingData
 	}{
 		Ctx:      ctx,
 		Sender:   sender,
@@ -236,14 +236,14 @@ func (mock *VoterMock) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMet
 func (mock *VoterMock) TallyVoteCalls() []struct {
 	Ctx      sdk.Context
 	Sender   sdk.AccAddress
-	PollMeta vote.PollMeta
-	Data     vote.VotingData
+	PollMeta exported.PollMeta
+	Data     exported.VotingData
 } {
 	var calls []struct {
 		Ctx      sdk.Context
 		Sender   sdk.AccAddress
-		PollMeta vote.PollMeta
-		Data     vote.VotingData
+		PollMeta exported.PollMeta
+		Data     exported.VotingData
 	}
 	mock.lockTallyVote.RLock()
 	calls = mock.calls.TallyVote
@@ -279,7 +279,7 @@ var _ types.Signer = &SignerMock{}
 // 			GetSnapshotCounterForKeyIDFunc: func(ctx sdk.Context, keyID string) (int64, bool) {
 // 				panic("mock out the GetSnapshotCounterForKeyID method")
 // 			},
-// 			StartSignFunc: func(ctx sdk.Context, initPoll interface{InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
+// 			StartSignFunc: func(ctx sdk.Context, initPoll interface{InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64) error}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
 // 				panic("mock out the StartSign method")
 // 			},
 // 		}
@@ -309,7 +309,7 @@ type SignerMock struct {
 
 	// StartSignFunc mocks the StartSign method.
 	StartSignFunc func(ctx sdk.Context, initPoll interface {
-		InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error
+		InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64) error
 	}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error
 
 	// calls tracks calls to the methods.
@@ -366,7 +366,7 @@ type SignerMock struct {
 			Ctx sdk.Context
 			// InitPoll is the initPoll argument value.
 			InitPoll interface {
-				InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error
+				InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64) error
 			}
 			// KeyID is the keyID argument value.
 			KeyID string
@@ -607,7 +607,7 @@ func (mock *SignerMock) GetSnapshotCounterForKeyIDCalls() []struct {
 
 // StartSign calls StartSignFunc.
 func (mock *SignerMock) StartSign(ctx sdk.Context, initPoll interface {
-	InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error
+	InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64) error
 }, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
 	if mock.StartSignFunc == nil {
 		panic("SignerMock.StartSignFunc: method is nil but Signer.StartSign was just called")
@@ -615,7 +615,7 @@ func (mock *SignerMock) StartSign(ctx sdk.Context, initPoll interface {
 	callInfo := struct {
 		Ctx      sdk.Context
 		InitPoll interface {
-			InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error
+			InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64) error
 		}
 		KeyID            string
 		SigID            string
@@ -641,7 +641,7 @@ func (mock *SignerMock) StartSign(ctx sdk.Context, initPoll interface {
 func (mock *SignerMock) StartSignCalls() []struct {
 	Ctx      sdk.Context
 	InitPoll interface {
-		InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error
+		InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64) error
 	}
 	KeyID            string
 	SigID            string
@@ -651,7 +651,7 @@ func (mock *SignerMock) StartSignCalls() []struct {
 	var calls []struct {
 		Ctx      sdk.Context
 		InitPoll interface {
-			InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error
+			InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64) error
 		}
 		KeyID            string
 		SigID            string
@@ -1253,10 +1253,10 @@ var _ types.EthKeeper = &EthKeeperMock{}
 // 			GetTokenAddressFunc: func(ctx sdk.Context, symbol string, gatewayAddr common.Address) (common.Address, error) {
 // 				panic("mock out the GetTokenAddress method")
 // 			},
-// 			SetPendingDepositFunc: func(ctx sdk.Context, poll vote.PollMeta, deposit *types.ERC20Deposit)  {
+// 			SetPendingDepositFunc: func(ctx sdk.Context, poll exported.PollMeta, deposit *types.ERC20Deposit)  {
 // 				panic("mock out the SetPendingDeposit method")
 // 			},
-// 			SetPendingTokenDeployFunc: func(ctx sdk.Context, poll vote.PollMeta, tokenDeploy types.ERC20TokenDeploy)  {
+// 			SetPendingTokenDeployFunc: func(ctx sdk.Context, poll exported.PollMeta, tokenDeploy types.ERC20TokenDeploy)  {
 // 				panic("mock out the SetPendingTokenDeploy method")
 // 			},
 // 		}
@@ -1288,10 +1288,10 @@ type EthKeeperMock struct {
 	GetTokenAddressFunc func(ctx sdk.Context, symbol string, gatewayAddr common.Address) (common.Address, error)
 
 	// SetPendingDepositFunc mocks the SetPendingDeposit method.
-	SetPendingDepositFunc func(ctx sdk.Context, poll vote.PollMeta, deposit *types.ERC20Deposit)
+	SetPendingDepositFunc func(ctx sdk.Context, poll exported.PollMeta, deposit *types.ERC20Deposit)
 
 	// SetPendingTokenDeployFunc mocks the SetPendingTokenDeploy method.
-	SetPendingTokenDeployFunc func(ctx sdk.Context, poll vote.PollMeta, tokenDeploy types.ERC20TokenDeploy)
+	SetPendingTokenDeployFunc func(ctx sdk.Context, poll exported.PollMeta, tokenDeploy types.ERC20TokenDeploy)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -1343,7 +1343,7 @@ type EthKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Poll is the poll argument value.
-			Poll vote.PollMeta
+			Poll exported.PollMeta
 			// Deposit is the deposit argument value.
 			Deposit *types.ERC20Deposit
 		}
@@ -1352,7 +1352,7 @@ type EthKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Poll is the poll argument value.
-			Poll vote.PollMeta
+			Poll exported.PollMeta
 			// TokenDeploy is the tokenDeploy argument value.
 			TokenDeploy types.ERC20TokenDeploy
 		}
@@ -1601,13 +1601,13 @@ func (mock *EthKeeperMock) GetTokenAddressCalls() []struct {
 }
 
 // SetPendingDeposit calls SetPendingDepositFunc.
-func (mock *EthKeeperMock) SetPendingDeposit(ctx sdk.Context, poll vote.PollMeta, deposit *types.ERC20Deposit) {
+func (mock *EthKeeperMock) SetPendingDeposit(ctx sdk.Context, poll exported.PollMeta, deposit *types.ERC20Deposit) {
 	if mock.SetPendingDepositFunc == nil {
 		panic("EthKeeperMock.SetPendingDepositFunc: method is nil but EthKeeper.SetPendingDeposit was just called")
 	}
 	callInfo := struct {
 		Ctx     sdk.Context
-		Poll    vote.PollMeta
+		Poll    exported.PollMeta
 		Deposit *types.ERC20Deposit
 	}{
 		Ctx:     ctx,
@@ -1625,12 +1625,12 @@ func (mock *EthKeeperMock) SetPendingDeposit(ctx sdk.Context, poll vote.PollMeta
 //     len(mockedEthKeeper.SetPendingDepositCalls())
 func (mock *EthKeeperMock) SetPendingDepositCalls() []struct {
 	Ctx     sdk.Context
-	Poll    vote.PollMeta
+	Poll    exported.PollMeta
 	Deposit *types.ERC20Deposit
 } {
 	var calls []struct {
 		Ctx     sdk.Context
-		Poll    vote.PollMeta
+		Poll    exported.PollMeta
 		Deposit *types.ERC20Deposit
 	}
 	mock.lockSetPendingDeposit.RLock()
@@ -1640,13 +1640,13 @@ func (mock *EthKeeperMock) SetPendingDepositCalls() []struct {
 }
 
 // SetPendingTokenDeploy calls SetPendingTokenDeployFunc.
-func (mock *EthKeeperMock) SetPendingTokenDeploy(ctx sdk.Context, poll vote.PollMeta, tokenDeploy types.ERC20TokenDeploy) {
+func (mock *EthKeeperMock) SetPendingTokenDeploy(ctx sdk.Context, poll exported.PollMeta, tokenDeploy types.ERC20TokenDeploy) {
 	if mock.SetPendingTokenDeployFunc == nil {
 		panic("EthKeeperMock.SetPendingTokenDeployFunc: method is nil but EthKeeper.SetPendingTokenDeploy was just called")
 	}
 	callInfo := struct {
 		Ctx         sdk.Context
-		Poll        vote.PollMeta
+		Poll        exported.PollMeta
 		TokenDeploy types.ERC20TokenDeploy
 	}{
 		Ctx:         ctx,
@@ -1664,12 +1664,12 @@ func (mock *EthKeeperMock) SetPendingTokenDeploy(ctx sdk.Context, poll vote.Poll
 //     len(mockedEthKeeper.SetPendingTokenDeployCalls())
 func (mock *EthKeeperMock) SetPendingTokenDeployCalls() []struct {
 	Ctx         sdk.Context
-	Poll        vote.PollMeta
+	Poll        exported.PollMeta
 	TokenDeploy types.ERC20TokenDeploy
 } {
 	var calls []struct {
 		Ctx         sdk.Context
-		Poll        vote.PollMeta
+		Poll        exported.PollMeta
 		TokenDeploy types.ERC20TokenDeploy
 	}
 	mock.lockSetPendingTokenDeploy.RLock()

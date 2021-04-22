@@ -34,7 +34,6 @@ The pass backend requires GnuPG: https://gnupg.org/
   -h, --help                     help for keys
       --keyring-backend string   Select keyring's backend (os|file|test) (default "test")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
-      --output string            Output format (text|json) (default "text")
 ```
 
 ### Options inherited from parent commands
@@ -43,6 +42,7 @@ The pass backend requires GnuPG: https://gnupg.org/
       --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --output string       Output format (text|json) (default "text")
       --trace               print out full stack trace on errors
 ```
 

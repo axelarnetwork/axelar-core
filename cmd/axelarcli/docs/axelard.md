@@ -9,6 +9,7 @@ Axelar App
       --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --output string       Output format (text|json) (default "text")
       --trace               print out full stack trace on errors
 ```
 
@@ -34,5 +35,6 @@ Axelar App
 - [axelard tendermint](axelard_tendermint.md)	 - Tendermint subcommands
 - [axelard tx](axelard_tx.md)	 - Transactions subcommands
 - [axelard unsafe-reset-all](axelard_unsafe-reset-all.md)	 - Resets the blockchain database, removes address book files, and resets data/priv_validator_state.json to the genesis state
+- [axelard vald-start](axelard_vald-start.md)	 -
 - [axelard validate-genesis](axelard_validate-genesis.md)	 - validates the genesis file at the default location or at the location passed as an arg
 - [axelard version](axelard_version.md)	 - Print the application binary version information

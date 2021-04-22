@@ -4,9 +4,11 @@
 package mock
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/broadcast/exported"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"sync"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 )
 
 // Ensure, that BroadcasterMock does implement exported.Broadcaster.
@@ -19,9 +21,6 @@ var _ exported.Broadcaster = &BroadcasterMock{}
 //
 // 		// make and configure a mocked exported.Broadcaster
 // 		mockedBroadcaster := &BroadcasterMock{
-// 			GetLocalPrincipalFunc: func(ctx sdk.Context) sdk.ValAddress {
-// 				panic("mock out the GetLocalPrincipal method")
-// 			},
 // 			GetPrincipalFunc: func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
 // 				panic("mock out the GetPrincipal method")
 // 			},
@@ -38,9 +37,6 @@ var _ exported.Broadcaster = &BroadcasterMock{}
 //
 // 	}
 type BroadcasterMock struct {
-	// GetLocalPrincipalFunc mocks the GetLocalPrincipal method.
-	GetLocalPrincipalFunc func(ctx sdk.Context) sdk.ValAddress
-
 	// GetPrincipalFunc mocks the GetPrincipal method.
 	GetPrincipalFunc func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
 
@@ -52,11 +48,6 @@ type BroadcasterMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// GetLocalPrincipal holds details about calls to the GetLocalPrincipal method.
-		GetLocalPrincipal []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-		}
 		// GetPrincipal holds details about calls to the GetPrincipal method.
 		GetPrincipal []struct {
 			// Ctx is the ctx argument value.
@@ -81,41 +72,9 @@ type BroadcasterMock struct {
 			Proxy sdk.AccAddress
 		}
 	}
-	lockGetLocalPrincipal sync.RWMutex
-	lockGetPrincipal      sync.RWMutex
-	lockGetProxy          sync.RWMutex
-	lockRegisterProxy     sync.RWMutex
-}
-
-// GetLocalPrincipal calls GetLocalPrincipalFunc.
-func (mock *BroadcasterMock) GetLocalPrincipal(ctx sdk.Context) sdk.ValAddress {
-	if mock.GetLocalPrincipalFunc == nil {
-		panic("BroadcasterMock.GetLocalPrincipalFunc: method is nil but Broadcaster.GetLocalPrincipal was just called")
-	}
-	callInfo := struct {
-		Ctx sdk.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockGetLocalPrincipal.Lock()
-	mock.calls.GetLocalPrincipal = append(mock.calls.GetLocalPrincipal, callInfo)
-	mock.lockGetLocalPrincipal.Unlock()
-	return mock.GetLocalPrincipalFunc(ctx)
-}
-
-// GetLocalPrincipalCalls gets all the calls that were made to GetLocalPrincipal.
-// Check the length with:
-//     len(mockedBroadcaster.GetLocalPrincipalCalls())
-func (mock *BroadcasterMock) GetLocalPrincipalCalls() []struct {
-	Ctx sdk.Context
-} {
-	var calls []struct {
-		Ctx sdk.Context
-	}
-	mock.lockGetLocalPrincipal.RLock()
-	calls = mock.calls.GetLocalPrincipal
-	mock.lockGetLocalPrincipal.RUnlock()
-	return calls
+	lockGetPrincipal  sync.RWMutex
+	lockGetProxy      sync.RWMutex
+	lockRegisterProxy sync.RWMutex
 }
 
 // GetPrincipal calls GetPrincipalFunc.

@@ -144,7 +144,6 @@
     - [broadcast](axelard_tx_broadcast.md)	 - broadcast transactions subcommands
       - [registerProxy \[proxy\] ](axelard_tx_broadcast_registerProxy.md)	 - Register a proxy account for a specific validator principal to broadcast transactions in its stead
       - [sendStake \[amount\] \[address 1\] ... \[address n\]](axelard_tx_broadcast_sendStake.md)	 - Sends the specified amount of stake to the designated addresses
-    - [broadcast \[file_path\]](axelard_tx_broadcast.md)	 - Broadcast transactions generated offline
     - [crisis](axelard_tx_crisis.md)	 - Crisis transactions subcommands
       - [invariant-broken \[module-name\] \[invariant-route\]](axelard_tx_crisis_invariant-broken.md)	 - Submit proof that an invariant broken to halt the chain
     - [decode \[amino-byte-string\]](axelard_tx_decode.md)	 - Decode an binary encoded transaction string.
@@ -220,5 +219,6 @@
     - [vesting](axelard_tx_vesting.md)	 - Vesting transaction subcommands
       - [create-vesting-account \[to_address\] \[amount\] \[end_time\]](axelard_tx_vesting_create-vesting-account.md)	 - Create a new vesting account funded with an allocation of tokens.
   - [unsafe-reset-all](axelard_unsafe-reset-all.md)	 - Resets the blockchain database, removes address book files, and resets data/priv_validator_state.json to the genesis state
+  - [vald-start](axelard_vald-start.md)	 -
   - [validate-genesis \[file\]](axelard_validate-genesis.md)	 - validates the genesis file at the default location or at the location passed as an arg
   - [version](axelard_version.md)	 - Print the application binary version information

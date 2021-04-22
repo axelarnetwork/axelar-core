@@ -1,16 +1,7 @@
-## axelard tx staking redelegate
-
-Redelegate illiquid tokens from one validator to another
-
-### Synopsis
-
-Redelegate an amount of illiquid staking tokens from one validator to another.
-
-Example:
-$ <appd> tx staking redelegate axelarvaloper1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj axelarvaloper1l2rsakp388kuv9k8qzq6lrm9taddae7fpx59wm 100stake --from mykey
+## axelard vald-start
 
 ```
-axelard tx staking redelegate [src-validator-addr] [dst-validator-addr] [amount] [flags]
+axelard vald-start [flags]
 ```
 
 ### Options
@@ -18,6 +9,7 @@ axelard tx staking redelegate [src-validator-addr] [dst-validator-addr] [amount]
 ```
   -a, --account-number uint      The account number of the signing account (offline mode only)
   -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "sync")
+      --chain-id string          The network chain ID (default "axelar")
       --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
       --fees string              Fees to pay along with transaction; eg: 10uatom
       --from string              Name or address of private key with which to sign
@@ -25,7 +17,7 @@ axelard tx staking redelegate [src-validator-addr] [dst-validator-addr] [amount]
       --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
       --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
-  -h, --help                     help for redelegate
+  -h, --help                     help for vald-start
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "test")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                   Use a connected Ledger device
@@ -35,13 +27,15 @@ axelard tx staking redelegate [src-validator-addr] [dst-validator-addr] [amount]
   -s, --sequence uint            The sequence number of the signing account (offline mode only)
       --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
       --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
+      --tofnd-host string        host name for tss daemon
+      --tofnd-port string        port for tss daemon (default "50051")
+      --validator-addr string    the address of the validator operator
   -y, --yes                      Skip tx broadcasting prompt confirmation
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --chain-id string     The network chain ID (default "axelar")
       --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
@@ -51,4 +45,4 @@ axelard tx staking redelegate [src-validator-addr] [dst-validator-addr] [amount]
 
 ### SEE ALSO
 
-- [axelard tx staking](axelard_tx_staking.md)	 - Staking transaction subcommands
+- [axelard](axelard.md)	 - Axelar App
