@@ -85,6 +85,7 @@ github.com/axelarnetwork/axelar-core v0.0.2-0.20210302093357-f2f67692d1ba/go.mod
 github.com/axelarnetwork/axelar-core v0.2.0/go.mod h1:vaXQReZJ1ZunnmWD2r2XMncW4JK0pMnFZs82za0qonI=
 github.com/axelarnetwork/axelar-core v0.2.1-0.20210420064253-2fdc0cee2af1/go.mod h1:HSFbr2Mvr1TSFepBa2bzmSImbv0MHCZYYxwOE0++XZQ=
 github.com/axelarnetwork/axelar-core v0.2.1-0.20210420090019-80d67305ddbd/go.mod h1:HSFbr2Mvr1TSFepBa2bzmSImbv0MHCZYYxwOE0++XZQ=
+github.com/axelarnetwork/axelar-core v0.2.1-0.20210421094505-8957a6346590/go.mod h1:P2fJMEKNCBC5zInIRQdEYOfYvCl5Qnog8QbzdifV1uo=
 github.com/axelarnetwork/axelar-core v0.2.1-0.20210422014703-c0252e329ca1/go.mod h1:+KOXLEAzsj0QU1QENRsd1Xjhe1ZeKgbCdk3rDyCsufU=
 github.com/axelarnetwork/axelar-core v0.2.1-0.20210422080158-ab9dfe9258dd/go.mod h1:12dtifN/xccOCoXTklWWZ9EySfU4YaZmEpDi4kIM+Wk=
 github.com/axelarnetwork/c2d2 v0.0.0-20210302225045-2f24e9ea1116 h1:zegF+1j6qph5URd0bnIMJ6uI3pV95xLgjX1e5VbMe9c=
@@ -105,6 +106,8 @@ github.com/axelarnetwork/c2d2 v0.0.0-20210422075704-6276803063d9 h1:hbOSFBv9qedf
 github.com/axelarnetwork/c2d2 v0.0.0-20210422075704-6276803063d9/go.mod h1:qGL9KDc0tSjNinLMjTNOftAVbkq+r7URT7vQPt29w14=
 github.com/axelarnetwork/c2d2 v0.0.0-20210422080636-ebd5e616388a h1:7FJ6LbUAH3VyZwR3+ZpGaPXXH0SQzS/z357y24voJHY=
 github.com/axelarnetwork/c2d2 v0.0.0-20210422080636-ebd5e616388a/go.mod h1:xQT5rd9qw06Bqchb4sLib5VYqlxZalnQqDn9QzkNvDM=
+github.com/axelarnetwork/c2d2 v0.0.0-20210422081159-106ca0e91d75 h1:dzmWr+bPW+0Te47hgBN49v7vU2c2Rb0S+ev2sIX8PAE=
+github.com/axelarnetwork/c2d2 v0.0.0-20210422081159-106ca0e91d75/go.mod h1:ltHoJnAXW0qkpYfpyGiYviKHuYhg/OC5I7cziytcZNo=
 github.com/bartekn/go-bip39 v0.0.0-20171116152956-a05967ea095d h1:1aAija9gr0Hyv4KfQcRcwlmFIrhkDmIj2dz5bkg/s/8=
 github.com/bartekn/go-bip39 v0.0.0-20171116152956-a05967ea095d/go.mod h1:icNx/6QdFblhsEjZehARqbNumymUT/ydwlLojFdv7Sk=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
