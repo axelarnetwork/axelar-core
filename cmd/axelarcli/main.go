@@ -20,6 +20,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
 )
 
 //go:generate ./genDocs.sh ./docs
@@ -40,7 +41,7 @@ func main() {
 		rootCmd = executor.Root()
 
 		// set static values for dynamic (system-dependent) flag defaults
-		cmd.OverwriteFlagDefaults(rootCmd, map[string]string{
+		utils.OverwriteFlagDefaults(rootCmd, map[string]string{
 			flags.FlagHome:  home,
 			cli.FlagIP:      "127.0.0.1",
 			cli.FlagMoniker: "node",

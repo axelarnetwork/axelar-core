@@ -26,12 +26,12 @@ type Mgr struct {
 }
 
 // NewMgr returns a new Mgr instance
-func NewMgr(rpc rpc3.Client, broadcaster types.Broadcaster, defaultSender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
+func NewMgr(rpc rpc3.Client, broadcaster types.Broadcaster, sender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
 		rpc:         rpc,
 		logger:      logger.With("listener", "btc"),
 		broadcaster: broadcaster,
-		sender:      defaultSender,
+		sender:      sender,
 		cdc:         cdc,
 	}
 }

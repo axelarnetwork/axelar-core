@@ -1,73 +1,63 @@
 package broadcast
 
 import (
-	"context"
 	"fmt"
 	"math"
 	"math/rand"
 	"time"
 
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
-	tx2 "github.com/cosmos/cosmos-sdk/client/tx"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
-	rpc "github.com/tendermint/tendermint/rpc/client"
-	"github.com/tendermint/tendermint/rpc/client/http"
-	coretypes "github.com/tendermint/tendermint/rpc/core/types"
-
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
-	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 )
 
 // Broadcaster submits transactions to a tendermint node
 type Broadcaster struct {
-	rpc        types.Client
-	logger     log.Logger
-	seqNo      uint64
-	broadcasts chan func()
-	signer     types.Sign
-	chainID    string
-	gas        uint64
+	logger    log.Logger
+	queue     chan func()
+	ctx       sdkClient.Context
+	txFactory tx.Factory
 }
 
 // NewBroadcaster returns a broadcaster to submit transactions to the blockchain.
 // Only one instance of a broadcaster should be run for a given account, otherwise risk conflicting sequence numbers for submitted transactions.
-func NewBroadcaster(signer types.Sign, client types.Client, conf broadcastTypes.ClientConfig, logger log.Logger) (*Broadcaster, error) {
-	if conf.ChainID == "" {
-		return nil, sdkerrors.Wrap(broadcastTypes.ErrInvalidChain, "chain ID required but not specified")
-	}
-
+func NewBroadcaster(ctx sdkClient.Context, txf tx.Factory, logger log.Logger) *Broadcaster {
 	broadcaster := &Broadcaster{
-		signer:     signer,
-		chainID:    conf.ChainID,
-		gas:        conf.Gas,
-		rpc:        client,
-		logger:     logger,
-		seqNo:      0,
-		broadcasts: make(chan func(), 1000),
+		ctx:       ctx,
+		logger:    logger,
+		queue:     make(chan func(), 1000),
+		txFactory: txf,
 	}
 
-	// call broadcast functions sequentially
+	// sequential function queue
 	go func() {
 		// this is expected to run for the full life time of the process, so there is no need to be able to escape the loop
-		for broadcast := range broadcaster.broadcasts {
-			broadcast()
+		for executeCommand := range broadcaster.queue {
+			executeCommand()
 		}
 	}()
 
-	return broadcaster, nil
+	return broadcaster
+}
+
+// Reset resets the account number and sequence number of the sender. This is executed in serialized order with other incoming broadcast commands
+func (b *Broadcaster) Reset() {
+	b.queue <- func() {
+		b.txFactory = b.txFactory.
+			WithAccountNumber(0).
+			WithSequence(0)
+	}
 }
 
 // Broadcast sends the passed messages to the network. This function in thread-safe.
 func (b *Broadcaster) Broadcast(msgs ...sdk.Msg) error {
 	errChan := make(chan error, 1)
-	// push the "intent to run broadcast" into a channel so it can be executed sequentially,
+	// push the "intent to run broadcast" into the queue so it can be executed sequentially,
 	// even if the public Broadcast function is called concurrently
-	b.broadcasts <- func() { errChan <- b.broadcast(msgs) }
+	b.queue <- func() { errChan <- b.broadcast(msgs) }
 	// block until the broadcast call has actually been run
 	return <-errChan
 }
@@ -82,114 +72,48 @@ func (b *Broadcaster) broadcast(msgs []sdk.Msg) error {
 		return fmt.Errorf("messages must have at least one signer")
 	}
 
-	accNo, seqNo, err := b.updateAccountNumberSequence(msgs[0].GetSigners()[0])
+	txf, err := tx.PrepareFactory(b.ctx, b.txFactory)
 	if err != nil {
 		return err
 	}
 
-	stdSignMsg := legacytx.StdSignMsg{
-		ChainID:       b.chainID,
-		AccountNumber: accNo,
-		Sequence:      seqNo,
-		Msgs:          msgs,
-		Fee:           legacytx.NewStdFee(b.gas, nil),
+	if txf.SimulateAndExecute() || b.ctx.Simulate {
+		_, adjusted, err := tx.CalculateGas(b.ctx.QueryWithData, txf, msgs...)
+		if err != nil {
+			return err
+		}
+
+		txf = txf.WithGas(adjusted)
 	}
 
-	tx, err := sign(b.signer, stdSignMsg)
+	txBuilder, err := tx.BuildUnsignedTx(txf, msgs...)
 	if err != nil {
 		return err
 	}
 
-	b.logger.Debug(fmt.Sprintf("broadcasting %d messages from address: %.20s, acc no.: %d, seq no.: %d, chainId: %s",
-		len(msgs), msgs[0].GetSigners()[0], stdSignMsg.AccountNumber, stdSignMsg.Sequence, stdSignMsg.ChainID))
-
-	res, err := b.rpc.BroadcastTxSync(tx)
+	err = tx.Sign(txf, b.ctx.GetFromName(), txBuilder, true)
 	if err != nil {
 		return err
 	}
+
+	txBytes, err := b.ctx.TxConfig.TxEncoder()(txBuilder.GetTx())
+	if err != nil {
+		return err
+	}
+
+	// broadcast to a Tendermint node
+	res, err := b.ctx.BroadcastTx(txBytes)
+	if err != nil {
+		return err
+	}
+
 	if res.Code != abci.CodeTypeOK {
-		return fmt.Errorf(res.Log)
+		return fmt.Errorf(res.RawLog)
 	}
 	// broadcast has been successful, so increment sequence number
-	b.seqNo += 1
+	b.txFactory = b.txFactory.WithSequence(txf.Sequence() + 1)
+
 	return nil
-}
-
-func (b *Broadcaster) updateAccountNumberSequence(addr sdk.AccAddress) (uint64, uint64, error) {
-	accNo, seqNo, err := b.rpc.GetAccountNumberSequence(addr)
-	if err != nil {
-		return 0, 0, err
-	}
-	if seqNo > b.seqNo {
-		b.seqNo = seqNo
-	}
-	return accNo, b.seqNo, nil
-}
-
-func sign(sign types.Sign, msg legacytx.StdSignMsg) (legacytx.StdTx, error) {
-	var sigs []legacytx.StdSignature
-	for i, m := range msg.Msgs {
-		if len(m.GetSigners()) == 0 {
-			return legacytx.StdTx{}, fmt.Errorf("signing failed: msg at idx [%d] without signers", i)
-		}
-		for _, s := range m.GetSigners() {
-			sig, err := sign(s, msg)
-			if err != nil {
-				return legacytx.StdTx{}, err
-			}
-			sigs = append(sigs, sig)
-		}
-	}
-
-	return legacytx.NewStdTx(msg.Msgs, msg.Fee, sigs, msg.Memo), nil
-}
-
-type client struct {
-	rpc.ABCIClient
-	ctx      sdkClient.Context
-	txConfig sdkClient.TxConfig
-}
-
-// GetAccountNumberSequence returns sequence and account number for the given address.
-// It returns an error if the account couldn't be retrieved from the state.
-func (c client) GetAccountNumberSequence(addr sdk.AccAddress) (accNum uint64, accSeq uint64, err error) {
-	return c.ctx.AccountRetriever.GetAccountNumberSequence(c.ctx, addr)
-}
-
-// NewClient returns a new rpc client to a tendermint node
-func NewClient(ctx sdkClient.Context, txConfig sdkClient.TxConfig, tendermintURI string) (types.Client, error) {
-	abciClient, err := http.New(tendermintURI, "/websocket")
-	if err != nil {
-		return nil, err
-	}
-
-	return client{ABCIClient: abciClient, ctx: ctx, txConfig: txConfig}, nil
-}
-
-// BroadcastTxSync submits a transaction synchronously
-func (c client) BroadcastTxSync(stdTx legacytx.StdTx) (*coretypes.ResultBroadcastTx, error) {
-	txBytes, err := tx2.ConvertAndEncodeStdTx(c.txConfig, stdTx)
-	if err != nil {
-		return nil, err
-	}
-	return c.ABCIClient.BroadcastTxSync(context.Background(), txBytes)
-}
-
-// NewSigner unlocks the given keybase, so messages can be signed by the returned sign function
-func NewSigner(keybase keyring.Keyring, accountInfo keyring.Info) (types.Sign, error) {
-	return func(from sdk.AccAddress, msg legacytx.StdSignMsg) (legacytx.StdSignature, error) {
-		if !from.Equals(accountInfo.GetAddress()) {
-			return legacytx.StdSignature{}, fmt.Errorf("could not sign, expected address %.20s, got %.20s", accountInfo.GetAddress(), from)
-		}
-		sig, pk, err := keybase.Sign(accountInfo.GetName(), msg.Bytes())
-		if err != nil {
-			return legacytx.StdSignature{}, err
-		}
-		return legacytx.StdSignature{
-			PubKey:    pk,
-			Signature: sig,
-		}, nil
-	}, nil
 }
 
 // BackOffBroadcaster is a broadcast wrapper that adds retries with backoff
@@ -198,26 +122,38 @@ type BackOffBroadcaster struct {
 	timeout     time.Duration
 	maxRetries  int
 	backOff     func(retryCount int, minTimeout time.Duration) time.Duration
+	queue       chan func()
 }
 
-// WithBackoff wraps a broadcaster so that failed broadcasts are retried with the given back-off strategy
+// WithBackoff wraps a broadcaster so that failed queue are retried with the given back-off strategy
 func WithBackoff(b *Broadcaster, strategy BackOff, minTimeout time.Duration, maxRetries int) *BackOffBroadcaster {
-	return &BackOffBroadcaster{
+	backOff := &BackOffBroadcaster{
 		broadcaster: b,
 		timeout:     minTimeout,
 		maxRetries:  maxRetries,
 		backOff:     strategy,
+		queue:       make(chan func(), 1000),
 	}
+
+	// call broadcast functions sequentially
+	go func() {
+		// this is expected to run for the full life time of the process, so there is no need to be able to escape the loop
+		for broadcast := range backOff.queue {
+			broadcast()
+		}
+	}()
+
+	return backOff
 }
 
 // Broadcast submits messages synchronously and retries with exponential backoff.
 // This function is thread-safe but might block for a long time depending on the exponential backoff parameters.
 func (b *BackOffBroadcaster) Broadcast(msgs ...sdk.Msg) error {
-	errChan := make(chan error)
-	go func() {
-		defer close(errChan)
-		errChan <- b.broadcastWithBackoff(msgs)
-	}()
+	errChan := make(chan error, 1)
+	// push the "intent to run broadcast" into a channel so it can be executed sequentially,
+	// even if the public Broadcast function is called concurrently
+	b.queue <- func() { errChan <- b.broadcastWithBackoff(msgs) }
+	// block until the broadcast call has actually been run
 	return <-errChan
 }
 
@@ -227,6 +163,9 @@ func (b *BackOffBroadcaster) broadcastWithBackoff(msgs []sdk.Msg) (err error) {
 		if err == nil {
 			return nil
 		}
+
+		// in case the issue is sequence number, we reset it here
+		b.broadcaster.Reset()
 
 		// exponential backoff
 		if i < b.maxRetries {

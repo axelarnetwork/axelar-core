@@ -4,65 +4,1028 @@
 package mock
 
 import (
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
-	coretypes "github.com/tendermint/tendermint/rpc/core/types"
+	"context"
 	"sync"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/tendermint/tendermint/libs/bytes"
+	"github.com/tendermint/tendermint/libs/log"
+	rpcclient "github.com/tendermint/tendermint/rpc/client"
+	"github.com/tendermint/tendermint/rpc/core/types"
+	tenderminttypes "github.com/tendermint/tendermint/types"
+
+	broadcasttypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
 )
 
-// Ensure, that ClientMock does implement types.Client.
+// Ensure, that ClientMock does implement broadcasttypes.Client.
 // If this is not the case, regenerate this file with moq.
-var _ types.Client = &ClientMock{}
+var _ broadcasttypes.Client = &ClientMock{}
 
-// ClientMock is a mock implementation of types.Client.
+// ClientMock is a mock implementation of broadcasttypes.Client.
 //
 // 	func TestSomethingThatUsesClient(t *testing.T) {
 //
-// 		// make and configure a mocked types.Client
+// 		// make and configure a mocked broadcasttypes.Client
 // 		mockedClient := &ClientMock{
-// 			BroadcastTxSyncFunc: func(tx legacytx.StdTx) (*coretypes.ResultBroadcastTx, error) {
+// 			ABCIInfoFunc: func(contextMoqParam context.Context) (*coretypes.ResultABCIInfo, error) {
+// 				panic("mock out the ABCIInfo method")
+// 			},
+// 			ABCIQueryFunc: func(ctx context.Context, path string, data bytes.HexBytes) (*coretypes.ResultABCIQuery, error) {
+// 				panic("mock out the ABCIQuery method")
+// 			},
+// 			ABCIQueryWithOptionsFunc: func(ctx context.Context, path string, data bytes.HexBytes, opts rpcclient.ABCIQueryOptions) (*coretypes.ResultABCIQuery, error) {
+// 				panic("mock out the ABCIQueryWithOptions method")
+// 			},
+// 			BlockFunc: func(ctx context.Context, height *int64) (*coretypes.ResultBlock, error) {
+// 				panic("mock out the Block method")
+// 			},
+// 			BlockByHashFunc: func(ctx context.Context, hash []byte) (*coretypes.ResultBlock, error) {
+// 				panic("mock out the BlockByHash method")
+// 			},
+// 			BlockResultsFunc: func(ctx context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
+// 				panic("mock out the BlockResults method")
+// 			},
+// 			BlockSearchFunc: func(ctx context.Context, query string, page *int, perPage *int, orderBy string) (*coretypes.ResultBlockSearch, error) {
+// 				panic("mock out the BlockSearch method")
+// 			},
+// 			BlockchainInfoFunc: func(ctx context.Context, minHeight int64, maxHeight int64) (*coretypes.ResultBlockchainInfo, error) {
+// 				panic("mock out the BlockchainInfo method")
+// 			},
+// 			BroadcastEvidenceFunc: func(contextMoqParam context.Context, evidence tenderminttypes.Evidence) (*coretypes.ResultBroadcastEvidence, error) {
+// 				panic("mock out the BroadcastEvidence method")
+// 			},
+// 			BroadcastTxAsyncFunc: func(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTx, error) {
+// 				panic("mock out the BroadcastTxAsync method")
+// 			},
+// 			BroadcastTxCommitFunc: func(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTxCommit, error) {
+// 				panic("mock out the BroadcastTxCommit method")
+// 			},
+// 			BroadcastTxSyncFunc: func(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTx, error) {
 // 				panic("mock out the BroadcastTxSync method")
 // 			},
-// 			GetAccountNumberSequenceFunc: func(addr sdk.AccAddress) (uint64, uint64, error) {
-// 				panic("mock out the GetAccountNumberSequence method")
+// 			CheckTxFunc: func(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultCheckTx, error) {
+// 				panic("mock out the CheckTx method")
+// 			},
+// 			CommitFunc: func(ctx context.Context, height *int64) (*coretypes.ResultCommit, error) {
+// 				panic("mock out the Commit method")
+// 			},
+// 			ConsensusParamsFunc: func(ctx context.Context, height *int64) (*coretypes.ResultConsensusParams, error) {
+// 				panic("mock out the ConsensusParams method")
+// 			},
+// 			ConsensusStateFunc: func(contextMoqParam context.Context) (*coretypes.ResultConsensusState, error) {
+// 				panic("mock out the ConsensusState method")
+// 			},
+// 			DumpConsensusStateFunc: func(contextMoqParam context.Context) (*coretypes.ResultDumpConsensusState, error) {
+// 				panic("mock out the DumpConsensusState method")
+// 			},
+// 			GenesisFunc: func(contextMoqParam context.Context) (*coretypes.ResultGenesis, error) {
+// 				panic("mock out the Genesis method")
+// 			},
+// 			HealthFunc: func(contextMoqParam context.Context) (*coretypes.ResultHealth, error) {
+// 				panic("mock out the Health method")
+// 			},
+// 			IsRunningFunc: func() bool {
+// 				panic("mock out the IsRunning method")
+// 			},
+// 			NetInfoFunc: func(contextMoqParam context.Context) (*coretypes.ResultNetInfo, error) {
+// 				panic("mock out the NetInfo method")
+// 			},
+// 			NumUnconfirmedTxsFunc: func(contextMoqParam context.Context) (*coretypes.ResultUnconfirmedTxs, error) {
+// 				panic("mock out the NumUnconfirmedTxs method")
+// 			},
+// 			OnResetFunc: func() error {
+// 				panic("mock out the OnReset method")
+// 			},
+// 			OnStartFunc: func() error {
+// 				panic("mock out the OnStart method")
+// 			},
+// 			OnStopFunc: func()  {
+// 				panic("mock out the OnStop method")
+// 			},
+// 			QuitFunc: func() <-chan struct{} {
+// 				panic("mock out the Quit method")
+// 			},
+// 			ResetFunc: func() error {
+// 				panic("mock out the Reset method")
+// 			},
+// 			SetLoggerFunc: func(logger log.Logger)  {
+// 				panic("mock out the SetLogger method")
+// 			},
+// 			StartFunc: func() error {
+// 				panic("mock out the Start method")
+// 			},
+// 			StatusFunc: func(contextMoqParam context.Context) (*coretypes.ResultStatus, error) {
+// 				panic("mock out the Status method")
+// 			},
+// 			StopFunc: func() error {
+// 				panic("mock out the Stop method")
+// 			},
+// 			StringFunc: func() string {
+// 				panic("mock out the String method")
+// 			},
+// 			SubscribeFunc: func(ctx context.Context, subscriber string, query string, outCapacity ...int) (<-chan coretypes.ResultEvent, error) {
+// 				panic("mock out the Subscribe method")
+// 			},
+// 			TxFunc: func(ctx context.Context, hash []byte, prove bool) (*coretypes.ResultTx, error) {
+// 				panic("mock out the Tx method")
+// 			},
+// 			TxSearchFunc: func(ctx context.Context, query string, prove bool, page *int, perPage *int, orderBy string) (*coretypes.ResultTxSearch, error) {
+// 				panic("mock out the TxSearch method")
+// 			},
+// 			UnconfirmedTxsFunc: func(ctx context.Context, limit *int) (*coretypes.ResultUnconfirmedTxs, error) {
+// 				panic("mock out the UnconfirmedTxs method")
+// 			},
+// 			UnsubscribeFunc: func(ctx context.Context, subscriber string, query string) error {
+// 				panic("mock out the Unsubscribe method")
+// 			},
+// 			UnsubscribeAllFunc: func(ctx context.Context, subscriber string) error {
+// 				panic("mock out the UnsubscribeAll method")
+// 			},
+// 			ValidatorsFunc: func(ctx context.Context, height *int64, page *int, perPage *int) (*coretypes.ResultValidators, error) {
+// 				panic("mock out the Validators method")
 // 			},
 // 		}
 //
-// 		// use mockedClient in code that requires types.Client
+// 		// use mockedClient in code that requires broadcasttypes.Client
 // 		// and then make assertions.
 //
 // 	}
 type ClientMock struct {
-	// BroadcastTxSyncFunc mocks the BroadcastTxSync method.
-	BroadcastTxSyncFunc func(tx legacytx.StdTx) (*coretypes.ResultBroadcastTx, error)
+	// ABCIInfoFunc mocks the ABCIInfo method.
+	ABCIInfoFunc func(contextMoqParam context.Context) (*coretypes.ResultABCIInfo, error)
 
-	// GetAccountNumberSequenceFunc mocks the GetAccountNumberSequence method.
-	GetAccountNumberSequenceFunc func(addr sdk.AccAddress) (uint64, uint64, error)
+	// ABCIQueryFunc mocks the ABCIQuery method.
+	ABCIQueryFunc func(ctx context.Context, path string, data bytes.HexBytes) (*coretypes.ResultABCIQuery, error)
+
+	// ABCIQueryWithOptionsFunc mocks the ABCIQueryWithOptions method.
+	ABCIQueryWithOptionsFunc func(ctx context.Context, path string, data bytes.HexBytes, opts rpcclient.ABCIQueryOptions) (*coretypes.ResultABCIQuery, error)
+
+	// BlockFunc mocks the Block method.
+	BlockFunc func(ctx context.Context, height *int64) (*coretypes.ResultBlock, error)
+
+	// BlockByHashFunc mocks the BlockByHash method.
+	BlockByHashFunc func(ctx context.Context, hash []byte) (*coretypes.ResultBlock, error)
+
+	// BlockResultsFunc mocks the BlockResults method.
+	BlockResultsFunc func(ctx context.Context, height *int64) (*coretypes.ResultBlockResults, error)
+
+	// BlockSearchFunc mocks the BlockSearch method.
+	BlockSearchFunc func(ctx context.Context, query string, page *int, perPage *int, orderBy string) (*coretypes.ResultBlockSearch, error)
+
+	// BlockchainInfoFunc mocks the BlockchainInfo method.
+	BlockchainInfoFunc func(ctx context.Context, minHeight int64, maxHeight int64) (*coretypes.ResultBlockchainInfo, error)
+
+	// BroadcastEvidenceFunc mocks the BroadcastEvidence method.
+	BroadcastEvidenceFunc func(contextMoqParam context.Context, evidence tenderminttypes.Evidence) (*coretypes.ResultBroadcastEvidence, error)
+
+	// BroadcastTxAsyncFunc mocks the BroadcastTxAsync method.
+	BroadcastTxAsyncFunc func(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTx, error)
+
+	// BroadcastTxCommitFunc mocks the BroadcastTxCommit method.
+	BroadcastTxCommitFunc func(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTxCommit, error)
+
+	// BroadcastTxSyncFunc mocks the BroadcastTxSync method.
+	BroadcastTxSyncFunc func(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTx, error)
+
+	// CheckTxFunc mocks the CheckTx method.
+	CheckTxFunc func(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultCheckTx, error)
+
+	// CommitFunc mocks the Commit method.
+	CommitFunc func(ctx context.Context, height *int64) (*coretypes.ResultCommit, error)
+
+	// ConsensusParamsFunc mocks the ConsensusParams method.
+	ConsensusParamsFunc func(ctx context.Context, height *int64) (*coretypes.ResultConsensusParams, error)
+
+	// ConsensusStateFunc mocks the ConsensusState method.
+	ConsensusStateFunc func(contextMoqParam context.Context) (*coretypes.ResultConsensusState, error)
+
+	// DumpConsensusStateFunc mocks the DumpConsensusState method.
+	DumpConsensusStateFunc func(contextMoqParam context.Context) (*coretypes.ResultDumpConsensusState, error)
+
+	// GenesisFunc mocks the Genesis method.
+	GenesisFunc func(contextMoqParam context.Context) (*coretypes.ResultGenesis, error)
+
+	// HealthFunc mocks the Health method.
+	HealthFunc func(contextMoqParam context.Context) (*coretypes.ResultHealth, error)
+
+	// IsRunningFunc mocks the IsRunning method.
+	IsRunningFunc func() bool
+
+	// NetInfoFunc mocks the NetInfo method.
+	NetInfoFunc func(contextMoqParam context.Context) (*coretypes.ResultNetInfo, error)
+
+	// NumUnconfirmedTxsFunc mocks the NumUnconfirmedTxs method.
+	NumUnconfirmedTxsFunc func(contextMoqParam context.Context) (*coretypes.ResultUnconfirmedTxs, error)
+
+	// OnResetFunc mocks the OnReset method.
+	OnResetFunc func() error
+
+	// OnStartFunc mocks the OnStart method.
+	OnStartFunc func() error
+
+	// OnStopFunc mocks the OnStop method.
+	OnStopFunc func()
+
+	// QuitFunc mocks the Quit method.
+	QuitFunc func() <-chan struct{}
+
+	// ResetFunc mocks the Reset method.
+	ResetFunc func() error
+
+	// SetLoggerFunc mocks the SetLogger method.
+	SetLoggerFunc func(logger log.Logger)
+
+	// StartFunc mocks the Start method.
+	StartFunc func() error
+
+	// StatusFunc mocks the Status method.
+	StatusFunc func(contextMoqParam context.Context) (*coretypes.ResultStatus, error)
+
+	// StopFunc mocks the Stop method.
+	StopFunc func() error
+
+	// StringFunc mocks the String method.
+	StringFunc func() string
+
+	// SubscribeFunc mocks the Subscribe method.
+	SubscribeFunc func(ctx context.Context, subscriber string, query string, outCapacity ...int) (<-chan coretypes.ResultEvent, error)
+
+	// TxFunc mocks the Tx method.
+	TxFunc func(ctx context.Context, hash []byte, prove bool) (*coretypes.ResultTx, error)
+
+	// TxSearchFunc mocks the TxSearch method.
+	TxSearchFunc func(ctx context.Context, query string, prove bool, page *int, perPage *int, orderBy string) (*coretypes.ResultTxSearch, error)
+
+	// UnconfirmedTxsFunc mocks the UnconfirmedTxs method.
+	UnconfirmedTxsFunc func(ctx context.Context, limit *int) (*coretypes.ResultUnconfirmedTxs, error)
+
+	// UnsubscribeFunc mocks the Unsubscribe method.
+	UnsubscribeFunc func(ctx context.Context, subscriber string, query string) error
+
+	// UnsubscribeAllFunc mocks the UnsubscribeAll method.
+	UnsubscribeAllFunc func(ctx context.Context, subscriber string) error
+
+	// ValidatorsFunc mocks the Validators method.
+	ValidatorsFunc func(ctx context.Context, height *int64, page *int, perPage *int) (*coretypes.ResultValidators, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// ABCIInfo holds details about calls to the ABCIInfo method.
+		ABCIInfo []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+		}
+		// ABCIQuery holds details about calls to the ABCIQuery method.
+		ABCIQuery []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Path is the path argument value.
+			Path string
+			// Data is the data argument value.
+			Data bytes.HexBytes
+		}
+		// ABCIQueryWithOptions holds details about calls to the ABCIQueryWithOptions method.
+		ABCIQueryWithOptions []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Path is the path argument value.
+			Path string
+			// Data is the data argument value.
+			Data bytes.HexBytes
+			// Opts is the opts argument value.
+			Opts rpcclient.ABCIQueryOptions
+		}
+		// Block holds details about calls to the Block method.
+		Block []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Height is the height argument value.
+			Height *int64
+		}
+		// BlockByHash holds details about calls to the BlockByHash method.
+		BlockByHash []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Hash is the hash argument value.
+			Hash []byte
+		}
+		// BlockResults holds details about calls to the BlockResults method.
+		BlockResults []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Height is the height argument value.
+			Height *int64
+		}
+		// BlockSearch holds details about calls to the BlockSearch method.
+		BlockSearch []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Query is the query argument value.
+			Query string
+			// Page is the page argument value.
+			Page *int
+			// PerPage is the perPage argument value.
+			PerPage *int
+			// OrderBy is the orderBy argument value.
+			OrderBy string
+		}
+		// BlockchainInfo holds details about calls to the BlockchainInfo method.
+		BlockchainInfo []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// MinHeight is the minHeight argument value.
+			MinHeight int64
+			// MaxHeight is the maxHeight argument value.
+			MaxHeight int64
+		}
+		// BroadcastEvidence holds details about calls to the BroadcastEvidence method.
+		BroadcastEvidence []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+			// Evidence is the evidence argument value.
+			Evidence tenderminttypes.Evidence
+		}
+		// BroadcastTxAsync holds details about calls to the BroadcastTxAsync method.
+		BroadcastTxAsync []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+			// Tx is the tx argument value.
+			Tx tenderminttypes.Tx
+		}
+		// BroadcastTxCommit holds details about calls to the BroadcastTxCommit method.
+		BroadcastTxCommit []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+			// Tx is the tx argument value.
+			Tx tenderminttypes.Tx
+		}
 		// BroadcastTxSync holds details about calls to the BroadcastTxSync method.
 		BroadcastTxSync []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
 			// Tx is the tx argument value.
-			Tx legacytx.StdTx
+			Tx tenderminttypes.Tx
 		}
-		// GetAccountNumberSequence holds details about calls to the GetAccountNumberSequence method.
-		GetAccountNumberSequence []struct {
-			// Addr is the addr argument value.
-			Addr sdk.AccAddress
+		// CheckTx holds details about calls to the CheckTx method.
+		CheckTx []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+			// Tx is the tx argument value.
+			Tx tenderminttypes.Tx
+		}
+		// Commit holds details about calls to the Commit method.
+		Commit []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Height is the height argument value.
+			Height *int64
+		}
+		// ConsensusParams holds details about calls to the ConsensusParams method.
+		ConsensusParams []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Height is the height argument value.
+			Height *int64
+		}
+		// ConsensusState holds details about calls to the ConsensusState method.
+		ConsensusState []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+		}
+		// DumpConsensusState holds details about calls to the DumpConsensusState method.
+		DumpConsensusState []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+		}
+		// Genesis holds details about calls to the Genesis method.
+		Genesis []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+		}
+		// Health holds details about calls to the Health method.
+		Health []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+		}
+		// IsRunning holds details about calls to the IsRunning method.
+		IsRunning []struct {
+		}
+		// NetInfo holds details about calls to the NetInfo method.
+		NetInfo []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+		}
+		// NumUnconfirmedTxs holds details about calls to the NumUnconfirmedTxs method.
+		NumUnconfirmedTxs []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+		}
+		// OnReset holds details about calls to the OnReset method.
+		OnReset []struct {
+		}
+		// OnStart holds details about calls to the OnStart method.
+		OnStart []struct {
+		}
+		// OnStop holds details about calls to the OnStop method.
+		OnStop []struct {
+		}
+		// Quit holds details about calls to the Quit method.
+		Quit []struct {
+		}
+		// Reset holds details about calls to the Reset method.
+		Reset []struct {
+		}
+		// SetLogger holds details about calls to the SetLogger method.
+		SetLogger []struct {
+			// Logger is the logger argument value.
+			Logger log.Logger
+		}
+		// Start holds details about calls to the Start method.
+		Start []struct {
+		}
+		// Status holds details about calls to the Status method.
+		Status []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+		}
+		// Stop holds details about calls to the Stop method.
+		Stop []struct {
+		}
+		// String holds details about calls to the String method.
+		String []struct {
+		}
+		// Subscribe holds details about calls to the Subscribe method.
+		Subscribe []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Subscriber is the subscriber argument value.
+			Subscriber string
+			// Query is the query argument value.
+			Query string
+			// OutCapacity is the outCapacity argument value.
+			OutCapacity []int
+		}
+		// Tx holds details about calls to the Tx method.
+		Tx []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Hash is the hash argument value.
+			Hash []byte
+			// Prove is the prove argument value.
+			Prove bool
+		}
+		// TxSearch holds details about calls to the TxSearch method.
+		TxSearch []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Query is the query argument value.
+			Query string
+			// Prove is the prove argument value.
+			Prove bool
+			// Page is the page argument value.
+			Page *int
+			// PerPage is the perPage argument value.
+			PerPage *int
+			// OrderBy is the orderBy argument value.
+			OrderBy string
+		}
+		// UnconfirmedTxs holds details about calls to the UnconfirmedTxs method.
+		UnconfirmedTxs []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Limit is the limit argument value.
+			Limit *int
+		}
+		// Unsubscribe holds details about calls to the Unsubscribe method.
+		Unsubscribe []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Subscriber is the subscriber argument value.
+			Subscriber string
+			// Query is the query argument value.
+			Query string
+		}
+		// UnsubscribeAll holds details about calls to the UnsubscribeAll method.
+		UnsubscribeAll []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Subscriber is the subscriber argument value.
+			Subscriber string
+		}
+		// Validators holds details about calls to the Validators method.
+		Validators []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Height is the height argument value.
+			Height *int64
+			// Page is the page argument value.
+			Page *int
+			// PerPage is the perPage argument value.
+			PerPage *int
 		}
 	}
-	lockBroadcastTxSync          sync.RWMutex
-	lockGetAccountNumberSequence sync.RWMutex
+	lockABCIInfo             sync.RWMutex
+	lockABCIQuery            sync.RWMutex
+	lockABCIQueryWithOptions sync.RWMutex
+	lockBlock                sync.RWMutex
+	lockBlockByHash          sync.RWMutex
+	lockBlockResults         sync.RWMutex
+	lockBlockSearch          sync.RWMutex
+	lockBlockchainInfo       sync.RWMutex
+	lockBroadcastEvidence    sync.RWMutex
+	lockBroadcastTxAsync     sync.RWMutex
+	lockBroadcastTxCommit    sync.RWMutex
+	lockBroadcastTxSync      sync.RWMutex
+	lockCheckTx              sync.RWMutex
+	lockCommit               sync.RWMutex
+	lockConsensusParams      sync.RWMutex
+	lockConsensusState       sync.RWMutex
+	lockDumpConsensusState   sync.RWMutex
+	lockGenesis              sync.RWMutex
+	lockHealth               sync.RWMutex
+	lockIsRunning            sync.RWMutex
+	lockNetInfo              sync.RWMutex
+	lockNumUnconfirmedTxs    sync.RWMutex
+	lockOnReset              sync.RWMutex
+	lockOnStart              sync.RWMutex
+	lockOnStop               sync.RWMutex
+	lockQuit                 sync.RWMutex
+	lockReset                sync.RWMutex
+	lockSetLogger            sync.RWMutex
+	lockStart                sync.RWMutex
+	lockStatus               sync.RWMutex
+	lockStop                 sync.RWMutex
+	lockString               sync.RWMutex
+	lockSubscribe            sync.RWMutex
+	lockTx                   sync.RWMutex
+	lockTxSearch             sync.RWMutex
+	lockUnconfirmedTxs       sync.RWMutex
+	lockUnsubscribe          sync.RWMutex
+	lockUnsubscribeAll       sync.RWMutex
+	lockValidators           sync.RWMutex
+}
+
+// ABCIInfo calls ABCIInfoFunc.
+func (mock *ClientMock) ABCIInfo(contextMoqParam context.Context) (*coretypes.ResultABCIInfo, error) {
+	callInfo := struct {
+		ContextMoqParam context.Context
+	}{
+		ContextMoqParam: contextMoqParam,
+	}
+	mock.lockABCIInfo.Lock()
+	mock.calls.ABCIInfo = append(mock.calls.ABCIInfo, callInfo)
+	mock.lockABCIInfo.Unlock()
+	if mock.ABCIInfoFunc == nil {
+		var (
+			resultABCIInfoOut *coretypes.ResultABCIInfo
+			errOut            error
+		)
+		return resultABCIInfoOut, errOut
+	}
+	return mock.ABCIInfoFunc(contextMoqParam)
+}
+
+// ABCIInfoCalls gets all the calls that were made to ABCIInfo.
+// Check the length with:
+//     len(mockedClient.ABCIInfoCalls())
+func (mock *ClientMock) ABCIInfoCalls() []struct {
+	ContextMoqParam context.Context
+} {
+	var calls []struct {
+		ContextMoqParam context.Context
+	}
+	mock.lockABCIInfo.RLock()
+	calls = mock.calls.ABCIInfo
+	mock.lockABCIInfo.RUnlock()
+	return calls
+}
+
+// ABCIQuery calls ABCIQueryFunc.
+func (mock *ClientMock) ABCIQuery(ctx context.Context, path string, data bytes.HexBytes) (*coretypes.ResultABCIQuery, error) {
+	callInfo := struct {
+		Ctx  context.Context
+		Path string
+		Data bytes.HexBytes
+	}{
+		Ctx:  ctx,
+		Path: path,
+		Data: data,
+	}
+	mock.lockABCIQuery.Lock()
+	mock.calls.ABCIQuery = append(mock.calls.ABCIQuery, callInfo)
+	mock.lockABCIQuery.Unlock()
+	if mock.ABCIQueryFunc == nil {
+		var (
+			resultABCIQueryOut *coretypes.ResultABCIQuery
+			errOut             error
+		)
+		return resultABCIQueryOut, errOut
+	}
+	return mock.ABCIQueryFunc(ctx, path, data)
+}
+
+// ABCIQueryCalls gets all the calls that were made to ABCIQuery.
+// Check the length with:
+//     len(mockedClient.ABCIQueryCalls())
+func (mock *ClientMock) ABCIQueryCalls() []struct {
+	Ctx  context.Context
+	Path string
+	Data bytes.HexBytes
+} {
+	var calls []struct {
+		Ctx  context.Context
+		Path string
+		Data bytes.HexBytes
+	}
+	mock.lockABCIQuery.RLock()
+	calls = mock.calls.ABCIQuery
+	mock.lockABCIQuery.RUnlock()
+	return calls
+}
+
+// ABCIQueryWithOptions calls ABCIQueryWithOptionsFunc.
+func (mock *ClientMock) ABCIQueryWithOptions(ctx context.Context, path string, data bytes.HexBytes, opts rpcclient.ABCIQueryOptions) (*coretypes.ResultABCIQuery, error) {
+	callInfo := struct {
+		Ctx  context.Context
+		Path string
+		Data bytes.HexBytes
+		Opts rpcclient.ABCIQueryOptions
+	}{
+		Ctx:  ctx,
+		Path: path,
+		Data: data,
+		Opts: opts,
+	}
+	mock.lockABCIQueryWithOptions.Lock()
+	mock.calls.ABCIQueryWithOptions = append(mock.calls.ABCIQueryWithOptions, callInfo)
+	mock.lockABCIQueryWithOptions.Unlock()
+	if mock.ABCIQueryWithOptionsFunc == nil {
+		var (
+			resultABCIQueryOut *coretypes.ResultABCIQuery
+			errOut             error
+		)
+		return resultABCIQueryOut, errOut
+	}
+	return mock.ABCIQueryWithOptionsFunc(ctx, path, data, opts)
+}
+
+// ABCIQueryWithOptionsCalls gets all the calls that were made to ABCIQueryWithOptions.
+// Check the length with:
+//     len(mockedClient.ABCIQueryWithOptionsCalls())
+func (mock *ClientMock) ABCIQueryWithOptionsCalls() []struct {
+	Ctx  context.Context
+	Path string
+	Data bytes.HexBytes
+	Opts rpcclient.ABCIQueryOptions
+} {
+	var calls []struct {
+		Ctx  context.Context
+		Path string
+		Data bytes.HexBytes
+		Opts rpcclient.ABCIQueryOptions
+	}
+	mock.lockABCIQueryWithOptions.RLock()
+	calls = mock.calls.ABCIQueryWithOptions
+	mock.lockABCIQueryWithOptions.RUnlock()
+	return calls
+}
+
+// Block calls BlockFunc.
+func (mock *ClientMock) Block(ctx context.Context, height *int64) (*coretypes.ResultBlock, error) {
+	callInfo := struct {
+		Ctx    context.Context
+		Height *int64
+	}{
+		Ctx:    ctx,
+		Height: height,
+	}
+	mock.lockBlock.Lock()
+	mock.calls.Block = append(mock.calls.Block, callInfo)
+	mock.lockBlock.Unlock()
+	if mock.BlockFunc == nil {
+		var (
+			resultBlockOut *coretypes.ResultBlock
+			errOut         error
+		)
+		return resultBlockOut, errOut
+	}
+	return mock.BlockFunc(ctx, height)
+}
+
+// BlockCalls gets all the calls that were made to Block.
+// Check the length with:
+//     len(mockedClient.BlockCalls())
+func (mock *ClientMock) BlockCalls() []struct {
+	Ctx    context.Context
+	Height *int64
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Height *int64
+	}
+	mock.lockBlock.RLock()
+	calls = mock.calls.Block
+	mock.lockBlock.RUnlock()
+	return calls
+}
+
+// BlockByHash calls BlockByHashFunc.
+func (mock *ClientMock) BlockByHash(ctx context.Context, hash []byte) (*coretypes.ResultBlock, error) {
+	callInfo := struct {
+		Ctx  context.Context
+		Hash []byte
+	}{
+		Ctx:  ctx,
+		Hash: hash,
+	}
+	mock.lockBlockByHash.Lock()
+	mock.calls.BlockByHash = append(mock.calls.BlockByHash, callInfo)
+	mock.lockBlockByHash.Unlock()
+	if mock.BlockByHashFunc == nil {
+		var (
+			resultBlockOut *coretypes.ResultBlock
+			errOut         error
+		)
+		return resultBlockOut, errOut
+	}
+	return mock.BlockByHashFunc(ctx, hash)
+}
+
+// BlockByHashCalls gets all the calls that were made to BlockByHash.
+// Check the length with:
+//     len(mockedClient.BlockByHashCalls())
+func (mock *ClientMock) BlockByHashCalls() []struct {
+	Ctx  context.Context
+	Hash []byte
+} {
+	var calls []struct {
+		Ctx  context.Context
+		Hash []byte
+	}
+	mock.lockBlockByHash.RLock()
+	calls = mock.calls.BlockByHash
+	mock.lockBlockByHash.RUnlock()
+	return calls
+}
+
+// BlockResults calls BlockResultsFunc.
+func (mock *ClientMock) BlockResults(ctx context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
+	callInfo := struct {
+		Ctx    context.Context
+		Height *int64
+	}{
+		Ctx:    ctx,
+		Height: height,
+	}
+	mock.lockBlockResults.Lock()
+	mock.calls.BlockResults = append(mock.calls.BlockResults, callInfo)
+	mock.lockBlockResults.Unlock()
+	if mock.BlockResultsFunc == nil {
+		var (
+			resultBlockResultsOut *coretypes.ResultBlockResults
+			errOut                error
+		)
+		return resultBlockResultsOut, errOut
+	}
+	return mock.BlockResultsFunc(ctx, height)
+}
+
+// BlockResultsCalls gets all the calls that were made to BlockResults.
+// Check the length with:
+//     len(mockedClient.BlockResultsCalls())
+func (mock *ClientMock) BlockResultsCalls() []struct {
+	Ctx    context.Context
+	Height *int64
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Height *int64
+	}
+	mock.lockBlockResults.RLock()
+	calls = mock.calls.BlockResults
+	mock.lockBlockResults.RUnlock()
+	return calls
+}
+
+// BlockSearch calls BlockSearchFunc.
+func (mock *ClientMock) BlockSearch(ctx context.Context, query string, page *int, perPage *int, orderBy string) (*coretypes.ResultBlockSearch, error) {
+	callInfo := struct {
+		Ctx     context.Context
+		Query   string
+		Page    *int
+		PerPage *int
+		OrderBy string
+	}{
+		Ctx:     ctx,
+		Query:   query,
+		Page:    page,
+		PerPage: perPage,
+		OrderBy: orderBy,
+	}
+	mock.lockBlockSearch.Lock()
+	mock.calls.BlockSearch = append(mock.calls.BlockSearch, callInfo)
+	mock.lockBlockSearch.Unlock()
+	if mock.BlockSearchFunc == nil {
+		var (
+			resultBlockSearchOut *coretypes.ResultBlockSearch
+			errOut               error
+		)
+		return resultBlockSearchOut, errOut
+	}
+	return mock.BlockSearchFunc(ctx, query, page, perPage, orderBy)
+}
+
+// BlockSearchCalls gets all the calls that were made to BlockSearch.
+// Check the length with:
+//     len(mockedClient.BlockSearchCalls())
+func (mock *ClientMock) BlockSearchCalls() []struct {
+	Ctx     context.Context
+	Query   string
+	Page    *int
+	PerPage *int
+	OrderBy string
+} {
+	var calls []struct {
+		Ctx     context.Context
+		Query   string
+		Page    *int
+		PerPage *int
+		OrderBy string
+	}
+	mock.lockBlockSearch.RLock()
+	calls = mock.calls.BlockSearch
+	mock.lockBlockSearch.RUnlock()
+	return calls
+}
+
+// BlockchainInfo calls BlockchainInfoFunc.
+func (mock *ClientMock) BlockchainInfo(ctx context.Context, minHeight int64, maxHeight int64) (*coretypes.ResultBlockchainInfo, error) {
+	callInfo := struct {
+		Ctx       context.Context
+		MinHeight int64
+		MaxHeight int64
+	}{
+		Ctx:       ctx,
+		MinHeight: minHeight,
+		MaxHeight: maxHeight,
+	}
+	mock.lockBlockchainInfo.Lock()
+	mock.calls.BlockchainInfo = append(mock.calls.BlockchainInfo, callInfo)
+	mock.lockBlockchainInfo.Unlock()
+	if mock.BlockchainInfoFunc == nil {
+		var (
+			resultBlockchainInfoOut *coretypes.ResultBlockchainInfo
+			errOut                  error
+		)
+		return resultBlockchainInfoOut, errOut
+	}
+	return mock.BlockchainInfoFunc(ctx, minHeight, maxHeight)
+}
+
+// BlockchainInfoCalls gets all the calls that were made to BlockchainInfo.
+// Check the length with:
+//     len(mockedClient.BlockchainInfoCalls())
+func (mock *ClientMock) BlockchainInfoCalls() []struct {
+	Ctx       context.Context
+	MinHeight int64
+	MaxHeight int64
+} {
+	var calls []struct {
+		Ctx       context.Context
+		MinHeight int64
+		MaxHeight int64
+	}
+	mock.lockBlockchainInfo.RLock()
+	calls = mock.calls.BlockchainInfo
+	mock.lockBlockchainInfo.RUnlock()
+	return calls
+}
+
+// BroadcastEvidence calls BroadcastEvidenceFunc.
+func (mock *ClientMock) BroadcastEvidence(contextMoqParam context.Context, evidence tenderminttypes.Evidence) (*coretypes.ResultBroadcastEvidence, error) {
+	callInfo := struct {
+		ContextMoqParam context.Context
+		Evidence        tenderminttypes.Evidence
+	}{
+		ContextMoqParam: contextMoqParam,
+		Evidence:        evidence,
+	}
+	mock.lockBroadcastEvidence.Lock()
+	mock.calls.BroadcastEvidence = append(mock.calls.BroadcastEvidence, callInfo)
+	mock.lockBroadcastEvidence.Unlock()
+	if mock.BroadcastEvidenceFunc == nil {
+		var (
+			resultBroadcastEvidenceOut *coretypes.ResultBroadcastEvidence
+			errOut                     error
+		)
+		return resultBroadcastEvidenceOut, errOut
+	}
+	return mock.BroadcastEvidenceFunc(contextMoqParam, evidence)
+}
+
+// BroadcastEvidenceCalls gets all the calls that were made to BroadcastEvidence.
+// Check the length with:
+//     len(mockedClient.BroadcastEvidenceCalls())
+func (mock *ClientMock) BroadcastEvidenceCalls() []struct {
+	ContextMoqParam context.Context
+	Evidence        tenderminttypes.Evidence
+} {
+	var calls []struct {
+		ContextMoqParam context.Context
+		Evidence        tenderminttypes.Evidence
+	}
+	mock.lockBroadcastEvidence.RLock()
+	calls = mock.calls.BroadcastEvidence
+	mock.lockBroadcastEvidence.RUnlock()
+	return calls
+}
+
+// BroadcastTxAsync calls BroadcastTxAsyncFunc.
+func (mock *ClientMock) BroadcastTxAsync(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTx, error) {
+	callInfo := struct {
+		ContextMoqParam context.Context
+		Tx              tenderminttypes.Tx
+	}{
+		ContextMoqParam: contextMoqParam,
+		Tx:              tx,
+	}
+	mock.lockBroadcastTxAsync.Lock()
+	mock.calls.BroadcastTxAsync = append(mock.calls.BroadcastTxAsync, callInfo)
+	mock.lockBroadcastTxAsync.Unlock()
+	if mock.BroadcastTxAsyncFunc == nil {
+		var (
+			resultBroadcastTxOut *coretypes.ResultBroadcastTx
+			errOut               error
+		)
+		return resultBroadcastTxOut, errOut
+	}
+	return mock.BroadcastTxAsyncFunc(contextMoqParam, tx)
+}
+
+// BroadcastTxAsyncCalls gets all the calls that were made to BroadcastTxAsync.
+// Check the length with:
+//     len(mockedClient.BroadcastTxAsyncCalls())
+func (mock *ClientMock) BroadcastTxAsyncCalls() []struct {
+	ContextMoqParam context.Context
+	Tx              tenderminttypes.Tx
+} {
+	var calls []struct {
+		ContextMoqParam context.Context
+		Tx              tenderminttypes.Tx
+	}
+	mock.lockBroadcastTxAsync.RLock()
+	calls = mock.calls.BroadcastTxAsync
+	mock.lockBroadcastTxAsync.RUnlock()
+	return calls
+}
+
+// BroadcastTxCommit calls BroadcastTxCommitFunc.
+func (mock *ClientMock) BroadcastTxCommit(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTxCommit, error) {
+	callInfo := struct {
+		ContextMoqParam context.Context
+		Tx              tenderminttypes.Tx
+	}{
+		ContextMoqParam: contextMoqParam,
+		Tx:              tx,
+	}
+	mock.lockBroadcastTxCommit.Lock()
+	mock.calls.BroadcastTxCommit = append(mock.calls.BroadcastTxCommit, callInfo)
+	mock.lockBroadcastTxCommit.Unlock()
+	if mock.BroadcastTxCommitFunc == nil {
+		var (
+			resultBroadcastTxCommitOut *coretypes.ResultBroadcastTxCommit
+			errOut                     error
+		)
+		return resultBroadcastTxCommitOut, errOut
+	}
+	return mock.BroadcastTxCommitFunc(contextMoqParam, tx)
+}
+
+// BroadcastTxCommitCalls gets all the calls that were made to BroadcastTxCommit.
+// Check the length with:
+//     len(mockedClient.BroadcastTxCommitCalls())
+func (mock *ClientMock) BroadcastTxCommitCalls() []struct {
+	ContextMoqParam context.Context
+	Tx              tenderminttypes.Tx
+} {
+	var calls []struct {
+		ContextMoqParam context.Context
+		Tx              tenderminttypes.Tx
+	}
+	mock.lockBroadcastTxCommit.RLock()
+	calls = mock.calls.BroadcastTxCommit
+	mock.lockBroadcastTxCommit.RUnlock()
+	return calls
 }
 
 // BroadcastTxSync calls BroadcastTxSyncFunc.
-func (mock *ClientMock) BroadcastTxSync(tx legacytx.StdTx) (*coretypes.ResultBroadcastTx, error) {
+func (mock *ClientMock) BroadcastTxSync(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTx, error) {
 	callInfo := struct {
-		Tx legacytx.StdTx
+		ContextMoqParam context.Context
+		Tx              tenderminttypes.Tx
 	}{
-		Tx: tx,
+		ContextMoqParam: contextMoqParam,
+		Tx:              tx,
 	}
 	mock.lockBroadcastTxSync.Lock()
 	mock.calls.BroadcastTxSync = append(mock.calls.BroadcastTxSync, callInfo)
@@ -74,17 +1037,19 @@ func (mock *ClientMock) BroadcastTxSync(tx legacytx.StdTx) (*coretypes.ResultBro
 		)
 		return resultBroadcastTxOut, errOut
 	}
-	return mock.BroadcastTxSyncFunc(tx)
+	return mock.BroadcastTxSyncFunc(contextMoqParam, tx)
 }
 
 // BroadcastTxSyncCalls gets all the calls that were made to BroadcastTxSync.
 // Check the length with:
 //     len(mockedClient.BroadcastTxSyncCalls())
 func (mock *ClientMock) BroadcastTxSyncCalls() []struct {
-	Tx legacytx.StdTx
+	ContextMoqParam context.Context
+	Tx              tenderminttypes.Tx
 } {
 	var calls []struct {
-		Tx legacytx.StdTx
+		ContextMoqParam context.Context
+		Tx              tenderminttypes.Tx
 	}
 	mock.lockBroadcastTxSync.RLock()
 	calls = mock.calls.BroadcastTxSync
@@ -92,51 +1057,977 @@ func (mock *ClientMock) BroadcastTxSyncCalls() []struct {
 	return calls
 }
 
-// GetAccountNumberSequence calls GetAccountNumberSequenceFunc.
-func (mock *ClientMock) GetAccountNumberSequence(addr sdk.AccAddress) (uint64, uint64, error) {
+// CheckTx calls CheckTxFunc.
+func (mock *ClientMock) CheckTx(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultCheckTx, error) {
 	callInfo := struct {
-		Addr sdk.AccAddress
+		ContextMoqParam context.Context
+		Tx              tenderminttypes.Tx
 	}{
-		Addr: addr,
+		ContextMoqParam: contextMoqParam,
+		Tx:              tx,
 	}
-	mock.lockGetAccountNumberSequence.Lock()
-	mock.calls.GetAccountNumberSequence = append(mock.calls.GetAccountNumberSequence, callInfo)
-	mock.lockGetAccountNumberSequence.Unlock()
-	if mock.GetAccountNumberSequenceFunc == nil {
+	mock.lockCheckTx.Lock()
+	mock.calls.CheckTx = append(mock.calls.CheckTx, callInfo)
+	mock.lockCheckTx.Unlock()
+	if mock.CheckTxFunc == nil {
 		var (
-			accNumOut uint64
-			accSeqOut uint64
-			errOut    error
+			resultCheckTxOut *coretypes.ResultCheckTx
+			errOut           error
 		)
-		return accNumOut, accSeqOut, errOut
+		return resultCheckTxOut, errOut
 	}
-	return mock.GetAccountNumberSequenceFunc(addr)
+	return mock.CheckTxFunc(contextMoqParam, tx)
 }
 
-// GetAccountNumberSequenceCalls gets all the calls that were made to GetAccountNumberSequence.
+// CheckTxCalls gets all the calls that were made to CheckTx.
 // Check the length with:
-//     len(mockedClient.GetAccountNumberSequenceCalls())
-func (mock *ClientMock) GetAccountNumberSequenceCalls() []struct {
-	Addr sdk.AccAddress
+//     len(mockedClient.CheckTxCalls())
+func (mock *ClientMock) CheckTxCalls() []struct {
+	ContextMoqParam context.Context
+	Tx              tenderminttypes.Tx
 } {
 	var calls []struct {
-		Addr sdk.AccAddress
+		ContextMoqParam context.Context
+		Tx              tenderminttypes.Tx
 	}
-	mock.lockGetAccountNumberSequence.RLock()
-	calls = mock.calls.GetAccountNumberSequence
-	mock.lockGetAccountNumberSequence.RUnlock()
+	mock.lockCheckTx.RLock()
+	calls = mock.calls.CheckTx
+	mock.lockCheckTx.RUnlock()
 	return calls
 }
 
-// Ensure, that MsgMock does implement types.Msg.
-// If this is not the case, regenerate this file with moq.
-var _ types.Msg = &MsgMock{}
+// Commit calls CommitFunc.
+func (mock *ClientMock) Commit(ctx context.Context, height *int64) (*coretypes.ResultCommit, error) {
+	callInfo := struct {
+		Ctx    context.Context
+		Height *int64
+	}{
+		Ctx:    ctx,
+		Height: height,
+	}
+	mock.lockCommit.Lock()
+	mock.calls.Commit = append(mock.calls.Commit, callInfo)
+	mock.lockCommit.Unlock()
+	if mock.CommitFunc == nil {
+		var (
+			resultCommitOut *coretypes.ResultCommit
+			errOut          error
+		)
+		return resultCommitOut, errOut
+	}
+	return mock.CommitFunc(ctx, height)
+}
 
-// MsgMock is a mock implementation of types.Msg.
+// CommitCalls gets all the calls that were made to Commit.
+// Check the length with:
+//     len(mockedClient.CommitCalls())
+func (mock *ClientMock) CommitCalls() []struct {
+	Ctx    context.Context
+	Height *int64
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Height *int64
+	}
+	mock.lockCommit.RLock()
+	calls = mock.calls.Commit
+	mock.lockCommit.RUnlock()
+	return calls
+}
+
+// ConsensusParams calls ConsensusParamsFunc.
+func (mock *ClientMock) ConsensusParams(ctx context.Context, height *int64) (*coretypes.ResultConsensusParams, error) {
+	callInfo := struct {
+		Ctx    context.Context
+		Height *int64
+	}{
+		Ctx:    ctx,
+		Height: height,
+	}
+	mock.lockConsensusParams.Lock()
+	mock.calls.ConsensusParams = append(mock.calls.ConsensusParams, callInfo)
+	mock.lockConsensusParams.Unlock()
+	if mock.ConsensusParamsFunc == nil {
+		var (
+			resultConsensusParamsOut *coretypes.ResultConsensusParams
+			errOut                   error
+		)
+		return resultConsensusParamsOut, errOut
+	}
+	return mock.ConsensusParamsFunc(ctx, height)
+}
+
+// ConsensusParamsCalls gets all the calls that were made to ConsensusParams.
+// Check the length with:
+//     len(mockedClient.ConsensusParamsCalls())
+func (mock *ClientMock) ConsensusParamsCalls() []struct {
+	Ctx    context.Context
+	Height *int64
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Height *int64
+	}
+	mock.lockConsensusParams.RLock()
+	calls = mock.calls.ConsensusParams
+	mock.lockConsensusParams.RUnlock()
+	return calls
+}
+
+// ConsensusState calls ConsensusStateFunc.
+func (mock *ClientMock) ConsensusState(contextMoqParam context.Context) (*coretypes.ResultConsensusState, error) {
+	callInfo := struct {
+		ContextMoqParam context.Context
+	}{
+		ContextMoqParam: contextMoqParam,
+	}
+	mock.lockConsensusState.Lock()
+	mock.calls.ConsensusState = append(mock.calls.ConsensusState, callInfo)
+	mock.lockConsensusState.Unlock()
+	if mock.ConsensusStateFunc == nil {
+		var (
+			resultConsensusStateOut *coretypes.ResultConsensusState
+			errOut                  error
+		)
+		return resultConsensusStateOut, errOut
+	}
+	return mock.ConsensusStateFunc(contextMoqParam)
+}
+
+// ConsensusStateCalls gets all the calls that were made to ConsensusState.
+// Check the length with:
+//     len(mockedClient.ConsensusStateCalls())
+func (mock *ClientMock) ConsensusStateCalls() []struct {
+	ContextMoqParam context.Context
+} {
+	var calls []struct {
+		ContextMoqParam context.Context
+	}
+	mock.lockConsensusState.RLock()
+	calls = mock.calls.ConsensusState
+	mock.lockConsensusState.RUnlock()
+	return calls
+}
+
+// DumpConsensusState calls DumpConsensusStateFunc.
+func (mock *ClientMock) DumpConsensusState(contextMoqParam context.Context) (*coretypes.ResultDumpConsensusState, error) {
+	callInfo := struct {
+		ContextMoqParam context.Context
+	}{
+		ContextMoqParam: contextMoqParam,
+	}
+	mock.lockDumpConsensusState.Lock()
+	mock.calls.DumpConsensusState = append(mock.calls.DumpConsensusState, callInfo)
+	mock.lockDumpConsensusState.Unlock()
+	if mock.DumpConsensusStateFunc == nil {
+		var (
+			resultDumpConsensusStateOut *coretypes.ResultDumpConsensusState
+			errOut                      error
+		)
+		return resultDumpConsensusStateOut, errOut
+	}
+	return mock.DumpConsensusStateFunc(contextMoqParam)
+}
+
+// DumpConsensusStateCalls gets all the calls that were made to DumpConsensusState.
+// Check the length with:
+//     len(mockedClient.DumpConsensusStateCalls())
+func (mock *ClientMock) DumpConsensusStateCalls() []struct {
+	ContextMoqParam context.Context
+} {
+	var calls []struct {
+		ContextMoqParam context.Context
+	}
+	mock.lockDumpConsensusState.RLock()
+	calls = mock.calls.DumpConsensusState
+	mock.lockDumpConsensusState.RUnlock()
+	return calls
+}
+
+// Genesis calls GenesisFunc.
+func (mock *ClientMock) Genesis(contextMoqParam context.Context) (*coretypes.ResultGenesis, error) {
+	callInfo := struct {
+		ContextMoqParam context.Context
+	}{
+		ContextMoqParam: contextMoqParam,
+	}
+	mock.lockGenesis.Lock()
+	mock.calls.Genesis = append(mock.calls.Genesis, callInfo)
+	mock.lockGenesis.Unlock()
+	if mock.GenesisFunc == nil {
+		var (
+			resultGenesisOut *coretypes.ResultGenesis
+			errOut           error
+		)
+		return resultGenesisOut, errOut
+	}
+	return mock.GenesisFunc(contextMoqParam)
+}
+
+// GenesisCalls gets all the calls that were made to Genesis.
+// Check the length with:
+//     len(mockedClient.GenesisCalls())
+func (mock *ClientMock) GenesisCalls() []struct {
+	ContextMoqParam context.Context
+} {
+	var calls []struct {
+		ContextMoqParam context.Context
+	}
+	mock.lockGenesis.RLock()
+	calls = mock.calls.Genesis
+	mock.lockGenesis.RUnlock()
+	return calls
+}
+
+// Health calls HealthFunc.
+func (mock *ClientMock) Health(contextMoqParam context.Context) (*coretypes.ResultHealth, error) {
+	callInfo := struct {
+		ContextMoqParam context.Context
+	}{
+		ContextMoqParam: contextMoqParam,
+	}
+	mock.lockHealth.Lock()
+	mock.calls.Health = append(mock.calls.Health, callInfo)
+	mock.lockHealth.Unlock()
+	if mock.HealthFunc == nil {
+		var (
+			resultHealthOut *coretypes.ResultHealth
+			errOut          error
+		)
+		return resultHealthOut, errOut
+	}
+	return mock.HealthFunc(contextMoqParam)
+}
+
+// HealthCalls gets all the calls that were made to Health.
+// Check the length with:
+//     len(mockedClient.HealthCalls())
+func (mock *ClientMock) HealthCalls() []struct {
+	ContextMoqParam context.Context
+} {
+	var calls []struct {
+		ContextMoqParam context.Context
+	}
+	mock.lockHealth.RLock()
+	calls = mock.calls.Health
+	mock.lockHealth.RUnlock()
+	return calls
+}
+
+// IsRunning calls IsRunningFunc.
+func (mock *ClientMock) IsRunning() bool {
+	callInfo := struct {
+	}{}
+	mock.lockIsRunning.Lock()
+	mock.calls.IsRunning = append(mock.calls.IsRunning, callInfo)
+	mock.lockIsRunning.Unlock()
+	if mock.IsRunningFunc == nil {
+		var (
+			bOut bool
+		)
+		return bOut
+	}
+	return mock.IsRunningFunc()
+}
+
+// IsRunningCalls gets all the calls that were made to IsRunning.
+// Check the length with:
+//     len(mockedClient.IsRunningCalls())
+func (mock *ClientMock) IsRunningCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockIsRunning.RLock()
+	calls = mock.calls.IsRunning
+	mock.lockIsRunning.RUnlock()
+	return calls
+}
+
+// NetInfo calls NetInfoFunc.
+func (mock *ClientMock) NetInfo(contextMoqParam context.Context) (*coretypes.ResultNetInfo, error) {
+	callInfo := struct {
+		ContextMoqParam context.Context
+	}{
+		ContextMoqParam: contextMoqParam,
+	}
+	mock.lockNetInfo.Lock()
+	mock.calls.NetInfo = append(mock.calls.NetInfo, callInfo)
+	mock.lockNetInfo.Unlock()
+	if mock.NetInfoFunc == nil {
+		var (
+			resultNetInfoOut *coretypes.ResultNetInfo
+			errOut           error
+		)
+		return resultNetInfoOut, errOut
+	}
+	return mock.NetInfoFunc(contextMoqParam)
+}
+
+// NetInfoCalls gets all the calls that were made to NetInfo.
+// Check the length with:
+//     len(mockedClient.NetInfoCalls())
+func (mock *ClientMock) NetInfoCalls() []struct {
+	ContextMoqParam context.Context
+} {
+	var calls []struct {
+		ContextMoqParam context.Context
+	}
+	mock.lockNetInfo.RLock()
+	calls = mock.calls.NetInfo
+	mock.lockNetInfo.RUnlock()
+	return calls
+}
+
+// NumUnconfirmedTxs calls NumUnconfirmedTxsFunc.
+func (mock *ClientMock) NumUnconfirmedTxs(contextMoqParam context.Context) (*coretypes.ResultUnconfirmedTxs, error) {
+	callInfo := struct {
+		ContextMoqParam context.Context
+	}{
+		ContextMoqParam: contextMoqParam,
+	}
+	mock.lockNumUnconfirmedTxs.Lock()
+	mock.calls.NumUnconfirmedTxs = append(mock.calls.NumUnconfirmedTxs, callInfo)
+	mock.lockNumUnconfirmedTxs.Unlock()
+	if mock.NumUnconfirmedTxsFunc == nil {
+		var (
+			resultUnconfirmedTxsOut *coretypes.ResultUnconfirmedTxs
+			errOut                  error
+		)
+		return resultUnconfirmedTxsOut, errOut
+	}
+	return mock.NumUnconfirmedTxsFunc(contextMoqParam)
+}
+
+// NumUnconfirmedTxsCalls gets all the calls that were made to NumUnconfirmedTxs.
+// Check the length with:
+//     len(mockedClient.NumUnconfirmedTxsCalls())
+func (mock *ClientMock) NumUnconfirmedTxsCalls() []struct {
+	ContextMoqParam context.Context
+} {
+	var calls []struct {
+		ContextMoqParam context.Context
+	}
+	mock.lockNumUnconfirmedTxs.RLock()
+	calls = mock.calls.NumUnconfirmedTxs
+	mock.lockNumUnconfirmedTxs.RUnlock()
+	return calls
+}
+
+// OnReset calls OnResetFunc.
+func (mock *ClientMock) OnReset() error {
+	callInfo := struct {
+	}{}
+	mock.lockOnReset.Lock()
+	mock.calls.OnReset = append(mock.calls.OnReset, callInfo)
+	mock.lockOnReset.Unlock()
+	if mock.OnResetFunc == nil {
+		var (
+			errOut error
+		)
+		return errOut
+	}
+	return mock.OnResetFunc()
+}
+
+// OnResetCalls gets all the calls that were made to OnReset.
+// Check the length with:
+//     len(mockedClient.OnResetCalls())
+func (mock *ClientMock) OnResetCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockOnReset.RLock()
+	calls = mock.calls.OnReset
+	mock.lockOnReset.RUnlock()
+	return calls
+}
+
+// OnStart calls OnStartFunc.
+func (mock *ClientMock) OnStart() error {
+	callInfo := struct {
+	}{}
+	mock.lockOnStart.Lock()
+	mock.calls.OnStart = append(mock.calls.OnStart, callInfo)
+	mock.lockOnStart.Unlock()
+	if mock.OnStartFunc == nil {
+		var (
+			errOut error
+		)
+		return errOut
+	}
+	return mock.OnStartFunc()
+}
+
+// OnStartCalls gets all the calls that were made to OnStart.
+// Check the length with:
+//     len(mockedClient.OnStartCalls())
+func (mock *ClientMock) OnStartCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockOnStart.RLock()
+	calls = mock.calls.OnStart
+	mock.lockOnStart.RUnlock()
+	return calls
+}
+
+// OnStop calls OnStopFunc.
+func (mock *ClientMock) OnStop() {
+	callInfo := struct {
+	}{}
+	mock.lockOnStop.Lock()
+	mock.calls.OnStop = append(mock.calls.OnStop, callInfo)
+	mock.lockOnStop.Unlock()
+	if mock.OnStopFunc == nil {
+		return
+	}
+	mock.OnStopFunc()
+}
+
+// OnStopCalls gets all the calls that were made to OnStop.
+// Check the length with:
+//     len(mockedClient.OnStopCalls())
+func (mock *ClientMock) OnStopCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockOnStop.RLock()
+	calls = mock.calls.OnStop
+	mock.lockOnStop.RUnlock()
+	return calls
+}
+
+// Quit calls QuitFunc.
+func (mock *ClientMock) Quit() <-chan struct{} {
+	callInfo := struct {
+	}{}
+	mock.lockQuit.Lock()
+	mock.calls.Quit = append(mock.calls.Quit, callInfo)
+	mock.lockQuit.Unlock()
+	if mock.QuitFunc == nil {
+		var (
+			valChOut <-chan struct{}
+		)
+		return valChOut
+	}
+	return mock.QuitFunc()
+}
+
+// QuitCalls gets all the calls that were made to Quit.
+// Check the length with:
+//     len(mockedClient.QuitCalls())
+func (mock *ClientMock) QuitCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockQuit.RLock()
+	calls = mock.calls.Quit
+	mock.lockQuit.RUnlock()
+	return calls
+}
+
+// Reset calls ResetFunc.
+func (mock *ClientMock) Reset() error {
+	callInfo := struct {
+	}{}
+	mock.lockReset.Lock()
+	mock.calls.Reset = append(mock.calls.Reset, callInfo)
+	mock.lockReset.Unlock()
+	if mock.ResetFunc == nil {
+		var (
+			errOut error
+		)
+		return errOut
+	}
+	return mock.ResetFunc()
+}
+
+// ResetCalls gets all the calls that were made to Reset.
+// Check the length with:
+//     len(mockedClient.ResetCalls())
+func (mock *ClientMock) ResetCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockReset.RLock()
+	calls = mock.calls.Reset
+	mock.lockReset.RUnlock()
+	return calls
+}
+
+// SetLogger calls SetLoggerFunc.
+func (mock *ClientMock) SetLogger(logger log.Logger) {
+	callInfo := struct {
+		Logger log.Logger
+	}{
+		Logger: logger,
+	}
+	mock.lockSetLogger.Lock()
+	mock.calls.SetLogger = append(mock.calls.SetLogger, callInfo)
+	mock.lockSetLogger.Unlock()
+	if mock.SetLoggerFunc == nil {
+		return
+	}
+	mock.SetLoggerFunc(logger)
+}
+
+// SetLoggerCalls gets all the calls that were made to SetLogger.
+// Check the length with:
+//     len(mockedClient.SetLoggerCalls())
+func (mock *ClientMock) SetLoggerCalls() []struct {
+	Logger log.Logger
+} {
+	var calls []struct {
+		Logger log.Logger
+	}
+	mock.lockSetLogger.RLock()
+	calls = mock.calls.SetLogger
+	mock.lockSetLogger.RUnlock()
+	return calls
+}
+
+// Start calls StartFunc.
+func (mock *ClientMock) Start() error {
+	callInfo := struct {
+	}{}
+	mock.lockStart.Lock()
+	mock.calls.Start = append(mock.calls.Start, callInfo)
+	mock.lockStart.Unlock()
+	if mock.StartFunc == nil {
+		var (
+			errOut error
+		)
+		return errOut
+	}
+	return mock.StartFunc()
+}
+
+// StartCalls gets all the calls that were made to Start.
+// Check the length with:
+//     len(mockedClient.StartCalls())
+func (mock *ClientMock) StartCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockStart.RLock()
+	calls = mock.calls.Start
+	mock.lockStart.RUnlock()
+	return calls
+}
+
+// Status calls StatusFunc.
+func (mock *ClientMock) Status(contextMoqParam context.Context) (*coretypes.ResultStatus, error) {
+	callInfo := struct {
+		ContextMoqParam context.Context
+	}{
+		ContextMoqParam: contextMoqParam,
+	}
+	mock.lockStatus.Lock()
+	mock.calls.Status = append(mock.calls.Status, callInfo)
+	mock.lockStatus.Unlock()
+	if mock.StatusFunc == nil {
+		var (
+			resultStatusOut *coretypes.ResultStatus
+			errOut          error
+		)
+		return resultStatusOut, errOut
+	}
+	return mock.StatusFunc(contextMoqParam)
+}
+
+// StatusCalls gets all the calls that were made to Status.
+// Check the length with:
+//     len(mockedClient.StatusCalls())
+func (mock *ClientMock) StatusCalls() []struct {
+	ContextMoqParam context.Context
+} {
+	var calls []struct {
+		ContextMoqParam context.Context
+	}
+	mock.lockStatus.RLock()
+	calls = mock.calls.Status
+	mock.lockStatus.RUnlock()
+	return calls
+}
+
+// Stop calls StopFunc.
+func (mock *ClientMock) Stop() error {
+	callInfo := struct {
+	}{}
+	mock.lockStop.Lock()
+	mock.calls.Stop = append(mock.calls.Stop, callInfo)
+	mock.lockStop.Unlock()
+	if mock.StopFunc == nil {
+		var (
+			errOut error
+		)
+		return errOut
+	}
+	return mock.StopFunc()
+}
+
+// StopCalls gets all the calls that were made to Stop.
+// Check the length with:
+//     len(mockedClient.StopCalls())
+func (mock *ClientMock) StopCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockStop.RLock()
+	calls = mock.calls.Stop
+	mock.lockStop.RUnlock()
+	return calls
+}
+
+// String calls StringFunc.
+func (mock *ClientMock) String() string {
+	callInfo := struct {
+	}{}
+	mock.lockString.Lock()
+	mock.calls.String = append(mock.calls.String, callInfo)
+	mock.lockString.Unlock()
+	if mock.StringFunc == nil {
+		var (
+			sOut string
+		)
+		return sOut
+	}
+	return mock.StringFunc()
+}
+
+// StringCalls gets all the calls that were made to String.
+// Check the length with:
+//     len(mockedClient.StringCalls())
+func (mock *ClientMock) StringCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockString.RLock()
+	calls = mock.calls.String
+	mock.lockString.RUnlock()
+	return calls
+}
+
+// Subscribe calls SubscribeFunc.
+func (mock *ClientMock) Subscribe(ctx context.Context, subscriber string, query string, outCapacity ...int) (<-chan coretypes.ResultEvent, error) {
+	callInfo := struct {
+		Ctx         context.Context
+		Subscriber  string
+		Query       string
+		OutCapacity []int
+	}{
+		Ctx:         ctx,
+		Subscriber:  subscriber,
+		Query:       query,
+		OutCapacity: outCapacity,
+	}
+	mock.lockSubscribe.Lock()
+	mock.calls.Subscribe = append(mock.calls.Subscribe, callInfo)
+	mock.lockSubscribe.Unlock()
+	if mock.SubscribeFunc == nil {
+		var (
+			outOut <-chan coretypes.ResultEvent
+			errOut error
+		)
+		return outOut, errOut
+	}
+	return mock.SubscribeFunc(ctx, subscriber, query, outCapacity...)
+}
+
+// SubscribeCalls gets all the calls that were made to Subscribe.
+// Check the length with:
+//     len(mockedClient.SubscribeCalls())
+func (mock *ClientMock) SubscribeCalls() []struct {
+	Ctx         context.Context
+	Subscriber  string
+	Query       string
+	OutCapacity []int
+} {
+	var calls []struct {
+		Ctx         context.Context
+		Subscriber  string
+		Query       string
+		OutCapacity []int
+	}
+	mock.lockSubscribe.RLock()
+	calls = mock.calls.Subscribe
+	mock.lockSubscribe.RUnlock()
+	return calls
+}
+
+// Tx calls TxFunc.
+func (mock *ClientMock) Tx(ctx context.Context, hash []byte, prove bool) (*coretypes.ResultTx, error) {
+	callInfo := struct {
+		Ctx   context.Context
+		Hash  []byte
+		Prove bool
+	}{
+		Ctx:   ctx,
+		Hash:  hash,
+		Prove: prove,
+	}
+	mock.lockTx.Lock()
+	mock.calls.Tx = append(mock.calls.Tx, callInfo)
+	mock.lockTx.Unlock()
+	if mock.TxFunc == nil {
+		var (
+			resultTxOut *coretypes.ResultTx
+			errOut      error
+		)
+		return resultTxOut, errOut
+	}
+	return mock.TxFunc(ctx, hash, prove)
+}
+
+// TxCalls gets all the calls that were made to Tx.
+// Check the length with:
+//     len(mockedClient.TxCalls())
+func (mock *ClientMock) TxCalls() []struct {
+	Ctx   context.Context
+	Hash  []byte
+	Prove bool
+} {
+	var calls []struct {
+		Ctx   context.Context
+		Hash  []byte
+		Prove bool
+	}
+	mock.lockTx.RLock()
+	calls = mock.calls.Tx
+	mock.lockTx.RUnlock()
+	return calls
+}
+
+// TxSearch calls TxSearchFunc.
+func (mock *ClientMock) TxSearch(ctx context.Context, query string, prove bool, page *int, perPage *int, orderBy string) (*coretypes.ResultTxSearch, error) {
+	callInfo := struct {
+		Ctx     context.Context
+		Query   string
+		Prove   bool
+		Page    *int
+		PerPage *int
+		OrderBy string
+	}{
+		Ctx:     ctx,
+		Query:   query,
+		Prove:   prove,
+		Page:    page,
+		PerPage: perPage,
+		OrderBy: orderBy,
+	}
+	mock.lockTxSearch.Lock()
+	mock.calls.TxSearch = append(mock.calls.TxSearch, callInfo)
+	mock.lockTxSearch.Unlock()
+	if mock.TxSearchFunc == nil {
+		var (
+			resultTxSearchOut *coretypes.ResultTxSearch
+			errOut            error
+		)
+		return resultTxSearchOut, errOut
+	}
+	return mock.TxSearchFunc(ctx, query, prove, page, perPage, orderBy)
+}
+
+// TxSearchCalls gets all the calls that were made to TxSearch.
+// Check the length with:
+//     len(mockedClient.TxSearchCalls())
+func (mock *ClientMock) TxSearchCalls() []struct {
+	Ctx     context.Context
+	Query   string
+	Prove   bool
+	Page    *int
+	PerPage *int
+	OrderBy string
+} {
+	var calls []struct {
+		Ctx     context.Context
+		Query   string
+		Prove   bool
+		Page    *int
+		PerPage *int
+		OrderBy string
+	}
+	mock.lockTxSearch.RLock()
+	calls = mock.calls.TxSearch
+	mock.lockTxSearch.RUnlock()
+	return calls
+}
+
+// UnconfirmedTxs calls UnconfirmedTxsFunc.
+func (mock *ClientMock) UnconfirmedTxs(ctx context.Context, limit *int) (*coretypes.ResultUnconfirmedTxs, error) {
+	callInfo := struct {
+		Ctx   context.Context
+		Limit *int
+	}{
+		Ctx:   ctx,
+		Limit: limit,
+	}
+	mock.lockUnconfirmedTxs.Lock()
+	mock.calls.UnconfirmedTxs = append(mock.calls.UnconfirmedTxs, callInfo)
+	mock.lockUnconfirmedTxs.Unlock()
+	if mock.UnconfirmedTxsFunc == nil {
+		var (
+			resultUnconfirmedTxsOut *coretypes.ResultUnconfirmedTxs
+			errOut                  error
+		)
+		return resultUnconfirmedTxsOut, errOut
+	}
+	return mock.UnconfirmedTxsFunc(ctx, limit)
+}
+
+// UnconfirmedTxsCalls gets all the calls that were made to UnconfirmedTxs.
+// Check the length with:
+//     len(mockedClient.UnconfirmedTxsCalls())
+func (mock *ClientMock) UnconfirmedTxsCalls() []struct {
+	Ctx   context.Context
+	Limit *int
+} {
+	var calls []struct {
+		Ctx   context.Context
+		Limit *int
+	}
+	mock.lockUnconfirmedTxs.RLock()
+	calls = mock.calls.UnconfirmedTxs
+	mock.lockUnconfirmedTxs.RUnlock()
+	return calls
+}
+
+// Unsubscribe calls UnsubscribeFunc.
+func (mock *ClientMock) Unsubscribe(ctx context.Context, subscriber string, query string) error {
+	callInfo := struct {
+		Ctx        context.Context
+		Subscriber string
+		Query      string
+	}{
+		Ctx:        ctx,
+		Subscriber: subscriber,
+		Query:      query,
+	}
+	mock.lockUnsubscribe.Lock()
+	mock.calls.Unsubscribe = append(mock.calls.Unsubscribe, callInfo)
+	mock.lockUnsubscribe.Unlock()
+	if mock.UnsubscribeFunc == nil {
+		var (
+			errOut error
+		)
+		return errOut
+	}
+	return mock.UnsubscribeFunc(ctx, subscriber, query)
+}
+
+// UnsubscribeCalls gets all the calls that were made to Unsubscribe.
+// Check the length with:
+//     len(mockedClient.UnsubscribeCalls())
+func (mock *ClientMock) UnsubscribeCalls() []struct {
+	Ctx        context.Context
+	Subscriber string
+	Query      string
+} {
+	var calls []struct {
+		Ctx        context.Context
+		Subscriber string
+		Query      string
+	}
+	mock.lockUnsubscribe.RLock()
+	calls = mock.calls.Unsubscribe
+	mock.lockUnsubscribe.RUnlock()
+	return calls
+}
+
+// UnsubscribeAll calls UnsubscribeAllFunc.
+func (mock *ClientMock) UnsubscribeAll(ctx context.Context, subscriber string) error {
+	callInfo := struct {
+		Ctx        context.Context
+		Subscriber string
+	}{
+		Ctx:        ctx,
+		Subscriber: subscriber,
+	}
+	mock.lockUnsubscribeAll.Lock()
+	mock.calls.UnsubscribeAll = append(mock.calls.UnsubscribeAll, callInfo)
+	mock.lockUnsubscribeAll.Unlock()
+	if mock.UnsubscribeAllFunc == nil {
+		var (
+			errOut error
+		)
+		return errOut
+	}
+	return mock.UnsubscribeAllFunc(ctx, subscriber)
+}
+
+// UnsubscribeAllCalls gets all the calls that were made to UnsubscribeAll.
+// Check the length with:
+//     len(mockedClient.UnsubscribeAllCalls())
+func (mock *ClientMock) UnsubscribeAllCalls() []struct {
+	Ctx        context.Context
+	Subscriber string
+} {
+	var calls []struct {
+		Ctx        context.Context
+		Subscriber string
+	}
+	mock.lockUnsubscribeAll.RLock()
+	calls = mock.calls.UnsubscribeAll
+	mock.lockUnsubscribeAll.RUnlock()
+	return calls
+}
+
+// Validators calls ValidatorsFunc.
+func (mock *ClientMock) Validators(ctx context.Context, height *int64, page *int, perPage *int) (*coretypes.ResultValidators, error) {
+	callInfo := struct {
+		Ctx     context.Context
+		Height  *int64
+		Page    *int
+		PerPage *int
+	}{
+		Ctx:     ctx,
+		Height:  height,
+		Page:    page,
+		PerPage: perPage,
+	}
+	mock.lockValidators.Lock()
+	mock.calls.Validators = append(mock.calls.Validators, callInfo)
+	mock.lockValidators.Unlock()
+	if mock.ValidatorsFunc == nil {
+		var (
+			resultValidatorsOut *coretypes.ResultValidators
+			errOut              error
+		)
+		return resultValidatorsOut, errOut
+	}
+	return mock.ValidatorsFunc(ctx, height, page, perPage)
+}
+
+// ValidatorsCalls gets all the calls that were made to Validators.
+// Check the length with:
+//     len(mockedClient.ValidatorsCalls())
+func (mock *ClientMock) ValidatorsCalls() []struct {
+	Ctx     context.Context
+	Height  *int64
+	Page    *int
+	PerPage *int
+} {
+	var calls []struct {
+		Ctx     context.Context
+		Height  *int64
+		Page    *int
+		PerPage *int
+	}
+	mock.lockValidators.RLock()
+	calls = mock.calls.Validators
+	mock.lockValidators.RUnlock()
+	return calls
+}
+
+// Ensure, that MsgMock does implement broadcasttypes.Msg.
+// If this is not the case, regenerate this file with moq.
+var _ broadcasttypes.Msg = &MsgMock{}
+
+// MsgMock is a mock implementation of broadcasttypes.Msg.
 //
 // 	func TestSomethingThatUsesMsg(t *testing.T) {
 //
-// 		// make and configure a mocked types.Msg
+// 		// make and configure a mocked broadcasttypes.Msg
 // 		mockedMsg := &MsgMock{
 // 			GetSignBytesFunc: func() []byte {
 // 				panic("mock out the GetSignBytes method")
@@ -164,7 +2055,7 @@ var _ types.Msg = &MsgMock{}
 // 			},
 // 		}
 //
-// 		// use mockedMsg in code that requires types.Msg
+// 		// use mockedMsg in code that requires broadcasttypes.Msg
 // 		// and then make assertions.
 //
 // 	}
@@ -456,22 +2347,22 @@ func (mock *MsgMock) ValidateBasicCalls() []struct {
 	return calls
 }
 
-// Ensure, that BroadcasterMock does implement types.Broadcaster.
+// Ensure, that BroadcasterMock does implement broadcasttypes.Broadcaster.
 // If this is not the case, regenerate this file with moq.
-var _ types.Broadcaster = &BroadcasterMock{}
+var _ broadcasttypes.Broadcaster = &BroadcasterMock{}
 
-// BroadcasterMock is a mock implementation of types.Broadcaster.
+// BroadcasterMock is a mock implementation of broadcasttypes.Broadcaster.
 //
 // 	func TestSomethingThatUsesBroadcaster(t *testing.T) {
 //
-// 		// make and configure a mocked types.Broadcaster
+// 		// make and configure a mocked broadcasttypes.Broadcaster
 // 		mockedBroadcaster := &BroadcasterMock{
 // 			BroadcastFunc: func(msgs ...sdk.Msg) error {
 // 				panic("mock out the Broadcast method")
 // 			},
 // 		}
 //
-// 		// use mockedBroadcaster in code that requires types.Broadcaster
+// 		// use mockedBroadcaster in code that requires broadcasttypes.Broadcaster
 // 		// and then make assertions.
 //
 // 	}
