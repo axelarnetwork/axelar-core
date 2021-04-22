@@ -20,6 +20,14 @@ isGenesisInitialized() {
   return 1
 }
 
+isValidator() {
+  if axelarcli query staking validator "$(axelarcli keys show validator --bech=val -a)"; then
+    return 0
+  fi
+
+  return 1
+}
+
 initGenesis() {
   if [ -n "$INIT_SCRIPT" ] && [ -f "$INIT_SCRIPT" ]; then
     echo "Running script at $INIT_SCRIPT to create the genesis file"
@@ -35,6 +43,19 @@ startValProc() {
 }
 
 D_HOME_DIR="$HOME_DIR/.axelar"
+}
+  done
+    fi
+      break
+      strace -ewrite -p $(pidof vald)
+      echo Attaching to vald output
+    if [ $PROCESS_1_STATUS = 0 ]; then
+
+    VALD_STATUS=$?
+    ps aux |grep vald | grep -q -v grep
+    sleep 5
+  for i in {1..100}; do
+attachValStdout() {
 
 if ! isGenesisInitialized; then
   initGenesis
@@ -59,6 +80,20 @@ if [ -n "$PEERS_FILE" ]; then
   addPeers "$PEERS"
 fi
 
-startValProc &
+if [ "$START_REST" = true ]; then
+  # REST endpoint must be bound to 0.0.0.0 for availability on docker host
+  axelarcli rest-server \
+    --chain-id=axelarcli \
+    --laddr=tcp://0.0.0.0:1317 \
+    --node tcp://0.0.0.0:26657 \
+    --unsafe-cors &
+fi
+
+if axelarcli query staking validator "$(axelarcli keys show validator --bech=val -a)"; then
+  startValProc &
+else
+  # assume vald started by makeValidator.sh and attempt to attach output
+  attachValStdout &
+fi
 
 exec axelard start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"}

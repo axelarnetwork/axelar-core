@@ -22,6 +22,9 @@ ENV CGO_ENABLED=0
 RUN make build
 
 FROM alpine:3.12
+RUN apk add --no-cache --update \
+  bash \
+  strace
 
 COPY --from=build /go/axelar/bin/* /usr/local/bin/
 COPY ./entrypoint.sh /entrypoint.sh
