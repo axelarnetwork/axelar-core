@@ -44,7 +44,7 @@ func (b *Broadcaster) Broadcast(msgs ...sdk.Msg) error {
 			return err
 		}
 
-		err = Broadcast(b.ctx, txf, msgs)
+		_, err = Broadcast(b.ctx, txf, msgs)
 		if err != nil {
 			// reset account and sequence number in case they were the issue
 			b.txFactory = b.txFactory.
@@ -59,22 +59,51 @@ func (b *Broadcaster) Broadcast(msgs ...sdk.Msg) error {
 	})
 }
 
+// Broadcast sends the passed messages to the network. This function in thread-safe.
+func (b *Broadcaster) BroadcastWithResult(msgs ...sdk.Msg) (*sdk.TxResponse, error) {
+	resChan := make(chan *sdk.TxResponse, 1)
+
+	// serialize concurrent calls to broadcast
+	return <-resChan, b.pipeline.Push(func() error {
+
+		txf, err := tx.PrepareFactory(b.ctx, b.txFactory)
+		if err != nil {
+			return err
+		}
+
+		res, err := Broadcast(b.ctx, txf, msgs)
+		if err != nil {
+			// reset account and sequence number in case they were the issue
+			b.txFactory = b.txFactory.
+				WithAccountNumber(0).
+				WithSequence(0)
+			return err
+		}
+
+		resChan <- res
+
+		// broadcast has been successful, so increment sequence number
+		b.txFactory = txf.WithSequence(txf.Sequence() + 1)
+		return nil
+	})
+}
+
 // Broadcast bundles the given messages into a single transaction and submits it to the blockchain.
 // If there are more than one message, all messages must have the single same signer
-func Broadcast(ctx sdkClient.Context, txf tx.Factory, msgs []sdk.Msg) error {
+func Broadcast(ctx sdkClient.Context, txf tx.Factory, msgs []sdk.Msg) (*sdk.TxResponse, error) {
 	if len(msgs) == 0 {
-		return fmt.Errorf("call broadcast with at least one message")
+		return nil, fmt.Errorf("call broadcast with at least one message")
 	}
 
 	// By convention the first signer of a tx pays the fees
 	if len(msgs[0].GetSigners()) == 0 {
-		return fmt.Errorf("messages must have at least one signer")
+		return nil, fmt.Errorf("messages must have at least one signer")
 	}
 
 	if txf.SimulateAndExecute() || ctx.Simulate {
 		_, adjusted, err := tx.CalculateGas(ctx.QueryWithData, txf, msgs...)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		txf = txf.WithGas(adjusted)
@@ -82,30 +111,30 @@ func Broadcast(ctx sdkClient.Context, txf tx.Factory, msgs []sdk.Msg) error {
 
 	txBuilder, err := tx.BuildUnsignedTx(txf, msgs...)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = tx.Sign(txf, ctx.GetFromName(), txBuilder, true)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	txBytes, err := ctx.TxConfig.TxEncoder()(txBuilder.GetTx())
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// broadcast to a Tendermint node
 	res, err := ctx.BroadcastTx(txBytes)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if res.Code != abci.CodeTypeOK {
-		return fmt.Errorf(res.RawLog)
+		return res, fmt.Errorf(res.RawLog)
 	}
 
-	return nil
+	return res, nil
 }
 
 // RetryPipeline manages serialized execution of functions with retry on error

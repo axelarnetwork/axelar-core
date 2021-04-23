@@ -25,6 +25,7 @@ type (
 // Broadcaster interface allows the submission of messages to the axelar network
 type Broadcaster interface {
 	Broadcast(msgs ...sdk.Msg) error
+	BroadcastWithResult(msgs ...sdk.Msg) (*sdk.TxResponse, error)
 }
 
 // Pipeline represents an execution pipeline
