@@ -4,11 +4,9 @@
 package mock
 
 import (
-	"sync"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/axelarnetwork/axelar-core/x/broadcast/exported"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"sync"
 )
 
 // Ensure, that BroadcasterMock does implement exported.Broadcaster.

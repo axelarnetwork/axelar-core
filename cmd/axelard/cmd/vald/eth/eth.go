@@ -48,8 +48,8 @@ func NewMgr(rpc rpc2.Client, broadcaster types2.Broadcaster, sender sdk.AccAddre
 	}
 }
 
-// ProccessDepositConfirmation votes on the correctness of an Ethereum token deposit
-func (mgr Mgr) ProccessDepositConfirmation(attributes []sdk.Attribute) (err error) {
+// ProcessDepositConfirmation votes on the correctness of an Ethereum token deposit
+func (mgr Mgr) ProcessDepositConfirmation(attributes []sdk.Attribute) (err error) {
 	txID, amount, burnAddr, tokenAddr, confHeight, poll, err := parseDepositConfirmationParams(mgr.cdc, attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "Ethereum deposit confirmation failed")
@@ -75,8 +75,8 @@ func (mgr Mgr) ProccessDepositConfirmation(attributes []sdk.Attribute) (err erro
 	return mgr.broadcaster.Broadcast(msg)
 }
 
-// ProccessTokenConfirmation votes on the correctness of an Ethereum token deployment
-func (mgr Mgr) ProccessTokenConfirmation(attributes []sdk.Attribute) error {
+// ProcessTokenConfirmation votes on the correctness of an Ethereum token deployment
+func (mgr Mgr) ProcessTokenConfirmation(attributes []sdk.Attribute) error {
 	txID, gatewayAddr, tokenAddr, symbol, confHeight, poll, err := parseTokenConfirmationParams(mgr.cdc, attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "Ethereum token deployment confirmation failed")

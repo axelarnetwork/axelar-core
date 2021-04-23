@@ -155,8 +155,8 @@ func listen(ctx sdkClient.Context, hub *tmEvents.Hub, txf tx.Factory, axelarCfg 
 		events.Consume(signStart, tssMgr.ProcessSignStart),
 		events.Consume(signMsg, tssMgr.ProcessSignMsg),
 		events.Consume(btcConf, btcMgr.ProcessConfirmation),
-		events.Consume(ethDepConf, ethMgr.ProccessDepositConfirmation),
-		events.Consume(ethTokConf, ethMgr.ProccessTokenConfirmation),
+		events.Consume(ethDepConf, ethMgr.ProcessDepositConfirmation),
+		events.Consume(ethTokConf, ethMgr.ProcessTokenConfirmation),
 	}
 
 	// errGroup runs async processes and cancels their context if ANY of them returns an error.
