@@ -100,7 +100,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 	)
 	setup := func() {
 		cdc := testutils.MakeEncodingConfig().Amino
-		poll := exported.NewPollMetaWithNonce(ethTypes.ModuleName, rand.StrBetween(5, 20), rand.PosI64(), rand.I64Between(0, 1000))
+		poll := exported.NewPollMetaWithNonce(ethTypes.ModuleName, rand.StrBetween(5, 20), rand.PosI64(), rand.I64Between(1, 1000))
 
 		burnAddrBytes := rand.Bytes(common.AddressLength)
 		tokenAddrBytes := rand.Bytes(common.AddressLength)
