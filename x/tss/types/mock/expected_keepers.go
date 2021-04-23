@@ -5,14 +5,17 @@ package mock
 
 import (
 	"context"
-	tofnd "github.com/axelarnetwork/axelar-core/third_party/proto/tofnd"
-	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
-	exported1 "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	"sync"
+
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
-	"sync"
+
+	"github.com/axelarnetwork/axelar-core/third_party/proto/tofnd"
+	tofnd2 "github.com/axelarnetwork/axelar-core/x/tss/tofnd"
+	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
+	exported1 "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // Ensure, that TofndClientMock does implement tsstypes.TofndClient.
@@ -39,10 +42,10 @@ var _ tsstypes.TofndClient = &TofndClientMock{}
 // 	}
 type TofndClientMock struct {
 	// KeygenFunc mocks the Keygen method.
-	KeygenFunc func(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_KeygenClient, error)
+	KeygenFunc func(ctx context.Context, opts ...grpc.CallOption) (tofnd2.GG20_KeygenClient, error)
 
 	// SignFunc mocks the Sign method.
-	SignFunc func(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_SignClient, error)
+	SignFunc func(ctx context.Context, opts ...grpc.CallOption) (tofnd2.GG20_SignClient, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -66,7 +69,7 @@ type TofndClientMock struct {
 }
 
 // Keygen calls KeygenFunc.
-func (mock *TofndClientMock) Keygen(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_KeygenClient, error) {
+func (mock *TofndClientMock) Keygen(ctx context.Context, opts ...grpc.CallOption) (tofnd2.GG20_KeygenClient, error) {
 	if mock.KeygenFunc == nil {
 		panic("TofndClientMock.KeygenFunc: method is nil but TofndClient.Keygen was just called")
 	}
@@ -101,7 +104,7 @@ func (mock *TofndClientMock) KeygenCalls() []struct {
 }
 
 // Sign calls SignFunc.
-func (mock *TofndClientMock) Sign(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_SignClient, error) {
+func (mock *TofndClientMock) Sign(ctx context.Context, opts ...grpc.CallOption) (tofnd2.GG20_SignClient, error) {
 	if mock.SignFunc == nil {
 		panic("TofndClientMock.SignFunc: method is nil but TofndClient.Sign was just called")
 	}

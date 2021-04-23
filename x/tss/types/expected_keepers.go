@@ -4,7 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	"github.com/axelarnetwork/axelar-core/third_party/proto/tofnd"
+	tofnd2 "github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -45,17 +45,17 @@ type InitPoller = interface {
 
 // TofndClient wraps around TofndKeyGenClient and TofndSignClient
 type TofndClient interface {
-	tofnd.GG20Client
+	tofnd2.GG20Client
 }
 
 // TofndKeyGenClient provides keygen functionality
 type TofndKeyGenClient interface {
-	tofnd.GG20_KeygenClient
+	tofnd2.GG20_KeygenClient
 }
 
 // TofndSignClient provides signing functionality
 type TofndSignClient interface {
-	tofnd.GG20_SignClient
+	tofnd2.GG20_SignClient
 }
 
 // StakingKeeper adopts the methods from "github.com/cosmos/cosmos-sdk/x/staking/exported" that are
