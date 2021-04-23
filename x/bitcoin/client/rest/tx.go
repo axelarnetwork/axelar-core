@@ -21,8 +21,8 @@ const (
 	TxMethodConfirmTx              = "confirm"
 	TxMethodSignPendingTransfersTx = "sign"
 
-	QMethodDepositAddress     = keeper.QueryDepositAddress
-	QMethodGetConsolidationTx = keeper.GetTx
+	QueryMethodDepositAddress     = keeper.QueryDepositAddress
+	QueryMethodGetConsolidationTx = keeper.GetTx
 )
 
 // RegisterRoutes registers this module's REST routes with the given router
@@ -33,8 +33,8 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(GetHandlerSignPendingTransfersTx(cliCtx), TxMethodSignPendingTransfersTx)
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
-	registerQuery(QueryDepositAddress(cliCtx), QMethodDepositAddress, clientUtils.PathVarChain, clientUtils.PathVarEthereumAddress)
-	registerQuery(QueryGetConsolidationTx(cliCtx), QMethodGetConsolidationTx)
+	registerQuery(QueryDepositAddress(cliCtx), QueryMethodDepositAddress, clientUtils.PathVarChain, clientUtils.PathVarEthereumAddress)
+	registerQuery(QueryGetConsolidationTx(cliCtx), QueryMethodGetConsolidationTx)
 }
 
 // ReqLink represents a request to link a cross-chain address to a Bitcoin address
