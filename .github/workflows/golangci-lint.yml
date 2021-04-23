@@ -13,5 +13,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.CICD_RSA_KEY }}
+          known_hosts: ${{ secrets.KNOWN_HOSTS_GITHUB }}
+      - name: Configure for private repos
+        run: git config --global url."git@github.com:axelarnetwork".insteadOf https://github.com/axelarnetwork      
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
