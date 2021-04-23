@@ -3,7 +3,10 @@ package broadcast
 import (
 	"fmt"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/legacy"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
+	sdkClient "github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
@@ -23,7 +26,7 @@ type LegacyBroadcasterImpl struct {
 
 // NewLegacyBroadcaster returns a broadcaster to submit transactions to the blockchain with the legacy transaction data structures use by the REST endpoint.
 // Only one instance of a broadcaster should be run for a given account, otherwise risk conflicting sequence numbers for submitted transactions.
-func NewLegacyBroadcaster(signer legacy.SignFn, client legacy.LegacyClient, conf broadcastTypes.ClientConfig, logger tmLog.Logger) (*LegacyBroadcasterImpl, error) {
+func NewLegacyBroadcaster(signer legacy.SignFn, sdkCtx sdkClient.Context, client legacy.LegacyClient, conf broadcastTypes.ClientConfig, pipeline types.Pipeline, logger tmLog.Logger) (*LegacyBroadcasterImpl, error) {
 	if conf.ChainID == "" {
 		return nil, sdkerrors.Wrap(broadcastTypes.ErrInvalidChain, "chain ID required but not specified")
 	}
@@ -33,6 +36,12 @@ func NewLegacyBroadcaster(signer legacy.SignFn, client legacy.LegacyClient, conf
 		client:  client,
 		seqNo:   0,
 		chainID: conf.ChainID,
+		Broadcaster: Broadcaster{
+			logger:    logger,
+			pipeline:  pipeline,
+			ctx:       sdkCtx,
+			txFactory: tx.Factory{},
+		},
 	}
 
 	return broadcaster, nil
