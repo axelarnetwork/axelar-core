@@ -7,6 +7,10 @@ import (
 	"context"
 	"sync"
 
+	sdkClient "github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/crypto/hd"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/libs/log"
@@ -14,18 +18,18 @@ import (
 	"github.com/tendermint/tendermint/rpc/core/types"
 	tenderminttypes "github.com/tendermint/tendermint/types"
 
-	broadcasttypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
 )
 
-// Ensure, that ClientMock does implement broadcasttypes.Client.
+// Ensure, that ClientMock does implement types.Client.
 // If this is not the case, regenerate this file with moq.
-var _ broadcasttypes.Client = &ClientMock{}
+var _ types.Client = &ClientMock{}
 
-// ClientMock is a mock implementation of broadcasttypes.Client.
+// ClientMock is a mock implementation of types.Client.
 //
 // 	func TestSomethingThatUsesClient(t *testing.T) {
 //
-// 		// make and configure a mocked broadcasttypes.Client
+// 		// make and configure a mocked types.Client
 // 		mockedClient := &ClientMock{
 // 			ABCIInfoFunc: func(contextMoqParam context.Context) (*coretypes.ResultABCIInfo, error) {
 // 				panic("mock out the ABCIInfo method")
@@ -146,7 +150,7 @@ var _ broadcasttypes.Client = &ClientMock{}
 // 			},
 // 		}
 //
-// 		// use mockedClient in code that requires broadcasttypes.Client
+// 		// use mockedClient in code that requires types.Client
 // 		// and then make assertions.
 //
 // 	}
@@ -2019,350 +2023,22 @@ func (mock *ClientMock) ValidatorsCalls() []struct {
 	return calls
 }
 
-// Ensure, that MsgMock does implement broadcasttypes.Msg.
+// Ensure, that BroadcasterMock does implement types.Broadcaster.
 // If this is not the case, regenerate this file with moq.
-var _ broadcasttypes.Msg = &MsgMock{}
+var _ types.Broadcaster = &BroadcasterMock{}
 
-// MsgMock is a mock implementation of broadcasttypes.Msg.
-//
-// 	func TestSomethingThatUsesMsg(t *testing.T) {
-//
-// 		// make and configure a mocked broadcasttypes.Msg
-// 		mockedMsg := &MsgMock{
-// 			GetSignBytesFunc: func() []byte {
-// 				panic("mock out the GetSignBytes method")
-// 			},
-// 			GetSignersFunc: func() []sdk.AccAddress {
-// 				panic("mock out the GetSigners method")
-// 			},
-// 			ProtoMessageFunc: func()  {
-// 				panic("mock out the ProtoMessage method")
-// 			},
-// 			ResetFunc: func()  {
-// 				panic("mock out the Reset method")
-// 			},
-// 			RouteFunc: func() string {
-// 				panic("mock out the Route method")
-// 			},
-// 			StringFunc: func() string {
-// 				panic("mock out the String method")
-// 			},
-// 			TypeFunc: func() string {
-// 				panic("mock out the Type method")
-// 			},
-// 			ValidateBasicFunc: func() error {
-// 				panic("mock out the ValidateBasic method")
-// 			},
-// 		}
-//
-// 		// use mockedMsg in code that requires broadcasttypes.Msg
-// 		// and then make assertions.
-//
-// 	}
-type MsgMock struct {
-	// GetSignBytesFunc mocks the GetSignBytes method.
-	GetSignBytesFunc func() []byte
-
-	// GetSignersFunc mocks the GetSigners method.
-	GetSignersFunc func() []sdk.AccAddress
-
-	// ProtoMessageFunc mocks the ProtoMessage method.
-	ProtoMessageFunc func()
-
-	// ResetFunc mocks the Reset method.
-	ResetFunc func()
-
-	// RouteFunc mocks the Route method.
-	RouteFunc func() string
-
-	// StringFunc mocks the String method.
-	StringFunc func() string
-
-	// TypeFunc mocks the Type method.
-	TypeFunc func() string
-
-	// ValidateBasicFunc mocks the ValidateBasic method.
-	ValidateBasicFunc func() error
-
-	// calls tracks calls to the methods.
-	calls struct {
-		// GetSignBytes holds details about calls to the GetSignBytes method.
-		GetSignBytes []struct {
-		}
-		// GetSigners holds details about calls to the GetSigners method.
-		GetSigners []struct {
-		}
-		// ProtoMessage holds details about calls to the ProtoMessage method.
-		ProtoMessage []struct {
-		}
-		// Reset holds details about calls to the Reset method.
-		Reset []struct {
-		}
-		// Route holds details about calls to the Route method.
-		Route []struct {
-		}
-		// String holds details about calls to the String method.
-		String []struct {
-		}
-		// Type holds details about calls to the Type method.
-		Type []struct {
-		}
-		// ValidateBasic holds details about calls to the ValidateBasic method.
-		ValidateBasic []struct {
-		}
-	}
-	lockGetSignBytes  sync.RWMutex
-	lockGetSigners    sync.RWMutex
-	lockProtoMessage  sync.RWMutex
-	lockReset         sync.RWMutex
-	lockRoute         sync.RWMutex
-	lockString        sync.RWMutex
-	lockType          sync.RWMutex
-	lockValidateBasic sync.RWMutex
-}
-
-// GetSignBytes calls GetSignBytesFunc.
-func (mock *MsgMock) GetSignBytes() []byte {
-	callInfo := struct {
-	}{}
-	mock.lockGetSignBytes.Lock()
-	mock.calls.GetSignBytes = append(mock.calls.GetSignBytes, callInfo)
-	mock.lockGetSignBytes.Unlock()
-	if mock.GetSignBytesFunc == nil {
-		var (
-			bytesOut []byte
-		)
-		return bytesOut
-	}
-	return mock.GetSignBytesFunc()
-}
-
-// GetSignBytesCalls gets all the calls that were made to GetSignBytes.
-// Check the length with:
-//     len(mockedMsg.GetSignBytesCalls())
-func (mock *MsgMock) GetSignBytesCalls() []struct {
-} {
-	var calls []struct {
-	}
-	mock.lockGetSignBytes.RLock()
-	calls = mock.calls.GetSignBytes
-	mock.lockGetSignBytes.RUnlock()
-	return calls
-}
-
-// GetSigners calls GetSignersFunc.
-func (mock *MsgMock) GetSigners() []sdk.AccAddress {
-	callInfo := struct {
-	}{}
-	mock.lockGetSigners.Lock()
-	mock.calls.GetSigners = append(mock.calls.GetSigners, callInfo)
-	mock.lockGetSigners.Unlock()
-	if mock.GetSignersFunc == nil {
-		var (
-			accAddresssOut []sdk.AccAddress
-		)
-		return accAddresssOut
-	}
-	return mock.GetSignersFunc()
-}
-
-// GetSignersCalls gets all the calls that were made to GetSigners.
-// Check the length with:
-//     len(mockedMsg.GetSignersCalls())
-func (mock *MsgMock) GetSignersCalls() []struct {
-} {
-	var calls []struct {
-	}
-	mock.lockGetSigners.RLock()
-	calls = mock.calls.GetSigners
-	mock.lockGetSigners.RUnlock()
-	return calls
-}
-
-// ProtoMessage calls ProtoMessageFunc.
-func (mock *MsgMock) ProtoMessage() {
-	callInfo := struct {
-	}{}
-	mock.lockProtoMessage.Lock()
-	mock.calls.ProtoMessage = append(mock.calls.ProtoMessage, callInfo)
-	mock.lockProtoMessage.Unlock()
-	if mock.ProtoMessageFunc == nil {
-		return
-	}
-	mock.ProtoMessageFunc()
-}
-
-// ProtoMessageCalls gets all the calls that were made to ProtoMessage.
-// Check the length with:
-//     len(mockedMsg.ProtoMessageCalls())
-func (mock *MsgMock) ProtoMessageCalls() []struct {
-} {
-	var calls []struct {
-	}
-	mock.lockProtoMessage.RLock()
-	calls = mock.calls.ProtoMessage
-	mock.lockProtoMessage.RUnlock()
-	return calls
-}
-
-// Reset calls ResetFunc.
-func (mock *MsgMock) Reset() {
-	callInfo := struct {
-	}{}
-	mock.lockReset.Lock()
-	mock.calls.Reset = append(mock.calls.Reset, callInfo)
-	mock.lockReset.Unlock()
-	if mock.ResetFunc == nil {
-		return
-	}
-	mock.ResetFunc()
-}
-
-// ResetCalls gets all the calls that were made to Reset.
-// Check the length with:
-//     len(mockedMsg.ResetCalls())
-func (mock *MsgMock) ResetCalls() []struct {
-} {
-	var calls []struct {
-	}
-	mock.lockReset.RLock()
-	calls = mock.calls.Reset
-	mock.lockReset.RUnlock()
-	return calls
-}
-
-// Route calls RouteFunc.
-func (mock *MsgMock) Route() string {
-	callInfo := struct {
-	}{}
-	mock.lockRoute.Lock()
-	mock.calls.Route = append(mock.calls.Route, callInfo)
-	mock.lockRoute.Unlock()
-	if mock.RouteFunc == nil {
-		var (
-			sOut string
-		)
-		return sOut
-	}
-	return mock.RouteFunc()
-}
-
-// RouteCalls gets all the calls that were made to Route.
-// Check the length with:
-//     len(mockedMsg.RouteCalls())
-func (mock *MsgMock) RouteCalls() []struct {
-} {
-	var calls []struct {
-	}
-	mock.lockRoute.RLock()
-	calls = mock.calls.Route
-	mock.lockRoute.RUnlock()
-	return calls
-}
-
-// String calls StringFunc.
-func (mock *MsgMock) String() string {
-	callInfo := struct {
-	}{}
-	mock.lockString.Lock()
-	mock.calls.String = append(mock.calls.String, callInfo)
-	mock.lockString.Unlock()
-	if mock.StringFunc == nil {
-		var (
-			sOut string
-		)
-		return sOut
-	}
-	return mock.StringFunc()
-}
-
-// StringCalls gets all the calls that were made to String.
-// Check the length with:
-//     len(mockedMsg.StringCalls())
-func (mock *MsgMock) StringCalls() []struct {
-} {
-	var calls []struct {
-	}
-	mock.lockString.RLock()
-	calls = mock.calls.String
-	mock.lockString.RUnlock()
-	return calls
-}
-
-// Type calls TypeFunc.
-func (mock *MsgMock) Type() string {
-	callInfo := struct {
-	}{}
-	mock.lockType.Lock()
-	mock.calls.Type = append(mock.calls.Type, callInfo)
-	mock.lockType.Unlock()
-	if mock.TypeFunc == nil {
-		var (
-			sOut string
-		)
-		return sOut
-	}
-	return mock.TypeFunc()
-}
-
-// TypeCalls gets all the calls that were made to Type.
-// Check the length with:
-//     len(mockedMsg.TypeCalls())
-func (mock *MsgMock) TypeCalls() []struct {
-} {
-	var calls []struct {
-	}
-	mock.lockType.RLock()
-	calls = mock.calls.Type
-	mock.lockType.RUnlock()
-	return calls
-}
-
-// ValidateBasic calls ValidateBasicFunc.
-func (mock *MsgMock) ValidateBasic() error {
-	callInfo := struct {
-	}{}
-	mock.lockValidateBasic.Lock()
-	mock.calls.ValidateBasic = append(mock.calls.ValidateBasic, callInfo)
-	mock.lockValidateBasic.Unlock()
-	if mock.ValidateBasicFunc == nil {
-		var (
-			errOut error
-		)
-		return errOut
-	}
-	return mock.ValidateBasicFunc()
-}
-
-// ValidateBasicCalls gets all the calls that were made to ValidateBasic.
-// Check the length with:
-//     len(mockedMsg.ValidateBasicCalls())
-func (mock *MsgMock) ValidateBasicCalls() []struct {
-} {
-	var calls []struct {
-	}
-	mock.lockValidateBasic.RLock()
-	calls = mock.calls.ValidateBasic
-	mock.lockValidateBasic.RUnlock()
-	return calls
-}
-
-// Ensure, that BroadcasterMock does implement broadcasttypes.Broadcaster.
-// If this is not the case, regenerate this file with moq.
-var _ broadcasttypes.Broadcaster = &BroadcasterMock{}
-
-// BroadcasterMock is a mock implementation of broadcasttypes.Broadcaster.
+// BroadcasterMock is a mock implementation of types.Broadcaster.
 //
 // 	func TestSomethingThatUsesBroadcaster(t *testing.T) {
 //
-// 		// make and configure a mocked broadcasttypes.Broadcaster
+// 		// make and configure a mocked types.Broadcaster
 // 		mockedBroadcaster := &BroadcasterMock{
 // 			BroadcastFunc: func(msgs ...sdk.Msg) error {
 // 				panic("mock out the Broadcast method")
 // 			},
 // 		}
 //
-// 		// use mockedBroadcaster in code that requires broadcasttypes.Broadcaster
+// 		// use mockedBroadcaster in code that requires types.Broadcaster
 // 		// and then make assertions.
 //
 // 	}
@@ -2412,5 +2088,1633 @@ func (mock *BroadcasterMock) BroadcastCalls() []struct {
 	mock.lockBroadcast.RLock()
 	calls = mock.calls.Broadcast
 	mock.lockBroadcast.RUnlock()
+	return calls
+}
+
+// Ensure, that AccountRetrieverMock does implement types.AccountRetriever.
+// If this is not the case, regenerate this file with moq.
+var _ types.AccountRetriever = &AccountRetrieverMock{}
+
+// AccountRetrieverMock is a mock implementation of types.AccountRetriever.
+//
+// 	func TestSomethingThatUsesAccountRetriever(t *testing.T) {
+//
+// 		// make and configure a mocked types.AccountRetriever
+// 		mockedAccountRetriever := &AccountRetrieverMock{
+// 			EnsureExistsFunc: func(clientCtx sdkClient.Context, addr sdk.AccAddress) error {
+// 				panic("mock out the EnsureExists method")
+// 			},
+// 			GetAccountFunc: func(clientCtx sdkClient.Context, addr sdk.AccAddress) (sdkClient.Account, error) {
+// 				panic("mock out the GetAccount method")
+// 			},
+// 			GetAccountNumberSequenceFunc: func(clientCtx sdkClient.Context, addr sdk.AccAddress) (uint64, uint64, error) {
+// 				panic("mock out the GetAccountNumberSequence method")
+// 			},
+// 			GetAccountWithHeightFunc: func(clientCtx sdkClient.Context, addr sdk.AccAddress) (sdkClient.Account, int64, error) {
+// 				panic("mock out the GetAccountWithHeight method")
+// 			},
+// 		}
+//
+// 		// use mockedAccountRetriever in code that requires types.AccountRetriever
+// 		// and then make assertions.
+//
+// 	}
+type AccountRetrieverMock struct {
+	// EnsureExistsFunc mocks the EnsureExists method.
+	EnsureExistsFunc func(clientCtx sdkClient.Context, addr sdk.AccAddress) error
+
+	// GetAccountFunc mocks the GetAccount method.
+	GetAccountFunc func(clientCtx sdkClient.Context, addr sdk.AccAddress) (sdkClient.Account, error)
+
+	// GetAccountNumberSequenceFunc mocks the GetAccountNumberSequence method.
+	GetAccountNumberSequenceFunc func(clientCtx sdkClient.Context, addr sdk.AccAddress) (uint64, uint64, error)
+
+	// GetAccountWithHeightFunc mocks the GetAccountWithHeight method.
+	GetAccountWithHeightFunc func(clientCtx sdkClient.Context, addr sdk.AccAddress) (sdkClient.Account, int64, error)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// EnsureExists holds details about calls to the EnsureExists method.
+		EnsureExists []struct {
+			// ClientCtx is the clientCtx argument value.
+			ClientCtx sdkClient.Context
+			// Addr is the addr argument value.
+			Addr sdk.AccAddress
+		}
+		// GetAccount holds details about calls to the GetAccount method.
+		GetAccount []struct {
+			// ClientCtx is the clientCtx argument value.
+			ClientCtx sdkClient.Context
+			// Addr is the addr argument value.
+			Addr sdk.AccAddress
+		}
+		// GetAccountNumberSequence holds details about calls to the GetAccountNumberSequence method.
+		GetAccountNumberSequence []struct {
+			// ClientCtx is the clientCtx argument value.
+			ClientCtx sdkClient.Context
+			// Addr is the addr argument value.
+			Addr sdk.AccAddress
+		}
+		// GetAccountWithHeight holds details about calls to the GetAccountWithHeight method.
+		GetAccountWithHeight []struct {
+			// ClientCtx is the clientCtx argument value.
+			ClientCtx sdkClient.Context
+			// Addr is the addr argument value.
+			Addr sdk.AccAddress
+		}
+	}
+	lockEnsureExists             sync.RWMutex
+	lockGetAccount               sync.RWMutex
+	lockGetAccountNumberSequence sync.RWMutex
+	lockGetAccountWithHeight     sync.RWMutex
+}
+
+// EnsureExists calls EnsureExistsFunc.
+func (mock *AccountRetrieverMock) EnsureExists(clientCtx sdkClient.Context, addr sdk.AccAddress) error {
+	callInfo := struct {
+		ClientCtx sdkClient.Context
+		Addr      sdk.AccAddress
+	}{
+		ClientCtx: clientCtx,
+		Addr:      addr,
+	}
+	mock.lockEnsureExists.Lock()
+	mock.calls.EnsureExists = append(mock.calls.EnsureExists, callInfo)
+	mock.lockEnsureExists.Unlock()
+	if mock.EnsureExistsFunc == nil {
+		var (
+			errOut error
+		)
+		return errOut
+	}
+	return mock.EnsureExistsFunc(clientCtx, addr)
+}
+
+// EnsureExistsCalls gets all the calls that were made to EnsureExists.
+// Check the length with:
+//     len(mockedAccountRetriever.EnsureExistsCalls())
+func (mock *AccountRetrieverMock) EnsureExistsCalls() []struct {
+	ClientCtx sdkClient.Context
+	Addr      sdk.AccAddress
+} {
+	var calls []struct {
+		ClientCtx sdkClient.Context
+		Addr      sdk.AccAddress
+	}
+	mock.lockEnsureExists.RLock()
+	calls = mock.calls.EnsureExists
+	mock.lockEnsureExists.RUnlock()
+	return calls
+}
+
+// GetAccount calls GetAccountFunc.
+func (mock *AccountRetrieverMock) GetAccount(clientCtx sdkClient.Context, addr sdk.AccAddress) (sdkClient.Account, error) {
+	callInfo := struct {
+		ClientCtx sdkClient.Context
+		Addr      sdk.AccAddress
+	}{
+		ClientCtx: clientCtx,
+		Addr:      addr,
+	}
+	mock.lockGetAccount.Lock()
+	mock.calls.GetAccount = append(mock.calls.GetAccount, callInfo)
+	mock.lockGetAccount.Unlock()
+	if mock.GetAccountFunc == nil {
+		var (
+			accountOut sdkClient.Account
+			errOut     error
+		)
+		return accountOut, errOut
+	}
+	return mock.GetAccountFunc(clientCtx, addr)
+}
+
+// GetAccountCalls gets all the calls that were made to GetAccount.
+// Check the length with:
+//     len(mockedAccountRetriever.GetAccountCalls())
+func (mock *AccountRetrieverMock) GetAccountCalls() []struct {
+	ClientCtx sdkClient.Context
+	Addr      sdk.AccAddress
+} {
+	var calls []struct {
+		ClientCtx sdkClient.Context
+		Addr      sdk.AccAddress
+	}
+	mock.lockGetAccount.RLock()
+	calls = mock.calls.GetAccount
+	mock.lockGetAccount.RUnlock()
+	return calls
+}
+
+// GetAccountNumberSequence calls GetAccountNumberSequenceFunc.
+func (mock *AccountRetrieverMock) GetAccountNumberSequence(clientCtx sdkClient.Context, addr sdk.AccAddress) (uint64, uint64, error) {
+	callInfo := struct {
+		ClientCtx sdkClient.Context
+		Addr      sdk.AccAddress
+	}{
+		ClientCtx: clientCtx,
+		Addr:      addr,
+	}
+	mock.lockGetAccountNumberSequence.Lock()
+	mock.calls.GetAccountNumberSequence = append(mock.calls.GetAccountNumberSequence, callInfo)
+	mock.lockGetAccountNumberSequence.Unlock()
+	if mock.GetAccountNumberSequenceFunc == nil {
+		var (
+			accNumOut uint64
+			accSeqOut uint64
+			errOut    error
+		)
+		return accNumOut, accSeqOut, errOut
+	}
+	return mock.GetAccountNumberSequenceFunc(clientCtx, addr)
+}
+
+// GetAccountNumberSequenceCalls gets all the calls that were made to GetAccountNumberSequence.
+// Check the length with:
+//     len(mockedAccountRetriever.GetAccountNumberSequenceCalls())
+func (mock *AccountRetrieverMock) GetAccountNumberSequenceCalls() []struct {
+	ClientCtx sdkClient.Context
+	Addr      sdk.AccAddress
+} {
+	var calls []struct {
+		ClientCtx sdkClient.Context
+		Addr      sdk.AccAddress
+	}
+	mock.lockGetAccountNumberSequence.RLock()
+	calls = mock.calls.GetAccountNumberSequence
+	mock.lockGetAccountNumberSequence.RUnlock()
+	return calls
+}
+
+// GetAccountWithHeight calls GetAccountWithHeightFunc.
+func (mock *AccountRetrieverMock) GetAccountWithHeight(clientCtx sdkClient.Context, addr sdk.AccAddress) (sdkClient.Account, int64, error) {
+	callInfo := struct {
+		ClientCtx sdkClient.Context
+		Addr      sdk.AccAddress
+	}{
+		ClientCtx: clientCtx,
+		Addr:      addr,
+	}
+	mock.lockGetAccountWithHeight.Lock()
+	mock.calls.GetAccountWithHeight = append(mock.calls.GetAccountWithHeight, callInfo)
+	mock.lockGetAccountWithHeight.Unlock()
+	if mock.GetAccountWithHeightFunc == nil {
+		var (
+			accountOut sdkClient.Account
+			nOut       int64
+			errOut     error
+		)
+		return accountOut, nOut, errOut
+	}
+	return mock.GetAccountWithHeightFunc(clientCtx, addr)
+}
+
+// GetAccountWithHeightCalls gets all the calls that were made to GetAccountWithHeight.
+// Check the length with:
+//     len(mockedAccountRetriever.GetAccountWithHeightCalls())
+func (mock *AccountRetrieverMock) GetAccountWithHeightCalls() []struct {
+	ClientCtx sdkClient.Context
+	Addr      sdk.AccAddress
+} {
+	var calls []struct {
+		ClientCtx sdkClient.Context
+		Addr      sdk.AccAddress
+	}
+	mock.lockGetAccountWithHeight.RLock()
+	calls = mock.calls.GetAccountWithHeight
+	mock.lockGetAccountWithHeight.RUnlock()
+	return calls
+}
+
+// Ensure, that KeyringMock does implement types.Keyring.
+// If this is not the case, regenerate this file with moq.
+var _ types.Keyring = &KeyringMock{}
+
+// KeyringMock is a mock implementation of types.Keyring.
+//
+// 	func TestSomethingThatUsesKeyring(t *testing.T) {
+//
+// 		// make and configure a mocked types.Keyring
+// 		mockedKeyring := &KeyringMock{
+// 			DeleteFunc: func(uid string) error {
+// 				panic("mock out the Delete method")
+// 			},
+// 			DeleteByAddressFunc: func(address sdk.Address) error {
+// 				panic("mock out the DeleteByAddress method")
+// 			},
+// 			ExportPrivKeyArmorFunc: func(uid string, encryptPassphrase string) (string, error) {
+// 				panic("mock out the ExportPrivKeyArmor method")
+// 			},
+// 			ExportPrivKeyArmorByAddressFunc: func(address sdk.Address, encryptPassphrase string) (string, error) {
+// 				panic("mock out the ExportPrivKeyArmorByAddress method")
+// 			},
+// 			ExportPubKeyArmorFunc: func(uid string) (string, error) {
+// 				panic("mock out the ExportPubKeyArmor method")
+// 			},
+// 			ExportPubKeyArmorByAddressFunc: func(address sdk.Address) (string, error) {
+// 				panic("mock out the ExportPubKeyArmorByAddress method")
+// 			},
+// 			ImportPrivKeyFunc: func(uid string, armor string, passphrase string) error {
+// 				panic("mock out the ImportPrivKey method")
+// 			},
+// 			ImportPubKeyFunc: func(uid string, armor string) error {
+// 				panic("mock out the ImportPubKey method")
+// 			},
+// 			KeyFunc: func(uid string) (keyring.Info, error) {
+// 				panic("mock out the Key method")
+// 			},
+// 			KeyByAddressFunc: func(address sdk.Address) (keyring.Info, error) {
+// 				panic("mock out the KeyByAddress method")
+// 			},
+// 			ListFunc: func() ([]keyring.Info, error) {
+// 				panic("mock out the List method")
+// 			},
+// 			NewAccountFunc: func(uid string, mnemonic string, bip39Passwd string, hdPath string, algo keyring.SignatureAlgo) (keyring.Info, error) {
+// 				panic("mock out the NewAccount method")
+// 			},
+// 			NewMnemonicFunc: func(uid string, language keyring.Language, hdPath string, algo keyring.SignatureAlgo) (keyring.Info, string, error) {
+// 				panic("mock out the NewMnemonic method")
+// 			},
+// 			SaveLedgerKeyFunc: func(uid string, algo keyring.SignatureAlgo, hrp string, coinType uint32, account uint32, index uint32) (keyring.Info, error) {
+// 				panic("mock out the SaveLedgerKey method")
+// 			},
+// 			SaveMultisigFunc: func(uid string, pubkey cryptotypes.PubKey) (keyring.Info, error) {
+// 				panic("mock out the SaveMultisig method")
+// 			},
+// 			SavePubKeyFunc: func(uid string, pubkey cryptotypes.PubKey, algo hd.PubKeyType) (keyring.Info, error) {
+// 				panic("mock out the SavePubKey method")
+// 			},
+// 			SignFunc: func(uid string, msg []byte) ([]byte, cryptotypes.PubKey, error) {
+// 				panic("mock out the Sign method")
+// 			},
+// 			SignByAddressFunc: func(address sdk.Address, msg []byte) ([]byte, cryptotypes.PubKey, error) {
+// 				panic("mock out the SignByAddress method")
+// 			},
+// 			SupportedAlgorithmsFunc: func() (keyring.SigningAlgoList, keyring.SigningAlgoList) {
+// 				panic("mock out the SupportedAlgorithms method")
+// 			},
+// 		}
+//
+// 		// use mockedKeyring in code that requires types.Keyring
+// 		// and then make assertions.
+//
+// 	}
+type KeyringMock struct {
+	// DeleteFunc mocks the Delete method.
+	DeleteFunc func(uid string) error
+
+	// DeleteByAddressFunc mocks the DeleteByAddress method.
+	DeleteByAddressFunc func(address sdk.Address) error
+
+	// ExportPrivKeyArmorFunc mocks the ExportPrivKeyArmor method.
+	ExportPrivKeyArmorFunc func(uid string, encryptPassphrase string) (string, error)
+
+	// ExportPrivKeyArmorByAddressFunc mocks the ExportPrivKeyArmorByAddress method.
+	ExportPrivKeyArmorByAddressFunc func(address sdk.Address, encryptPassphrase string) (string, error)
+
+	// ExportPubKeyArmorFunc mocks the ExportPubKeyArmor method.
+	ExportPubKeyArmorFunc func(uid string) (string, error)
+
+	// ExportPubKeyArmorByAddressFunc mocks the ExportPubKeyArmorByAddress method.
+	ExportPubKeyArmorByAddressFunc func(address sdk.Address) (string, error)
+
+	// ImportPrivKeyFunc mocks the ImportPrivKey method.
+	ImportPrivKeyFunc func(uid string, armor string, passphrase string) error
+
+	// ImportPubKeyFunc mocks the ImportPubKey method.
+	ImportPubKeyFunc func(uid string, armor string) error
+
+	// KeyFunc mocks the Key method.
+	KeyFunc func(uid string) (keyring.Info, error)
+
+	// KeyByAddressFunc mocks the KeyByAddress method.
+	KeyByAddressFunc func(address sdk.Address) (keyring.Info, error)
+
+	// ListFunc mocks the List method.
+	ListFunc func() ([]keyring.Info, error)
+
+	// NewAccountFunc mocks the NewAccount method.
+	NewAccountFunc func(uid string, mnemonic string, bip39Passwd string, hdPath string, algo keyring.SignatureAlgo) (keyring.Info, error)
+
+	// NewMnemonicFunc mocks the NewMnemonic method.
+	NewMnemonicFunc func(uid string, language keyring.Language, hdPath string, algo keyring.SignatureAlgo) (keyring.Info, string, error)
+
+	// SaveLedgerKeyFunc mocks the SaveLedgerKey method.
+	SaveLedgerKeyFunc func(uid string, algo keyring.SignatureAlgo, hrp string, coinType uint32, account uint32, index uint32) (keyring.Info, error)
+
+	// SaveMultisigFunc mocks the SaveMultisig method.
+	SaveMultisigFunc func(uid string, pubkey cryptotypes.PubKey) (keyring.Info, error)
+
+	// SavePubKeyFunc mocks the SavePubKey method.
+	SavePubKeyFunc func(uid string, pubkey cryptotypes.PubKey, algo hd.PubKeyType) (keyring.Info, error)
+
+	// SignFunc mocks the Sign method.
+	SignFunc func(uid string, msg []byte) ([]byte, cryptotypes.PubKey, error)
+
+	// SignByAddressFunc mocks the SignByAddress method.
+	SignByAddressFunc func(address sdk.Address, msg []byte) ([]byte, cryptotypes.PubKey, error)
+
+	// SupportedAlgorithmsFunc mocks the SupportedAlgorithms method.
+	SupportedAlgorithmsFunc func() (keyring.SigningAlgoList, keyring.SigningAlgoList)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// Delete holds details about calls to the Delete method.
+		Delete []struct {
+			// UID is the uid argument value.
+			UID string
+		}
+		// DeleteByAddress holds details about calls to the DeleteByAddress method.
+		DeleteByAddress []struct {
+			// Address is the address argument value.
+			Address sdk.Address
+		}
+		// ExportPrivKeyArmor holds details about calls to the ExportPrivKeyArmor method.
+		ExportPrivKeyArmor []struct {
+			// UID is the uid argument value.
+			UID string
+			// EncryptPassphrase is the encryptPassphrase argument value.
+			EncryptPassphrase string
+		}
+		// ExportPrivKeyArmorByAddress holds details about calls to the ExportPrivKeyArmorByAddress method.
+		ExportPrivKeyArmorByAddress []struct {
+			// Address is the address argument value.
+			Address sdk.Address
+			// EncryptPassphrase is the encryptPassphrase argument value.
+			EncryptPassphrase string
+		}
+		// ExportPubKeyArmor holds details about calls to the ExportPubKeyArmor method.
+		ExportPubKeyArmor []struct {
+			// UID is the uid argument value.
+			UID string
+		}
+		// ExportPubKeyArmorByAddress holds details about calls to the ExportPubKeyArmorByAddress method.
+		ExportPubKeyArmorByAddress []struct {
+			// Address is the address argument value.
+			Address sdk.Address
+		}
+		// ImportPrivKey holds details about calls to the ImportPrivKey method.
+		ImportPrivKey []struct {
+			// UID is the uid argument value.
+			UID string
+			// Armor is the armor argument value.
+			Armor string
+			// Passphrase is the passphrase argument value.
+			Passphrase string
+		}
+		// ImportPubKey holds details about calls to the ImportPubKey method.
+		ImportPubKey []struct {
+			// UID is the uid argument value.
+			UID string
+			// Armor is the armor argument value.
+			Armor string
+		}
+		// Key holds details about calls to the Key method.
+		Key []struct {
+			// UID is the uid argument value.
+			UID string
+		}
+		// KeyByAddress holds details about calls to the KeyByAddress method.
+		KeyByAddress []struct {
+			// Address is the address argument value.
+			Address sdk.Address
+		}
+		// List holds details about calls to the List method.
+		List []struct {
+		}
+		// NewAccount holds details about calls to the NewAccount method.
+		NewAccount []struct {
+			// UID is the uid argument value.
+			UID string
+			// Mnemonic is the mnemonic argument value.
+			Mnemonic string
+			// Bip39Passwd is the bip39Passwd argument value.
+			Bip39Passwd string
+			// HdPath is the hdPath argument value.
+			HdPath string
+			// Algo is the algo argument value.
+			Algo keyring.SignatureAlgo
+		}
+		// NewMnemonic holds details about calls to the NewMnemonic method.
+		NewMnemonic []struct {
+			// UID is the uid argument value.
+			UID string
+			// Language is the language argument value.
+			Language keyring.Language
+			// HdPath is the hdPath argument value.
+			HdPath string
+			// Algo is the algo argument value.
+			Algo keyring.SignatureAlgo
+		}
+		// SaveLedgerKey holds details about calls to the SaveLedgerKey method.
+		SaveLedgerKey []struct {
+			// UID is the uid argument value.
+			UID string
+			// Algo is the algo argument value.
+			Algo keyring.SignatureAlgo
+			// Hrp is the hrp argument value.
+			Hrp string
+			// CoinType is the coinType argument value.
+			CoinType uint32
+			// Account is the account argument value.
+			Account uint32
+			// Index is the index argument value.
+			Index uint32
+		}
+		// SaveMultisig holds details about calls to the SaveMultisig method.
+		SaveMultisig []struct {
+			// UID is the uid argument value.
+			UID string
+			// Pubkey is the pubkey argument value.
+			Pubkey cryptotypes.PubKey
+		}
+		// SavePubKey holds details about calls to the SavePubKey method.
+		SavePubKey []struct {
+			// UID is the uid argument value.
+			UID string
+			// Pubkey is the pubkey argument value.
+			Pubkey cryptotypes.PubKey
+			// Algo is the algo argument value.
+			Algo hd.PubKeyType
+		}
+		// Sign holds details about calls to the Sign method.
+		Sign []struct {
+			// UID is the uid argument value.
+			UID string
+			// Msg is the msg argument value.
+			Msg []byte
+		}
+		// SignByAddress holds details about calls to the SignByAddress method.
+		SignByAddress []struct {
+			// Address is the address argument value.
+			Address sdk.Address
+			// Msg is the msg argument value.
+			Msg []byte
+		}
+		// SupportedAlgorithms holds details about calls to the SupportedAlgorithms method.
+		SupportedAlgorithms []struct {
+		}
+	}
+	lockDelete                      sync.RWMutex
+	lockDeleteByAddress             sync.RWMutex
+	lockExportPrivKeyArmor          sync.RWMutex
+	lockExportPrivKeyArmorByAddress sync.RWMutex
+	lockExportPubKeyArmor           sync.RWMutex
+	lockExportPubKeyArmorByAddress  sync.RWMutex
+	lockImportPrivKey               sync.RWMutex
+	lockImportPubKey                sync.RWMutex
+	lockKey                         sync.RWMutex
+	lockKeyByAddress                sync.RWMutex
+	lockList                        sync.RWMutex
+	lockNewAccount                  sync.RWMutex
+	lockNewMnemonic                 sync.RWMutex
+	lockSaveLedgerKey               sync.RWMutex
+	lockSaveMultisig                sync.RWMutex
+	lockSavePubKey                  sync.RWMutex
+	lockSign                        sync.RWMutex
+	lockSignByAddress               sync.RWMutex
+	lockSupportedAlgorithms         sync.RWMutex
+}
+
+// Delete calls DeleteFunc.
+func (mock *KeyringMock) Delete(uid string) error {
+	callInfo := struct {
+		UID string
+	}{
+		UID: uid,
+	}
+	mock.lockDelete.Lock()
+	mock.calls.Delete = append(mock.calls.Delete, callInfo)
+	mock.lockDelete.Unlock()
+	if mock.DeleteFunc == nil {
+		var (
+			errOut error
+		)
+		return errOut
+	}
+	return mock.DeleteFunc(uid)
+}
+
+// DeleteCalls gets all the calls that were made to Delete.
+// Check the length with:
+//     len(mockedKeyring.DeleteCalls())
+func (mock *KeyringMock) DeleteCalls() []struct {
+	UID string
+} {
+	var calls []struct {
+		UID string
+	}
+	mock.lockDelete.RLock()
+	calls = mock.calls.Delete
+	mock.lockDelete.RUnlock()
+	return calls
+}
+
+// DeleteByAddress calls DeleteByAddressFunc.
+func (mock *KeyringMock) DeleteByAddress(address sdk.Address) error {
+	callInfo := struct {
+		Address sdk.Address
+	}{
+		Address: address,
+	}
+	mock.lockDeleteByAddress.Lock()
+	mock.calls.DeleteByAddress = append(mock.calls.DeleteByAddress, callInfo)
+	mock.lockDeleteByAddress.Unlock()
+	if mock.DeleteByAddressFunc == nil {
+		var (
+			errOut error
+		)
+		return errOut
+	}
+	return mock.DeleteByAddressFunc(address)
+}
+
+// DeleteByAddressCalls gets all the calls that were made to DeleteByAddress.
+// Check the length with:
+//     len(mockedKeyring.DeleteByAddressCalls())
+func (mock *KeyringMock) DeleteByAddressCalls() []struct {
+	Address sdk.Address
+} {
+	var calls []struct {
+		Address sdk.Address
+	}
+	mock.lockDeleteByAddress.RLock()
+	calls = mock.calls.DeleteByAddress
+	mock.lockDeleteByAddress.RUnlock()
+	return calls
+}
+
+// ExportPrivKeyArmor calls ExportPrivKeyArmorFunc.
+func (mock *KeyringMock) ExportPrivKeyArmor(uid string, encryptPassphrase string) (string, error) {
+	callInfo := struct {
+		UID               string
+		EncryptPassphrase string
+	}{
+		UID:               uid,
+		EncryptPassphrase: encryptPassphrase,
+	}
+	mock.lockExportPrivKeyArmor.Lock()
+	mock.calls.ExportPrivKeyArmor = append(mock.calls.ExportPrivKeyArmor, callInfo)
+	mock.lockExportPrivKeyArmor.Unlock()
+	if mock.ExportPrivKeyArmorFunc == nil {
+		var (
+			armorOut string
+			errOut   error
+		)
+		return armorOut, errOut
+	}
+	return mock.ExportPrivKeyArmorFunc(uid, encryptPassphrase)
+}
+
+// ExportPrivKeyArmorCalls gets all the calls that were made to ExportPrivKeyArmor.
+// Check the length with:
+//     len(mockedKeyring.ExportPrivKeyArmorCalls())
+func (mock *KeyringMock) ExportPrivKeyArmorCalls() []struct {
+	UID               string
+	EncryptPassphrase string
+} {
+	var calls []struct {
+		UID               string
+		EncryptPassphrase string
+	}
+	mock.lockExportPrivKeyArmor.RLock()
+	calls = mock.calls.ExportPrivKeyArmor
+	mock.lockExportPrivKeyArmor.RUnlock()
+	return calls
+}
+
+// ExportPrivKeyArmorByAddress calls ExportPrivKeyArmorByAddressFunc.
+func (mock *KeyringMock) ExportPrivKeyArmorByAddress(address sdk.Address, encryptPassphrase string) (string, error) {
+	callInfo := struct {
+		Address           sdk.Address
+		EncryptPassphrase string
+	}{
+		Address:           address,
+		EncryptPassphrase: encryptPassphrase,
+	}
+	mock.lockExportPrivKeyArmorByAddress.Lock()
+	mock.calls.ExportPrivKeyArmorByAddress = append(mock.calls.ExportPrivKeyArmorByAddress, callInfo)
+	mock.lockExportPrivKeyArmorByAddress.Unlock()
+	if mock.ExportPrivKeyArmorByAddressFunc == nil {
+		var (
+			armorOut string
+			errOut   error
+		)
+		return armorOut, errOut
+	}
+	return mock.ExportPrivKeyArmorByAddressFunc(address, encryptPassphrase)
+}
+
+// ExportPrivKeyArmorByAddressCalls gets all the calls that were made to ExportPrivKeyArmorByAddress.
+// Check the length with:
+//     len(mockedKeyring.ExportPrivKeyArmorByAddressCalls())
+func (mock *KeyringMock) ExportPrivKeyArmorByAddressCalls() []struct {
+	Address           sdk.Address
+	EncryptPassphrase string
+} {
+	var calls []struct {
+		Address           sdk.Address
+		EncryptPassphrase string
+	}
+	mock.lockExportPrivKeyArmorByAddress.RLock()
+	calls = mock.calls.ExportPrivKeyArmorByAddress
+	mock.lockExportPrivKeyArmorByAddress.RUnlock()
+	return calls
+}
+
+// ExportPubKeyArmor calls ExportPubKeyArmorFunc.
+func (mock *KeyringMock) ExportPubKeyArmor(uid string) (string, error) {
+	callInfo := struct {
+		UID string
+	}{
+		UID: uid,
+	}
+	mock.lockExportPubKeyArmor.Lock()
+	mock.calls.ExportPubKeyArmor = append(mock.calls.ExportPubKeyArmor, callInfo)
+	mock.lockExportPubKeyArmor.Unlock()
+	if mock.ExportPubKeyArmorFunc == nil {
+		var (
+			sOut   string
+			errOut error
+		)
+		return sOut, errOut
+	}
+	return mock.ExportPubKeyArmorFunc(uid)
+}
+
+// ExportPubKeyArmorCalls gets all the calls that were made to ExportPubKeyArmor.
+// Check the length with:
+//     len(mockedKeyring.ExportPubKeyArmorCalls())
+func (mock *KeyringMock) ExportPubKeyArmorCalls() []struct {
+	UID string
+} {
+	var calls []struct {
+		UID string
+	}
+	mock.lockExportPubKeyArmor.RLock()
+	calls = mock.calls.ExportPubKeyArmor
+	mock.lockExportPubKeyArmor.RUnlock()
+	return calls
+}
+
+// ExportPubKeyArmorByAddress calls ExportPubKeyArmorByAddressFunc.
+func (mock *KeyringMock) ExportPubKeyArmorByAddress(address sdk.Address) (string, error) {
+	callInfo := struct {
+		Address sdk.Address
+	}{
+		Address: address,
+	}
+	mock.lockExportPubKeyArmorByAddress.Lock()
+	mock.calls.ExportPubKeyArmorByAddress = append(mock.calls.ExportPubKeyArmorByAddress, callInfo)
+	mock.lockExportPubKeyArmorByAddress.Unlock()
+	if mock.ExportPubKeyArmorByAddressFunc == nil {
+		var (
+			sOut   string
+			errOut error
+		)
+		return sOut, errOut
+	}
+	return mock.ExportPubKeyArmorByAddressFunc(address)
+}
+
+// ExportPubKeyArmorByAddressCalls gets all the calls that were made to ExportPubKeyArmorByAddress.
+// Check the length with:
+//     len(mockedKeyring.ExportPubKeyArmorByAddressCalls())
+func (mock *KeyringMock) ExportPubKeyArmorByAddressCalls() []struct {
+	Address sdk.Address
+} {
+	var calls []struct {
+		Address sdk.Address
+	}
+	mock.lockExportPubKeyArmorByAddress.RLock()
+	calls = mock.calls.ExportPubKeyArmorByAddress
+	mock.lockExportPubKeyArmorByAddress.RUnlock()
+	return calls
+}
+
+// ImportPrivKey calls ImportPrivKeyFunc.
+func (mock *KeyringMock) ImportPrivKey(uid string, armor string, passphrase string) error {
+	callInfo := struct {
+		UID        string
+		Armor      string
+		Passphrase string
+	}{
+		UID:        uid,
+		Armor:      armor,
+		Passphrase: passphrase,
+	}
+	mock.lockImportPrivKey.Lock()
+	mock.calls.ImportPrivKey = append(mock.calls.ImportPrivKey, callInfo)
+	mock.lockImportPrivKey.Unlock()
+	if mock.ImportPrivKeyFunc == nil {
+		var (
+			errOut error
+		)
+		return errOut
+	}
+	return mock.ImportPrivKeyFunc(uid, armor, passphrase)
+}
+
+// ImportPrivKeyCalls gets all the calls that were made to ImportPrivKey.
+// Check the length with:
+//     len(mockedKeyring.ImportPrivKeyCalls())
+func (mock *KeyringMock) ImportPrivKeyCalls() []struct {
+	UID        string
+	Armor      string
+	Passphrase string
+} {
+	var calls []struct {
+		UID        string
+		Armor      string
+		Passphrase string
+	}
+	mock.lockImportPrivKey.RLock()
+	calls = mock.calls.ImportPrivKey
+	mock.lockImportPrivKey.RUnlock()
+	return calls
+}
+
+// ImportPubKey calls ImportPubKeyFunc.
+func (mock *KeyringMock) ImportPubKey(uid string, armor string) error {
+	callInfo := struct {
+		UID   string
+		Armor string
+	}{
+		UID:   uid,
+		Armor: armor,
+	}
+	mock.lockImportPubKey.Lock()
+	mock.calls.ImportPubKey = append(mock.calls.ImportPubKey, callInfo)
+	mock.lockImportPubKey.Unlock()
+	if mock.ImportPubKeyFunc == nil {
+		var (
+			errOut error
+		)
+		return errOut
+	}
+	return mock.ImportPubKeyFunc(uid, armor)
+}
+
+// ImportPubKeyCalls gets all the calls that were made to ImportPubKey.
+// Check the length with:
+//     len(mockedKeyring.ImportPubKeyCalls())
+func (mock *KeyringMock) ImportPubKeyCalls() []struct {
+	UID   string
+	Armor string
+} {
+	var calls []struct {
+		UID   string
+		Armor string
+	}
+	mock.lockImportPubKey.RLock()
+	calls = mock.calls.ImportPubKey
+	mock.lockImportPubKey.RUnlock()
+	return calls
+}
+
+// Key calls KeyFunc.
+func (mock *KeyringMock) Key(uid string) (keyring.Info, error) {
+	callInfo := struct {
+		UID string
+	}{
+		UID: uid,
+	}
+	mock.lockKey.Lock()
+	mock.calls.Key = append(mock.calls.Key, callInfo)
+	mock.lockKey.Unlock()
+	if mock.KeyFunc == nil {
+		var (
+			infoOut keyring.Info
+			errOut  error
+		)
+		return infoOut, errOut
+	}
+	return mock.KeyFunc(uid)
+}
+
+// KeyCalls gets all the calls that were made to Key.
+// Check the length with:
+//     len(mockedKeyring.KeyCalls())
+func (mock *KeyringMock) KeyCalls() []struct {
+	UID string
+} {
+	var calls []struct {
+		UID string
+	}
+	mock.lockKey.RLock()
+	calls = mock.calls.Key
+	mock.lockKey.RUnlock()
+	return calls
+}
+
+// KeyByAddress calls KeyByAddressFunc.
+func (mock *KeyringMock) KeyByAddress(address sdk.Address) (keyring.Info, error) {
+	callInfo := struct {
+		Address sdk.Address
+	}{
+		Address: address,
+	}
+	mock.lockKeyByAddress.Lock()
+	mock.calls.KeyByAddress = append(mock.calls.KeyByAddress, callInfo)
+	mock.lockKeyByAddress.Unlock()
+	if mock.KeyByAddressFunc == nil {
+		var (
+			infoOut keyring.Info
+			errOut  error
+		)
+		return infoOut, errOut
+	}
+	return mock.KeyByAddressFunc(address)
+}
+
+// KeyByAddressCalls gets all the calls that were made to KeyByAddress.
+// Check the length with:
+//     len(mockedKeyring.KeyByAddressCalls())
+func (mock *KeyringMock) KeyByAddressCalls() []struct {
+	Address sdk.Address
+} {
+	var calls []struct {
+		Address sdk.Address
+	}
+	mock.lockKeyByAddress.RLock()
+	calls = mock.calls.KeyByAddress
+	mock.lockKeyByAddress.RUnlock()
+	return calls
+}
+
+// List calls ListFunc.
+func (mock *KeyringMock) List() ([]keyring.Info, error) {
+	callInfo := struct {
+	}{}
+	mock.lockList.Lock()
+	mock.calls.List = append(mock.calls.List, callInfo)
+	mock.lockList.Unlock()
+	if mock.ListFunc == nil {
+		var (
+			infosOut []keyring.Info
+			errOut   error
+		)
+		return infosOut, errOut
+	}
+	return mock.ListFunc()
+}
+
+// ListCalls gets all the calls that were made to List.
+// Check the length with:
+//     len(mockedKeyring.ListCalls())
+func (mock *KeyringMock) ListCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockList.RLock()
+	calls = mock.calls.List
+	mock.lockList.RUnlock()
+	return calls
+}
+
+// NewAccount calls NewAccountFunc.
+func (mock *KeyringMock) NewAccount(uid string, mnemonic string, bip39Passwd string, hdPath string, algo keyring.SignatureAlgo) (keyring.Info, error) {
+	callInfo := struct {
+		UID         string
+		Mnemonic    string
+		Bip39Passwd string
+		HdPath      string
+		Algo        keyring.SignatureAlgo
+	}{
+		UID:         uid,
+		Mnemonic:    mnemonic,
+		Bip39Passwd: bip39Passwd,
+		HdPath:      hdPath,
+		Algo:        algo,
+	}
+	mock.lockNewAccount.Lock()
+	mock.calls.NewAccount = append(mock.calls.NewAccount, callInfo)
+	mock.lockNewAccount.Unlock()
+	if mock.NewAccountFunc == nil {
+		var (
+			infoOut keyring.Info
+			errOut  error
+		)
+		return infoOut, errOut
+	}
+	return mock.NewAccountFunc(uid, mnemonic, bip39Passwd, hdPath, algo)
+}
+
+// NewAccountCalls gets all the calls that were made to NewAccount.
+// Check the length with:
+//     len(mockedKeyring.NewAccountCalls())
+func (mock *KeyringMock) NewAccountCalls() []struct {
+	UID         string
+	Mnemonic    string
+	Bip39Passwd string
+	HdPath      string
+	Algo        keyring.SignatureAlgo
+} {
+	var calls []struct {
+		UID         string
+		Mnemonic    string
+		Bip39Passwd string
+		HdPath      string
+		Algo        keyring.SignatureAlgo
+	}
+	mock.lockNewAccount.RLock()
+	calls = mock.calls.NewAccount
+	mock.lockNewAccount.RUnlock()
+	return calls
+}
+
+// NewMnemonic calls NewMnemonicFunc.
+func (mock *KeyringMock) NewMnemonic(uid string, language keyring.Language, hdPath string, algo keyring.SignatureAlgo) (keyring.Info, string, error) {
+	callInfo := struct {
+		UID      string
+		Language keyring.Language
+		HdPath   string
+		Algo     keyring.SignatureAlgo
+	}{
+		UID:      uid,
+		Language: language,
+		HdPath:   hdPath,
+		Algo:     algo,
+	}
+	mock.lockNewMnemonic.Lock()
+	mock.calls.NewMnemonic = append(mock.calls.NewMnemonic, callInfo)
+	mock.lockNewMnemonic.Unlock()
+	if mock.NewMnemonicFunc == nil {
+		var (
+			infoOut keyring.Info
+			sOut    string
+			errOut  error
+		)
+		return infoOut, sOut, errOut
+	}
+	return mock.NewMnemonicFunc(uid, language, hdPath, algo)
+}
+
+// NewMnemonicCalls gets all the calls that were made to NewMnemonic.
+// Check the length with:
+//     len(mockedKeyring.NewMnemonicCalls())
+func (mock *KeyringMock) NewMnemonicCalls() []struct {
+	UID      string
+	Language keyring.Language
+	HdPath   string
+	Algo     keyring.SignatureAlgo
+} {
+	var calls []struct {
+		UID      string
+		Language keyring.Language
+		HdPath   string
+		Algo     keyring.SignatureAlgo
+	}
+	mock.lockNewMnemonic.RLock()
+	calls = mock.calls.NewMnemonic
+	mock.lockNewMnemonic.RUnlock()
+	return calls
+}
+
+// SaveLedgerKey calls SaveLedgerKeyFunc.
+func (mock *KeyringMock) SaveLedgerKey(uid string, algo keyring.SignatureAlgo, hrp string, coinType uint32, account uint32, index uint32) (keyring.Info, error) {
+	callInfo := struct {
+		UID      string
+		Algo     keyring.SignatureAlgo
+		Hrp      string
+		CoinType uint32
+		Account  uint32
+		Index    uint32
+	}{
+		UID:      uid,
+		Algo:     algo,
+		Hrp:      hrp,
+		CoinType: coinType,
+		Account:  account,
+		Index:    index,
+	}
+	mock.lockSaveLedgerKey.Lock()
+	mock.calls.SaveLedgerKey = append(mock.calls.SaveLedgerKey, callInfo)
+	mock.lockSaveLedgerKey.Unlock()
+	if mock.SaveLedgerKeyFunc == nil {
+		var (
+			infoOut keyring.Info
+			errOut  error
+		)
+		return infoOut, errOut
+	}
+	return mock.SaveLedgerKeyFunc(uid, algo, hrp, coinType, account, index)
+}
+
+// SaveLedgerKeyCalls gets all the calls that were made to SaveLedgerKey.
+// Check the length with:
+//     len(mockedKeyring.SaveLedgerKeyCalls())
+func (mock *KeyringMock) SaveLedgerKeyCalls() []struct {
+	UID      string
+	Algo     keyring.SignatureAlgo
+	Hrp      string
+	CoinType uint32
+	Account  uint32
+	Index    uint32
+} {
+	var calls []struct {
+		UID      string
+		Algo     keyring.SignatureAlgo
+		Hrp      string
+		CoinType uint32
+		Account  uint32
+		Index    uint32
+	}
+	mock.lockSaveLedgerKey.RLock()
+	calls = mock.calls.SaveLedgerKey
+	mock.lockSaveLedgerKey.RUnlock()
+	return calls
+}
+
+// SaveMultisig calls SaveMultisigFunc.
+func (mock *KeyringMock) SaveMultisig(uid string, pubkey cryptotypes.PubKey) (keyring.Info, error) {
+	callInfo := struct {
+		UID    string
+		Pubkey cryptotypes.PubKey
+	}{
+		UID:    uid,
+		Pubkey: pubkey,
+	}
+	mock.lockSaveMultisig.Lock()
+	mock.calls.SaveMultisig = append(mock.calls.SaveMultisig, callInfo)
+	mock.lockSaveMultisig.Unlock()
+	if mock.SaveMultisigFunc == nil {
+		var (
+			infoOut keyring.Info
+			errOut  error
+		)
+		return infoOut, errOut
+	}
+	return mock.SaveMultisigFunc(uid, pubkey)
+}
+
+// SaveMultisigCalls gets all the calls that were made to SaveMultisig.
+// Check the length with:
+//     len(mockedKeyring.SaveMultisigCalls())
+func (mock *KeyringMock) SaveMultisigCalls() []struct {
+	UID    string
+	Pubkey cryptotypes.PubKey
+} {
+	var calls []struct {
+		UID    string
+		Pubkey cryptotypes.PubKey
+	}
+	mock.lockSaveMultisig.RLock()
+	calls = mock.calls.SaveMultisig
+	mock.lockSaveMultisig.RUnlock()
+	return calls
+}
+
+// SavePubKey calls SavePubKeyFunc.
+func (mock *KeyringMock) SavePubKey(uid string, pubkey cryptotypes.PubKey, algo hd.PubKeyType) (keyring.Info, error) {
+	callInfo := struct {
+		UID    string
+		Pubkey cryptotypes.PubKey
+		Algo   hd.PubKeyType
+	}{
+		UID:    uid,
+		Pubkey: pubkey,
+		Algo:   algo,
+	}
+	mock.lockSavePubKey.Lock()
+	mock.calls.SavePubKey = append(mock.calls.SavePubKey, callInfo)
+	mock.lockSavePubKey.Unlock()
+	if mock.SavePubKeyFunc == nil {
+		var (
+			infoOut keyring.Info
+			errOut  error
+		)
+		return infoOut, errOut
+	}
+	return mock.SavePubKeyFunc(uid, pubkey, algo)
+}
+
+// SavePubKeyCalls gets all the calls that were made to SavePubKey.
+// Check the length with:
+//     len(mockedKeyring.SavePubKeyCalls())
+func (mock *KeyringMock) SavePubKeyCalls() []struct {
+	UID    string
+	Pubkey cryptotypes.PubKey
+	Algo   hd.PubKeyType
+} {
+	var calls []struct {
+		UID    string
+		Pubkey cryptotypes.PubKey
+		Algo   hd.PubKeyType
+	}
+	mock.lockSavePubKey.RLock()
+	calls = mock.calls.SavePubKey
+	mock.lockSavePubKey.RUnlock()
+	return calls
+}
+
+// Sign calls SignFunc.
+func (mock *KeyringMock) Sign(uid string, msg []byte) ([]byte, cryptotypes.PubKey, error) {
+	callInfo := struct {
+		UID string
+		Msg []byte
+	}{
+		UID: uid,
+		Msg: msg,
+	}
+	mock.lockSign.Lock()
+	mock.calls.Sign = append(mock.calls.Sign, callInfo)
+	mock.lockSign.Unlock()
+	if mock.SignFunc == nil {
+		var (
+			bytesOut  []byte
+			pubKeyOut cryptotypes.PubKey
+			errOut    error
+		)
+		return bytesOut, pubKeyOut, errOut
+	}
+	return mock.SignFunc(uid, msg)
+}
+
+// SignCalls gets all the calls that were made to Sign.
+// Check the length with:
+//     len(mockedKeyring.SignCalls())
+func (mock *KeyringMock) SignCalls() []struct {
+	UID string
+	Msg []byte
+} {
+	var calls []struct {
+		UID string
+		Msg []byte
+	}
+	mock.lockSign.RLock()
+	calls = mock.calls.Sign
+	mock.lockSign.RUnlock()
+	return calls
+}
+
+// SignByAddress calls SignByAddressFunc.
+func (mock *KeyringMock) SignByAddress(address sdk.Address, msg []byte) ([]byte, cryptotypes.PubKey, error) {
+	callInfo := struct {
+		Address sdk.Address
+		Msg     []byte
+	}{
+		Address: address,
+		Msg:     msg,
+	}
+	mock.lockSignByAddress.Lock()
+	mock.calls.SignByAddress = append(mock.calls.SignByAddress, callInfo)
+	mock.lockSignByAddress.Unlock()
+	if mock.SignByAddressFunc == nil {
+		var (
+			bytesOut  []byte
+			pubKeyOut cryptotypes.PubKey
+			errOut    error
+		)
+		return bytesOut, pubKeyOut, errOut
+	}
+	return mock.SignByAddressFunc(address, msg)
+}
+
+// SignByAddressCalls gets all the calls that were made to SignByAddress.
+// Check the length with:
+//     len(mockedKeyring.SignByAddressCalls())
+func (mock *KeyringMock) SignByAddressCalls() []struct {
+	Address sdk.Address
+	Msg     []byte
+} {
+	var calls []struct {
+		Address sdk.Address
+		Msg     []byte
+	}
+	mock.lockSignByAddress.RLock()
+	calls = mock.calls.SignByAddress
+	mock.lockSignByAddress.RUnlock()
+	return calls
+}
+
+// SupportedAlgorithms calls SupportedAlgorithmsFunc.
+func (mock *KeyringMock) SupportedAlgorithms() (keyring.SigningAlgoList, keyring.SigningAlgoList) {
+	callInfo := struct {
+	}{}
+	mock.lockSupportedAlgorithms.Lock()
+	mock.calls.SupportedAlgorithms = append(mock.calls.SupportedAlgorithms, callInfo)
+	mock.lockSupportedAlgorithms.Unlock()
+	if mock.SupportedAlgorithmsFunc == nil {
+		var (
+			signingAlgoListOut1 keyring.SigningAlgoList
+			signingAlgoListOut2 keyring.SigningAlgoList
+		)
+		return signingAlgoListOut1, signingAlgoListOut2
+	}
+	return mock.SupportedAlgorithmsFunc()
+}
+
+// SupportedAlgorithmsCalls gets all the calls that were made to SupportedAlgorithms.
+// Check the length with:
+//     len(mockedKeyring.SupportedAlgorithmsCalls())
+func (mock *KeyringMock) SupportedAlgorithmsCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockSupportedAlgorithms.RLock()
+	calls = mock.calls.SupportedAlgorithms
+	mock.lockSupportedAlgorithms.RUnlock()
+	return calls
+}
+
+// Ensure, that InfoMock does implement types.Info.
+// If this is not the case, regenerate this file with moq.
+var _ types.Info = &InfoMock{}
+
+// InfoMock is a mock implementation of types.Info.
+//
+// 	func TestSomethingThatUsesInfo(t *testing.T) {
+//
+// 		// make and configure a mocked types.Info
+// 		mockedInfo := &InfoMock{
+// 			GetAddressFunc: func() sdk.AccAddress {
+// 				panic("mock out the GetAddress method")
+// 			},
+// 			GetAlgoFunc: func() hd.PubKeyType {
+// 				panic("mock out the GetAlgo method")
+// 			},
+// 			GetNameFunc: func() string {
+// 				panic("mock out the GetName method")
+// 			},
+// 			GetPathFunc: func() (*hd.BIP44Params, error) {
+// 				panic("mock out the GetPath method")
+// 			},
+// 			GetPubKeyFunc: func() cryptotypes.PubKey {
+// 				panic("mock out the GetPubKey method")
+// 			},
+// 			GetTypeFunc: func() keyring.KeyType {
+// 				panic("mock out the GetType method")
+// 			},
+// 		}
+//
+// 		// use mockedInfo in code that requires types.Info
+// 		// and then make assertions.
+//
+// 	}
+type InfoMock struct {
+	// GetAddressFunc mocks the GetAddress method.
+	GetAddressFunc func() sdk.AccAddress
+
+	// GetAlgoFunc mocks the GetAlgo method.
+	GetAlgoFunc func() hd.PubKeyType
+
+	// GetNameFunc mocks the GetName method.
+	GetNameFunc func() string
+
+	// GetPathFunc mocks the GetPath method.
+	GetPathFunc func() (*hd.BIP44Params, error)
+
+	// GetPubKeyFunc mocks the GetPubKey method.
+	GetPubKeyFunc func() cryptotypes.PubKey
+
+	// GetTypeFunc mocks the GetType method.
+	GetTypeFunc func() keyring.KeyType
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetAddress holds details about calls to the GetAddress method.
+		GetAddress []struct {
+		}
+		// GetAlgo holds details about calls to the GetAlgo method.
+		GetAlgo []struct {
+		}
+		// GetName holds details about calls to the GetName method.
+		GetName []struct {
+		}
+		// GetPath holds details about calls to the GetPath method.
+		GetPath []struct {
+		}
+		// GetPubKey holds details about calls to the GetPubKey method.
+		GetPubKey []struct {
+		}
+		// GetType holds details about calls to the GetType method.
+		GetType []struct {
+		}
+	}
+	lockGetAddress sync.RWMutex
+	lockGetAlgo    sync.RWMutex
+	lockGetName    sync.RWMutex
+	lockGetPath    sync.RWMutex
+	lockGetPubKey  sync.RWMutex
+	lockGetType    sync.RWMutex
+}
+
+// GetAddress calls GetAddressFunc.
+func (mock *InfoMock) GetAddress() sdk.AccAddress {
+	callInfo := struct {
+	}{}
+	mock.lockGetAddress.Lock()
+	mock.calls.GetAddress = append(mock.calls.GetAddress, callInfo)
+	mock.lockGetAddress.Unlock()
+	if mock.GetAddressFunc == nil {
+		var (
+			accAddressOut sdk.AccAddress
+		)
+		return accAddressOut
+	}
+	return mock.GetAddressFunc()
+}
+
+// GetAddressCalls gets all the calls that were made to GetAddress.
+// Check the length with:
+//     len(mockedInfo.GetAddressCalls())
+func (mock *InfoMock) GetAddressCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetAddress.RLock()
+	calls = mock.calls.GetAddress
+	mock.lockGetAddress.RUnlock()
+	return calls
+}
+
+// GetAlgo calls GetAlgoFunc.
+func (mock *InfoMock) GetAlgo() hd.PubKeyType {
+	callInfo := struct {
+	}{}
+	mock.lockGetAlgo.Lock()
+	mock.calls.GetAlgo = append(mock.calls.GetAlgo, callInfo)
+	mock.lockGetAlgo.Unlock()
+	if mock.GetAlgoFunc == nil {
+		var (
+			pubKeyTypeOut hd.PubKeyType
+		)
+		return pubKeyTypeOut
+	}
+	return mock.GetAlgoFunc()
+}
+
+// GetAlgoCalls gets all the calls that were made to GetAlgo.
+// Check the length with:
+//     len(mockedInfo.GetAlgoCalls())
+func (mock *InfoMock) GetAlgoCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetAlgo.RLock()
+	calls = mock.calls.GetAlgo
+	mock.lockGetAlgo.RUnlock()
+	return calls
+}
+
+// GetName calls GetNameFunc.
+func (mock *InfoMock) GetName() string {
+	callInfo := struct {
+	}{}
+	mock.lockGetName.Lock()
+	mock.calls.GetName = append(mock.calls.GetName, callInfo)
+	mock.lockGetName.Unlock()
+	if mock.GetNameFunc == nil {
+		var (
+			sOut string
+		)
+		return sOut
+	}
+	return mock.GetNameFunc()
+}
+
+// GetNameCalls gets all the calls that were made to GetName.
+// Check the length with:
+//     len(mockedInfo.GetNameCalls())
+func (mock *InfoMock) GetNameCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetName.RLock()
+	calls = mock.calls.GetName
+	mock.lockGetName.RUnlock()
+	return calls
+}
+
+// GetPath calls GetPathFunc.
+func (mock *InfoMock) GetPath() (*hd.BIP44Params, error) {
+	callInfo := struct {
+	}{}
+	mock.lockGetPath.Lock()
+	mock.calls.GetPath = append(mock.calls.GetPath, callInfo)
+	mock.lockGetPath.Unlock()
+	if mock.GetPathFunc == nil {
+		var (
+			bIP44ParamsOut *hd.BIP44Params
+			errOut         error
+		)
+		return bIP44ParamsOut, errOut
+	}
+	return mock.GetPathFunc()
+}
+
+// GetPathCalls gets all the calls that were made to GetPath.
+// Check the length with:
+//     len(mockedInfo.GetPathCalls())
+func (mock *InfoMock) GetPathCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetPath.RLock()
+	calls = mock.calls.GetPath
+	mock.lockGetPath.RUnlock()
+	return calls
+}
+
+// GetPubKey calls GetPubKeyFunc.
+func (mock *InfoMock) GetPubKey() cryptotypes.PubKey {
+	callInfo := struct {
+	}{}
+	mock.lockGetPubKey.Lock()
+	mock.calls.GetPubKey = append(mock.calls.GetPubKey, callInfo)
+	mock.lockGetPubKey.Unlock()
+	if mock.GetPubKeyFunc == nil {
+		var (
+			pubKeyOut cryptotypes.PubKey
+		)
+		return pubKeyOut
+	}
+	return mock.GetPubKeyFunc()
+}
+
+// GetPubKeyCalls gets all the calls that were made to GetPubKey.
+// Check the length with:
+//     len(mockedInfo.GetPubKeyCalls())
+func (mock *InfoMock) GetPubKeyCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetPubKey.RLock()
+	calls = mock.calls.GetPubKey
+	mock.lockGetPubKey.RUnlock()
+	return calls
+}
+
+// GetType calls GetTypeFunc.
+func (mock *InfoMock) GetType() keyring.KeyType {
+	callInfo := struct {
+	}{}
+	mock.lockGetType.Lock()
+	mock.calls.GetType = append(mock.calls.GetType, callInfo)
+	mock.lockGetType.Unlock()
+	if mock.GetTypeFunc == nil {
+		var (
+			keyTypeOut keyring.KeyType
+		)
+		return keyTypeOut
+	}
+	return mock.GetTypeFunc()
+}
+
+// GetTypeCalls gets all the calls that were made to GetType.
+// Check the length with:
+//     len(mockedInfo.GetTypeCalls())
+func (mock *InfoMock) GetTypeCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetType.RLock()
+	calls = mock.calls.GetType
+	mock.lockGetType.RUnlock()
+	return calls
+}
+
+// Ensure, that PipelineMock does implement types.Pipeline.
+// If this is not the case, regenerate this file with moq.
+var _ types.Pipeline = &PipelineMock{}
+
+// PipelineMock is a mock implementation of types.Pipeline.
+//
+// 	func TestSomethingThatUsesPipeline(t *testing.T) {
+//
+// 		// make and configure a mocked types.Pipeline
+// 		mockedPipeline := &PipelineMock{
+// 			CloseFunc: func()  {
+// 				panic("mock out the Close method")
+// 			},
+// 			PushFunc: func(fn func() error) error {
+// 				panic("mock out the Push method")
+// 			},
+// 		}
+//
+// 		// use mockedPipeline in code that requires types.Pipeline
+// 		// and then make assertions.
+//
+// 	}
+type PipelineMock struct {
+	// CloseFunc mocks the Close method.
+	CloseFunc func()
+
+	// PushFunc mocks the Push method.
+	PushFunc func(fn func() error) error
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// Close holds details about calls to the Close method.
+		Close []struct {
+		}
+		// Push holds details about calls to the Push method.
+		Push []struct {
+			// Fn is the fn argument value.
+			Fn func() error
+		}
+	}
+	lockClose sync.RWMutex
+	lockPush  sync.RWMutex
+}
+
+// Close calls CloseFunc.
+func (mock *PipelineMock) Close() {
+	callInfo := struct {
+	}{}
+	mock.lockClose.Lock()
+	mock.calls.Close = append(mock.calls.Close, callInfo)
+	mock.lockClose.Unlock()
+	if mock.CloseFunc == nil {
+		return
+	}
+	mock.CloseFunc()
+}
+
+// CloseCalls gets all the calls that were made to Close.
+// Check the length with:
+//     len(mockedPipeline.CloseCalls())
+func (mock *PipelineMock) CloseCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockClose.RLock()
+	calls = mock.calls.Close
+	mock.lockClose.RUnlock()
+	return calls
+}
+
+// Push calls PushFunc.
+func (mock *PipelineMock) Push(fn func() error) error {
+	callInfo := struct {
+		Fn func() error
+	}{
+		Fn: fn,
+	}
+	mock.lockPush.Lock()
+	mock.calls.Push = append(mock.calls.Push, callInfo)
+	mock.lockPush.Unlock()
+	if mock.PushFunc == nil {
+		var (
+			errOut error
+		)
+		return errOut
+	}
+	return mock.PushFunc(fn)
+}
+
+// PushCalls gets all the calls that were made to Push.
+// Check the length with:
+//     len(mockedPipeline.PushCalls())
+func (mock *PipelineMock) PushCalls() []struct {
+	Fn func() error
+} {
+	var calls []struct {
+		Fn func() error
+	}
+	mock.lockPush.RLock()
+	calls = mock.calls.Push
+	mock.lockPush.RUnlock()
 	return calls
 }

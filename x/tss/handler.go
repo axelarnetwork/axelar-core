@@ -167,7 +167,7 @@ func handleMsgAssignNextKey(ctx sdk.Context, k keeper.Keeper, s types.Snapshotte
 
 	keyRequirement, found := k.GetKeyRequirement(ctx, chain, msg.KeyRole)
 	if !found {
-		return nil, fmt.Errorf("%s key is not required for chain %s", msg.KeyRole.String(), chain.Name)
+		return nil, fmt.Errorf("%s key is not required for chain %s", msg.KeyRole.SimpleString(), chain.Name)
 	}
 
 	if len(snapshot.Validators) < int(keyRequirement.MinValidatorSubsetSize) {

@@ -1,29 +1,30 @@
 package types
 
 import (
+	sdkClient "github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
-	coretypes "github.com/tendermint/tendermint/rpc/core/types"
+	rpcclient "github.com/tendermint/tendermint/rpc/client"
 )
 
-//go:generate moq -out ./mock/broadcast.go -pkg mock -stub . Client Msg Broadcaster
+//go:generate moq -out ./mock/types.go -pkg mock -stub . Client Broadcaster AccountRetriever Keyring Info Pipeline
 // go:generate moq -out ./mock/interfaces.go -pkg mock -stub . Keybase Client KVStore Info Msg
 
-// Msg is a wrapped interface for moq generation
+// interface wraps for testing purposes
 type (
-	Msg sdk.Msg
+	AccountRetriever sdkClient.AccountRetriever
+	Client           rpcclient.Client
+	Keyring          keyring.Keyring
+	Info             keyring.Info
 )
-
-// Client represents a tendermint/Cosmos client
-type Client interface {
-	BroadcastTxSync(tx legacytx.StdTx) (*coretypes.ResultBroadcastTx, error)
-	GetAccountNumberSequence(addr sdk.AccAddress) (accNum uint64, accSeq uint64, err error)
-}
-
-// Sign returns a signature for the given message from the account associated with the given address
-type Sign func(from sdk.AccAddress, msg legacytx.StdSignMsg) (legacytx.StdSignature, error)
 
 // Broadcaster interface allows the submission of messages to the axelar network
 type Broadcaster interface {
 	Broadcast(msgs ...sdk.Msg) error
+}
+
+// Pipeline represents an execution pipeline
+type Pipeline interface {
+	Push(func() error) error
+	Close()
 }

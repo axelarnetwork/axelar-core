@@ -465,11 +465,11 @@ func initParamsKeeper(appCodec codec.Marshaler, legacyAmino *codec.LegacyAmino, 
 	paramsKeeper.Subspace(govtypes.ModuleName).WithKeyTable(govtypes.ParamKeyTable())
 	paramsKeeper.Subspace(crisistypes.ModuleName)
 
-	paramsKeeper.Subspace(snapTypes.ModuleName).WithKeyTable(snapTypes.KeyTable())
-	paramsKeeper.Subspace(tssTypes.ModuleName).WithKeyTable(tssTypes.KeyTable())
-	paramsKeeper.Subspace(btcTypes.ModuleName).WithKeyTable(btcTypes.KeyTable())
-	paramsKeeper.Subspace(ethTypes.ModuleName).WithKeyTable(ethTypes.KeyTable())
-	paramsKeeper.Subspace(nexusTypes.ModuleName).WithKeyTable(nexusTypes.KeyTable())
+	paramsKeeper.Subspace(snapTypes.ModuleName)
+	paramsKeeper.Subspace(tssTypes.ModuleName)
+	paramsKeeper.Subspace(btcTypes.ModuleName)
+	paramsKeeper.Subspace(ethTypes.ModuleName)
+	paramsKeeper.Subspace(nexusTypes.ModuleName)
 
 	return paramsKeeper
 }

@@ -42,7 +42,7 @@ func NewKeeper(cdc *codec.LegacyAmino, storeKey sdk.StoreKey, paramSpace params.
 	return Keeper{
 		slasher:  slasher,
 		cdc:      cdc,
-		params:   paramSpace,
+		params:   paramSpace.WithKeyTable(types.KeyTable()),
 		storeKey: storeKey,
 	}
 }

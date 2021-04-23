@@ -37,7 +37,7 @@ type Keeper struct {
 
 // NewKeeper returns a new keeper object
 func NewKeeper(cdc *codec.LegacyAmino, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
-	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace}
+	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable())}
 }
 
 // SetParams sets the bitcoin module's parameters

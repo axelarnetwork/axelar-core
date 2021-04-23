@@ -71,6 +71,7 @@ func GetValdCommand() *cobra.Command {
 
 	utils.OverwriteFlagDefaults(cmd, map[string]string{
 		flags.FlagGasAdjustment: "1.2",
+		flags.FlagBroadcastMode: flags.BroadcastSync,
 	})
 
 	return cmd
@@ -167,9 +168,8 @@ func listen(ctx sdkClient.Context, hub *tmEvents.Hub, txf tx.Factory, axelarCfg 
 }
 
 func createBroadcaster(ctx sdkClient.Context, txf tx.Factory, axelarCfg app.Config, logger log.Logger) bcTypes.Broadcaster {
-	b := broadcast.NewBroadcaster(ctx, txf, logger)
-	backoffBroadcaster := broadcast.WithBackoff(b, broadcast.Linear, axelarCfg.MinTimeout, axelarCfg.MaxRetries)
-	return backoffBroadcaster
+	pipeline := broadcast.NewPipelineWithRetry(10000, axelarCfg.MaxRetries, broadcast.LinearBackOff(axelarCfg.MinTimeout), logger)
+	return broadcast.NewBroadcaster(ctx, txf, pipeline, logger)
 }
 
 func createTSSMgr(broadcaster bcTypes.Broadcaster, sender sdk.AccAddress, axelarCfg app.Config, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {

@@ -44,7 +44,7 @@ type Keeper struct {
 
 // NewEthKeeper returns a new ethereum keeper
 func NewEthKeeper(cdc *codec.LegacyAmino, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
-	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace}
+	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable())}
 }
 
 // SetParams sets the eth module's parameters

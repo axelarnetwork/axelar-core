@@ -2,7 +2,6 @@ package broadcast
 
 import (
 	"fmt"
-	"math"
 	"math/rand"
 	"time"
 
@@ -12,57 +11,57 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
+
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
 )
 
 // Broadcaster submits transactions to a tendermint node
 type Broadcaster struct {
 	logger    log.Logger
-	queue     chan func()
+	pipeline  types.Pipeline
 	ctx       sdkClient.Context
 	txFactory tx.Factory
 }
 
 // NewBroadcaster returns a broadcaster to submit transactions to the blockchain.
 // Only one instance of a broadcaster should be run for a given account, otherwise risk conflicting sequence numbers for submitted transactions.
-func NewBroadcaster(ctx sdkClient.Context, txf tx.Factory, logger log.Logger) *Broadcaster {
-	broadcaster := &Broadcaster{
+func NewBroadcaster(ctx sdkClient.Context, txf tx.Factory, pipeline types.Pipeline, logger log.Logger) *Broadcaster {
+	return &Broadcaster{
 		ctx:       ctx,
 		logger:    logger,
-		queue:     make(chan func(), 1000),
+		pipeline:  pipeline,
 		txFactory: txf,
-	}
-
-	// sequential function queue
-	go func() {
-		// this is expected to run for the full life time of the process, so there is no need to be able to escape the loop
-		for executeCommand := range broadcaster.queue {
-			executeCommand()
-		}
-	}()
-
-	return broadcaster
-}
-
-// Reset resets the account number and sequence number of the sender. This is executed in serialized order with other incoming broadcast commands
-func (b *Broadcaster) Reset() {
-	b.queue <- func() {
-		b.txFactory = b.txFactory.
-			WithAccountNumber(0).
-			WithSequence(0)
 	}
 }
 
 // Broadcast sends the passed messages to the network. This function in thread-safe.
 func (b *Broadcaster) Broadcast(msgs ...sdk.Msg) error {
-	errChan := make(chan error, 1)
-	// push the "intent to run broadcast" into the queue so it can be executed sequentially,
-	// even if the public Broadcast function is called concurrently
-	b.queue <- func() { errChan <- b.broadcast(msgs) }
-	// block until the broadcast call has actually been run
-	return <-errChan
+	// serialize concurrent calls to broadcast
+	return b.pipeline.Push(func() error {
+
+		txf, err := tx.PrepareFactory(b.ctx, b.txFactory)
+		if err != nil {
+			return err
+		}
+
+		err = Broadcast(b.ctx, txf, msgs)
+		if err != nil {
+			// reset account and sequence number in case they were the issue
+			b.txFactory = b.txFactory.
+				WithAccountNumber(0).
+				WithSequence(0)
+			return err
+		}
+
+		// broadcast has been successful, so increment sequence number
+		b.txFactory = txf.WithSequence(txf.Sequence() + 1)
+		return nil
+	})
 }
 
-func (b *Broadcaster) broadcast(msgs []sdk.Msg) error {
+// Broadcast bundles the given messages into a single transaction and submits it to the blockchain.
+// If there are more than one message, all messages must have the single same signer
+func Broadcast(ctx sdkClient.Context, txf tx.Factory, msgs []sdk.Msg) error {
 	if len(msgs) == 0 {
 		return fmt.Errorf("call broadcast with at least one message")
 	}
@@ -72,13 +71,8 @@ func (b *Broadcaster) broadcast(msgs []sdk.Msg) error {
 		return fmt.Errorf("messages must have at least one signer")
 	}
 
-	txf, err := tx.PrepareFactory(b.ctx, b.txFactory)
-	if err != nil {
-		return err
-	}
-
-	if txf.SimulateAndExecute() || b.ctx.Simulate {
-		_, adjusted, err := tx.CalculateGas(b.ctx.QueryWithData, txf, msgs...)
+	if txf.SimulateAndExecute() || ctx.Simulate {
+		_, adjusted, err := tx.CalculateGas(ctx.QueryWithData, txf, msgs...)
 		if err != nil {
 			return err
 		}
@@ -91,18 +85,18 @@ func (b *Broadcaster) broadcast(msgs []sdk.Msg) error {
 		return err
 	}
 
-	err = tx.Sign(txf, b.ctx.GetFromName(), txBuilder, true)
+	err = tx.Sign(txf, ctx.GetFromName(), txBuilder, true)
 	if err != nil {
 		return err
 	}
 
-	txBytes, err := b.ctx.TxConfig.TxEncoder()(txBuilder.GetTx())
+	txBytes, err := ctx.TxConfig.TxEncoder()(txBuilder.GetTx())
 	if err != nil {
 		return err
 	}
 
 	// broadcast to a Tendermint node
-	res, err := b.ctx.BroadcastTx(txBytes)
+	res, err := ctx.BroadcastTx(txBytes)
 	if err != nil {
 		return err
 	}
@@ -110,95 +104,86 @@ func (b *Broadcaster) broadcast(msgs []sdk.Msg) error {
 	if res.Code != abci.CodeTypeOK {
 		return fmt.Errorf(res.RawLog)
 	}
-	// broadcast has been successful, so increment sequence number
-	b.txFactory = b.txFactory.WithSequence(txf.Sequence() + 1)
 
 	return nil
 }
 
-// BackOffBroadcaster is a broadcast wrapper that adds retries with backoff
-type BackOffBroadcaster struct {
-	broadcaster *Broadcaster
-	timeout     time.Duration
-	maxRetries  int
-	backOff     func(retryCount int, minTimeout time.Duration) time.Duration
-	queue       chan func()
+// RetryPipeline manages serialized execution of functions with retry on error
+type RetryPipeline struct {
+	c          chan func()
+	backOff    BackOff
+	maxRetries int
+	logger     log.Logger
 }
 
-// WithBackoff wraps a broadcaster so that failed queue are retried with the given back-off strategy
-func WithBackoff(b *Broadcaster, strategy BackOff, minTimeout time.Duration, maxRetries int) *BackOffBroadcaster {
-	backOff := &BackOffBroadcaster{
-		broadcaster: b,
-		timeout:     minTimeout,
-		maxRetries:  maxRetries,
-		backOff:     strategy,
-		queue:       make(chan func(), 1000),
-	}
-
-	// call broadcast functions sequentially
-	go func() {
-		// this is expected to run for the full life time of the process, so there is no need to be able to escape the loop
-		for broadcast := range backOff.queue {
-			broadcast()
-		}
-	}()
-
-	return backOff
+// Push adds the given function to the serialized execution pipeline
+func (p RetryPipeline) Push(f func() error) error {
+	e := make(chan error, 1)
+	p.c <- func() { e <- p.retry(f) }
+	return <-e
 }
 
-// Broadcast submits messages synchronously and retries with exponential backoff.
-// This function is thread-safe but might block for a long time depending on the exponential backoff parameters.
-func (b *BackOffBroadcaster) Broadcast(msgs ...sdk.Msg) error {
-	errChan := make(chan error, 1)
-	// push the "intent to run broadcast" into a channel so it can be executed sequentially,
-	// even if the public Broadcast function is called concurrently
-	b.queue <- func() { errChan <- b.broadcastWithBackoff(msgs) }
-	// block until the broadcast call has actually been run
-	return <-errChan
-}
-
-func (b *BackOffBroadcaster) broadcastWithBackoff(msgs []sdk.Msg) (err error) {
-	for i := 0; i <= b.maxRetries; i++ {
-		err = b.broadcaster.Broadcast(msgs...)
+func (p RetryPipeline) retry(f func() error) error {
+	var err error
+	for i := 0; i <= p.maxRetries; i++ {
+		err = f()
 		if err == nil {
 			return nil
 		}
 
-		// in case the issue is sequence number, we reset it here
-		b.broadcaster.Reset()
-
-		// exponential backoff
-		if i < b.maxRetries {
-			timeout := b.backOff(i, b.timeout)
-			b.broadcaster.logger.Error(sdkerrors.Wrapf(err, "backing off (retry in %v )", timeout).Error())
+		if i < p.maxRetries {
+			timeout := p.backOff(i)
+			p.logger.Error(sdkerrors.Wrapf(err, "backing off (retry in %v )", timeout).Error())
 			time.Sleep(timeout)
 		}
 	}
+	return sdkerrors.Wrap(err, fmt.Sprintf("aborting after %d retries", p.maxRetries))
+}
 
-	return sdkerrors.Wrap(err, fmt.Sprintf("aborting broadcast after %d retries", b.maxRetries))
+// Close closes the pipeline
+func (p RetryPipeline) Close() {
+	close(p.c)
+}
+
+// NewPipelineWithRetry returns a pipeline with the given configuration
+func NewPipelineWithRetry(cap int, maxRetries int, backOffStrategy BackOff, logger log.Logger) *RetryPipeline {
+	p := &RetryPipeline{
+		c:          make(chan func(), cap),
+		backOff:    backOffStrategy,
+		maxRetries: maxRetries,
+		logger:     logger,
+	}
+
+	go func() {
+		for f := range p.c {
+			f()
+		}
+	}()
+
+	return p
 }
 
 // BackOff computes the next back-off duration
-type BackOff func(retryCount int, minTimeout time.Duration) time.Duration
+type BackOff func(currentRetryCount int) time.Duration
 
-var (
-	// Exponential computes an exponential back-off
-	Exponential = func(i int, minTimeout time.Duration) time.Duration {
+// ExponentialBackOff computes an exponential back-off
+func ExponentialBackOff(minTimeout time.Duration) BackOff {
+	return func(currentRetryCount int) time.Duration {
 		jitter := rand.Float64()
-		strategy := math.Pow(2, float64(i))
-		// casting a float <1 to time.Duration ==0, so need normalize by multiplying with float64(time.Second) first
-		backoff := math.Max(strategy*jitter, 1) * minTimeout.Seconds() * float64(time.Second)
+		strategy := 1 << currentRetryCount
+		backoff := (1 + float64(strategy)*jitter) * minTimeout.Seconds() * float64(time.Second)
 
 		return time.Duration(backoff)
 	}
+}
 
-	// Linear computes a linear back-off
-	Linear = func(i int, minTimeout time.Duration) time.Duration {
+// LinearBackOff computes a linear back-off
+func LinearBackOff(minTimeout time.Duration) BackOff {
+	return func(currentRetryCount int) time.Duration {
 		jitter := rand.Float64()
-		strategy := float64(i)
+		strategy := float64(currentRetryCount)
 
-		// casting a float <1 to time.Duration ==0, so need normalize by multiplying with float64(time.Second) first
-		backoff := math.Max(strategy*jitter, 1) * minTimeout.Seconds() * float64(time.Second)
+		backoff := (1 + strategy*jitter) * minTimeout.Seconds() * float64(time.Second)
 		return time.Duration(backoff)
 	}
-)
+}
