@@ -25,12 +25,6 @@ var _ tsstypes.TofndClient = &TofndClientMock{}
 //
 // 		// make and configure a mocked tsstypes.TofndClient
 // 		mockedTofndClient := &TofndClientMock{
-// 			GetKeyFunc: func(ctx context.Context, in *tofnd.Uid, opts ...grpc.CallOption) (*tofnd.Bytes, error) {
-// 				panic("mock out the GetKey method")
-// 			},
-// 			GetSigFunc: func(ctx context.Context, in *tofnd.Uid, opts ...grpc.CallOption) (*tofnd.Bytes, error) {
-// 				panic("mock out the GetSig method")
-// 			},
 // 			KeygenFunc: func(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_KeygenClient, error) {
 // 				panic("mock out the Keygen method")
 // 			},
@@ -44,12 +38,6 @@ var _ tsstypes.TofndClient = &TofndClientMock{}
 //
 // 	}
 type TofndClientMock struct {
-	// GetKeyFunc mocks the GetKey method.
-	GetKeyFunc func(ctx context.Context, in *tofnd.Uid, opts ...grpc.CallOption) (*tofnd.Bytes, error)
-
-	// GetSigFunc mocks the GetSig method.
-	GetSigFunc func(ctx context.Context, in *tofnd.Uid, opts ...grpc.CallOption) (*tofnd.Bytes, error)
-
 	// KeygenFunc mocks the Keygen method.
 	KeygenFunc func(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_KeygenClient, error)
 
@@ -58,24 +46,6 @@ type TofndClientMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// GetKey holds details about calls to the GetKey method.
-		GetKey []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// In is the in argument value.
-			In *tofnd.Uid
-			// Opts is the opts argument value.
-			Opts []grpc.CallOption
-		}
-		// GetSig holds details about calls to the GetSig method.
-		GetSig []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// In is the in argument value.
-			In *tofnd.Uid
-			// Opts is the opts argument value.
-			Opts []grpc.CallOption
-		}
 		// Keygen holds details about calls to the Keygen method.
 		Keygen []struct {
 			// Ctx is the ctx argument value.
@@ -91,88 +61,8 @@ type TofndClientMock struct {
 			Opts []grpc.CallOption
 		}
 	}
-	lockGetKey sync.RWMutex
-	lockGetSig sync.RWMutex
 	lockKeygen sync.RWMutex
 	lockSign   sync.RWMutex
-}
-
-// GetKey calls GetKeyFunc.
-func (mock *TofndClientMock) GetKey(ctx context.Context, in *tofnd.Uid, opts ...grpc.CallOption) (*tofnd.Bytes, error) {
-	if mock.GetKeyFunc == nil {
-		panic("TofndClientMock.GetKeyFunc: method is nil but TofndClient.GetKey was just called")
-	}
-	callInfo := struct {
-		Ctx  context.Context
-		In   *tofnd.Uid
-		Opts []grpc.CallOption
-	}{
-		Ctx:  ctx,
-		In:   in,
-		Opts: opts,
-	}
-	mock.lockGetKey.Lock()
-	mock.calls.GetKey = append(mock.calls.GetKey, callInfo)
-	mock.lockGetKey.Unlock()
-	return mock.GetKeyFunc(ctx, in, opts...)
-}
-
-// GetKeyCalls gets all the calls that were made to GetKey.
-// Check the length with:
-//     len(mockedTofndClient.GetKeyCalls())
-func (mock *TofndClientMock) GetKeyCalls() []struct {
-	Ctx  context.Context
-	In   *tofnd.Uid
-	Opts []grpc.CallOption
-} {
-	var calls []struct {
-		Ctx  context.Context
-		In   *tofnd.Uid
-		Opts []grpc.CallOption
-	}
-	mock.lockGetKey.RLock()
-	calls = mock.calls.GetKey
-	mock.lockGetKey.RUnlock()
-	return calls
-}
-
-// GetSig calls GetSigFunc.
-func (mock *TofndClientMock) GetSig(ctx context.Context, in *tofnd.Uid, opts ...grpc.CallOption) (*tofnd.Bytes, error) {
-	if mock.GetSigFunc == nil {
-		panic("TofndClientMock.GetSigFunc: method is nil but TofndClient.GetSig was just called")
-	}
-	callInfo := struct {
-		Ctx  context.Context
-		In   *tofnd.Uid
-		Opts []grpc.CallOption
-	}{
-		Ctx:  ctx,
-		In:   in,
-		Opts: opts,
-	}
-	mock.lockGetSig.Lock()
-	mock.calls.GetSig = append(mock.calls.GetSig, callInfo)
-	mock.lockGetSig.Unlock()
-	return mock.GetSigFunc(ctx, in, opts...)
-}
-
-// GetSigCalls gets all the calls that were made to GetSig.
-// Check the length with:
-//     len(mockedTofndClient.GetSigCalls())
-func (mock *TofndClientMock) GetSigCalls() []struct {
-	Ctx  context.Context
-	In   *tofnd.Uid
-	Opts []grpc.CallOption
-} {
-	var calls []struct {
-		Ctx  context.Context
-		In   *tofnd.Uid
-		Opts []grpc.CallOption
-	}
-	mock.lockGetSig.RLock()
-	calls = mock.calls.GetSig
-	mock.lockGetSig.RUnlock()
-	return calls
 }
 
 // Keygen calls KeygenFunc.
