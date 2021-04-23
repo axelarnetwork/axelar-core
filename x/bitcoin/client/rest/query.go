@@ -22,6 +22,11 @@ type RespDepositAddress struct {
 	Address string `json:"address" yaml:"address"`
 }
 
+// RespKeyAddress represents the response of a key address query
+type RespKeyAddress struct {
+	Address string `json:"address" yaml:"address"`
+}
+
 // QueryDepositAddress returns a handler to query a deposit address
 func QueryDepositAddress(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -50,6 +55,32 @@ func QueryDepositAddress(cliCtx client.Context) http.HandlerFunc {
 
 		resp := RespDepositAddress{Address: string(res)}
 
+		rest.PostProcessResponse(w, cliCtx, resp)
+	}
+}
+
+// HandlerQueryDepositAddress returns a handler to query a the bitcoin address for key with a given role
+func QueryKeyAddress(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		role := mux.Vars(r)[utils.PathVarCommandID]
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryKeyAddress), []byte(role))
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		if len(res) == 0 {
+			rest.PostProcessResponse(w, cliCtx, "")
+			return
+		}
+
+		resp := RespDepositAddress{Address: string(res)}
 		rest.PostProcessResponse(w, cliCtx, resp)
 	}
 }
