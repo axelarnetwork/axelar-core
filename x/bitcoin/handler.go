@@ -265,7 +265,7 @@ func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer ty
 
 	return &sdk.Result{
 		Events: ctx.EventManager().ABCIEvents(),
-		Log:    fmt.Sprintf("successfully started signing protocols to consolidate pending transfers"),
+		Log:    "successfully started signing protocols to consolidate pending transfers",
 	}, nil
 }
 

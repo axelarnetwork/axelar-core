@@ -66,7 +66,7 @@ func preparePendingOutPoints(k Keeper, ctx sdk.Context, infoCount int) []types.O
 		k.SetPendingOutpointInfo(ctx, exported.PollMeta{ID: rand2.StrBetween(5, 20)}, info)
 		outs = append(outs, info)
 	}
-	return nil
+	return outs
 }
 
 func prepareConfirmedOutPoints(k Keeper, ctx sdk.Context, infoCount int) []types.OutPointInfo {
