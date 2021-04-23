@@ -112,10 +112,14 @@ github.com/aws/aws-sdk-go-v2/service/sso v1.1.1/go.mod h1:SuZJxklHxLAXgLTc1iFXbE
 github.com/aws/aws-sdk-go-v2/service/sts v1.1.1/go.mod h1:Wi0EBZwiz/K44YliU0EKxqTCJGUfYTWXrrBwkq736bM=
 github.com/aws/smithy-go v1.1.0/go.mod h1:EzMw8dbp/YJL4A5/sbhGddag+NPT7q084agLbB9LgIw=
 github.com/axelarnetwork/axelar-core v0.0.2-0.20210302093357-f2f67692d1ba/go.mod h1:JDzy4mE0MHSdMcSRRcttESUyQ8a1YWFWDWaLJ5/gJbA=
-github.com/axelarnetwork/axelar-core v0.1.1-0.20210315234849-8ca55dab3a8d/go.mod h1:vaXQReZJ1ZunnmWD2r2XMncW4JK0pMnFZs82za0qonI=
+github.com/axelarnetwork/axelar-core v0.2.0/go.mod h1:vaXQReZJ1ZunnmWD2r2XMncW4JK0pMnFZs82za0qonI=
+github.com/axelarnetwork/axelar-core v0.2.1-0.20210420090019-80d67305ddbd/go.mod h1:HSFbr2Mvr1TSFepBa2bzmSImbv0MHCZYYxwOE0++XZQ=
+github.com/axelarnetwork/axelar-core v0.2.1-0.20210421094505-8957a6346590/go.mod h1:P2fJMEKNCBC5zInIRQdEYOfYvCl5Qnog8QbzdifV1uo=
 github.com/axelarnetwork/c2d2 v0.0.0-20210302225045-2f24e9ea1116/go.mod h1:wPKBFS06EN2PTjk3QUJK9sakL2NAUhGhhTfWAaq+kL0=
-github.com/axelarnetwork/c2d2 v0.0.0-20210419231552-639bb3c730ac h1:HgHUl7utnJAUEwETwOuSJSLVa2zAarnqyiGL2+Jzjxs=
-github.com/axelarnetwork/c2d2 v0.0.0-20210419231552-639bb3c730ac/go.mod h1:Q0tUrTIdp83U5AbffM8UbEOO6eSPd6NVjeVPHc7KTUc=
+github.com/axelarnetwork/c2d2 v0.0.0-20210330235528-2fe5a04ab3dd/go.mod h1:g2Wj6hklfrEcUfT8cyyOqynRBZl4JlaWWwLQQeTtfpw=
+github.com/axelarnetwork/c2d2 v0.0.0-20210421090436-d4b33584a58e/go.mod h1:jn5OqnZRu1WjfwHAVvooJQJ0fEtCfJVezF2bLJ18Llo=
+github.com/axelarnetwork/c2d2 v0.0.0-20210422233640-c8f5552a49fb h1:WeHoF4AJrLVJd3A3K9NqXr90xIT1WV3Jrkxh9upMY6I=
+github.com/axelarnetwork/c2d2 v0.0.0-20210422233640-c8f5552a49fb/go.mod h1:UoshUyTOgV09Hk+FykWDN+QLDTQXSrkAPlsE8b1pzHc=
 github.com/bartekn/go-bip39 v0.0.0-20171116152956-a05967ea095d/go.mod h1:icNx/6QdFblhsEjZehARqbNumymUT/ydwlLojFdv7Sk=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=

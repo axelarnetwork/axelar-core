@@ -19,7 +19,7 @@ import (
 // GetTxCmd returns the transaction commands for this module
 func GetTxCmd() *cobra.Command {
 	ethTxCmd := &cobra.Command{
-		Use:                        "ethereum",
+		Use:                        types.ModuleName,
 		Short:                      fmt.Sprintf("%s transactions subcommands", types.ModuleName),
 		DisableFlagParsing:         true,
 		SuggestionsMinimumDistance: 2,
@@ -48,7 +48,10 @@ func GetCmdLink() *cobra.Command {
 		Short: "Link a cross chain address to an ethereum address created by Axelar",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := client.GetClientContextFromCmd(cmd)
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
 
 			msg := &types.MsgLink{
 				Sender:         cliCtx.GetFromAddress(),
@@ -74,7 +77,10 @@ func GetCmdSignTx() *cobra.Command {
 		Short: "sign a raw Ethereum transaction",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := client.GetClientContextFromCmd(cmd)
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
 
 			json, err := ioutil.ReadFile(args[0])
 			if err != nil {
@@ -104,7 +110,10 @@ func GetCmdConfirmERC20TokenDeploy() *cobra.Command {
 		Short: "Confirm an ERC20 token deployment in an Ethereum transaction for a given symbol of token and gateway address",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := client.GetClientContextFromCmd(cmd)
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
 
 			txID := common.HexToHash(args[0])
 			msg := types.NewMsgConfirmERC20TokenDeploy(cliCtx.GetFromAddress(), txID, args[1])
@@ -126,7 +135,10 @@ func GetCmdConfirmERC20Deposit() *cobra.Command {
 		Short: "Confirm an ERC20 deposit in an Ethereum transaction that sent given amount of token to a burner address",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := client.GetClientContextFromCmd(cmd)
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
 
 			txID := common.HexToHash(args[0])
 			amount := sdk.NewUintFromString(args[1])
@@ -151,7 +163,10 @@ func GetCmdSignPendingTransfersTx() *cobra.Command {
 		Short: "Sign all pending transfers to Ethereum",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := client.GetClientContextFromCmd(cmd)
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
 
 			msg := types.NewMsgSignPendingTransfers(cliCtx.GetFromAddress())
 			if err := msg.ValidateBasic(); err != nil {
@@ -172,7 +187,10 @@ func GetCmdSignDeployToken() *cobra.Command {
 		Short: "Signs the call data to deploy a token with the AxelarGateway contract",
 		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := client.GetClientContextFromCmd(cmd)
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
 
 			decs, err := strconv.ParseUint(args[2], 10, 8)
 			if err != nil {
@@ -202,7 +220,10 @@ func GetCmdSignBurnTokens() *cobra.Command {
 		Short: "Sign burn command for all confirmed Ethereum token deposits",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := client.GetClientContextFromCmd(cmd)
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
 
 			msg := types.NewMsgSignBurnTokens(cliCtx.GetFromAddress())
 			if err := msg.ValidateBasic(); err != nil {
@@ -223,7 +244,10 @@ func GetCmdSignTransferOwnership() *cobra.Command {
 		Short: "Sign transfer ownership command for Ethereum contract",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := client.GetClientContextFromCmd(cmd)
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
 			newOwnerAddr := common.HexToAddress(args[0])
 
 			msg := types.NewMsgSignTransferOwnership(cliCtx.GetFromAddress(), newOwnerAddr)
