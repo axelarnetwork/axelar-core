@@ -65,7 +65,7 @@ func (m *MsgConfirmOutpoint) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgConfirmOutpoint proto.InternalMessageInfo
 
-// MsgLink represents a message to link an cross-chain address to a Bitcoin
+// MsgLink represents a message to link a cross-chain address to a Bitcoin
 // address
 type MsgLink struct {
 	Sender         github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
