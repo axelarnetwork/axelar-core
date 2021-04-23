@@ -50,7 +50,7 @@ func GetCmdDepositAddress(queryRoute string) *cobra.Command {
 				return sdkerrors.Wrap(err, types.ErrFDepositAddress)
 			}
 
-			return clientCtx.PrintString(string(res))
+			return clientCtx.PrintObjectLegacy(string(res))
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
@@ -74,7 +74,7 @@ func GetCmdConsolidationTx(queryRoute string) *cobra.Command {
 				return sdkerrors.Wrap(err, types.ErrFGetTransfers)
 			}
 
-			return clientCtx.PrintString(string(res))
+			return clientCtx.PrintObjectLegacy(string(res))
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)

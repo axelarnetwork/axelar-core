@@ -57,7 +57,7 @@ func GetCmdMasterAddress(queryRoute string) *cobra.Command {
 			}
 
 			out := common.BytesToAddress(res)
-			return cliCtx.PrintString(out.Hex())
+			return cliCtx.PrintObjectLegacy(out.Hex())
 		},
 	}
 
@@ -82,7 +82,7 @@ func GetCmdTokenAddress(queryRoute string) *cobra.Command {
 			}
 
 			out := common.BytesToAddress(res)
-			return cliCtx.PrintString(out.Hex())
+			return cliCtx.PrintObjectLegacy(out.Hex())
 		},
 	}
 
@@ -107,7 +107,7 @@ func GetCmdAxelarGatewayAddress(queryRoute string) *cobra.Command {
 			}
 
 			out := common.BytesToAddress(res)
-			return cliCtx.PrintString(out.Hex())
+			return cliCtx.PrintObjectLegacy(out.Hex())
 		},
 	}
 
