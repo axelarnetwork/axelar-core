@@ -1,0 +1,17 @@
+name: Golangci-lint
+
+on:
+  - pull_request
+
+jobs:
+  lint:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-18.04
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
