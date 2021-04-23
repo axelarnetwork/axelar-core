@@ -5,8 +5,7 @@ package mock
 
 import (
 	"context"
-	"sync"
-
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -17,8 +16,7 @@ import (
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	"github.com/tendermint/tendermint/rpc/core/types"
 	tenderminttypes "github.com/tendermint/tendermint/types"
-
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
+	"sync"
 )
 
 // Ensure, that ClientMock does implement types.Client.

@@ -218,7 +218,7 @@ func GetCmdSignBurnTokens() *cobra.Command {
 
 // GetCmdSignTransferOwnership returns the cli command to sign transfer-ownership command for Ethereum contract
 func GetCmdSignTransferOwnership() *cobra.Command {
-	cmd:=  &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "transfer-ownership [newOwnerAddr]",
 		Short: "Sign transfer ownership command for Ethereum contract",
 		Args:  cobra.ExactArgs(1),

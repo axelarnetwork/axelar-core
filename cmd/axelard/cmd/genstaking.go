@@ -19,14 +19,14 @@ import (
 const (
 	flagUnbondingPeriod = "unbonding-period"
 	flagMaxValidators   = "max-validators"
-	flagBondDenom = "bond-denom"
+	flagBondDenom       = "bond-denom"
 )
 
 // SetGenesisStakingCmd returns set-genesis-chain-params cobra Command.
 func SetGenesisStakingCmd(defaultNodeHome string) *cobra.Command {
 	var (
-		unbond string
-		max    uint32
+		unbond    string
+		max       uint32
 		bondDenom string
 	)
 

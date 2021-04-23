@@ -36,8 +36,6 @@ axelard tx [flags]
 - [axelard tx ethereum](axelard_tx_ethereum.md)	 - ethereum transactions subcommands
 - [axelard tx evidence](axelard_tx_evidence.md)	 - Evidence transaction subcommands
 - [axelard tx gov](axelard_tx_gov.md)	 - Governance transactions subcommands
-- [axelard tx ibc](axelard_tx_ibc.md)	 - IBC transaction subcommands
-- [axelard tx ibc-transfer](axelard_tx_ibc-transfer.md)	 - IBC fungible token transfer transaction subcommands
 - [axelard tx multisign](axelard_tx_multisign.md)	 - Generate multisig signatures for transactions generated offline
 - [axelard tx sign](axelard_tx_sign.md)	 - Sign a transaction generated offline
 - [axelard tx sign-batch](axelard_tx_sign-batch.md)	 - Sign transaction batch files

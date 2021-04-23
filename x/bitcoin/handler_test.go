@@ -540,7 +540,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		setup()
 		// equalize deposits and transfers
 		transfer := randomTransfer()
-		transfer.Asset.Amount = sdk.NewInt(depositAmount - transferAmount - int64(msg.Fee))
+		transfer.Asset.Amount = sdk.NewInt(depositAmount - transferAmount - msg.Fee)
 		transfers = append(transfers, transfer)
 		transferAmount += transfer.Asset.Amount.Int64()
 

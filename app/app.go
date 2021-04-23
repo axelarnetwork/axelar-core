@@ -49,9 +49,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	"github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer"
-	ibctransfertypes "github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer/types"
-	ibc "github.com/cosmos/cosmos-sdk/x/ibc/core"
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
@@ -131,10 +128,8 @@ var (
 		params.AppModuleBasic{},
 		crisis.AppModuleBasic{},
 		slashing.AppModuleBasic{},
-		ibc.AppModuleBasic{},
 		upgrade.AppModuleBasic{},
 		evidence.AppModuleBasic{},
-		transfer.AppModuleBasic{},
 		vesting.AppModuleBasic{},
 
 		tss.AppModuleBasic{},
@@ -154,7 +149,6 @@ var (
 		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
 		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
 		govtypes.ModuleName:            {authtypes.Burner},
-		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
 	}
 )
 
@@ -251,8 +245,8 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		memKeys:           memKeys,
 	}
 
-	app.paramsKeeper = initParamsKeeper(appCodec, legacyAmino, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey])
-
+	paramsK := initParamsKeeper(appCodec, legacyAmino, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey])
+	app.paramsKeeper = paramsK
 	// set the BaseApp's parameter store
 	bApp.SetParamStore(app.getSubspace(baseapp.Paramspace))
 
@@ -263,46 +257,50 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	bankK := bankkeeper.NewBaseKeeper(
 		appCodec, keys[banktypes.StoreKey], accountK, app.getSubspace(banktypes.ModuleName), app.ModuleAccountAddrs(),
 	)
-	app.stakingKeeper = stakingkeeper.NewKeeper(
+	stakingK := stakingkeeper.NewKeeper(
 		appCodec, keys[stakingtypes.StoreKey], accountK, bankK, app.getSubspace(stakingtypes.ModuleName),
 	)
 
 	mintK := mintkeeper.NewKeeper(
-		appCodec, keys[minttypes.StoreKey], app.getSubspace(minttypes.ModuleName), &app.stakingKeeper,
+		appCodec, keys[minttypes.StoreKey], app.getSubspace(minttypes.ModuleName), &stakingK,
 		accountK, bankK, authtypes.FeeCollectorName,
 	)
-	app.distrKeeper = distrkeeper.NewKeeper(
+	distrK := distrkeeper.NewKeeper(
 		appCodec, keys[distrtypes.StoreKey], app.getSubspace(distrtypes.ModuleName), accountK, bankK,
-		&app.stakingKeeper, authtypes.FeeCollectorName, app.ModuleAccountAddrs(),
+		&stakingK, authtypes.FeeCollectorName, app.ModuleAccountAddrs(),
 	)
-	app.slashingKeeper = slashingkeeper.NewKeeper(
-		appCodec, keys[slashingtypes.StoreKey], &app.stakingKeeper, app.getSubspace(slashingtypes.ModuleName),
+	app.distrKeeper = distrK
+	slashingK := slashingkeeper.NewKeeper(
+		appCodec, keys[slashingtypes.StoreKey], &stakingK, app.getSubspace(slashingtypes.ModuleName),
 	)
-	app.crisisKeeper = crisiskeeper.NewKeeper(
+	app.slashingKeeper = slashingK
+	crisisK := crisiskeeper.NewKeeper(
 		app.getSubspace(crisistypes.ModuleName), invCheckPeriod, bankK, authtypes.FeeCollectorName,
 	)
+	app.crisisKeeper = crisisK
 	upgradeK := upgradekeeper.NewKeeper(skipUpgradeHeights, keys[upgradetypes.StoreKey], appCodec, homePath)
 
 	evidenceK := evidencekeeper.NewKeeper(
-		appCodec, keys[evidencetypes.StoreKey], &app.stakingKeeper, app.slashingKeeper,
+		appCodec, keys[evidencetypes.StoreKey], &stakingK, slashingK,
 	)
 	// register the proposal types
 	govRouter := govtypes.NewRouter()
 	govRouter.AddRoute(govtypes.RouterKey, govtypes.ProposalHandler).
-		AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(app.paramsKeeper)).
-		AddRoute(distrtypes.RouterKey, distr.NewCommunityPoolSpendProposalHandler(app.distrKeeper)).
+		AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(paramsK)).
+		AddRoute(distrtypes.RouterKey, distr.NewCommunityPoolSpendProposalHandler(distrK)).
 		AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(upgradeK))
 
 	govK := govkeeper.NewKeeper(
 		appCodec, keys[govtypes.StoreKey], app.getSubspace(govtypes.ModuleName), accountK, bankK,
-		&app.stakingKeeper, govRouter,
+		&stakingK, govRouter,
 	)
 
 	// register the staking hooks
 	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks
-	app.stakingKeeper = *app.stakingKeeper.SetHooks(
-		stakingtypes.NewMultiStakingHooks(app.distrKeeper.Hooks(), app.slashingKeeper.Hooks()),
+	stakingK = *stakingK.SetHooks(
+		stakingtypes.NewMultiStakingHooks(distrK.Hooks(), slashingK.Hooks()),
 	)
+	app.stakingKeeper = stakingK
 
 	// axelar custom keepers
 	btcK := btcKeeper.NewKeeper(
@@ -312,14 +310,14 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		app.legacyAmino, keys[ethTypes.StoreKey], app.getSubspace(ethTypes.ModuleName),
 	)
 
-	broadcastK, err := broadcastKeeper.NewKeeper(app.legacyAmino, keys[broadcastTypes.StoreKey], app.stakingKeeper)
+	broadcastK, err := broadcastKeeper.NewKeeper(app.legacyAmino, keys[broadcastTypes.StoreKey], stakingK)
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
 
 	slashingKCast := &snapshotExportedMock.SlasherMock{
 		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapshotExported.ValidatorInfo, bool) {
-			signingInfo, found := app.slashingKeeper.GetValidatorSigningInfo(ctx, address)
+			signingInfo, found := slashingK.GetValidatorSigningInfo(ctx, address)
 
 			return snapshotExported.ValidatorInfo{ValidatorSigningInfo: signingInfo}, found
 		},
@@ -328,7 +326,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		app.legacyAmino, keys[tssTypes.StoreKey], app.getSubspace(tssTypes.ModuleName), slashingKCast,
 	)
 	snapK := snapKeeper.NewKeeper(
-		app.legacyAmino, keys[snapTypes.StoreKey], app.getSubspace(snapTypes.ModuleName), broadcastK, app.stakingKeeper,
+		app.legacyAmino, keys[snapTypes.StoreKey], app.getSubspace(snapTypes.ModuleName), broadcastK, stakingK,
 		slashingKCast, tssK,
 	)
 	nexusK := nexusKeeper.NewKeeper(
@@ -358,22 +356,22 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
 	app.mm = module.NewManager(
-		genutil.NewAppModule(accountK, app.stakingKeeper, app.BaseApp.DeliverTx, encodingConfig.TxConfig),
+		genutil.NewAppModule(accountK, stakingK, app.BaseApp.DeliverTx, encodingConfig.TxConfig),
 		auth.NewAppModule(appCodec, accountK, nil),
 		vesting.NewAppModule(accountK, bankK),
 		bank.NewAppModule(appCodec, bankK, accountK),
-		crisis.NewAppModule(&app.crisisKeeper, skipGenesisInvariants),
+		crisis.NewAppModule(&crisisK, skipGenesisInvariants),
 		gov.NewAppModule(appCodec, govK, accountK, bankK),
 		mint.NewAppModule(appCodec, mintK, accountK),
-		slashing.NewAppModule(appCodec, app.slashingKeeper, accountK, bankK, app.stakingKeeper),
-		distr.NewAppModule(appCodec, app.distrKeeper, accountK, bankK, app.stakingKeeper),
-		staking.NewAppModule(appCodec, app.stakingKeeper, accountK, bankK),
+		slashing.NewAppModule(appCodec, slashingK, accountK, bankK, stakingK),
+		distr.NewAppModule(appCodec, distrK, accountK, bankK, stakingK),
+		staking.NewAppModule(appCodec, stakingK, accountK, bankK),
 		upgrade.NewAppModule(upgradeK),
 		evidence.NewAppModule(*evidenceK),
-		params.NewAppModule(app.paramsKeeper),
+		params.NewAppModule(paramsK),
 
 		snapshot.NewAppModule(snapK),
-		tss.NewAppModule(tssK, snapK, votingK, nexusK, app.stakingKeeper, broadcastK),
+		tss.NewAppModule(tssK, snapK, votingK, nexusK, stakingK, broadcastK),
 		vote.NewAppModule(votingK),
 		broadcast.NewAppModule(broadcastK),
 		nexus.NewAppModule(nexusK),
@@ -413,8 +411,8 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		voteTypes.ModuleName,
 	)
 
-	app.mm.RegisterInvariants(&app.crisisKeeper)
-	app.mm.RegisterInvariants(&app.crisisKeeper)
+	app.mm.RegisterInvariants(&crisisK)
+	app.mm.RegisterInvariants(&crisisK)
 
 	// register all module routes and module queriers
 	app.mm.RegisterRoutes(app.Router(), app.QueryRouter(), legacyAmino)

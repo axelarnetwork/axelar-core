@@ -67,6 +67,6 @@ message SignInit {
 // Used only because rpc args cannot be scalar types,
 // so we need to wrap scalar types inside message types.
 
-message Uid { string uid = 1; }
+message Uid {string uid = 1;}
 
-message Bytes { bytes payload = 1; }
+message Bytes {bytes payload = 1;}

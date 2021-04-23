@@ -24,7 +24,7 @@ func (m MsgDeregister) Type() string {
 
 // ValidateBasic implements sdk.Msg
 func (m MsgDeregister) ValidateBasic() error {
-	if m.Sender == nil || len(m.Sender) != sdk.AddrLen {
+	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(ErrTss, "sender must be set")
 	}
 

@@ -27,7 +27,7 @@ func (m MsgAssignNextKey) Type() string { return "AssignNextKey" }
 
 // ValidateBasic performs a stateless validation of this message
 func (m MsgAssignNextKey) ValidateBasic() error {
-	if m.Sender == nil || len(m.Sender) != sdk.AddrLen {
+	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(ErrTss, "sender must be set")
 	}
 
