@@ -59,35 +59,6 @@ func (b *Broadcaster) Broadcast(msgs ...sdk.Msg) error {
 	})
 }
 
-// Broadcast sends the passed messages to the network. This function in thread-safe.
-func (b *Broadcaster) BroadcastWithResult(msgs ...sdk.Msg) (*sdk.TxResponse, error) {
-	resChan := make(chan *sdk.TxResponse, 1)
-
-	// serialize concurrent calls to broadcast
-	return <-resChan, b.pipeline.Push(func() error {
-
-		txf, err := tx.PrepareFactory(b.ctx, b.txFactory)
-		if err != nil {
-			return err
-		}
-
-		res, err := Broadcast(b.ctx, txf, msgs)
-		if err != nil {
-			// reset account and sequence number in case they were the issue
-			b.txFactory = b.txFactory.
-				WithAccountNumber(0).
-				WithSequence(0)
-			return err
-		}
-
-		resChan <- res
-
-		// broadcast has been successful, so increment sequence number
-		b.txFactory = txf.WithSequence(txf.Sequence() + 1)
-		return nil
-	})
-}
-
 // Broadcast bundles the given messages into a single transaction and submits it to the blockchain.
 // If there are more than one message, all messages must have the single same signer
 func Broadcast(ctx sdkClient.Context, txf tx.Factory, msgs []sdk.Msg) (*sdk.TxResponse, error) {
