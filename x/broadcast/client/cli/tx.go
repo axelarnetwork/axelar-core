@@ -1,26 +1,21 @@
 package cli
 
 import (
-	"bufio"
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	authUtils "github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/x/broadcast/types"
-	"github.com/cosmos/cosmos-sdk/x/bank"
 )
 
 // GetTxCmd returns the transaction commands for this module
-func GetTxCmd(cdc *codec.Codec) *cobra.Command {
+func GetTxCmd() *cobra.Command {
 	broadcastTxCmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      fmt.Sprintf("%s transactions subcommands", types.ModuleName),
@@ -29,56 +24,67 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	broadcastTxCmd.AddCommand(flags.PostCommands(
-		GetCmdRegisterProxy(cdc),
-		GetCmdSendStake(cdc),
-	)...)
+	broadcastTxCmd.AddCommand(
+		GetCmdRegisterProxy(),
+		GetCmdSendStake(),
+	)
 
 	return broadcastTxCmd
 }
 
-func GetCmdRegisterProxy(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
+// GetCmdRegisterProxy returns the command to register a proxy
+func GetCmdRegisterProxy() *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "registerProxy [proxy] ",
 		Short: "Register a proxy account for a specific validator principal to broadcast transactions in its stead",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(authUtils.GetTxEncoder(cdc))
-
-			voter, _, err := context.GetFromFields(inBuf, args[0], false)
-			if err != nil {
-				return sdkerrors.Wrap(types.ErrBroadcast, "proxy invalid")
-			}
-
-			msg := types.NewMsgRegisterProxy(sdk.ValAddress(cliCtx.FromAddress), voter)
-			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
-		},
-	}
-}
-
-func GetCmdSendStake(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "sendStake [amount] [address 1] ... [address n]",
-		Short: "Sends the specified amount of stake to the designated addresses",
-		Args:  cobra.MinimumNArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-
-			cliCtx, txBldr := utils.PrepareCli(cmd.InOrStdin(), cdc)
-
-			coins, err := sdk.ParseCoins(args[0])
+			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			if coins.Len() != 1 {
-				return fmt.Errorf("Only a single amount is permitted")
+			proxyKey, err := clientCtx.Keyring.Key(args[0])
+			if err != nil {
+				return sdkerrors.Wrap(types.ErrBroadcast, "proxy invalid")
 			}
 
-			inputs := make([]bank.Input, 0)
-			outputs := make([]bank.Output, 0)
+			msg := types.NewMsgRegisterProxy(sdk.ValAddress(clientCtx.FromAddress), proxyKey.GetAddress())
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdSendStake returns the command to send stake to a number of addresses
+func GetCmdSendStake() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "sendStake [amount] [address 1] ... [address n]",
+		Short: "Sends the specified amount of stake to the designated addresses",
+		Args:  cobra.MinimumNArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			decCoins, err := sdk.ParseDecCoins(args[0])
+			if err != nil {
+				return err
+			}
+
+			if decCoins.Len() != 1 {
+				return fmt.Errorf("only a single amount is permitted")
+			}
+
+			coins, decimals := decCoins.TruncateDecimal()
+			if !decimals.IsZero() {
+				return fmt.Errorf("amount must be an integer value")
+			}
+
+			inputs := make([]banktypes.Input, 0)
+			outputs := make([]banktypes.Output, 0)
 
 			for _, addr := range args[1:] {
 
@@ -87,13 +93,15 @@ func GetCmdSendStake(cdc *codec.Codec) *cobra.Command {
 					return err
 				}
 
-				inputs = append(inputs, bank.NewInput(cliCtx.FromAddress, coins))
-				outputs = append(outputs, bank.NewOutput(to, coins))
+				inputs = append(inputs, banktypes.NewInput(clientCtx.FromAddress, coins))
+				outputs = append(outputs, banktypes.NewOutput(to, coins))
 
 			}
 
-			msg := bank.NewMsgMultiSend(inputs, outputs)
-			return authUtils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			msg := banktypes.NewMsgMultiSend(inputs, outputs)
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
 }

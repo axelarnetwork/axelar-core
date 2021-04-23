@@ -2,14 +2,16 @@ package rest
 
 import (
 	"fmt"
-	clientUtils "github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/x/broadcast/types"
-	"github.com/cosmos/cosmos-sdk/client/context"
+	"net/http"
+
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/gorilla/mux"
-	"net/http"
+
+	clientUtils "github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/broadcast/types"
 )
 
 // ReqRegisterProxy defines the properties of a tx request's body
@@ -17,11 +19,12 @@ type ReqRegisterProxy struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 }
 
-func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
+// RegisterRoutes registers rest routes for this module
+func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("/tx/%s/registerProxy/{voter}", types.ModuleName), registerProxyHandlerFn(cliCtx)).Methods("POST")
 }
 
-func registerProxyHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
+func registerProxyHandlerFn(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// extract voter address path variable
 		vars := mux.Vars(r)
@@ -33,7 +36,7 @@ func registerProxyHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		var req ReqRegisterProxy
-		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
 			return
 		}
@@ -47,6 +50,6 @@ func registerProxyHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		msg := types.NewMsgRegisterProxy(sdk.ValAddress(fromAddr), voter)
-		utils.WriteGenerateStdTxResponse(w, cliCtx, baseReq, []sdk.Msg{msg})
+		tx.WriteGeneratedTxResponse(cliCtx, w, baseReq, msg)
 	}
 }

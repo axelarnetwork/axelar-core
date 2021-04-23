@@ -7,7 +7,7 @@ import (
 	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
@@ -31,12 +31,12 @@ var _ types.BTCKeeper = Keeper{}
 // Keeper provides access to all state changes regarding the Bitcoin module
 type Keeper struct {
 	storeKey sdk.StoreKey
-	cdc      *codec.Codec
+	cdc      *codec.LegacyAmino
 	params   params.Subspace
 }
 
 // NewKeeper returns a new keeper object
-func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
+func NewKeeper(cdc *codec.LegacyAmino, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
 	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable())}
 }
 
@@ -89,7 +89,7 @@ func (k Keeper) GetNetwork(ctx sdk.Context) types.Network {
 }
 
 // Codec returns the codec used by the keeper to marshal and unmarshal data
-func (k Keeper) Codec() *codec.Codec {
+func (k Keeper) Codec() *codec.LegacyAmino {
 	return k.cdc
 }
 
@@ -191,9 +191,9 @@ func (k Keeper) SetOutpointInfo(ctx sdk.Context, info types.OutPointInfo, state 
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(info)
 	switch state {
 	case types.CONFIRMED:
-		ctx.KVStore(k.storeKey).Set([]byte(confirmedOutPointPrefix+info.OutPoint.String()), bz)
+		ctx.KVStore(k.storeKey).Set([]byte(confirmedOutPointPrefix+info.OutPoint), bz)
 	case types.SPENT:
-		ctx.KVStore(k.storeKey).Set([]byte(spentOutPointPrefix+info.OutPoint.String()), bz)
+		ctx.KVStore(k.storeKey).Set([]byte(spentOutPointPrefix+info.OutPoint), bz)
 	default:
 		panic("invalid outpoint state")
 	}

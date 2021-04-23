@@ -5,57 +5,58 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
-	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/server"
+	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
+	"github.com/cosmos/cosmos-sdk/x/staking/client/cli"
+	"github.com/rs/zerolog"
+	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
+	tmcfg "github.com/tendermint/tendermint/config"
+	tmcli "github.com/tendermint/tendermint/libs/cli"
 
 	"github.com/axelarnetwork/axelar-core/app"
-
-	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/client/keys"
-	"github.com/cosmos/cosmos-sdk/client/lcd"
-	"github.com/cosmos/cosmos-sdk/client/rpc"
-	"github.com/cosmos/cosmos-sdk/version"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
-	authRest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
-	"github.com/cosmos/cosmos-sdk/x/bank"
-	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"github.com/tendermint/go-amino"
-	"github.com/tendermint/tendermint/libs/cli"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
 )
 
 //go:generate ./genDocs.sh ./docs
 
+// Deprecated
 func main() {
 	docs := flag.String("docs", "", "only generate documentation for the CLI commands into the specified folder")
 	flag.Parse()
-	// Configure cobra to sort commands
-	cobra.EnableCommandSorting = false
 
-	// Instantiate the codec for the command line application
-	cdc := app.MakeCodec()
-	app.SetConfig()
-
+	rootCmd, _ := cmd.NewRootCmd()
 	// If run with the docs flag, generate documentation for all CLI commands
 	if *docs != "" {
-		cmd := CreateRootCmd(cdc, "$HOME/.axelarcli")
+		// add flags from svrcmd.Execute()
+		rootCmd.PersistentFlags().String(flags.FlagLogLevel, zerolog.InfoLevel.String(), "The logging level (trace|debug|info|warn|error|fatal|panic)")
+		rootCmd.PersistentFlags().String(flags.FlagLogFormat, tmcfg.LogFormatPlain, "The logging format (json|plain)")
+		home := filepath.Join("$HOME", "."+app.Name)
+		executor := tmcli.PrepareBaseCmd(rootCmd, "", home)
+		rootCmd = executor.Root()
+
+		// set static values for dynamic (system-dependent) flag defaults
+		utils.OverwriteFlagDefaults(rootCmd, map[string]string{
+			flags.FlagHome:  home,
+			cli.FlagIP:      "127.0.0.1",
+			cli.FlagMoniker: "node",
+		})
+
 		// The AutoGen tag includes a date, so when the time zone of the local machine is different from the time zone
 		// of the github host the date could be different and the PR check fail. Therefore we disable it
-		cmd.DisableAutoGenTag = true
-		deleteLineBreakCmds(cmd)
-		if err := doc.GenMarkdownTree(cmd, *docs); err != nil {
+		rootCmd.DisableAutoGenTag = true
+		deleteLineBreakCmds(rootCmd)
+		if err := doc.GenMarkdownTree(rootCmd, *docs); err != nil {
 			fmt.Printf("Failed generating CLI command documentation: %s, exiting...\n", err)
 			os.Exit(1)
 		}
 
-		if err := genTOC(cmd, *docs); err != nil {
+		if err := genTOC(rootCmd, *docs); err != nil {
 			fmt.Printf("Failed generating CLI command table of contents: %s, exiting...\n", err)
 			os.Exit(1)
 		}
@@ -63,131 +64,15 @@ func main() {
 		os.Exit(0)
 	}
 
-	rootCmd := CreateRootCmd(cdc, app.DefaultCLIHome)
+	if err := svrcmd.Execute(rootCmd, app.DefaultNodeHome); err != nil {
+		switch e := err.(type) {
+		case server.ErrorCode:
+			os.Exit(e.Code)
 
-	// Add flags and prefix all env exposed with AX
-	executor := cli.PrepareMainCmd(rootCmd, "AX", app.DefaultCLIHome)
-
-	err := executor.Execute()
-	if err != nil {
-		fmt.Printf("Failed executing CLI command: %s, exiting...\n", err)
-		os.Exit(1)
-	}
-}
-
-func CreateRootCmd(cdc *codec.Codec, homeDir string) *cobra.Command {
-	rootCmd := &cobra.Command{
-		Use:   "axelarcli",
-		Short: "Axelar Client",
-	}
-
-	// Add --chain-id to persistent flags and mark it required
-	rootCmd.PersistentFlags().String(flags.FlagChainID, "", "Network ID of tendermint node")
-	rootCmd.PersistentPreRunE = func(_ *cobra.Command, _ []string) error {
-		return initConfig(rootCmd)
-	}
-
-	// Construct Root Command
-	rootCmd.AddCommand(
-		rpc.StatusCommand(),
-		client.ConfigCmd(homeDir),
-		queryCmd(cdc),
-		txCmd(cdc),
-		flags.LineBreak,
-		lcd.ServeCommand(cdc, registerRoutes),
-		flags.LineBreak,
-		keys.Commands(),
-		flags.LineBreak,
-		version.Cmd,
-		flags.NewCompletionCmd(rootCmd, true),
-	)
-	return rootCmd
-}
-
-func queryCmd(cdc *amino.Codec) *cobra.Command {
-	queryCmd := &cobra.Command{
-		Use:     "query",
-		Aliases: []string{"q"},
-		Short:   "Querying subcommands",
-	}
-
-	queryCmd.AddCommand(
-		authcmd.GetAccountCmd(cdc),
-		flags.LineBreak,
-		rpc.ValidatorCommand(cdc),
-		rpc.BlockCommand(),
-		authcmd.QueryTxsByEventsCmd(cdc),
-		authcmd.QueryTxCmd(cdc),
-		flags.LineBreak,
-	)
-
-	// add modules' query commands
-	app.ModuleBasics.AddQueryCommands(queryCmd, cdc)
-
-	return queryCmd
-}
-
-func txCmd(cdc *amino.Codec) *cobra.Command {
-	txCmd := &cobra.Command{
-		Use:   "tx",
-		Short: "Transactions subcommands",
-	}
-
-	txCmd.AddCommand(
-		bankcmd.SendTxCmd(cdc),
-		flags.LineBreak,
-		authcmd.GetSignCommand(cdc),
-		authcmd.GetMultiSignCommand(cdc),
-		flags.LineBreak,
-		authcmd.GetEncodeCommand(cdc),
-		authcmd.GetDecodeCommand(cdc),
-		flags.LineBreak,
-	)
-
-	// add modules' tx commands
-	app.ModuleBasics.AddTxCommands(txCmd, cdc)
-
-	// remove auth and bank commands as they're mounted under the root tx command
-	var cmdsToRemove []*cobra.Command
-
-	for _, cmd := range txCmd.Commands() {
-		if cmd.Use == auth.ModuleName || cmd.Use == bank.ModuleName {
-			cmdsToRemove = append(cmdsToRemove, cmd)
+		default:
+			os.Exit(1)
 		}
 	}
-
-	txCmd.RemoveCommand(cmdsToRemove...)
-
-	return txCmd
-}
-
-func registerRoutes(rs *lcd.RestServer) {
-	client.RegisterRoutes(rs.CliCtx, rs.Mux)
-	app.ModuleBasics.RegisterRESTRoutes(rs.CliCtx, rs.Mux)
-	authRest.RegisterTxRoutes(rs.CliCtx, rs.Mux)
-}
-
-func initConfig(cmd *cobra.Command) error {
-	home, err := cmd.PersistentFlags().GetString(cli.HomeFlag)
-	if err != nil {
-		return err
-	}
-
-	cfgFile := path.Join(home, "config", "config.toml")
-	if _, err := os.Stat(cfgFile); err == nil {
-		viper.SetConfigFile(cfgFile)
-
-		if err := viper.ReadInConfig(); err != nil {
-			return err
-		}
-	}
-	if err := viper.BindPFlag(flags.FlagChainID, cmd.PersistentFlags().Lookup(flags.FlagChainID)); err != nil {
-		return err
-	}
-	if err := viper.BindPFlag(cli.EncodingFlag, cmd.PersistentFlags().Lookup(cli.EncodingFlag)); err != nil {
-		return err
-	}
-	return viper.BindPFlag(cli.OutputFlag, cmd.PersistentFlags().Lookup(cli.OutputFlag))
 }
 
 func genTOC(cmd *cobra.Command, dir string) error {

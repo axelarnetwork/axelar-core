@@ -2,22 +2,23 @@ package rest
 
 import (
 	"fmt"
-	"github.com/axelarnetwork/axelar-core/utils"
 	"math/big"
 	"net/http"
 	"strconv"
 
+	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
-	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
-	"github.com/cosmos/cosmos-sdk/client/context"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gorilla/mux"
+
+	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 )
 
+// query parameters
 const (
 	QParamFromAddress = "from_address"
 	QParamCommandID   = "command_id"
@@ -25,7 +26,8 @@ const (
 	QParamGasLimit    = "gas_limit"
 )
 
-func GetHandlerQueryMasterAddress(cliCtx context.CLIContext) http.HandlerFunc {
+// GetHandlerQueryMasterAddress returns a handler to query the ethereum master address
+func GetHandlerQueryMasterAddress(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -48,7 +50,8 @@ func GetHandlerQueryMasterAddress(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-func GetHandlerQueryAxelarGatewayAddress(cliCtx context.CLIContext) http.HandlerFunc {
+// GetHandlerQueryAxelarGatewayAddress returns a handler to query the ethereum gateway contract address
+func GetHandlerQueryAxelarGatewayAddress(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -71,7 +74,8 @@ func GetHandlerQueryAxelarGatewayAddress(cliCtx context.CLIContext) http.Handler
 	}
 }
 
-func GetHandlerQueryCommandData(cliCtx context.CLIContext) http.HandlerFunc {
+// GetHandlerQueryCommandData returns a handler to query command data by id
+func GetHandlerQueryCommandData(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -87,12 +91,13 @@ func GetHandlerQueryCommandData(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		var data []byte
-		cliCtx.Codec.MustUnmarshalJSON(res, &data)
+		cliCtx.LegacyAmino.MustUnmarshalJSON(res, &data)
 		rest.PostProcessResponse(w, cliCtx, common.Bytes2Hex(data))
 	}
 }
 
-func GetHandlerQueryCreateDeployTx(cliCtx context.CLIContext) http.HandlerFunc {
+// GetHandlerQueryCreateDeployTx returns a handler to create an ethereum transaction to deploy a smart contract
+func GetHandlerQueryCreateDeployTx(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -115,7 +120,7 @@ func GetHandlerQueryCreateDeployTx(cliCtx context.CLIContext) http.HandlerFunc {
 			GasLimit: gasLimit,
 		}
 
-		json, err := cliCtx.Codec.MarshalJSON(params)
+		json, err := cliCtx.LegacyAmino.MarshalJSON(params)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -131,7 +136,8 @@ func GetHandlerQueryCreateDeployTx(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-func GetHandlerQuerySendTx(cliCtx context.CLIContext) http.HandlerFunc {
+// GetHandlerQuerySendTx returns a handler to send a transaction to an ethereum wallet to be signed and submitted by a specified account
+func GetHandlerQuerySendTx(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -148,7 +154,7 @@ func GetHandlerQuerySendTx(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		var result types.SendTxResult
-		err = cliCtx.Codec.UnmarshalJSON(res, &result)
+		err = cliCtx.LegacyAmino.UnmarshalJSON(res, &result)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -158,7 +164,9 @@ func GetHandlerQuerySendTx(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-func GetHandlerQuerySendCommandTx(cliCtx context.CLIContext) http.HandlerFunc {
+// GetHandlerQuerySendCommandTx returns a handler to send an ethereum transaction containing a smart contract call
+// to an ethereum wallet to be signed and submitted by a specified account
+func GetHandlerQuerySendCommandTx(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -177,7 +185,7 @@ func GetHandlerQuerySendCommandTx(cliCtx context.CLIContext) http.HandlerFunc {
 			Sender:    fromAddr,
 		}
 
-		json, err := cliCtx.Codec.MarshalJSON(params)
+		json, err := cliCtx.LegacyAmino.MarshalJSON(params)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -190,7 +198,7 @@ func GetHandlerQuerySendCommandTx(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		var txHash string
-		cliCtx.Codec.MustUnmarshalJSON(res, &txHash)
+		cliCtx.LegacyAmino.MustUnmarshalJSON(res, &txHash)
 		rest.PostProcessResponse(w, cliCtx, txHash)
 	}
 }

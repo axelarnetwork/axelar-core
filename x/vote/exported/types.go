@@ -8,13 +8,6 @@ import (
 type VotingData interface {
 }
 
-// PollMeta represents the meta data for a poll
-type PollMeta struct {
-	Module string
-	ID     string
-	Nonce  int64
-}
-
 // NewPollMeta constructor for PollMeta without nonce
 func NewPollMeta(module string, id string) PollMeta {
 	return PollMeta{
@@ -33,17 +26,17 @@ func NewPollMetaWithNonce(module string, id string, blockHeight int64, lockingPe
 	}
 }
 
-func (p PollMeta) String() string {
-	return fmt.Sprintf("%s_%s_%d", p.Module, p.ID, p.Nonce)
+func (m PollMeta) String() string {
+	return fmt.Sprintf("%s_%s_%d", m.Module, m.ID, m.Nonce)
 }
 
 // Validate performs a stateless validity check to ensure PollMeta has been properly initialized
-func (p PollMeta) Validate() error {
-	if p.Module == "" {
+func (m PollMeta) Validate() error {
+	if m.Module == "" {
 		return fmt.Errorf("missing module")
 	}
 
-	if p.ID == "" {
+	if m.ID == "" {
 		return fmt.Errorf("missing poll ID")
 	}
 

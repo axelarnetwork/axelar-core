@@ -1,0 +1,15 @@
+syntax = "proto3";
+package bitcoin.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/bitcoin/types";
+
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// DepositQueryParams describe the parameters used to query for a Bitcoin
+// deposit address
+message DepositQueryParams {
+  string address = 1;
+  string chain = 2;
+}

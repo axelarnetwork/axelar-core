@@ -13,7 +13,7 @@ import (
 
 func TestSdkInt_Marshaling(t *testing.T) {
 	i := sdk.NewInt(75)
-	cdc := testutils.Codec()
+	cdc := testutils.MakeEncodingConfig().Amino
 
 	bz := cdc.MustMarshalBinaryLengthPrefixed(i)
 	var unmarshaled sdk.Int
@@ -34,7 +34,7 @@ func TestTalliedVote_Marshaling(t *testing.T) {
 		Tally: sdk.NewInt(23),
 		Data:  []byte("a public key"),
 	}
-	cdc := testutils.Codec()
+	cdc := testutils.MakeEncodingConfig().Amino
 
 	bz := cdc.MustMarshalBinaryLengthPrefixed(vote)
 	var unmarshaled types.TalliedVote

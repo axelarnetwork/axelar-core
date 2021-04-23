@@ -54,7 +54,8 @@ import (
 // 17. Wait for vote
 // 18. Rotate to the new master key
 func TestBitcoinKeyRotation(t *testing.T) {
-	randStrings := rand.Strings(5, 50)
+	randStrings := rand.Strings(5, 20)
+	cdc := testutils.MakeEncodingConfig().Amino
 
 	// set up chain
 	const nodeCount = 10
@@ -62,8 +63,12 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	listeners := registerWaitEventListeners(nodeData[0])
 
 	// register proxies for all validators
-	for i, proxy := range randStrings.Take(nodeCount) {
-		res := <-chain.Submit(broadcastTypes.MsgRegisterProxy{Principal: nodeData[i].Validator.OperatorAddress, Proxy: sdk.AccAddress(proxy)})
+	for i := 0; i < nodeCount; i++ {
+		operatorAddress, err := sdk.ValAddressFromBech32(nodeData[i].Validator.OperatorAddress)
+		if err != nil {
+			panic(err)
+		}
+		res := <-chain.Submit(&broadcastTypes.MsgRegisterProxy{PrincipalAddr: operatorAddress, ProxyAddr: rand.Bytes(sdk.AddrLen)})
 		assert.NoError(t, res.Error)
 	}
 
@@ -107,7 +112,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	bz, err := nodeData[0].Node.Query(
 		[]string{ethTypes.QuerierRoute, ethKeeper.CreateDeployTx},
 		abci.RequestQuery{
-			Data: testutils.Codec().MustMarshalJSON(
+			Data: cdc.MustMarshalJSON(
 				ethTypes.DeployParams{
 					GasPrice: sdk.NewInt(1),
 					GasLimit: 3000000,
@@ -115,10 +120,10 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	)
 	assert.NoError(t, err)
 	var result ethTypes.DeployResult
-	testutils.Codec().MustUnmarshalJSON(bz, &result)
+	cdc.MustUnmarshalJSON(bz, &result)
 
 	deployGatewayResult := <-chain.Submit(
-		ethTypes.MsgSignTx{Sender: randomSender(), Tx: testutils.Codec().MustMarshalJSON(result.Tx)})
+		&ethTypes.MsgSignTx{Sender: randomSender(), Tx: cdc.MustMarshalJSON(result.Tx)})
 	assert.NoError(t, deployGatewayResult.Error)
 
 	// wait for voting to be done (signing takes longer to tally up)
@@ -133,7 +138,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// deploy token
 	deployTokenResult := <-chain.Submit(
-		ethTypes.MsgSignDeployToken{Sender: randomSender(), Capacity: sdk.NewInt(100000), Decimals: 8, Symbol: "satoshi", TokenName: "Satoshi"})
+		&ethTypes.MsgSignDeployToken{Sender: randomSender(), Capacity: sdk.NewInt(100000), Decimals: 8, Symbol: "satoshi", TokenName: "Satoshi"})
 	assert.NoError(t, deployTokenResult.Error)
 
 	// wait for voting to be done (signing takes longer to tally up)
@@ -151,7 +156,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	bz, err = nodeData[0].Node.Query(
 		[]string{ethTypes.QuerierRoute, ethKeeper.SendCommand},
 		abci.RequestQuery{
-			Data: testutils.Codec().MustMarshalJSON(
+			Data: cdc.MustMarshalJSON(
 				ethTypes.CommandParams{
 					CommandID: ethTypes.CommandID(commandID),
 					Sender:    sender.String(),
@@ -161,7 +166,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// confirm the token deployment
 	var txHashHex string
-	testutils.Codec().MustUnmarshalJSON(bz, &txHashHex)
+	cdc.MustUnmarshalJSON(bz, &txHashHex)
 	txHash := common.HexToHash(txHashHex)
 
 	bz, err = nodeData[0].Node.Query(
@@ -220,7 +225,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 		// store this information for later in the test
 		totalDepositAmount += int64(depositInfo.Amount)
-		deposits[depositInfo.OutPoint.String()] = depositInfo
+		deposits[depositInfo.OutPoint] = depositInfo
 	}
 
 	// wait for voting to be done
@@ -260,7 +265,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, err)
 
 	var rawSignedTx string
-	testutils.Codec().MustUnmarshalJSON(bz, &rawSignedTx)
+	cdc.MustUnmarshalJSON(bz, &rawSignedTx)
 	signedTx := wire.NewMsgTx(wire.TxVersion)
 	buf, err := hex.DecodeString(rawSignedTx)
 	assert.NoError(t, err)
@@ -274,7 +279,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	consolidationInfo := randomOutpointInfo(consAddr.EncodeAddress())
 	consolidationInfo.Amount = btcutil.Amount(signedTx.TxOut[0].Value)
 	hash := signedTx.TxHash()
-	consolidationInfo.OutPoint = wire.NewOutPoint(&hash, 0)
+	consolidationInfo.OutPoint = wire.NewOutPoint(&hash, 0).String()
 
 	// confirm master key transfer
 	confirmResult2 := <-chain.Submit(btcTypes.NewMsgConfirmOutpoint(randomSender(), consolidationInfo))

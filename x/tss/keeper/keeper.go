@@ -6,7 +6,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -29,15 +29,16 @@ const (
 	keyRolePrefix               = "key_role_"
 )
 
+// Keeper allows access to the broadcast state
 type Keeper struct {
 	slasher  snapshot.Slasher
 	params   params.Subspace
 	storeKey sdk.StoreKey
-	cdc      *codec.Codec
+	cdc      *codec.LegacyAmino
 }
 
 // NewKeeper constructs a tss keeper
-func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace, slasher snapshot.Slasher) Keeper {
+func NewKeeper(cdc *codec.LegacyAmino, storeKey sdk.StoreKey, paramSpace params.Subspace, slasher snapshot.Slasher) Keeper {
 	return Keeper{
 		slasher:  slasher,
 		cdc:      cdc,

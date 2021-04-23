@@ -1,14 +1,17 @@
 # axelar-core
 
-The axelar-core app based on the Cosmos SDK is the main application of the axelar network.
-This repository is used to build the necessary binaries and docker image to run a core validator.
-See the axelarnetwork/axelarate repo for instructions to run a node.
+The axelar-core app based on the Cosmos SDK is the main application of the axelar network. This repository is used to
+build the necessary binaries and docker image to run a core validator. See the axelarnetwork/axelarate repo for
+instructions to run a node.
 
 ## Prerequisites for building binaries and docker images
 
 1. Have a SSH key on your machine
 2. Add your public key to your Github account for authentication
-3. Run `ssh-add ~/.ssh/{private key file name}` to add your private key to your ssh agent. **IMPORTANT**: the ssh agent only keeps your priate key in memory so you have to repeat this step every time you restart your machine.  You can automate this step in two ways as described [here](https://apple.stackexchange.com/questions/254468/macos-sierra-doesn-t-seem-to-remember-ssh-keys-between-reboots/264974#264974):
+3. Run `ssh-add ~/.ssh/{private key file name}` to add your private key to your ssh agent. **IMPORTANT**: the ssh agent
+   only keeps your priate key in memory so you have to repeat this step every time you restart your machine. You can
+   automate this step in two ways as
+   described [here](https://apple.stackexchange.com/questions/254468/macos-sierra-doesn-t-seem-to-remember-ssh-keys-between-reboots/264974#264974):
     * Add the following to your `~/.ssh/config` file:
     ```
     Host *
@@ -16,21 +19,23 @@ See the axelarnetwork/axelarate repo for instructions to run a node.
        UseKeychain yes     
     ```
     * Add `ssh-add ~/.ssh/{private key file name} &>/dev/null` in your shell's .rc file (eg. `~/.bash_profile`).
-4. Run `git config --global url."git@github.com:axelarnetwork".insteadOf https://github.com/axelarnetwork` to force `go get` to authenticate via ssh
+4. Run `git config --global url."git@github.com:axelarnetwork".insteadOf https://github.com/axelarnetwork` to
+   force `go get` to authenticate via ssh
 
 ## Building binaries locally
 
-Execute `make build` to create local binaries for the validator node.
-They are created in the `./bin` folder.
+Execute `make build` to create local binaries for the validator node. They are created in the `./bin` folder.
 
 ## Creating docker images
-To create a regular docker image for the validator, execute `make docker-image`.
-This creates the image axelar/core:latest.
 
-To create a docker image for debugging (with [delve](https://github.com/go-delve/delve)), execute `make docker-image-debug`.
-This creates the image axelar/core-debug:latest.
+To create a regular docker image for the validator, execute `make docker-image`. This creates the image axelar/core:
+latest.
+
+To create a docker image for debugging (with [delve](https://github.com/go-delve/delve)),
+execute `make docker-image-debug`. This creates the image axelar/core-debug:latest.
 
 ## Interacting with a local validator node
+
 With a local (dockerized) validator running, the `axelarcli` binary can be used to interact with the node.
 Run `./bin/axelarcli --help` after building the binaries to get information about the available commands.
 

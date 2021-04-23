@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
-	abci "github.com/tendermint/tendermint/abci/types"
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
@@ -31,13 +31,13 @@ const (
 var keeper Keeper
 
 func init() {
-	cdc := testutils.Codec()
-	nexusSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
-	keeper = NewKeeper(cdc, sdk.NewKVStoreKey("nexus"), nexusSubspace)
+	encCfg := testutils.MakeEncodingConfig()
+	nexusSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
+	keeper = NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("nexus"), nexusSubspace)
 }
 
 func TestLinkNoForeignAssetSupport(t *testing.T) {
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	keeper.SetParams(ctx, types.DefaultParams())
 
 	sender, recipient := makeRandAddressesForChain(btc.Bitcoin, eth.Ethereum)
@@ -47,7 +47,7 @@ func TestLinkNoForeignAssetSupport(t *testing.T) {
 }
 
 func TestLinkSuccess(t *testing.T) {
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	keeper.SetParams(ctx, types.DefaultParams())
 
 	sender, recipient := makeRandAddressesForChain(btc.Bitcoin, eth.Ethereum)
@@ -67,7 +67,7 @@ func TestLinkSuccess(t *testing.T) {
 }
 
 func TestPrepareNoLink(t *testing.T) {
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	keeper.SetParams(ctx, types.DefaultParams())
 
 	sender, _ := makeRandAddressesForChain(btc.Bitcoin, eth.Ethereum)
@@ -76,7 +76,7 @@ func TestPrepareNoLink(t *testing.T) {
 }
 
 func TestPrepareSuccess(t *testing.T) {
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	keeper.SetParams(ctx, types.DefaultParams())
 
 	amounts := make(map[exported.CrossChainAddress]sdk.Coin)
@@ -104,7 +104,7 @@ func TestPrepareSuccess(t *testing.T) {
 }
 
 func TestArchive(t *testing.T) {
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	keeper.SetParams(ctx, types.DefaultParams())
 
 	recipients := make([]exported.CrossChainAddress, 0)
@@ -143,7 +143,7 @@ func TestArchive(t *testing.T) {
 }
 
 func TestTotalInvalid(t *testing.T) {
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	keeper.SetParams(ctx, types.DefaultParams())
 	btcSender, btcRecipient := makeRandAddressesForChain(btc.Bitcoin, eth.Ethereum)
 	keeper.LinkAddresses(ctx, btcSender, btcRecipient)
@@ -161,7 +161,7 @@ func TestTotalInvalid(t *testing.T) {
 }
 
 func TestTotalSucess(t *testing.T) {
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	keeper.SetParams(ctx, types.DefaultParams())
 	btcSender, btcRecipient := makeRandAddressesForChain(btc.Bitcoin, eth.Ethereum)
 	keeper.LinkAddresses(ctx, btcSender, btcRecipient)
@@ -190,7 +190,7 @@ func TestSetChainGetChain_MixCaseChainName(t *testing.T) {
 		SupportsForeignAssets: true,
 	}
 
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	keeper.SetChain(ctx, chain)
 
 	actual, ok := keeper.GetChain(ctx, strings.ToUpper(chainName))
@@ -212,7 +212,7 @@ func TestSetChainGetChain_UpperCaseChainName(t *testing.T) {
 		SupportsForeignAssets: true,
 	}
 
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	keeper.SetChain(ctx, chain)
 
 	actual, ok := keeper.GetChain(ctx, strings.ToUpper(chainName))
@@ -234,7 +234,7 @@ func TestSetChainGetChain_LowerCaseChainName(t *testing.T) {
 		SupportsForeignAssets: true,
 	}
 
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	keeper.SetChain(ctx, chain)
 
 	actual, ok := keeper.GetChain(ctx, strings.ToUpper(chainName))

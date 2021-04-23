@@ -110,7 +110,7 @@ func (k Keeper) setParticipateInSign(ctx sdk.Context, sigID string, validator sd
 	ctx.KVStore(k.storeKey).Set([]byte(participatePrefix+"sign_"+sigID+validator.String()), []byte{})
 }
 
-// DoesValidatorParticipateInKeygen returns true if given validator participates in signing for the given sig ID; otherwise, false
+// DoesValidatorParticipateInSign returns true if given validator participates in signing for the given sig ID; otherwise, false
 func (k Keeper) DoesValidatorParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) bool {
 	return ctx.KVStore(k.storeKey).Has([]byte(participatePrefix + "sign_" + sigID + validator.String()))
 }

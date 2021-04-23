@@ -31,13 +31,13 @@ const (
 // Keeper - the vote module's keeper
 type Keeper struct {
 	storeKey    sdk.StoreKey
-	cdc         *codec.Codec
+	cdc         *codec.LegacyAmino
 	broadcaster types.Broadcaster
 	snapshotter types.Snapshotter
 }
 
 // NewKeeper - keeper constructor
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, snapshotter types.Snapshotter, broadcaster types.Broadcaster) Keeper {
+func NewKeeper(cdc *codec.LegacyAmino, key sdk.StoreKey, snapshotter types.Snapshotter, broadcaster types.Broadcaster) Keeper {
 	keeper := Keeper{
 		storeKey:    key,
 		cdc:         cdc,

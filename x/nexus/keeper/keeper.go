@@ -7,7 +7,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -28,12 +28,12 @@ const (
 // Keeper represents a ballance keeper
 type Keeper struct {
 	storeKey sdk.StoreKey
-	cdc      *codec.Codec
+	cdc      *codec.LegacyAmino
 	params   params.Subspace
 }
 
 // NewKeeper returns a new nexus keeper
-func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
+func NewKeeper(cdc *codec.LegacyAmino, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
 	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable())}
 }
 

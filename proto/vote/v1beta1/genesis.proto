@@ -1,0 +1,13 @@
+syntax = "proto3";
+package vote.v1beta1;
+option go_package = "github.com/axelarnetwork/axelar-core/x/vote/types";
+
+import "gogoproto/gogo.proto";
+import "utils/v1beta1/threshold.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message GenesisState {
+  int64 voting_interval = 1;
+  utils.v1beta1.Threshold voting_threshold = 2 [ (gogoproto.nullable) = false ];
+}

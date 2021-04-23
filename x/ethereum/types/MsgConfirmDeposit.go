@@ -6,18 +6,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-// MsgConfirmDeposit represents an erc20 deposit confirmation message
-type MsgConfirmDeposit struct {
-	Sender     sdk.AccAddress
-	TxID       string
-	Amount     sdk.Uint
-	BurnerAddr string
-}
-
 // NewMsgConfirmERC20Deposit creates a message of type MsgConfirmDeposit
-func NewMsgConfirmERC20Deposit(sender sdk.AccAddress, txID common.Hash, amount sdk.Uint, burnerAddr common.Address) sdk.Msg {
+func NewMsgConfirmERC20Deposit(sender sdk.AccAddress, txID common.Hash, amount sdk.Uint, burnerAddr common.Address) *MsgConfirmDeposit {
 
-	return MsgConfirmDeposit{
+	return &MsgConfirmDeposit{
 		Sender:     sender,
 		TxID:       txID.Hex(),
 		Amount:     amount,
@@ -26,31 +18,31 @@ func NewMsgConfirmERC20Deposit(sender sdk.AccAddress, txID common.Hash, amount s
 }
 
 // Route implements sdk.Msg
-func (msg MsgConfirmDeposit) Route() string {
+func (m MsgConfirmDeposit) Route() string {
 	return RouterKey
 }
 
 // Type implements sdk.Msg
-func (msg MsgConfirmDeposit) Type() string {
+func (m MsgConfirmDeposit) Type() string {
 	return "ConfirmERC20Deposit"
 }
 
 // ValidateBasic implements sdk.Msg
-func (msg MsgConfirmDeposit) ValidateBasic() error {
-	if msg.Sender.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
+func (m MsgConfirmDeposit) ValidateBasic() error {
+	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
 	return nil
 }
 
 // GetSignBytes implements sdk.Msg
-func (msg MsgConfirmDeposit) GetSignBytes() []byte {
-	bz := ModuleCdc.MustMarshalJSON(msg)
+func (m MsgConfirmDeposit) GetSignBytes() []byte {
+	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
 }
 
 // GetSigners implements sdk.Msg
-func (msg MsgConfirmDeposit) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Sender}
+func (m MsgConfirmDeposit) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{m.Sender}
 }

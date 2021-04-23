@@ -6,9 +6,8 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
-	"github.com/cosmos/cosmos-sdk/x/params/subspace"
-	sdkExported "github.com/cosmos/cosmos-sdk/x/staking/exported"
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -28,12 +27,12 @@ type Keeper struct {
 	slasher     exported.Slasher
 	broadcaster exported.Broadcaster
 	tss         exported.Tss
-	cdc         *codec.Codec
-	params      subspace.Subspace
+	cdc         *codec.LegacyAmino
+	params      params.Subspace
 }
 
 // NewKeeper creates a new keeper for the staking module
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramSpace params.Subspace, broadcaster exported.Broadcaster, staking types.StakingKeeper, slasher exported.Slasher, tss exported.Tss) Keeper {
+func NewKeeper(cdc *codec.LegacyAmino, key sdk.StoreKey, paramSpace params.Subspace, broadcaster exported.Broadcaster, staking types.StakingKeeper, slasher exported.Slasher, tss exported.Tss) Keeper {
 	return Keeper{
 		storeKey:    key,
 		cdc:         cdc,
@@ -128,23 +127,32 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, nextCounter int64, subsetSize i
 	var validators []exported.Validator
 	snapshotTotalPower, validatorsTotalPower := sdk.ZeroInt(), sdk.ZeroInt()
 
-	validatorIter := func(_ int64, validator sdkExported.ValidatorI) (stop bool) {
+	validatorIter := func(_ int64, validator stakingtypes.ValidatorI) (stop bool) {
 		validatorsTotalPower = validatorsTotalPower.AddRaw(validator.GetConsensusPower())
 
-		if !exported.IsValidatorActive(ctx, k.slasher, validator) {
+		// this explicit type cast is necessary, because snapshot needs to call UnpackInterfaces() on the validator
+		// and it is not exposed in the ValidatorI interface
+		v, ok := validator.(exported.Validator)
+		if !ok {
+			k.Logger(ctx).Error(fmt.Sprintf("unexpected validator type: expected %T, got %T", stakingtypes.Validator{}, validator))
 			return false
 		}
 
-		if !exported.DoesValidatorHasProxyRegistered(ctx, k.broadcaster, validator) {
+		if !exported.IsValidatorActive(ctx, k.slasher, v) {
 			return false
 		}
 
-		if !exported.IsValidatorTssRegistered(ctx, k.tss, validator) {
+		if !exported.HasProxyRegistered(ctx, k.broadcaster, v) {
 			return false
 		}
 
-		snapshotTotalPower = snapshotTotalPower.AddRaw(validator.GetConsensusPower())
-		validators = append(validators, validator)
+		if !exported.IsValidatorTssRegistered(ctx, k.tss, v) {
+			return false
+		}
+
+		snapshotTotalPower = snapshotTotalPower.AddRaw(v.GetConsensusPower())
+
+		validators = append(validators, v)
 
 		// if subsetSize equals 0, we will iterate through all validators and potentially put them all into the snapshot
 		return len(validators) == int(subsetSize)

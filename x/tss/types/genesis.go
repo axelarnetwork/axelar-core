@@ -8,16 +8,14 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-type GenesisState struct {
-	Params Params
+// DefaultGenesis represents the default genesis state
+func DefaultGenesis() *GenesisState {
+	return &GenesisState{DefaultParams()}
 }
 
-func DefaultGenesisState() GenesisState {
-	return GenesisState{DefaultParams()}
-}
-
-func ValidateGenesis(g GenesisState) error {
-	if err := g.Params.Validate(); err != nil {
+// Validate validates the genesis state
+func (m GenesisState) Validate() error {
+	if err := m.Params.Validate(); err != nil {
 		return sdkerrors.Wrap(err, fmt.Sprintf("genesis state for module %s is invalid", ModuleName))
 	}
 	return nil
@@ -25,7 +23,7 @@ func ValidateGenesis(g GenesisState) error {
 
 // GetGenesisStateFromAppState returns x/tss GenesisState given raw application
 // genesis state.
-func GetGenesisStateFromAppState(cdc *codec.Codec, appState map[string]json.RawMessage) GenesisState {
+func GetGenesisStateFromAppState(cdc codec.Marshaler, appState map[string]json.RawMessage) GenesisState {
 	var genesisState GenesisState
 	if appState[ModuleName] != nil {
 		cdc.MustUnmarshalJSON(appState[ModuleName], &genesisState)

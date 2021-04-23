@@ -20,15 +20,6 @@ type Key struct {
 	Role  KeyRole
 }
 
-// KeyRole is an enum for the role of the key
-type KeyRole int
-
-const (
-	MasterKey KeyRole = iota
-	SecondaryKey
-	Unknown
-)
-
 // GetKeyRoles returns an array of all types of key role
 func GetKeyRoles() []KeyRole {
 	return []KeyRole{MasterKey, SecondaryKey}
@@ -37,9 +28,9 @@ func GetKeyRoles() []KeyRole {
 // KeyRoleFromStr creates a KeyRole from string
 func KeyRoleFromStr(str string) (KeyRole, error) {
 	switch strings.ToLower(str) {
-	case MasterKey.String():
+	case MasterKey.SimpleString():
 		return MasterKey, nil
-	case SecondaryKey.String():
+	case SecondaryKey.SimpleString():
 		return SecondaryKey, nil
 	default:
 		return -1, fmt.Errorf("invalid key role %s", str)
@@ -47,38 +38,38 @@ func KeyRoleFromStr(str string) (KeyRole, error) {
 }
 
 // Validate validates the KeyRole
-func (r KeyRole) Validate() error {
-	switch r {
+func (x KeyRole) Validate() error {
+	switch x {
 	case MasterKey, SecondaryKey:
 		return nil
 	default:
-		return fmt.Errorf("invalid key role %d", r)
+		return fmt.Errorf("invalid key role %d", x)
 	}
 }
 
-// String converts the KeyRole to a string
-func (r KeyRole) String() string {
-	return [...]string{"master", "secondary"}[r]
-}
-
-// KeyRequirement defines requirements for keys
-type KeyRequirement struct {
-	ChainName              string
-	KeyRole                KeyRole
-	MinValidatorSubsetSize int64
+// SimpleString converts the KeyRole to a string
+func (x KeyRole) SimpleString() string {
+	switch x {
+	case MasterKey:
+		return "master"
+	case SecondaryKey:
+		return "secondary"
+	default:
+		return "unknown"
+	}
 }
 
 // Validate validates the KeyRequirement
-func (r KeyRequirement) Validate() error {
-	if r.ChainName == "" {
-		return fmt.Errorf("invalid ChainName %s", r.ChainName)
+func (m KeyRequirement) Validate() error {
+	if m.ChainName == "" {
+		return fmt.Errorf("invalid ChainName %s", m.ChainName)
 	}
 
-	if err := r.KeyRole.Validate(); err != nil {
+	if err := m.KeyRole.Validate(); err != nil {
 		return err
 	}
 
-	if r.MinValidatorSubsetSize <= 0 {
+	if m.MinValidatorSubsetSize <= 0 {
 		return fmt.Errorf("MinValidatorSubsetSize has to be greater than 0 when the key is required")
 	}
 

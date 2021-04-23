@@ -1,17 +1,11 @@
 package keeper
 
 import (
-	"encoding/binary"
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/rpc/client"
 
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/exported"
 	"github.com/axelarnetwork/axelar-core/x/broadcast/types"
@@ -21,54 +15,25 @@ var _ broadcast.Broadcaster = Keeper{}
 
 const (
 	proxyCountKey = "proxyCount"
-	seqNoKey      = "seqNo"
 )
 
 // Keeper - the broadcast keeper
 type Keeper struct {
-	staker          types.Staker
-	storeKey        sdk.StoreKey
-	from            sdk.AccAddress
-	keybase         keys.Keybase
-	authKeeper      auth.AccountKeeper
-	encodeTx        sdk.TxEncoder
-	config          types.ClientConfig
-	rpc             client.ABCIClient
-	fromName        string
-	subjectiveStore sdk.KVStore
-	cdc             *codec.Codec
+	staker   types.Staker
+	storeKey sdk.StoreKey
+	cdc      *codec.LegacyAmino
 }
 
 // NewKeeper constructs a broadcast keeper
 func NewKeeper(
-	cdc *codec.Codec,
+	cdc *codec.LegacyAmino,
 	storeKey sdk.StoreKey,
-	subjectiveStore sdk.KVStore,
-	keybase keys.Keybase,
-	authKeeper auth.AccountKeeper,
 	stakingKeeper types.Staker,
-	client client.ABCIClient,
-	conf types.ClientConfig,
-	logger log.Logger,
 ) (Keeper, error) {
-	logger.With("module", fmt.Sprintf("x/%s", types.ModuleName)).Debug("creating broadcast keeper")
-	from, fromName, err := types.GetAccountAddress(conf.From, keybase)
-	if err != nil {
-		return Keeper{}, err
-	}
-	logger.With("module", fmt.Sprintf("x/%s", types.ModuleName)).Debug("broadcast keeper created")
 	return Keeper{
-		subjectiveStore: subjectiveStore,
-		staker:          stakingKeeper,
-		storeKey:        storeKey,
-		from:            from,
-		keybase:         keybase,
-		authKeeper:      authKeeper,
-		encodeTx:        utils.GetTxEncoder(cdc),
-		cdc:             cdc,
-		config:          conf,
-		rpc:             client,
-		fromName:        fromName,
+		staker:   stakingKeeper,
+		storeKey: storeKey,
+		cdc:      cdc,
 	}, nil
 }
 
@@ -102,13 +67,6 @@ func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy s
 	return nil
 }
 
-// GetLocalPrincipal returns the address of the local validator account. Returns nil if not set.
-//
-// WARNING: Handle with care, this call is non-deterministic because it exposes local information that is DIFFERENT for each validator
-func (k Keeper) GetLocalPrincipal(ctx sdk.Context) sdk.ValAddress {
-	return k.GetPrincipal(ctx, k.from)
-}
-
 // GetPrincipal returns the proxy address for a given principal address. Returns nil if not set.
 func (k Keeper) GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
 	if proxy == nil {
@@ -135,59 +93,4 @@ func (k Keeper) getProxyCount(ctx sdk.Context) int {
 	var count int
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &count)
 	return count
-}
-
-func (k Keeper) prepareMsgForSigning(ctx sdk.Context, msgs []sdk.Msg) (auth.StdSignMsg, error) {
-	if k.config.ChainID == "" {
-		return auth.StdSignMsg{}, sdkerrors.Wrap(types.ErrInvalidChain, "chain ID required but not specified")
-	}
-
-	acc := k.authKeeper.GetAccount(ctx, k.from)
-	seqNo := k.getSeqNo()
-	if acc.GetSequence() > seqNo {
-		seqNo = acc.GetSequence()
-	}
-
-	return auth.StdSignMsg{
-		ChainID:       k.config.ChainID,
-		AccountNumber: acc.GetAccountNumber(),
-		Sequence:      seqNo,
-		Msgs:          msgs,
-		Fee:           auth.NewStdFee(10000000, nil),
-	}, nil
-}
-
-func (k Keeper) sign(msg auth.StdSignMsg) (auth.StdTx, error) {
-	sig, err := k.makeSignature(msg)
-	if err != nil {
-		return auth.StdTx{}, err
-	}
-
-	return auth.NewStdTx(msg.Msgs, msg.Fee, []auth.StdSignature{sig}, msg.Memo), nil
-}
-
-func (k Keeper) makeSignature(msg auth.StdSignMsg) (auth.StdSignature, error) {
-	sigBytes, pubkey, err := k.keybase.Sign(k.fromName, k.config.KeyringPassphrase, msg.Bytes())
-	if err != nil {
-		return auth.StdSignature{}, err
-	}
-
-	return auth.StdSignature{
-		PubKey:    pubkey,
-		Signature: sigBytes,
-	}, nil
-}
-
-func (k Keeper) getSeqNo() uint64 {
-	seqNo := k.subjectiveStore.Get([]byte(seqNoKey))
-	if seqNo == nil {
-		return 0
-	}
-	return binary.LittleEndian.Uint64(seqNo)
-}
-
-func (k Keeper) setSeqNo(seqNo uint64) {
-	bz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(bz, seqNo)
-	k.subjectiveStore.Set([]byte(seqNoKey), bz)
 }

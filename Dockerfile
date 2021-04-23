@@ -28,8 +28,6 @@ COPY ./entrypoint.sh /entrypoint.sh
 
 # The home directory of axelar-core where configuration/genesis/data are stored
 ENV HOME_DIR /root
-# Whether or not to start the REST server
-ENV START_REST false
 # Host name for tss daemon (only necessary for validator nodes)
 ENV TOFND_HOST ""
 # The keyring backend type https://docs.cosmos.network/master/run-node/keyring.html

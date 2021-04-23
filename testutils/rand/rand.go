@@ -2,9 +2,14 @@ package rand
 
 import (
 	"math/rand"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common/math"
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 // PosI64 returns a positive pseudo-random integer
 func PosI64() int64 {

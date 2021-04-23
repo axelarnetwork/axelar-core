@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"time"
 
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/slashing"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 )
 
 //go:generate moq -out ./mock/types.go -pkg mock . Validator Snapshotter Slasher Broadcaster Tss
@@ -13,15 +14,16 @@ import (
 // Validator is an interface for a Cosmos validator account
 type Validator interface {
 	GetOperator() sdk.ValAddress
-	GetConsAddr() sdk.ConsAddress
+	GetConsAddr() (sdk.ConsAddress, error)
 	GetConsensusPower() int64
 	IsJailed() bool
+	UnpackInterfaces(c codectypes.AnyUnpacker) error
 }
 
 // ValidatorInfo adopts the methods from "github.com/cosmos/cosmos-sdk/x/slashing" that are
 // actually used by this module
 type ValidatorInfo struct {
-	slashing.ValidatorSigningInfo
+	slashingtypes.ValidatorSigningInfo
 }
 
 // Slasher provides functionality to manage slashing info for a validator
@@ -41,13 +43,18 @@ type Tss interface {
 
 // IsValidatorActive returns true if the validator is active; otherwise, false
 func IsValidatorActive(ctx sdk.Context, slasher Slasher, validator Validator) bool {
-	signingInfo, found := slasher.GetValidatorSigningInfo(ctx, validator.GetConsAddr())
+	consAdd, err := validator.GetConsAddr()
+	if err != nil {
+		return false
+	}
+
+	signingInfo, found := slasher.GetValidatorSigningInfo(ctx, consAdd)
 
 	return found && !signingInfo.Tombstoned && signingInfo.MissedBlocksCounter <= 0 && !validator.IsJailed()
 }
 
-// DoesValidatorHasProxyRegistered returns true if the validator has broadcast proxy registered; otherwise, false
-func DoesValidatorHasProxyRegistered(ctx sdk.Context, broadcaster Broadcaster, validator Validator) bool {
+// HasProxyRegistered returns true if the validator has broadcast proxy registered; otherwise, false
+func HasProxyRegistered(ctx sdk.Context, broadcaster Broadcaster, validator Validator) bool {
 	return broadcaster.GetProxy(ctx, validator.GetOperator()) != nil
 }
 
@@ -75,6 +82,16 @@ func (s Snapshot) GetValidator(address sdk.ValAddress) (Validator, bool) {
 	}
 
 	return nil, false
+}
+
+// UnpackInterfaces implements UnpackInterfacesMessage.UnpackInterfaces
+func (s Snapshot) UnpackInterfaces(c codectypes.AnyUnpacker) error {
+	for _, v := range s.Validators {
+		if err := v.UnpackInterfaces(c); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Snapshotter represents the interface for the snapshot module's functionality

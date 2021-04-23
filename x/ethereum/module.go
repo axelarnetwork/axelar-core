@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 
-	sdkCli "github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
+	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/gorilla/mux"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -33,39 +35,47 @@ func (AppModuleBasic) Name() string {
 	return types.ModuleName
 }
 
-// RegisterCodec registers the types necessary in this module with the given codec
-func (AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
-	types.RegisterCodec(cdc)
+// RegisterLegacyAminoCodec registers the types necessary in this module with the given codec
+func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
+	types.RegisterLegacyAminoCodec(cdc)
+}
+
+// RegisterInterfaces registers the module's interface types
+func (AppModuleBasic) RegisterInterfaces(reg cdctypes.InterfaceRegistry) {
+	types.RegisterInterfaces(reg)
 }
 
 // DefaultGenesis returns the default genesis state
-func (AppModuleBasic) DefaultGenesis() json.RawMessage {
-	return types.ModuleCdc.MustMarshalJSON(types.DefaultGenesisState())
+func (AppModuleBasic) DefaultGenesis(cdc codec.JSONMarshaler) json.RawMessage {
+	return cdc.MustMarshalJSON(types.DefaultGenesisState())
 }
 
 // ValidateGenesis checks the given genesis state for validity
-func (AppModuleBasic) ValidateGenesis(message json.RawMessage) error {
-	var data types.GenesisState
-	err := types.ModuleCdc.UnmarshalJSON(message, &data)
-	if err != nil {
-		return err
+func (AppModuleBasic) ValidateGenesis(cdc codec.JSONMarshaler, _ client.TxEncodingConfig, bz json.RawMessage) error {
+	var genState types.GenesisState
+	if err := cdc.UnmarshalJSON(bz, &genState); err != nil {
+		return fmt.Errorf("failed to unmarshal %s genesis state: %w", types.ModuleName, err)
 	}
-	return types.ValidateGenesis(data)
+	return genState.Validate()
 }
 
 // RegisterRESTRoutes registers the REST routes for this module
-func (AppModuleBasic) RegisterRESTRoutes(cliCtx sdkCli.CLIContext, rtr *mux.Router) {
-	rest.RegisterRoutes(cliCtx, rtr)
+func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Router) {
+	rest.RegisterRoutes(clientCtx, rtr)
+}
+
+// RegisterGRPCGatewayRoutes registers the gRPC Gateway routes for the module.
+func (AppModuleBasic) RegisterGRPCGatewayRoutes(client.Context, *runtime.ServeMux) {
 }
 
 // GetTxCmd returns all CLI tx commands for this module
-func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
-	return cli.GetTxCmd(cdc)
+func (AppModuleBasic) GetTxCmd() *cobra.Command {
+	return cli.GetTxCmd()
 }
 
 // GetQueryCmd returns all CLI query commands for this module
-func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
-	return cli.GetQueryCmd(types.QuerierRoute, cdc)
+func (AppModuleBasic) GetQueryCmd() *cobra.Command {
+	return cli.GetQueryCmd(types.QuerierRoute)
 }
 
 // AppModule implements module.AppModule
@@ -98,39 +108,37 @@ func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {
 }
 
 // InitGenesis initializes the module's keeper from the given genesis state
-func (am AppModule) InitGenesis(ctx sdk.Context, message json.RawMessage) []abci.ValidatorUpdate {
-	var genesisState types.GenesisState
-	types.ModuleCdc.MustUnmarshalJSON(message, &genesisState)
+func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs json.RawMessage) []abci.ValidatorUpdate {
+	var genState types.GenesisState
+	// Initialize global index to index in genesis state
+	cdc.MustUnmarshalJSON(gs, &genState)
+
 	id, err := am.rpc.ChainID(context.Background())
 	if err != nil {
 		panic(err)
 	}
 	actualNetwork := types.NetworkByID(id)
-	if genesisState.Params.Network != actualNetwork {
+	if genState.Params.Network != actualNetwork {
 		panic(fmt.Sprintf(
 			"local ethereum client not configured correctly: expected network %s, got %s",
-			genesisState.Params.Network,
+			genState.Params.Network,
 			actualNetwork,
 		))
 	}
-	InitGenesis(ctx, am.keeper, genesisState)
+	InitGenesis(ctx, am.keeper, genState)
+
 	return []abci.ValidatorUpdate{}
 }
 
 // ExportGenesis exports a genesis state from the module's keeper
-func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	gs := ExportGenesis(ctx, am.keeper)
-	return types.ModuleCdc.MustMarshalJSON(gs)
+func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json.RawMessage {
+	genState := ExportGenesis(ctx, am.keeper)
+	return cdc.MustMarshalJSON(&genState)
 }
 
 // Route returns the module's route
-func (AppModule) Route() string {
-	return types.RouterKey
-}
-
-// NewHandler returns a new handler for this module
-func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper, am.voter, am.signer, am.nexus, am.snapshotter)
+func (am AppModule) Route() sdk.Route {
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.voter, am.signer, am.nexus, am.snapshotter))
 }
 
 // QuerierRoute returns this module's query route
@@ -138,9 +146,14 @@ func (AppModule) QuerierRoute() string {
 	return types.QuerierRoute
 }
 
-// NewQuerierHandler returns a new query handler for this module
-func (am AppModule) NewQuerierHandler() sdk.Querier {
+// LegacyQuerierHandler returns a new query handler for this module
+func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 	return keeper.NewQuerier(am.rpc, am.keeper, am.signer)
+}
+
+// RegisterServices registers a GRPC query service to respond to the
+// module-specific GRPC queries.
+func (am AppModule) RegisterServices(module.Configurator) {
 }
 
 // BeginBlock executes all state transitions this module requires at the beginning of each new block

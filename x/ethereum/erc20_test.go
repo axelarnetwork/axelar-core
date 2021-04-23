@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
@@ -207,16 +208,17 @@ func TestDeploy(t *testing.T) {
 	}
 
 	minConfHeight := rand2.I64Between(1, 10)
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, minConfHeight)
+	encCfg := testutils.MakeEncodingConfig()
 
 	rpc := &mock.RPCClientMock{PendingNonceAtFunc: backend.PendingNonceAt, SuggestGasPriceFunc: backend.SuggestGasPrice}
 	query := keeper.NewQuerier(rpc, k, tssSigner)
-	res, err := query(ctx, []string{keeper.CreateDeployTx}, abci.RequestQuery{Data: testutils.Codec().MustMarshalJSON(deployParams)})
+	res, err := query(ctx, []string{keeper.CreateDeployTx}, abci.RequestQuery{Data: encCfg.Amino.MustMarshalJSON(deployParams)})
 	assert.NoError(t, err)
 
 	var result types.DeployResult
-	testutils.Codec().MustUnmarshalJSON(res, &result)
+	encCfg.Amino.MustUnmarshalJSON(res, &result)
 
 	signedTx, err := ethTypes.SignTx(result.Tx, signer, privateKey)
 	assert.NoError(t, err)

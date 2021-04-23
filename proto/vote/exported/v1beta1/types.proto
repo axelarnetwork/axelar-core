@@ -1,0 +1,15 @@
+syntax = "proto3";
+package vote.exported.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/vote/exported";
+
+import "gogoproto/gogo.proto";
+
+// PollMeta represents the meta data for a poll
+message PollMeta {
+  option (gogoproto.goproto_stringer) = false;
+
+  string module = 1;
+  string id = 2 [ (gogoproto.customname) = "ID" ];
+  int64 nonce = 3;
+}

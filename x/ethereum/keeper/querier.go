@@ -103,7 +103,7 @@ func queryTokenAddress(ctx sdk.Context, k Keeper, symbol string) ([]byte, error)
 */
 func createDeployGateway(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, data []byte) ([]byte, error) {
 	var params types.DeployParams
-	err := types.ModuleCdc.UnmarshalJSON(data, &params)
+	err := types.ModuleCdc.LegacyAmino.UnmarshalJSON(data, &params)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
@@ -144,7 +144,7 @@ func createDeployGateway(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types
 		ContractAddress: crypto.CreateAddress(contractOwner, nonce).String(),
 	}
 	k.Logger(ctx).Debug(fmt.Sprintf("Contract address: %s", result.ContractAddress))
-	return types.ModuleCdc.MustMarshalJSON(result), nil
+	return types.ModuleCdc.LegacyAmino.MustMarshalJSON(result), nil
 }
 
 func sendSignedTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, txID string) ([]byte, error) {
@@ -178,7 +178,7 @@ func sendSignedTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer
 
 func createTxAndSend(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, data []byte) ([]byte, error) {
 	var params types.CommandParams
-	err := types.ModuleCdc.UnmarshalJSON(data, &params)
+	err := types.ModuleCdc.LegacyAmino.UnmarshalJSON(data, &params)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
