@@ -115,7 +115,6 @@ github.com/axelarnetwork/axelar-core v0.0.2-0.20210302093357-f2f67692d1ba/go.mod
 github.com/axelarnetwork/axelar-core v0.1.1-0.20210315234849-8ca55dab3a8d/go.mod h1:vaXQReZJ1ZunnmWD2r2XMncW4JK0pMnFZs82za0qonI=
 github.com/axelarnetwork/axelar-core v0.2.1-0.20210423084955-0dbf0191030d/go.mod h1:DuqNX0D+wRmE03UtetIBygdgsMGnPDZeBW6HC2gp7KU=
 github.com/axelarnetwork/c2d2 v0.0.0-20210302225045-2f24e9ea1116/go.mod h1:wPKBFS06EN2PTjk3QUJK9sakL2NAUhGhhTfWAaq+kL0=
-github.com/axelarnetwork/c2d2 v0.0.0-20210419231552-639bb3c730ac h1:HgHUl7utnJAUEwETwOuSJSLVa2zAarnqyiGL2+Jzjxs=
 github.com/axelarnetwork/c2d2 v0.0.0-20210419231552-639bb3c730ac/go.mod h1:Q0tUrTIdp83U5AbffM8UbEOO6eSPd6NVjeVPHc7KTUc=
 github.com/axelarnetwork/c2d2 v0.0.0-20210423102742-f48d3a53a76a h1:mmSG/q9ON0SJfqOEBOOkug/Dz5l0Y5tkGVKOAZP/NRg=
 github.com/axelarnetwork/c2d2 v0.0.0-20210423102742-f48d3a53a76a/go.mod h1:dOU5BVned4npw2FjVWEwsQK3Uhsew5hhVCWzsHbjeP0=

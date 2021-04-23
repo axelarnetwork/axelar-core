@@ -18,7 +18,6 @@ require (
 	github.com/matryer/moq v0.2.1
 	github.com/miguelmota/go-ethereum-hdwallet v0.0.1
 	github.com/rakyll/statik v0.1.7
-	github.com/regen-network/cosmos-proto v0.3.1 // indirect
 	github.com/rs/zerolog v1.21.0
 	github.com/spf13/cast v1.3.1
 	github.com/spf13/cobra v1.1.3
@@ -27,7 +26,6 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/tendermint/tendermint v0.34.9
 	github.com/tendermint/tm-db v0.6.4
-	google.golang.org/genproto v0.0.0-20210414175830-92282443c685 // indirect
 	google.golang.org/grpc v1.36.1
 	google.golang.org/protobuf v1.26.0
 )
