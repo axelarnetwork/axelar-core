@@ -22,3 +22,5 @@ jobs:
         run: git config --global url."git@github.com:axelarnetwork".insteadOf https://github.com/axelarnetwork      
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
+        with:
+          args: --timeout 10m
