@@ -77,11 +77,7 @@ func MustSubscribe(hub *events.Hub, eventType string, module string, action stri
 func Subscribe(hub *events.Hub, eventType string, module string, action string) (FilteredSubscriber, error) {
 	qString := fmt.Sprintf("%s='%s' AND %s.%s='%s'",
 		tm.EventTypeKey, tm.EventTx, eventType, sdk.AttributeKeyModule, module)
-	bus, err := hub.Subscribe(query.MustParse(qString))
-	if err != nil {
-		return FilteredSubscriber{}, err
-	}
-	subscriber, err := bus.Subscribe()
+	subscriber, err := hub.Subscribe(query.MustParse(qString))
 	if err != nil {
 		return FilteredSubscriber{}, err
 	}

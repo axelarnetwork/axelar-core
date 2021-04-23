@@ -92,17 +92,14 @@ func setPersistentFlags(rootCmd *cobra.Command) {
 }
 
 func newHub() (*tmEvents.Hub, error) {
-	conf := client.Config{
-		Address:  client.DefaultAddress,
-		Endpoint: client.DefaultWSEndpoint,
-	}
-
-	c, err := client.NewConnectedClient(conf)
+	cl, err := client.NewClient(client.DefaultAddress, client.DefaultWSEndpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	hub := tmEvents.NewHub(c)
+	err = cl.Start()
+
+	hub := tmEvents.NewHub(cl)
 	return &hub, nil
 }
 
