@@ -17,7 +17,7 @@ message MsgConfirmOutpoint {
   OutPointInfo out_point_info = 2 [ (gogoproto.nullable) = false ];
 }
 
-// MsgLink represents a message to link an cross-chain address to a Bitcoin
+// MsgLink represents a message to link a cross-chain address to a Bitcoin
 // address
 message MsgLink {
   bytes sender = 1 [ (gogoproto.casttype) =
