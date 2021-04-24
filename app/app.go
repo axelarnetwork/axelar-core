@@ -338,7 +338,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 	var rpcEth ethTypes.RPCClient
 	if axelarCfg.WithEthBridge {
-		rpcEth, err = ethTypes.NewRPCClient(axelarCfg.EthRpcAddr)
+		rpcEth, err = ethTypes.NewRPCClient(axelarCfg.EthRPCAddr)
 		if err != nil {
 			tmos.Exit(err.Error())
 		}

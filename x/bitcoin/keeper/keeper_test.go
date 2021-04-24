@@ -60,11 +60,9 @@ func prepareNoOutpoints(Keeper, sdk.Context, int) []types.OutPointInfo {
 }
 
 func preparePendingOutPoints(k Keeper, ctx sdk.Context, infoCount int) []types.OutPointInfo {
-	var outs []types.OutPointInfo
 	for i := 0; i < infoCount; i++ {
 		info := randOutPointInfo()
 		k.SetPendingOutpointInfo(ctx, exported.PollMeta{ID: rand2.StrBetween(5, 20)}, info)
-		outs = append(outs, info)
 	}
 	return nil
 }

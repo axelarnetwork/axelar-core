@@ -54,13 +54,13 @@ func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy s
 	storedProxy := ctx.KVStore(k.storeKey).Get(principal)
 	if storedProxy != nil {
 		ctx.KVStore(k.storeKey).Delete(storedProxy)
-		count -= 1
+		count--
 	}
 	k.Logger(ctx).Debug("setting proxy")
 	ctx.KVStore(k.storeKey).Set(proxy, principal)
 	// Creating a reverse lookup
 	ctx.KVStore(k.storeKey).Set(principal, proxy)
-	count += 1
+	count++
 	k.Logger(ctx).Debug("setting proxy count")
 	k.setProxyCount(ctx, count)
 	k.Logger(ctx).Debug("done")

@@ -82,7 +82,7 @@ func calcRatio(values []bool) float64 {
 	ratio := 0.0
 	for _, val := range values {
 		if val {
-			ratio += 1
+			ratio++
 		}
 	}
 	ratio /= float64(len(values))

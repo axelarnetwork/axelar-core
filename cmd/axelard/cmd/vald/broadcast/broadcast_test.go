@@ -70,6 +70,7 @@ func TestBroadcast(t *testing.T) {
 			decodedTx, err := ctx.TxConfig.TxDecoder()(call.Tx)
 			assert.NoError(t, err)
 			sigs, err := decodedTx.(authsigning.SigVerifiableTx).GetSignaturesV2()
+			assert.NoError(t, err)
 			for _, sig := range sigs {
 				foundSeqNo[sig.Sequence] = true
 			}
@@ -108,6 +109,7 @@ func TestBroadcast(t *testing.T) {
 			decodedTx, err := ctx.TxConfig.TxDecoder()(call.Tx)
 			assert.NoError(t, err)
 			sigs, err := decodedTx.(authsigning.SigVerifiableTx).GetSignaturesV2()
+			assert.NoError(t, err)
 			for _, sig := range sigs {
 				foundSeqNo[sig.Sequence] = true
 			}
@@ -142,7 +144,7 @@ func TestRetryPipeline_Push(t *testing.T) {
 					defer wg.Done()
 					retry := 0
 					err := p.Push(func() error {
-						retry += 1
+						retry++
 						return fmt.Errorf("retry %d, iteration %d", retry, i)
 					})
 					assert.Error(t, err)
