@@ -25,7 +25,7 @@ const (
 
 	// Dummy values: the values do not matter, used as markers
 	voted         byte = 0
-	indexNotFound      = -1
+	indexNotFound int  = -1
 )
 
 // Keeper - the vote module's keeper

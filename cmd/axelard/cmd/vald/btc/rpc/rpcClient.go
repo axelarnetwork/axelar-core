@@ -18,7 +18,7 @@ import (
 
 const (
 	sleep          = 1 * time.Second
-	errRpcInWarmup = btcjson.RPCErrorCode(-28)
+	errRPCInWarmup = btcjson.RPCErrorCode(-28)
 )
 
 //go:generate moq -pkg mock -out ./mock/rpcClient.go . Client
@@ -52,22 +52,22 @@ func NewRPCClient(cfg types.BtcConfig, logger log.Logger) (*ClientImpl, error) {
 			return nil, err
 		}
 	}
-	parsedUrl, err := url.Parse(cfg.RPCAddr)
+	parsedURL, err := url.Parse(cfg.RPCAddr)
 	if err != nil {
 		return nil, err
 	}
 	user := cfg.RPCUser
 	pw := cfg.RPCPass
-	if parsedUrl.User != nil {
-		user = parsedUrl.User.Username()
-		parsedPW, isSet := parsedUrl.User.Password()
+	if parsedURL.User != nil {
+		user = parsedURL.User.Username()
+		parsedPW, isSet := parsedURL.User.Password()
 		if isSet {
 			pw = parsedPW
 		}
 	}
 
 	rpcCfg := &rpcclient.ConnConfig{
-		Host:                 parsedUrl.Host,
+		Host:                 parsedURL.Host,
 		CookiePath:           cfg.CookiePath,
 		User:                 user,
 		Pass:                 pw,
@@ -100,9 +100,9 @@ func waitForAuthCookie(cookiePath string, timeout time.Duration, logger log.Logg
 	}
 	if t < timeout {
 		return nil
-	} else {
-		return sdkerrors.Wrap(types.ErrInvalidConfig, fmt.Sprintf("bitcoin auth cookie could not be found at %s", cookiePath))
 	}
+
+	return sdkerrors.Wrap(types.ErrInvalidConfig, fmt.Sprintf("bitcoin auth cookie could not be found at %s", cookiePath))
 }
 
 func (r *ClientImpl) setNetwork(logger log.Logger) error {
@@ -112,11 +112,11 @@ func (r *ClientImpl) setNetwork(logger log.Logger) error {
 	var retries int
 
 	// Ensure the loop is run at least once
-	var err error = &btcjson.RPCError{Code: errRpcInWarmup}
+	var err error = &btcjson.RPCError{Code: errRPCInWarmup}
 	for retries = 0; err != nil && retries < maxRetries; retries++ {
 		switch err := err.(type) {
 		case *btcjson.RPCError:
-			if err.Code == errRpcInWarmup {
+			if err.Code == errRPCInWarmup {
 				logger.Debug("waiting for bitcoin rpc server to start")
 				time.Sleep(sleep)
 			} else {
@@ -135,9 +135,8 @@ func (r *ClientImpl) setNetwork(logger log.Logger) error {
 		}
 		r.network, err = types.NetworkFromStr(info.Chain)
 		return err
-	} else {
-		return sdkerrors.Wrap(types.ErrTimeOut, "could not establish a connection to the bitcoin node")
 	}
+	return sdkerrors.Wrap(types.ErrTimeOut, "could not establish a connection to the bitcoin node")
 }
 
 func unexpectedError(err error) error {

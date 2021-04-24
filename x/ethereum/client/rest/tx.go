@@ -80,7 +80,7 @@ type ReqConfirmDeposit struct {
 // ReqSignTx represents a request to sign a transaction
 type ReqSignTx struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
-	TxJson  string       `json:"tx_json" yaml:"tx_json"`
+	TxJSON  string       `json:"tx_json" yaml:"tx_json"`
 }
 
 // ReqSignPendingTransfers represents a request to sign all pending transfers
@@ -206,15 +206,15 @@ func GetHandlerSignTx(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		txJson := []byte(req.TxJson)
+		txJSON := []byte(req.TxJSON)
 		var ethtx *ethTypes.Transaction
-		err := cliCtx.LegacyAmino.UnmarshalJSON(txJson, &ethtx)
+		err := cliCtx.LegacyAmino.UnmarshalJSON(txJSON, &ethtx)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		msg := types.NewMsgSignTx(fromAddr, txJson)
+		msg := types.NewMsgSignTx(fromAddr, txJSON)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

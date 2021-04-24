@@ -131,10 +131,11 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		assert.FailNow(t, "signing", err)
 	}
 
-	bz, err = nodeData[0].Node.Query(
+	_, err = nodeData[0].Node.Query(
 		[]string{ethTypes.QuerierRoute, ethKeeper.SendTx, string(deployGatewayResult.Data)},
 		abci.RequestQuery{Data: nil},
 	)
+	assert.NoError(t, err)
 
 	// deploy token
 	deployTokenResult := <-chain.Submit(
@@ -173,15 +174,16 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		[]string{ethTypes.QuerierRoute, ethKeeper.QueryTokenAddress, "satoshi"},
 		abci.RequestQuery{Data: nil},
 	)
+	assert.NoError(t, err)
 	tokenAddr := common.BytesToAddress(bz)
 	bz, err = nodeData[0].Node.Query(
 		[]string{ethTypes.QuerierRoute, ethKeeper.QueryAxelarGatewayAddress},
 		abci.RequestQuery{Data: nil},
 	)
+	assert.NoError(t, err)
 	gatewayAddr := common.BytesToAddress(bz)
 	logs := createTokenDeployLogs(gatewayAddr, tokenAddr)
-	var ethBlock int64
-	ethBlock = rand.I64Between(10, 100)
+	ethBlock := rand.I64Between(10, 100)
 
 	for _, node := range nodeData {
 

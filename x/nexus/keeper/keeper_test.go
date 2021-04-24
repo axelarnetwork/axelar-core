@@ -107,17 +107,12 @@ func TestArchive(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	keeper.SetParams(ctx, types.DefaultParams())
 
-	recipients := make([]exported.CrossChainAddress, 0)
-	var total uint64 = 0
-
 	for i := 0; i < linkedAddr; i++ {
 		sender, recipient := makeRandAddressesForChain(btc.Bitcoin, eth.Ethereum)
-		recipients = append(recipients, recipient)
 		keeper.LinkAddresses(ctx, sender, recipient)
 		amount := makeRandAmount(btcTypes.Satoshi)
 		err := keeper.EnqueueForTransfer(ctx, sender, amount)
 		assert.NoError(t, err)
-		total += amount.Amount.Uint64()
 	}
 
 	transfers := keeper.GetPendingTransfersForChain(ctx, eth.Ethereum)

@@ -12,10 +12,14 @@ import (
 
 // interface wraps for testing purposes
 type (
+	// AccountRetriever wrapper for github.com/cosmos/cosmos-sdk/client.AccountRetriever
 	AccountRetriever sdkClient.AccountRetriever
-	Client           rpcclient.Client
-	Keyring          keyring.Keyring
-	Info             keyring.Info
+	// Client wrapper for github.com/tendermint/tendermint/rpc/client.Client
+	Client rpcclient.Client
+	// Keyring wrapper for github.com/cosmos/cosmos-sdk/crypto/keyring.Keyring
+	Keyring keyring.Keyring
+	// Info wrapper for github.com/cosmos/cosmos-sdk/crypto/keyring.Info
+	Info keyring.Info
 )
 
 // Broadcaster interface allows the submission of messages to the axelar network

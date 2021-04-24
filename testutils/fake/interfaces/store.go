@@ -6,6 +6,8 @@ import sdkTypes "github.com/cosmos/cosmos-sdk/types"
 
 // Interface wrappers for mocking
 type (
+	// MultiStore wrapper for github.com/cosmos/cosmos-sdk/types.MultiStore
 	MultiStore sdkTypes.MultiStore
-	KVStore    sdkTypes.KVStore
+	// KVStore wrapper for github.com/cosmos/cosmos-sdk/types.KVStore
+	KVStore sdkTypes.KVStore
 )
