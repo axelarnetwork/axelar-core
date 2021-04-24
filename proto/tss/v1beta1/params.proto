@@ -10,7 +10,7 @@ option (gogoproto.goproto_getters_all) = false;
 
 // Params is the parameter set for this module
 message Params {
-  // KeyLockingPeriod defines the key for the locking period
+  // Deprecated
   int64 locking_period = 1;
   // MinKeygenThreshold defines the minimum % of stake that must be online
   // to authorize generation of a new key in the system.

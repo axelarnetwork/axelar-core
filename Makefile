@@ -93,7 +93,8 @@ proto-all: proto-format proto-lint proto-gen
 
 proto-gen:
 	@echo "Generating Protobuf files"
-	@$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace tendermintdev/sdk-proto-gen sh ./scripts/protocgen.sh
+	@DOCKER_BUILDKIT=1 docker build --ssh default -t axelar/proto-gen -f ./Dockerfile.protocgen .
+	@$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace axelar/proto-gen sh ./scripts/protocgen.sh
 
 proto-format:
 	@echo "Formatting Protobuf files"

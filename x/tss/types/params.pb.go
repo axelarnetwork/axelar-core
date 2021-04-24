@@ -27,7 +27,7 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // Params is the parameter set for this module
 type Params struct {
-	// KeyLockingPeriod defines the key for the locking period
+	// Deprecated
 	LockingPeriod int64 `protobuf:"varint,1,opt,name=locking_period,json=lockingPeriod,proto3" json:"locking_period,omitempty"`
 	// MinKeygenThreshold defines the minimum % of stake that must be online
 	// to authorize generation of a new key in the system.
