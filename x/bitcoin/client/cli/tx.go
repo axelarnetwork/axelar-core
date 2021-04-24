@@ -37,9 +37,8 @@ func GetCmdConfirmTxOut() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "confirmTxOut [txID:voutIdx] [amount] [address]",
 		Short: "Confirm a Bitcoin transaction",
-		Long: fmt.Sprintf(
-			"Confirm that a transaction happened on the Bitcoin network so it can be processed on axelar."),
-		Args: cobra.ExactArgs(3),
+		Long:  "Confirm that a transaction happened on the Bitcoin network so it can be processed on axelar.",
+		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {

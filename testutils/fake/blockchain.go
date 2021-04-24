@@ -156,7 +156,7 @@ func (bc *BlockChain) cutBlocks() <-chan block {
 		// close block channel when message channel is closed
 		defer close(blocks)
 		nextBlock := newBlock(bc.blockSize, tmproto.Header{Height: bc.CurrentHeight(), Time: time.Now()})
-		bc.currentHeight += 1
+		bc.currentHeight++
 
 		for {
 			timeOut, cancel := context.WithTimeout(context.Background(), bc.blockTimeOut)
@@ -175,14 +175,14 @@ func (bc *BlockChain) cutBlocks() <-chan block {
 					if len(nextBlock.msgs) == bc.blockSize {
 						blocks <- nextBlock
 						nextBlock = newBlock(bc.blockSize, tmproto.Header{Height: bc.CurrentHeight(), Time: time.Now()})
-						bc.currentHeight += 1
+						bc.currentHeight++
 
 					}
 				// timeout happened before receiving a message, cut the block here and start a new one
 				case <-timeOut.Done():
 					blocks <- nextBlock
 					nextBlock = newBlock(bc.blockSize, tmproto.Header{Height: bc.CurrentHeight(), Time: time.Now()})
-					bc.currentHeight += 1
+					bc.currentHeight++
 
 					cancel()
 					break timeOutloop
@@ -213,9 +213,7 @@ func deepCopy(bc BlockChain) *BlockChain {
 	newChain.blockSize = bc.blockSize
 	newChain.blockTimeOut = bc.blockTimeOut
 	newChain.currentHeight = bc.currentHeight
-	for _, node := range bc.nodes {
-		newChain.nodes = append(newChain.nodes, node)
-	}
+	newChain.nodes = append(newChain.nodes, bc.nodes...)
 
 	return newChain
 }

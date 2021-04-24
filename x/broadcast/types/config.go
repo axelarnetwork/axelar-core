@@ -15,7 +15,7 @@ type BroadcastConfig struct {
 // ClientConfig is the configuration for all client processes
 type ClientConfig struct {
 	KeyringBackend    string `mapstructure:"keyring-backend"`
-	TendermintNodeUri string `mapstructure:"node"`
+	TendermintNodeURI string `mapstructure:"node"`
 	ChainID           string `mapstructure:"chain-id"`
 	BroadcastConfig   `mapstructure:"broadcast"`
 }

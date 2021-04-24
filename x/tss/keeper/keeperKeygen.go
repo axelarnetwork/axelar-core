@@ -23,9 +23,7 @@ func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID string, th
 	}
 
 	// set keygen participants
-	var participants []string
 	for _, v := range snapshot.Validators {
-		participants = append(participants, v.GetOperator().String())
 		k.setParticipatesInKeygen(ctx, keyID, v.GetOperator())
 	}
 
@@ -159,12 +157,12 @@ func (k Keeper) getKeygenStart(ctx sdk.Context, keyID string) (int64, bool) {
 func (k Keeper) getKeyID(ctx sdk.Context, chain nexus.Chain, rotation int64, keyRole exported.KeyRole) (string, bool) {
 	storageKey := fmt.Sprintf("%s%d_%s_%s", rotationPrefix, rotation, chain.Name, keyRole.String())
 
-	keyId := ctx.KVStore(k.storeKey).Get([]byte(storageKey))
-	if keyId == nil {
+	keyID := ctx.KVStore(k.storeKey).Get([]byte(storageKey))
+	if keyID == nil {
 		return "", false
 	}
 
-	return string(keyId), true
+	return string(keyID), true
 }
 
 func (k Keeper) setKeyID(ctx sdk.Context, chain nexus.Chain, rotation int64, keyRole exported.KeyRole, keyID string) {

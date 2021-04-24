@@ -434,7 +434,7 @@ func handleMsgSignBurnTokens(ctx sdk.Context, k keeper.Keeper, signer types.Sign
 	deposits := k.GetConfirmedDeposits(ctx)
 
 	if len(deposits) == 0 {
-		return &sdk.Result{Log: fmt.Sprintf("no confirmed deposits found to burn")}, nil
+		return &sdk.Result{Log: "no confirmed deposits found to burn"}, nil
 	}
 
 	chainID := k.GetNetwork(ctx).Params().ChainID

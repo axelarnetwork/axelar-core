@@ -91,13 +91,6 @@ func (k Keeper) GetKeyRequirement(ctx sdk.Context, chain nexus.Chain, keyRole ex
 	return keyRequirement, true
 }
 
-// getLockingPeriod returns the period of blocks that keygen is locked after a new snapshot has been created
-func (k Keeper) getLockingPeriod(ctx sdk.Context) int64 {
-	var period int64
-	k.params.Get(ctx, types.KeyLockingPeriod, &period)
-	return period
-}
-
 // SetValidatorDeregisteredBlockHeight sets the validator's deregistration block height
 func (k Keeper) SetValidatorDeregisteredBlockHeight(ctx sdk.Context, valAddr sdk.ValAddress, blockHeight int64) {
 	key := []byte(validatorDeregisteredPrefix + valAddr.String())

@@ -203,7 +203,7 @@ func createBTCMgr(axelarCfg app.Config, b bcTypes.Broadcaster, sender sdk.AccAdd
 }
 
 func createETHMgr(axelarCfg app.Config, b bcTypes.Broadcaster, sender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *eth.Mgr {
-	rpc, err := ethRPC.NewClient(axelarCfg.EthRpcAddr)
+	rpc, err := ethRPC.NewClient(axelarCfg.EthRPCAddr)
 	if err != nil {
 		logger.Error(err.Error())
 		panic(err)
