@@ -22,7 +22,7 @@ const (
 	TxMethodSignPendingTransfersTx = "sign"
 
 	QueryMethodDepositAddress     = keeper.QueryDepositAddress
-	QueryMethodKeyAddress         = keeper.QueryKeyAddress
+	QueryMethodMasterAddress      = keeper.QueryMasterAddress
 	QueryMethodGetConsolidationTx = keeper.GetTx
 )
 
@@ -35,7 +35,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
 	registerQuery(QueryDepositAddress(cliCtx), QueryMethodDepositAddress, clientUtils.PathVarChain, clientUtils.PathVarEthereumAddress)
-	registerQuery(QueryKeyAddress(cliCtx), QueryMethodKeyAddress, clientUtils.PathVarKeyRole)
+	registerQuery(QueryMasterAddress(cliCtx), QueryMethodMasterAddress)
 	registerQuery(QueryGetConsolidationTx(cliCtx), QueryMethodGetConsolidationTx)
 }
 
