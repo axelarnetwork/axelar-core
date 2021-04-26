@@ -94,8 +94,9 @@ func handleMsgVoteSig(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg *type
 		// the result is not necessarily the same as the msg (the vote could have been decided earlier and now a false vote is cast),
 		// so use result instead of msg
 		ctx.EventManager().EmitEvent(sdk.NewEvent(
-			types.EventTypeSigDecided,
+			types.EventTypeSign,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
 			sdk.NewAttribute(types.AttributeKeyPoll, msg.PollMeta.String()),
 			sdk.NewAttribute(types.AttributeKeyPayload, string(msg.SigBytes)),
 		))
@@ -126,8 +127,9 @@ func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg *t
 		// the result is not necessarily the same as the msg (the vote could have been decided earlier and now a false vote is cast),
 		// so use result instead of msg
 		ctx.EventManager().EmitEvent(sdk.NewEvent(
-			types.EventTypePubKeyDecided,
+			types.EventTypeKeygen,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
 			sdk.NewAttribute(types.AttributeKeyPoll, msg.PollMeta.String()),
 			sdk.NewAttribute(types.AttributeKeyPayload, string(msg.PubKeyBytes)),
 		))
