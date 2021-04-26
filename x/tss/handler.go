@@ -62,7 +62,7 @@ func handleMsgRotateKey(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg *ty
 		return nil, err
 	}
 
-	k.Logger(ctx).Debug(fmt.Sprintf("rotated %s key for chain %s", msg.KeyRole.String(), chain.Name))
+	k.Logger(ctx).Debug(fmt.Sprintf("rotated %s key for chain %s", msg.KeyRole.SimpleString(), chain.Name))
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -167,14 +167,14 @@ func handleMsgAssignNextKey(ctx sdk.Context, k keeper.Keeper, s types.Snapshotte
 
 	keyRequirement, found := k.GetKeyRequirement(ctx, chain, msg.KeyRole)
 	if !found {
-		return nil, fmt.Errorf("%s key is not required for chain %s", msg.KeyRole.String(), chain.Name)
+		return nil, fmt.Errorf("%s key is not required for chain %s", msg.KeyRole.SimpleString(), chain.Name)
 	}
 
 	if len(snapshot.Validators) < int(keyRequirement.MinValidatorSubsetSize) {
 		return nil, fmt.Errorf(
 			"expected %s's %s key to be generated with at least %d validators, actual %d",
 			chain.Name,
-			msg.KeyRole.String(),
+			msg.KeyRole.SimpleString(),
 			keyRequirement.MinValidatorSubsetSize,
 			len(snapshot.Validators),
 		)
@@ -184,9 +184,9 @@ func handleMsgAssignNextKey(ctx sdk.Context, k keeper.Keeper, s types.Snapshotte
 		return nil, fmt.Errorf(
 			"expected %s's %s key to have tss shares distributed with policy %s, actual %s",
 			chain.Name,
-			msg.KeyRole.String(),
-			keyRequirement.KeyShareDistributionPolicy.String(),
-			snapshot.KeyShareDistributionPolicy.String(),
+			msg.KeyRole.SimpleString(),
+			keyRequirement.KeyShareDistributionPolicy.SimpleString(),
+			snapshot.KeyShareDistributionPolicy.SimpleString(),
 		)
 	}
 
@@ -195,7 +195,7 @@ func handleMsgAssignNextKey(ctx sdk.Context, k keeper.Keeper, s types.Snapshotte
 		return nil, err
 	}
 
-	k.Logger(ctx).Debug(fmt.Sprintf("prepared %s key rotation for chain %s", msg.KeyRole.String(), chain.Name))
+	k.Logger(ctx).Debug(fmt.Sprintf("prepared %s key rotation for chain %s", msg.KeyRole.SimpleString(), chain.Name))
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -252,9 +252,9 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 		return nil, fmt.Errorf(msg)
 	}
 
-	threshold := k.ComputeCorruptionThreshold(ctx, int(snapshot.TotalPower.Int64()))
-	if threshold < 1 || threshold > int(snapshot.TotalPower.Int64()) {
-		return nil, fmt.Errorf("invalid threshold: %d, total power: %d", threshold, snapshot.TotalPower.Int64())
+	threshold := k.ComputeCorruptionThreshold(ctx, snapshot.TotalShareCount)
+	if threshold < 1 || snapshot.TotalShareCount.Int64() <= threshold {
+		return nil, fmt.Errorf("invalid threshold: %d, total power: %d", threshold, snapshot.TotalShareCount.Int64())
 	}
 
 	if err := k.StartKeygen(ctx, v, msg.NewKeyID, snapshot); err != nil {
@@ -262,10 +262,10 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 	}
 
 	var participants []string
-	var participantShareCounts []int64
+	var participantShareCounts []uint32
 	for _, validator := range snapshot.Validators {
 		participants = append(participants, validator.GetOperator().String())
-		participantShareCounts = append(participantShareCounts, validator.Power.Int64())
+		participantShareCounts = append(participantShareCounts, uint32(validator.ShareCount))
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -273,13 +273,13 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 			sdk.NewAttribute(types.AttributeKeyKeyID, msg.NewKeyID),
-			sdk.NewAttribute(types.AttributeKeyThreshold, strconv.Itoa(threshold)),
+			sdk.NewAttribute(types.AttributeKeyThreshold, strconv.FormatInt(threshold, 10)),
 			sdk.NewAttribute(types.AttributeKeyParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participants))),
 			sdk.NewAttribute(types.AttributeKeyParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participantShareCounts))),
 		),
 	)
 
-	k.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d] key_share_distribution_policy [%s]", msg.NewKeyID, threshold, msg.KeyShareDistributionPolicy.String()))
+	k.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d] key_share_distribution_policy [%s]", msg.NewKeyID, threshold, msg.KeyShareDistributionPolicy.SimpleString()))
 
 	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }

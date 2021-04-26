@@ -25,15 +25,26 @@ func GetKeyRoles() []KeyRole {
 	return []KeyRole{MasterKey, SecondaryKey}
 }
 
-// KeyRoleFromStr creates a KeyRole from string
-func KeyRoleFromStr(str string) (KeyRole, error) {
+// KeyRoleFromSimpleStr creates a KeyRole from string
+func KeyRoleFromSimpleStr(str string) (KeyRole, error) {
 	switch strings.ToLower(str) {
-	case "master":
+	case MasterKey.SimpleString():
 		return MasterKey, nil
-	case "secondary":
+	case SecondaryKey.SimpleString():
 		return SecondaryKey, nil
 	default:
 		return -1, fmt.Errorf("invalid key role %s", str)
+	}
+}
+
+func (x KeyRole) SimpleString() string {
+	switch x {
+	case MasterKey:
+		return "master"
+	case SecondaryKey:
+		return "secondary"
+	default:
+		return "unknown"
 	}
 }
 
@@ -47,15 +58,26 @@ func (x KeyRole) Validate() error {
 	}
 }
 
-// KeyShareDistributionPolicyFromStr creates a KeyShareDistributionPolicy from string
-func KeyShareDistributionPolicyFromStr(str string) (KeyShareDistributionPolicy, error) {
+// KeyShareDistributionPolicyFromSimpleStr creates a KeyShareDistributionPolicy from string
+func KeyShareDistributionPolicyFromSimpleStr(str string) (KeyShareDistributionPolicy, error) {
 	switch strings.ToLower(str) {
-	case "weighted-by-stake":
+	case WeightedByStake.SimpleString():
 		return WeightedByStake, nil
-	case "one-per-validator":
+	case OnePerValidator.SimpleString():
 		return OnePerValidator, nil
 	default:
 		return -1, fmt.Errorf("invalid key share distribution policy %s", str)
+	}
+}
+
+func (r KeyShareDistributionPolicy) SimpleString() string {
+	switch r {
+	case WeightedByStake:
+		return "weighted-by-stake"
+	case OnePerValidator:
+		return "one-per-validator"
+	default:
+		return "unknown"
 	}
 }
 

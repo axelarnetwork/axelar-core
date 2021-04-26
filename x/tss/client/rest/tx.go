@@ -69,7 +69,7 @@ func GetHandlerKeygenStart(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		keyShareDistributionPolicy, err := exported.KeyShareDistributionPolicyFromStr(req.KeyShareDistributionPolicy)
+		keyShareDistributionPolicy, err := exported.KeyShareDistributionPolicyFromSimpleStr(req.KeyShareDistributionPolicy)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -102,7 +102,7 @@ func GetHandlerKeyAssignNext(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		keyRole, err := exported.KeyRoleFromStr(req.KeyRole)
+		keyRole, err := exported.KeyRoleFromSimpleStr(req.KeyRole)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -135,7 +135,7 @@ func GetHandlerKeyRotate(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		keyRole, err := exported.KeyRoleFromStr(req.KeyRole)
+		keyRole, err := exported.KeyRoleFromSimpleStr(req.KeyRole)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

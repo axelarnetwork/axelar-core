@@ -69,13 +69,13 @@ func (mgr *Mgr) ProcessKeygenMsg(attributes []sdk.Attribute) error {
 	return nil
 }
 
-func parseKeygenStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, threshold int32, participants []string, participantShareCounts []int64) {
+func parseKeygenStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, threshold int32, participants []string, participantShareCounts []uint32) {
 	for _, attribute := range attributes {
 		switch attribute.Key {
 		case tss.AttributeKeyKeyID:
 			keyID = attribute.Value
 		case tss.AttributeKeyThreshold:
-			t, err := strconv.Atoi(attribute.Value)
+			t, err := strconv.ParseInt(attribute.Value, 10, 32)
 			if err != nil {
 				panic(err)
 			}
@@ -91,7 +91,7 @@ func parseKeygenStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) 
 	return keyID, threshold, participants, participantShareCounts
 }
 
-func (mgr *Mgr) startKeygen(keyID string, threshold int32, myIndex int32, participants []string, participantShareCounts []int64) (tss.Stream, context.CancelFunc, error) {
+func (mgr *Mgr) startKeygen(keyID string, threshold int32, myIndex int32, participants []string, participantShareCounts []uint32) (tss.Stream, context.CancelFunc, error) {
 	if _, ok := mgr.getKeygenStream(keyID); ok {
 		return nil, nil, fmt.Errorf("keygen protocol for ID %s already in progress", keyID)
 	}
@@ -103,18 +103,12 @@ func (mgr *Mgr) startKeygen(keyID string, threshold int32, myIndex int32, partic
 		return nil, nil, sdkerrors.Wrap(err, "failed tofnd gRPC call Keygen")
 	}
 
-	var shareCountsUin32 []uint32
-	for _, participantShareCount := range participantShareCounts {
-		// Do we need to check for overflow?
-		shareCountsUin32 = append(shareCountsUin32, uint32(participantShareCount))
-	}
-
 	keygenInit := &tofnd.MessageIn_KeygenInit{
 		KeygenInit: &tofnd.KeygenInit{
 			NewKeyUid:        keyID,
 			Threshold:        threshold,
 			PartyUids:        participants,
-			PartyShareCounts: shareCountsUin32,
+			PartyShareCounts: participantShareCounts,
 			MyPartyIndex:     myIndex,
 		},
 	}

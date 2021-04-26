@@ -17,6 +17,7 @@ import (
 
 	appParams "github.com/axelarnetwork/axelar-core/app/params"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/utils"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -36,11 +37,11 @@ var (
 	val4       = newValidator(sdk.ValAddress("validator4"), 100)
 	validators = []snapshot.Validator{val1, val2, val3, val4}
 	snap       = snapshot.Snapshot{
-		Validators: validators,
-		Timestamp:  time.Now(),
-		Height:     rand2.I64Between(1, 1000000),
-		TotalPower: sdk.NewInt(400),
-		Counter:    rand2.I64Between(0, 100000),
+		Validators:      validators,
+		Timestamp:       time.Now(),
+		Height:          rand2.I64Between(1, 1000000),
+		TotalShareCount: sdk.NewInt(400),
+		Counter:         rand2.I64Between(0, 100000),
 	}
 	randPosInt      = rand2.I64GenBetween(0, 100000000)
 	randDistinctStr = rand2.Strings(3, 15).Distinct()
@@ -134,5 +135,21 @@ func newValidator(address sdk.ValAddress, power int64) snapshot.Validator {
 		GetOperatorFunc:       func() sdk.ValAddress { return address },
 		GetConsensusPowerFunc: func() int64 { return power },
 		GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return address.Bytes(), nil },
-	}, sdk.NewInt(power))
+	}, power)
+}
+
+func TestComputeCorruptionThreshold(t *testing.T) {
+	s := setup(t)
+	defaultParams := types.DefaultParams()
+
+	s.Keeper.SetParams(s.Ctx, defaultParams)
+	assert.Equal(t, int64(5), s.Keeper.ComputeCorruptionThreshold(s.Ctx, sdk.NewInt(10)))
+
+	defaultParams.CorruptionThreshold = utils.Threshold{Numerator: 99, Denominator: 100}
+	s.Keeper.SetParams(s.Ctx, defaultParams)
+	assert.Equal(t, int64(8), s.Keeper.ComputeCorruptionThreshold(s.Ctx, sdk.NewInt(10)))
+
+	defaultParams.CorruptionThreshold = utils.Threshold{Numerator: 1, Denominator: 100}
+	s.Keeper.SetParams(s.Ctx, defaultParams)
+	assert.Equal(t, int64(-1), s.Keeper.ComputeCorruptionThreshold(s.Ctx, sdk.NewInt(10)))
 }

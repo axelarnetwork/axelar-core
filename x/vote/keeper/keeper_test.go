@@ -41,11 +41,11 @@ func setup() *testSetup {
 	setup.Snapshotter = &snapMock.SnapshotterMock{
 		GetLatestCounterFunc: func(sdk.Context) int64 { return rand.I64Between(1, 10000) },
 		GetSnapshotFunc: func(sdk.Context, int64) (snapshot.Snapshot, bool) {
-			totalPower := sdk.ZeroInt()
+			totalShareCount := sdk.ZeroInt()
 			for _, v := range setup.ValidatorSet {
-				totalPower = totalPower.Add(v.Power)
+				totalShareCount = totalShareCount.AddRaw(v.ShareCount)
 			}
-			return snapshot.Snapshot{Validators: setup.ValidatorSet, TotalPower: totalPower}, true
+			return snapshot.Snapshot{Validators: setup.ValidatorSet, TotalShareCount: totalShareCount}, true
 		},
 	}
 	setup.Broadcaster = &bcMock.BroadcasterMock{
@@ -233,15 +233,15 @@ func newValidator(address sdk.ValAddress, power int64) snapshot.Validator {
 		GetOperatorFunc: func() sdk.ValAddress { return address },
 	}
 
-	return snapshot.NewValidator(sdkValidator, sdk.NewInt(power))
+	return snapshot.NewValidator(sdkValidator, power)
 }
 
 func calcMajorityLowerLimit(threshold utils.Threshold, minorityPower snapshot.Validator) int64 {
 	minorityShare := threshold.Denominator - threshold.Numerator
 	majorityShare := threshold.Numerator
-	majorityLowerLimit := minorityPower.Power.Int64() / minorityShare * majorityShare
+	majorityLowerLimit := minorityPower.ShareCount / minorityShare * majorityShare
 	// Due to integer division the lower limit might be underestimated by up to 2
-	for threshold.IsMet(sdk.NewInt(majorityLowerLimit), sdk.NewInt(majorityLowerLimit).Add(minorityPower.Power)) {
+	for threshold.IsMet(sdk.NewInt(majorityLowerLimit), sdk.NewInt(majorityLowerLimit).AddRaw(minorityPower.ShareCount)) {
 		majorityLowerLimit += 1
 	}
 	return majorityLowerLimit

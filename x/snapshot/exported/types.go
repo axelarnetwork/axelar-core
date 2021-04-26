@@ -24,11 +24,11 @@ type SDKValidator interface {
 
 type Validator struct {
 	SDKValidator
-	Power sdk.Int
+	ShareCount int64
 }
 
-func NewValidator(validator SDKValidator, power sdk.Int) Validator {
-	return Validator{SDKValidator: validator, Power: power}
+func NewValidator(validator SDKValidator, shareCount int64) Validator {
+	return Validator{SDKValidator: validator, ShareCount: shareCount}
 }
 
 // ValidatorInfo adopts the methods from "github.com/cosmos/cosmos-sdk/x/slashing" that are
@@ -80,7 +80,7 @@ type Snapshot struct {
 	Validators                 []Validator                    `json:"validators"`
 	Timestamp                  time.Time                      `json:"timestamp"`
 	Height                     int64                          `json:"height"`
-	TotalPower                 sdk.Int                        `json:"totalpower"`
+	TotalShareCount            sdk.Int                        `json:"totalsharecount"`
 	Counter                    int64                          `json:"counter"`
 	KeyShareDistributionPolicy tss.KeyShareDistributionPolicy `json:"keysharedistributionpolicy"`
 }
@@ -111,5 +111,5 @@ type Snapshotter interface {
 	GetLatestSnapshot(ctx sdk.Context) (Snapshot, bool)
 	GetLatestCounter(ctx sdk.Context) int64
 	GetSnapshot(ctx sdk.Context, counter int64) (Snapshot, bool)
-	TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error)
+	TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (snapshotConsensusPower sdk.Int, totalConsensusPower sdk.Int, err error)
 }

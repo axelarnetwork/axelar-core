@@ -62,7 +62,7 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 }
 
 // TakeSnapshot attempts to create a new snapshot; if subsetSize equals 0, snapshot will be created with all validators
-func (k Keeper) TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error) {
+func (k Keeper) TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (snapshotConsensusPower sdk.Int, totalConsensusPower sdk.Int, err error) {
 	s, ok := k.GetLatestSnapshot(ctx)
 
 	if !ok {
@@ -124,9 +124,9 @@ func (k Keeper) GetLatestCounter(ctx sdk.Context) int64 {
 	return i
 }
 
-func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error) {
+func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (snapshotConsensusPower sdk.Int, totalConsensusPower sdk.Int, err error) {
 	var validators []exported.SDKValidator
-	snapshotConsensusPower, totalConsensusPower := sdk.ZeroInt(), sdk.ZeroInt()
+	snapshotConsensusPower, totalConsensusPower = sdk.ZeroInt(), sdk.ZeroInt()
 
 	validatorIter := func(_ int64, validator stakingtypes.ValidatorI) (stop bool) {
 		totalConsensusPower = totalConsensusPower.AddRaw(validator.GetConsensusPower())
@@ -151,7 +151,6 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64
 			return false
 		}
 
-		snapshotConsensusPower = snapshotConsensusPower.AddRaw(validator.GetConsensusPower())
 		validators = append(validators, v)
 
 		// if subsetSize equals 0, we will iterate through all validators and potentially put them all into the snapshot
@@ -161,15 +160,17 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64
 	k.staking.IterateBondedValidatorsByPower(ctx, validatorIter)
 
 	minBondFractionPerShare := k.tss.GetMinBondFractionPerShare(ctx)
-
 	var participants []exported.Validator
+
 	for _, validator := range validators {
 		if !minBondFractionPerShare.IsMet(sdk.NewInt(validator.GetConsensusPower()), totalConsensusPower) {
-			snapshotConsensusPower = snapshotConsensusPower.SubRaw(validator.GetConsensusPower())
-			continue
+			// Since IterateBondedValidatorsByPower iterates validators by power in descending order, once
+			// we find a validator with consensus power below minimum, we don't have to continue anymore
+			break
 		}
 
-		participants = append(participants, exported.NewValidator(validator, sdk.ZeroInt()))
+		snapshotConsensusPower = snapshotConsensusPower.AddRaw(validator.GetConsensusPower())
+		participants = append(participants, exported.NewValidator(validator, 0))
 	}
 
 	if len(participants) == 0 {
@@ -183,25 +184,25 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64
 	// Since IterateBondedValidatorsByPower iterates validators by power in descending order, the last participant is
 	// the one with least amount of bond among all participants
 	bondPerShare := participants[len(participants)-1].GetConsensusPower()
-	totalPower := sdk.ZeroInt()
+	totalShareCount := sdk.ZeroInt()
 	for i := range participants {
 		switch keyShareDistributionPolicy {
 		case tss.WeightedByStake:
-			participants[i].Power = sdk.NewInt(participants[i].GetConsensusPower()).QuoRaw(bondPerShare)
+			participants[i].ShareCount = participants[i].GetConsensusPower() / bondPerShare
 		case tss.OnePerValidator:
-			participants[i].Power = sdk.OneInt()
+			participants[i].ShareCount = 1
 		default:
 			return sdk.ZeroInt(), sdk.ZeroInt(), fmt.Errorf("invalid key share distribution policy %d", keyShareDistributionPolicy)
 		}
 
-		totalPower = totalPower.Add(participants[i].Power)
+		totalShareCount = totalShareCount.AddRaw(participants[i].ShareCount)
 	}
 
 	snapshot := exported.Snapshot{
 		Validators:                 participants,
 		Timestamp:                  ctx.BlockTime(),
 		Height:                     ctx.BlockHeight(),
-		TotalPower:                 totalPower,
+		TotalShareCount:            totalShareCount,
 		Counter:                    counter,
 		KeyShareDistributionPolicy: keyShareDistributionPolicy,
 	}

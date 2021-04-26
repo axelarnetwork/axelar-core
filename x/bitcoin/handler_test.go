@@ -468,11 +468,11 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		snapshotter = &mock.SnapshotterMock{
 			GetSnapshotFunc: func(_ sdk.Context, counter int64) (snapshot.Snapshot, bool) {
 				return snapshot.Snapshot{
-					Validators: []snapshot.Validator{},
-					Timestamp:  time.Now(),
-					Height:     rand.PosI64(),
-					TotalPower: sdk.NewInt(rand.PosI64()),
-					Counter:    counter,
+					Validators:      []snapshot.Validator{},
+					Timestamp:       time.Now(),
+					Height:          rand.PosI64(),
+					TotalShareCount: sdk.NewInt(rand.PosI64()),
+					Counter:         counter,
 				}, true
 			},
 		}

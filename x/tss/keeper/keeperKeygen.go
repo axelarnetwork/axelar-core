@@ -130,7 +130,7 @@ func (k Keeper) AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole export
 func (k Keeper) RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) error {
 	r := k.getRotationCount(ctx, chain, keyRole)
 	if _, found := k.getKeyID(ctx, chain, r+1, keyRole); !found {
-		return fmt.Errorf("next %s key for chain %s not set", keyRole.String(), chain.Name)
+		return fmt.Errorf("next %s key for chain %s not set", keyRole.SimpleString(), chain.Name)
 	}
 
 	k.setRotationCount(ctx, chain, keyRole, r+1)
@@ -155,7 +155,7 @@ func (k Keeper) getKeygenStart(ctx sdk.Context, keyID string) (int64, bool) {
 }
 
 func (k Keeper) getKeyID(ctx sdk.Context, chain nexus.Chain, rotation int64, keyRole exported.KeyRole) (string, bool) {
-	storageKey := fmt.Sprintf("%s%d_%s_%s", rotationPrefix, rotation, chain.Name, keyRole.String())
+	storageKey := fmt.Sprintf("%s%d_%s_%s", rotationPrefix, rotation, chain.Name, keyRole.SimpleString())
 
 	keyID := ctx.KVStore(k.storeKey).Get([]byte(storageKey))
 	if keyID == nil {
@@ -166,13 +166,13 @@ func (k Keeper) getKeyID(ctx sdk.Context, chain nexus.Chain, rotation int64, key
 }
 
 func (k Keeper) setKeyID(ctx sdk.Context, chain nexus.Chain, rotation int64, keyRole exported.KeyRole, keyID string) {
-	storageKey := fmt.Sprintf("%s%d_%s_%s", rotationPrefix, rotation, chain.Name, keyRole.String())
+	storageKey := fmt.Sprintf("%s%d_%s_%s", rotationPrefix, rotation, chain.Name, keyRole.SimpleString())
 
 	ctx.KVStore(k.storeKey).Set([]byte(storageKey), []byte(keyID))
 }
 
 func (k Keeper) getRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) int64 {
-	storageKey := fmt.Sprintf("%s%s_%s", rotationPrefix, chain.Name, keyRole.String())
+	storageKey := fmt.Sprintf("%s%s_%s", rotationPrefix, chain.Name, keyRole.SimpleString())
 
 	bz := ctx.KVStore(k.storeKey).Get([]byte(storageKey))
 	if bz == nil {
@@ -184,7 +184,7 @@ func (k Keeper) getRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole exp
 }
 
 func (k Keeper) setRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole, rotation int64) {
-	storageKey := fmt.Sprintf("%s%s_%s", rotationPrefix, chain.Name, keyRole.String())
+	storageKey := fmt.Sprintf("%s%s_%s", rotationPrefix, chain.Name, keyRole.SimpleString())
 
 	ctx.KVStore(k.storeKey).Set([]byte(storageKey), k.cdc.MustMarshalBinaryLengthPrefixed(rotation))
 }
