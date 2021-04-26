@@ -242,7 +242,7 @@ func calcMajorityLowerLimit(threshold utils.Threshold, minorityPower snapshot.Va
 	majorityLowerLimit := minorityPower.ShareCount / minorityShare * majorityShare
 	// Due to integer division the lower limit might be underestimated by up to 2
 	for threshold.IsMet(sdk.NewInt(majorityLowerLimit), sdk.NewInt(majorityLowerLimit).AddRaw(minorityPower.ShareCount)) {
-		majorityLowerLimit += 1
+		majorityLowerLimit++
 	}
 	return majorityLowerLimit
 }

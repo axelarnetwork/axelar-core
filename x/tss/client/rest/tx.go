@@ -24,7 +24,7 @@ const (
 // ReqKeygenStart represents a key-gen request
 type ReqKeygenStart struct {
 	BaseReq                    rest.BaseReq `json:"base_req" yaml:"base_req"`
-	NewKeyId                   string       `json:"key_id" yaml:"key_id"`
+	NewKeyID                   string       `json:"key_id" yaml:"key_id"`
 	SubsetSize                 int64        `json:"validator_count" yaml:"validator_count"`
 	KeyShareDistributionPolicy string       `json:"key_share_distribution_policy" yaml:"key_share_distribution_policy"`
 }
@@ -75,7 +75,7 @@ func GetHandlerKeygenStart(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewMsgKeygenStart(sender, req.NewKeyId, req.SubsetSize, keyShareDistributionPolicy)
+		msg := types.NewMsgKeygenStart(sender, req.NewKeyID, req.SubsetSize, keyShareDistributionPolicy)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

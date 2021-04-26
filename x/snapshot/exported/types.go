@@ -22,11 +22,13 @@ type SDKValidator interface {
 	UnpackInterfaces(c codectypes.AnyUnpacker) error
 }
 
+// Validator represents a validator that participates in tss and voting
 type Validator struct {
 	SDKValidator
 	ShareCount int64
 }
 
+// NewValidator is the constructor for Validator
 func NewValidator(validator SDKValidator, shareCount int64) Validator {
 	return Validator{SDKValidator: validator, ShareCount: shareCount}
 }

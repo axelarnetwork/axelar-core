@@ -37,6 +37,7 @@ func KeyRoleFromSimpleStr(str string) (KeyRole, error) {
 	}
 }
 
+// SimpleString returns a human-readable string
 func (x KeyRole) SimpleString() string {
 	switch x {
 	case MasterKey:
@@ -70,6 +71,7 @@ func KeyShareDistributionPolicyFromSimpleStr(str string) (KeyShareDistributionPo
 	}
 }
 
+// SimpleString returns a human-readable string
 func (r KeyShareDistributionPolicy) SimpleString() string {
 	switch r {
 	case WeightedByStake:
