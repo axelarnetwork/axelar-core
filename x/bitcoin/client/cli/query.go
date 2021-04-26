@@ -57,6 +57,32 @@ func GetCmdDepositAddress(queryRoute string) *cobra.Command {
 	return cmd
 }
 
+// GetCmdDepositAddress returns the master address command
+func GetCmdMasterAddress(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "master-addr",
+		Short: "Returns the bitcoin address of the current master key",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryMasterAddress)
+
+			res, _, err := clientCtx.QueryWithData(path, nil)
+			if err != nil {
+				return sdkerrors.Wrap(err, types.ErrFDepositAddress)
+			}
+
+			return clientCtx.PrintString(string(res))
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
 // GetCmdConsolidationTx returns a transaction containing all pending transfers to Bitcoin
 func GetCmdConsolidationTx(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
