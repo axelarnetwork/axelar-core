@@ -10,10 +10,11 @@ import (
 
 // RegisterLegacyAminoCodec registers concrete types on codec
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	cdc.RegisterInterface((*exported.Validator)(nil), nil)
+	cdc.RegisterInterface((*exported.SDKValidator)(nil), nil)
 	/* The snapshot keeper is dependent on the StakingKeeper interface, which returns validators through interfaces.
 	However, the snapshot keeper has to marshal the validators, so it must register the actual concrete type that is returned. */
-	cdc.RegisterConcrete(&stakingtypes.Validator{}, "snapshot/Validator", nil)
+	cdc.RegisterConcrete(&stakingtypes.Validator{}, "snapshot/SDKValidator", nil)
+	cdc.RegisterConcrete(&exported.Validator{}, "snapshot/Validator", nil)
 }
 
 var amino = codec.NewLegacyAmino()

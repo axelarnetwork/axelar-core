@@ -21,22 +21,25 @@ func (k Keeper) StartSign(ctx sdk.Context, voter types.InitPoller, keyID string,
 
 	// for now we recalculate the threshold
 	// might make sense to store it with the snapshot after keygen is done.
-	threshold := k.ComputeCorruptionThreshold(ctx, len(s.Validators))
+	threshold := k.ComputeCorruptionThreshold(ctx, s.TotalShareCount)
 
 	var activeValidators []snapshot.Validator
+	activeShareCount := sdk.ZeroInt()
+
 	for _, validator := range s.Validators {
 		if snapshot.IsValidatorActive(ctx, k.slasher, validator) {
 			activeValidators = append(activeValidators, validator)
+			activeShareCount = activeShareCount.AddRaw(validator.ShareCount)
 		}
 	}
 
-	if len(activeValidators) <= threshold {
-		return fmt.Errorf(fmt.Sprintf("not enough active validators are online: threshold [%d], online [%d]",
-			threshold, len(activeValidators)))
+	if activeShareCount.Int64() <= threshold {
+		return fmt.Errorf(fmt.Sprintf("not enough active validators are online: threshold [%d], online share count [%d]",
+			threshold, activeShareCount.Int64()))
 	}
 
-	k.Logger(ctx).Info(fmt.Sprintf("starting sign with threshold [%d] (need [%d]), online validators count [%d]",
-		threshold, threshold+1, len(activeValidators)))
+	k.Logger(ctx).Info(fmt.Sprintf("starting sign with threshold [%d] (need [%d]), online share count [%d]",
+		threshold, threshold+1, activeShareCount.Int64()))
 
 	// set sign participants
 	var participants []string

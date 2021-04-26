@@ -17,14 +17,14 @@ import (
 
 // ProcessKeygenStart starts the communication with the keygen protocol
 func (mgr *Mgr) ProcessKeygenStart(attributes []sdk.Attribute) error {
-	keyID, threshold, participants := parseKeygenStartParams(mgr.cdc, attributes)
+	keyID, threshold, participants, participantShareCounts := parseKeygenStartParams(mgr.cdc, attributes)
 	myIndex, ok := indexOf(participants, mgr.principalAddr)
 	if !ok {
 		// do not participate
 		return nil
 	}
 
-	stream, cancel, err := mgr.startKeygen(keyID, threshold, myIndex, participants)
+	stream, cancel, err := mgr.startKeygen(keyID, threshold, myIndex, participants, participantShareCounts)
 	if err != nil {
 		return err
 	}
@@ -46,28 +46,16 @@ func (mgr *Mgr) ProcessKeygenStart(attributes []sdk.Attribute) error {
 		}
 	}()
 	go func() {
-		err := mgr.handleKeygenResult(keyID, result)
-		if err != nil {
-			errChan <- err
-		} else {
-			// this is the last part of the sign, so if there are no errors here return nil
-			errChan <- nil
-		}
+		errChan <- mgr.handleKeygenResult(keyID, result)
 	}()
+
 	return <-errChan
 }
 
 // ProcessKeygenMsg forwards blockchain messages to the keygen protocol
 func (mgr *Mgr) ProcessKeygenMsg(attributes []sdk.Attribute) error {
 	keyID, from, payload := parseMsgParams(mgr.cdc, attributes)
-	msgIn, err := prepareTrafficIn(mgr.principalAddr, from, keyID, payload, mgr.Logger)
-	if err != nil {
-		return err
-	}
-	// this message is not meant for this tofnd instance
-	if msgIn == nil {
-		return nil
-	}
+	msgIn := prepareTrafficIn(mgr.principalAddr, from, keyID, payload, mgr.Logger)
 
 	stream, ok := mgr.getKeygenStream(keyID)
 	if !ok {
@@ -81,27 +69,29 @@ func (mgr *Mgr) ProcessKeygenMsg(attributes []sdk.Attribute) error {
 	return nil
 }
 
-func parseKeygenStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, threshold int32, participants []string) {
+func parseKeygenStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, threshold int32, participants []string, participantShareCounts []uint32) {
 	for _, attribute := range attributes {
 		switch attribute.Key {
 		case tss.AttributeKeyKeyID:
 			keyID = attribute.Value
 		case tss.AttributeKeyThreshold:
-			t, err := strconv.Atoi(attribute.Value)
+			t, err := strconv.ParseInt(attribute.Value, 10, 32)
 			if err != nil {
 				panic(err)
 			}
 			threshold = int32(t)
 		case tss.AttributeKeyParticipants:
 			cdc.MustUnmarshalJSON([]byte(attribute.Value), &participants)
+		case tss.AttributeKeyParticipantShareCounts:
+			cdc.MustUnmarshalJSON([]byte(attribute.Value), &participantShareCounts)
 		default:
 		}
 	}
 
-	return keyID, threshold, participants
+	return keyID, threshold, participants, participantShareCounts
 }
 
-func (mgr *Mgr) startKeygen(keyID string, threshold int32, myIndex int32, participants []string) (tss.Stream, context.CancelFunc, error) {
+func (mgr *Mgr) startKeygen(keyID string, threshold int32, myIndex int32, participants []string, participantShareCounts []uint32) (tss.Stream, context.CancelFunc, error) {
 	if _, ok := mgr.getKeygenStream(keyID); ok {
 		return nil, nil, fmt.Errorf("keygen protocol for ID %s already in progress", keyID)
 	}
@@ -115,10 +105,11 @@ func (mgr *Mgr) startKeygen(keyID string, threshold int32, myIndex int32, partic
 
 	keygenInit := &tofnd.MessageIn_KeygenInit{
 		KeygenInit: &tofnd.KeygenInit{
-			NewKeyUid:    keyID,
-			Threshold:    threshold,
-			PartyUids:    participants,
-			MyPartyIndex: myIndex,
+			NewKeyUid:        keyID,
+			Threshold:        threshold,
+			PartyUids:        participants,
+			PartyShareCounts: participantShareCounts,
+			MyPartyIndex:     myIndex,
 		},
 	}
 

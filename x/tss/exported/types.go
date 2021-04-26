@@ -25,8 +25,8 @@ func GetKeyRoles() []KeyRole {
 	return []KeyRole{MasterKey, SecondaryKey}
 }
 
-// KeyRoleFromStr creates a KeyRole from string
-func KeyRoleFromStr(str string) (KeyRole, error) {
+// KeyRoleFromSimpleStr creates a KeyRole from string
+func KeyRoleFromSimpleStr(str string) (KeyRole, error) {
 	switch strings.ToLower(str) {
 	case MasterKey.SimpleString():
 		return MasterKey, nil
@@ -34,6 +34,18 @@ func KeyRoleFromStr(str string) (KeyRole, error) {
 		return SecondaryKey, nil
 	default:
 		return -1, fmt.Errorf("invalid key role %s", str)
+	}
+}
+
+// SimpleString returns a human-readable string
+func (x KeyRole) SimpleString() string {
+	switch x {
+	case MasterKey:
+		return "master"
+	case SecondaryKey:
+		return "secondary"
+	default:
+		return "unknown"
 	}
 }
 
@@ -47,15 +59,37 @@ func (x KeyRole) Validate() error {
 	}
 }
 
-// SimpleString converts the KeyRole to a string
-func (x KeyRole) SimpleString() string {
-	switch x {
-	case MasterKey:
-		return "master"
-	case SecondaryKey:
-		return "secondary"
+// KeyShareDistributionPolicyFromSimpleStr creates a KeyShareDistributionPolicy from string
+func KeyShareDistributionPolicyFromSimpleStr(str string) (KeyShareDistributionPolicy, error) {
+	switch strings.ToLower(str) {
+	case WeightedByStake.SimpleString():
+		return WeightedByStake, nil
+	case OnePerValidator.SimpleString():
+		return OnePerValidator, nil
+	default:
+		return -1, fmt.Errorf("invalid key share distribution policy %s", str)
+	}
+}
+
+// SimpleString returns a human-readable string
+func (r KeyShareDistributionPolicy) SimpleString() string {
+	switch r {
+	case WeightedByStake:
+		return "weighted-by-stake"
+	case OnePerValidator:
+		return "one-per-validator"
 	default:
 		return "unknown"
+	}
+}
+
+// Validate validates the KeyShareDistributionPolicy
+func (r KeyShareDistributionPolicy) Validate() error {
+	switch r {
+	case WeightedByStake, OnePerValidator:
+		return nil
+	default:
+		return fmt.Errorf("invalid key share distribution policy %d", r)
 	}
 }
 
@@ -71,6 +105,10 @@ func (m KeyRequirement) Validate() error {
 
 	if m.MinValidatorSubsetSize <= 0 {
 		return fmt.Errorf("MinValidatorSubsetSize has to be greater than 0 when the key is required")
+	}
+
+	if err := m.KeyShareDistributionPolicy.Validate(); err != nil {
+		return err
 	}
 
 	return nil

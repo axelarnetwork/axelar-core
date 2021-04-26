@@ -1,16 +1,18 @@
 package types
 
 import (
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewMsgKeygenStart constructor for MsgKeygenStart
-func NewMsgKeygenStart(sender sdk.AccAddress, newKeyID string, subsetSize int64) *MsgKeygenStart {
+func NewMsgKeygenStart(sender sdk.AccAddress, newKeyID string, subsetSize int64, keyShareDistributionPolicy exported.KeyShareDistributionPolicy) *MsgKeygenStart {
 	return &MsgKeygenStart{
-		Sender:     sender,
-		NewKeyID:   newKeyID,
-		SubsetSize: subsetSize,
+		Sender:                     sender,
+		NewKeyID:                   newKeyID,
+		SubsetSize:                 subsetSize,
+		KeyShareDistributionPolicy: keyShareDistributionPolicy,
 	}
 }
 
@@ -33,6 +35,10 @@ func (m MsgKeygenStart) ValidateBasic() error {
 
 	if m.SubsetSize < 0 {
 		return sdkerrors.Wrap(ErrTss, "subset size has to be greater than or equal to 0")
+	}
+
+	if err := m.KeyShareDistributionPolicy.Validate(); err != nil {
+		return err
 	}
 
 	// TODO enforce a maximum length for m.NewKeyID?

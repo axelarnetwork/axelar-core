@@ -6,8 +6,9 @@ import (
 
 	tofnd2 "github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 
-	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -22,12 +23,12 @@ type Broadcaster interface {
 type Snapshotter interface {
 	GetLatestSnapshot(ctx sdk.Context) (snapshot.Snapshot, bool)
 	GetSnapshot(ctx sdk.Context, counter int64) (snapshot.Snapshot, bool)
-	TakeSnapshot(ctx sdk.Context, subsetSize int64) error
+	TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy exported.KeyShareDistributionPolicy) (snapshotConsensusPower sdk.Int, totalConsensusPower sdk.Int, err error)
 }
 
 // Nexus provides access to the nexus functionality
 type Nexus interface {
-	GetChain(ctx sdk.Context, chain string) (exported.Chain, bool)
+	GetChain(ctx sdk.Context, chain string) (nexus.Chain, bool)
 }
 
 // Voter provides voting functionality

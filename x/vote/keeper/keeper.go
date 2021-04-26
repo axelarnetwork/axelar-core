@@ -147,7 +147,7 @@ func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta expor
 	i := k.getTalliedVoteIdx(ctx, pollMeta, data)
 	if i == indexNotFound {
 		talliedVote = types.TalliedVote{
-			Tally: sdk.NewInt(validator.GetConsensusPower()),
+			Tally: sdk.NewInt(validator.ShareCount),
 			Data:  data,
 		}
 
@@ -156,14 +156,14 @@ func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta expor
 	} else {
 		// this assignment copies the value, so we need to write it back into the array
 		talliedVote = poll.Votes[i]
-		talliedVote.Tally = talliedVote.Tally.AddRaw(validator.GetConsensusPower())
+		talliedVote.Tally = talliedVote.Tally.AddRaw(validator.ShareCount)
 		poll.Votes[i] = talliedVote
 	}
 
 	threshold := k.GetVotingThreshold(ctx)
-	if threshold.IsMet(talliedVote.Tally, snap.TotalPower) {
+	if threshold.IsMet(talliedVote.Tally, snap.TotalShareCount) {
 		k.Logger(ctx).Debug(fmt.Sprintf("threshold of %d/%d has been met for %s: %s/%s",
-			threshold.Numerator, threshold.Denominator, pollMeta, talliedVote.Tally.String(), snap.TotalPower.String()))
+			threshold.Numerator, threshold.Denominator, pollMeta, talliedVote.Tally.String(), snap.TotalShareCount.String()))
 		poll.Result = talliedVote.Data
 	}
 

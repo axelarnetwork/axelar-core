@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"fmt"
-	"math"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -70,7 +69,7 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 }
 
 func (k Keeper) setKeyRequirement(ctx sdk.Context, keyRequirement exported.KeyRequirement) {
-	key := fmt.Sprintf("%s%s_%s", keyRequirementPrefix, keyRequirement.ChainName, keyRequirement.KeyRole.String())
+	key := fmt.Sprintf("%s%s_%s", keyRequirementPrefix, keyRequirement.ChainName, keyRequirement.KeyRole.SimpleString())
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(keyRequirement)
 
 	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
@@ -78,7 +77,7 @@ func (k Keeper) setKeyRequirement(ctx sdk.Context, keyRequirement exported.KeyRe
 
 // GetKeyRequirement gets the key requirement for a given chain of a given role
 func (k Keeper) GetKeyRequirement(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyRequirement, bool) {
-	key := fmt.Sprintf("%s%s_%s", keyRequirementPrefix, chain.Name, keyRole.String())
+	key := fmt.Sprintf("%s%s_%s", keyRequirementPrefix, chain.Name, keyRole.SimpleString())
 	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
 
 	if bz == nil {
@@ -115,10 +114,10 @@ func (k Keeper) GetValidatorDeregisteredBlockHeight(ctx sdk.Context, valAddr sdk
 }
 
 // ComputeCorruptionThreshold returns corruption threshold to be used by tss
-func (k Keeper) ComputeCorruptionThreshold(ctx sdk.Context, totalvalidators int) int {
+func (k Keeper) ComputeCorruptionThreshold(ctx sdk.Context, totalShareCount sdk.Int) int64 {
 	var threshold utils.Threshold
 	k.params.Get(ctx, types.KeyCorruptionThreshold, &threshold)
-	// threshold = totalValidators * corruption threshold - 1
-	return int(math.Ceil(float64(totalvalidators)*float64(threshold.Numerator)/
-		float64(threshold.Denominator))) - 1
+
+	// (threshold + 1) shares are required to signed
+	return totalShareCount.MulRaw(threshold.Numerator).QuoRaw(threshold.Denominator).Int64() - 1
 }

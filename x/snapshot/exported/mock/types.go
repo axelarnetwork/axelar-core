@@ -4,22 +4,24 @@
 package mock
 
 import (
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"sync"
 )
 
-// Ensure, that ValidatorMock does implement exported.Validator.
+// Ensure, that SDKValidatorMock does implement exported.SDKValidator.
 // If this is not the case, regenerate this file with moq.
-var _ exported.Validator = &ValidatorMock{}
+var _ exported.SDKValidator = &SDKValidatorMock{}
 
-// ValidatorMock is a mock implementation of exported.Validator.
+// SDKValidatorMock is a mock implementation of exported.SDKValidator.
 //
-// 	func TestSomethingThatUsesValidator(t *testing.T) {
+// 	func TestSomethingThatUsesSDKValidator(t *testing.T) {
 //
-// 		// make and configure a mocked exported.Validator
-// 		mockedValidator := &ValidatorMock{
+// 		// make and configure a mocked exported.SDKValidator
+// 		mockedSDKValidator := &SDKValidatorMock{
 // 			GetConsAddrFunc: func() (sdk.ConsAddress, error) {
 // 				panic("mock out the GetConsAddr method")
 // 			},
@@ -37,11 +39,11 @@ var _ exported.Validator = &ValidatorMock{}
 // 			},
 // 		}
 //
-// 		// use mockedValidator in code that requires exported.Validator
+// 		// use mockedSDKValidator in code that requires exported.SDKValidator
 // 		// and then make assertions.
 //
 // 	}
-type ValidatorMock struct {
+type SDKValidatorMock struct {
 	// GetConsAddrFunc mocks the GetConsAddr method.
 	GetConsAddrFunc func() (sdk.ConsAddress, error)
 
@@ -85,9 +87,9 @@ type ValidatorMock struct {
 }
 
 // GetConsAddr calls GetConsAddrFunc.
-func (mock *ValidatorMock) GetConsAddr() (sdk.ConsAddress, error) {
+func (mock *SDKValidatorMock) GetConsAddr() (sdk.ConsAddress, error) {
 	if mock.GetConsAddrFunc == nil {
-		panic("ValidatorMock.GetConsAddrFunc: method is nil but Validator.GetConsAddr was just called")
+		panic("SDKValidatorMock.GetConsAddrFunc: method is nil but SDKValidator.GetConsAddr was just called")
 	}
 	callInfo := struct {
 	}{}
@@ -99,8 +101,8 @@ func (mock *ValidatorMock) GetConsAddr() (sdk.ConsAddress, error) {
 
 // GetConsAddrCalls gets all the calls that were made to GetConsAddr.
 // Check the length with:
-//     len(mockedValidator.GetConsAddrCalls())
-func (mock *ValidatorMock) GetConsAddrCalls() []struct {
+//     len(mockedSDKValidator.GetConsAddrCalls())
+func (mock *SDKValidatorMock) GetConsAddrCalls() []struct {
 } {
 	var calls []struct {
 	}
@@ -111,9 +113,9 @@ func (mock *ValidatorMock) GetConsAddrCalls() []struct {
 }
 
 // GetConsensusPower calls GetConsensusPowerFunc.
-func (mock *ValidatorMock) GetConsensusPower() int64 {
+func (mock *SDKValidatorMock) GetConsensusPower() int64 {
 	if mock.GetConsensusPowerFunc == nil {
-		panic("ValidatorMock.GetConsensusPowerFunc: method is nil but Validator.GetConsensusPower was just called")
+		panic("SDKValidatorMock.GetConsensusPowerFunc: method is nil but SDKValidator.GetConsensusPower was just called")
 	}
 	callInfo := struct {
 	}{}
@@ -125,8 +127,8 @@ func (mock *ValidatorMock) GetConsensusPower() int64 {
 
 // GetConsensusPowerCalls gets all the calls that were made to GetConsensusPower.
 // Check the length with:
-//     len(mockedValidator.GetConsensusPowerCalls())
-func (mock *ValidatorMock) GetConsensusPowerCalls() []struct {
+//     len(mockedSDKValidator.GetConsensusPowerCalls())
+func (mock *SDKValidatorMock) GetConsensusPowerCalls() []struct {
 } {
 	var calls []struct {
 	}
@@ -137,9 +139,9 @@ func (mock *ValidatorMock) GetConsensusPowerCalls() []struct {
 }
 
 // GetOperator calls GetOperatorFunc.
-func (mock *ValidatorMock) GetOperator() sdk.ValAddress {
+func (mock *SDKValidatorMock) GetOperator() sdk.ValAddress {
 	if mock.GetOperatorFunc == nil {
-		panic("ValidatorMock.GetOperatorFunc: method is nil but Validator.GetOperator was just called")
+		panic("SDKValidatorMock.GetOperatorFunc: method is nil but SDKValidator.GetOperator was just called")
 	}
 	callInfo := struct {
 	}{}
@@ -151,8 +153,8 @@ func (mock *ValidatorMock) GetOperator() sdk.ValAddress {
 
 // GetOperatorCalls gets all the calls that were made to GetOperator.
 // Check the length with:
-//     len(mockedValidator.GetOperatorCalls())
-func (mock *ValidatorMock) GetOperatorCalls() []struct {
+//     len(mockedSDKValidator.GetOperatorCalls())
+func (mock *SDKValidatorMock) GetOperatorCalls() []struct {
 } {
 	var calls []struct {
 	}
@@ -163,9 +165,9 @@ func (mock *ValidatorMock) GetOperatorCalls() []struct {
 }
 
 // IsJailed calls IsJailedFunc.
-func (mock *ValidatorMock) IsJailed() bool {
+func (mock *SDKValidatorMock) IsJailed() bool {
 	if mock.IsJailedFunc == nil {
-		panic("ValidatorMock.IsJailedFunc: method is nil but Validator.IsJailed was just called")
+		panic("SDKValidatorMock.IsJailedFunc: method is nil but SDKValidator.IsJailed was just called")
 	}
 	callInfo := struct {
 	}{}
@@ -177,8 +179,8 @@ func (mock *ValidatorMock) IsJailed() bool {
 
 // IsJailedCalls gets all the calls that were made to IsJailed.
 // Check the length with:
-//     len(mockedValidator.IsJailedCalls())
-func (mock *ValidatorMock) IsJailedCalls() []struct {
+//     len(mockedSDKValidator.IsJailedCalls())
+func (mock *SDKValidatorMock) IsJailedCalls() []struct {
 } {
 	var calls []struct {
 	}
@@ -189,9 +191,9 @@ func (mock *ValidatorMock) IsJailedCalls() []struct {
 }
 
 // UnpackInterfaces calls UnpackInterfacesFunc.
-func (mock *ValidatorMock) UnpackInterfaces(c codectypes.AnyUnpacker) error {
+func (mock *SDKValidatorMock) UnpackInterfaces(c codectypes.AnyUnpacker) error {
 	if mock.UnpackInterfacesFunc == nil {
-		panic("ValidatorMock.UnpackInterfacesFunc: method is nil but Validator.UnpackInterfaces was just called")
+		panic("SDKValidatorMock.UnpackInterfacesFunc: method is nil but SDKValidator.UnpackInterfaces was just called")
 	}
 	callInfo := struct {
 		C codectypes.AnyUnpacker
@@ -206,8 +208,8 @@ func (mock *ValidatorMock) UnpackInterfaces(c codectypes.AnyUnpacker) error {
 
 // UnpackInterfacesCalls gets all the calls that were made to UnpackInterfaces.
 // Check the length with:
-//     len(mockedValidator.UnpackInterfacesCalls())
-func (mock *ValidatorMock) UnpackInterfacesCalls() []struct {
+//     len(mockedSDKValidator.UnpackInterfacesCalls())
+func (mock *SDKValidatorMock) UnpackInterfacesCalls() []struct {
 	C codectypes.AnyUnpacker
 } {
 	var calls []struct {
@@ -238,7 +240,7 @@ var _ exported.Snapshotter = &SnapshotterMock{}
 // 			GetSnapshotFunc: func(ctx sdk.Context, counter int64) (exported.Snapshot, bool) {
 // 				panic("mock out the GetSnapshot method")
 // 			},
-// 			TakeSnapshotFunc: func(ctx sdk.Context, subsetSize int64) error {
+// 			TakeSnapshotFunc: func(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error) {
 // 				panic("mock out the TakeSnapshot method")
 // 			},
 // 		}
@@ -258,7 +260,7 @@ type SnapshotterMock struct {
 	GetSnapshotFunc func(ctx sdk.Context, counter int64) (exported.Snapshot, bool)
 
 	// TakeSnapshotFunc mocks the TakeSnapshot method.
-	TakeSnapshotFunc func(ctx sdk.Context, subsetSize int64) error
+	TakeSnapshotFunc func(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -285,6 +287,8 @@ type SnapshotterMock struct {
 			Ctx sdk.Context
 			// SubsetSize is the subsetSize argument value.
 			SubsetSize int64
+			// KeyShareDistributionPolicy is the keyShareDistributionPolicy argument value.
+			KeyShareDistributionPolicy tss.KeyShareDistributionPolicy
 		}
 	}
 	lockGetLatestCounter  sync.RWMutex
@@ -391,33 +395,37 @@ func (mock *SnapshotterMock) GetSnapshotCalls() []struct {
 }
 
 // TakeSnapshot calls TakeSnapshotFunc.
-func (mock *SnapshotterMock) TakeSnapshot(ctx sdk.Context, subsetSize int64) error {
+func (mock *SnapshotterMock) TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error) {
 	if mock.TakeSnapshotFunc == nil {
 		panic("SnapshotterMock.TakeSnapshotFunc: method is nil but Snapshotter.TakeSnapshot was just called")
 	}
 	callInfo := struct {
-		Ctx        sdk.Context
-		SubsetSize int64
+		Ctx                        sdk.Context
+		SubsetSize                 int64
+		KeyShareDistributionPolicy tss.KeyShareDistributionPolicy
 	}{
-		Ctx:        ctx,
-		SubsetSize: subsetSize,
+		Ctx:                        ctx,
+		SubsetSize:                 subsetSize,
+		KeyShareDistributionPolicy: keyShareDistributionPolicy,
 	}
 	mock.lockTakeSnapshot.Lock()
 	mock.calls.TakeSnapshot = append(mock.calls.TakeSnapshot, callInfo)
 	mock.lockTakeSnapshot.Unlock()
-	return mock.TakeSnapshotFunc(ctx, subsetSize)
+	return mock.TakeSnapshotFunc(ctx, subsetSize, keyShareDistributionPolicy)
 }
 
 // TakeSnapshotCalls gets all the calls that were made to TakeSnapshot.
 // Check the length with:
 //     len(mockedSnapshotter.TakeSnapshotCalls())
 func (mock *SnapshotterMock) TakeSnapshotCalls() []struct {
-	Ctx        sdk.Context
-	SubsetSize int64
+	Ctx                        sdk.Context
+	SubsetSize                 int64
+	KeyShareDistributionPolicy tss.KeyShareDistributionPolicy
 } {
 	var calls []struct {
-		Ctx        sdk.Context
-		SubsetSize int64
+		Ctx                        sdk.Context
+		SubsetSize                 int64
+		KeyShareDistributionPolicy tss.KeyShareDistributionPolicy
 	}
 	mock.lockTakeSnapshot.RLock()
 	calls = mock.calls.TakeSnapshot
@@ -577,6 +585,9 @@ var _ exported.Tss = &TssMock{}
 //
 // 		// make and configure a mocked exported.Tss
 // 		mockedTss := &TssMock{
+// 			GetMinBondFractionPerShareFunc: func(ctx sdk.Context) utils.Threshold {
+// 				panic("mock out the GetMinBondFractionPerShare method")
+// 			},
 // 			GetValidatorDeregisteredBlockHeightFunc: func(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
 // 				panic("mock out the GetValidatorDeregisteredBlockHeight method")
 // 			},
@@ -587,11 +598,19 @@ var _ exported.Tss = &TssMock{}
 //
 // 	}
 type TssMock struct {
+	// GetMinBondFractionPerShareFunc mocks the GetMinBondFractionPerShare method.
+	GetMinBondFractionPerShareFunc func(ctx sdk.Context) utils.Threshold
+
 	// GetValidatorDeregisteredBlockHeightFunc mocks the GetValidatorDeregisteredBlockHeight method.
 	GetValidatorDeregisteredBlockHeightFunc func(ctx sdk.Context, valAddr sdk.ValAddress) int64
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// GetMinBondFractionPerShare holds details about calls to the GetMinBondFractionPerShare method.
+		GetMinBondFractionPerShare []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
 		// GetValidatorDeregisteredBlockHeight holds details about calls to the GetValidatorDeregisteredBlockHeight method.
 		GetValidatorDeregisteredBlockHeight []struct {
 			// Ctx is the ctx argument value.
@@ -600,7 +619,39 @@ type TssMock struct {
 			ValAddr sdk.ValAddress
 		}
 	}
+	lockGetMinBondFractionPerShare          sync.RWMutex
 	lockGetValidatorDeregisteredBlockHeight sync.RWMutex
+}
+
+// GetMinBondFractionPerShare calls GetMinBondFractionPerShareFunc.
+func (mock *TssMock) GetMinBondFractionPerShare(ctx sdk.Context) utils.Threshold {
+	if mock.GetMinBondFractionPerShareFunc == nil {
+		panic("TssMock.GetMinBondFractionPerShareFunc: method is nil but Tss.GetMinBondFractionPerShare was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetMinBondFractionPerShare.Lock()
+	mock.calls.GetMinBondFractionPerShare = append(mock.calls.GetMinBondFractionPerShare, callInfo)
+	mock.lockGetMinBondFractionPerShare.Unlock()
+	return mock.GetMinBondFractionPerShareFunc(ctx)
+}
+
+// GetMinBondFractionPerShareCalls gets all the calls that were made to GetMinBondFractionPerShare.
+// Check the length with:
+//     len(mockedTss.GetMinBondFractionPerShareCalls())
+func (mock *TssMock) GetMinBondFractionPerShareCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockGetMinBondFractionPerShare.RLock()
+	calls = mock.calls.GetMinBondFractionPerShare
+	mock.lockGetMinBondFractionPerShare.RUnlock()
+	return calls
 }
 
 // GetValidatorDeregisteredBlockHeight calls GetValidatorDeregisteredBlockHeightFunc.

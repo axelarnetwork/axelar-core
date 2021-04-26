@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:experimental
 
-FROM golang:1.15-alpine3.12 as build
+FROM golang:1.16-alpine3.12 as build
 
 RUN apk add --no-cache --update \
   openssh-client \
