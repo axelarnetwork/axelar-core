@@ -48,6 +48,7 @@ func (s FilteredSubscriber) Events() <-chan types.Event {
 // Do not consume the same subscriber multiple times.
 func Consume(subscriber FilteredSubscriber, process func(attributes []sdk.Attribute) error) jobs2.Job {
 	return func(errChan chan<- error) {
+	loop:
 		for {
 			select {
 			case e := <-subscriber.Events():
@@ -57,7 +58,7 @@ func Consume(subscriber FilteredSubscriber, process func(attributes []sdk.Attrib
 					}
 				}()
 			case <-subscriber.Done():
-				break
+				break loop
 			}
 		}
 	}
