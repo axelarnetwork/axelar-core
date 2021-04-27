@@ -113,7 +113,6 @@ github.com/aws/aws-sdk-go-v2/service/sts v1.1.1/go.mod h1:Wi0EBZwiz/K44YliU0EKxq
 github.com/aws/smithy-go v1.1.0/go.mod h1:EzMw8dbp/YJL4A5/sbhGddag+NPT7q084agLbB9LgIw=
 github.com/axelarnetwork/axelar-core v0.0.2-0.20210302093357-f2f67692d1ba/go.mod h1:JDzy4mE0MHSdMcSRRcttESUyQ8a1YWFWDWaLJ5/gJbA=
 github.com/axelarnetwork/axelar-core v0.1.1-0.20210315234849-8ca55dab3a8d/go.mod h1:vaXQReZJ1ZunnmWD2r2XMncW4JK0pMnFZs82za0qonI=
-github.com/axelarnetwork/axelar-core v0.2.0/go.mod h1:vaXQReZJ1ZunnmWD2r2XMncW4JK0pMnFZs82za0qonI=
 github.com/axelarnetwork/axelar-core v0.2.1-0.20210423084955-0dbf0191030d/go.mod h1:DuqNX0D+wRmE03UtetIBygdgsMGnPDZeBW6HC2gp7KU=
 github.com/axelarnetwork/axelar-core v0.2.1-0.20210427044520-c522d95bf75b/go.mod h1:BTjaInENCWkSK+RW2tXbsKJyutjfyV0v2OQ+8phK9MI=
 github.com/axelarnetwork/axelar-core v0.2.1-0.20210427051927-23fcc85787ee/go.mod h1:5n6U8Z/ePDnPwVjsZ6f1DB6I5qrZlJUtWVTKZBOudBs=
@@ -121,13 +120,10 @@ github.com/axelarnetwork/axelar-core v0.2.1-0.20210427140533-c43d6c05746c/go.mod
 github.com/axelarnetwork/c2d2 v0.0.0-20210302225045-2f24e9ea1116/go.mod h1:wPKBFS06EN2PTjk3QUJK9sakL2NAUhGhhTfWAaq+kL0=
 github.com/axelarnetwork/c2d2 v0.0.0-20210419231552-639bb3c730ac/go.mod h1:Q0tUrTIdp83U5AbffM8UbEOO6eSPd6NVjeVPHc7KTUc=
 github.com/axelarnetwork/c2d2 v0.0.0-20210426041003-5de189915aa9/go.mod h1:dOU5BVned4npw2FjVWEwsQK3Uhsew5hhVCWzsHbjeP0=
-github.com/axelarnetwork/c2d2 v0.0.0-20210427021505-4f6388e8b119 h1:z8heTawq+J3xdzcXZ1wzRa6dr+aocHxyCsfrGZ9dfXc=
-github.com/axelarnetwork/c2d2 v0.0.0-20210427021505-4f6388e8b119/go.mod h1:4Hlo2GzNyAFc5oYD503pL7W+3eCSnW/rd2n0CCamztk=
 github.com/axelarnetwork/c2d2 v0.0.0-20210427051439-dbe7e36fa05c/go.mod h1:7HjA1/2PgTMyguCAxjPId+286Y54bR1JUPBDTF8P23M=
 github.com/axelarnetwork/c2d2 v0.0.0-20210427131830-66bafd35dcf3/go.mod h1:sbjlH7/j1vywHHWtx7SUtfJWpRkOZT95IoAr/YoezI0=
-github.com/axelarnetwork/c2d2 v0.0.0-20210427141847-ab8e0a11effe/go.mod h1:8hgm4WLYdwqLGBH6d9TK7k0Gm5C1KbJRXmBu5viohTI=
-github.com/axelarnetwork/tm-events v0.0.0-20210427150706-2ff65c65024b h1:q+puH1gnX2BeRl4+N3tT00xS9m887J+22eYvYQ4V8EU=
-github.com/axelarnetwork/tm-events v0.0.0-20210427150706-2ff65c65024b/go.mod h1:BsmYiXLHcu8aHcEZ3rt49QvMUACqZ2XPtrwfwbiOiW8=
+github.com/axelarnetwork/tm-events v0.0.0-20210427152311-c5af1437e59e h1:5a/SXHMeTgHC7XTIHlZeldU76F3HJW3OOWmdgG6ghAk=
+github.com/axelarnetwork/tm-events v0.0.0-20210427152311-c5af1437e59e/go.mod h1:fLdxSm3GmhpURcTzbfsdNR9xMDrzxjFZhiWMTzxtJ1s=
 github.com/bartekn/go-bip39 v0.0.0-20171116152956-a05967ea095d/go.mod h1:icNx/6QdFblhsEjZehARqbNumymUT/ydwlLojFdv7Sk=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=

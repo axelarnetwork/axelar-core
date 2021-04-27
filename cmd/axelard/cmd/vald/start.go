@@ -2,12 +2,11 @@ package vald
 
 import (
 	"fmt"
-	events2 "github.com/axelarnetwork/tm-events/pkg/tendermint/events"
 	"path"
 	"time"
 
-	"github.com/axelarnetwork/c2d2/pkg/tendermint/client"
-	tmEvents "github.com/axelarnetwork/c2d2/pkg/tendermint/events"
+	"github.com/axelarnetwork/tm-events/pkg/tendermint/client"
+	tmEvents "github.com/axelarnetwork/tm-events/pkg/tendermint/events"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -134,24 +133,24 @@ func listen(ctx sdkClient.Context, hub *tmEvents.Hub, txf tx.Factory, axelarCfg 
 	btcMgr := createBTCMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
 	ethMgr := createETHMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
 
-	keygenStart := events2.MustSubscribe(hub, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
-	keygenMsg := events2.MustSubscribe(hub, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
-	signStart := events2.MustSubscribe(hub, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueStart)
-	signMsg := events2.MustSubscribe(hub, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
+	keygenStart := tmEvents.MustSubscribe(hub, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
+	keygenMsg := tmEvents.MustSubscribe(hub, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
+	signStart := tmEvents.MustSubscribe(hub, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueStart)
+	signMsg := tmEvents.MustSubscribe(hub, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
 
-	btcConf := events2.MustSubscribe(hub, btcTypes.EventTypeOutpointConfirmation, btcTypes.ModuleName, btcTypes.AttributeValueStart)
+	btcConf := tmEvents.MustSubscribe(hub, btcTypes.EventTypeOutpointConfirmation, btcTypes.ModuleName, btcTypes.AttributeValueStart)
 
-	ethDepConf := events2.MustSubscribe(hub, ethTypes.EventTypeDepositConfirmation, ethTypes.ModuleName, ethTypes.AttributeValueStart)
-	ethTokConf := events2.MustSubscribe(hub, ethTypes.EventTypeTokenConfirmation, ethTypes.ModuleName, ethTypes.AttributeValueStart)
+	ethDepConf := tmEvents.MustSubscribe(hub, ethTypes.EventTypeDepositConfirmation, ethTypes.ModuleName, ethTypes.AttributeValueStart)
+	ethTokConf := tmEvents.MustSubscribe(hub, ethTypes.EventTypeTokenConfirmation, ethTypes.ModuleName, ethTypes.AttributeValueStart)
 
 	js := []jobs.Job{
-		events2.Consume(keygenStart, tssMgr.ProcessKeygenStart),
-		events2.Consume(keygenMsg, tssMgr.ProcessKeygenMsg),
-		events2.Consume(signStart, tssMgr.ProcessSignStart),
-		events2.Consume(signMsg, tssMgr.ProcessSignMsg),
-		events2.Consume(btcConf, btcMgr.ProcessConfirmation),
-		events2.Consume(ethDepConf, ethMgr.ProcessDepositConfirmation),
-		events2.Consume(ethTokConf, ethMgr.ProcessTokenConfirmation),
+		tmEvents.Consume(keygenStart, tssMgr.ProcessKeygenStart),
+		tmEvents.Consume(keygenMsg, tssMgr.ProcessKeygenMsg),
+		tmEvents.Consume(signStart, tssMgr.ProcessSignStart),
+		tmEvents.Consume(signMsg, tssMgr.ProcessSignMsg),
+		tmEvents.Consume(btcConf, btcMgr.ProcessConfirmation),
+		tmEvents.Consume(ethDepConf, ethMgr.ProcessDepositConfirmation),
+		tmEvents.Consume(ethTokConf, ethMgr.ProcessTokenConfirmation),
 	}
 
 	// errGroup runs async processes and cancels their context if ANY of them returns an error.
