@@ -230,6 +230,9 @@ func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer ty
 	}
 
 	outputs, totalWithdrawals := prepareOutputs(ctx, k, n)
+	if len(outputs) == 0 {
+		k.Logger(ctx).Info("creating consolidation transaction without any withdrawals")
+	}
 	inputs, totalDeposits, err := prepareInputs(ctx, k, signer)
 	if err != nil {
 		return nil, err
