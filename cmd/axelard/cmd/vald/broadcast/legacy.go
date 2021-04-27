@@ -14,10 +14,10 @@ import (
 	tmLog "github.com/tendermint/tendermint/libs/log"
 )
 
-// Broadcaster submits transactions to a tendermint node
+// LegacyBroadcasterImpl submits transactions to a tendermint node
 type LegacyBroadcasterImpl struct {
 	Broadcaster
-	client  legacy.LegacyClient
+	client  legacy.Client
 	signer  legacy.SignFn
 	seqNo   uint64
 	accNo   uint64
@@ -26,7 +26,7 @@ type LegacyBroadcasterImpl struct {
 
 // NewLegacyBroadcaster returns a broadcaster to submit transactions to the blockchain with the legacy transaction data structures use by the REST endpoint.
 // Only one instance of a broadcaster should be run for a given account, otherwise risk conflicting sequence numbers for submitted transactions.
-func NewLegacyBroadcaster(signer legacy.SignFn, sdkCtx sdkClient.Context, client legacy.LegacyClient, conf broadcastTypes.ClientConfig, pipeline types.Pipeline, logger tmLog.Logger) (*LegacyBroadcasterImpl, error) {
+func NewLegacyBroadcaster(signer legacy.SignFn, sdkCtx sdkClient.Context, client legacy.Client, conf broadcastTypes.ClientConfig, pipeline types.Pipeline, logger tmLog.Logger) (*LegacyBroadcasterImpl, error) {
 	if conf.ChainID == "" {
 		return nil, sdkerrors.Wrap(broadcastTypes.ErrInvalidChain, "chain ID required but not specified")
 	}
@@ -47,15 +47,17 @@ func NewLegacyBroadcaster(signer legacy.SignFn, sdkCtx sdkClient.Context, client
 	return broadcaster, nil
 }
 
+// GetSeqNo returns the broadcaster's current sequence number
 func (b *LegacyBroadcasterImpl) GetSeqNo() uint64 {
 	return b.seqNo
 }
 
+// GetAccNo returns the broadcaster's internal account number
 func (b *LegacyBroadcasterImpl) GetAccNo() uint64 {
 	return b.accNo
 }
 
-// Broadcast sends the passed messages to the network. This function in thread-safe.
+// BroadcastLegacyStdTx sends at transaction built using the REST endpoint. This function in thread-safe.
 func (b *LegacyBroadcasterImpl) BroadcastLegacyStdTx(tx legacytx.StdTx) (*sdk.TxResponse, error) {
 	resChan := make(chan *sdk.TxResponse, 1)
 	// serialize concurrent calls to broadcast
@@ -125,7 +127,7 @@ func (b *LegacyBroadcasterImpl) signAndBroadcast(msg legacytx.StdSignMsg) (*sdk.
 	}
 
 	// broadcast has been successful, so increment sequence number
-	b.seqNo += 1
+	b.seqNo++
 	return res, nil
 }
 

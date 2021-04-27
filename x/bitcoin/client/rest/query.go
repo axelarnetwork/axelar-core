@@ -47,7 +47,7 @@ func QueryDepositAddress(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// HandlerQueryMasterAddress returns a handler to query the segwit address of the master key
+// QueryMasterAddress returns a handler to query the segwit address of the master key
 func QueryMasterAddress(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

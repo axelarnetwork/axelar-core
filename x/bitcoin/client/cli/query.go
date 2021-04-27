@@ -57,7 +57,7 @@ func GetCmdDepositAddress(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdDepositAddress returns the master address command
+// GetCmdMasterAddress returns the master address command
 func GetCmdMasterAddress(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "master-addr",
