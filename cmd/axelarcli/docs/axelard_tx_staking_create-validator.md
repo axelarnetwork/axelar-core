@@ -11,7 +11,7 @@ axelard tx staking create-validator [flags]
 ```
   -a, --account-number uint                 The account number of the signing account (offline mode only)
       --amount string                       Amount of coins to bond
-  -b, --broadcast-mode string               Transaction broadcasting mode (sync|async|block) (default "sync")
+  -b, --broadcast-mode string               Transaction broadcasting mode (sync|async|block) (default "block")
       --commission-max-change-rate string   The maximum commission change rate percentage (per day)
       --commission-max-rate string          The maximum commission rate percentage
       --commission-rate string              The initial commission rate percentage

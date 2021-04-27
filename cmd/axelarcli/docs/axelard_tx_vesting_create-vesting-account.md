@@ -18,7 +18,7 @@ axelard tx vesting create-vesting-account [to_address] [amount] [end_time] [flag
 
 ```
   -a, --account-number uint      The account number of the signing account (offline mode only)
-  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "sync")
+  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "block")
       --delayed                  Create a delayed vesting account if true
       --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
       --fees string              Fees to pay along with transaction; eg: 10uatom

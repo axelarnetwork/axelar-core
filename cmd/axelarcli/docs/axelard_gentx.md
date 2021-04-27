@@ -36,7 +36,7 @@ axelard gentx [key_name] [amount] [flags]
 ```
   -a, --account-number uint                 The account number of the signing account (offline mode only)
       --amount string                       Amount of coins to bond
-  -b, --broadcast-mode string               Transaction broadcasting mode (sync|async|block) (default "sync")
+  -b, --broadcast-mode string               Transaction broadcasting mode (sync|async|block) (default "block")
       --chain-id string                     The network chain ID (default "axelar")
       --commission-max-change-rate string   The maximum commission change rate percentage (per day)
       --commission-max-rate string          The maximum commission rate percentage

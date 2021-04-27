@@ -18,7 +18,7 @@ axelard tx gov vote [proposal-id] [option] [flags]
 
 ```
   -a, --account-number uint      The account number of the signing account (offline mode only)
-  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "sync")
+  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "block")
       --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
       --fees string              Fees to pay along with transaction; eg: 10uatom
       --from string              Name or address of private key with which to sign
