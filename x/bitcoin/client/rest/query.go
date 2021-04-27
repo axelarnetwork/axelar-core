@@ -17,11 +17,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/rest"
 )
 
-// RespDepositAddress represents the response of a deposit address query
-type RespDepositAddress struct {
-	Address string `json:"address" yaml:"address"`
-}
-
 // QueryDepositAddress returns a handler to query a deposit address
 func QueryDepositAddress(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -48,9 +43,31 @@ func QueryDepositAddress(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		resp := RespDepositAddress{Address: string(res)}
+		rest.PostProcessResponse(w, cliCtx, string(res))
+	}
+}
 
-		rest.PostProcessResponse(w, cliCtx, resp)
+// QueryMasterAddress returns a handler to query the segwit address of the master key
+func QueryMasterAddress(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryMasterAddress), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		if len(res) == 0 {
+			rest.PostProcessResponse(w, cliCtx, "")
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, string(res))
 	}
 }
 
