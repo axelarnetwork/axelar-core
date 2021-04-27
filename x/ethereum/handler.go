@@ -391,7 +391,7 @@ func handleMsgSignDeployToken(ctx sdk.Context, k keeper.Keeper, signer types.Sig
 		return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
 	}
 
-	commandIDHex := hex.EncodeToString(commandID[:])
+	commandIDHex := common.Bytes2Hex(commandID[:])
 	k.Logger(ctx).Info(fmt.Sprintf("storing data for deploy-token command %s", commandIDHex))
 	k.SetCommandData(ctx, commandID, data)
 
