@@ -313,7 +313,7 @@ func (n *Node) start() {
 					n.Ctx.Logger().Error(fmt.Sprintf("error from handler for route %s: %s", msg.Route(), err.Error()))
 					// to allow failed messages we need to implement a cache for the multistore to revert in case of failure
 					// outputing the error message here so that we can have a sense for why it panics in case verbose mode is not active.
-					panic(fmt.Sprintf("no failing messages allowed for now: error from handler for route %s: %s", msg.Route(), err.Error()))
+					panic(fmt.Sprintf("no failing messages allowed for now: error from handler for route %s: %s\nmessage: %v", msg.Route(), err.Error(), msg))
 				}
 				msgEvents := sdk.Events{
 					sdk.NewEvent(sdk.EventTypeMessage, sdk.NewAttribute(sdk.AttributeKeyAction, msg.Type())),
