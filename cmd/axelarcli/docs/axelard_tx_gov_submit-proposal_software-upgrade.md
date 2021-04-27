@@ -16,7 +16,7 @@ axelard tx gov submit-proposal software-upgrade [name] (--upgrade-height [height
 
 ```
   -a, --account-number uint      The account number of the signing account (offline mode only)
-  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "sync")
+  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "block")
       --deposit string           deposit of proposal
       --description string       description of proposal
       --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
