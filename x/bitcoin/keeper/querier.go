@@ -20,6 +20,7 @@ import (
 // Query paths
 const (
 	QueryDepositAddress = "depositAddr"
+	QueryMasterAddress  = "masterAddr"
 	GetTx               = "getTx"
 )
 
@@ -31,6 +32,8 @@ func NewQuerier(k types.BTCKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 		switch path[0] {
 		case QueryDepositAddress:
 			res, err = queryDepositAddress(ctx, k, s, n, req.Data)
+		case QueryMasterAddress:
+			res, err = queryMasterAddress(ctx, k, s)
 		case GetTx:
 			res, err = getRawConsolidationTx(ctx, k)
 		default:
@@ -68,6 +71,21 @@ func queryDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n t
 	}
 
 	addr := types.NewLinkedAddress(masterKey, secondaryKey, k.GetNetwork(ctx), recipient)
+
+	return []byte(addr.EncodeAddress()), nil
+}
+
+func queryMasterAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer) ([]byte, error) {
+	masterKey, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.MasterKey)
+	if !ok {
+		return nil, fmt.Errorf("masterKey not found")
+	}
+
+	addr := types.NewConsolidationAddress(masterKey, k.GetNetwork(ctx))
+
+	if _, ok := k.GetAddress(ctx, addr.EncodeAddress()); !ok {
+		return nil, fmt.Errorf("no address found for current %s masterKey", tss.MasterKey.String())
+	}
 
 	return []byte(addr.EncodeAddress()), nil
 }
