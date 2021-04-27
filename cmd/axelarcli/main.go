@@ -46,8 +46,7 @@ func main() {
 			cli.FlagIP:      "127.0.0.1",
 			cli.FlagMoniker: "node",
 		}
-		utils.OverwriteFlagDefaults(rootCmd, values)
-		utils.OverwriteFlagValues(rootCmd, values)
+		utils.OverwriteFlagDefaults(rootCmd, values, true)
 
 		// The AutoGen tag includes a date, so when the time zone of the local machine is different from the time zone
 		// of the github host the date could be different and the PR check fail. Therefore we disable it

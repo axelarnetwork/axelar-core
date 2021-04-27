@@ -68,17 +68,6 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	}
 
 	initRootCmd(rootCmd, encodingConfig)
-
-	defaults := map[string]string{
-		flags.FlagChainID:        app.Name,
-		flags.FlagKeyringBackend: "test",
-		flags.FlagBroadcastMode:  flags.BroadcastBlock,
-	}
-	utils.OverwriteFlagDefaults(rootCmd, defaults)
-	utils.OverwriteFlagValues(rootCmd, defaults)
-
-	rootCmd.PersistentFlags().String(tmcli.OutputFlag, "text", "Output format (text|json)")
-
 	return rootCmd, encodingConfig
 }
 
@@ -100,7 +89,6 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		SetGenesisSnapshotCmd(app.DefaultNodeHome),
 		SetGenesisEthContractsCmd(app.DefaultNodeHome),
 		SetGenesisChainParamsCmd(app.DefaultNodeHome),
-		vald.GetValdCommand(),
 	)
 
 	server.AddCommands(rootCmd, app.DefaultNodeHome, newApp, export(encodingConfig), addAdditionalFlags)
@@ -112,6 +100,18 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		txCommand(),
 		keys.Commands(app.DefaultNodeHome),
 	)
+
+	defaults := map[string]string{
+		flags.FlagChainID:        app.Name,
+		flags.FlagKeyringBackend: "test",
+		flags.FlagBroadcastMode:  flags.BroadcastBlock,
+	}
+	utils.OverwriteFlagDefaults(rootCmd, defaults, true)
+
+	rootCmd.PersistentFlags().String(tmcli.OutputFlag, "text", "Output format (text|json)")
+
+	// add vald after the overwrite so it can set its own defaults
+	rootCmd.AddCommand(vald.GetValdCommand())
 }
 
 func addAdditionalFlags(startCmd *cobra.Command) {
