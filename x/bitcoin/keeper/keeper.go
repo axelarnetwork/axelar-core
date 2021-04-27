@@ -89,9 +89,9 @@ func (k Keeper) GetNetwork(ctx sdk.Context) types.Network {
 	return network
 }
 
-// GetMinWithdrawalAmt returns the minimum withdrawal threshold
-func (k Keeper) GetMinimumWithdrawalAmount(ctx sdk.Context) int64 {
-	var result int64
+// GetMinimumWithdrawalAmount returns the minimum withdrawal threshold
+func (k Keeper) GetMinimumWithdrawalAmount(ctx sdk.Context) btcutil.Amount {
+	var result btcutil.Amount
 	k.params.Get(ctx, types.KeyMinimumWithdralAmount, &result)
 
 	return result
@@ -265,21 +265,21 @@ func (k Keeper) DeleteSignedTx(ctx sdk.Context) {
 	ctx.KVStore(k.storeKey).Delete([]byte(signedTxKey))
 }
 
-// SetDustAmount stores  the dust amount for a destination bitcoin address
-func (k Keeper) SetDustAmount(ctx sdk.Context, encodedAddress string, amount sdk.Int) {
+// SetDustAmount stores the dust amount for a destination bitcoin address
+func (k Keeper) SetDustAmount(ctx sdk.Context, encodedAddress string, amount btcutil.Amount) {
 	ctx.KVStore(k.storeKey).Set([]byte(dustAmtPrefix+encodedAddress), k.cdc.MustMarshalBinaryLengthPrefixed(amount))
 }
 
 // GetDustAmount returns the dust amount for a destination bitcoin address
-func (k Keeper) GetDustAmount(ctx sdk.Context, encodedAddress string) (sdk.Int, bool) {
+func (k Keeper) GetDustAmount(ctx sdk.Context, encodedAddress string) btcutil.Amount {
 
 	bz := ctx.KVStore(k.storeKey).Get([]byte(dustAmtPrefix + encodedAddress))
 	if bz == nil {
-		return sdk.ZeroInt(), false
+		return 0
 	}
-	var amt sdk.Int
+	var amt btcutil.Amount
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &amt)
-	return amt, true
+	return amt
 }
 
 // DeleteDustAmount deletes the dust amount for a destination bitcoin address

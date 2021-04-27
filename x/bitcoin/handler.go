@@ -270,13 +270,13 @@ func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer ty
 }
 
 func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.Output, sdk.Int) {
-	MIN_AMOUNT := sdk.NewInt(k.GetMinimumWithdrawalAmount(ctx))
+	minAmount := sdk.NewInt(int64(k.GetMinimumWithdrawalAmount(ctx)))
 
 	pendingTransfers := n.GetPendingTransfersForChain(ctx, exported.Bitcoin)
-	var outPuts []types.Output
+	var outputs []types.Output
 	totalOut := sdk.ZeroInt()
 
-	addrWithdrawal := make(map[btcutil.Address]sdk.Int)
+	addrWithdrawal := make(map[string]sdk.Int)
 	// Combine output to same destination address
 	for _, transfer := range pendingTransfers {
 		recipient, err := btcutil.DecodeAddress(transfer.Recipient.Address, k.GetNetwork(ctx).Params())
@@ -284,53 +284,60 @@ func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.
 			k.Logger(ctx).Error(fmt.Sprintf("%s is not a valid address", transfer.Recipient))
 			continue
 		}
-
-		if _, ok := addrWithdrawal[recipient]; ok {
-			addrWithdrawal[recipient] = addrWithdrawal[recipient].Add(transfer.Asset.Amount)
-		} else {
-			addrWithdrawal[recipient] = transfer.Asset.Amount
+		encodeAddr := recipient.EncodeAddress()
+		if _, ok := addrWithdrawal[encodeAddr]; !ok {
+			addrWithdrawal[encodeAddr] = sdk.ZeroInt()
 		}
+		addrWithdrawal[encodeAddr] = addrWithdrawal[encodeAddr].Add(transfer.Asset.Amount)
 
 		n.ArchivePendingTransfer(ctx, transfer)
 	}
 
-	for recipient, amount := range addrWithdrawal {
-		// Check if the recipient has unsent dust amount
-		unSentDust, found := k.GetDustAmount(ctx, recipient.EncodeAddress())
-
-		if found {
-			amount = amount.Add(unSentDust)
+	// Loop over pendingTransfer again for deterministic operation
+	for _, transfer := range pendingTransfers {
+		recipient, err := btcutil.DecodeAddress(transfer.Recipient.Address, k.GetNetwork(ctx).Params())
+		if err != nil {
+			k.Logger(ctx).Error(fmt.Sprintf("%s is not a valid address", transfer.Recipient))
+			continue
 		}
 
-		if amount.LT(MIN_AMOUNT) {
-			// Set and continue
-			k.SetDustAmount(ctx, recipient.EncodeAddress(), amount)
+		encodeAddr := recipient.EncodeAddress()
+		amount, ok := addrWithdrawal[encodeAddr]
+		if !ok {
+			continue
+		}
 
+		// delete form map to prevent recounting
+		delete(addrWithdrawal, encodeAddr)
+
+		// Check if the recipient has unsent dust amount
+		unsentDust := k.GetDustAmount(ctx, encodeAddr)
+		amount = amount.Add(sdk.NewInt(int64(unsentDust)))
+		if amount.LT(minAmount) {
+			// Set and continue
+			k.SetDustAmount(ctx, recipient.EncodeAddress(), btcutil.Amount(amount.Int64()))
+			k.Logger(ctx).Info(fmt.Sprintf("4. Set and continue"))
 			event := sdk.NewEvent(types.EventTypeWithdrawalFailed,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 				sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.EncodeAddress()),
 				sdk.NewAttribute(types.AttributeKeyAmount, amount.String()),
-				sdk.NewAttribute(sdk.EventTypeMessage, fmt.Sprintf("Withdrawal below minmum amount %s", MIN_AMOUNT)),
+				sdk.NewAttribute(sdk.EventTypeMessage, fmt.Sprintf("Withdrawal below minmum amount %s", minAmount)),
 			)
-
 			ctx.EventManager().EmitEvent(event)
-
 			continue
 		}
 
-		if found {
-			// Delete the dustAmount
-			k.DeleteDustAmount(ctx, recipient.EncodeAddress())
+		if unsentDust > 0 {
+			k.DeleteDustAmount(ctx, encodeAddr)
 		}
 
-		outPuts = append(outPuts,
+		outputs = append(outputs,
 			types.Output{Amount: btcutil.Amount(amount.Int64()), Recipient: recipient})
 
 		totalOut = totalOut.Add(amount)
-
 	}
 
-	return outPuts, totalOut
+	return outputs, totalOut
 }
 
 func prepareInputs(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) ([]types.OutPointToSign, sdk.Int, error) {
