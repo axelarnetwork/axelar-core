@@ -2,6 +2,7 @@ package vald
 
 import (
 	"fmt"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/events"
 	"path"
 	"time"
 
@@ -144,13 +145,13 @@ func listen(ctx sdkClient.Context, hub *tmEvents.Hub, txf tx.Factory, axelarCfg 
 	ethTokConf := tmEvents.MustSubscribe(hub, ethTypes.EventTypeTokenConfirmation, ethTypes.ModuleName, ethTypes.AttributeValueStart)
 
 	js := []jobs.Job{
-		tmEvents.Consume(keygenStart, tssMgr.ProcessKeygenStart),
-		tmEvents.Consume(keygenMsg, tssMgr.ProcessKeygenMsg),
-		tmEvents.Consume(signStart, tssMgr.ProcessSignStart),
-		tmEvents.Consume(signMsg, tssMgr.ProcessSignMsg),
-		tmEvents.Consume(btcConf, btcMgr.ProcessConfirmation),
-		tmEvents.Consume(ethDepConf, ethMgr.ProcessDepositConfirmation),
-		tmEvents.Consume(ethTokConf, ethMgr.ProcessTokenConfirmation),
+		events.Consume(keygenStart, tssMgr.ProcessKeygenStart),
+		events.Consume(keygenMsg, tssMgr.ProcessKeygenMsg),
+		events.Consume(signStart, tssMgr.ProcessSignStart),
+		events.Consume(signMsg, tssMgr.ProcessSignMsg),
+		events.Consume(btcConf, btcMgr.ProcessConfirmation),
+		events.Consume(ethDepConf, ethMgr.ProcessDepositConfirmation),
+		events.Consume(ethTokConf, ethMgr.ProcessTokenConfirmation),
 	}
 
 	// errGroup runs async processes and cancels their context if ANY of them returns an error.

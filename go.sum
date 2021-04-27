@@ -124,6 +124,8 @@ github.com/axelarnetwork/c2d2 v0.0.0-20210427051439-dbe7e36fa05c/go.mod h1:7HjA1
 github.com/axelarnetwork/c2d2 v0.0.0-20210427131830-66bafd35dcf3/go.mod h1:sbjlH7/j1vywHHWtx7SUtfJWpRkOZT95IoAr/YoezI0=
 github.com/axelarnetwork/tm-events v0.0.0-20210427152311-c5af1437e59e h1:5a/SXHMeTgHC7XTIHlZeldU76F3HJW3OOWmdgG6ghAk=
 github.com/axelarnetwork/tm-events v0.0.0-20210427152311-c5af1437e59e/go.mod h1:fLdxSm3GmhpURcTzbfsdNR9xMDrzxjFZhiWMTzxtJ1s=
+github.com/axelarnetwork/tm-events v0.0.0-20210427154304-86290b49ae8f h1:pB3Ohx1meO9OpoqsiLiRLZ4EQJmcERodt0BJR+yv6ag=
+github.com/axelarnetwork/tm-events v0.0.0-20210427154304-86290b49ae8f/go.mod h1:6nbjjfoDUrsrRL3k1UQdTNSg5dZYAhSEnbTLMxnrw/g=
 github.com/bartekn/go-bip39 v0.0.0-20171116152956-a05967ea095d/go.mod h1:icNx/6QdFblhsEjZehARqbNumymUT/ydwlLojFdv7Sk=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
