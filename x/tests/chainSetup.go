@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	mathRand "math/rand"
+	"sort"
 	"strconv"
 	"time"
 
@@ -231,6 +232,9 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 		}
 		validators = append(validators, validator)
 	}
+	sort.Slice(validators, func(i, j int) bool {
+		return validators[i].Tokens.GT(validators[j].Tokens)
+	})
 	// create a chain
 	chain := fake.NewBlockchain().WithBlockTimeOut(10 * time.Millisecond)
 
