@@ -41,7 +41,7 @@ func main() {
 		rootCmd = executor.Root()
 
 		// set static values for dynamic (system-dependent) flag defaults
-		utils.OverwriteFlagDefaults(rootCmd, map[string]string{
+		utils.OverwriteFlagValues(rootCmd, map[string]string{
 			flags.FlagHome:  home,
 			cli.FlagIP:      "127.0.0.1",
 			cli.FlagMoniker: "node",

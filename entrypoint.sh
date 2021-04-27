@@ -32,8 +32,7 @@ initGenesis() {
 startValProc() {
   sleep 10s
   axelard vald-start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} \
-    --validator-addr "$(axelarcli keys show validator -a --bech val)" \
-    --broadcast-mode sync
+    --validator-addr "$(axelarcli keys show validator -a --bech val)"
 }
 
 D_HOME_DIR="$HOME_DIR/.axelar"

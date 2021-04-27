@@ -69,8 +69,8 @@ func GetValdCommand() *cobra.Command {
 	setPersistentFlags(cmd)
 	flags.AddTxFlagsToCmd(cmd)
 
-	utils.OverwriteFlagDefaults(cmd, map[string]string{
-		flags.FlagGasAdjustment: "1.2",
+	utils.OverwriteFlagValues(cmd, map[string]string{
+		flags.FlagGasAdjustment: "2",
 		flags.FlagBroadcastMode: flags.BroadcastSync,
 	})
 
