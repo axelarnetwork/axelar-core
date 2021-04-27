@@ -307,7 +307,7 @@ func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.
 			continue
 		}
 
-		// delete form map to prevent recounting
+		// delete from map to prevent recounting
 		delete(addrWithdrawal, encodeAddr)
 
 		// Check if the recipient has unsent dust amount
@@ -316,7 +316,6 @@ func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.
 		if amount.LT(minAmount) {
 			// Set and continue
 			k.SetDustAmount(ctx, recipient.EncodeAddress(), btcutil.Amount(amount.Int64()))
-			k.Logger(ctx).Info(fmt.Sprintf("4. Set and continue"))
 			event := sdk.NewEvent(types.EventTypeWithdrawalFailed,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 				sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.EncodeAddress()),
