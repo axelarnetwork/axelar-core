@@ -3,7 +3,6 @@ package bitcoin
 import (
 	"encoding/hex"
 	"fmt"
-
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
@@ -62,6 +61,13 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, k types.BTCKeeper, si
 
 	k.DeleteUnsignedTx(ctx)
 	k.SetSignedTx(ctx, tx)
+
+	// Notify that consolidation tx can be queried
+	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeTransactionSigned,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(types.AttributeKeyTxHash, tx.TxHash().String()),
+	))
+
 	k.Logger(ctx).Debug(fmt.Sprintf("transaction %s is fully signed", tx.TxHash().String()))
 
 	return nil

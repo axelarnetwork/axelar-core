@@ -53,6 +53,7 @@ func Consume(subscriber FilteredSubscriber, process func(attributes []sdk.Attrib
 			select {
 			case e := <-subscriber.Events():
 				go func() {
+					defer recovery(errChan)
 					if err := process(e.Attributes); err != nil {
 						errChan <- err
 					}
@@ -61,6 +62,12 @@ func Consume(subscriber FilteredSubscriber, process func(attributes []sdk.Attrib
 				break loop
 			}
 		}
+	}
+}
+
+func recovery(errChan chan<- error) {
+	if r := recover(); r != nil {
+		errChan <- fmt.Errorf("job panicked:%s", r)
 	}
 }
 
