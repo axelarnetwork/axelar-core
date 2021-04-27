@@ -2,11 +2,12 @@ package vald
 
 import (
 	"fmt"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/events"
 	"path"
 	"time"
 
-	"github.com/axelarnetwork/c2d2/pkg/tendermint/client"
-	tmEvents "github.com/axelarnetwork/c2d2/pkg/tendermint/events"
+	"github.com/axelarnetwork/tm-events/pkg/tendermint/client"
+	tmEvents "github.com/axelarnetwork/tm-events/pkg/tendermint/events"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -27,7 +28,6 @@ import (
 	btcRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/eth"
 	ethRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/eth/rpc"
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/events"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/jobs"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
@@ -134,15 +134,15 @@ func listen(ctx sdkClient.Context, hub *tmEvents.Hub, txf tx.Factory, axelarCfg 
 	btcMgr := createBTCMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
 	ethMgr := createETHMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
 
-	keygenStart := events.MustSubscribe(hub, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
-	keygenMsg := events.MustSubscribe(hub, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
-	signStart := events.MustSubscribe(hub, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueStart)
-	signMsg := events.MustSubscribe(hub, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
+	keygenStart := tmEvents.MustSubscribe(hub, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
+	keygenMsg := tmEvents.MustSubscribe(hub, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
+	signStart := tmEvents.MustSubscribe(hub, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueStart)
+	signMsg := tmEvents.MustSubscribe(hub, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
 
-	btcConf := events.MustSubscribe(hub, btcTypes.EventTypeOutpointConfirmation, btcTypes.ModuleName, btcTypes.AttributeValueStart)
+	btcConf := tmEvents.MustSubscribe(hub, btcTypes.EventTypeOutpointConfirmation, btcTypes.ModuleName, btcTypes.AttributeValueStart)
 
-	ethDepConf := events.MustSubscribe(hub, ethTypes.EventTypeDepositConfirmation, ethTypes.ModuleName, ethTypes.AttributeValueStart)
-	ethTokConf := events.MustSubscribe(hub, ethTypes.EventTypeTokenConfirmation, ethTypes.ModuleName, ethTypes.AttributeValueStart)
+	ethDepConf := tmEvents.MustSubscribe(hub, ethTypes.EventTypeDepositConfirmation, ethTypes.ModuleName, ethTypes.AttributeValueStart)
+	ethTokConf := tmEvents.MustSubscribe(hub, ethTypes.EventTypeTokenConfirmation, ethTypes.ModuleName, ethTypes.AttributeValueStart)
 
 	js := []jobs.Job{
 		events.Consume(keygenStart, tssMgr.ProcessKeygenStart),
