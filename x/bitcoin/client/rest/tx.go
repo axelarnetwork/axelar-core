@@ -107,7 +107,7 @@ func GetHandlerLink(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewMsgLink(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], req.Address)
+		msg := types.NewMsgLink(fromAddr, req.Address, mux.Vars(r)[clientUtils.PathVarChain])
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
