@@ -51,7 +51,7 @@ func NewLegacyBroadcaster(signer legacy.SignFn, sdkCtx sdkClient.Context, client
 func (b *LegacyBroadcasterImpl) BroadcastLegacyStdTx(tx legacytx.StdTx) (*sdk.TxResponse, error) {
 	resChan := make(chan *sdk.TxResponse, 1)
 	// serialize concurrent calls to broadcast
-	return <-resChan, b.pipeline.Push(func() error {
+	if err := b.pipeline.Push(func() error {
 		res, err := b.broadcastTx(tx)
 		if err != nil {
 			// reset account and sequence number in case they were the issue
@@ -65,7 +65,11 @@ func (b *LegacyBroadcasterImpl) BroadcastLegacyStdTx(tx legacytx.StdTx) (*sdk.Tx
 		// broadcast has been successful, so increment sequence number
 		b.seqNo++
 		return nil
-	})
+	}); err != nil {
+		return nil, err
+	}
+
+	return <-resChan, nil
 }
 
 // broadcastTx signs a standard tx object and broadcasts it to the network
