@@ -69,10 +69,13 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 
 	initRootCmd(rootCmd, encodingConfig)
 
-	utils.OverwriteFlagDefaults(rootCmd, map[string]string{
+	defaults := map[string]string{
 		flags.FlagChainID:        app.Name,
 		flags.FlagKeyringBackend: "test",
-	})
+		flags.FlagBroadcastMode:  flags.BroadcastBlock,
+	}
+	utils.OverwriteFlagDefaults(rootCmd, defaults)
+	utils.OverwriteFlagValues(rootCmd, defaults)
 
 	rootCmd.PersistentFlags().String(tmcli.OutputFlag, "text", "Output format (text|json)")
 
