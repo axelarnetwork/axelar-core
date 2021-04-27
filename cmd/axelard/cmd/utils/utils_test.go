@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 )
 
@@ -14,70 +15,70 @@ func TestOverwriteFlagDefaults(t *testing.T) {
 	strGen := rand.Strings(0, 1000).Distinct()
 	intGen := rand.PInt64Gen()
 
-	cmd := &cobra.Command{}
+	var (
+		stringFlagName, intFlagName string
+		defaultString               string
+		defaultInt                  int64
+	)
 
-	stringFlagName := rand.StrBetween(5, 20)
-	defaultString := strGen.Next()
+	setup := func() *cobra.Command {
+		cmd := &cobra.Command{}
 
-	intFlagName := rand.StrBetween(5, 20)
-	defaultInt := intGen.Next()
+		stringFlagName = rand.StrBetween(5, 20)
+		defaultString = strGen.Next()
 
-	cmd.Flags().String(stringFlagName, defaultString, strGen.Next())
-	cmd.Flags().Int64(intFlagName, defaultInt, strGen.Next())
+		intFlagName = rand.StrBetween(5, 20)
+		defaultInt = intGen.Next()
 
-	newDefaultString := strGen.Next()
-	newDefaultInt := intGen.Next()
-	unknownFlag := strGen.Next()
-	defaults := map[string]string{
-		stringFlagName: newDefaultString,
-		intFlagName:    strconv.FormatInt(newDefaultInt, 10),
-		unknownFlag:    strGen.Next(),
+		cmd.Flags().String(stringFlagName, defaultString, strGen.Next())
+		cmd.Flags().Int64(intFlagName, defaultInt, strGen.Next())
+		return cmd
+	}
+	testCases := []struct {
+		label     string
+		updateVal bool
+	}{
+		{"only update defaults", false},
+		{"also update current value", true},
 	}
 
-	OverwriteFlagDefaults(cmd, defaults)
+	repeats := 100
 
-	f1 := cmd.Flags().Lookup(stringFlagName)
-	f2 := cmd.Flags().Lookup(intFlagName)
-	assert.Equal(t, f1.DefValue, newDefaultString)
-	assert.Equal(t, f1.Value.String(), defaultString)
-	assert.False(t, f1.Changed)
-	assert.Equal(t, f2.DefValue, strconv.FormatInt(newDefaultInt, 10))
-	assert.Equal(t, f2.Value.String(), strconv.FormatInt(defaultInt, 10))
-	assert.False(t, f2.Changed)
-}
+	for _, testCase := range testCases {
+		t.Run(testCase.label, testutils.Func(func(t *testing.T) {
+			cmd := setup()
 
-func TestOverwriteFlagValues(t *testing.T) {
-	strGen := rand.Strings(0, 1000).Distinct()
-	intGen := rand.PInt64Gen()
+			newDefaultString := strGen.Next()
+			newDefaultInt := intGen.Next()
 
-	cmd := &cobra.Command{}
+			unknownFlag := strGen.Next()
 
-	stringFlagName := rand.StrBetween(5, 20)
-	defaultString := strGen.Next()
+			defaults := map[string]string{
+				stringFlagName: newDefaultString,
+				intFlagName:    strconv.FormatInt(newDefaultInt, 10),
+				unknownFlag:    strGen.Next(),
+			}
 
-	intFlagName := rand.StrBetween(5, 20)
-	defaultInt := intGen.Next()
+			OverwriteFlagDefaults(cmd, defaults, testCase.updateVal)
 
-	cmd.Flags().String(stringFlagName, defaultString, strGen.Next())
-	cmd.Flags().Int64(intFlagName, defaultInt, strGen.Next())
+			f1 := cmd.Flags().Lookup(stringFlagName)
+			f2 := cmd.Flags().Lookup(intFlagName)
 
-	newString := strGen.Next()
-	newInt := intGen.Next()
-	unknownFlag := strGen.Next()
-	values := map[string]string{
-		stringFlagName: newString,
-		intFlagName:    strconv.FormatInt(newInt, 10),
-		unknownFlag:    strGen.Next(),
+			assert.Equal(t, f1.DefValue, newDefaultString)
+			assert.Equal(t, f2.DefValue, strconv.FormatInt(newDefaultInt, 10))
+
+			if testCase.updateVal {
+				assert.Equal(t, f1.Value.String(), newDefaultString)
+				assert.True(t, f1.Changed)
+				assert.Equal(t, f2.Value.String(), strconv.FormatInt(newDefaultInt, 10))
+				assert.True(t, f2.Changed)
+			} else {
+				assert.Equal(t, f1.Value.String(), defaultString)
+				assert.False(t, f1.Changed)
+				assert.Equal(t, f2.Value.String(), strconv.FormatInt(defaultInt, 10))
+				assert.False(t, f2.Changed)
+			}
+
+		}).Repeat(repeats))
 	}
-
-	OverwriteFlagValues(cmd, values)
-
-	f1 := cmd.Flags().Lookup(stringFlagName)
-	f2 := cmd.Flags().Lookup(intFlagName)
-	assert.Equal(t, f1.DefValue, defaultString)
-	assert.Equal(t, f1.Value.String(), newString)
-	assert.True(t, f1.Changed)
-	assert.Equal(t, f2.DefValue, strconv.FormatInt(defaultInt, 10))
-	assert.Equal(t, f2.Value.String(), strconv.FormatInt(newInt, 10))
-	assert.True(t, f2.Changed)
 }

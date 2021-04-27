@@ -2,9 +2,10 @@ package vald
 
 import (
 	"fmt"
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/events"
 	"path"
 	"time"
+
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/events"
 
 	"github.com/axelarnetwork/tm-events/pkg/tendermint/client"
 	tmEvents "github.com/axelarnetwork/tm-events/pkg/tendermint/events"
@@ -69,10 +70,11 @@ func GetValdCommand() *cobra.Command {
 	setPersistentFlags(cmd)
 	flags.AddTxFlagsToCmd(cmd)
 
-	utils.OverwriteFlagValues(cmd, map[string]string{
+	values := map[string]string{
 		flags.FlagGasAdjustment: "2",
 		flags.FlagBroadcastMode: flags.BroadcastSync,
-	})
+	}
+	utils.OverwriteFlagDefaults(cmd, values, true)
 
 	return cmd
 }
