@@ -31,7 +31,7 @@ axelard tx gov submit-proposal [flags]
 
 ```
   -a, --account-number uint      The account number of the signing account (offline mode only)
-  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "sync")
+  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "block")
       --deposit string           The proposal deposit
       --description string       The proposal description
       --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
