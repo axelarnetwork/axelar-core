@@ -3,6 +3,7 @@ package types
 // EventTypeOutpointConfirmation is an event type
 const (
 	EventTypeOutpointConfirmation = "outpointConfirmation"
+	EventTypeTransactionSigned    = "transactionSigned"
 	EventTypeWithdrawalFailed     = "withdrawalFailed"
 )
 
@@ -11,6 +12,7 @@ const (
 	AttributeKeyConfHeight         = "confHeight"
 	AttributeKeyOutPointInfo       = "outPointInfo"
 	AttributeKeyPoll               = "poll"
+	AttributeKeyTxHash             = "txHash"
 	AttributeKeyAmount             = "amount"
 	AttributeKeyDestinationAddress = "destinationAddress"
 )

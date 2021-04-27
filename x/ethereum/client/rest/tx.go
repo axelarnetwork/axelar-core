@@ -28,12 +28,12 @@ const (
 	TxMethodSignDeployToken    = "sign-deploy-token"
 	TxMethodSignBurnTokens     = "sign-burn"
 
-	QMethodMasterAddress        = keeper.QueryMasterAddress
-	QMethodAxelarGatewayAddress = keeper.QueryAxelarGatewayAddress
-	QMethodCommandData          = keeper.QueryCommandData
-	QMethodCreateDeployTx       = keeper.CreateDeployTx
-	QMethodSendTx               = keeper.SendTx
-	QMethodSendCommand          = keeper.SendCommand
+	QueryMethodMasterAddress        = keeper.QueryMasterAddress
+	QueryMethodAxelarGatewayAddress = keeper.QueryAxelarGatewayAddress
+	QueryMethodCommandData          = keeper.QueryCommandData
+	QueryMethodCreateDeployTx       = keeper.CreateDeployTx
+	QueryMethodSendTx               = keeper.SendTx
+	QueryMethodSendCommand          = keeper.SendCommand
 )
 
 // RegisterRoutes registers this module's REST routes with the given router
@@ -48,12 +48,12 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(GetHandlerSignBurnTokens(cliCtx), TxMethodSignBurnTokens)
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
-	registerQuery(GetHandlerQueryMasterAddress(cliCtx), QMethodMasterAddress)
-	registerQuery(GetHandlerQueryAxelarGatewayAddress(cliCtx), QMethodAxelarGatewayAddress)
-	registerQuery(GetHandlerQueryCommandData(cliCtx), QMethodCommandData, clientUtils.PathVarCommandID)
-	registerQuery(GetHandlerQueryCreateDeployTx(cliCtx), QMethodCreateDeployTx)
-	registerQuery(GetHandlerQuerySendTx(cliCtx), QMethodSendTx, clientUtils.PathVarTxID)
-	registerQuery(GetHandlerQuerySendCommandTx(cliCtx), QMethodSendCommand)
+	registerQuery(GetHandlerQueryMasterAddress(cliCtx), QueryMethodMasterAddress)
+	registerQuery(GetHandlerQueryAxelarGatewayAddress(cliCtx), QueryMethodAxelarGatewayAddress)
+	registerQuery(GetHandlerQueryCommandData(cliCtx), QueryMethodCommandData, clientUtils.PathVarCommandID)
+	registerQuery(GetHandlerQueryCreateDeployTx(cliCtx), QueryMethodCreateDeployTx)
+	registerQuery(GetHandlerQuerySendTx(cliCtx), QueryMethodSendTx, clientUtils.PathVarTxID)
+	registerQuery(GetHandlerQuerySendCommandTx(cliCtx), QueryMethodSendCommand)
 }
 
 // ReqLink represents a request to link a cross-chain address to an Ethereum address
