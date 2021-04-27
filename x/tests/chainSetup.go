@@ -443,7 +443,9 @@ type listeners struct {
 func registerWaitEventListeners(n nodeData) listeners {
 	// register listener for keygen completion
 	keygenDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
-		return event.Type == tssTypes.EventTypePubKeyDecided
+		attributes := mapifyAttributes(event)
+		return event.Type == tssTypes.EventTypeKeygen &&
+			attributes[sdk.AttributeKeyAction] == tssTypes.AttributeValueDecided
 	})
 
 	// register btc listener for outpoint confirmation
@@ -472,7 +474,9 @@ func registerWaitEventListeners(n nodeData) listeners {
 
 	// register listener for sign completion
 	signDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
-		return event.Type == tssTypes.EventTypeSigDecided
+		attributes := mapifyAttributes(event)
+		return event.Type == tssTypes.EventTypeSign &&
+			attributes[sdk.AttributeKeyAction] == tssTypes.AttributeValueDecided
 	})
 
 	return listeners{

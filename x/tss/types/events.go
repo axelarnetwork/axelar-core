@@ -2,10 +2,8 @@ package types
 
 // Event types
 const (
-	EventTypeKeygen        = "keygen"
-	EventTypeSign          = "sign"
-	EventTypeSigDecided    = "sigDecided"
-	EventTypePubKeyDecided = "pubKeyDecided"
+	EventTypeKeygen = "keygen"
+	EventTypeSign   = "sign"
 )
 
 // Event attribute keys
@@ -24,6 +22,7 @@ const (
 
 // Event attribute values
 const (
-	AttributeValueStart = "start"
-	AttributeValueMsg   = "message"
+	AttributeValueStart   = "start"
+	AttributeValueMsg     = "message"
+	AttributeValueDecided = "decided"
 )
