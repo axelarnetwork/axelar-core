@@ -631,7 +631,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 			}
 		}
 		if sameAddressCount > 0 {
-			sameAddressCount -= 1
+			sameAddressCount --
 		}
 		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
 		assert.NoError(t, err)
