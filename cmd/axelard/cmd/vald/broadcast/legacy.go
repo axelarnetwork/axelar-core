@@ -24,14 +24,6 @@ type LegacyBroadcasterImpl struct {
 	chainID string
 }
 
-func (b *LegacyBroadcasterImpl) GetSeqNo() uint64 {
-	return b.seqNo
-}
-
-func (b *LegacyBroadcasterImpl) GetAccNo() uint64 {
-	return b.accNo
-}
-
 // NewLegacyBroadcaster returns a broadcaster to submit transactions to the blockchain with the legacy transaction data structures use by the REST endpoint.
 // Only one instance of a broadcaster should be run for a given account, otherwise risk conflicting sequence numbers for submitted transactions.
 func NewLegacyBroadcaster(signer legacy.SignFn, sdkCtx sdkClient.Context, client legacy.LegacyClient, conf broadcastTypes.ClientConfig, pipeline types.Pipeline, logger tmLog.Logger) (*LegacyBroadcasterImpl, error) {
@@ -53,6 +45,14 @@ func NewLegacyBroadcaster(signer legacy.SignFn, sdkCtx sdkClient.Context, client
 	}
 
 	return broadcaster, nil
+}
+
+func (b *LegacyBroadcasterImpl) GetSeqNo() uint64 {
+	return b.seqNo
+}
+
+func (b *LegacyBroadcasterImpl) GetAccNo() uint64 {
+	return b.accNo
 }
 
 // Broadcast sends the passed messages to the network. This function in thread-safe.
