@@ -6,19 +6,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// Chain represents the properties of a registered blockchain
-type Chain struct {
-	Name                  string
-	NativeAsset           string
-	SupportsForeignAssets bool
-}
-
 // Validate performs a stateless check to ensure the Chain object has been initialized correctly
-func (c Chain) Validate() error {
-	if c.Name == "" {
+func (m Chain) Validate() error {
+	if m.Name == "" {
 		return fmt.Errorf("missing chain name")
 	}
-	if c.NativeAsset == "" {
+	if m.NativeAsset == "" {
 		return fmt.Errorf("missing native asset name")
 	}
 	return nil

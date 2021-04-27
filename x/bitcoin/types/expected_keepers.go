@@ -20,7 +20,7 @@ type BTCKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 	SetParams(ctx sdk.Context, p Params)
 	GetParams(ctx sdk.Context) Params
-	Codec() *codec.Codec
+	Codec() *codec.LegacyAmino
 
 	GetRequiredConfirmationHeight(ctx sdk.Context) uint64
 	GetRevoteLockingPeriod(ctx sdk.Context) int64

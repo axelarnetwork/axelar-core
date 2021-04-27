@@ -1,0 +1,36 @@
+syntax = "proto3";
+package tss.exported.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/tss/exported";
+
+import "gogoproto/gogo.proto";
+
+// KeyRequirement defines requirements for keys
+message KeyRequirement {
+  string chain_name = 1;
+  KeyRole key_role = 2;
+  int64 min_validator_subset_size = 3;
+  KeyShareDistributionPolicy key_share_distribution_policy = 4;
+}
+
+enum KeyRole {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  KEY_ROLE_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "Unknown" ];
+  KEY_ROLE_MASTER_KEY = 1 [ (gogoproto.enumvalue_customname) = "MasterKey" ];
+  KEY_ROLE_SECONDARY_KEY = 2
+      [ (gogoproto.enumvalue_customname) = "SecondaryKey" ];
+}
+
+enum KeyShareDistributionPolicy {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  KEY_SHARE_DISTRIBUTION_POLICY_UNSPECIFIED = 0
+      [ (gogoproto.enumvalue_customname) = "Unspecified" ];
+  KEY_SHARE_DISTRIBUTION_POLICY_WEIGHTED_BY_STAKE = 1
+      [ (gogoproto.enumvalue_customname) = "WeightedByStake" ];
+  KEY_SHARE_DISTRIBUTION_POLICY_ONE_PER_VALIDATOR = 2
+      [ (gogoproto.enumvalue_customname) = "OnePerValidator" ];
+}

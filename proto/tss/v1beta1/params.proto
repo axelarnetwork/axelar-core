@@ -1,0 +1,30 @@
+syntax = "proto3";
+package tss.v1beta1;
+option go_package = "github.com/axelarnetwork/axelar-core/x/tss/types";
+
+import "gogoproto/gogo.proto";
+import "utils/v1beta1/threshold.proto";
+import "tss/exported/v1beta1/types.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// Params is the parameter set for this module
+message Params {
+  // Deprecated
+  int64 locking_period = 1;
+  // MinKeygenThreshold defines the minimum % of stake that must be online
+  // to authorize generation of a new key in the system.
+  utils.v1beta1.Threshold min_keygen_threshold = 2
+      [ (gogoproto.nullable) = false ];
+  // CorruptionThreshold defines the corruption threshold with which
+  // we'll run keygen protocol.
+  utils.v1beta1.Threshold corruption_threshold = 3
+      [ (gogoproto.nullable) = false ];
+  // KeyRequirements defines the requirement of each key for each chain
+  repeated exported.v1beta1.KeyRequirement key_requirements = 4
+      [ (gogoproto.nullable) = false ];
+  // MinBondFractionPerShare defines the % of stake validators have to bond per
+  // key share
+  utils.v1beta1.Threshold min_bond_fraction_per_share = 5
+      [ (gogoproto.nullable) = false ];
+}

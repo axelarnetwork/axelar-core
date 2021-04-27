@@ -28,11 +28,11 @@ func NewMultiStore() sdk.MultiStore {
 	ms.GetKVStoreFunc = func(storeKey types.StoreKey) types.KVStore {
 		if store, ok := ms.kvstore[storeKey.String()]; ok {
 			return store
-		} else {
-			store := NewTestKVStore()
-			ms.kvstore[storeKey.String()] = store
-			return store
 		}
+		store := NewTestKVStore()
+		ms.kvstore[storeKey.String()] = store
+		return store
+
 	}
 	return ms
 }
@@ -72,11 +72,10 @@ func (t TestKVStore) Get(key []byte) []byte {
 	defer t.mutex.RUnlock()
 	val, ok := t.store[string(key)]
 
-	if ok {
-		return val
-	} else {
+	if !ok {
 		return nil
 	}
+	return val
 }
 
 // Has checks if an entry for the given key exists
@@ -242,5 +241,6 @@ func (mi mockIterator) Error() error {
 }
 
 // Close releases the Iterator.
-func (mi mockIterator) Close() {
+func (mi mockIterator) Close() error {
+	return nil
 }

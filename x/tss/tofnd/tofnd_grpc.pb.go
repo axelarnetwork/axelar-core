@@ -3,10 +3,11 @@
 package tofnd
 
 import (
-	context "context"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
+	"context"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -19,8 +20,6 @@ const _ = grpc.SupportPackageIsVersion7
 type GG20Client interface {
 	Keygen(ctx context.Context, opts ...grpc.CallOption) (GG20_KeygenClient, error)
 	Sign(ctx context.Context, opts ...grpc.CallOption) (GG20_SignClient, error)
-	GetKey(ctx context.Context, in *Uid, opts ...grpc.CallOption) (*Bytes, error)
-	GetSig(ctx context.Context, in *Uid, opts ...grpc.CallOption) (*Bytes, error)
 }
 
 type gG20Client struct {
@@ -31,14 +30,8 @@ func NewGG20Client(cc grpc.ClientConnInterface) GG20Client {
 	return &gG20Client{cc}
 }
 
-var gG20KeygenStreamDesc = &grpc.StreamDesc{
-	StreamName:    "Keygen",
-	ServerStreams: true,
-	ClientStreams: true,
-}
-
 func (c *gG20Client) Keygen(ctx context.Context, opts ...grpc.CallOption) (GG20_KeygenClient, error) {
-	stream, err := c.cc.NewStream(ctx, gG20KeygenStreamDesc, "/tofnd.GG20/Keygen", opts...)
+	stream, err := c.cc.NewStream(ctx, &_GG20_serviceDesc.Streams[0], "/tofnd.GG20/Keygen", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -68,14 +61,8 @@ func (x *gG20KeygenClient) Recv() (*MessageOut, error) {
 	return m, nil
 }
 
-var gG20SignStreamDesc = &grpc.StreamDesc{
-	StreamName:    "Sign",
-	ServerStreams: true,
-	ClientStreams: true,
-}
-
 func (c *gG20Client) Sign(ctx context.Context, opts ...grpc.CallOption) (GG20_SignClient, error) {
-	stream, err := c.cc.NewStream(ctx, gG20SignStreamDesc, "/tofnd.GG20/Sign", opts...)
+	stream, err := c.cc.NewStream(ctx, &_GG20_serviceDesc.Streams[1], "/tofnd.GG20/Sign", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -105,82 +92,40 @@ func (x *gG20SignClient) Recv() (*MessageOut, error) {
 	return m, nil
 }
 
-var gG20GetKeyStreamDesc = &grpc.StreamDesc{
-	StreamName: "GetKey",
+// GG20Server is the server API for GG20 service.
+// All implementations must embed UnimplementedGG20Server
+// for forward compatibility
+type GG20Server interface {
+	Keygen(GG20_KeygenServer) error
+	Sign(GG20_SignServer) error
+	mustEmbedUnimplementedGG20Server()
 }
 
-func (c *gG20Client) GetKey(ctx context.Context, in *Uid, opts ...grpc.CallOption) (*Bytes, error) {
-	out := new(Bytes)
-	err := c.cc.Invoke(ctx, "/tofnd.GG20/GetKey", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
+// UnimplementedGG20Server must be embedded to have forward compatible implementations.
+type UnimplementedGG20Server struct {
 }
 
-var gG20GetSigStreamDesc = &grpc.StreamDesc{
-	StreamName: "GetSig",
+func (UnimplementedGG20Server) Keygen(GG20_KeygenServer) error {
+	return status.Errorf(codes.Unimplemented, "method Keygen not implemented")
+}
+func (UnimplementedGG20Server) Sign(GG20_SignServer) error {
+	return status.Errorf(codes.Unimplemented, "method Sign not implemented")
+}
+func (UnimplementedGG20Server) mustEmbedUnimplementedGG20Server() {}
+
+// UnsafeGG20Server may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to GG20Server will
+// result in compilation errors.
+type UnsafeGG20Server interface {
+	mustEmbedUnimplementedGG20Server()
 }
 
-func (c *gG20Client) GetSig(ctx context.Context, in *Uid, opts ...grpc.CallOption) (*Bytes, error) {
-	out := new(Bytes)
-	err := c.cc.Invoke(ctx, "/tofnd.GG20/GetSig", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
+func RegisterGG20Server(s grpc.ServiceRegistrar, srv GG20Server) {
+	s.RegisterService(&_GG20_serviceDesc, srv)
 }
 
-// GG20Service is the service API for GG20 service.
-// Fields should be assigned to their respective handler implementations only before
-// RegisterGG20Service is called.  Any unassigned fields will result in the
-// handler for that method returning an Unimplemented error.
-type GG20Service struct {
-	Keygen func(GG20_KeygenServer) error
-	Sign   func(GG20_SignServer) error
-	GetKey func(context.Context, *Uid) (*Bytes, error)
-	GetSig func(context.Context, *Uid) (*Bytes, error)
-}
-
-func (s *GG20Service) keygen(_ interface{}, stream grpc.ServerStream) error {
-	return s.Keygen(&gG20KeygenServer{stream})
-}
-func (s *GG20Service) sign(_ interface{}, stream grpc.ServerStream) error {
-	return s.Sign(&gG20SignServer{stream})
-}
-func (s *GG20Service) getKey(_ interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Uid)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return s.GetKey(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     s,
-		FullMethod: "/tofnd.GG20/GetKey",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return s.GetKey(ctx, req.(*Uid))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-func (s *GG20Service) getSig(_ interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Uid)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return s.GetSig(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     s,
-		FullMethod: "/tofnd.GG20/GetSig",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return s.GetSig(ctx, req.(*Uid))
-	}
-	return interceptor(ctx, in, info, handler)
+func _GG20_Keygen_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(GG20Server).Keygen(&gG20KeygenServer{stream})
 }
 
 type GG20_KeygenServer interface {
@@ -205,6 +150,10 @@ func (x *gG20KeygenServer) Recv() (*MessageIn, error) {
 	return m, nil
 }
 
+func _GG20_Sign_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(GG20Server).Sign(&gG20SignServer{stream})
+}
+
 type GG20_SignServer interface {
 	Send(*MessageOut) error
 	Recv() (*MessageIn, error)
@@ -227,95 +176,23 @@ func (x *gG20SignServer) Recv() (*MessageIn, error) {
 	return m, nil
 }
 
-// RegisterGG20Service registers a service implementation with a gRPC server.
-func RegisterGG20Service(s grpc.ServiceRegistrar, srv *GG20Service) {
-	srvCopy := *srv
-	if srvCopy.Keygen == nil {
-		srvCopy.Keygen = func(GG20_KeygenServer) error {
-			return status.Errorf(codes.Unimplemented, "method Keygen not implemented")
-		}
-	}
-	if srvCopy.Sign == nil {
-		srvCopy.Sign = func(GG20_SignServer) error {
-			return status.Errorf(codes.Unimplemented, "method Sign not implemented")
-		}
-	}
-	if srvCopy.GetKey == nil {
-		srvCopy.GetKey = func(context.Context, *Uid) (*Bytes, error) {
-			return nil, status.Errorf(codes.Unimplemented, "method GetKey not implemented")
-		}
-	}
-	if srvCopy.GetSig == nil {
-		srvCopy.GetSig = func(context.Context, *Uid) (*Bytes, error) {
-			return nil, status.Errorf(codes.Unimplemented, "method GetSig not implemented")
-		}
-	}
-	sd := grpc.ServiceDesc{
-		ServiceName: "tofnd.GG20",
-		Methods: []grpc.MethodDesc{
-			{
-				MethodName: "GetKey",
-				Handler:    srvCopy.getKey,
-			},
-			{
-				MethodName: "GetSig",
-				Handler:    srvCopy.getSig,
-			},
+var _GG20_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "tofnd.GG20",
+	HandlerType: (*GG20Server)(nil),
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "Keygen",
+			Handler:       _GG20_Keygen_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
 		},
-		Streams: []grpc.StreamDesc{
-			{
-				StreamName:    "Keygen",
-				Handler:       srvCopy.keygen,
-				ServerStreams: true,
-				ClientStreams: true,
-			},
-			{
-				StreamName:    "Sign",
-				Handler:       srvCopy.sign,
-				ServerStreams: true,
-				ClientStreams: true,
-			},
+		{
+			StreamName:    "Sign",
+			Handler:       _GG20_Sign_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
 		},
-		Metadata: "x/tss/tofnd/tofnd.proto",
-	}
-
-	s.RegisterService(&sd, nil)
-}
-
-// NewGG20Service creates a new GG20Service containing the
-// implemented methods of the GG20 service in s.  Any unimplemented
-// methods will result in the gRPC server returning an UNIMPLEMENTED status to the client.
-// This includes situations where the method handler is misspelled or has the wrong
-// signature.  For this reason, this function should be used with great care and
-// is not recommended to be used by most users.
-func NewGG20Service(s interface{}) *GG20Service {
-	ns := &GG20Service{}
-	if h, ok := s.(interface{ Keygen(GG20_KeygenServer) error }); ok {
-		ns.Keygen = h.Keygen
-	}
-	if h, ok := s.(interface{ Sign(GG20_SignServer) error }); ok {
-		ns.Sign = h.Sign
-	}
-	if h, ok := s.(interface {
-		GetKey(context.Context, *Uid) (*Bytes, error)
-	}); ok {
-		ns.GetKey = h.GetKey
-	}
-	if h, ok := s.(interface {
-		GetSig(context.Context, *Uid) (*Bytes, error)
-	}); ok {
-		ns.GetSig = h.GetSig
-	}
-	return ns
-}
-
-// UnstableGG20Service is the service API for GG20 service.
-// New methods may be added to this interface if they are added to the service
-// definition, which is not a backward-compatible change.  For this reason,
-// use of this type is not recommended.
-type UnstableGG20Service interface {
-	Keygen(GG20_KeygenServer) error
-	Sign(GG20_SignServer) error
-	GetKey(context.Context, *Uid) (*Bytes, error)
-	GetSig(context.Context, *Uid) (*Bytes, error)
+	},
+	Metadata: "third_party/proto/tofnd/tofnd.proto",
 }

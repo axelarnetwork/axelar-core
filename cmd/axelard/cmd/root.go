@@ -1,157 +1,236 @@
 package cmd
 
 import (
-	"encoding/json"
+	"errors"
 	"io"
-	"path"
+	"os"
+	"path/filepath"
 
-	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/debug"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/client/keys"
+	"github.com/cosmos/cosmos-sdk/client/rpc"
 	"github.com/cosmos/cosmos-sdk/server"
+	servertypes "github.com/cosmos/cosmos-sdk/server/types"
+	"github.com/cosmos/cosmos-sdk/snapshots"
 	"github.com/cosmos/cosmos-sdk/store"
-	"github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
+	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
+	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	vestingcli "github.com/cosmos/cosmos-sdk/x/auth/vesting/client/cli"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"github.com/cosmos/cosmos-sdk/x/crisis"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
-	"github.com/cosmos/cosmos-sdk/x/staking"
+	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/cli"
+	tmcli "github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/log"
-	tmtypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
-)
 
-const (
-	flagInvCheckPeriod = "inv-check-period"
-	cliHomeFlag        = "clihome"
+	"github.com/axelarnetwork/axelar-core/app"
+	"github.com/axelarnetwork/axelar-core/app/params"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald"
+	"github.com/axelarnetwork/axelar-core/x/tss"
 )
-
-var invCheckPeriod uint
 
 // NewRootCmd creates a new root command for axelard. It is called once in the
 // main function.
-func NewRootCmd() cli.Executor {
-	cdc := app.MakeCodec()
+func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	app.SetConfig()
 
-	ctx := server.NewDefaultContext()
-	cobra.EnableCommandSorting = false
+	encodingConfig := app.MakeEncodingConfig()
+
+	initClientCtx := client.Context{}.
+		WithJSONMarshaler(encodingConfig.Marshaler).
+		WithInterfaceRegistry(encodingConfig.InterfaceRegistry).
+		WithTxConfig(encodingConfig.TxConfig).
+		WithLegacyAmino(encodingConfig.Amino).
+		WithInput(os.Stdin).
+		WithAccountRetriever(authtypes.AccountRetriever{}).
+		WithBroadcastMode(flags.BroadcastBlock).
+		WithHomeDir(app.DefaultNodeHome)
+
 	rootCmd := &cobra.Command{
-		Use:               app.Name + "d",
-		Short:             "Axelar Daemon (server)",
-		PersistentPreRunE: server.PersistentPreRunEFn(ctx),
+		Use:   app.Name + "d",
+		Short: "Axelar App",
+		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
+			if err := client.SetCmdClientContextHandler(initClientCtx, cmd); err != nil {
+				return err
+			}
+
+			return server.InterceptConfigsPreRunHandler(cmd)
+		},
 	}
 
-	initRootCmd(rootCmd, ctx, cdc)
+	initRootCmd(rootCmd, encodingConfig)
 
-	// prepare and add flags
-	executor := cli.PrepareBaseCmd(rootCmd, "AX", app.DefaultNodeHome)
-	rootCmd.PersistentFlags().UintVar(&invCheckPeriod, flagInvCheckPeriod,
-		0, "Assert registered invariants every N blocks")
-	addAdditionalFlags(rootCmd)
-	return executor
+	utils.OverwriteFlagDefaults(rootCmd, map[string]string{
+		flags.FlagChainID:        app.Name,
+		flags.FlagKeyringBackend: "test",
+	})
+
+	rootCmd.PersistentFlags().String(tmcli.OutputFlag, "text", "Output format (text|json)")
+
+	return rootCmd, encodingConfig
 }
 
-func initRootCmd(rootCmd *cobra.Command, ctx *server.Context, cdc *codec.Codec) {
-	rootCmd.AddCommand(genutilcli.InitCmd(ctx, cdc, app.ModuleBasics, app.DefaultNodeHome))
-	rootCmd.AddCommand(genutilcli.CollectGenTxsCmd(ctx, cdc, auth.GenesisAccountIterator{}, app.DefaultNodeHome))
-	rootCmd.AddCommand(genutilcli.MigrateGenesisCmd(ctx, cdc))
+func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
+	authclient.Codec = encodingConfig.Marshaler
+
 	rootCmd.AddCommand(
-		genutilcli.GenTxCmd(
-			ctx, cdc, app.ModuleBasics, staking.AppModuleBasic{},
-			auth.GenesisAccountIterator{}, app.DefaultNodeHome, app.DefaultCLIHome,
-		),
+		genutilcli.InitCmd(app.ModuleBasics, app.DefaultNodeHome),
+		genutilcli.CollectGenTxsCmd(banktypes.GenesisBalancesIterator{}, app.DefaultNodeHome),
+		genutilcli.MigrateGenesisCmd(),
+		genutilcli.GenTxCmd(app.ModuleBasics, encodingConfig.TxConfig, banktypes.GenesisBalancesIterator{}, app.DefaultNodeHome),
+		genutilcli.ValidateGenesisCmd(app.ModuleBasics),
+		AddGenesisAccountCmd(app.DefaultNodeHome),
+		tmcli.NewCompletionCmd(rootCmd, true),
+		debug.Cmd(),
+		SetGenesisStakingCmd(app.DefaultNodeHome),
+		SetGenesisVoteCmd(app.DefaultNodeHome),
+		SetGenesisTSSCmd(app.DefaultNodeHome),
+		SetGenesisSnapshotCmd(app.DefaultNodeHome),
+		SetGenesisEthContractsCmd(app.DefaultNodeHome),
+		SetGenesisChainParamsCmd(app.DefaultNodeHome),
+		vald.GetValdCommand(),
 	)
-	rootCmd.AddCommand(genutilcli.ValidateGenesisCmd(ctx, cdc, app.ModuleBasics))
-	rootCmd.AddCommand(AddGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
-	rootCmd.AddCommand(SetGenesisStakingCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
-	rootCmd.AddCommand(SetGenesisVoteCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
-	rootCmd.AddCommand(SetGenesisTSSCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
-	rootCmd.AddCommand(SetGenesisSnapshotCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
-	rootCmd.AddCommand(SetGenesisEthContractsCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
-	rootCmd.AddCommand(SetGenesisChainParamsCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
-	rootCmd.AddCommand(flags.NewCompletionCmd(rootCmd, true))
-	rootCmd.AddCommand(debug.Cmd(cdc))
 
-	server.AddCommands(ctx, cdc, rootCmd, newApp, exportAppStateAndTMValidators)
+	server.AddCommands(rootCmd, app.DefaultNodeHome, newApp, export(encodingConfig), addAdditionalFlags)
+
+	// add keybase, auxiliary RPC, query, and tx child commands
+	rootCmd.AddCommand(
+		rpc.StatusCommand(),
+		queryCommand(),
+		txCommand(),
+		keys.Commands(app.DefaultNodeHome),
+	)
 }
 
-func addAdditionalFlags(rootCmd *cobra.Command) {
-	// These flags are intended for submitting transactions.
-	// Since the daemon can broadcast messages now we need the flags here as well (mostly for their default values)
-	flags.PostCommands(rootCmd)
-
-	// This flag has a defined default in PostCommands, but is not bound to viper
-	_ = viper.BindPFlag(flags.FlagGasAdjustment, rootCmd.Flags().Lookup(flags.FlagGasAdjustment))
-
-	// The daemon acts as a broadcaster as well, so we need access to the cli configuration (in particular the keybase)
-	rootCmd.PersistentFlags().String(cliHomeFlag, app.DefaultCLIHome, "directory for cli config and data")
-	_ = viper.BindPFlag(cliHomeFlag, rootCmd.Flags().Lookup(cliHomeFlag))
-
-	rootCmd.PersistentFlags().String("tofnd-host", "", "host name for tss daemon")
-	_ = viper.BindPFlag("tofnd_host", rootCmd.PersistentFlags().Lookup("tofnd-host"))
-
-	rootCmd.PersistentFlags().String("tofnd-port", "50051", "port for tss daemon")
-	_ = viper.BindPFlag("tofnd_port", rootCmd.PersistentFlags().Lookup("tofnd-port"))
+func addAdditionalFlags(startCmd *cobra.Command) {
+	crisis.AddModuleInitFlags(startCmd)
+	tss.AddModuleInitFlags(startCmd)
 }
 
-func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application {
+func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, appOpts servertypes.AppOptions) servertypes.Application {
 	var cache sdk.MultiStorePersistentCache
 
 	if viper.GetBool(server.FlagInterBlockCache) {
 		cache = store.NewCommitKVStoreCacheManager()
 	}
 
-	return app.NewInitApp(
-		logger, db, traceStore, true, invCheckPeriod, loadConfig(),
-		baseapp.SetPruning(types.NewPruningOptionsFromString(viper.GetString("pruning"))),
-		baseapp.SetMinGasPrices(viper.GetString(server.FlagMinGasPrices)),
-		baseapp.SetHaltHeight(viper.GetUint64(server.FlagHaltHeight)),
-		baseapp.SetHaltTime(viper.GetUint64(server.FlagHaltTime)),
+	skipUpgradeHeights := make(map[int64]bool)
+	for _, h := range cast.ToIntSlice(appOpts.Get(server.FlagUnsafeSkipUpgrades)) {
+		skipUpgradeHeights[int64(h)] = true
+	}
+
+	pruningOpts, err := server.GetPruningOptionsFromFlags(appOpts)
+	if err != nil {
+		panic(err)
+	}
+
+	snapshotDir := filepath.Join(cast.ToString(appOpts.Get(flags.FlagHome)), "data", "snapshots")
+	snapshotDB, err := sdk.NewLevelDB("metadata", snapshotDir)
+	if err != nil {
+		panic(err)
+	}
+	snapshotStore, err := snapshots.NewStore(snapshotDB, snapshotDir)
+	if err != nil {
+		panic(err)
+	}
+
+	return app.NewAxelarApp(
+		logger, db, traceStore, true, skipUpgradeHeights,
+		cast.ToString(appOpts.Get(flags.FlagHome)),
+		cast.ToUint(appOpts.Get(server.FlagInvCheckPeriod)),
+		app.MakeEncodingConfig(),
+		appOpts,
+		baseapp.SetPruning(pruningOpts),
+		baseapp.SetMinGasPrices(cast.ToString(appOpts.Get(server.FlagMinGasPrices))),
+		baseapp.SetHaltHeight(cast.ToUint64(appOpts.Get(server.FlagHaltHeight))),
+		baseapp.SetHaltTime(cast.ToUint64(appOpts.Get(server.FlagHaltTime))),
+		baseapp.SetMinRetainBlocks(cast.ToUint64(appOpts.Get(server.FlagMinRetainBlocks))),
 		baseapp.SetInterBlockCache(cache),
+		baseapp.SetTrace(cast.ToBool(appOpts.Get(server.FlagTrace))),
+		baseapp.SetIndexEvents(cast.ToStringSlice(appOpts.Get(server.FlagIndexEvents))),
+		baseapp.SetSnapshotStore(snapshotStore),
+		baseapp.SetSnapshotInterval(cast.ToUint64(appOpts.Get(server.FlagStateSyncSnapshotInterval))),
+		baseapp.SetSnapshotKeepRecent(cast.ToUint32(appOpts.Get(server.FlagStateSyncSnapshotKeepRecent))),
 	)
 }
 
-func exportAppStateAndTMValidators(
-	logger log.Logger, db dbm.DB, traceStore io.Writer, height int64, forZeroHeight bool, jailWhiteList []string,
-) (json.RawMessage, []tmtypes.GenesisValidator, error) {
+func export(encCfg params.EncodingConfig) servertypes.AppExporter {
+	return func(logger log.Logger, db dbm.DB, traceStore io.Writer, height int64, forZeroHeight bool, jailAllowedAddrs []string,
+		appOpts servertypes.AppOptions) (servertypes.ExportedApp, error) {
 
-	conf := loadConfig()
-
-	if height != -1 {
-		aApp := app.NewInitApp(logger, db, traceStore, false, uint(1), conf)
-		err := aApp.LoadHeight(height)
-		if err != nil {
-			return nil, nil, err
+		homePath := cast.ToString(appOpts.Get(flags.FlagHome))
+		if homePath == "" {
+			return servertypes.ExportedApp{}, errors.New("application home not set")
 		}
-		return aApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
+
+		aApp := app.NewAxelarApp(logger, db, traceStore, height == -1, map[int64]bool{}, homePath,
+			cast.ToUint(appOpts.Get(server.FlagInvCheckPeriod)), encCfg, appOpts)
+		if height != -1 {
+			if err := aApp.LoadHeight(height); err != nil {
+				return servertypes.ExportedApp{}, err
+			}
+		}
+
+		return aApp.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs)
 	}
-
-	aApp := app.NewInitApp(logger, db, traceStore, true, uint(1), conf)
-
-	return aApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 }
 
-func loadConfig() app.Config {
-	// need to merge in cli config because axelard now has its own broadcasting client
-	conf := app.DefaultConfig()
-	homeDir := viper.GetString(cli.HomeFlag)
-	cliHomeDir := viper.GetString(cliHomeFlag)
-	cliCfgFile := path.Join(cliHomeDir, "config", "config.toml")
-	viper.SetConfigFile(cliCfgFile)
-	if err := viper.MergeInConfig(); err != nil {
-		panic(err)
+func queryCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:                        "query",
+		Aliases:                    []string{"q"},
+		Short:                      "Querying subcommands",
+		DisableFlagParsing:         true,
+		SuggestionsMinimumDistance: 2,
+		RunE:                       client.ValidateCmd,
 	}
-	cfgFile := path.Join(homeDir, "config", "config.toml")
-	viper.SetConfigFile(cfgFile)
 
-	if err := viper.Unmarshal(&conf); err != nil {
-		panic(err)
+	cmd.AddCommand(
+		authcmd.GetAccountCmd(),
+		rpc.ValidatorCommand(),
+		rpc.BlockCommand(),
+		authcmd.QueryTxsByEventsCmd(),
+		authcmd.QueryTxCmd(),
+	)
+
+	app.ModuleBasics.AddQueryCommands(cmd)
+	cmd.PersistentFlags().String(flags.FlagChainID, "", "The network chain ID")
+
+	return cmd
+}
+
+func txCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:                        "tx",
+		Short:                      "Transactions subcommands",
+		DisableFlagParsing:         true,
+		SuggestionsMinimumDistance: 2,
+		RunE:                       client.ValidateCmd,
 	}
-	return conf
+
+	cmd.AddCommand(
+		authcmd.GetSignCommand(),
+		authcmd.GetSignBatchCommand(),
+		authcmd.GetMultiSignCommand(),
+		authcmd.GetValidateSignaturesCommand(),
+		flags.LineBreak,
+		authcmd.GetEncodeCommand(),
+		authcmd.GetDecodeCommand(),
+		flags.LineBreak,
+		vestingcli.GetTxCmd(),
+	)
+
+	app.ModuleBasics.AddTxCommands(cmd)
+	cmd.PersistentFlags().String(flags.FlagChainID, "", "The network chain ID")
+
+	return cmd
 }

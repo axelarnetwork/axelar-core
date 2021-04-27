@@ -5,45 +5,42 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// Ensure MsgTrackAddress implements sdk.Msg interface
-var _ sdk.Msg = &MsgRegisterProxy{}
-
-type MsgRegisterProxy struct {
-	Principal sdk.ValAddress
-	Proxy     sdk.AccAddress
-}
-
-func NewMsgRegisterProxy(principal sdk.ValAddress, proxy sdk.AccAddress) MsgRegisterProxy {
-	return MsgRegisterProxy{
-		Principal: principal,
-		Proxy:     proxy,
+// NewMsgRegisterProxy - MsgRegisterProxy constructor
+func NewMsgRegisterProxy(principal sdk.ValAddress, proxy sdk.AccAddress) *MsgRegisterProxy {
+	return &MsgRegisterProxy{
+		PrincipalAddr: principal,
+		ProxyAddr:     proxy,
 	}
 }
 
-func (msg MsgRegisterProxy) Route() string {
+// Route returns the route for this message
+func (m MsgRegisterProxy) Route() string {
 	return RouterKey
 }
 
-func (msg MsgRegisterProxy) Type() string {
+// Type returns the type of the message
+func (m MsgRegisterProxy) Type() string {
 	return "RegisterProxy"
 }
 
-func (msg MsgRegisterProxy) ValidateBasic() error {
-	if msg.Principal.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing validator principal")
+// ValidateBasic executes a stateless message validation
+func (m MsgRegisterProxy) ValidateBasic() error {
+	if err := sdk.VerifyAddressFormat(m.PrincipalAddr); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "principal").Error())
 	}
-	if msg.Proxy.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing broadcast proxy")
+	if err := sdk.VerifyAddressFormat(m.ProxyAddr); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "proxy").Error())
 	}
 
 	return nil
 }
 
-func (msg MsgRegisterProxy) GetSignBytes() []byte {
-	bz := ModuleCdc.MustMarshalJSON(msg)
-	return sdk.MustSortJSON(bz)
+// GetSignBytes returns the message bytes that need to be signed
+func (m MsgRegisterProxy) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
-func (msg MsgRegisterProxy) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{sdk.AccAddress(msg.Principal)}
+// GetSigners returns the set of signers for this message
+func (m MsgRegisterProxy) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{sdk.AccAddress(m.PrincipalAddr)}
 }

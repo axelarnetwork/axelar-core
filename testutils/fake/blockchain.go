@@ -9,6 +9,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 // Result contains either the result of a successful message execution or the error that occurred
@@ -36,10 +37,10 @@ type block struct {
 		sdk.Msg
 		out chan<- *Result
 	}
-	header abci.Header
+	header tmproto.Header
 }
 
-func newBlock(size int, header abci.Header) block {
+func newBlock(size int, header tmproto.Header) block {
 	return block{msgs: make([]struct {
 		sdk.Msg
 		out chan<- *Result
@@ -154,8 +155,8 @@ func (bc *BlockChain) cutBlocks() <-chan block {
 	go func() {
 		// close block channel when message channel is closed
 		defer close(blocks)
-		nextBlock := newBlock(bc.blockSize, abci.Header{Height: bc.CurrentHeight(), Time: time.Now()})
-		bc.currentHeight += 1
+		nextBlock := newBlock(bc.blockSize, tmproto.Header{Height: bc.CurrentHeight(), Time: time.Now()})
+		bc.currentHeight++
 
 		for {
 			timeOut, cancel := context.WithTimeout(context.Background(), bc.blockTimeOut)
@@ -173,15 +174,15 @@ func (bc *BlockChain) cutBlocks() <-chan block {
 					nextBlock.msgs = append(nextBlock.msgs, msg)
 					if len(nextBlock.msgs) == bc.blockSize {
 						blocks <- nextBlock
-						nextBlock = newBlock(bc.blockSize, abci.Header{Height: bc.CurrentHeight(), Time: time.Now()})
-						bc.currentHeight += 1
+						nextBlock = newBlock(bc.blockSize, tmproto.Header{Height: bc.CurrentHeight(), Time: time.Now()})
+						bc.currentHeight++
 
 					}
 				// timeout happened before receiving a message, cut the block here and start a new one
 				case <-timeOut.Done():
 					blocks <- nextBlock
-					nextBlock = newBlock(bc.blockSize, abci.Header{Height: bc.CurrentHeight(), Time: time.Now()})
-					bc.currentHeight += 1
+					nextBlock = newBlock(bc.blockSize, tmproto.Header{Height: bc.CurrentHeight(), Time: time.Now()})
+					bc.currentHeight++
 
 					cancel()
 					break timeOutloop
@@ -212,9 +213,7 @@ func deepCopy(bc BlockChain) *BlockChain {
 	newChain.blockSize = bc.blockSize
 	newChain.blockTimeOut = bc.blockTimeOut
 	newChain.currentHeight = bc.currentHeight
-	for _, node := range bc.nodes {
-		newChain.nodes = append(newChain.nodes, node)
-	}
+	newChain.nodes = append(newChain.nodes, bc.nodes...)
 
 	return newChain
 }
@@ -321,7 +320,7 @@ func (n *Node) start() {
 				}
 
 				if res != nil {
-					msgEvents = msgEvents.AppendEvents(res.Events)
+					msgEvents = msgEvents.AppendEvents(res.GetEvents())
 				}
 
 				events := msgEvents.ToABCIEvents()
@@ -354,8 +353,8 @@ func NewRouter() sdk.Router {
 }
 
 // AddRoute adds a new handler route
-func (r Router) AddRoute(moduleName string, h sdk.Handler) sdk.Router {
-	r.handlers[moduleName] = h
+func (r Router) AddRoute(route sdk.Route) sdk.Router {
+	r.handlers[route.Path()] = route.Handler()
 	return r
 }
 

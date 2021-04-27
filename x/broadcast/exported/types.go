@@ -17,9 +17,4 @@ type Broadcaster interface {
 
 	// GetProxy returns the proxy address for a given principal address. Returns nil if not set.
 	GetProxy(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress
-
-	// GetLocalPrincipal returns the address of the local validator account. Returns nil if not set.
-	//
-	// WARNING: Handle with care, this call is non-deterministic because it exposes local information that is DIFFERENT for each validator
-	GetLocalPrincipal(ctx sdk.Context) sdk.ValAddress
 }

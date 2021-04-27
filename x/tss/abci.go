@@ -1,9 +1,10 @@
 package tss
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
+
+	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
 )
 
 // BeginBlocker check for infraction evidence or downtime of validators

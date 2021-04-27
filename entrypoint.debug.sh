@@ -12,15 +12,15 @@ addPeers() {
   mv "$D_HOME_DIR/config/config.toml.tmp" "$D_HOME_DIR/config/config.toml"
 }
 
-prepareCli() {
-  #### Client
-  echo "Setting up config for CLI"
-  axelarcli config keyring-backend "$KEYRING_BACKEND"
-  axelarcli config chain-id "$CHAIN_ID"
-  axelarcli config output json
-  axelarcli config indent true
-  axelarcli config trust-node true
-}
+#prepareCli() {
+#  #### Client
+#  echo "Setting up config for CLI"
+#  axelarcli config keyring-backend "$KEYRING_BACKEND"
+#  axelarcli config chain-id "$CHAIN_ID"
+#  axelarcli config output json
+#  axelarcli config indent true
+#  axelarcli config trust-node true
+#}
 
 isCliPrepared() {
   if [ -f "$CLI_HOME_DIR/config/config.toml" ]; then
@@ -63,15 +63,15 @@ startValProc() {
   fi
 
   dlv --listen=:2346 --headless=true ${VALD_CONTINUE:+--continue} --api-version=2 --accept-multiclient exec \
-    /usr/local/bin/vald -- start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} --validator-addr "$(axelarcli keys show validator -a --bech val)"
+    /usr/local/bin/axelard -- vald-start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} --validator-addr "$(axelarcli keys show validator -a --bech val)"
 }
 
-CLI_HOME_DIR="$HOME_DIR/.axelarcli"
-D_HOME_DIR="$HOME_DIR/.axelard"
+CLI_HOME_DIR="$HOME_DIR/.axelar"
+D_HOME_DIR="$HOME_DIR/.axelar"
 
-if ! isCliPrepared; then
-  prepareCli
-fi
+#if ! isCliPrepared; then
+#  prepareCli
+#fi
 
 if ! isGenesisInitialized; then
   initGenesis
@@ -82,8 +82,13 @@ if ! isGenesisInitialized; then
   exit 1
 fi
 
-if [ -n "$CONFIG_PATH" ] && [ -f "$CONFIG_PATH" ]; then
-  cp "$CONFIG_PATH" "$D_HOME_DIR/config/config.toml"
+if [ -n "$CONFIG_PATH" ] && [ -d "$CONFIG_PATH" ]; then
+  if [ -f "$CONFIG_PATH/config.toml" ]; then
+    cp "$CONFIG_PATH/config.toml" "$D_HOME_DIR/config/config.toml"
+  fi
+  if [ -f "$CONFIG_PATH/app.toml" ]; then
+    cp "$CONFIG_PATH/app.toml" "$D_HOME_DIR/config/app.toml"
+  fi
 fi
 
 if [ -n "$PEERS_FILE" ]; then
@@ -93,12 +98,6 @@ fi
 
 if [ "$REST_CONTINUE" != true ]; then
   unset REST_CONTINUE
-fi
-
-if [ "$START_REST" = true ]; then
-    # REST endpoint must be bound to 0.0.0.0 for availability on docker host
-    dlv --listen=:2347 --headless=true --api-version=2 ${REST_CONTINUE:+--continue} --accept-multiclient exec \
-      /usr/local/bin/axelarcli -- rest-server --chain-id=axelarcli --laddr=tcp://0.0.0.0:1317 --node tcp://0.0.0.0:26657 --unsafe-cors &
 fi
 
 startValProc &

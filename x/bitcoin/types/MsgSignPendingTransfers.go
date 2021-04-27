@@ -8,33 +8,27 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// MsgSignPendingTransfers represents a message to trigger the signing of a consolidation transaction
-type MsgSignPendingTransfers struct {
-	Sender sdk.AccAddress
-	Fee    btcutil.Amount
-}
-
 // NewMsgSignPendingTransfers - MsgSignPendingTransfers constructor
-func NewMsgSignPendingTransfers(sender sdk.AccAddress, fee btcutil.Amount) sdk.Msg {
-	return MsgSignPendingTransfers{Sender: sender, Fee: fee}
+func NewMsgSignPendingTransfers(sender sdk.AccAddress, fee btcutil.Amount) *MsgSignPendingTransfers {
+	return &MsgSignPendingTransfers{Sender: sender, Fee: int64(fee)}
 }
 
 // Route returns the route for this message
-func (msg MsgSignPendingTransfers) Route() string {
+func (m MsgSignPendingTransfers) Route() string {
 	return RouterKey
 }
 
 // Type returns the type of the message
-func (msg MsgSignPendingTransfers) Type() string {
+func (m MsgSignPendingTransfers) Type() string {
 	return "SignPendingTransfers"
 }
 
 // ValidateBasic executes a stateless message validation
-func (msg MsgSignPendingTransfers) ValidateBasic() error {
-	if msg.Sender.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
+func (m MsgSignPendingTransfers) ValidateBasic() error {
+	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
-	if msg.Fee <= 0 {
+	if m.Fee <= 0 {
 		return fmt.Errorf("fee must be a positive amount")
 	}
 
@@ -42,12 +36,11 @@ func (msg MsgSignPendingTransfers) ValidateBasic() error {
 }
 
 // GetSignBytes returns the message bytes that need to be signed
-func (msg MsgSignPendingTransfers) GetSignBytes() []byte {
-	bz := ModuleCdc.MustMarshalJSON(msg)
-	return sdk.MustSortJSON(bz)
+func (m MsgSignPendingTransfers) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
 // GetSigners returns the set of signers for this message
-func (msg MsgSignPendingTransfers) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Sender}
+func (m MsgSignPendingTransfers) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{m.Sender}
 }

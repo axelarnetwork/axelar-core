@@ -12,24 +12,6 @@ addPeers() {
   mv "$D_HOME_DIR/config/config.toml.tmp" "$D_HOME_DIR/config/config.toml"
 }
 
-prepareCli() {
-  #### Client
-  echo "Setting up config for CLI"
-  axelarcli config keyring-backend "$KEYRING_BACKEND"
-  axelarcli config chain-id "$CHAIN_ID"
-  axelarcli config output json
-  axelarcli config indent true
-  axelarcli config trust-node true
-}
-
-isCliPrepared() {
-  if [ -f "$CLI_HOME_DIR/config/config.toml" ]; then
-    return 0
-  fi
-
-  return 1
-}
-
 isGenesisInitialized() {
   if [ -f "$D_HOME_DIR/config/genesis.json" ]; then
     return 0
@@ -49,15 +31,12 @@ initGenesis() {
 
 startValProc() {
   sleep 10s
-  vald start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} --validator-addr "$(axelarcli keys show validator -a --bech val)"
+  axelard vald-start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} \
+    --validator-addr "$(axelarcli keys show validator -a --bech val)" \
+    --broadcast-mode sync
 }
 
-CLI_HOME_DIR="$HOME_DIR/.axelarcli"
-D_HOME_DIR="$HOME_DIR/.axelard"
-
-if ! isCliPrepared; then
-  prepareCli
-fi
+D_HOME_DIR="$HOME_DIR/.axelar"
 
 if ! isGenesisInitialized; then
   initGenesis
@@ -68,22 +47,18 @@ if ! isGenesisInitialized; then
   exit 1
 fi
 
-if [ -n "$CONFIG_PATH" ] && [ -f "$CONFIG_PATH" ]; then
-  cp "$CONFIG_PATH" "$D_HOME_DIR/config/config.toml"
+if [ -n "$CONFIG_PATH" ] && [ -d "$CONFIG_PATH" ]; then
+  if [ -f "$CONFIG_PATH/config.toml" ]; then
+    cp "$CONFIG_PATH/config.toml" "$D_HOME_DIR/config/config.toml"
+  fi
+  if [ -f "$CONFIG_PATH/app.toml" ]; then
+    cp "$CONFIG_PATH/app.toml" "$D_HOME_DIR/config/app.toml"
+  fi
 fi
 
 if [ -n "$PEERS_FILE" ]; then
   PEERS=$(cat "$PEERS_FILE")
   addPeers "$PEERS"
-fi
-
-if [ "$START_REST" = true ]; then
-  # REST endpoint must be bound to 0.0.0.0 for availability on docker host
-  axelarcli rest-server \
-    --chain-id=axelarcli \
-    --laddr=tcp://0.0.0.0:1317 \
-    --node tcp://0.0.0.0:26657 \
-    --unsafe-cors &
 fi
 
 startValProc &

@@ -5,18 +5,15 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
-	cliUtils "github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 // GetTxCmd returns the transaction commands for this module
-func GetTxCmd(cdc *codec.Codec) *cobra.Command {
+func GetTxCmd() *cobra.Command {
 	tssTxCmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      fmt.Sprintf("%s transactions subcommands", types.ModuleName),
@@ -25,17 +22,17 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	tssTxCmd.AddCommand(flags.PostCommands(
-		getCmdKeygenStart(cdc),
-		getCmdAssignNextKey(cdc),
-		getCmdRotateKey(cdc),
-		getCmdDeregister(cdc),
-	)...)
+	tssTxCmd.AddCommand(
+		getCmdKeygenStart(),
+		getCmdAssignNextKey(),
+		getCmdRotateKey(),
+		getCmdDeregister(),
+	)
 
 	return tssTxCmd
 }
 
-func getCmdKeygenStart(cdc *codec.Codec) *cobra.Command {
+func getCmdKeygenStart() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "start-keygen",
 		Short: "Initiate threshold key generation protocol",
@@ -48,21 +45,36 @@ func getCmdKeygenStart(cdc *codec.Codec) *cobra.Command {
 	}
 
 	subsetSize := cmd.Flags().Int64("subset-size", 0, "number of top validators to participate in the key generation")
+	keyShareDistributionPolicy := cmd.Flags().String(
+		"key-share-distribution-policy",
+		exported.WeightedByStake.SimpleString(),
+		fmt.Sprintf("policy for distributing key shares; available options: %s, %s", exported.WeightedByStake.SimpleString(), exported.OnePerValidator.SimpleString()),
+	)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
+		clientCtx, err := client.GetClientTxContext(cmd)
+		if err != nil {
+			return err
+		}
 
-		msg := types.NewMsgKeygenStart(cliCtx.FromAddress, *newKeyID, *subsetSize)
+		keyShareDistributionPolicy, err := exported.KeyShareDistributionPolicyFromSimpleStr(*keyShareDistributionPolicy)
+		if err != nil {
+			return err
+		}
+
+		msg := types.NewMsgKeygenStart(clientCtx.FromAddress, *newKeyID, *subsetSize, keyShareDistributionPolicy)
 		if err := msg.ValidateBasic(); err != nil {
 			return err
 		}
-		return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 	}
+
+	flags.AddTxFlagsToCmd(cmd)
 
 	return cmd
 }
 
-func getCmdAssignNextKey(cdc *codec.Codec) *cobra.Command {
+func getCmdAssignNextKey() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "assign-next [chain] [role] [keyID]",
 		Short: "Assigns a previously created key with [keyID] as the next key for [chain]",
@@ -70,28 +82,32 @@ func getCmdAssignNextKey(cdc *codec.Codec) *cobra.Command {
 	}
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
+		clientCtx, err := client.GetClientTxContext(cmd)
+		if err != nil {
+			return err
+		}
 
 		chain := args[0]
-		keyRole, err := exported.KeyRoleFromStr(args[1])
+		keyRole, err := exported.KeyRoleFromSimpleStr(args[1])
 		if err != nil {
 			return err
 		}
 		keyID := args[2]
 
-		msg := types.NewMsgAssignNextKey(cliCtx.FromAddress, chain, keyID, keyRole)
+		msg := types.NewMsgAssignNextKey(clientCtx.FromAddress, chain, keyID, keyRole)
 
 		if err := msg.ValidateBasic(); err != nil {
 			return err
 		}
 
-		return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 	}
 
+	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }
 
-func getCmdRotateKey(cdc *codec.Codec) *cobra.Command {
+func getCmdRotateKey() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "rotate [chain] [role]",
 		Short: "Rotate the given chain from the old key to the previously assigned one",
@@ -99,40 +115,49 @@ func getCmdRotateKey(cdc *codec.Codec) *cobra.Command {
 	}
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
-
-		chain := args[0]
-		keyRole, err := exported.KeyRoleFromStr(args[1])
+		clientCtx, err := client.GetClientTxContext(cmd)
 		if err != nil {
 			return err
 		}
 
-		msg := types.NewMsgRotateKey(cliCtx.FromAddress, chain, keyRole)
+		chain := args[0]
+		keyRole, err := exported.KeyRoleFromSimpleStr(args[1])
+		if err != nil {
+			return err
+		}
+
+		msg := types.NewMsgRotateKey(clientCtx.FromAddress, chain, keyRole)
 		if err := msg.ValidateBasic(); err != nil {
 			return err
 		}
 
-		return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 	}
+
+	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }
 
-func getCmdDeregister(cdc *codec.Codec) *cobra.Command {
+func getCmdDeregister() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "deregister",
 		Short: "Deregister from participating in any future key generation",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, txBldr := cliUtils.PrepareCli(cmd.InOrStdin(), cdc)
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
 
-			msg := types.NewMsgDeregister(cliCtx.GetFromAddress())
+			msg := types.NewMsgDeregister(clientCtx.GetFromAddress())
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
 
+	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }

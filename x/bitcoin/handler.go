@@ -23,13 +23,13 @@ func NewHandler(k types.BTCKeeper, v types.Voter, signer types.Signer, n types.N
 	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
-		case types.MsgLink:
+		case *types.MsgLink:
 			return HandleMsgLink(ctx, k, signer, n, msg)
-		case types.MsgConfirmOutpoint:
+		case *types.MsgConfirmOutpoint:
 			return HandleMsgConfirmOutpoint(ctx, k, v, signer, msg)
-		case types.MsgVoteConfirmOutpoint:
+		case *types.MsgVoteConfirmOutpoint:
 			return HandleMsgVoteConfirmOutpoint(ctx, k, v, n, msg)
-		case types.MsgSignPendingTransfers:
+		case *types.MsgSignPendingTransfers:
 			return HandleMsgSignPendingTransfers(ctx, k, signer, n, snapshotter, v, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
@@ -49,7 +49,7 @@ func NewHandler(k types.BTCKeeper, v types.Voter, signer types.Signer, n types.N
 }
 
 // HandleMsgLink handles address linking
-func HandleMsgLink(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n types.Nexus, msg types.MsgLink) (*sdk.Result, error) {
+func HandleMsgLink(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n types.Nexus, msg *types.MsgLink) (*sdk.Result, error) {
 	masterKey, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.MasterKey)
 	if !ok {
 		return nil, fmt.Errorf("master key not set")
@@ -77,13 +77,13 @@ func HandleMsgLink(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n types.N
 	return &sdk.Result{
 		Data:   []byte(depositAddr.EncodeAddress()),
 		Log:    fmt.Sprintf("successfully linked {%s} and {%s}", depositAddr.ToCrossChainAddr().String(), recipient.String()),
-		Events: ctx.EventManager().Events(),
+		Events: ctx.EventManager().ABCIEvents(),
 	}, nil
 }
 
 // HandleMsgConfirmOutpoint handles the confirmation of a Bitcoin outpoint
-func HandleMsgConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, voter types.InitPoller, signer types.Signer, msg types.MsgConfirmOutpoint) (*sdk.Result, error) {
-	_, state, ok := k.GetOutPointInfo(ctx, *msg.OutPointInfo.OutPoint)
+func HandleMsgConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, voter types.InitPoller, signer types.Signer, msg *types.MsgConfirmOutpoint) (*sdk.Result, error) {
+	_, state, ok := k.GetOutPointInfo(ctx, msg.OutPointInfo.GetOutPoint())
 	switch {
 	case !ok:
 		break
@@ -107,7 +107,7 @@ func HandleMsgConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, voter types.In
 		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
 	}
 
-	poll := vote.NewPollMetaWithNonce(types.ModuleName, msg.OutPointInfo.OutPoint.String(), ctx.BlockHeight(), k.GetRevoteLockingPeriod(ctx))
+	poll := vote.NewPollMetaWithNonce(types.ModuleName, msg.OutPointInfo.OutPoint, ctx.BlockHeight(), k.GetRevoteLockingPeriod(ctx))
 	if err := voter.InitPoll(ctx, poll, counter); err != nil {
 		return nil, err
 	}
@@ -122,22 +122,22 @@ func HandleMsgConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, voter types.In
 	))
 
 	return &sdk.Result{
-		Log:    fmt.Sprintf("votes on confirmation of %s started", msg.OutPointInfo.OutPoint.String()),
-		Events: ctx.EventManager().Events(),
+		Log:    fmt.Sprintf("votes on confirmation of %s started", msg.OutPointInfo.OutPoint),
+		Events: ctx.EventManager().ABCIEvents(),
 	}, nil
 }
 
 // HandleMsgVoteConfirmOutpoint handles the votes on an outpoint confirmation
-func HandleMsgVoteConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, v types.Voter, n types.Nexus, msg types.MsgVoteConfirmOutpoint) (*sdk.Result, error) {
+func HandleMsgVoteConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, v types.Voter, n types.Nexus, msg *types.MsgVoteConfirmOutpoint) (*sdk.Result, error) {
 	// has the outpoint been confirmed before?
-	confirmedOutPointInfo, state, confirmedBefore := k.GetOutPointInfo(ctx, msg.OutPoint)
+	confirmedOutPointInfo, state, confirmedBefore := k.GetOutPointInfo(ctx, *types.MustConvertOutPointFromStr(msg.OutPoint))
 	// is there an ongoing poll?
 	pendingOutPointInfo, pollFound := k.GetPendingOutPointInfo(ctx, msg.Poll)
 
 	switch {
 	// a malicious user could try to delete an ongoing poll by providing an already confirmed outpoint,
 	// so we need to check that it matches the poll before deleting
-	case confirmedBefore && pollFound && pendingOutPointInfo.OutPoint.String() == confirmedOutPointInfo.OutPoint.String():
+	case confirmedBefore && pollFound && pendingOutPointInfo.OutPoint == confirmedOutPointInfo.OutPoint:
 		v.DeletePoll(ctx, msg.Poll)
 		k.DeletePendingOutPointInfo(ctx, msg.Poll)
 		fallthrough
@@ -145,16 +145,16 @@ func HandleMsgVoteConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, v types.Vo
 	case confirmedBefore:
 		switch state {
 		case types.CONFIRMED:
-			return &sdk.Result{Log: fmt.Sprintf("outpoint %s already confirmed", msg.OutPoint.String())}, nil
+			return &sdk.Result{Log: fmt.Sprintf("outpoint %s already confirmed", msg.OutPoint)}, nil
 		case types.SPENT:
-			return &sdk.Result{Log: fmt.Sprintf("outpoint %s already spent", msg.OutPoint.String())}, nil
+			return &sdk.Result{Log: fmt.Sprintf("outpoint %s already spent", msg.OutPoint)}, nil
 		default:
 			panic(fmt.Sprintf("invalid outpoint state %v", state))
 		}
 	case !pollFound:
 		return nil, fmt.Errorf("no outpoint found for poll %s", msg.Poll.String())
-	case pendingOutPointInfo.OutPoint.String() != msg.OutPoint.String():
-		return nil, fmt.Errorf("outpoint %s does not match poll %s", msg.OutPoint.String(), msg.Poll.String())
+	case pendingOutPointInfo.OutPoint != msg.OutPoint:
+		return nil, fmt.Errorf("outpoint %s does not match poll %s", msg.OutPoint, msg.Poll.String())
 	default:
 		// assert: the outpoint is known and has not been confirmed before
 	}
@@ -165,7 +165,7 @@ func HandleMsgVoteConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, v types.Vo
 
 	result := v.Result(ctx, msg.Poll)
 	if result == nil {
-		return &sdk.Result{Log: fmt.Sprintf("not enough votes to confirm outpoint %s yet", msg.OutPoint.String())}, nil
+		return &sdk.Result{Log: fmt.Sprintf("not enough votes to confirm outpoint %s yet", msg.OutPoint)}, nil
 	}
 
 	// assert: the poll has completed
@@ -187,8 +187,8 @@ func HandleMsgVoteConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, v types.Vo
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
 		return &sdk.Result{
-			Log:    fmt.Sprintf("outpoint %s was discarded ", msg.OutPoint.String()),
-			Events: ctx.EventManager().Events(),
+			Log:    fmt.Sprintf("outpoint %s was discarded ", msg.OutPoint),
+			Events: ctx.EventManager().ABCIEvents(),
 		}, nil
 	}
 	ctx.EventManager().EmitEvent(
@@ -200,10 +200,10 @@ func HandleMsgVoteConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, v types.Vo
 	//  i.e. multiple outpoints in the SignedTx need to be confirmed
 
 	// if this is the consolidation outpoint it means the latest consolidation transaction is confirmed on Bitcoin
-	if tx, ok := k.GetSignedTx(ctx); ok && tx.TxHash() == pendingOutPointInfo.OutPoint.Hash {
+	if tx, ok := k.GetSignedTx(ctx); ok && tx.TxHash() == pendingOutPointInfo.GetOutPoint().Hash {
 		k.DeleteSignedTx(ctx)
 		return &sdk.Result{
-			Events: ctx.EventManager().Events(),
+			Events: ctx.EventManager().ABCIEvents(),
 			Log:    "confirmed consolidation transaction"}, nil
 	}
 
@@ -215,13 +215,13 @@ func HandleMsgVoteConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, v types.Vo
 	}
 
 	return &sdk.Result{
-		Events: ctx.EventManager().Events(),
+		Events: ctx.EventManager().ABCIEvents(),
 		Log:    fmt.Sprintf("transfer of %s from {%s} successfully prepared", amount.Amount.String(), depositAddr.String()),
 	}, nil
 }
 
 // HandleMsgSignPendingTransfers handles the signing of a consolidation transaction (consolidate confirmed outpoints and pay out transfers)
-func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, n types.Nexus, snapshotter types.Snapshotter, v types.Voter, msg types.MsgSignPendingTransfers) (*sdk.Result, error) {
+func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, n types.Nexus, snapshotter types.Snapshotter, v types.Voter, msg *types.MsgSignPendingTransfers) (*sdk.Result, error) {
 	if _, ok := k.GetUnsignedTx(ctx); ok {
 		return nil, fmt.Errorf("consolidation in progress")
 	}
@@ -235,11 +235,11 @@ func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer ty
 		return nil, err
 	}
 
-	change := totalDeposits.Sub(totalWithdrawals).SubRaw(int64(msg.Fee))
+	change := totalDeposits.Sub(totalWithdrawals).SubRaw(msg.Fee)
 	switch change.Sign() {
 	case -1, 0:
 		return nil, fmt.Errorf("not enough deposits (%s) to make all withdrawals (%s) with a transaction fee of %s",
-			totalDeposits.String(), totalWithdrawals.String(), msg.Fee.String(),
+			totalDeposits.String(), totalWithdrawals.String(), btcutil.Amount(msg.Fee).String(),
 		)
 	case 1:
 		changeOutput, err := prepareChange(ctx, k, signer, change)
@@ -264,8 +264,8 @@ func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer ty
 	}
 
 	return &sdk.Result{
-		Events: ctx.EventManager().Events(),
-		Log:    fmt.Sprintf("successfully started signing protocols to consolidate pending transfers"),
+		Events: ctx.EventManager().ABCIEvents(),
+		Log:    "successfully started signing protocols to consolidate pending transfers",
 	}, nil
 }
 
@@ -350,7 +350,7 @@ func prepareInputs(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) ([]t
 	for _, info := range k.GetConfirmedOutPointInfos(ctx) {
 		addr, ok := k.GetAddress(ctx, info.Address)
 		if !ok {
-			return nil, sdk.ZeroInt(), fmt.Errorf("address for confirmed outpoint %s must be known", info.OutPoint.String())
+			return nil, sdk.ZeroInt(), fmt.Errorf("address for confirmed outpoint %s must be known", info.OutPoint)
 		}
 
 		key, found := signer.GetKey(ctx, addr.Key.ID)
@@ -368,7 +368,7 @@ func prepareInputs(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) ([]t
 
 		prevOuts = append(prevOuts, types.OutPointToSign{OutPointInfo: info, AddressInfo: addr})
 		totalDeposits = totalDeposits.AddRaw(int64(info.Amount))
-		k.DeleteOutpointInfo(ctx, *info.OutPoint)
+		k.DeleteOutpointInfo(ctx, info.GetOutPoint())
 		k.SetOutpointInfo(ctx, info, types.SPENT)
 	}
 

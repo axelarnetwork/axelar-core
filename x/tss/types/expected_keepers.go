@@ -4,10 +4,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
+	tofnd2 "github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 
-	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -22,12 +23,12 @@ type Broadcaster interface {
 type Snapshotter interface {
 	GetLatestSnapshot(ctx sdk.Context) (snapshot.Snapshot, bool)
 	GetSnapshot(ctx sdk.Context, counter int64) (snapshot.Snapshot, bool)
-	TakeSnapshot(ctx sdk.Context, subsetSize int64) error
+	TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy exported.KeyShareDistributionPolicy) (snapshotConsensusPower sdk.Int, totalConsensusPower sdk.Int, err error)
 }
 
 // Nexus provides access to the nexus functionality
 type Nexus interface {
-	GetChain(ctx sdk.Context, chain string) (exported.Chain, bool)
+	GetChain(ctx sdk.Context, chain string) (nexus.Chain, bool)
 }
 
 // Voter provides voting functionality
@@ -45,17 +46,17 @@ type InitPoller = interface {
 
 // TofndClient wraps around TofndKeyGenClient and TofndSignClient
 type TofndClient interface {
-	tofnd.GG20Client
+	tofnd2.GG20Client
 }
 
 // TofndKeyGenClient provides keygen functionality
 type TofndKeyGenClient interface {
-	tofnd.GG20_KeygenClient
+	tofnd2.GG20_KeygenClient
 }
 
 // TofndSignClient provides signing functionality
 type TofndSignClient interface {
-	tofnd.GG20_SignClient
+	tofnd2.GG20_SignClient
 }
 
 // StakingKeeper adopts the methods from "github.com/cosmos/cosmos-sdk/x/staking/exported" that are

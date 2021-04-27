@@ -15,7 +15,7 @@ func InitGenesis(ctx sdk.Context, k types.BTCKeeper, g types.GenesisState) {
 // ExportGenesis writes the current store values
 // to a genesis file, which can be imported again
 // with InitGenesis
-func ExportGenesis(ctx sdk.Context, k types.BTCKeeper) types.GenesisState {
+func ExportGenesis(ctx sdk.Context, k types.BTCKeeper) *types.GenesisState {
 	params := k.GetParams(ctx)
-	return types.GenesisState{Params: params}
+	return &types.GenesisState{Params: params}
 }

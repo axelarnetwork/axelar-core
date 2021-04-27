@@ -2,28 +2,29 @@ package keeper
 
 import (
 	"crypto/ecdsa"
-	"crypto/rand"
-	"strconv"
+	cryptoRand "crypto/rand"
 	"testing"
 	"time"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/assert"
-	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
+	"github.com/tendermint/tendermint/libs/rand"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
+	appParams "github.com/axelarnetwork/axelar-core/app/params"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/utils"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
 
-	slashingTypes "github.com/cosmos/cosmos-sdk/x/slashing"
+	slashingTypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 
-	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -36,12 +37,11 @@ var (
 	val4       = newValidator(sdk.ValAddress("validator4"), 100)
 	validators = []snapshot.Validator{val1, val2, val3, val4}
 	snap       = snapshot.Snapshot{
-		Validators:           validators,
-		Timestamp:            time.Now(),
-		Height:               rand2.I64Between(1, 1000000),
-		TotalPower:           sdk.NewInt(400),
-		ValidatorsTotalPower: sdk.NewInt(400),
-		Counter:              rand2.I64Between(0, 100000),
+		Validators:      validators,
+		Timestamp:       time.Now(),
+		Height:          rand2.I64Between(1, 1000000),
+		TotalShareCount: sdk.NewInt(400),
+		Counter:         rand2.I64Between(0, 100000),
 	}
 	randPosInt      = rand2.I64GenBetween(0, 100000000)
 	randDistinctStr = rand2.Strings(3, 15).Distinct()
@@ -57,12 +57,14 @@ type testSetup struct {
 }
 
 func setup(t *testing.T) *testSetup {
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	broadcaster := prepareBroadcaster(t, ctx, testutils.Codec(), validators)
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	encCfg := appParams.MakeEncodingConfig()
+	broadcaster := prepareBroadcaster(t, ctx, encCfg.Amino, validators)
 	voter := &tssMock.VoterMock{
 		InitPollFunc: func(sdk.Context, exported.PollMeta, int64) error { return nil },
 	}
-	subspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), "tss")
+
+	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), "tss")
 	setup := &testSetup{
 		Broadcaster: broadcaster,
 		Voter:       voter,
@@ -85,7 +87,7 @@ func setup(t *testing.T) *testSetup {
 		},
 	}
 
-	k := NewKeeper(testutils.Codec(), sdk.NewKVStoreKey("tss"), subspace, slasher)
+	k := NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("tss"), subspace, slasher)
 	k.SetParams(ctx, types.DefaultParams())
 
 	setup.Keeper = k
@@ -101,10 +103,10 @@ func (s *testSetup) SetLockingPeriod(lockingPeriod int64) {
 func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context) tss.Key {
 	keyID := randDistinctStr.Next()
 	s.PrivateKey = make(chan *ecdsa.PrivateKey, 1)
-	err := s.Keeper.StartKeygen(ctx, s.Voter, keyID, len(validators)-1, snap)
+	err := s.Keeper.StartKeygen(ctx, s.Voter, keyID, snap)
 	assert.NoError(t, err)
 
-	sk, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
+	sk, err := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
 	if err != nil {
 		panic(err)
 	}
@@ -116,22 +118,38 @@ func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context) tss.Key {
 	}
 }
 
-func prepareBroadcaster(t *testing.T, ctx sdk.Context, cdc *codec.Codec, validators []snapshot.Validator) fake.Broadcaster {
+func prepareBroadcaster(t *testing.T, ctx sdk.Context, cdc *codec.LegacyAmino, validators []snapshot.Validator) fake.Broadcaster {
 	broadcaster := fake.NewBroadcaster(cdc, validators[0].GetOperator(), func(msg sdk.Msg) (result <-chan *fake.Result) {
 		return make(chan *fake.Result)
 	})
 
-	for i, v := range validators {
-		assert.NoError(t, broadcaster.RegisterProxy(ctx, v.GetOperator(), sdk.AccAddress("proxy"+strconv.Itoa(i))))
+	for _, v := range validators {
+		assert.NoError(t, broadcaster.RegisterProxy(ctx, v.GetOperator(), rand.Bytes(sdk.AddrLen)))
 	}
 
 	return broadcaster
 }
 
-func newValidator(address sdk.ValAddress, power int64) *snapMock.ValidatorMock {
-	return &snapMock.ValidatorMock{
+func newValidator(address sdk.ValAddress, power int64) snapshot.Validator {
+	return snapshot.NewValidator(&snapMock.SDKValidatorMock{
 		GetOperatorFunc:       func() sdk.ValAddress { return address },
 		GetConsensusPowerFunc: func() int64 { return power },
-		GetConsAddrFunc:       func() sdk.ConsAddress { return address.Bytes() },
-	}
+		GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return address.Bytes(), nil },
+	}, power)
+}
+
+func TestComputeCorruptionThreshold(t *testing.T) {
+	s := setup(t)
+	defaultParams := types.DefaultParams()
+
+	s.Keeper.SetParams(s.Ctx, defaultParams)
+	assert.Equal(t, int64(5), s.Keeper.ComputeCorruptionThreshold(s.Ctx, sdk.NewInt(10)))
+
+	defaultParams.CorruptionThreshold = utils.Threshold{Numerator: 99, Denominator: 100}
+	s.Keeper.SetParams(s.Ctx, defaultParams)
+	assert.Equal(t, int64(8), s.Keeper.ComputeCorruptionThreshold(s.Ctx, sdk.NewInt(10)))
+
+	defaultParams.CorruptionThreshold = utils.Threshold{Numerator: 1, Denominator: 100}
+	s.Keeper.SetParams(s.Ctx, defaultParams)
+	assert.Equal(t, int64(-1), s.Keeper.ComputeCorruptionThreshold(s.Ctx, sdk.NewInt(10)))
 }

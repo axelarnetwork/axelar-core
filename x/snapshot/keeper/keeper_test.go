@@ -6,29 +6,33 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cosmos/cosmos-sdk/x/params"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/crypto/ed25519"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
+	appParams "github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 
-	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	snapshotMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
-
-	sdkExported "github.com/cosmos/cosmos-sdk/x/staking/exported"
 	staking "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/tendermint/tendermint/libs/log"
 )
 
-var stringGen = rand.Strings(5, 50).Distinct()
+var encCfg appParams.EncodingConfig
 
 // Cases to test
 var testCases = []struct {
@@ -50,9 +54,9 @@ var testCases = []struct {
 
 func init() {
 	// Necessary if tests execute with the real sdk staking keeper
-	cdc := testutils.Codec()
-	cdc.RegisterConcrete("", "string", nil)
-	staking.RegisterCodec(cdc)
+	encCfg = testutils.MakeEncodingConfig()
+	encCfg.Amino.RegisterConcrete("", "string", nil)
+	staking.RegisterLegacyAminoCodec(encCfg.Amino)
 
 }
 
@@ -61,9 +65,8 @@ func TestTakeSnapshot_WithSubsetSize(t *testing.T) {
 	validators := genValidators(t, 5, 500)
 	staker := newMockStaker(validators...)
 
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	cdc := testutils.Codec()
-	snapSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	snapSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
 	slashingKeeper := &snapshotMock.SlasherMock{
 		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (exported.ValidatorInfo, bool) {
 			newInfo := slashingtypes.NewValidatorSigningInfo(
@@ -82,7 +85,7 @@ func TestTakeSnapshot_WithSubsetSize(t *testing.T) {
 		GetProxyFunc: func(_ sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
 			for _, v := range validators {
 				if bytes.Equal(principal.Bytes(), v.GetOperator()) {
-					return sdk.AccAddress(stringGen.Next())
+					return rand.Bytes(sdk.AddrLen)
 				}
 			}
 			return nil
@@ -92,12 +95,15 @@ func TestTakeSnapshot_WithSubsetSize(t *testing.T) {
 		GetValidatorDeregisteredBlockHeightFunc: func(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
 			return 0
 		},
+		GetMinBondFractionPerShareFunc: func(sdk.Context) utils.Threshold {
+			return utils.Threshold{Numerator: 1, Denominator: 200}
+		},
 	}
 
-	keeper := NewKeeper(cdc, sdk.NewKVStoreKey("staking"), snapSubspace, broadcasterMock, staker, slashingKeeper, tssMock)
+	keeper := NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("staking"), snapSubspace, broadcasterMock, staker, slashingKeeper, tssMock)
 	keeper.SetParams(ctx, types.DefaultParams())
 
-	err := keeper.TakeSnapshot(ctx, subsetSize)
+	_, _, err := keeper.TakeSnapshot(ctx, subsetSize, tss.WeightedByStake)
 	assert.NoError(t, err)
 
 	actual, ok := keeper.GetSnapshot(ctx, 0)
@@ -109,14 +115,13 @@ func TestTakeSnapshot_WithSubsetSize(t *testing.T) {
 func TestSnapshots(t *testing.T) {
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("Test-%d", i), func(t *testing.T) {
-			ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-			cdc := testutils.Codec()
+			ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 			validators := genValidators(t, testCase.numValidators, testCase.totalPower)
 			staker := newMockStaker(validators...)
 
 			assert.True(t, staker.GetLastTotalPower(ctx).Equal(sdk.NewInt(int64(testCase.totalPower))))
 
-			snapSubspace := params.NewSubspace(testutils.Codec(), sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
+			snapSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
 
 			slashingKeeper := &snapshotMock.SlasherMock{
 				GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (exported.ValidatorInfo, bool) {
@@ -137,7 +142,7 @@ func TestSnapshots(t *testing.T) {
 				GetProxyFunc: func(_ sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
 					for _, v := range validators {
 						if bytes.Equal(principal.Bytes(), v.GetOperator()) {
-							return sdk.AccAddress(stringGen.Next())
+							return rand.Bytes(sdk.AddrLen)
 						}
 					}
 					return nil
@@ -148,9 +153,12 @@ func TestSnapshots(t *testing.T) {
 				GetValidatorDeregisteredBlockHeightFunc: func(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
 					return 0
 				},
+				GetMinBondFractionPerShareFunc: func(sdk.Context) utils.Threshold {
+					return utils.Threshold{Numerator: 1, Denominator: 200}
+				},
 			}
 
-			keeper := NewKeeper(cdc, sdk.NewKVStoreKey("staking"), snapSubspace, broadcasterMock, staker, slashingKeeper, tssMock)
+			keeper := NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("staking"), snapSubspace, broadcasterMock, staker, slashingKeeper, tssMock)
 			keeper.SetParams(ctx, types.DefaultParams())
 
 			_, ok := keeper.GetSnapshot(ctx, 0)
@@ -162,7 +170,7 @@ func TestSnapshots(t *testing.T) {
 
 			assert.False(t, ok)
 
-			err := keeper.TakeSnapshot(ctx, 0)
+			_, _, err := keeper.TakeSnapshot(ctx, 0, tss.WeightedByStake)
 
 			assert.NoError(t, err)
 
@@ -175,13 +183,13 @@ func TestSnapshots(t *testing.T) {
 				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetOperator())
 			}
 
-			err = keeper.TakeSnapshot(ctx, 0)
+			_, _, err = keeper.TakeSnapshot(ctx, 0, tss.WeightedByStake)
 
 			assert.Error(t, err)
 
 			ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.DefaultParams().LockingPeriod + 100))
 
-			err = keeper.TakeSnapshot(ctx, 0)
+			_, _, err = keeper.TakeSnapshot(ctx, 0, tss.WeightedByStake)
 
 			assert.NoError(t, err)
 
@@ -198,10 +206,10 @@ func TestSnapshots(t *testing.T) {
 }
 
 // This function returns a set of validators whose voting power adds up to the specified total power
-func genValidators(t *testing.T, numValidators, totalConsPower int) []sdkExported.ValidatorI {
+func genValidators(t *testing.T, numValidators, totalConsPower int) []stakingtypes.ValidatorI {
 	t.Logf("Total Power: %v", totalConsPower)
 
-	validators := make([]sdkExported.ValidatorI, numValidators)
+	validators := make([]stakingtypes.ValidatorI, numValidators)
 
 	quotient, remainder := totalConsPower/numValidators, totalConsPower%numValidators
 
@@ -211,11 +219,21 @@ func genValidators(t *testing.T, numValidators, totalConsPower int) []sdkExporte
 			power += remainder
 		}
 
+		protoPK, err := cryptocodec.FromTmPubKeyInterface(ed25519.GenPrivKey().PubKey())
+		if err != nil {
+			panic(err)
+		}
+
+		pk, err := codectypes.NewAnyWithValue(protoPK)
+		if err != nil {
+			panic(err)
+		}
+
 		validators[i] = staking.Validator{
-			OperatorAddress: sdk.ValAddress(stringGen.Next()),
+			OperatorAddress: sdk.ValAddress(rand.Bytes(sdk.AddrLen)).String(),
 			Tokens:          sdk.TokensFromConsensusPower(int64(power)),
-			Status:          sdk.Bonded,
-			ConsPubKey:      ed25519.GenPrivKey().PubKey(),
+			Status:          stakingtypes.Bonded,
+			ConsensusPubkey: pk,
 		}
 	}
 
@@ -225,13 +243,13 @@ func genValidators(t *testing.T, numValidators, totalConsPower int) []sdkExporte
 var _ types.StakingKeeper = mockStaker{}
 
 type mockStaker struct {
-	validators []sdkExported.ValidatorI
+	validators []stakingtypes.ValidatorI
 	totalPower sdk.Int
 }
 
-func newMockStaker(validators ...sdkExported.ValidatorI) *mockStaker {
+func newMockStaker(validators ...stakingtypes.ValidatorI) *mockStaker {
 	keeper := &mockStaker{
-		make([]sdkExported.ValidatorI, 0),
+		make([]stakingtypes.ValidatorI, 0),
 		sdk.ZeroInt(),
 	}
 
@@ -247,7 +265,7 @@ func (k mockStaker) GetLastTotalPower(_ sdk.Context) (power sdk.Int) {
 	return k.totalPower
 }
 
-func (k mockStaker) IterateBondedValidatorsByPower(_ sdk.Context, fn func(index int64, validator sdkExported.ValidatorI) (stop bool)) {
+func (k mockStaker) IterateBondedValidatorsByPower(_ sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) {
 	for i, val := range k.validators {
 		if fn(int64(i), val) {
 			return
@@ -255,7 +273,7 @@ func (k mockStaker) IterateBondedValidatorsByPower(_ sdk.Context, fn func(index 
 	}
 }
 
-func (k mockStaker) Validator(_ sdk.Context, addr sdk.ValAddress) sdkExported.ValidatorI {
+func (k mockStaker) Validator(_ sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI {
 	for _, validator := range k.validators {
 		if bytes.Equal(validator.GetOperator(), addr) {
 			return validator

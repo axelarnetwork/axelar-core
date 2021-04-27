@@ -20,10 +20,10 @@ func TestKeeper_StartKeygen_IdAlreadyInUse_ReturnError(t *testing.T) {
 	for _, keyID := range randDistinctStr.Distinct().Take(100) {
 		s := setup(t)
 
-		err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, 1, snap)
+		err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, snap)
 		assert.NoError(t, err)
 
-		err = s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, 1, snap)
+		err = s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, snap)
 		assert.Error(t, err)
 	}
 }
@@ -41,7 +41,7 @@ func TestKeeper_AssignNextMasterKey_StartKeygenAfterLockingPeriod_Unlocked(t *te
 		s.SetLockingPeriod(lockingPeriod)
 
 		keyID := randDistinctStr.Next()
-		err := s.Keeper.StartKeygen(ctx, s.Voter, keyID, len(validators)-1, snap)
+		err := s.Keeper.StartKeygen(ctx, s.Voter, keyID, snap)
 		assert.NoError(t, err)
 
 		// time passes
@@ -71,6 +71,7 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_NewKeyIsSet(t *testing.T) {
 		ctx := s.Ctx.WithBlockHeight(currHeight)
 		s.SetLockingPeriod(lockingPeriod)
 		expectedKey := s.SetKey(t, ctx)
+		expectedKey.Role = exported.MasterKey
 
 		assert.NoError(t, s.Keeper.AssignNextKey(ctx, chain, exported.MasterKey, expectedKey.ID))
 		assert.NoError(t, s.Keeper.RotateKey(s.Ctx, chain, exported.MasterKey))

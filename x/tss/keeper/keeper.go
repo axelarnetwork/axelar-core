@@ -2,11 +2,10 @@ package keeper
 
 import (
 	"fmt"
-	"math"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -29,15 +28,16 @@ const (
 	keyRolePrefix               = "key_role_"
 )
 
+// Keeper allows access to the broadcast state
 type Keeper struct {
 	slasher  snapshot.Slasher
 	params   params.Subspace
 	storeKey sdk.StoreKey
-	cdc      *codec.Codec
+	cdc      *codec.LegacyAmino
 }
 
 // NewKeeper constructs a tss keeper
-func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace, slasher snapshot.Slasher) Keeper {
+func NewKeeper(cdc *codec.LegacyAmino, storeKey sdk.StoreKey, paramSpace params.Subspace, slasher snapshot.Slasher) Keeper {
 	return Keeper{
 		slasher:  slasher,
 		cdc:      cdc,
@@ -69,7 +69,7 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 }
 
 func (k Keeper) setKeyRequirement(ctx sdk.Context, keyRequirement exported.KeyRequirement) {
-	key := fmt.Sprintf("%s%s_%s", keyRequirementPrefix, keyRequirement.ChainName, keyRequirement.KeyRole.String())
+	key := fmt.Sprintf("%s%s_%s", keyRequirementPrefix, keyRequirement.ChainName, keyRequirement.KeyRole.SimpleString())
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(keyRequirement)
 
 	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
@@ -77,7 +77,7 @@ func (k Keeper) setKeyRequirement(ctx sdk.Context, keyRequirement exported.KeyRe
 
 // GetKeyRequirement gets the key requirement for a given chain of a given role
 func (k Keeper) GetKeyRequirement(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyRequirement, bool) {
-	key := fmt.Sprintf("%s%s_%s", keyRequirementPrefix, chain.Name, keyRole.String())
+	key := fmt.Sprintf("%s%s_%s", keyRequirementPrefix, chain.Name, keyRole.SimpleString())
 	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
 
 	if bz == nil {
@@ -88,13 +88,6 @@ func (k Keeper) GetKeyRequirement(ctx sdk.Context, chain nexus.Chain, keyRole ex
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &keyRequirement)
 
 	return keyRequirement, true
-}
-
-// getLockingPeriod returns the period of blocks that keygen is locked after a new snapshot has been created
-func (k Keeper) getLockingPeriod(ctx sdk.Context) int64 {
-	var period int64
-	k.params.Get(ctx, types.KeyLockingPeriod, &period)
-	return period
 }
 
 // SetValidatorDeregisteredBlockHeight sets the validator's deregistration block height
@@ -121,10 +114,10 @@ func (k Keeper) GetValidatorDeregisteredBlockHeight(ctx sdk.Context, valAddr sdk
 }
 
 // ComputeCorruptionThreshold returns corruption threshold to be used by tss
-func (k Keeper) ComputeCorruptionThreshold(ctx sdk.Context, totalvalidators int) int {
+func (k Keeper) ComputeCorruptionThreshold(ctx sdk.Context, totalShareCount sdk.Int) int64 {
 	var threshold utils.Threshold
 	k.params.Get(ctx, types.KeyCorruptionThreshold, &threshold)
-	// threshold = totalValidators * corruption threshold - 1
-	return int(math.Ceil(float64(totalvalidators)*float64(threshold.Numerator)/
-		float64(threshold.Denominator))) - 1
+
+	// (threshold + 1) shares are required to signed
+	return totalShareCount.MulRaw(threshold.Numerator).QuoRaw(threshold.Denominator).Int64() - 1
 }

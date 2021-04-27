@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/cosmos-sdk/x/params"
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/tendermint/tendermint/libs/log"
@@ -38,12 +38,12 @@ const (
 // Keeper represents the ethereum keeper
 type Keeper struct {
 	storeKey sdk.StoreKey
-	cdc      *codec.Codec
+	cdc      *codec.LegacyAmino
 	params   params.Subspace
 }
 
 // NewEthKeeper returns a new ethereum keeper
-func NewEthKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
+func NewEthKeeper(cdc *codec.LegacyAmino, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
 	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable())}
 }
 
@@ -67,7 +67,7 @@ func (k Keeper) GetNetwork(ctx sdk.Context) types.Network {
 }
 
 // Codec returns the codec
-func (k Keeper) Codec() *codec.Codec {
+func (k Keeper) Codec() *codec.LegacyAmino {
 	return k.cdc
 }
 
@@ -224,7 +224,7 @@ func (k Keeper) SetPendingTokenDeploy(ctx sdk.Context, poll exported.PollMeta, t
 }
 
 // SetTokenInfo stores the token info
-func (k Keeper) SetTokenInfo(ctx sdk.Context, msg types.MsgSignDeployToken) {
+func (k Keeper) SetTokenInfo(ctx sdk.Context, msg *types.MsgSignDeployToken) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(msg)
 	ctx.KVStore(k.storeKey).Set([]byte(symbolPrefix+msg.Symbol), bz)
 }

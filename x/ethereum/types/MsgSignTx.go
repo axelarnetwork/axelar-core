@@ -8,53 +8,54 @@ import (
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-type MsgSignTx struct {
-	Sender sdk.AccAddress
-	// Tx is stored in serialized form because the amino codec cannot properly deserialize MsgSignTx otherwise
-	Tx []byte
-}
-
-func NewMsgSignTx(sender sdk.AccAddress, jsonTx []byte) sdk.Msg {
-	return MsgSignTx{
+// NewMsgSignTx - constructor
+func NewMsgSignTx(sender sdk.AccAddress, jsonTx []byte) *MsgSignTx {
+	return &MsgSignTx{
 		Sender: sender,
 		Tx:     jsonTx,
 	}
 }
 
-func (msg MsgSignTx) Route() string {
+// Route returns the route of the message
+func (m MsgSignTx) Route() string {
 	return RouterKey
 }
 
-func (msg MsgSignTx) Type() string {
+// Type returns the type of the message
+func (m MsgSignTx) Type() string {
 	return "SignTx"
 }
 
-func (msg MsgSignTx) ValidateBasic() error {
-	if msg.Sender.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
+// ValidateBasic executes a stateless message validation
+func (m MsgSignTx) ValidateBasic() error {
+	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
-	if msg.Tx == nil {
+	if m.Tx == nil {
 		return fmt.Errorf("missing tx")
 	}
 	tx := ethTypes.Transaction{}
-	if err := tx.UnmarshalJSON(msg.Tx); err != nil {
+	if err := tx.UnmarshalJSON(m.Tx); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (msg MsgSignTx) GetSignBytes() []byte {
-	bz := ModuleCdc.MustMarshalJSON(msg)
+// GetSignBytes returns the message bytes that need to be signed
+func (m MsgSignTx) GetSignBytes() []byte {
+	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
 }
 
-func (msg MsgSignTx) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Sender}
+// GetSigners returns the set of signers for this message
+func (m MsgSignTx) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{m.Sender}
 }
 
-func (msg MsgSignTx) UnmarshaledTx() *ethTypes.Transaction {
+// UnmarshaledTx returns the unmarshaled ethereum transaction contained in this message
+func (m MsgSignTx) UnmarshaledTx() *ethTypes.Transaction {
 	tx := &ethTypes.Transaction{}
-	err := tx.UnmarshalJSON(msg.Tx)
+	err := tx.UnmarshalJSON(m.Tx)
 	if err != nil {
 		panic(err)
 	}

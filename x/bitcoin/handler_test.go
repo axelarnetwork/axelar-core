@@ -12,11 +12,12 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/go-amino"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
@@ -35,7 +36,7 @@ func TestHandleMsgLink(t *testing.T) {
 		signer      *mock.SignerMock
 		nexusKeeper *mock.NexusMock
 		ctx         sdk.Context
-		msg         types.MsgLink
+		msg         *types.MsgLink
 	)
 	setup := func() {
 		btcKeeper = &mock.BTCKeeperMock{
@@ -58,7 +59,7 @@ func TestHandleMsgLink(t *testing.T) {
 			IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return true },
 			LinkAddressesFunc:     func(sdk.Context, nexus.CrossChainAddress, nexus.CrossChainAddress) {},
 		}
-		ctx = sdk.NewContext(nil, abci.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		msg = randomMsgLink()
 	}
 	repeatCount := 20
@@ -102,7 +103,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 		voter     *mock.VoterMock
 		signer    *mock.SignerMock
 		ctx       sdk.Context
-		msg       types.MsgConfirmOutpoint
+		msg       *types.MsgConfirmOutpoint
 	)
 	setup := func() {
 		address := randomAddress()
@@ -124,7 +125,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 			GetRevoteLockingPeriodFunc:        func(sdk.Context) int64 { return int64(mathRand.Uint32()) },
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) uint64 { return mathRand.Uint64() },
 			SetPendingOutpointInfoFunc:        func(sdk.Context, vote.PollMeta, types.OutPointInfo) {},
-			CodecFunc:                         func() *amino.Codec { return testutils.Codec() },
+			CodecFunc:                         func() *codec.LegacyAmino { return types.ModuleCdc.LegacyAmino },
 		}
 		voter = &mock.VoterMock{
 			InitPollFunc: func(sdk.Context, vote.PollMeta, int64) error { return nil },
@@ -139,7 +140,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 			},
 		}
 
-		ctx = sdk.NewContext(nil, abci.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		msg = randomMsgConfirmOutpoint()
 		msg.OutPointInfo.Address = address.EncodeAddress()
 	}
@@ -149,7 +150,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 		setup()
 		res, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, signer, msg)
 		assert.NoError(t, err)
-		assert.Len(t, testutils.Events(res.Events).Filter(func(event sdk.Event) bool { return event.Type == types.EventTypeOutpointConfirmation }), 1)
+		assert.Len(t, testutils.Events(res.Events).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeOutpointConfirmation }), 1)
 		assert.Equal(t, msg.OutPointInfo, btcKeeper.SetPendingOutpointInfoCalls()[0].Info)
 		assert.Equal(t, voter.InitPollCalls()[0].Poll, btcKeeper.SetPendingOutpointInfoCalls()[0].Poll)
 	}).Repeat(repeatCount))
@@ -193,13 +194,13 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		voter       *mock.VoterMock
 		nexusKeeper *mock.NexusMock
 		ctx         sdk.Context
-		msg         types.MsgVoteConfirmOutpoint
+		msg         *types.MsgVoteConfirmOutpoint
 		info        types.OutPointInfo
 	)
 	setup := func() {
 		info = randomOutpointInfo()
 		msg = randomMsgVoteConfirmOutpoint()
-		msg.OutPoint = *info.OutPoint
+		msg.OutPoint = info.OutPoint
 		btcKeeper = &mock.BTCKeeperMock{
 			GetOutPointInfoFunc: func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
 				return types.OutPointInfo{}, 0, false
@@ -207,7 +208,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			SetOutpointInfoFunc:           func(sdk.Context, types.OutPointInfo, types.OutPointState) {},
 			GetPendingOutPointInfoFunc:    func(sdk.Context, vote.PollMeta) (types.OutPointInfo, bool) { return info, true },
 			DeletePendingOutPointInfoFunc: func(sdk.Context, vote.PollMeta) {},
-			CodecFunc:                     func() *amino.Codec { return testutils.Codec() },
+			CodecFunc:                     func() *codec.LegacyAmino { return types.ModuleCdc.LegacyAmino },
 			GetSignedTxFunc:               func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
 		}
 		voter = &mock.VoterMock{
@@ -219,7 +220,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) error { return nil },
 		}
 
-		ctx = sdk.NewContext(nil, abci.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 	}
 
 	repeats := 20
@@ -240,8 +241,10 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 	t.Run("happy path confirm consolidation", testutils.Func(func(t *testing.T) {
 		setup()
 		tx := wire.NewMsgTx(wire.TxVersion)
-		info.OutPoint.Hash = tx.TxHash()
-		msg.OutPoint.Hash = tx.TxHash()
+		hash := tx.TxHash()
+		op := wire.NewOutPoint(&hash, info.GetOutPoint().Index)
+		info.OutPoint = op.String()
+		msg.OutPoint = op.String()
 		btcKeeper.GetSignedTxFunc = func(sdk.Context) (*wire.MsgTx, bool) { return tx, true }
 		btcKeeper.DeleteSignedTxFunc = func(sdk.Context) {}
 
@@ -374,7 +377,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		nexusKeeper *mock.NexusMock
 		snapshotter *mock.SnapshotterMock
 		ctx         sdk.Context
-		msg         types.MsgSignPendingTransfers
+		msg         *types.MsgSignPendingTransfers
 
 		transfers               []nexus.CrossChainTransfer
 		transferAmount          int64
@@ -384,10 +387,10 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 	)
 
 	setup := func() {
-		ctx = sdk.NewContext(nil, abci.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		msg = types.MsgSignPendingTransfers{
-			Fee: btcutil.Amount(rand.I64Between(0, 1000000)),
-		}
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		msg = types.NewMsgSignPendingTransfers(rand.Bytes(sdk.AddrLen),
+			btcutil.Amount(rand.I64Between(0, 1000000)),
+		)
 
 		minimumWithdrawalAmount = btcutil.Amount(rand.I64Between(1, 5000))
 		transferAmount = 0
@@ -396,10 +399,9 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 			transfers = append(transfers, randomTransfer(int64(minimumWithdrawalAmount), 1000000))
 			transferAmount += transfers[i].Asset.Amount.Int64()
 		}
-
 		depositAmount = 0
 		deposits = []types.OutPointInfo{}
-		for depositAmount <= transferAmount+int64(msg.Fee) {
+		for depositAmount <= transferAmount+msg.Fee {
 			deposit := randomOutpointInfo()
 			deposits = append(deposits, deposit)
 			depositAmount += int64(deposit.Amount)
@@ -414,7 +416,6 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 			GetUnsignedTxFunc:              func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
 			GetSignedTxFunc:                func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
 			GetNetworkFunc:                 func(sdk.Context) types.Network { return types.Mainnet },
-			GetMinimumWithdrawalAmountFunc: func(sdk.Context) btcutil.Amount { return  minimumWithdrawalAmount },
 			LoggerFunc:                     func(sdk.Context) log.Logger { return log.TestingLogger() },
 			GetConfirmedOutPointInfosFunc:  func(sdk.Context) []types.OutPointInfo { return deposits },
 			DeleteOutpointInfoFunc:         func(sdk.Context, wire.OutPoint) {},
@@ -435,6 +436,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 			},
 			SetAddressFunc:    func(sdk.Context, types.AddressInfo) {},
 			SetUnsignedTxFunc: func(sdk.Context, *wire.MsgTx) {},
+			GetMinimumWithdrawalAmountFunc: func(sdk.Context) btcutil.Amount { return  minimumWithdrawalAmount },
 			GetDustAmountFunc: func(sdk.Context, string) btcutil.Amount { return 0 },
 			SetDustAmountFunc: func(sdk.Context, string, btcutil.Amount) {},
 		}
@@ -471,11 +473,11 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		snapshotter = &mock.SnapshotterMock{
 			GetSnapshotFunc: func(_ sdk.Context, counter int64) (snapshot.Snapshot, bool) {
 				return snapshot.Snapshot{
-					Validators: []snapshot.Validator{},
-					Timestamp:  time.Now(),
-					Height:     rand.PosI64(),
-					TotalPower: sdk.NewInt(rand.PosI64()),
-					Counter:    counter,
+					Validators:      []snapshot.Validator{},
+					Timestamp:       time.Now(),
+					Height:          rand.PosI64(),
+					TotalShareCount: sdk.NewInt(rand.PosI64()),
+					Counter:         counter,
 				}, true
 			},
 		}
@@ -487,7 +489,6 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		setup()
 
 		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
-
 		assert.NoError(t, err)
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)+1) // + consolidation outpoint
@@ -544,7 +545,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		setup()
 		// equalize deposits and transfers
 		transfer := randomTransfer(int64(minimumWithdrawalAmount), 1000000)
-		transfer.Asset.Amount = sdk.NewInt(depositAmount - transferAmount - int64(msg.Fee))
+		transfer.Asset.Amount = sdk.NewInt(depositAmount - transferAmount - msg.Fee)
 		transfers = append(transfers, transfer)
 		transferAmount += transfer.Asset.Amount.Int64()
 
@@ -673,28 +674,27 @@ func mapi(n int, f func(i int)) {
 	}
 }
 
-func randomMsgLink() types.MsgLink {
-	return types.MsgLink{
-		Sender:         sdk.AccAddress(rand.StrBetween(5, 20)),
-		RecipientAddr:  rand.StrBetween(5, 100),
-		RecipientChain: rand.StrBetween(5, 100),
-	}
+func randomMsgLink() *types.MsgLink {
+	return types.NewMsgLink(
+		rand.Bytes(sdk.AddrLen),
+		rand.StrBetween(5, 100),
+		rand.StrBetween(5, 100))
 }
 
-func randomMsgConfirmOutpoint() types.MsgConfirmOutpoint {
-	return types.NewMsgConfirmOutpoint(sdk.AccAddress(rand.StrBetween(5, 20)), randomOutpointInfo())
+func randomMsgConfirmOutpoint() *types.MsgConfirmOutpoint {
+	return types.NewMsgConfirmOutpoint(rand.Bytes(sdk.AddrLen), randomOutpointInfo())
 }
 
-func randomMsgVoteConfirmOutpoint() types.MsgVoteConfirmOutpoint {
-	return types.MsgVoteConfirmOutpoint{
-		Sender: sdk.AccAddress(rand.StrBetween(5, 20)),
-		Poll: vote.PollMeta{
+func randomMsgVoteConfirmOutpoint() *types.MsgVoteConfirmOutpoint {
+	return types.NewMsgVoteConfirmOutpoint(
+		rand.Bytes(sdk.AddrLen),
+		vote.PollMeta{
 			Module: types.ModuleName,
 			ID:     rand.StrBetween(5, 20),
 		},
-		OutPoint:  *randomOutpointInfo().OutPoint,
-		Confirmed: rand.Bools(0.5).Next(),
-	}
+		randomOutpointInfo().GetOutPoint(),
+		rand.Bools(0.5).Next(),
+	)
 }
 
 func randomOutpointInfo() types.OutPointInfo {
@@ -703,7 +703,7 @@ func randomOutpointInfo() types.OutPointInfo {
 		panic(err)
 	}
 	return types.OutPointInfo{
-		OutPoint: wire.NewOutPoint(txHash, mathRand.Uint32()),
+		OutPoint: wire.NewOutPoint(txHash, mathRand.Uint32()).String(),
 		Amount:   btcutil.Amount(rand.I64Between(1, 10000000000)),
 		Address:  randomAddress().EncodeAddress(),
 	}

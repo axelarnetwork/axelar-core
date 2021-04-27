@@ -7,7 +7,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -28,12 +28,12 @@ const (
 // Keeper represents a ballance keeper
 type Keeper struct {
 	storeKey sdk.StoreKey
-	cdc      *codec.Codec
+	cdc      *codec.LegacyAmino
 	params   params.Subspace
 }
 
 // NewKeeper returns a new nexus keeper
-func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
+func NewKeeper(cdc *codec.LegacyAmino, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
 	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable())}
 }
 
@@ -68,13 +68,9 @@ func (k Keeper) RegisterAsset(ctx sdk.Context, chainName, denom string) {
 	ctx.KVStore(k.storeKey).Set([]byte(registeredPrefix+strings.ToLower(chainName)+denom), k.cdc.MustMarshalBinaryLengthPrefixed(true))
 }
 
-// IsAssetRegistered returns true if the specified asset is suppported by the given chain
+// IsAssetRegistered returns true if the specified asset is supported by the given chain
 func (k Keeper) IsAssetRegistered(ctx sdk.Context, chainName, denom string) bool {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(registeredPrefix + strings.ToLower(chainName) + denom))
-	if bz == nil {
-		return false
-	}
-	return true
+	return ctx.KVStore(k.storeKey).Has([]byte(registeredPrefix + strings.ToLower(chainName) + denom))
 }
 
 // GetChains retrieves the specification for all supported blockchains

@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         go-version:
-          - 1.15.x
+          - 1.16.x
         os:
           - ubuntu-18.04
     runs-on: ${{ matrix.os }}
@@ -17,7 +17,7 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go-version }}
-          
+
       - name: Install Python
         uses: actions/setup-python@v1
 
@@ -34,14 +34,14 @@ jobs:
         run: |
           git config --global url."git@github.com:axelarnetwork".insteadOf https://github.com/axelarnetwork
           go get github.com/matryer/moq
-      
+
       - name: Install mdformat
-        
+
         uses: BSFishy/pip-action@v1
         with:
           # The packages to install from Pip
           packages: mdformat
-    
+
       - name: Check generated code up-to-date
         run: |
           go generate -x ./...
@@ -49,7 +49,7 @@ jobs:
           if [ -n "$(git status --porcelain)" ]; then
             echo Following files are changed...
             git status
-            
+
             echo Changes:
             git diff
 

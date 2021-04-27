@@ -1,0 +1,21 @@
+syntax = "proto3";
+package bitcoin.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/bitcoin/types";
+
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// OutPointInfo describes all the necessary information to confirm the outPoint
+// of a transaction
+message OutPointInfo {
+  option (gogoproto.goproto_stringer) = false;
+
+  string out_point = 1;
+  int64 amount = 2
+      [ (gogoproto.casttype) = "github.com/btcsuite/btcutil.Amount" ];
+  string address = 3;
+}
+
+message Network { string name = 1; }

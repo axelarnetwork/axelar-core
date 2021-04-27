@@ -1,0 +1,13 @@
+syntax = "proto3";
+package nexus.exported.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/nexus/exported";
+
+import "gogoproto/gogo.proto";
+
+// Chain represents the properties of a registered blockchain
+message Chain {
+  string name = 1;
+  string native_asset = 2;
+  bool supports_foreign_assets = 3;
+}

@@ -5,8 +5,10 @@ import (
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/std"
+	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/axelarnetwork/axelar-core/app/params"
 	bitcoin "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	ethereum "github.com/axelarnetwork/axelar-core/x/ethereum/types"
@@ -16,31 +18,29 @@ import (
 )
 
 var (
-	cdc *codec.Codec
+	cdc *codec.LegacyAmino
 )
 
-// Codec creates a codec for testing with all necessary types registered.
-// This codec is not sealed so tests can add their own mock types.
-func Codec() *codec.Codec {
-	// Use cache if initialized before
-	if cdc != nil {
-		return cdc
-	}
-
-	cdc = codec.New()
-
-	sdk.RegisterCodec(cdc)
-	codec.RegisterCrypto(cdc)
+// MakeEncodingConfig creates an EncodingConfig for testing
+func MakeEncodingConfig() params.EncodingConfig {
+	encodingConfig := params.MakeEncodingConfig()
+	cdc = encodingConfig.Amino
+	std.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 
 	// Add new modules here so tests have access to marshalling the registered ethereum
-	vote.RegisterCodec(cdc)
-	bitcoin.RegisterCodec(cdc)
-	tss.RegisterCodec(cdc)
-	broadcast.RegisterCodec(cdc)
-	snapshot.RegisterCodec(cdc)
-	ethereum.RegisterCodec(cdc)
+	vote.RegisterLegacyAminoCodec(cdc)
+	bitcoin.RegisterLegacyAminoCodec(cdc)
+	bitcoin.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	tss.RegisterLegacyAminoCodec(cdc)
+	tss.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	broadcast.RegisterLegacyAminoCodec(cdc)
+	broadcast.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	snapshot.RegisterLegacyAminoCodec(cdc)
+	ethereum.RegisterLegacyAminoCodec(cdc)
+	ethereum.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 
-	return cdc
+	return encodingConfig
 }
 
 // Func wraps a regular testing function so it can be used as a pointer function receiver
@@ -56,10 +56,10 @@ func (f Func) Repeat(n int) Func {
 }
 
 // Events wraps sdk.Events
-type Events sdk.Events
+type Events []abci.Event
 
 // Filter returns a collection of events filtered by the predicate
-func (fe Events) Filter(predicate func(events sdk.Event) bool) Events {
+func (fe Events) Filter(predicate func(events abci.Event) bool) Events {
 	var filtered Events
 	for _, event := range fe {
 		if predicate(event) {

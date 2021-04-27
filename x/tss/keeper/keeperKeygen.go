@@ -17,15 +17,13 @@ import (
 )
 
 // StartKeygen starts a keygen protocol with the specified parameters
-func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID string, threshold int, snapshot snapshot.Snapshot) error {
+func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID string, snapshot snapshot.Snapshot) error {
 	if _, found := k.getKeygenStart(ctx, keyID); found {
 		return fmt.Errorf("keyID %s is already in use", keyID)
 	}
 
 	// set keygen participants
-	var participants []string
 	for _, v := range snapshot.Validators {
-		participants = append(participants, v.GetOperator().String())
 		k.setParticipatesInKeygen(ctx, keyID, v.GetOperator())
 	}
 
@@ -132,7 +130,7 @@ func (k Keeper) AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole export
 func (k Keeper) RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) error {
 	r := k.getRotationCount(ctx, chain, keyRole)
 	if _, found := k.getKeyID(ctx, chain, r+1, keyRole); !found {
-		return fmt.Errorf("next %s key for chain %s not set", keyRole.String(), chain.Name)
+		return fmt.Errorf("next %s key for chain %s not set", keyRole.SimpleString(), chain.Name)
 	}
 
 	k.setRotationCount(ctx, chain, keyRole, r+1)
@@ -157,24 +155,24 @@ func (k Keeper) getKeygenStart(ctx sdk.Context, keyID string) (int64, bool) {
 }
 
 func (k Keeper) getKeyID(ctx sdk.Context, chain nexus.Chain, rotation int64, keyRole exported.KeyRole) (string, bool) {
-	storageKey := fmt.Sprintf("%s%d_%s_%s", rotationPrefix, rotation, chain.Name, keyRole.String())
+	storageKey := fmt.Sprintf("%s%d_%s_%s", rotationPrefix, rotation, chain.Name, keyRole.SimpleString())
 
-	keyId := ctx.KVStore(k.storeKey).Get([]byte(storageKey))
-	if keyId == nil {
+	keyID := ctx.KVStore(k.storeKey).Get([]byte(storageKey))
+	if keyID == nil {
 		return "", false
 	}
 
-	return string(keyId), true
+	return string(keyID), true
 }
 
 func (k Keeper) setKeyID(ctx sdk.Context, chain nexus.Chain, rotation int64, keyRole exported.KeyRole, keyID string) {
-	storageKey := fmt.Sprintf("%s%d_%s_%s", rotationPrefix, rotation, chain.Name, keyRole.String())
+	storageKey := fmt.Sprintf("%s%d_%s_%s", rotationPrefix, rotation, chain.Name, keyRole.SimpleString())
 
 	ctx.KVStore(k.storeKey).Set([]byte(storageKey), []byte(keyID))
 }
 
 func (k Keeper) getRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) int64 {
-	storageKey := fmt.Sprintf("%s%s_%s", rotationPrefix, chain.Name, keyRole.String())
+	storageKey := fmt.Sprintf("%s%s_%s", rotationPrefix, chain.Name, keyRole.SimpleString())
 
 	bz := ctx.KVStore(k.storeKey).Get([]byte(storageKey))
 	if bz == nil {
@@ -186,7 +184,7 @@ func (k Keeper) getRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole exp
 }
 
 func (k Keeper) setRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole, rotation int64) {
-	storageKey := fmt.Sprintf("%s%s_%s", rotationPrefix, chain.Name, keyRole.String())
+	storageKey := fmt.Sprintf("%s%s_%s", rotationPrefix, chain.Name, keyRole.SimpleString())
 
 	ctx.KVStore(k.storeKey).Set([]byte(storageKey), k.cdc.MustMarshalBinaryLengthPrefixed(rotation))
 }
@@ -219,5 +217,13 @@ func (k Keeper) DoesValidatorParticipateInKeygen(ctx sdk.Context, keyID string, 
 func (k Keeper) GetMinKeygenThreshold(ctx sdk.Context) utils.Threshold {
 	var threshold utils.Threshold
 	k.params.Get(ctx, types.KeyMinKeygenThreshold, &threshold)
+	return threshold
+}
+
+// GetMinBondFractionPerShare returns the % of stake validators have to bond per key share
+func (k Keeper) GetMinBondFractionPerShare(ctx sdk.Context) utils.Threshold {
+	var threshold utils.Threshold
+	k.params.Get(ctx, types.KeyMinBondFractionPerShare, &threshold)
+
 	return threshold
 }

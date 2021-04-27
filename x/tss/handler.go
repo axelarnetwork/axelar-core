@@ -17,21 +17,21 @@ func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Vot
 	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
-		case types.MsgKeygenTraffic:
-			return handleMsgKeygenTraffic(ctx, k, msg, broadcaster)
-		case types.MsgSignTraffic:
-			return handleMsgSignTraffic(ctx, k, msg, broadcaster)
-		case types.MsgKeygenStart:
+		case *types.MsgKeygenTraffic:
+			return handleMsgKeygenTraffic(ctx, k, broadcaster, msg)
+		case *types.MsgSignTraffic:
+			return handleMsgSignTraffic(ctx, k, broadcaster, msg)
+		case *types.MsgKeygenStart:
 			return handleMsgKeygenStart(ctx, k, s, staker, v, msg)
-		case types.MsgAssignNextKey:
+		case *types.MsgAssignNextKey:
 			return handleMsgAssignNextKey(ctx, k, s, n, msg)
-		case types.MsgRotateKey:
+		case *types.MsgRotateKey:
 			return handleMsgRotateKey(ctx, k, n, msg)
-		case types.MsgVotePubKey:
+		case *types.MsgVotePubKey:
 			return handleMsgVotePubKey(ctx, k, v, msg)
-		case types.MsgVoteSig:
+		case *types.MsgVoteSig:
 			return handleMsgVoteSig(ctx, k, v, msg)
-		case types.MsgDeregister:
+		case *types.MsgDeregister:
 			return handleMsgDeregister(ctx, k, staker, msg)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
@@ -52,7 +52,7 @@ func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Vot
 	}
 }
 
-func handleMsgRotateKey(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg types.MsgRotateKey) (*sdk.Result, error) {
+func handleMsgRotateKey(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg *types.MsgRotateKey) (*sdk.Result, error) {
 	chain, ok := n.GetChain(ctx, msg.Chain)
 	if !ok {
 		return nil, fmt.Errorf("unknown chain")
@@ -62,7 +62,7 @@ func handleMsgRotateKey(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg typ
 		return nil, err
 	}
 
-	k.Logger(ctx).Debug(fmt.Sprintf("rotated %s key for chain %s", msg.KeyRole.String(), chain.Name))
+	k.Logger(ctx).Debug(fmt.Sprintf("rotated %s key for chain %s", msg.KeyRole.SimpleString(), chain.Name))
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -73,10 +73,10 @@ func handleMsgRotateKey(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg typ
 		),
 	)
 
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
-func handleMsgVoteSig(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.MsgVoteSig) (*sdk.Result, error) {
+func handleMsgVoteSig(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg *types.MsgVoteSig) (*sdk.Result, error) {
 	if _, ok := k.GetSig(ctx, msg.PollMeta.ID); ok {
 		// the signature is already set, no need for further processing of the vote
 		return &sdk.Result{Log: fmt.Sprintf("signature %s already verified", msg.PollMeta.ID)}, nil
@@ -94,8 +94,9 @@ func handleMsgVoteSig(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types
 		// the result is not necessarily the same as the msg (the vote could have been decided earlier and now a false vote is cast),
 		// so use result instead of msg
 		ctx.EventManager().EmitEvent(sdk.NewEvent(
-			types.EventTypeSigDecided,
+			types.EventTypeSign,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
 			sdk.NewAttribute(types.AttributeKeyPoll, msg.PollMeta.String()),
 			sdk.NewAttribute(types.AttributeKeyPayload, string(msg.SigBytes)),
 		))
@@ -109,13 +110,13 @@ func handleMsgVoteSig(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types
 		}
 	}
 
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
-func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg types.MsgVotePubKey) (*sdk.Result, error) {
+func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg *types.MsgVotePubKey) (*sdk.Result, error) {
 	if _, ok := k.GetKey(ctx, msg.PollMeta.ID); ok {
 		// the key is already set, no need for further processing of the vote
-		return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+		return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 	}
 
 	if err := v.TallyVote(ctx, msg.Sender, msg.PollMeta, msg.PubKeyBytes); err != nil {
@@ -126,8 +127,9 @@ func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg ty
 		// the result is not necessarily the same as the msg (the vote could have been decided earlier and now a false vote is cast),
 		// so use result instead of msg
 		ctx.EventManager().EmitEvent(sdk.NewEvent(
-			types.EventTypePubKeyDecided,
+			types.EventTypeKeygen,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
 			sdk.NewAttribute(types.AttributeKeyPoll, msg.PollMeta.String()),
 			sdk.NewAttribute(types.AttributeKeyPayload, string(msg.PubKeyBytes)),
 		))
@@ -146,10 +148,10 @@ func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg ty
 		}
 	}
 
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
-func handleMsgAssignNextKey(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, n types.Nexus, msg types.MsgAssignNextKey) (*sdk.Result, error) {
+func handleMsgAssignNextKey(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, n types.Nexus, msg *types.MsgAssignNextKey) (*sdk.Result, error) {
 	chain, ok := n.GetChain(ctx, msg.Chain)
 	if !ok {
 		return nil, fmt.Errorf("unknown chain")
@@ -167,16 +169,26 @@ func handleMsgAssignNextKey(ctx sdk.Context, k keeper.Keeper, s types.Snapshotte
 
 	keyRequirement, found := k.GetKeyRequirement(ctx, chain, msg.KeyRole)
 	if !found {
-		return nil, fmt.Errorf("%s key is not required for chain %s", msg.KeyRole.String(), chain.Name)
+		return nil, fmt.Errorf("%s key is not required for chain %s", msg.KeyRole.SimpleString(), chain.Name)
 	}
 
 	if len(snapshot.Validators) < int(keyRequirement.MinValidatorSubsetSize) {
 		return nil, fmt.Errorf(
 			"expected %s's %s key to be generated with at least %d validators, actual %d",
 			chain.Name,
-			msg.KeyRole.String(),
+			msg.KeyRole.SimpleString(),
 			keyRequirement.MinValidatorSubsetSize,
 			len(snapshot.Validators),
+		)
+	}
+
+	if snapshot.KeyShareDistributionPolicy != keyRequirement.KeyShareDistributionPolicy {
+		return nil, fmt.Errorf(
+			"expected %s's %s key to have tss shares distributed with policy %s, actual %s",
+			chain.Name,
+			msg.KeyRole.SimpleString(),
+			keyRequirement.KeyShareDistributionPolicy.SimpleString(),
+			snapshot.KeyShareDistributionPolicy.SimpleString(),
 		)
 	}
 
@@ -185,7 +197,7 @@ func handleMsgAssignNextKey(ctx sdk.Context, k keeper.Keeper, s types.Snapshotte
 		return nil, err
 	}
 
-	k.Logger(ctx).Debug(fmt.Sprintf("prepared %s key rotation for chain %s", msg.KeyRole.String(), chain.Name))
+	k.Logger(ctx).Debug(fmt.Sprintf("prepared %s key rotation for chain %s", msg.KeyRole.SimpleString(), chain.Name))
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -195,10 +207,10 @@ func handleMsgAssignNextKey(ctx sdk.Context, k keeper.Keeper, s types.Snapshotte
 		),
 	)
 
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
-func handleMsgKeygenTraffic(ctx sdk.Context, k keeper.Keeper, msg types.MsgKeygenTraffic, broadcaster types.Broadcaster) (*sdk.Result, error) {
+func handleMsgKeygenTraffic(ctx sdk.Context, k keeper.Keeper, broadcaster types.Broadcaster, msg *types.MsgKeygenTraffic) (*sdk.Result, error) {
 	senderAddress := broadcaster.GetPrincipal(ctx, msg.Sender)
 	if senderAddress.Empty() {
 		return nil, fmt.Errorf("invalid message: sender [%s] is not a validator", msg.Sender)
@@ -216,12 +228,13 @@ func handleMsgKeygenTraffic(ctx sdk.Context, k keeper.Keeper, msg types.MsgKeyge
 			sdk.NewAttribute(sdk.AttributeKeySender, senderAddress.String()),
 			sdk.NewAttribute(types.AttributeKeyPayload, string(types.ModuleCdc.MustMarshalJSON(msg.Payload)))))
 
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
-func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, staker types.StakingKeeper, v types.Voter, msg types.MsgKeygenStart) (*sdk.Result, error) {
+func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter, staker types.StakingKeeper, v types.Voter, msg *types.MsgKeygenStart) (*sdk.Result, error) {
 	// record the snapshot of active validators that we'll use for the key
-	if err := s.TakeSnapshot(ctx, msg.SubsetSize); err != nil {
+	snapshotConsensusPower, totalConsensusPower, err := s.TakeSnapshot(ctx, msg.SubsetSize, msg.KeyShareDistributionPolicy)
+	if err != nil {
 		return nil, err
 	}
 
@@ -230,30 +243,31 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 		return nil, fmt.Errorf("the system needs to have at least one validator snapshot")
 	}
 
-	if !k.GetMinKeygenThreshold(ctx).IsMet(snapshot.TotalPower, snapshot.ValidatorsTotalPower) {
-		msg := fmt.Sprintf("Unable to meet min stake threshold required for keygen: active %s out of %s total",
-			snapshot.TotalPower.String(), staker.GetLastTotalPower(ctx).String())
+	if !k.GetMinKeygenThreshold(ctx).IsMet(snapshotConsensusPower, totalConsensusPower) {
+		msg := fmt.Sprintf(
+			"Unable to meet min stake threshold required for keygen: active %s out of %s total",
+			snapshotConsensusPower.String(),
+			totalConsensusPower.String(),
+		)
 		k.Logger(ctx).Info(msg)
 
 		return nil, fmt.Errorf(msg)
 	}
 
-	threshold := k.ComputeCorruptionThreshold(ctx, len(snapshot.Validators))
-
-	// TODO: need to figure out how to calculate threshold based on total number of
-	// validators in the system, individual's stake, etc.
-	if threshold < 1 || threshold > len(snapshot.Validators) {
-		return nil, fmt.Errorf("invalid threshold: %d, validators: %d", threshold, len(snapshot.Validators))
+	threshold := k.ComputeCorruptionThreshold(ctx, snapshot.TotalShareCount)
+	if threshold < 1 || snapshot.TotalShareCount.Int64() <= threshold {
+		return nil, fmt.Errorf("invalid threshold: %d, total power: %d", threshold, snapshot.TotalShareCount.Int64())
 	}
 
-	err := k.StartKeygen(ctx, v, msg.NewKeyID, threshold, snapshot)
-	if err != nil {
+	if err := k.StartKeygen(ctx, v, msg.NewKeyID, snapshot); err != nil {
 		return nil, err
 	}
 
 	var participants []string
-	for _, v := range snapshot.Validators {
-		participants = append(participants, v.GetOperator().String())
+	var participantShareCounts []uint32
+	for _, validator := range snapshot.Validators {
+		participants = append(participants, validator.GetOperator().String())
+		participantShareCounts = append(participantShareCounts, uint32(validator.ShareCount))
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -261,15 +275,18 @@ func handleMsgKeygenStart(ctx sdk.Context, k keeper.Keeper, s types.Snapshotter,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 			sdk.NewAttribute(types.AttributeKeyKeyID, msg.NewKeyID),
-			sdk.NewAttribute(types.AttributeKeyThreshold, strconv.Itoa(threshold)),
-			sdk.NewAttribute(types.AttributeKeyParticipants, string(types.ModuleCdc.MustMarshalJSON(participants)))))
+			sdk.NewAttribute(types.AttributeKeyThreshold, strconv.FormatInt(threshold, 10)),
+			sdk.NewAttribute(types.AttributeKeyParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participants))),
+			sdk.NewAttribute(types.AttributeKeyParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participantShareCounts))),
+		),
+	)
 
-	k.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d]", msg.NewKeyID, threshold))
+	k.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d] key_share_distribution_policy [%s]", msg.NewKeyID, threshold, msg.KeyShareDistributionPolicy.SimpleString()))
 
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
-func handleMsgSignTraffic(ctx sdk.Context, k keeper.Keeper, msg types.MsgSignTraffic, broadcaster types.Broadcaster) (*sdk.Result, error) {
+func handleMsgSignTraffic(ctx sdk.Context, k keeper.Keeper, broadcaster types.Broadcaster, msg *types.MsgSignTraffic) (*sdk.Result, error) {
 	senderAddress := broadcaster.GetPrincipal(ctx, msg.Sender)
 	if senderAddress.Empty() {
 		return nil, fmt.Errorf("invalid message: sender [%s] is not a validator", msg.Sender)
@@ -287,10 +304,10 @@ func handleMsgSignTraffic(ctx sdk.Context, k keeper.Keeper, msg types.MsgSignTra
 			sdk.NewAttribute(sdk.AttributeKeySender, senderAddress.String()),
 			sdk.NewAttribute(types.AttributeKeyPayload, string(types.ModuleCdc.MustMarshalJSON(msg.Payload)))))
 
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
-func handleMsgDeregister(ctx sdk.Context, k keeper.Keeper, staker types.StakingKeeper, msg types.MsgDeregister) (*sdk.Result, error) {
+func handleMsgDeregister(ctx sdk.Context, k keeper.Keeper, staker types.StakingKeeper, msg *types.MsgDeregister) (*sdk.Result, error) {
 	valAddr := sdk.ValAddress(msg.Sender)
 
 	if _, found := staker.GetValidator(ctx, valAddr); !found {
@@ -299,5 +316,5 @@ func handleMsgDeregister(ctx sdk.Context, k keeper.Keeper, staker types.StakingK
 
 	k.SetValidatorDeregisteredBlockHeight(ctx, valAddr, ctx.BlockHeight())
 
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }

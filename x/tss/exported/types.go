@@ -20,66 +20,95 @@ type Key struct {
 	Role  KeyRole
 }
 
-// KeyRole is an enum for the role of the key
-type KeyRole int
-
-const (
-	MasterKey KeyRole = iota
-	SecondaryKey
-	Unknown
-)
-
 // GetKeyRoles returns an array of all types of key role
 func GetKeyRoles() []KeyRole {
 	return []KeyRole{MasterKey, SecondaryKey}
 }
 
-// KeyRoleFromStr creates a KeyRole from string
-func KeyRoleFromStr(str string) (KeyRole, error) {
+// KeyRoleFromSimpleStr creates a KeyRole from string
+func KeyRoleFromSimpleStr(str string) (KeyRole, error) {
 	switch strings.ToLower(str) {
-	case MasterKey.String():
+	case MasterKey.SimpleString():
 		return MasterKey, nil
-	case SecondaryKey.String():
+	case SecondaryKey.SimpleString():
 		return SecondaryKey, nil
 	default:
 		return -1, fmt.Errorf("invalid key role %s", str)
 	}
 }
 
+// SimpleString returns a human-readable string
+func (x KeyRole) SimpleString() string {
+	switch x {
+	case MasterKey:
+		return "master"
+	case SecondaryKey:
+		return "secondary"
+	default:
+		return "unknown"
+	}
+}
+
 // Validate validates the KeyRole
-func (r KeyRole) Validate() error {
-	switch r {
+func (x KeyRole) Validate() error {
+	switch x {
 	case MasterKey, SecondaryKey:
 		return nil
 	default:
-		return fmt.Errorf("invalid key role %d", r)
+		return fmt.Errorf("invalid key role %d", x)
 	}
 }
 
-// String converts the KeyRole to a string
-func (r KeyRole) String() string {
-	return [...]string{"master", "secondary"}[r]
+// KeyShareDistributionPolicyFromSimpleStr creates a KeyShareDistributionPolicy from string
+func KeyShareDistributionPolicyFromSimpleStr(str string) (KeyShareDistributionPolicy, error) {
+	switch strings.ToLower(str) {
+	case WeightedByStake.SimpleString():
+		return WeightedByStake, nil
+	case OnePerValidator.SimpleString():
+		return OnePerValidator, nil
+	default:
+		return -1, fmt.Errorf("invalid key share distribution policy %s", str)
+	}
 }
 
-// KeyRequirement defines requirements for keys
-type KeyRequirement struct {
-	ChainName              string
-	KeyRole                KeyRole
-	MinValidatorSubsetSize int64
+// SimpleString returns a human-readable string
+func (r KeyShareDistributionPolicy) SimpleString() string {
+	switch r {
+	case WeightedByStake:
+		return "weighted-by-stake"
+	case OnePerValidator:
+		return "one-per-validator"
+	default:
+		return "unknown"
+	}
+}
+
+// Validate validates the KeyShareDistributionPolicy
+func (r KeyShareDistributionPolicy) Validate() error {
+	switch r {
+	case WeightedByStake, OnePerValidator:
+		return nil
+	default:
+		return fmt.Errorf("invalid key share distribution policy %d", r)
+	}
 }
 
 // Validate validates the KeyRequirement
-func (r KeyRequirement) Validate() error {
-	if r.ChainName == "" {
-		return fmt.Errorf("invalid ChainName %s", r.ChainName)
+func (m KeyRequirement) Validate() error {
+	if m.ChainName == "" {
+		return fmt.Errorf("invalid ChainName %s", m.ChainName)
 	}
 
-	if err := r.KeyRole.Validate(); err != nil {
+	if err := m.KeyRole.Validate(); err != nil {
 		return err
 	}
 
-	if r.MinValidatorSubsetSize <= 0 {
+	if m.MinValidatorSubsetSize <= 0 {
 		return fmt.Errorf("MinValidatorSubsetSize has to be greater than 0 when the key is required")
+	}
+
+	if err := m.KeyShareDistributionPolicy.Validate(); err != nil {
+		return err
 	}
 
 	return nil

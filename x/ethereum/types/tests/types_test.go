@@ -6,10 +6,10 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/cosmos/cosmos-sdk/x/params"
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
-	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
@@ -156,10 +156,10 @@ func TestCreateExecuteData_CorrectExecuteData(t *testing.T) {
 }
 
 func TestGetTokenAddress_CorrectData(t *testing.T) {
-	cdc := testutils.Codec()
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	subspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
-	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"), subspace)
+	encCfg := testutils.MakeEncodingConfig()
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
+	k := keeper.NewEthKeeper(encCfg.Amino, sdk.NewKVStoreKey("testKey"), subspace)
 
 	axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
 	tokenName := "axelar token"
@@ -172,7 +172,7 @@ func TestGetTokenAddress_CorrectData(t *testing.T) {
 	k.SetParams(ctx, types.DefaultParams())
 	account, err := sdk.AccAddressFromBech32("cosmos1vjyc4qmsdtdl5a4ruymnjqpchm5gyqde63sqdh")
 	assert.NoError(t, err)
-	k.SetTokenInfo(ctx, types.MsgSignDeployToken{Sender: account, TokenName: tokenName, Symbol: tokenSymbol, Decimals: decimals, Capacity: capacity})
+	k.SetTokenInfo(ctx, &types.MsgSignDeployToken{Sender: account, TokenName: tokenName, Symbol: tokenSymbol, Decimals: decimals, Capacity: capacity})
 
 	actual, err := k.GetTokenAddress(ctx, tokenSymbol, axelarGateway)
 
@@ -181,10 +181,10 @@ func TestGetTokenAddress_CorrectData(t *testing.T) {
 }
 
 func TestGetBurnerAddressAndSalt_CorrectData(t *testing.T) {
-	cdc := testutils.Codec()
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	subspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
-	k := keeper.NewEthKeeper(cdc, sdk.NewKVStoreKey("testKey"), subspace)
+	encCfg := testutils.MakeEncodingConfig()
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
+	k := keeper.NewEthKeeper(encCfg.Amino, sdk.NewKVStoreKey("testKey"), subspace)
 
 	axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
 	recipient := "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L"

@@ -7,16 +7,9 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// MsgLink represents a message to link an cross-chain address to a Bitcoin address
-type MsgLink struct {
-	Sender         sdk.AccAddress
-	RecipientAddr  string
-	RecipientChain string
-}
-
 // NewMsgLink - MsgLink constructor
-func NewMsgLink(sender sdk.AccAddress, recipientAddr string, recipientChain string) sdk.Msg {
-	return MsgLink{
+func NewMsgLink(sender sdk.AccAddress, recipientAddr string, recipientChain string) *MsgLink {
+	return &MsgLink{
 		Sender:         sender,
 		RecipientAddr:  recipientAddr,
 		RecipientChain: recipientChain,
@@ -24,37 +17,36 @@ func NewMsgLink(sender sdk.AccAddress, recipientAddr string, recipientChain stri
 }
 
 // Route returns the route for this message
-func (msg MsgLink) Route() string {
+func (m MsgLink) Route() string {
 	return RouterKey
 }
 
 // Type returns the type of the message
-func (msg MsgLink) Type() string {
+func (m MsgLink) Type() string {
 	return "Link"
 }
 
 // ValidateBasic executes a stateless message validation
-func (msg MsgLink) ValidateBasic() error {
-	if msg.Sender.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
+func (m MsgLink) ValidateBasic() error {
+	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if msg.RecipientAddr == "" {
+	if m.RecipientAddr == "" {
 		return fmt.Errorf("missing recipient address")
 	}
-	if msg.RecipientChain == "" {
+	if m.RecipientChain == "" {
 		return fmt.Errorf("missing recipient chain")
 	}
 	return nil
 }
 
 // GetSignBytes returns the message bytes that need to be signed
-func (msg MsgLink) GetSignBytes() []byte {
-	bz := ModuleCdc.MustMarshalJSON(msg)
-	return sdk.MustSortJSON(bz)
+func (m MsgLink) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
 // GetSigners returns the set of signers for this message
-func (msg MsgLink) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Sender}
+func (m MsgLink) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{m.Sender}
 }

@@ -8,11 +8,12 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/assert"
-	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
+	appParams "github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
@@ -22,10 +23,10 @@ import (
 
 func TestKeeper_GetConfirmedOutPointInfos(t *testing.T) {
 	setup := func() (Keeper, sdk.Context) {
-		cdc := testutils.Codec()
-		btcSubspace := params.NewSubspace(cdc, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"), "btc")
-		ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-		return NewKeeper(cdc, sdk.NewKVStoreKey("btc"), btcSubspace), ctx
+		encCfg := appParams.MakeEncodingConfig()
+		btcSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"), "btc")
+		ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		return NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("btc"), btcSubspace), ctx
 	}
 
 	testCases := []struct {
@@ -59,11 +60,9 @@ func prepareNoOutpoints(Keeper, sdk.Context, int) []types.OutPointInfo {
 }
 
 func preparePendingOutPoints(k Keeper, ctx sdk.Context, infoCount int) []types.OutPointInfo {
-	var outs []types.OutPointInfo
 	for i := 0; i < infoCount; i++ {
 		info := randOutPointInfo()
 		k.SetPendingOutpointInfo(ctx, exported.PollMeta{ID: rand2.StrBetween(5, 20)}, info)
-		outs = append(outs, info)
 	}
 	return nil
 }
@@ -110,7 +109,7 @@ func randOutPointInfo() types.OutPointInfo {
 		panic(err)
 	}
 	info := types.OutPointInfo{
-		OutPoint: wire.NewOutPoint(txHash, rand.Uint32()),
+		OutPoint: wire.NewOutPoint(txHash, rand.Uint32()).String(),
 		Amount:   btcutil.Amount(rand2.PosI64()),
 		Address:  rand2.StrBetween(20, 60),
 	}

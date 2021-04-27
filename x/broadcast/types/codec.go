@@ -2,19 +2,28 @@ package types
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
+	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
+	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// RegisterCodec registers concrete types on codec
-func RegisterCodec(cdc *codec.Codec) {
-	cdc.RegisterConcrete(MsgRegisterProxy{}, "broadcast/RegisterProxy", nil)
+// RegisterLegacyAminoCodec registers concrete types on codec
+func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
+	cdc.RegisterConcrete(&MsgRegisterProxy{}, "broadcast/RegisterProxy", nil)
 }
 
+// RegisterInterfaces registers types and interfaces with the given registry
+func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
+	registry.RegisterImplementations((*sdk.Msg)(nil), &MsgRegisterProxy{})
+}
+
+var amino = codec.NewLegacyAmino()
+
 // ModuleCdc defines the module codec
-var ModuleCdc *codec.Codec
+var ModuleCdc = codec.NewAminoCodec(amino)
 
 func init() {
-	ModuleCdc = codec.New()
-	RegisterCodec(ModuleCdc)
-	codec.RegisterCrypto(ModuleCdc)
-	ModuleCdc.Seal()
+	RegisterLegacyAminoCodec(amino)
+	cryptocodec.RegisterCrypto(amino)
+	amino.Seal()
 }
