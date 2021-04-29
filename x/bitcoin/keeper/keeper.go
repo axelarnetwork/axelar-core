@@ -154,20 +154,16 @@ func (k Keeper) GetPendingOutPointInfo(ctx sdk.Context, poll exported.PollMeta) 
 func (k Keeper) GetOutPointInfo(ctx sdk.Context, outPoint wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
 	var info types.OutPointInfo
 
-	prefixes := map[types.OutPointState]string{
-		types.CONFIRMED: confirmedOutPointPrefix,
-		types.SPENT:     spentOutPointPrefix,
+	bz := ctx.KVStore(k.storeKey).Get([]byte(confirmedOutPointPrefix + outPoint.String()))
+	if bz != nil {
+		k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &info)
+		return info, types.CONFIRMED, true
 	}
 
-	// the order of this iteration is non-deterministic,
-	// the only reason this is correct is because exactly one of the cases is true
-	for state, prefix := range prefixes {
-		bz := ctx.KVStore(k.storeKey).Get([]byte(prefix + outPoint.String()))
-		if bz != nil {
-			k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &info)
-			return info, state, true
-		}
-
+	bz = ctx.KVStore(k.storeKey).Get([]byte(spentOutPointPrefix + outPoint.String()))
+	if bz != nil {
+		k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &info)
+		return info, types.SPENT, true
 	}
 
 	return types.OutPointInfo{}, 0, false
