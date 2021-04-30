@@ -281,20 +281,17 @@ func (k Keeper) SetPendingDeposit(ctx sdk.Context, poll exported.PollMeta, depos
 // GetDeposit retrieves a confirmed/burned deposit
 func (k Keeper) GetDeposit(ctx sdk.Context, txID string, burnAddr string) (types.ERC20Deposit, types.DepositState, bool) {
 	var deposit types.ERC20Deposit
-	prefixes := map[types.DepositState]string{
-		types.CONFIRMED: confirmedDepositPrefix,
-		types.BURNED:    burnedDepositPrefix,
+
+	bz := ctx.KVStore(k.storeKey).Get([]byte(confirmedDepositPrefix + txID + "_" + burnAddr))
+	if bz != nil {
+		k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &deposit)
+		return deposit, types.CONFIRMED, true
 	}
 
-	// the order of this iteration is non-deterministic,
-	// the only reason this is correct is because exactly one of the cases is true
-	for state, prefix := range prefixes {
-		bz := ctx.KVStore(k.storeKey).Get([]byte(prefix + txID + "_" + burnAddr))
-		if bz != nil {
-			k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &deposit)
-			return deposit, state, true
-		}
-
+	bz = ctx.KVStore(k.storeKey).Get([]byte(burnedDepositPrefix + txID + "_" + burnAddr))
+	if bz != nil {
+		k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &deposit)
+		return deposit, types.BURNED, true
 	}
 
 	return types.ERC20Deposit{}, 0, false
