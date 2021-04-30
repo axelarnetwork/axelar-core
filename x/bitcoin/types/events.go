@@ -4,7 +4,7 @@ package types
 const (
 	EventTypeOutpointConfirmation = "outpointConfirmation"
 	EventTypeTransactionSigned    = "transactionSigned"
-	EventTypeWithdrawalFailed     = "withdrawalFailed"
+	EventTypeWithdrawal           = "withdrawal"
 )
 
 // Event attribute keys
@@ -22,4 +22,5 @@ const (
 	AttributeValueStart   = "start"
 	AttributeValueConfirm = "confirm"
 	AttributeValueReject  = "reject"
+	AttributeValueFailed  = "failed"
 )

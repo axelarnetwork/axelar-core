@@ -91,10 +91,10 @@ func (k Keeper) GetNetwork(ctx sdk.Context) types.Network {
 
 // GetMinimumWithdrawalAmount returns the minimum withdrawal threshold
 func (k Keeper) GetMinimumWithdrawalAmount(ctx sdk.Context) btcutil.Amount {
-	var result int64
+	var result btcutil.Amount
 	k.params.Get(ctx, types.KeyMinimumWithdrawalAmount, &result)
 
-	return btcutil.Amount(result)
+	return result
 }
 
 // Codec returns the codec used by the keeper to marshal and unmarshal data

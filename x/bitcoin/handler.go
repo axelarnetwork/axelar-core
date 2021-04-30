@@ -315,12 +315,15 @@ func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.
 
 		// Check if the recipient has unsent dust amount
 		unsentDust := k.GetDustAmount(ctx, encodeAddr)
+		k.DeleteDustAmount(ctx, encodeAddr)
+
 		amount = amount.Add(sdk.NewInt(int64(unsentDust)))
 		if amount.LT(minAmount) {
 			// Set and continue
 			k.SetDustAmount(ctx, recipient.EncodeAddress(), btcutil.Amount(amount.Int64()))
-			event := sdk.NewEvent(types.EventTypeWithdrawalFailed,
+			event := sdk.NewEvent(types.EventTypeWithdrawal,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueFailed),
 				sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.EncodeAddress()),
 				sdk.NewAttribute(types.AttributeKeyAmount, amount.String()),
 				sdk.NewAttribute(sdk.EventTypeMessage, fmt.Sprintf("Withdrawal below minmum amount %s", minAmount)),
@@ -329,9 +332,6 @@ func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.
 			continue
 		}
 
-		if unsentDust > 0 {
-			k.DeleteDustAmount(ctx, encodeAddr)
-		}
 
 		outputs = append(outputs,
 			types.Output{Amount: btcutil.Amount(amount.Int64()), Recipient: recipient})

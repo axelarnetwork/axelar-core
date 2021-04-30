@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"github.com/btcsuite/btcutil"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -83,7 +84,7 @@ func validateRevoteLockingPeriod(period interface{}) error {
 }
 
 func validateMinimumWithdrawalAmount(amount interface{}) error {
-	i, ok := amount.(int64)
+	i, ok := amount.(btcutil.Amount)
 	if !ok {
 		return fmt.Errorf("invalid parameter type for minimum withdrawal amount: %T", i)
 	}

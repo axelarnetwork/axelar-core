@@ -406,6 +406,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 			deposits = append(deposits, deposit)
 			depositAmount += int64(deposit.Amount)
 		}
+		dustAmount := make(map[string]btcutil.Amount)
 
 		masterPrivateKey, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
 		masterKey := tss.Key{ID: rand.StrBetween(5, 20), Value: masterPrivateKey.PublicKey, Role: tss.MasterKey}
@@ -437,8 +438,22 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 			SetAddressFunc:    func(sdk.Context, types.AddressInfo) {},
 			SetUnsignedTxFunc: func(sdk.Context, *wire.MsgTx) {},
 			GetMinimumWithdrawalAmountFunc: func(sdk.Context) btcutil.Amount { return  minimumWithdrawalAmount },
-			GetDustAmountFunc: func(sdk.Context, string) btcutil.Amount { return 0 },
-			SetDustAmountFunc: func(sdk.Context, string, btcutil.Amount) {},
+			GetDustAmountFunc: func(ctx sdk.Context, encodeAddr string) btcutil.Amount {
+				amount, ok := dustAmount[encodeAddr]
+				if !ok {
+					return 0
+				}
+				return amount
+			},
+			SetDustAmountFunc: func(ctx sdk.Context, encodeAddr string, amount btcutil.Amount) {
+				if _, ok := dustAmount[encodeAddr]; !ok {
+					dustAmount[encodeAddr] = 0
+				}
+				dustAmount[encodeAddr] += amount
+			},
+			DeleteDustAmountFunc: func(ctx sdk.Context, encodeAddr string) {
+				delete(dustAmount, encodeAddr)
+			},
 		}
 		nexusKeeper = &mock.NexusMock{
 			GetPendingTransfersForChainFunc: func(sdk.Context, nexus.Chain) []nexus.CrossChainTransfer { return transfers },
@@ -541,6 +556,89 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		assert.Len(t, signer.StartSignCalls(), len(deposits))
 	}).Repeat(repeatCount))
 
+	t.Run("happy path transfer to same destination address", testutils.Func(func(t *testing.T) {
+		setup()
+
+		// this test case is not interested in less than 2 transfers
+		if len(transfers) < 1 {
+			return
+		}
+
+		var sameAddressCount int
+		randAddress := randomAddress()
+
+		sameAddressCount = int(rand.I64Between(1, int64(len(transfers)+1)))
+		for i := 0; i < sameAddressCount; i++ {
+			transfers[i].Recipient.Address = randAddress.EncodeAddress()
+		}
+
+		uniqueTransferCount := len(transfers) - sameAddressCount + 1
+
+		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		assert.NoError(t, err)
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, uniqueTransferCount+1) // + 1 consolidation outpoint
+		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
+		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(deposits))
+		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), len(deposits))
+		assert.Len(t, btcKeeper.SetMasterKeyOutpointExistsCalls(), 1)
+		mapi(len(btcKeeper.SetOutpointInfoCalls()), func(i int) { assert.Equal(t, types.SPENT, btcKeeper.SetOutpointInfoCalls()[i].State) })
+		assert.Len(t, signer.StartSignCalls(), len(deposits))
+	}).Repeat(repeatCount))
+
+	t.Run("happy path transfer below minimum amount", testutils.Func(func(t *testing.T) {
+		setup()
+		var belowMinimumCount int
+		if len(transfers) > 0 {
+			belowMinimumCount = int(rand.I64Between(1, int64(len(transfers)+1)))
+			for i := 0; i < belowMinimumCount; i++ {
+				transfers[i].Asset.Amount = sdk.NewInt(rand.I64Between(0, int64(minimumWithdrawalAmount)))
+			}
+		}
+
+		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		assert.NoError(t, err)
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)-belowMinimumCount+1) // + 1 consolidation outpoint
+		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
+		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(deposits))
+		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), len(deposits))
+		assert.Len(t, btcKeeper.SetMasterKeyOutpointExistsCalls(), 1)
+		mapi(len(btcKeeper.SetOutpointInfoCalls()), func(i int) { assert.Equal(t, types.SPENT, btcKeeper.SetOutpointInfoCalls()[i].State) })
+		assert.Len(t, signer.StartSignCalls(), len(deposits))
+	}).Repeat(repeatCount))
+
+	t.Run("happy path rescuing previously ignored output", testutils.Func(func(t *testing.T) {
+		setup()
+
+		dust := make(map[string]btcutil.Amount)
+		for i := 0; i < len(transfers) ; i++ {
+			encodeAddr := transfers[i].Recipient.Address
+			dustAmount := btcutil.Amount(rand.I64Between(1, int64(minimumWithdrawalAmount)))
+			btcKeeper.SetDustAmountFunc(ctx, encodeAddr, dustAmount)
+			dust[encodeAddr] += dustAmount
+		}
+
+		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		assert.NoError(t, err)
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)+1) // + 1 consolidation outpoint
+		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
+		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(deposits))
+		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), len(deposits))
+		assert.Len(t, btcKeeper.SetMasterKeyOutpointExistsCalls(), 1)
+		mapi(len(btcKeeper.SetOutpointInfoCalls()), func(i int) { assert.Equal(t, types.SPENT, btcKeeper.SetOutpointInfoCalls()[i].State) })
+		assert.Len(t, signer.StartSignCalls(), len(deposits))
+
+		txOut :=  btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut
+		for i := 0; i < len(transfers) ; i++ {
+			encodeAddr :=  transfers[i].Recipient.Address
+			assert.Equal(t, btcKeeper.GetDustAmountFunc(ctx, encodeAddr), btcutil.Amount(0))
+			assert.Equal(t, int64(dust[encodeAddr]) + transfers[i].Asset.Amount.Int64(), txOut[i].Value)
+		}
+
+	}).Repeat(repeatCount))
+
 	t.Run("deposits == transfers", testutils.Func(func(t *testing.T) {
 		setup()
 		// equalize deposits and transfers
@@ -620,52 +718,6 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
 
-	t.Run("transfer to same destination address", testutils.Func(func(t *testing.T) {
-		setup()
-		var sameAddressCount int
-		randAddress := randomAddress()
-		if len(transfers) > 0 {
-			sameAddressCount = int(rand.I64Between(0, int64(len(transfers))))
-			for i := 0; i < sameAddressCount; i++ {
-				transfers[i].Recipient.Address = randAddress.EncodeAddress()
-			}
-		}
-		if sameAddressCount > 0 {
-			sameAddressCount --
-		}
-		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
-		assert.NoError(t, err)
-		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
-		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)-sameAddressCount+1) // + 1 consolidation outpoint
-		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
-		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(deposits))
-		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), len(deposits))
-		assert.Len(t, btcKeeper.SetMasterKeyOutpointExistsCalls(), 1)
-		mapi(len(btcKeeper.SetOutpointInfoCalls()), func(i int) { assert.Equal(t, types.SPENT, btcKeeper.SetOutpointInfoCalls()[i].State) })
-		assert.Len(t, signer.StartSignCalls(), len(deposits))
-	}).Repeat(repeatCount))
-
-	t.Run("transfer below minimum amount", testutils.Func(func(t *testing.T) {
-		setup()
-		var belowMinimumCount int
-		if len(transfers) > 0 {
-			belowMinimumCount = int(rand.I64Between(0, int64(len(transfers))))
-			for i := 0; i < belowMinimumCount; i++ {
-				transfers[i].Asset.Amount = sdk.NewInt(rand.I64Between(0, int64(minimumWithdrawalAmount)))
-			}
-		}
-
-		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
-		assert.NoError(t, err)
-		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
-		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)-belowMinimumCount+1) // + 1 consolidation outpoint
-		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
-		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(deposits))
-		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), len(deposits))
-		assert.Len(t, btcKeeper.SetMasterKeyOutpointExistsCalls(), 1)
-		mapi(len(btcKeeper.SetOutpointInfoCalls()), func(i int) { assert.Equal(t, types.SPENT, btcKeeper.SetOutpointInfoCalls()[i].State) })
-		assert.Len(t, signer.StartSignCalls(), len(deposits))
-	}).Repeat(repeatCount))
 }
 
 func mapi(n int, f func(i int)) {
@@ -709,10 +761,10 @@ func randomOutpointInfo() types.OutPointInfo {
 	}
 }
 
-func randomTransfer(lower int64, upper int64) nexus.CrossChainTransfer {
+func randomTransfer(lowerAmount int64, upperAmount int64) nexus.CrossChainTransfer {
 	return nexus.CrossChainTransfer{
 		Recipient: nexus.CrossChainAddress{Chain: exported.Bitcoin, Address: randomAddress().EncodeAddress()},
-		Asset:     sdk.NewInt64Coin(exported.Bitcoin.NativeAsset, rand.I64Between(lower, upper)),
+		Asset:     sdk.NewInt64Coin(exported.Bitcoin.NativeAsset, rand.I64Between(lowerAmount, upperAmount)),
 		ID:        mathRand.Uint64(),
 	}
 }
