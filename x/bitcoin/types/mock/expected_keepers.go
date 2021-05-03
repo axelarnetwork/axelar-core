@@ -10,6 +10,7 @@ import (
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	exported "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/btcsuite/btcd/wire"
+	github_com_btcsuite_btcutil "github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -1187,6 +1188,9 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			CodecFunc: func() *codec.LegacyAmino {
 // 				panic("mock out the Codec method")
 // 			},
+// 			DeleteDustAmountFunc: func(ctx sdk.Context, encodedAddress string)  {
+// 				panic("mock out the DeleteDustAmount method")
+// 			},
 // 			DeleteOutpointInfoFunc: func(ctx sdk.Context, outPoint wire.OutPoint)  {
 // 				panic("mock out the DeleteOutpointInfo method")
 // 			},
@@ -1207,6 +1211,12 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			},
 // 			GetConfirmedOutPointInfosFunc: func(ctx sdk.Context) []types.OutPointInfo {
 // 				panic("mock out the GetConfirmedOutPointInfos method")
+// 			},
+// 			GetDustAmountFunc: func(ctx sdk.Context, encodedAddress string) github_com_btcsuite_btcutil.Amount {
+// 				panic("mock out the GetDustAmount method")
+// 			},
+// 			GetMinimumWithdrawalAmountFunc: func(ctx sdk.Context) github_com_btcsuite_btcutil.Amount {
+// 				panic("mock out the GetMinimumWithdrawalAmount method")
 // 			},
 // 			GetNetworkFunc: func(ctx sdk.Context) types.Network {
 // 				panic("mock out the GetNetwork method")
@@ -1241,6 +1251,9 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			SetAddressFunc: func(ctx sdk.Context, address types.AddressInfo)  {
 // 				panic("mock out the SetAddress method")
 // 			},
+// 			SetDustAmountFunc: func(ctx sdk.Context, encodedAddress string, amount github_com_btcsuite_btcutil.Amount)  {
+// 				panic("mock out the SetDustAmount method")
+// 			},
 // 			SetMasterKeyOutpointExistsFunc: func(ctx sdk.Context)  {
 // 				panic("mock out the SetMasterKeyOutpointExists method")
 // 			},
@@ -1269,6 +1282,9 @@ type BTCKeeperMock struct {
 	// CodecFunc mocks the Codec method.
 	CodecFunc func() *codec.LegacyAmino
 
+	// DeleteDustAmountFunc mocks the DeleteDustAmount method.
+	DeleteDustAmountFunc func(ctx sdk.Context, encodedAddress string)
+
 	// DeleteOutpointInfoFunc mocks the DeleteOutpointInfo method.
 	DeleteOutpointInfoFunc func(ctx sdk.Context, outPoint wire.OutPoint)
 
@@ -1289,6 +1305,12 @@ type BTCKeeperMock struct {
 
 	// GetConfirmedOutPointInfosFunc mocks the GetConfirmedOutPointInfos method.
 	GetConfirmedOutPointInfosFunc func(ctx sdk.Context) []types.OutPointInfo
+
+	// GetDustAmountFunc mocks the GetDustAmount method.
+	GetDustAmountFunc func(ctx sdk.Context, encodedAddress string) github_com_btcsuite_btcutil.Amount
+
+	// GetMinimumWithdrawalAmountFunc mocks the GetMinimumWithdrawalAmount method.
+	GetMinimumWithdrawalAmountFunc func(ctx sdk.Context) github_com_btcsuite_btcutil.Amount
 
 	// GetNetworkFunc mocks the GetNetwork method.
 	GetNetworkFunc func(ctx sdk.Context) types.Network
@@ -1323,6 +1345,9 @@ type BTCKeeperMock struct {
 	// SetAddressFunc mocks the SetAddress method.
 	SetAddressFunc func(ctx sdk.Context, address types.AddressInfo)
 
+	// SetDustAmountFunc mocks the SetDustAmount method.
+	SetDustAmountFunc func(ctx sdk.Context, encodedAddress string, amount github_com_btcsuite_btcutil.Amount)
+
 	// SetMasterKeyOutpointExistsFunc mocks the SetMasterKeyOutpointExists method.
 	SetMasterKeyOutpointExistsFunc func(ctx sdk.Context)
 
@@ -1345,6 +1370,13 @@ type BTCKeeperMock struct {
 	calls struct {
 		// Codec holds details about calls to the Codec method.
 		Codec []struct {
+		}
+		// DeleteDustAmount holds details about calls to the DeleteDustAmount method.
+		DeleteDustAmount []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// EncodedAddress is the encodedAddress argument value.
+			EncodedAddress string
 		}
 		// DeleteOutpointInfo holds details about calls to the DeleteOutpointInfo method.
 		DeleteOutpointInfo []struct {
@@ -1384,6 +1416,18 @@ type BTCKeeperMock struct {
 		}
 		// GetConfirmedOutPointInfos holds details about calls to the GetConfirmedOutPointInfos method.
 		GetConfirmedOutPointInfos []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
+		// GetDustAmount holds details about calls to the GetDustAmount method.
+		GetDustAmount []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// EncodedAddress is the encodedAddress argument value.
+			EncodedAddress string
+		}
+		// GetMinimumWithdrawalAmount holds details about calls to the GetMinimumWithdrawalAmount method.
+		GetMinimumWithdrawalAmount []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 		}
@@ -1448,6 +1492,15 @@ type BTCKeeperMock struct {
 			// Address is the address argument value.
 			Address types.AddressInfo
 		}
+		// SetDustAmount holds details about calls to the SetDustAmount method.
+		SetDustAmount []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// EncodedAddress is the encodedAddress argument value.
+			EncodedAddress string
+			// Amount is the amount argument value.
+			Amount github_com_btcsuite_btcutil.Amount
+		}
 		// SetMasterKeyOutpointExists holds details about calls to the SetMasterKeyOutpointExists method.
 		SetMasterKeyOutpointExists []struct {
 			// Ctx is the ctx argument value.
@@ -1494,6 +1547,7 @@ type BTCKeeperMock struct {
 		}
 	}
 	lockCodec                         sync.RWMutex
+	lockDeleteDustAmount              sync.RWMutex
 	lockDeleteOutpointInfo            sync.RWMutex
 	lockDeletePendingOutPointInfo     sync.RWMutex
 	lockDeleteSignedTx                sync.RWMutex
@@ -1501,6 +1555,8 @@ type BTCKeeperMock struct {
 	lockDoesMasterKeyOutpointExist    sync.RWMutex
 	lockGetAddress                    sync.RWMutex
 	lockGetConfirmedOutPointInfos     sync.RWMutex
+	lockGetDustAmount                 sync.RWMutex
+	lockGetMinimumWithdrawalAmount    sync.RWMutex
 	lockGetNetwork                    sync.RWMutex
 	lockGetOutPointInfo               sync.RWMutex
 	lockGetParams                     sync.RWMutex
@@ -1512,6 +1568,7 @@ type BTCKeeperMock struct {
 	lockGetUnsignedTx                 sync.RWMutex
 	lockLogger                        sync.RWMutex
 	lockSetAddress                    sync.RWMutex
+	lockSetDustAmount                 sync.RWMutex
 	lockSetMasterKeyOutpointExists    sync.RWMutex
 	lockSetOutpointInfo               sync.RWMutex
 	lockSetParams                     sync.RWMutex
@@ -1543,6 +1600,41 @@ func (mock *BTCKeeperMock) CodecCalls() []struct {
 	mock.lockCodec.RLock()
 	calls = mock.calls.Codec
 	mock.lockCodec.RUnlock()
+	return calls
+}
+
+// DeleteDustAmount calls DeleteDustAmountFunc.
+func (mock *BTCKeeperMock) DeleteDustAmount(ctx sdk.Context, encodedAddress string) {
+	if mock.DeleteDustAmountFunc == nil {
+		panic("BTCKeeperMock.DeleteDustAmountFunc: method is nil but BTCKeeper.DeleteDustAmount was just called")
+	}
+	callInfo := struct {
+		Ctx            sdk.Context
+		EncodedAddress string
+	}{
+		Ctx:            ctx,
+		EncodedAddress: encodedAddress,
+	}
+	mock.lockDeleteDustAmount.Lock()
+	mock.calls.DeleteDustAmount = append(mock.calls.DeleteDustAmount, callInfo)
+	mock.lockDeleteDustAmount.Unlock()
+	mock.DeleteDustAmountFunc(ctx, encodedAddress)
+}
+
+// DeleteDustAmountCalls gets all the calls that were made to DeleteDustAmount.
+// Check the length with:
+//     len(mockedBTCKeeper.DeleteDustAmountCalls())
+func (mock *BTCKeeperMock) DeleteDustAmountCalls() []struct {
+	Ctx            sdk.Context
+	EncodedAddress string
+} {
+	var calls []struct {
+		Ctx            sdk.Context
+		EncodedAddress string
+	}
+	mock.lockDeleteDustAmount.RLock()
+	calls = mock.calls.DeleteDustAmount
+	mock.lockDeleteDustAmount.RUnlock()
 	return calls
 }
 
@@ -1772,6 +1864,72 @@ func (mock *BTCKeeperMock) GetConfirmedOutPointInfosCalls() []struct {
 	mock.lockGetConfirmedOutPointInfos.RLock()
 	calls = mock.calls.GetConfirmedOutPointInfos
 	mock.lockGetConfirmedOutPointInfos.RUnlock()
+	return calls
+}
+
+// GetDustAmount calls GetDustAmountFunc.
+func (mock *BTCKeeperMock) GetDustAmount(ctx sdk.Context, encodedAddress string) github_com_btcsuite_btcutil.Amount {
+	if mock.GetDustAmountFunc == nil {
+		panic("BTCKeeperMock.GetDustAmountFunc: method is nil but BTCKeeper.GetDustAmount was just called")
+	}
+	callInfo := struct {
+		Ctx            sdk.Context
+		EncodedAddress string
+	}{
+		Ctx:            ctx,
+		EncodedAddress: encodedAddress,
+	}
+	mock.lockGetDustAmount.Lock()
+	mock.calls.GetDustAmount = append(mock.calls.GetDustAmount, callInfo)
+	mock.lockGetDustAmount.Unlock()
+	return mock.GetDustAmountFunc(ctx, encodedAddress)
+}
+
+// GetDustAmountCalls gets all the calls that were made to GetDustAmount.
+// Check the length with:
+//     len(mockedBTCKeeper.GetDustAmountCalls())
+func (mock *BTCKeeperMock) GetDustAmountCalls() []struct {
+	Ctx            sdk.Context
+	EncodedAddress string
+} {
+	var calls []struct {
+		Ctx            sdk.Context
+		EncodedAddress string
+	}
+	mock.lockGetDustAmount.RLock()
+	calls = mock.calls.GetDustAmount
+	mock.lockGetDustAmount.RUnlock()
+	return calls
+}
+
+// GetMinimumWithdrawalAmount calls GetMinimumWithdrawalAmountFunc.
+func (mock *BTCKeeperMock) GetMinimumWithdrawalAmount(ctx sdk.Context) github_com_btcsuite_btcutil.Amount {
+	if mock.GetMinimumWithdrawalAmountFunc == nil {
+		panic("BTCKeeperMock.GetMinimumWithdrawalAmountFunc: method is nil but BTCKeeper.GetMinimumWithdrawalAmount was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetMinimumWithdrawalAmount.Lock()
+	mock.calls.GetMinimumWithdrawalAmount = append(mock.calls.GetMinimumWithdrawalAmount, callInfo)
+	mock.lockGetMinimumWithdrawalAmount.Unlock()
+	return mock.GetMinimumWithdrawalAmountFunc(ctx)
+}
+
+// GetMinimumWithdrawalAmountCalls gets all the calls that were made to GetMinimumWithdrawalAmount.
+// Check the length with:
+//     len(mockedBTCKeeper.GetMinimumWithdrawalAmountCalls())
+func (mock *BTCKeeperMock) GetMinimumWithdrawalAmountCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockGetMinimumWithdrawalAmount.RLock()
+	calls = mock.calls.GetMinimumWithdrawalAmount
+	mock.lockGetMinimumWithdrawalAmount.RUnlock()
 	return calls
 }
 
@@ -2125,6 +2283,45 @@ func (mock *BTCKeeperMock) SetAddressCalls() []struct {
 	mock.lockSetAddress.RLock()
 	calls = mock.calls.SetAddress
 	mock.lockSetAddress.RUnlock()
+	return calls
+}
+
+// SetDustAmount calls SetDustAmountFunc.
+func (mock *BTCKeeperMock) SetDustAmount(ctx sdk.Context, encodedAddress string, amount github_com_btcsuite_btcutil.Amount) {
+	if mock.SetDustAmountFunc == nil {
+		panic("BTCKeeperMock.SetDustAmountFunc: method is nil but BTCKeeper.SetDustAmount was just called")
+	}
+	callInfo := struct {
+		Ctx            sdk.Context
+		EncodedAddress string
+		Amount         github_com_btcsuite_btcutil.Amount
+	}{
+		Ctx:            ctx,
+		EncodedAddress: encodedAddress,
+		Amount:         amount,
+	}
+	mock.lockSetDustAmount.Lock()
+	mock.calls.SetDustAmount = append(mock.calls.SetDustAmount, callInfo)
+	mock.lockSetDustAmount.Unlock()
+	mock.SetDustAmountFunc(ctx, encodedAddress, amount)
+}
+
+// SetDustAmountCalls gets all the calls that were made to SetDustAmount.
+// Check the length with:
+//     len(mockedBTCKeeper.SetDustAmountCalls())
+func (mock *BTCKeeperMock) SetDustAmountCalls() []struct {
+	Ctx            sdk.Context
+	EncodedAddress string
+	Amount         github_com_btcsuite_btcutil.Amount
+} {
+	var calls []struct {
+		Ctx            sdk.Context
+		EncodedAddress string
+		Amount         github_com_btcsuite_btcutil.Amount
+	}
+	mock.lockSetDustAmount.RLock()
+	calls = mock.calls.SetDustAmount
+	mock.lockSetDustAmount.RUnlock()
 	return calls
 }
 

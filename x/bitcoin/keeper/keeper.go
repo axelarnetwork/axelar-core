@@ -20,6 +20,7 @@ const (
 	confirmedOutPointPrefix = "conf_"
 	spentOutPointPrefix     = "spent_"
 	addrPrefix              = "addr_"
+	dustAmtPrefix           = "dust_"
 
 	unsignedTxKey          = "unsignedTx"
 	signedTxKey            = "signedTx"
@@ -86,6 +87,14 @@ func (k Keeper) GetNetwork(ctx sdk.Context) types.Network {
 	var network types.Network
 	k.params.Get(ctx, types.KeyNetwork, &network)
 	return network
+}
+
+// GetMinimumWithdrawalAmount returns the minimum withdrawal threshold
+func (k Keeper) GetMinimumWithdrawalAmount(ctx sdk.Context) btcutil.Amount {
+	var result btcutil.Amount
+	k.params.Get(ctx, types.KeyMinimumWithdrawalAmount, &result)
+
+	return result
 }
 
 // Codec returns the codec used by the keeper to marshal and unmarshal data
@@ -250,6 +259,28 @@ func (k Keeper) GetSignedTx(ctx sdk.Context) (*wire.MsgTx, bool) {
 // DeleteSignedTx deletes the signed transaction for outpoint consolidation
 func (k Keeper) DeleteSignedTx(ctx sdk.Context) {
 	ctx.KVStore(k.storeKey).Delete([]byte(signedTxKey))
+}
+
+// SetDustAmount stores the dust amount for a destination bitcoin address
+func (k Keeper) SetDustAmount(ctx sdk.Context, encodedAddress string, amount btcutil.Amount) {
+	ctx.KVStore(k.storeKey).Set([]byte(dustAmtPrefix+encodedAddress), k.cdc.MustMarshalBinaryLengthPrefixed(amount))
+}
+
+// GetDustAmount returns the dust amount for a destination bitcoin address
+func (k Keeper) GetDustAmount(ctx sdk.Context, encodedAddress string) btcutil.Amount {
+
+	bz := ctx.KVStore(k.storeKey).Get([]byte(dustAmtPrefix + encodedAddress))
+	if bz == nil {
+		return 0
+	}
+	var amt btcutil.Amount
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &amt)
+	return amt
+}
+
+// DeleteDustAmount deletes the dust amount for a destination bitcoin address
+func (k Keeper) DeleteDustAmount(ctx sdk.Context, encodedAddress string) {
+	ctx.KVStore(k.storeKey).Delete([]byte(dustAmtPrefix + encodedAddress))
 }
 
 // SetMasterKeyOutpointExists sets existence for UTXO controlled by the master key
