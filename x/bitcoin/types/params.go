@@ -2,7 +2,7 @@ package types
 
 import (
 	"fmt"
-
+	"github.com/btcsuite/btcutil"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -10,10 +10,11 @@ import (
 
 // Parameter keys
 var (
-	KeyConfirmationHeight  = []byte("confirmationHeight")
-	KeyNetwork             = []byte("network")
-	KeyRevoteLockingPeriod = []byte("RevoteLockingPeriod")
-	KeySigCheckInterval    = []byte("KeySigCheckInterval")
+	KeyConfirmationHeight    = []byte("confirmationHeight")
+	KeyNetwork               = []byte("network")
+	KeyRevoteLockingPeriod   = []byte("RevoteLockingPeriod")
+	KeySigCheckInterval      = []byte("KeySigCheckInterval")
+	KeyMinimumWithdrawalAmount = []byte("KeyMinimumWithdrawalAmount")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -27,8 +28,8 @@ func DefaultParams() Params {
 		ConfirmationHeight:  1,
 		Network:             Network{Name: Regtest.Name},
 		RevoteLockingPeriod: 50,
-
 		SigCheckInterval: 10,
+		MinimumWithdrawalAmount: 5000,
 	}
 }
 
@@ -46,6 +47,7 @@ func (m *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(KeyNetwork, &m.Network, validateNetwork),
 		paramtypes.NewParamSetPair(KeyRevoteLockingPeriod, &m.RevoteLockingPeriod, validateRevoteLockingPeriod),
 		paramtypes.NewParamSetPair(KeySigCheckInterval, &m.SigCheckInterval, validateSigCheckInterval),
+		paramtypes.NewParamSetPair(KeyMinimumWithdrawalAmount, &m.MinimumWithdrawalAmount, validateMinimumWithdrawalAmount),
 	}
 }
 
@@ -81,6 +83,20 @@ func validateRevoteLockingPeriod(period interface{}) error {
 	return nil
 }
 
+func validateMinimumWithdrawalAmount(amount interface{}) error {
+	i, ok := amount.(btcutil.Amount)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for minimum withdrawal amount: %T", i)
+	}
+
+	// Dust limit is 546 satoshis for non-SegWit, 294 satoshis for SegWit
+	if i <= 546 {
+		return sdkerrors.Wrap(types.ErrInvalidGenesis, " minimum withdrawal amount must be greater than 0")
+	}
+
+	return nil
+}
+
 func validateSigCheckInterval(interval interface{}) error {
 	i, ok := interval.(int64)
 	if !ok {
@@ -108,6 +124,10 @@ func (m Params) Validate() error {
 		return err
 	}
 	if err := validateSigCheckInterval(m.SigCheckInterval); err != nil {
+		return err
+	}
+
+	if err := validateMinimumWithdrawalAmount(m.MinimumWithdrawalAmount); err != nil {
 		return err
 	}
 

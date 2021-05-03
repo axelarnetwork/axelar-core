@@ -4,14 +4,17 @@ package types
 const (
 	EventTypeOutpointConfirmation = "outpointConfirmation"
 	EventTypeTransactionSigned    = "transactionSigned"
+	EventTypeWithdrawal           = "withdrawal"
 )
 
 // Event attribute keys
 const (
-	AttributeKeyConfHeight   = "confHeight"
-	AttributeKeyOutPointInfo = "outPointInfo"
-	AttributeKeyPoll         = "poll"
-	AttributeKeyTxHash       = "txHash"
+	AttributeKeyConfHeight         = "confHeight"
+	AttributeKeyOutPointInfo       = "outPointInfo"
+	AttributeKeyPoll               = "poll"
+	AttributeKeyTxHash             = "txHash"
+	AttributeKeyAmount             = "amount"
+	AttributeKeyDestinationAddress = "destinationAddress"
 )
 
 // Event attribute values
@@ -19,4 +22,5 @@ const (
 	AttributeValueStart   = "start"
 	AttributeValueConfirm = "confirm"
 	AttributeValueReject  = "reject"
+	AttributeValueFailed  = "failed"
 )

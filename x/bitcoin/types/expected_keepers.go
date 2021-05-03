@@ -2,6 +2,7 @@ package types
 
 import (
 	"github.com/btcsuite/btcd/wire"
+	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -25,6 +26,7 @@ type BTCKeeper interface {
 	GetRevoteLockingPeriod(ctx sdk.Context) int64
 	GetSigCheckInterval(ctx sdk.Context) int64
 	GetNetwork(ctx sdk.Context) Network
+	GetMinimumWithdrawalAmount(ctx sdk.Context) btcutil.Amount
 
 	SetPendingOutpointInfo(ctx sdk.Context, poll vote.PollMeta, info OutPointInfo)
 	GetPendingOutPointInfo(ctx sdk.Context, poll vote.PollMeta) (OutPointInfo, bool)
@@ -43,6 +45,10 @@ type BTCKeeper interface {
 
 	SetAddress(ctx sdk.Context, address AddressInfo)
 	GetAddress(ctx sdk.Context, encodedAddress string) (AddressInfo, bool)
+
+	GetDustAmount(ctx sdk.Context, encodedAddress string) btcutil.Amount
+	SetDustAmount(ctx sdk.Context, encodedAddress string, amount btcutil.Amount)
+	DeleteDustAmount(ctx sdk.Context, encodedAddress string)
 
 	SetMasterKeyOutpointExists(ctx sdk.Context)
 	DoesMasterKeyOutpointExist(ctx sdk.Context) bool
