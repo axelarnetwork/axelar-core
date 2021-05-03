@@ -280,6 +280,9 @@ func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.
 	totalOut := sdk.ZeroInt()
 
 	addrWithdrawal := make(map[string]sdk.Int)
+	var recipients []btcutil.Address
+	//recipients := make([]btcutil.Address, len(pendingTransfers))
+
 	// Combine output to same destination address
 	for _, transfer := range pendingTransfers {
 		recipient, err := btcutil.DecodeAddress(transfer.Recipient.Address, k.GetNetwork(ctx).Params())
@@ -287,7 +290,9 @@ func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.
 			k.Logger(ctx).Error(fmt.Sprintf("%s is not a valid address", transfer.Recipient))
 			continue
 		}
+		recipients = append(recipients, recipient)
 		encodeAddr := recipient.EncodeAddress()
+
 		if _, ok := addrWithdrawal[encodeAddr]; !ok {
 			addrWithdrawal[encodeAddr] = sdk.ZeroInt()
 		}
@@ -296,14 +301,7 @@ func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.
 		n.ArchivePendingTransfer(ctx, transfer)
 	}
 
-	// Loop over pendingTransfer again for deterministic operation
-	for _, transfer := range pendingTransfers {
-		recipient, err := btcutil.DecodeAddress(transfer.Recipient.Address, k.GetNetwork(ctx).Params())
-		if err != nil {
-			k.Logger(ctx).Error(fmt.Sprintf("%s is not a valid address", transfer.Recipient))
-			continue
-		}
-
+	for _, recipient := range recipients {
 		encodeAddr := recipient.EncodeAddress()
 		amount, ok := addrWithdrawal[encodeAddr]
 		if !ok {
@@ -320,18 +318,17 @@ func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.
 		amount = amount.Add(sdk.NewInt(int64(unsentDust)))
 		if amount.LT(minAmount) {
 			// Set and continue
-			k.SetDustAmount(ctx, recipient.EncodeAddress(), btcutil.Amount(amount.Int64()))
+			k.SetDustAmount(ctx,encodeAddr, btcutil.Amount(amount.Int64()))
 			event := sdk.NewEvent(types.EventTypeWithdrawal,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueFailed),
-				sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.EncodeAddress()),
+				sdk.NewAttribute(types.AttributeKeyDestinationAddress, encodeAddr),
 				sdk.NewAttribute(types.AttributeKeyAmount, amount.String()),
 				sdk.NewAttribute(sdk.EventTypeMessage, fmt.Sprintf("Withdrawal below minmum amount %s", minAmount)),
 			)
 			ctx.EventManager().EmitEvent(event)
 			continue
 		}
-
 
 		outputs = append(outputs,
 			types.Output{Amount: btcutil.Amount(amount.Int64()), Recipient: recipient})
