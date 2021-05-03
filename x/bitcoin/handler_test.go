@@ -506,7 +506,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
 		assert.NoError(t, err)
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
-		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)+1) // + consolidation outpoint
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)+2) // + consolidation outpoint + anyone-can-spend outpoint
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(deposits))
 		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), len(deposits))
@@ -524,7 +524,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, signer.GetCurrentKeyCalls(), 0)
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
-		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)+1) // + 1 consolidation outpoint
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)+2) // + consolidation outpoint + anyone-can-spend outpoint
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(deposits))
 		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), len(deposits))
@@ -547,7 +547,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
 		assert.NoError(t, err)
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
-		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)-wrongAddressCount+1) // + 1 consolidation outpoint
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)-wrongAddressCount+2) // + consolidation outpoint + anyone-can-spend outpoint
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers)-wrongAddressCount)
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(deposits))
 		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), len(deposits))

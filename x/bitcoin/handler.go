@@ -229,7 +229,7 @@ func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer ty
 		return nil, fmt.Errorf("previous consolidation transaction must be confirmed first")
 	}
 
-	outputs, totalWithdrawals := prepareOutputs(ctx, k, n)
+	outputs, totalOut := prepareOutputs(ctx, k, n)
 	if len(outputs) == 0 {
 		k.Logger(ctx).Info("creating consolidation transaction without any withdrawals")
 	}
@@ -238,11 +238,19 @@ func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer ty
 		return nil, err
 	}
 
-	change := totalDeposits.Sub(totalWithdrawals).SubRaw(msg.Fee)
+	estimatedTxSize, err := estimateTxSize(ctx, k, signer, inputs, outputs)
+	if err != nil {
+		return nil, err
+	}
+
+	// consodilation transactions always pay 1 satoshi/byte, which is the default minimum relay feerate bitcoin-core sets
+	fee := sdk.NewInt(estimatedTxSize).Mul(sdk.OneInt()).AddRaw(msg.Fee)
+	change := totalDeposits.Sub(totalOut).Sub(fee)
+
 	switch change.Sign() {
 	case -1, 0:
 		return nil, fmt.Errorf("not enough deposits (%s) to make all withdrawals (%s) with a transaction fee of %s",
-			totalDeposits.String(), totalWithdrawals.String(), btcutil.Amount(msg.Fee).String(),
+			totalDeposits.String(), totalOut.String(), btcutil.Amount(fee.Int64()).String(),
 		)
 	case 1:
 		changeOutput, err := prepareChange(ctx, k, signer, change)
@@ -272,17 +280,33 @@ func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer ty
 	}, nil
 }
 
+func estimateTxSize(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, inputs []types.OutPointToSign, outputs []types.Output) (int64, error) {
+	zeroChangeOutput, err := prepareChange(ctx, k, signer, sdk.ZeroInt())
+	if err != nil {
+		return 0, err
+	}
+
+	tx, err := types.CreateTx(inputs, append(outputs, zeroChangeOutput))
+	if err != nil {
+		return 0, err
+	}
+
+	return types.EstimateTxSize(*tx, inputs), nil
+}
+
 func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.Output, sdk.Int) {
 	minAmount := sdk.NewInt(int64(k.GetMinimumWithdrawalAmount(ctx)))
-
 	pendingTransfers := n.GetPendingTransfersForChain(ctx, exported.Bitcoin)
-	var outputs []types.Output
-	totalOut := sdk.ZeroInt()
+	// first output in consolidation transaction is always for our anyone-can-spend address for the
+	// sake of child-pay-for-parent so that anyone can pay
+	// TODO: Replace hardcoded 5000 below with minimumWithdrawalAmount
+	anyoneCanSpendOutput := types.Output{Amount: btcutil.Amount(5000), Recipient: types.NewAnyoneCanSpendAddress(k.GetNetwork(ctx))}
+	outputs := []types.Output{anyoneCanSpendOutput}
+	totalOut := sdk.NewInt(int64(anyoneCanSpendOutput.Amount))
 
 	addrWithdrawal := make(map[string]sdk.Int)
 	var recipients []btcutil.Address
 
-	// Combine output to same destination address
 	for _, transfer := range pendingTransfers {
 		recipient, err := btcutil.DecodeAddress(transfer.Recipient.Address, k.GetNetwork(ctx).Params())
 		if err != nil {

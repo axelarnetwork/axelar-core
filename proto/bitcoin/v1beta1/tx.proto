@@ -31,7 +31,8 @@ message MsgLink {
 message MsgSignPendingTransfers {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  int64 fee = 2;
+  // TODO: Remove once c2d2 is ready to perform child-pay-for-parent for consolidation transactions
+  int64 fee = 2 [ deprecated = true ];
 }
 
 // MsgVoteConfirmOutpoint represents a message to that votes on an outpoint

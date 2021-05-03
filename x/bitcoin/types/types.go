@@ -33,6 +33,8 @@ const (
 	regtest = "regtest"
 )
 
+const maxDerSigLength = 72
+
 // Params returns the network parameters
 func (m Network) Params() *chaincfg.Params {
 	switch m.Name {
@@ -216,6 +218,20 @@ func createCrossChainRedeemScript(pk1 btcec.PublicKey, pk2 btcec.PublicKey, cros
 	return redeemScript
 }
 
+// createAnyoneCanSpendRedeemScript generates a redeem script that anyone can spend
+func createAnyoneCanSpendRedeemScript() RedeemScript {
+	redeemScript, err := txscript.NewScriptBuilder().
+		AddOp(txscript.OP_1).
+		Script()
+	// the script builder only returns an error of the script is non-canonical.
+	// Since we want to build canonical scripts and the template is predefined, an error here means the template is wrong,
+	// i.e. it's a bug.
+	if err != nil {
+		panic(err)
+	}
+	return redeemScript
+}
+
 // createMasterRedeemScript generates a redeem script unique to the given key
 func createMasterRedeemScript(pk btcec.PublicKey) RedeemScript {
 	redeemScript, err := txscript.NewScriptBuilder().
@@ -277,6 +293,11 @@ func NewLinkedAddress(masterKey tss.Key, secondaryKey tss.Key, network Network, 
 	}
 }
 
+// NewAnyoneCanSpendAddress creates a p2sh address that anyone can spend
+func NewAnyoneCanSpendAddress(network Network) btcutil.Address {
+	return createP2WSHAddress(createAnyoneCanSpendRedeemScript(), network)
+}
+
 // ToCrossChainAddr returns the corresponding cross-chain address
 func (addr AddressInfo) ToCrossChainAddr() nexus.CrossChainAddress {
 	return nexus.CrossChainAddress{
@@ -325,6 +346,16 @@ func AssembleBtcTx(rawTx *wire.MsgTx, outpointsToSign []OutPointToSign, sigs []b
 	}
 
 	return rawTx, nil
+}
+
+// EstimateTxSize calculates the estimated size of given transaction after all witness data is attached
+func EstimateTxSize(tx wire.MsgTx, outpointsToSign []OutPointToSign) int64 {
+	for i, input := range outpointsToSign {
+		zeroSigBytes := make([]byte, maxDerSigLength)
+		tx.TxIn[i].Witness = wire.TxWitness{zeroSigBytes, input.RedeemScript}
+	}
+
+	return int64(tx.SerializeSize())
 }
 
 // Native asset denominations
