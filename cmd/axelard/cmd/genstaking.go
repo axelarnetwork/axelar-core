@@ -7,12 +7,12 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
-	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
+	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
+	mintTypes "github.com/cosmos/cosmos-sdk/x/mint/types"
+	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/spf13/cobra"
 )
 
@@ -69,13 +69,23 @@ func SetGenesisStakingCmd(defaultNodeHome string) *cobra.Command {
 
 			if bondDenom != "" {
 				genesisStaking.Params.BondDenom = bondDenom
+
+				var genesisMint mintTypes.GenesisState
+				if appState[mintTypes.ModuleName] != nil {
+					cdc.MustUnmarshalJSON(appState[mintTypes.ModuleName], &genesisMint)
+				}
+				genesisMint.Params.MintDenom = bondDenom
+				genesisSnapshotBz, err := cdc.MarshalJSON(&genesisMint)
+				if err != nil {
+					return fmt.Errorf("failed to marshal snapshot genesis state: %w", err)
+				}
+				appState[mintTypes.ModuleName] = genesisSnapshotBz
 			}
 
 			genesisSnapshotBz, err := cdc.MarshalJSON(&genesisStaking)
 			if err != nil {
 				return fmt.Errorf("failed to marshal snapshot genesis state: %w", err)
 			}
-
 			appState[stakingTypes.ModuleName] = genesisSnapshotBz
 
 			appStateJSON, err := json.Marshal(appState)
