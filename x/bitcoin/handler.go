@@ -281,7 +281,6 @@ func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.
 
 	addrWithdrawal := make(map[string]sdk.Int)
 	var recipients []btcutil.Address
-	//recipients := make([]btcutil.Address, len(pendingTransfers))
 
 	// Combine output to same destination address
 	for _, transfer := range pendingTransfers {
@@ -291,38 +290,38 @@ func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.
 			continue
 		}
 		recipients = append(recipients, recipient)
-		encodeAddr := recipient.EncodeAddress()
+		encodedAddress := recipient.EncodeAddress()
 
-		if _, ok := addrWithdrawal[encodeAddr]; !ok {
-			addrWithdrawal[encodeAddr] = sdk.ZeroInt()
+		if _, ok := addrWithdrawal[encodedAddress]; !ok {
+			addrWithdrawal[encodedAddress] = sdk.ZeroInt()
 		}
-		addrWithdrawal[encodeAddr] = addrWithdrawal[encodeAddr].Add(transfer.Asset.Amount)
+		addrWithdrawal[encodedAddress] = addrWithdrawal[encodedAddress].Add(transfer.Asset.Amount)
 
 		n.ArchivePendingTransfer(ctx, transfer)
 	}
 
 	for _, recipient := range recipients {
-		encodeAddr := recipient.EncodeAddress()
-		amount, ok := addrWithdrawal[encodeAddr]
+		encodedAddress := recipient.EncodeAddress()
+		amount, ok := addrWithdrawal[encodedAddress]
 		if !ok {
 			continue
 		}
 
 		// delete from map to prevent recounting
-		delete(addrWithdrawal, encodeAddr)
+		delete(addrWithdrawal, encodedAddress)
 
 		// Check if the recipient has unsent dust amount
-		unsentDust := k.GetDustAmount(ctx, encodeAddr)
-		k.DeleteDustAmount(ctx, encodeAddr)
+		unsentDust := k.GetDustAmount(ctx, encodedAddress)
+		k.DeleteDustAmount(ctx, encodedAddress)
 
 		amount = amount.Add(sdk.NewInt(int64(unsentDust)))
 		if amount.LT(minAmount) {
 			// Set and continue
-			k.SetDustAmount(ctx,encodeAddr, btcutil.Amount(amount.Int64()))
+			k.SetDustAmount(ctx, encodedAddress, btcutil.Amount(amount.Int64()))
 			event := sdk.NewEvent(types.EventTypeWithdrawal,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueFailed),
-				sdk.NewAttribute(types.AttributeKeyDestinationAddress, encodeAddr),
+				sdk.NewAttribute(types.AttributeKeyDestinationAddress, encodedAddress),
 				sdk.NewAttribute(types.AttributeKeyAmount, amount.String()),
 				sdk.NewAttribute(sdk.EventTypeMessage, fmt.Sprintf("Withdrawal below minmum amount %s", minAmount)),
 			)
