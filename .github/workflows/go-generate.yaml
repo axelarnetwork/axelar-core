@@ -1,4 +1,4 @@
-name: Check Go Generate Up-to-date
+name: Check Generated Files Up-to-date
 
 on:
   - pull_request
@@ -42,10 +42,14 @@ jobs:
           # The packages to install from Pip
           packages: mdformat
 
-      - name: Check generated code up-to-date
-        run: |
-          go generate -x ./...
+      - name: Run go generate
+        run: make generate
 
+      - name: Generate proto files and docs
+        run: make proto-format proto-gen
+
+      - name: Check for changes
+        run: |
           if [ -n "$(git status --porcelain)" ]; then
             echo Following files are changed...
             git status

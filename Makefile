@@ -16,7 +16,7 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=axelar \
 BUILD_FLAGS := -ldflags '$(ldflags)'
 
 .PHONY: all
-all: generate build docker-image docker-image-debug
+all: generate lint build docker-image docker-image-debug
 
 go.sum: go.mod
 		@echo "--> Ensure dependencies have not been modified"
