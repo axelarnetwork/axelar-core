@@ -89,7 +89,8 @@ func validateMinimumWithdrawalAmount(amount interface{}) error {
 		return fmt.Errorf("invalid parameter type for minimum withdrawal amount: %T", i)
 	}
 
-	if i <= 0 {
+	// Dust limit is 546 satoshis for non-SegWit, 294 satoshis for SegWit
+	if i <= 546 {
 		return sdkerrors.Wrap(types.ErrInvalidGenesis, " minimum withdrawal amount must be greater than 0")
 	}
 
