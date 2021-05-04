@@ -27,4 +27,5 @@ axelard query bitcoin [flags]
 
 - [axelard query](axelard_query.md)	 - Querying subcommands
 - [axelard query bitcoin deposit-addr](axelard_query_bitcoin_deposit-addr.md)	 - Returns a bitcoin deposit address for a recipient address on another blockchain
+- [axelard query bitcoin master-addr](axelard_query_bitcoin_master-addr.md)	 - Returns the bitcoin address of the current master key
 - [axelard query bitcoin rawTx](axelard_query_bitcoin_rawTx.md)	 - Returns the encoded hex string of a fully signed transfer and consolidation transaction
