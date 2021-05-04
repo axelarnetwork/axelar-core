@@ -27,6 +27,8 @@ jobs:
           name: cicd_rsa_key
           key: ${{ secrets.CICD_RSA_KEY }}
           known_hosts: ${{ secrets.KNOWN_HOSTS_GITHUB }}
+
+      - name: Add SSH key to agent
         run: ssh-add cicd_rsa_key
 
       - name: Checkout code
