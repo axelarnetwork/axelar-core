@@ -26,6 +26,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 	btcTxCmd.AddCommand(
 		GetCmdDepositAddress(queryRoute),
 		GetCmdConsolidationTx(queryRoute),
+		GetCmdMasterAddress(queryRoute),
 	)
 
 	return btcTxCmd
