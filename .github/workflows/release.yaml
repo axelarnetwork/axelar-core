@@ -27,7 +27,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BUMP: ${{ github.event.inputs.bumpType }}
           TAG_CONTEXT: branch
-          RELEASE_BRANCHES: master,releases.*
+          RELEASE_BRANCHES: main,releases.*
           WITH_V: true
           DRY_RUN: true
 
@@ -40,7 +40,7 @@ jobs:
         run: |
           new_release_branch=""
 
-          if [ "${{ github.ref }}" = "refs/heads/master" ]; then
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
             if [ "${{ github.event.inputs.bumpType }}" = "major" ]; then
               let new_major=${{ steps.parsed-release.outputs.major }}+1
               new_release_branch="releases/$new_major.0.x"
@@ -48,7 +48,7 @@ jobs:
               let new_minor=${{ steps.parsed-release.outputs.minor }}+1
               new_release_branch="releases/${{ steps.parsed-release.outputs.major }}.$new_minor.x"
             else
-              echo "cannot make patch release from master branch"
+              echo "cannot make patch release from main branch"
               exit 1
             fi
           elif [[ "${{ github.ref }}" = refs/heads/releases/* ]]; then
@@ -57,7 +57,7 @@ jobs:
               exit 1
             fi
           else
-            echo "can only release from master or releases/* branches"
+            echo "can only release from main or releases/* branches"
             exit 1
           fi
 
@@ -78,7 +78,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BUMP: ${{ github.event.inputs.bumpType }}
           TAG_CONTEXT: branch
-          RELEASE_BRANCHES: master,releases.*
+          RELEASE_BRANCHES: main,releases.*
           WITH_V: true
 
       - name: Install SSH key
