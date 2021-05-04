@@ -24,8 +24,10 @@ jobs:
       - name: Install SSH key
         uses: shimataro/ssh-key-action@v2
         with:
+          name: cicd_rsa_key
           key: ${{ secrets.CICD_RSA_KEY }}
           known_hosts: ${{ secrets.KNOWN_HOSTS_GITHUB }}
+        run: ssh-add cicd_rsa_key
 
       - name: Checkout code
         uses: actions/checkout@v2
