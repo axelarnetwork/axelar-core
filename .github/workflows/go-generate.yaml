@@ -31,7 +31,7 @@ jobs:
       - name: Set up ssh agent
         uses: webfactory/ssh-agent@v0.5.2
         with:
-          ssh-private-key: ${{ secrets.KNOWN_HOSTS_GITHUB }}
+          ssh-private-key: ${{ secrets.CICD_RSA_KEY }}
 
       - name: Checkout code
         uses: actions/checkout@v2
