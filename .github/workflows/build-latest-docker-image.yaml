@@ -3,7 +3,7 @@ name: Build and push latest docker image
 on:
   push:
     branches:
-      - master
+      - main
   workflow_dispatch:
     inputs:
       buildDebug:
@@ -29,7 +29,7 @@ jobs:
         run: |
           TAG="latest"
 
-          if [[ "$BRANCH_NAME" != "master" ]]; then
+          if [[ "$BRANCH_NAME" != "main" ]]; then
             TAG=$(echo $BRANCH_NAME | tr "/" "-")
           fi
 
