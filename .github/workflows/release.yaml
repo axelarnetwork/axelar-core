@@ -81,8 +81,8 @@ jobs:
           RELEASE_BRANCHES: master,releases.*
           WITH_V: true
 
-      - name: Install SSH key
-        uses: webfactory/ssh-agent@v0.4.1
+      - name: Set up ssh agent
+        uses: webfactory/ssh-agent@v0.5.2
         with:
           ssh-private-key: ${{ secrets.CICD_RSA_KEY }}
 
