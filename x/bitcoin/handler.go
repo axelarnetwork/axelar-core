@@ -243,7 +243,7 @@ func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer ty
 		return nil, err
 	}
 
-	// consodilation transactions always pay 1 satoshi/byte, which is the default minimum relay feerate bitcoin-core sets
+	// consolidation transactions always pay 1 satoshi/byte, which is the default minimum relay fee rate bitcoin-core sets
 	fee := sdk.NewInt(estimatedTxSize).Mul(sdk.OneInt()).AddRaw(msg.Fee)
 	change := totalDeposits.Sub(totalOut).Sub(fee)
 
@@ -257,7 +257,8 @@ func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer ty
 		if err != nil {
 			return nil, err
 		}
-		outputs = append(outputs, changeOutput)
+		// vout 0 is always the change, and vout 1 is always anyone-can-spend
+		outputs = append([]types.Output{changeOutput}, outputs...)
 		k.SetMasterKeyOutpointExists(ctx)
 	default:
 		return nil, fmt.Errorf("sign value of change for consolidation transaction unexpected: %d", change.Sign())
@@ -299,14 +300,14 @@ func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.
 	pendingTransfers := n.GetPendingTransfersForChain(ctx, exported.Bitcoin)
 	// first output in consolidation transaction is always for our anyone-can-spend address for the
 	// sake of child-pay-for-parent so that anyone can pay
-	// TODO: Replace hardcoded 5000 below with minimumWithdrawalAmount
-	anyoneCanSpendOutput := types.Output{Amount: btcutil.Amount(5000), Recipient: types.NewAnyoneCanSpendAddress(k.GetNetwork(ctx))}
+	anyoneCanSpendOutput := types.Output{Amount: k.GetMinimumWithdrawalAmount(ctx), Recipient: types.NewAnyoneCanSpendAddress(k.GetNetwork(ctx))}
 	outputs := []types.Output{anyoneCanSpendOutput}
 	totalOut := sdk.NewInt(int64(anyoneCanSpendOutput.Amount))
 
 	addrWithdrawal := make(map[string]sdk.Int)
 	var recipients []btcutil.Address
 
+	// Combine output to same destination address
 	for _, transfer := range pendingTransfers {
 		recipient, err := btcutil.DecodeAddress(transfer.Recipient.Address, k.GetNetwork(ctx).Params())
 		if err != nil {

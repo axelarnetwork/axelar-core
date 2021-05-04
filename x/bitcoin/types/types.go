@@ -33,6 +33,7 @@ const (
 	regtest = "regtest"
 )
 
+// maxDerSigLength defines the maximum size in bytes of a DER encoded bitcoin signature
 const maxDerSigLength = 72
 
 // Params returns the network parameters
@@ -209,7 +210,7 @@ func createCrossChainRedeemScript(pk1 btcec.PublicKey, pk2 btcec.PublicKey, cros
 		AddData(nonce).
 		AddOp(txscript.OP_DROP).
 		Script()
-	// the script builder only returns an error if the script is non-canonical.
+	// The script builder only returns an error if the script is non-canonical.
 	// Since we want to build canonical scripts and the template is predefined, an error here means the template is wrong,
 	// i.e. it's a bug.
 	if err != nil {
@@ -221,9 +222,9 @@ func createCrossChainRedeemScript(pk1 btcec.PublicKey, pk2 btcec.PublicKey, cros
 // createAnyoneCanSpendRedeemScript generates a redeem script that anyone can spend
 func createAnyoneCanSpendRedeemScript() RedeemScript {
 	redeemScript, err := txscript.NewScriptBuilder().
-		AddOp(txscript.OP_1).
+		AddOp(txscript.OP_TRUE).
 		Script()
-	// the script builder only returns an error of the script is non-canonical.
+	// The script builder only returns an error if the script is non-canonical.
 	// Since we want to build canonical scripts and the template is predefined, an error here means the template is wrong,
 	// i.e. it's a bug.
 	if err != nil {
@@ -238,7 +239,7 @@ func createMasterRedeemScript(pk btcec.PublicKey) RedeemScript {
 		AddData(pk.SerializeCompressed()).
 		AddOp(txscript.OP_CHECKSIG).
 		Script()
-	// the script builder only returns an error of the script is non-canonical.
+	// The script builder only returns an error if the script is non-canonical.
 	// Since we want to build canonical scripts and the template is predefined, an error here means the template is wrong,
 	// i.e. it's a bug.
 	if err != nil {
@@ -348,7 +349,7 @@ func AssembleBtcTx(rawTx *wire.MsgTx, outpointsToSign []OutPointToSign, sigs []b
 	return rawTx, nil
 }
 
-// EstimateTxSize calculates the estimated size of given transaction after all witness data is attached
+// EstimateTxSize calculates the upper limit of the size in byte of given transaction after all witness data is attached
 func EstimateTxSize(tx wire.MsgTx, outpointsToSign []OutPointToSign) int64 {
 	for i, input := range outpointsToSign {
 		zeroSigBytes := make([]byte, maxDerSigLength)
