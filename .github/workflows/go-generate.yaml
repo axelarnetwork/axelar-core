@@ -21,13 +21,6 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v1
 
-      - name: Install SSH key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          name: cicd_rsa_key
-          key: ${{ secrets.CICD_RSA_KEY }}
-          known_hosts: ${{ secrets.KNOWN_HOSTS_GITHUB }}
-
       - name: Set up ssh agent
         uses: webfactory/ssh-agent@v0.5.2
         with:
