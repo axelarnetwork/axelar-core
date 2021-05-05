@@ -200,7 +200,10 @@ func HandleMsgVoteConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, v types.Vo
 	//  i.e. multiple outpoints in the SignedTx need to be confirmed
 
 	// if this is the consolidation outpoint it means the latest consolidation transaction is confirmed on Bitcoin
-	if tx, ok := k.GetSignedTx(ctx); ok && tx.TxHash() == pendingOutPointInfo.GetOutPoint().Hash {
+	tx, txExist := k.GetSignedTx(ctx)
+	vout, voutExist := k.GetMasterKeyVout(ctx)
+	outPoint := pendingOutPointInfo.GetOutPoint()
+	if txExist && voutExist && tx.TxHash() == outPoint.Hash && vout == outPoint.Index {
 		k.DeleteSignedTx(ctx)
 		return &sdk.Result{
 			Events: ctx.EventManager().ABCIEvents(),
@@ -259,7 +262,7 @@ func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer ty
 		}
 		// vout 0 is always the change, and vout 1 is always anyone-can-spend
 		outputs = append([]types.Output{changeOutput}, outputs...)
-		k.SetMasterKeyOutpointExists(ctx)
+		k.SetMasterKeyVout(ctx, 0)
 	default:
 		return nil, fmt.Errorf("sign value of change for consolidation transaction unexpected: %d", change.Sign())
 	}
@@ -367,7 +370,7 @@ func prepareInputs(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) ([]t
 	var prevOuts []types.OutPointToSign
 	totalDeposits := sdk.ZeroInt()
 
-	masterKeyUtxoExists := k.DoesMasterKeyOutpointExist(ctx)
+	_, masterKeyUtxoExists := k.GetMasterKeyVout(ctx)
 	masterKeyUtxoFound := false
 
 	for _, info := range k.GetConfirmedOutPointInfos(ctx) {
@@ -396,7 +399,7 @@ func prepareInputs(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) ([]t
 	}
 
 	if masterKeyUtxoExists != masterKeyUtxoFound {
-		return nil, sdk.ZeroInt(), fmt.Errorf("expect to spend UTXO of master key but not found")
+		return nil, sdk.ZeroInt(), fmt.Errorf("previous consolidation outpoint must be confirmed first")
 	}
 
 	return prevOuts, totalDeposits, nil

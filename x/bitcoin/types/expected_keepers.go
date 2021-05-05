@@ -50,8 +50,8 @@ type BTCKeeper interface {
 	SetDustAmount(ctx sdk.Context, encodedAddress string, amount btcutil.Amount)
 	DeleteDustAmount(ctx sdk.Context, encodedAddress string)
 
-	SetMasterKeyOutpointExists(ctx sdk.Context)
-	DoesMasterKeyOutpointExist(ctx sdk.Context) bool
+	SetMasterKeyVout(ctx sdk.Context, vout uint32)
+	GetMasterKeyVout(ctx sdk.Context) (uint32, bool)
 }
 
 // Voter is the interface that provides voting functionality
