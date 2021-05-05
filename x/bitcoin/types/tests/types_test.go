@@ -207,10 +207,61 @@ func TestNewLinkedAddress_NotSpendableByRandomKey(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestNewAnyoneCanSpendAddress(t *testing.T) {
+	t.Run("should return an address that is spendable by anyone", testutils.Func(func(t *testing.T) {
+		inputAmount := btcutil.Amount(100000000) // 1btc
+		outputAmount := btcutil.Amount(10000000) // 0.1btc
+		address := types.NewAnyoneCanSpendAddress(types.Testnet3)
+		redeemScript, err := txscript.NewScriptBuilder().
+			AddOp(txscript.OP_TRUE).
+			Script()
+		if err != nil {
+			panic(err)
+		}
+		outPoint, err := types.OutPointFromStr(fmt.Sprintf("%s:0", rand.HexStr(64)))
+		if err != nil {
+			panic(err)
+		}
+		inputs := []types.OutPointToSign{
+			{
+				AddressInfo: types.AddressInfo{
+					Address:      address,
+					RedeemScript: redeemScript,
+				},
+				OutPointInfo: types.NewOutPointInfo(
+					outPoint,
+					inputAmount, // 1btc
+					address.EncodeAddress(),
+				),
+			},
+		}
+		outputs := []types.Output{
+			{
+				Amount:    outputAmount,
+				Recipient: address,
+			},
+		}
+
+		tx, err := types.CreateTx(inputs, outputs)
+		assert.NoError(t, err)
+
+		tx.TxIn[0].Witness = wire.TxWitness{redeemScript}
+
+		payScript, err := txscript.PayToAddrScript(address)
+		assert.NoError(t, err)
+
+		scriptEngine, err := txscript.NewEngine(payScript, tx, 0, txscript.StandardVerifyFlags, nil, nil, int64(inputAmount))
+		assert.NoError(t, err)
+
+		err = scriptEngine.Execute()
+		assert.NoError(t, err)
+	}))
+}
+
 func TestEstimateTxSize(t *testing.T) {
 	repeats := 100
 
-	t.Run("should give reasonable transaction size estimation", testutils.Func(func(t *testing.T) {
+	t.Run("should return a reasonable transaction size estimation", testutils.Func(func(t *testing.T) {
 		masterPrivateKey, err := btcec.NewPrivateKey(btcec.S256())
 		if err != nil {
 			panic(err)

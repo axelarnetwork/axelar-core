@@ -110,7 +110,9 @@ var xxx_messageInfo_MsgLink proto.InternalMessageInfo
 // consolidation transaction
 type MsgSignPendingTransfers struct {
 	Sender github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
-	Fee    int64                                         `protobuf:"varint,2,opt,name=fee,proto3" json:"fee,omitempty"` // Deprecated: Do not use.
+	// TODO: Remove once c2d2 is ready to perform child-pay-for-parent for
+	// consolidation transactions
+	Fee int64 `protobuf:"varint,2,opt,name=fee,proto3" json:"fee,omitempty"` // Deprecated: Do not use.
 }
 
 func (m *MsgSignPendingTransfers) Reset()         { *m = MsgSignPendingTransfers{} }
