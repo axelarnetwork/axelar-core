@@ -1,4 +1,4 @@
-name: Check Go Generate Up-to-date
+name: Check Generated Files Up-to-date
 
 on:
   - pull_request
@@ -21,11 +21,10 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v1
 
-      - name: Install SSH key
-        uses: shimataro/ssh-key-action@v2
+      - name: Set up ssh agent
+        uses: webfactory/ssh-agent@v0.5.2
         with:
-          key: ${{ secrets.CICD_RSA_KEY }}
-          known_hosts: ${{ secrets.KNOWN_HOSTS_GITHUB }}
+          ssh-private-key: ${{ secrets.CICD_RSA_KEY }}
 
       - name: Checkout code
         uses: actions/checkout@v2
@@ -42,10 +41,14 @@ jobs:
           # The packages to install from Pip
           packages: mdformat
 
-      - name: Check generated code up-to-date
-        run: |
-          go generate -x ./...
+      - name: Run go generate
+        run: make generate
 
+      - name: Generate proto files and docs
+        run: make proto-format proto-gen
+
+      - name: Check for changes
+        run: |
           if [ -n "$(git status --porcelain)" ]; then
             echo Following files are changed...
             git status

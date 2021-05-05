@@ -24,5 +24,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Lint
+      - name: Golint
         run: golint -set_exit_status ./...
+
+      - name: Proto-lint
+        run: make proto-lint

@@ -7,14 +7,13 @@ protoc_gen_go() {
     echo -e "\tPlease run this command from somewhere inside the axelar-core folder."
     return 1
   fi
-
-#  go get github.com/regen-network/cosmos-proto/protoc-gen-gocosmos@latest
 }
 
 protoc_gen_go
 
 proto_dirs=$(find ./proto -path -prune -o -name '*.proto' -print0 | xargs -0 -n1 dirname | sort | uniq)
 for dir in $proto_dirs; do
+  # shellcheck disable=SC2046
   buf protoc \
   -I "proto" \
   -I "third_party/proto" \
@@ -22,8 +21,16 @@ for dir in $proto_dirs; do
 Mgoogle/protobuf/any.proto=github.com/cosmos/cosmos-sdk/codec/types:. \
   --grpc-gateway_out=logtostderr=true:. \
   $(find "${dir}" -maxdepth 1 -name '*.proto') # this needs to remain unquoted because we want word splitting
-
 done
+
+# command to generate docs using protoc-gen-doc
+# shellcheck disable=SC2046
+buf protoc \
+-I "proto" \
+-I "third_party/proto" \
+--doc_out=./docs/proto \
+--doc_opt=./docs/protodoc-markdown.tmpl,proto-docs.md \
+$(find "$(pwd)/proto" -maxdepth 5 -name '*.proto') # this needs to remain unquoted because we want word splitting
 
 # move proto files to the right places
 cp -r github.com/axelarnetwork/axelar-core/* ./

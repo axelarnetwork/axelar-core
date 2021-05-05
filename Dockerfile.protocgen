@@ -7,11 +7,7 @@ RUN apk add --no-cache --update \
   git \
   ca-certificates
 
-
-
 RUN git config --global url."git@github.com:axelarnetwork".insteadOf https://github.com/axelarnetwork
 RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
 
 RUN --mount=type=ssh go get github.com/regen-network/cosmos-proto/protoc-gen-gocosmos@latest
-
-
