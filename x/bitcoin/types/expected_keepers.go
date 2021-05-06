@@ -44,8 +44,8 @@ type BTCKeeper interface {
 	SetAddress(ctx sdk.Context, address AddressInfo)
 	GetAddress(ctx sdk.Context, encodedAddress string) (AddressInfo, bool)
 
-	SetMasterKeyOutpointExists(ctx sdk.Context)
-	DoesMasterKeyOutpointExist(ctx sdk.Context) bool
+	SetMasterKeyVout(ctx sdk.Context, vout uint32)
+	GetMasterKeyVout(ctx sdk.Context) (uint32, bool)
 }
 
 // Voter is the interface that provides voting functionality

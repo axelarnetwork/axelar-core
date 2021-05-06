@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"encoding/binary"
 	"fmt"
 
 	"github.com/btcsuite/btcd/wire"
@@ -21,9 +22,9 @@ const (
 	spentOutPointPrefix     = "spent_"
 	addrPrefix              = "addr_"
 
-	unsignedTxKey          = "unsignedTx"
-	signedTxKey            = "signedTx"
-	masterKeyUtxoExistsKey = "master_key_utxo_exists"
+	unsignedTxKey    = "unsignedTx"
+	signedTxKey      = "signedTx"
+	masterKeyVoutKey = "master_key_vout"
 )
 
 var _ types.BTCKeeper = Keeper{}
@@ -252,12 +253,19 @@ func (k Keeper) DeleteSignedTx(ctx sdk.Context) {
 	ctx.KVStore(k.storeKey).Delete([]byte(signedTxKey))
 }
 
-// SetMasterKeyOutpointExists sets existence for UTXO controlled by the master key
-func (k Keeper) SetMasterKeyOutpointExists(ctx sdk.Context) {
-	ctx.KVStore(k.storeKey).Set([]byte(masterKeyUtxoExistsKey), []byte{})
+// SetMasterKeyVout sets the index of the consolidation outpoint
+func (k Keeper) SetMasterKeyVout(ctx sdk.Context, vout uint32) {
+	bz := make([]byte, 4)
+	binary.LittleEndian.PutUint32(bz, vout)
+	ctx.KVStore(k.storeKey).Set([]byte(masterKeyVoutKey), bz)
 }
 
-// DoesMasterKeyOutpointExist returns true if there is any UTXO controlled by the master key; otherwise, false
-func (k Keeper) DoesMasterKeyOutpointExist(ctx sdk.Context) bool {
-	return ctx.KVStore(k.storeKey).Has([]byte(masterKeyUtxoExistsKey))
+// GetMasterKeyVout returns the index of the consolidation outpoint if there is any UTXO controlled by the master key; otherwise, false
+func (k Keeper) GetMasterKeyVout(ctx sdk.Context) (uint32, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(masterKeyVoutKey))
+	if bz == nil {
+		return 0, false
+	}
+
+	return binary.LittleEndian.Uint32(bz), true
 }
