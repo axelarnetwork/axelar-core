@@ -244,8 +244,9 @@ func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer ty
 	if _, ok := k.GetUnsignedTx(ctx); ok {
 		return nil, fmt.Errorf("consolidation in progress")
 	}
-	if _, ok := k.GetSignedTx(ctx); ok {
-		return nil, fmt.Errorf("previous consolidation transaction must be confirmed first")
+	if tx, ok := k.GetSignedTx(ctx); ok {
+		vout, _ := k.GetMasterKeyVout(ctx)
+		return nil, fmt.Errorf("previous consolidation transaction %s:%d must be confirmed first", tx.TxHash().String(), vout)
 	}
 
 	outputs, totalOut := prepareOutputs(ctx, k, n)
