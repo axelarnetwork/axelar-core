@@ -435,9 +435,9 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 					},
 				}, true
 			},
-			SetAddressFunc:    func(sdk.Context, types.AddressInfo) {},
-			SetUnsignedTxFunc: func(sdk.Context, *wire.MsgTx) {},
-			GetMinimumWithdrawalAmountFunc: func(sdk.Context) btcutil.Amount { return  minimumWithdrawalAmount },
+			SetAddressFunc:                 func(sdk.Context, types.AddressInfo) {},
+			SetUnsignedTxFunc:              func(sdk.Context, *wire.MsgTx) {},
+			GetMinimumWithdrawalAmountFunc: func(sdk.Context) btcutil.Amount { return minimumWithdrawalAmount },
 			GetDustAmountFunc: func(ctx sdk.Context, encodeAddr string) btcutil.Amount {
 				amount, ok := dustAmount[encodeAddr]
 				if !ok {
@@ -506,7 +506,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
 		assert.NoError(t, err)
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
-		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)+1) // + consolidation outpoint
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)+2) // + consolidation outpoint + anyone-can-spend outpoint
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(deposits))
 		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), len(deposits))
@@ -524,7 +524,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, signer.GetCurrentKeyCalls(), 0)
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
-		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)+1) // + 1 consolidation outpoint
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)+2) // + consolidation outpoint + anyone-can-spend outpoint
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(deposits))
 		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), len(deposits))
@@ -547,7 +547,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
 		assert.NoError(t, err)
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
-		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)-wrongAddressCount+1) // + 1 consolidation outpoint
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)-wrongAddressCount+2) // + consolidation outpoint + anyone-can-spend outpoint
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers)-wrongAddressCount)
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(deposits))
 		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), len(deposits))
@@ -577,7 +577,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
 		assert.NoError(t, err)
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
-		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, uniqueTransferCount+1) // + 1 consolidation outpoint
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, uniqueTransferCount+2) // + consolidation outpoint + anyone-can-spend output
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(deposits))
 		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), len(deposits))
@@ -599,7 +599,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
 		assert.NoError(t, err)
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
-		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)-belowMinimumCount+1) // + 1 consolidation outpoint
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)-belowMinimumCount+2) // + consolidation outpoint + anyone-can-spend output
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(deposits))
 		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), len(deposits))
@@ -612,7 +612,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		setup()
 
 		dust := make(map[string]btcutil.Amount)
-		for i := 0; i < len(transfers) ; i++ {
+		for i := 0; i < len(transfers); i++ {
 			encodeAddr := transfers[i].Recipient.Address
 			dustAmount := btcutil.Amount(rand.I64Between(1, int64(minimumWithdrawalAmount)))
 			btcKeeper.SetDustAmountFunc(ctx, encodeAddr, dustAmount)
@@ -622,7 +622,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
 		assert.NoError(t, err)
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
-		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)+1) // + 1 consolidation outpoint
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)+2) // + consolidation outpoint + anyone-can-spend output
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(deposits))
 		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), len(deposits))
@@ -630,11 +630,11 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		mapi(len(btcKeeper.SetOutpointInfoCalls()), func(i int) { assert.Equal(t, types.SPENT, btcKeeper.SetOutpointInfoCalls()[i].State) })
 		assert.Len(t, signer.StartSignCalls(), len(deposits))
 
-		txOut :=  btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut
-		for i := 0; i < len(transfers) ; i++ {
-			encodeAddr :=  transfers[i].Recipient.Address
+		txOut := btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut
+		for i := 0; i < len(transfers); i++ {
+			encodeAddr := transfers[i].Recipient.Address
 			assert.Equal(t, btcKeeper.GetDustAmountFunc(ctx, encodeAddr), btcutil.Amount(0))
-			assert.Equal(t, int64(dust[encodeAddr]) + transfers[i].Asset.Amount.Int64(), txOut[i].Value)
+			assert.Equal(t, int64(dust[encodeAddr])+transfers[i].Asset.Amount.Int64(), txOut[i+2].Value)
 		}
 
 	}).Repeat(repeatCount))
