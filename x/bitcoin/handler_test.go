@@ -290,6 +290,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		tx := wire.NewMsgTx(wire.TxVersion)
 		hash := tx.TxHash()
 		op := wire.NewOutPoint(&hash, info.GetOutPoint().Index)
+		info.OutPoint = op.String()
 		msg.OutPoint = op.String()
 		addr, _ := btcKeeper.GetAddress(ctx, info.Address)
 		addr.Role = types.CONSOLIDATION
@@ -312,6 +313,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		tx := wire.NewMsgTx(wire.TxVersion)
 		hash := tx.TxHash()
 		op := wire.NewOutPoint(&hash, info.GetOutPoint().Index)
+		info.OutPoint = op.String()
 		msg.OutPoint = op.String()
 
 		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
