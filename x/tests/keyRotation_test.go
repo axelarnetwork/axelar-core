@@ -279,7 +279,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	chain.WaitNBlocks(2 * btcTypes.DefaultParams().SigCheckInterval)
 
 	// get signed tx to Bitcoin
-	bz, err = nodeData[0].Node.Query([]string{btcTypes.QuerierRoute, btcKeeper.GetTx}, abci.RequestQuery{})
+	bz, err = nodeData[0].Node.Query([]string{btcTypes.QuerierRoute, btcKeeper.GetConsolidationTx}, abci.RequestQuery{})
 	assert.NoError(t, err)
 
 	var rawSignedTx string

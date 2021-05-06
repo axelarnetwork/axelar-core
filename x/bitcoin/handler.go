@@ -264,7 +264,7 @@ func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer ty
 	}
 
 	// consolidation transactions always pay 1 satoshi/byte, which is the default minimum relay fee rate bitcoin-core sets
-	fee := sdk.NewInt(txSizeUpperBound).Mul(sdk.OneInt()).AddRaw(msg.Fee)
+	fee := sdk.NewInt(txSizeUpperBound).MulRaw(types.MinRelayTxFeeSatoshiPerByte)
 	change := totalDeposits.Sub(totalOut).Sub(fee)
 
 	switch change.Sign() {
@@ -320,7 +320,7 @@ func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.
 	pendingTransfers := n.GetPendingTransfersForChain(ctx, exported.Bitcoin)
 	// first output in consolidation transaction is always for our anyone-can-spend address for the
 	// sake of child-pay-for-parent so that anyone can pay
-	anyoneCanSpendOutput := types.Output{Amount: k.GetMinimumWithdrawalAmount(ctx), Recipient: types.NewAnyoneCanSpendAddress(k.GetNetwork(ctx))}
+	anyoneCanSpendOutput := types.Output{Amount: k.GetMinimumWithdrawalAmount(ctx), Recipient: types.NewAnyoneCanSpendAddress(k.GetNetwork(ctx)).Address}
 	outputs := []types.Output{anyoneCanSpendOutput}
 	totalOut := sdk.NewInt(int64(anyoneCanSpendOutput.Amount))
 

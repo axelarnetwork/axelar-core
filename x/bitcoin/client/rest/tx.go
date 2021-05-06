@@ -23,7 +23,7 @@ const (
 
 	QueryMethodDepositAddress     = keeper.QueryDepositAddress
 	QueryMethodMasterAddress      = keeper.QueryMasterAddress
-	QueryMethodGetConsolidationTx = keeper.GetTx
+	QueryMethodGetConsolidationTx = keeper.GetConsolidationTx
 )
 
 // RegisterRoutes registers this module's REST routes with the given router

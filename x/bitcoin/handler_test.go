@@ -523,7 +523,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		}
 		depositAmount = 0
 		deposits = []types.OutPointInfo{}
-		for depositAmount <= transferAmount+msg.Fee {
+		for depositAmount <= transferAmount {
 			deposit := randomOutpointInfo()
 			deposits = append(deposits, deposit)
 			depositAmount += int64(deposit.Amount)
@@ -765,7 +765,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		setup()
 		// equalize deposits and transfers
 		transfer := randomTransfer(int64(minimumWithdrawalAmount), 1000000)
-		transfer.Asset.Amount = sdk.NewInt(depositAmount - transferAmount - msg.Fee)
+		transfer.Asset.Amount = sdk.NewInt(depositAmount - transferAmount)
 		transfers = append(transfers, transfer)
 		transferAmount += transfer.Asset.Amount.Int64()
 

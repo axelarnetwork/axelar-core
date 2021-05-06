@@ -2,10 +2,16 @@ package keeper
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"math"
 
+	"github.com/btcsuite/btcd/btcjson"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcd/mempool"
 	"github.com/btcsuite/btcd/wire"
+	"github.com/btcsuite/btcutil"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -19,13 +25,14 @@ import (
 
 // Query paths
 const (
-	QueryDepositAddress = "depositAddr"
-	QueryMasterAddress  = "masterAddr"
-	GetTx               = "getTx"
+	QueryDepositAddress      = "depositAddr"
+	QueryMasterAddress       = "masterAddr"
+	GetConsolidationTx       = "getConsolidationTx"
+	GetPayForConsolidationTx = "getPayForConsolidationTx"
 )
 
 // NewQuerier returns a new querier for the Bitcoin module
-func NewQuerier(k types.BTCKeeper, s types.Signer, n types.Nexus) sdk.Querier {
+func NewQuerier(rpc types.RPCClient, k types.BTCKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		var res []byte
 		var err error
@@ -34,8 +41,10 @@ func NewQuerier(k types.BTCKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 			res, err = queryDepositAddress(ctx, k, s, n, req.Data)
 		case QueryMasterAddress:
 			res, err = queryMasterAddress(ctx, k, s)
-		case GetTx:
+		case GetConsolidationTx:
 			res, err = getRawConsolidationTx(ctx, k)
+		case GetPayForConsolidationTx:
+			res, err = payForConsolidationTx(ctx, k, rpc, req.Data)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown btc-bridge query endpoint: %s", path[1]))
 		}
@@ -96,9 +105,152 @@ func getRawConsolidationTx(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {
 		return nil, fmt.Errorf("no signed consolidation transaction ready")
 	}
 
+	encodedTx, err := encodeTx(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	return k.Codec().MustMarshalJSON(hex.EncodeToString(encodedTx)), nil
+}
+
+func payForConsolidationTx(ctx sdk.Context, k types.BTCKeeper, rpc types.RPCClient, data []byte) ([]byte, error) {
+	feeRate := int64(binary.LittleEndian.Uint64(data))
+
+	consolidationTx, ok := k.GetSignedTx(ctx)
+	if !ok {
+		return nil, fmt.Errorf("no signed consolidation transaction ready")
+	}
+
+	utxos, err := rpc.ListUnspent()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(utxos) <= 0 {
+		return nil, fmt.Errorf("no UTXO available to pay for consolidation transaction")
+	}
+
+	if feeRate <= 0 {
+		estimateSmartFeeResult, err := rpc.EstimateSmartFee(1, &btcjson.EstimateModeEconomical)
+		if err != nil {
+			return nil, err
+		}
+
+		// feeRate here is measured in satoshi/byte
+		feeRate = int64(math.Ceil(*estimateSmartFeeResult.FeeRate * btcutil.SatoshiPerBitcoin / 1000))
+		if feeRate <= types.MinRelayTxFeeSatoshiPerByte {
+			return nil, fmt.Errorf("no need to pay for consolidation transaction")
+		}
+	}
+
+	network := k.GetNetwork(ctx)
+	consolidationTxHash := consolidationTx.TxHash()
+	anyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network)
+	inputs := []types.OutPointToSign{
+		{
+			OutPointInfo: types.NewOutPointInfo(
+				wire.NewOutPoint(&consolidationTxHash, 1),
+				k.GetMinimumWithdrawalAmount(ctx),
+				anyoneCanSpendAddress.EncodeAddress(),
+			),
+			AddressInfo: types.AddressInfo{
+				Address:      anyoneCanSpendAddress.Address,
+				RedeemScript: anyoneCanSpendAddress.RedeemScript,
+			},
+		},
+	}
+	inputTotal := sdk.NewInt(int64(k.GetMinimumWithdrawalAmount(ctx)))
+
+	for _, utxo := range utxos {
+		hash, err := chainhash.NewHashFromStr(utxo.TxID)
+		if err != nil {
+			return nil, err
+		}
+
+		address, err := btcutil.DecodeAddress(utxo.Address, network.Params())
+		if err != nil {
+			return nil, err
+		}
+
+		redeemScript, err := hex.DecodeString(utxo.RedeemScript)
+		if err != nil {
+			return nil, err
+		}
+
+		amount := btcutil.Amount(utxo.Amount * btcutil.SatoshiPerBitcoin)
+		outPointInfo := types.NewOutPointInfo(
+			wire.NewOutPoint(hash, utxo.Vout),
+			amount,
+			utxo.Address,
+		)
+		addressInfo := types.AddressInfo{
+			Address:      address,
+			RedeemScript: redeemScript,
+		}
+
+		input := types.OutPointToSign{
+			OutPointInfo: outPointInfo,
+			AddressInfo:  addressInfo,
+		}
+		inputs = append(inputs, input)
+		inputTotal = inputTotal.AddRaw(int64(amount))
+	}
+
+	address, err := btcutil.DecodeAddress(utxos[0].Address, network.Params())
+	if err != nil {
+		return nil, err
+	}
+	txSizeUpperBound, err := estimateTxSize(inputs, []types.Output{{Amount: 0, Recipient: address}})
+	if err != nil {
+		return nil, err
+	}
+
+	consolidationTxSize := mempool.GetTxVirtualSize(btcutil.NewTx(consolidationTx))
+	fee := (txSizeUpperBound+consolidationTxSize)*feeRate - consolidationTxSize*types.MinRelayTxFeeSatoshiPerByte
+	amount := btcutil.Amount(inputTotal.SubRaw(fee).Int64())
+	if amount < 0 {
+		return nil, fmt.Errorf("not enough UTXOs to execute child-pay-for-parent with fee rate %d", feeRate)
+	}
+
+	outputs := []types.Output{
+		{Amount: btcutil.Amount(inputTotal.SubRaw(fee).Int64()), Recipient: address},
+	}
+
+	tx, err := types.CreateTx(inputs, outputs)
+	if err != nil {
+		return nil, err
+	}
+
+	tx.TxIn[0].Witness = wire.TxWitness{anyoneCanSpendAddress.RedeemScript}
+	// By setting an input's sequence to be (wire.MaxTxInSequenceNum - 2), it makes the transaction opt-in to transaction replacement (https://github.com/bitcoin/bips/blob/master/bip-0125.mediawiki)
+	tx.TxIn[0].Sequence = wire.MaxTxInSequenceNum - 2
+	tx, _, err = rpc.SignRawTransactionWithWallet(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	encodedTx, err := encodeTx(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	return k.Codec().MustMarshalJSON(hex.EncodeToString(encodedTx)), nil
+}
+
+func encodeTx(tx *wire.MsgTx) ([]byte, error) {
 	var buf bytes.Buffer
 	if err := tx.BtcEncode(&buf, wire.FeeFilterVersion, wire.WitnessEncoding); err != nil {
 		return nil, err
 	}
-	return k.Codec().MustMarshalJSON(hex.EncodeToString(buf.Bytes())), nil
+
+	return buf.Bytes(), nil
+}
+
+func estimateTxSize(inputs []types.OutPointToSign, outputs []types.Output) (int64, error) {
+	tx, err := types.CreateTx(inputs, outputs)
+	if err != nil {
+		return 0, err
+	}
+
+	return types.EstimateTxSize(*tx, inputs), nil
 }

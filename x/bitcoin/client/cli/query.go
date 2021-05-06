@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/binary"
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -26,6 +27,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 	btcTxCmd.AddCommand(
 		GetCmdDepositAddress(queryRoute),
 		GetCmdConsolidationTx(queryRoute),
+		GetCmdPayForConsolidationTx(queryRoute),
 		GetCmdMasterAddress(queryRoute),
 	)
 
@@ -96,7 +98,7 @@ func GetCmdConsolidationTx(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			res, _, err := clientCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.GetTx), nil)
+			res, _, err := clientCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.GetConsolidationTx), nil)
 			if err != nil {
 				return sdkerrors.Wrap(err, types.ErrFGetTransfers)
 			}
@@ -104,6 +106,37 @@ func GetCmdConsolidationTx(queryRoute string) *cobra.Command {
 			return clientCtx.PrintObjectLegacy(string(res))
 		},
 	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdPayForConsolidationTx returns a transaction that pays for the consolidation transaction
+func GetCmdPayForConsolidationTx(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "rawPayForConsolidationTx",
+		Short: "Returns the encoded hex string of a fully signed transaction that pays for the consolidation transaction",
+		Args:  cobra.ExactArgs(0),
+	}
+
+	feeRate := cmd.Flags().Int64("fee-rate", 0, "fee rate to be set for the child-pay-for-parent transaction")
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		clientCtx, err := client.GetClientQueryContext(cmd)
+		if err != nil {
+			return err
+		}
+
+		bz := make([]byte, 8)
+		binary.LittleEndian.PutUint64(bz, uint64(*feeRate))
+
+		res, _, err := clientCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.GetPayForConsolidationTx), bz)
+		if err != nil {
+			return sdkerrors.Wrap(err, types.ErrFGetTransfers)
+		}
+
+		return clientCtx.PrintObjectLegacy(string(res))
+	}
+
 	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }

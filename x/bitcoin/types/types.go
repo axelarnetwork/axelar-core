@@ -9,6 +9,7 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcd/mempool"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
@@ -36,6 +37,9 @@ const (
 // maxDerSigLength defines the maximum size in bytes of a DER encoded bitcoin signature, and a bitcoin signature can only get up to 72 bytes according to
 // https://transactionfee.info/charts/bitcoin-script-ecdsa-length/#:~:text=The%20ECDSA%20signatures%20used%20in,normally%20taking%20up%2032%20bytes
 const maxDerSigLength = 72
+
+// MinRelayTxFeeSatoshiPerByte defines bitcoin's default minimum relay fee in satoshi/byte
+const MinRelayTxFeeSatoshiPerByte = int64(mempool.DefaultMinRelayTxFee / 1000)
 
 // Params returns the network parameters
 func (m Network) Params() *chaincfg.Params {
@@ -309,8 +313,15 @@ func NewLinkedAddress(masterKey tss.Key, secondaryKey tss.Key, network Network, 
 }
 
 // NewAnyoneCanSpendAddress creates a p2sh address that anyone can spend
-func NewAnyoneCanSpendAddress(network Network) btcutil.Address {
-	return createP2WSHAddress(createAnyoneCanSpendRedeemScript(), network)
+func NewAnyoneCanSpendAddress(network Network) AddressInfo {
+	script := createAnyoneCanSpendRedeemScript()
+	addr := createP2WSHAddress(script, network)
+
+	return AddressInfo{
+		RedeemScript: script,
+		Address:      addr,
+		Role:         NONE,
+	}
 }
 
 // ToCrossChainAddr returns the corresponding cross-chain address
@@ -370,7 +381,7 @@ func EstimateTxSize(tx wire.MsgTx, outpointsToSign []OutPointToSign) int64 {
 		tx.TxIn[i].Witness = wire.TxWitness{zeroSigBytes, input.RedeemScript}
 	}
 
-	return int64(tx.SerializeSize())
+	return mempool.GetTxVirtualSize(btcutil.NewTx(&tx))
 }
 
 // Native asset denominations

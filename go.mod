@@ -8,7 +8,8 @@ replace github.com/keybase/go-keychain => github.com/99designs/go-keychain v0.0.
 
 require (
 	github.com/axelarnetwork/tm-events v0.0.0-20210427154304-86290b49ae8f
-	github.com/btcsuite/btcd v0.21.0-beta
+	// TODO: update to v0.22.0-beta once https://github.com/btcsuite/btcd/issues/1706 is resolved
+	github.com/btcsuite/btcd v0.21.0-beta.0.20210506225145-0ec4bdc1b8e1
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/cosmos/cosmos-sdk v0.42.4
 	github.com/ethereum/go-ethereum v1.10.2
