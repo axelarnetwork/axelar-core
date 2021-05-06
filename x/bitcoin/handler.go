@@ -216,6 +216,8 @@ func HandleMsgVoteConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, v types.Vo
 	case types.CONSOLIDATION:
 		tx, txExist := k.GetSignedTx(ctx)
 		vout, voutExist := k.GetMasterKeyVout(ctx)
+		// TODO: both booleans should always have the same value, we might be able to make use of cosmos invariant checks to enforce it
+		//  without the need to check it every call
 		if txExist && voutExist {
 			txHash := tx.TxHash()
 
