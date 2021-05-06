@@ -33,7 +33,8 @@ const (
 	regtest = "regtest"
 )
 
-// maxDerSigLength defines the maximum size in bytes of a DER encoded bitcoin signature
+// maxDerSigLength defines the maximum size in bytes of a DER encoded bitcoin signature, and a bitcoin signature can only get up to 72 bytes according to
+// https://transactionfee.info/charts/bitcoin-script-ecdsa-length/#:~:text=The%20ECDSA%20signatures%20used%20in,normally%20taking%20up%2032%20bytes
 const maxDerSigLength = 72
 
 // Params returns the network parameters

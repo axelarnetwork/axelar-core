@@ -238,13 +238,13 @@ func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer ty
 		return nil, err
 	}
 
-	estimatedTxSize, err := estimateTxSize(ctx, k, signer, inputs, outputs)
+	txSizeUpperBound, err := estimateTxSize(ctx, k, signer, inputs, outputs)
 	if err != nil {
 		return nil, err
 	}
 
 	// consolidation transactions always pay 1 satoshi/byte, which is the default minimum relay fee rate bitcoin-core sets
-	fee := sdk.NewInt(estimatedTxSize).Mul(sdk.OneInt()).AddRaw(msg.Fee)
+	fee := sdk.NewInt(txSizeUpperBound).Mul(sdk.OneInt()).AddRaw(msg.Fee)
 	change := totalDeposits.Sub(totalOut).Sub(fee)
 
 	switch change.Sign() {

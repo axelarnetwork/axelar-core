@@ -326,7 +326,9 @@ func TestEstimateTxSize(t *testing.T) {
 		expected := int64(signedTx.SerializeSize())
 		actual := types.EstimateTxSize(*tx, inputs)
 
+		// expected - 1 * inputCount <= actual <= expected because a bitcoin signature can either contain 71 or 72 bytes
+		// https://transactionfee.info/charts/bitcoin-script-ecdsa-length/#:~:text=The%20ECDSA%20signatures%20used%20in,normally%20taking%20up%2032%20bytes
 		assert.LessOrEqual(t, expected, actual)
-		assert.LessOrEqual(t, actual-2*inputCount, expected)
+		assert.LessOrEqual(t, actual-1*inputCount, expected)
 	}).Repeat(repeats))
 }
