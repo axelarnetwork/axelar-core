@@ -195,32 +195,46 @@ func HandleMsgVoteConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, v types.Vo
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
 	k.SetOutpointInfo(ctx, pendingOutPointInfo, types.CONFIRMED)
+	addr, ok := k.GetAddress(ctx, pendingOutPointInfo.Address)
+	if !ok {
+		return nil, fmt.Errorf("cannot confirm outpoint of unknown address")
+	}
 
-	// TODO: handle withdrawals to deposit or consolidation addresses (this is currently undefined behaviour),
-	//  i.e. multiple outpoints in the SignedTx need to be confirmed
+	switch addr.Role {
+	case types.DEPOSIT:
+		// handle cross-chain transfer
+		depositAddr := nexus.CrossChainAddress{Address: pendingOutPointInfo.Address, Chain: exported.Bitcoin}
+		amount := sdk.NewInt64Coin(exported.Bitcoin.NativeAsset, int64(pendingOutPointInfo.Amount))
+		if err := n.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
+			return nil, sdkerrors.Wrap(err, "cross-chain transfer failed")
+		}
 
-	// if this is the consolidation outpoint it means the latest consolidation transaction is confirmed on Bitcoin
-	tx, txExist := k.GetSignedTx(ctx)
-	vout, voutExist := k.GetMasterKeyVout(ctx)
-	outPoint := pendingOutPointInfo.GetOutPoint()
-	if txExist && voutExist && tx.TxHash() == outPoint.Hash && vout == outPoint.Index {
-		k.DeleteSignedTx(ctx)
 		return &sdk.Result{
 			Events: ctx.EventManager().ABCIEvents(),
-			Log:    "confirmed consolidation transaction"}, nil
-	}
+			Log:    fmt.Sprintf("transfer of %s from {%s} successfully prepared", amount.Amount.String(), depositAddr.String()),
+		}, nil
+	case types.CONSOLIDATION:
+		tx, txExist := k.GetSignedTx(ctx)
+		vout, voutExist := k.GetMasterKeyVout(ctx)
+		if txExist && voutExist {
+			txHash := tx.TxHash()
 
-	// handle cross-chain transfer
-	depositAddr := nexus.CrossChainAddress{Address: pendingOutPointInfo.Address, Chain: exported.Bitcoin}
-	amount := sdk.NewInt64Coin(exported.Bitcoin.NativeAsset, int64(pendingOutPointInfo.Amount))
-	if err := n.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
-		return nil, sdkerrors.Wrap(err, "cross-chain transfer failed")
-	}
+			// if this is the consolidation outpoint it means the latest consolidation transaction is confirmed on Bitcoin
+			if wire.NewOutPoint(&txHash, vout).String() == pendingOutPointInfo.OutPoint {
+				k.DeleteSignedTx(ctx)
+				return &sdk.Result{
+					Events: ctx.EventManager().ABCIEvents(),
+					Log:    "confirmed consolidation transaction"}, nil
+			}
+		}
 
-	return &sdk.Result{
-		Events: ctx.EventManager().ABCIEvents(),
-		Log:    fmt.Sprintf("transfer of %s from {%s} successfully prepared", amount.Amount.String(), depositAddr.String()),
-	}, nil
+		// the outpoint simply deposits funds into a consolidation address. Simply confirm
+		return &sdk.Result{
+			Events: ctx.EventManager().ABCIEvents(),
+			Log:    "confirmed top up of consolidation balance"}, nil
+	default:
+		return nil, fmt.Errorf("outpoint sends funds to address with unrecognized role")
+	}
 }
 
 // HandleMsgSignPendingTransfers handles the signing of a consolidation transaction (consolidate confirmed outpoints and pay out transfers)

@@ -268,6 +268,7 @@ type AddressInfo struct {
 	Key          tss.Key
 }
 
+// AddressRole is an enum that specifies the allowed bitcoin address roles
 type AddressRole int
 
 // Roles of bitcoin addresses created by axelar
