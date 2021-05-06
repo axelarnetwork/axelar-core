@@ -28,8 +28,8 @@ func (m MsgSignPendingTransfers) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
-	if m.Fee <= 0 {
-		return fmt.Errorf("fee must be a positive amount")
+	if m.Fee < 0 {
+		return fmt.Errorf("fee must be greater than or equal to 0")
 	}
 
 	return nil

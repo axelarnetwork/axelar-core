@@ -200,7 +200,10 @@ func HandleMsgVoteConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, v types.Vo
 	//  i.e. multiple outpoints in the SignedTx need to be confirmed
 
 	// if this is the consolidation outpoint it means the latest consolidation transaction is confirmed on Bitcoin
-	if tx, ok := k.GetSignedTx(ctx); ok && tx.TxHash() == pendingOutPointInfo.GetOutPoint().Hash {
+	tx, txExist := k.GetSignedTx(ctx)
+	vout, voutExist := k.GetMasterKeyVout(ctx)
+	outPoint := pendingOutPointInfo.GetOutPoint()
+	if txExist && voutExist && tx.TxHash() == outPoint.Hash && vout == outPoint.Index {
 		k.DeleteSignedTx(ctx)
 		return &sdk.Result{
 			Events: ctx.EventManager().ABCIEvents(),
@@ -225,11 +228,12 @@ func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer ty
 	if _, ok := k.GetUnsignedTx(ctx); ok {
 		return nil, fmt.Errorf("consolidation in progress")
 	}
-	if _, ok := k.GetSignedTx(ctx); ok {
-		return nil, fmt.Errorf("previous consolidation transaction must be confirmed first")
+	if tx, ok := k.GetSignedTx(ctx); ok {
+		vout, _ := k.GetMasterKeyVout(ctx)
+		return nil, fmt.Errorf("previous consolidation transaction %s:%d must be confirmed first", tx.TxHash().String(), vout)
 	}
 
-	outputs, totalWithdrawals := prepareOutputs(ctx, k, n)
+	outputs, totalOut := prepareOutputs(ctx, k, n)
 	if len(outputs) == 0 {
 		k.Logger(ctx).Info("creating consolidation transaction without any withdrawals")
 	}
@@ -238,19 +242,28 @@ func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer ty
 		return nil, err
 	}
 
-	change := totalDeposits.Sub(totalWithdrawals).SubRaw(msg.Fee)
+	txSizeUpperBound, err := estimateTxSize(ctx, k, signer, inputs, outputs)
+	if err != nil {
+		return nil, err
+	}
+
+	// consolidation transactions always pay 1 satoshi/byte, which is the default minimum relay fee rate bitcoin-core sets
+	fee := sdk.NewInt(txSizeUpperBound).Mul(sdk.OneInt()).AddRaw(msg.Fee)
+	change := totalDeposits.Sub(totalOut).Sub(fee)
+
 	switch change.Sign() {
 	case -1, 0:
 		return nil, fmt.Errorf("not enough deposits (%s) to make all withdrawals (%s) with a transaction fee of %s",
-			totalDeposits.String(), totalWithdrawals.String(), btcutil.Amount(msg.Fee).String(),
+			totalDeposits.String(), totalOut.String(), btcutil.Amount(fee.Int64()).String(),
 		)
 	case 1:
 		changeOutput, err := prepareChange(ctx, k, signer, change)
 		if err != nil {
 			return nil, err
 		}
-		outputs = append(outputs, changeOutput)
-		k.SetMasterKeyOutpointExists(ctx)
+		// vout 0 is always the change, and vout 1 is always anyone-can-spend
+		outputs = append([]types.Output{changeOutput}, outputs...)
+		k.SetMasterKeyVout(ctx, 0)
 	default:
 		return nil, fmt.Errorf("sign value of change for consolidation transaction unexpected: %d", change.Sign())
 	}
@@ -272,12 +285,28 @@ func HandleMsgSignPendingTransfers(ctx sdk.Context, k types.BTCKeeper, signer ty
 	}, nil
 }
 
+func estimateTxSize(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, inputs []types.OutPointToSign, outputs []types.Output) (int64, error) {
+	zeroChangeOutput, err := prepareChange(ctx, k, signer, sdk.ZeroInt())
+	if err != nil {
+		return 0, err
+	}
+
+	tx, err := types.CreateTx(inputs, append(outputs, zeroChangeOutput))
+	if err != nil {
+		return 0, err
+	}
+
+	return types.EstimateTxSize(*tx, inputs), nil
+}
+
 func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.Output, sdk.Int) {
 	minAmount := sdk.NewInt(int64(k.GetMinimumWithdrawalAmount(ctx)))
-
 	pendingTransfers := n.GetPendingTransfersForChain(ctx, exported.Bitcoin)
-	var outputs []types.Output
-	totalOut := sdk.ZeroInt()
+	// first output in consolidation transaction is always for our anyone-can-spend address for the
+	// sake of child-pay-for-parent so that anyone can pay
+	anyoneCanSpendOutput := types.Output{Amount: k.GetMinimumWithdrawalAmount(ctx), Recipient: types.NewAnyoneCanSpendAddress(k.GetNetwork(ctx))}
+	outputs := []types.Output{anyoneCanSpendOutput}
+	totalOut := sdk.NewInt(int64(anyoneCanSpendOutput.Amount))
 
 	addrWithdrawal := make(map[string]sdk.Int)
 	var recipients []btcutil.Address
@@ -342,7 +371,7 @@ func prepareInputs(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) ([]t
 	var prevOuts []types.OutPointToSign
 	totalDeposits := sdk.ZeroInt()
 
-	masterKeyUtxoExists := k.DoesMasterKeyOutpointExist(ctx)
+	_, masterKeyUtxoExists := k.GetMasterKeyVout(ctx)
 	masterKeyUtxoFound := false
 
 	for _, info := range k.GetConfirmedOutPointInfos(ctx) {
@@ -371,7 +400,7 @@ func prepareInputs(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) ([]t
 	}
 
 	if masterKeyUtxoExists != masterKeyUtxoFound {
-		return nil, sdk.ZeroInt(), fmt.Errorf("expect to spend UTXO of master key but not found")
+		return nil, sdk.ZeroInt(), fmt.Errorf("previous consolidation outpoint must be confirmed first")
 	}
 
 	return prevOuts, totalDeposits, nil

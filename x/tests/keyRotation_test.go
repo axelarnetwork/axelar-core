@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
@@ -210,6 +211,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	totalDepositCount := int(rand.I64Between(1, 20))
 	var totalDepositAmount int64
 	deposits := make(map[string]btcTypes.OutPointInfo)
+	var outpointsToSign []btcTypes.OutPointToSign
 
 	for i := 0; i < totalDepositCount; i++ {
 		// get deposit address for ethereum transfer
@@ -228,6 +230,21 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		// store this information for later in the test
 		totalDepositAmount += int64(depositInfo.Amount)
 		deposits[depositInfo.OutPoint] = depositInfo
+
+		randomPrivateKey, err := btcec.NewPrivateKey(btcec.S256())
+		if err != nil {
+			panic(err)
+		}
+
+		outpointsToSign = append(outpointsToSign, btcTypes.OutPointToSign{
+			OutPointInfo: depositInfo,
+			AddressInfo: btcTypes.NewLinkedAddress(
+				tss.Key{ID: rand.Str(10), Value: randomPrivateKey.PublicKey, Role: tss.MasterKey},
+				tss.Key{ID: rand.Str(10), Value: randomPrivateKey.PublicKey, Role: tss.SecondaryKey},
+				btcTypes.DefaultParams().Network,
+				crossChainAddr,
+			),
+		})
 	}
 
 	// wait for voting to be done
@@ -250,8 +267,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, assignKeyResult.Error)
 
 	// sign the consolidation transaction
-	fee := rand.I64Between(1, totalDepositAmount)
-	signResult := <-chain.Submit(btcTypes.NewMsgSignPendingTransfers(randomSender(), btcutil.Amount(fee)))
+	signResult := <-chain.Submit(btcTypes.NewMsgSignPendingTransfers(randomSender(), 0))
 	assert.NoError(t, signResult.Error)
 
 	// wait for voting to be done
@@ -274,7 +290,8 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	err = signedTx.BtcDecode(bytes.NewReader(buf), wire.FeeFilterVersion, wire.WitnessEncoding)
 	assert.NoError(t, err)
-	assert.True(t, txCorrectlyFormed(signedTx, deposits, totalDepositAmount-fee))
+	fee := btcTypes.EstimateTxSize(*signedTx, outpointsToSign)
+	assert.True(t, txCorrectlyFormed(signedTx, deposits, totalDepositAmount-fee-int64(btcTypes.DefaultParams().MinimumWithdrawalAmount)))
 
 	// expected consolidation info
 	consAddr := getAddress(signedTx.TxOut[0], btcTypes.DefaultParams().Network.Params())
@@ -310,15 +327,13 @@ func getAddress(txOut *wire.TxOut, chainParams *chaincfg.Params) btcutil.Address
 }
 
 func txCorrectlyFormed(tx *wire.MsgTx, deposits map[string]btcTypes.OutPointInfo, txAmount int64) bool {
-	txInsCorrect := true
 	for _, in := range tx.TxIn {
 		if _, ok := deposits[in.PreviousOutPoint.String()]; !ok || in.Witness == nil {
-			txInsCorrect = false
-			break
+			return false
 		}
 	}
 
-	return len(tx.TxOut) == 1 && // one TxOut
-		tx.TxOut[0].Value == txAmount && // amount matches
-		txInsCorrect // inputs match
+	return len(tx.TxOut) == 2 && // two TxOut's
+		tx.TxOut[0].Value == txAmount && // change TxOut
+		tx.TxOut[1].Value == int64(btcTypes.DefaultParams().MinimumWithdrawalAmount) // anyone-can-spend TxOut
 }
