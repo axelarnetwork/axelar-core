@@ -73,6 +73,7 @@ func TestHandleMsgLink(t *testing.T) {
 		assert.Equal(t, exported.Bitcoin, signer.GetCurrentKeyCalls()[0].Chain)
 		assert.Equal(t, msg.RecipientChain, nexusKeeper.GetChainCalls()[0].Chain)
 		assert.Equal(t, btcKeeper.SetAddressCalls()[0].Address.Address.EncodeAddress(), string(res.Data))
+		assert.Equal(t, types.DEPOSIT, btcKeeper.SetAddressCalls()[0].Address.Role)
 	}).Repeat(repeatCount))
 
 	t.Run("no master key", testutils.Func(func(t *testing.T) {
@@ -115,6 +116,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 				return types.AddressInfo{
 					Address:      address,
 					RedeemScript: rand.Bytes(200),
+					Role:         types.DEPOSIT,
 					Key: tss.Key{
 						ID:    rand.StrBetween(5, 20),
 						Value: ecdsa.PublicKey{},
@@ -146,7 +148,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 	}
 
 	repeatCount := 20
-	t.Run("happy path outpoint", testutils.Func(func(t *testing.T) {
+	t.Run("happy path deposit", testutils.Func(func(t *testing.T) {
 		setup()
 		res, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, signer, msg)
 		assert.NoError(t, err)
@@ -154,7 +156,20 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 		assert.Equal(t, msg.OutPointInfo, btcKeeper.SetPendingOutpointInfoCalls()[0].Info)
 		assert.Equal(t, voter.InitPollCalls()[0].Poll, btcKeeper.SetPendingOutpointInfoCalls()[0].Poll)
 	}).Repeat(repeatCount))
+	t.Run("happy path consolidation", testutils.Func(func(t *testing.T) {
+		setup()
+		addr, _ := btcKeeper.GetAddress(ctx, msg.OutPointInfo.Address)
+		addr.Role = types.CONSOLIDATION
+		btcKeeper.GetAddressFunc = func(sdk.Context, string) (types.AddressInfo, bool) {
+			return addr, true
+		}
 
+		res, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, signer, msg)
+		assert.NoError(t, err)
+		assert.Len(t, testutils.Events(res.Events).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeOutpointConfirmation }), 1)
+		assert.Equal(t, msg.OutPointInfo, btcKeeper.SetPendingOutpointInfoCalls()[0].Info)
+		assert.Equal(t, voter.InitPollCalls()[0].Poll, btcKeeper.SetPendingOutpointInfoCalls()[0].Poll)
+	}).Repeat(repeatCount))
 	t.Run("already confirmed", testutils.Func(func(t *testing.T) {
 		setup()
 		btcKeeper.GetOutPointInfoFunc = func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
@@ -198,6 +213,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		info        types.OutPointInfo
 	)
 	setup := func() {
+		address := randomAddress()
 		info = randomOutpointInfo()
 		msg = randomMsgVoteConfirmOutpoint()
 		msg.OutPoint = info.OutPoint
@@ -211,6 +227,18 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			CodecFunc:                     func() *codec.LegacyAmino { return types.ModuleCdc.LegacyAmino },
 			GetSignedTxFunc:               func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
 			GetMasterKeyVoutFunc:          func(sdk.Context) (uint32, bool) { return 0, false },
+			GetAddressFunc: func(sdk.Context, string) (types.AddressInfo, bool) {
+				return types.AddressInfo{
+					Address:      address,
+					RedeemScript: rand.Bytes(200),
+					Role:         types.DEPOSIT,
+					Key: tss.Key{
+						ID:    rand.StrBetween(5, 20),
+						Value: ecdsa.PublicKey{},
+						Role:  tss.SecondaryKey,
+					},
+				}, true
+			},
 		}
 		voter = &mock.VoterMock{
 			TallyVoteFunc:  func(sdk.Context, sdk.AccAddress, vote.PollMeta, vote.VotingData) error { return nil },
@@ -225,7 +253,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 	}
 
 	repeats := 20
-	t.Run("happy path confirm deposit", testutils.Func(func(t *testing.T) {
+	t.Run("happy path confirm deposit to deposit address", testutils.Func(func(t *testing.T) {
 		setup()
 
 		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
@@ -239,17 +267,82 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		assert.Equal(t, int64(info.Amount), nexusKeeper.EnqueueForTransferCalls()[0].Amount.Amount.Int64())
 	}).Repeat(repeats))
 
-	t.Run("happy path confirm consolidation", testutils.Func(func(t *testing.T) {
+	t.Run("happy path confirm deposit to consolidation address", testutils.Func(func(t *testing.T) {
+		setup()
+		addr, _ := btcKeeper.GetAddress(ctx, info.Address)
+		addr.Role = types.CONSOLIDATION
+		btcKeeper.GetAddressFunc = func(sdk.Context, string) (types.AddressInfo, bool) {
+			return addr, true
+		}
+
+		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		assert.NoError(t, err)
+		assert.Len(t, voter.DeletePollCalls(), 1)
+		assert.Len(t, btcKeeper.DeletePendingOutPointInfoCalls(), 1)
+		assert.Equal(t, info, btcKeeper.SetOutpointInfoCalls()[0].Info)
+		assert.Equal(t, types.CONFIRMED, btcKeeper.SetOutpointInfoCalls()[0].State)
+		assert.Len(t, btcKeeper.DeleteSignedTxCalls(), 0)
+		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
+	}).Repeat(repeats))
+
+	t.Run("happy path confirm deposit to consolidation address in consolidation tx", testutils.Func(func(t *testing.T) {
 		setup()
 		tx := wire.NewMsgTx(wire.TxVersion)
 		hash := tx.TxHash()
 		op := wire.NewOutPoint(&hash, info.GetOutPoint().Index)
 		info.OutPoint = op.String()
 		msg.OutPoint = op.String()
+		addr, _ := btcKeeper.GetAddress(ctx, info.Address)
+		addr.Role = types.CONSOLIDATION
+		btcKeeper.GetAddressFunc = func(sdk.Context, string) (types.AddressInfo, bool) {
+			return addr, true
+		}
+
+		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		assert.NoError(t, err)
+		assert.Len(t, voter.DeletePollCalls(), 1)
+		assert.Len(t, btcKeeper.DeletePendingOutPointInfoCalls(), 1)
+		assert.Equal(t, info, btcKeeper.SetOutpointInfoCalls()[0].Info)
+		assert.Equal(t, types.CONFIRMED, btcKeeper.SetOutpointInfoCalls()[0].State)
+		assert.Len(t, btcKeeper.DeleteSignedTxCalls(), 0)
+		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
+	}).Repeat(repeats))
+
+	t.Run("happy path confirm deposit to deposit address in consolidation tx", testutils.Func(func(t *testing.T) {
+		setup()
+		tx := wire.NewMsgTx(wire.TxVersion)
+		hash := tx.TxHash()
+		op := wire.NewOutPoint(&hash, info.GetOutPoint().Index)
+		info.OutPoint = op.String()
+		msg.OutPoint = op.String()
+
+		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		assert.NoError(t, err)
+		assert.Len(t, voter.DeletePollCalls(), 1)
+		assert.Len(t, btcKeeper.DeletePendingOutPointInfoCalls(), 1)
+		assert.Equal(t, info, btcKeeper.SetOutpointInfoCalls()[0].Info)
+		assert.Equal(t, types.CONFIRMED, btcKeeper.SetOutpointInfoCalls()[0].State)
+		assert.Len(t, btcKeeper.DeleteSignedTxCalls(), 0)
+		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 1)
+	}).Repeat(repeats))
+
+	t.Run("happy path confirm consolidation", testutils.Func(func(t *testing.T) {
+		setup()
+		tx := wire.NewMsgTx(wire.TxVersion)
+		hash := tx.TxHash()
+		vout, _ := btcKeeper.GetMasterKeyVoutFunc(ctx)
+		op := wire.NewOutPoint(&hash, vout)
+		info.OutPoint = op.String()
+		msg.OutPoint = op.String()
 		btcKeeper.GetSignedTxFunc = func(sdk.Context) (*wire.MsgTx, bool) { return tx, true }
 		btcKeeper.DeleteSignedTxFunc = func(sdk.Context) {}
 		btcKeeper.GetMasterKeyVoutFunc = func(sdk.Context) (uint32, bool) {
 			return op.Index, true
+		}
+		addr, _ := btcKeeper.GetAddress(ctx, "")
+		addr.Role = types.CONSOLIDATION
+		btcKeeper.GetAddressFunc = func(sdk.Context, string) (types.AddressInfo, bool) {
+			return addr, true
 		}
 
 		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
@@ -261,7 +354,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		assert.Len(t, btcKeeper.DeleteSignedTxCalls(), 1)
 		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
 	}).Repeat(repeats))
-	t.Run("happy path confirm deposit in consolidation tx", testutils.Func(func(t *testing.T) {
+	t.Run("happy path confirm deposit to deposit address in consolidation tx", testutils.Func(func(t *testing.T) {
 		setup()
 		tx := wire.NewMsgTx(wire.TxVersion)
 		hash := tx.TxHash()
@@ -783,8 +876,12 @@ func randomOutpointInfo() types.OutPointInfo {
 	if err != nil {
 		panic(err)
 	}
+	vout := mathRand.Uint32()
+	if vout == 0 {
+		vout++
+	}
 	return types.OutPointInfo{
-		OutPoint: wire.NewOutPoint(txHash, mathRand.Uint32()).String(),
+		OutPoint: wire.NewOutPoint(txHash, vout).String(),
 		Amount:   btcutil.Amount(rand.I64Between(1, 10000000000)),
 		Address:  randomAddress().EncodeAddress(),
 	}

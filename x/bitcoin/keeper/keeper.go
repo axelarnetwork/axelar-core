@@ -109,10 +109,12 @@ func (k Keeper) SetAddress(ctx sdk.Context, address types.AddressInfo) {
 	// so we use a helper struct to get around that problem
 	a := struct {
 		Addr   string
+		Role   types.AddressRole
 		Script types.RedeemScript
 		Key    tss.Key
 	}{
 		Addr:   address.EncodeAddress(),
+		Role:   address.Role,
 		Script: address.RedeemScript,
 		Key:    address.Key,
 	}
@@ -130,6 +132,7 @@ func (k Keeper) GetAddress(ctx sdk.Context, encodedAddress string) (types.Addres
 	// so we use a helper struct to get around that problem
 	var a struct {
 		Addr   string
+		Role   types.AddressRole
 		Script types.RedeemScript
 		Key    tss.Key
 	}
@@ -137,6 +140,7 @@ func (k Keeper) GetAddress(ctx sdk.Context, encodedAddress string) (types.Addres
 	addr, _ := btcutil.DecodeAddress(a.Addr, k.GetNetwork(ctx).Params())
 	return types.AddressInfo{
 		Address:      addr,
+		Role:         a.Role,
 		RedeemScript: a.Script,
 		Key:          a.Key,
 	}, true

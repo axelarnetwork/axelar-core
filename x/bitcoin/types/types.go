@@ -263,9 +263,20 @@ func createP2WSHAddress(script RedeemScript, network Network) *btcutil.AddressWi
 // AddressInfo is a wrapper containing the Bitcoin P2WSH address, it's corresponding script and the underlying key
 type AddressInfo struct {
 	btcutil.Address
+	Role         AddressRole
 	RedeemScript RedeemScript
 	Key          tss.Key
 }
+
+// AddressRole is an enum that specifies the allowed bitcoin address roles
+type AddressRole int
+
+// Roles of bitcoin addresses created by axelar
+const (
+	NONE AddressRole = iota
+	DEPOSIT
+	CONSOLIDATION
+)
 
 // NewConsolidationAddress creates a new address used to consolidate all unspent outpoints
 func NewConsolidationAddress(pk tss.Key, network Network) AddressInfo {
@@ -275,6 +286,7 @@ func NewConsolidationAddress(pk tss.Key, network Network) AddressInfo {
 	return AddressInfo{
 		RedeemScript: script,
 		Address:      addr,
+		Role:         CONSOLIDATION,
 		Key:          pk,
 	}
 }
@@ -291,6 +303,7 @@ func NewLinkedAddress(masterKey tss.Key, secondaryKey tss.Key, network Network, 
 	return AddressInfo{
 		RedeemScript: script,
 		Address:      addr,
+		Role:         DEPOSIT,
 		Key:          secondaryKey,
 	}
 }
