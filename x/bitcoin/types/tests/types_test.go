@@ -11,6 +11,7 @@ import (
 	"github.com/btcsuite/btcutil"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 
@@ -204,4 +205,130 @@ func TestNewLinkedAddress_NotSpendableByRandomKey(t *testing.T) {
 
 	_, err = types.AssembleBtcTx(tx, inputs, []btcec.Signature{*sig})
 	assert.Error(t, err)
+}
+
+func TestNewAnyoneCanSpendAddress(t *testing.T) {
+	t.Run("should return an address that is spendable by anyone", testutils.Func(func(t *testing.T) {
+		inputAmount := btcutil.Amount(100000000) // 1btc
+		outputAmount := btcutil.Amount(10000000) // 0.1btc
+		address := types.NewAnyoneCanSpendAddress(types.Testnet3)
+		redeemScript, err := txscript.NewScriptBuilder().
+			AddOp(txscript.OP_TRUE).
+			Script()
+		if err != nil {
+			panic(err)
+		}
+		outPoint, err := types.OutPointFromStr(fmt.Sprintf("%s:0", rand.HexStr(64)))
+		if err != nil {
+			panic(err)
+		}
+		inputs := []types.OutPointToSign{
+			{
+				AddressInfo: types.AddressInfo{
+					Address:      address,
+					RedeemScript: redeemScript,
+				},
+				OutPointInfo: types.NewOutPointInfo(
+					outPoint,
+					inputAmount, // 1btc
+					address.EncodeAddress(),
+				),
+			},
+		}
+		outputs := []types.Output{
+			{
+				Amount:    outputAmount,
+				Recipient: address,
+			},
+		}
+
+		tx, err := types.CreateTx(inputs, outputs)
+		assert.NoError(t, err)
+
+		tx.TxIn[0].Witness = wire.TxWitness{redeemScript}
+
+		payScript, err := txscript.PayToAddrScript(address)
+		assert.NoError(t, err)
+
+		scriptEngine, err := txscript.NewEngine(payScript, tx, 0, txscript.StandardVerifyFlags, nil, nil, int64(inputAmount))
+		assert.NoError(t, err)
+
+		err = scriptEngine.Execute()
+		assert.NoError(t, err)
+	}))
+}
+
+func TestEstimateTxSize(t *testing.T) {
+	repeats := 100
+
+	t.Run("should return a reasonable transaction size estimation", testutils.Func(func(t *testing.T) {
+		masterPrivateKey, err := btcec.NewPrivateKey(btcec.S256())
+		if err != nil {
+			panic(err)
+		}
+		secondaryPrivateKey, err := btcec.NewPrivateKey(btcec.S256())
+		if err != nil {
+			panic(err)
+		}
+		masterKey := tss.Key{ID: rand.Str(10), Value: masterPrivateKey.PublicKey, Role: tss.MasterKey}
+		secondaryKey := tss.Key{ID: rand.Str(10), Value: secondaryPrivateKey.PublicKey, Role: tss.SecondaryKey}
+
+		inputCount := rand.I64Between(11, 20)
+		outputCount := rand.I64Between(1, 11)
+		var inputs []types.OutPointToSign
+		var outputs []types.Output
+
+		for i := 0; i < int(inputCount); i++ {
+			addressInfo := types.NewLinkedAddress(masterKey, secondaryKey, types.Testnet3, nexus.CrossChainAddress{Chain: ethereum.Ethereum, Address: ethereumAddress})
+			outPoint, err := types.OutPointFromStr(fmt.Sprintf("%s:%d", rand.HexStr(64), rand.I64Between(0, 100)))
+			if err != nil {
+				panic(err)
+			}
+			inputAmount := btcutil.Amount(rand.I64Between(100, 10000))
+
+			inputs = append(inputs, types.OutPointToSign{
+				AddressInfo: addressInfo,
+				OutPointInfo: types.NewOutPointInfo(
+					outPoint,
+					inputAmount, // 1btc
+					addressInfo.Address.EncodeAddress(),
+				),
+			})
+		}
+
+		for i := 0; i < int(outputCount); i++ {
+			addressInfo := types.NewConsolidationAddress(masterKey, types.Testnet3)
+			outputAmount := btcutil.Amount(rand.I64Between(1, 100))
+
+			outputs = append(outputs, types.Output{
+				Amount:    outputAmount,
+				Recipient: addressInfo.Address,
+			})
+		}
+
+		tx, err := types.CreateTx(inputs, outputs)
+		assert.NoError(t, err)
+
+		var signatures []btcec.Signature
+
+		for i, input := range inputs {
+			sigHash, err := txscript.CalcWitnessSigHash(input.AddressInfo.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, i, int64(input.OutPointInfo.Amount))
+			assert.NoError(t, err)
+
+			signature, err := masterPrivateKey.Sign(sigHash)
+			assert.NoError(t, err)
+			signatures = append(signatures, *signature)
+		}
+
+		signedTx, err := types.AssembleBtcTx(tx, inputs, signatures)
+		assert.NoError(t, err)
+
+		expected := int64(signedTx.SerializeSize())
+		actual := types.EstimateTxSize(*tx, inputs)
+
+		// expected - 1 * inputCount <= actual <= expected because a bitcoin signature can either contain 71 or 72 bytes
+		// https://transactionfee.info/charts/bitcoin-script-ecdsa-length/#:~:text=The%20ECDSA%20signatures%20used%20in,normally%20taking%20up%2032%20bytes
+		assert.LessOrEqual(t, expected, actual)
+		assert.LessOrEqual(t, actual-1*inputCount, expected)
+	}).Repeat(repeats))
 }
