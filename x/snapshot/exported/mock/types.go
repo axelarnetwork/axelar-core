@@ -34,7 +34,7 @@ var _ exported.SDKValidator = &SDKValidatorMock{}
 // 			IsJailedFunc: func() bool {
 // 				panic("mock out the IsJailed method")
 // 			},
-// 			UnpackInterfacesFunc: func(c codectypes.AnyUnpacker) error {
+// 			UnpackInterfacesFunc: func(unpacker codectypes.AnyUnpacker) error {
 // 				panic("mock out the UnpackInterfaces method")
 // 			},
 // 		}
@@ -57,7 +57,7 @@ type SDKValidatorMock struct {
 	IsJailedFunc func() bool
 
 	// UnpackInterfacesFunc mocks the UnpackInterfaces method.
-	UnpackInterfacesFunc func(c codectypes.AnyUnpacker) error
+	UnpackInterfacesFunc func(unpacker codectypes.AnyUnpacker) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -75,8 +75,8 @@ type SDKValidatorMock struct {
 		}
 		// UnpackInterfaces holds details about calls to the UnpackInterfaces method.
 		UnpackInterfaces []struct {
-			// C is the c argument value.
-			C codectypes.AnyUnpacker
+			// Unpacker is the unpacker argument value.
+			Unpacker codectypes.AnyUnpacker
 		}
 	}
 	lockGetConsAddr       sync.RWMutex
@@ -191,29 +191,29 @@ func (mock *SDKValidatorMock) IsJailedCalls() []struct {
 }
 
 // UnpackInterfaces calls UnpackInterfacesFunc.
-func (mock *SDKValidatorMock) UnpackInterfaces(c codectypes.AnyUnpacker) error {
+func (mock *SDKValidatorMock) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
 	if mock.UnpackInterfacesFunc == nil {
 		panic("SDKValidatorMock.UnpackInterfacesFunc: method is nil but SDKValidator.UnpackInterfaces was just called")
 	}
 	callInfo := struct {
-		C codectypes.AnyUnpacker
+		Unpacker codectypes.AnyUnpacker
 	}{
-		C: c,
+		Unpacker: unpacker,
 	}
 	mock.lockUnpackInterfaces.Lock()
 	mock.calls.UnpackInterfaces = append(mock.calls.UnpackInterfaces, callInfo)
 	mock.lockUnpackInterfaces.Unlock()
-	return mock.UnpackInterfacesFunc(c)
+	return mock.UnpackInterfacesFunc(unpacker)
 }
 
 // UnpackInterfacesCalls gets all the calls that were made to UnpackInterfaces.
 // Check the length with:
 //     len(mockedSDKValidator.UnpackInterfacesCalls())
 func (mock *SDKValidatorMock) UnpackInterfacesCalls() []struct {
-	C codectypes.AnyUnpacker
+	Unpacker codectypes.AnyUnpacker
 } {
 	var calls []struct {
-		C codectypes.AnyUnpacker
+		Unpacker codectypes.AnyUnpacker
 	}
 	mock.lockUnpackInterfaces.RLock()
 	calls = mock.calls.UnpackInterfaces

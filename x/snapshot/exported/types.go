@@ -4,22 +4,23 @@ import (
 	"bytes"
 	"time"
 
-	"github.com/axelarnetwork/axelar-core/utils"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
+
+	"github.com/axelarnetwork/axelar-core/utils"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 //go:generate moq -out ./mock/types.go -pkg mock . SDKValidator Snapshotter Slasher Broadcaster Tss
 
 // SDKValidator is an interface for a Cosmos validator account
 type SDKValidator interface {
+	codectypes.UnpackInterfacesMessage
 	GetOperator() sdk.ValAddress
 	GetConsAddr() (sdk.ConsAddress, error)
 	GetConsensusPower() int64
 	IsJailed() bool
-	UnpackInterfaces(c codectypes.AnyUnpacker) error
 }
 
 // Validator represents a validator that participates in tss and voting
@@ -98,7 +99,7 @@ func (s Snapshot) GetValidator(address sdk.ValAddress) (Validator, bool) {
 	return Validator{}, false
 }
 
-// UnpackInterfaces implements UnpackInterfacesMessage.UnpackInterfaces
+// UnpackInterfaces implements UnpackInterfacesMessage
 func (s Snapshot) UnpackInterfaces(c codectypes.AnyUnpacker) error {
 	for _, v := range s.Validators {
 		if err := v.UnpackInterfaces(c); err != nil {
