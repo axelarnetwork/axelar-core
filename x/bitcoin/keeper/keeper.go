@@ -17,16 +17,16 @@ import (
 )
 
 const (
-	pendingOutpointPrefix       = "pend_"
-	confirmedOutPointPrefix     = "conf_"
-	spentOutPointPrefix         = "spent_"
-	addrPrefix                  = "addr_"
-	dustAmtPrefix               = "dust_"
-	anyoneCanSpendAddressPrefix = "anyone_can_spend_address_"
+	pendingOutpointPrefix   = "pend_"
+	confirmedOutPointPrefix = "conf_"
+	spentOutPointPrefix     = "spent_"
+	addrPrefix              = "addr_"
+	dustAmtPrefix           = "dust_"
 
-	unsignedTxKey    = "unsignedTx"
-	signedTxKey      = "signedTx"
-	masterKeyVoutKey = "master_key_vout"
+	anyoneCanSpendAddressKey = "anyone_can_spend_address"
+	unsignedTxKey            = "unsignedTx"
+	signedTxKey              = "signedTx"
+	masterKeyVoutKey         = "master_key_vout"
 )
 
 var _ types.BTCKeeper = Keeper{}
@@ -46,7 +46,7 @@ func NewKeeper(cdc *codec.LegacyAmino, storeKey sdk.StoreKey, paramSpace params.
 // SetParams sets the bitcoin module's parameters
 func (k Keeper) SetParams(ctx sdk.Context, p types.Params) {
 	k.params.SetParamSet(ctx, &p)
-	k.setAddress(ctx, anyoneCanSpendAddressPrefix, types.NewAnyoneCanSpendAddress(p.Network))
+	k.setAddress(ctx, anyoneCanSpendAddressKey, types.NewAnyoneCanSpendAddress(p.Network))
 }
 
 // GetParams gets the bitcoin module's parameters
@@ -63,7 +63,7 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 
 // GetAnyoneCanSpendAddress retrieves the anyone-can-spend address
 func (k Keeper) GetAnyoneCanSpendAddress(ctx sdk.Context) types.AddressInfo {
-	address, found := k.getAddress(ctx, anyoneCanSpendAddressPrefix)
+	address, found := k.getAddress(ctx, anyoneCanSpendAddressKey)
 	if !found {
 		panic("bitcoin's anyone-can-pay-address isn't set")
 	}

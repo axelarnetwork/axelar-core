@@ -282,10 +282,8 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	bz, err = nodeData[0].Node.Query([]string{btcTypes.QuerierRoute, btcKeeper.GetConsolidationTx}, abci.RequestQuery{})
 	assert.NoError(t, err)
 
-	var rawSignedTx string
-	cdc.MustUnmarshalJSON(bz, &rawSignedTx)
+	buf, err := hex.DecodeString(string(bz))
 	signedTx := wire.NewMsgTx(wire.TxVersion)
-	buf, err := hex.DecodeString(rawSignedTx)
 	assert.NoError(t, err)
 
 	err = signedTx.BtcDecode(bytes.NewReader(buf), wire.FeeFilterVersion, wire.WitnessEncoding)

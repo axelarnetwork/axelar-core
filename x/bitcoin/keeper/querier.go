@@ -110,7 +110,7 @@ func getRawConsolidationTx(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {
 		return nil, err
 	}
 
-	return k.Codec().MustMarshalJSON(hex.EncodeToString(encodedTx)), nil
+	return []byte(hex.EncodeToString(encodedTx)), nil
 }
 
 func payForConsolidationTx(ctx sdk.Context, k types.BTCKeeper, rpc types.RPCClient, data []byte) ([]byte, error) {
@@ -234,7 +234,7 @@ func payForConsolidationTx(ctx sdk.Context, k types.BTCKeeper, rpc types.RPCClie
 		return nil, err
 	}
 
-	return k.Codec().MustMarshalJSON(hex.EncodeToString(encodedTx)), nil
+	return []byte(hex.EncodeToString(encodedTx)), nil
 }
 
 func encodeTx(tx *wire.MsgTx) ([]byte, error) {
