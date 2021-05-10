@@ -164,7 +164,6 @@ func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta expor
 	if threshold.IsMet(talliedVote.Tally, snap.TotalShareCount) {
 		k.Logger(ctx).Debug(fmt.Sprintf("threshold of %d/%d has been met for %s: %s/%s",
 			threshold.Numerator, threshold.Denominator, pollMeta, talliedVote.Tally.String(), snap.TotalShareCount.String()))
-		k.Logger(ctx).Info(fmt.Sprintf("transaction confirmed in poll %s", pollMeta))
 		poll.Result = talliedVote.Data
 	}
 
