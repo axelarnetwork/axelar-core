@@ -22,6 +22,7 @@ type BTCKeeper interface {
 	GetParams(ctx sdk.Context) Params
 	Codec() *codec.LegacyAmino
 
+	GetAnyoneCanSpendAddress(ctx sdk.Context) AddressInfo
 	GetRequiredConfirmationHeight(ctx sdk.Context) uint64
 	GetRevoteLockingPeriod(ctx sdk.Context) int64
 	GetSigCheckInterval(ctx sdk.Context) int64

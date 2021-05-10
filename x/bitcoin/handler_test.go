@@ -576,6 +576,9 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 			DeleteDustAmountFunc: func(ctx sdk.Context, encodeAddr string) {
 				delete(dustAmount, encodeAddr)
 			},
+			GetAnyoneCanSpendAddressFunc: func(ctx sdk.Context) types.AddressInfo {
+				return types.NewAnyoneCanSpendAddress(types.DefaultParams().Network)
+			},
 		}
 		nexusKeeper = &mock.NexusMock{
 			GetPendingTransfersForChainFunc: func(sdk.Context, nexus.Chain) []nexus.CrossChainTransfer { return transfers },

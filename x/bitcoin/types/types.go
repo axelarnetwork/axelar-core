@@ -312,7 +312,7 @@ func NewLinkedAddress(masterKey tss.Key, secondaryKey tss.Key, network Network, 
 	}
 }
 
-// NewAnyoneCanSpendAddress creates a p2sh address that anyone can spend
+// NewAnyoneCanSpendAddress creates a p2wsh address that anyone can spend
 func NewAnyoneCanSpendAddress(network Network) AddressInfo {
 	script := createAnyoneCanSpendRedeemScript()
 	addr := createP2WSHAddress(script, network)

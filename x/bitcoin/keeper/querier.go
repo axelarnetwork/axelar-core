@@ -145,7 +145,7 @@ func payForConsolidationTx(ctx sdk.Context, k types.BTCKeeper, rpc types.RPCClie
 
 	network := k.GetNetwork(ctx)
 	consolidationTxHash := consolidationTx.TxHash()
-	anyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network)
+	anyoneCanSpendAddress := k.GetAnyoneCanSpendAddress(ctx)
 	inputs := []types.OutPointToSign{
 		{
 			OutPointInfo: types.NewOutPointInfo(
