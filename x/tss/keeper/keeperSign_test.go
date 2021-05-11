@@ -14,7 +14,7 @@ import (
 )
 
 func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
-	s := setup(t)
+	s := setup()
 	sigID := "sigID"
 	keyID := "keyID"
 	msg := []byte("message")
@@ -48,7 +48,7 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 }
 
 func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
-	s := setup(t)
+	s := setup()
 	sigID := "sigID"
 	keyID := "keyID1"
 	msgToSign := []byte("message")
