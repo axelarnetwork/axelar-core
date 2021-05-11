@@ -8,5 +8,6 @@ lint:
     - tendermint
     - confio
     - cosmos_proto
+    - google
     - gogoproto
     - tofnd
