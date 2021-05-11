@@ -78,6 +78,7 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	axelarParams "github.com/axelarnetwork/axelar-core/app/params"
+	btcRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc"
 	"github.com/axelarnetwork/axelar-core/x/ante"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
@@ -345,6 +346,11 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		rpcEth = ethTypes.NewDummyRPC()
 	}
 
+	rpcBtc, err := btcRPC.NewRPCClient(axelarCfg.BtcConfig, logger)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+
 	/****  Module Options ****/
 
 	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment
@@ -374,7 +380,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		broadcast.NewAppModule(broadcastK),
 		nexus.NewAppModule(nexusK),
 		ethereum.NewAppModule(ethK, votingK, tssK, nexusK, snapK, rpcEth),
-		bitcoin.NewAppModule(btcK, votingK, tssK, nexusK, snapK),
+		bitcoin.NewAppModule(btcK, votingK, tssK, nexusK, snapK, rpcBtc),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that

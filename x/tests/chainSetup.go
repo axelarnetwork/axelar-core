@@ -41,6 +41,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/bitcoin"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	btcMock "github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/broadcast"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	ethKeeper "github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
@@ -70,6 +71,7 @@ func randomEthSender() common.Address {
 
 type testMocks struct {
 	ETH     *ethMock.RPCClientMock
+	BTC     *btcMock.RPCClientMock
 	Keygen  *tssMock.TofndKeyGenClientMock
 	Sign    *tssMock.TofndSignClientMock
 	Staker  *snapshotTypesMock.StakingKeeperMock
@@ -136,7 +138,7 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 		AddRoute(sdk.NewRoute(tssTypes.RouterKey, tssHandler))
 
 	queriers := map[string]sdk.Querier{
-		btcTypes.QuerierRoute: btcKeeper.NewQuerier(bitcoinKeeper, signer, nexusK),
+		btcTypes.QuerierRoute: btcKeeper.NewQuerier(mocks.BTC, bitcoinKeeper, signer, nexusK),
 		ethTypes.QuerierRoute: ethKeeper.NewQuerier(mocks.ETH, ethereumKeeper, signer),
 	}
 
@@ -212,7 +214,10 @@ func createMocks(validators []stakingtypes.Validator) testMocks {
 		SendTransactionFunc: func(context.Context, *gethTypes.Transaction) error { return nil },
 	}
 
+	btcClient := &btcMock.RPCClientMock{}
+
 	return testMocks{
+		BTC:     btcClient,
 		ETH:     ethClient,
 		Staker:  stakingKeeper,
 		Slasher: slasher,

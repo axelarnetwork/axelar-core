@@ -80,7 +80,7 @@ func QueryGetConsolidationTx(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.GetTx), nil)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.GetConsolidationTx), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, types.ErrFGetTransfers)
 			return

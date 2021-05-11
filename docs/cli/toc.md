@@ -33,6 +33,7 @@
     - [bitcoin](axelard_query_bitcoin.md)	 - bitcoin query subcommands
       - [deposit-addr \[chain\] \[recipient address\]](axelard_query_bitcoin_deposit-addr.md)	 - Returns a bitcoin deposit address for a recipient address on another blockchain
       - [master-addr](axelard_query_bitcoin_master-addr.md)	 - Returns the bitcoin address of the current master key
+      - [rawPayForConsolidationTx](axelard_query_bitcoin_rawPayForConsolidationTx.md)	 - Returns the encoded hex string of a fully signed transaction that pays for the consolidation transaction
       - [rawTx](axelard_query_bitcoin_rawTx.md)	 - Returns the encoded hex string of a fully signed transfer and consolidation transaction
     - [block \[height\]](axelard_query_block.md)	 - Get verified data for a the block at given height
     - [distribution](axelard_query_distribution.md)	 - Querying commands for the distribution module
