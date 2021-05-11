@@ -174,7 +174,8 @@ func HandleMsgVoteConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, v types.Vo
 		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", msg.Poll.String(), result)
 	}
 
-	k.Logger(ctx).Info(fmt.Sprintf("bitcoin outpoint confirmation result is %s", result))
+	logger := ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
+	logger.Info(fmt.Sprintf("bitcoin outpoint confirmation result is %s", result))
 	v.DeletePoll(ctx, msg.Poll)
 	k.DeletePendingOutPointInfo(ctx, msg.Poll)
 
