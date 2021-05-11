@@ -78,6 +78,7 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	axelarParams "github.com/axelarnetwork/axelar-core/app/params"
+	btcRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc"
 	"github.com/axelarnetwork/axelar-core/x/ante"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
@@ -310,10 +311,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		app.legacyAmino, keys[ethTypes.StoreKey], app.getSubspace(ethTypes.ModuleName),
 	)
 
-	broadcastK, err := broadcastKeeper.NewKeeper(app.legacyAmino, keys[broadcastTypes.StoreKey], stakingK)
-	if err != nil {
-		tmos.Exit(err.Error())
-	}
+	broadcastK := broadcastKeeper.NewKeeper(app.legacyAmino, keys[broadcastTypes.StoreKey], stakingK)
 
 	slashingKCast := &snapshotExportedMock.SlasherMock{
 		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapshotExported.ValidatorInfo, bool) {
@@ -337,6 +335,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	)
 
 	var rpcEth ethTypes.RPCClient
+	var err error
 	if axelarCfg.WithEthBridge {
 		rpcEth, err = ethTypes.NewRPCClient(axelarCfg.EthRPCAddr)
 		if err != nil {
@@ -345,6 +344,11 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		logger.With("module", fmt.Sprintf("x/%s", ethTypes.ModuleName)).Debug("Successfully connected to ethereum node")
 	} else {
 		rpcEth = ethTypes.NewDummyRPC()
+	}
+
+	rpcBtc, err := btcRPC.NewRPCClient(axelarCfg.BtcConfig, logger)
+	if err != nil {
+		tmos.Exit(err.Error())
 	}
 
 	/****  Module Options ****/
@@ -376,7 +380,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		broadcast.NewAppModule(broadcastK),
 		nexus.NewAppModule(nexusK),
 		ethereum.NewAppModule(ethK, votingK, tssK, nexusK, snapK, rpcEth),
-		bitcoin.NewAppModule(btcK, votingK, tssK, nexusK, snapK),
+		bitcoin.NewAppModule(btcK, votingK, tssK, nexusK, snapK, rpcBtc),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that

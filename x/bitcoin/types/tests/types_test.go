@@ -6,6 +6,7 @@ import (
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcd/mempool"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
@@ -212,12 +213,6 @@ func TestNewAnyoneCanSpendAddress(t *testing.T) {
 		inputAmount := btcutil.Amount(100000000) // 1btc
 		outputAmount := btcutil.Amount(10000000) // 0.1btc
 		address := types.NewAnyoneCanSpendAddress(types.Testnet3)
-		redeemScript, err := txscript.NewScriptBuilder().
-			AddOp(txscript.OP_TRUE).
-			Script()
-		if err != nil {
-			panic(err)
-		}
 		outPoint, err := types.OutPointFromStr(fmt.Sprintf("%s:0", rand.HexStr(64)))
 		if err != nil {
 			panic(err)
@@ -225,8 +220,8 @@ func TestNewAnyoneCanSpendAddress(t *testing.T) {
 		inputs := []types.OutPointToSign{
 			{
 				AddressInfo: types.AddressInfo{
-					Address:      address,
-					RedeemScript: redeemScript,
+					Address:      address.Address,
+					RedeemScript: address.RedeemScript,
 				},
 				OutPointInfo: types.NewOutPointInfo(
 					outPoint,
@@ -238,16 +233,16 @@ func TestNewAnyoneCanSpendAddress(t *testing.T) {
 		outputs := []types.Output{
 			{
 				Amount:    outputAmount,
-				Recipient: address,
+				Recipient: address.Address,
 			},
 		}
 
 		tx, err := types.CreateTx(inputs, outputs)
 		assert.NoError(t, err)
 
-		tx.TxIn[0].Witness = wire.TxWitness{redeemScript}
+		tx.TxIn[0].Witness = wire.TxWitness{address.RedeemScript}
 
-		payScript, err := txscript.PayToAddrScript(address)
+		payScript, err := txscript.PayToAddrScript(address.Address)
 		assert.NoError(t, err)
 
 		scriptEngine, err := txscript.NewEngine(payScript, tx, 0, txscript.StandardVerifyFlags, nil, nil, int64(inputAmount))
@@ -323,7 +318,7 @@ func TestEstimateTxSize(t *testing.T) {
 		signedTx, err := types.AssembleBtcTx(tx, inputs, signatures)
 		assert.NoError(t, err)
 
-		expected := int64(signedTx.SerializeSize())
+		expected := mempool.GetTxVirtualSize(btcutil.NewTx(signedTx))
 		actual := types.EstimateTxSize(*tx, inputs)
 
 		// expected - 1 * inputCount <= actual <= expected because a bitcoin signature can either contain 71 or 72 bytes

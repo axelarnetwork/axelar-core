@@ -1,6 +1,8 @@
 package exported
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
+import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+)
 
 //go:generate moq -out ./mock/types.go -pkg mock . Broadcaster
 

@@ -8,6 +8,7 @@ import (
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
+	_ "google.golang.org/genproto/googleapis/api/annotations"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -24,23 +25,23 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-type MsgRegisterProxy struct {
+type RegisterProxyRequest struct {
 	PrincipalAddr github_com_cosmos_cosmos_sdk_types.ValAddress `protobuf:"bytes,1,opt,name=principal_addr,json=principalAddr,proto3,casttype=github.com/cosmos/cosmos-sdk/types.ValAddress" json:"principal_addr,omitempty"`
 	ProxyAddr     github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,2,opt,name=proxy_addr,json=proxyAddr,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"proxy_addr,omitempty"`
 }
 
-func (m *MsgRegisterProxy) Reset()         { *m = MsgRegisterProxy{} }
-func (m *MsgRegisterProxy) String() string { return proto.CompactTextString(m) }
-func (*MsgRegisterProxy) ProtoMessage()    {}
-func (*MsgRegisterProxy) Descriptor() ([]byte, []int) {
+func (m *RegisterProxyRequest) Reset()         { *m = RegisterProxyRequest{} }
+func (m *RegisterProxyRequest) String() string { return proto.CompactTextString(m) }
+func (*RegisterProxyRequest) ProtoMessage()    {}
+func (*RegisterProxyRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_34168aff4e361a5a, []int{0}
 }
-func (m *MsgRegisterProxy) XXX_Unmarshal(b []byte) error {
+func (m *RegisterProxyRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgRegisterProxy) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *RegisterProxyRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgRegisterProxy.Marshal(b, m, deterministic)
+		return xxx_messageInfo_RegisterProxyRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -50,46 +51,85 @@ func (m *MsgRegisterProxy) XXX_Marshal(b []byte, deterministic bool) ([]byte, er
 		return b[:n], nil
 	}
 }
-func (m *MsgRegisterProxy) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgRegisterProxy.Merge(m, src)
+func (m *RegisterProxyRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RegisterProxyRequest.Merge(m, src)
 }
-func (m *MsgRegisterProxy) XXX_Size() int {
+func (m *RegisterProxyRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgRegisterProxy) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgRegisterProxy.DiscardUnknown(m)
+func (m *RegisterProxyRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_RegisterProxyRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgRegisterProxy proto.InternalMessageInfo
+var xxx_messageInfo_RegisterProxyRequest proto.InternalMessageInfo
+
+type RegisterProxyResponse struct {
+}
+
+func (m *RegisterProxyResponse) Reset()         { *m = RegisterProxyResponse{} }
+func (m *RegisterProxyResponse) String() string { return proto.CompactTextString(m) }
+func (*RegisterProxyResponse) ProtoMessage()    {}
+func (*RegisterProxyResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_34168aff4e361a5a, []int{1}
+}
+func (m *RegisterProxyResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *RegisterProxyResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_RegisterProxyResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *RegisterProxyResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RegisterProxyResponse.Merge(m, src)
+}
+func (m *RegisterProxyResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *RegisterProxyResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_RegisterProxyResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RegisterProxyResponse proto.InternalMessageInfo
 
 func init() {
-	proto.RegisterType((*MsgRegisterProxy)(nil), "broadcast.v1beta1.MsgRegisterProxy")
+	proto.RegisterType((*RegisterProxyRequest)(nil), "broadcast.v1beta1.RegisterProxyRequest")
+	proto.RegisterType((*RegisterProxyResponse)(nil), "broadcast.v1beta1.RegisterProxyResponse")
 }
 
 func init() { proto.RegisterFile("broadcast/v1beta1/tx.proto", fileDescriptor_34168aff4e361a5a) }
 
 var fileDescriptor_34168aff4e361a5a = []byte{
-	// 260 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0x4a, 0x2a, 0xca, 0x4f,
-	0x4c, 0x49, 0x4e, 0x2c, 0x2e, 0xd1, 0x2f, 0x33, 0x4c, 0x4a, 0x2d, 0x49, 0x34, 0xd4, 0x2f, 0xa9,
-	0xd0, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x12, 0x84, 0xcb, 0xe9, 0x41, 0xe5, 0xa4, 0x44, 0xd2,
-	0xf3, 0xd3, 0xf3, 0xc1, 0xb2, 0xfa, 0x20, 0x16, 0x44, 0xa1, 0xd2, 0x3e, 0x46, 0x2e, 0x01, 0xdf,
-	0xe2, 0xf4, 0xa0, 0xd4, 0xf4, 0xcc, 0xe2, 0x92, 0xd4, 0xa2, 0x80, 0xa2, 0xfc, 0x8a, 0x4a, 0xa1,
-	0x08, 0x2e, 0xbe, 0x82, 0xa2, 0xcc, 0xbc, 0xe4, 0xcc, 0x82, 0xc4, 0x9c, 0xf8, 0xc4, 0x94, 0x94,
-	0x22, 0x09, 0x46, 0x05, 0x46, 0x0d, 0x1e, 0x27, 0xc3, 0x5f, 0xf7, 0xe4, 0x75, 0xd3, 0x33, 0x4b,
-	0x32, 0x4a, 0x93, 0xf4, 0x92, 0xf3, 0x73, 0xf5, 0x93, 0xf3, 0x8b, 0x73, 0xf3, 0x8b, 0xa1, 0x94,
-	0x6e, 0x71, 0x4a, 0xb6, 0x7e, 0x49, 0x65, 0x41, 0x6a, 0xb1, 0x5e, 0x58, 0x62, 0x8e, 0x63, 0x4a,
-	0x4a, 0x51, 0x6a, 0x71, 0x71, 0x10, 0x2f, 0xdc, 0x20, 0x90, 0x88, 0x50, 0x00, 0x17, 0x57, 0x01,
-	0xc8, 0x0a, 0x88, 0xa9, 0x4c, 0x24, 0x99, 0xea, 0x98, 0x9c, 0x0c, 0x33, 0x95, 0x13, 0x6c, 0x08,
-	0x88, 0xe7, 0x14, 0x72, 0xe2, 0xa1, 0x1c, 0xc3, 0x89, 0x47, 0x72, 0x8c, 0x17, 0x1e, 0xc9, 0x31,
-	0x3e, 0x78, 0x24, 0xc7, 0x38, 0xe1, 0xb1, 0x1c, 0xc3, 0x85, 0xc7, 0x72, 0x0c, 0x37, 0x1e, 0xcb,
-	0x31, 0x44, 0x99, 0x21, 0x99, 0x9b, 0x58, 0x91, 0x9a, 0x93, 0x58, 0x94, 0x97, 0x5a, 0x52, 0x9e,
-	0x5f, 0x94, 0x0d, 0xe5, 0xe9, 0x26, 0xe7, 0x17, 0xa5, 0xea, 0x57, 0xe8, 0x23, 0x82, 0x12, 0x6c,
-	0x57, 0x12, 0x1b, 0x38, 0x74, 0x8c, 0x01, 0x01, 0x00, 0x00, 0xff, 0xff, 0x9c, 0xb3, 0x30, 0x1a,
-	0x64, 0x01, 0x00, 0x00,
+	// 293 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x91, 0x3f, 0x4b, 0x03, 0x31,
+	0x18, 0xc6, 0xef, 0x1c, 0x04, 0x83, 0x0a, 0x96, 0x8a, 0x52, 0x24, 0x4a, 0x27, 0x97, 0x5e, 0x28,
+	0x82, 0x7b, 0xfb, 0x09, 0x4a, 0x11, 0x11, 0x17, 0xc9, 0x25, 0x2f, 0x31, 0xf4, 0x9a, 0x37, 0xe6,
+	0x4d, 0xf5, 0xfa, 0x2d, 0xfc, 0x4c, 0x4e, 0x1d, 0x3b, 0x3a, 0x89, 0xb6, 0xdf, 0xc2, 0x49, 0xee,
+	0x5a, 0xab, 0xb8, 0x39, 0x25, 0x4f, 0x7e, 0xe1, 0xf7, 0xe4, 0x0f, 0x6b, 0xe5, 0x01, 0xa5, 0x56,
+	0x92, 0xa2, 0x78, 0xec, 0xe6, 0x10, 0x65, 0x57, 0xc4, 0x32, 0xf3, 0x01, 0x23, 0x36, 0x0e, 0x36,
+	0x2c, 0x5b, 0xb3, 0x56, 0xd3, 0xa0, 0xc1, 0x9a, 0x8a, 0x6a, 0xb6, 0xda, 0xd8, 0x3a, 0x31, 0x88,
+	0xa6, 0x00, 0x21, 0xbd, 0x15, 0xd2, 0x39, 0x8c, 0x32, 0x5a, 0x74, 0xb4, 0xa2, 0xed, 0x97, 0x94,
+	0x35, 0x87, 0x60, 0x2c, 0x45, 0x08, 0x83, 0x80, 0xe5, 0x74, 0x08, 0x0f, 0x13, 0xa0, 0xd8, 0xb8,
+	0x61, 0xfb, 0x3e, 0x58, 0xa7, 0xac, 0x97, 0xc5, 0x9d, 0xd4, 0x3a, 0x1c, 0xa7, 0x67, 0xe9, 0xf9,
+	0x6e, 0xbf, 0xfb, 0xf9, 0x76, 0xda, 0x31, 0x36, 0xde, 0x4f, 0xf2, 0x4c, 0xe1, 0x58, 0x28, 0xa4,
+	0x31, 0xd2, 0x7a, 0xe8, 0x90, 0x1e, 0x89, 0x38, 0xf5, 0x40, 0xd9, 0xb5, 0x2c, 0x7a, 0x5a, 0x07,
+	0x20, 0x1a, 0xee, 0x6d, 0x44, 0xd5, 0x4a, 0x63, 0xc0, 0x98, 0xaf, 0x9a, 0x56, 0xd6, 0xad, 0x7f,
+	0x59, 0x7b, 0x4a, 0x7d, 0x5b, 0x77, 0x6a, 0x49, 0x95, 0xda, 0x47, 0xec, 0xf0, 0xcf, 0x1d, 0xc8,
+	0xa3, 0x23, 0xe8, 0x5f, 0xcd, 0x3e, 0x78, 0x32, 0x5b, 0xf0, 0x74, 0xbe, 0xe0, 0xe9, 0xfb, 0x82,
+	0xa7, 0xcf, 0x4b, 0x9e, 0xcc, 0x97, 0x3c, 0x79, 0x5d, 0xf2, 0xe4, 0xf6, 0xf2, 0x57, 0xa1, 0x2c,
+	0xa1, 0x90, 0xc1, 0x41, 0x7c, 0xc2, 0x30, 0x5a, 0xa7, 0x8e, 0xc2, 0x00, 0xa2, 0x14, 0x3f, 0xbf,
+	0x50, 0x1f, 0x22, 0xdf, 0xae, 0x9f, 0xee, 0xe2, 0x2b, 0x00, 0x00, 0xff, 0xff, 0xfd, 0x32, 0x31,
+	0x2b, 0x9f, 0x01, 0x00, 0x00,
 }
 
-func (m *MsgRegisterProxy) Marshal() (dAtA []byte, err error) {
+func (m *RegisterProxyRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -99,12 +139,12 @@ func (m *MsgRegisterProxy) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgRegisterProxy) MarshalTo(dAtA []byte) (int, error) {
+func (m *RegisterProxyRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MsgRegisterProxy) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *RegisterProxyRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -126,6 +166,29 @@ func (m *MsgRegisterProxy) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *RegisterProxyResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *RegisterProxyResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *RegisterProxyResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTx(v)
 	base := offset
@@ -137,7 +200,7 @@ func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *MsgRegisterProxy) Size() (n int) {
+func (m *RegisterProxyRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -154,13 +217,22 @@ func (m *MsgRegisterProxy) Size() (n int) {
 	return n
 }
 
+func (m *RegisterProxyResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
 func sovTx(x uint64) (n int) {
 	return (math_bits.Len64(x|1) + 6) / 7
 }
 func sozTx(x uint64) (n int) {
 	return sovTx(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *MsgRegisterProxy) Unmarshal(dAtA []byte) error {
+func (m *RegisterProxyRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -183,10 +255,10 @@ func (m *MsgRegisterProxy) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: MsgRegisterProxy: wiretype end group for non-group")
+			return fmt.Errorf("proto: RegisterProxyRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgRegisterProxy: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: RegisterProxyRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -257,6 +329,56 @@ func (m *MsgRegisterProxy) Unmarshal(dAtA []byte) error {
 				m.ProxyAddr = []byte{}
 			}
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *RegisterProxyResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RegisterProxyResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RegisterProxyResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTx(dAtA[iNdEx:])

@@ -5,7 +5,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/client/tx"
+	legacyTx "github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -49,8 +49,8 @@ func GetCmdRegisterProxy() *cobra.Command {
 				return sdkerrors.Wrap(types.ErrBroadcast, "proxy invalid")
 			}
 
-			msg := types.NewMsgRegisterProxy(sdk.ValAddress(clientCtx.FromAddress), proxyKey.GetAddress())
-			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+			msg := types.NewRegisterProxyRequest(sdk.ValAddress(clientCtx.FromAddress), proxyKey.GetAddress())
+			return legacyTx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
 	flags.AddTxFlagsToCmd(cmd)
@@ -99,7 +99,7 @@ func GetCmdSendStake() *cobra.Command {
 			}
 
 			msg := banktypes.NewMsgMultiSend(inputs, outputs)
-			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+			return legacyTx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
 	flags.AddTxFlagsToCmd(cmd)

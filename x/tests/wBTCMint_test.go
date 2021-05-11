@@ -54,7 +54,7 @@ func Test_wBTC_mint(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
-		res := <-chain.Submit(&broadcastTypes.MsgRegisterProxy{PrincipalAddr: operatorAddress, ProxyAddr: rand.Bytes(sdk.AddrLen)})
+		res := <-chain.Submit(&broadcastTypes.RegisterProxyRequest{PrincipalAddr: operatorAddress, ProxyAddr: nodeData[i].Proxy})
 		assert.NoError(t, res.Error)
 	}
 

@@ -23,7 +23,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
 )
 
-//go:generate ./genDocs.sh ../../docs/cli
+////go:generate ./genDocs.sh ../../docs/cli
 
 // Deprecated
 func main() {

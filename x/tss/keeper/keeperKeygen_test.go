@@ -18,7 +18,7 @@ import (
 
 func TestKeeper_StartKeygen_IdAlreadyInUse_ReturnError(t *testing.T) {
 	for _, keyID := range randDistinctStr.Distinct().Take(100) {
-		s := setup(t)
+		s := setup()
 
 		err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, snap)
 		assert.NoError(t, err)
@@ -30,7 +30,7 @@ func TestKeeper_StartKeygen_IdAlreadyInUse_ReturnError(t *testing.T) {
 
 func TestKeeper_AssignNextMasterKey_StartKeygenAfterLockingPeriod_Unlocked(t *testing.T) {
 	for _, currHeight := range randPosInt.Take(100) {
-		s := setup(t)
+		s := setup()
 		ctx := s.Ctx.WithBlockHeight(currHeight)
 
 		// snapshotHeight + lockingPeriod <= currHeight
@@ -67,7 +67,7 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_NewKeyIsSet(t *testing.T) {
 
 	for i := 0; i < 100; i++ {
 		chain := eth.Ethereum
-		s := setup(t)
+		s := setup()
 		ctx := s.Ctx.WithBlockHeight(currHeight)
 		s.SetLockingPeriod(lockingPeriod)
 		expectedKey := s.SetKey(t, ctx)
@@ -86,7 +86,7 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_AssignNextSecondaryKey_Rotat
 	currHeight := rand2.I64Between(0, 10000000)
 
 	chain := bitcoin.Bitcoin
-	s := setup(t)
+	s := setup()
 	ctx := s.Ctx.WithBlockHeight(currHeight)
 	expectedMasterKey := s.SetKey(t, ctx)
 	expectedSecondaryKey := s.SetKey(t, ctx)
@@ -112,7 +112,7 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_AssignNextSecondaryKey_Rotat
 func TestKeeper_AssignNextMasterKey_RotateMasterKey_MultipleTimes_PreviousKeysStillAvailable(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		chain := eth.Ethereum
-		s := setup(t)
+		s := setup()
 		s.SetLockingPeriod(0)
 		ctx := s.Ctx
 		keys := make([]exported.Key, 10)
