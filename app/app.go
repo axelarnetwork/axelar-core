@@ -311,10 +311,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		app.legacyAmino, keys[ethTypes.StoreKey], app.getSubspace(ethTypes.ModuleName),
 	)
 
-	broadcastK, err := broadcastKeeper.NewKeeper(app.legacyAmino, keys[broadcastTypes.StoreKey], stakingK)
-	if err != nil {
-		tmos.Exit(err.Error())
-	}
+	broadcastK := broadcastKeeper.NewKeeper(app.legacyAmino, keys[broadcastTypes.StoreKey], stakingK)
 
 	slashingKCast := &snapshotExportedMock.SlasherMock{
 		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapshotExported.ValidatorInfo, bool) {
@@ -338,6 +335,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	)
 
 	var rpcEth ethTypes.RPCClient
+	var err error
 	if axelarCfg.WithEthBridge {
 		rpcEth, err = ethTypes.NewRPCClient(axelarCfg.EthRPCAddr)
 		if err != nil {

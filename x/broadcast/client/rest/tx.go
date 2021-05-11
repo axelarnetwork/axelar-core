@@ -49,7 +49,7 @@ func registerProxyHandlerFn(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewMsgRegisterProxy(sdk.ValAddress(fromAddr), voter)
+		msg := types.NewRegisterProxyRequest(sdk.ValAddress(fromAddr), voter)
 		tx.WriteGeneratedTxResponse(cliCtx, w, baseReq, msg)
 	}
 }
