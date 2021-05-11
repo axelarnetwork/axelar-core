@@ -7,12 +7,10 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/libs/rand"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	appParams "github.com/axelarnetwork/axelar-core/app/params"
@@ -48,29 +46,26 @@ var (
 )
 
 type testSetup struct {
-	Keeper      Keeper
-	Broadcaster fake.Broadcaster
-	Voter       types.Voter
-	Ctx         sdk.Context
-	PrivateKey  chan *ecdsa.PrivateKey
-	Signature   chan []byte
+	Keeper     Keeper
+	Voter      types.Voter
+	Ctx        sdk.Context
+	PrivateKey chan *ecdsa.PrivateKey
+	Signature  chan []byte
 }
 
-func setup(t *testing.T) *testSetup {
+func setup() *testSetup {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	encCfg := appParams.MakeEncodingConfig()
-	broadcaster := prepareBroadcaster(t, ctx, encCfg.Amino, validators)
 	voter := &tssMock.VoterMock{
 		InitPollFunc: func(sdk.Context, exported.PollMeta, int64) error { return nil },
 	}
 
 	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), "tss")
 	setup := &testSetup{
-		Broadcaster: broadcaster,
-		Voter:       voter,
-		Ctx:         ctx,
-		PrivateKey:  make(chan *ecdsa.PrivateKey, 1),
-		Signature:   make(chan []byte, 1),
+		Voter:      voter,
+		Ctx:        ctx,
+		PrivateKey: make(chan *ecdsa.PrivateKey, 1),
+		Signature:  make(chan []byte, 1),
 	}
 
 	slasher := &snapMock.SlasherMock{
@@ -118,18 +113,6 @@ func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context) tss.Key {
 	}
 }
 
-func prepareBroadcaster(t *testing.T, ctx sdk.Context, cdc *codec.LegacyAmino, validators []snapshot.Validator) fake.Broadcaster {
-	broadcaster := fake.NewBroadcaster(cdc, validators[0].GetOperator(), func(msg sdk.Msg) (result <-chan *fake.Result) {
-		return make(chan *fake.Result)
-	})
-
-	for _, v := range validators {
-		assert.NoError(t, broadcaster.RegisterProxy(ctx, v.GetOperator(), rand.Bytes(sdk.AddrLen)))
-	}
-
-	return broadcaster
-}
-
 func newValidator(address sdk.ValAddress, power int64) snapshot.Validator {
 	return snapshot.NewValidator(&snapMock.SDKValidatorMock{
 		GetOperatorFunc:       func() sdk.ValAddress { return address },
@@ -139,7 +122,7 @@ func newValidator(address sdk.ValAddress, power int64) snapshot.Validator {
 }
 
 func TestComputeCorruptionThreshold(t *testing.T) {
-	s := setup(t)
+	s := setup()
 	defaultParams := types.DefaultParams()
 
 	s.Keeper.SetParams(s.Ctx, defaultParams)

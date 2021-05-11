@@ -118,7 +118,7 @@ func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta expor
 
 	valAddress := k.broadcaster.GetPrincipal(ctx, sender)
 	if valAddress == nil {
-		err := fmt.Errorf("account %v is not registered as a validator proxy", sender)
+		err := fmt.Errorf("account %v is not registered as a validator proxy", sender.String())
 		return err
 	}
 

@@ -5,26 +5,26 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// NewMsgRegisterProxy - MsgRegisterProxy constructor
-func NewMsgRegisterProxy(principal sdk.ValAddress, proxy sdk.AccAddress) *MsgRegisterProxy {
-	return &MsgRegisterProxy{
+// NewRegisterProxyRequest - RegisterProxyRequest constructor
+func NewRegisterProxyRequest(principal sdk.ValAddress, proxy sdk.AccAddress) *RegisterProxyRequest {
+	return &RegisterProxyRequest{
 		PrincipalAddr: principal,
 		ProxyAddr:     proxy,
 	}
 }
 
 // Route returns the route for this message
-func (m MsgRegisterProxy) Route() string {
+func (m RegisterProxyRequest) Route() string {
 	return RouterKey
 }
 
 // Type returns the type of the message
-func (m MsgRegisterProxy) Type() string {
+func (m RegisterProxyRequest) Type() string {
 	return "RegisterProxy"
 }
 
 // ValidateBasic executes a stateless message validation
-func (m MsgRegisterProxy) ValidateBasic() error {
+func (m RegisterProxyRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.PrincipalAddr); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "principal").Error())
 	}
@@ -36,11 +36,11 @@ func (m MsgRegisterProxy) ValidateBasic() error {
 }
 
 // GetSignBytes returns the message bytes that need to be signed
-func (m MsgRegisterProxy) GetSignBytes() []byte {
+func (m RegisterProxyRequest) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
 // GetSigners returns the set of signers for this message
-func (m MsgRegisterProxy) GetSigners() []sdk.AccAddress {
+func (m RegisterProxyRequest) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{sdk.AccAddress(m.PrincipalAddr)}
 }

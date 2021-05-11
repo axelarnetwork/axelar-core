@@ -29,12 +29,12 @@ func NewKeeper(
 	cdc *codec.LegacyAmino,
 	storeKey sdk.StoreKey,
 	stakingKeeper types.Staker,
-) (Keeper, error) {
+) Keeper {
 	return Keeper{
 		staker:   stakingKeeper,
 		storeKey: storeKey,
 		cdc:      cdc,
-	}, nil
+	}
 }
 
 // Logger returns a module-specific logger.

@@ -30,6 +30,7 @@ import (
 	eth2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/eth"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
+	broadcastKeeper "github.com/axelarnetwork/axelar-core/x/broadcast/keeper"
 	"github.com/axelarnetwork/axelar-core/x/ethereum"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
@@ -78,15 +79,17 @@ type testMocks struct {
 }
 
 type nodeData struct {
-	Node        *fake.Node
-	Validator   stakingtypes.Validator
-	Mocks       testMocks
-	Broadcaster fake.Broadcaster
+	Node      *fake.Node
+	Validator stakingtypes.Validator
+	Proxy     sdk.AccAddress
+	Mocks     testMocks
 }
 
-func newNode(moniker string, broadcaster fake.Broadcaster, mocks testMocks) *fake.Node {
+func newNode(moniker string, mocks testMocks) *fake.Node {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger().With("node", moniker))
 	encCfg := testutils.MakeEncodingConfig()
+
+	broadcaster := broadcastKeeper.NewKeeper(encCfg.Amino, sdk.NewKVStoreKey(broadcastTypes.StoreKey), mocks.Staker)
 
 	snapSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
 	snapKeeper := snapshotKeeper.NewKeeper(encCfg.Amino, sdk.NewKVStoreKey(snapshotTypes.StoreKey), snapSubspace, broadcaster, mocks.Staker, mocks.Slasher, mocks.Tss)
@@ -179,6 +182,15 @@ func createMocks(validators []stakingtypes.Validator) testMocks {
 			}
 			return totalPower
 		},
+		ValidatorFunc: func(_ sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI {
+			addrStr := addr.String()
+			for _, val := range validators {
+				if val.OperatorAddress == addrStr {
+					return val
+				}
+			}
+			return nil
+		},
 	}
 
 	tssK := &snapshotExportedMock.TssMock{
@@ -210,8 +222,6 @@ func createMocks(validators []stakingtypes.Validator) testMocks {
 
 // initChain Creates a chain with given number of validators
 func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
-	encCfg := testutils.MakeEncodingConfig()
-
 	protoPK, err := cryptocodec.FromTmPubKeyInterface(ed25519.GenPrivKey().PubKey())
 	if err != nil {
 		panic(err)
@@ -244,20 +254,13 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 		// create mocks
 		mocks := createMocks(validators)
 
-		// assign nodes
-		oppAddr, err := sdk.ValAddressFromBech32(validator.OperatorAddress)
-		if err != nil {
-			panic(err)
-		}
-		broadcaster := fake.NewBroadcaster(encCfg.Amino, oppAddr, chain.Submit)
-
-		node := newNode(test+strconv.Itoa(i), broadcaster, mocks)
+		node := newNode(test+strconv.Itoa(i), mocks)
 		chain.AddNodes(node)
-		n := nodeData{Node: node, Validator: validator, Mocks: mocks, Broadcaster: broadcaster}
+		n := nodeData{Node: node, Validator: validator, Mocks: mocks, Proxy: rand.Bytes(sdk.AddrLen)}
 
-		registerTSSEventListeners(n, t)
-		registerBTCEventListener(n)
-		registerETHEventListener(n)
+		registerTSSEventListeners(n, t, chain.Submit)
+		registerBTCEventListener(n, chain.Submit)
+		registerETHEventListener(n, chain.Submit)
 		data = append(data, n)
 	}
 
@@ -267,7 +270,7 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 	return chain, data
 }
 
-func registerBTCEventListener(n nodeData) {
+func registerBTCEventListener(n nodeData, submitMsg func(msg sdk.Msg) (result <-chan *fake.Result)) {
 	encCfg := testutils.MakeEncodingConfig()
 
 	// register listener for confirmation
@@ -286,22 +289,18 @@ func registerBTCEventListener(n nodeData) {
 
 		var out btcTypes.OutPointInfo
 		encCfg.Amino.MustUnmarshalJSON([]byte(m[btcTypes.AttributeKeyOutPointInfo]), &out)
-		err := n.Broadcaster.Broadcast(n.Node.Ctx,
-			&btcTypes.MsgVoteConfirmOutpoint{
-				Sender:    n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal),
-				Poll:      poll,
-				Confirmed: true,
-				OutPoint:  out.OutPoint,
-			})
-		if err != nil {
-			panic(err)
-		}
+		_ = submitMsg(&btcTypes.MsgVoteConfirmOutpoint{
+			Sender:    n.Proxy,
+			Poll:      poll,
+			Confirmed: true,
+			OutPoint:  out.OutPoint,
+		})
 
 		return true
 	})
 }
 
-func registerETHEventListener(n nodeData) {
+func registerETHEventListener(n nodeData, submitMsg func(msg sdk.Msg) (result <-chan *fake.Result)) {
 	encCfg := testutils.MakeEncodingConfig()
 	// register listener for deposit confirmation
 	n.Node.RegisterEventListener(func(event abci.Event) bool {
@@ -317,17 +316,13 @@ func registerETHEventListener(n nodeData) {
 		var poll voting.PollMeta
 		encCfg.Amino.MustUnmarshalJSON([]byte(m[ethTypes.AttributeKeyPoll]), &poll)
 
-		err := n.Broadcaster.Broadcast(n.Node.Ctx,
-			&ethTypes.MsgVoteConfirmDeposit{
-				Sender:    n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal),
-				Poll:      poll,
-				Confirmed: true,
-				TxID:      m[ethTypes.AttributeKeyTxID],
-				BurnAddr:  m[ethTypes.AttributeKeyBurnAddress],
-			})
-		if err != nil {
-			panic(err)
-		}
+		_ = submitMsg(&ethTypes.MsgVoteConfirmDeposit{
+			Sender:    n.Proxy,
+			Poll:      poll,
+			Confirmed: true,
+			TxID:      m[ethTypes.AttributeKeyTxID],
+			BurnAddr:  m[ethTypes.AttributeKeyBurnAddress],
+		})
 
 		return true
 	})
@@ -346,17 +341,14 @@ func registerETHEventListener(n nodeData) {
 		var poll voting.PollMeta
 		encCfg.Amino.MustUnmarshalJSON([]byte(m[ethTypes.AttributeKeyPoll]), &poll)
 
-		err := n.Broadcaster.Broadcast(n.Node.Ctx,
+		_ = submitMsg(
 			&ethTypes.MsgVoteConfirmToken{
-				Sender:    n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal),
+				Sender:    n.Proxy,
 				Poll:      poll,
 				Confirmed: true,
 				TxID:      m[ethTypes.AttributeKeyTxID],
 				Symbol:    m[ethTypes.AttributeKeySymbol],
 			})
-		if err != nil {
-			panic(err)
-		}
 
 		return true
 	})
@@ -376,7 +368,7 @@ func randomOutpointInfo(recipient string) btcTypes.OutPointInfo {
 	}
 }
 
-func registerTSSEventListeners(n nodeData, t *fake.Tofnd) {
+func registerTSSEventListeners(n nodeData, t *fake.Tofnd, submitMsg func(msg sdk.Msg) (result <-chan *fake.Result)) {
 	// register listener for keygen start
 	n.Node.RegisterEventListener(func(event abci.Event) bool {
 		if event.Type != tssTypes.EventTypeKeygen {
@@ -392,14 +384,10 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd) {
 		}
 
 		pk := t.KeyGen(m[tssTypes.AttributeKeyKeyID]) // simulate correct keygen + vote
-		err := n.Broadcaster.Broadcast(n.Node.Ctx,
-			&tssTypes.MsgVotePubKey{
-				Sender:      n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal),
-				PubKeyBytes: pk,
-				PollMeta:    voting.NewPollMeta(tssTypes.ModuleName, m[tssTypes.AttributeKeyKeyID])})
-		if err != nil {
-			panic(err)
-		}
+		_ = submitMsg(&tssTypes.MsgVotePubKey{
+			Sender:      n.Proxy,
+			PubKeyBytes: pk,
+			PollMeta:    voting.NewPollMeta(tssTypes.ModuleName, m[tssTypes.AttributeKeyKeyID])})
 
 		return true
 	})
@@ -420,18 +408,13 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd) {
 
 		sig := t.Sign(m[tssTypes.AttributeKeySigID], m[tssTypes.AttributeKeyKeyID], []byte(m[tssTypes.AttributeKeyPayload]))
 
-		err := n.Broadcaster.Broadcast(n.Node.Ctx,
-			&tssTypes.MsgVoteSig{
-				Sender:   n.Broadcaster.GetProxy(n.Node.Ctx, n.Broadcaster.LocalPrincipal),
-				SigBytes: sig,
-				PollMeta: voting.NewPollMeta(
-					tssTypes.ModuleName,
-					m[tssTypes.AttributeKeySigID],
-				)})
-		if err != nil {
-			panic(err)
-		}
-
+		_ = submitMsg(&tssTypes.MsgVoteSig{
+			Sender:   n.Proxy,
+			SigBytes: sig,
+			PollMeta: voting.NewPollMeta(
+				tssTypes.ModuleName,
+				m[tssTypes.AttributeKeySigID],
+			)})
 		return true
 	})
 }

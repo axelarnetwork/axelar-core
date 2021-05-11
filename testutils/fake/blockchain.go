@@ -325,6 +325,9 @@ func (n *Node) start() {
 
 				events := msgEvents.ToABCIEvents()
 				for _, event := range events {
+					if len(n.events) >= cap(n.events) {
+						panic(fmt.Sprintf("node %s event queue ran out of space", n.Moniker))
+					}
 					n.events <- event
 				}
 

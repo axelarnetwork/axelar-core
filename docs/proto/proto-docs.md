@@ -30,7 +30,11 @@
     - [GenesisState](#broadcast.v1beta1.GenesisState)
   
 - [broadcast/v1beta1/tx.proto](#broadcast/v1beta1/tx.proto)
-    - [MsgRegisterProxy](#broadcast.v1beta1.MsgRegisterProxy)
+    - [RegisterProxyRequest](#broadcast.v1beta1.RegisterProxyRequest)
+    - [RegisterProxyResponse](#broadcast.v1beta1.RegisterProxyResponse)
+  
+- [broadcast/v1beta1/service.proto](#broadcast/v1beta1/service.proto)
+    - [MsgService](#broadcast.v1beta1.MsgService)
   
 - [ethereum/v1beta1/params.proto](#ethereum/v1beta1/params.proto)
     - [Params](#ethereum.v1beta1.Params)
@@ -410,9 +414,9 @@ MsgVoteConfirmOutpoint represents a message to that votes on an outpoint
 
 
 
-<a name="broadcast.v1beta1.MsgRegisterProxy"></a>
+<a name="broadcast.v1beta1.RegisterProxyRequest"></a>
 
-### MsgRegisterProxy
+### RegisterProxyRequest
 
 
 
@@ -425,11 +429,47 @@ MsgVoteConfirmOutpoint represents a message to that votes on an outpoint
 
 
 
+
+<a name="broadcast.v1beta1.RegisterProxyResponse"></a>
+
+### RegisterProxyResponse
+
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
 
  <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="broadcast/v1beta1/service.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## broadcast/v1beta1/service.proto
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="broadcast.v1beta1.MsgService"></a>
+
+### MsgService
+Msg defines the broadcast Msg service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `RegisterProxy` | [RegisterProxyRequest](#broadcast.v1beta1.RegisterProxyRequest) | [RegisterProxyResponse](#broadcast.v1beta1.RegisterProxyResponse) | RegisterProxy defines a method for registering a proxy account that can act in a validator account's stead. | POST|/axelar/broadcast/registerProxy/{proxy_addr}|
 
  <!-- end services -->
 
