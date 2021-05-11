@@ -23,9 +23,10 @@ const (
 	addrPrefix              = "addr_"
 	dustAmtPrefix           = "dust_"
 
-	unsignedTxKey    = "unsignedTx"
-	signedTxKey      = "signedTx"
-	masterKeyVoutKey = "master_key_vout"
+	anyoneCanSpendAddressKey = "anyone_can_spend_address"
+	unsignedTxKey            = "unsignedTx"
+	signedTxKey              = "signedTx"
+	masterKeyVoutKey         = "master_key_vout"
 )
 
 var _ types.BTCKeeper = Keeper{}
@@ -45,6 +46,7 @@ func NewKeeper(cdc *codec.LegacyAmino, storeKey sdk.StoreKey, paramSpace params.
 // SetParams sets the bitcoin module's parameters
 func (k Keeper) SetParams(ctx sdk.Context, p types.Params) {
 	k.params.SetParamSet(ctx, &p)
+	k.setAddress(ctx, anyoneCanSpendAddressKey, types.NewAnyoneCanSpendAddress(p.Network))
 }
 
 // GetParams gets the bitcoin module's parameters
@@ -57,6 +59,16 @@ func (k Keeper) GetParams(ctx sdk.Context) types.Params {
 // Logger returns a module-specific logger.
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
+}
+
+// GetAnyoneCanSpendAddress retrieves the anyone-can-spend address
+func (k Keeper) GetAnyoneCanSpendAddress(ctx sdk.Context) types.AddressInfo {
+	address, found := k.getAddress(ctx, anyoneCanSpendAddressKey)
+	if !found {
+		panic("bitcoin's anyone-can-pay-address isn't set")
+	}
+
+	return address
 }
 
 // GetRequiredConfirmationHeight returns the minimum number of confirmations a transaction must have on Bitcoin
@@ -105,6 +117,10 @@ func (k Keeper) Codec() *codec.LegacyAmino {
 
 // SetAddress stores the given address information
 func (k Keeper) SetAddress(ctx sdk.Context, address types.AddressInfo) {
+	k.setAddress(ctx, addrPrefix+address.EncodeAddress(), address)
+}
+
+func (k Keeper) setAddress(ctx sdk.Context, key string, address types.AddressInfo) {
 	// btcutil.Address (and it's implementations) can't be serialized with amino,
 	// so we use a helper struct to get around that problem
 	a := struct {
@@ -118,12 +134,17 @@ func (k Keeper) SetAddress(ctx sdk.Context, address types.AddressInfo) {
 		Script: address.RedeemScript,
 		Key:    address.Key,
 	}
-	ctx.KVStore(k.storeKey).Set([]byte(addrPrefix+address.EncodeAddress()), k.Codec().MustMarshalBinaryLengthPrefixed(a))
+
+	ctx.KVStore(k.storeKey).Set([]byte(key), k.Codec().MustMarshalBinaryLengthPrefixed(a))
 }
 
 // GetAddress returns the address information for the given encoded address
 func (k Keeper) GetAddress(ctx sdk.Context, encodedAddress string) (types.AddressInfo, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(addrPrefix + encodedAddress))
+	return k.getAddress(ctx, addrPrefix+encodedAddress)
+}
+
+func (k Keeper) getAddress(ctx sdk.Context, key string) (types.AddressInfo, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
 	if bz == nil {
 		return types.AddressInfo{}, false
 	}
@@ -138,6 +159,7 @@ func (k Keeper) GetAddress(ctx sdk.Context, encodedAddress string) (types.Addres
 	}
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &a)
 	addr, _ := btcutil.DecodeAddress(a.Addr, k.GetNetwork(ctx).Params())
+
 	return types.AddressInfo{
 		Address:      addr,
 		Role:         a.Role,

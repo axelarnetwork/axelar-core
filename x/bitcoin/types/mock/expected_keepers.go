@@ -1206,6 +1206,9 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			GetAddressFunc: func(ctx sdk.Context, encodedAddress string) (types.AddressInfo, bool) {
 // 				panic("mock out the GetAddress method")
 // 			},
+// 			GetAnyoneCanSpendAddressFunc: func(ctx sdk.Context) types.AddressInfo {
+// 				panic("mock out the GetAnyoneCanSpendAddress method")
+// 			},
 // 			GetConfirmedOutPointInfosFunc: func(ctx sdk.Context) []types.OutPointInfo {
 // 				panic("mock out the GetConfirmedOutPointInfos method")
 // 			},
@@ -1299,6 +1302,9 @@ type BTCKeeperMock struct {
 
 	// GetAddressFunc mocks the GetAddress method.
 	GetAddressFunc func(ctx sdk.Context, encodedAddress string) (types.AddressInfo, bool)
+
+	// GetAnyoneCanSpendAddressFunc mocks the GetAnyoneCanSpendAddress method.
+	GetAnyoneCanSpendAddressFunc func(ctx sdk.Context) types.AddressInfo
 
 	// GetConfirmedOutPointInfosFunc mocks the GetConfirmedOutPointInfos method.
 	GetConfirmedOutPointInfosFunc func(ctx sdk.Context) []types.OutPointInfo
@@ -1408,6 +1414,11 @@ type BTCKeeperMock struct {
 			Ctx sdk.Context
 			// EncodedAddress is the encodedAddress argument value.
 			EncodedAddress string
+		}
+		// GetAnyoneCanSpendAddress holds details about calls to the GetAnyoneCanSpendAddress method.
+		GetAnyoneCanSpendAddress []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
 		}
 		// GetConfirmedOutPointInfos holds details about calls to the GetConfirmedOutPointInfos method.
 		GetConfirmedOutPointInfos []struct {
@@ -1555,6 +1566,7 @@ type BTCKeeperMock struct {
 	lockDeleteSignedTx                sync.RWMutex
 	lockDeleteUnsignedTx              sync.RWMutex
 	lockGetAddress                    sync.RWMutex
+	lockGetAnyoneCanSpendAddress      sync.RWMutex
 	lockGetConfirmedOutPointInfos     sync.RWMutex
 	lockGetDustAmount                 sync.RWMutex
 	lockGetMasterKeyVout              sync.RWMutex
@@ -1804,6 +1816,37 @@ func (mock *BTCKeeperMock) GetAddressCalls() []struct {
 	mock.lockGetAddress.RLock()
 	calls = mock.calls.GetAddress
 	mock.lockGetAddress.RUnlock()
+	return calls
+}
+
+// GetAnyoneCanSpendAddress calls GetAnyoneCanSpendAddressFunc.
+func (mock *BTCKeeperMock) GetAnyoneCanSpendAddress(ctx sdk.Context) types.AddressInfo {
+	if mock.GetAnyoneCanSpendAddressFunc == nil {
+		panic("BTCKeeperMock.GetAnyoneCanSpendAddressFunc: method is nil but BTCKeeper.GetAnyoneCanSpendAddress was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetAnyoneCanSpendAddress.Lock()
+	mock.calls.GetAnyoneCanSpendAddress = append(mock.calls.GetAnyoneCanSpendAddress, callInfo)
+	mock.lockGetAnyoneCanSpendAddress.Unlock()
+	return mock.GetAnyoneCanSpendAddressFunc(ctx)
+}
+
+// GetAnyoneCanSpendAddressCalls gets all the calls that were made to GetAnyoneCanSpendAddress.
+// Check the length with:
+//     len(mockedBTCKeeper.GetAnyoneCanSpendAddressCalls())
+func (mock *BTCKeeperMock) GetAnyoneCanSpendAddressCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockGetAnyoneCanSpendAddress.RLock()
+	calls = mock.calls.GetAnyoneCanSpendAddress
+	mock.lockGetAnyoneCanSpendAddress.RUnlock()
 	return calls
 }
 
