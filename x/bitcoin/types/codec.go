@@ -1,10 +1,6 @@
 package types
 
 import (
-	"crypto/elliptic"
-
-	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
@@ -17,10 +13,6 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&MsgConfirmOutpoint{}, "bitcoin/ConfirmOutpoint", nil)
 	cdc.RegisterConcrete(&MsgLink{}, "bitcoin/Link", nil)
 	cdc.RegisterConcrete(&MsgSignPendingTransfers{}, "bitcoin/SignPendingTransfers", nil)
-	cdc.RegisterInterface((*btcutil.Address)(nil), nil)
-	cdc.RegisterConcrete(&btcutil.AddressPubKeyHash{}, "bitcoin/pkhash", nil)
-	cdc.RegisterInterface((*elliptic.Curve)(nil), nil)
-	cdc.RegisterConcrete(btcec.S256(), "bitcoin/curve", nil)
 }
 
 // RegisterInterfaces registers types and interfaces with the given registry

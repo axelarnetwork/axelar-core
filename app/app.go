@@ -305,7 +305,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 	// axelar custom keepers
 	btcK := btcKeeper.NewKeeper(
-		app.legacyAmino, keys[btcTypes.StoreKey], app.getSubspace(btcTypes.ModuleName),
+		appCodec, keys[btcTypes.StoreKey], app.getSubspace(btcTypes.ModuleName),
 	)
 	ethK := ethKeeper.NewEthKeeper(
 		app.legacyAmino, keys[ethTypes.StoreKey], app.getSubspace(ethTypes.ModuleName),
