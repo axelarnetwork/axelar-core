@@ -282,6 +282,7 @@ func HandleMsgVoteConfirmDeposit(ctx sdk.Context, k keeper.Keeper, v types.Voter
 		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", msg.Poll.String(), result)
 	}
 
+	k.Logger(ctx).Info(fmt.Sprintf("ethereum deposit confirmation result is %s", result))
 	v.DeletePoll(ctx, msg.Poll)
 	k.DeletePendingDeposit(ctx, msg.Poll)
 
@@ -349,6 +350,7 @@ func HandleMsgVoteConfirmToken(ctx sdk.Context, k keeper.Keeper, v types.Voter, 
 		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", msg.Poll.String(), result)
 	}
 
+	k.Logger(ctx).Info(fmt.Sprintf("token deployment confirmation result is %s", result))
 	v.DeletePoll(ctx, msg.Poll)
 	k.DeletePendingToken(ctx, msg.Poll)
 
