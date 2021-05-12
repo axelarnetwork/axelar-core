@@ -143,7 +143,7 @@ func handleMsgVotePubKey(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg *t
 			}
 			pubKey := btcecPK.ToECDSA()
 			k.SetKey(ctx, msg.PollMeta.ID, *pubKey)
-			k.Logger(ctx).Info(fmt.Sprintf("public key confirmation result is %s", result))
+			k.Logger(ctx).Info(fmt.Sprintf("public key confirmation result is %.10s", result))
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized voting result type: %T", result))
