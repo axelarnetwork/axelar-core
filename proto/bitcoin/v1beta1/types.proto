@@ -4,7 +4,6 @@ package bitcoin.v1beta1;
 option go_package = "github.com/axelarnetwork/axelar-core/x/bitcoin/types";
 
 import "gogoproto/gogo.proto";
-import "google/protobuf/any.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -23,7 +22,7 @@ enum AddressRole {
   option (gogoproto.goproto_enum_prefix) = false;
   option (gogoproto.goproto_enum_stringer) = true;
 
-  ADDRESS_ROLE_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "NONE" ];
+  ADDRESS_ROLE_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "None" ];
   ADDRESS_ROLE_DEPOSIT = 1 [ (gogoproto.enumvalue_customname) = "Deposit" ];
   ADDRESS_ROLE_CONSOLIDATION = 2
       [ (gogoproto.enumvalue_customname) = "Consolidation" ];

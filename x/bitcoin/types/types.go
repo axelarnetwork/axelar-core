@@ -296,7 +296,7 @@ func NewAnyoneCanSpendAddress(network Network) AddressInfo {
 	return AddressInfo{
 		RedeemScript: script,
 		Address:      address.EncodeAddress(),
-		Role:         NONE,
+		Role:         None,
 	}
 }
 
@@ -363,7 +363,7 @@ func AssembleBtcTx(rawTx *wire.MsgTx, outpointsToSign []OutPointToSign, sigs []b
 // MustEncodeTx serializes a given bitcoin transaction; panic if error
 func MustEncodeTx(tx *wire.MsgTx) []byte {
 	var buf bytes.Buffer
-	if err := tx.BtcEncode(&buf, wire.FeeFilterVersion, wire.WitnessEncoding); err != nil {
+	if err := tx.Serialize(&buf); err != nil {
 		panic(err)
 	}
 
@@ -375,7 +375,7 @@ func MustDecodeTx(bz []byte) wire.MsgTx {
 	var tx wire.MsgTx
 
 	rbuf := bytes.NewReader(bz)
-	if err := tx.BtcDecode(rbuf, wire.FeeFilterVersion, wire.WitnessEncoding); err != nil {
+	if err := tx.Deserialize(rbuf); err != nil {
 		panic(err)
 	}
 
