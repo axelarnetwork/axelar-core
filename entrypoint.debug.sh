@@ -15,11 +15,11 @@ addPeers() {
 #prepareCli() {
 #  #### Client
 #  echo "Setting up config for CLI"
-#  axelarcli config keyring-backend "$KEYRING_BACKEND"
-#  axelarcli config chain-id "$CHAIN_ID"
-#  axelarcli config output json
-#  axelarcli config indent true
-#  axelarcli config trust-node true
+#  axelard config keyring-backend "$KEYRING_BACKEND"
+#  axelard config chain-id "$CHAIN_ID"
+#  axelard config output json
+#  axelard config indent true
+#  axelard config trust-node true
 #}
 
 isCliPrepared() {
@@ -63,7 +63,7 @@ startValProc() {
   fi
 
   dlv --listen=:2346 --headless=true ${VALD_CONTINUE:+--continue} --api-version=2 --accept-multiclient exec \
-    /usr/local/bin/axelard -- vald-start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} --validator-addr "$(axelarcli keys show validator -a --bech val)"
+    /usr/local/bin/axelard -- vald-start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} --validator-addr "$(axelard keys show validator -a --bech val)"
 }
 
 CLI_HOME_DIR="$HOME_DIR/.axelar"

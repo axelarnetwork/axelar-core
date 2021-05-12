@@ -36,8 +36,8 @@ execute `make docker-image-debug`. This creates the image axelar/core-debug:late
 
 ## Interacting with a local validator node
 
-With a local (dockerized) validator running, the `axelarcli` binary can be used to interact with the node.
-Run `./bin/axelarcli --help` after building the binaries to get information about the available commands.
+With a local (dockerized) validator running, the `axelard` binary can be used to interact with the node.
+Run `./bin/axelard --help` after building the binaries to get information about the available commands.
 
 ## Show API documentation
 
@@ -52,7 +52,7 @@ to populate the documentation. See https://blog.golang.org/godoc for more inform
 
 ### CLI command documentation
 
-For the full list of available CLI commands for `axelarcli` see [here](cmd/axelarcli/docs/toc.md)
+For the full list of available CLI commands for `axelard` see [here](docs/toc.md)
 
 ## Test tools
 

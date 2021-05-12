@@ -39,6 +39,5 @@ ENV REST_CONTINUE true
 ENV CORE_CONTINUE true
 
 RUN mkdir "${HOME_DIR}/.axelard"
-RUN mkdir "${HOME_DIR}/.axelarcli"
 
 ENTRYPOINT ["/axelar/entrypoint.debug.sh"]

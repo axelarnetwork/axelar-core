@@ -42,6 +42,5 @@ ENV CONFIG_PATH ""
 ENV INIT_SCRIPT ""
 
 RUN mkdir "${HOME_DIR}/.axelard"
-RUN mkdir "${HOME_DIR}/.axelarcli"
 
 ENTRYPOINT ["/entrypoint.sh"]
