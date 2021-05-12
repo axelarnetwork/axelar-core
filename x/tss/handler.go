@@ -104,7 +104,7 @@ func handleMsgVoteSig(ctx sdk.Context, k keeper.Keeper, v types.Voter, msg *type
 		switch sigBytes := result.(type) {
 		case []byte:
 			k.SetSig(ctx, msg.PollMeta.ID, sigBytes)
-			k.Logger(ctx).Info(fmt.Sprintf("signature verification result is %s", result))
+			k.Logger(ctx).Info(fmt.Sprintf("signature verification result is %.10s", result))
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized voting result type: %T", result))
