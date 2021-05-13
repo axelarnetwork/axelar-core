@@ -108,14 +108,25 @@
     - [GenesisState](#tss.v1beta1.GenesisState)
   
 - [tss/v1beta1/tx.proto](#tss/v1beta1/tx.proto)
-    - [MsgAssignNextKey](#tss.v1beta1.MsgAssignNextKey)
-    - [MsgDeregister](#tss.v1beta1.MsgDeregister)
-    - [MsgKeygenStart](#tss.v1beta1.MsgKeygenStart)
-    - [MsgKeygenTraffic](#tss.v1beta1.MsgKeygenTraffic)
-    - [MsgRotateKey](#tss.v1beta1.MsgRotateKey)
-    - [MsgSignTraffic](#tss.v1beta1.MsgSignTraffic)
-    - [MsgVotePubKey](#tss.v1beta1.MsgVotePubKey)
-    - [MsgVoteSig](#tss.v1beta1.MsgVoteSig)
+    - [AssignKeyRequest](#tss.v1beta1.AssignKeyRequest)
+    - [AssignKeyResponse](#tss.v1beta1.AssignKeyResponse)
+    - [DeregisterRequest](#tss.v1beta1.DeregisterRequest)
+    - [DeregisterResponse](#tss.v1beta1.DeregisterResponse)
+    - [KeygenTrafficRequest](#tss.v1beta1.KeygenTrafficRequest)
+    - [KeygenTrafficResponse](#tss.v1beta1.KeygenTrafficResponse)
+    - [RotateKeyRequest](#tss.v1beta1.RotateKeyRequest)
+    - [RotateKeyResponse](#tss.v1beta1.RotateKeyResponse)
+    - [SignTrafficRequest](#tss.v1beta1.SignTrafficRequest)
+    - [SignTrafficResponse](#tss.v1beta1.SignTrafficResponse)
+    - [StartKeygenRequest](#tss.v1beta1.StartKeygenRequest)
+    - [StartKeygenResponse](#tss.v1beta1.StartKeygenResponse)
+    - [VotePubKeyRequest](#tss.v1beta1.VotePubKeyRequest)
+    - [VotePubKeyResponse](#tss.v1beta1.VotePubKeyResponse)
+    - [VoteSigRequest](#tss.v1beta1.VoteSigRequest)
+    - [VoteSigResponse](#tss.v1beta1.VoteSigResponse)
+  
+- [tss/v1beta1/service.proto](#tss/v1beta1/service.proto)
+    - [MsgService](#tss.v1beta1.MsgService)
   
 - [vote/v1beta1/genesis.proto](#vote/v1beta1/genesis.proto)
     - [GenesisState](#vote.v1beta1.GenesisState)
@@ -1364,10 +1375,10 @@ Params is the parameter set for this module
 
 
 
-<a name="tss.v1beta1.MsgAssignNextKey"></a>
+<a name="tss.v1beta1.AssignKeyRequest"></a>
 
-### MsgAssignNextKey
-MsgAssignNextKey represents a message to assign a new key
+### AssignKeyRequest
+AssignKeyRequest represents a message to assign a new key
 
 
 | Field | Type | Label | Description |
@@ -1382,44 +1393,46 @@ MsgAssignNextKey represents a message to assign a new key
 
 
 
-<a name="tss.v1beta1.MsgDeregister"></a>
+<a name="tss.v1beta1.AssignKeyResponse"></a>
 
-### MsgDeregister
-MsgDeregister to deregister so that the validator will not participate in any
-future keygen
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [string](#string) |  |  |
+### AssignKeyResponse
 
 
 
 
 
 
-<a name="tss.v1beta1.MsgKeygenStart"></a>
 
-### MsgKeygenStart
-MsgKeygenStart indicate the start of keygen
+<a name="tss.v1beta1.DeregisterRequest"></a>
+
+### DeregisterRequest
+DeregisterRequest to deregister so that the validator will not participate in
+any future keygen
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [string](#string) |  |  |
-| `new_key_id` | [string](#string) |  |  |
-| `subset_size` | [int64](#int64) |  |  |
-| `key_share_distribution_policy` | [tss.exported.v1beta1.KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
 
 
 
 
 
 
-<a name="tss.v1beta1.MsgKeygenTraffic"></a>
+<a name="tss.v1beta1.DeregisterResponse"></a>
 
-### MsgKeygenTraffic
-MsgKeygenTraffic protocol message
+### DeregisterResponse
+
+
+
+
+
+
+
+<a name="tss.v1beta1.KeygenTrafficRequest"></a>
+
+### KeygenTrafficRequest
+KeygenTrafficRequest protocol message
 
 
 | Field | Type | Label | Description |
@@ -1433,9 +1446,19 @@ MsgKeygenTraffic protocol message
 
 
 
-<a name="tss.v1beta1.MsgRotateKey"></a>
+<a name="tss.v1beta1.KeygenTrafficResponse"></a>
 
-### MsgRotateKey
+### KeygenTrafficResponse
+
+
+
+
+
+
+
+<a name="tss.v1beta1.RotateKeyRequest"></a>
+
+### RotateKeyRequest
 
 
 
@@ -1451,10 +1474,20 @@ MsgKeygenTraffic protocol message
 
 
 
-<a name="tss.v1beta1.MsgSignTraffic"></a>
+<a name="tss.v1beta1.RotateKeyResponse"></a>
 
-### MsgSignTraffic
-MsgSignTraffic protocol message
+### RotateKeyResponse
+
+
+
+
+
+
+
+<a name="tss.v1beta1.SignTrafficRequest"></a>
+
+### SignTrafficRequest
+SignTrafficRequest protocol message
 
 
 | Field | Type | Label | Description |
@@ -1468,10 +1501,48 @@ MsgSignTraffic protocol message
 
 
 
-<a name="tss.v1beta1.MsgVotePubKey"></a>
+<a name="tss.v1beta1.SignTrafficResponse"></a>
 
-### MsgVotePubKey
-MsgVotePubKey represents the message to vote on a public key
+### SignTrafficResponse
+
+
+
+
+
+
+
+<a name="tss.v1beta1.StartKeygenRequest"></a>
+
+### StartKeygenRequest
+StartKeygenRequest indicate the start of keygen
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [string](#string) |  |  |
+| `new_key_id` | [string](#string) |  |  |
+| `subset_size` | [int64](#int64) |  |  |
+| `key_share_distribution_policy` | [tss.exported.v1beta1.KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.StartKeygenResponse"></a>
+
+### StartKeygenResponse
+
+
+
+
+
+
+
+<a name="tss.v1beta1.VotePubKeyRequest"></a>
+
+### VotePubKeyRequest
+VotePubKeyRequest represents the message to vote on a public key
 
 
 | Field | Type | Label | Description |
@@ -1485,10 +1556,20 @@ MsgVotePubKey represents the message to vote on a public key
 
 
 
-<a name="tss.v1beta1.MsgVoteSig"></a>
+<a name="tss.v1beta1.VotePubKeyResponse"></a>
 
-### MsgVoteSig
-MsgVoteSig represents a message to vote for a signature
+### VotePubKeyResponse
+
+
+
+
+
+
+
+<a name="tss.v1beta1.VoteSigRequest"></a>
+
+### VoteSigRequest
+VoteSigRequest represents a message to vote for a signature
 
 
 | Field | Type | Label | Description |
@@ -1501,11 +1582,54 @@ MsgVoteSig represents a message to vote for a signature
 
 
 
+
+<a name="tss.v1beta1.VoteSigResponse"></a>
+
+### VoteSigResponse
+
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
 
  <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="tss/v1beta1/service.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tss/v1beta1/service.proto
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="tss.v1beta1.MsgService"></a>
+
+### MsgService
+Msg defines the tss Msg service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `StartKeygen` | [StartKeygenRequest](#tss.v1beta1.StartKeygenRequest) | [StartKeygenResponse](#tss.v1beta1.StartKeygenResponse) |  | POST|/axelar/tss/startKeygen|
+| `KeygenTraffic` | [KeygenTrafficRequest](#tss.v1beta1.KeygenTrafficRequest) | [KeygenTrafficResponse](#tss.v1beta1.KeygenTrafficResponse) |  | |
+| `AssignKey` | [AssignKeyRequest](#tss.v1beta1.AssignKeyRequest) | [AssignKeyResponse](#tss.v1beta1.AssignKeyResponse) |  | POST|/axelar/tss/assign/{chain}|
+| `RotateKey` | [RotateKeyRequest](#tss.v1beta1.RotateKeyRequest) | [RotateKeyResponse](#tss.v1beta1.RotateKeyResponse) |  | POST|/axelar/tss/assign/{chain}|
+| `VotePubKey` | [VotePubKeyRequest](#tss.v1beta1.VotePubKeyRequest) | [VotePubKeyResponse](#tss.v1beta1.VotePubKeyResponse) |  | |
+| `SignTraffic` | [SignTrafficRequest](#tss.v1beta1.SignTrafficRequest) | [SignTrafficResponse](#tss.v1beta1.SignTrafficResponse) |  | |
+| `VoteSig` | [VoteSigRequest](#tss.v1beta1.VoteSigRequest) | [VoteSigResponse](#tss.v1beta1.VoteSigResponse) |  | |
+| `Deregister` | [DeregisterRequest](#tss.v1beta1.DeregisterRequest) | [DeregisterResponse](#tss.v1beta1.DeregisterResponse) |  | |
 
  <!-- end services -->
 

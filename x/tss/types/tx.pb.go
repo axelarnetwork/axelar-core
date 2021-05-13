@@ -25,195 +25,357 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// MsgAssignNextKey represents a message to assign a new key
-type MsgAssignNextKey struct {
+// AssignKeyRequest represents a message to assign a new key
+type AssignKeyRequest struct {
 	Sender  github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 	Chain   string                                        `protobuf:"bytes,2,opt,name=chain,proto3" json:"chain,omitempty"`
 	KeyID   string                                        `protobuf:"bytes,3,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`
 	KeyRole exported.KeyRole                              `protobuf:"varint,4,opt,name=key_role,json=keyRole,proto3,enum=tss.exported.v1beta1.KeyRole" json:"key_role,omitempty"`
 }
 
-func (m *MsgAssignNextKey) Reset()         { *m = MsgAssignNextKey{} }
-func (m *MsgAssignNextKey) String() string { return proto.CompactTextString(m) }
-func (*MsgAssignNextKey) ProtoMessage()    {}
-func (*MsgAssignNextKey) Descriptor() ([]byte, []int) {
+func (m *AssignKeyRequest) Reset()         { *m = AssignKeyRequest{} }
+func (m *AssignKeyRequest) String() string { return proto.CompactTextString(m) }
+func (*AssignKeyRequest) ProtoMessage()    {}
+func (*AssignKeyRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_58d13e1023e3ffaf, []int{0}
 }
-func (m *MsgAssignNextKey) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_MsgAssignNextKey.Unmarshal(m, b)
+func (m *AssignKeyRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_AssignKeyRequest.Unmarshal(m, b)
 }
-func (m *MsgAssignNextKey) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_MsgAssignNextKey.Marshal(b, m, deterministic)
+func (m *AssignKeyRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_AssignKeyRequest.Marshal(b, m, deterministic)
 }
-func (m *MsgAssignNextKey) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgAssignNextKey.Merge(m, src)
+func (m *AssignKeyRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AssignKeyRequest.Merge(m, src)
 }
-func (m *MsgAssignNextKey) XXX_Size() int {
-	return xxx_messageInfo_MsgAssignNextKey.Size(m)
+func (m *AssignKeyRequest) XXX_Size() int {
+	return xxx_messageInfo_AssignKeyRequest.Size(m)
 }
-func (m *MsgAssignNextKey) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgAssignNextKey.DiscardUnknown(m)
+func (m *AssignKeyRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_AssignKeyRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgAssignNextKey proto.InternalMessageInfo
+var xxx_messageInfo_AssignKeyRequest proto.InternalMessageInfo
 
-// MsgDeregister to deregister so that the validator will not participate in any
-// future keygen
-type MsgDeregister struct {
+type AssignKeyResponse struct {
+}
+
+func (m *AssignKeyResponse) Reset()         { *m = AssignKeyResponse{} }
+func (m *AssignKeyResponse) String() string { return proto.CompactTextString(m) }
+func (*AssignKeyResponse) ProtoMessage()    {}
+func (*AssignKeyResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_58d13e1023e3ffaf, []int{1}
+}
+func (m *AssignKeyResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_AssignKeyResponse.Unmarshal(m, b)
+}
+func (m *AssignKeyResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_AssignKeyResponse.Marshal(b, m, deterministic)
+}
+func (m *AssignKeyResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AssignKeyResponse.Merge(m, src)
+}
+func (m *AssignKeyResponse) XXX_Size() int {
+	return xxx_messageInfo_AssignKeyResponse.Size(m)
+}
+func (m *AssignKeyResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_AssignKeyResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AssignKeyResponse proto.InternalMessageInfo
+
+// DeregisterRequest to deregister so that the validator will not participate in
+// any future keygen
+type DeregisterRequest struct {
 	Sender github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 }
 
-func (m *MsgDeregister) Reset()         { *m = MsgDeregister{} }
-func (m *MsgDeregister) String() string { return proto.CompactTextString(m) }
-func (*MsgDeregister) ProtoMessage()    {}
-func (*MsgDeregister) Descriptor() ([]byte, []int) {
-	return fileDescriptor_58d13e1023e3ffaf, []int{1}
+func (m *DeregisterRequest) Reset()         { *m = DeregisterRequest{} }
+func (m *DeregisterRequest) String() string { return proto.CompactTextString(m) }
+func (*DeregisterRequest) ProtoMessage()    {}
+func (*DeregisterRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_58d13e1023e3ffaf, []int{2}
 }
-func (m *MsgDeregister) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_MsgDeregister.Unmarshal(m, b)
+func (m *DeregisterRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeregisterRequest.Unmarshal(m, b)
 }
-func (m *MsgDeregister) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_MsgDeregister.Marshal(b, m, deterministic)
+func (m *DeregisterRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeregisterRequest.Marshal(b, m, deterministic)
 }
-func (m *MsgDeregister) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgDeregister.Merge(m, src)
+func (m *DeregisterRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeregisterRequest.Merge(m, src)
 }
-func (m *MsgDeregister) XXX_Size() int {
-	return xxx_messageInfo_MsgDeregister.Size(m)
+func (m *DeregisterRequest) XXX_Size() int {
+	return xxx_messageInfo_DeregisterRequest.Size(m)
 }
-func (m *MsgDeregister) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgDeregister.DiscardUnknown(m)
+func (m *DeregisterRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeregisterRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgDeregister proto.InternalMessageInfo
+var xxx_messageInfo_DeregisterRequest proto.InternalMessageInfo
 
-// MsgKeygenStart indicate the start of keygen
-type MsgKeygenStart struct {
+type DeregisterResponse struct {
+}
+
+func (m *DeregisterResponse) Reset()         { *m = DeregisterResponse{} }
+func (m *DeregisterResponse) String() string { return proto.CompactTextString(m) }
+func (*DeregisterResponse) ProtoMessage()    {}
+func (*DeregisterResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_58d13e1023e3ffaf, []int{3}
+}
+func (m *DeregisterResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeregisterResponse.Unmarshal(m, b)
+}
+func (m *DeregisterResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeregisterResponse.Marshal(b, m, deterministic)
+}
+func (m *DeregisterResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeregisterResponse.Merge(m, src)
+}
+func (m *DeregisterResponse) XXX_Size() int {
+	return xxx_messageInfo_DeregisterResponse.Size(m)
+}
+func (m *DeregisterResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeregisterResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeregisterResponse proto.InternalMessageInfo
+
+// StartKeygenRequest indicate the start of keygen
+type StartKeygenRequest struct {
 	Sender                     github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 	NewKeyID                   string                                        `protobuf:"bytes,2,opt,name=new_key_id,json=newKeyId,proto3" json:"new_key_id,omitempty"`
 	SubsetSize                 int64                                         `protobuf:"varint,3,opt,name=subset_size,json=subsetSize,proto3" json:"subset_size,omitempty"`
 	KeyShareDistributionPolicy exported.KeyShareDistributionPolicy           `protobuf:"varint,4,opt,name=key_share_distribution_policy,json=keyShareDistributionPolicy,proto3,enum=tss.exported.v1beta1.KeyShareDistributionPolicy" json:"key_share_distribution_policy,omitempty"`
 }
 
-func (m *MsgKeygenStart) Reset()         { *m = MsgKeygenStart{} }
-func (m *MsgKeygenStart) String() string { return proto.CompactTextString(m) }
-func (*MsgKeygenStart) ProtoMessage()    {}
-func (*MsgKeygenStart) Descriptor() ([]byte, []int) {
-	return fileDescriptor_58d13e1023e3ffaf, []int{2}
+func (m *StartKeygenRequest) Reset()         { *m = StartKeygenRequest{} }
+func (m *StartKeygenRequest) String() string { return proto.CompactTextString(m) }
+func (*StartKeygenRequest) ProtoMessage()    {}
+func (*StartKeygenRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_58d13e1023e3ffaf, []int{4}
 }
-func (m *MsgKeygenStart) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_MsgKeygenStart.Unmarshal(m, b)
+func (m *StartKeygenRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_StartKeygenRequest.Unmarshal(m, b)
 }
-func (m *MsgKeygenStart) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_MsgKeygenStart.Marshal(b, m, deterministic)
+func (m *StartKeygenRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_StartKeygenRequest.Marshal(b, m, deterministic)
 }
-func (m *MsgKeygenStart) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgKeygenStart.Merge(m, src)
+func (m *StartKeygenRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_StartKeygenRequest.Merge(m, src)
 }
-func (m *MsgKeygenStart) XXX_Size() int {
-	return xxx_messageInfo_MsgKeygenStart.Size(m)
+func (m *StartKeygenRequest) XXX_Size() int {
+	return xxx_messageInfo_StartKeygenRequest.Size(m)
 }
-func (m *MsgKeygenStart) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgKeygenStart.DiscardUnknown(m)
+func (m *StartKeygenRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_StartKeygenRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgKeygenStart proto.InternalMessageInfo
+var xxx_messageInfo_StartKeygenRequest proto.InternalMessageInfo
 
-type MsgRotateKey struct {
+type StartKeygenResponse struct {
+}
+
+func (m *StartKeygenResponse) Reset()         { *m = StartKeygenResponse{} }
+func (m *StartKeygenResponse) String() string { return proto.CompactTextString(m) }
+func (*StartKeygenResponse) ProtoMessage()    {}
+func (*StartKeygenResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_58d13e1023e3ffaf, []int{5}
+}
+func (m *StartKeygenResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_StartKeygenResponse.Unmarshal(m, b)
+}
+func (m *StartKeygenResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_StartKeygenResponse.Marshal(b, m, deterministic)
+}
+func (m *StartKeygenResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_StartKeygenResponse.Merge(m, src)
+}
+func (m *StartKeygenResponse) XXX_Size() int {
+	return xxx_messageInfo_StartKeygenResponse.Size(m)
+}
+func (m *StartKeygenResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_StartKeygenResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_StartKeygenResponse proto.InternalMessageInfo
+
+type RotateKeyRequest struct {
 	Sender     github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 	Chain      string                                        `protobuf:"bytes,2,opt,name=chain,proto3" json:"chain,omitempty"`
 	SubsetSize int64                                         `protobuf:"varint,3,opt,name=subset_size,json=subsetSize,proto3" json:"subset_size,omitempty"`
 	KeyRole    exported.KeyRole                              `protobuf:"varint,4,opt,name=key_role,json=keyRole,proto3,enum=tss.exported.v1beta1.KeyRole" json:"key_role,omitempty"`
 }
 
-func (m *MsgRotateKey) Reset()         { *m = MsgRotateKey{} }
-func (m *MsgRotateKey) String() string { return proto.CompactTextString(m) }
-func (*MsgRotateKey) ProtoMessage()    {}
-func (*MsgRotateKey) Descriptor() ([]byte, []int) {
-	return fileDescriptor_58d13e1023e3ffaf, []int{3}
+func (m *RotateKeyRequest) Reset()         { *m = RotateKeyRequest{} }
+func (m *RotateKeyRequest) String() string { return proto.CompactTextString(m) }
+func (*RotateKeyRequest) ProtoMessage()    {}
+func (*RotateKeyRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_58d13e1023e3ffaf, []int{6}
 }
-func (m *MsgRotateKey) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_MsgRotateKey.Unmarshal(m, b)
+func (m *RotateKeyRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RotateKeyRequest.Unmarshal(m, b)
 }
-func (m *MsgRotateKey) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_MsgRotateKey.Marshal(b, m, deterministic)
+func (m *RotateKeyRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RotateKeyRequest.Marshal(b, m, deterministic)
 }
-func (m *MsgRotateKey) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgRotateKey.Merge(m, src)
+func (m *RotateKeyRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RotateKeyRequest.Merge(m, src)
 }
-func (m *MsgRotateKey) XXX_Size() int {
-	return xxx_messageInfo_MsgRotateKey.Size(m)
+func (m *RotateKeyRequest) XXX_Size() int {
+	return xxx_messageInfo_RotateKeyRequest.Size(m)
 }
-func (m *MsgRotateKey) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgRotateKey.DiscardUnknown(m)
+func (m *RotateKeyRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_RotateKeyRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgRotateKey proto.InternalMessageInfo
+var xxx_messageInfo_RotateKeyRequest proto.InternalMessageInfo
 
-// MsgKeygenTraffic protocol message
-type MsgKeygenTraffic struct {
+type RotateKeyResponse struct {
+}
+
+func (m *RotateKeyResponse) Reset()         { *m = RotateKeyResponse{} }
+func (m *RotateKeyResponse) String() string { return proto.CompactTextString(m) }
+func (*RotateKeyResponse) ProtoMessage()    {}
+func (*RotateKeyResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_58d13e1023e3ffaf, []int{7}
+}
+func (m *RotateKeyResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RotateKeyResponse.Unmarshal(m, b)
+}
+func (m *RotateKeyResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RotateKeyResponse.Marshal(b, m, deterministic)
+}
+func (m *RotateKeyResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RotateKeyResponse.Merge(m, src)
+}
+func (m *RotateKeyResponse) XXX_Size() int {
+	return xxx_messageInfo_RotateKeyResponse.Size(m)
+}
+func (m *RotateKeyResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_RotateKeyResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RotateKeyResponse proto.InternalMessageInfo
+
+// KeygenTrafficRequest protocol message
+type KeygenTrafficRequest struct {
 	Sender    github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 	SessionID string                                        `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	Payload   *tofnd.TrafficOut                             `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
 }
 
-func (m *MsgKeygenTraffic) Reset()         { *m = MsgKeygenTraffic{} }
-func (m *MsgKeygenTraffic) String() string { return proto.CompactTextString(m) }
-func (*MsgKeygenTraffic) ProtoMessage()    {}
-func (*MsgKeygenTraffic) Descriptor() ([]byte, []int) {
-	return fileDescriptor_58d13e1023e3ffaf, []int{4}
+func (m *KeygenTrafficRequest) Reset()         { *m = KeygenTrafficRequest{} }
+func (m *KeygenTrafficRequest) String() string { return proto.CompactTextString(m) }
+func (*KeygenTrafficRequest) ProtoMessage()    {}
+func (*KeygenTrafficRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_58d13e1023e3ffaf, []int{8}
 }
-func (m *MsgKeygenTraffic) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_MsgKeygenTraffic.Unmarshal(m, b)
+func (m *KeygenTrafficRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_KeygenTrafficRequest.Unmarshal(m, b)
 }
-func (m *MsgKeygenTraffic) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_MsgKeygenTraffic.Marshal(b, m, deterministic)
+func (m *KeygenTrafficRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_KeygenTrafficRequest.Marshal(b, m, deterministic)
 }
-func (m *MsgKeygenTraffic) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgKeygenTraffic.Merge(m, src)
+func (m *KeygenTrafficRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_KeygenTrafficRequest.Merge(m, src)
 }
-func (m *MsgKeygenTraffic) XXX_Size() int {
-	return xxx_messageInfo_MsgKeygenTraffic.Size(m)
+func (m *KeygenTrafficRequest) XXX_Size() int {
+	return xxx_messageInfo_KeygenTrafficRequest.Size(m)
 }
-func (m *MsgKeygenTraffic) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgKeygenTraffic.DiscardUnknown(m)
+func (m *KeygenTrafficRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_KeygenTrafficRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgKeygenTraffic proto.InternalMessageInfo
+var xxx_messageInfo_KeygenTrafficRequest proto.InternalMessageInfo
 
-// MsgSignTraffic protocol message
-type MsgSignTraffic struct {
+type KeygenTrafficResponse struct {
+}
+
+func (m *KeygenTrafficResponse) Reset()         { *m = KeygenTrafficResponse{} }
+func (m *KeygenTrafficResponse) String() string { return proto.CompactTextString(m) }
+func (*KeygenTrafficResponse) ProtoMessage()    {}
+func (*KeygenTrafficResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_58d13e1023e3ffaf, []int{9}
+}
+func (m *KeygenTrafficResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_KeygenTrafficResponse.Unmarshal(m, b)
+}
+func (m *KeygenTrafficResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_KeygenTrafficResponse.Marshal(b, m, deterministic)
+}
+func (m *KeygenTrafficResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_KeygenTrafficResponse.Merge(m, src)
+}
+func (m *KeygenTrafficResponse) XXX_Size() int {
+	return xxx_messageInfo_KeygenTrafficResponse.Size(m)
+}
+func (m *KeygenTrafficResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_KeygenTrafficResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_KeygenTrafficResponse proto.InternalMessageInfo
+
+// SignTrafficRequest protocol message
+type SignTrafficRequest struct {
 	Sender    github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 	SessionID string                                        `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	Payload   *tofnd.TrafficOut                             `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
 }
 
-func (m *MsgSignTraffic) Reset()         { *m = MsgSignTraffic{} }
-func (m *MsgSignTraffic) String() string { return proto.CompactTextString(m) }
-func (*MsgSignTraffic) ProtoMessage()    {}
-func (*MsgSignTraffic) Descriptor() ([]byte, []int) {
-	return fileDescriptor_58d13e1023e3ffaf, []int{5}
+func (m *SignTrafficRequest) Reset()         { *m = SignTrafficRequest{} }
+func (m *SignTrafficRequest) String() string { return proto.CompactTextString(m) }
+func (*SignTrafficRequest) ProtoMessage()    {}
+func (*SignTrafficRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_58d13e1023e3ffaf, []int{10}
 }
-func (m *MsgSignTraffic) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_MsgSignTraffic.Unmarshal(m, b)
+func (m *SignTrafficRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SignTrafficRequest.Unmarshal(m, b)
 }
-func (m *MsgSignTraffic) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_MsgSignTraffic.Marshal(b, m, deterministic)
+func (m *SignTrafficRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SignTrafficRequest.Marshal(b, m, deterministic)
 }
-func (m *MsgSignTraffic) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgSignTraffic.Merge(m, src)
+func (m *SignTrafficRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SignTrafficRequest.Merge(m, src)
 }
-func (m *MsgSignTraffic) XXX_Size() int {
-	return xxx_messageInfo_MsgSignTraffic.Size(m)
+func (m *SignTrafficRequest) XXX_Size() int {
+	return xxx_messageInfo_SignTrafficRequest.Size(m)
 }
-func (m *MsgSignTraffic) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgSignTraffic.DiscardUnknown(m)
+func (m *SignTrafficRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SignTrafficRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgSignTraffic proto.InternalMessageInfo
+var xxx_messageInfo_SignTrafficRequest proto.InternalMessageInfo
 
-// MsgVotePubKey represents the message to vote on a public key
-type MsgVotePubKey struct {
+type SignTrafficResponse struct {
+}
+
+func (m *SignTrafficResponse) Reset()         { *m = SignTrafficResponse{} }
+func (m *SignTrafficResponse) String() string { return proto.CompactTextString(m) }
+func (*SignTrafficResponse) ProtoMessage()    {}
+func (*SignTrafficResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_58d13e1023e3ffaf, []int{11}
+}
+func (m *SignTrafficResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SignTrafficResponse.Unmarshal(m, b)
+}
+func (m *SignTrafficResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SignTrafficResponse.Marshal(b, m, deterministic)
+}
+func (m *SignTrafficResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SignTrafficResponse.Merge(m, src)
+}
+func (m *SignTrafficResponse) XXX_Size() int {
+	return xxx_messageInfo_SignTrafficResponse.Size(m)
+}
+func (m *SignTrafficResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_SignTrafficResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SignTrafficResponse proto.InternalMessageInfo
+
+// VotePubKeyRequest represents the message to vote on a public key
+type VotePubKeyRequest struct {
 	Sender   github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 	PollMeta exported1.PollMeta                            `protobuf:"bytes,2,opt,name=poll_meta,json=pollMeta,proto3" json:"poll_meta"`
 	// need to vote on the bytes instead of ecdsa.PublicKey, otherwise we lose the
@@ -221,32 +383,59 @@ type MsgVotePubKey struct {
 	PubKeyBytes []byte `protobuf:"bytes,3,opt,name=pub_key_bytes,json=pubKeyBytes,proto3" json:"pub_key_bytes,omitempty"`
 }
 
-func (m *MsgVotePubKey) Reset()         { *m = MsgVotePubKey{} }
-func (m *MsgVotePubKey) String() string { return proto.CompactTextString(m) }
-func (*MsgVotePubKey) ProtoMessage()    {}
-func (*MsgVotePubKey) Descriptor() ([]byte, []int) {
-	return fileDescriptor_58d13e1023e3ffaf, []int{6}
+func (m *VotePubKeyRequest) Reset()         { *m = VotePubKeyRequest{} }
+func (m *VotePubKeyRequest) String() string { return proto.CompactTextString(m) }
+func (*VotePubKeyRequest) ProtoMessage()    {}
+func (*VotePubKeyRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_58d13e1023e3ffaf, []int{12}
 }
-func (m *MsgVotePubKey) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_MsgVotePubKey.Unmarshal(m, b)
+func (m *VotePubKeyRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_VotePubKeyRequest.Unmarshal(m, b)
 }
-func (m *MsgVotePubKey) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_MsgVotePubKey.Marshal(b, m, deterministic)
+func (m *VotePubKeyRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_VotePubKeyRequest.Marshal(b, m, deterministic)
 }
-func (m *MsgVotePubKey) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgVotePubKey.Merge(m, src)
+func (m *VotePubKeyRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VotePubKeyRequest.Merge(m, src)
 }
-func (m *MsgVotePubKey) XXX_Size() int {
-	return xxx_messageInfo_MsgVotePubKey.Size(m)
+func (m *VotePubKeyRequest) XXX_Size() int {
+	return xxx_messageInfo_VotePubKeyRequest.Size(m)
 }
-func (m *MsgVotePubKey) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgVotePubKey.DiscardUnknown(m)
+func (m *VotePubKeyRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_VotePubKeyRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgVotePubKey proto.InternalMessageInfo
+var xxx_messageInfo_VotePubKeyRequest proto.InternalMessageInfo
 
-// MsgVoteSig represents a message to vote for a signature
-type MsgVoteSig struct {
+type VotePubKeyResponse struct {
+}
+
+func (m *VotePubKeyResponse) Reset()         { *m = VotePubKeyResponse{} }
+func (m *VotePubKeyResponse) String() string { return proto.CompactTextString(m) }
+func (*VotePubKeyResponse) ProtoMessage()    {}
+func (*VotePubKeyResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_58d13e1023e3ffaf, []int{13}
+}
+func (m *VotePubKeyResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_VotePubKeyResponse.Unmarshal(m, b)
+}
+func (m *VotePubKeyResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_VotePubKeyResponse.Marshal(b, m, deterministic)
+}
+func (m *VotePubKeyResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VotePubKeyResponse.Merge(m, src)
+}
+func (m *VotePubKeyResponse) XXX_Size() int {
+	return xxx_messageInfo_VotePubKeyResponse.Size(m)
+}
+func (m *VotePubKeyResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_VotePubKeyResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_VotePubKeyResponse proto.InternalMessageInfo
+
+// VoteSigRequest represents a message to vote for a signature
+type VoteSigRequest struct {
 	Sender   github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 	PollMeta exported1.PollMeta                            `protobuf:"bytes,2,opt,name=poll_meta,json=pollMeta,proto3" json:"poll_meta"`
 	// need to vote on the bytes instead of r, s, because Go cannot deserialize
@@ -254,85 +443,122 @@ type MsgVoteSig struct {
 	SigBytes []byte `protobuf:"bytes,3,opt,name=sig_bytes,json=sigBytes,proto3" json:"sig_bytes,omitempty"`
 }
 
-func (m *MsgVoteSig) Reset()         { *m = MsgVoteSig{} }
-func (m *MsgVoteSig) String() string { return proto.CompactTextString(m) }
-func (*MsgVoteSig) ProtoMessage()    {}
-func (*MsgVoteSig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_58d13e1023e3ffaf, []int{7}
+func (m *VoteSigRequest) Reset()         { *m = VoteSigRequest{} }
+func (m *VoteSigRequest) String() string { return proto.CompactTextString(m) }
+func (*VoteSigRequest) ProtoMessage()    {}
+func (*VoteSigRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_58d13e1023e3ffaf, []int{14}
 }
-func (m *MsgVoteSig) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_MsgVoteSig.Unmarshal(m, b)
+func (m *VoteSigRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_VoteSigRequest.Unmarshal(m, b)
 }
-func (m *MsgVoteSig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_MsgVoteSig.Marshal(b, m, deterministic)
+func (m *VoteSigRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_VoteSigRequest.Marshal(b, m, deterministic)
 }
-func (m *MsgVoteSig) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgVoteSig.Merge(m, src)
+func (m *VoteSigRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VoteSigRequest.Merge(m, src)
 }
-func (m *MsgVoteSig) XXX_Size() int {
-	return xxx_messageInfo_MsgVoteSig.Size(m)
+func (m *VoteSigRequest) XXX_Size() int {
+	return xxx_messageInfo_VoteSigRequest.Size(m)
 }
-func (m *MsgVoteSig) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgVoteSig.DiscardUnknown(m)
+func (m *VoteSigRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_VoteSigRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgVoteSig proto.InternalMessageInfo
+var xxx_messageInfo_VoteSigRequest proto.InternalMessageInfo
+
+type VoteSigResponse struct {
+}
+
+func (m *VoteSigResponse) Reset()         { *m = VoteSigResponse{} }
+func (m *VoteSigResponse) String() string { return proto.CompactTextString(m) }
+func (*VoteSigResponse) ProtoMessage()    {}
+func (*VoteSigResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_58d13e1023e3ffaf, []int{15}
+}
+func (m *VoteSigResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_VoteSigResponse.Unmarshal(m, b)
+}
+func (m *VoteSigResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_VoteSigResponse.Marshal(b, m, deterministic)
+}
+func (m *VoteSigResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VoteSigResponse.Merge(m, src)
+}
+func (m *VoteSigResponse) XXX_Size() int {
+	return xxx_messageInfo_VoteSigResponse.Size(m)
+}
+func (m *VoteSigResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_VoteSigResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_VoteSigResponse proto.InternalMessageInfo
 
 func init() {
-	proto.RegisterType((*MsgAssignNextKey)(nil), "tss.v1beta1.MsgAssignNextKey")
-	proto.RegisterType((*MsgDeregister)(nil), "tss.v1beta1.MsgDeregister")
-	proto.RegisterType((*MsgKeygenStart)(nil), "tss.v1beta1.MsgKeygenStart")
-	proto.RegisterType((*MsgRotateKey)(nil), "tss.v1beta1.MsgRotateKey")
-	proto.RegisterType((*MsgKeygenTraffic)(nil), "tss.v1beta1.MsgKeygenTraffic")
-	proto.RegisterType((*MsgSignTraffic)(nil), "tss.v1beta1.MsgSignTraffic")
-	proto.RegisterType((*MsgVotePubKey)(nil), "tss.v1beta1.MsgVotePubKey")
-	proto.RegisterType((*MsgVoteSig)(nil), "tss.v1beta1.MsgVoteSig")
+	proto.RegisterType((*AssignKeyRequest)(nil), "tss.v1beta1.AssignKeyRequest")
+	proto.RegisterType((*AssignKeyResponse)(nil), "tss.v1beta1.AssignKeyResponse")
+	proto.RegisterType((*DeregisterRequest)(nil), "tss.v1beta1.DeregisterRequest")
+	proto.RegisterType((*DeregisterResponse)(nil), "tss.v1beta1.DeregisterResponse")
+	proto.RegisterType((*StartKeygenRequest)(nil), "tss.v1beta1.StartKeygenRequest")
+	proto.RegisterType((*StartKeygenResponse)(nil), "tss.v1beta1.StartKeygenResponse")
+	proto.RegisterType((*RotateKeyRequest)(nil), "tss.v1beta1.RotateKeyRequest")
+	proto.RegisterType((*RotateKeyResponse)(nil), "tss.v1beta1.RotateKeyResponse")
+	proto.RegisterType((*KeygenTrafficRequest)(nil), "tss.v1beta1.KeygenTrafficRequest")
+	proto.RegisterType((*KeygenTrafficResponse)(nil), "tss.v1beta1.KeygenTrafficResponse")
+	proto.RegisterType((*SignTrafficRequest)(nil), "tss.v1beta1.SignTrafficRequest")
+	proto.RegisterType((*SignTrafficResponse)(nil), "tss.v1beta1.SignTrafficResponse")
+	proto.RegisterType((*VotePubKeyRequest)(nil), "tss.v1beta1.VotePubKeyRequest")
+	proto.RegisterType((*VotePubKeyResponse)(nil), "tss.v1beta1.VotePubKeyResponse")
+	proto.RegisterType((*VoteSigRequest)(nil), "tss.v1beta1.VoteSigRequest")
+	proto.RegisterType((*VoteSigResponse)(nil), "tss.v1beta1.VoteSigResponse")
 }
 
 func init() { proto.RegisterFile("tss/v1beta1/tx.proto", fileDescriptor_58d13e1023e3ffaf) }
 
 var fileDescriptor_58d13e1023e3ffaf = []byte{
-	// 659 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xd4, 0x55, 0x4f, 0x6f, 0xd3, 0x4a,
-	0x10, 0xb7, 0xfb, 0x37, 0xd9, 0xa4, 0xd5, 0x93, 0xd5, 0x43, 0xd4, 0xa7, 0xda, 0x79, 0x3e, 0x55,
-	0x4f, 0xaf, 0x49, 0xdb, 0x77, 0x80, 0x6b, 0xad, 0x5c, 0xa2, 0x28, 0xa5, 0x72, 0x10, 0x87, 0x5e,
-	0x22, 0xff, 0x99, 0x6e, 0x57, 0x71, 0xbd, 0xd6, 0xce, 0xa6, 0x8d, 0xfb, 0x29, 0xf8, 0x02, 0x7c,
-	0x0f, 0xce, 0x88, 0x43, 0xc5, 0x85, 0x1e, 0x39, 0x45, 0x90, 0x7e, 0x0b, 0x4e, 0x68, 0xed, 0x0d,
-	0x14, 0x50, 0x41, 0x82, 0x0a, 0xc1, 0xc9, 0x3b, 0xb3, 0x33, 0x3f, 0xcd, 0xef, 0x37, 0x33, 0x5e,
-	0xb2, 0x21, 0x11, 0xdb, 0xe7, 0x7b, 0x21, 0xc8, 0x60, 0xaf, 0x2d, 0x27, 0xad, 0x4c, 0x70, 0xc9,
-	0xad, 0x9a, 0x44, 0x6c, 0x69, 0xef, 0xe6, 0x06, 0xe5, 0x94, 0x17, 0xfe, 0xb6, 0x3a, 0x95, 0x21,
-	0x9b, 0x4d, 0x95, 0x08, 0x93, 0x8c, 0x0b, 0x09, 0xf1, 0x27, 0x84, 0x3c, 0x03, 0xd4, 0x11, 0x5b,
-	0x2a, 0x42, 0xf2, 0x93, 0xf4, 0xd6, 0xb5, 0xb2, 0xf4, 0xf5, 0x3f, 0xe7, 0x5c, 0xc2, 0x37, 0x11,
-	0xdc, 0xd7, 0x26, 0xf9, 0xab, 0x8f, 0xf4, 0x00, 0x91, 0xd1, 0xf4, 0x10, 0x26, 0xb2, 0x07, 0xb9,
-	0xd5, 0x25, 0x2b, 0x08, 0x69, 0x0c, 0xa2, 0x61, 0x36, 0xcd, 0xed, 0xba, 0xb7, 0xf7, 0x7e, 0xea,
-	0xec, 0x50, 0x26, 0x4f, 0xc7, 0x61, 0x2b, 0xe2, 0x67, 0xed, 0x88, 0xe3, 0x19, 0x47, 0xfd, 0xd9,
-	0xc1, 0x78, 0xa4, 0x21, 0x0f, 0xa2, 0xe8, 0x20, 0x8e, 0x05, 0x20, 0xfa, 0x1a, 0xc0, 0xda, 0x20,
-	0xcb, 0xd1, 0x69, 0xc0, 0xd2, 0xc6, 0x42, 0xd3, 0xdc, 0xae, 0xfa, 0xa5, 0x61, 0x35, 0xc9, 0xca,
-	0x08, 0xf2, 0x21, 0x8b, 0x1b, 0x8b, 0xca, 0xed, 0x55, 0x67, 0x53, 0x67, 0xb9, 0x07, 0x79, 0xb7,
-	0xe3, 0x2f, 0x8f, 0x20, 0xef, 0xc6, 0xd6, 0x43, 0x52, 0x51, 0x11, 0x82, 0x27, 0xd0, 0x58, 0x6a,
-	0x9a, 0xdb, 0xeb, 0xfb, 0x5b, 0x2d, 0xa5, 0xd8, 0x9c, 0xcc, 0x5c, 0xba, 0x56, 0x0f, 0x72, 0x9f,
-	0x27, 0xe0, 0xaf, 0x8e, 0xca, 0x83, 0x7b, 0x4c, 0xd6, 0xfa, 0x48, 0x3b, 0x20, 0x80, 0x32, 0x94,
-	0x20, 0xbe, 0x60, 0x53, 0xfd, 0x09, 0x36, 0xee, 0xb3, 0x05, 0xb2, 0xde, 0x47, 0xda, 0x83, 0x9c,
-	0x42, 0x3a, 0x90, 0x81, 0x90, 0xf7, 0x88, 0x6e, 0xfd, 0x4b, 0x48, 0x0a, 0x17, 0x43, 0xad, 0x4c,
-	0x21, 0x98, 0x57, 0x9f, 0x4d, 0x9d, 0xca, 0x21, 0x5c, 0x94, 0xe2, 0x54, 0xd2, 0xf2, 0x14, 0x5b,
-	0x0e, 0xa9, 0xe1, 0x38, 0x44, 0x90, 0x43, 0x64, 0x97, 0x50, 0xc8, 0xb8, 0xe8, 0x93, 0xd2, 0x35,
-	0x60, 0x97, 0x60, 0x21, 0xd9, 0x52, 0x40, 0x78, 0x1a, 0x08, 0x18, 0xc6, 0x0c, 0xa5, 0x60, 0xe1,
-	0x58, 0x32, 0x9e, 0x0e, 0x33, 0x9e, 0xb0, 0x28, 0xd7, 0xaa, 0xee, 0xde, 0xa9, 0xea, 0x40, 0x65,
-	0x76, 0x6e, 0x25, 0x1e, 0x15, 0x79, 0xfe, 0xe6, 0xe8, 0xce, 0x3b, 0xf7, 0x95, 0x49, 0xea, 0x7d,
-	0xa4, 0x3e, 0x97, 0x81, 0x84, 0x5f, 0x32, 0x49, 0xdf, 0xd5, 0xe1, 0xc7, 0x07, 0xe9, 0x65, 0xb9,
-	0x1a, 0x65, 0xb3, 0x1f, 0x8b, 0xe0, 0xe4, 0x84, 0x45, 0xf7, 0x49, 0xe8, 0x3f, 0x42, 0x10, 0x10,
-	0x55, 0x4b, 0x3e, 0xb6, 0x7b, 0x6d, 0x36, 0x75, 0xaa, 0x83, 0xd2, 0xdb, 0xed, 0xf8, 0x55, 0x1d,
-	0xd0, 0x8d, 0xad, 0x07, 0x64, 0x35, 0x0b, 0xf2, 0x84, 0x07, 0xe5, 0xce, 0xd4, 0x34, 0x8d, 0x72,
-	0xdd, 0xe7, 0x1c, 0x74, 0x95, 0x8f, 0xc6, 0xd2, 0x9f, 0x47, 0xbb, 0x2f, 0xcc, 0x62, 0x66, 0x07,
-	0x8c, 0xfe, 0xd9, 0x24, 0xd4, 0x56, 0x3f, 0xe1, 0x12, 0x8e, 0xc6, 0xe1, 0x3d, 0x4f, 0x96, 0x47,
-	0xaa, 0x19, 0x4f, 0x92, 0xe1, 0x19, 0xc8, 0xa0, 0xa0, 0x50, 0xdb, 0x77, 0x5a, 0xea, 0xd7, 0xf9,
-	0xf5, 0x90, 0x1c, 0xf1, 0x24, 0xe9, 0x83, 0x0c, 0xbc, 0xa5, 0xab, 0xa9, 0x63, 0xf8, 0x95, 0x4c,
-	0xdb, 0x96, 0x4b, 0xd6, 0xb2, 0x71, 0x58, 0xec, 0x6e, 0x98, 0x4b, 0xc0, 0x82, 0x5f, 0xdd, 0xaf,
-	0x65, 0x45, 0xb5, 0x9e, 0x72, 0xb9, 0xcf, 0x4d, 0x42, 0x34, 0x89, 0x01, 0xa3, 0xbf, 0x1b, 0x83,
-	0xbf, 0x49, 0x15, 0x19, 0xfd, 0xac, 0xfa, 0x0a, 0x32, 0x5a, 0x94, 0xee, 0x1d, 0x5e, 0xbd, 0xb3,
-	0x8d, 0xab, 0x99, 0x6d, 0x5c, 0xcf, 0x6c, 0xe3, 0xed, 0xcc, 0x36, 0x9e, 0xde, 0xd8, 0xc6, 0xf5,
-	0x8d, 0x6d, 0xbc, 0xb9, 0xb1, 0x8d, 0xe3, 0xdd, 0x5b, 0x55, 0x07, 0x13, 0x48, 0x02, 0x91, 0x82,
-	0xbc, 0xe0, 0x62, 0xa4, 0xad, 0x9d, 0x88, 0x0b, 0x68, 0x4f, 0xda, 0xc5, 0x6b, 0xa5, 0x38, 0x84,
-	0x2b, 0xc5, 0xeb, 0xf3, 0xff, 0x87, 0x00, 0x00, 0x00, 0xff, 0xff, 0x30, 0x31, 0x86, 0x95, 0x1c,
-	0x07, 0x00, 0x00,
+	// 700 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xd4, 0x95, 0x4d, 0x53, 0x13, 0x4d,
+	0x10, 0xc7, 0x77, 0x79, 0x4d, 0x26, 0xc0, 0x43, 0x96, 0x50, 0x4f, 0x8a, 0xa7, 0x48, 0xf2, 0xe4,
+	0x44, 0x59, 0x92, 0x00, 0x1e, 0xf4, 0x4a, 0x2a, 0x97, 0x14, 0x25, 0x52, 0x1b, 0xcb, 0x83, 0x07,
+	0x53, 0xfb, 0xd2, 0x2c, 0x53, 0x59, 0x76, 0xd6, 0xe9, 0x59, 0xc8, 0xf2, 0x29, 0xfc, 0x0a, 0x7e,
+	0x0f, 0xcf, 0x56, 0x4e, 0xca, 0xd1, 0x53, 0x4a, 0xc3, 0xb7, 0xf0, 0x64, 0xcd, 0xee, 0x04, 0x16,
+	0x15, 0x3d, 0x20, 0x96, 0x9e, 0x32, 0xd3, 0xd3, 0xdd, 0xdb, 0xbf, 0xff, 0x74, 0x7a, 0x48, 0x49,
+	0x20, 0x36, 0x4f, 0xb6, 0x6d, 0x10, 0xd6, 0x76, 0x53, 0x0c, 0x1a, 0x21, 0x67, 0x82, 0x19, 0x05,
+	0x81, 0xd8, 0x50, 0xd6, 0xb5, 0x92, 0xc7, 0x3c, 0x96, 0xd8, 0x9b, 0x72, 0x95, 0xba, 0xac, 0xd5,
+	0x64, 0x20, 0x0c, 0x42, 0xc6, 0x05, 0xb8, 0x57, 0x19, 0xe2, 0x10, 0x50, 0x79, 0xac, 0x4b, 0x0f,
+	0xc1, 0x0e, 0x83, 0xcc, 0xb1, 0xdc, 0xa9, 0xe3, 0xff, 0x4f, 0x98, 0x80, 0x1f, 0x66, 0xa8, 0xbf,
+	0xd7, 0xc9, 0xf2, 0x2e, 0x22, 0xf5, 0x82, 0x3d, 0x88, 0x4d, 0x78, 0x19, 0x01, 0x0a, 0xa3, 0x43,
+	0xe6, 0x10, 0x02, 0x17, 0x78, 0x59, 0xaf, 0xe9, 0x1b, 0x0b, 0xad, 0xed, 0xcf, 0xa3, 0xea, 0xa6,
+	0x47, 0xc5, 0x51, 0x64, 0x37, 0x1c, 0x76, 0xdc, 0x74, 0x18, 0x1e, 0x33, 0x54, 0x3f, 0x9b, 0xe8,
+	0xf6, 0x55, 0xca, 0x5d, 0xc7, 0xd9, 0x75, 0x5d, 0x0e, 0x88, 0xa6, 0x4a, 0x60, 0x94, 0xc8, 0xac,
+	0x73, 0x64, 0xd1, 0xa0, 0x3c, 0x55, 0xd3, 0x37, 0xf2, 0x66, 0xba, 0x31, 0x6a, 0x64, 0xae, 0x0f,
+	0x71, 0x8f, 0xba, 0xe5, 0x69, 0x69, 0x6e, 0xe5, 0xc7, 0xa3, 0xea, 0xec, 0x1e, 0xc4, 0x9d, 0xb6,
+	0x39, 0xdb, 0x87, 0xb8, 0xe3, 0x1a, 0x8f, 0x48, 0x4e, 0x7a, 0x70, 0xe6, 0x43, 0x79, 0xa6, 0xa6,
+	0x6f, 0x2c, 0xed, 0xac, 0x37, 0xa4, 0x62, 0x13, 0x98, 0x89, 0x74, 0x0d, 0x59, 0x36, 0xf3, 0xc1,
+	0x9c, 0xef, 0xa7, 0x8b, 0xfa, 0x0a, 0x29, 0x66, 0x80, 0x30, 0x64, 0x01, 0x42, 0xfd, 0x05, 0x29,
+	0xb6, 0x81, 0x83, 0x47, 0x51, 0x00, 0xff, 0x3e, 0x66, 0xfe, 0x16, 0x98, 0xf5, 0x12, 0x31, 0xb2,
+	0xf9, 0xd5, 0x57, 0x5f, 0x4f, 0x11, 0xa3, 0x2b, 0x2c, 0x2e, 0xf6, 0x20, 0xf6, 0x20, 0xf8, 0xf5,
+	0xdf, 0x35, 0xee, 0x11, 0x12, 0xc0, 0x69, 0x4f, 0x89, 0x99, 0x68, 0xdc, 0x5a, 0x18, 0x8f, 0xaa,
+	0xb9, 0x7d, 0x38, 0x4d, 0xf5, 0xcc, 0x05, 0xe9, 0xca, 0x35, 0xaa, 0xa4, 0x80, 0x91, 0x8d, 0x20,
+	0x7a, 0x48, 0xcf, 0x20, 0x51, 0x7e, 0xda, 0x24, 0xa9, 0xa9, 0x4b, 0xcf, 0xc0, 0x40, 0xb2, 0x2e,
+	0x13, 0xe1, 0x91, 0xc5, 0xa1, 0xe7, 0x52, 0x14, 0x9c, 0xda, 0x91, 0xa0, 0x2c, 0xe8, 0x85, 0xcc,
+	0xa7, 0x4e, 0xac, 0x2e, 0x62, 0xeb, 0xc6, 0x8b, 0xe8, 0xca, 0xc8, 0x76, 0x26, 0xf0, 0x20, 0x89,
+	0x33, 0xd7, 0xfa, 0x37, 0x9e, 0xd5, 0x57, 0xc9, 0xca, 0x35, 0x89, 0x94, 0x74, 0xef, 0x74, 0xb2,
+	0x6c, 0x32, 0x61, 0x09, 0xf8, 0x9d, 0x7d, 0xf9, 0x53, 0x89, 0x6e, 0xd5, 0x96, 0x19, 0x1e, 0x45,
+	0x39, 0xd4, 0x49, 0x29, 0x05, 0x7f, 0xca, 0xad, 0xc3, 0x43, 0xea, 0xdc, 0x01, 0xe9, 0x7d, 0x42,
+	0x10, 0x10, 0xe5, 0x35, 0x5e, 0xb6, 0xc8, 0xe2, 0x78, 0x54, 0xcd, 0x77, 0x53, 0x6b, 0xa7, 0x6d,
+	0xe6, 0x95, 0x43, 0xc7, 0x35, 0x1e, 0x92, 0xf9, 0xd0, 0x8a, 0x7d, 0x66, 0xa5, 0x7f, 0xcd, 0x82,
+	0xe2, 0x4b, 0xa7, 0xca, 0x04, 0x4e, 0x15, 0xfb, 0x24, 0x12, 0xe6, 0xc4, 0xbb, 0xfe, 0x2f, 0x59,
+	0xfd, 0x8a, 0x44, 0x31, 0xbe, 0xd5, 0x89, 0xd1, 0xa5, 0xde, 0xdf, 0x4f, 0x28, 0x3b, 0x35, 0xcb,
+	0x71, 0xc5, 0x57, 0x7c, 0xc6, 0x04, 0x1c, 0x44, 0xf6, 0xdd, 0xb4, 0x6a, 0x8b, 0xe4, 0x43, 0xe6,
+	0xfb, 0xbd, 0x63, 0x10, 0x56, 0x42, 0x57, 0xd8, 0xa9, 0x36, 0xe4, 0x64, 0xff, 0xb6, 0xeb, 0x0e,
+	0x98, 0xef, 0x3f, 0x06, 0x61, 0xb5, 0x66, 0x86, 0xa3, 0xaa, 0x66, 0xe6, 0x42, 0xb5, 0x37, 0xea,
+	0x64, 0x31, 0x8c, 0xec, 0x64, 0x4e, 0xd8, 0xb1, 0x00, 0x4c, 0xd0, 0x17, 0xcc, 0x42, 0x98, 0x14,
+	0xdd, 0x92, 0x26, 0x39, 0xc3, 0xb2, 0x1c, 0x0a, 0xef, 0x8d, 0x4e, 0x96, 0xa4, 0xb9, 0x4b, 0xbd,
+	0x3f, 0x94, 0xed, 0x3f, 0x92, 0x47, 0xea, 0x5d, 0xe3, 0xca, 0x21, 0xf5, 0x52, 0xa8, 0x22, 0xf9,
+	0xe7, 0xb2, 0xfa, 0x94, 0xa8, 0xb5, 0x3f, 0xfc, 0x54, 0xd1, 0x86, 0xe3, 0x8a, 0x76, 0x3e, 0xae,
+	0x68, 0x1f, 0xc7, 0x15, 0xed, 0xd5, 0x45, 0x45, 0x3b, 0xbf, 0xa8, 0x68, 0x1f, 0x2e, 0x2a, 0xda,
+	0xf3, 0xad, 0x0c, 0x88, 0x35, 0x00, 0xdf, 0xe2, 0x01, 0x88, 0x53, 0xc6, 0xfb, 0x6a, 0xb7, 0xe9,
+	0x30, 0x0e, 0xcd, 0x41, 0x33, 0x79, 0x79, 0x25, 0x96, 0x3d, 0x97, 0xbc, 0xa4, 0x0f, 0xbe, 0x04,
+	0x00, 0x00, 0xff, 0xff, 0xdf, 0x19, 0x2d, 0x76, 0xe8, 0x07, 0x00, 0x00,
 }

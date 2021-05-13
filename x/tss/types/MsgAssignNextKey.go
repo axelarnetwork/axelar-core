@@ -9,9 +9,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
-// NewMsgAssignNextKey constructor for MsgAssignNextKey
-func NewMsgAssignNextKey(sender sdk.AccAddress, chain string, keyID string, keyRole exported.KeyRole) *MsgAssignNextKey {
-	return &MsgAssignNextKey{
+// NewAssignKeyRequest constructor for AssignKeyRequest
+func NewAssignKeyRequest(sender sdk.AccAddress, chain string, keyID string, keyRole exported.KeyRole) *AssignKeyRequest {
+	return &AssignKeyRequest{
 		Sender:  sender,
 		Chain:   chain,
 		KeyID:   keyID,
@@ -20,13 +20,13 @@ func NewMsgAssignNextKey(sender sdk.AccAddress, chain string, keyID string, keyR
 }
 
 // Route returns the route for this message
-func (m MsgAssignNextKey) Route() string { return RouterKey }
+func (m AssignKeyRequest) Route() string { return RouterKey }
 
 // Type returns the type of this message
-func (m MsgAssignNextKey) Type() string { return "AssignNextKey" }
+func (m AssignKeyRequest) Type() string { return "AssignNextKey" }
 
 // ValidateBasic performs a stateless validation of this message
-func (m MsgAssignNextKey) ValidateBasic() error {
+func (m AssignKeyRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(ErrTss, "sender must be set")
 	}
@@ -47,11 +47,11 @@ func (m MsgAssignNextKey) ValidateBasic() error {
 }
 
 // GetSignBytes returns the bytes to sign for this message
-func (m MsgAssignNextKey) GetSignBytes() []byte {
+func (m AssignKeyRequest) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
 // GetSigners returns the set of signers for this message
-func (m MsgAssignNextKey) GetSigners() []sdk.AccAddress {
+func (m AssignKeyRequest) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }

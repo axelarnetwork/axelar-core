@@ -1,14 +1,15 @@
 package types
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
-// NewMsgKeygenStart constructor for MsgKeygenStart
-func NewMsgKeygenStart(sender sdk.AccAddress, newKeyID string, subsetSize int64, keyShareDistributionPolicy exported.KeyShareDistributionPolicy) *MsgKeygenStart {
-	return &MsgKeygenStart{
+// NewStartKeygenRequest constructor for StartKeygenRequest
+func NewStartKeygenRequest(sender sdk.AccAddress, newKeyID string, subsetSize int64, keyShareDistributionPolicy exported.KeyShareDistributionPolicy) *StartKeygenRequest {
+	return &StartKeygenRequest{
 		Sender:                     sender,
 		NewKeyID:                   newKeyID,
 		SubsetSize:                 subsetSize,
@@ -17,14 +18,14 @@ func NewMsgKeygenStart(sender sdk.AccAddress, newKeyID string, subsetSize int64,
 }
 
 // Route implements the sdk.Msg interface.
-func (m MsgKeygenStart) Route() string { return RouterKey }
+func (m StartKeygenRequest) Route() string { return RouterKey }
 
 // Type implements the sdk.Msg interface.
 // naming convention follows x/staking/types/msgs.go
-func (m MsgKeygenStart) Type() string { return "KeyGenStart" }
+func (m StartKeygenRequest) Type() string { return "KeyGenStart" }
 
 // ValidateBasic implements the sdk.Msg interface.
-func (m MsgKeygenStart) ValidateBasic() error {
+func (m StartKeygenRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
@@ -46,11 +47,11 @@ func (m MsgKeygenStart) ValidateBasic() error {
 }
 
 // GetSignBytes implements the sdk.Msg interface.
-func (m MsgKeygenStart) GetSignBytes() []byte {
+func (m StartKeygenRequest) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
 // GetSigners implements sdk.Msg
-func (m MsgKeygenStart) GetSigners() []sdk.AccAddress {
+func (m StartKeygenRequest) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }

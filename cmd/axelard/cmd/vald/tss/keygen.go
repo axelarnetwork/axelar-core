@@ -126,7 +126,7 @@ func (mgr *Mgr) handleIntermediateKeygenMsgs(keyID string, intermediate <-chan *
 		mgr.Logger.Debug(fmt.Sprintf("outgoing keygen msg: key [%.20s] from me [%.20s] to [%.20s] broadcast [%t]\n",
 			keyID, mgr.principalAddr, msg.ToPartyUid, msg.IsBroadcast))
 		// sender is set by broadcaster
-		tssMsg := &tss.MsgKeygenTraffic{Sender: mgr.sender, SessionID: keyID, Payload: msg}
+		tssMsg := &tss.KeygenTrafficRequest{Sender: mgr.sender, SessionID: keyID, Payload: msg}
 		if err := mgr.broadcaster.Broadcast(tssMsg); err != nil {
 			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing keygen msg")
 		}
@@ -152,7 +152,7 @@ func (mgr *Mgr) handleKeygenResult(keyID string, result <-chan []byte) error {
 	mgr.Logger.Info(fmt.Sprintf("handler goroutine: received pubkey from server! [%v]", pubkey))
 
 	poll := voting.NewPollMeta(tss.ModuleName, keyID)
-	vote := &tss.MsgVotePubKey{Sender: mgr.sender, PollMeta: poll, PubKeyBytes: bz}
+	vote := &tss.VotePubKeyRequest{Sender: mgr.sender, PollMeta: poll, PubKeyBytes: bz}
 	return mgr.broadcaster.Broadcast(vote)
 }
 

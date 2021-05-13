@@ -75,7 +75,7 @@ func GetHandlerKeygenStart(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewMsgKeygenStart(sender, req.NewKeyID, req.SubsetSize, keyShareDistributionPolicy)
+		msg := types.NewStartKeygenRequest(sender, req.NewKeyID, req.SubsetSize, keyShareDistributionPolicy)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -108,7 +108,7 @@ func GetHandlerKeyAssignNext(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewMsgAssignNextKey(sender, mux.Vars(r)[clientUtils.PathVarChain], req.KeyID, keyRole)
+		msg := types.NewAssignKeyRequest(sender, mux.Vars(r)[clientUtils.PathVarChain], req.KeyID, keyRole)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -141,7 +141,7 @@ func GetHandlerKeyRotate(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewMsgRotateKey(sender, mux.Vars(r)[clientUtils.PathVarChain], keyRole)
+		msg := types.NewRotateKeyRequest(sender, mux.Vars(r)[clientUtils.PathVarChain], keyRole)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

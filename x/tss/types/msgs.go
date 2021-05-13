@@ -9,14 +9,14 @@ import (
 )
 
 // Route implements the sdk.Msg interface.
-func (m MsgKeygenTraffic) Route() string { return RouterKey }
+func (m KeygenTrafficRequest) Route() string { return RouterKey }
 
 // Type implements the sdk.Msg interface.
 // naming convention follows x/staking/types/msgs.go
-func (m MsgKeygenTraffic) Type() string { return "KeygenTraffic" }
+func (m KeygenTrafficRequest) Type() string { return "KeygenTraffic" }
 
 // ValidateBasic implements the sdk.Msg interface.
-func (m MsgKeygenTraffic) ValidateBasic() error {
+func (m KeygenTrafficRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
@@ -34,24 +34,24 @@ func (m MsgKeygenTraffic) ValidateBasic() error {
 }
 
 // GetSignBytes implements the sdk.Msg interface
-func (m MsgKeygenTraffic) GetSignBytes() []byte {
+func (m KeygenTrafficRequest) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
 // GetSigners implements the sdk.Msg interface
-func (m MsgKeygenTraffic) GetSigners() []sdk.AccAddress {
+func (m KeygenTrafficRequest) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }
 
 // Route implements the sdk.Msg interface.
-func (m MsgSignTraffic) Route() string { return RouterKey }
+func (m SignTrafficRequest) Route() string { return RouterKey }
 
 // Type implements the sdk.Msg interface.
 // naming convention follows x/staking/types/msgs.go
-func (m MsgSignTraffic) Type() string { return "SignTraffic" }
+func (m SignTrafficRequest) Type() string { return "SignTraffic" }
 
 // ValidateBasic implements the sdk.Msg interface.
-func (m MsgSignTraffic) ValidateBasic() error {
+func (m SignTrafficRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
@@ -69,27 +69,27 @@ func (m MsgSignTraffic) ValidateBasic() error {
 }
 
 // GetSignBytes implements the sdk.Msg interface
-func (m MsgSignTraffic) GetSignBytes() []byte {
+func (m SignTrafficRequest) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
 // GetSigners implements the sdk.Msg interface
-func (m MsgSignTraffic) GetSigners() []sdk.AccAddress {
+func (m SignTrafficRequest) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }
 
 // Route returns the route for this message
-func (m MsgVotePubKey) Route() string {
+func (m VotePubKeyRequest) Route() string {
 	return RouterKey
 }
 
 // Type returns the type of this message
-func (m MsgVotePubKey) Type() string {
+func (m VotePubKeyRequest) Type() string {
 	return "VotePubKey"
 }
 
 // ValidateBasic performs a stateless validation of this message
-func (m MsgVotePubKey) ValidateBasic() error {
+func (m VotePubKeyRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
@@ -103,27 +103,27 @@ func (m MsgVotePubKey) ValidateBasic() error {
 }
 
 // GetSignBytes returns the bytes to sign for this message
-func (m MsgVotePubKey) GetSignBytes() []byte {
+func (m VotePubKeyRequest) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
 // GetSigners returns the set of signers for this message
-func (m MsgVotePubKey) GetSigners() []sdk.AccAddress {
+func (m VotePubKeyRequest) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }
 
 // Route returns the route for this message
-func (m MsgVoteSig) Route() string {
+func (m VoteSigRequest) Route() string {
 	return RouterKey
 }
 
 // Type returns the type of this message
-func (m MsgVoteSig) Type() string {
+func (m VoteSigRequest) Type() string {
 	return "VoteSig"
 }
 
 // ValidateBasic performs a stateless validation of this message
-func (m MsgVoteSig) ValidateBasic() error {
+func (m VoteSigRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
@@ -137,11 +137,11 @@ func (m MsgVoteSig) ValidateBasic() error {
 }
 
 // GetSignBytes returns the bytes to sign for this message
-func (m MsgVoteSig) GetSignBytes() []byte {
+func (m VoteSigRequest) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
 // GetSigners returns the set of signers for this message
-func (m MsgVoteSig) GetSigners() []sdk.AccAddress {
+func (m VoteSigRequest) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }

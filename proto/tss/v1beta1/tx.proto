@@ -13,8 +13,8 @@ option (gogoproto.marshaler_all) = false;
 option (gogoproto.unmarshaler_all) = false;
 option (gogoproto.sizer_all) = false;
 
-// MsgAssignNextKey represents a message to assign a new key
-message MsgAssignNextKey {
+// AssignKeyRequest represents a message to assign a new key
+message AssignKeyRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
@@ -22,15 +22,19 @@ message MsgAssignNextKey {
   exported.v1beta1.KeyRole key_role = 4;
 }
 
-// MsgDeregister to deregister so that the validator will not participate in any
-// future keygen
-message MsgDeregister {
+message AssignKeyResponse {}
+
+// DeregisterRequest to deregister so that the validator will not participate in
+// any future keygen
+message DeregisterRequest {
   string sender = 1 [ (gogoproto.casttype) =
                           "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
 }
 
-// MsgKeygenStart indicate the start of keygen
-message MsgKeygenStart {
+message DeregisterResponse {}
+
+// StartKeygenRequest indicate the start of keygen
+message StartKeygenRequest {
   string sender = 1 [ (gogoproto.casttype) =
                           "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string new_key_id = 2 [ (gogoproto.customname) = "NewKeyID" ];
@@ -38,7 +42,9 @@ message MsgKeygenStart {
   exported.v1beta1.KeyShareDistributionPolicy key_share_distribution_policy = 4;
 }
 
-message MsgRotateKey {
+message StartKeygenResponse {}
+
+message RotateKeyRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
@@ -46,24 +52,30 @@ message MsgRotateKey {
   exported.v1beta1.KeyRole key_role = 4;
 }
 
-// MsgKeygenTraffic protocol message
-message MsgKeygenTraffic {
+message RotateKeyResponse {}
+
+// KeygenTrafficRequest protocol message
+message KeygenTrafficRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string session_id = 2 [ (gogoproto.customname) = "SessionID" ];
   tofnd.v1beta1.TrafficOut payload = 3;
 }
 
-// MsgSignTraffic protocol message
-message MsgSignTraffic {
+message KeygenTrafficResponse {}
+
+// SignTrafficRequest protocol message
+message SignTrafficRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string session_id = 2 [ (gogoproto.customname) = "SessionID" ];
   tofnd.v1beta1.TrafficOut payload = 3;
 }
 
-// MsgVotePubKey represents the message to vote on a public key
-message MsgVotePubKey {
+message SignTrafficResponse {}
+
+// VotePubKeyRequest represents the message to vote on a public key
+message VotePubKeyRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   vote.exported.v1beta1.PollMeta poll_meta = 2 [ (gogoproto.nullable) = false ];
@@ -71,9 +83,10 @@ message MsgVotePubKey {
   // elliptic curve information
   bytes pub_key_bytes = 3;
 }
+message VotePubKeyResponse {}
 
-// MsgVoteSig represents a message to vote for a signature
-message MsgVoteSig {
+// VoteSigRequest represents a message to vote for a signature
+message VoteSigRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   vote.exported.v1beta1.PollMeta poll_meta = 2 [ (gogoproto.nullable) = false ];
@@ -81,3 +94,5 @@ message MsgVoteSig {
   // private fields using reflection (so *big.Int does not work)
   bytes sig_bytes = 3;
 }
+
+message VoteSigResponse {}
