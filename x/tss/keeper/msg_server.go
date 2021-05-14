@@ -234,6 +234,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			}
 			pubKey := btcecPK.ToECDSA()
 			s.SetKey(ctx, req.PollMeta.ID, *pubKey)
+			s.Logger(ctx).Info(fmt.Sprintf("public key confirmation result is %.10s", result))
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized voting result type: %T", result))
@@ -298,6 +299,7 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		switch sigBytes := result.(type) {
 		case []byte:
 			s.SetSig(ctx, req.PollMeta.ID, sigBytes)
+			s.Logger(ctx).Info(fmt.Sprintf("signature verification result is %.10s", result))
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized voting result type: %T", result))
