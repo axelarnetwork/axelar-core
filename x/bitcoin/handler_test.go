@@ -12,7 +12,6 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -72,8 +71,8 @@ func TestHandleMsgLink(t *testing.T) {
 		assert.Len(t, nexusKeeper.LinkAddressesCalls(), 1)
 		assert.Equal(t, exported.Bitcoin, signer.GetCurrentKeyCalls()[0].Chain)
 		assert.Equal(t, msg.RecipientChain, nexusKeeper.GetChainCalls()[0].Chain)
-		assert.Equal(t, btcKeeper.SetAddressCalls()[0].Address.Address.EncodeAddress(), string(res.Data))
-		assert.Equal(t, types.DEPOSIT, btcKeeper.SetAddressCalls()[0].Address.Role)
+		assert.Equal(t, btcKeeper.SetAddressCalls()[0].Address.Address, string(res.Data))
+		assert.Equal(t, types.Deposit, btcKeeper.SetAddressCalls()[0].Address.Role)
 	}).Repeat(repeatCount))
 
 	t.Run("no master key", testutils.Func(func(t *testing.T) {
@@ -114,20 +113,15 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 			},
 			GetAddressFunc: func(sdk.Context, string) (types.AddressInfo, bool) {
 				return types.AddressInfo{
-					Address:      address,
+					Address:      address.EncodeAddress(),
 					RedeemScript: rand.Bytes(200),
-					Role:         types.DEPOSIT,
-					Key: tss.Key{
-						ID:    rand.StrBetween(5, 20),
-						Value: ecdsa.PublicKey{},
-						Role:  tss.SecondaryKey,
-					},
+					Role:         types.Deposit,
+					KeyID:        rand.StrBetween(5, 20),
 				}, true
 			},
 			GetRevoteLockingPeriodFunc:        func(sdk.Context) int64 { return int64(mathRand.Uint32()) },
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) uint64 { return mathRand.Uint64() },
 			SetPendingOutpointInfoFunc:        func(sdk.Context, vote.PollMeta, types.OutPointInfo) {},
-			CodecFunc:                         func() *codec.LegacyAmino { return types.ModuleCdc.LegacyAmino },
 		}
 		voter = &mock.VoterMock{
 			InitPollFunc: func(sdk.Context, vote.PollMeta, int64) error { return nil },
@@ -159,7 +153,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 	t.Run("happy path consolidation", testutils.Func(func(t *testing.T) {
 		setup()
 		addr, _ := btcKeeper.GetAddress(ctx, msg.OutPointInfo.Address)
-		addr.Role = types.CONSOLIDATION
+		addr.Role = types.Consolidation
 		btcKeeper.GetAddressFunc = func(sdk.Context, string) (types.AddressInfo, bool) {
 			return addr, true
 		}
@@ -224,19 +218,14 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			SetOutpointInfoFunc:           func(sdk.Context, types.OutPointInfo, types.OutPointState) {},
 			GetPendingOutPointInfoFunc:    func(sdk.Context, vote.PollMeta) (types.OutPointInfo, bool) { return info, true },
 			DeletePendingOutPointInfoFunc: func(sdk.Context, vote.PollMeta) {},
-			CodecFunc:                     func() *codec.LegacyAmino { return types.ModuleCdc.LegacyAmino },
 			GetSignedTxFunc:               func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
 			GetMasterKeyVoutFunc:          func(sdk.Context) (uint32, bool) { return 0, false },
 			GetAddressFunc: func(sdk.Context, string) (types.AddressInfo, bool) {
 				return types.AddressInfo{
-					Address:      address,
+					Address:      address.EncodeAddress(),
 					RedeemScript: rand.Bytes(200),
-					Role:         types.DEPOSIT,
-					Key: tss.Key{
-						ID:    rand.StrBetween(5, 20),
-						Value: ecdsa.PublicKey{},
-						Role:  tss.SecondaryKey,
-					},
+					Role:         types.Deposit,
+					KeyID:        rand.StrBetween(5, 20),
 				}, true
 			},
 		}
@@ -270,7 +259,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 	t.Run("happy path confirm deposit to consolidation address", testutils.Func(func(t *testing.T) {
 		setup()
 		addr, _ := btcKeeper.GetAddress(ctx, info.Address)
-		addr.Role = types.CONSOLIDATION
+		addr.Role = types.Consolidation
 		btcKeeper.GetAddressFunc = func(sdk.Context, string) (types.AddressInfo, bool) {
 			return addr, true
 		}
@@ -293,7 +282,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		info.OutPoint = op.String()
 		msg.OutPoint = op.String()
 		addr, _ := btcKeeper.GetAddress(ctx, info.Address)
-		addr.Role = types.CONSOLIDATION
+		addr.Role = types.Consolidation
 		btcKeeper.GetAddressFunc = func(sdk.Context, string) (types.AddressInfo, bool) {
 			return addr, true
 		}
@@ -340,7 +329,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			return op.Index, true
 		}
 		addr, _ := btcKeeper.GetAddress(ctx, "")
-		addr.Role = types.CONSOLIDATION
+		addr.Role = types.Consolidation
 		btcKeeper.GetAddressFunc = func(sdk.Context, string) (types.AddressInfo, bool) {
 			return addr, true
 		}
@@ -546,15 +535,10 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 			GetMasterKeyVoutFunc:          func(sdk.Context) (uint32, bool) { return 0, false },
 			SetMasterKeyVoutFunc:          func(sdk.Context, uint32) {},
 			GetAddressFunc: func(_ sdk.Context, encodedAddress string) (types.AddressInfo, bool) {
-				sk, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
 				return types.AddressInfo{
-					Address:      nil,
+					Address:      "",
 					RedeemScript: nil,
-					Key: tss.Key{
-						ID:    secondaryKey.ID,
-						Value: sk.PublicKey,
-						Role:  tss.SecondaryKey,
-					},
+					KeyID:        secondaryKey.ID,
 				}, true
 			},
 			SetAddressFunc:                 func(sdk.Context, types.AddressInfo) {},

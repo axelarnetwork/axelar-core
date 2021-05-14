@@ -98,7 +98,7 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	voter := voteKeeper.NewKeeper(encCfg.Amino, sdk.NewKVStoreKey(voteTypes.StoreKey), snapKeeper, broadcaster)
 
 	btcSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
-	bitcoinKeeper := btcKeeper.NewKeeper(encCfg.Amino, sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)
+	bitcoinKeeper := btcKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)
 	btcParams := btcTypes.DefaultParams()
 	bitcoinKeeper.SetParams(ctx, btcParams)
 

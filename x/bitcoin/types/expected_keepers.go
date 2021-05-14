@@ -3,7 +3,6 @@ package types
 import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -20,7 +19,6 @@ type BTCKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 	SetParams(ctx sdk.Context, p Params)
 	GetParams(ctx sdk.Context) Params
-	Codec() *codec.LegacyAmino
 
 	GetAnyoneCanSpendAddress(ctx sdk.Context) AddressInfo
 	GetRequiredConfirmationHeight(ctx sdk.Context) uint64

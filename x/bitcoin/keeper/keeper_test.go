@@ -26,7 +26,7 @@ func TestKeeper_GetConfirmedOutPointInfos(t *testing.T) {
 		encCfg := appParams.MakeEncodingConfig()
 		btcSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"), "btc")
 		ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-		return NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("btc"), btcSubspace), ctx
+		return NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("btc"), btcSubspace), ctx
 	}
 
 	testCases := []struct {

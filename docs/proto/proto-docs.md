@@ -5,8 +5,11 @@
 ## Table of Contents
 
 - [bitcoin/v1beta1/types.proto](#bitcoin/v1beta1/types.proto)
+    - [AddressInfo](#bitcoin.v1beta1.AddressInfo)
     - [Network](#bitcoin.v1beta1.Network)
     - [OutPointInfo](#bitcoin.v1beta1.OutPointInfo)
+  
+    - [AddressRole](#bitcoin.v1beta1.AddressRole)
   
 - [bitcoin/v1beta1/params.proto](#bitcoin/v1beta1/params.proto)
     - [Params](#bitcoin.v1beta1.Params)
@@ -121,6 +124,25 @@
 
 
 
+<a name="bitcoin.v1beta1.AddressInfo"></a>
+
+### AddressInfo
+AddressInfo is a wrapper containing the Bitcoin P2WSH address, it's
+corresponding script and the underlying key
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
+| `role` | [AddressRole](#bitcoin.v1beta1.AddressRole) |  |  |
+| `redeem_script` | [bytes](#bytes) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="bitcoin.v1beta1.Network"></a>
 
 ### Network
@@ -154,6 +176,19 @@ of a transaction
 
 
  <!-- end messages -->
+
+
+<a name="bitcoin.v1beta1.AddressRole"></a>
+
+### AddressRole
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| ADDRESS_ROLE_UNSPECIFIED | 0 |  |
+| ADDRESS_ROLE_DEPOSIT | 1 |  |
+| ADDRESS_ROLE_CONSOLIDATION | 2 |  |
+
 
  <!-- end enums -->
 

@@ -12,7 +12,6 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -34,12 +33,12 @@ var _ types.BTCKeeper = Keeper{}
 // Keeper provides access to all state changes regarding the Bitcoin module
 type Keeper struct {
 	storeKey sdk.StoreKey
-	cdc      *codec.LegacyAmino
+	cdc      codec.BinaryMarshaler
 	params   params.Subspace
 }
 
 // NewKeeper returns a new keeper object
-func NewKeeper(cdc *codec.LegacyAmino, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
+func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
 	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable())}
 }
 
@@ -110,32 +109,13 @@ func (k Keeper) GetMinimumWithdrawalAmount(ctx sdk.Context) btcutil.Amount {
 	return result
 }
 
-// Codec returns the codec used by the keeper to marshal and unmarshal data
-func (k Keeper) Codec() *codec.LegacyAmino {
-	return k.cdc
-}
-
 // SetAddress stores the given address information
 func (k Keeper) SetAddress(ctx sdk.Context, address types.AddressInfo) {
-	k.setAddress(ctx, addrPrefix+address.EncodeAddress(), address)
+	k.setAddress(ctx, addrPrefix+address.Address, address)
 }
 
 func (k Keeper) setAddress(ctx sdk.Context, key string, address types.AddressInfo) {
-	// btcutil.Address (and it's implementations) can't be serialized with amino,
-	// so we use a helper struct to get around that problem
-	a := struct {
-		Addr   string
-		Role   types.AddressRole
-		Script types.RedeemScript
-		Key    tss.Key
-	}{
-		Addr:   address.EncodeAddress(),
-		Role:   address.Role,
-		Script: address.RedeemScript,
-		Key:    address.Key,
-	}
-
-	ctx.KVStore(k.storeKey).Set([]byte(key), k.Codec().MustMarshalBinaryLengthPrefixed(a))
+	ctx.KVStore(k.storeKey).Set([]byte(key), k.cdc.MustMarshalBinaryLengthPrefixed(&address))
 }
 
 // GetAddress returns the address information for the given encoded address
@@ -149,23 +129,10 @@ func (k Keeper) getAddress(ctx sdk.Context, key string) (types.AddressInfo, bool
 		return types.AddressInfo{}, false
 	}
 
-	// btcutil.Address (and it's implementations) can't be serialized with amino,
-	// so we use a helper struct to get around that problem
-	var a struct {
-		Addr   string
-		Role   types.AddressRole
-		Script types.RedeemScript
-		Key    tss.Key
-	}
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &a)
-	addr, _ := btcutil.DecodeAddress(a.Addr, k.GetNetwork(ctx).Params())
+	var address types.AddressInfo
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &address)
 
-	return types.AddressInfo{
-		Address:      addr,
-		Role:         a.Role,
-		RedeemScript: a.Script,
-		Key:          a.Key,
-	}, true
+	return address, true
 }
 
 // DeleteOutpointInfo deletes a the given outpoint if known
@@ -209,7 +176,7 @@ func (k Keeper) GetOutPointInfo(ctx sdk.Context, outPoint wire.OutPoint) (types.
 // Since the information is not yet confirmed the outpoint info is not necessarily unique.
 // Therefore we need to store by the poll that confirms/rejects it
 func (k Keeper) SetPendingOutpointInfo(ctx sdk.Context, poll exported.PollMeta, info types.OutPointInfo) {
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(info)
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(&info)
 	ctx.KVStore(k.storeKey).Set([]byte(pendingOutpointPrefix+poll.String()), bz)
 }
 
@@ -220,7 +187,8 @@ func (k Keeper) DeletePendingOutPointInfo(ctx sdk.Context, poll exported.PollMet
 
 // SetOutpointInfo stores confirmed or spent outpoints
 func (k Keeper) SetOutpointInfo(ctx sdk.Context, info types.OutPointInfo, state types.OutPointState) {
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(info)
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(&info)
+
 	switch state {
 	case types.CONFIRMED:
 		ctx.KVStore(k.storeKey).Set([]byte(confirmedOutPointPrefix+info.OutPoint), bz)
@@ -246,8 +214,7 @@ func (k Keeper) GetConfirmedOutPointInfos(ctx sdk.Context) []types.OutPointInfo 
 
 // SetUnsignedTx stores a raw transaction for outpoint consolidation
 func (k Keeper) SetUnsignedTx(ctx sdk.Context, tx *wire.MsgTx) {
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(tx)
-	ctx.KVStore(k.storeKey).Set([]byte(unsignedTxKey), bz)
+	ctx.KVStore(k.storeKey).Set([]byte(unsignedTxKey), types.MustEncodeTx(tx))
 }
 
 // GetUnsignedTx returns the raw unsigned transaction for outpoint consolidation
@@ -256,10 +223,10 @@ func (k Keeper) GetUnsignedTx(ctx sdk.Context) (*wire.MsgTx, bool) {
 	if bz == nil {
 		return nil, false
 	}
-	var tx *wire.MsgTx
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &tx)
 
-	return tx, true
+	tx := types.MustDecodeTx(bz)
+
+	return &tx, true
 }
 
 // DeleteUnsignedTx deletes the raw unsigned transaction for outpoint consolidation
@@ -269,7 +236,7 @@ func (k Keeper) DeleteUnsignedTx(ctx sdk.Context) {
 
 // SetSignedTx stores the signed transaction for outpoint consolidation
 func (k Keeper) SetSignedTx(ctx sdk.Context, tx *wire.MsgTx) {
-	ctx.KVStore(k.storeKey).Set([]byte(signedTxKey), k.cdc.MustMarshalBinaryLengthPrefixed(tx))
+	ctx.KVStore(k.storeKey).Set([]byte(signedTxKey), types.MustEncodeTx(tx))
 }
 
 // GetSignedTx returns the signed transaction for outpoint consolidation
@@ -278,9 +245,10 @@ func (k Keeper) GetSignedTx(ctx sdk.Context) (*wire.MsgTx, bool) {
 	if bz == nil {
 		return nil, false
 	}
-	var tx *wire.MsgTx
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &tx)
-	return tx, true
+
+	tx := types.MustDecodeTx(bz)
+
+	return &tx, true
 }
 
 // DeleteSignedTx deletes the signed transaction for outpoint consolidation
@@ -290,7 +258,10 @@ func (k Keeper) DeleteSignedTx(ctx sdk.Context) {
 
 // SetDustAmount stores the dust amount for a destination bitcoin address
 func (k Keeper) SetDustAmount(ctx sdk.Context, encodedAddress string, amount btcutil.Amount) {
-	ctx.KVStore(k.storeKey).Set([]byte(dustAmtPrefix+encodedAddress), k.cdc.MustMarshalBinaryLengthPrefixed(amount))
+	bz := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bz, uint64(amount))
+
+	ctx.KVStore(k.storeKey).Set([]byte(dustAmtPrefix+encodedAddress), bz)
 }
 
 // GetDustAmount returns the dust amount for a destination bitcoin address
@@ -299,9 +270,8 @@ func (k Keeper) GetDustAmount(ctx sdk.Context, encodedAddress string) btcutil.Am
 	if bz == nil {
 		return 0
 	}
-	var amt btcutil.Amount
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &amt)
-	return amt
+
+	return btcutil.Amount(int64(binary.LittleEndian.Uint64(bz)))
 }
 
 // DeleteDustAmount deletes the dust amount for a destination bitcoin address
