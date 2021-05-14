@@ -24,10 +24,17 @@
     - [PollMeta](#vote.exported.v1beta1.PollMeta)
   
 - [bitcoin/v1beta1/tx.proto](#bitcoin/v1beta1/tx.proto)
-    - [MsgConfirmOutpoint](#bitcoin.v1beta1.MsgConfirmOutpoint)
-    - [MsgLink](#bitcoin.v1beta1.MsgLink)
-    - [MsgSignPendingTransfers](#bitcoin.v1beta1.MsgSignPendingTransfers)
-    - [MsgVoteConfirmOutpoint](#bitcoin.v1beta1.MsgVoteConfirmOutpoint)
+    - [ConfirmOutpointRequest](#bitcoin.v1beta1.ConfirmOutpointRequest)
+    - [ConfirmOutpointResponse](#bitcoin.v1beta1.ConfirmOutpointResponse)
+    - [LinkRequest](#bitcoin.v1beta1.LinkRequest)
+    - [LinkResponse](#bitcoin.v1beta1.LinkResponse)
+    - [SignPendingTransfersRequest](#bitcoin.v1beta1.SignPendingTransfersRequest)
+    - [SignPendingTransfersResponse](#bitcoin.v1beta1.SignPendingTransfersResponse)
+    - [VoteConfirmOutpointRequest](#bitcoin.v1beta1.VoteConfirmOutpointRequest)
+    - [VoteConfirmOutpointResponse](#bitcoin.v1beta1.VoteConfirmOutpointResponse)
+  
+- [bitcoin/v1beta1/service.proto](#bitcoin/v1beta1/service.proto)
+    - [MsgService](#bitcoin.v1beta1.MsgService)
   
 - [broadcast/v1beta1/genesis.proto](#broadcast/v1beta1/genesis.proto)
     - [GenesisState](#broadcast.v1beta1.GenesisState)
@@ -337,9 +344,9 @@ PollMeta represents the meta data for a poll
 
 
 
-<a name="bitcoin.v1beta1.MsgConfirmOutpoint"></a>
+<a name="bitcoin.v1beta1.ConfirmOutpointRequest"></a>
 
-### MsgConfirmOutpoint
+### ConfirmOutpointRequest
 MsgConfirmOutpoint represents a message to trigger the confirmation of a
 Bitcoin outpoint
 
@@ -354,9 +361,19 @@ Bitcoin outpoint
 
 
 
-<a name="bitcoin.v1beta1.MsgLink"></a>
+<a name="bitcoin.v1beta1.ConfirmOutpointResponse"></a>
 
-### MsgLink
+### ConfirmOutpointResponse
+
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.LinkRequest"></a>
+
+### LinkRequest
 MsgLink represents a message to link a cross-chain address to a Bitcoin
 address
 
@@ -372,9 +389,24 @@ address
 
 
 
-<a name="bitcoin.v1beta1.MsgSignPendingTransfers"></a>
+<a name="bitcoin.v1beta1.LinkResponse"></a>
 
-### MsgSignPendingTransfers
+### LinkResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `deposit_addr` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.SignPendingTransfersRequest"></a>
+
+### SignPendingTransfersRequest
 MsgSignPendingTransfers represents a message to trigger the signing of a
 consolidation transaction
 
@@ -389,9 +421,24 @@ consolidation transaction
 
 
 
-<a name="bitcoin.v1beta1.MsgVoteConfirmOutpoint"></a>
+<a name="bitcoin.v1beta1.SignPendingTransfersResponse"></a>
 
-### MsgVoteConfirmOutpoint
+### SignPendingTransfersResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `command_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.VoteConfirmOutpointRequest"></a>
+
+### VoteConfirmOutpointRequest
 MsgVoteConfirmOutpoint represents a message to that votes on an outpoint
 
 
@@ -406,11 +453,55 @@ MsgVoteConfirmOutpoint represents a message to that votes on an outpoint
 
 
 
+
+<a name="bitcoin.v1beta1.VoteConfirmOutpointResponse"></a>
+
+### VoteConfirmOutpointResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `status` | [string](#string) |  |  |
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
 
  <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="bitcoin/v1beta1/service.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## bitcoin/v1beta1/service.proto
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="bitcoin.v1beta1.MsgService"></a>
+
+### MsgService
+Msg defines the bitcoin Msg service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `Link` | [LinkRequest](#bitcoin.v1beta1.LinkRequest) | [LinkResponse](#bitcoin.v1beta1.LinkResponse) |  | POST|/axelar/bitcoin/link/{recipient_chain}|
+| `ConfirmOutpoint` | [ConfirmOutpointRequest](#bitcoin.v1beta1.ConfirmOutpointRequest) | [ConfirmOutpointResponse](#bitcoin.v1beta1.ConfirmOutpointResponse) |  | POST|/axelar/bitcoin/confirm|
+| `VoteConfirmOutpoint` | [VoteConfirmOutpointRequest](#bitcoin.v1beta1.VoteConfirmOutpointRequest) | [VoteConfirmOutpointResponse](#bitcoin.v1beta1.VoteConfirmOutpointResponse) |  | |
+| `SignPendingTransfers` | [SignPendingTransfersRequest](#bitcoin.v1beta1.SignPendingTransfersRequest) | [SignPendingTransfersResponse](#bitcoin.v1beta1.SignPendingTransfersResponse) |  | POST|/axelar/bitcoin/sign|
 
  <!-- end services -->
 

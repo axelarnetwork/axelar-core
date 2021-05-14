@@ -232,7 +232,7 @@ func createMsgsWithRandomSigner() []sdk.Msg {
 		if err != nil {
 			panic(err)
 		}
-		msg := btc.NewMsgVoteConfirmOutpoint(
+		msg := btc.NewVoteConfirmOutpointRequest(
 			signer,
 			exported.NewPollMeta(btc.ModuleName, rand.StrBetween(5, 100)),
 			*wire.NewOutPoint(txHash, mathRand.Uint32()),

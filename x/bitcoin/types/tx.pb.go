@@ -27,23 +27,23 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // MsgConfirmOutpoint represents a message to trigger the confirmation of a
 // Bitcoin outpoint
-type MsgConfirmOutpoint struct {
+type ConfirmOutpointRequest struct {
 	Sender       github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 	OutPointInfo OutPointInfo                                  `protobuf:"bytes,2,opt,name=out_point_info,json=outPointInfo,proto3" json:"out_point_info"`
 }
 
-func (m *MsgConfirmOutpoint) Reset()         { *m = MsgConfirmOutpoint{} }
-func (m *MsgConfirmOutpoint) String() string { return proto.CompactTextString(m) }
-func (*MsgConfirmOutpoint) ProtoMessage()    {}
-func (*MsgConfirmOutpoint) Descriptor() ([]byte, []int) {
+func (m *ConfirmOutpointRequest) Reset()         { *m = ConfirmOutpointRequest{} }
+func (m *ConfirmOutpointRequest) String() string { return proto.CompactTextString(m) }
+func (*ConfirmOutpointRequest) ProtoMessage()    {}
+func (*ConfirmOutpointRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5f5c2c0447d15a63, []int{0}
 }
-func (m *MsgConfirmOutpoint) XXX_Unmarshal(b []byte) error {
+func (m *ConfirmOutpointRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgConfirmOutpoint) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ConfirmOutpointRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgConfirmOutpoint.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ConfirmOutpointRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -53,38 +53,74 @@ func (m *MsgConfirmOutpoint) XXX_Marshal(b []byte, deterministic bool) ([]byte, 
 		return b[:n], nil
 	}
 }
-func (m *MsgConfirmOutpoint) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgConfirmOutpoint.Merge(m, src)
+func (m *ConfirmOutpointRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ConfirmOutpointRequest.Merge(m, src)
 }
-func (m *MsgConfirmOutpoint) XXX_Size() int {
+func (m *ConfirmOutpointRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgConfirmOutpoint) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgConfirmOutpoint.DiscardUnknown(m)
+func (m *ConfirmOutpointRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ConfirmOutpointRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgConfirmOutpoint proto.InternalMessageInfo
+var xxx_messageInfo_ConfirmOutpointRequest proto.InternalMessageInfo
+
+type ConfirmOutpointResponse struct {
+}
+
+func (m *ConfirmOutpointResponse) Reset()         { *m = ConfirmOutpointResponse{} }
+func (m *ConfirmOutpointResponse) String() string { return proto.CompactTextString(m) }
+func (*ConfirmOutpointResponse) ProtoMessage()    {}
+func (*ConfirmOutpointResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5f5c2c0447d15a63, []int{1}
+}
+func (m *ConfirmOutpointResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ConfirmOutpointResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ConfirmOutpointResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ConfirmOutpointResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ConfirmOutpointResponse.Merge(m, src)
+}
+func (m *ConfirmOutpointResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ConfirmOutpointResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ConfirmOutpointResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ConfirmOutpointResponse proto.InternalMessageInfo
 
 // MsgLink represents a message to link a cross-chain address to a Bitcoin
 // address
-type MsgLink struct {
+type LinkRequest struct {
 	Sender         github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 	RecipientAddr  string                                        `protobuf:"bytes,2,opt,name=recipient_addr,json=recipientAddr,proto3" json:"recipient_addr,omitempty"`
 	RecipientChain string                                        `protobuf:"bytes,3,opt,name=recipient_chain,json=recipientChain,proto3" json:"recipient_chain,omitempty"`
 }
 
-func (m *MsgLink) Reset()         { *m = MsgLink{} }
-func (m *MsgLink) String() string { return proto.CompactTextString(m) }
-func (*MsgLink) ProtoMessage()    {}
-func (*MsgLink) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5f5c2c0447d15a63, []int{1}
+func (m *LinkRequest) Reset()         { *m = LinkRequest{} }
+func (m *LinkRequest) String() string { return proto.CompactTextString(m) }
+func (*LinkRequest) ProtoMessage()    {}
+func (*LinkRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5f5c2c0447d15a63, []int{2}
 }
-func (m *MsgLink) XXX_Unmarshal(b []byte) error {
+func (m *LinkRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgLink) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *LinkRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgLink.Marshal(b, m, deterministic)
+		return xxx_messageInfo_LinkRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -94,39 +130,76 @@ func (m *MsgLink) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return b[:n], nil
 	}
 }
-func (m *MsgLink) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgLink.Merge(m, src)
+func (m *LinkRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LinkRequest.Merge(m, src)
 }
-func (m *MsgLink) XXX_Size() int {
+func (m *LinkRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgLink) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgLink.DiscardUnknown(m)
+func (m *LinkRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_LinkRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgLink proto.InternalMessageInfo
+var xxx_messageInfo_LinkRequest proto.InternalMessageInfo
+
+type LinkResponse struct {
+	DepositAddr string `protobuf:"bytes,2,opt,name=deposit_addr,json=depositAddr,proto3" json:"deposit_addr,omitempty"`
+}
+
+func (m *LinkResponse) Reset()         { *m = LinkResponse{} }
+func (m *LinkResponse) String() string { return proto.CompactTextString(m) }
+func (*LinkResponse) ProtoMessage()    {}
+func (*LinkResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5f5c2c0447d15a63, []int{3}
+}
+func (m *LinkResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *LinkResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_LinkResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *LinkResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LinkResponse.Merge(m, src)
+}
+func (m *LinkResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *LinkResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_LinkResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LinkResponse proto.InternalMessageInfo
 
 // MsgSignPendingTransfers represents a message to trigger the signing of a
 // consolidation transaction
-type MsgSignPendingTransfers struct {
+type SignPendingTransfersRequest struct {
 	Sender github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 	// TODO: Remove once c2d2 is ready to perform child-pay-for-parent for
 	// consolidation transactions
 	Fee int64 `protobuf:"varint,2,opt,name=fee,proto3" json:"fee,omitempty"` // Deprecated: Do not use.
 }
 
-func (m *MsgSignPendingTransfers) Reset()         { *m = MsgSignPendingTransfers{} }
-func (m *MsgSignPendingTransfers) String() string { return proto.CompactTextString(m) }
-func (*MsgSignPendingTransfers) ProtoMessage()    {}
-func (*MsgSignPendingTransfers) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5f5c2c0447d15a63, []int{2}
+func (m *SignPendingTransfersRequest) Reset()         { *m = SignPendingTransfersRequest{} }
+func (m *SignPendingTransfersRequest) String() string { return proto.CompactTextString(m) }
+func (*SignPendingTransfersRequest) ProtoMessage()    {}
+func (*SignPendingTransfersRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5f5c2c0447d15a63, []int{4}
 }
-func (m *MsgSignPendingTransfers) XXX_Unmarshal(b []byte) error {
+func (m *SignPendingTransfersRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgSignPendingTransfers) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SignPendingTransfersRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgSignPendingTransfers.Marshal(b, m, deterministic)
+		return xxx_messageInfo_SignPendingTransfersRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -136,38 +209,75 @@ func (m *MsgSignPendingTransfers) XXX_Marshal(b []byte, deterministic bool) ([]b
 		return b[:n], nil
 	}
 }
-func (m *MsgSignPendingTransfers) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgSignPendingTransfers.Merge(m, src)
+func (m *SignPendingTransfersRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SignPendingTransfersRequest.Merge(m, src)
 }
-func (m *MsgSignPendingTransfers) XXX_Size() int {
+func (m *SignPendingTransfersRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgSignPendingTransfers) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgSignPendingTransfers.DiscardUnknown(m)
+func (m *SignPendingTransfersRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SignPendingTransfersRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgSignPendingTransfers proto.InternalMessageInfo
+var xxx_messageInfo_SignPendingTransfersRequest proto.InternalMessageInfo
+
+type SignPendingTransfersResponse struct {
+	CommandID string `protobuf:"bytes,1,opt,name=command_id,json=commandId,proto3" json:"command_id,omitempty"`
+}
+
+func (m *SignPendingTransfersResponse) Reset()         { *m = SignPendingTransfersResponse{} }
+func (m *SignPendingTransfersResponse) String() string { return proto.CompactTextString(m) }
+func (*SignPendingTransfersResponse) ProtoMessage()    {}
+func (*SignPendingTransfersResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5f5c2c0447d15a63, []int{5}
+}
+func (m *SignPendingTransfersResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SignPendingTransfersResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SignPendingTransfersResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SignPendingTransfersResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SignPendingTransfersResponse.Merge(m, src)
+}
+func (m *SignPendingTransfersResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *SignPendingTransfersResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_SignPendingTransfersResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SignPendingTransfersResponse proto.InternalMessageInfo
 
 // MsgVoteConfirmOutpoint represents a message to that votes on an outpoint
-type MsgVoteConfirmOutpoint struct {
+type VoteConfirmOutpointRequest struct {
 	Sender    github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 	Poll      exported.PollMeta                             `protobuf:"bytes,2,opt,name=poll,proto3" json:"poll"`
 	OutPoint  string                                        `protobuf:"bytes,3,opt,name=out_point,json=outPoint,proto3" json:"out_point,omitempty"`
 	Confirmed bool                                          `protobuf:"varint,4,opt,name=confirmed,proto3" json:"confirmed,omitempty"`
 }
 
-func (m *MsgVoteConfirmOutpoint) Reset()         { *m = MsgVoteConfirmOutpoint{} }
-func (m *MsgVoteConfirmOutpoint) String() string { return proto.CompactTextString(m) }
-func (*MsgVoteConfirmOutpoint) ProtoMessage()    {}
-func (*MsgVoteConfirmOutpoint) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5f5c2c0447d15a63, []int{3}
+func (m *VoteConfirmOutpointRequest) Reset()         { *m = VoteConfirmOutpointRequest{} }
+func (m *VoteConfirmOutpointRequest) String() string { return proto.CompactTextString(m) }
+func (*VoteConfirmOutpointRequest) ProtoMessage()    {}
+func (*VoteConfirmOutpointRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5f5c2c0447d15a63, []int{6}
 }
-func (m *MsgVoteConfirmOutpoint) XXX_Unmarshal(b []byte) error {
+func (m *VoteConfirmOutpointRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgVoteConfirmOutpoint) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *VoteConfirmOutpointRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgVoteConfirmOutpoint.Marshal(b, m, deterministic)
+		return xxx_messageInfo_VoteConfirmOutpointRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -177,61 +287,107 @@ func (m *MsgVoteConfirmOutpoint) XXX_Marshal(b []byte, deterministic bool) ([]by
 		return b[:n], nil
 	}
 }
-func (m *MsgVoteConfirmOutpoint) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgVoteConfirmOutpoint.Merge(m, src)
+func (m *VoteConfirmOutpointRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VoteConfirmOutpointRequest.Merge(m, src)
 }
-func (m *MsgVoteConfirmOutpoint) XXX_Size() int {
+func (m *VoteConfirmOutpointRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgVoteConfirmOutpoint) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgVoteConfirmOutpoint.DiscardUnknown(m)
+func (m *VoteConfirmOutpointRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_VoteConfirmOutpointRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgVoteConfirmOutpoint proto.InternalMessageInfo
+var xxx_messageInfo_VoteConfirmOutpointRequest proto.InternalMessageInfo
+
+type VoteConfirmOutpointResponse struct {
+	Status string `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
+}
+
+func (m *VoteConfirmOutpointResponse) Reset()         { *m = VoteConfirmOutpointResponse{} }
+func (m *VoteConfirmOutpointResponse) String() string { return proto.CompactTextString(m) }
+func (*VoteConfirmOutpointResponse) ProtoMessage()    {}
+func (*VoteConfirmOutpointResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5f5c2c0447d15a63, []int{7}
+}
+func (m *VoteConfirmOutpointResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *VoteConfirmOutpointResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_VoteConfirmOutpointResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *VoteConfirmOutpointResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VoteConfirmOutpointResponse.Merge(m, src)
+}
+func (m *VoteConfirmOutpointResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *VoteConfirmOutpointResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_VoteConfirmOutpointResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_VoteConfirmOutpointResponse proto.InternalMessageInfo
 
 func init() {
-	proto.RegisterType((*MsgConfirmOutpoint)(nil), "bitcoin.v1beta1.MsgConfirmOutpoint")
-	proto.RegisterType((*MsgLink)(nil), "bitcoin.v1beta1.MsgLink")
-	proto.RegisterType((*MsgSignPendingTransfers)(nil), "bitcoin.v1beta1.MsgSignPendingTransfers")
-	proto.RegisterType((*MsgVoteConfirmOutpoint)(nil), "bitcoin.v1beta1.MsgVoteConfirmOutpoint")
+	proto.RegisterType((*ConfirmOutpointRequest)(nil), "bitcoin.v1beta1.ConfirmOutpointRequest")
+	proto.RegisterType((*ConfirmOutpointResponse)(nil), "bitcoin.v1beta1.ConfirmOutpointResponse")
+	proto.RegisterType((*LinkRequest)(nil), "bitcoin.v1beta1.LinkRequest")
+	proto.RegisterType((*LinkResponse)(nil), "bitcoin.v1beta1.LinkResponse")
+	proto.RegisterType((*SignPendingTransfersRequest)(nil), "bitcoin.v1beta1.SignPendingTransfersRequest")
+	proto.RegisterType((*SignPendingTransfersResponse)(nil), "bitcoin.v1beta1.SignPendingTransfersResponse")
+	proto.RegisterType((*VoteConfirmOutpointRequest)(nil), "bitcoin.v1beta1.VoteConfirmOutpointRequest")
+	proto.RegisterType((*VoteConfirmOutpointResponse)(nil), "bitcoin.v1beta1.VoteConfirmOutpointResponse")
 }
 
 func init() { proto.RegisterFile("bitcoin/v1beta1/tx.proto", fileDescriptor_5f5c2c0447d15a63) }
 
 var fileDescriptor_5f5c2c0447d15a63 = []byte{
-	// 460 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x53, 0xc1, 0x6e, 0xd3, 0x40,
-	0x10, 0xcd, 0x36, 0x51, 0x69, 0x96, 0xd2, 0x4a, 0x56, 0x05, 0x56, 0x0b, 0x4e, 0x88, 0x84, 0xc8,
-	0x25, 0xb6, 0x02, 0x5c, 0x38, 0x36, 0x3d, 0x45, 0xc2, 0x6a, 0x64, 0x10, 0x07, 0x2e, 0x91, 0xe3,
-	0x1d, 0x6f, 0x57, 0x71, 0x76, 0xac, 0xdd, 0x4d, 0x09, 0x7c, 0x05, 0x1f, 0xc1, 0x89, 0x2f, 0xc9,
-	0xb1, 0x47, 0xb8, 0x54, 0x90, 0xfc, 0x05, 0x27, 0x64, 0x67, 0x93, 0x54, 0xc0, 0xb1, 0x3d, 0x79,
-	0xf7, 0xcd, 0x9b, 0xf1, 0x9b, 0x7d, 0x33, 0xd4, 0x1d, 0x09, 0x93, 0xa0, 0x90, 0xc1, 0x65, 0x77,
-	0x04, 0x26, 0xee, 0x06, 0x66, 0xe6, 0xe7, 0x0a, 0x0d, 0x3a, 0x87, 0x36, 0xe2, 0xdb, 0xc8, 0xf1,
-	0xc9, 0x3f, 0xd4, 0x4f, 0x39, 0xe8, 0x15, 0xfb, 0xf8, 0xe9, 0x25, 0x1a, 0x08, 0x60, 0x96, 0xa3,
-	0x32, 0xc0, 0xfe, 0x4b, 0x39, 0xe2, 0xc8, 0xb1, 0x3c, 0x06, 0xc5, 0x69, 0x85, 0xb6, 0xbe, 0x11,
-	0xea, 0x84, 0x9a, 0x9f, 0xa1, 0x4c, 0x85, 0x9a, 0x9c, 0x4f, 0x4d, 0x8e, 0x42, 0x1a, 0xa7, 0x4f,
-	0x77, 0x35, 0x48, 0x06, 0xca, 0x25, 0x4d, 0xd2, 0xde, 0xef, 0x75, 0x7f, 0x5f, 0x37, 0x3a, 0x5c,
-	0x98, 0x8b, 0xe9, 0xc8, 0x4f, 0x70, 0x12, 0x24, 0xa8, 0x27, 0xa8, 0xed, 0xa7, 0xa3, 0xd9, 0xd8,
-	0xfe, 0xea, 0x34, 0x49, 0x4e, 0x19, 0x53, 0xa0, 0x75, 0x64, 0x0b, 0x38, 0x7d, 0x7a, 0x80, 0x53,
-	0x33, 0x2c, 0xeb, 0x0e, 0x85, 0x4c, 0xd1, 0xdd, 0x69, 0x92, 0xf6, 0xfd, 0x17, 0x4f, 0xfc, 0xbf,
-	0x3a, 0xf4, 0xcf, 0xa7, 0x66, 0x50, 0xb0, 0xfa, 0x32, 0xc5, 0x5e, 0x6d, 0x7e, 0xdd, 0xa8, 0x44,
-	0xfb, 0x78, 0x03, 0x6b, 0x7d, 0x25, 0xf4, 0x5e, 0xa8, 0xf9, 0x1b, 0x21, 0xc7, 0xb7, 0xa9, 0xf0,
-	0x19, 0x3d, 0x50, 0x90, 0x88, 0x5c, 0x80, 0x34, 0xc3, 0x98, 0x31, 0x55, 0x2a, 0xac, 0x47, 0x0f,
-	0x36, 0x68, 0x91, 0xe1, 0x3c, 0xa7, 0x87, 0x5b, 0x5a, 0x72, 0x11, 0x0b, 0xe9, 0x56, 0x4b, 0xde,
-	0x36, 0xfb, 0xac, 0x40, 0x5b, 0x9f, 0xe9, 0xa3, 0x50, 0xf3, 0xb7, 0x82, 0xcb, 0x01, 0x48, 0x26,
-	0x24, 0x7f, 0xa7, 0x62, 0xa9, 0x53, 0x50, 0xfa, 0x36, 0x55, 0x1f, 0xd1, 0x6a, 0x0a, 0x50, 0x4a,
-	0xad, 0xf6, 0x76, 0x5c, 0x12, 0x15, 0xd7, 0xd6, 0x0f, 0x42, 0x1f, 0x86, 0x9a, 0xbf, 0x47, 0x03,
-	0x77, 0xe8, 0xe9, 0x6b, 0x5a, 0xcb, 0x31, 0xcb, 0xac, 0x93, 0x0d, 0xbf, 0x98, 0x3e, 0x7f, 0x3d,
-	0x7d, 0x1b, 0x3f, 0x07, 0x98, 0x65, 0x21, 0x98, 0xd8, 0x7a, 0x59, 0xa6, 0x38, 0x27, 0xb4, 0xbe,
-	0x19, 0x07, 0xfb, 0x7e, 0x7b, 0x6b, 0x93, 0x9d, 0xc7, 0xb4, 0x9e, 0xac, 0x54, 0x03, 0x73, 0x6b,
-	0x4d, 0xd2, 0xde, 0x8b, 0xb6, 0x40, 0x2f, 0x9a, 0xff, 0xf2, 0x2a, 0xf3, 0x85, 0x47, 0xae, 0x16,
-	0x1e, 0xf9, 0xb9, 0xf0, 0xc8, 0x97, 0xa5, 0x57, 0xb9, 0x5a, 0x7a, 0x95, 0xef, 0x4b, 0xaf, 0xf2,
-	0xe1, 0xd5, 0x8d, 0x56, 0xe2, 0x19, 0x64, 0xb1, 0x92, 0x60, 0x3e, 0xa2, 0x1a, 0xdb, 0x5b, 0x27,
-	0x41, 0x05, 0xc1, 0x2c, 0x58, 0xaf, 0x51, 0xd9, 0xdc, 0x68, 0xb7, 0x5c, 0x83, 0x97, 0x7f, 0x02,
-	0x00, 0x00, 0xff, 0xff, 0xdd, 0xef, 0x51, 0x16, 0x89, 0x03, 0x00, 0x00,
+	// 544 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x54, 0x4d, 0x6f, 0xda, 0x40,
+	0x10, 0xc5, 0x49, 0x14, 0xc5, 0x1b, 0x92, 0x48, 0x56, 0x94, 0xba, 0x21, 0x35, 0xc4, 0x52, 0x55,
+	0x0e, 0xc5, 0x16, 0xfd, 0x38, 0xf4, 0x18, 0xe8, 0x05, 0x29, 0x55, 0x90, 0x5b, 0xf5, 0xd0, 0x0b,
+	0x32, 0xde, 0x81, 0xac, 0x80, 0x1d, 0x77, 0x77, 0x9d, 0xd2, 0x4b, 0x7f, 0x43, 0x7f, 0x46, 0x4f,
+	0xfd, 0x1d, 0x1c, 0x73, 0xec, 0xa5, 0xa8, 0x85, 0x7f, 0xd1, 0x53, 0x65, 0x7b, 0x81, 0xb4, 0xe1,
+	0xca, 0x89, 0xdd, 0xb7, 0x6f, 0x67, 0xdf, 0x1b, 0xde, 0x98, 0xd8, 0x5d, 0xa6, 0x22, 0x64, 0xdc,
+	0xbf, 0xa9, 0x77, 0x41, 0x85, 0x75, 0x5f, 0x8d, 0xbd, 0x58, 0xa0, 0x42, 0xeb, 0x48, 0x9f, 0x78,
+	0xfa, 0xe4, 0xb4, 0x74, 0x8f, 0xfa, 0x39, 0x06, 0x99, 0xb3, 0x4f, 0xcf, 0x6f, 0x50, 0x81, 0x0f,
+	0xe3, 0x18, 0x85, 0x02, 0xba, 0x96, 0x72, 0xdc, 0xc7, 0x3e, 0x66, 0x4b, 0x3f, 0x5d, 0xe5, 0xa8,
+	0xfb, 0xdd, 0x20, 0x27, 0x4d, 0xe4, 0x3d, 0x26, 0x46, 0x57, 0x89, 0x8a, 0x91, 0x71, 0x15, 0xc0,
+	0xc7, 0x04, 0xa4, 0xb2, 0x5a, 0x64, 0x57, 0x02, 0xa7, 0x20, 0x6c, 0xa3, 0x62, 0x54, 0x8b, 0x8d,
+	0xfa, 0x9f, 0x69, 0xb9, 0xd6, 0x67, 0xea, 0x3a, 0xe9, 0x7a, 0x11, 0x8e, 0xfc, 0x08, 0xe5, 0x08,
+	0xa5, 0xfe, 0xa9, 0x49, 0x3a, 0xd0, 0xcf, 0x5d, 0x44, 0xd1, 0x05, 0xa5, 0x02, 0xa4, 0x0c, 0x74,
+	0x01, 0xab, 0x45, 0x0e, 0x31, 0x51, 0x9d, 0xac, 0x7c, 0x87, 0xf1, 0x1e, 0xda, 0x5b, 0x15, 0xa3,
+	0xba, 0xff, 0xec, 0x91, 0xf7, 0x9f, 0x4b, 0xef, 0x2a, 0x51, 0xed, 0x94, 0xd5, 0xe2, 0x3d, 0x6c,
+	0xec, 0x4c, 0xa6, 0xe5, 0x42, 0x50, 0xc4, 0x3b, 0x98, 0xfb, 0x90, 0x3c, 0xb8, 0xa7, 0x57, 0xc6,
+	0xc8, 0x25, 0xb8, 0xdf, 0x0c, 0xb2, 0x7f, 0xc9, 0xf8, 0x60, 0x03, 0x06, 0x1e, 0x93, 0x43, 0x01,
+	0x11, 0x8b, 0x19, 0x70, 0xd5, 0x09, 0x29, 0x15, 0x99, 0x01, 0x33, 0x38, 0x58, 0xa2, 0xe9, 0x0d,
+	0xeb, 0x09, 0x39, 0x5a, 0xd1, 0xa2, 0xeb, 0x90, 0x71, 0x7b, 0x3b, 0xe3, 0xad, 0x6e, 0x37, 0x53,
+	0xd4, 0xad, 0x93, 0x62, 0xae, 0x34, 0x97, 0x6e, 0x9d, 0x93, 0x22, 0x85, 0x18, 0x25, 0xfb, 0xa7,
+	0xfa, 0xbe, 0xc6, 0xd2, 0xda, 0xee, 0x17, 0x52, 0x7a, 0xcb, 0xfa, 0xbc, 0x0d, 0x9c, 0x32, 0xde,
+	0x7f, 0x27, 0x42, 0x2e, 0x7b, 0x20, 0xe4, 0x06, 0xcc, 0x1e, 0x93, 0xed, 0x1e, 0x40, 0xa6, 0x61,
+	0xbb, 0xb1, 0x65, 0x1b, 0x41, 0xba, 0x75, 0x2f, 0xc9, 0xd9, 0xfa, 0xf7, 0xb5, 0x85, 0xa7, 0x84,
+	0x44, 0x38, 0x1a, 0x85, 0x9c, 0x76, 0x18, 0xcd, 0x44, 0x98, 0x8d, 0x83, 0xd9, 0xb4, 0x6c, 0x36,
+	0x73, 0xb4, 0xf5, 0x3a, 0x30, 0x35, 0xa1, 0x45, 0xdd, 0x9f, 0x06, 0x39, 0x7d, 0x8f, 0x0a, 0x36,
+	0x9f, 0xbd, 0x57, 0x64, 0x27, 0xc6, 0xe1, 0x50, 0x27, 0xae, 0xec, 0xa5, 0x93, 0xe2, 0x2d, 0x26,
+	0x65, 0x99, 0xbb, 0x36, 0x0e, 0x87, 0x6f, 0x40, 0x85, 0x3a, 0x73, 0xd9, 0x15, 0xab, 0x44, 0xcc,
+	0x65, 0x6c, 0xf5, 0x1f, 0xb9, 0xb7, 0x08, 0xa3, 0x75, 0x46, 0xcc, 0x28, 0x17, 0x0f, 0xd4, 0xde,
+	0xa9, 0x18, 0xd5, 0xbd, 0x60, 0x05, 0xb8, 0x2f, 0x49, 0x69, 0xad, 0x3d, 0xdd, 0xac, 0x13, 0xb2,
+	0x2b, 0x55, 0xa8, 0x12, 0x99, 0x37, 0x2a, 0xd0, 0xbb, 0x46, 0x30, 0xf9, 0xed, 0x14, 0x26, 0x33,
+	0xc7, 0xb8, 0x9d, 0x39, 0xc6, 0xaf, 0x99, 0x63, 0x7c, 0x9d, 0x3b, 0x85, 0xdb, 0xb9, 0x53, 0xf8,
+	0x31, 0x77, 0x0a, 0x1f, 0x5e, 0xdc, 0xe9, 0x40, 0x38, 0x86, 0x61, 0x28, 0x38, 0xa8, 0x4f, 0x28,
+	0x06, 0x7a, 0x57, 0x8b, 0x50, 0x80, 0x3f, 0xf6, 0x17, 0x5f, 0x8a, 0xac, 0x27, 0xdd, 0xdd, 0x6c,
+	0xd2, 0x9f, 0xff, 0x0d, 0x00, 0x00, 0xff, 0xff, 0xee, 0x35, 0xb8, 0x95, 0x6c, 0x04, 0x00, 0x00,
 }
 
-func (m *MsgConfirmOutpoint) Marshal() (dAtA []byte, err error) {
+func (m *ConfirmOutpointRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -241,12 +397,12 @@ func (m *MsgConfirmOutpoint) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgConfirmOutpoint) MarshalTo(dAtA []byte) (int, error) {
+func (m *ConfirmOutpointRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MsgConfirmOutpoint) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ConfirmOutpointRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -271,7 +427,7 @@ func (m *MsgConfirmOutpoint) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgLink) Marshal() (dAtA []byte, err error) {
+func (m *ConfirmOutpointResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -281,12 +437,35 @@ func (m *MsgLink) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgLink) MarshalTo(dAtA []byte) (int, error) {
+func (m *ConfirmOutpointResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MsgLink) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ConfirmOutpointResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *LinkRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *LinkRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *LinkRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -315,7 +494,7 @@ func (m *MsgLink) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgSignPendingTransfers) Marshal() (dAtA []byte, err error) {
+func (m *LinkResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -325,12 +504,42 @@ func (m *MsgSignPendingTransfers) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgSignPendingTransfers) MarshalTo(dAtA []byte) (int, error) {
+func (m *LinkResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MsgSignPendingTransfers) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *LinkResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.DepositAddr) > 0 {
+		i -= len(m.DepositAddr)
+		copy(dAtA[i:], m.DepositAddr)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.DepositAddr)))
+		i--
+		dAtA[i] = 0x12
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *SignPendingTransfersRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SignPendingTransfersRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SignPendingTransfersRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -350,7 +559,7 @@ func (m *MsgSignPendingTransfers) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgVoteConfirmOutpoint) Marshal() (dAtA []byte, err error) {
+func (m *SignPendingTransfersResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -360,12 +569,42 @@ func (m *MsgVoteConfirmOutpoint) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgVoteConfirmOutpoint) MarshalTo(dAtA []byte) (int, error) {
+func (m *SignPendingTransfersResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MsgVoteConfirmOutpoint) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *SignPendingTransfersResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.CommandID) > 0 {
+		i -= len(m.CommandID)
+		copy(dAtA[i:], m.CommandID)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.CommandID)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *VoteConfirmOutpointRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *VoteConfirmOutpointRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *VoteConfirmOutpointRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -407,6 +646,36 @@ func (m *MsgVoteConfirmOutpoint) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
+func (m *VoteConfirmOutpointResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *VoteConfirmOutpointResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *VoteConfirmOutpointResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Status) > 0 {
+		i -= len(m.Status)
+		copy(dAtA[i:], m.Status)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Status)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTx(v)
 	base := offset
@@ -418,7 +687,7 @@ func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *MsgConfirmOutpoint) Size() (n int) {
+func (m *ConfirmOutpointRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -433,7 +702,16 @@ func (m *MsgConfirmOutpoint) Size() (n int) {
 	return n
 }
 
-func (m *MsgLink) Size() (n int) {
+func (m *ConfirmOutpointResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *LinkRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -454,7 +732,20 @@ func (m *MsgLink) Size() (n int) {
 	return n
 }
 
-func (m *MsgSignPendingTransfers) Size() (n int) {
+func (m *LinkResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.DepositAddr)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *SignPendingTransfersRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -470,7 +761,20 @@ func (m *MsgSignPendingTransfers) Size() (n int) {
 	return n
 }
 
-func (m *MsgVoteConfirmOutpoint) Size() (n int) {
+func (m *SignPendingTransfersResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.CommandID)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *VoteConfirmOutpointRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -492,13 +796,26 @@ func (m *MsgVoteConfirmOutpoint) Size() (n int) {
 	return n
 }
 
+func (m *VoteConfirmOutpointResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Status)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
 func sovTx(x uint64) (n int) {
 	return (math_bits.Len64(x|1) + 6) / 7
 }
 func sozTx(x uint64) (n int) {
 	return sovTx(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *MsgConfirmOutpoint) Unmarshal(dAtA []byte) error {
+func (m *ConfirmOutpointRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -521,10 +838,10 @@ func (m *MsgConfirmOutpoint) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: MsgConfirmOutpoint: wiretype end group for non-group")
+			return fmt.Errorf("proto: ConfirmOutpointRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgConfirmOutpoint: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ConfirmOutpointRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -615,7 +932,7 @@ func (m *MsgConfirmOutpoint) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgLink) Unmarshal(dAtA []byte) error {
+func (m *ConfirmOutpointResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -638,10 +955,60 @@ func (m *MsgLink) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: MsgLink: wiretype end group for non-group")
+			return fmt.Errorf("proto: ConfirmOutpointResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgLink: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ConfirmOutpointResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *LinkRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: LinkRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: LinkRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -763,7 +1130,7 @@ func (m *MsgLink) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgSignPendingTransfers) Unmarshal(dAtA []byte) error {
+func (m *LinkResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -786,10 +1153,92 @@ func (m *MsgSignPendingTransfers) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: MsgSignPendingTransfers: wiretype end group for non-group")
+			return fmt.Errorf("proto: LinkResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgSignPendingTransfers: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: LinkResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DepositAddr", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DepositAddr = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SignPendingTransfersRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SignPendingTransfersRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SignPendingTransfersRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -866,7 +1315,7 @@ func (m *MsgSignPendingTransfers) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgVoteConfirmOutpoint) Unmarshal(dAtA []byte) error {
+func (m *SignPendingTransfersResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -889,10 +1338,92 @@ func (m *MsgVoteConfirmOutpoint) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: MsgVoteConfirmOutpoint: wiretype end group for non-group")
+			return fmt.Errorf("proto: SignPendingTransfersResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgVoteConfirmOutpoint: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: SignPendingTransfersResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CommandID", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CommandID = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *VoteConfirmOutpointRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: VoteConfirmOutpointRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: VoteConfirmOutpointRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1014,6 +1545,88 @@ func (m *MsgVoteConfirmOutpoint) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.Confirmed = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *VoteConfirmOutpointResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: VoteConfirmOutpointResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: VoteConfirmOutpointResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Status = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTx(dAtA[iNdEx:])

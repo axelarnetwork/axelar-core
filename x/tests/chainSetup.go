@@ -294,12 +294,7 @@ func registerBTCEventListener(n nodeData, submitMsg func(msg sdk.Msg) (result <-
 
 		var out btcTypes.OutPointInfo
 		encCfg.Amino.MustUnmarshalJSON([]byte(m[btcTypes.AttributeKeyOutPointInfo]), &out)
-		_ = submitMsg(&btcTypes.MsgVoteConfirmOutpoint{
-			Sender:    n.Proxy,
-			Poll:      poll,
-			Confirmed: true,
-			OutPoint:  out.OutPoint,
-		})
+		_ = submitMsg(btcTypes.NewVoteConfirmOutpointRequest(n.Proxy, poll, out.GetOutPoint(), true))
 
 		return true
 	})
