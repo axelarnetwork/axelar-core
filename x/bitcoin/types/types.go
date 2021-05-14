@@ -1,6 +1,7 @@
 package types
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"fmt"
 	"strconv"
@@ -125,13 +126,6 @@ func (m OutPointInfo) String() string {
 // GetOutPoint returns the outpoint as a struct instead of a string
 func (m OutPointInfo) GetOutPoint() wire.OutPoint {
 	return *MustConvertOutPointFromStr(m.OutPoint)
-}
-
-// RawTxParams describe the parameters used to create a raw unsigned transaction for Bitcoin
-type RawTxParams struct {
-	OutPoint    *wire.OutPoint
-	DepositAddr string
-	Satoshi     sdk.Coin
 }
 
 // CreateTx returns a new unsigned Bitcoin transaction
@@ -264,34 +258,16 @@ func createP2WSHAddress(script RedeemScript, network Network) *btcutil.AddressWi
 	return addr
 }
 
-// AddressInfo is a wrapper containing the Bitcoin P2WSH address, it's corresponding script and the underlying key
-type AddressInfo struct {
-	btcutil.Address
-	Role         AddressRole
-	RedeemScript RedeemScript
-	Key          tss.Key
-}
-
-// AddressRole is an enum that specifies the allowed bitcoin address roles
-type AddressRole int
-
-// Roles of bitcoin addresses created by axelar
-const (
-	NONE AddressRole = iota
-	DEPOSIT
-	CONSOLIDATION
-)
-
 // NewConsolidationAddress creates a new address used to consolidate all unspent outpoints
 func NewConsolidationAddress(pk tss.Key, network Network) AddressInfo {
 	script := createMasterRedeemScript(btcec.PublicKey(pk.Value))
-	addr := createP2WSHAddress(script, network)
+	address := createP2WSHAddress(script, network)
 
 	return AddressInfo{
 		RedeemScript: script,
-		Address:      addr,
-		Role:         CONSOLIDATION,
-		Key:          pk,
+		Address:      address.EncodeAddress(),
+		Role:         Consolidation,
+		KeyID:        pk.ID,
 	}
 }
 
@@ -302,33 +278,43 @@ func NewLinkedAddress(masterKey tss.Key, secondaryKey tss.Key, network Network, 
 		btcec.PublicKey(secondaryKey.Value),
 		recipient,
 	)
-	addr := createP2WSHAddress(script, network)
+	address := createP2WSHAddress(script, network)
 
 	return AddressInfo{
 		RedeemScript: script,
-		Address:      addr,
-		Role:         DEPOSIT,
-		Key:          secondaryKey,
+		Address:      address.EncodeAddress(),
+		Role:         Deposit,
+		KeyID:        secondaryKey.ID,
 	}
 }
 
 // NewAnyoneCanSpendAddress creates a p2wsh address that anyone can spend
 func NewAnyoneCanSpendAddress(network Network) AddressInfo {
 	script := createAnyoneCanSpendRedeemScript()
-	addr := createP2WSHAddress(script, network)
+	address := createP2WSHAddress(script, network)
 
 	return AddressInfo{
 		RedeemScript: script,
-		Address:      addr,
-		Role:         NONE,
+		Address:      address.EncodeAddress(),
+		Role:         None,
 	}
 }
 
+// GetAddress returns the encoded bitcoin address
+func (m AddressInfo) GetAddress() btcutil.Address {
+	address, err := btcutil.DecodeAddress(m.Address, nil)
+	if err != nil {
+		panic(fmt.Errorf("invalid bitcoin address %s found", m.Address))
+	}
+
+	return address
+}
+
 // ToCrossChainAddr returns the corresponding cross-chain address
-func (addr AddressInfo) ToCrossChainAddr() nexus.CrossChainAddress {
+func (m AddressInfo) ToCrossChainAddr() nexus.CrossChainAddress {
 	return nexus.CrossChainAddress{
 		Chain:   exported.Bitcoin,
-		Address: addr.EncodeAddress(),
+		Address: m.Address,
 	}
 }
 
@@ -361,7 +347,7 @@ func AssembleBtcTx(rawTx *wire.MsgTx, outpointsToSign []OutPointToSign, sigs []b
 		sigBytes := append(sigs[i].Serialize(), byte(txscript.SigHashAll))
 		rawTx.TxIn[i].Witness = wire.TxWitness{sigBytes, in.RedeemScript}
 
-		payScript, err := txscript.PayToAddrScript(in.AddressInfo.Address)
+		payScript, err := txscript.PayToAddrScript(in.AddressInfo.GetAddress())
 		if err != nil {
 			return nil, err
 		}
@@ -372,6 +358,28 @@ func AssembleBtcTx(rawTx *wire.MsgTx, outpointsToSign []OutPointToSign, sigs []b
 	}
 
 	return rawTx, nil
+}
+
+// MustEncodeTx serializes a given bitcoin transaction; panic if error
+func MustEncodeTx(tx *wire.MsgTx) []byte {
+	var buf bytes.Buffer
+	if err := tx.Serialize(&buf); err != nil {
+		panic(err)
+	}
+
+	return buf.Bytes()
+}
+
+// MustDecodeTx deserializes a bytes to a bitcoin transaction; panic if error
+func MustDecodeTx(bz []byte) wire.MsgTx {
+	var tx wire.MsgTx
+
+	rbuf := bytes.NewReader(bz)
+	if err := tx.Deserialize(rbuf); err != nil {
+		panic(err)
+	}
+
+	return tx
 }
 
 // EstimateTxSize calculates the upper limit of the size in byte of given transaction after all witness data is attached

@@ -11,7 +11,6 @@ import (
 	exported "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/btcsuite/btcd/wire"
 	github_com_btcsuite_btcutil "github.com/btcsuite/btcutil"
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
 	"sync"
@@ -1185,9 +1184,6 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 //
 // 		// make and configure a mocked types.BTCKeeper
 // 		mockedBTCKeeper := &BTCKeeperMock{
-// 			CodecFunc: func() *codec.LegacyAmino {
-// 				panic("mock out the Codec method")
-// 			},
 // 			DeleteDustAmountFunc: func(ctx sdk.Context, encodedAddress string)  {
 // 				panic("mock out the DeleteDustAmount method")
 // 			},
@@ -1282,9 +1278,6 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 //
 // 	}
 type BTCKeeperMock struct {
-	// CodecFunc mocks the Codec method.
-	CodecFunc func() *codec.LegacyAmino
-
 	// DeleteDustAmountFunc mocks the DeleteDustAmount method.
 	DeleteDustAmountFunc func(ctx sdk.Context, encodedAddress string)
 
@@ -1374,9 +1367,6 @@ type BTCKeeperMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// Codec holds details about calls to the Codec method.
-		Codec []struct {
-		}
 		// DeleteDustAmount holds details about calls to the DeleteDustAmount method.
 		DeleteDustAmount []struct {
 			// Ctx is the ctx argument value.
@@ -1559,7 +1549,6 @@ type BTCKeeperMock struct {
 			Tx *wire.MsgTx
 		}
 	}
-	lockCodec                         sync.RWMutex
 	lockDeleteDustAmount              sync.RWMutex
 	lockDeleteOutpointInfo            sync.RWMutex
 	lockDeletePendingOutPointInfo     sync.RWMutex
@@ -1589,32 +1578,6 @@ type BTCKeeperMock struct {
 	lockSetPendingOutpointInfo        sync.RWMutex
 	lockSetSignedTx                   sync.RWMutex
 	lockSetUnsignedTx                 sync.RWMutex
-}
-
-// Codec calls CodecFunc.
-func (mock *BTCKeeperMock) Codec() *codec.LegacyAmino {
-	if mock.CodecFunc == nil {
-		panic("BTCKeeperMock.CodecFunc: method is nil but BTCKeeper.Codec was just called")
-	}
-	callInfo := struct {
-	}{}
-	mock.lockCodec.Lock()
-	mock.calls.Codec = append(mock.calls.Codec, callInfo)
-	mock.lockCodec.Unlock()
-	return mock.CodecFunc()
-}
-
-// CodecCalls gets all the calls that were made to Codec.
-// Check the length with:
-//     len(mockedBTCKeeper.CodecCalls())
-func (mock *BTCKeeperMock) CodecCalls() []struct {
-} {
-	var calls []struct {
-	}
-	mock.lockCodec.RLock()
-	calls = mock.calls.Codec
-	mock.lockCodec.RUnlock()
-	return calls
 }
 
 // DeleteDustAmount calls DeleteDustAmountFunc.

@@ -70,13 +70,13 @@ func HandleMsgLink(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n types.N
 	}
 
 	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: msg.RecipientAddr}
-	depositAddr := types.NewLinkedAddress(masterKey, secondaryKey, k.GetNetwork(ctx), recipient)
-	n.LinkAddresses(ctx, depositAddr.ToCrossChainAddr(), recipient)
-	k.SetAddress(ctx, depositAddr)
+	depositAddressInfo := types.NewLinkedAddress(masterKey, secondaryKey, k.GetNetwork(ctx), recipient)
+	n.LinkAddresses(ctx, depositAddressInfo.ToCrossChainAddr(), recipient)
+	k.SetAddress(ctx, depositAddressInfo)
 
 	return &sdk.Result{
-		Data:   []byte(depositAddr.EncodeAddress()),
-		Log:    fmt.Sprintf("successfully linked {%s} and {%s}", depositAddr.ToCrossChainAddr().String(), recipient.String()),
+		Data:   []byte(depositAddressInfo.Address),
+		Log:    fmt.Sprintf("successfully linked {%s} and {%s}", depositAddressInfo.ToCrossChainAddr().String(), recipient.String()),
 		Events: ctx.EventManager().ABCIEvents(),
 	}, nil
 }
@@ -117,8 +117,8 @@ func HandleMsgConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, voter types.In
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 		sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(k.GetRequiredConfirmationHeight(ctx), 10)),
-		sdk.NewAttribute(types.AttributeKeyOutPointInfo, string(k.Codec().MustMarshalJSON(msg.OutPointInfo))),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(poll))),
+		sdk.NewAttribute(types.AttributeKeyOutPointInfo, string(types.ModuleCdc.MustMarshalJSON(&msg.OutPointInfo))),
+		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&poll))),
 	))
 
 	return &sdk.Result{
@@ -182,8 +182,8 @@ func HandleMsgVoteConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, v types.Vo
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeOutpointConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(msg.Poll))),
-		sdk.NewAttribute(types.AttributeKeyOutPointInfo, string(k.Codec().MustMarshalJSON(pendingOutPointInfo))))
+		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&msg.Poll))),
+		sdk.NewAttribute(types.AttributeKeyOutPointInfo, string(types.ModuleCdc.MustMarshalJSON(&pendingOutPointInfo))))
 
 	if !confirmed {
 		ctx.EventManager().EmitEvent(
@@ -203,7 +203,7 @@ func HandleMsgVoteConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, v types.Vo
 	}
 
 	switch addr.Role {
-	case types.DEPOSIT:
+	case types.Deposit:
 		// handle cross-chain transfer
 		depositAddr := nexus.CrossChainAddress{Address: pendingOutPointInfo.Address, Chain: exported.Bitcoin}
 		amount := sdk.NewInt64Coin(exported.Bitcoin.NativeAsset, int64(pendingOutPointInfo.Amount))
@@ -215,7 +215,7 @@ func HandleMsgVoteConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, v types.Vo
 			Events: ctx.EventManager().ABCIEvents(),
 			Log:    fmt.Sprintf("transfer of %s from {%s} successfully prepared", amount.Amount.String(), depositAddr.String()),
 		}, nil
-	case types.CONSOLIDATION:
+	case types.Consolidation:
 		tx, txExist := k.GetSignedTx(ctx)
 		vout, voutExist := k.GetMasterKeyVout(ctx)
 		// TODO: both booleans should always have the same value, we might be able to make use of cosmos invariant checks to enforce it
@@ -322,7 +322,7 @@ func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.
 	pendingTransfers := n.GetPendingTransfersForChain(ctx, exported.Bitcoin)
 	// first output in consolidation transaction is always for our anyone-can-spend address for the
 	// sake of child-pay-for-parent so that anyone can pay
-	anyoneCanSpendOutput := types.Output{Amount: k.GetMinimumWithdrawalAmount(ctx), Recipient: k.GetAnyoneCanSpendAddress(ctx).Address}
+	anyoneCanSpendOutput := types.Output{Amount: k.GetMinimumWithdrawalAmount(ctx), Recipient: k.GetAnyoneCanSpendAddress(ctx).GetAddress()}
 	outputs := []types.Output{anyoneCanSpendOutput}
 	totalOut := sdk.NewInt(int64(anyoneCanSpendOutput.Amount))
 
@@ -398,13 +398,13 @@ func prepareInputs(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) ([]t
 			return nil, sdk.ZeroInt(), fmt.Errorf("address for confirmed outpoint %s must be known", info.OutPoint)
 		}
 
-		key, found := signer.GetKey(ctx, addr.Key.ID)
+		key, found := signer.GetKey(ctx, addr.KeyID)
 		if !found {
-			return nil, sdk.ZeroInt(), fmt.Errorf("key %s cannot be found", addr.Key.ID)
+			return nil, sdk.ZeroInt(), fmt.Errorf("key %s cannot be found", addr.KeyID)
 		}
 
 		if key.Role == tss.Unknown {
-			return nil, sdk.ZeroInt(), fmt.Errorf("key role not set for key %s", addr.Key.ID)
+			return nil, sdk.ZeroInt(), fmt.Errorf("key role not set for key %s", addr.KeyID)
 		}
 
 		if key.Role == tss.MasterKey {
@@ -438,10 +438,10 @@ func prepareChange(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, chan
 		}
 	}
 
-	addr := types.NewConsolidationAddress(key, k.GetNetwork(ctx))
-	k.SetAddress(ctx, addr)
+	addressInfo := types.NewConsolidationAddress(key, k.GetNetwork(ctx))
+	k.SetAddress(ctx, addressInfo)
 
-	return types.Output{Amount: btcutil.Amount(change.Int64()), Recipient: addr.Address}, nil
+	return types.Output{Amount: btcutil.Amount(change.Int64()), Recipient: addressInfo.GetAddress()}, nil
 }
 
 func startSignInputs(ctx sdk.Context, signer types.Signer, snapshotter types.Snapshotter, v types.Voter, tx *wire.MsgTx, outpointsToSign []types.OutPointToSign) error {
@@ -451,9 +451,9 @@ func startSignInputs(ctx sdk.Context, signer types.Signer, snapshotter types.Sna
 			return err
 		}
 
-		counter, ok := signer.GetSnapshotCounterForKeyID(ctx, in.Key.ID)
+		counter, ok := signer.GetSnapshotCounterForKeyID(ctx, in.KeyID)
 		if !ok {
-			return fmt.Errorf("no snapshot counter for key ID %s registered", in.Key.ID)
+			return fmt.Errorf("no snapshot counter for key ID %s registered", in.KeyID)
 		}
 
 		snapshot, ok := snapshotter.GetSnapshot(ctx, counter)
@@ -462,7 +462,7 @@ func startSignInputs(ctx sdk.Context, signer types.Signer, snapshotter types.Sna
 		}
 
 		sigID := hex.EncodeToString(hash)
-		err = signer.StartSign(ctx, v, in.Key.ID, sigID, hash, snapshot)
+		err = signer.StartSign(ctx, v, in.KeyID, sigID, hash, snapshot)
 		if err != nil {
 			return err
 		}

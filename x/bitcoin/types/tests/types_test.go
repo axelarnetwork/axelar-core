@@ -71,32 +71,32 @@ func TestNewLinkedAddress_SpendableByMasterKey(t *testing.T) {
 
 	inputAmount := btcutil.Amount(100000000) // 1btc
 	outputAmount := btcutil.Amount(10000000) // 0.1btc
-	linkedAddress := types.NewLinkedAddress(masterKey, secondaryKey, types.Testnet3, nexus.CrossChainAddress{Chain: ethereum.Ethereum, Address: ethereumAddress})
+	linkedAddressInfo := types.NewLinkedAddress(masterKey, secondaryKey, types.Testnet3, nexus.CrossChainAddress{Chain: ethereum.Ethereum, Address: ethereumAddress})
 	outPoint, err := types.OutPointFromStr(fmt.Sprintf("%s:0", rand.HexStr(64)))
 	if err != nil {
 		panic(err)
 	}
 	inputs := []types.OutPointToSign{
 		{
-			AddressInfo: linkedAddress,
+			AddressInfo: linkedAddressInfo,
 			OutPointInfo: types.NewOutPointInfo(
 				outPoint,
 				inputAmount, // 1btc
-				linkedAddress.Address.EncodeAddress(),
+				linkedAddressInfo.Address,
 			),
 		},
 	}
 	outputs := []types.Output{
 		{
 			Amount:    outputAmount,
-			Recipient: linkedAddress.Address,
+			Recipient: linkedAddressInfo.GetAddress(),
 		},
 	}
 
 	tx, err := types.CreateTx(inputs, outputs)
 	assert.NoError(t, err)
 
-	sigHash, err := txscript.CalcWitnessSigHash(linkedAddress.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, 0, int64(inputAmount))
+	sigHash, err := txscript.CalcWitnessSigHash(linkedAddressInfo.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, 0, int64(inputAmount))
 	assert.NoError(t, err)
 
 	sig, err := masterPrivateKey.Sign(sigHash)
@@ -120,32 +120,32 @@ func TestNewLinkedAddress_SpendableBySecondaryKey(t *testing.T) {
 
 	inputAmount := btcutil.Amount(100000000) // 1btc
 	outputAmount := btcutil.Amount(10000000) // 0.1btc
-	linkedAddress := types.NewLinkedAddress(masterKey, secondaryKey, types.Testnet3, nexus.CrossChainAddress{Chain: ethereum.Ethereum, Address: ethereumAddress})
+	linkedAddressInfo := types.NewLinkedAddress(masterKey, secondaryKey, types.Testnet3, nexus.CrossChainAddress{Chain: ethereum.Ethereum, Address: ethereumAddress})
 	outPoint, err := types.OutPointFromStr(fmt.Sprintf("%s:0", rand.HexStr(64)))
 	if err != nil {
 		panic(err)
 	}
 	inputs := []types.OutPointToSign{
 		{
-			AddressInfo: linkedAddress,
+			AddressInfo: linkedAddressInfo,
 			OutPointInfo: types.NewOutPointInfo(
 				outPoint,
 				inputAmount, // 1btc
-				linkedAddress.Address.EncodeAddress(),
+				linkedAddressInfo.Address,
 			),
 		},
 	}
 	outputs := []types.Output{
 		{
 			Amount:    outputAmount,
-			Recipient: linkedAddress.Address,
+			Recipient: linkedAddressInfo.GetAddress(),
 		},
 	}
 
 	tx, err := types.CreateTx(inputs, outputs)
 	assert.NoError(t, err)
 
-	sigHash, err := txscript.CalcWitnessSigHash(linkedAddress.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, 0, int64(inputAmount))
+	sigHash, err := txscript.CalcWitnessSigHash(linkedAddressInfo.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, 0, int64(inputAmount))
 	assert.NoError(t, err)
 
 	sig, err := secondaryPrivateKey.Sign(sigHash)
@@ -173,32 +173,32 @@ func TestNewLinkedAddress_NotSpendableByRandomKey(t *testing.T) {
 
 	inputAmount := btcutil.Amount(100000000) // 1btc
 	outputAmount := btcutil.Amount(10000000) // 0.1btc
-	linkedAddress := types.NewLinkedAddress(masterKey, secondaryKey, types.Testnet3, nexus.CrossChainAddress{Chain: ethereum.Ethereum, Address: ethereumAddress})
+	linkedAddressInfo := types.NewLinkedAddress(masterKey, secondaryKey, types.Testnet3, nexus.CrossChainAddress{Chain: ethereum.Ethereum, Address: ethereumAddress})
 	outPoint, err := types.OutPointFromStr(fmt.Sprintf("%s:0", rand.HexStr(64)))
 	if err != nil {
 		panic(err)
 	}
 	inputs := []types.OutPointToSign{
 		{
-			AddressInfo: linkedAddress,
+			AddressInfo: linkedAddressInfo,
 			OutPointInfo: types.NewOutPointInfo(
 				outPoint,
 				inputAmount, // 1btc
-				linkedAddress.Address.EncodeAddress(),
+				linkedAddressInfo.Address,
 			),
 		},
 	}
 	outputs := []types.Output{
 		{
 			Amount:    outputAmount,
-			Recipient: linkedAddress.Address,
+			Recipient: linkedAddressInfo.GetAddress(),
 		},
 	}
 
 	tx, err := types.CreateTx(inputs, outputs)
 	assert.NoError(t, err)
 
-	sigHash, err := txscript.CalcWitnessSigHash(linkedAddress.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, 0, int64(inputAmount))
+	sigHash, err := txscript.CalcWitnessSigHash(linkedAddressInfo.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, 0, int64(inputAmount))
 	assert.NoError(t, err)
 
 	sig, err := randomPrivateKey.Sign(sigHash)
@@ -212,7 +212,7 @@ func TestNewAnyoneCanSpendAddress(t *testing.T) {
 	t.Run("should return an address that is spendable by anyone", testutils.Func(func(t *testing.T) {
 		inputAmount := btcutil.Amount(100000000) // 1btc
 		outputAmount := btcutil.Amount(10000000) // 0.1btc
-		address := types.NewAnyoneCanSpendAddress(types.Testnet3)
+		addressInfo := types.NewAnyoneCanSpendAddress(types.Testnet3)
 		outPoint, err := types.OutPointFromStr(fmt.Sprintf("%s:0", rand.HexStr(64)))
 		if err != nil {
 			panic(err)
@@ -220,29 +220,29 @@ func TestNewAnyoneCanSpendAddress(t *testing.T) {
 		inputs := []types.OutPointToSign{
 			{
 				AddressInfo: types.AddressInfo{
-					Address:      address.Address,
-					RedeemScript: address.RedeemScript,
+					Address:      addressInfo.Address,
+					RedeemScript: addressInfo.RedeemScript,
 				},
 				OutPointInfo: types.NewOutPointInfo(
 					outPoint,
 					inputAmount, // 1btc
-					address.EncodeAddress(),
+					addressInfo.Address,
 				),
 			},
 		}
 		outputs := []types.Output{
 			{
 				Amount:    outputAmount,
-				Recipient: address.Address,
+				Recipient: addressInfo.GetAddress(),
 			},
 		}
 
 		tx, err := types.CreateTx(inputs, outputs)
 		assert.NoError(t, err)
 
-		tx.TxIn[0].Witness = wire.TxWitness{address.RedeemScript}
+		tx.TxIn[0].Witness = wire.TxWitness{addressInfo.RedeemScript}
 
-		payScript, err := txscript.PayToAddrScript(address.Address)
+		payScript, err := txscript.PayToAddrScript(addressInfo.GetAddress())
 		assert.NoError(t, err)
 
 		scriptEngine, err := txscript.NewEngine(payScript, tx, 0, txscript.StandardVerifyFlags, nil, nil, int64(inputAmount))
@@ -286,7 +286,7 @@ func TestEstimateTxSize(t *testing.T) {
 				OutPointInfo: types.NewOutPointInfo(
 					outPoint,
 					inputAmount, // 1btc
-					addressInfo.Address.EncodeAddress(),
+					addressInfo.Address,
 				),
 			})
 		}
@@ -297,7 +297,7 @@ func TestEstimateTxSize(t *testing.T) {
 
 			outputs = append(outputs, types.Output{
 				Amount:    outputAmount,
-				Recipient: addressInfo.Address,
+				Recipient: addressInfo.GetAddress(),
 			})
 		}
 

@@ -18,4 +18,23 @@ message OutPointInfo {
   string address = 3;
 }
 
+enum AddressRole {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  ADDRESS_ROLE_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "None" ];
+  ADDRESS_ROLE_DEPOSIT = 1 [ (gogoproto.enumvalue_customname) = "Deposit" ];
+  ADDRESS_ROLE_CONSOLIDATION = 2
+      [ (gogoproto.enumvalue_customname) = "Consolidation" ];
+}
+
+// AddressInfo is a wrapper containing the Bitcoin P2WSH address, it's
+// corresponding script and the underlying key
+message AddressInfo {
+  string address = 1;
+  AddressRole role = 2;
+  bytes redeem_script = 3;
+  string key_id = 4 [ (gogoproto.customname) = "KeyID" ];
+}
+
 message Network { string name = 1; }

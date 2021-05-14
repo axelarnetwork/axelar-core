@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"bytes"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
@@ -81,7 +80,7 @@ func queryDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n t
 
 	addr := types.NewLinkedAddress(masterKey, secondaryKey, k.GetNetwork(ctx), recipient)
 
-	return []byte(addr.EncodeAddress()), nil
+	return []byte(addr.Address), nil
 }
 
 func queryMasterAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer) ([]byte, error) {
@@ -92,11 +91,11 @@ func queryMasterAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer) ([]b
 
 	addr := types.NewConsolidationAddress(masterKey, k.GetNetwork(ctx))
 
-	if _, ok := k.GetAddress(ctx, addr.EncodeAddress()); !ok {
+	if _, ok := k.GetAddress(ctx, addr.Address); !ok {
 		return nil, fmt.Errorf("no address found for current %s masterKey", tss.MasterKey.String())
 	}
 
-	return []byte(addr.EncodeAddress()), nil
+	return []byte(addr.Address), nil
 }
 
 func getRawConsolidationTx(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {
@@ -105,12 +104,7 @@ func getRawConsolidationTx(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {
 		return nil, fmt.Errorf("no signed consolidation transaction ready")
 	}
 
-	encodedTx, err := encodeTx(tx)
-	if err != nil {
-		return nil, err
-	}
-
-	return []byte(hex.EncodeToString(encodedTx)), nil
+	return []byte(hex.EncodeToString(types.MustEncodeTx(tx))), nil
 }
 
 func payForConsolidationTx(ctx sdk.Context, k types.BTCKeeper, rpc types.RPCClient, data []byte) ([]byte, error) {
@@ -151,7 +145,7 @@ func payForConsolidationTx(ctx sdk.Context, k types.BTCKeeper, rpc types.RPCClie
 			OutPointInfo: types.NewOutPointInfo(
 				wire.NewOutPoint(&consolidationTxHash, 1),
 				k.GetMinimumWithdrawalAmount(ctx),
-				anyoneCanSpendAddress.EncodeAddress(),
+				anyoneCanSpendAddress.Address,
 			),
 			AddressInfo: types.AddressInfo{
 				Address:      anyoneCanSpendAddress.Address,
@@ -184,7 +178,7 @@ func payForConsolidationTx(ctx sdk.Context, k types.BTCKeeper, rpc types.RPCClie
 			utxo.Address,
 		)
 		addressInfo := types.AddressInfo{
-			Address:      address,
+			Address:      address.EncodeAddress(),
 			RedeemScript: redeemScript,
 		}
 
@@ -229,21 +223,7 @@ func payForConsolidationTx(ctx sdk.Context, k types.BTCKeeper, rpc types.RPCClie
 		return nil, err
 	}
 
-	encodedTx, err := encodeTx(tx)
-	if err != nil {
-		return nil, err
-	}
-
-	return []byte(hex.EncodeToString(encodedTx)), nil
-}
-
-func encodeTx(tx *wire.MsgTx) ([]byte, error) {
-	var buf bytes.Buffer
-	if err := tx.BtcEncode(&buf, wire.FeeFilterVersion, wire.WitnessEncoding); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
+	return []byte(hex.EncodeToString(types.MustEncodeTx(tx))), nil
 }
 
 func estimateTxSize(inputs []types.OutPointToSign, outputs []types.Output) (int64, error) {

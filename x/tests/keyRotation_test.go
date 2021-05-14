@@ -24,6 +24,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
@@ -283,13 +284,11 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, err)
 
 	buf, err := hex.DecodeString(string(bz))
-	signedTx := wire.NewMsgTx(wire.TxVersion)
 	assert.NoError(t, err)
+	signedTx := types.MustDecodeTx(buf)
 
-	err = signedTx.BtcDecode(bytes.NewReader(buf), wire.FeeFilterVersion, wire.WitnessEncoding)
-	assert.NoError(t, err)
-	fee := btcTypes.EstimateTxSize(*signedTx, outpointsToSign)
-	assert.True(t, txCorrectlyFormed(signedTx, deposits, totalDepositAmount-fee-int64(btcTypes.DefaultParams().MinimumWithdrawalAmount)))
+	fee := btcTypes.EstimateTxSize(signedTx, outpointsToSign)
+	assert.True(t, txCorrectlyFormed(&signedTx, deposits, totalDepositAmount-fee-int64(btcTypes.DefaultParams().MinimumWithdrawalAmount)))
 
 	// expected consolidation info
 	consAddr := getAddress(signedTx.TxOut[0], btcTypes.DefaultParams().Network.Params())
