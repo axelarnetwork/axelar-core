@@ -125,13 +125,11 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	tssHandler := tss.NewHandler(signer, snapKeeper, nexusK, voter, &tssMock.StakingKeeperMock{
 		GetLastTotalPowerFunc: mocks.Staker.GetLastTotalPowerFunc,
 	}, broadcaster)
-	voteHandler := vote.NewHandler()
 
 	router = router.
 		AddRoute(sdk.NewRoute(broadcastTypes.RouterKey, broadcastHandler)).
 		AddRoute(sdk.NewRoute(btcTypes.RouterKey, btcHandler)).
 		AddRoute(sdk.NewRoute(ethTypes.RouterKey, ethHandler)).
-		AddRoute(sdk.NewRoute(voteTypes.RouterKey, voteHandler)).
 		AddRoute(sdk.NewRoute(tssTypes.RouterKey, tssHandler))
 
 	queriers := map[string]sdk.Querier{
