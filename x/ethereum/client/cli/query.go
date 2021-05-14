@@ -34,6 +34,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdCreateDeployTx(queryRoute),
 		GetCmdSendTx(queryRoute),
 		GetCmdSendCommand(queryRoute),
+		GetCmdQueryCommandData(queryRoute),
 	)
 
 	return ethQueryCmd
@@ -225,6 +226,35 @@ func GetCmdSendCommand(queryRoute string) *cobra.Command {
 			cliCtx.LegacyAmino.MustUnmarshalJSON(res, &txHash)
 
 			return cliCtx.PrintObjectLegacy(fmt.Sprintf("successfully sent transaction %s to Ethereum", txHash))
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdQueryCommandData returns the query to get the signed command data
+func GetCmdQueryCommandData(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "command [commandID]",
+		Short: "Get the signed command data that can be wrapped in an Ethereum transaction to execute the command [commandID] on Axelar Gateway",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			commandIDHex := args[0]
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryCommandData, commandIDHex), nil)
+			if err != nil {
+				return sdkerrors.Wrapf(err, "could not get command %s", commandIDHex)
+			}
+
+			var data []byte
+			cliCtx.LegacyAmino.MustUnmarshalJSON(res, &data)
+
+			return cliCtx.PrintObjectLegacy(common.Bytes2Hex(data))
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
