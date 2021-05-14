@@ -111,7 +111,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json
 
 // Route returns this module's message routing key.
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler())
+	return sdk.Route{}
 }
 
 // QuerierRoute returns this module's query route
