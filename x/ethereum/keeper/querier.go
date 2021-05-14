@@ -252,8 +252,6 @@ func queryCommandData(ctx sdk.Context, k Keeper, s types.Signer, commandIDHex st
 		return nil, sdkerrors.Wrapf(types.ErrEthereum, "could not create transaction data: %s", err)
 	}
 
-	k.Logger(ctx).Debug(common.Bytes2Hex(executeData))
-
 	return k.Codec().MustMarshalJSON(executeData), nil
 }
 
