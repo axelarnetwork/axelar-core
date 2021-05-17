@@ -109,21 +109,6 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json
 	return cdc.MustMarshalJSON(&genState)
 }
 
-// Route returns the module's route
-func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler())
-}
-
-// QuerierRoute returns this module's query route
-func (AppModule) QuerierRoute() string {
-	return types.QuerierRoute
-}
-
-// LegacyQuerierHandler returns a new query handler for this module
-func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
-	return nil
-}
-
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(module.Configurator) {
@@ -138,3 +123,12 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	return EndBlocker(ctx, req, am.keeper)
 }
+
+// Route returns the module's route
+func (am AppModule) Route() sdk.Route { return sdk.Route{} }
+
+// QuerierRoute returns this module's query route
+func (AppModule) QuerierRoute() string { return "" }
+
+// LegacyQuerierHandler returns a new query handler for this module
+func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier { return nil }

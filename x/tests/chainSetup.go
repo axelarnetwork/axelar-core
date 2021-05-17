@@ -47,7 +47,6 @@ import (
 	ethKeeper "github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	ethMock "github.com/axelarnetwork/axelar-core/x/ethereum/types/mock"
-	"github.com/axelarnetwork/axelar-core/x/snapshot"
 	snapshotExported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapshotExportedMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	snapshotKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
@@ -123,18 +122,14 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	broadcastHandler := broadcast.NewHandler(broadcaster)
 	btcHandler := bitcoin.NewHandler(bitcoinKeeper, voter, signer, nexusK, snapKeeper)
 	ethHandler := ethereum.NewHandler(ethereumKeeper, voter, signer, nexusK, snapKeeper)
-	snapHandler := snapshot.NewHandler()
 	tssHandler := tss.NewHandler(signer, snapKeeper, nexusK, voter, &tssMock.StakingKeeperMock{
 		GetLastTotalPowerFunc: mocks.Staker.GetLastTotalPowerFunc,
 	}, broadcaster)
-	voteHandler := vote.NewHandler()
 
 	router = router.
 		AddRoute(sdk.NewRoute(broadcastTypes.RouterKey, broadcastHandler)).
 		AddRoute(sdk.NewRoute(btcTypes.RouterKey, btcHandler)).
 		AddRoute(sdk.NewRoute(ethTypes.RouterKey, ethHandler)).
-		AddRoute(sdk.NewRoute(snapshotTypes.RouterKey, snapHandler)).
-		AddRoute(sdk.NewRoute(voteTypes.RouterKey, voteHandler)).
 		AddRoute(sdk.NewRoute(tssTypes.RouterKey, tssHandler))
 
 	queriers := map[string]sdk.Querier{

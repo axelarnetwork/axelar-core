@@ -44,6 +44,7 @@
       - [slashes \[validator\] \[start-height\] \[end-height\]](axelard_query_distribution_slashes.md)	 - Query distribution validator slashes
       - [validator-outstanding-rewards \[validator\]](axelard_query_distribution_validator-outstanding-rewards.md)	 - Query distribution outstanding (un-withdrawn) rewards for a validator and all their delegations
     - [ethereum](axelard_query_ethereum.md)	 - Querying commands for the ethereum module
+      - [command \[commandID\]](axelard_query_ethereum_command.md)	 - Get the signed command data that can be wrapped in an Ethereum transaction to execute the command \[commandID\] on Axelar Gateway
       - [deploy-gateway](axelard_query_ethereum_deploy-gateway.md)	 - Obtain a raw transaction for the deployment of Axelar Gateway.
       - [gateway-address](axelard_query_ethereum_gateway-address.md)	 - Query the Axelar Gateway contract address
       - [master-address](axelard_query_ethereum_master-address.md)	 - Query an address by key ID
