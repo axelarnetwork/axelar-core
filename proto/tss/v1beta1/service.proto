@@ -19,8 +19,13 @@ service MsgService {
       body : "*"
     };
   }
-  rpc KeygenTraffic(tss.v1beta1.KeygenTrafficRequest)
-      returns (tss.v1beta1.KeygenTrafficResponse);
+
+  rpc ProcessKeygenTraffic(tss.v1beta1.ProcessKeygenTrafficRequest)
+      returns (tss.v1beta1.ProcessKeygenTrafficResponse) {
+    option (google.api.http) = {
+    };
+  }
+
   rpc AssignKey(tss.v1beta1.AssignKeyRequest)
       returns (tss.v1beta1.AssignKeyResponse) {
     option (google.api.http) = {
@@ -28,6 +33,7 @@ service MsgService {
       body : "*"
     };
   }
+
   rpc RotateKey(tss.v1beta1.RotateKeyRequest)
       returns (tss.v1beta1.RotateKeyResponse) {
     option (google.api.http) = {
@@ -35,13 +41,28 @@ service MsgService {
       body : "*"
     };
   }
-  rpc VotePubKey(tss.v1beta1.VotePubKeyRequest)
-      returns (tss.v1beta1.VotePubKeyResponse);
 
-  rpc SignTraffic(tss.v1beta1.SignTrafficRequest)
-      returns (tss.v1beta1.SignTrafficResponse);
-  rpc VoteSig(tss.v1beta1.VoteSigRequest) returns (tss.v1beta1.VoteSigResponse);
+  rpc VotePubKey(tss.v1beta1.VotePubKeyRequest)
+      returns (tss.v1beta1.VotePubKeyResponse) {
+    option (google.api.http) = {
+    };
+  };
+
+  rpc ProcessSignTraffic(tss.v1beta1.ProcessSignTrafficRequest)
+      returns (tss.v1beta1.ProcessSignTrafficResponse) {
+    option (google.api.http) = {
+    };
+  }
+
+  rpc VoteSig(tss.v1beta1.VoteSigRequest)
+      returns (tss.v1beta1.VoteSigResponse) {
+    option (google.api.http) = {
+    };
+  }
 
   rpc Deregister(tss.v1beta1.DeregisterRequest)
-      returns (tss.v1beta1.DeregisterResponse);
+      returns (tss.v1beta1.DeregisterResponse) {
+    option (google.api.http) = {
+    };
+  }
 }

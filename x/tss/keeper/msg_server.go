@@ -93,7 +93,7 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 	return &types.StartKeygenResponse{}, nil
 }
 
-func (s msgServer) KeygenTraffic(c context.Context, req *types.KeygenTrafficRequest) (*types.KeygenTrafficResponse, error) {
+func (s msgServer) ProcessKeygenTraffic(c context.Context, req *types.ProcessKeygenTrafficRequest) (*types.ProcessKeygenTrafficResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
 	senderAddress := s.broadcaster.GetPrincipal(ctx, req.Sender)
@@ -113,7 +113,7 @@ func (s msgServer) KeygenTraffic(c context.Context, req *types.KeygenTrafficRequ
 			sdk.NewAttribute(sdk.AttributeKeySender, senderAddress.String()),
 			sdk.NewAttribute(types.AttributeKeyPayload, string(types.ModuleCdc.MustMarshalJSON(req.Payload)))))
 
-	return &types.KeygenTrafficResponse{}, nil
+	return &types.ProcessKeygenTrafficResponse{}, nil
 }
 
 func (s msgServer) AssignKey(c context.Context, req *types.AssignKeyRequest) (*types.AssignKeyResponse, error) {
@@ -245,7 +245,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 
 }
 
-func (s msgServer) SignTraffic(c context.Context, req *types.SignTrafficRequest) (*types.SignTrafficResponse, error) {
+func (s msgServer) ProcessSignTraffic(c context.Context, req *types.ProcessSignTrafficRequest) (*types.ProcessSignTrafficResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
 	senderAddress := s.broadcaster.GetPrincipal(ctx, req.Sender)
@@ -265,7 +265,7 @@ func (s msgServer) SignTraffic(c context.Context, req *types.SignTrafficRequest)
 			sdk.NewAttribute(sdk.AttributeKeySender, senderAddress.String()),
 			sdk.NewAttribute(types.AttributeKeyPayload, string(types.ModuleCdc.MustMarshalJSON(req.Payload)))))
 
-	return &types.SignTrafficResponse{}, nil
+	return &types.ProcessSignTrafficResponse{}, nil
 }
 
 func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types.VoteSigResponse, error) {

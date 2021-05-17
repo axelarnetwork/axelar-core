@@ -54,25 +54,25 @@ message RotateKeyRequest {
 
 message RotateKeyResponse {}
 
-// KeygenTrafficRequest protocol message
-message KeygenTrafficRequest {
+// ProcessKeygenTrafficRequest protocol message
+message ProcessKeygenTrafficRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string session_id = 2 [ (gogoproto.customname) = "SessionID" ];
   tofnd.v1beta1.TrafficOut payload = 3;
 }
 
-message KeygenTrafficResponse {}
+message ProcessKeygenTrafficResponse {}
 
-// SignTrafficRequest protocol message
-message SignTrafficRequest {
+// ProcessSignTrafficRequest protocol message
+message ProcessSignTrafficRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string session_id = 2 [ (gogoproto.customname) = "SessionID" ];
   tofnd.v1beta1.TrafficOut payload = 3;
 }
 
-message SignTrafficResponse {}
+message ProcessSignTrafficResponse {}
 
 // VotePubKeyRequest represents the message to vote on a public key
 message VotePubKeyRequest {

@@ -16,11 +16,11 @@ func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Vot
 	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
-		case *types.KeygenTrafficRequest:
-			res, err := server.KeygenTraffic(sdk.WrapSDKContext(ctx), msg)
+		case *types.ProcessKeygenTrafficRequest:
+			res, err := server.ProcessKeygenTraffic(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
-		case *types.SignTrafficRequest:
-			res, err := server.SignTraffic(sdk.WrapSDKContext(ctx), msg)
+		case *types.ProcessSignTrafficRequest:
+			res, err := server.ProcessSignTraffic(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
 		case *types.StartKeygenRequest:
 			res, err := server.StartKeygen(sdk.WrapSDKContext(ctx), msg)

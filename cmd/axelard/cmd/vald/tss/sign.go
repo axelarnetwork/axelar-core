@@ -128,7 +128,7 @@ func (mgr *Mgr) handleIntermediateSignMsgs(sigID string, intermediate <-chan *to
 		mgr.Logger.Debug(fmt.Sprintf("outgoing sign msg: sig [%.20s] from me [%.20s] to [%.20s] broadcast [%t]\n",
 			sigID, mgr.principalAddr, msg.ToPartyUid, msg.IsBroadcast))
 		// sender is set by broadcaster
-		tssMsg := &tss.SignTrafficRequest{Sender: mgr.sender, SessionID: sigID, Payload: msg}
+		tssMsg := &tss.ProcessSignTrafficRequest{Sender: mgr.sender, SessionID: sigID, Payload: msg}
 		if err := mgr.broadcaster.Broadcast(tssMsg); err != nil {
 			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing sign msg")
 		}

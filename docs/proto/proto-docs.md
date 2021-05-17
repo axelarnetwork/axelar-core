@@ -112,12 +112,12 @@
     - [AssignKeyResponse](#tss.v1beta1.AssignKeyResponse)
     - [DeregisterRequest](#tss.v1beta1.DeregisterRequest)
     - [DeregisterResponse](#tss.v1beta1.DeregisterResponse)
-    - [KeygenTrafficRequest](#tss.v1beta1.KeygenTrafficRequest)
-    - [KeygenTrafficResponse](#tss.v1beta1.KeygenTrafficResponse)
+    - [ProcessKeygenTrafficRequest](#tss.v1beta1.ProcessKeygenTrafficRequest)
+    - [ProcessKeygenTrafficResponse](#tss.v1beta1.ProcessKeygenTrafficResponse)
+    - [ProcessSignTrafficRequest](#tss.v1beta1.ProcessSignTrafficRequest)
+    - [ProcessSignTrafficResponse](#tss.v1beta1.ProcessSignTrafficResponse)
     - [RotateKeyRequest](#tss.v1beta1.RotateKeyRequest)
     - [RotateKeyResponse](#tss.v1beta1.RotateKeyResponse)
-    - [SignTrafficRequest](#tss.v1beta1.SignTrafficRequest)
-    - [SignTrafficResponse](#tss.v1beta1.SignTrafficResponse)
     - [StartKeygenRequest](#tss.v1beta1.StartKeygenRequest)
     - [StartKeygenResponse](#tss.v1beta1.StartKeygenResponse)
     - [VotePubKeyRequest](#tss.v1beta1.VotePubKeyRequest)
@@ -511,7 +511,7 @@ Msg defines the bitcoin Msg service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `Link` | [LinkRequest](#bitcoin.v1beta1.LinkRequest) | [LinkResponse](#bitcoin.v1beta1.LinkResponse) |  | POST|/axelar/bitcoin/link/{recipient_chain}|
 | `ConfirmOutpoint` | [ConfirmOutpointRequest](#bitcoin.v1beta1.ConfirmOutpointRequest) | [ConfirmOutpointResponse](#bitcoin.v1beta1.ConfirmOutpointResponse) |  | POST|/axelar/bitcoin/confirm|
-| `VoteConfirmOutpoint` | [VoteConfirmOutpointRequest](#bitcoin.v1beta1.VoteConfirmOutpointRequest) | [VoteConfirmOutpointResponse](#bitcoin.v1beta1.VoteConfirmOutpointResponse) |  | |
+| `VoteConfirmOutpoint` | [VoteConfirmOutpointRequest](#bitcoin.v1beta1.VoteConfirmOutpointRequest) | [VoteConfirmOutpointResponse](#bitcoin.v1beta1.VoteConfirmOutpointResponse) |  | ||
 | `SignPendingTransfers` | [SignPendingTransfersRequest](#bitcoin.v1beta1.SignPendingTransfersRequest) | [SignPendingTransfersResponse](#bitcoin.v1beta1.SignPendingTransfersResponse) |  | POST|/axelar/bitcoin/sign|
 
  <!-- end services -->
@@ -1429,10 +1429,10 @@ any future keygen
 
 
 
-<a name="tss.v1beta1.KeygenTrafficRequest"></a>
+<a name="tss.v1beta1.ProcessKeygenTrafficRequest"></a>
 
-### KeygenTrafficRequest
-KeygenTrafficRequest protocol message
+### ProcessKeygenTrafficRequest
+ProcessKeygenTrafficRequest protocol message
 
 
 | Field | Type | Label | Description |
@@ -1446,9 +1446,36 @@ KeygenTrafficRequest protocol message
 
 
 
-<a name="tss.v1beta1.KeygenTrafficResponse"></a>
+<a name="tss.v1beta1.ProcessKeygenTrafficResponse"></a>
 
-### KeygenTrafficResponse
+### ProcessKeygenTrafficResponse
+
+
+
+
+
+
+
+<a name="tss.v1beta1.ProcessSignTrafficRequest"></a>
+
+### ProcessSignTrafficRequest
+ProcessSignTrafficRequest protocol message
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `session_id` | [string](#string) |  |  |
+| `payload` | [tss.tofnd.v1beta1.TrafficOut](#tss.tofnd.v1beta1.TrafficOut) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.ProcessSignTrafficResponse"></a>
+
+### ProcessSignTrafficResponse
 
 
 
@@ -1477,33 +1504,6 @@ KeygenTrafficRequest protocol message
 <a name="tss.v1beta1.RotateKeyResponse"></a>
 
 ### RotateKeyResponse
-
-
-
-
-
-
-
-<a name="tss.v1beta1.SignTrafficRequest"></a>
-
-### SignTrafficRequest
-SignTrafficRequest protocol message
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `session_id` | [string](#string) |  |  |
-| `payload` | [tss.tofnd.v1beta1.TrafficOut](#tss.tofnd.v1beta1.TrafficOut) |  |  |
-
-
-
-
-
-
-<a name="tss.v1beta1.SignTrafficResponse"></a>
-
-### SignTrafficResponse
 
 
 
@@ -1623,13 +1623,13 @@ Msg defines the tss Msg service.
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `StartKeygen` | [StartKeygenRequest](#tss.v1beta1.StartKeygenRequest) | [StartKeygenResponse](#tss.v1beta1.StartKeygenResponse) |  | POST|/axelar/tss/startKeygen|
-| `KeygenTraffic` | [KeygenTrafficRequest](#tss.v1beta1.KeygenTrafficRequest) | [KeygenTrafficResponse](#tss.v1beta1.KeygenTrafficResponse) |  | |
+| `ProcessKeygenTraffic` | [ProcessKeygenTrafficRequest](#tss.v1beta1.ProcessKeygenTrafficRequest) | [ProcessKeygenTrafficResponse](#tss.v1beta1.ProcessKeygenTrafficResponse) |  | ||
 | `AssignKey` | [AssignKeyRequest](#tss.v1beta1.AssignKeyRequest) | [AssignKeyResponse](#tss.v1beta1.AssignKeyResponse) |  | POST|/axelar/tss/assign/{chain}|
 | `RotateKey` | [RotateKeyRequest](#tss.v1beta1.RotateKeyRequest) | [RotateKeyResponse](#tss.v1beta1.RotateKeyResponse) |  | POST|/axelar/tss/assign/{chain}|
-| `VotePubKey` | [VotePubKeyRequest](#tss.v1beta1.VotePubKeyRequest) | [VotePubKeyResponse](#tss.v1beta1.VotePubKeyResponse) |  | |
-| `SignTraffic` | [SignTrafficRequest](#tss.v1beta1.SignTrafficRequest) | [SignTrafficResponse](#tss.v1beta1.SignTrafficResponse) |  | |
-| `VoteSig` | [VoteSigRequest](#tss.v1beta1.VoteSigRequest) | [VoteSigResponse](#tss.v1beta1.VoteSigResponse) |  | |
-| `Deregister` | [DeregisterRequest](#tss.v1beta1.DeregisterRequest) | [DeregisterResponse](#tss.v1beta1.DeregisterResponse) |  | |
+| `VotePubKey` | [VotePubKeyRequest](#tss.v1beta1.VotePubKeyRequest) | [VotePubKeyResponse](#tss.v1beta1.VotePubKeyResponse) |  | ||
+| `ProcessSignTraffic` | [ProcessSignTrafficRequest](#tss.v1beta1.ProcessSignTrafficRequest) | [ProcessSignTrafficResponse](#tss.v1beta1.ProcessSignTrafficResponse) |  | ||
+| `VoteSig` | [VoteSigRequest](#tss.v1beta1.VoteSigRequest) | [VoteSigResponse](#tss.v1beta1.VoteSigResponse) |  | ||
+| `Deregister` | [DeregisterRequest](#tss.v1beta1.DeregisterRequest) | [DeregisterResponse](#tss.v1beta1.DeregisterResponse) |  | ||
 
  <!-- end services -->
 
