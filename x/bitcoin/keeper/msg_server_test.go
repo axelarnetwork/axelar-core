@@ -1,4 +1,4 @@
-package bitcoin
+package keeper
 
 import (
 	"crypto/ecdsa"
@@ -31,11 +31,12 @@ import (
 
 func TestHandleMsgLink(t *testing.T) {
 	var (
+		server      types.MsgServiceServer
 		btcKeeper   *mock.BTCKeeperMock
 		signer      *mock.SignerMock
 		nexusKeeper *mock.NexusMock
 		ctx         sdk.Context
-		msg         *types.MsgLink
+		msg         *types.LinkRequest
 	)
 	setup := func() {
 		btcKeeper = &mock.BTCKeeperMock{
@@ -60,39 +61,40 @@ func TestHandleMsgLink(t *testing.T) {
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		msg = randomMsgLink()
+		server = NewMsgServerImpl(btcKeeper, signer, nexusKeeper, &mock.VoterMock{}, &mock.SnapshotterMock{})
 	}
 	repeatCount := 20
 
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
-		res, err := HandleMsgLink(ctx, btcKeeper, signer, nexusKeeper, msg)
+		res, err := server.Link(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 		assert.Len(t, btcKeeper.SetAddressCalls(), 1)
 		assert.Len(t, nexusKeeper.LinkAddressesCalls(), 1)
 		assert.Equal(t, exported.Bitcoin, signer.GetCurrentKeyCalls()[0].Chain)
 		assert.Equal(t, msg.RecipientChain, nexusKeeper.GetChainCalls()[0].Chain)
-		assert.Equal(t, btcKeeper.SetAddressCalls()[0].Address.Address, string(res.Data))
+		assert.Equal(t, btcKeeper.SetAddressCalls()[0].Address.Address, res.DepositAddr)
 		assert.Equal(t, types.Deposit, btcKeeper.SetAddressCalls()[0].Address.Role)
 	}).Repeat(repeatCount))
 
 	t.Run("no master key", testutils.Func(func(t *testing.T) {
 		setup()
 		signer.GetCurrentKeyFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) { return tss.Key{}, false }
-		_, err := HandleMsgLink(ctx, btcKeeper, signer, nexusKeeper, msg)
+		_, err := server.Link(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
 
 	t.Run("unknown chain", testutils.Func(func(t *testing.T) {
 		setup()
 		nexusKeeper.GetChainFunc = func(sdk.Context, string) (nexus.Chain, bool) { return nexus.Chain{}, false }
-		_, err := HandleMsgLink(ctx, btcKeeper, signer, nexusKeeper, msg)
+		_, err := server.Link(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
 
 	t.Run("asset not registered", testutils.Func(func(t *testing.T) {
 		setup()
 		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, string, string) bool { return false }
-		_, err := HandleMsgLink(ctx, btcKeeper, signer, nexusKeeper, msg)
+		_, err := server.Link(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
 }
@@ -103,7 +105,8 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 		voter     *mock.VoterMock
 		signer    *mock.SignerMock
 		ctx       sdk.Context
-		msg       *types.MsgConfirmOutpoint
+		msg       *types.ConfirmOutpointRequest
+		server    types.MsgServiceServer
 	)
 	setup := func() {
 		address := randomAddress()
@@ -139,14 +142,16 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		msg = randomMsgConfirmOutpoint()
 		msg.OutPointInfo.Address = address.EncodeAddress()
+		server = NewMsgServerImpl(btcKeeper, signer, &mock.NexusMock{}, voter, &mock.SnapshotterMock{})
 	}
 
 	repeatCount := 20
 	t.Run("happy path deposit", testutils.Func(func(t *testing.T) {
 		setup()
-		res, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, signer, msg)
+		_, err := server.ConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
+		events := ctx.EventManager().ABCIEvents()
 		assert.NoError(t, err)
-		assert.Len(t, testutils.Events(res.Events).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeOutpointConfirmation }), 1)
+		assert.Len(t, testutils.Events(events).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeOutpointConfirmation }), 1)
 		assert.Equal(t, msg.OutPointInfo, btcKeeper.SetPendingOutpointInfoCalls()[0].Info)
 		assert.Equal(t, voter.InitPollCalls()[0].Poll, btcKeeper.SetPendingOutpointInfoCalls()[0].Poll)
 	}).Repeat(repeatCount))
@@ -158,9 +163,10 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 			return addr, true
 		}
 
-		res, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, signer, msg)
+		_, err := server.ConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
+		events := sdk.UnwrapSDKContext(sdk.WrapSDKContext(ctx)).EventManager().ABCIEvents()
 		assert.NoError(t, err)
-		assert.Len(t, testutils.Events(res.Events).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeOutpointConfirmation }), 1)
+		assert.Len(t, testutils.Events(events).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeOutpointConfirmation }), 1)
 		assert.Equal(t, msg.OutPointInfo, btcKeeper.SetPendingOutpointInfoCalls()[0].Info)
 		assert.Equal(t, voter.InitPollCalls()[0].Poll, btcKeeper.SetPendingOutpointInfoCalls()[0].Poll)
 	}).Repeat(repeatCount))
@@ -169,7 +175,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 		btcKeeper.GetOutPointInfoFunc = func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
 			return msg.OutPointInfo, types.CONFIRMED, true
 		}
-		_, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, signer, msg)
+		_, err := server.ConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
 
@@ -178,21 +184,21 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 		btcKeeper.GetOutPointInfoFunc = func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
 			return msg.OutPointInfo, types.SPENT, true
 		}
-		_, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, signer, msg)
+		_, err := server.ConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
 
 	t.Run("address unknown", testutils.Func(func(t *testing.T) {
 		setup()
 		btcKeeper.GetAddressFunc = func(sdk.Context, string) (types.AddressInfo, bool) { return types.AddressInfo{}, false }
-		_, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, signer, msg)
+		_, err := server.ConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
 
 	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
 		setup()
 		voter.InitPollFunc = func(sdk.Context, vote.PollMeta, int64) error { return fmt.Errorf("poll setup failed") }
-		_, err := HandleMsgConfirmOutpoint(ctx, btcKeeper, voter, signer, msg)
+		_, err := server.ConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
 }
@@ -203,8 +209,9 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		voter       *mock.VoterMock
 		nexusKeeper *mock.NexusMock
 		ctx         sdk.Context
-		msg         *types.MsgVoteConfirmOutpoint
+		msg         *types.VoteConfirmOutpointRequest
 		info        types.OutPointInfo
+		server      types.MsgServiceServer
 	)
 	setup := func() {
 		address := randomAddress()
@@ -239,13 +246,14 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		}
 
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		server = NewMsgServerImpl(btcKeeper, &mock.SignerMock{}, nexusKeeper, voter, &mock.SnapshotterMock{})
 	}
 
 	repeats := 20
 	t.Run("happy path confirm deposit to deposit address", testutils.Func(func(t *testing.T) {
 		setup()
 
-		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 		assert.Len(t, voter.DeletePollCalls(), 1)
 		assert.Len(t, btcKeeper.DeletePendingOutPointInfoCalls(), 1)
@@ -264,7 +272,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			return addr, true
 		}
 
-		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 		assert.Len(t, voter.DeletePollCalls(), 1)
 		assert.Len(t, btcKeeper.DeletePendingOutPointInfoCalls(), 1)
@@ -287,7 +295,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			return addr, true
 		}
 
-		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 		assert.Len(t, voter.DeletePollCalls(), 1)
 		assert.Len(t, btcKeeper.DeletePendingOutPointInfoCalls(), 1)
@@ -305,7 +313,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		info.OutPoint = op.String()
 		msg.OutPoint = op.String()
 
-		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 		assert.Len(t, voter.DeletePollCalls(), 1)
 		assert.Len(t, btcKeeper.DeletePendingOutPointInfoCalls(), 1)
@@ -334,7 +342,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			return addr, true
 		}
 
-		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 		assert.Len(t, voter.DeletePollCalls(), 1)
 		assert.Len(t, btcKeeper.DeletePendingOutPointInfoCalls(), 1)
@@ -359,7 +367,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 				true
 		}
 
-		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 		assert.Len(t, voter.DeletePollCalls(), 1)
 		assert.Len(t, btcKeeper.DeletePendingOutPointInfoCalls(), 1)
@@ -373,7 +381,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		setup()
 		voter.ResultFunc = func(sdk.Context, vote.PollMeta) vote.VotingData { return false }
 
-		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 		assert.Len(t, voter.DeletePollCalls(), 1)
 		assert.Len(t, btcKeeper.DeletePendingOutPointInfoCalls(), 1)
@@ -386,7 +394,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		setup()
 		voter.ResultFunc = func(sdk.Context, vote.PollMeta) vote.VotingData { return nil }
 
-		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 		assert.Len(t, voter.DeletePollCalls(), 0)
 		assert.Len(t, btcKeeper.DeletePendingOutPointInfoCalls(), 0)
@@ -404,7 +412,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			return info, types.CONFIRMED, true
 		}
 
-		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 		assert.Len(t, voter.DeletePollCalls(), 0)
 		assert.Len(t, btcKeeper.DeletePendingOutPointInfoCalls(), 0)
@@ -419,7 +427,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			return info, types.CONFIRMED, true
 		}
 
-		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 		assert.Len(t, voter.DeletePollCalls(), 1)
 		assert.Len(t, btcKeeper.DeletePendingOutPointInfoCalls(), 1)
@@ -434,7 +442,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			return info, types.SPENT, true
 		}
 
-		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 		assert.Len(t, voter.DeletePollCalls(), 1)
 		assert.Len(t, btcKeeper.DeletePendingOutPointInfoCalls(), 1)
@@ -448,7 +456,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		btcKeeper.GetPendingOutPointInfoFunc =
 			func(sdk.Context, vote.PollMeta) (types.OutPointInfo, bool) { return types.OutPointInfo{}, false }
 
-		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeats))
 
@@ -458,7 +466,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			return fmt.Errorf("failed")
 		}
 
-		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeats))
 
@@ -468,14 +476,14 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			return fmt.Errorf("failed")
 		}
 
-		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeats))
 	t.Run("outpoint does not match poll", testutils.Func(func(t *testing.T) {
 		setup()
 		info = randomOutpointInfo()
 
-		_, err := HandleMsgVoteConfirmOutpoint(ctx, btcKeeper, voter, nexusKeeper, msg)
+		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeats))
 }
@@ -488,7 +496,8 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		nexusKeeper *mock.NexusMock
 		snapshotter *mock.SnapshotterMock
 		ctx         sdk.Context
-		msg         *types.MsgSignPendingTransfers
+		msg         *types.SignPendingTransfersRequest
+		server      types.MsgServiceServer
 
 		transfers               []nexus.CrossChainTransfer
 		transferAmount          int64
@@ -499,7 +508,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		msg = types.NewMsgSignPendingTransfers(rand.Bytes(sdk.AddrLen),
+		msg = types.NewSignPendingTransfersRequest(rand.Bytes(sdk.AddrLen),
 			btcutil.Amount(rand.I64Between(0, 1000000)),
 		)
 
@@ -605,14 +614,14 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 				}, true
 			},
 		}
-
+		server = NewMsgServerImpl(btcKeeper, signer, nexusKeeper, voter, snapshotter)
 	}
 
 	repeatCount := 20
 	t.Run("happy path more deposits than transfers", testutils.Func(func(t *testing.T) {
 		setup()
 
-		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		_, err := server.SignPendingTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)+2) // + consolidation outpoint + anyone-can-spend outpoint
@@ -629,7 +638,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		setup()
 		signer.GetNextKeyFunc = signer.GetCurrentKeyFunc
 
-		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		_, err := server.SignPendingTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 		assert.Len(t, signer.GetCurrentKeyCalls(), 0)
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
@@ -653,7 +662,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 			}
 		}
 
-		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		_, err := server.SignPendingTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)-wrongAddressCount+2) // + consolidation outpoint + anyone-can-spend outpoint
@@ -683,7 +692,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 
 		uniqueTransferCount := len(transfers) - sameAddressCount + 1
 
-		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		_, err := server.SignPendingTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, uniqueTransferCount+2) // + consolidation outpoint + anyone-can-spend output
@@ -705,7 +714,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 			}
 		}
 
-		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		_, err := server.SignPendingTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)-belowMinimumCount+2) // + consolidation outpoint + anyone-can-spend output
@@ -728,7 +737,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 			dust[encodeAddr] += dustAmount
 		}
 
-		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		_, err := server.SignPendingTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)+2) // + consolidation outpoint + anyone-can-spend output
@@ -756,7 +765,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		transfers = append(transfers, transfer)
 		transferAmount += transfer.Asset.Amount.Int64()
 
-		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		_, err := server.SignPendingTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
 
@@ -764,7 +773,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		setup()
 		btcKeeper.GetUnsignedTxFunc = func(sdk.Context) (*wire.MsgTx, bool) { return wire.NewMsgTx(wire.TxVersion), true }
 
-		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		_, err := server.SignPendingTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
 
@@ -772,7 +781,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		setup()
 		btcKeeper.GetSignedTxFunc = func(sdk.Context) (*wire.MsgTx, bool) { return wire.NewMsgTx(wire.TxVersion), true }
 
-		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		_, err := server.SignPendingTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
 
@@ -780,7 +789,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		setup()
 		btcKeeper.GetAddressFunc = func(sdk.Context, string) (types.AddressInfo, bool) { return types.AddressInfo{}, false }
 
-		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		_, err := server.SignPendingTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
 
@@ -788,7 +797,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		setup()
 		deposits = deposits[:len(deposits)-1]
 
-		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		_, err := server.SignPendingTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
 
@@ -797,7 +806,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		signer.GetNextKeyFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) { return tss.Key{}, false }
 		signer.GetCurrentKeyFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) { return tss.Key{}, false }
 
-		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		_, err := server.SignPendingTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
 
@@ -805,7 +814,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		setup()
 		signer.GetSnapshotCounterForKeyIDFunc = func(sdk.Context, string) (int64, bool) { return 0, false }
 
-		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		_, err := server.SignPendingTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
 
@@ -813,7 +822,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		setup()
 		snapshotter.GetSnapshotFunc = func(sdk.Context, int64) (snapshot.Snapshot, bool) { return snapshot.Snapshot{}, false }
 
-		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		_, err := server.SignPendingTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
 
@@ -823,7 +832,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 			return fmt.Errorf("failed")
 		}
 
-		_, err := HandleMsgSignPendingTransfers(ctx, btcKeeper, signer, nexusKeeper, snapshotter, voter, msg)
+		_, err := server.SignPendingTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
 
@@ -835,19 +844,19 @@ func mapi(n int, f func(i int)) {
 	}
 }
 
-func randomMsgLink() *types.MsgLink {
-	return types.NewMsgLink(
+func randomMsgLink() *types.LinkRequest {
+	return types.NewLinkRequest(
 		rand.Bytes(sdk.AddrLen),
 		rand.StrBetween(5, 100),
 		rand.StrBetween(5, 100))
 }
 
-func randomMsgConfirmOutpoint() *types.MsgConfirmOutpoint {
-	return types.NewMsgConfirmOutpoint(rand.Bytes(sdk.AddrLen), randomOutpointInfo())
+func randomMsgConfirmOutpoint() *types.ConfirmOutpointRequest {
+	return types.NewConfirmOutpointRequest(rand.Bytes(sdk.AddrLen), randomOutpointInfo())
 }
 
-func randomMsgVoteConfirmOutpoint() *types.MsgVoteConfirmOutpoint {
-	return types.NewMsgVoteConfirmOutpoint(
+func randomMsgVoteConfirmOutpoint() *types.VoteConfirmOutpointRequest {
+	return types.NewVoteConfirmOutpointRequest(
 		rand.Bytes(sdk.AddrLen),
 		vote.PollMeta{
 			Module: types.ModuleName,
