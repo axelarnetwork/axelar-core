@@ -167,14 +167,14 @@ func (k Keeper) GetArchivedTransfersForChain(ctx sdk.Context, chain exported.Cha
 
 // ArchivePendingTransfer marks the transfer for the given recipient as concluded and archived
 func (k Keeper) ArchivePendingTransfer(ctx sdk.Context, transfer exported.CrossChainTransfer) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingPrefix + marshalCrossChainKey(transfer.Recipient.Chain, transfer.Id)))
+	bz := ctx.KVStore(k.storeKey).Get([]byte(pendingPrefix + marshalCrossChainKey(transfer.Recipient.Chain, transfer.ID)))
 	if bz == nil {
 		return
 	}
 
 	// Archive the transfer
-	ctx.KVStore(k.storeKey).Delete([]byte(pendingPrefix + marshalCrossChainKey(transfer.Recipient.Chain, transfer.Id)))
-	ctx.KVStore(k.storeKey).Set([]byte(archivedPrefix+marshalCrossChainKey(transfer.Recipient.Chain, transfer.Id)), bz)
+	ctx.KVStore(k.storeKey).Delete([]byte(pendingPrefix + marshalCrossChainKey(transfer.Recipient.Chain, transfer.ID)))
+	ctx.KVStore(k.storeKey).Set([]byte(archivedPrefix+marshalCrossChainKey(transfer.Recipient.Chain, transfer.ID)), bz)
 
 	// Update the total nexus for the chain if it is a foreign asset
 	var t exported.CrossChainTransfer
@@ -218,7 +218,7 @@ func (k Keeper) setPendingTransfer(ctx sdk.Context, recipient exported.CrossChai
 		next = binary.LittleEndian.Uint64(bz)
 	}
 
-	transfer := exported.CrossChainTransfer{Recipient: recipient, Asset: amount, Id: next}
+	transfer := exported.CrossChainTransfer{Recipient: recipient, Asset: amount, ID: next}
 	ctx.KVStore(k.storeKey).Set([]byte(pendingPrefix+marshalCrossChainKey(recipient.Chain, next)), k.cdc.MustMarshalBinaryLengthPrefixed(&transfer))
 
 	next++
