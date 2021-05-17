@@ -175,4 +175,6 @@ proto-update-deps:
 ## Issue link: https://github.com/confio/ics23/issues/32
 	@./scripts/sed.sh $(CONFIO_TYPES)/proofs.proto
 
+	@./scripts/proto-copy-cosmos-sdk.sh
+
 .PHONY: proto-all proto-gen proto-gen-any proto-swagger-gen proto-format proto-lint proto-check-breaking proto-update-deps

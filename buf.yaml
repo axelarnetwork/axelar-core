@@ -11,3 +11,5 @@ lint:
     - google
     - gogoproto
     - tofnd
+    - cosmos
+    - ibc
