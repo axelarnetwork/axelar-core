@@ -111,7 +111,7 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	signer.SetParams(ctx, tssTypes.DefaultParams())
 
 	nexusSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("balanceKey"), sdk.NewKVStoreKey("tbalanceKey"), "balance")
-	nexusK := nexusKeeper.NewKeeper(encCfg.Amino, sdk.NewKVStoreKey(nexusTypes.StoreKey), nexusSubspace)
+	nexusK := nexusKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(nexusTypes.StoreKey), nexusSubspace)
 	nexusK.SetParams(ctx, nexusTypes.DefaultParams())
 
 	voter.SetVotingInterval(ctx, voteTypes.DefaultGenesisState().VotingInterval)

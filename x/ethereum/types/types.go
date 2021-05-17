@@ -273,7 +273,7 @@ func CreateMintCommandData(chainID *big.Int, transfers []nexus.CrossChainTransfe
 			return nil, err
 		}
 
-		commandIDs = append(commandIDs, transferIDtoCommandID(transfer.ID))
+		commandIDs = append(commandIDs, transferIDtoCommandID(transfer.Id))
 		commands = append(commands, axelarGatewayCommandMint)
 		commandParams = append(commandParams, commandParam)
 	}

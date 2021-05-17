@@ -317,7 +317,7 @@ func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.
 	for _, transfer := range pendingTransfers {
 		recipient, err := btcutil.DecodeAddress(transfer.Recipient.Address, k.GetNetwork(ctx).Params())
 		if err != nil {
-			k.Logger(ctx).Error(fmt.Sprintf("%s is not a valid address", transfer.Recipient))
+			k.Logger(ctx).Error(fmt.Sprintf("%s is not a valid address", transfer.Recipient.String()))
 			continue
 		}
 		recipients = append(recipients, recipient)
