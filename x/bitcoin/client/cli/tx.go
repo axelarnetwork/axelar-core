@@ -57,7 +57,7 @@ func GetCmdConfirmTxOut() *cobra.Command {
 
 			outInfo := types.NewOutPointInfo(outPoint, btcutil.Amount(satoshi.Amount.Int64()), args[2])
 
-			msg := types.NewMsgConfirmOutpoint(clientCtx.GetFromAddress(), outInfo)
+			msg := types.NewConfirmOutpointRequest(clientCtx.GetFromAddress(), outInfo)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -81,7 +81,7 @@ func GetCmdLink() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewMsgLink(clientCtx.GetFromAddress(), args[1], args[0])
+			msg := types.NewLinkRequest(clientCtx.GetFromAddress(), args[1], args[0])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -109,7 +109,7 @@ func GetCmdSignPendingTransfersTx() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			msg := types.NewMsgSignPendingTransfers(clientCtx.GetFromAddress(), btcutil.Amount(satoshi.Amount.Int64()))
+			msg := types.NewSignPendingTransfersRequest(clientCtx.GetFromAddress(), btcutil.Amount(satoshi.Amount.Int64()))
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

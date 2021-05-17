@@ -306,7 +306,6 @@ func (n *Node) start() {
 				n.Ctx.Logger().Error(fmt.Sprintf("error when validating message %s", msg.Type()))
 
 				msg.out <- &Result{nil, err}
-
 			} else if h := n.router.Route(n.Ctx, msg.Route()); h != nil {
 				res, err := h(n.Ctx, msg.Msg)
 				if err != nil {
@@ -330,14 +329,11 @@ func (n *Node) start() {
 					}
 					n.events <- event
 				}
-
 				msg.out <- &Result{res, err}
-
 			} else {
 				panic(fmt.Sprintf("no handler for route %s defined", msg.Route()))
 			}
 		}
-
 		// end block
 		for _, endBlocker := range n.endBlockers {
 			endBlocker(n.Ctx, abci.RequestEndBlock{Height: b.header.Height})

@@ -47,12 +47,8 @@ func (mgr *Mgr) ProcessConfirmation(attributes []sdk.Attribute) error {
 	if err != nil {
 		mgr.logger.Debug(sdkerrors.Wrap(err, "tx outpoint confirmation failed").Error())
 	}
-	msg := &btc.MsgVoteConfirmOutpoint{
-		Sender:    mgr.sender,
-		Poll:      poll,
-		Confirmed: err == nil,
-		OutPoint:  outPointInfo.OutPoint,
-	}
+	msg := btc.NewVoteConfirmOutpointRequest(mgr.sender, poll, outPointInfo.GetOutPoint(), err == nil)
+
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, poll.String()))
 	return mgr.broadcaster.Broadcast(msg)
 }

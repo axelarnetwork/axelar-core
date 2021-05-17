@@ -17,6 +17,7 @@ import (
 	goEth "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	goEthTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -217,15 +218,16 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	for i := 0; i < totalDepositCount; i++ {
 		// get deposit address for ethereum transfer
 		crossChainAddr := nexus.CrossChainAddress{Chain: eth.Ethereum, Address: randStrings.Next()}
-		linkResult := <-chain.Submit(btcTypes.NewMsgLink(randomSender(), crossChainAddr.Address, crossChainAddr.Chain.Name))
+		linkResult := <-chain.Submit(btcTypes.NewLinkRequest(randomSender(), crossChainAddr.Address, crossChainAddr.Chain.Name))
 		assert.NoError(t, linkResult.Error)
 
 		// simulate deposit to master key address
-		depositAddr := string(linkResult.Data)
-		depositInfo := randomOutpointInfo(depositAddr)
+		var linkResponse btcTypes.LinkResponse
+		assert.NoError(t, proto.Unmarshal(linkResult.Data, &linkResponse))
+		depositInfo := randomOutpointInfo(linkResponse.DepositAddr)
 
 		// confirm deposit to master key
-		confirmResult1 := <-chain.Submit(btcTypes.NewMsgConfirmOutpoint(randomSender(), depositInfo))
+		confirmResult1 := <-chain.Submit(btcTypes.NewConfirmOutpointRequest(randomSender(), depositInfo))
 		assert.NoError(t, confirmResult1.Error)
 
 		// store this information for later in the test
@@ -268,7 +270,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, assignKeyResult.Error)
 
 	// sign the consolidation transaction
-	signResult := <-chain.Submit(btcTypes.NewMsgSignPendingTransfers(randomSender(), 0))
+	signResult := <-chain.Submit(btcTypes.NewSignPendingTransfersRequest(randomSender(), 0))
 	assert.NoError(t, signResult.Error)
 
 	// wait for voting to be done
@@ -298,7 +300,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	consolidationInfo.OutPoint = wire.NewOutPoint(&hash, 0).String()
 
 	// confirm master key transfer
-	confirmResult2 := <-chain.Submit(btcTypes.NewMsgConfirmOutpoint(randomSender(), consolidationInfo))
+	confirmResult2 := <-chain.Submit(btcTypes.NewConfirmOutpointRequest(randomSender(), consolidationInfo))
 	assert.NoError(t, confirmResult2.Error)
 
 	// wait for voting to be done

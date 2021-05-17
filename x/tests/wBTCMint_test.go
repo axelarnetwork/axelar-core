@@ -11,6 +11,7 @@ import (
 	goEth "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	goEthTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/gogo/protobuf/proto"
 
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -212,15 +213,16 @@ func Test_wBTC_mint(t *testing.T) {
 		// Get a deposit address for an Ethereum recipient address
 		// we don't provide an actual recipient address, so it is created automatically
 		crosschainAddr := nexus.CrossChainAddress{Chain: eth.Ethereum, Address: rand.StrBetween(5, 20)}
-		res := <-chain.Submit(btcTypes.NewMsgLink(randomSender(), crosschainAddr.Address, crosschainAddr.Chain.Name))
+		res := <-chain.Submit(btcTypes.NewLinkRequest(randomSender(), crosschainAddr.Address, crosschainAddr.Chain.Name))
 		assert.NoError(t, res.Error)
-		depositAddr := string(res.Data)
+		var linkResponse btcTypes.LinkResponse
+		assert.NoError(t, proto.Unmarshal(res.Data, &linkResponse))
 
 		// Simulate deposit
-		depositInfo := randomOutpointInfo(depositAddr)
+		depositInfo := randomOutpointInfo(linkResponse.DepositAddr)
 
 		// confirm the previously received information
-		res = <-chain.Submit(btcTypes.NewMsgConfirmOutpoint(randomSender(), depositInfo))
+		res = <-chain.Submit(btcTypes.NewConfirmOutpointRequest(randomSender(), depositInfo))
 		assert.NoError(t, res.Error)
 
 	}
