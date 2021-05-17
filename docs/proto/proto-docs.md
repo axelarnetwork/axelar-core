@@ -57,6 +57,11 @@
     - [MsgVoteConfirmDeposit](#ethereum.v1beta1.MsgVoteConfirmDeposit)
     - [MsgVoteConfirmToken](#ethereum.v1beta1.MsgVoteConfirmToken)
   
+- [ethereum/v1beta1/types.proto](#ethereum/v1beta1/types.proto)
+    - [BurnerInfo](#ethereum.v1beta1.BurnerInfo)
+    - [ERC20Deposit](#ethereum.v1beta1.ERC20Deposit)
+    - [ERC20TokenDeployment](#ethereum.v1beta1.ERC20TokenDeployment)
+  
 - [nexus/exported/v1beta1/types.proto](#nexus/exported/v1beta1/types.proto)
     - [Chain](#nexus.exported.v1beta1.Chain)
   
@@ -595,7 +600,7 @@ MsgConfirmDeposit represents an erc20 deposit confirmation message
 | `sender` | [bytes](#bytes) |  |  |
 | `tx_id` | [string](#string) |  |  |
 | `amount` | [bytes](#bytes) |  |  |
-| `burner_addr` | [string](#string) |  |  |
+| `burner_address` | [string](#string) |  |  |
 
 
 
@@ -755,6 +760,74 @@ MsgVoteConfirmToken represents a message that votes on a token deploy
 | `tx_id` | [string](#string) |  |  |
 | `symbol` | [string](#string) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="ethereum/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## ethereum/v1beta1/types.proto
+
+
+
+<a name="ethereum.v1beta1.BurnerInfo"></a>
+
+### BurnerInfo
+BurnerInfo describes information required to burn token at an burner address
+that is deposited by an user
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `token_address` | [string](#string) |  |  |
+| `symbol` | [string](#string) |  |  |
+| `salt` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="ethereum.v1beta1.ERC20Deposit"></a>
+
+### ERC20Deposit
+ERC20Deposit contains information for an ERC20 deposit
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `amount` | [string](#string) |  |  |
+| `symbol` | [string](#string) |  |  |
+| `burner_address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="ethereum.v1beta1.ERC20TokenDeployment"></a>
+
+### ERC20TokenDeployment
+ERC20TokenDeployment describes information about an ERC20 token
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `symbol` | [string](#string) |  |  |
+| `token_address` | [string](#string) |  |  |
 
 
 

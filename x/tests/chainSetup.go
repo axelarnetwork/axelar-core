@@ -103,7 +103,7 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	bitcoinKeeper.SetParams(ctx, btcParams)
 
 	ethSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "eth")
-	ethereumKeeper := ethKeeper.NewEthKeeper(encCfg.Amino, sdk.NewKVStoreKey(ethTypes.StoreKey), ethSubspace)
+	ethereumKeeper := ethKeeper.NewEthKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(ethTypes.StoreKey), ethSubspace)
 	ethereumKeeper.SetParams(ctx, ethTypes.DefaultParams())
 
 	tssSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), tssTypes.DefaultParamspace)

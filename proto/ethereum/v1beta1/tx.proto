@@ -17,7 +17,7 @@ message MsgConfirmDeposit {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
     (gogoproto.nullable) = false
   ];
-  string burner_addr = 4;
+  string burner_address = 4;
 }
 
 // MsgConfirmToken represents a token deploy confirmation message

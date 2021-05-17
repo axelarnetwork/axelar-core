@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"strings"
@@ -159,40 +160,11 @@ type DeployResult struct {
 	Tx              *ethTypes.Transaction `json:"tx"`
 }
 
-// SendTxResult describes the result of the send signed tx query,
-// containing the signed transaction and the unsigned tx hash
-type SendTxResult struct {
-	TxID     string                `json:"tx_id"`
-	SignedTx *ethTypes.Transaction `json:"tx"`
-}
-
 // CommandParams describe the parameters used to send a pre-signed command to the given contract,
 // with the sender signing the transaction on the Ethereum node
 type CommandParams struct {
 	CommandID CommandID
 	Sender    string
-}
-
-// ERC20TokenDeploy describes information about an ERC20 token
-type ERC20TokenDeploy struct {
-	Symbol    string
-	TokenAddr string
-}
-
-// BurnerInfo describes information required to burn token at an burner address
-// that is deposited by an user
-type BurnerInfo struct {
-	TokenAddr string
-	Symbol    string
-	Salt      [common.HashLength]byte
-}
-
-// ERC20Deposit contains information for an ERC20 deposit
-type ERC20Deposit struct {
-	TxID       common.Hash
-	Amount     sdk.Uint
-	Symbol     string
-	BurnerAddr string
 }
 
 // DepositState is an enum for the state of a deposit
@@ -203,6 +175,16 @@ const (
 	CONFIRMED DepositState = iota
 	BURNED
 )
+
+// GetTxIDHex returns the tx ID encoded as a hex string with 0x prefix
+func (m ERC20Deposit) GetTxIDHex() string {
+	return fmt.Sprintf("0x%s", hex.EncodeToString(m.TxID))
+}
+
+// IsEqual returns true if given ERC20 deposit is equal; false otherwise
+func (m ERC20Deposit) IsEqual(another ERC20Deposit) bool {
+	return bytes.Compare(m.TxID, another.TxID) == 0 && m.BurnerAddress == another.BurnerAddress
+}
 
 // CreateExecuteData wraps the specific command data and includes the command signature.
 // Returns the data that goes into the data field of an Ethereum transaction
@@ -309,13 +291,13 @@ func CreateBurnCommandData(chainID *big.Int, height int64, burnerInfos []BurnerI
 	binary.LittleEndian.PutUint64(heightBytes, uint64(height))
 
 	for _, burnerInfo := range burnerInfos {
-		commandParam, err := createBurnTokenParams(burnerInfo.Symbol, common.BytesToHash(burnerInfo.Salt[:]))
+		commandParam, err := createBurnTokenParams(burnerInfo.Symbol, common.BytesToHash(burnerInfo.Salt))
 		if err != nil {
 			return nil, err
 		}
 
 		// TODO: A sequential ID for burns instead of hashing block height and salt together?
-		commandID := CommandID(crypto.Keccak256Hash(append(burnerInfo.Salt[:], heightBytes...)))
+		commandID := CommandID(crypto.Keccak256Hash(append(burnerInfo.Salt, heightBytes...)))
 
 		commandIDs = append(commandIDs, commandID)
 		commands = append(commands, axelarGatewayCommandBurnToken)

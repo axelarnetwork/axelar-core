@@ -6,7 +6,6 @@ import (
 	mathRand "math/rand"
 	"testing"
 
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -49,7 +48,7 @@ func TestLink_NoGateway(t *testing.T) {
 	encCfg := testutils.MakeEncodingConfig()
 
 	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
-	k := keeper.NewEthKeeper(encCfg.Amino, sdk.NewKVStoreKey("testKey"), subspace)
+	k := keeper.NewEthKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), subspace)
 	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(minConfHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, RevoteLockingPeriod: 50})
 
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
@@ -187,7 +186,7 @@ func TestLink_Success(t *testing.T) {
 	assert.Equal(t, sender, n.LinkAddressesCalls()[0].Sender)
 	assert.Equal(t, recipient, n.LinkAddressesCalls()[0].Recipient)
 
-	assert.Equal(t, types.BurnerInfo{TokenAddr: tokenAddr.Hex(), Symbol: msg.Symbol, Salt: salt}, *k.GetBurnerInfo(ctx, burnAddr))
+	assert.Equal(t, types.BurnerInfo{TokenAddress: tokenAddr.Hex(), Symbol: msg.Symbol, Salt: salt.Bytes()}, *k.GetBurnerInfo(ctx, burnAddr))
 }
 
 func TestDeployTx_DifferentValue_DifferentHash(t *testing.T) {
@@ -296,8 +295,6 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 	)
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
-		encCfg := testutils.MakeEncodingConfig()
-
 		k = &ethMock.EthKeeperMock{
 			GetGatewayAddressFunc: func(sdk.Context) (common.Address, bool) {
 				return common.BytesToAddress(rand.Bytes(common.AddressLength)), true
@@ -307,8 +304,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			},
 			GetRevoteLockingPeriodFunc:        func(ctx sdk.Context) int64 { return rand.PosI64() },
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) uint64 { return mathRand.Uint64() },
-			SetPendingTokenDeployFunc:         func(sdk.Context, vote.PollMeta, types.ERC20TokenDeploy) {},
-			CodecFunc:                         func() *codec.LegacyAmino { return encCfg.Amino },
+			SetPendingTokenDeployFunc:         func(sdk.Context, vote.PollMeta, types.ERC20TokenDeployment) {},
 		}
 		v = &ethMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta, int64) error { return nil }}
 		n = &ethMock.NexusMock{IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return false }}
@@ -406,22 +402,20 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	)
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
-		encCfg := testutils.MakeEncodingConfig()
 		k = &ethMock.EthKeeperMock{
 			GetDepositFunc: func(sdk.Context, string, string) (types.ERC20Deposit, types.DepositState, bool) {
 				return types.ERC20Deposit{}, 0, false
 			},
 			GetBurnerInfoFunc: func(sdk.Context, common.Address) *types.BurnerInfo {
 				return &types.BurnerInfo{
-					TokenAddr: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex(),
-					Symbol:    rand.StrBetween(5, 10),
-					Salt:      common.BytesToHash(rand.Bytes(common.HashLength)),
+					TokenAddress: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex(),
+					Symbol:       rand.StrBetween(5, 10),
+					Salt:         rand.Bytes(common.HashLength),
 				}
 			},
 			GetRevoteLockingPeriodFunc:        func(sdk.Context) int64 { return rand.PosI64() },
 			SetPendingDepositFunc:             func(sdk.Context, vote.PollMeta, *types.ERC20Deposit) {},
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) uint64 { return mathRand.Uint64() },
-			CodecFunc:                         func() *codec.LegacyAmino { return encCfg.Amino },
 		}
 		v = &ethMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta, int64) error { return nil }}
 		s = &mock.SignerMock{
@@ -434,10 +428,10 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		}
 
 		msg = &types.MsgConfirmDeposit{
-			Sender:     rand.Bytes(20),
-			TxID:       common.BytesToHash(rand.Bytes(common.HashLength)).Hex(),
-			Amount:     sdk.NewUint(mathRand.Uint64()),
-			BurnerAddr: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex(),
+			Sender:        rand.Bytes(20),
+			TxID:          common.BytesToHash(rand.Bytes(common.HashLength)).Hex(),
+			Amount:        sdk.NewUint(mathRand.Uint64()),
+			BurnerAddress: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex(),
 		}
 	}
 
@@ -456,10 +450,10 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		setup()
 		k.GetDepositFunc = func(sdk.Context, string, string) (types.ERC20Deposit, types.DepositState, bool) {
 			return types.ERC20Deposit{
-				TxID:       common.BytesToHash(rand.Bytes(common.HashLength)),
-				Amount:     sdk.NewUint(mathRand.Uint64()),
-				Symbol:     rand.StrBetween(5, 10),
-				BurnerAddr: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex(),
+				TxID:          rand.Bytes(common.HashLength),
+				Amount:        sdk.NewUint(mathRand.Uint64()),
+				Symbol:        rand.StrBetween(5, 10),
+				BurnerAddress: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex(),
 			}, types.CONFIRMED, true
 		}
 
@@ -472,10 +466,10 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		setup()
 		k.GetDepositFunc = func(sdk.Context, string, string) (types.ERC20Deposit, types.DepositState, bool) {
 			return types.ERC20Deposit{
-				TxID:       common.BytesToHash(rand.Bytes(common.HashLength)),
-				Amount:     sdk.NewUint(mathRand.Uint64()),
-				Symbol:     rand.StrBetween(5, 10),
-				BurnerAddr: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex(),
+				TxID:          rand.Bytes(common.HashLength),
+				Amount:        sdk.NewUint(mathRand.Uint64()),
+				Symbol:        rand.StrBetween(5, 10),
+				BurnerAddress: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex(),
 			}, types.BURNED, true
 		}
 
@@ -560,7 +554,7 @@ func createSignedEthTx() *ethTypes.Transaction {
 func newKeeper(ctx sdk.Context, confHeight int64) keeper.Keeper {
 	encCfg := testutils.MakeEncodingConfig()
 	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
-	k := keeper.NewEthKeeper(encCfg.Amino, sdk.NewKVStoreKey("testKey"), subspace)
+	k := keeper.NewEthKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), subspace)
 	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(confHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, RevoteLockingPeriod: 50})
 	k.SetGatewayAddress(ctx, common.HexToAddress(gateway))
 

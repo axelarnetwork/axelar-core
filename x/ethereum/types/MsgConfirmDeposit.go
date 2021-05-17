@@ -10,10 +10,10 @@ import (
 func NewMsgConfirmERC20Deposit(sender sdk.AccAddress, txID common.Hash, amount sdk.Uint, burnerAddr common.Address) *MsgConfirmDeposit {
 
 	return &MsgConfirmDeposit{
-		Sender:     sender,
-		TxID:       txID.Hex(),
-		Amount:     amount,
-		BurnerAddr: burnerAddr.Hex(),
+		Sender:        sender,
+		TxID:          txID.Hex(),
+		Amount:        amount,
+		BurnerAddress: burnerAddr.Hex(),
 	}
 }
 

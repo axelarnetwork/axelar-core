@@ -190,10 +190,9 @@ func GetCmdSendTx(queryRoute string) *cobra.Command {
 				return sdkerrors.Wrapf(err, types.ErrFSendTx, args[0])
 			}
 
-			var result types.SendTxResult
-			cliCtx.LegacyAmino.MustUnmarshalJSON(res, &result)
+			txHash := common.BytesToHash(res)
 
-			return cliCtx.PrintObjectLegacy(fmt.Sprintf("successfully sent transaction %s to Ethereum", result.SignedTx.Hash().String()))
+			return cliCtx.PrintObjectLegacy(fmt.Sprintf("successfully sent transaction %s to Ethereum", txHash.Hex()))
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
@@ -222,10 +221,9 @@ func GetCmdSendCommand(queryRoute string) *cobra.Command {
 				return sdkerrors.Wrapf(err, "could not send Ethereum transaction executing command %s", commandID)
 			}
 
-			var txHash string
-			cliCtx.LegacyAmino.MustUnmarshalJSON(res, &txHash)
+			txHash := common.BytesToHash(res)
 
-			return cliCtx.PrintObjectLegacy(fmt.Sprintf("successfully sent transaction %s to Ethereum", txHash))
+			return cliCtx.PrintObjectLegacy(fmt.Sprintf("successfully sent transaction %s to Ethereum", txHash.Hex()))
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
@@ -251,10 +249,7 @@ func GetCmdQueryCommandData(queryRoute string) *cobra.Command {
 				return sdkerrors.Wrapf(err, "could not get command %s", commandIDHex)
 			}
 
-			var data []byte
-			cliCtx.LegacyAmino.MustUnmarshalJSON(res, &data)
-
-			return cliCtx.PrintObjectLegacy(common.Bytes2Hex(data))
+			return cliCtx.PrintObjectLegacy(fmt.Sprintf("0x%s", common.Bytes2Hex(res)))
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)

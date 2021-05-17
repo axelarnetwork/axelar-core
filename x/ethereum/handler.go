@@ -64,7 +64,7 @@ func NewHandler(k keeper.Keeper, v types.Voter, s types.Signer, n types.Nexus, s
 }
 
 func handleMsgLink(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg *types.MsgLink) (*sdk.Result, error) {
-	gatewayAddr, ok := k.GetGatewayAddress(ctx)
+	gatewayAddress, ok := k.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
@@ -83,12 +83,12 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg *types.M
 		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", exported.Ethereum.NativeAsset, recipientChain.Name)
 	}
 
-	tokenAddr, err := k.GetTokenAddress(ctx, msg.Symbol, gatewayAddr)
+	tokenAddress, err := k.GetTokenAddress(ctx, msg.Symbol, gatewayAddress)
 	if err != nil {
 		return nil, err
 	}
 
-	burnerAddr, salt, err := k.GetBurnerAddressAndSalt(ctx, tokenAddr, msg.RecipientAddr, gatewayAddr)
+	burnerAddr, salt, err := k.GetBurnerAddressAndSalt(ctx, tokenAddress, msg.RecipientAddr, gatewayAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -97,12 +97,10 @@ func handleMsgLink(ctx sdk.Context, k keeper.Keeper, n types.Nexus, msg *types.M
 		nexus.CrossChainAddress{Chain: senderChain, Address: burnerAddr.String()},
 		nexus.CrossChainAddress{Chain: recipientChain, Address: msg.RecipientAddr})
 
-	var array [common.HashLength]byte
-	copy(array[:], salt.Bytes())
 	burnerInfo := types.BurnerInfo{
-		TokenAddr: tokenAddr.Hex(),
-		Symbol:    msg.Symbol,
-		Salt:      array,
+		TokenAddress: tokenAddress.Hex(),
+		Symbol:       msg.Symbol,
+		Salt:         salt.Bytes(),
 	}
 	k.SetBurnerInfo(ctx, burnerAddr, &burnerInfo)
 
@@ -130,12 +128,12 @@ func HandleMsgConfirmTokenDeploy(ctx sdk.Context, k types.EthKeeper, v types.Vot
 		return nil, fmt.Errorf("token %s is already registered", msg.Symbol)
 	}
 
-	gatewayAddr, ok := k.GetGatewayAddress(ctx)
+	gatewayAddress, ok := k.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	tokenAddr, err := k.GetTokenAddress(ctx, msg.Symbol, gatewayAddr)
+	tokenAddress, err := k.GetTokenAddress(ctx, msg.Symbol, gatewayAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -155,9 +153,9 @@ func HandleMsgConfirmTokenDeploy(ctx sdk.Context, k types.EthKeeper, v types.Vot
 		return nil, err
 	}
 
-	deploy := types.ERC20TokenDeploy{
-		Symbol:    msg.Symbol,
-		TokenAddr: tokenAddr.Hex(),
+	deploy := types.ERC20TokenDeployment{
+		Symbol:       msg.Symbol,
+		TokenAddress: tokenAddress.Hex(),
 	}
 	k.SetPendingTokenDeploy(ctx, poll, deploy)
 
@@ -166,11 +164,11 @@ func HandleMsgConfirmTokenDeploy(ctx sdk.Context, k types.EthKeeper, v types.Vot
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 			sdk.NewAttribute(types.AttributeKeyTxID, msg.TxID),
-			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
-			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),
+			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddress.Hex()),
+			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeySymbol, msg.Symbol),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(k.GetRequiredConfirmationHeight(ctx), 10)),
-			sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(poll))),
+			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&poll))),
 		),
 	)
 
@@ -182,7 +180,7 @@ func HandleMsgConfirmTokenDeploy(ctx sdk.Context, k types.EthKeeper, v types.Vot
 
 // HandleMsgConfirmDeposit handles deposit confirmations
 func HandleMsgConfirmDeposit(ctx sdk.Context, k types.EthKeeper, v types.Voter, signer types.Signer, msg *types.MsgConfirmDeposit) (*sdk.Result, error) {
-	_, state, ok := k.GetDeposit(ctx, msg.TxID, msg.BurnerAddr)
+	_, state, ok := k.GetDeposit(ctx, msg.TxID, msg.BurnerAddress)
 	switch {
 	case !ok:
 		break
@@ -192,9 +190,9 @@ func HandleMsgConfirmDeposit(ctx sdk.Context, k types.EthKeeper, v types.Voter, 
 		return nil, fmt.Errorf("already burned")
 	}
 
-	burnerInfo := k.GetBurnerInfo(ctx, common.HexToAddress(msg.BurnerAddr))
+	burnerInfo := k.GetBurnerInfo(ctx, common.HexToAddress(msg.BurnerAddress))
 	if burnerInfo == nil {
-		return nil, fmt.Errorf("no burner info found for address %s", msg.BurnerAddr)
+		return nil, fmt.Errorf("no burner info found for address %s", msg.BurnerAddress)
 	}
 
 	keyID, ok := signer.GetCurrentKeyID(ctx, exported.Ethereum, tss.MasterKey)
@@ -207,16 +205,16 @@ func HandleMsgConfirmDeposit(ctx sdk.Context, k types.EthKeeper, v types.Voter, 
 		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
 	}
 
-	poll := vote.NewPollMetaWithNonce(types.ModuleName, msg.TxID+"_"+msg.BurnerAddr, ctx.BlockHeight(), k.GetRevoteLockingPeriod(ctx))
+	poll := vote.NewPollMetaWithNonce(types.ModuleName, msg.TxID+"_"+msg.BurnerAddress, ctx.BlockHeight(), k.GetRevoteLockingPeriod(ctx))
 	if err := v.InitPoll(ctx, poll, counter); err != nil {
 		return nil, err
 	}
 
 	erc20Deposit := types.ERC20Deposit{
-		TxID:       common.HexToHash(msg.TxID),
-		Amount:     msg.Amount,
-		Symbol:     burnerInfo.Symbol,
-		BurnerAddr: msg.BurnerAddr,
+		TxID:          common.Hex2Bytes(msg.TxID),
+		Amount:        msg.Amount,
+		Symbol:        burnerInfo.Symbol,
+		BurnerAddress: msg.BurnerAddress,
 	}
 	k.SetPendingDeposit(ctx, poll, &erc20Deposit)
 
@@ -226,10 +224,10 @@ func HandleMsgConfirmDeposit(ctx sdk.Context, k types.EthKeeper, v types.Voter, 
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 			sdk.NewAttribute(types.AttributeKeyTxID, msg.TxID),
 			sdk.NewAttribute(types.AttributeKeyAmount, msg.Amount.String()),
-			sdk.NewAttribute(types.AttributeKeyBurnAddress, msg.BurnerAddr),
-			sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddr),
+			sdk.NewAttribute(types.AttributeKeyBurnAddress, msg.BurnerAddress),
+			sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(k.GetRequiredConfirmationHeight(ctx), 10)),
-			sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(poll))),
+			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&poll))),
 		),
 	)
 
@@ -247,7 +245,7 @@ func HandleMsgVoteConfirmDeposit(ctx sdk.Context, k keeper.Keeper, v types.Voter
 	switch {
 	// a malicious user could try to delete an ongoing poll by providing an already confirmed token,
 	// so we need to check that it matches the poll before deleting
-	case depositFound && pollFound && confirmedDeposit == pendingDeposit:
+	case depositFound && pollFound && confirmedDeposit.IsEqual(pendingDeposit):
 		v.DeletePoll(ctx, msg.Poll)
 		k.DeletePendingDeposit(ctx, msg.Poll)
 		fallthrough
@@ -255,13 +253,13 @@ func HandleMsgVoteConfirmDeposit(ctx sdk.Context, k keeper.Keeper, v types.Voter
 	case depositFound:
 		switch state {
 		case types.CONFIRMED:
-			return &sdk.Result{Log: fmt.Sprintf("deposit in %s to address %s already confirmed", pendingDeposit.TxID, pendingDeposit.BurnerAddr)}, nil
+			return &sdk.Result{Log: fmt.Sprintf("deposit in %s to address %s already confirmed", pendingDeposit.TxID, pendingDeposit.BurnerAddress)}, nil
 		case types.BURNED:
-			return &sdk.Result{Log: fmt.Sprintf("deposit in %s to address %s already spent", pendingDeposit.TxID, pendingDeposit.BurnerAddr)}, nil
+			return &sdk.Result{Log: fmt.Sprintf("deposit in %s to address %s already spent", pendingDeposit.TxID, pendingDeposit.BurnerAddress)}, nil
 		}
 	case !pollFound:
 		return nil, fmt.Errorf("no deposit found for poll %s", msg.Poll.String())
-	case pendingDeposit.BurnerAddr != msg.BurnAddr || pendingDeposit.TxID.Hex() != msg.TxID:
+	case pendingDeposit.BurnerAddress != msg.BurnAddr || pendingDeposit.GetTxIDHex() != msg.TxID:
 		return nil, fmt.Errorf("deposit in %s to address %s does not match poll %s", msg.TxID, msg.BurnAddr, msg.Poll.String())
 	default:
 		// assert: the deposit is known and has not been confirmed before
@@ -289,7 +287,7 @@ func HandleMsgVoteConfirmDeposit(ctx sdk.Context, k keeper.Keeper, v types.Voter
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeDepositConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(msg.Poll))))
+		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&msg.Poll))))
 
 	if !depositFound {
 		ctx.EventManager().EmitEvent(
@@ -302,7 +300,7 @@ func HandleMsgVoteConfirmDeposit(ctx sdk.Context, k keeper.Keeper, v types.Voter
 	ctx.EventManager().EmitEvent(
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
-	depositAddr := nexus.CrossChainAddress{Address: pendingDeposit.BurnerAddr, Chain: exported.Ethereum}
+	depositAddr := nexus.CrossChainAddress{Address: pendingDeposit.BurnerAddress, Chain: exported.Ethereum}
 	amount := sdk.NewInt64Coin(pendingDeposit.Symbol, pendingDeposit.Amount.BigInt().Int64())
 	if err := n.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
 		return nil, err
@@ -357,7 +355,7 @@ func HandleMsgVoteConfirmToken(ctx sdk.Context, k keeper.Keeper, v types.Voter, 
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeTokenConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(k.Codec().MustMarshalJSON(msg.Poll))))
+		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&msg.Poll))))
 
 	if !confirmed {
 		ctx.EventManager().EmitEvent(
@@ -444,15 +442,15 @@ func handleMsgSignBurnTokens(ctx sdk.Context, k keeper.Keeper, signer types.Sign
 	var burnerInfos []types.BurnerInfo
 	seen := map[string]bool{}
 	for _, deposit := range deposits {
-		if seen[deposit.BurnerAddr] {
+		if seen[deposit.BurnerAddress] {
 			continue
 		}
-		burnerInfo := k.GetBurnerInfo(ctx, common.HexToAddress(deposit.BurnerAddr))
+		burnerInfo := k.GetBurnerInfo(ctx, common.HexToAddress(deposit.BurnerAddress))
 		if burnerInfo == nil {
-			return nil, fmt.Errorf("no burner info found for address %s", deposit.BurnerAddr)
+			return nil, fmt.Errorf("no burner info found for address %s", deposit.BurnerAddress)
 		}
 		burnerInfos = append(burnerInfos, *burnerInfo)
-		seen[deposit.BurnerAddr] = true
+		seen[deposit.BurnerAddress] = true
 	}
 
 	data, err := types.CreateBurnCommandData(chainID, ctx.BlockHeight(), burnerInfos)
@@ -589,7 +587,7 @@ func handleMsgSignTx(ctx sdk.Context, k keeper.Keeper, signer types.Signer, snap
 		return nil, err
 	}
 
-	k.Logger(ctx).Info(fmt.Sprintf("ethereum tx [%s] to sign: %s", txID, k.Codec().MustMarshalJSON(hash)))
+	k.Logger(ctx).Info(fmt.Sprintf("ethereum tx [%s] to sign: %s", txID, hash.Hex()))
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			sdk.EventTypeMessage,

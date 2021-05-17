@@ -1,7 +1,6 @@
 package types
 
 import (
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 
@@ -18,9 +17,8 @@ type EthKeeper interface {
 	GetGatewayAddress(ctx sdk.Context) (common.Address, bool)
 	GetTokenAddress(ctx sdk.Context, symbol string, gatewayAddr common.Address) (common.Address, error)
 	GetRevoteLockingPeriod(ctx sdk.Context) int64
-	SetPendingTokenDeploy(ctx sdk.Context, poll vote.PollMeta, tokenDeploy ERC20TokenDeploy)
+	SetPendingTokenDeploy(ctx sdk.Context, poll vote.PollMeta, tokenDeploy ERC20TokenDeployment)
 	GetRequiredConfirmationHeight(ctx sdk.Context) uint64
-	Codec() *codec.LegacyAmino
 	GetDeposit(ctx sdk.Context, txID string, burnerAddr string) (ERC20Deposit, DepositState, bool)
 	GetBurnerInfo(ctx sdk.Context, address common.Address) *BurnerInfo
 	SetPendingDeposit(ctx sdk.Context, poll vote.PollMeta, deposit *ERC20Deposit)

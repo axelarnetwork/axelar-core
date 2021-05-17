@@ -1,0 +1,33 @@
+syntax = "proto3";
+package ethereum.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/ethereum/types";
+
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// BurnerInfo describes information required to burn token at an burner address
+// that is deposited by an user
+message BurnerInfo {
+  string token_address = 1;
+  string symbol = 2;
+  bytes salt = 3;
+}
+
+// ERC20Deposit contains information for an ERC20 deposit
+message ERC20Deposit {
+  bytes tx_id = 1 [ (gogoproto.customname) = "TxID" ];
+  string amount = 2 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+  string symbol = 3;
+  string burner_address = 4;
+}
+
+// ERC20TokenDeployment describes information about an ERC20 token
+message ERC20TokenDeployment {
+  string symbol = 1;
+  string token_address = 2;
+}
