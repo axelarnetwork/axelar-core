@@ -67,10 +67,10 @@ func (k Keeper) GetParams(ctx sdk.Context) types.Params {
 
 // RegisterAsset indicates that the specified asset is supported by the given chain
 func (k Keeper) RegisterAsset(ctx sdk.Context, chainName, denom string) {
-	var register bytes.Buffer
-	enc := gob.NewEncoder(&register)
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
 	_ = enc.Encode(true)
-	ctx.KVStore(k.storeKey).Set([]byte(registeredPrefix+strings.ToLower(chainName)+denom), register.Bytes())
+	ctx.KVStore(k.storeKey).Set([]byte(registeredPrefix+strings.ToLower(chainName)+denom), buf.Bytes())
 }
 
 // IsAssetRegistered returns true if the specified asset is supported by the given chain
