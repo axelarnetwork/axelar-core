@@ -8,26 +8,26 @@ import (
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-// NewMsgSignTx - constructor
-func NewMsgSignTx(sender sdk.AccAddress, jsonTx []byte) *MsgSignTx {
-	return &MsgSignTx{
+// NewSignTxRequest - constructor
+func NewSignTxRequest(sender sdk.AccAddress, jsonTx []byte) *SignTxRequest {
+	return &SignTxRequest{
 		Sender: sender,
 		Tx:     jsonTx,
 	}
 }
 
 // Route returns the route of the message
-func (m MsgSignTx) Route() string {
+func (m SignTxRequest) Route() string {
 	return RouterKey
 }
 
 // Type returns the type of the message
-func (m MsgSignTx) Type() string {
+func (m SignTxRequest) Type() string {
 	return "SignTx"
 }
 
 // ValidateBasic executes a stateless message validation
-func (m MsgSignTx) ValidateBasic() error {
+func (m SignTxRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
@@ -42,18 +42,18 @@ func (m MsgSignTx) ValidateBasic() error {
 }
 
 // GetSignBytes returns the message bytes that need to be signed
-func (m MsgSignTx) GetSignBytes() []byte {
+func (m SignTxRequest) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
 }
 
 // GetSigners returns the set of signers for this message
-func (m MsgSignTx) GetSigners() []sdk.AccAddress {
+func (m SignTxRequest) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }
 
 // UnmarshaledTx returns the unmarshaled ethereum transaction contained in this message
-func (m MsgSignTx) UnmarshaledTx() *ethTypes.Transaction {
+func (m SignTxRequest) UnmarshaledTx() *ethTypes.Transaction {
 	tx := &ethTypes.Transaction{}
 	err := tx.UnmarshalJSON(m.Tx)
 	if err != nil {

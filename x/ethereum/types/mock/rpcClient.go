@@ -4,7 +4,7 @@
 package mock
 
 import (
-	"context"
+	context "context"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"

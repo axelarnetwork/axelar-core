@@ -1,4 +1,4 @@
-package ethereum
+package keeper
 
 import (
 	"fmt"
@@ -23,7 +23,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/exported"
-	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types/mock"
 	ethMock "github.com/axelarnetwork/axelar-core/x/ethereum/types/mock"
@@ -49,7 +48,7 @@ func TestLink_NoGateway(t *testing.T) {
 	encCfg := testutils.MakeEncodingConfig()
 
 	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
-	k := keeper.NewEthKeeper(encCfg.Amino, sdk.NewKVStoreKey("testKey"), subspace)
+	k := NewEthKeeper(encCfg.Amino, sdk.NewKVStoreKey("testKey"), subspace)
 	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(minConfHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, RevoteLockingPeriod: 50})
 
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
@@ -64,8 +63,8 @@ func TestLink_NoGateway(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	handler := NewHandler(k, &ethMock.VoterMock{}, signer, n, &ethMock.SnapshotterMock{})
-	_, err := handler(ctx, &types.MsgLink{Sender: rand.Bytes(sdk.AddrLen), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
+	server := NewMsgServerImpl(k, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
+	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.Bytes(sdk.AddrLen), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
 	assert.Equal(t, 0, len(n.IsAssetRegisteredCalls()))
@@ -97,8 +96,8 @@ func TestLink_NoRecipientChain(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	handler := NewHandler(k, &ethMock.VoterMock{}, signer, n, &ethMock.SnapshotterMock{})
-	_, err := handler(ctx, &types.MsgLink{Sender: rand.Bytes(sdk.AddrLen), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
+	server := NewMsgServerImpl(k, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
+	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.Bytes(sdk.AddrLen), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
 	assert.Equal(t, 0, len(n.IsAssetRegisteredCalls()))
@@ -130,9 +129,9 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	handler := NewHandler(k, &ethMock.VoterMock{}, signer, n, &ethMock.SnapshotterMock{})
+	server := NewMsgServerImpl(k, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
-	_, err := handler(ctx, &types.MsgLink{Sender: rand.Bytes(sdk.AddrLen), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
+	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.Bytes(sdk.AddrLen), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
 	assert.Equal(t, 1, len(n.IsAssetRegisteredCalls()))
@@ -177,8 +176,8 @@ func TestLink_Success(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	handler := NewHandler(k, &ethMock.VoterMock{}, signer, n, &ethMock.SnapshotterMock{})
-	_, err = handler(ctx, &types.MsgLink{Sender: rand.Bytes(sdk.AddrLen), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Symbol: msg.Symbol})
+	server := NewMsgServerImpl(k, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
+	_, err = server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.Bytes(sdk.AddrLen), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Symbol: msg.Symbol})
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(n.IsAssetRegisteredCalls()))
@@ -287,12 +286,13 @@ func TestMintTx_DifferentRecipient_DifferentHash(t *testing.T) {
 
 func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 	var (
-		ctx sdk.Context
-		k   *ethMock.EthKeeperMock
-		v   *ethMock.VoterMock
-		n   *ethMock.NexusMock
-		s   *ethMock.SignerMock
-		msg *types.MsgConfirmToken
+		ctx    sdk.Context
+		k      *ethMock.EthKeeperMock
+		v      *ethMock.VoterMock
+		n      *ethMock.NexusMock
+		s      *ethMock.SignerMock
+		msg    *types.ConfirmTokenRequest
+		server types.MsgServiceServer
 	)
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
@@ -321,21 +321,23 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			},
 		}
 
-		msg = &types.MsgConfirmToken{
+		msg = &types.ConfirmTokenRequest{
 			Sender: rand.Bytes(20),
 			TxID:   common.BytesToHash(rand.Bytes(common.HashLength)).Hex(),
 			Symbol: rand.StrBetween(5, 10),
 		}
+
+		server = NewMsgServerImpl(k, n, s, v, &mock.SnapshotterMock{})
 	}
 
 	repeats := 20
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		result, err := HandleMsgConfirmTokenDeploy(ctx, k, v, s, n, msg)
+		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
 
 		assert.NoError(t, err)
-		assert.Len(t, testutils.Events(result.Events).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeTokenConfirmation }), 1)
+		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeTokenConfirmation }), 1)
 		assert.Equal(t, v.InitPollCalls()[0].Poll, k.SetPendingTokenDeployCalls()[0].Poll)
 	}).Repeat(repeats))
 
@@ -343,7 +345,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		setup()
 		k.GetGatewayAddressFunc = func(sdk.Context) (common.Address, bool) { return common.Address{}, false }
 
-		_, err := HandleMsgConfirmTokenDeploy(ctx, k, v, s, n, msg)
+		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))
@@ -354,7 +356,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			return common.Address{}, fmt.Errorf("failed")
 		}
 
-		_, err := HandleMsgConfirmTokenDeploy(ctx, k, v, s, n, msg)
+		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))
@@ -363,7 +365,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		setup()
 		n.IsAssetRegisteredFunc = func(sdk.Context, string, string) bool { return true }
 
-		_, err := HandleMsgConfirmTokenDeploy(ctx, k, v, s, n, msg)
+		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))
@@ -372,7 +374,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		setup()
 		v.InitPollFunc = func(sdk.Context, vote.PollMeta, int64) error { return fmt.Errorf("poll setup failed") }
 
-		_, err := HandleMsgConfirmTokenDeploy(ctx, k, v, s, n, msg)
+		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))
@@ -381,7 +383,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		setup()
 		s.GetCurrentKeyIDFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (string, bool) { return "", false }
 
-		_, err := HandleMsgConfirmTokenDeploy(ctx, k, v, s, n, msg)
+		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))
@@ -390,7 +392,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		setup()
 		s.GetSnapshotCounterForKeyIDFunc = func(sdk.Context, string) (int64, bool) { return 0, false }
 
-		_, err := HandleMsgConfirmTokenDeploy(ctx, k, v, s, n, msg)
+		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))
@@ -398,11 +400,12 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 func TestHandleMsgConfirmDeposit(t *testing.T) {
 	var (
-		ctx sdk.Context
-		k   *ethMock.EthKeeperMock
-		v   *ethMock.VoterMock
-		s   *ethMock.SignerMock
-		msg *types.MsgConfirmDeposit
+		ctx    sdk.Context
+		k      *ethMock.EthKeeperMock
+		v      *ethMock.VoterMock
+		s      *ethMock.SignerMock
+		msg    *types.ConfirmDepositRequest
+		server types.MsgServiceServer
 	)
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
@@ -433,22 +436,23 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			},
 		}
 
-		msg = &types.MsgConfirmDeposit{
+		msg = &types.ConfirmDepositRequest{
 			Sender:     rand.Bytes(20),
 			TxID:       common.BytesToHash(rand.Bytes(common.HashLength)).Hex(),
 			Amount:     sdk.NewUint(mathRand.Uint64()),
 			BurnerAddr: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex(),
 		}
+		server = NewMsgServerImpl(k, &mock.NexusMock{}, s, v, &mock.SnapshotterMock{})
 	}
 
 	repeats := 20
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		result, err := HandleMsgConfirmDeposit(ctx, k, v, s, msg)
+		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
 		assert.NoError(t, err)
-		assert.Len(t, testutils.Events(result.Events).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeDepositConfirmation }), 1)
+		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeDepositConfirmation }), 1)
 		assert.Equal(t, v.InitPollCalls()[0].Poll, k.SetPendingDepositCalls()[0].Poll)
 	}).Repeat(repeats))
 
@@ -463,7 +467,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			}, types.CONFIRMED, true
 		}
 
-		_, err := HandleMsgConfirmDeposit(ctx, k, v, s, msg)
+		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))
@@ -479,7 +483,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			}, types.BURNED, true
 		}
 
-		_, err := HandleMsgConfirmDeposit(ctx, k, v, s, msg)
+		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))
@@ -488,7 +492,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		setup()
 		k.GetBurnerInfoFunc = func(sdk.Context, common.Address) *types.BurnerInfo { return nil }
 
-		_, err := HandleMsgConfirmDeposit(ctx, k, v, s, msg)
+		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))
@@ -497,7 +501,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		setup()
 		v.InitPollFunc = func(sdk.Context, vote.PollMeta, int64) error { return fmt.Errorf("failed") }
 
-		_, err := HandleMsgConfirmDeposit(ctx, k, v, s, msg)
+		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))
@@ -506,7 +510,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		setup()
 		s.GetCurrentKeyIDFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (string, bool) { return "", false }
 
-		_, err := HandleMsgConfirmDeposit(ctx, k, v, s, msg)
+		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))
@@ -515,7 +519,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		setup()
 		s.GetSnapshotCounterForKeyIDFunc = func(sdk.Context, string) (int64, bool) { return 0, false }
 
-		_, err := HandleMsgConfirmDeposit(ctx, k, v, s, msg)
+		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))
@@ -557,22 +561,22 @@ func createSignedEthTx() *ethTypes.Transaction {
 	return sign(ethTypes.NewTransaction(nonce, contractAddr, value, gasLimit, gasPrice, data))
 }
 
-func newKeeper(ctx sdk.Context, confHeight int64) keeper.Keeper {
+func newKeeper(ctx sdk.Context, confHeight int64) Keeper {
 	encCfg := testutils.MakeEncodingConfig()
 	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
-	k := keeper.NewEthKeeper(encCfg.Amino, sdk.NewKVStoreKey("testKey"), subspace)
+	k := NewEthKeeper(encCfg.Amino, sdk.NewKVStoreKey("testKey"), subspace)
 	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(confHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, RevoteLockingPeriod: 50})
 	k.SetGatewayAddress(ctx, common.HexToAddress(gateway))
 
 	return k
 }
 
-func createMsgSignDeploy() *types.MsgSignDeployToken {
+func createMsgSignDeploy() *types.SignDeployTokenRequest {
 	account := sdk.AccAddress(rand.Bytes(sdk.AddrLen))
 	symbol := rand.Str(3)
 	name := rand.Str(10)
 	decimals := rand.Bytes(1)[0]
 	capacity := sdk.NewIntFromUint64(uint64(rand.PosI64()))
 
-	return &types.MsgSignDeployToken{Sender: account, TokenName: name, Symbol: symbol, Decimals: decimals, Capacity: capacity}
+	return &types.SignDeployTokenRequest{Sender: account, TokenName: name, Symbol: symbol, Decimals: decimals, Capacity: capacity}
 }

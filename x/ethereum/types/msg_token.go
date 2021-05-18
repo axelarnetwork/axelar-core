@@ -6,29 +6,27 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-// NewMsgConfirmERC20Deposit creates a message of type MsgConfirmDeposit
-func NewMsgConfirmERC20Deposit(sender sdk.AccAddress, txID common.Hash, amount sdk.Uint, burnerAddr common.Address) *MsgConfirmDeposit {
-
-	return &MsgConfirmDeposit{
-		Sender:     sender,
-		TxID:       txID.Hex(),
-		Amount:     amount,
-		BurnerAddr: burnerAddr.Hex(),
+// NewConfirmTokenRequest creates a message of type ConfirmTokenRequest
+func NewConfirmTokenRequest(sender sdk.AccAddress, txID common.Hash, symbol string) *ConfirmTokenRequest {
+	return &ConfirmTokenRequest{
+		Sender: sender,
+		TxID:   txID.Hex(),
+		Symbol: symbol,
 	}
 }
 
 // Route implements sdk.Msg
-func (m MsgConfirmDeposit) Route() string {
+func (m ConfirmTokenRequest) Route() string {
 	return RouterKey
 }
 
 // Type implements sdk.Msg
-func (m MsgConfirmDeposit) Type() string {
-	return "ConfirmERC20Deposit"
+func (m ConfirmTokenRequest) Type() string {
+	return "ConfirmERC20TokenDeploy"
 }
 
 // ValidateBasic implements sdk.Msg
-func (m MsgConfirmDeposit) ValidateBasic() error {
+func (m ConfirmTokenRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
@@ -37,12 +35,12 @@ func (m MsgConfirmDeposit) ValidateBasic() error {
 }
 
 // GetSignBytes implements sdk.Msg
-func (m MsgConfirmDeposit) GetSignBytes() []byte {
+func (m ConfirmTokenRequest) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
 }
 
 // GetSigners implements sdk.Msg
-func (m MsgConfirmDeposit) GetSigners() []sdk.AccAddress {
+func (m ConfirmTokenRequest) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }

@@ -64,7 +64,7 @@ func (mgr Mgr) ProcessDepositConfirmation(attributes []sdk.Attribute) (err error
 		return true
 	})
 
-	msg := &ethTypes.MsgVoteConfirmDeposit{
+	msg := &ethTypes.VoteConfirmDepositRequest{
 		Sender:    mgr.sender,
 		Poll:      poll,
 		TxID:      txID.Hex(),
@@ -91,7 +91,7 @@ func (mgr Mgr) ProcessTokenConfirmation(attributes []sdk.Attribute) error {
 		return true
 	})
 
-	msg := &ethTypes.MsgVoteConfirmToken{
+	msg := &ethTypes.VoteConfirmTokenRequest{
 		Sender:    mgr.sender,
 		Poll:      poll,
 		TxID:      txID.Hex(),

@@ -1,4 +1,4 @@
-package ethereum
+package keeper
 
 import (
 	"context"
@@ -26,7 +26,6 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
-	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types/mock"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -213,8 +212,8 @@ func TestDeploy(t *testing.T) {
 	encCfg := testutils.MakeEncodingConfig()
 
 	rpc := &mock.RPCClientMock{PendingNonceAtFunc: backend.PendingNonceAt, SuggestGasPriceFunc: backend.SuggestGasPrice}
-	query := keeper.NewQuerier(rpc, k, tssSigner)
-	res, err := query(ctx, []string{keeper.CreateDeployTx}, abci.RequestQuery{Data: encCfg.Amino.MustMarshalJSON(deployParams)})
+	query := NewQuerier(rpc, k, tssSigner)
+	res, err := query(ctx, []string{CreateDeployTx}, abci.RequestQuery{Data: encCfg.Amino.MustMarshalJSON(deployParams)})
 	assert.NoError(t, err)
 
 	var result types.DeployResult

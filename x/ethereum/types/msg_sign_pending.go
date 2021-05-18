@@ -5,23 +5,23 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// NewMsgSignPendingTransfers - MsgSignPendingTransfers constructor
-func NewMsgSignPendingTransfers(sender sdk.AccAddress) *MsgSignPendingTransfers {
-	return &MsgSignPendingTransfers{Sender: sender}
+// NewSignPendingTransfersRequest - SignPendingTransfersRequest constructor
+func NewSignPendingTransfersRequest(sender sdk.AccAddress) *SignPendingTransfersRequest {
+	return &SignPendingTransfersRequest{Sender: sender}
 }
 
 // Route returns the route for this message
-func (m MsgSignPendingTransfers) Route() string {
+func (m SignPendingTransfersRequest) Route() string {
 	return RouterKey
 }
 
 // Type returns the type of the message
-func (m MsgSignPendingTransfers) Type() string {
+func (m SignPendingTransfersRequest) Type() string {
 	return "SignPendingTransfers"
 }
 
 // ValidateBasic executes a stateless message validation
-func (m MsgSignPendingTransfers) ValidateBasic() error {
+func (m SignPendingTransfersRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
@@ -30,12 +30,12 @@ func (m MsgSignPendingTransfers) ValidateBasic() error {
 }
 
 // GetSignBytes returns the message bytes that need to be signed
-func (m MsgSignPendingTransfers) GetSignBytes() []byte {
+func (m SignPendingTransfersRequest) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
 }
 
 // GetSigners returns the set of signers for this message
-func (m MsgSignPendingTransfers) GetSigners() []sdk.AccAddress {
+func (m SignPendingTransfersRequest) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }

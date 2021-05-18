@@ -12,6 +12,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
+	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/tendermint/tendermint/libs/log"
 	"sync"
 )
 
@@ -1235,14 +1237,47 @@ var _ types.EthKeeper = &EthKeeperMock{}
 // 			CodecFunc: func() *codec.LegacyAmino {
 // 				panic("mock out the Codec method")
 // 			},
+// 			DeleteDepositFunc: func(ctx sdk.Context, deposit types.ERC20Deposit)  {
+// 				panic("mock out the DeleteDeposit method")
+// 			},
+// 			DeletePendingDepositFunc: func(ctx sdk.Context, poll exported.PollMeta)  {
+// 				panic("mock out the DeletePendingDeposit method")
+// 			},
+// 			DeletePendingTokenFunc: func(ctx sdk.Context, poll exported.PollMeta)  {
+// 				panic("mock out the DeletePendingToken method")
+// 			},
+// 			GetBurnerAddressAndSaltFunc: func(ctx sdk.Context, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error) {
+// 				panic("mock out the GetBurnerAddressAndSalt method")
+// 			},
 // 			GetBurnerInfoFunc: func(ctx sdk.Context, address common.Address) *types.BurnerInfo {
 // 				panic("mock out the GetBurnerInfo method")
+// 			},
+// 			GetConfirmedDepositsFunc: func(ctx sdk.Context) []types.ERC20Deposit {
+// 				panic("mock out the GetConfirmedDeposits method")
 // 			},
 // 			GetDepositFunc: func(ctx sdk.Context, txID string, burnerAddr string) (types.ERC20Deposit, types.DepositState, bool) {
 // 				panic("mock out the GetDeposit method")
 // 			},
 // 			GetGatewayAddressFunc: func(ctx sdk.Context) (common.Address, bool) {
 // 				panic("mock out the GetGatewayAddress method")
+// 			},
+// 			GetGatewayByteCodesFunc: func(ctx sdk.Context) []byte {
+// 				panic("mock out the GetGatewayByteCodes method")
+// 			},
+// 			GetHashToSignFunc: func(ctx sdk.Context, txID string) (common.Hash, error) {
+// 				panic("mock out the GetHashToSign method")
+// 			},
+// 			GetNetworkFunc: func(ctx sdk.Context) types.Network {
+// 				panic("mock out the GetNetwork method")
+// 			},
+// 			GetParamsFunc: func(ctx sdk.Context) types.Params {
+// 				panic("mock out the GetParams method")
+// 			},
+// 			GetPendingDepositFunc: func(ctx sdk.Context, poll exported.PollMeta) (types.ERC20Deposit, bool) {
+// 				panic("mock out the GetPendingDeposit method")
+// 			},
+// 			GetPendingTokenDeployFunc: func(ctx sdk.Context, poll exported.PollMeta) (types.ERC20TokenDeploy, bool) {
+// 				panic("mock out the GetPendingTokenDeploy method")
 // 			},
 // 			GetRequiredConfirmationHeightFunc: func(ctx sdk.Context) uint64 {
 // 				panic("mock out the GetRequiredConfirmationHeight method")
@@ -1253,11 +1288,35 @@ var _ types.EthKeeper = &EthKeeperMock{}
 // 			GetTokenAddressFunc: func(ctx sdk.Context, symbol string, gatewayAddr common.Address) (common.Address, error) {
 // 				panic("mock out the GetTokenAddress method")
 // 			},
+// 			LoggerFunc: func(ctx sdk.Context) log.Logger {
+// 				panic("mock out the Logger method")
+// 			},
+// 			SetBurnerInfoFunc: func(ctx sdk.Context, burnerAddr common.Address, burnerInfo *types.BurnerInfo)  {
+// 				panic("mock out the SetBurnerInfo method")
+// 			},
+// 			SetCommandDataFunc: func(ctx sdk.Context, commandID types.CommandID, commandData []byte)  {
+// 				panic("mock out the SetCommandData method")
+// 			},
+// 			SetDepositFunc: func(ctx sdk.Context, deposit types.ERC20Deposit, state types.DepositState)  {
+// 				panic("mock out the SetDeposit method")
+// 			},
+// 			SetGatewayAddressFunc: func(ctx sdk.Context, addr common.Address)  {
+// 				panic("mock out the SetGatewayAddress method")
+// 			},
+// 			SetParamsFunc: func(ctx sdk.Context, params types.Params)  {
+// 				panic("mock out the SetParams method")
+// 			},
 // 			SetPendingDepositFunc: func(ctx sdk.Context, poll exported.PollMeta, deposit *types.ERC20Deposit)  {
 // 				panic("mock out the SetPendingDeposit method")
 // 			},
 // 			SetPendingTokenDeployFunc: func(ctx sdk.Context, poll exported.PollMeta, tokenDeploy types.ERC20TokenDeploy)  {
 // 				panic("mock out the SetPendingTokenDeploy method")
+// 			},
+// 			SetTokenInfoFunc: func(ctx sdk.Context, msg *types.SignDeployTokenRequest)  {
+// 				panic("mock out the SetTokenInfo method")
+// 			},
+// 			SetUnsignedTxFunc: func(ctx sdk.Context, txID string, tx *ethTypes.Transaction)  {
+// 				panic("mock out the SetUnsignedTx method")
 // 			},
 // 		}
 //
@@ -1269,14 +1328,47 @@ type EthKeeperMock struct {
 	// CodecFunc mocks the Codec method.
 	CodecFunc func() *codec.LegacyAmino
 
+	// DeleteDepositFunc mocks the DeleteDeposit method.
+	DeleteDepositFunc func(ctx sdk.Context, deposit types.ERC20Deposit)
+
+	// DeletePendingDepositFunc mocks the DeletePendingDeposit method.
+	DeletePendingDepositFunc func(ctx sdk.Context, poll exported.PollMeta)
+
+	// DeletePendingTokenFunc mocks the DeletePendingToken method.
+	DeletePendingTokenFunc func(ctx sdk.Context, poll exported.PollMeta)
+
+	// GetBurnerAddressAndSaltFunc mocks the GetBurnerAddressAndSalt method.
+	GetBurnerAddressAndSaltFunc func(ctx sdk.Context, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error)
+
 	// GetBurnerInfoFunc mocks the GetBurnerInfo method.
 	GetBurnerInfoFunc func(ctx sdk.Context, address common.Address) *types.BurnerInfo
+
+	// GetConfirmedDepositsFunc mocks the GetConfirmedDeposits method.
+	GetConfirmedDepositsFunc func(ctx sdk.Context) []types.ERC20Deposit
 
 	// GetDepositFunc mocks the GetDeposit method.
 	GetDepositFunc func(ctx sdk.Context, txID string, burnerAddr string) (types.ERC20Deposit, types.DepositState, bool)
 
 	// GetGatewayAddressFunc mocks the GetGatewayAddress method.
 	GetGatewayAddressFunc func(ctx sdk.Context) (common.Address, bool)
+
+	// GetGatewayByteCodesFunc mocks the GetGatewayByteCodes method.
+	GetGatewayByteCodesFunc func(ctx sdk.Context) []byte
+
+	// GetHashToSignFunc mocks the GetHashToSign method.
+	GetHashToSignFunc func(ctx sdk.Context, txID string) (common.Hash, error)
+
+	// GetNetworkFunc mocks the GetNetwork method.
+	GetNetworkFunc func(ctx sdk.Context) types.Network
+
+	// GetParamsFunc mocks the GetParams method.
+	GetParamsFunc func(ctx sdk.Context) types.Params
+
+	// GetPendingDepositFunc mocks the GetPendingDeposit method.
+	GetPendingDepositFunc func(ctx sdk.Context, poll exported.PollMeta) (types.ERC20Deposit, bool)
+
+	// GetPendingTokenDeployFunc mocks the GetPendingTokenDeploy method.
+	GetPendingTokenDeployFunc func(ctx sdk.Context, poll exported.PollMeta) (types.ERC20TokenDeploy, bool)
 
 	// GetRequiredConfirmationHeightFunc mocks the GetRequiredConfirmationHeight method.
 	GetRequiredConfirmationHeightFunc func(ctx sdk.Context) uint64
@@ -1287,16 +1379,72 @@ type EthKeeperMock struct {
 	// GetTokenAddressFunc mocks the GetTokenAddress method.
 	GetTokenAddressFunc func(ctx sdk.Context, symbol string, gatewayAddr common.Address) (common.Address, error)
 
+	// LoggerFunc mocks the Logger method.
+	LoggerFunc func(ctx sdk.Context) log.Logger
+
+	// SetBurnerInfoFunc mocks the SetBurnerInfo method.
+	SetBurnerInfoFunc func(ctx sdk.Context, burnerAddr common.Address, burnerInfo *types.BurnerInfo)
+
+	// SetCommandDataFunc mocks the SetCommandData method.
+	SetCommandDataFunc func(ctx sdk.Context, commandID types.CommandID, commandData []byte)
+
+	// SetDepositFunc mocks the SetDeposit method.
+	SetDepositFunc func(ctx sdk.Context, deposit types.ERC20Deposit, state types.DepositState)
+
+	// SetGatewayAddressFunc mocks the SetGatewayAddress method.
+	SetGatewayAddressFunc func(ctx sdk.Context, addr common.Address)
+
+	// SetParamsFunc mocks the SetParams method.
+	SetParamsFunc func(ctx sdk.Context, params types.Params)
+
 	// SetPendingDepositFunc mocks the SetPendingDeposit method.
 	SetPendingDepositFunc func(ctx sdk.Context, poll exported.PollMeta, deposit *types.ERC20Deposit)
 
 	// SetPendingTokenDeployFunc mocks the SetPendingTokenDeploy method.
 	SetPendingTokenDeployFunc func(ctx sdk.Context, poll exported.PollMeta, tokenDeploy types.ERC20TokenDeploy)
 
+	// SetTokenInfoFunc mocks the SetTokenInfo method.
+	SetTokenInfoFunc func(ctx sdk.Context, msg *types.SignDeployTokenRequest)
+
+	// SetUnsignedTxFunc mocks the SetUnsignedTx method.
+	SetUnsignedTxFunc func(ctx sdk.Context, txID string, tx *ethTypes.Transaction)
+
 	// calls tracks calls to the methods.
 	calls struct {
 		// Codec holds details about calls to the Codec method.
 		Codec []struct {
+		}
+		// DeleteDeposit holds details about calls to the DeleteDeposit method.
+		DeleteDeposit []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Deposit is the deposit argument value.
+			Deposit types.ERC20Deposit
+		}
+		// DeletePendingDeposit holds details about calls to the DeletePendingDeposit method.
+		DeletePendingDeposit []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Poll is the poll argument value.
+			Poll exported.PollMeta
+		}
+		// DeletePendingToken holds details about calls to the DeletePendingToken method.
+		DeletePendingToken []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Poll is the poll argument value.
+			Poll exported.PollMeta
+		}
+		// GetBurnerAddressAndSalt holds details about calls to the GetBurnerAddressAndSalt method.
+		GetBurnerAddressAndSalt []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// TokenAddr is the tokenAddr argument value.
+			TokenAddr common.Address
+			// Recipient is the recipient argument value.
+			Recipient string
+			// GatewayAddr is the gatewayAddr argument value.
+			GatewayAddr common.Address
 		}
 		// GetBurnerInfo holds details about calls to the GetBurnerInfo method.
 		GetBurnerInfo []struct {
@@ -1304,6 +1452,11 @@ type EthKeeperMock struct {
 			Ctx sdk.Context
 			// Address is the address argument value.
 			Address common.Address
+		}
+		// GetConfirmedDeposits holds details about calls to the GetConfirmedDeposits method.
+		GetConfirmedDeposits []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
 		}
 		// GetDeposit holds details about calls to the GetDeposit method.
 		GetDeposit []struct {
@@ -1318,6 +1471,42 @@ type EthKeeperMock struct {
 		GetGatewayAddress []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
+		}
+		// GetGatewayByteCodes holds details about calls to the GetGatewayByteCodes method.
+		GetGatewayByteCodes []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
+		// GetHashToSign holds details about calls to the GetHashToSign method.
+		GetHashToSign []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// TxID is the txID argument value.
+			TxID string
+		}
+		// GetNetwork holds details about calls to the GetNetwork method.
+		GetNetwork []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
+		// GetParams holds details about calls to the GetParams method.
+		GetParams []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
+		// GetPendingDeposit holds details about calls to the GetPendingDeposit method.
+		GetPendingDeposit []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Poll is the poll argument value.
+			Poll exported.PollMeta
+		}
+		// GetPendingTokenDeploy holds details about calls to the GetPendingTokenDeploy method.
+		GetPendingTokenDeploy []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Poll is the poll argument value.
+			Poll exported.PollMeta
 		}
 		// GetRequiredConfirmationHeight holds details about calls to the GetRequiredConfirmationHeight method.
 		GetRequiredConfirmationHeight []struct {
@@ -1338,6 +1527,52 @@ type EthKeeperMock struct {
 			// GatewayAddr is the gatewayAddr argument value.
 			GatewayAddr common.Address
 		}
+		// Logger holds details about calls to the Logger method.
+		Logger []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
+		// SetBurnerInfo holds details about calls to the SetBurnerInfo method.
+		SetBurnerInfo []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// BurnerAddr is the burnerAddr argument value.
+			BurnerAddr common.Address
+			// BurnerInfo is the burnerInfo argument value.
+			BurnerInfo *types.BurnerInfo
+		}
+		// SetCommandData holds details about calls to the SetCommandData method.
+		SetCommandData []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// CommandID is the commandID argument value.
+			CommandID types.CommandID
+			// CommandData is the commandData argument value.
+			CommandData []byte
+		}
+		// SetDeposit holds details about calls to the SetDeposit method.
+		SetDeposit []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Deposit is the deposit argument value.
+			Deposit types.ERC20Deposit
+			// State is the state argument value.
+			State types.DepositState
+		}
+		// SetGatewayAddress holds details about calls to the SetGatewayAddress method.
+		SetGatewayAddress []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Addr is the addr argument value.
+			Addr common.Address
+		}
+		// SetParams holds details about calls to the SetParams method.
+		SetParams []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Params is the params argument value.
+			Params types.Params
+		}
 		// SetPendingDeposit holds details about calls to the SetPendingDeposit method.
 		SetPendingDeposit []struct {
 			// Ctx is the ctx argument value.
@@ -1356,16 +1591,51 @@ type EthKeeperMock struct {
 			// TokenDeploy is the tokenDeploy argument value.
 			TokenDeploy types.ERC20TokenDeploy
 		}
+		// SetTokenInfo holds details about calls to the SetTokenInfo method.
+		SetTokenInfo []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Msg is the msg argument value.
+			Msg *types.SignDeployTokenRequest
+		}
+		// SetUnsignedTx holds details about calls to the SetUnsignedTx method.
+		SetUnsignedTx []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// TxID is the txID argument value.
+			TxID string
+			// Tx is the tx argument value.
+			Tx *ethTypes.Transaction
+		}
 	}
 	lockCodec                         sync.RWMutex
+	lockDeleteDeposit                 sync.RWMutex
+	lockDeletePendingDeposit          sync.RWMutex
+	lockDeletePendingToken            sync.RWMutex
+	lockGetBurnerAddressAndSalt       sync.RWMutex
 	lockGetBurnerInfo                 sync.RWMutex
+	lockGetConfirmedDeposits          sync.RWMutex
 	lockGetDeposit                    sync.RWMutex
 	lockGetGatewayAddress             sync.RWMutex
+	lockGetGatewayByteCodes           sync.RWMutex
+	lockGetHashToSign                 sync.RWMutex
+	lockGetNetwork                    sync.RWMutex
+	lockGetParams                     sync.RWMutex
+	lockGetPendingDeposit             sync.RWMutex
+	lockGetPendingTokenDeploy         sync.RWMutex
 	lockGetRequiredConfirmationHeight sync.RWMutex
 	lockGetRevoteLockingPeriod        sync.RWMutex
 	lockGetTokenAddress               sync.RWMutex
+	lockLogger                        sync.RWMutex
+	lockSetBurnerInfo                 sync.RWMutex
+	lockSetCommandData                sync.RWMutex
+	lockSetDeposit                    sync.RWMutex
+	lockSetGatewayAddress             sync.RWMutex
+	lockSetParams                     sync.RWMutex
 	lockSetPendingDeposit             sync.RWMutex
 	lockSetPendingTokenDeploy         sync.RWMutex
+	lockSetTokenInfo                  sync.RWMutex
+	lockSetUnsignedTx                 sync.RWMutex
 }
 
 // Codec calls CodecFunc.
@@ -1391,6 +1661,154 @@ func (mock *EthKeeperMock) CodecCalls() []struct {
 	mock.lockCodec.RLock()
 	calls = mock.calls.Codec
 	mock.lockCodec.RUnlock()
+	return calls
+}
+
+// DeleteDeposit calls DeleteDepositFunc.
+func (mock *EthKeeperMock) DeleteDeposit(ctx sdk.Context, deposit types.ERC20Deposit) {
+	if mock.DeleteDepositFunc == nil {
+		panic("EthKeeperMock.DeleteDepositFunc: method is nil but EthKeeper.DeleteDeposit was just called")
+	}
+	callInfo := struct {
+		Ctx     sdk.Context
+		Deposit types.ERC20Deposit
+	}{
+		Ctx:     ctx,
+		Deposit: deposit,
+	}
+	mock.lockDeleteDeposit.Lock()
+	mock.calls.DeleteDeposit = append(mock.calls.DeleteDeposit, callInfo)
+	mock.lockDeleteDeposit.Unlock()
+	mock.DeleteDepositFunc(ctx, deposit)
+}
+
+// DeleteDepositCalls gets all the calls that were made to DeleteDeposit.
+// Check the length with:
+//     len(mockedEthKeeper.DeleteDepositCalls())
+func (mock *EthKeeperMock) DeleteDepositCalls() []struct {
+	Ctx     sdk.Context
+	Deposit types.ERC20Deposit
+} {
+	var calls []struct {
+		Ctx     sdk.Context
+		Deposit types.ERC20Deposit
+	}
+	mock.lockDeleteDeposit.RLock()
+	calls = mock.calls.DeleteDeposit
+	mock.lockDeleteDeposit.RUnlock()
+	return calls
+}
+
+// DeletePendingDeposit calls DeletePendingDepositFunc.
+func (mock *EthKeeperMock) DeletePendingDeposit(ctx sdk.Context, poll exported.PollMeta) {
+	if mock.DeletePendingDepositFunc == nil {
+		panic("EthKeeperMock.DeletePendingDepositFunc: method is nil but EthKeeper.DeletePendingDeposit was just called")
+	}
+	callInfo := struct {
+		Ctx  sdk.Context
+		Poll exported.PollMeta
+	}{
+		Ctx:  ctx,
+		Poll: poll,
+	}
+	mock.lockDeletePendingDeposit.Lock()
+	mock.calls.DeletePendingDeposit = append(mock.calls.DeletePendingDeposit, callInfo)
+	mock.lockDeletePendingDeposit.Unlock()
+	mock.DeletePendingDepositFunc(ctx, poll)
+}
+
+// DeletePendingDepositCalls gets all the calls that were made to DeletePendingDeposit.
+// Check the length with:
+//     len(mockedEthKeeper.DeletePendingDepositCalls())
+func (mock *EthKeeperMock) DeletePendingDepositCalls() []struct {
+	Ctx  sdk.Context
+	Poll exported.PollMeta
+} {
+	var calls []struct {
+		Ctx  sdk.Context
+		Poll exported.PollMeta
+	}
+	mock.lockDeletePendingDeposit.RLock()
+	calls = mock.calls.DeletePendingDeposit
+	mock.lockDeletePendingDeposit.RUnlock()
+	return calls
+}
+
+// DeletePendingToken calls DeletePendingTokenFunc.
+func (mock *EthKeeperMock) DeletePendingToken(ctx sdk.Context, poll exported.PollMeta) {
+	if mock.DeletePendingTokenFunc == nil {
+		panic("EthKeeperMock.DeletePendingTokenFunc: method is nil but EthKeeper.DeletePendingToken was just called")
+	}
+	callInfo := struct {
+		Ctx  sdk.Context
+		Poll exported.PollMeta
+	}{
+		Ctx:  ctx,
+		Poll: poll,
+	}
+	mock.lockDeletePendingToken.Lock()
+	mock.calls.DeletePendingToken = append(mock.calls.DeletePendingToken, callInfo)
+	mock.lockDeletePendingToken.Unlock()
+	mock.DeletePendingTokenFunc(ctx, poll)
+}
+
+// DeletePendingTokenCalls gets all the calls that were made to DeletePendingToken.
+// Check the length with:
+//     len(mockedEthKeeper.DeletePendingTokenCalls())
+func (mock *EthKeeperMock) DeletePendingTokenCalls() []struct {
+	Ctx  sdk.Context
+	Poll exported.PollMeta
+} {
+	var calls []struct {
+		Ctx  sdk.Context
+		Poll exported.PollMeta
+	}
+	mock.lockDeletePendingToken.RLock()
+	calls = mock.calls.DeletePendingToken
+	mock.lockDeletePendingToken.RUnlock()
+	return calls
+}
+
+// GetBurnerAddressAndSalt calls GetBurnerAddressAndSaltFunc.
+func (mock *EthKeeperMock) GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error) {
+	if mock.GetBurnerAddressAndSaltFunc == nil {
+		panic("EthKeeperMock.GetBurnerAddressAndSaltFunc: method is nil but EthKeeper.GetBurnerAddressAndSalt was just called")
+	}
+	callInfo := struct {
+		Ctx         sdk.Context
+		TokenAddr   common.Address
+		Recipient   string
+		GatewayAddr common.Address
+	}{
+		Ctx:         ctx,
+		TokenAddr:   tokenAddr,
+		Recipient:   recipient,
+		GatewayAddr: gatewayAddr,
+	}
+	mock.lockGetBurnerAddressAndSalt.Lock()
+	mock.calls.GetBurnerAddressAndSalt = append(mock.calls.GetBurnerAddressAndSalt, callInfo)
+	mock.lockGetBurnerAddressAndSalt.Unlock()
+	return mock.GetBurnerAddressAndSaltFunc(ctx, tokenAddr, recipient, gatewayAddr)
+}
+
+// GetBurnerAddressAndSaltCalls gets all the calls that were made to GetBurnerAddressAndSalt.
+// Check the length with:
+//     len(mockedEthKeeper.GetBurnerAddressAndSaltCalls())
+func (mock *EthKeeperMock) GetBurnerAddressAndSaltCalls() []struct {
+	Ctx         sdk.Context
+	TokenAddr   common.Address
+	Recipient   string
+	GatewayAddr common.Address
+} {
+	var calls []struct {
+		Ctx         sdk.Context
+		TokenAddr   common.Address
+		Recipient   string
+		GatewayAddr common.Address
+	}
+	mock.lockGetBurnerAddressAndSalt.RLock()
+	calls = mock.calls.GetBurnerAddressAndSalt
+	mock.lockGetBurnerAddressAndSalt.RUnlock()
 	return calls
 }
 
@@ -1426,6 +1844,37 @@ func (mock *EthKeeperMock) GetBurnerInfoCalls() []struct {
 	mock.lockGetBurnerInfo.RLock()
 	calls = mock.calls.GetBurnerInfo
 	mock.lockGetBurnerInfo.RUnlock()
+	return calls
+}
+
+// GetConfirmedDeposits calls GetConfirmedDepositsFunc.
+func (mock *EthKeeperMock) GetConfirmedDeposits(ctx sdk.Context) []types.ERC20Deposit {
+	if mock.GetConfirmedDepositsFunc == nil {
+		panic("EthKeeperMock.GetConfirmedDepositsFunc: method is nil but EthKeeper.GetConfirmedDeposits was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetConfirmedDeposits.Lock()
+	mock.calls.GetConfirmedDeposits = append(mock.calls.GetConfirmedDeposits, callInfo)
+	mock.lockGetConfirmedDeposits.Unlock()
+	return mock.GetConfirmedDepositsFunc(ctx)
+}
+
+// GetConfirmedDepositsCalls gets all the calls that were made to GetConfirmedDeposits.
+// Check the length with:
+//     len(mockedEthKeeper.GetConfirmedDepositsCalls())
+func (mock *EthKeeperMock) GetConfirmedDepositsCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockGetConfirmedDeposits.RLock()
+	calls = mock.calls.GetConfirmedDeposits
+	mock.lockGetConfirmedDeposits.RUnlock()
 	return calls
 }
 
@@ -1496,6 +1945,204 @@ func (mock *EthKeeperMock) GetGatewayAddressCalls() []struct {
 	mock.lockGetGatewayAddress.RLock()
 	calls = mock.calls.GetGatewayAddress
 	mock.lockGetGatewayAddress.RUnlock()
+	return calls
+}
+
+// GetGatewayByteCodes calls GetGatewayByteCodesFunc.
+func (mock *EthKeeperMock) GetGatewayByteCodes(ctx sdk.Context) []byte {
+	if mock.GetGatewayByteCodesFunc == nil {
+		panic("EthKeeperMock.GetGatewayByteCodesFunc: method is nil but EthKeeper.GetGatewayByteCodes was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetGatewayByteCodes.Lock()
+	mock.calls.GetGatewayByteCodes = append(mock.calls.GetGatewayByteCodes, callInfo)
+	mock.lockGetGatewayByteCodes.Unlock()
+	return mock.GetGatewayByteCodesFunc(ctx)
+}
+
+// GetGatewayByteCodesCalls gets all the calls that were made to GetGatewayByteCodes.
+// Check the length with:
+//     len(mockedEthKeeper.GetGatewayByteCodesCalls())
+func (mock *EthKeeperMock) GetGatewayByteCodesCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockGetGatewayByteCodes.RLock()
+	calls = mock.calls.GetGatewayByteCodes
+	mock.lockGetGatewayByteCodes.RUnlock()
+	return calls
+}
+
+// GetHashToSign calls GetHashToSignFunc.
+func (mock *EthKeeperMock) GetHashToSign(ctx sdk.Context, txID string) (common.Hash, error) {
+	if mock.GetHashToSignFunc == nil {
+		panic("EthKeeperMock.GetHashToSignFunc: method is nil but EthKeeper.GetHashToSign was just called")
+	}
+	callInfo := struct {
+		Ctx  sdk.Context
+		TxID string
+	}{
+		Ctx:  ctx,
+		TxID: txID,
+	}
+	mock.lockGetHashToSign.Lock()
+	mock.calls.GetHashToSign = append(mock.calls.GetHashToSign, callInfo)
+	mock.lockGetHashToSign.Unlock()
+	return mock.GetHashToSignFunc(ctx, txID)
+}
+
+// GetHashToSignCalls gets all the calls that were made to GetHashToSign.
+// Check the length with:
+//     len(mockedEthKeeper.GetHashToSignCalls())
+func (mock *EthKeeperMock) GetHashToSignCalls() []struct {
+	Ctx  sdk.Context
+	TxID string
+} {
+	var calls []struct {
+		Ctx  sdk.Context
+		TxID string
+	}
+	mock.lockGetHashToSign.RLock()
+	calls = mock.calls.GetHashToSign
+	mock.lockGetHashToSign.RUnlock()
+	return calls
+}
+
+// GetNetwork calls GetNetworkFunc.
+func (mock *EthKeeperMock) GetNetwork(ctx sdk.Context) types.Network {
+	if mock.GetNetworkFunc == nil {
+		panic("EthKeeperMock.GetNetworkFunc: method is nil but EthKeeper.GetNetwork was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetNetwork.Lock()
+	mock.calls.GetNetwork = append(mock.calls.GetNetwork, callInfo)
+	mock.lockGetNetwork.Unlock()
+	return mock.GetNetworkFunc(ctx)
+}
+
+// GetNetworkCalls gets all the calls that were made to GetNetwork.
+// Check the length with:
+//     len(mockedEthKeeper.GetNetworkCalls())
+func (mock *EthKeeperMock) GetNetworkCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockGetNetwork.RLock()
+	calls = mock.calls.GetNetwork
+	mock.lockGetNetwork.RUnlock()
+	return calls
+}
+
+// GetParams calls GetParamsFunc.
+func (mock *EthKeeperMock) GetParams(ctx sdk.Context) types.Params {
+	if mock.GetParamsFunc == nil {
+		panic("EthKeeperMock.GetParamsFunc: method is nil but EthKeeper.GetParams was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetParams.Lock()
+	mock.calls.GetParams = append(mock.calls.GetParams, callInfo)
+	mock.lockGetParams.Unlock()
+	return mock.GetParamsFunc(ctx)
+}
+
+// GetParamsCalls gets all the calls that were made to GetParams.
+// Check the length with:
+//     len(mockedEthKeeper.GetParamsCalls())
+func (mock *EthKeeperMock) GetParamsCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockGetParams.RLock()
+	calls = mock.calls.GetParams
+	mock.lockGetParams.RUnlock()
+	return calls
+}
+
+// GetPendingDeposit calls GetPendingDepositFunc.
+func (mock *EthKeeperMock) GetPendingDeposit(ctx sdk.Context, poll exported.PollMeta) (types.ERC20Deposit, bool) {
+	if mock.GetPendingDepositFunc == nil {
+		panic("EthKeeperMock.GetPendingDepositFunc: method is nil but EthKeeper.GetPendingDeposit was just called")
+	}
+	callInfo := struct {
+		Ctx  sdk.Context
+		Poll exported.PollMeta
+	}{
+		Ctx:  ctx,
+		Poll: poll,
+	}
+	mock.lockGetPendingDeposit.Lock()
+	mock.calls.GetPendingDeposit = append(mock.calls.GetPendingDeposit, callInfo)
+	mock.lockGetPendingDeposit.Unlock()
+	return mock.GetPendingDepositFunc(ctx, poll)
+}
+
+// GetPendingDepositCalls gets all the calls that were made to GetPendingDeposit.
+// Check the length with:
+//     len(mockedEthKeeper.GetPendingDepositCalls())
+func (mock *EthKeeperMock) GetPendingDepositCalls() []struct {
+	Ctx  sdk.Context
+	Poll exported.PollMeta
+} {
+	var calls []struct {
+		Ctx  sdk.Context
+		Poll exported.PollMeta
+	}
+	mock.lockGetPendingDeposit.RLock()
+	calls = mock.calls.GetPendingDeposit
+	mock.lockGetPendingDeposit.RUnlock()
+	return calls
+}
+
+// GetPendingTokenDeploy calls GetPendingTokenDeployFunc.
+func (mock *EthKeeperMock) GetPendingTokenDeploy(ctx sdk.Context, poll exported.PollMeta) (types.ERC20TokenDeploy, bool) {
+	if mock.GetPendingTokenDeployFunc == nil {
+		panic("EthKeeperMock.GetPendingTokenDeployFunc: method is nil but EthKeeper.GetPendingTokenDeploy was just called")
+	}
+	callInfo := struct {
+		Ctx  sdk.Context
+		Poll exported.PollMeta
+	}{
+		Ctx:  ctx,
+		Poll: poll,
+	}
+	mock.lockGetPendingTokenDeploy.Lock()
+	mock.calls.GetPendingTokenDeploy = append(mock.calls.GetPendingTokenDeploy, callInfo)
+	mock.lockGetPendingTokenDeploy.Unlock()
+	return mock.GetPendingTokenDeployFunc(ctx, poll)
+}
+
+// GetPendingTokenDeployCalls gets all the calls that were made to GetPendingTokenDeploy.
+// Check the length with:
+//     len(mockedEthKeeper.GetPendingTokenDeployCalls())
+func (mock *EthKeeperMock) GetPendingTokenDeployCalls() []struct {
+	Ctx  sdk.Context
+	Poll exported.PollMeta
+} {
+	var calls []struct {
+		Ctx  sdk.Context
+		Poll exported.PollMeta
+	}
+	mock.lockGetPendingTokenDeploy.RLock()
+	calls = mock.calls.GetPendingTokenDeploy
+	mock.lockGetPendingTokenDeploy.RUnlock()
 	return calls
 }
 
@@ -1600,6 +2247,224 @@ func (mock *EthKeeperMock) GetTokenAddressCalls() []struct {
 	return calls
 }
 
+// Logger calls LoggerFunc.
+func (mock *EthKeeperMock) Logger(ctx sdk.Context) log.Logger {
+	if mock.LoggerFunc == nil {
+		panic("EthKeeperMock.LoggerFunc: method is nil but EthKeeper.Logger was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockLogger.Lock()
+	mock.calls.Logger = append(mock.calls.Logger, callInfo)
+	mock.lockLogger.Unlock()
+	return mock.LoggerFunc(ctx)
+}
+
+// LoggerCalls gets all the calls that were made to Logger.
+// Check the length with:
+//     len(mockedEthKeeper.LoggerCalls())
+func (mock *EthKeeperMock) LoggerCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockLogger.RLock()
+	calls = mock.calls.Logger
+	mock.lockLogger.RUnlock()
+	return calls
+}
+
+// SetBurnerInfo calls SetBurnerInfoFunc.
+func (mock *EthKeeperMock) SetBurnerInfo(ctx sdk.Context, burnerAddr common.Address, burnerInfo *types.BurnerInfo) {
+	if mock.SetBurnerInfoFunc == nil {
+		panic("EthKeeperMock.SetBurnerInfoFunc: method is nil but EthKeeper.SetBurnerInfo was just called")
+	}
+	callInfo := struct {
+		Ctx        sdk.Context
+		BurnerAddr common.Address
+		BurnerInfo *types.BurnerInfo
+	}{
+		Ctx:        ctx,
+		BurnerAddr: burnerAddr,
+		BurnerInfo: burnerInfo,
+	}
+	mock.lockSetBurnerInfo.Lock()
+	mock.calls.SetBurnerInfo = append(mock.calls.SetBurnerInfo, callInfo)
+	mock.lockSetBurnerInfo.Unlock()
+	mock.SetBurnerInfoFunc(ctx, burnerAddr, burnerInfo)
+}
+
+// SetBurnerInfoCalls gets all the calls that were made to SetBurnerInfo.
+// Check the length with:
+//     len(mockedEthKeeper.SetBurnerInfoCalls())
+func (mock *EthKeeperMock) SetBurnerInfoCalls() []struct {
+	Ctx        sdk.Context
+	BurnerAddr common.Address
+	BurnerInfo *types.BurnerInfo
+} {
+	var calls []struct {
+		Ctx        sdk.Context
+		BurnerAddr common.Address
+		BurnerInfo *types.BurnerInfo
+	}
+	mock.lockSetBurnerInfo.RLock()
+	calls = mock.calls.SetBurnerInfo
+	mock.lockSetBurnerInfo.RUnlock()
+	return calls
+}
+
+// SetCommandData calls SetCommandDataFunc.
+func (mock *EthKeeperMock) SetCommandData(ctx sdk.Context, commandID types.CommandID, commandData []byte) {
+	if mock.SetCommandDataFunc == nil {
+		panic("EthKeeperMock.SetCommandDataFunc: method is nil but EthKeeper.SetCommandData was just called")
+	}
+	callInfo := struct {
+		Ctx         sdk.Context
+		CommandID   types.CommandID
+		CommandData []byte
+	}{
+		Ctx:         ctx,
+		CommandID:   commandID,
+		CommandData: commandData,
+	}
+	mock.lockSetCommandData.Lock()
+	mock.calls.SetCommandData = append(mock.calls.SetCommandData, callInfo)
+	mock.lockSetCommandData.Unlock()
+	mock.SetCommandDataFunc(ctx, commandID, commandData)
+}
+
+// SetCommandDataCalls gets all the calls that were made to SetCommandData.
+// Check the length with:
+//     len(mockedEthKeeper.SetCommandDataCalls())
+func (mock *EthKeeperMock) SetCommandDataCalls() []struct {
+	Ctx         sdk.Context
+	CommandID   types.CommandID
+	CommandData []byte
+} {
+	var calls []struct {
+		Ctx         sdk.Context
+		CommandID   types.CommandID
+		CommandData []byte
+	}
+	mock.lockSetCommandData.RLock()
+	calls = mock.calls.SetCommandData
+	mock.lockSetCommandData.RUnlock()
+	return calls
+}
+
+// SetDeposit calls SetDepositFunc.
+func (mock *EthKeeperMock) SetDeposit(ctx sdk.Context, deposit types.ERC20Deposit, state types.DepositState) {
+	if mock.SetDepositFunc == nil {
+		panic("EthKeeperMock.SetDepositFunc: method is nil but EthKeeper.SetDeposit was just called")
+	}
+	callInfo := struct {
+		Ctx     sdk.Context
+		Deposit types.ERC20Deposit
+		State   types.DepositState
+	}{
+		Ctx:     ctx,
+		Deposit: deposit,
+		State:   state,
+	}
+	mock.lockSetDeposit.Lock()
+	mock.calls.SetDeposit = append(mock.calls.SetDeposit, callInfo)
+	mock.lockSetDeposit.Unlock()
+	mock.SetDepositFunc(ctx, deposit, state)
+}
+
+// SetDepositCalls gets all the calls that were made to SetDeposit.
+// Check the length with:
+//     len(mockedEthKeeper.SetDepositCalls())
+func (mock *EthKeeperMock) SetDepositCalls() []struct {
+	Ctx     sdk.Context
+	Deposit types.ERC20Deposit
+	State   types.DepositState
+} {
+	var calls []struct {
+		Ctx     sdk.Context
+		Deposit types.ERC20Deposit
+		State   types.DepositState
+	}
+	mock.lockSetDeposit.RLock()
+	calls = mock.calls.SetDeposit
+	mock.lockSetDeposit.RUnlock()
+	return calls
+}
+
+// SetGatewayAddress calls SetGatewayAddressFunc.
+func (mock *EthKeeperMock) SetGatewayAddress(ctx sdk.Context, addr common.Address) {
+	if mock.SetGatewayAddressFunc == nil {
+		panic("EthKeeperMock.SetGatewayAddressFunc: method is nil but EthKeeper.SetGatewayAddress was just called")
+	}
+	callInfo := struct {
+		Ctx  sdk.Context
+		Addr common.Address
+	}{
+		Ctx:  ctx,
+		Addr: addr,
+	}
+	mock.lockSetGatewayAddress.Lock()
+	mock.calls.SetGatewayAddress = append(mock.calls.SetGatewayAddress, callInfo)
+	mock.lockSetGatewayAddress.Unlock()
+	mock.SetGatewayAddressFunc(ctx, addr)
+}
+
+// SetGatewayAddressCalls gets all the calls that were made to SetGatewayAddress.
+// Check the length with:
+//     len(mockedEthKeeper.SetGatewayAddressCalls())
+func (mock *EthKeeperMock) SetGatewayAddressCalls() []struct {
+	Ctx  sdk.Context
+	Addr common.Address
+} {
+	var calls []struct {
+		Ctx  sdk.Context
+		Addr common.Address
+	}
+	mock.lockSetGatewayAddress.RLock()
+	calls = mock.calls.SetGatewayAddress
+	mock.lockSetGatewayAddress.RUnlock()
+	return calls
+}
+
+// SetParams calls SetParamsFunc.
+func (mock *EthKeeperMock) SetParams(ctx sdk.Context, params types.Params) {
+	if mock.SetParamsFunc == nil {
+		panic("EthKeeperMock.SetParamsFunc: method is nil but EthKeeper.SetParams was just called")
+	}
+	callInfo := struct {
+		Ctx    sdk.Context
+		Params types.Params
+	}{
+		Ctx:    ctx,
+		Params: params,
+	}
+	mock.lockSetParams.Lock()
+	mock.calls.SetParams = append(mock.calls.SetParams, callInfo)
+	mock.lockSetParams.Unlock()
+	mock.SetParamsFunc(ctx, params)
+}
+
+// SetParamsCalls gets all the calls that were made to SetParams.
+// Check the length with:
+//     len(mockedEthKeeper.SetParamsCalls())
+func (mock *EthKeeperMock) SetParamsCalls() []struct {
+	Ctx    sdk.Context
+	Params types.Params
+} {
+	var calls []struct {
+		Ctx    sdk.Context
+		Params types.Params
+	}
+	mock.lockSetParams.RLock()
+	calls = mock.calls.SetParams
+	mock.lockSetParams.RUnlock()
+	return calls
+}
+
 // SetPendingDeposit calls SetPendingDepositFunc.
 func (mock *EthKeeperMock) SetPendingDeposit(ctx sdk.Context, poll exported.PollMeta, deposit *types.ERC20Deposit) {
 	if mock.SetPendingDepositFunc == nil {
@@ -1675,5 +2540,79 @@ func (mock *EthKeeperMock) SetPendingTokenDeployCalls() []struct {
 	mock.lockSetPendingTokenDeploy.RLock()
 	calls = mock.calls.SetPendingTokenDeploy
 	mock.lockSetPendingTokenDeploy.RUnlock()
+	return calls
+}
+
+// SetTokenInfo calls SetTokenInfoFunc.
+func (mock *EthKeeperMock) SetTokenInfo(ctx sdk.Context, msg *types.SignDeployTokenRequest) {
+	if mock.SetTokenInfoFunc == nil {
+		panic("EthKeeperMock.SetTokenInfoFunc: method is nil but EthKeeper.SetTokenInfo was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+		Msg *types.SignDeployTokenRequest
+	}{
+		Ctx: ctx,
+		Msg: msg,
+	}
+	mock.lockSetTokenInfo.Lock()
+	mock.calls.SetTokenInfo = append(mock.calls.SetTokenInfo, callInfo)
+	mock.lockSetTokenInfo.Unlock()
+	mock.SetTokenInfoFunc(ctx, msg)
+}
+
+// SetTokenInfoCalls gets all the calls that were made to SetTokenInfo.
+// Check the length with:
+//     len(mockedEthKeeper.SetTokenInfoCalls())
+func (mock *EthKeeperMock) SetTokenInfoCalls() []struct {
+	Ctx sdk.Context
+	Msg *types.SignDeployTokenRequest
+} {
+	var calls []struct {
+		Ctx sdk.Context
+		Msg *types.SignDeployTokenRequest
+	}
+	mock.lockSetTokenInfo.RLock()
+	calls = mock.calls.SetTokenInfo
+	mock.lockSetTokenInfo.RUnlock()
+	return calls
+}
+
+// SetUnsignedTx calls SetUnsignedTxFunc.
+func (mock *EthKeeperMock) SetUnsignedTx(ctx sdk.Context, txID string, tx *ethTypes.Transaction) {
+	if mock.SetUnsignedTxFunc == nil {
+		panic("EthKeeperMock.SetUnsignedTxFunc: method is nil but EthKeeper.SetUnsignedTx was just called")
+	}
+	callInfo := struct {
+		Ctx  sdk.Context
+		TxID string
+		Tx   *ethTypes.Transaction
+	}{
+		Ctx:  ctx,
+		TxID: txID,
+		Tx:   tx,
+	}
+	mock.lockSetUnsignedTx.Lock()
+	mock.calls.SetUnsignedTx = append(mock.calls.SetUnsignedTx, callInfo)
+	mock.lockSetUnsignedTx.Unlock()
+	mock.SetUnsignedTxFunc(ctx, txID, tx)
+}
+
+// SetUnsignedTxCalls gets all the calls that were made to SetUnsignedTx.
+// Check the length with:
+//     len(mockedEthKeeper.SetUnsignedTxCalls())
+func (mock *EthKeeperMock) SetUnsignedTxCalls() []struct {
+	Ctx  sdk.Context
+	TxID string
+	Tx   *ethTypes.Transaction
+} {
+	var calls []struct {
+		Ctx  sdk.Context
+		TxID string
+		Tx   *ethTypes.Transaction
+	}
+	mock.lockSetUnsignedTx.RLock()
+	calls = mock.calls.SetUnsignedTx
+	mock.lockSetUnsignedTx.RUnlock()
 	return calls
 }
