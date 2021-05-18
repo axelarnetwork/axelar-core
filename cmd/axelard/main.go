@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/server"
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
+	"github.com/cosmos/cosmos-sdk/telemetry"
 	"github.com/cosmos/cosmos-sdk/x/staking/client/cli"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
@@ -64,12 +65,12 @@ func main() {
 		os.Exit(0)
 	}
 
+	setupMetrics()
 
 	if err := svrcmd.Execute(rootCmd, app.DefaultNodeHome); err != nil {
 		switch e := err.(type) {
 		case server.ErrorCode:
 			os.Exit(e.Code)
-
 		default:
 			os.Exit(1)
 		}
@@ -119,4 +120,14 @@ func deleteLineBreakCmds(cmd *cobra.Command) {
 	for _, c := range cmd.Commands() {
 		deleteLineBreakCmds(c)
 	}
+}
+
+func setupMetrics() {
+	telemetry.New(telemetry.Config{
+		Enabled:                 true,
+		EnableHostname:          false,
+		ServiceName:             "axelar",
+		PrometheusRetentionTime: 3600,
+		EnableHostnameLabel:     false,
+	})
 }
