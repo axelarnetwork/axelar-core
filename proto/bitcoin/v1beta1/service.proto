@@ -27,7 +27,10 @@ service MsgService {
   }
 
   rpc VoteConfirmOutpoint(bitcoin.v1beta1.VoteConfirmOutpointRequest)
-      returns (bitcoin.v1beta1.VoteConfirmOutpointResponse) {}
+      returns (bitcoin.v1beta1.VoteConfirmOutpointResponse) {
+    option (google.api.http) = {
+    };
+  }
 
   rpc SignPendingTransfers(bitcoin.v1beta1.SignPendingTransfersRequest)
       returns (bitcoin.v1beta1.SignPendingTransfersResponse) {

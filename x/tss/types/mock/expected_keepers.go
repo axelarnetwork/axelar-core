@@ -4,13 +4,13 @@
 package mock
 
 import (
-	"context"
+	context "context"
 	tofnd "github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	exported1 "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	"google.golang.org/grpc"
+	grpc "google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"sync"
 )

@@ -9,9 +9,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
-// NewMsgRotateKey constructor for MsgAssignNextKey
-func NewMsgRotateKey(sender sdk.AccAddress, chain string, keyRole exported.KeyRole) *MsgRotateKey {
-	return &MsgRotateKey{
+// NewRotateKeyRequest constructor for RotateKeyRequest
+func NewRotateKeyRequest(sender sdk.AccAddress, chain string, keyRole exported.KeyRole) *RotateKeyRequest {
+	return &RotateKeyRequest{
 		Sender:  sender,
 		Chain:   chain,
 		KeyRole: keyRole,
@@ -19,17 +19,17 @@ func NewMsgRotateKey(sender sdk.AccAddress, chain string, keyRole exported.KeyRo
 }
 
 // Route returns the route for this message
-func (m MsgRotateKey) Route() string {
+func (m RotateKeyRequest) Route() string {
 	return RouterKey
 }
 
 // Type returns the type of this message
-func (m MsgRotateKey) Type() string {
+func (m RotateKeyRequest) Type() string {
 	return "RotateKey"
 }
 
 // ValidateBasic performs a stateless validation of this message
-func (m MsgRotateKey) ValidateBasic() error {
+func (m RotateKeyRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(ErrTss, "sender must be set")
 	}
@@ -45,11 +45,11 @@ func (m MsgRotateKey) ValidateBasic() error {
 }
 
 // GetSignBytes returns the bytes to sign for this message
-func (m MsgRotateKey) GetSignBytes() []byte {
+func (m RotateKeyRequest) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
 // GetSigners returns the set of signers for this message
-func (m MsgRotateKey) GetSigners() []sdk.AccAddress {
+func (m RotateKeyRequest) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }

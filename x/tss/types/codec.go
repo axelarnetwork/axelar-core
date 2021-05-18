@@ -9,14 +9,14 @@ import (
 
 // RegisterLegacyAminoCodec registers concrete types on codec
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	cdc.RegisterConcrete(&MsgKeygenStart{}, "tss/MsgKeygenStart", nil)
-	cdc.RegisterConcrete(&MsgKeygenTraffic{}, "tss/MsgKeygenTraffic", nil)
-	cdc.RegisterConcrete(&MsgSignTraffic{}, "tss/MsgSignTraffic", nil)
-	cdc.RegisterConcrete(&MsgAssignNextKey{}, "tss/MsgAssignNextKey", nil)
-	cdc.RegisterConcrete(&MsgRotateKey{}, "tss/MsgRotateKey", nil)
-	cdc.RegisterConcrete(&MsgVoteSig{}, "tss/MsgVoteSig", nil)
-	cdc.RegisterConcrete(&MsgVotePubKey{}, "tss/MsgVotePubKey", nil)
-	cdc.RegisterConcrete(&MsgDeregister{}, "tss/MsgDeregister", nil)
+	cdc.RegisterConcrete(&StartKeygenRequest{}, "tss/StartKeygen", nil)
+	cdc.RegisterConcrete(&ProcessKeygenTrafficResponse{}, "tss/KeygenTraffic", nil)
+	cdc.RegisterConcrete(&ProcessSignTrafficRequest{}, "tss/SignTraffic", nil)
+	cdc.RegisterConcrete(&AssignKeyRequest{}, "tss/AssignKey", nil)
+	cdc.RegisterConcrete(&RotateKeyRequest{}, "tss/RotateKey", nil)
+	cdc.RegisterConcrete(&VoteSigRequest{}, "tss/VoteSig", nil)
+	cdc.RegisterConcrete(&VotePubKeyRequest{}, "tss/VotePubKey", nil)
+	cdc.RegisterConcrete(&DeregisterRequest{}, "tss/Deregister", nil)
 
 	// this module's votes contain byte slices and for the VotingData interface
 	cdc.RegisterConcrete([]byte{}, "tss/bytes", nil)
@@ -25,14 +25,14 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 // RegisterInterfaces registers types and interfaces with the given registry
 func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil),
-		&MsgKeygenStart{},
-		&MsgKeygenTraffic{},
-		&MsgSignTraffic{},
-		&MsgAssignNextKey{},
-		&MsgRotateKey{},
-		&MsgVoteSig{},
-		&MsgVotePubKey{},
-		&MsgDeregister{},
+		&StartKeygenRequest{},
+		&ProcessKeygenTrafficRequest{},
+		&ProcessSignTrafficRequest{},
+		&AssignKeyRequest{},
+		&RotateKeyRequest{},
+		&VoteSigRequest{},
+		&VotePubKeyRequest{},
+		&DeregisterRequest{},
 	)
 }
 
