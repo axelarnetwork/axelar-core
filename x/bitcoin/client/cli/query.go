@@ -29,6 +29,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdConsolidationTx(queryRoute),
 		GetCmdPayForConsolidationTx(queryRoute),
 		GetCmdMasterAddress(queryRoute),
+		GetCmdSignTransferState(queryRoute),
 	)
 
 	return btcTxCmd
@@ -132,6 +133,32 @@ func GetCmdPayForConsolidationTx(queryRoute string) *cobra.Command {
 		res, _, err := clientCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.GetPayForConsolidationTx), bz)
 		if err != nil {
 			return sdkerrors.Wrap(err, types.ErrFGetTransfers)
+		}
+
+		return clientCtx.PrintObjectLegacy(string(res))
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdSignTransferState returns the sign transfer state
+func GetCmdSignTransferState(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "signTransferState",
+		Short: "Returns the sign transfer state",
+		Args:  cobra.ExactArgs(0),
+	}
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		clientCtx, err := client.GetClientQueryContext(cmd)
+		if err != nil {
+			return err
+		}
+
+		res, _, err := clientCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.GetSignTransferState), nil)
+		if err != nil {
+			return sdkerrors.Wrap(err, types.ErrFGetSignTransferState)
 		}
 
 		return clientCtx.PrintObjectLegacy(string(res))

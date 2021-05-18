@@ -28,6 +28,7 @@ const (
 	QueryMasterAddress       = "masterAddr"
 	GetConsolidationTx       = "getConsolidationTx"
 	GetPayForConsolidationTx = "getPayForConsolidationTx"
+	GetSignTransferState     = "getSignTransferState"
 )
 
 // NewQuerier returns a new querier for the Bitcoin module
@@ -44,6 +45,8 @@ func NewQuerier(rpc types.RPCClient, k types.BTCKeeper, s types.Signer, n types.
 			res, err = getRawConsolidationTx(ctx, k)
 		case GetPayForConsolidationTx:
 			res, err = payForConsolidationTx(ctx, k, rpc, req.Data)
+		case GetSignTransferState:
+			res, err = getSignTransferState(ctx, k)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown btc-bridge query endpoint: %s", path[1]))
 		}
@@ -233,4 +236,17 @@ func estimateTxSize(inputs []types.OutPointToSign, outputs []types.Output) (int6
 	}
 
 	return types.EstimateTxSize(*tx, inputs), nil
+}
+
+func getSignTransferState(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {
+
+	if _, ok := k.GetUnsignedTx(ctx); ok {
+		return []byte(types.Signing), nil
+	}
+
+	if _, ok := k.GetSignedTx(ctx); ok {
+		return []byte(types.Signed), nil
+	}
+
+	return []byte(types.Ready), nil
 }
