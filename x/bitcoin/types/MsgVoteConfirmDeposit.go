@@ -8,9 +8,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-// NewMsgVoteConfirmOutpoint - MsgVoteConfirmOutpoint constructor
-func NewMsgVoteConfirmOutpoint(sender sdk.AccAddress, poll exported.PollMeta, outPoint wire.OutPoint, confirmed bool) *MsgVoteConfirmOutpoint {
-	return &MsgVoteConfirmOutpoint{
+// NewVoteConfirmOutpointRequest - MsgVoteConfirmOutpoint constructor
+func NewVoteConfirmOutpointRequest(sender sdk.AccAddress, poll exported.PollMeta, outPoint wire.OutPoint, confirmed bool) *VoteConfirmOutpointRequest {
+	return &VoteConfirmOutpointRequest{
 		Sender:    sender,
 		Poll:      poll,
 		OutPoint:  outPoint.String(),
@@ -19,17 +19,17 @@ func NewMsgVoteConfirmOutpoint(sender sdk.AccAddress, poll exported.PollMeta, ou
 }
 
 // Route returns the route for this message
-func (m MsgVoteConfirmOutpoint) Route() string {
+func (m VoteConfirmOutpointRequest) Route() string {
 	return RouterKey
 }
 
 // Type returns the type of the message
-func (m MsgVoteConfirmOutpoint) Type() string {
+func (m VoteConfirmOutpointRequest) Type() string {
 	return "VoteConfirmDeposit"
 }
 
 // ValidateBasic executes a stateless message validation
-func (m MsgVoteConfirmOutpoint) ValidateBasic() error {
+func (m VoteConfirmOutpointRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
@@ -41,11 +41,11 @@ func (m MsgVoteConfirmOutpoint) ValidateBasic() error {
 }
 
 // GetSignBytes returns the message bytes that need to be signed
-func (m MsgVoteConfirmOutpoint) GetSignBytes() []byte {
+func (m VoteConfirmOutpointRequest) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
 // GetSigners returns the set of signers for this message
-func (m MsgVoteConfirmOutpoint) GetSigners() []sdk.AccAddress {
+func (m VoteConfirmOutpointRequest) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }

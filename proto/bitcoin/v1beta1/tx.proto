@@ -11,24 +11,28 @@ option (gogoproto.goproto_getters_all) = false;
 
 // MsgConfirmOutpoint represents a message to trigger the confirmation of a
 // Bitcoin outpoint
-message MsgConfirmOutpoint {
+message ConfirmOutpointRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   OutPointInfo out_point_info = 2 [ (gogoproto.nullable) = false ];
 }
 
+message ConfirmOutpointResponse {};
+
 // MsgLink represents a message to link a cross-chain address to a Bitcoin
 // address
-message MsgLink {
+message LinkRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string recipient_addr = 2;
   string recipient_chain = 3;
 }
 
+message LinkResponse { string deposit_addr = 2; };
+
 // MsgSignPendingTransfers represents a message to trigger the signing of a
 // consolidation transaction
-message MsgSignPendingTransfers {
+message SignPendingTransfersRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   // TODO: Remove once c2d2 is ready to perform child-pay-for-parent for
@@ -36,11 +40,17 @@ message MsgSignPendingTransfers {
   int64 fee = 2 [ deprecated = true ];
 }
 
+message SignPendingTransfersResponse {
+  string command_id = 1 [ (gogoproto.customname) = "CommandID" ];
+};
+
 // MsgVoteConfirmOutpoint represents a message to that votes on an outpoint
-message MsgVoteConfirmOutpoint {
+message VoteConfirmOutpointRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   vote.exported.v1beta1.PollMeta poll = 2 [ (gogoproto.nullable) = false ];
   string out_point = 3;
   bool confirmed = 4;
 }
+
+message VoteConfirmOutpointResponse { string status = 1; };

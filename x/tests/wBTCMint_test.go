@@ -11,6 +11,7 @@ import (
 	goEth "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	goEthTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/gogo/protobuf/proto"
 
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -25,7 +26,7 @@ import (
 	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
+	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 // 0. Create and start a chain
@@ -60,12 +61,12 @@ func Test_wBTC_mint(t *testing.T) {
 
 	// start keygen
 	btcMasterKeyID := randStrings.Next()
-	btcKeygenResult := <-chain.Submit(tssTypes.NewMsgKeygenStart(randomSender(), btcMasterKeyID, 0, tss.WeightedByStake))
+	btcKeygenResult := <-chain.Submit(types.NewStartKeygenRequest(randomSender(), btcMasterKeyID, 0, tss.WeightedByStake))
 	assert.NoError(t, btcKeygenResult.Error)
 
 	// start keygen
 	ethMasterKeyID := randStrings.Next()
-	ethKeygenResult := <-chain.Submit(tssTypes.NewMsgKeygenStart(randomSender(), ethMasterKeyID, 0, tss.WeightedByStake))
+	ethKeygenResult := <-chain.Submit(types.NewStartKeygenRequest(randomSender(), ethMasterKeyID, 0, tss.WeightedByStake))
 	assert.NoError(t, ethKeygenResult.Error)
 
 	// wait for voting to be done
@@ -76,7 +77,7 @@ func Test_wBTC_mint(t *testing.T) {
 	chains := []string{btc.Bitcoin.Name, eth.Ethereum.Name}
 	for _, c := range chains {
 		masterKeyID := randStrings.Next()
-		masterKeygenResult := <-chain.Submit(tssTypes.NewMsgKeygenStart(randomSender(), masterKeyID, 0, tss.WeightedByStake))
+		masterKeygenResult := <-chain.Submit(types.NewStartKeygenRequest(randomSender(), masterKeyID, 0, tss.WeightedByStake))
 		assert.NoError(t, masterKeygenResult.Error)
 
 		// wait for voting to be done
@@ -84,15 +85,15 @@ func Test_wBTC_mint(t *testing.T) {
 			assert.FailNow(t, "keygen", err)
 		}
 
-		assignMasterKeyResult := <-chain.Submit(tssTypes.NewMsgAssignNextKey(randomSender(), c, masterKeyID, tss.MasterKey))
+		assignMasterKeyResult := <-chain.Submit(types.NewAssignKeyRequest(randomSender(), c, masterKeyID, tss.MasterKey))
 		assert.NoError(t, assignMasterKeyResult.Error)
 
-		rotateMasterKeyResult := <-chain.Submit(tssTypes.NewMsgRotateKey(randomSender(), c, tss.MasterKey))
+		rotateMasterKeyResult := <-chain.Submit(types.NewRotateKeyRequest(randomSender(), c, tss.MasterKey))
 		assert.NoError(t, rotateMasterKeyResult.Error)
 
 		if c == btc.Bitcoin.Name {
 			secondaryKeyID := randStrings.Next()
-			secondaryKeygenResult := <-chain.Submit(tssTypes.NewMsgKeygenStart(randomSender(), secondaryKeyID, 0, tss.OnePerValidator))
+			secondaryKeygenResult := <-chain.Submit(types.NewStartKeygenRequest(randomSender(), secondaryKeyID, 0, tss.OnePerValidator))
 			assert.NoError(t, secondaryKeygenResult.Error)
 
 			// wait for voting to be done
@@ -100,10 +101,10 @@ func Test_wBTC_mint(t *testing.T) {
 				assert.FailNow(t, "keygen", err)
 			}
 
-			assignSecondaryKeyResult := <-chain.Submit(tssTypes.NewMsgAssignNextKey(randomSender(), c, secondaryKeyID, tss.SecondaryKey))
+			assignSecondaryKeyResult := <-chain.Submit(types.NewAssignKeyRequest(randomSender(), c, secondaryKeyID, tss.SecondaryKey))
 			assert.NoError(t, assignSecondaryKeyResult.Error)
 
-			rotateSecondaryKeyResult := <-chain.Submit(tssTypes.NewMsgRotateKey(randomSender(), c, tss.SecondaryKey))
+			rotateSecondaryKeyResult := <-chain.Submit(types.NewRotateKeyRequest(randomSender(), c, tss.SecondaryKey))
 			assert.NoError(t, rotateSecondaryKeyResult.Error)
 		}
 	}
@@ -212,15 +213,16 @@ func Test_wBTC_mint(t *testing.T) {
 		// Get a deposit address for an Ethereum recipient address
 		// we don't provide an actual recipient address, so it is created automatically
 		crosschainAddr := nexus.CrossChainAddress{Chain: eth.Ethereum, Address: rand.StrBetween(5, 20)}
-		res := <-chain.Submit(btcTypes.NewMsgLink(randomSender(), crosschainAddr.Address, crosschainAddr.Chain.Name))
+		res := <-chain.Submit(btcTypes.NewLinkRequest(randomSender(), crosschainAddr.Address, crosschainAddr.Chain.Name))
 		assert.NoError(t, res.Error)
-		depositAddr := string(res.Data)
+		var linkResponse btcTypes.LinkResponse
+		assert.NoError(t, proto.Unmarshal(res.Data, &linkResponse))
 
 		// Simulate deposit
-		depositInfo := randomOutpointInfo(depositAddr)
+		depositInfo := randomOutpointInfo(linkResponse.DepositAddr)
 
 		// confirm the previously received information
-		res = <-chain.Submit(btcTypes.NewMsgConfirmOutpoint(randomSender(), depositInfo))
+		res = <-chain.Submit(btcTypes.NewConfirmOutpointRequest(randomSender(), depositInfo))
 		assert.NoError(t, res.Error)
 
 	}

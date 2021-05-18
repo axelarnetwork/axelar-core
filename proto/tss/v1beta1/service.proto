@@ -1,0 +1,68 @@
+syntax = "proto3";
+package tss.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/tss/types";
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "broadcast/v1beta1/tx.proto";
+import "tss/v1beta1/tx.proto";
+
+option (gogoproto.goproto_registration) = true;
+
+// Msg defines the tss Msg service.
+service MsgService {
+  rpc StartKeygen(tss.v1beta1.StartKeygenRequest)
+      returns (tss.v1beta1.StartKeygenResponse) {
+    option (google.api.http) = {
+      post : "/axelar/tss/startKeygen"
+      body : "*"
+    };
+  }
+
+  rpc ProcessKeygenTraffic(tss.v1beta1.ProcessKeygenTrafficRequest)
+      returns (tss.v1beta1.ProcessKeygenTrafficResponse) {
+    option (google.api.http) = {
+    };
+  }
+
+  rpc AssignKey(tss.v1beta1.AssignKeyRequest)
+      returns (tss.v1beta1.AssignKeyResponse) {
+    option (google.api.http) = {
+      post : "/axelar/tss/assign/{chain}"
+      body : "*"
+    };
+  }
+
+  rpc RotateKey(tss.v1beta1.RotateKeyRequest)
+      returns (tss.v1beta1.RotateKeyResponse) {
+    option (google.api.http) = {
+      post : "/axelar/tss/assign/{chain}"
+      body : "*"
+    };
+  }
+
+  rpc VotePubKey(tss.v1beta1.VotePubKeyRequest)
+      returns (tss.v1beta1.VotePubKeyResponse) {
+    option (google.api.http) = {
+    };
+  };
+
+  rpc ProcessSignTraffic(tss.v1beta1.ProcessSignTrafficRequest)
+      returns (tss.v1beta1.ProcessSignTrafficResponse) {
+    option (google.api.http) = {
+    };
+  }
+
+  rpc VoteSig(tss.v1beta1.VoteSigRequest)
+      returns (tss.v1beta1.VoteSigResponse) {
+    option (google.api.http) = {
+    };
+  }
+
+  rpc Deregister(tss.v1beta1.DeregisterRequest)
+      returns (tss.v1beta1.DeregisterResponse) {
+    option (google.api.http) = {
+    };
+  }
+}

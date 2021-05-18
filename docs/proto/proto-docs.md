@@ -24,10 +24,17 @@
     - [PollMeta](#vote.exported.v1beta1.PollMeta)
   
 - [bitcoin/v1beta1/tx.proto](#bitcoin/v1beta1/tx.proto)
-    - [MsgConfirmOutpoint](#bitcoin.v1beta1.MsgConfirmOutpoint)
-    - [MsgLink](#bitcoin.v1beta1.MsgLink)
-    - [MsgSignPendingTransfers](#bitcoin.v1beta1.MsgSignPendingTransfers)
-    - [MsgVoteConfirmOutpoint](#bitcoin.v1beta1.MsgVoteConfirmOutpoint)
+    - [ConfirmOutpointRequest](#bitcoin.v1beta1.ConfirmOutpointRequest)
+    - [ConfirmOutpointResponse](#bitcoin.v1beta1.ConfirmOutpointResponse)
+    - [LinkRequest](#bitcoin.v1beta1.LinkRequest)
+    - [LinkResponse](#bitcoin.v1beta1.LinkResponse)
+    - [SignPendingTransfersRequest](#bitcoin.v1beta1.SignPendingTransfersRequest)
+    - [SignPendingTransfersResponse](#bitcoin.v1beta1.SignPendingTransfersResponse)
+    - [VoteConfirmOutpointRequest](#bitcoin.v1beta1.VoteConfirmOutpointRequest)
+    - [VoteConfirmOutpointResponse](#bitcoin.v1beta1.VoteConfirmOutpointResponse)
+  
+- [bitcoin/v1beta1/service.proto](#bitcoin/v1beta1/service.proto)
+    - [MsgService](#bitcoin.v1beta1.MsgService)
   
 - [broadcast/v1beta1/genesis.proto](#broadcast/v1beta1/genesis.proto)
     - [GenesisState](#broadcast.v1beta1.GenesisState)
@@ -101,14 +108,25 @@
     - [GenesisState](#tss.v1beta1.GenesisState)
   
 - [tss/v1beta1/tx.proto](#tss/v1beta1/tx.proto)
-    - [MsgAssignNextKey](#tss.v1beta1.MsgAssignNextKey)
-    - [MsgDeregister](#tss.v1beta1.MsgDeregister)
-    - [MsgKeygenStart](#tss.v1beta1.MsgKeygenStart)
-    - [MsgKeygenTraffic](#tss.v1beta1.MsgKeygenTraffic)
-    - [MsgRotateKey](#tss.v1beta1.MsgRotateKey)
-    - [MsgSignTraffic](#tss.v1beta1.MsgSignTraffic)
-    - [MsgVotePubKey](#tss.v1beta1.MsgVotePubKey)
-    - [MsgVoteSig](#tss.v1beta1.MsgVoteSig)
+    - [AssignKeyRequest](#tss.v1beta1.AssignKeyRequest)
+    - [AssignKeyResponse](#tss.v1beta1.AssignKeyResponse)
+    - [DeregisterRequest](#tss.v1beta1.DeregisterRequest)
+    - [DeregisterResponse](#tss.v1beta1.DeregisterResponse)
+    - [ProcessKeygenTrafficRequest](#tss.v1beta1.ProcessKeygenTrafficRequest)
+    - [ProcessKeygenTrafficResponse](#tss.v1beta1.ProcessKeygenTrafficResponse)
+    - [ProcessSignTrafficRequest](#tss.v1beta1.ProcessSignTrafficRequest)
+    - [ProcessSignTrafficResponse](#tss.v1beta1.ProcessSignTrafficResponse)
+    - [RotateKeyRequest](#tss.v1beta1.RotateKeyRequest)
+    - [RotateKeyResponse](#tss.v1beta1.RotateKeyResponse)
+    - [StartKeygenRequest](#tss.v1beta1.StartKeygenRequest)
+    - [StartKeygenResponse](#tss.v1beta1.StartKeygenResponse)
+    - [VotePubKeyRequest](#tss.v1beta1.VotePubKeyRequest)
+    - [VotePubKeyResponse](#tss.v1beta1.VotePubKeyResponse)
+    - [VoteSigRequest](#tss.v1beta1.VoteSigRequest)
+    - [VoteSigResponse](#tss.v1beta1.VoteSigResponse)
+  
+- [tss/v1beta1/service.proto](#tss/v1beta1/service.proto)
+    - [MsgService](#tss.v1beta1.MsgService)
   
 - [vote/v1beta1/genesis.proto](#vote/v1beta1/genesis.proto)
     - [GenesisState](#vote.v1beta1.GenesisState)
@@ -337,9 +355,9 @@ PollMeta represents the meta data for a poll
 
 
 
-<a name="bitcoin.v1beta1.MsgConfirmOutpoint"></a>
+<a name="bitcoin.v1beta1.ConfirmOutpointRequest"></a>
 
-### MsgConfirmOutpoint
+### ConfirmOutpointRequest
 MsgConfirmOutpoint represents a message to trigger the confirmation of a
 Bitcoin outpoint
 
@@ -354,9 +372,19 @@ Bitcoin outpoint
 
 
 
-<a name="bitcoin.v1beta1.MsgLink"></a>
+<a name="bitcoin.v1beta1.ConfirmOutpointResponse"></a>
 
-### MsgLink
+### ConfirmOutpointResponse
+
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.LinkRequest"></a>
+
+### LinkRequest
 MsgLink represents a message to link a cross-chain address to a Bitcoin
 address
 
@@ -372,9 +400,24 @@ address
 
 
 
-<a name="bitcoin.v1beta1.MsgSignPendingTransfers"></a>
+<a name="bitcoin.v1beta1.LinkResponse"></a>
 
-### MsgSignPendingTransfers
+### LinkResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `deposit_addr` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.SignPendingTransfersRequest"></a>
+
+### SignPendingTransfersRequest
 MsgSignPendingTransfers represents a message to trigger the signing of a
 consolidation transaction
 
@@ -389,9 +432,24 @@ consolidation transaction
 
 
 
-<a name="bitcoin.v1beta1.MsgVoteConfirmOutpoint"></a>
+<a name="bitcoin.v1beta1.SignPendingTransfersResponse"></a>
 
-### MsgVoteConfirmOutpoint
+### SignPendingTransfersResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `command_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.VoteConfirmOutpointRequest"></a>
+
+### VoteConfirmOutpointRequest
 MsgVoteConfirmOutpoint represents a message to that votes on an outpoint
 
 
@@ -406,11 +464,55 @@ MsgVoteConfirmOutpoint represents a message to that votes on an outpoint
 
 
 
+
+<a name="bitcoin.v1beta1.VoteConfirmOutpointResponse"></a>
+
+### VoteConfirmOutpointResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `status` | [string](#string) |  |  |
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
 
  <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="bitcoin/v1beta1/service.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## bitcoin/v1beta1/service.proto
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="bitcoin.v1beta1.MsgService"></a>
+
+### MsgService
+Msg defines the bitcoin Msg service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `Link` | [LinkRequest](#bitcoin.v1beta1.LinkRequest) | [LinkResponse](#bitcoin.v1beta1.LinkResponse) |  | POST|/axelar/bitcoin/link/{recipient_chain}|
+| `ConfirmOutpoint` | [ConfirmOutpointRequest](#bitcoin.v1beta1.ConfirmOutpointRequest) | [ConfirmOutpointResponse](#bitcoin.v1beta1.ConfirmOutpointResponse) |  | POST|/axelar/bitcoin/confirm|
+| `VoteConfirmOutpoint` | [VoteConfirmOutpointRequest](#bitcoin.v1beta1.VoteConfirmOutpointRequest) | [VoteConfirmOutpointResponse](#bitcoin.v1beta1.VoteConfirmOutpointResponse) |  | ||
+| `SignPendingTransfers` | [SignPendingTransfersRequest](#bitcoin.v1beta1.SignPendingTransfersRequest) | [SignPendingTransfersResponse](#bitcoin.v1beta1.SignPendingTransfersResponse) |  | POST|/axelar/bitcoin/sign|
 
  <!-- end services -->
 
@@ -1273,10 +1375,10 @@ Params is the parameter set for this module
 
 
 
-<a name="tss.v1beta1.MsgAssignNextKey"></a>
+<a name="tss.v1beta1.AssignKeyRequest"></a>
 
-### MsgAssignNextKey
-MsgAssignNextKey represents a message to assign a new key
+### AssignKeyRequest
+AssignKeyRequest represents a message to assign a new key
 
 
 | Field | Type | Label | Description |
@@ -1291,44 +1393,46 @@ MsgAssignNextKey represents a message to assign a new key
 
 
 
-<a name="tss.v1beta1.MsgDeregister"></a>
+<a name="tss.v1beta1.AssignKeyResponse"></a>
 
-### MsgDeregister
-MsgDeregister to deregister so that the validator will not participate in any
-future keygen
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [string](#string) |  |  |
+### AssignKeyResponse
 
 
 
 
 
 
-<a name="tss.v1beta1.MsgKeygenStart"></a>
 
-### MsgKeygenStart
-MsgKeygenStart indicate the start of keygen
+<a name="tss.v1beta1.DeregisterRequest"></a>
+
+### DeregisterRequest
+DeregisterRequest to deregister so that the validator will not participate in
+any future keygen
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [string](#string) |  |  |
-| `new_key_id` | [string](#string) |  |  |
-| `subset_size` | [int64](#int64) |  |  |
-| `key_share_distribution_policy` | [tss.exported.v1beta1.KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
 
 
 
 
 
 
-<a name="tss.v1beta1.MsgKeygenTraffic"></a>
+<a name="tss.v1beta1.DeregisterResponse"></a>
 
-### MsgKeygenTraffic
-MsgKeygenTraffic protocol message
+### DeregisterResponse
+
+
+
+
+
+
+
+<a name="tss.v1beta1.ProcessKeygenTrafficRequest"></a>
+
+### ProcessKeygenTrafficRequest
+ProcessKeygenTrafficRequest protocol message
 
 
 | Field | Type | Label | Description |
@@ -1342,9 +1446,46 @@ MsgKeygenTraffic protocol message
 
 
 
-<a name="tss.v1beta1.MsgRotateKey"></a>
+<a name="tss.v1beta1.ProcessKeygenTrafficResponse"></a>
 
-### MsgRotateKey
+### ProcessKeygenTrafficResponse
+
+
+
+
+
+
+
+<a name="tss.v1beta1.ProcessSignTrafficRequest"></a>
+
+### ProcessSignTrafficRequest
+ProcessSignTrafficRequest protocol message
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `session_id` | [string](#string) |  |  |
+| `payload` | [tss.tofnd.v1beta1.TrafficOut](#tss.tofnd.v1beta1.TrafficOut) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.ProcessSignTrafficResponse"></a>
+
+### ProcessSignTrafficResponse
+
+
+
+
+
+
+
+<a name="tss.v1beta1.RotateKeyRequest"></a>
+
+### RotateKeyRequest
 
 
 
@@ -1360,27 +1501,48 @@ MsgKeygenTraffic protocol message
 
 
 
-<a name="tss.v1beta1.MsgSignTraffic"></a>
+<a name="tss.v1beta1.RotateKeyResponse"></a>
 
-### MsgSignTraffic
-MsgSignTraffic protocol message
+### RotateKeyResponse
+
+
+
+
+
+
+
+<a name="tss.v1beta1.StartKeygenRequest"></a>
+
+### StartKeygenRequest
+StartKeygenRequest indicate the start of keygen
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `session_id` | [string](#string) |  |  |
-| `payload` | [tss.tofnd.v1beta1.TrafficOut](#tss.tofnd.v1beta1.TrafficOut) |  |  |
+| `sender` | [string](#string) |  |  |
+| `new_key_id` | [string](#string) |  |  |
+| `subset_size` | [int64](#int64) |  |  |
+| `key_share_distribution_policy` | [tss.exported.v1beta1.KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
 
 
 
 
 
 
-<a name="tss.v1beta1.MsgVotePubKey"></a>
+<a name="tss.v1beta1.StartKeygenResponse"></a>
 
-### MsgVotePubKey
-MsgVotePubKey represents the message to vote on a public key
+### StartKeygenResponse
+
+
+
+
+
+
+
+<a name="tss.v1beta1.VotePubKeyRequest"></a>
+
+### VotePubKeyRequest
+VotePubKeyRequest represents the message to vote on a public key
 
 
 | Field | Type | Label | Description |
@@ -1394,10 +1556,20 @@ MsgVotePubKey represents the message to vote on a public key
 
 
 
-<a name="tss.v1beta1.MsgVoteSig"></a>
+<a name="tss.v1beta1.VotePubKeyResponse"></a>
 
-### MsgVoteSig
-MsgVoteSig represents a message to vote for a signature
+### VotePubKeyResponse
+
+
+
+
+
+
+
+<a name="tss.v1beta1.VoteSigRequest"></a>
+
+### VoteSigRequest
+VoteSigRequest represents a message to vote for a signature
 
 
 | Field | Type | Label | Description |
@@ -1410,11 +1582,54 @@ MsgVoteSig represents a message to vote for a signature
 
 
 
+
+<a name="tss.v1beta1.VoteSigResponse"></a>
+
+### VoteSigResponse
+
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
 
  <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="tss/v1beta1/service.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tss/v1beta1/service.proto
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="tss.v1beta1.MsgService"></a>
+
+### MsgService
+Msg defines the tss Msg service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `StartKeygen` | [StartKeygenRequest](#tss.v1beta1.StartKeygenRequest) | [StartKeygenResponse](#tss.v1beta1.StartKeygenResponse) |  | POST|/axelar/tss/startKeygen|
+| `ProcessKeygenTraffic` | [ProcessKeygenTrafficRequest](#tss.v1beta1.ProcessKeygenTrafficRequest) | [ProcessKeygenTrafficResponse](#tss.v1beta1.ProcessKeygenTrafficResponse) |  | ||
+| `AssignKey` | [AssignKeyRequest](#tss.v1beta1.AssignKeyRequest) | [AssignKeyResponse](#tss.v1beta1.AssignKeyResponse) |  | POST|/axelar/tss/assign/{chain}|
+| `RotateKey` | [RotateKeyRequest](#tss.v1beta1.RotateKeyRequest) | [RotateKeyResponse](#tss.v1beta1.RotateKeyResponse) |  | POST|/axelar/tss/assign/{chain}|
+| `VotePubKey` | [VotePubKeyRequest](#tss.v1beta1.VotePubKeyRequest) | [VotePubKeyResponse](#tss.v1beta1.VotePubKeyResponse) |  | ||
+| `ProcessSignTraffic` | [ProcessSignTrafficRequest](#tss.v1beta1.ProcessSignTrafficRequest) | [ProcessSignTrafficResponse](#tss.v1beta1.ProcessSignTrafficResponse) |  | ||
+| `VoteSig` | [VoteSigRequest](#tss.v1beta1.VoteSigRequest) | [VoteSigResponse](#tss.v1beta1.VoteSigResponse) |  | ||
+| `Deregister` | [DeregisterRequest](#tss.v1beta1.DeregisterRequest) | [DeregisterResponse](#tss.v1beta1.DeregisterResponse) |  | ||
 
  <!-- end services -->
 

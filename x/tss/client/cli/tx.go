@@ -62,7 +62,7 @@ func getCmdKeygenStart() *cobra.Command {
 			return err
 		}
 
-		msg := types.NewMsgKeygenStart(clientCtx.FromAddress, *newKeyID, *subsetSize, keyShareDistributionPolicy)
+		msg := types.NewStartKeygenRequest(clientCtx.FromAddress, *newKeyID, *subsetSize, keyShareDistributionPolicy)
 		if err := msg.ValidateBasic(); err != nil {
 			return err
 		}
@@ -94,7 +94,7 @@ func getCmdAssignNextKey() *cobra.Command {
 		}
 		keyID := args[2]
 
-		msg := types.NewMsgAssignNextKey(clientCtx.FromAddress, chain, keyID, keyRole)
+		msg := types.NewAssignKeyRequest(clientCtx.FromAddress, chain, keyID, keyRole)
 
 		if err := msg.ValidateBasic(); err != nil {
 			return err
@@ -126,7 +126,7 @@ func getCmdRotateKey() *cobra.Command {
 			return err
 		}
 
-		msg := types.NewMsgRotateKey(clientCtx.FromAddress, chain, keyRole)
+		msg := types.NewRotateKeyRequest(clientCtx.FromAddress, chain, keyRole)
 		if err := msg.ValidateBasic(); err != nil {
 			return err
 		}
@@ -149,7 +149,7 @@ func getCmdDeregister() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewMsgDeregister(clientCtx.GetFromAddress())
+			msg := types.NewDeregisterRequest(clientCtx.GetFromAddress())
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

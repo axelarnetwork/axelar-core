@@ -80,7 +80,7 @@ func GetHandlerSignPendingTransfersTx(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewMsgSignPendingTransfers(fromAddr, btcutil.Amount(satoshi.Amount.Int64()))
+		msg := types.NewSignPendingTransfersRequest(fromAddr, btcutil.Amount(satoshi.Amount.Int64()))
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -107,7 +107,7 @@ func GetHandlerLink(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewMsgLink(fromAddr, req.Address, mux.Vars(r)[clientUtils.PathVarChain])
+		msg := types.NewLinkRequest(fromAddr, req.Address, mux.Vars(r)[clientUtils.PathVarChain])
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -139,7 +139,7 @@ func GetHandlerConfirmTx(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewMsgConfirmOutpoint(fromAddr, out)
+		msg := types.NewConfirmOutpointRequest(fromAddr, out)
 
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
