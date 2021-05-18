@@ -35,6 +35,7 @@
       - [master-addr](axelard_query_bitcoin_master-addr.md)	 - Returns the bitcoin address of the current master key
       - [rawPayForConsolidationTx](axelard_query_bitcoin_rawPayForConsolidationTx.md)	 - Returns the encoded hex string of a fully signed transaction that pays for the consolidation transaction
       - [rawTx](axelard_query_bitcoin_rawTx.md)	 - Returns the encoded hex string of a fully signed transfer and consolidation transaction
+      - [signTransferState](axelard_query_bitcoin_signTransferState.md)	 - Returns the sign transfer state
     - [block \[height\]](axelard_query_block.md)	 - Get verified data for a the block at given height
     - [distribution](axelard_query_distribution.md)	 - Querying commands for the distribution module
       - [commission \[validator\]](axelard_query_distribution_commission.md)	 - Query distribution validator commission
