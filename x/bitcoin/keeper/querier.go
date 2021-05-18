@@ -241,12 +241,12 @@ func estimateTxSize(inputs []types.OutPointToSign, outputs []types.Output) (int6
 func getSignTransferState(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {
 
 	if _, ok := k.GetUnsignedTx(ctx); ok {
-		return []byte(types.Signing), nil
+		return []byte(types.Signing.String()), nil
 	}
 
 	if _, ok := k.GetSignedTx(ctx); ok {
-		return []byte(types.Signed), nil
+		return []byte(types.Signed.String()), nil
 	}
 
-	return []byte(types.Ready), nil
+	return []byte(types.Ready.String()), nil
 }

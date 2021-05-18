@@ -10,6 +10,7 @@
     - [OutPointInfo](#bitcoin.v1beta1.OutPointInfo)
   
     - [AddressRole](#bitcoin.v1beta1.AddressRole)
+    - [SignTransferState](#bitcoin.v1beta1.SignTransferState)
   
 - [bitcoin/v1beta1/params.proto](#bitcoin/v1beta1/params.proto)
     - [Params](#bitcoin.v1beta1.Params)
@@ -206,6 +207,20 @@ of a transaction
 | ADDRESS_ROLE_UNSPECIFIED | 0 |  |
 | ADDRESS_ROLE_DEPOSIT | 1 |  |
 | ADDRESS_ROLE_CONSOLIDATION | 2 |  |
+
+
+
+<a name="bitcoin.v1beta1.SignTransferState"></a>
+
+### SignTransferState
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| SIGN_TRANSFER_STATE_UNSPECIFIED | 0 |  |
+| SIGN_TRANSFER_STATE_SIGNING_PENDING_TRANSFERS | 1 |  |
+| SIGN_TRANSFER_STATE_SIGNED_NOT_CONFIRMED | 2 |  |
+| SIGN_TRANSFER_STATE_READY_TO_SIGN | 3 |  |
 
 
  <!-- end enums -->

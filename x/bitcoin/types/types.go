@@ -423,10 +423,3 @@ func ParseSatoshi(rawCoin string) (sdk.Coin, error) {
 	}
 	return sat, nil
 }
-
-// States of sign transfers
-const (
-	Signing = "signing-pending-transfers"
-	Signed  = "signed-pending-transfers-but-not-confirmed"
-	Ready   = "ready-to-sign-pending-transfers"
-)
