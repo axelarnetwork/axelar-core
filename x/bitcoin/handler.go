@@ -18,7 +18,11 @@ func NewHandler(k types.BTCKeeper, v types.Voter, signer types.Signer, n types.N
 		switch msg := msg.(type) {
 		case *types.LinkRequest:
 			res, err := server.Link(sdk.WrapSDKContext(ctx), msg)
-			return sdk.WrapServiceResult(ctx, res, err)
+			result, err := sdk.WrapServiceResult(ctx, res, err)
+			if err == nil {
+				result.Log = fmt.Sprintf("successfully linked {%s} and {%s}", res.DepositAddr, msg.RecipientAddr)
+			}
+			return result, err
 		case *types.ConfirmOutpointRequest:
 			res, err := server.ConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
