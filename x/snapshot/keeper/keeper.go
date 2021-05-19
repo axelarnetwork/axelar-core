@@ -151,6 +151,10 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64
 			return false
 		}
 
+		if exported.IsValidatorTssJailed(ctx, k.tss, v) {
+			return false
+		}
+
 		validators = append(validators, v)
 
 		// if subsetSize equals 0, we will iterate through all validators and potentially put them all into the snapshot

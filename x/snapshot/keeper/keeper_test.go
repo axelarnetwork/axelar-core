@@ -98,6 +98,7 @@ func TestTakeSnapshot_WithSubsetSize(t *testing.T) {
 		GetMinBondFractionPerShareFunc: func(sdk.Context) utils.Threshold {
 			return utils.Threshold{Numerator: 1, Denominator: 200}
 		},
+		GetTssJailedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
 	}
 
 	keeper := NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("staking"), snapSubspace, broadcasterMock, staker, slashingKeeper, tssMock)
@@ -156,6 +157,7 @@ func TestSnapshots(t *testing.T) {
 				GetMinBondFractionPerShareFunc: func(sdk.Context) utils.Threshold {
 					return utils.Threshold{Numerator: 1, Denominator: 200}
 				},
+				GetTssJailedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
 			}
 
 			keeper := NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("staking"), snapSubspace, broadcasterMock, staker, slashingKeeper, tssMock)

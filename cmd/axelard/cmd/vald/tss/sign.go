@@ -3,6 +3,7 @@ package tss
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -44,14 +45,9 @@ func (mgr *Mgr) ProcessSignStart(attributes []sdk.Attribute) error {
 		}
 	}()
 	go func() {
-		err := mgr.handleSignResult(sigID, result)
-		if err != nil {
-			errChan <- err
-		} else {
-			// this is the last part of the keygen, so if there are no errors here return nil
-			errChan <- nil
-		}
+		errChan <- mgr.handleSignResult(sigID, result)
 	}()
+
 	return <-errChan
 }
 
@@ -136,7 +132,7 @@ func (mgr *Mgr) handleIntermediateSignMsgs(sigID string, intermediate <-chan *to
 	return nil
 }
 
-func (mgr *Mgr) handleSignResult(sigID string, result <-chan []byte) error {
+func (mgr *Mgr) handleSignResult(sigID string, resultChan <-chan interface{}) error {
 	// Delete the reference to the signing stream with sigID because entering this function means the tss protocol has completed
 	defer func() {
 		mgr.sign.Lock()
@@ -144,11 +140,14 @@ func (mgr *Mgr) handleSignResult(sigID string, result <-chan []byte) error {
 		delete(mgr.signStreams, sigID)
 	}()
 
-	bz := <-result
-	mgr.Logger.Info(fmt.Sprintf("handler goroutine: received sig from server! [%.20s]", bz))
+	result := (<-resultChan).(*tofnd.MessageOut_SignResult)
+	if result.GetCriminals() != nil {
+		// criminals have to be sorted in ascending order
+		sort.Stable(result.GetCriminals())
+	}
 
 	poll := voting.NewPollMeta(tss.ModuleName, sigID)
-	vote := &tss.VoteSigRequest{Sender: mgr.sender, PollMeta: poll, SigBytes: bz}
+	vote := &tss.VoteSigRequest{Sender: mgr.sender, PollMeta: poll, Result: result}
 	return mgr.broadcaster.Broadcast(vote)
 }
 
