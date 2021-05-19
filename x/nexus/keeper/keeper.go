@@ -1,9 +1,7 @@
 package keeper
 
 import (
-	"bytes"
 	"encoding/binary"
-	"encoding/gob"
 	"fmt"
 	"strings"
 
@@ -24,7 +22,8 @@ const (
 	totalPrefix      = "total_"
 	registeredPrefix = "registered_"
 
-	sequenceKey = "nextID"
+	sequenceKey   = "nextID"
+	registerAsset = "true"
 )
 
 // Keeper represents a ballance keeper
@@ -67,10 +66,7 @@ func (k Keeper) GetParams(ctx sdk.Context) types.Params {
 
 // RegisterAsset indicates that the specified asset is supported by the given chain
 func (k Keeper) RegisterAsset(ctx sdk.Context, chainName, denom string) {
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	_ = enc.Encode(true)
-	ctx.KVStore(k.storeKey).Set([]byte(registeredPrefix+strings.ToLower(chainName)+denom), buf.Bytes())
+	ctx.KVStore(k.storeKey).Set([]byte(registeredPrefix+strings.ToLower(chainName)+denom), []byte(registerAsset))
 }
 
 // IsAssetRegistered returns true if the specified asset is supported by the given chain
