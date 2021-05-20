@@ -2,7 +2,10 @@ package tests
 
 import (
 	"fmt"
+	mathRand "math/rand"
+	"strings"
 	"testing"
+	"unicode"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
@@ -10,6 +13,7 @@ import (
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
@@ -326,4 +330,45 @@ func TestEstimateTxSize(t *testing.T) {
 		assert.LessOrEqual(t, expected, actual)
 		assert.LessOrEqual(t, actual-1*inputCount, expected)
 	}).Repeat(repeats))
+}
+
+func TestConfirmOutpointRequest_GetOutPoint(t *testing.T) {
+	t.Run("case insensitive", testutils.Func(func(t *testing.T) {
+		hash, _ := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
+		outpoint := wire.NewOutPoint(hash, mathRand.Uint32())
+		info := types.NewOutPointInfo(outpoint, btcutil.Amount(rand.PosI64()), rand.StrBetween(5, 100))
+		req1 := types.NewConfirmOutpointRequest(rand.Bytes(sdk.AddrLen), info)
+		req2 := types.NewConfirmOutpointRequest(req1.Sender, info)
+
+		var runes []rune
+		flipDistr := rand.Bools(0.5)
+
+		for _, r := range req1.OutPointInfo.OutPoint {
+			if unicode.IsLetter(r) && flipDistr.Next() {
+				runes = append(runes, unicode.ToUpper(r))
+			} else {
+				runes = append(runes, r)
+			}
+		}
+
+		req1.OutPointInfo.OutPoint = string(runes)
+		assert.Equal(t, req1.OutPointInfo.GetOutPoint(), req2.OutPointInfo.GetOutPoint())
+	}).Repeat(20))
+}
+
+func TestAddress(t *testing.T) {
+	t.Run("case insensitive", testutils.Func(func(t *testing.T) {
+		addr, err := btcutil.NewAddressWitnessScriptHash(rand.Bytes(32), types.Mainnet.Params())
+		assert.NoError(t, err)
+
+		addrStr1 := addr.EncodeAddress()
+		addrStr2 := strings.ToUpper(addrStr1)
+
+		addr1, err := btcutil.DecodeAddress(addrStr1, types.Mainnet.Params())
+		assert.NoError(t, err)
+		addr2, err := btcutil.DecodeAddress(addrStr2, types.Mainnet.Params())
+		assert.NoError(t, err)
+		assert.NotEqual(t, addrStr1, addrStr2)
+		assert.Equal(t, addr1, addr2)
+	}).Repeat(20))
 }
