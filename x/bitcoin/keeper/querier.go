@@ -100,31 +100,17 @@ func queryMasterAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer) ([]b
 
 func getRawConsolidationTx(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {
 	if _, ok := k.GetUnsignedTx(ctx); ok {
-		rawTxResponse := &types.QueryRawTxResponse{RowTxOneof: &types.QueryRawTxResponse_State{State: types.Signing}}
-		res, err := rawTxResponse.Marshal()
-		if err != nil {
-			return nil, err
-		}
-		return res, nil
-
+		rawTxResponse := &types.QueryRawTxResponse{StateOrTx: &types.QueryRawTxResponse_State{State: types.Signing}}
+		return rawTxResponse.Marshal()
 	}
 
 	if tx, ok := k.GetSignedTx(ctx); ok {
-		rawTxResponse := &types.QueryRawTxResponse{RowTxOneof: &types.QueryRawTxResponse_RawTx{RawTx: hex.EncodeToString(types.MustEncodeTx(tx))}}
-		res, err := rawTxResponse.Marshal()
-		if err != nil {
-			return nil, err
-		}
-		return res, nil
+		rawTxResponse := &types.QueryRawTxResponse{StateOrTx: &types.QueryRawTxResponse_RawTx{RawTx: hex.EncodeToString(types.MustEncodeTx(tx))}}
+		return rawTxResponse.Marshal()
 	}
 
-	rawTxResponse := &types.QueryRawTxResponse{RowTxOneof: &types.QueryRawTxResponse_State{State: types.Ready}}
-	res, err := rawTxResponse.Marshal()
-	if err != nil {
-		return nil, err
-	}
-	return res, nil
-
+	rawTxResponse := &types.QueryRawTxResponse{StateOrTx: &types.QueryRawTxResponse_State{State: types.Ready}}
+	return rawTxResponse.Marshal()
 }
 
 func payForConsolidationTx(ctx sdk.Context, k types.BTCKeeper, rpc types.RPCClient, data []byte) ([]byte, error) {

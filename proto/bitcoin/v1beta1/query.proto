@@ -16,7 +16,7 @@ message DepositQueryParams {
 }
 
 message QueryRawTxResponse {
-  oneof row_tx_oneof {
+  oneof state_or_tx {
     string raw_tx = 1;
     SignState state = 2;
   }
