@@ -68,6 +68,8 @@
   
 - [nexus/exported/v1beta1/types.proto](#nexus/exported/v1beta1/types.proto)
     - [Chain](#nexus.exported.v1beta1.Chain)
+    - [CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress)
+    - [CrossChainTransfer](#nexus.exported.v1beta1.CrossChainTransfer)
   
 - [nexus/v1beta1/params.proto](#nexus/v1beta1/params.proto)
     - [Params](#nexus.v1beta1.Params)
@@ -922,6 +924,40 @@ Chain represents the properties of a registered blockchain
 | `name` | [string](#string) |  |  |
 | `native_asset` | [string](#string) |  |  |
 | `supports_foreign_assets` | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="nexus.exported.v1beta1.CrossChainAddress"></a>
+
+### CrossChainAddress
+CrossChainAddress represents a generalized address on any registered chain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [Chain](#nexus.exported.v1beta1.Chain) |  |  |
+| `address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="nexus.exported.v1beta1.CrossChainTransfer"></a>
+
+### CrossChainTransfer
+CrossChainTransfer represents a generalized transfer of some asset to a
+registered blockchain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `recipient` | [CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress) |  |  |
+| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `id` | [uint64](#uint64) |  |  |
 
 
 
