@@ -28,7 +28,6 @@ const (
 	QueryMasterAddress       = "masterAddr"
 	GetConsolidationTx       = "getConsolidationTx"
 	GetPayForConsolidationTx = "getPayForConsolidationTx"
-	GetSignTransferState     = "getSignTransferState"
 )
 
 // NewQuerier returns a new querier for the Bitcoin module
@@ -45,8 +44,6 @@ func NewQuerier(rpc types.RPCClient, k types.BTCKeeper, s types.Signer, n types.
 			res, err = getRawConsolidationTx(ctx, k)
 		case GetPayForConsolidationTx:
 			res, err = payForConsolidationTx(ctx, k, rpc, req.Data)
-		case GetSignTransferState:
-			res, err = getSignTransferState(ctx, k)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown btc-bridge query endpoint: %s", path[1]))
 		}
@@ -102,12 +99,32 @@ func queryMasterAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer) ([]b
 }
 
 func getRawConsolidationTx(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {
-	tx, ok := k.GetSignedTx(ctx)
-	if !ok {
-		return nil, fmt.Errorf("no signed consolidation transaction ready")
+	if _, ok := k.GetUnsignedTx(ctx); ok {
+		rawTxResponse := &types.QueryRawTxResponse{RowTxOneof: &types.QueryRawTxResponse_State{State: types.Signing}}
+		res, err := rawTxResponse.Marshal()
+		if err != nil {
+			return nil, err
+		}
+		return res, nil
+
 	}
 
-	return []byte(hex.EncodeToString(types.MustEncodeTx(tx))), nil
+	if tx, ok := k.GetSignedTx(ctx); ok {
+		rawTxResponse := &types.QueryRawTxResponse{RowTxOneof: &types.QueryRawTxResponse_RawTx{RawTx: hex.EncodeToString(types.MustEncodeTx(tx))}}
+		res, err := rawTxResponse.Marshal()
+		if err != nil {
+			return nil, err
+		}
+		return res, nil
+	}
+
+	rawTxResponse := &types.QueryRawTxResponse{RowTxOneof: &types.QueryRawTxResponse_State{State: types.Ready}}
+	res, err := rawTxResponse.Marshal()
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+
 }
 
 func payForConsolidationTx(ctx sdk.Context, k types.BTCKeeper, rpc types.RPCClient, data []byte) ([]byte, error) {
@@ -236,17 +253,4 @@ func estimateTxSize(inputs []types.OutPointToSign, outputs []types.Output) (int6
 	}
 
 	return types.EstimateTxSize(*tx, inputs), nil
-}
-
-func getSignTransferState(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {
-
-	if _, ok := k.GetUnsignedTx(ctx); ok {
-		return []byte(types.Signing.String()), nil
-	}
-
-	if _, ok := k.GetSignedTx(ctx); ok {
-		return []byte(types.Signed.String()), nil
-	}
-
-	return []byte(types.Ready.String()), nil
 }

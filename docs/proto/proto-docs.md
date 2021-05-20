@@ -10,7 +10,7 @@
     - [OutPointInfo](#bitcoin.v1beta1.OutPointInfo)
   
     - [AddressRole](#bitcoin.v1beta1.AddressRole)
-    - [SignTransferState](#bitcoin.v1beta1.SignTransferState)
+    - [SignState](#bitcoin.v1beta1.SignState)
   
 - [bitcoin/v1beta1/params.proto](#bitcoin/v1beta1/params.proto)
     - [Params](#bitcoin.v1beta1.Params)
@@ -20,6 +20,7 @@
   
 - [bitcoin/v1beta1/query.proto](#bitcoin/v1beta1/query.proto)
     - [DepositQueryParams](#bitcoin.v1beta1.DepositQueryParams)
+    - [QueryRawTxResponse](#bitcoin.v1beta1.QueryRawTxResponse)
   
 - [vote/exported/v1beta1/types.proto](#vote/exported/v1beta1/types.proto)
     - [PollMeta](#vote.exported.v1beta1.PollMeta)
@@ -210,17 +211,17 @@ of a transaction
 
 
 
-<a name="bitcoin.v1beta1.SignTransferState"></a>
+<a name="bitcoin.v1beta1.SignState"></a>
 
-### SignTransferState
+### SignState
 
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| SIGN_TRANSFER_STATE_UNSPECIFIED | 0 |  |
-| SIGN_TRANSFER_STATE_SIGNING_PENDING_TRANSFERS | 1 |  |
-| SIGN_TRANSFER_STATE_SIGNED_NOT_CONFIRMED | 2 |  |
-| SIGN_TRANSFER_STATE_READY_TO_SIGN | 3 |  |
+| SIGN_STATE_UNSPECIFIED | 0 |  |
+| SIGN_STATE_SIGNING_PENDING_TRANSFERS | 1 |  |
+| SIGN_STATE_SIGNED_NOT_CONFIRMED | 2 |  |
+| SIGN_STATE_READY_TO_SIGN | 3 |  |
 
 
  <!-- end enums -->
@@ -315,6 +316,22 @@ deposit address
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  |  |
 | `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.QueryRawTxResponse"></a>
+
+### QueryRawTxResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `raw_tx` | [string](#string) |  |  |
+| `state` | [SignState](#bitcoin.v1beta1.SignState) |  |  |
 
 
 
