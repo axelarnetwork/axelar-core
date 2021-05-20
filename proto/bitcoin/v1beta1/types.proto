@@ -48,6 +48,5 @@ enum SignState {
       [ (gogoproto.enumvalue_customname) = "Signing" ];
   SIGN_STATE_SIGNED_NOT_CONFIRMED = 2
       [ (gogoproto.enumvalue_customname) = "Signed" ];
-  SIGN_STATE_READY_TO_SIGN = 3
-      [ (gogoproto.enumvalue_customname) = "Ready" ];
+  SIGN_STATE_READY_TO_SIGN = 3 [ (gogoproto.enumvalue_customname) = "Ready" ];
 }
