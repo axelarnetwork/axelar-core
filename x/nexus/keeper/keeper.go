@@ -22,8 +22,8 @@ const (
 	totalPrefix      = "total_"
 	registeredPrefix = "registered_"
 
-	sequenceKey   = "nextID"
-	registerAsset = "true"
+	sequenceKey = "nextID"
+	registered  = 0x01
 )
 
 // Keeper represents a ballance keeper
@@ -66,7 +66,7 @@ func (k Keeper) GetParams(ctx sdk.Context) types.Params {
 
 // RegisterAsset indicates that the specified asset is supported by the given chain
 func (k Keeper) RegisterAsset(ctx sdk.Context, chainName, denom string) {
-	ctx.KVStore(k.storeKey).Set([]byte(registeredPrefix+strings.ToLower(chainName)+denom), []byte(registerAsset))
+	ctx.KVStore(k.storeKey).Set([]byte(registeredPrefix+strings.ToLower(chainName)+denom), []byte{registered})
 }
 
 // IsAssetRegistered returns true if the specified asset is supported by the given chain
