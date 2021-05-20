@@ -47,7 +47,7 @@ func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramSpace para
 func (k Keeper) SetParams(ctx sdk.Context, p types.Params) {
 	k.params.SetParamSet(ctx, &p)
 	anyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(p.Network)
-	k.getStore(ctx).Set(utils.Key(anyoneCanSpendAddressKey), &anyoneCanSpendAddress)
+	k.getStore(ctx).Set(utils.LowerCaseKey(anyoneCanSpendAddressKey), &anyoneCanSpendAddress)
 }
 
 // GetParams gets the bitcoin module's parameters
@@ -65,7 +65,7 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 // GetAnyoneCanSpendAddress retrieves the anyone-can-spend address
 func (k Keeper) GetAnyoneCanSpendAddress(ctx sdk.Context) types.AddressInfo {
 	var address types.AddressInfo
-	ok := k.getStore(ctx).Get(utils.Key(anyoneCanSpendAddressKey), &address)
+	ok := k.getStore(ctx).Get(utils.LowerCaseKey(anyoneCanSpendAddressKey), &address)
 	if !ok {
 		panic("bitcoin's anyone-can-pay-address isn't set")
 	}
@@ -197,12 +197,12 @@ func (k Keeper) GetConfirmedOutPointInfos(ctx sdk.Context) []types.OutPointInfo 
 
 // SetUnsignedTx stores a raw transaction for outpoint consolidation
 func (k Keeper) SetUnsignedTx(ctx sdk.Context, tx *wire.MsgTx) {
-	k.getStore(ctx).SetRaw(utils.Key(unsignedTxKey), types.MustEncodeTx(tx))
+	k.getStore(ctx).SetRaw(utils.LowerCaseKey(unsignedTxKey), types.MustEncodeTx(tx))
 }
 
 // GetUnsignedTx returns the raw unsigned transaction for outpoint consolidation
 func (k Keeper) GetUnsignedTx(ctx sdk.Context) (*wire.MsgTx, bool) {
-	bz := k.getStore(ctx).GetRaw(utils.Key(unsignedTxKey))
+	bz := k.getStore(ctx).GetRaw(utils.LowerCaseKey(unsignedTxKey))
 	if bz == nil {
 		return nil, false
 	}
@@ -214,17 +214,17 @@ func (k Keeper) GetUnsignedTx(ctx sdk.Context) (*wire.MsgTx, bool) {
 
 // DeleteUnsignedTx deletes the raw unsigned transaction for outpoint consolidation
 func (k Keeper) DeleteUnsignedTx(ctx sdk.Context) {
-	k.getStore(ctx).Delete(utils.Key(unsignedTxKey))
+	k.getStore(ctx).Delete(utils.LowerCaseKey(unsignedTxKey))
 }
 
 // SetSignedTx stores the signed transaction for outpoint consolidation
 func (k Keeper) SetSignedTx(ctx sdk.Context, tx *wire.MsgTx) {
-	k.getStore(ctx).SetRaw(utils.Key(signedTxKey), types.MustEncodeTx(tx))
+	k.getStore(ctx).SetRaw(utils.LowerCaseKey(signedTxKey), types.MustEncodeTx(tx))
 }
 
 // GetSignedTx returns the signed transaction for outpoint consolidation
 func (k Keeper) GetSignedTx(ctx sdk.Context) (*wire.MsgTx, bool) {
-	bz := k.getStore(ctx).GetRaw(utils.Key(signedTxKey))
+	bz := k.getStore(ctx).GetRaw(utils.LowerCaseKey(signedTxKey))
 	if bz == nil {
 		return nil, false
 	}
@@ -236,7 +236,7 @@ func (k Keeper) GetSignedTx(ctx sdk.Context) (*wire.MsgTx, bool) {
 
 // DeleteSignedTx deletes the signed transaction for outpoint consolidation
 func (k Keeper) DeleteSignedTx(ctx sdk.Context) {
-	k.getStore(ctx).Delete(utils.Key(signedTxKey))
+	k.getStore(ctx).Delete(utils.LowerCaseKey(signedTxKey))
 }
 
 // SetDustAmount stores the dust amount for a destination bitcoin address
@@ -266,12 +266,12 @@ func (k Keeper) DeleteDustAmount(ctx sdk.Context, encodedAddress string) {
 func (k Keeper) SetMasterKeyVout(ctx sdk.Context, vout uint32) {
 	bz := make([]byte, 4)
 	binary.LittleEndian.PutUint32(bz, vout)
-	k.getStore(ctx).SetRaw(utils.Key(masterKeyVoutKey), bz)
+	k.getStore(ctx).SetRaw(utils.LowerCaseKey(masterKeyVoutKey), bz)
 }
 
 // GetMasterKeyVout returns the index of the consolidation outpoint if there is any UTXO controlled by the master key; otherwise, false
 func (k Keeper) GetMasterKeyVout(ctx sdk.Context) (uint32, bool) {
-	bz := k.getStore(ctx).GetRaw(utils.Key(masterKeyVoutKey))
+	bz := k.getStore(ctx).GetRaw(utils.LowerCaseKey(masterKeyVoutKey))
 	if bz == nil {
 		return 0, false
 	}

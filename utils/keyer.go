@@ -59,21 +59,6 @@ func (store NormalizedKVStore) Delete(key Keyer) {
 	store.KVStore.Delete(key.AsKey())
 }
 
-var _ Keyer = Key("")
-
-// Key is a 1-to-1 wrapper around a key string
-type Key string
-
-// AsKey returns the byte representation of the key
-func (k Key) AsKey() []byte {
-	return []byte(k)
-}
-
-// WithPrefix prepends the given prefix to the key
-func (k Key) WithPrefix(prefix string) Keyer {
-	return Key(prefix + string(k))
-}
-
 var _ Keyer = LowerCaseKey("")
 
 // LowerCaseKey wraps around a key string to enable case insensitive comparisons
