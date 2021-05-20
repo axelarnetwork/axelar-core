@@ -96,7 +96,7 @@ func TestKeeper_GetOutPointInfo(t *testing.T) {
 
 		keeper.SetOutpointInfo(ctx, info, types.CONFIRMED)
 
-		_, _, ok := keeper.GetOutPointInfo(ctx, info.GetOutPoint())
+		_, _, ok := keeper.GetOutPointInfo(ctx, *outpoint)
 		assert.True(t, ok)
 	}).Repeat(20))
 }
