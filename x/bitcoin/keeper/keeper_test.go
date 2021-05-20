@@ -1,8 +1,9 @@
 package keeper
 
 import (
-	"math/rand"
+	mathRand "math/rand"
 	"testing"
+	"unicode"
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
@@ -16,10 +17,54 @@ import (
 	appParams "github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
-	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
+
+func TestKeeper_GetOutPointInfo(t *testing.T) {
+	var (
+		ctx    sdk.Context
+		keeper Keeper
+	)
+	setup := func() {
+		encCfg := appParams.MakeEncodingConfig()
+		btcSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"), "btc")
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		keeper = NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("btc"), btcSubspace)
+	}
+
+	t.Run("case insensitive", testutils.Func(func(t *testing.T) {
+		setup()
+		hash, _ := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
+
+		outpoint := wire.NewOutPoint(hash, mathRand.Uint32())
+		outStr := outpoint.String()
+
+		var runes []rune
+		flipDistr := rand.Bools(0.5)
+
+		for _, r := range outStr {
+			if unicode.IsLetter(r) && flipDistr.Next() {
+				runes = append(runes, unicode.ToUpper(r))
+			} else {
+				runes = append(runes, r)
+			}
+		}
+
+		outStr = string(runes)
+		info := types.OutPointInfo{
+			OutPoint: outStr,
+			Amount:   btcutil.Amount(rand.PosI64()),
+			Address:  rand.StrBetween(5, 100),
+		}
+
+		keeper.SetOutpointInfo(ctx, info, types.CONFIRMED)
+
+		_, _, ok := keeper.GetOutPointInfo(ctx, info.GetOutPoint())
+		assert.True(t, ok)
+	}).Repeat(20))
+}
 
 func TestKeeper_GetConfirmedOutPointInfos(t *testing.T) {
 	setup := func() (Keeper, sdk.Context) {
@@ -43,14 +88,12 @@ func TestKeeper_GetConfirmedOutPointInfos(t *testing.T) {
 	repeatCount := 10
 	for _, testCase := range testCases {
 		t.Run(testCase.label, testutils.Func(func(t *testing.T) {
-
 			k, ctx := setup()
-			infoCount := int(rand2.I64Between(1, 200))
+			infoCount := int(rand.I64Between(1, 200))
 			expectedOuts := testCase.prepare(k, ctx, infoCount)
 			actualConfirmedOuts := k.GetConfirmedOutPointInfos(ctx)
 			assert.ElementsMatch(t, expectedOuts, actualConfirmedOuts,
 				"expected: %d elements, got: %d elements", len(expectedOuts), len(actualConfirmedOuts))
-
 		}).Repeat(repeatCount))
 	}
 }
@@ -62,7 +105,7 @@ func prepareNoOutpoints(Keeper, sdk.Context, int) []types.OutPointInfo {
 func preparePendingOutPoints(k Keeper, ctx sdk.Context, infoCount int) []types.OutPointInfo {
 	for i := 0; i < infoCount; i++ {
 		info := randOutPointInfo()
-		k.SetPendingOutpointInfo(ctx, exported.PollMeta{ID: rand2.StrBetween(5, 20)}, info)
+		k.SetPendingOutpointInfo(ctx, exported.PollMeta{ID: rand.StrBetween(5, 20)}, info)
 	}
 	return nil
 }
@@ -88,7 +131,7 @@ func prepareOutPoints(k Keeper, ctx sdk.Context, infoCount int, state types.OutP
 
 func prepareRandomOutPointStates(k Keeper, ctx sdk.Context, infoCount int) []types.OutPointInfo {
 	var pendingCount, confirmedCount, spentCount int
-	for _, state := range rand2.Distr(3).Samples(infoCount) {
+	for _, state := range rand.Distr(3).Samples(infoCount) {
 		switch types.OutPointState(state) {
 		case 2: // pending
 			pendingCount++
@@ -104,14 +147,14 @@ func prepareRandomOutPointStates(k Keeper, ctx sdk.Context, infoCount int) []typ
 }
 
 func randOutPointInfo() types.OutPointInfo {
-	txHash, err := chainhash.NewHash(rand2.Bytes(chainhash.HashSize))
+	txHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
 	if err != nil {
 		panic(err)
 	}
 	info := types.OutPointInfo{
-		OutPoint: wire.NewOutPoint(txHash, rand.Uint32()).String(),
-		Amount:   btcutil.Amount(rand2.PosI64()),
-		Address:  rand2.StrBetween(20, 60),
+		OutPoint: wire.NewOutPoint(txHash, mathRand.Uint32()).String(),
+		Amount:   btcutil.Amount(rand.PosI64()),
+		Address:  rand.StrBetween(20, 60),
 	}
 	return info
 }
