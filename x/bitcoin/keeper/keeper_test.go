@@ -2,6 +2,7 @@ package keeper
 
 import (
 	mathRand "math/rand"
+	"strings"
 	"testing"
 	"unicode"
 
@@ -21,6 +22,40 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
+
+func TestKeeper_GetAddress(t *testing.T) {
+	var (
+		ctx    sdk.Context
+		keeper Keeper
+	)
+	setup := func() {
+		encCfg := appParams.MakeEncodingConfig()
+		btcSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"), "btc")
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		keeper = NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("btc"), btcSubspace)
+	}
+	t.Run("case insensitive", testutils.Func(func(t *testing.T) {
+		setup()
+		addr, err := btcutil.NewAddressWitnessScriptHash(rand.Bytes(32), types.Mainnet.Params())
+		assert.NoError(t, err)
+
+		addrStr1 := strings.ToLower(addr.EncodeAddress())
+		addrStr2 := strings.ToUpper(addrStr1)
+		assert.NotEqual(t, addrStr1, addrStr2)
+
+		info := types.AddressInfo{
+			Address:      addrStr1,
+			Role:         types.Deposit,
+			RedeemScript: rand.Bytes(200),
+			KeyID:        rand.StrBetween(5, 20),
+		}
+		keeper.SetAddress(ctx, info)
+		result, ok := keeper.GetAddress(ctx, addrStr2)
+		assert.True(t, ok)
+		assert.Equal(t, info, result)
+	}).Repeat(20))
+
+}
 
 func TestKeeper_GetOutPointInfo(t *testing.T) {
 	var (
