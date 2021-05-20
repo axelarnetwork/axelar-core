@@ -23,17 +23,18 @@ const (
 	registeredPrefix = "registered_"
 
 	sequenceKey = "nextID"
+	registered  = 0x01
 )
 
 // Keeper represents a ballance keeper
 type Keeper struct {
 	storeKey sdk.StoreKey
-	cdc      *codec.LegacyAmino
+	cdc      codec.BinaryMarshaler
 	params   params.Subspace
 }
 
 // NewKeeper returns a new nexus keeper
-func NewKeeper(cdc *codec.LegacyAmino, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
+func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
 	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable())}
 }
 
@@ -65,7 +66,7 @@ func (k Keeper) GetParams(ctx sdk.Context) types.Params {
 
 // RegisterAsset indicates that the specified asset is supported by the given chain
 func (k Keeper) RegisterAsset(ctx sdk.Context, chainName, denom string) {
-	ctx.KVStore(k.storeKey).Set([]byte(registeredPrefix+strings.ToLower(chainName)+denom), k.cdc.MustMarshalBinaryLengthPrefixed(true))
+	ctx.KVStore(k.storeKey).Set([]byte(registeredPrefix+strings.ToLower(chainName)+denom), []byte{registered})
 }
 
 // IsAssetRegistered returns true if the specified asset is supported by the given chain
@@ -101,12 +102,12 @@ func (k Keeper) GetChain(ctx sdk.Context, chainName string) (exported.Chain, boo
 
 // SetChain sets the specification for a supported chain
 func (k Keeper) SetChain(ctx sdk.Context, chain exported.Chain) {
-	ctx.KVStore(k.storeKey).Set([]byte(chainPrefix+strings.ToLower(chain.Name)), k.cdc.MustMarshalBinaryLengthPrefixed(chain))
+	ctx.KVStore(k.storeKey).Set([]byte(chainPrefix+strings.ToLower(chain.Name)), k.cdc.MustMarshalBinaryLengthPrefixed(&chain))
 }
 
 // LinkAddresses links a sender address to a cross-chain recipient address
 func (k Keeper) LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) {
-	ctx.KVStore(k.storeKey).Set([]byte(senderPrefix+sender.String()), k.cdc.MustMarshalBinaryLengthPrefixed(recipient))
+	ctx.KVStore(k.storeKey).Set([]byte(senderPrefix+sender.String()), k.cdc.MustMarshalBinaryLengthPrefixed(&recipient))
 }
 
 // GetRecipient retrieves the cross chain recipient associated to the specified sender
@@ -195,14 +196,14 @@ func (k Keeper) addToChainTotal(ctx sdk.Context, chain exported.Chain, amount sd
 	total := k.getChainTotal(ctx, chain, amount.Denom)
 	total = total.Add(amount)
 
-	ctx.KVStore(k.storeKey).Set([]byte(totalPrefix+chain.Name+"_"+amount.Denom), k.cdc.MustMarshalBinaryLengthPrefixed(total))
+	ctx.KVStore(k.storeKey).Set([]byte(totalPrefix+chain.Name+"_"+amount.Denom), k.cdc.MustMarshalBinaryLengthPrefixed(&total))
 }
 
 func (k Keeper) subtractFromChainTotal(ctx sdk.Context, chain exported.Chain, withdrawal sdk.Coin) {
 	total := k.getChainTotal(ctx, chain, withdrawal.Denom)
 	total = total.Sub(withdrawal)
 
-	ctx.KVStore(k.storeKey).Set([]byte(totalPrefix+chain.Name+"_"+withdrawal.Denom), k.cdc.MustMarshalBinaryLengthPrefixed(total))
+	ctx.KVStore(k.storeKey).Set([]byte(totalPrefix+chain.Name+"_"+withdrawal.Denom), k.cdc.MustMarshalBinaryLengthPrefixed(&total))
 }
 
 func (k Keeper) setPendingTransfer(ctx sdk.Context, recipient exported.CrossChainAddress, amount sdk.Coin) {
@@ -214,7 +215,7 @@ func (k Keeper) setPendingTransfer(ctx sdk.Context, recipient exported.CrossChai
 	}
 
 	transfer := exported.CrossChainTransfer{Recipient: recipient, Asset: amount, ID: next}
-	ctx.KVStore(k.storeKey).Set([]byte(pendingPrefix+marshalCrossChainKey(recipient.Chain, next)), k.cdc.MustMarshalBinaryLengthPrefixed(transfer))
+	ctx.KVStore(k.storeKey).Set([]byte(pendingPrefix+marshalCrossChainKey(recipient.Chain, next)), k.cdc.MustMarshalBinaryLengthPrefixed(&transfer))
 
 	next++
 	bz = make([]byte, 8)

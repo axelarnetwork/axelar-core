@@ -328,7 +328,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		slashingKCast, tssK,
 	)
 	nexusK := nexusKeeper.NewKeeper(
-		app.legacyAmino, keys[nexusTypes.StoreKey], app.getSubspace(nexusTypes.ModuleName),
+		appCodec, keys[nexusTypes.StoreKey], app.getSubspace(nexusTypes.ModuleName),
 	)
 	votingK := voteKeeper.NewKeeper(
 		app.legacyAmino, keys[voteTypes.StoreKey], snapK, broadcastK,
