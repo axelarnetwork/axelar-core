@@ -896,6 +896,39 @@ MsgVoteConfirmToken represents a message that votes on a token deploy
 
 
 
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="nexus/exported/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## nexus/exported/v1beta1/types.proto
+
+
+
+<a name="nexus.exported.v1beta1.Chain"></a>
+
+### Chain
+Chain represents the properties of a registered blockchain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `name` | [string](#string) |  |  |
+| `native_asset` | [string](#string) |  |  |
+| `supports_foreign_assets` | [bool](#bool) |  |  |
+
+
+
+
+
 
 <a name="nexus.exported.v1beta1.CrossChainAddress"></a>
 
@@ -925,39 +958,6 @@ registered blockchain
 | `recipient` | [CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress) |  |  |
 | `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `id` | [uint64](#uint64) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="nexus/exported/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## nexus/exported/v1beta1/types.proto
-
-
-
-<a name="nexus.exported.v1beta1.Chain"></a>
-
-### Chain
-Chain represents the properties of a registered blockchain
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `name` | [string](#string) |  |  |
-| `native_asset` | [string](#string) |  |  |
-| `supports_foreign_assets` | [bool](#bool) |  |  |
 
 
 
