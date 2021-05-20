@@ -10,6 +10,7 @@
     - [OutPointInfo](#bitcoin.v1beta1.OutPointInfo)
   
     - [AddressRole](#bitcoin.v1beta1.AddressRole)
+    - [SignState](#bitcoin.v1beta1.SignState)
   
 - [bitcoin/v1beta1/params.proto](#bitcoin/v1beta1/params.proto)
     - [Params](#bitcoin.v1beta1.Params)
@@ -19,6 +20,7 @@
   
 - [bitcoin/v1beta1/query.proto](#bitcoin/v1beta1/query.proto)
     - [DepositQueryParams](#bitcoin.v1beta1.DepositQueryParams)
+    - [QueryRawTxResponse](#bitcoin.v1beta1.QueryRawTxResponse)
   
 - [vote/exported/v1beta1/types.proto](#vote/exported/v1beta1/types.proto)
     - [PollMeta](#vote.exported.v1beta1.PollMeta)
@@ -79,6 +81,8 @@
   
 - [nexus/exported/v1beta1/types.proto](#nexus/exported/v1beta1/types.proto)
     - [Chain](#nexus.exported.v1beta1.Chain)
+    - [CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress)
+    - [CrossChainTransfer](#nexus.exported.v1beta1.CrossChainTransfer)
   
 - [nexus/v1beta1/params.proto](#nexus/v1beta1/params.proto)
     - [Params](#nexus.v1beta1.Params)
@@ -221,6 +225,20 @@ of a transaction
 | ADDRESS_ROLE_CONSOLIDATION | 2 |  |
 
 
+
+<a name="bitcoin.v1beta1.SignState"></a>
+
+### SignState
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| SIGN_STATE_UNSPECIFIED | 0 |  |
+| SIGN_STATE_SIGNING_PENDING_TRANSFERS | 1 |  |
+| SIGN_STATE_SIGNED_NOT_CONFIRMED | 2 |  |
+| SIGN_STATE_READY_TO_SIGN | 3 |  |
+
+
  <!-- end enums -->
 
  <!-- end HasExtensions -->
@@ -313,6 +331,22 @@ deposit address
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  |  |
 | `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.QueryRawTxResponse"></a>
+
+### QueryRawTxResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `raw_tx` | [string](#string) |  |  |
+| `state` | [SignState](#bitcoin.v1beta1.SignState) |  |  |
 
 
 
@@ -1078,6 +1112,40 @@ Chain represents the properties of a registered blockchain
 | `name` | [string](#string) |  |  |
 | `native_asset` | [string](#string) |  |  |
 | `supports_foreign_assets` | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="nexus.exported.v1beta1.CrossChainAddress"></a>
+
+### CrossChainAddress
+CrossChainAddress represents a generalized address on any registered chain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [Chain](#nexus.exported.v1beta1.Chain) |  |  |
+| `address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="nexus.exported.v1beta1.CrossChainTransfer"></a>
+
+### CrossChainTransfer
+CrossChainTransfer represents a generalized transfer of some asset to a
+registered blockchain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `recipient` | [CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress) |  |  |
+| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `id` | [uint64](#uint64) |  |  |
 
 
 

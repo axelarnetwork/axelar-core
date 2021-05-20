@@ -38,3 +38,15 @@ message AddressInfo {
 }
 
 message Network { string name = 1; }
+
+enum SignState {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  SIGN_STATE_UNSPECIFIED = 0;
+  SIGN_STATE_SIGNING_PENDING_TRANSFERS = 1
+      [ (gogoproto.enumvalue_customname) = "Signing" ];
+  SIGN_STATE_SIGNED_NOT_CONFIRMED = 2
+      [ (gogoproto.enumvalue_customname) = "Signed" ];
+  SIGN_STATE_READY_TO_SIGN = 3 [ (gogoproto.enumvalue_customname) = "Ready" ];
+}

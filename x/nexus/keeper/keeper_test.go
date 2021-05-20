@@ -33,7 +33,7 @@ var keeper Keeper
 func init() {
 	encCfg := testutils.MakeEncodingConfig()
 	nexusSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
-	keeper = NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("nexus"), nexusSubspace)
+	keeper = NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("nexus"), nexusSubspace)
 }
 
 func TestLinkNoForeignAssetSupport(t *testing.T) {

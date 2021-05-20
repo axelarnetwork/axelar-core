@@ -99,12 +99,18 @@ func queryMasterAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer) ([]b
 }
 
 func getRawConsolidationTx(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {
-	tx, ok := k.GetSignedTx(ctx)
-	if !ok {
-		return nil, fmt.Errorf("no signed consolidation transaction ready")
+	if _, ok := k.GetUnsignedTx(ctx); ok {
+		rawTxResponse := &types.QueryRawTxResponse{StateOrTx: &types.QueryRawTxResponse_State{State: types.Signing}}
+		return rawTxResponse.Marshal()
 	}
 
-	return []byte(hex.EncodeToString(types.MustEncodeTx(tx))), nil
+	if tx, ok := k.GetSignedTx(ctx); ok {
+		rawTxResponse := &types.QueryRawTxResponse{StateOrTx: &types.QueryRawTxResponse_RawTx{RawTx: hex.EncodeToString(types.MustEncodeTx(tx))}}
+		return rawTxResponse.Marshal()
+	}
+
+	rawTxResponse := &types.QueryRawTxResponse{StateOrTx: &types.QueryRawTxResponse_State{State: types.Ready}}
+	return rawTxResponse.Marshal()
 }
 
 func payForConsolidationTx(ctx sdk.Context, k types.BTCKeeper, rpc types.RPCClient, data []byte) ([]byte, error) {
