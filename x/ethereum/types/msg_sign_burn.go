@@ -5,34 +5,34 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// NewMsgSignBurnTokens is the constructor for MsgSignBurnTokens
-func NewMsgSignBurnTokens(sender sdk.AccAddress) *MsgSignBurnTokens {
-	return &MsgSignBurnTokens{Sender: sender}
+// NewSignBurnTokensRequest is the constructor for SignBurnTokensRequest
+func NewSignBurnTokensRequest(sender sdk.AccAddress) *SignBurnTokensRequest {
+	return &SignBurnTokensRequest{Sender: sender}
 }
 
 // Route implements sdk.Msg
-func (m MsgSignBurnTokens) Route() string {
+func (m SignBurnTokensRequest) Route() string {
 	return RouterKey
 }
 
 // Type implements sdk.Msg
-func (m MsgSignBurnTokens) Type() string {
+func (m SignBurnTokensRequest) Type() string {
 	return "SignBurnTokens"
 }
 
 // GetSignBytes  implements sdk.Msg
-func (m MsgSignBurnTokens) GetSignBytes() []byte {
+func (m SignBurnTokensRequest) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
 }
 
 // GetSigners implements sdk.Msg
-func (m MsgSignBurnTokens) GetSigners() []sdk.AccAddress {
+func (m SignBurnTokensRequest) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }
 
 // ValidateBasic implements sdk.Msg
-func (m MsgSignBurnTokens) ValidateBasic() error {
+func (m SignBurnTokensRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}

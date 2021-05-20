@@ -172,7 +172,7 @@ func TestGetTokenAddress_CorrectData(t *testing.T) {
 	k.SetParams(ctx, types.DefaultParams())
 	account, err := sdk.AccAddressFromBech32("cosmos1vjyc4qmsdtdl5a4ruymnjqpchm5gyqde63sqdh")
 	assert.NoError(t, err)
-	k.SetTokenInfo(ctx, &types.MsgSignDeployToken{Sender: account, TokenName: tokenName, Symbol: tokenSymbol, Decimals: decimals, Capacity: capacity})
+	k.SetTokenInfo(ctx, &types.SignDeployTokenRequest{Sender: account, TokenName: tokenName, Symbol: tokenSymbol, Decimals: decimals, Capacity: capacity})
 
 	actual, err := k.GetTokenAddress(ctx, tokenSymbol, axelarGateway)
 

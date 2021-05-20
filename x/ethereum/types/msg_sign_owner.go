@@ -8,28 +8,33 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
+// NewSignTransferOwnershipRequest is the constructor for SignTransferOwnershipRequest
+func NewSignTransferOwnershipRequest(sender sdk.AccAddress, newOwner common.Address) *SignTransferOwnershipRequest {
+	return &SignTransferOwnershipRequest{Sender: sender, NewOwner: newOwner.Hex()}
+}
+
 // Route implements sdk.Msg
-func (m MsgSignTransferOwnership) Route() string {
+func (m SignTransferOwnershipRequest) Route() string {
 	return RouterKey
 }
 
 // Type implements sdk.Msg
-func (m MsgSignTransferOwnership) Type() string {
+func (m SignTransferOwnershipRequest) Type() string {
 	return "SignTransferOwnership"
 }
 
 // GetSignBytes  implements sdk.Msg
-func (m MsgSignTransferOwnership) GetSignBytes() []byte {
+func (m SignTransferOwnershipRequest) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
 // GetSigners implements sdk.Msg
-func (m MsgSignTransferOwnership) GetSigners() []sdk.AccAddress {
+func (m SignTransferOwnershipRequest) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }
 
 // ValidateBasic implements sdk.Msg
-func (m MsgSignTransferOwnership) ValidateBasic() error {
+func (m SignTransferOwnershipRequest) ValidateBasic() error {
 	if m.Sender.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
 	}
@@ -38,9 +43,4 @@ func (m MsgSignTransferOwnership) ValidateBasic() error {
 	}
 
 	return nil
-}
-
-// NewMsgSignTransferOwnership is the constructor for MsgSignTransferOwnership
-func NewMsgSignTransferOwnership(sender sdk.AccAddress, newOwner common.Address) *MsgSignTransferOwnership {
-	return &MsgSignTransferOwnership{Sender: sender, NewOwner: newOwner.Hex()}
 }

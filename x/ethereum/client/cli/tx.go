@@ -53,7 +53,7 @@ func GetCmdLink() *cobra.Command {
 				return err
 			}
 
-			msg := &types.MsgLink{
+			msg := &types.LinkRequest{
 				Sender:         cliCtx.GetFromAddress(),
 				RecipientChain: args[0],
 				RecipientAddr:  args[1],
@@ -89,7 +89,7 @@ func GetCmdSignTx() *cobra.Command {
 			var ethtx *ethTypes.Transaction
 			cliCtx.LegacyAmino.MustUnmarshalJSON(json, &ethtx)
 
-			msg := types.NewMsgSignTx(cliCtx.GetFromAddress(), json)
+			msg := types.NewSignTxRequest(cliCtx.GetFromAddress(), json)
 
 			if err := msg.ValidateBasic(); err != nil {
 				return err
@@ -116,7 +116,7 @@ func GetCmdConfirmERC20TokenDeploy() *cobra.Command {
 			}
 
 			txID := common.HexToHash(args[0])
-			msg := types.NewMsgConfirmERC20TokenDeploy(cliCtx.GetFromAddress(), txID, args[1])
+			msg := types.NewConfirmTokenRequest(cliCtx.GetFromAddress(), txID, args[1])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -144,7 +144,7 @@ func GetCmdConfirmERC20Deposit() *cobra.Command {
 			amount := sdk.NewUintFromString(args[1])
 			burnerAddr := common.HexToAddress(args[2])
 
-			msg := types.NewMsgConfirmERC20Deposit(cliCtx.GetFromAddress(), txID, amount, burnerAddr)
+			msg := types.NewConfirmDepositRequest(cliCtx.GetFromAddress(), txID, amount, burnerAddr)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -168,7 +168,7 @@ func GetCmdSignPendingTransfersTx() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewMsgSignPendingTransfers(cliCtx.GetFromAddress())
+			msg := types.NewSignPendingTransfersRequest(cliCtx.GetFromAddress())
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -201,7 +201,7 @@ func GetCmdSignDeployToken() *cobra.Command {
 			if !ok {
 				return fmt.Errorf("could not parse capacity")
 			}
-			msg := types.NewMsgSignDeployToken(cliCtx.GetFromAddress(), args[0], args[1], uint8(decs), capacity)
+			msg := types.NewSignDeployTokenRequest(cliCtx.GetFromAddress(), args[0], args[1], uint8(decs), capacity)
 			if err = msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -225,7 +225,7 @@ func GetCmdSignBurnTokens() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewMsgSignBurnTokens(cliCtx.GetFromAddress())
+			msg := types.NewSignBurnTokensRequest(cliCtx.GetFromAddress())
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -250,7 +250,7 @@ func GetCmdSignTransferOwnership() *cobra.Command {
 			}
 			newOwnerAddr := common.HexToAddress(args[0])
 
-			msg := types.NewMsgSignTransferOwnership(cliCtx.GetFromAddress(), newOwnerAddr)
+			msg := types.NewSignTransferOwnershipRequest(cliCtx.GetFromAddress(), newOwnerAddr)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

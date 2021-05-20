@@ -1,0 +1,82 @@
+syntax = "proto3";
+package ethereum.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/ethereum/types";
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "ethereum/v1beta1/tx.proto";
+
+option (gogoproto.goproto_registration) = true;
+
+// Msg defines the ethereum Msg service.
+service MsgService {
+  rpc Link(LinkRequest) returns (LinkResponse) {
+    option (google.api.http) = {
+      post : "/axelar/ethereum/link/{recipient_chain}"
+      body : "*"
+    };
+  }
+
+  rpc ConfirmToken(ConfirmTokenRequest) returns (ConfirmTokenResponse) {
+    option (google.api.http) = {
+      post : "/axelar/ethereum/confirm-erc20-deploy/{symbol}"
+      body : "*"
+    };
+  }
+
+  rpc ConfirmDeposit(ConfirmDepositRequest) returns (ConfirmDepositResponse) {
+    option (google.api.http) = {
+      post : "/axelar/ethereum/confirm-erc20-deposit"
+      body : "*"
+    };
+  }
+
+  rpc VoteConfirmDeposit(VoteConfirmDepositRequest)
+      returns (VoteConfirmDepositResponse) {
+    option (google.api.http) = {
+    };
+  }
+
+  rpc VoteConfirmToken(VoteConfirmTokenRequest)
+      returns (VoteConfirmTokenResponse) {
+    option (google.api.http) = {
+    };
+  }
+
+  rpc SignDeployToken(SignDeployTokenRequest)
+      returns (SignDeployTokenResponse) {
+    option (google.api.http) = {
+      post : "/axelar/ethereum/sign-deploy-token/{symbol}"
+      body : "*"
+    };
+  }
+
+  rpc SignBurnTokens(SignBurnTokensRequest) returns (SignBurnTokensResponse) {
+    option (google.api.http) = {
+      post : "/axelar/ethereum/sign-burn"
+      body : "*"
+    };
+  }
+
+  rpc SignTx(SignTxRequest) returns (SignTxResponse) {
+    option (google.api.http) = {
+      post : "/axelar/ethereum/sign-tx"
+      body : "*"
+    };
+  }
+
+  rpc SignPendingTransfers(SignPendingTransfersRequest)
+      returns (SignPendingTransfersResponse) {
+    option (google.api.http) = {
+      post : "/axelar/ethereum/sign-pending"
+      body : "*"
+    };
+  }
+
+  rpc SignTransferOwnership(SignTransferOwnershipRequest)
+      returns (SignTransferOwnershipResponse) {
+    option (google.api.http) = {
+    };
+  }
+}

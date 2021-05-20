@@ -26,25 +26,25 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // MsgConfirmDeposit represents an erc20 deposit confirmation message
-type MsgConfirmDeposit struct {
+type ConfirmDepositRequest struct {
 	Sender     github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 	TxID       string                                        `protobuf:"bytes,2,opt,name=tx_id,json=txId,proto3" json:"tx_id,omitempty"`
 	Amount     github_com_cosmos_cosmos_sdk_types.Uint       `protobuf:"bytes,3,opt,name=amount,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Uint" json:"amount"`
 	BurnerAddr string                                        `protobuf:"bytes,4,opt,name=burner_addr,json=burnerAddr,proto3" json:"burner_addr,omitempty"`
 }
 
-func (m *MsgConfirmDeposit) Reset()         { *m = MsgConfirmDeposit{} }
-func (m *MsgConfirmDeposit) String() string { return proto.CompactTextString(m) }
-func (*MsgConfirmDeposit) ProtoMessage()    {}
-func (*MsgConfirmDeposit) Descriptor() ([]byte, []int) {
+func (m *ConfirmDepositRequest) Reset()         { *m = ConfirmDepositRequest{} }
+func (m *ConfirmDepositRequest) String() string { return proto.CompactTextString(m) }
+func (*ConfirmDepositRequest) ProtoMessage()    {}
+func (*ConfirmDepositRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c9f117e14f9a922b, []int{0}
 }
-func (m *MsgConfirmDeposit) XXX_Unmarshal(b []byte) error {
+func (m *ConfirmDepositRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgConfirmDeposit) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ConfirmDepositRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgConfirmDeposit.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ConfirmDepositRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -54,37 +54,73 @@ func (m *MsgConfirmDeposit) XXX_Marshal(b []byte, deterministic bool) ([]byte, e
 		return b[:n], nil
 	}
 }
-func (m *MsgConfirmDeposit) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgConfirmDeposit.Merge(m, src)
+func (m *ConfirmDepositRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ConfirmDepositRequest.Merge(m, src)
 }
-func (m *MsgConfirmDeposit) XXX_Size() int {
+func (m *ConfirmDepositRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgConfirmDeposit) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgConfirmDeposit.DiscardUnknown(m)
+func (m *ConfirmDepositRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ConfirmDepositRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgConfirmDeposit proto.InternalMessageInfo
+var xxx_messageInfo_ConfirmDepositRequest proto.InternalMessageInfo
+
+type ConfirmDepositResponse struct {
+}
+
+func (m *ConfirmDepositResponse) Reset()         { *m = ConfirmDepositResponse{} }
+func (m *ConfirmDepositResponse) String() string { return proto.CompactTextString(m) }
+func (*ConfirmDepositResponse) ProtoMessage()    {}
+func (*ConfirmDepositResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c9f117e14f9a922b, []int{1}
+}
+func (m *ConfirmDepositResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ConfirmDepositResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ConfirmDepositResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ConfirmDepositResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ConfirmDepositResponse.Merge(m, src)
+}
+func (m *ConfirmDepositResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ConfirmDepositResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ConfirmDepositResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ConfirmDepositResponse proto.InternalMessageInfo
 
 // MsgConfirmToken represents a token deploy confirmation message
-type MsgConfirmToken struct {
+type ConfirmTokenRequest struct {
 	Sender github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 	TxID   string                                        `protobuf:"bytes,2,opt,name=tx_id,json=txId,proto3" json:"tx_id,omitempty"`
 	Symbol string                                        `protobuf:"bytes,3,opt,name=symbol,proto3" json:"symbol,omitempty"`
 }
 
-func (m *MsgConfirmToken) Reset()         { *m = MsgConfirmToken{} }
-func (m *MsgConfirmToken) String() string { return proto.CompactTextString(m) }
-func (*MsgConfirmToken) ProtoMessage()    {}
-func (*MsgConfirmToken) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c9f117e14f9a922b, []int{1}
+func (m *ConfirmTokenRequest) Reset()         { *m = ConfirmTokenRequest{} }
+func (m *ConfirmTokenRequest) String() string { return proto.CompactTextString(m) }
+func (*ConfirmTokenRequest) ProtoMessage()    {}
+func (*ConfirmTokenRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c9f117e14f9a922b, []int{2}
 }
-func (m *MsgConfirmToken) XXX_Unmarshal(b []byte) error {
+func (m *ConfirmTokenRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgConfirmToken) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ConfirmTokenRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgConfirmToken.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ConfirmTokenRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -94,39 +130,75 @@ func (m *MsgConfirmToken) XXX_Marshal(b []byte, deterministic bool) ([]byte, err
 		return b[:n], nil
 	}
 }
-func (m *MsgConfirmToken) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgConfirmToken.Merge(m, src)
+func (m *ConfirmTokenRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ConfirmTokenRequest.Merge(m, src)
 }
-func (m *MsgConfirmToken) XXX_Size() int {
+func (m *ConfirmTokenRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgConfirmToken) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgConfirmToken.DiscardUnknown(m)
+func (m *ConfirmTokenRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ConfirmTokenRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgConfirmToken proto.InternalMessageInfo
+var xxx_messageInfo_ConfirmTokenRequest proto.InternalMessageInfo
+
+type ConfirmTokenResponse struct {
+}
+
+func (m *ConfirmTokenResponse) Reset()         { *m = ConfirmTokenResponse{} }
+func (m *ConfirmTokenResponse) String() string { return proto.CompactTextString(m) }
+func (*ConfirmTokenResponse) ProtoMessage()    {}
+func (*ConfirmTokenResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c9f117e14f9a922b, []int{3}
+}
+func (m *ConfirmTokenResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ConfirmTokenResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ConfirmTokenResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ConfirmTokenResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ConfirmTokenResponse.Merge(m, src)
+}
+func (m *ConfirmTokenResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ConfirmTokenResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ConfirmTokenResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ConfirmTokenResponse proto.InternalMessageInfo
 
 // MsgLink represents the message that links a cross chain address to a burner
 // address
-type MsgLink struct {
+type LinkRequest struct {
 	Sender         github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 	RecipientAddr  string                                        `protobuf:"bytes,2,opt,name=recipient_addr,json=recipientAddr,proto3" json:"recipient_addr,omitempty"`
 	Symbol         string                                        `protobuf:"bytes,3,opt,name=symbol,proto3" json:"symbol,omitempty"`
 	RecipientChain string                                        `protobuf:"bytes,4,opt,name=recipient_chain,json=recipientChain,proto3" json:"recipient_chain,omitempty"`
 }
 
-func (m *MsgLink) Reset()         { *m = MsgLink{} }
-func (m *MsgLink) String() string { return proto.CompactTextString(m) }
-func (*MsgLink) ProtoMessage()    {}
-func (*MsgLink) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c9f117e14f9a922b, []int{2}
+func (m *LinkRequest) Reset()         { *m = LinkRequest{} }
+func (m *LinkRequest) String() string { return proto.CompactTextString(m) }
+func (*LinkRequest) ProtoMessage()    {}
+func (*LinkRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c9f117e14f9a922b, []int{4}
 }
-func (m *MsgLink) XXX_Unmarshal(b []byte) error {
+func (m *LinkRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgLink) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *LinkRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgLink.Marshal(b, m, deterministic)
+		return xxx_messageInfo_LinkRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -136,36 +208,73 @@ func (m *MsgLink) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return b[:n], nil
 	}
 }
-func (m *MsgLink) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgLink.Merge(m, src)
+func (m *LinkRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LinkRequest.Merge(m, src)
 }
-func (m *MsgLink) XXX_Size() int {
+func (m *LinkRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgLink) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgLink.DiscardUnknown(m)
+func (m *LinkRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_LinkRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgLink proto.InternalMessageInfo
+var xxx_messageInfo_LinkRequest proto.InternalMessageInfo
+
+type LinkResponse struct {
+	DepositAddr string `protobuf:"bytes,1,opt,name=deposit_addr,json=depositAddr,proto3" json:"deposit_addr,omitempty"`
+}
+
+func (m *LinkResponse) Reset()         { *m = LinkResponse{} }
+func (m *LinkResponse) String() string { return proto.CompactTextString(m) }
+func (*LinkResponse) ProtoMessage()    {}
+func (*LinkResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c9f117e14f9a922b, []int{5}
+}
+func (m *LinkResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *LinkResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_LinkResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *LinkResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LinkResponse.Merge(m, src)
+}
+func (m *LinkResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *LinkResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_LinkResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LinkResponse proto.InternalMessageInfo
 
 // MsgSignBurnTokens represents the message to sign commands to burn tokens with
 // AxelarGateway
-type MsgSignBurnTokens struct {
+type SignBurnTokensRequest struct {
 	Sender github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 }
 
-func (m *MsgSignBurnTokens) Reset()         { *m = MsgSignBurnTokens{} }
-func (m *MsgSignBurnTokens) String() string { return proto.CompactTextString(m) }
-func (*MsgSignBurnTokens) ProtoMessage()    {}
-func (*MsgSignBurnTokens) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c9f117e14f9a922b, []int{3}
+func (m *SignBurnTokensRequest) Reset()         { *m = SignBurnTokensRequest{} }
+func (m *SignBurnTokensRequest) String() string { return proto.CompactTextString(m) }
+func (*SignBurnTokensRequest) ProtoMessage()    {}
+func (*SignBurnTokensRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c9f117e14f9a922b, []int{6}
 }
-func (m *MsgSignBurnTokens) XXX_Unmarshal(b []byte) error {
+func (m *SignBurnTokensRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgSignBurnTokens) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SignBurnTokensRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgSignBurnTokens.Marshal(b, m, deterministic)
+		return xxx_messageInfo_SignBurnTokensRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -175,21 +284,58 @@ func (m *MsgSignBurnTokens) XXX_Marshal(b []byte, deterministic bool) ([]byte, e
 		return b[:n], nil
 	}
 }
-func (m *MsgSignBurnTokens) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgSignBurnTokens.Merge(m, src)
+func (m *SignBurnTokensRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SignBurnTokensRequest.Merge(m, src)
 }
-func (m *MsgSignBurnTokens) XXX_Size() int {
+func (m *SignBurnTokensRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgSignBurnTokens) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgSignBurnTokens.DiscardUnknown(m)
+func (m *SignBurnTokensRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SignBurnTokensRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgSignBurnTokens proto.InternalMessageInfo
+var xxx_messageInfo_SignBurnTokensRequest proto.InternalMessageInfo
+
+type SignBurnTokensResponse struct {
+	CommandID []byte `protobuf:"bytes,1,opt,name=command_id,json=commandId,proto3" json:"command_id,omitempty"`
+}
+
+func (m *SignBurnTokensResponse) Reset()         { *m = SignBurnTokensResponse{} }
+func (m *SignBurnTokensResponse) String() string { return proto.CompactTextString(m) }
+func (*SignBurnTokensResponse) ProtoMessage()    {}
+func (*SignBurnTokensResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c9f117e14f9a922b, []int{7}
+}
+func (m *SignBurnTokensResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SignBurnTokensResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SignBurnTokensResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SignBurnTokensResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SignBurnTokensResponse.Merge(m, src)
+}
+func (m *SignBurnTokensResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *SignBurnTokensResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_SignBurnTokensResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SignBurnTokensResponse proto.InternalMessageInfo
 
 // MsgSignDeployToken represents the message to sign a deploy token command for
 // AxelarGateway
-type MsgSignDeployToken struct {
+type SignDeployTokenRequest struct {
 	Sender    github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 	Capacity  github_com_cosmos_cosmos_sdk_types.Int        `protobuf:"bytes,2,opt,name=capacity,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"capacity"`
 	Decimals  uint8                                         `protobuf:"varint,3,opt,name=decimals,proto3,casttype=uint8" json:"decimals,omitempty"`
@@ -197,18 +343,18 @@ type MsgSignDeployToken struct {
 	TokenName string                                        `protobuf:"bytes,5,opt,name=token_name,json=tokenName,proto3" json:"token_name,omitempty"`
 }
 
-func (m *MsgSignDeployToken) Reset()         { *m = MsgSignDeployToken{} }
-func (m *MsgSignDeployToken) String() string { return proto.CompactTextString(m) }
-func (*MsgSignDeployToken) ProtoMessage()    {}
-func (*MsgSignDeployToken) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c9f117e14f9a922b, []int{4}
+func (m *SignDeployTokenRequest) Reset()         { *m = SignDeployTokenRequest{} }
+func (m *SignDeployTokenRequest) String() string { return proto.CompactTextString(m) }
+func (*SignDeployTokenRequest) ProtoMessage()    {}
+func (*SignDeployTokenRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c9f117e14f9a922b, []int{8}
 }
-func (m *MsgSignDeployToken) XXX_Unmarshal(b []byte) error {
+func (m *SignDeployTokenRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgSignDeployToken) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SignDeployTokenRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgSignDeployToken.Marshal(b, m, deterministic)
+		return xxx_messageInfo_SignDeployTokenRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -218,36 +364,73 @@ func (m *MsgSignDeployToken) XXX_Marshal(b []byte, deterministic bool) ([]byte, 
 		return b[:n], nil
 	}
 }
-func (m *MsgSignDeployToken) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgSignDeployToken.Merge(m, src)
+func (m *SignDeployTokenRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SignDeployTokenRequest.Merge(m, src)
 }
-func (m *MsgSignDeployToken) XXX_Size() int {
+func (m *SignDeployTokenRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgSignDeployToken) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgSignDeployToken.DiscardUnknown(m)
+func (m *SignDeployTokenRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SignDeployTokenRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgSignDeployToken proto.InternalMessageInfo
+var xxx_messageInfo_SignDeployTokenRequest proto.InternalMessageInfo
+
+type SignDeployTokenResponse struct {
+	CommandID []byte `protobuf:"bytes,1,opt,name=command_id,json=commandId,proto3" json:"command_id,omitempty"`
+}
+
+func (m *SignDeployTokenResponse) Reset()         { *m = SignDeployTokenResponse{} }
+func (m *SignDeployTokenResponse) String() string { return proto.CompactTextString(m) }
+func (*SignDeployTokenResponse) ProtoMessage()    {}
+func (*SignDeployTokenResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c9f117e14f9a922b, []int{9}
+}
+func (m *SignDeployTokenResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SignDeployTokenResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SignDeployTokenResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SignDeployTokenResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SignDeployTokenResponse.Merge(m, src)
+}
+func (m *SignDeployTokenResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *SignDeployTokenResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_SignDeployTokenResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SignDeployTokenResponse proto.InternalMessageInfo
 
 // MsgSignPendingTransfers represents a message to trigger the signing of all
 // pending transfers
-type MsgSignPendingTransfers struct {
+type SignPendingTransfersRequest struct {
 	Sender github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 }
 
-func (m *MsgSignPendingTransfers) Reset()         { *m = MsgSignPendingTransfers{} }
-func (m *MsgSignPendingTransfers) String() string { return proto.CompactTextString(m) }
-func (*MsgSignPendingTransfers) ProtoMessage()    {}
-func (*MsgSignPendingTransfers) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c9f117e14f9a922b, []int{5}
+func (m *SignPendingTransfersRequest) Reset()         { *m = SignPendingTransfersRequest{} }
+func (m *SignPendingTransfersRequest) String() string { return proto.CompactTextString(m) }
+func (*SignPendingTransfersRequest) ProtoMessage()    {}
+func (*SignPendingTransfersRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c9f117e14f9a922b, []int{10}
 }
-func (m *MsgSignPendingTransfers) XXX_Unmarshal(b []byte) error {
+func (m *SignPendingTransfersRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgSignPendingTransfers) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SignPendingTransfersRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgSignPendingTransfers.Marshal(b, m, deterministic)
+		return xxx_messageInfo_SignPendingTransfersRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -257,37 +440,74 @@ func (m *MsgSignPendingTransfers) XXX_Marshal(b []byte, deterministic bool) ([]b
 		return b[:n], nil
 	}
 }
-func (m *MsgSignPendingTransfers) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgSignPendingTransfers.Merge(m, src)
+func (m *SignPendingTransfersRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SignPendingTransfersRequest.Merge(m, src)
 }
-func (m *MsgSignPendingTransfers) XXX_Size() int {
+func (m *SignPendingTransfersRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgSignPendingTransfers) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgSignPendingTransfers.DiscardUnknown(m)
+func (m *SignPendingTransfersRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SignPendingTransfersRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgSignPendingTransfers proto.InternalMessageInfo
+var xxx_messageInfo_SignPendingTransfersRequest proto.InternalMessageInfo
 
-type MsgSignTx struct {
+type SignPendingTransfersResponse struct {
+	CommandID []byte `protobuf:"bytes,1,opt,name=command_id,json=commandId,proto3" json:"command_id,omitempty"`
+}
+
+func (m *SignPendingTransfersResponse) Reset()         { *m = SignPendingTransfersResponse{} }
+func (m *SignPendingTransfersResponse) String() string { return proto.CompactTextString(m) }
+func (*SignPendingTransfersResponse) ProtoMessage()    {}
+func (*SignPendingTransfersResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c9f117e14f9a922b, []int{11}
+}
+func (m *SignPendingTransfersResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SignPendingTransfersResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SignPendingTransfersResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SignPendingTransfersResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SignPendingTransfersResponse.Merge(m, src)
+}
+func (m *SignPendingTransfersResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *SignPendingTransfersResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_SignPendingTransfersResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SignPendingTransfersResponse proto.InternalMessageInfo
+
+type SignTxRequest struct {
 	Sender github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 	// Tx is stored in serialized form because the amino codec cannot properly
 	// deserialize MsgSignTx otherwise
 	Tx []byte `protobuf:"bytes,2,opt,name=tx,proto3" json:"tx,omitempty"`
 }
 
-func (m *MsgSignTx) Reset()         { *m = MsgSignTx{} }
-func (m *MsgSignTx) String() string { return proto.CompactTextString(m) }
-func (*MsgSignTx) ProtoMessage()    {}
-func (*MsgSignTx) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c9f117e14f9a922b, []int{6}
+func (m *SignTxRequest) Reset()         { *m = SignTxRequest{} }
+func (m *SignTxRequest) String() string { return proto.CompactTextString(m) }
+func (*SignTxRequest) ProtoMessage()    {}
+func (*SignTxRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c9f117e14f9a922b, []int{12}
 }
-func (m *MsgSignTx) XXX_Unmarshal(b []byte) error {
+func (m *SignTxRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgSignTx) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SignTxRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgSignTx.Marshal(b, m, deterministic)
+		return xxx_messageInfo_SignTxRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -297,20 +517,57 @@ func (m *MsgSignTx) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return b[:n], nil
 	}
 }
-func (m *MsgSignTx) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgSignTx.Merge(m, src)
+func (m *SignTxRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SignTxRequest.Merge(m, src)
 }
-func (m *MsgSignTx) XXX_Size() int {
+func (m *SignTxRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgSignTx) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgSignTx.DiscardUnknown(m)
+func (m *SignTxRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SignTxRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgSignTx proto.InternalMessageInfo
+var xxx_messageInfo_SignTxRequest proto.InternalMessageInfo
+
+type SignTxResponse struct {
+	TxID string `protobuf:"bytes,1,opt,name=tx_id,json=txId,proto3" json:"tx_id,omitempty"`
+}
+
+func (m *SignTxResponse) Reset()         { *m = SignTxResponse{} }
+func (m *SignTxResponse) String() string { return proto.CompactTextString(m) }
+func (*SignTxResponse) ProtoMessage()    {}
+func (*SignTxResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c9f117e14f9a922b, []int{13}
+}
+func (m *SignTxResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SignTxResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SignTxResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SignTxResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SignTxResponse.Merge(m, src)
+}
+func (m *SignTxResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *SignTxResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_SignTxResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SignTxResponse proto.InternalMessageInfo
 
 // MsgVoteConfirmDeposit represents a message that votes on a deposit
-type MsgVoteConfirmDeposit struct {
+type VoteConfirmDepositRequest struct {
 	Sender    github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 	Poll      exported.PollMeta                             `protobuf:"bytes,2,opt,name=poll,proto3" json:"poll"`
 	TxID      string                                        `protobuf:"bytes,3,opt,name=tx_id,json=txId,proto3" json:"tx_id,omitempty"`
@@ -318,18 +575,18 @@ type MsgVoteConfirmDeposit struct {
 	Confirmed bool                                          `protobuf:"varint,5,opt,name=confirmed,proto3" json:"confirmed,omitempty"`
 }
 
-func (m *MsgVoteConfirmDeposit) Reset()         { *m = MsgVoteConfirmDeposit{} }
-func (m *MsgVoteConfirmDeposit) String() string { return proto.CompactTextString(m) }
-func (*MsgVoteConfirmDeposit) ProtoMessage()    {}
-func (*MsgVoteConfirmDeposit) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c9f117e14f9a922b, []int{7}
+func (m *VoteConfirmDepositRequest) Reset()         { *m = VoteConfirmDepositRequest{} }
+func (m *VoteConfirmDepositRequest) String() string { return proto.CompactTextString(m) }
+func (*VoteConfirmDepositRequest) ProtoMessage()    {}
+func (*VoteConfirmDepositRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c9f117e14f9a922b, []int{14}
 }
-func (m *MsgVoteConfirmDeposit) XXX_Unmarshal(b []byte) error {
+func (m *VoteConfirmDepositRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgVoteConfirmDeposit) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *VoteConfirmDepositRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgVoteConfirmDeposit.Marshal(b, m, deterministic)
+		return xxx_messageInfo_VoteConfirmDepositRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -339,20 +596,57 @@ func (m *MsgVoteConfirmDeposit) XXX_Marshal(b []byte, deterministic bool) ([]byt
 		return b[:n], nil
 	}
 }
-func (m *MsgVoteConfirmDeposit) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgVoteConfirmDeposit.Merge(m, src)
+func (m *VoteConfirmDepositRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VoteConfirmDepositRequest.Merge(m, src)
 }
-func (m *MsgVoteConfirmDeposit) XXX_Size() int {
+func (m *VoteConfirmDepositRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgVoteConfirmDeposit) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgVoteConfirmDeposit.DiscardUnknown(m)
+func (m *VoteConfirmDepositRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_VoteConfirmDepositRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgVoteConfirmDeposit proto.InternalMessageInfo
+var xxx_messageInfo_VoteConfirmDepositRequest proto.InternalMessageInfo
+
+type VoteConfirmDepositResponse struct {
+	Log string `protobuf:"bytes,1,opt,name=log,proto3" json:"log,omitempty"`
+}
+
+func (m *VoteConfirmDepositResponse) Reset()         { *m = VoteConfirmDepositResponse{} }
+func (m *VoteConfirmDepositResponse) String() string { return proto.CompactTextString(m) }
+func (*VoteConfirmDepositResponse) ProtoMessage()    {}
+func (*VoteConfirmDepositResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c9f117e14f9a922b, []int{15}
+}
+func (m *VoteConfirmDepositResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *VoteConfirmDepositResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_VoteConfirmDepositResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *VoteConfirmDepositResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VoteConfirmDepositResponse.Merge(m, src)
+}
+func (m *VoteConfirmDepositResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *VoteConfirmDepositResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_VoteConfirmDepositResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_VoteConfirmDepositResponse proto.InternalMessageInfo
 
 // MsgVoteConfirmToken represents a message that votes on a token deploy
-type MsgVoteConfirmToken struct {
+type VoteConfirmTokenRequest struct {
 	Sender    github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 	Poll      exported.PollMeta                             `protobuf:"bytes,2,opt,name=poll,proto3" json:"poll"`
 	TxID      string                                        `protobuf:"bytes,3,opt,name=tx_id,json=txId,proto3" json:"tx_id,omitempty"`
@@ -360,18 +654,18 @@ type MsgVoteConfirmToken struct {
 	Confirmed bool                                          `protobuf:"varint,5,opt,name=confirmed,proto3" json:"confirmed,omitempty"`
 }
 
-func (m *MsgVoteConfirmToken) Reset()         { *m = MsgVoteConfirmToken{} }
-func (m *MsgVoteConfirmToken) String() string { return proto.CompactTextString(m) }
-func (*MsgVoteConfirmToken) ProtoMessage()    {}
-func (*MsgVoteConfirmToken) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c9f117e14f9a922b, []int{8}
+func (m *VoteConfirmTokenRequest) Reset()         { *m = VoteConfirmTokenRequest{} }
+func (m *VoteConfirmTokenRequest) String() string { return proto.CompactTextString(m) }
+func (*VoteConfirmTokenRequest) ProtoMessage()    {}
+func (*VoteConfirmTokenRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c9f117e14f9a922b, []int{16}
 }
-func (m *MsgVoteConfirmToken) XXX_Unmarshal(b []byte) error {
+func (m *VoteConfirmTokenRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgVoteConfirmToken) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *VoteConfirmTokenRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgVoteConfirmToken.Marshal(b, m, deterministic)
+		return xxx_messageInfo_VoteConfirmTokenRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -381,37 +675,74 @@ func (m *MsgVoteConfirmToken) XXX_Marshal(b []byte, deterministic bool) ([]byte,
 		return b[:n], nil
 	}
 }
-func (m *MsgVoteConfirmToken) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgVoteConfirmToken.Merge(m, src)
+func (m *VoteConfirmTokenRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VoteConfirmTokenRequest.Merge(m, src)
 }
-func (m *MsgVoteConfirmToken) XXX_Size() int {
+func (m *VoteConfirmTokenRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgVoteConfirmToken) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgVoteConfirmToken.DiscardUnknown(m)
+func (m *VoteConfirmTokenRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_VoteConfirmTokenRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgVoteConfirmToken proto.InternalMessageInfo
+var xxx_messageInfo_VoteConfirmTokenRequest proto.InternalMessageInfo
+
+type VoteConfirmTokenResponse struct {
+	Log string `protobuf:"bytes,1,opt,name=log,proto3" json:"log,omitempty"`
+}
+
+func (m *VoteConfirmTokenResponse) Reset()         { *m = VoteConfirmTokenResponse{} }
+func (m *VoteConfirmTokenResponse) String() string { return proto.CompactTextString(m) }
+func (*VoteConfirmTokenResponse) ProtoMessage()    {}
+func (*VoteConfirmTokenResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c9f117e14f9a922b, []int{17}
+}
+func (m *VoteConfirmTokenResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *VoteConfirmTokenResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_VoteConfirmTokenResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *VoteConfirmTokenResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VoteConfirmTokenResponse.Merge(m, src)
+}
+func (m *VoteConfirmTokenResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *VoteConfirmTokenResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_VoteConfirmTokenResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_VoteConfirmTokenResponse proto.InternalMessageInfo
 
 // MsgSignDeployToken represents the message to sign a deploy token command for
 // AxelarGateway
-type MsgSignTransferOwnership struct {
+type SignTransferOwnershipRequest struct {
 	Sender   github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 	NewOwner string                                        `protobuf:"bytes,2,opt,name=new_owner,json=newOwner,proto3" json:"new_owner,omitempty"`
 }
 
-func (m *MsgSignTransferOwnership) Reset()         { *m = MsgSignTransferOwnership{} }
-func (m *MsgSignTransferOwnership) String() string { return proto.CompactTextString(m) }
-func (*MsgSignTransferOwnership) ProtoMessage()    {}
-func (*MsgSignTransferOwnership) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c9f117e14f9a922b, []int{9}
+func (m *SignTransferOwnershipRequest) Reset()         { *m = SignTransferOwnershipRequest{} }
+func (m *SignTransferOwnershipRequest) String() string { return proto.CompactTextString(m) }
+func (*SignTransferOwnershipRequest) ProtoMessage()    {}
+func (*SignTransferOwnershipRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c9f117e14f9a922b, []int{18}
 }
-func (m *MsgSignTransferOwnership) XXX_Unmarshal(b []byte) error {
+func (m *SignTransferOwnershipRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgSignTransferOwnership) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SignTransferOwnershipRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgSignTransferOwnership.Marshal(b, m, deterministic)
+		return xxx_messageInfo_SignTransferOwnershipRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -421,82 +752,137 @@ func (m *MsgSignTransferOwnership) XXX_Marshal(b []byte, deterministic bool) ([]
 		return b[:n], nil
 	}
 }
-func (m *MsgSignTransferOwnership) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgSignTransferOwnership.Merge(m, src)
+func (m *SignTransferOwnershipRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SignTransferOwnershipRequest.Merge(m, src)
 }
-func (m *MsgSignTransferOwnership) XXX_Size() int {
+func (m *SignTransferOwnershipRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgSignTransferOwnership) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgSignTransferOwnership.DiscardUnknown(m)
+func (m *SignTransferOwnershipRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SignTransferOwnershipRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgSignTransferOwnership proto.InternalMessageInfo
+var xxx_messageInfo_SignTransferOwnershipRequest proto.InternalMessageInfo
+
+type SignTransferOwnershipResponse struct {
+	CommandID []byte `protobuf:"bytes,1,opt,name=command_id,json=commandId,proto3" json:"command_id,omitempty"`
+}
+
+func (m *SignTransferOwnershipResponse) Reset()         { *m = SignTransferOwnershipResponse{} }
+func (m *SignTransferOwnershipResponse) String() string { return proto.CompactTextString(m) }
+func (*SignTransferOwnershipResponse) ProtoMessage()    {}
+func (*SignTransferOwnershipResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c9f117e14f9a922b, []int{19}
+}
+func (m *SignTransferOwnershipResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SignTransferOwnershipResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SignTransferOwnershipResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SignTransferOwnershipResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SignTransferOwnershipResponse.Merge(m, src)
+}
+func (m *SignTransferOwnershipResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *SignTransferOwnershipResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_SignTransferOwnershipResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SignTransferOwnershipResponse proto.InternalMessageInfo
 
 func init() {
-	proto.RegisterType((*MsgConfirmDeposit)(nil), "ethereum.v1beta1.MsgConfirmDeposit")
-	proto.RegisterType((*MsgConfirmToken)(nil), "ethereum.v1beta1.MsgConfirmToken")
-	proto.RegisterType((*MsgLink)(nil), "ethereum.v1beta1.MsgLink")
-	proto.RegisterType((*MsgSignBurnTokens)(nil), "ethereum.v1beta1.MsgSignBurnTokens")
-	proto.RegisterType((*MsgSignDeployToken)(nil), "ethereum.v1beta1.MsgSignDeployToken")
-	proto.RegisterType((*MsgSignPendingTransfers)(nil), "ethereum.v1beta1.MsgSignPendingTransfers")
-	proto.RegisterType((*MsgSignTx)(nil), "ethereum.v1beta1.MsgSignTx")
-	proto.RegisterType((*MsgVoteConfirmDeposit)(nil), "ethereum.v1beta1.MsgVoteConfirmDeposit")
-	proto.RegisterType((*MsgVoteConfirmToken)(nil), "ethereum.v1beta1.MsgVoteConfirmToken")
-	proto.RegisterType((*MsgSignTransferOwnership)(nil), "ethereum.v1beta1.MsgSignTransferOwnership")
+	proto.RegisterType((*ConfirmDepositRequest)(nil), "ethereum.v1beta1.ConfirmDepositRequest")
+	proto.RegisterType((*ConfirmDepositResponse)(nil), "ethereum.v1beta1.ConfirmDepositResponse")
+	proto.RegisterType((*ConfirmTokenRequest)(nil), "ethereum.v1beta1.ConfirmTokenRequest")
+	proto.RegisterType((*ConfirmTokenResponse)(nil), "ethereum.v1beta1.ConfirmTokenResponse")
+	proto.RegisterType((*LinkRequest)(nil), "ethereum.v1beta1.LinkRequest")
+	proto.RegisterType((*LinkResponse)(nil), "ethereum.v1beta1.LinkResponse")
+	proto.RegisterType((*SignBurnTokensRequest)(nil), "ethereum.v1beta1.SignBurnTokensRequest")
+	proto.RegisterType((*SignBurnTokensResponse)(nil), "ethereum.v1beta1.SignBurnTokensResponse")
+	proto.RegisterType((*SignDeployTokenRequest)(nil), "ethereum.v1beta1.SignDeployTokenRequest")
+	proto.RegisterType((*SignDeployTokenResponse)(nil), "ethereum.v1beta1.SignDeployTokenResponse")
+	proto.RegisterType((*SignPendingTransfersRequest)(nil), "ethereum.v1beta1.SignPendingTransfersRequest")
+	proto.RegisterType((*SignPendingTransfersResponse)(nil), "ethereum.v1beta1.SignPendingTransfersResponse")
+	proto.RegisterType((*SignTxRequest)(nil), "ethereum.v1beta1.SignTxRequest")
+	proto.RegisterType((*SignTxResponse)(nil), "ethereum.v1beta1.SignTxResponse")
+	proto.RegisterType((*VoteConfirmDepositRequest)(nil), "ethereum.v1beta1.VoteConfirmDepositRequest")
+	proto.RegisterType((*VoteConfirmDepositResponse)(nil), "ethereum.v1beta1.VoteConfirmDepositResponse")
+	proto.RegisterType((*VoteConfirmTokenRequest)(nil), "ethereum.v1beta1.VoteConfirmTokenRequest")
+	proto.RegisterType((*VoteConfirmTokenResponse)(nil), "ethereum.v1beta1.VoteConfirmTokenResponse")
+	proto.RegisterType((*SignTransferOwnershipRequest)(nil), "ethereum.v1beta1.SignTransferOwnershipRequest")
+	proto.RegisterType((*SignTransferOwnershipResponse)(nil), "ethereum.v1beta1.SignTransferOwnershipResponse")
 }
 
 func init() { proto.RegisterFile("ethereum/v1beta1/tx.proto", fileDescriptor_c9f117e14f9a922b) }
 
 var fileDescriptor_c9f117e14f9a922b = []byte{
-	// 692 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x55, 0xbf, 0x6f, 0xd3, 0x40,
-	0x14, 0x8e, 0xd3, 0x34, 0xc4, 0xd7, 0x5f, 0x60, 0x7e, 0x85, 0x96, 0x26, 0xc5, 0x52, 0x69, 0x97,
-	0xc6, 0x2a, 0x08, 0x09, 0xc6, 0xa6, 0x95, 0x50, 0x10, 0x81, 0xca, 0x0d, 0x0c, 0x0c, 0x44, 0x8e,
-	0xfd, 0xea, 0x9c, 0x62, 0xdf, 0x59, 0x77, 0x97, 0xc6, 0x59, 0xd9, 0xd8, 0x90, 0xf8, 0x77, 0xf8,
-	0x03, 0x3a, 0x76, 0x44, 0x0c, 0x11, 0xa4, 0x03, 0x2b, 0x1b, 0x52, 0x27, 0xe4, 0xcb, 0x25, 0x69,
-	0x11, 0x45, 0x95, 0x48, 0x99, 0xec, 0x7b, 0xef, 0xde, 0xfb, 0xde, 0xf7, 0xdd, 0xbb, 0x77, 0xe8,
-	0x0e, 0x88, 0x26, 0x30, 0x68, 0x87, 0xd6, 0xc1, 0x66, 0x03, 0x84, 0xb3, 0x69, 0x89, 0xb8, 0x14,
-	0x31, 0x2a, 0xa8, 0x71, 0x75, 0xe8, 0x2a, 0x29, 0xd7, 0xe2, 0x0d, 0x9f, 0xfa, 0x54, 0x3a, 0xad,
-	0xe4, 0x6f, 0xb0, 0x6f, 0xf1, 0xde, 0x01, 0x15, 0x60, 0x41, 0x1c, 0x51, 0x26, 0xc0, 0x1b, 0xe7,
-	0xe9, 0x46, 0xc0, 0x07, 0x5b, 0xcc, 0xef, 0x1a, 0xba, 0x56, 0xe5, 0xfe, 0x36, 0x25, 0xfb, 0x98,
-	0x85, 0x3b, 0x10, 0x51, 0x8e, 0x85, 0x51, 0x41, 0x59, 0x0e, 0xc4, 0x03, 0x96, 0xd7, 0x56, 0xb4,
-	0xf5, 0xd9, 0xf2, 0xe6, 0x49, 0xaf, 0xb8, 0xe1, 0x63, 0xd1, 0x6c, 0x37, 0x4a, 0x2e, 0x0d, 0x2d,
-	0x97, 0xf2, 0x90, 0x72, 0xf5, 0xd9, 0xe0, 0x5e, 0x4b, 0xe5, 0xdc, 0x72, 0xdd, 0x2d, 0xcf, 0x63,
-	0xc0, 0xb9, 0xad, 0x12, 0x18, 0xcb, 0x68, 0x5a, 0xc4, 0x75, 0xec, 0xe5, 0xd3, 0x2b, 0xda, 0xba,
-	0x5e, 0xce, 0xf5, 0x7b, 0xc5, 0x4c, 0x2d, 0xae, 0xec, 0xd8, 0x19, 0x11, 0x57, 0x3c, 0xe3, 0x29,
-	0xca, 0x3a, 0x21, 0x6d, 0x13, 0x91, 0x9f, 0x92, 0x48, 0xd6, 0x61, 0xaf, 0x98, 0xfa, 0xd2, 0x2b,
-	0xae, 0x5d, 0x00, 0xed, 0x15, 0x26, 0xc2, 0x56, 0xe1, 0x46, 0x11, 0xcd, 0x34, 0xda, 0x8c, 0x00,
-	0xab, 0x3b, 0x9e, 0xc7, 0xf2, 0x99, 0x04, 0xcd, 0x46, 0x03, 0x53, 0x52, 0x93, 0xf9, 0x51, 0x43,
-	0x0b, 0x63, 0xa6, 0x35, 0xda, 0x02, 0xf2, 0x1f, 0x79, 0xde, 0x42, 0x59, 0xde, 0x0d, 0x1b, 0x34,
-	0x90, 0x3c, 0x75, 0x5b, 0xad, 0xcc, 0x4f, 0x1a, 0xba, 0x52, 0xe5, 0xfe, 0x73, 0x4c, 0x5a, 0x93,
-	0xac, 0x66, 0x15, 0xcd, 0x33, 0x70, 0x71, 0x84, 0x81, 0x88, 0x81, 0x20, 0xb2, 0x2c, 0x7b, 0x6e,
-	0x64, 0x4d, 0x22, 0xce, 0xab, 0xca, 0x58, 0x43, 0x0b, 0xe3, 0x70, 0xb7, 0xe9, 0x60, 0xa2, 0x04,
-	0x1d, 0x67, 0xdd, 0x4e, 0xac, 0xe6, 0x5b, 0xd9, 0x3d, 0x7b, 0xd8, 0x27, 0xe5, 0x36, 0x23, 0x52,
-	0x54, 0xfe, 0x1b, 0x0f, 0xfd, 0x1f, 0x78, 0x98, 0xef, 0xd3, 0xc8, 0x50, 0x00, 0x3b, 0x10, 0x05,
-	0xb4, 0x3b, 0xf1, 0x73, 0x7b, 0x86, 0x72, 0xae, 0x13, 0x39, 0x2e, 0x16, 0x5d, 0xa9, 0xd1, 0x6c,
-	0xb9, 0xa4, 0x5a, 0xf0, 0xfe, 0x05, 0x12, 0x56, 0x88, 0xb0, 0x47, 0xf1, 0xc6, 0x2a, 0xca, 0x79,
-	0xe0, 0xe2, 0xd0, 0x09, 0xb8, 0x14, 0x74, 0xae, 0xac, 0x9f, 0xf4, 0x8a, 0xd3, 0x6d, 0x4c, 0xc4,
-	0x63, 0x7b, 0xe4, 0x3a, 0xa5, 0x7a, 0xe6, 0x8c, 0xea, 0xcb, 0x08, 0x89, 0x84, 0x5e, 0x9d, 0x38,
-	0x21, 0xe4, 0xa7, 0xa5, 0x4f, 0x97, 0x96, 0x17, 0x4e, 0x08, 0xa6, 0x87, 0x6e, 0x2b, 0x29, 0x76,
-	0x81, 0x78, 0x98, 0xf8, 0x35, 0xe6, 0x10, 0xbe, 0x0f, 0x8c, 0x4f, 0x50, 0x0f, 0x73, 0x1f, 0xe9,
-	0x0a, 0xa5, 0x16, 0x4f, 0x52, 0xe7, 0x79, 0x94, 0x16, 0xf1, 0x40, 0x61, 0x3b, 0x2d, 0x62, 0xf3,
-	0xa7, 0x86, 0x6e, 0x56, 0xb9, 0xff, 0x9a, 0x0a, 0xb8, 0xbc, 0xe1, 0xf3, 0x04, 0x65, 0x22, 0x1a,
-	0x04, 0x12, 0x76, 0xe6, 0x41, 0xb1, 0x94, 0xcc, 0xc3, 0xd2, 0x70, 0x1e, 0x0e, 0x87, 0x67, 0x69,
-	0x97, 0x06, 0x41, 0x15, 0x84, 0x53, 0xce, 0x24, 0x27, 0x6f, 0xcb, 0x90, 0xf1, 0x7d, 0x9e, 0xfa,
-	0xe3, 0x7d, 0x5e, 0x42, 0x7a, 0x32, 0x5b, 0x4e, 0x0f, 0x9b, 0x5c, 0x62, 0x90, 0xd7, 0xea, 0x2e,
-	0xd2, 0xdd, 0x01, 0x27, 0xf0, 0xe4, 0x39, 0xe6, 0xec, 0xb1, 0xc1, 0xfc, 0xa1, 0xa1, 0xeb, 0x67,
-	0x99, 0x4f, 0xbc, 0xa9, 0x2f, 0x8f, 0xf7, 0x79, 0xbd, 0xfb, 0x77, 0xca, 0xef, 0x34, 0x94, 0x1f,
-	0x76, 0x95, 0x6a, 0xda, 0x97, 0x1d, 0x02, 0x8c, 0x37, 0x71, 0x34, 0x49, 0xde, 0x4b, 0x48, 0x27,
-	0xd0, 0xa9, 0xd3, 0x24, 0xb7, 0x9a, 0x78, 0x39, 0x02, 0x1d, 0x89, 0x55, 0xde, 0x3b, 0xfc, 0x56,
-	0x48, 0x1d, 0xf6, 0x0b, 0xda, 0x51, 0xbf, 0xa0, 0x7d, 0xed, 0x17, 0xb4, 0x0f, 0xc7, 0x85, 0xd4,
-	0xd1, 0x71, 0x21, 0xf5, 0xf9, 0xb8, 0x90, 0x7a, 0xf3, 0xe8, 0x14, 0xa2, 0x13, 0x43, 0xe0, 0x30,
-	0x02, 0xa2, 0x43, 0x59, 0x4b, 0xad, 0x36, 0x5c, 0xca, 0xc0, 0x8a, 0xad, 0xd1, 0xab, 0x2c, 0x8b,
-	0x68, 0x64, 0xe5, 0x33, 0xfa, 0xf0, 0x57, 0x00, 0x00, 0x00, 0xff, 0xff, 0xe0, 0xdd, 0xb0, 0xc0,
-	0xae, 0x07, 0x00, 0x00,
+	// 826 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x56, 0xcf, 0x8f, 0xdb, 0x54,
+	0x10, 0x8e, 0x77, 0xb3, 0xab, 0x78, 0x36, 0x59, 0x2a, 0xd3, 0xa6, 0xe9, 0x6e, 0x37, 0x6e, 0x2d,
+	0x95, 0xf6, 0xd0, 0xb5, 0x15, 0x10, 0x12, 0x1c, 0x9b, 0x8d, 0xa8, 0x82, 0x5a, 0xa8, 0xdc, 0xc0,
+	0x81, 0x4b, 0xe4, 0xd8, 0xd3, 0xc4, 0xc4, 0x7e, 0xcf, 0xbc, 0xf7, 0xd2, 0x38, 0xff, 0x00, 0x37,
+	0x24, 0x6e, 0xfc, 0x3b, 0x1c, 0xf7, 0xd8, 0x23, 0xe2, 0x10, 0x41, 0xf6, 0xc8, 0x95, 0x53, 0xb9,
+	0x20, 0x3f, 0xbf, 0xfc, 0x68, 0x9b, 0xa0, 0xd5, 0x42, 0x38, 0x25, 0x9e, 0xf1, 0xcc, 0x7c, 0xdf,
+	0x37, 0x6f, 0xe6, 0x19, 0x6e, 0xa1, 0x18, 0x20, 0xc3, 0x51, 0xec, 0xbc, 0x6c, 0xf4, 0x50, 0x78,
+	0x0d, 0x47, 0xa4, 0x76, 0xc2, 0xa8, 0xa0, 0xc6, 0xb5, 0xb9, 0xcb, 0x56, 0xae, 0xa3, 0xeb, 0x7d,
+	0xda, 0xa7, 0xd2, 0xe9, 0x64, 0xff, 0xf2, 0xf7, 0x8e, 0xee, 0xbe, 0xa4, 0x02, 0x1d, 0x4c, 0x13,
+	0xca, 0x04, 0x06, 0xcb, 0x3c, 0x93, 0x04, 0x79, 0xfe, 0x8a, 0xf5, 0x87, 0x06, 0x37, 0xce, 0x28,
+	0x79, 0x11, 0xb2, 0xb8, 0x85, 0x09, 0xe5, 0xa1, 0x70, 0xf1, 0xbb, 0x11, 0x72, 0x61, 0xb4, 0x61,
+	0x9f, 0x23, 0x09, 0x90, 0xd5, 0xb4, 0x3b, 0xda, 0x83, 0x72, 0xb3, 0xf1, 0x7a, 0x6a, 0x9e, 0xf6,
+	0x43, 0x31, 0x18, 0xf5, 0x6c, 0x9f, 0xc6, 0x8e, 0x4f, 0x79, 0x4c, 0xb9, 0xfa, 0x39, 0xe5, 0xc1,
+	0x50, 0xe5, 0x7d, 0xe4, 0xfb, 0x8f, 0x82, 0x80, 0x21, 0xe7, 0xae, 0x4a, 0x60, 0x9c, 0xc0, 0x9e,
+	0x48, 0xbb, 0x61, 0x50, 0xdb, 0xb9, 0xa3, 0x3d, 0xd0, 0x9b, 0xa5, 0xd9, 0xd4, 0x2c, 0x76, 0xd2,
+	0x76, 0xcb, 0x2d, 0x8a, 0xb4, 0x1d, 0x18, 0x8f, 0x61, 0xdf, 0x8b, 0xe9, 0x88, 0x88, 0xda, 0xae,
+	0xac, 0xe4, 0x9c, 0x4f, 0xcd, 0xc2, 0xaf, 0x53, 0xf3, 0xfe, 0x25, 0xaa, 0x7d, 0x15, 0x12, 0xe1,
+	0xaa, 0x70, 0xc3, 0x84, 0x83, 0xde, 0x88, 0x11, 0x64, 0x5d, 0x2f, 0x08, 0x58, 0xad, 0x98, 0x55,
+	0x73, 0x21, 0x37, 0x65, 0x98, 0xac, 0x1a, 0x54, 0xdf, 0x26, 0xcb, 0x13, 0x4a, 0x38, 0x5a, 0x3f,
+	0x69, 0xf0, 0xbe, 0x72, 0x75, 0xe8, 0x10, 0xc9, 0xff, 0xaf, 0x42, 0x15, 0xf6, 0xf9, 0x24, 0xee,
+	0xd1, 0x48, 0xaa, 0xa0, 0xbb, 0xea, 0xc9, 0xaa, 0xc2, 0xf5, 0x37, 0x81, 0x29, 0xc4, 0x3f, 0x6b,
+	0x70, 0xf0, 0x24, 0x24, 0xc3, 0x2d, 0x20, 0xbd, 0x07, 0x87, 0x0c, 0xfd, 0x30, 0x09, 0x91, 0x88,
+	0x5c, 0x4a, 0x09, 0xd9, 0xad, 0x2c, 0xac, 0x59, 0xc4, 0x26, 0xc4, 0xc6, 0x7d, 0x78, 0x6f, 0x19,
+	0xee, 0x0f, 0xbc, 0x90, 0xa8, 0x56, 0x2c, 0xb3, 0x9e, 0x65, 0x56, 0xab, 0x01, 0xe5, 0x9c, 0x41,
+	0x4e, 0xc9, 0xb8, 0x0b, 0xe5, 0x20, 0xef, 0x4b, 0x5e, 0x55, 0x93, 0x51, 0x07, 0xca, 0x26, 0x3b,
+	0xd8, 0x83, 0x1b, 0xcf, 0xc3, 0x3e, 0x69, 0x8e, 0x18, 0x91, 0x72, 0xf0, 0xf5, 0xf4, 0xf5, 0x7f,
+	0x41, 0xdf, 0xfa, 0x0c, 0xaa, 0x6f, 0xd7, 0x50, 0x00, 0x1f, 0x02, 0xf8, 0x34, 0x8e, 0x3d, 0x12,
+	0x64, 0x7d, 0xcc, 0x75, 0xae, 0xcc, 0xa6, 0xa6, 0x7e, 0x96, 0x5b, 0xdb, 0x2d, 0x57, 0x57, 0x2f,
+	0xb4, 0x03, 0xeb, 0x87, 0x9d, 0x3c, 0x51, 0x0b, 0x93, 0x88, 0x4e, 0xb6, 0x75, 0xac, 0x3e, 0x87,
+	0x92, 0xef, 0x25, 0x9e, 0x1f, 0x8a, 0x89, 0x6c, 0x53, 0xb9, 0x69, 0xab, 0xf9, 0xf9, 0xe0, 0x12,
+	0x09, 0xdb, 0x44, 0xb8, 0x8b, 0x78, 0xe3, 0x1e, 0x94, 0x02, 0xf4, 0xc3, 0xd8, 0x8b, 0xb8, 0xec,
+	0x69, 0xa5, 0xa9, 0xbf, 0x9e, 0x9a, 0x7b, 0xa3, 0x90, 0x88, 0x4f, 0xdc, 0x85, 0x6b, 0xa5, 0xf1,
+	0xc5, 0x37, 0x1a, 0x7f, 0x02, 0x20, 0x32, 0x96, 0x5d, 0xe2, 0xc5, 0x58, 0xdb, 0x93, 0x3e, 0x5d,
+	0x5a, 0xbe, 0xf0, 0x62, 0xb4, 0x1e, 0xc3, 0xcd, 0x77, 0xe4, 0xb8, 0x92, 0xb0, 0x03, 0x38, 0xce,
+	0x12, 0x3d, 0x43, 0x12, 0x84, 0xa4, 0xdf, 0x61, 0x1e, 0xe1, 0x2f, 0x90, 0xf1, 0xff, 0x5e, 0x5c,
+	0xeb, 0x09, 0xdc, 0x5e, 0x5f, 0xe9, 0x4a, 0xb8, 0xbf, 0x85, 0x4a, 0x96, 0xad, 0x93, 0x6e, 0xe1,
+	0x18, 0x1c, 0xc2, 0x8e, 0x48, 0xf3, 0x03, 0xe0, 0xee, 0x88, 0xd4, 0x72, 0xe0, 0x70, 0x5e, 0x4b,
+	0x61, 0x5d, 0xec, 0x1f, 0x6d, 0xdd, 0xfe, 0xb1, 0xfe, 0xd2, 0xe0, 0xd6, 0xd7, 0x54, 0xe0, 0xd6,
+	0x6f, 0x83, 0x4f, 0xa1, 0x98, 0xd0, 0x28, 0x92, 0x58, 0x0f, 0x3e, 0x34, 0xed, 0xec, 0x92, 0xb2,
+	0xe7, 0x97, 0xd4, 0xfc, 0x46, 0xb3, 0x9f, 0xd1, 0x28, 0x7a, 0x8a, 0xc2, 0x6b, 0x16, 0xb3, 0xd3,
+	0xec, 0xca, 0x90, 0x25, 0x85, 0xdd, 0xb5, 0x2b, 0xf4, 0x18, 0xf4, 0x6c, 0xd9, 0xaf, 0x6e, 0xff,
+	0x52, 0x66, 0x90, 0xdb, 0xea, 0x36, 0xe8, 0x7e, 0x4e, 0x0d, 0x03, 0x79, 0x36, 0x4b, 0xee, 0xd2,
+	0x60, 0xd9, 0x70, 0xb4, 0x8e, 0xbc, 0x92, 0xee, 0x1a, 0xec, 0x46, 0xb4, 0xaf, 0xf6, 0x51, 0xf6,
+	0xd7, 0xfa, 0x53, 0x83, 0x9b, 0x2b, 0x01, 0xdb, 0x1a, 0xee, 0xed, 0x69, 0xb5, 0x69, 0x86, 0xff,
+	0x59, 0xa6, 0x87, 0x50, 0x7b, 0x97, 0xf5, 0x46, 0x91, 0xbe, 0xd7, 0xf2, 0xf1, 0x99, 0xcf, 0xcd,
+	0x97, 0x63, 0x82, 0x8c, 0x0f, 0xc2, 0x64, 0x0b, 0x4a, 0x1d, 0x83, 0x4e, 0x70, 0xdc, 0xa5, 0x59,
+	0x09, 0x75, 0x5d, 0x95, 0x08, 0x8e, 0x65, 0x49, 0xeb, 0x29, 0x9c, 0x6c, 0xc0, 0x71, 0x95, 0x39,
+	0x6e, 0x3e, 0x3f, 0xff, 0xbd, 0x5e, 0x38, 0x9f, 0xd5, 0xb5, 0x57, 0xb3, 0xba, 0xf6, 0xdb, 0xac,
+	0xae, 0xfd, 0x78, 0x51, 0x2f, 0xbc, 0xba, 0xa8, 0x17, 0x7e, 0xb9, 0xa8, 0x17, 0xbe, 0xf9, 0x78,
+	0x85, 0x80, 0x97, 0x62, 0xe4, 0x31, 0x82, 0x62, 0x4c, 0xd9, 0x50, 0x3d, 0x9d, 0xfa, 0x94, 0xa1,
+	0x93, 0x3a, 0x8b, 0xef, 0x3b, 0xc9, 0xa9, 0xb7, 0x2f, 0x3f, 0xc8, 0x3e, 0xfa, 0x3b, 0x00, 0x00,
+	0xff, 0xff, 0x05, 0xc7, 0xfe, 0xfd, 0xf8, 0x09, 0x00, 0x00,
 }
 
-func (m *MsgConfirmDeposit) Marshal() (dAtA []byte, err error) {
+func (m *ConfirmDepositRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -506,12 +892,12 @@ func (m *MsgConfirmDeposit) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgConfirmDeposit) MarshalTo(dAtA []byte) (int, error) {
+func (m *ConfirmDepositRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MsgConfirmDeposit) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ConfirmDepositRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -550,7 +936,7 @@ func (m *MsgConfirmDeposit) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgConfirmToken) Marshal() (dAtA []byte, err error) {
+func (m *ConfirmDepositResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -560,12 +946,35 @@ func (m *MsgConfirmToken) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgConfirmToken) MarshalTo(dAtA []byte) (int, error) {
+func (m *ConfirmDepositResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MsgConfirmToken) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ConfirmDepositResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *ConfirmTokenRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ConfirmTokenRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ConfirmTokenRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -594,7 +1003,7 @@ func (m *MsgConfirmToken) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgLink) Marshal() (dAtA []byte, err error) {
+func (m *ConfirmTokenResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -604,12 +1013,35 @@ func (m *MsgLink) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgLink) MarshalTo(dAtA []byte) (int, error) {
+func (m *ConfirmTokenResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MsgLink) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ConfirmTokenResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *LinkRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *LinkRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *LinkRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -645,7 +1077,7 @@ func (m *MsgLink) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgSignBurnTokens) Marshal() (dAtA []byte, err error) {
+func (m *LinkResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -655,12 +1087,42 @@ func (m *MsgSignBurnTokens) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgSignBurnTokens) MarshalTo(dAtA []byte) (int, error) {
+func (m *LinkResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MsgSignBurnTokens) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *LinkResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.DepositAddr) > 0 {
+		i -= len(m.DepositAddr)
+		copy(dAtA[i:], m.DepositAddr)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.DepositAddr)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *SignBurnTokensRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SignBurnTokensRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SignBurnTokensRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -675,7 +1137,7 @@ func (m *MsgSignBurnTokens) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgSignDeployToken) Marshal() (dAtA []byte, err error) {
+func (m *SignBurnTokensResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -685,12 +1147,42 @@ func (m *MsgSignDeployToken) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgSignDeployToken) MarshalTo(dAtA []byte) (int, error) {
+func (m *SignBurnTokensResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MsgSignDeployToken) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *SignBurnTokensResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.CommandID) > 0 {
+		i -= len(m.CommandID)
+		copy(dAtA[i:], m.CommandID)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.CommandID)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *SignDeployTokenRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SignDeployTokenRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SignDeployTokenRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -734,7 +1226,7 @@ func (m *MsgSignDeployToken) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgSignPendingTransfers) Marshal() (dAtA []byte, err error) {
+func (m *SignDeployTokenResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -744,12 +1236,42 @@ func (m *MsgSignPendingTransfers) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgSignPendingTransfers) MarshalTo(dAtA []byte) (int, error) {
+func (m *SignDeployTokenResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MsgSignPendingTransfers) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *SignDeployTokenResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.CommandID) > 0 {
+		i -= len(m.CommandID)
+		copy(dAtA[i:], m.CommandID)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.CommandID)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *SignPendingTransfersRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SignPendingTransfersRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SignPendingTransfersRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -764,7 +1286,7 @@ func (m *MsgSignPendingTransfers) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgSignTx) Marshal() (dAtA []byte, err error) {
+func (m *SignPendingTransfersResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -774,12 +1296,42 @@ func (m *MsgSignTx) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgSignTx) MarshalTo(dAtA []byte) (int, error) {
+func (m *SignPendingTransfersResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MsgSignTx) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *SignPendingTransfersResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.CommandID) > 0 {
+		i -= len(m.CommandID)
+		copy(dAtA[i:], m.CommandID)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.CommandID)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *SignTxRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SignTxRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SignTxRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -801,7 +1353,7 @@ func (m *MsgSignTx) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgVoteConfirmDeposit) Marshal() (dAtA []byte, err error) {
+func (m *SignTxResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -811,12 +1363,42 @@ func (m *MsgVoteConfirmDeposit) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgVoteConfirmDeposit) MarshalTo(dAtA []byte) (int, error) {
+func (m *SignTxResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MsgVoteConfirmDeposit) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *SignTxResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.TxID) > 0 {
+		i -= len(m.TxID)
+		copy(dAtA[i:], m.TxID)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.TxID)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *VoteConfirmDepositRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *VoteConfirmDepositRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *VoteConfirmDepositRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -865,7 +1447,7 @@ func (m *MsgVoteConfirmDeposit) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgVoteConfirmToken) Marshal() (dAtA []byte, err error) {
+func (m *VoteConfirmDepositResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -875,12 +1457,42 @@ func (m *MsgVoteConfirmToken) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgVoteConfirmToken) MarshalTo(dAtA []byte) (int, error) {
+func (m *VoteConfirmDepositResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MsgVoteConfirmToken) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *VoteConfirmDepositResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Log) > 0 {
+		i -= len(m.Log)
+		copy(dAtA[i:], m.Log)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Log)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *VoteConfirmTokenRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *VoteConfirmTokenRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *VoteConfirmTokenRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -929,7 +1541,7 @@ func (m *MsgVoteConfirmToken) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgSignTransferOwnership) Marshal() (dAtA []byte, err error) {
+func (m *VoteConfirmTokenResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -939,12 +1551,42 @@ func (m *MsgSignTransferOwnership) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgSignTransferOwnership) MarshalTo(dAtA []byte) (int, error) {
+func (m *VoteConfirmTokenResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MsgSignTransferOwnership) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *VoteConfirmTokenResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Log) > 0 {
+		i -= len(m.Log)
+		copy(dAtA[i:], m.Log)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Log)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *SignTransferOwnershipRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SignTransferOwnershipRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SignTransferOwnershipRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -966,6 +1608,36 @@ func (m *MsgSignTransferOwnership) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
+func (m *SignTransferOwnershipResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SignTransferOwnershipResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SignTransferOwnershipResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.CommandID) > 0 {
+		i -= len(m.CommandID)
+		copy(dAtA[i:], m.CommandID)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.CommandID)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTx(v)
 	base := offset
@@ -977,7 +1649,7 @@ func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *MsgConfirmDeposit) Size() (n int) {
+func (m *ConfirmDepositRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1000,7 +1672,16 @@ func (m *MsgConfirmDeposit) Size() (n int) {
 	return n
 }
 
-func (m *MsgConfirmToken) Size() (n int) {
+func (m *ConfirmDepositResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *ConfirmTokenRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1021,7 +1702,16 @@ func (m *MsgConfirmToken) Size() (n int) {
 	return n
 }
 
-func (m *MsgLink) Size() (n int) {
+func (m *ConfirmTokenResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *LinkRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1046,7 +1736,20 @@ func (m *MsgLink) Size() (n int) {
 	return n
 }
 
-func (m *MsgSignBurnTokens) Size() (n int) {
+func (m *LinkResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.DepositAddr)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *SignBurnTokensRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1059,7 +1762,20 @@ func (m *MsgSignBurnTokens) Size() (n int) {
 	return n
 }
 
-func (m *MsgSignDeployToken) Size() (n int) {
+func (m *SignBurnTokensResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.CommandID)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *SignDeployTokenRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1085,7 +1801,20 @@ func (m *MsgSignDeployToken) Size() (n int) {
 	return n
 }
 
-func (m *MsgSignPendingTransfers) Size() (n int) {
+func (m *SignDeployTokenResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.CommandID)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *SignPendingTransfersRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1098,7 +1827,20 @@ func (m *MsgSignPendingTransfers) Size() (n int) {
 	return n
 }
 
-func (m *MsgSignTx) Size() (n int) {
+func (m *SignPendingTransfersResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.CommandID)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *SignTxRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1115,7 +1857,20 @@ func (m *MsgSignTx) Size() (n int) {
 	return n
 }
 
-func (m *MsgVoteConfirmDeposit) Size() (n int) {
+func (m *SignTxResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.TxID)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *VoteConfirmDepositRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1141,7 +1896,20 @@ func (m *MsgVoteConfirmDeposit) Size() (n int) {
 	return n
 }
 
-func (m *MsgVoteConfirmToken) Size() (n int) {
+func (m *VoteConfirmDepositResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Log)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *VoteConfirmTokenRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1167,7 +1935,20 @@ func (m *MsgVoteConfirmToken) Size() (n int) {
 	return n
 }
 
-func (m *MsgSignTransferOwnership) Size() (n int) {
+func (m *VoteConfirmTokenResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Log)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *SignTransferOwnershipRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1184,13 +1965,26 @@ func (m *MsgSignTransferOwnership) Size() (n int) {
 	return n
 }
 
+func (m *SignTransferOwnershipResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.CommandID)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
 func sovTx(x uint64) (n int) {
 	return (math_bits.Len64(x|1) + 6) / 7
 }
 func sozTx(x uint64) (n int) {
 	return sovTx(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *MsgConfirmDeposit) Unmarshal(dAtA []byte) error {
+func (m *ConfirmDepositRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1213,10 +2007,10 @@ func (m *MsgConfirmDeposit) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: MsgConfirmDeposit: wiretype end group for non-group")
+			return fmt.Errorf("proto: ConfirmDepositRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgConfirmDeposit: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ConfirmDepositRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1371,7 +2165,7 @@ func (m *MsgConfirmDeposit) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgConfirmToken) Unmarshal(dAtA []byte) error {
+func (m *ConfirmDepositResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1394,10 +2188,60 @@ func (m *MsgConfirmToken) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: MsgConfirmToken: wiretype end group for non-group")
+			return fmt.Errorf("proto: ConfirmDepositResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgConfirmToken: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ConfirmDepositResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ConfirmTokenRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ConfirmTokenRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ConfirmTokenRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1519,7 +2363,7 @@ func (m *MsgConfirmToken) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgLink) Unmarshal(dAtA []byte) error {
+func (m *ConfirmTokenResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1542,10 +2386,60 @@ func (m *MsgLink) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: MsgLink: wiretype end group for non-group")
+			return fmt.Errorf("proto: ConfirmTokenResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgLink: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ConfirmTokenResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *LinkRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: LinkRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: LinkRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1699,7 +2593,7 @@ func (m *MsgLink) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgSignBurnTokens) Unmarshal(dAtA []byte) error {
+func (m *LinkResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1722,10 +2616,92 @@ func (m *MsgSignBurnTokens) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: MsgSignBurnTokens: wiretype end group for non-group")
+			return fmt.Errorf("proto: LinkResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgSignBurnTokens: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: LinkResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DepositAddr", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DepositAddr = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SignBurnTokensRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SignBurnTokensRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SignBurnTokensRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1781,7 +2757,7 @@ func (m *MsgSignBurnTokens) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgSignDeployToken) Unmarshal(dAtA []byte) error {
+func (m *SignBurnTokensResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1804,10 +2780,94 @@ func (m *MsgSignDeployToken) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: MsgSignDeployToken: wiretype end group for non-group")
+			return fmt.Errorf("proto: SignBurnTokensResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgSignDeployToken: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: SignBurnTokensResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CommandID", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CommandID = append(m.CommandID[:0], dAtA[iNdEx:postIndex]...)
+			if m.CommandID == nil {
+				m.CommandID = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SignDeployTokenRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SignDeployTokenRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SignDeployTokenRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1981,7 +3041,7 @@ func (m *MsgSignDeployToken) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgSignPendingTransfers) Unmarshal(dAtA []byte) error {
+func (m *SignDeployTokenResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2004,10 +3064,94 @@ func (m *MsgSignPendingTransfers) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: MsgSignPendingTransfers: wiretype end group for non-group")
+			return fmt.Errorf("proto: SignDeployTokenResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgSignPendingTransfers: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: SignDeployTokenResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CommandID", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CommandID = append(m.CommandID[:0], dAtA[iNdEx:postIndex]...)
+			if m.CommandID == nil {
+				m.CommandID = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SignPendingTransfersRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SignPendingTransfersRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SignPendingTransfersRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -2065,7 +3209,7 @@ func (m *MsgSignPendingTransfers) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgSignTx) Unmarshal(dAtA []byte) error {
+func (m *SignPendingTransfersResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2088,10 +3232,94 @@ func (m *MsgSignTx) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: MsgSignTx: wiretype end group for non-group")
+			return fmt.Errorf("proto: SignPendingTransfersResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgSignTx: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: SignPendingTransfersResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CommandID", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CommandID = append(m.CommandID[:0], dAtA[iNdEx:postIndex]...)
+			if m.CommandID == nil {
+				m.CommandID = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SignTxRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SignTxRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SignTxRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -2183,7 +3411,7 @@ func (m *MsgSignTx) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgVoteConfirmDeposit) Unmarshal(dAtA []byte) error {
+func (m *SignTxResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2206,10 +3434,92 @@ func (m *MsgVoteConfirmDeposit) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: MsgVoteConfirmDeposit: wiretype end group for non-group")
+			return fmt.Errorf("proto: SignTxResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgVoteConfirmDeposit: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: SignTxResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TxID", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TxID = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *VoteConfirmDepositRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: VoteConfirmDepositRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: VoteConfirmDepositRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -2384,7 +3694,7 @@ func (m *MsgVoteConfirmDeposit) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgVoteConfirmToken) Unmarshal(dAtA []byte) error {
+func (m *VoteConfirmDepositResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2407,10 +3717,92 @@ func (m *MsgVoteConfirmToken) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: MsgVoteConfirmToken: wiretype end group for non-group")
+			return fmt.Errorf("proto: VoteConfirmDepositResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgVoteConfirmToken: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: VoteConfirmDepositResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Log", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Log = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *VoteConfirmTokenRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: VoteConfirmTokenRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: VoteConfirmTokenRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -2585,7 +3977,7 @@ func (m *MsgVoteConfirmToken) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgSignTransferOwnership) Unmarshal(dAtA []byte) error {
+func (m *VoteConfirmTokenResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2608,10 +4000,92 @@ func (m *MsgSignTransferOwnership) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: MsgSignTransferOwnership: wiretype end group for non-group")
+			return fmt.Errorf("proto: VoteConfirmTokenResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgSignTransferOwnership: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: VoteConfirmTokenResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Log", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Log = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SignTransferOwnershipRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SignTransferOwnershipRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SignTransferOwnershipRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -2679,6 +4153,90 @@ func (m *MsgSignTransferOwnership) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.NewOwner = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SignTransferOwnershipResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SignTransferOwnershipResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SignTransferOwnershipResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CommandID", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CommandID = append(m.CommandID[:0], dAtA[iNdEx:postIndex]...)
+			if m.CommandID == nil {
+				m.CommandID = []byte{}
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

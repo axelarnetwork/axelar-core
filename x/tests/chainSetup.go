@@ -311,7 +311,7 @@ func registerETHEventListener(n nodeData, submitMsg func(msg sdk.Msg) (result <-
 		var poll voting.PollMeta
 		encCfg.Amino.MustUnmarshalJSON([]byte(m[ethTypes.AttributeKeyPoll]), &poll)
 
-		_ = submitMsg(&ethTypes.MsgVoteConfirmDeposit{
+		_ = submitMsg(&ethTypes.VoteConfirmDepositRequest{
 			Sender:    n.Proxy,
 			Poll:      poll,
 			Confirmed: true,
@@ -337,7 +337,7 @@ func registerETHEventListener(n nodeData, submitMsg func(msg sdk.Msg) (result <-
 		encCfg.Amino.MustUnmarshalJSON([]byte(m[ethTypes.AttributeKeyPoll]), &poll)
 
 		_ = submitMsg(
-			&ethTypes.MsgVoteConfirmToken{
+			&ethTypes.VoteConfirmTokenRequest{
 				Sender:    n.Proxy,
 				Poll:      poll,
 				Confirmed: true,
