@@ -54,7 +54,7 @@ type Broadcaster interface {
 type Tss interface {
 	GetValidatorDeregisteredBlockHeight(ctx sdk.Context, valAddr sdk.ValAddress) int64
 	GetMinBondFractionPerShare(ctx sdk.Context) utils.Threshold
-	GetTssJailedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
+	GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
 }
 
 // IsValidatorActive returns true if the validator is active; otherwise, false
@@ -79,9 +79,9 @@ func IsValidatorTssRegistered(ctx sdk.Context, tss Tss, validator SDKValidator) 
 	return tss.GetValidatorDeregisteredBlockHeight(ctx, validator.GetOperator()) <= 0
 }
 
-// IsValidatorTssJailed returns true if the validator is placed in TSS jail for committing crime during any ceremony; otherwise, false
-func IsValidatorTssJailed(ctx sdk.Context, tss Tss, validator SDKValidator) bool {
-	return tss.GetTssJailedUntil(ctx, validator.GetOperator()) > ctx.BlockHeight()
+// IsValidatorTssSuspended returns true if the validator is suspended from participating TSS ceremonies for committing faulty behaviour; otherwise, false
+func IsValidatorTssSuspended(ctx sdk.Context, tss Tss, validator SDKValidator) bool {
+	return tss.GetTssSuspendedUntil(ctx, validator.GetOperator()) > ctx.BlockHeight()
 }
 
 // Snapshot is a snapshot of the validator set at a given block height.

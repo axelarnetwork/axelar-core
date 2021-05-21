@@ -198,7 +198,7 @@ func createMocks(validators []stakingtypes.Validator) testMocks {
 		GetMinBondFractionPerShareFunc: func(sdk.Context) utils.Threshold {
 			return utils.Threshold{Numerator: 1, Denominator: 200}
 		},
-		GetTssJailedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
+		GetTssSuspendedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
 	}
 
 	ethClient := &ethMock.RPCClientMock{

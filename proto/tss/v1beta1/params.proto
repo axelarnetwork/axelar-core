@@ -26,8 +26,8 @@ message Params {
   // key share
   utils.v1beta1.Threshold min_bond_fraction_per_share = 5
       [ (gogoproto.nullable) = false ];
-  // JailPeriodBlockNumberSignMaliciousCrime defines the number of blocks a
+  // SuspendPeriodBlockNumberSignMalicious defines the number of blocks a
   // validator is disallowed to participate in any TSS ceremony after committing
-  // a malicious crime during signing
-  int64 jail_period_block_number_sign_malicious_crime = 6;
+  // a malicious behaviour during signing
+  int64 suspend_period_block_number_sign_malicious = 6;
 }

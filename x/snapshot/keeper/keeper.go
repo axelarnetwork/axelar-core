@@ -151,7 +151,7 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64
 			return false
 		}
 
-		if exported.IsValidatorTssJailed(ctx, k.tss, v) {
+		if exported.IsValidatorTssSuspended(ctx, k.tss, v) {
 			return false
 		}
 

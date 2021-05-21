@@ -588,8 +588,8 @@ var _ exported.Tss = &TssMock{}
 // 			GetMinBondFractionPerShareFunc: func(ctx sdk.Context) utils.Threshold {
 // 				panic("mock out the GetMinBondFractionPerShare method")
 // 			},
-// 			GetTssJailedUntilFunc: func(ctx sdk.Context, validator sdk.ValAddress) int64 {
-// 				panic("mock out the GetTssJailedUntil method")
+// 			GetTssSuspendedUntilFunc: func(ctx sdk.Context, validator sdk.ValAddress) int64 {
+// 				panic("mock out the GetTssSuspendedUntil method")
 // 			},
 // 			GetValidatorDeregisteredBlockHeightFunc: func(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
 // 				panic("mock out the GetValidatorDeregisteredBlockHeight method")
@@ -604,8 +604,8 @@ type TssMock struct {
 	// GetMinBondFractionPerShareFunc mocks the GetMinBondFractionPerShare method.
 	GetMinBondFractionPerShareFunc func(ctx sdk.Context) utils.Threshold
 
-	// GetTssJailedUntilFunc mocks the GetTssJailedUntil method.
-	GetTssJailedUntilFunc func(ctx sdk.Context, validator sdk.ValAddress) int64
+	// GetTssSuspendedUntilFunc mocks the GetTssSuspendedUntil method.
+	GetTssSuspendedUntilFunc func(ctx sdk.Context, validator sdk.ValAddress) int64
 
 	// GetValidatorDeregisteredBlockHeightFunc mocks the GetValidatorDeregisteredBlockHeight method.
 	GetValidatorDeregisteredBlockHeightFunc func(ctx sdk.Context, valAddr sdk.ValAddress) int64
@@ -617,8 +617,8 @@ type TssMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 		}
-		// GetTssJailedUntil holds details about calls to the GetTssJailedUntil method.
-		GetTssJailedUntil []struct {
+		// GetTssSuspendedUntil holds details about calls to the GetTssSuspendedUntil method.
+		GetTssSuspendedUntil []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Validator is the validator argument value.
@@ -633,7 +633,7 @@ type TssMock struct {
 		}
 	}
 	lockGetMinBondFractionPerShare          sync.RWMutex
-	lockGetTssJailedUntil                   sync.RWMutex
+	lockGetTssSuspendedUntil                sync.RWMutex
 	lockGetValidatorDeregisteredBlockHeight sync.RWMutex
 }
 
@@ -668,10 +668,10 @@ func (mock *TssMock) GetMinBondFractionPerShareCalls() []struct {
 	return calls
 }
 
-// GetTssJailedUntil calls GetTssJailedUntilFunc.
-func (mock *TssMock) GetTssJailedUntil(ctx sdk.Context, validator sdk.ValAddress) int64 {
-	if mock.GetTssJailedUntilFunc == nil {
-		panic("TssMock.GetTssJailedUntilFunc: method is nil but Tss.GetTssJailedUntil was just called")
+// GetTssSuspendedUntil calls GetTssSuspendedUntilFunc.
+func (mock *TssMock) GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64 {
+	if mock.GetTssSuspendedUntilFunc == nil {
+		panic("TssMock.GetTssSuspendedUntilFunc: method is nil but Tss.GetTssSuspendedUntil was just called")
 	}
 	callInfo := struct {
 		Ctx       sdk.Context
@@ -680,16 +680,16 @@ func (mock *TssMock) GetTssJailedUntil(ctx sdk.Context, validator sdk.ValAddress
 		Ctx:       ctx,
 		Validator: validator,
 	}
-	mock.lockGetTssJailedUntil.Lock()
-	mock.calls.GetTssJailedUntil = append(mock.calls.GetTssJailedUntil, callInfo)
-	mock.lockGetTssJailedUntil.Unlock()
-	return mock.GetTssJailedUntilFunc(ctx, validator)
+	mock.lockGetTssSuspendedUntil.Lock()
+	mock.calls.GetTssSuspendedUntil = append(mock.calls.GetTssSuspendedUntil, callInfo)
+	mock.lockGetTssSuspendedUntil.Unlock()
+	return mock.GetTssSuspendedUntilFunc(ctx, validator)
 }
 
-// GetTssJailedUntilCalls gets all the calls that were made to GetTssJailedUntil.
+// GetTssSuspendedUntilCalls gets all the calls that were made to GetTssSuspendedUntil.
 // Check the length with:
-//     len(mockedTss.GetTssJailedUntilCalls())
-func (mock *TssMock) GetTssJailedUntilCalls() []struct {
+//     len(mockedTss.GetTssSuspendedUntilCalls())
+func (mock *TssMock) GetTssSuspendedUntilCalls() []struct {
 	Ctx       sdk.Context
 	Validator sdk.ValAddress
 } {
@@ -697,9 +697,9 @@ func (mock *TssMock) GetTssJailedUntilCalls() []struct {
 		Ctx       sdk.Context
 		Validator sdk.ValAddress
 	}
-	mock.lockGetTssJailedUntil.RLock()
-	calls = mock.calls.GetTssJailedUntil
-	mock.lockGetTssJailedUntil.RUnlock()
+	mock.lockGetTssSuspendedUntil.RLock()
+	calls = mock.calls.GetTssSuspendedUntil
+	mock.lockGetTssSuspendedUntil.RUnlock()
 	return calls
 }
 

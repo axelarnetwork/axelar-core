@@ -28,7 +28,7 @@ func (k Keeper) StartSign(ctx sdk.Context, voter types.InitPoller, keyID string,
 	activeShareCount := sdk.ZeroInt()
 
 	for _, validator := range s.Validators {
-		if snapshot.IsValidatorActive(ctx, k.slasher, validator) && !snapshot.IsValidatorTssJailed(ctx, k, validator) {
+		if snapshot.IsValidatorActive(ctx, k.slasher, validator) && !snapshot.IsValidatorTssSuspended(ctx, k, validator) {
 			activeValidators = append(activeValidators, validator)
 			activeShareCount = activeShareCount.AddRaw(validator.ShareCount)
 		}
@@ -127,7 +127,7 @@ func (k Keeper) DoesValidatorParticipateInSign(ctx sdk.Context, sigID string, va
 func (k Keeper) PenalizeSignCriminal(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd.MessageOut_CriminalList_Criminal_CrimeType) {
 	switch crimeType {
 	case tofnd.CRIME_TYPE_MALICIOUS:
-		k.setTssJailedUntil(ctx, criminal, ctx.BlockHeight()+k.GetParams(ctx).JailPeriodBlockNumberSignMaliciousCrime)
+		k.setTssSuspendedUntil(ctx, criminal, ctx.BlockHeight()+k.GetParams(ctx).SuspendPeriodBlockNumberSignMalicious)
 	default:
 		k.Logger(ctx).Info("no policy is set to penalize validator %s for crime type %s", criminal.String(), crimeType.String())
 	}
