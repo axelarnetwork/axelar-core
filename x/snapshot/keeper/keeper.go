@@ -139,19 +139,10 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64
 			return false
 		}
 
-		if !exported.IsValidatorActive(ctx, k.slasher, v) {
-			return false
-		}
-
-		if !exported.HasProxyRegistered(ctx, k.broadcaster, v) {
-			return false
-		}
-
-		if !exported.IsValidatorTssRegistered(ctx, k.tss, v) {
-			return false
-		}
-
-		if exported.IsValidatorTssSuspended(ctx, k.tss, v) {
+		if !exported.IsValidatorActive(ctx, k.slasher, v) ||
+			!exported.HasProxyRegistered(ctx, k.broadcaster, v) ||
+			!exported.IsValidatorTssRegistered(ctx, k.tss, v) ||
+			exported.IsValidatorTssSuspended(ctx, k.tss, v) {
 			return false
 		}
 

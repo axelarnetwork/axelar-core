@@ -1578,7 +1578,7 @@ Params is the parameter set for this module
 | `corruption_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  | CorruptionThreshold defines the corruption threshold with which we'll run keygen protocol. |
 | `key_requirements` | [tss.exported.v1beta1.KeyRequirement](#tss.exported.v1beta1.KeyRequirement) | repeated | KeyRequirements defines the requirement of each key for each chain |
 | `min_bond_fraction_per_share` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  | MinBondFractionPerShare defines the % of stake validators have to bond per key share |
-| `suspend_period_block_number_sign_malicious` | [int64](#int64) |  | SuspendPeriodBlockNumberSignMalicious defines the number of blocks a validator is disallowed to participate in any TSS ceremony after committing a malicious behaviour during signing |
+| `suspend_duration_in_blocks` | [int64](#int64) |  | SuspendDurationInBlocks defines the number of blocks a validator is disallowed to participate in any TSS ceremony after committing a malicious behaviour during signing |
 
 
 

@@ -20,12 +20,12 @@ const (
 
 // Parameter keys
 var (
-	KeyLockingPeriod                         = []byte("lockingPeriod")
-	KeyMinKeygenThreshold                    = []byte("minKeygenThreshold")
-	KeyCorruptionThreshold                   = []byte("corruptionThreshold")
-	KeyKeyRequirements                       = []byte("keyRequirements")
-	KeyMinBondFractionPerShare               = []byte("MinBondFractionPerShare")
-	KeySuspendPeriodBlockNumberSignMalicious = []byte("SuspendPeriodBlockNumberSignMalicious")
+	KeyLockingPeriod           = []byte("lockingPeriod")
+	KeyMinKeygenThreshold      = []byte("minKeygenThreshold")
+	KeyCorruptionThreshold     = []byte("corruptionThreshold")
+	KeyKeyRequirements         = []byte("keyRequirements")
+	KeyMinBondFractionPerShare = []byte("MinBondFractionPerShare")
+	KeySuspendDurationInBlocks = []byte("SuspendDurationInBlocks")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -45,8 +45,8 @@ func DefaultParams() Params {
 			{ChainName: bitcoin.Bitcoin.Name, KeyRole: exported.SecondaryKey, MinValidatorSubsetSize: 3, KeyShareDistributionPolicy: exported.OnePerValidator},
 			{ChainName: ethereum.Ethereum.Name, KeyRole: exported.MasterKey, MinValidatorSubsetSize: 5, KeyShareDistributionPolicy: exported.WeightedByStake},
 		},
-		MinBondFractionPerShare:               utils.Threshold{Numerator: 1, Denominator: 10},
-		SuspendPeriodBlockNumberSignMalicious: 1000,
+		MinBondFractionPerShare: utils.Threshold{Numerator: 1, Denominator: 10},
+		SuspendDurationInBlocks: 1000,
 	}
 }
 
@@ -65,7 +65,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyCorruptionThreshold, &m.CorruptionThreshold, validateThreshold),
 		params.NewParamSetPair(KeyKeyRequirements, &m.KeyRequirements, validateKeyRequirements),
 		params.NewParamSetPair(KeyMinBondFractionPerShare, &m.MinBondFractionPerShare, validateMinBondFractionPerShare),
-		params.NewParamSetPair(KeySuspendPeriodBlockNumberSignMalicious, &m.SuspendPeriodBlockNumberSignMalicious, validateSuspendPeriodBlockNumberSignMalicious),
+		params.NewParamSetPair(KeySuspendDurationInBlocks, &m.SuspendDurationInBlocks, validateSuspendDurationInBlocks),
 	}
 }
 
@@ -106,7 +106,7 @@ func (m Params) Validate() error {
 		return err
 	}
 
-	if err := validateSuspendPeriodBlockNumberSignMalicious(m.SuspendPeriodBlockNumberSignMalicious); err != nil {
+	if err := validateSuspendDurationInBlocks(m.SuspendDurationInBlocks); err != nil {
 		return err
 	}
 
@@ -182,14 +182,14 @@ func validateMinBondFractionPerShare(minBondFractionPerShare interface{}) error 
 	return nil
 }
 
-func validateSuspendPeriodBlockNumberSignMalicious(suspendPeriodBlockNumberSignMalicious interface{}) error {
-	val, ok := suspendPeriodBlockNumberSignMalicious.(int64)
+func validateSuspendDurationInBlocks(suspendDurationInBlocks interface{}) error {
+	val, ok := suspendDurationInBlocks.(int64)
 	if !ok {
-		return fmt.Errorf("invalid parameter type for SuspendPeriodBlockNumberSignMalicious: %T", suspendPeriodBlockNumberSignMalicious)
+		return fmt.Errorf("invalid parameter type for SuspendDurationInBlocks: %T", suspendDurationInBlocks)
 	}
 
 	if val <= 0 {
-		return fmt.Errorf("SuspendPeriodBlockNumberSignMalicious must be a positive integer")
+		return fmt.Errorf("SuspendDurationInBlocks must be a positive integer")
 	}
 
 	return nil
