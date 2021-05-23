@@ -3,7 +3,8 @@ package types
 // CLI query error message formats
 const (
 	ErrFDepositAddress       = "could not resolve master key"
-	ErrFGetTransfers         = "could not get the consolidation transaction"
+	ErrFGetRawTx             = "could not get the raw consolidation transaction"
+	ErrFGetPayForRawTx       = "could not get the raw pay-for-consolidation transaction"
 	ErrFInvalidFeeRate       = "invalid fee rate"
 	ErrFGetSignTransferState = "could not get the sign transfer state"
 )

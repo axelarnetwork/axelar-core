@@ -90,14 +90,14 @@ func QueryGetConsolidationTx(cliCtx client.Context) http.HandlerFunc {
 
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.GetConsolidationTx), nil)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, types.ErrFGetTransfers)
+			rest.WriteErrorResponse(w, http.StatusBadRequest, types.ErrFGetRawTx)
 			return
 		}
 
 		var proto types.QueryRawTxResponse
-		err = cliCtx.JSONMarshaler.UnmarshalJSON(res, &proto)
+		err = proto.Unmarshal(res)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to unmarshal QueryRawTxResponse: "+err.Error())
 			return
 		}
 
@@ -132,7 +132,7 @@ func QueryGetPayForConsolidationTx(cliCtx client.Context) http.HandlerFunc {
 
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.GetPayForConsolidationTx), bz)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, types.ErrFGetTransfers)
+			rest.WriteErrorResponse(w, http.StatusBadRequest, types.ErrFGetPayForRawTx)
 			return
 		}
 
