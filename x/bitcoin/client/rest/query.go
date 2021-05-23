@@ -1,8 +1,10 @@
 package rest
 
 import (
+	"encoding/binary"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
 
@@ -71,6 +73,12 @@ func QueryMasterAddress(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
+// GetConsolidationTxResult models the QueryRawTxResponse from keeper.GetConsolidationTx as a JSON response
+type GetConsolidationTxResult struct {
+	State types.SignState `json:"state"`
+	RawTx string          `json:"raw_tx"`
+}
+
 // QueryGetConsolidationTx returns a handler to build a consolidation transaction
 func QueryGetConsolidationTx(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -86,8 +94,45 @@ func QueryGetConsolidationTx(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		if len(res) == 0 {
-			rest.PostProcessResponse(w, cliCtx, "")
+		var proto types.QueryRawTxResponse
+		err = cliCtx.JSONMarshaler.UnmarshalJSON(res, &proto)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		result := GetConsolidationTxResult{
+			State: proto.GetState(),
+			RawTx: proto.GetRawTx(),
+		}
+
+		rest.PostProcessResponse(w, cliCtx, result)
+	}
+}
+
+// QueryGetPayForConsolidationTx returns a handler to build a transaction that pays for the consolidation transaction
+func QueryGetPayForConsolidationTx(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		// Parse fee rate
+		feeStr := mux.Vars(r)[utils.PathVarBtcFeeRate]
+		feeRate, err := strconv.ParseInt(feeStr, 10, 64)
+		if err == nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, types.ErrFInvalidFeeRate)
+			return
+		}
+
+		bz := make([]byte, 8)
+		binary.LittleEndian.PutUint64(bz, uint64(feeRate))
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.GetPayForConsolidationTx), bz)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, types.ErrFGetTransfers)
 			return
 		}
 
