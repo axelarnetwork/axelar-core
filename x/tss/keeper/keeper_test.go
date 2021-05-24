@@ -82,7 +82,7 @@ func setup() *testSetup {
 		},
 	}
 
-	k := NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("tss"), subspace, slasher)
+	k := NewKeeper(encCfg.Amino, encCfg.Marshaler, sdk.NewKVStoreKey("tss"), subspace, slasher)
 	k.SetParams(ctx, types.DefaultParams())
 
 	setup.Keeper = k

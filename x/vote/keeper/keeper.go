@@ -82,7 +82,7 @@ func (k Keeper) GetVotingThreshold(ctx sdk.Context) utils.Threshold {
 // InitPoll initializes a new poll. This is the first step of the voting protocol.
 // The Keeper only accepts votes for initialized polls.
 func (k Keeper) InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64) error {
-	if k.getPoll(ctx, poll) != nil {
+	if k.GetPoll(ctx, poll) != nil {
 		return fmt.Errorf("poll with same name already exists")
 	}
 
@@ -111,7 +111,7 @@ func (k Keeper) DeletePoll(ctx sdk.Context, poll exported.PollMeta) {
 
 // TallyVote tallies votes that have been broadcast. Each validator can only vote once per poll.
 func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data exported.VotingData) error {
-	poll := k.getPoll(ctx, pollMeta)
+	poll := k.GetPoll(ctx, pollMeta)
 	if poll == nil {
 		return fmt.Errorf("poll does not exist or is closed")
 	}
@@ -175,15 +175,15 @@ func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta expor
 func (k Keeper) Result(ctx sdk.Context, pollMeta exported.PollMeta) exported.VotingData {
 	// This unmarshals all votes for this poll, which is not needed in this context.
 	// Should it become a performance concern we could split the result off into a separate data structure
-	poll := k.getPoll(ctx, pollMeta)
+	poll := k.GetPoll(ctx, pollMeta)
 	if poll == nil {
 		return nil
 	}
 	return poll.Result
 }
 
-// using a pointer reference to adhere to the pattern of returning nil if value is not found
-func (k Keeper) getPoll(ctx sdk.Context, pollMeta exported.PollMeta) *types.Poll {
+// GetPoll returns the poll given poll meta
+func (k Keeper) GetPoll(ctx sdk.Context, pollMeta exported.PollMeta) *types.Poll {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(pollPrefix + pollMeta.String()))
 	if bz == nil {
 		return nil

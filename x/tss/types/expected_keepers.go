@@ -10,6 +10,7 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 //go:generate moq -pkg mock -out ./mock/expected_keepers.go . TofndClient TofndKeyGenClient TofndSignClient Voter StakingKeeper
@@ -37,6 +38,7 @@ type Voter interface {
 	DeletePoll(ctx sdk.Context, poll vote.PollMeta)
 	TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta vote.PollMeta, data vote.VotingData) error
 	Result(ctx sdk.Context, poll vote.PollMeta) vote.VotingData
+	GetPoll(ctx sdk.Context, pollMeta vote.PollMeta) *votetypes.Poll
 }
 
 // InitPoller is a minimal interface to start a poll

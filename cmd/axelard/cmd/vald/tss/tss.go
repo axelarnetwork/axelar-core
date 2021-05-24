@@ -63,9 +63,10 @@ func NewMgr(client tofnd.GG20Client, timeout time.Duration, principalAddr string
 	}
 }
 
-func handleStream(stream tss.Stream, cancel context.CancelFunc, logger log.Logger) (broadcast <-chan *tofnd.TrafficOut, result <-chan []byte, err <-chan error) {
+func handleStream(stream tss.Stream, cancel context.CancelFunc, logger log.Logger) (broadcast <-chan *tofnd.TrafficOut, result <-chan interface{}, err <-chan error) {
 	broadcastChan := make(chan *tofnd.TrafficOut)
-	resChan := make(chan []byte)
+	// TODO: MessageOut_KeygenResult and MessageOut_SignResult should be merged into one type of message
+	resChan := make(chan interface{})
 	errChan := make(chan error, 2)
 
 	// server handler https://grpc.io/docs/languages/go/basics/#bidirectional-streaming-rpc-1
@@ -99,19 +100,8 @@ func handleStream(stream tss.Stream, cancel context.CancelFunc, logger log.Logge
 				resChan <- msg.KeygenResult
 				return
 			case *tofnd.MessageOut_SignResult_:
-				switch signResult := msg.SignResult.GetSignResultData().(type) {
-				case *tofnd.MessageOut_SignResult_Signature:
-					resChan <- signResult.Signature
-					return
-				case *tofnd.MessageOut_SignResult_Criminals:
-					logger.Info("sign failure, list of criminals:")
-					for _, criminal := range signResult.Criminals.Criminals {
-						logger.Info(fmt.Sprintf("criminal: %s, crime: %s", criminal.PartyUid, criminal.CrimeType.String()))
-					}
-					// TODO handle failure: vote on criminals
-				default:
-					panic(fmt.Sprintf("unexpected result %T", signResult))
-				}
+				resChan <- msg.SignResult
+				return
 			default:
 				errChan <- fmt.Errorf("handler goroutine: server stream should send only msg type")
 				return

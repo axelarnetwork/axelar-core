@@ -54,6 +54,7 @@ type Broadcaster interface {
 type Tss interface {
 	GetValidatorDeregisteredBlockHeight(ctx sdk.Context, valAddr sdk.ValAddress) int64
 	GetMinBondFractionPerShare(ctx sdk.Context) utils.Threshold
+	GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
 }
 
 // IsValidatorActive returns true if the validator is active; otherwise, false
@@ -76,6 +77,11 @@ func HasProxyRegistered(ctx sdk.Context, broadcaster Broadcaster, validator SDKV
 // IsValidatorTssRegistered returns true if the validator is registered to participate in tss key generation; otherwise, false
 func IsValidatorTssRegistered(ctx sdk.Context, tss Tss, validator SDKValidator) bool {
 	return tss.GetValidatorDeregisteredBlockHeight(ctx, validator.GetOperator()) <= 0
+}
+
+// IsValidatorTssSuspended returns true if the validator is suspended from participating TSS ceremonies for committing faulty behaviour; otherwise, false
+func IsValidatorTssSuspended(ctx sdk.Context, tss Tss, validator SDKValidator) bool {
+	return tss.GetTssSuspendedUntil(ctx, validator.GetOperator()) > ctx.BlockHeight()
 }
 
 // Snapshot is a snapshot of the validator set at a given block height.

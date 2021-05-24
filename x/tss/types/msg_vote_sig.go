@@ -1,9 +1,6 @@
 package types
 
 import (
-	"fmt"
-
-	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -23,12 +20,11 @@ func (m VoteSigRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
-	if m.SigBytes == nil {
-		return fmt.Errorf("missing signature data")
-	}
-	if _, err := btcec.ParseDERSignature(m.SigBytes, btcec.S256()); err != nil {
+
+	if err := m.Result.Validate(); err != nil {
 		return err
 	}
+
 	return m.PollMeta.Validate()
 }
 
