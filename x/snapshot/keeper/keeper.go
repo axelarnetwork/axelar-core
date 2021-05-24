@@ -173,7 +173,7 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64
 	}
 
 	if subsetSize > 0 && len(participants) != int(subsetSize) {
-		return sdk.ZeroInt(), sdk.ZeroInt(), fmt.Errorf("only %d validators are eligible for keygen which is less than desired subset size %d", len(validators), subsetSize)
+		return sdk.ZeroInt(), sdk.ZeroInt(), fmt.Errorf("only %d validators are eligible for keygen which is less than desired subset size %d", len(participants), subsetSize)
 	}
 
 	// Since IterateBondedValidatorsByPower iterates validators by power in descending order, the last participant is
