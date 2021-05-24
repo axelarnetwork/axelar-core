@@ -25,14 +25,14 @@ import (
 
 func TestDecodeTokenDeployEvent_CorrectData(t *testing.T) {
 	axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
-	tokenDeploySig := ERC20TokenDeploySig
+	tokenDeploySig := ERC20TokenDeploymentSig
 	expectedAddr := common.HexToAddress("0xE7481ECB61F9C84b91C03414F3D5d48E5436045D")
 	expectedSymbol := "XPTO"
 	data := common.FromHex("0x0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000e7481ecb61f9c84b91c03414f3d5d48e5436045d00000000000000000000000000000000000000000000000000000000000000045850544f00000000000000000000000000000000000000000000000000000000")
 
 	l := &geth.Log{Address: axelarGateway, Data: data, Topics: []common.Hash{tokenDeploySig}}
 
-	symbol, tokenAddr, err := decodeERC20TokenDeployEvent(l)
+	symbol, tokenAddr, err := decodeERC20TokenDeploymentEvent(l)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedSymbol, symbol)
 	assert.Equal(t, expectedAddr, tokenAddr)
@@ -276,7 +276,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 						symbol,
 						common.BytesToAddress(gatewayAddrBytes),
 						common.BytesToAddress(tokenAddrBytes),
-						ERC20TokenDeploySig,
+						ERC20TokenDeploymentSig,
 						true,
 					),
 				}

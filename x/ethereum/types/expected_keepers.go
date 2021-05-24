@@ -1,7 +1,6 @@
 package types
 
 import (
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -24,10 +23,9 @@ type EthKeeper interface {
 	GetGatewayAddress(ctx sdk.Context) (common.Address, bool)
 	GetTokenAddress(ctx sdk.Context, symbol string, gatewayAddr common.Address) (common.Address, error)
 	GetRevoteLockingPeriod(ctx sdk.Context) int64
-	SetPendingTokenDeploy(ctx sdk.Context, poll vote.PollMeta, tokenDeploy ERC20TokenDeploy)
+	SetPendingTokenDeployment(ctx sdk.Context, poll vote.PollMeta, tokenDeploy ERC20TokenDeployment)
 	GetRequiredConfirmationHeight(ctx sdk.Context) uint64
-	Codec() *codec.LegacyAmino
-	GetDeposit(ctx sdk.Context, txID string, burnerAddr string) (ERC20Deposit, DepositState, bool)
+	GetDeposit(ctx sdk.Context, txID common.Hash, burnerAddr common.Address) (ERC20Deposit, DepositState, bool)
 	GetBurnerInfo(ctx sdk.Context, address common.Address) *BurnerInfo
 	SetPendingDeposit(ctx sdk.Context, poll vote.PollMeta, deposit *ERC20Deposit)
 	GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error)
@@ -37,7 +35,7 @@ type EthKeeper interface {
 	DeleteDeposit(ctx sdk.Context, deposit ERC20Deposit)
 	Logger(ctx sdk.Context) log.Logger
 	SetDeposit(ctx sdk.Context, deposit ERC20Deposit, state DepositState)
-	GetPendingTokenDeploy(ctx sdk.Context, poll vote.PollMeta) (ERC20TokenDeploy, bool)
+	GetPendingTokenDeployment(ctx sdk.Context, poll vote.PollMeta) (ERC20TokenDeployment, bool)
 	DeletePendingToken(ctx sdk.Context, poll vote.PollMeta)
 	SetCommandData(ctx sdk.Context, commandID CommandID, commandData []byte)
 	SetTokenInfo(ctx sdk.Context, msg *SignDeployTokenRequest)

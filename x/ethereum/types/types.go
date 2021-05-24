@@ -62,6 +62,80 @@ var (
 	}
 )
 
+// Address wraps ethereum Address
+type Address common.Address
+
+// Bytes returns the actual byte array of the address
+func (a Address) Bytes() []byte {
+	return common.Address(a).Bytes()
+}
+
+// Hex returns an EIP55-compliant hex string representation of the address
+func (a Address) Hex() string {
+	return common.Address(a).Hex()
+}
+
+// Marshal implements codec.ProtoMarshaler
+func (a Address) Marshal() ([]byte, error) {
+	return a[:], nil
+}
+
+// MarshalTo implements codec.ProtoMarshaler
+func (a Address) MarshalTo(data []byte) (n int, err error) {
+	copy(data, a[:])
+
+	return common.HashLength, nil
+}
+
+// Unmarshal implements codec.ProtoMarshaler
+func (a *Address) Unmarshal(data []byte) error {
+	*a = Address(common.BytesToAddress(data))
+
+	return nil
+}
+
+// Size implements codec.ProtoMarshaler
+func (a Address) Size() int {
+	return common.AddressLength
+}
+
+// Hash wraps ethereum Hash
+type Hash common.Hash
+
+// Bytes returns the actual byte array of the hash
+func (h Hash) Bytes() []byte {
+	return common.Hash(h).Bytes()
+}
+
+// Hex converts a hash to a hex string.
+func (h Hash) Hex() string {
+	return common.Hash(h).Hex()
+}
+
+// Marshal implements codec.ProtoMarshaler
+func (h Hash) Marshal() ([]byte, error) {
+	return h[:], nil
+}
+
+// MarshalTo implements codec.ProtoMarshaler
+func (h Hash) MarshalTo(data []byte) (n int, err error) {
+	copy(data, h[:])
+
+	return common.HashLength, nil
+}
+
+// Unmarshal implements codec.ProtoMarshaler
+func (h *Hash) Unmarshal(data []byte) error {
+	*h = Hash(common.BytesToHash(data))
+
+	return nil
+}
+
+// Size implements codec.ProtoMarshaler
+func (h Hash) Size() int {
+	return common.HashLength
+}
+
 // Network provides additional functionality based on the ethereum network name
 type Network string
 
@@ -159,40 +233,11 @@ type DeployResult struct {
 	Tx              *ethTypes.Transaction `json:"tx"`
 }
 
-// SendTxResult describes the result of the send signed tx query,
-// containing the signed transaction and the unsigned tx hash
-type SendTxResult struct {
-	TxID     string                `json:"tx_id"`
-	SignedTx *ethTypes.Transaction `json:"tx"`
-}
-
 // CommandParams describe the parameters used to send a pre-signed command to the given contract,
 // with the sender signing the transaction on the Ethereum node
 type CommandParams struct {
 	CommandID CommandID
 	Sender    string
-}
-
-// ERC20TokenDeploy describes information about an ERC20 token
-type ERC20TokenDeploy struct {
-	Symbol    string
-	TokenAddr string
-}
-
-// BurnerInfo describes information required to burn token at an burner address
-// that is deposited by an user
-type BurnerInfo struct {
-	TokenAddr string
-	Symbol    string
-	Salt      [common.HashLength]byte
-}
-
-// ERC20Deposit contains information for an ERC20 deposit
-type ERC20Deposit struct {
-	TxID       common.Hash
-	Amount     sdk.Uint
-	Symbol     string
-	BurnerAddr string
 }
 
 // DepositState is an enum for the state of a deposit
@@ -268,7 +313,7 @@ func CreateMintCommandData(chainID *big.Int, transfers []nexus.CrossChainTransfe
 	var commandParams [][]byte
 
 	for _, transfer := range transfers {
-		commandParam, err := createMintParams(transfer.Recipient.Address, transfer.Asset.Denom, transfer.Asset.Amount.BigInt())
+		commandParam, err := createMintParams(common.HexToAddress(transfer.Recipient.Address), transfer.Asset.Denom, transfer.Asset.Amount.BigInt())
 		if err != nil {
 			return nil, err
 		}
@@ -309,13 +354,13 @@ func CreateBurnCommandData(chainID *big.Int, height int64, burnerInfos []BurnerI
 	binary.LittleEndian.PutUint64(heightBytes, uint64(height))
 
 	for _, burnerInfo := range burnerInfos {
-		commandParam, err := createBurnTokenParams(burnerInfo.Symbol, common.BytesToHash(burnerInfo.Salt[:]))
+		commandParam, err := createBurnTokenParams(burnerInfo.Symbol, common.Hash(burnerInfo.Salt))
 		if err != nil {
 			return nil, err
 		}
 
 		// TODO: A sequential ID for burns instead of hashing block height and salt together?
-		commandID := CommandID(crypto.Keccak256Hash(append(burnerInfo.Salt[:], heightBytes...)))
+		commandID := CommandID(crypto.Keccak256Hash(append(burnerInfo.Salt.Bytes(), heightBytes...)))
 
 		commandIDs = append(commandIDs, commandID)
 		commands = append(commands, axelarGatewayCommandBurnToken)
@@ -326,7 +371,7 @@ func CreateBurnCommandData(chainID *big.Int, height int64, burnerInfos []BurnerI
 }
 
 // CreateTransferOwnershipCommandData returns the command data to transfer ownership of the contract
-func CreateTransferOwnershipCommandData(chainID *big.Int, commandID CommandID, newOwnerAddr string) ([]byte, error) {
+func CreateTransferOwnershipCommandData(chainID *big.Int, commandID CommandID, newOwnerAddr common.Address) ([]byte, error) {
 	transferOwnershipParams, err := createTransferOwnershipParams(newOwnerAddr)
 	if err != nil {
 		return nil, err
@@ -384,15 +429,7 @@ func packArguments(chainID *big.Int, commandIDs []CommandID, commands []string, 
 	return result, nil
 }
 
-/* This function would strip off anything in the hex strings beyond 32 bytes */
-func hexToByte32(hex string) [32]byte {
-	var result [32]byte
-	copy(result[:], common.LeftPadBytes(common.FromHex(hex), 32)[:32])
-
-	return result
-}
-
-func createMintParams(address string, denom string, amount *big.Int) ([]byte, error) {
+func createMintParams(address common.Address, denom string, amount *big.Int) ([]byte, error) {
 	addressType, err := abi.NewType("address", "address", nil)
 	if err != nil {
 		return nil, err
@@ -409,7 +446,7 @@ func createMintParams(address string, denom string, amount *big.Int) ([]byte, er
 	}
 
 	arguments := abi.Arguments{{Type: stringType}, {Type: addressType}, {Type: uint256Type}}
-	result, err := arguments.Pack(denom, hexToByte32(address), amount)
+	result, err := arguments.Pack(denom, address, amount)
 	if err != nil {
 		return nil, err
 	}
@@ -447,7 +484,7 @@ func createDeployTokenParams(tokenName string, symbol string, decimals uint8, ca
 	return result, nil
 }
 
-func createBurnTokenParams(symbol string, salt [32]byte) ([]byte, error) {
+func createBurnTokenParams(symbol string, salt common.Hash) ([]byte, error) {
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
 		return nil, err
@@ -467,16 +504,14 @@ func createBurnTokenParams(symbol string, salt [32]byte) ([]byte, error) {
 	return result, nil
 }
 
-func createTransferOwnershipParams(newOwnerAddr string) ([]byte, error) {
+func createTransferOwnershipParams(newOwnerAddr common.Address) ([]byte, error) {
 	addressType, err := abi.NewType("address", "address", nil)
 	if err != nil {
 		return nil, err
 	}
 
 	arguments := abi.Arguments{{Type: addressType}}
-	result, err := arguments.Pack(
-		hexToByte32(newOwnerAddr),
-	)
+	result, err := arguments.Pack(newOwnerAddr)
 	if err != nil {
 		return nil, err
 	}

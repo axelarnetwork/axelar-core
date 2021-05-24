@@ -21,12 +21,7 @@ func (m VoteConfirmDepositRequest) ValidateBasic() error {
 	if m.Sender == nil || len(m.Sender) != sdk.AddrLen {
 		return fmt.Errorf("missing sender")
 	}
-	if m.TxID == "" {
-		return fmt.Errorf("tx ID missing")
-	}
-	if m.BurnAddr == "" {
-		return fmt.Errorf("burn address missing")
-	}
+
 	return m.Poll.Validate()
 }
 
