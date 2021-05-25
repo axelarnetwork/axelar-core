@@ -82,13 +82,20 @@ func (a Address) Marshal() ([]byte, error) {
 
 // MarshalTo implements codec.ProtoMarshaler
 func (a Address) MarshalTo(data []byte) (n int, err error) {
-	copy(data, a[:])
+	bytesCopied := copy(data, a[:])
+	if bytesCopied != common.AddressLength {
+		return 0, fmt.Errorf("expected data size to be %d, actual %d", common.AddressLength, len(data))
+	}
 
-	return common.HashLength, nil
+	return common.AddressLength, nil
 }
 
 // Unmarshal implements codec.ProtoMarshaler
 func (a *Address) Unmarshal(data []byte) error {
+	if len(data) != common.AddressLength {
+		return fmt.Errorf("expected data size to be %d, actual %d", common.AddressLength, len(data))
+	}
+
 	*a = Address(common.BytesToAddress(data))
 
 	return nil
@@ -119,13 +126,20 @@ func (h Hash) Marshal() ([]byte, error) {
 
 // MarshalTo implements codec.ProtoMarshaler
 func (h Hash) MarshalTo(data []byte) (n int, err error) {
-	copy(data, h[:])
+	bytesCopied := copy(data, h[:])
+	if bytesCopied != common.HashLength {
+		return 0, fmt.Errorf("expected data size to be %d, actual %d", common.HashLength, len(data))
+	}
 
 	return common.HashLength, nil
 }
 
 // Unmarshal implements codec.ProtoMarshaler
 func (h *Hash) Unmarshal(data []byte) error {
+	if len(data) != common.HashLength {
+		return fmt.Errorf("expected data size to be %d, actual %d", common.HashLength, len(data))
+	}
+
 	*h = Hash(common.BytesToHash(data))
 
 	return nil
