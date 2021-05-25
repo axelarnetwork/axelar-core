@@ -137,7 +137,7 @@ func GetCmdPayForConsolidationTx(queryRoute string) *cobra.Command {
 
 		res, _, err := clientCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.GetPayForConsolidationTx), bz)
 		if err != nil {
-			return sdkerrors.Wrap(err, types.ErrFGetRawTx)
+			return sdkerrors.Wrap(err, types.ErrFGetPayForRawTx)
 		}
 
 		return clientCtx.PrintObjectLegacy(string(res))
