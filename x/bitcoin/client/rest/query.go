@@ -121,6 +121,10 @@ func QueryGetPayForConsolidationTx(cliCtx client.Context) http.HandlerFunc {
 
 		// Parse fee rate
 		feeStr := mux.Vars(r)[utils.PathVarBtcFeeRate]
+		if feeStr == "" {
+			feeStr = "0" // fee is optional and defaults to zero
+		}
+
 		feeRate, err := strconv.ParseInt(feeStr, 10, 64)
 		if err == nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, types.ErrFInvalidFeeRate)
