@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"strconv"
 
@@ -9,6 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -232,8 +234,11 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			if err != nil {
 				return nil, fmt.Errorf("could not unmarshal public key bytes: [%w]", err)
 			}
+
 			pubKey := btcecPK.ToECDSA()
 			s.SetKey(ctx, req.PollMeta.ID, *pubKey)
+			s.voter.DeletePoll(ctx, req.PollMeta)
+
 			s.Logger(ctx).Info(fmt.Sprintf("public key confirmation result is %.10s", result))
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
@@ -277,36 +282,74 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		return &types.VoteSigResponse{}, nil
 	}
 
-	if _, err := btcec.ParseDERSignature(req.SigBytes, btcec.S256()); err != nil {
-		return nil, sdkerrors.Wrap(err, "discard vote for invalid signature")
+	poll := s.voter.GetPoll(ctx, req.PollMeta)
+	if poll == nil {
+		return nil, fmt.Errorf("poll does not exist or is closed")
 	}
 
-	if err := s.voter.TallyVote(ctx, req.Sender, req.PollMeta, req.SigBytes); err != nil {
-		return nil, err
+	snapshot, found := s.snapshotter.GetSnapshot(ctx, poll.ValidatorSnapshotCounter)
+	if !found {
+		return nil, fmt.Errorf("no snapshot found for counter %d", poll.ValidatorSnapshotCounter)
 	}
 
-	if result := s.voter.Result(ctx, req.PollMeta); result != nil {
-		// the result is not necessarily the same as the msg (the vote could have been decided earlier and now a false vote is cast),
-		// so use result instead of msg
-		ctx.EventManager().EmitEvent(sdk.NewEvent(
-			types.EventTypeSign,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
-			sdk.NewAttribute(types.AttributeKeyPoll, req.PollMeta.String()),
-			sdk.NewAttribute(types.AttributeKeyPayload, string(req.SigBytes)),
-		))
-
-		switch sigBytes := result.(type) {
-		case []byte:
-			s.SetSig(ctx, req.PollMeta.ID, sigBytes)
-			s.Logger(ctx).Info(fmt.Sprintf("signature verification result is %.10s", result))
-		default:
-			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
-				fmt.Sprintf("unrecognized voting result type: %T", result))
+	if criminals := req.Result.GetCriminals(); criminals != nil {
+		for _, criminal := range criminals.Criminals {
+			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
+			if _, found := snapshot.GetValidator(criminalAddress); !found {
+				return nil, fmt.Errorf("received criminal %s who is not a participant of producing signature %s", criminalAddress.String(), req.PollMeta.ID)
+			}
 		}
 	}
 
-	return &types.VoteSigResponse{}, nil
+	voteData := s.protoCdc.MustMarshalBinaryLengthPrefixed(req.Result)
+	// TODO: TallyVote should take a codec.ProtoMarshaler as voteData instead of interface{}
+	if err := s.voter.TallyVote(ctx, req.Sender, req.PollMeta, voteData); err != nil {
+		return nil, err
+	}
+
+	result := s.voter.Result(ctx, req.PollMeta)
+	if result == nil {
+		return &types.VoteSigResponse{}, nil
+	}
+
+	// the result is not necessarily the same as the msg (the vote could have been decided earlier and now a false vote is cast),
+	// so use result instead of msg
+	ctx.EventManager().EmitEvent(sdk.NewEvent(
+		types.EventTypeSign,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
+		sdk.NewAttribute(types.AttributeKeyPoll, req.PollMeta.String()),
+		// TODO: Consider emitting criminals or signature with different attributes
+		sdk.NewAttribute(types.AttributeKeyPayload, req.Result.String()),
+	))
+
+	switch bz := result.(type) {
+	case []byte:
+		s.voter.DeletePoll(ctx, req.PollMeta)
+
+		var signResult tofnd.MessageOut_SignResult
+		s.protoCdc.MustUnmarshalBinaryLengthPrefixed(bz, &signResult)
+
+		if signature := signResult.GetSignature(); signature != nil {
+			s.SetSig(ctx, req.PollMeta.ID, signature)
+			s.Logger(ctx).Info(fmt.Sprintf("signature for %s verified: %.10s", req.PollMeta.ID, hex.EncodeToString(signature)))
+
+			return &types.VoteSigResponse{}, nil
+		}
+
+		s.deleteKeyIDForSig(ctx, req.PollMeta.ID)
+		for _, criminal := range signResult.GetCriminals().Criminals {
+			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
+			s.Keeper.PenalizeSignCriminal(ctx, criminalAddress, criminal.GetCrimeType())
+
+			s.Logger(ctx).Info(fmt.Sprintf("criminal for %s verified: %s - %s", req.PollMeta.ID, criminal.GetPartyUid(), criminal.CrimeType.String()))
+		}
+
+		return &types.VoteSigResponse{}, nil
+	default:
+		return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
+			fmt.Sprintf("unrecognized voting result type: %T", result))
+	}
 }
 
 func (s msgServer) Deregister(c context.Context, req *types.DeregisterRequest) (*types.DeregisterResponse, error) {

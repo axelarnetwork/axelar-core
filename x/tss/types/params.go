@@ -25,6 +25,7 @@ var (
 	KeyCorruptionThreshold     = []byte("corruptionThreshold")
 	KeyKeyRequirements         = []byte("keyRequirements")
 	KeyMinBondFractionPerShare = []byte("MinBondFractionPerShare")
+	KeySuspendDurationInBlocks = []byte("SuspendDurationInBlocks")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -45,6 +46,7 @@ func DefaultParams() Params {
 			{ChainName: ethereum.Ethereum.Name, KeyRole: exported.MasterKey, MinValidatorSubsetSize: 5, KeyShareDistributionPolicy: exported.WeightedByStake},
 		},
 		MinBondFractionPerShare: utils.Threshold{Numerator: 1, Denominator: 10},
+		SuspendDurationInBlocks: 1000,
 	}
 }
 
@@ -63,6 +65,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyCorruptionThreshold, &m.CorruptionThreshold, validateThreshold),
 		params.NewParamSetPair(KeyKeyRequirements, &m.KeyRequirements, validateKeyRequirements),
 		params.NewParamSetPair(KeyMinBondFractionPerShare, &m.MinBondFractionPerShare, validateMinBondFractionPerShare),
+		params.NewParamSetPair(KeySuspendDurationInBlocks, &m.SuspendDurationInBlocks, validateSuspendDurationInBlocks),
 	}
 }
 
@@ -100,6 +103,10 @@ func (m Params) Validate() error {
 	}
 
 	if err := validateMinBondFractionPerShare(m.MinBondFractionPerShare); err != nil {
+		return err
+	}
+
+	if err := validateSuspendDurationInBlocks(m.SuspendDurationInBlocks); err != nil {
 		return err
 	}
 
@@ -154,10 +161,10 @@ func validateKeyRequirements(keyRequirements interface{}) error {
 	return nil
 }
 
-func validateMinBondFractionPerShare(MinBondFractionPerShare interface{}) error {
-	val, ok := MinBondFractionPerShare.(utils.Threshold)
+func validateMinBondFractionPerShare(minBondFractionPerShare interface{}) error {
+	val, ok := minBondFractionPerShare.(utils.Threshold)
 	if !ok {
-		return fmt.Errorf("invalid parameter type for MinBondFractionPerShare: %T", MinBondFractionPerShare)
+		return fmt.Errorf("invalid parameter type for MinBondFractionPerShare: %T", minBondFractionPerShare)
 	}
 
 	if val.Numerator <= 0 {
@@ -170,6 +177,19 @@ func validateMinBondFractionPerShare(MinBondFractionPerShare interface{}) error 
 
 	if val.Numerator >= val.Denominator {
 		return fmt.Errorf("threshold must be <=1 for MinBondFractionPerShare")
+	}
+
+	return nil
+}
+
+func validateSuspendDurationInBlocks(suspendDurationInBlocks interface{}) error {
+	val, ok := suspendDurationInBlocks.(int64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for SuspendDurationInBlocks: %T", suspendDurationInBlocks)
+	}
+
+	if val <= 0 {
+		return fmt.Errorf("SuspendDurationInBlocks must be a positive integer")
 	}
 
 	return nil

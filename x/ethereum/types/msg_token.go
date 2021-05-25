@@ -10,7 +10,7 @@ import (
 func NewConfirmTokenRequest(sender sdk.AccAddress, txID common.Hash, symbol string) *ConfirmTokenRequest {
 	return &ConfirmTokenRequest{
 		Sender: sender,
-		TxID:   txID.Hex(),
+		TxID:   Hash(txID),
 		Symbol: symbol,
 	}
 }
@@ -22,7 +22,7 @@ func (m ConfirmTokenRequest) Route() string {
 
 // Type implements sdk.Msg
 func (m ConfirmTokenRequest) Type() string {
-	return "ConfirmERC20TokenDeploy"
+	return "ConfirmERC20TokenDeployment"
 }
 
 // ValidateBasic implements sdk.Msg

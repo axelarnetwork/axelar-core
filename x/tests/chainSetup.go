@@ -45,6 +45,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/broadcast"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	ethKeeper "github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	ethMock "github.com/axelarnetwork/axelar-core/x/ethereum/types/mock"
 	snapshotExported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -54,6 +55,7 @@ import (
 	snapshotTypesMock "github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/tss"
 	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	tssMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/vote"
@@ -103,11 +105,11 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	bitcoinKeeper.SetParams(ctx, btcParams)
 
 	ethSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "eth")
-	ethereumKeeper := ethKeeper.NewEthKeeper(encCfg.Amino, sdk.NewKVStoreKey(ethTypes.StoreKey), ethSubspace)
+	ethereumKeeper := ethKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(ethTypes.StoreKey), ethSubspace)
 	ethereumKeeper.SetParams(ctx, ethTypes.DefaultParams())
 
 	tssSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), tssTypes.DefaultParamspace)
-	signer := tssKeeper.NewKeeper(encCfg.Amino, sdk.NewKVStoreKey(tssTypes.StoreKey), tssSubspace, mocks.Slasher)
+	signer := tssKeeper.NewKeeper(encCfg.Amino, encCfg.Marshaler, sdk.NewKVStoreKey(tssTypes.StoreKey), tssSubspace, mocks.Slasher)
 	signer.SetParams(ctx, tssTypes.DefaultParams())
 
 	nexusSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("balanceKey"), sdk.NewKVStoreKey("tbalanceKey"), "balance")
@@ -197,6 +199,7 @@ func createMocks(validators []stakingtypes.Validator) testMocks {
 		GetMinBondFractionPerShareFunc: func(sdk.Context) utils.Threshold {
 			return utils.Threshold{Numerator: 1, Denominator: 200}
 		},
+		GetTssSuspendedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
 	}
 
 	ethClient := &ethMock.RPCClientMock{
@@ -312,11 +315,11 @@ func registerETHEventListener(n nodeData, submitMsg func(msg sdk.Msg) (result <-
 		encCfg.Amino.MustUnmarshalJSON([]byte(m[ethTypes.AttributeKeyPoll]), &poll)
 
 		_ = submitMsg(&ethTypes.VoteConfirmDepositRequest{
-			Sender:    n.Proxy,
-			Poll:      poll,
-			Confirmed: true,
-			TxID:      m[ethTypes.AttributeKeyTxID],
-			BurnAddr:  m[ethTypes.AttributeKeyBurnAddress],
+			Sender:      n.Proxy,
+			Poll:        poll,
+			Confirmed:   true,
+			TxID:        types.Hash(common.HexToHash(m[ethTypes.AttributeKeyTxID])),
+			BurnAddress: types.Address(common.HexToAddress(m[ethTypes.AttributeKeyBurnAddress])),
 		})
 
 		return true
@@ -341,7 +344,7 @@ func registerETHEventListener(n nodeData, submitMsg func(msg sdk.Msg) (result <-
 				Sender:    n.Proxy,
 				Poll:      poll,
 				Confirmed: true,
-				TxID:      m[ethTypes.AttributeKeyTxID],
+				TxID:      ethTypes.Hash(common.HexToHash(m[ethTypes.AttributeKeyTxID])),
 				Symbol:    m[ethTypes.AttributeKeySymbol],
 			})
 
@@ -404,8 +407,8 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd, submitMsg func(msg sdk
 		sig := t.Sign(m[tssTypes.AttributeKeySigID], m[tssTypes.AttributeKeyKeyID], []byte(m[tssTypes.AttributeKeyPayload]))
 
 		_ = submitMsg(&tssTypes.VoteSigRequest{
-			Sender:   n.Proxy,
-			SigBytes: sig,
+			Sender: n.Proxy,
+			Result: &tofnd.MessageOut_SignResult{SignResultData: &tofnd.MessageOut_SignResult_Signature{Signature: sig}},
 			PollMeta: voting.NewPollMeta(
 				tssTypes.ModuleName,
 				m[tssTypes.AttributeKeySigID],
@@ -513,7 +516,7 @@ func createTokenDeployLogs(gateway, addr common.Address) []*goEthTypes.Log {
 			if err != nil {
 				panic(err)
 			}
-			logs = append(logs, &goEthTypes.Log{Address: gateway, Data: data, Topics: []common.Hash{eth2.ERC20TokenDeploySig}})
+			logs = append(logs, &goEthTypes.Log{Address: gateway, Data: data, Topics: []common.Hash{eth2.ERC20TokenDeploymentSig}})
 			continue
 		}
 

@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"encoding/binary"
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -26,6 +27,7 @@ const (
 	validatorDeregisteredPrefix = "validator_deregistered_block_height_"
 	keyRequirementPrefix        = "key_requirement_"
 	keyRolePrefix               = "key_role_"
+	keyTssSuspendedUntil        = "key_tss_suspended_until_"
 )
 
 // Keeper allows access to the broadcast state
@@ -33,14 +35,17 @@ type Keeper struct {
 	slasher  snapshot.Slasher
 	params   params.Subspace
 	storeKey sdk.StoreKey
+	// TODO: remove cdc and use protoCdc only
 	cdc      *codec.LegacyAmino
+	protoCdc codec.BinaryMarshaler
 }
 
 // NewKeeper constructs a tss keeper
-func NewKeeper(cdc *codec.LegacyAmino, storeKey sdk.StoreKey, paramSpace params.Subspace, slasher snapshot.Slasher) Keeper {
+func NewKeeper(cdc *codec.LegacyAmino, protoCdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramSpace params.Subspace, slasher snapshot.Slasher) Keeper {
 	return Keeper{
 		slasher:  slasher,
 		cdc:      cdc,
+		protoCdc: protoCdc,
 		params:   paramSpace.WithKeyTable(types.KeyTable()),
 		storeKey: storeKey,
 	}
@@ -120,4 +125,23 @@ func (k Keeper) ComputeCorruptionThreshold(ctx sdk.Context, totalShareCount sdk.
 
 	// (threshold + 1) shares are required to signed
 	return totalShareCount.MulRaw(threshold.Numerator).QuoRaw(threshold.Denominator).Int64() - 1
+}
+
+func (k Keeper) setTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress, suspendedUntilBlockNumber int64) {
+	key := fmt.Sprintf("%s%s", keyTssSuspendedUntil, validator.String())
+	bz := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bz, uint64(suspendedUntilBlockNumber))
+
+	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
+}
+
+// GetTssSuspendedUntil returns the block number at which a validator is released from TSS suspension
+func (k Keeper) GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64 {
+	key := fmt.Sprintf("%s%s", keyTssSuspendedUntil, validator.String())
+	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
+	if bz == nil {
+		return 0
+	}
+
+	return int64(binary.LittleEndian.Uint64(bz))
 }

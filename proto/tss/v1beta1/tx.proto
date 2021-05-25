@@ -90,9 +90,7 @@ message VoteSigRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   vote.exported.v1beta1.PollMeta poll_meta = 2 [ (gogoproto.nullable) = false ];
-  // need to vote on the bytes instead of r, s, because Go cannot deserialize
-  // private fields using reflection (so *big.Int does not work)
-  bytes sig_bytes = 3;
+  tofnd.v1beta1.MessageOut.SignResult result = 3;
 }
 
 message VoteSigResponse {}

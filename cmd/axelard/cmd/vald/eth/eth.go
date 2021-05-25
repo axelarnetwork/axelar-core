@@ -18,14 +18,15 @@ import (
 	types2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
 	rpc2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/eth/rpc"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // Smart contract event signatures
 var (
-	ERC20TransferSig    = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
-	ERC20TokenDeploySig = crypto.Keccak256Hash([]byte("TokenDeployed(string,address)"))
+	ERC20TransferSig        = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
+	ERC20TokenDeploymentSig = crypto.Keccak256Hash([]byte("TokenDeployed(string,address)"))
 )
 
 // Mgr manages all communication with Ethereum
@@ -65,11 +66,11 @@ func (mgr Mgr) ProcessDepositConfirmation(attributes []sdk.Attribute) (err error
 	})
 
 	msg := &ethTypes.VoteConfirmDepositRequest{
-		Sender:    mgr.sender,
-		Poll:      poll,
-		TxID:      txID.Hex(),
-		BurnAddr:  burnAddr.Hex(),
-		Confirmed: confirmed,
+		Sender:      mgr.sender,
+		Poll:        poll,
+		TxID:        types.Hash(txID),
+		BurnAddress: types.Address(burnAddr),
+		Confirmed:   confirmed,
 	}
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, poll.String()))
 	return mgr.broadcaster.Broadcast(msg)
@@ -83,7 +84,7 @@ func (mgr Mgr) ProcessTokenConfirmation(attributes []sdk.Attribute) error {
 	}
 
 	confirmed := mgr.validate(txID, confHeight, func(txReceipt *geth.Receipt) bool {
-		err = confirmERC20TokenDeploy(txReceipt, symbol, gatewayAddr, tokenAddr)
+		err = confirmERC20TokenDeployment(txReceipt, symbol, gatewayAddr, tokenAddr)
 		if err != nil {
 			mgr.logger.Debug(sdkerrors.Wrap(err, "token confirmation failed").Error())
 			return false
@@ -94,7 +95,7 @@ func (mgr Mgr) ProcessTokenConfirmation(attributes []sdk.Attribute) error {
 	msg := &ethTypes.VoteConfirmTokenRequest{
 		Sender:    mgr.sender,
 		Poll:      poll,
-		TxID:      txID.Hex(),
+		TxID:      types.Hash(txID),
 		Confirmed: confirmed,
 		Symbol:    symbol,
 	}
@@ -243,7 +244,7 @@ func confirmERC20Deposit(txReceipt *geth.Receipt, amount sdk.Uint, burnAddr comm
 	return nil
 }
 
-func confirmERC20TokenDeploy(txReceipt *geth.Receipt, expectedSymbol string, gatewayAddr, expectedAddr common.Address) error {
+func confirmERC20TokenDeployment(txReceipt *geth.Receipt, expectedSymbol string, gatewayAddr, expectedAddr common.Address) error {
 	for _, log := range txReceipt.Logs {
 		// Event is not emitted by the axelar gateway
 		if log.Address != gatewayAddr {
@@ -251,7 +252,7 @@ func confirmERC20TokenDeploy(txReceipt *geth.Receipt, expectedSymbol string, gat
 		}
 
 		// Event is not for a ERC20 token deployment
-		symbol, tokenAddr, err := decodeERC20TokenDeployEvent(log)
+		symbol, tokenAddr, err := decodeERC20TokenDeploymentEvent(log)
 		if err != nil {
 			continue
 		}
@@ -291,8 +292,8 @@ func decodeERC20TransferEvent(log *geth.Log) (common.Address, sdk.Uint, error) {
 	return to, sdk.NewUintFromBigInt(amount), nil
 }
 
-func decodeERC20TokenDeployEvent(log *geth.Log) (string, common.Address, error) {
-	if len(log.Topics) != 1 || log.Topics[0] != ERC20TokenDeploySig {
+func decodeERC20TokenDeploymentEvent(log *geth.Log) (string, common.Address, error) {
+	if len(log.Topics) != 1 || log.Topics[0] != ERC20TokenDeploymentSig {
 		return "", common.Address{}, fmt.Errorf("event is not for an ERC20 token deployment")
 	}
 

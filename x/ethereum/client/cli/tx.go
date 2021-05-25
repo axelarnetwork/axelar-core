@@ -30,7 +30,7 @@ func GetTxCmd() *cobra.Command {
 	ethTxCmd.AddCommand(
 		GetCmdLink(),
 		GetCmdSignTx(),
-		GetCmdConfirmERC20TokenDeploy(),
+		GetCmdConfirmERC20TokenDeployment(),
 		GetCmdConfirmERC20Deposit(),
 		GetCmdSignPendingTransfersTx(),
 		GetCmdSignDeployToken(),
@@ -103,8 +103,8 @@ func GetCmdSignTx() *cobra.Command {
 	return cmd
 }
 
-// GetCmdConfirmERC20TokenDeploy returns the cli command to confirm a ERC20 token deployment
-func GetCmdConfirmERC20TokenDeploy() *cobra.Command {
+// GetCmdConfirmERC20TokenDeployment returns the cli command to confirm a ERC20 token deployment
+func GetCmdConfirmERC20TokenDeployment() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "confirm-erc20-token [txID] [symbol]",
 		Short: "Confirm an ERC20 token deployment in an Ethereum transaction for a given symbol of token and gateway address",

@@ -21,12 +21,11 @@ func (m VoteConfirmTokenRequest) ValidateBasic() error {
 	if m.Sender == nil || len(m.Sender) != sdk.AddrLen {
 		return fmt.Errorf("missing sender")
 	}
-	if m.TxID == "" {
-		return fmt.Errorf("tx ID missing")
-	}
+
 	if m.Symbol == "" {
 		return fmt.Errorf("symbol missing")
 	}
+
 	return m.Poll.Validate()
 }
 

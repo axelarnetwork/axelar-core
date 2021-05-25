@@ -307,8 +307,8 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	btcK := btcKeeper.NewKeeper(
 		appCodec, keys[btcTypes.StoreKey], app.getSubspace(btcTypes.ModuleName),
 	)
-	ethK := ethKeeper.NewEthKeeper(
-		app.legacyAmino, keys[ethTypes.StoreKey], app.getSubspace(ethTypes.ModuleName),
+	ethK := ethKeeper.NewKeeper(
+		appCodec, keys[ethTypes.StoreKey], app.getSubspace(ethTypes.ModuleName),
 	)
 
 	broadcastK := broadcastKeeper.NewKeeper(app.legacyAmino, keys[broadcastTypes.StoreKey], stakingK)
@@ -321,7 +321,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		},
 	}
 	tssK := tssKeeper.NewKeeper(
-		app.legacyAmino, keys[tssTypes.StoreKey], app.getSubspace(tssTypes.ModuleName), slashingKCast,
+		app.legacyAmino, appCodec, keys[tssTypes.StoreKey], app.getSubspace(tssTypes.ModuleName), slashingKCast,
 	)
 	snapK := snapKeeper.NewKeeper(
 		app.legacyAmino, keys[snapTypes.StoreKey], app.getSubspace(snapTypes.ModuleName), broadcastK, stakingK,
