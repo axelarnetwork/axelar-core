@@ -13,6 +13,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
+	// nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -25,6 +26,7 @@ const (
 	QueryMasterAddress        = "master-address"
 	QueryAxelarGatewayAddress = "gateway-address"
 	QueryCommandData          = "command-data"
+	QueryDepositAddress		  = "deposit-address"
 	CreateDeployTx            = "deploy-gateway"
 	SendTx                    = "send-tx"
 	SendCommand               = "send-command"
@@ -42,6 +44,8 @@ func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer) sdk.Querier {
 			return queryTokenAddress(ctx, k, path[1])
 		case QueryCommandData:
 			return queryCommandData(ctx, k, s, path[1])
+		case QueryDepositAddress:
+			return queryDepositAddress(ctx, k, req.Data)
 		case CreateDeployTx:
 			return createDeployGateway(ctx, k, rpc, s, req.Data)
 		case SendTx:
@@ -52,6 +56,30 @@ func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer) sdk.Querier {
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown eth-bridge query endpoint: %s", path[0]))
 		}
 	}
+}
+
+func queryDepositAddress(ctx sdk.Context, k Keeper, data []byte) ([]byte, error) {
+	var params types.DepositQueryParams
+	if err := types.ModuleCdc.UnmarshalJSON(data, &params); err != nil {
+		return nil, fmt.Errorf("could not parse the recipient")
+	}
+
+	gatewayAddr, ok := k.GetGatewayAddress(ctx)
+	if !ok {
+		return nil, fmt.Errorf("axelar gateway address not set")
+	}
+
+	tokenAddr, err := k.GetTokenAddress(ctx, params.Symbol, gatewayAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	depositAddr, _, err := k.GetBurnerAddressAndSalt(ctx, tokenAddr, params.Address, gatewayAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	return depositAddr.Bytes(), nil
 }
 
 func queryMasterAddress(ctx sdk.Context, s types.Signer) ([]byte, error) {

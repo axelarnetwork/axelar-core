@@ -24,10 +24,11 @@ import (
 
 // Query paths
 const (
-	QueryDepositAddress      = "depositAddr"
-	QueryMasterAddress       = "masterAddr"
-	GetConsolidationTx       = "getConsolidationTx"
-	GetPayForConsolidationTx = "getPayForConsolidationTx"
+	QueryDepositAddress      	= "depositAddr"
+	QueryMasterAddress       	= "masterAddr"
+	QueryMinimumWithdrawAmount 	= "minWithdrawAmount"
+	GetConsolidationTx      	= "getConsolidationTx"
+	GetPayForConsolidationTx  	= "getPayForConsolidationTx"
 )
 
 // NewQuerier returns a new querier for the Bitcoin module
@@ -40,6 +41,8 @@ func NewQuerier(rpc types.RPCClient, k types.BTCKeeper, s types.Signer, n types.
 			res, err = queryDepositAddress(ctx, k, s, n, req.Data)
 		case QueryMasterAddress:
 			res, err = queryMasterAddress(ctx, k, s)
+		case QueryMinimumWithdrawAmount:
+			res = queryMinimumWithdrawAmount(ctx, k)
 		case GetConsolidationTx:
 			res, err = getRawConsolidationTx(ctx, k)
 		case GetPayForConsolidationTx:
@@ -96,6 +99,13 @@ func queryMasterAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer) ([]b
 	}
 
 	return []byte(addr.Address), nil
+}
+
+func queryMinimumWithdrawAmount(ctx sdk.Context, k types.BTCKeeper) ([]byte) {
+
+	amount := make([]byte, 8)
+	binary.LittleEndian.PutUint64(amount, uint64(k.GetMinimumWithdrawalAmount(ctx)))
+	return amount
 }
 
 func getRawConsolidationTx(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {

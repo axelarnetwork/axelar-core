@@ -3,6 +3,7 @@ package cli
 import (
 	"encoding/binary"
 	"fmt"
+	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -29,6 +30,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdConsolidationTx(queryRoute),
 		GetCmdPayForConsolidationTx(queryRoute),
 		GetCmdMasterAddress(queryRoute),
+		GetCmdMinimumWithdrawAmount(queryRoute),
 	)
 
 	return btcTxCmd
@@ -65,7 +67,7 @@ func GetCmdMasterAddress(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "master-addr",
 		Short: "Returns the bitcoin address of the current master key",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
@@ -137,6 +139,34 @@ func GetCmdPayForConsolidationTx(queryRoute string) *cobra.Command {
 		return clientCtx.PrintObjectLegacy(string(res))
 	}
 
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdMinimumWithdrawAmount returns the minimum amount to withdraw
+func GetCmdMinimumWithdrawAmount(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "minWithdraw",
+		Short: "Returns the minimum withdraw amount in satoshi",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryMinimumWithdrawAmount)
+
+			res, _, err := clientCtx.QueryWithData(path, nil)
+			if err != nil {
+				return sdkerrors.Wrap(err, types.ErrFDepositAddress)
+			}
+
+			response := int64(binary.LittleEndian.Uint64(res))
+
+			return clientCtx.PrintString(strconv.FormatInt(response, 10))
+		},
+	}
 	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }

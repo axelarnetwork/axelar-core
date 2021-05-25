@@ -52,6 +52,9 @@
 - [ethereum/v1beta1/genesis.proto](#ethereum/v1beta1/genesis.proto)
     - [GenesisState](#ethereum.v1beta1.GenesisState)
   
+- [ethereum/v1beta1/query.proto](#ethereum/v1beta1/query.proto)
+    - [DepositQueryParams](#ethereum.v1beta1.DepositQueryParams)
+  
 - [ethereum/v1beta1/tx.proto](#ethereum/v1beta1/tx.proto)
     - [MsgConfirmDeposit](#ethereum.v1beta1.MsgConfirmDeposit)
     - [MsgConfirmToken](#ethereum.v1beta1.MsgConfirmToken)
@@ -664,6 +667,40 @@ Params is the parameter set for this module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#ethereum.v1beta1.Params) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="ethereum/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## ethereum/v1beta1/query.proto
+
+
+
+<a name="ethereum.v1beta1.DepositQueryParams"></a>
+
+### DepositQueryParams
+DepositQueryParams describe the parameters used to query for an Ethereum
+deposit address
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
+| `symbol` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
 
 
 
