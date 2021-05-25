@@ -2,9 +2,12 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -24,9 +27,11 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
+	"github.com/rs/zerolog"
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	tmcfg "github.com/tendermint/tendermint/config"
 	tmcli "github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
@@ -63,12 +68,43 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 				return err
 			}
 
-			return server.InterceptConfigsPreRunHandler(cmd)
+			err := server.InterceptConfigsPreRunHandler(cmd)
+			if err != nil {
+				return err
+			}
+
+			// InterceptConfigsPreRunHandler initializes a console logger with an improper time format with no way of changing the config,
+			// so we need to overwrite the logger
+			err = overwriteLogger(cmd)
+			if err != nil {
+				return err
+			}
+
+			return nil
 		},
 	}
 
 	initRootCmd(rootCmd, encodingConfig)
 	return rootCmd, encodingConfig
+}
+
+func overwriteLogger(cmd *cobra.Command) error {
+	serverCtx := server.GetServerContextFromCmd(cmd)
+	var logWriter io.Writer
+	if strings.ToLower(serverCtx.Viper.GetString(flags.FlagLogFormat)) == tmcfg.LogFormatPlain {
+		logWriter = zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}
+	} else {
+		logWriter = os.Stderr
+	}
+
+	logLvlStr := serverCtx.Viper.GetString(flags.FlagLogLevel)
+	logLvl, err := zerolog.ParseLevel(logLvlStr)
+	if err != nil {
+		return fmt.Errorf("failed to parse log level (%s): %w", logLvlStr, err)
+	}
+
+	serverCtx.Logger = server.ZeroLogWrapper{Logger: zerolog.New(logWriter).Level(logLvl).With().Timestamp().Logger()}
+	return nil
 }
 
 func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {

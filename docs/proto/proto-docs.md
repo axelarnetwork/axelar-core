@@ -10,6 +10,7 @@
     - [OutPointInfo](#bitcoin.v1beta1.OutPointInfo)
   
     - [AddressRole](#bitcoin.v1beta1.AddressRole)
+    - [SignState](#bitcoin.v1beta1.SignState)
   
 - [bitcoin/v1beta1/params.proto](#bitcoin/v1beta1/params.proto)
     - [Params](#bitcoin.v1beta1.Params)
@@ -19,6 +20,7 @@
   
 - [bitcoin/v1beta1/query.proto](#bitcoin/v1beta1/query.proto)
     - [DepositQueryParams](#bitcoin.v1beta1.DepositQueryParams)
+    - [QueryRawTxResponse](#bitcoin.v1beta1.QueryRawTxResponse)
   
 - [vote/exported/v1beta1/types.proto](#vote/exported/v1beta1/types.proto)
     - [PollMeta](#vote.exported.v1beta1.PollMeta)
@@ -56,19 +58,34 @@
     - [DepositQueryParams](#ethereum.v1beta1.DepositQueryParams)
   
 - [ethereum/v1beta1/tx.proto](#ethereum/v1beta1/tx.proto)
-    - [MsgConfirmDeposit](#ethereum.v1beta1.MsgConfirmDeposit)
-    - [MsgConfirmToken](#ethereum.v1beta1.MsgConfirmToken)
-    - [MsgLink](#ethereum.v1beta1.MsgLink)
-    - [MsgSignBurnTokens](#ethereum.v1beta1.MsgSignBurnTokens)
-    - [MsgSignDeployToken](#ethereum.v1beta1.MsgSignDeployToken)
-    - [MsgSignPendingTransfers](#ethereum.v1beta1.MsgSignPendingTransfers)
-    - [MsgSignTransferOwnership](#ethereum.v1beta1.MsgSignTransferOwnership)
-    - [MsgSignTx](#ethereum.v1beta1.MsgSignTx)
-    - [MsgVoteConfirmDeposit](#ethereum.v1beta1.MsgVoteConfirmDeposit)
-    - [MsgVoteConfirmToken](#ethereum.v1beta1.MsgVoteConfirmToken)
+    - [ConfirmDepositRequest](#ethereum.v1beta1.ConfirmDepositRequest)
+    - [ConfirmDepositResponse](#ethereum.v1beta1.ConfirmDepositResponse)
+    - [ConfirmTokenRequest](#ethereum.v1beta1.ConfirmTokenRequest)
+    - [ConfirmTokenResponse](#ethereum.v1beta1.ConfirmTokenResponse)
+    - [LinkRequest](#ethereum.v1beta1.LinkRequest)
+    - [LinkResponse](#ethereum.v1beta1.LinkResponse)
+    - [SignBurnTokensRequest](#ethereum.v1beta1.SignBurnTokensRequest)
+    - [SignBurnTokensResponse](#ethereum.v1beta1.SignBurnTokensResponse)
+    - [SignDeployTokenRequest](#ethereum.v1beta1.SignDeployTokenRequest)
+    - [SignDeployTokenResponse](#ethereum.v1beta1.SignDeployTokenResponse)
+    - [SignPendingTransfersRequest](#ethereum.v1beta1.SignPendingTransfersRequest)
+    - [SignPendingTransfersResponse](#ethereum.v1beta1.SignPendingTransfersResponse)
+    - [SignTransferOwnershipRequest](#ethereum.v1beta1.SignTransferOwnershipRequest)
+    - [SignTransferOwnershipResponse](#ethereum.v1beta1.SignTransferOwnershipResponse)
+    - [SignTxRequest](#ethereum.v1beta1.SignTxRequest)
+    - [SignTxResponse](#ethereum.v1beta1.SignTxResponse)
+    - [VoteConfirmDepositRequest](#ethereum.v1beta1.VoteConfirmDepositRequest)
+    - [VoteConfirmDepositResponse](#ethereum.v1beta1.VoteConfirmDepositResponse)
+    - [VoteConfirmTokenRequest](#ethereum.v1beta1.VoteConfirmTokenRequest)
+    - [VoteConfirmTokenResponse](#ethereum.v1beta1.VoteConfirmTokenResponse)
+  
+- [ethereum/v1beta1/service.proto](#ethereum/v1beta1/service.proto)
+    - [MsgService](#ethereum.v1beta1.MsgService)
   
 - [nexus/exported/v1beta1/types.proto](#nexus/exported/v1beta1/types.proto)
     - [Chain](#nexus.exported.v1beta1.Chain)
+    - [CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress)
+    - [CrossChainTransfer](#nexus.exported.v1beta1.CrossChainTransfer)
   
 - [nexus/v1beta1/params.proto](#nexus/v1beta1/params.proto)
     - [Params](#nexus.v1beta1.Params)
@@ -211,6 +228,20 @@ of a transaction
 | ADDRESS_ROLE_CONSOLIDATION | 2 |  |
 
 
+
+<a name="bitcoin.v1beta1.SignState"></a>
+
+### SignState
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| SIGN_STATE_UNSPECIFIED | 0 |  |
+| SIGN_STATE_SIGNING_PENDING_TRANSFERS | 1 |  |
+| SIGN_STATE_SIGNED_NOT_CONFIRMED | 2 |  |
+| SIGN_STATE_READY_TO_SIGN | 3 |  |
+
+
  <!-- end enums -->
 
  <!-- end HasExtensions -->
@@ -303,6 +334,22 @@ deposit address
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  |  |
 | `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.QueryRawTxResponse"></a>
+
+### QueryRawTxResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `raw_tx` | [string](#string) |  |  |
+| `state` | [SignState](#bitcoin.v1beta1.SignState) |  |  |
 
 
 
@@ -723,9 +770,9 @@ deposit address
 
 
 
-<a name="ethereum.v1beta1.MsgConfirmDeposit"></a>
+<a name="ethereum.v1beta1.ConfirmDepositRequest"></a>
 
-### MsgConfirmDeposit
+### ConfirmDepositRequest
 MsgConfirmDeposit represents an erc20 deposit confirmation message
 
 
@@ -741,9 +788,19 @@ MsgConfirmDeposit represents an erc20 deposit confirmation message
 
 
 
-<a name="ethereum.v1beta1.MsgConfirmToken"></a>
+<a name="ethereum.v1beta1.ConfirmDepositResponse"></a>
 
-### MsgConfirmToken
+### ConfirmDepositResponse
+
+
+
+
+
+
+
+<a name="ethereum.v1beta1.ConfirmTokenRequest"></a>
+
+### ConfirmTokenRequest
 MsgConfirmToken represents a token deploy confirmation message
 
 
@@ -758,9 +815,19 @@ MsgConfirmToken represents a token deploy confirmation message
 
 
 
-<a name="ethereum.v1beta1.MsgLink"></a>
+<a name="ethereum.v1beta1.ConfirmTokenResponse"></a>
 
-### MsgLink
+### ConfirmTokenResponse
+
+
+
+
+
+
+
+<a name="ethereum.v1beta1.LinkRequest"></a>
+
+### LinkRequest
 MsgLink represents the message that links a cross chain address to a burner
 address
 
@@ -777,9 +844,24 @@ address
 
 
 
-<a name="ethereum.v1beta1.MsgSignBurnTokens"></a>
+<a name="ethereum.v1beta1.LinkResponse"></a>
 
-### MsgSignBurnTokens
+### LinkResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `deposit_addr` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="ethereum.v1beta1.SignBurnTokensRequest"></a>
+
+### SignBurnTokensRequest
 MsgSignBurnTokens represents the message to sign commands to burn tokens with
 AxelarGateway
 
@@ -793,9 +875,24 @@ AxelarGateway
 
 
 
-<a name="ethereum.v1beta1.MsgSignDeployToken"></a>
+<a name="ethereum.v1beta1.SignBurnTokensResponse"></a>
 
-### MsgSignDeployToken
+### SignBurnTokensResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `command_id` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="ethereum.v1beta1.SignDeployTokenRequest"></a>
+
+### SignDeployTokenRequest
 MsgSignDeployToken represents the message to sign a deploy token command for
 AxelarGateway
 
@@ -813,9 +910,24 @@ AxelarGateway
 
 
 
-<a name="ethereum.v1beta1.MsgSignPendingTransfers"></a>
+<a name="ethereum.v1beta1.SignDeployTokenResponse"></a>
 
-### MsgSignPendingTransfers
+### SignDeployTokenResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `command_id` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="ethereum.v1beta1.SignPendingTransfersRequest"></a>
+
+### SignPendingTransfersRequest
 MsgSignPendingTransfers represents a message to trigger the signing of all
 pending transfers
 
@@ -829,9 +941,24 @@ pending transfers
 
 
 
-<a name="ethereum.v1beta1.MsgSignTransferOwnership"></a>
+<a name="ethereum.v1beta1.SignPendingTransfersResponse"></a>
 
-### MsgSignTransferOwnership
+### SignPendingTransfersResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `command_id` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="ethereum.v1beta1.SignTransferOwnershipRequest"></a>
+
+### SignTransferOwnershipRequest
 MsgSignDeployToken represents the message to sign a deploy token command for
 AxelarGateway
 
@@ -846,9 +973,24 @@ AxelarGateway
 
 
 
-<a name="ethereum.v1beta1.MsgSignTx"></a>
+<a name="ethereum.v1beta1.SignTransferOwnershipResponse"></a>
 
-### MsgSignTx
+### SignTransferOwnershipResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `command_id` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="ethereum.v1beta1.SignTxRequest"></a>
+
+### SignTxRequest
 
 
 
@@ -862,9 +1004,24 @@ AxelarGateway
 
 
 
-<a name="ethereum.v1beta1.MsgVoteConfirmDeposit"></a>
+<a name="ethereum.v1beta1.SignTxResponse"></a>
 
-### MsgVoteConfirmDeposit
+### SignTxResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="ethereum.v1beta1.VoteConfirmDepositRequest"></a>
+
+### VoteConfirmDepositRequest
 MsgVoteConfirmDeposit represents a message that votes on a deposit
 
 
@@ -881,9 +1038,24 @@ MsgVoteConfirmDeposit represents a message that votes on a deposit
 
 
 
-<a name="ethereum.v1beta1.MsgVoteConfirmToken"></a>
+<a name="ethereum.v1beta1.VoteConfirmDepositResponse"></a>
 
-### MsgVoteConfirmToken
+### VoteConfirmDepositResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `log` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="ethereum.v1beta1.VoteConfirmTokenRequest"></a>
+
+### VoteConfirmTokenRequest
 MsgVoteConfirmToken represents a message that votes on a token deploy
 
 
@@ -899,11 +1071,61 @@ MsgVoteConfirmToken represents a message that votes on a token deploy
 
 
 
+
+<a name="ethereum.v1beta1.VoteConfirmTokenResponse"></a>
+
+### VoteConfirmTokenResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `log` | [string](#string) |  |  |
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
 
  <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="ethereum/v1beta1/service.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## ethereum/v1beta1/service.proto
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="ethereum.v1beta1.MsgService"></a>
+
+### MsgService
+Msg defines the ethereum Msg service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `Link` | [LinkRequest](#ethereum.v1beta1.LinkRequest) | [LinkResponse](#ethereum.v1beta1.LinkResponse) |  | POST|/axelar/ethereum/link/{recipient_chain}|
+| `ConfirmToken` | [ConfirmTokenRequest](#ethereum.v1beta1.ConfirmTokenRequest) | [ConfirmTokenResponse](#ethereum.v1beta1.ConfirmTokenResponse) |  | POST|/axelar/ethereum/confirm-erc20-deploy/{symbol}|
+| `ConfirmDeposit` | [ConfirmDepositRequest](#ethereum.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#ethereum.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/ethereum/confirm-erc20-deposit|
+| `VoteConfirmDeposit` | [VoteConfirmDepositRequest](#ethereum.v1beta1.VoteConfirmDepositRequest) | [VoteConfirmDepositResponse](#ethereum.v1beta1.VoteConfirmDepositResponse) |  | ||
+| `VoteConfirmToken` | [VoteConfirmTokenRequest](#ethereum.v1beta1.VoteConfirmTokenRequest) | [VoteConfirmTokenResponse](#ethereum.v1beta1.VoteConfirmTokenResponse) |  | ||
+| `SignDeployToken` | [SignDeployTokenRequest](#ethereum.v1beta1.SignDeployTokenRequest) | [SignDeployTokenResponse](#ethereum.v1beta1.SignDeployTokenResponse) |  | POST|/axelar/ethereum/sign-deploy-token/{symbol}|
+| `SignBurnTokens` | [SignBurnTokensRequest](#ethereum.v1beta1.SignBurnTokensRequest) | [SignBurnTokensResponse](#ethereum.v1beta1.SignBurnTokensResponse) |  | POST|/axelar/ethereum/sign-burn|
+| `SignTx` | [SignTxRequest](#ethereum.v1beta1.SignTxRequest) | [SignTxResponse](#ethereum.v1beta1.SignTxResponse) |  | POST|/axelar/ethereum/sign-tx|
+| `SignPendingTransfers` | [SignPendingTransfersRequest](#ethereum.v1beta1.SignPendingTransfersRequest) | [SignPendingTransfersResponse](#ethereum.v1beta1.SignPendingTransfersResponse) |  | POST|/axelar/ethereum/sign-pending|
+| `SignTransferOwnership` | [SignTransferOwnershipRequest](#ethereum.v1beta1.SignTransferOwnershipRequest) | [SignTransferOwnershipResponse](#ethereum.v1beta1.SignTransferOwnershipResponse) |  | ||
 
  <!-- end services -->
 
@@ -927,6 +1149,40 @@ Chain represents the properties of a registered blockchain
 | `name` | [string](#string) |  |  |
 | `native_asset` | [string](#string) |  |  |
 | `supports_foreign_assets` | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="nexus.exported.v1beta1.CrossChainAddress"></a>
+
+### CrossChainAddress
+CrossChainAddress represents a generalized address on any registered chain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [Chain](#nexus.exported.v1beta1.Chain) |  |  |
+| `address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="nexus.exported.v1beta1.CrossChainTransfer"></a>
+
+### CrossChainTransfer
+CrossChainTransfer represents a generalized transfer of some asset to a
+registered blockchain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `recipient` | [CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress) |  |  |
+| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `id` | [uint64](#uint64) |  |  |
 
 
 
@@ -1354,11 +1610,12 @@ Params is the parameter set for this module
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `locking_period` | [int64](#int64) |  | Deprecated |
+| `locking_period` | [int64](#int64) |  | **Deprecated.**  |
 | `min_keygen_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  | MinKeygenThreshold defines the minimum % of stake that must be online to authorize generation of a new key in the system. |
 | `corruption_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  | CorruptionThreshold defines the corruption threshold with which we'll run keygen protocol. |
 | `key_requirements` | [tss.exported.v1beta1.KeyRequirement](#tss.exported.v1beta1.KeyRequirement) | repeated | KeyRequirements defines the requirement of each key for each chain |
 | `min_bond_fraction_per_share` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  | MinBondFractionPerShare defines the % of stake validators have to bond per key share |
+| `suspend_duration_in_blocks` | [int64](#int64) |  | SuspendDurationInBlocks defines the number of blocks a validator is disallowed to participate in any TSS ceremony after committing a malicious behaviour during signing |
 
 
 
@@ -1613,7 +1870,7 @@ VoteSigRequest represents a message to vote for a signature
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `poll_meta` | [vote.exported.v1beta1.PollMeta](#vote.exported.v1beta1.PollMeta) |  |  |
-| `sig_bytes` | [bytes](#bytes) |  | need to vote on the bytes instead of r, s, because Go cannot deserialize private fields using reflection (so *big.Int does not work) |
+| `result` | [tss.tofnd.v1beta1.MessageOut.SignResult](#tss.tofnd.v1beta1.MessageOut.SignResult) |  |  |
 
 
 

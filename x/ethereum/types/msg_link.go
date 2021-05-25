@@ -8,17 +8,17 @@ import (
 )
 
 // Route implements sdk.Msg
-func (m MsgLink) Route() string {
+func (m LinkRequest) Route() string {
 	return RouterKey
 }
 
 // Type  implements sdk.Msg
-func (m MsgLink) Type() string {
+func (m LinkRequest) Type() string {
 	return "Link"
 }
 
 // ValidateBasic implements sdk.Msg
-func (m MsgLink) ValidateBasic() error {
+func (m LinkRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
@@ -37,12 +37,12 @@ func (m MsgLink) ValidateBasic() error {
 }
 
 // GetSignBytes implements sdk.Msg
-func (m MsgLink) GetSignBytes() []byte {
+func (m LinkRequest) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
 }
 
 // GetSigners implements sdk.Msg
-func (m MsgLink) GetSigners() []sdk.AccAddress {
+func (m LinkRequest) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }

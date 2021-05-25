@@ -9,31 +9,31 @@ import (
 
 // RegisterLegacyAminoCodec registers concrete types on codec
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	cdc.RegisterConcrete(&MsgLink{}, "ethereum/MsgLink", nil)
-	cdc.RegisterConcrete(&MsgVoteConfirmToken{}, "ethereum/VoteConfirmToken", nil)
-	cdc.RegisterConcrete(&MsgVoteConfirmDeposit{}, "ethereum/VoteConfirmDeposit", nil)
-	cdc.RegisterConcrete(&MsgConfirmToken{}, "ethereum/ConfirmToken", nil)
-	cdc.RegisterConcrete(&MsgConfirmDeposit{}, "ethereum/ConfirmDeposit", nil)
-	cdc.RegisterConcrete(&MsgSignTx{}, "ethereum/SignTx", nil)
-	cdc.RegisterConcrete(&MsgSignPendingTransfers{}, "ethereum/SignPendingTransfers", nil)
-	cdc.RegisterConcrete(&MsgSignDeployToken{}, "ethereum/SignDeployToken", nil)
-	cdc.RegisterConcrete(&MsgSignBurnTokens{}, "ethereum/SignBurnTokens", nil)
-	cdc.RegisterConcrete(&MsgSignTransferOwnership{}, "ethereum/SignTransferOwnership", nil)
+	cdc.RegisterConcrete(&LinkRequest{}, "ethereum/MsgLink", nil)
+	cdc.RegisterConcrete(&VoteConfirmTokenRequest{}, "ethereum/VoteConfirmToken", nil)
+	cdc.RegisterConcrete(&VoteConfirmDepositRequest{}, "ethereum/VoteConfirmDeposit", nil)
+	cdc.RegisterConcrete(&ConfirmTokenRequest{}, "ethereum/ConfirmToken", nil)
+	cdc.RegisterConcrete(&ConfirmDepositRequest{}, "ethereum/ConfirmDeposit", nil)
+	cdc.RegisterConcrete(&SignTxRequest{}, "ethereum/SignTx", nil)
+	cdc.RegisterConcrete(&SignPendingTransfersRequest{}, "ethereum/SignPendingTransfers", nil)
+	cdc.RegisterConcrete(&SignDeployTokenRequest{}, "ethereum/SignDeployToken", nil)
+	cdc.RegisterConcrete(&SignBurnTokensRequest{}, "ethereum/SignBurnTokens", nil)
+	cdc.RegisterConcrete(&SignTransferOwnershipRequest{}, "ethereum/SignTransferOwnership", nil)
 }
 
 // RegisterInterfaces registers types and interfaces with the given registry
 func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil),
-		&MsgLink{},
-		&MsgVoteConfirmToken{},
-		&MsgVoteConfirmDeposit{},
-		&MsgConfirmToken{},
-		&MsgConfirmDeposit{},
-		&MsgSignTx{},
-		&MsgSignPendingTransfers{},
-		&MsgSignDeployToken{},
-		&MsgSignBurnTokens{},
-		&MsgSignTransferOwnership{},
+		&LinkRequest{},
+		&VoteConfirmTokenRequest{},
+		&VoteConfirmDepositRequest{},
+		&ConfirmTokenRequest{},
+		&ConfirmDepositRequest{},
+		&SignTxRequest{},
+		&SignPendingTransfersRequest{},
+		&SignDeployTokenRequest{},
+		&SignBurnTokensRequest{},
+		&SignTransferOwnershipRequest{},
 	)
 }
 

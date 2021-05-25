@@ -4,6 +4,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
+	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/tendermint/tendermint/libs/log"
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -15,6 +17,10 @@ import (
 
 // EthKeeper is implemented by this module's keeper
 type EthKeeper interface {
+	GetParams(ctx sdk.Context) Params
+	SetParams(ctx sdk.Context, params Params)
+	GetNetwork(ctx sdk.Context) Network
+
 	GetGatewayAddress(ctx sdk.Context) (common.Address, bool)
 	GetTokenAddress(ctx sdk.Context, symbol string, gatewayAddr common.Address) (common.Address, error)
 	GetRevoteLockingPeriod(ctx sdk.Context) int64
@@ -24,6 +30,22 @@ type EthKeeper interface {
 	GetDeposit(ctx sdk.Context, txID string, burnerAddr string) (ERC20Deposit, DepositState, bool)
 	GetBurnerInfo(ctx sdk.Context, address common.Address) *BurnerInfo
 	SetPendingDeposit(ctx sdk.Context, poll vote.PollMeta, deposit *ERC20Deposit)
+	GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error)
+	SetBurnerInfo(ctx sdk.Context, burnerAddr common.Address, burnerInfo *BurnerInfo)
+	GetPendingDeposit(ctx sdk.Context, poll vote.PollMeta) (ERC20Deposit, bool)
+	DeletePendingDeposit(ctx sdk.Context, poll vote.PollMeta)
+	DeleteDeposit(ctx sdk.Context, deposit ERC20Deposit)
+	Logger(ctx sdk.Context) log.Logger
+	SetDeposit(ctx sdk.Context, deposit ERC20Deposit, state DepositState)
+	GetPendingTokenDeploy(ctx sdk.Context, poll vote.PollMeta) (ERC20TokenDeploy, bool)
+	DeletePendingToken(ctx sdk.Context, poll vote.PollMeta)
+	SetCommandData(ctx sdk.Context, commandID CommandID, commandData []byte)
+	SetTokenInfo(ctx sdk.Context, msg *SignDeployTokenRequest)
+	GetConfirmedDeposits(ctx sdk.Context) []ERC20Deposit
+	SetUnsignedTx(ctx sdk.Context, txID string, tx *ethTypes.Transaction)
+	GetHashToSign(ctx sdk.Context, txID string) (common.Hash, error)
+	GetGatewayByteCodes(ctx sdk.Context) []byte
+	SetGatewayAddress(ctx sdk.Context, addr common.Address)
 }
 
 // Voter wraps around the existing vote.Voter interface to adhere to the Cosmos convention of keeping all

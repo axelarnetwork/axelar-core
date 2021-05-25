@@ -224,18 +224,18 @@ func (k Keeper) SetPendingTokenDeploy(ctx sdk.Context, poll exported.PollMeta, t
 }
 
 // SetTokenInfo stores the token info
-func (k Keeper) SetTokenInfo(ctx sdk.Context, msg *types.MsgSignDeployToken) {
+func (k Keeper) SetTokenInfo(ctx sdk.Context, msg *types.SignDeployTokenRequest) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(msg)
 	ctx.KVStore(k.storeKey).Set([]byte(symbolPrefix+msg.Symbol), bz)
 }
 
 // getTokenInfo retrieves the token info
-func (k Keeper) getTokenInfo(ctx sdk.Context, symbol string) *types.MsgSignDeployToken {
+func (k Keeper) getTokenInfo(ctx sdk.Context, symbol string) *types.SignDeployTokenRequest {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(symbolPrefix + symbol))
 	if bz == nil {
 		return nil
 	}
-	var msg *types.MsgSignDeployToken
+	var msg *types.SignDeployTokenRequest
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &msg)
 
 	return msg

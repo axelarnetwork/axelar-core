@@ -8,6 +8,7 @@ import (
 
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -27,7 +28,7 @@ func (k Keeper) StartSign(ctx sdk.Context, voter types.InitPoller, keyID string,
 	activeShareCount := sdk.ZeroInt()
 
 	for _, validator := range s.Validators {
-		if snapshot.IsValidatorActive(ctx, k.slasher, validator) {
+		if snapshot.IsValidatorActive(ctx, k.slasher, validator) && !snapshot.IsValidatorTssSuspended(ctx, k, validator) {
 			activeValidators = append(activeValidators, validator)
 			activeShareCount = activeShareCount.AddRaw(validator.ShareCount)
 		}
@@ -109,6 +110,10 @@ func (k Keeper) getKeyIDForSig(ctx sdk.Context, sigID string) (string, bool) {
 	return string(bz), true
 }
 
+func (k Keeper) deleteKeyIDForSig(ctx sdk.Context, sigID string) {
+	ctx.KVStore(k.storeKey).Delete([]byte(keyIDForSigPrefix + sigID))
+}
+
 func (k Keeper) setParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) {
 	ctx.KVStore(k.storeKey).Set([]byte(participatePrefix+"sign_"+sigID+validator.String()), []byte{})
 }
@@ -116,4 +121,14 @@ func (k Keeper) setParticipateInSign(ctx sdk.Context, sigID string, validator sd
 // DoesValidatorParticipateInSign returns true if given validator participates in signing for the given sig ID; otherwise, false
 func (k Keeper) DoesValidatorParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) bool {
 	return ctx.KVStore(k.storeKey).Has([]byte(participatePrefix + "sign_" + sigID + validator.String()))
+}
+
+// PenalizeSignCriminal penalizes the criminal caught during signing according to the given crime type
+func (k Keeper) PenalizeSignCriminal(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd.MessageOut_CriminalList_Criminal_CrimeType) {
+	switch crimeType {
+	case tofnd.CRIME_TYPE_MALICIOUS:
+		k.setTssSuspendedUntil(ctx, criminal, ctx.BlockHeight()+k.GetParams(ctx).SuspendDurationInBlocks)
+	default:
+		k.Logger(ctx).Info("no policy is set to penalize validator %s for crime type %s", criminal.String(), crimeType.String())
+	}
 }

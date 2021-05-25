@@ -105,7 +105,13 @@ func GetCmdConsolidationTx(queryRoute string) *cobra.Command {
 				return sdkerrors.Wrap(err, types.ErrFGetTransfers)
 			}
 
-			return clientCtx.PrintObjectLegacy(string(res))
+			var response types.QueryRawTxResponse
+			err = response.Unmarshal(res)
+			if err != nil {
+				return err
+			}
+			return clientCtx.PrintProto(&response)
+
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)

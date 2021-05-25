@@ -124,7 +124,7 @@ func Test_wBTC_mint(t *testing.T) {
 	cdc.MustUnmarshalJSON(bz, &result)
 
 	deployGatewayResult := <-chain.Submit(
-		&ethTypes.MsgSignTx{Sender: randomSender(), Tx: cdc.MustMarshalJSON(result.Tx)})
+		&ethTypes.SignTxRequest{Sender: randomSender(), Tx: cdc.MustMarshalJSON(result.Tx)})
 	assert.NoError(t, deployGatewayResult.Error)
 
 	// wait for voting to be done (signing takes longer to tally up)
@@ -132,15 +132,17 @@ func Test_wBTC_mint(t *testing.T) {
 		assert.FailNow(t, "signing", err)
 	}
 
+	var signTxResponse ethTypes.SignTxResponse
+	assert.NoError(t, proto.Unmarshal(deployGatewayResult.Data, &signTxResponse))
 	_, err = nodeData[0].Node.Query(
-		[]string{ethTypes.QuerierRoute, ethKeeper.SendTx, string(deployGatewayResult.Data)},
+		[]string{ethTypes.QuerierRoute, ethKeeper.SendTx, signTxResponse.TxID},
 		abci.RequestQuery{Data: nil},
 	)
 	assert.NoError(t, err)
 
 	// deploy token
 	deployTokenResult := <-chain.Submit(
-		&ethTypes.MsgSignDeployToken{Sender: randomSender(), Capacity: sdk.NewInt(100000), Decimals: 8, Symbol: "satoshi", TokenName: "Satoshi"})
+		&ethTypes.SignDeployTokenRequest{Sender: randomSender(), Capacity: sdk.NewInt(100000), Decimals: 8, Symbol: "satoshi", TokenName: "Satoshi"})
 	assert.NoError(t, deployTokenResult.Error)
 
 	// wait for voting to be done (signing takes longer to tally up)
@@ -200,7 +202,7 @@ func Test_wBTC_mint(t *testing.T) {
 		}
 	}
 
-	confirmResult := <-chain.Submit(ethTypes.NewMsgConfirmERC20TokenDeploy(randomSender(), txHash, "satoshi"))
+	confirmResult := <-chain.Submit(ethTypes.NewConfirmTokenRequest(randomSender(), txHash, "satoshi"))
 	assert.NoError(t, confirmResult.Error)
 
 	if err := waitFor(listeners.ethTokenDone, 1); err != nil {
@@ -233,7 +235,7 @@ func Test_wBTC_mint(t *testing.T) {
 	}
 
 	// Sign all pending transfers to Ethereum
-	res := <-chain.Submit(ethTypes.NewMsgSignPendingTransfers(randomSender()))
+	res := <-chain.Submit(ethTypes.NewSignPendingTransfersRequest(randomSender()))
 	assert.NoError(t, res.Error)
 
 	commandID2 := common.BytesToHash(res.Data)

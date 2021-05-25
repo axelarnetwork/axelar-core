@@ -134,7 +134,7 @@ func (mgr *Mgr) handleIntermediateKeygenMsgs(keyID string, intermediate <-chan *
 	return nil
 }
 
-func (mgr *Mgr) handleKeygenResult(keyID string, result <-chan []byte) error {
+func (mgr *Mgr) handleKeygenResult(keyID string, resultChan <-chan interface{}) error {
 	// Delete the reference to the keygen stream with keyID because entering this function means the tss protocol has completed
 	defer func() {
 		mgr.keygen.Lock()
@@ -142,8 +142,8 @@ func (mgr *Mgr) handleKeygenResult(keyID string, result <-chan []byte) error {
 		delete(mgr.keygenStreams, keyID)
 	}()
 
-	bz := <-result
-	btcecPK, err := btcec.ParsePubKey(bz, btcec.S256())
+	result := (<-resultChan).([]byte)
+	btcecPK, err := btcec.ParsePubKey(result, btcec.S256())
 	if err != nil {
 		return sdkerrors.Wrap(err, "handler goroutine: failure to deserialize pubkey")
 	}
@@ -152,7 +152,7 @@ func (mgr *Mgr) handleKeygenResult(keyID string, result <-chan []byte) error {
 	mgr.Logger.Info(fmt.Sprintf("handler goroutine: received pubkey from server! [%v]", pubkey))
 
 	poll := voting.NewPollMeta(tss.ModuleName, keyID)
-	vote := &tss.VotePubKeyRequest{Sender: mgr.sender, PollMeta: poll, PubKeyBytes: bz}
+	vote := &tss.VotePubKeyRequest{Sender: mgr.sender, PollMeta: poll, PubKeyBytes: result}
 	return mgr.broadcaster.Broadcast(vote)
 }
 

@@ -117,7 +117,7 @@ func GetHandlerLink(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := &types.MsgLink{
+		msg := &types.LinkRequest{
 			Sender:         fromAddr,
 			RecipientChain: mux.Vars(r)[clientUtils.PathVarChain],
 			RecipientAddr:  req.RecipientAddr,
@@ -150,7 +150,7 @@ func GetHandlerConfirmTokenDeploy(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		txID := common.HexToHash(req.TxID)
-		msg := types.NewMsgConfirmERC20TokenDeploy(fromAddr, txID, mux.Vars(r)[clientUtils.PathVarSymbol])
+		msg := types.NewConfirmTokenRequest(fromAddr, txID, mux.Vars(r)[clientUtils.PathVarSymbol])
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -180,7 +180,7 @@ func GetHandlerConfirmDeposit(cliCtx client.Context) http.HandlerFunc {
 		amount := sdk.NewUintFromString(req.Amount)
 		burnerAddr := common.HexToAddress(req.BurnerAddress)
 
-		msg := types.NewMsgConfirmERC20Deposit(fromAddr, txID, amount, burnerAddr)
+		msg := types.NewConfirmDepositRequest(fromAddr, txID, amount, burnerAddr)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -214,7 +214,7 @@ func GetHandlerSignTx(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewMsgSignTx(fromAddr, txJSON)
+		msg := types.NewSignTxRequest(fromAddr, txJSON)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -240,7 +240,7 @@ func GetHandlerSignPendingTransfers(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewMsgSignPendingTransfers(fromAddr)
+		msg := types.NewSignPendingTransfersRequest(fromAddr)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -275,7 +275,7 @@ func GetHandlerSignDeployToken(cliCtx client.Context) http.HandlerFunc {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, errors.New("could not parse capacity").Error())
 		}
 
-		msg := types.NewMsgSignDeployToken(fromAddr, req.Name, symbol, uint8(decs), capacity)
+		msg := types.NewSignDeployTokenRequest(fromAddr, req.Name, symbol, uint8(decs), capacity)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -300,7 +300,7 @@ func GetHandlerSignBurnTokens(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewMsgSignBurnTokens(fromAddr)
+		msg := types.NewSignBurnTokensRequest(fromAddr)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

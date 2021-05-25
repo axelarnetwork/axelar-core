@@ -179,7 +179,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.True(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.MsgVoteConfirmDeposit).Confirmed)
+		assert.True(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.VoteConfirmDepositRequest).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("missing attributes", testutils.Func(func(t *testing.T) {
@@ -204,7 +204,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.MsgVoteConfirmDeposit).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.VoteConfirmDepositRequest).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("no block number", testutils.Func(func(t *testing.T) {
@@ -217,7 +217,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.MsgVoteConfirmDeposit).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.VoteConfirmDepositRequest).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("amount mismatch", testutils.Func(func(t *testing.T) {
@@ -234,7 +234,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.MsgVoteConfirmDeposit).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.VoteConfirmDepositRequest).Confirmed)
 	}).Repeat(repeats))
 }
 
@@ -295,7 +295,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.True(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.MsgVoteConfirmToken).Confirmed)
+		assert.True(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.VoteConfirmTokenRequest).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("missing attributes", testutils.Func(func(t *testing.T) {
@@ -320,7 +320,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.MsgVoteConfirmToken).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.VoteConfirmTokenRequest).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("no block number", testutils.Func(func(t *testing.T) {
@@ -333,7 +333,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.MsgVoteConfirmToken).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.VoteConfirmTokenRequest).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("no deploy event", testutils.Func(func(t *testing.T) {
@@ -354,7 +354,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.MsgVoteConfirmToken).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.VoteConfirmTokenRequest).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("wrong deploy event", testutils.Func(func(t *testing.T) {
@@ -372,7 +372,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.MsgVoteConfirmToken).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.VoteConfirmTokenRequest).Confirmed)
 	}).Repeat(repeats))
 }
 

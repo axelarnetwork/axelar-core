@@ -8,6 +8,7 @@ import (
 	tofnd "github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	exported1 "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	grpc "google.golang.org/grpc"
@@ -810,6 +811,9 @@ var _ tsstypes.Voter = &VoterMock{}
 // 			DeletePollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta)  {
 // 				panic("mock out the DeletePoll method")
 // 			},
+// 			GetPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, pollMeta exported1.PollMeta) *votetypes.Poll {
+// 				panic("mock out the GetPoll method")
+// 			},
 // 			InitPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta, snapshotCounter int64) error {
 // 				panic("mock out the InitPoll method")
 // 			},
@@ -829,6 +833,9 @@ type VoterMock struct {
 	// DeletePollFunc mocks the DeletePoll method.
 	DeletePollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta)
 
+	// GetPollFunc mocks the GetPoll method.
+	GetPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, pollMeta exported1.PollMeta) *votetypes.Poll
+
 	// InitPollFunc mocks the InitPoll method.
 	InitPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta, snapshotCounter int64) error
 
@@ -846,6 +853,13 @@ type VoterMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Poll is the poll argument value.
 			Poll exported1.PollMeta
+		}
+		// GetPoll holds details about calls to the GetPoll method.
+		GetPoll []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// PollMeta is the pollMeta argument value.
+			PollMeta exported1.PollMeta
 		}
 		// InitPoll holds details about calls to the InitPoll method.
 		InitPoll []struct {
@@ -876,6 +890,7 @@ type VoterMock struct {
 		}
 	}
 	lockDeletePoll sync.RWMutex
+	lockGetPoll    sync.RWMutex
 	lockInitPoll   sync.RWMutex
 	lockResult     sync.RWMutex
 	lockTallyVote  sync.RWMutex
@@ -913,6 +928,41 @@ func (mock *VoterMock) DeletePollCalls() []struct {
 	mock.lockDeletePoll.RLock()
 	calls = mock.calls.DeletePoll
 	mock.lockDeletePoll.RUnlock()
+	return calls
+}
+
+// GetPoll calls GetPollFunc.
+func (mock *VoterMock) GetPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollMeta exported1.PollMeta) *votetypes.Poll {
+	if mock.GetPollFunc == nil {
+		panic("VoterMock.GetPollFunc: method is nil but Voter.GetPoll was just called")
+	}
+	callInfo := struct {
+		Ctx      github_com_cosmos_cosmos_sdk_types.Context
+		PollMeta exported1.PollMeta
+	}{
+		Ctx:      ctx,
+		PollMeta: pollMeta,
+	}
+	mock.lockGetPoll.Lock()
+	mock.calls.GetPoll = append(mock.calls.GetPoll, callInfo)
+	mock.lockGetPoll.Unlock()
+	return mock.GetPollFunc(ctx, pollMeta)
+}
+
+// GetPollCalls gets all the calls that were made to GetPoll.
+// Check the length with:
+//     len(mockedVoter.GetPollCalls())
+func (mock *VoterMock) GetPollCalls() []struct {
+	Ctx      github_com_cosmos_cosmos_sdk_types.Context
+	PollMeta exported1.PollMeta
+} {
+	var calls []struct {
+		Ctx      github_com_cosmos_cosmos_sdk_types.Context
+		PollMeta exported1.PollMeta
+	}
+	mock.lockGetPoll.RLock()
+	calls = mock.calls.GetPoll
+	mock.lockGetPoll.RUnlock()
 	return calls
 }
 

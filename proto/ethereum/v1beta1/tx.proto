@@ -9,7 +9,7 @@ import "vote/exported/v1beta1/types.proto";
 option (gogoproto.goproto_getters_all) = false;
 
 // MsgConfirmDeposit represents an erc20 deposit confirmation message
-message MsgConfirmDeposit {
+message ConfirmDepositRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string tx_id = 2 [ (gogoproto.customname) = "TxID" ];
@@ -20,17 +20,21 @@ message MsgConfirmDeposit {
   string burner_addr = 4;
 }
 
+message ConfirmDepositResponse {}
+
 // MsgConfirmToken represents a token deploy confirmation message
-message MsgConfirmToken {
+message ConfirmTokenRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string tx_id = 2 [ (gogoproto.customname) = "TxID" ];
   string symbol = 3;
 }
 
+message ConfirmTokenResponse {}
+
 // MsgLink represents the message that links a cross chain address to a burner
 // address
-message MsgLink {
+message LinkRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string recipient_addr = 2;
@@ -38,16 +42,22 @@ message MsgLink {
   string recipient_chain = 4;
 }
 
+message LinkResponse { string deposit_addr = 1; }
+
 // MsgSignBurnTokens represents the message to sign commands to burn tokens with
 // AxelarGateway
-message MsgSignBurnTokens {
+message SignBurnTokensRequest {
   string sender = 1 [ (gogoproto.casttype) =
                           "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
 }
 
+message SignBurnTokensResponse {
+  bytes command_id = 1 [ (gogoproto.customname) = "CommandID" ];
+}
+
 // MsgSignDeployToken represents the message to sign a deploy token command for
 // AxelarGateway
-message MsgSignDeployToken {
+message SignDeployTokenRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   bytes capacity = 2 [
@@ -59,14 +69,22 @@ message MsgSignDeployToken {
   string token_name = 5;
 }
 
+message SignDeployTokenResponse {
+  bytes command_id = 1 [ (gogoproto.customname) = "CommandID" ];
+}
+
 // MsgSignPendingTransfers represents a message to trigger the signing of all
 // pending transfers
-message MsgSignPendingTransfers {
+message SignPendingTransfersRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
 }
 
-message MsgSignTx {
+message SignPendingTransfersResponse {
+  bytes command_id = 1 [ (gogoproto.customname) = "CommandID" ];
+}
+
+message SignTxRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   // Tx is stored in serialized form because the amino codec cannot properly
@@ -74,8 +92,10 @@ message MsgSignTx {
   bytes tx = 2;
 }
 
+message SignTxResponse { string tx_id = 1 [ (gogoproto.customname) = "TxID" ]; }
+
 // MsgVoteConfirmDeposit represents a message that votes on a deposit
-message MsgVoteConfirmDeposit {
+message VoteConfirmDepositRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   vote.exported.v1beta1.PollMeta poll = 2 [ (gogoproto.nullable) = false ];
@@ -84,8 +104,10 @@ message MsgVoteConfirmDeposit {
   bool confirmed = 5;
 }
 
+message VoteConfirmDepositResponse { string log = 1; }
+
 // MsgVoteConfirmToken represents a message that votes on a token deploy
-message MsgVoteConfirmToken {
+message VoteConfirmTokenRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   vote.exported.v1beta1.PollMeta poll = 2 [ (gogoproto.nullable) = false ];
@@ -94,10 +116,16 @@ message MsgVoteConfirmToken {
   bool confirmed = 5;
 }
 
+message VoteConfirmTokenResponse { string log = 1; }
+
 // MsgSignDeployToken represents the message to sign a deploy token command for
 // AxelarGateway
-message MsgSignTransferOwnership {
+message SignTransferOwnershipRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string new_owner = 2;
+}
+
+message SignTransferOwnershipResponse {
+  bytes command_id = 1 [ (gogoproto.customname) = "CommandID" ];
 }

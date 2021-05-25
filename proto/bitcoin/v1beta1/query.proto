@@ -4,6 +4,7 @@ package bitcoin.v1beta1;
 option go_package = "github.com/axelarnetwork/axelar-core/x/bitcoin/types";
 
 import "gogoproto/gogo.proto";
+import "bitcoin/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -12,4 +13,11 @@ option (gogoproto.goproto_getters_all) = false;
 message DepositQueryParams {
   string address = 1;
   string chain = 2;
+}
+
+message QueryRawTxResponse {
+  oneof state_or_tx {
+    string raw_tx = 1;
+    SignState state = 2;
+  }
 }
