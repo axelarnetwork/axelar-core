@@ -100,7 +100,7 @@ func GetCmdConsolidationTx(queryRoute string) *cobra.Command {
 
 			res, _, err := clientCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.GetConsolidationTx), nil)
 			if err != nil {
-				return sdkerrors.Wrap(err, types.ErrFGetTransfers)
+				return sdkerrors.Wrap(err, types.ErrFGetRawTx)
 			}
 
 			var response types.QueryRawTxResponse
@@ -137,7 +137,7 @@ func GetCmdPayForConsolidationTx(queryRoute string) *cobra.Command {
 
 		res, _, err := clientCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.GetPayForConsolidationTx), bz)
 		if err != nil {
-			return sdkerrors.Wrap(err, types.ErrFGetTransfers)
+			return sdkerrors.Wrap(err, types.ErrFGetPayForRawTx)
 		}
 
 		return clientCtx.PrintObjectLegacy(string(res))
