@@ -1,8 +1,6 @@
 package types
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
@@ -10,7 +8,7 @@ import (
 
 // NewSignTransferOwnershipRequest is the constructor for SignTransferOwnershipRequest
 func NewSignTransferOwnershipRequest(sender sdk.AccAddress, newOwner common.Address) *SignTransferOwnershipRequest {
-	return &SignTransferOwnershipRequest{Sender: sender, NewOwner: newOwner.Hex()}
+	return &SignTransferOwnershipRequest{Sender: sender, NewOwner: Address(newOwner)}
 }
 
 // Route implements sdk.Msg
@@ -37,9 +35,6 @@ func (m SignTransferOwnershipRequest) GetSigners() []sdk.AccAddress {
 func (m SignTransferOwnershipRequest) ValidateBasic() error {
 	if m.Sender.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
-	}
-	if m.NewOwner == "" {
-		return fmt.Errorf("missing new owner address")
 	}
 
 	return nil

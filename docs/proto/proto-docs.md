@@ -79,6 +79,11 @@
 - [ethereum/v1beta1/service.proto](#ethereum/v1beta1/service.proto)
     - [MsgService](#ethereum.v1beta1.MsgService)
   
+- [ethereum/v1beta1/types.proto](#ethereum/v1beta1/types.proto)
+    - [BurnerInfo](#ethereum.v1beta1.BurnerInfo)
+    - [ERC20Deposit](#ethereum.v1beta1.ERC20Deposit)
+    - [ERC20TokenDeployment](#ethereum.v1beta1.ERC20TokenDeployment)
+  
 - [nexus/exported/v1beta1/types.proto](#nexus/exported/v1beta1/types.proto)
     - [Chain](#nexus.exported.v1beta1.Chain)
     - [CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress)
@@ -742,9 +747,9 @@ MsgConfirmDeposit represents an erc20 deposit confirmation message
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `tx_id` | [string](#string) |  |  |
+| `tx_id` | [bytes](#bytes) |  |  |
 | `amount` | [bytes](#bytes) |  |  |
-| `burner_addr` | [string](#string) |  |  |
+| `burner_address` | [bytes](#bytes) |  |  |
 
 
 
@@ -770,7 +775,7 @@ MsgConfirmToken represents a token deploy confirmation message
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `tx_id` | [string](#string) |  |  |
+| `tx_id` | [bytes](#bytes) |  |  |
 | `symbol` | [string](#string) |  |  |
 
 
@@ -831,7 +836,7 @@ AxelarGateway
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `sender` | [string](#string) |  |  |
+| `sender` | [bytes](#bytes) |  |  |
 
 
 
@@ -929,7 +934,7 @@ AxelarGateway
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `new_owner` | [string](#string) |  |  |
+| `new_owner` | [bytes](#bytes) |  |  |
 
 
 
@@ -992,8 +997,8 @@ MsgVoteConfirmDeposit represents a message that votes on a deposit
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `poll` | [vote.exported.v1beta1.PollMeta](#vote.exported.v1beta1.PollMeta) |  |  |
-| `tx_id` | [string](#string) |  |  |
-| `burn_addr` | [string](#string) |  |  |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `burn_address` | [bytes](#bytes) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
 
 
@@ -1026,7 +1031,7 @@ MsgVoteConfirmToken represents a message that votes on a token deploy
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `poll` | [vote.exported.v1beta1.PollMeta](#vote.exported.v1beta1.PollMeta) |  |  |
-| `tx_id` | [string](#string) |  |  |
+| `tx_id` | [bytes](#bytes) |  |  |
 | `symbol` | [string](#string) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
 
@@ -1089,6 +1094,74 @@ Msg defines the ethereum Msg service.
 | `SignTx` | [SignTxRequest](#ethereum.v1beta1.SignTxRequest) | [SignTxResponse](#ethereum.v1beta1.SignTxResponse) |  | POST|/axelar/ethereum/sign-tx|
 | `SignPendingTransfers` | [SignPendingTransfersRequest](#ethereum.v1beta1.SignPendingTransfersRequest) | [SignPendingTransfersResponse](#ethereum.v1beta1.SignPendingTransfersResponse) |  | POST|/axelar/ethereum/sign-pending|
 | `SignTransferOwnership` | [SignTransferOwnershipRequest](#ethereum.v1beta1.SignTransferOwnershipRequest) | [SignTransferOwnershipResponse](#ethereum.v1beta1.SignTransferOwnershipResponse) |  | ||
+
+ <!-- end services -->
+
+
+
+<a name="ethereum/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## ethereum/v1beta1/types.proto
+
+
+
+<a name="ethereum.v1beta1.BurnerInfo"></a>
+
+### BurnerInfo
+BurnerInfo describes information required to burn token at an burner address
+that is deposited by an user
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `token_address` | [bytes](#bytes) |  |  |
+| `symbol` | [string](#string) |  |  |
+| `salt` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="ethereum.v1beta1.ERC20Deposit"></a>
+
+### ERC20Deposit
+ERC20Deposit contains information for an ERC20 deposit
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `amount` | [bytes](#bytes) |  |  |
+| `symbol` | [string](#string) |  |  |
+| `burner_address` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="ethereum.v1beta1.ERC20TokenDeployment"></a>
+
+### ERC20TokenDeployment
+ERC20TokenDeployment describes information about an ERC20 token
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `symbol` | [string](#string) |  |  |
+| `token_address` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
 
  <!-- end services -->
 

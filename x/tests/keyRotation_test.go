@@ -171,9 +171,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, err)
 
 	// confirm the token deployment
-	var txHashHex string
-	cdc.MustUnmarshalJSON(bz, &txHashHex)
-	txHash := common.HexToHash(txHashHex)
+	txHash := common.BytesToHash(bz)
 
 	bz, err = nodeData[0].Node.Query(
 		[]string{ethTypes.QuerierRoute, ethKeeper.QueryTokenAddress, "satoshi"},

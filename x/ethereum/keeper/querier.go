@@ -168,12 +168,7 @@ func sendSignedTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer
 		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
 	}
 
-	result := types.SendTxResult{
-		TxID:     txID,
-		SignedTx: signedTx,
-	}
-
-	return k.Codec().MustMarshalJSON(result), nil
+	return signedTx.Hash().Bytes(), nil
 }
 
 func createTxAndSend(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, data []byte) ([]byte, error) {
@@ -224,7 +219,7 @@ func createTxAndSend(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Sig
 		return nil, sdkerrors.Wrapf(types.ErrEthereum, "could not send transaction: %s", err)
 	}
 
-	return k.Codec().MustMarshalJSON(txHash), nil
+	return common.FromHex(txHash), nil
 }
 
 func queryCommandData(ctx sdk.Context, k Keeper, s types.Signer, commandIDHex string) ([]byte, error) {
@@ -252,7 +247,7 @@ func queryCommandData(ctx sdk.Context, k Keeper, s types.Signer, commandIDHex st
 		return nil, sdkerrors.Wrapf(types.ErrEthereum, "could not create transaction data: %s", err)
 	}
 
-	return k.Codec().MustMarshalJSON(executeData), nil
+	return executeData, nil
 }
 
 func getContractOwner(ctx sdk.Context, s types.Signer) (common.Address, error) {
