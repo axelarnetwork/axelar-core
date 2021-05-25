@@ -41,6 +41,4 @@ ENV CONFIG_PATH ""
 # A initialization script to create the genesis file (optional)
 ENV INIT_SCRIPT ""
 
-RUN mkdir "${HOME_DIR}/.axelard"
-
 ENTRYPOINT ["/entrypoint.sh"]

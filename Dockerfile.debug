@@ -38,6 +38,4 @@ ENV REST_CONTINUE true
 # Should dlv wait for a debugger to attach to the axelard process before starting it?
 ENV CORE_CONTINUE true
 
-RUN mkdir "${HOME_DIR}/.axelard"
-
 ENTRYPOINT ["/axelar/entrypoint.debug.sh"]
