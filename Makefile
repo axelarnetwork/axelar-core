@@ -9,7 +9,6 @@ HTTPS_GIT := https://github.com/axelarnetowrk/axelar-core.git
 
 ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=axelar \
 	-X github.com/cosmos/cosmos-sdk/version.ServerName=axelard \
-	-X github.com/cosmos/cosmos-sdk/version.ClientName=axelarcli \
 	-X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
 	-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT)
 
@@ -36,19 +35,11 @@ lint:
 .PHONY: build
 build: go.sum
 		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) ./cmd/axelard
-		go build -o ./bin/axelarcli -mod=readonly $(BUILD_FLAGS) ./cmd/axelarcli
-
 
 # Build the project with debug flags
 .PHONY: debug
 debug: go.sum
 		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) -gcflags="all=-N -l" ./cmd/axelard
-		go build -o ./bin/axelarcli -mod=readonly $(BUILD_FLAGS) -gcflags="all=-N -l" ./cmd/axelarcli
-
-# Build axelarcli with release flags for alpine architecture
-.PHONY: alpine-axelarcli
-alpine-axelarcli: go.sum
-		GOOS=linux GOARCH=amd64 go build -o ./bin/axelarcli -mod=readonly $(BUILD_FLAGS) ./cmd/axelarcli
 
 # Build a release image
 .PHONY: docker-image
