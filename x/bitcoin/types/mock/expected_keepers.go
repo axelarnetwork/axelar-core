@@ -1187,6 +1187,9 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			CodecFunc: func() *codec.LegacyAmino {
 // 				panic("mock out the Codec method")
 // 			},
+// 			CountUnspentOutpointFunc: func(ctx sdk.Context) uint {
+// 				panic("mock out the CountUnspentOutpoint method")
+// 			},
 // 			DeleteOutpointInfoFunc: func(ctx sdk.Context, outPoint wire.OutPoint)  {
 // 				panic("mock out the DeleteOutpointInfo method")
 // 			},
@@ -1269,6 +1272,9 @@ type BTCKeeperMock struct {
 	// CodecFunc mocks the Codec method.
 	CodecFunc func() *codec.LegacyAmino
 
+	// CountUnspentOutpointFunc mocks the CountUnspentOutpoint method.
+	CountUnspentOutpointFunc func(ctx sdk.Context) uint
+
 	// DeleteOutpointInfoFunc mocks the DeleteOutpointInfo method.
 	DeleteOutpointInfoFunc func(ctx sdk.Context, outPoint wire.OutPoint)
 
@@ -1345,6 +1351,11 @@ type BTCKeeperMock struct {
 	calls struct {
 		// Codec holds details about calls to the Codec method.
 		Codec []struct {
+		}
+		// CountUnspentOutpoint holds details about calls to the CountUnspentOutpoint method.
+		CountUnspentOutpoint []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
 		}
 		// DeleteOutpointInfo holds details about calls to the DeleteOutpointInfo method.
 		DeleteOutpointInfo []struct {
@@ -1496,6 +1507,7 @@ type BTCKeeperMock struct {
 		}
 	}
 	lockCodec                         sync.RWMutex
+	lockCountUnspentOutpoint          sync.RWMutex
 	lockDeleteOutpointInfo            sync.RWMutex
 	lockDeletePendingOutPointInfo     sync.RWMutex
 	lockDeleteSignedTx                sync.RWMutex
@@ -1545,6 +1557,37 @@ func (mock *BTCKeeperMock) CodecCalls() []struct {
 	mock.lockCodec.RLock()
 	calls = mock.calls.Codec
 	mock.lockCodec.RUnlock()
+	return calls
+}
+
+// CountUnspentOutpoint calls CountUnspentOutpointFunc.
+func (mock *BTCKeeperMock) CountUnspentOutpoint(ctx sdk.Context) uint {
+	if mock.CountUnspentOutpointFunc == nil {
+		panic("BTCKeeperMock.CountUnspentOutpointFunc: method is nil but BTCKeeper.CountUnspentOutpoint was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockCountUnspentOutpoint.Lock()
+	mock.calls.CountUnspentOutpoint = append(mock.calls.CountUnspentOutpoint, callInfo)
+	mock.lockCountUnspentOutpoint.Unlock()
+	return mock.CountUnspentOutpointFunc(ctx)
+}
+
+// CountUnspentOutpointCalls gets all the calls that were made to CountUnspentOutpoint.
+// Check the length with:
+//     len(mockedBTCKeeper.CountUnspentOutpointCalls())
+func (mock *BTCKeeperMock) CountUnspentOutpointCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockCountUnspentOutpoint.RLock()
+	calls = mock.calls.CountUnspentOutpoint
+	mock.lockCountUnspentOutpoint.RUnlock()
 	return calls
 }
 

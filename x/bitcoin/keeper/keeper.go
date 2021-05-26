@@ -273,3 +273,18 @@ func (k Keeper) GetMasterKeyVout(ctx sdk.Context) (uint32, bool) {
 
 	return binary.LittleEndian.Uint32(bz), true
 }
+
+// CountUnspentOutpoint returns the number of unspent outpoint
+func (k Keeper) CountUnspentOutpoint(ctx sdk.Context) uint {
+	result := uint(0)
+
+	for iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(pendingOutpointPrefix)); iter.Valid(); iter.Next() {
+		result++
+	}
+
+	for iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(confirmedOutPointPrefix)); iter.Valid(); iter.Next() {
+		result++
+	}
+
+	return result
+}

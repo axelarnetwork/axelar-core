@@ -207,7 +207,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	// simulate deposits
-	totalDepositCount := int(rand.I64Between(1, 20))
+	totalDepositCount := int(rand.I64Between(1, 4))
 	var totalDepositAmount int64
 	deposits := make(map[string]btcTypes.OutPointInfo)
 

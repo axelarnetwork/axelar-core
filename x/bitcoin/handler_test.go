@@ -128,6 +128,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) uint64 { return mathRand.Uint64() },
 			SetPendingOutpointInfoFunc:        func(sdk.Context, vote.PollMeta, types.OutPointInfo) {},
 			CodecFunc:                         func() *codec.LegacyAmino { return types.ModuleCdc.LegacyAmino },
+			CountUnspentOutpointFunc:          func(ctx sdk.Context) uint { return 0 },
 		}
 		voter = &mock.VoterMock{
 			InitPollFunc: func(sdk.Context, vote.PollMeta, int64) error { return nil },

@@ -207,7 +207,7 @@ func Test_wBTC_mint(t *testing.T) {
 	}
 
 	// steps followed as per https://github.com/axelarnetwork/axelarate#mint-erc20-wrapped-bitcoin-tokens-on-ethereum
-	totalDepositCount := int(rand.I64Between(1, 20))
+	totalDepositCount := int(rand.I64Between(1, 4))
 	for i := 0; i < totalDepositCount; i++ {
 		// Get a deposit address for an Ethereum recipient address
 		// we don't provide an actual recipient address, so it is created automatically
@@ -222,7 +222,6 @@ func Test_wBTC_mint(t *testing.T) {
 		// confirm the previously received information
 		res = <-chain.Submit(btcTypes.NewMsgConfirmOutpoint(randomSender(), depositInfo))
 		assert.NoError(t, res.Error)
-
 	}
 
 	// Wait until confirm is complete
