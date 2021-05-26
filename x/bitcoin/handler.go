@@ -115,7 +115,7 @@ func HandleMsgConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, voter types.In
 	}
 
 	if k.CountUnspentOutpoint(ctx) >= maxUnspentOutpointCount {
-		return nil, fmt.Errorf("currently no more than %d unspent deposits are allowed in the system, please run sign-pending-transfers first and try again", maxUnspentOutpointCount)
+		return nil, fmt.Errorf("currently no more than %d concurrent unspent deposits are allowed in the system, please check-in with the testnet moderators and ask them to consolidate and re-try later in the day", maxUnspentOutpointCount)
 	}
 
 	k.SetPendingOutpointInfo(ctx, poll, msg.OutPointInfo)
