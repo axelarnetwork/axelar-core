@@ -18,6 +18,8 @@ import (
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
+const maxUnspentOutpointCount = 4
+
 // NewHandler creates an sdk.Handler for all bitcoin type messages
 func NewHandler(k types.BTCKeeper, v types.Voter, signer types.Signer, n types.Nexus, snapshotter types.Snapshotter) sdk.Handler {
 	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
@@ -111,6 +113,11 @@ func HandleMsgConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, voter types.In
 	if err := voter.InitPoll(ctx, poll, counter); err != nil {
 		return nil, err
 	}
+
+	if k.CountUnspentOutpoint(ctx) >= maxUnspentOutpointCount {
+		return nil, fmt.Errorf("currently no more than %d concurrent unspent deposits are allowed in the system, please check-in with the testnet moderators and ask them to consolidate and re-try later in the day", maxUnspentOutpointCount)
+	}
+
 	k.SetPendingOutpointInfo(ctx, poll, msg.OutPointInfo)
 
 	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeOutpointConfirmation,
