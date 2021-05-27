@@ -1,13 +1,13 @@
 ## axelard tx ethereum add-chain
 
-Add a evm chain
+Add a new evm chain
 
 ### Synopsis
 
-Add a evm chain. If the chain is already present, it will be updated.
+Add a new evm chain. If the chain is already present, it will be updated.
 
 ```
-axelard tx ethereum add-chain [name] [native asset] [supports foreign assets] [flags]
+axelard tx ethereum add-chain [name] [native asset] [flags]
 ```
 
 ### Options

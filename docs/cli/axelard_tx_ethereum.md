@@ -26,7 +26,7 @@ axelard tx ethereum [flags]
 ### SEE ALSO
 
 - [axelard tx](axelard_tx.md)	 - Transactions subcommands
-- [axelard tx ethereum add-chain](axelard_tx_ethereum_add-chain.md)	 - Add a evm chain
+- [axelard tx ethereum add-chain](axelard_tx_ethereum_add-chain.md)	 - Add a new evm chain
 - [axelard tx ethereum confirm-erc20-deposit](axelard_tx_ethereum_confirm-erc20-deposit.md)	 - Confirm an ERC20 deposit in an Ethereum transaction that sent given amount of token to a burner address
 - [axelard tx ethereum confirm-erc20-token](axelard_tx_ethereum_confirm-erc20-token.md)	 - Confirm an ERC20 token deployment in an Ethereum transaction for a given symbol of token and gateway address
 - [axelard tx ethereum link](axelard_tx_ethereum_link.md)	 - Link a cross chain address to an ethereum address created by Axelar
