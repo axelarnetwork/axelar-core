@@ -19,6 +19,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&SignDeployTokenRequest{}, "ethereum/SignDeployToken", nil)
 	cdc.RegisterConcrete(&SignBurnTokensRequest{}, "ethereum/SignBurnTokens", nil)
 	cdc.RegisterConcrete(&SignTransferOwnershipRequest{}, "ethereum/SignTransferOwnership", nil)
+	cdc.RegisterConcrete(&AddChainRequest{}, "ethereum/AddChainRequest", nil)
 }
 
 // RegisterInterfaces registers types and interfaces with the given registry
@@ -34,6 +35,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&SignDeployTokenRequest{},
 		&SignBurnTokensRequest{},
 		&SignTransferOwnershipRequest{},
+		&AddChainRequest{},
 	)
 }
 

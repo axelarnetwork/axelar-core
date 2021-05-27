@@ -23,7 +23,7 @@ func (m AddChainRequest) Route() string {
 
 // Type returns the type of the message
 func (m AddChainRequest) Type() string {
-	return "VoteConfirmToken"
+	return "AddChain"
 }
 
 // ValidateBasic executes a stateless message validation

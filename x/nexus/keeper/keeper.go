@@ -55,7 +55,6 @@ func (k Keeper) SetParams(ctx sdk.Context, p types.Params) {
 		// Native assets can be registered at start up
 		k.RegisterAsset(ctx, chain.Name, chain.NativeAsset)
 	}
-
 }
 
 // GetParams gets the nexus module's parameters
