@@ -397,11 +397,13 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 func TestAddChain(t *testing.T) {
 	var (
-		ctx    sdk.Context
-		k      *ethMock.EthKeeperMock
-		n      *ethMock.NexusMock
-		msg    *types.AddChainRequest
-		server types.MsgServiceServer
+		ctx         sdk.Context
+		k           *ethMock.EthKeeperMock
+		n           *ethMock.NexusMock
+		msg         *types.AddChainRequest
+		server      types.MsgServiceServer
+		name        string
+		nativeAsset string
 	)
 
 	setup := func() {
@@ -412,10 +414,12 @@ func TestAddChain(t *testing.T) {
 			RegisterAssetFunc: func(_ sdk.Context, chainName, denom string) {},
 		}
 
+		name = rand.StrBetween(5, 20)
+		nativeAsset = rand.StrBetween(3, 10)
 		msg = &types.AddChainRequest{
 			Sender:      rand.Bytes(20),
-			Name:        rand.StrBetween(5, 20),
-			NativeAsset: rand.StrBetween(3, 10),
+			Name:        name,
+			NativeAsset: nativeAsset,
 		}
 
 		server = NewMsgServerImpl(k, n, &ethMock.SignerMock{}, &ethMock.VoterMock{}, &mock.SnapshotterMock{})
@@ -449,7 +453,21 @@ func TestAddChain(t *testing.T) {
 	t.Run("no asset", testutils.Func(func(t *testing.T) {
 		setup()
 
+		msg.Name = name
 		msg.NativeAsset = ""
+
+		_, err := server.AddChain(sdk.WrapSDKContext(ctx), msg)
+
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(n.SetChainCalls()))
+		assert.Equal(t, 0, len(n.RegisterAssetCalls()))
+	}).Repeat(repeats))
+
+	t.Run("hardcoded chain", testutils.Func(func(t *testing.T) {
+		setup()
+
+		msg.Name = "Bitcoin"
+		msg.NativeAsset = nativeAsset
 
 		_, err := server.AddChain(sdk.WrapSDKContext(ctx), msg)
 

@@ -652,6 +652,12 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 			Log: fmt.Sprintf("invalid chain spec: %v", err)}, nil
 	}
 
+	// hardcoded chains should not be part of the genesis params
+	if chain.IsHardCoded() {
+		return &types.AddChainResponse{
+			Log: fmt.Sprintf("'%s' is a hardcoded chain", chain.Name)}, nil
+	}
+
 	s.nexus.SetChain(ctx, chain)
 	s.nexus.RegisterAsset(ctx, chain.Name, chain.NativeAsset)
 

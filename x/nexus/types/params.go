@@ -1,10 +1,13 @@
 package types
 
 import (
+	"strings"
+
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 
+	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
@@ -55,6 +58,12 @@ func validateChains(infos interface{}) error {
 	for _, c := range chains {
 		if err := c.Validate(); err != nil {
 			return sdkerrors.Wrapf(types.ErrInvalidGenesis, "invalid chain: %v", err)
+		}
+
+		// hardcoded chains should not be part of the genesis params
+		switch strings.ToLower(c.Name) {
+		case strings.ToLower(btc.Bitcoin.Name):
+			return sdkerrors.Wrapf(types.ErrInvalidGenesis, "'%s' is a hardcoded chain", c.Name)
 		}
 	}
 
