@@ -25,6 +25,7 @@ message MessageIn {
     KeygenInit keygen_init = 1; // first message only, Keygen
     SignInit sign_init = 2;     // first message only, Sign
     TrafficIn traffic = 3;      // all subsequent messages
+    bool abort = 4;             // abort the protocol, ignore the bool value
   }
 }
 
