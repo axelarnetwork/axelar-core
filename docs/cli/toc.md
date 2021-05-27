@@ -2,6 +2,7 @@
 
 - [axelard](axelard.md)	 - Axelar App
   - [add-genesis-account \[address_or_key_name\] \[coin\]\[,\[coin\]\]](axelard_add-genesis-account.md)	 - Add a genesis account to genesis.json
+  - [add-genesis-chain-spec \[name\] \[platform\] \[native asset\] \[supports foreign assets\]](axelard_add-genesis-chain-spec.md)	 - Add a chain spec in genesis.json
   - [collect-gentxs](axelard_collect-gentxs.md)	 - Collect genesis txs and output a genesis.json file
   - [debug](axelard_debug.md)	 - Tool for helping with debugging your application
     - [addr \[address\]](axelard_debug_addr.md)	 - Convert an address between hex and bech32

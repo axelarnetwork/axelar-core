@@ -148,3 +148,13 @@ message SignTransferOwnershipRequest {
 message SignTransferOwnershipResponse {
   bytes command_id = 1 [ (gogoproto.customname) = "CommandID" ];
 }
+
+message AddChainRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string name = 2;
+  string native_asset = 3;
+  bool supports_foreign = 4;
+}
+
+message AddChainResponse { string log = 1; }

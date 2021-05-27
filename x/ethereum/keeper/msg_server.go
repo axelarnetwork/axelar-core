@@ -637,3 +637,25 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 
 	return &types.SignTransferOwnershipResponse{CommandID: commandID[:]}, nil
 }
+
+func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*types.AddChainResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain := nexus.Chain{
+		Name:                  req.Name,
+		Platform:              types.ModuleName,
+		NativeAsset:           req.NativeAsset,
+		SupportsForeignAssets: req.SupportsForeign,
+	}
+
+	if err := chain.Validate(); err != nil {
+		return &types.AddChainResponse{
+			Log: fmt.Sprintf("invalid chain spec: %v", err)}, nil
+	}
+
+	s.nexus.SetChain(ctx, chain)
+	s.nexus.RegisterAsset(ctx, chain.Name, chain.NativeAsset)
+
+	return &types.AddChainResponse{
+		Log: fmt.Sprintf("successfully added new chain %s", chain.Name)}, nil
+}

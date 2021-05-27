@@ -55,6 +55,8 @@
     - [GenesisState](#ethereum.v1beta1.GenesisState)
   
 - [ethereum/v1beta1/tx.proto](#ethereum/v1beta1/tx.proto)
+    - [AddChainRequest](#ethereum.v1beta1.AddChainRequest)
+    - [AddChainResponse](#ethereum.v1beta1.AddChainResponse)
     - [ConfirmDepositRequest](#ethereum.v1beta1.ConfirmDepositRequest)
     - [ConfirmDepositResponse](#ethereum.v1beta1.ConfirmDepositResponse)
     - [ConfirmTokenRequest](#ethereum.v1beta1.ConfirmTokenRequest)
@@ -738,6 +740,39 @@ Params is the parameter set for this module
 
 
 
+<a name="ethereum.v1beta1.AddChainRequest"></a>
+
+### AddChainRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `name` | [string](#string) |  |  |
+| `native_asset` | [string](#string) |  |  |
+| `supports_foreign` | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="ethereum.v1beta1.AddChainResponse"></a>
+
+### AddChainResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `log` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="ethereum.v1beta1.ConfirmDepositRequest"></a>
 
 ### ConfirmDepositRequest
@@ -1094,6 +1129,7 @@ Msg defines the ethereum Msg service.
 | `SignTx` | [SignTxRequest](#ethereum.v1beta1.SignTxRequest) | [SignTxResponse](#ethereum.v1beta1.SignTxResponse) |  | POST|/axelar/ethereum/sign-tx|
 | `SignPendingTransfers` | [SignPendingTransfersRequest](#ethereum.v1beta1.SignPendingTransfersRequest) | [SignPendingTransfersResponse](#ethereum.v1beta1.SignPendingTransfersResponse) |  | POST|/axelar/ethereum/sign-pending|
 | `SignTransferOwnership` | [SignTransferOwnershipRequest](#ethereum.v1beta1.SignTransferOwnershipRequest) | [SignTransferOwnershipResponse](#ethereum.v1beta1.SignTransferOwnershipResponse) |  | ||
+| `AddChain` | [AddChainRequest](#ethereum.v1beta1.AddChainRequest) | [AddChainResponse](#ethereum.v1beta1.AddChainResponse) |  | POST|/axelar/ethereum/add-chain|
 
  <!-- end services -->
 
@@ -1183,6 +1219,7 @@ Chain represents the properties of a registered blockchain
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `name` | [string](#string) |  |  |
+| `platform` | [string](#string) |  |  |
 | `native_asset` | [string](#string) |  |  |
 | `supports_foreign_assets` | [bool](#bool) |  |  |
 

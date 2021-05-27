@@ -16,6 +16,7 @@ Axelar App
 ### SEE ALSO
 
 - [axelard add-genesis-account](axelard_add-genesis-account.md)	 - Add a genesis account to genesis.json
+- [axelard add-genesis-chain-spec](axelard_add-genesis-chain-spec.md)	 - Add a chain spec in genesis.json
 - [axelard collect-gentxs](axelard_collect-gentxs.md)	 - Collect genesis txs and output a genesis.json file
 - [axelard debug](axelard_debug.md)	 - Tool for helping with debugging your application
 - [axelard export](axelard_export.md)	 - Export state to JSON
