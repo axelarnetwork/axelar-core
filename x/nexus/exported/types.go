@@ -4,16 +4,6 @@ import (
 	"fmt"
 )
 
-const (
-
-	// Known platforms (TODO: ethereum will eventually be renamed to EVM)
-	ethPlatform = "ethereum"
-	btcPlatform = "bitcoin"
-
-	// Hardcoded chains
-	bitcoin = "bitcoin"
-)
-
 // Validate performs a stateless check to ensure the Chain object has been initialized correctly
 func (m Chain) Validate() error {
 	if m.Name == "" {

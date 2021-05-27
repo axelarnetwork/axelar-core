@@ -395,6 +395,70 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 	}).Repeat(repeats))
 }
 
+func TestAddChain(t *testing.T) {
+	var (
+		ctx    sdk.Context
+		k      *ethMock.EthKeeperMock
+		n      *ethMock.NexusMock
+		msg    *types.AddChainRequest
+		server types.MsgServiceServer
+	)
+
+	setup := func() {
+		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
+
+		n = &ethMock.NexusMock{
+			SetChainFunc:      func(_ sdk.Context, chain nexus.Chain) {},
+			RegisterAssetFunc: func(_ sdk.Context, chainName, denom string) {},
+		}
+
+		msg = &types.AddChainRequest{
+			Sender:      rand.Bytes(20),
+			Name:        rand.StrBetween(5, 20),
+			NativeAsset: rand.StrBetween(3, 10),
+		}
+
+		server = NewMsgServerImpl(k, n, &ethMock.SignerMock{}, &ethMock.VoterMock{}, &mock.SnapshotterMock{})
+	}
+
+	repeats := 20
+	t.Run("happy path", testutils.Func(func(t *testing.T) {
+		setup()
+
+		_, err := server.AddChain(sdk.WrapSDKContext(ctx), msg)
+
+		assert.NoError(t, err)
+		assert.Equal(t, msg.Name, n.SetChainCalls()[0].Chain.Name)
+		assert.Equal(t, msg.NativeAsset, n.SetChainCalls()[0].Chain.NativeAsset)
+		assert.Equal(t, msg.Name, n.RegisterAssetCalls()[0].ChainName)
+		assert.Equal(t, msg.NativeAsset, n.RegisterAssetCalls()[0].Denom)
+	}).Repeat(repeats))
+
+	t.Run("no name", testutils.Func(func(t *testing.T) {
+		setup()
+
+		msg.Name = ""
+
+		_, err := server.AddChain(sdk.WrapSDKContext(ctx), msg)
+
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(n.SetChainCalls()))
+		assert.Equal(t, 0, len(n.RegisterAssetCalls()))
+	}).Repeat(repeats))
+
+	t.Run("no asset", testutils.Func(func(t *testing.T) {
+		setup()
+
+		msg.NativeAsset = ""
+
+		_, err := server.AddChain(sdk.WrapSDKContext(ctx), msg)
+
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(n.SetChainCalls()))
+		assert.Equal(t, 0, len(n.RegisterAssetCalls()))
+	}).Repeat(repeats))
+}
+
 func TestHandleMsgConfirmDeposit(t *testing.T) {
 	var (
 		ctx    sdk.Context
