@@ -643,9 +643,8 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 
 	chain := nexus.Chain{
 		Name:                  req.Name,
-		Platform:              types.ModuleName,
 		NativeAsset:           req.NativeAsset,
-		SupportsForeignAssets: req.SupportsForeign,
+		SupportsForeignAssets: true,
 	}
 
 	if err := chain.Validate(); err != nil {

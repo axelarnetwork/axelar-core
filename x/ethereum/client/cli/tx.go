@@ -266,10 +266,10 @@ func GetCmdSignTransferOwnership() *cobra.Command {
 // GetCmdAddChain returns the cli command to add a new evm chain command
 func GetCmdAddChain() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-chain [name] [native asset] [supports foreign assets]",
-		Short: "Add a evm chain",
-		Long:  "Add a evm chain. If the chain is already present, it will be updated.",
-		Args:  cobra.ExactArgs(3),
+		Use:   "add-chain [name] [native asset]",
+		Short: "Add a new evm chain",
+		Long:  "Add a new evm chain. If the chain is already present, it will be updated.",
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -277,12 +277,8 @@ func GetCmdAddChain() *cobra.Command {
 			}
 			name := args[0]
 			nativeAsset := args[1]
-			supportsForeign, err := strconv.ParseBool(args[2])
-			if err != nil {
-				return fmt.Errorf("last parameter must be a boolean value")
-			}
 
-			msg := types.NewAddChainRequest(cliCtx.GetFromAddress(), name, nativeAsset, supportsForeign)
+			msg := types.NewAddChainRequest(cliCtx.GetFromAddress(), name, nativeAsset)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

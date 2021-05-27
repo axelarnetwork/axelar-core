@@ -103,12 +103,11 @@ type ReqSignBurnTokens struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 }
 
-// ReqAddchain represents a request to add a new evm chain command
-type ReqAddchain struct {
-	BaseReq         rest.BaseReq `json:"base_req" yaml:"base_req"`
-	Name            string       `json:"name" yaml:"name"`
-	NativeAsset     string       `json:"native_asset" yaml:"native_asset"`
-	SupportsForeign bool         `json:"supports_foreign" yaml:"supports_foreign"`
+// ReqAddChain represents a request to add a new evm chain command
+type ReqAddChain struct {
+	BaseReq     rest.BaseReq `json:"base_req" yaml:"base_req"`
+	Name        string       `json:"name" yaml:"name"`
+	NativeAsset string       `json:"native_asset" yaml:"native_asset"`
 }
 
 // GetHandlerLink returns the handler to link addresses
@@ -322,7 +321,7 @@ func GetHandlerSignBurnTokens(cliCtx client.Context) http.HandlerFunc {
 // GetHandlerAddChain returns a handler to add a new evm chain command
 func GetHandlerAddChain(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReqAddchain
+		var req ReqAddChain
 		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
 			return
 		}
@@ -335,7 +334,7 @@ func GetHandlerAddChain(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewAddChainRequest(fromAddr, req.Name, req.NativeAsset, req.SupportsForeign)
+		msg := types.NewAddChainRequest(fromAddr, req.Name, req.NativeAsset)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

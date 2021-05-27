@@ -8,11 +8,11 @@ import (
 )
 
 // NewAddChainRequest is the constructor for NewAddChainRequest
-func NewAddChainRequest(sender sdk.AccAddress, name, nativeAsset string, supportsForeign bool) *AddChainRequest {
+func NewAddChainRequest(sender sdk.AccAddress, name, nativeAsset string) *AddChainRequest {
 	return &AddChainRequest{
-		Sender:          sender,
-		Name:            name,
-		SupportsForeign: supportsForeign,
+		Sender:      sender,
+		Name:        name,
+		NativeAsset: nativeAsset,
 	}
 }
 
@@ -34,9 +34,8 @@ func (m AddChainRequest) ValidateBasic() error {
 
 	chain := nexus.Chain{
 		Name:                  m.Name,
-		Platform:              ModuleName,
 		NativeAsset:           m.NativeAsset,
-		SupportsForeignAssets: m.SupportsForeign,
+		SupportsForeignAssets: true,
 	}
 
 	if err := chain.Validate(); err != nil {

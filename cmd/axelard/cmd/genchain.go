@@ -3,7 +3,6 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 
 	nexusExported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -21,10 +20,10 @@ import (
 func AddGenesisChainSpecCmd(defaultNodeHome string) *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:   "add-genesis-chain-spec [name] [platform] [native asset] [supports foreign assets]",
-		Short: "Add a chain spec in genesis.json",
-		Long:  "Add a chain spec in genesis.json. If the chain is already set in the genesis file, it will be updated.",
-		Args:  cobra.ExactArgs(4),
+		Use:   "add-genesis-evm-chain [name] [native asset]",
+		Short: "Adds an evn chain in genesis.json",
+		Long:  "Adds an evm chain in genesis.json. If the chain is already set in the genesis file, it will be updated.",
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx := client.GetClientContextFromCmd(cmd)
 			depCdc := clientCtx.JSONMarshaler
@@ -36,12 +35,7 @@ func AddGenesisChainSpecCmd(defaultNodeHome string) *cobra.Command {
 			config.SetRoot(clientCtx.HomeDir)
 
 			name := args[0]
-			platform := strings.ToLower(args[1])
-			nativeAsset := args[2]
-			supportsForeign, err := strconv.ParseBool(args[3])
-			if err != nil {
-				return fmt.Errorf("last parameter must be a boolean value")
-			}
+			nativeAsset := args[1]
 
 			genFile := config.GenesisFile()
 			appState, genDoc, err := genutiltypes.GenesisStateFromGenFile(genFile)
@@ -51,9 +45,8 @@ func AddGenesisChainSpecCmd(defaultNodeHome string) *cobra.Command {
 
 			chain := nexusExported.Chain{
 				Name:                  name,
-				Platform:              platform,
 				NativeAsset:           nativeAsset,
-				SupportsForeignAssets: supportsForeign,
+				SupportsForeignAssets: true,
 			}
 
 			if err := chain.Validate(); err != nil {

@@ -751,7 +751,6 @@ Params is the parameter set for this module
 | `sender` | [bytes](#bytes) |  |  |
 | `name` | [string](#string) |  |  |
 | `native_asset` | [string](#string) |  |  |
-| `supports_foreign` | [bool](#bool) |  |  |
 
 
 
@@ -1219,7 +1218,6 @@ Chain represents the properties of a registered blockchain
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `name` | [string](#string) |  |  |
-| `platform` | [string](#string) |  |  |
 | `native_asset` | [string](#string) |  |  |
 | `supports_foreign_assets` | [bool](#bool) |  |  |
 
