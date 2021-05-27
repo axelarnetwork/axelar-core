@@ -2,7 +2,6 @@ package exported
 
 import (
 	"fmt"
-	"strings"
 )
 
 const (
@@ -24,22 +23,5 @@ func (m Chain) Validate() error {
 		return fmt.Errorf("missing native asset name")
 	}
 
-	// check hardcoded chains
-	switch strings.ToLower(m.Name) {
-
-	// The more hardcoded chains we add in the future, the more
-	// cases will be needed here
-	case bitcoin:
-		return fmt.Errorf("bitcoin is a hardcoded chain")
-	}
-
-	switch strings.ToLower(m.Platform) {
-
-	// The more platforms we add in the future, the more
-	// cases will be needed here
-	case ethPlatform:
-	default:
-		return fmt.Errorf("unknown or reserved platform")
-	}
 	return nil
 }
