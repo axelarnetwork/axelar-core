@@ -1492,6 +1492,7 @@ File copied from golang tofnd with minor tweaks
 | `keygen_init` | [KeygenInit](#tss.tofnd.v1beta1.KeygenInit) |  | first message only, Keygen |
 | `sign_init` | [SignInit](#tss.tofnd.v1beta1.SignInit) |  | first message only, Sign |
 | `traffic` | [TrafficIn](#tss.tofnd.v1beta1.TrafficIn) |  | all subsequent messages |
+| `abort` | [bool](#bool) |  | abort the protocol, ignore the bool value |
 
 
 
