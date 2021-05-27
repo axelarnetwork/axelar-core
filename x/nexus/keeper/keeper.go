@@ -10,6 +10,7 @@ import (
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/tendermint/tendermint/libs/log"
 
+	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
@@ -55,6 +56,10 @@ func (k Keeper) SetParams(ctx sdk.Context, p types.Params) {
 		// Native assets can be registered at start up
 		k.RegisterAsset(ctx, chain.Name, chain.NativeAsset)
 	}
+
+	// add hardcoded chains (so far only bitcoin is supported)
+	k.SetChain(ctx, btc.Bitcoin)
+	k.RegisterAsset(ctx, btc.Bitcoin.Name, btc.Bitcoin.NativeAsset)
 }
 
 // GetParams gets the nexus module's parameters
