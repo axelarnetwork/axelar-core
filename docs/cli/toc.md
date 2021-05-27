@@ -129,6 +129,7 @@
       - [withdraw-rewards \[validator-addr\]](axelard_tx_distribution_withdraw-rewards.md)	 - Withdraw rewards from a given delegation address, and optionally withdraw validator commission if the delegation address given is a validator operator
     - [encode \[file\]](axelard_tx_encode.md)	 - Encode transactions generated offline
     - [ethereum](axelard_tx_ethereum.md)	 - ethereum transactions subcommands
+      - [add-chain \[name\] \[native asset\] \[supports foreign assets\]](axelard_tx_ethereum_add-chain.md)	 - Add a evm chain
       - [confirm-erc20-deposit \[txID\] \[amount\] \[burnerAddr\]](axelard_tx_ethereum_confirm-erc20-deposit.md)	 - Confirm an ERC20 deposit in an Ethereum transaction that sent given amount of token to a burner address
       - [confirm-erc20-token \[txID\] \[symbol\]](axelard_tx_ethereum_confirm-erc20-token.md)	 - Confirm an ERC20 token deployment in an Ethereum transaction for a given symbol of token and gateway address
       - [link \[chain\] \[address\] \[symbol\]](axelard_tx_ethereum_link.md)	 - Link a cross chain address to an ethereum address created by Axelar
