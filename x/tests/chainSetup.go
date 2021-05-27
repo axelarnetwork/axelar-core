@@ -39,6 +39,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin"
+	btcExported "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	btcMock "github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
@@ -115,6 +116,8 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	nexusSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("balanceKey"), sdk.NewKVStoreKey("tbalanceKey"), "balance")
 	nexusK := nexusKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(nexusTypes.StoreKey), nexusSubspace)
 	nexusK.SetParams(ctx, nexusTypes.DefaultParams())
+	nexusK.SetChain(ctx, btcExported.Bitcoin)
+	nexusK.RegisterAsset(ctx, btcExported.Bitcoin.Name, btcExported.Bitcoin.NativeAsset)
 
 	voter.SetVotingInterval(ctx, voteTypes.DefaultGenesisState().VotingInterval)
 	voter.SetVotingThreshold(ctx, voteTypes.DefaultGenesisState().VotingThreshold)
