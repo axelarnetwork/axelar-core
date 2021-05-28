@@ -268,7 +268,6 @@ func GetCmdAddChain() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add-chain [name] [native asset]",
 		Short: "Add a new evm chain",
-		Long:  "Add a new evm chain. If the chain is already present, it will be updated.",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
