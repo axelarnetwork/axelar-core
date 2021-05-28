@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	mathRand "math/rand"
+	"strings"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -22,6 +23,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/exported"
+	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types/mock"
 	ethMock "github.com/axelarnetwork/axelar-core/x/ethereum/types/mock"
@@ -412,6 +414,16 @@ func TestAddChain(t *testing.T) {
 		n = &ethMock.NexusMock{
 			SetChainFunc:      func(_ sdk.Context, chain nexus.Chain) {},
 			RegisterAssetFunc: func(_ sdk.Context, chainName, denom string) {},
+			GetChainFunc: func(_ sdk.Context, chainName string) (nexus.Chain, bool) {
+				switch strings.ToLower(chainName) {
+				case strings.ToLower(btc.Bitcoin.Name):
+					return btc.Bitcoin, true
+				case strings.ToLower(eth.Ethereum.Name):
+					return eth.Ethereum, true
+				default:
+					return nexus.Chain{}, false
+				}
+			},
 		}
 
 		name = rand.StrBetween(5, 20)
@@ -463,7 +475,7 @@ func TestAddChain(t *testing.T) {
 		assert.Equal(t, 0, len(n.RegisterAssetCalls()))
 	}).Repeat(repeats))
 
-	t.Run("hardcoded chain", testutils.Func(func(t *testing.T) {
+	t.Run("chain already defined", testutils.Func(func(t *testing.T) {
 		setup()
 
 		msg.Name = "Bitcoin"

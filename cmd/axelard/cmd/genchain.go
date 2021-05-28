@@ -53,11 +53,6 @@ func AddGenesisEVMChainCmd(defaultNodeHome string) *cobra.Command {
 				return err
 			}
 
-			// hardcoded chains should not be part of the genesis params
-			if chain.IsHardCoded() {
-				return fmt.Errorf("'%s' is a hardcoded chain", chain.Name)
-			}
-
 			genesisState := nexusTypes.GetGenesisStateFromAppState(cdc, appState)
 
 			chains := genesisState.Params.Chains
