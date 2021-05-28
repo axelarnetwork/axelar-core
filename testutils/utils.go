@@ -30,6 +30,7 @@ func MakeEncodingConfig() params.EncodingConfig {
 
 	// Add new modules here so tests have access to marshalling the registered ethereum
 	vote.RegisterLegacyAminoCodec(cdc)
+	vote.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	bitcoin.RegisterLegacyAminoCodec(cdc)
 	bitcoin.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	tss.RegisterLegacyAminoCodec(cdc)

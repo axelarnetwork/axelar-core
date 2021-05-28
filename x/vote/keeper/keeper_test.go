@@ -6,6 +6,7 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	gogoprototypes "github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -34,8 +35,10 @@ type testSetup struct {
 }
 
 func setup() *testSetup {
-	cdc := testutils.MakeEncodingConfig().Amino
-	cdc.RegisterConcrete("", "string", nil)
+	encCfg := testutils.MakeEncodingConfig()
+	encCfg.InterfaceRegistry.RegisterImplementations((*exported.VotingData)(nil),
+		&gogoprototypes.StringValue{},
+	)
 
 	setup := &testSetup{Ctx: sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())}
 	setup.Snapshotter = &snapMock.SnapshotterMock{
@@ -51,7 +54,7 @@ func setup() *testSetup {
 	setup.Broadcaster = &bcMock.BroadcasterMock{
 		GetPrincipalFunc: func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return rand.Bytes(sdk.AddrLen) },
 	}
-	setup.Keeper = NewKeeper(cdc, sdk.NewKVStoreKey(stringGen.Next()), setup.Snapshotter, setup.Broadcaster)
+	setup.Keeper = NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(stringGen.Next()), setup.Snapshotter, setup.Broadcaster)
 	return setup
 }
 
@@ -131,6 +134,7 @@ func TestKeeper_TallyVote_WithWinner(t *testing.T) {
 	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, rand.PosI64()))
 	err := s.Keeper.TallyVote(s.Ctx, randomSender(), poll, data)
 	res := s.Keeper.Result(s.Ctx, poll)
+
 	assert.NoError(t, err)
 	assert.Equal(t, data, res)
 }
@@ -216,8 +220,8 @@ func TestKeeper_TallyVote_ForDecidedPoll(t *testing.T) {
 	assert.Equal(t, data1, s.Keeper.Result(s.Ctx, poll))
 }
 
-func randomData() string {
-	return stringGen.Next()
+func randomData() exported.VotingData {
+	return &gogoprototypes.StringValue{Value: stringGen.Next()}
 }
 
 func randomSender() sdk.AccAddress {

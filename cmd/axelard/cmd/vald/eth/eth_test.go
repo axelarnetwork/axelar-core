@@ -100,7 +100,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 	)
 	setup := func() {
 		cdc := testutils.MakeEncodingConfig().Amino
-		poll := exported.NewPollMetaWithNonce(evmTypes.ModuleName, rand.StrBetween(5, 20), rand.PosI64(), rand.I64Between(1, 1000))
+		poll := exported.NewPollMeta(evmTypes.ModuleName, rand.StrBetween(5, 20))
 
 		burnAddrBytes := rand.Bytes(common.AddressLength)
 		tokenAddrBytes := rand.Bytes(common.AddressLength)
@@ -248,7 +248,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 	)
 	setup := func() {
 		cdc := testutils.MakeEncodingConfig().Amino
-		poll := exported.NewPollMetaWithNonce(evmTypes.ModuleName, rand.StrBetween(5, 20), rand.PosI64(), rand.I64Between(1, 1000))
+		poll := exported.NewPollMeta(evmTypes.ModuleName, rand.StrBetween(5, 20))
 
 		gatewayAddrBytes = rand.Bytes(common.AddressLength)
 		tokenAddrBytes := rand.Bytes(common.AddressLength)

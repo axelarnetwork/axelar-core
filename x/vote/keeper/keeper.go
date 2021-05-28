@@ -5,6 +5,7 @@ package keeper
 
 import (
 	"crypto/sha256"
+	"encoding/binary"
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -31,13 +32,13 @@ const (
 // Keeper - the vote module's keeper
 type Keeper struct {
 	storeKey    sdk.StoreKey
-	cdc         *codec.LegacyAmino
+	cdc         codec.BinaryMarshaler
 	broadcaster types.Broadcaster
 	snapshotter types.Snapshotter
 }
 
 // NewKeeper - keeper constructor
-func NewKeeper(cdc *codec.LegacyAmino, key sdk.StoreKey, snapshotter types.Snapshotter, broadcaster types.Broadcaster) Keeper {
+func NewKeeper(cdc codec.BinaryMarshaler, key sdk.StoreKey, snapshotter types.Snapshotter, broadcaster types.Broadcaster) Keeper {
 	keeper := Keeper{
 		storeKey:    key,
 		cdc:         cdc,
@@ -54,21 +55,22 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 
 // SetVotingInterval sets the interval in which votes are supposed to be broadcast
 func (k Keeper) SetVotingInterval(ctx sdk.Context, votingInterval int64) {
-	ctx.KVStore(k.storeKey).Set([]byte(votingIntervalKey), k.cdc.MustMarshalBinaryLengthPrefixed(votingInterval))
+	bz := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bz, uint64(votingInterval))
+
+	ctx.KVStore(k.storeKey).Set([]byte(votingIntervalKey), bz)
 }
 
 // GetVotingInterval returns the interval in which votes are supposed to be broadcast
 func (k Keeper) GetVotingInterval(ctx sdk.Context) int64 {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(votingIntervalKey))
 
-	var interval int64
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &interval)
-	return interval
+	return int64(binary.LittleEndian.Uint64(bz))
 }
 
 // SetVotingThreshold sets the voting power threshold that must be reached to decide a poll
 func (k Keeper) SetVotingThreshold(ctx sdk.Context, threshold utils.Threshold) {
-	ctx.KVStore(k.storeKey).Set([]byte(votingThresholdKey), k.cdc.MustMarshalBinaryLengthPrefixed(threshold))
+	ctx.KVStore(k.storeKey).Set([]byte(votingThresholdKey), k.cdc.MustMarshalBinaryLengthPrefixed(&threshold))
 }
 
 // GetVotingThreshold returns the voting power threshold that must be reached to decide a poll
@@ -76,17 +78,18 @@ func (k Keeper) GetVotingThreshold(ctx sdk.Context) utils.Threshold {
 	rawThreshold := ctx.KVStore(k.storeKey).Get([]byte(votingThresholdKey))
 	var threshold utils.Threshold
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(rawThreshold, &threshold)
+
 	return threshold
 }
 
 // InitPoll initializes a new poll. This is the first step of the voting protocol.
 // The Keeper only accepts votes for initialized polls.
-func (k Keeper) InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64) error {
-	if k.GetPoll(ctx, poll) != nil {
+func (k Keeper) InitPoll(ctx sdk.Context, pollMeta exported.PollMeta, snapshotCounter int64) error {
+	if k.GetPoll(ctx, pollMeta) != nil {
 		return fmt.Errorf("poll with same name already exists")
 	}
 
-	k.setPoll(ctx, types.Poll{Meta: poll, ValidatorSnapshotCounter: snapshotCounter})
+	k.setPoll(ctx, types.NewPoll(pollMeta, snapshotCounter))
 
 	return nil
 }
@@ -146,10 +149,7 @@ func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta expor
 	// check if others match this vote, create a new unique entry if not, simply add voting power if match is found
 	i := k.getTalliedVoteIdx(ctx, pollMeta, data)
 	if i == indexNotFound {
-		talliedVote = types.TalliedVote{
-			Tally: sdk.NewInt(validator.ShareCount),
-			Data:  data,
-		}
+		talliedVote = types.NewTalliedVote(validator.ShareCount, data)
 
 		poll.Votes = append(poll.Votes, talliedVote)
 		k.setTalliedVoteIdx(ctx, pollMeta, data, len(poll.Votes)-1)
@@ -164,6 +164,7 @@ func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta expor
 	if threshold.IsMet(talliedVote.Tally, snap.TotalShareCount) {
 		k.Logger(ctx).Debug(fmt.Sprintf("threshold of %d/%d has been met for %s: %s/%s",
 			threshold.Numerator, threshold.Denominator, pollMeta, talliedVote.Tally.String(), snap.TotalShareCount.String()))
+
 		poll.Result = talliedVote.Data
 	}
 
@@ -172,14 +173,15 @@ func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta expor
 }
 
 // Result returns the decided outcome of a poll. Returns nil if the poll is still undecided or does not exist.
-func (k Keeper) Result(ctx sdk.Context, pollMeta exported.PollMeta) exported.VotingData {
+func (k Keeper) Result(ctx sdk.Context, pollMeta exported.PollMeta) interface{} {
 	// This unmarshals all votes for this poll, which is not needed in this context.
 	// Should it become a performance concern we could split the result off into a separate data structure
 	poll := k.GetPoll(ctx, pollMeta)
 	if poll == nil {
 		return nil
 	}
-	return poll.Result
+
+	return poll.GetResult()
 }
 
 // GetPoll returns the poll given poll meta
@@ -195,7 +197,7 @@ func (k Keeper) GetPoll(ctx sdk.Context, pollMeta exported.PollMeta) *types.Poll
 }
 
 func (k Keeper) setPoll(ctx sdk.Context, poll types.Poll) {
-	ctx.KVStore(k.storeKey).Set([]byte(pollPrefix+poll.Meta.String()), k.cdc.MustMarshalBinaryLengthPrefixed(poll))
+	ctx.KVStore(k.storeKey).Set([]byte(pollPrefix+poll.Meta.String()), k.cdc.MustMarshalBinaryLengthPrefixed(&poll))
 }
 
 // To adhere to the same one-return-value pattern as the other getters return a marker value if not found
@@ -206,14 +208,16 @@ func (k Keeper) getTalliedVoteIdx(ctx sdk.Context, poll exported.PollMeta, data 
 	if bz == nil {
 		return indexNotFound
 	}
-	var i int
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &i)
-	return i
+
+	return int(binary.LittleEndian.Uint64(bz))
 }
 
 func (k Keeper) setTalliedVoteIdx(ctx sdk.Context, poll exported.PollMeta, data exported.VotingData, i int) {
 	voteKey := k.talliedVoteKey(poll, data)
-	ctx.KVStore(k.storeKey).Set(voteKey, k.cdc.MustMarshalBinaryLengthPrefixed(i))
+	bz := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bz, uint64(i))
+
+	ctx.KVStore(k.storeKey).Set(voteKey, bz)
 }
 
 func (k Keeper) getHasVoted(ctx sdk.Context, poll exported.PollMeta, address sdk.ValAddress) bool {
@@ -231,5 +235,6 @@ func (k Keeper) talliedVoteKey(poll exported.PollMeta, data exported.VotingData)
 func (k Keeper) hash(data exported.VotingData) string {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(data)
 	h := sha256.Sum256(bz)
+
 	return string(h[:])
 }

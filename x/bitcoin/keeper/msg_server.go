@@ -11,6 +11,7 @@ import (
 	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	gogoprototypes "github.com/gogo/protobuf/types"
 
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
@@ -98,7 +99,7 @@ func (s msgServer) ConfirmOutpoint(c context.Context, req *types.ConfirmOutpoint
 		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
 	}
 
-	poll := vote.NewPollMetaWithNonce(types.ModuleName, req.OutPointInfo.OutPoint, ctx.BlockHeight(), s.GetRevoteLockingPeriod(ctx))
+	poll := vote.NewPollMeta(types.ModuleName, req.OutPointInfo.OutPoint)
 	if err := s.voter.InitPoll(ctx, poll, counter); err != nil {
 		return nil, err
 	}
@@ -149,7 +150,7 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 		// assert: the outpoint is known and has not been confirmed before
 	}
 
-	if err := s.voter.TallyVote(ctx, req.Sender, req.Poll, req.Confirmed); err != nil {
+	if err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed}); err != nil {
 		return nil, err
 	}
 
@@ -159,7 +160,7 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 	}
 
 	// assert: the poll has completed
-	confirmed, ok := result.(bool)
+	confirmed, ok := result.(*gogoprototypes.BoolValue)
 	if !ok {
 		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.Poll.String(), result)
 	}
@@ -175,7 +176,7 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.Poll))),
 		sdk.NewAttribute(types.AttributeKeyOutPointInfo, string(types.ModuleCdc.MustMarshalJSON(&pendingOutPointInfo))))
 
-	if !confirmed {
+	if !confirmed.Value {
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
 		return &types.VoteConfirmOutpointResponse{

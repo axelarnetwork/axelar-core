@@ -1,18 +1,29 @@
 package types
 
 import (
-	"github.com/cosmos/cosmos-sdk/codec"
-	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
-
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	"github.com/cosmos/cosmos-sdk/codec"
+	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
+	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
+	gogoprototypes "github.com/gogo/protobuf/types"
 )
 
 // RegisterLegacyAminoCodec registers concrete types on codec
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	cdc.RegisterInterface((*exported.VotingData)(nil), nil)
+	// cdc.RegisterInterface((*exported.VotingData)(nil), nil)
 
 	// Default type for voting, i.e. yes/no vote. Modules need to register their own types if they need more elaborate VotingData
-	cdc.RegisterConcrete(true, "vote/VotingData", nil)
+	// cdc.RegisterConcrete(true, "vote/VotingData", nil)
+}
+
+// RegisterInterfaces registers types and interfaces with the given registry
+func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
+	registry.RegisterInterface("vote.exported.VotingData", (*exported.VotingData)(nil))
+	registry.RegisterImplementations((*exported.VotingData)(nil),
+		&tofnd.MessageOut_SignResult{},
+		&gogoprototypes.BytesValue{},
+	)
 }
 
 var amino = codec.NewLegacyAmino()

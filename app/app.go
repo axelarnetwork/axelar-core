@@ -321,7 +321,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		},
 	}
 	tssK := tssKeeper.NewKeeper(
-		app.legacyAmino, appCodec, keys[tssTypes.StoreKey], app.getSubspace(tssTypes.ModuleName), slashingKCast,
+		app.legacyAmino, keys[tssTypes.StoreKey], app.getSubspace(tssTypes.ModuleName), slashingKCast,
 	)
 	snapK := snapKeeper.NewKeeper(
 		app.legacyAmino, keys[snapTypes.StoreKey], app.getSubspace(snapTypes.ModuleName), broadcastK, stakingK,
@@ -331,7 +331,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		appCodec, keys[nexusTypes.StoreKey], app.getSubspace(nexusTypes.ModuleName),
 	)
 	votingK := voteKeeper.NewKeeper(
-		app.legacyAmino, keys[voteTypes.StoreKey], snapK, broadcastK,
+		appCodec, keys[voteTypes.StoreKey], snapK, broadcastK,
 	)
 
 	var rpcEth evmTypes.RPCClient

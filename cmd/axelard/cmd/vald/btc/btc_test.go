@@ -38,7 +38,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 		mgr = NewMgr(rpc, broadcaster, nil, log.TestingLogger(), cdc)
 
 		confHeight = rand.PosI64()
-		poll := exported.NewPollMetaWithNonce(btc.ModuleName, rand.StrBetween(1, 100), rand.PosI64(), rand.PosI64())
+		poll := exported.NewPollMeta(btc.ModuleName, rand.StrBetween(1, 100))
 
 		info = randomOutpointInfo()
 		attributes = []sdk.Attribute{

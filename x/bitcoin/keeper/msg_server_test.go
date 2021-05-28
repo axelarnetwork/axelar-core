@@ -13,6 +13,7 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	gogoprototypes "github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -237,8 +238,10 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			},
 		}
 		voter = &mock.VoterMock{
-			TallyVoteFunc:  func(sdk.Context, sdk.AccAddress, vote.PollMeta, vote.VotingData) error { return nil },
-			ResultFunc:     func(sdk.Context, vote.PollMeta) vote.VotingData { return true },
+			TallyVoteFunc: func(sdk.Context, sdk.AccAddress, vote.PollMeta, vote.VotingData) error { return nil },
+			ResultFunc: func(sdk.Context, vote.PollMeta) interface{} {
+				return &gogoprototypes.BoolValue{Value: true}
+			},
 			DeletePollFunc: func(sdk.Context, vote.PollMeta) {},
 		}
 		nexusKeeper = &mock.NexusMock{
@@ -379,7 +382,9 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 
 	t.Run("happy path reject", testutils.Func(func(t *testing.T) {
 		setup()
-		voter.ResultFunc = func(sdk.Context, vote.PollMeta) vote.VotingData { return false }
+		voter.ResultFunc = func(sdk.Context, vote.PollMeta) interface{} {
+			return &gogoprototypes.BoolValue{Value: false}
+		}
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
@@ -392,7 +397,9 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 
 	t.Run("happy path no result yet", testutils.Func(func(t *testing.T) {
 		setup()
-		voter.ResultFunc = func(sdk.Context, vote.PollMeta) vote.VotingData { return nil }
+		voter.ResultFunc = func(sdk.Context, vote.PollMeta) interface{} {
+			return nil
+		}
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
