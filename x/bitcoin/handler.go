@@ -95,7 +95,8 @@ func HandleMsgConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, voter types.In
 		return nil, fmt.Errorf("already spent")
 	}
 
-	if _, ok := k.GetAddress(ctx, msg.OutPointInfo.Address); !ok {
+	addr, ok := k.GetAddress(ctx, msg.OutPointInfo.Address)
+	if !ok {
 		return nil, fmt.Errorf("outpoint address unknown, aborting deposit confirmation")
 	}
 
@@ -114,7 +115,7 @@ func HandleMsgConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, voter types.In
 		return nil, err
 	}
 
-	if k.CountUnspentOutpoint(ctx) >= maxUnspentOutpointCount {
+	if addr.Role == types.DEPOSIT && k.CountUnspentOutpoint(ctx) >= maxUnspentOutpointCount {
 		return nil, fmt.Errorf("currently no more than %d concurrent unspent deposits are allowed in the system, please check-in with the testnet moderators and ask them to consolidate and re-try later in the day", maxUnspentOutpointCount)
 	}
 
