@@ -39,7 +39,8 @@ message StartKeygenRequest {
                           "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string new_key_id = 2 [ (gogoproto.customname) = "NewKeyID" ];
   int64 subset_size = 3;
-  tss.exported.v1beta1.KeyShareDistributionPolicy key_share_distribution_policy = 4;
+  tss.exported.v1beta1.KeyShareDistributionPolicy
+      key_share_distribution_policy = 4;
 }
 
 message StartKeygenResponse {}
