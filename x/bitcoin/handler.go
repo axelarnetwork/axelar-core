@@ -115,7 +115,10 @@ func HandleMsgConfirmOutpoint(ctx sdk.Context, k types.BTCKeeper, voter types.In
 		return nil, err
 	}
 
-	if addr.Role == types.DEPOSIT && k.CountUnspentOutpoint(ctx) >= maxUnspentOutpointCount {
+	if ctx.BlockHeight() < 31550 && k.CountUnspentOutpoint(ctx) >= maxUnspentOutpointCount {
+		return nil, fmt.Errorf("currently no more than %d concurrent unspent deposits are allowed in the system, please check-in with the testnet moderators and ask them to consolidate and re-try later in the day", maxUnspentOutpointCount)
+	}
+	if ctx.BlockHeight() >= 31550 && addr.Role == types.DEPOSIT && k.CountUnspentOutpoint(ctx) >= maxUnspentOutpointCount {
 		return nil, fmt.Errorf("currently no more than %d concurrent unspent deposits are allowed in the system, please check-in with the testnet moderators and ask them to consolidate and re-try later in the day", maxUnspentOutpointCount)
 	}
 
