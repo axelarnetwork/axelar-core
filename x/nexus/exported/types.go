@@ -12,6 +12,5 @@ func (m Chain) Validate() error {
 	if m.NativeAsset == "" {
 		return fmt.Errorf("missing native asset name")
 	}
-
 	return nil
 }

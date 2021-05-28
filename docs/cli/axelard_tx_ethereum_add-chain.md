@@ -2,10 +2,6 @@
 
 Add a new evm chain
 
-### Synopsis
-
-Add a new evm chain. If the chain is already present, it will be updated.
-
 ```
 axelard tx ethereum add-chain [name] [native asset] [flags]
 ```
