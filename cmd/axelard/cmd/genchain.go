@@ -16,8 +16,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// AddGenesisChainSpecCmd returns set-genesis-chain cobra Command.
-func AddGenesisChainSpecCmd(defaultNodeHome string) *cobra.Command {
+// AddGenesisEVMChainCmd returns set-genesis-chain cobra Command.
+func AddGenesisEVMChainCmd(defaultNodeHome string) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "add-genesis-evm-chain [name] [native asset]",
