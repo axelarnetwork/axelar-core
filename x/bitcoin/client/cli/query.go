@@ -27,10 +27,12 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 
 	btcTxCmd.AddCommand(
 		GetCmdDepositAddress(queryRoute),
+		GetCmdConsolidationTxState(queryRoute),
 		GetCmdConsolidationTx(queryRoute),
 		GetCmdPayForConsolidationTx(queryRoute),
 		GetCmdMasterAddress(queryRoute),
 		GetCmdMinimumWithdrawAmount(queryRoute),
+		GetCmdTxState(queryRoute),
 	)
 
 	return btcTxCmd
@@ -82,6 +84,32 @@ func GetCmdMasterAddress(queryRoute string) *cobra.Command {
 			}
 
 			return clientCtx.PrintString(string(res))
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdConsolidationTxState returns the state of the bitcoin consolidation transaction
+func GetCmdConsolidationTxState(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "consolidationTxState",
+		Short: "Returns the state of the consolidation transaction as seen by Axelar network",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.GetConsolidationTxState)
+
+			res, _, err := clientCtx.QueryWithData(path, nil)
+			if err != nil {
+				return sdkerrors.Wrap(err, types.ErrFConsolidationState)
+			}
+
+			return clientCtx.PrintObjectLegacy(string(res))
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
@@ -165,12 +193,39 @@ func GetCmdMinimumWithdrawAmount(queryRoute string) *cobra.Command {
 
 			res, _, err := clientCtx.QueryWithData(path, nil)
 			if err != nil {
-				return sdkerrors.Wrap(err, types.ErrFDepositAddress)
+				return sdkerrors.Wrap(err, types.ErrFMinWithdraw)
 			}
 
 			response := int64(binary.LittleEndian.Uint64(res))
 
 			return clientCtx.PrintString(strconv.FormatInt(response, 10))
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdTxState returns the state of the bitcoin transaction
+func GetCmdTxState(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "txState [txID:voutIdx]",
+		Short: "Returns the state of a bitcoin transaction as seen by Axelar network",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			outpointBytes := []byte(args[0])
+			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryTxState)
+
+			res, _, err := clientCtx.QueryWithData(path, outpointBytes)
+			if err != nil {
+				return sdkerrors.Wrap(err, types.ErrFTxState)
+			}
+
+			return clientCtx.PrintObjectLegacy(string(res))
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)

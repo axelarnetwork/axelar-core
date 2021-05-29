@@ -135,7 +135,7 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 
 	queriers := map[string]sdk.Querier{
 		btcTypes.QuerierRoute: btcKeeper.NewQuerier(mocks.BTC, bitcoinKeeper, signer, nexusK),
-		ethTypes.QuerierRoute: ethKeeper.NewQuerier(mocks.ETH, ethereumKeeper, signer),
+		ethTypes.QuerierRoute: ethKeeper.NewQuerier(mocks.ETH, ethereumKeeper, signer, nexusK),
 	}
 
 	node := fake.NewNode(moniker, ctx, router, queriers).

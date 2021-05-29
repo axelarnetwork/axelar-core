@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math"
+	"strconv"
 
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
@@ -27,7 +28,9 @@ const (
 	QueryDepositAddress      	= "depositAddr"
 	QueryMasterAddress       	= "masterAddr"
 	QueryMinimumWithdrawAmount 	= "minWithdrawAmount"
+	QueryTxState				= "txState"
 	GetConsolidationTx      	= "getConsolidationTx"
+	GetConsolidationTxState		= "getConsolidationTxState"
 	GetPayForConsolidationTx  	= "getPayForConsolidationTx"
 )
 
@@ -43,8 +46,12 @@ func NewQuerier(rpc types.RPCClient, k types.BTCKeeper, s types.Signer, n types.
 			res, err = queryMasterAddress(ctx, k, s)
 		case QueryMinimumWithdrawAmount:
 			res = queryMinimumWithdrawAmount(ctx, k)
+		case QueryTxState:
+			res, err = queryTxState(ctx, k, req.Data)
 		case GetConsolidationTx:
 			res, err = getRawConsolidationTx(ctx, k)
+		case GetConsolidationTxState:
+			res, err = getConsolidationTxState(ctx, k)
 		case GetPayForConsolidationTx:
 			res, err = payForConsolidationTx(ctx, k, rpc, req.Data)
 		default:
@@ -81,9 +88,14 @@ func queryDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n t
 		return nil, fmt.Errorf("secondary key not set")
 	}
 
-	addr := types.NewLinkedAddress(masterKey, secondaryKey, k.GetNetwork(ctx), recipient)
+	depositAddr := types.NewLinkedAddress(masterKey, secondaryKey, k.GetNetwork(ctx), recipient)
 
-	return []byte(addr.Address), nil
+	_, ok = n.GetRecipient(ctx, depositAddr.ToCrossChainAddr())
+	if !ok {
+		return nil, fmt.Errorf("deposit address is not linked with recipient address")
+	}
+
+	return []byte(depositAddr.Address), nil
 }
 
 func queryMasterAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer) ([]byte, error) {
@@ -106,6 +118,52 @@ func queryMinimumWithdrawAmount(ctx sdk.Context, k types.BTCKeeper) ([]byte) {
 	amount := make([]byte, 8)
 	binary.LittleEndian.PutUint64(amount, uint64(k.GetMinimumWithdrawalAmount(ctx)))
 	return amount
+}
+
+func queryTxState(ctx sdk.Context, k types.BTCKeeper, data []byte) ([]byte, error) {
+
+	outpoint, err := types.OutPointFromStr(string(data))
+	if err != nil {
+		return nil, err
+	}
+
+	_, state, ok := k.GetOutPointInfo(ctx, *outpoint)
+	var message string
+
+	switch {
+	case !ok:
+		message = "bitcoin transaction not found"
+	case state == types.CONFIRMED:
+		message = "bitcoin transaction state is confirmed"
+	case state == types.SPENT:
+		message = "bitcoin transaction state is spent"
+	default:
+		message = "bitcoin transaction state is not confirmed"
+	}
+
+	return []byte(message), nil
+}
+
+func getConsolidationTxState(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {
+
+	tx, ok := k.GetSignedTx(ctx);
+	if !ok {
+		return nil, fmt.Errorf("could not find the signed consolidation transaction")
+	}
+	txID := tx.TxHash().String()
+	vout, ok := k.GetMasterKeyVout(ctx)
+	if !ok {
+		return nil, fmt.Errorf("could not find the consolidation transaction vout")
+	}
+
+	outpointByte := []byte(txID + ":" + strconv.FormatUint(uint64(vout), 10))
+
+	stateMsg, err := queryTxState(ctx, k, outpointByte)
+	if err != nil {
+		return nil, err
+	}
+
+	return stateMsg, nil
 }
 
 func getRawConsolidationTx(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {

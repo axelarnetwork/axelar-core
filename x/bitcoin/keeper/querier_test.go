@@ -29,6 +29,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
+	ethereum "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
@@ -175,6 +176,12 @@ func TestQueryDepositAddress(t *testing.T) {
 					SupportsForeignAssets: true,
 				}, true
 			},
+			GetRecipientFunc: func(sdk.Context, nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
+				return nexus.CrossChainAddress{
+					Chain:		ethereum.Ethereum,
+					Address:	randomAddress().EncodeAddress(),
+				}, true
+			},
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		data = types.ModuleCdc.MustMarshalJSON(&types.DepositQueryParams{Chain: "ethereum", Address: "0xf2151de34BbFb22f799243FFBeFf18FD5D701147"})
@@ -187,13 +194,13 @@ func TestQueryDepositAddress(t *testing.T) {
 		setup()
 
 		res, err := queryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, data)
-		_, _ = res, err
 
 		assert := assert.New(t)
 		assert.NoError(err)
 		assert.Len(btcKeeper.GetNetworkCalls(), 1)
 		assert.Len(signer.GetCurrentKeyCalls(), 2)
 		assert.Len(nexusKeeper.GetChainCalls(), 1)
+		assert.Len(nexusKeeper.GetRecipientCalls(), 1)
 
 		assert.Equal("ethereum", nexusKeeper.GetChainCalls()[0].Chain)
 
@@ -203,6 +210,8 @@ func TestQueryDepositAddress(t *testing.T) {
 		assert.Equal(exported.Bitcoin, signer.GetCurrentKeyCalls()[1].Chain)
 		assert.Equal(tss.SecondaryKey, signer.GetCurrentKeyCalls()[1].KeyRole)
 
+		assert.Equal(string(res), nexusKeeper.GetRecipientCalls()[0].Sender.Address)
+
 	}).Repeat(repeatCount))
 
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
@@ -211,13 +220,13 @@ func TestQueryDepositAddress(t *testing.T) {
 		data = types.ModuleCdc.MustMarshalJSON(dataStr)
 
 		res, err := queryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, data)
-		_, _ = res, err
 
 		assert := assert.New(t)
 		assert.NoError(err)
 		assert.Len(btcKeeper.GetNetworkCalls(), 1)
 		assert.Len(signer.GetCurrentKeyCalls(), 2)
 		assert.Len(nexusKeeper.GetChainCalls(), 1)
+		assert.Len(nexusKeeper.GetRecipientCalls(), 1)
 
 		assert.Equal(dataStr.Chain, nexusKeeper.GetChainCalls()[0].Chain)
 
@@ -226,6 +235,8 @@ func TestQueryDepositAddress(t *testing.T) {
 
 		assert.Equal(exported.Bitcoin, signer.GetCurrentKeyCalls()[1].Chain)
 		assert.Equal(tss.SecondaryKey, signer.GetCurrentKeyCalls()[1].KeyRole)
+
+		assert.Equal(string(res), nexusKeeper.GetRecipientCalls()[0].Sender.Address)
 
 	}).Repeat(repeatCount))
 
@@ -254,9 +265,22 @@ func TestQueryDepositAddress(t *testing.T) {
 	}).Repeat(repeatCount))
 
 
-	t.Run("no master key", testutils.Func(func(t *testing.T) {
+	t.Run("no master/secondary key", testutils.Func(func(t *testing.T) {
 		setup()
 		signer.GetCurrentKeyFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) { return tss.Key{}, false }
+
+		_, err := queryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, data)
+
+		assert := assert.New(t)
+		assert.Error(err)
+
+	}).Repeat(repeatCount))
+
+	t.Run("deposit address not linked", testutils.Func(func(t *testing.T) {
+		setup()
+		nexusKeeper.GetRecipientFunc = func(sdk.Context, nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
+			return nexus.CrossChainAddress{}, false
+		}
 
 		_, err := queryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, data)
 

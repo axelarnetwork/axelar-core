@@ -13,7 +13,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
-	// nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -33,7 +33,7 @@ const (
 )
 
 // NewQuerier returns a new querier for the ethereum module
-func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer) sdk.Querier {
+func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer, n types.Nexus) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		switch path[0] {
 		case QueryMasterAddress:
@@ -45,7 +45,7 @@ func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer) sdk.Querier {
 		case QueryCommandData:
 			return queryCommandData(ctx, k, s, path[1])
 		case QueryDepositAddress:
-			return queryDepositAddress(ctx, k, req.Data)
+			return queryDepositAddress(ctx, k, n, req.Data)
 		case CreateDeployTx:
 			return createDeployGateway(ctx, k, rpc, s, req.Data)
 		case SendTx:
@@ -58,7 +58,7 @@ func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer) sdk.Querier {
 	}
 }
 
-func queryDepositAddress(ctx sdk.Context, k Keeper, data []byte) ([]byte, error) {
+func queryDepositAddress(ctx sdk.Context, k Keeper, n types.Nexus, data []byte) ([]byte, error) {
 	var params types.DepositQueryParams
 	if err := types.ModuleCdc.UnmarshalJSON(data, &params); err != nil {
 		return nil, fmt.Errorf("could not parse the recipient")
@@ -77,6 +77,16 @@ func queryDepositAddress(ctx sdk.Context, k Keeper, data []byte) ([]byte, error)
 	depositAddr, _, err := k.GetBurnerAddressAndSalt(ctx, tokenAddr, params.Address, gatewayAddr)
 	if err != nil {
 		return nil, err
+	}
+
+	depositChain, ok := n.GetChain(ctx, exported.Ethereum.Name)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", exported.Ethereum.Name)
+	}
+
+	_, ok = n.GetRecipient(ctx, nexus.CrossChainAddress{Chain: depositChain, Address: depositAddr.String()})
+	if !ok {
+		return nil, fmt.Errorf("deposit address is not linked with recipient address")
 	}
 
 	return depositAddr.Bytes(), nil

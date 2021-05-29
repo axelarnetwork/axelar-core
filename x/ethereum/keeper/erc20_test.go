@@ -201,6 +201,8 @@ func TestDeploy(t *testing.T) {
 		}, true
 	}}
 
+	nexusMock := &mock.NexusMock{}
+
 	deployParams := types.DeployParams{
 		GasPrice: sdk.ZeroInt(),
 		GasLimit: gasLimit,
@@ -212,7 +214,7 @@ func TestDeploy(t *testing.T) {
 	encCfg := testutils.MakeEncodingConfig()
 
 	rpc := &mock.RPCClientMock{PendingNonceAtFunc: backend.PendingNonceAt, SuggestGasPriceFunc: backend.SuggestGasPrice}
-	query := NewQuerier(rpc, k, tssSigner)
+	query := NewQuerier(rpc, k, tssSigner, nexusMock)
 	res, err := query(ctx, []string{CreateDeployTx}, abci.RequestQuery{Data: encCfg.Amino.MustMarshalJSON(deployParams)})
 	assert.NoError(t, err)
 
