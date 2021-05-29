@@ -647,11 +647,6 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 		SupportsForeignAssets: true,
 	}
 
-	if err := chain.Validate(); err != nil {
-		return &types.AddChainResponse{
-			Log: fmt.Sprintf("invalid chain spec: %v", err)}, nil
-	}
-
 	if _, found := s.nexus.GetChain(ctx, chain.Name); found {
 		return &types.AddChainResponse{
 			Log: fmt.Sprintf("chain '%s' is already defined", chain.Name)}, nil

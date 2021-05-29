@@ -450,31 +450,6 @@ func TestAddChain(t *testing.T) {
 		assert.Equal(t, msg.NativeAsset, n.RegisterAssetCalls()[0].Denom)
 	}).Repeat(repeats))
 
-	t.Run("no name", testutils.Func(func(t *testing.T) {
-		setup()
-
-		msg.Name = ""
-
-		_, err := server.AddChain(sdk.WrapSDKContext(ctx), msg)
-
-		assert.NoError(t, err)
-		assert.Equal(t, 0, len(n.SetChainCalls()))
-		assert.Equal(t, 0, len(n.RegisterAssetCalls()))
-	}).Repeat(repeats))
-
-	t.Run("no asset", testutils.Func(func(t *testing.T) {
-		setup()
-
-		msg.Name = name
-		msg.NativeAsset = ""
-
-		_, err := server.AddChain(sdk.WrapSDKContext(ctx), msg)
-
-		assert.NoError(t, err)
-		assert.Equal(t, 0, len(n.SetChainCalls()))
-		assert.Equal(t, 0, len(n.RegisterAssetCalls()))
-	}).Repeat(repeats))
-
 	t.Run("chain already defined", testutils.Func(func(t *testing.T) {
 		setup()
 
