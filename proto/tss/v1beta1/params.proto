@@ -20,7 +20,7 @@ message Params {
   utils.v1beta1.Threshold corruption_threshold = 3
       [ (gogoproto.nullable) = false ];
   // KeyRequirements defines the requirement of each key for each chain
-  repeated exported.v1beta1.KeyRequirement key_requirements = 4
+  repeated tss.exported.v1beta1.KeyRequirement key_requirements = 4
       [ (gogoproto.nullable) = false ];
   // MinBondFractionPerShare defines the % of stake validators have to bond per
   // key share

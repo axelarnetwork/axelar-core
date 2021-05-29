@@ -19,7 +19,7 @@ message AssignKeyRequest {
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
   string key_id = 3 [ (gogoproto.customname) = "KeyID" ];
-  exported.v1beta1.KeyRole key_role = 4;
+  tss.exported.v1beta1.KeyRole key_role = 4;
 }
 
 message AssignKeyResponse {}
@@ -39,7 +39,8 @@ message StartKeygenRequest {
                           "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string new_key_id = 2 [ (gogoproto.customname) = "NewKeyID" ];
   int64 subset_size = 3;
-  exported.v1beta1.KeyShareDistributionPolicy key_share_distribution_policy = 4;
+  tss.exported.v1beta1.KeyShareDistributionPolicy
+      key_share_distribution_policy = 4;
 }
 
 message StartKeygenResponse {}
@@ -49,7 +50,7 @@ message RotateKeyRequest {
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
   int64 subset_size = 3;
-  exported.v1beta1.KeyRole key_role = 4;
+  tss.exported.v1beta1.KeyRole key_role = 4;
 }
 
 message RotateKeyResponse {}
@@ -59,7 +60,7 @@ message ProcessKeygenTrafficRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string session_id = 2 [ (gogoproto.customname) = "SessionID" ];
-  tofnd.v1beta1.TrafficOut payload = 3;
+  tss.tofnd.v1beta1.TrafficOut payload = 3;
 }
 
 message ProcessKeygenTrafficResponse {}
@@ -69,7 +70,7 @@ message ProcessSignTrafficRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string session_id = 2 [ (gogoproto.customname) = "SessionID" ];
-  tofnd.v1beta1.TrafficOut payload = 3;
+  tss.tofnd.v1beta1.TrafficOut payload = 3;
 }
 
 message ProcessSignTrafficResponse {}
@@ -90,7 +91,7 @@ message VoteSigRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   vote.exported.v1beta1.PollMeta poll_meta = 2 [ (gogoproto.nullable) = false ];
-  tofnd.v1beta1.MessageOut.SignResult result = 3;
+  tss.tofnd.v1beta1.MessageOut.SignResult result = 3;
 }
 
 message VoteSigResponse {}

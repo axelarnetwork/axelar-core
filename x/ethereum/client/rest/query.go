@@ -90,9 +90,7 @@ func GetHandlerQueryCommandData(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		var data []byte
-		cliCtx.LegacyAmino.MustUnmarshalJSON(res, &data)
-		rest.PostProcessResponse(w, cliCtx, common.Bytes2Hex(data))
+		rest.PostProcessResponse(w, cliCtx, common.Bytes2Hex(res))
 	}
 }
 
@@ -153,14 +151,7 @@ func GetHandlerQuerySendTx(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		var result types.SendTxResult
-		err = cliCtx.LegacyAmino.UnmarshalJSON(res, &result)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		rest.PostProcessResponse(w, cliCtx, result)
+		rest.PostProcessResponse(w, cliCtx, common.BytesToHash(res).Hex())
 	}
 }
 
@@ -197,9 +188,7 @@ func GetHandlerQuerySendCommandTx(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		var txHash string
-		cliCtx.LegacyAmino.MustUnmarshalJSON(res, &txHash)
-		rest.PostProcessResponse(w, cliCtx, txHash)
+		rest.PostProcessResponse(w, cliCtx, common.BytesToHash(res).Hex())
 	}
 }
 

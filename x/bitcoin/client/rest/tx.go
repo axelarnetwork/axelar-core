@@ -37,6 +37,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery(QueryDepositAddress(cliCtx), QueryMethodDepositAddress, clientUtils.PathVarChain, clientUtils.PathVarEthereumAddress)
 	registerQuery(QueryMasterAddress(cliCtx), QueryMethodMasterAddress)
 	registerQuery(QueryGetConsolidationTx(cliCtx), QueryMethodGetConsolidationTx)
+	registerQuery(QueryGetPayForConsolidationTx(cliCtx), QueryMethodGetConsolidationTx, clientUtils.PathVarBtcFeeRate)
 }
 
 // ReqLink represents a request to link a cross-chain address to a Bitcoin address

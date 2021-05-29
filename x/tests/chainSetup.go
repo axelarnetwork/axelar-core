@@ -45,6 +45,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/broadcast"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	ethKeeper "github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
+	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	ethMock "github.com/axelarnetwork/axelar-core/x/ethereum/types/mock"
 	snapshotExported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -104,7 +105,7 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	bitcoinKeeper.SetParams(ctx, btcParams)
 
 	ethSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "eth")
-	ethereumKeeper := ethKeeper.NewEthKeeper(encCfg.Amino, sdk.NewKVStoreKey(ethTypes.StoreKey), ethSubspace)
+	ethereumKeeper := ethKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(ethTypes.StoreKey), ethSubspace)
 	ethereumKeeper.SetParams(ctx, ethTypes.DefaultParams())
 
 	tssSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), tssTypes.DefaultParamspace)
@@ -314,11 +315,11 @@ func registerETHEventListener(n nodeData, submitMsg func(msg sdk.Msg) (result <-
 		encCfg.Amino.MustUnmarshalJSON([]byte(m[ethTypes.AttributeKeyPoll]), &poll)
 
 		_ = submitMsg(&ethTypes.VoteConfirmDepositRequest{
-			Sender:    n.Proxy,
-			Poll:      poll,
-			Confirmed: true,
-			TxID:      m[ethTypes.AttributeKeyTxID],
-			BurnAddr:  m[ethTypes.AttributeKeyBurnAddress],
+			Sender:      n.Proxy,
+			Poll:        poll,
+			Confirmed:   true,
+			TxID:        types.Hash(common.HexToHash(m[ethTypes.AttributeKeyTxID])),
+			BurnAddress: types.Address(common.HexToAddress(m[ethTypes.AttributeKeyBurnAddress])),
 		})
 
 		return true
@@ -343,7 +344,7 @@ func registerETHEventListener(n nodeData, submitMsg func(msg sdk.Msg) (result <-
 				Sender:    n.Proxy,
 				Poll:      poll,
 				Confirmed: true,
-				TxID:      m[ethTypes.AttributeKeyTxID],
+				TxID:      ethTypes.Hash(common.HexToHash(m[ethTypes.AttributeKeyTxID])),
 				Symbol:    m[ethTypes.AttributeKeySymbol],
 			})
 
@@ -515,7 +516,7 @@ func createTokenDeployLogs(gateway, addr common.Address) []*goEthTypes.Log {
 			if err != nil {
 				panic(err)
 			}
-			logs = append(logs, &goEthTypes.Log{Address: gateway, Data: data, Topics: []common.Hash{eth2.ERC20TokenDeploySig}})
+			logs = append(logs, &goEthTypes.Log{Address: gateway, Data: data, Topics: []common.Hash{eth2.ERC20TokenDeploymentSig}})
 			continue
 		}
 

@@ -126,8 +126,6 @@ func (b *LegacyBroadcasterImpl) signAndBroadcast(msg legacytx.StdSignMsg) (*sdk.
 		return nil, fmt.Errorf(res.RawLog)
 	}
 
-	// broadcast has been successful, so increment sequence number
-	b.seqNo++
 	return res, nil
 }
 
