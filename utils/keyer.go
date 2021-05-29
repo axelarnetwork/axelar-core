@@ -76,7 +76,7 @@ func (k LowerCaseKey) AsKey() []byte {
 
 // WithPrefix prepends the given prefix to the key
 func (k LowerCaseKey) WithPrefix(prefix string) Keyer {
-	return LowerCaseKey(prefix + string(k))
+	return LowerCaseKey(prefix + "_" + string(k))
 }
 
 // Equals compares two keys for equality

@@ -16,12 +16,12 @@ import (
 )
 
 const (
-	senderPrefix     = "send_"
-	chainPrefix      = "chain_"
-	pendingPrefix    = "pend_"
-	archivedPrefix   = "arch_"
-	totalPrefix      = "total_"
-	registeredPrefix = "registered_"
+	senderPrefix     = "send"
+	chainPrefix      = "chain"
+	pendingPrefix    = "pend"
+	archivedPrefix   = "arch"
+	totalPrefix      = "total"
+	registeredPrefix = "registered"
 
 	sequenceKey = "nextID"
 	registered  = 0x01
@@ -217,9 +217,9 @@ func (k Keeper) setPendingTransfer(ctx sdk.Context, recipient exported.CrossChai
 
 func (k Keeper) getAddresses(ctx sdk.Context, getType string, chain exported.Chain) []exported.CrossChainTransfer {
 	transfers := make([]exported.CrossChainTransfer, 0)
-	prefix := []byte(getType + chain.Name + "_")
+	prefix := utils.LowerCaseKey("").WithPrefix(chain.Name).WithPrefix(getType)
 
-	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), prefix)
+	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), prefix.AsKey())
 	for ; iter.Valid(); iter.Next() {
 		bz := iter.Value()
 		var transfer exported.CrossChainTransfer
