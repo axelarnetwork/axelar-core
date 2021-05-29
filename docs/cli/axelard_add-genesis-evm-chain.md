@@ -2,10 +2,6 @@
 
 Adds an evn chain in genesis.json
 
-### Synopsis
-
-Adds an evm chain in genesis.json. If the chain is already set in the genesis file, it will be updated.
-
 ```
 axelard add-genesis-evm-chain [name] [native asset] [flags]
 ```

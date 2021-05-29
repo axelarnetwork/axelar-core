@@ -3,7 +3,6 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	nexusExported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
@@ -22,7 +21,6 @@ func AddGenesisEVMChainCmd(defaultNodeHome string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add-genesis-evm-chain [name] [native asset]",
 		Short: "Adds an evn chain in genesis.json",
-		Long:  "Adds an evm chain in genesis.json. If the chain is already set in the genesis file, it will be updated.",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx := client.GetClientContextFromCmd(cmd)
@@ -54,16 +52,10 @@ func AddGenesisEVMChainCmd(defaultNodeHome string) *cobra.Command {
 			}
 
 			genesisState := nexusTypes.GetGenesisStateFromAppState(cdc, appState)
-
 			chains := genesisState.Params.Chains
-			for i, chain := range chains {
-				if strings.ToLower(chain.Name) == strings.ToLower(name) {
-					chains = append(chains[:i], chains[i+1:]...)
-				}
-			}
 			chains = append(chains, chain)
-
 			genesisState.Params.Chains = chains
+
 			genesisStateBz, err := cdc.MarshalJSON(&genesisState)
 			if err != nil {
 				return fmt.Errorf("failed to marshal nexus genesis state: %w", err)
