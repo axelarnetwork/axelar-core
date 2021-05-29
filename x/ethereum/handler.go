@@ -103,7 +103,8 @@ func NewHandler(k keeper.Keeper, v types.Voter, s types.Signer, n types.Nexus, s
 			res, err := server.AddChain(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
-				result.Log = res.Log
+				result.Log = fmt.Sprintf("successfully added new chain %s", msg.Name)
+
 			}
 			return result, err
 		default:

@@ -763,11 +763,6 @@ Params is the parameter set for this module
 
 
 
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `log` | [string](#string) |  |  |
-
-
 
 
 

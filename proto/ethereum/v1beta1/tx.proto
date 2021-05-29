@@ -156,4 +156,4 @@ message AddChainRequest {
   string native_asset = 3;
 }
 
-message AddChainResponse { string log = 1; }
+message AddChainResponse {}

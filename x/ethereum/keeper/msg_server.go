@@ -648,13 +648,11 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 	}
 
 	if _, found := s.nexus.GetChain(ctx, chain.Name); found {
-		return &types.AddChainResponse{
-			Log: fmt.Sprintf("chain '%s' is already defined", chain.Name)}, nil
+		return &types.AddChainResponse{}, fmt.Errorf("chain '%s' is already defined", chain.Name)
 	}
 
 	s.nexus.SetChain(ctx, chain)
 	s.nexus.RegisterAsset(ctx, chain.Name, chain.NativeAsset)
 
-	return &types.AddChainResponse{
-		Log: fmt.Sprintf("successfully added new chain %s", chain.Name)}, nil
+	return &types.AddChainResponse{}, nil
 }
