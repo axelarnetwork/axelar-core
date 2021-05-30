@@ -100,7 +100,7 @@ func (s msgServer) ConfirmOutpoint(c context.Context, req *types.ConfirmOutpoint
 	}
 
 	poll := vote.NewPollMeta(types.ModuleName, req.OutPointInfo.OutPoint)
-	if err := s.voter.InitPoll(ctx, poll, counter); err != nil {
+	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+s.BTCKeeper.GetRevoteLockingPeriod(ctx)); err != nil {
 		return nil, err
 	}
 	s.SetPendingOutpointInfo(ctx, poll, req.OutPointInfo)

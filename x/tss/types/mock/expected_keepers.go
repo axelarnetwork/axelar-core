@@ -814,7 +814,7 @@ var _ tsstypes.Voter = &VoterMock{}
 // 			GetPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, pollMeta exported1.PollMeta) *votetypes.Poll {
 // 				panic("mock out the GetPoll method")
 // 			},
-// 			InitPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta, snapshotCounter int64) error {
+// 			InitPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta, snapshotCounter int64, expireAt int64) error {
 // 				panic("mock out the InitPoll method")
 // 			},
 // 			ResultFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta) interface{} {
@@ -837,7 +837,7 @@ type VoterMock struct {
 	GetPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, pollMeta exported1.PollMeta) *votetypes.Poll
 
 	// InitPollFunc mocks the InitPoll method.
-	InitPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta, snapshotCounter int64) error
+	InitPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta, snapshotCounter int64, expireAt int64) error
 
 	// ResultFunc mocks the Result method.
 	ResultFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta) interface{}
@@ -869,6 +869,8 @@ type VoterMock struct {
 			Poll exported1.PollMeta
 			// SnapshotCounter is the snapshotCounter argument value.
 			SnapshotCounter int64
+			// ExpireAt is the expireAt argument value.
+			ExpireAt int64
 		}
 		// Result holds details about calls to the Result method.
 		Result []struct {
@@ -967,7 +969,7 @@ func (mock *VoterMock) GetPollCalls() []struct {
 }
 
 // InitPoll calls InitPollFunc.
-func (mock *VoterMock) InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta, snapshotCounter int64) error {
+func (mock *VoterMock) InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta, snapshotCounter int64, expireAt int64) error {
 	if mock.InitPollFunc == nil {
 		panic("VoterMock.InitPollFunc: method is nil but Voter.InitPoll was just called")
 	}
@@ -975,15 +977,17 @@ func (mock *VoterMock) InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, 
 		Ctx             github_com_cosmos_cosmos_sdk_types.Context
 		Poll            exported1.PollMeta
 		SnapshotCounter int64
+		ExpireAt        int64
 	}{
 		Ctx:             ctx,
 		Poll:            poll,
 		SnapshotCounter: snapshotCounter,
+		ExpireAt:        expireAt,
 	}
 	mock.lockInitPoll.Lock()
 	mock.calls.InitPoll = append(mock.calls.InitPoll, callInfo)
 	mock.lockInitPoll.Unlock()
-	return mock.InitPollFunc(ctx, poll, snapshotCounter)
+	return mock.InitPollFunc(ctx, poll, snapshotCounter, expireAt)
 }
 
 // InitPollCalls gets all the calls that were made to InitPoll.
@@ -993,11 +997,13 @@ func (mock *VoterMock) InitPollCalls() []struct {
 	Ctx             github_com_cosmos_cosmos_sdk_types.Context
 	Poll            exported1.PollMeta
 	SnapshotCounter int64
+	ExpireAt        int64
 } {
 	var calls []struct {
 		Ctx             github_com_cosmos_cosmos_sdk_types.Context
 		Poll            exported1.PollMeta
 		SnapshotCounter int64
+		ExpireAt        int64
 	}
 	mock.lockInitPoll.RLock()
 	calls = mock.calls.InitPoll

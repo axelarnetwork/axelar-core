@@ -123,7 +123,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	}
 
 	poll := vote.NewPollMeta(types.ModuleName, req.TxID.Hex()+"_"+req.Symbol)
-	if err := s.voter.InitPoll(ctx, poll, counter); err != nil {
+	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+s.EthKeeper.GetRevoteLockingPeriod(ctx)); err != nil {
 		return nil, err
 	}
 
@@ -178,7 +178,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	}
 
 	poll := vote.NewPollMeta(types.ModuleName, req.TxID.Hex()+"_"+req.BurnerAddress.Hex())
-	if err := s.voter.InitPoll(ctx, poll, counter); err != nil {
+	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+s.EthKeeper.GetRevoteLockingPeriod(ctx)); err != nil {
 		return nil, err
 	}
 

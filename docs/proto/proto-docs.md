@@ -2065,6 +2065,7 @@ have any data type
 | `meta` | [vote.exported.v1beta1.PollMeta](#vote.exported.v1beta1.PollMeta) |  |  |
 | `validator_snapshot_counter` | [int64](#int64) |  |  |
 | `votes` | [TalliedVote](#vote.v1beta1.TalliedVote) | repeated |  |
+| `expire_at` | [int64](#int64) |  |  |
 | `result` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
 
 

@@ -309,7 +309,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) uint64 { return mathRand.Uint64() },
 			SetPendingTokenDeploymentFunc:     func(sdk.Context, vote.PollMeta, types.ERC20TokenDeployment) {},
 		}
-		v = &evmMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta, int64) error { return nil }}
+		v = &evmMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta, int64, int64) error { return nil }}
 		n = &evmMock.NexusMock{IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return false }}
 		s = &mock.SignerMock{
 			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
@@ -371,7 +371,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
 		setup()
-		v.InitPollFunc = func(sdk.Context, vote.PollMeta, int64) error { return fmt.Errorf("poll setup failed") }
+		v.InitPollFunc = func(sdk.Context, vote.PollMeta, int64, int64) error { return fmt.Errorf("poll setup failed") }
 
 		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
 
@@ -490,7 +490,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			SetPendingDepositFunc:             func(sdk.Context, vote.PollMeta, *types.ERC20Deposit) {},
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) uint64 { return mathRand.Uint64() },
 		}
-		v = &evmMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta, int64) error { return nil }}
+		v = &evmMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta, int64, int64) error { return nil }}
 		s = &mock.SignerMock{
 			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
 				return rand.StrBetween(5, 20), true
@@ -563,7 +563,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
 		setup()
-		v.InitPollFunc = func(sdk.Context, vote.PollMeta, int64) error { return fmt.Errorf("failed") }
+		v.InitPollFunc = func(sdk.Context, vote.PollMeta, int64, int64) error { return fmt.Errorf("failed") }
 
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 

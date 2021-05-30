@@ -49,7 +49,7 @@ type EthKeeper interface {
 // Voter wraps around the existing vote.Voter interface to adhere to the Cosmos convention of keeping all
 // expected keepers from other modules in the expected_keepers.go file
 type Voter interface {
-	InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error
+	InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64, expireAt int64) error
 	DeletePoll(ctx sdk.Context, poll vote.PollMeta)
 	TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta vote.PollMeta, data vote.VotingData) error
 	Result(ctx sdk.Context, poll vote.PollMeta) interface{}
@@ -72,7 +72,7 @@ type Nexus interface {
 // because the concrete implementation of Signer (specifically StartSign) is defined in a different package using another (identical)
 // InitPoller interface. Go cannot match the types otherwise
 type InitPoller = interface {
-	InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error
+	InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64, expireAt int64) error
 }
 
 // Signer provides keygen and signing functionality

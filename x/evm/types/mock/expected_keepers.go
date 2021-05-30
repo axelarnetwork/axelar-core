@@ -29,7 +29,7 @@ var _ types.Voter = &VoterMock{}
 // 			DeletePollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta)  {
 // 				panic("mock out the DeletePoll method")
 // 			},
-// 			InitPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, snapshotCounter int64) error {
+// 			InitPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error {
 // 				panic("mock out the InitPoll method")
 // 			},
 // 			ResultFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta) interface{} {
@@ -49,7 +49,7 @@ type VoterMock struct {
 	DeletePollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta)
 
 	// InitPollFunc mocks the InitPoll method.
-	InitPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, snapshotCounter int64) error
+	InitPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error
 
 	// ResultFunc mocks the Result method.
 	ResultFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta) interface{}
@@ -74,6 +74,8 @@ type VoterMock struct {
 			Poll exported.PollMeta
 			// SnapshotCounter is the snapshotCounter argument value.
 			SnapshotCounter int64
+			// ExpireAt is the expireAt argument value.
+			ExpireAt int64
 		}
 		// Result holds details about calls to the Result method.
 		Result []struct {
@@ -136,7 +138,7 @@ func (mock *VoterMock) DeletePollCalls() []struct {
 }
 
 // InitPoll calls InitPollFunc.
-func (mock *VoterMock) InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, snapshotCounter int64) error {
+func (mock *VoterMock) InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error {
 	if mock.InitPollFunc == nil {
 		panic("VoterMock.InitPollFunc: method is nil but Voter.InitPoll was just called")
 	}
@@ -144,15 +146,17 @@ func (mock *VoterMock) InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, 
 		Ctx             github_com_cosmos_cosmos_sdk_types.Context
 		Poll            exported.PollMeta
 		SnapshotCounter int64
+		ExpireAt        int64
 	}{
 		Ctx:             ctx,
 		Poll:            poll,
 		SnapshotCounter: snapshotCounter,
+		ExpireAt:        expireAt,
 	}
 	mock.lockInitPoll.Lock()
 	mock.calls.InitPoll = append(mock.calls.InitPoll, callInfo)
 	mock.lockInitPoll.Unlock()
-	return mock.InitPollFunc(ctx, poll, snapshotCounter)
+	return mock.InitPollFunc(ctx, poll, snapshotCounter, expireAt)
 }
 
 // InitPollCalls gets all the calls that were made to InitPoll.
@@ -162,11 +166,13 @@ func (mock *VoterMock) InitPollCalls() []struct {
 	Ctx             github_com_cosmos_cosmos_sdk_types.Context
 	Poll            exported.PollMeta
 	SnapshotCounter int64
+	ExpireAt        int64
 } {
 	var calls []struct {
 		Ctx             github_com_cosmos_cosmos_sdk_types.Context
 		Poll            exported.PollMeta
 		SnapshotCounter int64
+		ExpireAt        int64
 	}
 	mock.lockInitPoll.RLock()
 	calls = mock.calls.InitPoll
@@ -280,7 +286,7 @@ var _ types.Signer = &SignerMock{}
 // 			GetSnapshotCounterForKeyIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) (int64, bool) {
 // 				panic("mock out the GetSnapshotCounterForKeyID method")
 // 			},
-// 			StartSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, initPoll interface{InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, snapshotCounter int64) error}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
+// 			StartSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, initPoll interface{InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
 // 				panic("mock out the StartSign method")
 // 			},
 // 		}
@@ -310,7 +316,7 @@ type SignerMock struct {
 
 	// StartSignFunc mocks the StartSign method.
 	StartSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, initPoll interface {
-		InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, snapshotCounter int64) error
+		InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error
 	}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error
 
 	// calls tracks calls to the methods.
@@ -367,7 +373,7 @@ type SignerMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// InitPoll is the initPoll argument value.
 			InitPoll interface {
-				InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, snapshotCounter int64) error
+				InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error
 			}
 			// KeyID is the keyID argument value.
 			KeyID string
@@ -608,7 +614,7 @@ func (mock *SignerMock) GetSnapshotCounterForKeyIDCalls() []struct {
 
 // StartSign calls StartSignFunc.
 func (mock *SignerMock) StartSign(ctx github_com_cosmos_cosmos_sdk_types.Context, initPoll interface {
-	InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, snapshotCounter int64) error
+	InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error
 }, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
 	if mock.StartSignFunc == nil {
 		panic("SignerMock.StartSignFunc: method is nil but Signer.StartSign was just called")
@@ -616,7 +622,7 @@ func (mock *SignerMock) StartSign(ctx github_com_cosmos_cosmos_sdk_types.Context
 	callInfo := struct {
 		Ctx      github_com_cosmos_cosmos_sdk_types.Context
 		InitPoll interface {
-			InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, snapshotCounter int64) error
+			InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error
 		}
 		KeyID            string
 		SigID            string
@@ -642,7 +648,7 @@ func (mock *SignerMock) StartSign(ctx github_com_cosmos_cosmos_sdk_types.Context
 func (mock *SignerMock) StartSignCalls() []struct {
 	Ctx      github_com_cosmos_cosmos_sdk_types.Context
 	InitPoll interface {
-		InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, snapshotCounter int64) error
+		InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error
 	}
 	KeyID            string
 	SigID            string
@@ -652,7 +658,7 @@ func (mock *SignerMock) StartSignCalls() []struct {
 	var calls []struct {
 		Ctx      github_com_cosmos_cosmos_sdk_types.Context
 		InitPoll interface {
-			InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, snapshotCounter int64) error
+			InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error
 		}
 		KeyID            string
 		SigID            string

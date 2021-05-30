@@ -128,7 +128,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 			SetPendingOutpointInfoFunc:        func(sdk.Context, vote.PollMeta, types.OutPointInfo) {},
 		}
 		voter = &mock.VoterMock{
-			InitPollFunc: func(sdk.Context, vote.PollMeta, int64) error { return nil },
+			InitPollFunc: func(sdk.Context, vote.PollMeta, int64, int64) error { return nil },
 		}
 
 		signer = &mock.SignerMock{
@@ -198,7 +198,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 
 	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
 		setup()
-		voter.InitPollFunc = func(sdk.Context, vote.PollMeta, int64) error { return fmt.Errorf("poll setup failed") }
+		voter.InitPollFunc = func(sdk.Context, vote.PollMeta, int64, int64) error { return fmt.Errorf("poll setup failed") }
 		_, err := server.ConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
