@@ -1,6 +1,6 @@
 ## axelard add-genesis-evm-chain
 
-Adds an evn chain in genesis.json
+Adds an EVM chain in genesis.json
 
 ```
 axelard add-genesis-evm-chain [name] [native asset] [flags]

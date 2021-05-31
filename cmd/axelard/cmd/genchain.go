@@ -20,7 +20,7 @@ func AddGenesisEVMChainCmd(defaultNodeHome string) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "add-genesis-evm-chain [name] [native asset]",
-		Short: "Adds an evn chain in genesis.json",
+		Short: "Adds an EVM chain in genesis.json",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx := client.GetClientContextFromCmd(cmd)

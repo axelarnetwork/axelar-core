@@ -267,7 +267,7 @@ func GetCmdSignTransferOwnership() *cobra.Command {
 func GetCmdAddChain() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add-chain [name] [native asset]",
-		Short: "Add a new evm chain",
+		Short: "Add a new EVM chain",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)

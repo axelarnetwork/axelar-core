@@ -1,6 +1,6 @@
 ## axelard tx ethereum add-chain
 
-Add a new evm chain
+Add a new EVM chain
 
 ```
 axelard tx ethereum add-chain [name] [native asset] [flags]
