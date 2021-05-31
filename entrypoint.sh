@@ -62,4 +62,4 @@ fi
 
 startValProc &
 
-exec axelard start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"}
+exec cosmovisor start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"}

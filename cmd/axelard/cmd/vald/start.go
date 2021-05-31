@@ -5,8 +5,6 @@ import (
 	"path"
 	"time"
 
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/events"
-
 	"github.com/axelarnetwork/tm-events/pkg/tendermint/client"
 	tmEvents "github.com/axelarnetwork/tm-events/pkg/tendermint/events"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
@@ -29,6 +27,7 @@ import (
 	btcRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/eth"
 	ethRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/eth/rpc"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/events"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/jobs"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
