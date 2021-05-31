@@ -1,4 +1,4 @@
-package ethereum
+package evm
 
 import (
 	"context"
@@ -15,10 +15,10 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/axelarnetwork/axelar-core/x/ethereum/client/cli"
-	"github.com/axelarnetwork/axelar-core/x/ethereum/client/rest"
-	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
-	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
+	"github.com/axelarnetwork/axelar-core/x/evm/client/cli"
+	"github.com/axelarnetwork/axelar-core/x/evm/client/rest"
+	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
+	"github.com/axelarnetwork/axelar-core/x/evm/types"
 )
 
 var (

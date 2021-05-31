@@ -12,8 +12,8 @@ import (
 
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	bitcoinTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
-	ethereumTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
+	eth "github.com/axelarnetwork/axelar-core/x/evm/exported"
+	ethereumTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"

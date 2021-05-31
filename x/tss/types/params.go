@@ -9,7 +9,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	bitcoin "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
-	ethereum "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
+	ethereum "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 

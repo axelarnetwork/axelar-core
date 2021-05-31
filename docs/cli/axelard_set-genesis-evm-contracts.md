@@ -1,9 +1,9 @@
-## axelard set-genesis-ethereum-contracts
+## axelard set-genesis-evm-contracts
 
-Set the ethereum's contract parameters in genesis.json
+Set the EVM's contract parameters in genesis.json
 
 ```
-axelard set-genesis-ethereum-contracts [flags]
+axelard set-genesis-evm-contracts [flags]
 ```
 
 ### Options
@@ -11,7 +11,7 @@ axelard set-genesis-ethereum-contracts [flags]
 ```
       --burnable string   Path to the burner contract ABI.
       --gateway string    Path to the Axelar Gateway contract ABI.
-  -h, --help              help for set-genesis-ethereum-contracts
+  -h, --help              help for set-genesis-evm-contracts
       --token string      Path to the tokens contract ABI.
 ```
 

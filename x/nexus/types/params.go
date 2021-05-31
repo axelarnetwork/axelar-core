@@ -6,7 +6,7 @@ import (
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
-	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
+	eth "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 

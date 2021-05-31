@@ -86,9 +86,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/broadcast"
 	broadcastKeeper "github.com/axelarnetwork/axelar-core/x/broadcast/keeper"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
-	"github.com/axelarnetwork/axelar-core/x/ethereum"
-	ethKeeper "github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
-	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
+	"github.com/axelarnetwork/axelar-core/x/evm"
+	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
+	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
@@ -136,7 +136,7 @@ var (
 		tss.AppModuleBasic{},
 		vote.AppModuleBasic{},
 		bitcoin.AppModuleBasic{},
-		ethereum.AppModuleBasic{},
+		evm.AppModuleBasic{},
 		broadcast.AppModuleBasic{},
 		snapshot.AppModuleBasic{},
 		nexus.AppModuleBasic{},
@@ -226,7 +226,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		voteTypes.StoreKey,
 		broadcastTypes.StoreKey,
 		btcTypes.StoreKey,
-		ethTypes.StoreKey,
+		evmTypes.StoreKey,
 		snapTypes.StoreKey,
 		tssTypes.StoreKey,
 		nexusTypes.StoreKey,
@@ -307,8 +307,8 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	btcK := btcKeeper.NewKeeper(
 		appCodec, keys[btcTypes.StoreKey], app.getSubspace(btcTypes.ModuleName),
 	)
-	ethK := ethKeeper.NewKeeper(
-		appCodec, keys[ethTypes.StoreKey], app.getSubspace(ethTypes.ModuleName),
+	ethK := evmKeeper.NewKeeper(
+		appCodec, keys[evmTypes.StoreKey], app.getSubspace(evmTypes.ModuleName),
 	)
 
 	broadcastK := broadcastKeeper.NewKeeper(app.legacyAmino, keys[broadcastTypes.StoreKey], stakingK)
@@ -334,16 +334,16 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		app.legacyAmino, keys[voteTypes.StoreKey], snapK, broadcastK,
 	)
 
-	var rpcEth ethTypes.RPCClient
+	var rpcEth evmTypes.RPCClient
 	var err error
 	if axelarCfg.WithEthBridge {
-		rpcEth, err = ethTypes.NewRPCClient(axelarCfg.EthRPCAddr)
+		rpcEth, err = evmTypes.NewRPCClient(axelarCfg.EthRPCAddr)
 		if err != nil {
 			tmos.Exit(err.Error())
 		}
-		logger.With("module", fmt.Sprintf("x/%s", ethTypes.ModuleName)).Debug("Successfully connected to ethereum node")
+		logger.With("module", fmt.Sprintf("x/%s", evmTypes.ModuleName)).Debug("Successfully connected to ethereum node")
 	} else {
-		rpcEth = ethTypes.NewDummyRPC()
+		rpcEth = evmTypes.NewDummyRPC()
 	}
 
 	rpcBtc, err := btcRPC.NewRPCClient(axelarCfg.BtcConfig, logger)
@@ -379,7 +379,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		vote.NewAppModule(votingK),
 		broadcast.NewAppModule(broadcastK),
 		nexus.NewAppModule(nexusK),
-		ethereum.NewAppModule(ethK, votingK, tssK, nexusK, snapK, rpcEth),
+		evm.NewAppModule(ethK, votingK, tssK, nexusK, snapK, rpcEth),
 		bitcoin.NewAppModule(btcK, votingK, tssK, nexusK, snapK, rpcBtc),
 	)
 
@@ -409,7 +409,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		snapTypes.ModuleName,
 		tssTypes.ModuleName,
 		btcTypes.ModuleName,
-		ethTypes.ModuleName,
+		evmTypes.ModuleName,
 		nexusTypes.ModuleName,
 		broadcastTypes.ModuleName,
 		voteTypes.ModuleName,
@@ -470,7 +470,7 @@ func initParamsKeeper(appCodec codec.Marshaler, legacyAmino *codec.LegacyAmino, 
 	paramsKeeper.Subspace(snapTypes.ModuleName)
 	paramsKeeper.Subspace(tssTypes.ModuleName)
 	paramsKeeper.Subspace(btcTypes.ModuleName)
-	paramsKeeper.Subspace(ethTypes.ModuleName)
+	paramsKeeper.Subspace(evmTypes.ModuleName)
 	paramsKeeper.Subspace(nexusTypes.ModuleName)
 
 	return paramsKeeper

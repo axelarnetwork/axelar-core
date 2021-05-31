@@ -1,10 +1,10 @@
-package ethereum
+package evm
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
+	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 )
 
 // BeginBlocker check for infraction evidence or downtime of validators

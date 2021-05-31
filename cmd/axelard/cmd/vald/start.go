@@ -31,7 +31,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/jobs"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
+	ethTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 

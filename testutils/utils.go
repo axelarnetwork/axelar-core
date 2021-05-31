@@ -11,7 +11,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/app/params"
 	bitcoin "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/types"
-	ethereum "github.com/axelarnetwork/axelar-core/x/ethereum/types"
+	ethereum "github.com/axelarnetwork/axelar-core/x/evm/types"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/types"
