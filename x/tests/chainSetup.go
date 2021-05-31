@@ -31,7 +31,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	broadcastKeeper "github.com/axelarnetwork/axelar-core/x/broadcast/keeper"
-	"github.com/axelarnetwork/axelar-core/x/ethereum"
+	"github.com/axelarnetwork/axelar-core/x/evm"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -44,10 +44,10 @@ import (
 	btcMock "github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/broadcast"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
-	ethKeeper "github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
-	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
-	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
-	ethMock "github.com/axelarnetwork/axelar-core/x/ethereum/types/mock"
+	ethKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
+	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	ethTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
+	ethMock "github.com/axelarnetwork/axelar-core/x/evm/types/mock"
 	snapshotExported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapshotExportedMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	snapshotKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
@@ -123,7 +123,7 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 
 	broadcastHandler := broadcast.NewHandler(broadcaster)
 	btcHandler := bitcoin.NewHandler(bitcoinKeeper, voter, signer, nexusK, snapKeeper)
-	ethHandler := ethereum.NewHandler(ethereumKeeper, voter, signer, nexusK, snapKeeper)
+	ethHandler := evm.NewHandler(ethereumKeeper, voter, signer, nexusK, snapKeeper)
 	tssHandler := tss.NewHandler(signer, snapKeeper, nexusK, voter, &tssMock.StakingKeeperMock{
 		GetLastTotalPowerFunc: mocks.Staker.GetLastTotalPowerFunc,
 	}, broadcaster)

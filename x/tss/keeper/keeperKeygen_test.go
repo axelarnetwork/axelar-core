@@ -9,7 +9,7 @@ import (
 
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	bitcoin "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
-	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
+	eth "github.com/axelarnetwork/axelar-core/x/evm/exported"
 
 	"github.com/stretchr/testify/assert"
 
