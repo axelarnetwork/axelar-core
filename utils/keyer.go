@@ -69,6 +69,7 @@ var _ Keyer = LowerCaseKey("")
 // LowerCaseKey wraps around a key string to enable case insensitive comparisons
 type LowerCaseKey string
 
+// EmptyLowerCaseKey is an empty key that can be used for prefix iteration
 var EmptyLowerCaseKey = LowerCaseKey("")
 
 // ToLowerCaseKey converts the string representation of the given object into a lower case key
