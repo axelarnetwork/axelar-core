@@ -9,7 +9,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	bitcoin "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
-	ethereum "github.com/axelarnetwork/axelar-core/x/evm/exported"
+	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
@@ -43,7 +43,7 @@ func DefaultParams() Params {
 		KeyRequirements: []exported.KeyRequirement{
 			{ChainName: bitcoin.Bitcoin.Name, KeyRole: exported.MasterKey, MinValidatorSubsetSize: 5, KeyShareDistributionPolicy: exported.WeightedByStake},
 			{ChainName: bitcoin.Bitcoin.Name, KeyRole: exported.SecondaryKey, MinValidatorSubsetSize: 3, KeyShareDistributionPolicy: exported.OnePerValidator},
-			{ChainName: ethereum.Ethereum.Name, KeyRole: exported.MasterKey, MinValidatorSubsetSize: 5, KeyShareDistributionPolicy: exported.WeightedByStake},
+			{ChainName: evm.Ethereum.Name, KeyRole: exported.MasterKey, MinValidatorSubsetSize: 5, KeyShareDistributionPolicy: exported.WeightedByStake},
 		},
 		MinBondFractionPerShare: utils.Threshold{Numerator: 1, Denominator: 10},
 		SuspendDurationInBlocks: 1000,
