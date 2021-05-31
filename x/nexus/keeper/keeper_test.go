@@ -88,7 +88,7 @@ func TestPrepareSuccess(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	transfers := keeper.GetPendingTransfersForChain(ctx, eth.Ethereum)
+	transfers := keeper.GetTransfersForChain(ctx, eth.Ethereum, exported.Pending)
 	assert.Equal(t, len(transfers), len(amounts))
 	assert.Equal(t, linkedAddr, len(transfers))
 
@@ -115,13 +115,13 @@ func TestArchive(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	transfers := keeper.GetPendingTransfersForChain(ctx, eth.Ethereum)
+	transfers := keeper.GetTransfersForChain(ctx, eth.Ethereum, exported.Pending)
 
 	for _, transfer := range transfers {
 		keeper.ArchivePendingTransfer(ctx, transfer)
 	}
 
-	archived := keeper.GetArchivedTransfersForChain(ctx, eth.Ethereum)
+	archived := keeper.GetTransfersForChain(ctx, eth.Ethereum, exported.Archived)
 	assert.Equal(t, linkedAddr, len(archived))
 
 	count := 0
@@ -134,7 +134,7 @@ func TestArchive(t *testing.T) {
 		}
 	}
 	assert.Equal(t, linkedAddr, count)
-	assert.Equal(t, 0, len(keeper.GetPendingTransfersForChain(ctx, eth.Ethereum)))
+	assert.Equal(t, 0, len(keeper.GetTransfersForChain(ctx, eth.Ethereum, exported.Pending)))
 }
 
 func TestTotalInvalid(t *testing.T) {
@@ -147,7 +147,7 @@ func TestTotalInvalid(t *testing.T) {
 
 	err := keeper.EnqueueForTransfer(ctx, btcSender, makeRandAmount(btcTypes.Satoshi))
 	assert.NoError(t, err)
-	transfer := keeper.GetPendingTransfersForChain(ctx, eth.Ethereum)[0]
+	transfer := keeper.GetTransfersForChain(ctx, eth.Ethereum, exported.Pending)[0]
 	keeper.ArchivePendingTransfer(ctx, transfer)
 	total := transfer.Asset.Amount.Int64()
 	amount := sdk.NewCoin(btcTypes.Satoshi, sdk.NewInt(total+rand.I64Between(1, 100000)))
@@ -166,7 +166,7 @@ func TestTotalSucess(t *testing.T) {
 
 	err := keeper.EnqueueForTransfer(ctx, btcSender, makeRandAmount(btcTypes.Satoshi))
 	assert.NoError(t, err)
-	transfer := keeper.GetPendingTransfersForChain(ctx, eth.Ethereum)[0]
+	transfer := keeper.GetTransfersForChain(ctx, eth.Ethereum, exported.Pending)[0]
 	keeper.ArchivePendingTransfer(ctx, transfer)
 	total := transfer.Asset.Amount.Int64()
 	amount := sdk.NewCoin(btcTypes.Satoshi, sdk.NewInt(rand.I64Between(1, total)))

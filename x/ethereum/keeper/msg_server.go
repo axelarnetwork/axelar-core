@@ -527,7 +527,7 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 
 func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendingTransfersRequest) (*types.SignPendingTransfersResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	pendingTransfers := s.nexus.GetPendingTransfersForChain(ctx, exported.Ethereum)
+	pendingTransfers := s.nexus.GetTransfersForChain(ctx, exported.Ethereum, nexus.Pending)
 
 	if len(pendingTransfers) == 0 {
 		return &types.SignPendingTransfersResponse{}, nil
