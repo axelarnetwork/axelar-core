@@ -19,7 +19,7 @@ import (
 	rpc2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/eth/rpc"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	ethTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
+	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -65,7 +65,7 @@ func (mgr Mgr) ProcessDepositConfirmation(attributes []sdk.Attribute) (err error
 		return true
 	})
 
-	msg := &ethTypes.VoteConfirmDepositRequest{
+	msg := &evmTypes.VoteConfirmDepositRequest{
 		Sender:      mgr.sender,
 		Poll:        poll,
 		TxID:        types.Hash(txID),
@@ -92,7 +92,7 @@ func (mgr Mgr) ProcessTokenConfirmation(attributes []sdk.Attribute) error {
 		return true
 	})
 
-	msg := &ethTypes.VoteConfirmTokenRequest{
+	msg := &evmTypes.VoteConfirmTokenRequest{
 		Sender:    mgr.sender,
 		Poll:      poll,
 		TxID:      types.Hash(txID),
@@ -114,30 +114,30 @@ func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Att
 	var txIDFound, amountFound, burnAddrFound, tokenAddrFound, confHeightFound, pollFound bool
 	for _, attribute := range attributes {
 		switch attribute.Key {
-		case ethTypes.AttributeKeyTxID:
+		case evmTypes.AttributeKeyTxID:
 			txID = common.HexToHash(attribute.Value)
 			txIDFound = true
-		case ethTypes.AttributeKeyAmount:
+		case evmTypes.AttributeKeyAmount:
 			amount, err = sdk.ParseUint(attribute.Value)
 			if err != nil {
 				return [32]byte{}, sdk.Uint{}, [20]byte{}, [20]byte{}, 0, vote.PollMeta{},
 					sdkerrors.Wrap(err, "parsing transfer amount failed")
 			}
 			amountFound = true
-		case ethTypes.AttributeKeyBurnAddress:
+		case evmTypes.AttributeKeyBurnAddress:
 			burnAddr = common.HexToAddress(attribute.Value)
 			burnAddrFound = true
-		case ethTypes.AttributeKeyTokenAddress:
+		case evmTypes.AttributeKeyTokenAddress:
 			tokenAddr = common.HexToAddress(attribute.Value)
 			tokenAddrFound = true
-		case ethTypes.AttributeKeyConfHeight:
+		case evmTypes.AttributeKeyConfHeight:
 			confHeight, err = strconv.ParseUint(attribute.Value, 10, 64)
 			if err != nil {
 				return common.Hash{}, sdk.Uint{}, common.Address{}, common.Address{}, 0, vote.PollMeta{},
 					sdkerrors.Wrap(err, "parsing confirmation height failed")
 			}
 			confHeightFound = true
-		case ethTypes.AttributeKeyPoll:
+		case evmTypes.AttributeKeyPoll:
 			cdc.MustUnmarshalJSON([]byte(attribute.Value), &poll)
 			pollFound = true
 		default:
@@ -161,19 +161,19 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attri
 	var txIDFound, gatewayAddrFound, tokenAddrFound, symbolFound, confHeightFound, pollFound bool
 	for _, attribute := range attributes {
 		switch attribute.Key {
-		case ethTypes.AttributeKeyTxID:
+		case evmTypes.AttributeKeyTxID:
 			txID = common.HexToHash(attribute.Value)
 			txIDFound = true
-		case ethTypes.AttributeKeyGatewayAddress:
+		case evmTypes.AttributeKeyGatewayAddress:
 			gatewayAddr = common.HexToAddress(attribute.Value)
 			gatewayAddrFound = true
-		case ethTypes.AttributeKeyTokenAddress:
+		case evmTypes.AttributeKeyTokenAddress:
 			tokenAddr = common.HexToAddress(attribute.Value)
 			tokenAddrFound = true
-		case ethTypes.AttributeKeySymbol:
+		case evmTypes.AttributeKeySymbol:
 			symbol = attribute.Value
 			symbolFound = true
-		case ethTypes.AttributeKeyConfHeight:
+		case evmTypes.AttributeKeyConfHeight:
 			h, err := strconv.Atoi(attribute.Value)
 			if err != nil {
 				return common.Hash{}, common.Address{}, common.Address{}, "", 0, vote.PollMeta{},
