@@ -23,10 +23,10 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
-	eth "github.com/axelarnetwork/axelar-core/x/evm/exported"
+	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
-	ethMock "github.com/axelarnetwork/axelar-core/x/evm/types/mock"
+	evmMock "github.com/axelarnetwork/axelar-core/x/evm/types/mock"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -55,7 +55,7 @@ func TestLink_NoGateway(t *testing.T) {
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
 	symbol := rand.Str(3)
 
-	n := &ethMock.NexusMock{}
+	n := &evmMock.NexusMock{}
 	signer := &mock.SignerMock{
 		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
 			return rand.StrBetween(5, 20), true
@@ -82,7 +82,7 @@ func TestLink_NoRecipientChain(t *testing.T) {
 	symbol := rand.Str(3)
 
 	chains := map[string]nexus.Chain{exported.Ethereum.Name: exported.Ethereum}
-	n := &ethMock.NexusMock{
+	n := &evmMock.NexusMock{
 		GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 			c, ok := chains[chain]
 			return c, ok
@@ -114,7 +114,7 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 	symbol := rand.Str(3)
 
 	chains := map[string]nexus.Chain{btc.Bitcoin.Name: btc.Bitcoin, exported.Ethereum.Name: exported.Ethereum}
-	n := &ethMock.NexusMock{
+	n := &evmMock.NexusMock{
 		GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 			c, ok := chains[chain]
 			return c, ok
@@ -161,7 +161,7 @@ func TestLink_Success(t *testing.T) {
 	sender := nexus.CrossChainAddress{Address: burnAddr.String(), Chain: exported.Ethereum}
 
 	chains := map[string]nexus.Chain{btc.Bitcoin.Name: btc.Bitcoin, exported.Ethereum.Name: exported.Ethereum}
-	n := &ethMock.NexusMock{
+	n := &evmMock.NexusMock{
 		LinkAddressesFunc: func(ctx sdk.Context, s nexus.CrossChainAddress, r nexus.CrossChainAddress) {},
 		GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 			c, ok := chains[chain]
@@ -288,17 +288,17 @@ func TestMintTx_DifferentRecipient_DifferentHash(t *testing.T) {
 func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 	var (
 		ctx    sdk.Context
-		k      *ethMock.EthKeeperMock
-		v      *ethMock.VoterMock
-		n      *ethMock.NexusMock
-		s      *ethMock.SignerMock
+		k      *evmMock.EthKeeperMock
+		v      *evmMock.VoterMock
+		n      *evmMock.NexusMock
+		s      *evmMock.SignerMock
 		msg    *types.ConfirmTokenRequest
 		server types.MsgServiceServer
 	)
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
 
-		k = &ethMock.EthKeeperMock{
+		k = &evmMock.EthKeeperMock{
 			GetGatewayAddressFunc: func(sdk.Context) (common.Address, bool) {
 				return common.BytesToAddress(rand.Bytes(common.AddressLength)), true
 			},
@@ -309,8 +309,8 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) uint64 { return mathRand.Uint64() },
 			SetPendingTokenDeploymentFunc:     func(sdk.Context, vote.PollMeta, types.ERC20TokenDeployment) {},
 		}
-		v = &ethMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta, int64) error { return nil }}
-		n = &ethMock.NexusMock{IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return false }}
+		v = &evmMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta, int64) error { return nil }}
+		n = &evmMock.NexusMock{IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return false }}
 		s = &mock.SignerMock{
 			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
 				return rand.StrBetween(5, 20), true
@@ -400,8 +400,8 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 func TestAddChain(t *testing.T) {
 	var (
 		ctx         sdk.Context
-		k           *ethMock.EthKeeperMock
-		n           *ethMock.NexusMock
+		k           *evmMock.EthKeeperMock
+		n           *evmMock.NexusMock
 		msg         *types.AddChainRequest
 		server      types.MsgServiceServer
 		name        string
@@ -411,15 +411,15 @@ func TestAddChain(t *testing.T) {
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
 
-		n = &ethMock.NexusMock{
+		n = &evmMock.NexusMock{
 			SetChainFunc:      func(_ sdk.Context, chain nexus.Chain) {},
 			RegisterAssetFunc: func(_ sdk.Context, chainName, denom string) {},
 			GetChainFunc: func(_ sdk.Context, chainName string) (nexus.Chain, bool) {
 				switch strings.ToLower(chainName) {
 				case strings.ToLower(btc.Bitcoin.Name):
 					return btc.Bitcoin, true
-				case strings.ToLower(eth.Ethereum.Name):
-					return eth.Ethereum, true
+				case strings.ToLower(evm.Ethereum.Name):
+					return evm.Ethereum, true
 				default:
 					return nexus.Chain{}, false
 				}
@@ -434,7 +434,7 @@ func TestAddChain(t *testing.T) {
 			NativeAsset: nativeAsset,
 		}
 
-		server = NewMsgServerImpl(k, n, &ethMock.SignerMock{}, &ethMock.VoterMock{}, &mock.SnapshotterMock{})
+		server = NewMsgServerImpl(k, n, &evmMock.SignerMock{}, &evmMock.VoterMock{}, &mock.SnapshotterMock{})
 	}
 
 	repeats := 20
@@ -467,15 +467,15 @@ func TestAddChain(t *testing.T) {
 func TestHandleMsgConfirmDeposit(t *testing.T) {
 	var (
 		ctx    sdk.Context
-		k      *ethMock.EthKeeperMock
-		v      *ethMock.VoterMock
-		s      *ethMock.SignerMock
+		k      *evmMock.EthKeeperMock
+		v      *evmMock.VoterMock
+		s      *evmMock.SignerMock
 		msg    *types.ConfirmDepositRequest
 		server types.MsgServiceServer
 	)
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
-		k = &ethMock.EthKeeperMock{
+		k = &evmMock.EthKeeperMock{
 			GetDepositFunc: func(sdk.Context, common.Hash, common.Address) (types.ERC20Deposit, types.DepositState, bool) {
 				return types.ERC20Deposit{}, 0, false
 			},
@@ -490,7 +490,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			SetPendingDepositFunc:             func(sdk.Context, vote.PollMeta, *types.ERC20Deposit) {},
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) uint64 { return mathRand.Uint64() },
 		}
-		v = &ethMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta, int64) error { return nil }}
+		v = &evmMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta, int64) error { return nil }}
 		s = &mock.SignerMock{
 			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
 				return rand.StrBetween(5, 20), true
