@@ -637,3 +637,22 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 
 	return &types.SignTransferOwnershipResponse{CommandID: commandID[:]}, nil
 }
+
+func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*types.AddChainResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain := nexus.Chain{
+		Name:                  req.Name,
+		NativeAsset:           req.NativeAsset,
+		SupportsForeignAssets: true,
+	}
+
+	if _, found := s.nexus.GetChain(ctx, chain.Name); found {
+		return &types.AddChainResponse{}, fmt.Errorf("chain '%s' is already defined", chain.Name)
+	}
+
+	s.nexus.SetChain(ctx, chain)
+	s.nexus.RegisterAsset(ctx, chain.Name, chain.NativeAsset)
+
+	return &types.AddChainResponse{}, nil
+}

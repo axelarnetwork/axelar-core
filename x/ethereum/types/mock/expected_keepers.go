@@ -702,6 +702,9 @@ var _ types.Nexus = &NexusMock{}
 // 			RegisterAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName string, denom string)  {
 // 				panic("mock out the RegisterAsset method")
 // 			},
+// 			SetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain)  {
+// 				panic("mock out the SetChain method")
+// 			},
 // 		}
 //
 // 		// use mockedNexus in code that requires types.Nexus
@@ -735,6 +738,9 @@ type NexusMock struct {
 
 	// RegisterAssetFunc mocks the RegisterAsset method.
 	RegisterAssetFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName string, denom string)
+
+	// SetChainFunc mocks the SetChain method.
+	SetChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -809,6 +815,13 @@ type NexusMock struct {
 			// Denom is the denom argument value.
 			Denom string
 		}
+		// SetChain holds details about calls to the SetChain method.
+		SetChain []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+		}
 	}
 	lockArchivePendingTransfer       sync.RWMutex
 	lockEnqueueForTransfer           sync.RWMutex
@@ -819,6 +832,7 @@ type NexusMock struct {
 	lockIsAssetRegistered            sync.RWMutex
 	lockLinkAddresses                sync.RWMutex
 	lockRegisterAsset                sync.RWMutex
+	lockSetChain                     sync.RWMutex
 }
 
 // ArchivePendingTransfer calls ArchivePendingTransferFunc.
@@ -1149,6 +1163,41 @@ func (mock *NexusMock) RegisterAssetCalls() []struct {
 	mock.lockRegisterAsset.RLock()
 	calls = mock.calls.RegisterAsset
 	mock.lockRegisterAsset.RUnlock()
+	return calls
+}
+
+// SetChain calls SetChainFunc.
+func (mock *NexusMock) SetChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain) {
+	if mock.SetChainFunc == nil {
+		panic("NexusMock.SetChainFunc: method is nil but Nexus.SetChain was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain nexus.Chain
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockSetChain.Lock()
+	mock.calls.SetChain = append(mock.calls.SetChain, callInfo)
+	mock.lockSetChain.Unlock()
+	mock.SetChainFunc(ctx, chain)
+}
+
+// SetChainCalls gets all the calls that were made to SetChain.
+// Check the length with:
+//     len(mockedNexus.SetChainCalls())
+func (mock *NexusMock) SetChainCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain nexus.Chain
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain nexus.Chain
+	}
+	mock.lockSetChain.RLock()
+	calls = mock.calls.SetChain
+	mock.lockSetChain.RUnlock()
 	return calls
 }
 

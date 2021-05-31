@@ -36,6 +36,7 @@ func GetTxCmd() *cobra.Command {
 		GetCmdSignDeployToken(),
 		GetCmdSignBurnTokens(),
 		GetCmdSignTransferOwnership(),
+		GetCmdAddChain(),
 	)
 
 	return ethTxCmd
@@ -251,6 +252,32 @@ func GetCmdSignTransferOwnership() *cobra.Command {
 			newOwnerAddr := common.HexToAddress(args[0])
 
 			msg := types.NewSignTransferOwnershipRequest(cliCtx.GetFromAddress(), newOwnerAddr)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdAddChain returns the cli command to add a new evm chain command
+func GetCmdAddChain() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "add-chain [name] [native asset]",
+		Short: "Add a new EVM chain",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+			name := args[0]
+			nativeAsset := args[1]
+
+			msg := types.NewAddChainRequest(cliCtx.GetFromAddress(), name, nativeAsset)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

@@ -98,6 +98,15 @@ func NewHandler(k keeper.Keeper, v types.Voter, s types.Signer, n types.Nexus, s
 				result.Log = fmt.Sprintf("successfully started signing protocol for transfer-ownership command %s", hex.EncodeToString(res.CommandID))
 			}
 			return result, err
+		case *types.AddChainRequest:
+
+			res, err := server.AddChain(sdk.WrapSDKContext(ctx), msg)
+			result, err := sdk.WrapServiceResult(ctx, res, err)
+			if err == nil {
+				result.Log = fmt.Sprintf("successfully added new chain %s", msg.Name)
+
+			}
+			return result, err
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))

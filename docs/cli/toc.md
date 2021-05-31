@@ -2,6 +2,7 @@
 
 - [axelard](axelard.md)	 - Axelar App
   - [add-genesis-account \[address_or_key_name\] \[coin\]\[,\[coin\]\]](axelard_add-genesis-account.md)	 - Add a genesis account to genesis.json
+  - [add-genesis-evm-chain \[name\] \[native asset\]](axelard_add-genesis-evm-chain.md)	 - Adds an EVM chain in genesis.json
   - [collect-gentxs](axelard_collect-gentxs.md)	 - Collect genesis txs and output a genesis.json file
   - [debug](axelard_debug.md)	 - Tool for helping with debugging your application
     - [addr \[address\]](axelard_debug_addr.md)	 - Convert an address between hex and bech32
@@ -128,6 +129,7 @@
       - [withdraw-rewards \[validator-addr\]](axelard_tx_distribution_withdraw-rewards.md)	 - Withdraw rewards from a given delegation address, and optionally withdraw validator commission if the delegation address given is a validator operator
     - [encode \[file\]](axelard_tx_encode.md)	 - Encode transactions generated offline
     - [ethereum](axelard_tx_ethereum.md)	 - ethereum transactions subcommands
+      - [add-chain \[name\] \[native asset\]](axelard_tx_ethereum_add-chain.md)	 - Add a new EVM chain
       - [confirm-erc20-deposit \[txID\] \[amount\] \[burnerAddr\]](axelard_tx_ethereum_confirm-erc20-deposit.md)	 - Confirm an ERC20 deposit in an Ethereum transaction that sent given amount of token to a burner address
       - [confirm-erc20-token \[txID\] \[symbol\]](axelard_tx_ethereum_confirm-erc20-token.md)	 - Confirm an ERC20 token deployment in an Ethereum transaction for a given symbol of token and gateway address
       - [link \[chain\] \[address\] \[symbol\]](axelard_tx_ethereum_link.md)	 - Link a cross chain address to an ethereum address created by Axelar
