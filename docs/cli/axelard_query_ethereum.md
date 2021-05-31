@@ -1,6 +1,6 @@
 ## axelard query ethereum
 
-Querying commands for the ethereum module
+Querying commands for the evm module
 
 ```
 axelard query ethereum [flags]

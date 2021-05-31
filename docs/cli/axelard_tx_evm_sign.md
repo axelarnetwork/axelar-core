@@ -1,9 +1,9 @@
-## axelard tx ethereum sign-deploy-token
+## axelard tx evm sign
 
-Signs the call data to deploy a token with the AxelarGateway contract
+sign a raw Ethereum transaction
 
 ```
-axelard tx ethereum sign-deploy-token [name] [symbol] [decimals] [capacity] [flags]
+axelard tx evm sign [tx json file path] [flags]
 ```
 
 ### Options
@@ -18,7 +18,7 @@ axelard tx ethereum sign-deploy-token [name] [symbol] [decimals] [capacity] [fla
       --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
       --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
-  -h, --help                     help for sign-deploy-token
+  -h, --help                     help for sign
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "test")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                   Use a connected Ledger device
@@ -44,4 +44,4 @@ axelard tx ethereum sign-deploy-token [name] [symbol] [decimals] [capacity] [fla
 
 ### SEE ALSO
 
-- [axelard tx ethereum](axelard_tx_ethereum.md)	 - ethereum transactions subcommands
+- [axelard tx evm](axelard_tx_evm.md)	 - evm transactions subcommands

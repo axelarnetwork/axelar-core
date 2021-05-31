@@ -32,7 +32,7 @@ axelard query [flags]
 - [axelard query bitcoin](axelard_query_bitcoin.md)	 - bitcoin query subcommands
 - [axelard query block](axelard_query_block.md)	 - Get verified data for a the block at given height
 - [axelard query distribution](axelard_query_distribution.md)	 - Querying commands for the distribution module
-- [axelard query ethereum](axelard_query_ethereum.md)	 - Querying commands for the ethereum module
+- [axelard query ethereum](axelard_query_ethereum.md)	 - Querying commands for the evm module
 - [axelard query evidence](axelard_query_evidence.md)	 - Query for evidence by hash or for all (paginated) submitted evidence
 - [axelard query gov](axelard_query_gov.md)	 - Querying commands for the governance module
 - [axelard query mint](axelard_query_mint.md)	 - Querying commands for the minting module

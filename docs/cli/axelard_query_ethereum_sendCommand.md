@@ -27,4 +27,4 @@ axelard query ethereum sendCommand [commandID] [fromAddress] [flags]
 
 ### SEE ALSO
 
-- [axelard query ethereum](axelard_query_ethereum.md)	 - Querying commands for the ethereum module
+- [axelard query ethereum](axelard_query_ethereum.md)	 - Querying commands for the evm module

@@ -1,9 +1,9 @@
-## axelard tx ethereum confirm-erc20-token
+## axelard tx evm transfer-ownership
 
-Confirm an ERC20 token deployment in an Ethereum transaction for a given symbol of token and gateway address
+Sign transfer ownership command for Ethereum contract
 
 ```
-axelard tx ethereum confirm-erc20-token [txID] [symbol] [flags]
+axelard tx evm transfer-ownership [newOwnerAddr] [flags]
 ```
 
 ### Options
@@ -18,7 +18,7 @@ axelard tx ethereum confirm-erc20-token [txID] [symbol] [flags]
       --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
       --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
-  -h, --help                     help for confirm-erc20-token
+  -h, --help                     help for transfer-ownership
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "test")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                   Use a connected Ledger device
@@ -44,4 +44,4 @@ axelard tx ethereum confirm-erc20-token [txID] [symbol] [flags]
 
 ### SEE ALSO
 
-- [axelard tx ethereum](axelard_tx_ethereum.md)	 - ethereum transactions subcommands
+- [axelard tx evm](axelard_tx_evm.md)	 - evm transactions subcommands

@@ -29,4 +29,4 @@ axelard query ethereum deploy-gateway [flags]
 
 ### SEE ALSO
 
-- [axelard query ethereum](axelard_query_ethereum.md)	 - Querying commands for the ethereum module
+- [axelard query ethereum](axelard_query_ethereum.md)	 - Querying commands for the evm module
