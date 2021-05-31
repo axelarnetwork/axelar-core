@@ -54,6 +54,11 @@ func (store NormalizedKVStore) GetRaw(key Keyer) []byte {
 	return store.KVStore.Get(key.AsKey())
 }
 
+// Has returns true if the key exists.
+func (store NormalizedKVStore) Has(key Keyer) bool {
+	return store.KVStore.Has(key.AsKey())
+}
+
 // Delete deletes the value stored under the given key, if it exists
 func (store NormalizedKVStore) Delete(key Keyer) {
 	store.KVStore.Delete(key.AsKey())
@@ -63,6 +68,8 @@ var _ Keyer = LowerCaseKey("")
 
 // LowerCaseKey wraps around a key string to enable case insensitive comparisons
 type LowerCaseKey string
+
+var EmptyLowerCaseKey = LowerCaseKey("")
 
 // ToLowerCaseKey converts the string representation of the given object into a lower case key
 func ToLowerCaseKey(key fmt.Stringer) LowerCaseKey {

@@ -91,6 +91,8 @@
     - [CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress)
     - [CrossChainTransfer](#nexus.exported.v1beta1.CrossChainTransfer)
   
+    - [TransferState](#nexus.exported.v1beta1.TransferState)
+  
 - [nexus/v1beta1/params.proto](#nexus/v1beta1/params.proto)
     - [Params](#nexus.v1beta1.Params)
   
@@ -1255,6 +1257,19 @@ registered blockchain
 
 
  <!-- end messages -->
+
+
+<a name="nexus.exported.v1beta1.TransferState"></a>
+
+### TransferState
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| TRANSFER_STATE_UNSPECIFIED | 0 |  |
+| TRANSFER_STATE_PENDING | 1 |  |
+| TRANSFER_STATE_ARCHIVED | 2 |  |
+
 
  <!-- end enums -->
 
