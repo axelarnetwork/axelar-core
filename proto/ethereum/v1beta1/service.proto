@@ -79,4 +79,11 @@ service MsgService {
     option (google.api.http) = {
     };
   }
+
+  rpc AddChain(AddChainRequest) returns (AddChainResponse) {
+    option (google.api.http) = {
+      post : "/axelar/ethereum/add-chain"
+      body : "*"
+    };
+  }
 }

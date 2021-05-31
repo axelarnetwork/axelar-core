@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	mathRand "math/rand"
+	"strings"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -22,6 +23,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/exported"
+	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
 	"github.com/axelarnetwork/axelar-core/x/ethereum/types/mock"
 	ethMock "github.com/axelarnetwork/axelar-core/x/ethereum/types/mock"
@@ -392,6 +394,73 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
 
 		assert.Error(t, err)
+	}).Repeat(repeats))
+}
+
+func TestAddChain(t *testing.T) {
+	var (
+		ctx         sdk.Context
+		k           *ethMock.EthKeeperMock
+		n           *ethMock.NexusMock
+		msg         *types.AddChainRequest
+		server      types.MsgServiceServer
+		name        string
+		nativeAsset string
+	)
+
+	setup := func() {
+		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
+
+		n = &ethMock.NexusMock{
+			SetChainFunc:      func(_ sdk.Context, chain nexus.Chain) {},
+			RegisterAssetFunc: func(_ sdk.Context, chainName, denom string) {},
+			GetChainFunc: func(_ sdk.Context, chainName string) (nexus.Chain, bool) {
+				switch strings.ToLower(chainName) {
+				case strings.ToLower(btc.Bitcoin.Name):
+					return btc.Bitcoin, true
+				case strings.ToLower(eth.Ethereum.Name):
+					return eth.Ethereum, true
+				default:
+					return nexus.Chain{}, false
+				}
+			},
+		}
+
+		name = rand.StrBetween(5, 20)
+		nativeAsset = rand.StrBetween(3, 10)
+		msg = &types.AddChainRequest{
+			Sender:      rand.Bytes(20),
+			Name:        name,
+			NativeAsset: nativeAsset,
+		}
+
+		server = NewMsgServerImpl(k, n, &ethMock.SignerMock{}, &ethMock.VoterMock{}, &mock.SnapshotterMock{})
+	}
+
+	repeats := 20
+	t.Run("happy path", testutils.Func(func(t *testing.T) {
+		setup()
+
+		_, err := server.AddChain(sdk.WrapSDKContext(ctx), msg)
+
+		assert.NoError(t, err)
+		assert.Equal(t, msg.Name, n.SetChainCalls()[0].Chain.Name)
+		assert.Equal(t, msg.NativeAsset, n.SetChainCalls()[0].Chain.NativeAsset)
+		assert.Equal(t, msg.Name, n.RegisterAssetCalls()[0].ChainName)
+		assert.Equal(t, msg.NativeAsset, n.RegisterAssetCalls()[0].Denom)
+	}).Repeat(repeats))
+
+	t.Run("chain already defined", testutils.Func(func(t *testing.T) {
+		setup()
+
+		msg.Name = "Bitcoin"
+		msg.NativeAsset = nativeAsset
+
+		_, err := server.AddChain(sdk.WrapSDKContext(ctx), msg)
+
+		assert.Error(t, err)
+		assert.Equal(t, 0, len(n.SetChainCalls()))
+		assert.Equal(t, 0, len(n.RegisterAssetCalls()))
 	}).Repeat(repeats))
 }
 

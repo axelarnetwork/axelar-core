@@ -27,6 +27,7 @@ const (
 	TxMethodSignPending        = "sign-pending"
 	TxMethodSignDeployToken    = "sign-deploy-token"
 	TxMethodSignBurnTokens     = "sign-burn"
+	TxAddChain                 = "add-chain"
 
 	QueryMethodMasterAddress        = keeper.QueryMasterAddress
 	QueryMethodAxelarGatewayAddress = keeper.QueryAxelarGatewayAddress
@@ -46,6 +47,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(GetHandlerSignPendingTransfers(cliCtx), TxMethodSignPending)
 	registerTx(GetHandlerSignDeployToken(cliCtx), TxMethodSignDeployToken, clientUtils.PathVarSymbol)
 	registerTx(GetHandlerSignBurnTokens(cliCtx), TxMethodSignBurnTokens)
+	registerTx(GetHandlerAddChain(cliCtx), TxAddChain)
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
 	registerQuery(GetHandlerQueryMasterAddress(cliCtx), QueryMethodMasterAddress)
@@ -99,6 +101,13 @@ type ReqSignDeployToken struct {
 // ReqSignBurnTokens represents a request to sign all outstanding burn commands
 type ReqSignBurnTokens struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+}
+
+// ReqAddChain represents a request to add a new evm chain command
+type ReqAddChain struct {
+	BaseReq     rest.BaseReq `json:"base_req" yaml:"base_req"`
+	Name        string       `json:"name" yaml:"name"`
+	NativeAsset string       `json:"native_asset" yaml:"native_asset"`
 }
 
 // GetHandlerLink returns the handler to link addresses
@@ -301,6 +310,31 @@ func GetHandlerSignBurnTokens(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		msg := types.NewSignBurnTokensRequest(fromAddr)
+		if err := msg.ValidateBasic(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
+	}
+}
+
+// GetHandlerAddChain returns a handler to add a new evm chain command
+func GetHandlerAddChain(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req ReqAddChain
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
+			return
+		}
+		req.BaseReq = req.BaseReq.Sanitize()
+		if !req.BaseReq.ValidateBasic(w) {
+			return
+		}
+		fromAddr, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
+		if !ok {
+			return
+		}
+
+		msg := types.NewAddChainRequest(fromAddr, req.Name, req.NativeAsset)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
