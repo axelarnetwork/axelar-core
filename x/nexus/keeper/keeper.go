@@ -18,8 +18,6 @@ import (
 const (
 	senderPrefix     = "send"
 	chainPrefix      = "chain"
-	pendingPrefix    = "pend"
-	archivedPrefix   = "arch"
 	totalPrefix      = "total"
 	registeredPrefix = "registered"
 
@@ -27,7 +25,7 @@ const (
 	registered  = 0x01
 )
 
-// Keeper represents a ballance keeper
+// Keeper represents a nexus keeper
 type Keeper struct {
 	storeKey sdk.StoreKey
 	cdc      codec.BinaryMarshaler
@@ -79,7 +77,8 @@ func (k Keeper) IsAssetRegistered(ctx sdk.Context, chainName, denom string) bool
 func (k Keeper) GetChains(ctx sdk.Context) []exported.Chain {
 	var results []exported.Chain
 
-	for iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(chainPrefix)); iter.Valid(); iter.Next() {
+	prefix := utils.EmptyLowerCaseKey.WithPrefix(chainPrefix).AsKey()
+	for iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), prefix); iter.Valid(); iter.Next() {
 		var chain exported.Chain
 		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &chain)
 		results = append(results, chain)
@@ -142,28 +141,18 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 	return nil
 }
 
-// GetPendingTransfersForChain returns the current set of pending transfers for a given chain
-func (k Keeper) GetPendingTransfersForChain(ctx sdk.Context, chain exported.Chain) []exported.CrossChainTransfer {
-	return k.getAddresses(ctx, pendingPrefix, chain)
-}
-
-// GetArchivedTransfersForChain returns the history of concluded transactions to a given chain
-func (k Keeper) GetArchivedTransfersForChain(ctx sdk.Context, chain exported.Chain) []exported.CrossChainTransfer {
-	return k.getAddresses(ctx, archivedPrefix, chain)
-}
-
 // ArchivePendingTransfer marks the transfer for the given recipient as concluded and archived
 func (k Keeper) ArchivePendingTransfer(ctx sdk.Context, transfer exported.CrossChainTransfer) {
 	store := k.getStore(ctx)
 	key := utils.LowerCaseKey(strconv.FormatUint(transfer.ID, 10)).WithPrefix(transfer.Recipient.Chain.Name)
-	bz := store.GetRaw(key.WithPrefix(pendingPrefix))
+	bz := store.GetRaw(key.WithPrefix(exported.Pending.String()))
 	if bz == nil {
 		return
 	}
 
 	// Archive the transfer
-	store.Delete(key.WithPrefix(pendingPrefix))
-	store.SetRaw(key.WithPrefix(archivedPrefix), bz)
+	store.Delete(key.WithPrefix(exported.Pending.String()))
+	store.SetRaw(key.WithPrefix(exported.Archived.String()), bz)
 
 	// Update the total nexus for the chain if it is a foreign asset
 	var t exported.CrossChainTransfer
@@ -207,7 +196,7 @@ func (k Keeper) setPendingTransfer(ctx sdk.Context, recipient exported.CrossChai
 	}
 
 	transfer := exported.CrossChainTransfer{Recipient: recipient, Asset: amount, ID: next}
-	store.Set(utils.LowerCaseKey(strconv.FormatUint(next, 10)).WithPrefix(recipient.Chain.Name).WithPrefix(pendingPrefix), &transfer)
+	store.Set(utils.LowerCaseKey(strconv.FormatUint(next, 10)).WithPrefix(recipient.Chain.Name).WithPrefix(exported.Pending.String()), &transfer)
 
 	next++
 	bz = make([]byte, 8)
@@ -215,9 +204,10 @@ func (k Keeper) setPendingTransfer(ctx sdk.Context, recipient exported.CrossChai
 	store.SetRaw(utils.LowerCaseKey(sequenceKey), bz)
 }
 
-func (k Keeper) getAddresses(ctx sdk.Context, getType string, chain exported.Chain) []exported.CrossChainTransfer {
+// GetTransfersForChain returns the current set of transfers with the given state for the given chain
+func (k Keeper) GetTransfersForChain(ctx sdk.Context, chain exported.Chain, state exported.TransferState) []exported.CrossChainTransfer {
 	transfers := make([]exported.CrossChainTransfer, 0)
-	prefix := utils.LowerCaseKey("").WithPrefix(chain.Name).WithPrefix(getType)
+	prefix := utils.EmptyLowerCaseKey.WithPrefix(chain.Name).WithPrefix(state.String())
 
 	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), prefix.AsKey())
 	for ; iter.Valid(); iter.Next() {

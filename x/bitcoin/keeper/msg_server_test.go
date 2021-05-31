@@ -574,8 +574,8 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 			},
 		}
 		nexusKeeper = &mock.NexusMock{
-			GetPendingTransfersForChainFunc: func(sdk.Context, nexus.Chain) []nexus.CrossChainTransfer { return transfers },
-			ArchivePendingTransferFunc:      func(sdk.Context, nexus.CrossChainTransfer) {},
+			GetTransfersForChainFunc:   func(sdk.Context, nexus.Chain, nexus.TransferState) []nexus.CrossChainTransfer { return transfers },
+			ArchivePendingTransferFunc: func(sdk.Context, nexus.CrossChainTransfer) {},
 		}
 		signer = &mock.SignerMock{
 			GetNextKeyFunc: func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) {

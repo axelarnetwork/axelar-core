@@ -28,3 +28,12 @@ message CrossChainTransfer {
   cosmos.base.v1beta1.Coin asset = 2 [ (gogoproto.nullable) = false ];
   uint64 id = 3 [ (gogoproto.customname) = "ID" ];
 }
+
+enum TransferState {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  TRANSFER_STATE_UNSPECIFIED = 0;
+  TRANSFER_STATE_PENDING = 1 [ (gogoproto.enumvalue_customname) = "Pending" ];
+  TRANSFER_STATE_ARCHIVED = 2 [ (gogoproto.enumvalue_customname) = "Archived" ];
+}
