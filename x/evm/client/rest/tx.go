@@ -58,7 +58,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery(GetHandlerQuerySendCommandTx(cliCtx), QueryMethodSendCommand)
 }
 
-// ReqLink represents a request to link a cross-chain address to an Ethereum address
+// ReqLink represents a request to link a cross-chain address to an EVM chain address
 type ReqLink struct {
 	BaseReq       rest.BaseReq `json:"base_req" yaml:"base_req"`
 	RecipientAddr string       `json:"recipient" yaml:"recipient"`

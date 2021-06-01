@@ -22,7 +22,7 @@ func (m GenesisState) Validate() error {
 	return nil
 }
 
-// GetGenesisStateFromAppState returns x/ethereum GenesisState given raw application
+// GetGenesisStateFromAppState returns x/evm GenesisState given raw application
 // genesis state.
 func GetGenesisStateFromAppState(cdc codec.Marshaler, appState map[string]json.RawMessage) GenesisState {
 	var genesisState GenesisState

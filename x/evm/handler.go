@@ -12,7 +12,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 )
 
-// NewHandler returns the handler of the ethereum module
+// NewHandler returns the handler of the EVM module
 func NewHandler(k keeper.Keeper, v types.Voter, s types.Signer, n types.Nexus, snapshotter types.Snapshotter) sdk.Handler {
 	server := keeper.NewMsgServerImpl(k, n, s, v, snapshotter)
 	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
@@ -117,7 +117,7 @@ func NewHandler(k keeper.Keeper, v types.Voter, s types.Signer, n types.Nexus, s
 		res, err := h(ctx, msg)
 		if err != nil {
 			k.Logger(ctx).Debug(err.Error())
-			return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+			return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
 		}
 		k.Logger(ctx).Debug(res.Log)
 		return res, nil

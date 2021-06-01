@@ -58,7 +58,7 @@ func queryMasterAddress(ctx sdk.Context, s types.Signer) ([]byte, error) {
 
 	pk, ok := s.GetCurrentKey(ctx, exported.Ethereum, tss.MasterKey)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, "key not found")
+		return nil, sdkerrors.Wrap(types.ErrEVM, "key not found")
 	}
 
 	fromAddress := crypto.PubkeyToAddress(pk.Value)
@@ -72,7 +72,7 @@ func queryAxelarGateway(ctx sdk.Context, k Keeper) ([]byte, error) {
 
 	addr, ok := k.GetGatewayAddress(ctx)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, "axelar gateway not set")
+		return nil, sdkerrors.Wrap(types.ErrEVM, "axelar gateway not set")
 	}
 
 	return addr.Bytes(), nil
@@ -82,12 +82,12 @@ func queryTokenAddress(ctx sdk.Context, k Keeper, symbol string) ([]byte, error)
 
 	gateway, ok := k.GetGatewayAddress(ctx)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, "axelar gateway not set")
+		return nil, sdkerrors.Wrap(types.ErrEVM, "axelar gateway not set")
 	}
 
 	addr, err := k.GetTokenAddress(ctx, symbol, gateway)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
 	}
 
 	return addr.Bytes(), nil
@@ -105,7 +105,7 @@ func createDeployGateway(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types
 	var params types.DeployParams
 	err := types.ModuleCdc.LegacyAmino.UnmarshalJSON(data, &params)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
 	}
 
 	contractOwner, err := getContractOwner(ctx, s)
@@ -150,22 +150,22 @@ func createDeployGateway(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types
 func sendSignedTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, txID string) ([]byte, error) {
 	pk, ok := s.GetKeyForSigID(ctx, txID)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not find a corresponding key for sig ID %s", txID))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding key for sig ID %s", txID))
 	}
 
 	sig, ok := s.GetSig(ctx, txID)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not find a corresponding signature for sig ID %s", txID))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding signature for sig ID %s", txID))
 	}
 
 	signedTx, err := k.AssembleEthTx(ctx, txID, pk.Value, sig)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not insert generated signature: %v", err))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not insert generated signature: %v", err))
 	}
 
 	err = rpc.SendTransaction(context.Background(), signedTx)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
 	}
 
 	return signedTx.Hash().Bytes(), nil
@@ -175,36 +175,36 @@ func createTxAndSend(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Sig
 	var params types.CommandParams
 	err := types.ModuleCdc.LegacyAmino.UnmarshalJSON(data, &params)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, err.Error())
+		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
 	}
 
 	commandIDHex := common.Bytes2Hex(params.CommandID[:])
 	sig, ok := s.GetSig(ctx, commandIDHex)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not find a corresponding signature for sig ID %s", commandIDHex))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding signature for sig ID %s", commandIDHex))
 	}
 
 	pk, ok := s.GetKeyForSigID(ctx, commandIDHex)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not find a corresponding key for sig ID %s", commandIDHex))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding key for sig ID %s", commandIDHex))
 	}
 
 	commandData := k.GetCommandData(ctx, params.CommandID)
 	commandSig, err := types.ToEthSignature(sig, types.GetEthereumSignHash(commandData), pk.Value)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not create recoverable signature: %v", err))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not create recoverable signature: %v", err))
 	}
 
 	executeData, err := types.CreateExecuteData(commandData, commandSig)
 	if err != nil {
-		return nil, sdkerrors.Wrapf(types.ErrEthereum, "could not create transaction data: %s", err)
+		return nil, sdkerrors.Wrapf(types.ErrEVM, "could not create transaction data: %s", err)
 	}
 
 	k.Logger(ctx).Debug(common.Bytes2Hex(executeData))
 
 	contractAddr, ok := k.GetGatewayAddress(ctx)
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrEthereum, "axelar gateway not deployed yet")
+		return nil, sdkerrors.Wrapf(types.ErrEVM, "axelar gateway not deployed yet")
 	}
 
 	msg := ethereumRoot.CallMsg{
@@ -216,7 +216,7 @@ func createTxAndSend(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Sig
 
 	txHash, err := rpc.SendAndSignTransaction(context.Background(), msg)
 	if err != nil {
-		return nil, sdkerrors.Wrapf(types.ErrEthereum, "could not send transaction: %s", err)
+		return nil, sdkerrors.Wrapf(types.ErrEVM, "could not send transaction: %s", err)
 	}
 
 	return common.FromHex(txHash), nil
@@ -225,12 +225,12 @@ func createTxAndSend(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Sig
 func queryCommandData(ctx sdk.Context, k Keeper, s types.Signer, commandIDHex string) ([]byte, error) {
 	sig, ok := s.GetSig(ctx, commandIDHex)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not find a corresponding signature for sig ID %s", commandIDHex))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding signature for sig ID %s", commandIDHex))
 	}
 
 	pk, ok := s.GetKeyForSigID(ctx, commandIDHex)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not find a corresponding key for sig ID %s", commandIDHex))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding key for sig ID %s", commandIDHex))
 	}
 
 	var commandID types.CommandID
@@ -239,12 +239,12 @@ func queryCommandData(ctx sdk.Context, k Keeper, s types.Signer, commandIDHex st
 	commandData := k.GetCommandData(ctx, commandID)
 	commandSig, err := types.ToEthSignature(sig, types.GetEthereumSignHash(commandData), pk.Value)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not create recoverable signature: %v", err))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not create recoverable signature: %v", err))
 	}
 
 	executeData, err := types.CreateExecuteData(commandData, commandSig)
 	if err != nil {
-		return nil, sdkerrors.Wrapf(types.ErrEthereum, "could not create transaction data: %s", err)
+		return nil, sdkerrors.Wrapf(types.ErrEVM, "could not create transaction data: %s", err)
 	}
 
 	return executeData, nil

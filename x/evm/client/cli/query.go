@@ -20,7 +20,7 @@ import (
 // GetQueryCmd returns the cli query commands for this module
 func GetQueryCmd(queryRoute string) *cobra.Command {
 	ethQueryCmd := &cobra.Command{
-		Use:                        "ethereum",
+		Use:                        "evm",
 		Short:                      fmt.Sprintf("Querying commands for the %s module", types.ModuleName),
 		DisableFlagParsing:         true,
 		SuggestionsMinimumDistance: 2,
@@ -41,7 +41,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 
 }
 
-// GetCmdMasterAddress returns the query for the ethereum master address that owns the AxelarGateway contract
+// GetCmdMasterAddress returns the query for an EVM chain master address that owns the AxelarGateway contract
 func GetCmdMasterAddress(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "master-address",
@@ -69,7 +69,7 @@ func GetCmdMasterAddress(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdTokenAddress returns the query for the ethereum master address that owns the AxelarGateway contract
+// GetCmdTokenAddress returns the query for an EVM chain master address that owns the AxelarGateway contract
 func GetCmdTokenAddress(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "token-address [symbol]",
@@ -125,7 +125,7 @@ func GetCmdAxelarGatewayAddress(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdCreateDeployTx returns the query for a raw unsigned Ethereum deploy transaction for the smart contract of a given path
+// GetCmdCreateDeployTx returns the query for a raw unsigned EVM deploy transaction for the smart contract of a given path
 func GetCmdCreateDeployTx(queryRoute string) *cobra.Command {
 	var gasPriceStr string
 	var gasLimit uint64
@@ -173,11 +173,11 @@ func GetCmdCreateDeployTx(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdSendTx sends a transaction to Ethereum
+// GetCmdSendTx sends a transaction to an EVM chain
 func GetCmdSendTx(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "sendTx [txID]",
-		Short: "Send a transaction that spends tx [txID] to Ethereum",
+		Short: "Send a transaction that spends tx [txID] to chain [chain]",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientQueryContext(cmd)

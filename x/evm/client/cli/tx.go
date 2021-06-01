@@ -42,11 +42,11 @@ func GetTxCmd() *cobra.Command {
 	return ethTxCmd
 }
 
-// GetCmdLink links a cross chain address to an ethereum address created by Axelar
+// GetCmdLink links a cross chain address to an EVM chain address created by Axelar
 func GetCmdLink() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "link [chain] [address] [symbol]",
-		Short: "Link a cross chain address to an ethereum address created by Axelar",
+		Short: "Link a cross chain address to an EVM chain address created by Axelar",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
@@ -75,7 +75,7 @@ func GetCmdLink() *cobra.Command {
 func GetCmdSignTx() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "sign [tx json file path]",
-		Short: "sign a raw Ethereum transaction",
+		Short: "sign a raw EVM chain transaction",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
@@ -108,7 +108,7 @@ func GetCmdSignTx() *cobra.Command {
 func GetCmdConfirmERC20TokenDeployment() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "confirm-erc20-token [txID] [symbol]",
-		Short: "Confirm an ERC20 token deployment in an Ethereum transaction for a given symbol of token and gateway address",
+		Short: "Confirm an ERC20 token deployment in an EVM chain transaction for a given symbol of token and gateway address",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
@@ -133,7 +133,7 @@ func GetCmdConfirmERC20TokenDeployment() *cobra.Command {
 func GetCmdConfirmERC20Deposit() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "confirm-erc20-deposit [txID] [amount] [burnerAddr]",
-		Short: "Confirm an ERC20 deposit in an Ethereum transaction that sent given amount of token to a burner address",
+		Short: "Confirm an ERC20 deposit in an EVM chain transaction that sent given amount of token to a burner address",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
@@ -157,11 +157,11 @@ func GetCmdConfirmERC20Deposit() *cobra.Command {
 	return cmd
 }
 
-// GetCmdSignPendingTransfersTx returns the cli command to sign all pending token transfers to Ethereum
+// GetCmdSignPendingTransfersTx returns the cli command to sign all pending token transfers to an EVM chain
 func GetCmdSignPendingTransfersTx() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "sign-pending-transfers",
-		Short: "Sign all pending transfers to Ethereum",
+		Short: "Sign all pending transfers to an EVM chain",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
@@ -181,7 +181,7 @@ func GetCmdSignPendingTransfersTx() *cobra.Command {
 	return cmd
 }
 
-// GetCmdSignDeployToken returns the cli command to sign deploy-token command data for Ethereum
+// GetCmdSignDeployToken returns the cli command to sign deploy-token command data for an EVM chain
 func GetCmdSignDeployToken() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "sign-deploy-token [name] [symbol] [decimals] [capacity]",
@@ -214,11 +214,11 @@ func GetCmdSignDeployToken() *cobra.Command {
 	return cmd
 }
 
-// GetCmdSignBurnTokens returns the cli command to sign burn command for all confirmed Ethereum token deposits
+// GetCmdSignBurnTokens returns the cli command to sign burn command for all confirmed token deposits in an EVM chain
 func GetCmdSignBurnTokens() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "sign-burn-tokens",
-		Short: "Sign burn command for all confirmed Ethereum token deposits",
+		Short: "Sign burn command for all confirmed token deposits in an EVM chain",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
@@ -238,11 +238,11 @@ func GetCmdSignBurnTokens() *cobra.Command {
 	return cmd
 }
 
-// GetCmdSignTransferOwnership returns the cli command to sign transfer-ownership command for Ethereum contract
+// GetCmdSignTransferOwnership returns the cli command to sign transfer-ownership command for an EVM chain contract
 func GetCmdSignTransferOwnership() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "transfer-ownership [newOwnerAddr]",
-		Short: "Sign transfer ownership command for Ethereum contract",
+		Short: "Sign transfer ownership command for an EVM chain contract",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)

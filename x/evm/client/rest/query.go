@@ -26,7 +26,7 @@ const (
 	QParamGasLimit    = "gas_limit"
 )
 
-// GetHandlerQueryMasterAddress returns a handler to query the ethereum master address
+// GetHandlerQueryMasterAddress returns a handler to query an EVM chain master address
 func GetHandlerQueryMasterAddress(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -50,7 +50,7 @@ func GetHandlerQueryMasterAddress(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// GetHandlerQueryAxelarGatewayAddress returns a handler to query the ethereum gateway contract address
+// GetHandlerQueryAxelarGatewayAddress returns a handler to query an EVM chain gateway contract address
 func GetHandlerQueryAxelarGatewayAddress(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -86,7 +86,7 @@ func GetHandlerQueryCommandData(cliCtx client.Context) http.HandlerFunc {
 
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryCommandData, commandID), nil)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSendCommandTx, commandID).Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSendCommandTx, "Ethereum", commandID).Error())
 			return
 		}
 
@@ -94,7 +94,7 @@ func GetHandlerQueryCommandData(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// GetHandlerQueryCreateDeployTx returns a handler to create an ethereum transaction to deploy a smart contract
+// GetHandlerQueryCreateDeployTx returns a handler to create an EVM chain transaction to deploy a smart contract
 func GetHandlerQueryCreateDeployTx(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -134,7 +134,7 @@ func GetHandlerQueryCreateDeployTx(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// GetHandlerQuerySendTx returns a handler to send a transaction to an ethereum wallet to be signed and submitted by a specified account
+// GetHandlerQuerySendTx returns a handler to send a transaction to an EVM chain wallet to be signed and submitted by a specified account
 func GetHandlerQuerySendTx(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -155,8 +155,8 @@ func GetHandlerQuerySendTx(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// GetHandlerQuerySendCommandTx returns a handler to send an ethereum transaction containing a smart contract call
-// to an ethereum wallet to be signed and submitted by a specified account
+// GetHandlerQuerySendCommandTx returns a handler to send an EVM chain transaction containing a smart contract call
+// to a wallet to be signed and submitted by a specified account
 func GetHandlerQuerySendCommandTx(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -184,7 +184,7 @@ func GetHandlerQuerySendCommandTx(cliCtx client.Context) http.HandlerFunc {
 
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.SendCommand), json)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSendCommandTx, commandIDHex).Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSendCommandTx, "Ethereum", commandIDHex).Error())
 			return
 		}
 

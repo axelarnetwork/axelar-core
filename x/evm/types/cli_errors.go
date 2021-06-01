@@ -7,5 +7,5 @@ const (
 	ErrFTokenAddress   = "could not resolve token address: %s\n"
 	ErrFDeployTx       = "could not send the command transaction with txID %s"
 	ErrFSendTx         = "could not send the deploy transaction with txID %s"
-	ErrFSendCommandTx  = "could not send Ethereum transaction executing command %s"
+	ErrFSendCommandTx  = "could not send %s transaction executing command %s"
 )

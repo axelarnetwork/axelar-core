@@ -35,14 +35,14 @@ const (
 	tokenAddrPrefix        = "tokenAddr_"
 )
 
-// Keeper represents the ethereum keeper
+// Keeper represents the EVM keeper
 type Keeper struct {
 	storeKey sdk.StoreKey
 	cdc      codec.BinaryMarshaler
 	params   params.Subspace
 }
 
-// NewKeeper returns a new ethereum keeper
+// NewKeeper returns a new EVM keeper
 func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
 	return Keeper{
 		cdc:      cdc,
@@ -331,7 +331,7 @@ func (k Keeper) AssembleEthTx(ctx sdk.Context, txID string, pk ecdsa.PublicKey, 
 
 	recoverableSig, err := types.ToEthSignature(sig, signer.Hash(rawTx), pk)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEthereum, fmt.Sprintf("could not create recoverable signature: %v", err))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not create recoverable signature: %v", err))
 	}
 
 	return rawTx.WithSignature(signer, recoverableSig[:])

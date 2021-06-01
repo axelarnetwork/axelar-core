@@ -52,7 +52,7 @@ func (m SignTxRequest) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }
 
-// UnmarshaledTx returns the unmarshaled ethereum transaction contained in this message
+// UnmarshaledTx returns the unmarshaled evm transaction contained in this message
 func (m SignTxRequest) UnmarshaledTx() *ethTypes.Transaction {
 	tx := &ethTypes.Transaction{}
 	err := tx.UnmarshalJSON(m.Tx)
