@@ -10,12 +10,7 @@ import (
 )
 
 // RegisterLegacyAminoCodec registers concrete types on codec
-func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	// cdc.RegisterInterface((*exported.VotingData)(nil), nil)
-
-	// Default type for voting, i.e. yes/no vote. Modules need to register their own types if they need more elaborate VotingData
-	// cdc.RegisterConcrete(true, "vote/VotingData", nil)
-}
+func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {}
 
 // RegisterInterfaces registers types and interfaces with the given registry
 func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {

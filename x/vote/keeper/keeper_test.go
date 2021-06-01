@@ -19,6 +19,7 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	"github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 var stringGen = rand.Strings(5, 50).Distinct()
@@ -62,20 +63,46 @@ func (s *testSetup) NewTimeout(t time.Duration) {
 	s.Timeout, s.cancel = context.WithTimeout(context.Background(), t)
 }
 
-// no error on initializing new poll
-func TestKeeper_InitPoll_NoError(t *testing.T) {
-	s := setup()
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, randomPoll(), 100, 0))
-}
+func TestInitPoll(t *testing.T) {
+	t.Run("should create a new poll", testutils.Func(func(t *testing.T) {
+		s := setup()
 
-// error when initializing poll with same id as existing poll
-func TestKeeper_InitPoll_SameIdReturnError(t *testing.T) {
-	s := setup()
+		pollMeta := randomPoll()
+		snapshotCounter := int64(100)
+		expireAt := int64(0)
 
-	poll := randomPoll()
+		assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollMeta, snapshotCounter, expireAt))
 
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, 100, 0))
-	assert.Error(t, s.Keeper.InitPoll(s.Ctx, poll, 100, 0))
+		expected := types.NewPoll(pollMeta, snapshotCounter, expireAt)
+		actual := s.Keeper.GetPoll(s.Ctx, pollMeta)
+		assert.Equal(t, expected, *actual)
+	}))
+
+	t.Run("should return error if poll with same meta exists and has not expired yet", testutils.Func(func(t *testing.T) {
+		s := setup()
+		pollMeta := randomPoll()
+		snapshotCounter := int64(100)
+		expireAt := int64(0)
+
+		assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollMeta, snapshotCounter, expireAt))
+		assert.Error(t, s.Keeper.InitPoll(s.Ctx, pollMeta, snapshotCounter, expireAt))
+	}))
+
+	t.Run("should create a new poll if poll with same meta exists and has already expired", testutils.Func(func(t *testing.T) {
+		s := setup()
+		pollMeta := randomPoll()
+		snapshotCounter1 := int64(100)
+		snapshotCounter2 := int64(101)
+		expireAt1 := int64(10)
+		expireAt2 := int64(20)
+
+		assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollMeta, snapshotCounter1, expireAt1))
+		assert.NoError(t, s.Keeper.InitPoll(s.Ctx.WithBlockHeight(expireAt1), pollMeta, snapshotCounter2, expireAt2))
+
+		expected := types.NewPoll(pollMeta, snapshotCounter2, expireAt2)
+		actual := s.Keeper.GetPoll(s.Ctx, pollMeta)
+		assert.Equal(t, expected, *actual)
+	}))
 }
 
 // error when tallying non-existing poll

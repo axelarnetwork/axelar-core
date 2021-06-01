@@ -817,7 +817,7 @@ var _ tsstypes.Voter = &VoterMock{}
 // 			InitPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta, snapshotCounter int64, expireAt int64) error {
 // 				panic("mock out the InitPoll method")
 // 			},
-// 			ResultFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta) interface{} {
+// 			ResultFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta) exported1.VotingData {
 // 				panic("mock out the Result method")
 // 			},
 // 			TallyVoteFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.AccAddress, pollMeta exported1.PollMeta, data exported1.VotingData) error {
@@ -840,7 +840,7 @@ type VoterMock struct {
 	InitPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta, snapshotCounter int64, expireAt int64) error
 
 	// ResultFunc mocks the Result method.
-	ResultFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta) interface{}
+	ResultFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta) exported1.VotingData
 
 	// TallyVoteFunc mocks the TallyVote method.
 	TallyVoteFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.AccAddress, pollMeta exported1.PollMeta, data exported1.VotingData) error
@@ -1012,7 +1012,7 @@ func (mock *VoterMock) InitPollCalls() []struct {
 }
 
 // Result calls ResultFunc.
-func (mock *VoterMock) Result(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta) interface{} {
+func (mock *VoterMock) Result(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta) exported1.VotingData {
 	if mock.ResultFunc == nil {
 		panic("VoterMock.ResultFunc: method is nil but Voter.Result was just called")
 	}

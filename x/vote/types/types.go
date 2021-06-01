@@ -37,13 +37,13 @@ func (m Poll) HasExpired(ctx sdk.Context) bool {
 	return m.ExpireAt > 0 && ctx.BlockHeight() >= m.ExpireAt
 }
 
-// GetResult returns the poll result
-func (m Poll) GetResult() interface{} {
+// MustGetResult returns the poll result
+func (m Poll) MustGetResult() exported.VotingData {
 	if m.Result == nil {
 		return nil
 	}
 
-	return m.Result.GetCachedValue()
+	return m.Result.GetCachedValue().(exported.VotingData)
 }
 
 // UnpackInterfaces implements UnpackInterfacesMessage

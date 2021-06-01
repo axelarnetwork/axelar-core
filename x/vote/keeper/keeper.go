@@ -86,23 +86,18 @@ func (k Keeper) GetVotingThreshold(ctx sdk.Context) utils.Threshold {
 // The Keeper only accepts votes for initialized polls.
 func (k Keeper) InitPoll(ctx sdk.Context, pollMeta exported.PollMeta, snapshotCounter int64, expireAt int64) error {
 	poll := k.GetPoll(ctx, pollMeta)
-	if poll == nil {
+
+	switch {
+	case poll != nil && !poll.HasExpired(ctx):
+		return fmt.Errorf("poll %s already exists and has not expired yet", pollMeta.String())
+	case poll != nil && poll.MustGetResult() != nil:
+		return fmt.Errorf("poll %s has already got result", pollMeta.String())
+	default:
+		k.DeletePoll(ctx, pollMeta)
 		k.setPoll(ctx, types.NewPoll(pollMeta, snapshotCounter, expireAt))
+
 		return nil
 	}
-
-	if !poll.HasExpired(ctx) {
-		return fmt.Errorf("poll %s already exists and has not expired yet", pollMeta.String())
-	}
-
-	if poll.GetResult() != nil {
-		return fmt.Errorf("poll %s has already got result", pollMeta.String())
-	}
-
-	k.DeletePoll(ctx, pollMeta)
-	k.setPoll(ctx, types.NewPoll(pollMeta, snapshotCounter, expireAt))
-
-	return nil
 }
 
 // DeletePoll deletes the specified poll.
@@ -184,7 +179,7 @@ func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta expor
 }
 
 // Result returns the decided outcome of a poll. Returns nil if the poll is still undecided or does not exist.
-func (k Keeper) Result(ctx sdk.Context, pollMeta exported.PollMeta) interface{} {
+func (k Keeper) Result(ctx sdk.Context, pollMeta exported.PollMeta) exported.VotingData {
 	// This unmarshals all votes for this poll, which is not needed in this context.
 	// Should it become a performance concern we could split the result off into a separate data structure
 	poll := k.GetPoll(ctx, pollMeta)
@@ -192,7 +187,7 @@ func (k Keeper) Result(ctx sdk.Context, pollMeta exported.PollMeta) interface{} 
 		return nil
 	}
 
-	return poll.GetResult()
+	return poll.MustGetResult()
 }
 
 // GetPoll returns the poll given poll meta

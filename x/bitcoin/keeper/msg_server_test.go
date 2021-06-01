@@ -239,7 +239,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		}
 		voter = &mock.VoterMock{
 			TallyVoteFunc: func(sdk.Context, sdk.AccAddress, vote.PollMeta, vote.VotingData) error { return nil },
-			ResultFunc: func(sdk.Context, vote.PollMeta) interface{} {
+			ResultFunc: func(sdk.Context, vote.PollMeta) vote.VotingData {
 				return &gogoprototypes.BoolValue{Value: true}
 			},
 			DeletePollFunc: func(sdk.Context, vote.PollMeta) {},
@@ -382,7 +382,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 
 	t.Run("happy path reject", testutils.Func(func(t *testing.T) {
 		setup()
-		voter.ResultFunc = func(sdk.Context, vote.PollMeta) interface{} {
+		voter.ResultFunc = func(sdk.Context, vote.PollMeta) vote.VotingData {
 			return &gogoprototypes.BoolValue{Value: false}
 		}
 
@@ -397,7 +397,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 
 	t.Run("happy path no result yet", testutils.Func(func(t *testing.T) {
 		setup()
-		voter.ResultFunc = func(sdk.Context, vote.PollMeta) interface{} {
+		voter.ResultFunc = func(sdk.Context, vote.PollMeta) vote.VotingData {
 			return nil
 		}
 
