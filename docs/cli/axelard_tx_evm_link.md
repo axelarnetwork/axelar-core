@@ -1,6 +1,6 @@
 ## axelard tx evm link
 
-Link a cross chain address to an ethereum address created by Axelar
+Link a cross chain address to an EVM chain address created by Axelar
 
 ```
 axelard tx evm link [chain] [address] [symbol] [flags]

@@ -1,9 +1,9 @@
-## axelard query ethereum deploy-gateway
+## axelard query evm deploy-gateway
 
 Obtain a raw transaction for the deployment of Axelar Gateway.
 
 ```
-axelard query ethereum deploy-gateway [flags]
+axelard query evm deploy-gateway [flags]
 ```
 
 ### Options
@@ -29,4 +29,4 @@ axelard query ethereum deploy-gateway [flags]
 
 ### SEE ALSO
 
-- [axelard query ethereum](axelard_query_ethereum.md)	 - Querying commands for the evm module
+- [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module

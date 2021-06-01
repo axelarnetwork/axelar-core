@@ -1,6 +1,6 @@
 ## axelard tx evm sign
 
-sign a raw Ethereum transaction
+sign a raw EVM chain transaction
 
 ```
 axelard tx evm sign [tx json file path] [flags]

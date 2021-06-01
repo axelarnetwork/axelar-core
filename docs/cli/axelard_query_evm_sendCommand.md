@@ -1,16 +1,16 @@
-## axelard query ethereum command
+## axelard query evm sendCommand
 
-Get the signed command data that can be wrapped in an Ethereum transaction to execute the command \[commandID\] on Axelar Gateway
+Send a transaction signed by \[fromAddress\] that executes the command \[commandID\] to Axelar Gateway
 
 ```
-axelard query ethereum command [commandID] [flags]
+axelard query evm sendCommand [commandID] [fromAddress] [flags]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for command
+  -h, --help          help for sendCommand
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 
@@ -27,4 +27,4 @@ axelard query ethereum command [commandID] [flags]
 
 ### SEE ALSO
 
-- [axelard query ethereum](axelard_query_ethereum.md)	 - Querying commands for the evm module
+- [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module

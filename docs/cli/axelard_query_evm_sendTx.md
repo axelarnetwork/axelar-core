@@ -1,16 +1,16 @@
-## axelard query ethereum sendCommand
+## axelard query evm sendTx
 
-Send a transaction signed by \[fromAddress\] that executes the command \[commandID\] to Axelar Gateway
+Send a transaction that spends tx \[txID\] to chain \[chain\]
 
 ```
-axelard query ethereum sendCommand [commandID] [fromAddress] [flags]
+axelard query evm sendTx [txID] [flags]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for sendCommand
+  -h, --help          help for sendTx
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 
@@ -27,4 +27,4 @@ axelard query ethereum sendCommand [commandID] [fromAddress] [flags]
 
 ### SEE ALSO
 
-- [axelard query ethereum](axelard_query_ethereum.md)	 - Querying commands for the evm module
+- [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module

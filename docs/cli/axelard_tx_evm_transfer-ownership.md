@@ -1,6 +1,6 @@
 ## axelard tx evm transfer-ownership
 
-Sign transfer ownership command for Ethereum contract
+Sign transfer ownership command for an EVM chain contract
 
 ```
 axelard tx evm transfer-ownership [newOwnerAddr] [flags]

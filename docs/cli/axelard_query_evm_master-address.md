@@ -1,9 +1,9 @@
-## axelard query ethereum master-address
+## axelard query evm master-address
 
 Query an address by key ID
 
 ```
-axelard query ethereum master-address [flags]
+axelard query evm master-address [flags]
 ```
 
 ### Options
@@ -27,4 +27,4 @@ axelard query ethereum master-address [flags]
 
 ### SEE ALSO
 
-- [axelard query ethereum](axelard_query_ethereum.md)	 - Querying commands for the evm module
+- [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module

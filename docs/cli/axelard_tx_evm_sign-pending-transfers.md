@@ -1,6 +1,6 @@
 ## axelard tx evm sign-pending-transfers
 
-Sign all pending transfers to Ethereum
+Sign all pending transfers to an EVM chain
 
 ```
 axelard tx evm sign-pending-transfers [flags]

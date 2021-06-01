@@ -1,16 +1,16 @@
-## axelard query ethereum gateway-address
+## axelard query evm command
 
-Query the Axelar Gateway contract address
+Get the signed command data that can be wrapped in an Ethereum transaction to execute the command \[commandID\] on Axelar Gateway
 
 ```
-axelard query ethereum gateway-address [flags]
+axelard query evm command [commandID] [flags]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for gateway-address
+  -h, --help          help for command
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 
@@ -27,4 +27,4 @@ axelard query ethereum gateway-address [flags]
 
 ### SEE ALSO
 
-- [axelard query ethereum](axelard_query_ethereum.md)	 - Querying commands for the evm module
+- [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module

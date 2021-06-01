@@ -1,6 +1,6 @@
 ## axelard tx evm sign-burn-tokens
 
-Sign burn command for all confirmed Ethereum token deposits
+Sign burn command for all confirmed token deposits in an EVM chain
 
 ```
 axelard tx evm sign-burn-tokens [flags]

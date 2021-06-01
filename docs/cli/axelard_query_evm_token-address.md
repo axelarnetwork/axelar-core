@@ -1,16 +1,16 @@
-## axelard query ethereum sendTx
+## axelard query evm token-address
 
-Send a transaction that spends tx \[txID\] to Ethereum
+Query a token address by symbol
 
 ```
-axelard query ethereum sendTx [txID] [flags]
+axelard query evm token-address [symbol] [flags]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for sendTx
+  -h, --help          help for token-address
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 
@@ -27,4 +27,4 @@ axelard query ethereum sendTx [txID] [flags]
 
 ### SEE ALSO
 
-- [axelard query ethereum](axelard_query_ethereum.md)	 - Querying commands for the evm module
+- [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module

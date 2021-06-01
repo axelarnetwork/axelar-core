@@ -1,16 +1,16 @@
-## axelard query ethereum token-address
+## axelard query evm gateway-address
 
-Query a token address by symbol
+Query the Axelar Gateway contract address
 
 ```
-axelard query ethereum token-address [symbol] [flags]
+axelard query evm gateway-address [flags]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for token-address
+  -h, --help          help for gateway-address
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 
@@ -27,4 +27,4 @@ axelard query ethereum token-address [symbol] [flags]
 
 ### SEE ALSO
 
-- [axelard query ethereum](axelard_query_ethereum.md)	 - Querying commands for the evm module
+- [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module

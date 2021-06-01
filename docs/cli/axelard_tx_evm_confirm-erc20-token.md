@@ -1,6 +1,6 @@
 ## axelard tx evm confirm-erc20-token
 
-Confirm an ERC20 token deployment in an Ethereum transaction for a given symbol of token and gateway address
+Confirm an ERC20 token deployment in an EVM chain transaction for a given symbol of token and gateway address
 
 ```
 axelard tx evm confirm-erc20-token [txID] [symbol] [flags]
