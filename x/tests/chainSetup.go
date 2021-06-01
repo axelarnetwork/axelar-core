@@ -105,8 +105,8 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	bitcoinKeeper.SetParams(ctx, btcParams)
 
 	ethSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "eth")
-	ethereumKeeper := evmKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(evmTypes.StoreKey), ethSubspace)
-	ethereumKeeper.SetParams(ctx, evmTypes.DefaultParams())
+	EVMKeeper := evmKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(evmTypes.StoreKey), ethSubspace)
+	EVMKeeper.SetParams(ctx, evmTypes.DefaultParams())
 
 	tssSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), tssTypes.DefaultParamspace)
 	signer := tssKeeper.NewKeeper(encCfg.Amino, encCfg.Marshaler, sdk.NewKVStoreKey(tssTypes.StoreKey), tssSubspace, mocks.Slasher)
@@ -123,7 +123,7 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 
 	broadcastHandler := broadcast.NewHandler(broadcaster)
 	btcHandler := bitcoin.NewHandler(bitcoinKeeper, voter, signer, nexusK, snapKeeper)
-	ethHandler := evm.NewHandler(ethereumKeeper, voter, signer, nexusK, snapKeeper)
+	ethHandler := evm.NewHandler(EVMKeeper, voter, signer, nexusK, snapKeeper)
 	tssHandler := tss.NewHandler(signer, snapKeeper, nexusK, voter, &tssMock.StakingKeeperMock{
 		GetLastTotalPowerFunc: mocks.Staker.GetLastTotalPowerFunc,
 	}, broadcaster)
@@ -136,7 +136,7 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 
 	queriers := map[string]sdk.Querier{
 		btcTypes.QuerierRoute: btcKeeper.NewQuerier(mocks.BTC, bitcoinKeeper, signer, nexusK),
-		evmTypes.QuerierRoute: evmKeeper.NewQuerier(mocks.ETH, ethereumKeeper, signer),
+		evmTypes.QuerierRoute: evmKeeper.NewQuerier(mocks.ETH, EVMKeeper, signer),
 	}
 
 	node := fake.NewNode(moniker, ctx, router, queriers).
