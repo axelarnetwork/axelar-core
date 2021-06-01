@@ -1,6 +1,6 @@
 syntax = "proto3";
-package ethereum.v1beta1;
-option go_package = "github.com/axelarnetwork/axelar-core/x/ethereum/types";
+package evm.v1beta1;
+option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types";
 
 import "gogoproto/gogo.proto";
 
