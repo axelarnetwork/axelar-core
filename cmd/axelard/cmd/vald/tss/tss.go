@@ -96,7 +96,7 @@ func handleStream(stream tss.Stream, cancel context.CancelFunc, logger log.Logge
 			switch msg := msgOneof.GetData().(type) {
 			case *tofnd.MessageOut_Traffic:
 				broadcastChan <- msg.Traffic
-			case *tofnd.MessageOut_KeygenResult:
+			case *tofnd.MessageOut_KeygenResult_:
 				resChan <- msg.KeygenResult
 				return
 			case *tofnd.MessageOut_SignResult_:
