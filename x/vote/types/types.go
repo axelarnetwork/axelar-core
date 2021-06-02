@@ -37,8 +37,8 @@ func (m Poll) HasExpired(ctx sdk.Context) bool {
 	return m.ExpireAt > 0 && ctx.BlockHeight() >= m.ExpireAt
 }
 
-// MustGetResult returns the poll result
-func (m Poll) MustGetResult() exported.VotingData {
+// GetResult returns the poll result
+func (m Poll) GetResult() exported.VotingData {
 	if m.Result == nil {
 		return nil
 	}

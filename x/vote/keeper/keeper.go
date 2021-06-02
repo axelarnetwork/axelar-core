@@ -90,7 +90,7 @@ func (k Keeper) InitPoll(ctx sdk.Context, pollMeta exported.PollMeta, snapshotCo
 	switch {
 	case poll != nil && !poll.HasExpired(ctx):
 		return fmt.Errorf("poll %s already exists and has not expired yet", pollMeta.String())
-	case poll != nil && poll.MustGetResult() != nil:
+	case poll != nil && poll.GetResult() != nil:
 		return fmt.Errorf("poll %s has already got result", pollMeta.String())
 	default:
 		k.DeletePoll(ctx, pollMeta)
@@ -187,7 +187,7 @@ func (k Keeper) Result(ctx sdk.Context, pollMeta exported.PollMeta) exported.Vot
 		return nil
 	}
 
-	return poll.MustGetResult()
+	return poll.GetResult()
 }
 
 // GetPoll returns the poll given poll meta
