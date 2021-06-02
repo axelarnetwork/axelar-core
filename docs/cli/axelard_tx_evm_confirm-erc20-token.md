@@ -3,7 +3,7 @@
 Confirm an ERC20 token deployment in an EVM chain transaction for a given symbol of token and gateway address
 
 ```
-axelard tx evm confirm-erc20-token [txID] [symbol] [flags]
+axelard tx evm confirm-erc20-token [chain] [txID] [symbol] [flags]
 ```
 
 ### Options

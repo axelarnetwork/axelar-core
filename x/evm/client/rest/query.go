@@ -20,6 +20,7 @@ import (
 
 // query parameters
 const (
+	QParamsChain      = "chain"
 	QParamFromAddress = "from_address"
 	QParamCommandID   = "command_id"
 	QParamGasPrice    = "gas_price"
@@ -34,8 +35,9 @@ func GetHandlerQueryMasterAddress(cliCtx client.Context) http.HandlerFunc {
 		if !ok {
 			return
 		}
+		chain := mux.Vars(r)[utils.PathVarChain]
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryMasterAddress), nil)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryMasterAddress, chain), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
 			return
@@ -58,8 +60,9 @@ func GetHandlerQueryAxelarGatewayAddress(cliCtx client.Context) http.HandlerFunc
 		if !ok {
 			return
 		}
+		chain := mux.Vars(r)[utils.PathVarChain]
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryAxelarGatewayAddress), nil)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryAxelarGatewayAddress, chain), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
 			return
@@ -82,11 +85,12 @@ func GetHandlerQueryCommandData(cliCtx client.Context) http.HandlerFunc {
 		if !ok {
 			return
 		}
+		chain := mux.Vars(r)[utils.PathVarChain]
 		commandID := mux.Vars(r)[utils.PathVarCommandID]
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryCommandData, commandID), nil)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QueryCommandData, chain, commandID), nil)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSendCommandTx, "Ethereum", commandID).Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSendCommandTx, chain, commandID).Error())
 			return
 		}
 
@@ -103,17 +107,18 @@ func GetHandlerQueryCreateDeployTx(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
+		chain := r.URL.Query().Get(QParamsChain)
 		gasPrice, ok := parseGasPrice(w, r)
 		if !ok {
 			return
 		}
-
 		gasLimit, ok := parseGasLimit(w, r)
 		if !ok {
 			return
 		}
 
 		params := types.DeployParams{
+			Chain:    chain,
 			GasPrice: gasPrice,
 			GasLimit: gasLimit,
 		}
@@ -142,10 +147,10 @@ func GetHandlerQuerySendTx(cliCtx client.Context) http.HandlerFunc {
 		if !ok {
 			return
 		}
-
+		chain := mux.Vars(r)[utils.PathVarChain]
 		txID := mux.Vars(r)[utils.PathVarTxID]
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.SendTx, txID), nil)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.SendTx, chain, txID), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSendTx, txID).Error())
 			return
@@ -165,6 +170,7 @@ func GetHandlerQuerySendCommandTx(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
+		chain := r.URL.Query().Get(QParamsChain)
 		fromAddr := r.URL.Query().Get(QParamFromAddress)
 		commandIDHex := r.URL.Query().Get(QParamCommandID)
 
@@ -172,6 +178,7 @@ func GetHandlerQuerySendCommandTx(cliCtx client.Context) http.HandlerFunc {
 		copy(commandID[:], common.Hex2Bytes(commandIDHex))
 
 		params := types.CommandParams{
+			Chain:     chain,
 			CommandID: commandID,
 			Sender:    fromAddr,
 		}
@@ -184,7 +191,7 @@ func GetHandlerQuerySendCommandTx(cliCtx client.Context) http.HandlerFunc {
 
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.SendCommand), json)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSendCommandTx, "Ethereum", commandIDHex).Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSendCommandTx, chain, commandIDHex).Error())
 			return
 		}
 

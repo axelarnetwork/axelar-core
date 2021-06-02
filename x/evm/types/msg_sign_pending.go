@@ -1,13 +1,15 @@
 package types
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewSignPendingTransfersRequest - SignPendingTransfersRequest constructor
-func NewSignPendingTransfersRequest(sender sdk.AccAddress) *SignPendingTransfersRequest {
-	return &SignPendingTransfersRequest{Sender: sender}
+func NewSignPendingTransfersRequest(sender sdk.AccAddress, chain string) *SignPendingTransfersRequest {
+	return &SignPendingTransfersRequest{Sender: sender, Chain: chain}
 }
 
 // Route returns the route for this message
@@ -24,6 +26,9 @@ func (m SignPendingTransfersRequest) Type() string {
 func (m SignPendingTransfersRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	}
+	if m.Chain == "" {
+		return fmt.Errorf("missing chain")
 	}
 
 	return nil

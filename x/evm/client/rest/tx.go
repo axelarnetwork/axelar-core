@@ -50,17 +50,18 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(GetHandlerAddChain(cliCtx), TxAddChain)
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
-	registerQuery(GetHandlerQueryMasterAddress(cliCtx), QueryMethodMasterAddress)
-	registerQuery(GetHandlerQueryAxelarGatewayAddress(cliCtx), QueryMethodAxelarGatewayAddress)
-	registerQuery(GetHandlerQueryCommandData(cliCtx), QueryMethodCommandData, clientUtils.PathVarCommandID)
+	registerQuery(GetHandlerQueryMasterAddress(cliCtx), QueryMethodMasterAddress, clientUtils.PathVarChain)
+	registerQuery(GetHandlerQueryAxelarGatewayAddress(cliCtx), QueryMethodAxelarGatewayAddress, clientUtils.PathVarChain)
+	registerQuery(GetHandlerQueryCommandData(cliCtx), QueryMethodCommandData, clientUtils.PathVarChain, clientUtils.PathVarCommandID)
 	registerQuery(GetHandlerQueryCreateDeployTx(cliCtx), QueryMethodCreateDeployTx)
-	registerQuery(GetHandlerQuerySendTx(cliCtx), QueryMethodSendTx, clientUtils.PathVarTxID)
+	registerQuery(GetHandlerQuerySendTx(cliCtx), QueryMethodSendTx, clientUtils.PathVarChain, clientUtils.PathVarTxID)
 	registerQuery(GetHandlerQuerySendCommandTx(cliCtx), QueryMethodSendCommand)
 }
 
 // ReqLink represents a request to link a cross-chain address to an EVM chain address
 type ReqLink struct {
 	BaseReq       rest.BaseReq `json:"base_req" yaml:"base_req"`
+	Chain         string       `json:"chain" yaml:"chain"`
 	RecipientAddr string       `json:"recipient" yaml:"recipient"`
 	Symbol        string       `json:"symbol" yaml:"symbol"`
 }
@@ -68,12 +69,14 @@ type ReqLink struct {
 // ReqConfirmTokenDeploy represents a request to confirm a token deployment
 type ReqConfirmTokenDeploy struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+	Chain   string       `json:"chain" yaml:"chain"`
 	TxID    string       `json:"tx_id" yaml:"tx_id"`
 }
 
 // ReqConfirmDeposit represents a request to confirm a deposit
 type ReqConfirmDeposit struct {
 	BaseReq       rest.BaseReq `json:"base_req" yaml:"base_req"`
+	Chain         string       `json:"chain" yaml:"chain"`
 	TxID          string       `json:"tx_id" yaml:"tx_id"`
 	Amount        string       `json:"amount" yaml:"amount"`
 	BurnerAddress string       `json:"burner_address" yaml:"burner_address"`
@@ -82,17 +85,20 @@ type ReqConfirmDeposit struct {
 // ReqSignTx represents a request to sign a transaction
 type ReqSignTx struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+	Chain   string       `json:"chain" yaml:"chain"`
 	TxJSON  string       `json:"tx_json" yaml:"tx_json"`
 }
 
 // ReqSignPendingTransfers represents a request to sign all pending transfers
 type ReqSignPendingTransfers struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+	Chain   string       `json:"chain" yaml:"chain"`
 }
 
 // ReqSignDeployToken represents a request to sign a deploy token command
 type ReqSignDeployToken struct {
 	BaseReq  rest.BaseReq `json:"base_req" yaml:"base_req"`
+	Chain    string       `json:"chain" yaml:"chain"`
 	Name     string       `json:"name" yaml:"name"`
 	Decimals string       `json:"decimals" yaml:"decimals"`
 	Capacity string       `json:"capacity" yaml:"capacity"`
@@ -101,11 +107,13 @@ type ReqSignDeployToken struct {
 // ReqSignBurnTokens represents a request to sign all outstanding burn commands
 type ReqSignBurnTokens struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+	Chain   string       `json:"chain" yaml:"chain"`
 }
 
 // ReqAddChain represents a request to add a new evm chain command
 type ReqAddChain struct {
 	BaseReq     rest.BaseReq `json:"base_req" yaml:"base_req"`
+	Chain       string       `json:"chain" yaml:"chain"`
 	Name        string       `json:"name" yaml:"name"`
 	NativeAsset string       `json:"native_asset" yaml:"native_asset"`
 }
@@ -159,7 +167,7 @@ func GetHandlerConfirmTokenDeploy(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		txID := common.HexToHash(req.TxID)
-		msg := types.NewConfirmTokenRequest(fromAddr, txID, mux.Vars(r)[clientUtils.PathVarSymbol])
+		msg := types.NewConfirmTokenRequest(fromAddr, req.Chain, mux.Vars(r)[clientUtils.PathVarSymbol], txID)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -189,7 +197,7 @@ func GetHandlerConfirmDeposit(cliCtx client.Context) http.HandlerFunc {
 		amount := sdk.NewUintFromString(req.Amount)
 		burnerAddr := common.HexToAddress(req.BurnerAddress)
 
-		msg := types.NewConfirmDepositRequest(fromAddr, txID, amount, burnerAddr)
+		msg := types.NewConfirmDepositRequest(fromAddr, req.Chain, txID, amount, burnerAddr)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -223,7 +231,7 @@ func GetHandlerSignTx(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewSignTxRequest(fromAddr, txJSON)
+		msg := types.NewSignTxRequest(fromAddr, req.Chain, txJSON)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -249,7 +257,7 @@ func GetHandlerSignPendingTransfers(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewSignPendingTransfersRequest(fromAddr)
+		msg := types.NewSignPendingTransfersRequest(fromAddr, req.Chain)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -284,7 +292,7 @@ func GetHandlerSignDeployToken(cliCtx client.Context) http.HandlerFunc {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, errors.New("could not parse capacity").Error())
 		}
 
-		msg := types.NewSignDeployTokenRequest(fromAddr, req.Name, symbol, uint8(decs), capacity)
+		msg := types.NewSignDeployTokenRequest(fromAddr, req.Chain, req.Name, symbol, uint8(decs), capacity)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -309,7 +317,7 @@ func GetHandlerSignBurnTokens(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewSignBurnTokensRequest(fromAddr)
+		msg := types.NewSignBurnTokensRequest(fromAddr, req.Chain)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -334,7 +342,7 @@ func GetHandlerAddChain(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewAddChainRequest(fromAddr, req.Name, req.NativeAsset)
+		msg := types.NewAddChainRequest(fromAddr, req.Chain, req.Name, req.NativeAsset)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

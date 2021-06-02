@@ -1,13 +1,15 @@
 package types
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewSignBurnTokensRequest is the constructor for SignBurnTokensRequest
-func NewSignBurnTokensRequest(sender sdk.AccAddress) *SignBurnTokensRequest {
-	return &SignBurnTokensRequest{Sender: sender}
+func NewSignBurnTokensRequest(sender sdk.AccAddress, chain string) *SignBurnTokensRequest {
+	return &SignBurnTokensRequest{Sender: sender, Chain: chain}
 }
 
 // Route implements sdk.Msg
@@ -35,6 +37,9 @@ func (m SignBurnTokensRequest) GetSigners() []sdk.AccAddress {
 func (m SignBurnTokensRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	}
+	if m.Chain == "" {
+		return fmt.Errorf("missing chain")
 	}
 
 	return nil

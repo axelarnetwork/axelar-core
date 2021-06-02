@@ -3,7 +3,7 @@
 Query the Axelar Gateway contract address
 
 ```
-axelard query evm gateway-address [flags]
+axelard query evm gateway-address [chain] [flags]
 ```
 
 ### Options

@@ -12,16 +12,17 @@ option (gogoproto.goproto_getters_all) = false;
 message ConfirmDepositRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  bytes tx_id = 2 [
+  string chain = 2;
+  bytes tx_id = 3 [
     (gogoproto.nullable) = false,
     (gogoproto.customtype) = "Hash",
     (gogoproto.customname) = "TxID"
   ];
-  bytes amount = 3 [
+  bytes amount = 4 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
     (gogoproto.nullable) = false
   ];
-  bytes burner_address = 4
+  bytes burner_address = 5
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
 }
 
@@ -31,12 +32,13 @@ message ConfirmDepositResponse {}
 message ConfirmTokenRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  bytes tx_id = 2 [
+  string chain = 2;
+  bytes tx_id = 3 [
     (gogoproto.nullable) = false,
     (gogoproto.customtype) = "Hash",
     (gogoproto.customname) = "TxID"
   ];
-  string symbol = 3;
+  string symbol = 4;
 }
 
 message ConfirmTokenResponse {}
@@ -46,9 +48,10 @@ message ConfirmTokenResponse {}
 message LinkRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string recipient_addr = 2;
-  string symbol = 3;
-  string recipient_chain = 4;
+  string chain = 2;
+  string recipient_addr = 3;
+  string symbol = 4;
+  string recipient_chain = 5;
 }
 
 message LinkResponse { string deposit_addr = 1; }
@@ -58,6 +61,7 @@ message LinkResponse { string deposit_addr = 1; }
 message SignBurnTokensRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2;
 }
 
 message SignBurnTokensResponse {
@@ -69,13 +73,14 @@ message SignBurnTokensResponse {
 message SignDeployTokenRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  bytes capacity = 2 [
+  string chain = 2;
+  bytes capacity = 3 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.nullable) = false
   ];
-  uint32 decimals = 3 [ (gogoproto.casttype) = "uint8" ];
-  string symbol = 4;
-  string token_name = 5;
+  uint32 decimals = 4 [ (gogoproto.casttype) = "uint8" ];
+  string symbol = 5;
+  string token_name = 6;
 }
 
 message SignDeployTokenResponse {
@@ -87,6 +92,7 @@ message SignDeployTokenResponse {
 message SignPendingTransfersRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2;
 }
 
 message SignPendingTransfersResponse {
@@ -98,7 +104,8 @@ message SignTxRequest {
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   // Tx is stored in serialized form because the amino codec cannot properly
   // deserialize MsgSignTx otherwise
-  bytes tx = 2;
+  string chain = 2;
+  bytes tx = 3;
 }
 
 message SignTxResponse { string tx_id = 1 [ (gogoproto.customname) = "TxID" ]; }
@@ -107,15 +114,16 @@ message SignTxResponse { string tx_id = 1 [ (gogoproto.customname) = "TxID" ]; }
 message VoteConfirmDepositRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  vote.exported.v1beta1.PollMeta poll = 2 [ (gogoproto.nullable) = false ];
-  bytes tx_id = 3 [
+  string chain = 2;
+  vote.exported.v1beta1.PollMeta poll = 3 [ (gogoproto.nullable) = false ];
+  bytes tx_id = 4 [
     (gogoproto.nullable) = false,
     (gogoproto.customtype) = "Hash",
     (gogoproto.customname) = "TxID"
   ];
-  bytes burn_address = 4
+  bytes burn_address = 5
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
-  bool confirmed = 5;
+  bool confirmed = 6;
 }
 
 message VoteConfirmDepositResponse { string log = 1; }
@@ -124,14 +132,15 @@ message VoteConfirmDepositResponse { string log = 1; }
 message VoteConfirmTokenRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  vote.exported.v1beta1.PollMeta poll = 2 [ (gogoproto.nullable) = false ];
-  bytes tx_id = 3 [
+  string chain = 2;
+  vote.exported.v1beta1.PollMeta poll = 3 [ (gogoproto.nullable) = false ];
+  bytes tx_id = 4 [
     (gogoproto.nullable) = false,
     (gogoproto.customtype) = "Hash",
     (gogoproto.customname) = "TxID"
   ];
-  string symbol = 4;
-  bool confirmed = 5;
+  string symbol = 5;
+  bool confirmed = 6;
 }
 
 message VoteConfirmTokenResponse { string log = 1; }
@@ -141,7 +150,8 @@ message VoteConfirmTokenResponse { string log = 1; }
 message SignTransferOwnershipRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  bytes new_owner = 2
+  string chain = 2;
+  bytes new_owner = 3
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
 }
 
@@ -152,8 +162,9 @@ message SignTransferOwnershipResponse {
 message AddChainRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string name = 2;
-  string native_asset = 3;
+  string chain = 2;
+  string name = 3;
+  string native_asset = 4;
 }
 
 message AddChainResponse {}

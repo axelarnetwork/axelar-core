@@ -9,9 +9,10 @@ import (
 )
 
 // NewSignTxRequest - constructor
-func NewSignTxRequest(sender sdk.AccAddress, jsonTx []byte) *SignTxRequest {
+func NewSignTxRequest(sender sdk.AccAddress, chain string, jsonTx []byte) *SignTxRequest {
 	return &SignTxRequest{
 		Sender: sender,
+		Chain:  chain,
 		Tx:     jsonTx,
 	}
 }
@@ -31,6 +32,9 @@ func (m SignTxRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
+	if m.Chain == "" {
+		return fmt.Errorf("missing chain")
+	}
 	if m.Tx == nil {
 		return fmt.Errorf("missing tx")
 	}
@@ -38,6 +42,7 @@ func (m SignTxRequest) ValidateBasic() error {
 	if err := tx.UnmarshalJSON(m.Tx); err != nil {
 		return err
 	}
+
 	return nil
 }
 

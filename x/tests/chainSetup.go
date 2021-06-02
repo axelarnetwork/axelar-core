@@ -136,7 +136,7 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 
 	queriers := map[string]sdk.Querier{
 		btcTypes.QuerierRoute: btcKeeper.NewQuerier(mocks.BTC, bitcoinKeeper, signer, nexusK),
-		evmTypes.QuerierRoute: evmKeeper.NewQuerier(mocks.ETH, EVMKeeper, signer),
+		evmTypes.QuerierRoute: evmKeeper.NewQuerier(mocks.ETH, EVMKeeper, signer, nexusK),
 	}
 
 	node := fake.NewNode(moniker, ctx, router, queriers).
@@ -316,6 +316,7 @@ func registerETHEventListener(n nodeData, submitMsg func(msg sdk.Msg) (result <-
 
 		_ = submitMsg(&evmTypes.VoteConfirmDepositRequest{
 			Sender:      n.Proxy,
+			Chain:       m[evmTypes.AttributeKeyChain],
 			Poll:        poll,
 			Confirmed:   true,
 			TxID:        types.Hash(common.HexToHash(m[evmTypes.AttributeKeyTxID])),
@@ -342,6 +343,7 @@ func registerETHEventListener(n nodeData, submitMsg func(msg sdk.Msg) (result <-
 		_ = submitMsg(
 			&evmTypes.VoteConfirmTokenRequest{
 				Sender:    n.Proxy,
+				Chain:     m[evmTypes.AttributeKeyChain],
 				Poll:      poll,
 				Confirmed: true,
 				TxID:      evmTypes.Hash(common.HexToHash(m[evmTypes.AttributeKeyTxID])),

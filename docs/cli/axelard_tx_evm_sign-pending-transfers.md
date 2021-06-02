@@ -3,7 +3,7 @@
 Sign all pending transfers to an EVM chain
 
 ```
-axelard tx evm sign-pending-transfers [flags]
+axelard tx evm sign-pending-transfers [chain] [flags]
 ```
 
 ### Options

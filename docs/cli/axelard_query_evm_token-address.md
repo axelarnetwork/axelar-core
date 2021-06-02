@@ -3,7 +3,7 @@
 Query a token address by symbol
 
 ```
-axelard query evm token-address [symbol] [flags]
+axelard query evm token-address [chain] [symbol] [flags]
 ```
 
 ### Options

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/big"
 	mathRand "math/rand"
-	"strings"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -23,7 +22,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
-	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
 	evmMock "github.com/axelarnetwork/axelar-core/x/evm/types/mock"
@@ -37,11 +35,36 @@ const (
 )
 
 var (
+	evmChain  = exported.Ethereum.Name
 	bytecodes = common.FromHex(MymintableBin)
 	tokenBC   = rand.Bytes(64)
 	burnerBC  = rand.Bytes(64)
 	gateway   = "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7"
 )
+
+func TestLink_UnknownChain(t *testing.T) {
+	minConfHeight := rand.I64Between(1, 10)
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	encCfg := testutils.MakeEncodingConfig()
+
+	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
+	k := NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), subspace)
+	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(minConfHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, RevoteLockingPeriod: 50})
+
+	recipient := nexus.CrossChainAddress{Address: "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L", Chain: btc.Bitcoin}
+	symbol := rand.Str(3)
+
+	n := &evmMock.NexusMock{
+		GetChainFunc: func(sdk.Context, string) (nexus.Chain, bool) { return nexus.Chain{}, false },
+	}
+	server := NewMsgServerImpl(k, n, &mock.SignerMock{}, &mock.VoterMock{}, &mock.SnapshotterMock{})
+	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.Bytes(sdk.AddrLen), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Symbol: symbol})
+
+	assert.Error(t, err)
+	assert.Equal(t, 0, len(n.IsAssetRegisteredCalls()))
+	assert.Equal(t, 1, len(n.GetChainCalls()))
+	assert.Equal(t, 0, len(n.LinkAddressesCalls()))
+}
 
 func TestLink_NoGateway(t *testing.T) {
 	minConfHeight := rand.I64Between(1, 10)
@@ -55,7 +78,13 @@ func TestLink_NoGateway(t *testing.T) {
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
 	symbol := rand.Str(3)
 
-	n := &evmMock.NexusMock{}
+	chains := map[string]nexus.Chain{exported.Ethereum.Name: exported.Ethereum}
+	n := &evmMock.NexusMock{
+		GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+			c, ok := chains[chain]
+			return c, ok
+		},
+	}
 	signer := &mock.SignerMock{
 		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
 			return rand.StrBetween(5, 20), true
@@ -65,11 +94,11 @@ func TestLink_NoGateway(t *testing.T) {
 		},
 	}
 	server := NewMsgServerImpl(k, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
-	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.Bytes(sdk.AddrLen), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
+	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Chain: evmChain, Sender: rand.Bytes(sdk.AddrLen), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
 	assert.Equal(t, 0, len(n.IsAssetRegisteredCalls()))
-	assert.Equal(t, 0, len(n.GetChainCalls()))
+	assert.Equal(t, 1, len(n.GetChainCalls()))
 	assert.Equal(t, 0, len(n.LinkAddressesCalls()))
 }
 
@@ -98,7 +127,7 @@ func TestLink_NoRecipientChain(t *testing.T) {
 		},
 	}
 	server := NewMsgServerImpl(k, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
-	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.Bytes(sdk.AddrLen), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
+	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Chain: evmChain, Sender: rand.Bytes(sdk.AddrLen), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
 	assert.Equal(t, 0, len(n.IsAssetRegisteredCalls()))
@@ -132,7 +161,7 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 	}
 	server := NewMsgServerImpl(k, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
-	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.Bytes(sdk.AddrLen), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
+	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.Bytes(sdk.AddrLen), Chain: evmChain, RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
 	assert.Equal(t, 1, len(n.IsAssetRegisteredCalls()))
@@ -178,7 +207,7 @@ func TestLink_Success(t *testing.T) {
 		},
 	}
 	server := NewMsgServerImpl(k, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
-	_, err = server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.Bytes(sdk.AddrLen), RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Symbol: msg.Symbol})
+	_, err = server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.Bytes(sdk.AddrLen), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Symbol: msg.Symbol})
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(n.IsAssetRegisteredCalls()))
@@ -310,7 +339,14 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			SetPendingTokenDeploymentFunc:     func(sdk.Context, vote.PollMeta, types.ERC20TokenDeployment) {},
 		}
 		v = &evmMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta, int64, int64) error { return nil }}
-		n = &evmMock.NexusMock{IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return false }}
+		chains := map[string]nexus.Chain{exported.Ethereum.Name: exported.Ethereum}
+		n = &evmMock.NexusMock{
+			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+				c, ok := chains[chain]
+				return c, ok
+			},
+			IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return false },
+		}
 		s = &mock.SignerMock{
 			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
 				return rand.StrBetween(5, 20), true
@@ -322,6 +358,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 		msg = &types.ConfirmTokenRequest{
 			Sender: rand.Bytes(20),
+			Chain:  evmChain,
 			TxID:   types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 			Symbol: rand.StrBetween(5, 10),
 		}
@@ -338,6 +375,15 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeTokenConfirmation }), 1)
 		assert.Equal(t, v.InitPollCalls()[0].Poll, k.SetPendingTokenDeploymentCalls()[0].Poll)
+	}).Repeat(repeats))
+
+	t.Run("unknown chain", testutils.Func(func(t *testing.T) {
+		setup()
+		msg.Chain = rand.StrBetween(5, 20)
+
+		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
+
+		assert.Error(t, err)
 	}).Repeat(repeats))
 
 	t.Run("no gateway", testutils.Func(func(t *testing.T) {
@@ -411,18 +457,16 @@ func TestAddChain(t *testing.T) {
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
 
+		chains := map[string]nexus.Chain{
+			exported.Ethereum.Name: exported.Ethereum,
+			btc.Bitcoin.Name:       btc.Bitcoin,
+		}
 		n = &evmMock.NexusMock{
 			SetChainFunc:      func(_ sdk.Context, chain nexus.Chain) {},
 			RegisterAssetFunc: func(_ sdk.Context, chainName, denom string) {},
-			GetChainFunc: func(_ sdk.Context, chainName string) (nexus.Chain, bool) {
-				switch strings.ToLower(chainName) {
-				case strings.ToLower(btc.Bitcoin.Name):
-					return btc.Bitcoin, true
-				case strings.ToLower(evm.Ethereum.Name):
-					return evm.Ethereum, true
-				default:
-					return nexus.Chain{}, false
-				}
+			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+				c, ok := chains[chain]
+				return c, ok
 			},
 		}
 
@@ -430,6 +474,7 @@ func TestAddChain(t *testing.T) {
 		nativeAsset = rand.StrBetween(3, 10)
 		msg = &types.AddChainRequest{
 			Sender:      rand.Bytes(20),
+			Chain:       evmChain,
 			Name:        name,
 			NativeAsset: nativeAsset,
 		}
@@ -470,6 +515,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		k      *evmMock.EthKeeperMock
 		v      *evmMock.VoterMock
 		s      *evmMock.SignerMock
+		n      *evmMock.NexusMock
 		msg    *types.ConfirmDepositRequest
 		server types.MsgServiceServer
 	)
@@ -499,14 +545,22 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 				return rand.PosI64(), true
 			},
 		}
+		chains := map[string]nexus.Chain{exported.Ethereum.Name: exported.Ethereum}
+		n = &evmMock.NexusMock{
+			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+				c, ok := chains[chain]
+				return c, ok
+			},
+		}
 
 		msg = &types.ConfirmDepositRequest{
 			Sender:        rand.Bytes(20),
+			Chain:         evmChain,
 			TxID:          types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 			Amount:        sdk.NewUint(mathRand.Uint64()),
 			BurnerAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
 		}
-		server = NewMsgServerImpl(k, &mock.NexusMock{}, s, v, &mock.SnapshotterMock{})
+		server = NewMsgServerImpl(k, n, s, v, &mock.SnapshotterMock{})
 	}
 
 	repeats := 20
@@ -518,6 +572,15 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeDepositConfirmation }), 1)
 		assert.Equal(t, v.InitPollCalls()[0].Poll, k.SetPendingDepositCalls()[0].Poll)
+	}).Repeat(repeats))
+
+	t.Run("unknown chain", testutils.Func(func(t *testing.T) {
+		setup()
+		msg.Chain = rand.StrBetween(5, 20)
+
+		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
+
+		assert.Error(t, err)
 	}).Repeat(repeats))
 
 	t.Run("deposit confirmed", testutils.Func(func(t *testing.T) {

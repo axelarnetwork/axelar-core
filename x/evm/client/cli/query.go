@@ -44,16 +44,16 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 // GetCmdMasterAddress returns the query for an EVM chain master address that owns the AxelarGateway contract
 func GetCmdMasterAddress(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "master-address",
+		Use:   "master-address [chain]",
 		Short: "Query an address by key ID",
-		Args:  cobra.ExactArgs(0),
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryMasterAddress), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryMasterAddress, args[0]), nil)
 			if err != nil {
 				fmt.Printf(types.ErrFMasterKey, err.Error())
 
@@ -72,16 +72,16 @@ func GetCmdMasterAddress(queryRoute string) *cobra.Command {
 // GetCmdTokenAddress returns the query for an EVM chain master address that owns the AxelarGateway contract
 func GetCmdTokenAddress(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "token-address [symbol]",
+		Use:   "token-address [chain] [symbol]",
 		Short: "Query a token address by symbol",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryTokenAddress, args[0]), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QueryTokenAddress, args[0], args[1]), nil)
 			if err != nil {
 				fmt.Printf(types.ErrFTokenAddress, err.Error())
 
@@ -100,16 +100,16 @@ func GetCmdTokenAddress(queryRoute string) *cobra.Command {
 // GetCmdAxelarGatewayAddress returns the query for the AxelarGateway contract address
 func GetCmdAxelarGatewayAddress(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "gateway-address",
+		Use:   "gateway-address [chain]",
 		Short: "Query the Axelar Gateway contract address",
-		Args:  cobra.ExactArgs(0),
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryAxelarGatewayAddress), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryAxelarGatewayAddress, args[0]), nil)
 			if err != nil {
 				fmt.Printf(types.ErrFGatewayAddress, err.Error())
 
@@ -130,9 +130,9 @@ func GetCmdCreateDeployTx(queryRoute string) *cobra.Command {
 	var gasPriceStr string
 	var gasLimit uint64
 	cmd := &cobra.Command{
-		Use:   "deploy-gateway",
+		Use:   "deploy-gateway [chain]",
 		Short: "Obtain a raw transaction for the deployment of Axelar Gateway.",
-		Args:  cobra.ExactArgs(0),
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
@@ -147,6 +147,7 @@ func GetCmdCreateDeployTx(queryRoute string) *cobra.Command {
 			gasPrice := sdk.NewIntFromBigInt(gasPriceBig)
 
 			params := types.DeployParams{
+				Chain:    args[0],
 				GasPrice: gasPrice,
 				GasLimit: gasLimit,
 			}
@@ -176,18 +177,18 @@ func GetCmdCreateDeployTx(queryRoute string) *cobra.Command {
 // GetCmdSendTx sends a transaction to an EVM chain
 func GetCmdSendTx(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "sendTx [txID]",
+		Use:   "sendTx [chain] [txID]",
 		Short: "Send a transaction that spends tx [txID] to chain [chain]",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.SendTx, args[0]), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.SendTx, args[0], args[1]), nil)
 			if err != nil {
-				return sdkerrors.Wrapf(err, types.ErrFSendTx, args[0])
+				return sdkerrors.Wrapf(err, types.ErrFSendTx, args[1])
 			}
 
 			return cliCtx.PrintObjectLegacy(fmt.Sprintf("successfully sent transaction %s to Ethereum", common.BytesToHash(res).Hex()))
@@ -200,19 +201,20 @@ func GetCmdSendTx(queryRoute string) *cobra.Command {
 // GetCmdSendCommand returns the query to send a signed command from an externally controlled address to the specified contract
 func GetCmdSendCommand(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "sendCommand [commandID] [fromAddress]",
+		Use:   "sendCommand [chain] [commandID] [fromAddress]",
 		Short: "Send a transaction signed by [fromAddress] that executes the command [commandID] to Axelar Gateway",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 			var commandID types.CommandID
-			copy(commandID[:], common.Hex2Bytes(args[0]))
+			copy(commandID[:], common.Hex2Bytes(args[1]))
 			params := types.CommandParams{
+				Chain:     args[0],
 				CommandID: commandID,
-				Sender:    args[1],
+				Sender:    args[2],
 			}
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.SendCommand), cliCtx.LegacyAmino.MustMarshalJSON(params))
 			if err != nil {
@@ -229,7 +231,7 @@ func GetCmdSendCommand(queryRoute string) *cobra.Command {
 // GetCmdQueryCommandData returns the query to get the signed command data
 func GetCmdQueryCommandData(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "command [commandID]",
+		Use:   "command [chain] [commandID]",
 		Short: "Get the signed command data that can be wrapped in an Ethereum transaction to execute the command [commandID] on Axelar Gateway",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -238,9 +240,10 @@ func GetCmdQueryCommandData(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			commandIDHex := args[0]
+			chain := args[0]
+			commandIDHex := args[1]
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryCommandData, commandIDHex), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QueryCommandData, chain, commandIDHex), nil)
 			if err != nil {
 				return sdkerrors.Wrapf(err, "could not get command %s", commandIDHex)
 			}

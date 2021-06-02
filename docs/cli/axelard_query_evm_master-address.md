@@ -3,7 +3,7 @@
 Query an address by key ID
 
 ```
-axelard query evm master-address [flags]
+axelard query evm master-address [chain] [flags]
 ```
 
 ### Options

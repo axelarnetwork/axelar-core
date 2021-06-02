@@ -754,6 +754,7 @@ Params is the parameter set for this module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
 | `name` | [string](#string) |  |  |
 | `native_asset` | [string](#string) |  |  |
 
@@ -781,6 +782,7 @@ MsgConfirmDeposit represents an erc20 deposit confirmation message
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `amount` | [bytes](#bytes) |  |  |
 | `burner_address` | [bytes](#bytes) |  |  |
@@ -809,6 +811,7 @@ MsgConfirmToken represents a token deploy confirmation message
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `symbol` | [string](#string) |  |  |
 
@@ -837,6 +840,7 @@ address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
 | `recipient_addr` | [string](#string) |  |  |
 | `symbol` | [string](#string) |  |  |
 | `recipient_chain` | [string](#string) |  |  |
@@ -871,6 +875,7 @@ AxelarGateway
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
 
 
 
@@ -902,6 +907,7 @@ AxelarGateway
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
 | `capacity` | [bytes](#bytes) |  |  |
 | `decimals` | [uint32](#uint32) |  |  |
 | `symbol` | [string](#string) |  |  |
@@ -937,6 +943,7 @@ pending transfers
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
 
 
 
@@ -968,6 +975,7 @@ AxelarGateway
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
 | `new_owner` | [bytes](#bytes) |  |  |
 
 
@@ -999,7 +1007,8 @@ AxelarGateway
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `tx` | [bytes](#bytes) |  | Tx is stored in serialized form because the amino codec cannot properly deserialize MsgSignTx otherwise |
+| `chain` | [string](#string) |  | Tx is stored in serialized form because the amino codec cannot properly deserialize MsgSignTx otherwise |
+| `tx` | [bytes](#bytes) |  |  |
 
 
 
@@ -1030,6 +1039,7 @@ MsgVoteConfirmDeposit represents a message that votes on a deposit
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
 | `poll` | [vote.exported.v1beta1.PollMeta](#vote.exported.v1beta1.PollMeta) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `burn_address` | [bytes](#bytes) |  |  |
@@ -1064,6 +1074,7 @@ MsgVoteConfirmToken represents a message that votes on a token deploy
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
 | `poll` | [vote.exported.v1beta1.PollMeta](#vote.exported.v1beta1.PollMeta) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `symbol` | [string](#string) |  |  |

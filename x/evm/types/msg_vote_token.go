@@ -3,8 +3,28 @@ package types
 import (
 	"fmt"
 
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/ethereum/go-ethereum/common"
 )
+
+// NewVoteConfirmTokenRequest creates a message of type ConfirmTokenRequest
+func NewVoteConfirmTokenRequest(
+	sender sdk.AccAddress,
+	chain, symbol string,
+	poll vote.PollMeta,
+	txID common.Hash,
+	confirmed bool) *VoteConfirmTokenRequest {
+	return &VoteConfirmTokenRequest{
+		Sender:    sender,
+		Chain:     chain,
+		Poll:      poll,
+		TxID:      Hash(txID),
+		Symbol:    symbol,
+		Confirmed: confirmed,
+	}
+}
 
 // Route returns the route for this message
 func (m VoteConfirmTokenRequest) Route() string {
@@ -18,10 +38,12 @@ func (m VoteConfirmTokenRequest) Type() string {
 
 // ValidateBasic executes a stateless message validation
 func (m VoteConfirmTokenRequest) ValidateBasic() error {
-	if m.Sender == nil || len(m.Sender) != sdk.AddrLen {
-		return fmt.Errorf("missing sender")
+	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
-
+	if m.Chain == "" {
+		return fmt.Errorf("missing chain")
+	}
 	if m.Symbol == "" {
 		return fmt.Errorf("symbol missing")
 	}

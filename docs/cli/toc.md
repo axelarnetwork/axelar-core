@@ -46,13 +46,13 @@
       - [validator-outstanding-rewards \[validator\]](axelard_query_distribution_validator-outstanding-rewards.md)	 - Query distribution outstanding (un-withdrawn) rewards for a validator and all their delegations
     - [evidence](axelard_query_evidence.md)	 - Query for evidence by hash or for all (paginated) submitted evidence
     - [evm](axelard_query_evm.md)	 - Querying commands for the evm module
-      - [command \[commandID\]](axelard_query_evm_command.md)	 - Get the signed command data that can be wrapped in an Ethereum transaction to execute the command \[commandID\] on Axelar Gateway
-      - [deploy-gateway](axelard_query_evm_deploy-gateway.md)	 - Obtain a raw transaction for the deployment of Axelar Gateway.
-      - [gateway-address](axelard_query_evm_gateway-address.md)	 - Query the Axelar Gateway contract address
-      - [master-address](axelard_query_evm_master-address.md)	 - Query an address by key ID
-      - [sendCommand \[commandID\] \[fromAddress\]](axelard_query_evm_sendCommand.md)	 - Send a transaction signed by \[fromAddress\] that executes the command \[commandID\] to Axelar Gateway
-      - [sendTx \[txID\]](axelard_query_evm_sendTx.md)	 - Send a transaction that spends tx \[txID\] to chain \[chain\]
-      - [token-address \[symbol\]](axelard_query_evm_token-address.md)	 - Query a token address by symbol
+      - [command \[chain\] \[commandID\]](axelard_query_evm_command.md)	 - Get the signed command data that can be wrapped in an Ethereum transaction to execute the command \[commandID\] on Axelar Gateway
+      - [deploy-gateway \[chain\]](axelard_query_evm_deploy-gateway.md)	 - Obtain a raw transaction for the deployment of Axelar Gateway.
+      - [gateway-address \[chain\]](axelard_query_evm_gateway-address.md)	 - Query the Axelar Gateway contract address
+      - [master-address \[chain\]](axelard_query_evm_master-address.md)	 - Query an address by key ID
+      - [sendCommand \[chain\] \[commandID\] \[fromAddress\]](axelard_query_evm_sendCommand.md)	 - Send a transaction signed by \[fromAddress\] that executes the command \[commandID\] to Axelar Gateway
+      - [sendTx \[chain\] \[txID\]](axelard_query_evm_sendTx.md)	 - Send a transaction that spends tx \[txID\] to chain \[chain\]
+      - [token-address \[chain\] \[symbol\]](axelard_query_evm_token-address.md)	 - Query a token address by symbol
     - [gov](axelard_query_gov.md)	 - Querying commands for the governance module
       - [deposit \[proposal-id\] \[depositer-addr\]](axelard_query_gov_deposit.md)	 - Query details of a deposit
       - [deposits \[proposal-id\]](axelard_query_gov_deposits.md)	 - Query deposits on a proposal
@@ -130,15 +130,15 @@
     - [encode \[file\]](axelard_tx_encode.md)	 - Encode transactions generated offline
     - [evidence](axelard_tx_evidence.md)	 - Evidence transaction subcommands
     - [evm](axelard_tx_evm.md)	 - evm transactions subcommands
-      - [add-chain \[name\] \[native asset\]](axelard_tx_evm_add-chain.md)	 - Add a new EVM chain
-      - [confirm-erc20-deposit \[txID\] \[amount\] \[burnerAddr\]](axelard_tx_evm_confirm-erc20-deposit.md)	 - Confirm an ERC20 deposit in an EVM chain transaction that sent given amount of token to a burner address
-      - [confirm-erc20-token \[txID\] \[symbol\]](axelard_tx_evm_confirm-erc20-token.md)	 - Confirm an ERC20 token deployment in an EVM chain transaction for a given symbol of token and gateway address
-      - [link \[chain\] \[address\] \[symbol\]](axelard_tx_evm_link.md)	 - Link a cross chain address to an EVM chain address created by Axelar
-      - [sign \[tx json file path\]](axelard_tx_evm_sign.md)	 - sign a raw EVM chain transaction
-      - [sign-burn-tokens](axelard_tx_evm_sign-burn-tokens.md)	 - Sign burn command for all confirmed token deposits in an EVM chain
-      - [sign-deploy-token \[name\] \[symbol\] \[decimals\] \[capacity\]](axelard_tx_evm_sign-deploy-token.md)	 - Signs the call data to deploy a token with the AxelarGateway contract
-      - [sign-pending-transfers](axelard_tx_evm_sign-pending-transfers.md)	 - Sign all pending transfers to an EVM chain
-      - [transfer-ownership \[newOwnerAddr\]](axelard_tx_evm_transfer-ownership.md)	 - Sign transfer ownership command for an EVM chain contract
+      - [add-chain \[chain\] \[name\] \[native asset\]](axelard_tx_evm_add-chain.md)	 - Add a new EVM chain
+      - [confirm-erc20-deposit \[chain\] \[txID\] \[amount\] \[burnerAddr\]](axelard_tx_evm_confirm-erc20-deposit.md)	 - Confirm an ERC20 deposit in an EVM chain transaction that sent given amount of token to a burner address
+      - [confirm-erc20-token \[chain\] \[txID\] \[symbol\]](axelard_tx_evm_confirm-erc20-token.md)	 - Confirm an ERC20 token deployment in an EVM chain transaction for a given symbol of token and gateway address
+      - [link \[chain\] \[recipient chain\] \[recipient address\] \[symbol\]](axelard_tx_evm_link.md)	 - Link a cross chain address to an EVM chain address created by Axelar
+      - [sign \[chain\] \[tx json file path\]](axelard_tx_evm_sign.md)	 - sign a raw EVM chain transaction
+      - [sign-burn-tokens \[chain\]](axelard_tx_evm_sign-burn-tokens.md)	 - Sign burn command for all confirmed token deposits in an EVM chain
+      - [sign-deploy-token \[chain\] \[name\] \[symbol\] \[decimals\] \[capacity\]](axelard_tx_evm_sign-deploy-token.md)	 - Signs the call data to deploy a token with the AxelarGateway contract
+      - [sign-pending-transfers \[chain\]](axelard_tx_evm_sign-pending-transfers.md)	 - Sign all pending transfers to an EVM chain
+      - [transfer-ownership \[chain\] \[newOwnerAddr\]](axelard_tx_evm_transfer-ownership.md)	 - Sign transfer ownership command for an EVM chain contract
     - [gov](axelard_tx_gov.md)	 - Governance transactions subcommands
       - [deposit \[proposal-id\] \[deposit\]](axelard_tx_gov_deposit.md)	 - Deposit tokens for an active proposal
       - [submit-proposal](axelard_tx_gov_submit-proposal.md)	 - Submit a proposal along with an initial deposit

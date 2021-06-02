@@ -1,15 +1,18 @@
 package types
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 )
 
 // NewConfirmDepositRequest creates a message of type ConfirmDepositRequest
-func NewConfirmDepositRequest(sender sdk.AccAddress, txID common.Hash, amount sdk.Uint, burnerAddr common.Address) *ConfirmDepositRequest {
+func NewConfirmDepositRequest(sender sdk.AccAddress, chain string, txID common.Hash, amount sdk.Uint, burnerAddr common.Address) *ConfirmDepositRequest {
 	return &ConfirmDepositRequest{
 		Sender:        sender,
+		Chain:         chain,
 		TxID:          Hash(txID),
 		Amount:        amount,
 		BurnerAddress: Address(burnerAddr),
@@ -30,6 +33,10 @@ func (m ConfirmDepositRequest) Type() string {
 func (m ConfirmDepositRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	}
+
+	if m.Chain == "" {
+		return fmt.Errorf("missing chain")
 	}
 
 	return nil
