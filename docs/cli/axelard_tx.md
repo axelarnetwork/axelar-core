@@ -33,8 +33,8 @@ axelard tx [flags]
 - [axelard tx decode](axelard_tx_decode.md)	 - Decode an binary encoded transaction string.
 - [axelard tx distribution](axelard_tx_distribution.md)	 - Distribution transactions subcommands
 - [axelard tx encode](axelard_tx_encode.md)	 - Encode transactions generated offline
-- [axelard tx ethereum](axelard_tx_ethereum.md)	 - ethereum transactions subcommands
 - [axelard tx evidence](axelard_tx_evidence.md)	 - Evidence transaction subcommands
+- [axelard tx evm](axelard_tx_evm.md)	 - evm transactions subcommands
 - [axelard tx gov](axelard_tx_gov.md)	 - Governance transactions subcommands
 - [axelard tx multisign](axelard_tx_multisign.md)	 - Generate multisig signatures for transactions generated offline
 - [axelard tx sign](axelard_tx_sign.md)	 - Sign a transaction generated offline

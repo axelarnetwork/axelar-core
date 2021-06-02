@@ -1,0 +1,17 @@
+syntax = "proto3";
+package evm.v1beta1;
+option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types";
+
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// Params is the parameter set for this module
+message Params {
+  uint64 confirmation_height = 1;
+  string network = 2 [ (gogoproto.casttype) = "Network" ];
+  bytes gateway = 3;
+  bytes token = 4;
+  bytes burnable = 5;
+  int64 revote_locking_period = 6;
+}

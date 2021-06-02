@@ -9,7 +9,7 @@ import (
 
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	bitcoin "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
-	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
+	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 
 	"github.com/stretchr/testify/assert"
 
@@ -52,7 +52,7 @@ func TestKeeper_AssignNextMasterKey_StartKeygenAfterLockingPeriod_Unlocked(t *te
 			panic(err)
 		}
 		s.Keeper.SetKey(ctx, keyID, sk.PublicKey)
-		chain := eth.Ethereum
+		chain := evm.Ethereum
 
 		assert.NoError(t, s.Keeper.AssignNextKey(ctx, chain, exported.MasterKey, keyID))
 	}
@@ -66,7 +66,7 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_NewKeyIsSet(t *testing.T) {
 	assert.GreaterOrEqual(t, currHeight, snapshotHeight+lockingPeriod)
 
 	for i := 0; i < 100; i++ {
-		chain := eth.Ethereum
+		chain := evm.Ethereum
 		s := setup()
 		ctx := s.Ctx.WithBlockHeight(currHeight)
 		s.SetLockingPeriod(lockingPeriod)
@@ -111,7 +111,7 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_AssignNextSecondaryKey_Rotat
 
 func TestKeeper_AssignNextMasterKey_RotateMasterKey_MultipleTimes_PreviousKeysStillAvailable(t *testing.T) {
 	for i := 0; i < 100; i++ {
-		chain := eth.Ethereum
+		chain := evm.Ethereum
 		s := setup()
 		s.SetLockingPeriod(0)
 		ctx := s.Ctx

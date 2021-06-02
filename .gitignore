@@ -17,5 +17,5 @@
 
 /bin/
 /.vscode/
-/x/ethereum/client/cli/testdata/
+/x/evm/client/cli/testdata/
 /node_modules/

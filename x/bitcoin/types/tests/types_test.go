@@ -20,7 +20,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 
-	ethereum "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
+	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
@@ -75,7 +75,7 @@ func TestNewLinkedAddress_SpendableByMasterKey(t *testing.T) {
 
 	inputAmount := btcutil.Amount(100000000) // 1btc
 	outputAmount := btcutil.Amount(10000000) // 0.1btc
-	linkedAddressInfo := types.NewLinkedAddress(masterKey, secondaryKey, types.Testnet3, nexus.CrossChainAddress{Chain: ethereum.Ethereum, Address: ethereumAddress})
+	linkedAddressInfo := types.NewLinkedAddress(masterKey, secondaryKey, types.Testnet3, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress})
 	outPoint, err := types.OutPointFromStr(fmt.Sprintf("%s:0", rand.HexStr(64)))
 	if err != nil {
 		panic(err)
@@ -124,7 +124,7 @@ func TestNewLinkedAddress_SpendableBySecondaryKey(t *testing.T) {
 
 	inputAmount := btcutil.Amount(100000000) // 1btc
 	outputAmount := btcutil.Amount(10000000) // 0.1btc
-	linkedAddressInfo := types.NewLinkedAddress(masterKey, secondaryKey, types.Testnet3, nexus.CrossChainAddress{Chain: ethereum.Ethereum, Address: ethereumAddress})
+	linkedAddressInfo := types.NewLinkedAddress(masterKey, secondaryKey, types.Testnet3, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress})
 	outPoint, err := types.OutPointFromStr(fmt.Sprintf("%s:0", rand.HexStr(64)))
 	if err != nil {
 		panic(err)
@@ -177,7 +177,7 @@ func TestNewLinkedAddress_NotSpendableByRandomKey(t *testing.T) {
 
 	inputAmount := btcutil.Amount(100000000) // 1btc
 	outputAmount := btcutil.Amount(10000000) // 0.1btc
-	linkedAddressInfo := types.NewLinkedAddress(masterKey, secondaryKey, types.Testnet3, nexus.CrossChainAddress{Chain: ethereum.Ethereum, Address: ethereumAddress})
+	linkedAddressInfo := types.NewLinkedAddress(masterKey, secondaryKey, types.Testnet3, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress})
 	outPoint, err := types.OutPointFromStr(fmt.Sprintf("%s:0", rand.HexStr(64)))
 	if err != nil {
 		panic(err)
@@ -278,7 +278,7 @@ func TestEstimateTxSize(t *testing.T) {
 		var outputs []types.Output
 
 		for i := 0; i < int(inputCount); i++ {
-			addressInfo := types.NewLinkedAddress(masterKey, secondaryKey, types.Testnet3, nexus.CrossChainAddress{Chain: ethereum.Ethereum, Address: ethereumAddress})
+			addressInfo := types.NewLinkedAddress(masterKey, secondaryKey, types.Testnet3, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress})
 			outPoint, err := types.OutPointFromStr(fmt.Sprintf("%s:%d", rand.HexStr(64), rand.I64Between(0, 100)))
 			if err != nil {
 				panic(err)

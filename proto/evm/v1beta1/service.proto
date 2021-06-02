@@ -1,0 +1,89 @@
+syntax = "proto3";
+package evm.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types";
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "evm/v1beta1/tx.proto";
+
+option (gogoproto.goproto_registration) = true;
+
+// Msg defines the evm Msg service.
+service MsgService {
+  rpc Link(LinkRequest) returns (LinkResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/link/{recipient_chain}"
+      body : "*"
+    };
+  }
+
+  rpc ConfirmToken(ConfirmTokenRequest) returns (ConfirmTokenResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/confirm-erc20-deploy/{symbol}"
+      body : "*"
+    };
+  }
+
+  rpc ConfirmDeposit(ConfirmDepositRequest) returns (ConfirmDepositResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/confirm-erc20-deposit"
+      body : "*"
+    };
+  }
+
+  rpc VoteConfirmDeposit(VoteConfirmDepositRequest)
+      returns (VoteConfirmDepositResponse) {
+    option (google.api.http) = {
+    };
+  }
+
+  rpc VoteConfirmToken(VoteConfirmTokenRequest)
+      returns (VoteConfirmTokenResponse) {
+    option (google.api.http) = {
+    };
+  }
+
+  rpc SignDeployToken(SignDeployTokenRequest)
+      returns (SignDeployTokenResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/sign-deploy-token/{symbol}"
+      body : "*"
+    };
+  }
+
+  rpc SignBurnTokens(SignBurnTokensRequest) returns (SignBurnTokensResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/sign-burn"
+      body : "*"
+    };
+  }
+
+  rpc SignTx(SignTxRequest) returns (SignTxResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/sign-tx"
+      body : "*"
+    };
+  }
+
+  rpc SignPendingTransfers(SignPendingTransfersRequest)
+      returns (SignPendingTransfersResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/sign-pending"
+      body : "*"
+    };
+  }
+
+  rpc SignTransferOwnership(SignTransferOwnershipRequest)
+      returns (SignTransferOwnershipResponse) {
+    option (google.api.http) = {
+    };
+  }
+
+  rpc AddChain(AddChainRequest) returns (AddChainResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/add-chain"
+      body : "*"
+    };
+  }
+}

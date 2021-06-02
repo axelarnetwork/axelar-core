@@ -31,7 +31,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	broadcastKeeper "github.com/axelarnetwork/axelar-core/x/broadcast/keeper"
-	"github.com/axelarnetwork/axelar-core/x/ethereum"
+	"github.com/axelarnetwork/axelar-core/x/evm"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -44,10 +44,10 @@ import (
 	btcMock "github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/broadcast"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
-	ethKeeper "github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
-	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
-	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
-	ethMock "github.com/axelarnetwork/axelar-core/x/ethereum/types/mock"
+	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
+	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
+	evmMock "github.com/axelarnetwork/axelar-core/x/evm/types/mock"
 	snapshotExported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapshotExportedMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	snapshotKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
@@ -71,7 +71,7 @@ func randomEthSender() common.Address {
 }
 
 type testMocks struct {
-	ETH     *ethMock.RPCClientMock
+	ETH     *evmMock.RPCClientMock
 	BTC     *btcMock.RPCClientMock
 	Keygen  *tssMock.TofndKeyGenClientMock
 	Sign    *tssMock.TofndSignClientMock
@@ -105,8 +105,8 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	bitcoinKeeper.SetParams(ctx, btcParams)
 
 	ethSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "eth")
-	ethereumKeeper := ethKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(ethTypes.StoreKey), ethSubspace)
-	ethereumKeeper.SetParams(ctx, ethTypes.DefaultParams())
+	EVMKeeper := evmKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(evmTypes.StoreKey), ethSubspace)
+	EVMKeeper.SetParams(ctx, evmTypes.DefaultParams())
 
 	tssSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), tssTypes.DefaultParamspace)
 	signer := tssKeeper.NewKeeper(encCfg.Amino, encCfg.Marshaler, sdk.NewKVStoreKey(tssTypes.StoreKey), tssSubspace, mocks.Slasher)
@@ -123,7 +123,7 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 
 	broadcastHandler := broadcast.NewHandler(broadcaster)
 	btcHandler := bitcoin.NewHandler(bitcoinKeeper, voter, signer, nexusK, snapKeeper)
-	ethHandler := ethereum.NewHandler(ethereumKeeper, voter, signer, nexusK, snapKeeper)
+	ethHandler := evm.NewHandler(EVMKeeper, voter, signer, nexusK, snapKeeper)
 	tssHandler := tss.NewHandler(signer, snapKeeper, nexusK, voter, &tssMock.StakingKeeperMock{
 		GetLastTotalPowerFunc: mocks.Staker.GetLastTotalPowerFunc,
 	}, broadcaster)
@@ -131,12 +131,12 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	router = router.
 		AddRoute(sdk.NewRoute(broadcastTypes.RouterKey, broadcastHandler)).
 		AddRoute(sdk.NewRoute(btcTypes.RouterKey, btcHandler)).
-		AddRoute(sdk.NewRoute(ethTypes.RouterKey, ethHandler)).
+		AddRoute(sdk.NewRoute(evmTypes.RouterKey, ethHandler)).
 		AddRoute(sdk.NewRoute(tssTypes.RouterKey, tssHandler))
 
 	queriers := map[string]sdk.Querier{
 		btcTypes.QuerierRoute: btcKeeper.NewQuerier(mocks.BTC, bitcoinKeeper, signer, nexusK),
-		ethTypes.QuerierRoute: ethKeeper.NewQuerier(mocks.ETH, ethereumKeeper, signer),
+		evmTypes.QuerierRoute: evmKeeper.NewQuerier(mocks.ETH, EVMKeeper, signer),
 	}
 
 	node := fake.NewNode(moniker, ctx, router, queriers).
@@ -202,7 +202,7 @@ func createMocks(validators []stakingtypes.Validator) testMocks {
 		GetTssSuspendedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
 	}
 
-	ethClient := &ethMock.RPCClientMock{
+	ethClient := &evmMock.RPCClientMock{
 		SendAndSignTransactionFunc: func(context.Context, geth.CallMsg) (string, error) {
 			return "", nil
 		},
@@ -302,24 +302,24 @@ func registerETHEventListener(n nodeData, submitMsg func(msg sdk.Msg) (result <-
 	encCfg := testutils.MakeEncodingConfig()
 	// register listener for deposit confirmation
 	n.Node.RegisterEventListener(func(event abci.Event) bool {
-		if event.Type != ethTypes.EventTypeDepositConfirmation {
+		if event.Type != evmTypes.EventTypeDepositConfirmation {
 			return false
 		}
 
 		m := mapifyAttributes(event)
-		if m[sdk.AttributeKeyAction] != ethTypes.AttributeValueStart {
+		if m[sdk.AttributeKeyAction] != evmTypes.AttributeValueStart {
 			return false
 		}
 
 		var poll voting.PollMeta
-		encCfg.Amino.MustUnmarshalJSON([]byte(m[ethTypes.AttributeKeyPoll]), &poll)
+		encCfg.Amino.MustUnmarshalJSON([]byte(m[evmTypes.AttributeKeyPoll]), &poll)
 
-		_ = submitMsg(&ethTypes.VoteConfirmDepositRequest{
+		_ = submitMsg(&evmTypes.VoteConfirmDepositRequest{
 			Sender:      n.Proxy,
 			Poll:        poll,
 			Confirmed:   true,
-			TxID:        types.Hash(common.HexToHash(m[ethTypes.AttributeKeyTxID])),
-			BurnAddress: types.Address(common.HexToAddress(m[ethTypes.AttributeKeyBurnAddress])),
+			TxID:        types.Hash(common.HexToHash(m[evmTypes.AttributeKeyTxID])),
+			BurnAddress: types.Address(common.HexToAddress(m[evmTypes.AttributeKeyBurnAddress])),
 		})
 
 		return true
@@ -327,25 +327,25 @@ func registerETHEventListener(n nodeData, submitMsg func(msg sdk.Msg) (result <-
 
 	// register listener for token deploy confirmation
 	n.Node.RegisterEventListener(func(event abci.Event) bool {
-		if event.Type != ethTypes.EventTypeTokenConfirmation {
+		if event.Type != evmTypes.EventTypeTokenConfirmation {
 			return false
 		}
 
 		m := mapifyAttributes(event)
-		if m[sdk.AttributeKeyAction] != ethTypes.AttributeValueStart {
+		if m[sdk.AttributeKeyAction] != evmTypes.AttributeValueStart {
 			return false
 		}
 
 		var poll voting.PollMeta
-		encCfg.Amino.MustUnmarshalJSON([]byte(m[ethTypes.AttributeKeyPoll]), &poll)
+		encCfg.Amino.MustUnmarshalJSON([]byte(m[evmTypes.AttributeKeyPoll]), &poll)
 
 		_ = submitMsg(
-			&ethTypes.VoteConfirmTokenRequest{
+			&evmTypes.VoteConfirmTokenRequest{
 				Sender:    n.Proxy,
 				Poll:      poll,
 				Confirmed: true,
-				TxID:      ethTypes.Hash(common.HexToHash(m[ethTypes.AttributeKeyTxID])),
-				Symbol:    m[ethTypes.AttributeKeySymbol],
+				TxID:      evmTypes.Hash(common.HexToHash(m[evmTypes.AttributeKeyTxID])),
+				Symbol:    m[evmTypes.AttributeKeySymbol],
 			})
 
 		return true
@@ -444,17 +444,17 @@ func registerWaitEventListeners(n nodeData) listeners {
 	// register eth listener for confirmation
 	ethDepositDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
 		attributes := mapifyAttributes(event)
-		return event.Type == ethTypes.EventTypeDepositConfirmation &&
-			(attributes[sdk.AttributeKeyAction] == ethTypes.AttributeValueConfirm ||
-				attributes[sdk.AttributeKeyAction] == ethTypes.AttributeValueReject)
+		return event.Type == evmTypes.EventTypeDepositConfirmation &&
+			(attributes[sdk.AttributeKeyAction] == evmTypes.AttributeValueConfirm ||
+				attributes[sdk.AttributeKeyAction] == evmTypes.AttributeValueReject)
 	})
 
 	// register eth listener for confirmation
 	ethTokenDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
 		attributes := mapifyAttributes(event)
-		return event.Type == ethTypes.EventTypeTokenConfirmation &&
-			(attributes[sdk.AttributeKeyAction] == ethTypes.AttributeValueConfirm ||
-				attributes[sdk.AttributeKeyAction] == ethTypes.AttributeValueReject)
+		return event.Type == evmTypes.EventTypeTokenConfirmation &&
+			(attributes[sdk.AttributeKeyAction] == evmTypes.AttributeValueConfirm ||
+				attributes[sdk.AttributeKeyAction] == evmTypes.AttributeValueReject)
 	})
 
 	// register listener for sign completion

@@ -123,7 +123,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		SetGenesisVoteCmd(app.DefaultNodeHome),
 		SetGenesisTSSCmd(app.DefaultNodeHome),
 		SetGenesisSnapshotCmd(app.DefaultNodeHome),
-		SetGenesisEthContractsCmd(app.DefaultNodeHome),
+		SetGenesisEVMContractsCmd(app.DefaultNodeHome),
 		SetGenesisChainParamsCmd(app.DefaultNodeHome),
 		AddGenesisEVMChainCmd(app.DefaultNodeHome),
 	)
