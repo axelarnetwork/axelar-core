@@ -17,7 +17,7 @@ import (
 )
 
 // ProcessKeygenStart starts the communication with the keygen protocol
-func (mgr *Mgr) ProcessKeygenStart(attributes []sdk.Attribute) error {
+func (mgr *Mgr) ProcessKeygenStart(_ int64, attributes []sdk.Attribute) error {
 	keyID, threshold, participants, participantShareCounts := parseKeygenStartParams(mgr.cdc, attributes)
 	myIndex, ok := indexOf(participants, mgr.principalAddr)
 	if !ok {
@@ -54,7 +54,7 @@ func (mgr *Mgr) ProcessKeygenStart(attributes []sdk.Attribute) error {
 }
 
 // ProcessKeygenMsg forwards blockchain messages to the keygen protocol
-func (mgr *Mgr) ProcessKeygenMsg(attributes []sdk.Attribute) error {
+func (mgr *Mgr) ProcessKeygenMsg(_ int64, attributes []sdk.Attribute) error {
 	keyID, from, payload := parseMsgParams(mgr.cdc, attributes)
 	msgIn := prepareTrafficIn(mgr.principalAddr, from, keyID, payload, mgr.Logger)
 

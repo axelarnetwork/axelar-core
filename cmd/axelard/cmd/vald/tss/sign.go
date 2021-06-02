@@ -15,13 +15,15 @@ import (
 )
 
 // ProcessSignStart starts the communication with the sign protocol
-func (mgr *Mgr) ProcessSignStart(attributes []sdk.Attribute) error {
+func (mgr *Mgr) ProcessSignStart(blockHeight int64, attributes []sdk.Attribute) error {
 	keyID, sigID, participants, payload := parseSignStartParams(mgr.cdc, attributes)
 	_, ok := indexOf(participants, mgr.principalAddr)
 	if !ok {
 		// do not participate
 		return nil
 	}
+
+	session := mgr.timeoutQueue.enqueue(sigID, blockHeight+mgr.sessionTimeout)
 
 	stream, cancel, err := mgr.startSign(keyID, sigID, participants, payload)
 	if err != nil {
@@ -30,7 +32,7 @@ func (mgr *Mgr) ProcessSignStart(attributes []sdk.Attribute) error {
 	mgr.setSignStream(sigID, stream)
 
 	// use error channel to coordinate errors during communication with keygen protocol
-	errChan := make(chan error, 3)
+	errChan := make(chan error, 4)
 	intermediateMsgs, result, streamErrChan := handleStream(stream, cancel, mgr.Logger)
 	go func() {
 		err, ok := <-streamErrChan
@@ -45,6 +47,17 @@ func (mgr *Mgr) ProcessSignStart(attributes []sdk.Attribute) error {
 		}
 	}()
 	go func() {
+		<-session.timeout
+
+		found, err := mgr.abortSign(sigID)
+		if !found {
+			return
+		}
+
+		mgr.Logger.Info(fmt.Sprintf("aborted sign protocol %s due to timeout", sigID))
+		errChan <- err
+	}()
+	go func() {
 		errChan <- mgr.handleSignResult(sigID, result)
 	}()
 
@@ -52,7 +65,7 @@ func (mgr *Mgr) ProcessSignStart(attributes []sdk.Attribute) error {
 }
 
 // ProcessSignMsg forwards blockchain messages to the sign protocol
-func (mgr *Mgr) ProcessSignMsg(attributes []sdk.Attribute) error {
+func (mgr *Mgr) ProcessSignMsg(_ int64, attributes []sdk.Attribute) error {
 	sigID, from, payload := parseMsgParams(mgr.cdc, attributes)
 	msgIn := prepareTrafficIn(mgr.principalAddr, from, sigID, payload, mgr.Logger)
 	// this message is not meant for this tofnd instance

@@ -1,6 +1,7 @@
 package vald
 
 import (
+	"encoding/json"
 	"fmt"
 	"path"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/log"
@@ -41,7 +43,15 @@ func GetValdCommand() *cobra.Command {
 		Use: "vald-start",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			serverCtx := server.GetServerContextFromCmd(cmd)
+			config := serverCtx.Config
+			genFile := config.GenesisFile()
+			appState, _, err := genutiltypes.GenesisStateFromGenFile(genFile)
+			if err != nil {
+				return fmt.Errorf("failed to unmarshal genesis state: %w", err)
+			}
+
 			logger := serverCtx.Logger.With("module", "vald")
+
 			cliCtx, err := sdkClient.GetClientTxContext(cmd)
 			if err != nil {
 				return err
@@ -50,7 +60,7 @@ func GetValdCommand() *cobra.Command {
 			// dynamically adjust gas limit by simulating the tx first
 			txf := tx.NewFactoryCLI(cliCtx, cmd.Flags()).WithSimulateAndExecute(true)
 
-			hub, err := newHub()
+			hub, err := newHub(logger)
 			if err != nil {
 				return err
 			}
@@ -61,7 +71,7 @@ func GetValdCommand() *cobra.Command {
 			}
 
 			logger.Info("Start listening to events")
-			listen(cliCtx, hub, txf, axConf, valAddr, logger)
+			listen(cliCtx, appState, hub, txf, axConf, valAddr, logger)
 			logger.Info("Shutting down")
 			return nil
 		},
@@ -94,13 +104,13 @@ func setPersistentFlags(rootCmd *cobra.Command) {
 	_ = viper.BindPFlag(flags.FlagChainID, rootCmd.PersistentFlags().Lookup(flags.FlagChainID))
 }
 
-func newHub() (*tmEvents.Hub, error) {
-	c, err := client.NewClient(client.DefaultAddress, client.DefaultWSEndpoint)
+func newHub(logger log.Logger) (*tmEvents.Hub, error) {
+	c, err := client.NewClient(client.DefaultAddress, client.DefaultWSEndpoint, logger)
 	if err != nil {
 		return nil, err
 	}
 
-	hub := tmEvents.NewHub(c)
+	hub := tmEvents.NewHub(c, logger)
 	return &hub, nil
 }
 
@@ -122,8 +132,10 @@ func loadConfig() (app.Config, string) {
 	return conf, viper.GetString("validator-addr")
 }
 
-func listen(ctx sdkClient.Context, hub *tmEvents.Hub, txf tx.Factory, axelarCfg app.Config, valAddr string, logger log.Logger) {
-	cdc := app.MakeEncodingConfig().Amino
+func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmEvents.Hub, txf tx.Factory, axelarCfg app.Config, valAddr string, logger log.Logger) {
+	encCfg := app.MakeEncodingConfig()
+	cdc := encCfg.Amino
+	protoCdc := encCfg.Marshaler
 	sender, err := ctx.Keyring.Key(axelarCfg.BroadcastConfig.From)
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "failed to read broadcaster account info from keyring"))
@@ -133,25 +145,28 @@ func listen(ctx sdkClient.Context, hub *tmEvents.Hub, txf tx.Factory, axelarCfg 
 		WithFromName(sender.GetName())
 
 	broadcaster := createBroadcaster(ctx, txf, axelarCfg, logger)
-	tssMgr := createTSSMgr(broadcaster, ctx.FromAddress, axelarCfg, logger, valAddr, cdc)
+	tssMgr := createTSSMgr(broadcaster, ctx.FromAddress, tssTypes.GetGenesisStateFromAppState(protoCdc, appState), axelarCfg, logger, valAddr, cdc)
 	btcMgr := createBTCMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
 	ethMgr := createETHMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
 
-	keygenStart := tmEvents.MustSubscribe(hub, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
-	keygenMsg := tmEvents.MustSubscribe(hub, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
-	signStart := tmEvents.MustSubscribe(hub, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueStart)
-	signMsg := tmEvents.MustSubscribe(hub, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
+	keygenStart := tmEvents.MustSubscribeTx(hub, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
+	keygenMsg := tmEvents.MustSubscribeTx(hub, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
+	signStart := tmEvents.MustSubscribeTx(hub, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueStart)
+	signMsg := tmEvents.MustSubscribeTx(hub, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
 
-	btcConf := tmEvents.MustSubscribe(hub, btcTypes.EventTypeOutpointConfirmation, btcTypes.ModuleName, btcTypes.AttributeValueStart)
+	btcConf := tmEvents.MustSubscribeTx(hub, btcTypes.EventTypeOutpointConfirmation, btcTypes.ModuleName, btcTypes.AttributeValueStart)
 
-	ethDepConf := tmEvents.MustSubscribe(hub, evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	ethTokConf := tmEvents.MustSubscribe(hub, evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	ethDepConf := tmEvents.MustSubscribeTx(hub, evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	ethTokConf := tmEvents.MustSubscribeTx(hub, evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+
+	blockHeaderSub := tmEvents.MustSubscribeNewBlockHeader(hub)
 
 	js := []jobs.Job{
 		events.Consume(keygenStart, tssMgr.ProcessKeygenStart),
 		events.Consume(keygenMsg, tssMgr.ProcessKeygenMsg),
 		events.Consume(signStart, tssMgr.ProcessSignStart),
 		events.Consume(signMsg, tssMgr.ProcessSignMsg),
+		events.Consume(blockHeaderSub, tssMgr.ProcessNewBlockHeader),
 		events.Consume(btcConf, btcMgr.ProcessConfirmation),
 		events.Consume(ethDepConf, ethMgr.ProcessDepositConfirmation),
 		events.Consume(ethTokConf, ethMgr.ProcessTokenConfirmation),
@@ -170,14 +185,15 @@ func createBroadcaster(ctx sdkClient.Context, txf tx.Factory, axelarCfg app.Conf
 	return broadcast.NewBroadcaster(ctx, txf, pipeline, logger)
 }
 
-func createTSSMgr(broadcaster bcTypes.Broadcaster, sender sdk.AccAddress, axelarCfg app.Config, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
+func createTSSMgr(broadcaster bcTypes.Broadcaster, sender sdk.AccAddress, genesisState tssTypes.GenesisState, axelarCfg app.Config, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
 	create := func() (*tss.Mgr, error) {
 		gg20client, err := tss.CreateTOFNDClient(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, logger)
 		if err != nil {
 			return nil, err
 		}
 
-		tssMgr := tss.NewMgr(gg20client, 2*time.Hour, valAddr, broadcaster, sender, logger, cdc)
+		tssMgr := tss.NewMgr(gg20client, 2*time.Hour, valAddr, broadcaster, sender, genesisState.Params.TimeoutInBlocks, logger, cdc)
+
 		return tssMgr, nil
 	}
 	mgr, err := create()
