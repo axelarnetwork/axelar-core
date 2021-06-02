@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	gogoprototypes "github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
@@ -30,34 +31,32 @@ func TestSdkInt_Marshaling(t *testing.T) {
 }
 
 func TestTalliedVote_Marshaling(t *testing.T) {
-	vote := types.TalliedVote{
-		Tally: sdk.NewInt(23),
-		Data:  []byte("a public key"),
-	}
-	cdc := testutils.MakeEncodingConfig().Amino
+	encCfg := testutils.MakeEncodingConfig()
+	cdc := encCfg.Marshaler
 
-	bz := cdc.MustMarshalBinaryLengthPrefixed(vote)
-	var unmarshaled types.TalliedVote
-	cdc.MustUnmarshalBinaryLengthPrefixed(bz, &unmarshaled)
+	data := gogoprototypes.BytesValue{Value: []byte("a public key")}
+	vote := types.NewTalliedVote(23, &data)
 
-	assert.Equal(t, unmarshaled, vote)
+	bz := cdc.MustMarshalBinaryLengthPrefixed(&vote)
+	var actual types.TalliedVote
+	cdc.MustUnmarshalBinaryLengthPrefixed(bz, &actual)
 
-	bz = cdc.MustMarshalJSON(vote)
-	var unmarshaled2 types.TalliedVote
-	cdc.MustUnmarshalJSON(bz, &unmarshaled2)
+	assert.Equal(t, vote, actual)
 
-	assert.Equal(t, unmarshaled2, vote)
+	bz = cdc.MustMarshalJSON(&vote)
+	var actual2 types.TalliedVote
+	cdc.MustUnmarshalJSON(bz, &actual2)
+
+	assert.Equal(t, vote.Tally, actual2.Tally)
+	assert.Equal(t, vote.Data.GetCachedValue(), actual2.Data.GetCachedValue())
 }
 
 func TestPoll_TallyNewVote(t *testing.T) {
 	poll := types.Poll{
 		Meta:                     exported.NewPollMeta("test", "test"),
 		ValidatorSnapshotCounter: 0,
-		Votes: []types.TalliedVote{{
-			Tally: sdk.NewInt(23),
-			Data:  []byte("a public key")},
-		},
-		Result: nil,
+		Votes:                    []types.TalliedVote{types.NewTalliedVote(23, &gogoprototypes.BytesValue{Value: []byte("a public key")})},
+		Result:                   nil,
 	}
 
 	vote := &poll.Votes[0]

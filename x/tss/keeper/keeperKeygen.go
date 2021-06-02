@@ -34,7 +34,7 @@ func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID string, sn
 	k.setSnapshotCounterForKeyID(ctx, keyID, snapshot.Counter)
 
 	poll := voting.NewPollMeta(types.ModuleName, keyID)
-	if err := voter.InitPoll(ctx, poll, snapshot.Counter); err != nil {
+	if err := voter.InitPoll(ctx, poll, snapshot.Counter, 0); err != nil {
 		return err
 	}
 

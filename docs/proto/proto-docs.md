@@ -157,6 +157,10 @@
 - [vote/v1beta1/genesis.proto](#vote/v1beta1/genesis.proto)
     - [GenesisState](#vote.v1beta1.GenesisState)
   
+- [vote/v1beta1/types.proto](#vote/v1beta1/types.proto)
+    - [Poll](#vote.v1beta1.Poll)
+    - [TalliedVote](#vote.v1beta1.TalliedVote)
+  
 - [Scalar Value Types](#scalar-value-types)
 
 
@@ -388,7 +392,6 @@ PollMeta represents the meta data for a poll
 | ----- | ---- | ----- | ----------- |
 | `module` | [string](#string) |  |  |
 | `id` | [string](#string) |  |  |
-| `nonce` | [int64](#int64) |  |  |
 
 
 
@@ -2028,6 +2031,59 @@ Msg defines the tss Msg service.
 | ----- | ---- | ----- | ----------- |
 | `voting_interval` | [int64](#int64) |  |  |
 | `voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="vote/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## vote/v1beta1/types.proto
+
+
+
+<a name="vote.v1beta1.Poll"></a>
+
+### Poll
+Poll represents a poll with write-in voting, i.e. the result of the vote can
+have any data type
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `meta` | [vote.exported.v1beta1.PollMeta](#vote.exported.v1beta1.PollMeta) |  |  |
+| `validator_snapshot_counter` | [int64](#int64) |  |  |
+| `votes` | [TalliedVote](#vote.v1beta1.TalliedVote) | repeated |  |
+| `expire_at` | [int64](#int64) |  |  |
+| `result` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+
+
+
+
+
+
+<a name="vote.v1beta1.TalliedVote"></a>
+
+### TalliedVote
+TalliedVote represents a vote for a poll with the accumulated stake of all
+validators voting for the same VotingData
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tally` | [bytes](#bytes) |  |  |
+| `data` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
 
 
 

@@ -10,6 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	gogoprototypes "github.com/gogo/protobuf/types"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -121,8 +122,8 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
 	}
 
-	poll := vote.NewPollMetaWithNonce(types.ModuleName, req.TxID.Hex()+"_"+req.Symbol, ctx.BlockHeight(), s.GetRevoteLockingPeriod(ctx))
-	if err := s.voter.InitPoll(ctx, poll, counter); err != nil {
+	poll := vote.NewPollMeta(types.ModuleName, req.TxID.Hex()+"_"+req.Symbol)
+	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+s.EthKeeper.GetRevoteLockingPeriod(ctx)); err != nil {
 		return nil, err
 	}
 
@@ -176,8 +177,8 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
 	}
 
-	poll := vote.NewPollMetaWithNonce(types.ModuleName, req.TxID.Hex()+"_"+req.BurnerAddress.Hex(), ctx.BlockHeight(), s.GetRevoteLockingPeriod(ctx))
-	if err := s.voter.InitPoll(ctx, poll, counter); err != nil {
+	poll := vote.NewPollMeta(types.ModuleName, req.TxID.Hex()+"_"+req.BurnerAddress.Hex())
+	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+s.EthKeeper.GetRevoteLockingPeriod(ctx)); err != nil {
 		return nil, err
 	}
 
@@ -234,7 +235,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		// assert: the deposit is known and has not been confirmed before
 	}
 
-	if err := s.voter.TallyVote(ctx, req.Sender, req.Poll, req.Confirmed); err != nil {
+	if err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed}); err != nil {
 		return nil, err
 	}
 
@@ -244,7 +245,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	}
 
 	// assert: the poll has completed
-	depositFound, ok := result.(bool)
+	confirmed, ok := result.(*gogoprototypes.BoolValue)
 	if !ok {
 		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.Poll.String(), result)
 	}
@@ -258,7 +259,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.Poll))))
 
-	if !depositFound {
+	if !confirmed.Value {
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
 		return &types.VoteConfirmDepositResponse{
@@ -302,7 +303,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 		// assert: the token is known and has not been confirmed before
 	}
 
-	if err := s.voter.TallyVote(ctx, req.Sender, req.Poll, req.Confirmed); err != nil {
+	if err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed}); err != nil {
 		return nil, err
 	}
 
@@ -312,7 +313,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 	}
 
 	// assert: the poll has completed
-	confirmed, ok := result.(bool)
+	confirmed, ok := result.(*gogoprototypes.BoolValue)
 	if !ok {
 		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.Poll.String(), result)
 	}
@@ -326,7 +327,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.Poll))))
 
-	if !confirmed {
+	if !confirmed.Value {
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
 		return &types.VoteConfirmTokenResponse{

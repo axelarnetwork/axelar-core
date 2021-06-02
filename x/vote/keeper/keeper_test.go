@@ -6,6 +6,7 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	gogoprototypes "github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -18,6 +19,7 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	"github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 var stringGen = rand.Strings(5, 50).Distinct()
@@ -34,8 +36,10 @@ type testSetup struct {
 }
 
 func setup() *testSetup {
-	cdc := testutils.MakeEncodingConfig().Amino
-	cdc.RegisterConcrete("", "string", nil)
+	encCfg := testutils.MakeEncodingConfig()
+	encCfg.InterfaceRegistry.RegisterImplementations((*exported.VotingData)(nil),
+		&gogoprototypes.StringValue{},
+	)
 
 	setup := &testSetup{Ctx: sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())}
 	setup.Snapshotter = &snapMock.SnapshotterMock{
@@ -51,7 +55,7 @@ func setup() *testSetup {
 	setup.Broadcaster = &bcMock.BroadcasterMock{
 		GetPrincipalFunc: func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return rand.Bytes(sdk.AddrLen) },
 	}
-	setup.Keeper = NewKeeper(cdc, sdk.NewKVStoreKey(stringGen.Next()), setup.Snapshotter, setup.Broadcaster)
+	setup.Keeper = NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(stringGen.Next()), setup.Snapshotter, setup.Broadcaster)
 	return setup
 }
 
@@ -59,20 +63,46 @@ func (s *testSetup) NewTimeout(t time.Duration) {
 	s.Timeout, s.cancel = context.WithTimeout(context.Background(), t)
 }
 
-// no error on initializing new poll
-func TestKeeper_InitPoll_NoError(t *testing.T) {
-	s := setup()
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, randomPoll(), 100))
-}
+func TestInitPoll(t *testing.T) {
+	t.Run("should create a new poll", testutils.Func(func(t *testing.T) {
+		s := setup()
 
-// error when initializing poll with same id as existing poll
-func TestKeeper_InitPoll_SameIdReturnError(t *testing.T) {
-	s := setup()
+		pollMeta := randomPoll()
+		snapshotCounter := int64(100)
+		expireAt := int64(0)
 
-	poll := randomPoll()
+		assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollMeta, snapshotCounter, expireAt))
 
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, 100))
-	assert.Error(t, s.Keeper.InitPoll(s.Ctx, poll, 100))
+		expected := types.NewPoll(pollMeta, snapshotCounter, expireAt)
+		actual := s.Keeper.GetPoll(s.Ctx, pollMeta)
+		assert.Equal(t, expected, *actual)
+	}))
+
+	t.Run("should return error if poll with same meta exists and has not expired yet", testutils.Func(func(t *testing.T) {
+		s := setup()
+		pollMeta := randomPoll()
+		snapshotCounter := int64(100)
+		expireAt := int64(0)
+
+		assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollMeta, snapshotCounter, expireAt))
+		assert.Error(t, s.Keeper.InitPoll(s.Ctx, pollMeta, snapshotCounter, expireAt))
+	}))
+
+	t.Run("should create a new poll if poll with same meta exists and has already expired", testutils.Func(func(t *testing.T) {
+		s := setup()
+		pollMeta := randomPoll()
+		snapshotCounter1 := int64(100)
+		snapshotCounter2 := int64(101)
+		expireAt1 := int64(10)
+		expireAt2 := int64(20)
+
+		assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollMeta, snapshotCounter1, expireAt1))
+		assert.NoError(t, s.Keeper.InitPoll(s.Ctx.WithBlockHeight(expireAt1), pollMeta, snapshotCounter2, expireAt2))
+
+		expected := types.NewPoll(pollMeta, snapshotCounter2, expireAt2)
+		actual := s.Keeper.GetPoll(s.Ctx, pollMeta)
+		assert.Equal(t, expected, *actual)
+	}))
 }
 
 // error when tallying non-existing poll
@@ -81,7 +111,7 @@ func TestKeeper_TallyVote_NonExistingPoll_ReturnError(t *testing.T) {
 
 	poll := randomPoll()
 
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, rand.PosI64()))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, rand.PosI64(), 0))
 	assert.Error(t, s.Keeper.TallyVote(s.Ctx, randomSender(), poll, randomData()))
 }
 
@@ -93,7 +123,7 @@ func TestKeeper_TallyVote_UnknownVoter_ReturnError(t *testing.T) {
 
 	poll := randomPoll()
 
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, rand.PosI64()))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, rand.PosI64(), 0))
 	assert.Error(t, s.Keeper.TallyVote(s.Ctx, randomSender(), poll, randomData()))
 }
 
@@ -110,7 +140,7 @@ func TestKeeper_TallyVote_NoWinner(t *testing.T) {
 
 	poll := randomPoll()
 
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, rand.PosI64()))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, rand.PosI64(), 0))
 	assert.NoError(t, s.Keeper.TallyVote(s.Ctx, randomSender(), poll, randomData()))
 	assert.Nil(t, s.Keeper.Result(s.Ctx, poll))
 }
@@ -128,9 +158,10 @@ func TestKeeper_TallyVote_WithWinner(t *testing.T) {
 	poll := randomPoll()
 	data := randomData()
 
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, rand.PosI64()))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, rand.PosI64(), 0))
 	err := s.Keeper.TallyVote(s.Ctx, randomSender(), poll, data)
 	res := s.Keeper.Result(s.Ctx, poll)
+
 	assert.NoError(t, err)
 	assert.Equal(t, data, res)
 }
@@ -147,7 +178,7 @@ func TestKeeper_TallyVote_TwoVotesFromSameValidator_ReturnError(t *testing.T) {
 	poll := randomPoll()
 	sender := randomSender()
 
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, rand.PosI64()))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, rand.PosI64(), 0))
 	assert.NoError(t, s.Keeper.TallyVote(s.Ctx, sender, poll, randomData()))
 	assert.Error(t, s.Keeper.TallyVote(s.Ctx, sender, poll, randomData()))
 	assert.Error(t, s.Keeper.TallyVote(s.Ctx, sender, poll, randomData()))
@@ -167,7 +198,7 @@ func TestKeeper_TallyVote_MultipleVotesUntilDecision(t *testing.T) {
 	}
 
 	poll := randomPoll()
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, 100))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, 100, 0))
 
 	sender := randomSender()
 	data := randomData()
@@ -200,7 +231,7 @@ func TestKeeper_TallyVote_ForDecidedPoll(t *testing.T) {
 	s.ValidatorSet = []snapshot.Validator{minorityPower, majorityPower}
 
 	poll := randomPoll()
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, 100))
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, 100, 0))
 
 	s.Broadcaster.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return majorityPower.GetOperator() }
 
@@ -216,8 +247,8 @@ func TestKeeper_TallyVote_ForDecidedPoll(t *testing.T) {
 	assert.Equal(t, data1, s.Keeper.Result(s.Ctx, poll))
 }
 
-func randomData() string {
-	return stringGen.Next()
+func randomData() exported.VotingData {
+	return &gogoprototypes.StringValue{Value: stringGen.Next()}
 }
 
 func randomSender() sdk.AccAddress {

@@ -11,5 +11,4 @@ message PollMeta {
 
   string module = 1;
   string id = 2 [ (gogoproto.customname) = "ID" ];
-  int64 nonce = 3;
 }

@@ -57,7 +57,7 @@ func setup() *testSetup {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	encCfg := appParams.MakeEncodingConfig()
 	voter := &tssMock.VoterMock{
-		InitPollFunc: func(sdk.Context, exported.PollMeta, int64) error { return nil },
+		InitPollFunc: func(sdk.Context, exported.PollMeta, int64, int64) error { return nil },
 	}
 
 	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), "tss")
@@ -82,7 +82,7 @@ func setup() *testSetup {
 		},
 	}
 
-	k := NewKeeper(encCfg.Amino, encCfg.Marshaler, sdk.NewKVStoreKey("tss"), subspace, slasher)
+	k := NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("tss"), subspace, slasher)
 	k.SetParams(ctx, types.DefaultParams())
 
 	setup.Keeper = k

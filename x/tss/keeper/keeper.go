@@ -35,17 +35,14 @@ type Keeper struct {
 	slasher  snapshot.Slasher
 	params   params.Subspace
 	storeKey sdk.StoreKey
-	// TODO: remove cdc and use protoCdc only
 	cdc      *codec.LegacyAmino
-	protoCdc codec.BinaryMarshaler
 }
 
 // NewKeeper constructs a tss keeper
-func NewKeeper(cdc *codec.LegacyAmino, protoCdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramSpace params.Subspace, slasher snapshot.Slasher) Keeper {
+func NewKeeper(cdc *codec.LegacyAmino, storeKey sdk.StoreKey, paramSpace params.Subspace, slasher snapshot.Slasher) Keeper {
 	return Keeper{
 		slasher:  slasher,
 		cdc:      cdc,
-		protoCdc: protoCdc,
 		params:   paramSpace.WithKeyTable(types.KeyTable()),
 		storeKey: storeKey,
 	}

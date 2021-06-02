@@ -1,0 +1,33 @@
+syntax = "proto3";
+package vote.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/vote/types";
+
+import "google/protobuf/any.proto";
+import "gogoproto/gogo.proto";
+import "vote/exported/v1beta1/types.proto";
+import "cosmos_proto/cosmos.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// TalliedVote represents a vote for a poll with the accumulated stake of all
+// validators voting for the same VotingData
+message TalliedVote {
+  bytes tally = 1 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
+  google.protobuf.Any data = 2
+      [ (cosmos_proto.accepts_interface) = "exported.VotingData" ];
+}
+
+// Poll represents a poll with write-in voting, i.e. the result of the vote can
+// have any data type
+message Poll {
+  vote.exported.v1beta1.PollMeta meta = 1 [ (gogoproto.nullable) = false ];
+  int64 validator_snapshot_counter = 2;
+  repeated TalliedVote votes = 3 [ (gogoproto.nullable) = false ];
+  int64 expire_at = 4;
+  google.protobuf.Any result = 5
+      [ (cosmos_proto.accepts_interface) = "exported.VotingData" ];
+}
