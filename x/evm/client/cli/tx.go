@@ -18,7 +18,7 @@ import (
 
 // GetTxCmd returns the transaction commands for this module
 func GetTxCmd() *cobra.Command {
-	ethTxCmd := &cobra.Command{
+	evmTxCmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      fmt.Sprintf("%s transactions subcommands", types.ModuleName),
 		DisableFlagParsing:         true,
@@ -27,7 +27,7 @@ func GetTxCmd() *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	ethTxCmd.AddCommand(
+	evmTxCmd.AddCommand(
 		GetCmdLink(),
 		GetCmdSignTx(),
 		GetCmdConfirmERC20TokenDeployment(),
@@ -39,7 +39,7 @@ func GetTxCmd() *cobra.Command {
 		GetCmdAddChain(),
 	)
 
-	return ethTxCmd
+	return evmTxCmd
 }
 
 // GetCmdLink links a cross chain address to an EVM chain address created by Axelar

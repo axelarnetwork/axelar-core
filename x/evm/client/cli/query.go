@@ -19,7 +19,7 @@ import (
 
 // GetQueryCmd returns the cli query commands for this module
 func GetQueryCmd(queryRoute string) *cobra.Command {
-	ethQueryCmd := &cobra.Command{
+	evmQueryCmd := &cobra.Command{
 		Use:                        "evm",
 		Short:                      fmt.Sprintf("Querying commands for the %s module", types.ModuleName),
 		DisableFlagParsing:         true,
@@ -27,7 +27,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	ethQueryCmd.AddCommand(
+	evmQueryCmd.AddCommand(
 		GetCmdMasterAddress(queryRoute),
 		GetCmdAxelarGatewayAddress(queryRoute),
 		GetCmdTokenAddress(queryRoute),
@@ -37,7 +37,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdQueryCommandData(queryRoute),
 	)
 
-	return ethQueryCmd
+	return evmQueryCmd
 
 }
 
