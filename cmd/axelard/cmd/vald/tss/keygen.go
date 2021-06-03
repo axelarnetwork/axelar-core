@@ -3,6 +3,7 @@ package tss
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 
 	"github.com/btcsuite/btcd/btcec"
@@ -142,8 +143,14 @@ func (mgr *Mgr) handleKeygenResult(keyID string, resultChan <-chan interface{}) 
 		delete(mgr.keygenStreams, keyID)
 	}()
 
-	result := (<-resultChan).([]byte)
-	btcecPK, err := btcec.ParsePubKey(result, btcec.S256())
+	result := (<-resultChan).(*tofnd.MessageOut_KeygenResult)
+	if result.GetCriminals() != nil {
+		// criminals have to be sorted in ascending order
+		sort.Stable(result.GetCriminals())
+	}
+
+	pubKeyBytes := result.GetPubkey()
+	btcecPK, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
 	if err != nil {
 		return sdkerrors.Wrap(err, "handler goroutine: failure to deserialize pubkey")
 	}
@@ -152,7 +159,7 @@ func (mgr *Mgr) handleKeygenResult(keyID string, resultChan <-chan interface{}) 
 	mgr.Logger.Info(fmt.Sprintf("handler goroutine: received pubkey from server! [%v]", pubkey))
 
 	poll := voting.NewPollMeta(tss.ModuleName, keyID)
-	vote := &tss.VotePubKeyRequest{Sender: mgr.sender, PollMeta: poll, PubKeyBytes: result}
+	vote := &tss.VotePubKeyRequest{Sender: mgr.sender, PollMeta: poll, PubKeyBytes: pubKeyBytes}
 	return mgr.broadcaster.Broadcast(vote)
 }
 
