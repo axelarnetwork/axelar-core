@@ -2,12 +2,14 @@ package keeper
 
 import (
 	"crypto/ecdsa"
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -21,11 +23,14 @@ import (
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
+	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 )
 
 const (
-	gatewayKey = "gateway"
+	gatewayKey   = "gateway"
+	subspacesKey = "subspaces"
 
+	chainPrefix            = "chain_"
 	unsignedPrefix         = "unsigned_"
 	pendingTokenPrefix     = "pending_token_"
 	pendingDepositPrefix   = "pending_deposit_"
@@ -39,37 +44,76 @@ const (
 
 // Keeper represents the EVM keeper
 type Keeper struct {
-	storeKey sdk.StoreKey
-	cdc      codec.BinaryMarshaler
-	params   params.Subspace
+	storeKey     sdk.StoreKey
+	cdc          codec.BinaryMarshaler
+	paramsKeeper paramskeeper.Keeper
 }
 
 // NewKeeper returns a new EVM keeper
-func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
+func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramsKeeper paramskeeper.Keeper /*paramSpace params.Subspace*/) Keeper {
 	return Keeper{
-		cdc:      cdc,
-		storeKey: storeKey,
-		params:   paramSpace.WithKeyTable(types.KeyTable()),
+		cdc:          cdc,
+		storeKey:     storeKey,
+		paramsKeeper: paramsKeeper,
 	}
 }
 
-// SetParams sets the eth module's parameters
-func (k Keeper) SetParams(ctx sdk.Context, p types.Params) {
-	k.params.SetParamSet(ctx, &p)
+// SetParams sets the evm module's parameters
+func (k Keeper) SetParams(ctx sdk.Context, params []types.Params) {
+
+	subspaces := struct {
+		Chains []string `json:"chains"`
+	}{}
+	bz := ctx.KVStore(k.storeKey).Get([]byte(subspacesKey))
+	if bz != nil {
+		_ = json.Unmarshal(bz, &subspaces)
+	}
+
+	for _, p := range params {
+		str := strings.ToLower(p.Chain)
+		subspace := k.paramsKeeper.Subspace(types.ModuleName + "_" + str)
+		subspace = subspace.WithKeyTable(types.KeyTable())
+		subspace.SetParamSet(ctx, &p)
+		subspaces.Chains = append(subspaces.Chains, str)
+	}
+
+	bz, _ = json.Marshal(subspaces)
+	ctx.KVStore(k.storeKey).Set([]byte(subspacesKey), bz)
 }
 
-// GetParams gets the eth module's parameters
-func (k Keeper) GetParams(ctx sdk.Context) types.Params {
-	var p types.Params
-	k.params.GetParamSet(ctx, &p)
-	return p
+// GetParams gets the evm module's parameters
+func (k Keeper) GetParams(ctx sdk.Context) []types.Params {
+
+	subspaces := struct {
+		Chains []string `json:"chains"`
+	}{}
+	bz := ctx.KVStore(k.storeKey).Get([]byte(subspacesKey))
+	if bz != nil {
+		_ = json.Unmarshal(bz, &subspaces)
+	}
+
+	params := make([]types.Params, 0)
+	for _, chain := range subspaces.Chains {
+		subspace, _ := k.getSubspace(ctx, chain)
+
+		var p types.Params
+		subspace.GetParamSet(ctx, &p)
+		params = append(params, p)
+	}
+
+	return params
 }
 
 // GetNetwork returns the Ethereum network Axelar-Core is expected to connect to
-func (k Keeper) GetNetwork(ctx sdk.Context) types.Network {
+func (k Keeper) GetNetwork(ctx sdk.Context, chain string) (types.Network, bool) {
 	var network types.Network
-	k.params.Get(ctx, types.KeyNetwork, &network)
-	return network
+	subspace, ok := k.getSubspace(ctx, chain)
+	if !ok {
+		return network, false
+	}
+
+	subspace.Get(ctx, types.KeyNetwork, &network)
+	return network, true
 }
 
 // Logger returns a module-specific logger.
@@ -78,18 +122,29 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 }
 
 // GetRequiredConfirmationHeight returns the required block confirmation height
-func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context) uint64 {
+func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context, chain string) (uint64, bool) {
 	var h uint64
-	k.params.Get(ctx, types.KeyConfirmationHeight, &h)
-	return h
+
+	subspace, ok := k.getSubspace(ctx, chain)
+	if !ok {
+		return h, false
+	}
+
+	subspace.Get(ctx, types.KeyConfirmationHeight, &h)
+	return h, true
 }
 
 // GetRevoteLockingPeriod returns the lock period for revoting
-func (k Keeper) GetRevoteLockingPeriod(ctx sdk.Context) int64 {
+func (k Keeper) GetRevoteLockingPeriod(ctx sdk.Context, chain string) (int64, bool) {
 	var result int64
-	k.params.Get(ctx, types.KeyRevoteLockingPeriod, &result)
 
-	return result
+	subspace, ok := k.getSubspace(ctx, chain)
+	if !ok {
+		return result, false
+	}
+
+	subspace.Get(ctx, types.KeyRevoteLockingPeriod, &result)
+	return result, true
 }
 
 // SetGatewayAddress sets the contract address for Axelar Gateway
@@ -165,7 +220,7 @@ func (k Keeper) GetTokenAddress(ctx sdk.Context, chain, symbol string, gatewayAd
 		return common.Address{}, err
 	}
 
-	tokenInitCode := append(k.getTokenBC(ctx), packed...)
+	tokenInitCode := append(k.getTokenBC(ctx, chain), packed...)
 	tokenInitCodeHash := crypto.Keccak256Hash(tokenInitCode)
 
 	tokenAddr := crypto.CreateAddress2(gatewayAddr, saltToken, tokenInitCodeHash.Bytes())
@@ -174,7 +229,7 @@ func (k Keeper) GetTokenAddress(ctx sdk.Context, chain, symbol string, gatewayAd
 }
 
 // GetBurnerAddressAndSalt calculates a burner address and the corresponding salt for the given token address, recipient and axelar gateway address
-func (k Keeper) GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error) {
+func (k Keeper) GetBurnerAddressAndSalt(ctx sdk.Context, chain string, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error) {
 	addressType, err := abi.NewType("address", "address", nil)
 	if err != nil {
 		return common.Address{}, common.Hash{}, err
@@ -193,29 +248,36 @@ func (k Keeper) GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr common.Addres
 		return common.Address{}, common.Hash{}, err
 	}
 
-	burnerInitCode := append(k.getBurnerBC(ctx), packed...)
+	burnerInitCode := append(k.getBurnerBC(ctx, chain), packed...)
 	burnerInitCodeHash := crypto.Keccak256Hash(burnerInitCode)
 
 	return crypto.CreateAddress2(gatewayAddr, saltBurn, burnerInitCodeHash.Bytes()), saltBurn, nil
 }
 
-func (k Keeper) getBurnerBC(ctx sdk.Context) []byte {
+func (k Keeper) getBurnerBC(ctx sdk.Context, chain string) []byte {
 	var b []byte
-	k.params.Get(ctx, types.KeyBurnable, &b)
+	subspace, _ := k.getSubspace(ctx, chain)
+	subspace.Get(ctx, types.KeyBurnable, &b)
 	return b
 }
 
-func (k Keeper) getTokenBC(ctx sdk.Context) []byte {
+func (k Keeper) getTokenBC(ctx sdk.Context, chain string) []byte {
 	var b []byte
-	k.params.Get(ctx, types.KeyToken, &b)
+	subspace, _ := k.getSubspace(ctx, chain)
+	subspace.Get(ctx, types.KeyToken, &b)
 	return b
 }
 
 // GetGatewayByteCodes retrieves the byte codes for the Axelar Gateway smart contract
-func (k Keeper) GetGatewayByteCodes(ctx sdk.Context) []byte {
+func (k Keeper) GetGatewayByteCodes(ctx sdk.Context, chain string) ([]byte, bool) {
 	var b []byte
-	k.params.Get(ctx, types.KeyGateway, &b)
-	return b
+	subspace, ok := k.getSubspace(ctx, chain)
+	if !ok {
+		return b, false
+	}
+
+	subspace.Get(ctx, types.KeyGateway, &b)
+	return b, true
 }
 
 // SetPendingTokenDeployment stores a pending ERC20 token deployment
@@ -329,7 +391,7 @@ func (k Keeper) AssembleEthTx(ctx sdk.Context, chain, txID string, pk ecdsa.Publ
 		return nil, fmt.Errorf("raw tx for ID %s has not been prepared yet", txID)
 	}
 
-	signer := k.getSigner(ctx)
+	signer := k.getSigner(ctx, chain)
 
 	recoverableSig, err := types.ToEthSignature(sig, signer.Hash(rawTx), pk)
 	if err != nil {
@@ -345,13 +407,14 @@ func (k Keeper) GetHashToSign(ctx sdk.Context, chain, txID string) (common.Hash,
 	if rawTx == nil {
 		return common.Hash{}, fmt.Errorf("raw tx with id %s not found", txID)
 	}
-	signer := k.getSigner(ctx)
+	signer := k.getSigner(ctx, chain)
 	return signer.Hash(rawTx), nil
 }
 
-func (k Keeper) getSigner(ctx sdk.Context) ethTypes.EIP155Signer {
+func (k Keeper) getSigner(ctx sdk.Context, chain string) ethTypes.EIP155Signer {
 	var network types.Network
-	k.params.Get(ctx, types.KeyNetwork, &network)
+	subspace, _ := k.getSubspace(ctx, chain)
+	subspace.Get(ctx, types.KeyNetwork, &network)
 	return ethTypes.NewEIP155Signer(network.Params().ChainID)
 }
 
@@ -410,6 +473,10 @@ func (k Keeper) DeleteDeposit(ctx sdk.Context, chain string, deposit types.ERC20
 }
 
 func (k Keeper) getStore(ctx sdk.Context, chain string) prefix.Store {
-	pre := []byte(strings.ToLower(chain))
+	pre := []byte(chainPrefix + strings.ToLower(chain) + "_")
 	return prefix.NewStore(ctx.KVStore(k.storeKey), pre)
+}
+
+func (k Keeper) getSubspace(ctx sdk.Context, chain string) (params.Subspace, bool) {
+	return k.paramsKeeper.GetSubspace(types.ModuleName + "_" + strings.ToLower(chain))
 }

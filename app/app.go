@@ -308,7 +308,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		appCodec, keys[btcTypes.StoreKey], app.getSubspace(btcTypes.ModuleName),
 	)
 	ethK := evmKeeper.NewKeeper(
-		appCodec, keys[evmTypes.StoreKey], app.getSubspace(evmTypes.ModuleName),
+		appCodec, keys[evmTypes.StoreKey], app.paramsKeeper,
 	)
 
 	broadcastK := broadcastKeeper.NewKeeper(app.legacyAmino, keys[broadcastTypes.StoreKey], stakingK)
@@ -470,7 +470,6 @@ func initParamsKeeper(appCodec codec.Marshaler, legacyAmino *codec.LegacyAmino, 
 	paramsKeeper.Subspace(snapTypes.ModuleName)
 	paramsKeeper.Subspace(tssTypes.ModuleName)
 	paramsKeeper.Subspace(btcTypes.ModuleName)
-	paramsKeeper.Subspace(evmTypes.ModuleName)
 	paramsKeeper.Subspace(nexusTypes.ModuleName)
 
 	return paramsKeeper

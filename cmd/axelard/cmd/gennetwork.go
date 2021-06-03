@@ -89,11 +89,13 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 						return err
 					}
 
-					genesisState.Params.Network = network
+					//TODO:  Currently assuming a single element in the Params slice. We need to generalize for more EVM chains.
+					genesisState.Params[0].Network = network
 				}
 
 				if confirmationHeight > 0 {
-					genesisState.Params.ConfirmationHeight = confirmationHeight
+					//TODO:  Currently assuming a single element in the Params slice. We need to generalize for more EVM chains.
+					genesisState.Params[0].ConfirmationHeight = confirmationHeight
 				}
 
 				genesisStateBz, err = cdc.MarshalJSON(&genesisState)

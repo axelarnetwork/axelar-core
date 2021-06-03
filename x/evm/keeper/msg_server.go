@@ -5,7 +5,9 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"math/big"
 	"strconv"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -68,7 +70,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, err
 	}
 
-	burnerAddr, salt, err := s.GetBurnerAddressAndSalt(ctx, tokenAddr, req.RecipientAddr, gatewayAddr)
+	burnerAddr, salt, err := s.GetBurnerAddressAndSalt(ctx, senderChain.Name, tokenAddr, req.RecipientAddr, gatewayAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +131,13 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	}
 
 	poll := vote.NewPollMeta(types.ModuleName, req.TxID.Hex()+"_"+req.Symbol)
-	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+s.EthKeeper.GetRevoteLockingPeriod(ctx)); err != nil {
+
+	period, ok := s.EthKeeper.GetRevoteLockingPeriod(ctx, chain.Name)
+	if !ok {
+		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", req.Chain)
+	}
+
+	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+period); err != nil {
 		return nil, err
 	}
 
@@ -139,6 +147,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	}
 	s.SetPendingTokenDeployment(ctx, chain.Name, poll, deploy)
 
+	height, _ := s.EthKeeper.GetRequiredConfirmationHeight(ctx, chain.Name)
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeTokenConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
@@ -148,7 +157,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),
 			sdk.NewAttribute(types.AttributeKeySymbol, req.Symbol),
-			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(s.GetRequiredConfirmationHeight(ctx), 10)),
+			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
 			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&poll))),
 		),
 	)
@@ -189,8 +198,13 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
 	}
 
+	period, ok := s.EthKeeper.GetRevoteLockingPeriod(ctx, chain.Name)
+	if !ok {
+		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", req.Chain)
+	}
+
 	poll := vote.NewPollMeta(types.ModuleName, req.TxID.Hex()+"_"+req.BurnerAddress.Hex())
-	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+s.EthKeeper.GetRevoteLockingPeriod(ctx)); err != nil {
+	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+period); err != nil {
 		return nil, err
 	}
 
@@ -202,6 +216,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	}
 	s.SetPendingDeposit(ctx, chain.Name, poll, &erc20Deposit)
 
+	height, _ := s.EthKeeper.GetRequiredConfirmationHeight(ctx, chain.Name)
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeDepositConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
@@ -211,7 +226,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 			sdk.NewAttribute(types.AttributeKeyAmount, req.Amount.String()),
 			sdk.NewAttribute(types.AttributeKeyBurnAddress, req.BurnerAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()),
-			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(s.GetRequiredConfirmationHeight(ctx), 10)),
+			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
 			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&poll))),
 		),
 	)
@@ -375,7 +390,10 @@ func (s msgServer) SignDeployToken(c context.Context, req *types.SignDeployToken
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	chainID := s.GetParams(ctx).Network.Params().ChainID
+	chainID := s.getChainID(ctx, req.Chain)
+	if chainID == nil {
+		return nil, fmt.Errorf("Could not find chain ID for '%s'", req.Chain)
+	}
 
 	var commandID types.CommandID
 	copy(commandID[:], crypto.Keccak256([]byte(req.TokenName))[:32])
@@ -437,7 +455,10 @@ func (s msgServer) SignBurnTokens(c context.Context, req *types.SignBurnTokensRe
 		return &types.SignBurnTokensResponse{}, nil
 	}
 
-	chainID := s.GetNetwork(ctx).Params().ChainID
+	chainID := s.getChainID(ctx, req.Chain)
+	if chainID == nil {
+		return nil, fmt.Errorf("Could not find chain ID for '%s'", req.Chain)
+	}
 
 	var burnerInfos []types.BurnerInfo
 	seen := map[string]bool{}
@@ -550,9 +571,14 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 		return nil, err
 	}
 
+	byteCodes, ok := s.GetGatewayByteCodes(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("Could not retrieve gateway bytecodes for chain %s", req.Chain)
+	}
+
 	// if this is the transaction that is deploying Axelar Gateway, calculate and save address
 	// TODO: this is something that should be done after the signature has been successfully confirmed
-	if tx.To() == nil && bytes.Equal(tx.Data(), s.GetGatewayByteCodes(ctx)) {
+	if tx.To() == nil && bytes.Equal(tx.Data(), byteCodes) {
 
 		pub, ok := s.signer.GetCurrentKey(ctx, chain, tss.MasterKey)
 		if !ok {
@@ -579,7 +605,10 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 		return &types.SignPendingTransfersResponse{}, nil
 	}
 
-	chainID := s.GetNetwork(ctx).Params().ChainID
+	chainID := s.getChainID(ctx, req.Chain)
+	if chainID == nil {
+		return nil, fmt.Errorf("Could not find chain ID for '%s'", req.Chain)
+	}
 
 	data, err := types.CreateMintCommandData(chainID, pendingTransfers)
 	if err != nil {
@@ -640,7 +669,10 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	chainID := s.GetNetwork(ctx).Params().ChainID
+	chainID := s.getChainID(ctx, req.Chain)
+	if chainID == nil {
+		return nil, fmt.Errorf("Could not find chain ID for '%s'", req.Chain)
+	}
 
 	var commandID types.CommandID
 	copy(commandID[:], crypto.Keccak256(req.NewOwner.Bytes())[:32])
@@ -705,4 +737,14 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 	s.nexus.RegisterAsset(ctx, chain.Name, chain.NativeAsset)
 
 	return &types.AddChainResponse{}, nil
+}
+
+func (s msgServer) getChainID(ctx sdk.Context, chain string) (chainID *big.Int) {
+	for _, p := range s.GetParams(ctx) {
+		if strings.ToLower(p.Chain) == strings.ToLower(chain) {
+			chainID = p.Network.Params().ChainID
+		}
+	}
+
+	return
 }

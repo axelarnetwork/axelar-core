@@ -687,6 +687,7 @@ Params is the parameter set for this module
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
 | `confirmation_height` | [uint64](#uint64) |  |  |
 | `network` | [string](#string) |  |  |
 | `gateway` | [bytes](#bytes) |  |  |
@@ -718,12 +719,12 @@ Params is the parameter set for this module
 <a name="evm.v1beta1.GenesisState"></a>
 
 ### GenesisState
-
+GenesisState represents the genesis state
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `params` | [Params](#evm.v1beta1.Params) |  |  |
+| `params` | [Params](#evm.v1beta1.Params) | repeated |  |
 
 
 

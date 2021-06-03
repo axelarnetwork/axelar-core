@@ -18,12 +18,12 @@ import (
 type EthKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 
-	GetParams(ctx sdk.Context) Params
-	SetParams(ctx sdk.Context, params Params)
-	GetNetwork(ctx sdk.Context) Network
-	GetRequiredConfirmationHeight(ctx sdk.Context) uint64
-	GetRevoteLockingPeriod(ctx sdk.Context) int64
-	GetGatewayByteCodes(ctx sdk.Context) []byte
+	GetParams(ctx sdk.Context) []Params
+	SetParams(ctx sdk.Context, params []Params)
+	GetNetwork(ctx sdk.Context, chain string) (Network, bool)
+	GetRequiredConfirmationHeight(ctx sdk.Context, chain string) (uint64, bool)
+	GetRevoteLockingPeriod(ctx sdk.Context, chain string) (int64, bool)
+	GetGatewayByteCodes(ctx sdk.Context, chain string) ([]byte, bool)
 
 	GetGatewayAddress(ctx sdk.Context, chain string) (common.Address, bool)
 	GetTokenAddress(ctx sdk.Context, chain, symbol string, gatewayAddr common.Address) (common.Address, error)
@@ -31,7 +31,7 @@ type EthKeeper interface {
 	GetDeposit(ctx sdk.Context, chain string, txID common.Hash, burnerAddr common.Address) (ERC20Deposit, DepositState, bool)
 	GetBurnerInfo(ctx sdk.Context, chain string, address common.Address) *BurnerInfo
 	SetPendingDeposit(ctx sdk.Context, chain string, poll vote.PollMeta, deposit *ERC20Deposit)
-	GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error)
+	GetBurnerAddressAndSalt(ctx sdk.Context, chain string, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error)
 	SetBurnerInfo(ctx sdk.Context, chain string, burnerAddr common.Address, burnerInfo *BurnerInfo)
 	GetPendingDeposit(ctx sdk.Context, chain string, poll vote.PollMeta) (ERC20Deposit, bool)
 	DeletePendingDeposit(ctx sdk.Context, chain string, poll vote.PollMeta)
