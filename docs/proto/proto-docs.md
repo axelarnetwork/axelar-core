@@ -117,6 +117,7 @@
     - [MessageOut](#tss.tofnd.v1beta1.MessageOut)
     - [MessageOut.CriminalList](#tss.tofnd.v1beta1.MessageOut.CriminalList)
     - [MessageOut.CriminalList.Criminal](#tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal)
+    - [MessageOut.KeygenResult](#tss.tofnd.v1beta1.MessageOut.KeygenResult)
     - [MessageOut.SignResult](#tss.tofnd.v1beta1.MessageOut.SignResult)
     - [SignInit](#tss.tofnd.v1beta1.SignInit)
     - [TrafficIn](#tss.tofnd.v1beta1.TrafficIn)
@@ -1530,7 +1531,7 @@ File copied from golang tofnd with minor tweaks
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `traffic` | [TrafficOut](#tss.tofnd.v1beta1.TrafficOut) |  | all but final message |
-| `keygen_result` | [bytes](#bytes) |  | final message only, Keygen |
+| `keygen_result` | [MessageOut.KeygenResult](#tss.tofnd.v1beta1.MessageOut.KeygenResult) |  | final message only, Keygen |
 | `sign_result` | [MessageOut.SignResult](#tss.tofnd.v1beta1.MessageOut.SignResult) |  | final message only, Sign |
 
 
@@ -1563,6 +1564,22 @@ File copied from golang tofnd with minor tweaks
 | ----- | ---- | ----- | ----------- |
 | `party_uid` | [string](#string) |  |  |
 | `crime_type` | [MessageOut.CriminalList.Criminal.CrimeType](#tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal.CrimeType) |  |  |
+
+
+
+
+
+
+<a name="tss.tofnd.v1beta1.MessageOut.KeygenResult"></a>
+
+### MessageOut.KeygenResult
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pubkey` | [bytes](#bytes) |  |  |
+| `criminals` | [MessageOut.CriminalList](#tss.tofnd.v1beta1.MessageOut.CriminalList) |  |  |
 
 
 
