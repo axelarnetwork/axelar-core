@@ -58,7 +58,7 @@ func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer, n types.Nexus) sd
 	}
 }
 
-func queryDepositAddress(ctx sdk.Context, k Keeper, n types.Nexus, data []byte) ([]byte, error) {
+func queryDepositAddress(ctx sdk.Context, k types.EthKeeper, n types.Nexus, data []byte) ([]byte, error) {
 	var params types.DepositQueryParams
 	if err := types.ModuleCdc.UnmarshalJSON(data, &params); err != nil {
 		return nil, fmt.Errorf("could not parse the recipient")
@@ -116,7 +116,7 @@ func queryAxelarGateway(ctx sdk.Context, k Keeper) ([]byte, error) {
 	return addr.Bytes(), nil
 }
 
-func queryTokenAddress(ctx sdk.Context, k Keeper, symbol string) ([]byte, error) {
+func queryTokenAddress(ctx sdk.Context, k types.EthKeeper, symbol string) ([]byte, error) {
 
 	gateway, ok := k.GetGatewayAddress(ctx)
 	if !ok {

@@ -132,7 +132,7 @@ func queryTxState(ctx sdk.Context, k types.BTCKeeper, data []byte) ([]byte, erro
 
 	switch {
 	case !ok:
-		message = "bitcoin transaction not found"
+		return nil, fmt.Errorf("bitcoin transaction not found")
 	case state == types.CONFIRMED:
 		message = "bitcoin transaction state is confirmed"
 	case state == types.SPENT:

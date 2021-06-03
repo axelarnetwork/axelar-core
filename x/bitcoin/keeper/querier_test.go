@@ -3,33 +3,24 @@ package keeper
 import (
 	"crypto/ecdsa"
 	cryptoRand "crypto/rand"
-	"encoding/binary"
-	// "encoding/hex"
-	// "fmt"
-	// "math"
+	mathRand "math/rand"
+	"strconv"
 	"testing"
 
 	"github.com/btcsuite/btcd/btcec"
-	// "github.com/btcsuite/btcd/btcjson"
-	// "github.com/btcsuite/btcd/chaincfg/chainhash"
-	// "github.com/btcsuite/btcd/mempool"
-	// "github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
-	// abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcd/wire"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	// sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
-	ethereum "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
@@ -101,51 +92,6 @@ func TestQueryMasterAddress(t *testing.T) {
 
 }
 
-
-func TestQueryMinimumWithdrawAmount(t *testing.T) {
-
-	var (
-		btcKeeper   *mock.BTCKeeperMock
-		ctx         sdk.Context
-	)
-
-
-	setup := func() {
-
-		btcKeeper = &mock.BTCKeeperMock{
-			GetMinimumWithdrawalAmountFunc: func(ctx sdk.Context) btcutil.Amount {
-				var result btcutil.Amount
-				// btcKeeper.params.Get(ctx, types.KeyMinimumWithdrawalAmount, &result)
-			
-				return result
-			},
-		}
-		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-	}
-
-
-	repeatCount := 20
-
-	t.Run("happy path", testutils.Func(func(t *testing.T) {
-		setup()
-
-		kvstore := fake.NewTestKVStore()
-		amount := make([]byte, 8)
-		binary.LittleEndian.PutUint64(amount, uint64(btcutil.Amount(rand.I64Between(1, 5000))))
-		kvstore.Set(types.KeyMinimumWithdrawalAmount, amount)
-
-		_ = queryMinimumWithdrawAmount(ctx, btcKeeper)
-		res := kvstore.Get(types.KeyMinimumWithdrawalAmount)
-
-		assert := assert.New(t)
-		assert.Len(btcKeeper.GetMinimumWithdrawalAmountCalls(), 1)
-		assert.Equal(amount, res)
-
-	}).Repeat(repeatCount))
-
-}
-
-
 func TestQueryDepositAddress(t *testing.T) {
 
 	var (
@@ -178,7 +124,7 @@ func TestQueryDepositAddress(t *testing.T) {
 			},
 			GetRecipientFunc: func(sdk.Context, nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
 				return nexus.CrossChainAddress{
-					Chain:		ethereum.Ethereum,
+					Chain:		exported.Bitcoin,
 					Address:	randomAddress().EncodeAddress(),
 				}, true
 			},
@@ -289,4 +235,191 @@ func TestQueryDepositAddress(t *testing.T) {
 
 	}).Repeat(repeatCount))
 	
+}
+
+func TestQueryTxState(t *testing.T) {
+
+	var (
+		btcKeeper   *mock.BTCKeeperMock
+		ctx         sdk.Context
+		data		[]byte
+	)
+
+
+	setup := func() {
+		btcKeeper = &mock.BTCKeeperMock{
+			GetOutPointInfoFunc: func(ctx sdk.Context, outpoint wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) { 
+				return randomOutpointInfo(), types.CONFIRMED, true
+			},
+		}
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		
+		txHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
+		if err != nil {
+			panic(err)
+		}
+		vout := mathRand.Uint32()
+		if vout == 0 {
+			vout++
+		}
+		data = []byte(txHash.String() + ":" + strconv.FormatUint(uint64(vout), 10))
+	}
+
+	repeatCount := 20
+
+	t.Run("happy path", testutils.Func(func(t *testing.T) {
+		setup()
+
+		_, err := queryTxState(ctx, btcKeeper, data)
+
+		assert := assert.New(t)
+		assert.NoError(err)
+		assert.Len(btcKeeper.GetOutPointInfoCalls(), 1)
+
+	}).Repeat(repeatCount))
+
+	t.Run("transaction not found", testutils.Func(func(t *testing.T) {
+		setup()
+		btcKeeper.GetOutPointInfoFunc = func(ctx sdk.Context, outpoint wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) { 
+			return types.OutPointInfo{}, 0, false
+		}
+
+		_, err := queryTxState(ctx, btcKeeper, data)
+
+		assert := assert.New(t)
+		assert.Error(err)
+
+	}).Repeat(repeatCount))
+}
+
+func TestGetRawConsolidationTx(t *testing.T) {
+
+	var (
+		btcKeeper   *mock.BTCKeeperMock
+		ctx         sdk.Context
+	)
+
+	setup := func() {
+		btcKeeper = &mock.BTCKeeperMock{
+			GetUnsignedTxFunc:        	func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
+			GetSignedTxFunc:            func(sdk.Context) (*wire.MsgTx, bool) { return wire.NewMsgTx(wire.TxVersion), true },
+		}
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+	}
+
+	repeatCount := 20
+
+	t.Run("happy path", testutils.Func(func(t *testing.T) {
+		setup()
+
+		_, err := getRawConsolidationTx(ctx, btcKeeper)
+
+		assert := assert.New(t)
+		assert.NoError(err)
+		assert.Len(btcKeeper.GetUnsignedTxCalls(), 1)
+		assert.Len(btcKeeper.GetSignedTxCalls(), 1)
+
+	}).Repeat(repeatCount))
+
+	t.Run("consolidation transaction unsigned", testutils.Func(func(t *testing.T) {
+		setup()
+
+		_, err := getRawConsolidationTx(ctx, btcKeeper)
+		btcKeeper.GetUnsignedTxFunc = func(sdk.Context) (*wire.MsgTx, bool) { return wire.NewMsgTx(wire.TxVersion), true }
+		btcKeeper.GetSignedTxFunc = func(sdk.Context) (*wire.MsgTx, bool) { return nil, false }
+
+		assert := assert.New(t)
+		assert.NoError(err)
+		assert.Len(btcKeeper.GetUnsignedTxCalls(), 1)
+
+	}).Repeat(repeatCount))
+
+	t.Run("no consolidation transaction", testutils.Func(func(t *testing.T) {
+		setup()
+
+		_, err := getRawConsolidationTx(ctx, btcKeeper)
+		btcKeeper.GetUnsignedTxFunc = func(sdk.Context) (*wire.MsgTx, bool) { return nil, false }
+		btcKeeper.GetSignedTxFunc = func(sdk.Context) (*wire.MsgTx, bool) { return nil, false }
+
+		assert := assert.New(t)
+		assert.NoError(err)
+		assert.Len(btcKeeper.GetUnsignedTxCalls(), 1)
+		assert.Len(btcKeeper.GetSignedTxCalls(), 1)
+
+	}).Repeat(repeatCount))
+}
+
+func TestGetConsolidationTxState(t *testing.T) {
+
+	var (
+		btcKeeper   *mock.BTCKeeperMock
+		ctx         sdk.Context
+	)
+
+	setup := func() {
+		btcKeeper = &mock.BTCKeeperMock{
+			GetSignedTxFunc:            func(sdk.Context) (*wire.MsgTx, bool) { return wire.NewMsgTx(wire.TxVersion), true },
+			GetOutPointInfoFunc: func(ctx sdk.Context, outpoint wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) { 
+				return randomOutpointInfo(), types.CONFIRMED, true
+			},
+			GetMasterKeyVoutFunc:       func(sdk.Context) (uint32, bool) { 
+				vout := mathRand.Uint32()
+				if vout == 0 {
+					vout++
+				}
+				return vout, true
+			},
+		}
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+	}
+
+	repeatCount := 20
+
+	t.Run("happy path", testutils.Func(func(t *testing.T) {
+		setup()
+
+		_, err := getConsolidationTxState(ctx, btcKeeper)
+
+		assert := assert.New(t)
+		assert.NoError(err)
+		assert.Len(btcKeeper.GetSignedTxCalls(), 1)
+		assert.Len(btcKeeper.GetOutPointInfoCalls(), 1)
+		assert.Len(btcKeeper.GetMasterKeyVoutCalls(), 1)
+
+	}).Repeat(repeatCount))
+
+	t.Run("no signed consolidation transaction", testutils.Func(func(t *testing.T) {
+		setup()
+		btcKeeper.GetSignedTxFunc = func(sdk.Context) (*wire.MsgTx, bool) { return nil, false }
+
+		_, err := getConsolidationTxState(ctx, btcKeeper)
+
+		assert := assert.New(t)
+		assert.Error(err)
+
+	}).Repeat(repeatCount))
+
+	t.Run("master key vout not set", testutils.Func(func(t *testing.T) {
+		setup()
+		btcKeeper.GetMasterKeyVoutFunc = func(sdk.Context) (uint32, bool) { return 0, false }
+
+		_, err := getConsolidationTxState(ctx, btcKeeper)
+
+		assert := assert.New(t)
+		assert.Error(err)
+
+	}).Repeat(repeatCount))
+
+	t.Run("consolidation transaction not tracked", testutils.Func(func(t *testing.T) {
+		setup()
+		btcKeeper.GetOutPointInfoFunc = func(ctx sdk.Context, outpoint wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) { 
+			return types.OutPointInfo{}, 0, false
+		}
+
+		_, err := getConsolidationTxState(ctx, btcKeeper)
+
+		assert := assert.New(t)
+		assert.Error(err)
+
+	}).Repeat(repeatCount))
 }
