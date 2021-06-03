@@ -13,7 +13,8 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
 
-	types2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
+	broadcastTypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
+	rpc "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss/rpc"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
@@ -73,7 +74,7 @@ func newTimeoutQueue() *timeoutQueue {
 
 // Mgr represents an object that manages all communication with the external tss process
 type Mgr struct {
-	client         tofnd.GG20Client
+	client         rpc.Client
 	keygen         *sync.RWMutex
 	sign           *sync.RWMutex
 	keygenStreams  map[string]tss.Stream
@@ -83,13 +84,13 @@ type Mgr struct {
 	Timeout        time.Duration
 	principalAddr  string
 	Logger         log.Logger
-	broadcaster    types2.Broadcaster
+	broadcaster    broadcastTypes.Broadcaster
 	sender         sdk.AccAddress
 	cdc            *codec.LegacyAmino
 }
 
 // CreateTOFNDClient creates a client to communicate with the external tofnd process
-func CreateTOFNDClient(host string, port string, logger log.Logger) (tofnd.GG20Client, error) {
+func CreateTOFNDClient(host string, port string, logger log.Logger) (rpc.Client, error) {
 	tofndServerAddress := host + ":" + port
 	logger.Info(fmt.Sprintf("initiate connection to tofnd gRPC server: %s", tofndServerAddress))
 	conn, err := grpc.Dial(tofndServerAddress, grpc.WithInsecure(), grpc.WithBlock())
@@ -102,7 +103,7 @@ func CreateTOFNDClient(host string, port string, logger log.Logger) (tofnd.GG20C
 }
 
 // NewMgr returns a new tss manager instance
-func NewMgr(client tofnd.GG20Client, timeout time.Duration, principalAddr string, broadcaster types2.Broadcaster, sender sdk.AccAddress, sessionTimeout int64, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
+func NewMgr(client rpc.Client, timeout time.Duration, principalAddr string, broadcaster broadcastTypes.Broadcaster, sender sdk.AccAddress, sessionTimeout int64, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
 		client:         client,
 		keygen:         &sync.RWMutex{},
