@@ -12,7 +12,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	gogoprototypes "github.com/gogo/protobuf/types"
 
-	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -43,15 +42,17 @@ func NewMsgServerImpl(keeper types.EthKeeper, n types.Nexus, s types.Signer, v t
 
 func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+
+	senderChain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
 	gatewayAddr, ok := s.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	senderChain, ok := s.nexus.GetChain(ctx, exported.Ethereum.Name)
-	if !ok {
-		return nil, fmt.Errorf("%s is not a registered chain", exported.Ethereum.Name)
-	}
 	recipientChain, ok := s.nexus.GetChain(ctx, req.RecipientChain)
 	if !ok {
 		return nil, fmt.Errorf("unknown recipient chain")
@@ -59,7 +60,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 
 	found := s.nexus.IsAssetRegistered(ctx, recipientChain.Name, req.Symbol)
 	if !found {
-		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", exported.Ethereum.NativeAsset, recipientChain.Name)
+		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", req.Symbol, recipientChain.Name)
 	}
 
 	tokenAddr, err := s.GetTokenAddress(ctx, req.Symbol, gatewayAddr)
@@ -98,7 +99,12 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 // ConfirmToken handles token deployment confirmation
 func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenRequest) (*types.ConfirmTokenResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	if s.nexus.IsAssetRegistered(ctx, exported.Ethereum.Name, req.Symbol) {
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
+	if s.nexus.IsAssetRegistered(ctx, chain.Name, req.Symbol) {
 		return nil, fmt.Errorf("token %s is already registered", req.Symbol)
 	}
 
@@ -112,9 +118,9 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, err
 	}
 
-	keyID, ok := s.signer.GetCurrentKeyID(ctx, exported.Ethereum, tss.MasterKey)
+	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
 	if !ok {
-		return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
+		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
 	}
 
 	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
@@ -137,6 +143,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		sdk.NewEvent(types.EventTypeTokenConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
+			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
 			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),
@@ -152,6 +159,11 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 // ConfirmDeposit handles deposit confirmations
 func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRequest) (*types.ConfirmDepositResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
 	_, state, ok := s.GetDeposit(ctx, common.Hash(req.TxID), common.Address(req.BurnerAddress))
 	switch {
 	case !ok:
@@ -167,9 +179,9 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("no burner info found for address %s", req.BurnerAddress)
 	}
 
-	keyID, ok := s.signer.GetCurrentKeyID(ctx, exported.Ethereum, tss.MasterKey)
+	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
 	if !ok {
-		return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
+		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
 	}
 
 	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
@@ -194,6 +206,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		sdk.NewEvent(types.EventTypeDepositConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
+			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
 			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyAmount, req.Amount.String()),
 			sdk.NewAttribute(types.AttributeKeyBurnAddress, req.BurnerAddress.Hex()),
@@ -209,6 +222,11 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 // VoteConfirmDeposit handles votes for deposit confirmations
 func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmDepositRequest) (*types.VoteConfirmDepositResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
 	pendingDeposit, pollFound := s.GetPendingDeposit(ctx, req.Poll)
 	confirmedDeposit, state, depositFound := s.GetDeposit(ctx, common.Hash(req.TxID), common.Address(req.BurnAddress))
 
@@ -257,6 +275,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeDepositConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.Poll))))
 
 	if !confirmed.Value {
@@ -269,7 +288,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	ctx.EventManager().EmitEvent(
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
-	depositAddr := nexus.CrossChainAddress{Address: pendingDeposit.BurnerAddress.Hex(), Chain: exported.Ethereum}
+	depositAddr := nexus.CrossChainAddress{Address: pendingDeposit.BurnerAddress.Hex(), Chain: chain}
 	amount := sdk.NewInt64Coin(pendingDeposit.Symbol, pendingDeposit.Amount.BigInt().Int64())
 	if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
 		return nil, err
@@ -282,9 +301,14 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 // VoteConfirmToken handles votes for token deployment confirmations
 func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTokenRequest) (*types.VoteConfirmTokenResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
 	// is there an ongoing poll?
 	token, pollFound := s.GetPendingTokenDeployment(ctx, req.Poll)
-	registered := s.nexus.IsAssetRegistered(ctx, exported.Ethereum.Name, req.Symbol)
+	registered := s.nexus.IsAssetRegistered(ctx, chain.Name, req.Symbol)
 	switch {
 	// a malicious user could try to delete an ongoing poll by providing an already confirmed token,
 	// so we need to check that it matches the poll before deleting
@@ -325,6 +349,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeTokenConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.Poll))))
 
 	if !confirmed.Value {
@@ -337,7 +362,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 	ctx.EventManager().EmitEvent(
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
-	s.nexus.RegisterAsset(ctx, exported.Ethereum.Name, token.Symbol)
+	s.nexus.RegisterAsset(ctx, chain.Name, token.Symbol)
 
 	return &types.VoteConfirmTokenResponse{
 		Log: fmt.Sprintf("token %s deployment confirmed", token.Symbol)}, nil
@@ -345,6 +370,11 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 
 func (s msgServer) SignDeployToken(c context.Context, req *types.SignDeployTokenRequest) (*types.SignDeployTokenResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
 	chainID := s.GetParams(ctx).Network.Params().ChainID
 
 	var commandID types.CommandID
@@ -355,9 +385,9 @@ func (s msgServer) SignDeployToken(c context.Context, req *types.SignDeployToken
 		return nil, err
 	}
 
-	keyID, ok := s.signer.GetCurrentKeyID(ctx, exported.Ethereum, tss.MasterKey)
+	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
 	if !ok {
-		return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
+		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
 	}
 
 	commandIDHex := common.Bytes2Hex(commandID[:])
@@ -396,6 +426,11 @@ func (s msgServer) SignDeployToken(c context.Context, req *types.SignDeployToken
 
 func (s msgServer) SignBurnTokens(c context.Context, req *types.SignBurnTokensRequest) (*types.SignBurnTokensResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
 	deposits := s.GetConfirmedDeposits(ctx)
 
 	if len(deposits) == 0 {
@@ -426,16 +461,16 @@ func (s msgServer) SignBurnTokens(c context.Context, req *types.SignBurnTokensRe
 	var commandID types.CommandID
 	copy(commandID[:], crypto.Keccak256(data)[:32])
 
-	keyID, ok := s.signer.GetCurrentKeyID(ctx, exported.Ethereum, tss.MasterKey)
+	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
 	if !ok {
-		return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
+		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
 	}
 
 	commandIDHex := hex.EncodeToString(commandID[:])
 	s.Logger(ctx).Info(fmt.Sprintf("storing data for burn command %s", commandIDHex))
 	s.SetCommandData(ctx, commandID, data)
 
-	s.Logger(ctx).Info(fmt.Sprintf("signing burn command [%s] for token deposits to chain %s", commandIDHex, exported.Ethereum.Name))
+	s.Logger(ctx).Info(fmt.Sprintf("signing burn command [%s] for token deposits to chain %s", commandIDHex, chain.Name))
 	signHash := types.GetEthereumSignHash(data)
 
 	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
@@ -471,6 +506,11 @@ func (s msgServer) SignBurnTokens(c context.Context, req *types.SignBurnTokensRe
 
 func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.SignTxResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
 	tx := req.UnmarshaledTx()
 	txID := tx.Hash().String()
 	s.SetUnsignedTx(ctx, txID, tx)
@@ -490,9 +530,9 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 		),
 	)
 
-	keyID, ok := s.signer.GetCurrentKeyID(ctx, exported.Ethereum, tss.MasterKey)
+	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
 	if !ok {
-		return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
+		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
 	}
 
 	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
@@ -514,9 +554,9 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 	// TODO: this is something that should be done after the signature has been successfully confirmed
 	if tx.To() == nil && bytes.Equal(tx.Data(), s.GetGatewayByteCodes(ctx)) {
 
-		pub, ok := s.signer.GetCurrentKey(ctx, exported.Ethereum, tss.MasterKey)
+		pub, ok := s.signer.GetCurrentKey(ctx, chain, tss.MasterKey)
 		if !ok {
-			return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
+			return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
 		}
 
 		addr := crypto.CreateAddress(crypto.PubkeyToAddress(pub.Value), tx.Nonce())
@@ -528,7 +568,12 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 
 func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendingTransfersRequest) (*types.SignPendingTransfersResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	pendingTransfers := s.nexus.GetTransfersForChain(ctx, exported.Ethereum, nexus.Pending)
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
+	pendingTransfers := s.nexus.GetTransfersForChain(ctx, chain, nexus.Pending)
 
 	if len(pendingTransfers) == 0 {
 		return &types.SignPendingTransfersResponse{}, nil
@@ -544,16 +589,16 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 	var commandID types.CommandID
 	copy(commandID[:], crypto.Keccak256(data)[:32])
 
-	keyID, ok := s.signer.GetCurrentKeyID(ctx, exported.Ethereum, tss.MasterKey)
+	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
 	if !ok {
-		return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
+		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
 	}
 
 	commandIDHex := hex.EncodeToString(commandID[:])
 	s.Logger(ctx).Info(fmt.Sprintf("storing data for mint command %s", commandIDHex))
 	s.SetCommandData(ctx, commandID, data)
 
-	s.Logger(ctx).Info(fmt.Sprintf("signing mint command [%s] for pending transfers to chain %s", commandIDHex, exported.Ethereum.Name))
+	s.Logger(ctx).Info(fmt.Sprintf("signing mint command [%s] for pending transfers to chain %s", commandIDHex, chain.Name))
 	signHash := types.GetEthereumSignHash(data)
 
 	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
@@ -590,6 +635,10 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 
 func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTransferOwnershipRequest) (*types.SignTransferOwnershipResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
 
 	chainID := s.GetNetwork(ctx).Params().ChainID
 
@@ -601,9 +650,9 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 		return nil, err
 	}
 
-	keyID, ok := s.signer.GetCurrentKeyID(ctx, exported.Ethereum, tss.MasterKey)
+	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
 	if !ok {
-		return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
+		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
 	}
 
 	commandIDHex := hex.EncodeToString(commandID[:])

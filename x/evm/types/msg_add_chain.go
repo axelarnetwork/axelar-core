@@ -5,12 +5,14 @@ import (
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewAddChainRequest is the constructor for NewAddChainRequest
-func NewAddChainRequest(sender sdk.AccAddress, name, nativeAsset string) *AddChainRequest {
+func NewAddChainRequest(sender sdk.AccAddress, chain, name, nativeAsset string) *AddChainRequest {
 	return &AddChainRequest{
 		Sender:      sender,
+		Chain:       chain,
 		Name:        name,
 		NativeAsset: nativeAsset,
 	}
@@ -28,8 +30,12 @@ func (m AddChainRequest) Type() string {
 
 // ValidateBasic executes a stateless message validation
 func (m AddChainRequest) ValidateBasic() error {
-	if m.Sender == nil || len(m.Sender) != sdk.AddrLen {
-		return fmt.Errorf("missing sender")
+	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	}
+
+	if m.Chain == "" {
+		return fmt.Errorf("missing chain")
 	}
 
 	chain := nexus.Chain{

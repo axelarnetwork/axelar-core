@@ -3,7 +3,7 @@
 Send a transaction signed by \[fromAddress\] that executes the command \[commandID\] to Axelar Gateway
 
 ```
-axelard query evm sendCommand [commandID] [fromAddress] [flags]
+axelard query evm sendCommand [chain] [commandID] [fromAddress] [flags]
 ```
 
 ### Options

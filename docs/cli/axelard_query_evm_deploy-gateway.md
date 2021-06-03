@@ -3,7 +3,7 @@
 Obtain a raw transaction for the deployment of Axelar Gateway.
 
 ```
-axelard query evm deploy-gateway [flags]
+axelard query evm deploy-gateway [chain] [flags]
 ```
 
 ### Options

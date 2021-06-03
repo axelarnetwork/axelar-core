@@ -200,6 +200,15 @@ func TestDeploy(t *testing.T) {
 			Role:  tss.MasterKey,
 		}, true
 	}}
+	nexusMock := &mock.NexusMock{
+		GetChainFunc: func(sdk.Context, string) (nexus.Chain, bool) {
+			return nexus.Chain{
+				Name:                  rand2.StrBetween(5, 20),
+				NativeAsset:           rand2.StrBetween(3, 5),
+				SupportsForeignAssets: true,
+			}, true
+		},
+	}
 
 	deployParams := types.DeployParams{
 		GasPrice: sdk.ZeroInt(),
@@ -212,7 +221,7 @@ func TestDeploy(t *testing.T) {
 	encCfg := testutils.MakeEncodingConfig()
 
 	rpc := &mock.RPCClientMock{PendingNonceAtFunc: backend.PendingNonceAt, SuggestGasPriceFunc: backend.SuggestGasPrice}
-	query := NewQuerier(rpc, k, tssSigner)
+	query := NewQuerier(rpc, k, tssSigner, nexusMock)
 	res, err := query(ctx, []string{CreateDeployTx}, abci.RequestQuery{Data: encCfg.Amino.MustMarshalJSON(deployParams)})
 	assert.NoError(t, err)
 

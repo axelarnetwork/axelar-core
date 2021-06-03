@@ -8,9 +8,10 @@ import (
 )
 
 // NewSignDeployTokenRequest is the constructor for SignDeployTokenRequest
-func NewSignDeployTokenRequest(sender sdk.AccAddress, tokenName string, symbol string, decimals uint8, capacity sdk.Int) *SignDeployTokenRequest {
+func NewSignDeployTokenRequest(sender sdk.AccAddress, chain, tokenName, symbol string, decimals uint8, capacity sdk.Int) *SignDeployTokenRequest {
 	return &SignDeployTokenRequest{
 		Sender:    sender,
+		Chain:     chain,
 		TokenName: tokenName,
 		Symbol:    symbol,
 		Decimals:  decimals,
@@ -44,6 +45,9 @@ func (m SignDeployTokenRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
+	if m.Chain == "" {
+		return fmt.Errorf("missing chain")
+	}
 	if m.TokenName == "" {
 		return fmt.Errorf("missing token name")
 	}
@@ -53,5 +57,6 @@ func (m SignDeployTokenRequest) ValidateBasic() error {
 	if !m.Capacity.IsPositive() {
 		return fmt.Errorf("token capacity must be a positive number")
 	}
+
 	return nil
 }

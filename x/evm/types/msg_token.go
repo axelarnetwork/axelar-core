@@ -1,17 +1,20 @@
 package types
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 )
 
 // NewConfirmTokenRequest creates a message of type ConfirmTokenRequest
-func NewConfirmTokenRequest(sender sdk.AccAddress, txID common.Hash, symbol string) *ConfirmTokenRequest {
+func NewConfirmTokenRequest(sender sdk.AccAddress, chain, symbol string, txID common.Hash) *ConfirmTokenRequest {
 	return &ConfirmTokenRequest{
 		Sender: sender,
-		TxID:   Hash(txID),
+		Chain:  chain,
 		Symbol: symbol,
+		TxID:   Hash(txID),
 	}
 }
 
@@ -29,6 +32,9 @@ func (m ConfirmTokenRequest) Type() string {
 func (m ConfirmTokenRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	}
+	if m.Chain == "" {
+		return fmt.Errorf("missing chain")
 	}
 
 	return nil

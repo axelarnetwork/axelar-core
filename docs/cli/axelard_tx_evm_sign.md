@@ -3,7 +3,7 @@
 sign a raw EVM chain transaction
 
 ```
-axelard tx evm sign [tx json file path] [flags]
+axelard tx evm sign [chain] [tx json file path] [flags]
 ```
 
 ### Options

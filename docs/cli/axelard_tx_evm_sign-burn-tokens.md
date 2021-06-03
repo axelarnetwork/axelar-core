@@ -3,7 +3,7 @@
 Sign burn command for all confirmed token deposits in an EVM chain
 
 ```
-axelard tx evm sign-burn-tokens [flags]
+axelard tx evm sign-burn-tokens [chain] [flags]
 ```
 
 ### Options

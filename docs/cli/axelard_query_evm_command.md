@@ -3,7 +3,7 @@
 Get the signed command data that can be wrapped in an Ethereum transaction to execute the command \[commandID\] on Axelar Gateway
 
 ```
-axelard query evm command [commandID] [flags]
+axelard query evm command [chain] [commandID] [flags]
 ```
 
 ### Options

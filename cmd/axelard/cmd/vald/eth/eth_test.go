@@ -108,6 +108,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		confHeight := rand.I64Between(0, blockNumber-1)
 		amount := rand.PosI64() // restrict to int64 so the amount in the receipt doesn't overflow
 		attributes = []sdk.Attribute{
+			sdk.NewAttribute(evmTypes.AttributeKeyChain, "Ethereum"),
 			sdk.NewAttribute(evmTypes.AttributeKeyTxID, common.Bytes2Hex(rand.Bytes(common.HashLength))),
 			sdk.NewAttribute(evmTypes.AttributeKeyAmount, strconv.FormatUint(uint64(amount), 10)),
 			sdk.NewAttribute(evmTypes.AttributeKeyBurnAddress, common.Bytes2Hex(burnAddrBytes)),
@@ -257,6 +258,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		symbol := rand.StrBetween(5, 20)
 		attributes = []sdk.Attribute{
+			sdk.NewAttribute(evmTypes.AttributeKeyChain, "Ethereum"),
 			sdk.NewAttribute(evmTypes.AttributeKeyTxID, common.Bytes2Hex(rand.Bytes(common.HashLength))),
 			sdk.NewAttribute(evmTypes.AttributeKeyGatewayAddress, common.Bytes2Hex(gatewayAddrBytes)),
 			sdk.NewAttribute(evmTypes.AttributeKeyTokenAddress, common.Bytes2Hex(tokenAddrBytes)),

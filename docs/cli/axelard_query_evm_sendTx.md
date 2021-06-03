@@ -3,7 +3,7 @@
 Send a transaction that spends tx \[txID\] to chain \[chain\]
 
 ```
-axelard query evm sendTx [txID] [flags]
+axelard query evm sendTx [chain] [txID] [flags]
 ```
 
 ### Options

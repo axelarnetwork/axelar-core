@@ -9,6 +9,7 @@ const (
 // Event attribute keys
 const (
 	AttributeKeyCommandID      = "commandID"
+	AttributeKeyChain          = "chain"
 	AttributeKeyAddress        = "address"
 	AttributeKeyPoll           = "poll"
 	AttributeKeyTxID           = "txID"
