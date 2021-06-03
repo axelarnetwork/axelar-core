@@ -79,7 +79,7 @@ func queryAxelarGateway(ctx sdk.Context, k Keeper, n types.Nexus, chainName stri
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
 	}
 
-	addr, ok := k.GetGatewayAddress(ctx)
+	addr, ok := k.GetGatewayAddress(ctx, chainName)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEVM, "axelar gateway not set")
 	}
@@ -94,12 +94,12 @@ func queryTokenAddress(ctx sdk.Context, k Keeper, n types.Nexus, chainName, symb
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
 	}
 
-	gateway, ok := k.GetGatewayAddress(ctx)
+	gateway, ok := k.GetGatewayAddress(ctx, chainName)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEVM, "axelar gateway not set")
 	}
 
-	addr, err := k.GetTokenAddress(ctx, symbol, gateway)
+	addr, err := k.GetTokenAddress(ctx, chainName, symbol, gateway)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
 	}
@@ -178,7 +178,7 @@ func sendSignedTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding signature for sig ID %s", txID))
 	}
 
-	signedTx, err := k.AssembleEthTx(ctx, txID, pk.Value, sig)
+	signedTx, err := k.AssembleEthTx(ctx, chainName, txID, pk.Value, sig)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not insert generated signature: %v", err))
 	}
@@ -214,7 +214,7 @@ func createTxAndSend(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Sig
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding key for sig ID %s", commandIDHex))
 	}
 
-	commandData := k.GetCommandData(ctx, params.CommandID)
+	commandData := k.GetCommandData(ctx, params.Chain, params.CommandID)
 	commandSig, err := types.ToEthSignature(sig, types.GetEthereumSignHash(commandData), pk.Value)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not create recoverable signature: %v", err))
@@ -227,7 +227,7 @@ func createTxAndSend(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Sig
 
 	k.Logger(ctx).Debug(common.Bytes2Hex(executeData))
 
-	contractAddr, ok := k.GetGatewayAddress(ctx)
+	contractAddr, ok := k.GetGatewayAddress(ctx, params.Chain)
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrEVM, "axelar gateway not deployed yet")
 	}
@@ -267,7 +267,7 @@ func queryCommandData(ctx sdk.Context, k Keeper, s types.Signer, n types.Nexus, 
 	var commandID types.CommandID
 	copy(commandID[:], common.Hex2Bytes(commandIDHex))
 
-	commandData := k.GetCommandData(ctx, commandID)
+	commandData := k.GetCommandData(ctx, chainName, commandID)
 	commandSig, err := types.ToEthSignature(sig, types.GetEthereumSignHash(commandData), pk.Value)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not create recoverable signature: %v", err))

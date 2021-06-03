@@ -161,6 +161,7 @@ func TestGetTokenAddress_CorrectData(t *testing.T) {
 	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
 	k := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), subspace)
 
+	chain := "Ethereum"
 	axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
 	tokenName := "axelar token"
 	tokenSymbol := "at"
@@ -172,9 +173,9 @@ func TestGetTokenAddress_CorrectData(t *testing.T) {
 	k.SetParams(ctx, types.DefaultParams())
 	account, err := sdk.AccAddressFromBech32("cosmos1vjyc4qmsdtdl5a4ruymnjqpchm5gyqde63sqdh")
 	assert.NoError(t, err)
-	k.SetTokenInfo(ctx, &types.SignDeployTokenRequest{Sender: account, TokenName: tokenName, Symbol: tokenSymbol, Decimals: decimals, Capacity: capacity})
+	k.SetTokenInfo(ctx, chain, &types.SignDeployTokenRequest{Sender: account, TokenName: tokenName, Symbol: tokenSymbol, Decimals: decimals, Capacity: capacity})
 
-	actual, err := k.GetTokenAddress(ctx, tokenSymbol, axelarGateway)
+	actual, err := k.GetTokenAddress(ctx, chain, tokenSymbol, axelarGateway)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
