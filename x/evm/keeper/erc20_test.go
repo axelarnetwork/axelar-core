@@ -188,7 +188,7 @@ func TestDeploy(t *testing.T) {
 	}
 
 	backend := backends.NewSimulatedBackend(core.GenesisAlloc{addr: {Balance: big.NewInt(1 * params.Ether)}}, 3000000)
-
+	chain := "Ethereum"
 	chainID := backend.Blockchain().Config().ChainID
 	assert.NoError(t, err)
 	signer := ethTypes.NewEIP155Signer(chainID)
@@ -211,13 +211,14 @@ func TestDeploy(t *testing.T) {
 	}
 
 	deployParams := types.DeployParams{
+		Chain:    chain,
 		GasPrice: sdk.ZeroInt(),
 		GasLimit: gasLimit,
 	}
 
 	minConfHeight := rand2.I64Between(1, 10)
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-	k := newKeeper(ctx, minConfHeight)
+	k := newKeeper(ctx, chain, minConfHeight)
 	encCfg := testutils.MakeEncodingConfig()
 
 	rpc := &mock.RPCClientMock{PendingNonceAtFunc: backend.PendingNonceAt, SuggestGasPriceFunc: backend.SuggestGasPrice}

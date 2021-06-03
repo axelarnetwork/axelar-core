@@ -20,13 +20,15 @@ func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
 	var (
 		ctx    sdk.Context
 		keeper Keeper
+		chain  string
 	)
 
 	setup := func() {
 		encCfg := params.MakeEncodingConfig()
 		subspace := paramstypes.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"), "eth")
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-		keeper = NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("eth"), subspace)
+		keeper = NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("evm"), subspace)
+		chain = "Ethereum"
 	}
 
 	t.Run("should set and get the burner info", testutils.Func(func(t *testing.T) {
@@ -39,8 +41,8 @@ func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
 		}
 		burnerAddress := common.BytesToAddress(rand.Bytes(common.AddressLength))
 
-		keeper.SetBurnerInfo(ctx, burnerAddress, &burnerInfo)
-		actual := keeper.GetBurnerInfo(ctx, burnerAddress)
+		keeper.SetBurnerInfo(ctx, chain, burnerAddress, &burnerInfo)
+		actual := keeper.GetBurnerInfo(ctx, chain, burnerAddress)
 
 		assert.NotNil(t, actual)
 		assert.Equal(t, *actual, burnerInfo)
