@@ -37,7 +37,7 @@ func NewMgr(rpc rpc3.Client, broadcaster types.Broadcaster, sender sdk.AccAddres
 }
 
 // ProcessConfirmation votes on the correctness of a Bitcoin deposit
-func (mgr *Mgr) ProcessConfirmation(attributes []sdk.Attribute) error {
+func (mgr *Mgr) ProcessConfirmation(_ int64, attributes []sdk.Attribute) error {
 	outPointInfo, confHeight, poll, err := parseConfirmationParams(mgr.cdc, attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "Bitcoin transaction confirmation failed")

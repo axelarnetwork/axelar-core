@@ -13,28 +13,100 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
 
-	types2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
+	broadcastTypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
+	rpc "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss/rpc"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
+// Session defines a tss session which is either signing or keygen
+type Session struct {
+	ID        string
+	TimeoutAt int64
+	timeout   chan struct{}
+}
+
+// Timeout signals a session has timed out
+func (s *Session) Timeout() {
+	close(s.timeout)
+}
+
+// WaitForTimeout waits until the session has timed out
+func (s *Session) WaitForTimeout() {
+	<-s.timeout
+}
+
+// TimeoutQueue is a queue of sessions order by timeoutAt
+type TimeoutQueue struct {
+	lock  sync.RWMutex
+	queue []*Session
+}
+
+// Enqueue adds a new session with ID and timeoutAt into the queue
+func (q *TimeoutQueue) Enqueue(ID string, timeoutAt int64) *Session {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+
+	session := Session{ID: ID, TimeoutAt: timeoutAt, timeout: make(chan struct{})}
+	q.queue = append(q.queue, &session)
+
+	return &session
+}
+
+// Dequeue pops the first session in queue
+func (q *TimeoutQueue) Dequeue() *Session {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+
+	if len(q.queue) == 0 {
+		return nil
+	}
+
+	result := q.queue[0]
+	q.queue = q.queue[1:]
+
+	return result
+}
+
+// Top returns the first session in queue
+func (q *TimeoutQueue) Top() *Session {
+	q.lock.RLock()
+	defer q.lock.RUnlock()
+
+	if len(q.queue) == 0 {
+		return nil
+	}
+
+	return q.queue[0]
+}
+
+// NewTimeoutQueue is the constructor for TimeoutQueue
+func NewTimeoutQueue() *TimeoutQueue {
+	return &TimeoutQueue{
+		lock:  sync.RWMutex{},
+		queue: []*Session{},
+	}
+}
+
 // Mgr represents an object that manages all communication with the external tss process
 type Mgr struct {
-	client        tofnd.GG20Client
-	keygen        *sync.RWMutex
-	sign          *sync.RWMutex
-	keygenStreams map[string]tss.Stream
-	signStreams   map[string]tss.Stream
-	Timeout       time.Duration
-	principalAddr string
-	Logger        log.Logger
-	broadcaster   types2.Broadcaster
-	sender        sdk.AccAddress
-	cdc           *codec.LegacyAmino
+	client         rpc.Client
+	keygen         *sync.RWMutex
+	sign           *sync.RWMutex
+	keygenStreams  map[string]tss.Stream
+	signStreams    map[string]tss.Stream
+	timeoutQueue   *TimeoutQueue
+	sessionTimeout int64
+	Timeout        time.Duration
+	principalAddr  string
+	Logger         log.Logger
+	broadcaster    broadcastTypes.Broadcaster
+	sender         sdk.AccAddress
+	cdc            *codec.LegacyAmino
 }
 
 // CreateTOFNDClient creates a client to communicate with the external tofnd process
-func CreateTOFNDClient(host string, port string, logger log.Logger) (tofnd.GG20Client, error) {
+func CreateTOFNDClient(host string, port string, logger log.Logger) (rpc.Client, error) {
 	tofndServerAddress := host + ":" + port
 	logger.Info(fmt.Sprintf("initiate connection to tofnd gRPC server: %s", tofndServerAddress))
 	conn, err := grpc.Dial(tofndServerAddress, grpc.WithInsecure(), grpc.WithBlock())
@@ -47,20 +119,45 @@ func CreateTOFNDClient(host string, port string, logger log.Logger) (tofnd.GG20C
 }
 
 // NewMgr returns a new tss manager instance
-func NewMgr(client tofnd.GG20Client, timeout time.Duration, principalAddr string, broadcaster types2.Broadcaster, sender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
+func NewMgr(client rpc.Client, timeout time.Duration, principalAddr string, broadcaster broadcastTypes.Broadcaster, sender sdk.AccAddress, sessionTimeout int64, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
-		client:        client,
-		keygen:        &sync.RWMutex{},
-		sign:          &sync.RWMutex{},
-		keygenStreams: map[string]tss.Stream{},
-		signStreams:   map[string]tss.Stream{},
-		Timeout:       timeout,
-		principalAddr: principalAddr,
-		Logger:        logger.With("listener", "tss"),
-		broadcaster:   broadcaster,
-		sender:        sender,
-		cdc:           cdc,
+		client:         client,
+		keygen:         &sync.RWMutex{},
+		sign:           &sync.RWMutex{},
+		keygenStreams:  map[string]tss.Stream{},
+		signStreams:    map[string]tss.Stream{},
+		timeoutQueue:   NewTimeoutQueue(),
+		sessionTimeout: sessionTimeout,
+		Timeout:        timeout,
+		principalAddr:  principalAddr,
+		Logger:         logger.With("listener", "tss"),
+		broadcaster:    broadcaster,
+		sender:         sender,
+		cdc:            cdc,
 	}
+}
+
+func (mgr *Mgr) abortSign(sigID string) (found bool, err error) {
+	stream, ok := mgr.getSignStream(sigID)
+	if !ok {
+		return false, nil
+	}
+
+	return true, abort(stream)
+}
+
+func abort(stream tss.Stream) error {
+	msg := &tofnd.MessageIn{
+		Data: &tofnd.MessageIn_Abort{
+			Abort: true,
+		},
+	}
+
+	if err := stream.Send(msg); err != nil {
+		return sdkerrors.Wrap(err, "failure to send abort msg to gRPC server")
+	}
+
+	return nil
 }
 
 func handleStream(stream tss.Stream, cancel context.CancelFunc, logger log.Logger) (broadcast <-chan *tofnd.TrafficOut, result <-chan interface{}, err <-chan error) {

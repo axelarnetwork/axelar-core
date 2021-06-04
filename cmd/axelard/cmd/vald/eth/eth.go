@@ -50,7 +50,7 @@ func NewMgr(rpc rpc2.Client, broadcaster types2.Broadcaster, sender sdk.AccAddre
 }
 
 // ProcessDepositConfirmation votes on the correctness of an EVM chain token deposit
-func (mgr Mgr) ProcessDepositConfirmation(attributes []sdk.Attribute) (err error) {
+func (mgr Mgr) ProcessDepositConfirmation(_ int64, attributes []sdk.Attribute) (err error) {
 	chain, txID, amount, burnAddr, tokenAddr, confHeight, poll, err := parseDepositConfirmationParams(mgr.cdc, attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "EVM deposit confirmation failed")
@@ -71,7 +71,7 @@ func (mgr Mgr) ProcessDepositConfirmation(attributes []sdk.Attribute) (err error
 }
 
 // ProcessTokenConfirmation votes on the correctness of an EVM chain token deployment
-func (mgr Mgr) ProcessTokenConfirmation(attributes []sdk.Attribute) error {
+func (mgr Mgr) ProcessTokenConfirmation(_ int64, attributes []sdk.Attribute) error {
 	chain, txID, gatewayAddr, tokenAddr, symbol, confHeight, poll, err := parseTokenConfirmationParams(mgr.cdc, attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "EVM token deployment confirmation failed")
