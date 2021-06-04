@@ -128,12 +128,15 @@ func (p RetryPipeline) retry(f func() error) error {
 	for i := 0; i <= p.maxRetries; i++ {
 		err = f()
 		if err == nil {
+			if i > 0 {
+				p.logger.Info("successful broadcast after backoff")
+			}
 			return nil
 		}
 
 		if i < p.maxRetries {
 			timeout := p.backOff(i)
-			p.logger.Error(sdkerrors.Wrapf(err, "backing off (retry in %v )", timeout).Error())
+			p.logger.Info(sdkerrors.Wrapf(err, "backing off (retry in %v )", timeout).Error())
 			time.Sleep(timeout)
 		}
 	}
