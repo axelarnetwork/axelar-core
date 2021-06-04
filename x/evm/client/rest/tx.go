@@ -20,42 +20,42 @@ import (
 
 // rest routes
 const (
-	TxMethodLink               = "link"
-	TxMethodConfirmTokenDeploy = "confirm-erc20-deploy"
-	TxMethodConfirmDeposit     = "confirm-erc20-deposit"
-	TxMethodSignTx             = "sign-tx"
-	TxMethodSignPending        = "sign-pending"
-	TxMethodSignDeployToken    = "sign-deploy-token"
-	TxMethodSignBurnTokens     = "sign-burn"
-	TxAddChain                 = "add-chain"
+	TxLink               = "link"
+	TxConfirmTokenDeploy = "confirm-erc20-deploy"
+	TxConfirmDeposit     = "confirm-erc20-deposit"
+	TxSignTx             = "sign-tx"
+	TxSignPending        = "sign-pending"
+	TxSignDeployToken    = "sign-deploy-token"
+	TxSignBurnTokens     = "sign-burn"
+	TxAddChain           = "add-chain"
 
-	QueryMethodMasterAddress        = keeper.QueryMasterAddress
-	QueryMethodAxelarGatewayAddress = keeper.QueryAxelarGatewayAddress
-	QueryMethodCommandData          = keeper.QueryCommandData
-	QueryMethodCreateDeployTx       = keeper.CreateDeployTx
-	QueryMethodSendTx               = keeper.SendTx
-	QueryMethodSendCommand          = keeper.SendCommand
+	QueryMasterAddress        = keeper.QueryMasterAddress
+	QueryAxelarGatewayAddress = keeper.QueryAxelarGatewayAddress
+	QueryCommandData          = keeper.QueryCommandData
+	QueryCreateDeployTx       = keeper.CreateDeployTx
+	QuerySendTx               = keeper.SendTx
+	QuerySendCommand          = keeper.SendCommand
 )
 
 // RegisterRoutes registers this module's REST routes with the given router
 func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx := clientUtils.RegisterTxHandlerFn(r, types.RestRoute)
-	registerTx(GetHandlerLink(cliCtx), TxMethodLink, clientUtils.PathVarChain)
-	registerTx(GetHandlerConfirmTokenDeploy(cliCtx), TxMethodConfirmTokenDeploy, clientUtils.PathVarChain, clientUtils.PathVarSymbol)
-	registerTx(GetHandlerConfirmDeposit(cliCtx), TxMethodConfirmDeposit, clientUtils.PathVarChain)
-	registerTx(GetHandlerSignTx(cliCtx), TxMethodSignTx, clientUtils.PathVarChain)
-	registerTx(GetHandlerSignPendingTransfers(cliCtx), TxMethodSignPending, clientUtils.PathVarChain)
-	registerTx(GetHandlerSignDeployToken(cliCtx), TxMethodSignDeployToken, clientUtils.PathVarChain, clientUtils.PathVarSymbol)
-	registerTx(GetHandlerSignBurnTokens(cliCtx), TxMethodSignBurnTokens, clientUtils.PathVarChain)
+	registerTx(GetHandlerLink(cliCtx), TxLink, clientUtils.PathVarChain)
+	registerTx(GetHandlerConfirmTokenDeploy(cliCtx), TxConfirmTokenDeploy, clientUtils.PathVarChain, clientUtils.PathVarSymbol)
+	registerTx(GetHandlerConfirmDeposit(cliCtx), TxConfirmDeposit, clientUtils.PathVarChain)
+	registerTx(GetHandlerSignTx(cliCtx), TxSignTx, clientUtils.PathVarChain)
+	registerTx(GetHandlerSignPendingTransfers(cliCtx), TxSignPending, clientUtils.PathVarChain)
+	registerTx(GetHandlerSignDeployToken(cliCtx), TxSignDeployToken, clientUtils.PathVarChain, clientUtils.PathVarSymbol)
+	registerTx(GetHandlerSignBurnTokens(cliCtx), TxSignBurnTokens, clientUtils.PathVarChain)
 	registerTx(GetHandlerAddChain(cliCtx), TxAddChain)
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
-	registerQuery(GetHandlerQueryMasterAddress(cliCtx), QueryMethodMasterAddress, clientUtils.PathVarChain)
-	registerQuery(GetHandlerQueryAxelarGatewayAddress(cliCtx), QueryMethodAxelarGatewayAddress, clientUtils.PathVarChain)
-	registerQuery(GetHandlerQueryCommandData(cliCtx), QueryMethodCommandData, clientUtils.PathVarChain, clientUtils.PathVarCommandID)
-	registerQuery(GetHandlerQueryCreateDeployTx(cliCtx), QueryMethodCreateDeployTx, clientUtils.PathVarChain)
-	registerQuery(GetHandlerQuerySendTx(cliCtx), QueryMethodSendTx, clientUtils.PathVarChain, clientUtils.PathVarTxID)
-	registerQuery(GetHandlerQuerySendCommandTx(cliCtx), QueryMethodSendCommand, clientUtils.PathVarChain)
+	registerQuery(GetHandlerQueryMasterAddress(cliCtx), QueryMasterAddress, clientUtils.PathVarChain)
+	registerQuery(GetHandlerQueryAxelarGatewayAddress(cliCtx), QueryAxelarGatewayAddress, clientUtils.PathVarChain)
+	registerQuery(GetHandlerQueryCommandData(cliCtx), QueryCommandData, clientUtils.PathVarChain, clientUtils.PathVarCommandID)
+	registerQuery(GetHandlerQueryCreateDeployTx(cliCtx), QueryCreateDeployTx, clientUtils.PathVarChain)
+	registerQuery(GetHandlerQuerySendTx(cliCtx), QuerySendTx, clientUtils.PathVarChain, clientUtils.PathVarTxID)
+	registerQuery(GetHandlerQuerySendCommandTx(cliCtx), QuerySendCommand, clientUtils.PathVarChain)
 }
 
 // ReqLink represents a request to link a cross-chain address to an EVM chain address
