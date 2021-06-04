@@ -79,7 +79,7 @@ func queryDepositAddress(ctx sdk.Context, k types.EthKeeper, n types.Nexus, chai
 		return nil, err
 	}
 
-	depositAddr, _, err := k.GetBurnerAddressAndSalt(ctx, tokenAddr, params.Address, gatewayAddr)
+	depositAddr, _, err := k.GetBurnerAddressAndSalt(ctx, chainName, tokenAddr, params.Address, gatewayAddr)
 	if err != nil {
 		return nil, err
 	}

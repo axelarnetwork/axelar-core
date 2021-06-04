@@ -110,7 +110,7 @@ func TestQueryDepositAddress(t *testing.T) {
 			GetTokenAddressFunc: func(ctx sdk.Context, evmChain string, symbol string, gatewayAddr common.Address) (common.Address, error) { 
 				return randomAddress(), nil 
 			},
-			GetBurnerAddressAndSaltFunc: func(ctx sdk.Context, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error) {
+			GetBurnerAddressAndSaltFunc: func(ctx sdk.Context, evmChain string, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error) {
 				 return expectedAddress, randomHash(), nil 
 			},
 		}
@@ -204,7 +204,7 @@ func TestQueryDepositAddress(t *testing.T) {
 	t.Run("cannot get deposit address", testutils.Func(func(t *testing.T) {
 		expectedAddress := randomAddress()
 		setup(expectedAddress)
-		ethKeeper.GetBurnerAddressAndSaltFunc = func(ctx sdk.Context, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error) {
+		ethKeeper.GetBurnerAddressAndSaltFunc = func(ctx sdk.Context, evmChain string, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error) {
 			return common.Address{}, common.Hash{}, fmt.Errorf("could not find deposit address")
 	   }
 
