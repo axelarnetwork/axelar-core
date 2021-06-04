@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	gogoprototypes "github.com/gogo/protobuf/types"
 
+	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -165,6 +166,53 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	return &types.ConfirmTokenResponse{}, nil
 }
 
+func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainRequest) (*types.ConfirmChainResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	if _, found := s.nexus.GetChain(ctx, req.Name); found {
+		return &types.ConfirmChainResponse{}, fmt.Errorf("chain '%s' is already confirmed", req.Name)
+	}
+
+	if !s.EthKeeper.KnownChain(ctx, req.Name) {
+		return &types.ConfirmChainResponse{}, fmt.Errorf("'%s' has not been added yet", req.Name)
+	}
+
+	//TODO: Do we need an EVM-wide key, or can we assume Ethereum's for this specific case?
+	keyID, ok := s.signer.GetCurrentKeyID(ctx, exported.Ethereum, tss.MasterKey)
+	if !ok {
+		return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
+	}
+
+	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
+	if !ok {
+		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
+	}
+
+	//TODO: Can we assume Ethereum for this specific case or do we need something else?
+	period, ok := s.EthKeeper.GetRevoteLockingPeriod(ctx, exported.Ethereum.Name)
+	if !ok {
+		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", exported.Ethereum.Name)
+	}
+
+	poll := vote.NewPollMeta(types.ModuleName, req.Name+"_"+req.NativeAsset)
+	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+period); err != nil {
+		return nil, err
+	}
+
+	s.EthKeeper.SetPendingChain(ctx, req.Name, poll, req.NativeAsset)
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeChainConfirmation,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
+			sdk.NewAttribute(types.AttributeKeyChain, req.Name),
+			sdk.NewAttribute(types.AttributeKeyNativeAsset, req.NativeAsset),
+			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&poll))),
+		),
+	)
+
+	return &types.ConfirmChainResponse{}, nil
+}
+
 // ConfirmDeposit handles deposit confirmations
 func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRequest) (*types.ConfirmDepositResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
@@ -234,6 +282,77 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	return &types.ConfirmDepositResponse{}, nil
 }
 
+func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmChainRequest) (*types.VoteConfirmChainResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	confirmedChain, registered := s.nexus.GetChain(ctx, req.Chain)
+	confirmedChain.Name = strings.ToLower(confirmedChain.Name)
+	nativeAsset, pollFound := s.GetPendingChain(ctx, req.Chain, req.Poll)
+
+	switch {
+	// a malicious user could try to delete an ongoing poll by providing an already confirmed chain,
+	// so we need to check that it matches the poll before deleting
+	case registered && pollFound && req.NativeAsset == nativeAsset:
+		s.voter.DeletePoll(ctx, req.Poll)
+		s.DeletePendingChain(ctx, req.Chain, req.Poll)
+		fallthrough
+	// If the voting threshold has been met and additional votes are received they should not return an error
+	case registered:
+		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("chain %s already confirmed", req.Chain)}, nil
+	case !pollFound:
+		return nil, fmt.Errorf("no poll found for chain %s", req.Poll.String())
+	case req.NativeAsset != nativeAsset:
+		return nil, fmt.Errorf("native asset for chain %s does not match poll %s", req.Chain, req.Poll.String())
+	default:
+		// assert: the chain is known and has not been confirmed before
+	}
+
+	if err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed}); err != nil {
+		return nil, err
+	}
+
+	result := s.voter.Result(ctx, req.Poll)
+	if result == nil {
+		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("not enough votes to confirm chain in %s yet", req.Chain)}, nil
+	}
+
+	// assert: the poll has completed
+	confirmed, ok := result.(*gogoprototypes.BoolValue)
+	if !ok {
+		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.Poll.String(), result)
+	}
+
+	s.Logger(ctx).Info(fmt.Sprintf("EVM chain confirmation result is %s", result))
+	s.voter.DeletePoll(ctx, req.Poll)
+	s.DeletePendingChain(ctx, req.Chain, req.Poll)
+
+	// handle poll result
+	event := sdk.NewEvent(types.EventTypeChainConfirmation,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(types.AttributeKeyChain, req.Chain),
+		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.Poll))))
+
+	if !confirmed.Value {
+		ctx.EventManager().EmitEvent(
+			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
+		return &types.VoteConfirmChainResponse{
+			Log: fmt.Sprintf("chain %s was rejected", req.Chain),
+		}, nil
+	}
+	ctx.EventManager().EmitEvent(
+		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
+
+	chain := nexus.Chain{
+		Name:                  req.Chain,
+		NativeAsset:           nativeAsset,
+		SupportsForeignAssets: true,
+	}
+	s.nexus.SetChain(ctx, chain)
+	s.nexus.RegisterAsset(ctx, chain.Name, chain.NativeAsset)
+
+	return &types.VoteConfirmChainResponse{}, nil
+}
+
 // VoteConfirmDeposit handles votes for deposit confirmations
 func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmDepositRequest) (*types.VoteConfirmDepositResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
@@ -246,7 +365,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	confirmedDeposit, state, depositFound := s.GetDeposit(ctx, chain.Name, common.Hash(req.TxID), common.Address(req.BurnAddress))
 
 	switch {
-	// a malicious user could try to delete an ongoing poll by providing an already confirmed token,
+	// a malicious user could try to delete an ongoing poll by providing an already confirmed deposit,
 	// so we need to check that it matches the poll before deleting
 	case depositFound && pollFound && confirmedDeposit == pendingDeposit:
 		s.voter.DeletePoll(ctx, req.Poll)
@@ -723,18 +842,22 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*types.AddChainResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chain := nexus.Chain{
-		Name:                  req.Name,
-		NativeAsset:           req.NativeAsset,
-		SupportsForeignAssets: true,
+	if _, found := s.nexus.GetChain(ctx, req.Name); found {
+		return &types.AddChainResponse{}, fmt.Errorf("chain '%s' is already registered", req.Name)
 	}
 
-	if _, found := s.nexus.GetChain(ctx, chain.Name); found {
-		return &types.AddChainResponse{}, fmt.Errorf("chain '%s' is already defined", chain.Name)
-	}
+	param := types.DefaultParams()[0]
+	param.Chain = req.Name
+	s.SetParams(ctx, []types.Params{param})
 
-	s.nexus.SetChain(ctx, chain)
-	s.nexus.RegisterAsset(ctx, chain.Name, chain.NativeAsset)
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeTokenConfirmation,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueUpdate),
+			sdk.NewAttribute(types.AttributeKeyChain, req.Name),
+			sdk.NewAttribute(types.AttributeKeyNativeAsset, req.NativeAsset),
+		),
+	)
 
 	return &types.AddChainResponse{}, nil
 }

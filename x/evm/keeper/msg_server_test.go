@@ -315,6 +315,100 @@ func TestMintTx_DifferentRecipient_DifferentHash(t *testing.T) {
 	assert.NotEqual(t, tx1.Hash(), tx2.Hash())
 }
 
+func TestHandleMsgConfirmChain(t *testing.T) {
+	var (
+		ctx    sdk.Context
+		k      *evmMock.EthKeeperMock
+		v      *evmMock.VoterMock
+		n      *evmMock.NexusMock
+		s      *evmMock.SignerMock
+		msg    *types.ConfirmChainRequest
+		server types.MsgServiceServer
+	)
+
+	setup := func() {
+		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
+
+		k = &evmMock.EthKeeperMock{
+			KnownChainFunc:             func(sdk.Context, string) bool { return true },
+			GetRevoteLockingPeriodFunc: func(ctx sdk.Context, _ string) (int64, bool) { return rand.PosI64(), true },
+			SetPendingChainFunc:        func(sdk.Context, string, vote.PollMeta, string) {},
+		}
+		v = &evmMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta, int64, int64) error { return nil }}
+		chains := map[string]nexus.Chain{exported.Ethereum.Name: exported.Ethereum}
+		n = &evmMock.NexusMock{
+			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+				c, ok := chains[chain]
+				return c, ok
+			},
+			IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return false },
+		}
+		s = &mock.SignerMock{
+			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
+				return rand.StrBetween(5, 20), true
+			},
+			GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
+				return rand.PosI64(), true
+			},
+		}
+
+		msg = &types.ConfirmChainRequest{
+			Sender:      rand.Bytes(20),
+			Name:        rand.StrBetween(5, 20),
+			NativeAsset: rand.StrBetween(3, 5),
+		}
+
+		server = NewMsgServerImpl(k, n, s, v, &mock.SnapshotterMock{})
+	}
+
+	repeats := 20
+	t.Run("happy path", testutils.Func(func(t *testing.T) {
+		setup()
+
+		_, err := server.ConfirmChain(sdk.WrapSDKContext(ctx), msg)
+
+		assert.NoError(t, err)
+		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeChainConfirmation }), 1)
+		assert.Equal(t, v.InitPollCalls()[0].Poll, k.SetPendingChainCalls()[0].Poll)
+	}).Repeat(repeats))
+
+	t.Run("registered chain", testutils.Func(func(t *testing.T) {
+		setup()
+		msg.Name = evmChain
+
+		_, err := server.ConfirmChain(sdk.WrapSDKContext(ctx), msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
+		setup()
+		v.InitPollFunc = func(sdk.Context, vote.PollMeta, int64, int64) error { return fmt.Errorf("poll setup failed") }
+
+		_, err := server.ConfirmChain(sdk.WrapSDKContext(ctx), msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("no key", testutils.Func(func(t *testing.T) {
+		setup()
+		s.GetCurrentKeyIDFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (string, bool) { return "", false }
+
+		_, err := server.ConfirmChain(sdk.WrapSDKContext(ctx), msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("no snapshot counter", testutils.Func(func(t *testing.T) {
+		setup()
+		s.GetSnapshotCounterForKeyIDFunc = func(sdk.Context, string) (int64, bool) { return 0, false }
+
+		_, err := server.ConfirmChain(sdk.WrapSDKContext(ctx), msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+}
+
 func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 	var (
 		ctx    sdk.Context
@@ -475,7 +569,6 @@ func TestAddChain(t *testing.T) {
 		nativeAsset = rand.StrBetween(3, 10)
 		msg = &types.AddChainRequest{
 			Sender:      rand.Bytes(20),
-			Chain:       evmChain,
 			Name:        name,
 			NativeAsset: nativeAsset,
 		}

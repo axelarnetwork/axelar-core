@@ -18,6 +18,13 @@ service MsgService {
     };
   }
 
+  rpc ConfirmChain(ConfirmChainRequest) returns (ConfirmChainResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/confirm-chain"
+      body : "*"
+    };
+  }
+
   rpc ConfirmToken(ConfirmTokenRequest) returns (ConfirmTokenResponse) {
     option (google.api.http) = {
       post : "/axelar/evm/confirm-erc20-deploy/{symbol}"
@@ -29,6 +36,12 @@ service MsgService {
     option (google.api.http) = {
       post : "/axelar/evm/confirm-erc20-deposit"
       body : "*"
+    };
+  }
+
+  rpc VoteConfirmChain(VoteConfirmChainRequest)
+      returns (VoteConfirmChainResponse) {
+    option (google.api.http) = {
     };
   }
 

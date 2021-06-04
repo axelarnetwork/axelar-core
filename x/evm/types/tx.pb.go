@@ -25,6 +25,81 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+type ConfirmChainRequest struct {
+	Sender      github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	Name        string                                        `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	NativeAsset string                                        `protobuf:"bytes,3,opt,name=native_asset,json=nativeAsset,proto3" json:"native_asset,omitempty"`
+}
+
+func (m *ConfirmChainRequest) Reset()         { *m = ConfirmChainRequest{} }
+func (m *ConfirmChainRequest) String() string { return proto.CompactTextString(m) }
+func (*ConfirmChainRequest) ProtoMessage()    {}
+func (*ConfirmChainRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0b4b69622c19e531, []int{0}
+}
+func (m *ConfirmChainRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ConfirmChainRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ConfirmChainRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ConfirmChainRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ConfirmChainRequest.Merge(m, src)
+}
+func (m *ConfirmChainRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ConfirmChainRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ConfirmChainRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ConfirmChainRequest proto.InternalMessageInfo
+
+type ConfirmChainResponse struct {
+}
+
+func (m *ConfirmChainResponse) Reset()         { *m = ConfirmChainResponse{} }
+func (m *ConfirmChainResponse) String() string { return proto.CompactTextString(m) }
+func (*ConfirmChainResponse) ProtoMessage()    {}
+func (*ConfirmChainResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0b4b69622c19e531, []int{1}
+}
+func (m *ConfirmChainResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ConfirmChainResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ConfirmChainResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ConfirmChainResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ConfirmChainResponse.Merge(m, src)
+}
+func (m *ConfirmChainResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ConfirmChainResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ConfirmChainResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ConfirmChainResponse proto.InternalMessageInfo
+
 // MsgConfirmDeposit represents an erc20 deposit confirmation message
 type ConfirmDepositRequest struct {
 	Sender        github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
@@ -38,7 +113,7 @@ func (m *ConfirmDepositRequest) Reset()         { *m = ConfirmDepositRequest{} }
 func (m *ConfirmDepositRequest) String() string { return proto.CompactTextString(m) }
 func (*ConfirmDepositRequest) ProtoMessage()    {}
 func (*ConfirmDepositRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b4b69622c19e531, []int{0}
+	return fileDescriptor_0b4b69622c19e531, []int{2}
 }
 func (m *ConfirmDepositRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -74,7 +149,7 @@ func (m *ConfirmDepositResponse) Reset()         { *m = ConfirmDepositResponse{}
 func (m *ConfirmDepositResponse) String() string { return proto.CompactTextString(m) }
 func (*ConfirmDepositResponse) ProtoMessage()    {}
 func (*ConfirmDepositResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b4b69622c19e531, []int{1}
+	return fileDescriptor_0b4b69622c19e531, []int{3}
 }
 func (m *ConfirmDepositResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -115,7 +190,7 @@ func (m *ConfirmTokenRequest) Reset()         { *m = ConfirmTokenRequest{} }
 func (m *ConfirmTokenRequest) String() string { return proto.CompactTextString(m) }
 func (*ConfirmTokenRequest) ProtoMessage()    {}
 func (*ConfirmTokenRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b4b69622c19e531, []int{2}
+	return fileDescriptor_0b4b69622c19e531, []int{4}
 }
 func (m *ConfirmTokenRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -151,7 +226,7 @@ func (m *ConfirmTokenResponse) Reset()         { *m = ConfirmTokenResponse{} }
 func (m *ConfirmTokenResponse) String() string { return proto.CompactTextString(m) }
 func (*ConfirmTokenResponse) ProtoMessage()    {}
 func (*ConfirmTokenResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b4b69622c19e531, []int{3}
+	return fileDescriptor_0b4b69622c19e531, []int{5}
 }
 func (m *ConfirmTokenResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -194,7 +269,7 @@ func (m *LinkRequest) Reset()         { *m = LinkRequest{} }
 func (m *LinkRequest) String() string { return proto.CompactTextString(m) }
 func (*LinkRequest) ProtoMessage()    {}
 func (*LinkRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b4b69622c19e531, []int{4}
+	return fileDescriptor_0b4b69622c19e531, []int{6}
 }
 func (m *LinkRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -231,7 +306,7 @@ func (m *LinkResponse) Reset()         { *m = LinkResponse{} }
 func (m *LinkResponse) String() string { return proto.CompactTextString(m) }
 func (*LinkResponse) ProtoMessage()    {}
 func (*LinkResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b4b69622c19e531, []int{5}
+	return fileDescriptor_0b4b69622c19e531, []int{7}
 }
 func (m *LinkResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -271,7 +346,7 @@ func (m *SignBurnTokensRequest) Reset()         { *m = SignBurnTokensRequest{} }
 func (m *SignBurnTokensRequest) String() string { return proto.CompactTextString(m) }
 func (*SignBurnTokensRequest) ProtoMessage()    {}
 func (*SignBurnTokensRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b4b69622c19e531, []int{6}
+	return fileDescriptor_0b4b69622c19e531, []int{8}
 }
 func (m *SignBurnTokensRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -308,7 +383,7 @@ func (m *SignBurnTokensResponse) Reset()         { *m = SignBurnTokensResponse{}
 func (m *SignBurnTokensResponse) String() string { return proto.CompactTextString(m) }
 func (*SignBurnTokensResponse) ProtoMessage()    {}
 func (*SignBurnTokensResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b4b69622c19e531, []int{7}
+	return fileDescriptor_0b4b69622c19e531, []int{9}
 }
 func (m *SignBurnTokensResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -352,7 +427,7 @@ func (m *SignDeployTokenRequest) Reset()         { *m = SignDeployTokenRequest{}
 func (m *SignDeployTokenRequest) String() string { return proto.CompactTextString(m) }
 func (*SignDeployTokenRequest) ProtoMessage()    {}
 func (*SignDeployTokenRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b4b69622c19e531, []int{8}
+	return fileDescriptor_0b4b69622c19e531, []int{10}
 }
 func (m *SignDeployTokenRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -389,7 +464,7 @@ func (m *SignDeployTokenResponse) Reset()         { *m = SignDeployTokenResponse
 func (m *SignDeployTokenResponse) String() string { return proto.CompactTextString(m) }
 func (*SignDeployTokenResponse) ProtoMessage()    {}
 func (*SignDeployTokenResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b4b69622c19e531, []int{9}
+	return fileDescriptor_0b4b69622c19e531, []int{11}
 }
 func (m *SignDeployTokenResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -429,7 +504,7 @@ func (m *SignPendingTransfersRequest) Reset()         { *m = SignPendingTransfer
 func (m *SignPendingTransfersRequest) String() string { return proto.CompactTextString(m) }
 func (*SignPendingTransfersRequest) ProtoMessage()    {}
 func (*SignPendingTransfersRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b4b69622c19e531, []int{10}
+	return fileDescriptor_0b4b69622c19e531, []int{12}
 }
 func (m *SignPendingTransfersRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -466,7 +541,7 @@ func (m *SignPendingTransfersResponse) Reset()         { *m = SignPendingTransfe
 func (m *SignPendingTransfersResponse) String() string { return proto.CompactTextString(m) }
 func (*SignPendingTransfersResponse) ProtoMessage()    {}
 func (*SignPendingTransfersResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b4b69622c19e531, []int{11}
+	return fileDescriptor_0b4b69622c19e531, []int{13}
 }
 func (m *SignPendingTransfersResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -507,7 +582,7 @@ func (m *SignTxRequest) Reset()         { *m = SignTxRequest{} }
 func (m *SignTxRequest) String() string { return proto.CompactTextString(m) }
 func (*SignTxRequest) ProtoMessage()    {}
 func (*SignTxRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b4b69622c19e531, []int{12}
+	return fileDescriptor_0b4b69622c19e531, []int{14}
 }
 func (m *SignTxRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -544,7 +619,7 @@ func (m *SignTxResponse) Reset()         { *m = SignTxResponse{} }
 func (m *SignTxResponse) String() string { return proto.CompactTextString(m) }
 func (*SignTxResponse) ProtoMessage()    {}
 func (*SignTxResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b4b69622c19e531, []int{13}
+	return fileDescriptor_0b4b69622c19e531, []int{15}
 }
 func (m *SignTxResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -573,6 +648,85 @@ func (m *SignTxResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_SignTxResponse proto.InternalMessageInfo
 
+// MsgVoteConfirmChain represents a message that votes on a new EVM chain
+type VoteConfirmChainRequest struct {
+	Sender      github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	Chain       string                                        `protobuf:"bytes,2,opt,name=chain,proto3" json:"chain,omitempty"`
+	Poll        exported.PollMeta                             `protobuf:"bytes,3,opt,name=poll,proto3" json:"poll"`
+	NativeAsset string                                        `protobuf:"bytes,4,opt,name=native_asset,json=nativeAsset,proto3" json:"native_asset,omitempty"`
+	Confirmed   bool                                          `protobuf:"varint,5,opt,name=confirmed,proto3" json:"confirmed,omitempty"`
+}
+
+func (m *VoteConfirmChainRequest) Reset()         { *m = VoteConfirmChainRequest{} }
+func (m *VoteConfirmChainRequest) String() string { return proto.CompactTextString(m) }
+func (*VoteConfirmChainRequest) ProtoMessage()    {}
+func (*VoteConfirmChainRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0b4b69622c19e531, []int{16}
+}
+func (m *VoteConfirmChainRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *VoteConfirmChainRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_VoteConfirmChainRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *VoteConfirmChainRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VoteConfirmChainRequest.Merge(m, src)
+}
+func (m *VoteConfirmChainRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *VoteConfirmChainRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_VoteConfirmChainRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_VoteConfirmChainRequest proto.InternalMessageInfo
+
+type VoteConfirmChainResponse struct {
+	Log string `protobuf:"bytes,1,opt,name=log,proto3" json:"log,omitempty"`
+}
+
+func (m *VoteConfirmChainResponse) Reset()         { *m = VoteConfirmChainResponse{} }
+func (m *VoteConfirmChainResponse) String() string { return proto.CompactTextString(m) }
+func (*VoteConfirmChainResponse) ProtoMessage()    {}
+func (*VoteConfirmChainResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0b4b69622c19e531, []int{17}
+}
+func (m *VoteConfirmChainResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *VoteConfirmChainResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_VoteConfirmChainResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *VoteConfirmChainResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VoteConfirmChainResponse.Merge(m, src)
+}
+func (m *VoteConfirmChainResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *VoteConfirmChainResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_VoteConfirmChainResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_VoteConfirmChainResponse proto.InternalMessageInfo
+
 // MsgVoteConfirmDeposit represents a message that votes on a deposit
 type VoteConfirmDepositRequest struct {
 	Sender      github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
@@ -587,7 +741,7 @@ func (m *VoteConfirmDepositRequest) Reset()         { *m = VoteConfirmDepositReq
 func (m *VoteConfirmDepositRequest) String() string { return proto.CompactTextString(m) }
 func (*VoteConfirmDepositRequest) ProtoMessage()    {}
 func (*VoteConfirmDepositRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b4b69622c19e531, []int{14}
+	return fileDescriptor_0b4b69622c19e531, []int{18}
 }
 func (m *VoteConfirmDepositRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -624,7 +778,7 @@ func (m *VoteConfirmDepositResponse) Reset()         { *m = VoteConfirmDepositRe
 func (m *VoteConfirmDepositResponse) String() string { return proto.CompactTextString(m) }
 func (*VoteConfirmDepositResponse) ProtoMessage()    {}
 func (*VoteConfirmDepositResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b4b69622c19e531, []int{15}
+	return fileDescriptor_0b4b69622c19e531, []int{19}
 }
 func (m *VoteConfirmDepositResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -667,7 +821,7 @@ func (m *VoteConfirmTokenRequest) Reset()         { *m = VoteConfirmTokenRequest
 func (m *VoteConfirmTokenRequest) String() string { return proto.CompactTextString(m) }
 func (*VoteConfirmTokenRequest) ProtoMessage()    {}
 func (*VoteConfirmTokenRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b4b69622c19e531, []int{16}
+	return fileDescriptor_0b4b69622c19e531, []int{20}
 }
 func (m *VoteConfirmTokenRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -704,7 +858,7 @@ func (m *VoteConfirmTokenResponse) Reset()         { *m = VoteConfirmTokenRespon
 func (m *VoteConfirmTokenResponse) String() string { return proto.CompactTextString(m) }
 func (*VoteConfirmTokenResponse) ProtoMessage()    {}
 func (*VoteConfirmTokenResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b4b69622c19e531, []int{17}
+	return fileDescriptor_0b4b69622c19e531, []int{21}
 }
 func (m *VoteConfirmTokenResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -745,7 +899,7 @@ func (m *SignTransferOwnershipRequest) Reset()         { *m = SignTransferOwners
 func (m *SignTransferOwnershipRequest) String() string { return proto.CompactTextString(m) }
 func (*SignTransferOwnershipRequest) ProtoMessage()    {}
 func (*SignTransferOwnershipRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b4b69622c19e531, []int{18}
+	return fileDescriptor_0b4b69622c19e531, []int{22}
 }
 func (m *SignTransferOwnershipRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -782,7 +936,7 @@ func (m *SignTransferOwnershipResponse) Reset()         { *m = SignTransferOwner
 func (m *SignTransferOwnershipResponse) String() string { return proto.CompactTextString(m) }
 func (*SignTransferOwnershipResponse) ProtoMessage()    {}
 func (*SignTransferOwnershipResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b4b69622c19e531, []int{19}
+	return fileDescriptor_0b4b69622c19e531, []int{23}
 }
 func (m *SignTransferOwnershipResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -813,16 +967,15 @@ var xxx_messageInfo_SignTransferOwnershipResponse proto.InternalMessageInfo
 
 type AddChainRequest struct {
 	Sender      github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
-	Chain       string                                        `protobuf:"bytes,2,opt,name=chain,proto3" json:"chain,omitempty"`
-	Name        string                                        `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	NativeAsset string                                        `protobuf:"bytes,4,opt,name=native_asset,json=nativeAsset,proto3" json:"native_asset,omitempty"`
+	Name        string                                        `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	NativeAsset string                                        `protobuf:"bytes,3,opt,name=native_asset,json=nativeAsset,proto3" json:"native_asset,omitempty"`
 }
 
 func (m *AddChainRequest) Reset()         { *m = AddChainRequest{} }
 func (m *AddChainRequest) String() string { return proto.CompactTextString(m) }
 func (*AddChainRequest) ProtoMessage()    {}
 func (*AddChainRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b4b69622c19e531, []int{20}
+	return fileDescriptor_0b4b69622c19e531, []int{24}
 }
 func (m *AddChainRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -858,7 +1011,7 @@ func (m *AddChainResponse) Reset()         { *m = AddChainResponse{} }
 func (m *AddChainResponse) String() string { return proto.CompactTextString(m) }
 func (*AddChainResponse) ProtoMessage()    {}
 func (*AddChainResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b4b69622c19e531, []int{21}
+	return fileDescriptor_0b4b69622c19e531, []int{25}
 }
 func (m *AddChainResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -888,6 +1041,8 @@ func (m *AddChainResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_AddChainResponse proto.InternalMessageInfo
 
 func init() {
+	proto.RegisterType((*ConfirmChainRequest)(nil), "evm.v1beta1.ConfirmChainRequest")
+	proto.RegisterType((*ConfirmChainResponse)(nil), "evm.v1beta1.ConfirmChainResponse")
 	proto.RegisterType((*ConfirmDepositRequest)(nil), "evm.v1beta1.ConfirmDepositRequest")
 	proto.RegisterType((*ConfirmDepositResponse)(nil), "evm.v1beta1.ConfirmDepositResponse")
 	proto.RegisterType((*ConfirmTokenRequest)(nil), "evm.v1beta1.ConfirmTokenRequest")
@@ -902,6 +1057,8 @@ func init() {
 	proto.RegisterType((*SignPendingTransfersResponse)(nil), "evm.v1beta1.SignPendingTransfersResponse")
 	proto.RegisterType((*SignTxRequest)(nil), "evm.v1beta1.SignTxRequest")
 	proto.RegisterType((*SignTxResponse)(nil), "evm.v1beta1.SignTxResponse")
+	proto.RegisterType((*VoteConfirmChainRequest)(nil), "evm.v1beta1.VoteConfirmChainRequest")
+	proto.RegisterType((*VoteConfirmChainResponse)(nil), "evm.v1beta1.VoteConfirmChainResponse")
 	proto.RegisterType((*VoteConfirmDepositRequest)(nil), "evm.v1beta1.VoteConfirmDepositRequest")
 	proto.RegisterType((*VoteConfirmDepositResponse)(nil), "evm.v1beta1.VoteConfirmDepositResponse")
 	proto.RegisterType((*VoteConfirmTokenRequest)(nil), "evm.v1beta1.VoteConfirmTokenRequest")
@@ -915,64 +1072,134 @@ func init() {
 func init() { proto.RegisterFile("evm/v1beta1/tx.proto", fileDescriptor_0b4b69622c19e531) }
 
 var fileDescriptor_0b4b69622c19e531 = []byte{
-	// 900 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x56, 0x4f, 0x6f, 0x1b, 0x45,
-	0x14, 0xf7, 0xba, 0xb6, 0xf1, 0x3e, 0xc7, 0x49, 0xb5, 0xb8, 0xa9, 0x09, 0x8d, 0xdd, 0xae, 0x54,
+	// 947 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x57, 0x41, 0x6f, 0x1b, 0x45,
+	0x14, 0xf6, 0xba, 0x6b, 0x63, 0x3f, 0xdb, 0x49, 0xb5, 0xb8, 0xa9, 0x09, 0x8d, 0xdd, 0xae, 0x54,
 	0x5a, 0xa4, 0xc4, 0x4b, 0x8a, 0x84, 0xe0, 0x18, 0x27, 0xa2, 0x18, 0xb5, 0xa5, 0x5a, 0x02, 0x07,
-	0x2e, 0xd6, 0x7a, 0xf7, 0xd5, 0x59, 0x65, 0x77, 0x66, 0xd9, 0x19, 0x3b, 0x9b, 0x0b, 0xe2, 0x23,
-	0x70, 0xe2, 0x0b, 0xc0, 0x85, 0x03, 0x37, 0x2e, 0x7c, 0x83, 0x1c, 0x7b, 0x42, 0x88, 0x83, 0x05,
-	0xce, 0xb7, 0xe8, 0x09, 0xcd, 0x1f, 0xc7, 0x49, 0x53, 0xd3, 0x28, 0x87, 0xa5, 0xa7, 0xdd, 0x79,
-	0xf3, 0xfe, 0xfd, 0x7e, 0xf3, 0xe6, 0xbd, 0x81, 0x06, 0x8e, 0x63, 0x67, 0xbc, 0x35, 0x40, 0xee,
-	0x6d, 0x39, 0x3c, 0xeb, 0x24, 0x29, 0xe5, 0xd4, 0xaa, 0xe1, 0x38, 0xee, 0x68, 0xe9, 0x5a, 0x63,
-	0x48, 0x87, 0x54, 0xca, 0x1d, 0xf1, 0xa7, 0x54, 0xd6, 0xee, 0x8c, 0x29, 0x47, 0x07, 0xb3, 0x84,
-	0xa6, 0x1c, 0x83, 0xb9, 0x8b, 0xa3, 0x04, 0x99, 0x52, 0xb1, 0x7f, 0x2e, 0xc2, 0x8d, 0x1d, 0x4a,
-	0x9e, 0x85, 0x69, 0xbc, 0x8b, 0x09, 0x65, 0x21, 0x77, 0xf1, 0xdb, 0x11, 0x32, 0x6e, 0xf5, 0xa0,
-	0xc2, 0x90, 0x04, 0x98, 0x36, 0x8d, 0xdb, 0xc6, 0xfd, 0xa5, 0xee, 0xd6, 0x8b, 0x49, 0x7b, 0x73,
-	0x18, 0xf2, 0xfd, 0xd1, 0xa0, 0xe3, 0xd3, 0xd8, 0xf1, 0x29, 0x8b, 0x29, 0xd3, 0x9f, 0x4d, 0x16,
-	0x1c, 0x68, 0xbf, 0xdb, 0xbe, 0xbf, 0x1d, 0x04, 0x29, 0x32, 0xe6, 0x6a, 0x07, 0x56, 0x03, 0xca,
-	0xfe, 0xbe, 0x17, 0x92, 0x66, 0xf1, 0xb6, 0x71, 0xdf, 0x74, 0xd5, 0xc2, 0x7a, 0x1f, 0xca, 0x3c,
-	0xeb, 0x87, 0x41, 0xf3, 0x9a, 0xf4, 0xdf, 0x38, 0x9e, 0xb4, 0x0b, 0x7f, 0x4d, 0xda, 0xa5, 0xcf,
-	0x3c, 0xb6, 0x3f, 0x9d, 0xb4, 0x4b, 0x7b, 0x59, 0x6f, 0xd7, 0x2d, 0xf1, 0xac, 0x17, 0x58, 0x0f,
-	0xa1, 0xe2, 0xc5, 0x74, 0x44, 0x78, 0xb3, 0x24, 0x75, 0x1d, 0xad, 0x7b, 0xef, 0x12, 0xf9, 0x7c,
-	0x15, 0x12, 0xee, 0x6a, 0x73, 0xeb, 0x23, 0x58, 0x1e, 0x8c, 0x52, 0x82, 0x69, 0xdf, 0x53, 0x39,
-	0x36, 0xcb, 0xd2, 0xe1, 0x8a, 0x76, 0xf8, 0xd6, 0x2c, 0xf5, 0xba, 0x52, 0xd3, 0x4b, 0xbb, 0x09,
-	0xab, 0x2f, 0xb3, 0xc4, 0x12, 0x4a, 0x18, 0xda, 0xbf, 0x1b, 0xf0, 0xb6, 0xde, 0xda, 0xa3, 0x07,
-	0x48, 0xde, 0x44, 0xfa, 0x56, 0xa1, 0xc2, 0x8e, 0xe2, 0x01, 0x8d, 0x24, 0x7d, 0xa6, 0xab, 0x57,
-	0xf6, 0x2a, 0x34, 0xce, 0xa7, 0xae, 0x31, 0xfd, 0x61, 0x40, 0xed, 0x51, 0x48, 0x0e, 0x72, 0xc3,
-	0x72, 0x17, 0x96, 0x53, 0xf4, 0xc3, 0x24, 0x44, 0xc2, 0xe5, 0xc9, 0x48, 0x50, 0xa6, 0x5b, 0x3f,
-	0x95, 0x0a, 0x3f, 0x8b, 0x70, 0x58, 0xf7, 0x60, 0x65, 0x6e, 0xae, 0xdc, 0x97, 0xa5, 0xc2, 0xdc,
-	0xeb, 0x8e, 0x90, 0xda, 0x5b, 0xb0, 0xa4, 0x70, 0x29, 0xa0, 0xd6, 0x1d, 0x58, 0x0a, 0xd4, 0x79,
-	0xaa, 0xa8, 0x86, 0xb4, 0xaa, 0x69, 0x99, 0x88, 0x69, 0x67, 0x70, 0xe3, 0xcb, 0x70, 0x48, 0xba,
-	0xa3, 0x94, 0x48, 0x92, 0x58, 0x5e, 0xa4, 0xd8, 0x9f, 0xc2, 0xea, 0xcb, 0x91, 0x75, 0xda, 0x1b,
-	0x00, 0x3e, 0x8d, 0x63, 0x8f, 0x04, 0xe2, 0xfc, 0x55, 0xf8, 0xfa, 0x74, 0xd2, 0x36, 0x77, 0x94,
-	0xb4, 0xb7, 0xeb, 0x9a, 0x5a, 0xa1, 0x17, 0xd8, 0x3f, 0x15, 0x95, 0xa3, 0x5d, 0x4c, 0x22, 0x7a,
-	0x94, 0x6f, 0x91, 0x7e, 0x0e, 0x55, 0xdf, 0x4b, 0x3c, 0x3f, 0xe4, 0x47, 0xba, 0x4e, 0x3b, 0xba,
-	0x4e, 0xdf, 0xbb, 0x44, 0x98, 0x1e, 0xe1, 0xee, 0xa9, 0xbd, 0x75, 0x17, 0xaa, 0x01, 0xfa, 0x61,
-	0xec, 0x45, 0x4c, 0x9e, 0x7f, 0xbd, 0x6b, 0xbe, 0x98, 0xb4, 0xcb, 0xa3, 0x90, 0xf0, 0x8f, 0xdd,
-	0xd3, 0xad, 0x33, 0x45, 0x52, 0x3e, 0x57, 0x24, 0xeb, 0x00, 0x5c, 0x60, 0xef, 0x13, 0x2f, 0xc6,
-	0x66, 0x45, 0xee, 0x99, 0x52, 0xf2, 0xc4, 0x8b, 0xd1, 0x7e, 0x08, 0x37, 0x2f, 0x90, 0x74, 0x25,
-	0xba, 0xbf, 0x83, 0x77, 0x85, 0xa3, 0xa7, 0x48, 0x82, 0x90, 0x0c, 0xf7, 0x52, 0x8f, 0xb0, 0x67,
-	0x98, 0xe6, 0x57, 0x36, 0x8f, 0xe0, 0xd6, 0xab, 0xe3, 0x5f, 0x09, 0xcd, 0xf7, 0x06, 0xd4, 0x85,
-	0xbb, 0xbd, 0x2c, 0xb7, 0x9a, 0x59, 0x86, 0x22, 0xcf, 0x54, 0xb5, 0xb8, 0x45, 0x9e, 0xd9, 0x0e,
-	0x2c, 0xcf, 0x32, 0xd0, 0x10, 0xd6, 0x67, 0xad, 0x4f, 0xde, 0xd7, 0x6e, 0xf5, 0x7c, 0xbb, 0xb3,
-	0x7f, 0x2b, 0xc2, 0x3b, 0x5f, 0x53, 0x8e, 0xff, 0xd3, 0x5c, 0xfb, 0x04, 0x4a, 0x09, 0x8d, 0x22,
-	0x89, 0xa0, 0xf6, 0xa0, 0xdd, 0x11, 0x43, 0xb8, 0x33, 0x1b, 0xc2, 0xb3, 0x89, 0xdd, 0x79, 0x4a,
-	0xa3, 0xe8, 0x31, 0x72, 0xaf, 0x5b, 0x12, 0x17, 0xc2, 0x95, 0x26, 0xf3, 0x9e, 0x5e, 0x7a, 0x6d,
-	0x4f, 0x7f, 0x00, 0x4b, 0x62, 0x44, 0xbd, 0x6e, 0x8e, 0xd5, 0x84, 0x92, 0x5e, 0x58, 0xb7, 0xc0,
-	0xf4, 0x15, 0x27, 0x18, 0xc8, 0x1b, 0x50, 0x75, 0xe7, 0x02, 0xbb, 0x03, 0x6b, 0xaf, 0x62, 0x4d,
-	0x73, 0x7e, 0x1d, 0xae, 0x45, 0x74, 0xa8, 0x3b, 0xa4, 0xf8, 0xb5, 0x7f, 0x2c, 0xc2, 0xcd, 0x33,
-	0x06, 0xf9, 0x36, 0x96, 0x7c, 0x48, 0x5e, 0xd4, 0x4b, 0xfe, 0x9b, 0xc8, 0x0d, 0x68, 0x5e, 0xe4,
-	0x65, 0x21, 0x8d, 0xbf, 0x1a, 0xea, 0xc2, 0xce, 0x6e, 0xea, 0x17, 0x87, 0x04, 0x53, 0xb6, 0x1f,
-	0x26, 0xb9, 0x71, 0xb9, 0x01, 0x26, 0xc1, 0xc3, 0x3e, 0x15, 0x81, 0x75, 0x97, 0xbe, 0x50, 0x47,
-	0x55, 0x82, 0x87, 0x32, 0x33, 0xfb, 0x31, 0xac, 0x2f, 0x48, 0xf7, 0x4a, 0x0d, 0xe6, 0x17, 0x03,
-	0x56, 0xb6, 0x83, 0x40, 0xce, 0xe7, 0xdc, 0x10, 0x5b, 0x50, 0x92, 0x53, 0x40, 0xbd, 0x32, 0xe4,
-	0xbf, 0x78, 0x0b, 0x10, 0x8f, 0x87, 0x63, 0xec, 0x7b, 0x8c, 0x21, 0xd7, 0x4f, 0x8c, 0x9a, 0x92,
-	0x6d, 0x0b, 0x91, 0x6d, 0xc1, 0xf5, 0x79, 0xaa, 0x0a, 0x6d, 0xf7, 0xc9, 0xf1, 0x3f, 0xad, 0xc2,
-	0xf1, 0xb4, 0x65, 0x3c, 0x9f, 0xb6, 0x8c, 0xbf, 0xa7, 0x2d, 0xe3, 0x87, 0x93, 0x56, 0xe1, 0xf9,
-	0x49, 0xab, 0xf0, 0xe7, 0x49, 0xab, 0xf0, 0xcd, 0x07, 0x67, 0xb2, 0xf6, 0x32, 0x8c, 0xbc, 0x94,
-	0x20, 0x3f, 0xa4, 0xe9, 0x81, 0x5e, 0x6d, 0xfa, 0x34, 0x45, 0x27, 0x73, 0xc4, 0x0b, 0x5f, 0x62,
-	0x18, 0x54, 0xe4, 0xbb, 0xfc, 0xc3, 0x7f, 0x03, 0x00, 0x00, 0xff, 0xff, 0xe9, 0x31, 0xe4, 0xb6,
-	0xf5, 0x0b, 0x00, 0x00,
+	0x2e, 0xd6, 0x7a, 0xf7, 0xd5, 0x59, 0x65, 0x77, 0x66, 0xd9, 0x19, 0x3b, 0x9b, 0x0b, 0xe2, 0x27,
+	0x20, 0x21, 0xc1, 0x0f, 0x80, 0x2b, 0x37, 0x2e, 0xfc, 0x83, 0x1c, 0x7b, 0x42, 0x88, 0x83, 0x05,
+	0xce, 0x7f, 0xe0, 0xd0, 0x13, 0xda, 0x99, 0x71, 0x1c, 0xc7, 0x09, 0xad, 0x82, 0xba, 0xca, 0xc9,
+	0x9e, 0xb7, 0x6f, 0xde, 0xfb, 0xde, 0x37, 0xdf, 0xbc, 0xb7, 0x0b, 0x75, 0x1c, 0x85, 0xd6, 0x68,
+	0xb3, 0x8f, 0xdc, 0xd9, 0xb4, 0x78, 0xd2, 0x8e, 0x62, 0xca, 0xa9, 0x51, 0xc1, 0x51, 0xd8, 0x56,
+	0xd6, 0xd5, 0xfa, 0x80, 0x0e, 0xa8, 0xb0, 0x5b, 0xe9, 0x3f, 0xe9, 0xb2, 0x7a, 0x67, 0x44, 0x39,
+	0x5a, 0x98, 0x44, 0x34, 0xe6, 0xe8, 0xcd, 0x42, 0x1c, 0x46, 0xc8, 0xa4, 0x8b, 0xf9, 0xa3, 0x06,
+	0x6f, 0x6e, 0x53, 0xf2, 0xcc, 0x8f, 0xc3, 0xed, 0x3d, 0xc7, 0x27, 0x36, 0x7e, 0x3d, 0x44, 0xc6,
+	0x8d, 0x2e, 0x14, 0x19, 0x12, 0x0f, 0xe3, 0x86, 0x76, 0x5b, 0xbb, 0x5f, 0xed, 0x6c, 0xbe, 0x18,
+	0xb7, 0x36, 0x06, 0x3e, 0xdf, 0x1b, 0xf6, 0xdb, 0x2e, 0x0d, 0x2d, 0x97, 0xb2, 0x90, 0x32, 0xf5,
+	0xb3, 0xc1, 0xbc, 0x7d, 0x15, 0x75, 0xcb, 0x75, 0xb7, 0x3c, 0x2f, 0x46, 0xc6, 0x6c, 0x15, 0xc0,
+	0x30, 0x40, 0x27, 0x4e, 0x88, 0x8d, 0xfc, 0x6d, 0xed, 0x7e, 0xd9, 0x16, 0xff, 0x8d, 0x3b, 0x50,
+	0x25, 0x0e, 0xf7, 0x47, 0xd8, 0x73, 0x18, 0x43, 0xde, 0xb8, 0x26, 0x9e, 0x55, 0xa4, 0x6d, 0x2b,
+	0x35, 0x99, 0x2b, 0x50, 0x9f, 0x07, 0xc6, 0x22, 0x4a, 0x18, 0x9a, 0x3f, 0xe7, 0xe1, 0x86, 0x7a,
+	0xb0, 0x83, 0x11, 0x65, 0x3e, 0x7f, 0x0d, 0x98, 0xeb, 0x50, 0x70, 0xd3, 0xac, 0x0a, 0xb4, 0x5c,
+	0x18, 0xef, 0x42, 0x81, 0x27, 0x3d, 0xdf, 0x13, 0x70, 0xab, 0x9d, 0xfa, 0xd1, 0xb8, 0x95, 0xfb,
+	0x73, 0xdc, 0xd2, 0x3f, 0x71, 0xd8, 0xde, 0x64, 0xdc, 0xd2, 0x77, 0x93, 0xee, 0x8e, 0xad, 0xf3,
+	0xa4, 0xeb, 0x19, 0x0f, 0xa1, 0xe8, 0x84, 0x74, 0x48, 0x78, 0x43, 0x17, 0xbe, 0x96, 0xf2, 0xbd,
+	0xf7, 0x0a, 0x78, 0xbe, 0xf0, 0x09, 0xb7, 0xd5, 0x76, 0xe3, 0x03, 0x58, 0xea, 0x0f, 0x63, 0x82,
+	0x71, 0xcf, 0x91, 0x18, 0x1b, 0x05, 0x11, 0x70, 0x59, 0x05, 0x7c, 0x63, 0x0a, 0xbd, 0x26, 0xdd,
+	0xd4, 0xd2, 0x6c, 0xc0, 0xca, 0x59, 0x96, 0x14, 0x81, 0xbf, 0xcd, 0x8e, 0x7c, 0x97, 0xee, 0x23,
+	0xb9, 0x8a, 0xf4, 0xad, 0x40, 0x91, 0x1d, 0x86, 0x7d, 0x1a, 0x08, 0xfa, 0xca, 0xb6, 0x5a, 0x9d,
+	0x12, 0x85, 0x82, 0xae, 0x6a, 0xfa, 0x5d, 0x83, 0xca, 0x23, 0x9f, 0xec, 0x67, 0x56, 0xcb, 0x5d,
+	0x58, 0x8a, 0xd1, 0xf5, 0x23, 0x1f, 0x09, 0x17, 0x27, 0xa3, 0x24, 0x5c, 0x3b, 0xb1, 0xa6, 0x71,
+	0x2e, 0xaa, 0xc3, 0xb8, 0x07, 0xcb, 0xb3, 0xed, 0x32, 0x7c, 0x41, 0x38, 0xcc, 0xa2, 0x0a, 0xd5,
+	0x9b, 0x9b, 0x50, 0x95, 0x75, 0xc9, 0x42, 0xd3, 0x8b, 0xe3, 0xc9, 0xf3, 0x94, 0x59, 0x35, 0x79,
+	0x71, 0x94, 0x2d, 0xcd, 0x69, 0x26, 0x70, 0xe3, 0x73, 0x7f, 0x40, 0x3a, 0xc3, 0x98, 0x08, 0x92,
+	0x58, 0x56, 0xa4, 0x98, 0x1f, 0xc3, 0xca, 0xd9, 0xcc, 0x0a, 0xf6, 0x3a, 0x80, 0x4b, 0xc3, 0xd0,
+	0x21, 0x5e, 0x7a, 0xfe, 0x32, 0x7d, 0x6d, 0x32, 0x6e, 0x95, 0xb7, 0xa5, 0xb5, 0xbb, 0x63, 0x97,
+	0x95, 0x43, 0xd7, 0x33, 0x7f, 0xca, 0xcb, 0x40, 0x3b, 0x18, 0x05, 0xf4, 0x30, 0x5b, 0x91, 0x7e,
+	0x0a, 0x25, 0xd7, 0x89, 0x1c, 0xd7, 0xe7, 0x87, 0x4a, 0xa7, 0x6d, 0xa5, 0xd3, 0x77, 0x5e, 0x21,
+	0x4d, 0x97, 0x70, 0xfb, 0x64, 0xbf, 0x71, 0x17, 0x4a, 0x1e, 0xba, 0x7e, 0xe8, 0x04, 0x4c, 0x9c,
+	0x7f, 0xad, 0x53, 0x7e, 0x31, 0x6e, 0x15, 0x86, 0x3e, 0xe1, 0x1f, 0xda, 0x27, 0x8f, 0x4e, 0x89,
+	0xa4, 0x30, 0x27, 0x92, 0x35, 0x00, 0x9e, 0xd6, 0xde, 0x13, 0xed, 0xb3, 0x28, 0x9e, 0x95, 0x85,
+	0xe5, 0x89, 0x13, 0xa2, 0xf9, 0x10, 0x6e, 0x2e, 0x90, 0x74, 0x29, 0xba, 0xbf, 0x81, 0xb7, 0xd3,
+	0x40, 0x4f, 0x91, 0x78, 0x3e, 0x19, 0xec, 0xc6, 0x0e, 0x61, 0xcf, 0x30, 0xce, 0x4e, 0x36, 0x8f,
+	0xe0, 0xd6, 0xf9, 0xf9, 0x2f, 0x55, 0xcd, 0xb7, 0x1a, 0xd4, 0xd2, 0x70, 0xbb, 0x49, 0x66, 0x9a,
+	0x59, 0x82, 0x3c, 0x4f, 0xa4, 0x5a, 0xec, 0x3c, 0x4f, 0x4c, 0x0b, 0x96, 0xa6, 0x08, 0x54, 0x09,
+	0x6b, 0xd3, 0xd6, 0x27, 0xee, 0x6b, 0xa7, 0x34, 0xdf, 0xee, 0xcc, 0x7f, 0x34, 0xb8, 0xf9, 0x25,
+	0xe5, 0xf8, 0x9a, 0x27, 0xf1, 0xf9, 0xe8, 0x3f, 0x02, 0x3d, 0xa2, 0x41, 0x20, 0xf0, 0x57, 0x1e,
+	0xb4, 0xda, 0xe9, 0x4b, 0x43, 0x7b, 0xfa, 0xd2, 0x30, 0x7d, 0xc3, 0x68, 0x3f, 0xa5, 0x41, 0xf0,
+	0x18, 0xb9, 0xd3, 0xd1, 0xd3, 0xeb, 0x60, 0x8b, 0x2d, 0x0b, 0x63, 0x5c, 0x5f, 0x18, 0xe3, 0xc6,
+	0x2d, 0x28, 0xbb, 0xb2, 0x2a, 0xf4, 0x84, 0xbe, 0x4b, 0xf6, 0xcc, 0x60, 0xae, 0x43, 0x63, 0xb1,
+	0x6e, 0xc5, 0xd9, 0x75, 0xb8, 0x16, 0xd0, 0x81, 0xea, 0x70, 0xe9, 0x5f, 0xf3, 0xd7, 0x3c, 0xbc,
+	0x75, 0xca, 0x3d, 0xeb, 0xf1, 0xff, 0x3f, 0x88, 0x3a, 0x19, 0x7d, 0xfa, 0x4b, 0x47, 0xdf, 0x03,
+	0xa8, 0xa6, 0x93, 0xfc, 0x65, 0xe3, 0xbe, 0x92, 0x3a, 0xa9, 0xc5, 0x3c, 0xc9, 0xc5, 0xb3, 0x24,
+	0xb7, 0x61, 0xf5, 0x3c, 0xd6, 0x2e, 0xa4, 0xf9, 0x87, 0xfc, 0x9c, 0x1a, 0xb3, 0xed, 0xbf, 0xd9,
+	0x90, 0x7c, 0x51, 0xcb, 0xfd, 0x6f, 0x22, 0xe7, 0xd5, 0x3a, 0xdf, 0x72, 0x17, 0x69, 0xfc, 0x45,
+	0x93, 0x7d, 0x6d, 0xda, 0xd0, 0x3e, 0x3b, 0x20, 0x18, 0xb3, 0x3d, 0x3f, 0xca, 0x8c, 0xcb, 0x75,
+	0x28, 0x13, 0x3c, 0xe8, 0xd1, 0x34, 0xb1, 0x1a, 0x66, 0x0b, 0x3a, 0x2a, 0x11, 0x3c, 0x10, 0xc8,
+	0xcc, 0xc7, 0xb0, 0x76, 0x01, 0xdc, 0x4b, 0xf5, 0xe1, 0xef, 0x35, 0x58, 0xde, 0xf2, 0xbc, 0x2b,
+	0xf6, 0x55, 0x61, 0xc0, 0xf5, 0x19, 0x28, 0x59, 0x57, 0xe7, 0xc9, 0xd1, 0xdf, 0xcd, 0xdc, 0xd1,
+	0xa4, 0xa9, 0x3d, 0x9f, 0x34, 0xb5, 0xbf, 0x26, 0x4d, 0xed, 0xbb, 0xe3, 0x66, 0xee, 0xf9, 0x71,
+	0x33, 0xf7, 0xc7, 0x71, 0x33, 0xf7, 0xd5, 0x7b, 0xa7, 0xf0, 0x39, 0x09, 0x06, 0x4e, 0x4c, 0x90,
+	0x1f, 0xd0, 0x78, 0x5f, 0xad, 0x36, 0x5c, 0x1a, 0xa3, 0x95, 0x58, 0xe9, 0x47, 0x9a, 0x40, 0xdb,
+	0x2f, 0x8a, 0x4f, 0xab, 0xf7, 0xff, 0x0d, 0x00, 0x00, 0xff, 0xff, 0x12, 0x5b, 0x69, 0xfa, 0xb8,
+	0x0d, 0x00, 0x00,
+}
+
+func (m *ConfirmChainRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ConfirmChainRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ConfirmChainRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.NativeAsset) > 0 {
+		i -= len(m.NativeAsset)
+		copy(dAtA[i:], m.NativeAsset)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.NativeAsset)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Sender) > 0 {
+		i -= len(m.Sender)
+		copy(dAtA[i:], m.Sender)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Sender)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ConfirmChainResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ConfirmChainResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ConfirmChainResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
 }
 
 func (m *ConfirmDepositRequest) Marshal() (dAtA []byte, err error) {
@@ -1534,6 +1761,100 @@ func (m *SignTxResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *VoteConfirmChainRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *VoteConfirmChainRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *VoteConfirmChainRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Confirmed {
+		i--
+		if m.Confirmed {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x28
+	}
+	if len(m.NativeAsset) > 0 {
+		i -= len(m.NativeAsset)
+		copy(dAtA[i:], m.NativeAsset)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.NativeAsset)))
+		i--
+		dAtA[i] = 0x22
+	}
+	{
+		size, err := m.Poll.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintTx(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1a
+	if len(m.Chain) > 0 {
+		i -= len(m.Chain)
+		copy(dAtA[i:], m.Chain)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Chain)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Sender) > 0 {
+		i -= len(m.Sender)
+		copy(dAtA[i:], m.Sender)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Sender)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *VoteConfirmChainResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *VoteConfirmChainResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *VoteConfirmChainResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Log) > 0 {
+		i -= len(m.Log)
+		copy(dAtA[i:], m.Log)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Log)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *VoteConfirmDepositRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -1847,19 +2168,12 @@ func (m *AddChainRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.NativeAsset)
 		i = encodeVarintTx(dAtA, i, uint64(len(m.NativeAsset)))
 		i--
-		dAtA[i] = 0x22
+		dAtA[i] = 0x1a
 	}
 	if len(m.Name) > 0 {
 		i -= len(m.Name)
 		copy(dAtA[i:], m.Name)
 		i = encodeVarintTx(dAtA, i, uint64(len(m.Name)))
-		i--
-		dAtA[i] = 0x1a
-	}
-	if len(m.Chain) > 0 {
-		i -= len(m.Chain)
-		copy(dAtA[i:], m.Chain)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Chain)))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -1907,6 +2221,36 @@ func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *ConfirmChainRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Sender)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.NativeAsset)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *ConfirmChainResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
 func (m *ConfirmDepositRequest) Size() (n int) {
 	if m == nil {
 		return 0
@@ -2150,6 +2494,45 @@ func (m *SignTxResponse) Size() (n int) {
 	return n
 }
 
+func (m *VoteConfirmChainRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Sender)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.Chain)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = m.Poll.Size()
+	n += 1 + l + sovTx(uint64(l))
+	l = len(m.NativeAsset)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	if m.Confirmed {
+		n += 2
+	}
+	return n
+}
+
+func (m *VoteConfirmChainResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Log)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
 func (m *VoteConfirmDepositRequest) Size() (n int) {
 	if m == nil {
 		return 0
@@ -2272,10 +2655,6 @@ func (m *AddChainRequest) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
 	}
-	l = len(m.Chain)
-	if l > 0 {
-		n += 1 + l + sovTx(uint64(l))
-	}
 	l = len(m.Name)
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
@@ -2301,6 +2680,204 @@ func sovTx(x uint64) (n int) {
 }
 func sozTx(x uint64) (n int) {
 	return sovTx(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (m *ConfirmChainRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ConfirmChainRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ConfirmChainRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Sender", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Sender = append(m.Sender[:0], dAtA[iNdEx:postIndex]...)
+			if m.Sender == nil {
+				m.Sender = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NativeAsset", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.NativeAsset = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ConfirmChainResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ConfirmChainResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ConfirmChainResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 func (m *ConfirmDepositRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -4040,6 +4617,289 @@ func (m *SignTxResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *VoteConfirmChainRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: VoteConfirmChainRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: VoteConfirmChainRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Sender", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Sender = append(m.Sender[:0], dAtA[iNdEx:postIndex]...)
+			if m.Sender == nil {
+				m.Sender = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Chain = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Poll", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Poll.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NativeAsset", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.NativeAsset = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Confirmed", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Confirmed = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *VoteConfirmChainResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: VoteConfirmChainResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: VoteConfirmChainResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Log", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Log = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *VoteConfirmDepositRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -4971,38 +5831,6 @@ func (m *AddChainRequest) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Chain = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
 			}
 			var stringLen uint64
@@ -5033,7 +5861,7 @@ func (m *AddChainRequest) Unmarshal(dAtA []byte) error {
 			}
 			m.Name = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 4:
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field NativeAsset", wireType)
 			}

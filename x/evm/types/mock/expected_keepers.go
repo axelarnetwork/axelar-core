@@ -1248,6 +1248,9 @@ var _ types.EthKeeper = &EthKeeperMock{}
 // 			DeleteDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, deposit types.ERC20Deposit)  {
 // 				panic("mock out the DeleteDeposit method")
 // 			},
+// 			DeletePendingChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta)  {
+// 				panic("mock out the DeletePendingChain method")
+// 			},
 // 			DeletePendingDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta)  {
 // 				panic("mock out the DeletePendingDeposit method")
 // 			},
@@ -1281,6 +1284,9 @@ var _ types.EthKeeper = &EthKeeperMock{}
 // 			GetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.Params {
 // 				panic("mock out the GetParams method")
 // 			},
+// 			GetPendingChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta) (string, bool) {
+// 				panic("mock out the GetPendingChain method")
+// 			},
 // 			GetPendingDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta) (types.ERC20Deposit, bool) {
 // 				panic("mock out the GetPendingDeposit method")
 // 			},
@@ -1295,6 +1301,9 @@ var _ types.EthKeeper = &EthKeeperMock{}
 // 			},
 // 			GetTokenAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, symbol string, gatewayAddr common.Address) (common.Address, error) {
 // 				panic("mock out the GetTokenAddress method")
+// 			},
+// 			KnownChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) bool {
+// 				panic("mock out the KnownChain method")
 // 			},
 // 			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
 // 				panic("mock out the Logger method")
@@ -1313,6 +1322,9 @@ var _ types.EthKeeper = &EthKeeperMock{}
 // 			},
 // 			SetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, params []types.Params)  {
 // 				panic("mock out the SetParams method")
+// 			},
+// 			SetPendingChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta, nativeAsset string)  {
+// 				panic("mock out the SetPendingChain method")
 // 			},
 // 			SetPendingDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta, deposit *types.ERC20Deposit)  {
 // 				panic("mock out the SetPendingDeposit method")
@@ -1335,6 +1347,9 @@ var _ types.EthKeeper = &EthKeeperMock{}
 type EthKeeperMock struct {
 	// DeleteDepositFunc mocks the DeleteDeposit method.
 	DeleteDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, deposit types.ERC20Deposit)
+
+	// DeletePendingChainFunc mocks the DeletePendingChain method.
+	DeletePendingChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta)
 
 	// DeletePendingDepositFunc mocks the DeletePendingDeposit method.
 	DeletePendingDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta)
@@ -1369,6 +1384,9 @@ type EthKeeperMock struct {
 	// GetParamsFunc mocks the GetParams method.
 	GetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.Params
 
+	// GetPendingChainFunc mocks the GetPendingChain method.
+	GetPendingChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta) (string, bool)
+
 	// GetPendingDepositFunc mocks the GetPendingDeposit method.
 	GetPendingDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta) (types.ERC20Deposit, bool)
 
@@ -1383,6 +1401,9 @@ type EthKeeperMock struct {
 
 	// GetTokenAddressFunc mocks the GetTokenAddress method.
 	GetTokenAddressFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, symbol string, gatewayAddr common.Address) (common.Address, error)
+
+	// KnownChainFunc mocks the KnownChain method.
+	KnownChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) bool
 
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger
@@ -1401,6 +1422,9 @@ type EthKeeperMock struct {
 
 	// SetParamsFunc mocks the SetParams method.
 	SetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, params []types.Params)
+
+	// SetPendingChainFunc mocks the SetPendingChain method.
+	SetPendingChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta, nativeAsset string)
 
 	// SetPendingDepositFunc mocks the SetPendingDeposit method.
 	SetPendingDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta, deposit *types.ERC20Deposit)
@@ -1424,6 +1448,15 @@ type EthKeeperMock struct {
 			Chain string
 			// Deposit is the deposit argument value.
 			Deposit types.ERC20Deposit
+		}
+		// DeletePendingChain holds details about calls to the DeletePendingChain method.
+		DeletePendingChain []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain string
+			// Poll is the poll argument value.
+			Poll exported.PollMeta
 		}
 		// DeletePendingDeposit holds details about calls to the DeletePendingDeposit method.
 		DeletePendingDeposit []struct {
@@ -1518,6 +1551,15 @@ type EthKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
+		// GetPendingChain holds details about calls to the GetPendingChain method.
+		GetPendingChain []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain string
+			// Poll is the poll argument value.
+			Poll exported.PollMeta
+		}
 		// GetPendingDeposit holds details about calls to the GetPendingDeposit method.
 		GetPendingDeposit []struct {
 			// Ctx is the ctx argument value.
@@ -1560,6 +1602,13 @@ type EthKeeperMock struct {
 			Symbol string
 			// GatewayAddr is the gatewayAddr argument value.
 			GatewayAddr common.Address
+		}
+		// KnownChain holds details about calls to the KnownChain method.
+		KnownChain []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain string
 		}
 		// Logger holds details about calls to the Logger method.
 		Logger []struct {
@@ -1615,6 +1664,17 @@ type EthKeeperMock struct {
 			// Params is the params argument value.
 			Params []types.Params
 		}
+		// SetPendingChain holds details about calls to the SetPendingChain method.
+		SetPendingChain []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain string
+			// Poll is the poll argument value.
+			Poll exported.PollMeta
+			// NativeAsset is the nativeAsset argument value.
+			NativeAsset string
+		}
 		// SetPendingDeposit holds details about calls to the SetPendingDeposit method.
 		SetPendingDeposit []struct {
 			// Ctx is the ctx argument value.
@@ -1659,6 +1719,7 @@ type EthKeeperMock struct {
 		}
 	}
 	lockDeleteDeposit                 sync.RWMutex
+	lockDeletePendingChain            sync.RWMutex
 	lockDeletePendingDeposit          sync.RWMutex
 	lockDeletePendingToken            sync.RWMutex
 	lockGetBurnerAddressAndSalt       sync.RWMutex
@@ -1670,17 +1731,20 @@ type EthKeeperMock struct {
 	lockGetHashToSign                 sync.RWMutex
 	lockGetNetwork                    sync.RWMutex
 	lockGetParams                     sync.RWMutex
+	lockGetPendingChain               sync.RWMutex
 	lockGetPendingDeposit             sync.RWMutex
 	lockGetPendingTokenDeployment     sync.RWMutex
 	lockGetRequiredConfirmationHeight sync.RWMutex
 	lockGetRevoteLockingPeriod        sync.RWMutex
 	lockGetTokenAddress               sync.RWMutex
+	lockKnownChain                    sync.RWMutex
 	lockLogger                        sync.RWMutex
 	lockSetBurnerInfo                 sync.RWMutex
 	lockSetCommandData                sync.RWMutex
 	lockSetDeposit                    sync.RWMutex
 	lockSetGatewayAddress             sync.RWMutex
 	lockSetParams                     sync.RWMutex
+	lockSetPendingChain               sync.RWMutex
 	lockSetPendingDeposit             sync.RWMutex
 	lockSetPendingTokenDeployment     sync.RWMutex
 	lockSetTokenInfo                  sync.RWMutex
@@ -1723,6 +1787,45 @@ func (mock *EthKeeperMock) DeleteDepositCalls() []struct {
 	mock.lockDeleteDeposit.RLock()
 	calls = mock.calls.DeleteDeposit
 	mock.lockDeleteDeposit.RUnlock()
+	return calls
+}
+
+// DeletePendingChain calls DeletePendingChainFunc.
+func (mock *EthKeeperMock) DeletePendingChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta) {
+	if mock.DeletePendingChainFunc == nil {
+		panic("EthKeeperMock.DeletePendingChainFunc: method is nil but EthKeeper.DeletePendingChain was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain string
+		Poll  exported.PollMeta
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+		Poll:  poll,
+	}
+	mock.lockDeletePendingChain.Lock()
+	mock.calls.DeletePendingChain = append(mock.calls.DeletePendingChain, callInfo)
+	mock.lockDeletePendingChain.Unlock()
+	mock.DeletePendingChainFunc(ctx, chain, poll)
+}
+
+// DeletePendingChainCalls gets all the calls that were made to DeletePendingChain.
+// Check the length with:
+//     len(mockedEthKeeper.DeletePendingChainCalls())
+func (mock *EthKeeperMock) DeletePendingChainCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain string
+	Poll  exported.PollMeta
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain string
+		Poll  exported.PollMeta
+	}
+	mock.lockDeletePendingChain.RLock()
+	calls = mock.calls.DeletePendingChain
+	mock.lockDeletePendingChain.RUnlock()
 	return calls
 }
 
@@ -2143,6 +2246,45 @@ func (mock *EthKeeperMock) GetParamsCalls() []struct {
 	return calls
 }
 
+// GetPendingChain calls GetPendingChainFunc.
+func (mock *EthKeeperMock) GetPendingChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta) (string, bool) {
+	if mock.GetPendingChainFunc == nil {
+		panic("EthKeeperMock.GetPendingChainFunc: method is nil but EthKeeper.GetPendingChain was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain string
+		Poll  exported.PollMeta
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+		Poll:  poll,
+	}
+	mock.lockGetPendingChain.Lock()
+	mock.calls.GetPendingChain = append(mock.calls.GetPendingChain, callInfo)
+	mock.lockGetPendingChain.Unlock()
+	return mock.GetPendingChainFunc(ctx, chain, poll)
+}
+
+// GetPendingChainCalls gets all the calls that were made to GetPendingChain.
+// Check the length with:
+//     len(mockedEthKeeper.GetPendingChainCalls())
+func (mock *EthKeeperMock) GetPendingChainCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain string
+	Poll  exported.PollMeta
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain string
+		Poll  exported.PollMeta
+	}
+	mock.lockGetPendingChain.RLock()
+	calls = mock.calls.GetPendingChain
+	mock.lockGetPendingChain.RUnlock()
+	return calls
+}
+
 // GetPendingDeposit calls GetPendingDepositFunc.
 func (mock *EthKeeperMock) GetPendingDeposit(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta) (types.ERC20Deposit, bool) {
 	if mock.GetPendingDepositFunc == nil {
@@ -2331,6 +2473,41 @@ func (mock *EthKeeperMock) GetTokenAddressCalls() []struct {
 	mock.lockGetTokenAddress.RLock()
 	calls = mock.calls.GetTokenAddress
 	mock.lockGetTokenAddress.RUnlock()
+	return calls
+}
+
+// KnownChain calls KnownChainFunc.
+func (mock *EthKeeperMock) KnownChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) bool {
+	if mock.KnownChainFunc == nil {
+		panic("EthKeeperMock.KnownChainFunc: method is nil but EthKeeper.KnownChain was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain string
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockKnownChain.Lock()
+	mock.calls.KnownChain = append(mock.calls.KnownChain, callInfo)
+	mock.lockKnownChain.Unlock()
+	return mock.KnownChainFunc(ctx, chain)
+}
+
+// KnownChainCalls gets all the calls that were made to KnownChain.
+// Check the length with:
+//     len(mockedEthKeeper.KnownChainCalls())
+func (mock *EthKeeperMock) KnownChainCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain string
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain string
+	}
+	mock.lockKnownChain.RLock()
+	calls = mock.calls.KnownChain
+	mock.lockKnownChain.RUnlock()
 	return calls
 }
 
@@ -2565,6 +2742,49 @@ func (mock *EthKeeperMock) SetParamsCalls() []struct {
 	mock.lockSetParams.RLock()
 	calls = mock.calls.SetParams
 	mock.lockSetParams.RUnlock()
+	return calls
+}
+
+// SetPendingChain calls SetPendingChainFunc.
+func (mock *EthKeeperMock) SetPendingChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta, nativeAsset string) {
+	if mock.SetPendingChainFunc == nil {
+		panic("EthKeeperMock.SetPendingChainFunc: method is nil but EthKeeper.SetPendingChain was just called")
+	}
+	callInfo := struct {
+		Ctx         github_com_cosmos_cosmos_sdk_types.Context
+		Chain       string
+		Poll        exported.PollMeta
+		NativeAsset string
+	}{
+		Ctx:         ctx,
+		Chain:       chain,
+		Poll:        poll,
+		NativeAsset: nativeAsset,
+	}
+	mock.lockSetPendingChain.Lock()
+	mock.calls.SetPendingChain = append(mock.calls.SetPendingChain, callInfo)
+	mock.lockSetPendingChain.Unlock()
+	mock.SetPendingChainFunc(ctx, chain, poll, nativeAsset)
+}
+
+// SetPendingChainCalls gets all the calls that were made to SetPendingChain.
+// Check the length with:
+//     len(mockedEthKeeper.SetPendingChainCalls())
+func (mock *EthKeeperMock) SetPendingChainCalls() []struct {
+	Ctx         github_com_cosmos_cosmos_sdk_types.Context
+	Chain       string
+	Poll        exported.PollMeta
+	NativeAsset string
+} {
+	var calls []struct {
+		Ctx         github_com_cosmos_cosmos_sdk_types.Context
+		Chain       string
+		Poll        exported.PollMeta
+		NativeAsset string
+	}
+	mock.lockSetPendingChain.RLock()
+	calls = mock.calls.SetPendingChain
+	mock.lockSetPendingChain.RUnlock()
 	return calls
 }
 

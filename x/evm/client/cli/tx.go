@@ -30,6 +30,7 @@ func GetTxCmd() *cobra.Command {
 	evmTxCmd.AddCommand(
 		GetCmdLink(),
 		GetCmdSignTx(),
+		GetCmdConfirmChain(),
 		GetCmdConfirmERC20TokenDeployment(),
 		GetCmdConfirmERC20Deposit(),
 		GetCmdSignPendingTransfersTx(),
@@ -96,6 +97,32 @@ func GetCmdSignTx() *cobra.Command {
 		},
 	}
 
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdConfirmChain returns the cli command to confirm a ERC20 token deployment
+func GetCmdConfirmChain() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "confirm-erc20-token [chain] [native asset]",
+		Short: "Confirm an EVM chain for a given name and native asset",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			chain := args[0]
+			nativeAsset := args[1]
+			msg := types.NewConfirmChainRequest(cliCtx.GetFromAddress(), chain, nativeAsset)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }
@@ -269,7 +296,7 @@ func GetCmdSignTransferOwnership() *cobra.Command {
 // GetCmdAddChain returns the cli command to add a new evm chain command
 func GetCmdAddChain() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-chain [chain] [name] [native asset]",
+		Use:   "add-chain [name] [native asset]",
 		Short: "Add a new EVM chain",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -277,11 +304,10 @@ func GetCmdAddChain() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			chain := args[0]
-			name := args[1]
-			nativeAsset := args[2]
+			name := args[0]
+			nativeAsset := args[1]
 
-			msg := types.NewAddChainRequest(cliCtx.GetFromAddress(), chain, name, nativeAsset)
+			msg := types.NewAddChainRequest(cliCtx.GetFromAddress(), name, nativeAsset)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

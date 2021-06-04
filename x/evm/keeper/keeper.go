@@ -30,6 +30,7 @@ const (
 	chainPrefix            = "chain_"
 	subspacePrefix         = "subspace_"
 	unsignedPrefix         = "unsigned_"
+	pendingChainPrefix     = "pending_chain_"
 	pendingTokenPrefix     = "pending_token_"
 	pendingDepositPrefix   = "pending_deposit_"
 	confirmedDepositPrefix = "confirmed_deposit_"
@@ -435,6 +436,26 @@ func (k Keeper) GetPendingDeposit(ctx sdk.Context, chain string, poll exported.P
 	return deposit, true
 }
 
+// DeletePendingChain deletes the poll associated to a  given chain
+func (k Keeper) DeletePendingChain(ctx sdk.Context, chain string, poll exported.PollMeta) {
+	k.getStore(ctx, chain).Delete([]byte(pendingChainPrefix + poll.String()))
+}
+
+// SetPendingChain stores a poll associated to a  given chain
+func (k Keeper) SetPendingChain(ctx sdk.Context, chain string, poll exported.PollMeta, nativeAsset string) {
+	k.getStore(ctx, chain).Set([]byte(pendingChainPrefix+poll.String()), []byte(nativeAsset))
+}
+
+// GetPendingChain returns the poll associated to a  given chain
+func (k Keeper) GetPendingChain(ctx sdk.Context, chain string, poll exported.PollMeta) (string, bool) {
+	bz := k.getStore(ctx, chain).Get([]byte(pendingChainPrefix + poll.String()))
+	if bz == nil {
+		return "", false
+	}
+
+	return string(bz), true
+}
+
 // SetDeposit stores confirmed or burned deposits
 func (k Keeper) SetDeposit(ctx sdk.Context, chain string, deposit types.ERC20Deposit, state types.DepositState) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(&deposit)
@@ -453,6 +474,12 @@ func (k Keeper) SetDeposit(ctx sdk.Context, chain string, deposit types.ERC20Dep
 func (k Keeper) DeleteDeposit(ctx sdk.Context, chain string, deposit types.ERC20Deposit) {
 	k.getStore(ctx, chain).Delete([]byte(confirmedDepositPrefix + deposit.TxID.Hex() + "_" + deposit.BurnerAddress.Hex()))
 	k.getStore(ctx, chain).Delete([]byte(burnedDepositPrefix + deposit.TxID.Hex() + "_" + deposit.BurnerAddress.Hex()))
+}
+
+// KnownChain checks if the keeper is aware of a given chain
+func (k Keeper) KnownChain(ctx sdk.Context, chain string) bool {
+	_, ok := k.getSubspace(ctx, chain)
+	return ok
 }
 
 func (k Keeper) getStore(ctx sdk.Context, chain string) prefix.Store {

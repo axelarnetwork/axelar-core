@@ -8,6 +8,15 @@ import "vote/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
+message ConfirmChainRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string name = 2;
+  string native_asset = 3;
+}
+
+message ConfirmChainResponse {}
+
 // MsgConfirmDeposit represents an erc20 deposit confirmation message
 message ConfirmDepositRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
@@ -110,6 +119,18 @@ message SignTxRequest {
 
 message SignTxResponse { string tx_id = 1 [ (gogoproto.customname) = "TxID" ]; }
 
+// MsgVoteConfirmChain represents a message that votes on a new EVM chain
+message VoteConfirmChainRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2;
+  vote.exported.v1beta1.PollMeta poll = 3 [ (gogoproto.nullable) = false ];
+  string native_asset = 4;
+  bool confirmed = 5;
+}
+
+message VoteConfirmChainResponse { string log = 1; }
+
 // MsgVoteConfirmDeposit represents a message that votes on a deposit
 message VoteConfirmDepositRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
@@ -162,9 +183,8 @@ message SignTransferOwnershipResponse {
 message AddChainRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string chain = 2;
-  string name = 3;
-  string native_asset = 4;
+  string name = 2;
+  string native_asset = 3;
 }
 
 message AddChainResponse {}

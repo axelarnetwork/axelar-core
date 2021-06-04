@@ -21,6 +21,7 @@ import (
 // rest routes
 const (
 	TxMethodLink               = "link"
+	TxMethodConfirmChain       = "confirm-chain"
 	TxMethodConfirmTokenDeploy = "confirm-erc20-deploy"
 	TxMethodConfirmDeposit     = "confirm-erc20-deposit"
 	TxMethodSignTx             = "sign-tx"
@@ -41,6 +42,7 @@ const (
 func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx := clientUtils.RegisterTxHandlerFn(r, types.RestRoute)
 	registerTx(GetHandlerLink(cliCtx), TxMethodLink, clientUtils.PathVarChain)
+	registerTx(GetHandlerConfirmChain(cliCtx), TxMethodConfirmChain)
 	registerTx(GetHandlerConfirmTokenDeploy(cliCtx), TxMethodConfirmTokenDeploy, clientUtils.PathVarSymbol)
 	registerTx(GetHandlerConfirmDeposit(cliCtx), TxMethodConfirmDeposit)
 	registerTx(GetHandlerSignTx(cliCtx), TxMethodSignTx)
@@ -64,6 +66,13 @@ type ReqLink struct {
 	Chain         string       `json:"chain" yaml:"chain"`
 	RecipientAddr string       `json:"recipient" yaml:"recipient"`
 	Symbol        string       `json:"symbol" yaml:"symbol"`
+}
+
+// ReqConfirmChain represents a request to confirm a token deployment
+type ReqConfirmChain struct {
+	BaseReq     rest.BaseReq `json:"base_req" yaml:"base_req"`
+	Chain       string       `json:"chain" yaml:"chain"`
+	NativeAsset string       `json:"native_asset" yaml:"native_asset"`
 }
 
 // ReqConfirmTokenDeploy represents a request to confirm a token deployment
@@ -113,7 +122,6 @@ type ReqSignBurnTokens struct {
 // ReqAddChain represents a request to add a new evm chain command
 type ReqAddChain struct {
 	BaseReq     rest.BaseReq `json:"base_req" yaml:"base_req"`
-	Chain       string       `json:"chain" yaml:"chain"`
 	Name        string       `json:"name" yaml:"name"`
 	NativeAsset string       `json:"native_asset" yaml:"native_asset"`
 }
@@ -168,6 +176,32 @@ func GetHandlerConfirmTokenDeploy(cliCtx client.Context) http.HandlerFunc {
 
 		txID := common.HexToHash(req.TxID)
 		msg := types.NewConfirmTokenRequest(fromAddr, req.Chain, mux.Vars(r)[clientUtils.PathVarSymbol], txID)
+		if err := msg.ValidateBasic(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
+	}
+}
+
+// GetHandlerConfirmChain returns a handler to confirm an EVM chain
+func GetHandlerConfirmChain(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req ReqConfirmChain
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
+			return
+		}
+		req.BaseReq = req.BaseReq.Sanitize()
+		if !req.BaseReq.ValidateBasic(w) {
+			return
+		}
+		fromAddr, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
+		if !ok {
+			return
+		}
+
+		msg := types.NewConfirmChainRequest(fromAddr, req.Chain, req.NativeAsset)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -342,7 +376,7 @@ func GetHandlerAddChain(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewAddChainRequest(fromAddr, req.Chain, req.Name, req.NativeAsset)
+		msg := types.NewAddChainRequest(fromAddr, req.Name, req.NativeAsset)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
