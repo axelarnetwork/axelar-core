@@ -54,6 +54,9 @@
 - [evm/v1beta1/genesis.proto](#evm/v1beta1/genesis.proto)
     - [GenesisState](#evm.v1beta1.GenesisState)
   
+- [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
+    - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
+  
 - [evm/v1beta1/tx.proto](#evm/v1beta1/tx.proto)
     - [AddChainRequest](#evm.v1beta1.AddChainRequest)
     - [AddChainResponse](#evm.v1beta1.AddChainResponse)
@@ -725,6 +728,40 @@ GenesisState represents the genesis state
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#evm.v1beta1.Params) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="evm/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## evm/v1beta1/query.proto
+
+
+
+<a name="evm.v1beta1.DepositQueryParams"></a>
+
+### DepositQueryParams
+DepositQueryParams describe the parameters used to query for an EVM
+deposit address
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
+| `symbol` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
 
 
 

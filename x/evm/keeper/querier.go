@@ -12,6 +12,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -24,6 +25,7 @@ const (
 	QueryMasterAddress        = "master-address"
 	QueryAxelarGatewayAddress = "gateway-address"
 	QueryCommandData          = "command-data"
+	QueryDepositAddress		  = "deposit-address"
 	CreateDeployTx            = "deploy-gateway"
 	SendTx                    = "send-tx"
 	SendCommand               = "send-command"
@@ -41,6 +43,8 @@ func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer, n types.Nexus) sd
 			return queryTokenAddress(ctx, k, n, path[1], path[2])
 		case QueryCommandData:
 			return queryCommandData(ctx, k, s, n, path[1], path[2])
+		case QueryDepositAddress:
+			return queryDepositAddress(ctx, k, n, path[1], req.Data)
 		case CreateDeployTx:
 			return createDeployGateway(ctx, k, rpc, s, n, req.Data)
 		case SendTx:
@@ -51,6 +55,41 @@ func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer, n types.Nexus) sd
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown eth-bridge query endpoint: %s", path[0]))
 		}
 	}
+}
+
+func queryDepositAddress(ctx sdk.Context, k types.EthKeeper, n types.Nexus, chainName string, data []byte) ([]byte, error) {
+	
+	depositChain, ok := n.GetChain(ctx, chainName)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
+	}
+	
+	var params types.DepositQueryParams
+	if err := types.ModuleCdc.UnmarshalJSON(data, &params); err != nil {
+		return nil, fmt.Errorf("could not parse the recipient")
+	}
+
+	gatewayAddr, ok := k.GetGatewayAddress(ctx, chainName)
+	if !ok {
+		return nil, fmt.Errorf("axelar gateway address not set")
+	}
+
+	tokenAddr, err := k.GetTokenAddress(ctx, chainName, params.Symbol, gatewayAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	depositAddr, _, err := k.GetBurnerAddressAndSalt(ctx, chainName, tokenAddr, params.Address, gatewayAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	_, ok = n.GetRecipient(ctx, nexus.CrossChainAddress{Chain: depositChain, Address: depositAddr.String()})
+	if !ok {
+		return nil, fmt.Errorf("deposit address is not linked with recipient address")
+	}
+
+	return depositAddr.Bytes(), nil
 }
 
 func queryMasterAddress(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string) ([]byte, error) {
@@ -87,7 +126,7 @@ func queryAxelarGateway(ctx sdk.Context, k Keeper, n types.Nexus, chainName stri
 	return addr.Bytes(), nil
 }
 
-func queryTokenAddress(ctx sdk.Context, k Keeper, n types.Nexus, chainName, symbol string) ([]byte, error) {
+func queryTokenAddress(ctx sdk.Context, k types.EthKeeper, n types.Nexus, chainName, symbol string) ([]byte, error) {
 
 	_, ok := n.GetChain(ctx, chainName)
 	if !ok {

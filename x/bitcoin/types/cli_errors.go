@@ -7,4 +7,7 @@ const (
 	ErrFGetPayForRawTx       = "could not get the raw pay-for-consolidation transaction"
 	ErrFInvalidFeeRate       = "invalid fee rate"
 	ErrFGetSignTransferState = "could not get the sign transfer state"
+	ErrFMinWithdraw			 = "could not get the minimum withdraw amount"
+	ErrFTxState				 = "could not get bitcoin transaction state"
+	ErrFConsolidationState	 = "could not get bitcoin consolidation transaction state"
 )

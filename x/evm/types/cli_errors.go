@@ -2,6 +2,7 @@ package types
 
 // module errors
 const (
+	ErrFDepositAddress = "could not get the deposit address"
 	ErrFMasterKey      = "could not resolve master key: %s\n"
 	ErrFGatewayAddress = "could not resolve gateway address: %s\n"
 	ErrFTokenAddress   = "could not resolve token address: %s\n"
