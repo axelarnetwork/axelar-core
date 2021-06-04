@@ -25,6 +25,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/blocks"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast"
 	bcTypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc"
