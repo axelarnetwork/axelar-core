@@ -52,7 +52,7 @@ type ReqConfirmOutPoint struct {
 	TxInfo  string       `json:"tx_info" yaml:"tx_info"`
 }
 
-// ReqSignPendingTransfersTx represents a request to sign pending token transfers from Ethereum
+// ReqSignPendingTransfersTx represents a request to sign pending token transfers
 type ReqSignPendingTransfersTx struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	Fee     string       `json:"fee" yaml:"fee"`

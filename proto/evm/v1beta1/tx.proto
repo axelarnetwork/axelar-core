@@ -1,0 +1,170 @@
+syntax = "proto3";
+package evm.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types";
+
+import "gogoproto/gogo.proto";
+import "vote/exported/v1beta1/types.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// MsgConfirmDeposit represents an erc20 deposit confirmation message
+message ConfirmDepositRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2;
+  bytes tx_id = 3 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash",
+    (gogoproto.customname) = "TxID"
+  ];
+  bytes amount = 4 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+  bytes burner_address = 5
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+}
+
+message ConfirmDepositResponse {}
+
+// MsgConfirmToken represents a token deploy confirmation message
+message ConfirmTokenRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2;
+  bytes tx_id = 3 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash",
+    (gogoproto.customname) = "TxID"
+  ];
+  string symbol = 4;
+}
+
+message ConfirmTokenResponse {}
+
+// MsgLink represents the message that links a cross chain address to a burner
+// address
+message LinkRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2;
+  string recipient_addr = 3;
+  string symbol = 4;
+  string recipient_chain = 5;
+}
+
+message LinkResponse { string deposit_addr = 1; }
+
+// MsgSignBurnTokens represents the message to sign commands to burn tokens with
+// AxelarGateway
+message SignBurnTokensRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2;
+}
+
+message SignBurnTokensResponse {
+  bytes command_id = 1 [ (gogoproto.customname) = "CommandID" ];
+}
+
+// MsgSignDeployToken represents the message to sign a deploy token command for
+// AxelarGateway
+message SignDeployTokenRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2;
+  bytes capacity = 3 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
+  uint32 decimals = 4 [ (gogoproto.casttype) = "uint8" ];
+  string symbol = 5;
+  string token_name = 6;
+}
+
+message SignDeployTokenResponse {
+  bytes command_id = 1 [ (gogoproto.customname) = "CommandID" ];
+}
+
+// MsgSignPendingTransfers represents a message to trigger the signing of all
+// pending transfers
+message SignPendingTransfersRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2;
+}
+
+message SignPendingTransfersResponse {
+  bytes command_id = 1 [ (gogoproto.customname) = "CommandID" ];
+}
+
+message SignTxRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  // Tx is stored in serialized form because the amino codec cannot properly
+  // deserialize MsgSignTx otherwise
+  string chain = 2;
+  bytes tx = 3;
+}
+
+message SignTxResponse { string tx_id = 1 [ (gogoproto.customname) = "TxID" ]; }
+
+// MsgVoteConfirmDeposit represents a message that votes on a deposit
+message VoteConfirmDepositRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2;
+  vote.exported.v1beta1.PollMeta poll = 3 [ (gogoproto.nullable) = false ];
+  bytes tx_id = 4 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash",
+    (gogoproto.customname) = "TxID"
+  ];
+  bytes burn_address = 5
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  bool confirmed = 6;
+}
+
+message VoteConfirmDepositResponse { string log = 1; }
+
+// MsgVoteConfirmToken represents a message that votes on a token deploy
+message VoteConfirmTokenRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2;
+  vote.exported.v1beta1.PollMeta poll = 3 [ (gogoproto.nullable) = false ];
+  bytes tx_id = 4 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash",
+    (gogoproto.customname) = "TxID"
+  ];
+  string symbol = 5;
+  bool confirmed = 6;
+}
+
+message VoteConfirmTokenResponse { string log = 1; }
+
+// MsgSignDeployToken represents the message to sign a deploy token command for
+// AxelarGateway
+message SignTransferOwnershipRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2;
+  bytes new_owner = 3
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+}
+
+message SignTransferOwnershipResponse {
+  bytes command_id = 1 [ (gogoproto.customname) = "CommandID" ];
+}
+
+message AddChainRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2;
+  string name = 3;
+  string native_asset = 4;
+}
+
+message AddChainResponse {}

@@ -12,8 +12,8 @@ import (
 
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	bitcoinTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
-	ethereumTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
+	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
+	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -79,12 +79,12 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 				if err != nil {
 					return fmt.Errorf("failed to marshal bitcoin genesis state: %w", err)
 				}
-			case strings.ToLower(eth.Ethereum.Name):
-				genesisState := ethereumTypes.GetGenesisStateFromAppState(cdc, appState)
-				moduleName = ethereumTypes.ModuleName
+			case strings.ToLower(evm.Ethereum.Name):
+				genesisState := evmTypes.GetGenesisStateFromAppState(cdc, appState)
+				moduleName = evmTypes.ModuleName
 
 				if networkStr != "" {
-					network, err := ethereumTypes.NetworkFromStr(networkStr)
+					network, err := evmTypes.NetworkFromStr(networkStr)
 					if err != nil {
 						return err
 					}

@@ -1,0 +1,16 @@
+syntax = "proto3";
+package evm.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types";
+
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// DepositQueryParams describe the parameters used to query for an EVM
+// deposit address
+message DepositQueryParams {
+  string address = 1;
+  string symbol = 2;
+  string chain = 3;
+}

@@ -18,8 +18,8 @@ import (
 	types2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
 	rpc2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/eth/rpc"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	"github.com/axelarnetwork/axelar-core/x/ethereum/types"
-	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
+	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -49,11 +49,11 @@ func NewMgr(rpc rpc2.Client, broadcaster types2.Broadcaster, sender sdk.AccAddre
 	}
 }
 
-// ProcessDepositConfirmation votes on the correctness of an Ethereum token deposit
+// ProcessDepositConfirmation votes on the correctness of an EVM chain token deposit
 func (mgr Mgr) ProcessDepositConfirmation(attributes []sdk.Attribute) (err error) {
-	txID, amount, burnAddr, tokenAddr, confHeight, poll, err := parseDepositConfirmationParams(mgr.cdc, attributes)
+	chain, txID, amount, burnAddr, tokenAddr, confHeight, poll, err := parseDepositConfirmationParams(mgr.cdc, attributes)
 	if err != nil {
-		return sdkerrors.Wrap(err, "Ethereum deposit confirmation failed")
+		return sdkerrors.Wrap(err, "EVM deposit confirmation failed")
 	}
 
 	confirmed := mgr.validate(txID, confHeight, func(txReceipt *geth.Receipt) bool {
@@ -65,22 +65,16 @@ func (mgr Mgr) ProcessDepositConfirmation(attributes []sdk.Attribute) (err error
 		return true
 	})
 
-	msg := &ethTypes.VoteConfirmDepositRequest{
-		Sender:      mgr.sender,
-		Poll:        poll,
-		TxID:        types.Hash(txID),
-		BurnAddress: types.Address(burnAddr),
-		Confirmed:   confirmed,
-	}
+	msg := evmTypes.NewVoteConfirmDepositRequest(mgr.sender, chain, poll, txID, types.Address(burnAddr), confirmed)
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, poll.String()))
 	return mgr.broadcaster.Broadcast(msg)
 }
 
-// ProcessTokenConfirmation votes on the correctness of an Ethereum token deployment
+// ProcessTokenConfirmation votes on the correctness of an EVM chain token deployment
 func (mgr Mgr) ProcessTokenConfirmation(attributes []sdk.Attribute) error {
-	txID, gatewayAddr, tokenAddr, symbol, confHeight, poll, err := parseTokenConfirmationParams(mgr.cdc, attributes)
+	chain, txID, gatewayAddr, tokenAddr, symbol, confHeight, poll, err := parseTokenConfirmationParams(mgr.cdc, attributes)
 	if err != nil {
-		return sdkerrors.Wrap(err, "Ethereum token deployment confirmation failed")
+		return sdkerrors.Wrap(err, "EVM token deployment confirmation failed")
 	}
 
 	confirmed := mgr.validate(txID, confHeight, func(txReceipt *geth.Receipt) bool {
@@ -92,18 +86,13 @@ func (mgr Mgr) ProcessTokenConfirmation(attributes []sdk.Attribute) error {
 		return true
 	})
 
-	msg := &ethTypes.VoteConfirmTokenRequest{
-		Sender:    mgr.sender,
-		Poll:      poll,
-		TxID:      types.Hash(txID),
-		Confirmed: confirmed,
-		Symbol:    symbol,
-	}
+	msg := evmTypes.NewVoteConfirmTokenRequest(mgr.sender, chain, symbol, poll, txID, confirmed)
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, poll.String()))
 	return mgr.broadcaster.Broadcast(msg)
 }
 
 func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (
+	chain string,
 	txID common.Hash,
 	amount sdk.Uint,
 	burnAddr, tokenAddr common.Address,
@@ -111,46 +100,50 @@ func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Att
 	poll vote.PollMeta,
 	err error,
 ) {
-	var txIDFound, amountFound, burnAddrFound, tokenAddrFound, confHeightFound, pollFound bool
+	var chainFound, txIDFound, amountFound, burnAddrFound, tokenAddrFound, confHeightFound, pollFound bool
 	for _, attribute := range attributes {
 		switch attribute.Key {
-		case ethTypes.AttributeKeyTxID:
+		case evmTypes.AttributeKeyChain:
+			chain = attribute.Value
+			chainFound = true
+		case evmTypes.AttributeKeyTxID:
 			txID = common.HexToHash(attribute.Value)
 			txIDFound = true
-		case ethTypes.AttributeKeyAmount:
+		case evmTypes.AttributeKeyAmount:
 			amount, err = sdk.ParseUint(attribute.Value)
 			if err != nil {
-				return [32]byte{}, sdk.Uint{}, [20]byte{}, [20]byte{}, 0, vote.PollMeta{},
+				return "", common.Hash{}, sdk.Uint{}, common.Address{}, common.Address{}, 0, vote.PollMeta{},
 					sdkerrors.Wrap(err, "parsing transfer amount failed")
 			}
 			amountFound = true
-		case ethTypes.AttributeKeyBurnAddress:
+		case evmTypes.AttributeKeyBurnAddress:
 			burnAddr = common.HexToAddress(attribute.Value)
 			burnAddrFound = true
-		case ethTypes.AttributeKeyTokenAddress:
+		case evmTypes.AttributeKeyTokenAddress:
 			tokenAddr = common.HexToAddress(attribute.Value)
 			tokenAddrFound = true
-		case ethTypes.AttributeKeyConfHeight:
+		case evmTypes.AttributeKeyConfHeight:
 			confHeight, err = strconv.ParseUint(attribute.Value, 10, 64)
 			if err != nil {
-				return common.Hash{}, sdk.Uint{}, common.Address{}, common.Address{}, 0, vote.PollMeta{},
+				return "", common.Hash{}, sdk.Uint{}, common.Address{}, common.Address{}, 0, vote.PollMeta{},
 					sdkerrors.Wrap(err, "parsing confirmation height failed")
 			}
 			confHeightFound = true
-		case ethTypes.AttributeKeyPoll:
+		case evmTypes.AttributeKeyPoll:
 			cdc.MustUnmarshalJSON([]byte(attribute.Value), &poll)
 			pollFound = true
 		default:
 		}
 	}
-	if !txIDFound || !amountFound || !burnAddrFound || !tokenAddrFound || !confHeightFound || !pollFound {
-		return common.Hash{}, sdk.Uint{}, common.Address{}, common.Address{}, 0, vote.PollMeta{},
+	if !chainFound || !txIDFound || !amountFound || !burnAddrFound || !tokenAddrFound || !confHeightFound || !pollFound {
+		return "", common.Hash{}, sdk.Uint{}, common.Address{}, common.Address{}, 0, vote.PollMeta{},
 			fmt.Errorf("insufficient event attributes")
 	}
-	return txID, amount, burnAddr, tokenAddr, confHeight, poll, nil
+	return chain, txID, amount, burnAddr, tokenAddr, confHeight, poll, nil
 }
 
 func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (
+	chain string,
 	txID common.Hash,
 	gatewayAddr, tokenAddr common.Address,
 	symbol string,
@@ -158,25 +151,28 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attri
 	poll vote.PollMeta,
 	err error,
 ) {
-	var txIDFound, gatewayAddrFound, tokenAddrFound, symbolFound, confHeightFound, pollFound bool
+	var chainFound, txIDFound, gatewayAddrFound, tokenAddrFound, symbolFound, confHeightFound, pollFound bool
 	for _, attribute := range attributes {
 		switch attribute.Key {
-		case ethTypes.AttributeKeyTxID:
+		case evmTypes.AttributeKeyChain:
+			chain = attribute.Value
+			chainFound = true
+		case evmTypes.AttributeKeyTxID:
 			txID = common.HexToHash(attribute.Value)
 			txIDFound = true
-		case ethTypes.AttributeKeyGatewayAddress:
+		case evmTypes.AttributeKeyGatewayAddress:
 			gatewayAddr = common.HexToAddress(attribute.Value)
 			gatewayAddrFound = true
-		case ethTypes.AttributeKeyTokenAddress:
+		case evmTypes.AttributeKeyTokenAddress:
 			tokenAddr = common.HexToAddress(attribute.Value)
 			tokenAddrFound = true
-		case ethTypes.AttributeKeySymbol:
+		case evmTypes.AttributeKeySymbol:
 			symbol = attribute.Value
 			symbolFound = true
-		case ethTypes.AttributeKeyConfHeight:
+		case evmTypes.AttributeKeyConfHeight:
 			h, err := strconv.Atoi(attribute.Value)
 			if err != nil {
-				return common.Hash{}, common.Address{}, common.Address{}, "", 0, vote.PollMeta{},
+				return "", common.Hash{}, common.Address{}, common.Address{}, "", 0, vote.PollMeta{},
 					sdkerrors.Wrap(err, "parsing confirmation height failed")
 			}
 			confHeight = uint64(h)
@@ -187,11 +183,11 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attri
 		default:
 		}
 	}
-	if !txIDFound || !gatewayAddrFound || !tokenAddrFound || !symbolFound || !confHeightFound || !pollFound {
-		return common.Hash{}, common.Address{}, common.Address{}, "", 0, vote.PollMeta{},
+	if !chainFound || !txIDFound || !gatewayAddrFound || !tokenAddrFound || !symbolFound || !confHeightFound || !pollFound {
+		return "", common.Hash{}, common.Address{}, common.Address{}, "", 0, vote.PollMeta{},
 			fmt.Errorf("insufficient event attributes")
 	}
-	return txID, gatewayAddr, tokenAddr, symbol, confHeight, poll, nil
+	return chain, txID, gatewayAddr, tokenAddr, symbol, confHeight, poll, nil
 }
 
 func (mgr Mgr) validate(txID common.Hash, confHeight uint64, validateLogs func(txReceipt *geth.Receipt) bool) bool {

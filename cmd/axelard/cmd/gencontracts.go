@@ -12,7 +12,7 @@ import (
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/spf13/cobra"
 
-	ethereumTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
+	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 )
 
 const (
@@ -21,13 +21,13 @@ const (
 	flagBurnable = "burnable"
 )
 
-// SetGenesisEthContractsCmd returns set-genesis-chain-params cobra Command.
-func SetGenesisEthContractsCmd(defaultNodeHome string) *cobra.Command {
+// SetGenesisEVMContractsCmd returns set-genesis-chain-params cobra Command.
+func SetGenesisEVMContractsCmd(defaultNodeHome string) *cobra.Command {
 	var gatewayFile, tokenFile, burnableFile string
 
 	cmd := &cobra.Command{
-		Use:   "set-genesis-ethereum-contracts",
-		Short: "Set the ethereum's contract parameters in genesis.json",
+		Use:   "set-genesis-evm-contracts",
+		Short: "Set the EVM's contract parameters in genesis.json",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx := client.GetClientContextFromCmd(cmd)
@@ -44,7 +44,7 @@ func SetGenesisEthContractsCmd(defaultNodeHome string) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("failed to unmarshal genesis state: %w", err)
 			}
-			genesisState := ethereumTypes.GetGenesisStateFromAppState(cdc, appState)
+			genesisState := evmTypes.GetGenesisStateFromAppState(cdc, appState)
 
 			if gatewayFile != "" {
 				gateway, err := getByteCodes(gatewayFile)
@@ -74,7 +74,7 @@ func SetGenesisEthContractsCmd(defaultNodeHome string) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("failed to marshal ethereum genesis state: %w", err)
 			}
-			appState[ethereumTypes.ModuleName] = genesisStateBz
+			appState[evmTypes.ModuleName] = genesisStateBz
 			appStateJSON, err := json.Marshal(appState)
 			if err != nil {
 				return fmt.Errorf("failed to marshal application genesis state: %w", err)

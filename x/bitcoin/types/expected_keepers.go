@@ -55,7 +55,7 @@ type BTCKeeper interface {
 
 // Voter is the interface that provides voting functionality
 type Voter interface {
-	InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error
+	InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64, expireAt int64) error
 	DeletePoll(ctx sdk.Context, poll vote.PollMeta)
 	TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta vote.PollMeta, data vote.VotingData) error
 	Result(ctx sdk.Context, poll vote.PollMeta) vote.VotingData
@@ -65,7 +65,7 @@ type Voter interface {
 // because the concrete implementation of Signer (specifically StartSign) is defined in a different package using another (identical)
 // InitPoller interface. Go cannot match the types otherwise
 type InitPoller = interface {
-	InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64) error
+	InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64, expireAt int64) error
 }
 
 // Signer provides keygen and signing functionality
@@ -84,8 +84,7 @@ type Nexus interface {
 	LinkAddresses(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress)
 	GetRecipient(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool)
 	EnqueueForTransfer(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) error
-	GetPendingTransfersForChain(ctx sdk.Context, chain nexus.Chain) []nexus.CrossChainTransfer
-	GetArchivedTransfersForChain(ctx sdk.Context, chain nexus.Chain) []nexus.CrossChainTransfer
+	GetTransfersForChain(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer
 	ArchivePendingTransfer(ctx sdk.Context, transfer nexus.CrossChainTransfer)
 	GetChain(ctx sdk.Context, chain string) (nexus.Chain, bool)
 	IsAssetRegistered(ctx sdk.Context, chainName, denom string) bool

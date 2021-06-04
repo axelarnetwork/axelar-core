@@ -13,6 +13,7 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	gogoprototypes "github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -127,7 +128,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 			SetPendingOutpointInfoFunc:        func(sdk.Context, vote.PollMeta, types.OutPointInfo) {},
 		}
 		voter = &mock.VoterMock{
-			InitPollFunc: func(sdk.Context, vote.PollMeta, int64) error { return nil },
+			InitPollFunc: func(sdk.Context, vote.PollMeta, int64, int64) error { return nil },
 		}
 
 		signer = &mock.SignerMock{
@@ -197,7 +198,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 
 	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
 		setup()
-		voter.InitPollFunc = func(sdk.Context, vote.PollMeta, int64) error { return fmt.Errorf("poll setup failed") }
+		voter.InitPollFunc = func(sdk.Context, vote.PollMeta, int64, int64) error { return fmt.Errorf("poll setup failed") }
 		_, err := server.ConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
@@ -237,8 +238,10 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			},
 		}
 		voter = &mock.VoterMock{
-			TallyVoteFunc:  func(sdk.Context, sdk.AccAddress, vote.PollMeta, vote.VotingData) error { return nil },
-			ResultFunc:     func(sdk.Context, vote.PollMeta) vote.VotingData { return true },
+			TallyVoteFunc: func(sdk.Context, sdk.AccAddress, vote.PollMeta, vote.VotingData) error { return nil },
+			ResultFunc: func(sdk.Context, vote.PollMeta) vote.VotingData {
+				return &gogoprototypes.BoolValue{Value: true}
+			},
 			DeletePollFunc: func(sdk.Context, vote.PollMeta) {},
 		}
 		nexusKeeper = &mock.NexusMock{
@@ -379,7 +382,9 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 
 	t.Run("happy path reject", testutils.Func(func(t *testing.T) {
 		setup()
-		voter.ResultFunc = func(sdk.Context, vote.PollMeta) vote.VotingData { return false }
+		voter.ResultFunc = func(sdk.Context, vote.PollMeta) vote.VotingData {
+			return &gogoprototypes.BoolValue{Value: false}
+		}
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
@@ -392,7 +397,9 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 
 	t.Run("happy path no result yet", testutils.Func(func(t *testing.T) {
 		setup()
-		voter.ResultFunc = func(sdk.Context, vote.PollMeta) vote.VotingData { return nil }
+		voter.ResultFunc = func(sdk.Context, vote.PollMeta) vote.VotingData {
+			return nil
+		}
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
@@ -574,8 +581,8 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 			},
 		}
 		nexusKeeper = &mock.NexusMock{
-			GetPendingTransfersForChainFunc: func(sdk.Context, nexus.Chain) []nexus.CrossChainTransfer { return transfers },
-			ArchivePendingTransferFunc:      func(sdk.Context, nexus.CrossChainTransfer) {},
+			GetTransfersForChainFunc:   func(sdk.Context, nexus.Chain, nexus.TransferState) []nexus.CrossChainTransfer { return transfers },
+			ArchivePendingTransferFunc: func(sdk.Context, nexus.CrossChainTransfer) {},
 		}
 		signer = &mock.SignerMock{
 			GetNextKeyFunc: func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) {

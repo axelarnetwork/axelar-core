@@ -48,49 +48,53 @@
 - [broadcast/v1beta1/service.proto](#broadcast/v1beta1/service.proto)
     - [MsgService](#broadcast.v1beta1.MsgService)
   
-- [ethereum/v1beta1/params.proto](#ethereum/v1beta1/params.proto)
-    - [Params](#ethereum.v1beta1.Params)
+- [evm/v1beta1/params.proto](#evm/v1beta1/params.proto)
+    - [Params](#evm.v1beta1.Params)
   
-- [ethereum/v1beta1/genesis.proto](#ethereum/v1beta1/genesis.proto)
-    - [GenesisState](#ethereum.v1beta1.GenesisState)
+- [evm/v1beta1/genesis.proto](#evm/v1beta1/genesis.proto)
+    - [GenesisState](#evm.v1beta1.GenesisState)
   
-- [ethereum/v1beta1/query.proto](#ethereum/v1beta1/query.proto)
-    - [DepositQueryParams](#ethereum.v1beta1.DepositQueryParams)
+- [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
+    - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
   
-- [ethereum/v1beta1/tx.proto](#ethereum/v1beta1/tx.proto)
-    - [ConfirmDepositRequest](#ethereum.v1beta1.ConfirmDepositRequest)
-    - [ConfirmDepositResponse](#ethereum.v1beta1.ConfirmDepositResponse)
-    - [ConfirmTokenRequest](#ethereum.v1beta1.ConfirmTokenRequest)
-    - [ConfirmTokenResponse](#ethereum.v1beta1.ConfirmTokenResponse)
-    - [LinkRequest](#ethereum.v1beta1.LinkRequest)
-    - [LinkResponse](#ethereum.v1beta1.LinkResponse)
-    - [SignBurnTokensRequest](#ethereum.v1beta1.SignBurnTokensRequest)
-    - [SignBurnTokensResponse](#ethereum.v1beta1.SignBurnTokensResponse)
-    - [SignDeployTokenRequest](#ethereum.v1beta1.SignDeployTokenRequest)
-    - [SignDeployTokenResponse](#ethereum.v1beta1.SignDeployTokenResponse)
-    - [SignPendingTransfersRequest](#ethereum.v1beta1.SignPendingTransfersRequest)
-    - [SignPendingTransfersResponse](#ethereum.v1beta1.SignPendingTransfersResponse)
-    - [SignTransferOwnershipRequest](#ethereum.v1beta1.SignTransferOwnershipRequest)
-    - [SignTransferOwnershipResponse](#ethereum.v1beta1.SignTransferOwnershipResponse)
-    - [SignTxRequest](#ethereum.v1beta1.SignTxRequest)
-    - [SignTxResponse](#ethereum.v1beta1.SignTxResponse)
-    - [VoteConfirmDepositRequest](#ethereum.v1beta1.VoteConfirmDepositRequest)
-    - [VoteConfirmDepositResponse](#ethereum.v1beta1.VoteConfirmDepositResponse)
-    - [VoteConfirmTokenRequest](#ethereum.v1beta1.VoteConfirmTokenRequest)
-    - [VoteConfirmTokenResponse](#ethereum.v1beta1.VoteConfirmTokenResponse)
+- [evm/v1beta1/tx.proto](#evm/v1beta1/tx.proto)
+    - [AddChainRequest](#evm.v1beta1.AddChainRequest)
+    - [AddChainResponse](#evm.v1beta1.AddChainResponse)
+    - [ConfirmDepositRequest](#evm.v1beta1.ConfirmDepositRequest)
+    - [ConfirmDepositResponse](#evm.v1beta1.ConfirmDepositResponse)
+    - [ConfirmTokenRequest](#evm.v1beta1.ConfirmTokenRequest)
+    - [ConfirmTokenResponse](#evm.v1beta1.ConfirmTokenResponse)
+    - [LinkRequest](#evm.v1beta1.LinkRequest)
+    - [LinkResponse](#evm.v1beta1.LinkResponse)
+    - [SignBurnTokensRequest](#evm.v1beta1.SignBurnTokensRequest)
+    - [SignBurnTokensResponse](#evm.v1beta1.SignBurnTokensResponse)
+    - [SignDeployTokenRequest](#evm.v1beta1.SignDeployTokenRequest)
+    - [SignDeployTokenResponse](#evm.v1beta1.SignDeployTokenResponse)
+    - [SignPendingTransfersRequest](#evm.v1beta1.SignPendingTransfersRequest)
+    - [SignPendingTransfersResponse](#evm.v1beta1.SignPendingTransfersResponse)
+    - [SignTransferOwnershipRequest](#evm.v1beta1.SignTransferOwnershipRequest)
+    - [SignTransferOwnershipResponse](#evm.v1beta1.SignTransferOwnershipResponse)
+    - [SignTxRequest](#evm.v1beta1.SignTxRequest)
+    - [SignTxResponse](#evm.v1beta1.SignTxResponse)
+    - [VoteConfirmDepositRequest](#evm.v1beta1.VoteConfirmDepositRequest)
+    - [VoteConfirmDepositResponse](#evm.v1beta1.VoteConfirmDepositResponse)
+    - [VoteConfirmTokenRequest](#evm.v1beta1.VoteConfirmTokenRequest)
+    - [VoteConfirmTokenResponse](#evm.v1beta1.VoteConfirmTokenResponse)
   
-- [ethereum/v1beta1/service.proto](#ethereum/v1beta1/service.proto)
-    - [MsgService](#ethereum.v1beta1.MsgService)
+- [evm/v1beta1/service.proto](#evm/v1beta1/service.proto)
+    - [MsgService](#evm.v1beta1.MsgService)
   
-- [ethereum/v1beta1/types.proto](#ethereum/v1beta1/types.proto)
-    - [BurnerInfo](#ethereum.v1beta1.BurnerInfo)
-    - [ERC20Deposit](#ethereum.v1beta1.ERC20Deposit)
-    - [ERC20TokenDeployment](#ethereum.v1beta1.ERC20TokenDeployment)
+- [evm/v1beta1/types.proto](#evm/v1beta1/types.proto)
+    - [BurnerInfo](#evm.v1beta1.BurnerInfo)
+    - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
+    - [ERC20TokenDeployment](#evm.v1beta1.ERC20TokenDeployment)
   
 - [nexus/exported/v1beta1/types.proto](#nexus/exported/v1beta1/types.proto)
     - [Chain](#nexus.exported.v1beta1.Chain)
     - [CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress)
     - [CrossChainTransfer](#nexus.exported.v1beta1.CrossChainTransfer)
+  
+    - [TransferState](#nexus.exported.v1beta1.TransferState)
   
 - [nexus/v1beta1/params.proto](#nexus/v1beta1/params.proto)
     - [Params](#nexus.v1beta1.Params)
@@ -116,6 +120,7 @@
     - [MessageOut](#tss.tofnd.v1beta1.MessageOut)
     - [MessageOut.CriminalList](#tss.tofnd.v1beta1.MessageOut.CriminalList)
     - [MessageOut.CriminalList.Criminal](#tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal)
+    - [MessageOut.KeygenResult](#tss.tofnd.v1beta1.MessageOut.KeygenResult)
     - [MessageOut.SignResult](#tss.tofnd.v1beta1.MessageOut.SignResult)
     - [SignInit](#tss.tofnd.v1beta1.SignInit)
     - [TrafficIn](#tss.tofnd.v1beta1.TrafficIn)
@@ -155,6 +160,10 @@
   
 - [vote/v1beta1/genesis.proto](#vote/v1beta1/genesis.proto)
     - [GenesisState](#vote.v1beta1.GenesisState)
+  
+- [vote/v1beta1/types.proto](#vote/v1beta1/types.proto)
+    - [Poll](#vote.v1beta1.Poll)
+    - [TalliedVote](#vote.v1beta1.TalliedVote)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -387,7 +396,6 @@ PollMeta represents the meta data for a poll
 | ----- | ---- | ----- | ----------- |
 | `module` | [string](#string) |  |  |
 | `id` | [string](#string) |  |  |
-| `nonce` | [int64](#int64) |  |  |
 
 
 
@@ -667,14 +675,14 @@ Msg defines the broadcast Msg service.
 
 
 
-<a name="ethereum/v1beta1/params.proto"></a>
+<a name="evm/v1beta1/params.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## ethereum/v1beta1/params.proto
+## evm/v1beta1/params.proto
 
 
 
-<a name="ethereum.v1beta1.Params"></a>
+<a name="evm.v1beta1.Params"></a>
 
 ### Params
 Params is the parameter set for this module
@@ -703,14 +711,14 @@ Params is the parameter set for this module
 
 
 
-<a name="ethereum/v1beta1/genesis.proto"></a>
+<a name="evm/v1beta1/genesis.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## ethereum/v1beta1/genesis.proto
+## evm/v1beta1/genesis.proto
 
 
 
-<a name="ethereum.v1beta1.GenesisState"></a>
+<a name="evm.v1beta1.GenesisState"></a>
 
 ### GenesisState
 
@@ -718,7 +726,7 @@ Params is the parameter set for this module
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `params` | [Params](#ethereum.v1beta1.Params) |  |  |
+| `params` | [Params](#evm.v1beta1.Params) |  |  |
 
 
 
@@ -734,17 +742,17 @@ Params is the parameter set for this module
 
 
 
-<a name="ethereum/v1beta1/query.proto"></a>
+<a name="evm/v1beta1/query.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## ethereum/v1beta1/query.proto
+## evm/v1beta1/query.proto
 
 
 
-<a name="ethereum.v1beta1.DepositQueryParams"></a>
+<a name="evm.v1beta1.DepositQueryParams"></a>
 
 ### DepositQueryParams
-DepositQueryParams describe the parameters used to query for an Ethereum
+DepositQueryParams describe the parameters used to query for an EVM
 deposit address
 
 
@@ -768,14 +776,42 @@ deposit address
 
 
 
-<a name="ethereum/v1beta1/tx.proto"></a>
+<a name="evm/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## ethereum/v1beta1/tx.proto
+## evm/v1beta1/tx.proto
 
 
 
-<a name="ethereum.v1beta1.ConfirmDepositRequest"></a>
+<a name="evm.v1beta1.AddChainRequest"></a>
+
+### AddChainRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `name` | [string](#string) |  |  |
+| `native_asset` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.AddChainResponse"></a>
+
+### AddChainResponse
+
+
+
+
+
+
+
+<a name="evm.v1beta1.ConfirmDepositRequest"></a>
 
 ### ConfirmDepositRequest
 MsgConfirmDeposit represents an erc20 deposit confirmation message
@@ -784,6 +820,7 @@ MsgConfirmDeposit represents an erc20 deposit confirmation message
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `amount` | [bytes](#bytes) |  |  |
 | `burner_address` | [bytes](#bytes) |  |  |
@@ -793,7 +830,7 @@ MsgConfirmDeposit represents an erc20 deposit confirmation message
 
 
 
-<a name="ethereum.v1beta1.ConfirmDepositResponse"></a>
+<a name="evm.v1beta1.ConfirmDepositResponse"></a>
 
 ### ConfirmDepositResponse
 
@@ -803,7 +840,7 @@ MsgConfirmDeposit represents an erc20 deposit confirmation message
 
 
 
-<a name="ethereum.v1beta1.ConfirmTokenRequest"></a>
+<a name="evm.v1beta1.ConfirmTokenRequest"></a>
 
 ### ConfirmTokenRequest
 MsgConfirmToken represents a token deploy confirmation message
@@ -812,6 +849,7 @@ MsgConfirmToken represents a token deploy confirmation message
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `symbol` | [string](#string) |  |  |
 
@@ -820,7 +858,7 @@ MsgConfirmToken represents a token deploy confirmation message
 
 
 
-<a name="ethereum.v1beta1.ConfirmTokenResponse"></a>
+<a name="evm.v1beta1.ConfirmTokenResponse"></a>
 
 ### ConfirmTokenResponse
 
@@ -830,7 +868,7 @@ MsgConfirmToken represents a token deploy confirmation message
 
 
 
-<a name="ethereum.v1beta1.LinkRequest"></a>
+<a name="evm.v1beta1.LinkRequest"></a>
 
 ### LinkRequest
 MsgLink represents the message that links a cross chain address to a burner
@@ -840,6 +878,7 @@ address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
 | `recipient_addr` | [string](#string) |  |  |
 | `symbol` | [string](#string) |  |  |
 | `recipient_chain` | [string](#string) |  |  |
@@ -849,7 +888,7 @@ address
 
 
 
-<a name="ethereum.v1beta1.LinkResponse"></a>
+<a name="evm.v1beta1.LinkResponse"></a>
 
 ### LinkResponse
 
@@ -864,7 +903,7 @@ address
 
 
 
-<a name="ethereum.v1beta1.SignBurnTokensRequest"></a>
+<a name="evm.v1beta1.SignBurnTokensRequest"></a>
 
 ### SignBurnTokensRequest
 MsgSignBurnTokens represents the message to sign commands to burn tokens with
@@ -874,13 +913,14 @@ AxelarGateway
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
 
 
 
 
 
 
-<a name="ethereum.v1beta1.SignBurnTokensResponse"></a>
+<a name="evm.v1beta1.SignBurnTokensResponse"></a>
 
 ### SignBurnTokensResponse
 
@@ -895,7 +935,7 @@ AxelarGateway
 
 
 
-<a name="ethereum.v1beta1.SignDeployTokenRequest"></a>
+<a name="evm.v1beta1.SignDeployTokenRequest"></a>
 
 ### SignDeployTokenRequest
 MsgSignDeployToken represents the message to sign a deploy token command for
@@ -905,6 +945,7 @@ AxelarGateway
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
 | `capacity` | [bytes](#bytes) |  |  |
 | `decimals` | [uint32](#uint32) |  |  |
 | `symbol` | [string](#string) |  |  |
@@ -915,7 +956,7 @@ AxelarGateway
 
 
 
-<a name="ethereum.v1beta1.SignDeployTokenResponse"></a>
+<a name="evm.v1beta1.SignDeployTokenResponse"></a>
 
 ### SignDeployTokenResponse
 
@@ -930,7 +971,7 @@ AxelarGateway
 
 
 
-<a name="ethereum.v1beta1.SignPendingTransfersRequest"></a>
+<a name="evm.v1beta1.SignPendingTransfersRequest"></a>
 
 ### SignPendingTransfersRequest
 MsgSignPendingTransfers represents a message to trigger the signing of all
@@ -940,13 +981,14 @@ pending transfers
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
 
 
 
 
 
 
-<a name="ethereum.v1beta1.SignPendingTransfersResponse"></a>
+<a name="evm.v1beta1.SignPendingTransfersResponse"></a>
 
 ### SignPendingTransfersResponse
 
@@ -961,7 +1003,7 @@ pending transfers
 
 
 
-<a name="ethereum.v1beta1.SignTransferOwnershipRequest"></a>
+<a name="evm.v1beta1.SignTransferOwnershipRequest"></a>
 
 ### SignTransferOwnershipRequest
 MsgSignDeployToken represents the message to sign a deploy token command for
@@ -971,6 +1013,7 @@ AxelarGateway
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
 | `new_owner` | [bytes](#bytes) |  |  |
 
 
@@ -978,7 +1021,7 @@ AxelarGateway
 
 
 
-<a name="ethereum.v1beta1.SignTransferOwnershipResponse"></a>
+<a name="evm.v1beta1.SignTransferOwnershipResponse"></a>
 
 ### SignTransferOwnershipResponse
 
@@ -993,7 +1036,7 @@ AxelarGateway
 
 
 
-<a name="ethereum.v1beta1.SignTxRequest"></a>
+<a name="evm.v1beta1.SignTxRequest"></a>
 
 ### SignTxRequest
 
@@ -1002,14 +1045,15 @@ AxelarGateway
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `tx` | [bytes](#bytes) |  | Tx is stored in serialized form because the amino codec cannot properly deserialize MsgSignTx otherwise |
+| `chain` | [string](#string) |  | Tx is stored in serialized form because the amino codec cannot properly deserialize MsgSignTx otherwise |
+| `tx` | [bytes](#bytes) |  |  |
 
 
 
 
 
 
-<a name="ethereum.v1beta1.SignTxResponse"></a>
+<a name="evm.v1beta1.SignTxResponse"></a>
 
 ### SignTxResponse
 
@@ -1024,7 +1068,7 @@ AxelarGateway
 
 
 
-<a name="ethereum.v1beta1.VoteConfirmDepositRequest"></a>
+<a name="evm.v1beta1.VoteConfirmDepositRequest"></a>
 
 ### VoteConfirmDepositRequest
 MsgVoteConfirmDeposit represents a message that votes on a deposit
@@ -1033,6 +1077,7 @@ MsgVoteConfirmDeposit represents a message that votes on a deposit
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
 | `poll` | [vote.exported.v1beta1.PollMeta](#vote.exported.v1beta1.PollMeta) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `burn_address` | [bytes](#bytes) |  |  |
@@ -1043,7 +1088,7 @@ MsgVoteConfirmDeposit represents a message that votes on a deposit
 
 
 
-<a name="ethereum.v1beta1.VoteConfirmDepositResponse"></a>
+<a name="evm.v1beta1.VoteConfirmDepositResponse"></a>
 
 ### VoteConfirmDepositResponse
 
@@ -1058,7 +1103,7 @@ MsgVoteConfirmDeposit represents a message that votes on a deposit
 
 
 
-<a name="ethereum.v1beta1.VoteConfirmTokenRequest"></a>
+<a name="evm.v1beta1.VoteConfirmTokenRequest"></a>
 
 ### VoteConfirmTokenRequest
 MsgVoteConfirmToken represents a message that votes on a token deploy
@@ -1067,6 +1112,7 @@ MsgVoteConfirmToken represents a message that votes on a token deploy
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
 | `poll` | [vote.exported.v1beta1.PollMeta](#vote.exported.v1beta1.PollMeta) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `symbol` | [string](#string) |  |  |
@@ -1077,7 +1123,7 @@ MsgVoteConfirmToken represents a message that votes on a token deploy
 
 
 
-<a name="ethereum.v1beta1.VoteConfirmTokenResponse"></a>
+<a name="evm.v1beta1.VoteConfirmTokenResponse"></a>
 
 ### VoteConfirmTokenResponse
 
@@ -1101,10 +1147,10 @@ MsgVoteConfirmToken represents a message that votes on a token deploy
 
 
 
-<a name="ethereum/v1beta1/service.proto"></a>
+<a name="evm/v1beta1/service.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## ethereum/v1beta1/service.proto
+## evm/v1beta1/service.proto
 
 
  <!-- end messages -->
@@ -1114,36 +1160,37 @@ MsgVoteConfirmToken represents a message that votes on a token deploy
  <!-- end HasExtensions -->
 
 
-<a name="ethereum.v1beta1.MsgService"></a>
+<a name="evm.v1beta1.MsgService"></a>
 
 ### MsgService
-Msg defines the ethereum Msg service.
+Msg defines the evm Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `Link` | [LinkRequest](#ethereum.v1beta1.LinkRequest) | [LinkResponse](#ethereum.v1beta1.LinkResponse) |  | POST|/axelar/ethereum/link/{recipient_chain}|
-| `ConfirmToken` | [ConfirmTokenRequest](#ethereum.v1beta1.ConfirmTokenRequest) | [ConfirmTokenResponse](#ethereum.v1beta1.ConfirmTokenResponse) |  | POST|/axelar/ethereum/confirm-erc20-deploy/{symbol}|
-| `ConfirmDeposit` | [ConfirmDepositRequest](#ethereum.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#ethereum.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/ethereum/confirm-erc20-deposit|
-| `VoteConfirmDeposit` | [VoteConfirmDepositRequest](#ethereum.v1beta1.VoteConfirmDepositRequest) | [VoteConfirmDepositResponse](#ethereum.v1beta1.VoteConfirmDepositResponse) |  | ||
-| `VoteConfirmToken` | [VoteConfirmTokenRequest](#ethereum.v1beta1.VoteConfirmTokenRequest) | [VoteConfirmTokenResponse](#ethereum.v1beta1.VoteConfirmTokenResponse) |  | ||
-| `SignDeployToken` | [SignDeployTokenRequest](#ethereum.v1beta1.SignDeployTokenRequest) | [SignDeployTokenResponse](#ethereum.v1beta1.SignDeployTokenResponse) |  | POST|/axelar/ethereum/sign-deploy-token/{symbol}|
-| `SignBurnTokens` | [SignBurnTokensRequest](#ethereum.v1beta1.SignBurnTokensRequest) | [SignBurnTokensResponse](#ethereum.v1beta1.SignBurnTokensResponse) |  | POST|/axelar/ethereum/sign-burn|
-| `SignTx` | [SignTxRequest](#ethereum.v1beta1.SignTxRequest) | [SignTxResponse](#ethereum.v1beta1.SignTxResponse) |  | POST|/axelar/ethereum/sign-tx|
-| `SignPendingTransfers` | [SignPendingTransfersRequest](#ethereum.v1beta1.SignPendingTransfersRequest) | [SignPendingTransfersResponse](#ethereum.v1beta1.SignPendingTransfersResponse) |  | POST|/axelar/ethereum/sign-pending|
-| `SignTransferOwnership` | [SignTransferOwnershipRequest](#ethereum.v1beta1.SignTransferOwnershipRequest) | [SignTransferOwnershipResponse](#ethereum.v1beta1.SignTransferOwnershipResponse) |  | ||
+| `Link` | [LinkRequest](#evm.v1beta1.LinkRequest) | [LinkResponse](#evm.v1beta1.LinkResponse) |  | POST|/axelar/evm/link/{recipient_chain}|
+| `ConfirmToken` | [ConfirmTokenRequest](#evm.v1beta1.ConfirmTokenRequest) | [ConfirmTokenResponse](#evm.v1beta1.ConfirmTokenResponse) |  | POST|/axelar/evm/confirm-erc20-deploy/{symbol}|
+| `ConfirmDeposit` | [ConfirmDepositRequest](#evm.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#evm.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/evm/confirm-erc20-deposit|
+| `VoteConfirmDeposit` | [VoteConfirmDepositRequest](#evm.v1beta1.VoteConfirmDepositRequest) | [VoteConfirmDepositResponse](#evm.v1beta1.VoteConfirmDepositResponse) |  | ||
+| `VoteConfirmToken` | [VoteConfirmTokenRequest](#evm.v1beta1.VoteConfirmTokenRequest) | [VoteConfirmTokenResponse](#evm.v1beta1.VoteConfirmTokenResponse) |  | ||
+| `SignDeployToken` | [SignDeployTokenRequest](#evm.v1beta1.SignDeployTokenRequest) | [SignDeployTokenResponse](#evm.v1beta1.SignDeployTokenResponse) |  | POST|/axelar/evm/sign-deploy-token/{symbol}|
+| `SignBurnTokens` | [SignBurnTokensRequest](#evm.v1beta1.SignBurnTokensRequest) | [SignBurnTokensResponse](#evm.v1beta1.SignBurnTokensResponse) |  | POST|/axelar/evm/sign-burn|
+| `SignTx` | [SignTxRequest](#evm.v1beta1.SignTxRequest) | [SignTxResponse](#evm.v1beta1.SignTxResponse) |  | POST|/axelar/evm/sign-tx|
+| `SignPendingTransfers` | [SignPendingTransfersRequest](#evm.v1beta1.SignPendingTransfersRequest) | [SignPendingTransfersResponse](#evm.v1beta1.SignPendingTransfersResponse) |  | POST|/axelar/evm/sign-pending|
+| `SignTransferOwnership` | [SignTransferOwnershipRequest](#evm.v1beta1.SignTransferOwnershipRequest) | [SignTransferOwnershipResponse](#evm.v1beta1.SignTransferOwnershipResponse) |  | ||
+| `AddChain` | [AddChainRequest](#evm.v1beta1.AddChainRequest) | [AddChainResponse](#evm.v1beta1.AddChainResponse) |  | POST|/axelar/evm/add-chain|
 
  <!-- end services -->
 
 
 
-<a name="ethereum/v1beta1/types.proto"></a>
+<a name="evm/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## ethereum/v1beta1/types.proto
+## evm/v1beta1/types.proto
 
 
 
-<a name="ethereum.v1beta1.BurnerInfo"></a>
+<a name="evm.v1beta1.BurnerInfo"></a>
 
 ### BurnerInfo
 BurnerInfo describes information required to burn token at an burner address
@@ -1161,7 +1208,7 @@ that is deposited by an user
 
 
 
-<a name="ethereum.v1beta1.ERC20Deposit"></a>
+<a name="evm.v1beta1.ERC20Deposit"></a>
 
 ### ERC20Deposit
 ERC20Deposit contains information for an ERC20 deposit
@@ -1179,7 +1226,7 @@ ERC20Deposit contains information for an ERC20 deposit
 
 
 
-<a name="ethereum.v1beta1.ERC20TokenDeployment"></a>
+<a name="evm.v1beta1.ERC20TokenDeployment"></a>
 
 ### ERC20TokenDeployment
 ERC20TokenDeployment describes information about an ERC20 token
@@ -1262,6 +1309,19 @@ registered blockchain
 
 
  <!-- end messages -->
+
+
+<a name="nexus.exported.v1beta1.TransferState"></a>
+
+### TransferState
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| TRANSFER_STATE_UNSPECIFIED | 0 |  |
+| TRANSFER_STATE_PENDING | 1 |  |
+| TRANSFER_STATE_ARCHIVED | 2 |  |
+
 
  <!-- end enums -->
 
@@ -1508,7 +1568,7 @@ File copied from golang tofnd with minor tweaks
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `traffic` | [TrafficOut](#tss.tofnd.v1beta1.TrafficOut) |  | all but final message |
-| `keygen_result` | [bytes](#bytes) |  | final message only, Keygen |
+| `keygen_result` | [MessageOut.KeygenResult](#tss.tofnd.v1beta1.MessageOut.KeygenResult) |  | final message only, Keygen |
 | `sign_result` | [MessageOut.SignResult](#tss.tofnd.v1beta1.MessageOut.SignResult) |  | final message only, Sign |
 
 
@@ -1541,6 +1601,22 @@ File copied from golang tofnd with minor tweaks
 | ----- | ---- | ----- | ----------- |
 | `party_uid` | [string](#string) |  |  |
 | `crime_type` | [MessageOut.CriminalList.Criminal.CrimeType](#tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal.CrimeType) |  |  |
+
+
+
+
+
+
+<a name="tss.tofnd.v1beta1.MessageOut.KeygenResult"></a>
+
+### MessageOut.KeygenResult
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pubkey` | [bytes](#bytes) |  |  |
+| `criminals` | [MessageOut.CriminalList](#tss.tofnd.v1beta1.MessageOut.CriminalList) |  |  |
 
 
 
@@ -2020,6 +2096,59 @@ Msg defines the tss Msg service.
 | ----- | ---- | ----- | ----------- |
 | `voting_interval` | [int64](#int64) |  |  |
 | `voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="vote/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## vote/v1beta1/types.proto
+
+
+
+<a name="vote.v1beta1.Poll"></a>
+
+### Poll
+Poll represents a poll with write-in voting, i.e. the result of the vote can
+have any data type
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `meta` | [vote.exported.v1beta1.PollMeta](#vote.exported.v1beta1.PollMeta) |  |  |
+| `validator_snapshot_counter` | [int64](#int64) |  |  |
+| `votes` | [TalliedVote](#vote.v1beta1.TalliedVote) | repeated |  |
+| `expire_at` | [int64](#int64) |  |  |
+| `result` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+
+
+
+
+
+
+<a name="vote.v1beta1.TalliedVote"></a>
+
+### TalliedVote
+TalliedVote represents a vote for a poll with the accumulated stake of all
+validators voting for the same VotingData
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tally` | [bytes](#bytes) |  |  |
+| `data` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
 
 
 

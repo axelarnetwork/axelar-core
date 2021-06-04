@@ -28,9 +28,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
-	eth "github.com/axelarnetwork/axelar-core/x/ethereum/exported"
-	ethKeeper "github.com/axelarnetwork/axelar-core/x/ethereum/keeper"
-	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
+	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
+	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
+	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	types2 "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -75,7 +75,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		assert.NoError(t, res.Error)
 	}
 
-	chains := []string{btc.Bitcoin.Name, eth.Ethereum.Name}
+	chains := []string{btc.Bitcoin.Name, evm.Ethereum.Name}
 
 	for _, c := range chains {
 		masterKeyID := randStrings.Next()
@@ -113,20 +113,21 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// setup axelar gateway
 	bz, err := nodeData[0].Node.Query(
-		[]string{ethTypes.QuerierRoute, ethKeeper.CreateDeployTx},
+		[]string{evmTypes.QuerierRoute, evmKeeper.CreateDeployTx},
 		abci.RequestQuery{
 			Data: cdc.MustMarshalJSON(
-				ethTypes.DeployParams{
+				evmTypes.DeployParams{
+					Chain:    "ethereum",
 					GasPrice: sdk.NewInt(1),
 					GasLimit: 3000000,
 				})},
 	)
 	assert.NoError(t, err)
-	var result ethTypes.DeployResult
+	var result evmTypes.DeployResult
 	cdc.MustUnmarshalJSON(bz, &result)
 
 	deployGatewayResult := <-chain.Submit(
-		&ethTypes.SignTxRequest{Sender: randomSender(), Tx: cdc.MustMarshalJSON(result.Tx)})
+		&evmTypes.SignTxRequest{Sender: randomSender(), Chain: "ethereum", Tx: cdc.MustMarshalJSON(result.Tx)})
 	assert.NoError(t, deployGatewayResult.Error)
 
 	// wait for voting to be done (signing takes longer to tally up)
@@ -134,17 +135,17 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		assert.FailNow(t, "signing", err)
 	}
 
-	var signTxResponse ethTypes.SignTxResponse
+	var signTxResponse evmTypes.SignTxResponse
 	assert.NoError(t, proto.Unmarshal(deployGatewayResult.Data, &signTxResponse))
 	_, err = nodeData[0].Node.Query(
-		[]string{ethTypes.QuerierRoute, ethKeeper.SendTx, signTxResponse.TxID},
+		[]string{evmTypes.QuerierRoute, evmKeeper.SendTx, "ethereum", signTxResponse.TxID},
 		abci.RequestQuery{Data: nil},
 	)
 	assert.NoError(t, err)
 
 	// deploy token
 	deployTokenResult := <-chain.Submit(
-		&ethTypes.SignDeployTokenRequest{Sender: randomSender(), Capacity: sdk.NewInt(100000), Decimals: 8, Symbol: "satoshi", TokenName: "Satoshi"})
+		&evmTypes.SignDeployTokenRequest{Sender: randomSender(), Chain: "ethereum", Capacity: sdk.NewInt(100000), Decimals: 8, Symbol: "satoshi", TokenName: "Satoshi"})
 	assert.NoError(t, deployTokenResult.Error)
 
 	// wait for voting to be done (signing takes longer to tally up)
@@ -160,11 +161,12 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	sender := randomEthSender()
 	bz, err = nodeData[0].Node.Query(
-		[]string{ethTypes.QuerierRoute, ethKeeper.SendCommand},
+		[]string{evmTypes.QuerierRoute, evmKeeper.SendCommand},
 		abci.RequestQuery{
 			Data: cdc.MustMarshalJSON(
-				ethTypes.CommandParams{
-					CommandID: ethTypes.CommandID(commandID),
+				evmTypes.CommandParams{
+					Chain:     "ethereum",
+					CommandID: evmTypes.CommandID(commandID),
 					Sender:    sender.String(),
 				})},
 	)
@@ -174,13 +176,13 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	txHash := common.BytesToHash(bz)
 
 	bz, err = nodeData[0].Node.Query(
-		[]string{ethTypes.QuerierRoute, ethKeeper.QueryTokenAddress, "satoshi"},
+		[]string{evmTypes.QuerierRoute, evmKeeper.QueryTokenAddress, "ethereum", "satoshi"},
 		abci.RequestQuery{Data: nil},
 	)
 	assert.NoError(t, err)
 	tokenAddr := common.BytesToAddress(bz)
 	bz, err = nodeData[0].Node.Query(
-		[]string{ethTypes.QuerierRoute, ethKeeper.QueryAxelarGatewayAddress},
+		[]string{evmTypes.QuerierRoute, evmKeeper.QueryAxelarGatewayAddress, "ethereum"},
 		abci.RequestQuery{Data: nil},
 	)
 	assert.NoError(t, err)
@@ -202,7 +204,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		}
 	}
 
-	confirmResult1 := <-chain.Submit(ethTypes.NewConfirmTokenRequest(randomSender(), txHash, "satoshi"))
+	confirmResult1 := <-chain.Submit(evmTypes.NewConfirmTokenRequest(randomSender(), "ethereum", "satoshi", txHash))
 	assert.NoError(t, confirmResult1.Error)
 
 	if err := waitFor(listeners.ethTokenDone, 1); err != nil {
@@ -217,7 +219,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	for i := 0; i < totalDepositCount; i++ {
 		// get deposit address for ethereum transfer
-		crossChainAddr := nexus.CrossChainAddress{Chain: eth.Ethereum, Address: randStrings.Next()}
+		crossChainAddr := nexus.CrossChainAddress{Chain: evm.Ethereum, Address: randStrings.Next()}
 		linkResult := <-chain.Submit(btcTypes.NewLinkRequest(randomSender(), crossChainAddr.Address, crossChainAddr.Chain.Name))
 		assert.NoError(t, linkResult.Error)
 

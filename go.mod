@@ -3,7 +3,6 @@ module github.com/axelarnetwork/axelar-core
 go 1.16
 
 require (
-	github.com/armon/go-metrics v0.3.6 // indirect
 	github.com/axelarnetwork/tm-events v0.0.0-20210427154304-86290b49ae8f
 	// TODO: update to v0.22.0-beta once https://github.com/btcsuite/btcd/issues/1706 is resolved
 	github.com/btcsuite/btcd v0.21.0-beta.0.20210506225145-0ec4bdc1b8e1
@@ -17,16 +16,17 @@ require (
 	github.com/matryer/moq v0.2.1
 	github.com/miguelmota/go-ethereum-hdwallet v0.0.1
 	github.com/rakyll/statik v0.1.7
+	github.com/regen-network/cosmos-proto v0.3.1 // indirect
 	github.com/rs/zerolog v1.21.0
 	github.com/spf13/cast v1.3.1
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.7.0
-	github.com/tendermint/tendermint v0.34.9
+	github.com/tendermint/tendermint v0.34.10
 	github.com/tendermint/tm-db v0.6.4
 	google.golang.org/genproto v0.0.0-20210303154014-9728d6b83eeb
-	google.golang.org/grpc v1.36.1
+	google.golang.org/grpc v1.37.0
 	google.golang.org/protobuf v1.26.0
 )
 

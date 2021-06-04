@@ -9,6 +9,7 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	gogoprototypes "github.com/gogo/protobuf/types"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -213,7 +214,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		return &types.VotePubKeyResponse{}, nil
 	}
 
-	if err := s.voter.TallyVote(ctx, req.Sender, req.PollMeta, req.PubKeyBytes); err != nil {
+	if err := s.voter.TallyVote(ctx, req.Sender, req.PollMeta, &gogoprototypes.BytesValue{Value: req.PubKeyBytes}); err != nil {
 		return nil, err
 	}
 
@@ -228,9 +229,9 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			sdk.NewAttribute(types.AttributeKeyPayload, string(req.PubKeyBytes)),
 		))
 		switch pkBytes := result.(type) {
-		case []byte:
+		case *gogoprototypes.BytesValue:
 			s.Logger(ctx).Debug(fmt.Sprintf("public key with ID %s confirmed", req.PollMeta.ID))
-			btcecPK, err := btcec.ParsePubKey(pkBytes, btcec.S256())
+			btcecPK, err := btcec.ParsePubKey(pkBytes.Value, btcec.S256())
 			if err != nil {
 				return nil, fmt.Errorf("could not unmarshal public key bytes: [%w]", err)
 			}
@@ -301,9 +302,7 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		}
 	}
 
-	voteData := s.protoCdc.MustMarshalBinaryLengthPrefixed(req.Result)
-	// TODO: TallyVote should take a codec.ProtoMarshaler as voteData instead of interface{}
-	if err := s.voter.TallyVote(ctx, req.Sender, req.PollMeta, voteData); err != nil {
+	if err := s.voter.TallyVote(ctx, req.Sender, req.PollMeta, req.Result); err != nil {
 		return nil, err
 	}
 
@@ -323,12 +322,9 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		sdk.NewAttribute(types.AttributeKeyPayload, req.Result.String()),
 	))
 
-	switch bz := result.(type) {
-	case []byte:
+	switch signResult := result.(type) {
+	case *tofnd.MessageOut_SignResult:
 		s.voter.DeletePoll(ctx, req.PollMeta)
-
-		var signResult tofnd.MessageOut_SignResult
-		s.protoCdc.MustUnmarshalBinaryLengthPrefixed(bz, &signResult)
 
 		if signature := signResult.GetSignature(); signature != nil {
 			s.SetSig(ctx, req.PollMeta.ID, signature)

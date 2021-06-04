@@ -29,7 +29,7 @@ var _ types.Voter = &VoterMock{}
 // 			DeletePollFunc: func(ctx sdk.Context, poll exported.PollMeta)  {
 // 				panic("mock out the DeletePoll method")
 // 			},
-// 			InitPollFunc: func(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64) error {
+// 			InitPollFunc: func(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error {
 // 				panic("mock out the InitPoll method")
 // 			},
 // 			ResultFunc: func(ctx sdk.Context, poll exported.PollMeta) exported.VotingData {
@@ -49,7 +49,7 @@ type VoterMock struct {
 	DeletePollFunc func(ctx sdk.Context, poll exported.PollMeta)
 
 	// InitPollFunc mocks the InitPoll method.
-	InitPollFunc func(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64) error
+	InitPollFunc func(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error
 
 	// ResultFunc mocks the Result method.
 	ResultFunc func(ctx sdk.Context, poll exported.PollMeta) exported.VotingData
@@ -74,6 +74,8 @@ type VoterMock struct {
 			Poll exported.PollMeta
 			// SnapshotCounter is the snapshotCounter argument value.
 			SnapshotCounter int64
+			// ExpireAt is the expireAt argument value.
+			ExpireAt int64
 		}
 		// Result holds details about calls to the Result method.
 		Result []struct {
@@ -136,7 +138,7 @@ func (mock *VoterMock) DeletePollCalls() []struct {
 }
 
 // InitPoll calls InitPollFunc.
-func (mock *VoterMock) InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64) error {
+func (mock *VoterMock) InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error {
 	if mock.InitPollFunc == nil {
 		panic("VoterMock.InitPollFunc: method is nil but Voter.InitPoll was just called")
 	}
@@ -144,15 +146,17 @@ func (mock *VoterMock) InitPoll(ctx sdk.Context, poll exported.PollMeta, snapsho
 		Ctx             sdk.Context
 		Poll            exported.PollMeta
 		SnapshotCounter int64
+		ExpireAt        int64
 	}{
 		Ctx:             ctx,
 		Poll:            poll,
 		SnapshotCounter: snapshotCounter,
+		ExpireAt:        expireAt,
 	}
 	mock.lockInitPoll.Lock()
 	mock.calls.InitPoll = append(mock.calls.InitPoll, callInfo)
 	mock.lockInitPoll.Unlock()
-	return mock.InitPollFunc(ctx, poll, snapshotCounter)
+	return mock.InitPollFunc(ctx, poll, snapshotCounter, expireAt)
 }
 
 // InitPollCalls gets all the calls that were made to InitPoll.
@@ -162,11 +166,13 @@ func (mock *VoterMock) InitPollCalls() []struct {
 	Ctx             sdk.Context
 	Poll            exported.PollMeta
 	SnapshotCounter int64
+	ExpireAt        int64
 } {
 	var calls []struct {
 		Ctx             sdk.Context
 		Poll            exported.PollMeta
 		SnapshotCounter int64
+		ExpireAt        int64
 	}
 	mock.lockInitPoll.RLock()
 	calls = mock.calls.InitPoll
@@ -280,7 +286,7 @@ var _ types.Signer = &SignerMock{}
 // 			GetSnapshotCounterForKeyIDFunc: func(ctx sdk.Context, keyID string) (int64, bool) {
 // 				panic("mock out the GetSnapshotCounterForKeyID method")
 // 			},
-// 			StartSignFunc: func(ctx sdk.Context, initPoll interface{InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64) error}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
+// 			StartSignFunc: func(ctx sdk.Context, initPoll interface{InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
 // 				panic("mock out the StartSign method")
 // 			},
 // 		}
@@ -310,7 +316,7 @@ type SignerMock struct {
 
 	// StartSignFunc mocks the StartSign method.
 	StartSignFunc func(ctx sdk.Context, initPoll interface {
-		InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64) error
+		InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error
 	}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error
 
 	// calls tracks calls to the methods.
@@ -369,7 +375,7 @@ type SignerMock struct {
 			Ctx sdk.Context
 			// InitPoll is the initPoll argument value.
 			InitPoll interface {
-				InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64) error
+				InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error
 			}
 			// KeyID is the keyID argument value.
 			KeyID string
@@ -614,7 +620,7 @@ func (mock *SignerMock) GetSnapshotCounterForKeyIDCalls() []struct {
 
 // StartSign calls StartSignFunc.
 func (mock *SignerMock) StartSign(ctx sdk.Context, initPoll interface {
-	InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64) error
+	InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error
 }, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
 	if mock.StartSignFunc == nil {
 		panic("SignerMock.StartSignFunc: method is nil but Signer.StartSign was just called")
@@ -622,7 +628,7 @@ func (mock *SignerMock) StartSign(ctx sdk.Context, initPoll interface {
 	callInfo := struct {
 		Ctx      sdk.Context
 		InitPoll interface {
-			InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64) error
+			InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error
 		}
 		KeyID            string
 		SigID            string
@@ -648,7 +654,7 @@ func (mock *SignerMock) StartSign(ctx sdk.Context, initPoll interface {
 func (mock *SignerMock) StartSignCalls() []struct {
 	Ctx      sdk.Context
 	InitPoll interface {
-		InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64) error
+		InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error
 	}
 	KeyID            string
 	SigID            string
@@ -658,7 +664,7 @@ func (mock *SignerMock) StartSignCalls() []struct {
 	var calls []struct {
 		Ctx      sdk.Context
 		InitPoll interface {
-			InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64) error
+			InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error
 		}
 		KeyID            string
 		SigID            string
@@ -687,17 +693,14 @@ var _ types.Nexus = &NexusMock{}
 // 			EnqueueForTransferFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) error {
 // 				panic("mock out the EnqueueForTransfer method")
 // 			},
-// 			GetArchivedTransfersForChainFunc: func(ctx sdk.Context, chain nexus.Chain) []nexus.CrossChainTransfer {
-// 				panic("mock out the GetArchivedTransfersForChain method")
-// 			},
 // 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 // 				panic("mock out the GetChain method")
 // 			},
-// 			GetPendingTransfersForChainFunc: func(ctx sdk.Context, chain nexus.Chain) []nexus.CrossChainTransfer {
-// 				panic("mock out the GetPendingTransfersForChain method")
-// 			},
 // 			GetRecipientFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
 // 				panic("mock out the GetRecipient method")
+// 			},
+// 			GetTransfersForChainFunc: func(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer {
+// 				panic("mock out the GetTransfersForChain method")
 // 			},
 // 			IsAssetRegisteredFunc: func(ctx sdk.Context, chainName string, denom string) bool {
 // 				panic("mock out the IsAssetRegistered method")
@@ -718,17 +721,14 @@ type NexusMock struct {
 	// EnqueueForTransferFunc mocks the EnqueueForTransfer method.
 	EnqueueForTransferFunc func(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) error
 
-	// GetArchivedTransfersForChainFunc mocks the GetArchivedTransfersForChain method.
-	GetArchivedTransfersForChainFunc func(ctx sdk.Context, chain nexus.Chain) []nexus.CrossChainTransfer
-
 	// GetChainFunc mocks the GetChain method.
 	GetChainFunc func(ctx sdk.Context, chain string) (nexus.Chain, bool)
 
-	// GetPendingTransfersForChainFunc mocks the GetPendingTransfersForChain method.
-	GetPendingTransfersForChainFunc func(ctx sdk.Context, chain nexus.Chain) []nexus.CrossChainTransfer
-
 	// GetRecipientFunc mocks the GetRecipient method.
 	GetRecipientFunc func(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool)
+
+	// GetTransfersForChainFunc mocks the GetTransfersForChain method.
+	GetTransfersForChainFunc func(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer
 
 	// IsAssetRegisteredFunc mocks the IsAssetRegistered method.
 	IsAssetRegisteredFunc func(ctx sdk.Context, chainName string, denom string) bool
@@ -754,13 +754,6 @@ type NexusMock struct {
 			// Amount is the amount argument value.
 			Amount sdk.Coin
 		}
-		// GetArchivedTransfersForChain holds details about calls to the GetArchivedTransfersForChain method.
-		GetArchivedTransfersForChain []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Chain is the chain argument value.
-			Chain nexus.Chain
-		}
 		// GetChain holds details about calls to the GetChain method.
 		GetChain []struct {
 			// Ctx is the ctx argument value.
@@ -768,19 +761,21 @@ type NexusMock struct {
 			// Chain is the chain argument value.
 			Chain string
 		}
-		// GetPendingTransfersForChain holds details about calls to the GetPendingTransfersForChain method.
-		GetPendingTransfersForChain []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Chain is the chain argument value.
-			Chain nexus.Chain
-		}
 		// GetRecipient holds details about calls to the GetRecipient method.
 		GetRecipient []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Sender is the sender argument value.
 			Sender nexus.CrossChainAddress
+		}
+		// GetTransfersForChain holds details about calls to the GetTransfersForChain method.
+		GetTransfersForChain []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+			// State is the state argument value.
+			State nexus.TransferState
 		}
 		// IsAssetRegistered holds details about calls to the IsAssetRegistered method.
 		IsAssetRegistered []struct {
@@ -801,14 +796,13 @@ type NexusMock struct {
 			Recipient nexus.CrossChainAddress
 		}
 	}
-	lockArchivePendingTransfer       sync.RWMutex
-	lockEnqueueForTransfer           sync.RWMutex
-	lockGetArchivedTransfersForChain sync.RWMutex
-	lockGetChain                     sync.RWMutex
-	lockGetPendingTransfersForChain  sync.RWMutex
-	lockGetRecipient                 sync.RWMutex
-	lockIsAssetRegistered            sync.RWMutex
-	lockLinkAddresses                sync.RWMutex
+	lockArchivePendingTransfer sync.RWMutex
+	lockEnqueueForTransfer     sync.RWMutex
+	lockGetChain               sync.RWMutex
+	lockGetRecipient           sync.RWMutex
+	lockGetTransfersForChain   sync.RWMutex
+	lockIsAssetRegistered      sync.RWMutex
+	lockLinkAddresses          sync.RWMutex
 }
 
 // ArchivePendingTransfer calls ArchivePendingTransferFunc.
@@ -885,41 +879,6 @@ func (mock *NexusMock) EnqueueForTransferCalls() []struct {
 	return calls
 }
 
-// GetArchivedTransfersForChain calls GetArchivedTransfersForChainFunc.
-func (mock *NexusMock) GetArchivedTransfersForChain(ctx sdk.Context, chain nexus.Chain) []nexus.CrossChainTransfer {
-	if mock.GetArchivedTransfersForChainFunc == nil {
-		panic("NexusMock.GetArchivedTransfersForChainFunc: method is nil but Nexus.GetArchivedTransfersForChain was just called")
-	}
-	callInfo := struct {
-		Ctx   sdk.Context
-		Chain nexus.Chain
-	}{
-		Ctx:   ctx,
-		Chain: chain,
-	}
-	mock.lockGetArchivedTransfersForChain.Lock()
-	mock.calls.GetArchivedTransfersForChain = append(mock.calls.GetArchivedTransfersForChain, callInfo)
-	mock.lockGetArchivedTransfersForChain.Unlock()
-	return mock.GetArchivedTransfersForChainFunc(ctx, chain)
-}
-
-// GetArchivedTransfersForChainCalls gets all the calls that were made to GetArchivedTransfersForChain.
-// Check the length with:
-//     len(mockedNexus.GetArchivedTransfersForChainCalls())
-func (mock *NexusMock) GetArchivedTransfersForChainCalls() []struct {
-	Ctx   sdk.Context
-	Chain nexus.Chain
-} {
-	var calls []struct {
-		Ctx   sdk.Context
-		Chain nexus.Chain
-	}
-	mock.lockGetArchivedTransfersForChain.RLock()
-	calls = mock.calls.GetArchivedTransfersForChain
-	mock.lockGetArchivedTransfersForChain.RUnlock()
-	return calls
-}
-
 // GetChain calls GetChainFunc.
 func (mock *NexusMock) GetChain(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 	if mock.GetChainFunc == nil {
@@ -955,41 +914,6 @@ func (mock *NexusMock) GetChainCalls() []struct {
 	return calls
 }
 
-// GetPendingTransfersForChain calls GetPendingTransfersForChainFunc.
-func (mock *NexusMock) GetPendingTransfersForChain(ctx sdk.Context, chain nexus.Chain) []nexus.CrossChainTransfer {
-	if mock.GetPendingTransfersForChainFunc == nil {
-		panic("NexusMock.GetPendingTransfersForChainFunc: method is nil but Nexus.GetPendingTransfersForChain was just called")
-	}
-	callInfo := struct {
-		Ctx   sdk.Context
-		Chain nexus.Chain
-	}{
-		Ctx:   ctx,
-		Chain: chain,
-	}
-	mock.lockGetPendingTransfersForChain.Lock()
-	mock.calls.GetPendingTransfersForChain = append(mock.calls.GetPendingTransfersForChain, callInfo)
-	mock.lockGetPendingTransfersForChain.Unlock()
-	return mock.GetPendingTransfersForChainFunc(ctx, chain)
-}
-
-// GetPendingTransfersForChainCalls gets all the calls that were made to GetPendingTransfersForChain.
-// Check the length with:
-//     len(mockedNexus.GetPendingTransfersForChainCalls())
-func (mock *NexusMock) GetPendingTransfersForChainCalls() []struct {
-	Ctx   sdk.Context
-	Chain nexus.Chain
-} {
-	var calls []struct {
-		Ctx   sdk.Context
-		Chain nexus.Chain
-	}
-	mock.lockGetPendingTransfersForChain.RLock()
-	calls = mock.calls.GetPendingTransfersForChain
-	mock.lockGetPendingTransfersForChain.RUnlock()
-	return calls
-}
-
 // GetRecipient calls GetRecipientFunc.
 func (mock *NexusMock) GetRecipient(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
 	if mock.GetRecipientFunc == nil {
@@ -1022,6 +946,45 @@ func (mock *NexusMock) GetRecipientCalls() []struct {
 	mock.lockGetRecipient.RLock()
 	calls = mock.calls.GetRecipient
 	mock.lockGetRecipient.RUnlock()
+	return calls
+}
+
+// GetTransfersForChain calls GetTransfersForChainFunc.
+func (mock *NexusMock) GetTransfersForChain(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer {
+	if mock.GetTransfersForChainFunc == nil {
+		panic("NexusMock.GetTransfersForChainFunc: method is nil but Nexus.GetTransfersForChain was just called")
+	}
+	callInfo := struct {
+		Ctx   sdk.Context
+		Chain nexus.Chain
+		State nexus.TransferState
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+		State: state,
+	}
+	mock.lockGetTransfersForChain.Lock()
+	mock.calls.GetTransfersForChain = append(mock.calls.GetTransfersForChain, callInfo)
+	mock.lockGetTransfersForChain.Unlock()
+	return mock.GetTransfersForChainFunc(ctx, chain, state)
+}
+
+// GetTransfersForChainCalls gets all the calls that were made to GetTransfersForChain.
+// Check the length with:
+//     len(mockedNexus.GetTransfersForChainCalls())
+func (mock *NexusMock) GetTransfersForChainCalls() []struct {
+	Ctx   sdk.Context
+	Chain nexus.Chain
+	State nexus.TransferState
+} {
+	var calls []struct {
+		Ctx   sdk.Context
+		Chain nexus.Chain
+		State nexus.TransferState
+	}
+	mock.lockGetTransfersForChain.RLock()
+	calls = mock.calls.GetTransfersForChain
+	mock.lockGetTransfersForChain.RUnlock()
 	return calls
 }
 

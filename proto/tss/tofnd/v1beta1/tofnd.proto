@@ -30,10 +30,17 @@ message MessageIn {
 }
 
 message MessageOut {
-  oneof data {                  // TODO don't reuse `data`
-    TrafficOut traffic = 1;     // all but final message
-    bytes keygen_result = 2;    // final message only, Keygen
-    SignResult sign_result = 3; // final message only, Sign
+  oneof data {                      // TODO don't reuse `data`
+    TrafficOut traffic = 1;         // all but final message
+    KeygenResult keygen_result = 2; // final message only, Keygen
+    SignResult sign_result = 3;     // final message only, Sign
+  }
+
+  message KeygenResult {
+    oneof keygen_result_data {
+      bytes pubkey = 1;
+      CriminalList criminals = 2;
+    }
   }
 
   message SignResult {

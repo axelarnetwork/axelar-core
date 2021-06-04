@@ -19,7 +19,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/eth/rpc/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	ethTypes "github.com/axelarnetwork/axelar-core/x/ethereum/types"
+	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -100,7 +100,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 	)
 	setup := func() {
 		cdc := testutils.MakeEncodingConfig().Amino
-		poll := exported.NewPollMetaWithNonce(ethTypes.ModuleName, rand.StrBetween(5, 20), rand.PosI64(), rand.I64Between(1, 1000))
+		poll := exported.NewPollMeta(evmTypes.ModuleName, rand.StrBetween(5, 20))
 
 		burnAddrBytes := rand.Bytes(common.AddressLength)
 		tokenAddrBytes := rand.Bytes(common.AddressLength)
@@ -108,12 +108,13 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		confHeight := rand.I64Between(0, blockNumber-1)
 		amount := rand.PosI64() // restrict to int64 so the amount in the receipt doesn't overflow
 		attributes = []sdk.Attribute{
-			sdk.NewAttribute(ethTypes.AttributeKeyTxID, common.Bytes2Hex(rand.Bytes(common.HashLength))),
-			sdk.NewAttribute(ethTypes.AttributeKeyAmount, strconv.FormatUint(uint64(amount), 10)),
-			sdk.NewAttribute(ethTypes.AttributeKeyBurnAddress, common.Bytes2Hex(burnAddrBytes)),
-			sdk.NewAttribute(ethTypes.AttributeKeyTokenAddress, common.Bytes2Hex(tokenAddrBytes)),
-			sdk.NewAttribute(ethTypes.AttributeKeyConfHeight, strconv.FormatUint(uint64(confHeight), 10)),
-			sdk.NewAttribute(ethTypes.AttributeKeyPoll, string(cdc.MustMarshalJSON(poll))),
+			sdk.NewAttribute(evmTypes.AttributeKeyChain, "Ethereum"),
+			sdk.NewAttribute(evmTypes.AttributeKeyTxID, common.Bytes2Hex(rand.Bytes(common.HashLength))),
+			sdk.NewAttribute(evmTypes.AttributeKeyAmount, strconv.FormatUint(uint64(amount), 10)),
+			sdk.NewAttribute(evmTypes.AttributeKeyBurnAddress, common.Bytes2Hex(burnAddrBytes)),
+			sdk.NewAttribute(evmTypes.AttributeKeyTokenAddress, common.Bytes2Hex(tokenAddrBytes)),
+			sdk.NewAttribute(evmTypes.AttributeKeyConfHeight, strconv.FormatUint(uint64(confHeight), 10)),
+			sdk.NewAttribute(evmTypes.AttributeKeyPoll, string(cdc.MustMarshalJSON(poll))),
 		}
 
 		rpc = &mock.ClientMock{
@@ -179,7 +180,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.True(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.VoteConfirmDepositRequest).Confirmed)
+		assert.True(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmDepositRequest).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("missing attributes", testutils.Func(func(t *testing.T) {
@@ -204,7 +205,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.VoteConfirmDepositRequest).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmDepositRequest).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("no block number", testutils.Func(func(t *testing.T) {
@@ -217,13 +218,13 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.VoteConfirmDepositRequest).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmDepositRequest).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("amount mismatch", testutils.Func(func(t *testing.T) {
 		setup()
 		for i, attribute := range attributes {
-			if attribute.Key == ethTypes.AttributeKeyAmount {
+			if attribute.Key == evmTypes.AttributeKeyAmount {
 				// have to use index, otherwise this would only change the copy of the attribute, not the one in the slice
 				attributes[i].Value = strconv.FormatUint(mathRand.Uint64(), 10)
 				break
@@ -234,7 +235,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.VoteConfirmDepositRequest).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmDepositRequest).Confirmed)
 	}).Repeat(repeats))
 }
 
@@ -248,7 +249,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 	)
 	setup := func() {
 		cdc := testutils.MakeEncodingConfig().Amino
-		poll := exported.NewPollMetaWithNonce(ethTypes.ModuleName, rand.StrBetween(5, 20), rand.PosI64(), rand.I64Between(1, 1000))
+		poll := exported.NewPollMeta(evmTypes.ModuleName, rand.StrBetween(5, 20))
 
 		gatewayAddrBytes = rand.Bytes(common.AddressLength)
 		tokenAddrBytes := rand.Bytes(common.AddressLength)
@@ -257,12 +258,13 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		symbol := rand.StrBetween(5, 20)
 		attributes = []sdk.Attribute{
-			sdk.NewAttribute(ethTypes.AttributeKeyTxID, common.Bytes2Hex(rand.Bytes(common.HashLength))),
-			sdk.NewAttribute(ethTypes.AttributeKeyGatewayAddress, common.Bytes2Hex(gatewayAddrBytes)),
-			sdk.NewAttribute(ethTypes.AttributeKeyTokenAddress, common.Bytes2Hex(tokenAddrBytes)),
-			sdk.NewAttribute(ethTypes.AttributeKeySymbol, symbol),
-			sdk.NewAttribute(ethTypes.AttributeKeyConfHeight, strconv.FormatUint(uint64(confHeight), 10)),
-			sdk.NewAttribute(ethTypes.AttributeKeyPoll, string(cdc.MustMarshalJSON(poll))),
+			sdk.NewAttribute(evmTypes.AttributeKeyChain, "Ethereum"),
+			sdk.NewAttribute(evmTypes.AttributeKeyTxID, common.Bytes2Hex(rand.Bytes(common.HashLength))),
+			sdk.NewAttribute(evmTypes.AttributeKeyGatewayAddress, common.Bytes2Hex(gatewayAddrBytes)),
+			sdk.NewAttribute(evmTypes.AttributeKeyTokenAddress, common.Bytes2Hex(tokenAddrBytes)),
+			sdk.NewAttribute(evmTypes.AttributeKeySymbol, symbol),
+			sdk.NewAttribute(evmTypes.AttributeKeyConfHeight, strconv.FormatUint(uint64(confHeight), 10)),
+			sdk.NewAttribute(evmTypes.AttributeKeyPoll, string(cdc.MustMarshalJSON(poll))),
 		}
 
 		rpc = &mock.ClientMock{
@@ -295,7 +297,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.True(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.VoteConfirmTokenRequest).Confirmed)
+		assert.True(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmTokenRequest).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("missing attributes", testutils.Func(func(t *testing.T) {
@@ -320,7 +322,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.VoteConfirmTokenRequest).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmTokenRequest).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("no block number", testutils.Func(func(t *testing.T) {
@@ -333,7 +335,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.VoteConfirmTokenRequest).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmTokenRequest).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("no deploy event", testutils.Func(func(t *testing.T) {
@@ -354,7 +356,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.VoteConfirmTokenRequest).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmTokenRequest).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("wrong deploy event", testutils.Func(func(t *testing.T) {
@@ -372,7 +374,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*ethTypes.VoteConfirmTokenRequest).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmTokenRequest).Confirmed)
 	}).Repeat(repeats))
 }
 
