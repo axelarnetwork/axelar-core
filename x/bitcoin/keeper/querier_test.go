@@ -4,7 +4,6 @@ import (
 	"crypto/ecdsa"
 	cryptoRand "crypto/rand"
 	mathRand "math/rand"
-	"strconv"
 	"testing"
 
 	"github.com/btcsuite/btcd/btcec"
@@ -37,7 +36,14 @@ func TestQueryMasterAddress(t *testing.T) {
 	setup := func() {
 		btcKeeper = &mock.BTCKeeperMock{
 			GetNetworkFunc: func(ctx sdk.Context) types.Network { return types.Mainnet },
-			GetAddressFunc: func(sdk.Context, string) ( types.AddressInfo, bool) { return types.AddressInfo {}, true },
+			GetAddressFunc: func(sdk.Context, string) ( types.AddressInfo, bool) { 
+				return types.AddressInfo{
+					Address:      randomAddress().EncodeAddress(),
+					RedeemScript: rand.Bytes(200),
+					Role:         types.Deposit,
+					KeyID:        rand.StrBetween(5, 20),
+				}, true
+			},
 		}
 		signer = &mock.SignerMock{
 			GetCurrentKeyFunc: func(_ sdk.Context, _ nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
@@ -58,11 +64,9 @@ func TestQueryMasterAddress(t *testing.T) {
 
 		assert := assert.New(t)
 		assert.NoError(err)
-		assert.Len(signer.GetCurrentKeyCalls(), 1)
-		assert.Len(btcKeeper.GetNetworkCalls(), 1)
 		assert.Len(btcKeeper.GetAddressCalls(), 1)
 
-		assert.Equal(string(res), btcKeeper.GetAddressCalls()[0].EncodedAddress)
+		assert.Equal(btcKeeper.GetAddressCalls()[0].EncodedAddress, string(res))
 
 	}).Repeat(repeatCount))
 
@@ -70,11 +74,10 @@ func TestQueryMasterAddress(t *testing.T) {
 		setup()
 		signer.GetCurrentKeyFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) { return tss.Key{}, false }
 
-		res, err := queryMasterAddress(ctx, btcKeeper, signer)
+		_, err := queryMasterAddress(ctx, btcKeeper, signer)
 
 		assert := assert.New(t)
 		assert.Error(err)
-		assert.Nil(res)
 
 	}).Repeat(repeatCount))
 
@@ -82,11 +85,10 @@ func TestQueryMasterAddress(t *testing.T) {
 		setup()
 		btcKeeper.GetAddressFunc = func(sdk.Context, string) ( types.AddressInfo, bool) { return types.AddressInfo {}, false }
 
-		res, err := queryMasterAddress(ctx, btcKeeper, signer)
+		_, err := queryMasterAddress(ctx, btcKeeper, signer)
 
 		assert := assert.New(t)
 		assert.Error(err)
-		assert.Nil(res)
 
 	}).Repeat(repeatCount))
 
@@ -143,19 +145,9 @@ func TestQueryDepositAddress(t *testing.T) {
 
 		assert := assert.New(t)
 		assert.NoError(err)
-		assert.Len(btcKeeper.GetNetworkCalls(), 1)
-		assert.Len(signer.GetCurrentKeyCalls(), 2)
-		assert.Len(nexusKeeper.GetChainCalls(), 1)
 		assert.Len(nexusKeeper.GetRecipientCalls(), 1)
 
-		assert.Equal("ethereum", nexusKeeper.GetChainCalls()[0].Chain)
-
-		assert.Equal(exported.Bitcoin, signer.GetCurrentKeyCalls()[0].Chain)
-		assert.Equal(tss.MasterKey, signer.GetCurrentKeyCalls()[0].KeyRole)
-
-		assert.Equal(exported.Bitcoin, signer.GetCurrentKeyCalls()[1].Chain)
-		assert.Equal(tss.SecondaryKey, signer.GetCurrentKeyCalls()[1].KeyRole)
-
+		assert.Equal(nexusKeeper.GetChainCalls()[0].Chain, "ethereum")
 		assert.Equal(string(res), nexusKeeper.GetRecipientCalls()[0].Sender.Address)
 
 	}).Repeat(repeatCount))
@@ -169,19 +161,9 @@ func TestQueryDepositAddress(t *testing.T) {
 
 		assert := assert.New(t)
 		assert.NoError(err)
-		assert.Len(btcKeeper.GetNetworkCalls(), 1)
-		assert.Len(signer.GetCurrentKeyCalls(), 2)
-		assert.Len(nexusKeeper.GetChainCalls(), 1)
 		assert.Len(nexusKeeper.GetRecipientCalls(), 1)
 
-		assert.Equal(dataStr.Chain, nexusKeeper.GetChainCalls()[0].Chain)
-
-		assert.Equal(exported.Bitcoin, signer.GetCurrentKeyCalls()[0].Chain)
-		assert.Equal(tss.MasterKey, signer.GetCurrentKeyCalls()[0].KeyRole)
-
-		assert.Equal(exported.Bitcoin, signer.GetCurrentKeyCalls()[1].Chain)
-		assert.Equal(tss.SecondaryKey, signer.GetCurrentKeyCalls()[1].KeyRole)
-
+		assert.Equal(nexusKeeper.GetChainCalls()[0].Chain, dataStr.Chain)
 		assert.Equal(string(res), nexusKeeper.GetRecipientCalls()[0].Sender.Address)
 
 	}).Repeat(repeatCount))
@@ -262,7 +244,7 @@ func TestQueryTxState(t *testing.T) {
 		if vout == 0 {
 			vout++
 		}
-		data = []byte(txHash.String() + ":" + strconv.FormatUint(uint64(vout), 10))
+		data = []byte(wire.NewOutPoint(txHash, vout).String())
 	}
 
 	repeatCount := 20
@@ -378,13 +360,13 @@ func TestGetConsolidationTxState(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		_, err := getConsolidationTxState(ctx, btcKeeper)
+		res, err := getConsolidationTxState(ctx, btcKeeper)
 
 		assert := assert.New(t)
 		assert.NoError(err)
 		assert.Len(btcKeeper.GetSignedTxCalls(), 1)
 		assert.Len(btcKeeper.GetOutPointInfoCalls(), 1)
-		assert.Len(btcKeeper.GetMasterKeyVoutCalls(), 1)
+		assert.Equal(string(res), "bitcoin transaction state is confirmed")
 
 	}).Repeat(repeatCount))
 

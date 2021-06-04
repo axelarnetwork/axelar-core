@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math"
-	"strconv"
 
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
@@ -150,13 +149,13 @@ func getConsolidationTxState(ctx sdk.Context, k types.BTCKeeper) ([]byte, error)
 	if !ok {
 		return nil, fmt.Errorf("could not find the signed consolidation transaction")
 	}
-	txID := tx.TxHash().String()
+	txID := tx.TxHash()
 	vout, ok := k.GetMasterKeyVout(ctx)
 	if !ok {
 		return nil, fmt.Errorf("could not find the consolidation transaction vout")
 	}
 
-	outpointByte := []byte(txID + ":" + strconv.FormatUint(uint64(vout), 10))
+	outpointByte := []byte(wire.NewOutPoint(&txID, vout).String())
 
 	stateMsg, err := queryTxState(ctx, k, outpointByte)
 	if err != nil {
