@@ -55,9 +55,9 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery(GetHandlerQueryMasterAddress(cliCtx), QueryMethodMasterAddress, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQueryAxelarGatewayAddress(cliCtx), QueryMethodAxelarGatewayAddress, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQueryCommandData(cliCtx), QueryMethodCommandData, clientUtils.PathVarChain, clientUtils.PathVarCommandID)
-	registerQuery(GetHandlerQueryCreateDeployTx(cliCtx), QueryMethodCreateDeployTx)
+	registerQuery(GetHandlerQueryCreateDeployTx(cliCtx), QueryMethodCreateDeployTx, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQuerySendTx(cliCtx), QueryMethodSendTx, clientUtils.PathVarChain, clientUtils.PathVarTxID)
-	registerQuery(GetHandlerQuerySendCommandTx(cliCtx), QueryMethodSendCommand)
+	registerQuery(GetHandlerQuerySendCommandTx(cliCtx), QueryMethodSendCommand, clientUtils.PathVarChain)
 }
 
 // ReqLink represents a request to link a cross-chain address to an EVM chain address

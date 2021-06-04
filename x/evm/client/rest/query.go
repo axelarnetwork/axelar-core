@@ -20,7 +20,7 @@ import (
 
 // query parameters
 const (
-	QParamsChain      = "chain"
+	QParamChain       = "chain"
 	QParamFromAddress = "from_address"
 	QParamCommandID   = "command_id"
 	QParamGasPrice    = "gas_price"
@@ -107,7 +107,7 @@ func GetHandlerQueryCreateDeployTx(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		chain := r.URL.Query().Get(QParamsChain)
+		chain := mux.Vars(r)[utils.PathVarChain]
 		gasPrice, ok := parseGasPrice(w, r)
 		if !ok {
 			return
@@ -170,7 +170,7 @@ func GetHandlerQuerySendCommandTx(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		chain := r.URL.Query().Get(QParamsChain)
+		chain := mux.Vars(r)[utils.PathVarChain]
 		fromAddr := r.URL.Query().Get(QParamFromAddress)
 		commandIDHex := r.URL.Query().Get(QParamCommandID)
 
