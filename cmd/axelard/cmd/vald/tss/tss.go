@@ -38,7 +38,7 @@ func (s *Session) WaitForTimeout() {
 
 // TimeoutQueue is a queue of sessions order by timeoutAt
 type TimeoutQueue struct {
-	lock  *sync.RWMutex
+	lock  sync.RWMutex
 	queue []*Session
 }
 
@@ -83,7 +83,7 @@ func (q *TimeoutQueue) Top() *Session {
 // NewTimeoutQueue is the constructor for TimeoutQueue
 func NewTimeoutQueue() *TimeoutQueue {
 	return &TimeoutQueue{
-		lock:  &sync.RWMutex{},
+		lock:  sync.RWMutex{},
 		queue: []*Session{},
 	}
 }

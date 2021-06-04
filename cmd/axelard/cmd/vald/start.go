@@ -144,8 +144,10 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 		WithFromAddress(sender.GetAddress()).
 		WithFromName(sender.GetName())
 
+	tssGenesisState := tssTypes.GetGenesisStateFromAppState(protoCdc, appState)
+
 	broadcaster := createBroadcaster(ctx, txf, axelarCfg, logger)
-	tssMgr := createTSSMgr(broadcaster, ctx.FromAddress, tssTypes.GetGenesisStateFromAppState(protoCdc, appState), axelarCfg, logger, valAddr, cdc)
+	tssMgr := createTSSMgr(broadcaster, ctx.FromAddress, &tssGenesisState, axelarCfg, logger, valAddr, cdc)
 	btcMgr := createBTCMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
 	ethMgr := createETHMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
 
@@ -185,7 +187,7 @@ func createBroadcaster(ctx sdkClient.Context, txf tx.Factory, axelarCfg app.Conf
 	return broadcast.NewBroadcaster(ctx, txf, pipeline, logger)
 }
 
-func createTSSMgr(broadcaster bcTypes.Broadcaster, sender sdk.AccAddress, genesisState tssTypes.GenesisState, axelarCfg app.Config, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
+func createTSSMgr(broadcaster bcTypes.Broadcaster, sender sdk.AccAddress, genesisState *tssTypes.GenesisState, axelarCfg app.Config, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
 	create := func() (*tss.Mgr, error) {
 		gg20client, err := tss.CreateTOFNDClient(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, logger)
 		if err != nil {
