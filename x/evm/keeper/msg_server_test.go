@@ -556,9 +556,10 @@ func TestAddChain(t *testing.T) {
 			exported.Ethereum.Name: exported.Ethereum,
 			btc.Bitcoin.Name:       btc.Bitcoin,
 		}
+		k = &evmMock.EthKeeperMock{
+			SetParamsFunc: func(sdk.Context, []types.Params) {},
+		}
 		n = &evmMock.NexusMock{
-			SetChainFunc:      func(_ sdk.Context, chain nexus.Chain) {},
-			RegisterAssetFunc: func(_ sdk.Context, chainName, denom string) {},
 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 				c, ok := chains[chain]
 				return c, ok
@@ -583,13 +584,12 @@ func TestAddChain(t *testing.T) {
 		_, err := server.AddChain(sdk.WrapSDKContext(ctx), msg)
 
 		assert.NoError(t, err)
-		assert.Equal(t, msg.Name, n.SetChainCalls()[0].Chain.Name)
-		assert.Equal(t, msg.NativeAsset, n.SetChainCalls()[0].Chain.NativeAsset)
-		assert.Equal(t, msg.Name, n.RegisterAssetCalls()[0].ChainName)
-		assert.Equal(t, msg.NativeAsset, n.RegisterAssetCalls()[0].Denom)
+		assert.Equal(t, 1, len(k.SetParamsCalls()))
+		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeNewChain }), 1)
+
 	}).Repeat(repeats))
 
-	t.Run("chain already defined", testutils.Func(func(t *testing.T) {
+	t.Run("chain already registered", testutils.Func(func(t *testing.T) {
 		setup()
 
 		msg.Name = "Bitcoin"
@@ -598,8 +598,7 @@ func TestAddChain(t *testing.T) {
 		_, err := server.AddChain(sdk.WrapSDKContext(ctx), msg)
 
 		assert.Error(t, err)
-		assert.Equal(t, 0, len(n.SetChainCalls()))
-		assert.Equal(t, 0, len(n.RegisterAssetCalls()))
+		assert.Equal(t, 0, len(k.SetParamsCalls()))
 	}).Repeat(repeats))
 }
 
