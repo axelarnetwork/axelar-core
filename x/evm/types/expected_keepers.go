@@ -10,6 +10,7 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
 //go:generate moq -out ./mock/expected_keepers.go -pkg mock . Voter Signer Nexus Snapshotter EthKeeper
@@ -18,12 +19,12 @@ import (
 type EthKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 
-	GetParams(ctx sdk.Context) Params
-	SetParams(ctx sdk.Context, params Params)
-	GetNetwork(ctx sdk.Context) Network
-	GetRequiredConfirmationHeight(ctx sdk.Context) uint64
-	GetRevoteLockingPeriod(ctx sdk.Context) int64
-	GetGatewayByteCodes(ctx sdk.Context) []byte
+	GetParams(ctx sdk.Context) []Params
+	SetParams(ctx sdk.Context, params []Params)
+	GetNetwork(ctx sdk.Context, chain string) (Network, bool)
+	GetRequiredConfirmationHeight(ctx sdk.Context, chain string) (uint64, bool)
+	GetRevoteLockingPeriod(ctx sdk.Context, chain string) (int64, bool)
+	GetGatewayByteCodes(ctx sdk.Context, chain string) ([]byte, bool)
 
 	GetGatewayAddress(ctx sdk.Context, chain string) (common.Address, bool)
 	GetTokenAddress(ctx sdk.Context, chain, symbol string, gatewayAddr common.Address) (common.Address, error)
@@ -31,7 +32,7 @@ type EthKeeper interface {
 	GetDeposit(ctx sdk.Context, chain string, txID common.Hash, burnerAddr common.Address) (ERC20Deposit, DepositState, bool)
 	GetBurnerInfo(ctx sdk.Context, chain string, address common.Address) *BurnerInfo
 	SetPendingDeposit(ctx sdk.Context, chain string, poll vote.PollMeta, deposit *ERC20Deposit)
-	GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error)
+	GetBurnerAddressAndSalt(ctx sdk.Context, chain string, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error)
 	SetBurnerInfo(ctx sdk.Context, chain string, burnerAddr common.Address, burnerInfo *BurnerInfo)
 	GetPendingDeposit(ctx sdk.Context, chain string, poll vote.PollMeta) (ERC20Deposit, bool)
 	DeletePendingDeposit(ctx sdk.Context, chain string, poll vote.PollMeta)
@@ -45,6 +46,12 @@ type EthKeeper interface {
 	SetUnsignedTx(ctx sdk.Context, chain, txID string, tx *ethTypes.Transaction)
 	GetHashToSign(ctx sdk.Context, chain, txID string) (common.Hash, error)
 	SetGatewayAddress(ctx sdk.Context, chain string, addr common.Address)
+}
+
+// ParamsKeeper represents a global paramstore
+type ParamsKeeper interface {
+	Subspace(s string) params.Subspace
+	GetSubspace(s string) (params.Subspace, bool)
 }
 
 // Voter wraps around the existing vote.Voter interface to adhere to the Cosmos convention of keeping all
