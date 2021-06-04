@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"crypto/ecdsa"
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -27,10 +26,10 @@ import (
 )
 
 const (
-	gatewayKey   = "gateway"
-	subspacesKey = "subspaces"
+	gatewayKey = "gateway"
 
 	chainPrefix            = "chain_"
+	subspacePrefix         = "subspace_"
 	unsignedPrefix         = "unsigned_"
 	pendingTokenPrefix     = "pending_token_"
 	pendingDepositPrefix   = "pending_deposit_"
@@ -60,40 +59,25 @@ func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramsKeeper pa
 
 // SetParams sets the evm module's parameters
 func (k Keeper) SetParams(ctx sdk.Context, params []types.Params) {
-
-	subspaces := struct {
-		Chains []string `json:"chains"`
-	}{}
-	bz := ctx.KVStore(k.storeKey).Get([]byte(subspacesKey))
-	if bz != nil {
-		_ = json.Unmarshal(bz, &subspaces)
-	}
-
 	for _, p := range params {
 		str := strings.ToLower(p.Chain)
-		subspace := k.paramsKeeper.Subspace(types.ModuleName + "_" + str)
-		subspace = subspace.WithKeyTable(types.KeyTable())
+		subspace, ok := k.getSubspace(ctx, str)
+		if !ok {
+			subspace = k.paramsKeeper.Subspace(types.ModuleName + "_" + str)
+			subspace = subspace.WithKeyTable(types.KeyTable())
+		}
 		subspace.SetParamSet(ctx, &p)
-		subspaces.Chains = append(subspaces.Chains, str)
+		ctx.KVStore(k.storeKey).Set([]byte(subspacePrefix+str), []byte(p.Chain))
 	}
-
-	bz, _ = json.Marshal(subspaces)
-	ctx.KVStore(k.storeKey).Set([]byte(subspacesKey), bz)
 }
 
 // GetParams gets the evm module's parameters
 func (k Keeper) GetParams(ctx sdk.Context) []types.Params {
-
-	subspaces := struct {
-		Chains []string `json:"chains"`
-	}{}
-	bz := ctx.KVStore(k.storeKey).Get([]byte(subspacesKey))
-	if bz != nil {
-		_ = json.Unmarshal(bz, &subspaces)
-	}
-
 	params := make([]types.Params, 0)
-	for _, chain := range subspaces.Chains {
+	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(subspacePrefix))
+
+	for ; iter.Valid(); iter.Next() {
+		chain := string(iter.Value())
 		subspace, _ := k.getSubspace(ctx, chain)
 
 		var p types.Params
