@@ -22,7 +22,6 @@ import (
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
-	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 )
 
 const (
@@ -45,11 +44,11 @@ const (
 type Keeper struct {
 	storeKey     sdk.StoreKey
 	cdc          codec.BinaryMarshaler
-	paramsKeeper paramskeeper.Keeper
+	paramsKeeper types.ParamsKeeper
 }
 
 // NewKeeper returns a new EVM keeper
-func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramsKeeper paramskeeper.Keeper) Keeper {
+func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramsKeeper types.ParamsKeeper) Keeper {
 	return Keeper{
 		cdc:          cdc,
 		storeKey:     storeKey,

@@ -10,6 +10,7 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
 //go:generate moq -out ./mock/expected_keepers.go -pkg mock . Voter Signer Nexus Snapshotter EthKeeper
@@ -45,6 +46,12 @@ type EthKeeper interface {
 	SetUnsignedTx(ctx sdk.Context, chain, txID string, tx *ethTypes.Transaction)
 	GetHashToSign(ctx sdk.Context, chain, txID string) (common.Hash, error)
 	SetGatewayAddress(ctx sdk.Context, chain string, addr common.Address)
+}
+
+// ParamsKeeper represents a global paramstore
+type ParamsKeeper interface {
+	Subspace(s string) params.Subspace
+	GetSubspace(s string) (params.Subspace, bool)
 }
 
 // Voter wraps around the existing vote.Voter interface to adhere to the Cosmos convention of keeping all
