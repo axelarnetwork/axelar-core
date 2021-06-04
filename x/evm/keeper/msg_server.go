@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -148,6 +149,9 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	s.SetPendingTokenDeployment(ctx, chain.Name, poll, deploy)
 
 	height, _ := s.EthKeeper.GetRequiredConfirmationHeight(ctx, chain.Name)
+
+	telemetry.NewLabel("eth_token_addr", tokenAddr.String())
+
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeTokenConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
@@ -587,6 +591,8 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 
 		addr := crypto.CreateAddress(crypto.PubkeyToAddress(pub.Value), tx.Nonce())
 		s.SetGatewayAddress(ctx, chain.Name, addr)
+
+		telemetry.NewLabel("eth_factory_addr", addr.String())
 	}
 
 	return &types.SignTxResponse{TxID: txID}, nil
