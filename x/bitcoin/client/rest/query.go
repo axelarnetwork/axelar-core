@@ -21,7 +21,7 @@ import (
 
 // query parameters
 const (
-	QParamFeeRate = "fee_rate"
+	QueryParamFeeRate = "fee_rate"
 )
 
 // QueryDepositAddress returns a handler to query a deposit address
@@ -125,7 +125,7 @@ func QueryGetPayForConsolidationTx(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		// Parse fee rate
-		feeStr := r.URL.Query().Get(QParamFeeRate)
+		feeStr := r.URL.Query().Get(QueryParamFeeRate)
 		if feeStr == "" {
 			feeStr = "0" // fee is optional and defaults to zero
 		}
