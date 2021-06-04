@@ -88,8 +88,8 @@ func (m *Mgr) Subscribe(q tmpubsub.Query) (pubsub.Subscriber, error) {
 	return subscription.Subscribe()
 }
 
-// QueryEvents retrieves the block of given height from tendermint and extracts all tx events
-func (m *Mgr) QueryEvents(height int64) error {
+// QueryTxEvents retrieves the block of given height from tendermint and extracts all tx events
+func (m *Mgr) QueryTxEvents(height int64) error {
 	res, err := m.client.BlockResults(context.Background(), &height)
 	if err != nil {
 		return err

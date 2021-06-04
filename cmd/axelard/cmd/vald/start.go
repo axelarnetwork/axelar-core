@@ -25,7 +25,6 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/blocks"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast"
 	bcTypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc"
@@ -169,12 +168,12 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 	ethTokConf := tmEvents.MustSubscribeTx(eventMgr, evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 
 	js := []jobs.Job{
-		blocks.Consume(blockHeader, eventMgr.QueryEvents),
+		events.Consume(blockHeader, func(h int64, _ []sdk.Attribute) error { return eventMgr.QueryTxEvents(h) }),
+		events.Consume(blockHeader, tssMgr.ProcessNewBlockHeader),
 		events.Consume(keygenStart, tssMgr.ProcessKeygenStart),
 		events.Consume(keygenMsg, tssMgr.ProcessKeygenMsg),
 		events.Consume(signStart, tssMgr.ProcessSignStart),
 		events.Consume(signMsg, tssMgr.ProcessSignMsg),
-		events.Consume(blockHeader, tssMgr.ProcessNewBlockHeader),
 		events.Consume(btcConf, btcMgr.ProcessConfirmation),
 		events.Consume(ethDepConf, ethMgr.ProcessDepositConfirmation),
 		events.Consume(ethTokConf, ethMgr.ProcessTokenConfirmation),
