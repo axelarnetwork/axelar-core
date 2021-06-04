@@ -17,6 +17,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/evm/client/cli"
 	"github.com/axelarnetwork/axelar-core/x/evm/client/rest"
+	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 )
@@ -118,10 +119,19 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 		panic(err)
 	}
 	actualNetwork := types.NetworkByID(id)
-	if genState.Params.Network != actualNetwork {
+
+	//TODO: We need to generalize for more EVM chains.
+	var param types.Params
+	for _, p := range genState.Params {
+		if exported.Ethereum.Name == p.Chain {
+			param = p
+			break
+		}
+	}
+	if param.Network != actualNetwork {
 		panic(fmt.Sprintf(
 			"local ethereum client not configured correctly: expected network %s, got %s",
-			genState.Params.Network,
+			genState.Params[0].Network,
 			actualNetwork,
 		))
 	}

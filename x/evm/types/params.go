@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -11,6 +12,7 @@ import (
 
 // Parameter keys
 var (
+	KeyChain               = []byte("chain")
 	KeyConfirmationHeight  = []byte("confirmationHeight")
 	KeyNetwork             = []byte("network")
 	KeyRevoteLockingPeriod = []byte("RevoteLockingPeriod")
@@ -26,7 +28,7 @@ func KeyTable() params.KeyTable {
 }
 
 // DefaultParams returns the module's parameter set initialized with default values
-func DefaultParams() Params {
+func DefaultParams() []Params {
 	bzGateway, err := hex.DecodeString(gateway)
 	if err != nil {
 		panic(err)
@@ -40,14 +42,15 @@ func DefaultParams() Params {
 		panic(err)
 	}
 
-	return Params{
+	return []Params{{
+		Chain:               exported.Ethereum.Name,
 		ConfirmationHeight:  1,
 		Network:             Ganache,
 		Gateway:             bzGateway,
 		Token:               bzToken,
 		Burnable:            bzBurnable,
 		RevoteLockingPeriod: 50,
-	}
+	}}
 }
 
 // ParamSetPairs implements the ParamSet interface and returns all the key/value pairs
@@ -60,6 +63,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		set on the correct Params data struct
 	*/
 	return params.ParamSetPairs{
+		params.NewParamSetPair(KeyChain, &m.Chain, validateChain),
 		params.NewParamSetPair(KeyConfirmationHeight, &m.ConfirmationHeight, validateConfirmationHeight),
 		params.NewParamSetPair(KeyNetwork, &m.Network, validateNetwork),
 		params.NewParamSetPair(KeyGateway, &m.Gateway, validateBytes),
@@ -67,6 +71,17 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyBurnable, &m.Burnable, validateBytes),
 		params.NewParamSetPair(KeyRevoteLockingPeriod, &m.RevoteLockingPeriod, validateRevoteLockingPeriod),
 	}
+}
+
+func validateChain(chain interface{}) error {
+	c, ok := chain.(string)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for chain: %T", chain)
+	}
+	if c == "" {
+		return sdkerrors.Wrap(types.ErrInvalidGenesis, "chain name cannot be an empty string")
+	}
+	return nil
 }
 
 func validateNetwork(network interface{}) error {

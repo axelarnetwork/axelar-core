@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -18,6 +17,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 )
 
 func TestCreateMintCommandData_SingleMint(t *testing.T) {
@@ -158,8 +158,8 @@ func TestCreateExecuteData_CorrectExecuteData(t *testing.T) {
 func TestGetTokenAddress_CorrectData(t *testing.T) {
 	encCfg := testutils.MakeEncodingConfig()
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
-	k := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), subspace)
+	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
+	k := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), paramsK)
 
 	chain := "Ethereum"
 	axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
@@ -184,8 +184,8 @@ func TestGetTokenAddress_CorrectData(t *testing.T) {
 func TestGetBurnerAddressAndSalt_CorrectData(t *testing.T) {
 	encCfg := testutils.MakeEncodingConfig()
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
-	k := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), subspace)
+	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
+	k := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), paramsK)
 
 	axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
 	recipient := "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L"
@@ -195,7 +195,7 @@ func TestGetBurnerAddressAndSalt_CorrectData(t *testing.T) {
 
 	k.SetParams(ctx, types.DefaultParams())
 
-	actualburnerAddr, actualSalt, err := k.GetBurnerAddressAndSalt(ctx, tokenAddr, recipient, axelarGateway)
+	actualburnerAddr, actualSalt, err := k.GetBurnerAddressAndSalt(ctx, exported.Ethereum.Name, tokenAddr, recipient, axelarGateway)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedBurnerAddr, actualburnerAddr)
