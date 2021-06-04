@@ -20,7 +20,6 @@ import (
 
 // query parameters
 const (
-	QParamChain       = "chain"
 	QParamFromAddress = "from_address"
 	QParamCommandID   = "command_id"
 	QParamGasPrice    = "gas_price"
