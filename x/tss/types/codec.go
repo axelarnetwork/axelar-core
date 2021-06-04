@@ -17,9 +17,6 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&VoteSigRequest{}, "tss/VoteSig", nil)
 	cdc.RegisterConcrete(&VotePubKeyRequest{}, "tss/VotePubKey", nil)
 	cdc.RegisterConcrete(&DeregisterRequest{}, "tss/Deregister", nil)
-
-	// this module's votes contain byte slices and for the VotingData interface
-	cdc.RegisterConcrete([]byte{}, "tss/bytes", nil)
 }
 
 // RegisterInterfaces registers types and interfaces with the given registry

@@ -9,9 +9,6 @@ import "tss/tofnd/v1beta1/tofnd.proto";
 import "vote/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
-option (gogoproto.marshaler_all) = false;
-option (gogoproto.unmarshaler_all) = false;
-option (gogoproto.sizer_all) = false;
 
 // AssignKeyRequest represents a message to assign a new key
 message AssignKeyRequest {
@@ -80,9 +77,7 @@ message VotePubKeyRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   vote.exported.v1beta1.PollMeta poll_meta = 2 [ (gogoproto.nullable) = false ];
-  // need to vote on the bytes instead of ecdsa.PublicKey, otherwise we lose the
-  // elliptic curve information
-  bytes pub_key_bytes = 3;
+  tss.tofnd.v1beta1.MessageOut.KeygenResult result = 3;
 }
 message VotePubKeyResponse {}
 
