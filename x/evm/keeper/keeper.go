@@ -49,7 +49,7 @@ type Keeper struct {
 }
 
 // NewKeeper returns a new EVM keeper
-func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramsKeeper paramskeeper.Keeper /*paramSpace params.Subspace*/) Keeper {
+func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramsKeeper paramskeeper.Keeper) Keeper {
 	return Keeper{
 		cdc:          cdc,
 		storeKey:     storeKey,
