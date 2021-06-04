@@ -9,19 +9,19 @@ import (
 // ProcessNewBlockHeader handles timeout on new block header
 func (mgr *Mgr) ProcessNewBlockHeader(blockHeight int64, _ []sdk.Attribute) error {
 	for {
-		session := mgr.timeoutQueue.top()
+		session := mgr.timeoutQueue.Top()
 
 		if session == nil {
 			return nil
 		}
 
-		mgr.Logger.Debug(fmt.Sprintf("session ID: %s, session timeout: %d, block height: %d", session.id, session.timeoutAt, blockHeight))
+		mgr.Logger.Debug(fmt.Sprintf("session ID: %s, session timeout: %d, block height: %d", session.ID, session.TimeoutAt, blockHeight))
 
-		if session.timeoutAt > blockHeight {
+		if session.TimeoutAt > blockHeight {
 			return nil
 		}
 
-		mgr.timeoutQueue.dequeue()
-		close(session.timeout)
+		mgr.timeoutQueue.Dequeue()
+		session.Timeout()
 	}
 }

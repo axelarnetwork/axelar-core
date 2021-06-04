@@ -35,7 +35,7 @@ func TestProcessNewBlockHeader(t *testing.T) {
 		id := rand.Str(20)
 		timeoutAt := int64(1234)
 
-		mgr.timeoutQueue.enqueue(id, timeoutAt)
+		mgr.timeoutQueue.Enqueue(id, timeoutAt)
 
 		assert.NoError(t, mgr.ProcessNewBlockHeader(timeoutAt-1, nil))
 		assert.Len(t, mgr.timeoutQueue.queue, 1)
@@ -48,9 +48,9 @@ func TestProcessNewBlockHeader(t *testing.T) {
 		id2 := rand.Str(20)
 		timeoutAt := int64(1234)
 
-		session1 := mgr.timeoutQueue.enqueue(id1, timeoutAt)
-		session2 := mgr.timeoutQueue.enqueue(id2, timeoutAt)
-		mgr.timeoutQueue.enqueue(rand.Str(20), timeoutAt+1)
+		session1 := mgr.timeoutQueue.Enqueue(id1, timeoutAt)
+		session2 := mgr.timeoutQueue.Enqueue(id2, timeoutAt)
+		mgr.timeoutQueue.Enqueue(rand.Str(20), timeoutAt+1)
 
 		assert.NoError(t, mgr.ProcessNewBlockHeader(timeoutAt, nil))
 		assert.Len(t, mgr.timeoutQueue.queue, 1)

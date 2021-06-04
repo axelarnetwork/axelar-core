@@ -19,28 +19,42 @@ import (
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
-type session struct {
-	id        string
-	timeoutAt int64
+// Session defines a tss session which is either signing or keygen
+type Session struct {
+	ID        string
+	TimeoutAt int64
 	timeout   chan struct{}
 }
 
-type timeoutQueue struct {
-	lock  *sync.RWMutex
-	queue []*session
+// Timeout signals a session has timed out
+func (s *Session) Timeout() {
+	close(s.timeout)
 }
 
-func (q *timeoutQueue) enqueue(ID string, timeoutAt int64) *session {
+// WaitForTimeout waits until the session has timed out
+func (s *Session) WaitForTimeout() {
+	<-s.timeout
+}
+
+// TimeoutQueue is a queue of sessions order by timeoutAt
+type TimeoutQueue struct {
+	lock  *sync.RWMutex
+	queue []*Session
+}
+
+// Enqueue adds a new session with ID and timeoutAt into the queue
+func (q *TimeoutQueue) Enqueue(ID string, timeoutAt int64) *Session {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
-	session := session{id: ID, timeoutAt: timeoutAt, timeout: make(chan struct{})}
+	session := Session{ID: ID, TimeoutAt: timeoutAt, timeout: make(chan struct{})}
 	q.queue = append(q.queue, &session)
 
 	return &session
 }
 
-func (q *timeoutQueue) dequeue() *session {
+// Dequeue pops the first session in queue
+func (q *TimeoutQueue) Dequeue() *Session {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
@@ -54,7 +68,8 @@ func (q *timeoutQueue) dequeue() *session {
 	return result
 }
 
-func (q *timeoutQueue) top() *session {
+// Top returns the first session in queue
+func (q *TimeoutQueue) Top() *Session {
 	q.lock.RLock()
 	defer q.lock.RUnlock()
 
@@ -65,10 +80,11 @@ func (q *timeoutQueue) top() *session {
 	return q.queue[0]
 }
 
-func newTimeoutQueue() *timeoutQueue {
-	return &timeoutQueue{
+// NewTimeoutQueue is the constructor for TimeoutQueue
+func NewTimeoutQueue() *TimeoutQueue {
+	return &TimeoutQueue{
 		lock:  &sync.RWMutex{},
-		queue: []*session{},
+		queue: []*Session{},
 	}
 }
 
@@ -79,7 +95,7 @@ type Mgr struct {
 	sign           *sync.RWMutex
 	keygenStreams  map[string]tss.Stream
 	signStreams    map[string]tss.Stream
-	timeoutQueue   *timeoutQueue
+	timeoutQueue   *TimeoutQueue
 	sessionTimeout int64
 	Timeout        time.Duration
 	principalAddr  string
@@ -110,7 +126,7 @@ func NewMgr(client rpc.Client, timeout time.Duration, principalAddr string, broa
 		sign:           &sync.RWMutex{},
 		keygenStreams:  map[string]tss.Stream{},
 		signStreams:    map[string]tss.Stream{},
-		timeoutQueue:   newTimeoutQueue(),
+		timeoutQueue:   NewTimeoutQueue(),
 		sessionTimeout: sessionTimeout,
 		Timeout:        timeout,
 		principalAddr:  principalAddr,

@@ -23,7 +23,7 @@ func (mgr *Mgr) ProcessSignStart(blockHeight int64, attributes []sdk.Attribute) 
 		return nil
 	}
 
-	session := mgr.timeoutQueue.enqueue(sigID, blockHeight+mgr.sessionTimeout)
+	session := mgr.timeoutQueue.Enqueue(sigID, blockHeight+mgr.sessionTimeout)
 
 	stream, cancel, err := mgr.startSign(keyID, sigID, participants, payload)
 	if err != nil {
@@ -47,7 +47,7 @@ func (mgr *Mgr) ProcessSignStart(blockHeight int64, attributes []sdk.Attribute) 
 		}
 	}()
 	go func() {
-		<-session.timeout
+		session.WaitForTimeout()
 
 		found, err := mgr.abortSign(sigID)
 		if !found {
