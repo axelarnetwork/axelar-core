@@ -851,7 +851,7 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 	s.SetParams(ctx, []types.Params{param})
 
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeTokenConfirmation,
+		sdk.NewEvent(types.EventTypeNewChain,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueUpdate),
 			sdk.NewAttribute(types.AttributeKeyChain, req.Name),
