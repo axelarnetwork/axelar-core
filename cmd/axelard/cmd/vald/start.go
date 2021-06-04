@@ -3,7 +3,11 @@ package vald
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"os/signal"
 	"path"
+	"path/filepath"
+	"syscall"
 	"time"
 
 	"github.com/axelarnetwork/tm-events/pkg/pubsub"
@@ -73,8 +77,22 @@ func GetValdCommand() *cobra.Command {
 				return fmt.Errorf("validator address not set")
 			}
 
+			valdHome := filepath.Join(cliCtx.HomeDir, "vald")
+			if _, err := os.Stat(valdHome); os.IsNotExist(err) {
+				err := os.Mkdir(valdHome, 0755)
+				if err != nil {
+					return err
+				}
+			}
+
+			f, err := os.OpenFile("state.json", os.O_CREATE|os.O_RDWR, 0755)
+			if err != nil {
+				return err
+			}
+			stateStore := events.NewStateStore(f)
+
 			logger.Info("Start listening to events")
-			listen(cliCtx, appState, hub, txf, axConf, valAddr, logger)
+			listen(cliCtx, appState, hub, txf, axConf, valAddr, stateStore, logger)
 			logger.Info("Shutting down")
 			return nil
 		},
@@ -135,7 +153,7 @@ func loadConfig() (app.Config, string) {
 	return conf, viper.GetString("validator-addr")
 }
 
-func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmEvents.Hub, txf tx.Factory, axelarCfg app.Config, valAddr string, logger log.Logger) {
+func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmEvents.Hub, txf tx.Factory, axelarCfg app.Config, valAddr string, store events.StateStore, logger log.Logger) {
 	encCfg := app.MakeEncodingConfig()
 	cdc := encCfg.Amino
 	protoCdc := encCfg.Marshaler
@@ -151,7 +169,7 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 
 	broadcaster := createBroadcaster(ctx, txf, axelarCfg, logger)
 
-	eventMgr := createEventMgr(ctx, logger)
+	eventMgr := createEventMgr(ctx, store, logger)
 	tssMgr := createTSSMgr(broadcaster, ctx.FromAddress, &tssGenesisState, axelarCfg, logger, valAddr, cdc)
 	btcMgr := createBTCMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
 	ethMgr := createETHMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
@@ -170,8 +188,22 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 	ethDepConf := tmEvents.MustSubscribeTx(eventMgr, evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 	ethTokConf := tmEvents.MustSubscribeTx(eventMgr, evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 
+	sigs := make(chan os.Signal, 1)
+	done := make(chan struct{}, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		sig := <-sigs
+		logger.Info(fmt.Sprintf("received %s", sig.String()))
+		done <- struct{}{}
+	}()
+
+	syncJob := func(errChan chan<- error) {
+		errChan <- <-eventMgr.FetchEvents(done)
+	}
+
 	js := []jobs.Job{
-		events.Consume(blockHeader, func(h int64, _ []sdk.Attribute) error { return eventMgr.QueryTxEvents(h) }),
+		syncJob,
+		events.Consume(blockHeader, func(h int64, _ []sdk.Attribute) error { return eventMgr.NotifyNewBlock(h) }),
 		events.Consume(blockHeader, tssMgr.ProcessNewBlockHeader),
 		events.Consume(keygenStart, tssMgr.ProcessKeygenStart),
 		events.Consume(keygenMsg, tssMgr.ProcessKeygenMsg),
@@ -212,7 +244,7 @@ func (b wrappedBus) Publish(event pubsub.Event) error {
 	return b.Bus.Publish(e)
 }
 
-func createEventMgr(ctx sdkClient.Context, logger log.Logger) *events.Mgr {
+func createEventMgr(ctx sdkClient.Context, store events.StateStore, logger log.Logger) *events.Mgr {
 	node, err := ctx.GetNode()
 	if err != nil {
 		panic(err)
@@ -222,7 +254,7 @@ func createEventMgr(ctx sdkClient.Context, logger log.Logger) *events.Mgr {
 		return wrappedBus{pubsub.NewBus()}
 	}
 
-	return events.NewMgr(node, pubSubFactory, logger)
+	return events.NewMgr(node, store, pubSubFactory, logger)
 }
 
 func createBroadcaster(ctx sdkClient.Context, txf tx.Factory, axelarCfg app.Config, logger log.Logger) bcTypes.Broadcaster {

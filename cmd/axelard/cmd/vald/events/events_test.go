@@ -42,7 +42,7 @@ func TestMgr_QueryTxEvents(t *testing.T) {
 			},
 		}
 		actualEvents := make(chan pubsub.Event, 100000)
-		mgr = NewMgr(client, func() pubsub.Bus {
+		mgr = NewMgr(client,, func() pubsub.Bus {
 			return &mock.BusMock{
 				PublishFunc: func(event pubsub.Event) error {
 					actualEvents <- event
@@ -71,7 +71,7 @@ func TestMgr_QueryTxEvents(t *testing.T) {
 		setup()
 		subscribe()
 
-		assert.NoError(t, mgr.QueryTxEvents(rand.PosI64()))
+		assert.NoError(t, mgr.queryBlockResults(rand.PosI64()))
 		assert.Len(t, client.BlockResultsCalls(), 1)
 		var actualEvents []abci.Event
 	loop:
@@ -96,7 +96,7 @@ func TestMgr_QueryTxEvents(t *testing.T) {
 			}, nil
 		}
 
-		assert.NoError(t, mgr.QueryTxEvents(rand.PosI64()))
+		assert.NoError(t, mgr.queryBlockResults(rand.PosI64()))
 		var actualEvents []abci.Event
 	loop:
 		for {
@@ -131,7 +131,7 @@ func TestMgr_QueryTxEvents(t *testing.T) {
 			StringFunc: func() string { return rand.StrBetween(1, 100) },
 		})
 		assert.NoError(t, err)
-		assert.NoError(t, mgr.QueryTxEvents(rand.PosI64()))
+		assert.NoError(t, mgr.queryBlockResults(rand.PosI64()))
 
 		filteredCount := 0
 		var expectedEventsFiltered []abci.Event
@@ -176,7 +176,7 @@ func TestMgr_QueryTxEvents(t *testing.T) {
 			StringFunc: func() string { return rand.StrBetween(1, 100) },
 		})
 		assert.NoError(t, err)
-		assert.NoError(t, mgr.QueryTxEvents(rand.PosI64()))
+		assert.NoError(t, mgr.queryBlockResults(rand.PosI64()))
 
 		var actualEvents []abci.Event
 	loop:
@@ -195,7 +195,7 @@ func TestMgr_QueryTxEvents(t *testing.T) {
 	t.Run("no subscriptions", testutils.Func(func(t *testing.T) {
 		setup()
 
-		assert.NoError(t, mgr.QueryTxEvents(rand.PosI64()))
+		assert.NoError(t, mgr.queryBlockResults(rand.PosI64()))
 	}).Repeat(repeats))
 
 	t.Run("query block with negative block number", testutils.Func(func(t *testing.T) {
@@ -205,7 +205,7 @@ func TestMgr_QueryTxEvents(t *testing.T) {
 			return nil, fmt.Errorf("negative block numbers not allowed")
 		}
 
-		assert.Error(t, mgr.QueryTxEvents(-1*rand.PosI64()))
+		assert.Error(t, mgr.queryBlockResults(-1*rand.PosI64()))
 	}).Repeat(repeats))
 
 	t.Run("query block with future block number", testutils.Func(func(t *testing.T) {
@@ -216,7 +216,7 @@ func TestMgr_QueryTxEvents(t *testing.T) {
 			return nil, fmt.Errorf("negative block numbers not allowed")
 		}
 
-		assert.Error(t, mgr.QueryTxEvents(rand.I64Between(currHeight+1, 10e12)))
+		assert.Error(t, mgr.queryBlockResults(rand.I64Between(currHeight+1, 10e12)))
 	}).Repeat(repeats))
 }
 
