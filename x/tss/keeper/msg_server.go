@@ -333,6 +333,7 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 			return &types.VoteSigResponse{}, nil
 		}
 
+		// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed
 		s.deleteKeyIDForSig(ctx, req.PollMeta.ID)
 		for _, criminal := range signResult.GetCriminals().Criminals {
 			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())

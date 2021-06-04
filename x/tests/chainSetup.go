@@ -14,6 +14,7 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -104,8 +105,8 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	btcParams := btcTypes.DefaultParams()
 	bitcoinKeeper.SetParams(ctx, btcParams)
 
-	ethSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "eth")
-	EVMKeeper := evmKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(evmTypes.StoreKey), ethSubspace)
+	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"))
+	EVMKeeper := evmKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(evmTypes.StoreKey), paramsK)
 	EVMKeeper.SetParams(ctx, evmTypes.DefaultParams())
 
 	tssSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), tssTypes.DefaultParamspace)

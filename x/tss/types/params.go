@@ -26,6 +26,7 @@ var (
 	KeyKeyRequirements         = []byte("keyRequirements")
 	KeyMinBondFractionPerShare = []byte("MinBondFractionPerShare")
 	KeySuspendDurationInBlocks = []byte("SuspendDurationInBlocks")
+	KeyTimeoutInBlocks         = []byte("TimeoutInBlocks")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -47,6 +48,7 @@ func DefaultParams() Params {
 		},
 		MinBondFractionPerShare: utils.Threshold{Numerator: 1, Denominator: 10},
 		SuspendDurationInBlocks: 1000,
+		TimeoutInBlocks:         100,
 	}
 }
 
@@ -66,6 +68,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyKeyRequirements, &m.KeyRequirements, validateKeyRequirements),
 		params.NewParamSetPair(KeyMinBondFractionPerShare, &m.MinBondFractionPerShare, validateMinBondFractionPerShare),
 		params.NewParamSetPair(KeySuspendDurationInBlocks, &m.SuspendDurationInBlocks, validateSuspendDurationInBlocks),
+		params.NewParamSetPair(KeyTimeoutInBlocks, &m.TimeoutInBlocks, validateTimeoutInBlocks),
 	}
 }
 
@@ -107,6 +110,10 @@ func (m Params) Validate() error {
 	}
 
 	if err := validateSuspendDurationInBlocks(m.SuspendDurationInBlocks); err != nil {
+		return err
+	}
+
+	if err := validateTimeoutInBlocks(m.TimeoutInBlocks); err != nil {
 		return err
 	}
 
@@ -190,6 +197,19 @@ func validateSuspendDurationInBlocks(suspendDurationInBlocks interface{}) error 
 
 	if val <= 0 {
 		return fmt.Errorf("SuspendDurationInBlocks must be a positive integer")
+	}
+
+	return nil
+}
+
+func validateTimeoutInBlocks(timeoutInBlocks interface{}) error {
+	val, ok := timeoutInBlocks.(int64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for TimeoutInBlocks: %T", timeoutInBlocks)
+	}
+
+	if val <= 0 {
+		return fmt.Errorf("TimeoutInBlocks must be a positive integer")
 	}
 
 	return nil

@@ -30,4 +30,6 @@ message Params {
   // validator is disallowed to participate in any TSS ceremony after committing
   // a malicious behaviour during signing
   int64 suspend_duration_in_blocks = 6;
+  // TimeoutInBlocks defines the timeout in blocks for signing and keygen
+  int64 timeout_in_blocks = 7;
 }

@@ -179,11 +179,16 @@ func createDeployGateway(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types
 		}
 	}
 
+	byteCodes, ok := k.GetGatewayByteCodes(ctx, params.Chain)
+	if !ok {
+		return nil, fmt.Errorf("Could not retrieve gateway bytecodes for chain %s", params.Chain)
+	}
+
 	gasLimit := params.GasLimit
 	if gasLimit == 0 {
 		gasLimit, err = rpc.EstimateGas(context.Background(), ethereumRoot.CallMsg{
 			To:   nil,
-			Data: k.GetGatewayByteCodes(ctx),
+			Data: byteCodes,
 		})
 
 		if err != nil {
@@ -191,7 +196,7 @@ func createDeployGateway(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types
 		}
 	}
 
-	tx := ethTypes.NewContractCreation(nonce, big.NewInt(0), gasLimit, gasPrice, k.GetGatewayByteCodes(ctx))
+	tx := ethTypes.NewContractCreation(nonce, big.NewInt(0), gasLimit, gasPrice, byteCodes)
 	result := types.DeployResult{
 		Tx:              tx,
 		ContractAddress: crypto.CreateAddress(contractOwner, nonce).String(),

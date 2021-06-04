@@ -9,7 +9,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
@@ -25,9 +25,9 @@ func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
 
 	setup := func() {
 		encCfg := params.MakeEncodingConfig()
-		subspace := paramstypes.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"), "eth")
+		paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"))
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-		keeper = NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("evm"), subspace)
+		keeper = NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("evm"), paramsK)
 		chain = "Ethereum"
 	}
 

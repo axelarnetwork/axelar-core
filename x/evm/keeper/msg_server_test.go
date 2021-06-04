@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethCrypto "github.com/ethereum/go-ethereum/crypto"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -28,6 +27,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 )
 
 const (
@@ -47,9 +47,9 @@ func TestLink_UnknownChain(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	encCfg := testutils.MakeEncodingConfig()
 
-	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
-	k := NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), subspace)
-	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(minConfHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, RevoteLockingPeriod: 50})
+	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
+	k := NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), paramsK)
+	k.SetParams(ctx, []types.Params{{Chain: exported.Ethereum.Name, Network: network, ConfirmationHeight: uint64(minConfHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, RevoteLockingPeriod: 50}})
 
 	recipient := nexus.CrossChainAddress{Address: "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L", Chain: btc.Bitcoin}
 	symbol := rand.Str(3)
@@ -71,9 +71,9 @@ func TestLink_NoGateway(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	encCfg := testutils.MakeEncodingConfig()
 
-	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
-	k := NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), subspace)
-	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(minConfHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, RevoteLockingPeriod: 50})
+	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
+	k := NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), paramsK)
+	k.SetParams(ctx, []types.Params{{Chain: exported.Ethereum.Name, Network: network, ConfirmationHeight: uint64(minConfHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, RevoteLockingPeriod: 50}})
 
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
 	symbol := rand.Str(3)
@@ -184,7 +184,7 @@ func TestLink_Success(t *testing.T) {
 		panic(err)
 	}
 
-	burnAddr, salt, err := k.GetBurnerAddressAndSalt(ctx, tokenAddr, recipient.Address, common.HexToAddress(gateway))
+	burnAddr, salt, err := k.GetBurnerAddressAndSalt(ctx, chain, tokenAddr, recipient.Address, common.HexToAddress(gateway))
 	if err != nil {
 		panic(err)
 	}
@@ -335,8 +335,8 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			GetTokenAddressFunc: func(sdk.Context, string, string, common.Address) (common.Address, error) {
 				return common.BytesToAddress(rand.Bytes(common.AddressLength)), nil
 			},
-			GetRevoteLockingPeriodFunc:        func(ctx sdk.Context) int64 { return rand.PosI64() },
-			GetRequiredConfirmationHeightFunc: func(sdk.Context) uint64 { return mathRand.Uint64() },
+			GetRevoteLockingPeriodFunc:        func(ctx sdk.Context, _ string) (int64, bool) { return rand.PosI64(), true },
+			GetRequiredConfirmationHeightFunc: func(sdk.Context, string) (uint64, bool) { return mathRand.Uint64(), true },
 			SetPendingTokenDeploymentFunc:     func(sdk.Context, string, vote.PollMeta, types.ERC20TokenDeployment) {},
 		}
 		v = &evmMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta, int64, int64) error { return nil }}
@@ -533,9 +533,9 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 					Salt:         types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 				}
 			},
-			GetRevoteLockingPeriodFunc:        func(sdk.Context) int64 { return rand.PosI64() },
+			GetRevoteLockingPeriodFunc:        func(sdk.Context, string) (int64, bool) { return rand.PosI64(), true },
 			SetPendingDepositFunc:             func(sdk.Context, string, vote.PollMeta, *types.ERC20Deposit) {},
-			GetRequiredConfirmationHeightFunc: func(sdk.Context) uint64 { return mathRand.Uint64() },
+			GetRequiredConfirmationHeightFunc: func(sdk.Context, string) (uint64, bool) { return mathRand.Uint64(), true },
 		}
 		v = &evmMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta, int64, int64) error { return nil }}
 		s = &mock.SignerMock{
@@ -691,9 +691,9 @@ func createSignedEthTx() *ethTypes.Transaction {
 
 func newKeeper(ctx sdk.Context, chain string, confHeight int64) Keeper {
 	encCfg := testutils.MakeEncodingConfig()
-	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"), "sub")
-	k := NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), subspace)
-	k.SetParams(ctx, types.Params{Network: network, ConfirmationHeight: uint64(confHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, RevoteLockingPeriod: 50})
+	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
+	k := NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), paramsK)
+	k.SetParams(ctx, []types.Params{{Chain: exported.Ethereum.Name, Network: network, ConfirmationHeight: uint64(confHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, RevoteLockingPeriod: 50}})
 	k.SetGatewayAddress(ctx, chain, common.HexToAddress(gateway))
 
 	return k

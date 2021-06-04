@@ -7,4 +7,7 @@ import "evm/v1beta1/params.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
-message GenesisState { Params params = 1 [ (gogoproto.nullable) = false ]; }
+// GenesisState represents the genesis state
+message GenesisState {
+  repeated Params params = 1 [ (gogoproto.nullable) = false ];
+}
