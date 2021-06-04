@@ -6,6 +6,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/axelarnetwork/tm-events/pkg/pubsub"
 	"github.com/axelarnetwork/tm-events/pkg/tendermint/client"
 	tmEvents "github.com/axelarnetwork/tm-events/pkg/tendermint/events"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
@@ -18,6 +19,7 @@ import (
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	tmos "github.com/tendermint/tendermint/libs/os"
 
@@ -147,28 +149,31 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 	tssGenesisState := tssTypes.GetGenesisStateFromAppState(protoCdc, appState)
 
 	broadcaster := createBroadcaster(ctx, txf, axelarCfg, logger)
+
+	eventMgr := createEventMgr(ctx, logger)
 	tssMgr := createTSSMgr(broadcaster, ctx.FromAddress, &tssGenesisState, axelarCfg, logger, valAddr, cdc)
 	btcMgr := createBTCMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
 	ethMgr := createETHMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
 
-	keygenStart := tmEvents.MustSubscribeTx(hub, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
-	keygenMsg := tmEvents.MustSubscribeTx(hub, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
-	signStart := tmEvents.MustSubscribeTx(hub, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueStart)
-	signMsg := tmEvents.MustSubscribeTx(hub, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
+	blockHeader := tmEvents.MustSubscribeNewBlockHeader(hub)
 
-	btcConf := tmEvents.MustSubscribeTx(hub, btcTypes.EventTypeOutpointConfirmation, btcTypes.ModuleName, btcTypes.AttributeValueStart)
+	keygenStart := tmEvents.MustSubscribeTx(eventMgr, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
+	keygenMsg := tmEvents.MustSubscribeTx(eventMgr, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
+	signStart := tmEvents.MustSubscribeTx(eventMgr, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueStart)
+	signMsg := tmEvents.MustSubscribeTx(eventMgr, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
 
-	ethDepConf := tmEvents.MustSubscribeTx(hub, evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	ethTokConf := tmEvents.MustSubscribeTx(hub, evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	btcConf := tmEvents.MustSubscribeTx(eventMgr, btcTypes.EventTypeOutpointConfirmation, btcTypes.ModuleName, btcTypes.AttributeValueStart)
 
-	blockHeaderSub := tmEvents.MustSubscribeNewBlockHeader(hub)
+	ethDepConf := tmEvents.MustSubscribeTx(eventMgr, evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	ethTokConf := tmEvents.MustSubscribeTx(eventMgr, evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 
 	js := []jobs.Job{
+		events.Consume(blockHeader, func(h int64, _ []sdk.Attribute) error { return eventMgr.QueryTxEvents(h) }),
+		events.Consume(blockHeader, tssMgr.ProcessNewBlockHeader),
 		events.Consume(keygenStart, tssMgr.ProcessKeygenStart),
 		events.Consume(keygenMsg, tssMgr.ProcessKeygenMsg),
 		events.Consume(signStart, tssMgr.ProcessSignStart),
 		events.Consume(signMsg, tssMgr.ProcessSignMsg),
-		events.Consume(blockHeaderSub, tssMgr.ProcessNewBlockHeader),
 		events.Consume(btcConf, btcMgr.ProcessConfirmation),
 		events.Consume(ethDepConf, ethMgr.ProcessDepositConfirmation),
 		events.Consume(ethTokConf, ethMgr.ProcessTokenConfirmation),
@@ -180,6 +185,39 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 	mgr := jobs.NewMgr(logErr)
 	mgr.AddJobs(js...)
 	mgr.Wait()
+}
+
+// Somewhere in the event pipeline abci.Event needs to be converted into an event type FilteredSubscriber understands
+// to decouple event routing from type mapping and to make the conversion explicit, wrappedBus wraps around a given bus to
+// convert incoming events
+type wrappedBus struct {
+	pubsub.Bus
+}
+
+// Publish implements the tmEvents.Publisher interface
+func (b wrappedBus) Publish(event pubsub.Event) error {
+	abciEvent, ok := event.(abci.Event)
+	if !ok {
+		return fmt.Errorf("expected event of type %T, got %T", abci.Event{}, event)
+	}
+	e, ok := tmEvents.ProcessEvent(abciEvent)
+	if !ok {
+		return fmt.Errorf("could not parse event %v", event)
+	}
+	return b.Bus.Publish(e)
+}
+
+func createEventMgr(ctx sdkClient.Context, logger log.Logger) *events.Mgr {
+	node, err := ctx.GetNode()
+	if err != nil {
+		panic(err)
+	}
+
+	pubSubFactory := func() pubsub.Bus {
+		return wrappedBus{pubsub.NewBus()}
+	}
+
+	return events.NewMgr(node, pubSubFactory, logger)
 }
 
 func createBroadcaster(ctx sdkClient.Context, txf tx.Factory, axelarCfg app.Config, logger log.Logger) bcTypes.Broadcaster {
