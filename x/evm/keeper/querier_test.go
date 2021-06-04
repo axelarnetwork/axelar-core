@@ -22,14 +22,16 @@ import (
 func TestQueryTokenAddress(t *testing.T) {
 
 	var (
-		ethKeeper   *mock.EthKeeperMock
-		nexusKeeper *mock.NexusMock
-		ctx         sdk.Context
-		evmChain	string
-		symbol		string
+		ethKeeper   	*mock.EthKeeperMock
+		nexusKeeper 	*mock.NexusMock
+		ctx         	sdk.Context
+		evmChain		string
+		symbol			string
+		expectedAddress common.Address
 	)
 
-	setup := func(expectedAddress common.Address) {
+	setup := func() {
+		expectedAddress = randomAddress()
 
 		ethKeeper = &mock.EthKeeperMock{
 			GetGatewayAddressFunc: func(ctx sdk.Context, evmChain string) (common.Address, bool) { return randomAddress(), true },
@@ -53,21 +55,19 @@ func TestQueryTokenAddress(t *testing.T) {
 	repeatCount := 20
 
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
-		expectedAddress := randomAddress()
-		setup(expectedAddress)
+		setup()
 
 		res, err := queryTokenAddress(ctx, ethKeeper, nexusKeeper, evmChain, symbol)
 
 		assert := assert.New(t)
 		assert.NoError(err)
 		assert.Len(ethKeeper.GetTokenAddressCalls(), 1)
-		assert.Equal(res, expectedAddress.Bytes())
+		assert.Equal(expectedAddress.Bytes(), res)
 
 	}).Repeat(repeatCount))
 
 	t.Run("gateway not set", testutils.Func(func(t *testing.T) {
-		expectedAddress := randomAddress()
-		setup(expectedAddress)
+		setup()
 		ethKeeper.GetGatewayAddressFunc = func(ctx sdk.Context, evmChain string) (common.Address, bool) { return common.Address{}, false }
 
 		_, err := queryTokenAddress(ctx, ethKeeper, nexusKeeper, evmChain, symbol)
@@ -78,8 +78,7 @@ func TestQueryTokenAddress(t *testing.T) {
 	}).Repeat(repeatCount))
 
 	t.Run("token not deployed", testutils.Func(func(t *testing.T) {
-		expectedAddress := randomAddress()
-		setup(expectedAddress)
+		setup()
 		ethKeeper.GetTokenAddressFunc = func(ctx sdk.Context, evmChain string, symbol string, gatewayAddr common.Address) (common.Address, error) { 
 			return common.Address{}, fmt.Errorf("could not find token address") 
 		}
@@ -96,14 +95,16 @@ func TestQueryTokenAddress(t *testing.T) {
 func TestQueryDepositAddress(t *testing.T) {
 
 	var (
-		ethKeeper   *mock.EthKeeperMock
-		nexusKeeper *mock.NexusMock
-		ctx         sdk.Context
-		evmChain	string
-		data		[]byte
+		ethKeeper  		*mock.EthKeeperMock
+		nexusKeeper 	*mock.NexusMock
+		ctx         	sdk.Context
+		evmChain		string
+		data			[]byte
+		expectedAddress common.Address
 	)
 
-	setup := func(expectedAddress common.Address) {
+	setup := func() {
+		expectedAddress = randomAddress()
 
 		ethKeeper = &mock.EthKeeperMock{
 			GetGatewayAddressFunc: func(ctx sdk.Context, evmChain string) (common.Address, bool) { return randomAddress(), true },
@@ -142,8 +143,7 @@ func TestQueryDepositAddress(t *testing.T) {
 	repeatCount := 20
 
 	t.Run("happy path hard coded", testutils.Func(func(t *testing.T) {
-		expectedAddress := randomAddress()
-		setup(expectedAddress)
+		setup()
 
 		res, err := queryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
 
@@ -151,13 +151,12 @@ func TestQueryDepositAddress(t *testing.T) {
 		assert.NoError(err)
 		assert.Len(ethKeeper.GetBurnerAddressAndSaltCalls(), 1)
 		assert.Len(nexusKeeper.GetRecipientCalls(), 1)
-		assert.Equal(res, expectedAddress.Bytes())
+		assert.Equal(expectedAddress.Bytes(), res)
 
 	}).Repeat(repeatCount))
 
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
-		expectedAddress := randomAddress()
-		setup(expectedAddress)
+		setup()
 		dataStr := &types.DepositQueryParams{
 			Chain: rand.StrBetween(5, 20), 
 			Address: "tb" + rand.HexStr(40),
@@ -171,13 +170,12 @@ func TestQueryDepositAddress(t *testing.T) {
 		assert.NoError(err)
 		assert.Len(ethKeeper.GetBurnerAddressAndSaltCalls(), 1)
 		assert.Len(nexusKeeper.GetRecipientCalls(), 1)
-		assert.Equal(res, expectedAddress.Bytes())
+		assert.Equal(expectedAddress.Bytes(), res)
 
 	}).Repeat(repeatCount))
 
 	t.Run("gateway not deployed", testutils.Func(func(t *testing.T) {
-		expectedAddress := randomAddress()
-		setup(expectedAddress)
+		setup()
 		ethKeeper.GetGatewayAddressFunc = func(ctx sdk.Context, evmChain string) (common.Address, bool) { return common.Address{}, false }
 
 		_, err := queryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
@@ -188,8 +186,7 @@ func TestQueryDepositAddress(t *testing.T) {
 	}).Repeat(repeatCount))
 
 	t.Run("token contract not deployed", testutils.Func(func(t *testing.T) {
-		expectedAddress := randomAddress()
-		setup(expectedAddress)
+		setup()
 		ethKeeper.GetTokenAddressFunc = func(ctx sdk.Context, evmChain string, symbol string, gatewayAddr common.Address) (common.Address, error) { 
 			return common.Address{}, fmt.Errorf("could not find token address") 
 		}
@@ -202,8 +199,7 @@ func TestQueryDepositAddress(t *testing.T) {
 	}).Repeat(repeatCount))
 
 	t.Run("cannot get deposit address", testutils.Func(func(t *testing.T) {
-		expectedAddress := randomAddress()
-		setup(expectedAddress)
+		setup()
 		ethKeeper.GetBurnerAddressAndSaltFunc = func(ctx sdk.Context, evmChain string, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error) {
 			return common.Address{}, common.Hash{}, fmt.Errorf("could not find deposit address")
 	   }
@@ -216,8 +212,7 @@ func TestQueryDepositAddress(t *testing.T) {
 	}).Repeat(repeatCount))
 
 	t.Run("Ethereum chain not registered", testutils.Func(func(t *testing.T) {
-		expectedAddress := randomAddress()
-		setup(expectedAddress)
+		setup()
 		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 			return nexus.Chain {}, false
 		}
@@ -229,8 +224,7 @@ func TestQueryDepositAddress(t *testing.T) {
 	}).Repeat(repeatCount))
 
 	t.Run("deposit address not linked", testutils.Func(func(t *testing.T) {
-		expectedAddress := randomAddress()
-		setup(expectedAddress)
+		setup()
 		nexusKeeper.GetRecipientFunc = func(sdk.Context, nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
 			return nexus.CrossChainAddress{}, false
 		}
