@@ -19,6 +19,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/rest"
 )
 
+// query parameters
+const (
+	QParamFeeRate = "fee_rate"
+)
+
 // QueryDepositAddress returns a handler to query a deposit address
 func QueryDepositAddress(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -120,7 +125,7 @@ func QueryGetPayForConsolidationTx(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		// Parse fee rate
-		feeStr := mux.Vars(r)[utils.PathVarBtcFeeRate]
+		feeStr := r.URL.Query().Get(QParamFeeRate)
 		if feeStr == "" {
 			feeStr = "0" // fee is optional and defaults to zero
 		}
