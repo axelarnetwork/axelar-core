@@ -172,7 +172,7 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 		return &types.ConfirmChainResponse{}, fmt.Errorf("chain '%s' is already confirmed", req.Name)
 	}
 
-	if found, _ := s.EthKeeper.HasPendingChain(ctx, req.Name); !found {
+	if found, _ := s.EthKeeper.GetPendingChainAsset(ctx, req.Name); !found {
 		return &types.ConfirmChainResponse{}, fmt.Errorf("'%s' has not been added yet", req.Name)
 	}
 
@@ -283,7 +283,7 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 	ctx := sdk.UnwrapSDKContext(c)
 
 	registeredChain, registered := s.nexus.GetChain(ctx, req.Name)
-	pendingChain, nativeAsset := s.HasPendingChain(ctx, req.Name)
+	pendingChain, nativeAsset := s.GetPendingChainAsset(ctx, req.Name)
 
 	if registered {
 		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("chain %s already confirmed", registeredChain.Name)}, nil

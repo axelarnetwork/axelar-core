@@ -48,7 +48,7 @@ type EthKeeper interface {
 	SetGatewayAddress(ctx sdk.Context, chain string, addr common.Address)
 	DeletePendingChain(ctx sdk.Context, chain string)
 	SetPendingChain(ctx sdk.Context, chain string, nativeAsset string)
-	HasPendingChain(ctx sdk.Context, chain string) (bool, string)
+	GetPendingChainAsset(ctx sdk.Context, chain string) (bool, string)
 }
 
 // ParamsKeeper represents a global paramstore

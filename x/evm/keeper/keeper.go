@@ -446,8 +446,8 @@ func (k Keeper) SetPendingChain(ctx sdk.Context, chain string, nativeAsset strin
 	k.getStore(ctx, chain).Set([]byte(pendingChainPrefix), []byte(nativeAsset))
 }
 
-// HasPendingChain returns true if chain that is not registered yet, alongside its native asset
-func (k Keeper) HasPendingChain(ctx sdk.Context, chain string) (bool, string) {
+// GetPendingChainAsset returns true if chain that is not registered yet, alongside its native asset
+func (k Keeper) GetPendingChainAsset(ctx sdk.Context, chain string) (bool, string) {
 	bz := k.getStore(ctx, chain).Get([]byte(pendingChainPrefix))
 	if bz == nil {
 		return false, ""
