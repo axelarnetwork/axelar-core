@@ -609,7 +609,6 @@ func TestAddChain(t *testing.T) {
 		_, err := server.AddChain(sdk.WrapSDKContext(ctx), msg)
 
 		assert.Error(t, err)
-		assert.Equal(t, 0, len(k.SetParamsCalls()))
 	}).Repeat(repeats))
 }
 
