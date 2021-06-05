@@ -164,6 +164,8 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 
 	btcConf := tmEvents.MustSubscribeTx(eventMgr, btcTypes.EventTypeOutpointConfirmation, btcTypes.ModuleName, btcTypes.AttributeValueStart)
 
+	ethNewChain := tmEvents.MustSubscribeTx(hub, evmTypes.EventTypeNewChain, evmTypes.ModuleName, evmTypes.AttributeValueUpdate)
+	ethChainConf := tmEvents.MustSubscribeTx(hub, evmTypes.EventTypeChainConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 	ethDepConf := tmEvents.MustSubscribeTx(eventMgr, evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 	ethTokConf := tmEvents.MustSubscribeTx(eventMgr, evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 
@@ -175,6 +177,8 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 		events.Consume(signStart, tssMgr.ProcessSignStart),
 		events.Consume(signMsg, tssMgr.ProcessSignMsg),
 		events.Consume(btcConf, btcMgr.ProcessConfirmation),
+		events.Consume(ethNewChain, ethMgr.ProcessNewChain),
+		events.Consume(ethChainConf, ethMgr.ProcessChainConfirmation),
 		events.Consume(ethDepConf, ethMgr.ProcessDepositConfirmation),
 		events.Consume(ethTokConf, ethMgr.ProcessTokenConfirmation),
 	}

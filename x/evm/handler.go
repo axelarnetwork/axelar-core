@@ -25,6 +25,13 @@ func NewHandler(k keeper.Keeper, v types.Voter, s types.Signer, n types.Nexus, s
 				result.Log = fmt.Sprintf("successfully linked {%s} and {%s}", res.DepositAddr, msg.RecipientAddr)
 			}
 			return result, err
+		case *types.ConfirmChainRequest:
+			res, err := server.ConfirmChain(sdk.WrapSDKContext(ctx), msg)
+			result, err := sdk.WrapServiceResult(ctx, res, err)
+			if err == nil {
+				result.Log = fmt.Sprintf("votes on confirmation of EVM chain %s started", msg.Name)
+			}
+			return result, err
 		case *types.ConfirmTokenRequest:
 			res, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
@@ -37,6 +44,13 @@ func NewHandler(k keeper.Keeper, v types.Voter, s types.Signer, n types.Nexus, s
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
 				result.Log = fmt.Sprintf("votes on confirmation of deposit %s started", msg.TxID)
+			}
+			return result, err
+		case *types.VoteConfirmChainRequest:
+			res, err := server.VoteConfirmChain(sdk.WrapSDKContext(ctx), msg)
+			result, err := sdk.WrapServiceResult(ctx, res, err)
+			if err == nil {
+				result.Log = res.Log
 			}
 			return result, err
 		case *types.VoteConfirmDepositRequest:

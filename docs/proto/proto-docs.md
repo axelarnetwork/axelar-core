@@ -60,6 +60,8 @@
 - [evm/v1beta1/tx.proto](#evm/v1beta1/tx.proto)
     - [AddChainRequest](#evm.v1beta1.AddChainRequest)
     - [AddChainResponse](#evm.v1beta1.AddChainResponse)
+    - [ConfirmChainRequest](#evm.v1beta1.ConfirmChainRequest)
+    - [ConfirmChainResponse](#evm.v1beta1.ConfirmChainResponse)
     - [ConfirmDepositRequest](#evm.v1beta1.ConfirmDepositRequest)
     - [ConfirmDepositResponse](#evm.v1beta1.ConfirmDepositResponse)
     - [ConfirmTokenRequest](#evm.v1beta1.ConfirmTokenRequest)
@@ -76,6 +78,8 @@
     - [SignTransferOwnershipResponse](#evm.v1beta1.SignTransferOwnershipResponse)
     - [SignTxRequest](#evm.v1beta1.SignTxRequest)
     - [SignTxResponse](#evm.v1beta1.SignTxResponse)
+    - [VoteConfirmChainRequest](#evm.v1beta1.VoteConfirmChainRequest)
+    - [VoteConfirmChainResponse](#evm.v1beta1.VoteConfirmChainResponse)
     - [VoteConfirmDepositRequest](#evm.v1beta1.VoteConfirmDepositRequest)
     - [VoteConfirmDepositResponse](#evm.v1beta1.VoteConfirmDepositResponse)
     - [VoteConfirmTokenRequest](#evm.v1beta1.VoteConfirmTokenRequest)
@@ -793,7 +797,6 @@ deposit address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `chain` | [string](#string) |  |  |
 | `name` | [string](#string) |  |  |
 | `native_asset` | [string](#string) |  |  |
 
@@ -805,6 +808,32 @@ deposit address
 <a name="evm.v1beta1.AddChainResponse"></a>
 
 ### AddChainResponse
+
+
+
+
+
+
+
+<a name="evm.v1beta1.ConfirmChainRequest"></a>
+
+### ConfirmChainRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `name` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ConfirmChainResponse"></a>
+
+### ConfirmChainResponse
 
 
 
@@ -1069,6 +1098,39 @@ AxelarGateway
 
 
 
+<a name="evm.v1beta1.VoteConfirmChainRequest"></a>
+
+### VoteConfirmChainRequest
+MsgVoteConfirmChain represents a message that votes on a new EVM chain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `name` | [string](#string) |  |  |
+| `poll` | [vote.exported.v1beta1.PollMeta](#vote.exported.v1beta1.PollMeta) |  |  |
+| `confirmed` | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.VoteConfirmChainResponse"></a>
+
+### VoteConfirmChainResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `log` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="evm.v1beta1.VoteConfirmDepositRequest"></a>
 
 ### VoteConfirmDepositRequest
@@ -1169,8 +1231,10 @@ Msg defines the evm Msg service.
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `Link` | [LinkRequest](#evm.v1beta1.LinkRequest) | [LinkResponse](#evm.v1beta1.LinkResponse) |  | POST|/axelar/evm/link/{recipient_chain}|
+| `ConfirmChain` | [ConfirmChainRequest](#evm.v1beta1.ConfirmChainRequest) | [ConfirmChainResponse](#evm.v1beta1.ConfirmChainResponse) |  | POST|/axelar/evm/confirm-chain|
 | `ConfirmToken` | [ConfirmTokenRequest](#evm.v1beta1.ConfirmTokenRequest) | [ConfirmTokenResponse](#evm.v1beta1.ConfirmTokenResponse) |  | POST|/axelar/evm/confirm-erc20-deploy/{symbol}|
 | `ConfirmDeposit` | [ConfirmDepositRequest](#evm.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#evm.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/evm/confirm-erc20-deposit|
+| `VoteConfirmChain` | [VoteConfirmChainRequest](#evm.v1beta1.VoteConfirmChainRequest) | [VoteConfirmChainResponse](#evm.v1beta1.VoteConfirmChainResponse) |  | ||
 | `VoteConfirmDeposit` | [VoteConfirmDepositRequest](#evm.v1beta1.VoteConfirmDepositRequest) | [VoteConfirmDepositResponse](#evm.v1beta1.VoteConfirmDepositResponse) |  | ||
 | `VoteConfirmToken` | [VoteConfirmTokenRequest](#evm.v1beta1.VoteConfirmTokenRequest) | [VoteConfirmTokenResponse](#evm.v1beta1.VoteConfirmTokenResponse) |  | ||
 | `SignDeployToken` | [SignDeployTokenRequest](#evm.v1beta1.SignDeployTokenRequest) | [SignDeployTokenResponse](#evm.v1beta1.SignDeployTokenResponse) |  | POST|/axelar/evm/sign-deploy-token/{symbol}|

@@ -30,6 +30,7 @@ const (
 	chainPrefix            = "chain_"
 	subspacePrefix         = "subspace_"
 	unsignedPrefix         = "unsigned_"
+	pendingChainPrefix     = "pending_chain_"
 	pendingTokenPrefix     = "pending_token_"
 	pendingDepositPrefix   = "pending_deposit_"
 	confirmedDepositPrefix = "confirmed_deposit_"
@@ -433,6 +434,26 @@ func (k Keeper) GetPendingDeposit(ctx sdk.Context, chain string, poll exported.P
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &deposit)
 
 	return deposit, true
+}
+
+// DeletePendingChain deletes a chain that is not registered yet
+func (k Keeper) DeletePendingChain(ctx sdk.Context, chain string) {
+	k.getStore(ctx, chain).Delete([]byte(pendingChainPrefix))
+}
+
+// SetPendingChain stores a chain that is not registered yet
+func (k Keeper) SetPendingChain(ctx sdk.Context, chain string, nativeAsset string) {
+	k.getStore(ctx, chain).Set([]byte(pendingChainPrefix), []byte(nativeAsset))
+}
+
+// GetPendingChainAsset returns true if chain that is not registered yet, alongside its native asset
+func (k Keeper) GetPendingChainAsset(ctx sdk.Context, chain string) (bool, string) {
+	bz := k.getStore(ctx, chain).Get([]byte(pendingChainPrefix))
+	if bz == nil {
+		return false, ""
+	}
+
+	return true, string(bz)
 }
 
 // SetDeposit stores confirmed or burned deposits
