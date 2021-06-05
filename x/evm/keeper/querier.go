@@ -58,12 +58,10 @@ func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer, n types.Nexus) sd
 }
 
 func queryDepositAddress(ctx sdk.Context, k types.EthKeeper, n types.Nexus, chainName string, data []byte) ([]byte, error) {
-
 	depositChain, ok := n.GetChain(ctx, chainName)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
 	}
-
 	var params types.DepositQueryParams
 	if err := types.ModuleCdc.UnmarshalJSON(data, &params); err != nil {
 		return nil, fmt.Errorf("could not parse the recipient")
