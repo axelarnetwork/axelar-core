@@ -16,6 +16,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types/mock"
+	rpc2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/eth/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/eth/rpc/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
@@ -170,7 +171,9 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 			},
 		}
 		broadcaster = &mock2.BroadcasterMock{}
-		mgr = NewMgr(rpc, broadcaster, rand.Bytes(sdk.AddrLen), log.TestingLogger(), cdc)
+		evmMap := make(map[string]rpc2.Client)
+		evmMap["ethereum"] = rpc
+		mgr = NewMgr(evmMap, broadcaster, rand.Bytes(sdk.AddrLen), log.TestingLogger(), cdc)
 	}
 	repeats := 20
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
@@ -286,7 +289,9 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 			},
 		}
 		broadcaster = &mock2.BroadcasterMock{}
-		mgr = NewMgr(rpc, broadcaster, rand.Bytes(sdk.AddrLen), log.TestingLogger(), cdc)
+		evmMap := make(map[string]rpc2.Client)
+		evmMap["ethereum"] = rpc
+		mgr = NewMgr(evmMap, broadcaster, rand.Bytes(sdk.AddrLen), log.TestingLogger(), cdc)
 	}
 
 	repeats := 20

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
@@ -334,16 +335,24 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		appCodec, keys[voteTypes.StoreKey], snapK, broadcastK,
 	)
 
-	var rpcEth evmTypes.RPCClient
-	var err error
-	if axelarCfg.WithEthBridge {
-		rpcEth, err = evmTypes.NewRPCClient(axelarCfg.EthRPCAddr)
-		if err != nil {
-			tmos.Exit(err.Error())
+	rpcsEVM := make(map[string]evmTypes.RPCClient)
+	for _, evmConf := range axelarCfg.EVMConfig {
+		if _, found := rpcsEVM[strings.ToLower(evmConf.Name)]; found {
+			continue
 		}
-		logger.With("module", fmt.Sprintf("x/%s", evmTypes.ModuleName)).Debug("Successfully connected to ethereum node")
-	} else {
-		rpcEth = evmTypes.NewDummyRPC()
+
+		var rpcEVM evmTypes.RPCClient
+		var err error
+		if evmConf.WithBridge {
+			rpcEVM, err = evmTypes.NewRPCClient(evmConf.RPCAddr)
+			if err != nil {
+				tmos.Exit(err.Error())
+			}
+			logger.With("module", fmt.Sprintf("x/%s", evmTypes.ModuleName)).Debug(fmt.Sprintf("Successfully connected to %s node", evmConf.Name))
+		} else {
+			rpcEVM = evmTypes.NewDummyRPC()
+		}
+		rpcsEVM[strings.ToLower(evmConf.Name)] = rpcEVM
 	}
 
 	rpcBtc, err := btcRPC.NewRPCClient(axelarCfg.BtcConfig, logger)
@@ -379,7 +388,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		vote.NewAppModule(votingK),
 		broadcast.NewAppModule(broadcastK),
 		nexus.NewAppModule(nexusK),
-		evm.NewAppModule(ethK, votingK, tssK, nexusK, snapK, rpcEth),
+		evm.NewAppModule(ethK, votingK, tssK, nexusK, snapK, rpcsEVM),
 		bitcoin.NewAppModule(btcK, votingK, tssK, nexusK, snapK, rpcBtc),
 	)
 

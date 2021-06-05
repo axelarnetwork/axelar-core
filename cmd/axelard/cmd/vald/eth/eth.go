@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"strconv"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -32,16 +33,16 @@ var (
 // Mgr manages all communication with Ethereum
 type Mgr struct {
 	logger      tmLog.Logger
-	rpc         rpc2.Client
+	rpcs        map[string]rpc2.Client
 	broadcaster types2.Broadcaster
 	sender      sdk.AccAddress
 	cdc         *codec.LegacyAmino
 }
 
 // NewMgr returns a new Mgr instance
-func NewMgr(rpc rpc2.Client, broadcaster types2.Broadcaster, sender sdk.AccAddress, logger tmLog.Logger, cdc *codec.LegacyAmino) *Mgr {
+func NewMgr(rpcs map[string]rpc2.Client, broadcaster types2.Broadcaster, sender sdk.AccAddress, logger tmLog.Logger, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
-		rpc:         rpc,
+		rpcs:        rpcs,
 		broadcaster: broadcaster,
 		sender:      sender,
 		logger:      logger.With("listener", "eth"),
@@ -83,7 +84,12 @@ func (mgr Mgr) ProcessDepositConfirmation(attributes []sdk.Attribute) (err error
 		return sdkerrors.Wrap(err, "EVM deposit confirmation failed")
 	}
 
-	confirmed := mgr.validate(txID, confHeight, func(txReceipt *geth.Receipt) bool {
+	rpc, found := mgr.rpcs[strings.ToLower(chain)]
+	if !found {
+		return sdkerrors.Wrap(err, fmt.Sprintf("Unable to find an RPC for chain '%s'", chain))
+	}
+
+	confirmed := mgr.validate(rpc, txID, confHeight, func(txReceipt *geth.Receipt) bool {
 		err = confirmERC20Deposit(txReceipt, amount, burnAddr, tokenAddr)
 		if err != nil {
 			mgr.logger.Debug(sdkerrors.Wrap(err, "deposit confirmation failed").Error())
@@ -104,7 +110,12 @@ func (mgr Mgr) ProcessTokenConfirmation(attributes []sdk.Attribute) error {
 		return sdkerrors.Wrap(err, "EVM token deployment confirmation failed")
 	}
 
-	confirmed := mgr.validate(txID, confHeight, func(txReceipt *geth.Receipt) bool {
+	rpc, found := mgr.rpcs[strings.ToLower(chain)]
+	if !found {
+		return sdkerrors.Wrap(err, fmt.Sprintf("Unable to find an RPC for chain '%s'", chain))
+	}
+
+	confirmed := mgr.validate(rpc, txID, confHeight, func(txReceipt *geth.Receipt) bool {
 		err = confirmERC20TokenDeployment(txReceipt, symbol, gatewayAddr, tokenAddr)
 		if err != nil {
 			mgr.logger.Debug(sdkerrors.Wrap(err, "token confirmation failed").Error())
@@ -263,14 +274,14 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attri
 	return chain, txID, gatewayAddr, tokenAddr, symbol, confHeight, poll, nil
 }
 
-func (mgr Mgr) validate(txID common.Hash, confHeight uint64, validateLogs func(txReceipt *geth.Receipt) bool) bool {
-	blockNumber, err := mgr.rpc.BlockNumber(context.Background())
+func (mgr Mgr) validate(rpc rpc2.Client, txID common.Hash, confHeight uint64, validateLogs func(txReceipt *geth.Receipt) bool) bool {
+	blockNumber, err := rpc.BlockNumber(context.Background())
 	if err != nil {
 		mgr.logger.Debug(sdkerrors.Wrap(err, "checking block number failed").Error())
 		// TODO: this error is not the caller's fault, so we should implement a retry here instead of voting against
 		return false
 	}
-	txReceipt, err := mgr.rpc.TransactionReceipt(context.Background(), txID)
+	txReceipt, err := rpc.TransactionReceipt(context.Background(), txID)
 	if err != nil {
 		mgr.logger.Debug(sdkerrors.Wrap(err, "transaction receipt call failed").Error())
 		return false

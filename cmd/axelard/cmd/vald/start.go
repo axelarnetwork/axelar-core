@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -34,7 +35,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc"
 	btcRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/eth"
-	ethRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/eth/rpc"
+	evmRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/eth/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/events"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/jobs"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss"
@@ -313,19 +314,32 @@ func createBTCMgr(axelarCfg app.Config, b bcTypes.Broadcaster, sender sdk.AccAdd
 	// clean up btcRPC connection on process shutdown
 	cleanupCommands = append(cleanupCommands, rpc.Shutdown)
 
+	logger.Info("Successfully connected to Bitcoin bridge ")
+
 	btcMgr := btc.NewMgr(rpc, b, sender, logger, cdc)
 	return btcMgr
 }
 
 func createETHMgr(axelarCfg app.Config, b bcTypes.Broadcaster, sender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *eth.Mgr {
-	rpc, err := ethRPC.NewClient(axelarCfg.EthRPCAddr)
-	if err != nil {
-		logger.Error(err.Error())
-		panic(err)
-	}
-	// clean up ethRPC connection on process shutdown
-	cleanupCommands = append(cleanupCommands, rpc.Close)
+	rpcs := make(map[string]evmRPC.Client)
 
-	ethMgr := eth.NewMgr(rpc, b, sender, logger, cdc)
+	for _, evmConf := range axelarCfg.EVMConfig {
+		if _, found := rpcs[strings.ToLower(evmConf.Name)]; found {
+			continue
+		}
+
+		rpc, err := evmRPC.NewClient(evmConf.RPCAddr)
+		if err != nil {
+			logger.Error(err.Error())
+			panic(err)
+		}
+		// clean up ethRPC connection on process shutdown
+		cleanupCommands = append(cleanupCommands, rpc.Close)
+
+		rpcs[strings.ToLower(evmConf.Name)] = rpc
+		logger.Info(fmt.Sprintf("Successfully connected to EVM bridge for chain %s", evmConf.Name))
+	}
+
+	ethMgr := eth.NewMgr(rpcs, b, sender, logger, cdc)
 	return ethMgr
 }
