@@ -593,7 +593,6 @@ func TestAddChain(t *testing.T) {
 		_, err := server.AddChain(sdk.WrapSDKContext(ctx), msg)
 
 		assert.NoError(t, err)
-		assert.Equal(t, 1, len(k.SetParamsCalls()))
 		assert.Equal(t, 1, len(k.SetPendingChainCalls()))
 		assert.Equal(t, name, k.SetPendingChainCalls()[0].Chain)
 		assert.Equal(t, nativeAsset, k.SetPendingChainCalls()[0].NativeAsset)

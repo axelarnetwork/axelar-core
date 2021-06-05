@@ -328,11 +328,15 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 	ctx.EventManager().EmitEvent(
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
+	param := types.DefaultParams()[0]
+	param.Chain = req.Name
 	chain := nexus.Chain{
 		Name:                  req.Name,
 		NativeAsset:           nativeAsset,
 		SupportsForeignAssets: true,
 	}
+
+	s.SetParams(ctx, []types.Params{param})
 	s.nexus.SetChain(ctx, chain)
 	s.nexus.RegisterAsset(ctx, chain.Name, chain.NativeAsset)
 
@@ -832,10 +836,6 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 		return &types.AddChainResponse{}, fmt.Errorf("chain '%s' is already registered", req.Name)
 	}
 
-	param := types.DefaultParams()[0]
-	param.Chain = req.Name
-
-	s.SetParams(ctx, []types.Params{param})
 	s.SetPendingChain(ctx, req.Name, req.NativeAsset)
 
 	ctx.EventManager().EmitEvent(
