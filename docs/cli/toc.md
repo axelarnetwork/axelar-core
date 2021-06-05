@@ -136,7 +136,7 @@
     - [evm](axelard_tx_evm.md)	 - evm transactions subcommands
       - [add-chain \[name\] \[native asset\]](axelard_tx_evm_add-chain.md)	 - Add a new EVM chain
       - [confirm-erc20-deposit \[chain\] \[txID\] \[amount\] \[burnerAddr\]](axelard_tx_evm_confirm-erc20-deposit.md)	 - Confirm an ERC20 deposit in an EVM chain transaction that sent given amount of token to a burner address
-      - [confirm-erc20-token \[chain\] \[native asset\]](axelard_tx_evm_confirm-erc20-token.md)	 - Confirm an EVM chain for a given name and native asset
+      - [confirm-erc20-token \[chain\]](axelard_tx_evm_confirm-erc20-token.md)	 - Confirm an EVM chain for a given name and native asset
       - [confirm-erc20-token \[chain\] \[txID\] \[symbol\]](axelard_tx_evm_confirm-erc20-token.md)	 - Confirm an ERC20 token deployment in an EVM chain transaction for a given symbol of token and gateway address
       - [link \[chain\] \[recipient chain\] \[recipient address\] \[symbol\]](axelard_tx_evm_link.md)	 - Link a cross chain address to an EVM chain address created by Axelar
       - [sign \[chain\] \[tx json file path\]](axelard_tx_evm_sign.md)	 - sign a raw EVM chain transaction

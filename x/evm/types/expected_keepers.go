@@ -46,10 +46,9 @@ type EthKeeper interface {
 	SetUnsignedTx(ctx sdk.Context, chain, txID string, tx *ethTypes.Transaction)
 	GetHashToSign(ctx sdk.Context, chain, txID string) (common.Hash, error)
 	SetGatewayAddress(ctx sdk.Context, chain string, addr common.Address)
-	KnownChain(ctx sdk.Context, chain string) bool
-	DeletePendingChain(ctx sdk.Context, chain string, poll vote.PollMeta)
-	SetPendingChain(ctx sdk.Context, chain string, poll vote.PollMeta, nativeAsset string)
-	GetPendingChain(ctx sdk.Context, chain string, poll vote.PollMeta) (string, bool)
+	DeletePendingChain(ctx sdk.Context, chain string)
+	SetPendingChain(ctx sdk.Context, chain string, nativeAsset string)
+	HasPendingChain(ctx sdk.Context, chain string) (bool, string)
 }
 
 // ParamsKeeper represents a global paramstore

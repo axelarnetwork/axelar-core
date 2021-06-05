@@ -12,7 +12,6 @@ message ConfirmChainRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string name = 2;
-  string native_asset = 3;
 }
 
 message ConfirmChainResponse {}
@@ -123,10 +122,9 @@ message SignTxResponse { string tx_id = 1 [ (gogoproto.customname) = "TxID" ]; }
 message VoteConfirmChainRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string chain = 2;
+  string name = 2;
   vote.exported.v1beta1.PollMeta poll = 3 [ (gogoproto.nullable) = false ];
-  string native_asset = 4;
-  bool confirmed = 5;
+  bool confirmed = 4;
 }
 
 message VoteConfirmChainResponse { string log = 1; }

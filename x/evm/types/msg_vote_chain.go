@@ -11,15 +11,14 @@ import (
 // NewVoteConfirmChainRequest creates a message of type ConfirmTokenRequest
 func NewVoteConfirmChainRequest(
 	sender sdk.AccAddress,
-	chain, nativeAsset string,
+	name string,
 	poll vote.PollMeta,
 	confirmed bool) *VoteConfirmChainRequest {
 	return &VoteConfirmChainRequest{
-		Sender:      sender,
-		Chain:       chain,
-		NativeAsset: nativeAsset,
-		Poll:        poll,
-		Confirmed:   confirmed,
+		Sender:    sender,
+		Name:      name,
+		Poll:      poll,
+		Confirmed: confirmed,
 	}
 }
 
@@ -38,12 +37,8 @@ func (m VoteConfirmChainRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
-	if m.Chain == "" {
+	if m.Name == "" {
 		return fmt.Errorf("missing chain")
-	}
-
-	if m.NativeAsset == "" {
-		return fmt.Errorf("missing native asset")
 	}
 
 	return m.Poll.Validate()

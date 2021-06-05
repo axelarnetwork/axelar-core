@@ -172,7 +172,7 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 		return &types.ConfirmChainResponse{}, fmt.Errorf("chain '%s' is already confirmed", req.Name)
 	}
 
-	if !s.EthKeeper.KnownChain(ctx, req.Name) {
+	if found, _ := s.EthKeeper.HasPendingChain(ctx, req.Name); !found {
 		return &types.ConfirmChainResponse{}, fmt.Errorf("'%s' has not been added yet", req.Name)
 	}
 
@@ -193,19 +193,16 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", exported.Ethereum.Name)
 	}
 
-	poll := vote.NewPollMeta(types.ModuleName, req.Name+"_"+req.NativeAsset)
+	poll := vote.NewPollMeta(types.ModuleName, req.Name)
 	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+period); err != nil {
 		return nil, err
 	}
-
-	s.EthKeeper.SetPendingChain(ctx, req.Name, poll, req.NativeAsset)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeChainConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 			sdk.NewAttribute(types.AttributeKeyChain, req.Name),
-			sdk.NewAttribute(types.AttributeKeyNativeAsset, req.NativeAsset),
 			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&poll))),
 		),
 	)
@@ -285,26 +282,15 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmChainRequest) (*types.VoteConfirmChainResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	confirmedChain, registered := s.nexus.GetChain(ctx, req.Chain)
-	confirmedChain.Name = strings.ToLower(confirmedChain.Name)
-	nativeAsset, pollFound := s.GetPendingChain(ctx, req.Chain, req.Poll)
+	registeredChain, registered := s.nexus.GetChain(ctx, req.Name)
+	pendingChain, nativeAsset := s.HasPendingChain(ctx, req.Name)
 
-	switch {
-	// a malicious user could try to delete an ongoing poll by providing an already confirmed chain,
-	// so we need to check that it matches the poll before deleting
-	case registered && pollFound && req.NativeAsset == nativeAsset:
-		s.voter.DeletePoll(ctx, req.Poll)
-		s.DeletePendingChain(ctx, req.Chain, req.Poll)
-		fallthrough
-	// If the voting threshold has been met and additional votes are received they should not return an error
-	case registered:
-		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("chain %s already confirmed", req.Chain)}, nil
-	case !pollFound:
-		return nil, fmt.Errorf("no poll found for chain %s", req.Poll.String())
-	case req.NativeAsset != nativeAsset:
-		return nil, fmt.Errorf("native asset for chain %s does not match poll %s", req.Chain, req.Poll.String())
-	default:
-		// assert: the chain is known and has not been confirmed before
+	if registered {
+		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("chain %s already confirmed", registeredChain.Name)}, nil
+	}
+
+	if !pendingChain {
+		return nil, fmt.Errorf("unknown chain %s", req.Name)
 	}
 
 	if err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed}); err != nil {
@@ -313,7 +299,7 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 
 	result := s.voter.Result(ctx, req.Poll)
 	if result == nil {
-		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("not enough votes to confirm chain in %s yet", req.Chain)}, nil
+		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("not enough votes to confirm chain in %s yet", req.Name)}, nil
 	}
 
 	// assert: the poll has completed
@@ -324,26 +310,26 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 
 	s.Logger(ctx).Info(fmt.Sprintf("EVM chain confirmation result is %s", result))
 	s.voter.DeletePoll(ctx, req.Poll)
-	s.DeletePendingChain(ctx, req.Chain, req.Poll)
+	s.DeletePendingChain(ctx, req.Name)
 
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeChainConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyChain, req.Chain),
+		sdk.NewAttribute(types.AttributeKeyChain, req.Name),
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.Poll))))
 
 	if !confirmed.Value {
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
 		return &types.VoteConfirmChainResponse{
-			Log: fmt.Sprintf("chain %s was rejected", req.Chain),
+			Log: fmt.Sprintf("chain %s was rejected", req.Name),
 		}, nil
 	}
 	ctx.EventManager().EmitEvent(
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
 	chain := nexus.Chain{
-		Name:                  req.Chain,
+		Name:                  req.Name,
 		NativeAsset:           nativeAsset,
 		SupportsForeignAssets: true,
 	}
@@ -848,7 +834,9 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 
 	param := types.DefaultParams()[0]
 	param.Chain = req.Name
+
 	s.SetParams(ctx, []types.Params{param})
+	s.SetPendingChain(ctx, req.Name, req.NativeAsset)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeNewChain,

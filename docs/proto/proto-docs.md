@@ -825,7 +825,6 @@ deposit address
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `name` | [string](#string) |  |  |
-| `native_asset` | [string](#string) |  |  |
 
 
 
@@ -1108,9 +1107,8 @@ MsgVoteConfirmChain represents a message that votes on a new EVM chain
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `chain` | [string](#string) |  |  |
+| `name` | [string](#string) |  |  |
 | `poll` | [vote.exported.v1beta1.PollMeta](#vote.exported.v1beta1.PollMeta) |  |  |
-| `native_asset` | [string](#string) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
 
 

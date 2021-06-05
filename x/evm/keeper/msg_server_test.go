@@ -330,9 +330,9 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
 
 		k = &evmMock.EthKeeperMock{
-			KnownChainFunc:             func(sdk.Context, string) bool { return true },
 			GetRevoteLockingPeriodFunc: func(ctx sdk.Context, _ string) (int64, bool) { return rand.PosI64(), true },
-			SetPendingChainFunc:        func(sdk.Context, string, vote.PollMeta, string) {},
+			SetPendingChainFunc:        func(sdk.Context, string, string) {},
+			HasPendingChainFunc:        func(sdk.Context, string) (bool, string) { return true, rand.StrBetween(3, 5) },
 		}
 		v = &evmMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta, int64, int64) error { return nil }}
 		chains := map[string]nexus.Chain{exported.Ethereum.Name: exported.Ethereum}
@@ -353,9 +353,8 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 		}
 
 		msg = &types.ConfirmChainRequest{
-			Sender:      rand.Bytes(20),
-			Name:        rand.StrBetween(5, 20),
-			NativeAsset: rand.StrBetween(3, 5),
+			Sender: rand.Bytes(20),
+			Name:   rand.StrBetween(5, 20),
 		}
 
 		server = NewMsgServerImpl(k, n, s, v, &mock.SnapshotterMock{})
@@ -369,12 +368,21 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeChainConfirmation }), 1)
-		assert.Equal(t, v.InitPollCalls()[0].Poll, k.SetPendingChainCalls()[0].Poll)
+		assert.Equal(t, 1, len(v.InitPollCalls()))
 	}).Repeat(repeats))
 
 	t.Run("registered chain", testutils.Func(func(t *testing.T) {
 		setup()
 		msg.Name = evmChain
+
+		_, err := server.ConfirmChain(sdk.WrapSDKContext(ctx), msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("unknown chain", testutils.Func(func(t *testing.T) {
+		setup()
+		k.HasPendingChainFunc = func(sdk.Context, string) (bool, string) { return false, "" }
 
 		_, err := server.ConfirmChain(sdk.WrapSDKContext(ctx), msg)
 
@@ -557,7 +565,8 @@ func TestAddChain(t *testing.T) {
 			btc.Bitcoin.Name:       btc.Bitcoin,
 		}
 		k = &evmMock.EthKeeperMock{
-			SetParamsFunc: func(sdk.Context, []types.Params) {},
+			SetParamsFunc:       func(sdk.Context, []types.Params) {},
+			SetPendingChainFunc: func(sdk.Context, string, string) {},
 		}
 		n = &evmMock.NexusMock{
 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {

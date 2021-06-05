@@ -436,24 +436,24 @@ func (k Keeper) GetPendingDeposit(ctx sdk.Context, chain string, poll exported.P
 	return deposit, true
 }
 
-// DeletePendingChain deletes the poll associated to a  given chain
-func (k Keeper) DeletePendingChain(ctx sdk.Context, chain string, poll exported.PollMeta) {
-	k.getStore(ctx, chain).Delete([]byte(pendingChainPrefix + poll.String()))
+// DeletePendingChain deletes a chain that is not registered yet
+func (k Keeper) DeletePendingChain(ctx sdk.Context, chain string) {
+	k.getStore(ctx, chain).Delete([]byte(pendingChainPrefix))
 }
 
-// SetPendingChain stores a poll associated to a  given chain
-func (k Keeper) SetPendingChain(ctx sdk.Context, chain string, poll exported.PollMeta, nativeAsset string) {
-	k.getStore(ctx, chain).Set([]byte(pendingChainPrefix+poll.String()), []byte(nativeAsset))
+// SetPendingChain stores a chain that is not registered yet
+func (k Keeper) SetPendingChain(ctx sdk.Context, chain string, nativeAsset string) {
+	k.getStore(ctx, chain).Set([]byte(pendingChainPrefix), []byte(nativeAsset))
 }
 
-// GetPendingChain returns the poll associated to a  given chain
-func (k Keeper) GetPendingChain(ctx sdk.Context, chain string, poll exported.PollMeta) (string, bool) {
-	bz := k.getStore(ctx, chain).Get([]byte(pendingChainPrefix + poll.String()))
+// HasPendingChain returns true if chain that is not registered yet, alongside its native asset
+func (k Keeper) HasPendingChain(ctx sdk.Context, chain string) (bool, string) {
+	bz := k.getStore(ctx, chain).Get([]byte(pendingChainPrefix))
 	if bz == nil {
-		return "", false
+		return false, ""
 	}
 
-	return string(bz), true
+	return true, string(bz)
 }
 
 // SetDeposit stores confirmed or burned deposits
@@ -474,12 +474,6 @@ func (k Keeper) SetDeposit(ctx sdk.Context, chain string, deposit types.ERC20Dep
 func (k Keeper) DeleteDeposit(ctx sdk.Context, chain string, deposit types.ERC20Deposit) {
 	k.getStore(ctx, chain).Delete([]byte(confirmedDepositPrefix + deposit.TxID.Hex() + "_" + deposit.BurnerAddress.Hex()))
 	k.getStore(ctx, chain).Delete([]byte(burnedDepositPrefix + deposit.TxID.Hex() + "_" + deposit.BurnerAddress.Hex()))
-}
-
-// KnownChain checks if the keeper is aware of a given chain
-func (k Keeper) KnownChain(ctx sdk.Context, chain string) bool {
-	_, ok := k.getSubspace(ctx, chain)
-	return ok
 }
 
 func (k Keeper) getStore(ctx sdk.Context, chain string) prefix.Store {
