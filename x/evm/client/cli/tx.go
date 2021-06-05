@@ -106,7 +106,7 @@ func GetCmdConfirmChain() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "confirm-erc20-token [chain]",
 		Short: "Confirm an EVM chain for a given name and native asset",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -296,7 +296,7 @@ func GetCmdAddChain() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add-chain [name] [native asset]",
 		Short: "Add a new EVM chain",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
