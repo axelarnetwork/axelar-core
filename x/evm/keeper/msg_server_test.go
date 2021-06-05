@@ -594,6 +594,9 @@ func TestAddChain(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(k.SetParamsCalls()))
+		assert.Equal(t, 1, len(k.SetPendingChainCalls()))
+		assert.Equal(t, name, k.SetPendingChainCalls()[0].Chain)
+		assert.Equal(t, nativeAsset, k.SetPendingChainCalls()[0].NativeAsset)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeNewChain }), 1)
 
 	}).Repeat(repeats))
