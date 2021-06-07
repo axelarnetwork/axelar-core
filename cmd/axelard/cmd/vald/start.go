@@ -3,7 +3,12 @@ package vald
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"os/signal"
 	"path"
+	"path/filepath"
+	"sync"
+	"syscall"
 	"time"
 
 	"github.com/axelarnetwork/tm-events/pkg/pubsub"
@@ -21,7 +26,6 @@ import (
 	"github.com/spf13/viper"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
-	tmos "github.com/tendermint/tendermint/libs/os"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
@@ -39,20 +43,36 @@ import (
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
+var once sync.Once
+var cleanupCommands []func()
+
 // GetValdCommand returns the command to start vald
 func GetValdCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "vald-start",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			serverCtx := server.GetServerContextFromCmd(cmd)
+			logger := serverCtx.Logger.With("module", "vald")
+
+			// in case of panic we still want to try and cleanup resources,
+			// but we have to make sure it's not called more than once if the program is stopped by an interrupt signal
+			defer once.Do(cleanUp)
+
+			sigs := make(chan os.Signal, 1)
+			signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+			go func() {
+				sig := <-sigs
+				logger.Info(fmt.Sprintf("captured signal \"%s\"", sig))
+				once.Do(cleanUp)
+			}()
+
 			config := serverCtx.Config
 			genFile := config.GenesisFile()
 			appState, _, err := genutiltypes.GenesisStateFromGenFile(genFile)
 			if err != nil {
 				return fmt.Errorf("failed to unmarshal genesis state: %w", err)
 			}
-
-			logger := serverCtx.Logger.With("module", "vald")
 
 			cliCtx, err := sdkClient.GetClientTxContext(cmd)
 			if err != nil {
@@ -72,8 +92,24 @@ func GetValdCommand() *cobra.Command {
 				return fmt.Errorf("validator address not set")
 			}
 
+			valdHome := filepath.Join(cliCtx.HomeDir, "vald")
+			if _, err := os.Stat(valdHome); os.IsNotExist(err) {
+				logger.Info(fmt.Sprintf("folder %s does not exist, creating...", valdHome))
+				err := os.Mkdir(valdHome, 0755)
+				if err != nil {
+					return err
+				}
+			}
+
+			fPath := filepath.Join(valdHome, "state.json")
+			f, err := os.OpenFile(fPath, os.O_CREATE|os.O_RDWR, 0755)
+			if err != nil {
+				return err
+			}
+			stateStore := events.NewStateStore(f)
+
 			logger.Info("Start listening to events")
-			listen(cliCtx, appState, hub, txf, axConf, valAddr, logger)
+			listen(cliCtx, appState, hub, txf, axConf, valAddr, stateStore, logger)
 			logger.Info("Shutting down")
 			return nil
 		},
@@ -90,6 +126,12 @@ func GetValdCommand() *cobra.Command {
 	utils.OverwriteFlagDefaults(cmd, values, true)
 
 	return cmd
+}
+
+func cleanUp() {
+	for _, cmd := range cleanupCommands {
+		cmd()
+	}
 }
 
 func setPersistentFlags(rootCmd *cobra.Command) {
@@ -134,7 +176,7 @@ func loadConfig() (app.Config, string) {
 	return conf, viper.GetString("validator-addr")
 }
 
-func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmEvents.Hub, txf tx.Factory, axelarCfg app.Config, valAddr string, logger log.Logger) {
+func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmEvents.Hub, txf tx.Factory, axelarCfg app.Config, valAddr string, store events.StateStore, logger log.Logger) {
 	encCfg := app.MakeEncodingConfig()
 	cdc := encCfg.Amino
 	protoCdc := encCfg.Marshaler
@@ -150,12 +192,14 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 
 	broadcaster := createBroadcaster(ctx, txf, axelarCfg, logger)
 
-	eventMgr := createEventMgr(ctx, logger)
+	eventMgr := createEventMgr(ctx, store, logger)
 	tssMgr := createTSSMgr(broadcaster, ctx.FromAddress, &tssGenesisState, axelarCfg, logger, valAddr, cdc)
 	btcMgr := createBTCMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
 	ethMgr := createETHMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
 
-	blockHeader := tmEvents.MustSubscribeNewBlockHeader(hub)
+	// we have two processes listening to block headers
+	blockHeader1 := tmEvents.MustSubscribeNewBlockHeader(hub)
+	blockHeader2 := tmEvents.MustSubscribeNewBlockHeader(hub)
 
 	keygenStart := tmEvents.MustSubscribeTx(eventMgr, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
 	keygenMsg := tmEvents.MustSubscribeTx(eventMgr, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
@@ -164,23 +208,36 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 
 	btcConf := tmEvents.MustSubscribeTx(eventMgr, btcTypes.EventTypeOutpointConfirmation, btcTypes.ModuleName, btcTypes.AttributeValueStart)
 
-	ethNewChain := tmEvents.MustSubscribeTx(hub, evmTypes.EventTypeNewChain, evmTypes.ModuleName, evmTypes.AttributeValueUpdate)
-	ethChainConf := tmEvents.MustSubscribeTx(hub, evmTypes.EventTypeChainConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 	ethDepConf := tmEvents.MustSubscribeTx(eventMgr, evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 	ethTokConf := tmEvents.MustSubscribeTx(eventMgr, evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 
+	// stop the jobs if process gets interrupted/terminated
+	cleanupCommands = append(cleanupCommands, func() {
+		logger.Info("persisting event state...")
+		eventMgr.Shutdown()
+		logger.Info("event state persisted")
+		logger.Info("stopping listening for blocks...")
+		blockHeader1.Close()
+		blockHeader2.Close()
+		logger.Info("block listener stopped")
+	})
+
+	fetchEvents := func(errChan chan<- error) {
+		for err := range eventMgr.FetchEvents() {
+			errChan <- err
+		}
+	}
 	js := []jobs.Job{
-		events.Consume(blockHeader, func(h int64, _ []sdk.Attribute) error { return eventMgr.QueryTxEvents(h) }),
-		events.Consume(blockHeader, tssMgr.ProcessNewBlockHeader),
+		fetchEvents,
+		events.Consume(blockHeader1, events.OnlyBlockHeight(eventMgr.NotifyNewBlock)),
+		events.Consume(blockHeader2, events.OnlyBlockHeight(tssMgr.ProcessNewBlockHeader)),
 		events.Consume(keygenStart, tssMgr.ProcessKeygenStart),
-		events.Consume(keygenMsg, tssMgr.ProcessKeygenMsg),
+		events.Consume(keygenMsg, events.OnlyAttributes(tssMgr.ProcessKeygenMsg)),
 		events.Consume(signStart, tssMgr.ProcessSignStart),
-		events.Consume(signMsg, tssMgr.ProcessSignMsg),
-		events.Consume(btcConf, btcMgr.ProcessConfirmation),
-		events.Consume(ethNewChain, ethMgr.ProcessNewChain),
-		events.Consume(ethChainConf, ethMgr.ProcessChainConfirmation),
-		events.Consume(ethDepConf, ethMgr.ProcessDepositConfirmation),
-		events.Consume(ethTokConf, ethMgr.ProcessTokenConfirmation),
+		events.Consume(signMsg, events.OnlyAttributes(tssMgr.ProcessSignMsg)),
+		events.Consume(btcConf, events.OnlyAttributes(btcMgr.ProcessConfirmation)),
+		events.Consume(ethDepConf, events.OnlyAttributes(ethMgr.ProcessDepositConfirmation)),
+		events.Consume(ethTokConf, events.OnlyAttributes(ethMgr.ProcessTokenConfirmation)),
 	}
 
 	// errGroup runs async processes and cancels their context if ANY of them returns an error.
@@ -211,7 +268,7 @@ func (b wrappedBus) Publish(event pubsub.Event) error {
 	return b.Bus.Publish(e)
 }
 
-func createEventMgr(ctx sdkClient.Context, logger log.Logger) *events.Mgr {
+func createEventMgr(ctx sdkClient.Context, store events.StateStore, logger log.Logger) *events.Mgr {
 	node, err := ctx.GetNode()
 	if err != nil {
 		panic(err)
@@ -221,7 +278,7 @@ func createEventMgr(ctx sdkClient.Context, logger log.Logger) *events.Mgr {
 		return wrappedBus{pubsub.NewBus()}
 	}
 
-	return events.NewMgr(node, pubSubFactory, logger)
+	return events.NewMgr(node, store, pubSubFactory, logger)
 }
 
 func createBroadcaster(ctx sdkClient.Context, txf tx.Factory, axelarCfg app.Config, logger log.Logger) bcTypes.Broadcaster {
@@ -254,7 +311,7 @@ func createBTCMgr(axelarCfg app.Config, b bcTypes.Broadcaster, sender sdk.AccAdd
 		panic(err)
 	}
 	// clean up btcRPC connection on process shutdown
-	tmos.TrapSignal(logger, rpc.Shutdown)
+	cleanupCommands = append(cleanupCommands, rpc.Shutdown)
 
 	btcMgr := btc.NewMgr(rpc, b, sender, logger, cdc)
 	return btcMgr
@@ -267,7 +324,7 @@ func createETHMgr(axelarCfg app.Config, b bcTypes.Broadcaster, sender sdk.AccAdd
 		panic(err)
 	}
 	// clean up ethRPC connection on process shutdown
-	tmos.TrapSignal(logger, rpc.Close)
+	cleanupCommands = append(cleanupCommands, rpc.Close)
 
 	ethMgr := eth.NewMgr(rpc, b, sender, logger, cdc)
 	return ethMgr

@@ -59,7 +59,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 			copy(wrongAttributes, attributes)
 			wrongAttributes = append(wrongAttributes[:i], wrongAttributes[(i+1):]...)
 
-			err := mgr.ProcessConfirmation(0, wrongAttributes)
+			err := mgr.ProcessConfirmation(wrongAttributes)
 			assert.Error(t, err)
 			assert.Len(t, broadcaster.BroadcastCalls(), 0)
 		}
@@ -71,7 +71,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 			return nil, fmt.Errorf("some error")
 		}
 
-		err := mgr.ProcessConfirmation(0, attributes)
+		err := mgr.ProcessConfirmation(attributes)
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*btc.VoteConfirmOutpointRequest).Confirmed)
@@ -83,7 +83,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 			return nil, nil
 		}
 
-		err := mgr.ProcessConfirmation(0, attributes)
+		err := mgr.ProcessConfirmation(attributes)
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*btc.VoteConfirmOutpointRequest).Confirmed)
@@ -99,7 +99,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 			}, nil
 		}
 
-		err := mgr.ProcessConfirmation(0, attributes)
+		err := mgr.ProcessConfirmation(attributes)
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*btc.VoteConfirmOutpointRequest).Confirmed)
@@ -116,7 +116,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 			}, nil
 		}
 
-		err := mgr.ProcessConfirmation(0, attributes)
+		err := mgr.ProcessConfirmation(attributes)
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*btc.VoteConfirmOutpointRequest).Confirmed)
@@ -132,7 +132,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 			}, nil
 		}
 
-		err := mgr.ProcessConfirmation(0, attributes)
+		err := mgr.ProcessConfirmation(attributes)
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		assert.True(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*btc.VoteConfirmOutpointRequest).Confirmed)
