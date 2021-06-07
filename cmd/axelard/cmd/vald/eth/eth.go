@@ -16,10 +16,9 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	tmLog "github.com/tendermint/tendermint/libs/log"
 
-	types2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
-	rpc2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/eth/rpc"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/eth/rpc"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -33,14 +32,14 @@ var (
 // Mgr manages all communication with Ethereum
 type Mgr struct {
 	logger      tmLog.Logger
-	rpcs        map[string]rpc2.Client
-	broadcaster types2.Broadcaster
+	rpcs        map[string]rpc.Client
+	broadcaster types.Broadcaster
 	sender      sdk.AccAddress
 	cdc         *codec.LegacyAmino
 }
 
 // NewMgr returns a new Mgr instance
-func NewMgr(rpcs map[string]rpc2.Client, broadcaster types2.Broadcaster, sender sdk.AccAddress, logger tmLog.Logger, cdc *codec.LegacyAmino) *Mgr {
+func NewMgr(rpcs map[string]rpc.Client, broadcaster types.Broadcaster, sender sdk.AccAddress, logger tmLog.Logger, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
 		rpcs:        rpcs,
 		broadcaster: broadcaster,
@@ -98,7 +97,7 @@ func (mgr Mgr) ProcessDepositConfirmation(attributes []sdk.Attribute) (err error
 		return true
 	})
 
-	msg := evmTypes.NewVoteConfirmDepositRequest(mgr.sender, chain, poll, txID, types.Address(burnAddr), confirmed)
+	msg := evmTypes.NewVoteConfirmDepositRequest(mgr.sender, chain, poll, txID, evmTypes.Address(burnAddr), confirmed)
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, poll.String()))
 	return mgr.broadcaster.Broadcast(msg)
 }
@@ -274,7 +273,7 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attri
 	return chain, txID, gatewayAddr, tokenAddr, symbol, confHeight, poll, nil
 }
 
-func (mgr Mgr) validate(rpc rpc2.Client, txID common.Hash, confHeight uint64, validateLogs func(txReceipt *geth.Receipt) bool) bool {
+func (mgr Mgr) validate(rpc rpc.Client, txID common.Hash, confHeight uint64, validateLogs func(txReceipt *geth.Receipt) bool) bool {
 	blockNumber, err := rpc.BlockNumber(context.Background())
 	if err != nil {
 		mgr.logger.Debug(sdkerrors.Wrap(err, "checking block number failed").Error())

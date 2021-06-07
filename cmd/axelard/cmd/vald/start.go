@@ -325,7 +325,9 @@ func createETHMgr(axelarCfg app.Config, b bcTypes.Broadcaster, sender sdk.AccAdd
 
 	for _, evmConf := range axelarCfg.EVMConfig {
 		if _, found := rpcs[strings.ToLower(evmConf.Name)]; found {
-			continue
+			msg := fmt.Errorf("duplicate bridge configuration found for EVM chain %s", evmConf.Name)
+			logger.Error(msg.Error())
+			panic(msg)
 		}
 
 		rpc, err := evmRPC.NewClient(evmConf.RPCAddr)

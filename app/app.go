@@ -338,7 +338,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	rpcsEVM := make(map[string]evmTypes.RPCClient)
 	for _, evmConf := range axelarCfg.EVMConfig {
 		if _, found := rpcsEVM[strings.ToLower(evmConf.Name)]; found {
-			continue
+			tmos.Exit(fmt.Sprintf("duplicate bridge configuration found for EVM chain %s", evmConf.Name))
 		}
 
 		var rpcEVM evmTypes.RPCClient
