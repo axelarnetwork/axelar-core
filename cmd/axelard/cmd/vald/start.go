@@ -197,8 +197,8 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 	btcMgr := createBTCMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
 	ethMgr := createETHMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
 
-	blockHeader := tmEvents.MustSubscribeNewBlockHeader(hub)
 	// we have two processes listening to block headers
+	blockHeader1 := tmEvents.MustSubscribeNewBlockHeader(hub)
 	blockHeader2 := tmEvents.MustSubscribeNewBlockHeader(hub)
 
 	keygenStart := tmEvents.MustSubscribeTx(eventMgr, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
@@ -217,7 +217,7 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 		eventMgr.Shutdown()
 		logger.Info("event state persisted")
 		logger.Info("stopping listening for blocks...")
-		blockHeader.Close()
+		blockHeader1.Close()
 		blockHeader2.Close()
 		logger.Info("block listener stopped")
 	})
@@ -229,9 +229,9 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 	}
 	js := []jobs.Job{
 		fetchEvents,
-		events.Consume(blockHeader, events.OnlyBlockHeight(eventMgr.NotifyNewBlock)),
+		events.Consume(blockHeader1, events.OnlyBlockHeight(eventMgr.NotifyNewBlock)),
 		events.Consume(blockHeader2, events.OnlyBlockHeight(tssMgr.ProcessNewBlockHeader)),
-		events.Consume(keygenStart, events.OnlyAttributes(tssMgr.ProcessKeygenStart)),
+		events.Consume(keygenStart, tssMgr.ProcessKeygenStart),
 		events.Consume(keygenMsg, events.OnlyAttributes(tssMgr.ProcessKeygenMsg)),
 		events.Consume(signStart, tssMgr.ProcessSignStart),
 		events.Consume(signMsg, events.OnlyAttributes(tssMgr.ProcessSignMsg)),
