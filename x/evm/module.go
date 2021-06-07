@@ -135,7 +135,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 		if param.Network != actualNetwork {
 			panic(fmt.Sprintf(
 				"local ethereum client not configured correctly: expected network %s, got %s",
-				genState.Params[0].Network,
+				param.Network,
 				actualNetwork,
 			))
 		}
