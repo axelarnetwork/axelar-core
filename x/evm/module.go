@@ -132,9 +132,16 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 				break
 			}
 		}
+		if param.Network == "" {
+			panic(fmt.Sprintf(
+				"unable to find genesis paramaters for chain %s",
+				chain,
+			))
+		}
 		if param.Network != actualNetwork {
 			panic(fmt.Sprintf(
-				"local EVM client not configured correctly: expected network %s, got %s",
+				"local %s client not configured correctly: expected network %s, got %s",
+				chain,
 				param.Network,
 				actualNetwork,
 			))
