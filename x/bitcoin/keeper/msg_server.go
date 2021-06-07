@@ -9,6 +9,7 @@ import (
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
+	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	gogoprototypes "github.com/gogo/protobuf/types"
@@ -425,6 +426,9 @@ func prepareChange(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, chan
 
 	addressInfo := types.NewConsolidationAddress(key, k.GetNetwork(ctx))
 	k.SetAddress(ctx, addressInfo)
+
+	telemetry.NewLabel("btc_master_addr", addressInfo.Address)
+	telemetry.SetGauge(float32(change.Int64()), "btc_master_addr_balance")
 
 	return types.Output{Amount: btcutil.Amount(change.Int64()), Recipient: addressInfo.GetAddress()}, nil
 }
