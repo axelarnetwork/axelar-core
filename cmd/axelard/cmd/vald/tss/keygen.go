@@ -70,7 +70,7 @@ func (mgr *Mgr) ProcessKeygenStart(blockHeight int64, attributes []sdk.Attribute
 }
 
 // ProcessKeygenMsg forwards blockchain messages to the keygen protocol
-func (mgr *Mgr) ProcessKeygenMsg(_ int64, attributes []sdk.Attribute) error {
+func (mgr *Mgr) ProcessKeygenMsg(attributes []sdk.Attribute) error {
 	keyID, from, payload := parseMsgParams(mgr.cdc, attributes)
 	msgIn := prepareTrafficIn(mgr.principalAddr, from, keyID, payload, mgr.Logger)
 

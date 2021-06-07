@@ -2,9 +2,11 @@ package events
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
+	"io"
 	mathRand "math/rand"
 	"testing"
+	"time"
 
 	"github.com/axelarnetwork/tm-events/pkg/pubsub"
 	"github.com/stretchr/testify/assert"
@@ -18,15 +20,102 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 )
 
-func TestMgr_QueryTxEvents(t *testing.T) {
+func TestMgr_FetchEvents(t *testing.T) {
 	var (
-		sub            pubsub.Subscriber
+		rwc *mock.ReadWriteSeekTruncateCloserMock
+		mgr *Mgr
+	)
+	setup := func(initialComplete int64) {
+		bus := func() pubsub.Bus { return &mock.BusMock{} }
+		copied := 0
+		rwc = &mock.ReadWriteSeekTruncateCloserMock{
+			ReadFunc: func(bz []byte) (int, error) {
+				x, err := json.Marshal(initialComplete)
+				if err != nil {
+					return 0, err
+				}
+
+				if copied < len(x) {
+					n := copy(bz, x[copied:])
+					copied += n
+					return n, nil
+				}
+				return 0, io.EOF
+			},
+			WriteFunc:    func(bz []byte) (int, error) { return 0, nil },
+			CloseFunc:    func() error { return nil },
+			SeekFunc:     func(int64, int) (int64, error) { return 0, nil },
+			TruncateFunc: func(int64) error { return nil },
+		}
+		client := &mock.SignClientMock{
+			BlockResultsFunc: func(_ context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
+				return &coretypes.ResultBlockResults{Height: *height}, nil
+			},
+		}
+		mgr = NewMgr(client, NewStateStore(rwc), bus, log.TestingLogger())
+	}
+
+	repeats := 20
+	t.Run("stops when done", testutils.Func(func(t *testing.T) {
+		setup(0)
+
+		errChan := mgr.FetchEvents()
+
+		mgr.Shutdown()
+		for err := range errChan {
+			assert.Nil(t, err)
+		}
+		assert.Len(t, rwc.WriteCalls(), 1)
+		assert.Len(t, rwc.CloseCalls(), 1)
+	}).Repeat(repeats))
+
+	t.Run("do not fetch blocks when no update available", testutils.Func(func(t *testing.T) {
+		initialCompleted := rand.PosI64()
+		setup(initialCompleted)
+
+		errChan := mgr.FetchEvents()
+		mgr.NotifyNewBlock(rand.I64Between(0, initialCompleted+1))
+
+		mgr.Shutdown()
+		for err := range errChan {
+			assert.Nil(t, err)
+		}
+
+		var actualCompleted int64
+		assert.NoError(t, json.Unmarshal(rwc.WriteCalls()[0].P, &actualCompleted))
+		assert.Equal(t, initialCompleted, actualCompleted)
+	}).Repeat(repeats))
+
+	t.Run("fetch all available blocks", testutils.Func(func(t *testing.T) {
+		initialCompleted := rand.I64Between(0, 10000)
+		setup(initialCompleted)
+
+		errChan := mgr.FetchEvents()
+		seen := rand.I64Between(initialCompleted+1, initialCompleted+30)
+		mgr.NotifyNewBlock(seen)
+
+		// delay so mgr has time to fetch the block
+		time.Sleep(1 * time.Millisecond)
+		mgr.Shutdown()
+		for err := range errChan {
+			assert.Nil(t, err)
+		}
+		var actualCompleted int64
+		assert.NoError(t, json.Unmarshal(rwc.WriteCalls()[0].P, &actualCompleted))
+		assert.Equal(t, seen, actualCompleted)
+	}).Repeat(repeats))
+}
+
+func TestMgr_Subscribe(t *testing.T) {
+	var (
 		mgr            *Mgr
 		client         *mock.SignClientMock
 		expectedEvents []abci.Event
+		rwc            *mock.ReadWriteSeekTruncateCloserMock
+		query          *mock.QueryMock
 	)
 
-	setup := func() {
+	setup := func(initialComplete int64) {
 		client = &mock.SignClientMock{
 			BlockResultsFunc: func(_ context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
 				result := &coretypes.ResultBlockResults{
@@ -41,8 +130,29 @@ func TestMgr_QueryTxEvents(t *testing.T) {
 				return result, nil
 			},
 		}
+		copied := 0
+		rwc = &mock.ReadWriteSeekTruncateCloserMock{
+			ReadFunc: func(bz []byte) (int, error) {
+				x, err := json.Marshal(initialComplete)
+				if err != nil {
+					return 0, err
+				}
+
+				if copied < len(x) {
+					n := copy(bz, x[copied:])
+					copied += n
+					return n, nil
+				}
+				return 0, io.EOF
+			},
+			WriteFunc:    func(bz []byte) (int, error) { return 0, nil },
+			CloseFunc:    func() error { return nil },
+			SeekFunc:     func(int64, int) (int64, error) { return 0, nil },
+			TruncateFunc: func(int64) error { return nil },
+		}
+
 		actualEvents := make(chan pubsub.Event, 100000)
-		mgr = NewMgr(client,, func() pubsub.Bus {
+		mgr = NewMgr(client, NewStateStore(rwc), func() pubsub.Bus {
 			return &mock.BusMock{
 				PublishFunc: func(event pubsub.Event) error {
 					actualEvents <- event
@@ -53,42 +163,45 @@ func TestMgr_QueryTxEvents(t *testing.T) {
 						EventsFunc: func() <-chan pubsub.Event { return actualEvents },
 					}, nil
 				},
+				CloseFunc: func() {
+					close(actualEvents)
+				},
 			}
 		}, log.TestingLogger())
-	}
-	subscribe := func() {
-		var err error
-		sub, err = mgr.Subscribe(&mock.QueryMock{
+
+		query = &mock.QueryMock{
 			MatchesFunc: func(map[string][]string) (bool, error) { return true, nil },
 			StringFunc:  func() string { return rand.StrBetween(1, 100) },
-		})
-		if err != nil {
-			panic(err)
 		}
 	}
+
 	repeats := 20
 	t.Run("query block with txs", testutils.Func(func(t *testing.T) {
-		setup()
-		subscribe()
+		completed := rand.I64Between(0, 10000)
+		setup(completed)
 
-		assert.NoError(t, mgr.queryBlockResults(rand.PosI64()))
-		assert.Len(t, client.BlockResultsCalls(), 1)
+		sub, err := mgr.Subscribe(query)
+		assert.NoError(t, err)
+
+		mgr.FetchEvents()
+		mgr.NotifyNewBlock(completed + 1)
+
+		// delay so mgr has time to fetch the block
+		time.Sleep(1 * time.Millisecond)
+		// closes channels so we can test deterministically
+		mgr.Shutdown()
+
 		var actualEvents []abci.Event
-	loop:
-		for {
-			select {
-			case e := <-sub.Events():
-				actualEvents = append(actualEvents, e.(abci.Event))
-			default:
-				break loop
-			}
+		for e := range sub.Events() {
+			actualEvents = append(actualEvents, e.(abci.Event))
 		}
+
 		assert.Equal(t, expectedEvents, actualEvents)
 	}).Repeat(repeats))
 
 	t.Run("query block without txs", testutils.Func(func(t *testing.T) {
-		setup()
-		subscribe()
+		completed := rand.I64Between(0, 10000)
+		setup(completed)
 		client.BlockResultsFunc = func(_ context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
 			return &coretypes.ResultBlockResults{
 				Height:     *height,
@@ -96,34 +209,37 @@ func TestMgr_QueryTxEvents(t *testing.T) {
 			}, nil
 		}
 
-		assert.NoError(t, mgr.queryBlockResults(rand.PosI64()))
+		sub, err := mgr.Subscribe(query)
+		assert.NoError(t, err)
+
+		mgr.FetchEvents()
+		mgr.NotifyNewBlock(completed + 1)
+
+		// closes channels so we can test deterministically
+		mgr.Shutdown()
+
 		var actualEvents []abci.Event
-	loop:
-		for {
-			select {
-			case e := <-sub.Events():
-				actualEvents = append(actualEvents, e.(abci.Event))
-			default:
-				break loop
-			}
+		for e := range sub.Events() {
+			actualEvents = append(actualEvents, e.(abci.Event))
 		}
 		assert.Len(t, actualEvents, 0)
 	}).Repeat(repeats))
 
 	t.Run("match only some events", testutils.Func(func(t *testing.T) {
-		setup()
+		completed := rand.I64Between(0, 10000)
+		setup(completed)
 		mockedResults := client.BlockResultsFunc
-		var expectedResult *coretypes.ResultBlockResults
+		expectedResult := make(chan []*abci.ResponseDeliverTx, 1)
 		client.BlockResultsFunc = func(ctx context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
 			res, err := mockedResults(ctx, height)
-			expectedResult = res
+			assert.NoError(t, err)
+			expectedResult <- res.TxsResults
 			return res, err
 		}
 
 		eventCount := 0
 		n := int(rand.I64Between(1, 10))
-		var err error
-		sub, err = mgr.Subscribe(&mock.QueryMock{
+		sub, err := mgr.Subscribe(&mock.QueryMock{
 			MatchesFunc: func(map[string][]string) (bool, error) {
 				eventCount++
 				return eventCount%n == 0, nil
@@ -131,43 +247,45 @@ func TestMgr_QueryTxEvents(t *testing.T) {
 			StringFunc: func() string { return rand.StrBetween(1, 100) },
 		})
 		assert.NoError(t, err)
-		assert.NoError(t, mgr.queryBlockResults(rand.PosI64()))
+
+		mgr.FetchEvents()
+		mgr.NotifyNewBlock(completed + 1)
 
 		filteredCount := 0
 		var expectedEventsFiltered []abci.Event
-		for _, tx := range expectedResult.TxsResults {
+		txs := <-expectedResult
+		for _, tx := range txs {
 			filteredCount++
 			if filteredCount%n == 0 {
 				expectedEventsFiltered = append(expectedEventsFiltered, tx.Events...)
 			}
 		}
 
-		var actualEvents []abci.Event
-	loop:
-		for {
-			select {
-			case e := <-sub.Events():
-				actualEvents = append(actualEvents, e.(abci.Event))
-			default:
-				break loop
-			}
-		}
+		// closes channels so we can test deterministically
+		mgr.Shutdown()
 
+		var actualEvents []abci.Event
+		for e := range sub.Events() {
+			actualEvents = append(actualEvents, e.(abci.Event))
+		}
 		assert.Equal(t, expectedEventsFiltered, actualEvents)
 	}).Repeat(repeats))
 
 	t.Run("match tm.event=Tx", testutils.Func(func(t *testing.T) {
-		setup()
+		completed := rand.I64Between(0, 10000)
+		setup(completed)
 
 		var err error
-		sub, err = mgr.Subscribe(&mock.QueryMock{
+		sub, err := mgr.Subscribe(&mock.QueryMock{
 			MatchesFunc: func(events map[string][]string) (bool, error) {
 				for key, values := range events {
-					if key == tm.EventTypeKey {
-						for _, value := range values {
-							if value == tm.EventTx {
-								return true, nil
-							}
+					if key != tm.EventTypeKey {
+						continue
+					}
+
+					for _, value := range values {
+						if value == tm.EventTx {
+							return true, nil
 						}
 					}
 				}
@@ -176,47 +294,21 @@ func TestMgr_QueryTxEvents(t *testing.T) {
 			StringFunc: func() string { return rand.StrBetween(1, 100) },
 		})
 		assert.NoError(t, err)
-		assert.NoError(t, mgr.queryBlockResults(rand.PosI64()))
+
+		mgr.FetchEvents()
+		mgr.NotifyNewBlock(completed + 1)
+
+		// delay so mgr has time to fetch the block
+		time.Sleep(1 * time.Millisecond)
+		// closes channels so we can test deterministically
+		mgr.Shutdown()
 
 		var actualEvents []abci.Event
-	loop:
-		for {
-			select {
-			case e := <-sub.Events():
-				actualEvents = append(actualEvents, e.(abci.Event))
-			default:
-				break loop
-			}
+		for e := range sub.Events() {
+			actualEvents = append(actualEvents, e.(abci.Event))
 		}
 
 		assert.Equal(t, expectedEvents, actualEvents)
-	}).Repeat(repeats))
-
-	t.Run("no subscriptions", testutils.Func(func(t *testing.T) {
-		setup()
-
-		assert.NoError(t, mgr.queryBlockResults(rand.PosI64()))
-	}).Repeat(repeats))
-
-	t.Run("query block with negative block number", testutils.Func(func(t *testing.T) {
-		setup()
-		client.BlockResultsFunc = func(_ context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
-			assert.True(t, *height < 0)
-			return nil, fmt.Errorf("negative block numbers not allowed")
-		}
-
-		assert.Error(t, mgr.queryBlockResults(-1*rand.PosI64()))
-	}).Repeat(repeats))
-
-	t.Run("query block with future block number", testutils.Func(func(t *testing.T) {
-		setup()
-		currHeight := rand.I64Between(0, 10e8)
-		client.BlockResultsFunc = func(_ context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
-			assert.True(t, *height > currHeight)
-			return nil, fmt.Errorf("negative block numbers not allowed")
-		}
-
-		assert.Error(t, mgr.queryBlockResults(rand.I64Between(currHeight+1, 10e12)))
 	}).Repeat(repeats))
 }
 

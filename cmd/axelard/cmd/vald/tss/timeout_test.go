@@ -7,11 +7,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/tendermint/tendermint/libs/log"
+
 	broadcastMock "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types/mock"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss/rpc/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	"github.com/tendermint/tendermint/libs/log"
 )
 
 func TestProcessNewBlockHeader(t *testing.T) {
@@ -26,7 +27,7 @@ func TestProcessNewBlockHeader(t *testing.T) {
 	t.Run("should do nothing when the timeout queue is empty", testutils.Func(func(t *testing.T) {
 		mgr := NewMgr(&rpcClient, time.Second, principalAddr, &broadcaster, sender, sessionTimeout, logger, cdc)
 
-		assert.NoError(t, mgr.ProcessNewBlockHeader(100, nil))
+		mgr.ProcessNewBlockHeader(100)
 	}))
 
 	t.Run("should do nothing if first session in queue has not timed out yet", testutils.Func(func(t *testing.T) {
@@ -37,7 +38,7 @@ func TestProcessNewBlockHeader(t *testing.T) {
 
 		mgr.timeoutQueue.Enqueue(id, timeoutAt)
 
-		assert.NoError(t, mgr.ProcessNewBlockHeader(timeoutAt-1, nil))
+		mgr.ProcessNewBlockHeader(timeoutAt - 1)
 		assert.Len(t, mgr.timeoutQueue.queue, 1)
 	}))
 
@@ -52,7 +53,8 @@ func TestProcessNewBlockHeader(t *testing.T) {
 		session2 := mgr.timeoutQueue.Enqueue(id2, timeoutAt)
 		mgr.timeoutQueue.Enqueue(rand.Str(20), timeoutAt+1)
 
-		assert.NoError(t, mgr.ProcessNewBlockHeader(timeoutAt, nil))
+		mgr.ProcessNewBlockHeader(timeoutAt)
+
 		assert.Len(t, mgr.timeoutQueue.queue, 1)
 		assert.Panics(t, func() { close(session1.timeout) })
 		assert.Panics(t, func() { close(session2.timeout) })

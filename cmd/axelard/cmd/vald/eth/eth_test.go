@@ -176,7 +176,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		err := mgr.ProcessDepositConfirmation(0, attributes)
+		err := mgr.ProcessDepositConfirmation(attributes)
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -191,7 +191,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 			copy(wrongAttributes, attributes)
 			wrongAttributes = append(wrongAttributes[:i], wrongAttributes[(i+1):]...)
 
-			err := mgr.ProcessDepositConfirmation(0, wrongAttributes)
+			err := mgr.ProcessDepositConfirmation(wrongAttributes)
 			assert.Error(t, err)
 			assert.Len(t, broadcaster.BroadcastCalls(), 0)
 		}
@@ -201,7 +201,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		setup()
 		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return nil, fmt.Errorf("error") }
 
-		err := mgr.ProcessDepositConfirmation(0, attributes)
+		err := mgr.ProcessDepositConfirmation(attributes)
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -214,7 +214,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 			return 0, fmt.Errorf("error")
 		}
 
-		err := mgr.ProcessDepositConfirmation(0, attributes)
+		err := mgr.ProcessDepositConfirmation(attributes)
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -231,7 +231,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 			}
 		}
 
-		err := mgr.ProcessDepositConfirmation(0, attributes)
+		err := mgr.ProcessDepositConfirmation(attributes)
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -293,7 +293,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		err := mgr.ProcessTokenConfirmation(0, attributes)
+		err := mgr.ProcessTokenConfirmation(attributes)
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -308,7 +308,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 			copy(wrongAttributes, attributes)
 			wrongAttributes = append(wrongAttributes[:i], wrongAttributes[(i+1):]...)
 
-			err := mgr.ProcessTokenConfirmation(0, wrongAttributes)
+			err := mgr.ProcessTokenConfirmation(wrongAttributes)
 			assert.Error(t, err)
 			assert.Len(t, broadcaster.BroadcastCalls(), 0)
 		}
@@ -318,7 +318,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		setup()
 		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return nil, fmt.Errorf("error") }
 
-		err := mgr.ProcessTokenConfirmation(0, attributes)
+		err := mgr.ProcessTokenConfirmation(attributes)
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -331,7 +331,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 			return 0, fmt.Errorf("error")
 		}
 
-		err := mgr.ProcessTokenConfirmation(0, attributes)
+		err := mgr.ProcessTokenConfirmation(attributes)
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -352,7 +352,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		receipt.Logs = append(receipt.Logs[:correctLogIdx], receipt.Logs[correctLogIdx+1:]...)
 		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return receipt, nil }
 
-		err := mgr.ProcessTokenConfirmation(0, attributes)
+		err := mgr.ProcessTokenConfirmation(attributes)
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -370,7 +370,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		}
 		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return receipt, nil }
 
-		err := mgr.ProcessTokenConfirmation(0, attributes)
+		err := mgr.ProcessTokenConfirmation(attributes)
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
