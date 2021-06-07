@@ -386,9 +386,9 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd, submitMsg func(msg sdk
 
 		pk := t.KeyGen(m[tssTypes.AttributeKeyKeyID]) // simulate correct keygen + vote
 		_ = submitMsg(&tssTypes.VotePubKeyRequest{
-			Sender:      n.Proxy,
-			PubKeyBytes: pk,
-			PollMeta:    voting.NewPollMeta(tssTypes.ModuleName, m[tssTypes.AttributeKeyKeyID])})
+			Sender:   n.Proxy,
+			Result:   &tofnd.MessageOut_KeygenResult{KeygenResultData: &tofnd.MessageOut_KeygenResult_Pubkey{Pubkey: pk}},
+			PollMeta: voting.NewPollMeta(tssTypes.ModuleName, m[tssTypes.AttributeKeyKeyID])})
 
 		return true
 	})

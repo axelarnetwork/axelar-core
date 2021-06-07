@@ -23,6 +23,7 @@ func (mgr *Mgr) ProcessSignStart(blockHeight int64, attributes []sdk.Attribute) 
 		return nil
 	}
 
+	done := false
 	session := mgr.timeoutQueue.Enqueue(sigID, blockHeight+mgr.sessionTimeout)
 
 	stream, cancel, err := mgr.startSign(keyID, sigID, participants, payload)
@@ -49,16 +50,18 @@ func (mgr *Mgr) ProcessSignStart(blockHeight int64, attributes []sdk.Attribute) 
 	go func() {
 		session.WaitForTimeout()
 
-		found, err := mgr.abortSign(sigID)
-		if !found {
+		if done {
 			return
 		}
 
+		errChan <- mgr.abortSign(sigID)
 		mgr.Logger.Info(fmt.Sprintf("aborted sign protocol %s due to timeout", sigID))
-		errChan <- err
 	}()
 	go func() {
-		errChan <- mgr.handleSignResult(sigID, result)
+		err := mgr.handleSignResult(sigID, result)
+		done = true
+
+		errChan <- err
 	}()
 
 	return <-errChan

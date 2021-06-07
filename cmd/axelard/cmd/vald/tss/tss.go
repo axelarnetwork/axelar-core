@@ -137,13 +137,22 @@ func NewMgr(client rpc.Client, timeout time.Duration, principalAddr string, broa
 	}
 }
 
-func (mgr *Mgr) abortSign(sigID string) (found bool, err error) {
+func (mgr *Mgr) abortSign(sigID string) (err error) {
 	stream, ok := mgr.getSignStream(sigID)
 	if !ok {
-		return false, nil
+		return nil
 	}
 
-	return true, abort(stream)
+	return abort(stream)
+}
+
+func (mgr *Mgr) abortKeygen(keyID string) (err error) {
+	stream, ok := mgr.getKeygenStream(keyID)
+	if !ok {
+		return nil
+	}
+
+	return abort(stream)
 }
 
 func abort(stream tss.Stream) error {

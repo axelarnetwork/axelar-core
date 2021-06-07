@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
 )
@@ -34,7 +35,7 @@ func TestTalliedVote_Marshaling(t *testing.T) {
 	encCfg := testutils.MakeEncodingConfig()
 	cdc := encCfg.Marshaler
 
-	data := gogoprototypes.BytesValue{Value: []byte("a public key")}
+	data := tofnd.MessageOut_KeygenResult{KeygenResultData: &tofnd.MessageOut_KeygenResult_Pubkey{Pubkey: []byte("a public key")}}
 	vote := types.NewTalliedVote(23, &data)
 
 	bz := cdc.MustMarshalBinaryLengthPrefixed(&vote)

@@ -2059,7 +2059,7 @@ VotePubKeyRequest represents the message to vote on a public key
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `poll_meta` | [vote.exported.v1beta1.PollMeta](#vote.exported.v1beta1.PollMeta) |  |  |
-| `pub_key_bytes` | [bytes](#bytes) |  | need to vote on the bytes instead of ecdsa.PublicKey, otherwise we lose the elliptic curve information |
+| `result` | [tss.tofnd.v1beta1.MessageOut.KeygenResult](#tss.tofnd.v1beta1.MessageOut.KeygenResult) |  |  |
 
 
 
