@@ -28,6 +28,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 	}
 
 	evmQueryCmd.AddCommand(
+		GetCmdDepositAddress(queryRoute),
 		GetCmdMasterAddress(queryRoute),
 		GetCmdAxelarGatewayAddress(queryRoute),
 		GetCmdTokenAddress(queryRoute),
@@ -39,6 +40,33 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 
 	return evmQueryCmd
 
+}
+
+// GetCmdDepositAddress returns the deposit address command
+func GetCmdDepositAddress(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "deposit-addr [evm chain] [recipient chain] [recipient address] [symbol]",
+		Short: "Returns an evm chain deposit address for a recipient address on another blockchain",
+		Args:  cobra.ExactArgs(4),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			path := fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryDepositAddress, args[0])
+
+			res, _, err := cliCtx.QueryWithData(path, types.ModuleCdc.MustMarshalJSON(&types.DepositQueryParams{Chain: args[1], Address: args[2], Symbol: args[3]}))
+			if err != nil {
+				return sdkerrors.Wrap(err, types.ErrFDepositAddress)
+			}
+
+			out := common.BytesToAddress(res)
+			return cliCtx.PrintObjectLegacy(out.Hex())
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
 }
 
 // GetCmdMasterAddress returns the query for an EVM chain master address that owns the AxelarGateway contract

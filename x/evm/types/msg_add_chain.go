@@ -9,10 +9,9 @@ import (
 )
 
 // NewAddChainRequest is the constructor for NewAddChainRequest
-func NewAddChainRequest(sender sdk.AccAddress, chain, name, nativeAsset string) *AddChainRequest {
+func NewAddChainRequest(sender sdk.AccAddress, name, nativeAsset string) *AddChainRequest {
 	return &AddChainRequest{
 		Sender:      sender,
-		Chain:       chain,
 		Name:        name,
 		NativeAsset: nativeAsset,
 	}
@@ -32,10 +31,6 @@ func (m AddChainRequest) Type() string {
 func (m AddChainRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
-	}
-
-	if m.Chain == "" {
-		return fmt.Errorf("missing chain")
 	}
 
 	chain := nexus.Chain{

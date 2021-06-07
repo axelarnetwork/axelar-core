@@ -46,7 +46,7 @@ func DefaultParams() Params {
 			{ChainName: bitcoin.Bitcoin.Name, KeyRole: exported.SecondaryKey, MinValidatorSubsetSize: 3, KeyShareDistributionPolicy: exported.OnePerValidator},
 			{ChainName: evm.Ethereum.Name, KeyRole: exported.MasterKey, MinValidatorSubsetSize: 5, KeyShareDistributionPolicy: exported.WeightedByStake},
 		},
-		MinBondFractionPerShare: utils.Threshold{Numerator: 1, Denominator: 10},
+		MinBondFractionPerShare: utils.Threshold{Numerator: 1, Denominator: 100},
 		SuspendDurationInBlocks: 1000,
 		TimeoutInBlocks:         100,
 	}

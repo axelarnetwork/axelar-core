@@ -16,7 +16,7 @@ require (
 	github.com/matryer/moq v0.2.1
 	github.com/miguelmota/go-ethereum-hdwallet v0.0.1
 	github.com/rakyll/statik v0.1.7
-	github.com/regen-network/cosmos-proto v0.3.1 // indirect
+	github.com/regen-network/cosmos-proto v0.3.1
 	github.com/rs/zerolog v1.21.0
 	github.com/spf13/cast v1.3.1
 	github.com/spf13/cobra v1.1.3

@@ -49,8 +49,35 @@ func NewMgr(rpc rpc2.Client, broadcaster types2.Broadcaster, sender sdk.AccAddre
 	}
 }
 
+// ProcessNewChain notifies the operator that vald needs to be restarted/udpated for a new chain
+func (mgr Mgr) ProcessNewChain(_ int64, attributes []sdk.Attribute) (err error) {
+	chain, nativeAsset, err := parseNewChainParams(attributes)
+	if err != nil {
+		return sdkerrors.Wrap(err, "Invalid update event")
+	}
+
+	//TODO: what other actions should be taken to notify the operator?
+	mgr.logger.Info(fmt.Sprintf("VALD needs to be updated and restarted for new chain %s with native asset %s", chain, nativeAsset))
+	return nil
+}
+
+// ProcessChainConfirmation votes on the correctness of an EVM chain token deposit
+func (mgr Mgr) ProcessChainConfirmation(_ int64, attributes []sdk.Attribute) (err error) {
+	chain, poll, err := parseChainConfirmationParams(mgr.cdc, attributes)
+	if err != nil {
+		return sdkerrors.Wrap(err, "EVM chain confirmation failed")
+	}
+
+	//TODO: augment VALD with logic to check if it was updated with info for the given chain
+	confirmed := false
+
+	msg := evmTypes.NewVoteConfirmChainRequest(mgr.sender, chain, poll, confirmed)
+	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, poll.String()))
+	return mgr.broadcaster.Broadcast(msg)
+}
+
 // ProcessDepositConfirmation votes on the correctness of an EVM chain token deposit
-func (mgr Mgr) ProcessDepositConfirmation(_ int64, attributes []sdk.Attribute) (err error) {
+func (mgr Mgr) ProcessDepositConfirmation(attributes []sdk.Attribute) (err error) {
 	chain, txID, amount, burnAddr, tokenAddr, confHeight, poll, err := parseDepositConfirmationParams(mgr.cdc, attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "EVM deposit confirmation failed")
@@ -71,7 +98,7 @@ func (mgr Mgr) ProcessDepositConfirmation(_ int64, attributes []sdk.Attribute) (
 }
 
 // ProcessTokenConfirmation votes on the correctness of an EVM chain token deployment
-func (mgr Mgr) ProcessTokenConfirmation(_ int64, attributes []sdk.Attribute) error {
+func (mgr Mgr) ProcessTokenConfirmation(attributes []sdk.Attribute) error {
 	chain, txID, gatewayAddr, tokenAddr, symbol, confHeight, poll, err := parseTokenConfirmationParams(mgr.cdc, attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "EVM token deployment confirmation failed")
@@ -89,6 +116,52 @@ func (mgr Mgr) ProcessTokenConfirmation(_ int64, attributes []sdk.Attribute) err
 	msg := evmTypes.NewVoteConfirmTokenRequest(mgr.sender, chain, symbol, poll, txID, confirmed)
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, poll.String()))
 	return mgr.broadcaster.Broadcast(msg)
+}
+
+func parseNewChainParams(attributes []sdk.Attribute) (
+	chain string,
+	nativeAsset string,
+	err error,
+) {
+	var chainFound, nativeAssetFound bool
+	for _, attribute := range attributes {
+		switch attribute.Key {
+		case evmTypes.AttributeKeyChain:
+			chain = attribute.Value
+			chainFound = true
+		case evmTypes.AttributeKeyNativeAsset:
+			chain = attribute.Value
+			chainFound = true
+		default:
+		}
+	}
+	if !chainFound || !nativeAssetFound {
+		return "", "", fmt.Errorf("insufficient event attributes")
+	}
+	return chain, nativeAsset, nil
+}
+
+func parseChainConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (
+	chain string,
+	poll vote.PollMeta,
+	err error,
+) {
+	var chainFound, pollFound bool
+	for _, attribute := range attributes {
+		switch attribute.Key {
+		case evmTypes.AttributeKeyChain:
+			chain = attribute.Value
+			chainFound = true
+		case evmTypes.AttributeKeyPoll:
+			cdc.MustUnmarshalJSON([]byte(attribute.Value), &poll)
+			pollFound = true
+		default:
+		}
+	}
+	if !chainFound || !pollFound {
+		return "", vote.PollMeta{}, fmt.Errorf("insufficient event attributes")
+	}
+	return chain, poll, nil
 }
 
 func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (

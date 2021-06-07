@@ -17,13 +17,16 @@ import (
 )
 
 // ProcessKeygenStart starts the communication with the keygen protocol
-func (mgr *Mgr) ProcessKeygenStart(_ int64, attributes []sdk.Attribute) error {
+func (mgr *Mgr) ProcessKeygenStart(blockHeight int64, attributes []sdk.Attribute) error {
 	keyID, threshold, participants, participantShareCounts := parseKeygenStartParams(mgr.cdc, attributes)
 	myIndex, ok := indexOf(participants, mgr.principalAddr)
 	if !ok {
 		// do not participate
 		return nil
 	}
+
+	done := false
+	session := mgr.timeoutQueue.Enqueue(keyID, blockHeight+mgr.sessionTimeout)
 
 	stream, cancel, err := mgr.startKeygen(keyID, threshold, myIndex, participants, participantShareCounts)
 	if err != nil {
@@ -32,7 +35,7 @@ func (mgr *Mgr) ProcessKeygenStart(_ int64, attributes []sdk.Attribute) error {
 	mgr.setKeygenStream(keyID, stream)
 
 	// use error channel to coordinate errors during communication with sign protocol
-	errChan := make(chan error, 3)
+	errChan := make(chan error, 4)
 	intermediateMsgs, result, streamErrChan := handleStream(stream, cancel, mgr.Logger)
 	go func() {
 		err, ok := <-streamErrChan
@@ -47,14 +50,27 @@ func (mgr *Mgr) ProcessKeygenStart(_ int64, attributes []sdk.Attribute) error {
 		}
 	}()
 	go func() {
-		errChan <- mgr.handleKeygenResult(keyID, result)
+		session.WaitForTimeout()
+
+		if done {
+			return
+		}
+
+		errChan <- mgr.abortKeygen(keyID)
+		mgr.Logger.Info(fmt.Sprintf("aborted keygen protocol %s due to timeout", keyID))
+	}()
+	go func() {
+		err := mgr.handleKeygenResult(keyID, result)
+		done = true
+
+		errChan <- err
 	}()
 
 	return <-errChan
 }
 
 // ProcessKeygenMsg forwards blockchain messages to the keygen protocol
-func (mgr *Mgr) ProcessKeygenMsg(_ int64, attributes []sdk.Attribute) error {
+func (mgr *Mgr) ProcessKeygenMsg(attributes []sdk.Attribute) error {
 	keyID, from, payload := parseMsgParams(mgr.cdc, attributes)
 	msgIn := prepareTrafficIn(mgr.principalAddr, from, keyID, payload, mgr.Logger)
 
@@ -150,16 +166,18 @@ func (mgr *Mgr) handleKeygenResult(keyID string, resultChan <-chan interface{}) 
 	}
 
 	pubKeyBytes := result.GetPubkey()
-	btcecPK, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
-	if err != nil {
-		return sdkerrors.Wrap(err, "handler goroutine: failure to deserialize pubkey")
-	}
-	pubkey := btcecPK.ToECDSA()
+	if pubKeyBytes != nil {
+		btcecPK, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
+		if err != nil {
+			return sdkerrors.Wrap(err, "handler goroutine: failure to deserialize pubkey")
+		}
 
-	mgr.Logger.Info(fmt.Sprintf("handler goroutine: received pubkey from server! [%v]", pubkey))
+		mgr.Logger.Info(fmt.Sprintf("handler goroutine: received pubkey from server! [%v]", btcecPK.ToECDSA()))
+	}
 
 	poll := voting.NewPollMeta(tss.ModuleName, keyID)
-	vote := &tss.VotePubKeyRequest{Sender: mgr.sender, PollMeta: poll, PubKeyBytes: pubKeyBytes}
+	vote := &tss.VotePubKeyRequest{Sender: mgr.sender, PollMeta: poll, Result: result}
+
 	return mgr.broadcaster.Broadcast(vote)
 }
 

@@ -2,6 +2,8 @@ package types
 
 // Event types
 const (
+	EventTypeNewChain            = "newChain"
+	EventTypeChainConfirmation   = "chainConfirmation"
 	EventTypeDepositConfirmation = "depositConfirmation"
 	EventTypeTokenConfirmation   = "tokenConfirmation"
 )
@@ -19,10 +21,12 @@ const (
 	AttributeKeyGatewayAddress = "gatewayAddress"
 	AttributeKeyConfHeight     = "confHeight"
 	AttributeKeySymbol         = "symbol"
+	AttributeKeyNativeAsset    = "nativeAsset"
 )
 
 // Event attribute values
 const (
+	AttributeValueUpdate  = "update"
 	AttributeValueStart   = "start"
 	AttributeValueReject  = "reject"
 	AttributeValueConfirm = "confirm"

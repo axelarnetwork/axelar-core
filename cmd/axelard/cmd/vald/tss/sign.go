@@ -23,6 +23,7 @@ func (mgr *Mgr) ProcessSignStart(blockHeight int64, attributes []sdk.Attribute) 
 		return nil
 	}
 
+	done := false
 	session := mgr.timeoutQueue.Enqueue(sigID, blockHeight+mgr.sessionTimeout)
 
 	stream, cancel, err := mgr.startSign(keyID, sigID, participants, payload)
@@ -49,23 +50,25 @@ func (mgr *Mgr) ProcessSignStart(blockHeight int64, attributes []sdk.Attribute) 
 	go func() {
 		session.WaitForTimeout()
 
-		found, err := mgr.abortSign(sigID)
-		if !found {
+		if done {
 			return
 		}
 
+		errChan <- mgr.abortSign(sigID)
 		mgr.Logger.Info(fmt.Sprintf("aborted sign protocol %s due to timeout", sigID))
-		errChan <- err
 	}()
 	go func() {
-		errChan <- mgr.handleSignResult(sigID, result)
+		err := mgr.handleSignResult(sigID, result)
+		done = true
+
+		errChan <- err
 	}()
 
 	return <-errChan
 }
 
 // ProcessSignMsg forwards blockchain messages to the sign protocol
-func (mgr *Mgr) ProcessSignMsg(_ int64, attributes []sdk.Attribute) error {
+func (mgr *Mgr) ProcessSignMsg(attributes []sdk.Attribute) error {
 	sigID, from, payload := parseMsgParams(mgr.cdc, attributes)
 	msgIn := prepareTrafficIn(mgr.principalAddr, from, sigID, payload, mgr.Logger)
 	// this message is not meant for this tofnd instance
