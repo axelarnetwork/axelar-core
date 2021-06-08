@@ -25,7 +25,7 @@ Axelar App
 - [axelard keys](axelard_keys.md)	 - Manage your application's keys
 - [axelard migrate](axelard_migrate.md)	 - Migrate genesis to a specified target version
 - [axelard query](axelard_query.md)	 - Querying subcommands
-- [axelard set-genesis-chain-params](axelard_set-genesis-chain-params.md)	 - Set the chain's parameters in genesis.json
+- [axelard set-genesis-chain-params](axelard_set-genesis-chain-params.md)	 - Set chain parameters in genesis.json
 - [axelard set-genesis-evm-contracts](axelard_set-genesis-evm-contracts.md)	 - Set the EVM's contract parameters in genesis.json
 - [axelard set-genesis-snapshot](axelard_set-genesis-snapshot.md)	 - Set the genesis parameters for the snapshot module
 - [axelard set-genesis-staking](axelard_set-genesis-staking.md)	 - Set the genesis parameters for the staking module

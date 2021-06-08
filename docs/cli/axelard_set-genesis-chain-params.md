@@ -1,19 +1,22 @@
 ## axelard set-genesis-chain-params
 
-Set the chain's parameters in genesis.json
+Set chain parameters in genesis.json
 
 ### Synopsis
 
-Set the chain's parameters in genesis.json. The provided chain must be one of those axelar supports.
+Set chain parameters in genesis.json. The provided platform must be one of those axelar supports (bitcoin, EVM).
 
 ```
-axelard set-genesis-chain-params [chain] [flags]
+axelard set-genesis-chain-params [bitcoin | evm] [flags]
 ```
 
 ### Options
 
 ```
       --confirmation-height uint   Confirmation height to set for the given chain.
+      --evm-chain-id string        Integer representing the chain ID (EVM only).
+      --evm-chain-name string      Chain name (EVM only, required).
+      --evm-network-name string    Network name (EVM only).
   -h, --help                       help for set-genesis-chain-params
       --network string             Name of the network to set for the given chain.
 ```

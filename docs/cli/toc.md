@@ -99,7 +99,7 @@
     - [upgrade](axelard_query_upgrade.md)	 - Querying commands for the upgrade module
       - [applied \[upgrade-name\]](axelard_query_upgrade_applied.md)	 - block header for height at which a completed upgrade was applied
       - [plan](axelard_query_upgrade_plan.md)	 - get upgrade plan (if one exists)
-  - [set-genesis-chain-params \[chain\]](axelard_set-genesis-chain-params.md)	 - Set the chain's parameters in genesis.json
+  - [set-genesis-chain-params \[bitcoin | evm\]](axelard_set-genesis-chain-params.md)	 - Set chain parameters in genesis.json
   - [set-genesis-evm-contracts](axelard_set-genesis-evm-contracts.md)	 - Set the EVM's contract parameters in genesis.json
   - [set-genesis-snapshot](axelard_set-genesis-snapshot.md)	 - Set the genesis parameters for the snapshot module
   - [set-genesis-staking](axelard_set-genesis-staking.md)	 - Set the genesis parameters for the staking module
