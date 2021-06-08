@@ -20,15 +20,16 @@ import (
 
 // rest routes
 const (
-	TxConfirmChain       = "confirm-chain"
-	TxLink               = "link"
-	TxConfirmTokenDeploy = "confirm-erc20-deploy"
-	TxConfirmDeposit     = "confirm-erc20-deposit"
-	TxSignTx             = "sign-tx"
-	TxSignPending        = "sign-pending"
-	TxSignDeployToken    = "sign-deploy-token"
-	TxSignBurnTokens     = "sign-burn"
-	TxAddChain           = "add-chain"
+	TxConfirmChain          = "confirm-chain"
+	TxLink                  = "link"
+	TxConfirmTokenDeploy    = "confirm-erc20-deploy"
+	TxConfirmDeposit        = "confirm-erc20-deposit"
+	TxSignTx                = "sign-tx"
+	TxSignPending           = "sign-pending"
+	TxSignDeployToken       = "sign-deploy-token"
+	TxSignBurnTokens        = "sign-burn"
+	TxSignTransferOwnership = "sign-transfer-ownership"
+	TxAddChain              = "add-chain"
 
 	QueryMasterAddress        = keeper.QueryMasterAddress
 	QueryAxelarGatewayAddress = keeper.QueryAxelarGatewayAddress
@@ -48,6 +49,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(GetHandlerSignPendingTransfers(cliCtx), TxSignPending, clientUtils.PathVarChain)
 	registerTx(GetHandlerSignDeployToken(cliCtx), TxSignDeployToken, clientUtils.PathVarChain, clientUtils.PathVarSymbol)
 	registerTx(GetHandlerSignBurnTokens(cliCtx), TxSignBurnTokens, clientUtils.PathVarChain)
+	registerTx(GetHandlerSignTransferOwnership(cliCtx), TxSignTransferOwnership, clientUtils.PathVarChain)
 	registerTx(GetHandlerConfirmChain(cliCtx), TxConfirmChain)
 	registerTx(GetHandlerAddChain(cliCtx), TxAddChain)
 
@@ -110,6 +112,12 @@ type ReqSignDeployToken struct {
 // ReqSignBurnTokens represents a request to sign all outstanding burn commands
 type ReqSignBurnTokens struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+}
+
+// ReqSignTransferOwnership represents a request to sign transfer ownership command
+type ReqSignTransferOwnership struct {
+	BaseReq  rest.BaseReq `json:"base_req" yaml:"base_req"`
+	NewOwner string       `json:"new_owner" yaml:"new_owner"`
 }
 
 // ReqAddChain represents a request to add a new evm chain command
@@ -346,6 +354,31 @@ func GetHandlerSignBurnTokens(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		msg := types.NewSignBurnTokensRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain])
+		if err := msg.ValidateBasic(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
+	}
+}
+
+// GetHandlerSignTransferOwnership returns a handler to sign transfer ownership command
+func GetHandlerSignTransferOwnership(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req ReqSignTransferOwnership
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
+			return
+		}
+		req.BaseReq = req.BaseReq.Sanitize()
+		if !req.BaseReq.ValidateBasic(w) {
+			return
+		}
+		fromAddr, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
+		if !ok {
+			return
+		}
+		newOwner := common.HexToAddress(req.NewOwner)
+		msg := types.NewSignTransferOwnershipRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], newOwner)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
