@@ -135,9 +135,12 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 		AddRoute(sdk.NewRoute(evmTypes.RouterKey, ethHandler)).
 		AddRoute(sdk.NewRoute(tssTypes.RouterKey, tssHandler))
 
+	evmMap := make(map[string]evmTypes.RPCClient)
+	evmMap["ethereum"] = mocks.ETH
+
 	queriers := map[string]sdk.Querier{
 		btcTypes.QuerierRoute: btcKeeper.NewQuerier(mocks.BTC, bitcoinKeeper, signer, nexusK),
-		evmTypes.QuerierRoute: evmKeeper.NewQuerier(mocks.ETH, EVMKeeper, signer, nexusK),
+		evmTypes.QuerierRoute: evmKeeper.NewQuerier(evmMap, EVMKeeper, signer, nexusK),
 	}
 
 	node := fake.NewNode(moniker, ctx, router, queriers).

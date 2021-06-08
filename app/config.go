@@ -9,16 +9,17 @@ import (
 
 // Config contains all necessary application configurations
 type Config struct {
-	evm.EthConfig          `mapstructure:"axelar_bridge_eth"`
 	bitcoin.BtcConfig      `mapstructure:"axelar_bridge_btc"`
 	tss.TssConfig          `mapstructure:",squash"`
 	broadcast.ClientConfig `mapstructure:",squash"`
+
+	EVMConfig []evm.EVMConfig `mapstructure:"axelar_bridge_evm"`
 }
 
 // DefaultConfig returns a configurations populated with default values
 func DefaultConfig() Config {
 	return Config{
-		EthConfig:    evm.DefaultConfig(),
+		EVMConfig:    evm.DefaultConfig(),
 		BtcConfig:    bitcoin.DefaultConfig(),
 		TssConfig:    tss.TssConfig{},
 		ClientConfig: broadcast.ClientConfig{},
