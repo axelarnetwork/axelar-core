@@ -20,7 +20,7 @@ import (
 
 // rest routes
 const (
-	TxMethodConfirmChain       = "confirm-chain"
+	TxConfirmChain       = "confirm-chain"
 	TxLink               = "link"
 	TxConfirmTokenDeploy = "confirm-erc20-deploy"
 	TxConfirmDeposit     = "confirm-erc20-deposit"
@@ -48,7 +48,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(GetHandlerSignPendingTransfers(cliCtx), TxSignPending, clientUtils.PathVarChain)
 	registerTx(GetHandlerSignDeployToken(cliCtx), TxSignDeployToken, clientUtils.PathVarChain, clientUtils.PathVarSymbol)
 	registerTx(GetHandlerSignBurnTokens(cliCtx), TxSignBurnTokens, clientUtils.PathVarChain)
-	registerTx(GetHandlerConfirmChain(cliCtx), TxMethodConfirmChain)
+	registerTx(GetHandlerConfirmChain(cliCtx), TxConfirmChain)
 	registerTx(GetHandlerAddChain(cliCtx), TxAddChain)
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
