@@ -106,7 +106,7 @@ func parseSignStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (k
 	return keyID, sigID, participants, payload
 }
 
-func (mgr *Mgr) startSign(keyID string, sigID string, participants []string, payload []byte) (tss.Stream, context.CancelFunc, error) {
+func (mgr *Mgr) startSign(keyID string, sigID string, participants []string, payload []byte) (Stream, context.CancelFunc, error) {
 	if _, ok := mgr.getSignStream(sigID); ok {
 		return nil, nil, fmt.Errorf("sign protocol for ID %s already in progress", sigID)
 	}
@@ -169,7 +169,7 @@ func (mgr *Mgr) handleSignResult(sigID string, resultChan <-chan interface{}) er
 	return mgr.broadcaster.Broadcast(vote)
 }
 
-func (mgr *Mgr) getSignStream(sigID string) (tss.Stream, bool) {
+func (mgr *Mgr) getSignStream(sigID string) (Stream, bool) {
 	mgr.sign.RLock()
 	defer mgr.sign.RUnlock()
 
@@ -177,9 +177,9 @@ func (mgr *Mgr) getSignStream(sigID string) (tss.Stream, bool) {
 	return stream, ok
 }
 
-func (mgr *Mgr) setSignStream(sigID string, stream tss.Stream) {
+func (mgr *Mgr) setSignStream(sigID string, stream Stream) {
 	mgr.sign.Lock()
 	defer mgr.sign.Unlock()
 
-	mgr.signStreams[sigID] = stream
+	mgr.signStreams[sigID] = lock(stream)
 }

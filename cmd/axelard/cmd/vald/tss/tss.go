@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc"
 
 	broadcastTypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
-	rpc "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss/rpc"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss/rpc"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
@@ -88,13 +88,53 @@ func NewTimeoutQueue() *TimeoutQueue {
 	}
 }
 
+// Stream is the abstracted communication stream with tofnd
+type Stream interface {
+	Send(in *tofnd.MessageIn) error
+	Recv() (*tofnd.MessageOut, error)
+	CloseSend() error
+}
+
+type lockableStream struct {
+	lock   sync.Mutex
+	stream Stream
+}
+
+func lock(stream Stream) *lockableStream {
+	return &lockableStream{
+		lock:   sync.Mutex{},
+		stream: stream,
+	}
+}
+
+func (l *lockableStream) Send(in *tofnd.MessageIn) error {
+	l.lock.Lock()
+	defer l.lock.Unlock()
+
+	return l.stream.Send(in)
+}
+
+func (l *lockableStream) Recv() (*tofnd.MessageOut, error) {
+	l.lock.Lock()
+	defer l.lock.Unlock()
+
+	return l.stream.Recv()
+}
+
+func (l *lockableStream) CloseSend() error {
+	l.lock.Lock()
+	defer l.lock.Unlock()
+
+	return l.stream.CloseSend()
+}
+
 // Mgr represents an object that manages all communication with the external tss process
 type Mgr struct {
 	client         rpc.Client
 	keygen         *sync.RWMutex
 	sign           *sync.RWMutex
-	keygenStreams  map[string]tss.Stream
-	signStreams    map[string]tss.Stream
+	keygenStreams  map[string]*lockableStream
+	signStreams    map[string]*lockableStream
 	timeoutQueue   *TimeoutQueue
 	sessionTimeout int64
 	Timeout        time.Duration
@@ -124,8 +164,8 @@ func NewMgr(client rpc.Client, timeout time.Duration, principalAddr string, broa
 		client:         client,
 		keygen:         &sync.RWMutex{},
 		sign:           &sync.RWMutex{},
-		keygenStreams:  map[string]tss.Stream{},
-		signStreams:    map[string]tss.Stream{},
+		keygenStreams:  make(map[string]*lockableStream),
+		signStreams:    make(map[string]*lockableStream),
 		timeoutQueue:   NewTimeoutQueue(),
 		sessionTimeout: sessionTimeout,
 		Timeout:        timeout,
@@ -155,7 +195,7 @@ func (mgr *Mgr) abortKeygen(keyID string) (err error) {
 	return abort(stream)
 }
 
-func abort(stream tss.Stream) error {
+func abort(stream Stream) error {
 	msg := &tofnd.MessageIn{
 		Data: &tofnd.MessageIn_Abort{
 			Abort: true,
@@ -169,7 +209,7 @@ func abort(stream tss.Stream) error {
 	return nil
 }
 
-func handleStream(stream tss.Stream, cancel context.CancelFunc, logger log.Logger) (broadcast <-chan *tofnd.TrafficOut, result <-chan interface{}, err <-chan error) {
+func handleStream(stream Stream, cancel context.CancelFunc, logger log.Logger) (broadcast <-chan *tofnd.TrafficOut, result <-chan interface{}, err <-chan error) {
 	broadcastChan := make(chan *tofnd.TrafficOut)
 	// TODO: MessageOut_KeygenResult and MessageOut_SignResult should be merged into one type of message
 	resChan := make(chan interface{})
