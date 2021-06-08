@@ -48,7 +48,7 @@ func DefaultParams() []Params {
 	return []Params{{
 		Chain:               exported.Ethereum.Name,
 		ConfirmationHeight:  1,
-		Network:             Ganache,
+		ExpectedNetwork:     Ganache,
 		Gateway:             bzGateway,
 		Token:               bzToken,
 		Burnable:            bzBurnable,
@@ -90,7 +90,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 	return params.ParamSetPairs{
 		params.NewParamSetPair(KeyChain, &m.Chain, validateChain),
 		params.NewParamSetPair(KeyConfirmationHeight, &m.ConfirmationHeight, validateConfirmationHeight),
-		params.NewParamSetPair(KeyNetwork, &m.Network, validateNetwork),
+		params.NewParamSetPair(KeyNetwork, &m.ExpectedNetwork, validateNetwork),
 		params.NewParamSetPair(KeyGateway, &m.Gateway, validateBytes),
 		params.NewParamSetPair(KeyToken, &m.Token, validateBytes),
 		params.NewParamSetPair(KeyBurnable, &m.Burnable, validateBytes),
@@ -178,7 +178,7 @@ func (m Params) Validate() error {
 		return err
 	}
 
-	if err := validateNetwork(m.Network); err != nil {
+	if err := validateNetwork(m.ExpectedNetwork); err != nil {
 		return err
 	}
 
