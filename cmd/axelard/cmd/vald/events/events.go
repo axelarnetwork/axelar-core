@@ -164,7 +164,7 @@ func (m *Mgr) processUpdates() error {
 }
 
 func (m *Mgr) checkForUpdate() {
-	// no need to lock here: the exact value of SeenBlock doesn't matter and it can only increase monotonically.
+	// no need to lock here: the exact value of Seen doesn't matter and it can only increase monotonically.
 	// So even if another goroutine changes the value this check can never go from "update" to "no update"
 
 	if m.state.Seen > m.state.Completed {
