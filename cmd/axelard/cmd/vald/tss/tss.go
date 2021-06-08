@@ -96,34 +96,36 @@ type Stream interface {
 }
 
 type lockableStream struct {
-	lock   sync.Mutex
-	stream Stream
+	sendLock sync.Mutex
+	recvLock sync.Mutex
+	stream   Stream
 }
 
 func lock(stream Stream) *lockableStream {
 	return &lockableStream{
-		lock:   sync.Mutex{},
-		stream: stream,
+		sendLock: sync.Mutex{},
+		recvLock: sync.Mutex{},
+		stream:   stream,
 	}
 }
 
 func (l *lockableStream) Send(in *tofnd.MessageIn) error {
-	l.lock.Lock()
-	defer l.lock.Unlock()
+	l.sendLock.Lock()
+	defer l.sendLock.Unlock()
 
 	return l.stream.Send(in)
 }
 
 func (l *lockableStream) Recv() (*tofnd.MessageOut, error) {
-	l.lock.Lock()
-	defer l.lock.Unlock()
+	l.recvLock.Lock()
+	defer l.recvLock.Unlock()
 
 	return l.stream.Recv()
 }
 
 func (l *lockableStream) CloseSend() error {
-	l.lock.Lock()
-	defer l.lock.Unlock()
+	l.sendLock.Lock()
+	defer l.sendLock.Unlock()
 
 	return l.stream.CloseSend()
 }
