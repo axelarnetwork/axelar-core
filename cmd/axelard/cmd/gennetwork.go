@@ -40,7 +40,7 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 		// EVM only
 		evmChainName   string
 		evmNetworkName string
-		evmChainID     int64
+		evmChainID     string
 	)
 	cmd := &cobra.Command{
 		Use:   "set-genesis-chain-params [bitcoin | evm]",
@@ -108,8 +108,12 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 					index = len(genesisState.Params) - 1
 				}
 
-				if evmNetworkName != "" && evmChainID != 0 {
-					id := sdk.NewInt(evmChainID)
+				if evmNetworkName != "" && evmChainID != "" {
+					id, ok := sdk.NewIntFromString(evmChainID)
+					if !ok {
+						return fmt.Errorf("chain ID must be an integer")
+					}
+
 					i := findEVMNetwork(genesisState.Params[index].Networks, evmNetworkName)
 					if i < 0 {
 						genesisState.Params[index].Networks =
@@ -166,7 +170,7 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 	cmd.Flags().Uint64Var(&confirmationHeight, flagConfHeight, 0, "Confirmation height to set for the given chain.")
 	cmd.Flags().StringVar(&evmChainName, flagEVMChainName, "", "Chain name (EVM only, required).")
 	cmd.Flags().StringVar(&evmNetworkName, flagEVMNetworkName, "", "Network name (EVM only).")
-	cmd.Flags().Int64Var(&evmChainID, flagEVMChainID, 0, "Chain ID (EVM only).")
+	cmd.Flags().StringVar(&evmChainID, flagEVMChainID, "", "Integer representing the chain ID (EVM only).")
 
 	return cmd
 }
