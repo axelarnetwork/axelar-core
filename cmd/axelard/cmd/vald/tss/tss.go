@@ -95,35 +95,40 @@ type Stream interface {
 	CloseSend() error
 }
 
-type lockableStream struct {
+// LockableStream is a thread-safe Stream
+type LockableStream struct {
 	sendLock sync.Mutex
 	recvLock sync.Mutex
 	stream   Stream
 }
 
-func lock(stream Stream) *lockableStream {
-	return &lockableStream{
+// NewLockableStream return a new thread-safe stream instance
+func NewLockableStream(stream Stream) *LockableStream {
+	return &LockableStream{
 		sendLock: sync.Mutex{},
 		recvLock: sync.Mutex{},
 		stream:   stream,
 	}
 }
 
-func (l *lockableStream) Send(in *tofnd.MessageIn) error {
+// Send implements the Stream interface
+func (l *LockableStream) Send(in *tofnd.MessageIn) error {
 	l.sendLock.Lock()
 	defer l.sendLock.Unlock()
 
 	return l.stream.Send(in)
 }
 
-func (l *lockableStream) Recv() (*tofnd.MessageOut, error) {
+// Recv implements the Stream interface
+func (l *LockableStream) Recv() (*tofnd.MessageOut, error) {
 	l.recvLock.Lock()
 	defer l.recvLock.Unlock()
 
 	return l.stream.Recv()
 }
 
-func (l *lockableStream) CloseSend() error {
+// CloseSend implements the Stream interface
+func (l *LockableStream) CloseSend() error {
 	l.sendLock.Lock()
 	defer l.sendLock.Unlock()
 
@@ -135,8 +140,8 @@ type Mgr struct {
 	client         rpc.Client
 	keygen         *sync.RWMutex
 	sign           *sync.RWMutex
-	keygenStreams  map[string]*lockableStream
-	signStreams    map[string]*lockableStream
+	keygenStreams  map[string]*LockableStream
+	signStreams    map[string]*LockableStream
 	timeoutQueue   *TimeoutQueue
 	sessionTimeout int64
 	Timeout        time.Duration
@@ -166,8 +171,8 @@ func NewMgr(client rpc.Client, timeout time.Duration, principalAddr string, broa
 		client:         client,
 		keygen:         &sync.RWMutex{},
 		sign:           &sync.RWMutex{},
-		keygenStreams:  make(map[string]*lockableStream),
-		signStreams:    make(map[string]*lockableStream),
+		keygenStreams:  make(map[string]*LockableStream),
+		signStreams:    make(map[string]*LockableStream),
 		timeoutQueue:   NewTimeoutQueue(),
 		sessionTimeout: sessionTimeout,
 		Timeout:        timeout,

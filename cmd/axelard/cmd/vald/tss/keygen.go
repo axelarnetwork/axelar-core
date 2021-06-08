@@ -195,5 +195,5 @@ func (mgr *Mgr) setKeygenStream(keyID string, stream Stream) {
 	mgr.keygen.Lock()
 	defer mgr.keygen.Unlock()
 
-	mgr.keygenStreams[keyID] = lock(stream)
+	mgr.keygenStreams[keyID] = NewLockableStream(stream)
 }

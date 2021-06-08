@@ -181,5 +181,5 @@ func (mgr *Mgr) setSignStream(sigID string, stream Stream) {
 	mgr.sign.Lock()
 	defer mgr.sign.Unlock()
 
-	mgr.signStreams[sigID] = lock(stream)
+	mgr.signStreams[sigID] = NewLockableStream(stream)
 }
