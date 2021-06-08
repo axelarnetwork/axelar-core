@@ -1,4 +1,4 @@
-package eth
+package evm
 
 import (
 	"context"
@@ -17,7 +17,7 @@ import (
 	tmLog "github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/eth/rpc"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -44,32 +44,30 @@ func NewMgr(rpcs map[string]rpc.Client, broadcaster types.Broadcaster, sender sd
 		rpcs:        rpcs,
 		broadcaster: broadcaster,
 		sender:      sender,
-		logger:      logger.With("listener", "eth"),
+		logger:      logger.With("listener", "evm"),
 		cdc:         cdc,
 	}
 }
 
 // ProcessNewChain notifies the operator that vald needs to be restarted/udpated for a new chain
-func (mgr Mgr) ProcessNewChain(_ int64, attributes []sdk.Attribute) (err error) {
+func (mgr Mgr) ProcessNewChain(attributes []sdk.Attribute) (err error) {
 	chain, nativeAsset, err := parseNewChainParams(attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "Invalid update event")
 	}
 
-	//TODO: what other actions should be taken to notify the operator?
 	mgr.logger.Info(fmt.Sprintf("VALD needs to be updated and restarted for new chain %s with native asset %s", chain, nativeAsset))
 	return nil
 }
 
 // ProcessChainConfirmation votes on the correctness of an EVM chain token deposit
-func (mgr Mgr) ProcessChainConfirmation(_ int64, attributes []sdk.Attribute) (err error) {
+func (mgr Mgr) ProcessChainConfirmation(attributes []sdk.Attribute) (err error) {
 	chain, poll, err := parseChainConfirmationParams(mgr.cdc, attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "EVM chain confirmation failed")
 	}
 
-	//TODO: augment VALD with logic to check if it was updated with info for the given chain
-	confirmed := false
+	_, confirmed := mgr.rpcs[strings.ToLower(chain)]
 
 	msg := evmTypes.NewVoteConfirmChainRequest(mgr.sender, chain, poll, confirmed)
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, poll.String()))
@@ -140,8 +138,8 @@ func parseNewChainParams(attributes []sdk.Attribute) (
 			chain = attribute.Value
 			chainFound = true
 		case evmTypes.AttributeKeyNativeAsset:
-			chain = attribute.Value
-			chainFound = true
+			nativeAsset = attribute.Value
+			nativeAssetFound = true
 		default:
 		}
 	}

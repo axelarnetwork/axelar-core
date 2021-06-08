@@ -34,9 +34,9 @@ import (
 	bcTypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc"
 	btcRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc"
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/eth"
-	evmRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/eth/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/events"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm"
+	evmRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/jobs"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
@@ -196,7 +196,7 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 	eventMgr := createEventMgr(ctx, store, logger)
 	tssMgr := createTSSMgr(broadcaster, ctx.FromAddress, &tssGenesisState, axelarCfg, logger, valAddr, cdc)
 	btcMgr := createBTCMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
-	ethMgr := createETHMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
+	ethMgr := createEVMMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
 
 	// we have two processes listening to block headers
 	blockHeader1 := tmEvents.MustSubscribeNewBlockHeader(hub)
@@ -320,17 +320,21 @@ func createBTCMgr(axelarCfg app.Config, b bcTypes.Broadcaster, sender sdk.AccAdd
 	return btcMgr
 }
 
-func createETHMgr(axelarCfg app.Config, b bcTypes.Broadcaster, sender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *eth.Mgr {
+func createEVMMgr(axelarCfg app.Config, b bcTypes.Broadcaster, sender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *evm.Mgr {
 	rpcs := make(map[string]evmRPC.Client)
 
-	for _, evmConf := range axelarCfg.EVMConfig {
-		if _, found := rpcs[strings.ToLower(evmConf.Name)]; found {
-			msg := fmt.Errorf("duplicate bridge configuration found for EVM chain %s", evmConf.Name)
+	for _, evmChainConf := range axelarCfg.EVMConfig {
+		if !evmChainConf.WithBridge {
+			continue
+		}
+
+		if _, found := rpcs[strings.ToLower(evmChainConf.Name)]; found {
+			msg := fmt.Errorf("duplicate bridge configuration found for EVM chain %s", evmChainConf.Name)
 			logger.Error(msg.Error())
 			panic(msg)
 		}
 
-		rpc, err := evmRPC.NewClient(evmConf.RPCAddr)
+		rpc, err := evmRPC.NewClient(evmChainConf.RPCAddr)
 		if err != nil {
 			logger.Error(err.Error())
 			panic(err)
@@ -338,10 +342,10 @@ func createETHMgr(axelarCfg app.Config, b bcTypes.Broadcaster, sender sdk.AccAdd
 		// clean up ethRPC connection on process shutdown
 		cleanupCommands = append(cleanupCommands, rpc.Close)
 
-		rpcs[strings.ToLower(evmConf.Name)] = rpc
-		logger.Info(fmt.Sprintf("Successfully connected to EVM bridge for chain %s", evmConf.Name))
+		rpcs[strings.ToLower(evmChainConf.Name)] = rpc
+		logger.Info(fmt.Sprintf("Successfully connected to EVM bridge for chain %s", evmChainConf.Name))
 	}
 
-	ethMgr := eth.NewMgr(rpcs, b, sender, logger, cdc)
+	ethMgr := evm.NewMgr(rpcs, b, sender, logger, cdc)
 	return ethMgr
 }
