@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"strconv"
@@ -294,9 +295,9 @@ func GetCmdSignTransferOwnership() *cobra.Command {
 // GetCmdAddChain returns the cli command to add a new evm chain command
 func GetCmdAddChain() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-chain [name] [native asset]",
+		Use:   "add-chain [name] [native asset] [params file]",
 		Short: "Add a new EVM chain",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -304,8 +305,19 @@ func GetCmdAddChain() *cobra.Command {
 			}
 			name := args[0]
 			nativeAsset := args[1]
+			jsonFile := args[2]
 
-			msg := types.NewAddChainRequest(cliCtx.GetFromAddress(), name, nativeAsset)
+			byteValue, err := ioutil.ReadFile(jsonFile)
+			if err != nil {
+				return err
+			}
+			var params types.Params
+			err = json.Unmarshal([]byte(byteValue), &params)
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewAddChainRequest(cliCtx.GetFromAddress(), name, nativeAsset, params)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

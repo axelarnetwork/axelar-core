@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"crypto/ecdsa"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"strings"
@@ -443,18 +444,32 @@ func (k Keeper) DeletePendingChain(ctx sdk.Context, chain string) {
 }
 
 // SetPendingChain stores a chain that is not registered yet
-func (k Keeper) SetPendingChain(ctx sdk.Context, chain string, nativeAsset string) {
-	k.getStore(ctx, chain).Set([]byte(pendingChainPrefix), []byte(nativeAsset))
+func (k Keeper) SetPendingChain(ctx sdk.Context, chain string, nativeAsset string, params types.Params) {
+	info := struct {
+		NativeAsset string       `json:"native_asset"`
+		Params      types.Params `json:"params"`
+	}{
+		NativeAsset: nativeAsset,
+		Params:      params,
+	}
+	bz, _ := json.Marshal(info)
+	k.getStore(ctx, chain).Set([]byte(pendingChainPrefix), bz)
 }
 
 // GetPendingChainAsset returns true if chain that is not registered yet, alongside its native asset
-func (k Keeper) GetPendingChainAsset(ctx sdk.Context, chain string) (bool, string) {
+func (k Keeper) GetPendingChainAsset(ctx sdk.Context, chain string) (bool, string, types.Params) {
 	bz := k.getStore(ctx, chain).Get([]byte(pendingChainPrefix))
 	if bz == nil {
-		return false, ""
+		return false, "", types.Params{}
 	}
 
-	return true, string(bz)
+	info := struct {
+		NativeAsset string       `json:"native_asset"`
+		Params      types.Params `json:"params"`
+	}{}
+	_ = json.Unmarshal(bz, &info)
+
+	return true, info.NativeAsset, info.Params
 }
 
 // SetDeposit stores confirmed or burned deposits

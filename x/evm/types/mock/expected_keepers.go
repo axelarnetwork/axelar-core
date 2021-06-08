@@ -1291,7 +1291,7 @@ var _ types.EthKeeper = &EthKeeperMock{}
 // 			GetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.Params {
 // 				panic("mock out the GetParams method")
 // 			},
-// 			GetPendingChainAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (bool, string) {
+// 			GetPendingChainAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (bool, string, types.Params) {
 // 				panic("mock out the GetPendingChainAsset method")
 // 			},
 // 			GetPendingDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta) (types.ERC20Deposit, bool) {
@@ -1327,7 +1327,7 @@ var _ types.EthKeeper = &EthKeeperMock{}
 // 			SetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, params []types.Params)  {
 // 				panic("mock out the SetParams method")
 // 			},
-// 			SetPendingChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, nativeAsset string)  {
+// 			SetPendingChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, nativeAsset string, params types.Params)  {
 // 				panic("mock out the SetPendingChain method")
 // 			},
 // 			SetPendingDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta, deposit *types.ERC20Deposit)  {
@@ -1395,7 +1395,7 @@ type EthKeeperMock struct {
 	GetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.Params
 
 	// GetPendingChainAssetFunc mocks the GetPendingChainAsset method.
-	GetPendingChainAssetFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (bool, string)
+	GetPendingChainAssetFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (bool, string, types.Params)
 
 	// GetPendingDepositFunc mocks the GetPendingDeposit method.
 	GetPendingDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta) (types.ERC20Deposit, bool)
@@ -1431,7 +1431,7 @@ type EthKeeperMock struct {
 	SetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, params []types.Params)
 
 	// SetPendingChainFunc mocks the SetPendingChain method.
-	SetPendingChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, nativeAsset string)
+	SetPendingChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, nativeAsset string, params types.Params)
 
 	// SetPendingDepositFunc mocks the SetPendingDeposit method.
 	SetPendingDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta, deposit *types.ERC20Deposit)
@@ -1686,6 +1686,8 @@ type EthKeeperMock struct {
 			Chain string
 			// NativeAsset is the nativeAsset argument value.
 			NativeAsset string
+			// Params is the params argument value.
+			Params types.Params
 		}
 		// SetPendingDeposit holds details about calls to the SetPendingDeposit method.
 		SetPendingDeposit []struct {
@@ -2334,7 +2336,7 @@ func (mock *EthKeeperMock) GetParamsCalls() []struct {
 }
 
 // GetPendingChainAsset calls GetPendingChainAssetFunc.
-func (mock *EthKeeperMock) GetPendingChainAsset(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (bool, string) {
+func (mock *EthKeeperMock) GetPendingChainAsset(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (bool, string, types.Params) {
 	if mock.GetPendingChainAssetFunc == nil {
 		panic("EthKeeperMock.GetPendingChainAssetFunc: method is nil but EthKeeper.GetPendingChainAsset was just called")
 	}
@@ -2794,7 +2796,7 @@ func (mock *EthKeeperMock) SetParamsCalls() []struct {
 }
 
 // SetPendingChain calls SetPendingChainFunc.
-func (mock *EthKeeperMock) SetPendingChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, nativeAsset string) {
+func (mock *EthKeeperMock) SetPendingChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, nativeAsset string, params types.Params) {
 	if mock.SetPendingChainFunc == nil {
 		panic("EthKeeperMock.SetPendingChainFunc: method is nil but EthKeeper.SetPendingChain was just called")
 	}
@@ -2802,15 +2804,17 @@ func (mock *EthKeeperMock) SetPendingChain(ctx github_com_cosmos_cosmos_sdk_type
 		Ctx         github_com_cosmos_cosmos_sdk_types.Context
 		Chain       string
 		NativeAsset string
+		Params      types.Params
 	}{
 		Ctx:         ctx,
 		Chain:       chain,
 		NativeAsset: nativeAsset,
+		Params:      params,
 	}
 	mock.lockSetPendingChain.Lock()
 	mock.calls.SetPendingChain = append(mock.calls.SetPendingChain, callInfo)
 	mock.lockSetPendingChain.Unlock()
-	mock.SetPendingChainFunc(ctx, chain, nativeAsset)
+	mock.SetPendingChainFunc(ctx, chain, nativeAsset, params)
 }
 
 // SetPendingChainCalls gets all the calls that were made to SetPendingChain.
@@ -2820,11 +2824,13 @@ func (mock *EthKeeperMock) SetPendingChainCalls() []struct {
 	Ctx         github_com_cosmos_cosmos_sdk_types.Context
 	Chain       string
 	NativeAsset string
+	Params      types.Params
 } {
 	var calls []struct {
 		Ctx         github_com_cosmos_cosmos_sdk_types.Context
 		Chain       string
 		NativeAsset string
+		Params      types.Params
 	}
 	mock.lockSetPendingChain.RLock()
 	calls = mock.calls.SetPendingChain

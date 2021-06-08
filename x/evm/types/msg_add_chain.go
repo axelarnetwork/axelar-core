@@ -9,11 +9,12 @@ import (
 )
 
 // NewAddChainRequest is the constructor for NewAddChainRequest
-func NewAddChainRequest(sender sdk.AccAddress, name, nativeAsset string) *AddChainRequest {
+func NewAddChainRequest(sender sdk.AccAddress, name, nativeAsset string, params Params) *AddChainRequest {
 	return &AddChainRequest{
 		Sender:      sender,
 		Name:        name,
 		NativeAsset: nativeAsset,
+		Params:      params,
 	}
 }
 
@@ -41,6 +42,10 @@ func (m AddChainRequest) ValidateBasic() error {
 
 	if err := chain.Validate(); err != nil {
 		return fmt.Errorf("invalid chain spec: %v", err)
+	}
+
+	if err := m.Params.Validate(); err != nil {
+		return fmt.Errorf("invalid EVM param: %v", err)
 	}
 
 	return nil
