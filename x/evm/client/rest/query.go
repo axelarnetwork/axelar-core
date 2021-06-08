@@ -20,11 +20,10 @@ import (
 
 // query parameters
 const (
-	QParamsChain      = "chain"
-	QParamFromAddress = "from_address"
-	QParamCommandID   = "command_id"
-	QParamGasPrice    = "gas_price"
-	QParamGasLimit    = "gas_limit"
+	QueryParamFromAddress = "from_address"
+	QueryParamCommandID   = "command_id"
+	QueryParamGasPrice    = "gas_price"
+	QueryParamGasLimit    = "gas_limit"
 )
 
 // GetHandlerQueryMasterAddress returns a handler to query an EVM chain master address
@@ -107,7 +106,7 @@ func GetHandlerQueryCreateDeployTx(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		chain := r.URL.Query().Get(QParamsChain)
+		chain := mux.Vars(r)[utils.PathVarChain]
 		gasPrice, ok := parseGasPrice(w, r)
 		if !ok {
 			return
@@ -170,9 +169,9 @@ func GetHandlerQuerySendCommandTx(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		chain := r.URL.Query().Get(QParamsChain)
-		fromAddr := r.URL.Query().Get(QParamFromAddress)
-		commandIDHex := r.URL.Query().Get(QParamCommandID)
+		chain := mux.Vars(r)[utils.PathVarChain]
+		fromAddr := r.URL.Query().Get(QueryParamFromAddress)
+		commandIDHex := r.URL.Query().Get(QueryParamCommandID)
 
 		var commandID types.CommandID
 		copy(commandID[:], common.Hex2Bytes(commandIDHex))
@@ -200,7 +199,7 @@ func GetHandlerQuerySendCommandTx(cliCtx client.Context) http.HandlerFunc {
 }
 
 func parseGasLimit(w http.ResponseWriter, r *http.Request) (uint64, bool) {
-	glStr := r.URL.Query().Get(QParamGasLimit)
+	glStr := r.URL.Query().Get(QueryParamGasLimit)
 	gl, err := strconv.ParseUint(glStr, 10, 64)
 	if err != nil {
 		rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "could not parse gas limit").Error())
@@ -211,7 +210,7 @@ func parseGasLimit(w http.ResponseWriter, r *http.Request) (uint64, bool) {
 }
 
 func parseGasPrice(w http.ResponseWriter, r *http.Request) (sdk.Int, bool) {
-	gpStr := r.URL.Query().Get(QParamGasPrice)
+	gpStr := r.URL.Query().Get(QueryParamGasPrice)
 	gpBig, ok := big.NewInt(0).SetString(gpStr, 10)
 	if !ok {
 		rest.WriteErrorResponse(w, http.StatusBadRequest, "could not parse gas price")
