@@ -781,7 +781,7 @@ Params is the parameter set for this module
 | ----- | ---- | ----- | ----------- |
 | `chain` | [string](#string) |  |  |
 | `confirmation_height` | [uint64](#uint64) |  |  |
-| `expected_network` | [string](#string) |  |  |
+| `network` | [string](#string) |  |  |
 | `gateway` | [bytes](#bytes) |  |  |
 | `token` | [bytes](#bytes) |  |  |
 | `burnable` | [bytes](#bytes) |  |  |
