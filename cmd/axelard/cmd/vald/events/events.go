@@ -96,6 +96,7 @@ func NewMgr(client rpcclient.SignClient, store StateStore, pubsubFactory func() 
 
 	mgr := &Mgr{
 		subscribeLock: sync.RWMutex{},
+		stateLock:     sync.RWMutex{},
 		client:        client,
 		subscriptions: make(map[string]struct {
 			tmpubsub.Query
@@ -167,6 +168,7 @@ func (m *Mgr) checkForUpdate() {
 	// So even if another goroutine changes the value this check can never go from "update" to "no update"
 
 	if m.state.Seen > m.state.Completed {
+		// multiple places can call this function, so the select statement prevents stalling when updateAvailable is already set
 		select {
 		case m.updateAvailable <- struct{}{}:
 			return
