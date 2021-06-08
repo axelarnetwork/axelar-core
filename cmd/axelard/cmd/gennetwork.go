@@ -22,8 +22,9 @@ import (
 )
 
 const (
-	flagConfHeight = "confirmation-height"
-	flagNetwork    = "network"
+	flagConfHeight          = "confirmation-height"
+	flagNetwork             = "network"
+	flagrevoteLockingPEriod = "revote-locking-period"
 
 	//EVM only
 	flagEVMChainName   = "evm-chain-name"
@@ -34,8 +35,9 @@ const (
 // SetGenesisChainParamsCmd returns set-genesis-chain-params cobra Command.
 func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 	var (
-		expectedNetwork    string
-		confirmationHeight uint64
+		expectedNetwork     string
+		confirmationHeight  uint64
+		revoteLockingPeriod int64
 
 		// EVM only
 		evmChainName   string
@@ -84,6 +86,10 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 
 				if confirmationHeight > 0 {
 					genesisState.Params.ConfirmationHeight = confirmationHeight
+				}
+
+				if revoteLockingPeriod > 0 {
+					genesisState.Params.RevoteLockingPeriod = revoteLockingPeriod
 				}
 
 				genesisStateBz, err = cdc.MarshalJSON(&genesisState)
@@ -151,6 +157,10 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 					genesisState.Params[index].ConfirmationHeight = confirmationHeight
 				}
 
+				if revoteLockingPeriod > 0 {
+					genesisState.Params[index].RevoteLockingPeriod = revoteLockingPeriod
+				}
+
 				genesisStateBz, err = cdc.MarshalJSON(&genesisState)
 				if err != nil {
 					return fmt.Errorf("failed to marshal ethereum genesis state: %w", err)
@@ -174,6 +184,7 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 	cmd.Flags().String(flags.FlagHome, defaultNodeHome, "node's home directory")
 	cmd.Flags().StringVar(&expectedNetwork, flagNetwork, "", "Name of the network to set for the given chain.")
 	cmd.Flags().Uint64Var(&confirmationHeight, flagConfHeight, 0, "Confirmation height to set for the given chain.")
+	cmd.Flags().Int64Var(&revoteLockingPeriod, flagrevoteLockingPEriod, 0, "Revote locking period to set for the given chain.")
 	cmd.Flags().StringVar(&evmChainName, flagEVMChainName, "", "Chain name (EVM only, required).")
 	cmd.Flags().StringVar(&evmNetworkName, flagEVMNetworkName, "", "Network name (EVM only, required).")
 	cmd.Flags().StringVar(&evmChainID, flagEVMChainID, "", "Integer representing the chain ID (EVM only, required).")
