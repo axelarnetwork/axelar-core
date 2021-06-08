@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc"
 
 	broadcastTypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
-	rpc "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss/rpc"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss/rpc"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
@@ -88,13 +88,60 @@ func NewTimeoutQueue() *TimeoutQueue {
 	}
 }
 
+// Stream is the abstracted communication stream with tofnd
+type Stream interface {
+	Send(in *tofnd.MessageIn) error
+	Recv() (*tofnd.MessageOut, error)
+	CloseSend() error
+}
+
+// LockableStream is a thread-safe Stream
+type LockableStream struct {
+	sendLock sync.Mutex
+	recvLock sync.Mutex
+	stream   Stream
+}
+
+// NewLockableStream return a new thread-safe stream instance
+func NewLockableStream(stream Stream) *LockableStream {
+	return &LockableStream{
+		sendLock: sync.Mutex{},
+		recvLock: sync.Mutex{},
+		stream:   stream,
+	}
+}
+
+// Send implements the Stream interface
+func (l *LockableStream) Send(in *tofnd.MessageIn) error {
+	l.sendLock.Lock()
+	defer l.sendLock.Unlock()
+
+	return l.stream.Send(in)
+}
+
+// Recv implements the Stream interface
+func (l *LockableStream) Recv() (*tofnd.MessageOut, error) {
+	l.recvLock.Lock()
+	defer l.recvLock.Unlock()
+
+	return l.stream.Recv()
+}
+
+// CloseSend implements the Stream interface
+func (l *LockableStream) CloseSend() error {
+	l.sendLock.Lock()
+	defer l.sendLock.Unlock()
+
+	return l.stream.CloseSend()
+}
+
 // Mgr represents an object that manages all communication with the external tss process
 type Mgr struct {
 	client         rpc.Client
 	keygen         *sync.RWMutex
 	sign           *sync.RWMutex
-	keygenStreams  map[string]tss.Stream
-	signStreams    map[string]tss.Stream
+	keygenStreams  map[string]*LockableStream
+	signStreams    map[string]*LockableStream
 	timeoutQueue   *TimeoutQueue
 	sessionTimeout int64
 	Timeout        time.Duration
@@ -124,8 +171,8 @@ func NewMgr(client rpc.Client, timeout time.Duration, principalAddr string, broa
 		client:         client,
 		keygen:         &sync.RWMutex{},
 		sign:           &sync.RWMutex{},
-		keygenStreams:  map[string]tss.Stream{},
-		signStreams:    map[string]tss.Stream{},
+		keygenStreams:  make(map[string]*LockableStream),
+		signStreams:    make(map[string]*LockableStream),
 		timeoutQueue:   NewTimeoutQueue(),
 		sessionTimeout: sessionTimeout,
 		Timeout:        timeout,
@@ -155,7 +202,7 @@ func (mgr *Mgr) abortKeygen(keyID string) (err error) {
 	return abort(stream)
 }
 
-func abort(stream tss.Stream) error {
+func abort(stream Stream) error {
 	msg := &tofnd.MessageIn{
 		Data: &tofnd.MessageIn_Abort{
 			Abort: true,
@@ -169,7 +216,7 @@ func abort(stream tss.Stream) error {
 	return nil
 }
 
-func handleStream(stream tss.Stream, cancel context.CancelFunc, logger log.Logger) (broadcast <-chan *tofnd.TrafficOut, result <-chan interface{}, err <-chan error) {
+func handleStream(stream Stream, cancel context.CancelFunc, logger log.Logger) (broadcast <-chan *tofnd.TrafficOut, result <-chan interface{}, err <-chan error) {
 	broadcastChan := make(chan *tofnd.TrafficOut)
 	// TODO: MessageOut_KeygenResult and MessageOut_SignResult should be merged into one type of message
 	resChan := make(chan interface{})

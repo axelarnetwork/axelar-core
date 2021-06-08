@@ -108,7 +108,7 @@ func parseKeygenStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) 
 	return keyID, threshold, participants, participantShareCounts
 }
 
-func (mgr *Mgr) startKeygen(keyID string, threshold int32, myIndex int32, participants []string, participantShareCounts []uint32) (tss.Stream, context.CancelFunc, error) {
+func (mgr *Mgr) startKeygen(keyID string, threshold int32, myIndex int32, participants []string, participantShareCounts []uint32) (Stream, context.CancelFunc, error) {
 	if _, ok := mgr.getKeygenStream(keyID); ok {
 		return nil, nil, fmt.Errorf("keygen protocol for ID %s already in progress", keyID)
 	}
@@ -183,7 +183,7 @@ func (mgr *Mgr) handleKeygenResult(keyID string, resultChan <-chan interface{}) 
 	return mgr.broadcaster.Broadcast(vote)
 }
 
-func (mgr *Mgr) getKeygenStream(keyID string) (tss.Stream, bool) {
+func (mgr *Mgr) getKeygenStream(keyID string) (Stream, bool) {
 	mgr.keygen.RLock()
 	defer mgr.keygen.RUnlock()
 
@@ -191,9 +191,9 @@ func (mgr *Mgr) getKeygenStream(keyID string) (tss.Stream, bool) {
 	return stream, ok
 }
 
-func (mgr *Mgr) setKeygenStream(keyID string, stream tss.Stream) {
+func (mgr *Mgr) setKeygenStream(keyID string, stream Stream) {
 	mgr.keygen.Lock()
 	defer mgr.keygen.Unlock()
 
-	mgr.keygenStreams[keyID] = stream
+	mgr.keygenStreams[keyID] = NewLockableStream(stream)
 }
