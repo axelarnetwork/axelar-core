@@ -53,7 +53,6 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(GetHandlerConfirmChain(cliCtx), TxConfirmChain)
 	registerTx(GetHandlerAddChain(cliCtx), TxAddChain)
 
-
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
 	registerQuery(GetHandlerQueryMasterAddress(cliCtx), QueryMasterAddress, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQueryAxelarGatewayAddress(cliCtx), QueryAxelarGatewayAddress, clientUtils.PathVarChain)
