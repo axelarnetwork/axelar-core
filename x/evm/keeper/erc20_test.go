@@ -222,7 +222,9 @@ func TestDeploy(t *testing.T) {
 	encCfg := testutils.MakeEncodingConfig()
 
 	rpc := &mock.RPCClientMock{PendingNonceAtFunc: backend.PendingNonceAt, SuggestGasPriceFunc: backend.SuggestGasPrice}
-	query := NewQuerier(rpc, k, tssSigner, nexusMock)
+	evmMap := make(map[string]types.RPCClient)
+	evmMap["ethereum"] = rpc
+	query := NewQuerier(evmMap, k, tssSigner, nexusMock)
 	res, err := query(ctx, []string{CreateDeployTx}, abci.RequestQuery{Data: encCfg.Amino.MustMarshalJSON(deployParams)})
 	assert.NoError(t, err)
 

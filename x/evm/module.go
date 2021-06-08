@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -17,7 +18,6 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/evm/client/cli"
 	"github.com/axelarnetwork/axelar-core/x/evm/client/rest"
-	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 )
@@ -85,13 +85,13 @@ type AppModule struct {
 	keeper      keeper.Keeper
 	voter       types.Voter
 	nexus       types.Nexus
-	rpc         types.RPCClient
+	rpcs        map[string]types.RPCClient
 	signer      types.Signer
 	snapshotter types.Snapshotter
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, nexus types.Nexus, snapshotter types.Snapshotter, rpc types.RPCClient) AppModule {
+func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, nexus types.Nexus, snapshotter types.Snapshotter, rpcs map[string]types.RPCClient) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
@@ -99,7 +99,7 @@ func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, nexus
 		signer:         signer,
 		nexus:          nexus,
 		snapshotter:    snapshotter,
-		rpc:            rpc,
+		rpcs:           rpcs,
 	}
 }
 
@@ -114,26 +114,38 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 	// Initialize global index to index in genesis state
 	cdc.MustUnmarshalJSON(gs, &genState)
 
-	id, err := am.rpc.ChainID(context.Background())
-	if err != nil {
-		panic(err)
-	}
-	actualNetwork := types.NetworkByID(id)
-
-	//TODO: We need to generalize for more EVM chains.
-	var param types.Params
-	for _, p := range genState.Params {
-		if exported.Ethereum.Name == p.Chain {
-			param = p
-			break
+	for chain, rpc := range am.rpcs {
+		id, err := rpc.ChainID(context.Background())
+		if err != nil {
+			panic(err)
 		}
-	}
-	if param.Network != actualNetwork {
-		panic(fmt.Sprintf(
-			"local ethereum client not configured correctly: expected network %s, got %s",
-			genState.Params[0].Network,
-			actualNetwork,
-		))
+
+		// TODO: this relies on having hard-coded information about the networks,
+		// which is not reasonable to assume. We need a more generic approach that
+		// that does not rely on having prior knowledge of the networks
+		actualNetwork := types.NetworkByID(id)
+
+		var param types.Params
+		for _, p := range genState.Params {
+			if chain == strings.ToLower(p.Chain) {
+				param = p
+				break
+			}
+		}
+		if param.Network == "" {
+			panic(fmt.Sprintf(
+				"unable to find genesis paramaters for chain %s",
+				chain,
+			))
+		}
+		if param.Network != actualNetwork {
+			panic(fmt.Sprintf(
+				"local %s client not configured correctly: expected network %s, got %s",
+				chain,
+				param.Network,
+				actualNetwork,
+			))
+		}
 	}
 	InitGenesis(ctx, am.keeper, genState)
 
@@ -158,7 +170,7 @@ func (AppModule) QuerierRoute() string {
 
 // LegacyQuerierHandler returns a new query handler for this module
 func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
-	return keeper.NewQuerier(am.rpc, am.keeper, am.signer, am.nexus)
+	return keeper.NewQuerier(am.rpcs, am.keeper, am.signer, am.nexus)
 }
 
 // RegisterServices registers a GRPC query service to respond to the

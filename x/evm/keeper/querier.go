@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"strings"
 
 	ethereumRoot "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -32,7 +33,7 @@ const (
 )
 
 // NewQuerier returns a new querier for the ethereum module
-func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer, n types.Nexus) sdk.Querier {
+func NewQuerier(rpcs map[string]types.RPCClient, k Keeper, s types.Signer, n types.Nexus) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		switch path[0] {
 		case QueryMasterAddress:
@@ -46,11 +47,11 @@ func NewQuerier(rpc types.RPCClient, k Keeper, s types.Signer, n types.Nexus) sd
 		case QueryDepositAddress:
 			return queryDepositAddress(ctx, k, n, path[1], req.Data)
 		case CreateDeployTx:
-			return createDeployGateway(ctx, k, rpc, s, n, req.Data)
+			return createDeployGateway(ctx, k, rpcs, s, n, req.Data)
 		case SendTx:
-			return sendSignedTx(ctx, k, rpc, s, n, path[1], path[2])
+			return sendSignedTx(ctx, k, rpcs, s, n, path[1], path[2])
 		case SendCommand:
-			return createTxAndSend(ctx, k, rpc, s, n, req.Data)
+			return createTxAndSend(ctx, k, rpcs, s, n, req.Data)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown eth-bridge query endpoint: %s", path[0]))
 		}
@@ -152,11 +153,16 @@ func queryTokenAddress(ctx sdk.Context, k types.EthKeeper, n types.Nexus, chainN
 
   If gasLimit is set to 0, the function will attempt to estimate the amount of gas needed
 */
-func createDeployGateway(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, n types.Nexus, data []byte) ([]byte, error) {
+func createDeployGateway(ctx sdk.Context, k Keeper, rpcs map[string]types.RPCClient, s types.Signer, n types.Nexus, data []byte) ([]byte, error) {
 	var params types.DeployParams
 	err := types.ModuleCdc.LegacyAmino.UnmarshalJSON(data, &params)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
+	}
+
+	rpc, found := rpcs[strings.ToLower(params.Chain)]
+	if !found {
+		return nil, fmt.Errorf("could not find RPC for chain '%s'", params.Chain)
 	}
 
 	contractOwner, err := getContractOwner(ctx, s, n, params.Chain)
@@ -203,11 +209,16 @@ func createDeployGateway(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types
 	return types.ModuleCdc.LegacyAmino.MustMarshalJSON(result), nil
 }
 
-func sendSignedTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, n types.Nexus, chainName, txID string) ([]byte, error) {
+func sendSignedTx(ctx sdk.Context, k Keeper, rpcs map[string]types.RPCClient, s types.Signer, n types.Nexus, chainName, txID string) ([]byte, error) {
 
 	_, ok := n.GetChain(ctx, chainName)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
+	}
+
+	rpc, found := rpcs[strings.ToLower(chainName)]
+	if !found {
+		return nil, fmt.Errorf("could not find RPC for chain '%s'", chainName)
 	}
 
 	pk, ok := s.GetKeyForSigID(ctx, txID)
@@ -233,11 +244,16 @@ func sendSignedTx(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer
 	return signedTx.Hash().Bytes(), nil
 }
 
-func createTxAndSend(ctx sdk.Context, k Keeper, rpc types.RPCClient, s types.Signer, n types.Nexus, data []byte) ([]byte, error) {
+func createTxAndSend(ctx sdk.Context, k Keeper, rpcs map[string]types.RPCClient, s types.Signer, n types.Nexus, data []byte) ([]byte, error) {
 	var params types.CommandParams
 	err := types.ModuleCdc.LegacyAmino.UnmarshalJSON(data, &params)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
+	}
+
+	rpc, found := rpcs[strings.ToLower(params.Chain)]
+	if !found {
+		return nil, fmt.Errorf("could not find RPC for chain '%s'", params.Chain)
 	}
 
 	_, ok := n.GetChain(ctx, params.Chain)

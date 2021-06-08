@@ -187,7 +187,7 @@ func TestMgr_Subscribe(t *testing.T) {
 		mgr.NotifyNewBlock(completed + 1)
 
 		// delay so mgr has time to fetch the block
-		time.Sleep(1 * time.Millisecond)
+		time.Sleep(2 * time.Millisecond)
 		// closes channels so we can test deterministically
 		mgr.Shutdown()
 
