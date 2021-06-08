@@ -17,7 +17,6 @@ const (
 	PathVarSymbol          = "Symbol"
 	PathVarTxID            = "TxID"
 	PathVarCommandID       = "CommandID"
-	PathVarBtcFeeRate      = "BtcFeeRate"
 )
 
 // ExtractReqSender extracts the sender address from an SDK base request

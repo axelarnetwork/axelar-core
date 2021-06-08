@@ -3,7 +3,7 @@ module github.com/axelarnetwork/axelar-core
 go 1.16
 
 require (
-	github.com/axelarnetwork/tm-events v0.0.0-20210427154304-86290b49ae8f
+	github.com/axelarnetwork/tm-events v0.0.0-20210603164553-dc0202f4ebaf
 	// TODO: update to v0.22.0-beta once https://github.com/btcsuite/btcd/issues/1706 is resolved
 	github.com/btcsuite/btcd v0.21.0-beta.0.20210506225145-0ec4bdc1b8e1
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
@@ -16,7 +16,7 @@ require (
 	github.com/matryer/moq v0.2.1
 	github.com/miguelmota/go-ethereum-hdwallet v0.0.1
 	github.com/rakyll/statik v0.1.7
-	github.com/regen-network/cosmos-proto v0.3.1 // indirect
+	github.com/regen-network/cosmos-proto v0.3.1
 	github.com/rs/zerolog v1.21.0
 	github.com/spf13/cast v1.3.1
 	github.com/spf13/cobra v1.1.3

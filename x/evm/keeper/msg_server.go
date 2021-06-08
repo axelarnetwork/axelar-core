@@ -5,13 +5,17 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"math/big"
 	"strconv"
+	"strings"
 
+	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	gogoprototypes "github.com/gogo/protobuf/types"
 
+	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -68,7 +72,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, err
 	}
 
-	burnerAddr, salt, err := s.GetBurnerAddressAndSalt(ctx, tokenAddr, req.RecipientAddr, gatewayAddr)
+	burnerAddr, salt, err := s.GetBurnerAddressAndSalt(ctx, senderChain.Name, tokenAddr, req.RecipientAddr, gatewayAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +133,13 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	}
 
 	poll := vote.NewPollMeta(types.ModuleName, req.TxID.Hex()+"_"+req.Symbol)
-	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+s.EthKeeper.GetRevoteLockingPeriod(ctx)); err != nil {
+
+	period, ok := s.EthKeeper.GetRevoteLockingPeriod(ctx, chain.Name)
+	if !ok {
+		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", req.Chain)
+	}
+
+	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+period); err != nil {
 		return nil, err
 	}
 
@@ -138,6 +148,10 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		TokenAddress: types.Address(tokenAddr),
 	}
 	s.SetPendingTokenDeployment(ctx, chain.Name, poll, deploy)
+
+	height, _ := s.EthKeeper.GetRequiredConfirmationHeight(ctx, chain.Name)
+
+	telemetry.NewLabel("eth_token_addr", tokenAddr.String())
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeTokenConfirmation,
@@ -148,12 +162,56 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),
 			sdk.NewAttribute(types.AttributeKeySymbol, req.Symbol),
-			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(s.GetRequiredConfirmationHeight(ctx), 10)),
+			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
 			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&poll))),
 		),
 	)
 
 	return &types.ConfirmTokenResponse{}, nil
+}
+
+func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainRequest) (*types.ConfirmChainResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	if _, found := s.nexus.GetChain(ctx, req.Name); found {
+		return &types.ConfirmChainResponse{}, fmt.Errorf("chain '%s' is already confirmed", req.Name)
+	}
+
+	if found, _ := s.EthKeeper.GetPendingChainAsset(ctx, req.Name); !found {
+		return &types.ConfirmChainResponse{}, fmt.Errorf("'%s' has not been added yet", req.Name)
+	}
+
+	//TODO: Do we need an EVM-wide key, or can we assume Ethereum's for this specific case?
+	keyID, ok := s.signer.GetCurrentKeyID(ctx, exported.Ethereum, tss.MasterKey)
+	if !ok {
+		return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
+	}
+
+	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
+	if !ok {
+		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
+	}
+
+	//TODO: Can we assume Ethereum for this specific case or do we need something else?
+	period, ok := s.EthKeeper.GetRevoteLockingPeriod(ctx, exported.Ethereum.Name)
+	if !ok {
+		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", exported.Ethereum.Name)
+	}
+
+	poll := vote.NewPollMeta(types.ModuleName, req.Name)
+	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+period); err != nil {
+		return nil, err
+	}
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeChainConfirmation,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
+			sdk.NewAttribute(types.AttributeKeyChain, req.Name),
+			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&poll))),
+		),
+	)
+
+	return &types.ConfirmChainResponse{}, nil
 }
 
 // ConfirmDeposit handles deposit confirmations
@@ -189,8 +247,13 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
 	}
 
+	period, ok := s.EthKeeper.GetRevoteLockingPeriod(ctx, chain.Name)
+	if !ok {
+		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", req.Chain)
+	}
+
 	poll := vote.NewPollMeta(types.ModuleName, req.TxID.Hex()+"_"+req.BurnerAddress.Hex())
-	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+s.EthKeeper.GetRevoteLockingPeriod(ctx)); err != nil {
+	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+period); err != nil {
 		return nil, err
 	}
 
@@ -202,6 +265,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	}
 	s.SetPendingDeposit(ctx, chain.Name, poll, &erc20Deposit)
 
+	height, _ := s.EthKeeper.GetRequiredConfirmationHeight(ctx, chain.Name)
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeDepositConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
@@ -211,12 +275,76 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 			sdk.NewAttribute(types.AttributeKeyAmount, req.Amount.String()),
 			sdk.NewAttribute(types.AttributeKeyBurnAddress, req.BurnerAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()),
-			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(s.GetRequiredConfirmationHeight(ctx), 10)),
+			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
 			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&poll))),
 		),
 	)
 
 	return &types.ConfirmDepositResponse{}, nil
+}
+
+func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmChainRequest) (*types.VoteConfirmChainResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	registeredChain, registered := s.nexus.GetChain(ctx, req.Name)
+	pendingChain, nativeAsset := s.GetPendingChainAsset(ctx, req.Name)
+
+	if registered {
+		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("chain %s already confirmed", registeredChain.Name)}, nil
+	}
+
+	if !pendingChain {
+		return nil, fmt.Errorf("unknown chain %s", req.Name)
+	}
+
+	if err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed}); err != nil {
+		return nil, err
+	}
+
+	result := s.voter.Result(ctx, req.Poll)
+	if result == nil {
+		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("not enough votes to confirm chain in %s yet", req.Name)}, nil
+	}
+
+	// assert: the poll has completed
+	confirmed, ok := result.(*gogoprototypes.BoolValue)
+	if !ok {
+		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.Poll.String(), result)
+	}
+
+	s.Logger(ctx).Info(fmt.Sprintf("EVM chain confirmation result is %s", result))
+	s.voter.DeletePoll(ctx, req.Poll)
+	s.DeletePendingChain(ctx, req.Name)
+
+	// handle poll result
+	event := sdk.NewEvent(types.EventTypeChainConfirmation,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(types.AttributeKeyChain, req.Name),
+		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.Poll))))
+
+	if !confirmed.Value {
+		ctx.EventManager().EmitEvent(
+			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
+		return &types.VoteConfirmChainResponse{
+			Log: fmt.Sprintf("chain %s was rejected", req.Name),
+		}, nil
+	}
+	ctx.EventManager().EmitEvent(
+		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
+
+	param := types.DefaultParams()[0]
+	param.Chain = req.Name
+	chain := nexus.Chain{
+		Name:                  req.Name,
+		NativeAsset:           nativeAsset,
+		SupportsForeignAssets: true,
+	}
+
+	s.SetParams(ctx, []types.Params{param})
+	s.nexus.SetChain(ctx, chain)
+	s.nexus.RegisterAsset(ctx, chain.Name, chain.NativeAsset)
+
+	return &types.VoteConfirmChainResponse{}, nil
 }
 
 // VoteConfirmDeposit handles votes for deposit confirmations
@@ -231,7 +359,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	confirmedDeposit, state, depositFound := s.GetDeposit(ctx, chain.Name, common.Hash(req.TxID), common.Address(req.BurnAddress))
 
 	switch {
-	// a malicious user could try to delete an ongoing poll by providing an already confirmed token,
+	// a malicious user could try to delete an ongoing poll by providing an already confirmed deposit,
 	// so we need to check that it matches the poll before deleting
 	case depositFound && pollFound && confirmedDeposit == pendingDeposit:
 		s.voter.DeletePoll(ctx, req.Poll)
@@ -375,7 +503,10 @@ func (s msgServer) SignDeployToken(c context.Context, req *types.SignDeployToken
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	chainID := s.GetParams(ctx).Network.Params().ChainID
+	chainID := s.getChainID(ctx, req.Chain)
+	if chainID == nil {
+		return nil, fmt.Errorf("Could not find chain ID for '%s'", req.Chain)
+	}
 
 	var commandID types.CommandID
 	copy(commandID[:], crypto.Keccak256([]byte(req.TokenName))[:32])
@@ -437,7 +568,10 @@ func (s msgServer) SignBurnTokens(c context.Context, req *types.SignBurnTokensRe
 		return &types.SignBurnTokensResponse{}, nil
 	}
 
-	chainID := s.GetNetwork(ctx).Params().ChainID
+	chainID := s.getChainID(ctx, req.Chain)
+	if chainID == nil {
+		return nil, fmt.Errorf("Could not find chain ID for '%s'", req.Chain)
+	}
 
 	var burnerInfos []types.BurnerInfo
 	seen := map[string]bool{}
@@ -550,9 +684,14 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 		return nil, err
 	}
 
+	byteCodes, ok := s.GetGatewayByteCodes(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("Could not retrieve gateway bytecodes for chain %s", req.Chain)
+	}
+
 	// if this is the transaction that is deploying Axelar Gateway, calculate and save address
 	// TODO: this is something that should be done after the signature has been successfully confirmed
-	if tx.To() == nil && bytes.Equal(tx.Data(), s.GetGatewayByteCodes(ctx)) {
+	if tx.To() == nil && bytes.Equal(tx.Data(), byteCodes) {
 
 		pub, ok := s.signer.GetCurrentKey(ctx, chain, tss.MasterKey)
 		if !ok {
@@ -561,6 +700,8 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 
 		addr := crypto.CreateAddress(crypto.PubkeyToAddress(pub.Value), tx.Nonce())
 		s.SetGatewayAddress(ctx, chain.Name, addr)
+
+		telemetry.NewLabel("eth_factory_addr", addr.String())
 	}
 
 	return &types.SignTxResponse{TxID: txID}, nil
@@ -579,7 +720,10 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 		return &types.SignPendingTransfersResponse{}, nil
 	}
 
-	chainID := s.GetNetwork(ctx).Params().ChainID
+	chainID := s.getChainID(ctx, req.Chain)
+	if chainID == nil {
+		return nil, fmt.Errorf("Could not find chain ID for '%s'", req.Chain)
+	}
 
 	data, err := types.CreateMintCommandData(chainID, pendingTransfers)
 	if err != nil {
@@ -640,7 +784,10 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	chainID := s.GetNetwork(ctx).Params().ChainID
+	chainID := s.getChainID(ctx, req.Chain)
+	if chainID == nil {
+		return nil, fmt.Errorf("Could not find chain ID for '%s'", req.Chain)
+	}
 
 	var commandID types.CommandID
 	copy(commandID[:], crypto.Keccak256(req.NewOwner.Bytes())[:32])
@@ -691,18 +838,30 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*types.AddChainResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chain := nexus.Chain{
-		Name:                  req.Name,
-		NativeAsset:           req.NativeAsset,
-		SupportsForeignAssets: true,
+	if _, found := s.nexus.GetChain(ctx, req.Name); found {
+		return &types.AddChainResponse{}, fmt.Errorf("chain '%s' is already registered", req.Name)
 	}
 
-	if _, found := s.nexus.GetChain(ctx, chain.Name); found {
-		return &types.AddChainResponse{}, fmt.Errorf("chain '%s' is already defined", chain.Name)
-	}
+	s.SetPendingChain(ctx, req.Name, req.NativeAsset)
 
-	s.nexus.SetChain(ctx, chain)
-	s.nexus.RegisterAsset(ctx, chain.Name, chain.NativeAsset)
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeNewChain,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueUpdate),
+			sdk.NewAttribute(types.AttributeKeyChain, req.Name),
+			sdk.NewAttribute(types.AttributeKeyNativeAsset, req.NativeAsset),
+		),
+	)
 
 	return &types.AddChainResponse{}, nil
+}
+
+func (s msgServer) getChainID(ctx sdk.Context, chain string) (chainID *big.Int) {
+	for _, p := range s.GetParams(ctx) {
+		if strings.ToLower(p.Chain) == strings.ToLower(chain) {
+			chainID = p.Network.Params().ChainID
+		}
+	}
+
+	return
 }

@@ -138,6 +138,10 @@ func (k Keeper) RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.K
 	return nil
 }
 
+func (k Keeper) deleteKeygenStart(ctx sdk.Context, keyID string) {
+	ctx.KVStore(k.storeKey).Delete([]byte(keygenStartHeight + keyID))
+}
+
 func (k Keeper) setKeygenStart(ctx sdk.Context, keyID string) {
 	ctx.KVStore(k.storeKey).Set([]byte(keygenStartHeight+keyID), k.cdc.MustMarshalBinaryLengthPrefixed(ctx.BlockHeight()))
 }
@@ -189,6 +193,10 @@ func (k Keeper) setRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole exp
 	ctx.KVStore(k.storeKey).Set([]byte(storageKey), k.cdc.MustMarshalBinaryLengthPrefixed(rotation))
 }
 
+func (k Keeper) deleteSnapshotCounterForKeyID(ctx sdk.Context, keyID string) {
+	ctx.KVStore(k.storeKey).Delete([]byte(snapshotForKeyIDPrefix + keyID))
+}
+
 func (k Keeper) setSnapshotCounterForKeyID(ctx sdk.Context, keyID string, counter int64) {
 	ctx.KVStore(k.storeKey).Set([]byte(snapshotForKeyIDPrefix+keyID), k.cdc.MustMarshalBinaryBare(counter))
 }
@@ -202,6 +210,16 @@ func (k Keeper) GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64
 	var counter int64
 	k.cdc.MustUnmarshalBinaryBare(bz, &counter)
 	return counter, true
+}
+
+func (k Keeper) deleteParticipantsInKeygen(ctx sdk.Context, keyID string) {
+	store := ctx.KVStore(k.storeKey)
+	iter := sdk.KVStorePrefixIterator(store, []byte(participatePrefix+"key_"+keyID))
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		store.Delete(iter.Key())
+	}
 }
 
 func (k Keeper) setParticipatesInKeygen(ctx sdk.Context, keyID string, validator sdk.ValAddress) {

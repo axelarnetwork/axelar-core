@@ -79,6 +79,16 @@ func Bytes(len int) []byte {
 	return bz
 }
 
+// BytesBetween returns a random byte slice of random length in the given limits (inclusive)
+func BytesBetween(minLength int, maxLength int) []byte {
+	len := int(I64Between(int64(minLength), int64(maxLength+1)))
+	bz := make([]byte, len)
+	for i, b := range I64GenBetween(0, 256).Take(len) {
+		bz[i] = byte(b)
+	}
+	return bz
+}
+
 // BoolGen represents an random bool generator.
 // Call Stop when done so dangling goroutines can be cleaned up.
 type BoolGen struct {

@@ -19,6 +19,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/rest"
 )
 
+// query parameters
+const (
+	QueryParamFeeRate = "fee_rate"
+)
+
 // QueryDepositAddress returns a handler to query a deposit address
 func QueryDepositAddress(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -120,13 +125,13 @@ func QueryGetPayForConsolidationTx(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		// Parse fee rate
-		feeStr := mux.Vars(r)[utils.PathVarBtcFeeRate]
-		if feeStr == "" {
-			feeStr = "0" // fee is optional and defaults to zero
+		feeRateStr := r.URL.Query().Get(QueryParamFeeRate)
+		if feeRateStr == "" {
+			feeRateStr = "0" // fee is optional and defaults to zero
 		}
 
-		feeRate, err := strconv.ParseInt(feeStr, 10, 64)
-		if err == nil {
+		feeRate, err := strconv.ParseInt(feeRateStr, 10, 64)
+		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, types.ErrFInvalidFeeRate)
 			return
 		}
@@ -136,10 +141,10 @@ func QueryGetPayForConsolidationTx(cliCtx client.Context) http.HandlerFunc {
 
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.GetPayForConsolidationTx), bz)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, types.ErrFGetPayForRawTx)
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFGetPayForRawTx).Error())
 			return
 		}
 
-		rest.PostProcessResponse(w, cliCtx, res)
+		rest.PostProcessResponse(w, cliCtx, string(res))
 	}
 }

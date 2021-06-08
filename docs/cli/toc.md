@@ -32,10 +32,13 @@
       - [denom-metadata](axelard_query_bank_denom-metadata.md)	 - Query the client metadata for coin denominations
       - [total](axelard_query_bank_total.md)	 - Query the total supply of coins of the chain
     - [bitcoin](axelard_query_bitcoin.md)	 - bitcoin query subcommands
+      - [consolidationTxState](axelard_query_bitcoin_consolidationTxState.md)	 - Returns the state of the consolidation transaction as seen by Axelar network
       - [deposit-addr \[chain\] \[recipient address\]](axelard_query_bitcoin_deposit-addr.md)	 - Returns a bitcoin deposit address for a recipient address on another blockchain
       - [master-addr](axelard_query_bitcoin_master-addr.md)	 - Returns the bitcoin address of the current master key
+      - [minWithdraw](axelard_query_bitcoin_minWithdraw.md)	 - Returns the minimum withdraw amount in satoshi
       - [rawPayForConsolidationTx](axelard_query_bitcoin_rawPayForConsolidationTx.md)	 - Returns the encoded hex string of a fully signed transaction that pays for the consolidation transaction
       - [rawTx](axelard_query_bitcoin_rawTx.md)	 - Returns the encoded hex string of a fully signed transfer and consolidation transaction
+      - [txState \[txID:voutIdx\]](axelard_query_bitcoin_txState.md)	 - Returns the state of a bitcoin transaction as seen by Axelar network
     - [block \[height\]](axelard_query_block.md)	 - Get verified data for a the block at given height
     - [distribution](axelard_query_distribution.md)	 - Querying commands for the distribution module
       - [commission \[validator\]](axelard_query_distribution_commission.md)	 - Query distribution validator commission
@@ -48,6 +51,7 @@
     - [evm](axelard_query_evm.md)	 - Querying commands for the evm module
       - [command \[chain\] \[commandID\]](axelard_query_evm_command.md)	 - Get the signed command data that can be wrapped in an Ethereum transaction to execute the command \[commandID\] on Axelar Gateway
       - [deploy-gateway \[chain\]](axelard_query_evm_deploy-gateway.md)	 - Obtain a raw transaction for the deployment of Axelar Gateway.
+      - [deposit-addr \[evm chain\] \[recipient chain\] \[recipient address\] \[symbol\]](axelard_query_evm_deposit-addr.md)	 - Returns an evm chain deposit address for a recipient address on another blockchain
       - [gateway-address \[chain\]](axelard_query_evm_gateway-address.md)	 - Query the Axelar Gateway contract address
       - [master-address \[chain\]](axelard_query_evm_master-address.md)	 - Query an address by key ID
       - [sendCommand \[chain\] \[commandID\] \[fromAddress\]](axelard_query_evm_sendCommand.md)	 - Send a transaction signed by \[fromAddress\] that executes the command \[commandID\] to Axelar Gateway
@@ -130,8 +134,9 @@
     - [encode \[file\]](axelard_tx_encode.md)	 - Encode transactions generated offline
     - [evidence](axelard_tx_evidence.md)	 - Evidence transaction subcommands
     - [evm](axelard_tx_evm.md)	 - evm transactions subcommands
-      - [add-chain \[chain\] \[name\] \[native asset\]](axelard_tx_evm_add-chain.md)	 - Add a new EVM chain
+      - [add-chain \[name\] \[native asset\]](axelard_tx_evm_add-chain.md)	 - Add a new EVM chain
       - [confirm-erc20-deposit \[chain\] \[txID\] \[amount\] \[burnerAddr\]](axelard_tx_evm_confirm-erc20-deposit.md)	 - Confirm an ERC20 deposit in an EVM chain transaction that sent given amount of token to a burner address
+      - [confirm-erc20-token \[chain\]](axelard_tx_evm_confirm-erc20-token.md)	 - Confirm an EVM chain for a given name and native asset
       - [confirm-erc20-token \[chain\] \[txID\] \[symbol\]](axelard_tx_evm_confirm-erc20-token.md)	 - Confirm an ERC20 token deployment in an EVM chain transaction for a given symbol of token and gateway address
       - [link \[chain\] \[recipient chain\] \[recipient address\] \[symbol\]](axelard_tx_evm_link.md)	 - Link a cross chain address to an EVM chain address created by Axelar
       - [sign \[chain\] \[tx json file path\]](axelard_tx_evm_sign.md)	 - sign a raw EVM chain transaction

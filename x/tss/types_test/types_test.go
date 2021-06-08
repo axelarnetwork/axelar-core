@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -17,22 +18,22 @@ func TestMsgVotePubKey_Marshaling(t *testing.T) {
 	for i := range sender {
 		sender[i] = 0
 	}
-	vote := &tss.VotePubKeyRequest{
-		Sender:      sender,
-		PollMeta:    exported.NewPollMeta("test", "test"),
-		PubKeyBytes: []byte("some bytes"),
+	vote := tss.VotePubKeyRequest{
+		Sender:   sender,
+		PollMeta: exported.NewPollMeta("test", "test"),
+		Result:   &tofnd.MessageOut_KeygenResult{KeygenResultData: &tofnd.MessageOut_KeygenResult_Pubkey{Pubkey: []byte("some bytes")}},
 	}
 	encCfg := testutils.MakeEncodingConfig()
 
-	bz := encCfg.Amino.MustMarshalBinaryLengthPrefixed(vote)
-	var msg sdk.Msg
-	encCfg.Amino.MustUnmarshalBinaryLengthPrefixed(bz, &msg)
+	bz := encCfg.Marshaler.MustMarshalBinaryLengthPrefixed(&vote)
+	var msg tss.VotePubKeyRequest
+	encCfg.Marshaler.MustUnmarshalBinaryLengthPrefixed(bz, &msg)
 
 	assert.Equal(t, vote, msg)
 
-	bz = encCfg.Amino.MustMarshalJSON(vote)
-	var msg2 sdk.Msg
-	encCfg.Amino.MustUnmarshalJSON(bz, &msg2)
+	bz = encCfg.Marshaler.MustMarshalJSON(&vote)
+	var msg2 tss.VotePubKeyRequest
+	encCfg.Marshaler.MustUnmarshalJSON(bz, &msg2)
 
 	assert.Equal(t, vote, msg2)
 }

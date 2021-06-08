@@ -15,8 +15,10 @@ func DefaultGenesisState() *GenesisState {
 
 // Validate calidates the genesis state
 func (m GenesisState) Validate() error {
-	if err := m.Params.Validate(); err != nil {
-		return sdkerrors.Wrap(err, fmt.Sprintf("genesis m for module %s is invalid", ModuleName))
+	for _, p := range m.Params {
+		if err := p.Validate(); err != nil {
+			return sdkerrors.Wrap(err, fmt.Sprintf("genesis m for module %s is invalid", ModuleName))
+		}
 	}
 
 	return nil

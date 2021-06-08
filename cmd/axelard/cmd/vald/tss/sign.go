@@ -15,13 +15,16 @@ import (
 )
 
 // ProcessSignStart starts the communication with the sign protocol
-func (mgr *Mgr) ProcessSignStart(attributes []sdk.Attribute) error {
+func (mgr *Mgr) ProcessSignStart(blockHeight int64, attributes []sdk.Attribute) error {
 	keyID, sigID, participants, payload := parseSignStartParams(mgr.cdc, attributes)
 	_, ok := indexOf(participants, mgr.principalAddr)
 	if !ok {
 		// do not participate
 		return nil
 	}
+
+	done := false
+	session := mgr.timeoutQueue.Enqueue(sigID, blockHeight+mgr.sessionTimeout)
 
 	stream, cancel, err := mgr.startSign(keyID, sigID, participants, payload)
 	if err != nil {
@@ -30,7 +33,7 @@ func (mgr *Mgr) ProcessSignStart(attributes []sdk.Attribute) error {
 	mgr.setSignStream(sigID, stream)
 
 	// use error channel to coordinate errors during communication with keygen protocol
-	errChan := make(chan error, 3)
+	errChan := make(chan error, 4)
 	intermediateMsgs, result, streamErrChan := handleStream(stream, cancel, mgr.Logger)
 	go func() {
 		err, ok := <-streamErrChan
@@ -45,7 +48,20 @@ func (mgr *Mgr) ProcessSignStart(attributes []sdk.Attribute) error {
 		}
 	}()
 	go func() {
-		errChan <- mgr.handleSignResult(sigID, result)
+		session.WaitForTimeout()
+
+		if done {
+			return
+		}
+
+		errChan <- mgr.abortSign(sigID)
+		mgr.Logger.Info(fmt.Sprintf("aborted sign protocol %s due to timeout", sigID))
+	}()
+	go func() {
+		err := mgr.handleSignResult(sigID, result)
+		done = true
+
+		errChan <- err
 	}()
 
 	return <-errChan

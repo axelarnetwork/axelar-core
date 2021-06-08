@@ -9,7 +9,6 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	gogoprototypes "github.com/gogo/protobuf/types"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -214,41 +213,81 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		return &types.VotePubKeyResponse{}, nil
 	}
 
-	if err := s.voter.TallyVote(ctx, req.Sender, req.PollMeta, &gogoprototypes.BytesValue{Value: req.PubKeyBytes}); err != nil {
+	poll := s.voter.GetPoll(ctx, req.PollMeta)
+	if poll == nil {
+		return nil, fmt.Errorf("poll does not exist or is closed")
+	}
+
+	snapshot, found := s.snapshotter.GetSnapshot(ctx, poll.ValidatorSnapshotCounter)
+	if !found {
+		return nil, fmt.Errorf("no snapshot found for counter %d", poll.ValidatorSnapshotCounter)
+	}
+
+	if criminals := req.Result.GetCriminals(); criminals != nil {
+		for _, criminal := range criminals.Criminals {
+			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
+			if _, found := snapshot.GetValidator(criminalAddress); !found {
+				return nil, fmt.Errorf("received criminal %s who is not a participant of producing key %s", criminalAddress.String(), req.PollMeta.ID)
+			}
+		}
+	}
+
+	if err := s.voter.TallyVote(ctx, req.Sender, req.PollMeta, req.Result); err != nil {
 		return nil, err
 	}
 
-	if result := s.voter.Result(ctx, req.PollMeta); result != nil {
-		// the result is not necessarily the same as the msg (the vote could have been decided earlier and now a false vote is cast),
-		// so use result instead of msg
-		ctx.EventManager().EmitEvent(sdk.NewEvent(
-			types.EventTypeKeygen,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
-			sdk.NewAttribute(types.AttributeKeyPoll, req.PollMeta.String()),
-			sdk.NewAttribute(types.AttributeKeyPayload, string(req.PubKeyBytes)),
-		))
-		switch pkBytes := result.(type) {
-		case *gogoprototypes.BytesValue:
-			s.Logger(ctx).Debug(fmt.Sprintf("public key with ID %s confirmed", req.PollMeta.ID))
-			btcecPK, err := btcec.ParsePubKey(pkBytes.Value, btcec.S256())
+	result := s.voter.Result(ctx, req.PollMeta)
+	if result == nil {
+		return &types.VotePubKeyResponse{}, nil
+	}
+
+	// the result is not necessarily the same as the msg (the vote could have been decided earlier and now a false vote is cast),
+	// so use result instead of msg
+	ctx.EventManager().EmitEvent(sdk.NewEvent(
+		types.EventTypeKeygen,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
+		sdk.NewAttribute(types.AttributeKeyPoll, req.PollMeta.String()),
+		// TODO: Consider emitting criminals or pubkey with different attributes
+		sdk.NewAttribute(types.AttributeKeyPayload, req.Result.String()),
+	))
+
+	switch keygenResult := result.(type) {
+	case *tofnd.MessageOut_KeygenResult:
+		s.voter.DeletePoll(ctx, req.PollMeta)
+
+		if pubKeyBytes := keygenResult.GetPubkey(); pubKeyBytes != nil {
+			btcecPK, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
 			if err != nil {
 				return nil, fmt.Errorf("could not unmarshal public key bytes: [%w]", err)
 			}
 
 			pubKey := btcecPK.ToECDSA()
 			s.SetKey(ctx, req.PollMeta.ID, *pubKey)
-			s.voter.DeletePoll(ctx, req.PollMeta)
 
 			s.Logger(ctx).Info(fmt.Sprintf("public key confirmation result is %.10s", result))
-		default:
-			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
-				fmt.Sprintf("unrecognized voting result type: %T", result))
+
+			return &types.VotePubKeyResponse{}, nil
 		}
+
+		// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed
+		// TODO: the snapshot itself can be deleted too but we need to be more careful with it
+		s.deleteSnapshotCounterForKeyID(ctx, req.PollMeta.ID)
+		s.deleteKeygenStart(ctx, req.PollMeta.ID)
+		s.deleteParticipantsInKeygen(ctx, req.PollMeta.ID)
+
+		for _, criminal := range keygenResult.GetCriminals().Criminals {
+			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
+			s.Keeper.PenalizeSignCriminal(ctx, criminalAddress, criminal.GetCrimeType())
+
+			s.Logger(ctx).Info(fmt.Sprintf("criminal for generating key %s verified: %s - %s", req.PollMeta.ID, criminal.GetPartyUid(), criminal.CrimeType.String()))
+		}
+
+		return &types.VotePubKeyResponse{}, nil
+	default:
+		return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
+			fmt.Sprintf("unrecognized voting result type: %T", result))
 	}
-
-	return &types.VotePubKeyResponse{}, nil
-
 }
 
 func (s msgServer) ProcessSignTraffic(c context.Context, req *types.ProcessSignTrafficRequest) (*types.ProcessSignTrafficResponse, error) {
@@ -333,12 +372,13 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 			return &types.VoteSigResponse{}, nil
 		}
 
+		// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed
 		s.deleteKeyIDForSig(ctx, req.PollMeta.ID)
 		for _, criminal := range signResult.GetCriminals().Criminals {
 			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
 			s.Keeper.PenalizeSignCriminal(ctx, criminalAddress, criminal.GetCrimeType())
 
-			s.Logger(ctx).Info(fmt.Sprintf("criminal for %s verified: %s - %s", req.PollMeta.ID, criminal.GetPartyUid(), criminal.CrimeType.String()))
+			s.Logger(ctx).Info(fmt.Sprintf("criminal for signature %s verified: %s - %s", req.PollMeta.ID, criminal.GetPartyUid(), criminal.CrimeType.String()))
 		}
 
 		return &types.VoteSigResponse{}, nil

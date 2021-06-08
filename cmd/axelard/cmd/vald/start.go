@@ -1,10 +1,17 @@
 package vald
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+	"os/signal"
 	"path"
+	"path/filepath"
+	"sync"
+	"syscall"
 	"time"
 
+	"github.com/axelarnetwork/tm-events/pkg/pubsub"
 	"github.com/axelarnetwork/tm-events/pkg/tendermint/client"
 	tmEvents "github.com/axelarnetwork/tm-events/pkg/tendermint/events"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
@@ -14,10 +21,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
-	tmos "github.com/tendermint/tendermint/libs/os"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
@@ -35,6 +43,9 @@ import (
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
+var once sync.Once
+var cleanupCommands []func()
+
 // GetValdCommand returns the command to start vald
 func GetValdCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -42,6 +53,27 @@ func GetValdCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			logger := serverCtx.Logger.With("module", "vald")
+
+			// in case of panic we still want to try and cleanup resources,
+			// but we have to make sure it's not called more than once if the program is stopped by an interrupt signal
+			defer once.Do(cleanUp)
+
+			sigs := make(chan os.Signal, 1)
+			signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+			go func() {
+				sig := <-sigs
+				logger.Info(fmt.Sprintf("captured signal \"%s\"", sig))
+				once.Do(cleanUp)
+			}()
+
+			config := serverCtx.Config
+			genFile := config.GenesisFile()
+			appState, _, err := genutiltypes.GenesisStateFromGenFile(genFile)
+			if err != nil {
+				return fmt.Errorf("failed to unmarshal genesis state: %w", err)
+			}
+
 			cliCtx, err := sdkClient.GetClientTxContext(cmd)
 			if err != nil {
 				return err
@@ -50,7 +82,7 @@ func GetValdCommand() *cobra.Command {
 			// dynamically adjust gas limit by simulating the tx first
 			txf := tx.NewFactoryCLI(cliCtx, cmd.Flags()).WithSimulateAndExecute(true)
 
-			hub, err := newHub()
+			hub, err := newHub(logger)
 			if err != nil {
 				return err
 			}
@@ -60,8 +92,24 @@ func GetValdCommand() *cobra.Command {
 				return fmt.Errorf("validator address not set")
 			}
 
+			valdHome := filepath.Join(cliCtx.HomeDir, "vald")
+			if _, err := os.Stat(valdHome); os.IsNotExist(err) {
+				logger.Info(fmt.Sprintf("folder %s does not exist, creating...", valdHome))
+				err := os.Mkdir(valdHome, 0755)
+				if err != nil {
+					return err
+				}
+			}
+
+			fPath := filepath.Join(valdHome, "state.json")
+			f, err := os.OpenFile(fPath, os.O_CREATE|os.O_RDWR, 0755)
+			if err != nil {
+				return err
+			}
+			stateStore := events.NewStateStore(f)
+
 			logger.Info("Start listening to events")
-			listen(cliCtx, hub, txf, axConf, valAddr, logger)
+			listen(cliCtx, appState, hub, txf, axConf, valAddr, stateStore, logger)
 			logger.Info("Shutting down")
 			return nil
 		},
@@ -80,6 +128,12 @@ func GetValdCommand() *cobra.Command {
 	return cmd
 }
 
+func cleanUp() {
+	for _, cmd := range cleanupCommands {
+		cmd()
+	}
+}
+
 func setPersistentFlags(rootCmd *cobra.Command) {
 	rootCmd.PersistentFlags().String("tofnd-host", "", "host name for tss daemon")
 	_ = viper.BindPFlag("tofnd_host", rootCmd.PersistentFlags().Lookup("tofnd-host"))
@@ -94,13 +148,13 @@ func setPersistentFlags(rootCmd *cobra.Command) {
 	_ = viper.BindPFlag(flags.FlagChainID, rootCmd.PersistentFlags().Lookup(flags.FlagChainID))
 }
 
-func newHub() (*tmEvents.Hub, error) {
-	c, err := client.NewClient(client.DefaultAddress, client.DefaultWSEndpoint)
+func newHub(logger log.Logger) (*tmEvents.Hub, error) {
+	c, err := client.NewClient(client.DefaultAddress, client.DefaultWSEndpoint, logger)
 	if err != nil {
 		return nil, err
 	}
 
-	hub := tmEvents.NewHub(c)
+	hub := tmEvents.NewHub(c, logger)
 	return &hub, nil
 }
 
@@ -122,8 +176,10 @@ func loadConfig() (app.Config, string) {
 	return conf, viper.GetString("validator-addr")
 }
 
-func listen(ctx sdkClient.Context, hub *tmEvents.Hub, txf tx.Factory, axelarCfg app.Config, valAddr string, logger log.Logger) {
-	cdc := app.MakeEncodingConfig().Amino
+func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmEvents.Hub, txf tx.Factory, axelarCfg app.Config, valAddr string, store events.StateStore, logger log.Logger) {
+	encCfg := app.MakeEncodingConfig()
+	cdc := encCfg.Amino
+	protoCdc := encCfg.Marshaler
 	sender, err := ctx.Keyring.Key(axelarCfg.BroadcastConfig.From)
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "failed to read broadcaster account info from keyring"))
@@ -132,29 +188,56 @@ func listen(ctx sdkClient.Context, hub *tmEvents.Hub, txf tx.Factory, axelarCfg 
 		WithFromAddress(sender.GetAddress()).
 		WithFromName(sender.GetName())
 
+	tssGenesisState := tssTypes.GetGenesisStateFromAppState(protoCdc, appState)
+
 	broadcaster := createBroadcaster(ctx, txf, axelarCfg, logger)
-	tssMgr := createTSSMgr(broadcaster, ctx.FromAddress, axelarCfg, logger, valAddr, cdc)
+
+	eventMgr := createEventMgr(ctx, store, logger)
+	tssMgr := createTSSMgr(broadcaster, ctx.FromAddress, &tssGenesisState, axelarCfg, logger, valAddr, cdc)
 	btcMgr := createBTCMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
 	ethMgr := createETHMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
 
-	keygenStart := tmEvents.MustSubscribe(hub, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
-	keygenMsg := tmEvents.MustSubscribe(hub, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
-	signStart := tmEvents.MustSubscribe(hub, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueStart)
-	signMsg := tmEvents.MustSubscribe(hub, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
+	// we have two processes listening to block headers
+	blockHeader1 := tmEvents.MustSubscribeNewBlockHeader(hub)
+	blockHeader2 := tmEvents.MustSubscribeNewBlockHeader(hub)
 
-	btcConf := tmEvents.MustSubscribe(hub, btcTypes.EventTypeOutpointConfirmation, btcTypes.ModuleName, btcTypes.AttributeValueStart)
+	keygenStart := tmEvents.MustSubscribeTx(eventMgr, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
+	keygenMsg := tmEvents.MustSubscribeTx(eventMgr, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
+	signStart := tmEvents.MustSubscribeTx(eventMgr, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueStart)
+	signMsg := tmEvents.MustSubscribeTx(eventMgr, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
 
-	ethDepConf := tmEvents.MustSubscribe(hub, evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	ethTokConf := tmEvents.MustSubscribe(hub, evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	btcConf := tmEvents.MustSubscribeTx(eventMgr, btcTypes.EventTypeOutpointConfirmation, btcTypes.ModuleName, btcTypes.AttributeValueStart)
 
+	ethDepConf := tmEvents.MustSubscribeTx(eventMgr, evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	ethTokConf := tmEvents.MustSubscribeTx(eventMgr, evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+
+	// stop the jobs if process gets interrupted/terminated
+	cleanupCommands = append(cleanupCommands, func() {
+		logger.Info("persisting event state...")
+		eventMgr.Shutdown()
+		logger.Info("event state persisted")
+		logger.Info("stopping listening for blocks...")
+		blockHeader1.Close()
+		blockHeader2.Close()
+		logger.Info("block listener stopped")
+	})
+
+	fetchEvents := func(errChan chan<- error) {
+		for err := range eventMgr.FetchEvents() {
+			errChan <- err
+		}
+	}
 	js := []jobs.Job{
+		fetchEvents,
+		events.Consume(blockHeader1, events.OnlyBlockHeight(eventMgr.NotifyNewBlock)),
+		events.Consume(blockHeader2, events.OnlyBlockHeight(tssMgr.ProcessNewBlockHeader)),
 		events.Consume(keygenStart, tssMgr.ProcessKeygenStart),
-		events.Consume(keygenMsg, tssMgr.ProcessKeygenMsg),
+		events.Consume(keygenMsg, events.OnlyAttributes(tssMgr.ProcessKeygenMsg)),
 		events.Consume(signStart, tssMgr.ProcessSignStart),
-		events.Consume(signMsg, tssMgr.ProcessSignMsg),
-		events.Consume(btcConf, btcMgr.ProcessConfirmation),
-		events.Consume(ethDepConf, ethMgr.ProcessDepositConfirmation),
-		events.Consume(ethTokConf, ethMgr.ProcessTokenConfirmation),
+		events.Consume(signMsg, events.OnlyAttributes(tssMgr.ProcessSignMsg)),
+		events.Consume(btcConf, events.OnlyAttributes(btcMgr.ProcessConfirmation)),
+		events.Consume(ethDepConf, events.OnlyAttributes(ethMgr.ProcessDepositConfirmation)),
+		events.Consume(ethTokConf, events.OnlyAttributes(ethMgr.ProcessTokenConfirmation)),
 	}
 
 	// errGroup runs async processes and cancels their context if ANY of them returns an error.
@@ -165,19 +248,53 @@ func listen(ctx sdkClient.Context, hub *tmEvents.Hub, txf tx.Factory, axelarCfg 
 	mgr.Wait()
 }
 
+// Somewhere in the event pipeline abci.Event needs to be converted into an event type FilteredSubscriber understands
+// to decouple event routing from type mapping and to make the conversion explicit, wrappedBus wraps around a given bus to
+// convert incoming events
+type wrappedBus struct {
+	pubsub.Bus
+}
+
+// Publish implements the tmEvents.Publisher interface
+func (b wrappedBus) Publish(event pubsub.Event) error {
+	abciEvent, ok := event.(abci.Event)
+	if !ok {
+		return fmt.Errorf("expected event of type %T, got %T", abci.Event{}, event)
+	}
+	e, ok := tmEvents.ProcessEvent(abciEvent)
+	if !ok {
+		return fmt.Errorf("could not parse event %v", event)
+	}
+	return b.Bus.Publish(e)
+}
+
+func createEventMgr(ctx sdkClient.Context, store events.StateStore, logger log.Logger) *events.Mgr {
+	node, err := ctx.GetNode()
+	if err != nil {
+		panic(err)
+	}
+
+	pubSubFactory := func() pubsub.Bus {
+		return wrappedBus{pubsub.NewBus()}
+	}
+
+	return events.NewMgr(node, store, pubSubFactory, logger)
+}
+
 func createBroadcaster(ctx sdkClient.Context, txf tx.Factory, axelarCfg app.Config, logger log.Logger) bcTypes.Broadcaster {
 	pipeline := broadcast.NewPipelineWithRetry(10000, axelarCfg.MaxRetries, broadcast.LinearBackOff(axelarCfg.MinTimeout), logger)
 	return broadcast.NewBroadcaster(ctx, txf, pipeline, logger)
 }
 
-func createTSSMgr(broadcaster bcTypes.Broadcaster, sender sdk.AccAddress, axelarCfg app.Config, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
+func createTSSMgr(broadcaster bcTypes.Broadcaster, sender sdk.AccAddress, genesisState *tssTypes.GenesisState, axelarCfg app.Config, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
 	create := func() (*tss.Mgr, error) {
 		gg20client, err := tss.CreateTOFNDClient(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, logger)
 		if err != nil {
 			return nil, err
 		}
 
-		tssMgr := tss.NewMgr(gg20client, 2*time.Hour, valAddr, broadcaster, sender, logger, cdc)
+		tssMgr := tss.NewMgr(gg20client, 2*time.Hour, valAddr, broadcaster, sender, genesisState.Params.TimeoutInBlocks, logger, cdc)
+
 		return tssMgr, nil
 	}
 	mgr, err := create()
@@ -194,7 +311,7 @@ func createBTCMgr(axelarCfg app.Config, b bcTypes.Broadcaster, sender sdk.AccAdd
 		panic(err)
 	}
 	// clean up btcRPC connection on process shutdown
-	tmos.TrapSignal(logger, rpc.Shutdown)
+	cleanupCommands = append(cleanupCommands, rpc.Shutdown)
 
 	btcMgr := btc.NewMgr(rpc, b, sender, logger, cdc)
 	return btcMgr
@@ -207,7 +324,7 @@ func createETHMgr(axelarCfg app.Config, b bcTypes.Broadcaster, sender sdk.AccAdd
 		panic(err)
 	}
 	// clean up ethRPC connection on process shutdown
-	tmos.TrapSignal(logger, rpc.Close)
+	cleanupCommands = append(cleanupCommands, rpc.Close)
 
 	ethMgr := eth.NewMgr(rpc, b, sender, logger, cdc)
 	return ethMgr

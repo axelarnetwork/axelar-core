@@ -3,7 +3,7 @@
 Add a new EVM chain
 
 ```
-axelard tx evm add-chain [chain] [name] [native asset] [flags]
+axelard tx evm add-chain [name] [native asset] [flags]
 ```
 
 ### Options
