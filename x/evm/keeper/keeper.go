@@ -401,7 +401,7 @@ func (k Keeper) getSigner(ctx sdk.Context, chain string) ethTypes.EIP155Signer {
 	var network string
 	subspace, _ := k.getSubspace(ctx, chain)
 	subspace.Get(ctx, types.KeyNetwork, &network)
-	return ethTypes.NewEIP155Signer(k.GetChainIDByName(ctx, chain, network))
+	return ethTypes.NewEIP155Signer(k.GetChainIDByNetwork(ctx, chain, network))
 }
 
 // DeletePendingToken deletes the token associated with the given poll
@@ -513,8 +513,8 @@ func (k Keeper) GetNetworkByID(ctx sdk.Context, chain string, id *big.Int) (stri
 	return "", false
 }
 
-// GetChainIDByName returns the network name for a given chain and network name
-func (k Keeper) GetChainIDByName(ctx sdk.Context, chain, network string) *big.Int {
+// GetChainIDByNetwork returns the network name for a given chain and network name
+func (k Keeper) GetChainIDByNetwork(ctx sdk.Context, chain, network string) *big.Int {
 	if network == "" {
 		return nil
 	}

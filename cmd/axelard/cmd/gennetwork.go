@@ -104,44 +104,48 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 					defaults := evmTypes.DefaultParams()
 					params, _ = findEVMChain(defaults, evm.Ethereum.Name)
 					params.Chain = evmChainName
-					params.Network = "mainnet"
-					params.Networks = []evmTypes.NetworkInfo{{Name: "mainnet", Id: sdk.NewInt(1)}}
+					params.Network = ""
+					params.Networks = []evmTypes.NetworkInfo{}
 					genesisState.Params = append(genesisState.Params, params)
 					index = len(genesisState.Params) - 1
 				}
 
-				if evmNetworkName != "" && evmChainID != "" {
-					id, ok := sdk.NewIntFromString(evmChainID)
-					if !ok {
-						return fmt.Errorf("chain ID must be an integer")
-					}
-
-					i := findEVMNetwork(genesisState.Params[index].Networks, evmNetworkName)
-					if i < 0 {
-						genesisState.Params[index].Networks =
-							append(genesisState.Params[index].Networks,
-								evmTypes.NetworkInfo{Name: evmNetworkName, Id: id})
-					} else {
-						genesisState.Params[index].Networks[i].Id = id
-					}
+				if evmNetworkName == "" || evmChainID == "" {
+					return fmt.Errorf("flags %s and %s must be used together", flagEVMNetworkName, flagEVMChainID)
 
 				}
 
-				if expectedNetwork != "" {
-					found := false
-					for _, network := range params.Networks {
-						if network.Name == expectedNetwork {
-							found = true
-							break
-						}
-					}
-
-					if !found {
-						return fmt.Errorf("unable to find network %s", expectedNetwork)
-					}
-
-					genesisState.Params[index].Network = expectedNetwork
+				id, ok := sdk.NewIntFromString(evmChainID)
+				if !ok {
+					return fmt.Errorf("chain ID must be an integer")
 				}
+
+				i := findEVMNetwork(genesisState.Params[index].Networks, evmNetworkName)
+				if i < 0 {
+					genesisState.Params[index].Networks =
+						append(genesisState.Params[index].Networks,
+							evmTypes.NetworkInfo{Name: evmNetworkName, Id: id})
+				} else {
+					genesisState.Params[index].Networks[i].Id = id
+				}
+
+				if expectedNetwork == "" {
+					return fmt.Errorf("flags %s must be specified", flagNetwork)
+
+				}
+				found := false
+				for _, network := range params.Networks {
+					if network.Name == expectedNetwork {
+						found = true
+						break
+					}
+				}
+
+				if !found {
+					return fmt.Errorf("unable to find network %s", expectedNetwork)
+				}
+
+				genesisState.Params[index].Network = expectedNetwork
 
 				if confirmationHeight > 0 {
 					genesisState.Params[index].ConfirmationHeight = confirmationHeight
@@ -171,8 +175,8 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 	cmd.Flags().StringVar(&expectedNetwork, flagNetwork, "", "Name of the network to set for the given chain.")
 	cmd.Flags().Uint64Var(&confirmationHeight, flagConfHeight, 0, "Confirmation height to set for the given chain.")
 	cmd.Flags().StringVar(&evmChainName, flagEVMChainName, "", "Chain name (EVM only, required).")
-	cmd.Flags().StringVar(&evmNetworkName, flagEVMNetworkName, "", "Network name (EVM only).")
-	cmd.Flags().StringVar(&evmChainID, flagEVMChainID, "", "Integer representing the chain ID (EVM only).")
+	cmd.Flags().StringVar(&evmNetworkName, flagEVMNetworkName, "", "Network name (EVM only, required).")
+	cmd.Flags().StringVar(&evmChainID, flagEVMChainID, "", "Integer representing the chain ID (EVM only, required).")
 
 	return cmd
 }

@@ -857,7 +857,7 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 func (s msgServer) getChainID(ctx sdk.Context, chain string) (chainID *big.Int) {
 	for _, p := range s.GetParams(ctx) {
 		if strings.ToLower(p.Chain) == strings.ToLower(chain) {
-			chainID = s.GetChainIDByName(ctx, chain, p.Network)
+			chainID = s.GetChainIDByNetwork(ctx, chain, p.Network)
 		}
 	}
 
