@@ -20,16 +20,16 @@ import (
 
 // rest routes
 const (
-	TxConfirmChain       = "confirm-chain"
-	TxLink               = "link"
-	TxConfirmTokenDeploy = "confirm-erc20-deploy"
-	TxConfirmDeposit     = "confirm-erc20-deposit"
-	TxSignTx             = "sign-tx"
-	TxSignPending        = "sign-pending"
-	TxSignDeployToken    = "sign-deploy-token"
-	TxSignBurnTokens     = "sign-burn"
-	TxAddChain           = "add-chain"
-	TxTransferOwnership  = "transfer-ownership"
+	TxConfirmChain          = "confirm-chain"
+	TxLink                  = "link"
+	TxConfirmTokenDeploy    = "confirm-erc20-deploy"
+	TxConfirmDeposit        = "confirm-erc20-deposit"
+	TxSignTx                = "sign-tx"
+	TxSignPending           = "sign-pending"
+	TxSignDeployToken       = "sign-deploy-token"
+	TxSignBurnTokens        = "sign-burn"
+	TxSignTransferOwnership = "sign-transfer-ownership"
+	TxAddChain              = "add-chain"
 
 	QueryMasterAddress        = keeper.QueryMasterAddress
 	QueryAxelarGatewayAddress = keeper.QueryAxelarGatewayAddress
@@ -49,9 +49,10 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(GetHandlerSignPendingTransfers(cliCtx), TxSignPending, clientUtils.PathVarChain)
 	registerTx(GetHandlerSignDeployToken(cliCtx), TxSignDeployToken, clientUtils.PathVarChain, clientUtils.PathVarSymbol)
 	registerTx(GetHandlerSignBurnTokens(cliCtx), TxSignBurnTokens, clientUtils.PathVarChain)
+	registerTx(GetHandlerSignTransferOwnership(cliCtx), TxSignTransferOwnership, clientUtils.PathVarChain)
 	registerTx(GetHandlerConfirmChain(cliCtx), TxConfirmChain)
 	registerTx(GetHandlerAddChain(cliCtx), TxAddChain)
-	registerTx(GetHandlerSignTransferOwnership(cliCtx), TxTransferOwnership, clientUtils.PathVarChain)
+
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
 	registerQuery(GetHandlerQueryMasterAddress(cliCtx), QueryMasterAddress, clientUtils.PathVarChain)
