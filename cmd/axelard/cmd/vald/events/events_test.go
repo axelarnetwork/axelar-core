@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/axelarnetwork/tm-events/pkg/pubsub"
+	"github.com/axelarnetwork/tm-events/pkg/tendermint/events"
+	tmTypes "github.com/axelarnetwork/tm-events/pkg/tendermint/types"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -110,7 +112,7 @@ func TestMgr_Subscribe(t *testing.T) {
 	var (
 		mgr            *Mgr
 		client         *mock.SignClientMock
-		expectedEvents []abci.Event
+		expectedEvents []tmTypes.Event
 		rwc            *mock.ReadWriteSeekTruncateCloserMock
 		query          *mock.QueryMock
 	)
@@ -125,7 +127,12 @@ func TestMgr_Subscribe(t *testing.T) {
 
 				expectedEvents = nil
 				for _, tx := range result.TxsResults {
-					expectedEvents = append(expectedEvents, tx.Events...)
+					for _, event := range tx.Events {
+						e, ok := events.ProcessEvent(event)
+						e.Height = result.Height
+						assert.True(t, ok)
+						expectedEvents = append(expectedEvents, e)
+					}
 				}
 				return result, nil
 			},
@@ -191,9 +198,9 @@ func TestMgr_Subscribe(t *testing.T) {
 		// closes channels so we can test deterministically
 		mgr.Shutdown()
 
-		var actualEvents []abci.Event
+		var actualEvents []tmTypes.Event
 		for e := range sub.Events() {
-			actualEvents = append(actualEvents, e.(abci.Event))
+			actualEvents = append(actualEvents, e.(tmTypes.Event))
 		}
 
 		assert.Equal(t, expectedEvents, actualEvents)
@@ -229,11 +236,11 @@ func TestMgr_Subscribe(t *testing.T) {
 		completed := rand.I64Between(0, 10000)
 		setup(completed)
 		mockedResults := client.BlockResultsFunc
-		expectedResult := make(chan []*abci.ResponseDeliverTx, 1)
+		expectedResult := make(chan *coretypes.ResultBlockResults, 1)
 		client.BlockResultsFunc = func(ctx context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
 			res, err := mockedResults(ctx, height)
 			assert.NoError(t, err)
-			expectedResult <- res.TxsResults
+			expectedResult <- res
 			return res, err
 		}
 
@@ -252,21 +259,26 @@ func TestMgr_Subscribe(t *testing.T) {
 		mgr.NotifyNewBlock(completed + 1)
 
 		filteredCount := 0
-		var expectedEventsFiltered []abci.Event
-		txs := <-expectedResult
-		for _, tx := range txs {
+		var expectedEventsFiltered []tmTypes.Event
+		res := <-expectedResult
+		for _, tx := range res.TxsResults {
 			filteredCount++
 			if filteredCount%n == 0 {
-				expectedEventsFiltered = append(expectedEventsFiltered, tx.Events...)
+				for _, event := range tx.Events {
+					e, ok := events.ProcessEvent(event)
+					assert.True(t, ok)
+					e.Height = res.Height
+					expectedEventsFiltered = append(expectedEventsFiltered, e)
+				}
 			}
 		}
 
 		// closes channels so we can test deterministically
 		mgr.Shutdown()
 
-		var actualEvents []abci.Event
+		var actualEvents []tmTypes.Event
 		for e := range sub.Events() {
-			actualEvents = append(actualEvents, e.(abci.Event))
+			actualEvents = append(actualEvents, e.(tmTypes.Event))
 		}
 		assert.Equal(t, expectedEventsFiltered, actualEvents)
 	}).Repeat(repeats))
@@ -303,9 +315,9 @@ func TestMgr_Subscribe(t *testing.T) {
 		// closes channels so we can test deterministically
 		mgr.Shutdown()
 
-		var actualEvents []abci.Event
+		var actualEvents []tmTypes.Event
 		for e := range sub.Events() {
-			actualEvents = append(actualEvents, e.(abci.Event))
+			actualEvents = append(actualEvents, e.(tmTypes.Event))
 		}
 
 		assert.Equal(t, expectedEvents, actualEvents)
