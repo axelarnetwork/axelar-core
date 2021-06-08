@@ -104,6 +104,8 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 					defaults := evmTypes.DefaultParams()
 					params, _ = findEVMChain(defaults, evm.Ethereum.Name)
 					params.Chain = evmChainName
+					params.Network = "mainnet"
+					params.Networks = []evmTypes.NetworkInfo{{Name: "mainnet", Id: sdk.NewInt(1)}}
 					genesisState.Params = append(genesisState.Params, params)
 					index = len(genesisState.Params) - 1
 				}
