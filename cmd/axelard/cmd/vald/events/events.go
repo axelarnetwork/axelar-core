@@ -247,7 +247,12 @@ func (m *Mgr) publishEvents(block *coretypes.ResultBlockResults) error {
 			}
 
 			for _, event := range txRes.Events {
-				err := subscription.Publish(event)
+				e, ok := events.ProcessEvent(event)
+				if !ok {
+					return fmt.Errorf("could not parse event %v", event)
+				}
+				e.Height = block.Height
+				err := subscription.Publish(e)
 				if err != nil {
 					return err
 				}
