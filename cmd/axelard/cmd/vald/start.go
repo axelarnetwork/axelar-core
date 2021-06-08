@@ -25,7 +25,6 @@ import (
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/app"
@@ -249,37 +248,13 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 	mgr.Wait()
 }
 
-// Somewhere in the event pipeline abci.Event needs to be converted into an event type FilteredSubscriber understands
-// to decouple event routing from type mapping and to make the conversion explicit, wrappedBus wraps around a given bus to
-// convert incoming events
-type wrappedBus struct {
-	pubsub.Bus
-}
-
-// Publish implements the tmEvents.Publisher interface
-func (b wrappedBus) Publish(event pubsub.Event) error {
-	abciEvent, ok := event.(abci.Event)
-	if !ok {
-		return fmt.Errorf("expected event of type %T, got %T", abci.Event{}, event)
-	}
-	e, ok := tmEvents.ProcessEvent(abciEvent)
-	if !ok {
-		return fmt.Errorf("could not parse event %v", event)
-	}
-	return b.Bus.Publish(e)
-}
-
 func createEventMgr(ctx sdkClient.Context, store events.StateStore, logger log.Logger) *events.Mgr {
 	node, err := ctx.GetNode()
 	if err != nil {
 		panic(err)
 	}
 
-	pubSubFactory := func() pubsub.Bus {
-		return wrappedBus{pubsub.NewBus()}
-	}
-
-	return events.NewMgr(node, store, pubSubFactory, logger)
+	return events.NewMgr(node, store, pubsub.NewBus, logger)
 }
 
 func createBroadcaster(ctx sdkClient.Context, txf tx.Factory, axelarCfg app.Config, logger log.Logger) bcTypes.Broadcaster {
