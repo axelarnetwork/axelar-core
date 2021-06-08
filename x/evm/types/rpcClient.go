@@ -130,7 +130,7 @@ func (d dummyClient) SuggestGasPrice(context.Context) (*big.Int, error) {
 
 // ChainID implements RPCClient
 func (d dummyClient) ChainID(context.Context) (*big.Int, error) {
-	return DefaultParams()[0].Network.Params().ChainID, nil
+	return big.NewInt(1), nil
 }
 
 // EstimateGas implements RPCClient

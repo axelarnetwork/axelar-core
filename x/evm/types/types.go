@@ -13,7 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/params"
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -50,16 +49,6 @@ const (
 	axelarGatewayCommandBurnToken         = "burnToken"
 	axelarGatewayCommandTransferOwnership = "transferOwnership"
 	axelarGatewayFuncExecute              = "execute"
-)
-
-var (
-	networksByID = map[int64]Network{
-		params.MainnetChainConfig.ChainID.Int64():       Mainnet,
-		params.RopstenChainConfig.ChainID.Int64():       Ropsten,
-		params.RinkebyChainConfig.ChainID.Int64():       Rinkeby,
-		params.GoerliChainConfig.ChainID.Int64():        Goerli,
-		params.AllCliqueProtocolChanges.ChainID.Int64(): Ganache,
-	}
 )
 
 // Address wraps ethereum Address
@@ -148,66 +137,6 @@ func (h *Hash) Unmarshal(data []byte) error {
 // Size implements codec.ProtoMarshaler
 func (h Hash) Size() int {
 	return common.HashLength
-}
-
-// Network provides additional functionality based on the ethereum network name
-type Network string
-
-// NetworkFromStr returns network given string
-func NetworkFromStr(net string) (Network, error) {
-	switch net {
-	case "main":
-		return Mainnet, nil
-	case "ropsten":
-		return Ropsten, nil
-	case "rinkeby":
-		return Rinkeby, nil
-	case "goerli":
-		return Goerli, nil
-	case "ganache":
-		return Ganache, nil
-	default:
-		return "", fmt.Errorf("unknown network: %s", net)
-	}
-}
-
-// NetworkByID looks up the Ethereum network corresponding to the given chain ID
-func NetworkByID(id *big.Int) Network {
-	return networksByID[id.Int64()]
-}
-
-// Validate checks if the object is a valid network
-func (n Network) Validate() error {
-	switch string(n) {
-	case Mainnet, Ropsten, Rinkeby, Goerli, Ganache:
-		return nil
-	default:
-		return fmt.Errorf("network could not be parsed, choose %s, %s, %s, %s or %s",
-			Mainnet,
-			Ropsten,
-			Rinkeby,
-			Goerli,
-			Ganache,
-		)
-	}
-}
-
-// Params returns the configuration parameters associated with the network
-func (n Network) Params() *params.ChainConfig {
-	switch string(n) {
-	case Mainnet:
-		return params.MainnetChainConfig
-	case Ropsten:
-		return params.RopstenChainConfig
-	case Rinkeby:
-		return params.RinkebyChainConfig
-	case Goerli:
-		return params.GoerliChainConfig
-	case Ganache:
-		return params.AllCliqueProtocolChanges
-	default:
-		return nil
-	}
 }
 
 // Signature encodes the parameters R,S,V in the byte format expected by Ethereum

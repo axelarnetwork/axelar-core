@@ -13,6 +13,7 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	ethParams "github.com/ethereum/go-ethereum/params"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -30,16 +31,14 @@ import (
 	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 )
 
-const (
-	network = types.Network(types.Rinkeby)
-)
-
 var (
-	evmChain  = exported.Ethereum.Name
-	bytecodes = common.FromHex(MymintableBin)
-	tokenBC   = rand.Bytes(64)
-	burnerBC  = rand.Bytes(64)
-	gateway   = "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7"
+	evmChain    = exported.Ethereum.Name
+	network     = types.Rinkeby
+	networkConf = ethParams.RinkebyChainConfig
+	bytecodes   = common.FromHex(MymintableBin)
+	tokenBC     = rand.Bytes(64)
+	burnerBC    = rand.Bytes(64)
+	gateway     = "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7"
 )
 
 func TestLink_UnknownChain(t *testing.T) {
@@ -226,13 +225,13 @@ func TestDeployTx_DifferentValue_DifferentHash(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	tx1, err = ethTypes.SignTx(tx1, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	tx1, err = ethTypes.SignTx(tx1, ethTypes.NewEIP155Signer(networkConf.ChainID), privateKey)
 	if err != nil {
 		panic(err)
 	}
 	newValue := big.NewInt(rand.I64Between(1, 10000))
 	tx2 := sign(ethTypes.NewContractCreation(tx1.Nonce(), newValue, tx1.Gas(), tx1.GasPrice(), tx1.Data()))
-	tx2, err = ethTypes.SignTx(tx2, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	tx2, err = ethTypes.SignTx(tx2, ethTypes.NewEIP155Signer(networkConf.ChainID), privateKey)
 	if err != nil {
 		panic(err)
 	}
@@ -245,13 +244,13 @@ func TestDeployTx_DifferentData_DifferentHash(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	tx1, err = ethTypes.SignTx(tx1, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	tx1, err = ethTypes.SignTx(tx1, ethTypes.NewEIP155Signer(networkConf.ChainID), privateKey)
 	if err != nil {
 		panic(err)
 	}
 	newData := rand.Bytes(int(rand.I64Between(1, 10000)))
 	tx2 := sign(ethTypes.NewContractCreation(tx1.Nonce(), tx1.Value(), tx1.Gas(), tx1.GasPrice(), newData))
-	tx2, err = ethTypes.SignTx(tx2, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	tx2, err = ethTypes.SignTx(tx2, ethTypes.NewEIP155Signer(networkConf.ChainID), privateKey)
 	if err != nil {
 		panic(err)
 	}
@@ -264,13 +263,13 @@ func TestMintTx_DifferentValue_DifferentHash(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	tx1, err = ethTypes.SignTx(tx1, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	tx1, err = ethTypes.SignTx(tx1, ethTypes.NewEIP155Signer(networkConf.ChainID), privateKey)
 	if err != nil {
 		panic(err)
 	}
 	newValue := big.NewInt(rand.I64Between(1, 10000))
 	tx2 := sign(ethTypes.NewTransaction(tx1.Nonce(), *tx1.To(), newValue, tx1.Gas(), tx1.GasPrice(), tx1.Data()))
-	tx2, err = ethTypes.SignTx(tx2, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	tx2, err = ethTypes.SignTx(tx2, ethTypes.NewEIP155Signer(networkConf.ChainID), privateKey)
 	if err != nil {
 		panic(err)
 	}
@@ -283,13 +282,13 @@ func TestMintTx_DifferentData_DifferentHash(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	tx1, err = ethTypes.SignTx(tx1, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	tx1, err = ethTypes.SignTx(tx1, ethTypes.NewEIP155Signer(networkConf.ChainID), privateKey)
 	if err != nil {
 		panic(err)
 	}
 	newData := rand.Bytes(int(rand.I64Between(1, 10000)))
 	tx2 := sign(ethTypes.NewTransaction(tx1.Nonce(), *tx1.To(), tx1.Value(), tx1.Gas(), tx1.GasPrice(), newData))
-	tx2, err = ethTypes.SignTx(tx2, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	tx2, err = ethTypes.SignTx(tx2, ethTypes.NewEIP155Signer(networkConf.ChainID), privateKey)
 	if err != nil {
 		panic(err)
 	}
@@ -302,13 +301,13 @@ func TestMintTx_DifferentRecipient_DifferentHash(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	tx1, err = ethTypes.SignTx(tx1, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	tx1, err = ethTypes.SignTx(tx1, ethTypes.NewEIP155Signer(networkConf.ChainID), privateKey)
 	if err != nil {
 		panic(err)
 	}
 	newTo := common.BytesToAddress(rand.Bytes(common.AddressLength))
 	tx2 := sign(ethTypes.NewTransaction(tx1.Nonce(), newTo, tx1.Value(), tx1.Gas(), tx1.GasPrice(), tx1.Data()))
-	tx2, err = ethTypes.SignTx(tx2, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	tx2, err = ethTypes.SignTx(tx2, ethTypes.NewEIP155Signer(networkConf.ChainID), privateKey)
 	if err != nil {
 		panic(err)
 	}
@@ -772,7 +771,7 @@ func sign(tx *ethTypes.Transaction) *ethTypes.Transaction {
 	if err != nil {
 		panic(err)
 	}
-	signedTx, err := ethTypes.SignTx(tx, ethTypes.NewEIP155Signer(network.Params().ChainID), privateKey)
+	signedTx, err := ethTypes.SignTx(tx, ethTypes.NewEIP155Signer(networkConf.ChainID), privateKey)
 	if err != nil {
 		panic(err)
 	}

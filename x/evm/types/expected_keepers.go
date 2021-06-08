@@ -1,6 +1,8 @@
 package types
 
 import (
+	"math/big"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -21,7 +23,7 @@ type EthKeeper interface {
 
 	GetParams(ctx sdk.Context) []Params
 	SetParams(ctx sdk.Context, params []Params)
-	GetNetwork(ctx sdk.Context, chain string) (Network, bool)
+	GetNetwork(ctx sdk.Context, chain string) (string, bool)
 	GetRequiredConfirmationHeight(ctx sdk.Context, chain string) (uint64, bool)
 	GetRevoteLockingPeriod(ctx sdk.Context, chain string) (int64, bool)
 	GetGatewayByteCodes(ctx sdk.Context, chain string) ([]byte, bool)
@@ -49,6 +51,8 @@ type EthKeeper interface {
 	DeletePendingChain(ctx sdk.Context, chain string)
 	SetPendingChain(ctx sdk.Context, chain string, nativeAsset string)
 	GetPendingChainAsset(ctx sdk.Context, chain string) (bool, string)
+	GetNetworkByID(ctx sdk.Context, chain string, id *big.Int) (string, bool)
+	GetChainIDByName(ctx sdk.Context, chain, network string) *big.Int
 }
 
 // ParamsKeeper represents a global paramstore

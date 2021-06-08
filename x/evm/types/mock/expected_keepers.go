@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/tendermint/tendermint/libs/log"
+	"math/big"
 	"sync"
 )
 
@@ -1263,6 +1264,9 @@ var _ types.EthKeeper = &EthKeeperMock{}
 // 			GetBurnerInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, address common.Address) *types.BurnerInfo {
 // 				panic("mock out the GetBurnerInfo method")
 // 			},
+// 			GetChainIDByNameFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, network string) *big.Int {
+// 				panic("mock out the GetChainIDByName method")
+// 			},
 // 			GetConfirmedDepositsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) []types.ERC20Deposit {
 // 				panic("mock out the GetConfirmedDeposits method")
 // 			},
@@ -1278,8 +1282,11 @@ var _ types.EthKeeper = &EthKeeperMock{}
 // 			GetHashToSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, txID string) (common.Hash, error) {
 // 				panic("mock out the GetHashToSign method")
 // 			},
-// 			GetNetworkFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (types.Network, bool) {
+// 			GetNetworkFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (string, bool) {
 // 				panic("mock out the GetNetwork method")
+// 			},
+// 			GetNetworkByIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, id *big.Int) (string, bool) {
+// 				panic("mock out the GetNetworkByID method")
 // 			},
 // 			GetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.Params {
 // 				panic("mock out the GetParams method")
@@ -1360,6 +1367,9 @@ type EthKeeperMock struct {
 	// GetBurnerInfoFunc mocks the GetBurnerInfo method.
 	GetBurnerInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, address common.Address) *types.BurnerInfo
 
+	// GetChainIDByNameFunc mocks the GetChainIDByName method.
+	GetChainIDByNameFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, network string) *big.Int
+
 	// GetConfirmedDepositsFunc mocks the GetConfirmedDeposits method.
 	GetConfirmedDepositsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) []types.ERC20Deposit
 
@@ -1376,7 +1386,10 @@ type EthKeeperMock struct {
 	GetHashToSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, txID string) (common.Hash, error)
 
 	// GetNetworkFunc mocks the GetNetwork method.
-	GetNetworkFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (types.Network, bool)
+	GetNetworkFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (string, bool)
+
+	// GetNetworkByIDFunc mocks the GetNetworkByID method.
+	GetNetworkByIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, id *big.Int) (string, bool)
 
 	// GetParamsFunc mocks the GetParams method.
 	GetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.Params
@@ -1490,6 +1503,15 @@ type EthKeeperMock struct {
 			// Address is the address argument value.
 			Address common.Address
 		}
+		// GetChainIDByName holds details about calls to the GetChainIDByName method.
+		GetChainIDByName []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain string
+			// Network is the network argument value.
+			Network string
+		}
 		// GetConfirmedDeposits holds details about calls to the GetConfirmedDeposits method.
 		GetConfirmedDeposits []struct {
 			// Ctx is the ctx argument value.
@@ -1537,6 +1559,15 @@ type EthKeeperMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
 			Chain string
+		}
+		// GetNetworkByID holds details about calls to the GetNetworkByID method.
+		GetNetworkByID []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain string
+			// ID is the id argument value.
+			ID *big.Int
 		}
 		// GetParams holds details about calls to the GetParams method.
 		GetParams []struct {
@@ -1705,12 +1736,14 @@ type EthKeeperMock struct {
 	lockDeletePendingToken            sync.RWMutex
 	lockGetBurnerAddressAndSalt       sync.RWMutex
 	lockGetBurnerInfo                 sync.RWMutex
+	lockGetChainIDByName              sync.RWMutex
 	lockGetConfirmedDeposits          sync.RWMutex
 	lockGetDeposit                    sync.RWMutex
 	lockGetGatewayAddress             sync.RWMutex
 	lockGetGatewayByteCodes           sync.RWMutex
 	lockGetHashToSign                 sync.RWMutex
 	lockGetNetwork                    sync.RWMutex
+	lockGetNetworkByID                sync.RWMutex
 	lockGetParams                     sync.RWMutex
 	lockGetPendingChainAsset          sync.RWMutex
 	lockGetPendingDeposit             sync.RWMutex
@@ -1969,6 +2002,45 @@ func (mock *EthKeeperMock) GetBurnerInfoCalls() []struct {
 	return calls
 }
 
+// GetChainIDByName calls GetChainIDByNameFunc.
+func (mock *EthKeeperMock) GetChainIDByName(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, network string) *big.Int {
+	if mock.GetChainIDByNameFunc == nil {
+		panic("EthKeeperMock.GetChainIDByNameFunc: method is nil but EthKeeper.GetChainIDByName was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Chain   string
+		Network string
+	}{
+		Ctx:     ctx,
+		Chain:   chain,
+		Network: network,
+	}
+	mock.lockGetChainIDByName.Lock()
+	mock.calls.GetChainIDByName = append(mock.calls.GetChainIDByName, callInfo)
+	mock.lockGetChainIDByName.Unlock()
+	return mock.GetChainIDByNameFunc(ctx, chain, network)
+}
+
+// GetChainIDByNameCalls gets all the calls that were made to GetChainIDByName.
+// Check the length with:
+//     len(mockedEthKeeper.GetChainIDByNameCalls())
+func (mock *EthKeeperMock) GetChainIDByNameCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	Chain   string
+	Network string
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Chain   string
+		Network string
+	}
+	mock.lockGetChainIDByName.RLock()
+	calls = mock.calls.GetChainIDByName
+	mock.lockGetChainIDByName.RUnlock()
+	return calls
+}
+
 // GetConfirmedDeposits calls GetConfirmedDepositsFunc.
 func (mock *EthKeeperMock) GetConfirmedDeposits(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) []types.ERC20Deposit {
 	if mock.GetConfirmedDepositsFunc == nil {
@@ -2157,7 +2229,7 @@ func (mock *EthKeeperMock) GetHashToSignCalls() []struct {
 }
 
 // GetNetwork calls GetNetworkFunc.
-func (mock *EthKeeperMock) GetNetwork(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (types.Network, bool) {
+func (mock *EthKeeperMock) GetNetwork(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (string, bool) {
 	if mock.GetNetworkFunc == nil {
 		panic("EthKeeperMock.GetNetworkFunc: method is nil but EthKeeper.GetNetwork was just called")
 	}
@@ -2188,6 +2260,45 @@ func (mock *EthKeeperMock) GetNetworkCalls() []struct {
 	mock.lockGetNetwork.RLock()
 	calls = mock.calls.GetNetwork
 	mock.lockGetNetwork.RUnlock()
+	return calls
+}
+
+// GetNetworkByID calls GetNetworkByIDFunc.
+func (mock *EthKeeperMock) GetNetworkByID(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, id *big.Int) (string, bool) {
+	if mock.GetNetworkByIDFunc == nil {
+		panic("EthKeeperMock.GetNetworkByIDFunc: method is nil but EthKeeper.GetNetworkByID was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain string
+		ID    *big.Int
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+		ID:    id,
+	}
+	mock.lockGetNetworkByID.Lock()
+	mock.calls.GetNetworkByID = append(mock.calls.GetNetworkByID, callInfo)
+	mock.lockGetNetworkByID.Unlock()
+	return mock.GetNetworkByIDFunc(ctx, chain, id)
+}
+
+// GetNetworkByIDCalls gets all the calls that were made to GetNetworkByID.
+// Check the length with:
+//     len(mockedEthKeeper.GetNetworkByIDCalls())
+func (mock *EthKeeperMock) GetNetworkByIDCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain string
+	ID    *big.Int
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain string
+		ID    *big.Int
+	}
+	mock.lockGetNetworkByID.RLock()
+	calls = mock.calls.GetNetworkByID
+	mock.lockGetNetworkByID.RUnlock()
 	return calls
 }
 

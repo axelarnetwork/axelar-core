@@ -3,6 +3,7 @@ package keeper
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"math/big"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -89,8 +90,8 @@ func (k Keeper) GetParams(ctx sdk.Context) []types.Params {
 }
 
 // GetNetwork returns the Ethereum network Axelar-Core is expected to connect to
-func (k Keeper) GetNetwork(ctx sdk.Context, chain string) (types.Network, bool) {
-	var network types.Network
+func (k Keeper) GetNetwork(ctx sdk.Context, chain string) (string, bool) {
+	var network string
 	subspace, ok := k.getSubspace(ctx, chain)
 	if !ok {
 		return network, false
@@ -396,10 +397,10 @@ func (k Keeper) GetHashToSign(ctx sdk.Context, chain, txID string) (common.Hash,
 }
 
 func (k Keeper) getSigner(ctx sdk.Context, chain string) ethTypes.EIP155Signer {
-	var network types.Network
+	var network string
 	subspace, _ := k.getSubspace(ctx, chain)
 	subspace.Get(ctx, types.KeyNetwork, &network)
-	return ethTypes.NewEIP155Signer(network.Params().ChainID)
+	return ethTypes.NewEIP155Signer(k.GetChainIDByName(ctx, chain, network))
 }
 
 // DeletePendingToken deletes the token associated with the given poll
@@ -474,6 +475,48 @@ func (k Keeper) SetDeposit(ctx sdk.Context, chain string, deposit types.ERC20Dep
 func (k Keeper) DeleteDeposit(ctx sdk.Context, chain string, deposit types.ERC20Deposit) {
 	k.getStore(ctx, chain).Delete([]byte(confirmedDepositPrefix + deposit.TxID.Hex() + "_" + deposit.BurnerAddress.Hex()))
 	k.getStore(ctx, chain).Delete([]byte(burnedDepositPrefix + deposit.TxID.Hex() + "_" + deposit.BurnerAddress.Hex()))
+}
+
+// GetNetworkByID returns the network name for a given chain and network ID
+func (k Keeper) GetNetworkByID(ctx sdk.Context, chain string, id *big.Int) (string, bool) {
+	if id == nil {
+		return "", false
+	}
+	subspace, ok := k.getSubspace(ctx, chain)
+	if !ok {
+		return "", false
+	}
+
+	var p types.Params
+	subspace.GetParamSet(ctx, &p)
+	for _, n := range p.Networks {
+		if n.Id.BigInt().Cmp(id) == 0 {
+			return n.Name, true
+		}
+	}
+
+	return "", false
+}
+
+// GetChainIDByName returns the network name for a given chain and network name
+func (k Keeper) GetChainIDByName(ctx sdk.Context, chain, network string) *big.Int {
+	if network == "" {
+		return nil
+	}
+	subspace, ok := k.getSubspace(ctx, chain)
+	if !ok {
+		return nil
+	}
+
+	var p types.Params
+	subspace.GetParamSet(ctx, &p)
+	for _, n := range p.Networks {
+		if n.Name == network {
+			return n.Id.BigInt()
+		}
+	}
+
+	return nil
 }
 
 func (k Keeper) getStore(ctx sdk.Context, chain string) prefix.Store {

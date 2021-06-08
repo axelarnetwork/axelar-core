@@ -84,13 +84,22 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 				moduleName = evmTypes.ModuleName
 
 				if networkStr != "" {
-					network, err := evmTypes.NetworkFromStr(networkStr)
-					if err != nil {
-						return err
+
+					found := false
+					//TODO:  Currently assuming a single element in the Params slice. We need to generalize for more EVM chains.
+					for _, network := range genesisState.Params[0].Networks {
+						if network.Name == networkStr {
+							found = true
+							break
+						}
+					}
+
+					if !found {
+						return fmt.Errorf("unable to find network %s", networkStr)
 					}
 
 					//TODO:  Currently assuming a single element in the Params slice. We need to generalize for more EVM chains.
-					genesisState.Params[0].Network = network
+					genesisState.Params[0].Network = networkStr
 				}
 
 				if confirmationHeight > 0 {
