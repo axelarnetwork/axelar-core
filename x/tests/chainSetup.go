@@ -28,7 +28,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	eth2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/eth"
+	eth2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	broadcastKeeper "github.com/axelarnetwork/axelar-core/x/broadcast/keeper"
@@ -447,7 +447,7 @@ func registerWaitEventListeners(n nodeData) listeners {
 				attributes[sdk.AttributeKeyAction] == btcTypes.AttributeValueReject)
 	})
 
-	// register eth listener for confirmation
+	// register evm listener for confirmation
 	ethDepositDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
 		attributes := mapifyAttributes(event)
 		return event.Type == evmTypes.EventTypeDepositConfirmation &&
@@ -455,7 +455,7 @@ func registerWaitEventListeners(n nodeData) listeners {
 				attributes[sdk.AttributeKeyAction] == evmTypes.AttributeValueReject)
 	})
 
-	// register eth listener for confirmation
+	// register evm listener for confirmation
 	ethTokenDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
 		attributes := mapifyAttributes(event)
 		return event.Type == evmTypes.EventTypeTokenConfirmation &&
