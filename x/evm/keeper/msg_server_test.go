@@ -48,7 +48,7 @@ func TestLink_UnknownChain(t *testing.T) {
 
 	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
 	k := NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), paramsK)
-	k.SetParams(ctx, []types.Params{{Chain: exported.Ethereum.Name, Network: network, ConfirmationHeight: uint64(minConfHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, RevoteLockingPeriod: 50}})
+	k.SetParams(ctx, []types.Params{{Chain: exported.Ethereum.Name, ExpectedNetwork: network, ConfirmationHeight: uint64(minConfHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, RevoteLockingPeriod: 50}})
 
 	recipient := nexus.CrossChainAddress{Address: "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L", Chain: btc.Bitcoin}
 	symbol := rand.Str(3)
@@ -72,7 +72,7 @@ func TestLink_NoGateway(t *testing.T) {
 
 	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
 	k := NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), paramsK)
-	k.SetParams(ctx, []types.Params{{Chain: exported.Ethereum.Name, Network: network, ConfirmationHeight: uint64(minConfHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, RevoteLockingPeriod: 50}})
+	k.SetParams(ctx, []types.Params{{Chain: exported.Ethereum.Name, ExpectedNetwork: network, ConfirmationHeight: uint64(minConfHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, RevoteLockingPeriod: 50}})
 
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
 	symbol := rand.Str(3)
@@ -794,7 +794,7 @@ func newKeeper(ctx sdk.Context, chain string, confHeight int64) Keeper {
 	encCfg := testutils.MakeEncodingConfig()
 	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
 	k := NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), paramsK)
-	k.SetParams(ctx, []types.Params{{Chain: exported.Ethereum.Name, Network: network, ConfirmationHeight: uint64(confHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, RevoteLockingPeriod: 50}})
+	k.SetParams(ctx, []types.Params{{Chain: exported.Ethereum.Name, ExpectedNetwork: network, ConfirmationHeight: uint64(confHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, RevoteLockingPeriod: 50}})
 	k.SetGatewayAddress(ctx, chain, common.HexToAddress(gateway))
 
 	return k
