@@ -1291,8 +1291,8 @@ var _ types.EthKeeper = &EthKeeperMock{}
 // 			GetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.Params {
 // 				panic("mock out the GetParams method")
 // 			},
-// 			GetPendingChainAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (bool, string, types.Params) {
-// 				panic("mock out the GetPendingChainAsset method")
+// 			GetPendingChainInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (bool, string, types.Params) {
+// 				panic("mock out the GetPendingChainInfo method")
 // 			},
 // 			GetPendingDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta) (types.ERC20Deposit, bool) {
 // 				panic("mock out the GetPendingDeposit method")
@@ -1394,8 +1394,8 @@ type EthKeeperMock struct {
 	// GetParamsFunc mocks the GetParams method.
 	GetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.Params
 
-	// GetPendingChainAssetFunc mocks the GetPendingChainAsset method.
-	GetPendingChainAssetFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (bool, string, types.Params)
+	// GetPendingChainInfoFunc mocks the GetPendingChainInfo method.
+	GetPendingChainInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (bool, string, types.Params)
 
 	// GetPendingDepositFunc mocks the GetPendingDeposit method.
 	GetPendingDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta) (types.ERC20Deposit, bool)
@@ -1574,8 +1574,8 @@ type EthKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
-		// GetPendingChainAsset holds details about calls to the GetPendingChainAsset method.
-		GetPendingChainAsset []struct {
+		// GetPendingChainInfo holds details about calls to the GetPendingChainInfo method.
+		GetPendingChainInfo []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
@@ -1747,7 +1747,7 @@ type EthKeeperMock struct {
 	lockGetNetwork                    sync.RWMutex
 	lockGetNetworkByID                sync.RWMutex
 	lockGetParams                     sync.RWMutex
-	lockGetPendingChainAsset          sync.RWMutex
+	lockGetPendingChainInfo           sync.RWMutex
 	lockGetPendingDeposit             sync.RWMutex
 	lockGetPendingTokenDeployment     sync.RWMutex
 	lockGetRequiredConfirmationHeight sync.RWMutex
@@ -2335,10 +2335,10 @@ func (mock *EthKeeperMock) GetParamsCalls() []struct {
 	return calls
 }
 
-// GetPendingChainAsset calls GetPendingChainAssetFunc.
-func (mock *EthKeeperMock) GetPendingChainAsset(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (bool, string, types.Params) {
-	if mock.GetPendingChainAssetFunc == nil {
-		panic("EthKeeperMock.GetPendingChainAssetFunc: method is nil but EthKeeper.GetPendingChainAsset was just called")
+// GetPendingChainInfo calls GetPendingChainInfoFunc.
+func (mock *EthKeeperMock) GetPendingChainInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (bool, string, types.Params) {
+	if mock.GetPendingChainInfoFunc == nil {
+		panic("EthKeeperMock.GetPendingChainInfoFunc: method is nil but EthKeeper.GetPendingChainInfo was just called")
 	}
 	callInfo := struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
@@ -2347,16 +2347,16 @@ func (mock *EthKeeperMock) GetPendingChainAsset(ctx github_com_cosmos_cosmos_sdk
 		Ctx:   ctx,
 		Chain: chain,
 	}
-	mock.lockGetPendingChainAsset.Lock()
-	mock.calls.GetPendingChainAsset = append(mock.calls.GetPendingChainAsset, callInfo)
-	mock.lockGetPendingChainAsset.Unlock()
-	return mock.GetPendingChainAssetFunc(ctx, chain)
+	mock.lockGetPendingChainInfo.Lock()
+	mock.calls.GetPendingChainInfo = append(mock.calls.GetPendingChainInfo, callInfo)
+	mock.lockGetPendingChainInfo.Unlock()
+	return mock.GetPendingChainInfoFunc(ctx, chain)
 }
 
-// GetPendingChainAssetCalls gets all the calls that were made to GetPendingChainAsset.
+// GetPendingChainInfoCalls gets all the calls that were made to GetPendingChainInfo.
 // Check the length with:
-//     len(mockedEthKeeper.GetPendingChainAssetCalls())
-func (mock *EthKeeperMock) GetPendingChainAssetCalls() []struct {
+//     len(mockedEthKeeper.GetPendingChainInfoCalls())
+func (mock *EthKeeperMock) GetPendingChainInfoCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	Chain string
 } {
@@ -2364,9 +2364,9 @@ func (mock *EthKeeperMock) GetPendingChainAssetCalls() []struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
 		Chain string
 	}
-	mock.lockGetPendingChainAsset.RLock()
-	calls = mock.calls.GetPendingChainAsset
-	mock.lockGetPendingChainAsset.RUnlock()
+	mock.lockGetPendingChainInfo.RLock()
+	calls = mock.calls.GetPendingChainInfo
+	mock.lockGetPendingChainInfo.RUnlock()
 	return calls
 }
 

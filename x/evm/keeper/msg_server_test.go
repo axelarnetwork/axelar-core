@@ -331,7 +331,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 		k = &evmMock.EthKeeperMock{
 			GetRevoteLockingPeriodFunc: func(ctx sdk.Context, _ string) (int64, bool) { return rand.PosI64(), true },
 			SetPendingChainFunc:        func(sdk.Context, string, string, types.Params) {},
-			GetPendingChainAssetFunc: func(_ sdk.Context, chain string) (bool, string, types.Params) {
+			GetPendingChainInfoFunc: func(_ sdk.Context, chain string) (bool, string, types.Params) {
 				params := types.DefaultParams()[0]
 				params.Chain = chain
 				return true, rand.StrBetween(3, 5), params
@@ -385,7 +385,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 
 	t.Run("unknown chain", testutils.Func(func(t *testing.T) {
 		setup()
-		k.GetPendingChainAssetFunc = func(sdk.Context, string) (bool, string, types.Params) { return false, "", types.Params{} }
+		k.GetPendingChainInfoFunc = func(sdk.Context, string) (bool, string, types.Params) { return false, "", types.Params{} }
 
 		_, err := server.ConfirmChain(sdk.WrapSDKContext(ctx), msg)
 

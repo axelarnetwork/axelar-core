@@ -50,7 +50,7 @@ type EthKeeper interface {
 	SetGatewayAddress(ctx sdk.Context, chain string, addr common.Address)
 	DeletePendingChain(ctx sdk.Context, chain string)
 	SetPendingChain(ctx sdk.Context, chain string, nativeAsset string, params Params)
-	GetPendingChainAsset(ctx sdk.Context, chain string) (bool, string, Params)
+	GetPendingChainInfo(ctx sdk.Context, chain string) (bool, string, Params)
 	GetNetworkByID(ctx sdk.Context, chain string, id *big.Int) (string, bool)
 	GetChainIDByNetwork(ctx sdk.Context, chain, network string) *big.Int
 }
