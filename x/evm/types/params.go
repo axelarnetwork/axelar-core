@@ -5,9 +5,11 @@ import (
 	"fmt"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
+	gethParams "github.com/ethereum/go-ethereum/params"
 )
 
 // Parameter keys
@@ -16,6 +18,7 @@ var (
 	KeyConfirmationHeight  = []byte("confirmationHeight")
 	KeyNetwork             = []byte("network")
 	KeyRevoteLockingPeriod = []byte("RevoteLockingPeriod")
+	KeyNetworks            = []byte("networks")
 
 	KeyGateway  = []byte("gateway")
 	KeyToken    = []byte("token")
@@ -50,6 +53,28 @@ func DefaultParams() []Params {
 		Token:               bzToken,
 		Burnable:            bzBurnable,
 		RevoteLockingPeriod: 50,
+		Networks: []NetworkInfo{
+			{
+				Name: Mainnet,
+				Id:   sdk.NewIntFromBigInt(gethParams.MainnetChainConfig.ChainID),
+			},
+			{
+				Name: Ropsten,
+				Id:   sdk.NewIntFromBigInt(gethParams.RopstenChainConfig.ChainID),
+			},
+			{
+				Name: Rinkeby,
+				Id:   sdk.NewIntFromBigInt(gethParams.RinkebyChainConfig.ChainID),
+			},
+			{
+				Name: Goerli,
+				Id:   sdk.NewIntFromBigInt(gethParams.GoerliChainConfig.ChainID),
+			},
+			{
+				Name: Ganache,
+				Id:   sdk.NewIntFromBigInt(gethParams.AllCliqueProtocolChanges.ChainID),
+			},
+		},
 	}}
 }
 
@@ -70,6 +95,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyToken, &m.Token, validateBytes),
 		params.NewParamSetPair(KeyBurnable, &m.Burnable, validateBytes),
 		params.NewParamSetPair(KeyRevoteLockingPeriod, &m.RevoteLockingPeriod, validateRevoteLockingPeriod),
+		params.NewParamSetPair(KeyNetworks, &m.Networks, validateNetworks),
 	}
 }
 
@@ -85,11 +111,14 @@ func validateChain(chain interface{}) error {
 }
 
 func validateNetwork(network interface{}) error {
-	n, ok := network.(Network)
+	n, ok := network.(string)
 	if !ok {
 		return fmt.Errorf("invalid parameter type for network: %T", network)
 	}
-	return n.Validate()
+	if n == "" {
+		return sdkerrors.Wrap(types.ErrInvalidGenesis, "network name cannot be an empty string")
+	}
+	return nil
 }
 
 func validateConfirmationHeight(height interface{}) error {
@@ -124,6 +153,20 @@ func validateRevoteLockingPeriod(RevoteLockingPeriod interface{}) error {
 
 	if r <= 0 {
 		return sdkerrors.Wrap(types.ErrInvalidGenesis, "revote lock period be greater than 0")
+	}
+
+	return nil
+}
+
+func validateNetworks(network interface{}) error {
+	networks, ok := network.([]NetworkInfo)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for networks: %T", network)
+	}
+	for _, n := range networks {
+		if n.Name == "" {
+			return sdkerrors.Wrap(types.ErrInvalidGenesis, "network name cannot be an empty string")
+		}
 	}
 
 	return nil

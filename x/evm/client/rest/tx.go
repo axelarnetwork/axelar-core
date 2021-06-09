@@ -127,6 +127,7 @@ type ReqAddChain struct {
 	BaseReq     rest.BaseReq `json:"base_req" yaml:"base_req"`
 	Name        string       `json:"name" yaml:"name"`
 	NativeAsset string       `json:"native_asset" yaml:"native_asset"`
+	Params      types.Params `json:"params" yaml:"params"`
 }
 
 // GetHandlerLink returns the handler to link addresses
@@ -405,7 +406,7 @@ func GetHandlerAddChain(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewAddChainRequest(fromAddr, req.Name, req.NativeAsset)
+		msg := types.NewAddChainRequest(fromAddr, req.Name, req.NativeAsset, req.Params)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

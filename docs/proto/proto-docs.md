@@ -48,6 +48,12 @@
 - [broadcast/v1beta1/service.proto](#broadcast/v1beta1/service.proto)
     - [MsgService](#broadcast.v1beta1.MsgService)
   
+- [evm/v1beta1/types.proto](#evm/v1beta1/types.proto)
+    - [BurnerInfo](#evm.v1beta1.BurnerInfo)
+    - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
+    - [ERC20TokenDeployment](#evm.v1beta1.ERC20TokenDeployment)
+    - [NetworkInfo](#evm.v1beta1.NetworkInfo)
+  
 - [evm/v1beta1/params.proto](#evm/v1beta1/params.proto)
     - [Params](#evm.v1beta1.Params)
   
@@ -87,11 +93,6 @@
   
 - [evm/v1beta1/service.proto](#evm/v1beta1/service.proto)
     - [MsgService](#evm.v1beta1.MsgService)
-  
-- [evm/v1beta1/types.proto](#evm/v1beta1/types.proto)
-    - [BurnerInfo](#evm.v1beta1.BurnerInfo)
-    - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
-    - [ERC20TokenDeployment](#evm.v1beta1.ERC20TokenDeployment)
   
 - [nexus/exported/v1beta1/types.proto](#nexus/exported/v1beta1/types.proto)
     - [Chain](#nexus.exported.v1beta1.Chain)
@@ -679,6 +680,90 @@ Msg defines the broadcast Msg service.
 
 
 
+<a name="evm/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## evm/v1beta1/types.proto
+
+
+
+<a name="evm.v1beta1.BurnerInfo"></a>
+
+### BurnerInfo
+BurnerInfo describes information required to burn token at an burner address
+that is deposited by an user
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `token_address` | [bytes](#bytes) |  |  |
+| `symbol` | [string](#string) |  |  |
+| `salt` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ERC20Deposit"></a>
+
+### ERC20Deposit
+ERC20Deposit contains information for an ERC20 deposit
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `amount` | [bytes](#bytes) |  |  |
+| `symbol` | [string](#string) |  |  |
+| `burner_address` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ERC20TokenDeployment"></a>
+
+### ERC20TokenDeployment
+ERC20TokenDeployment describes information about an ERC20 token
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `symbol` | [string](#string) |  |  |
+| `token_address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.NetworkInfo"></a>
+
+### NetworkInfo
+NetworkInfo describes information about a network
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `name` | [string](#string) |  |  |
+| `id` | [bytes](#bytes) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="evm/v1beta1/params.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -701,6 +786,7 @@ Params is the parameter set for this module
 | `token` | [bytes](#bytes) |  |  |
 | `burnable` | [bytes](#bytes) |  |  |
 | `revote_locking_period` | [int64](#int64) |  |  |
+| `networks` | [NetworkInfo](#evm.v1beta1.NetworkInfo) | repeated |  |
 
 
 
@@ -799,6 +885,7 @@ deposit address
 | `sender` | [bytes](#bytes) |  |  |
 | `name` | [string](#string) |  |  |
 | `native_asset` | [string](#string) |  |  |
+| `params` | [bytes](#bytes) |  |  |
 
 
 
@@ -1243,74 +1330,6 @@ Msg defines the evm Msg service.
 | `SignPendingTransfers` | [SignPendingTransfersRequest](#evm.v1beta1.SignPendingTransfersRequest) | [SignPendingTransfersResponse](#evm.v1beta1.SignPendingTransfersResponse) |  | POST|/axelar/evm/sign-pending|
 | `SignTransferOwnership` | [SignTransferOwnershipRequest](#evm.v1beta1.SignTransferOwnershipRequest) | [SignTransferOwnershipResponse](#evm.v1beta1.SignTransferOwnershipResponse) |  | ||
 | `AddChain` | [AddChainRequest](#evm.v1beta1.AddChainRequest) | [AddChainResponse](#evm.v1beta1.AddChainResponse) |  | POST|/axelar/evm/add-chain|
-
- <!-- end services -->
-
-
-
-<a name="evm/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## evm/v1beta1/types.proto
-
-
-
-<a name="evm.v1beta1.BurnerInfo"></a>
-
-### BurnerInfo
-BurnerInfo describes information required to burn token at an burner address
-that is deposited by an user
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `token_address` | [bytes](#bytes) |  |  |
-| `symbol` | [string](#string) |  |  |
-| `salt` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.ERC20Deposit"></a>
-
-### ERC20Deposit
-ERC20Deposit contains information for an ERC20 deposit
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `tx_id` | [bytes](#bytes) |  |  |
-| `amount` | [bytes](#bytes) |  |  |
-| `symbol` | [string](#string) |  |  |
-| `burner_address` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.ERC20TokenDeployment"></a>
-
-### ERC20TokenDeployment
-ERC20TokenDeployment describes information about an ERC20 token
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `symbol` | [string](#string) |  |  |
-| `token_address` | [string](#string) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
 
  <!-- end services -->
 

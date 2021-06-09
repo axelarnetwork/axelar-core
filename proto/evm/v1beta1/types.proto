@@ -7,6 +7,15 @@ import "gogoproto/gogo.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
+// NetworkInfo describes information about a network
+message NetworkInfo {
+  string name = 1;
+  bytes id = 2 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
+}
+
 // BurnerInfo describes information required to burn token at an burner address
 // that is deposited by an user
 message BurnerInfo {

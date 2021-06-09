@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -111,43 +110,43 @@ func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {
 // InitGenesis initializes the module's keeper from the given genesis state
 func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs json.RawMessage) []abci.ValidatorUpdate {
 	var genState types.GenesisState
-	// Initialize global index to index in genesis state
 	cdc.MustUnmarshalJSON(gs, &genState)
+	InitGenesis(ctx, am.keeper, genState)
 
+	// TODO: this needs to be removed eventually, alongside all usage of RPCs across axelar-core
 	for chain, rpc := range am.rpcs {
 		id, err := rpc.ChainID(context.Background())
 		if err != nil {
 			panic(err)
 		}
 
-		// TODO: this relies on having hard-coded information about the networks,
-		// which is not reasonable to assume. We need a more generic approach that
-		// that does not rely on having prior knowledge of the networks
-		actualNetwork := types.NetworkByID(id)
-
-		var param types.Params
-		for _, p := range genState.Params {
-			if chain == strings.ToLower(p.Chain) {
-				param = p
-				break
-			}
-		}
-		if param.Network == "" {
+		actualNetwork, found := am.keeper.GetNetworkByID(ctx, chain, id)
+		if !found {
 			panic(fmt.Sprintf(
-				"unable to find genesis paramaters for chain %s",
+				"unable to find network name for for chain %s with ID %s",
+				chain,
+				id.String(),
+			))
+		}
+
+		network, found := am.keeper.GetNetwork(ctx, chain)
+		if !found {
+			panic(fmt.Sprintf(
+				"unable to find chain %s",
 				chain,
 			))
 		}
-		if param.Network != actualNetwork {
+
+		if network != actualNetwork {
 			panic(fmt.Sprintf(
 				"local %s client not configured correctly: expected network %s, got %s",
 				chain,
-				param.Network,
+				network,
 				actualNetwork,
 			))
 		}
+
 	}
-	InitGenesis(ctx, am.keeper, genState)
 
 	return []abci.ValidatorUpdate{}
 }

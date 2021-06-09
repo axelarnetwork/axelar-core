@@ -176,7 +176,7 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 		return &types.ConfirmChainResponse{}, fmt.Errorf("chain '%s' is already confirmed", req.Name)
 	}
 
-	if found, _ := s.EthKeeper.GetPendingChainAsset(ctx, req.Name); !found {
+	if found, _, _ := s.EthKeeper.GetPendingChainInfo(ctx, req.Name); !found {
 		return &types.ConfirmChainResponse{}, fmt.Errorf("'%s' has not been added yet", req.Name)
 	}
 
@@ -287,7 +287,7 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 	ctx := sdk.UnwrapSDKContext(c)
 
 	registeredChain, registered := s.nexus.GetChain(ctx, req.Name)
-	pendingChain, nativeAsset := s.GetPendingChainAsset(ctx, req.Name)
+	pendingChain, nativeAsset, params := s.GetPendingChainInfo(ctx, req.Name)
 
 	if registered {
 		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("chain %s already confirmed", registeredChain.Name)}, nil
@@ -332,15 +332,13 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 	ctx.EventManager().EmitEvent(
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
-	param := types.DefaultParams()[0]
-	param.Chain = req.Name
 	chain := nexus.Chain{
 		Name:                  req.Name,
 		NativeAsset:           nativeAsset,
 		SupportsForeignAssets: true,
 	}
 
-	s.SetParams(ctx, []types.Params{param})
+	s.SetParams(ctx, []types.Params{params})
 	s.nexus.SetChain(ctx, chain)
 	s.nexus.RegisterAsset(ctx, chain.Name, chain.NativeAsset)
 
@@ -842,7 +840,7 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 		return &types.AddChainResponse{}, fmt.Errorf("chain '%s' is already registered", req.Name)
 	}
 
-	s.SetPendingChain(ctx, req.Name, req.NativeAsset)
+	s.SetPendingChain(ctx, req.Name, req.NativeAsset, &req.Params)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeNewChain,
@@ -859,7 +857,7 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 func (s msgServer) getChainID(ctx sdk.Context, chain string) (chainID *big.Int) {
 	for _, p := range s.GetParams(ctx) {
 		if strings.ToLower(p.Chain) == strings.ToLower(chain) {
-			chainID = p.Network.Params().ChainID
+			chainID = s.GetChainIDByNetwork(ctx, chain, p.Network)
 		}
 	}
 

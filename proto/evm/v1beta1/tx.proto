@@ -183,6 +183,8 @@ message AddChainRequest {
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string name = 2;
   string native_asset = 3;
+  bytes params = 4
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Params" ];
 }
 
 message AddChainResponse {}

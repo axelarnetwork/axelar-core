@@ -1,9 +1,11 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"strconv"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -104,7 +106,7 @@ func GetCmdSignTx() *cobra.Command {
 // GetCmdConfirmChain returns the cli command to confirm a ERC20 token deployment
 func GetCmdConfirmChain() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "confirm-erc20-token [chain]",
+		Use:   "confirm-chain [chain]",
 		Short: "Confirm an EVM chain for a given name and native asset",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -294,9 +296,9 @@ func GetCmdSignTransferOwnership() *cobra.Command {
 // GetCmdAddChain returns the cli command to add a new evm chain command
 func GetCmdAddChain() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-chain [name] [native asset]",
+		Use:   "add-chain [name] [native asset] [params file]",
 		Short: "Add a new EVM chain",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -304,8 +306,23 @@ func GetCmdAddChain() *cobra.Command {
 			}
 			name := args[0]
 			nativeAsset := args[1]
+			jsonFile := args[2]
 
-			msg := types.NewAddChainRequest(cliCtx.GetFromAddress(), name, nativeAsset)
+			byteValue, err := ioutil.ReadFile(jsonFile)
+			if err != nil {
+				return err
+			}
+			var params types.Params
+			err = json.Unmarshal([]byte(byteValue), &params)
+			if err != nil {
+				return err
+			}
+
+			if strings.ToLower(name) != strings.ToLower(params.Chain) {
+				return fmt.Errorf("chain mismatch: chain name is %s, parameters chain is %s", name, params.Chain)
+			}
+
+			msg := types.NewAddChainRequest(cliCtx.GetFromAddress(), name, nativeAsset, params)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

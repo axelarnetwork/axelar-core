@@ -3,6 +3,7 @@ package evm.v1beta1;
 option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types";
 
 import "gogoproto/gogo.proto";
+import "evm/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -10,9 +11,11 @@ option (gogoproto.goproto_getters_all) = false;
 message Params {
   string chain = 1;
   uint64 confirmation_height = 2;
-  string network = 3 [ (gogoproto.casttype) = "Network" ];
+  string network = 3;
   bytes gateway = 4;
   bytes token = 5;
   bytes burnable = 6;
   int64 revote_locking_period = 7;
+  repeated evm.v1beta1.NetworkInfo networks = 8
+      [ (gogoproto.nullable) = false ];
 }

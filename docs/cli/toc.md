@@ -99,7 +99,7 @@
     - [upgrade](axelard_query_upgrade.md)	 - Querying commands for the upgrade module
       - [applied \[upgrade-name\]](axelard_query_upgrade_applied.md)	 - block header for height at which a completed upgrade was applied
       - [plan](axelard_query_upgrade_plan.md)	 - get upgrade plan (if one exists)
-  - [set-genesis-chain-params \[chain\]](axelard_set-genesis-chain-params.md)	 - Set the chain's parameters in genesis.json
+  - [set-genesis-chain-params \[bitcoin | evm\] \[chain\]](axelard_set-genesis-chain-params.md)	 - Set chain parameters in genesis.json
   - [set-genesis-evm-contracts](axelard_set-genesis-evm-contracts.md)	 - Set the EVM's contract parameters in genesis.json
   - [set-genesis-snapshot](axelard_set-genesis-snapshot.md)	 - Set the genesis parameters for the snapshot module
   - [set-genesis-staking](axelard_set-genesis-staking.md)	 - Set the genesis parameters for the staking module
@@ -134,9 +134,9 @@
     - [encode \[file\]](axelard_tx_encode.md)	 - Encode transactions generated offline
     - [evidence](axelard_tx_evidence.md)	 - Evidence transaction subcommands
     - [evm](axelard_tx_evm.md)	 - evm transactions subcommands
-      - [add-chain \[name\] \[native asset\]](axelard_tx_evm_add-chain.md)	 - Add a new EVM chain
+      - [add-chain \[name\] \[native asset\] \[params file\]](axelard_tx_evm_add-chain.md)	 - Add a new EVM chain
+      - [confirm-chain \[chain\]](axelard_tx_evm_confirm-chain.md)	 - Confirm an EVM chain for a given name and native asset
       - [confirm-erc20-deposit \[chain\] \[txID\] \[amount\] \[burnerAddr\]](axelard_tx_evm_confirm-erc20-deposit.md)	 - Confirm an ERC20 deposit in an EVM chain transaction that sent given amount of token to a burner address
-      - [confirm-erc20-token \[chain\]](axelard_tx_evm_confirm-erc20-token.md)	 - Confirm an EVM chain for a given name and native asset
       - [confirm-erc20-token \[chain\] \[txID\] \[symbol\]](axelard_tx_evm_confirm-erc20-token.md)	 - Confirm an ERC20 token deployment in an EVM chain transaction for a given symbol of token and gateway address
       - [link \[chain\] \[recipient chain\] \[recipient address\] \[symbol\]](axelard_tx_evm_link.md)	 - Link a cross chain address to an EVM chain address created by Axelar
       - [sign \[chain\] \[tx json file path\]](axelard_tx_evm_sign.md)	 - sign a raw EVM chain transaction
