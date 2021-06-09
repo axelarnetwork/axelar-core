@@ -51,6 +51,31 @@ func GetHandlerQueryMasterAddress(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
+// GetHandlerQueryNextMasterAddress returns a handler to query an EVM chain next master address
+func GetHandlerQueryNextMasterAddress(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+		chain := mux.Vars(r)[utils.PathVarChain]
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryNextMasterAddress, chain), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
+			return
+		}
+
+		if len(res) == 0 {
+			rest.PostProcessResponse(w, cliCtx, "")
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, common.BytesToAddress(res).Hex())
+	}
+}
+
 // GetHandlerQueryAxelarGatewayAddress returns a handler to query an EVM chain gateway contract address
 func GetHandlerQueryAxelarGatewayAddress(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

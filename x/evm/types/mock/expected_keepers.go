@@ -281,6 +281,9 @@ var _ types.Signer = &SignerMock{}
 // 			GetKeyForSigIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (tss.Key, bool) {
 // 				panic("mock out the GetKeyForSigID method")
 // 			},
+// 			GetNextKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+// 				panic("mock out the GetNextKey method")
+// 			},
 // 			GetSigFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (tss.Signature, bool) {
 // 				panic("mock out the GetSig method")
 // 			},
@@ -308,6 +311,9 @@ type SignerMock struct {
 
 	// GetKeyForSigIDFunc mocks the GetKeyForSigID method.
 	GetKeyForSigIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (tss.Key, bool)
+
+	// GetNextKeyFunc mocks the GetNextKey method.
+	GetNextKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 
 	// GetSigFunc mocks the GetSig method.
 	GetSigFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (tss.Signature, bool)
@@ -354,6 +360,15 @@ type SignerMock struct {
 			// SigID is the sigID argument value.
 			SigID string
 		}
+		// GetNextKey holds details about calls to the GetNextKey method.
+		GetNextKey []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+			// KeyRole is the keyRole argument value.
+			KeyRole tss.KeyRole
+		}
 		// GetSig holds details about calls to the GetSig method.
 		GetSig []struct {
 			// Ctx is the ctx argument value.
@@ -390,6 +405,7 @@ type SignerMock struct {
 	lockGetCurrentKeyID            sync.RWMutex
 	lockGetKey                     sync.RWMutex
 	lockGetKeyForSigID             sync.RWMutex
+	lockGetNextKey                 sync.RWMutex
 	lockGetSig                     sync.RWMutex
 	lockGetSnapshotCounterForKeyID sync.RWMutex
 	lockStartSign                  sync.RWMutex
@@ -540,6 +556,45 @@ func (mock *SignerMock) GetKeyForSigIDCalls() []struct {
 	mock.lockGetKeyForSigID.RLock()
 	calls = mock.calls.GetKeyForSigID
 	mock.lockGetKeyForSigID.RUnlock()
+	return calls
+}
+
+// GetNextKey calls GetNextKeyFunc.
+func (mock *SignerMock) GetNextKey(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+	if mock.GetNextKeyFunc == nil {
+		panic("SignerMock.GetNextKeyFunc: method is nil but Signer.GetNextKey was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Chain   nexus.Chain
+		KeyRole tss.KeyRole
+	}{
+		Ctx:     ctx,
+		Chain:   chain,
+		KeyRole: keyRole,
+	}
+	mock.lockGetNextKey.Lock()
+	mock.calls.GetNextKey = append(mock.calls.GetNextKey, callInfo)
+	mock.lockGetNextKey.Unlock()
+	return mock.GetNextKeyFunc(ctx, chain, keyRole)
+}
+
+// GetNextKeyCalls gets all the calls that were made to GetNextKey.
+// Check the length with:
+//     len(mockedSigner.GetNextKeyCalls())
+func (mock *SignerMock) GetNextKeyCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	Chain   nexus.Chain
+	KeyRole tss.KeyRole
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Chain   nexus.Chain
+		KeyRole tss.KeyRole
+	}
+	mock.lockGetNextKey.RLock()
+	calls = mock.calls.GetNextKey
+	mock.lockGetNextKey.RUnlock()
 	return calls
 }
 

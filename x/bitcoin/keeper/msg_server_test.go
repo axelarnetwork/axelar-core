@@ -519,7 +519,8 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 			btcutil.Amount(rand.I64Between(0, 1000000)),
 		)
 
-		minimumWithdrawalAmount = btcutil.Amount(rand.I64Between(1, 5000))
+		// let the minimum start at 2 so the dust limit can still go below
+		minimumWithdrawalAmount = btcutil.Amount(rand.I64Between(2, 5000))
 		transferAmount = 0
 		transfers = []nexus.CrossChainTransfer{}
 		for i := int64(0); i < rand.I64Between(0, 50); i++ {
@@ -739,7 +740,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		dust := make(map[string]btcutil.Amount)
 		for i := 0; i < len(transfers); i++ {
 			encodeAddr := transfers[i].Recipient.Address
-			dustAmount := btcutil.Amount(rand.I64Between(1, int64(minimumWithdrawalAmount)))
+			dustAmount := btcutil.Amount(rand.I64Between(1, int64(minimumWithdrawalAmount)+1)) // exclusive limit
 			btcKeeper.SetDustAmountFunc(ctx, encodeAddr, dustAmount)
 			dust[encodeAddr] += dustAmount
 		}
