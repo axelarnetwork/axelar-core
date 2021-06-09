@@ -75,6 +75,7 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 				genesisState := bitcoinTypes.GetGenesisStateFromAppState(cdc, appState)
 				moduleName = bitcoinTypes.ModuleName
 
+				// update expected network
 				if expectedNetwork != "" {
 					network, err := bitcoinTypes.NetworkFromStr(expectedNetwork)
 					if err != nil {
@@ -84,10 +85,12 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 					genesisState.Params.Network = network
 				}
 
+				// update confirmation height
 				if confirmationHeight > 0 {
 					genesisState.Params.ConfirmationHeight = confirmationHeight
 				}
 
+				// update revote locking period
 				if revoteLockingPeriod > 0 {
 					genesisState.Params.RevoteLockingPeriod = revoteLockingPeriod
 				}
@@ -101,6 +104,7 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 					return fmt.Errorf("flag %s is required for EVM platform", flagEVMChainName)
 				}
 
+				// fetch existing EVM chain, or add new one
 				genesisState := evmTypes.GetGenesisStateFromAppState(cdc, appState)
 				moduleName = evmTypes.ModuleName
 				var params evmTypes.Params
@@ -116,49 +120,49 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 					index = len(genesisState.Params) - 1
 				}
 
-				if evmNetworkName == "" || evmChainID == "" {
-					return fmt.Errorf("flags %s and %s must be used together", flagEVMNetworkName, flagEVMChainID)
-
-				}
-
-				id, ok := sdk.NewIntFromString(evmChainID)
-				if !ok {
-					return fmt.Errorf("chain ID must be an integer")
-				}
-
-				i := findEVMNetwork(genesisState.Params[index].Networks, evmNetworkName)
-				if i < 0 {
-					genesisState.Params[index].Networks =
-						append(genesisState.Params[index].Networks,
-							evmTypes.NetworkInfo{Name: evmNetworkName, Id: id})
-				} else {
-					genesisState.Params[index].Networks[i].Id = id
-				}
-
-				if expectedNetwork == "" {
-					return fmt.Errorf("flags %s must be specified", flagNetwork)
-
-				}
-				found := false
-				for _, network := range params.Networks {
-					if network.Name == expectedNetwork {
-						found = true
-						break
-					}
-				}
-
-				if !found {
-					return fmt.Errorf("unable to find network %s", expectedNetwork)
-				}
-
-				genesisState.Params[index].Network = expectedNetwork
-
+				// update confirmation height
 				if confirmationHeight > 0 {
 					genesisState.Params[index].ConfirmationHeight = confirmationHeight
 				}
 
+				// update revote locking period
 				if revoteLockingPeriod > 0 {
 					genesisState.Params[index].RevoteLockingPeriod = revoteLockingPeriod
+				}
+
+				// if we are editing the list of known networks, both evm-network-name
+				// and evm-chain-id need to be used
+				if (evmNetworkName != "" && evmChainID == "") || (evmNetworkName == "" && evmChainID != "") {
+					return fmt.Errorf("flags %s and %s must be used together", flagEVMNetworkName, flagEVMChainID)
+
+				}
+
+				// add new, or update existing network
+				if evmNetworkName != "" && evmChainID != "" {
+					id, ok := sdk.NewIntFromString(evmChainID)
+					if !ok {
+						return fmt.Errorf("chain ID must be an integer")
+					}
+
+					i := findEVMNetwork(genesisState.Params[index].Networks, evmNetworkName)
+					if i < 0 {
+						genesisState.Params[index].Networks =
+							append(genesisState.Params[index].Networks,
+								evmTypes.NetworkInfo{Name: evmNetworkName, Id: id})
+					} else {
+						genesisState.Params[index].Networks[i].Id = id
+					}
+
+				}
+
+				// update expected network
+				if expectedNetwork != "" {
+					i := findEVMNetwork(genesisState.Params[index].Networks, expectedNetwork)
+					if i < 0 {
+						return fmt.Errorf("unable to find network %s", expectedNetwork)
+					}
+
+					genesisState.Params[index].Network = genesisState.Params[index].Networks[i].Name
 				}
 
 				genesisStateBz, err = cdc.MarshalJSON(&genesisState)
@@ -185,16 +189,16 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 	cmd.Flags().StringVar(&expectedNetwork, flagNetwork, "", "Name of the network to set for the given chain.")
 	cmd.Flags().Uint64Var(&confirmationHeight, flagConfHeight, 0, "Confirmation height to set for the given chain.")
 	cmd.Flags().Int64Var(&revoteLockingPeriod, flagrevoteLockingPEriod, 0, "Revote locking period to set for the given chain.")
-	cmd.Flags().StringVar(&evmChainName, flagEVMChainName, "", "Chain name (EVM only, required).")
-	cmd.Flags().StringVar(&evmNetworkName, flagEVMNetworkName, "", "Network name (EVM only, required).")
-	cmd.Flags().StringVar(&evmChainID, flagEVMChainID, "", "Integer representing the chain ID (EVM only, required).")
+	cmd.Flags().StringVar(&evmChainName, flagEVMChainName, "", "Chain name (EVM only).")
+	cmd.Flags().StringVar(&evmNetworkName, flagEVMNetworkName, "", "Network name (EVM only).")
+	cmd.Flags().StringVar(&evmChainID, flagEVMChainID, "", "Integer representing the chain ID (EVM only).")
 
 	return cmd
 }
 
 func findEVMChain(params []evmTypes.Params, chain string) (param evmTypes.Params, index int) {
 	for index, param = range params {
-		if param.Chain == chain {
+		if strings.ToLower(param.Chain) == strings.ToLower(chain) {
 			return
 		}
 	}
@@ -206,7 +210,7 @@ func findEVMChain(params []evmTypes.Params, chain string) (param evmTypes.Params
 func findEVMNetwork(networks []evmTypes.NetworkInfo, network string) (index int) {
 	var info evmTypes.NetworkInfo
 	for index, info = range networks {
-		if info.Name == network {
+		if strings.ToLower(info.Name) == strings.ToLower(network) {
 			return
 		}
 	}
