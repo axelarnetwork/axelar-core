@@ -24,7 +24,7 @@ import (
 const (
 	flagConfHeight          = "confirmation-height"
 	flagNetwork             = "network"
-	flagrevoteLockingPEriod = "revote-locking-period"
+	flagrevoteLockingPeriod = "revote-locking-period"
 
 	//EVM only
 	flagEVMChainName   = "evm-chain-name"
