@@ -24,7 +24,7 @@ import (
 const (
 	flagConfHeight          = "confirmation-height"
 	flagNetwork             = "network"
-	flagrevoteLockingPeriod = "revote-locking-period"
+	flagRevoteLockingPeriod = "revote-locking-period"
 
 	//EVM only
 	flagEVMChainName   = "evm-chain-name"
@@ -188,7 +188,7 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 	cmd.Flags().String(flags.FlagHome, defaultNodeHome, "node's home directory")
 	cmd.Flags().StringVar(&expectedNetwork, flagNetwork, "", "Name of the network to set for the given chain.")
 	cmd.Flags().Uint64Var(&confirmationHeight, flagConfHeight, 0, "Confirmation height to set for the given chain.")
-	cmd.Flags().Int64Var(&revoteLockingPeriod, flagrevoteLockingPeriod, 0, "Revote locking period to set for the given chain.")
+	cmd.Flags().Int64Var(&revoteLockingPeriod, flagRevoteLockingPeriod, 0, "Revote locking period to set for the given chain.")
 	cmd.Flags().StringVar(&evmChainName, flagEVMChainName, "", "Chain name (EVM only).")
 	cmd.Flags().StringVar(&evmNetworkName, flagEVMNetworkName, "", "Network name (EVM only).")
 	cmd.Flags().StringVar(&evmChainID, flagEVMChainID, "", "Integer representing the chain ID (EVM only).")
