@@ -144,10 +144,6 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 			continue
 		}
 
-		for _, chain := range toRemove {
-			delete(am.rpcs, chain)
-		}
-
 		network, found := am.keeper.GetNetwork(ctx, chain)
 		if !found {
 			panic(fmt.Sprintf(
@@ -165,6 +161,10 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 			))
 		}
 
+	}
+
+	for _, chain := range toRemove {
+		delete(am.rpcs, chain)
 	}
 
 	return []abci.ValidatorUpdate{}
