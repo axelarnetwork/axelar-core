@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	mathRand "math/rand"
+	"sync"
 	"testing"
 	"time"
 
@@ -307,17 +308,20 @@ func TestMgr_Subscribe(t *testing.T) {
 		})
 		assert.NoError(t, err)
 
-		mgr.FetchEvents()
+		errChan := mgr.FetchEvents()
 		mgr.NotifyNewBlock(completed + 1)
 
-		// delay so mgr has time to fetch the block
-		time.Sleep(1 * time.Millisecond)
-		// closes channels so we can test deterministically
-		mgr.Shutdown()
-
+		once := sync.Once{}
 		var actualEvents []tmTypes.Event
 		for e := range sub.Events() {
+			// closes once we get events, because then we can be sure the whole block has been processed
+			once.Do(mgr.Shutdown)
+
 			actualEvents = append(actualEvents, e.(tmTypes.Event))
+		}
+
+		for err := range errChan {
+			assert.NoError(t, err)
 		}
 
 		assert.Equal(t, expectedEvents, actualEvents)
