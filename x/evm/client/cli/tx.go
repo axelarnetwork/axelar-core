@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strconv"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -315,6 +316,10 @@ func GetCmdAddChain() *cobra.Command {
 			err = json.Unmarshal([]byte(byteValue), &params)
 			if err != nil {
 				return err
+			}
+
+			if strings.ToLower(name) != strings.ToLower(params.Chain) {
+				return fmt.Errorf("chain mismatch: chain name is %s, parameters chain is %s", name, params.Chain)
 			}
 
 			msg := types.NewAddChainRequest(cliCtx.GetFromAddress(), name, nativeAsset, params)
