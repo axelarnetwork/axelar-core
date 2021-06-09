@@ -30,4 +30,5 @@ message Poll {
   int64 expire_at = 4;
   google.protobuf.Any result = 5
       [ (cosmos_proto.accepts_interface) = "exported.VotingData" ];
+  bool failed = 6;
 }
