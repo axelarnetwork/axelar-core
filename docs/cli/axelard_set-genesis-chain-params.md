@@ -14,9 +14,9 @@ axelard set-genesis-chain-params [bitcoin | evm] [flags]
 
 ```
       --confirmation-height uint    Confirmation height to set for the given chain.
-      --evm-chain-id string         Integer representing the chain ID (EVM only, required).
-      --evm-chain-name string       Chain name (EVM only, required).
-      --evm-network-name string     Network name (EVM only, required).
+      --evm-chain-id string         Integer representing the chain ID (EVM only).
+      --evm-chain-name string       Chain name (EVM only).
+      --evm-network-name string     Network name (EVM only).
   -h, --help                        help for set-genesis-chain-params
       --network string              Name of the network to set for the given chain.
       --revote-locking-period int   Revote locking period to set for the given chain.
