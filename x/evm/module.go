@@ -124,6 +124,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 	cdc.MustUnmarshalJSON(gs, &genState)
 	InitGenesis(ctx, am.keeper, genState)
 
+	toRemove := make([]string, 0)
 	// TODO: this needs to be removed eventually, alongside all usage of RPCs across axelar-core
 	for chain, rpc := range am.rpcs {
 		id, err := rpc.ChainID(context.Background())
@@ -139,8 +140,12 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 					chain,
 					id.String(),
 				))
-			delete(am.rpcs, chain)
+			toRemove = append(toRemove, chain)
 			continue
+		}
+
+		for _, chain := range toRemove {
+			delete(am.rpcs, chain)
 		}
 
 		network, found := am.keeper.GetNetwork(ctx, chain)
