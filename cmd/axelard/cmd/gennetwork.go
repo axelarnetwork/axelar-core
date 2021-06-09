@@ -27,7 +27,6 @@ const (
 	flagRevoteLockingPeriod = "revote-locking-period"
 
 	//EVM only
-	flagEVMChainName   = "evm-chain-name"
 	flagEVMNetworkName = "evm-network-name"
 	flagEVMChainID     = "evm-chain-id"
 )
@@ -40,15 +39,16 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 		revoteLockingPeriod int64
 
 		// EVM only
-		evmChainName   string
 		evmNetworkName string
 		evmChainID     string
 	)
 	cmd := &cobra.Command{
-		Use:   "set-genesis-chain-params [bitcoin | evm]",
+		Use:   "set-genesis-chain-params [bitcoin | evm] [chain]",
 		Short: "Set chain parameters in genesis.json",
-		Long:  "Set chain parameters in genesis.json. The provided platform must be one of those axelar supports (bitcoin, EVM).",
-		Args:  cobra.ExactArgs(1),
+		Long: "Set chain parameters in genesis.json. " +
+			"The provided platform must be one of those axelar supports (bitcoin, EVM). " +
+			"In the case of Bitcoin, there is no need for the chain argument.",
+		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx := client.GetClientContextFromCmd(cmd)
 			depCdc := clientCtx.JSONMarshaler
@@ -100,9 +100,10 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 					return fmt.Errorf("failed to marshal bitcoin genesis state: %w", err)
 				}
 			case strings.ToLower(evmTypes.ModuleName):
-				if evmChainName == "" {
-					return fmt.Errorf("flag '-%s' is required for EVM platform", flagEVMChainName)
+				if len(args) < 2 {
+					return fmt.Errorf("chain name is required for EVM platform")
 				}
+				evmChainName := args[1]
 
 				// fetch existing EVM chain, or add new one
 				genesisState := evmTypes.GetGenesisStateFromAppState(cdc, appState)
@@ -189,7 +190,6 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 	cmd.Flags().StringVar(&expectedNetwork, flagNetwork, "", "Name of the network to set for the given chain.")
 	cmd.Flags().Uint64Var(&confirmationHeight, flagConfHeight, 0, "Confirmation height to set for the given chain.")
 	cmd.Flags().Int64Var(&revoteLockingPeriod, flagRevoteLockingPeriod, 0, "Revote locking period to set for the given chain.")
-	cmd.Flags().StringVar(&evmChainName, flagEVMChainName, "", "Chain name (EVM only).")
 	cmd.Flags().StringVar(&evmNetworkName, flagEVMNetworkName, "", "Network name (EVM only).")
 	cmd.Flags().StringVar(&evmChainID, flagEVMChainID, "", "Integer representing the chain ID (EVM only).")
 
