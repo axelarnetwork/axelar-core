@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/tendermint/tendermint/libs/log"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -81,6 +83,7 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 // AppModule implements module.AppModule
 type AppModule struct {
 	AppModuleBasic
+	logger      log.Logger
 	keeper      keeper.Keeper
 	voter       types.Voter
 	nexus       types.Nexus
@@ -90,9 +93,17 @@ type AppModule struct {
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, voter types.Voter, signer types.Signer, nexus types.Nexus, snapshotter types.Snapshotter, rpcs map[string]types.RPCClient) AppModule {
+func NewAppModule(
+	logger log.Logger,
+	k keeper.Keeper,
+	voter types.Voter,
+	signer types.Signer,
+	nexus types.Nexus,
+	snapshotter types.Snapshotter,
+	rpcs map[string]types.RPCClient) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
+		logger:         logger,
 		keeper:         k,
 		voter:          voter,
 		signer:         signer,
@@ -122,11 +133,13 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 
 		actualNetwork, found := am.keeper.GetNetworkByID(ctx, chain, id)
 		if !found {
-			panic(fmt.Sprintf(
-				"unable to find network name for for chain %s with ID %s",
-				chain,
-				id.String(),
-			))
+			am.logger.With("module", fmt.Sprintf("x/%s", types.ModuleName)).Error(
+				fmt.Sprintf(
+					"unable to find network name for for chain %s with ID %s",
+					chain,
+					id.String(),
+				))
+			continue
 		}
 
 		network, found := am.keeper.GetNetwork(ctx, chain)
