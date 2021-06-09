@@ -101,7 +101,7 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 				}
 			case strings.ToLower(evmTypes.ModuleName):
 				if evmChainName == "" {
-					return fmt.Errorf("flag %s is required for EVM platform", flagEVMChainName)
+					return fmt.Errorf("flag '-%s' is required for EVM platform", flagEVMChainName)
 				}
 
 				// fetch existing EVM chain, or add new one
@@ -133,7 +133,7 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 				// if we are editing the list of known networks, both evm-network-name
 				// and evm-chain-id need to be used
 				if (evmNetworkName != "" && evmChainID == "") || (evmNetworkName == "" && evmChainID != "") {
-					return fmt.Errorf("flags %s and %s must be used together", flagEVMNetworkName, flagEVMChainID)
+					return fmt.Errorf("flags '-%s' and '-%s' must be used together", flagEVMNetworkName, flagEVMChainID)
 
 				}
 
