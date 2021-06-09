@@ -94,13 +94,13 @@ type AppModule struct {
 
 // NewAppModule creates a new AppModule object
 func NewAppModule(
-	logger log.Logger,
 	k keeper.Keeper,
 	voter types.Voter,
 	signer types.Signer,
 	nexus types.Nexus,
 	snapshotter types.Snapshotter,
-	rpcs map[string]types.RPCClient) AppModule {
+	rpcs map[string]types.RPCClient,
+	logger log.Logger) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		logger:         logger,
@@ -139,6 +139,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 					chain,
 					id.String(),
 				))
+			delete(am.rpcs, chain)
 			continue
 		}
 
