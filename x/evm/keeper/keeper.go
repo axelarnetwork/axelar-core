@@ -26,21 +26,21 @@ import (
 )
 
 const (
-	gatewayKey = "gateway"
+	gatewayKey            = "gateway"
+	pendingChainAssetKey  = "pending_chain_asset_"
+	pendingChainParamsKey = "pending_chain_params_"
 
-	chainPrefix              = "chain_"
-	subspacePrefix           = "subspace_"
-	unsignedPrefix           = "unsigned_"
-	pendingChainAssetPrefix  = "pending_chain_asset_"
-	pendingChainParamsPrefix = "pending_chain_params_"
-	pendingTokenPrefix       = "pending_token_"
-	pendingDepositPrefix     = "pending_deposit_"
-	confirmedDepositPrefix   = "confirmed_deposit_"
-	burnedDepositPrefix      = "burned_deposit_"
-	commandPrefix            = "command_"
-	symbolPrefix             = "symbol_"
-	burnerAddrPrefix         = "burnerAddr_"
-	tokenAddrPrefix          = "tokenAddr_"
+	chainPrefix            = "chain_"
+	subspacePrefix         = "subspace_"
+	unsignedPrefix         = "unsigned_"
+	pendingTokenPrefix     = "pending_token_"
+	pendingDepositPrefix   = "pending_deposit_"
+	confirmedDepositPrefix = "confirmed_deposit_"
+	burnedDepositPrefix    = "burned_deposit_"
+	commandPrefix          = "command_"
+	symbolPrefix           = "symbol_"
+	burnerAddrPrefix       = "burnerAddr_"
+	tokenAddrPrefix        = "tokenAddr_"
 )
 
 // Keeper represents the EVM keeper
@@ -440,27 +440,27 @@ func (k Keeper) GetPendingDeposit(ctx sdk.Context, chain string, poll exported.P
 
 // DeletePendingChain deletes a chain that is not registered yet
 func (k Keeper) DeletePendingChain(ctx sdk.Context, chain string) {
-	k.getStore(ctx, chain).Delete([]byte(pendingChainAssetPrefix))
-	k.getStore(ctx, chain).Delete([]byte(pendingChainParamsPrefix))
+	k.getStore(ctx, chain).Delete([]byte(pendingChainAssetKey))
+	k.getStore(ctx, chain).Delete([]byte(pendingChainParamsKey))
 }
 
 // SetPendingChain stores a chain that is not registered yet
 func (k Keeper) SetPendingChain(ctx sdk.Context, chain string, nativeAsset string, params *types.Params) {
-	k.getStore(ctx, chain).Set([]byte(pendingChainAssetPrefix), []byte(nativeAsset))
+	k.getStore(ctx, chain).Set([]byte(pendingChainAssetKey), []byte(nativeAsset))
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(params)
-	k.getStore(ctx, chain).Set([]byte(pendingChainParamsPrefix), bz)
+	k.getStore(ctx, chain).Set([]byte(pendingChainParamsKey), bz)
 }
 
 // GetPendingChainInfo returns true if chain that is not registered yet, alongside its native asset and genesis params
 func (k Keeper) GetPendingChainInfo(ctx sdk.Context, chain string) (bool, string, types.Params) {
-	bz := k.getStore(ctx, chain).Get([]byte(pendingChainParamsPrefix))
+	bz := k.getStore(ctx, chain).Get([]byte(pendingChainParamsKey))
 	if bz == nil {
 		return false, "", types.Params{}
 	}
 	var params types.Params
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &params)
 
-	return true, string(k.getStore(ctx, chain).Get([]byte(pendingChainAssetPrefix))), params
+	return true, string(k.getStore(ctx, chain).Get([]byte(pendingChainAssetKey))), params
 }
 
 // SetDeposit stores confirmed or burned deposits
