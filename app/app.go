@@ -388,7 +388,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		vote.NewAppModule(votingK),
 		broadcast.NewAppModule(broadcastK),
 		nexus.NewAppModule(nexusK),
-		evm.NewAppModule(ethK, votingK, tssK, nexusK, snapK, rpcsEVM),
+		evm.NewAppModule(ethK, votingK, tssK, nexusK, snapK, rpcsEVM, logger),
 		bitcoin.NewAppModule(btcK, votingK, tssK, nexusK, snapK, rpcBtc),
 	)
 
