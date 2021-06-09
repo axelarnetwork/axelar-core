@@ -840,7 +840,7 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 		return &types.AddChainResponse{}, fmt.Errorf("chain '%s' is already registered", req.Name)
 	}
 
-	s.SetPendingChain(ctx, req.Name, req.NativeAsset, req.Params)
+	s.SetPendingChain(ctx, req.Name, req.NativeAsset, &req.Params)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeNewChain,
