@@ -27,8 +27,8 @@ import (
 
 const (
 	gatewayKey            = "gateway"
-	pendingChainAssetKey  = "pending_chain_asset_"
-	pendingChainParamsKey = "pending_chain_params_"
+	pendingChainAssetKey  = "pending_chain_asset"
+	pendingChainParamsKey = "pending_chain_params"
 
 	chainPrefix            = "chain_"
 	subspacePrefix         = "subspace_"
