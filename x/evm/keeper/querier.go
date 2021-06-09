@@ -24,6 +24,7 @@ import (
 const (
 	QueryTokenAddress         = "token-address"
 	QueryMasterAddress        = "master-address"
+	QueryNextMasterAddress    = "next-master-address"
 	QueryAxelarGatewayAddress = "gateway-address"
 	QueryCommandData          = "command-data"
 	QueryDepositAddress       = "deposit-address"
@@ -38,6 +39,8 @@ func NewQuerier(rpcs map[string]types.RPCClient, k Keeper, s types.Signer, n typ
 		switch path[0] {
 		case QueryMasterAddress:
 			return queryMasterAddress(ctx, s, n, path[1])
+		case QueryNextMasterAddress:
+			return queryNextMasterAddress(ctx, s, n, path[1])
 		case QueryAxelarGatewayAddress:
 			return queryAxelarGateway(ctx, k, n, path[1])
 		case QueryTokenAddress:
@@ -101,6 +104,25 @@ func queryMasterAddress(ctx sdk.Context, s types.Signer, n types.Nexus, chainNam
 	pk, ok := s.GetCurrentKey(ctx, chain, tss.MasterKey)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEVM, "key not found")
+	}
+
+	fromAddress := crypto.PubkeyToAddress(pk.Value)
+
+	bz := fromAddress.Bytes()
+
+	return bz, nil
+}
+
+func queryNextMasterAddress(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string) ([]byte, error) {
+
+	chain, ok := n.GetChain(ctx, chainName)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
+	}
+
+	pk, ok := s.GetNextKey(ctx, chain, tss.MasterKey)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, "next key not found")
 	}
 
 	fromAddress := crypto.PubkeyToAddress(pk.Value)
