@@ -196,9 +196,9 @@ func GetCmdCreateDeployTx(queryRoute string) *cobra.Command {
 	flags.AddQueryFlagsToCmd(cmd)
 
 	cmd.Flags().Uint64Var(&gasLimit, "gas-limit", 3000000,
-		"Ethereum gas limit to use in the transaction (default value is 3000000). Set to 0 to estimate gas limit at the node.")
+		"EVM gas limit to use in the transaction (default value is 3000000). Set to 0 to estimate gas limit at the node.")
 	cmd.Flags().StringVar(&gasPriceStr, "gas-price", "0",
-		"Ethereum gas price to use in the transaction. If flag is omitted (or value set to 0), the gas price will be suggested by the node")
+		"EVM gas price to use in the transaction. If flag is omitted (or value set to 0), the gas price will be suggested by the node")
 	return cmd
 }
 
@@ -219,7 +219,7 @@ func GetCmdSendTx(queryRoute string) *cobra.Command {
 				return sdkerrors.Wrapf(err, types.ErrFSendTx, args[1])
 			}
 
-			return cliCtx.PrintObjectLegacy(fmt.Sprintf("successfully sent transaction %s to Ethereum", common.BytesToHash(res).Hex()))
+			return cliCtx.PrintObjectLegacy(fmt.Sprintf("successfully sent transaction %s to %s", common.BytesToHash(res).Hex(), args[0]))
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
@@ -246,10 +246,10 @@ func GetCmdSendCommand(queryRoute string) *cobra.Command {
 			}
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.SendCommand), cliCtx.LegacyAmino.MustMarshalJSON(params))
 			if err != nil {
-				return sdkerrors.Wrapf(err, "could not send Ethereum transaction executing command %s", commandID)
+				return sdkerrors.Wrapf(err, "could not send %s transaction executing command %s", args[0], commandID)
 			}
 
-			return cliCtx.PrintObjectLegacy(fmt.Sprintf("successfully sent transaction %s to Ethereum", common.BytesToHash(res).Hex()))
+			return cliCtx.PrintObjectLegacy(fmt.Sprintf("successfully sent transaction %s to %s", common.BytesToHash(res).Hex(), args[0]))
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
@@ -260,7 +260,7 @@ func GetCmdSendCommand(queryRoute string) *cobra.Command {
 func GetCmdQueryCommandData(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "command [chain] [commandID]",
-		Short: "Get the signed command data that can be wrapped in an Ethereum transaction to execute the command [commandID] on Axelar Gateway",
+		Short: "Get the signed command data that can be wrapped in an EVM transaction to execute the command [commandID] on Axelar Gateway",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientQueryContext(cmd)
