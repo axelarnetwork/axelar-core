@@ -184,7 +184,7 @@ func createDeployGateway(ctx sdk.Context, k Keeper, rpcs map[string]types.RPCCli
 
 	rpc, found := rpcs[strings.ToLower(params.Chain)]
 	if !found {
-		return nil, fmt.Errorf("could not find RPC for chain '%s'", params.Chain)
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find RPC for chain '%s'", params.Chain))
 	}
 
 	contractOwner, err := getContractOwner(ctx, s, n, params.Chain)
@@ -194,20 +194,20 @@ func createDeployGateway(ctx sdk.Context, k Keeper, rpcs map[string]types.RPCCli
 
 	nonce, err := rpc.PendingNonceAt(context.Background(), contractOwner)
 	if err != nil {
-		return nil, fmt.Errorf("could not create nonce: %s", err)
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not create nonce: %s", err))
 	}
 
 	gasPrice := params.GasPrice.BigInt()
 	if params.GasPrice.IsZero() {
 		gasPrice, err = rpc.SuggestGasPrice(context.Background())
 		if err != nil {
-			return nil, fmt.Errorf("could not calculate gas price: %s", err)
+			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not calculate gas price: %s", err))
 		}
 	}
 
 	byteCodes, ok := k.GetGatewayByteCodes(ctx, params.Chain)
 	if !ok {
-		return nil, fmt.Errorf("Could not retrieve gateway bytecodes for chain %s", params.Chain)
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("Could not retrieve gateway bytecodes for chain %s", params.Chain))
 	}
 
 	gasLimit := params.GasLimit
@@ -218,7 +218,7 @@ func createDeployGateway(ctx sdk.Context, k Keeper, rpcs map[string]types.RPCCli
 		})
 
 		if err != nil {
-			return nil, fmt.Errorf("could not estimate gas limit: %s", err)
+			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not estimate gas limit: %s", err))
 		}
 	}
 
