@@ -52,6 +52,7 @@ type Broadcaster interface {
 
 // Tss provides functionality to tss module
 type Tss interface {
+	SetKeyRequirement(ctx sdk.Context, keyRequirement tss.KeyRequirement)
 	GetValidatorDeregisteredBlockHeight(ctx sdk.Context, valAddr sdk.ValAddress) int64
 	GetMinBondFractionPerShare(ctx sdk.Context) utils.Threshold
 	GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64

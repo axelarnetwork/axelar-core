@@ -594,6 +594,9 @@ var _ exported.Tss = &TssMock{}
 // 			GetValidatorDeregisteredBlockHeightFunc: func(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
 // 				panic("mock out the GetValidatorDeregisteredBlockHeight method")
 // 			},
+// 			SetKeyRequirementFunc: func(ctx sdk.Context, keyRequirement tss.KeyRequirement)  {
+// 				panic("mock out the SetKeyRequirement method")
+// 			},
 // 		}
 //
 // 		// use mockedTss in code that requires exported.Tss
@@ -609,6 +612,9 @@ type TssMock struct {
 
 	// GetValidatorDeregisteredBlockHeightFunc mocks the GetValidatorDeregisteredBlockHeight method.
 	GetValidatorDeregisteredBlockHeightFunc func(ctx sdk.Context, valAddr sdk.ValAddress) int64
+
+	// SetKeyRequirementFunc mocks the SetKeyRequirement method.
+	SetKeyRequirementFunc func(ctx sdk.Context, keyRequirement tss.KeyRequirement)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -631,10 +637,18 @@ type TssMock struct {
 			// ValAddr is the valAddr argument value.
 			ValAddr sdk.ValAddress
 		}
+		// SetKeyRequirement holds details about calls to the SetKeyRequirement method.
+		SetKeyRequirement []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// KeyRequirement is the keyRequirement argument value.
+			KeyRequirement tss.KeyRequirement
+		}
 	}
 	lockGetMinBondFractionPerShare          sync.RWMutex
 	lockGetTssSuspendedUntil                sync.RWMutex
 	lockGetValidatorDeregisteredBlockHeight sync.RWMutex
+	lockSetKeyRequirement                   sync.RWMutex
 }
 
 // GetMinBondFractionPerShare calls GetMinBondFractionPerShareFunc.
@@ -735,5 +749,40 @@ func (mock *TssMock) GetValidatorDeregisteredBlockHeightCalls() []struct {
 	mock.lockGetValidatorDeregisteredBlockHeight.RLock()
 	calls = mock.calls.GetValidatorDeregisteredBlockHeight
 	mock.lockGetValidatorDeregisteredBlockHeight.RUnlock()
+	return calls
+}
+
+// SetKeyRequirement calls SetKeyRequirementFunc.
+func (mock *TssMock) SetKeyRequirement(ctx sdk.Context, keyRequirement tss.KeyRequirement) {
+	if mock.SetKeyRequirementFunc == nil {
+		panic("TssMock.SetKeyRequirementFunc: method is nil but Tss.SetKeyRequirement was just called")
+	}
+	callInfo := struct {
+		Ctx            sdk.Context
+		KeyRequirement tss.KeyRequirement
+	}{
+		Ctx:            ctx,
+		KeyRequirement: keyRequirement,
+	}
+	mock.lockSetKeyRequirement.Lock()
+	mock.calls.SetKeyRequirement = append(mock.calls.SetKeyRequirement, callInfo)
+	mock.lockSetKeyRequirement.Unlock()
+	mock.SetKeyRequirementFunc(ctx, keyRequirement)
+}
+
+// SetKeyRequirementCalls gets all the calls that were made to SetKeyRequirement.
+// Check the length with:
+//     len(mockedTss.SetKeyRequirementCalls())
+func (mock *TssMock) SetKeyRequirementCalls() []struct {
+	Ctx            sdk.Context
+	KeyRequirement tss.KeyRequirement
+} {
+	var calls []struct {
+		Ctx            sdk.Context
+		KeyRequirement tss.KeyRequirement
+	}
+	mock.lockSetKeyRequirement.RLock()
+	calls = mock.calls.SetKeyRequirement
+	mock.lockSetKeyRequirement.RUnlock()
 	return calls
 }

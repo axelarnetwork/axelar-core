@@ -29,6 +29,7 @@ import (
 	evmMock "github.com/axelarnetwork/axelar-core/x/evm/types/mock"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -65,7 +66,7 @@ func TestLink_UnknownChain(t *testing.T) {
 	n := &evmMock.NexusMock{
 		GetChainFunc: func(sdk.Context, string) (nexus.Chain, bool) { return nexus.Chain{}, false },
 	}
-	server := NewMsgServerImpl(k, n, &mock.SignerMock{}, &mock.VoterMock{}, &mock.SnapshotterMock{})
+	server := NewMsgServerImpl(k, &mock.TSSMock{}, n, &mock.SignerMock{}, &mock.VoterMock{}, &mock.SnapshotterMock{})
 	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.Bytes(sdk.AddrLen), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Symbol: symbol})
 
 	assert.Error(t, err)
@@ -109,7 +110,7 @@ func TestLink_NoGateway(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	server := NewMsgServerImpl(k, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
+	server := NewMsgServerImpl(k, &mock.TSSMock{}, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
 	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Chain: evmChain, Sender: rand.Bytes(sdk.AddrLen), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
@@ -142,7 +143,7 @@ func TestLink_NoRecipientChain(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	server := NewMsgServerImpl(k, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
+	server := NewMsgServerImpl(k, &mock.TSSMock{}, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
 	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Chain: evmChain, Sender: rand.Bytes(sdk.AddrLen), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
@@ -175,7 +176,7 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	server := NewMsgServerImpl(k, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
+	server := NewMsgServerImpl(k, &mock.TSSMock{}, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
 	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.Bytes(sdk.AddrLen), Chain: evmChain, RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
 
@@ -223,7 +224,7 @@ func TestLink_Success(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	server := NewMsgServerImpl(k, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
+	server := NewMsgServerImpl(k, &mock.TSSMock{}, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
 	_, err = server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.Bytes(sdk.AddrLen), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Symbol: msg.Symbol})
 
 	assert.NoError(t, err)
@@ -375,7 +376,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 			Name:   rand.StrBetween(5, 20),
 		}
 
-		server = NewMsgServerImpl(k, n, s, v, &mock.SnapshotterMock{})
+		server = NewMsgServerImpl(k, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{})
 	}
 
 	repeats := 20
@@ -484,7 +485,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			Symbol: rand.StrBetween(5, 10),
 		}
 
-		server = NewMsgServerImpl(k, n, s, v, &mock.SnapshotterMock{})
+		server = NewMsgServerImpl(k, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{})
 	}
 
 	repeats := 20
@@ -568,6 +569,7 @@ func TestAddChain(t *testing.T) {
 	var (
 		ctx         sdk.Context
 		k           *evmMock.EVMKeeperMock
+		tssMock     *evmMock.TSSMock
 		n           *evmMock.NexusMock
 		msg         *types.AddChainRequest
 		server      types.MsgServiceServer
@@ -586,6 +588,11 @@ func TestAddChain(t *testing.T) {
 			SetParamsFunc:       func(sdk.Context, ...types.Params) {},
 			SetPendingChainFunc: func(sdk.Context, nexus.Chain) {},
 		}
+
+		tssMock = &evmMock.TSSMock{
+			SetKeyRequirementFunc: func(sdk.Context, tss.KeyRequirement) {},
+		}
+
 		n = &evmMock.NexusMock{
 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 				c, ok := chains[chain]
@@ -595,13 +602,19 @@ func TestAddChain(t *testing.T) {
 
 		name = rand.StrBetween(5, 20)
 		nativeAsset = rand.StrBetween(3, 10)
+		params := types.DefaultParams()[0]
+		params.Chain = name
+		keyReqs := tssTypes.DefaultParams().KeyRequirements[0]
+		keyReqs.ChainName = name
 		msg = &types.AddChainRequest{
-			Sender:      rand.Bytes(20),
-			Name:        name,
-			NativeAsset: nativeAsset,
+			Sender:         rand.Bytes(20),
+			Name:           name,
+			NativeAsset:    nativeAsset,
+			KeyRequirement: keyReqs,
+			Params:         params,
 		}
 
-		server = NewMsgServerImpl(k, n, &evmMock.SignerMock{}, &evmMock.VoterMock{}, &mock.SnapshotterMock{})
+		server = NewMsgServerImpl(k, tssMock, n, &evmMock.SignerMock{}, &evmMock.VoterMock{}, &mock.SnapshotterMock{})
 	}
 
 	repeats := 20
@@ -611,9 +624,14 @@ func TestAddChain(t *testing.T) {
 		_, err := server.AddChain(sdk.WrapSDKContext(ctx), msg)
 
 		assert.NoError(t, err)
+		assert.Equal(t, 1, len(k.SetParamsCalls()))
+		assert.Equal(t, 1, len(tssMock.SetKeyRequirementCalls()))
 		assert.Equal(t, 1, len(k.SetPendingChainCalls()))
 		assert.Equal(t, name, k.SetPendingChainCalls()[0].Chain.Name)
 		assert.Equal(t, nativeAsset, k.SetPendingChainCalls()[0].Chain.NativeAsset)
+		assert.Equal(t, name, k.SetParamsCalls()[0].Params[0].Chain)
+		assert.Equal(t, name, tssMock.SetKeyRequirementCalls()[0].KeyRequirement.ChainName)
+
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeNewChain }), 1)
 
 	}).Repeat(repeats))
@@ -681,7 +699,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			Amount:        sdk.NewUint(mathRand.Uint64()),
 			BurnerAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
 		}
-		server = NewMsgServerImpl(k, n, s, v, &mock.SnapshotterMock{})
+		server = NewMsgServerImpl(k, &evmMock.TSSMock{}, n, s, v, &mock.SnapshotterMock{})
 	}
 
 	repeats := 20

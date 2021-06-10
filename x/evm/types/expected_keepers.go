@@ -16,7 +16,7 @@ import (
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Voter Signer Nexus Snapshotter EVMKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . TSS Voter Signer Nexus Snapshotter EVMKeeper
 
 // EVMKeeper is implemented by this module's keeper
 type EVMKeeper interface {
@@ -60,6 +60,12 @@ type EVMKeeper interface {
 type ParamsKeeper interface {
 	Subspace(s string) params.Subspace
 	GetSubspace(s string) (params.Subspace, bool)
+}
+
+// TSS wraps around the existing tss.Keeper interface to adhere to the Cosmos convention of keeping all
+// expected keepers from other modules in the expected_keepers.go file
+type TSS interface {
+	SetKeyRequirement(ctx sdk.Context, keyRequirement tss.KeyRequirement)
 }
 
 // Voter wraps around the existing vote.Voter interface to adhere to the Cosmos convention of keeping all

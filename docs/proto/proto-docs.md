@@ -63,6 +63,12 @@
 - [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
     - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
   
+- [tss/exported/v1beta1/types.proto](#tss/exported/v1beta1/types.proto)
+    - [KeyRequirement](#tss.exported.v1beta1.KeyRequirement)
+  
+    - [KeyRole](#tss.exported.v1beta1.KeyRole)
+    - [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy)
+  
 - [evm/v1beta1/tx.proto](#evm/v1beta1/tx.proto)
     - [AddChainRequest](#evm.v1beta1.AddChainRequest)
     - [AddChainResponse](#evm.v1beta1.AddChainResponse)
@@ -112,12 +118,6 @@
   
 - [snapshot/v1beta1/genesis.proto](#snapshot/v1beta1/genesis.proto)
     - [GenesisState](#snapshot.v1beta1.GenesisState)
-  
-- [tss/exported/v1beta1/types.proto](#tss/exported/v1beta1/types.proto)
-    - [KeyRequirement](#tss.exported.v1beta1.KeyRequirement)
-  
-    - [KeyRole](#tss.exported.v1beta1.KeyRole)
-    - [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy)
   
 - [tss/tofnd/v1beta1/tofnd.proto](#tss/tofnd/v1beta1/tofnd.proto)
     - [KeygenInit](#tss.tofnd.v1beta1.KeygenInit)
@@ -867,6 +867,66 @@ deposit address
 
 
 
+<a name="tss/exported/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tss/exported/v1beta1/types.proto
+
+
+
+<a name="tss.exported.v1beta1.KeyRequirement"></a>
+
+### KeyRequirement
+KeyRequirement defines requirements for keys
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain_name` | [string](#string) |  |  |
+| `key_role` | [KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+| `min_validator_subset_size` | [int64](#int64) |  |  |
+| `key_share_distribution_policy` | [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+
+<a name="tss.exported.v1beta1.KeyRole"></a>
+
+### KeyRole
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| KEY_ROLE_UNSPECIFIED | 0 |  |
+| KEY_ROLE_MASTER_KEY | 1 |  |
+| KEY_ROLE_SECONDARY_KEY | 2 |  |
+
+
+
+<a name="tss.exported.v1beta1.KeyShareDistributionPolicy"></a>
+
+### KeyShareDistributionPolicy
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| KEY_SHARE_DISTRIBUTION_POLICY_UNSPECIFIED | 0 |  |
+| KEY_SHARE_DISTRIBUTION_POLICY_WEIGHTED_BY_STAKE | 1 |  |
+| KEY_SHARE_DISTRIBUTION_POLICY_ONE_PER_VALIDATOR | 2 |  |
+
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="evm/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -885,6 +945,7 @@ deposit address
 | `sender` | [bytes](#bytes) |  |  |
 | `name` | [string](#string) |  |  |
 | `native_asset` | [string](#string) |  |  |
+| `key_requirement` | [tss.exported.v1beta1.KeyRequirement](#tss.exported.v1beta1.KeyRequirement) |  |  |
 | `params` | [bytes](#bytes) |  |  |
 
 
@@ -1530,66 +1591,6 @@ GenesisState represents the genesis state
 
 
  <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="tss/exported/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## tss/exported/v1beta1/types.proto
-
-
-
-<a name="tss.exported.v1beta1.KeyRequirement"></a>
-
-### KeyRequirement
-KeyRequirement defines requirements for keys
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain_name` | [string](#string) |  |  |
-| `key_role` | [KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
-| `min_validator_subset_size` | [int64](#int64) |  |  |
-| `key_share_distribution_policy` | [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
-
-<a name="tss.exported.v1beta1.KeyRole"></a>
-
-### KeyRole
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| KEY_ROLE_UNSPECIFIED | 0 |  |
-| KEY_ROLE_MASTER_KEY | 1 |  |
-| KEY_ROLE_SECONDARY_KEY | 2 |  |
-
-
-
-<a name="tss.exported.v1beta1.KeyShareDistributionPolicy"></a>
-
-### KeyShareDistributionPolicy
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| KEY_SHARE_DISTRIBUTION_POLICY_UNSPECIFIED | 0 |  |
-| KEY_SHARE_DISTRIBUTION_POLICY_WEIGHTED_BY_STAKE | 1 |  |
-| KEY_SHARE_DISTRIBUTION_POLICY_ONE_PER_VALIDATOR | 2 |  |
-
 
  <!-- end enums -->
 
