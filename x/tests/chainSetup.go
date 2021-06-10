@@ -107,7 +107,7 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 
 	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"))
 	EVMKeeper := evmKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(evmTypes.StoreKey), paramsK)
-	EVMKeeper.SetParams(ctx, evmTypes.DefaultParams())
+	EVMKeeper.SetParams(ctx, evmTypes.DefaultParams()...)
 
 	tssSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), tssTypes.DefaultParamspace)
 	signer := tssKeeper.NewKeeper(encCfg.Amino, sdk.NewKVStoreKey(tssTypes.StoreKey), tssSubspace, mocks.Slasher)

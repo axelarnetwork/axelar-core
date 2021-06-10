@@ -61,7 +61,7 @@ func NewQuerier(rpcs map[string]types.RPCClient, k Keeper, s types.Signer, n typ
 	}
 }
 
-func queryDepositAddress(ctx sdk.Context, k types.EthKeeper, n types.Nexus, chainName string, data []byte) ([]byte, error) {
+func queryDepositAddress(ctx sdk.Context, k types.EVMKeeper, n types.Nexus, chainName string, data []byte) ([]byte, error) {
 	depositChain, ok := n.GetChain(ctx, chainName)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
@@ -147,7 +147,7 @@ func queryAxelarGateway(ctx sdk.Context, k Keeper, n types.Nexus, chainName stri
 	return addr.Bytes(), nil
 }
 
-func queryTokenAddress(ctx sdk.Context, k types.EthKeeper, n types.Nexus, chainName, symbol string) ([]byte, error) {
+func queryTokenAddress(ctx sdk.Context, k types.EVMKeeper, n types.Nexus, chainName, symbol string) ([]byte, error) {
 
 	_, ok := n.GetChain(ctx, chainName)
 	if !ok {

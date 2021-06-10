@@ -10,7 +10,7 @@ import (
 // InitGenesis initialize default parameters
 // from the genesis state
 func InitGenesis(ctx sdk.Context, k keeper.Keeper, g types.GenesisState) {
-	k.SetParams(ctx, g.Params)
+	k.SetParams(ctx, g.Params...)
 }
 
 // ExportGenesis writes the current store values

@@ -8,21 +8,22 @@ import (
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/tendermint/tendermint/libs/log"
 
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
+
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
-	params "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Voter Signer Nexus Snapshotter EthKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Voter Signer Nexus Snapshotter EVMKeeper
 
-// EthKeeper is implemented by this module's keeper
-type EthKeeper interface {
+// EVMKeeper is implemented by this module's keeper
+type EVMKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 
 	GetParams(ctx sdk.Context) []Params
-	SetParams(ctx sdk.Context, params []Params)
+	SetParams(ctx sdk.Context, params ...Params)
 	GetNetwork(ctx sdk.Context, chain string) (string, bool)
 	GetRequiredConfirmationHeight(ctx sdk.Context, chain string) (uint64, bool)
 	GetRevoteLockingPeriod(ctx sdk.Context, chain string) (int64, bool)
@@ -49,8 +50,8 @@ type EthKeeper interface {
 	GetHashToSign(ctx sdk.Context, chain, txID string) (common.Hash, error)
 	SetGatewayAddress(ctx sdk.Context, chain string, addr common.Address)
 	DeletePendingChain(ctx sdk.Context, chain string)
-	SetPendingChain(ctx sdk.Context, chain string, nativeAsset string, params *Params)
-	GetPendingChainInfo(ctx sdk.Context, chain string) (bool, string, Params)
+	SetPendingChain(ctx sdk.Context, chain nexus.Chain)
+	GetPendingChain(ctx sdk.Context, chain string) (nexus.Chain, bool)
 	GetNetworkByID(ctx sdk.Context, chain string, id *big.Int) (string, bool)
 	GetChainIDByNetwork(ctx sdk.Context, chain, network string) *big.Int
 }

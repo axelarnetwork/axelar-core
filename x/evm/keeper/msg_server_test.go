@@ -17,6 +17,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 
+	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
+
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
@@ -28,7 +30,6 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
-	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 )
 
 var (
@@ -48,7 +49,15 @@ func TestLink_UnknownChain(t *testing.T) {
 
 	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
 	k := NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), paramsK)
-	k.SetParams(ctx, []types.Params{{Chain: exported.Ethereum.Name, Network: network, ConfirmationHeight: uint64(minConfHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, RevoteLockingPeriod: 50}})
+	k.SetParams(ctx, types.Params{
+		Chain:               exported.Ethereum.Name,
+		Network:             network,
+		ConfirmationHeight:  uint64(minConfHeight),
+		Gateway:             bytecodes,
+		Token:               tokenBC,
+		Burnable:            burnerBC,
+		RevoteLockingPeriod: 50,
+	})
 
 	recipient := nexus.CrossChainAddress{Address: "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L", Chain: btc.Bitcoin}
 	symbol := rand.Str(3)
@@ -72,7 +81,15 @@ func TestLink_NoGateway(t *testing.T) {
 
 	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
 	k := NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), paramsK)
-	k.SetParams(ctx, []types.Params{{Chain: exported.Ethereum.Name, Network: network, ConfirmationHeight: uint64(minConfHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, RevoteLockingPeriod: 50}})
+	k.SetParams(ctx, types.Params{
+		Chain:               exported.Ethereum.Name,
+		Network:             network,
+		ConfirmationHeight:  uint64(minConfHeight),
+		Gateway:             bytecodes,
+		Token:               tokenBC,
+		Burnable:            burnerBC,
+		RevoteLockingPeriod: 50,
+	})
 
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
 	symbol := rand.Str(3)
@@ -317,7 +334,7 @@ func TestMintTx_DifferentRecipient_DifferentHash(t *testing.T) {
 func TestHandleMsgConfirmChain(t *testing.T) {
 	var (
 		ctx    sdk.Context
-		k      *evmMock.EthKeeperMock
+		k      *evmMock.EVMKeeperMock
 		v      *evmMock.VoterMock
 		n      *evmMock.NexusMock
 		s      *evmMock.SignerMock
@@ -328,13 +345,11 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
 
-		k = &evmMock.EthKeeperMock{
+		k = &evmMock.EVMKeeperMock{
 			GetRevoteLockingPeriodFunc: func(ctx sdk.Context, _ string) (int64, bool) { return rand.PosI64(), true },
-			SetPendingChainFunc:        func(sdk.Context, string, string, *types.Params) {},
-			GetPendingChainInfoFunc: func(_ sdk.Context, chain string) (bool, string, types.Params) {
-				params := types.DefaultParams()[0]
-				params.Chain = chain
-				return true, rand.StrBetween(3, 5), params
+			SetPendingChainFunc:        func(sdk.Context, nexus.Chain) {},
+			GetPendingChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
+				return nexus.Chain{Name: chain, NativeAsset: rand.StrBetween(3, 5), SupportsForeignAssets: true}, true
 			},
 		}
 		v = &evmMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta, int64, int64) error { return nil }}
@@ -385,7 +400,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 
 	t.Run("unknown chain", testutils.Func(func(t *testing.T) {
 		setup()
-		k.GetPendingChainInfoFunc = func(sdk.Context, string) (bool, string, types.Params) { return false, "", types.Params{} }
+		k.GetPendingChainFunc = func(sdk.Context, string) (nexus.Chain, bool) { return nexus.Chain{}, false }
 
 		_, err := server.ConfirmChain(sdk.WrapSDKContext(ctx), msg)
 
@@ -423,7 +438,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 	var (
 		ctx    sdk.Context
-		k      *evmMock.EthKeeperMock
+		k      *evmMock.EVMKeeperMock
 		v      *evmMock.VoterMock
 		n      *evmMock.NexusMock
 		s      *evmMock.SignerMock
@@ -433,7 +448,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
 
-		k = &evmMock.EthKeeperMock{
+		k = &evmMock.EVMKeeperMock{
 			GetGatewayAddressFunc: func(sdk.Context, string) (common.Address, bool) {
 				return common.BytesToAddress(rand.Bytes(common.AddressLength)), true
 			},
@@ -552,7 +567,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 func TestAddChain(t *testing.T) {
 	var (
 		ctx         sdk.Context
-		k           *evmMock.EthKeeperMock
+		k           *evmMock.EVMKeeperMock
 		n           *evmMock.NexusMock
 		msg         *types.AddChainRequest
 		server      types.MsgServiceServer
@@ -567,9 +582,9 @@ func TestAddChain(t *testing.T) {
 			exported.Ethereum.Name: exported.Ethereum,
 			btc.Bitcoin.Name:       btc.Bitcoin,
 		}
-		k = &evmMock.EthKeeperMock{
-			SetParamsFunc:       func(sdk.Context, []types.Params) {},
-			SetPendingChainFunc: func(sdk.Context, string, string, *types.Params) {},
+		k = &evmMock.EVMKeeperMock{
+			SetParamsFunc:       func(sdk.Context, ...types.Params) {},
+			SetPendingChainFunc: func(sdk.Context, nexus.Chain) {},
 		}
 		n = &evmMock.NexusMock{
 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
@@ -597,8 +612,8 @@ func TestAddChain(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(k.SetPendingChainCalls()))
-		assert.Equal(t, name, k.SetPendingChainCalls()[0].Chain)
-		assert.Equal(t, nativeAsset, k.SetPendingChainCalls()[0].NativeAsset)
+		assert.Equal(t, name, k.SetPendingChainCalls()[0].Chain.Name)
+		assert.Equal(t, nativeAsset, k.SetPendingChainCalls()[0].Chain.NativeAsset)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeNewChain }), 1)
 
 	}).Repeat(repeats))
@@ -618,7 +633,7 @@ func TestAddChain(t *testing.T) {
 func TestHandleMsgConfirmDeposit(t *testing.T) {
 	var (
 		ctx    sdk.Context
-		k      *evmMock.EthKeeperMock
+		k      *evmMock.EVMKeeperMock
 		v      *evmMock.VoterMock
 		s      *evmMock.SignerMock
 		n      *evmMock.NexusMock
@@ -627,7 +642,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	)
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
-		k = &evmMock.EthKeeperMock{
+		k = &evmMock.EVMKeeperMock{
 			GetDepositFunc: func(sdk.Context, string, common.Hash, common.Address) (types.ERC20Deposit, types.DepositState, bool) {
 				return types.ERC20Deposit{}, 0, false
 			},
@@ -798,7 +813,15 @@ func newKeeper(ctx sdk.Context, chain string, confHeight int64) Keeper {
 	encCfg := testutils.MakeEncodingConfig()
 	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
 	k := NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), paramsK)
-	k.SetParams(ctx, []types.Params{{Chain: exported.Ethereum.Name, Network: network, ConfirmationHeight: uint64(confHeight), Gateway: bytecodes, Token: tokenBC, Burnable: burnerBC, RevoteLockingPeriod: 50}})
+	k.SetParams(ctx, types.Params{
+		Chain:               exported.Ethereum.Name,
+		Network:             network,
+		ConfirmationHeight:  uint64(confHeight),
+		Gateway:             bytecodes,
+		Token:               tokenBC,
+		Burnable:            burnerBC,
+		RevoteLockingPeriod: 50,
+	})
 	k.SetGatewayAddress(ctx, chain, common.HexToAddress(gateway))
 
 	return k

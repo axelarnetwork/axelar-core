@@ -11,13 +11,14 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/tendermint/tendermint/libs/log"
 
+	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
+
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 )
 
 func TestCreateMintCommandData_SingleMint(t *testing.T) {
@@ -170,7 +171,7 @@ func TestGetTokenAddress_CorrectData(t *testing.T) {
 
 	expected := common.HexToAddress("0xE7481ECB61F9C84b91C03414F3D5d48E5436045D")
 
-	k.SetParams(ctx, types.DefaultParams())
+	k.SetParams(ctx, types.DefaultParams()...)
 	account, err := sdk.AccAddressFromBech32("cosmos1vjyc4qmsdtdl5a4ruymnjqpchm5gyqde63sqdh")
 	assert.NoError(t, err)
 	k.SetTokenInfo(ctx, chain, &types.SignDeployTokenRequest{Sender: account, TokenName: tokenName, Symbol: tokenSymbol, Decimals: decimals, Capacity: capacity})
@@ -193,7 +194,7 @@ func TestGetBurnerAddressAndSalt_CorrectData(t *testing.T) {
 	expectedBurnerAddr := common.HexToAddress("0x5f185DAFBD08F00E2826c195087A722B0A094059")
 	expectedSalt := common.Hex2Bytes("35f28b34202f4e3de20c1710696e3f294ebe4df686b17be00fedf991190f9654")
 
-	k.SetParams(ctx, types.DefaultParams())
+	k.SetParams(ctx, types.DefaultParams()...)
 
 	actualburnerAddr, actualSalt, err := k.GetBurnerAddressAndSalt(ctx, exported.Ethereum.Name, tokenAddr, recipient, axelarGateway)
 
