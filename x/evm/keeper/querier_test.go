@@ -22,26 +22,26 @@ import (
 func TestQueryTokenAddress(t *testing.T) {
 
 	var (
-		ethKeeper   	*mock.EthKeeperMock
-		nexusKeeper 	*mock.NexusMock
-		ctx         	sdk.Context
-		evmChain		string
-		symbol			string
+		ethKeeper       *mock.EVMKeeperMock
+		nexusKeeper     *mock.NexusMock
+		ctx             sdk.Context
+		evmChain        string
+		symbol          string
 		expectedAddress common.Address
 	)
 
 	setup := func() {
 		expectedAddress = randomAddress()
 
-		ethKeeper = &mock.EthKeeperMock{
+		ethKeeper = &mock.EVMKeeperMock{
 			GetGatewayAddressFunc: func(ctx sdk.Context, evmChain string) (common.Address, bool) { return randomAddress(), true },
-			GetTokenAddressFunc: func(ctx sdk.Context, evmChain string, symbol string, gatewayAddr common.Address) (common.Address, error) { 
-				return expectedAddress, nil 
+			GetTokenAddressFunc: func(ctx sdk.Context, evmChain string, symbol string, gatewayAddr common.Address) (common.Address, error) {
+				return expectedAddress, nil
 			},
 		}
 		nexusKeeper = &mock.NexusMock{
 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
-				return nexus.Chain {
+				return nexus.Chain{
 					Name:                  chain,
 					NativeAsset:           rand.StrBetween(5, 20),
 					SupportsForeignAssets: true,
@@ -49,7 +49,7 @@ func TestQueryTokenAddress(t *testing.T) {
 			},
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		evmChain  = exported.Ethereum.Name
+		evmChain = exported.Ethereum.Name
 	}
 
 	repeatCount := 20
@@ -79,8 +79,8 @@ func TestQueryTokenAddress(t *testing.T) {
 
 	t.Run("token not deployed", testutils.Func(func(t *testing.T) {
 		setup()
-		ethKeeper.GetTokenAddressFunc = func(ctx sdk.Context, evmChain string, symbol string, gatewayAddr common.Address) (common.Address, error) { 
-			return common.Address{}, fmt.Errorf("could not find token address") 
+		ethKeeper.GetTokenAddressFunc = func(ctx sdk.Context, evmChain string, symbol string, gatewayAddr common.Address) (common.Address, error) {
+			return common.Address{}, fmt.Errorf("could not find token address")
 		}
 
 		_, err := queryTokenAddress(ctx, ethKeeper, nexusKeeper, evmChain, symbol)
@@ -95,29 +95,29 @@ func TestQueryTokenAddress(t *testing.T) {
 func TestQueryDepositAddress(t *testing.T) {
 
 	var (
-		ethKeeper  		*mock.EthKeeperMock
-		nexusKeeper 	*mock.NexusMock
-		ctx         	sdk.Context
-		evmChain		string
-		data			[]byte
+		ethKeeper       *mock.EVMKeeperMock
+		nexusKeeper     *mock.NexusMock
+		ctx             sdk.Context
+		evmChain        string
+		data            []byte
 		expectedAddress common.Address
 	)
 
 	setup := func() {
 		expectedAddress = randomAddress()
 
-		ethKeeper = &mock.EthKeeperMock{
+		ethKeeper = &mock.EVMKeeperMock{
 			GetGatewayAddressFunc: func(ctx sdk.Context, evmChain string) (common.Address, bool) { return randomAddress(), true },
-			GetTokenAddressFunc: func(ctx sdk.Context, evmChain string, symbol string, gatewayAddr common.Address) (common.Address, error) { 
-				return randomAddress(), nil 
+			GetTokenAddressFunc: func(ctx sdk.Context, evmChain string, symbol string, gatewayAddr common.Address) (common.Address, error) {
+				return randomAddress(), nil
 			},
 			GetBurnerAddressAndSaltFunc: func(ctx sdk.Context, evmChain string, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error) {
-				 return expectedAddress, randomHash(), nil 
+				return expectedAddress, randomHash(), nil
 			},
 		}
 		nexusKeeper = &mock.NexusMock{
 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
-				return nexus.Chain {
+				return nexus.Chain{
 					Name:                  chain,
 					NativeAsset:           rand.StrBetween(5, 20),
 					SupportsForeignAssets: true,
@@ -125,17 +125,17 @@ func TestQueryDepositAddress(t *testing.T) {
 			},
 			GetRecipientFunc: func(sdk.Context, nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
 				return nexus.CrossChainAddress{
-					Chain:		exported.Ethereum,
-					Address:	randomAddress().String(),
+					Chain:   exported.Ethereum,
+					Address: randomAddress().String(),
 				}, true
 			},
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		evmChain = exported.Ethereum.Name
 		data = types.ModuleCdc.MustMarshalJSON(&types.DepositQueryParams{
-			Chain: "bitcoin", 
+			Chain:   "bitcoin",
 			Address: "tb1qg2z5jatp22zg7wyhpthhgwvn0un05mdwmqgjln",
-			Symbol: "satoshi",
+			Symbol:  "satoshi",
 		})
 
 	}
@@ -158,9 +158,9 @@ func TestQueryDepositAddress(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 		dataStr := &types.DepositQueryParams{
-			Chain: rand.StrBetween(5, 20), 
+			Chain:   rand.StrBetween(5, 20),
 			Address: "tb" + rand.HexStr(40),
-			Symbol: rand.StrBetween(3, 8),
+			Symbol:  rand.StrBetween(3, 8),
 		}
 		data = types.ModuleCdc.MustMarshalJSON(dataStr)
 
@@ -187,8 +187,8 @@ func TestQueryDepositAddress(t *testing.T) {
 
 	t.Run("token contract not deployed", testutils.Func(func(t *testing.T) {
 		setup()
-		ethKeeper.GetTokenAddressFunc = func(ctx sdk.Context, evmChain string, symbol string, gatewayAddr common.Address) (common.Address, error) { 
-			return common.Address{}, fmt.Errorf("could not find token address") 
+		ethKeeper.GetTokenAddressFunc = func(ctx sdk.Context, evmChain string, symbol string, gatewayAddr common.Address) (common.Address, error) {
+			return common.Address{}, fmt.Errorf("could not find token address")
 		}
 
 		_, err := queryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
@@ -202,7 +202,7 @@ func TestQueryDepositAddress(t *testing.T) {
 		setup()
 		ethKeeper.GetBurnerAddressAndSaltFunc = func(ctx sdk.Context, evmChain string, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error) {
 			return common.Address{}, common.Hash{}, fmt.Errorf("could not find deposit address")
-	   }
+		}
 
 		_, err := queryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
 
@@ -214,7 +214,7 @@ func TestQueryDepositAddress(t *testing.T) {
 	t.Run("Ethereum chain not registered", testutils.Func(func(t *testing.T) {
 		setup()
 		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
-			return nexus.Chain {}, false
+			return nexus.Chain{}, false
 		}
 		_, err := queryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
 

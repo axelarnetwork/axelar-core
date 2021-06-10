@@ -19,16 +19,17 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 
+	"github.com/cosmos/cosmos-sdk/store/prefix"
+
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
 )
 
 const (
-	gatewayKey            = "gateway"
-	pendingChainAssetKey  = "pending_chain_asset"
-	pendingChainParamsKey = "pending_chain_params"
+	gatewayKey      = "gateway"
+	pendingChainKey = "pending_chain_asset"
 
 	chainPrefix            = "chain_"
 	subspacePrefix         = "subspace_"
@@ -60,10 +61,10 @@ func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramsKeeper ty
 }
 
 // SetParams sets the evm module's parameters
-func (k Keeper) SetParams(ctx sdk.Context, params []types.Params) {
+func (k Keeper) SetParams(ctx sdk.Context, params ...types.Params) {
 	for _, p := range params {
 		str := strings.ToLower(p.Chain)
-		subspace, ok := k.getSubspace(ctx, str)
+		subspace, ok := k.getSubspace(str)
 		if !ok {
 			subspace = k.paramsKeeper.Subspace(types.ModuleName + "_" + str)
 			subspace = subspace.WithKeyTable(types.KeyTable())
@@ -80,7 +81,7 @@ func (k Keeper) GetParams(ctx sdk.Context) []types.Params {
 
 	for ; iter.Valid(); iter.Next() {
 		chain := string(iter.Value())
-		subspace, _ := k.getSubspace(ctx, chain)
+		subspace, _ := k.getSubspace(chain)
 
 		var p types.Params
 		subspace.GetParamSet(ctx, &p)
@@ -93,7 +94,7 @@ func (k Keeper) GetParams(ctx sdk.Context) []types.Params {
 // GetNetwork returns the Ethereum network Axelar-Core is expected to connect to
 func (k Keeper) GetNetwork(ctx sdk.Context, chain string) (string, bool) {
 	var network string
-	subspace, ok := k.getSubspace(ctx, chain)
+	subspace, ok := k.getSubspace(chain)
 	if !ok {
 		return network, false
 	}
@@ -111,7 +112,7 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context, chain string) (uint64, bool) {
 	var h uint64
 
-	subspace, ok := k.getSubspace(ctx, chain)
+	subspace, ok := k.getSubspace(chain)
 	if !ok {
 		return h, false
 	}
@@ -124,7 +125,7 @@ func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context, chain string) (ui
 func (k Keeper) GetRevoteLockingPeriod(ctx sdk.Context, chain string) (int64, bool) {
 	var result int64
 
-	subspace, ok := k.getSubspace(ctx, chain)
+	subspace, ok := k.getSubspace(chain)
 	if !ok {
 		return result, false
 	}
@@ -242,14 +243,14 @@ func (k Keeper) GetBurnerAddressAndSalt(ctx sdk.Context, chain string, tokenAddr
 
 func (k Keeper) getBurnerBC(ctx sdk.Context, chain string) []byte {
 	var b []byte
-	subspace, _ := k.getSubspace(ctx, chain)
+	subspace, _ := k.getSubspace(chain)
 	subspace.Get(ctx, types.KeyBurnable, &b)
 	return b
 }
 
 func (k Keeper) getTokenBC(ctx sdk.Context, chain string) []byte {
 	var b []byte
-	subspace, _ := k.getSubspace(ctx, chain)
+	subspace, _ := k.getSubspace(chain)
 	subspace.Get(ctx, types.KeyToken, &b)
 	return b
 }
@@ -257,7 +258,7 @@ func (k Keeper) getTokenBC(ctx sdk.Context, chain string) []byte {
 // GetGatewayByteCodes retrieves the byte codes for the Axelar Gateway smart contract
 func (k Keeper) GetGatewayByteCodes(ctx sdk.Context, chain string) ([]byte, bool) {
 	var b []byte
-	subspace, ok := k.getSubspace(ctx, chain)
+	subspace, ok := k.getSubspace(chain)
 	if !ok {
 		return b, false
 	}
@@ -399,7 +400,7 @@ func (k Keeper) GetHashToSign(ctx sdk.Context, chain, txID string) (common.Hash,
 
 func (k Keeper) getSigner(ctx sdk.Context, chain string) ethTypes.EIP155Signer {
 	var network string
-	subspace, _ := k.getSubspace(ctx, chain)
+	subspace, _ := k.getSubspace(chain)
 	subspace.Get(ctx, types.KeyNetwork, &network)
 	return ethTypes.NewEIP155Signer(k.GetChainIDByNetwork(ctx, chain, network))
 }
@@ -440,27 +441,23 @@ func (k Keeper) GetPendingDeposit(ctx sdk.Context, chain string, poll exported.P
 
 // DeletePendingChain deletes a chain that is not registered yet
 func (k Keeper) DeletePendingChain(ctx sdk.Context, chain string) {
-	k.getStore(ctx, chain).Delete([]byte(pendingChainAssetKey))
-	k.getStore(ctx, chain).Delete([]byte(pendingChainParamsKey))
+	k.getStore(ctx, chain).Delete([]byte(pendingChainKey))
 }
 
-// SetPendingChain stores a chain that is not registered yet
-func (k Keeper) SetPendingChain(ctx sdk.Context, chain string, nativeAsset string, params *types.Params) {
-	k.getStore(ctx, chain).Set([]byte(pendingChainAssetKey), []byte(nativeAsset))
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(params)
-	k.getStore(ctx, chain).Set([]byte(pendingChainParamsKey), bz)
+// SetPendingChain stores the chain pending for confirmation
+func (k Keeper) SetPendingChain(ctx sdk.Context, chain nexus.Chain) {
+	k.getStore(ctx, chain.Name).Set([]byte(pendingChainKey), k.cdc.MustMarshalBinaryLengthPrefixed(&chain))
 }
 
-// GetPendingChainInfo returns true if chain that is not registered yet, alongside its native asset and genesis params
-func (k Keeper) GetPendingChainInfo(ctx sdk.Context, chain string) (bool, string, types.Params) {
-	bz := k.getStore(ctx, chain).Get([]byte(pendingChainParamsKey))
+// GetPendingChain returns the chain object with the given name, false if the chain is either unknown or confirmed
+func (k Keeper) GetPendingChain(ctx sdk.Context, chainName string) (nexus.Chain, bool) {
+	bz := k.getStore(ctx, chainName).Get([]byte(pendingChainKey))
 	if bz == nil {
-		return false, "", types.Params{}
+		return nexus.Chain{}, false
 	}
-	var params types.Params
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &params)
-
-	return true, string(k.getStore(ctx, chain).Get([]byte(pendingChainAssetKey))), params
+	var chain nexus.Chain
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &chain)
+	return chain, true
 }
 
 // SetDeposit stores confirmed or burned deposits
@@ -488,7 +485,7 @@ func (k Keeper) GetNetworkByID(ctx sdk.Context, chain string, id *big.Int) (stri
 	if id == nil {
 		return "", false
 	}
-	subspace, ok := k.getSubspace(ctx, chain)
+	subspace, ok := k.getSubspace(chain)
 	if !ok {
 		return "", false
 	}
@@ -509,7 +506,7 @@ func (k Keeper) GetChainIDByNetwork(ctx sdk.Context, chain, network string) *big
 	if network == "" {
 		return nil
 	}
-	subspace, ok := k.getSubspace(ctx, chain)
+	subspace, ok := k.getSubspace(chain)
 	if !ok {
 		return nil
 	}
@@ -530,6 +527,6 @@ func (k Keeper) getStore(ctx sdk.Context, chain string) prefix.Store {
 	return prefix.NewStore(ctx.KVStore(k.storeKey), pre)
 }
 
-func (k Keeper) getSubspace(ctx sdk.Context, chain string) (params.Subspace, bool) {
+func (k Keeper) getSubspace(chain string) (params.Subspace, bool) {
 	return k.paramsKeeper.GetSubspace(types.ModuleName + "_" + strings.ToLower(chain))
 }

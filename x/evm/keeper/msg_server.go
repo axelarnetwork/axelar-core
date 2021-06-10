@@ -25,7 +25,7 @@ import (
 var _ types.MsgServiceServer = msgServer{}
 
 type msgServer struct {
-	types.EthKeeper
+	types.EVMKeeper
 	signer      types.Signer
 	nexus       types.Nexus
 	voter       types.Voter
@@ -34,9 +34,9 @@ type msgServer struct {
 
 // NewMsgServerImpl returns an implementation of the bitcoin MsgServiceServer interface
 // for the provided Keeper.
-func NewMsgServerImpl(keeper types.EthKeeper, n types.Nexus, s types.Signer, v types.Voter, snap types.Snapshotter) types.MsgServiceServer {
+func NewMsgServerImpl(keeper types.EVMKeeper, n types.Nexus, s types.Signer, v types.Voter, snap types.Snapshotter) types.MsgServiceServer {
 	return msgServer{
-		EthKeeper:   keeper,
+		EVMKeeper:   keeper,
 		signer:      s,
 		nexus:       n,
 		voter:       v,
@@ -134,7 +134,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 
 	poll := vote.NewPollMeta(types.ModuleName, req.TxID.Hex()+"_"+req.Symbol)
 
-	period, ok := s.EthKeeper.GetRevoteLockingPeriod(ctx, chain.Name)
+	period, ok := s.EVMKeeper.GetRevoteLockingPeriod(ctx, chain.Name)
 	if !ok {
 		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", req.Chain)
 	}
@@ -149,7 +149,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	}
 	s.SetPendingTokenDeployment(ctx, chain.Name, poll, deploy)
 
-	height, _ := s.EthKeeper.GetRequiredConfirmationHeight(ctx, chain.Name)
+	height, _ := s.EVMKeeper.GetRequiredConfirmationHeight(ctx, chain.Name)
 
 	telemetry.NewLabel("eth_token_addr", tokenAddr.String())
 
@@ -176,7 +176,7 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 		return &types.ConfirmChainResponse{}, fmt.Errorf("chain '%s' is already confirmed", req.Name)
 	}
 
-	if found, _, _ := s.EthKeeper.GetPendingChainInfo(ctx, req.Name); !found {
+	if _, ok := s.EVMKeeper.GetPendingChain(ctx, req.Name); !ok {
 		return &types.ConfirmChainResponse{}, fmt.Errorf("'%s' has not been added yet", req.Name)
 	}
 
@@ -192,7 +192,7 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 	}
 
 	//TODO: Can we assume Ethereum for this specific case or do we need something else?
-	period, ok := s.EthKeeper.GetRevoteLockingPeriod(ctx, exported.Ethereum.Name)
+	period, ok := s.EVMKeeper.GetRevoteLockingPeriod(ctx, exported.Ethereum.Name)
 	if !ok {
 		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", exported.Ethereum.Name)
 	}
@@ -247,7 +247,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
 	}
 
-	period, ok := s.EthKeeper.GetRevoteLockingPeriod(ctx, chain.Name)
+	period, ok := s.EVMKeeper.GetRevoteLockingPeriod(ctx, chain.Name)
 	if !ok {
 		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", req.Chain)
 	}
@@ -258,14 +258,14 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	}
 
 	erc20Deposit := types.ERC20Deposit{
-		TxID:          types.Hash(req.TxID),
+		TxID:          req.TxID,
 		Amount:        req.Amount,
 		Symbol:        burnerInfo.Symbol,
 		BurnerAddress: req.BurnerAddress,
 	}
 	s.SetPendingDeposit(ctx, chain.Name, poll, &erc20Deposit)
 
-	height, _ := s.EthKeeper.GetRequiredConfirmationHeight(ctx, chain.Name)
+	height, _ := s.EVMKeeper.GetRequiredConfirmationHeight(ctx, chain.Name)
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeDepositConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
@@ -287,13 +287,11 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 	ctx := sdk.UnwrapSDKContext(c)
 
 	registeredChain, registered := s.nexus.GetChain(ctx, req.Name)
-	pendingChain, nativeAsset, params := s.GetPendingChainInfo(ctx, req.Name)
-
 	if registered {
 		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("chain %s already confirmed", registeredChain.Name)}, nil
 	}
-
-	if !pendingChain {
+	chain, ok := s.GetPendingChain(ctx, req.Name)
+	if !ok {
 		return nil, fmt.Errorf("unknown chain %s", req.Name)
 	}
 
@@ -332,13 +330,6 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 	ctx.EventManager().EmitEvent(
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
-	chain := nexus.Chain{
-		Name:                  req.Name,
-		NativeAsset:           nativeAsset,
-		SupportsForeignAssets: true,
-	}
-
-	s.SetParams(ctx, []types.Params{params})
 	s.nexus.SetChain(ctx, chain)
 	s.nexus.RegisterAsset(ctx, chain.Name, chain.NativeAsset)
 
@@ -840,7 +831,8 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 		return &types.AddChainResponse{}, fmt.Errorf("chain '%s' is already registered", req.Name)
 	}
 
-	s.SetPendingChain(ctx, req.Name, req.NativeAsset, &req.Params)
+	s.SetPendingChain(ctx, nexus.Chain{Name: req.Name, NativeAsset: req.NativeAsset, SupportsForeignAssets: true})
+	s.SetParams(ctx, req.Params)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeNewChain,
