@@ -146,7 +146,7 @@ func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta expor
 	}
 
 	// if the poll is already decided there is no need to keep track of further votes
-	if poll.Result != nil {
+	if poll.Result != nil || poll.Failed {
 		return nil
 	}
 
@@ -172,6 +172,13 @@ func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta expor
 			threshold.Numerator, threshold.Denominator, pollMeta, talliedVote.Tally.String(), snap.TotalShareCount.String()))
 
 		poll.Result = talliedVote.Data
+	}
+
+	_, highestTalliedVote := poll.GetHighestTalliedVote()
+	votedShareCount := poll.GetVotedShareCount()
+
+	if !threshold.IsMet(highestTalliedVote.Tally.Add(snap.TotalShareCount).Sub(votedShareCount), snap.TotalShareCount) {
+		poll.Failed = true
 	}
 
 	k.setPoll(ctx, *poll)

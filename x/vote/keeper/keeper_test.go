@@ -106,7 +106,7 @@ func TestInitPoll(t *testing.T) {
 }
 
 // error when tallying non-existing poll
-func TestKeeper_TallyVote_NonExistingPoll_ReturnError(t *testing.T) {
+func TestTallyVote_NonExistingPoll_ReturnError(t *testing.T) {
 	s := setup()
 
 	poll := randomPoll()
@@ -116,7 +116,7 @@ func TestKeeper_TallyVote_NonExistingPoll_ReturnError(t *testing.T) {
 }
 
 // error when tallied vote comes from unauthorized voter
-func TestKeeper_TallyVote_UnknownVoter_ReturnError(t *testing.T) {
+func TestTallyVote_UnknownVoter_ReturnError(t *testing.T) {
 	s := setup()
 	// proxy is unknown
 	s.Broadcaster.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return nil }
@@ -128,7 +128,7 @@ func TestKeeper_TallyVote_UnknownVoter_ReturnError(t *testing.T) {
 }
 
 // tally vote no winner
-func TestKeeper_TallyVote_NoWinner(t *testing.T) {
+func TestTallyVote_NoWinner(t *testing.T) {
 	s := setup()
 	threshold := utils.Threshold{Numerator: 2, Denominator: 3}
 	s.Keeper.SetVotingThreshold(s.Ctx, threshold)
@@ -146,7 +146,7 @@ func TestKeeper_TallyVote_NoWinner(t *testing.T) {
 }
 
 // tally vote with winner
-func TestKeeper_TallyVote_WithWinner(t *testing.T) {
+func TestTallyVote_WithWinner(t *testing.T) {
 	s := setup()
 	threshold := utils.Threshold{Numerator: 2, Denominator: 3}
 	s.Keeper.SetVotingThreshold(s.Ctx, threshold)
@@ -167,7 +167,7 @@ func TestKeeper_TallyVote_WithWinner(t *testing.T) {
 }
 
 // error when tallying second vote from same validator
-func TestKeeper_TallyVote_TwoVotesFromSameValidator_ReturnError(t *testing.T) {
+func TestTallyVote_TwoVotesFromSameValidator_ReturnError(t *testing.T) {
 	s := setup()
 	s.Keeper.SetVotingThreshold(s.Ctx, utils.Threshold{Numerator: 2, Denominator: 3})
 	s.ValidatorSet = []snapshot.Validator{newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(1, 1000))}
@@ -185,7 +185,7 @@ func TestKeeper_TallyVote_TwoVotesFromSameValidator_ReturnError(t *testing.T) {
 }
 
 // tally multiple votes until poll is decided
-func TestKeeper_TallyVote_MultipleVotesUntilDecision(t *testing.T) {
+func TestTallyVote_MultipleVotesUntilDecision(t *testing.T) {
 	s := setup()
 	s.Keeper.SetVotingThreshold(s.Ctx, utils.Threshold{Numerator: 2, Denominator: 3})
 	s.ValidatorSet = []snapshot.Validator{
@@ -222,7 +222,7 @@ func TestKeeper_TallyVote_MultipleVotesUntilDecision(t *testing.T) {
 }
 
 // tally vote for already decided vote
-func TestKeeper_TallyVote_ForDecidedPoll(t *testing.T) {
+func TestTallyVote_ForDecidedPoll(t *testing.T) {
 	s := setup()
 	threshold := utils.Threshold{Numerator: 2, Denominator: 3}
 	s.Keeper.SetVotingThreshold(s.Ctx, threshold)
@@ -245,6 +245,31 @@ func TestKeeper_TallyVote_ForDecidedPoll(t *testing.T) {
 	assert.NoError(t, s.Keeper.TallyVote(s.Ctx, randomSender(), poll, data2))
 	// does not change outcome
 	assert.Equal(t, data1, s.Keeper.Result(s.Ctx, poll))
+}
+
+func TestTallyVote_FailedPoll(t *testing.T) {
+	s := setup()
+	threshold := utils.Threshold{Numerator: 1, Denominator: 2}
+	s.Keeper.SetVotingThreshold(s.Ctx, threshold)
+	validatorPower := rand.I64Between(1, 200)
+	validator1 := newValidator(rand.Bytes(sdk.AddrLen), validatorPower)
+	validator2 := newValidator(rand.Bytes(sdk.AddrLen), validatorPower)
+	s.ValidatorSet = []snapshot.Validator{validator1, validator2}
+
+	poll := randomPoll()
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, 100, 0))
+
+	s.Broadcaster.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return validator1.GetOperator() }
+	assert.NoError(t, s.Keeper.TallyVote(s.Ctx, randomSender(), poll, randomData()))
+
+	assert.Nil(t, s.Keeper.Result(s.Ctx, poll))
+	assert.False(t, s.Keeper.GetPoll(s.Ctx, poll).Failed)
+
+	s.Broadcaster.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return validator2.GetOperator() }
+	assert.NoError(t, s.Keeper.TallyVote(s.Ctx, randomSender(), poll, randomData()))
+
+	assert.Nil(t, s.Keeper.Result(s.Ctx, poll))
+	assert.True(t, s.Keeper.GetPoll(s.Ctx, poll).Failed)
 }
 
 func randomData() exported.VotingData {

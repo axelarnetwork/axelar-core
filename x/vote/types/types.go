@@ -46,6 +46,32 @@ func (m Poll) GetResult() exported.VotingData {
 	return m.Result.GetCachedValue().(exported.VotingData)
 }
 
+// GetVotedShareCount returns the total voted share count in poll
+func (m Poll) GetVotedShareCount() sdk.Int {
+	result := sdk.ZeroInt()
+
+	for _, talliedVote := range m.Votes {
+		result = result.Add(talliedVote.Tally)
+	}
+
+	return result
+}
+
+// GetHighestTalliedVote returns the vote with the highest tally if any vote exists
+func (m Poll) GetHighestTalliedVote() (bool, TalliedVote) {
+	var result TalliedVote
+	found := false
+
+	for i, talliedVote := range m.Votes {
+		if i == 0 || talliedVote.Tally.GT(result.Tally) {
+			found = true
+			result = talliedVote
+		}
+	}
+
+	return found, result
+}
+
 // UnpackInterfaces implements UnpackInterfacesMessage
 func (m Poll) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
 	for i := range m.Votes {
