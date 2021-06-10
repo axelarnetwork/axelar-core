@@ -4,12 +4,13 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	gethParams "github.com/ethereum/go-ethereum/params"
+
+	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 )
 
 // Parameter keys
