@@ -64,7 +64,7 @@ func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramsKeeper ty
 func (k Keeper) SetParams(ctx sdk.Context, params ...types.Params) {
 	for _, p := range params {
 		str := strings.ToLower(p.Chain)
-		subspace, ok := k.getSubspace(str)
+		subspace, ok := k.getSubspace(ctx, str)
 		if !ok {
 			subspace = k.paramsKeeper.Subspace(types.ModuleName + "_" + str)
 			subspace = subspace.WithKeyTable(types.KeyTable())
@@ -81,7 +81,7 @@ func (k Keeper) GetParams(ctx sdk.Context) []types.Params {
 
 	for ; iter.Valid(); iter.Next() {
 		chain := string(iter.Value())
-		subspace, _ := k.getSubspace(chain)
+		subspace, _ := k.getSubspace(ctx, chain)
 
 		var p types.Params
 		subspace.GetParamSet(ctx, &p)
@@ -94,7 +94,7 @@ func (k Keeper) GetParams(ctx sdk.Context) []types.Params {
 // GetNetwork returns the Ethereum network Axelar-Core is expected to connect to
 func (k Keeper) GetNetwork(ctx sdk.Context, chain string) (string, bool) {
 	var network string
-	subspace, ok := k.getSubspace(chain)
+	subspace, ok := k.getSubspace(ctx, chain)
 	if !ok {
 		return network, false
 	}
@@ -112,7 +112,7 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context, chain string) (uint64, bool) {
 	var h uint64
 
-	subspace, ok := k.getSubspace(chain)
+	subspace, ok := k.getSubspace(ctx, chain)
 	if !ok {
 		return h, false
 	}
@@ -125,7 +125,7 @@ func (k Keeper) GetRequiredConfirmationHeight(ctx sdk.Context, chain string) (ui
 func (k Keeper) GetRevoteLockingPeriod(ctx sdk.Context, chain string) (int64, bool) {
 	var result int64
 
-	subspace, ok := k.getSubspace(chain)
+	subspace, ok := k.getSubspace(ctx, chain)
 	if !ok {
 		return result, false
 	}
@@ -243,14 +243,14 @@ func (k Keeper) GetBurnerAddressAndSalt(ctx sdk.Context, chain string, tokenAddr
 
 func (k Keeper) getBurnerBC(ctx sdk.Context, chain string) []byte {
 	var b []byte
-	subspace, _ := k.getSubspace(chain)
+	subspace, _ := k.getSubspace(ctx, chain)
 	subspace.Get(ctx, types.KeyBurnable, &b)
 	return b
 }
 
 func (k Keeper) getTokenBC(ctx sdk.Context, chain string) []byte {
 	var b []byte
-	subspace, _ := k.getSubspace(chain)
+	subspace, _ := k.getSubspace(ctx, chain)
 	subspace.Get(ctx, types.KeyToken, &b)
 	return b
 }
@@ -258,7 +258,7 @@ func (k Keeper) getTokenBC(ctx sdk.Context, chain string) []byte {
 // GetGatewayByteCodes retrieves the byte codes for the Axelar Gateway smart contract
 func (k Keeper) GetGatewayByteCodes(ctx sdk.Context, chain string) ([]byte, bool) {
 	var b []byte
-	subspace, ok := k.getSubspace(chain)
+	subspace, ok := k.getSubspace(ctx, chain)
 	if !ok {
 		return b, false
 	}
@@ -400,7 +400,7 @@ func (k Keeper) GetHashToSign(ctx sdk.Context, chain, txID string) (common.Hash,
 
 func (k Keeper) getSigner(ctx sdk.Context, chain string) ethTypes.EIP155Signer {
 	var network string
-	subspace, _ := k.getSubspace(chain)
+	subspace, _ := k.getSubspace(ctx, chain)
 	subspace.Get(ctx, types.KeyNetwork, &network)
 	return ethTypes.NewEIP155Signer(k.GetChainIDByNetwork(ctx, chain, network))
 }
@@ -485,7 +485,7 @@ func (k Keeper) GetNetworkByID(ctx sdk.Context, chain string, id *big.Int) (stri
 	if id == nil {
 		return "", false
 	}
-	subspace, ok := k.getSubspace(chain)
+	subspace, ok := k.getSubspace(ctx, chain)
 	if !ok {
 		return "", false
 	}
@@ -506,7 +506,7 @@ func (k Keeper) GetChainIDByNetwork(ctx sdk.Context, chain, network string) *big
 	if network == "" {
 		return nil
 	}
-	subspace, ok := k.getSubspace(chain)
+	subspace, ok := k.getSubspace(ctx, chain)
 	if !ok {
 		return nil
 	}
@@ -527,6 +527,12 @@ func (k Keeper) getStore(ctx sdk.Context, chain string) prefix.Store {
 	return prefix.NewStore(ctx.KVStore(k.storeKey), pre)
 }
 
-func (k Keeper) getSubspace(chain string) (params.Subspace, bool) {
-	return k.paramsKeeper.GetSubspace(types.ModuleName + "_" + strings.ToLower(chain))
+func (k Keeper) getSubspace(ctx sdk.Context, chain string) (params.Subspace, bool) {
+	chainLower := strings.ToLower(chain)
+	subspace, ok := k.paramsKeeper.GetSubspace(types.ModuleName + "_" + chainLower)
+	if !ok && ctx.KVStore(k.storeKey).Has([]byte(subspacePrefix+chainLower)) {
+		subspace = k.paramsKeeper.Subspace(types.ModuleName + "_" + chainLower)
+		subspace = subspace.WithKeyTable(types.KeyTable())
+	}
+	return subspace, ok
 }
