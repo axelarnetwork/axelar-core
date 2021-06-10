@@ -235,6 +235,8 @@ func CreateExecuteData(commandData []byte, commandSig Signature) ([]byte, error)
 // GetEthereumSignHash returns the hash that needs to be signed so AxelarGateway accepts the given command
 func GetEthereumSignHash(commandData []byte) common.Hash {
 	hash := crypto.Keccak256(commandData)
+
+	//TODO: is this the same across any EVM chain?
 	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(hash), hash)
 
 	return crypto.Keccak256Hash([]byte(msg))

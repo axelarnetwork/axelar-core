@@ -9,8 +9,8 @@ axelard query evm deploy-gateway [chain] [flags]
 ### Options
 
 ```
-      --gas-limit uint     Ethereum gas limit to use in the transaction (default value is 3000000). Set to 0 to estimate gas limit at the node. (default 3000000)
-      --gas-price string   Ethereum gas price to use in the transaction. If flag is omitted (or value set to 0), the gas price will be suggested by the node (default "0")
+      --gas-limit uint     EVM gas limit to use in the transaction (default value is 3000000). Set to 0 to estimate gas limit at the node. (default 3000000)
+      --gas-price string   EVM gas price to use in the transaction. If flag is omitted (or value set to 0), the gas price will be suggested by the node (default "0")
       --height int         Use a specific height to query state at (this can error if the node is pruning state)
   -h, --help               help for deploy-gateway
       --node string        <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")

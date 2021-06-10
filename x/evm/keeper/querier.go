@@ -33,7 +33,7 @@ const (
 	SendCommand               = "send-command"
 )
 
-// NewQuerier returns a new querier for the ethereum module
+// NewQuerier returns a new querier for the evm module
 func NewQuerier(rpcs map[string]types.RPCClient, k Keeper, s types.Signer, n types.Nexus) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		switch path[0] {

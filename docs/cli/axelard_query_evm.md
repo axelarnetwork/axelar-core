@@ -26,7 +26,7 @@ axelard query evm [flags]
 ### SEE ALSO
 
 - [axelard query](axelard_query.md)	 - Querying subcommands
-- [axelard query evm command](axelard_query_evm_command.md)	 - Get the signed command data that can be wrapped in an Ethereum transaction to execute the command \[commandID\] on Axelar Gateway
+- [axelard query evm command](axelard_query_evm_command.md)	 - Get the signed command data that can be wrapped in an EVM transaction to execute the command \[commandID\] on Axelar Gateway
 - [axelard query evm deploy-gateway](axelard_query_evm_deploy-gateway.md)	 - Obtain a raw transaction for the deployment of Axelar Gateway.
 - [axelard query evm deposit-addr](axelard_query_evm_deposit-addr.md)	 - Returns an evm chain deposit address for a recipient address on another blockchain
 - [axelard query evm gateway-address](axelard_query_evm_gateway-address.md)	 - Query the Axelar Gateway contract address
