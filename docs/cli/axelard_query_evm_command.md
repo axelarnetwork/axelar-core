@@ -1,6 +1,6 @@
 ## axelard query evm command
 
-Get the signed command data that can be wrapped in an Ethereum transaction to execute the command \[commandID\] on Axelar Gateway
+Get the signed command data that can be wrapped in an EVM transaction to execute the command \[commandID\] on Axelar Gateway
 
 ```
 axelard query evm command [chain] [commandID] [flags]

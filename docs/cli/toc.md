@@ -49,7 +49,7 @@
       - [validator-outstanding-rewards \[validator\]](axelard_query_distribution_validator-outstanding-rewards.md)	 - Query distribution outstanding (un-withdrawn) rewards for a validator and all their delegations
     - [evidence](axelard_query_evidence.md)	 - Query for evidence by hash or for all (paginated) submitted evidence
     - [evm](axelard_query_evm.md)	 - Querying commands for the evm module
-      - [command \[chain\] \[commandID\]](axelard_query_evm_command.md)	 - Get the signed command data that can be wrapped in an Ethereum transaction to execute the command \[commandID\] on Axelar Gateway
+      - [command \[chain\] \[commandID\]](axelard_query_evm_command.md)	 - Get the signed command data that can be wrapped in an EVM transaction to execute the command \[commandID\] on Axelar Gateway
       - [deploy-gateway \[chain\]](axelard_query_evm_deploy-gateway.md)	 - Obtain a raw transaction for the deployment of Axelar Gateway.
       - [deposit-addr \[evm chain\] \[recipient chain\] \[recipient address\] \[symbol\]](axelard_query_evm_deposit-addr.md)	 - Returns an evm chain deposit address for a recipient address on another blockchain
       - [gateway-address \[chain\]](axelard_query_evm_gateway-address.md)	 - Query the Axelar Gateway contract address
