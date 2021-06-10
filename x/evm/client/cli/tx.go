@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strconv"
-	"strings"
 
+	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -14,8 +15,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/spf13/cobra"
-
-	"github.com/axelarnetwork/axelar-core/x/evm/types"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -296,8 +295,9 @@ func GetCmdSignTransferOwnership() *cobra.Command {
 // GetCmdAddChain returns the cli command to add a new evm chain command
 func GetCmdAddChain() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-chain [name] [native asset] [params file]",
+		Use:   "add-chain [name] [native asset] [chain config]",
 		Short: "Add a new EVM chain",
+		Long:  "Add a new EVM chain. The chain config parameter should be the path to a json file containing the key requirements and the evm module parameters",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
@@ -312,17 +312,16 @@ func GetCmdAddChain() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			var params types.Params
-			err = json.Unmarshal([]byte(byteValue), &params)
+			var chainConf struct {
+				KeyRequirement tss.KeyRequirement `json:"key_requirement"`
+				Params         types.Params       `json:"params"`
+			}
+			err = json.Unmarshal([]byte(byteValue), &chainConf)
 			if err != nil {
 				return err
 			}
 
-			if strings.ToLower(name) != strings.ToLower(params.Chain) {
-				return fmt.Errorf("chain mismatch: chain name is %s, parameters chain is %s", name, params.Chain)
-			}
-
-			msg := types.NewAddChainRequest(cliCtx.GetFromAddress(), name, nativeAsset, params)
+			msg := types.NewAddChainRequest(cliCtx.GetFromAddress(), name, nativeAsset, chainConf.KeyRequirement, chainConf.Params)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

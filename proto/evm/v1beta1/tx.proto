@@ -5,6 +5,7 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types";
 
 import "gogoproto/gogo.proto";
 import "vote/exported/v1beta1/types.proto";
+import "tss/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -183,7 +184,9 @@ message AddChainRequest {
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string name = 2;
   string native_asset = 3;
-  bytes params = 4
+  tss.exported.v1beta1.KeyRequirement key_requirement = 4
+      [ (gogoproto.nullable) = false ];
+  bytes params = 5
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Params" ];
 }
 

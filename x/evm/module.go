@@ -85,6 +85,7 @@ type AppModule struct {
 	AppModuleBasic
 	logger      log.Logger
 	keeper      keeper.Keeper
+	tss         types.TSS
 	voter       types.Voter
 	nexus       types.Nexus
 	rpcs        map[string]types.RPCClient
@@ -95,6 +96,7 @@ type AppModule struct {
 // NewAppModule creates a new AppModule object
 func NewAppModule(
 	k keeper.Keeper,
+	tss types.TSS,
 	voter types.Voter,
 	signer types.Signer,
 	nexus types.Nexus,
@@ -105,6 +107,7 @@ func NewAppModule(
 		AppModuleBasic: AppModuleBasic{},
 		logger:         logger,
 		keeper:         k,
+		tss:            tss,
 		voter:          voter,
 		signer:         signer,
 		nexus:          nexus,
@@ -178,7 +181,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json
 
 // Route returns the module's route
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.voter, am.signer, am.nexus, am.snapshotter))
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.tss, am.voter, am.signer, am.nexus, am.snapshotter))
 }
 
 // QuerierRoute returns this module's query route

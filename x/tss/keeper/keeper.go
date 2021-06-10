@@ -60,7 +60,7 @@ func (k Keeper) SetParams(ctx sdk.Context, p types.Params) {
 	for _, keyRequirement := range p.KeyRequirements {
 		// By copying this data to the KV store, we avoid having to iterate across all element
 		// in the parameters table when a caller needs to fetch information from it
-		k.setKeyRequirement(ctx, keyRequirement)
+		k.SetKeyRequirement(ctx, keyRequirement)
 	}
 }
 
@@ -70,7 +70,8 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	return
 }
 
-func (k Keeper) setKeyRequirement(ctx sdk.Context, keyRequirement exported.KeyRequirement) {
+// SetKeyRequirement sets the key requirement for a given chain of a given role
+func (k Keeper) SetKeyRequirement(ctx sdk.Context, keyRequirement exported.KeyRequirement) {
 	key := fmt.Sprintf("%s%s_%s", keyRequirementPrefix, keyRequirement.ChainName, keyRequirement.KeyRole.SimpleString())
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(keyRequirement)
 

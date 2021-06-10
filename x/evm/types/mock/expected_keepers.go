@@ -17,6 +17,77 @@ import (
 	"sync"
 )
 
+// Ensure, that TSSMock does implement types.TSS.
+// If this is not the case, regenerate this file with moq.
+var _ types.TSS = &TSSMock{}
+
+// TSSMock is a mock implementation of types.TSS.
+//
+// 	func TestSomethingThatUsesTSS(t *testing.T) {
+//
+// 		// make and configure a mocked types.TSS
+// 		mockedTSS := &TSSMock{
+// 			SetKeyRequirementFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tss.KeyRequirement)  {
+// 				panic("mock out the SetKeyRequirement method")
+// 			},
+// 		}
+//
+// 		// use mockedTSS in code that requires types.TSS
+// 		// and then make assertions.
+//
+// 	}
+type TSSMock struct {
+	// SetKeyRequirementFunc mocks the SetKeyRequirement method.
+	SetKeyRequirementFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tss.KeyRequirement)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// SetKeyRequirement holds details about calls to the SetKeyRequirement method.
+		SetKeyRequirement []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// KeyRequirement is the keyRequirement argument value.
+			KeyRequirement tss.KeyRequirement
+		}
+	}
+	lockSetKeyRequirement sync.RWMutex
+}
+
+// SetKeyRequirement calls SetKeyRequirementFunc.
+func (mock *TSSMock) SetKeyRequirement(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tss.KeyRequirement) {
+	if mock.SetKeyRequirementFunc == nil {
+		panic("TSSMock.SetKeyRequirementFunc: method is nil but TSS.SetKeyRequirement was just called")
+	}
+	callInfo := struct {
+		Ctx            github_com_cosmos_cosmos_sdk_types.Context
+		KeyRequirement tss.KeyRequirement
+	}{
+		Ctx:            ctx,
+		KeyRequirement: keyRequirement,
+	}
+	mock.lockSetKeyRequirement.Lock()
+	mock.calls.SetKeyRequirement = append(mock.calls.SetKeyRequirement, callInfo)
+	mock.lockSetKeyRequirement.Unlock()
+	mock.SetKeyRequirementFunc(ctx, keyRequirement)
+}
+
+// SetKeyRequirementCalls gets all the calls that were made to SetKeyRequirement.
+// Check the length with:
+//     len(mockedTSS.SetKeyRequirementCalls())
+func (mock *TSSMock) SetKeyRequirementCalls() []struct {
+	Ctx            github_com_cosmos_cosmos_sdk_types.Context
+	KeyRequirement tss.KeyRequirement
+} {
+	var calls []struct {
+		Ctx            github_com_cosmos_cosmos_sdk_types.Context
+		KeyRequirement tss.KeyRequirement
+	}
+	mock.lockSetKeyRequirement.RLock()
+	calls = mock.calls.SetKeyRequirement
+	mock.lockSetKeyRequirement.RUnlock()
+	return calls
+}
+
 // Ensure, that VoterMock does implement types.Voter.
 // If this is not the case, regenerate this file with moq.
 var _ types.Voter = &VoterMock{}

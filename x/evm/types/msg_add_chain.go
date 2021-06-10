@@ -2,19 +2,22 @@ package types
 
 import (
 	"fmt"
+	"strings"
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewAddChainRequest is the constructor for NewAddChainRequest
-func NewAddChainRequest(sender sdk.AccAddress, name, nativeAsset string, params Params) *AddChainRequest {
+func NewAddChainRequest(sender sdk.AccAddress, name, nativeAsset string, keyReq tss.KeyRequirement, params Params) *AddChainRequest {
 	return &AddChainRequest{
-		Sender:      sender,
-		Name:        name,
-		NativeAsset: nativeAsset,
-		Params:      params,
+		Sender:         sender,
+		Name:           name,
+		NativeAsset:    nativeAsset,
+		KeyRequirement: keyReq,
+		Params:         params,
 	}
 }
 
@@ -44,8 +47,20 @@ func (m AddChainRequest) ValidateBasic() error {
 		return fmt.Errorf("invalid chain spec: %v", err)
 	}
 
+	if err := m.KeyRequirement.Validate(); err != nil {
+		return fmt.Errorf("invalid key requirement: %v", err)
+	}
+
 	if err := m.Params.Validate(); err != nil {
 		return fmt.Errorf("invalid EVM param: %v", err)
+	}
+
+	if strings.ToLower(m.Name) != strings.ToLower(m.KeyRequirement.ChainName) {
+		return fmt.Errorf("chain mismatch: chain name is %s, key requirement chain is %s", m.Name, m.KeyRequirement.ChainName)
+	}
+
+	if strings.ToLower(m.Name) != strings.ToLower(m.Params.Chain) {
+		return fmt.Errorf("chain mismatch: chain name is %s, parameters chain is %s", m.Name, m.Params.Chain)
 	}
 
 	return nil
