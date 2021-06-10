@@ -16,6 +16,7 @@ import (
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // rest routes
@@ -124,10 +125,11 @@ type ReqSignTransferOwnership struct {
 
 // ReqAddChain represents a request to add a new evm chain command
 type ReqAddChain struct {
-	BaseReq     rest.BaseReq `json:"base_req" yaml:"base_req"`
-	Name        string       `json:"name" yaml:"name"`
-	NativeAsset string       `json:"native_asset" yaml:"native_asset"`
-	Params      types.Params `json:"params" yaml:"params"`
+	BaseReq         rest.BaseReq       `json:"base_req" yaml:"base_req"`
+	Name            string             `json:"name" yaml:"name"`
+	NativeAsset     string             `json:"native_asset" yaml:"native_asset"`
+	KeyRequirements tss.KeyRequirement `json:"key_requirement" yaml:"key_requirement"`
+	Params          types.Params       `json:"params" yaml:"params"`
 }
 
 // GetHandlerLink returns the handler to link addresses
@@ -406,7 +408,7 @@ func GetHandlerAddChain(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewAddChainRequest(fromAddr, req.Name, req.NativeAsset, req.Params)
+		msg := types.NewAddChainRequest(fromAddr, req.Name, req.NativeAsset, req.KeyRequirements, req.Params)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

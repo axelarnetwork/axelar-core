@@ -26,6 +26,7 @@ var _ types.MsgServiceServer = msgServer{}
 
 type msgServer struct {
 	types.EVMKeeper
+	tss         types.TSS
 	signer      types.Signer
 	nexus       types.Nexus
 	voter       types.Voter
@@ -34,9 +35,10 @@ type msgServer struct {
 
 // NewMsgServerImpl returns an implementation of the bitcoin MsgServiceServer interface
 // for the provided Keeper.
-func NewMsgServerImpl(keeper types.EVMKeeper, n types.Nexus, s types.Signer, v types.Voter, snap types.Snapshotter) types.MsgServiceServer {
+func NewMsgServerImpl(keeper types.EVMKeeper, t types.TSS, n types.Nexus, s types.Signer, v types.Voter, snap types.Snapshotter) types.MsgServiceServer {
 	return msgServer{
 		EVMKeeper:   keeper,
+		tss:         t,
 		signer:      s,
 		nexus:       n,
 		voter:       v,
@@ -832,6 +834,7 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 	}
 
 	s.SetPendingChain(ctx, nexus.Chain{Name: req.Name, NativeAsset: req.NativeAsset, SupportsForeignAssets: true})
+	s.tss.SetKeyRequirement(ctx, req.KeyRequirement)
 	s.SetParams(ctx, req.Params)
 
 	ctx.EventManager().EmitEvent(
