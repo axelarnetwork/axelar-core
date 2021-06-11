@@ -1,5 +1,14 @@
-#!/bin/sh
+#!/bin/bash
 set -e
+
+trap stop_gracefully SIGTERM SIGINT
+
+stop_gracefully(){
+  echo "stopping all processes"
+  pkill "axelard"
+  sleep 10
+  echo "all processes stopped"
+}
 
 HOME_DIR=${HOME_DIR:?home directory not set}
 
@@ -45,7 +54,7 @@ startValProc() {
   fi
 
   dlv --listen=:2346 --headless=true ${VALD_CONTINUE:+--continue} --api-version=2 --accept-multiclient exec \
-    /usr/local/bin/axelard -- vald-start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} --validator-addr "$(axelard keys show validator -a --bech val)"
+    /usr/local/bin/axelard -- vald-start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} --validator-addr "$(axelard keys show validator -a --bech val)" &
 }
 
 D_HOME_DIR="$HOME_DIR/.axelar"
@@ -84,4 +93,6 @@ if [ "$CORE_CONTINUE" != true ]; then
 fi
 
 dlv --listen=:2345 --headless=true ${CORE_CONTINUE:+--continue} --api-version=2 --accept-multiclient exec \
-  /usr/local/bin/axelard -- start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"}
+  /usr/local/bin/axelard -- start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} &
+
+wait

@@ -226,7 +226,9 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 
 	fetchEvents := func(errChan chan<- error) {
 		for err := range eventMgr.FetchEvents() {
-			errChan <- err
+			if err != nil {
+				errChan <- err
+			}
 		}
 	}
 	js := []jobs.Job{
