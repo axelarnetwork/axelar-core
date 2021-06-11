@@ -38,6 +38,7 @@ func MakeEncodingConfig() params.EncodingConfig {
 	broadcast.RegisterLegacyAminoCodec(cdc)
 	broadcast.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	snapshot.RegisterLegacyAminoCodec(cdc)
+	snapshot.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	evm.RegisterLegacyAminoCodec(cdc)
 	evm.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 

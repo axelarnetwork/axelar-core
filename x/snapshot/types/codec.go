@@ -1,20 +1,22 @@
 package types
 
 import (
+	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/cosmos/cosmos-sdk/codec"
+	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-
-	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 )
 
 // RegisterLegacyAminoCodec registers concrete types on codec
-func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	cdc.RegisterInterface((*exported.SDKValidator)(nil), nil)
-	/* The snapshot keeper is dependent on the StakingKeeper interface, which returns validators through interfaces.
-	However, the snapshot keeper has to marshal the validators, so it must register the actual concrete type that is returned. */
-	cdc.RegisterConcrete(&stakingtypes.Validator{}, "snapshot/SDKValidator", nil)
-	cdc.RegisterConcrete(&exported.Validator{}, "snapshot/Validator", nil)
+func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {}
+
+// RegisterInterfaces registers types and interfaces with the given registry
+func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
+	registry.RegisterInterface("exported.SDKValidator",
+		(*exported.SDKValidator)(nil),
+		&stakingtypes.Validator{},
+	)
 }
 
 var amino = codec.NewLegacyAmino()

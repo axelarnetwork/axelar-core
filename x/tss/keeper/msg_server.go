@@ -10,6 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	snapshottypes "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
@@ -75,7 +76,7 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 	participants := make([]string, 0, len(snapshot.Validators))
 	participantShareCounts := make([]uint32, 0, len(snapshot.Validators))
 	for _, validator := range snapshot.Validators {
-		participants = append(participants, validator.GetOperator().String())
+		participants = append(participants, validator.SdkValidator.GetCachedValue().(snapshottypes.SDKValidator).GetOperator().String())
 		participantShareCounts = append(participantShareCounts, uint32(validator.ShareCount))
 	}
 

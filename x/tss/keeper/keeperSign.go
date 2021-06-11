@@ -28,7 +28,7 @@ func (k Keeper) StartSign(ctx sdk.Context, voter types.InitPoller, keyID string,
 	activeShareCount := sdk.ZeroInt()
 
 	for _, validator := range s.Validators {
-		if snapshot.IsValidatorActive(ctx, k.slasher, validator) && !snapshot.IsValidatorTssSuspended(ctx, k, validator) {
+		if snapshot.IsValidatorActive(ctx, k.slasher, validator.GetSDKValidator()) && !snapshot.IsValidatorTssSuspended(ctx, k, validator.GetSDKValidator()) {
 			activeValidators = append(activeValidators, validator)
 			activeShareCount = activeShareCount.AddRaw(validator.ShareCount)
 		}
@@ -45,8 +45,8 @@ func (k Keeper) StartSign(ctx sdk.Context, voter types.InitPoller, keyID string,
 	// set sign participants
 	var participants []string
 	for _, v := range activeValidators {
-		participants = append(participants, v.GetOperator().String())
-		k.setParticipateInSign(ctx, sigID, v.GetOperator())
+		participants = append(participants, v.GetSDKValidator().GetOperator().String())
+		k.setParticipateInSign(ctx, sigID, v.GetSDKValidator().GetOperator())
 	}
 
 	poll := vote.NewPollMeta(types.ModuleName, sigID)

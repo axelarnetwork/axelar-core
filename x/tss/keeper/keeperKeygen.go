@@ -12,19 +12,19 @@ import (
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	snapshottypes "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 // StartKeygen starts a keygen protocol with the specified parameters
-func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID string, snapshot snapshot.Snapshot) error {
+func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID string, snapshot snapshottypes.Snapshot) error {
 	if _, found := k.getKeygenStart(ctx, keyID); found {
 		return fmt.Errorf("keyID %s is already in use", keyID)
 	}
 
 	// set keygen participants
 	for _, v := range snapshot.Validators {
-		k.setParticipatesInKeygen(ctx, keyID, v.GetOperator())
+		k.setParticipatesInKeygen(ctx, keyID, v.GetSDKValidator().GetOperator())
 	}
 
 	// store block height for this keygen to be able to confirm later if the produced key is allowed as a master key

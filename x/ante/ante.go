@@ -100,8 +100,8 @@ func isValidatorHoldingTssShareOf(ctx sdk.Context, tss types.Tss, snapshotter ty
 		return false
 	}
 
-	for _, validators := range snapshot.Validators {
-		if validators.GetOperator().Equals(valAddress) {
+	for _, validator := range snapshot.Validators {
+		if validator.GetSDKValidator().GetOperator().Equals(valAddress) {
 			return true
 		}
 	}

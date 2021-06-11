@@ -55,9 +55,6 @@ var testCases = []struct {
 func init() {
 	// Necessary if tests execute with the real sdk staking keeper
 	encCfg = testutils.MakeEncodingConfig()
-	encCfg.Amino.RegisterConcrete("", "string", nil)
-	staking.RegisterLegacyAminoCodec(encCfg.Amino)
-
 }
 
 func TestTakeSnapshot_WithSubsetSize(t *testing.T) {
@@ -101,7 +98,7 @@ func TestTakeSnapshot_WithSubsetSize(t *testing.T) {
 		GetTssSuspendedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
 	}
 
-	keeper := NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("staking"), snapSubspace, broadcasterMock, staker, slashingKeeper, tssMock)
+	keeper := NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, broadcasterMock, staker, slashingKeeper, tssMock)
 	keeper.SetParams(ctx, types.DefaultParams())
 
 	_, _, err := keeper.TakeSnapshot(ctx, subsetSize, tss.WeightedByStake)
@@ -160,7 +157,7 @@ func TestSnapshots(t *testing.T) {
 				GetTssSuspendedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
 			}
 
-			keeper := NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("staking"), snapSubspace, broadcasterMock, staker, slashingKeeper, tssMock)
+			keeper := NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, broadcasterMock, staker, slashingKeeper, tssMock)
 			keeper.SetParams(ctx, types.DefaultParams())
 
 			_, ok := keeper.GetSnapshot(ctx, 0)
@@ -181,8 +178,8 @@ func TestSnapshots(t *testing.T) {
 			assert.True(t, ok)
 			assert.Equal(t, int64(0), keeper.GetLatestCounter(ctx))
 			for i, val := range validators {
-				assert.Equal(t, val.GetConsensusPower(), snapshot.Validators[i].GetConsensusPower())
-				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetOperator())
+				assert.Equal(t, val.GetConsensusPower(), snapshot.Validators[i].GetSDKValidator().GetConsensusPower())
+				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetSDKValidator().GetOperator())
 			}
 
 			_, _, err = keeper.TakeSnapshot(ctx, 0, tss.WeightedByStake)
@@ -200,8 +197,8 @@ func TestSnapshots(t *testing.T) {
 			assert.True(t, ok)
 			assert.Equal(t, keeper.GetLatestCounter(ctx), int64(1))
 			for i, val := range validators {
-				assert.Equal(t, val.GetConsensusPower(), snapshot.Validators[i].GetConsensusPower())
-				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetOperator())
+				assert.Equal(t, val.GetConsensusPower(), snapshot.Validators[i].GetSDKValidator().GetConsensusPower())
+				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetSDKValidator().GetOperator())
 			}
 		})
 	}

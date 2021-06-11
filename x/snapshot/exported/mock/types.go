@@ -5,59 +5,77 @@ package mock
 
 import (
 	"github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	snapshotexported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	tssexported "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	types "github.com/cosmos/cosmos-sdk/codec/types"
+	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	"sync"
 )
 
-// Ensure, that SDKValidatorMock does implement exported.SDKValidator.
+// Ensure, that SDKValidatorMock does implement snapshotexported.SDKValidator.
 // If this is not the case, regenerate this file with moq.
-var _ exported.SDKValidator = &SDKValidatorMock{}
+var _ snapshotexported.SDKValidator = &SDKValidatorMock{}
 
-// SDKValidatorMock is a mock implementation of exported.SDKValidator.
+// SDKValidatorMock is a mock implementation of snapshotexported.SDKValidator.
 //
 // 	func TestSomethingThatUsesSDKValidator(t *testing.T) {
 //
-// 		// make and configure a mocked exported.SDKValidator
+// 		// make and configure a mocked snapshotexported.SDKValidator
 // 		mockedSDKValidator := &SDKValidatorMock{
-// 			GetConsAddrFunc: func() (sdk.ConsAddress, error) {
+// 			GetConsAddrFunc: func() (github_com_cosmos_cosmos_sdk_types.ConsAddress, error) {
 // 				panic("mock out the GetConsAddr method")
 // 			},
 // 			GetConsensusPowerFunc: func() int64 {
 // 				panic("mock out the GetConsensusPower method")
 // 			},
-// 			GetOperatorFunc: func() sdk.ValAddress {
+// 			GetOperatorFunc: func() github_com_cosmos_cosmos_sdk_types.ValAddress {
 // 				panic("mock out the GetOperator method")
 // 			},
 // 			IsJailedFunc: func() bool {
 // 				panic("mock out the IsJailed method")
 // 			},
-// 			UnpackInterfacesFunc: func(unpacker codectypes.AnyUnpacker) error {
+// 			ProtoMessageFunc: func()  {
+// 				panic("mock out the ProtoMessage method")
+// 			},
+// 			ResetFunc: func()  {
+// 				panic("mock out the Reset method")
+// 			},
+// 			StringFunc: func() string {
+// 				panic("mock out the String method")
+// 			},
+// 			UnpackInterfacesFunc: func(unpacker types.AnyUnpacker) error {
 // 				panic("mock out the UnpackInterfaces method")
 // 			},
 // 		}
 //
-// 		// use mockedSDKValidator in code that requires exported.SDKValidator
+// 		// use mockedSDKValidator in code that requires snapshotexported.SDKValidator
 // 		// and then make assertions.
 //
 // 	}
 type SDKValidatorMock struct {
 	// GetConsAddrFunc mocks the GetConsAddr method.
-	GetConsAddrFunc func() (sdk.ConsAddress, error)
+	GetConsAddrFunc func() (github_com_cosmos_cosmos_sdk_types.ConsAddress, error)
 
 	// GetConsensusPowerFunc mocks the GetConsensusPower method.
 	GetConsensusPowerFunc func() int64
 
 	// GetOperatorFunc mocks the GetOperator method.
-	GetOperatorFunc func() sdk.ValAddress
+	GetOperatorFunc func() github_com_cosmos_cosmos_sdk_types.ValAddress
 
 	// IsJailedFunc mocks the IsJailed method.
 	IsJailedFunc func() bool
 
+	// ProtoMessageFunc mocks the ProtoMessage method.
+	ProtoMessageFunc func()
+
+	// ResetFunc mocks the Reset method.
+	ResetFunc func()
+
+	// StringFunc mocks the String method.
+	StringFunc func() string
+
 	// UnpackInterfacesFunc mocks the UnpackInterfaces method.
-	UnpackInterfacesFunc func(unpacker codectypes.AnyUnpacker) error
+	UnpackInterfacesFunc func(unpacker types.AnyUnpacker) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -73,21 +91,33 @@ type SDKValidatorMock struct {
 		// IsJailed holds details about calls to the IsJailed method.
 		IsJailed []struct {
 		}
+		// ProtoMessage holds details about calls to the ProtoMessage method.
+		ProtoMessage []struct {
+		}
+		// Reset holds details about calls to the Reset method.
+		Reset []struct {
+		}
+		// String holds details about calls to the String method.
+		String []struct {
+		}
 		// UnpackInterfaces holds details about calls to the UnpackInterfaces method.
 		UnpackInterfaces []struct {
 			// Unpacker is the unpacker argument value.
-			Unpacker codectypes.AnyUnpacker
+			Unpacker types.AnyUnpacker
 		}
 	}
 	lockGetConsAddr       sync.RWMutex
 	lockGetConsensusPower sync.RWMutex
 	lockGetOperator       sync.RWMutex
 	lockIsJailed          sync.RWMutex
+	lockProtoMessage      sync.RWMutex
+	lockReset             sync.RWMutex
+	lockString            sync.RWMutex
 	lockUnpackInterfaces  sync.RWMutex
 }
 
 // GetConsAddr calls GetConsAddrFunc.
-func (mock *SDKValidatorMock) GetConsAddr() (sdk.ConsAddress, error) {
+func (mock *SDKValidatorMock) GetConsAddr() (github_com_cosmos_cosmos_sdk_types.ConsAddress, error) {
 	if mock.GetConsAddrFunc == nil {
 		panic("SDKValidatorMock.GetConsAddrFunc: method is nil but SDKValidator.GetConsAddr was just called")
 	}
@@ -139,7 +169,7 @@ func (mock *SDKValidatorMock) GetConsensusPowerCalls() []struct {
 }
 
 // GetOperator calls GetOperatorFunc.
-func (mock *SDKValidatorMock) GetOperator() sdk.ValAddress {
+func (mock *SDKValidatorMock) GetOperator() github_com_cosmos_cosmos_sdk_types.ValAddress {
 	if mock.GetOperatorFunc == nil {
 		panic("SDKValidatorMock.GetOperatorFunc: method is nil but SDKValidator.GetOperator was just called")
 	}
@@ -190,13 +220,91 @@ func (mock *SDKValidatorMock) IsJailedCalls() []struct {
 	return calls
 }
 
+// ProtoMessage calls ProtoMessageFunc.
+func (mock *SDKValidatorMock) ProtoMessage() {
+	if mock.ProtoMessageFunc == nil {
+		panic("SDKValidatorMock.ProtoMessageFunc: method is nil but SDKValidator.ProtoMessage was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockProtoMessage.Lock()
+	mock.calls.ProtoMessage = append(mock.calls.ProtoMessage, callInfo)
+	mock.lockProtoMessage.Unlock()
+	mock.ProtoMessageFunc()
+}
+
+// ProtoMessageCalls gets all the calls that were made to ProtoMessage.
+// Check the length with:
+//     len(mockedSDKValidator.ProtoMessageCalls())
+func (mock *SDKValidatorMock) ProtoMessageCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockProtoMessage.RLock()
+	calls = mock.calls.ProtoMessage
+	mock.lockProtoMessage.RUnlock()
+	return calls
+}
+
+// Reset calls ResetFunc.
+func (mock *SDKValidatorMock) Reset() {
+	if mock.ResetFunc == nil {
+		panic("SDKValidatorMock.ResetFunc: method is nil but SDKValidator.Reset was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockReset.Lock()
+	mock.calls.Reset = append(mock.calls.Reset, callInfo)
+	mock.lockReset.Unlock()
+	mock.ResetFunc()
+}
+
+// ResetCalls gets all the calls that were made to Reset.
+// Check the length with:
+//     len(mockedSDKValidator.ResetCalls())
+func (mock *SDKValidatorMock) ResetCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockReset.RLock()
+	calls = mock.calls.Reset
+	mock.lockReset.RUnlock()
+	return calls
+}
+
+// String calls StringFunc.
+func (mock *SDKValidatorMock) String() string {
+	if mock.StringFunc == nil {
+		panic("SDKValidatorMock.StringFunc: method is nil but SDKValidator.String was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockString.Lock()
+	mock.calls.String = append(mock.calls.String, callInfo)
+	mock.lockString.Unlock()
+	return mock.StringFunc()
+}
+
+// StringCalls gets all the calls that were made to String.
+// Check the length with:
+//     len(mockedSDKValidator.StringCalls())
+func (mock *SDKValidatorMock) StringCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockString.RLock()
+	calls = mock.calls.String
+	mock.lockString.RUnlock()
+	return calls
+}
+
 // UnpackInterfaces calls UnpackInterfacesFunc.
-func (mock *SDKValidatorMock) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
+func (mock *SDKValidatorMock) UnpackInterfaces(unpacker types.AnyUnpacker) error {
 	if mock.UnpackInterfacesFunc == nil {
 		panic("SDKValidatorMock.UnpackInterfacesFunc: method is nil but SDKValidator.UnpackInterfaces was just called")
 	}
 	callInfo := struct {
-		Unpacker codectypes.AnyUnpacker
+		Unpacker types.AnyUnpacker
 	}{
 		Unpacker: unpacker,
 	}
@@ -210,10 +318,10 @@ func (mock *SDKValidatorMock) UnpackInterfaces(unpacker codectypes.AnyUnpacker) 
 // Check the length with:
 //     len(mockedSDKValidator.UnpackInterfacesCalls())
 func (mock *SDKValidatorMock) UnpackInterfacesCalls() []struct {
-	Unpacker codectypes.AnyUnpacker
+	Unpacker types.AnyUnpacker
 } {
 	var calls []struct {
-		Unpacker codectypes.AnyUnpacker
+		Unpacker types.AnyUnpacker
 	}
 	mock.lockUnpackInterfaces.RLock()
 	calls = mock.calls.UnpackInterfaces
@@ -221,74 +329,74 @@ func (mock *SDKValidatorMock) UnpackInterfacesCalls() []struct {
 	return calls
 }
 
-// Ensure, that SnapshotterMock does implement exported.Snapshotter.
+// Ensure, that SnapshotterMock does implement snapshotexported.Snapshotter.
 // If this is not the case, regenerate this file with moq.
-var _ exported.Snapshotter = &SnapshotterMock{}
+var _ snapshotexported.Snapshotter = &SnapshotterMock{}
 
-// SnapshotterMock is a mock implementation of exported.Snapshotter.
+// SnapshotterMock is a mock implementation of snapshotexported.Snapshotter.
 //
 // 	func TestSomethingThatUsesSnapshotter(t *testing.T) {
 //
-// 		// make and configure a mocked exported.Snapshotter
+// 		// make and configure a mocked snapshotexported.Snapshotter
 // 		mockedSnapshotter := &SnapshotterMock{
-// 			GetLatestCounterFunc: func(ctx sdk.Context) int64 {
+// 			GetLatestCounterFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
 // 				panic("mock out the GetLatestCounter method")
 // 			},
-// 			GetLatestSnapshotFunc: func(ctx sdk.Context) (exported.Snapshot, bool) {
+// 			GetLatestSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (snapshotexported.Snapshot, bool) {
 // 				panic("mock out the GetLatestSnapshot method")
 // 			},
-// 			GetSnapshotFunc: func(ctx sdk.Context, counter int64) (exported.Snapshot, bool) {
+// 			GetSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, counter int64) (snapshotexported.Snapshot, bool) {
 // 				panic("mock out the GetSnapshot method")
 // 			},
-// 			TakeSnapshotFunc: func(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error) {
+// 			TakeSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, subsetSize int64, keyShareDistributionPolicy tssexported.KeyShareDistributionPolicy) (github_com_cosmos_cosmos_sdk_types.Int, github_com_cosmos_cosmos_sdk_types.Int, error) {
 // 				panic("mock out the TakeSnapshot method")
 // 			},
 // 		}
 //
-// 		// use mockedSnapshotter in code that requires exported.Snapshotter
+// 		// use mockedSnapshotter in code that requires snapshotexported.Snapshotter
 // 		// and then make assertions.
 //
 // 	}
 type SnapshotterMock struct {
 	// GetLatestCounterFunc mocks the GetLatestCounter method.
-	GetLatestCounterFunc func(ctx sdk.Context) int64
+	GetLatestCounterFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64
 
 	// GetLatestSnapshotFunc mocks the GetLatestSnapshot method.
-	GetLatestSnapshotFunc func(ctx sdk.Context) (exported.Snapshot, bool)
+	GetLatestSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (snapshotexported.Snapshot, bool)
 
 	// GetSnapshotFunc mocks the GetSnapshot method.
-	GetSnapshotFunc func(ctx sdk.Context, counter int64) (exported.Snapshot, bool)
+	GetSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, counter int64) (snapshotexported.Snapshot, bool)
 
 	// TakeSnapshotFunc mocks the TakeSnapshot method.
-	TakeSnapshotFunc func(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error)
+	TakeSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, subsetSize int64, keyShareDistributionPolicy tssexported.KeyShareDistributionPolicy) (github_com_cosmos_cosmos_sdk_types.Int, github_com_cosmos_cosmos_sdk_types.Int, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// GetLatestCounter holds details about calls to the GetLatestCounter method.
 		GetLatestCounter []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
 		// GetLatestSnapshot holds details about calls to the GetLatestSnapshot method.
 		GetLatestSnapshot []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
 		// GetSnapshot holds details about calls to the GetSnapshot method.
 		GetSnapshot []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Counter is the counter argument value.
 			Counter int64
 		}
 		// TakeSnapshot holds details about calls to the TakeSnapshot method.
 		TakeSnapshot []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// SubsetSize is the subsetSize argument value.
 			SubsetSize int64
 			// KeyShareDistributionPolicy is the keyShareDistributionPolicy argument value.
-			KeyShareDistributionPolicy tss.KeyShareDistributionPolicy
+			KeyShareDistributionPolicy tssexported.KeyShareDistributionPolicy
 		}
 	}
 	lockGetLatestCounter  sync.RWMutex
@@ -298,12 +406,12 @@ type SnapshotterMock struct {
 }
 
 // GetLatestCounter calls GetLatestCounterFunc.
-func (mock *SnapshotterMock) GetLatestCounter(ctx sdk.Context) int64 {
+func (mock *SnapshotterMock) GetLatestCounter(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
 	if mock.GetLatestCounterFunc == nil {
 		panic("SnapshotterMock.GetLatestCounterFunc: method is nil but Snapshotter.GetLatestCounter was just called")
 	}
 	callInfo := struct {
-		Ctx sdk.Context
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
 	}{
 		Ctx: ctx,
 	}
@@ -317,10 +425,10 @@ func (mock *SnapshotterMock) GetLatestCounter(ctx sdk.Context) int64 {
 // Check the length with:
 //     len(mockedSnapshotter.GetLatestCounterCalls())
 func (mock *SnapshotterMock) GetLatestCounterCalls() []struct {
-	Ctx sdk.Context
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
 	var calls []struct {
-		Ctx sdk.Context
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
 	}
 	mock.lockGetLatestCounter.RLock()
 	calls = mock.calls.GetLatestCounter
@@ -329,12 +437,12 @@ func (mock *SnapshotterMock) GetLatestCounterCalls() []struct {
 }
 
 // GetLatestSnapshot calls GetLatestSnapshotFunc.
-func (mock *SnapshotterMock) GetLatestSnapshot(ctx sdk.Context) (exported.Snapshot, bool) {
+func (mock *SnapshotterMock) GetLatestSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context) (snapshotexported.Snapshot, bool) {
 	if mock.GetLatestSnapshotFunc == nil {
 		panic("SnapshotterMock.GetLatestSnapshotFunc: method is nil but Snapshotter.GetLatestSnapshot was just called")
 	}
 	callInfo := struct {
-		Ctx sdk.Context
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
 	}{
 		Ctx: ctx,
 	}
@@ -348,10 +456,10 @@ func (mock *SnapshotterMock) GetLatestSnapshot(ctx sdk.Context) (exported.Snapsh
 // Check the length with:
 //     len(mockedSnapshotter.GetLatestSnapshotCalls())
 func (mock *SnapshotterMock) GetLatestSnapshotCalls() []struct {
-	Ctx sdk.Context
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
 	var calls []struct {
-		Ctx sdk.Context
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
 	}
 	mock.lockGetLatestSnapshot.RLock()
 	calls = mock.calls.GetLatestSnapshot
@@ -360,12 +468,12 @@ func (mock *SnapshotterMock) GetLatestSnapshotCalls() []struct {
 }
 
 // GetSnapshot calls GetSnapshotFunc.
-func (mock *SnapshotterMock) GetSnapshot(ctx sdk.Context, counter int64) (exported.Snapshot, bool) {
+func (mock *SnapshotterMock) GetSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, counter int64) (snapshotexported.Snapshot, bool) {
 	if mock.GetSnapshotFunc == nil {
 		panic("SnapshotterMock.GetSnapshotFunc: method is nil but Snapshotter.GetSnapshot was just called")
 	}
 	callInfo := struct {
-		Ctx     sdk.Context
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
 		Counter int64
 	}{
 		Ctx:     ctx,
@@ -381,11 +489,11 @@ func (mock *SnapshotterMock) GetSnapshot(ctx sdk.Context, counter int64) (export
 // Check the length with:
 //     len(mockedSnapshotter.GetSnapshotCalls())
 func (mock *SnapshotterMock) GetSnapshotCalls() []struct {
-	Ctx     sdk.Context
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
 	Counter int64
 } {
 	var calls []struct {
-		Ctx     sdk.Context
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
 		Counter int64
 	}
 	mock.lockGetSnapshot.RLock()
@@ -395,14 +503,14 @@ func (mock *SnapshotterMock) GetSnapshotCalls() []struct {
 }
 
 // TakeSnapshot calls TakeSnapshotFunc.
-func (mock *SnapshotterMock) TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error) {
+func (mock *SnapshotterMock) TakeSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, subsetSize int64, keyShareDistributionPolicy tssexported.KeyShareDistributionPolicy) (github_com_cosmos_cosmos_sdk_types.Int, github_com_cosmos_cosmos_sdk_types.Int, error) {
 	if mock.TakeSnapshotFunc == nil {
 		panic("SnapshotterMock.TakeSnapshotFunc: method is nil but Snapshotter.TakeSnapshot was just called")
 	}
 	callInfo := struct {
-		Ctx                        sdk.Context
+		Ctx                        github_com_cosmos_cosmos_sdk_types.Context
 		SubsetSize                 int64
-		KeyShareDistributionPolicy tss.KeyShareDistributionPolicy
+		KeyShareDistributionPolicy tssexported.KeyShareDistributionPolicy
 	}{
 		Ctx:                        ctx,
 		SubsetSize:                 subsetSize,
@@ -418,14 +526,14 @@ func (mock *SnapshotterMock) TakeSnapshot(ctx sdk.Context, subsetSize int64, key
 // Check the length with:
 //     len(mockedSnapshotter.TakeSnapshotCalls())
 func (mock *SnapshotterMock) TakeSnapshotCalls() []struct {
-	Ctx                        sdk.Context
+	Ctx                        github_com_cosmos_cosmos_sdk_types.Context
 	SubsetSize                 int64
-	KeyShareDistributionPolicy tss.KeyShareDistributionPolicy
+	KeyShareDistributionPolicy tssexported.KeyShareDistributionPolicy
 } {
 	var calls []struct {
-		Ctx                        sdk.Context
+		Ctx                        github_com_cosmos_cosmos_sdk_types.Context
 		SubsetSize                 int64
-		KeyShareDistributionPolicy tss.KeyShareDistributionPolicy
+		KeyShareDistributionPolicy tssexported.KeyShareDistributionPolicy
 	}
 	mock.lockTakeSnapshot.RLock()
 	calls = mock.calls.TakeSnapshot
@@ -433,50 +541,50 @@ func (mock *SnapshotterMock) TakeSnapshotCalls() []struct {
 	return calls
 }
 
-// Ensure, that SlasherMock does implement exported.Slasher.
+// Ensure, that SlasherMock does implement snapshotexported.Slasher.
 // If this is not the case, regenerate this file with moq.
-var _ exported.Slasher = &SlasherMock{}
+var _ snapshotexported.Slasher = &SlasherMock{}
 
-// SlasherMock is a mock implementation of exported.Slasher.
+// SlasherMock is a mock implementation of snapshotexported.Slasher.
 //
 // 	func TestSomethingThatUsesSlasher(t *testing.T) {
 //
-// 		// make and configure a mocked exported.Slasher
+// 		// make and configure a mocked snapshotexported.Slasher
 // 		mockedSlasher := &SlasherMock{
-// 			GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (exported.ValidatorInfo, bool) {
+// 			GetValidatorSigningInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (snapshotexported.ValidatorInfo, bool) {
 // 				panic("mock out the GetValidatorSigningInfo method")
 // 			},
 // 		}
 //
-// 		// use mockedSlasher in code that requires exported.Slasher
+// 		// use mockedSlasher in code that requires snapshotexported.Slasher
 // 		// and then make assertions.
 //
 // 	}
 type SlasherMock struct {
 	// GetValidatorSigningInfoFunc mocks the GetValidatorSigningInfo method.
-	GetValidatorSigningInfoFunc func(ctx sdk.Context, address sdk.ConsAddress) (exported.ValidatorInfo, bool)
+	GetValidatorSigningInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (snapshotexported.ValidatorInfo, bool)
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// GetValidatorSigningInfo holds details about calls to the GetValidatorSigningInfo method.
 		GetValidatorSigningInfo []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Address is the address argument value.
-			Address sdk.ConsAddress
+			Address github_com_cosmos_cosmos_sdk_types.ConsAddress
 		}
 	}
 	lockGetValidatorSigningInfo sync.RWMutex
 }
 
 // GetValidatorSigningInfo calls GetValidatorSigningInfoFunc.
-func (mock *SlasherMock) GetValidatorSigningInfo(ctx sdk.Context, address sdk.ConsAddress) (exported.ValidatorInfo, bool) {
+func (mock *SlasherMock) GetValidatorSigningInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (snapshotexported.ValidatorInfo, bool) {
 	if mock.GetValidatorSigningInfoFunc == nil {
 		panic("SlasherMock.GetValidatorSigningInfoFunc: method is nil but Slasher.GetValidatorSigningInfo was just called")
 	}
 	callInfo := struct {
-		Ctx     sdk.Context
-		Address sdk.ConsAddress
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Address github_com_cosmos_cosmos_sdk_types.ConsAddress
 	}{
 		Ctx:     ctx,
 		Address: address,
@@ -491,12 +599,12 @@ func (mock *SlasherMock) GetValidatorSigningInfo(ctx sdk.Context, address sdk.Co
 // Check the length with:
 //     len(mockedSlasher.GetValidatorSigningInfoCalls())
 func (mock *SlasherMock) GetValidatorSigningInfoCalls() []struct {
-	Ctx     sdk.Context
-	Address sdk.ConsAddress
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	Address github_com_cosmos_cosmos_sdk_types.ConsAddress
 } {
 	var calls []struct {
-		Ctx     sdk.Context
-		Address sdk.ConsAddress
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Address github_com_cosmos_cosmos_sdk_types.ConsAddress
 	}
 	mock.lockGetValidatorSigningInfo.RLock()
 	calls = mock.calls.GetValidatorSigningInfo
@@ -504,50 +612,50 @@ func (mock *SlasherMock) GetValidatorSigningInfoCalls() []struct {
 	return calls
 }
 
-// Ensure, that BroadcasterMock does implement exported.Broadcaster.
+// Ensure, that BroadcasterMock does implement snapshotexported.Broadcaster.
 // If this is not the case, regenerate this file with moq.
-var _ exported.Broadcaster = &BroadcasterMock{}
+var _ snapshotexported.Broadcaster = &BroadcasterMock{}
 
-// BroadcasterMock is a mock implementation of exported.Broadcaster.
+// BroadcasterMock is a mock implementation of snapshotexported.Broadcaster.
 //
 // 	func TestSomethingThatUsesBroadcaster(t *testing.T) {
 //
-// 		// make and configure a mocked exported.Broadcaster
+// 		// make and configure a mocked snapshotexported.Broadcaster
 // 		mockedBroadcaster := &BroadcasterMock{
-// 			GetProxyFunc: func(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
+// 			GetProxyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, principal github_com_cosmos_cosmos_sdk_types.ValAddress) github_com_cosmos_cosmos_sdk_types.AccAddress {
 // 				panic("mock out the GetProxy method")
 // 			},
 // 		}
 //
-// 		// use mockedBroadcaster in code that requires exported.Broadcaster
+// 		// use mockedBroadcaster in code that requires snapshotexported.Broadcaster
 // 		// and then make assertions.
 //
 // 	}
 type BroadcasterMock struct {
 	// GetProxyFunc mocks the GetProxy method.
-	GetProxyFunc func(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress
+	GetProxyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, principal github_com_cosmos_cosmos_sdk_types.ValAddress) github_com_cosmos_cosmos_sdk_types.AccAddress
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// GetProxy holds details about calls to the GetProxy method.
 		GetProxy []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Principal is the principal argument value.
-			Principal sdk.ValAddress
+			Principal github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
 	}
 	lockGetProxy sync.RWMutex
 }
 
 // GetProxy calls GetProxyFunc.
-func (mock *BroadcasterMock) GetProxy(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
+func (mock *BroadcasterMock) GetProxy(ctx github_com_cosmos_cosmos_sdk_types.Context, principal github_com_cosmos_cosmos_sdk_types.ValAddress) github_com_cosmos_cosmos_sdk_types.AccAddress {
 	if mock.GetProxyFunc == nil {
 		panic("BroadcasterMock.GetProxyFunc: method is nil but Broadcaster.GetProxy was just called")
 	}
 	callInfo := struct {
-		Ctx       sdk.Context
-		Principal sdk.ValAddress
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		Principal github_com_cosmos_cosmos_sdk_types.ValAddress
 	}{
 		Ctx:       ctx,
 		Principal: principal,
@@ -562,12 +670,12 @@ func (mock *BroadcasterMock) GetProxy(ctx sdk.Context, principal sdk.ValAddress)
 // Check the length with:
 //     len(mockedBroadcaster.GetProxyCalls())
 func (mock *BroadcasterMock) GetProxyCalls() []struct {
-	Ctx       sdk.Context
-	Principal sdk.ValAddress
+	Ctx       github_com_cosmos_cosmos_sdk_types.Context
+	Principal github_com_cosmos_cosmos_sdk_types.ValAddress
 } {
 	var calls []struct {
-		Ctx       sdk.Context
-		Principal sdk.ValAddress
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		Principal github_com_cosmos_cosmos_sdk_types.ValAddress
 	}
 	mock.lockGetProxy.RLock()
 	calls = mock.calls.GetProxy
@@ -575,23 +683,23 @@ func (mock *BroadcasterMock) GetProxyCalls() []struct {
 	return calls
 }
 
-// Ensure, that TssMock does implement exported.Tss.
+// Ensure, that TssMock does implement snapshotexported.Tss.
 // If this is not the case, regenerate this file with moq.
-var _ exported.Tss = &TssMock{}
+var _ snapshotexported.Tss = &TssMock{}
 
-// TssMock is a mock implementation of exported.Tss.
+// TssMock is a mock implementation of snapshotexported.Tss.
 //
 // 	func TestSomethingThatUsesTss(t *testing.T) {
 //
-// 		// make and configure a mocked exported.Tss
+// 		// make and configure a mocked snapshotexported.Tss
 // 		mockedTss := &TssMock{
-// 			GetMinBondFractionPerShareFunc: func(ctx sdk.Context) utils.Threshold {
+// 			GetMinBondFractionPerShareFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold {
 // 				panic("mock out the GetMinBondFractionPerShare method")
 // 			},
-// 			GetTssSuspendedUntilFunc: func(ctx sdk.Context, validator sdk.ValAddress) int64 {
+// 			GetTssSuspendedUntilFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64 {
 // 				panic("mock out the GetTssSuspendedUntil method")
 // 			},
-// 			GetValidatorDeregisteredBlockHeightFunc: func(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
+// 			GetValidatorDeregisteredBlockHeightFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, valAddr github_com_cosmos_cosmos_sdk_types.ValAddress) int64 {
 // 				panic("mock out the GetValidatorDeregisteredBlockHeight method")
 // 			},
 // 			SetKeyRequirementFunc: func(ctx sdk.Context, keyRequirement tss.KeyRequirement)  {
@@ -599,19 +707,19 @@ var _ exported.Tss = &TssMock{}
 // 			},
 // 		}
 //
-// 		// use mockedTss in code that requires exported.Tss
+// 		// use mockedTss in code that requires snapshotexported.Tss
 // 		// and then make assertions.
 //
 // 	}
 type TssMock struct {
 	// GetMinBondFractionPerShareFunc mocks the GetMinBondFractionPerShare method.
-	GetMinBondFractionPerShareFunc func(ctx sdk.Context) utils.Threshold
+	GetMinBondFractionPerShareFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold
 
 	// GetTssSuspendedUntilFunc mocks the GetTssSuspendedUntil method.
-	GetTssSuspendedUntilFunc func(ctx sdk.Context, validator sdk.ValAddress) int64
+	GetTssSuspendedUntilFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64
 
 	// GetValidatorDeregisteredBlockHeightFunc mocks the GetValidatorDeregisteredBlockHeight method.
-	GetValidatorDeregisteredBlockHeightFunc func(ctx sdk.Context, valAddr sdk.ValAddress) int64
+	GetValidatorDeregisteredBlockHeightFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, valAddr github_com_cosmos_cosmos_sdk_types.ValAddress) int64
 
 	// SetKeyRequirementFunc mocks the SetKeyRequirement method.
 	SetKeyRequirementFunc func(ctx sdk.Context, keyRequirement tss.KeyRequirement)
@@ -621,21 +729,21 @@ type TssMock struct {
 		// GetMinBondFractionPerShare holds details about calls to the GetMinBondFractionPerShare method.
 		GetMinBondFractionPerShare []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
 		// GetTssSuspendedUntil holds details about calls to the GetTssSuspendedUntil method.
 		GetTssSuspendedUntil []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Validator is the validator argument value.
-			Validator sdk.ValAddress
+			Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
 		// GetValidatorDeregisteredBlockHeight holds details about calls to the GetValidatorDeregisteredBlockHeight method.
 		GetValidatorDeregisteredBlockHeight []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// ValAddr is the valAddr argument value.
-			ValAddr sdk.ValAddress
+			ValAddr github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
 		// SetKeyRequirement holds details about calls to the SetKeyRequirement method.
 		SetKeyRequirement []struct {
@@ -652,12 +760,12 @@ type TssMock struct {
 }
 
 // GetMinBondFractionPerShare calls GetMinBondFractionPerShareFunc.
-func (mock *TssMock) GetMinBondFractionPerShare(ctx sdk.Context) utils.Threshold {
+func (mock *TssMock) GetMinBondFractionPerShare(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold {
 	if mock.GetMinBondFractionPerShareFunc == nil {
 		panic("TssMock.GetMinBondFractionPerShareFunc: method is nil but Tss.GetMinBondFractionPerShare was just called")
 	}
 	callInfo := struct {
-		Ctx sdk.Context
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
 	}{
 		Ctx: ctx,
 	}
@@ -671,10 +779,10 @@ func (mock *TssMock) GetMinBondFractionPerShare(ctx sdk.Context) utils.Threshold
 // Check the length with:
 //     len(mockedTss.GetMinBondFractionPerShareCalls())
 func (mock *TssMock) GetMinBondFractionPerShareCalls() []struct {
-	Ctx sdk.Context
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
 	var calls []struct {
-		Ctx sdk.Context
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
 	}
 	mock.lockGetMinBondFractionPerShare.RLock()
 	calls = mock.calls.GetMinBondFractionPerShare
@@ -683,13 +791,13 @@ func (mock *TssMock) GetMinBondFractionPerShareCalls() []struct {
 }
 
 // GetTssSuspendedUntil calls GetTssSuspendedUntilFunc.
-func (mock *TssMock) GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64 {
+func (mock *TssMock) GetTssSuspendedUntil(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64 {
 	if mock.GetTssSuspendedUntilFunc == nil {
 		panic("TssMock.GetTssSuspendedUntilFunc: method is nil but Tss.GetTssSuspendedUntil was just called")
 	}
 	callInfo := struct {
-		Ctx       sdk.Context
-		Validator sdk.ValAddress
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 	}{
 		Ctx:       ctx,
 		Validator: validator,
@@ -704,12 +812,12 @@ func (mock *TssMock) GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddr
 // Check the length with:
 //     len(mockedTss.GetTssSuspendedUntilCalls())
 func (mock *TssMock) GetTssSuspendedUntilCalls() []struct {
-	Ctx       sdk.Context
-	Validator sdk.ValAddress
+	Ctx       github_com_cosmos_cosmos_sdk_types.Context
+	Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 } {
 	var calls []struct {
-		Ctx       sdk.Context
-		Validator sdk.ValAddress
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 	}
 	mock.lockGetTssSuspendedUntil.RLock()
 	calls = mock.calls.GetTssSuspendedUntil
@@ -718,13 +826,13 @@ func (mock *TssMock) GetTssSuspendedUntilCalls() []struct {
 }
 
 // GetValidatorDeregisteredBlockHeight calls GetValidatorDeregisteredBlockHeightFunc.
-func (mock *TssMock) GetValidatorDeregisteredBlockHeight(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
+func (mock *TssMock) GetValidatorDeregisteredBlockHeight(ctx github_com_cosmos_cosmos_sdk_types.Context, valAddr github_com_cosmos_cosmos_sdk_types.ValAddress) int64 {
 	if mock.GetValidatorDeregisteredBlockHeightFunc == nil {
 		panic("TssMock.GetValidatorDeregisteredBlockHeightFunc: method is nil but Tss.GetValidatorDeregisteredBlockHeight was just called")
 	}
 	callInfo := struct {
-		Ctx     sdk.Context
-		ValAddr sdk.ValAddress
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		ValAddr github_com_cosmos_cosmos_sdk_types.ValAddress
 	}{
 		Ctx:     ctx,
 		ValAddr: valAddr,
@@ -739,12 +847,12 @@ func (mock *TssMock) GetValidatorDeregisteredBlockHeight(ctx sdk.Context, valAdd
 // Check the length with:
 //     len(mockedTss.GetValidatorDeregisteredBlockHeightCalls())
 func (mock *TssMock) GetValidatorDeregisteredBlockHeightCalls() []struct {
-	Ctx     sdk.Context
-	ValAddr sdk.ValAddress
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	ValAddr github_com_cosmos_cosmos_sdk_types.ValAddress
 } {
 	var calls []struct {
-		Ctx     sdk.Context
-		ValAddr sdk.ValAddress
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		ValAddr github_com_cosmos_cosmos_sdk_types.ValAddress
 	}
 	mock.lockGetValidatorDeregisteredBlockHeight.RLock()
 	calls = mock.calls.GetValidatorDeregisteredBlockHeight
