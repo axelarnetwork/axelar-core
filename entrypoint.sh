@@ -1,6 +1,15 @@
 #!/bin/sh
 set -e
 
+trap stop_gracefully TERM INT
+
+stop_gracefully(){
+  echo "stopping all processes"
+  killall "axelard"
+  sleep 10
+  echo "all processes stopped"
+}
+
 HOME_DIR=${HOME_DIR:?home directory not set}
 
 fileCount() {
@@ -32,7 +41,7 @@ initGenesis() {
 startValProc() {
   sleep 10s
   axelard vald-start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} \
-    --validator-addr "$(axelard keys show validator -a --bech val)"
+    --validator-addr "$(axelard keys show validator -a --bech val)" &
 }
 
 D_HOME_DIR="$HOME_DIR/.axelar"
@@ -62,4 +71,6 @@ fi
 
 startValProc &
 
-exec axelard start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"}
+axelard start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} &
+
+wait
