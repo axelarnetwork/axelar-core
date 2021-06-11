@@ -273,13 +273,13 @@ func TestTallyVote_FailedPoll(t *testing.T) {
 	poll := randomPoll()
 	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, poll, 100, 0))
 
-	s.Broadcaster.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return validator1.GetOperator() }
+	s.Broadcaster.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return validator1.GetSDKValidator().GetOperator() }
 	assert.NoError(t, s.Keeper.TallyVote(s.Ctx, randomSender(), poll, randomData()))
 
 	assert.Nil(t, s.Keeper.Result(s.Ctx, poll))
 	assert.False(t, s.Keeper.GetPoll(s.Ctx, poll).Failed)
 
-	s.Broadcaster.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return validator2.GetOperator() }
+	s.Broadcaster.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return validator2.GetSDKValidator().GetOperator() }
 	assert.NoError(t, s.Keeper.TallyVote(s.Ctx, randomSender(), poll, randomData()))
 
 	assert.Nil(t, s.Keeper.Result(s.Ctx, poll))

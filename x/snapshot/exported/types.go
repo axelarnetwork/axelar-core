@@ -29,7 +29,7 @@ func NewValidator(validator SDKValidator, shareCount int64) Validator {
 	if err != nil {
 		panic(err)
 	}
-	return Validator{SdkValidator: validatorAny, ShareCount: shareCount}
+	return Validator{SDKValidator: validatorAny, ShareCount: shareCount}
 }
 
 // ValidatorInfo adopts the methods from "github.com/cosmos/cosmos-sdk/x/slashing" that are
@@ -84,9 +84,9 @@ func IsValidatorTssSuspended(ctx sdk.Context, tss Tss, validator SDKValidator) b
 }
 
 // GetValidator returns the validator for a given address, if it is part of the snapshot
-func (s Snapshot) GetValidator(address sdk.ValAddress) (Validator, bool) {
-	for _, validator := range s.Validators {
-		if validator.GetSDKValidator() != nil && bytes.Equal(validator.GetSDKValidator().GetOperator(), address) {
+func (m Snapshot) GetValidator(address sdk.ValAddress) (Validator, bool) {
+	for _, validator := range m.Validators {
+		if bytes.Equal(validator.GetSDKValidator().GetOperator(), address) {
 			return validator, true
 		}
 	}
@@ -104,21 +104,23 @@ type Snapshotter interface {
 
 // GetSDKValidator returns the SdkValidator
 func (m Validator) GetSDKValidator() SDKValidator {
-	if m.SdkValidator == nil {
+	if m.SDKValidator == nil {
 		return nil
 	}
 
-	return m.SdkValidator.GetCachedValue().(SDKValidator)
+	return m.SDKValidator.GetCachedValue().(SDKValidator)
 }
 
+// UnpackInterfaces implements UnpackInterfacesMessage
 func (m Validator) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
-	if m.SdkValidator != nil {
+	if m.SDKValidator != nil {
 		var sdkValidator SDKValidator
-		return unpacker.UnpackAny(m.SdkValidator, &sdkValidator)
+		return unpacker.UnpackAny(m.SDKValidator, &sdkValidator)
 	}
 	return nil
 }
 
+// UnpackInterfaces implements UnpackInterfacesMessage
 func (m Snapshot) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
 
 	for i := range m.Validators {

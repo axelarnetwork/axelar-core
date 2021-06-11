@@ -14,8 +14,10 @@ import "cosmos/staking/v1beta1/staking.proto";
 option (gogoproto.goproto_getters_all) = false;
 
 message Validator {
-  google.protobuf.Any sdk_validator = 1
-      [ (cosmos_proto.accepts_interface) = "exported.SDKValidator" ];
+  google.protobuf.Any sdk_validator = 1 [
+    (cosmos_proto.accepts_interface) = "exported.SDKValidator",
+    (gogoproto.customname) = "SDKValidator"
+  ];
   int64 share_count = 2;
 }
 

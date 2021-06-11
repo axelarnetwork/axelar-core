@@ -702,7 +702,7 @@ var _ snapshotexported.Tss = &TssMock{}
 // 			GetValidatorDeregisteredBlockHeightFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, valAddr github_com_cosmos_cosmos_sdk_types.ValAddress) int64 {
 // 				panic("mock out the GetValidatorDeregisteredBlockHeight method")
 // 			},
-// 			SetKeyRequirementFunc: func(ctx sdk.Context, keyRequirement tss.KeyRequirement)  {
+// 			SetKeyRequirementFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tssexported.KeyRequirement)  {
 // 				panic("mock out the SetKeyRequirement method")
 // 			},
 // 		}
@@ -722,7 +722,7 @@ type TssMock struct {
 	GetValidatorDeregisteredBlockHeightFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, valAddr github_com_cosmos_cosmos_sdk_types.ValAddress) int64
 
 	// SetKeyRequirementFunc mocks the SetKeyRequirement method.
-	SetKeyRequirementFunc func(ctx sdk.Context, keyRequirement tss.KeyRequirement)
+	SetKeyRequirementFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tssexported.KeyRequirement)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -748,9 +748,9 @@ type TssMock struct {
 		// SetKeyRequirement holds details about calls to the SetKeyRequirement method.
 		SetKeyRequirement []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// KeyRequirement is the keyRequirement argument value.
-			KeyRequirement tss.KeyRequirement
+			KeyRequirement tssexported.KeyRequirement
 		}
 	}
 	lockGetMinBondFractionPerShare          sync.RWMutex
@@ -861,13 +861,13 @@ func (mock *TssMock) GetValidatorDeregisteredBlockHeightCalls() []struct {
 }
 
 // SetKeyRequirement calls SetKeyRequirementFunc.
-func (mock *TssMock) SetKeyRequirement(ctx sdk.Context, keyRequirement tss.KeyRequirement) {
+func (mock *TssMock) SetKeyRequirement(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tssexported.KeyRequirement) {
 	if mock.SetKeyRequirementFunc == nil {
 		panic("TssMock.SetKeyRequirementFunc: method is nil but Tss.SetKeyRequirement was just called")
 	}
 	callInfo := struct {
-		Ctx            sdk.Context
-		KeyRequirement tss.KeyRequirement
+		Ctx            github_com_cosmos_cosmos_sdk_types.Context
+		KeyRequirement tssexported.KeyRequirement
 	}{
 		Ctx:            ctx,
 		KeyRequirement: keyRequirement,
@@ -882,12 +882,12 @@ func (mock *TssMock) SetKeyRequirement(ctx sdk.Context, keyRequirement tss.KeyRe
 // Check the length with:
 //     len(mockedTss.SetKeyRequirementCalls())
 func (mock *TssMock) SetKeyRequirementCalls() []struct {
-	Ctx            sdk.Context
-	KeyRequirement tss.KeyRequirement
+	Ctx            github_com_cosmos_cosmos_sdk_types.Context
+	KeyRequirement tssexported.KeyRequirement
 } {
 	var calls []struct {
-		Ctx            sdk.Context
-		KeyRequirement tss.KeyRequirement
+		Ctx            github_com_cosmos_cosmos_sdk_types.Context
+		KeyRequirement tssexported.KeyRequirement
 	}
 	mock.lockSetKeyRequirement.RLock()
 	calls = mock.calls.SetKeyRequirement
