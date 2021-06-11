@@ -261,7 +261,7 @@ func GetCmdQueryCommandData(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "command [chain] [commandID]",
 		Short: "Get the signed command data that can be wrapped in an EVM transaction to execute the command [commandID] on Axelar Gateway",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
