@@ -25,6 +25,7 @@ const (
 	QueryMethodMasterAddress            = keeper.QueryMasterAddress
 	QueryMethodGetConsolidationTx       = keeper.GetConsolidationTx
 	QueryMethodGetPayForConsolidationTx = keeper.GetPayForConsolidationTx
+	QueryMethodMinimumWithdrawAmount    = keeper.QueryMinimumWithdrawAmount
 )
 
 // RegisterRoutes registers this module's REST routes with the given router
@@ -39,6 +40,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery(QueryMasterAddress(cliCtx), QueryMethodMasterAddress)
 	registerQuery(QueryGetConsolidationTx(cliCtx), QueryMethodGetConsolidationTx)
 	registerQuery(QueryGetPayForConsolidationTx(cliCtx), QueryMethodGetPayForConsolidationTx)
+	registerQuery(QueryMinimumWithdrawAmount(cliCtx), QueryMethodMinimumWithdrawAmount)
 }
 
 // ReqLink represents a request to link a cross-chain address to a Bitcoin address

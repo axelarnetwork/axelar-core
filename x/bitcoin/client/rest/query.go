@@ -54,6 +54,26 @@ func QueryDepositAddress(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
+// QueryMinimumWithdrawAmount returns a handler to query the minimum amount to withdraw in satoshi
+func QueryMinimumWithdrawAmount(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryMinimumWithdrawAmount), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFDepositAddress).Error())
+			return
+		}
+
+		response := int64(binary.LittleEndian.Uint64(res))
+		rest.PostProcessResponse(w, cliCtx, strconv.FormatInt(response, 10))
+	}
+}
+
 // QueryMasterAddress returns a handler to query the segwit address of the master key
 func QueryMasterAddress(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
