@@ -49,6 +49,7 @@ type Keeper struct {
 	storeKey     sdk.StoreKey
 	cdc          codec.BinaryMarshaler
 	paramsKeeper types.ParamsKeeper
+	subspaces    map[string]params.Subspace
 }
 
 // NewKeeper returns a new EVM keeper
@@ -57,6 +58,7 @@ func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramsKeeper ty
 		cdc:          cdc,
 		storeKey:     storeKey,
 		paramsKeeper: paramsKeeper,
+		subspaces:    make(map[string]params.Subspace),
 	}
 }
 
@@ -528,7 +530,8 @@ func (k Keeper) getStore(ctx sdk.Context, chain string) prefix.Store {
 func (k Keeper) getSubspace(ctx sdk.Context, chain string) (params.Subspace, bool) {
 	chainLower := strings.ToLower(chain)
 
-	subspace, subspaceExists := k.paramsKeeper.GetSubspace(types.ModuleName + "_" + chainLower)
+	chainKey := types.ModuleName + "_" + chainLower
+	subspace, subspaceExists := k.subspaces[chainKey]
 
 	// The && operator in Golang does short-circuiting, i.e. the second condition will not be checked if the first one is already false.
 	// Subspaces need to be recreated if a node restarts, so it is possible that the subspace check returns different values for different nodes.
@@ -536,8 +539,9 @@ func (k Keeper) getSubspace(ctx sdk.Context, chain string) (params.Subspace, boo
 	// and hence a block hash conflict.
 	chainExists := ctx.KVStore(k.storeKey).Has([]byte(subspacePrefix + chainLower))
 	if !subspaceExists && chainExists {
-		subspace = k.paramsKeeper.Subspace(types.ModuleName + "_" + chainLower)
+		subspace = k.paramsKeeper.Subspace(chainKey)
 		subspace = subspace.WithKeyTable(types.KeyTable())
+		k.subspaces[chainKey], subspaceExists = subspace, true
 	}
 	return subspace, subspaceExists
 }
