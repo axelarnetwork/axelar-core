@@ -499,7 +499,7 @@ func (s msgServer) SignDeployToken(c context.Context, req *types.SignDeployToken
 		return nil, fmt.Errorf("Could not find chain ID for '%s'", req.Chain)
 	}
 
-	commandID := getCommandID([]byte(req.TokenName), chain.Name)
+	commandID := getCommandID([]byte(req.TokenName), chainID)
 
 	data, err := types.CreateDeployTokenCommandData(chainID, commandID, req.TokenName, req.Symbol, req.Decimals, req.Capacity)
 	if err != nil {
@@ -582,7 +582,7 @@ func (s msgServer) SignBurnTokens(c context.Context, req *types.SignBurnTokensRe
 		return nil, err
 	}
 
-	commandID := getCommandID(data, chain.Name)
+	commandID := getCommandID(data, chainID)
 
 	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
 	if !ok {
@@ -719,7 +719,7 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 		return nil, err
 	}
 
-	commandID := getCommandID(data, chain.Name)
+	commandID := getCommandID(data, chainID)
 
 	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
 	if !ok {
@@ -777,7 +777,7 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 		return nil, fmt.Errorf("Could not find chain ID for '%s'", req.Chain)
 	}
 
-	commandID := getCommandID(req.NewOwner.Bytes(), chain.Name)
+	commandID := getCommandID(req.NewOwner.Bytes(), chainID)
 
 	data, err := types.CreateTransferOwnershipCommandData(chainID, commandID, common.Address(req.NewOwner))
 	if err != nil {
@@ -855,8 +855,8 @@ func (s msgServer) getChainID(ctx sdk.Context, chain string) (chainID *big.Int) 
 	return
 }
 
-func getCommandID(data []byte, chain string) types.CommandID {
-	concat := append(data, []byte(chain)...)
+func getCommandID(data []byte, chainID *big.Int) types.CommandID {
+	concat := append(data, chainID.Bytes()...)
 	hash := crypto.Keccak256(concat)[:32]
 
 	var commandID types.CommandID
