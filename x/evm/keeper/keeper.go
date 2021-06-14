@@ -530,18 +530,18 @@ func (k Keeper) getStore(ctx sdk.Context, chain string) prefix.Store {
 func (k Keeper) getSubspace(ctx sdk.Context, chain string) (params.Subspace, bool) {
 	chainLower := strings.ToLower(chain)
 
-	chainKey := types.ModuleName + "_" + chainLower
-	subspace, subspaceExists := k.subspaces[chainKey]
-
-	// The && operator in Golang does short-circuiting, i.e. the second condition will not be checked if the first one is already false.
-	// Subspaces need to be recreated if a node restarts, so it is possible that the subspace check returns different values for different nodes.
-	// Therefore we need to make the following call to the kvstore before the if statement, otherwise we would run the risk of differing gas consumption
-	// and hence a block hash conflict.
-	chainExists := ctx.KVStore(k.storeKey).Has([]byte(subspacePrefix + chainLower))
-	if !subspaceExists && chainExists {
-		subspace = k.paramsKeeper.Subspace(chainKey)
-		subspace = subspace.WithKeyTable(types.KeyTable())
-		k.subspaces[chainKey], subspaceExists = subspace, true
+	// When a node restarts or joins the network after genesis, it might not have all EVM subspaces initialized.
+	// The following checks has to be done regardless, if we would only do it dependent on the existence of a subspace
+	// different nodes would consume different amounts of gas and it would result in a consensus failure
+	if !ctx.KVStore(k.storeKey).Has([]byte(subspacePrefix + chainLower)) {
+		return params.Subspace{}, false
 	}
-	return subspace, subspaceExists
+
+	chainKey := types.ModuleName + "_" + chainLower
+	subspace, ok := k.subspaces[chainKey]
+	if !ok {
+		subspace = k.paramsKeeper.Subspace(chainKey).WithKeyTable(types.KeyTable())
+		k.subspaces[chainKey] = subspace
+	}
+	return subspace, true
 }
