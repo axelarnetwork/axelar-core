@@ -3,17 +3,19 @@ package keeper
 import (
 	"testing"
 
-	params "github.com/axelarnetwork/axelar-core/app/params"
-	"github.com/axelarnetwork/axelar-core/testutils"
-	"github.com/axelarnetwork/axelar-core/testutils/fake"
-	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
+	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
+	"github.com/axelarnetwork/axelar-core/app/params"
+	"github.com/axelarnetwork/axelar-core/testutils"
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/x/evm/types"
 )
 
 func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
@@ -48,4 +50,48 @@ func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
 		assert.Equal(t, *actual, burnerInfo)
 	}).Repeat(20))
 
+}
+
+func TestKeeper_GetParams(t *testing.T) {
+	var (
+		keeperWithSubspace    Keeper
+		keeperWithoutSubspace Keeper
+		ctx                   sdk.Context
+	)
+	setup := func() {
+		encCfg := params.MakeEncodingConfig()
+
+		// store keys need to be the same instance for all keepers, otherwise ctx will create a new underlying store,
+		// even though the key string is the same
+		paramStoreKey := sdk.NewKVStoreKey(paramstypes.StoreKey)
+		paramTStoreKey := sdk.NewKVStoreKey(paramstypes.TStoreKey)
+		storeKey := sdk.NewKVStoreKey(types.StoreKey)
+
+		paramsK1 := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, paramStoreKey, paramTStoreKey)
+		paramsK2 := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, paramStoreKey, paramTStoreKey)
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+
+		keeperWithSubspace = NewKeeper(encCfg.Marshaler, storeKey, paramsK1)
+		keeperWithoutSubspace = NewKeeper(encCfg.Marshaler, storeKey, paramsK2)
+
+		// load params into a subspace
+		keeperWithSubspace.SetParams(ctx, types.DefaultParams()...)
+	}
+
+	// assert: the ctx kvstore stores all the keys of the subspace, but keeperWithoutSubspace has no Subspace created to access it
+	t.Run("creating subspaces consumes no additional gas", testutils.Func(func(t *testing.T) {
+		setup()
+
+		// reset gas meter for each access
+		ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+		_ = keeperWithSubspace.GetParams(ctx)
+		gasWithSubspace := ctx.GasMeter().GasConsumed()
+
+		// reset gas meter for each access
+		ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+		_ = keeperWithoutSubspace.GetParams(ctx)
+		gasWithoutSubspace := ctx.GasMeter().GasConsumed()
+
+		assert.Equal(t, gasWithSubspace, gasWithoutSubspace)
+	}).Repeat(20))
 }
