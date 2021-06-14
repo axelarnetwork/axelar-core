@@ -25,7 +25,7 @@ const (
 )
 
 // QueryDepositAddress returns a handler to query a deposit address
-func QueryDepositAddress(cliCtx client.Context) http.HandlerFunc {
+func QueryHandlerDepositAddress(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -55,7 +55,7 @@ func QueryDepositAddress(cliCtx client.Context) http.HandlerFunc {
 }
 
 // QueryMinimumWithdrawAmount returns a handler to query the minimum amount to withdraw in satoshi
-func QueryMinimumWithdrawAmount(cliCtx client.Context) http.HandlerFunc {
+func QueryHandlerMinimumWithdrawAmount(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -75,7 +75,7 @@ func QueryMinimumWithdrawAmount(cliCtx client.Context) http.HandlerFunc {
 }
 
 // QueryMasterAddress returns a handler to query the segwit address of the master key
-func QueryMasterAddress(cliCtx client.Context) http.HandlerFunc {
+func QueryHandlerMasterAddress(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -105,7 +105,7 @@ type GetConsolidationTxResult struct {
 }
 
 // QueryGetConsolidationTx returns a handler to build a consolidation transaction
-func QueryGetConsolidationTx(cliCtx client.Context) http.HandlerFunc {
+func QueryHandlerGetConsolidationTx(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -136,7 +136,7 @@ func QueryGetConsolidationTx(cliCtx client.Context) http.HandlerFunc {
 }
 
 // QueryGetPayForConsolidationTx returns a handler to build a transaction that pays for the consolidation transaction
-func QueryGetPayForConsolidationTx(cliCtx client.Context) http.HandlerFunc {
+func QueryHandlerGetPayForConsolidationTx(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
