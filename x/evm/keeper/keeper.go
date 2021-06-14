@@ -63,14 +63,12 @@ func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramsKeeper ty
 // SetParams sets the evm module's parameters
 func (k Keeper) SetParams(ctx sdk.Context, params ...types.Params) {
 	for _, p := range params {
-		str := strings.ToLower(p.Chain)
-		subspace, ok := k.getSubspace(ctx, str)
-		if !ok {
-			subspace = k.paramsKeeper.Subspace(types.ModuleName + "_" + str)
-			subspace = subspace.WithKeyTable(types.KeyTable())
-		}
+		chain := strings.ToLower(p.Chain)
+
+		// set the chain before calling the subspace so it is recognized as an existing chain
+		ctx.KVStore(k.storeKey).Set([]byte(subspacePrefix+chain), []byte(p.Chain))
+		subspace, _ := k.getSubspace(ctx, chain)
 		subspace.SetParamSet(ctx, &p)
-		ctx.KVStore(k.storeKey).Set([]byte(subspacePrefix+str), []byte(p.Chain))
 	}
 }
 
@@ -529,10 +527,17 @@ func (k Keeper) getStore(ctx sdk.Context, chain string) prefix.Store {
 
 func (k Keeper) getSubspace(ctx sdk.Context, chain string) (params.Subspace, bool) {
 	chainLower := strings.ToLower(chain)
-	subspace, ok := k.paramsKeeper.GetSubspace(types.ModuleName + "_" + chainLower)
-	if !ok && ctx.KVStore(k.storeKey).Has([]byte(subspacePrefix+chainLower)) {
+
+	subspace, subspaceExists := k.paramsKeeper.GetSubspace(types.ModuleName + "_" + chainLower)
+
+	// The && operator in Golang does short-circuiting, i.e. the second condition will not be checked if the first one is already false.
+	// Subspaces need to be recreated if a node restarts, so it is possible that the subspace check returns different values for different nodes.
+	// Therefore we need to make the following call to the kvstore before the if statement, otherwise we would run the risk of differing gas consumption
+	// and hence a block hash conflict.
+	chainExists := ctx.KVStore(k.storeKey).Has([]byte(subspacePrefix + chainLower))
+	if !subspaceExists && chainExists {
 		subspace = k.paramsKeeper.Subspace(types.ModuleName + "_" + chainLower)
 		subspace = subspace.WithKeyTable(types.KeyTable())
 	}
-	return subspace, ok
+	return subspace, subspaceExists
 }
