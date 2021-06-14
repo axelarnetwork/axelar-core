@@ -24,7 +24,7 @@ const (
 	QueryParamFeeRate = "fee_rate"
 )
 
-// QueryDepositAddress returns a handler to query a deposit address
+// QueryHandlerDepositAddress returns a handler to query a deposit address
 func QueryHandlerDepositAddress(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -54,7 +54,7 @@ func QueryHandlerDepositAddress(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// QueryMinimumWithdrawAmount returns a handler to query the minimum amount to withdraw in satoshi
+// QueryHandlerMinimumWithdrawAmount returns a handler to query the minimum amount to withdraw in satoshi
 func QueryHandlerMinimumWithdrawAmount(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -74,7 +74,7 @@ func QueryHandlerMinimumWithdrawAmount(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// QueryMasterAddress returns a handler to query the segwit address of the master key
+// QueryHandlerMasterAddress returns a handler to query the segwit address of the master key
 func QueryHandlerMasterAddress(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -104,7 +104,7 @@ type GetConsolidationTxResult struct {
 	RawTx string          `json:"raw_tx"`
 }
 
-// QueryGetConsolidationTx returns a handler to build a consolidation transaction
+// QueryHandlerGetConsolidationTx returns a handler to build a consolidation transaction
 func QueryHandlerGetConsolidationTx(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -135,7 +135,7 @@ func QueryHandlerGetConsolidationTx(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// QueryGetPayForConsolidationTx returns a handler to build a transaction that pays for the consolidation transaction
+// QueryHandlerGetPayForConsolidationTx returns a handler to build a transaction that pays for the consolidation transaction
 func QueryHandlerGetPayForConsolidationTx(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
