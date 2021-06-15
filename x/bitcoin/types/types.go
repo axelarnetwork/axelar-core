@@ -232,8 +232,8 @@ func createAnyoneCanSpendRedeemScript() RedeemScript {
 	return redeemScript
 }
 
-// createMasterRedeemScript generates a redeem script unique to the given key
-func createMasterRedeemScript(pk btcec.PublicKey) RedeemScript {
+// CreateMasterRedeemScript generates a redeem script unique to the given key
+func CreateMasterRedeemScript(pk btcec.PublicKey) RedeemScript {
 	redeemScript, err := txscript.NewScriptBuilder().
 		AddData(pk.SerializeCompressed()).
 		AddOp(txscript.OP_CHECKSIG).
@@ -247,8 +247,8 @@ func createMasterRedeemScript(pk btcec.PublicKey) RedeemScript {
 	return redeemScript
 }
 
-// createP2WSHAddress creates a SeqWit script address based on a redeem script
-func createP2WSHAddress(script RedeemScript, network Network) *btcutil.AddressWitnessScriptHash {
+// CreateP2WSHAddress creates a SeqWit script address based on a redeem script
+func CreateP2WSHAddress(script RedeemScript, network Network) *btcutil.AddressWitnessScriptHash {
 	hash := sha256.Sum256(script)
 	// hash is 32 bit long, so this cannot throw an error if there is no bug
 	addr, err := btcutil.NewAddressWitnessScriptHash(hash[:], network.Params())
@@ -260,8 +260,8 @@ func createP2WSHAddress(script RedeemScript, network Network) *btcutil.AddressWi
 
 // NewConsolidationAddress creates a new address used to consolidate all unspent outpoints
 func NewConsolidationAddress(pk tss.Key, network Network) AddressInfo {
-	script := createMasterRedeemScript(btcec.PublicKey(pk.Value))
-	address := createP2WSHAddress(script, network)
+	script := CreateMasterRedeemScript(btcec.PublicKey(pk.Value))
+	address := CreateP2WSHAddress(script, network)
 
 	return AddressInfo{
 		RedeemScript: script,
@@ -278,7 +278,7 @@ func NewLinkedAddress(masterKey tss.Key, secondaryKey tss.Key, network Network, 
 		btcec.PublicKey(secondaryKey.Value),
 		recipient,
 	)
-	address := createP2WSHAddress(script, network)
+	address := CreateP2WSHAddress(script, network)
 
 	return AddressInfo{
 		RedeemScript: script,
@@ -291,7 +291,7 @@ func NewLinkedAddress(masterKey tss.Key, secondaryKey tss.Key, network Network, 
 // NewAnyoneCanSpendAddress creates a p2wsh address that anyone can spend
 func NewAnyoneCanSpendAddress(network Network) AddressInfo {
 	script := createAnyoneCanSpendRedeemScript()
-	address := createP2WSHAddress(script, network)
+	address := CreateP2WSHAddress(script, network)
 
 	return AddressInfo{
 		RedeemScript: script,
