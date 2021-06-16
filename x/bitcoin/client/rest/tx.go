@@ -17,28 +17,30 @@ import (
 
 // rest routes
 const (
-	TxMethodLink                   = "link"
-	TxMethodConfirmTx              = "confirm"
-	TxMethodSignPendingTransfersTx = "sign"
+	TxLink                   = "link"
+	TxConfirmTx              = "confirm"
+	TxSignPendingTransfersTx = "sign"
 
-	QueryMethodDepositAddress           = keeper.QueryDepositAddress
-	QueryMethodMasterAddress            = keeper.QueryMasterAddress
-	QueryMethodGetConsolidationTx       = keeper.GetConsolidationTx
-	QueryMethodGetPayForConsolidationTx = keeper.GetPayForConsolidationTx
+	QueryDepositAddress           = keeper.QueryDepositAddress
+	QueryMasterAddress            = keeper.QueryMasterAddress
+	QueryGetConsolidationTx       = keeper.GetConsolidationTx
+	QueryGetPayForConsolidationTx = keeper.GetPayForConsolidationTx
+	QueryMinimumWithdrawAmount    = keeper.QueryMinimumWithdrawAmount
 )
 
 // RegisterRoutes registers this module's REST routes with the given router
 func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx := clientUtils.RegisterTxHandlerFn(r, types.RestRoute)
-	registerTx(GetHandlerLink(cliCtx), TxMethodLink, clientUtils.PathVarChain)
-	registerTx(GetHandlerConfirmTx(cliCtx), TxMethodConfirmTx)
-	registerTx(GetHandlerSignPendingTransfersTx(cliCtx), TxMethodSignPendingTransfersTx)
+	registerTx(TxHandlerLink(cliCtx), TxLink, clientUtils.PathVarChain)
+	registerTx(TxHandlerConfirmTx(cliCtx), TxConfirmTx)
+	registerTx(TxHandlerSignPendingTransfersTx(cliCtx), TxSignPendingTransfersTx)
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
-	registerQuery(QueryDepositAddress(cliCtx), QueryMethodDepositAddress, clientUtils.PathVarChain, clientUtils.PathVarEthereumAddress)
-	registerQuery(QueryMasterAddress(cliCtx), QueryMethodMasterAddress)
-	registerQuery(QueryGetConsolidationTx(cliCtx), QueryMethodGetConsolidationTx)
-	registerQuery(QueryGetPayForConsolidationTx(cliCtx), QueryMethodGetPayForConsolidationTx)
+	registerQuery(QueryHandlerDepositAddress(cliCtx), QueryDepositAddress, clientUtils.PathVarChain, clientUtils.PathVarEthereumAddress)
+	registerQuery(QueryHandlerMasterAddress(cliCtx), QueryMasterAddress)
+	registerQuery(QueryHandlerGetConsolidationTx(cliCtx), QueryGetConsolidationTx)
+	registerQuery(QueryHandlerGetPayForConsolidationTx(cliCtx), QueryGetPayForConsolidationTx)
+	registerQuery(QueryHandlerMinimumWithdrawAmount(cliCtx), QueryMinimumWithdrawAmount)
 }
 
 // ReqLink represents a request to link a cross-chain address to a Bitcoin address
@@ -59,8 +61,8 @@ type ReqSignPendingTransfersTx struct {
 	Fee     string       `json:"fee" yaml:"fee"`
 }
 
-// GetHandlerSignPendingTransfersTx returns the handler to sign pending transfers to Bitcoin
-func GetHandlerSignPendingTransfersTx(cliCtx client.Context) http.HandlerFunc {
+// TxHandlerSignPendingTransfersTx returns the handler to sign pending transfers to Bitcoin
+func TxHandlerSignPendingTransfersTx(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqSignPendingTransfersTx
 		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
@@ -92,8 +94,8 @@ func GetHandlerSignPendingTransfersTx(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// GetHandlerLink returns the handler to link a Bitcoin address to a cross-chain address
-func GetHandlerLink(cliCtx client.Context) http.HandlerFunc {
+// TxHandlerLink returns the handler to link a Bitcoin address to a cross-chain address
+func TxHandlerLink(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqLink
 		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
@@ -119,8 +121,8 @@ func GetHandlerLink(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// GetHandlerConfirmTx returns the handler to confirm a tx outpoint
-func GetHandlerConfirmTx(cliCtx client.Context) http.HandlerFunc {
+// TxHandlerConfirmTx returns the handler to confirm a tx outpoint
+func TxHandlerConfirmTx(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqConfirmOutPoint
 		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
