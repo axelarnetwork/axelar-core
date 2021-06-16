@@ -96,20 +96,16 @@ func GetCmdLink() *cobra.Command {
 // GetCmdSignPendingTransfersTx returns the cli command to sign all pending token transfers from other chains
 func GetCmdSignPendingTransfersTx() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "sign-pending-transfers [fee]",
+		Use:   "sign-pending-transfers",
 		Short: "Create a Bitcoin transaction for all pending transfers and sign it",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			satoshi, err := types.ParseSatoshi(args[0])
-			if err != nil {
-				return err
-			}
-			msg := types.NewSignPendingTransfersRequest(clientCtx.GetFromAddress(), btcutil.Amount(satoshi.Amount.Int64()))
+			msg := types.NewSignPendingTransfersRequest(clientCtx.GetFromAddress())
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

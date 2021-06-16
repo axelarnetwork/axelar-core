@@ -1,16 +1,13 @@
 package types
 
 import (
-	"fmt"
-
-	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewSignPendingTransfersRequest - SignPendingTransfersRequest constructor
-func NewSignPendingTransfersRequest(sender sdk.AccAddress, fee btcutil.Amount) *SignPendingTransfersRequest {
-	return &SignPendingTransfersRequest{Sender: sender, Fee: int64(fee)}
+func NewSignPendingTransfersRequest(sender sdk.AccAddress) *SignPendingTransfersRequest {
+	return &SignPendingTransfersRequest{Sender: sender}
 }
 
 // Route returns the route for this message
@@ -27,9 +24,6 @@ func (m SignPendingTransfersRequest) Type() string {
 func (m SignPendingTransfersRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
-	}
-	if m.Fee < 0 {
-		return fmt.Errorf("fee must be greater than or equal to 0")
 	}
 
 	return nil
