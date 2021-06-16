@@ -3,7 +3,7 @@
 Create a Bitcoin transaction for all pending transfers and sign it
 
 ```
-axelard tx bitcoin sign-pending-transfers [fee] [flags]
+axelard tx bitcoin sign-pending-transfers [flags]
 ```
 
 ### Options

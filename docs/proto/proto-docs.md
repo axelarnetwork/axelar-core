@@ -493,7 +493,6 @@ consolidation transaction
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `fee` | [int64](#int64) |  | **Deprecated.** TODO: Remove once c2d2 is ready to perform child-pay-for-parent for consolidation transactions |
 
 
 
