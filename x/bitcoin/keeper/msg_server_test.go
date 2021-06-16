@@ -515,9 +515,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		msg = types.NewSignPendingTransfersRequest(rand.Bytes(sdk.AddrLen),
-			btcutil.Amount(rand.I64Between(0, 1000000)),
-		)
+		msg = types.NewSignPendingTransfersRequest(rand.Bytes(sdk.AddrLen))
 
 		// let the minimum start at 2 so the dust limit can still go below
 		minimumWithdrawalAmount = btcutil.Amount(rand.I64Between(2, 5000))
