@@ -3,6 +3,7 @@ package events
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	mathRand "math/rand"
 	"sync"
@@ -22,6 +23,100 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 )
+
+func TestMgr_NewMgr(t *testing.T) {
+	bus := func() pubsub.Bus { return &mock.BusMock{} }
+
+	t.Run("should start from latest block when it is available", testutils.Func(func(t *testing.T) {
+		blockHeight := int64(100)
+
+		copied := 0
+		rwc := &mock.ReadWriteSeekTruncateCloserMock{
+			ReadFunc: func(bz []byte) (int, error) {
+				x, err := json.Marshal(0)
+				if err != nil {
+					return 0, err
+				}
+
+				if copied < len(x) {
+					n := copy(bz, x[copied:])
+					copied += n
+					return n, nil
+				}
+				return 0, io.EOF
+			},
+		}
+		client := &mock.SignClientMock{
+			BlockFunc: func(ctx context.Context, height *int64) (*coretypes.ResultBlock, error) {
+				return &coretypes.ResultBlock{Block: &tm.Block{Header: tm.Header{Height: blockHeight}}}, nil
+			},
+		}
+
+		mgr := NewMgr(client, NewStateStore(rwc), bus, log.TestingLogger())
+
+		assert.Equal(t, blockHeight, mgr.state.Completed)
+	}))
+
+	t.Run("should start from block 0 when latest block is not available", testutils.Func(func(t *testing.T) {
+		copied := 0
+		rwc := &mock.ReadWriteSeekTruncateCloserMock{
+			ReadFunc: func(bz []byte) (int, error) {
+				x, err := json.Marshal(0)
+				if err != nil {
+					return 0, err
+				}
+
+				if copied < len(x) {
+					n := copy(bz, x[copied:])
+					copied += n
+					return n, nil
+				}
+				return 0, io.EOF
+			},
+		}
+
+		client := &mock.SignClientMock{
+			BlockFunc: func(ctx context.Context, height *int64) (*coretypes.ResultBlock, error) {
+				return &coretypes.ResultBlock{Block: nil}, nil
+			},
+		}
+		mgr := NewMgr(client, NewStateStore(rwc), bus, log.TestingLogger())
+		assert.Equal(t, int64(0), mgr.state.Completed)
+
+		client = &mock.SignClientMock{
+			BlockFunc: func(ctx context.Context, height *int64) (*coretypes.ResultBlock, error) {
+				return nil, fmt.Errorf("some error")
+			},
+		}
+		mgr = NewMgr(client, NewStateStore(rwc), bus, log.TestingLogger())
+		assert.Equal(t, int64(0), mgr.state.Completed)
+	}))
+
+	t.Run("should start a block that is persisted", testutils.Func(func(t *testing.T) {
+		blockHeight := int64(1000)
+
+		copied := 0
+		rwc := &mock.ReadWriteSeekTruncateCloserMock{
+			ReadFunc: func(bz []byte) (int, error) {
+				x, err := json.Marshal(blockHeight)
+				if err != nil {
+					return 0, err
+				}
+
+				if copied < len(x) {
+					n := copy(bz, x[copied:])
+					copied += n
+					return n, nil
+				}
+				return 0, io.EOF
+			},
+		}
+
+		client := &mock.SignClientMock{}
+		mgr := NewMgr(client, NewStateStore(rwc), bus, log.TestingLogger())
+		assert.Equal(t, blockHeight, mgr.state.Completed)
+	}))
+}
 
 func TestMgr_FetchEvents(t *testing.T) {
 	var (
@@ -54,11 +149,15 @@ func TestMgr_FetchEvents(t *testing.T) {
 			BlockResultsFunc: func(_ context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
 				return &coretypes.ResultBlockResults{Height: *height}, nil
 			},
+			BlockFunc: func(ctx context.Context, height *int64) (*coretypes.ResultBlock, error) {
+				return &coretypes.ResultBlock{}, nil
+			},
 		}
 		mgr = NewMgr(client, NewStateStore(rwc), bus, log.TestingLogger())
 	}
 
 	repeats := 20
+
 	t.Run("stops when done", testutils.Func(func(t *testing.T) {
 		setup(0)
 

@@ -14,7 +14,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmpubsub "github.com/tendermint/tendermint/libs/pubsub"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
-	"github.com/tendermint/tendermint/rpc/core/types"
+	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 	tm "github.com/tendermint/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/jobs"
@@ -90,9 +90,15 @@ func NewMgr(client rpcclient.SignClient, store StateStore, pubsubFactory func() 
 	}
 
 	// sanitize input
-	if state.Completed < 0 {
-		state.Completed = 0
+	if state.Completed <= 0 {
+		if latestBlock, err := client.Block(context.Background(), nil); err != nil || latestBlock.Block == nil {
+			state.Completed = 0
+		} else {
+			state.Completed = latestBlock.Block.Height
+		}
 	}
+
+	logger.Debug(fmt.Sprintf("starting vald from block %d", state.Completed))
 
 	mgr := &Mgr{
 		subscribeLock: sync.RWMutex{},
