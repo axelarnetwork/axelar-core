@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"math/rand"
 
 	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -106,7 +105,7 @@ func GetCmdSignPendingTransfersTx() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewSignPendingTransfersRequest(clientCtx.GetFromAddress(), btcutil.Amount(rand.Int63()))
+			msg := types.NewSignPendingTransfersRequest(clientCtx.GetFromAddress())
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

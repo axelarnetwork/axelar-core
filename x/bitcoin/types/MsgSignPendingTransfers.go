@@ -1,14 +1,13 @@
 package types
 
 import (
-	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewSignPendingTransfersRequest - SignPendingTransfersRequest constructor
-func NewSignPendingTransfersRequest(sender sdk.AccAddress, fee btcutil.Amount) *SignPendingTransfersRequest {
-	return &SignPendingTransfersRequest{Sender: sender, Fee: int64(fee)}
+func NewSignPendingTransfersRequest(sender sdk.AccAddress) *SignPendingTransfersRequest {
+	return &SignPendingTransfersRequest{Sender: sender}
 }
 
 // Route returns the route for this message

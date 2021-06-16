@@ -1,10 +1,8 @@
 package rest
 
 import (
-	"math/rand"
 	"net/http"
 
-	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 
@@ -78,7 +76,7 @@ func TxHandlerSignPendingTransfersTx(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewSignPendingTransfersRequest(fromAddr, btcutil.Amount(rand.Int63()))
+		msg := types.NewSignPendingTransfersRequest(fromAddr)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
