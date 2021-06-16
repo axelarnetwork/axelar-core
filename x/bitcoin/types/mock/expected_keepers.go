@@ -9,6 +9,7 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	exported "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/btcsuite/btcd/wire"
 	github_com_btcsuite_btcutil "github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -32,10 +33,7 @@ var _ types.Voter = &VoterMock{}
 // 			InitPollFunc: func(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error {
 // 				panic("mock out the InitPoll method")
 // 			},
-// 			ResultFunc: func(ctx sdk.Context, poll exported.PollMeta) exported.VotingData {
-// 				panic("mock out the Result method")
-// 			},
-// 			TallyVoteFunc: func(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data exported.VotingData) error {
+// 			TallyVoteFunc: func(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data exported.VotingData) (*votetypes.Poll, error) {
 // 				panic("mock out the TallyVote method")
 // 			},
 // 		}
@@ -51,11 +49,8 @@ type VoterMock struct {
 	// InitPollFunc mocks the InitPoll method.
 	InitPollFunc func(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error
 
-	// ResultFunc mocks the Result method.
-	ResultFunc func(ctx sdk.Context, poll exported.PollMeta) exported.VotingData
-
 	// TallyVoteFunc mocks the TallyVote method.
-	TallyVoteFunc func(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data exported.VotingData) error
+	TallyVoteFunc func(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data exported.VotingData) (*votetypes.Poll, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -77,13 +72,6 @@ type VoterMock struct {
 			// ExpireAt is the expireAt argument value.
 			ExpireAt int64
 		}
-		// Result holds details about calls to the Result method.
-		Result []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Poll is the poll argument value.
-			Poll exported.PollMeta
-		}
 		// TallyVote holds details about calls to the TallyVote method.
 		TallyVote []struct {
 			// Ctx is the ctx argument value.
@@ -98,7 +86,6 @@ type VoterMock struct {
 	}
 	lockDeletePoll sync.RWMutex
 	lockInitPoll   sync.RWMutex
-	lockResult     sync.RWMutex
 	lockTallyVote  sync.RWMutex
 }
 
@@ -180,43 +167,8 @@ func (mock *VoterMock) InitPollCalls() []struct {
 	return calls
 }
 
-// Result calls ResultFunc.
-func (mock *VoterMock) Result(ctx sdk.Context, poll exported.PollMeta) exported.VotingData {
-	if mock.ResultFunc == nil {
-		panic("VoterMock.ResultFunc: method is nil but Voter.Result was just called")
-	}
-	callInfo := struct {
-		Ctx  sdk.Context
-		Poll exported.PollMeta
-	}{
-		Ctx:  ctx,
-		Poll: poll,
-	}
-	mock.lockResult.Lock()
-	mock.calls.Result = append(mock.calls.Result, callInfo)
-	mock.lockResult.Unlock()
-	return mock.ResultFunc(ctx, poll)
-}
-
-// ResultCalls gets all the calls that were made to Result.
-// Check the length with:
-//     len(mockedVoter.ResultCalls())
-func (mock *VoterMock) ResultCalls() []struct {
-	Ctx  sdk.Context
-	Poll exported.PollMeta
-} {
-	var calls []struct {
-		Ctx  sdk.Context
-		Poll exported.PollMeta
-	}
-	mock.lockResult.RLock()
-	calls = mock.calls.Result
-	mock.lockResult.RUnlock()
-	return calls
-}
-
 // TallyVote calls TallyVoteFunc.
-func (mock *VoterMock) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data exported.VotingData) error {
+func (mock *VoterMock) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data exported.VotingData) (*votetypes.Poll, error) {
 	if mock.TallyVoteFunc == nil {
 		panic("VoterMock.TallyVoteFunc: method is nil but Voter.TallyVote was just called")
 	}
