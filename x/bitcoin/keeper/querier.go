@@ -105,6 +105,8 @@ func queryMasterAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer) ([]b
 
 	addr := types.NewConsolidationAddress(masterKey, k.GetNetwork(ctx))
 
+	// After a key rotation, the master address is not known to Axelar Core until a consolidation
+	// transaction is completed, during which k.SetAddress() is called.
 	if _, ok := k.GetAddress(ctx, addr.Address); !ok {
 		return nil, fmt.Errorf("no address found for current %s masterKey", tss.MasterKey.String())
 	}
@@ -131,7 +133,7 @@ func queryTxState(ctx sdk.Context, k types.BTCKeeper, data []byte) ([]byte, erro
 
 	switch {
 	case !ok:
-		return nil, fmt.Errorf("bitcoin transaction not found")
+		return nil, fmt.Errorf("bitcoin transaction is not tracked")
 	case state == types.CONFIRMED:
 		message = "bitcoin transaction state is confirmed"
 	case state == types.SPENT:
