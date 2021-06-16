@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"math/rand"
 	"net/http"
 
 	"github.com/btcsuite/btcutil"
@@ -58,7 +59,6 @@ type ReqConfirmOutPoint struct {
 // ReqSignPendingTransfersTx represents a request to sign pending token transfers
 type ReqSignPendingTransfersTx struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
-	Fee     string       `json:"fee" yaml:"fee"`
 }
 
 // TxHandlerSignPendingTransfersTx returns the handler to sign pending transfers to Bitcoin
@@ -78,13 +78,7 @@ func TxHandlerSignPendingTransfersTx(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		satoshi, err := types.ParseSatoshi(req.Fee)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		msg := types.NewSignPendingTransfersRequest(fromAddr, btcutil.Amount(satoshi.Amount.Int64()))
+		msg := types.NewSignPendingTransfersRequest(fromAddr, btcutil.Amount(rand.Int63()))
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
