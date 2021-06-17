@@ -122,7 +122,6 @@ func (m Validator) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
 
 // UnpackInterfaces implements UnpackInterfacesMessage
 func (m Snapshot) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
-
 	for i := range m.Validators {
 		if err := m.Validators[i].UnpackInterfaces(unpacker); err != nil {
 			return err
