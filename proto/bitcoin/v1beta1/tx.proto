@@ -35,9 +35,6 @@ message LinkResponse { string deposit_addr = 2; };
 message SignPendingTransfersRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  // TODO: Remove once c2d2 is ready to perform child-pay-for-parent for
-  // consolidation transactions
-  int64 fee = 2 [ deprecated = true ];
 }
 
 message SignPendingTransfersResponse {

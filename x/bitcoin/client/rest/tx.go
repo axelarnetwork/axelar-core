@@ -3,7 +3,6 @@ package rest
 import (
 	"net/http"
 
-	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 
@@ -58,7 +57,6 @@ type ReqConfirmOutPoint struct {
 // ReqSignPendingTransfersTx represents a request to sign pending token transfers
 type ReqSignPendingTransfersTx struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
-	Fee     string       `json:"fee" yaml:"fee"`
 }
 
 // TxHandlerSignPendingTransfersTx returns the handler to sign pending transfers to Bitcoin
@@ -78,13 +76,7 @@ func TxHandlerSignPendingTransfersTx(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		satoshi, err := types.ParseSatoshi(req.Fee)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		msg := types.NewSignPendingTransfersRequest(fromAddr, btcutil.Amount(satoshi.Amount.Int64()))
+		msg := types.NewSignPendingTransfersRequest(fromAddr)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
