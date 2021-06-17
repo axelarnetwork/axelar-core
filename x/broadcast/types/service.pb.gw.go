@@ -268,7 +268,7 @@ func RegisterMsgServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 var (
 	pattern_MsgService_RegisterProxy_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"axelar", "broadcast", "registerProxy", "proxy_addr"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_DeregisterProxy_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "broadcast", "registerProxy"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_DeregisterProxy_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "broadcast", "deregisterProxy"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (

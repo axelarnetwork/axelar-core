@@ -701,7 +701,7 @@ Msg defines the broadcast Msg service.
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `RegisterProxy` | [RegisterProxyRequest](#broadcast.v1beta1.RegisterProxyRequest) | [RegisterProxyResponse](#broadcast.v1beta1.RegisterProxyResponse) | RegisterProxy defines a method for registering a proxy account that can act in a validator account's stead. | POST|/axelar/broadcast/registerProxy/{proxy_addr}|
-| `DeregisterProxy` | [DeregisterProxyRequest](#broadcast.v1beta1.DeregisterProxyRequest) | [DeregisterProxyResponse](#broadcast.v1beta1.DeregisterProxyResponse) | DeregisterProxy defines a method for deregistering a proxy account. | POST|/axelar/broadcast/registerProxy|
+| `DeregisterProxy` | [DeregisterProxyRequest](#broadcast.v1beta1.DeregisterProxyRequest) | [DeregisterProxyResponse](#broadcast.v1beta1.DeregisterProxyResponse) | DeregisterProxy defines a method for deregistering a proxy account. | POST|/axelar/broadcast/deregisterProxy|
 
  <!-- end services -->
 
