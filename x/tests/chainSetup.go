@@ -93,7 +93,7 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger().With("node", moniker))
 	encCfg := testutils.MakeEncodingConfig()
 
-	broadcaster := broadcastKeeper.NewKeeper(encCfg.Amino, sdk.NewKVStoreKey(broadcastTypes.StoreKey), mocks.Staker)
+	broadcaster := broadcastKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(broadcastTypes.StoreKey), mocks.Staker)
 
 	snapSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
 	snapKeeper := snapshotKeeper.NewKeeper(encCfg.Amino, sdk.NewKVStoreKey(snapshotTypes.StoreKey), snapSubspace, broadcaster, mocks.Staker, mocks.Slasher, mocks.Tss)

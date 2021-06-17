@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"encoding/binary"
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -21,12 +22,12 @@ const (
 type Keeper struct {
 	staker   types.Staker
 	storeKey sdk.StoreKey
-	cdc      *codec.LegacyAmino
+	cdc      codec.BinaryMarshaler
 }
 
 // NewKeeper constructs a broadcast keeper
 func NewKeeper(
-	cdc *codec.LegacyAmino,
+	cdc codec.BinaryMarshaler,
 	storeKey sdk.StoreKey,
 	stakingKeeper types.Staker,
 ) Keeper {
@@ -82,7 +83,10 @@ func (k Keeper) GetProxy(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddre
 
 func (k Keeper) setProxyCount(ctx sdk.Context, count int) {
 	k.Logger(ctx).Debug(fmt.Sprintf("number of known proxies: %v", count))
-	ctx.KVStore(k.storeKey).Set([]byte(proxyCountKey), k.cdc.MustMarshalBinaryLengthPrefixed(count))
+
+	bz := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bz, uint64(count))
+	ctx.KVStore(k.storeKey).Set([]byte(proxyCountKey), bz)
 }
 
 func (k Keeper) getProxyCount(ctx sdk.Context) int {
@@ -90,7 +94,7 @@ func (k Keeper) getProxyCount(ctx sdk.Context) int {
 	if bz == nil {
 		return 0
 	}
-	var count int
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &count)
-	return count
+
+	return int(binary.LittleEndian.Uint64(bz))
+
 }

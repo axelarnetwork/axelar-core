@@ -312,7 +312,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		appCodec, keys[evmTypes.StoreKey], app.paramsKeeper,
 	)
 
-	broadcastK := broadcastKeeper.NewKeeper(app.legacyAmino, keys[broadcastTypes.StoreKey], stakingK)
+	broadcastK := broadcastKeeper.NewKeeper(appCodec, keys[broadcastTypes.StoreKey], stakingK)
 
 	slashingKCast := &snapshotExportedMock.SlasherMock{
 		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapshotExported.ValidatorInfo, bool) {
