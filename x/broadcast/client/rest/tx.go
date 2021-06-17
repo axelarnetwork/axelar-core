@@ -19,9 +19,15 @@ type ReqRegisterProxy struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 }
 
+// DereqRegisterProxy defines the properties of a tx request's body
+type DereqRegisterProxy struct {
+	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+}
+
 // RegisterRoutes registers rest routes for this module
 func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("/tx/%s/registerProxy/{voter}", types.ModuleName), registerProxyHandlerFn(cliCtx)).Methods("POST")
+	r.HandleFunc(fmt.Sprintf("/tx/%s/deregisterProxy", types.ModuleName), deregisterProxyHandlerFn(cliCtx)).Methods("POST")
 }
 
 func registerProxyHandlerFn(cliCtx client.Context) http.HandlerFunc {
@@ -50,6 +56,27 @@ func registerProxyHandlerFn(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		msg := types.NewRegisterProxyRequest(sdk.ValAddress(fromAddr), voter)
+		tx.WriteGeneratedTxResponse(cliCtx, w, baseReq, msg)
+	}
+}
+
+func deregisterProxyHandlerFn(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req ReqRegisterProxy
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
+			return
+		}
+		baseReq := req.BaseReq.Sanitize()
+		if !baseReq.ValidateBasic(w) {
+			return
+		}
+		fromAddr, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
+		if !ok {
+			return
+		}
+
+		msg := types.NewDeregisterProxyRequest(sdk.ValAddress(fromAddr))
 		tx.WriteGeneratedTxResponse(cliCtx, w, baseReq, msg)
 	}
 }

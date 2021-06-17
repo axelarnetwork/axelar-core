@@ -26,6 +26,7 @@ func GetTxCmd() *cobra.Command {
 
 	broadcastTxCmd.AddCommand(
 		GetCmdRegisterProxy(),
+		GetCmdDeregisterProxy(),
 		GetCmdSendStake(),
 	)
 
@@ -50,6 +51,26 @@ func GetCmdRegisterProxy() *cobra.Command {
 			}
 
 			msg := types.NewRegisterProxyRequest(sdk.ValAddress(clientCtx.FromAddress), proxyKey.GetAddress())
+			return legacyTx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdDeregisterProxy returns the command to register a proxy
+func GetCmdDeregisterProxy() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "registerProxy",
+		Short: "Deregister a proxy account from a specific validator.",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewDeregisterProxyRequest(sdk.ValAddress(clientCtx.FromAddress))
 			return legacyTx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}

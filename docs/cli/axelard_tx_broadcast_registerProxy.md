@@ -1,9 +1,9 @@
 ## axelard tx broadcast registerProxy
 
-Register a proxy account for a specific validator principal to broadcast transactions in its stead
+Deregister a proxy account from a specific validator.
 
 ```
-axelard tx broadcast registerProxy [proxy]  [flags]
+axelard tx broadcast registerProxy [flags]
 ```
 
 ### Options

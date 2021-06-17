@@ -99,34 +99,110 @@ func (m *RegisterProxyResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_RegisterProxyResponse proto.InternalMessageInfo
 
+type DeregisterProxyRequest struct {
+	PrincipalAddr github_com_cosmos_cosmos_sdk_types.ValAddress `protobuf:"bytes,1,opt,name=principal_addr,json=principalAddr,proto3,casttype=github.com/cosmos/cosmos-sdk/types.ValAddress" json:"principal_addr,omitempty"`
+}
+
+func (m *DeregisterProxyRequest) Reset()         { *m = DeregisterProxyRequest{} }
+func (m *DeregisterProxyRequest) String() string { return proto.CompactTextString(m) }
+func (*DeregisterProxyRequest) ProtoMessage()    {}
+func (*DeregisterProxyRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_34168aff4e361a5a, []int{2}
+}
+func (m *DeregisterProxyRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DeregisterProxyRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DeregisterProxyRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DeregisterProxyRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeregisterProxyRequest.Merge(m, src)
+}
+func (m *DeregisterProxyRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *DeregisterProxyRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeregisterProxyRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeregisterProxyRequest proto.InternalMessageInfo
+
+type DeregisterProxyResponse struct {
+}
+
+func (m *DeregisterProxyResponse) Reset()         { *m = DeregisterProxyResponse{} }
+func (m *DeregisterProxyResponse) String() string { return proto.CompactTextString(m) }
+func (*DeregisterProxyResponse) ProtoMessage()    {}
+func (*DeregisterProxyResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_34168aff4e361a5a, []int{3}
+}
+func (m *DeregisterProxyResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DeregisterProxyResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DeregisterProxyResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DeregisterProxyResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeregisterProxyResponse.Merge(m, src)
+}
+func (m *DeregisterProxyResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *DeregisterProxyResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeregisterProxyResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeregisterProxyResponse proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*RegisterProxyRequest)(nil), "broadcast.v1beta1.RegisterProxyRequest")
 	proto.RegisterType((*RegisterProxyResponse)(nil), "broadcast.v1beta1.RegisterProxyResponse")
+	proto.RegisterType((*DeregisterProxyRequest)(nil), "broadcast.v1beta1.DeregisterProxyRequest")
+	proto.RegisterType((*DeregisterProxyResponse)(nil), "broadcast.v1beta1.DeregisterProxyResponse")
 }
 
 func init() { proto.RegisterFile("broadcast/v1beta1/tx.proto", fileDescriptor_34168aff4e361a5a) }
 
 var fileDescriptor_34168aff4e361a5a = []byte{
-	// 293 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x91, 0x3f, 0x4b, 0x03, 0x31,
-	0x18, 0xc6, 0xef, 0x1c, 0x04, 0x83, 0x0a, 0x96, 0x8a, 0x52, 0x24, 0x4a, 0x27, 0x97, 0x5e, 0x28,
-	0x82, 0x7b, 0xfb, 0x09, 0x4a, 0x11, 0x11, 0x17, 0xc9, 0x25, 0x2f, 0x31, 0xf4, 0x9a, 0x37, 0xe6,
-	0x4d, 0xf5, 0xfa, 0x2d, 0xfc, 0x4c, 0x4e, 0x1d, 0x3b, 0x3a, 0x89, 0xb6, 0xdf, 0xc2, 0x49, 0xee,
-	0x5a, 0xab, 0xb8, 0x39, 0x25, 0x4f, 0x7e, 0xe1, 0xf7, 0xe4, 0x0f, 0x6b, 0xe5, 0x01, 0xa5, 0x56,
-	0x92, 0xa2, 0x78, 0xec, 0xe6, 0x10, 0x65, 0x57, 0xc4, 0x32, 0xf3, 0x01, 0x23, 0x36, 0x0e, 0x36,
-	0x2c, 0x5b, 0xb3, 0x56, 0xd3, 0xa0, 0xc1, 0x9a, 0x8a, 0x6a, 0xb6, 0xda, 0xd8, 0x3a, 0x31, 0x88,
-	0xa6, 0x00, 0x21, 0xbd, 0x15, 0xd2, 0x39, 0x8c, 0x32, 0x5a, 0x74, 0xb4, 0xa2, 0xed, 0x97, 0x94,
-	0x35, 0x87, 0x60, 0x2c, 0x45, 0x08, 0x83, 0x80, 0xe5, 0x74, 0x08, 0x0f, 0x13, 0xa0, 0xd8, 0xb8,
-	0x61, 0xfb, 0x3e, 0x58, 0xa7, 0xac, 0x97, 0xc5, 0x9d, 0xd4, 0x3a, 0x1c, 0xa7, 0x67, 0xe9, 0xf9,
-	0x6e, 0xbf, 0xfb, 0xf9, 0x76, 0xda, 0x31, 0x36, 0xde, 0x4f, 0xf2, 0x4c, 0xe1, 0x58, 0x28, 0xa4,
-	0x31, 0xd2, 0x7a, 0xe8, 0x90, 0x1e, 0x89, 0x38, 0xf5, 0x40, 0xd9, 0xb5, 0x2c, 0x7a, 0x5a, 0x07,
-	0x20, 0x1a, 0xee, 0x6d, 0x44, 0xd5, 0x4a, 0x63, 0xc0, 0x98, 0xaf, 0x9a, 0x56, 0xd6, 0xad, 0x7f,
-	0x59, 0x7b, 0x4a, 0x7d, 0x5b, 0x77, 0x6a, 0x49, 0x95, 0xda, 0x47, 0xec, 0xf0, 0xcf, 0x1d, 0xc8,
-	0xa3, 0x23, 0xe8, 0x5f, 0xcd, 0x3e, 0x78, 0x32, 0x5b, 0xf0, 0x74, 0xbe, 0xe0, 0xe9, 0xfb, 0x82,
-	0xa7, 0xcf, 0x4b, 0x9e, 0xcc, 0x97, 0x3c, 0x79, 0x5d, 0xf2, 0xe4, 0xf6, 0xf2, 0x57, 0xa1, 0x2c,
-	0xa1, 0x90, 0xc1, 0x41, 0x7c, 0xc2, 0x30, 0x5a, 0xa7, 0x8e, 0xc2, 0x00, 0xa2, 0x14, 0x3f, 0xbf,
-	0x50, 0x1f, 0x22, 0xdf, 0xae, 0x9f, 0xee, 0xe2, 0x2b, 0x00, 0x00, 0xff, 0xff, 0xfd, 0x32, 0x31,
-	0x2b, 0x9f, 0x01, 0x00, 0x00,
+	// 313 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x92, 0xcf, 0x4a, 0x03, 0x31,
+	0x10, 0x87, 0x77, 0x3d, 0x08, 0x06, 0x15, 0x2c, 0xd5, 0x6a, 0x91, 0x28, 0x7b, 0xf2, 0xd2, 0x0d,
+	0x45, 0xf0, 0xde, 0xe2, 0x03, 0x94, 0x22, 0x22, 0x5e, 0x24, 0x9b, 0x1d, 0xd6, 0xa5, 0xdb, 0x4c,
+	0xcc, 0xa4, 0xba, 0x7d, 0x0b, 0x9f, 0xc9, 0x53, 0x8f, 0x3d, 0x7a, 0x12, 0x6d, 0xdf, 0xc2, 0x93,
+	0xec, 0x1f, 0xab, 0xe8, 0xc9, 0x8b, 0xa7, 0x64, 0xf2, 0x85, 0xef, 0x37, 0x43, 0xc2, 0xda, 0x91,
+	0x45, 0x19, 0x2b, 0x49, 0x4e, 0xdc, 0x77, 0x23, 0x70, 0xb2, 0x2b, 0x5c, 0x1e, 0x1a, 0x8b, 0x0e,
+	0x1b, 0x3b, 0x2b, 0x16, 0xd6, 0xac, 0xdd, 0x4c, 0x30, 0xc1, 0x92, 0x8a, 0x62, 0x57, 0x5d, 0x6c,
+	0x1f, 0x26, 0x88, 0x49, 0x06, 0x42, 0x9a, 0x54, 0x48, 0xad, 0xd1, 0x49, 0x97, 0xa2, 0xa6, 0x8a,
+	0x06, 0x4f, 0x3e, 0x6b, 0x0e, 0x21, 0x49, 0xc9, 0x81, 0x1d, 0x58, 0xcc, 0xa7, 0x43, 0xb8, 0x9b,
+	0x00, 0xb9, 0xc6, 0x15, 0xdb, 0x36, 0x36, 0xd5, 0x2a, 0x35, 0x32, 0xbb, 0x91, 0x71, 0x6c, 0xf7,
+	0xfd, 0x63, 0xff, 0x64, 0xb3, 0xdf, 0x7d, 0x7f, 0x39, 0xea, 0x24, 0xa9, 0xbb, 0x9d, 0x44, 0xa1,
+	0xc2, 0xb1, 0x50, 0x48, 0x63, 0xa4, 0x7a, 0xe9, 0x50, 0x3c, 0x12, 0x6e, 0x6a, 0x80, 0xc2, 0x4b,
+	0x99, 0xf5, 0xe2, 0xd8, 0x02, 0xd1, 0x70, 0x6b, 0x25, 0x2a, 0x4e, 0x1a, 0x03, 0xc6, 0x4c, 0x91,
+	0x54, 0x59, 0xd7, 0xfe, 0x64, 0xed, 0x29, 0xf5, 0x69, 0xdd, 0x28, 0x25, 0x45, 0x15, 0xb4, 0xd8,
+	0xee, 0x8f, 0x19, 0xc8, 0xa0, 0x26, 0x08, 0x2c, 0xdb, 0x3b, 0x07, 0xfb, 0xaf, 0xe3, 0x05, 0x07,
+	0xac, 0xf5, 0x2b, 0xb3, 0x6a, 0xa7, 0x7f, 0x31, 0x7b, 0xe3, 0xde, 0x6c, 0xc1, 0xfd, 0xf9, 0x82,
+	0xfb, 0xaf, 0x0b, 0xee, 0x3f, 0x2e, 0xb9, 0x37, 0x5f, 0x72, 0xef, 0x79, 0xc9, 0xbd, 0xeb, 0xb3,
+	0x6f, 0xb1, 0x32, 0x87, 0x4c, 0x5a, 0x0d, 0xee, 0x01, 0xed, 0xa8, 0xae, 0x3a, 0x0a, 0x2d, 0x88,
+	0x5c, 0x7c, 0x7d, 0x8a, 0xb2, 0x95, 0x68, 0xbd, 0x7c, 0xc9, 0xd3, 0x8f, 0x00, 0x00, 0x00, 0xff,
+	0xff, 0x1d, 0x0d, 0xcc, 0xa8, 0x2e, 0x02, 0x00, 0x00,
 }
 
 func (m *RegisterProxyRequest) Marshal() (dAtA []byte, err error) {
@@ -189,6 +265,59 @@ func (m *RegisterProxyResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *DeregisterProxyRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DeregisterProxyRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DeregisterProxyRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.PrincipalAddr) > 0 {
+		i -= len(m.PrincipalAddr)
+		copy(dAtA[i:], m.PrincipalAddr)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.PrincipalAddr)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *DeregisterProxyResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DeregisterProxyResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DeregisterProxyResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTx(v)
 	base := offset
@@ -218,6 +347,28 @@ func (m *RegisterProxyRequest) Size() (n int) {
 }
 
 func (m *RegisterProxyResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *DeregisterProxyRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.PrincipalAddr)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *DeregisterProxyResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -377,6 +528,140 @@ func (m *RegisterProxyResponse) Unmarshal(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: RegisterProxyResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DeregisterProxyRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DeregisterProxyRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DeregisterProxyRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PrincipalAddr", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PrincipalAddr = append(m.PrincipalAddr[:0], dAtA[iNdEx:postIndex]...)
+			if m.PrincipalAddr == nil {
+				m.PrincipalAddr = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DeregisterProxyResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DeregisterProxyResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DeregisterProxyResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:

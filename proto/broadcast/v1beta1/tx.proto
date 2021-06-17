@@ -17,3 +17,11 @@ message RegisterProxyRequest {
 }
 
 message RegisterProxyResponse {}
+
+message DeregisterProxyRequest {
+  bytes principal_addr = 1
+      [ (gogoproto.casttype) =
+            "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
+}
+
+message DeregisterProxyResponse {}

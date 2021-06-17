@@ -38,3 +38,20 @@ func (s msgServer) RegisterProxy(c context.Context, req *types.RegisterProxyRequ
 	)
 	return &types.RegisterProxyResponse{}, nil
 }
+
+func (s msgServer) DeregisterProxy(c context.Context, req *types.DeregisterProxyRequest) (*types.DeregisterProxyResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	if err := s.Keeper.DeregisterProxy(ctx, req.PrincipalAddr); err != nil {
+		return nil, sdkerrors.Wrap(types.ErrBroadcast, err.Error())
+	}
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeySender, req.PrincipalAddr.String()),
+		),
+	)
+	return &types.DeregisterProxyResponse{}, nil
+}
