@@ -121,8 +121,8 @@
       - [link \[chain\] \[address\]](axelard_tx_bitcoin_link.md)	 - Link a cross chain address to a bitcoin address created by Axelar
       - [sign-pending-transfers](axelard_tx_bitcoin_sign-pending-transfers.md)	 - Create a Bitcoin transaction for all pending transfers and sign it
     - [broadcast](axelard_tx_broadcast.md)	 - broadcast transactions subcommands
+      - [deregisterProxy](axelard_tx_broadcast_deregisterProxy.md)	 - Deregister a proxy account from a specific validator.
       - [registerProxy \[proxy\] ](axelard_tx_broadcast_registerProxy.md)	 - Register a proxy account for a specific validator principal to broadcast transactions in its stead
-      - [registerProxy](axelard_tx_broadcast_registerProxy.md)	 - Deregister a proxy account from a specific validator.
       - [sendStake \[amount\] \[address 1\] ... \[address n\]](axelard_tx_broadcast_sendStake.md)	 - Sends the specified amount of stake to the designated addresses
     - [crisis](axelard_tx_crisis.md)	 - Crisis transactions subcommands
       - [invariant-broken \[module-name\] \[invariant-route\]](axelard_tx_crisis_invariant-broken.md)	 - Submit proof that an invariant broken to halt the chain

@@ -61,7 +61,7 @@ func GetCmdRegisterProxy() *cobra.Command {
 // GetCmdDeregisterProxy returns the command to register a proxy
 func GetCmdDeregisterProxy() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "registerProxy",
+		Use:   "deregisterProxy",
 		Short: "Deregister a proxy account from a specific validator.",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {

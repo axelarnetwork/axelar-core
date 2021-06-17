@@ -1,9 +1,9 @@
-## axelard tx broadcast registerProxy
+## axelard tx broadcast deregisterProxy
 
-Register a proxy account for a specific validator principal to broadcast transactions in its stead
+Deregister a proxy account from a specific validator.
 
 ```
-axelard tx broadcast registerProxy [proxy]  [flags]
+axelard tx broadcast deregisterProxy [flags]
 ```
 
 ### Options
@@ -18,7 +18,7 @@ axelard tx broadcast registerProxy [proxy]  [flags]
       --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
       --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
-  -h, --help                     help for registerProxy
+  -h, --help                     help for deregisterProxy
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "test")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                   Use a connected Ledger device
