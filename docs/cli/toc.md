@@ -165,7 +165,6 @@
       - [unbond \[validator-addr\] \[amount\]](axelard_tx_staking_unbond.md)	 - Unbond shares from a validator
     - [tss](axelard_tx_tss.md)	 - tss transactions subcommands
       - [assign-next \[chain\] \[role\] \[keyID\]](axelard_tx_tss_assign-next.md)	 - Assigns a previously created key with \[keyID\] as the next key for \[chain\]
-      - [deregister](axelard_tx_tss_deregister.md)	 - Deregister from participating in any future key generation
       - [rotate \[chain\] \[role\]](axelard_tx_tss_rotate.md)	 - Rotate the given chain from the old key to the previously assigned one
       - [start-keygen](axelard_tx_tss_start-keygen.md)	 - Initiate threshold key generation protocol
     - [validate-signatures \[file\]](axelard_tx_validate-signatures.md)	 - Validate transactions signatures

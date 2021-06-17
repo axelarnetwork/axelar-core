@@ -387,17 +387,3 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 			fmt.Sprintf("unrecognized voting result type: %T", result))
 	}
 }
-
-func (s msgServer) Deregister(c context.Context, req *types.DeregisterRequest) (*types.DeregisterResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	valAddr := sdk.ValAddress(req.Sender)
-
-	if _, found := s.staker.GetValidator(ctx, valAddr); !found {
-		return nil, fmt.Errorf("sender %s is not a validator and cannot deregister for tss keygen", valAddr.String())
-	}
-
-	s.SetValidatorDeregisteredBlockHeight(ctx, valAddr, ctx.BlockHeight())
-
-	return &types.DeregisterResponse{}, nil
-}
