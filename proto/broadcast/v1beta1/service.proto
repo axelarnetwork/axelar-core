@@ -25,7 +25,7 @@ service MsgService {
   rpc DeregisterProxy(DeregisterProxyRequest)
       returns (DeregisterProxyResponse) {
     option (google.api.http) = {
-      post : "/axelar/broadcast/registerProxy"
+      post : "/axelar/broadcast/deregisterProxy"
       body : "*"
     };
   }
