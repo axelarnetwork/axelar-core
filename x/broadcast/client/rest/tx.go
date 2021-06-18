@@ -19,8 +19,8 @@ type ReqRegisterProxy struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 }
 
-// DereqRegisterProxy defines the properties of a tx request's body
-type DereqRegisterProxy struct {
+// ReqDeregisterProxy defines the properties of a tx request's body
+type ReqDeregisterProxy struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 }
 
@@ -62,7 +62,7 @@ func registerProxyHandlerFn(cliCtx client.Context) http.HandlerFunc {
 
 func deregisterProxyHandlerFn(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReqRegisterProxy
+		var req ReqDeregisterProxy
 		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
 			return
