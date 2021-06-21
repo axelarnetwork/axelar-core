@@ -699,22 +699,26 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 	return &types.SignTxResponse{TxID: txID}, nil
 }
 
-func mergeTransfersByAddress(transfers []nexus.CrossChainTransfer) []nexus.CrossChainTransfer {
+func mergeTransfersByAddressAndAsset(transfers []nexus.CrossChainTransfer) []nexus.CrossChainTransfer {
 	results := []nexus.CrossChainTransfer{}
-	transferAmountByAddress := map[nexus.CrossChainAddress]sdk.Int{}
+	transferAmountByAddressAndAsset := map[string]sdk.Int{}
 
 	for _, transfer := range transfers {
-		if _, ok := transferAmountByAddress[transfer.Recipient]; !ok {
-			transferAmountByAddress[transfer.Recipient] = sdk.ZeroInt()
+		id := fmt.Sprintf("%s-%s", transfer.Recipient.Address, transfer.Asset.Denom)
+
+		if _, ok := transferAmountByAddressAndAsset[id]; !ok {
+			transferAmountByAddressAndAsset[id] = sdk.ZeroInt()
 		}
 
-		transferAmountByAddress[transfer.Recipient] = transferAmountByAddress[transfer.Recipient].Add(transfer.Asset.Amount)
+		transferAmountByAddressAndAsset[id] = transferAmountByAddressAndAsset[id].Add(transfer.Asset.Amount)
 	}
 
-	addressSeen := map[nexus.CrossChainAddress]bool{}
+	seen := map[string]bool{}
 
 	for _, transfer := range transfers {
-		if addressSeen[transfer.Recipient] {
+		id := fmt.Sprintf("%s-%s", transfer.Recipient.Address, transfer.Asset.Denom)
+
+		if seen[id] {
 			continue
 		}
 
@@ -723,10 +727,10 @@ func mergeTransfersByAddress(transfers []nexus.CrossChainTransfer) []nexus.Cross
 			Asset:     transfer.Asset,
 			ID:        transfer.ID,
 		}
-		mergedTransfer.Asset.Amount = transferAmountByAddress[transfer.Recipient]
+		mergedTransfer.Asset.Amount = transferAmountByAddressAndAsset[id]
 
 		results = append(results, mergedTransfer)
-		addressSeen[transfer.Recipient] = true
+		seen[id] = true
 	}
 
 	return results
@@ -750,7 +754,7 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 		return nil, fmt.Errorf("Could not find chain ID for '%s'", req.Chain)
 	}
 
-	data, err := types.CreateMintCommandData(chainID, mergeTransfersByAddress(pendingTransfers))
+	data, err := types.CreateMintCommandData(chainID, mergeTransfersByAddressAndAsset(pendingTransfers))
 	if err != nil {
 		return nil, err
 	}
