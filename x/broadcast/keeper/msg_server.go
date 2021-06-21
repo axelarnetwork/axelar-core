@@ -58,6 +58,6 @@ func (s msgServer) DeregisterProxy(c context.Context, req *types.DeregisterProxy
 		),
 	)
 
-	s.Keeper.Logger(ctx).Info("Validator %s has de-registered proxy %s", req.PrincipalAddr, proxy)
+	s.Keeper.Logger(ctx).Info("validator %s has de-registered proxy %s", req.PrincipalAddr, proxy)
 	return &types.DeregisterProxyResponse{}, nil
 }
