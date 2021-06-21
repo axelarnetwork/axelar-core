@@ -26,6 +26,6 @@ axelard tx broadcast [flags]
 ### SEE ALSO
 
 - [axelard tx](axelard_tx.md)	 - Transactions subcommands
-- [axelard tx broadcast deregisterProxy](axelard_tx_broadcast_deregisterProxy.md)	 - Deregister a proxy account from a specific validator.
+- [axelard tx broadcast deregisterProxy](axelard_tx_broadcast_deregisterProxy.md)	 - Deregister the proxy account of the sender
 - [axelard tx broadcast registerProxy](axelard_tx_broadcast_registerProxy.md)	 - Register a proxy account for a specific validator principal to broadcast transactions in its stead
 - [axelard tx broadcast sendStake](axelard_tx_broadcast_sendStake.md)	 - Sends the specified amount of stake to the designated addresses

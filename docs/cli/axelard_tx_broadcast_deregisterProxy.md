@@ -1,6 +1,6 @@
 ## axelard tx broadcast deregisterProxy
 
-Deregister a proxy account from a specific validator.
+Deregister the proxy account of the sender
 
 ```
 axelard tx broadcast deregisterProxy [flags]

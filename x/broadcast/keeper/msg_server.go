@@ -32,6 +32,7 @@ func (s msgServer) RegisterProxy(c context.Context, req *types.RegisterProxyRequ
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeRegisterProxy),
 			sdk.NewAttribute(sdk.AttributeKeySender, req.PrincipalAddr.String()),
 			sdk.NewAttribute(types.AttributeAddress, req.ProxyAddr.String()),
 		),
@@ -41,6 +42,7 @@ func (s msgServer) RegisterProxy(c context.Context, req *types.RegisterProxyRequ
 
 func (s msgServer) DeregisterProxy(c context.Context, req *types.DeregisterProxyRequest) (*types.DeregisterProxyResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+	proxy := s.Keeper.GetProxy(ctx, req.PrincipalAddr)
 
 	if err := s.Keeper.DeregisterProxy(ctx, req.PrincipalAddr); err != nil {
 		return nil, sdkerrors.Wrap(types.ErrBroadcast, err.Error())
@@ -50,8 +52,12 @@ func (s msgServer) DeregisterProxy(c context.Context, req *types.DeregisterProxy
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeDeregisterProxy),
 			sdk.NewAttribute(sdk.AttributeKeySender, req.PrincipalAddr.String()),
+			sdk.NewAttribute(types.AttributeAddress, proxy.String()),
 		),
 	)
+
+	s.Keeper.Logger(ctx).Info("Validator %s has de-registered proxy %s", req.PrincipalAddr, proxy)
 	return &types.DeregisterProxyResponse{}, nil
 }
