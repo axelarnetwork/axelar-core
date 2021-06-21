@@ -80,15 +80,15 @@ func (k Keeper) DeregisterProxy(ctx sdk.Context, principal sdk.ValAddress) error
 		return fmt.Errorf("validator %s has no proxy registered", principal.String())
 	}
 
-	count := k.getProxyCount(ctx)
 	k.Logger(ctx).Debug("deleting proxy")
 	ctx.KVStore(k.storeKey).Delete(storedProxy)
 	// Delete the reverse lookup
 	ctx.KVStore(k.storeKey).Delete(principal)
+
+	k.Logger(ctx).Debug("setting proxy count")	
+	count := k.getProxyCount(ctx)
 	count--
-	k.Logger(ctx).Debug("setting proxy count")
 	k.setProxyCount(ctx, count)
-	k.Logger(ctx).Debug("done")
 	return nil
 }
 
