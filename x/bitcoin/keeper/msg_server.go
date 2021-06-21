@@ -244,12 +244,16 @@ func (s msgServer) SignPendingTransfers(c context.Context, _ *types.SignPendingT
 	if len(outputs) == 0 {
 		s.Logger(ctx).Info("creating consolidation transaction without any withdrawals")
 	}
+
+	anyoneCanSpendOutput := types.Output{Amount: s.BTCKeeper.GetMinimumWithdrawalAmount(ctx), Recipient: s.BTCKeeper.GetAnyoneCanSpendAddress(ctx).GetAddress()}
+	totalOut = totalOut.AddRaw(int64(anyoneCanSpendOutput.Amount))
+
 	inputs, totalDeposits, err := prepareInputs(ctx, s, s.signer)
 	if err != nil {
 		return nil, err
 	}
 
-	txSizeUpperBound, err := estimateTxSizeWithZeroChange(ctx, s, s.signer, inputs, outputs)
+	txSizeUpperBound, err := estimateTxSizeWithZeroChange(ctx, s, s.signer, inputs, append([]types.Output{anyoneCanSpendOutput}, outputs...))
 	if err != nil {
 		return nil, err
 	}
@@ -268,8 +272,8 @@ func (s msgServer) SignPendingTransfers(c context.Context, _ *types.SignPendingT
 		if err != nil {
 			return nil, err
 		}
-		// vout 0 is always the change, and vout 1 is always anyone-can-spend
-		outputs = append([]types.Output{changeOutput}, outputs...)
+		// vout 0 is always the change, and vout 1 is always anyone-can-spend for consolidation transaction
+		outputs = append([]types.Output{changeOutput, anyoneCanSpendOutput}, outputs...)
 		s.SetMasterKeyVout(ctx, 0)
 	default:
 		return nil, fmt.Errorf("sign value of change for consolidation transaction unexpected: %d", change.Sign())
@@ -306,11 +310,8 @@ func estimateTxSizeWithZeroChange(ctx sdk.Context, k types.BTCKeeper, signer typ
 func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.Output, sdk.Int) {
 	minAmount := sdk.NewInt(int64(k.GetMinimumWithdrawalAmount(ctx)))
 	pendingTransfers := n.GetTransfersForChain(ctx, exported.Bitcoin, nexus.Pending)
-	// first output in consolidation transaction is always for our anyone-can-spend address for the
-	// sake of child-pay-for-parent so that anyone can pay
-	anyoneCanSpendOutput := types.Output{Amount: k.GetMinimumWithdrawalAmount(ctx), Recipient: k.GetAnyoneCanSpendAddress(ctx).GetAddress()}
-	outputs := []types.Output{anyoneCanSpendOutput}
-	totalOut := sdk.NewInt(int64(anyoneCanSpendOutput.Amount))
+	outputs := []types.Output{}
+	totalOut := sdk.ZeroInt()
 
 	addrWithdrawal := make(map[string]sdk.Int)
 	var recipients []btcutil.Address
