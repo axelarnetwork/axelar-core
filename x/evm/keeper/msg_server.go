@@ -699,43 +699,6 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 	return &types.SignTxResponse{TxID: txID}, nil
 }
 
-func mergeTransfersByAddressAndAsset(transfers []nexus.CrossChainTransfer) []nexus.CrossChainTransfer {
-	results := []nexus.CrossChainTransfer{}
-	transferAmountByAddressAndAsset := map[string]sdk.Int{}
-
-	for _, transfer := range transfers {
-		id := fmt.Sprintf("%s-%s", transfer.Recipient.Address, transfer.Asset.Denom)
-
-		if _, ok := transferAmountByAddressAndAsset[id]; !ok {
-			transferAmountByAddressAndAsset[id] = sdk.ZeroInt()
-		}
-
-		transferAmountByAddressAndAsset[id] = transferAmountByAddressAndAsset[id].Add(transfer.Asset.Amount)
-	}
-
-	seen := map[string]bool{}
-
-	for _, transfer := range transfers {
-		id := fmt.Sprintf("%s-%s", transfer.Recipient.Address, transfer.Asset.Denom)
-
-		if seen[id] {
-			continue
-		}
-
-		mergedTransfer := nexus.CrossChainTransfer{
-			Recipient: transfer.Recipient,
-			Asset:     transfer.Asset,
-			ID:        transfer.ID,
-		}
-		mergedTransfer.Asset.Amount = transferAmountByAddressAndAsset[id]
-
-		results = append(results, mergedTransfer)
-		seen[id] = true
-	}
-
-	return results
-}
-
 func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendingTransfersRequest) (*types.SignPendingTransfersResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
@@ -754,7 +717,10 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 		return nil, fmt.Errorf("Could not find chain ID for '%s'", req.Chain)
 	}
 
-	data, err := types.CreateMintCommandData(chainID, mergeTransfersByAddressAndAsset(pendingTransfers))
+	getRecipientAndAsset := func(transfer nexus.CrossChainTransfer) string {
+		return fmt.Sprintf("%s-%s", transfer.Recipient.Address, transfer.Asset.Denom)
+	}
+	data, err := types.CreateMintCommandData(chainID, nexus.MergeTransfersBy(pendingTransfers, getRecipientAndAsset))
 	if err != nil {
 		return nil, err
 	}
