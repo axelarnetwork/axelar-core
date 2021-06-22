@@ -127,7 +127,9 @@ func setupMetrics() {
 		Enabled:                 true,
 		EnableHostname:          false,
 		ServiceName:             "axelar",
-		PrometheusRetentionTime: 3600,
+		// 1<<62, https://play.golang.org/p/szrQPRHxE0O
+		// A hacky way for
+		PrometheusRetentionTime: 4611686018427387904,
 		EnableHostnameLabel:     false,
 	})
 }
