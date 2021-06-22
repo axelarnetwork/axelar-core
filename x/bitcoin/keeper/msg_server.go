@@ -151,11 +151,12 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 		// assert: the outpoint is known and has not been confirmed before
 	}
 
-	if err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed}); err != nil {
+	poll, err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed})
+	if err != nil {
 		return nil, err
 	}
 
-	result := s.voter.Result(ctx, req.Poll)
+	result := poll.GetResult()
 	if result == nil {
 		return &types.VoteConfirmOutpointResponse{Status: fmt.Sprintf("not enough votes to confirm outpoint %s yet", req.OutPoint)}, nil
 	}

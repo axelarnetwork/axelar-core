@@ -12,6 +12,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	gogoprototypes "github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/assert"
@@ -28,6 +29,7 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 func TestHandleMsgLink(t *testing.T) {
@@ -238,9 +240,10 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			},
 		}
 		voter = &mock.VoterMock{
-			TallyVoteFunc: func(sdk.Context, sdk.AccAddress, vote.PollMeta, vote.VotingData) error { return nil },
-			ResultFunc: func(sdk.Context, vote.PollMeta) vote.VotingData {
-				return &gogoprototypes.BoolValue{Value: true}
+			TallyVoteFunc: func(sdk.Context, sdk.AccAddress, vote.PollMeta, vote.VotingData) (*votetypes.Poll, error) {
+				result, _ := codectypes.NewAnyWithValue(&gogoprototypes.BoolValue{Value: true})
+
+				return &votetypes.Poll{Result: result}, nil
 			},
 			DeletePollFunc: func(sdk.Context, vote.PollMeta) {},
 		}
@@ -382,9 +385,12 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 
 	t.Run("happy path reject", testutils.Func(func(t *testing.T) {
 		setup()
-		voter.ResultFunc = func(sdk.Context, vote.PollMeta) vote.VotingData {
-			return &gogoprototypes.BoolValue{Value: false}
-		}
+		voter.TallyVoteFunc =
+			func(sdk.Context, sdk.AccAddress, vote.PollMeta, vote.VotingData) (*votetypes.Poll, error) {
+				result, _ := codectypes.NewAnyWithValue(&gogoprototypes.BoolValue{Value: false})
+
+				return &votetypes.Poll{Result: result}, nil
+			}
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
@@ -397,9 +403,10 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 
 	t.Run("happy path no result yet", testutils.Func(func(t *testing.T) {
 		setup()
-		voter.ResultFunc = func(sdk.Context, vote.PollMeta) vote.VotingData {
-			return nil
-		}
+		voter.TallyVoteFunc =
+			func(sdk.Context, sdk.AccAddress, vote.PollMeta, vote.VotingData) (*votetypes.Poll, error) {
+				return &votetypes.Poll{}, nil
+			}
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
@@ -469,9 +476,10 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 
 	t.Run("tally failed", testutils.Func(func(t *testing.T) {
 		setup()
-		voter.TallyVoteFunc = func(sdk.Context, sdk.AccAddress, vote.PollMeta, vote.VotingData) error {
-			return fmt.Errorf("failed")
-		}
+		voter.TallyVoteFunc =
+			func(sdk.Context, sdk.AccAddress, vote.PollMeta, vote.VotingData) (*votetypes.Poll, error) {
+				return nil, fmt.Errorf("failed")
+			}
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)

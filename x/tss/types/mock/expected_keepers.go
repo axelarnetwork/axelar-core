@@ -817,10 +817,7 @@ var _ tsstypes.Voter = &VoterMock{}
 // 			InitPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta, snapshotCounter int64, expireAt int64) error {
 // 				panic("mock out the InitPoll method")
 // 			},
-// 			ResultFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta) exported1.VotingData {
-// 				panic("mock out the Result method")
-// 			},
-// 			TallyVoteFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.AccAddress, pollMeta exported1.PollMeta, data exported1.VotingData) error {
+// 			TallyVoteFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.AccAddress, pollMeta exported1.PollMeta, data exported1.VotingData) (*votetypes.Poll, error) {
 // 				panic("mock out the TallyVote method")
 // 			},
 // 		}
@@ -839,11 +836,8 @@ type VoterMock struct {
 	// InitPollFunc mocks the InitPoll method.
 	InitPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta, snapshotCounter int64, expireAt int64) error
 
-	// ResultFunc mocks the Result method.
-	ResultFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta) exported1.VotingData
-
 	// TallyVoteFunc mocks the TallyVote method.
-	TallyVoteFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.AccAddress, pollMeta exported1.PollMeta, data exported1.VotingData) error
+	TallyVoteFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.AccAddress, pollMeta exported1.PollMeta, data exported1.VotingData) (*votetypes.Poll, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -872,13 +866,6 @@ type VoterMock struct {
 			// ExpireAt is the expireAt argument value.
 			ExpireAt int64
 		}
-		// Result holds details about calls to the Result method.
-		Result []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Poll is the poll argument value.
-			Poll exported1.PollMeta
-		}
 		// TallyVote holds details about calls to the TallyVote method.
 		TallyVote []struct {
 			// Ctx is the ctx argument value.
@@ -894,7 +881,6 @@ type VoterMock struct {
 	lockDeletePoll sync.RWMutex
 	lockGetPoll    sync.RWMutex
 	lockInitPoll   sync.RWMutex
-	lockResult     sync.RWMutex
 	lockTallyVote  sync.RWMutex
 }
 
@@ -1011,43 +997,8 @@ func (mock *VoterMock) InitPollCalls() []struct {
 	return calls
 }
 
-// Result calls ResultFunc.
-func (mock *VoterMock) Result(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta) exported1.VotingData {
-	if mock.ResultFunc == nil {
-		panic("VoterMock.ResultFunc: method is nil but Voter.Result was just called")
-	}
-	callInfo := struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
-		Poll exported1.PollMeta
-	}{
-		Ctx:  ctx,
-		Poll: poll,
-	}
-	mock.lockResult.Lock()
-	mock.calls.Result = append(mock.calls.Result, callInfo)
-	mock.lockResult.Unlock()
-	return mock.ResultFunc(ctx, poll)
-}
-
-// ResultCalls gets all the calls that were made to Result.
-// Check the length with:
-//     len(mockedVoter.ResultCalls())
-func (mock *VoterMock) ResultCalls() []struct {
-	Ctx  github_com_cosmos_cosmos_sdk_types.Context
-	Poll exported1.PollMeta
-} {
-	var calls []struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
-		Poll exported1.PollMeta
-	}
-	mock.lockResult.RLock()
-	calls = mock.calls.Result
-	mock.lockResult.RUnlock()
-	return calls
-}
-
 // TallyVote calls TallyVoteFunc.
-func (mock *VoterMock) TallyVote(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.AccAddress, pollMeta exported1.PollMeta, data exported1.VotingData) error {
+func (mock *VoterMock) TallyVote(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.AccAddress, pollMeta exported1.PollMeta, data exported1.VotingData) (*votetypes.Poll, error) {
 	if mock.TallyVoteFunc == nil {
 		panic("VoterMock.TallyVoteFunc: method is nil but Voter.TallyVote was just called")
 	}

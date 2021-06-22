@@ -297,11 +297,12 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 		return nil, fmt.Errorf("unknown chain %s", req.Name)
 	}
 
-	if err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed}); err != nil {
+	poll, err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed})
+	if err != nil {
 		return nil, err
 	}
 
-	result := s.voter.Result(ctx, req.Poll)
+	result := poll.GetResult()
 	if result == nil {
 		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("not enough votes to confirm chain in %s yet", req.Name)}, nil
 	}
@@ -372,11 +373,12 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		// assert: the deposit is known and has not been confirmed before
 	}
 
-	if err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed}); err != nil {
+	poll, err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed})
+	if err != nil {
 		return nil, err
 	}
 
-	result := s.voter.Result(ctx, req.Poll)
+	result := poll.GetResult()
 	if result == nil {
 		return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("not enough votes to confirm deposit in %s to %s yet", req.TxID, req.BurnAddress.Hex())}, nil
 	}
@@ -446,11 +448,12 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 		// assert: the token is known and has not been confirmed before
 	}
 
-	if err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed}); err != nil {
+	poll, err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed})
+	if err != nil {
 		return nil, err
 	}
 
-	result := s.voter.Result(ctx, req.Poll)
+	result := poll.GetResult()
 	if result == nil {
 		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("not enough votes to confirm token %s yet", req.Symbol)}, nil
 	}
