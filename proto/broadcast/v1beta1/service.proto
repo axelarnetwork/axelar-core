@@ -11,11 +11,21 @@ option (gogoproto.goproto_registration) = true;
 
 // Msg defines the broadcast Msg service.
 service MsgService {
+
   // RegisterProxy defines a method for registering a proxy account that can act
   // in a validator account's stead.
   rpc RegisterProxy(RegisterProxyRequest) returns (RegisterProxyResponse) {
     option (google.api.http) = {
       post : "/axelar/broadcast/registerProxy/{proxy_addr}"
+      body : "*"
+    };
+  }
+
+  // DeregisterProxy defines a method for deregistering a proxy account.
+  rpc DeregisterProxy(DeregisterProxyRequest)
+      returns (DeregisterProxyResponse) {
+    option (google.api.http) = {
+      post : "/axelar/broadcast/deregisterProxy"
       body : "*"
     };
   }

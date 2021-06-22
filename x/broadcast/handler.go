@@ -19,6 +19,9 @@ func NewHandler(k keeper.Keeper) sdk.Handler {
 		case *types.RegisterProxyRequest:
 			res, err := server.RegisterProxy(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
+		case *types.DeregisterProxyRequest:
+			res, err := server.DeregisterProxy(sdk.WrapSDKContext(ctx), msg)
+			return sdk.WrapServiceResult(ctx, res, err)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))

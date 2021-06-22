@@ -11,11 +11,13 @@ import (
 // RegisterLegacyAminoCodec registers concrete types on codec
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&RegisterProxyRequest{}, "broadcast/RegisterProxy", nil)
+	cdc.RegisterConcrete(&DeregisterProxyRequest{}, "broadcast/DeregisterProxy", nil)
 }
 
 // RegisterInterfaces registers types and interfaces with the given registry
 func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil), &RegisterProxyRequest{})
+	registry.RegisterImplementations((*sdk.Msg)(nil), &DeregisterProxyRequest{})
 
 	msgservice.RegisterMsgServiceDesc(registry, &_MsgService_serviceDesc)
 }

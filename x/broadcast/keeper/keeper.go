@@ -67,6 +67,31 @@ func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy s
 	return nil
 }
 
+// DeregisterProxy deregisters a proxy address for a given principal
+func (k Keeper) DeregisterProxy(ctx sdk.Context, principal sdk.ValAddress) error {
+	val := k.staker.Validator(ctx, principal)
+	if val == nil {
+		return fmt.Errorf("validator %s is unknown", principal.String())
+	}
+	k.Logger(ctx).Debug("getting proxy count")
+
+	storedProxy := ctx.KVStore(k.storeKey).Get(principal)
+	if storedProxy == nil {
+		return fmt.Errorf("validator %s has no proxy registered", principal.String())
+	}
+
+	k.Logger(ctx).Debug("deleting proxy")
+	ctx.KVStore(k.storeKey).Delete(storedProxy)
+	// Delete the reverse lookup
+	ctx.KVStore(k.storeKey).Delete(principal)
+
+	k.Logger(ctx).Debug("setting proxy count")	
+	count := k.getProxyCount(ctx)
+	count--
+	k.setProxyCount(ctx, count)
+	return nil
+}
+
 // GetPrincipal returns the proxy address for a given principal address. Returns nil if not set.
 func (k Keeper) GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
 	if proxy == nil {
