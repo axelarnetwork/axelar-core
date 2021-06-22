@@ -147,8 +147,6 @@
 - [tss/v1beta1/tx.proto](#tss/v1beta1/tx.proto)
     - [AssignKeyRequest](#tss.v1beta1.AssignKeyRequest)
     - [AssignKeyResponse](#tss.v1beta1.AssignKeyResponse)
-    - [DeregisterRequest](#tss.v1beta1.DeregisterRequest)
-    - [DeregisterResponse](#tss.v1beta1.DeregisterResponse)
     - [ProcessKeygenTrafficRequest](#tss.v1beta1.ProcessKeygenTrafficRequest)
     - [ProcessKeygenTrafficResponse](#tss.v1beta1.ProcessKeygenTrafficResponse)
     - [ProcessSignTrafficRequest](#tss.v1beta1.ProcessSignTrafficRequest)
@@ -1960,32 +1958,6 @@ AssignKeyRequest represents a message to assign a new key
 
 
 
-<a name="tss.v1beta1.DeregisterRequest"></a>
-
-### DeregisterRequest
-DeregisterRequest to deregister so that the validator will not participate in
-any future keygen
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="tss.v1beta1.DeregisterResponse"></a>
-
-### DeregisterResponse
-
-
-
-
-
-
-
 <a name="tss.v1beta1.ProcessKeygenTrafficRequest"></a>
 
 ### ProcessKeygenTrafficRequest
@@ -2186,7 +2158,6 @@ Msg defines the tss Msg service.
 | `VotePubKey` | [VotePubKeyRequest](#tss.v1beta1.VotePubKeyRequest) | [VotePubKeyResponse](#tss.v1beta1.VotePubKeyResponse) |  | ||
 | `ProcessSignTraffic` | [ProcessSignTrafficRequest](#tss.v1beta1.ProcessSignTrafficRequest) | [ProcessSignTrafficResponse](#tss.v1beta1.ProcessSignTrafficResponse) |  | ||
 | `VoteSig` | [VoteSigRequest](#tss.v1beta1.VoteSigRequest) | [VoteSigResponse](#tss.v1beta1.VoteSigResponse) |  | ||
-| `Deregister` | [DeregisterRequest](#tss.v1beta1.DeregisterRequest) | [DeregisterResponse](#tss.v1beta1.DeregisterResponse) |  | ||
 
  <!-- end services -->
 

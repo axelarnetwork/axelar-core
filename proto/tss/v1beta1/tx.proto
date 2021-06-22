@@ -21,15 +21,6 @@ message AssignKeyRequest {
 
 message AssignKeyResponse {}
 
-// DeregisterRequest to deregister so that the validator will not participate in
-// any future keygen
-message DeregisterRequest {
-  string sender = 1 [ (gogoproto.casttype) =
-                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-}
-
-message DeregisterResponse {}
-
 // StartKeygenRequest indicate the start of keygen
 message StartKeygenRequest {
   string sender = 1 [ (gogoproto.casttype) =

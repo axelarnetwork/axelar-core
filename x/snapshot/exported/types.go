@@ -53,7 +53,6 @@ type Broadcaster interface {
 // Tss provides functionality to tss module
 type Tss interface {
 	SetKeyRequirement(ctx sdk.Context, keyRequirement tss.KeyRequirement)
-	GetValidatorDeregisteredBlockHeight(ctx sdk.Context, valAddr sdk.ValAddress) int64
 	GetMinBondFractionPerShare(ctx sdk.Context) utils.Threshold
 	GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
 }
@@ -73,11 +72,6 @@ func IsValidatorActive(ctx sdk.Context, slasher Slasher, validator SDKValidator)
 // HasProxyRegistered returns true if the validator has broadcast proxy registered; otherwise, false
 func HasProxyRegistered(ctx sdk.Context, broadcaster Broadcaster, validator SDKValidator) bool {
 	return broadcaster.GetProxy(ctx, validator.GetOperator()) != nil
-}
-
-// IsValidatorTssRegistered returns true if the validator is registered to participate in tss key generation; otherwise, false
-func IsValidatorTssRegistered(ctx sdk.Context, tss Tss, validator SDKValidator) bool {
-	return tss.GetValidatorDeregisteredBlockHeight(ctx, validator.GetOperator()) <= 0
 }
 
 // IsValidatorTssSuspended returns true if the validator is suspended from participating TSS ceremonies for committing faulty behaviour; otherwise, false

@@ -59,10 +59,4 @@ service MsgService {
     option (google.api.http) = {
     };
   }
-
-  rpc Deregister(tss.v1beta1.DeregisterRequest)
-      returns (tss.v1beta1.DeregisterResponse) {
-    option (google.api.http) = {
-    };
-  }
 }

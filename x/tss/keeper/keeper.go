@@ -93,29 +93,6 @@ func (k Keeper) GetKeyRequirement(ctx sdk.Context, chain nexus.Chain, keyRole ex
 	return keyRequirement, true
 }
 
-// SetValidatorDeregisteredBlockHeight sets the validator's deregistration block height
-func (k Keeper) SetValidatorDeregisteredBlockHeight(ctx sdk.Context, valAddr sdk.ValAddress, blockHeight int64) {
-	key := []byte(validatorDeregisteredPrefix + valAddr.String())
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(blockHeight)
-
-	ctx.KVStore(k.storeKey).Set(key, bz)
-}
-
-// GetValidatorDeregisteredBlockHeight gets the validator's deregistration block height; 0 if the validator has never deregistered
-func (k Keeper) GetValidatorDeregisteredBlockHeight(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
-	key := []byte(validatorDeregisteredPrefix + valAddr.String())
-	bz := ctx.KVStore(k.storeKey).Get(key)
-
-	if bz == nil {
-		return 0
-	}
-
-	var blockHeight int64
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &blockHeight)
-
-	return blockHeight
-}
-
 // ComputeCorruptionThreshold returns corruption threshold to be used by tss
 func (k Keeper) ComputeCorruptionThreshold(ctx sdk.Context, totalShareCount sdk.Int) int64 {
 	var threshold utils.Threshold

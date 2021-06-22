@@ -591,9 +591,6 @@ var _ exported.Tss = &TssMock{}
 // 			GetTssSuspendedUntilFunc: func(ctx sdk.Context, validator sdk.ValAddress) int64 {
 // 				panic("mock out the GetTssSuspendedUntil method")
 // 			},
-// 			GetValidatorDeregisteredBlockHeightFunc: func(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
-// 				panic("mock out the GetValidatorDeregisteredBlockHeight method")
-// 			},
 // 			SetKeyRequirementFunc: func(ctx sdk.Context, keyRequirement tss.KeyRequirement)  {
 // 				panic("mock out the SetKeyRequirement method")
 // 			},
@@ -609,9 +606,6 @@ type TssMock struct {
 
 	// GetTssSuspendedUntilFunc mocks the GetTssSuspendedUntil method.
 	GetTssSuspendedUntilFunc func(ctx sdk.Context, validator sdk.ValAddress) int64
-
-	// GetValidatorDeregisteredBlockHeightFunc mocks the GetValidatorDeregisteredBlockHeight method.
-	GetValidatorDeregisteredBlockHeightFunc func(ctx sdk.Context, valAddr sdk.ValAddress) int64
 
 	// SetKeyRequirementFunc mocks the SetKeyRequirement method.
 	SetKeyRequirementFunc func(ctx sdk.Context, keyRequirement tss.KeyRequirement)
@@ -630,13 +624,6 @@ type TssMock struct {
 			// Validator is the validator argument value.
 			Validator sdk.ValAddress
 		}
-		// GetValidatorDeregisteredBlockHeight holds details about calls to the GetValidatorDeregisteredBlockHeight method.
-		GetValidatorDeregisteredBlockHeight []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// ValAddr is the valAddr argument value.
-			ValAddr sdk.ValAddress
-		}
 		// SetKeyRequirement holds details about calls to the SetKeyRequirement method.
 		SetKeyRequirement []struct {
 			// Ctx is the ctx argument value.
@@ -645,10 +632,9 @@ type TssMock struct {
 			KeyRequirement tss.KeyRequirement
 		}
 	}
-	lockGetMinBondFractionPerShare          sync.RWMutex
-	lockGetTssSuspendedUntil                sync.RWMutex
-	lockGetValidatorDeregisteredBlockHeight sync.RWMutex
-	lockSetKeyRequirement                   sync.RWMutex
+	lockGetMinBondFractionPerShare sync.RWMutex
+	lockGetTssSuspendedUntil       sync.RWMutex
+	lockSetKeyRequirement          sync.RWMutex
 }
 
 // GetMinBondFractionPerShare calls GetMinBondFractionPerShareFunc.
@@ -714,41 +700,6 @@ func (mock *TssMock) GetTssSuspendedUntilCalls() []struct {
 	mock.lockGetTssSuspendedUntil.RLock()
 	calls = mock.calls.GetTssSuspendedUntil
 	mock.lockGetTssSuspendedUntil.RUnlock()
-	return calls
-}
-
-// GetValidatorDeregisteredBlockHeight calls GetValidatorDeregisteredBlockHeightFunc.
-func (mock *TssMock) GetValidatorDeregisteredBlockHeight(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
-	if mock.GetValidatorDeregisteredBlockHeightFunc == nil {
-		panic("TssMock.GetValidatorDeregisteredBlockHeightFunc: method is nil but Tss.GetValidatorDeregisteredBlockHeight was just called")
-	}
-	callInfo := struct {
-		Ctx     sdk.Context
-		ValAddr sdk.ValAddress
-	}{
-		Ctx:     ctx,
-		ValAddr: valAddr,
-	}
-	mock.lockGetValidatorDeregisteredBlockHeight.Lock()
-	mock.calls.GetValidatorDeregisteredBlockHeight = append(mock.calls.GetValidatorDeregisteredBlockHeight, callInfo)
-	mock.lockGetValidatorDeregisteredBlockHeight.Unlock()
-	return mock.GetValidatorDeregisteredBlockHeightFunc(ctx, valAddr)
-}
-
-// GetValidatorDeregisteredBlockHeightCalls gets all the calls that were made to GetValidatorDeregisteredBlockHeight.
-// Check the length with:
-//     len(mockedTss.GetValidatorDeregisteredBlockHeightCalls())
-func (mock *TssMock) GetValidatorDeregisteredBlockHeightCalls() []struct {
-	Ctx     sdk.Context
-	ValAddr sdk.ValAddress
-} {
-	var calls []struct {
-		Ctx     sdk.Context
-		ValAddr sdk.ValAddress
-	}
-	mock.lockGetValidatorDeregisteredBlockHeight.RLock()
-	calls = mock.calls.GetValidatorDeregisteredBlockHeight
-	mock.lockGetValidatorDeregisteredBlockHeight.RUnlock()
 	return calls
 }
 

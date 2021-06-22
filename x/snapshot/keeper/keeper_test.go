@@ -92,9 +92,6 @@ func TestTakeSnapshot_WithSubsetSize(t *testing.T) {
 		},
 	}
 	tssMock := &snapshotMock.TssMock{
-		GetValidatorDeregisteredBlockHeightFunc: func(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
-			return 0
-		},
 		GetMinBondFractionPerShareFunc: func(sdk.Context) utils.Threshold {
 			return utils.Threshold{Numerator: 1, Denominator: 200}
 		},
@@ -151,9 +148,6 @@ func TestSnapshots(t *testing.T) {
 			}
 
 			tssMock := &snapshotMock.TssMock{
-				GetValidatorDeregisteredBlockHeightFunc: func(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
-					return 0
-				},
 				GetMinBondFractionPerShareFunc: func(sdk.Context) utils.Threshold {
 					return utils.Threshold{Numerator: 1, Denominator: 200}
 				},
