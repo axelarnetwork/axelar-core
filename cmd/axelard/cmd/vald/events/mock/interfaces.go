@@ -8,7 +8,7 @@ import (
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 )
 
-//go:generate moq -out ./types.go -pkg mock . SignClient Query Bus Subscriber ReadWriteSeekTruncateCloser
+//go:generate moq -out ./types.go -pkg mock . SignClient Query Bus Subscriber ReadWriteSeekTruncateSyncCloser
 
 type (
 	// SignClient interface alias for mocking
@@ -19,10 +19,11 @@ type (
 	Bus pubsub.Bus
 	// Subscriber interface alias for mocking
 	Subscriber pubsub.Subscriber
-	// ReadWriteSeekTruncateCloser interface for mocking. Duplicated to prevent cyclic dependencies
-	ReadWriteSeekTruncateCloser interface {
+	// ReadWriteSeekTruncateSyncCloser interface for mocking. Duplicated to prevent cyclic dependencies
+	ReadWriteSeekTruncateSyncCloser interface {
 		io.ReadWriteSeeker
 		Truncate(size int64) error
+		Sync() error
 		Close() error
 	}
 )

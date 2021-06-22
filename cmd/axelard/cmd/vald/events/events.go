@@ -14,7 +14,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmpubsub "github.com/tendermint/tendermint/libs/pubsub"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
-	"github.com/tendermint/tendermint/rpc/core/types"
+	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 	tm "github.com/tendermint/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/jobs"
@@ -282,25 +282,30 @@ func mapifyEvents(events []abci.Event) map[string][]string {
 	return result
 }
 
-// ReadWriteSeekTruncateCloser effectively provides an interface for os.File so the event manager can be unit tested more easily
-type ReadWriteSeekTruncateCloser interface {
+// ReadWriteSeekTruncateSyncCloser effectively provides an interface for os.File so the event manager can be unit tested more easily
+type ReadWriteSeekTruncateSyncCloser interface {
 	io.ReadWriteSeeker
 	Truncate(size int64) error
+	Sync() error
 	Close() error
 }
 
 // StateStore manages event state persistence
 type StateStore struct {
-	rw ReadWriteSeekTruncateCloser
+	rw ReadWriteSeekTruncateSyncCloser
 }
 
 // NewStateStore returns a new StateStore instance
-func NewStateStore(rw ReadWriteSeekTruncateCloser) StateStore {
+func NewStateStore(rw ReadWriteSeekTruncateSyncCloser) StateStore {
 	return StateStore{rw: rw}
 }
 
 // Read returns the block height for which all events have been published
 func (s StateStore) Read() (completed int64) {
+	if _, err := s.rw.Seek(0, io.SeekStart); err != nil {
+		return 0
+	}
+
 	bz, err := io.ReadAll(s.rw)
 	if err != nil {
 		return 0
@@ -322,20 +327,20 @@ func (s StateStore) Write(completed int64) error {
 	}
 
 	// overwrite previous value
-	_, err = s.rw.Seek(0, io.SeekStart)
-	if err != nil {
-		return err
-	}
-	err = s.rw.Truncate(0)
-	if err != nil {
-		return err
-	}
-
-	_, err = s.rw.Write(bz)
-	if err != nil {
+	if _, err := s.rw.Seek(0, io.SeekStart); err != nil {
 		_ = s.rw.Close()
 		return err
 	}
 
-	return s.rw.Close()
+	if err := s.rw.Truncate(0); err != nil {
+		_ = s.rw.Close()
+		return err
+	}
+
+	if _, err := s.rw.Write(bz); err != nil {
+		_ = s.rw.Close()
+		return err
+	}
+
+	return s.rw.Sync()
 }

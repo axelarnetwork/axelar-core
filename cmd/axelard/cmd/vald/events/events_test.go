@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"io"
 	mathRand "math/rand"
+	"os"
+	"path/filepath"
 	"sync"
 	"testing"
 	"time"
@@ -23,15 +25,35 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 )
 
+func TestStateStore_Write(t *testing.T) {
+	t.Run("it should persist completed block number", testutils.Func(func(t *testing.T) {
+		fPath := filepath.Join(".", "state.json")
+		f, err := os.OpenFile(fPath, os.O_CREATE|os.O_RDWR, 0755)
+		if err != nil {
+			panic(err)
+		}
+
+		defer os.Remove(fPath)
+
+		stateStore := NewStateStore(f)
+		stateStore.Write(1)
+		assert.Equal(t, int64(1), stateStore.Read())
+		stateStore.Write(2)
+		assert.Equal(t, int64(2), stateStore.Read())
+		stateStore.Write(3)
+		assert.Equal(t, int64(3), stateStore.Read())
+	}))
+}
+
 func TestMgr_FetchEvents(t *testing.T) {
 	var (
-		rwc *mock.ReadWriteSeekTruncateCloserMock
+		rwc *mock.ReadWriteSeekTruncateSyncCloserMock
 		mgr *Mgr
 	)
 	setup := func(initialComplete int64) {
 		bus := func() pubsub.Bus { return &mock.BusMock{} }
 		copied := 0
-		rwc = &mock.ReadWriteSeekTruncateCloserMock{
+		rwc = &mock.ReadWriteSeekTruncateSyncCloserMock{
 			ReadFunc: func(bz []byte) (int, error) {
 				x, err := json.Marshal(initialComplete)
 				if err != nil {
@@ -49,6 +71,7 @@ func TestMgr_FetchEvents(t *testing.T) {
 			CloseFunc:    func() error { return nil },
 			SeekFunc:     func(int64, int) (int64, error) { return 0, nil },
 			TruncateFunc: func(int64) error { return nil },
+			SyncFunc:     func() error { return nil },
 		}
 		client := &mock.SignClientMock{
 			BlockResultsFunc: func(_ context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
@@ -69,7 +92,8 @@ func TestMgr_FetchEvents(t *testing.T) {
 			assert.Nil(t, err)
 		}
 		assert.Len(t, rwc.WriteCalls(), 1)
-		assert.Len(t, rwc.CloseCalls(), 1)
+		assert.Len(t, rwc.CloseCalls(), 0)
+		assert.Len(t, rwc.SyncCalls(), 1)
 	}).Repeat(repeats))
 
 	t.Run("do not fetch blocks when no update available", testutils.Func(func(t *testing.T) {
@@ -114,7 +138,7 @@ func TestMgr_Subscribe(t *testing.T) {
 		mgr            *Mgr
 		client         *mock.SignClientMock
 		expectedEvents []tmTypes.Event
-		rwc            *mock.ReadWriteSeekTruncateCloserMock
+		rwc            *mock.ReadWriteSeekTruncateSyncCloserMock
 		query          *mock.QueryMock
 	)
 
@@ -139,7 +163,7 @@ func TestMgr_Subscribe(t *testing.T) {
 			},
 		}
 		copied := 0
-		rwc = &mock.ReadWriteSeekTruncateCloserMock{
+		rwc = &mock.ReadWriteSeekTruncateSyncCloserMock{
 			ReadFunc: func(bz []byte) (int, error) {
 				x, err := json.Marshal(initialComplete)
 				if err != nil {
@@ -157,6 +181,7 @@ func TestMgr_Subscribe(t *testing.T) {
 			CloseFunc:    func() error { return nil },
 			SeekFunc:     func(int64, int) (int64, error) { return 0, nil },
 			TruncateFunc: func(int64) error { return nil },
+			SyncFunc:     func() error { return nil },
 		}
 
 		actualEvents := make(chan pubsub.Event, 100000)
