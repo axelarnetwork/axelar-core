@@ -325,6 +325,9 @@ func createEVMMgr(axelarCfg app.Config, b bcTypes.Broadcaster, sender sdk.AccAdd
 	return ethMgr
 }
 
+// RWALL grants rw-rw-rw- file permissions
+const RWALL = 0555
+
 // RWFile implements the ReadWriter interface for an underlying file
 type RWFile struct {
 	path string
@@ -339,4 +342,4 @@ func NewRWFile(path string) RWFile {
 func (f RWFile) ReadAll() ([]byte, error) { return os.ReadFile(f.path) }
 
 // WriteAll writes the given bytes to a file. Creates a new fille if it does not exist, overwrites the previous content otherwise.
-func (f RWFile) WriteAll(bz []byte) error { return os.WriteFile(f.path, bz, 555) }
+func (f RWFile) WriteAll(bz []byte) error { return os.WriteFile(f.path, bz, RWALL) }
