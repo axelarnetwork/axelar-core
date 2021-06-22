@@ -364,7 +364,7 @@ func TestStateStore_GetState(t *testing.T) {
 	}).Repeat(repeats))
 
 	t.Run("return block 0", testutils.Func(func(t *testing.T) {
-		expected := 0
+		expected := int64(0)
 		rw.ReadAllFunc = func() ([]byte, error) { return json.Marshal(expected) }
 		actual, err := store.GetState()
 		assert.NoError(t, err)
