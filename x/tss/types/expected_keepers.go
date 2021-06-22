@@ -36,8 +36,7 @@ type Nexus interface {
 type Voter interface {
 	InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64, expireAt int64) error
 	DeletePoll(ctx sdk.Context, poll vote.PollMeta)
-	TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta vote.PollMeta, data vote.VotingData) error
-	Result(ctx sdk.Context, poll vote.PollMeta) vote.VotingData
+	TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta vote.PollMeta, data vote.VotingData) (*votetypes.Poll, error)
 	GetPoll(ctx sdk.Context, pollMeta vote.PollMeta) *votetypes.Poll
 }
 

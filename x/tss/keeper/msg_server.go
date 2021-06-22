@@ -232,25 +232,35 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		}
 	}
 
-	if err := s.voter.TallyVote(ctx, req.Sender, req.PollMeta, req.Result); err != nil {
+	poll, err := s.voter.TallyVote(ctx, req.Sender, req.PollMeta, req.Result)
+	if err != nil {
 		return nil, err
 	}
 
-	result := s.voter.Result(ctx, req.PollMeta)
-	if result == nil {
+	result := poll.GetResult()
+	if result == nil && !poll.Failed {
 		return &types.VotePubKeyResponse{}, nil
 	}
 
-	// the result is not necessarily the same as the msg (the vote could have been decided earlier and now a false vote is cast),
-	// so use result instead of msg
-	ctx.EventManager().EmitEvent(sdk.NewEvent(
+	event := sdk.NewEvent(
 		types.EventTypeKeygen,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
 		sdk.NewAttribute(types.AttributeKeyPoll, req.PollMeta.String()),
-		// TODO: Consider emitting criminals or pubkey with different attributes
-		sdk.NewAttribute(types.AttributeKeyPayload, req.Result.String()),
-	))
+	)
+	defer ctx.EventManager().EmitEvent(event)
+
+	if poll.Failed {
+		ctx.EventManager().EmitEvent(
+			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
+		)
+
+		s.voter.DeletePoll(ctx, req.PollMeta)
+		s.deleteSnapshotCounterForKeyID(ctx, req.PollMeta.ID)
+		s.deleteKeygenStart(ctx, req.PollMeta.ID)
+		s.deleteParticipantsInKeygen(ctx, req.PollMeta.ID)
+
+		return &types.VotePubKeyResponse{}, nil
+	}
 
 	switch keygenResult := result.(type) {
 	case *tofnd.MessageOut_KeygenResult:
@@ -265,6 +275,12 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			pubKey := btcecPK.ToECDSA()
 			s.SetKey(ctx, req.PollMeta.ID, *pubKey)
 
+			ctx.EventManager().EmitEvent(
+				event.AppendAttributes(
+					sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
+					sdk.NewAttribute(types.AttributeKeyPayload, keygenResult.String()),
+				),
+			)
 			s.Logger(ctx).Info(fmt.Sprintf("public key confirmation result is %.10s", result))
 
 			return &types.VotePubKeyResponse{}, nil
@@ -275,6 +291,10 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		s.deleteSnapshotCounterForKeyID(ctx, req.PollMeta.ID)
 		s.deleteKeygenStart(ctx, req.PollMeta.ID)
 		s.deleteParticipantsInKeygen(ctx, req.PollMeta.ID)
+
+		ctx.EventManager().EmitEvent(
+			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
+		)
 
 		for _, criminal := range keygenResult.GetCriminals().Criminals {
 			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
@@ -341,25 +361,33 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		}
 	}
 
-	if err := s.voter.TallyVote(ctx, req.Sender, req.PollMeta, req.Result); err != nil {
+	poll, err := s.voter.TallyVote(ctx, req.Sender, req.PollMeta, req.Result)
+	if err != nil {
 		return nil, err
 	}
 
-	result := s.voter.Result(ctx, req.PollMeta)
-	if result == nil {
+	result := poll.GetResult()
+	if result == nil && !poll.Failed {
 		return &types.VoteSigResponse{}, nil
 	}
 
-	// the result is not necessarily the same as the msg (the vote could have been decided earlier and now a false vote is cast),
-	// so use result instead of msg
-	ctx.EventManager().EmitEvent(sdk.NewEvent(
+	event := sdk.NewEvent(
 		types.EventTypeSign,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
 		sdk.NewAttribute(types.AttributeKeyPoll, req.PollMeta.String()),
-		// TODO: Consider emitting criminals or signature with different attributes
-		sdk.NewAttribute(types.AttributeKeyPayload, req.Result.String()),
-	))
+	)
+	defer ctx.EventManager().EmitEvent(event)
+
+	if poll.Failed {
+		ctx.EventManager().EmitEvent(
+			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
+		)
+
+		s.voter.DeletePoll(ctx, req.PollMeta)
+		s.deleteKeyIDForSig(ctx, req.PollMeta.ID)
+
+		return &types.VoteSigResponse{}, nil
+	}
 
 	switch signResult := result.(type) {
 	case *tofnd.MessageOut_SignResult:
@@ -367,13 +395,24 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 
 		if signature := signResult.GetSignature(); signature != nil {
 			s.SetSig(ctx, req.PollMeta.ID, signature)
+
 			s.Logger(ctx).Info(fmt.Sprintf("signature for %s verified: %.10s", req.PollMeta.ID, hex.EncodeToString(signature)))
+			ctx.EventManager().EmitEvent(
+				event.AppendAttributes(
+					sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
+					sdk.NewAttribute(types.AttributeKeyPayload, signResult.String()),
+				),
+			)
 
 			return &types.VoteSigResponse{}, nil
 		}
 
 		// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed
 		s.deleteKeyIDForSig(ctx, req.PollMeta.ID)
+		ctx.EventManager().EmitEvent(
+			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
+		)
+
 		for _, criminal := range signResult.GetCriminals().Criminals {
 			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
 			s.Keeper.PenalizeSignCriminal(ctx, criminalAddress, criminal.GetCrimeType())
