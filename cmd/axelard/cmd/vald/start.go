@@ -102,14 +102,10 @@ func GetValdCommand() *cobra.Command {
 			}
 
 			fPath := filepath.Join(valdHome, "state.json")
-			f, err := os.OpenFile(fPath, os.O_CREATE|os.O_RDWR, 0755)
-			if err != nil {
-				return err
-			}
-			stateStore := events.NewStateStore(f)
+			stateSource := NewRWFile(fPath)
 
 			logger.Info("Start listening to events")
-			listen(cliCtx, appState, hub, txf, axConf, valAddr, stateStore, logger)
+			listen(cliCtx, appState, hub, txf, axConf, valAddr, stateSource, logger)
 			logger.Info("Shutting down")
 			return nil
 		},
@@ -176,7 +172,7 @@ func loadConfig() (app.Config, string) {
 	return conf, viper.GetString("validator-addr")
 }
 
-func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmEvents.Hub, txf tx.Factory, axelarCfg app.Config, valAddr string, store events.StateStore, logger log.Logger) {
+func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmEvents.Hub, txf tx.Factory, axelarCfg app.Config, valAddr string, stateSource events.ReadWriter, logger log.Logger) {
 	encCfg := app.MakeEncodingConfig()
 	cdc := encCfg.Amino
 	protoCdc := encCfg.Marshaler
@@ -192,7 +188,7 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 
 	broadcaster := createBroadcaster(ctx, txf, axelarCfg, logger)
 
-	eventMgr := createEventMgr(ctx, store, logger)
+	eventMgr := createEventMgr(ctx, stateSource, logger)
 	tssMgr := createTSSMgr(broadcaster, ctx.FromAddress, &tssGenesisState, axelarCfg, logger, valAddr, cdc)
 	btcMgr := createBTCMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
 	ethMgr := createEVMMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
@@ -226,9 +222,7 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 
 	fetchEvents := func(errChan chan<- error) {
 		for err := range eventMgr.FetchEvents() {
-			if err != nil {
-				errChan <- err
-			}
+			errChan <- err
 		}
 	}
 	js := []jobs.Job{
@@ -254,13 +248,13 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 	mgr.Wait()
 }
 
-func createEventMgr(ctx sdkClient.Context, store events.StateStore, logger log.Logger) *events.Mgr {
+func createEventMgr(ctx sdkClient.Context, stateSource events.ReadWriter, logger log.Logger) *events.Mgr {
 	node, err := ctx.GetNode()
 	if err != nil {
 		panic(err)
 	}
 
-	return events.NewMgr(node, store, pubsub.NewBus, logger)
+	return events.NewMgr(node, stateSource, pubsub.NewBus, logger)
 }
 
 func createBroadcaster(ctx sdkClient.Context, txf tx.Factory, axelarCfg app.Config, logger log.Logger) bcTypes.Broadcaster {
@@ -330,3 +324,19 @@ func createEVMMgr(axelarCfg app.Config, b bcTypes.Broadcaster, sender sdk.AccAdd
 	ethMgr := evm.NewMgr(rpcs, b, sender, logger, cdc)
 	return ethMgr
 }
+
+// RWFile implements the ReadWriter interface for an underlying file
+type RWFile struct {
+	path string
+}
+
+// NewRWFile returns a new RWFile instance for the given file path
+func NewRWFile(path string) RWFile {
+	return RWFile{path: path}
+}
+
+// ReadAll returns the full content of the file
+func (f RWFile) ReadAll() ([]byte, error) { return os.ReadFile(f.path) }
+
+// WriteAll writes the given bytes to a file. Creates a new fille if it does not exist, overwrites the previous content otherwise.
+func (f RWFile) WriteAll(bz []byte) error { return os.WriteFile(f.path, bz, 555) }

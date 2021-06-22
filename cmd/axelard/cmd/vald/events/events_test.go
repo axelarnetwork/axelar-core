@@ -3,7 +3,7 @@ package events
 import (
 	"context"
 	"encoding/json"
-	"io"
+	"fmt"
 	mathRand "math/rand"
 	"sync"
 	"testing"
@@ -23,39 +23,72 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 )
 
+func TestMgr_NewMgr(t *testing.T) {
+	bus := func() pubsub.Bus { return &mock.BusMock{} }
+
+	repeats := 20
+	t.Run("without state should start from latest block when it is available", testutils.Func(func(t *testing.T) {
+		blockHeight := rand.PosI64()
+
+		rw := &mock.ReadWriterMock{ReadAllFunc: func() ([]byte, error) { return nil, fmt.Errorf("some error") }}
+		client := &mock.SignClientMock{
+			BlockFunc: func(ctx context.Context, height *int64) (*coretypes.ResultBlock, error) {
+				return &coretypes.ResultBlock{Block: &tm.Block{Header: tm.Header{Height: blockHeight}}}, nil
+			},
+		}
+
+		mgr := NewMgr(client, rw, bus, log.TestingLogger())
+
+		assert.Equal(t, blockHeight, mgr.state.completed)
+	}).Repeat(repeats))
+
+	t.Run("without state should start from block 0 when latest block is not available", testutils.Func(func(t *testing.T) {
+		rw := &mock.ReadWriterMock{ReadAllFunc: func() ([]byte, error) { return nil, fmt.Errorf("some error") }}
+
+		client := &mock.SignClientMock{
+			BlockFunc: func(ctx context.Context, height *int64) (*coretypes.ResultBlock, error) {
+				return &coretypes.ResultBlock{Block: nil}, nil
+			},
+		}
+		mgr := NewMgr(client, rw, bus, log.TestingLogger())
+		assert.Equal(t, int64(0), mgr.state.completed)
+
+		client = &mock.SignClientMock{
+			BlockFunc: func(ctx context.Context, height *int64) (*coretypes.ResultBlock, error) {
+				return nil, fmt.Errorf("some error")
+			},
+		}
+		mgr = NewMgr(client, rw, bus, log.TestingLogger())
+		assert.Equal(t, int64(0), mgr.state.completed)
+	}).Repeat(repeats))
+
+	t.Run("should start a block that is persisted", testutils.Func(func(t *testing.T) {
+		blockHeight := rand.PosI64()
+
+		rw := &mock.ReadWriterMock{ReadAllFunc: func() ([]byte, error) { return json.Marshal(blockHeight) }}
+		client := &mock.SignClientMock{}
+		mgr := NewMgr(client, rw, bus, log.TestingLogger())
+		assert.Equal(t, blockHeight, mgr.state.completed)
+	}).Repeat(repeats))
+}
+
 func TestMgr_FetchEvents(t *testing.T) {
 	var (
-		rwc *mock.ReadWriteSeekTruncateCloserMock
+		rw  *mock.ReadWriterMock
 		mgr *Mgr
 	)
 	setup := func(initialComplete int64) {
 		bus := func() pubsub.Bus { return &mock.BusMock{} }
-		copied := 0
-		rwc = &mock.ReadWriteSeekTruncateCloserMock{
-			ReadFunc: func(bz []byte) (int, error) {
-				x, err := json.Marshal(initialComplete)
-				if err != nil {
-					return 0, err
-				}
-
-				if copied < len(x) {
-					n := copy(bz, x[copied:])
-					copied += n
-					return n, nil
-				}
-				return 0, io.EOF
-			},
-			WriteFunc:    func(bz []byte) (int, error) { return 0, nil },
-			CloseFunc:    func() error { return nil },
-			SeekFunc:     func(int64, int) (int64, error) { return 0, nil },
-			TruncateFunc: func(int64) error { return nil },
+		rw = &mock.ReadWriterMock{
+			ReadAllFunc:  func() ([]byte, error) { return json.Marshal(initialComplete) },
+			WriteAllFunc: func([]byte) error { return nil },
 		}
 		client := &mock.SignClientMock{
 			BlockResultsFunc: func(_ context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
 				return &coretypes.ResultBlockResults{Height: *height}, nil
 			},
 		}
-		mgr = NewMgr(client, NewStateStore(rwc), bus, log.TestingLogger())
+		mgr = NewMgr(client, rw, bus, log.TestingLogger())
 	}
 
 	repeats := 20
@@ -68,8 +101,6 @@ func TestMgr_FetchEvents(t *testing.T) {
 		for err := range errChan {
 			assert.Nil(t, err)
 		}
-		assert.Len(t, rwc.WriteCalls(), 1)
-		assert.Len(t, rwc.CloseCalls(), 1)
 	}).Repeat(repeats))
 
 	t.Run("do not fetch blocks when no update available", testutils.Func(func(t *testing.T) {
@@ -84,9 +115,7 @@ func TestMgr_FetchEvents(t *testing.T) {
 			assert.Nil(t, err)
 		}
 
-		var actualCompleted int64
-		assert.NoError(t, json.Unmarshal(rwc.WriteCalls()[0].P, &actualCompleted))
-		assert.Equal(t, initialCompleted, actualCompleted)
+		assert.Len(t, rw.WriteAllCalls(), 0)
 	}).Repeat(repeats))
 
 	t.Run("fetch all available blocks", testutils.Func(func(t *testing.T) {
@@ -95,18 +124,27 @@ func TestMgr_FetchEvents(t *testing.T) {
 
 		errChan := mgr.FetchEvents()
 		seen := rand.I64Between(initialCompleted+1, initialCompleted+30)
+		done := make(chan struct{})
+		rw.WriteAllFunc = func(bz []byte) error {
+			var written int64
+			err := json.Unmarshal(bz, &written)
+			assert.NoError(t, err)
+			if written == seen {
+				done <- struct{}{}
+			}
+			return nil
+		}
 		mgr.NotifyNewBlock(seen)
 
-		// delay so mgr has time to fetch the block
-		time.Sleep(1 * time.Millisecond)
+		assert.NoError(t, waitFor(done))
 		mgr.Shutdown()
 		for err := range errChan {
 			assert.Nil(t, err)
 		}
 		var actualCompleted int64
-		assert.NoError(t, json.Unmarshal(rwc.WriteCalls()[0].P, &actualCompleted))
+		assert.NoError(t, json.Unmarshal(rw.WriteAllCalls()[len(rw.WriteAllCalls())-1].Bytes, &actualCompleted))
 		assert.Equal(t, seen, actualCompleted)
-	}).Repeat(repeats))
+	}).Repeat(1))
 }
 
 func TestMgr_Subscribe(t *testing.T) {
@@ -114,7 +152,7 @@ func TestMgr_Subscribe(t *testing.T) {
 		mgr            *Mgr
 		client         *mock.SignClientMock
 		expectedEvents []tmTypes.Event
-		rwc            *mock.ReadWriteSeekTruncateCloserMock
+		rw             *mock.ReadWriterMock
 		query          *mock.QueryMock
 	)
 
@@ -138,29 +176,13 @@ func TestMgr_Subscribe(t *testing.T) {
 				return result, nil
 			},
 		}
-		copied := 0
-		rwc = &mock.ReadWriteSeekTruncateCloserMock{
-			ReadFunc: func(bz []byte) (int, error) {
-				x, err := json.Marshal(initialComplete)
-				if err != nil {
-					return 0, err
-				}
-
-				if copied < len(x) {
-					n := copy(bz, x[copied:])
-					copied += n
-					return n, nil
-				}
-				return 0, io.EOF
-			},
-			WriteFunc:    func(bz []byte) (int, error) { return 0, nil },
-			CloseFunc:    func() error { return nil },
-			SeekFunc:     func(int64, int) (int64, error) { return 0, nil },
-			TruncateFunc: func(int64) error { return nil },
+		rw = &mock.ReadWriterMock{
+			ReadAllFunc:  func() ([]byte, error) { return json.Marshal(initialComplete) },
+			WriteAllFunc: func([]byte) error { return nil },
 		}
 
 		actualEvents := make(chan pubsub.Event, 100000)
-		mgr = NewMgr(client, NewStateStore(rwc), func() pubsub.Bus {
+		mgr = NewMgr(client, rw, func() pubsub.Bus {
 			return &mock.BusMock{
 				PublishFunc: func(event pubsub.Event) error {
 					actualEvents <- event
@@ -367,4 +389,15 @@ func randomAttributes(count int64) []abci.EventAttribute {
 		})
 	}
 	return attributes
+}
+
+func waitFor(done <-chan struct{}) error {
+	timeout, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	select {
+	case <-done:
+		return nil
+	case <-timeout.Done():
+		return fmt.Errorf("timeout")
+	}
 }
