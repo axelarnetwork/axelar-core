@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"sync"
+	"sync/atomic"
 
 	"github.com/axelarnetwork/tm-events/pkg/pubsub"
 	"github.com/axelarnetwork/tm-events/pkg/tendermint/events"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	tmpubsub "github.com/tendermint/tendermint/libs/pubsub"
@@ -60,7 +61,6 @@ func OnlyAttributes(f func([]sdk.Attribute) error) func(int64, []sdk.Attribute) 
 // Mgr represents an object that receives blocks from a tendermint server and manages queries for events in those blocks
 type Mgr struct {
 	subscribeLock sync.RWMutex
-	stateLock     sync.RWMutex
 
 	store StateStore
 
@@ -71,45 +71,100 @@ type Mgr struct {
 	client          rpcclient.SignClient
 	createBus       func() pubsub.Bus
 	logger          log.Logger
-	state           syncState
-	updateAvailable chan struct{}
+	state           *syncState
 	startCleanup    chan struct{}
 	cleanupComplete chan struct{}
 }
 
+// syncState is the thread-safe representation of the state of event synchronisation
 type syncState struct {
-	Completed int64
-	Seen      int64
+	// using int64 instead of uint64 although values are always positive because the tendermint rpc expects int64,
+	// so we don't have to convert the type every time
+	completed int64
+	seen      int64
+
+	updateAvailable chan struct{}
+	stateLock       sync.RWMutex
+}
+
+func newSyncState(completed int64) *syncState {
+	return &syncState{
+		completed:       completed,
+		seen:            0,
+		updateAvailable: make(chan struct{}, 1),
+		stateLock:       sync.RWMutex{},
+	}
+}
+
+// NewBlockAvailable returns a channel that unblocks when an unprocessed block is available
+func (s *syncState) NewBlockAvailable() <-chan struct{} {
+	return s.updateAvailable
+}
+
+// LatestCompleted returns the latest processed block
+func (s *syncState) LatestCompleted() int64 {
+	return s.completed
+}
+
+// IncrComplete increments the counter for processed blocks
+func (s *syncState) IncrComplete() {
+	atomic.AddInt64(&s.completed, 1)
+	s.processUpdate()
+}
+
+// UpdateSeen updates the highest block that has been seen. Returns true if the new block is higher than the previous one
+func (s *syncState) UpdateSeen(seen int64) bool {
+	defer s.processUpdate()
+
+	s.stateLock.Lock()
+	// assert: this unlocks before processUpdate is called
+	defer s.stateLock.Unlock()
+	if s.seen < seen {
+		s.seen = seen
+		return true
+	}
+	return false
+}
+
+func (s *syncState) processUpdate() {
+	s.stateLock.RLock()
+	defer s.stateLock.RUnlock()
+
+	if s.seen <= s.completed {
+		return
+	}
+
+	// the updateAvailable "flag" might already be set, in that case nothing needs to be done
+	select {
+	case s.updateAvailable <- struct{}{}:
+		return
+	default:
+		return
+	}
 }
 
 // NewMgr returns a new mgr instance
-func NewMgr(client rpcclient.SignClient, store StateStore, pubsubFactory func() pubsub.Bus, logger log.Logger) *Mgr {
-	state := syncState{
-		Completed: store.Read(),
-		Seen:      0,
-	}
-
-	// sanitize input
-	if state.Completed < 0 {
-		state.Completed = 0
-	}
-
+func NewMgr(client rpcclient.SignClient, stateSource ReadWriter, pubsubFactory func() pubsub.Bus, logger log.Logger) *Mgr {
 	mgr := &Mgr{
 		subscribeLock: sync.RWMutex{},
-		stateLock:     sync.RWMutex{},
 		client:        client,
 		subscriptions: make(map[string]struct {
 			tmpubsub.Query
 			pubsub.Bus
 		}),
 		createBus:       pubsubFactory,
-		state:           state,
-		store:           store,
+		store:           NewStateStore(stateSource),
 		logger:          logger.With("listener", "events"),
-		updateAvailable: make(chan struct{}, 1),
 		startCleanup:    make(chan struct{}),
 		cleanupComplete: make(chan struct{}),
 	}
+
+	completed, err := mgr.store.GetState()
+	if err != nil {
+		completed = mgr.queryCurrBlockHeight()
+	}
+	mgr.state = newSyncState(completed)
+	logger.Debug(fmt.Sprintf("starting vald from block %d", mgr.state.completed))
 
 	return mgr
 }
@@ -117,65 +172,47 @@ func NewMgr(client rpcclient.SignClient, store StateStore, pubsubFactory func() 
 // FetchEvents asynchronously queries the blockchain for new blocks and publishes all txs events in those blocks to the event manager's subscribers.
 // Any occurring events are pushed into the returned error channel.
 func (m *Mgr) FetchEvents() <-chan error {
-	errChan := make(chan error, 2)
+	errChan := make(chan error, 1)
 	go func() {
-		defer close(errChan)
 		defer m.logger.Info("shutting down")
+		defer close(errChan)
 
-		errChan <- m.processUpdates()
+		for {
+			select {
+			case <-m.state.NewBlockAvailable():
+				block, err := m.queryBlockResults(m.state.LatestCompleted() + 1)
+				if err != nil {
+					errChan <- err
+					return
+				}
 
-		m.subscribeLock.Lock()
-		defer m.subscribeLock.Unlock()
+				if err = m.publishEvents(block); err != nil {
+					errChan <- err
+					return
+				}
 
-		m.logger.Info("closing all subscriptions")
-		for _, sub := range m.subscriptions {
-			sub.Close()
+				m.state.IncrComplete()
+
+				if err = m.store.SetState(m.state.LatestCompleted()); err != nil {
+					errChan <- err
+					return
+				}
+			case <-m.startCleanup:
+				m.logger.Info("closing all subscriptions")
+
+				m.subscribeLock.Lock()
+				for _, sub := range m.subscriptions {
+					sub.Close()
+				}
+				m.subscribeLock.Unlock()
+
+				m.cleanupComplete <- struct{}{}
+				return
+			}
 		}
-
-		m.logger.Info("flushing event sync state")
-		errChan <- m.store.Write(m.state.Completed)
-		m.cleanupComplete <- struct{}{}
 	}()
 
 	return errChan
-}
-
-func (m *Mgr) processUpdates() error {
-	for {
-		select {
-		case <-m.updateAvailable:
-			currBlock := m.state.Completed + 1
-			block, err := m.queryBlockResults(currBlock)
-			if err != nil {
-				return err
-			}
-			err = m.publishEvents(block)
-			if err != nil {
-				return err
-			}
-
-			m.state.Completed++
-		case <-m.startCleanup:
-			return nil
-		}
-
-		m.checkForUpdate()
-	}
-}
-
-func (m *Mgr) checkForUpdate() {
-	// no need to lock here: the exact value of Seen doesn't matter and it can only increase monotonically.
-	// So even if another goroutine changes the value this check can never go from "update" to "no update"
-
-	if m.state.Seen > m.state.Completed {
-		// multiple places can call this function, so the select statement prevents stalling when updateAvailable is already set
-		select {
-		case m.updateAvailable <- struct{}{}:
-			return
-		default:
-			return
-		}
-	}
 }
 
 // Subscribe returns an event subscription based on the given query
@@ -200,15 +237,8 @@ func (m *Mgr) Subscribe(q tmpubsub.Query) (pubsub.Subscriber, error) {
 
 // NotifyNewBlock notifies the manager that a new block at the given height is available on the blockchain
 func (m *Mgr) NotifyNewBlock(height int64) {
-	// it is important to lock here, otherwise for two (or more) concurrent calls the smaller value might win the data race
-	// and we miss the update trigger
-	m.stateLock.Lock()
-	defer m.stateLock.Unlock()
-
-	if height > m.state.Seen {
+	if m.state.UpdateSeen(height) {
 		m.logger.Debug(fmt.Sprintf("block %d added to queue", height))
-		m.state.Seen = height
-		m.checkForUpdate()
 	}
 }
 
@@ -226,6 +256,14 @@ func (m *Mgr) queryBlockResults(height int64) (*coretypes.ResultBlockResults, er
 	m.logger.Debug(fmt.Sprintf("received block %d", height))
 
 	return res, nil
+}
+
+func (m *Mgr) queryCurrBlockHeight() int64 {
+	latestBlock, err := m.client.Block(context.Background(), nil)
+	if err != nil || latestBlock.Block == nil {
+		return 0
+	}
+	return latestBlock.Block.Height
 }
 
 func (m *Mgr) publishEvents(block *coretypes.ResultBlockResults) error {
@@ -282,60 +320,50 @@ func mapifyEvents(events []abci.Event) map[string][]string {
 	return result
 }
 
-// ReadWriteSeekTruncateCloser effectively provides an interface for os.File so the event manager can be unit tested more easily
-type ReadWriteSeekTruncateCloser interface {
-	io.ReadWriteSeeker
-	Truncate(size int64) error
-	Close() error
+// ReadWriter represents a data source/sink
+type ReadWriter interface {
+	WriteAll([]byte) error
+	ReadAll() ([]byte, error)
 }
 
 // StateStore manages event state persistence
 type StateStore struct {
-	rw ReadWriteSeekTruncateCloser
+	rw ReadWriter
 }
 
 // NewStateStore returns a new StateStore instance
-func NewStateStore(rw ReadWriteSeekTruncateCloser) StateStore {
+func NewStateStore(rw ReadWriter) StateStore {
 	return StateStore{rw: rw}
 }
 
-// Read returns the block height for which all events have been published
-func (s StateStore) Read() (completed int64) {
-	bz, err := io.ReadAll(s.rw)
+// GetState returns the stored block height for which all events have been published
+func (s StateStore) GetState() (completed int64, err error) {
+	bz, err := s.rw.ReadAll()
 	if err != nil {
-		return 0
+		return 0, sdkerrors.Wrap(err, "could not read the event state")
 	}
 
 	err = json.Unmarshal(bz, &completed)
 	if err != nil {
-		return 0
+		return 0, sdkerrors.Wrap(err, "state is in unexpected format")
 	}
 
-	return completed
+	if completed < 0 {
+		return 0, fmt.Errorf("state must be a positive integer")
+	}
+
+	return completed, nil
 }
 
-// Write persists the block height for which all events have been published
-func (s StateStore) Write(completed int64) error {
+// SetState persists the block height for which all events have been published
+func (s StateStore) SetState(completed int64) error {
+	if completed < 0 {
+		return fmt.Errorf("state must be a positive integer")
+	}
+
 	bz, err := json.Marshal(completed)
 	if err != nil {
 		return err
 	}
-
-	// overwrite previous value
-	_, err = s.rw.Seek(0, io.SeekStart)
-	if err != nil {
-		return err
-	}
-	err = s.rw.Truncate(0)
-	if err != nil {
-		return err
-	}
-
-	_, err = s.rw.Write(bz)
-	if err != nil {
-		_ = s.rw.Close()
-		return err
-	}
-
-	return s.rw.Close()
+	return s.rw.WriteAll(bz)
 }
