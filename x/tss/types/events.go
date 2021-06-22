@@ -25,4 +25,5 @@ const (
 	AttributeValueStart   = "start"
 	AttributeValueMsg     = "message"
 	AttributeValueDecided = "decided"
+	AttributeValueReject  = "reject"
 )
