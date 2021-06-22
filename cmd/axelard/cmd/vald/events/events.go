@@ -62,7 +62,7 @@ func OnlyAttributes(f func([]sdk.Attribute) error) func(int64, []sdk.Attribute) 
 type Mgr struct {
 	subscribeLock sync.RWMutex
 
-	store stateStore
+	store StateStore
 
 	subscriptions map[string]struct {
 		tmpubsub.Query
@@ -96,7 +96,7 @@ func newSyncState(completed int64) *syncState {
 	}
 }
 
-// NewBlockAvailable unblocks when an unprocessed block is available
+// NewBlockAvailable returns a channel that unblocks when an unprocessed block is available
 func (s *syncState) NewBlockAvailable() <-chan struct{} {
 	return s.updateAvailable
 }
@@ -129,14 +129,17 @@ func (s *syncState) UpdateSeen(seen int64) bool {
 func (s *syncState) processUpdate() {
 	s.stateLock.RLock()
 	defer s.stateLock.RUnlock()
-	if s.seen > s.completed {
-		// the updateAvailable "flag" might already be set, in that case nothing needs to be done
-		select {
-		case s.updateAvailable <- struct{}{}:
-			return
-		default:
-			return
-		}
+
+	if s.seen <= s.completed {
+		return
+	}
+
+	// the updateAvailable "flag" might already be set, in that case nothing needs to be done
+	select {
+	case s.updateAvailable <- struct{}{}:
+		return
+	default:
+		return
 	}
 }
 
@@ -150,7 +153,7 @@ func NewMgr(client rpcclient.SignClient, stateSource ReadWriter, pubsubFactory f
 			pubsub.Bus
 		}),
 		createBus:       pubsubFactory,
-		store:           newStateStore(stateSource),
+		store:           NewStateStore(stateSource),
 		logger:          logger.With("listener", "events"),
 		startCleanup:    make(chan struct{}),
 		cleanupComplete: make(chan struct{}),
@@ -323,18 +326,18 @@ type ReadWriter interface {
 	ReadAll() ([]byte, error)
 }
 
-// stateStore manages event state persistence
-type stateStore struct {
+// StateStore manages event state persistence
+type StateStore struct {
 	rw ReadWriter
 }
 
-// newStateStore returns a new stateStore instance
-func newStateStore(rw ReadWriter) stateStore {
-	return stateStore{rw: rw}
+// NewStateStore returns a new StateStore instance
+func NewStateStore(rw ReadWriter) StateStore {
+	return StateStore{rw: rw}
 }
 
 // GetState returns the stored block height for which all events have been published
-func (s stateStore) GetState() (completed int64, err error) {
+func (s StateStore) GetState() (completed int64, err error) {
 	bz, err := s.rw.ReadAll()
 	if err != nil {
 		return 0, sdkerrors.Wrap(err, "could not read the event state")
@@ -346,14 +349,14 @@ func (s stateStore) GetState() (completed int64, err error) {
 	}
 
 	if completed < 0 {
-		return 0, sdkerrors.Wrap(err, "state must be a positive integer")
+		return 0, fmt.Errorf("state must be a positive integer")
 	}
 
 	return completed, nil
 }
 
 // SetState persists the block height for which all events have been published
-func (s stateStore) SetState(completed int64) error {
+func (s StateStore) SetState(completed int64) error {
 	if completed < 0 {
 		return fmt.Errorf("state must be a positive integer")
 	}
