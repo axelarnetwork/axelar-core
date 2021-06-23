@@ -161,7 +161,7 @@ func TestMgr_Subscribe(t *testing.T) {
 			BlockResultsFunc: func(_ context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
 				result := &coretypes.ResultBlockResults{
 					Height:     *height,
-					TxsResults: randomTxResults(rand.I64Between(0, 100)),
+					TxsResults: randomTxResults(rand.I64Between(1, 100)),
 				}
 
 				expectedEvents = nil
