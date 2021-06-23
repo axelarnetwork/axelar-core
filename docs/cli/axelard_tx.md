@@ -28,7 +28,6 @@ axelard tx [flags]
 - [axelard](axelard.md)	 - Axelar App
 - [axelard tx bank](axelard_tx_bank.md)	 - Bank transaction subcommands
 - [axelard tx bitcoin](axelard_tx_bitcoin.md)	 - bitcoin transactions subcommands
-- [axelard tx broadcast](axelard_tx_broadcast.md)	 - broadcast transactions subcommands
 - [axelard tx crisis](axelard_tx_crisis.md)	 - Crisis transactions subcommands
 - [axelard tx decode](axelard_tx_decode.md)	 - Decode an binary encoded transaction string.
 - [axelard tx distribution](axelard_tx_distribution.md)	 - Distribution transactions subcommands
@@ -40,6 +39,7 @@ axelard tx [flags]
 - [axelard tx sign](axelard_tx_sign.md)	 - Sign a transaction generated offline
 - [axelard tx sign-batch](axelard_tx_sign-batch.md)	 - Sign transaction batch files
 - [axelard tx slashing](axelard_tx_slashing.md)	 - Slashing transaction subcommands
+- [axelard tx snapshot](axelard_tx_snapshot.md)	 - snapshot transactions subcommands
 - [axelard tx staking](axelard_tx_staking.md)	 - Staking transaction subcommands
 - [axelard tx tss](axelard_tx_tss.md)	 - tss transactions subcommands
 - [axelard tx validate-signatures](axelard_tx_validate-signatures.md)	 - Validate transactions signatures

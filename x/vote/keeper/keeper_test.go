@@ -15,7 +15,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
-	bcMock "github.com/axelarnetwork/axelar-core/x/broadcast/exported/mock"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -27,7 +26,6 @@ var stringGen = rand.Strings(5, 50).Distinct()
 type testSetup struct {
 	Keeper      Keeper
 	Ctx         sdk.Context
-	Broadcaster *bcMock.BroadcasterMock
 	Snapshotter *snapMock.SnapshotterMock
 	// used by the snapshotter when returning a snapshot
 	ValidatorSet []snapshot.Validator
@@ -51,11 +49,10 @@ func setup() *testSetup {
 			}
 			return snapshot.Snapshot{Validators: setup.ValidatorSet, TotalShareCount: totalShareCount}, true
 		},
-	}
-	setup.Broadcaster = &bcMock.BroadcasterMock{
 		GetPrincipalFunc: func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return rand.Bytes(sdk.AddrLen) },
 	}
-	setup.Keeper = NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(stringGen.Next()), setup.Snapshotter, setup.Broadcaster)
+
+	setup.Keeper = NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(stringGen.Next()), setup.Snapshotter)
 	return setup
 }
 
@@ -120,7 +117,7 @@ func TestTallyVote_NonExistingPoll_ReturnError(t *testing.T) {
 func TestTallyVote_UnknownVoter_ReturnError(t *testing.T) {
 	s := setup()
 	// proxy is unknown
-	s.Broadcaster.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return nil }
+	s.Snapshotter.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return nil }
 
 	pollMeta := randomPollMeta()
 
@@ -138,7 +135,7 @@ func TestTallyVote_NoWinner(t *testing.T) {
 	majorityPower := newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(calcMajorityLowerLimit(threshold, minorityPower), 1000))
 	s.ValidatorSet = []snapshot.Validator{minorityPower, majorityPower}
 
-	s.Broadcaster.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return minorityPower.GetOperator() }
+	s.Snapshotter.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return minorityPower.GetOperator() }
 
 	pollMeta := randomPollMeta()
 
@@ -157,7 +154,7 @@ func TestTallyVote_WithWinner(t *testing.T) {
 	majorityPower := newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(calcMajorityLowerLimit(threshold, minorityPower), 1000))
 	s.ValidatorSet = []snapshot.Validator{minorityPower, majorityPower}
 
-	s.Broadcaster.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return majorityPower.GetOperator() }
+	s.Snapshotter.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return majorityPower.GetOperator() }
 	pollMeta := randomPollMeta()
 	data := randomData()
 
@@ -175,7 +172,7 @@ func TestTallyVote_TwoVotesFromSameValidator_ReturnError(t *testing.T) {
 	s.ValidatorSet = []snapshot.Validator{newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(1, 1000))}
 
 	// return same validator for all votes
-	s.Broadcaster.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return s.ValidatorSet[0].GetOperator() }
+	s.Snapshotter.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return s.ValidatorSet[0].GetOperator() }
 
 	pollMeta := randomPollMeta()
 	sender := randomSender()
@@ -208,7 +205,7 @@ func TestTallyVote_MultipleVotesUntilDecision(t *testing.T) {
 	sender := randomSender()
 	data := randomData()
 
-	s.Broadcaster.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return s.ValidatorSet[0].GetOperator() }
+	s.Snapshotter.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return s.ValidatorSet[0].GetOperator() }
 
 	poll, err := s.Keeper.TallyVote(s.Ctx, sender, pollMeta, data)
 	assert.NoError(t, err)
@@ -219,7 +216,7 @@ func TestTallyVote_MultipleVotesUntilDecision(t *testing.T) {
 		if i == 0 {
 			continue
 		}
-		s.Broadcaster.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return val.GetOperator() }
+		s.Snapshotter.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return val.GetOperator() }
 		poll, err = s.Keeper.TallyVote(s.Ctx, sender, pollMeta, data)
 		assert.NoError(t, err)
 		pollDecided = pollDecided || poll.GetResult() != nil
@@ -240,14 +237,14 @@ func TestTallyVote_ForDecidedPoll(t *testing.T) {
 	pollMeta := randomPollMeta()
 	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollMeta, 100, 0))
 
-	s.Broadcaster.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return majorityPower.GetOperator() }
+	s.Snapshotter.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return majorityPower.GetOperator() }
 
 	data1 := randomData()
 	poll, err := s.Keeper.TallyVote(s.Ctx, randomSender(), pollMeta, data1)
 	assert.NoError(t, err)
 	assert.Equal(t, data1, poll.GetResult())
 
-	s.Broadcaster.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return minorityPower.GetOperator() }
+	s.Snapshotter.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return minorityPower.GetOperator() }
 
 	data2 := randomData()
 	poll, err = s.Keeper.TallyVote(s.Ctx, randomSender(), pollMeta, data2)
@@ -268,13 +265,13 @@ func TestTallyVote_FailedPoll(t *testing.T) {
 	pollMeta := randomPollMeta()
 	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollMeta, 100, 0))
 
-	s.Broadcaster.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return validator1.GetOperator() }
+	s.Snapshotter.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return validator1.GetOperator() }
 	poll, err := s.Keeper.TallyVote(s.Ctx, randomSender(), pollMeta, randomData())
 	assert.NoError(t, err)
 	assert.Nil(t, poll.GetResult())
 	assert.False(t, poll.Failed)
 
-	s.Broadcaster.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return validator2.GetOperator() }
+	s.Snapshotter.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return validator2.GetOperator() }
 	poll, err = s.Keeper.TallyVote(s.Ctx, randomSender(), pollMeta, randomData())
 	assert.NoError(t, err)
 	assert.Nil(t, poll.GetResult())

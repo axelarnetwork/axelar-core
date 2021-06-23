@@ -16,8 +16,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	tmLog "github.com/tendermint/tendermint/libs/log"
 
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/snapshot/types"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"

@@ -10,8 +10,8 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
 	rpc3 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/snapshot/types"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
