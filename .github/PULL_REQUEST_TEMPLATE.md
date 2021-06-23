@@ -1,9 +1,3 @@
-## Status
-
-- [ ] Ready
-- [ ] In development
-- [ ] Hold
-
 ## Description
 
 ## Todos
