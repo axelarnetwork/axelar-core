@@ -18,7 +18,6 @@ var _ types.MsgServiceServer = msgServer{}
 
 type msgServer struct {
 	Keeper
-	broadcaster types.Broadcaster
 	snapshotter types.Snapshotter
 	staker      types.StakingKeeper
 	voter       types.Voter
@@ -27,10 +26,9 @@ type msgServer struct {
 
 // NewMsgServerImpl returns an implementation of the broadcast MsgServiceServer interface
 // for the provided Keeper.
-func NewMsgServerImpl(keeper Keeper, b types.Broadcaster, s types.Snapshotter, staker types.StakingKeeper, v types.Voter, n types.Nexus) types.MsgServiceServer {
+func NewMsgServerImpl(keeper Keeper, s types.Snapshotter, staker types.StakingKeeper, v types.Voter, n types.Nexus) types.MsgServiceServer {
 	return msgServer{
 		Keeper:      keeper,
-		broadcaster: b,
 		snapshotter: s,
 		staker:      staker,
 		voter:       v,
@@ -98,7 +96,7 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 func (s msgServer) ProcessKeygenTraffic(c context.Context, req *types.ProcessKeygenTrafficRequest) (*types.ProcessKeygenTrafficResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	senderAddress := s.broadcaster.GetPrincipal(ctx, req.Sender)
+	senderAddress := s.snapshotter.GetPrincipal(ctx, req.Sender)
 	if senderAddress.Empty() {
 		return nil, fmt.Errorf("invalid message: sender [%s] is not a validator", req.Sender)
 	}
@@ -313,7 +311,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 func (s msgServer) ProcessSignTraffic(c context.Context, req *types.ProcessSignTrafficRequest) (*types.ProcessSignTrafficResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	senderAddress := s.broadcaster.GetPrincipal(ctx, req.Sender)
+	senderAddress := s.snapshotter.GetPrincipal(ctx, req.Sender)
 	if senderAddress.Empty() {
 		return nil, fmt.Errorf("invalid message: sender [%s] is not a validator", req.Sender)
 	}

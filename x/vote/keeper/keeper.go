@@ -33,16 +33,14 @@ const (
 type Keeper struct {
 	storeKey    sdk.StoreKey
 	cdc         codec.BinaryMarshaler
-	broadcaster types.Broadcaster
 	snapshotter types.Snapshotter
 }
 
 // NewKeeper - keeper constructor
-func NewKeeper(cdc codec.BinaryMarshaler, key sdk.StoreKey, snapshotter types.Snapshotter, broadcaster types.Broadcaster) Keeper {
+func NewKeeper(cdc codec.BinaryMarshaler, key sdk.StoreKey, snapshotter types.Snapshotter) Keeper {
 	keeper := Keeper{
 		storeKey:    key,
 		cdc:         cdc,
-		broadcaster: broadcaster,
 		snapshotter: snapshotter,
 	}
 	return keeper
@@ -125,7 +123,7 @@ func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta expor
 		return nil, fmt.Errorf("poll does not exist or is closed")
 	}
 
-	valAddress := k.broadcaster.GetPrincipal(ctx, sender)
+	valAddress := k.snapshotter.GetPrincipal(ctx, sender)
 	if valAddress == nil {
 		return nil, fmt.Errorf("account %v is not registered as a validator proxy", sender.String())
 	}

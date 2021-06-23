@@ -120,10 +120,6 @@
       - [confirmTxOut \[txID:voutIdx\] \[amount\] \[address\]](axelard_tx_bitcoin_confirmTxOut.md)	 - Confirm a Bitcoin transaction
       - [link \[chain\] \[address\]](axelard_tx_bitcoin_link.md)	 - Link a cross chain address to a bitcoin address created by Axelar
       - [sign-pending-transfers](axelard_tx_bitcoin_sign-pending-transfers.md)	 - Create a Bitcoin transaction for all pending transfers and sign it
-    - [broadcast](axelard_tx_broadcast.md)	 - broadcast transactions subcommands
-      - [deregisterProxy](axelard_tx_broadcast_deregisterProxy.md)	 - Deregister the proxy account of the sender
-      - [registerProxy \[proxy\] ](axelard_tx_broadcast_registerProxy.md)	 - Register a proxy account for a specific validator principal to broadcast transactions in its stead
-      - [sendStake \[amount\] \[address 1\] ... \[address n\]](axelard_tx_broadcast_sendStake.md)	 - Sends the specified amount of stake to the designated addresses
     - [crisis](axelard_tx_crisis.md)	 - Crisis transactions subcommands
       - [invariant-broken \[module-name\] \[invariant-route\]](axelard_tx_crisis_invariant-broken.md)	 - Submit proof that an invariant broken to halt the chain
     - [decode \[amino-byte-string\]](axelard_tx_decode.md)	 - Decode an binary encoded transaction string.
@@ -158,6 +154,10 @@
     - [sign-batch \[file\]](axelard_tx_sign-batch.md)	 - Sign transaction batch files
     - [slashing](axelard_tx_slashing.md)	 - Slashing transaction subcommands
       - [unjail](axelard_tx_slashing_unjail.md)	 - unjail validator previously jailed for downtime
+    - [snapshot](axelard_tx_snapshot.md)	 - snapshot transactions subcommands
+      - [deregisterProxy](axelard_tx_snapshot_deregisterProxy.md)	 - Deregister the proxy account of the sender
+      - [registerProxy \[proxy\] ](axelard_tx_snapshot_registerProxy.md)	 - Register a proxy account for a specific validator principal to broadcast transactions in its stead
+      - [sendTokens \[amount\] \[address 1\] ... \[address n\]](axelard_tx_snapshot_sendTokens.md)	 - Sends the specified amount of tokens to the designated addresses
     - [staking](axelard_tx_staking.md)	 - Staking transaction subcommands
       - [create-validator](axelard_tx_staking_create-validator.md)	 - create new validator initialized with a self-delegation to it
       - [delegate \[validator-addr\] \[amount\]](axelard_tx_staking_delegate.md)	 - Delegate liquid tokens to a validator

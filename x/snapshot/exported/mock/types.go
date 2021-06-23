@@ -237,6 +237,9 @@ var _ exported.Snapshotter = &SnapshotterMock{}
 // 			GetLatestSnapshotFunc: func(ctx sdk.Context) (exported.Snapshot, bool) {
 // 				panic("mock out the GetLatestSnapshot method")
 // 			},
+// 			GetPrincipalFunc: func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
+// 				panic("mock out the GetPrincipal method")
+// 			},
 // 			GetSnapshotFunc: func(ctx sdk.Context, counter int64) (exported.Snapshot, bool) {
 // 				panic("mock out the GetSnapshot method")
 // 			},
@@ -256,6 +259,9 @@ type SnapshotterMock struct {
 	// GetLatestSnapshotFunc mocks the GetLatestSnapshot method.
 	GetLatestSnapshotFunc func(ctx sdk.Context) (exported.Snapshot, bool)
 
+	// GetPrincipalFunc mocks the GetPrincipal method.
+	GetPrincipalFunc func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
+
 	// GetSnapshotFunc mocks the GetSnapshot method.
 	GetSnapshotFunc func(ctx sdk.Context, counter int64) (exported.Snapshot, bool)
 
@@ -273,6 +279,13 @@ type SnapshotterMock struct {
 		GetLatestSnapshot []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
+		}
+		// GetPrincipal holds details about calls to the GetPrincipal method.
+		GetPrincipal []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Proxy is the proxy argument value.
+			Proxy sdk.AccAddress
 		}
 		// GetSnapshot holds details about calls to the GetSnapshot method.
 		GetSnapshot []struct {
@@ -293,6 +306,7 @@ type SnapshotterMock struct {
 	}
 	lockGetLatestCounter  sync.RWMutex
 	lockGetLatestSnapshot sync.RWMutex
+	lockGetPrincipal      sync.RWMutex
 	lockGetSnapshot       sync.RWMutex
 	lockTakeSnapshot      sync.RWMutex
 }
@@ -356,6 +370,41 @@ func (mock *SnapshotterMock) GetLatestSnapshotCalls() []struct {
 	mock.lockGetLatestSnapshot.RLock()
 	calls = mock.calls.GetLatestSnapshot
 	mock.lockGetLatestSnapshot.RUnlock()
+	return calls
+}
+
+// GetPrincipal calls GetPrincipalFunc.
+func (mock *SnapshotterMock) GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
+	if mock.GetPrincipalFunc == nil {
+		panic("SnapshotterMock.GetPrincipalFunc: method is nil but Snapshotter.GetPrincipal was just called")
+	}
+	callInfo := struct {
+		Ctx   sdk.Context
+		Proxy sdk.AccAddress
+	}{
+		Ctx:   ctx,
+		Proxy: proxy,
+	}
+	mock.lockGetPrincipal.Lock()
+	mock.calls.GetPrincipal = append(mock.calls.GetPrincipal, callInfo)
+	mock.lockGetPrincipal.Unlock()
+	return mock.GetPrincipalFunc(ctx, proxy)
+}
+
+// GetPrincipalCalls gets all the calls that were made to GetPrincipal.
+// Check the length with:
+//     len(mockedSnapshotter.GetPrincipalCalls())
+func (mock *SnapshotterMock) GetPrincipalCalls() []struct {
+	Ctx   sdk.Context
+	Proxy sdk.AccAddress
+} {
+	var calls []struct {
+		Ctx   sdk.Context
+		Proxy sdk.AccAddress
+	}
+	mock.lockGetPrincipal.RLock()
+	calls = mock.calls.GetPrincipal
+	mock.lockGetPrincipal.RUnlock()
 	return calls
 }
 

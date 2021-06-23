@@ -38,18 +38,6 @@
 - [bitcoin/v1beta1/service.proto](#bitcoin/v1beta1/service.proto)
     - [MsgService](#bitcoin.v1beta1.MsgService)
   
-- [broadcast/v1beta1/genesis.proto](#broadcast/v1beta1/genesis.proto)
-    - [GenesisState](#broadcast.v1beta1.GenesisState)
-  
-- [broadcast/v1beta1/tx.proto](#broadcast/v1beta1/tx.proto)
-    - [DeregisterProxyRequest](#broadcast.v1beta1.DeregisterProxyRequest)
-    - [DeregisterProxyResponse](#broadcast.v1beta1.DeregisterProxyResponse)
-    - [RegisterProxyRequest](#broadcast.v1beta1.RegisterProxyRequest)
-    - [RegisterProxyResponse](#broadcast.v1beta1.RegisterProxyResponse)
-  
-- [broadcast/v1beta1/service.proto](#broadcast/v1beta1/service.proto)
-    - [MsgService](#broadcast.v1beta1.MsgService)
-  
 - [evm/v1beta1/types.proto](#evm/v1beta1/types.proto)
     - [BurnerInfo](#evm.v1beta1.BurnerInfo)
     - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
@@ -120,6 +108,15 @@
   
 - [snapshot/v1beta1/genesis.proto](#snapshot/v1beta1/genesis.proto)
     - [GenesisState](#snapshot.v1beta1.GenesisState)
+  
+- [snapshot/v1beta1/tx.proto](#snapshot/v1beta1/tx.proto)
+    - [DeregisterProxyRequest](#snapshot.v1beta1.DeregisterProxyRequest)
+    - [DeregisterProxyResponse](#snapshot.v1beta1.DeregisterProxyResponse)
+    - [RegisterProxyRequest](#snapshot.v1beta1.RegisterProxyRequest)
+    - [RegisterProxyResponse](#snapshot.v1beta1.RegisterProxyResponse)
+  
+- [snapshot/v1beta1/service.proto](#snapshot/v1beta1/service.proto)
+    - [MsgService](#snapshot.v1beta1.MsgService)
   
 - [tss/tofnd/v1beta1/tofnd.proto](#tss/tofnd/v1beta1/tofnd.proto)
     - [KeygenInit](#tss.tofnd.v1beta1.KeygenInit)
@@ -580,126 +577,6 @@ Msg defines the bitcoin Msg service.
 | `ConfirmOutpoint` | [ConfirmOutpointRequest](#bitcoin.v1beta1.ConfirmOutpointRequest) | [ConfirmOutpointResponse](#bitcoin.v1beta1.ConfirmOutpointResponse) |  | POST|/axelar/bitcoin/confirm|
 | `VoteConfirmOutpoint` | [VoteConfirmOutpointRequest](#bitcoin.v1beta1.VoteConfirmOutpointRequest) | [VoteConfirmOutpointResponse](#bitcoin.v1beta1.VoteConfirmOutpointResponse) |  | ||
 | `SignPendingTransfers` | [SignPendingTransfersRequest](#bitcoin.v1beta1.SignPendingTransfersRequest) | [SignPendingTransfersResponse](#bitcoin.v1beta1.SignPendingTransfersResponse) |  | POST|/axelar/bitcoin/sign|
-
- <!-- end services -->
-
-
-
-<a name="broadcast/v1beta1/genesis.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## broadcast/v1beta1/genesis.proto
-
-
-
-<a name="broadcast.v1beta1.GenesisState"></a>
-
-### GenesisState
-
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="broadcast/v1beta1/tx.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## broadcast/v1beta1/tx.proto
-
-
-
-<a name="broadcast.v1beta1.DeregisterProxyRequest"></a>
-
-### DeregisterProxyRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `principal_addr` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="broadcast.v1beta1.DeregisterProxyResponse"></a>
-
-### DeregisterProxyResponse
-
-
-
-
-
-
-
-<a name="broadcast.v1beta1.RegisterProxyRequest"></a>
-
-### RegisterProxyRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `principal_addr` | [bytes](#bytes) |  |  |
-| `proxy_addr` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="broadcast.v1beta1.RegisterProxyResponse"></a>
-
-### RegisterProxyResponse
-
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="broadcast/v1beta1/service.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## broadcast/v1beta1/service.proto
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
-
-<a name="broadcast.v1beta1.MsgService"></a>
-
-### MsgService
-Msg defines the broadcast Msg service.
-
-| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
-| ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `RegisterProxy` | [RegisterProxyRequest](#broadcast.v1beta1.RegisterProxyRequest) | [RegisterProxyResponse](#broadcast.v1beta1.RegisterProxyResponse) | RegisterProxy defines a method for registering a proxy account that can act in a validator account's stead. | POST|/axelar/broadcast/registerProxy/{proxy_addr}|
-| `DeregisterProxy` | [DeregisterProxyRequest](#broadcast.v1beta1.DeregisterProxyRequest) | [DeregisterProxyResponse](#broadcast.v1beta1.DeregisterProxyResponse) | DeregisterProxy defines a method for deregistering a proxy account. | POST|/axelar/broadcast/deregisterProxy|
 
  <!-- end services -->
 
@@ -1620,6 +1497,100 @@ GenesisState represents the genesis state
  <!-- end enums -->
 
  <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="snapshot/v1beta1/tx.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## snapshot/v1beta1/tx.proto
+
+
+
+<a name="snapshot.v1beta1.DeregisterProxyRequest"></a>
+
+### DeregisterProxyRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `principal_addr` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="snapshot.v1beta1.DeregisterProxyResponse"></a>
+
+### DeregisterProxyResponse
+
+
+
+
+
+
+
+<a name="snapshot.v1beta1.RegisterProxyRequest"></a>
+
+### RegisterProxyRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `principal_addr` | [bytes](#bytes) |  |  |
+| `proxy_addr` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="snapshot.v1beta1.RegisterProxyResponse"></a>
+
+### RegisterProxyResponse
+
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="snapshot/v1beta1/service.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## snapshot/v1beta1/service.proto
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="snapshot.v1beta1.MsgService"></a>
+
+### MsgService
+Msg defines the snapshot Msg service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `RegisterProxy` | [RegisterProxyRequest](#snapshot.v1beta1.RegisterProxyRequest) | [RegisterProxyResponse](#snapshot.v1beta1.RegisterProxyResponse) | RegisterProxy defines a method for registering a proxy account that can act in a validator account's stead. | POST|/axelar/snapshot/registerProxy/{proxy_addr}|
+| `DeregisterProxy` | [DeregisterProxyRequest](#snapshot.v1beta1.DeregisterProxyRequest) | [DeregisterProxyResponse](#snapshot.v1beta1.DeregisterProxyResponse) | DeregisterProxy defines a method for deregistering a proxy account. | POST|/axelar/snapshot/deregisterProxy|
 
  <!-- end services -->
 
