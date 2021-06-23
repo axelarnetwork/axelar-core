@@ -27,7 +27,7 @@ func GetTxCmd() *cobra.Command {
 	snapshotTxCmd.AddCommand(
 		GetCmdRegisterProxy(),
 		GetCmdDeregisterProxy(),
-		GetCmdSendStake(),
+		GetCmdSendTokens(),
 	)
 
 	return snapshotTxCmd
@@ -78,11 +78,11 @@ func GetCmdDeregisterProxy() *cobra.Command {
 	return cmd
 }
 
-// GetCmdSendStake returns the command to send stake to a number of addresses
-func GetCmdSendStake() *cobra.Command {
+// GetCmdSendTokens returns the command to send stake to a number of addresses
+func GetCmdSendTokens() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "sendStake [amount] [address 1] ... [address n]",
-		Short: "Sends the specified amount of stake to the designated addresses",
+		Use:   "sendTokens [amount] [address 1] ... [address n]",
+		Short: "Sends the specified amount of tokens to the designated addresses",
 		Args:  cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
