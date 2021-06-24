@@ -41,14 +41,8 @@ func MergeTransfersBy(transfers []CrossChainTransfer, groupFn func(transfer Cros
 			continue
 		}
 
-		mergedTransfer := CrossChainTransfer{
-			Recipient: transfer.Recipient,
-			Asset:     transfer.Asset,
-			ID:        transfer.ID,
-		}
-		mergedTransfer.Asset.Amount = transferAmountByAddressAndAsset[id]
-
-		results = append(results, mergedTransfer)
+		transfer.Asset.Amount = transferAmountByAddressAndAsset[id]
+		results = append(results, transfer)
 		seen[id] = true
 	}
 
