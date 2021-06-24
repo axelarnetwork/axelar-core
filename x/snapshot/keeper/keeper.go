@@ -263,6 +263,7 @@ func (k Keeper) DeregisterProxy(ctx sdk.Context, principal sdk.ValAddress) error
 }
 
 // GetPrincipal returns the proxy address for a given principal address. Returns nil if not set.
+// The proxy will be marked as active and to be included in the next snapshot by default
 func (k Keeper) GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
 	if proxy == nil {
 		return nil
