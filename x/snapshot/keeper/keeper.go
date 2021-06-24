@@ -217,6 +217,7 @@ func counterKey(counter int64) []byte {
 }
 
 // RegisterProxy registers a proxy address for a given principal, which can broadcast messages in the principal's name
+// The proxy will be marked as active and to be included in the next snapshot by default
 func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy sdk.AccAddress) error {
 	val := k.staking.Validator(ctx, principal)
 	if val == nil {
@@ -242,7 +243,7 @@ func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy s
 	return nil
 }
 
-// DeregisterProxy deregisters a proxy address for a given principal
+// DeregisterProxy de-activates a proxy address for a given principal
 func (k Keeper) DeregisterProxy(ctx sdk.Context, principal sdk.ValAddress) error {
 	val := k.staking.Validator(ctx, principal)
 	if val == nil {
@@ -255,7 +256,7 @@ func (k Keeper) DeregisterProxy(ctx sdk.Context, principal sdk.ValAddress) error
 		return fmt.Errorf("validator %s has no proxy registered", principal.String())
 	}
 
-	k.Logger(ctx).Debug("deregistering proxy")
+	k.Logger(ctx).Debug("de-activates proxy")
 	bz := append([]byte{0}, storedProxy[1:]...)
 	ctx.KVStore(k.storeKey).Set(principal, bz)
 
@@ -263,7 +264,6 @@ func (k Keeper) DeregisterProxy(ctx sdk.Context, principal sdk.ValAddress) error
 }
 
 // GetPrincipal returns the proxy address for a given principal address. Returns nil if not set.
-// The proxy will be marked as active and to be included in the next snapshot by default
 func (k Keeper) GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
 	if proxy == nil {
 		return nil
