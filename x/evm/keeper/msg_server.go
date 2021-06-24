@@ -717,7 +717,10 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 		return nil, fmt.Errorf("Could not find chain ID for '%s'", req.Chain)
 	}
 
-	data, err := types.CreateMintCommandData(chainID, pendingTransfers)
+	getRecipientAndAsset := func(transfer nexus.CrossChainTransfer) string {
+		return fmt.Sprintf("%s-%s", transfer.Recipient.Address, transfer.Asset.Denom)
+	}
+	data, err := types.CreateMintCommandData(chainID, nexus.MergeTransfersBy(pendingTransfers, getRecipientAndAsset))
 	if err != nil {
 		return nil, err
 	}
