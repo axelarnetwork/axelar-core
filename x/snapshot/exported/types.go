@@ -64,9 +64,10 @@ func IsValidatorActive(ctx sdk.Context, slasher Slasher, validator SDKValidator)
 	return found && !signingInfo.Tombstoned && signingInfo.MissedBlocksCounter <= 0 && !validator.IsJailed()
 }
 
-// HasProxyRegistered returns true if the validator has proxy registered; otherwise, false
+// HasProxyRegistered returns true if the validator has broadcast proxy registered; otherwise, false
 func HasProxyRegistered(ctx sdk.Context, snapshotter Snapshotter, validator SDKValidator) bool {
-	return snapshotter.GetProxy(ctx, validator.GetOperator()) != nil
+	_, active := snapshotter.GetProxy(ctx, validator.GetOperator())
+	return active
 }
 
 // IsValidatorTssSuspended returns true if the validator is suspended from participating TSS ceremonies for committing faulty behaviour; otherwise, false

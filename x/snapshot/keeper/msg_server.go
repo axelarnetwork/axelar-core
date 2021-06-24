@@ -42,7 +42,7 @@ func (s msgServer) RegisterProxy(c context.Context, req *types.RegisterProxyRequ
 
 func (s msgServer) DeregisterProxy(c context.Context, req *types.DeregisterProxyRequest) (*types.DeregisterProxyResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	proxy := s.Keeper.GetProxy(ctx, req.PrincipalAddr)
+	proxy, _ := s.Keeper.GetProxy(ctx, req.PrincipalAddr)
 
 	if err := s.Keeper.DeregisterProxy(ctx, req.PrincipalAddr); err != nil {
 		return nil, sdkerrors.Wrap(types.ErrSnapshot, err.Error())

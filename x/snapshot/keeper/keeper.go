@@ -233,7 +233,8 @@ func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy s
 	k.Logger(ctx).Debug("setting proxy")
 	ctx.KVStore(k.storeKey).Set(proxy, principal)
 	// Creating a reverse lookup
-	ctx.KVStore(k.storeKey).Set(principal, proxy)
+	bz := append([]byte{1}, proxy...)
+	ctx.KVStore(k.storeKey).Set(principal, bz)
 	count++
 	k.Logger(ctx).Debug("setting proxy count")
 	k.setProxyCount(ctx, count)
@@ -254,15 +255,10 @@ func (k Keeper) DeregisterProxy(ctx sdk.Context, principal sdk.ValAddress) error
 		return fmt.Errorf("validator %s has no proxy registered", principal.String())
 	}
 
-	k.Logger(ctx).Debug("deleting proxy")
-	ctx.KVStore(k.storeKey).Delete(storedProxy)
-	// Delete the reverse lookup
-	ctx.KVStore(k.storeKey).Delete(principal)
+	k.Logger(ctx).Debug("deregistering proxy")
+	bz := append([]byte{0}, storedProxy[1:]...)
+	ctx.KVStore(k.storeKey).Set(principal, bz)
 
-	k.Logger(ctx).Debug("setting proxy count")
-	count := k.getProxyCount(ctx)
-	count--
-	k.setProxyCount(ctx, count)
 	return nil
 }
 
@@ -275,8 +271,19 @@ func (k Keeper) GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddre
 }
 
 // GetProxy returns the proxy address for a given principal address. Returns nil if not set.
-func (k Keeper) GetProxy(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
-	return ctx.KVStore(k.storeKey).Get(principal)
+// The bool value denotes wether or not the proxy is active and to be included in the next snapshot
+func (k Keeper) GetProxy(ctx sdk.Context, principal sdk.ValAddress) (sdk.AccAddress, bool) {
+	bz := ctx.KVStore(k.storeKey).Get(principal)
+	if bz == nil {
+		return nil, false
+	}
+
+	active := false
+	if bz[0] == 1 {
+		active = true
+	}
+
+	return bz[1:], active
 }
 
 func (k Keeper) setProxyCount(ctx sdk.Context, count int) {
