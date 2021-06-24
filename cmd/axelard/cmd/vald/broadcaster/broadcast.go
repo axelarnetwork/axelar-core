@@ -1,4 +1,4 @@
-package snapshot
+package broadcaster
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/snapshot/types"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
 )
 
 // Broadcaster submits transactions to a tendermint node

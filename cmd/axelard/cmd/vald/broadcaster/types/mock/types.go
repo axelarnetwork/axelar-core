@@ -5,7 +5,7 @@ package mock
 
 import (
 	"context"
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/snapshot/types"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"

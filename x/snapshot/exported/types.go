@@ -12,7 +12,7 @@ import (
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
-//go:generate moq -out ./mock/types.go -pkg mock . SDKValidator Snapshotter Slasher Broadcaster Tss
+//go:generate moq -out ./mock/types.go -pkg mock . SDKValidator Snapshotter Slasher Tss
 
 // SDKValidator is an interface for a Cosmos validator account
 type SDKValidator interface {
@@ -45,11 +45,6 @@ type Slasher interface {
 	GetValidatorSigningInfo(ctx sdk.Context, address sdk.ConsAddress) (info ValidatorInfo, found bool)
 }
 
-// Broadcaster provides broadcasting functionality
-type Broadcaster interface {
-	GetProxy(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress
-}
-
 // Tss provides functionality to tss module
 type Tss interface {
 	SetKeyRequirement(ctx sdk.Context, keyRequirement tss.KeyRequirement)
@@ -69,9 +64,9 @@ func IsValidatorActive(ctx sdk.Context, slasher Slasher, validator SDKValidator)
 	return found && !signingInfo.Tombstoned && signingInfo.MissedBlocksCounter <= 0 && !validator.IsJailed()
 }
 
-// HasProxyRegistered returns true if the validator has broadcast proxy registered; otherwise, false
-func HasProxyRegistered(ctx sdk.Context, broadcaster Broadcaster, validator SDKValidator) bool {
-	return broadcaster.GetProxy(ctx, validator.GetOperator()) != nil
+// HasProxyRegistered returns true if the validator has proxy registered; otherwise, false
+func HasProxyRegistered(ctx sdk.Context, snapshotter Snapshotter, validator SDKValidator) bool {
+	return snapshotter.GetProxy(ctx, validator.GetOperator()) != nil
 }
 
 // IsValidatorTssSuspended returns true if the validator is suspended from participating TSS ceremonies for committing faulty behaviour; otherwise, false
@@ -117,4 +112,5 @@ type Snapshotter interface {
 	GetSnapshot(ctx sdk.Context, counter int64) (Snapshot, bool)
 	TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (snapshotConsensusPower sdk.Int, totalConsensusPower sdk.Int, err error)
 	GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
+	GetProxy(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress
 }

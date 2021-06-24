@@ -13,7 +13,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
 
-	snapshotTypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/snapshot/types"
+	broadcasterTypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss/rpc"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -147,7 +147,7 @@ type Mgr struct {
 	Timeout        time.Duration
 	principalAddr  string
 	Logger         log.Logger
-	broadcaster    snapshotTypes.Broadcaster
+	broadcaster    broadcasterTypes.Broadcaster
 	sender         sdk.AccAddress
 	cdc            *codec.LegacyAmino
 }
@@ -166,7 +166,7 @@ func CreateTOFNDClient(host string, port string, logger log.Logger) (rpc.Client,
 }
 
 // NewMgr returns a new tss manager instance
-func NewMgr(client rpc.Client, timeout time.Duration, principalAddr string, broadcaster snapshotTypes.Broadcaster, sender sdk.AccAddress, sessionTimeout int64, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
+func NewMgr(client rpc.Client, timeout time.Duration, principalAddr string, broadcaster broadcasterTypes.Broadcaster, sender sdk.AccAddress, sessionTimeout int64, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
 		client:         client,
 		keygen:         &sync.RWMutex{},

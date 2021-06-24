@@ -1,4 +1,4 @@
-package snapshot
+package broadcaster
 
 import (
 	"context"
@@ -27,7 +27,7 @@ import (
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 	"github.com/tendermint/tendermint/types"
 
-	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/snapshot/types/mock"
+	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
