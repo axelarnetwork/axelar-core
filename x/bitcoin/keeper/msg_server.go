@@ -313,37 +313,28 @@ func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.
 	pendingTransfers := n.GetTransfersForChain(ctx, exported.Bitcoin, nexus.Pending)
 	outputs := []types.Output{}
 	totalOut := sdk.ZeroInt()
-
-	addrWithdrawal := make(map[string]sdk.Int)
-	var recipients []btcutil.Address
+	network := k.GetNetwork(ctx).Params()
 
 	// Combine output to same destination address
 	for _, transfer := range pendingTransfers {
-		recipient, err := btcutil.DecodeAddress(transfer.Recipient.Address, k.GetNetwork(ctx).Params())
+		if _, err := btcutil.DecodeAddress(transfer.Recipient.Address, network); err == nil {
+			n.ArchivePendingTransfer(ctx, transfer)
+		}
+	}
+
+	getRecipient := func(transfer nexus.CrossChainTransfer) string {
+		return transfer.Recipient.Address
+	}
+
+	for _, transfer := range nexus.MergeTransfersBy(pendingTransfers, getRecipient) {
+		recipient, err := btcutil.DecodeAddress(transfer.Recipient.Address, network)
 		if err != nil {
 			k.Logger(ctx).Error(fmt.Sprintf("%s is not a valid address", transfer.Recipient.Address))
 			continue
 		}
-		recipients = append(recipients, recipient)
+
 		encodedAddress := recipient.EncodeAddress()
-
-		if _, ok := addrWithdrawal[encodedAddress]; !ok {
-			addrWithdrawal[encodedAddress] = sdk.ZeroInt()
-		}
-		addrWithdrawal[encodedAddress] = addrWithdrawal[encodedAddress].Add(transfer.Asset.Amount)
-
-		n.ArchivePendingTransfer(ctx, transfer)
-	}
-
-	for _, recipient := range recipients {
-		encodedAddress := recipient.EncodeAddress()
-		amount, ok := addrWithdrawal[encodedAddress]
-		if !ok {
-			continue
-		}
-
-		// delete from map to prevent recounting
-		delete(addrWithdrawal, encodedAddress)
+		amount := transfer.Asset.Amount
 
 		// Check if the recipient has unsent dust amount
 		unsentDust := k.GetDustAmount(ctx, encodedAddress)
