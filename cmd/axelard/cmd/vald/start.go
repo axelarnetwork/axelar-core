@@ -29,14 +29,14 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster"
+	broadcasterTypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc"
 	btcRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/events"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm"
 	evmRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/jobs"
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/snapshot"
-	snapshotTypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/snapshot/types"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -257,12 +257,12 @@ func createEventMgr(ctx sdkClient.Context, stateSource events.ReadWriter, logger
 	return events.NewMgr(node, stateSource, pubsub.NewBus, logger)
 }
 
-func createBroadcaster(ctx sdkClient.Context, txf tx.Factory, axelarCfg app.Config, logger log.Logger) snapshotTypes.Broadcaster {
-	pipeline := snapshot.NewPipelineWithRetry(10000, axelarCfg.MaxRetries, snapshot.LinearBackOff(axelarCfg.MinTimeout), logger)
-	return snapshot.NewBroadcaster(ctx, txf, pipeline, logger)
+func createBroadcaster(ctx sdkClient.Context, txf tx.Factory, axelarCfg app.Config, logger log.Logger) broadcasterTypes.Broadcaster {
+	pipeline := broadcaster.NewPipelineWithRetry(10000, axelarCfg.MaxRetries, broadcaster.LinearBackOff(axelarCfg.MinTimeout), logger)
+	return broadcaster.NewBroadcaster(ctx, txf, pipeline, logger)
 }
 
-func createTSSMgr(broadcaster snapshotTypes.Broadcaster, sender sdk.AccAddress, genesisState *tssTypes.GenesisState, axelarCfg app.Config, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
+func createTSSMgr(broadcaster broadcasterTypes.Broadcaster, sender sdk.AccAddress, genesisState *tssTypes.GenesisState, axelarCfg app.Config, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
 	create := func() (*tss.Mgr, error) {
 		gg20client, err := tss.CreateTOFNDClient(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, logger)
 		if err != nil {
@@ -280,7 +280,7 @@ func createTSSMgr(broadcaster snapshotTypes.Broadcaster, sender sdk.AccAddress, 
 	return mgr
 }
 
-func createBTCMgr(axelarCfg app.Config, b snapshotTypes.Broadcaster, sender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *btc.Mgr {
+func createBTCMgr(axelarCfg app.Config, b broadcasterTypes.Broadcaster, sender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *btc.Mgr {
 	rpc, err := btcRPC.NewRPCClient(axelarCfg.BtcConfig, logger)
 	if err != nil {
 		logger.Error(err.Error())
@@ -295,7 +295,7 @@ func createBTCMgr(axelarCfg app.Config, b snapshotTypes.Broadcaster, sender sdk.
 	return btcMgr
 }
 
-func createEVMMgr(axelarCfg app.Config, b snapshotTypes.Broadcaster, sender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *evm.Mgr {
+func createEVMMgr(axelarCfg app.Config, b broadcasterTypes.Broadcaster, sender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *evm.Mgr {
 	rpcs := make(map[string]evmRPC.Client)
 
 	for _, evmChainConf := range axelarCfg.EVMConfig {
