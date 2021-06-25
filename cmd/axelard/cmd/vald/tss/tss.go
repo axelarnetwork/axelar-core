@@ -153,10 +153,12 @@ type Mgr struct {
 }
 
 // CreateTOFNDClient creates a client to communicate with the external tofnd process
-func CreateTOFNDClient(host string, port string, logger log.Logger) (rpc.Client, error) {
+func CreateTOFNDClient(host string, port string, timeout time.Duration, logger log.Logger) (rpc.Client, error) {
 	tofndServerAddress := host + ":" + port
 	logger.Info(fmt.Sprintf("initiate connection to tofnd gRPC server: %s", tofndServerAddress))
-	conn, err := grpc.Dial(tofndServerAddress, grpc.WithInsecure(), grpc.WithBlock())
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	conn, err := grpc.DialContext(ctx, tofndServerAddress, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		return nil, err
 	}

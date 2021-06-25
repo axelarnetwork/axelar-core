@@ -40,7 +40,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald"
-	"github.com/axelarnetwork/axelar-core/x/tss"
 )
 
 // NewRootCmd creates a new root command for axelard. It is called once in the
@@ -128,7 +127,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		AddGenesisEVMChainCmd(app.DefaultNodeHome),
 	)
 
-	server.AddCommands(rootCmd, app.DefaultNodeHome, newApp, export(encodingConfig), addAdditionalFlags)
+	server.AddCommands(rootCmd, app.DefaultNodeHome, newApp, export(encodingConfig), crisis.AddModuleInitFlags)
 
 	// add keybase, auxiliary RPC, query, and tx child commands
 	rootCmd.AddCommand(
@@ -149,11 +148,6 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 
 	// add vald after the overwrite so it can set its own defaults
 	rootCmd.AddCommand(vald.GetValdCommand())
-}
-
-func addAdditionalFlags(startCmd *cobra.Command) {
-	crisis.AddModuleInitFlags(startCmd)
-	tss.AddModuleInitFlags(startCmd)
 }
 
 func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, appOpts servertypes.AppOptions) servertypes.Application {
