@@ -243,8 +243,8 @@ func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy s
 	return nil
 }
 
-// DeregisterProxy de-activates a proxy address for a given principal
-func (k Keeper) DeregisterProxy(ctx sdk.Context, principal sdk.ValAddress) error {
+// DeactivateProxy deactivates the proxy address for a given principal
+func (k Keeper) DeactivateProxy(ctx sdk.Context, principal sdk.ValAddress) error {
 	val := k.staking.Validator(ctx, principal)
 	if val == nil {
 		return fmt.Errorf("validator %s is unknown", principal.String())
