@@ -150,9 +150,3 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	return EndBlocker(ctx, req, am.keeper)
 }
-
-// AddModuleInitFlags implements servertypes.ModuleInitFlags interface.
-func AddModuleInitFlags(startCmd *cobra.Command) {
-	startCmd.Flags().String("tofnd-host", "", "host name for tss daemon")
-	startCmd.Flags().String("tofnd-port", "50051", "port for tss daemon")
-}

@@ -21,7 +21,7 @@ func DefaultConfig() Config {
 	return Config{
 		EVMConfig:    evm.DefaultConfig(),
 		BtcConfig:    bitcoin.DefaultConfig(),
-		TssConfig:    tss.TssConfig{},
+		TssConfig:    tss.DefaultConfig(),
 		ClientConfig: vald.ClientConfig{},
 	}
 }

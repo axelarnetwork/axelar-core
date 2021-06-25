@@ -6,8 +6,6 @@ import "time"
 type BroadcastConfig struct {
 	From              string        `mapstructure:"broadcaster-account"`
 	KeyringPassphrase string        `mapstructure:"keyring-passphrase"`
-	GasAdjustment     float64       `mapstructure:"gas-adjustment"`
-	Gas               uint64        `mapstructure:"gas"`
 	MaxRetries        int           `mapstructure:"max-retries"`
 	MinTimeout        time.Duration `mapstructure:"min-timeout"`
 }
