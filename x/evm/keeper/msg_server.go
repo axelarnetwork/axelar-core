@@ -335,7 +335,6 @@ func (s msgServer) ConfirmTransferOwnership(c context.Context, req *types.Confir
 
 	transferOwnership := types.TransferOwnership{
 		TxID:            req.TxID,
-		NewOwnerAddress: req.NewOwnerAddress,
 		NextKeyID:       pk.ID,
 	}
 	s.SetPendingTransferOwnership(ctx, chain.Name, poll, &transferOwnership)
@@ -576,6 +575,7 @@ func (s msgServer) VoteConfirmTransferOwnership(c context.Context, req *types.Vo
 		return nil, fmt.Errorf("next %s key for chain %s not set", tss.MasterKey.SimpleString(), chain.Name)
 	}
 	ready := s.signer.IsKeyReady(ctx, nextKey.ID)
+	nextKeyAddr := crypto.PubkeyToAddress(nextKey.Value)
 	switch {
 	// a malicious user could try to delete an ongoing poll by providing an already confirmed KeyID,
 	// so we need to check that it matches the poll before deleting
@@ -585,10 +585,10 @@ func (s msgServer) VoteConfirmTransferOwnership(c context.Context, req *types.Vo
 		fallthrough
 	// If the voting threshold has been met and additional votes are received they should not return an error
 	case ready:
-		return &types.VoteConfirmTransferOwnershipResponse{Log: fmt.Sprintf("transfer ownership in %s to address %s already confirmed", pendingTransferOwnership.TxID.Hex(), pendingTransferOwnership.NewOwnerAddress.Hex())}, nil
+		return &types.VoteConfirmTransferOwnershipResponse{Log: fmt.Sprintf("transfer ownership in %s to address %s already confirmed", pendingTransferOwnership.TxID.Hex(), nextKeyAddr.Hex())}, nil
 	case !pollFound:
 		return nil, fmt.Errorf("no transfer ownership found for poll %s", req.Poll.String())
-	case pendingTransferOwnership.NewOwnerAddress != req.NewOwnerAddress || pendingTransferOwnership.TxID != req.TxID:
+	case nextKeyAddr != common.Address(req.NewOwnerAddress) || pendingTransferOwnership.TxID != req.TxID:
 		return nil, fmt.Errorf("transfer ownership in %s to address %s does not match poll %s", req.TxID, req.NewOwnerAddress.Hex(), req.Poll.String())
 	default:
 		// assert: the deposit is known and has not been confirmed before
