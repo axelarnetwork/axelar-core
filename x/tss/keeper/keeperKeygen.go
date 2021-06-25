@@ -253,5 +253,5 @@ func (k Keeper) SetKeyReady(ctx sdk.Context, keyID string) {
 
 // IsKeyReady returns true if the keyID is ready to rotate
 func (k Keeper) IsKeyReady(ctx sdk.Context, keyID string) bool {
-	return ctx.KVStore(k.storeKey).Get([]byte(keyReadyPrefix+keyID)) != nil
+	return ctx.KVStore(k.storeKey).Has([]byte(keyReadyPrefix+keyID))
 }

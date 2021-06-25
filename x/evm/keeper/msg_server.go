@@ -571,7 +571,11 @@ func (s msgServer) VoteConfirmTransferOwnership(c context.Context, req *types.Vo
 	}
 
 	pendingTransferOwnership, pollFound := s.GetPendingTransferOwnership(ctx, chain.Name, req.Poll)
-	ready := s.signer.IsKeyReady(ctx, pendingTransferOwnership.NextKeyID)
+	nextKey, ok := s.signer.GetNextKey(ctx, chain, tss.MasterKey)
+	if !ok {
+		return nil, fmt.Errorf("next %s key for chain %s not set", tss.MasterKey.SimpleString(), chain.Name)
+	}
+	ready := s.signer.IsKeyReady(ctx, nextKey.ID)
 	switch {
 	// a malicious user could try to delete an ongoing poll by providing an already confirmed KeyID,
 	// so we need to check that it matches the poll before deleting
@@ -582,7 +586,6 @@ func (s msgServer) VoteConfirmTransferOwnership(c context.Context, req *types.Vo
 	// If the voting threshold has been met and additional votes are received they should not return an error
 	case ready:
 		return &types.VoteConfirmTransferOwnershipResponse{Log: fmt.Sprintf("transfer ownership in %s to address %s already confirmed", pendingTransferOwnership.TxID.Hex(), pendingTransferOwnership.NewOwnerAddress.Hex())}, nil
-
 	case !pollFound:
 		return nil, fmt.Errorf("no transfer ownership found for poll %s", req.Poll.String())
 	case pendingTransferOwnership.NewOwnerAddress != req.NewOwnerAddress || pendingTransferOwnership.TxID != req.TxID:
