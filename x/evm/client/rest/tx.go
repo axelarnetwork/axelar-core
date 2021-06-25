@@ -21,16 +21,17 @@ import (
 
 // rest routes
 const (
-	TxConfirmChain          = "confirm-chain"
-	TxLink                  = "link"
-	TxConfirmTokenDeploy    = "confirm-erc20-deploy"
-	TxConfirmDeposit        = "confirm-erc20-deposit"
-	TxSignTx                = "sign-tx"
-	TxSignPending           = "sign-pending"
-	TxSignDeployToken       = "sign-deploy-token"
-	TxSignBurnTokens        = "sign-burn"
-	TxSignTransferOwnership = "sign-transfer-ownership"
-	TxAddChain              = "add-chain"
+	TxConfirmChain             = "confirm-chain"
+	TxLink                     = "link"
+	TxConfirmTokenDeploy       = "confirm-erc20-deploy"
+	TxConfirmDeposit           = "confirm-erc20-deposit"
+	TxConfirmTransferOwnership = "confirm-transfer-ownership"
+	TxSignTx                   = "sign-tx"
+	TxSignPending              = "sign-pending"
+	TxSignDeployToken          = "sign-deploy-token"
+	TxSignBurnTokens           = "sign-burn"
+	TxSignTransferOwnership    = "sign-transfer-ownership"
+	TxAddChain                 = "add-chain"
 
 	QueryMasterAddress        = keeper.QueryMasterAddress
 	QueryNextMasterAddress    = keeper.QueryNextMasterAddress
@@ -47,6 +48,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(GetHandlerLink(cliCtx), TxLink, clientUtils.PathVarChain)
 	registerTx(GetHandlerConfirmTokenDeploy(cliCtx), TxConfirmTokenDeploy, clientUtils.PathVarChain, clientUtils.PathVarSymbol)
 	registerTx(GetHandlerConfirmDeposit(cliCtx), TxConfirmDeposit, clientUtils.PathVarChain)
+	registerTx(GetHandlerConfirmTransferOwnership(cliCtx), TxConfirmTransferOwnership, clientUtils.PathVarChain)
 	registerTx(GetHandlerSignTx(cliCtx), TxSignTx, clientUtils.PathVarChain)
 	registerTx(GetHandlerSignPendingTransfers(cliCtx), TxSignPending, clientUtils.PathVarChain)
 	registerTx(GetHandlerSignDeployToken(cliCtx), TxSignDeployToken, clientUtils.PathVarChain, clientUtils.PathVarSymbol)
@@ -91,6 +93,13 @@ type ReqConfirmDeposit struct {
 	TxID          string       `json:"tx_id" yaml:"tx_id"`
 	Amount        string       `json:"amount" yaml:"amount"`
 	BurnerAddress string       `json:"burner_address" yaml:"burner_address"`
+}
+
+// ReqConfirmTransferOwnership represents a request to confirm a transfer ownership
+type ReqConfirmTransferOwnership struct {
+	BaseReq         rest.BaseReq `json:"base_req" yaml:"base_req"`
+	TxID            string       `json:"tx_id" yaml:"tx_id"`
+	NewOwnerAddress string       `json:"new_owner_address" yaml:"new_owner_address"`
 }
 
 // ReqSignTx represents a request to sign a transaction
@@ -239,6 +248,35 @@ func GetHandlerConfirmDeposit(cliCtx client.Context) http.HandlerFunc {
 		burnerAddr := common.HexToAddress(req.BurnerAddress)
 
 		msg := types.NewConfirmDepositRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], txID, amount, burnerAddr)
+		if err := msg.ValidateBasic(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
+	}
+}
+
+// GetHandlerConfirmTransferOwnership returns a handler to confirm a transfer ownership
+func GetHandlerConfirmTransferOwnership(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req ReqConfirmTransferOwnership
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
+			return
+		}
+		req.BaseReq = req.BaseReq.Sanitize()
+		if !req.BaseReq.ValidateBasic(w) {
+			return
+		}
+		fromAddr, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
+		if !ok {
+			return
+		}
+
+		txID := common.HexToHash(req.TxID)
+		newOwnerAddr := common.HexToAddress(req.NewOwnerAddress)
+
+		msg := types.NewConfirmTransferOwnershipRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], txID, newOwnerAddr)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
