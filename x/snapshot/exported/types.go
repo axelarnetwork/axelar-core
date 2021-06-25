@@ -113,5 +113,5 @@ type Snapshotter interface {
 	GetSnapshot(ctx sdk.Context, counter int64) (Snapshot, bool)
 	TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (snapshotConsensusPower sdk.Int, totalConsensusPower sdk.Int, err error)
 	GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
-	GetProxy(ctx sdk.Context, principal sdk.ValAddress) (sdk.AccAddress, bool)
+	GetProxy(ctx sdk.Context, principal sdk.ValAddress) (addr sdk.AccAddress, active bool)
 }
