@@ -21,7 +21,7 @@ func TestGRPCTimeout(t *testing.T) {
 			}
 		}()
 
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
 		_, err := grpc.DialContext(
 			ctx,
@@ -33,7 +33,7 @@ func TestGRPCTimeout(t *testing.T) {
 		assert.NoError(t, err)
 	})
 	t.Run("timeout", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
 
 		_, err := grpc.DialContext(ctx, "", grpc.WithInsecure(), grpc.WithBlock())
