@@ -1,6 +1,6 @@
 ## axelard tx snapshot deactivateProxy
 
-De-activate the proxy account of the sender
+Deactivate the proxy account of the sender
 
 ```
 axelard tx snapshot deactivateProxy [flags]
