@@ -279,9 +279,10 @@ func (k Keeper) GetProxy(ctx sdk.Context, principal sdk.ValAddress) (addr sdk.Ac
 	if bz == nil {
 		return nil, active
 	}
-	addr = bz[1:]
 
-	return addr, bz[0] == 1
+	addr = bz[1:]
+	active = bz[0] == 1
+	return addr, active
 }
 
 func (k Keeper) setProxyCount(ctx sdk.Context, count int) {
