@@ -12,6 +12,8 @@ type TssConfig struct {
 // DefaultConfig returns the default tss configuration
 func DefaultConfig() TssConfig {
 	return TssConfig{
+		Host:        "localhost",
+		Port:        "50051",
 		DialTimeout: 15 * time.Second,
 	}
 }

@@ -120,7 +120,6 @@ func GetValdCommand() *cobra.Command {
 	flags.AddTxFlagsToCmd(cmd)
 
 	values := map[string]string{
-		flags.FlagChainID:        app.Name,
 		flags.FlagKeyringBackend: "test",
 		flags.FlagGasAdjustment:  "2",
 		flags.FlagBroadcastMode:  flags.BroadcastSync,
@@ -137,10 +136,11 @@ func cleanUp() {
 }
 
 func setPersistentFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().String("tofnd-host", "", "host name for tss daemon")
-	cmd.PersistentFlags().String("tofnd-port", "50051", "port for tss daemon")
+	defaultConf := tssTypes.DefaultConfig()
+	cmd.PersistentFlags().String("tofnd-host", defaultConf.Host, "host name for tss daemon")
+	cmd.PersistentFlags().String("tofnd-port", defaultConf.Port, "port for tss daemon")
 	cmd.PersistentFlags().String("validator-addr", "", "the address of the validator operator")
-	cmd.PersistentFlags().String(flags.FlagChainID, "", "The network chain ID")
+	cmd.PersistentFlags().String(flags.FlagChainID, app.Name, "The network chain ID")
 }
 
 func newHub(logger log.Logger) (*tmEvents.Hub, error) {
