@@ -488,7 +488,7 @@ func (k Keeper) SetPendingTransferOwnership(ctx sdk.Context, chain string, poll 
 	k.getStore(ctx, chain).Set([]byte(pendingTransferOwnershipPrefix+poll.String()), bz)
 }
 
-// DeletePendingDeposit deletes the deposit associated with the given poll
+// DeletePendingTransferOwnership deletes the transfer ownership associated with the given poll
 func (k Keeper) DeletePendingTransferOwnership(ctx sdk.Context, chain string, poll exported.PollMeta) {
 	k.getStore(ctx, chain).Delete([]byte(pendingTransferOwnershipPrefix + poll.String()))
 }
