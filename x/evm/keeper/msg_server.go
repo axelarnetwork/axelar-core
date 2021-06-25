@@ -630,7 +630,6 @@ func (s msgServer) VoteConfirmTransferOwnership(c context.Context, req *types.Vo
 	ctx.EventManager().EmitEvent(
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
-	s.signer.SetKeyReady(ctx, pendingTransferOwnership.NextKeyID)
 	return &types.VoteConfirmTransferOwnershipResponse{}, nil
 }
 
