@@ -427,13 +427,15 @@ func confirmERC20TokenDeployment(txReceipt *geth.Receipt, expectedSymbol string,
 }
 
 func confirmTransferOwnership(txReceipt *geth.Receipt, gatewayAddr, expectedNewOwnerAddr common.Address) error {
-	for _, log := range txReceipt.Logs {
+	for i := len(txReceipt.Logs)-1; i >= 0; i-- {
+		log := txReceipt.Logs[i]
 		// Event is not emitted by the axelar gateway
 		if log.Address != gatewayAddr {
 			continue
 		}
 
-		// Event is not for a ERC20 token deployment
+		// There might be several transfer ownership event. Only interest in the last one.
+		// Event is not for a transfer ownership
 		newOwner, err := decodeTransferOwnershipEvent(log)
 		if err != nil {
 			continue
@@ -441,13 +443,14 @@ func confirmTransferOwnership(txReceipt *geth.Receipt, gatewayAddr, expectedNewO
 
 		// New owner addr does not match
 		if newOwner != expectedNewOwnerAddr {
-			continue
+			return fmt.Errorf("failed to confirm transfer ownership for new owner '%s' at contract address '%s'", expectedNewOwnerAddr.String(), gatewayAddr.String())
 		}
 
 		// if we reach this point, it means that the log matches what we want to verify,
 		// so the function can return with no error
 		return nil
 	}
+
 	return fmt.Errorf("failed to confirm transfer ownership for new owner '%s' at contract address '%s'", expectedNewOwnerAddr.String(), gatewayAddr.String())
 }
 

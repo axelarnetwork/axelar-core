@@ -419,6 +419,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 
 		gatewayAddrBytes = rand.Bytes(common.AddressLength)
 		newOwnerAddrBytes := rand.Bytes(common.AddressLength)
+		prevNewOwnerAddrBytes := rand.Bytes(common.AddressLength)
 		blockNumber := rand.PInt64Gen().Where(func(i int64) bool { return i != 0 }).Next() // restrict to int64 so the block number in the receipt doesn't overflow
 		confHeight := rand.I64Between(0, blockNumber-1)
 
@@ -439,21 +440,21 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 				receipt := &geth.Receipt{
 					BlockNumber: big.NewInt(rand.I64Between(0, blockNumber-confHeight)),
 					Logs: []*geth.Log{
-						/* transfer ownership event from a random address */
-						{
-							Address: common.BytesToAddress(rand.Bytes(common.AddressLength)),
-							Topics: []common.Hash{
-								TransferOwnershipSig,
-								common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
-								common.BytesToHash(common.LeftPadBytes(newOwnerAddrBytes, common.HashLength)),
-							},
-							Data: nil,
-						},
-						/* not a transfer ownership event */
+						/* previous transfer ownership event */
 						{
 							Address: common.BytesToAddress(gatewayAddrBytes),
 							Topics: []common.Hash{
-								common.BytesToHash(rand.Bytes(common.HashLength)),
+								TransferOwnershipSig,
+								common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
+								common.BytesToHash(common.LeftPadBytes(prevNewOwnerAddrBytes, common.HashLength)),
+							},
+							Data: nil,
+						},
+						/* a transfer ownership of our concern */
+						{
+							Address: common.BytesToAddress(gatewayAddrBytes),
+							Topics: []common.Hash{
+								TransferOwnershipSig,
 								common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
 								common.BytesToHash(common.LeftPadBytes(newOwnerAddrBytes, common.HashLength)),
 							},
@@ -468,9 +469,19 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 							},
 							Data: nil,
 						},
-						/* a transfer ownership of our concern */
+						/* not a transfer ownership event */
 						{
 							Address: common.BytesToAddress(gatewayAddrBytes),
+							Topics: []common.Hash{
+								common.BytesToHash(rand.Bytes(common.HashLength)),
+								common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
+								common.BytesToHash(common.LeftPadBytes(newOwnerAddrBytes, common.HashLength)),
+							},
+							Data: nil,
+						},
+						/* transfer ownership event from a random address */
+						{
+							Address: common.BytesToAddress(rand.Bytes(common.AddressLength)),
 							Topics: []common.Hash{
 								TransferOwnershipSig,
 								common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
@@ -557,6 +568,23 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 	}).Repeat(repeats))
 
 	t.Run("receipt status failed", testutils.Func(func(t *testing.T) {
+		setup()
+		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) {
+			receipt := &geth.Receipt{
+				BlockNumber: big.NewInt(1),
+				Logs:        nil,
+				Status:      0,
+			}
+			return receipt, nil
+		}
+		err := mgr.ProcessTransferOwnershipConfirmation(attributes)
+
+		assert.NoError(t, err)
+		assert.Len(t, broadcaster.BroadcastCalls(), 1)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmTransferOwnershipRequest).Confirmed)
+	}).Repeat(repeats))
+
+	t.Run("new owner not last transfer event ", testutils.Func(func(t *testing.T) {
 		setup()
 		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) {
 			receipt := &geth.Receipt{
