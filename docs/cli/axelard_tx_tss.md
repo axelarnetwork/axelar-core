@@ -27,5 +27,5 @@ axelard tx tss [flags]
 
 - [axelard tx](axelard_tx.md)	 - Transactions subcommands
 - [axelard tx tss assign-next](axelard_tx_tss_assign-next.md)	 - Assigns a previously created key with \[keyID\] as the next key for \[chain\]
-- [axelard tx tss rotate](axelard_tx_tss_rotate.md)	 - Rotate the given chain from the old key to the previously assigned one
+- [axelard tx tss rotate](axelard_tx_tss_rotate.md)	 - Rotate the given chain from the old key to the given key
 - [axelard tx tss start-keygen](axelard_tx_tss_start-keygen.md)	 - Initiate threshold key generation protocol

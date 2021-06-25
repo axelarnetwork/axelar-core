@@ -1,9 +1,9 @@
 ## axelard tx tss rotate
 
-Rotate the given chain from the old key to the previously assigned one
+Rotate the given chain from the old key to the given key
 
 ```
-axelard tx tss rotate [chain] [role] [flags]
+axelard tx tss rotate [chain] [role] [keyID] [flags]
 ```
 
 ### Options

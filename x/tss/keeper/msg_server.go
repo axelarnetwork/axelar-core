@@ -184,22 +184,32 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 		return nil, fmt.Errorf("unknown chain")
 	}
 
-	if err := s.Keeper.RotateKey(ctx, chain, req.KeyRole); err != nil {
-		return nil, err
+	_, hasActiveKey := s.Keeper.GetCurrentKeyID(ctx, chain, req.KeyRole)
+	assignedKeyID, hasNextKeyAssigned := s.Keeper.GetNextKeyID(ctx, chain, req.KeyRole)
+
+	switch {
+	case hasActiveKey && !hasNextKeyAssigned:
+		return nil, fmt.Errorf("no key assigned for rotation yet")
+	case hasActiveKey && assignedKeyID != req.KeyID:
+		return nil, fmt.Errorf("expected rotation to key ID %s, got key ID %s", assignedKeyID, req.KeyID)
+	default:
+		if err := s.Keeper.RotateKey(ctx, chain, req.KeyRole); err != nil {
+			return nil, err
+		}
+
+		s.Logger(ctx).Debug(fmt.Sprintf("rotated %s key for chain %s", req.KeyRole.SimpleString(), chain.Name))
+
+		ctx.EventManager().EmitEvent(
+			sdk.NewEvent(
+				sdk.EventTypeMessage,
+				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+				sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
+				sdk.NewAttribute(types.AttributeChain, chain.Name),
+			),
+		)
+
+		return &types.RotateKeyResponse{}, nil
 	}
-
-	s.Logger(ctx).Debug(fmt.Sprintf("rotated %s key for chain %s", req.KeyRole.SimpleString(), chain.Name))
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
-			sdk.NewAttribute(types.AttributeChain, chain.Name),
-		),
-	)
-
-	return &types.RotateKeyResponse{}, nil
 }
 
 func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (*types.VotePubKeyResponse, error) {
