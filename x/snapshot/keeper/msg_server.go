@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -40,11 +41,11 @@ func (s msgServer) RegisterProxy(c context.Context, req *types.RegisterProxyRequ
 	return &types.RegisterProxyResponse{}, nil
 }
 
-func (s msgServer) DeregisterProxy(c context.Context, req *types.DeregisterProxyRequest) (*types.DeregisterProxyResponse, error) {
+func (s msgServer) DeactivateProxy(c context.Context, req *types.DeactivateProxyRequest) (*types.DeactivateProxyResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	proxy := s.Keeper.GetProxy(ctx, req.PrincipalAddr)
+	proxy, _ := s.Keeper.GetProxy(ctx, req.PrincipalAddr)
 
-	if err := s.Keeper.DeregisterProxy(ctx, req.PrincipalAddr); err != nil {
+	if err := s.Keeper.DeactivateProxy(ctx, req.PrincipalAddr); err != nil {
 		return nil, sdkerrors.Wrap(types.ErrSnapshot, err.Error())
 	}
 
@@ -52,12 +53,12 @@ func (s msgServer) DeregisterProxy(c context.Context, req *types.DeregisterProxy
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeDeregisterProxy),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeDeactivateProxy),
 			sdk.NewAttribute(sdk.AttributeKeySender, req.PrincipalAddr.String()),
 			sdk.NewAttribute(types.AttributeAddress, proxy.String()),
 		),
 	)
 
-	s.Keeper.Logger(ctx).Info("validator %s has de-registered proxy %s", req.PrincipalAddr, proxy)
-	return &types.DeregisterProxyResponse{}, nil
+	s.Keeper.Logger(ctx).Info(fmt.Sprintf("validator %s has de-activated proxy %s", req.PrincipalAddr, proxy))
+	return &types.DeactivateProxyResponse{}, nil
 }

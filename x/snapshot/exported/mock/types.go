@@ -240,7 +240,7 @@ var _ exported.Snapshotter = &SnapshotterMock{}
 // 			GetPrincipalFunc: func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
 // 				panic("mock out the GetPrincipal method")
 // 			},
-// 			GetProxyFunc: func(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
+// 			GetProxyFunc: func(ctx sdk.Context, principal sdk.ValAddress) (sdk.AccAddress, bool) {
 // 				panic("mock out the GetProxy method")
 // 			},
 // 			GetSnapshotFunc: func(ctx sdk.Context, counter int64) (exported.Snapshot, bool) {
@@ -266,7 +266,7 @@ type SnapshotterMock struct {
 	GetPrincipalFunc func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
 
 	// GetProxyFunc mocks the GetProxy method.
-	GetProxyFunc func(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress
+	GetProxyFunc func(ctx sdk.Context, principal sdk.ValAddress) (sdk.AccAddress, bool)
 
 	// GetSnapshotFunc mocks the GetSnapshot method.
 	GetSnapshotFunc func(ctx sdk.Context, counter int64) (exported.Snapshot, bool)
@@ -423,7 +423,7 @@ func (mock *SnapshotterMock) GetPrincipalCalls() []struct {
 }
 
 // GetProxy calls GetProxyFunc.
-func (mock *SnapshotterMock) GetProxy(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
+func (mock *SnapshotterMock) GetProxy(ctx sdk.Context, principal sdk.ValAddress) (sdk.AccAddress, bool) {
 	if mock.GetProxyFunc == nil {
 		panic("SnapshotterMock.GetProxyFunc: method is nil but Snapshotter.GetProxy was just called")
 	}

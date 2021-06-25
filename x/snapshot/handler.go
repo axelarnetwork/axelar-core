@@ -19,8 +19,8 @@ func NewHandler(k keeper.Keeper) sdk.Handler {
 		case *types.RegisterProxyRequest:
 			res, err := server.RegisterProxy(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
-		case *types.DeregisterProxyRequest:
-			res, err := server.DeregisterProxy(sdk.WrapSDKContext(ctx), msg)
+		case *types.DeactivateProxyRequest:
+			res, err := server.DeactivateProxy(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,

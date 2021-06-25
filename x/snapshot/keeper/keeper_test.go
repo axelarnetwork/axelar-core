@@ -209,10 +209,13 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		proxy := sdk.AccAddress(rand.Bytes(sdk.AddrLen))
-		err := keeper.RegisterProxy(ctx, principalAddress, proxy)
+		expectedProxy := sdk.AccAddress(rand.Bytes(sdk.AddrLen))
+		err := keeper.RegisterProxy(ctx, principalAddress, expectedProxy)
 
 		assert.NoError(t, err)
+		proxy, active := keeper.GetProxy(ctx, principalAddress)
+		assert.True(t, active)
+		assert.Equal(t, expectedProxy, proxy)
 
 	}).Repeat(20))
 
@@ -233,7 +236,7 @@ func TestKeeper_DeregisterProxy(t *testing.T) {
 		ctx              sdk.Context
 		keeper           Keeper
 		principalAddress sdk.ValAddress
-		proxy            sdk.AccAddress
+		expectedProxy    sdk.AccAddress
 		staker           *mockStaker
 		validators       []staking.ValidatorI
 	)
@@ -245,19 +248,22 @@ func TestKeeper_DeregisterProxy(t *testing.T) {
 		validators = genValidators(t, 10, 100)
 		staker = newMockStaker(validators...)
 		principalAddress = validators[rand.I64Between(0, 10)].GetOperator()
-		proxy = sdk.AccAddress(rand.Bytes(sdk.AddrLen))
+		expectedProxy = sdk.AccAddress(rand.Bytes(sdk.AddrLen))
 
 		keeper = NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("staking"), snapSubspace, staker, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
-		if err := keeper.RegisterProxy(ctx, principalAddress, proxy); err != nil {
+		if err := keeper.RegisterProxy(ctx, principalAddress, expectedProxy); err != nil {
 			panic(fmt.Sprintf("setup failed for unit test: %v", err))
 		}
 	}
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		err := keeper.DeregisterProxy(ctx, principalAddress)
+		err := keeper.DeactivateProxy(ctx, principalAddress)
 
 		assert.NoError(t, err)
+		proxy, active := keeper.GetProxy(ctx, principalAddress)
+		assert.False(t, active)
+		assert.Equal(t, expectedProxy, proxy)
 
 	}).Repeat(20))
 
@@ -265,7 +271,7 @@ func TestKeeper_DeregisterProxy(t *testing.T) {
 		setup()
 
 		address := sdk.ValAddress(rand.Bytes(sdk.AddrLen))
-		err := keeper.DeregisterProxy(ctx, address)
+		err := keeper.DeactivateProxy(ctx, address)
 
 		assert.Error(t, err)
 
@@ -283,7 +289,7 @@ func TestKeeper_DeregisterProxy(t *testing.T) {
 		}
 
 		principalAddress = address
-		err := keeper.DeregisterProxy(ctx, principalAddress)
+		err := keeper.DeactivateProxy(ctx, principalAddress)
 
 		assert.Error(t, err)
 

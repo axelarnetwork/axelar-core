@@ -64,9 +64,10 @@ func IsValidatorActive(ctx sdk.Context, slasher Slasher, validator SDKValidator)
 	return found && !signingInfo.Tombstoned && signingInfo.MissedBlocksCounter <= 0 && !validator.IsJailed()
 }
 
-// HasProxyRegistered returns true if the validator has proxy registered; otherwise, false
+// HasProxyRegistered returns true if the validator has broadcast proxy registered; otherwise, false
 func HasProxyRegistered(ctx sdk.Context, snapshotter Snapshotter, validator SDKValidator) bool {
-	return snapshotter.GetProxy(ctx, validator.GetOperator()) != nil
+	_, active := snapshotter.GetProxy(ctx, validator.GetOperator())
+	return active
 }
 
 // IsValidatorTssSuspended returns true if the validator is suspended from participating TSS ceremonies for committing faulty behaviour; otherwise, false
@@ -112,5 +113,5 @@ type Snapshotter interface {
 	GetSnapshot(ctx sdk.Context, counter int64) (Snapshot, bool)
 	TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (snapshotConsensusPower sdk.Int, totalConsensusPower sdk.Int, err error)
 	GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
-	GetProxy(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress
+	GetProxy(ctx sdk.Context, principal sdk.ValAddress) (addr sdk.AccAddress, active bool)
 }
