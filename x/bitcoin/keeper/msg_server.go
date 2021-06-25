@@ -290,7 +290,7 @@ func (s msgServer) SignPendingTransfers(c context.Context, _ *types.SignPendingT
 	if err != nil {
 		return nil, err
 	}
-
+	setKeyReady(ctx, s.signer)
 	return &types.SignPendingTransfersResponse{}, nil
 }
 
@@ -450,4 +450,12 @@ func startSignInputs(ctx sdk.Context, signer types.Signer, snapshotter types.Sna
 		}
 	}
 	return nil
+}
+
+// setKeyReady sets next master key ready to rotate after a signed consolidation
+func setKeyReady(ctx sdk.Context, signer types.Signer) {
+	pk, found := signer.GetNextKey(ctx, exported.Bitcoin, tss.MasterKey)
+	if found {
+		signer.SetKeyReady(ctx, pk.ID)
+	}
 }

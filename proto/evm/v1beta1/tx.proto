@@ -52,6 +52,21 @@ message ConfirmTokenRequest {
 
 message ConfirmTokenResponse {}
 
+message ConfirmTransferOwnershipRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2;
+  bytes tx_id = 3 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash",
+    (gogoproto.customname) = "TxID"
+  ];
+  bytes new_owner_address = 5
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+}
+
+message ConfirmTransferOwnershipResponse {}
+
 // MsgLink represents the message that links a cross chain address to a burner
 // address
 message LinkRequest {
@@ -164,6 +179,23 @@ message VoteConfirmTokenRequest {
 }
 
 message VoteConfirmTokenResponse { string log = 1; }
+
+// MsgVoteConfirmDeposit represents a message that votes on a deposit
+message VoteConfirmTransferOwnershipRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2;
+  vote.exported.v1beta1.PollMeta poll = 3 [ (gogoproto.nullable) = false ];
+  bytes tx_id = 4 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash",
+    (gogoproto.customname) = "TxID"
+  ];
+  bytes new_owner_address = 5
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  bool confirmed = 6;
+}
+message VoteConfirmTransferOwnershipResponse { string log = 1; }
 
 // MsgSignDeployToken represents the message to sign a deploy token command for
 // AxelarGateway

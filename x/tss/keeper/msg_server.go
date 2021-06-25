@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"strconv"
-
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"strconv"
 
+	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
@@ -158,6 +159,10 @@ func (s msgServer) AssignKey(c context.Context, req *types.AssignKeyRequest) (*t
 		)
 	}
 
+	key, ok := s.GetNextKey(ctx, chain, req.KeyRole)
+	if chain.Name == evm.Ethereum.Name && ok {
+		return nil, fmt.Errorf(" prevous %s %s key %s is not rotated", chain.Name, req.KeyRole.SimpleString(), key.ID)
+	}
 	err := s.AssignNextKey(ctx, chain, req.KeyRole, req.KeyID)
 	if err != nil {
 		return nil, err
@@ -182,6 +187,12 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
 	if !ok {
 		return nil, fmt.Errorf("unknown chain")
+	}
+
+	_, found := s.GetCurrentKeyID(ctx, chain, req.KeyRole)
+	keyID, nextKeyFound := s.GetNextKeyID(ctx, chain, req.KeyRole)
+	if found && nextKeyFound && req.KeyRole == tss.MasterKey && !s.Keeper.IsKeyReady(ctx, keyID) {
+		return nil, fmt.Errorf("%s %s key is not ready to rotate", chain.Name, req.KeyRole.SimpleString())
 	}
 
 	if err := s.Keeper.RotateKey(ctx, chain, req.KeyRole); err != nil {

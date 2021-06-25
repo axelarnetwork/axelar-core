@@ -15,9 +15,11 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&VoteConfirmTokenRequest{}, "evm/VoteConfirmToken", nil)
 	cdc.RegisterConcrete(&VoteConfirmDepositRequest{}, "evm/VoteConfirmDeposit", nil)
 	cdc.RegisterConcrete(&VoteConfirmChainRequest{}, "evm/VoteConfirmChain", nil)
+	cdc.RegisterConcrete(&VoteConfirmTransferOwnershipRequest{}, "evm/VoteConfirmTransferOwnership", nil)
 	cdc.RegisterConcrete(&ConfirmTokenRequest{}, "evm/ConfirmToken", nil)
 	cdc.RegisterConcrete(&ConfirmDepositRequest{}, "evm/ConfirmDeposit", nil)
 	cdc.RegisterConcrete(&ConfirmChainRequest{}, "evm/ConfirmChain", nil)
+	cdc.RegisterConcrete(&ConfirmTransferOwnershipRequest{}, "evm/ConfirmTransferOwnership", nil)
 	cdc.RegisterConcrete(&SignTxRequest{}, "evm/SignTx", nil)
 	cdc.RegisterConcrete(&SignPendingTransfersRequest{}, "evm/SignPendingTransfers", nil)
 	cdc.RegisterConcrete(&SignDeployTokenRequest{}, "evm/SignDeployToken", nil)
@@ -33,9 +35,11 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&VoteConfirmTokenRequest{},
 		&VoteConfirmDepositRequest{},
 		&VoteConfirmChainRequest{},
+		&VoteConfirmTransferOwnershipRequest{},
 		&ConfirmTokenRequest{},
 		&ConfirmDepositRequest{},
 		&ConfirmChainRequest{},
+		&ConfirmTransferOwnershipRequest{},
 		&SignTxRequest{},
 		&SignPendingTransfersRequest{},
 		&SignDeployTokenRequest{},

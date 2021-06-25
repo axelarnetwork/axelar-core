@@ -27,6 +27,7 @@ import (
 var (
 	ERC20TransferSig        = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
 	ERC20TokenDeploymentSig = crypto.Keccak256Hash([]byte("TokenDeployed(string,address)"))
+	TransferOwnershipSig    = crypto.Keccak256Hash([]byte("OwnershipTransferred(address,address)"))
 )
 
 // Mgr manages all communication with Ethereum
@@ -122,6 +123,32 @@ func (mgr Mgr) ProcessTokenConfirmation(attributes []sdk.Attribute) error {
 	})
 
 	msg := evmTypes.NewVoteConfirmTokenRequest(mgr.sender, chain, symbol, poll, txID, confirmed)
+	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, poll.String()))
+	return mgr.broadcaster.Broadcast(msg)
+}
+
+// ProcessTransferOwnershipConfirmation votes on the correctness of an EVM chain transfer ownership
+func (mgr Mgr) ProcessTransferOwnershipConfirmation(attributes []sdk.Attribute) (err error) {
+	chain, txID, gatewayAddr, newOwnerAddr, confHeight, poll, err := parseTransferOwnershipConfirmationParams(mgr.cdc, attributes)
+	if err != nil {
+		return sdkerrors.Wrap(err, "EVM deposit confirmation failed")
+	}
+
+	rpc, found := mgr.rpcs[strings.ToLower(chain)]
+	if !found {
+		return sdkerrors.Wrap(err, fmt.Sprintf("Unable to find an RPC for chain '%s'", chain))
+	}
+
+	confirmed := mgr.validate(rpc, txID, confHeight, func(txReceipt *geth.Receipt) bool {
+		err = confirmTransferOwnership(txReceipt, gatewayAddr, newOwnerAddr)
+		if err != nil {
+			mgr.logger.Debug(sdkerrors.Wrap(err, "transfer ownership confirmation failed").Error())
+			return false
+		}
+		return true
+	})
+
+	msg := evmTypes.NewVoteConfirmTransferOwnershipRequest(mgr.sender, chain, poll, txID, evmTypes.Address(newOwnerAddr), confirmed)
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, poll.String()))
 	return mgr.broadcaster.Broadcast(msg)
 }
@@ -271,6 +298,50 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attri
 	return chain, txID, gatewayAddr, tokenAddr, symbol, confHeight, poll, nil
 }
 
+func parseTransferOwnershipConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (
+	chain string,
+	txID common.Hash,
+	gatewayAddr, newOwnerAddr common.Address,
+	confHeight uint64,
+	poll vote.PollMeta,
+	err error,
+) {
+	var chainFound, txIDFound, gatewayAddrFound, newOwnerAddrFound, confHeightFound, pollFound bool
+	for _, attribute := range attributes {
+		switch attribute.Key {
+		case evmTypes.AttributeKeyChain:
+			chain = attribute.Value
+			chainFound = true
+		case evmTypes.AttributeKeyTxID:
+			txID = common.HexToHash(attribute.Value)
+			txIDFound = true
+		case evmTypes.AttributeKeyGatewayAddress:
+			gatewayAddr = common.HexToAddress(attribute.Value)
+			gatewayAddrFound = true
+		case evmTypes.AttributeKeyAddress:
+			newOwnerAddr = common.HexToAddress(attribute.Value)
+			newOwnerAddrFound = true
+
+		case evmTypes.AttributeKeyConfHeight:
+			confHeight, err = strconv.ParseUint(attribute.Value, 10, 64)
+			if err != nil {
+				return "", common.Hash{}, common.Address{}, common.Address{}, 0, vote.PollMeta{},
+					sdkerrors.Wrap(err, "parsing confirmation height failed")
+			}
+			confHeightFound = true
+		case evmTypes.AttributeKeyPoll:
+			cdc.MustUnmarshalJSON([]byte(attribute.Value), &poll)
+			pollFound = true
+		default:
+		}
+	}
+	if !chainFound || !txIDFound || !gatewayAddrFound || !newOwnerAddrFound || !confHeightFound || !pollFound {
+		return "", common.Hash{}, common.Address{}, common.Address{}, 0, vote.PollMeta{},
+			fmt.Errorf("insufficient event attributes")
+	}
+	return chain, txID, gatewayAddr, newOwnerAddr, confHeight, poll, nil
+}
+
 func (mgr Mgr) validate(rpc rpc.Client, txID common.Hash, confHeight uint64, validateLogs func(txReceipt *geth.Receipt) bool) bool {
 	blockNumber, err := rpc.BlockNumber(context.Background())
 	if err != nil {
@@ -288,7 +359,10 @@ func (mgr Mgr) validate(rpc rpc.Client, txID common.Hash, confHeight uint64, val
 		mgr.logger.Debug(fmt.Sprintf("transaction %s does not have enough confirmations yet", txReceipt.TxHash.String()))
 		return false
 	}
-
+	if !isTxSuccessful(txReceipt) {
+		mgr.logger.Debug(fmt.Sprintf("transaction %s failed", txReceipt.TxHash.String()))
+		return false
+	}
 	return validateLogs(txReceipt)
 }
 
@@ -352,8 +426,37 @@ func confirmERC20TokenDeployment(txReceipt *geth.Receipt, expectedSymbol string,
 	return fmt.Errorf("failed to confirm token deployment for symbol '%s' at contract address '%s'", expectedSymbol, expectedAddr.String())
 }
 
+func confirmTransferOwnership(txReceipt *geth.Receipt, gatewayAddr, expectedNewOwnerAddr common.Address) error {
+	for _, log := range txReceipt.Logs {
+		// Event is not emitted by the axelar gateway
+		if log.Address != gatewayAddr {
+			continue
+		}
+
+		// Event is not for a ERC20 token deployment
+		newOwner, err := decodeTransferOwnershipEvent(log)
+		if err != nil {
+			continue
+		}
+
+		// New owner addr does not match
+		if newOwner != expectedNewOwnerAddr {
+			continue
+		}
+
+		// if we reach this point, it means that the log matches what we want to verify,
+		// so the function can return with no error
+		return nil
+	}
+	return fmt.Errorf("failed to confirm transfer ownership for new owner '%s' at contract address '%s'", expectedNewOwnerAddr.String(), gatewayAddr.String())
+}
+
 func isTxFinalized(txReceipt *geth.Receipt, blockNumber uint64, confirmationHeight uint64) bool {
 	return blockNumber-txReceipt.BlockNumber.Uint64()+1 >= confirmationHeight
+}
+
+func isTxSuccessful(txReceipt *geth.Receipt) bool {
+	return txReceipt.Status == 1
 }
 
 func decodeERC20TransferEvent(log *geth.Log) (common.Address, sdk.Uint, error) {
@@ -390,4 +493,14 @@ func decodeERC20TokenDeploymentEvent(log *geth.Log) (string, common.Address, err
 	}
 
 	return args[0].(string), args[1].(common.Address), nil
+}
+
+func decodeTransferOwnershipEvent(log *geth.Log) (common.Address, error) {
+	if len(log.Topics) != 3 || log.Topics[0] != TransferOwnershipSig {
+		return common.Address{}, fmt.Errorf("event is not for a transfer owernship")
+	}
+
+	newOwnerAddr := common.BytesToAddress(log.Topics[2][:])
+
+	return newOwnerAddr, nil
 }

@@ -5,6 +5,7 @@ package mock
 
 import (
 	"github.com/axelarnetwork/axelar-core/utils"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -615,8 +616,14 @@ var _ exported.Tss = &TssMock{}
 // 			GetMinBondFractionPerShareFunc: func(ctx sdk.Context) utils.Threshold {
 // 				panic("mock out the GetMinBondFractionPerShare method")
 // 			},
+// 			GetNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+// 				panic("mock out the GetNextKey method")
+// 			},
 // 			GetTssSuspendedUntilFunc: func(ctx sdk.Context, validator sdk.ValAddress) int64 {
 // 				panic("mock out the GetTssSuspendedUntil method")
+// 			},
+// 			IsKeyReadyFunc: func(ctx sdk.Context, keyID string) bool {
+// 				panic("mock out the IsKeyReady method")
 // 			},
 // 			SetKeyRequirementFunc: func(ctx sdk.Context, keyRequirement tss.KeyRequirement)  {
 // 				panic("mock out the SetKeyRequirement method")
@@ -631,8 +638,14 @@ type TssMock struct {
 	// GetMinBondFractionPerShareFunc mocks the GetMinBondFractionPerShare method.
 	GetMinBondFractionPerShareFunc func(ctx sdk.Context) utils.Threshold
 
+	// GetNextKeyFunc mocks the GetNextKey method.
+	GetNextKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
+
 	// GetTssSuspendedUntilFunc mocks the GetTssSuspendedUntil method.
 	GetTssSuspendedUntilFunc func(ctx sdk.Context, validator sdk.ValAddress) int64
+
+	// IsKeyReadyFunc mocks the IsKeyReady method.
+	IsKeyReadyFunc func(ctx sdk.Context, keyID string) bool
 
 	// SetKeyRequirementFunc mocks the SetKeyRequirement method.
 	SetKeyRequirementFunc func(ctx sdk.Context, keyRequirement tss.KeyRequirement)
@@ -644,12 +657,28 @@ type TssMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 		}
+		// GetNextKey holds details about calls to the GetNextKey method.
+		GetNextKey []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+			// KeyRole is the keyRole argument value.
+			KeyRole tss.KeyRole
+		}
 		// GetTssSuspendedUntil holds details about calls to the GetTssSuspendedUntil method.
 		GetTssSuspendedUntil []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Validator is the validator argument value.
 			Validator sdk.ValAddress
+		}
+		// IsKeyReady holds details about calls to the IsKeyReady method.
+		IsKeyReady []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// KeyID is the keyID argument value.
+			KeyID string
 		}
 		// SetKeyRequirement holds details about calls to the SetKeyRequirement method.
 		SetKeyRequirement []struct {
@@ -660,7 +689,9 @@ type TssMock struct {
 		}
 	}
 	lockGetMinBondFractionPerShare sync.RWMutex
+	lockGetNextKey                 sync.RWMutex
 	lockGetTssSuspendedUntil       sync.RWMutex
+	lockIsKeyReady                 sync.RWMutex
 	lockSetKeyRequirement          sync.RWMutex
 }
 
@@ -692,6 +723,45 @@ func (mock *TssMock) GetMinBondFractionPerShareCalls() []struct {
 	mock.lockGetMinBondFractionPerShare.RLock()
 	calls = mock.calls.GetMinBondFractionPerShare
 	mock.lockGetMinBondFractionPerShare.RUnlock()
+	return calls
+}
+
+// GetNextKey calls GetNextKeyFunc.
+func (mock *TssMock) GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+	if mock.GetNextKeyFunc == nil {
+		panic("TssMock.GetNextKeyFunc: method is nil but Tss.GetNextKey was just called")
+	}
+	callInfo := struct {
+		Ctx     sdk.Context
+		Chain   nexus.Chain
+		KeyRole tss.KeyRole
+	}{
+		Ctx:     ctx,
+		Chain:   chain,
+		KeyRole: keyRole,
+	}
+	mock.lockGetNextKey.Lock()
+	mock.calls.GetNextKey = append(mock.calls.GetNextKey, callInfo)
+	mock.lockGetNextKey.Unlock()
+	return mock.GetNextKeyFunc(ctx, chain, keyRole)
+}
+
+// GetNextKeyCalls gets all the calls that were made to GetNextKey.
+// Check the length with:
+//     len(mockedTss.GetNextKeyCalls())
+func (mock *TssMock) GetNextKeyCalls() []struct {
+	Ctx     sdk.Context
+	Chain   nexus.Chain
+	KeyRole tss.KeyRole
+} {
+	var calls []struct {
+		Ctx     sdk.Context
+		Chain   nexus.Chain
+		KeyRole tss.KeyRole
+	}
+	mock.lockGetNextKey.RLock()
+	calls = mock.calls.GetNextKey
+	mock.lockGetNextKey.RUnlock()
 	return calls
 }
 
@@ -727,6 +797,41 @@ func (mock *TssMock) GetTssSuspendedUntilCalls() []struct {
 	mock.lockGetTssSuspendedUntil.RLock()
 	calls = mock.calls.GetTssSuspendedUntil
 	mock.lockGetTssSuspendedUntil.RUnlock()
+	return calls
+}
+
+// IsKeyReady calls IsKeyReadyFunc.
+func (mock *TssMock) IsKeyReady(ctx sdk.Context, keyID string) bool {
+	if mock.IsKeyReadyFunc == nil {
+		panic("TssMock.IsKeyReadyFunc: method is nil but Tss.IsKeyReady was just called")
+	}
+	callInfo := struct {
+		Ctx   sdk.Context
+		KeyID string
+	}{
+		Ctx:   ctx,
+		KeyID: keyID,
+	}
+	mock.lockIsKeyReady.Lock()
+	mock.calls.IsKeyReady = append(mock.calls.IsKeyReady, callInfo)
+	mock.lockIsKeyReady.Unlock()
+	return mock.IsKeyReadyFunc(ctx, keyID)
+}
+
+// IsKeyReadyCalls gets all the calls that were made to IsKeyReady.
+// Check the length with:
+//     len(mockedTss.IsKeyReadyCalls())
+func (mock *TssMock) IsKeyReadyCalls() []struct {
+	Ctx   sdk.Context
+	KeyID string
+} {
+	var calls []struct {
+		Ctx   sdk.Context
+		KeyID string
+	}
+	mock.lockIsKeyReady.RLock()
+	calls = mock.calls.IsKeyReady
+	mock.lockIsKeyReady.RUnlock()
 	return calls
 }
 
