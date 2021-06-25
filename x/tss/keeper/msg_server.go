@@ -189,8 +189,10 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 		return nil, fmt.Errorf("unknown chain")
 	}
 
+	// if the current key not set, skip the key ready check
 	_, found := s.GetCurrentKeyID(ctx, chain, req.KeyRole)
 	keyID, nextKeyFound := s.GetNextKeyID(ctx, chain, req.KeyRole)
+	// only master keys are required for the key ready check
 	if found && nextKeyFound && req.KeyRole == tss.MasterKey && !s.Keeper.IsKeyReady(ctx, keyID) {
 		return nil, fmt.Errorf("%s %s key is not ready to rotate", chain.Name, req.KeyRole.SimpleString())
 	}
