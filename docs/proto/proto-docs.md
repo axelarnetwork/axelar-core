@@ -671,7 +671,6 @@ TransferOwnership contains information for a transfer ownership
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `tx_id` | [bytes](#bytes) |  |  |
-| `new_owner_address` | [bytes](#bytes) |  |  |
 | `next_key_id` | [string](#string) |  |  |
 
 
