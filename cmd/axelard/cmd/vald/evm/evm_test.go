@@ -166,6 +166,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 							Data: common.LeftPadBytes(big.NewInt(amount).Bytes(), common.HashLength),
 						},
 					},
+					Status: 1,
 				}
 				return receipt, nil
 			},
@@ -284,6 +285,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 						ERC20TokenDeploymentSig,
 						true,
 					),
+					Status: 1,
 				}
 				return receipt, nil
 			},

@@ -313,6 +313,12 @@ var _ types.Signer = &SignerMock{}
 // 			GetSnapshotCounterForKeyIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) (int64, bool) {
 // 				panic("mock out the GetSnapshotCounterForKeyID method")
 // 			},
+// 			IsKeyReadyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) bool {
+// 				panic("mock out the IsKeyReady method")
+// 			},
+// 			SetKeyReadyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string)  {
+// 				panic("mock out the SetKeyReady method")
+// 			},
 // 			StartSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, initPoll interface{InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
 // 				panic("mock out the StartSign method")
 // 			},
@@ -343,6 +349,12 @@ type SignerMock struct {
 
 	// GetSnapshotCounterForKeyIDFunc mocks the GetSnapshotCounterForKeyID method.
 	GetSnapshotCounterForKeyIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) (int64, bool)
+
+	// IsKeyReadyFunc mocks the IsKeyReady method.
+	IsKeyReadyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) bool
+
+	// SetKeyReadyFunc mocks the SetKeyReady method.
+	SetKeyReadyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string)
 
 	// StartSignFunc mocks the StartSign method.
 	StartSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, initPoll interface {
@@ -406,6 +418,20 @@ type SignerMock struct {
 			// KeyID is the keyID argument value.
 			KeyID string
 		}
+		// IsKeyReady holds details about calls to the IsKeyReady method.
+		IsKeyReady []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// KeyID is the keyID argument value.
+			KeyID string
+		}
+		// SetKeyReady holds details about calls to the SetKeyReady method.
+		SetKeyReady []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// KeyID is the keyID argument value.
+			KeyID string
+		}
 		// StartSign holds details about calls to the StartSign method.
 		StartSign []struct {
 			// Ctx is the ctx argument value.
@@ -431,6 +457,8 @@ type SignerMock struct {
 	lockGetNextKey                 sync.RWMutex
 	lockGetSig                     sync.RWMutex
 	lockGetSnapshotCounterForKeyID sync.RWMutex
+	lockIsKeyReady                 sync.RWMutex
+	lockSetKeyReady                sync.RWMutex
 	lockStartSign                  sync.RWMutex
 }
 
@@ -688,6 +716,76 @@ func (mock *SignerMock) GetSnapshotCounterForKeyIDCalls() []struct {
 	mock.lockGetSnapshotCounterForKeyID.RLock()
 	calls = mock.calls.GetSnapshotCounterForKeyID
 	mock.lockGetSnapshotCounterForKeyID.RUnlock()
+	return calls
+}
+
+// IsKeyReady calls IsKeyReadyFunc.
+func (mock *SignerMock) IsKeyReady(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) bool {
+	if mock.IsKeyReadyFunc == nil {
+		panic("SignerMock.IsKeyReadyFunc: method is nil but Signer.IsKeyReady was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		KeyID string
+	}{
+		Ctx:   ctx,
+		KeyID: keyID,
+	}
+	mock.lockIsKeyReady.Lock()
+	mock.calls.IsKeyReady = append(mock.calls.IsKeyReady, callInfo)
+	mock.lockIsKeyReady.Unlock()
+	return mock.IsKeyReadyFunc(ctx, keyID)
+}
+
+// IsKeyReadyCalls gets all the calls that were made to IsKeyReady.
+// Check the length with:
+//     len(mockedSigner.IsKeyReadyCalls())
+func (mock *SignerMock) IsKeyReadyCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	KeyID string
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		KeyID string
+	}
+	mock.lockIsKeyReady.RLock()
+	calls = mock.calls.IsKeyReady
+	mock.lockIsKeyReady.RUnlock()
+	return calls
+}
+
+// SetKeyReady calls SetKeyReadyFunc.
+func (mock *SignerMock) SetKeyReady(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) {
+	if mock.SetKeyReadyFunc == nil {
+		panic("SignerMock.SetKeyReadyFunc: method is nil but Signer.SetKeyReady was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		KeyID string
+	}{
+		Ctx:   ctx,
+		KeyID: keyID,
+	}
+	mock.lockSetKeyReady.Lock()
+	mock.calls.SetKeyReady = append(mock.calls.SetKeyReady, callInfo)
+	mock.lockSetKeyReady.Unlock()
+	mock.SetKeyReadyFunc(ctx, keyID)
+}
+
+// SetKeyReadyCalls gets all the calls that were made to SetKeyReady.
+// Check the length with:
+//     len(mockedSigner.SetKeyReadyCalls())
+func (mock *SignerMock) SetKeyReadyCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	KeyID string
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		KeyID string
+	}
+	mock.lockSetKeyReady.RLock()
+	calls = mock.calls.SetKeyReady
+	mock.lockSetKeyReady.RUnlock()
 	return calls
 }
 
@@ -1336,6 +1434,9 @@ var _ types.EVMKeeper = &EVMKeeperMock{}
 // 			DeletePendingTokenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta)  {
 // 				panic("mock out the DeletePendingToken method")
 // 			},
+// 			DeletePendingTransferOwnershipFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta)  {
+// 				panic("mock out the DeletePendingTransferOwnership method")
+// 			},
 // 			GetBurnerAddressAndSaltFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error) {
 // 				panic("mock out the GetBurnerAddressAndSalt method")
 // 			},
@@ -1378,6 +1479,9 @@ var _ types.EVMKeeper = &EVMKeeperMock{}
 // 			GetPendingTokenDeploymentFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta) (types.ERC20TokenDeployment, bool) {
 // 				panic("mock out the GetPendingTokenDeployment method")
 // 			},
+// 			GetPendingTransferOwnershipFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta) (types.TransferOwnership, bool) {
+// 				panic("mock out the GetPendingTransferOwnership method")
+// 			},
 // 			GetRequiredConfirmationHeightFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (uint64, bool) {
 // 				panic("mock out the GetRequiredConfirmationHeight method")
 // 			},
@@ -1414,6 +1518,9 @@ var _ types.EVMKeeper = &EVMKeeperMock{}
 // 			SetPendingTokenDeploymentFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta, tokenDeploy types.ERC20TokenDeployment)  {
 // 				panic("mock out the SetPendingTokenDeployment method")
 // 			},
+// 			SetPendingTransferOwnershipFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta, transferOwnership *types.TransferOwnership)  {
+// 				panic("mock out the SetPendingTransferOwnership method")
+// 			},
 // 			SetTokenInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, msg *types.SignDeployTokenRequest)  {
 // 				panic("mock out the SetTokenInfo method")
 // 			},
@@ -1438,6 +1545,9 @@ type EVMKeeperMock struct {
 
 	// DeletePendingTokenFunc mocks the DeletePendingToken method.
 	DeletePendingTokenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta)
+
+	// DeletePendingTransferOwnershipFunc mocks the DeletePendingTransferOwnership method.
+	DeletePendingTransferOwnershipFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta)
 
 	// GetBurnerAddressAndSaltFunc mocks the GetBurnerAddressAndSalt method.
 	GetBurnerAddressAndSaltFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error)
@@ -1481,6 +1591,9 @@ type EVMKeeperMock struct {
 	// GetPendingTokenDeploymentFunc mocks the GetPendingTokenDeployment method.
 	GetPendingTokenDeploymentFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta) (types.ERC20TokenDeployment, bool)
 
+	// GetPendingTransferOwnershipFunc mocks the GetPendingTransferOwnership method.
+	GetPendingTransferOwnershipFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta) (types.TransferOwnership, bool)
+
 	// GetRequiredConfirmationHeightFunc mocks the GetRequiredConfirmationHeight method.
 	GetRequiredConfirmationHeightFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (uint64, bool)
 
@@ -1517,6 +1630,9 @@ type EVMKeeperMock struct {
 	// SetPendingTokenDeploymentFunc mocks the SetPendingTokenDeployment method.
 	SetPendingTokenDeploymentFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta, tokenDeploy types.ERC20TokenDeployment)
 
+	// SetPendingTransferOwnershipFunc mocks the SetPendingTransferOwnership method.
+	SetPendingTransferOwnershipFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta, transferOwnership *types.TransferOwnership)
+
 	// SetTokenInfoFunc mocks the SetTokenInfo method.
 	SetTokenInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, msg *types.SignDeployTokenRequest)
 
@@ -1552,6 +1668,15 @@ type EVMKeeperMock struct {
 		}
 		// DeletePendingToken holds details about calls to the DeletePendingToken method.
 		DeletePendingToken []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain string
+			// Poll is the poll argument value.
+			Poll exported.PollMeta
+		}
+		// DeletePendingTransferOwnership holds details about calls to the DeletePendingTransferOwnership method.
+		DeletePendingTransferOwnership []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
@@ -1677,6 +1802,15 @@ type EVMKeeperMock struct {
 			// Poll is the poll argument value.
 			Poll exported.PollMeta
 		}
+		// GetPendingTransferOwnership holds details about calls to the GetPendingTransferOwnership method.
+		GetPendingTransferOwnership []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain string
+			// Poll is the poll argument value.
+			Poll exported.PollMeta
+		}
 		// GetRequiredConfirmationHeight holds details about calls to the GetRequiredConfirmationHeight method.
 		GetRequiredConfirmationHeight []struct {
 			// Ctx is the ctx argument value.
@@ -1785,6 +1919,17 @@ type EVMKeeperMock struct {
 			// TokenDeploy is the tokenDeploy argument value.
 			TokenDeploy types.ERC20TokenDeployment
 		}
+		// SetPendingTransferOwnership holds details about calls to the SetPendingTransferOwnership method.
+		SetPendingTransferOwnership []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain string
+			// Poll is the poll argument value.
+			Poll exported.PollMeta
+			// TransferOwnership is the transferOwnership argument value.
+			TransferOwnership *types.TransferOwnership
+		}
 		// SetTokenInfo holds details about calls to the SetTokenInfo method.
 		SetTokenInfo []struct {
 			// Ctx is the ctx argument value.
@@ -1806,38 +1951,41 @@ type EVMKeeperMock struct {
 			Tx *ethTypes.Transaction
 		}
 	}
-	lockDeleteDeposit                 sync.RWMutex
-	lockDeletePendingChain            sync.RWMutex
-	lockDeletePendingDeposit          sync.RWMutex
-	lockDeletePendingToken            sync.RWMutex
-	lockGetBurnerAddressAndSalt       sync.RWMutex
-	lockGetBurnerInfo                 sync.RWMutex
-	lockGetChainIDByNetwork           sync.RWMutex
-	lockGetConfirmedDeposits          sync.RWMutex
-	lockGetDeposit                    sync.RWMutex
-	lockGetGatewayAddress             sync.RWMutex
-	lockGetGatewayByteCodes           sync.RWMutex
-	lockGetHashToSign                 sync.RWMutex
-	lockGetNetwork                    sync.RWMutex
-	lockGetNetworkByID                sync.RWMutex
-	lockGetParams                     sync.RWMutex
-	lockGetPendingChain               sync.RWMutex
-	lockGetPendingDeposit             sync.RWMutex
-	lockGetPendingTokenDeployment     sync.RWMutex
-	lockGetRequiredConfirmationHeight sync.RWMutex
-	lockGetRevoteLockingPeriod        sync.RWMutex
-	lockGetTokenAddress               sync.RWMutex
-	lockLogger                        sync.RWMutex
-	lockSetBurnerInfo                 sync.RWMutex
-	lockSetCommandData                sync.RWMutex
-	lockSetDeposit                    sync.RWMutex
-	lockSetGatewayAddress             sync.RWMutex
-	lockSetParams                     sync.RWMutex
-	lockSetPendingChain               sync.RWMutex
-	lockSetPendingDeposit             sync.RWMutex
-	lockSetPendingTokenDeployment     sync.RWMutex
-	lockSetTokenInfo                  sync.RWMutex
-	lockSetUnsignedTx                 sync.RWMutex
+	lockDeleteDeposit                  sync.RWMutex
+	lockDeletePendingChain             sync.RWMutex
+	lockDeletePendingDeposit           sync.RWMutex
+	lockDeletePendingToken             sync.RWMutex
+	lockDeletePendingTransferOwnership sync.RWMutex
+	lockGetBurnerAddressAndSalt        sync.RWMutex
+	lockGetBurnerInfo                  sync.RWMutex
+	lockGetChainIDByNetwork            sync.RWMutex
+	lockGetConfirmedDeposits           sync.RWMutex
+	lockGetDeposit                     sync.RWMutex
+	lockGetGatewayAddress              sync.RWMutex
+	lockGetGatewayByteCodes            sync.RWMutex
+	lockGetHashToSign                  sync.RWMutex
+	lockGetNetwork                     sync.RWMutex
+	lockGetNetworkByID                 sync.RWMutex
+	lockGetParams                      sync.RWMutex
+	lockGetPendingChain                sync.RWMutex
+	lockGetPendingDeposit              sync.RWMutex
+	lockGetPendingTokenDeployment      sync.RWMutex
+	lockGetPendingTransferOwnership    sync.RWMutex
+	lockGetRequiredConfirmationHeight  sync.RWMutex
+	lockGetRevoteLockingPeriod         sync.RWMutex
+	lockGetTokenAddress                sync.RWMutex
+	lockLogger                         sync.RWMutex
+	lockSetBurnerInfo                  sync.RWMutex
+	lockSetCommandData                 sync.RWMutex
+	lockSetDeposit                     sync.RWMutex
+	lockSetGatewayAddress              sync.RWMutex
+	lockSetParams                      sync.RWMutex
+	lockSetPendingChain                sync.RWMutex
+	lockSetPendingDeposit              sync.RWMutex
+	lockSetPendingTokenDeployment      sync.RWMutex
+	lockSetPendingTransferOwnership    sync.RWMutex
+	lockSetTokenInfo                   sync.RWMutex
+	lockSetUnsignedTx                  sync.RWMutex
 }
 
 // DeleteDeposit calls DeleteDepositFunc.
@@ -1989,6 +2137,45 @@ func (mock *EVMKeeperMock) DeletePendingTokenCalls() []struct {
 	mock.lockDeletePendingToken.RLock()
 	calls = mock.calls.DeletePendingToken
 	mock.lockDeletePendingToken.RUnlock()
+	return calls
+}
+
+// DeletePendingTransferOwnership calls DeletePendingTransferOwnershipFunc.
+func (mock *EVMKeeperMock) DeletePendingTransferOwnership(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta) {
+	if mock.DeletePendingTransferOwnershipFunc == nil {
+		panic("EVMKeeperMock.DeletePendingTransferOwnershipFunc: method is nil but EVMKeeper.DeletePendingTransferOwnership was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain string
+		Poll  exported.PollMeta
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+		Poll:  poll,
+	}
+	mock.lockDeletePendingTransferOwnership.Lock()
+	mock.calls.DeletePendingTransferOwnership = append(mock.calls.DeletePendingTransferOwnership, callInfo)
+	mock.lockDeletePendingTransferOwnership.Unlock()
+	mock.DeletePendingTransferOwnershipFunc(ctx, chain, poll)
+}
+
+// DeletePendingTransferOwnershipCalls gets all the calls that were made to DeletePendingTransferOwnership.
+// Check the length with:
+//     len(mockedEVMKeeper.DeletePendingTransferOwnershipCalls())
+func (mock *EVMKeeperMock) DeletePendingTransferOwnershipCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain string
+	Poll  exported.PollMeta
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain string
+		Poll  exported.PollMeta
+	}
+	mock.lockDeletePendingTransferOwnership.RLock()
+	calls = mock.calls.DeletePendingTransferOwnership
+	mock.lockDeletePendingTransferOwnership.RUnlock()
 	return calls
 }
 
@@ -2522,6 +2709,45 @@ func (mock *EVMKeeperMock) GetPendingTokenDeploymentCalls() []struct {
 	return calls
 }
 
+// GetPendingTransferOwnership calls GetPendingTransferOwnershipFunc.
+func (mock *EVMKeeperMock) GetPendingTransferOwnership(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta) (types.TransferOwnership, bool) {
+	if mock.GetPendingTransferOwnershipFunc == nil {
+		panic("EVMKeeperMock.GetPendingTransferOwnershipFunc: method is nil but EVMKeeper.GetPendingTransferOwnership was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain string
+		Poll  exported.PollMeta
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+		Poll:  poll,
+	}
+	mock.lockGetPendingTransferOwnership.Lock()
+	mock.calls.GetPendingTransferOwnership = append(mock.calls.GetPendingTransferOwnership, callInfo)
+	mock.lockGetPendingTransferOwnership.Unlock()
+	return mock.GetPendingTransferOwnershipFunc(ctx, chain, poll)
+}
+
+// GetPendingTransferOwnershipCalls gets all the calls that were made to GetPendingTransferOwnership.
+// Check the length with:
+//     len(mockedEVMKeeper.GetPendingTransferOwnershipCalls())
+func (mock *EVMKeeperMock) GetPendingTransferOwnershipCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain string
+	Poll  exported.PollMeta
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain string
+		Poll  exported.PollMeta
+	}
+	mock.lockGetPendingTransferOwnership.RLock()
+	calls = mock.calls.GetPendingTransferOwnership
+	mock.lockGetPendingTransferOwnership.RUnlock()
+	return calls
+}
+
 // GetRequiredConfirmationHeight calls GetRequiredConfirmationHeightFunc.
 func (mock *EVMKeeperMock) GetRequiredConfirmationHeight(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (uint64, bool) {
 	if mock.GetRequiredConfirmationHeightFunc == nil {
@@ -2987,6 +3213,49 @@ func (mock *EVMKeeperMock) SetPendingTokenDeploymentCalls() []struct {
 	mock.lockSetPendingTokenDeployment.RLock()
 	calls = mock.calls.SetPendingTokenDeployment
 	mock.lockSetPendingTokenDeployment.RUnlock()
+	return calls
+}
+
+// SetPendingTransferOwnership calls SetPendingTransferOwnershipFunc.
+func (mock *EVMKeeperMock) SetPendingTransferOwnership(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta, transferOwnership *types.TransferOwnership) {
+	if mock.SetPendingTransferOwnershipFunc == nil {
+		panic("EVMKeeperMock.SetPendingTransferOwnershipFunc: method is nil but EVMKeeper.SetPendingTransferOwnership was just called")
+	}
+	callInfo := struct {
+		Ctx               github_com_cosmos_cosmos_sdk_types.Context
+		Chain             string
+		Poll              exported.PollMeta
+		TransferOwnership *types.TransferOwnership
+	}{
+		Ctx:               ctx,
+		Chain:             chain,
+		Poll:              poll,
+		TransferOwnership: transferOwnership,
+	}
+	mock.lockSetPendingTransferOwnership.Lock()
+	mock.calls.SetPendingTransferOwnership = append(mock.calls.SetPendingTransferOwnership, callInfo)
+	mock.lockSetPendingTransferOwnership.Unlock()
+	mock.SetPendingTransferOwnershipFunc(ctx, chain, poll, transferOwnership)
+}
+
+// SetPendingTransferOwnershipCalls gets all the calls that were made to SetPendingTransferOwnership.
+// Check the length with:
+//     len(mockedEVMKeeper.SetPendingTransferOwnershipCalls())
+func (mock *EVMKeeperMock) SetPendingTransferOwnershipCalls() []struct {
+	Ctx               github_com_cosmos_cosmos_sdk_types.Context
+	Chain             string
+	Poll              exported.PollMeta
+	TransferOwnership *types.TransferOwnership
+} {
+	var calls []struct {
+		Ctx               github_com_cosmos_cosmos_sdk_types.Context
+		Chain             string
+		Poll              exported.PollMeta
+		TransferOwnership *types.TransferOwnership
+	}
+	mock.lockSetPendingTransferOwnership.RLock()
+	calls = mock.calls.SetPendingTransferOwnership
+	mock.lockSetPendingTransferOwnership.RUnlock()
 	return calls
 }
 

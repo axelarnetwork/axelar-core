@@ -30,6 +30,7 @@ axelard tx evm [flags]
 - [axelard tx evm confirm-chain](axelard_tx_evm_confirm-chain.md)	 - Confirm an EVM chain for a given name and native asset
 - [axelard tx evm confirm-erc20-deposit](axelard_tx_evm_confirm-erc20-deposit.md)	 - Confirm an ERC20 deposit in an EVM chain transaction that sent given amount of token to a burner address
 - [axelard tx evm confirm-erc20-token](axelard_tx_evm_confirm-erc20-token.md)	 - Confirm an ERC20 token deployment in an EVM chain transaction for a given symbol of token and gateway address
+- [axelard tx evm confirm-transfer-ownership](axelard_tx_evm_confirm-transfer-ownership.md)	 - Confirm a transfer ownership in an EVM chain transaction
 - [axelard tx evm link](axelard_tx_evm_link.md)	 - Link a cross chain address to an EVM chain address created by Axelar
 - [axelard tx evm sign](axelard_tx_evm_sign.md)	 - sign a raw EVM chain transaction
 - [axelard tx evm sign-burn-tokens](axelard_tx_evm_sign-burn-tokens.md)	 - Sign burn command for all confirmed token deposits in an EVM chain

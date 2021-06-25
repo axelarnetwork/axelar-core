@@ -48,3 +48,16 @@ message ERC20TokenDeployment {
   string token_address = 2
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
 }
+
+// TransferOwnership contains information for a transfer ownership
+message TransferOwnership {
+  bytes tx_id = 1 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash",
+    (gogoproto.customname) = "TxID"
+  ];
+
+  bytes new_owner_address = 2
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  string next_key_id = 3 [ (gogoproto.customname) = "NextKeyID" ];
+}

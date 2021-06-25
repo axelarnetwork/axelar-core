@@ -53,6 +53,9 @@ type EVMKeeper interface {
 	DeletePendingChain(ctx sdk.Context, chain string)
 	SetPendingChain(ctx sdk.Context, chain nexus.Chain)
 	GetPendingChain(ctx sdk.Context, chain string) (nexus.Chain, bool)
+	GetPendingTransferOwnership(ctx sdk.Context, chain string, poll vote.PollMeta) (TransferOwnership, bool)
+	SetPendingTransferOwnership(ctx sdk.Context, chain string, poll vote.PollMeta, transferOwnership *TransferOwnership)
+	DeletePendingTransferOwnership(ctx sdk.Context, chain string, poll vote.PollMeta)
 	GetNetworkByID(ctx sdk.Context, chain string, id *big.Int) (string, bool)
 	GetChainIDByNetwork(ctx sdk.Context, chain, network string) *big.Int
 }
@@ -107,6 +110,8 @@ type Signer interface {
 	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 	GetKeyForSigID(ctx sdk.Context, sigID string) (tss.Key, bool)
 	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool)
+	IsKeyReady(ctx sdk.Context, keyID string) bool
+	SetKeyReady(ctx sdk.Context, keyID string)
 }
 
 // Snapshotter provides access to the snapshot functionality

@@ -42,6 +42,8 @@ const (
 	symbolPrefix           = "symbol_"
 	burnerAddrPrefix       = "burnerAddr_"
 	tokenAddrPrefix        = "tokenAddr_"
+
+	pendingTransferOwnershipPrefix = "pending_transfer_ownership_"
 )
 
 // Keeper represents the EVM keeper
@@ -478,6 +480,29 @@ func (k Keeper) SetDeposit(ctx sdk.Context, chain string, deposit types.ERC20Dep
 func (k Keeper) DeleteDeposit(ctx sdk.Context, chain string, deposit types.ERC20Deposit) {
 	k.getStore(ctx, chain).Delete([]byte(confirmedDepositPrefix + deposit.TxID.Hex() + "_" + deposit.BurnerAddress.Hex()))
 	k.getStore(ctx, chain).Delete([]byte(burnedDepositPrefix + deposit.TxID.Hex() + "_" + deposit.BurnerAddress.Hex()))
+}
+
+// SetPendingTransferOwnership stores a pending transfer ownership
+func (k Keeper) SetPendingTransferOwnership(ctx sdk.Context, chain string, poll exported.PollMeta, transferOwnership *types.TransferOwnership) {
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(transferOwnership)
+	k.getStore(ctx, chain).Set([]byte(pendingTransferOwnershipPrefix+poll.String()), bz)
+}
+
+// DeletePendingDeposit deletes the deposit associated with the given poll
+func (k Keeper) DeletePendingTransferOwnership(ctx sdk.Context, chain string, poll exported.PollMeta) {
+	k.getStore(ctx, chain).Delete([]byte(pendingTransferOwnershipPrefix + poll.String()))
+}
+
+// GetPendingTransferOwnership returns the transfer ownership associated with the given poll
+func (k Keeper) GetPendingTransferOwnership(ctx sdk.Context, chain string, poll exported.PollMeta) (types.TransferOwnership, bool) {
+	bz := k.getStore(ctx, chain).Get([]byte(pendingTransferOwnershipPrefix + poll.String()))
+	if bz == nil {
+		return types.TransferOwnership{}, false
+	}
+	var transferOwnership types.TransferOwnership
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &transferOwnership)
+
+	return transferOwnership, true
 }
 
 // GetNetworkByID returns the network name for a given chain and network ID
