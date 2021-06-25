@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -24,7 +23,6 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/app"
@@ -42,6 +40,9 @@ import (
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
+
+// RWALL grants rw-rw-rw- file permissions
+const RWALL = 0555
 
 var once sync.Once
 var cleanupCommands []func()
@@ -87,7 +88,12 @@ func GetValdCommand() *cobra.Command {
 				return err
 			}
 
-			axConf, valAddr := loadConfig()
+			axConf := app.DefaultConfig()
+			if err := serverCtx.Viper.Unmarshal(&axConf); err != nil {
+				panic(err)
+			}
+
+			valAddr := serverCtx.Viper.GetString("validator-addr")
 			if valAddr == "" {
 				return fmt.Errorf("validator address not set")
 			}
@@ -95,7 +101,7 @@ func GetValdCommand() *cobra.Command {
 			valdHome := filepath.Join(cliCtx.HomeDir, "vald")
 			if _, err := os.Stat(valdHome); os.IsNotExist(err) {
 				logger.Info(fmt.Sprintf("folder %s does not exist, creating...", valdHome))
-				err := os.Mkdir(valdHome, 0755)
+				err := os.Mkdir(valdHome, RWALL)
 				if err != nil {
 					return err
 				}
@@ -130,18 +136,11 @@ func cleanUp() {
 	}
 }
 
-func setPersistentFlags(rootCmd *cobra.Command) {
-	rootCmd.PersistentFlags().String("tofnd-host", "", "host name for tss daemon")
-	_ = viper.BindPFlag("tofnd_host", rootCmd.PersistentFlags().Lookup("tofnd-host"))
-
-	rootCmd.PersistentFlags().String("tofnd-port", "50051", "port for tss daemon")
-	_ = viper.BindPFlag("tofnd_port", rootCmd.PersistentFlags().Lookup("tofnd-port"))
-
-	rootCmd.PersistentFlags().String("validator-addr", "", "the address of the validator operator")
-	_ = viper.BindPFlag("validator-addr", rootCmd.PersistentFlags().Lookup("validator-addr"))
-
-	rootCmd.PersistentFlags().String(flags.FlagChainID, "", "The network chain ID")
-	_ = viper.BindPFlag(flags.FlagChainID, rootCmd.PersistentFlags().Lookup(flags.FlagChainID))
+func setPersistentFlags(cmd *cobra.Command) {
+	cmd.PersistentFlags().String("tofnd-host", "", "host name for tss daemon")
+	cmd.PersistentFlags().String("tofnd-port", "50051", "port for tss daemon")
+	cmd.PersistentFlags().String("validator-addr", "", "the address of the validator operator")
+	cmd.PersistentFlags().String(flags.FlagChainID, "", "The network chain ID")
 }
 
 func newHub(logger log.Logger) (*tmEvents.Hub, error) {
@@ -152,24 +151,6 @@ func newHub(logger log.Logger) (*tmEvents.Hub, error) {
 
 	hub := tmEvents.NewHub(c, logger)
 	return &hub, nil
-}
-
-func loadConfig() (app.Config, string) {
-	// need to merge in cli config because axelard now has its own broadcasting client
-	conf := app.DefaultConfig()
-	cliCfgFile := path.Join(app.DefaultNodeHome, "config", "config.toml")
-	viper.SetConfigFile(cliCfgFile)
-	if err := viper.MergeInConfig(); err != nil {
-		panic(err)
-	}
-
-	if err := viper.Unmarshal(&conf); err != nil {
-		panic(err)
-	}
-	// for some reason gas is not being filled
-	conf.Gas = viper.GetUint64("gas")
-
-	return conf, viper.GetString("validator-addr")
 }
 
 func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmEvents.Hub, txf tx.Factory, axelarCfg app.Config, valAddr string, stateSource events.ReadWriter, logger log.Logger) {
@@ -264,11 +245,10 @@ func createBroadcaster(ctx sdkClient.Context, txf tx.Factory, axelarCfg app.Conf
 
 func createTSSMgr(broadcaster broadcasterTypes.Broadcaster, sender sdk.AccAddress, genesisState *tssTypes.GenesisState, axelarCfg app.Config, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
 	create := func() (*tss.Mgr, error) {
-		gg20client, err := tss.CreateTOFNDClient(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, logger)
+		gg20client, err := tss.CreateTOFNDClient(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, axelarCfg.TssConfig.DialTimeout, logger)
 		if err != nil {
 			return nil, err
 		}
-
 		tssMgr := tss.NewMgr(gg20client, 2*time.Hour, valAddr, broadcaster, sender, genesisState.Params.TimeoutInBlocks, logger, cdc)
 
 		return tssMgr, nil
@@ -277,6 +257,7 @@ func createTSSMgr(broadcaster broadcasterTypes.Broadcaster, sender sdk.AccAddres
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "failed to create tss manager"))
 	}
+
 	return mgr
 }
 
@@ -324,9 +305,6 @@ func createEVMMgr(axelarCfg app.Config, b broadcasterTypes.Broadcaster, sender s
 	ethMgr := evm.NewMgr(rpcs, b, sender, logger, cdc)
 	return ethMgr
 }
-
-// RWALL grants rw-rw-rw- file permissions
-const RWALL = 0555
 
 // RWFile implements the ReadWriter interface for an underlying file
 type RWFile struct {

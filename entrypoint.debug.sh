@@ -93,6 +93,6 @@ if [ "$CORE_CONTINUE" != true ]; then
 fi
 
 dlv --listen=:2345 --headless=true ${CORE_CONTINUE:+--continue} --api-version=2 --accept-multiclient exec \
-  /usr/local/bin/axelard -- start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} &
+  /usr/local/bin/axelard -- start &
 
 wait
