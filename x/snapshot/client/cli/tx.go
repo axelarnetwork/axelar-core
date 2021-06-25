@@ -62,7 +62,7 @@ func GetCmdRegisterProxy() *cobra.Command {
 func GetCmdDeregisterProxy() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "deactivateProxy",
-		Short: "De-activate the proxy account of the sender",
+		Short: "Deactivate the proxy account of the sender",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
