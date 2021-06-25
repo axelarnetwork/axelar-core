@@ -76,7 +76,7 @@ func deactivateProxyHandlerFn(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewDeregisterProxyRequest(sdk.ValAddress(fromAddr))
+		msg := types.NewDeactivateProxyRequest(sdk.ValAddress(fromAddr))
 		tx.WriteGeneratedTxResponse(cliCtx, w, baseReq, msg)
 	}
 }

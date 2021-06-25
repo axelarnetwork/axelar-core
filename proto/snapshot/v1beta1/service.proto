@@ -21,11 +21,11 @@ service MsgService {
     };
   }
 
-  // DeregisterProxy defines a method for deregistering a proxy account.
-  rpc DeregisterProxy(DeregisterProxyRequest)
-      returns (DeregisterProxyResponse) {
+  // DeactivateProxy defines a method for deregistering a proxy account.
+  rpc DeactivateProxy(DeactivateProxyRequest)
+      returns (DeactivateProxyResponse) {
     option (google.api.http) = {
-      post : "/axelar/snapshot/deregisterProxy"
+      post : "/axelar/snapshot/deactivateProxy"
       body : "*"
     };
   }

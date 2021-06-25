@@ -70,7 +70,7 @@ func GetCmdDeregisterProxy() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewDeregisterProxyRequest(sdk.ValAddress(clientCtx.FromAddress))
+			msg := types.NewDeactivateProxyRequest(sdk.ValAddress(clientCtx.FromAddress))
 			return legacyTx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}

@@ -40,7 +40,7 @@ func (s msgServer) RegisterProxy(c context.Context, req *types.RegisterProxyRequ
 	return &types.RegisterProxyResponse{}, nil
 }
 
-func (s msgServer) DeregisterProxy(c context.Context, req *types.DeregisterProxyRequest) (*types.DeregisterProxyResponse, error) {
+func (s msgServer) DeactivateProxy(c context.Context, req *types.DeactivateProxyRequest) (*types.DeactivateProxyResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	proxy, _ := s.Keeper.GetProxy(ctx, req.PrincipalAddr)
 
@@ -59,5 +59,5 @@ func (s msgServer) DeregisterProxy(c context.Context, req *types.DeregisterProxy
 	)
 
 	s.Keeper.Logger(ctx).Info("validator %s has de-registered proxy %s", req.PrincipalAddr, proxy)
-	return &types.DeregisterProxyResponse{}, nil
+	return &types.DeactivateProxyResponse{}, nil
 }

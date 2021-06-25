@@ -99,22 +99,22 @@ func (m *RegisterProxyResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_RegisterProxyResponse proto.InternalMessageInfo
 
-type DeregisterProxyRequest struct {
+type DeactivateProxyRequest struct {
 	PrincipalAddr github_com_cosmos_cosmos_sdk_types.ValAddress `protobuf:"bytes,1,opt,name=principal_addr,json=principalAddr,proto3,casttype=github.com/cosmos/cosmos-sdk/types.ValAddress" json:"principal_addr,omitempty"`
 }
 
-func (m *DeregisterProxyRequest) Reset()         { *m = DeregisterProxyRequest{} }
-func (m *DeregisterProxyRequest) String() string { return proto.CompactTextString(m) }
-func (*DeregisterProxyRequest) ProtoMessage()    {}
-func (*DeregisterProxyRequest) Descriptor() ([]byte, []int) {
+func (m *DeactivateProxyRequest) Reset()         { *m = DeactivateProxyRequest{} }
+func (m *DeactivateProxyRequest) String() string { return proto.CompactTextString(m) }
+func (*DeactivateProxyRequest) ProtoMessage()    {}
+func (*DeactivateProxyRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a4923e082b209674, []int{2}
 }
-func (m *DeregisterProxyRequest) XXX_Unmarshal(b []byte) error {
+func (m *DeactivateProxyRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeregisterProxyRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeactivateProxyRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_DeregisterProxyRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_DeactivateProxyRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -124,33 +124,33 @@ func (m *DeregisterProxyRequest) XXX_Marshal(b []byte, deterministic bool) ([]by
 		return b[:n], nil
 	}
 }
-func (m *DeregisterProxyRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeregisterProxyRequest.Merge(m, src)
+func (m *DeactivateProxyRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeactivateProxyRequest.Merge(m, src)
 }
-func (m *DeregisterProxyRequest) XXX_Size() int {
+func (m *DeactivateProxyRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *DeregisterProxyRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_DeregisterProxyRequest.DiscardUnknown(m)
+func (m *DeactivateProxyRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeactivateProxyRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_DeregisterProxyRequest proto.InternalMessageInfo
+var xxx_messageInfo_DeactivateProxyRequest proto.InternalMessageInfo
 
-type DeregisterProxyResponse struct {
+type DeactivateProxyResponse struct {
 }
 
-func (m *DeregisterProxyResponse) Reset()         { *m = DeregisterProxyResponse{} }
-func (m *DeregisterProxyResponse) String() string { return proto.CompactTextString(m) }
-func (*DeregisterProxyResponse) ProtoMessage()    {}
-func (*DeregisterProxyResponse) Descriptor() ([]byte, []int) {
+func (m *DeactivateProxyResponse) Reset()         { *m = DeactivateProxyResponse{} }
+func (m *DeactivateProxyResponse) String() string { return proto.CompactTextString(m) }
+func (*DeactivateProxyResponse) ProtoMessage()    {}
+func (*DeactivateProxyResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a4923e082b209674, []int{3}
 }
-func (m *DeregisterProxyResponse) XXX_Unmarshal(b []byte) error {
+func (m *DeactivateProxyResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeregisterProxyResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeactivateProxyResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_DeregisterProxyResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_DeactivateProxyResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -160,49 +160,49 @@ func (m *DeregisterProxyResponse) XXX_Marshal(b []byte, deterministic bool) ([]b
 		return b[:n], nil
 	}
 }
-func (m *DeregisterProxyResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeregisterProxyResponse.Merge(m, src)
+func (m *DeactivateProxyResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeactivateProxyResponse.Merge(m, src)
 }
-func (m *DeregisterProxyResponse) XXX_Size() int {
+func (m *DeactivateProxyResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *DeregisterProxyResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_DeregisterProxyResponse.DiscardUnknown(m)
+func (m *DeactivateProxyResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeactivateProxyResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_DeregisterProxyResponse proto.InternalMessageInfo
+var xxx_messageInfo_DeactivateProxyResponse proto.InternalMessageInfo
 
 func init() {
 	proto.RegisterType((*RegisterProxyRequest)(nil), "snapshot.v1beta1.RegisterProxyRequest")
 	proto.RegisterType((*RegisterProxyResponse)(nil), "snapshot.v1beta1.RegisterProxyResponse")
-	proto.RegisterType((*DeregisterProxyRequest)(nil), "snapshot.v1beta1.DeregisterProxyRequest")
-	proto.RegisterType((*DeregisterProxyResponse)(nil), "snapshot.v1beta1.DeregisterProxyResponse")
+	proto.RegisterType((*DeactivateProxyRequest)(nil), "snapshot.v1beta1.DeactivateProxyRequest")
+	proto.RegisterType((*DeactivateProxyResponse)(nil), "snapshot.v1beta1.DeactivateProxyResponse")
 }
 
 func init() { proto.RegisterFile("snapshot/v1beta1/tx.proto", fileDescriptor_a4923e082b209674) }
 
 var fileDescriptor_a4923e082b209674 = []byte{
-	// 312 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x92, 0xcf, 0x4a, 0x03, 0x31,
-	0x10, 0x87, 0x77, 0x3d, 0x08, 0x06, 0x15, 0x29, 0xd5, 0xda, 0x22, 0x51, 0xf6, 0xe4, 0xa5, 0x1b,
-	0x8a, 0xf8, 0x00, 0x2d, 0x3e, 0x40, 0xa9, 0x20, 0xe2, 0x45, 0xd2, 0xdd, 0x61, 0x1b, 0xba, 0xcd,
-	0xc4, 0x4c, 0xaa, 0xdb, 0xb7, 0xf0, 0x99, 0x3c, 0xf5, 0xd8, 0xa3, 0x27, 0xd1, 0xf6, 0x2d, 0x3c,
-	0xc9, 0xfe, 0x69, 0x11, 0x3d, 0x79, 0xf1, 0x94, 0x4c, 0xbe, 0xf0, 0xfd, 0x66, 0x48, 0x58, 0x93,
-	0xb4, 0x34, 0x34, 0x42, 0x27, 0x1e, 0x3b, 0x43, 0x70, 0xb2, 0x23, 0x5c, 0x16, 0x1a, 0x8b, 0x0e,
-	0x6b, 0x07, 0x6b, 0x14, 0x56, 0xa8, 0x55, 0x4f, 0x30, 0xc1, 0x02, 0x8a, 0x7c, 0x57, 0xde, 0x6b,
-	0x9d, 0x24, 0x88, 0x49, 0x0a, 0x42, 0x1a, 0x25, 0xa4, 0xd6, 0xe8, 0xa4, 0x53, 0xa8, 0xa9, 0xa4,
-	0xc1, 0x8b, 0xcf, 0xea, 0x03, 0x48, 0x14, 0x39, 0xb0, 0x7d, 0x8b, 0xd9, 0x6c, 0x00, 0x0f, 0x53,
-	0x20, 0x57, 0xbb, 0x65, 0xfb, 0xc6, 0x2a, 0x1d, 0x29, 0x23, 0xd3, 0x7b, 0x19, 0xc7, 0xf6, 0xd8,
-	0x3f, 0xf3, 0xcf, 0x77, 0x7b, 0x9d, 0xcf, 0xb7, 0xd3, 0x76, 0xa2, 0xdc, 0x68, 0x3a, 0x0c, 0x23,
-	0x9c, 0x88, 0x08, 0x69, 0x82, 0x54, 0x2d, 0x6d, 0x8a, 0xc7, 0xc2, 0xcd, 0x0c, 0x50, 0x78, 0x23,
-	0xd3, 0x6e, 0x1c, 0x5b, 0x20, 0x1a, 0xec, 0x6d, 0x44, 0xf9, 0x49, 0xad, 0xcf, 0x98, 0xc9, 0x93,
-	0x4a, 0xeb, 0xd6, 0x9f, 0xac, 0xdd, 0x28, 0x5a, 0x5b, 0x77, 0x0a, 0x49, 0x5e, 0x05, 0x0d, 0x76,
-	0xf8, 0x63, 0x06, 0x32, 0xa8, 0x09, 0x02, 0xcb, 0x8e, 0xae, 0xc0, 0xfe, 0xeb, 0x78, 0x41, 0x93,
-	0x35, 0x7e, 0x65, 0x96, 0xed, 0xf4, 0xae, 0xe7, 0x1f, 0xdc, 0x9b, 0x2f, 0xb9, 0xbf, 0x58, 0x72,
-	0xff, 0x7d, 0xc9, 0xfd, 0xe7, 0x15, 0xf7, 0x16, 0x2b, 0xee, 0xbd, 0xae, 0xb8, 0x77, 0x77, 0xf9,
-	0x2d, 0x56, 0x66, 0x90, 0x4a, 0xab, 0xc1, 0x3d, 0xa1, 0x1d, 0x57, 0x55, 0x3b, 0x42, 0x0b, 0x22,
-	0x13, 0x9b, 0x2f, 0x51, 0x74, 0x32, 0xdc, 0x2e, 0x1e, 0xf2, 0xe2, 0x2b, 0x00, 0x00, 0xff, 0xff,
-	0x28, 0xb2, 0x73, 0xd2, 0x2b, 0x02, 0x00, 0x00,
+	// 320 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x92, 0xc1, 0x4a, 0x2b, 0x31,
+	0x14, 0x86, 0x67, 0xee, 0xe2, 0xc2, 0x0d, 0xf7, 0x5e, 0xa4, 0x54, 0x6b, 0x8b, 0x44, 0x99, 0x95,
+	0x9b, 0x4e, 0x28, 0xe2, 0x03, 0xb4, 0xf8, 0x00, 0xa5, 0x82, 0x88, 0x1b, 0x49, 0x33, 0x87, 0x69,
+	0xe8, 0x34, 0x27, 0x26, 0xa7, 0x75, 0xfa, 0x16, 0x3e, 0x93, 0xab, 0x2e, 0xbb, 0x74, 0x25, 0xda,
+	0xbe, 0x85, 0x2b, 0x99, 0x99, 0xb6, 0x88, 0xae, 0xdc, 0xb8, 0x4a, 0x4e, 0xbe, 0xf0, 0xfd, 0xe7,
+	0x90, 0xb0, 0xa6, 0x37, 0xd2, 0xfa, 0x11, 0x92, 0x98, 0x75, 0x86, 0x40, 0xb2, 0x23, 0x28, 0x8f,
+	0xad, 0x43, 0xc2, 0xda, 0xde, 0x16, 0xc5, 0x1b, 0xd4, 0xaa, 0xa7, 0x98, 0x62, 0x09, 0x45, 0xb1,
+	0xab, 0xee, 0xb5, 0x8e, 0x52, 0xc4, 0x34, 0x03, 0x21, 0xad, 0x16, 0xd2, 0x18, 0x24, 0x49, 0x1a,
+	0x8d, 0xaf, 0x68, 0xf4, 0x18, 0xb2, 0xfa, 0x00, 0x52, 0xed, 0x09, 0x5c, 0xdf, 0x61, 0x3e, 0x1f,
+	0xc0, 0xdd, 0x14, 0x3c, 0xd5, 0xae, 0xd9, 0x7f, 0xeb, 0xb4, 0x51, 0xda, 0xca, 0xec, 0x56, 0x26,
+	0x89, 0x3b, 0x0c, 0x4f, 0xc2, 0xd3, 0xbf, 0xbd, 0xce, 0xdb, 0xf3, 0x71, 0x3b, 0xd5, 0x34, 0x9a,
+	0x0e, 0x63, 0x85, 0x13, 0xa1, 0xd0, 0x4f, 0xd0, 0x6f, 0x96, 0xb6, 0x4f, 0xc6, 0x82, 0xe6, 0x16,
+	0x7c, 0x7c, 0x25, 0xb3, 0x6e, 0x92, 0x38, 0xf0, 0x7e, 0xf0, 0x6f, 0x27, 0x2a, 0x4e, 0x6a, 0x7d,
+	0xc6, 0x6c, 0x91, 0x54, 0x59, 0x7f, 0x7d, 0xcb, 0xda, 0x55, 0x6a, 0x6b, 0xfd, 0x53, 0x4a, 0x8a,
+	0x2a, 0x6a, 0xb0, 0xfd, 0x4f, 0x33, 0x78, 0x8b, 0xc6, 0x43, 0xe4, 0xd8, 0xc1, 0x05, 0x48, 0x45,
+	0x7a, 0x26, 0x09, 0x7e, 0x66, 0xbc, 0xa8, 0xc9, 0x1a, 0x5f, 0x32, 0xab, 0x76, 0x7a, 0x97, 0x8b,
+	0x57, 0x1e, 0x2c, 0x56, 0x3c, 0x5c, 0xae, 0x78, 0xf8, 0xb2, 0xe2, 0xe1, 0xc3, 0x9a, 0x07, 0xcb,
+	0x35, 0x0f, 0x9e, 0xd6, 0x3c, 0xb8, 0x39, 0xff, 0x10, 0x2b, 0x73, 0xc8, 0xa4, 0x33, 0x40, 0xf7,
+	0xe8, 0xc6, 0x9b, 0xaa, 0xad, 0xd0, 0x81, 0xc8, 0xc5, 0xee, 0x4b, 0x94, 0x9d, 0x0c, 0x7f, 0x97,
+	0x0f, 0x79, 0xf6, 0x1e, 0x00, 0x00, 0xff, 0xff, 0x66, 0xc2, 0x4f, 0x43, 0x2b, 0x02, 0x00, 0x00,
 }
 
 func (m *RegisterProxyRequest) Marshal() (dAtA []byte, err error) {
@@ -265,7 +265,7 @@ func (m *RegisterProxyResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *DeregisterProxyRequest) Marshal() (dAtA []byte, err error) {
+func (m *DeactivateProxyRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -275,12 +275,12 @@ func (m *DeregisterProxyRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DeregisterProxyRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *DeactivateProxyRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *DeregisterProxyRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *DeactivateProxyRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -295,7 +295,7 @@ func (m *DeregisterProxyRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *DeregisterProxyResponse) Marshal() (dAtA []byte, err error) {
+func (m *DeactivateProxyResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -305,12 +305,12 @@ func (m *DeregisterProxyResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DeregisterProxyResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *DeactivateProxyResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *DeregisterProxyResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *DeactivateProxyResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -355,7 +355,7 @@ func (m *RegisterProxyResponse) Size() (n int) {
 	return n
 }
 
-func (m *DeregisterProxyRequest) Size() (n int) {
+func (m *DeactivateProxyRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -368,7 +368,7 @@ func (m *DeregisterProxyRequest) Size() (n int) {
 	return n
 }
 
-func (m *DeregisterProxyResponse) Size() (n int) {
+func (m *DeactivateProxyResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -551,7 +551,7 @@ func (m *RegisterProxyResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DeregisterProxyRequest) Unmarshal(dAtA []byte) error {
+func (m *DeactivateProxyRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -574,10 +574,10 @@ func (m *DeregisterProxyRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: DeregisterProxyRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: DeactivateProxyRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DeregisterProxyRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: DeactivateProxyRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -635,7 +635,7 @@ func (m *DeregisterProxyRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DeregisterProxyResponse) Unmarshal(dAtA []byte) error {
+func (m *DeactivateProxyResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -658,10 +658,10 @@ func (m *DeregisterProxyResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: DeregisterProxyResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: DeactivateProxyResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DeregisterProxyResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: DeactivateProxyResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:

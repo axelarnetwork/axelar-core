@@ -110,8 +110,8 @@
     - [GenesisState](#snapshot.v1beta1.GenesisState)
   
 - [snapshot/v1beta1/tx.proto](#snapshot/v1beta1/tx.proto)
-    - [DeregisterProxyRequest](#snapshot.v1beta1.DeregisterProxyRequest)
-    - [DeregisterProxyResponse](#snapshot.v1beta1.DeregisterProxyResponse)
+    - [DeactivateProxyRequest](#snapshot.v1beta1.DeactivateProxyRequest)
+    - [DeactivateProxyResponse](#snapshot.v1beta1.DeactivateProxyResponse)
     - [RegisterProxyRequest](#snapshot.v1beta1.RegisterProxyRequest)
     - [RegisterProxyResponse](#snapshot.v1beta1.RegisterProxyResponse)
   
@@ -1509,9 +1509,9 @@ GenesisState represents the genesis state
 
 
 
-<a name="snapshot.v1beta1.DeregisterProxyRequest"></a>
+<a name="snapshot.v1beta1.DeactivateProxyRequest"></a>
 
-### DeregisterProxyRequest
+### DeactivateProxyRequest
 
 
 
@@ -1524,9 +1524,9 @@ GenesisState represents the genesis state
 
 
 
-<a name="snapshot.v1beta1.DeregisterProxyResponse"></a>
+<a name="snapshot.v1beta1.DeactivateProxyResponse"></a>
 
-### DeregisterProxyResponse
+### DeactivateProxyResponse
 
 
 
@@ -1590,7 +1590,7 @@ Msg defines the snapshot Msg service.
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `RegisterProxy` | [RegisterProxyRequest](#snapshot.v1beta1.RegisterProxyRequest) | [RegisterProxyResponse](#snapshot.v1beta1.RegisterProxyResponse) | RegisterProxy defines a method for registering a proxy account that can act in a validator account's stead. | POST|/axelar/snapshot/registerProxy/{proxy_addr}|
-| `DeregisterProxy` | [DeregisterProxyRequest](#snapshot.v1beta1.DeregisterProxyRequest) | [DeregisterProxyResponse](#snapshot.v1beta1.DeregisterProxyResponse) | DeregisterProxy defines a method for deregistering a proxy account. | POST|/axelar/snapshot/deregisterProxy|
+| `DeactivateProxy` | [DeactivateProxyRequest](#snapshot.v1beta1.DeactivateProxyRequest) | [DeactivateProxyResponse](#snapshot.v1beta1.DeactivateProxyResponse) | DeactivateProxy defines a method for deregistering a proxy account. | POST|/axelar/snapshot/deactivateProxy|
 
  <!-- end services -->
 
