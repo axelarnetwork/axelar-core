@@ -411,15 +411,15 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 		attributes       []sdk.Attribute
 		rpc              *mock.ClientMock
 		broadcaster      *mock2.BroadcasterMock
-		gatewayAddrBytes []byte
+		prevNewOwnerAddrBytes []byte
 	)
 	setup := func() {
 		cdc := testutils.MakeEncodingConfig().Amino
 		poll := exported.NewPollMeta(evmTypes.ModuleName, rand.StrBetween(5, 20))
 
-		gatewayAddrBytes = rand.Bytes(common.AddressLength)
+		gatewayAddrBytes := rand.Bytes(common.AddressLength)
 		newOwnerAddrBytes := rand.Bytes(common.AddressLength)
-		prevNewOwnerAddrBytes := rand.Bytes(common.AddressLength)
+		prevNewOwnerAddrBytes = rand.Bytes(common.AddressLength)
 		blockNumber := rand.PInt64Gen().Where(func(i int64) bool { return i != 0 }).Next() // restrict to int64 so the block number in the receipt doesn't overflow
 		confHeight := rand.I64Between(0, blockNumber-1)
 
@@ -586,14 +586,14 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 
 	t.Run("new owner not last transfer event ", testutils.Func(func(t *testing.T) {
 		setup()
-		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) {
-			receipt := &geth.Receipt{
-				BlockNumber: big.NewInt(1),
-				Logs:        nil,
-				Status:      0,
+		for i, attribute := range attributes {
+			if attribute.Key == evmTypes.AttributeKeyAddress {
+				// have to use index, otherwise this would only change the copy of the attribute, not the one in the slice
+				attributes[i].Value = common.BytesToAddress(prevNewOwnerAddrBytes).Hex()
+				break
 			}
-			return receipt, nil
 		}
+
 		err := mgr.ProcessTransferOwnershipConfirmation(attributes)
 
 		assert.NoError(t, err)
