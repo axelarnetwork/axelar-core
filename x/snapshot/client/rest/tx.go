@@ -19,15 +19,15 @@ type ReqRegisterProxy struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 }
 
-// ReqDeregisterProxy defines the properties of a tx request's body
-type ReqDeregisterProxy struct {
+// ReqDeactivateProxy defines the properties of a tx request's body
+type ReqDeactivateProxy struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 }
 
 // RegisterRoutes registers rest routes for this module
 func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("/tx/%s/registerProxy/{voter}", types.ModuleName), registerProxyHandlerFn(cliCtx)).Methods("POST")
-	r.HandleFunc(fmt.Sprintf("/tx/%s/deregisterProxy", types.ModuleName), deregisterProxyHandlerFn(cliCtx)).Methods("POST")
+	r.HandleFunc(fmt.Sprintf("/tx/%s/deactivateProxy", types.ModuleName), deactivateProxyHandlerFn(cliCtx)).Methods("POST")
 }
 
 func registerProxyHandlerFn(cliCtx client.Context) http.HandlerFunc {
@@ -60,9 +60,9 @@ func registerProxyHandlerFn(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-func deregisterProxyHandlerFn(cliCtx client.Context) http.HandlerFunc {
+func deactivateProxyHandlerFn(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReqDeregisterProxy
+		var req ReqDeactivateProxy
 		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
 			return

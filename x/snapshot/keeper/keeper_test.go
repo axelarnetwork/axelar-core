@@ -258,7 +258,7 @@ func TestKeeper_DeregisterProxy(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		err := keeper.DeregisterProxy(ctx, principalAddress)
+		err := keeper.DeactivateProxy(ctx, principalAddress)
 
 		assert.NoError(t, err)
 		proxy, active := keeper.GetProxy(ctx, principalAddress)
@@ -271,7 +271,7 @@ func TestKeeper_DeregisterProxy(t *testing.T) {
 		setup()
 
 		address := sdk.ValAddress(rand.Bytes(sdk.AddrLen))
-		err := keeper.DeregisterProxy(ctx, address)
+		err := keeper.DeactivateProxy(ctx, address)
 
 		assert.Error(t, err)
 
@@ -289,7 +289,7 @@ func TestKeeper_DeregisterProxy(t *testing.T) {
 		}
 
 		principalAddress = address
-		err := keeper.DeregisterProxy(ctx, principalAddress)
+		err := keeper.DeactivateProxy(ctx, principalAddress)
 
 		assert.Error(t, err)
 
