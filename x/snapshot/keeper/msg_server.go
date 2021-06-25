@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -52,12 +53,12 @@ func (s msgServer) DeactivateProxy(c context.Context, req *types.DeactivateProxy
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeDeregisterProxy),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeDeactivateProxy),
 			sdk.NewAttribute(sdk.AttributeKeySender, req.PrincipalAddr.String()),
 			sdk.NewAttribute(types.AttributeAddress, proxy.String()),
 		),
 	)
 
-	s.Keeper.Logger(ctx).Info("validator %s has de-registered proxy %s", req.PrincipalAddr, proxy)
+	s.Keeper.Logger(ctx).Info(fmt.Sprintf("validator %s has de-activated proxy %s", req.PrincipalAddr, proxy))
 	return &types.DeactivateProxyResponse{}, nil
 }

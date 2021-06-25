@@ -5,5 +5,5 @@ const (
 	AttributeModule          = ModuleName
 	AttributeAddress         = "address"
 	AttributeRegisterProxy   = "registerProxy"
-	AttributeDeregisterProxy = "deregisterProxy"
+	AttributeDeactivateProxy = "deactivateProxy"
 )

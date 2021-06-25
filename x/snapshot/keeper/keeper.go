@@ -249,7 +249,6 @@ func (k Keeper) DeactivateProxy(ctx sdk.Context, principal sdk.ValAddress) error
 	if val == nil {
 		return fmt.Errorf("validator %s is unknown", principal.String())
 	}
-	k.Logger(ctx).Debug("getting proxy count")
 
 	storedProxy := ctx.KVStore(k.storeKey).Get(principal)
 	if storedProxy == nil {
