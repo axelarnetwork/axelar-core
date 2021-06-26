@@ -17,7 +17,7 @@ import (
 var _ types.MsgServiceServer = msgServer{}
 
 type msgServer struct {
-	Keeper
+	types.TSSKeeper
 	snapshotter types.Snapshotter
 	staker      types.StakingKeeper
 	voter       types.Voter
@@ -26,9 +26,9 @@ type msgServer struct {
 
 // NewMsgServerImpl returns an implementation of the broadcast MsgServiceServer interface
 // for the provided Keeper.
-func NewMsgServerImpl(keeper Keeper, s types.Snapshotter, staker types.StakingKeeper, v types.Voter, n types.Nexus) types.MsgServiceServer {
+func NewMsgServerImpl(keeper types.TSSKeeper, s types.Snapshotter, staker types.StakingKeeper, v types.Voter, n types.Nexus) types.MsgServiceServer {
 	return msgServer{
-		Keeper:      keeper,
+		TSSKeeper:   keeper,
 		snapshotter: s,
 		staker:      staker,
 		voter:       v,
@@ -66,7 +66,7 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 		return nil, fmt.Errorf("invalid threshold: %d, total power: %d", threshold, snapshot.TotalShareCount.Int64())
 	}
 
-	if err := s.Keeper.StartKeygen(ctx, s.voter, req.NewKeyID, snapshot); err != nil {
+	if err := s.TSSKeeper.StartKeygen(ctx, s.voter, req.NewKeyID, snapshot); err != nil {
 		return nil, err
 	}
 
@@ -184,8 +184,8 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 		return nil, fmt.Errorf("unknown chain")
 	}
 
-	_, hasActiveKey := s.Keeper.GetCurrentKeyID(ctx, chain, req.KeyRole)
-	assignedKeyID, hasNextKeyAssigned := s.Keeper.GetNextKeyID(ctx, chain, req.KeyRole)
+	_, hasActiveKey := s.TSSKeeper.GetCurrentKeyID(ctx, chain, req.KeyRole)
+	assignedKeyID, hasNextKeyAssigned := s.TSSKeeper.GetNextKeyID(ctx, chain, req.KeyRole)
 
 	switch {
 	case hasActiveKey && !hasNextKeyAssigned:
@@ -193,7 +193,7 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 	case hasActiveKey && assignedKeyID != req.KeyID:
 		return nil, fmt.Errorf("expected rotation to key ID %s, got key ID %s", assignedKeyID, req.KeyID)
 	default:
-		if err := s.Keeper.RotateKey(ctx, chain, req.KeyRole); err != nil {
+		if err := s.TSSKeeper.RotateKey(ctx, chain, req.KeyRole); err != nil {
 			return nil, err
 		}
 
@@ -263,9 +263,9 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		)
 
 		s.voter.DeletePoll(ctx, req.PollMeta)
-		s.deleteSnapshotCounterForKeyID(ctx, req.PollMeta.ID)
-		s.deleteKeygenStart(ctx, req.PollMeta.ID)
-		s.deleteParticipantsInKeygen(ctx, req.PollMeta.ID)
+		s.DeleteSnapshotCounterForKeyID(ctx, req.PollMeta.ID)
+		s.DeleteKeygenStart(ctx, req.PollMeta.ID)
+		s.DeleteParticipantsInKeygen(ctx, req.PollMeta.ID)
 
 		return &types.VotePubKeyResponse{}, nil
 	}
@@ -296,9 +296,9 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 
 		// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed
 		// TODO: the snapshot itself can be deleted too but we need to be more careful with it
-		s.deleteSnapshotCounterForKeyID(ctx, req.PollMeta.ID)
-		s.deleteKeygenStart(ctx, req.PollMeta.ID)
-		s.deleteParticipantsInKeygen(ctx, req.PollMeta.ID)
+		s.DeleteSnapshotCounterForKeyID(ctx, req.PollMeta.ID)
+		s.DeleteKeygenStart(ctx, req.PollMeta.ID)
+		s.DeleteParticipantsInKeygen(ctx, req.PollMeta.ID)
 
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
@@ -306,7 +306,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 
 		for _, criminal := range keygenResult.GetCriminals().Criminals {
 			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
-			s.Keeper.PenalizeSignCriminal(ctx, criminalAddress, criminal.GetCrimeType())
+			s.TSSKeeper.PenalizeSignCriminal(ctx, criminalAddress, criminal.GetCrimeType())
 
 			s.Logger(ctx).Info(fmt.Sprintf("criminal for generating key %s verified: %s - %s", req.PollMeta.ID, criminal.GetPartyUid(), criminal.CrimeType.String()))
 		}
@@ -392,7 +392,7 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		)
 
 		s.voter.DeletePoll(ctx, req.PollMeta)
-		s.deleteKeyIDForSig(ctx, req.PollMeta.ID)
+		s.DeleteKeyIDForSig(ctx, req.PollMeta.ID)
 
 		return &types.VoteSigResponse{}, nil
 	}
@@ -416,14 +416,14 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		}
 
 		// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed
-		s.deleteKeyIDForSig(ctx, req.PollMeta.ID)
+		s.DeleteKeyIDForSig(ctx, req.PollMeta.ID)
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
 		)
 
 		for _, criminal := range signResult.GetCriminals().Criminals {
 			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
-			s.Keeper.PenalizeSignCriminal(ctx, criminalAddress, criminal.GetCrimeType())
+			s.TSSKeeper.PenalizeSignCriminal(ctx, criminalAddress, criminal.GetCrimeType())
 
 			s.Logger(ctx).Info(fmt.Sprintf("criminal for signature %s verified: %s - %s", req.PollMeta.ID, criminal.GetPartyUid(), criminal.CrimeType.String()))
 		}
