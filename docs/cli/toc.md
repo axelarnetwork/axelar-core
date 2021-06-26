@@ -119,7 +119,7 @@
     - [bitcoin](axelard_tx_bitcoin.md)	 - bitcoin transactions subcommands
       - [confirmTxOut \[txID:voutIdx\] \[amount\] \[address\]](axelard_tx_bitcoin_confirmTxOut.md)	 - Confirm a Bitcoin transaction
       - [link \[chain\] \[address\]](axelard_tx_bitcoin_link.md)	 - Link a cross chain address to a bitcoin address created by Axelar
-      - [sign-pending-transfers](axelard_tx_bitcoin_sign-pending-transfers.md)	 - Create a Bitcoin transaction for all pending transfers and sign it
+      - [sign-pending-transfers \[keyID\]](axelard_tx_bitcoin_sign-pending-transfers.md)	 - Create a Bitcoin transaction for all pending transfers and sign it
     - [crisis](axelard_tx_crisis.md)	 - Crisis transactions subcommands
       - [invariant-broken \[module-name\] \[invariant-route\]](axelard_tx_crisis_invariant-broken.md)	 - Submit proof that an invariant broken to halt the chain
     - [decode \[amino-byte-string\]](axelard_tx_decode.md)	 - Decode an binary encoded transaction string.

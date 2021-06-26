@@ -57,6 +57,7 @@ type ReqConfirmOutPoint struct {
 // ReqSignPendingTransfersTx represents a request to sign pending token transfers
 type ReqSignPendingTransfersTx struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+	KeyID   string       `json:"key_id" yaml:"key_id"`
 }
 
 // TxHandlerSignPendingTransfersTx returns the handler to sign pending transfers to Bitcoin
@@ -76,7 +77,7 @@ func TxHandlerSignPendingTransfersTx(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewSignPendingTransfersRequest(fromAddr)
+		msg := types.NewSignPendingTransfersRequest(fromAddr, req.KeyID)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

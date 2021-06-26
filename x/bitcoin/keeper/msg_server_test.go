@@ -523,7 +523,6 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		msg = types.NewSignPendingTransfersRequest(rand.Bytes(sdk.AddrLen))
 
 		// let the minimum start at 2 so the dust limit can still go below
 		minimumWithdrawalAmount = btcutil.Amount(rand.I64Between(2, 5000))
@@ -546,6 +545,8 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		masterKey := tss.Key{ID: rand.StrBetween(5, 20), Value: masterPrivateKey.PublicKey, Role: tss.MasterKey}
 		secondaryPrivateKey, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
 		secondaryKey := tss.Key{ID: rand.StrBetween(5, 20), Value: secondaryPrivateKey.PublicKey, Role: tss.SecondaryKey}
+
+		msg = types.NewSignPendingTransfersRequest(rand.Bytes(sdk.AddrLen), masterKey.ID)
 
 		btcKeeper = &mock.BTCKeeperMock{
 			GetUnsignedTxFunc:             func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
@@ -654,7 +655,6 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 
 		_, err := server.SignPendingTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
-		assert.Len(t, signer.GetCurrentKeyCalls(), 0)
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)+2) // + consolidation outpoint + anyone-can-spend outpoint
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))

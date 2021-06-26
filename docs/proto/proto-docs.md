@@ -490,6 +490,7 @@ consolidation transaction
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
+| `key_id` | [string](#string) |  |  |
 
 
 
@@ -500,11 +501,6 @@ consolidation transaction
 
 ### SignPendingTransfersResponse
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `command_id` | [string](#string) |  |  |
 
 
 
