@@ -128,7 +128,7 @@ func setupMetrics() {
 		EnableHostname:          false,
 		ServiceName:             "axelar",
 		// 1<<62, https://play.golang.org/p/szrQPRHxE0O
-		// A hacky way for
+		// A hacky way to essentially prevent prometheus metrics from ever expiring
 		PrometheusRetentionTime: 4611686018427387904,
 		EnableHostnameLabel:     false,
 	})
