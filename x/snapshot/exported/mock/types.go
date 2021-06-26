@@ -237,6 +237,12 @@ var _ exported.Snapshotter = &SnapshotterMock{}
 // 			GetLatestSnapshotFunc: func(ctx sdk.Context) (exported.Snapshot, bool) {
 // 				panic("mock out the GetLatestSnapshot method")
 // 			},
+// 			GetPrincipalFunc: func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
+// 				panic("mock out the GetPrincipal method")
+// 			},
+// 			GetProxyFunc: func(ctx sdk.Context, principal sdk.ValAddress) (sdk.AccAddress, bool) {
+// 				panic("mock out the GetProxy method")
+// 			},
 // 			GetSnapshotFunc: func(ctx sdk.Context, counter int64) (exported.Snapshot, bool) {
 // 				panic("mock out the GetSnapshot method")
 // 			},
@@ -256,6 +262,12 @@ type SnapshotterMock struct {
 	// GetLatestSnapshotFunc mocks the GetLatestSnapshot method.
 	GetLatestSnapshotFunc func(ctx sdk.Context) (exported.Snapshot, bool)
 
+	// GetPrincipalFunc mocks the GetPrincipal method.
+	GetPrincipalFunc func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
+
+	// GetProxyFunc mocks the GetProxy method.
+	GetProxyFunc func(ctx sdk.Context, principal sdk.ValAddress) (sdk.AccAddress, bool)
+
 	// GetSnapshotFunc mocks the GetSnapshot method.
 	GetSnapshotFunc func(ctx sdk.Context, counter int64) (exported.Snapshot, bool)
 
@@ -273,6 +285,20 @@ type SnapshotterMock struct {
 		GetLatestSnapshot []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
+		}
+		// GetPrincipal holds details about calls to the GetPrincipal method.
+		GetPrincipal []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Proxy is the proxy argument value.
+			Proxy sdk.AccAddress
+		}
+		// GetProxy holds details about calls to the GetProxy method.
+		GetProxy []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Principal is the principal argument value.
+			Principal sdk.ValAddress
 		}
 		// GetSnapshot holds details about calls to the GetSnapshot method.
 		GetSnapshot []struct {
@@ -293,6 +319,8 @@ type SnapshotterMock struct {
 	}
 	lockGetLatestCounter  sync.RWMutex
 	lockGetLatestSnapshot sync.RWMutex
+	lockGetPrincipal      sync.RWMutex
+	lockGetProxy          sync.RWMutex
 	lockGetSnapshot       sync.RWMutex
 	lockTakeSnapshot      sync.RWMutex
 }
@@ -356,6 +384,76 @@ func (mock *SnapshotterMock) GetLatestSnapshotCalls() []struct {
 	mock.lockGetLatestSnapshot.RLock()
 	calls = mock.calls.GetLatestSnapshot
 	mock.lockGetLatestSnapshot.RUnlock()
+	return calls
+}
+
+// GetPrincipal calls GetPrincipalFunc.
+func (mock *SnapshotterMock) GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
+	if mock.GetPrincipalFunc == nil {
+		panic("SnapshotterMock.GetPrincipalFunc: method is nil but Snapshotter.GetPrincipal was just called")
+	}
+	callInfo := struct {
+		Ctx   sdk.Context
+		Proxy sdk.AccAddress
+	}{
+		Ctx:   ctx,
+		Proxy: proxy,
+	}
+	mock.lockGetPrincipal.Lock()
+	mock.calls.GetPrincipal = append(mock.calls.GetPrincipal, callInfo)
+	mock.lockGetPrincipal.Unlock()
+	return mock.GetPrincipalFunc(ctx, proxy)
+}
+
+// GetPrincipalCalls gets all the calls that were made to GetPrincipal.
+// Check the length with:
+//     len(mockedSnapshotter.GetPrincipalCalls())
+func (mock *SnapshotterMock) GetPrincipalCalls() []struct {
+	Ctx   sdk.Context
+	Proxy sdk.AccAddress
+} {
+	var calls []struct {
+		Ctx   sdk.Context
+		Proxy sdk.AccAddress
+	}
+	mock.lockGetPrincipal.RLock()
+	calls = mock.calls.GetPrincipal
+	mock.lockGetPrincipal.RUnlock()
+	return calls
+}
+
+// GetProxy calls GetProxyFunc.
+func (mock *SnapshotterMock) GetProxy(ctx sdk.Context, principal sdk.ValAddress) (sdk.AccAddress, bool) {
+	if mock.GetProxyFunc == nil {
+		panic("SnapshotterMock.GetProxyFunc: method is nil but Snapshotter.GetProxy was just called")
+	}
+	callInfo := struct {
+		Ctx       sdk.Context
+		Principal sdk.ValAddress
+	}{
+		Ctx:       ctx,
+		Principal: principal,
+	}
+	mock.lockGetProxy.Lock()
+	mock.calls.GetProxy = append(mock.calls.GetProxy, callInfo)
+	mock.lockGetProxy.Unlock()
+	return mock.GetProxyFunc(ctx, principal)
+}
+
+// GetProxyCalls gets all the calls that were made to GetProxy.
+// Check the length with:
+//     len(mockedSnapshotter.GetProxyCalls())
+func (mock *SnapshotterMock) GetProxyCalls() []struct {
+	Ctx       sdk.Context
+	Principal sdk.ValAddress
+} {
+	var calls []struct {
+		Ctx       sdk.Context
+		Principal sdk.ValAddress
+	}
+	mock.lockGetProxy.RLock()
+	calls = mock.calls.GetProxy
+	mock.lockGetProxy.RUnlock()
 	return calls
 }
 
@@ -501,77 +599,6 @@ func (mock *SlasherMock) GetValidatorSigningInfoCalls() []struct {
 	mock.lockGetValidatorSigningInfo.RLock()
 	calls = mock.calls.GetValidatorSigningInfo
 	mock.lockGetValidatorSigningInfo.RUnlock()
-	return calls
-}
-
-// Ensure, that BroadcasterMock does implement exported.Broadcaster.
-// If this is not the case, regenerate this file with moq.
-var _ exported.Broadcaster = &BroadcasterMock{}
-
-// BroadcasterMock is a mock implementation of exported.Broadcaster.
-//
-// 	func TestSomethingThatUsesBroadcaster(t *testing.T) {
-//
-// 		// make and configure a mocked exported.Broadcaster
-// 		mockedBroadcaster := &BroadcasterMock{
-// 			GetProxyFunc: func(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
-// 				panic("mock out the GetProxy method")
-// 			},
-// 		}
-//
-// 		// use mockedBroadcaster in code that requires exported.Broadcaster
-// 		// and then make assertions.
-//
-// 	}
-type BroadcasterMock struct {
-	// GetProxyFunc mocks the GetProxy method.
-	GetProxyFunc func(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress
-
-	// calls tracks calls to the methods.
-	calls struct {
-		// GetProxy holds details about calls to the GetProxy method.
-		GetProxy []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Principal is the principal argument value.
-			Principal sdk.ValAddress
-		}
-	}
-	lockGetProxy sync.RWMutex
-}
-
-// GetProxy calls GetProxyFunc.
-func (mock *BroadcasterMock) GetProxy(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
-	if mock.GetProxyFunc == nil {
-		panic("BroadcasterMock.GetProxyFunc: method is nil but Broadcaster.GetProxy was just called")
-	}
-	callInfo := struct {
-		Ctx       sdk.Context
-		Principal sdk.ValAddress
-	}{
-		Ctx:       ctx,
-		Principal: principal,
-	}
-	mock.lockGetProxy.Lock()
-	mock.calls.GetProxy = append(mock.calls.GetProxy, callInfo)
-	mock.lockGetProxy.Unlock()
-	return mock.GetProxyFunc(ctx, principal)
-}
-
-// GetProxyCalls gets all the calls that were made to GetProxy.
-// Check the length with:
-//     len(mockedBroadcaster.GetProxyCalls())
-func (mock *BroadcasterMock) GetProxyCalls() []struct {
-	Ctx       sdk.Context
-	Principal sdk.ValAddress
-} {
-	var calls []struct {
-		Ctx       sdk.Context
-		Principal sdk.ValAddress
-	}
-	mock.lockGetProxy.RLock()
-	calls = mock.calls.GetProxy
-	mock.lockGetProxy.RUnlock()
 	return calls
 }
 

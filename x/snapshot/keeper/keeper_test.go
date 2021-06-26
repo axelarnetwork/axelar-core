@@ -81,16 +81,7 @@ func TestTakeSnapshot_WithSubsetSize(t *testing.T) {
 			return retinfo, true
 		},
 	}
-	broadcasterMock := &snapshotMock.BroadcasterMock{
-		GetProxyFunc: func(_ sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
-			for _, v := range validators {
-				if bytes.Equal(principal.Bytes(), v.GetOperator()) {
-					return rand.Bytes(sdk.AddrLen)
-				}
-			}
-			return nil
-		},
-	}
+
 	tssMock := &snapshotMock.TssMock{
 		GetMinBondFractionPerShareFunc: func(sdk.Context) utils.Threshold {
 			return utils.Threshold{Numerator: 1, Denominator: 200}
@@ -98,8 +89,11 @@ func TestTakeSnapshot_WithSubsetSize(t *testing.T) {
 		GetTssSuspendedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
 	}
 
-	keeper := NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("staking"), snapSubspace, broadcasterMock, staker, slashingKeeper, tssMock)
+	keeper := NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("staking"), snapSubspace, staker, slashingKeeper, tssMock)
 	keeper.SetParams(ctx, types.DefaultParams())
+	for _, v := range validators {
+		keeper.RegisterProxy(ctx, v.GetOperator(), rand.Bytes(sdk.AddrLen))
+	}
 
 	_, _, err := keeper.TakeSnapshot(ctx, subsetSize, tss.WeightedByStake)
 	assert.NoError(t, err)
@@ -136,17 +130,6 @@ func TestSnapshots(t *testing.T) {
 				},
 			}
 
-			broadcasterMock := &snapshotMock.BroadcasterMock{
-				GetProxyFunc: func(_ sdk.Context, principal sdk.ValAddress) sdk.AccAddress {
-					for _, v := range validators {
-						if bytes.Equal(principal.Bytes(), v.GetOperator()) {
-							return rand.Bytes(sdk.AddrLen)
-						}
-					}
-					return nil
-				},
-			}
-
 			tssMock := &snapshotMock.TssMock{
 				GetMinBondFractionPerShareFunc: func(sdk.Context) utils.Threshold {
 					return utils.Threshold{Numerator: 1, Denominator: 200}
@@ -154,8 +137,11 @@ func TestSnapshots(t *testing.T) {
 				GetTssSuspendedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
 			}
 
-			keeper := NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("staking"), snapSubspace, broadcasterMock, staker, slashingKeeper, tssMock)
+			keeper := NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("staking"), snapSubspace, staker, slashingKeeper, tssMock)
 			keeper.SetParams(ctx, types.DefaultParams())
+			for _, v := range validators {
+				keeper.RegisterProxy(ctx, v.GetOperator(), rand.Bytes(sdk.AddrLen))
+			}
 
 			_, ok := keeper.GetSnapshot(ctx, 0)
 
@@ -199,6 +185,115 @@ func TestSnapshots(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestKeeper_RegisterProxy(t *testing.T) {
+	var (
+		ctx              sdk.Context
+		keeper           Keeper
+		principalAddress sdk.ValAddress
+		staker           *mockStaker
+		validators       []staking.ValidatorI
+	)
+
+	setup := func() {
+		encCfg := appParams.MakeEncodingConfig()
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		snapSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
+		validators = genValidators(t, 10, 100)
+		staker = newMockStaker(validators...)
+		principalAddress = validators[rand.I64Between(0, 10)].GetOperator()
+
+		keeper = NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("staking"), snapSubspace, staker, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
+	}
+	t.Run("happy path", testutils.Func(func(t *testing.T) {
+		setup()
+
+		expectedProxy := sdk.AccAddress(rand.Bytes(sdk.AddrLen))
+		err := keeper.RegisterProxy(ctx, principalAddress, expectedProxy)
+
+		assert.NoError(t, err)
+		proxy, active := keeper.GetProxy(ctx, principalAddress)
+		assert.True(t, active)
+		assert.Equal(t, expectedProxy, proxy)
+
+	}).Repeat(20))
+
+	t.Run("unknown validator", testutils.Func(func(t *testing.T) {
+		setup()
+
+		address := sdk.ValAddress(rand.Bytes(sdk.AddrLen))
+		proxy := sdk.AccAddress(rand.Bytes(sdk.AddrLen))
+		err := keeper.RegisterProxy(ctx, address, proxy)
+
+		assert.Error(t, err)
+
+	}).Repeat(20))
+}
+
+func TestKeeper_DeregisterProxy(t *testing.T) {
+	var (
+		ctx              sdk.Context
+		keeper           Keeper
+		principalAddress sdk.ValAddress
+		expectedProxy    sdk.AccAddress
+		staker           *mockStaker
+		validators       []staking.ValidatorI
+	)
+
+	setup := func() {
+		encCfg := appParams.MakeEncodingConfig()
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		snapSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
+		validators = genValidators(t, 10, 100)
+		staker = newMockStaker(validators...)
+		principalAddress = validators[rand.I64Between(0, 10)].GetOperator()
+		expectedProxy = sdk.AccAddress(rand.Bytes(sdk.AddrLen))
+
+		keeper = NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("staking"), snapSubspace, staker, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
+		if err := keeper.RegisterProxy(ctx, principalAddress, expectedProxy); err != nil {
+			panic(fmt.Sprintf("setup failed for unit test: %v", err))
+		}
+	}
+	t.Run("happy path", testutils.Func(func(t *testing.T) {
+		setup()
+
+		err := keeper.DeactivateProxy(ctx, principalAddress)
+
+		assert.NoError(t, err)
+		proxy, active := keeper.GetProxy(ctx, principalAddress)
+		assert.False(t, active)
+		assert.Equal(t, expectedProxy, proxy)
+
+	}).Repeat(20))
+
+	t.Run("unknown validator", testutils.Func(func(t *testing.T) {
+		setup()
+
+		address := sdk.ValAddress(rand.Bytes(sdk.AddrLen))
+		err := keeper.DeactivateProxy(ctx, address)
+
+		assert.Error(t, err)
+
+	}).Repeat(20))
+
+	t.Run("no proxy", testutils.Func(func(t *testing.T) {
+		setup()
+
+		var address sdk.ValAddress
+		for {
+			address = validators[rand.I64Between(0, 10)].GetOperator()
+			if !bytes.Equal(principalAddress, address) {
+				break
+			}
+		}
+
+		principalAddress = address
+		err := keeper.DeactivateProxy(ctx, principalAddress)
+
+		assert.Error(t, err)
+
+	}).Repeat(20))
 }
 
 // This function returns a set of validators whose voting power adds up to the specified total power

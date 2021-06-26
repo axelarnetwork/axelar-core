@@ -5,7 +5,7 @@ package mock
 
 import (
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"sync"
 )
@@ -20,13 +20,13 @@ var _ types.StakingKeeper = &StakingKeeperMock{}
 //
 // 		// make and configure a mocked types.StakingKeeper
 // 		mockedStakingKeeper := &StakingKeeperMock{
-// 			GetLastTotalPowerFunc: func(ctx sdk.Context) sdk.Int {
+// 			GetLastTotalPowerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) github_com_cosmos_cosmos_sdk_types.Int {
 // 				panic("mock out the GetLastTotalPower method")
 // 			},
-// 			IterateBondedValidatorsByPowerFunc: func(ctx sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))  {
+// 			IterateBondedValidatorsByPowerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))  {
 // 				panic("mock out the IterateBondedValidatorsByPower method")
 // 			},
-// 			ValidatorFunc: func(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI {
+// 			ValidatorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.ValAddress) stakingtypes.ValidatorI {
 // 				panic("mock out the Validator method")
 // 			},
 // 		}
@@ -37,34 +37,34 @@ var _ types.StakingKeeper = &StakingKeeperMock{}
 // 	}
 type StakingKeeperMock struct {
 	// GetLastTotalPowerFunc mocks the GetLastTotalPower method.
-	GetLastTotalPowerFunc func(ctx sdk.Context) sdk.Int
+	GetLastTotalPowerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) github_com_cosmos_cosmos_sdk_types.Int
 
 	// IterateBondedValidatorsByPowerFunc mocks the IterateBondedValidatorsByPower method.
-	IterateBondedValidatorsByPowerFunc func(ctx sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))
+	IterateBondedValidatorsByPowerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))
 
 	// ValidatorFunc mocks the Validator method.
-	ValidatorFunc func(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI
+	ValidatorFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.ValAddress) stakingtypes.ValidatorI
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// GetLastTotalPower holds details about calls to the GetLastTotalPower method.
 		GetLastTotalPower []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
 		// IterateBondedValidatorsByPower holds details about calls to the IterateBondedValidatorsByPower method.
 		IterateBondedValidatorsByPower []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Fn is the fn argument value.
 			Fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)
 		}
 		// Validator holds details about calls to the Validator method.
 		Validator []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Addr is the addr argument value.
-			Addr sdk.ValAddress
+			Addr github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
 	}
 	lockGetLastTotalPower              sync.RWMutex
@@ -73,12 +73,12 @@ type StakingKeeperMock struct {
 }
 
 // GetLastTotalPower calls GetLastTotalPowerFunc.
-func (mock *StakingKeeperMock) GetLastTotalPower(ctx sdk.Context) sdk.Int {
+func (mock *StakingKeeperMock) GetLastTotalPower(ctx github_com_cosmos_cosmos_sdk_types.Context) github_com_cosmos_cosmos_sdk_types.Int {
 	if mock.GetLastTotalPowerFunc == nil {
 		panic("StakingKeeperMock.GetLastTotalPowerFunc: method is nil but StakingKeeper.GetLastTotalPower was just called")
 	}
 	callInfo := struct {
-		Ctx sdk.Context
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
 	}{
 		Ctx: ctx,
 	}
@@ -92,10 +92,10 @@ func (mock *StakingKeeperMock) GetLastTotalPower(ctx sdk.Context) sdk.Int {
 // Check the length with:
 //     len(mockedStakingKeeper.GetLastTotalPowerCalls())
 func (mock *StakingKeeperMock) GetLastTotalPowerCalls() []struct {
-	Ctx sdk.Context
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
 	var calls []struct {
-		Ctx sdk.Context
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
 	}
 	mock.lockGetLastTotalPower.RLock()
 	calls = mock.calls.GetLastTotalPower
@@ -104,12 +104,12 @@ func (mock *StakingKeeperMock) GetLastTotalPowerCalls() []struct {
 }
 
 // IterateBondedValidatorsByPower calls IterateBondedValidatorsByPowerFunc.
-func (mock *StakingKeeperMock) IterateBondedValidatorsByPower(ctx sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) {
+func (mock *StakingKeeperMock) IterateBondedValidatorsByPower(ctx github_com_cosmos_cosmos_sdk_types.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) {
 	if mock.IterateBondedValidatorsByPowerFunc == nil {
 		panic("StakingKeeperMock.IterateBondedValidatorsByPowerFunc: method is nil but StakingKeeper.IterateBondedValidatorsByPower was just called")
 	}
 	callInfo := struct {
-		Ctx sdk.Context
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
 		Fn  func(index int64, validator stakingtypes.ValidatorI) (stop bool)
 	}{
 		Ctx: ctx,
@@ -125,11 +125,11 @@ func (mock *StakingKeeperMock) IterateBondedValidatorsByPower(ctx sdk.Context, f
 // Check the length with:
 //     len(mockedStakingKeeper.IterateBondedValidatorsByPowerCalls())
 func (mock *StakingKeeperMock) IterateBondedValidatorsByPowerCalls() []struct {
-	Ctx sdk.Context
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
 	Fn  func(index int64, validator stakingtypes.ValidatorI) (stop bool)
 } {
 	var calls []struct {
-		Ctx sdk.Context
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
 		Fn  func(index int64, validator stakingtypes.ValidatorI) (stop bool)
 	}
 	mock.lockIterateBondedValidatorsByPower.RLock()
@@ -139,13 +139,13 @@ func (mock *StakingKeeperMock) IterateBondedValidatorsByPowerCalls() []struct {
 }
 
 // Validator calls ValidatorFunc.
-func (mock *StakingKeeperMock) Validator(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI {
+func (mock *StakingKeeperMock) Validator(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.ValAddress) stakingtypes.ValidatorI {
 	if mock.ValidatorFunc == nil {
 		panic("StakingKeeperMock.ValidatorFunc: method is nil but StakingKeeper.Validator was just called")
 	}
 	callInfo := struct {
-		Ctx  sdk.Context
-		Addr sdk.ValAddress
+		Ctx  github_com_cosmos_cosmos_sdk_types.Context
+		Addr github_com_cosmos_cosmos_sdk_types.ValAddress
 	}{
 		Ctx:  ctx,
 		Addr: addr,
@@ -160,12 +160,12 @@ func (mock *StakingKeeperMock) Validator(ctx sdk.Context, addr sdk.ValAddress) s
 // Check the length with:
 //     len(mockedStakingKeeper.ValidatorCalls())
 func (mock *StakingKeeperMock) ValidatorCalls() []struct {
-	Ctx  sdk.Context
-	Addr sdk.ValAddress
+	Ctx  github_com_cosmos_cosmos_sdk_types.Context
+	Addr github_com_cosmos_cosmos_sdk_types.ValAddress
 } {
 	var calls []struct {
-		Ctx  sdk.Context
-		Addr sdk.ValAddress
+		Ctx  github_com_cosmos_cosmos_sdk_types.Context
+		Addr github_com_cosmos_cosmos_sdk_types.ValAddress
 	}
 	mock.lockValidator.RLock()
 	calls = mock.calls.Validator

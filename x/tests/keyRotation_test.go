@@ -27,11 +27,11 @@ import (
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	snapshotTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	types2 "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
@@ -71,7 +71,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
-		res := <-chain.Submit(&broadcastTypes.RegisterProxyRequest{PrincipalAddr: operatorAddress, ProxyAddr: nodeData[i].Proxy})
+		res := <-chain.Submit(&snapshotTypes.RegisterProxyRequest{PrincipalAddr: operatorAddress, ProxyAddr: nodeData[i].Proxy})
 		assert.NoError(t, res.Error)
 	}
 

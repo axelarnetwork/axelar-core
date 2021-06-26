@@ -27,7 +27,7 @@ axelard vald-start [flags]
   -s, --sequence uint            The sequence number of the signing account (offline mode only)
       --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
       --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
-      --tofnd-host string        host name for tss daemon
+      --tofnd-host string        host name for tss daemon (default "localhost")
       --tofnd-port string        port for tss daemon (default "50051")
       --validator-addr string    the address of the validator operator
   -y, --yes                      Skip tx broadcasting prompt confirmation

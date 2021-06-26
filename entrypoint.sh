@@ -71,6 +71,6 @@ fi
 
 startValProc &
 
-axelard start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} &
+axelard start &
 
 wait
