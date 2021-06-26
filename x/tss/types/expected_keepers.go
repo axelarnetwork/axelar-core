@@ -71,6 +71,8 @@ type StakingKeeper interface {
 	GetLastTotalPower(ctx sdk.Context) (power sdk.Int)
 	GetValidator(ctx sdk.Context, addr sdk.ValAddress) (validator types.Validator, found bool)
 }
+
+// TSSKeeper provides keygen and signing functionality
 type TSSKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 	SetParams(ctx sdk.Context, p Params)
