@@ -980,7 +980,7 @@ MsgConfirmToken represents a token deploy confirmation message
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
-| `new_owner_address` | [bytes](#bytes) |  |  |
+| `key_id` | [string](#string) |  | bytes new_owner_address = 5 [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ]; |
 
 
 

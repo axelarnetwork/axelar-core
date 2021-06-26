@@ -293,24 +293,19 @@ func (s msgServer) ConfirmTransferOwnership(c context.Context, req *types.Confir
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
+	pk, ok := s.signer.GetKey(ctx, req.KeyID)
+	if !ok {
+		return nil, fmt.Errorf("key %s does not exist (yet)", req.KeyID)
+	}
+
+	_, ok = s.signer.GetNextKey(ctx, chain, tss.MasterKey)
+	if ok {
+		return nil, fmt.Errorf("next %s key for chain %s already set", tss.MasterKey.SimpleString(), chain.Name)
+	}
+
 	gatewayAddr, ok := s.GetGatewayAddress(ctx, chain.Name)
 	if !ok {
 		return nil, fmt.Errorf("axelar gateway address not set")
-	}
-
-	pk, ok := s.signer.GetNextKey(ctx, chain, tss.MasterKey)
-	if !ok {
-		return nil, fmt.Errorf("no assigned %s key for chain %s found", tss.MasterKey.SimpleString(), chain.Name)
-	}
-
-	nextMasterAddr := crypto.PubkeyToAddress(pk.Value)
-	if nextMasterAddr != common.Address(req.NewOwnerAddress) {
-		return nil, fmt.Errorf("next key %s does not match new owner %s for chain %s ", nextMasterAddr.Hex(), req.NewOwnerAddress.Hex(), chain.Name)
-	}
-
-	ok = s.signer.IsKeyReady(ctx, pk.ID)
-	if ok {
-		return nil, fmt.Errorf("already confirmed")
 	}
 
 	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
@@ -328,14 +323,14 @@ func (s msgServer) ConfirmTransferOwnership(c context.Context, req *types.Confir
 		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", req.Chain)
 	}
 
-	poll := vote.NewPollMeta(types.ModuleName, req.TxID.Hex()+"_"+req.NewOwnerAddress.Hex())
+	poll := vote.NewPollMeta(types.ModuleName, req.TxID.Hex()+"_"+req.KeyID)
 	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+period); err != nil {
 		return nil, err
 	}
 
 	transferOwnership := types.TransferOwnership{
-		TxID:            req.TxID,
-		NextKeyID:       pk.ID,
+		TxID:      req.TxID,
+		NextKeyID: pk.ID,
 	}
 	s.SetPendingTransferOwnership(ctx, chain.Name, poll, &transferOwnership)
 
@@ -347,7 +342,7 @@ func (s msgServer) ConfirmTransferOwnership(c context.Context, req *types.Confir
 			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
 			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
-			sdk.NewAttribute(types.AttributeKeyAddress, req.NewOwnerAddress.Hex()),
+			sdk.NewAttribute(types.AttributeKeyAddress, crypto.PubkeyToAddress(pk.Value).Hex()),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
 			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&poll))),
 		),
@@ -570,28 +565,30 @@ func (s msgServer) VoteConfirmTransferOwnership(c context.Context, req *types.Vo
 	}
 
 	pendingTransferOwnership, pollFound := s.GetPendingTransferOwnership(ctx, chain.Name, req.Poll)
-	nextKey, ok := s.signer.GetNextKey(ctx, chain, tss.MasterKey)
-	if !ok {
-		return nil, fmt.Errorf("next %s key for chain %s not set", tss.MasterKey.SimpleString(), chain.Name)
-	}
-	ready := s.signer.IsKeyReady(ctx, nextKey.ID)
-	nextKeyAddr := crypto.PubkeyToAddress(nextKey.Value)
+	_, hasNextKeyAssigned := s.signer.GetNextKey(ctx, chain, tss.MasterKey)
+
 	switch {
-	// a malicious user could try to delete an ongoing poll by providing an already confirmed KeyID,
+	// a malicious user could try to delete an ongoing poll by providing an already confirmed transfer ownership,
 	// so we need to check that it matches the poll before deleting
-	case pollFound && ready:
+	case pollFound && hasNextKeyAssigned:
 		s.voter.DeletePoll(ctx, req.Poll)
 		s.DeletePendingTransferOwnership(ctx, chain.Name, req.Poll)
 		fallthrough
 	// If the voting threshold has been met and additional votes are received they should not return an error
-	case ready:
-		return &types.VoteConfirmTransferOwnershipResponse{Log: fmt.Sprintf("transfer ownership in %s to address %s already confirmed", pendingTransferOwnership.TxID.Hex(), nextKeyAddr.Hex())}, nil
+	case hasNextKeyAssigned:
+		return &types.VoteConfirmTransferOwnershipResponse{Log: fmt.Sprintf("transfer ownership in %s to keyID %s already confirmed", pendingTransferOwnership.TxID.Hex(), pendingTransferOwnership.NextKeyID)}, nil
 	case !pollFound:
 		return nil, fmt.Errorf("no transfer ownership found for poll %s", req.Poll.String())
-	case nextKeyAddr != common.Address(req.NewOwnerAddress) || pendingTransferOwnership.TxID != req.TxID:
-		return nil, fmt.Errorf("transfer ownership in %s to address %s does not match poll %s", req.TxID, req.NewOwnerAddress.Hex(), req.Poll.String())
+	case pollFound:
+		pk, ok := s.signer.GetKey(ctx, pendingTransferOwnership.NextKeyID)
+		if !ok {
+			return nil, fmt.Errorf("key %s cannot be found", pendingTransferOwnership.NextKeyID)
+		}
+		if crypto.PubkeyToAddress(pk.Value) != common.Address(req.NewOwnerAddress) || pendingTransferOwnership.TxID != req.TxID {
+			return nil, fmt.Errorf("transfer ownership in %s to address %s does not match poll %s", req.TxID, req.NewOwnerAddress.Hex(), req.Poll.String())
+		}
 	default:
-		// assert: the deposit is known and has not been confirmed before
+		// assert: the transfer ownership is known and has not been confirmed before
 	}
 
 	poll, err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed})
@@ -629,6 +626,11 @@ func (s msgServer) VoteConfirmTransferOwnership(c context.Context, req *types.Vo
 	}
 	ctx.EventManager().EmitEvent(
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
+
+	err = s.signer.AssignNextKey(ctx, chain, tss.MasterKey, pendingTransferOwnership.NextKeyID)
+	if err != nil {
+		return nil, err
+	}
 
 	return &types.VoteConfirmTransferOwnershipResponse{}, nil
 }

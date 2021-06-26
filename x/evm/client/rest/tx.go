@@ -97,9 +97,9 @@ type ReqConfirmDeposit struct {
 
 // ReqConfirmTransferOwnership represents a request to confirm a transfer ownership
 type ReqConfirmTransferOwnership struct {
-	BaseReq         rest.BaseReq `json:"base_req" yaml:"base_req"`
-	TxID            string       `json:"tx_id" yaml:"tx_id"`
-	NewOwnerAddress string       `json:"new_owner_address" yaml:"new_owner_address"`
+	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+	TxID    string       `json:"tx_id" yaml:"tx_id"`
+	KeyID   string       `json:"key_id" yaml:"key_id"`
 }
 
 // ReqSignTx represents a request to sign a transaction
@@ -274,9 +274,8 @@ func GetHandlerConfirmTransferOwnership(cliCtx client.Context) http.HandlerFunc 
 		}
 
 		txID := common.HexToHash(req.TxID)
-		newOwnerAddr := common.HexToAddress(req.NewOwnerAddress)
 
-		msg := types.NewConfirmTransferOwnershipRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], txID, newOwnerAddr)
+		msg := types.NewConfirmTransferOwnershipRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], txID, req.KeyID)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

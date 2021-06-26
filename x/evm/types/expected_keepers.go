@@ -110,8 +110,7 @@ type Signer interface {
 	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 	GetKeyForSigID(ctx sdk.Context, sigID string) (tss.Key, bool)
 	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool)
-	IsKeyReady(ctx sdk.Context, keyID string) bool
-	SetKeyReady(ctx sdk.Context, keyID string)
+	AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error
 }
 
 // Snapshotter provides access to the snapshot functionality

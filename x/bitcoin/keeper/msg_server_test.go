@@ -620,7 +620,6 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 				return rand.PosI64(), true
 			},
 			StartSignFunc:   func(sdk.Context, types.InitPoller, string, string, []byte, snapshot.Snapshot) error { return nil },
-			SetKeyReadyFunc: func(ctx sdk.Context, keyID string) {},
 		}
 		snapshotter = &mock.SnapshotterMock{
 			GetSnapshotFunc: func(_ sdk.Context, counter int64) (snapshot.Snapshot, bool) {

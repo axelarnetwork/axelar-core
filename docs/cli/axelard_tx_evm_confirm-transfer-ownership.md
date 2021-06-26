@@ -3,7 +3,7 @@
 Confirm a transfer ownership in an EVM chain transaction
 
 ```
-axelard tx evm confirm-transfer-ownership [chain] [txID] [newOwnerAddr] [flags]
+axelard tx evm confirm-transfer-ownership [chain] [txID] [keyID] [flags]
 ```
 
 ### Options

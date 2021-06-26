@@ -52,7 +52,6 @@ type Tss interface {
 	GetMinBondFractionPerShare(ctx sdk.Context) utils.Threshold
 	GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
 	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
-	IsKeyReady(ctx sdk.Context, keyID string) bool
 }
 
 // IsValidatorActive returns true if the validator is active; otherwise, false

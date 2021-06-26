@@ -238,9 +238,6 @@ var _ types.Signer = &SignerMock{}
 // 			GetSnapshotCounterForKeyIDFunc: func(ctx sdk.Context, keyID string) (int64, bool) {
 // 				panic("mock out the GetSnapshotCounterForKeyID method")
 // 			},
-// 			SetKeyReadyFunc: func(ctx sdk.Context, keyID string)  {
-// 				panic("mock out the SetKeyReady method")
-// 			},
 // 			StartSignFunc: func(ctx sdk.Context, initPoll interface{InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
 // 				panic("mock out the StartSign method")
 // 			},
@@ -268,9 +265,6 @@ type SignerMock struct {
 
 	// GetSnapshotCounterForKeyIDFunc mocks the GetSnapshotCounterForKeyID method.
 	GetSnapshotCounterForKeyIDFunc func(ctx sdk.Context, keyID string) (int64, bool)
-
-	// SetKeyReadyFunc mocks the SetKeyReady method.
-	SetKeyReadyFunc func(ctx sdk.Context, keyID string)
 
 	// StartSignFunc mocks the StartSign method.
 	StartSignFunc func(ctx sdk.Context, initPoll interface {
@@ -327,13 +321,6 @@ type SignerMock struct {
 			// KeyID is the keyID argument value.
 			KeyID string
 		}
-		// SetKeyReady holds details about calls to the SetKeyReady method.
-		SetKeyReady []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// KeyID is the keyID argument value.
-			KeyID string
-		}
 		// StartSign holds details about calls to the StartSign method.
 		StartSign []struct {
 			// Ctx is the ctx argument value.
@@ -358,7 +345,6 @@ type SignerMock struct {
 	lockGetNextKey                 sync.RWMutex
 	lockGetSig                     sync.RWMutex
 	lockGetSnapshotCounterForKeyID sync.RWMutex
-	lockSetKeyReady                sync.RWMutex
 	lockStartSign                  sync.RWMutex
 }
 
@@ -581,41 +567,6 @@ func (mock *SignerMock) GetSnapshotCounterForKeyIDCalls() []struct {
 	mock.lockGetSnapshotCounterForKeyID.RLock()
 	calls = mock.calls.GetSnapshotCounterForKeyID
 	mock.lockGetSnapshotCounterForKeyID.RUnlock()
-	return calls
-}
-
-// SetKeyReady calls SetKeyReadyFunc.
-func (mock *SignerMock) SetKeyReady(ctx sdk.Context, keyID string) {
-	if mock.SetKeyReadyFunc == nil {
-		panic("SignerMock.SetKeyReadyFunc: method is nil but Signer.SetKeyReady was just called")
-	}
-	callInfo := struct {
-		Ctx   sdk.Context
-		KeyID string
-	}{
-		Ctx:   ctx,
-		KeyID: keyID,
-	}
-	mock.lockSetKeyReady.Lock()
-	mock.calls.SetKeyReady = append(mock.calls.SetKeyReady, callInfo)
-	mock.lockSetKeyReady.Unlock()
-	mock.SetKeyReadyFunc(ctx, keyID)
-}
-
-// SetKeyReadyCalls gets all the calls that were made to SetKeyReady.
-// Check the length with:
-//     len(mockedSigner.SetKeyReadyCalls())
-func (mock *SignerMock) SetKeyReadyCalls() []struct {
-	Ctx   sdk.Context
-	KeyID string
-} {
-	var calls []struct {
-		Ctx   sdk.Context
-		KeyID string
-	}
-	mock.lockSetKeyReady.RLock()
-	calls = mock.calls.SetKeyReady
-	mock.lockSetKeyReady.RUnlock()
 	return calls
 }
 

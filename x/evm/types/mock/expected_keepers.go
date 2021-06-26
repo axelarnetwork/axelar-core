@@ -292,6 +292,9 @@ var _ types.Signer = &SignerMock{}
 //
 // 		// make and configure a mocked types.Signer
 // 		mockedSigner := &SignerMock{
+// 			AssignNextKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error {
+// 				panic("mock out the AssignNextKey method")
+// 			},
 // 			GetCurrentKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
 // 				panic("mock out the GetCurrentKey method")
 // 			},
@@ -313,12 +316,6 @@ var _ types.Signer = &SignerMock{}
 // 			GetSnapshotCounterForKeyIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) (int64, bool) {
 // 				panic("mock out the GetSnapshotCounterForKeyID method")
 // 			},
-// 			IsKeyReadyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) bool {
-// 				panic("mock out the IsKeyReady method")
-// 			},
-// 			SetKeyReadyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string)  {
-// 				panic("mock out the SetKeyReady method")
-// 			},
 // 			StartSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, initPoll interface{InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
 // 				panic("mock out the StartSign method")
 // 			},
@@ -329,6 +326,9 @@ var _ types.Signer = &SignerMock{}
 //
 // 	}
 type SignerMock struct {
+	// AssignNextKeyFunc mocks the AssignNextKey method.
+	AssignNextKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error
+
 	// GetCurrentKeyFunc mocks the GetCurrentKey method.
 	GetCurrentKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 
@@ -350,12 +350,6 @@ type SignerMock struct {
 	// GetSnapshotCounterForKeyIDFunc mocks the GetSnapshotCounterForKeyID method.
 	GetSnapshotCounterForKeyIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) (int64, bool)
 
-	// IsKeyReadyFunc mocks the IsKeyReady method.
-	IsKeyReadyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) bool
-
-	// SetKeyReadyFunc mocks the SetKeyReady method.
-	SetKeyReadyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string)
-
 	// StartSignFunc mocks the StartSign method.
 	StartSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, initPoll interface {
 		InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error
@@ -363,6 +357,17 @@ type SignerMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// AssignNextKey holds details about calls to the AssignNextKey method.
+		AssignNextKey []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+			// KeyRole is the keyRole argument value.
+			KeyRole tss.KeyRole
+			// KeyID is the keyID argument value.
+			KeyID string
+		}
 		// GetCurrentKey holds details about calls to the GetCurrentKey method.
 		GetCurrentKey []struct {
 			// Ctx is the ctx argument value.
@@ -418,20 +423,6 @@ type SignerMock struct {
 			// KeyID is the keyID argument value.
 			KeyID string
 		}
-		// IsKeyReady holds details about calls to the IsKeyReady method.
-		IsKeyReady []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// KeyID is the keyID argument value.
-			KeyID string
-		}
-		// SetKeyReady holds details about calls to the SetKeyReady method.
-		SetKeyReady []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// KeyID is the keyID argument value.
-			KeyID string
-		}
 		// StartSign holds details about calls to the StartSign method.
 		StartSign []struct {
 			// Ctx is the ctx argument value.
@@ -450,6 +441,7 @@ type SignerMock struct {
 			SnapshotMoqParam snapshot.Snapshot
 		}
 	}
+	lockAssignNextKey              sync.RWMutex
 	lockGetCurrentKey              sync.RWMutex
 	lockGetCurrentKeyID            sync.RWMutex
 	lockGetKey                     sync.RWMutex
@@ -457,9 +449,50 @@ type SignerMock struct {
 	lockGetNextKey                 sync.RWMutex
 	lockGetSig                     sync.RWMutex
 	lockGetSnapshotCounterForKeyID sync.RWMutex
-	lockIsKeyReady                 sync.RWMutex
-	lockSetKeyReady                sync.RWMutex
 	lockStartSign                  sync.RWMutex
+}
+
+// AssignNextKey calls AssignNextKeyFunc.
+func (mock *SignerMock) AssignNextKey(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error {
+	if mock.AssignNextKeyFunc == nil {
+		panic("SignerMock.AssignNextKeyFunc: method is nil but Signer.AssignNextKey was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Chain   nexus.Chain
+		KeyRole tss.KeyRole
+		KeyID   string
+	}{
+		Ctx:     ctx,
+		Chain:   chain,
+		KeyRole: keyRole,
+		KeyID:   keyID,
+	}
+	mock.lockAssignNextKey.Lock()
+	mock.calls.AssignNextKey = append(mock.calls.AssignNextKey, callInfo)
+	mock.lockAssignNextKey.Unlock()
+	return mock.AssignNextKeyFunc(ctx, chain, keyRole, keyID)
+}
+
+// AssignNextKeyCalls gets all the calls that were made to AssignNextKey.
+// Check the length with:
+//     len(mockedSigner.AssignNextKeyCalls())
+func (mock *SignerMock) AssignNextKeyCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	Chain   nexus.Chain
+	KeyRole tss.KeyRole
+	KeyID   string
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Chain   nexus.Chain
+		KeyRole tss.KeyRole
+		KeyID   string
+	}
+	mock.lockAssignNextKey.RLock()
+	calls = mock.calls.AssignNextKey
+	mock.lockAssignNextKey.RUnlock()
+	return calls
 }
 
 // GetCurrentKey calls GetCurrentKeyFunc.
@@ -716,76 +749,6 @@ func (mock *SignerMock) GetSnapshotCounterForKeyIDCalls() []struct {
 	mock.lockGetSnapshotCounterForKeyID.RLock()
 	calls = mock.calls.GetSnapshotCounterForKeyID
 	mock.lockGetSnapshotCounterForKeyID.RUnlock()
-	return calls
-}
-
-// IsKeyReady calls IsKeyReadyFunc.
-func (mock *SignerMock) IsKeyReady(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) bool {
-	if mock.IsKeyReadyFunc == nil {
-		panic("SignerMock.IsKeyReadyFunc: method is nil but Signer.IsKeyReady was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		KeyID string
-	}{
-		Ctx:   ctx,
-		KeyID: keyID,
-	}
-	mock.lockIsKeyReady.Lock()
-	mock.calls.IsKeyReady = append(mock.calls.IsKeyReady, callInfo)
-	mock.lockIsKeyReady.Unlock()
-	return mock.IsKeyReadyFunc(ctx, keyID)
-}
-
-// IsKeyReadyCalls gets all the calls that were made to IsKeyReady.
-// Check the length with:
-//     len(mockedSigner.IsKeyReadyCalls())
-func (mock *SignerMock) IsKeyReadyCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	KeyID string
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		KeyID string
-	}
-	mock.lockIsKeyReady.RLock()
-	calls = mock.calls.IsKeyReady
-	mock.lockIsKeyReady.RUnlock()
-	return calls
-}
-
-// SetKeyReady calls SetKeyReadyFunc.
-func (mock *SignerMock) SetKeyReady(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) {
-	if mock.SetKeyReadyFunc == nil {
-		panic("SignerMock.SetKeyReadyFunc: method is nil but Signer.SetKeyReady was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		KeyID string
-	}{
-		Ctx:   ctx,
-		KeyID: keyID,
-	}
-	mock.lockSetKeyReady.Lock()
-	mock.calls.SetKeyReady = append(mock.calls.SetKeyReady, callInfo)
-	mock.lockSetKeyReady.Unlock()
-	mock.SetKeyReadyFunc(ctx, keyID)
-}
-
-// SetKeyReadyCalls gets all the calls that were made to SetKeyReady.
-// Check the length with:
-//     len(mockedSigner.SetKeyReadyCalls())
-func (mock *SignerMock) SetKeyReadyCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	KeyID string
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		KeyID string
-	}
-	mock.lockSetKeyReady.RLock()
-	calls = mock.calls.SetKeyReady
-	mock.lockSetKeyReady.RUnlock()
 	return calls
 }
 

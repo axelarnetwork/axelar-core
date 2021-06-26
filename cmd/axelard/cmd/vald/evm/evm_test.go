@@ -407,10 +407,10 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 	var (
-		mgr              *Mgr
-		attributes       []sdk.Attribute
-		rpc              *mock.ClientMock
-		broadcaster      *mock2.BroadcasterMock
+		mgr                   *Mgr
+		attributes            []sdk.Attribute
+		rpc                   *mock.ClientMock
+		broadcaster           *mock2.BroadcasterMock
 		prevNewOwnerAddrBytes []byte
 	)
 	setup := func() {
@@ -584,7 +584,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmTransferOwnershipRequest).Confirmed)
 	}).Repeat(repeats))
 
-	t.Run("new owner not last transfer event ", testutils.Func(func(t *testing.T) {
+	t.Run("new owner not last transfer event", testutils.Func(func(t *testing.T) {
 		setup()
 		for i, attribute := range attributes {
 			if attribute.Key == evmTypes.AttributeKeyAddress {

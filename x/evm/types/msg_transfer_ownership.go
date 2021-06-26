@@ -9,12 +9,12 @@ import (
 )
 
 // NewConfirmTransferOwnershipRequest creates a message of type ConfirmTransferOwnershipRequest
-func NewConfirmTransferOwnershipRequest(sender sdk.AccAddress, chain string, txID common.Hash, newOwnerAddr common.Address) *ConfirmTransferOwnershipRequest {
+func NewConfirmTransferOwnershipRequest(sender sdk.AccAddress, chain string, txID common.Hash, keyID string) *ConfirmTransferOwnershipRequest {
 	return &ConfirmTransferOwnershipRequest{
-		Sender:          sender,
-		Chain:           chain,
-		TxID:            Hash(txID),
-		NewOwnerAddress: Address(newOwnerAddr),
+		Sender: sender,
+		Chain:  chain,
+		TxID:   Hash(txID),
+		KeyID:  keyID,
 	}
 }
 

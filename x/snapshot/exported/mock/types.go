@@ -622,9 +622,6 @@ var _ exported.Tss = &TssMock{}
 // 			GetTssSuspendedUntilFunc: func(ctx sdk.Context, validator sdk.ValAddress) int64 {
 // 				panic("mock out the GetTssSuspendedUntil method")
 // 			},
-// 			IsKeyReadyFunc: func(ctx sdk.Context, keyID string) bool {
-// 				panic("mock out the IsKeyReady method")
-// 			},
 // 			SetKeyRequirementFunc: func(ctx sdk.Context, keyRequirement tss.KeyRequirement)  {
 // 				panic("mock out the SetKeyRequirement method")
 // 			},
@@ -643,9 +640,6 @@ type TssMock struct {
 
 	// GetTssSuspendedUntilFunc mocks the GetTssSuspendedUntil method.
 	GetTssSuspendedUntilFunc func(ctx sdk.Context, validator sdk.ValAddress) int64
-
-	// IsKeyReadyFunc mocks the IsKeyReady method.
-	IsKeyReadyFunc func(ctx sdk.Context, keyID string) bool
 
 	// SetKeyRequirementFunc mocks the SetKeyRequirement method.
 	SetKeyRequirementFunc func(ctx sdk.Context, keyRequirement tss.KeyRequirement)
@@ -673,13 +667,6 @@ type TssMock struct {
 			// Validator is the validator argument value.
 			Validator sdk.ValAddress
 		}
-		// IsKeyReady holds details about calls to the IsKeyReady method.
-		IsKeyReady []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// KeyID is the keyID argument value.
-			KeyID string
-		}
 		// SetKeyRequirement holds details about calls to the SetKeyRequirement method.
 		SetKeyRequirement []struct {
 			// Ctx is the ctx argument value.
@@ -691,7 +678,6 @@ type TssMock struct {
 	lockGetMinBondFractionPerShare sync.RWMutex
 	lockGetNextKey                 sync.RWMutex
 	lockGetTssSuspendedUntil       sync.RWMutex
-	lockIsKeyReady                 sync.RWMutex
 	lockSetKeyRequirement          sync.RWMutex
 }
 
@@ -797,41 +783,6 @@ func (mock *TssMock) GetTssSuspendedUntilCalls() []struct {
 	mock.lockGetTssSuspendedUntil.RLock()
 	calls = mock.calls.GetTssSuspendedUntil
 	mock.lockGetTssSuspendedUntil.RUnlock()
-	return calls
-}
-
-// IsKeyReady calls IsKeyReadyFunc.
-func (mock *TssMock) IsKeyReady(ctx sdk.Context, keyID string) bool {
-	if mock.IsKeyReadyFunc == nil {
-		panic("TssMock.IsKeyReadyFunc: method is nil but Tss.IsKeyReady was just called")
-	}
-	callInfo := struct {
-		Ctx   sdk.Context
-		KeyID string
-	}{
-		Ctx:   ctx,
-		KeyID: keyID,
-	}
-	mock.lockIsKeyReady.Lock()
-	mock.calls.IsKeyReady = append(mock.calls.IsKeyReady, callInfo)
-	mock.lockIsKeyReady.Unlock()
-	return mock.IsKeyReadyFunc(ctx, keyID)
-}
-
-// IsKeyReadyCalls gets all the calls that were made to IsKeyReady.
-// Check the length with:
-//     len(mockedTss.IsKeyReadyCalls())
-func (mock *TssMock) IsKeyReadyCalls() []struct {
-	Ctx   sdk.Context
-	KeyID string
-} {
-	var calls []struct {
-		Ctx   sdk.Context
-		KeyID string
-	}
-	mock.lockIsKeyReady.RLock()
-	calls = mock.calls.IsKeyReady
-	mock.lockIsKeyReady.RUnlock()
 	return calls
 }
 

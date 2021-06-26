@@ -61,8 +61,7 @@ message ConfirmTransferOwnershipRequest {
     (gogoproto.customtype) = "Hash",
     (gogoproto.customname) = "TxID"
   ];
-  bytes new_owner_address = 5
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  string key_id = 4 [ (gogoproto.customname) = "KeyID" ];
 }
 
 message ConfirmTransferOwnershipResponse {}

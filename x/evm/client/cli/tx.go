@@ -186,7 +186,7 @@ func GetCmdConfirmERC20Deposit() *cobra.Command {
 // GetCmdConfirmTransferOwnership returns the cli command to confirm a transfer ownership for the gateway contract
 func GetCmdConfirmTransferOwnership() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "confirm-transfer-ownership [chain] [txID] [newOwnerAddr]",
+		Use:   "confirm-transfer-ownership [chain] [txID] [keyID]",
 		Short: "Confirm a transfer ownership in an EVM chain transaction",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -197,8 +197,8 @@ func GetCmdConfirmTransferOwnership() *cobra.Command {
 
 			chain := args[0]
 			txID := common.HexToHash(args[1])
-			newOwnerAddr := common.HexToAddress(args[2])
-			msg := types.NewConfirmTransferOwnershipRequest(cliCtx.GetFromAddress(), chain, txID, newOwnerAddr)
+			keyID := args[2]
+			msg := types.NewConfirmTransferOwnershipRequest(cliCtx.GetFromAddress(), chain, txID, keyID)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
