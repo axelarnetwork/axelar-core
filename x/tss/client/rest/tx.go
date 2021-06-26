@@ -41,6 +41,7 @@ type ReqKeyRotate struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	Chain   string       `json:"chain" yaml:"chain"`
 	KeyRole string       `json:"key_role" yaml:"key_role"`
+	KeyID   string       `json:"key_id" yaml:"key_id"`
 }
 
 // RegisterRoutes registers all REST routes with the given router
@@ -141,7 +142,7 @@ func GetHandlerKeyRotate(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewRotateKeyRequest(sender, mux.Vars(r)[clientUtils.PathVarChain], keyRole)
+		msg := types.NewRotateKeyRequest(sender, mux.Vars(r)[clientUtils.PathVarChain], keyRole, req.KeyID)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

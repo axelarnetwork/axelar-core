@@ -63,14 +63,12 @@ type ParamsKeeper interface {
 	GetSubspace(s string) (params.Subspace, bool)
 }
 
-// TSS wraps around the existing tss.Keeper interface to adhere to the Cosmos convention of keeping all
-// expected keepers from other modules in the expected_keepers.go file
+// TSS exposes key functionality
 type TSS interface {
 	SetKeyRequirement(ctx sdk.Context, keyRequirement tss.KeyRequirement)
 }
 
-// Voter wraps around the existing vote.Voter interface to adhere to the Cosmos convention of keeping all
-// expected keepers from other modules in the expected_keepers.go file
+// Voter exposes voting functionality
 type Voter interface {
 	InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64, expireAt int64) error
 	DeletePoll(ctx sdk.Context, poll vote.PollMeta)

@@ -88,7 +88,7 @@ func Test_wBTC_mint(t *testing.T) {
 		assignMasterKeyResult := <-chain.Submit(types.NewAssignKeyRequest(randomSender(), c, masterKeyID, tss.MasterKey))
 		assert.NoError(t, assignMasterKeyResult.Error)
 
-		rotateMasterKeyResult := <-chain.Submit(types.NewRotateKeyRequest(randomSender(), c, tss.MasterKey))
+		rotateMasterKeyResult := <-chain.Submit(types.NewRotateKeyRequest(randomSender(), c, tss.MasterKey, masterKeyID))
 		assert.NoError(t, rotateMasterKeyResult.Error)
 
 		if c == btc.Bitcoin.Name {
@@ -104,7 +104,7 @@ func Test_wBTC_mint(t *testing.T) {
 			assignSecondaryKeyResult := <-chain.Submit(types.NewAssignKeyRequest(randomSender(), c, secondaryKeyID, tss.SecondaryKey))
 			assert.NoError(t, assignSecondaryKeyResult.Error)
 
-			rotateSecondaryKeyResult := <-chain.Submit(types.NewRotateKeyRequest(randomSender(), c, tss.SecondaryKey))
+			rotateSecondaryKeyResult := <-chain.Submit(types.NewRotateKeyRequest(randomSender(), c, tss.SecondaryKey, secondaryKeyID))
 			assert.NoError(t, rotateSecondaryKeyResult.Error)
 		}
 	}
