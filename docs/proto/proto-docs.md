@@ -1989,8 +1989,8 @@ ProcessSignTrafficRequest protocol message
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
-| `subset_size` | [int64](#int64) |  |  |
 | `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+| `key_id` | [string](#string) |  |  |
 
 
 

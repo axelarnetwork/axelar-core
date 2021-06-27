@@ -1,9 +1,13 @@
 package types
 
 import (
+	"crypto/ecdsa"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	tofnd2 "github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -13,7 +17,7 @@ import (
 	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
-//go:generate moq -pkg mock -out ./mock/expected_keepers.go . TofndClient TofndKeyGenClient TofndSignClient Voter StakingKeeper
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . TofndClient TofndKeyGenClient TofndSignClient Voter StakingKeeper TSSKeeper Snapshotter Nexus
 
 // Broadcaster provides broadcasting functionality
 type Broadcaster interface {
@@ -66,4 +70,38 @@ type TofndSignClient interface {
 type StakingKeeper interface {
 	GetLastTotalPower(ctx sdk.Context) (power sdk.Int)
 	GetValidator(ctx sdk.Context, addr sdk.ValAddress) (validator types.Validator, found bool)
+}
+
+// TSSKeeper provides keygen and signing functionality
+type TSSKeeper interface {
+	Logger(ctx sdk.Context) log.Logger
+	SetParams(ctx sdk.Context, p Params)
+	GetParams(ctx sdk.Context) (params Params)
+	SetKeyRequirement(ctx sdk.Context, keyRequirement exported.KeyRequirement)
+	GetKeyRequirement(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyRequirement, bool)
+	ComputeCorruptionThreshold(ctx sdk.Context, totalShareCount sdk.Int) int64
+	GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
+	StartSign(ctx sdk.Context, voter InitPoller, keyID string, sigID string, msg []byte, s snapshot.Snapshot) error
+	GetSig(ctx sdk.Context, sigID string) (exported.Signature, bool)
+	SetSig(ctx sdk.Context, sigID string, signature []byte)
+	GetKeyForSigID(ctx sdk.Context, sigID string) (exported.Key, bool)
+	DoesValidatorParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) bool
+	PenalizeSignCriminal(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd2.MessageOut_CriminalList_Criminal_CrimeType)
+	StartKeygen(ctx sdk.Context, voter Voter, keyID string, snapshot snapshot.Snapshot) error
+	GetKey(ctx sdk.Context, keyID string) (exported.Key, bool)
+	SetKey(ctx sdk.Context, keyID string, key ecdsa.PublicKey)
+	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (string, bool)
+	GetCurrentKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.Key, bool)
+	GetNextKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (string, bool)
+	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.Key, bool)
+	AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole, keyID string) error
+	RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) error
+	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool)
+	DoesValidatorParticipateInKeygen(ctx sdk.Context, keyID string, validator sdk.ValAddress) bool
+	GetMinKeygenThreshold(ctx sdk.Context) utils.Threshold
+	GetMinBondFractionPerShare(ctx sdk.Context) utils.Threshold
+	DeleteKeygenStart(ctx sdk.Context, keyID string)
+	DeleteKeyIDForSig(ctx sdk.Context, sigID string)
+	DeleteParticipantsInKeygen(ctx sdk.Context, keyID string)
+	DeleteSnapshotCounterForKeyID(ctx sdk.Context, keyID string)
 }

@@ -17,17 +17,16 @@ import (
 )
 
 const (
-	rotationPrefix              = "rotationCount_"
-	keygenStartHeight           = "blockHeight_"
-	pkPrefix                    = "pk_"
-	snapshotForKeyIDPrefix      = "sfkid_"
-	sigPrefix                   = "sig_"
-	keyIDForSigPrefix           = "kidfs_"
-	participatePrefix           = "part_"
-	validatorDeregisteredPrefix = "validator_deregistered_block_height_"
-	keyRequirementPrefix        = "key_requirement_"
-	keyRolePrefix               = "key_role_"
-	keyTssSuspendedUntil        = "key_tss_suspended_until_"
+	rotationPrefix         = "rotationCount_"
+	keygenStartHeight      = "blockHeight_"
+	pkPrefix               = "pk_"
+	snapshotForKeyIDPrefix = "sfkid_"
+	sigPrefix              = "sig_"
+	keyIDForSigPrefix      = "kidfs_"
+	participatePrefix      = "part_"
+	keyRequirementPrefix   = "key_requirement_"
+	keyRolePrefix          = "key_role_"
+	keyTssSuspendedUntil   = "key_tss_suspended_until_"
 )
 
 // Keeper allows access to the broadcast state
