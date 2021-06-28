@@ -1,0 +1,17 @@
+syntax = "proto3";
+package tss.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/tss/types";
+
+import "gogoproto/gogo.proto";
+import "proto/nexus/exported/v1beta1/types.proto";
+import "proto/tss/exported/v1beta1/types.proto";
+import "tss/v1beta1/types.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// QueryKeyParams describe the parameters used to query key information
+message QueryKeyParams {
+  tss.exported.v1beta1.KeyRole role = 1 [ (gogoproto.nullable) = false ];
+  nexus.exported.v1beta1.Chain chain = 2 [ (gogoproto.nullable) = false ];
+}
