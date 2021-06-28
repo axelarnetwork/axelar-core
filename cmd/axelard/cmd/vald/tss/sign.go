@@ -16,7 +16,10 @@ import (
 
 // ProcessSignStart starts the communication with the sign protocol
 func (mgr *Mgr) ProcessSignStart(blockHeight int64, attributes []sdk.Attribute) error {
-	keyID, sigID, participants, payload := parseSignStartParams(mgr.cdc, attributes)
+	keyID, sigID, participants, payload, err := parseSignStartParams(mgr.cdc, attributes)
+	if err != nil {
+		return err
+	}
 	_, ok := indexOf(participants, mgr.principalAddr)
 	if !ok {
 		// do not participate
@@ -88,22 +91,31 @@ func (mgr *Mgr) ProcessSignMsg(attributes []sdk.Attribute) error {
 	return nil
 }
 
-func parseSignStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, sigID string, participants []string, payload []byte) {
+func parseSignStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, sigID string, participants []string, payload []byte, err error) {
+	var keyIDFound, sigIDFound, participantsFound, payloadFound bool
 	for _, attribute := range attributes {
 		switch attribute.Key {
 		case tss.AttributeKeyKeyID:
 			keyID = attribute.Value
+			keyIDFound = true
 		case tss.AttributeKeySigID:
 			sigID = attribute.Value
+			sigIDFound = true
 		case tss.AttributeKeyParticipants:
 			cdc.MustUnmarshalJSON([]byte(attribute.Value), &participants)
+			participantsFound = true
 		case tss.AttributeKeyPayload:
 			payload = []byte(attribute.Value)
+			payloadFound = true
 		default:
 		}
 	}
 
-	return keyID, sigID, participants, payload
+	if !keyIDFound || !sigIDFound || !participantsFound || !payloadFound {
+		return "", "", nil, nil, fmt.Errorf("insufficient event attributes")
+	}
+
+	return keyID, sigID, participants, payload, nil
 }
 
 func (mgr *Mgr) startSign(keyID string, sigID string, participants []string, payload []byte) (Stream, context.CancelFunc, error) {
@@ -156,7 +168,12 @@ func (mgr *Mgr) handleSignResult(sigID string, resultChan <-chan interface{}) er
 		delete(mgr.signStreams, sigID)
 	}()
 
-	result := (<-resultChan).(*tofnd.MessageOut_SignResult)
+	r, ok := <-resultChan
+	if !ok {
+		return fmt.Errorf("failed to receive sign result, channel was closed by the server")
+	}
+
+	result := r.(*tofnd.MessageOut_SignResult)
 	if result.GetCriminals() != nil {
 		// criminals have to be sorted in ascending order
 		sort.Stable(result.GetCriminals())
