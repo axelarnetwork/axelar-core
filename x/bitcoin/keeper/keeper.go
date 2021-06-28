@@ -185,6 +185,7 @@ func (k Keeper) SetOutpointInfo(ctx sdk.Context, info types.OutPointInfo, state 
 // GetConfirmedOutPointInfos returns information about all confirmed outpoints
 func (k Keeper) GetConfirmedOutPointInfos(ctx sdk.Context) []types.OutPointInfo {
 	iter := sdk.KVStorePrefixIterator(k.getStore(ctx).KVStore, []byte(confirmedOutPointPrefix))
+	defer iter.Close()
 
 	var outs []types.OutPointInfo
 	for ; iter.Valid(); iter.Next() {

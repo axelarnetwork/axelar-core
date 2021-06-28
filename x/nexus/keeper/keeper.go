@@ -78,7 +78,10 @@ func (k Keeper) GetChains(ctx sdk.Context) []exported.Chain {
 	var results []exported.Chain
 
 	prefix := utils.EmptyLowerCaseKey.WithPrefix(chainPrefix).AsKey()
-	for iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), prefix); iter.Valid(); iter.Next() {
+	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), prefix)
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
 		var chain exported.Chain
 		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &chain)
 		results = append(results, chain)
@@ -207,9 +210,11 @@ func (k Keeper) setPendingTransfer(ctx sdk.Context, recipient exported.CrossChai
 // GetTransfersForChain returns the current set of transfers with the given state for the given chain
 func (k Keeper) GetTransfersForChain(ctx sdk.Context, chain exported.Chain, state exported.TransferState) []exported.CrossChainTransfer {
 	transfers := make([]exported.CrossChainTransfer, 0)
-	prefix := utils.EmptyLowerCaseKey.WithPrefix(chain.Name).WithPrefix(state.String())
 
+	prefix := utils.EmptyLowerCaseKey.WithPrefix(chain.Name).WithPrefix(state.String())
 	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), prefix.AsKey())
+	defer iter.Close()
+
 	for ; iter.Valid(); iter.Next() {
 		bz := iter.Value()
 		var transfer exported.CrossChainTransfer

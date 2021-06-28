@@ -105,12 +105,16 @@ func (k Keeper) DeletePoll(ctx sdk.Context, poll exported.PollMeta) {
 
 	// delete tallied votes index for poll
 	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(talliedPrefix+poll.String()))
+	defer iter.Close()
+
 	for ; iter.Valid(); iter.Next() {
 		ctx.KVStore(k.storeKey).Delete(iter.Key())
 	}
 
 	// delete voter index for poll
 	iter = sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(addrPrefix+poll.String()))
+	defer iter.Close()
+
 	for ; iter.Valid(); iter.Next() {
 		ctx.KVStore(k.storeKey).Delete(iter.Key())
 	}
