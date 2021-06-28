@@ -78,6 +78,7 @@ func (k Keeper) SetParams(ctx sdk.Context, params ...types.Params) {
 func (k Keeper) GetParams(ctx sdk.Context) []types.Params {
 	params := make([]types.Params, 0)
 	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(subspacePrefix))
+	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
 		chain := string(iter.Value())
@@ -359,6 +360,7 @@ func (k Keeper) GetDeposit(ctx sdk.Context, chain string, txID common.Hash, burn
 func (k Keeper) GetConfirmedDeposits(ctx sdk.Context, chain string) []types.ERC20Deposit {
 	var deposits []types.ERC20Deposit
 	iter := sdk.KVStorePrefixIterator(k.getStore(ctx, chain), []byte(confirmedDepositPrefix))
+	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
 		bz := iter.Value()
