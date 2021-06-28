@@ -108,9 +108,9 @@ func getCmdAssignNextKey() *cobra.Command {
 
 func getCmdRotateKey() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "rotate [chain] [role]",
-		Short: "Rotate the given chain from the old key to the previously assigned one",
-		Args:  cobra.ExactArgs(2),
+		Use:   "rotate [chain] [role] [keyID]",
+		Short: "Rotate the given chain from the old key to the given key",
+		Args:  cobra.ExactArgs(3),
 	}
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
@@ -125,7 +125,7 @@ func getCmdRotateKey() *cobra.Command {
 			return err
 		}
 
-		msg := types.NewRotateKeyRequest(clientCtx.FromAddress, chain, keyRole)
+		msg := types.NewRotateKeyRequest(clientCtx.FromAddress, chain, keyRole, args[0])
 		if err := msg.ValidateBasic(); err != nil {
 			return err
 		}
