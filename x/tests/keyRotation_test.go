@@ -272,7 +272,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, assignKeyResult.Error)
 
 	// sign the consolidation transaction
-	signResult := <-chain.Submit(btcTypes.NewSignPendingTransfersRequest(randomSender()))
+	signResult := <-chain.Submit(btcTypes.NewSignPendingTransfersRequest(randomSender(), masterKeyID2))
 	assert.NoError(t, signResult.Error)
 
 	// wait for voting to be done

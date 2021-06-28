@@ -35,11 +35,10 @@ message LinkResponse { string deposit_addr = 2; };
 message SignPendingTransfersRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string key_id = 2 [ (gogoproto.customname) = "KeyID" ];
 }
 
-message SignPendingTransfersResponse {
-  string command_id = 1 [ (gogoproto.customname) = "CommandID" ];
-};
+message SignPendingTransfersResponse {};
 
 // MsgVoteConfirmOutpoint represents a message to that votes on an outpoint
 message VoteConfirmOutpointRequest {
