@@ -2,6 +2,7 @@ package exported
 
 import (
 	"bytes"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"time"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -50,6 +51,7 @@ type Tss interface {
 	SetKeyRequirement(ctx sdk.Context, keyRequirement tss.KeyRequirement)
 	GetMinBondFractionPerShare(ctx sdk.Context) utils.Threshold
 	GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
+	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 }
 
 // IsValidatorActive returns true if the validator is active; otherwise, false
