@@ -156,7 +156,12 @@ func (mgr *Mgr) handleSignResult(sigID string, resultChan <-chan interface{}) er
 		delete(mgr.signStreams, sigID)
 	}()
 
-	result := (<-resultChan).(*tofnd.MessageOut_SignResult)
+	r, ok := <-resultChan
+	if !ok {
+		return fmt.Errorf("failed to receive sign result, channel was closed by the server")
+	}
+
+	result := r.(*tofnd.MessageOut_SignResult)
 	if result.GetCriminals() != nil {
 		// criminals have to be sorted in ascending order
 		sort.Stable(result.GetCriminals())

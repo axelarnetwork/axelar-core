@@ -159,7 +159,12 @@ func (mgr *Mgr) handleKeygenResult(keyID string, resultChan <-chan interface{}) 
 		delete(mgr.keygenStreams, keyID)
 	}()
 
-	result := (<-resultChan).(*tofnd.MessageOut_KeygenResult)
+	r, ok := <-resultChan
+	if !ok {
+		return fmt.Errorf("failed to receive keygen result, channel was closed by the server")
+	}
+
+	result := r.(*tofnd.MessageOut_KeygenResult)
 	if result.GetCriminals() != nil {
 		// criminals have to be sorted in ascending order
 		sort.Stable(result.GetCriminals())
