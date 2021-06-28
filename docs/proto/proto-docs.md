@@ -146,6 +146,9 @@
 - [tss/v1beta1/genesis.proto](#tss/v1beta1/genesis.proto)
     - [GenesisState](#tss.v1beta1.GenesisState)
   
+- [tss/v1beta1/query.proto](#tss/v1beta1/query.proto)
+    - [QuerySigResponse](#tss.v1beta1.QuerySigResponse)
+  
 - [tss/v1beta1/tx.proto](#tss/v1beta1/tx.proto)
     - [ProcessKeygenTrafficRequest](#tss.v1beta1.ProcessKeygenTrafficRequest)
     - [ProcessKeygenTrafficResponse](#tss.v1beta1.ProcessKeygenTrafficResponse)
@@ -1960,6 +1963,38 @@ Params is the parameter set for this module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#tss.v1beta1.Params) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="tss/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tss/v1beta1/query.proto
+
+
+
+<a name="tss.v1beta1.QuerySigResponse"></a>
+
+### QuerySigResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `r` | [bytes](#bytes) |  |  |
+| `s` | [bytes](#bytes) |  |  |
 
 
 

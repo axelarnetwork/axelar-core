@@ -3,19 +3,16 @@ package keeper
 import (
 	"fmt"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
-	abci "github.com/tendermint/tendermint/abci/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // Query paths
 const (
-	QueryCurrentKey = "current-key"
+	QueryGetSig = "get-sig"
 )
 
 // NewQuerier returns a new querier for the Bitcoin module
@@ -24,8 +21,8 @@ func NewQuerier(k tssTypes.TSSKeeper) sdk.Querier {
 		var res []byte
 		var err error
 		switch path[0] {
-		case Query:
-			res, err = queryCurrentKey(ctx, k, req.Data)
+		case QueryGetSig:
+			res, err = queryGetSig(ctx, k, req.Data)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown btc-bridge query endpoint: %s", path[1]))
 		}
@@ -37,17 +34,18 @@ func NewQuerier(k tssTypes.TSSKeeper) sdk.Querier {
 	}
 }
 
-func queryCurrentKey(ctx sdk.Context, k tssTypes.TSSKeeper, data []byte) ([]byte, error) {
-	var params QueryKeyParams
-	err := types.ModuleCdc.LegacyAmino.UnmarshalJSON(data, &params)
-	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
-	}
+func queryGetSig(ctx sdk.Context, k tssTypes.TSSKeeper, data []byte) ([]byte, error) {
+	sigID := string(data)
 
-	key, ok := k.GetCurrentKey(ctx, chain, role)
+	sig, ok := k.GetSig(ctx, sigID)
 	if !ok {
 		return nil, fmt.Errorf("masterKey not found")
 	}
 
-	return []byte(addr.Address), nil
+	sigResponse := tssTypes.QuerySigResponse{
+		R: *sig.R,
+		S: *sig.S,
+	}
+
+	return sigResponse.Marshal()
 }
