@@ -923,9 +923,20 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 		return nil, fmt.Errorf("Could not find chain ID for '%s'", req.Chain)
 	}
 
-	commandID := getCommandID(req.NewOwner.Bytes(), chainID)
+	key, ok := s.signer.GetKey(ctx, req.KeyID)
+	if !ok {
+		return nil, fmt.Errorf("unkown key %s", req.KeyID)
+	}
 
-	data, err := types.CreateTransferOwnershipCommandData(chainID, commandID, common.Address(req.NewOwner))
+	next, nextAssigned := s.signer.GetNextKey(ctx, exported.Ethereum, tss.MasterKey)
+	if nextAssigned {
+		return nil, fmt.Errorf("key %s already assigned as the next %s key for chain %s", next.ID, tss.MasterKey.SimpleString(), exported.Ethereum.Name)
+	}
+	newOwner := crypto.PubkeyToAddress(key.Value)
+
+	commandID := getCommandID(newOwner.Bytes(), chainID)
+
+	data, err := types.CreateTransferOwnershipCommandData(chainID, commandID, newOwner)
 	if err != nil {
 		return nil, err
 	}

@@ -119,7 +119,7 @@
     - [bitcoin](axelard_tx_bitcoin.md)	 - bitcoin transactions subcommands
       - [confirmTxOut \[txID:voutIdx\] \[amount\] \[address\]](axelard_tx_bitcoin_confirmTxOut.md)	 - Confirm a Bitcoin transaction
       - [link \[chain\] \[address\]](axelard_tx_bitcoin_link.md)	 - Link a cross chain address to a bitcoin address created by Axelar
-      - [sign-pending-transfers](axelard_tx_bitcoin_sign-pending-transfers.md)	 - Create a Bitcoin transaction for all pending transfers and sign it
+      - [sign-pending-transfers \[keyID\]](axelard_tx_bitcoin_sign-pending-transfers.md)	 - Create a Bitcoin transaction for all pending transfers and sign it
     - [crisis](axelard_tx_crisis.md)	 - Crisis transactions subcommands
       - [invariant-broken \[module-name\] \[invariant-route\]](axelard_tx_crisis_invariant-broken.md)	 - Submit proof that an invariant broken to halt the chain
     - [decode \[amino-byte-string\]](axelard_tx_decode.md)	 - Decode an binary encoded transaction string.
@@ -141,7 +141,7 @@
       - [sign-burn-tokens \[chain\]](axelard_tx_evm_sign-burn-tokens.md)	 - Sign burn command for all confirmed token deposits in an EVM chain
       - [sign-deploy-token \[chain\] \[name\] \[symbol\] \[decimals\] \[capacity\]](axelard_tx_evm_sign-deploy-token.md)	 - Signs the call data to deploy a token with the AxelarGateway contract
       - [sign-pending-transfers \[chain\]](axelard_tx_evm_sign-pending-transfers.md)	 - Sign all pending transfers to an EVM chain
-      - [transfer-ownership \[chain\] \[newOwnerAddr\]](axelard_tx_evm_transfer-ownership.md)	 - Sign transfer ownership command for an EVM chain contract
+      - [transfer-ownership \[chain\] \[keyID\]](axelard_tx_evm_transfer-ownership.md)	 - Sign transfer ownership command for an EVM chain contract
     - [gov](axelard_tx_gov.md)	 - Governance transactions subcommands
       - [deposit \[proposal-id\] \[deposit\]](axelard_tx_gov_deposit.md)	 - Deposit tokens for an active proposal
       - [submit-proposal](axelard_tx_gov_submit-proposal.md)	 - Submit a proposal along with an initial deposit
