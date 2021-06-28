@@ -7,8 +7,8 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
+	"github.com/axelarnetwork/axelar-core/x/tss/types"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/gorilla/mux"
@@ -16,13 +16,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/rest"
 )
 
-// query parameters
-const (
-	QueryParamFeeRate = "fee_rate"
-)
-
-// QueryHandlerDepositAddress returns a handler to query a deposit address
-func QueryHandlerDepositAddress(cliCtx client.Context) http.HandlerFunc {
+// QueryHandlerGetSig returns a handler to query a signature by its sigID
+func QueryHandlerGetSig(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -30,23 +25,20 @@ func QueryHandlerDepositAddress(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		vars := mux.Vars(r)
-		queryData, err := cliCtx.LegacyAmino.MarshalJSON(types.DepositQueryParams{Chain: vars[utils.PathVarChain], Address: vars[utils.PathVarEthereumAddress]})
+		queryData := []byte(mux.Vars(r)[utils.PathVarSigID])
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryGetSig), queryData)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
 		}
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryDepositAddress), queryData)
+		var sigResponse types.QuerySigResponse
+		err = sigResponse.Unmarshal(res)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFDepositAddress).Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "failed to get sig").Error())
 			return
 		}
 
-		if len(res) == 0 {
-			rest.PostProcessResponse(w, cliCtx, "")
-			return
-		}
-
-		rest.PostProcessResponse(w, cliCtx, string(res))
+		rest.PostProcessResponse(w, cliCtx, sigResponse)
 	}
 }
