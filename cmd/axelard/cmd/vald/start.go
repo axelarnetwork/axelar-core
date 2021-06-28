@@ -189,6 +189,7 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 	ethChainConf := tmEvents.MustSubscribeTx(hub, evmTypes.EventTypeChainConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 	ethDepConf := tmEvents.MustSubscribeTx(eventMgr, evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 	ethTokConf := tmEvents.MustSubscribeTx(eventMgr, evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	ethTraConf := tmEvents.MustSubscribeTx(eventMgr, evmTypes.EventTypeTransferOwnershipConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 
 	// stop the jobs if process gets interrupted/terminated
 	cleanupCommands = append(cleanupCommands, func() {
@@ -219,6 +220,7 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 		events.Consume(ethChainConf, events.OnlyAttributes(ethMgr.ProcessChainConfirmation)),
 		events.Consume(ethDepConf, events.OnlyAttributes(ethMgr.ProcessDepositConfirmation)),
 		events.Consume(ethTokConf, events.OnlyAttributes(ethMgr.ProcessTokenConfirmation)),
+		events.Consume(ethTraConf, events.OnlyAttributes(ethMgr.ProcessTransferOwnershipConfirmation)),
 	}
 
 	// errGroup runs async processes and cancels their context if ANY of them returns an error.

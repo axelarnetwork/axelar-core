@@ -250,9 +250,13 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		nexusKeeper = &mock.NexusMock{
 			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) error { return nil },
 		}
-
+		privateKey, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
+		masterKey := tss.Key{ID: rand.StrBetween(5, 20), Value: privateKey.PublicKey, Role: tss.MasterKey}
+		signerKeeper := &mock.SignerMock{
+			GetNextKeyFunc: func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) { return masterKey, false },
+		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		server = NewMsgServerImpl(btcKeeper, &mock.SignerMock{}, nexusKeeper, voter, &mock.SnapshotterMock{})
+		server = NewMsgServerImpl(btcKeeper, signerKeeper, nexusKeeper, voter, &mock.SnapshotterMock{})
 	}
 
 	repeats := 20
@@ -616,7 +620,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 			GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
 				return rand.PosI64(), true
 			},
-			StartSignFunc: func(sdk.Context, types.InitPoller, string, string, []byte, snapshot.Snapshot) error { return nil },
+			StartSignFunc:   func(sdk.Context, types.InitPoller, string, string, []byte, snapshot.Snapshot) error { return nil },
 		}
 		snapshotter = &mock.SnapshotterMock{
 			GetSnapshotFunc: func(_ sdk.Context, counter int64) (snapshot.Snapshot, bool) {
