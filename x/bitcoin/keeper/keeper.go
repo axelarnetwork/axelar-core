@@ -27,6 +27,8 @@ const (
 	unsignedTxKey            = "unsignedTx"
 	signedTxKey              = "signedTx"
 	masterKeyVoutKey         = "master_key_vout"
+
+	confirmedOutpointQueueName = "confirmed_outpoint"
 )
 
 var _ types.BTCKeeper = Keeper{}
@@ -112,6 +114,14 @@ func (k Keeper) GetMinimumWithdrawalAmount(ctx sdk.Context) btcutil.Amount {
 	return result
 }
 
+// GetMaxInputCount returns the max input count
+func (k Keeper) GetMaxInputCount(ctx sdk.Context) int64 {
+	var result int64
+	k.params.Get(ctx, types.KeyMaxInputCount, &result)
+
+	return result
+}
+
 // SetAddress stores the given address information
 func (k Keeper) SetAddress(ctx sdk.Context, address types.AddressInfo) {
 	k.getStore(ctx).Set(utils.LowerCaseKey(address.Address).WithPrefix(addrPrefix), &address)
@@ -174,7 +184,7 @@ func (k Keeper) SetOutpointInfo(ctx sdk.Context, info types.OutPointInfo, state 
 	key := utils.LowerCaseKey(info.OutPoint)
 	switch state {
 	case types.CONFIRMED:
-		k.getStore(ctx).Set(key.WithPrefix(confirmedOutPointPrefix), &info)
+		k.GetConfirmedOutpointInfoQueue(ctx).Enqueue(key.WithPrefix(confirmedOutPointPrefix), &info)
 	case types.SPENT:
 		k.getStore(ctx).Set(key.WithPrefix(spentOutPointPrefix), &info)
 	default:
@@ -182,18 +192,9 @@ func (k Keeper) SetOutpointInfo(ctx sdk.Context, info types.OutPointInfo, state 
 	}
 }
 
-// GetConfirmedOutPointInfos returns information about all confirmed outpoints
-func (k Keeper) GetConfirmedOutPointInfos(ctx sdk.Context) []types.OutPointInfo {
-	iter := sdk.KVStorePrefixIterator(k.getStore(ctx).KVStore, []byte(confirmedOutPointPrefix))
-	defer iter.Close()
-
-	var outs []types.OutPointInfo
-	for ; iter.Valid(); iter.Next() {
-		var info types.OutPointInfo
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &info)
-		outs = append(outs, info)
-	}
-	return outs
+// GetConfirmedOutpointInfoQueue returns the queue for confirmed outpoint infos
+func (k Keeper) GetConfirmedOutpointInfoQueue(ctx sdk.Context) utils.KVQueue {
+	return utils.NewBlockHeightKVQueue(k.getStore(ctx), ctx, confirmedOutpointQueueName)
 }
 
 // SetUnsignedTx stores a raw transaction for outpoint consolidation

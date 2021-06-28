@@ -65,6 +65,20 @@ func (store NormalizedKVStore) Delete(key Keyer) {
 }
 
 var _ Keyer = LowerCaseKey("")
+var _ Keyer = RegularKey("")
+
+// RegularKey is a regular key string that is identical to the underlying string
+type RegularKey string
+
+// AsKey returns the byte representation of the key
+func (k RegularKey) AsKey() []byte {
+	return []byte(string(k))
+}
+
+// WithPrefix prepends the given prefix to the key
+func (k RegularKey) WithPrefix(prefix string) Keyer {
+	return RegularKey(prefix + "_" + string(k))
+}
 
 // LowerCaseKey wraps around a key string to enable case insensitive comparisons
 type LowerCaseKey string
