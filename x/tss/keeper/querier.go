@@ -37,12 +37,13 @@ func NewQuerier(k tssTypes.TSSKeeper) sdk.Querier {
 func queryGetSig(ctx sdk.Context, k tssTypes.TSSKeeper, data []byte) ([]byte, error) {
 	sigID := string(data)
 
+	var sigResponse tssTypes.QuerySigResponse
 	sig, ok := k.GetSig(ctx, sigID)
 	if !ok {
-		return nil, fmt.Errorf("masterKey not found")
+		return sigResponse.Marshal()
 	}
 
-	sigResponse := tssTypes.QuerySigResponse{
+	sigResponse = tssTypes.QuerySigResponse{
 		R: *sig.R,
 		S: *sig.S,
 	}
