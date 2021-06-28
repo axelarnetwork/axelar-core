@@ -308,6 +308,7 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 	if err != nil {
 		return nil, err
 	}
+
 	return &types.SignPendingTransfersResponse{}, nil
 }
 
