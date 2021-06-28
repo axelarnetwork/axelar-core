@@ -269,7 +269,7 @@ func GetCmdSignBurnTokens() *cobra.Command {
 // GetCmdSignTransferOwnership returns the cli command to sign transfer-ownership command for an EVM chain contract
 func GetCmdSignTransferOwnership() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "transfer-ownership [chain] [newOwnerAddr]",
+		Use:   "transfer-ownership [chain] [keyID]",
 		Short: "Sign transfer ownership command for an EVM chain contract",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -277,10 +277,8 @@ func GetCmdSignTransferOwnership() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			chain := args[0]
-			newOwnerAddr := common.HexToAddress(args[1])
 
-			msg := types.NewSignTransferOwnershipRequest(cliCtx.GetFromAddress(), chain, newOwnerAddr)
+			msg := types.NewSignTransferOwnershipRequest(cliCtx.GetFromAddress(), args[0], args[1])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

@@ -119,8 +119,8 @@ type ReqSignBurnTokens struct {
 
 // ReqSignTransferOwnership represents a request to sign transfer ownership command
 type ReqSignTransferOwnership struct {
-	BaseReq  rest.BaseReq `json:"base_req" yaml:"base_req"`
-	NewOwner string       `json:"new_owner" yaml:"new_owner"`
+	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+	KeyID   string       `json:"key_id" yaml:"key_id"`
 }
 
 // ReqAddChain represents a request to add a new evm chain command
@@ -382,8 +382,7 @@ func GetHandlerSignTransferOwnership(cliCtx client.Context) http.HandlerFunc {
 		if !ok {
 			return
 		}
-		newOwner := common.HexToAddress(req.NewOwner)
-		msg := types.NewSignTransferOwnershipRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], newOwner)
+		msg := types.NewSignTransferOwnershipRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], req.KeyID)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

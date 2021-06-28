@@ -1090,7 +1090,7 @@ AxelarGateway
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
-| `new_owner` | [bytes](#bytes) |  |  |
+| `key_id` | [string](#string) |  |  |
 
 
 
