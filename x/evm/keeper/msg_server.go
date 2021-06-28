@@ -923,15 +923,6 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 		return nil, fmt.Errorf("Could not find chain ID for '%s'", req.Chain)
 	}
 
-	// Only transfer to the next pk address
-	pk, ok := s.signer.GetNextKey(ctx, chain, tss.MasterKey)
-	if !ok {
-		return nil, fmt.Errorf("no next assigned key found for %s ", req.Chain)
-	}
-	if crypto.PubkeyToAddress(pk.Value) != common.Address(req.NewOwner) {
-		return nil, fmt.Errorf("new owner %s does not match assigned key %s ", req.NewOwner.Hex(), crypto.PubkeyToAddress(pk.Value).Hex())
-	}
-
 	commandID := getCommandID(req.NewOwner.Bytes(), chainID)
 
 	data, err := types.CreateTransferOwnershipCommandData(chainID, commandID, common.Address(req.NewOwner))
