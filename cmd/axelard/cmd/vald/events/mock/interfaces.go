@@ -1,14 +1,12 @@
 package mock
 
 import (
-	"io"
-
 	"github.com/axelarnetwork/tm-events/pkg/pubsub"
 	tmpubsub "github.com/tendermint/tendermint/libs/pubsub"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 )
 
-//go:generate moq -out ./types.go -pkg mock . SignClient Query Bus Subscriber ReadWriteSeekTruncateCloser
+//go:generate moq -out ./types.go -pkg mock . SignClient Query Bus Subscriber ReadWriter
 
 type (
 	// SignClient interface alias for mocking
@@ -19,10 +17,9 @@ type (
 	Bus pubsub.Bus
 	// Subscriber interface alias for mocking
 	Subscriber pubsub.Subscriber
-	// ReadWriteSeekTruncateCloser interface for mocking. Duplicated to prevent cyclic dependencies
-	ReadWriteSeekTruncateCloser interface {
-		io.ReadWriteSeeker
-		Truncate(size int64) error
-		Close() error
+	// ReadWriter interface for mocking. Duplicated to prevent cyclic dependencies
+	ReadWriter interface {
+		WriteAll([]byte) error
+		ReadAll() ([]byte, error)
 	}
 )

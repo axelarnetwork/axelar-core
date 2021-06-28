@@ -5,12 +5,11 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/ethereum/go-ethereum/common"
 )
 
 // NewSignTransferOwnershipRequest is the constructor for SignTransferOwnershipRequest
-func NewSignTransferOwnershipRequest(sender sdk.AccAddress, chain string, newOwner common.Address) *SignTransferOwnershipRequest {
-	return &SignTransferOwnershipRequest{Sender: sender, Chain: chain, NewOwner: Address(newOwner)}
+func NewSignTransferOwnershipRequest(sender sdk.AccAddress, chain string, keyID string) *SignTransferOwnershipRequest {
+	return &SignTransferOwnershipRequest{Sender: sender, Chain: chain, KeyID: keyID}
 }
 
 // Route implements sdk.Msg

@@ -13,7 +13,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
 
-	broadcastTypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
+	broadcasterTypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss/rpc"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -147,16 +147,18 @@ type Mgr struct {
 	Timeout        time.Duration
 	principalAddr  string
 	Logger         log.Logger
-	broadcaster    broadcastTypes.Broadcaster
+	broadcaster    broadcasterTypes.Broadcaster
 	sender         sdk.AccAddress
 	cdc            *codec.LegacyAmino
 }
 
 // CreateTOFNDClient creates a client to communicate with the external tofnd process
-func CreateTOFNDClient(host string, port string, logger log.Logger) (rpc.Client, error) {
+func CreateTOFNDClient(host string, port string, timeout time.Duration, logger log.Logger) (rpc.Client, error) {
 	tofndServerAddress := host + ":" + port
 	logger.Info(fmt.Sprintf("initiate connection to tofnd gRPC server: %s", tofndServerAddress))
-	conn, err := grpc.Dial(tofndServerAddress, grpc.WithInsecure(), grpc.WithBlock())
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	conn, err := grpc.DialContext(ctx, tofndServerAddress, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +168,7 @@ func CreateTOFNDClient(host string, port string, logger log.Logger) (rpc.Client,
 }
 
 // NewMgr returns a new tss manager instance
-func NewMgr(client rpc.Client, timeout time.Duration, principalAddr string, broadcaster broadcastTypes.Broadcaster, sender sdk.AccAddress, sessionTimeout int64, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
+func NewMgr(client rpc.Client, timeout time.Duration, principalAddr string, broadcaster broadcasterTypes.Broadcaster, sender sdk.AccAddress, sessionTimeout int64, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
 		client:         client,
 		keygen:         &sync.RWMutex{},

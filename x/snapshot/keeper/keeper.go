@@ -16,33 +16,35 @@ import (
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
-const lastCounterKey = "lastcounter"
-const counterPrefix = "counter_"
+const (
+	proxyCountKey  = "proxyCount"
+	lastCounterKey = "lastcounter"
+
+	counterPrefix = "counter_"
+)
 
 // Make sure the keeper implements the Snapshotter interface
 var _ exported.Snapshotter = Keeper{}
 
 // Keeper represents the snapshot keeper
 type Keeper struct {
-	storeKey    sdk.StoreKey
-	staking     types.StakingKeeper
-	slasher     exported.Slasher
-	broadcaster exported.Broadcaster
-	tss         exported.Tss
-	cdc         codec.BinaryMarshaler
-	params      params.Subspace
+	storeKey sdk.StoreKey
+	staking  types.StakingKeeper
+	slasher  exported.Slasher
+	tss      exported.Tss
+	cdc      codec.BinaryMarshaler
+	params   params.Subspace
 }
 
 // NewKeeper creates a new keeper for the staking module
-func NewKeeper(cdc codec.BinaryMarshaler, key sdk.StoreKey, paramSpace params.Subspace, broadcaster exported.Broadcaster, staking types.StakingKeeper, slasher exported.Slasher, tss exported.Tss) Keeper {
+func NewKeeper(cdc codec.BinaryMarshaler, key sdk.StoreKey, paramSpace params.Subspace, staking types.StakingKeeper, slasher exported.Slasher, tss exported.Tss) Keeper {
 	return Keeper{
-		storeKey:    key,
-		cdc:         cdc,
-		staking:     staking,
-		params:      paramSpace.WithKeyTable(types.KeyTable()),
-		slasher:     slasher,
-		broadcaster: broadcaster,
-		tss:         tss,
+		storeKey: key,
+		cdc:      cdc,
+		staking:  staking,
+		params:   paramSpace.WithKeyTable(types.KeyTable()),
+		slasher:  slasher,
+		tss:      tss,
 	}
 }
 
@@ -138,8 +140,7 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64
 		}
 
 		if !exported.IsValidatorActive(ctx, k.slasher, &v) ||
-			!exported.HasProxyRegistered(ctx, k.broadcaster, &v) ||
-			!exported.IsValidatorTssRegistered(ctx, k.tss, &v) ||
+			!exported.HasProxyRegistered(ctx, k, &v) ||
 			exported.IsValidatorTssSuspended(ctx, k.tss, &v) {
 			return false
 		}
@@ -214,4 +215,90 @@ func (k Keeper) setLatestCounter(ctx sdk.Context, counter int64) {
 
 func counterKey(counter int64) []byte {
 	return []byte(fmt.Sprintf("%s%d", counterPrefix, counter))
+}
+
+// RegisterProxy registers a proxy address for a given principal, which can broadcast messages in the principal's name
+// The proxy will be marked as active and to be included in the next snapshot by default
+func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy sdk.AccAddress) error {
+	val := k.staking.Validator(ctx, principal)
+	if val == nil {
+		return fmt.Errorf("validator %s is unknown", principal.String())
+	}
+	k.Logger(ctx).Debug("getting proxy count")
+	count := k.getProxyCount(ctx)
+
+	storedProxy := ctx.KVStore(k.storeKey).Get(principal)
+	if storedProxy != nil {
+		ctx.KVStore(k.storeKey).Delete(storedProxy)
+		count--
+	}
+	k.Logger(ctx).Debug("setting proxy")
+	ctx.KVStore(k.storeKey).Set(proxy, principal)
+	// Creating a reverse lookup
+	bz := append([]byte{1}, proxy...)
+	ctx.KVStore(k.storeKey).Set(principal, bz)
+	count++
+	k.Logger(ctx).Debug("setting proxy count")
+	k.setProxyCount(ctx, count)
+	k.Logger(ctx).Debug("done")
+	return nil
+}
+
+// DeactivateProxy deactivates the proxy address for a given principal
+func (k Keeper) DeactivateProxy(ctx sdk.Context, principal sdk.ValAddress) error {
+	val := k.staking.Validator(ctx, principal)
+	if val == nil {
+		return fmt.Errorf("validator %s is unknown", principal.String())
+	}
+
+	storedProxy := ctx.KVStore(k.storeKey).Get(principal)
+	if storedProxy == nil {
+		return fmt.Errorf("validator %s has no proxy registered", principal.String())
+	}
+
+	k.Logger(ctx).Debug(fmt.Sprintf("deactivating proxy %s", sdk.AccAddress(storedProxy[1:]).String()))
+	bz := append([]byte{0}, storedProxy[1:]...)
+	ctx.KVStore(k.storeKey).Set(principal, bz)
+
+	return nil
+}
+
+// GetPrincipal returns the proxy address for a given principal address. Returns nil if not set.
+func (k Keeper) GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
+	if proxy == nil {
+		return nil
+	}
+	return ctx.KVStore(k.storeKey).Get(proxy)
+}
+
+// GetProxy returns the proxy address for a given principal address. Returns nil if not set.
+// The bool value denotes wether or not the proxy is active and to be included in the next snapshot
+func (k Keeper) GetProxy(ctx sdk.Context, principal sdk.ValAddress) (addr sdk.AccAddress, active bool) {
+
+	bz := ctx.KVStore(k.storeKey).Get(principal)
+	if bz == nil {
+		return nil, active
+	}
+
+	addr = bz[1:]
+	active = bz[0] == 1
+	return addr, active
+}
+
+func (k Keeper) setProxyCount(ctx sdk.Context, count int) {
+	k.Logger(ctx).Debug(fmt.Sprintf("number of known proxies: %v", count))
+	bz := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bz, uint64(count))
+
+	ctx.KVStore(k.storeKey).Set([]byte(proxyCountKey), bz)
+
+}
+
+func (k Keeper) getProxyCount(ctx sdk.Context) int {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(lastCounterKey))
+	if bz == nil {
+		return 0
+	}
+
+	return int(binary.LittleEndian.Uint64(bz))
 }

@@ -119,10 +119,7 @@
     - [bitcoin](axelard_tx_bitcoin.md)	 - bitcoin transactions subcommands
       - [confirmTxOut \[txID:voutIdx\] \[amount\] \[address\]](axelard_tx_bitcoin_confirmTxOut.md)	 - Confirm a Bitcoin transaction
       - [link \[chain\] \[address\]](axelard_tx_bitcoin_link.md)	 - Link a cross chain address to a bitcoin address created by Axelar
-      - [sign-pending-transfers](axelard_tx_bitcoin_sign-pending-transfers.md)	 - Create a Bitcoin transaction for all pending transfers and sign it
-    - [broadcast](axelard_tx_broadcast.md)	 - broadcast transactions subcommands
-      - [registerProxy \[proxy\] ](axelard_tx_broadcast_registerProxy.md)	 - Register a proxy account for a specific validator principal to broadcast transactions in its stead
-      - [sendStake \[amount\] \[address 1\] ... \[address n\]](axelard_tx_broadcast_sendStake.md)	 - Sends the specified amount of stake to the designated addresses
+      - [sign-pending-transfers \[keyID\]](axelard_tx_bitcoin_sign-pending-transfers.md)	 - Create a Bitcoin transaction for all pending transfers and sign it
     - [crisis](axelard_tx_crisis.md)	 - Crisis transactions subcommands
       - [invariant-broken \[module-name\] \[invariant-route\]](axelard_tx_crisis_invariant-broken.md)	 - Submit proof that an invariant broken to halt the chain
     - [decode \[amino-byte-string\]](axelard_tx_decode.md)	 - Decode an binary encoded transaction string.
@@ -138,12 +135,13 @@
       - [confirm-chain \[chain\]](axelard_tx_evm_confirm-chain.md)	 - Confirm an EVM chain for a given name and native asset
       - [confirm-erc20-deposit \[chain\] \[txID\] \[amount\] \[burnerAddr\]](axelard_tx_evm_confirm-erc20-deposit.md)	 - Confirm an ERC20 deposit in an EVM chain transaction that sent given amount of token to a burner address
       - [confirm-erc20-token \[chain\] \[txID\] \[symbol\]](axelard_tx_evm_confirm-erc20-token.md)	 - Confirm an ERC20 token deployment in an EVM chain transaction for a given symbol of token and gateway address
+      - [confirm-transfer-ownership \[chain\] \[txID\] \[keyID\]](axelard_tx_evm_confirm-transfer-ownership.md)	 - Confirm a transfer ownership in an EVM chain transaction
       - [link \[chain\] \[recipient chain\] \[recipient address\] \[symbol\]](axelard_tx_evm_link.md)	 - Link a cross chain address to an EVM chain address created by Axelar
       - [sign \[chain\] \[tx json file path\]](axelard_tx_evm_sign.md)	 - sign a raw EVM chain transaction
       - [sign-burn-tokens \[chain\]](axelard_tx_evm_sign-burn-tokens.md)	 - Sign burn command for all confirmed token deposits in an EVM chain
       - [sign-deploy-token \[chain\] \[name\] \[symbol\] \[decimals\] \[capacity\]](axelard_tx_evm_sign-deploy-token.md)	 - Signs the call data to deploy a token with the AxelarGateway contract
       - [sign-pending-transfers \[chain\]](axelard_tx_evm_sign-pending-transfers.md)	 - Sign all pending transfers to an EVM chain
-      - [transfer-ownership \[chain\] \[newOwnerAddr\]](axelard_tx_evm_transfer-ownership.md)	 - Sign transfer ownership command for an EVM chain contract
+      - [transfer-ownership \[chain\] \[keyID\]](axelard_tx_evm_transfer-ownership.md)	 - Sign transfer ownership command for an EVM chain contract
     - [gov](axelard_tx_gov.md)	 - Governance transactions subcommands
       - [deposit \[proposal-id\] \[deposit\]](axelard_tx_gov_deposit.md)	 - Deposit tokens for an active proposal
       - [submit-proposal](axelard_tx_gov_submit-proposal.md)	 - Submit a proposal along with an initial deposit
@@ -157,6 +155,10 @@
     - [sign-batch \[file\]](axelard_tx_sign-batch.md)	 - Sign transaction batch files
     - [slashing](axelard_tx_slashing.md)	 - Slashing transaction subcommands
       - [unjail](axelard_tx_slashing_unjail.md)	 - unjail validator previously jailed for downtime
+    - [snapshot](axelard_tx_snapshot.md)	 - snapshot transactions subcommands
+      - [deactivateProxy](axelard_tx_snapshot_deactivateProxy.md)	 - Deactivate the proxy account of the sender
+      - [registerProxy \[proxy\] ](axelard_tx_snapshot_registerProxy.md)	 - Register a proxy account for a specific validator principal to broadcast transactions in its stead
+      - [sendTokens \[amount\] \[address 1\] ... \[address n\]](axelard_tx_snapshot_sendTokens.md)	 - Sends the specified amount of tokens to the designated addresses
     - [staking](axelard_tx_staking.md)	 - Staking transaction subcommands
       - [create-validator](axelard_tx_staking_create-validator.md)	 - create new validator initialized with a self-delegation to it
       - [delegate \[validator-addr\] \[amount\]](axelard_tx_staking_delegate.md)	 - Delegate liquid tokens to a validator
@@ -165,8 +167,7 @@
       - [unbond \[validator-addr\] \[amount\]](axelard_tx_staking_unbond.md)	 - Unbond shares from a validator
     - [tss](axelard_tx_tss.md)	 - tss transactions subcommands
       - [assign-next \[chain\] \[role\] \[keyID\]](axelard_tx_tss_assign-next.md)	 - Assigns a previously created key with \[keyID\] as the next key for \[chain\]
-      - [deregister](axelard_tx_tss_deregister.md)	 - Deregister from participating in any future key generation
-      - [rotate \[chain\] \[role\]](axelard_tx_tss_rotate.md)	 - Rotate the given chain from the old key to the previously assigned one
+      - [rotate \[chain\] \[role\] \[keyID\]](axelard_tx_tss_rotate.md)	 - Rotate the given chain from the old key to the given key
       - [start-keygen](axelard_tx_tss_start-keygen.md)	 - Initiate threshold key generation protocol
     - [validate-signatures \[file\]](axelard_tx_validate-signatures.md)	 - Validate transactions signatures
     - [vesting](axelard_tx_vesting.md)	 - Vesting transaction subcommands

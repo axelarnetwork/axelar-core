@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -24,13 +23,12 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast"
-	bcTypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster"
+	broadcasterTypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc"
 	btcRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/events"
@@ -42,6 +40,9 @@ import (
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
+
+// RWALL grants rw-rw-rw- file permissions
+const RWALL = 0555
 
 var once sync.Once
 var cleanupCommands []func()
@@ -87,7 +88,12 @@ func GetValdCommand() *cobra.Command {
 				return err
 			}
 
-			axConf, valAddr := loadConfig()
+			axConf := app.DefaultConfig()
+			if err := serverCtx.Viper.Unmarshal(&axConf); err != nil {
+				panic(err)
+			}
+
+			valAddr := serverCtx.Viper.GetString("validator-addr")
 			if valAddr == "" {
 				return fmt.Errorf("validator address not set")
 			}
@@ -95,21 +101,17 @@ func GetValdCommand() *cobra.Command {
 			valdHome := filepath.Join(cliCtx.HomeDir, "vald")
 			if _, err := os.Stat(valdHome); os.IsNotExist(err) {
 				logger.Info(fmt.Sprintf("folder %s does not exist, creating...", valdHome))
-				err := os.Mkdir(valdHome, 0755)
+				err := os.Mkdir(valdHome, RWALL)
 				if err != nil {
 					return err
 				}
 			}
 
 			fPath := filepath.Join(valdHome, "state.json")
-			f, err := os.OpenFile(fPath, os.O_CREATE|os.O_RDWR, 0755)
-			if err != nil {
-				return err
-			}
-			stateStore := events.NewStateStore(f)
+			stateSource := NewRWFile(fPath)
 
 			logger.Info("Start listening to events")
-			listen(cliCtx, appState, hub, txf, axConf, valAddr, stateStore, logger)
+			listen(cliCtx, appState, hub, txf, axConf, valAddr, stateSource, logger)
 			logger.Info("Shutting down")
 			return nil
 		},
@@ -118,7 +120,6 @@ func GetValdCommand() *cobra.Command {
 	flags.AddTxFlagsToCmd(cmd)
 
 	values := map[string]string{
-		flags.FlagChainID:        app.Name,
 		flags.FlagKeyringBackend: "test",
 		flags.FlagGasAdjustment:  "2",
 		flags.FlagBroadcastMode:  flags.BroadcastSync,
@@ -134,18 +135,12 @@ func cleanUp() {
 	}
 }
 
-func setPersistentFlags(rootCmd *cobra.Command) {
-	rootCmd.PersistentFlags().String("tofnd-host", "", "host name for tss daemon")
-	_ = viper.BindPFlag("tofnd_host", rootCmd.PersistentFlags().Lookup("tofnd-host"))
-
-	rootCmd.PersistentFlags().String("tofnd-port", "50051", "port for tss daemon")
-	_ = viper.BindPFlag("tofnd_port", rootCmd.PersistentFlags().Lookup("tofnd-port"))
-
-	rootCmd.PersistentFlags().String("validator-addr", "", "the address of the validator operator")
-	_ = viper.BindPFlag("validator-addr", rootCmd.PersistentFlags().Lookup("validator-addr"))
-
-	rootCmd.PersistentFlags().String(flags.FlagChainID, "", "The network chain ID")
-	_ = viper.BindPFlag(flags.FlagChainID, rootCmd.PersistentFlags().Lookup(flags.FlagChainID))
+func setPersistentFlags(cmd *cobra.Command) {
+	defaultConf := tssTypes.DefaultConfig()
+	cmd.PersistentFlags().String("tofnd-host", defaultConf.Host, "host name for tss daemon")
+	cmd.PersistentFlags().String("tofnd-port", defaultConf.Port, "port for tss daemon")
+	cmd.PersistentFlags().String("validator-addr", "", "the address of the validator operator")
+	cmd.PersistentFlags().String(flags.FlagChainID, app.Name, "The network chain ID")
 }
 
 func newHub(logger log.Logger) (*tmEvents.Hub, error) {
@@ -158,25 +153,7 @@ func newHub(logger log.Logger) (*tmEvents.Hub, error) {
 	return &hub, nil
 }
 
-func loadConfig() (app.Config, string) {
-	// need to merge in cli config because axelard now has its own broadcasting client
-	conf := app.DefaultConfig()
-	cliCfgFile := path.Join(app.DefaultNodeHome, "config", "config.toml")
-	viper.SetConfigFile(cliCfgFile)
-	if err := viper.MergeInConfig(); err != nil {
-		panic(err)
-	}
-
-	if err := viper.Unmarshal(&conf); err != nil {
-		panic(err)
-	}
-	// for some reason gas is not being filled
-	conf.Gas = viper.GetUint64("gas")
-
-	return conf, viper.GetString("validator-addr")
-}
-
-func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmEvents.Hub, txf tx.Factory, axelarCfg app.Config, valAddr string, store events.StateStore, logger log.Logger) {
+func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmEvents.Hub, txf tx.Factory, axelarCfg app.Config, valAddr string, stateSource events.ReadWriter, logger log.Logger) {
 	encCfg := app.MakeEncodingConfig()
 	cdc := encCfg.Amino
 	protoCdc := encCfg.Marshaler
@@ -192,7 +169,7 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 
 	broadcaster := createBroadcaster(ctx, txf, axelarCfg, logger)
 
-	eventMgr := createEventMgr(ctx, store, logger)
+	eventMgr := createEventMgr(ctx, stateSource, logger)
 	tssMgr := createTSSMgr(broadcaster, ctx.FromAddress, &tssGenesisState, axelarCfg, logger, valAddr, cdc)
 	btcMgr := createBTCMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
 	ethMgr := createEVMMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
@@ -212,6 +189,7 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 	ethChainConf := tmEvents.MustSubscribeTx(hub, evmTypes.EventTypeChainConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 	ethDepConf := tmEvents.MustSubscribeTx(eventMgr, evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 	ethTokConf := tmEvents.MustSubscribeTx(eventMgr, evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	ethTraConf := tmEvents.MustSubscribeTx(eventMgr, evmTypes.EventTypeTransferOwnershipConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 
 	// stop the jobs if process gets interrupted/terminated
 	cleanupCommands = append(cleanupCommands, func() {
@@ -226,9 +204,7 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 
 	fetchEvents := func(errChan chan<- error) {
 		for err := range eventMgr.FetchEvents() {
-			if err != nil {
-				errChan <- err
-			}
+			errChan <- err
 		}
 	}
 	js := []jobs.Job{
@@ -244,6 +220,7 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 		events.Consume(ethChainConf, events.OnlyAttributes(ethMgr.ProcessChainConfirmation)),
 		events.Consume(ethDepConf, events.OnlyAttributes(ethMgr.ProcessDepositConfirmation)),
 		events.Consume(ethTokConf, events.OnlyAttributes(ethMgr.ProcessTokenConfirmation)),
+		events.Consume(ethTraConf, events.OnlyAttributes(ethMgr.ProcessTransferOwnershipConfirmation)),
 	}
 
 	// errGroup runs async processes and cancels their context if ANY of them returns an error.
@@ -254,27 +231,26 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 	mgr.Wait()
 }
 
-func createEventMgr(ctx sdkClient.Context, store events.StateStore, logger log.Logger) *events.Mgr {
+func createEventMgr(ctx sdkClient.Context, stateSource events.ReadWriter, logger log.Logger) *events.Mgr {
 	node, err := ctx.GetNode()
 	if err != nil {
 		panic(err)
 	}
 
-	return events.NewMgr(node, store, pubsub.NewBus, logger)
+	return events.NewMgr(node, stateSource, pubsub.NewBus, logger)
 }
 
-func createBroadcaster(ctx sdkClient.Context, txf tx.Factory, axelarCfg app.Config, logger log.Logger) bcTypes.Broadcaster {
-	pipeline := broadcast.NewPipelineWithRetry(10000, axelarCfg.MaxRetries, broadcast.LinearBackOff(axelarCfg.MinTimeout), logger)
-	return broadcast.NewBroadcaster(ctx, txf, pipeline, logger)
+func createBroadcaster(ctx sdkClient.Context, txf tx.Factory, axelarCfg app.Config, logger log.Logger) broadcasterTypes.Broadcaster {
+	pipeline := broadcaster.NewPipelineWithRetry(10000, axelarCfg.MaxRetries, broadcaster.LinearBackOff(axelarCfg.MinTimeout), logger)
+	return broadcaster.NewBroadcaster(ctx, txf, pipeline, logger)
 }
 
-func createTSSMgr(broadcaster bcTypes.Broadcaster, sender sdk.AccAddress, genesisState *tssTypes.GenesisState, axelarCfg app.Config, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
+func createTSSMgr(broadcaster broadcasterTypes.Broadcaster, sender sdk.AccAddress, genesisState *tssTypes.GenesisState, axelarCfg app.Config, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
 	create := func() (*tss.Mgr, error) {
-		gg20client, err := tss.CreateTOFNDClient(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, logger)
+		gg20client, err := tss.CreateTOFNDClient(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, axelarCfg.TssConfig.DialTimeout, logger)
 		if err != nil {
 			return nil, err
 		}
-
 		tssMgr := tss.NewMgr(gg20client, 2*time.Hour, valAddr, broadcaster, sender, genesisState.Params.TimeoutInBlocks, logger, cdc)
 
 		return tssMgr, nil
@@ -283,10 +259,11 @@ func createTSSMgr(broadcaster bcTypes.Broadcaster, sender sdk.AccAddress, genesi
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "failed to create tss manager"))
 	}
+
 	return mgr
 }
 
-func createBTCMgr(axelarCfg app.Config, b bcTypes.Broadcaster, sender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *btc.Mgr {
+func createBTCMgr(axelarCfg app.Config, b broadcasterTypes.Broadcaster, sender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *btc.Mgr {
 	rpc, err := btcRPC.NewRPCClient(axelarCfg.BtcConfig, logger)
 	if err != nil {
 		logger.Error(err.Error())
@@ -301,7 +278,7 @@ func createBTCMgr(axelarCfg app.Config, b bcTypes.Broadcaster, sender sdk.AccAdd
 	return btcMgr
 }
 
-func createEVMMgr(axelarCfg app.Config, b bcTypes.Broadcaster, sender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *evm.Mgr {
+func createEVMMgr(axelarCfg app.Config, b broadcasterTypes.Broadcaster, sender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *evm.Mgr {
 	rpcs := make(map[string]evmRPC.Client)
 
 	for _, evmChainConf := range axelarCfg.EVMConfig {
@@ -330,3 +307,19 @@ func createEVMMgr(axelarCfg app.Config, b bcTypes.Broadcaster, sender sdk.AccAdd
 	ethMgr := evm.NewMgr(rpcs, b, sender, logger, cdc)
 	return ethMgr
 }
+
+// RWFile implements the ReadWriter interface for an underlying file
+type RWFile struct {
+	path string
+}
+
+// NewRWFile returns a new RWFile instance for the given file path
+func NewRWFile(path string) RWFile {
+	return RWFile{path: path}
+}
+
+// ReadAll returns the full content of the file
+func (f RWFile) ReadAll() ([]byte, error) { return os.ReadFile(f.path) }
+
+// WriteAll writes the given bytes to a file. Creates a new fille if it does not exist, overwrites the previous content otherwise.
+func (f RWFile) WriteAll(bz []byte) error { return os.WriteFile(f.path, bz, RWALL) }

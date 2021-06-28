@@ -285,6 +285,72 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	return &types.ConfirmDepositResponse{}, nil
 }
 
+// ConfirmTransferOwnership handles transfer ownership confirmations
+func (s msgServer) ConfirmTransferOwnership(c context.Context, req *types.ConfirmTransferOwnershipRequest) (*types.ConfirmTransferOwnershipResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
+	pk, ok := s.signer.GetKey(ctx, req.KeyID)
+	if !ok {
+		return nil, fmt.Errorf("key %s does not exist (yet)", req.KeyID)
+	}
+
+	_, ok = s.signer.GetNextKey(ctx, chain, tss.MasterKey)
+	if ok {
+		return nil, fmt.Errorf("next %s key for chain %s already set", tss.MasterKey.SimpleString(), chain.Name)
+	}
+
+	gatewayAddr, ok := s.GetGatewayAddress(ctx, chain.Name)
+	if !ok {
+		return nil, fmt.Errorf("axelar gateway address not set")
+	}
+
+	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
+	if !ok {
+		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
+	}
+
+	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
+	if !ok {
+		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
+	}
+
+	period, ok := s.EVMKeeper.GetRevoteLockingPeriod(ctx, chain.Name)
+	if !ok {
+		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", req.Chain)
+	}
+
+	poll := vote.NewPollMeta(types.ModuleName, req.TxID.Hex()+"_"+req.KeyID)
+	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+period); err != nil {
+		return nil, err
+	}
+
+	transferOwnership := types.TransferOwnership{
+		TxID:      req.TxID,
+		NextKeyID: pk.ID,
+	}
+	s.SetPendingTransferOwnership(ctx, chain.Name, poll, &transferOwnership)
+
+	height, _ := s.EVMKeeper.GetRequiredConfirmationHeight(ctx, chain.Name)
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeTransferOwnershipConfirmation,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
+			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
+			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
+			sdk.NewAttribute(types.AttributeKeyAddress, crypto.PubkeyToAddress(pk.Value).Hex()),
+			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
+			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&poll))),
+		),
+	)
+
+	return &types.ConfirmTransferOwnershipResponse{}, nil
+}
+
 func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmChainRequest) (*types.VoteConfirmChainResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
@@ -297,11 +363,12 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 		return nil, fmt.Errorf("unknown chain %s", req.Name)
 	}
 
-	if err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed}); err != nil {
+	poll, err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed})
+	if err != nil {
 		return nil, err
 	}
 
-	result := s.voter.Result(ctx, req.Poll)
+	result := poll.GetResult()
 	if result == nil {
 		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("not enough votes to confirm chain in %s yet", req.Name)}, nil
 	}
@@ -372,11 +439,12 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		// assert: the deposit is known and has not been confirmed before
 	}
 
-	if err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed}); err != nil {
+	poll, err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed})
+	if err != nil {
 		return nil, err
 	}
 
-	result := s.voter.Result(ctx, req.Poll)
+	result := poll.GetResult()
 	if result == nil {
 		return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("not enough votes to confirm deposit in %s to %s yet", req.TxID, req.BurnAddress.Hex())}, nil
 	}
@@ -446,11 +514,12 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 		// assert: the token is known and has not been confirmed before
 	}
 
-	if err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed}); err != nil {
+	poll, err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed})
+	if err != nil {
 		return nil, err
 	}
 
-	result := s.voter.Result(ctx, req.Poll)
+	result := poll.GetResult()
 	if result == nil {
 		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("not enough votes to confirm token %s yet", req.Symbol)}, nil
 	}
@@ -485,6 +554,80 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 
 	return &types.VoteConfirmTokenResponse{
 		Log: fmt.Sprintf("token %s deployment confirmed", token.Symbol)}, nil
+}
+
+// VoteConfirmTransferOwnership handles votes for transfer ownership confirmations
+func (s msgServer) VoteConfirmTransferOwnership(c context.Context, req *types.VoteConfirmTransferOwnershipRequest) (*types.VoteConfirmTransferOwnershipResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
+	pendingTransferOwnership, pollFound := s.GetPendingTransferOwnership(ctx, chain.Name, req.Poll)
+	_, hasNextKeyAssigned := s.signer.GetNextKey(ctx, chain, tss.MasterKey)
+
+	switch {
+	// a malicious user could try to delete an ongoing poll by providing an already confirmed transfer ownership,
+	// so we need to check that it matches the poll before deleting
+	case pollFound && hasNextKeyAssigned:
+		s.voter.DeletePoll(ctx, req.Poll)
+		s.DeletePendingTransferOwnership(ctx, chain.Name, req.Poll)
+		fallthrough
+	// If the voting threshold has been met and additional votes are received they should not return an error
+	case hasNextKeyAssigned:
+		return &types.VoteConfirmTransferOwnershipResponse{Log: fmt.Sprintf("transfer ownership in %s to keyID %s already confirmed", pendingTransferOwnership.TxID.Hex(), pendingTransferOwnership.NextKeyID)}, nil
+	case !pollFound:
+		return nil, fmt.Errorf("no transfer ownership found for poll %s", req.Poll.String())
+	case pollFound:
+		pk, ok := s.signer.GetKey(ctx, pendingTransferOwnership.NextKeyID)
+		if !ok {
+			return nil, fmt.Errorf("key %s cannot be found", pendingTransferOwnership.NextKeyID)
+		}
+		if crypto.PubkeyToAddress(pk.Value) != common.Address(req.NewOwnerAddress) || pendingTransferOwnership.TxID != req.TxID {
+			return nil, fmt.Errorf("transfer ownership in %s to address %s does not match poll %s", req.TxID, req.NewOwnerAddress.Hex(), req.Poll.String())
+		}
+	default:
+		// assert: the transfer ownership is known and has not been confirmed before
+	}
+
+	poll, err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed})
+	if err != nil {
+		return nil, err
+	}
+
+	result := poll.GetResult()
+	if result == nil {
+		return &types.VoteConfirmTransferOwnershipResponse{Log: fmt.Sprintf("not enough votes to confirm transfer ownership in %s to %s yet", req.TxID, req.NewOwnerAddress.Hex())}, nil
+	}
+
+	// assert: the poll has completed
+	confirmed, ok := result.(*gogoprototypes.BoolValue)
+	if !ok {
+		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.Poll.String(), result)
+	}
+
+	s.Logger(ctx).Info(fmt.Sprintf("ethereum transfer ownership confirmation result is %s", result))
+	s.voter.DeletePoll(ctx, req.Poll)
+	s.DeletePendingTransferOwnership(ctx, chain.Name, req.Poll)
+
+	// handle poll result
+	event := sdk.NewEvent(types.EventTypeTransferOwnershipConfirmation,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.Poll))))
+
+	if !confirmed.Value {
+		ctx.EventManager().EmitEvent(
+			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
+		return &types.VoteConfirmTransferOwnershipResponse{
+			Log: fmt.Sprintf("transfer ownership in %s to %s was discarded", req.TxID, req.NewOwnerAddress.Hex()),
+		}, nil
+	}
+	ctx.EventManager().EmitEvent(
+		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
+
+	return &types.VoteConfirmTransferOwnershipResponse{}, nil
 }
 
 func (s msgServer) SignDeployToken(c context.Context, req *types.SignDeployTokenRequest) (*types.SignDeployTokenResponse, error) {
@@ -714,7 +857,10 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 		return nil, fmt.Errorf("Could not find chain ID for '%s'", req.Chain)
 	}
 
-	data, err := types.CreateMintCommandData(chainID, pendingTransfers)
+	getRecipientAndAsset := func(transfer nexus.CrossChainTransfer) string {
+		return fmt.Sprintf("%s-%s", transfer.Recipient.Address, transfer.Asset.Denom)
+	}
+	data, err := types.CreateMintCommandData(chainID, nexus.MergeTransfersBy(pendingTransfers, getRecipientAndAsset))
 	if err != nil {
 		return nil, err
 	}
@@ -777,9 +923,20 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 		return nil, fmt.Errorf("Could not find chain ID for '%s'", req.Chain)
 	}
 
-	commandID := getCommandID(req.NewOwner.Bytes(), chainID)
+	key, ok := s.signer.GetKey(ctx, req.KeyID)
+	if !ok {
+		return nil, fmt.Errorf("unkown key %s", req.KeyID)
+	}
 
-	data, err := types.CreateTransferOwnershipCommandData(chainID, commandID, common.Address(req.NewOwner))
+	next, nextAssigned := s.signer.GetNextKey(ctx, exported.Ethereum, tss.MasterKey)
+	if nextAssigned {
+		return nil, fmt.Errorf("key %s already assigned as the next %s key for chain %s", next.ID, tss.MasterKey.SimpleString(), exported.Ethereum.Name)
+	}
+	newOwner := crypto.PubkeyToAddress(key.Value)
+
+	commandID := getCommandID(newOwner.Bytes(), chainID)
+
+	data, err := types.CreateTransferOwnershipCommandData(chainID, commandID, newOwner)
 	if err != nil {
 		return nil, err
 	}

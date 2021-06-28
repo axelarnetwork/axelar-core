@@ -73,8 +73,6 @@ axelard start [flags]
       --rpc.unsafe                                      enabled unsafe rpc methods
       --state-sync.snapshot-interval uint               State sync snapshot interval
       --state-sync.snapshot-keep-recent uint32          State sync snapshot to keep (default 2)
-      --tofnd-host string                               host name for tss daemon
-      --tofnd-port string                               port for tss daemon (default "50051")
       --trace-store string                              Enable KVStore tracing to an output file
       --transport string                                Transport protocol: socket, grpc (default "socket")
       --unsafe-skip-upgrades ints                       Skip a set of upgrade heights to continue the old binary

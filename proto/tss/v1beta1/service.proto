@@ -5,7 +5,7 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/tss/types";
 
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
-import "broadcast/v1beta1/tx.proto";
+import "snapshot/v1beta1/tx.proto";
 import "tss/v1beta1/tx.proto";
 
 option (gogoproto.goproto_registration) = true;
@@ -56,12 +56,6 @@ service MsgService {
 
   rpc VoteSig(tss.v1beta1.VoteSigRequest)
       returns (tss.v1beta1.VoteSigResponse) {
-    option (google.api.http) = {
-    };
-  }
-
-  rpc Deregister(tss.v1beta1.DeregisterRequest)
-      returns (tss.v1beta1.DeregisterResponse) {
     option (google.api.http) = {
     };
   }

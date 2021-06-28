@@ -33,16 +33,14 @@ const (
 type Keeper struct {
 	storeKey    sdk.StoreKey
 	cdc         codec.BinaryMarshaler
-	broadcaster types.Broadcaster
 	snapshotter types.Snapshotter
 }
 
 // NewKeeper - keeper constructor
-func NewKeeper(cdc codec.BinaryMarshaler, key sdk.StoreKey, snapshotter types.Snapshotter, broadcaster types.Broadcaster) Keeper {
+func NewKeeper(cdc codec.BinaryMarshaler, key sdk.StoreKey, snapshotter types.Snapshotter) Keeper {
 	keeper := Keeper{
 		storeKey:    key,
 		cdc:         cdc,
-		broadcaster: broadcaster,
 		snapshotter: snapshotter,
 	}
 	return keeper
@@ -107,47 +105,50 @@ func (k Keeper) DeletePoll(ctx sdk.Context, poll exported.PollMeta) {
 
 	// delete tallied votes index for poll
 	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(talliedPrefix+poll.String()))
+	defer iter.Close()
+
 	for ; iter.Valid(); iter.Next() {
 		ctx.KVStore(k.storeKey).Delete(iter.Key())
 	}
 
 	// delete voter index for poll
 	iter = sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(addrPrefix+poll.String()))
+	defer iter.Close()
+
 	for ; iter.Valid(); iter.Next() {
 		ctx.KVStore(k.storeKey).Delete(iter.Key())
 	}
 }
 
 // TallyVote tallies votes that have been broadcast. Each validator can only vote once per poll.
-func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data exported.VotingData) error {
+func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data exported.VotingData) (*types.Poll, error) {
 	poll := k.GetPoll(ctx, pollMeta)
 	if poll == nil {
-		return fmt.Errorf("poll does not exist or is closed")
+		return nil, fmt.Errorf("poll does not exist or is closed")
 	}
 
-	valAddress := k.broadcaster.GetPrincipal(ctx, sender)
+	valAddress := k.snapshotter.GetPrincipal(ctx, sender)
 	if valAddress == nil {
-		err := fmt.Errorf("account %v is not registered as a validator proxy", sender.String())
-		return err
+		return nil, fmt.Errorf("account %v is not registered as a validator proxy", sender.String())
 	}
 
 	snap, ok := k.snapshotter.GetSnapshot(ctx, poll.ValidatorSnapshotCounter)
 	if !ok {
-		return fmt.Errorf("no snapshot found for counter %d", poll.ValidatorSnapshotCounter)
+		return nil, fmt.Errorf("no snapshot found for counter %d", poll.ValidatorSnapshotCounter)
 	}
 
 	validator, ok := snap.GetValidator(valAddress)
 	if !ok {
-		return fmt.Errorf("address %s is not eligible to vote in this poll", valAddress.String())
+		return nil, fmt.Errorf("address %s is not eligible to vote in this poll", valAddress.String())
 	}
 
 	if k.getHasVoted(ctx, pollMeta, valAddress) {
-		return fmt.Errorf("each validator can only vote once")
+		return nil, fmt.Errorf("each validator can only vote once")
 	}
 
 	// if the poll is already decided there is no need to keep track of further votes
 	if poll.Result != nil || poll.Failed {
-		return nil
+		return poll, nil
 	}
 
 	k.setHasVoted(ctx, pollMeta, valAddress)
@@ -182,19 +183,8 @@ func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta expor
 	}
 
 	k.setPoll(ctx, *poll)
-	return nil
-}
 
-// Result returns the decided outcome of a poll. Returns nil if the poll is still undecided or does not exist.
-func (k Keeper) Result(ctx sdk.Context, pollMeta exported.PollMeta) exported.VotingData {
-	// This unmarshals all votes for this poll, which is not needed in this context.
-	// Should it become a performance concern we could split the result off into a separate data structure
-	poll := k.GetPoll(ctx, pollMeta)
-	if poll == nil {
-		return nil
-	}
-
-	return poll.GetResult()
+	return poll, nil
 }
 
 // GetPoll returns the poll given poll meta
@@ -206,6 +196,7 @@ func (k Keeper) GetPoll(ctx sdk.Context, pollMeta exported.PollMeta) *types.Poll
 
 	var poll types.Poll
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &poll)
+
 	return &poll
 }
 

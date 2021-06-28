@@ -84,9 +84,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/bitcoin"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	"github.com/axelarnetwork/axelar-core/x/broadcast"
-	broadcastKeeper "github.com/axelarnetwork/axelar-core/x/broadcast/keeper"
-	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	"github.com/axelarnetwork/axelar-core/x/evm"
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -138,7 +135,6 @@ var (
 		vote.AppModuleBasic{},
 		bitcoin.AppModuleBasic{},
 		evm.AppModuleBasic{},
-		broadcast.AppModuleBasic{},
 		snapshot.AppModuleBasic{},
 		nexus.AppModuleBasic{},
 	)
@@ -225,7 +221,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		evidencetypes.StoreKey,
 
 		voteTypes.StoreKey,
-		broadcastTypes.StoreKey,
 		btcTypes.StoreKey,
 		evmTypes.StoreKey,
 		snapTypes.StoreKey,
@@ -312,8 +307,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		appCodec, keys[evmTypes.StoreKey], app.paramsKeeper,
 	)
 
-	broadcastK := broadcastKeeper.NewKeeper(app.legacyAmino, keys[broadcastTypes.StoreKey], stakingK)
-
 	slashingKCast := &snapshotExportedMock.SlasherMock{
 		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapshotExported.ValidatorInfo, bool) {
 			signingInfo, found := slashingK.GetValidatorSigningInfo(ctx, address)
@@ -325,14 +318,14 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		app.legacyAmino, keys[tssTypes.StoreKey], app.getSubspace(tssTypes.ModuleName), slashingKCast,
 	)
 	snapK := snapKeeper.NewKeeper(
-		appCodec, keys[snapTypes.StoreKey], app.getSubspace(snapTypes.ModuleName), broadcastK, stakingK,
+		appCodec, keys[snapTypes.StoreKey], app.getSubspace(snapTypes.ModuleName), stakingK,
 		slashingKCast, tssK,
 	)
 	nexusK := nexusKeeper.NewKeeper(
 		appCodec, keys[nexusTypes.StoreKey], app.getSubspace(nexusTypes.ModuleName),
 	)
 	votingK := voteKeeper.NewKeeper(
-		appCodec, keys[voteTypes.StoreKey], snapK, broadcastK,
+		appCodec, keys[voteTypes.StoreKey], snapK,
 	)
 
 	rpcsEVM := make(map[string]evmTypes.RPCClient)
@@ -384,9 +377,8 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		params.NewAppModule(paramsK),
 
 		snapshot.NewAppModule(snapK),
-		tss.NewAppModule(tssK, snapK, votingK, nexusK, stakingK, broadcastK),
+		tss.NewAppModule(tssK, snapK, votingK, nexusK, stakingK),
 		vote.NewAppModule(votingK),
-		broadcast.NewAppModule(broadcastK),
 		nexus.NewAppModule(nexusK),
 		evm.NewAppModule(ethK, tssK, votingK, tssK, nexusK, snapK, rpcsEVM, logger),
 		bitcoin.NewAppModule(btcK, votingK, tssK, nexusK, snapK, rpcBtc),
@@ -420,7 +412,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		btcTypes.ModuleName,
 		evmTypes.ModuleName,
 		nexusTypes.ModuleName,
-		broadcastTypes.ModuleName,
 		voteTypes.ModuleName,
 	)
 

@@ -85,11 +85,10 @@ type AppModule struct {
 	voter       types.Voter
 	nexus       types.Nexus
 	staker      types.StakingKeeper
-	broadcaster types.Broadcaster
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, s types.Snapshotter, v types.Voter, n types.Nexus, sk types.StakingKeeper, broadcaster types.Broadcaster) AppModule {
+func NewAppModule(k keeper.Keeper, s types.Snapshotter, v types.Voter, n types.Nexus, sk types.StakingKeeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
@@ -97,7 +96,6 @@ func NewAppModule(k keeper.Keeper, s types.Snapshotter, v types.Voter, n types.N
 		voter:          v,
 		nexus:          n,
 		staker:         sk,
-		broadcaster:    broadcaster,
 	}
 }
 
@@ -125,7 +123,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json
 
 // Route returns the module's route
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.snapshotter, am.nexus, am.voter, am.staker, am.broadcaster))
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.snapshotter, am.nexus, am.voter, am.staker))
 }
 
 // QuerierRoute returns this module's query route
@@ -151,10 +149,4 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 // EndBlock executes all state transitions this module requires at the end of each new block
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	return EndBlocker(ctx, req, am.keeper)
-}
-
-// AddModuleInitFlags implements servertypes.ModuleInitFlags interface.
-func AddModuleInitFlags(startCmd *cobra.Command) {
-	startCmd.Flags().String("tofnd-host", "", "host name for tss daemon")
-	startCmd.Flags().String("tofnd-port", "50051", "port for tss daemon")
 }

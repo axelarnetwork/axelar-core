@@ -38,21 +38,12 @@
 - [bitcoin/v1beta1/service.proto](#bitcoin/v1beta1/service.proto)
     - [MsgService](#bitcoin.v1beta1.MsgService)
   
-- [broadcast/v1beta1/genesis.proto](#broadcast/v1beta1/genesis.proto)
-    - [GenesisState](#broadcast.v1beta1.GenesisState)
-  
-- [broadcast/v1beta1/tx.proto](#broadcast/v1beta1/tx.proto)
-    - [RegisterProxyRequest](#broadcast.v1beta1.RegisterProxyRequest)
-    - [RegisterProxyResponse](#broadcast.v1beta1.RegisterProxyResponse)
-  
-- [broadcast/v1beta1/service.proto](#broadcast/v1beta1/service.proto)
-    - [MsgService](#broadcast.v1beta1.MsgService)
-  
 - [evm/v1beta1/types.proto](#evm/v1beta1/types.proto)
     - [BurnerInfo](#evm.v1beta1.BurnerInfo)
     - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
     - [ERC20TokenDeployment](#evm.v1beta1.ERC20TokenDeployment)
     - [NetworkInfo](#evm.v1beta1.NetworkInfo)
+    - [TransferOwnership](#evm.v1beta1.TransferOwnership)
   
 - [evm/v1beta1/params.proto](#evm/v1beta1/params.proto)
     - [Params](#evm.v1beta1.Params)
@@ -78,6 +69,8 @@
     - [ConfirmDepositResponse](#evm.v1beta1.ConfirmDepositResponse)
     - [ConfirmTokenRequest](#evm.v1beta1.ConfirmTokenRequest)
     - [ConfirmTokenResponse](#evm.v1beta1.ConfirmTokenResponse)
+    - [ConfirmTransferOwnershipRequest](#evm.v1beta1.ConfirmTransferOwnershipRequest)
+    - [ConfirmTransferOwnershipResponse](#evm.v1beta1.ConfirmTransferOwnershipResponse)
     - [LinkRequest](#evm.v1beta1.LinkRequest)
     - [LinkResponse](#evm.v1beta1.LinkResponse)
     - [SignBurnTokensRequest](#evm.v1beta1.SignBurnTokensRequest)
@@ -96,6 +89,8 @@
     - [VoteConfirmDepositResponse](#evm.v1beta1.VoteConfirmDepositResponse)
     - [VoteConfirmTokenRequest](#evm.v1beta1.VoteConfirmTokenRequest)
     - [VoteConfirmTokenResponse](#evm.v1beta1.VoteConfirmTokenResponse)
+    - [VoteConfirmTransferOwnershipRequest](#evm.v1beta1.VoteConfirmTransferOwnershipRequest)
+    - [VoteConfirmTransferOwnershipResponse](#evm.v1beta1.VoteConfirmTransferOwnershipResponse)
   
 - [evm/v1beta1/service.proto](#evm/v1beta1/service.proto)
     - [MsgService](#evm.v1beta1.MsgService)
@@ -123,6 +118,15 @@
 - [snapshot/v1beta1/genesis.proto](#snapshot/v1beta1/genesis.proto)
     - [GenesisState](#snapshot.v1beta1.GenesisState)
   
+- [snapshot/v1beta1/tx.proto](#snapshot/v1beta1/tx.proto)
+    - [DeactivateProxyRequest](#snapshot.v1beta1.DeactivateProxyRequest)
+    - [DeactivateProxyResponse](#snapshot.v1beta1.DeactivateProxyResponse)
+    - [RegisterProxyRequest](#snapshot.v1beta1.RegisterProxyRequest)
+    - [RegisterProxyResponse](#snapshot.v1beta1.RegisterProxyResponse)
+  
+- [snapshot/v1beta1/service.proto](#snapshot/v1beta1/service.proto)
+    - [MsgService](#snapshot.v1beta1.MsgService)
+  
 - [tss/tofnd/v1beta1/tofnd.proto](#tss/tofnd/v1beta1/tofnd.proto)
     - [KeygenInit](#tss.tofnd.v1beta1.KeygenInit)
     - [MessageIn](#tss.tofnd.v1beta1.MessageIn)
@@ -149,8 +153,6 @@
 - [tss/v1beta1/tx.proto](#tss/v1beta1/tx.proto)
     - [AssignKeyRequest](#tss.v1beta1.AssignKeyRequest)
     - [AssignKeyResponse](#tss.v1beta1.AssignKeyResponse)
-    - [DeregisterRequest](#tss.v1beta1.DeregisterRequest)
-    - [DeregisterResponse](#tss.v1beta1.DeregisterResponse)
     - [ProcessKeygenTrafficRequest](#tss.v1beta1.ProcessKeygenTrafficRequest)
     - [ProcessKeygenTrafficResponse](#tss.v1beta1.ProcessKeygenTrafficResponse)
     - [ProcessSignTrafficRequest](#tss.v1beta1.ProcessSignTrafficRequest)
@@ -497,6 +499,7 @@ consolidation transaction
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
+| `key_id` | [string](#string) |  |  |
 
 
 
@@ -507,11 +510,6 @@ consolidation transaction
 
 ### SignPendingTransfersResponse
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `command_id` | [string](#string) |  |  |
 
 
 
@@ -589,100 +587,6 @@ Msg defines the bitcoin Msg service.
 
 
 
-<a name="broadcast/v1beta1/genesis.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## broadcast/v1beta1/genesis.proto
-
-
-
-<a name="broadcast.v1beta1.GenesisState"></a>
-
-### GenesisState
-
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="broadcast/v1beta1/tx.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## broadcast/v1beta1/tx.proto
-
-
-
-<a name="broadcast.v1beta1.RegisterProxyRequest"></a>
-
-### RegisterProxyRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `principal_addr` | [bytes](#bytes) |  |  |
-| `proxy_addr` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="broadcast.v1beta1.RegisterProxyResponse"></a>
-
-### RegisterProxyResponse
-
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="broadcast/v1beta1/service.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## broadcast/v1beta1/service.proto
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
-
-<a name="broadcast.v1beta1.MsgService"></a>
-
-### MsgService
-Msg defines the broadcast Msg service.
-
-| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
-| ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `RegisterProxy` | [RegisterProxyRequest](#broadcast.v1beta1.RegisterProxyRequest) | [RegisterProxyResponse](#broadcast.v1beta1.RegisterProxyResponse) | RegisterProxy defines a method for registering a proxy account that can act in a validator account's stead. | POST|/axelar/broadcast/registerProxy/{proxy_addr}|
-
- <!-- end services -->
-
-
-
 <a name="evm/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -752,6 +656,22 @@ NetworkInfo describes information about a network
 | ----- | ---- | ----- | ----------- |
 | `name` | [string](#string) |  |  |
 | `id` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.TransferOwnership"></a>
+
+### TransferOwnership
+TransferOwnership contains information for a transfer ownership
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `next_key_id` | [string](#string) |  |  |
 
 
 
@@ -1049,6 +969,34 @@ MsgConfirmToken represents a token deploy confirmation message
 
 
 
+<a name="evm.v1beta1.ConfirmTransferOwnershipRequest"></a>
+
+### ConfirmTransferOwnershipRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ConfirmTransferOwnershipResponse"></a>
+
+### ConfirmTransferOwnershipResponse
+
+
+
+
+
+
+
 <a name="evm.v1beta1.LinkRequest"></a>
 
 ### LinkRequest
@@ -1195,7 +1143,7 @@ AxelarGateway
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
-| `new_owner` | [bytes](#bytes) |  |  |
+| `key_id` | [string](#string) |  |  |
 
 
 
@@ -1351,6 +1299,41 @@ MsgVoteConfirmToken represents a message that votes on a token deploy
 
 
 
+
+<a name="evm.v1beta1.VoteConfirmTransferOwnershipRequest"></a>
+
+### VoteConfirmTransferOwnershipRequest
+MsgVoteConfirmDeposit represents a message that votes on a deposit
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `poll` | [vote.exported.v1beta1.PollMeta](#vote.exported.v1beta1.PollMeta) |  |  |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `new_owner_address` | [bytes](#bytes) |  |  |
+| `confirmed` | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.VoteConfirmTransferOwnershipResponse"></a>
+
+### VoteConfirmTransferOwnershipResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `log` | [string](#string) |  |  |
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -1385,9 +1368,11 @@ Msg defines the evm Msg service.
 | `ConfirmChain` | [ConfirmChainRequest](#evm.v1beta1.ConfirmChainRequest) | [ConfirmChainResponse](#evm.v1beta1.ConfirmChainResponse) |  | POST|/axelar/evm/confirm-chain|
 | `ConfirmToken` | [ConfirmTokenRequest](#evm.v1beta1.ConfirmTokenRequest) | [ConfirmTokenResponse](#evm.v1beta1.ConfirmTokenResponse) |  | POST|/axelar/evm/confirm-erc20-deploy/{symbol}|
 | `ConfirmDeposit` | [ConfirmDepositRequest](#evm.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#evm.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/evm/confirm-erc20-deposit|
+| `ConfirmTransferOwnership` | [ConfirmTransferOwnershipRequest](#evm.v1beta1.ConfirmTransferOwnershipRequest) | [ConfirmTransferOwnershipResponse](#evm.v1beta1.ConfirmTransferOwnershipResponse) |  | POST|/axelar/evm/confirm-transfer-ownership|
 | `VoteConfirmChain` | [VoteConfirmChainRequest](#evm.v1beta1.VoteConfirmChainRequest) | [VoteConfirmChainResponse](#evm.v1beta1.VoteConfirmChainResponse) |  | ||
 | `VoteConfirmDeposit` | [VoteConfirmDepositRequest](#evm.v1beta1.VoteConfirmDepositRequest) | [VoteConfirmDepositResponse](#evm.v1beta1.VoteConfirmDepositResponse) |  | ||
 | `VoteConfirmToken` | [VoteConfirmTokenRequest](#evm.v1beta1.VoteConfirmTokenRequest) | [VoteConfirmTokenResponse](#evm.v1beta1.VoteConfirmTokenResponse) |  | ||
+| `VoteConfirmTransferOwnership` | [VoteConfirmTransferOwnershipRequest](#evm.v1beta1.VoteConfirmTransferOwnershipRequest) | [VoteConfirmTransferOwnershipResponse](#evm.v1beta1.VoteConfirmTransferOwnershipResponse) |  | ||
 | `SignDeployToken` | [SignDeployTokenRequest](#evm.v1beta1.SignDeployTokenRequest) | [SignDeployTokenResponse](#evm.v1beta1.SignDeployTokenResponse) |  | POST|/axelar/evm/sign-deploy-token/{symbol}|
 | `SignBurnTokens` | [SignBurnTokensRequest](#evm.v1beta1.SignBurnTokensRequest) | [SignBurnTokensResponse](#evm.v1beta1.SignBurnTokensResponse) |  | POST|/axelar/evm/sign-burn|
 | `SignTx` | [SignTxRequest](#evm.v1beta1.SignTxRequest) | [SignTxResponse](#evm.v1beta1.SignTxResponse) |  | POST|/axelar/evm/sign-tx|
@@ -1650,6 +1635,100 @@ GenesisState represents the genesis state
  <!-- end enums -->
 
  <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="snapshot/v1beta1/tx.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## snapshot/v1beta1/tx.proto
+
+
+
+<a name="snapshot.v1beta1.DeactivateProxyRequest"></a>
+
+### DeactivateProxyRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `principal_addr` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="snapshot.v1beta1.DeactivateProxyResponse"></a>
+
+### DeactivateProxyResponse
+
+
+
+
+
+
+
+<a name="snapshot.v1beta1.RegisterProxyRequest"></a>
+
+### RegisterProxyRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `principal_addr` | [bytes](#bytes) |  |  |
+| `proxy_addr` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="snapshot.v1beta1.RegisterProxyResponse"></a>
+
+### RegisterProxyResponse
+
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="snapshot/v1beta1/service.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## snapshot/v1beta1/service.proto
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="snapshot.v1beta1.MsgService"></a>
+
+### MsgService
+Msg defines the snapshot Msg service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `RegisterProxy` | [RegisterProxyRequest](#snapshot.v1beta1.RegisterProxyRequest) | [RegisterProxyResponse](#snapshot.v1beta1.RegisterProxyResponse) | RegisterProxy defines a method for registering a proxy account that can act in a validator account's stead. | POST|/axelar/snapshot/registerProxy/{proxy_addr}|
+| `DeactivateProxy` | [DeactivateProxyRequest](#snapshot.v1beta1.DeactivateProxyRequest) | [DeactivateProxyResponse](#snapshot.v1beta1.DeactivateProxyResponse) | DeactivateProxy defines a method for deregistering a proxy account. | POST|/axelar/snapshot/deactivateProxy|
 
  <!-- end services -->
 
@@ -1988,32 +2067,6 @@ AssignKeyRequest represents a message to assign a new key
 
 
 
-<a name="tss.v1beta1.DeregisterRequest"></a>
-
-### DeregisterRequest
-DeregisterRequest to deregister so that the validator will not participate in
-any future keygen
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="tss.v1beta1.DeregisterResponse"></a>
-
-### DeregisterResponse
-
-
-
-
-
-
-
 <a name="tss.v1beta1.ProcessKeygenTrafficRequest"></a>
 
 ### ProcessKeygenTrafficRequest
@@ -2078,8 +2131,8 @@ ProcessSignTrafficRequest protocol message
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
-| `subset_size` | [int64](#int64) |  |  |
 | `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+| `key_id` | [string](#string) |  |  |
 
 
 
@@ -2214,7 +2267,6 @@ Msg defines the tss Msg service.
 | `VotePubKey` | [VotePubKeyRequest](#tss.v1beta1.VotePubKeyRequest) | [VotePubKeyResponse](#tss.v1beta1.VotePubKeyResponse) |  | ||
 | `ProcessSignTraffic` | [ProcessSignTrafficRequest](#tss.v1beta1.ProcessSignTrafficRequest) | [ProcessSignTrafficResponse](#tss.v1beta1.ProcessSignTrafficResponse) |  | ||
 | `VoteSig` | [VoteSigRequest](#tss.v1beta1.VoteSigRequest) | [VoteSigResponse](#tss.v1beta1.VoteSigResponse) |  | ||
-| `Deregister` | [DeregisterRequest](#tss.v1beta1.DeregisterRequest) | [DeregisterResponse](#tss.v1beta1.DeregisterResponse) |  | ||
 
  <!-- end services -->
 

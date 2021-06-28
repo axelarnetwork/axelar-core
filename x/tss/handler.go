@@ -11,8 +11,8 @@ import (
 )
 
 // NewHandler returns the handler for the tss module
-func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Voter, staker types.StakingKeeper, broadcaster types.Broadcaster) sdk.Handler {
-	server := keeper.NewMsgServerImpl(k, broadcaster, s, staker, v, n)
+func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Voter, staker types.StakingKeeper) sdk.Handler {
+	server := keeper.NewMsgServerImpl(k, s, staker, v, n)
 	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
@@ -36,9 +36,6 @@ func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Vot
 			return sdk.WrapServiceResult(ctx, res, err)
 		case *types.VoteSigRequest:
 			res, err := server.VoteSig(sdk.WrapSDKContext(ctx), msg)
-			return sdk.WrapServiceResult(ctx, res, err)
-		case *types.DeregisterRequest:
-			res, err := server.Deregister(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,

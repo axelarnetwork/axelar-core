@@ -924,238 +924,103 @@ func (mock *SubscriberMock) EventsCalls() []struct {
 	return calls
 }
 
-// Ensure, that ReadWriteSeekTruncateCloserMock does implement ReadWriteSeekTruncateCloser.
+// Ensure, that ReadWriterMock does implement ReadWriter.
 // If this is not the case, regenerate this file with moq.
-var _ ReadWriteSeekTruncateCloser = &ReadWriteSeekTruncateCloserMock{}
+var _ ReadWriter = &ReadWriterMock{}
 
-// ReadWriteSeekTruncateCloserMock is a mock implementation of ReadWriteSeekTruncateCloser.
+// ReadWriterMock is a mock implementation of ReadWriter.
 //
-// 	func TestSomethingThatUsesReadWriteSeekTruncateCloser(t *testing.T) {
+// 	func TestSomethingThatUsesReadWriter(t *testing.T) {
 //
-// 		// make and configure a mocked ReadWriteSeekTruncateCloser
-// 		mockedReadWriteSeekTruncateCloser := &ReadWriteSeekTruncateCloserMock{
-// 			CloseFunc: func() error {
-// 				panic("mock out the Close method")
+// 		// make and configure a mocked ReadWriter
+// 		mockedReadWriter := &ReadWriterMock{
+// 			ReadAllFunc: func() ([]byte, error) {
+// 				panic("mock out the ReadAll method")
 // 			},
-// 			ReadFunc: func(p []byte) (int, error) {
-// 				panic("mock out the Read method")
-// 			},
-// 			SeekFunc: func(offset int64, whence int) (int64, error) {
-// 				panic("mock out the Seek method")
-// 			},
-// 			TruncateFunc: func(size int64) error {
-// 				panic("mock out the Truncate method")
-// 			},
-// 			WriteFunc: func(p []byte) (int, error) {
-// 				panic("mock out the Write method")
+// 			WriteAllFunc: func(bytes []byte) error {
+// 				panic("mock out the WriteAll method")
 // 			},
 // 		}
 //
-// 		// use mockedReadWriteSeekTruncateCloser in code that requires ReadWriteSeekTruncateCloser
+// 		// use mockedReadWriter in code that requires ReadWriter
 // 		// and then make assertions.
 //
 // 	}
-type ReadWriteSeekTruncateCloserMock struct {
-	// CloseFunc mocks the Close method.
-	CloseFunc func() error
+type ReadWriterMock struct {
+	// ReadAllFunc mocks the ReadAll method.
+	ReadAllFunc func() ([]byte, error)
 
-	// ReadFunc mocks the Read method.
-	ReadFunc func(p []byte) (int, error)
-
-	// SeekFunc mocks the Seek method.
-	SeekFunc func(offset int64, whence int) (int64, error)
-
-	// TruncateFunc mocks the Truncate method.
-	TruncateFunc func(size int64) error
-
-	// WriteFunc mocks the Write method.
-	WriteFunc func(p []byte) (int, error)
+	// WriteAllFunc mocks the WriteAll method.
+	WriteAllFunc func(bytes []byte) error
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// Close holds details about calls to the Close method.
-		Close []struct {
+		// ReadAll holds details about calls to the ReadAll method.
+		ReadAll []struct {
 		}
-		// Read holds details about calls to the Read method.
-		Read []struct {
-			// P is the p argument value.
-			P []byte
-		}
-		// Seek holds details about calls to the Seek method.
-		Seek []struct {
-			// Offset is the offset argument value.
-			Offset int64
-			// Whence is the whence argument value.
-			Whence int
-		}
-		// Truncate holds details about calls to the Truncate method.
-		Truncate []struct {
-			// Size is the size argument value.
-			Size int64
-		}
-		// Write holds details about calls to the Write method.
-		Write []struct {
-			// P is the p argument value.
-			P []byte
+		// WriteAll holds details about calls to the WriteAll method.
+		WriteAll []struct {
+			// Bytes is the bytes argument value.
+			Bytes []byte
 		}
 	}
-	lockClose    sync.RWMutex
-	lockRead     sync.RWMutex
-	lockSeek     sync.RWMutex
-	lockTruncate sync.RWMutex
-	lockWrite    sync.RWMutex
+	lockReadAll  sync.RWMutex
+	lockWriteAll sync.RWMutex
 }
 
-// Close calls CloseFunc.
-func (mock *ReadWriteSeekTruncateCloserMock) Close() error {
-	if mock.CloseFunc == nil {
-		panic("ReadWriteSeekTruncateCloserMock.CloseFunc: method is nil but ReadWriteSeekTruncateCloser.Close was just called")
+// ReadAll calls ReadAllFunc.
+func (mock *ReadWriterMock) ReadAll() ([]byte, error) {
+	if mock.ReadAllFunc == nil {
+		panic("ReadWriterMock.ReadAllFunc: method is nil but ReadWriter.ReadAll was just called")
 	}
 	callInfo := struct {
 	}{}
-	mock.lockClose.Lock()
-	mock.calls.Close = append(mock.calls.Close, callInfo)
-	mock.lockClose.Unlock()
-	return mock.CloseFunc()
+	mock.lockReadAll.Lock()
+	mock.calls.ReadAll = append(mock.calls.ReadAll, callInfo)
+	mock.lockReadAll.Unlock()
+	return mock.ReadAllFunc()
 }
 
-// CloseCalls gets all the calls that were made to Close.
+// ReadAllCalls gets all the calls that were made to ReadAll.
 // Check the length with:
-//     len(mockedReadWriteSeekTruncateCloser.CloseCalls())
-func (mock *ReadWriteSeekTruncateCloserMock) CloseCalls() []struct {
+//     len(mockedReadWriter.ReadAllCalls())
+func (mock *ReadWriterMock) ReadAllCalls() []struct {
 } {
 	var calls []struct {
 	}
-	mock.lockClose.RLock()
-	calls = mock.calls.Close
-	mock.lockClose.RUnlock()
+	mock.lockReadAll.RLock()
+	calls = mock.calls.ReadAll
+	mock.lockReadAll.RUnlock()
 	return calls
 }
 
-// Read calls ReadFunc.
-func (mock *ReadWriteSeekTruncateCloserMock) Read(p []byte) (int, error) {
-	if mock.ReadFunc == nil {
-		panic("ReadWriteSeekTruncateCloserMock.ReadFunc: method is nil but ReadWriteSeekTruncateCloser.Read was just called")
+// WriteAll calls WriteAllFunc.
+func (mock *ReadWriterMock) WriteAll(bytes []byte) error {
+	if mock.WriteAllFunc == nil {
+		panic("ReadWriterMock.WriteAllFunc: method is nil but ReadWriter.WriteAll was just called")
 	}
 	callInfo := struct {
-		P []byte
+		Bytes []byte
 	}{
-		P: p,
+		Bytes: bytes,
 	}
-	mock.lockRead.Lock()
-	mock.calls.Read = append(mock.calls.Read, callInfo)
-	mock.lockRead.Unlock()
-	return mock.ReadFunc(p)
+	mock.lockWriteAll.Lock()
+	mock.calls.WriteAll = append(mock.calls.WriteAll, callInfo)
+	mock.lockWriteAll.Unlock()
+	return mock.WriteAllFunc(bytes)
 }
 
-// ReadCalls gets all the calls that were made to Read.
+// WriteAllCalls gets all the calls that were made to WriteAll.
 // Check the length with:
-//     len(mockedReadWriteSeekTruncateCloser.ReadCalls())
-func (mock *ReadWriteSeekTruncateCloserMock) ReadCalls() []struct {
-	P []byte
+//     len(mockedReadWriter.WriteAllCalls())
+func (mock *ReadWriterMock) WriteAllCalls() []struct {
+	Bytes []byte
 } {
 	var calls []struct {
-		P []byte
+		Bytes []byte
 	}
-	mock.lockRead.RLock()
-	calls = mock.calls.Read
-	mock.lockRead.RUnlock()
-	return calls
-}
-
-// Seek calls SeekFunc.
-func (mock *ReadWriteSeekTruncateCloserMock) Seek(offset int64, whence int) (int64, error) {
-	if mock.SeekFunc == nil {
-		panic("ReadWriteSeekTruncateCloserMock.SeekFunc: method is nil but ReadWriteSeekTruncateCloser.Seek was just called")
-	}
-	callInfo := struct {
-		Offset int64
-		Whence int
-	}{
-		Offset: offset,
-		Whence: whence,
-	}
-	mock.lockSeek.Lock()
-	mock.calls.Seek = append(mock.calls.Seek, callInfo)
-	mock.lockSeek.Unlock()
-	return mock.SeekFunc(offset, whence)
-}
-
-// SeekCalls gets all the calls that were made to Seek.
-// Check the length with:
-//     len(mockedReadWriteSeekTruncateCloser.SeekCalls())
-func (mock *ReadWriteSeekTruncateCloserMock) SeekCalls() []struct {
-	Offset int64
-	Whence int
-} {
-	var calls []struct {
-		Offset int64
-		Whence int
-	}
-	mock.lockSeek.RLock()
-	calls = mock.calls.Seek
-	mock.lockSeek.RUnlock()
-	return calls
-}
-
-// Truncate calls TruncateFunc.
-func (mock *ReadWriteSeekTruncateCloserMock) Truncate(size int64) error {
-	if mock.TruncateFunc == nil {
-		panic("ReadWriteSeekTruncateCloserMock.TruncateFunc: method is nil but ReadWriteSeekTruncateCloser.Truncate was just called")
-	}
-	callInfo := struct {
-		Size int64
-	}{
-		Size: size,
-	}
-	mock.lockTruncate.Lock()
-	mock.calls.Truncate = append(mock.calls.Truncate, callInfo)
-	mock.lockTruncate.Unlock()
-	return mock.TruncateFunc(size)
-}
-
-// TruncateCalls gets all the calls that were made to Truncate.
-// Check the length with:
-//     len(mockedReadWriteSeekTruncateCloser.TruncateCalls())
-func (mock *ReadWriteSeekTruncateCloserMock) TruncateCalls() []struct {
-	Size int64
-} {
-	var calls []struct {
-		Size int64
-	}
-	mock.lockTruncate.RLock()
-	calls = mock.calls.Truncate
-	mock.lockTruncate.RUnlock()
-	return calls
-}
-
-// Write calls WriteFunc.
-func (mock *ReadWriteSeekTruncateCloserMock) Write(p []byte) (int, error) {
-	if mock.WriteFunc == nil {
-		panic("ReadWriteSeekTruncateCloserMock.WriteFunc: method is nil but ReadWriteSeekTruncateCloser.Write was just called")
-	}
-	callInfo := struct {
-		P []byte
-	}{
-		P: p,
-	}
-	mock.lockWrite.Lock()
-	mock.calls.Write = append(mock.calls.Write, callInfo)
-	mock.lockWrite.Unlock()
-	return mock.WriteFunc(p)
-}
-
-// WriteCalls gets all the calls that were made to Write.
-// Check the length with:
-//     len(mockedReadWriteSeekTruncateCloser.WriteCalls())
-func (mock *ReadWriteSeekTruncateCloserMock) WriteCalls() []struct {
-	P []byte
-} {
-	var calls []struct {
-		P []byte
-	}
-	mock.lockWrite.RLock()
-	calls = mock.calls.Write
-	mock.lockWrite.RUnlock()
+	mock.lockWriteAll.RLock()
+	calls = mock.calls.WriteAll
+	mock.lockWriteAll.RUnlock()
 	return calls
 }

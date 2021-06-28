@@ -1,17 +1,17 @@
 package app
 
 import (
+	vald "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/config"
 	bitcoin "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 // Config contains all necessary application configurations
 type Config struct {
-	bitcoin.BtcConfig      `mapstructure:"axelar_bridge_btc"`
-	tss.TssConfig          `mapstructure:",squash"`
-	broadcast.ClientConfig `mapstructure:",squash"`
+	bitcoin.BtcConfig `mapstructure:"axelar_bridge_btc"`
+	tss.TssConfig     `mapstructure:",squash"`
+	vald.ClientConfig `mapstructure:",squash"`
 
 	EVMConfig []evm.EVMConfig `mapstructure:"axelar_bridge_evm"`
 }
@@ -21,7 +21,7 @@ func DefaultConfig() Config {
 	return Config{
 		EVMConfig:    evm.DefaultConfig(),
 		BtcConfig:    bitcoin.DefaultConfig(),
-		TssConfig:    tss.TssConfig{},
-		ClientConfig: broadcast.ClientConfig{},
+		TssConfig:    tss.DefaultConfig(),
+		ClientConfig: vald.ClientConfig{},
 	}
 }

@@ -20,11 +20,11 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	snapshotTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
@@ -55,7 +55,7 @@ func Test_wBTC_mint(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
-		res := <-chain.Submit(&broadcastTypes.RegisterProxyRequest{PrincipalAddr: operatorAddress, ProxyAddr: nodeData[i].Proxy})
+		res := <-chain.Submit(&snapshotTypes.RegisterProxyRequest{PrincipalAddr: operatorAddress, ProxyAddr: nodeData[i].Proxy})
 		assert.NoError(t, res.Error)
 	}
 
@@ -88,7 +88,7 @@ func Test_wBTC_mint(t *testing.T) {
 		assignMasterKeyResult := <-chain.Submit(types.NewAssignKeyRequest(randomSender(), c, masterKeyID, tss.MasterKey))
 		assert.NoError(t, assignMasterKeyResult.Error)
 
-		rotateMasterKeyResult := <-chain.Submit(types.NewRotateKeyRequest(randomSender(), c, tss.MasterKey))
+		rotateMasterKeyResult := <-chain.Submit(types.NewRotateKeyRequest(randomSender(), c, tss.MasterKey, masterKeyID))
 		assert.NoError(t, rotateMasterKeyResult.Error)
 
 		if c == btc.Bitcoin.Name {
@@ -104,7 +104,7 @@ func Test_wBTC_mint(t *testing.T) {
 			assignSecondaryKeyResult := <-chain.Submit(types.NewAssignKeyRequest(randomSender(), c, secondaryKeyID, tss.SecondaryKey))
 			assert.NoError(t, assignSecondaryKeyResult.Error)
 
-			rotateSecondaryKeyResult := <-chain.Submit(types.NewRotateKeyRequest(randomSender(), c, tss.SecondaryKey))
+			rotateSecondaryKeyResult := <-chain.Submit(types.NewRotateKeyRequest(randomSender(), c, tss.SecondaryKey, secondaryKeyID))
 			assert.NoError(t, rotateSecondaryKeyResult.Error)
 		}
 	}

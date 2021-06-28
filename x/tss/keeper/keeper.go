@@ -17,17 +17,16 @@ import (
 )
 
 const (
-	rotationPrefix              = "rotationCount_"
-	keygenStartHeight           = "blockHeight_"
-	pkPrefix                    = "pk_"
-	snapshotForKeyIDPrefix      = "sfkid_"
-	sigPrefix                   = "sig_"
-	keyIDForSigPrefix           = "kidfs_"
-	participatePrefix           = "part_"
-	validatorDeregisteredPrefix = "validator_deregistered_block_height_"
-	keyRequirementPrefix        = "key_requirement_"
-	keyRolePrefix               = "key_role_"
-	keyTssSuspendedUntil        = "key_tss_suspended_until_"
+	rotationPrefix         = "rotationCount_"
+	keygenStartHeight      = "blockHeight_"
+	pkPrefix               = "pk_"
+	snapshotForKeyIDPrefix = "sfkid_"
+	sigPrefix              = "sig_"
+	keyIDForSigPrefix      = "kidfs_"
+	participatePrefix      = "part_"
+	keyRequirementPrefix   = "key_requirement_"
+	keyRolePrefix          = "key_role_"
+	keyTssSuspendedUntil   = "key_tss_suspended_until_"
 )
 
 // Keeper allows access to the broadcast state
@@ -91,29 +90,6 @@ func (k Keeper) GetKeyRequirement(ctx sdk.Context, chain nexus.Chain, keyRole ex
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &keyRequirement)
 
 	return keyRequirement, true
-}
-
-// SetValidatorDeregisteredBlockHeight sets the validator's deregistration block height
-func (k Keeper) SetValidatorDeregisteredBlockHeight(ctx sdk.Context, valAddr sdk.ValAddress, blockHeight int64) {
-	key := []byte(validatorDeregisteredPrefix + valAddr.String())
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(blockHeight)
-
-	ctx.KVStore(k.storeKey).Set(key, bz)
-}
-
-// GetValidatorDeregisteredBlockHeight gets the validator's deregistration block height; 0 if the validator has never deregistered
-func (k Keeper) GetValidatorDeregisteredBlockHeight(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
-	key := []byte(validatorDeregisteredPrefix + valAddr.String())
-	bz := ctx.KVStore(k.storeKey).Get(key)
-
-	if bz == nil {
-		return 0
-	}
-
-	var blockHeight int64
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &blockHeight)
-
-	return blockHeight
 }
 
 // ComputeCorruptionThreshold returns corruption threshold to be used by tss

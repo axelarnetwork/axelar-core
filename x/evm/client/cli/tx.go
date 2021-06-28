@@ -34,6 +34,7 @@ func GetTxCmd() *cobra.Command {
 		GetCmdConfirmChain(),
 		GetCmdConfirmERC20TokenDeployment(),
 		GetCmdConfirmERC20Deposit(),
+		GetCmdConfirmTransferOwnership(),
 		GetCmdSignPendingTransfersTx(),
 		GetCmdSignDeployToken(),
 		GetCmdSignBurnTokens(),
@@ -182,6 +183,33 @@ func GetCmdConfirmERC20Deposit() *cobra.Command {
 	return cmd
 }
 
+// GetCmdConfirmTransferOwnership returns the cli command to confirm a transfer ownership for the gateway contract
+func GetCmdConfirmTransferOwnership() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "confirm-transfer-ownership [chain] [txID] [keyID]",
+		Short: "Confirm a transfer ownership in an EVM chain transaction",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			chain := args[0]
+			txID := common.HexToHash(args[1])
+			keyID := args[2]
+			msg := types.NewConfirmTransferOwnershipRequest(cliCtx.GetFromAddress(), chain, txID, keyID)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
 // GetCmdSignPendingTransfersTx returns the cli command to sign all pending token transfers to an EVM chain
 func GetCmdSignPendingTransfersTx() *cobra.Command {
 	cmd := &cobra.Command{
@@ -269,7 +297,7 @@ func GetCmdSignBurnTokens() *cobra.Command {
 // GetCmdSignTransferOwnership returns the cli command to sign transfer-ownership command for an EVM chain contract
 func GetCmdSignTransferOwnership() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "transfer-ownership [chain] [newOwnerAddr]",
+		Use:   "transfer-ownership [chain] [keyID]",
 		Short: "Sign transfer ownership command for an EVM chain contract",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -277,10 +305,8 @@ func GetCmdSignTransferOwnership() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			chain := args[0]
-			newOwnerAddr := common.HexToAddress(args[1])
 
-			msg := types.NewSignTransferOwnershipRequest(cliCtx.GetFromAddress(), chain, newOwnerAddr)
+			msg := types.NewSignTransferOwnershipRequest(cliCtx.GetFromAddress(), args[0], args[1])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

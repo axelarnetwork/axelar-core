@@ -151,11 +151,12 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 		// assert: the outpoint is known and has not been confirmed before
 	}
 
-	if err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed}); err != nil {
+	poll, err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed})
+	if err != nil {
 		return nil, err
 	}
 
-	result := s.voter.Result(ctx, req.Poll)
+	result := poll.GetResult()
 	if result == nil {
 		return &types.VoteConfirmOutpointResponse{Status: fmt.Sprintf("not enough votes to confirm outpoint %s yet", req.OutPoint)}, nil
 	}
@@ -230,7 +231,7 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 }
 
 // SignPendingTransfers handles the signing of a consolidation transaction (consolidate confirmed outpoints and pay out transfers)
-func (s msgServer) SignPendingTransfers(c context.Context, _ *types.SignPendingTransfersRequest) (*types.SignPendingTransfersResponse, error) {
+func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendingTransfersRequest) (*types.SignPendingTransfersResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	if _, ok := s.GetUnsignedTx(ctx); ok {
 		return nil, fmt.Errorf("consolidation in progress")
@@ -238,6 +239,23 @@ func (s msgServer) SignPendingTransfers(c context.Context, _ *types.SignPendingT
 	if tx, ok := s.GetSignedTx(ctx); ok {
 		vout, _ := s.GetMasterKeyVout(ctx)
 		return nil, fmt.Errorf("previous consolidation transaction %s:%d must be confirmed first", tx.TxHash().String(), vout)
+	}
+
+	key, ok := s.signer.GetKey(ctx, req.KeyID)
+	if !ok {
+		return nil, fmt.Errorf("unkown key %s", req.KeyID)
+	}
+	if key.Role != tss.MasterKey {
+		return nil, fmt.Errorf("given key must have role %s instead of %s", tss.MasterKey.SimpleString(), key.Role.SimpleString())
+	}
+	current, ok := s.signer.GetCurrentKey(ctx, exported.Bitcoin, tss.MasterKey)
+	if !ok {
+		return nil, fmt.Errorf("current %s key is not set", tss.MasterKey.SimpleString())
+	}
+
+	next, nextAssigned := s.signer.GetNextKey(ctx, exported.Bitcoin, tss.MasterKey)
+	if current.ID != key.ID && nextAssigned && next.ID != key.ID {
+		return nil, fmt.Errorf("key %s already assigned as the next %s key for chain %s", next.ID, tss.MasterKey.SimpleString(), exported.Bitcoin.Name)
 	}
 
 	outputs, totalOut := prepareOutputs(ctx, s, s.nexus)
@@ -253,7 +271,8 @@ func (s msgServer) SignPendingTransfers(c context.Context, _ *types.SignPendingT
 		return nil, err
 	}
 
-	txSizeUpperBound, err := estimateTxSizeWithZeroChange(ctx, s, s.signer, inputs, append([]types.Output{anyoneCanSpendOutput}, outputs...))
+	consolidationAddress := types.NewConsolidationAddress(key, s.GetNetwork(ctx))
+	txSizeUpperBound, err := estimateTxSizeWithZeroChange(ctx, s, consolidationAddress, inputs, append([]types.Output{anyoneCanSpendOutput}, outputs...))
 	if err != nil {
 		return nil, err
 	}
@@ -268,7 +287,7 @@ func (s msgServer) SignPendingTransfers(c context.Context, _ *types.SignPendingT
 			totalDeposits.String(), totalOut.String(), btcutil.Amount(fee.Int64()).String(),
 		)
 	case 1:
-		changeOutput, err := prepareChange(ctx, s, s.signer, change)
+		changeOutput, err := prepareChange(ctx, s, consolidationAddress, change)
 		if err != nil {
 			return nil, err
 		}
@@ -293,8 +312,8 @@ func (s msgServer) SignPendingTransfers(c context.Context, _ *types.SignPendingT
 	return &types.SignPendingTransfersResponse{}, nil
 }
 
-func estimateTxSizeWithZeroChange(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, inputs []types.OutPointToSign, outputs []types.Output) (int64, error) {
-	zeroChangeOutput, err := prepareChange(ctx, k, signer, sdk.ZeroInt())
+func estimateTxSizeWithZeroChange(ctx sdk.Context, k types.BTCKeeper, address types.AddressInfo, inputs []types.OutPointToSign, outputs []types.Output) (int64, error) {
+	zeroChangeOutput, err := prepareChange(ctx, k, address, sdk.ZeroInt())
 	if err != nil {
 		return 0, err
 	}
@@ -312,37 +331,28 @@ func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.
 	pendingTransfers := n.GetTransfersForChain(ctx, exported.Bitcoin, nexus.Pending)
 	outputs := []types.Output{}
 	totalOut := sdk.ZeroInt()
-
-	addrWithdrawal := make(map[string]sdk.Int)
-	var recipients []btcutil.Address
+	network := k.GetNetwork(ctx).Params()
 
 	// Combine output to same destination address
 	for _, transfer := range pendingTransfers {
-		recipient, err := btcutil.DecodeAddress(transfer.Recipient.Address, k.GetNetwork(ctx).Params())
+		if _, err := btcutil.DecodeAddress(transfer.Recipient.Address, network); err == nil {
+			n.ArchivePendingTransfer(ctx, transfer)
+		}
+	}
+
+	getRecipient := func(transfer nexus.CrossChainTransfer) string {
+		return transfer.Recipient.Address
+	}
+
+	for _, transfer := range nexus.MergeTransfersBy(pendingTransfers, getRecipient) {
+		recipient, err := btcutil.DecodeAddress(transfer.Recipient.Address, network)
 		if err != nil {
 			k.Logger(ctx).Error(fmt.Sprintf("%s is not a valid address", transfer.Recipient.Address))
 			continue
 		}
-		recipients = append(recipients, recipient)
+
 		encodedAddress := recipient.EncodeAddress()
-
-		if _, ok := addrWithdrawal[encodedAddress]; !ok {
-			addrWithdrawal[encodedAddress] = sdk.ZeroInt()
-		}
-		addrWithdrawal[encodedAddress] = addrWithdrawal[encodedAddress].Add(transfer.Asset.Amount)
-
-		n.ArchivePendingTransfer(ctx, transfer)
-	}
-
-	for _, recipient := range recipients {
-		encodedAddress := recipient.EncodeAddress()
-		amount, ok := addrWithdrawal[encodedAddress]
-		if !ok {
-			continue
-		}
-
-		// delete from map to prevent recounting
-		delete(addrWithdrawal, encodedAddress)
+		amount := transfer.Asset.Amount
 
 		// Check if the recipient has unsent dust amount
 		unsentDust := k.GetDustAmount(ctx, encodedAddress)
@@ -411,27 +421,17 @@ func prepareInputs(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) ([]t
 	return prevOuts, totalDeposits, nil
 }
 
-func prepareChange(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, change sdk.Int) (types.Output, error) {
+func prepareChange(ctx sdk.Context, k types.BTCKeeper, consolidationAddress types.AddressInfo, change sdk.Int) (types.Output, error) {
 	if !change.IsInt64() {
 		return types.Output{}, fmt.Errorf("the calculated change is too large for a single transaction")
 	}
 
-	// if a new master key has been assigned for rotation spend change to that address, otherwise use the current one
-	key, ok := signer.GetNextKey(ctx, exported.Bitcoin, tss.MasterKey)
-	if !ok {
-		key, ok = signer.GetCurrentKey(ctx, exported.Bitcoin, tss.MasterKey)
-		if !ok {
-			return types.Output{}, fmt.Errorf("key not found")
-		}
-	}
+	k.SetAddress(ctx, consolidationAddress)
 
-	addressInfo := types.NewConsolidationAddress(key, k.GetNetwork(ctx))
-	k.SetAddress(ctx, addressInfo)
-
-	telemetry.NewLabel("btc_master_addr", addressInfo.Address)
+	telemetry.NewLabel("btc_master_addr", consolidationAddress.Address)
 	telemetry.SetGauge(float32(change.Int64()), "btc_master_addr_balance")
 
-	return types.Output{Amount: btcutil.Amount(change.Int64()), Recipient: addressInfo.GetAddress()}, nil
+	return types.Output{Amount: btcutil.Amount(change.Int64()), Recipient: consolidationAddress.GetAddress()}, nil
 }
 
 func startSignInputs(ctx sdk.Context, signer types.Signer, snapshotter types.Snapshotter, v types.Voter, tx *wire.MsgTx, outpointsToSign []types.OutPointToSign) error {

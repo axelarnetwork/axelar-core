@@ -17,8 +17,7 @@ import (
 var _ types.MsgServiceServer = msgServer{}
 
 type msgServer struct {
-	Keeper
-	broadcaster types.Broadcaster
+	types.TSSKeeper
 	snapshotter types.Snapshotter
 	staker      types.StakingKeeper
 	voter       types.Voter
@@ -27,10 +26,9 @@ type msgServer struct {
 
 // NewMsgServerImpl returns an implementation of the broadcast MsgServiceServer interface
 // for the provided Keeper.
-func NewMsgServerImpl(keeper Keeper, b types.Broadcaster, s types.Snapshotter, staker types.StakingKeeper, v types.Voter, n types.Nexus) types.MsgServiceServer {
+func NewMsgServerImpl(keeper types.TSSKeeper, s types.Snapshotter, staker types.StakingKeeper, v types.Voter, n types.Nexus) types.MsgServiceServer {
 	return msgServer{
-		Keeper:      keeper,
-		broadcaster: b,
+		TSSKeeper:   keeper,
 		snapshotter: s,
 		staker:      staker,
 		voter:       v,
@@ -68,7 +66,7 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 		return nil, fmt.Errorf("invalid threshold: %d, total power: %d", threshold, snapshot.TotalShareCount.Int64())
 	}
 
-	if err := s.Keeper.StartKeygen(ctx, s.voter, req.NewKeyID, snapshot); err != nil {
+	if err := s.TSSKeeper.StartKeygen(ctx, s.voter, req.NewKeyID, snapshot); err != nil {
 		return nil, err
 	}
 
@@ -98,7 +96,7 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 func (s msgServer) ProcessKeygenTraffic(c context.Context, req *types.ProcessKeygenTrafficRequest) (*types.ProcessKeygenTrafficResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	senderAddress := s.broadcaster.GetPrincipal(ctx, req.Sender)
+	senderAddress := s.snapshotter.GetPrincipal(ctx, req.Sender)
 	if senderAddress.Empty() {
 		return nil, fmt.Errorf("invalid message: sender [%s] is not a validator", req.Sender)
 	}
@@ -186,22 +184,32 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 		return nil, fmt.Errorf("unknown chain")
 	}
 
-	if err := s.Keeper.RotateKey(ctx, chain, req.KeyRole); err != nil {
-		return nil, err
+	_, hasActiveKey := s.TSSKeeper.GetCurrentKeyID(ctx, chain, req.KeyRole)
+	assignedKeyID, hasNextKeyAssigned := s.TSSKeeper.GetNextKeyID(ctx, chain, req.KeyRole)
+
+	switch {
+	case hasActiveKey && !hasNextKeyAssigned:
+		return nil, fmt.Errorf("no key assigned for rotation yet")
+	case hasActiveKey && assignedKeyID != req.KeyID:
+		return nil, fmt.Errorf("expected rotation to key ID %s, got key ID %s", assignedKeyID, req.KeyID)
+	default:
+		if err := s.TSSKeeper.RotateKey(ctx, chain, req.KeyRole); err != nil {
+			return nil, err
+		}
+
+		s.Logger(ctx).Debug(fmt.Sprintf("rotated %s key for chain %s", req.KeyRole.SimpleString(), chain.Name))
+
+		ctx.EventManager().EmitEvent(
+			sdk.NewEvent(
+				sdk.EventTypeMessage,
+				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+				sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
+				sdk.NewAttribute(types.AttributeChain, chain.Name),
+			),
+		)
+
+		return &types.RotateKeyResponse{}, nil
 	}
-
-	s.Logger(ctx).Debug(fmt.Sprintf("rotated %s key for chain %s", req.KeyRole.SimpleString(), chain.Name))
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
-			sdk.NewAttribute(types.AttributeChain, chain.Name),
-		),
-	)
-
-	return &types.RotateKeyResponse{}, nil
 }
 
 func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (*types.VotePubKeyResponse, error) {
@@ -232,25 +240,35 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		}
 	}
 
-	if err := s.voter.TallyVote(ctx, req.Sender, req.PollMeta, req.Result); err != nil {
+	poll, err := s.voter.TallyVote(ctx, req.Sender, req.PollMeta, req.Result)
+	if err != nil {
 		return nil, err
 	}
 
-	result := s.voter.Result(ctx, req.PollMeta)
-	if result == nil {
+	result := poll.GetResult()
+	if result == nil && !poll.Failed {
 		return &types.VotePubKeyResponse{}, nil
 	}
 
-	// the result is not necessarily the same as the msg (the vote could have been decided earlier and now a false vote is cast),
-	// so use result instead of msg
-	ctx.EventManager().EmitEvent(sdk.NewEvent(
+	event := sdk.NewEvent(
 		types.EventTypeKeygen,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
 		sdk.NewAttribute(types.AttributeKeyPoll, req.PollMeta.String()),
-		// TODO: Consider emitting criminals or pubkey with different attributes
-		sdk.NewAttribute(types.AttributeKeyPayload, req.Result.String()),
-	))
+	)
+	defer ctx.EventManager().EmitEvent(event)
+
+	if poll.Failed {
+		ctx.EventManager().EmitEvent(
+			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
+		)
+
+		s.voter.DeletePoll(ctx, req.PollMeta)
+		s.DeleteSnapshotCounterForKeyID(ctx, req.PollMeta.ID)
+		s.DeleteKeygenStart(ctx, req.PollMeta.ID)
+		s.DeleteParticipantsInKeygen(ctx, req.PollMeta.ID)
+
+		return &types.VotePubKeyResponse{}, nil
+	}
 
 	switch keygenResult := result.(type) {
 	case *tofnd.MessageOut_KeygenResult:
@@ -265,6 +283,12 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			pubKey := btcecPK.ToECDSA()
 			s.SetKey(ctx, req.PollMeta.ID, *pubKey)
 
+			ctx.EventManager().EmitEvent(
+				event.AppendAttributes(
+					sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
+					sdk.NewAttribute(types.AttributeKeyPayload, keygenResult.String()),
+				),
+			)
 			s.Logger(ctx).Info(fmt.Sprintf("public key confirmation result is %.10s", result))
 
 			return &types.VotePubKeyResponse{}, nil
@@ -272,13 +296,17 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 
 		// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed
 		// TODO: the snapshot itself can be deleted too but we need to be more careful with it
-		s.deleteSnapshotCounterForKeyID(ctx, req.PollMeta.ID)
-		s.deleteKeygenStart(ctx, req.PollMeta.ID)
-		s.deleteParticipantsInKeygen(ctx, req.PollMeta.ID)
+		s.DeleteSnapshotCounterForKeyID(ctx, req.PollMeta.ID)
+		s.DeleteKeygenStart(ctx, req.PollMeta.ID)
+		s.DeleteParticipantsInKeygen(ctx, req.PollMeta.ID)
+
+		ctx.EventManager().EmitEvent(
+			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
+		)
 
 		for _, criminal := range keygenResult.GetCriminals().Criminals {
 			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
-			s.Keeper.PenalizeSignCriminal(ctx, criminalAddress, criminal.GetCrimeType())
+			s.TSSKeeper.PenalizeSignCriminal(ctx, criminalAddress, criminal.GetCrimeType())
 
 			s.Logger(ctx).Info(fmt.Sprintf("criminal for generating key %s verified: %s - %s", req.PollMeta.ID, criminal.GetPartyUid(), criminal.CrimeType.String()))
 		}
@@ -293,7 +321,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 func (s msgServer) ProcessSignTraffic(c context.Context, req *types.ProcessSignTrafficRequest) (*types.ProcessSignTrafficResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	senderAddress := s.broadcaster.GetPrincipal(ctx, req.Sender)
+	senderAddress := s.snapshotter.GetPrincipal(ctx, req.Sender)
 	if senderAddress.Empty() {
 		return nil, fmt.Errorf("invalid message: sender [%s] is not a validator", req.Sender)
 	}
@@ -341,25 +369,33 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		}
 	}
 
-	if err := s.voter.TallyVote(ctx, req.Sender, req.PollMeta, req.Result); err != nil {
+	poll, err := s.voter.TallyVote(ctx, req.Sender, req.PollMeta, req.Result)
+	if err != nil {
 		return nil, err
 	}
 
-	result := s.voter.Result(ctx, req.PollMeta)
-	if result == nil {
+	result := poll.GetResult()
+	if result == nil && !poll.Failed {
 		return &types.VoteSigResponse{}, nil
 	}
 
-	// the result is not necessarily the same as the msg (the vote could have been decided earlier and now a false vote is cast),
-	// so use result instead of msg
-	ctx.EventManager().EmitEvent(sdk.NewEvent(
+	event := sdk.NewEvent(
 		types.EventTypeSign,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
 		sdk.NewAttribute(types.AttributeKeyPoll, req.PollMeta.String()),
-		// TODO: Consider emitting criminals or signature with different attributes
-		sdk.NewAttribute(types.AttributeKeyPayload, req.Result.String()),
-	))
+	)
+	defer ctx.EventManager().EmitEvent(event)
+
+	if poll.Failed {
+		ctx.EventManager().EmitEvent(
+			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
+		)
+
+		s.voter.DeletePoll(ctx, req.PollMeta)
+		s.DeleteKeyIDForSig(ctx, req.PollMeta.ID)
+
+		return &types.VoteSigResponse{}, nil
+	}
 
 	switch signResult := result.(type) {
 	case *tofnd.MessageOut_SignResult:
@@ -367,16 +403,27 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 
 		if signature := signResult.GetSignature(); signature != nil {
 			s.SetSig(ctx, req.PollMeta.ID, signature)
+
 			s.Logger(ctx).Info(fmt.Sprintf("signature for %s verified: %.10s", req.PollMeta.ID, hex.EncodeToString(signature)))
+			ctx.EventManager().EmitEvent(
+				event.AppendAttributes(
+					sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
+					sdk.NewAttribute(types.AttributeKeyPayload, signResult.String()),
+				),
+			)
 
 			return &types.VoteSigResponse{}, nil
 		}
 
 		// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed
-		s.deleteKeyIDForSig(ctx, req.PollMeta.ID)
+		s.DeleteKeyIDForSig(ctx, req.PollMeta.ID)
+		ctx.EventManager().EmitEvent(
+			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
+		)
+
 		for _, criminal := range signResult.GetCriminals().Criminals {
 			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
-			s.Keeper.PenalizeSignCriminal(ctx, criminalAddress, criminal.GetCrimeType())
+			s.TSSKeeper.PenalizeSignCriminal(ctx, criminalAddress, criminal.GetCrimeType())
 
 			s.Logger(ctx).Info(fmt.Sprintf("criminal for signature %s verified: %s - %s", req.PollMeta.ID, criminal.GetPartyUid(), criminal.CrimeType.String()))
 		}
@@ -386,18 +433,4 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 			fmt.Sprintf("unrecognized voting result type: %T", result))
 	}
-}
-
-func (s msgServer) Deregister(c context.Context, req *types.DeregisterRequest) (*types.DeregisterResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	valAddr := sdk.ValAddress(req.Sender)
-
-	if _, found := s.staker.GetValidator(ctx, valAddr); !found {
-		return nil, fmt.Errorf("sender %s is not a validator and cannot deregister for tss keygen", valAddr.String())
-	}
-
-	s.SetValidatorDeregisteredBlockHeight(ctx, valAddr, ctx.BlockHeight())
-
-	return &types.DeregisterResponse{}, nil
 }

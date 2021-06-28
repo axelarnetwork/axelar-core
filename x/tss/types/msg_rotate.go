@@ -10,11 +10,12 @@ import (
 )
 
 // NewRotateKeyRequest constructor for RotateKeyRequest
-func NewRotateKeyRequest(sender sdk.AccAddress, chain string, keyRole exported.KeyRole) *RotateKeyRequest {
+func NewRotateKeyRequest(sender sdk.AccAddress, chain string, keyRole exported.KeyRole, keyID string) *RotateKeyRequest {
 	return &RotateKeyRequest{
 		Sender:  sender,
 		Chain:   chain,
 		KeyRole: keyRole,
+		KeyID:   keyID,
 	}
 }
 
@@ -39,6 +40,10 @@ func (m RotateKeyRequest) ValidateBasic() error {
 
 	if err := m.KeyRole.Validate(); err != nil {
 		return err
+	}
+
+	if m.KeyID == "" {
+		return fmt.Errorf("missing key ID")
 	}
 
 	return nil

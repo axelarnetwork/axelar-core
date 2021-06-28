@@ -3,7 +3,7 @@
 Sign transfer ownership command for an EVM chain contract
 
 ```
-axelard tx evm transfer-ownership [chain] [newOwnerAddr] [flags]
+axelard tx evm transfer-ownership [chain] [keyID] [flags]
 ```
 
 ### Options

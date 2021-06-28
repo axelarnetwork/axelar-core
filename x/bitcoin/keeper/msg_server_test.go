@@ -12,6 +12,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	gogoprototypes "github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/assert"
@@ -28,6 +29,7 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 func TestHandleMsgLink(t *testing.T) {
@@ -238,18 +240,23 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			},
 		}
 		voter = &mock.VoterMock{
-			TallyVoteFunc: func(sdk.Context, sdk.AccAddress, vote.PollMeta, vote.VotingData) error { return nil },
-			ResultFunc: func(sdk.Context, vote.PollMeta) vote.VotingData {
-				return &gogoprototypes.BoolValue{Value: true}
+			TallyVoteFunc: func(sdk.Context, sdk.AccAddress, vote.PollMeta, vote.VotingData) (*votetypes.Poll, error) {
+				result, _ := codectypes.NewAnyWithValue(&gogoprototypes.BoolValue{Value: true})
+
+				return &votetypes.Poll{Result: result}, nil
 			},
 			DeletePollFunc: func(sdk.Context, vote.PollMeta) {},
 		}
 		nexusKeeper = &mock.NexusMock{
 			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) error { return nil },
 		}
-
+		privateKey, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
+		masterKey := tss.Key{ID: rand.StrBetween(5, 20), Value: privateKey.PublicKey, Role: tss.MasterKey}
+		signerKeeper := &mock.SignerMock{
+			GetNextKeyFunc: func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) { return masterKey, false },
+		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		server = NewMsgServerImpl(btcKeeper, &mock.SignerMock{}, nexusKeeper, voter, &mock.SnapshotterMock{})
+		server = NewMsgServerImpl(btcKeeper, signerKeeper, nexusKeeper, voter, &mock.SnapshotterMock{})
 	}
 
 	repeats := 20
@@ -382,9 +389,12 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 
 	t.Run("happy path reject", testutils.Func(func(t *testing.T) {
 		setup()
-		voter.ResultFunc = func(sdk.Context, vote.PollMeta) vote.VotingData {
-			return &gogoprototypes.BoolValue{Value: false}
-		}
+		voter.TallyVoteFunc =
+			func(sdk.Context, sdk.AccAddress, vote.PollMeta, vote.VotingData) (*votetypes.Poll, error) {
+				result, _ := codectypes.NewAnyWithValue(&gogoprototypes.BoolValue{Value: false})
+
+				return &votetypes.Poll{Result: result}, nil
+			}
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
@@ -397,9 +407,10 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 
 	t.Run("happy path no result yet", testutils.Func(func(t *testing.T) {
 		setup()
-		voter.ResultFunc = func(sdk.Context, vote.PollMeta) vote.VotingData {
-			return nil
-		}
+		voter.TallyVoteFunc =
+			func(sdk.Context, sdk.AccAddress, vote.PollMeta, vote.VotingData) (*votetypes.Poll, error) {
+				return &votetypes.Poll{}, nil
+			}
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
@@ -469,9 +480,10 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 
 	t.Run("tally failed", testutils.Func(func(t *testing.T) {
 		setup()
-		voter.TallyVoteFunc = func(sdk.Context, sdk.AccAddress, vote.PollMeta, vote.VotingData) error {
-			return fmt.Errorf("failed")
-		}
+		voter.TallyVoteFunc =
+			func(sdk.Context, sdk.AccAddress, vote.PollMeta, vote.VotingData) (*votetypes.Poll, error) {
+				return nil, fmt.Errorf("failed")
+			}
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
@@ -515,7 +527,6 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		msg = types.NewSignPendingTransfersRequest(rand.Bytes(sdk.AddrLen))
 
 		// let the minimum start at 2 so the dust limit can still go below
 		minimumWithdrawalAmount = btcutil.Amount(rand.I64Between(2, 5000))
@@ -538,6 +549,8 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		masterKey := tss.Key{ID: rand.StrBetween(5, 20), Value: masterPrivateKey.PublicKey, Role: tss.MasterKey}
 		secondaryPrivateKey, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
 		secondaryKey := tss.Key{ID: rand.StrBetween(5, 20), Value: secondaryPrivateKey.PublicKey, Role: tss.SecondaryKey}
+
+		msg = types.NewSignPendingTransfersRequest(rand.Bytes(sdk.AddrLen), masterKey.ID)
 
 		btcKeeper = &mock.BTCKeeperMock{
 			GetUnsignedTxFunc:             func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
@@ -607,7 +620,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 			GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
 				return rand.PosI64(), true
 			},
-			StartSignFunc: func(sdk.Context, types.InitPoller, string, string, []byte, snapshot.Snapshot) error { return nil },
+			StartSignFunc:   func(sdk.Context, types.InitPoller, string, string, []byte, snapshot.Snapshot) error { return nil },
 		}
 		snapshotter = &mock.SnapshotterMock{
 			GetSnapshotFunc: func(_ sdk.Context, counter int64) (snapshot.Snapshot, bool) {
@@ -646,7 +659,6 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 
 		_, err := server.SignPendingTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
-		assert.Len(t, signer.GetCurrentKeyCalls(), 0)
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, len(deposits))
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxOut, len(transfers)+2) // + consolidation outpoint + anyone-can-spend outpoint
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))

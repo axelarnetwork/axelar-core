@@ -2,15 +2,18 @@ package exported
 
 import (
 	"bytes"
-	"github.com/axelarnetwork/axelar-core/utils"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
+
+	"github.com/axelarnetwork/axelar-core/utils"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/gogo/protobuf/proto"
 )
 
-//go:generate moq -out ./mock/types.go -pkg mock . SDKValidator Snapshotter Slasher Broadcaster Tss
+//go:generate moq -out ./mock/types.go -pkg mock . SDKValidator Snapshotter Slasher Tss
 
 // SDKValidator is an interface for a Cosmos validator account
 type SDKValidator interface {
@@ -43,17 +46,12 @@ type Slasher interface {
 	GetValidatorSigningInfo(ctx sdk.Context, address sdk.ConsAddress) (info ValidatorInfo, found bool)
 }
 
-// Broadcaster provides broadcasting functionality
-type Broadcaster interface {
-	GetProxy(ctx sdk.Context, principal sdk.ValAddress) sdk.AccAddress
-}
-
 // Tss provides functionality to tss module
 type Tss interface {
 	SetKeyRequirement(ctx sdk.Context, keyRequirement tss.KeyRequirement)
-	GetValidatorDeregisteredBlockHeight(ctx sdk.Context, valAddr sdk.ValAddress) int64
 	GetMinBondFractionPerShare(ctx sdk.Context) utils.Threshold
 	GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
+	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 }
 
 // IsValidatorActive returns true if the validator is active; otherwise, false
@@ -69,13 +67,9 @@ func IsValidatorActive(ctx sdk.Context, slasher Slasher, validator SDKValidator)
 }
 
 // HasProxyRegistered returns true if the validator has broadcast proxy registered; otherwise, false
-func HasProxyRegistered(ctx sdk.Context, broadcaster Broadcaster, validator SDKValidator) bool {
-	return broadcaster.GetProxy(ctx, validator.GetOperator()) != nil
-}
-
-// IsValidatorTssRegistered returns true if the validator is registered to participate in tss key generation; otherwise, false
-func IsValidatorTssRegistered(ctx sdk.Context, tss Tss, validator SDKValidator) bool {
-	return tss.GetValidatorDeregisteredBlockHeight(ctx, validator.GetOperator()) <= 0
+func HasProxyRegistered(ctx sdk.Context, snapshotter Snapshotter, validator SDKValidator) bool {
+	_, active := snapshotter.GetProxy(ctx, validator.GetOperator())
+	return active
 }
 
 // IsValidatorTssSuspended returns true if the validator is suspended from participating TSS ceremonies for committing faulty behaviour; otherwise, false
@@ -100,6 +94,8 @@ type Snapshotter interface {
 	GetLatestCounter(ctx sdk.Context) int64
 	GetSnapshot(ctx sdk.Context, counter int64) (Snapshot, bool)
 	TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (snapshotConsensusPower sdk.Int, totalConsensusPower sdk.Int, err error)
+	GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
+	GetProxy(ctx sdk.Context, principal sdk.ValAddress) (addr sdk.AccAddress, active bool)
 }
 
 // GetSDKValidator returns the SdkValidator

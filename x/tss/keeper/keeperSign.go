@@ -110,7 +110,8 @@ func (k Keeper) getKeyIDForSig(ctx sdk.Context, sigID string) (string, bool) {
 	return string(bz), true
 }
 
-func (k Keeper) deleteKeyIDForSig(ctx sdk.Context, sigID string) {
+// DeleteKeyIDForSig deletes the key ID associated with the given signature
+func (k Keeper) DeleteKeyIDForSig(ctx sdk.Context, sigID string) {
 	ctx.KVStore(k.storeKey).Delete([]byte(keyIDForSigPrefix + sigID))
 }
 

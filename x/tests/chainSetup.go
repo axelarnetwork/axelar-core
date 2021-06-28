@@ -31,10 +31,10 @@ import (
 	eth2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
-	broadcastKeeper "github.com/axelarnetwork/axelar-core/x/broadcast/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
+	"github.com/axelarnetwork/axelar-core/x/snapshot"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
@@ -43,8 +43,6 @@ import (
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	btcMock "github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
-	"github.com/axelarnetwork/axelar-core/x/broadcast"
-	broadcastTypes "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -93,12 +91,10 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger().With("node", moniker))
 	encCfg := testutils.MakeEncodingConfig()
 
-	broadcaster := broadcastKeeper.NewKeeper(encCfg.Amino, sdk.NewKVStoreKey(broadcastTypes.StoreKey), mocks.Staker)
-
 	snapSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
-	snapKeeper := snapshotKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(snapshotTypes.StoreKey), snapSubspace, broadcaster, mocks.Staker, mocks.Slasher, mocks.Tss)
+	snapKeeper := snapshotKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(snapshotTypes.StoreKey), snapSubspace, mocks.Staker, mocks.Slasher, mocks.Tss)
 	snapKeeper.SetParams(ctx, snapshotTypes.DefaultParams())
-	voter := voteKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(voteTypes.StoreKey), snapKeeper, broadcaster)
+	voter := voteKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(voteTypes.StoreKey), snapKeeper)
 
 	btcSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
 	bitcoinKeeper := btcKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)
@@ -122,15 +118,15 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 
 	router := fake.NewRouter()
 
-	broadcastHandler := broadcast.NewHandler(broadcaster)
+	snapshotHandler := snapshot.NewHandler(snapKeeper)
 	btcHandler := bitcoin.NewHandler(bitcoinKeeper, voter, signer, nexusK, snapKeeper)
 	ethHandler := evm.NewHandler(EVMKeeper, mocks.Tss, voter, signer, nexusK, snapKeeper)
 	tssHandler := tss.NewHandler(signer, snapKeeper, nexusK, voter, &tssMock.StakingKeeperMock{
 		GetLastTotalPowerFunc: mocks.Staker.GetLastTotalPowerFunc,
-	}, broadcaster)
+	})
 
 	router = router.
-		AddRoute(sdk.NewRoute(broadcastTypes.RouterKey, broadcastHandler)).
+		AddRoute(sdk.NewRoute(snapshotTypes.RouterKey, snapshotHandler)).
 		AddRoute(sdk.NewRoute(btcTypes.RouterKey, btcHandler)).
 		AddRoute(sdk.NewRoute(evmTypes.RouterKey, ethHandler)).
 		AddRoute(sdk.NewRoute(tssTypes.RouterKey, tssHandler))
@@ -197,9 +193,6 @@ func createMocks(validators []stakingtypes.Validator) testMocks {
 	}
 
 	tssK := &snapshotExportedMock.TssMock{
-		GetValidatorDeregisteredBlockHeightFunc: func(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
-			return 0
-		},
 		GetMinBondFractionPerShareFunc: func(sdk.Context) utils.Threshold {
 			return utils.Threshold{Numerator: 1, Denominator: 200}
 		},

@@ -14,6 +14,7 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 //go:generate moq -out ./mock/expected_keepers.go -pkg mock . TSS Voter Signer Nexus Snapshotter EVMKeeper
@@ -52,6 +53,9 @@ type EVMKeeper interface {
 	DeletePendingChain(ctx sdk.Context, chain string)
 	SetPendingChain(ctx sdk.Context, chain nexus.Chain)
 	GetPendingChain(ctx sdk.Context, chain string) (nexus.Chain, bool)
+	GetPendingTransferOwnership(ctx sdk.Context, chain string, poll vote.PollMeta) (TransferOwnership, bool)
+	SetPendingTransferOwnership(ctx sdk.Context, chain string, poll vote.PollMeta, transferOwnership *TransferOwnership)
+	DeletePendingTransferOwnership(ctx sdk.Context, chain string, poll vote.PollMeta)
 	GetNetworkByID(ctx sdk.Context, chain string, id *big.Int) (string, bool)
 	GetChainIDByNetwork(ctx sdk.Context, chain, network string) *big.Int
 }
@@ -62,19 +66,16 @@ type ParamsKeeper interface {
 	GetSubspace(s string) (params.Subspace, bool)
 }
 
-// TSS wraps around the existing tss.Keeper interface to adhere to the Cosmos convention of keeping all
-// expected keepers from other modules in the expected_keepers.go file
+// TSS exposes key functionality
 type TSS interface {
 	SetKeyRequirement(ctx sdk.Context, keyRequirement tss.KeyRequirement)
 }
 
-// Voter wraps around the existing vote.Voter interface to adhere to the Cosmos convention of keeping all
-// expected keepers from other modules in the expected_keepers.go file
+// Voter exposes voting functionality
 type Voter interface {
 	InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64, expireAt int64) error
 	DeletePoll(ctx sdk.Context, poll vote.PollMeta)
-	TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta vote.PollMeta, data vote.VotingData) error
-	Result(ctx sdk.Context, poll vote.PollMeta) vote.VotingData
+	TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta vote.PollMeta, data vote.VotingData) (*votetypes.Poll, error)
 }
 
 // Nexus provides functionality to manage cross-chain transfers
@@ -107,6 +108,7 @@ type Signer interface {
 	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 	GetKeyForSigID(ctx sdk.Context, sigID string) (tss.Key, bool)
 	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool)
+	AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error
 }
 
 // Snapshotter provides access to the snapshot functionality

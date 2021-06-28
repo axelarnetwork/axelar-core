@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 
-	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/types/mock"
+	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types/mock"
 	evmRpc "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
@@ -92,6 +92,26 @@ func TestDecodeErc20TransferEvent_CorrectData(t *testing.T) {
 	assert.Equal(t, expectedAmount, actualAmount)
 }
 
+func TestDecodeTransferOwnershipEvent_CorrectData(t *testing.T) {
+	transferOwnershipEventSig := common.HexToHash("0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0")
+	expectedPrevOwner := common.BytesToAddress(rand.Bytes(common.AddressLength))
+	expectedNewOwner := common.BytesToAddress(rand.Bytes(common.AddressLength))
+
+	l := geth.Log{
+		Topics: []common.Hash{
+			transferOwnershipEventSig,
+			common.BytesToHash(common.LeftPadBytes(expectedPrevOwner.Bytes(), common.HashLength)),
+			common.BytesToHash(common.LeftPadBytes(expectedNewOwner.Bytes(), common.HashLength)),
+		},
+		Data: nil,
+	}
+
+	actualNewOwner, err := decodeTransferOwnershipEvent(&l)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedNewOwner, actualNewOwner)
+}
+
 func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 	var (
 		mgr         *Mgr
@@ -166,6 +186,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 							Data: common.LeftPadBytes(big.NewInt(amount).Bytes(), common.HashLength),
 						},
 					},
+					Status: 1,
 				}
 				return receipt, nil
 			},
@@ -284,6 +305,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 						ERC20TokenDeploymentSig,
 						true,
 					),
+					Status: 1,
 				}
 				return receipt, nil
 			},
@@ -380,6 +402,203 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmTokenRequest).Confirmed)
+	}).Repeat(repeats))
+}
+
+func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
+	var (
+		mgr                   *Mgr
+		attributes            []sdk.Attribute
+		rpc                   *mock.ClientMock
+		broadcaster           *mock2.BroadcasterMock
+		prevNewOwnerAddrBytes []byte
+	)
+	setup := func() {
+		cdc := testutils.MakeEncodingConfig().Amino
+		poll := exported.NewPollMeta(evmTypes.ModuleName, rand.StrBetween(5, 20))
+
+		gatewayAddrBytes := rand.Bytes(common.AddressLength)
+		newOwnerAddrBytes := rand.Bytes(common.AddressLength)
+		prevNewOwnerAddrBytes = rand.Bytes(common.AddressLength)
+		blockNumber := rand.PInt64Gen().Where(func(i int64) bool { return i != 0 }).Next() // restrict to int64 so the block number in the receipt doesn't overflow
+		confHeight := rand.I64Between(0, blockNumber-1)
+
+		attributes = []sdk.Attribute{
+			sdk.NewAttribute(evmTypes.AttributeKeyChain, "Ethereum"),
+			sdk.NewAttribute(evmTypes.AttributeKeyTxID, common.Bytes2Hex(rand.Bytes(common.HashLength))),
+			sdk.NewAttribute(evmTypes.AttributeKeyGatewayAddress, common.Bytes2Hex(gatewayAddrBytes)),
+			sdk.NewAttribute(evmTypes.AttributeKeyAddress, common.Bytes2Hex(newOwnerAddrBytes)),
+			sdk.NewAttribute(evmTypes.AttributeKeyConfHeight, strconv.FormatUint(uint64(confHeight), 10)),
+			sdk.NewAttribute(evmTypes.AttributeKeyPoll, string(cdc.MustMarshalJSON(poll))),
+		}
+
+		rpc = &mock.ClientMock{
+			BlockNumberFunc: func(context.Context) (uint64, error) {
+				return uint64(blockNumber), nil
+			},
+			TransactionReceiptFunc: func(context.Context, common.Hash) (*geth.Receipt, error) {
+				receipt := &geth.Receipt{
+					BlockNumber: big.NewInt(rand.I64Between(0, blockNumber-confHeight)),
+					Logs: []*geth.Log{
+						/* previous transfer ownership event */
+						{
+							Address: common.BytesToAddress(gatewayAddrBytes),
+							Topics: []common.Hash{
+								TransferOwnershipSig,
+								common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
+								common.BytesToHash(common.LeftPadBytes(prevNewOwnerAddrBytes, common.HashLength)),
+							},
+							Data: nil,
+						},
+						/* a transfer ownership of our concern */
+						{
+							Address: common.BytesToAddress(gatewayAddrBytes),
+							Topics: []common.Hash{
+								TransferOwnershipSig,
+								common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
+								common.BytesToHash(common.LeftPadBytes(newOwnerAddrBytes, common.HashLength)),
+							},
+							Data: nil,
+						},
+						/* an invalid transfer ownership */
+						{
+							Address: common.BytesToAddress(gatewayAddrBytes),
+							Topics: []common.Hash{
+								TransferOwnershipSig,
+								common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
+							},
+							Data: nil,
+						},
+						/* not a transfer ownership event */
+						{
+							Address: common.BytesToAddress(gatewayAddrBytes),
+							Topics: []common.Hash{
+								common.BytesToHash(rand.Bytes(common.HashLength)),
+								common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
+								common.BytesToHash(common.LeftPadBytes(newOwnerAddrBytes, common.HashLength)),
+							},
+							Data: nil,
+						},
+						/* transfer ownership event from a random address */
+						{
+							Address: common.BytesToAddress(rand.Bytes(common.AddressLength)),
+							Topics: []common.Hash{
+								TransferOwnershipSig,
+								common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
+								common.BytesToHash(common.LeftPadBytes(newOwnerAddrBytes, common.HashLength)),
+							},
+							Data: nil,
+						},
+					},
+					Status: 1,
+				}
+				return receipt, nil
+			},
+		}
+		broadcaster = &mock2.BroadcasterMock{}
+		evmMap := make(map[string]evmRpc.Client)
+		evmMap["ethereum"] = rpc
+		mgr = NewMgr(evmMap, broadcaster, rand.Bytes(sdk.AddrLen), log.TestingLogger(), cdc)
+	}
+
+	repeats := 20
+	t.Run("happy path", testutils.Func(func(t *testing.T) {
+		setup()
+
+		err := mgr.ProcessTransferOwnershipConfirmation(attributes)
+
+		assert.NoError(t, err)
+		assert.Len(t, broadcaster.BroadcastCalls(), 1)
+		assert.True(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmTransferOwnershipRequest).Confirmed)
+	}).Repeat(repeats))
+
+	t.Run("missing attributes", testutils.Func(func(t *testing.T) {
+		setup()
+		for i := 0; i < len(attributes); i++ {
+			// remove one attribute at a time
+			wrongAttributes := make([]sdk.Attribute, len(attributes))
+			copy(wrongAttributes, attributes)
+			wrongAttributes = append(wrongAttributes[:i], wrongAttributes[(i+1):]...)
+
+			err := mgr.ProcessTransferOwnershipConfirmation(wrongAttributes)
+			assert.Error(t, err)
+			assert.Len(t, broadcaster.BroadcastCalls(), 0)
+		}
+	}).Repeat(repeats))
+
+	t.Run("no tx receipt", testutils.Func(func(t *testing.T) {
+		setup()
+		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return nil, fmt.Errorf("error") }
+
+		err := mgr.ProcessTransferOwnershipConfirmation(attributes)
+
+		assert.NoError(t, err)
+		assert.Len(t, broadcaster.BroadcastCalls(), 1)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmTransferOwnershipRequest).Confirmed)
+	}).Repeat(repeats))
+
+	t.Run("no block number", testutils.Func(func(t *testing.T) {
+		setup()
+		rpc.BlockNumberFunc = func(context.Context) (uint64, error) {
+			return 0, fmt.Errorf("error")
+		}
+
+		err := mgr.ProcessTransferOwnershipConfirmation(attributes)
+
+		assert.NoError(t, err)
+		assert.Len(t, broadcaster.BroadcastCalls(), 1)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmTransferOwnershipRequest).Confirmed)
+	}).Repeat(repeats))
+
+	t.Run("new owner mismatch", testutils.Func(func(t *testing.T) {
+		setup()
+		for i, attribute := range attributes {
+			if attribute.Key == evmTypes.AttributeKeyAddress {
+				// have to use index, otherwise this would only change the copy of the attribute, not the one in the slice
+				attributes[i].Value = common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex()
+				break
+			}
+		}
+
+		err := mgr.ProcessTransferOwnershipConfirmation(attributes)
+
+		assert.NoError(t, err)
+		assert.Len(t, broadcaster.BroadcastCalls(), 1)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmTransferOwnershipRequest).Confirmed)
+	}).Repeat(repeats))
+
+	t.Run("receipt status failed", testutils.Func(func(t *testing.T) {
+		setup()
+		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) {
+			receipt := &geth.Receipt{
+				BlockNumber: big.NewInt(1),
+				Logs:        nil,
+				Status:      0,
+			}
+			return receipt, nil
+		}
+		err := mgr.ProcessTransferOwnershipConfirmation(attributes)
+
+		assert.NoError(t, err)
+		assert.Len(t, broadcaster.BroadcastCalls(), 1)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmTransferOwnershipRequest).Confirmed)
+	}).Repeat(repeats))
+
+	t.Run("new owner not last transfer event", testutils.Func(func(t *testing.T) {
+		setup()
+		for i, attribute := range attributes {
+			if attribute.Key == evmTypes.AttributeKeyAddress {
+				// have to use index, otherwise this would only change the copy of the attribute, not the one in the slice
+				attributes[i].Value = common.BytesToAddress(prevNewOwnerAddrBytes).Hex()
+				break
+			}
+		}
+
+		err := mgr.ProcessTransferOwnershipConfirmation(attributes)
+
+		assert.NoError(t, err)
+		assert.Len(t, broadcaster.BroadcastCalls(), 1)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmTransferOwnershipRequest).Confirmed)
 	}).Repeat(repeats))
 }
 

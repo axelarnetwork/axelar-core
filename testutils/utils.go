@@ -10,7 +10,6 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/app/params"
 	bitcoin "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	broadcast "github.com/axelarnetwork/axelar-core/x/broadcast/types"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -35,8 +34,6 @@ func MakeEncodingConfig() params.EncodingConfig {
 	bitcoin.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	tss.RegisterLegacyAminoCodec(cdc)
 	tss.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-	broadcast.RegisterLegacyAminoCodec(cdc)
-	broadcast.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	snapshot.RegisterLegacyAminoCodec(cdc)
 	snapshot.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	evm.RegisterLegacyAminoCodec(cdc)
