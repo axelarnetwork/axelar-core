@@ -36,7 +36,7 @@ func GetHandlerQueryMasterAddress(cliCtx client.Context) http.HandlerFunc {
 		}
 		chain := mux.Vars(r)[utils.PathVarChain]
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryMasterAddress, chain), nil)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QMasterAddress, chain), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
 			return
@@ -61,7 +61,7 @@ func GetHandlerQueryNextMasterAddress(cliCtx client.Context) http.HandlerFunc {
 		}
 		chain := mux.Vars(r)[utils.PathVarChain]
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryNextMasterAddress, chain), nil)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QNextMasterAddress, chain), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
 			return
@@ -86,7 +86,7 @@ func GetHandlerQueryAxelarGatewayAddress(cliCtx client.Context) http.HandlerFunc
 		}
 		chain := mux.Vars(r)[utils.PathVarChain]
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryAxelarGatewayAddress, chain), nil)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QAxelarGatewayAddress, chain), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
 			return
@@ -112,7 +112,7 @@ func GetHandlerQueryCommandData(cliCtx client.Context) http.HandlerFunc {
 		chain := mux.Vars(r)[utils.PathVarChain]
 		commandID := mux.Vars(r)[utils.PathVarCommandID]
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QueryCommandData, chain, commandID), nil)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QCommandData, chain, commandID), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSendCommandTx, chain, commandID).Error())
 			return

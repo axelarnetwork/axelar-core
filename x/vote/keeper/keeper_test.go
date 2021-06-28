@@ -1,4 +1,4 @@
-package keeper
+package keeper_test
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
+	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
@@ -18,13 +19,14 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	"github.com/axelarnetwork/axelar-core/x/vote/keeper"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 var stringGen = rand.Strings(5, 50).Distinct()
 
 type testSetup struct {
-	Keeper      Keeper
+	Keeper      keeper.Keeper
 	Ctx         sdk.Context
 	Snapshotter *snapMock.SnapshotterMock
 	// used by the snapshotter when returning a snapshot
@@ -34,7 +36,7 @@ type testSetup struct {
 }
 
 func setup() *testSetup {
-	encCfg := testutils.MakeEncodingConfig()
+	encCfg := app.MakeEncodingConfig()
 	encCfg.InterfaceRegistry.RegisterImplementations((*exported.VotingData)(nil),
 		&gogoprototypes.StringValue{},
 	)
@@ -52,7 +54,7 @@ func setup() *testSetup {
 		GetPrincipalFunc: func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return rand.Bytes(sdk.AddrLen) },
 	}
 
-	setup.Keeper = NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(stringGen.Next()), setup.Snapshotter)
+	setup.Keeper = keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(stringGen.Next()), setup.Snapshotter)
 	return setup
 }
 

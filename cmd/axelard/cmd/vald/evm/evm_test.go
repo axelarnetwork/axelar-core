@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/axelarnetwork/axelar-core/app"
 	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types/mock"
 	evmRpc "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc/mock"
@@ -100,7 +101,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		broadcaster *mock2.BroadcasterMock
 	)
 	setup := func() {
-		cdc := testutils.MakeEncodingConfig().Amino
+		cdc := app.MakeEncodingConfig().Amino
 		poll := exported.NewPollMeta(evmTypes.ModuleName, rand.StrBetween(5, 20))
 
 		burnAddrBytes := rand.Bytes(common.AddressLength)
@@ -251,7 +252,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		gatewayAddrBytes []byte
 	)
 	setup := func() {
-		cdc := testutils.MakeEncodingConfig().Amino
+		cdc := app.MakeEncodingConfig().Amino
 		poll := exported.NewPollMeta(evmTypes.ModuleName, rand.StrBetween(5, 20))
 
 		gatewayAddrBytes = rand.Bytes(common.AddressLength)

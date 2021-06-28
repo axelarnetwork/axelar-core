@@ -6,7 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/axelarnetwork/axelar-core/testutils"
+	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -23,7 +23,7 @@ func TestMsgVotePubKey_Marshaling(t *testing.T) {
 		PollMeta: exported.NewPollMeta("test", "test"),
 		Result:   &tofnd.MessageOut_KeygenResult{KeygenResultData: &tofnd.MessageOut_KeygenResult_Pubkey{Pubkey: []byte("some bytes")}},
 	}
-	encCfg := testutils.MakeEncodingConfig()
+	encCfg := app.MakeEncodingConfig()
 
 	bz := encCfg.Marshaler.MustMarshalBinaryLengthPrefixed(&vote)
 	var msg tss.VotePubKeyRequest

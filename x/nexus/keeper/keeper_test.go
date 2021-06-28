@@ -1,4 +1,4 @@
-package keeper
+package keeper_test
 
 import (
 	"strings"
@@ -9,12 +9,13 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/axelarnetwork/axelar-core/testutils"
+	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 
 	"github.com/stretchr/testify/assert"
@@ -28,12 +29,12 @@ const (
 	linkedAddr    int   = 50
 )
 
-var keeper Keeper
+var keeper nexusKeeper.Keeper
 
 func init() {
-	encCfg := testutils.MakeEncodingConfig()
+	encCfg := app.MakeEncodingConfig()
 	nexusSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
-	keeper = NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("nexus"), nexusSubspace)
+	keeper = nexusKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("nexus"), nexusSubspace)
 }
 
 func TestLinkNoForeignAssetSupport(t *testing.T) {
