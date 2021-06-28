@@ -171,8 +171,8 @@ message SignTransferOwnershipRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
-  bytes new_owner = 3
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  string key_id = 3
+      [ (gogoproto.customname) = "KeyID" ];
 }
 
 message SignTransferOwnershipResponse {

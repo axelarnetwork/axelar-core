@@ -140,7 +140,7 @@
       - [sign-burn-tokens \[chain\]](axelard_tx_evm_sign-burn-tokens.md)	 - Sign burn command for all confirmed token deposits in an EVM chain
       - [sign-deploy-token \[chain\] \[name\] \[symbol\] \[decimals\] \[capacity\]](axelard_tx_evm_sign-deploy-token.md)	 - Signs the call data to deploy a token with the AxelarGateway contract
       - [sign-pending-transfers \[chain\]](axelard_tx_evm_sign-pending-transfers.md)	 - Sign all pending transfers to an EVM chain
-      - [transfer-ownership \[chain\] \[newOwnerAddr\]](axelard_tx_evm_transfer-ownership.md)	 - Sign transfer ownership command for an EVM chain contract
+      - [transfer-ownership \[chain\] \[keyID\]](axelard_tx_evm_transfer-ownership.md)	 - Sign transfer ownership command for an EVM chain contract
     - [gov](axelard_tx_gov.md)	 - Governance transactions subcommands
       - [deposit \[proposal-id\] \[deposit\]](axelard_tx_gov_deposit.md)	 - Deposit tokens for an active proposal
       - [submit-proposal](axelard_tx_gov_submit-proposal.md)	 - Submit a proposal along with an initial deposit
