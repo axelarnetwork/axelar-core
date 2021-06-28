@@ -18,7 +18,11 @@ import (
 
 // ProcessKeygenStart starts the communication with the keygen protocol
 func (mgr *Mgr) ProcessKeygenStart(blockHeight int64, attributes []sdk.Attribute) error {
-	keyID, threshold, participants, participantShareCounts := parseKeygenStartParams(mgr.cdc, attributes)
+	keyID, threshold, participants, participantShareCounts, err := parseKeygenStartParams(mgr.cdc, attributes)
+	if err != nil {
+		return err
+	}
+
 	myIndex, ok := indexOf(participants, mgr.principalAddr)
 	if !ok {
 		// do not participate
@@ -86,26 +90,34 @@ func (mgr *Mgr) ProcessKeygenMsg(attributes []sdk.Attribute) error {
 	return nil
 }
 
-func parseKeygenStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, threshold int32, participants []string, participantShareCounts []uint32) {
+func parseKeygenStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, threshold int32, participants []string, participantShareCounts []uint32, err error) {
+	var keyIDFound, thresholdFound, participantsFound, sharesFound bool
 	for _, attribute := range attributes {
 		switch attribute.Key {
 		case tss.AttributeKeyKeyID:
 			keyID = attribute.Value
+			keyIDFound = true
 		case tss.AttributeKeyThreshold:
 			t, err := strconv.ParseInt(attribute.Value, 10, 32)
 			if err != nil {
 				panic(err)
 			}
 			threshold = int32(t)
+			thresholdFound = true
 		case tss.AttributeKeyParticipants:
 			cdc.MustUnmarshalJSON([]byte(attribute.Value), &participants)
+			participantsFound = true
 		case tss.AttributeKeyParticipantShareCounts:
 			cdc.MustUnmarshalJSON([]byte(attribute.Value), &participantShareCounts)
+			sharesFound = true
 		default:
 		}
 	}
+	if !keyIDFound || !thresholdFound || !participantsFound || !sharesFound {
+		return "", 0, nil, nil, fmt.Errorf("insufficient event attributes")
+	}
 
-	return keyID, threshold, participants, participantShareCounts
+	return keyID, threshold, participants, participantShareCounts, nil
 }
 
 func (mgr *Mgr) startKeygen(keyID string, threshold int32, myIndex int32, participants []string, participantShareCounts []uint32) (Stream, context.CancelFunc, error) {
