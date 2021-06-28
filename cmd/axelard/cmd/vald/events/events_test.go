@@ -216,13 +216,11 @@ func TestMgr_Subscribe(t *testing.T) {
 		mgr.FetchEvents()
 		mgr.NotifyNewBlock(completed + 1)
 
-		// delay so mgr has time to fetch the block
-		time.Sleep(2 * time.Millisecond)
-		// closes channels so we can test deterministically
-		mgr.Shutdown()
-
 		var actualEvents []tmTypes.Event
+		once := sync.Once{}
 		for e := range sub.Events() {
+			// closes once we get events, because then we can be sure the whole block has been processed
+			once.Do(mgr.Shutdown)
 			actualEvents = append(actualEvents, e.(tmTypes.Event))
 		}
 
@@ -238,15 +236,17 @@ func TestMgr_Subscribe(t *testing.T) {
 				TxsResults: nil,
 			}, nil
 		}
+		rw.WriteAllFunc = func(_ []byte) error {
+			// closes once the block was received. Shutdown is blocking, so need to call it async
+			go mgr.Shutdown()
+			return nil
+		}
 
 		sub, err := mgr.Subscribe(query)
 		assert.NoError(t, err)
 
 		mgr.FetchEvents()
 		mgr.NotifyNewBlock(completed + 1)
-
-		// closes channels so we can test deterministically
-		mgr.Shutdown()
 
 		var actualEvents []abci.Event
 		for e := range sub.Events() {
@@ -296,7 +296,6 @@ func TestMgr_Subscribe(t *testing.T) {
 			}
 		}
 
-		// closes channels so we can test deterministically
 		mgr.Shutdown()
 
 		var actualEvents []tmTypes.Event
