@@ -131,6 +131,9 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 	_, hasActiveKey := s.TSSKeeper.GetCurrentKeyID(ctx, chain, req.KeyRole)
 	assignedKeyID, hasNextKeyAssigned := s.TSSKeeper.GetNextKeyID(ctx, chain, req.KeyRole)
 
+	// TSS does not know if another module needs to do a cleanup step before it is ready to rotate in a new key.
+	// Therefore we use the NeedsAssignment requirement to indicate if a key needs to be explicitly assigned before rotation.
+	// Keys without such requirement can be rotated immediately
 	switch {
 	case hasActiveKey && keyReq.NeedsAssignment && !hasNextKeyAssigned:
 		return nil, fmt.Errorf("no key assigned for rotation yet")
