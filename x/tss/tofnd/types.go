@@ -62,7 +62,7 @@ func (m *MessageOut_SignResult) Validate() error {
 
 // Validate checks if the keygen result is valid
 func (m *MessageOut_KeygenResult) Validate() error {
-	if pubKeyBytes := m.GetPubkey(); pubKeyBytes != nil {
+	if pubKeyBytes := m.GetData().GetPubKey(); pubKeyBytes != nil {
 		_, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
 		if err != nil {
 			return err

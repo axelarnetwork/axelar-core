@@ -201,7 +201,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	switch keygenResult := result.(type) {
 	case *tofnd.MessageOut_KeygenResult:
 
-		if pubKeyBytes := keygenResult.GetPubkey(); pubKeyBytes != nil {
+		if pubKeyBytes := keygenResult.GetData().GetPubKey(); pubKeyBytes != nil {
 			btcecPK, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
 			if err != nil {
 				return nil, fmt.Errorf("could not unmarshal public key bytes: [%w]", err)

@@ -48,7 +48,7 @@ func (x MessageOut_CriminalList_Criminal_CrimeType) String() string {
 }
 
 func (MessageOut_CriminalList_Criminal_CrimeType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_762181cc22940332, []int{1, 2, 0, 0}
+	return fileDescriptor_762181cc22940332, []int{1, 3, 0, 0}
 }
 
 type MessageIn struct {
@@ -167,6 +167,7 @@ type MessageOut struct {
 	//	*MessageOut_Traffic
 	//	*MessageOut_KeygenResult_
 	//	*MessageOut_SignResult_
+	//	*MessageOut_NeedRecover_
 	Data isMessageOut_Data `protobuf_oneof:"data"`
 }
 
@@ -218,10 +219,14 @@ type MessageOut_KeygenResult_ struct {
 type MessageOut_SignResult_ struct {
 	SignResult *MessageOut_SignResult `protobuf:"bytes,3,opt,name=sign_result,json=signResult,proto3,oneof" json:"sign_result,omitempty"`
 }
+type MessageOut_NeedRecover_ struct {
+	NeedRecover *MessageOut_NeedRecover `protobuf:"bytes,4,opt,name=need_recover,json=needRecover,proto3,oneof" json:"need_recover,omitempty"`
+}
 
 func (*MessageOut_Traffic) isMessageOut_Data()       {}
 func (*MessageOut_KeygenResult_) isMessageOut_Data() {}
 func (*MessageOut_SignResult_) isMessageOut_Data()   {}
+func (*MessageOut_NeedRecover_) isMessageOut_Data()  {}
 
 func (m *MessageOut) GetData() isMessageOut_Data {
 	if m != nil {
@@ -251,18 +256,72 @@ func (m *MessageOut) GetSignResult() *MessageOut_SignResult {
 	return nil
 }
 
+func (m *MessageOut) GetNeedRecover() *MessageOut_NeedRecover {
+	if x, ok := m.GetData().(*MessageOut_NeedRecover_); ok {
+		return x.NeedRecover
+	}
+	return nil
+}
+
 // XXX_OneofWrappers is for the internal use of the proto package.
 func (*MessageOut) XXX_OneofWrappers() []interface{} {
 	return []interface{}{
 		(*MessageOut_Traffic)(nil),
 		(*MessageOut_KeygenResult_)(nil),
 		(*MessageOut_SignResult_)(nil),
+		(*MessageOut_NeedRecover_)(nil),
 	}
 }
 
+// TODO: create separate message in case we need to add more info later
+type MessageOut_NeedRecover struct {
+	SessionId string `protobuf:"bytes,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+}
+
+func (m *MessageOut_NeedRecover) Reset()         { *m = MessageOut_NeedRecover{} }
+func (m *MessageOut_NeedRecover) String() string { return proto.CompactTextString(m) }
+func (*MessageOut_NeedRecover) ProtoMessage()    {}
+func (*MessageOut_NeedRecover) Descriptor() ([]byte, []int) {
+	return fileDescriptor_762181cc22940332, []int{1, 0}
+}
+func (m *MessageOut_NeedRecover) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MessageOut_NeedRecover) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MessageOut_NeedRecover.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MessageOut_NeedRecover) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MessageOut_NeedRecover.Merge(m, src)
+}
+func (m *MessageOut_NeedRecover) XXX_Size() int {
+	return m.Size()
+}
+func (m *MessageOut_NeedRecover) XXX_DiscardUnknown() {
+	xxx_messageInfo_MessageOut_NeedRecover.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MessageOut_NeedRecover proto.InternalMessageInfo
+
+func (m *MessageOut_NeedRecover) GetSessionId() string {
+	if m != nil {
+		return m.SessionId
+	}
+	return ""
+}
+
+// Keygen's response types
 type MessageOut_KeygenResult struct {
 	// Types that are valid to be assigned to KeygenResultData:
-	//	*MessageOut_KeygenResult_Pubkey
+	//	*MessageOut_KeygenResult_Data
 	//	*MessageOut_KeygenResult_Criminals
 	KeygenResultData isMessageOut_KeygenResult_KeygenResultData `protobuf_oneof:"keygen_result_data"`
 }
@@ -271,7 +330,7 @@ func (m *MessageOut_KeygenResult) Reset()         { *m = MessageOut_KeygenResult
 func (m *MessageOut_KeygenResult) String() string { return proto.CompactTextString(m) }
 func (*MessageOut_KeygenResult) ProtoMessage()    {}
 func (*MessageOut_KeygenResult) Descriptor() ([]byte, []int) {
-	return fileDescriptor_762181cc22940332, []int{1, 0}
+	return fileDescriptor_762181cc22940332, []int{1, 1}
 }
 func (m *MessageOut_KeygenResult) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -306,14 +365,14 @@ type isMessageOut_KeygenResult_KeygenResultData interface {
 	Size() int
 }
 
-type MessageOut_KeygenResult_Pubkey struct {
-	Pubkey []byte `protobuf:"bytes,1,opt,name=pubkey,proto3,oneof" json:"pubkey,omitempty"`
+type MessageOut_KeygenResult_Data struct {
+	Data *MessageOut_KeygenResult_KeygenOutput `protobuf:"bytes,1,opt,name=data,proto3,oneof" json:"data,omitempty"`
 }
 type MessageOut_KeygenResult_Criminals struct {
 	Criminals *MessageOut_CriminalList `protobuf:"bytes,2,opt,name=criminals,proto3,oneof" json:"criminals,omitempty"`
 }
 
-func (*MessageOut_KeygenResult_Pubkey) isMessageOut_KeygenResult_KeygenResultData()    {}
+func (*MessageOut_KeygenResult_Data) isMessageOut_KeygenResult_KeygenResultData()      {}
 func (*MessageOut_KeygenResult_Criminals) isMessageOut_KeygenResult_KeygenResultData() {}
 
 func (m *MessageOut_KeygenResult) GetKeygenResultData() isMessageOut_KeygenResult_KeygenResultData {
@@ -323,9 +382,9 @@ func (m *MessageOut_KeygenResult) GetKeygenResultData() isMessageOut_KeygenResul
 	return nil
 }
 
-func (m *MessageOut_KeygenResult) GetPubkey() []byte {
-	if x, ok := m.GetKeygenResultData().(*MessageOut_KeygenResult_Pubkey); ok {
-		return x.Pubkey
+func (m *MessageOut_KeygenResult) GetData() *MessageOut_KeygenResult_KeygenOutput {
+	if x, ok := m.GetKeygenResultData().(*MessageOut_KeygenResult_Data); ok {
+		return x.Data
 	}
 	return nil
 }
@@ -340,11 +399,65 @@ func (m *MessageOut_KeygenResult) GetCriminals() *MessageOut_CriminalList {
 // XXX_OneofWrappers is for the internal use of the proto package.
 func (*MessageOut_KeygenResult) XXX_OneofWrappers() []interface{} {
 	return []interface{}{
-		(*MessageOut_KeygenResult_Pubkey)(nil),
+		(*MessageOut_KeygenResult_Data)(nil),
 		(*MessageOut_KeygenResult_Criminals)(nil),
 	}
 }
 
+// Keygen's success response
+type MessageOut_KeygenResult_KeygenOutput struct {
+	PubKey             []byte   `protobuf:"bytes,1,opt,name=pub_key,json=pubKey,proto3" json:"pub_key,omitempty"`
+	ShareRecoveryInfos [][]byte `protobuf:"bytes,2,rep,name=share_recovery_infos,json=shareRecoveryInfos,proto3" json:"share_recovery_infos,omitempty"`
+}
+
+func (m *MessageOut_KeygenResult_KeygenOutput) Reset()         { *m = MessageOut_KeygenResult_KeygenOutput{} }
+func (m *MessageOut_KeygenResult_KeygenOutput) String() string { return proto.CompactTextString(m) }
+func (*MessageOut_KeygenResult_KeygenOutput) ProtoMessage()    {}
+func (*MessageOut_KeygenResult_KeygenOutput) Descriptor() ([]byte, []int) {
+	return fileDescriptor_762181cc22940332, []int{1, 1, 0}
+}
+func (m *MessageOut_KeygenResult_KeygenOutput) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MessageOut_KeygenResult_KeygenOutput) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MessageOut_KeygenResult_KeygenOutput.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MessageOut_KeygenResult_KeygenOutput) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MessageOut_KeygenResult_KeygenOutput.Merge(m, src)
+}
+func (m *MessageOut_KeygenResult_KeygenOutput) XXX_Size() int {
+	return m.Size()
+}
+func (m *MessageOut_KeygenResult_KeygenOutput) XXX_DiscardUnknown() {
+	xxx_messageInfo_MessageOut_KeygenResult_KeygenOutput.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MessageOut_KeygenResult_KeygenOutput proto.InternalMessageInfo
+
+func (m *MessageOut_KeygenResult_KeygenOutput) GetPubKey() []byte {
+	if m != nil {
+		return m.PubKey
+	}
+	return nil
+}
+
+func (m *MessageOut_KeygenResult_KeygenOutput) GetShareRecoveryInfos() [][]byte {
+	if m != nil {
+		return m.ShareRecoveryInfos
+	}
+	return nil
+}
+
+// Sign's response types
 type MessageOut_SignResult struct {
 	// Types that are valid to be assigned to SignResultData:
 	//	*MessageOut_SignResult_Signature
@@ -356,7 +469,7 @@ func (m *MessageOut_SignResult) Reset()         { *m = MessageOut_SignResult{} }
 func (m *MessageOut_SignResult) String() string { return proto.CompactTextString(m) }
 func (*MessageOut_SignResult) ProtoMessage()    {}
 func (*MessageOut_SignResult) Descriptor() ([]byte, []int) {
-	return fileDescriptor_762181cc22940332, []int{1, 1}
+	return fileDescriptor_762181cc22940332, []int{1, 2}
 }
 func (m *MessageOut_SignResult) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -430,6 +543,7 @@ func (*MessageOut_SignResult) XXX_OneofWrappers() []interface{} {
 	}
 }
 
+// Keygen/Sign failure response message
 type MessageOut_CriminalList struct {
 	Criminals []*MessageOut_CriminalList_Criminal `protobuf:"bytes,1,rep,name=criminals,proto3" json:"criminals,omitempty"`
 }
@@ -438,7 +552,7 @@ func (m *MessageOut_CriminalList) Reset()         { *m = MessageOut_CriminalList
 func (m *MessageOut_CriminalList) String() string { return proto.CompactTextString(m) }
 func (*MessageOut_CriminalList) ProtoMessage()    {}
 func (*MessageOut_CriminalList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_762181cc22940332, []int{1, 2}
+	return fileDescriptor_762181cc22940332, []int{1, 3}
 }
 func (m *MessageOut_CriminalList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -483,7 +597,7 @@ func (m *MessageOut_CriminalList_Criminal) Reset()         { *m = MessageOut_Cri
 func (m *MessageOut_CriminalList_Criminal) String() string { return proto.CompactTextString(m) }
 func (*MessageOut_CriminalList_Criminal) ProtoMessage()    {}
 func (*MessageOut_CriminalList_Criminal) Descriptor() ([]byte, []int) {
-	return fileDescriptor_762181cc22940332, []int{1, 2, 0}
+	return fileDescriptor_762181cc22940332, []int{1, 3, 0}
 }
 func (m *MessageOut_CriminalList_Criminal) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -794,7 +908,9 @@ func init() {
 	proto.RegisterEnum("tss.tofnd.v1beta1.MessageOut_CriminalList_Criminal_CrimeType", MessageOut_CriminalList_Criminal_CrimeType_name, MessageOut_CriminalList_Criminal_CrimeType_value)
 	proto.RegisterType((*MessageIn)(nil), "tss.tofnd.v1beta1.MessageIn")
 	proto.RegisterType((*MessageOut)(nil), "tss.tofnd.v1beta1.MessageOut")
+	proto.RegisterType((*MessageOut_NeedRecover)(nil), "tss.tofnd.v1beta1.MessageOut.NeedRecover")
 	proto.RegisterType((*MessageOut_KeygenResult)(nil), "tss.tofnd.v1beta1.MessageOut.KeygenResult")
+	proto.RegisterType((*MessageOut_KeygenResult_KeygenOutput)(nil), "tss.tofnd.v1beta1.MessageOut.KeygenResult.KeygenOutput")
 	proto.RegisterType((*MessageOut_SignResult)(nil), "tss.tofnd.v1beta1.MessageOut.SignResult")
 	proto.RegisterType((*MessageOut_CriminalList)(nil), "tss.tofnd.v1beta1.MessageOut.CriminalList")
 	proto.RegisterType((*MessageOut_CriminalList_Criminal)(nil), "tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal")
@@ -807,58 +923,64 @@ func init() {
 func init() { proto.RegisterFile("tss/tofnd/v1beta1/tofnd.proto", fileDescriptor_762181cc22940332) }
 
 var fileDescriptor_762181cc22940332 = []byte{
-	// 803 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x55, 0xdd, 0x6e, 0xe3, 0x44,
-	0x14, 0xb6, 0x9b, 0x36, 0x8d, 0x4f, 0xdc, 0xa5, 0x8c, 0xaa, 0xc5, 0xca, 0xb6, 0x56, 0x88, 0x10,
-	0x8a, 0x10, 0x24, 0x6c, 0xf7, 0x06, 0x90, 0x90, 0xa0, 0xa1, 0x28, 0xde, 0x6e, 0x7f, 0xd6, 0x69,
-	0x2f, 0x40, 0x48, 0xd6, 0x24, 0x9e, 0x38, 0x23, 0x27, 0x9e, 0xc8, 0x33, 0xa6, 0xf5, 0x1b, 0xa0,
-	0x15, 0x17, 0xbc, 0x03, 0xcf, 0xc1, 0x3d, 0x97, 0xbd, 0xe4, 0x0a, 0xa1, 0xe6, 0x96, 0x87, 0x40,
-	0x1e, 0xff, 0xd2, 0x0d, 0x68, 0xb5, 0xea, 0xdd, 0x9c, 0xef, 0xcc, 0x39, 0xdf, 0xf7, 0x1d, 0xcf,
-	0x8c, 0xe1, 0x40, 0x70, 0xde, 0x17, 0x6c, 0x1a, 0xb8, 0xfd, 0x1f, 0x9f, 0x8e, 0x89, 0xc0, 0x4f,
-	0xd3, 0xa8, 0xb7, 0x0c, 0x99, 0x60, 0xe8, 0x5d, 0xc1, 0x79, 0x2f, 0x05, 0xb2, 0x74, 0x6b, 0xcf,
-	0x63, 0x1e, 0x93, 0xd9, 0x7e, 0xb2, 0x4a, 0x37, 0x76, 0x56, 0x2a, 0x68, 0xa7, 0x84, 0x73, 0xec,
-	0x11, 0x2b, 0x40, 0x5f, 0x41, 0xd3, 0x27, 0xb1, 0x47, 0x02, 0x87, 0x06, 0x54, 0x18, 0x6a, 0x5b,
-	0xed, 0x36, 0x0f, 0x0f, 0x7a, 0xaf, 0x35, 0xeb, 0x9d, 0xc8, 0x5d, 0x56, 0x40, 0xc5, 0x50, 0xb1,
-	0xc1, 0x2f, 0x22, 0xf4, 0x05, 0x68, 0x9c, 0x7a, 0x59, 0xfd, 0x86, 0xac, 0x7f, 0xb2, 0xa6, 0x7e,
-	0x44, 0xbd, 0xbc, 0xba, 0xc1, 0xb3, 0x35, 0xfa, 0x0c, 0xb6, 0x45, 0x88, 0xa7, 0x53, 0x3a, 0x31,
-	0x6a, 0xb2, 0x72, 0x7f, 0x4d, 0xe5, 0x65, 0xba, 0xc3, 0x0a, 0x86, 0x8a, 0x9d, 0x6f, 0x47, 0x8f,
-	0x61, 0x0b, 0x8f, 0x59, 0x28, 0x8c, 0xcd, 0xb6, 0xda, 0x6d, 0x0c, 0x15, 0x3b, 0x0d, 0x8f, 0xea,
-	0xb0, 0xe9, 0x62, 0x81, 0x3b, 0x7f, 0xd6, 0x01, 0x32, 0x97, 0xe7, 0x91, 0x40, 0x9f, 0x97, 0x44,
-	0xff, 0x6d, 0x31, 0x23, 0x3a, 0x8f, 0x44, 0x95, 0xe9, 0x25, 0xec, 0x64, 0x13, 0x0a, 0x09, 0x8f,
-	0xe6, 0xb9, 0xc7, 0x8f, 0xd6, 0x34, 0x28, 0x09, 0xb3, 0x71, 0xd9, 0xb2, 0x62, 0xa8, 0xd8, 0xba,
-	0x5f, 0x89, 0xd1, 0x09, 0x34, 0xe5, 0xc8, 0xb2, 0x86, 0xa9, 0xf5, 0xee, 0xff, 0x37, 0x4c, 0xe6,
-	0x57, 0xb4, 0x03, 0x5e, 0x44, 0xad, 0x57, 0x2a, 0xe8, 0x55, 0x36, 0x64, 0x40, 0x7d, 0x19, 0x8d,
-	0x7d, 0x12, 0x4b, 0xab, 0xfa, 0x50, 0xb1, 0xb3, 0x18, 0x3d, 0x07, 0x6d, 0x12, 0xd2, 0x05, 0x0d,
-	0xf0, 0x9c, 0xbf, 0x99, 0x8d, 0x41, 0xb6, 0xfd, 0x05, 0xe5, 0x09, 0x6f, 0x59, 0x7e, 0xb4, 0x07,
-	0xe8, 0x5f, 0x63, 0x71, 0x92, 0xb1, 0xb7, 0x7e, 0x56, 0x01, 0x4a, 0xa5, 0xc8, 0x4c, 0xcf, 0x06,
-	0x16, 0x51, 0x48, 0x0a, 0x35, 0x25, 0xf4, 0xa0, 0x82, 0x10, 0xec, 0x56, 0x86, 0x9a, 0xca, 0xb9,
-	0xdd, 0x00, 0xbd, 0x5a, 0x81, 0x5e, 0x56, 0x09, 0xd5, 0x76, 0xad, 0xdb, 0x3c, 0x7c, 0xf6, 0xe6,
-	0x84, 0x45, 0x50, 0xe1, 0x6d, 0xfd, 0xad, 0x42, 0x23, 0xc7, 0xd1, 0x13, 0xd0, 0x96, 0x38, 0x14,
-	0xb1, 0x13, 0x51, 0x57, 0x1a, 0xd6, 0xec, 0x86, 0x04, 0xae, 0xa8, 0x8b, 0x7e, 0x00, 0x48, 0xca,
-	0x88, 0x23, 0xe2, 0x25, 0x91, 0x76, 0x1f, 0x1d, 0x7e, 0xf9, 0x16, 0xec, 0x72, 0x41, 0x2e, 0xe3,
-	0x25, 0x49, 0x75, 0xc8, 0x65, 0x87, 0x80, 0x56, 0xe0, 0xa8, 0x05, 0x8f, 0x07, 0xb6, 0x75, 0x7a,
-	0xec, 0x5c, 0x7e, 0x77, 0x71, 0xec, 0x5c, 0x9d, 0x8d, 0x2e, 0x8e, 0x07, 0xd6, 0xb7, 0xd6, 0xf1,
-	0x37, 0xbb, 0x0a, 0xda, 0x07, 0xa3, 0x92, 0x3b, 0x3b, 0x3f, 0x73, 0x4e, 0xbf, 0x7e, 0x61, 0x0d,
-	0xac, 0xf3, 0xab, 0xd1, 0xae, 0x8a, 0x0c, 0xd8, 0xab, 0x64, 0xcb, 0xcc, 0x46, 0x6b, 0xf3, 0xa7,
-	0x5f, 0x4d, 0xa5, 0xb8, 0x60, 0x01, 0x68, 0xc5, 0xc5, 0x44, 0x1f, 0xc0, 0xa3, 0x69, 0xc8, 0x16,
-	0xce, 0x7d, 0xef, 0x7a, 0x82, 0x5e, 0xe4, 0xfe, 0x0d, 0xd8, 0x5e, 0xe2, 0x78, 0xce, 0xb0, 0x2b,
-	0xcd, 0xeb, 0x76, 0x1e, 0xa2, 0xf7, 0x41, 0xa7, 0xdc, 0x19, 0x87, 0x0c, 0xbb, 0x13, 0xcc, 0xd3,
-	0x1b, 0xd1, 0xb0, 0x9b, 0x94, 0x1f, 0xe5, 0x50, 0xc7, 0x07, 0x28, 0xef, 0x27, 0x6a, 0x83, 0x2e,
-	0xd8, 0x6b, 0x74, 0x20, 0xd8, 0xc3, 0x90, 0xfd, 0xa6, 0x02, 0x94, 0x0f, 0x1e, 0x32, 0xa1, 0x19,
-	0x90, 0x6b, 0xc7, 0x27, 0x55, 0x32, 0x2d, 0x20, 0xd7, 0x27, 0x44, 0x72, 0x1d, 0x00, 0x14, 0x52,
-	0x92, 0x73, 0x5c, 0x4b, 0xd2, 0xf9, 0x67, 0xe7, 0xe8, 0x63, 0x40, 0x69, 0x9a, 0xcf, 0x70, 0x48,
-	0x9c, 0x09, 0x8b, 0x02, 0xc1, 0x8d, 0xad, 0x76, 0xad, 0xbb, 0x63, 0xef, 0xca, 0xcc, 0x28, 0x49,
-	0x0c, 0x24, 0x9e, 0xcc, 0x72, 0x11, 0x67, 0xd6, 0x68, 0xe0, 0x92, 0x1b, 0x29, 0x70, 0xcb, 0xd6,
-	0x17, 0xb1, 0x34, 0x67, 0x25, 0x18, 0xda, 0x07, 0x4d, 0xcc, 0x42, 0xc2, 0x67, 0x6c, 0xee, 0xca,
-	0x37, 0x70, 0xcb, 0x2e, 0x81, 0xce, 0x2b, 0x15, 0x1a, 0xf9, 0x83, 0x9b, 0xab, 0xe7, 0xd4, 0xbb,
-	0xa7, 0x7e, 0x44, 0xbd, 0x44, 0xfd, 0x7b, 0xb0, 0x9d, 0x3b, 0xdb, 0x90, 0xb9, 0xba, 0xbf, 0xce,
-	0x56, 0xed, 0xbe, 0xad, 0x0f, 0xe1, 0x9d, 0x45, 0x7a, 0x52, 0x1d, 0xc1, 0x92, 0xf6, 0x81, 0x14,
-	0xa2, 0xdb, 0x3b, 0x19, 0x7c, 0xc9, 0x12, 0x0d, 0x47, 0xcf, 0x7f, 0xbf, 0x33, 0xd5, 0xdb, 0x3b,
-	0x53, 0xfd, 0xeb, 0xce, 0x54, 0x7f, 0x59, 0x99, 0xca, 0xed, 0xca, 0x54, 0xfe, 0x58, 0x99, 0xca,
-	0xf7, 0x9f, 0x7a, 0x54, 0xcc, 0xa2, 0x71, 0x6f, 0xc2, 0x16, 0x7d, 0x7c, 0x43, 0xe6, 0x38, 0x0c,
-	0x88, 0xb8, 0x66, 0xa1, 0x9f, 0x45, 0x9f, 0x4c, 0x58, 0x48, 0xfa, 0x37, 0xfd, 0xe2, 0xcf, 0x37,
-	0xae, 0xcb, 0x7f, 0xd8, 0xb3, 0x7f, 0x02, 0x00, 0x00, 0xff, 0xff, 0xa9, 0xb9, 0x88, 0x1c, 0x0d,
-	0x07, 0x00, 0x00,
+	// 910 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x56, 0x4b, 0x6f, 0xdb, 0x46,
+	0x10, 0x26, 0x25, 0x3f, 0xc4, 0x11, 0x9d, 0xba, 0x0b, 0x23, 0x11, 0x14, 0x5b, 0x50, 0x85, 0xa2,
+	0x50, 0x8b, 0x54, 0x4a, 0x9c, 0x43, 0x1f, 0x40, 0x81, 0x56, 0xaa, 0x0b, 0x31, 0x8e, 0x25, 0x67,
+	0x65, 0x1f, 0x52, 0x14, 0x20, 0x28, 0x71, 0x25, 0x2f, 0x24, 0xed, 0x0a, 0xdc, 0x65, 0x6c, 0xfe,
+	0x83, 0xa2, 0xe8, 0xa1, 0xe7, 0x5e, 0xfb, 0x3b, 0x7a, 0xef, 0xd1, 0xc7, 0x1e, 0x0b, 0xfb, 0x9a,
+	0x1f, 0x51, 0x70, 0x97, 0xa4, 0x58, 0xc7, 0x0d, 0x8c, 0x20, 0x37, 0xce, 0xcc, 0xce, 0x7c, 0x8f,
+	0x7d, 0x48, 0xb0, 0x27, 0x85, 0x68, 0x4b, 0x3e, 0x61, 0x7e, 0xfb, 0xd5, 0x93, 0x11, 0x91, 0xde,
+	0x13, 0x1d, 0xb5, 0x96, 0x01, 0x97, 0x1c, 0x7d, 0x28, 0x85, 0x68, 0xe9, 0x44, 0x52, 0xae, 0xee,
+	0x4c, 0xf9, 0x94, 0xab, 0x6a, 0x3b, 0xfe, 0xd2, 0x0b, 0x1b, 0xd7, 0x26, 0x58, 0x47, 0x44, 0x08,
+	0x6f, 0x4a, 0x1c, 0x86, 0xbe, 0x85, 0xf2, 0x8c, 0x44, 0x53, 0xc2, 0x5c, 0xca, 0xa8, 0xac, 0x98,
+	0x75, 0xb3, 0x59, 0xde, 0xdf, 0x6b, 0xbd, 0x31, 0xac, 0x75, 0xa8, 0x56, 0x39, 0x8c, 0xca, 0x9e,
+	0x81, 0x61, 0x96, 0x45, 0xe8, 0x6b, 0xb0, 0x04, 0x9d, 0x26, 0xfd, 0x05, 0xd5, 0xff, 0xf0, 0x96,
+	0xfe, 0x21, 0x9d, 0xa6, 0xdd, 0x25, 0x91, 0x7c, 0xa3, 0x2f, 0x61, 0x53, 0x06, 0xde, 0x64, 0x42,
+	0xc7, 0x95, 0xa2, 0xea, 0xdc, 0xbd, 0xa5, 0xf3, 0x44, 0xaf, 0x70, 0x58, 0xcf, 0xc0, 0xe9, 0x72,
+	0x74, 0x1f, 0xd6, 0xbd, 0x11, 0x0f, 0x64, 0x65, 0xad, 0x6e, 0x36, 0x4b, 0x3d, 0x03, 0xeb, 0xb0,
+	0xb3, 0x01, 0x6b, 0xbe, 0x27, 0xbd, 0xc6, 0xeb, 0x12, 0x40, 0xa2, 0x72, 0x10, 0x4a, 0xf4, 0xd5,
+	0x0a, 0xe8, 0xff, 0x25, 0x26, 0x40, 0x83, 0x50, 0xe6, 0x91, 0x5e, 0xc0, 0x56, 0xe2, 0x50, 0x40,
+	0x44, 0x38, 0x4f, 0x35, 0x7e, 0x76, 0xcb, 0x80, 0x15, 0x60, 0x62, 0x17, 0x56, 0x1d, 0x3d, 0x03,
+	0xdb, 0xb3, 0x5c, 0x8c, 0x0e, 0xa1, 0xac, 0x2c, 0x4b, 0x06, 0x6a, 0xe9, 0xcd, 0xb7, 0x0f, 0x8c,
+	0xfd, 0xcb, 0xc6, 0x81, 0xc8, 0x22, 0xd4, 0x07, 0x9b, 0x11, 0xe2, 0xbb, 0x01, 0x19, 0xf3, 0x57,
+	0x24, 0x50, 0x86, 0x94, 0xf7, 0x3f, 0x7d, 0xfb, 0xb4, 0x3e, 0x21, 0x3e, 0xd6, 0x0d, 0x3d, 0x03,
+	0x97, 0xd9, 0x2a, 0xac, 0x3e, 0x82, 0x72, 0xae, 0x8a, 0xf6, 0x00, 0x04, 0x11, 0x82, 0x72, 0xe6,
+	0x52, 0x5f, 0x99, 0x67, 0x61, 0x2b, 0xc9, 0x38, 0x7e, 0xf5, 0xf7, 0x02, 0xd8, 0x79, 0xad, 0xe8,
+	0x48, 0x6f, 0x40, 0x62, 0xf3, 0x17, 0x77, 0x77, 0x29, 0x09, 0x06, 0xa1, 0x5c, 0xaa, 0x0d, 0x50,
+	0x63, 0xd0, 0x33, 0xb0, 0xc6, 0x01, 0x5d, 0x50, 0xe6, 0xcd, 0xc5, 0xdd, 0x9c, 0xef, 0x26, 0xcb,
+	0x9f, 0x53, 0x11, 0x8f, 0x59, 0xb5, 0x57, 0x5f, 0xa6, 0x54, 0x35, 0x06, 0x7a, 0x00, 0x9b, 0xcb,
+	0x70, 0xe4, 0xce, 0x48, 0xa4, 0xd8, 0xda, 0x78, 0x63, 0x19, 0x8e, 0x0e, 0x49, 0x84, 0x1e, 0xc3,
+	0x8e, 0x38, 0xf3, 0x02, 0x92, 0x7a, 0x1a, 0xb9, 0x94, 0x4d, 0x78, 0x8c, 0x5f, 0x6c, 0xda, 0x18,
+	0xa9, 0x5a, 0xe2, 0x4f, 0xe4, 0xc4, 0x95, 0xce, 0x0e, 0xa0, 0xff, 0x1c, 0x12, 0x37, 0x26, 0x5f,
+	0xfd, 0xd5, 0x04, 0x58, 0xed, 0x1b, 0xaa, 0xe9, 0x9b, 0xe2, 0xc9, 0x30, 0x20, 0x1a, 0x31, 0xe6,
+	0x97, 0xa5, 0xde, 0xa7, 0xd6, 0x0e, 0x82, 0xed, 0xdc, 0x11, 0xd3, 0x74, 0x2e, 0x0b, 0x60, 0xe7,
+	0x3b, 0xd0, 0x8b, 0x3c, 0xa0, 0x59, 0x2f, 0x36, 0xcb, 0xfb, 0x4f, 0xef, 0x0e, 0x98, 0x05, 0x79,
+	0x8f, 0x5f, 0x9b, 0x50, 0x4a, 0xf3, 0xe8, 0x21, 0x58, 0x4b, 0x2f, 0x90, 0x91, 0x1b, 0x66, 0x47,
+	0xa7, 0xa4, 0x12, 0xa7, 0xd4, 0x47, 0x3f, 0x01, 0xc4, 0x6d, 0xc4, 0x95, 0xd1, 0x92, 0x28, 0xb9,
+	0xf7, 0xf6, 0xbf, 0x79, 0x07, 0x74, 0xf5, 0x41, 0x4e, 0xa2, 0x25, 0xd1, 0x3c, 0xd4, 0x67, 0x83,
+	0x80, 0x95, 0xe5, 0x51, 0x15, 0xee, 0x77, 0xb1, 0x73, 0x74, 0xe0, 0x9e, 0xbc, 0x3c, 0x3e, 0x70,
+	0x4f, 0xfb, 0xc3, 0xe3, 0x83, 0xae, 0xf3, 0x83, 0x73, 0xf0, 0xfd, 0xb6, 0x81, 0x76, 0xa1, 0x92,
+	0xab, 0xf5, 0x07, 0x7d, 0xf7, 0xe8, 0xbb, 0xe7, 0x4e, 0xd7, 0x19, 0x9c, 0x0e, 0xb7, 0x4d, 0x54,
+	0x81, 0x9d, 0x5c, 0x75, 0x55, 0x29, 0x54, 0xd7, 0x7e, 0xfe, 0xa3, 0x66, 0x64, 0xcf, 0x0d, 0x03,
+	0x2b, 0x7b, 0xa6, 0xd0, 0xc7, 0x70, 0x6f, 0x12, 0xf0, 0x85, 0x7b, 0x53, 0xbb, 0x1d, 0x67, 0x8f,
+	0x53, 0xfd, 0x15, 0xd8, 0x5c, 0x7a, 0xd1, 0x9c, 0x7b, 0xbe, 0x12, 0x6f, 0xe3, 0x34, 0x44, 0x1f,
+	0x81, 0x4d, 0x85, 0x3b, 0x0a, 0xb8, 0xe7, 0x8f, 0x3d, 0xa1, 0xdf, 0x87, 0x12, 0x2e, 0x53, 0xd1,
+	0x49, 0x53, 0x8d, 0x19, 0xc0, 0xea, 0xb5, 0x42, 0x75, 0xb0, 0x25, 0x7f, 0x03, 0x0e, 0x24, 0x7f,
+	0x3f, 0x60, 0x7f, 0x9a, 0x00, 0xab, 0xe7, 0x1f, 0xd5, 0xa0, 0xcc, 0xc8, 0x79, 0x7c, 0x6d, 0x72,
+	0x60, 0x16, 0x23, 0xe7, 0x87, 0x44, 0x61, 0xed, 0x01, 0x64, 0x54, 0xf4, 0x9d, 0xb1, 0xb0, 0x95,
+	0x6e, 0xbb, 0x40, 0x8f, 0x00, 0xe9, 0xb2, 0xbe, 0x62, 0x63, 0x1e, 0x32, 0x29, 0x2a, 0xeb, 0xf5,
+	0x62, 0x73, 0x0b, 0x6f, 0xab, 0xca, 0x30, 0x2e, 0x74, 0x55, 0x3e, 0xf6, 0x72, 0x11, 0x25, 0xd2,
+	0x28, 0xf3, 0xc9, 0x85, 0x22, 0xb8, 0x8e, 0xed, 0x45, 0xa4, 0xc4, 0x39, 0x71, 0x0e, 0xed, 0x82,
+	0x25, 0xcf, 0x02, 0x22, 0xce, 0xf8, 0xdc, 0x57, 0x0f, 0xe0, 0x3a, 0x5e, 0x25, 0x1a, 0xbf, 0x98,
+	0x50, 0x4a, 0x7f, 0x7e, 0x52, 0xf6, 0x82, 0x4e, 0x6f, 0xb0, 0x1f, 0xd2, 0x69, 0xcc, 0xfe, 0x01,
+	0x6c, 0xa6, 0xca, 0x0a, 0xaa, 0xb6, 0x31, 0xbb, 0x4d, 0x56, 0xf1, 0xa6, 0xac, 0x4f, 0xe0, 0x83,
+	0x85, 0x3e, 0xa9, 0xae, 0xe4, 0xf1, 0x78, 0xa6, 0x88, 0xd8, 0x78, 0x2b, 0x49, 0x9f, 0xf0, 0x98,
+	0x43, 0xe7, 0xd9, 0x5f, 0x57, 0x35, 0xf3, 0xf2, 0xaa, 0x66, 0xfe, 0x73, 0x55, 0x33, 0x7f, 0xbb,
+	0xae, 0x19, 0x97, 0xd7, 0x35, 0xe3, 0xef, 0xeb, 0x9a, 0xf1, 0xe3, 0xe3, 0x29, 0x95, 0x67, 0xe1,
+	0xa8, 0x35, 0xe6, 0x8b, 0xb6, 0x77, 0x41, 0xe6, 0x5e, 0xc0, 0x88, 0x3c, 0xe7, 0xc1, 0x2c, 0x89,
+	0x3e, 0x1f, 0xf3, 0x80, 0xb4, 0x2f, 0xda, 0xd9, 0xff, 0x80, 0xd1, 0x86, 0xfa, 0x45, 0x7f, 0xfa,
+	0x6f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x3a, 0x20, 0x75, 0xe0, 0x1b, 0x08, 0x00, 0x00,
 }
 
 func (m *MessageIn) Marshal() (dAtA []byte, err error) {
@@ -1068,6 +1190,57 @@ func (m *MessageOut_SignResult_) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	}
 	return len(dAtA) - i, nil
 }
+func (m *MessageOut_NeedRecover_) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MessageOut_NeedRecover_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.NeedRecover != nil {
+		{
+			size, err := m.NeedRecover.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTofnd(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x22
+	}
+	return len(dAtA) - i, nil
+}
+func (m *MessageOut_NeedRecover) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MessageOut_NeedRecover) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MessageOut_NeedRecover) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.SessionId) > 0 {
+		i -= len(m.SessionId)
+		copy(dAtA[i:], m.SessionId)
+		i = encodeVarintTofnd(dAtA, i, uint64(len(m.SessionId)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *MessageOut_KeygenResult) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -1100,17 +1273,22 @@ func (m *MessageOut_KeygenResult) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *MessageOut_KeygenResult_Pubkey) MarshalTo(dAtA []byte) (int, error) {
+func (m *MessageOut_KeygenResult_Data) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MessageOut_KeygenResult_Pubkey) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *MessageOut_KeygenResult_Data) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.Pubkey != nil {
-		i -= len(m.Pubkey)
-		copy(dAtA[i:], m.Pubkey)
-		i = encodeVarintTofnd(dAtA, i, uint64(len(m.Pubkey)))
+	if m.Data != nil {
+		{
+			size, err := m.Data.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTofnd(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0xa
 	}
@@ -1137,6 +1315,45 @@ func (m *MessageOut_KeygenResult_Criminals) MarshalToSizedBuffer(dAtA []byte) (i
 	}
 	return len(dAtA) - i, nil
 }
+func (m *MessageOut_KeygenResult_KeygenOutput) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MessageOut_KeygenResult_KeygenOutput) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MessageOut_KeygenResult_KeygenOutput) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.ShareRecoveryInfos) > 0 {
+		for iNdEx := len(m.ShareRecoveryInfos) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.ShareRecoveryInfos[iNdEx])
+			copy(dAtA[i:], m.ShareRecoveryInfos[iNdEx])
+			i = encodeVarintTofnd(dAtA, i, uint64(len(m.ShareRecoveryInfos[iNdEx])))
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if len(m.PubKey) > 0 {
+		i -= len(m.PubKey)
+		copy(dAtA[i:], m.PubKey)
+		i = encodeVarintTofnd(dAtA, i, uint64(len(m.PubKey)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *MessageOut_SignResult) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -1393,20 +1610,20 @@ func (m *KeygenInit) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	var l int
 	_ = l
 	if len(m.PartyShareCounts) > 0 {
-		dAtA10 := make([]byte, len(m.PartyShareCounts)*10)
-		var j9 int
+		dAtA12 := make([]byte, len(m.PartyShareCounts)*10)
+		var j11 int
 		for _, num := range m.PartyShareCounts {
 			for num >= 1<<7 {
-				dAtA10[j9] = uint8(uint64(num)&0x7f | 0x80)
+				dAtA12[j11] = uint8(uint64(num)&0x7f | 0x80)
 				num >>= 7
-				j9++
+				j11++
 			}
-			dAtA10[j9] = uint8(num)
-			j9++
+			dAtA12[j11] = uint8(num)
+			j11++
 		}
-		i -= j9
-		copy(dAtA[i:], dAtA10[:j9])
-		i = encodeVarintTofnd(dAtA, i, uint64(j9))
+		i -= j11
+		copy(dAtA[i:], dAtA12[:j11])
+		i = encodeVarintTofnd(dAtA, i, uint64(j11))
 		i--
 		dAtA[i] = 0x2a
 	}
@@ -1608,6 +1825,31 @@ func (m *MessageOut_SignResult_) Size() (n int) {
 	}
 	return n
 }
+func (m *MessageOut_NeedRecover_) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.NeedRecover != nil {
+		l = m.NeedRecover.Size()
+		n += 1 + l + sovTofnd(uint64(l))
+	}
+	return n
+}
+func (m *MessageOut_NeedRecover) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.SessionId)
+	if l > 0 {
+		n += 1 + l + sovTofnd(uint64(l))
+	}
+	return n
+}
+
 func (m *MessageOut_KeygenResult) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1620,14 +1862,14 @@ func (m *MessageOut_KeygenResult) Size() (n int) {
 	return n
 }
 
-func (m *MessageOut_KeygenResult_Pubkey) Size() (n int) {
+func (m *MessageOut_KeygenResult_Data) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.Pubkey != nil {
-		l = len(m.Pubkey)
+	if m.Data != nil {
+		l = m.Data.Size()
 		n += 1 + l + sovTofnd(uint64(l))
 	}
 	return n
@@ -1644,6 +1886,25 @@ func (m *MessageOut_KeygenResult_Criminals) Size() (n int) {
 	}
 	return n
 }
+func (m *MessageOut_KeygenResult_KeygenOutput) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.PubKey)
+	if l > 0 {
+		n += 1 + l + sovTofnd(uint64(l))
+	}
+	if len(m.ShareRecoveryInfos) > 0 {
+		for _, b := range m.ShareRecoveryInfos {
+			l = len(b)
+			n += 1 + l + sovTofnd(uint64(l))
+		}
+	}
+	return n
+}
+
 func (m *MessageOut_SignResult) Size() (n int) {
 	if m == nil {
 		return 0
@@ -2126,6 +2387,123 @@ func (m *MessageOut) Unmarshal(dAtA []byte) error {
 			}
 			m.Data = &MessageOut_SignResult_{v}
 			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NeedRecover", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTofnd
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTofnd
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTofnd
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &MessageOut_NeedRecover{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Data = &MessageOut_NeedRecover_{v}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTofnd(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTofnd
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MessageOut_NeedRecover) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTofnd
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: NeedRecover: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: NeedRecover: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SessionId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTofnd
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTofnd
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTofnd
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SessionId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTofnd(dAtA[iNdEx:])
@@ -2178,9 +2556,9 @@ func (m *MessageOut_KeygenResult) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Pubkey", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Data", wireType)
 			}
-			var byteLen int
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowTofnd
@@ -2190,24 +2568,26 @@ func (m *MessageOut_KeygenResult) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				byteLen |= int(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if byteLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthTofnd
 			}
-			postIndex := iNdEx + byteLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthTofnd
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			v := make([]byte, postIndex-iNdEx)
-			copy(v, dAtA[iNdEx:postIndex])
-			m.KeygenResultData = &MessageOut_KeygenResult_Pubkey{v}
+			v := &MessageOut_KeygenResult_KeygenOutput{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.KeygenResultData = &MessageOut_KeygenResult_Data{v}
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -2243,6 +2623,122 @@ func (m *MessageOut_KeygenResult) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			m.KeygenResultData = &MessageOut_KeygenResult_Criminals{v}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTofnd(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTofnd
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MessageOut_KeygenResult_KeygenOutput) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTofnd
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: KeygenOutput: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: KeygenOutput: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PubKey", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTofnd
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTofnd
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTofnd
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PubKey = append(m.PubKey[:0], dAtA[iNdEx:postIndex]...)
+			if m.PubKey == nil {
+				m.PubKey = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ShareRecoveryInfos", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTofnd
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTofnd
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTofnd
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ShareRecoveryInfos = append(m.ShareRecoveryInfos, make([]byte, postIndex-iNdEx))
+			copy(m.ShareRecoveryInfos[len(m.ShareRecoveryInfos)-1], dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

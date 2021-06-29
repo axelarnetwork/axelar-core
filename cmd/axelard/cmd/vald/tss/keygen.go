@@ -184,7 +184,8 @@ func (mgr *Mgr) handleKeygenResult(keyID string, resultChan <-chan interface{}) 
 
 	mgr.Logger.Debug(fmt.Sprintf("handler goroutine: received keygen result for %s [%+v]", keyID, result))
 
-	pubKeyBytes := result.GetPubkey()
+	// TODO: here result data contain the pub key and recovery info. For now we only use pubkey.
+	pubKeyBytes := result.GetData().PubKey
 	if pubKeyBytes != nil {
 		btcecPK, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
 		if err != nil {
