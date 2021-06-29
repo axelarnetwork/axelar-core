@@ -25,6 +25,7 @@ const (
 	QTokenAddress         = "token-address"
 	QMasterAddress        = "master-address"
 	QNextMasterAddress    = "next-master-address"
+	QKeyAddress           = "query-key-address"
 	QAxelarGatewayAddress = "gateway-address"
 	QCommandData          = "command-data"
 	QDepositAddress       = "deposit-address"
@@ -41,6 +42,8 @@ func NewQuerier(rpcs map[string]types.RPCClient, k Keeper, s types.Signer, n typ
 			return queryMasterAddress(ctx, s, n, path[1])
 		case QNextMasterAddress:
 			return queryNextMasterAddress(ctx, s, n, path[1])
+		case QKeyAddress:
+			return queryKeyAddress(ctx, s, req.Data)
 		case QAxelarGatewayAddress:
 			return queryAxelarGateway(ctx, k, n, path[1])
 		case QTokenAddress:
@@ -105,6 +108,20 @@ func queryMasterAddress(ctx sdk.Context, s types.Signer, n types.Nexus, chainNam
 	pk, ok := s.GetCurrentKey(ctx, chain, tss.MasterKey)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEVM, "key not found")
+	}
+
+	fromAddress := crypto.PubkeyToAddress(pk.Value)
+
+	bz := fromAddress.Bytes()
+
+	return bz, nil
+}
+
+func queryKeyAddress(ctx sdk.Context, s types.Signer, keyIDBytes []byte) ([]byte, error) {
+	keyID := string(keyIDBytes)
+	pk, ok := s.GetKey(ctx, keyID)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, "no key found for key ID "+keyID)
 	}
 
 	fromAddress := crypto.PubkeyToAddress(pk.Value)

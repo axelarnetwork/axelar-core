@@ -35,6 +35,7 @@ const (
 
 	QueryMasterAddress        = keeper.QMasterAddress
 	QueryNextMasterAddress    = keeper.QNextMasterAddress
+	QueryKeyAddress           = keeper.QKeyAddress
 	QueryAxelarGatewayAddress = keeper.QAxelarGatewayAddress
 	QueryCommandData          = keeper.QCommandData
 	QueryCreateDeployTx       = keeper.CreateDeployTx
@@ -60,6 +61,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
 	registerQuery(GetHandlerQueryMasterAddress(cliCtx), QueryMasterAddress, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQueryNextMasterAddress(cliCtx), QueryNextMasterAddress, clientUtils.PathVarChain)
+	registerQuery(GetHandlerQueryKeyAddress(cliCtx), QueryKeyAddress, clientUtils.PathVarKeyID)
 	registerQuery(GetHandlerQueryAxelarGatewayAddress(cliCtx), QueryAxelarGatewayAddress, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQueryCommandData(cliCtx), QueryCommandData, clientUtils.PathVarChain, clientUtils.PathVarCommandID)
 	registerQuery(GetHandlerQueryCreateDeployTx(cliCtx), QueryCreateDeployTx, clientUtils.PathVarChain)
