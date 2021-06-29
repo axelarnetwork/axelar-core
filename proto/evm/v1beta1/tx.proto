@@ -13,7 +13,6 @@ message ConfirmChainRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string name = 2;
-  int64 revote_locking_period = 3;
 }
 
 message ConfirmChainResponse {}

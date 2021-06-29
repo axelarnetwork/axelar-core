@@ -105,7 +105,6 @@ func GetCmdSignTx() *cobra.Command {
 
 // GetCmdConfirmChain returns the cli command to confirm a ERC20 token deployment
 func GetCmdConfirmChain() *cobra.Command {
-	var revoteLockingPeriod int64
 	cmd := &cobra.Command{
 		Use:   "confirm-chain [chain]",
 		Short: "Confirm an EVM chain for a given name and native asset",
@@ -116,7 +115,7 @@ func GetCmdConfirmChain() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewConfirmChainRequest(cliCtx.GetFromAddress(), args[0], revoteLockingPeriod)
+			msg := types.NewConfirmChainRequest(cliCtx.GetFromAddress(), args[0])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -125,8 +124,6 @@ func GetCmdConfirmChain() *cobra.Command {
 		},
 	}
 	flags.AddTxFlagsToCmd(cmd)
-	cmd.Flags().Int64Var(&revoteLockingPeriod, "revote-locking-period", 50,
-		"Number of new blocks that need to be created before re-trying confirmation.")
 
 	return cmd
 }

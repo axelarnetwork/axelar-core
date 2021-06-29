@@ -191,8 +191,18 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 		counter = s.snapshotter.GetLatestCounter(ctx)
 	}
 
+	var period int64 = -1
+	for _, p := range s.GetParams(ctx) {
+		if strings.ToLower(p.Chain) == strings.ToLower(req.Name) {
+			period = p.RevoteLockingPeriod
+		}
+	}
+	if period < 0 {
+		return nil, fmt.Errorf("invalid revote locking period: %d", period)
+	}
+
 	poll := vote.NewPollMeta(types.ModuleName, req.Name)
-	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+req.RevoteLockingPeriod); err != nil {
+	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+period); err != nil {
 		return nil, err
 	}
 

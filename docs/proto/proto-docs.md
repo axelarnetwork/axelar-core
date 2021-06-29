@@ -891,7 +891,6 @@ KeyRequirement defines requirements for keys
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `name` | [string](#string) |  |  |
-| `revote_locking_period` | [int64](#int64) |  |  |
 
 
 

@@ -348,11 +348,24 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
 
+		msg = &types.ConfirmChainRequest{
+			Sender: rand.Bytes(20),
+			Name:   rand.StrBetween(5, 20),
+		}
+
 		k = &evmMock.EVMKeeperMock{
-			GetRevoteLockingPeriodFunc: func(ctx sdk.Context, _ string) (int64, bool) { return rand.PosI64(), true },
-			SetPendingChainFunc:        func(sdk.Context, nexus.Chain) {},
+			GetParamsFunc: func(sdk.Context) []types.Params {
+				params := types.DefaultParams()
+				params[0].Chain = msg.Name
+				return params
+
+			},
+			SetPendingChainFunc: func(sdk.Context, nexus.Chain) {},
 			GetPendingChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
-				return nexus.Chain{Name: chain, NativeAsset: rand.StrBetween(3, 5), SupportsForeignAssets: true}, true
+				if chain == msg.Name {
+					return nexus.Chain{Name: msg.Name, NativeAsset: rand.StrBetween(3, 5), SupportsForeignAssets: true}, true
+				}
+				return nexus.Chain{}, false
 			},
 		}
 		v = &evmMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta, int64, int64) error { return nil }}
@@ -369,11 +382,6 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 				return rand.I64Between(50, 100)
 
 			},
-		}
-
-		msg = &types.ConfirmChainRequest{
-			Sender: rand.Bytes(20),
-			Name:   rand.StrBetween(5, 20),
 		}
 
 		server = keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, &mock.SignerMock{}, v, s)
