@@ -120,12 +120,15 @@ func queryMasterAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer) ([]b
 func queryKeyConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, keyIDBytes []byte) ([]byte, error) {
 	keyID := string(keyIDBytes)
 
-	masterKey, ok := s.GetKey(ctx, keyID)
+	key, ok := s.GetKey(ctx, keyID)
 	if !ok {
 		return nil, fmt.Errorf("no key with keyID %s found", keyID)
 	}
+	if key.Role != tss.MasterKey {
+		return nil, fmt.Errorf("key %s does not have the role %s", keyID, tss.MasterKey)
+	}
 
-	addr := types.NewConsolidationAddress(masterKey, k.GetNetwork(ctx))
+	addr := types.NewConsolidationAddress(key, k.GetNetwork(ctx))
 	return []byte(addr.Address), nil
 }
 
