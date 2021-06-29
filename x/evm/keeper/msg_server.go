@@ -613,7 +613,7 @@ func (s msgServer) VoteConfirmTransferOwnership(c context.Context, req *types.Vo
 	ctx.EventManager().EmitEvent(
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
-	if err := s.signer.AssignNextKey(ctx, exported.Ethereum, tss.MasterKey, pendingTransferOwnership.NextKeyID); err != nil {
+	if err := s.signer.AssignNextKey(ctx, chain, tss.MasterKey, pendingTransferOwnership.NextKeyID); err != nil {
 		return nil, err
 	}
 	return &types.VoteConfirmTransferOwnershipResponse{}, nil
@@ -931,7 +931,7 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 		return nil, fmt.Errorf("no snapshot found for key %s", key.ID)
 	}
 
-	if err := s.signer.AssertMatchesRequirements(ctx, snap, exported.Ethereum, key.ID, tss.MasterKey); err != nil {
+	if err := s.signer.AssertMatchesRequirements(ctx, snap, chain, key.ID, tss.MasterKey); err != nil {
 		return nil, sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", key.ID, tss.MasterKey.SimpleString())
 	}
 
