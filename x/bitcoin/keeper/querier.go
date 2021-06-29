@@ -114,7 +114,12 @@ func queryMasterAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer) ([]b
 		return nil, fmt.Errorf("no address found for current %s key %s", tss.MasterKey.SimpleString(), masterKey.ID)
 	}
 
-	return []byte(addr.Address), nil
+	resp := types.QueryMasterAddressResponse{
+		MasterAddress: addr.Address,
+		MasterKeyId:   masterKey.ID,
+	}
+
+	return resp.Marshal()
 }
 
 func queryKeyConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, keyIDBytes []byte) ([]byte, error) {

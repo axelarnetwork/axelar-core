@@ -20,6 +20,7 @@
   
 - [bitcoin/v1beta1/query.proto](#bitcoin/v1beta1/query.proto)
     - [DepositQueryParams](#bitcoin.v1beta1.DepositQueryParams)
+    - [QueryMasterAddressResponse](#bitcoin.v1beta1.QueryMasterAddressResponse)
     - [QueryRawTxResponse](#bitcoin.v1beta1.QueryRawTxResponse)
   
 - [vote/exported/v1beta1/types.proto](#vote/exported/v1beta1/types.proto)
@@ -356,6 +357,22 @@ deposit address
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  |  |
 | `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.QueryMasterAddressResponse"></a>
+
+### QueryMasterAddressResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `master_address` | [string](#string) |  |  |
+| `master_key_id` | [string](#string) |  |  |
 
 
 

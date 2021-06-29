@@ -44,8 +44,8 @@ func queryGetSig(ctx sdk.Context, k tssTypes.TSSKeeper, data []byte) ([]byte, er
 	}
 
 	sigResponse = tssTypes.QuerySigResponse{
-		R: *sig.R,
-		S: *sig.S,
+		R: sig.R.Bytes(),
+		S: sig.S.Bytes(),
 	}
 
 	return sigResponse.Marshal()
