@@ -191,14 +191,9 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 		counter = s.snapshotter.GetLatestCounter(ctx)
 	}
 
-	var period int64 = -1
-	for _, p := range s.GetParams(ctx) {
-		if strings.ToLower(p.Chain) == strings.ToLower(req.Name) {
-			period = p.RevoteLockingPeriod
-		}
-	}
-	if period < 0 {
-		return nil, fmt.Errorf("invalid revote locking period: %d", period)
+	period, ok := s.EVMKeeper.GetRevoteLockingPeriod(ctx, req.Name)
+	if !ok {
+		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", req.Name)
 	}
 
 	poll := vote.NewPollMeta(types.ModuleName, req.Name)

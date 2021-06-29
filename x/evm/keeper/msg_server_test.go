@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	mathRand "math/rand"
+	"strings"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -354,15 +355,15 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 		}
 
 		k = &evmMock.EVMKeeperMock{
-			GetParamsFunc: func(sdk.Context) []types.Params {
-				params := types.DefaultParams()
-				params[0].Chain = msg.Name
-				return params
-
+			GetRevoteLockingPeriodFunc: func(ctx sdk.Context, chain string) (int64, bool) {
+				if strings.ToLower(chain) == strings.ToLower(msg.Name) {
+					return rand.I64Between(50, 100), true
+				}
+				return -1, false
 			},
 			SetPendingChainFunc: func(sdk.Context, nexus.Chain) {},
 			GetPendingChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
-				if chain == msg.Name {
+				if strings.ToLower(chain) == strings.ToLower(msg.Name) {
 					return nexus.Chain{Name: msg.Name, NativeAsset: rand.StrBetween(3, 5), SupportsForeignAssets: true}, true
 				}
 				return nexus.Chain{}, false
