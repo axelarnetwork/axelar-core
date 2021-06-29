@@ -42,7 +42,7 @@ func GetCmdGetSig(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryGetSig), []byte(args[0]))
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryGetSig), []byte(args[0]))
 			if err != nil {
 				return sdkerrors.Wrapf(err, "failed to get signature")
 			}
