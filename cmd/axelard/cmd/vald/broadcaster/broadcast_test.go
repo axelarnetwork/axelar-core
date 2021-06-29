@@ -27,8 +27,8 @@ import (
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 	"github.com/tendermint/tendermint/types"
 
+	"github.com/axelarnetwork/axelar-core/app"
 	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types/mock"
-	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -206,7 +206,7 @@ func setup() (*Broadcaster, client.Context) {
 			}},
 		AccountRetriever: &mock2.AccountRetrieverMock{},
 		ChainID:          rand.StrBetween(5, 20),
-		TxConfig:         testutils.MakeEncodingConfig().TxConfig,
+		TxConfig:         app.MakeEncodingConfig().TxConfig,
 		Keyring: &mock2.KeyringMock{
 			KeyFunc: func(string) (keyring.Info, error) {
 				return key, nil

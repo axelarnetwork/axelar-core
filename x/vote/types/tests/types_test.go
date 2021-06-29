@@ -7,7 +7,7 @@ import (
 	gogoprototypes "github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/axelarnetwork/axelar-core/testutils"
+	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
@@ -15,7 +15,7 @@ import (
 
 func TestSdkInt_Marshaling(t *testing.T) {
 	i := sdk.NewInt(75)
-	cdc := testutils.MakeEncodingConfig().Amino
+	cdc := app.MakeEncodingConfig().Amino
 
 	bz := cdc.MustMarshalBinaryLengthPrefixed(i)
 	var unmarshaled sdk.Int
@@ -32,7 +32,7 @@ func TestSdkInt_Marshaling(t *testing.T) {
 }
 
 func TestTalliedVote_Marshaling(t *testing.T) {
-	encCfg := testutils.MakeEncodingConfig()
+	encCfg := app.MakeEncodingConfig()
 	cdc := encCfg.Marshaler
 
 	data := tofnd.MessageOut_KeygenResult{KeygenResultData: &tofnd.MessageOut_KeygenResult_Pubkey{Pubkey: []byte("a public key")}}

@@ -5,42 +5,12 @@ import (
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/std"
 	abci "github.com/tendermint/tendermint/abci/types"
-
-	"github.com/axelarnetwork/axelar-core/app/params"
-	bitcoin "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
-	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/types"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
-	vote "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 var (
 	cdc *codec.LegacyAmino
 )
-
-// MakeEncodingConfig creates an EncodingConfig for testing
-func MakeEncodingConfig() params.EncodingConfig {
-	encodingConfig := params.MakeEncodingConfig()
-	cdc = encodingConfig.Amino
-	std.RegisterLegacyAminoCodec(encodingConfig.Amino)
-	std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-
-	// Add new modules here so tests have access to marshalling the registered ethereum
-	vote.RegisterLegacyAminoCodec(cdc)
-	vote.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-	bitcoin.RegisterLegacyAminoCodec(cdc)
-	bitcoin.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-	tss.RegisterLegacyAminoCodec(cdc)
-	tss.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-	snapshot.RegisterLegacyAminoCodec(cdc)
-	snapshot.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-	evm.RegisterLegacyAminoCodec(cdc)
-	evm.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-
-	return encodingConfig
-}
 
 // Func wraps a regular testing function so it can be used as a pointer function receiver
 type Func func(t *testing.T)

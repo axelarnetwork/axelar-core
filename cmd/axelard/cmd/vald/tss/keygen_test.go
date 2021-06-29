@@ -13,6 +13,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
 
+	"github.com/axelarnetwork/axelar-core/app"
 	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types/mock"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss/rpc/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
@@ -29,7 +30,7 @@ func TestMgr_ProcessKeygenStart(t *testing.T) {
 		keygenClient *mock3.TofndKeyGenClientMock
 	)
 	setup := func() {
-		cdc := testutils.MakeEncodingConfig().Amino
+		cdc := app.MakeEncodingConfig().Amino
 		principalAddr := rand.StrBetween(5, 20)
 		keygenClient = &mock3.TofndKeyGenClientMock{
 			SendFunc:      func(*tofnd.MessageIn) error { return nil },

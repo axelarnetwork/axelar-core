@@ -1,4 +1,4 @@
-package keeper
+package keeper_test
 
 import (
 	"testing"
@@ -15,13 +15,14 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 )
 
 func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
 	var (
 		ctx    sdk.Context
-		keeper Keeper
+		keeper evmKeeper.Keeper
 		chain  string
 	)
 
@@ -29,7 +30,7 @@ func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
 		encCfg := params.MakeEncodingConfig()
 		paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"))
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-		keeper = NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("evm"), paramsK)
+		keeper = evmKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("evm"), paramsK)
 		chain = "Ethereum"
 	}
 
@@ -54,8 +55,8 @@ func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
 
 func TestKeeper_GetParams(t *testing.T) {
 	var (
-		keeperWithSubspace    Keeper
-		keeperWithoutSubspace Keeper
+		keeperWithSubspace    evmKeeper.Keeper
+		keeperWithoutSubspace evmKeeper.Keeper
 		ctx                   sdk.Context
 	)
 	setup := func() {
@@ -71,8 +72,8 @@ func TestKeeper_GetParams(t *testing.T) {
 		paramsK2 := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, paramStoreKey, paramTStoreKey)
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 
-		keeperWithSubspace = NewKeeper(encCfg.Marshaler, storeKey, paramsK1)
-		keeperWithoutSubspace = NewKeeper(encCfg.Marshaler, storeKey, paramsK2)
+		keeperWithSubspace = evmKeeper.NewKeeper(encCfg.Marshaler, storeKey, paramsK1)
+		keeperWithoutSubspace = evmKeeper.NewKeeper(encCfg.Marshaler, storeKey, paramsK2)
 
 		// load params into a subspace
 		keeperWithSubspace.SetParams(ctx, types.DefaultParams()...)

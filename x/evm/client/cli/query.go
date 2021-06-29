@@ -54,7 +54,7 @@ func GetCmdDepositAddress(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			path := fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryDepositAddress, args[0])
+			path := fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QDepositAddress, args[0])
 
 			res, _, err := cliCtx.QueryWithData(path, types.ModuleCdc.MustMarshalJSON(&types.DepositQueryParams{Chain: args[1], Address: args[2], Symbol: args[3]}))
 			if err != nil {
@@ -81,7 +81,7 @@ func GetCmdMasterAddress(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryMasterAddress, args[0]), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QMasterAddress, args[0]), nil)
 			if err != nil {
 				fmt.Printf(types.ErrFMasterKey, err.Error())
 
@@ -109,7 +109,7 @@ func GetCmdTokenAddress(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QueryTokenAddress, args[0], args[1]), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QTokenAddress, args[0], args[1]), nil)
 			if err != nil {
 				fmt.Printf(types.ErrFTokenAddress, err.Error())
 
@@ -137,7 +137,7 @@ func GetCmdAxelarGatewayAddress(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryAxelarGatewayAddress, args[0]), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QAxelarGatewayAddress, args[0]), nil)
 			if err != nil {
 				fmt.Printf(types.ErrFGatewayAddress, err.Error())
 
@@ -271,7 +271,7 @@ func GetCmdQueryCommandData(queryRoute string) *cobra.Command {
 			chain := args[0]
 			commandIDHex := args[1]
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QueryCommandData, chain, commandIDHex), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QCommandData, chain, commandIDHex), nil)
 			if err != nil {
 				return sdkerrors.Wrapf(err, "could not get command %s", commandIDHex)
 			}

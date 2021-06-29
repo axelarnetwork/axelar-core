@@ -1,4 +1,4 @@
-package keeper
+package keeper_test
 
 import (
 	"fmt"
@@ -19,11 +19,13 @@ import (
 
 	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 
+	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
+	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
 	evmMock "github.com/axelarnetwork/axelar-core/x/evm/types/mock"
@@ -46,10 +48,10 @@ var (
 func TestLink_UnknownChain(t *testing.T) {
 	minConfHeight := rand.I64Between(1, 10)
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-	encCfg := testutils.MakeEncodingConfig()
+	encCfg := app.MakeEncodingConfig()
 
 	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
-	k := NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), paramsK)
+	k := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), paramsK)
 	k.SetParams(ctx, types.Params{
 		Chain:               exported.Ethereum.Name,
 		Network:             network,
@@ -66,7 +68,7 @@ func TestLink_UnknownChain(t *testing.T) {
 	n := &evmMock.NexusMock{
 		GetChainFunc: func(sdk.Context, string) (nexus.Chain, bool) { return nexus.Chain{}, false },
 	}
-	server := NewMsgServerImpl(k, &mock.TSSMock{}, n, &mock.SignerMock{}, &mock.VoterMock{}, &mock.SnapshotterMock{})
+	server := keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, &mock.SignerMock{}, &mock.VoterMock{}, &mock.SnapshotterMock{})
 	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.Bytes(sdk.AddrLen), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Symbol: symbol})
 
 	assert.Error(t, err)
@@ -78,10 +80,10 @@ func TestLink_UnknownChain(t *testing.T) {
 func TestLink_NoGateway(t *testing.T) {
 	minConfHeight := rand.I64Between(1, 10)
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-	encCfg := testutils.MakeEncodingConfig()
+	encCfg := app.MakeEncodingConfig()
 
 	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
-	k := NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), paramsK)
+	k := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), paramsK)
 	k.SetParams(ctx, types.Params{
 		Chain:               exported.Ethereum.Name,
 		Network:             network,
@@ -110,7 +112,7 @@ func TestLink_NoGateway(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	server := NewMsgServerImpl(k, &mock.TSSMock{}, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
+	server := keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
 	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Chain: evmChain, Sender: rand.Bytes(sdk.AddrLen), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
@@ -143,7 +145,7 @@ func TestLink_NoRecipientChain(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	server := NewMsgServerImpl(k, &mock.TSSMock{}, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
+	server := keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
 	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Chain: evmChain, Sender: rand.Bytes(sdk.AddrLen), RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
@@ -176,7 +178,7 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	server := NewMsgServerImpl(k, &mock.TSSMock{}, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
+	server := keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
 	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.Bytes(sdk.AddrLen), Chain: evmChain, RecipientAddr: recipient.Address, Symbol: symbol, RecipientChain: recipient.Chain.Name})
 
@@ -224,7 +226,7 @@ func TestLink_Success(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	server := NewMsgServerImpl(k, &mock.TSSMock{}, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
+	server := keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
 	_, err = server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.Bytes(sdk.AddrLen), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Symbol: msg.Symbol})
 
 	assert.NoError(t, err)
@@ -376,7 +378,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 			Name:   rand.StrBetween(5, 20),
 		}
 
-		server = NewMsgServerImpl(k, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{})
+		server = keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{})
 	}
 
 	repeats := 20
@@ -485,7 +487,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			Symbol: rand.StrBetween(5, 10),
 		}
 
-		server = NewMsgServerImpl(k, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{})
+		server = keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{})
 	}
 
 	repeats := 20
@@ -614,7 +616,7 @@ func TestAddChain(t *testing.T) {
 			Params:         params,
 		}
 
-		server = NewMsgServerImpl(k, tssMock, n, &evmMock.SignerMock{}, &evmMock.VoterMock{}, &mock.SnapshotterMock{})
+		server = keeper.NewMsgServerImpl(k, tssMock, n, &evmMock.SignerMock{}, &evmMock.VoterMock{}, &mock.SnapshotterMock{})
 	}
 
 	repeats := 20
@@ -699,7 +701,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			Amount:        sdk.NewUint(mathRand.Uint64()),
 			BurnerAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
 		}
-		server = NewMsgServerImpl(k, &evmMock.TSSMock{}, n, s, v, &mock.SnapshotterMock{})
+		server = keeper.NewMsgServerImpl(k, &evmMock.TSSMock{}, n, s, v, &mock.SnapshotterMock{})
 	}
 
 	repeats := 20
@@ -827,10 +829,10 @@ func createSignedEthTx() *ethTypes.Transaction {
 	return sign(ethTypes.NewTransaction(nonce, contractAddr, value, gasLimit, gasPrice, data))
 }
 
-func newKeeper(ctx sdk.Context, chain string, confHeight int64) Keeper {
-	encCfg := testutils.MakeEncodingConfig()
+func newKeeper(ctx sdk.Context, chain string, confHeight int64) keeper.Keeper {
+	encCfg := app.MakeEncodingConfig()
 	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
-	k := NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), paramsK)
+	k := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), paramsK)
 	k.SetParams(ctx, types.Params{
 		Chain:               exported.Ethereum.Name,
 		Network:             network,
