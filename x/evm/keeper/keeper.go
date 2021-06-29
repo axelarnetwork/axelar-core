@@ -95,7 +95,7 @@ func (k Keeper) GetParams(ctx sdk.Context) []types.Params {
 	return params
 }
 
-// GetNetwork returns the Ethereum network Axelar-Core is expected to connect to
+// GetNetwork returns the EVM network Axelar-Core is expected to connect to
 func (k Keeper) GetNetwork(ctx sdk.Context, chain string) (string, bool) {
 	var network string
 	subspace, ok := k.getSubspace(ctx, chain)

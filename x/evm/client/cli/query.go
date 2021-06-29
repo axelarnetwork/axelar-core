@@ -74,7 +74,7 @@ func GetCmdMasterAddress(queryRoute string) *cobra.Command {
 	var IncludeKeyID bool
 	cmd := &cobra.Command{
 		Use:   "master-address [chain]",
-		Short: "Returns the ethereum address of the current evm key, and optionally the key's ID",
+		Short: "Returns the EVM address of the current master key, and optionally the key's ID",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientQueryContext(cmd)
