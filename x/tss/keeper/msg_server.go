@@ -125,7 +125,7 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 	}
 	keyReq, ok := s.GetKeyRequirement(ctx, chain, req.KeyRole)
 	if !ok {
-		return nil, fmt.Errorf("key requirements for chain %s and role %s not found", chain.Name, req.KeyRole.SimpleString())
+		return nil, fmt.Errorf("key requirement for chain %s and role %s not found", chain.Name, req.KeyRole.SimpleString())
 	}
 
 	_, hasActiveKey := s.TSSKeeper.GetCurrentKeyID(ctx, chain, req.KeyRole)
