@@ -1381,8 +1381,14 @@ var _ types.Snapshotter = &SnapshotterMock{}
 //
 // 		// make and configure a mocked types.Snapshotter
 // 		mockedSnapshotter := &SnapshotterMock{
+// 			GetLatestCounterFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
+// 				panic("mock out the GetLatestCounter method")
+// 			},
 // 			GetSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, counter int64) (snapshot.Snapshot, bool) {
 // 				panic("mock out the GetSnapshot method")
+// 			},
+// 			TakeSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (github_com_cosmos_cosmos_sdk_types.Int, github_com_cosmos_cosmos_sdk_types.Int, error) {
+// 				panic("mock out the TakeSnapshot method")
 // 			},
 // 		}
 //
@@ -1391,11 +1397,22 @@ var _ types.Snapshotter = &SnapshotterMock{}
 //
 // 	}
 type SnapshotterMock struct {
+	// GetLatestCounterFunc mocks the GetLatestCounter method.
+	GetLatestCounterFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64
+
 	// GetSnapshotFunc mocks the GetSnapshot method.
 	GetSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, counter int64) (snapshot.Snapshot, bool)
 
+	// TakeSnapshotFunc mocks the TakeSnapshot method.
+	TakeSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (github_com_cosmos_cosmos_sdk_types.Int, github_com_cosmos_cosmos_sdk_types.Int, error)
+
 	// calls tracks calls to the methods.
 	calls struct {
+		// GetLatestCounter holds details about calls to the GetLatestCounter method.
+		GetLatestCounter []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
 		// GetSnapshot holds details about calls to the GetSnapshot method.
 		GetSnapshot []struct {
 			// Ctx is the ctx argument value.
@@ -1403,8 +1420,50 @@ type SnapshotterMock struct {
 			// Counter is the counter argument value.
 			Counter int64
 		}
+		// TakeSnapshot holds details about calls to the TakeSnapshot method.
+		TakeSnapshot []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// SubsetSize is the subsetSize argument value.
+			SubsetSize int64
+			// KeyShareDistributionPolicy is the keyShareDistributionPolicy argument value.
+			KeyShareDistributionPolicy tss.KeyShareDistributionPolicy
+		}
 	}
-	lockGetSnapshot sync.RWMutex
+	lockGetLatestCounter sync.RWMutex
+	lockGetSnapshot      sync.RWMutex
+	lockTakeSnapshot     sync.RWMutex
+}
+
+// GetLatestCounter calls GetLatestCounterFunc.
+func (mock *SnapshotterMock) GetLatestCounter(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
+	if mock.GetLatestCounterFunc == nil {
+		panic("SnapshotterMock.GetLatestCounterFunc: method is nil but Snapshotter.GetLatestCounter was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetLatestCounter.Lock()
+	mock.calls.GetLatestCounter = append(mock.calls.GetLatestCounter, callInfo)
+	mock.lockGetLatestCounter.Unlock()
+	return mock.GetLatestCounterFunc(ctx)
+}
+
+// GetLatestCounterCalls gets all the calls that were made to GetLatestCounter.
+// Check the length with:
+//     len(mockedSnapshotter.GetLatestCounterCalls())
+func (mock *SnapshotterMock) GetLatestCounterCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockGetLatestCounter.RLock()
+	calls = mock.calls.GetLatestCounter
+	mock.lockGetLatestCounter.RUnlock()
+	return calls
 }
 
 // GetSnapshot calls GetSnapshotFunc.
@@ -1439,6 +1498,45 @@ func (mock *SnapshotterMock) GetSnapshotCalls() []struct {
 	mock.lockGetSnapshot.RLock()
 	calls = mock.calls.GetSnapshot
 	mock.lockGetSnapshot.RUnlock()
+	return calls
+}
+
+// TakeSnapshot calls TakeSnapshotFunc.
+func (mock *SnapshotterMock) TakeSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (github_com_cosmos_cosmos_sdk_types.Int, github_com_cosmos_cosmos_sdk_types.Int, error) {
+	if mock.TakeSnapshotFunc == nil {
+		panic("SnapshotterMock.TakeSnapshotFunc: method is nil but Snapshotter.TakeSnapshot was just called")
+	}
+	callInfo := struct {
+		Ctx                        github_com_cosmos_cosmos_sdk_types.Context
+		SubsetSize                 int64
+		KeyShareDistributionPolicy tss.KeyShareDistributionPolicy
+	}{
+		Ctx:                        ctx,
+		SubsetSize:                 subsetSize,
+		KeyShareDistributionPolicy: keyShareDistributionPolicy,
+	}
+	mock.lockTakeSnapshot.Lock()
+	mock.calls.TakeSnapshot = append(mock.calls.TakeSnapshot, callInfo)
+	mock.lockTakeSnapshot.Unlock()
+	return mock.TakeSnapshotFunc(ctx, subsetSize, keyShareDistributionPolicy)
+}
+
+// TakeSnapshotCalls gets all the calls that were made to TakeSnapshot.
+// Check the length with:
+//     len(mockedSnapshotter.TakeSnapshotCalls())
+func (mock *SnapshotterMock) TakeSnapshotCalls() []struct {
+	Ctx                        github_com_cosmos_cosmos_sdk_types.Context
+	SubsetSize                 int64
+	KeyShareDistributionPolicy tss.KeyShareDistributionPolicy
+} {
+	var calls []struct {
+		Ctx                        github_com_cosmos_cosmos_sdk_types.Context
+		SubsetSize                 int64
+		KeyShareDistributionPolicy tss.KeyShareDistributionPolicy
+	}
+	mock.lockTakeSnapshot.RLock()
+	calls = mock.calls.TakeSnapshot
+	mock.lockTakeSnapshot.RUnlock()
 	return calls
 }
 
