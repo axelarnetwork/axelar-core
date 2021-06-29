@@ -77,8 +77,9 @@ type ReqLink struct {
 
 // ReqConfirmChain represents a request to confirm a token deployment
 type ReqConfirmChain struct {
-	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
-	Chain   string       `json:"chain" yaml:"chain"`
+	BaseReq             rest.BaseReq `json:"base_req" yaml:"base_req"`
+	Chain               string       `json:"chain" yaml:"chain"`
+	RevoteLockingPeriod int64        `json:"revote_locking_period" yaml:"revote_locking_period"`
 }
 
 // ReqConfirmTokenDeploy represents a request to confirm a token deployment
@@ -217,7 +218,7 @@ func GetHandlerConfirmChain(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewConfirmChainRequest(fromAddr, req.Chain)
+		msg := types.NewConfirmChainRequest(fromAddr, req.Chain, req.RevoteLockingPeriod)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

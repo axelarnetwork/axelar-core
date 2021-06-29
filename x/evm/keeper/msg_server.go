@@ -15,7 +15,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	gogoprototypes "github.com/gogo/protobuf/types"
 
-	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -182,25 +181,17 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 		return &types.ConfirmChainResponse{}, fmt.Errorf("'%s' has not been added yet", req.Name)
 	}
 
-	//TODO: Do we need an EVM-wide key, or can we assume Ethereum's for this specific case?
-	keyID, ok := s.signer.GetCurrentKeyID(ctx, exported.Ethereum, tss.MasterKey)
-	if !ok {
-		return nil, fmt.Errorf("no master key for chain %s found", exported.Ethereum.Name)
-	}
-
-	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
-	if !ok {
-		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
-	}
-
-	//TODO: Can we assume Ethereum for this specific case or do we need something else?
-	period, ok := s.EVMKeeper.GetRevoteLockingPeriod(ctx, exported.Ethereum.Name)
-	if !ok {
-		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", exported.Ethereum.Name)
+	counter := s.snapshotter.GetLatestCounter(ctx)
+	if counter < 0 {
+		_, _, err := s.snapshotter.TakeSnapshot(ctx, 0, tss.Unspecified)
+		if err != nil {
+			return nil, fmt.Errorf("unable to take snapshot: %v", err)
+		}
+		counter = s.snapshotter.GetLatestCounter(ctx)
 	}
 
 	poll := vote.NewPollMeta(types.ModuleName, req.Name)
-	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+period); err != nil {
+	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+req.RevoteLockingPeriod); err != nil {
 		return nil, err
 	}
 
@@ -928,9 +919,9 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 		return nil, fmt.Errorf("unkown key %s", req.KeyID)
 	}
 
-	next, nextAssigned := s.signer.GetNextKey(ctx, exported.Ethereum, tss.MasterKey)
+	next, nextAssigned := s.signer.GetNextKey(ctx, chain, tss.MasterKey)
 	if nextAssigned {
-		return nil, fmt.Errorf("key %s already assigned as the next %s key for chain %s", next.ID, tss.MasterKey.SimpleString(), exported.Ethereum.Name)
+		return nil, fmt.Errorf("key %s already assigned as the next %s key for chain %s", next.ID, tss.MasterKey.SimpleString(), chain.Name)
 	}
 	newOwner := crypto.PubkeyToAddress(key.Value)
 

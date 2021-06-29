@@ -340,7 +340,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 		k      *evmMock.EVMKeeperMock
 		v      *evmMock.VoterMock
 		n      *evmMock.NexusMock
-		s      *evmMock.SignerMock
+		s      *evmMock.SnapshotterMock
 		msg    *types.ConfirmChainRequest
 		server types.MsgServiceServer
 	)
@@ -364,12 +364,10 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 			},
 			IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return false },
 		}
-		s = &mock.SignerMock{
-			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
-				return rand.StrBetween(5, 20), true
-			},
-			GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
-				return rand.PosI64(), true
+		s = &mock.SnapshotterMock{
+			GetLatestCounterFunc: func(sdk.Context) int64 {
+				return rand.I64Between(50, 100)
+
 			},
 		}
 
@@ -378,12 +376,34 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 			Name:   rand.StrBetween(5, 20),
 		}
 
-		server = keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{})
+		server = keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, &mock.SignerMock{}, v, s)
 	}
 
 	repeats := 20
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
+
+		_, err := server.ConfirmChain(sdk.WrapSDKContext(ctx), msg)
+
+		assert.NoError(t, err)
+		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeChainConfirmation }), 1)
+		assert.Equal(t, 1, len(v.InitPollCalls()))
+	}).Repeat(repeats))
+
+	t.Run("happy path with no snapshot", testutils.Func(func(t *testing.T) {
+		setup()
+
+		s = &mock.SnapshotterMock{
+			GetLatestCounterFunc: func(sdk.Context) int64 {
+				if len(s.TakeSnapshotCalls()) > 0 {
+					return rand.I64Between(50, 100)
+				}
+				return -1
+			},
+			TakeSnapshotFunc: func(sdk.Context, int64, tss.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error) {
+				return sdk.NewInt(rand.I64Between(10000, 100000)), sdk.NewInt(rand.I64Between(10000, 100000)), nil
+			},
+		}
 
 		_, err := server.ConfirmChain(sdk.WrapSDKContext(ctx), msg)
 
@@ -413,24 +433,6 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
 		setup()
 		v.InitPollFunc = func(sdk.Context, vote.PollMeta, int64, int64) error { return fmt.Errorf("poll setup failed") }
-
-		_, err := server.ConfirmChain(sdk.WrapSDKContext(ctx), msg)
-
-		assert.Error(t, err)
-	}).Repeat(repeats))
-
-	t.Run("no key", testutils.Func(func(t *testing.T) {
-		setup()
-		s.GetCurrentKeyIDFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (string, bool) { return "", false }
-
-		_, err := server.ConfirmChain(sdk.WrapSDKContext(ctx), msg)
-
-		assert.Error(t, err)
-	}).Repeat(repeats))
-
-	t.Run("no snapshot counter", testutils.Func(func(t *testing.T) {
-		setup()
-		s.GetSnapshotCounterForKeyIDFunc = func(sdk.Context, string) (int64, bool) { return 0, false }
 
 		_, err := server.ConfirmChain(sdk.WrapSDKContext(ctx), msg)
 

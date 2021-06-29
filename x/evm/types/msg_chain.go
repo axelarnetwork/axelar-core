@@ -8,10 +8,11 @@ import (
 )
 
 // NewConfirmChainRequest creates a message of type ConfirmTokenRequest
-func NewConfirmChainRequest(sender sdk.AccAddress, name string) *ConfirmChainRequest {
+func NewConfirmChainRequest(sender sdk.AccAddress, name string, lockingPeriod int64) *ConfirmChainRequest {
 	return &ConfirmChainRequest{
-		Sender: sender,
-		Name:   name,
+		Sender:              sender,
+		Name:                name,
+		RevoteLockingPeriod: lockingPeriod,
 	}
 }
 
@@ -32,6 +33,9 @@ func (m ConfirmChainRequest) ValidateBasic() error {
 	}
 	if m.Name == "" {
 		return fmt.Errorf("missing chain")
+	}
+	if m.RevoteLockingPeriod <= 0 {
+		return fmt.Errorf("revote locking period must be greater than zero")
 	}
 
 	return nil
