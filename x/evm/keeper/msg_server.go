@@ -184,7 +184,7 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 
 	counter := s.snapshotter.GetLatestCounter(ctx)
 	if counter < 0 {
-		_, _, err := s.snapshotter.TakeSnapshot(ctx, 0, tss.Unspecified)
+		_, _, err := s.snapshotter.TakeSnapshot(ctx, 0, tss.WeightedByStake)
 		if err != nil {
 			return nil, fmt.Errorf("unable to take snapshot: %v", err)
 		}
