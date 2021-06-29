@@ -132,11 +132,11 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 	assignedKeyID, hasNextKeyAssigned := s.TSSKeeper.GetNextKeyID(ctx, chain, req.KeyRole)
 
 	switch {
-	case hasActiveKey && keyReqs.NeedsAssignment && !hasNextKeyAssigned:
+	case hasActiveKey && keyReq.NeedsAssignment && !hasNextKeyAssigned:
 		return nil, fmt.Errorf("no key assigned for rotation yet")
-	case hasActiveKey && keyReqs.NeedsAssignment && assignedKeyID != req.KeyID:
+	case hasActiveKey && keyReq.NeedsAssignment && assignedKeyID != req.KeyID:
 		return nil, fmt.Errorf("expected rotation to key ID %s, got key ID %s", assignedKeyID, req.KeyID)
-	case !hasActiveKey || !keyReqs.NeedsAssignment:
+	case !hasActiveKey || !keyReq.NeedsAssignment:
 		if err := s.TSSKeeper.AssignNextKey(ctx, chain, req.KeyRole, req.KeyID); err != nil {
 			return nil, err
 		}

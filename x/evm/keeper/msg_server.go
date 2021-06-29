@@ -940,7 +940,7 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 		return nil, fmt.Errorf("no snapshot found for key %s", key.ID)
 	}
 
-	if err := s.signer.MatchesRequirements(ctx, snap, exported.Ethereum, key.ID, tss.MasterKey); err != nil {
+	if err := s.signer.AssertMatchesRequirements(ctx, snap, exported.Ethereum, key.ID, tss.MasterKey); err != nil {
 		return nil, sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", key.ID, tss.MasterKey.SimpleString())
 	}
 

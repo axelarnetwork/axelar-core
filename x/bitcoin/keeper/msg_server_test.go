@@ -626,7 +626,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 				return rand.PosI64(), true
 			},
 			StartSignFunc: func(sdk.Context, types.InitPoller, string, string, []byte, snapshot.Snapshot) error { return nil },
-			MatchesRequirementsFunc: func(sdk.Context, snapshot.Snapshot, nexus.Chain, string, tss.KeyRole) error {
+			AssertMatchesRequirementsFunc: func(sdk.Context, snapshot.Snapshot, nexus.Chain, string, tss.KeyRole) error {
 				return nil
 			},
 		}

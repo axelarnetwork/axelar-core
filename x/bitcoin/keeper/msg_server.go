@@ -282,7 +282,7 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 	}
 
 	if current.ID != consolidationKey.ID {
-		if err := s.signer.MatchesRequirements(ctx, snapshot, exported.Bitcoin, consolidationKey.ID, tss.MasterKey); err != nil {
+		if err := s.signer.AssertMatchesRequirements(ctx, snapshot, exported.Bitcoin, consolidationKey.ID, tss.MasterKey); err != nil {
 			return nil, sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", consolidationKey.ID, tss.MasterKey.SimpleString())
 		}
 	}

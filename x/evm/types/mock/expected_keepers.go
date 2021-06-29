@@ -292,6 +292,9 @@ var _ types.Signer = &SignerMock{}
 //
 // 		// make and configure a mocked types.Signer
 // 		mockedSigner := &SignerMock{
+// 			AssertMatchesRequirementsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotMoqParam snapshot.Snapshot, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error {
+// 				panic("mock out the AssertMatchesRequirements method")
+// 			},
 // 			AssignNextKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error {
 // 				panic("mock out the AssignNextKey method")
 // 			},
@@ -316,9 +319,6 @@ var _ types.Signer = &SignerMock{}
 // 			GetSnapshotCounterForKeyIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) (int64, bool) {
 // 				panic("mock out the GetSnapshotCounterForKeyID method")
 // 			},
-// 			MatchesRequirementsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotMoqParam snapshot.Snapshot, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error {
-// 				panic("mock out the MatchesRequirements method")
-// 			},
 // 			StartSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, initPoll interface{InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
 // 				panic("mock out the StartSign method")
 // 			},
@@ -329,6 +329,9 @@ var _ types.Signer = &SignerMock{}
 //
 // 	}
 type SignerMock struct {
+	// AssertMatchesRequirementsFunc mocks the AssertMatchesRequirements method.
+	AssertMatchesRequirementsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotMoqParam snapshot.Snapshot, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error
+
 	// AssignNextKeyFunc mocks the AssignNextKey method.
 	AssignNextKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error
 
@@ -353,9 +356,6 @@ type SignerMock struct {
 	// GetSnapshotCounterForKeyIDFunc mocks the GetSnapshotCounterForKeyID method.
 	GetSnapshotCounterForKeyIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) (int64, bool)
 
-	// MatchesRequirementsFunc mocks the MatchesRequirements method.
-	MatchesRequirementsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotMoqParam snapshot.Snapshot, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error
-
 	// StartSignFunc mocks the StartSign method.
 	StartSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, initPoll interface {
 		InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error
@@ -363,6 +363,19 @@ type SignerMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// AssertMatchesRequirements holds details about calls to the AssertMatchesRequirements method.
+		AssertMatchesRequirements []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// SnapshotMoqParam is the snapshotMoqParam argument value.
+			SnapshotMoqParam snapshot.Snapshot
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+			// KeyID is the keyID argument value.
+			KeyID string
+			// KeyRole is the keyRole argument value.
+			KeyRole tss.KeyRole
+		}
 		// AssignNextKey holds details about calls to the AssignNextKey method.
 		AssignNextKey []struct {
 			// Ctx is the ctx argument value.
@@ -429,19 +442,6 @@ type SignerMock struct {
 			// KeyID is the keyID argument value.
 			KeyID string
 		}
-		// MatchesRequirements holds details about calls to the MatchesRequirements method.
-		MatchesRequirements []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// SnapshotMoqParam is the snapshotMoqParam argument value.
-			SnapshotMoqParam snapshot.Snapshot
-			// Chain is the chain argument value.
-			Chain nexus.Chain
-			// KeyID is the keyID argument value.
-			KeyID string
-			// KeyRole is the keyRole argument value.
-			KeyRole tss.KeyRole
-		}
 		// StartSign holds details about calls to the StartSign method.
 		StartSign []struct {
 			// Ctx is the ctx argument value.
@@ -460,6 +460,7 @@ type SignerMock struct {
 			SnapshotMoqParam snapshot.Snapshot
 		}
 	}
+	lockAssertMatchesRequirements  sync.RWMutex
 	lockAssignNextKey              sync.RWMutex
 	lockGetCurrentKey              sync.RWMutex
 	lockGetCurrentKeyID            sync.RWMutex
@@ -468,8 +469,54 @@ type SignerMock struct {
 	lockGetNextKey                 sync.RWMutex
 	lockGetSig                     sync.RWMutex
 	lockGetSnapshotCounterForKeyID sync.RWMutex
-	lockMatchesRequirements        sync.RWMutex
 	lockStartSign                  sync.RWMutex
+}
+
+// AssertMatchesRequirements calls AssertMatchesRequirementsFunc.
+func (mock *SignerMock) AssertMatchesRequirements(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotMoqParam snapshot.Snapshot, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error {
+	if mock.AssertMatchesRequirementsFunc == nil {
+		panic("SignerMock.AssertMatchesRequirementsFunc: method is nil but Signer.AssertMatchesRequirements was just called")
+	}
+	callInfo := struct {
+		Ctx              github_com_cosmos_cosmos_sdk_types.Context
+		SnapshotMoqParam snapshot.Snapshot
+		Chain            nexus.Chain
+		KeyID            string
+		KeyRole          tss.KeyRole
+	}{
+		Ctx:              ctx,
+		SnapshotMoqParam: snapshotMoqParam,
+		Chain:            chain,
+		KeyID:            keyID,
+		KeyRole:          keyRole,
+	}
+	mock.lockAssertMatchesRequirements.Lock()
+	mock.calls.AssertMatchesRequirements = append(mock.calls.AssertMatchesRequirements, callInfo)
+	mock.lockAssertMatchesRequirements.Unlock()
+	return mock.AssertMatchesRequirementsFunc(ctx, snapshotMoqParam, chain, keyID, keyRole)
+}
+
+// AssertMatchesRequirementsCalls gets all the calls that were made to AssertMatchesRequirements.
+// Check the length with:
+//     len(mockedSigner.AssertMatchesRequirementsCalls())
+func (mock *SignerMock) AssertMatchesRequirementsCalls() []struct {
+	Ctx              github_com_cosmos_cosmos_sdk_types.Context
+	SnapshotMoqParam snapshot.Snapshot
+	Chain            nexus.Chain
+	KeyID            string
+	KeyRole          tss.KeyRole
+} {
+	var calls []struct {
+		Ctx              github_com_cosmos_cosmos_sdk_types.Context
+		SnapshotMoqParam snapshot.Snapshot
+		Chain            nexus.Chain
+		KeyID            string
+		KeyRole          tss.KeyRole
+	}
+	mock.lockAssertMatchesRequirements.RLock()
+	calls = mock.calls.AssertMatchesRequirements
+	mock.lockAssertMatchesRequirements.RUnlock()
+	return calls
 }
 
 // AssignNextKey calls AssignNextKeyFunc.
@@ -769,53 +816,6 @@ func (mock *SignerMock) GetSnapshotCounterForKeyIDCalls() []struct {
 	mock.lockGetSnapshotCounterForKeyID.RLock()
 	calls = mock.calls.GetSnapshotCounterForKeyID
 	mock.lockGetSnapshotCounterForKeyID.RUnlock()
-	return calls
-}
-
-// MatchesRequirements calls MatchesRequirementsFunc.
-func (mock *SignerMock) MatchesRequirements(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotMoqParam snapshot.Snapshot, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error {
-	if mock.MatchesRequirementsFunc == nil {
-		panic("SignerMock.MatchesRequirementsFunc: method is nil but Signer.MatchesRequirements was just called")
-	}
-	callInfo := struct {
-		Ctx              github_com_cosmos_cosmos_sdk_types.Context
-		SnapshotMoqParam snapshot.Snapshot
-		Chain            nexus.Chain
-		KeyID            string
-		KeyRole          tss.KeyRole
-	}{
-		Ctx:              ctx,
-		SnapshotMoqParam: snapshotMoqParam,
-		Chain:            chain,
-		KeyID:            keyID,
-		KeyRole:          keyRole,
-	}
-	mock.lockMatchesRequirements.Lock()
-	mock.calls.MatchesRequirements = append(mock.calls.MatchesRequirements, callInfo)
-	mock.lockMatchesRequirements.Unlock()
-	return mock.MatchesRequirementsFunc(ctx, snapshotMoqParam, chain, keyID, keyRole)
-}
-
-// MatchesRequirementsCalls gets all the calls that were made to MatchesRequirements.
-// Check the length with:
-//     len(mockedSigner.MatchesRequirementsCalls())
-func (mock *SignerMock) MatchesRequirementsCalls() []struct {
-	Ctx              github_com_cosmos_cosmos_sdk_types.Context
-	SnapshotMoqParam snapshot.Snapshot
-	Chain            nexus.Chain
-	KeyID            string
-	KeyRole          tss.KeyRole
-} {
-	var calls []struct {
-		Ctx              github_com_cosmos_cosmos_sdk_types.Context
-		SnapshotMoqParam snapshot.Snapshot
-		Chain            nexus.Chain
-		KeyID            string
-		KeyRole          tss.KeyRole
-	}
-	mock.lockMatchesRequirements.RLock()
-	calls = mock.calls.MatchesRequirements
-	mock.lockMatchesRequirements.RUnlock()
 	return calls
 }
 

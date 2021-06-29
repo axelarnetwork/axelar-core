@@ -37,7 +37,7 @@ type Keeper struct {
 	cdc      *codec.LegacyAmino
 }
 
-// MatchesRequirements checks if the properties of the given key match the requirements for the given role
+// AssertMatchesRequirements checks if the properties of the given key match the requirements for the given role
 func (k Keeper) AssertMatchesRequirements(ctx sdk.Context, snap snapshot.Snapshot, chain nexus.Chain, keyID string, keyRole exported.KeyRole) error {
 	counter, ok := k.GetSnapshotCounterForKeyID(ctx, keyID)
 	if !ok {
