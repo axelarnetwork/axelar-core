@@ -22,6 +22,7 @@ import (
 // query parameters
 const (
 	QueryParamFeeRate = "fee_rate"
+	QueryParamKeyID   = "key_id"
 )
 
 // QueryHandlerDepositAddress returns a handler to query a deposit address
@@ -84,6 +85,31 @@ func QueryHandlerMasterAddress(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryMasterAddress), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		if len(res) == 0 {
+			rest.PostProcessResponse(w, cliCtx, "")
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, string(res))
+	}
+}
+
+// QueryHandlerKeyConsolidationAddress  returns a handler to query the consolidation segwit address of any key
+func QueryHandlerKeyConsolidationAddress(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		keyID := r.URL.Query().Get(QueryParamKeyID)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryKeyConsolidationAddress), []byte(keyID))
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
