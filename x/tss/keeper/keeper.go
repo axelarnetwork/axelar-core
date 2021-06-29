@@ -48,6 +48,17 @@ func (k Keeper) AssertMatchesRequirements(ctx sdk.Context, snap snapshot.Snapsho
 		return fmt.Errorf("the given snapshot does not match the key %s", keyID)
 	}
 
+	currentKeyID, ok := k.GetCurrentKeyID(ctx, chain, keyRole)
+	if ok {
+		currentCounter, ok := k.GetSnapshotCounterForKeyID(ctx, currentKeyID)
+		if !ok {
+			return fmt.Errorf("no snapshot associated with the current %s key on chain %s", keyRole.SimpleString(), chain.Name)
+		}
+		if currentCounter >= counter {
+			return fmt.Errorf("choose a key that is newer than the current one for role %s on chain %s", keyRole.SimpleString(), chain.Name)
+		}
+	}
+
 	keyRequirement, found := k.GetKeyRequirement(ctx, chain, keyRole)
 	if !found {
 		return fmt.Errorf("%s key is not required for chain %s", keyRole.SimpleString(), chain.Name)
