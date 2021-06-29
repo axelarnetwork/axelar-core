@@ -16,9 +16,8 @@ import (
 
 // rest routes
 const (
-	TxMethodKeygenStart         = "start"
-	TxMethodMasterKeyAssignNext = "assign"
-	TxMethodMasterKeyRotate     = "rotate"
+	TxMethodKeygenStart     = "start"
+	TxMethodMasterKeyRotate = "rotate"
 )
 
 // ReqKeygenStart represents a key-gen request
@@ -27,13 +26,6 @@ type ReqKeygenStart struct {
 	NewKeyID                   string       `json:"key_id" yaml:"key_id"`
 	SubsetSize                 int64        `json:"validator_count" yaml:"validator_count"`
 	KeyShareDistributionPolicy string       `json:"key_share_distribution_policy" yaml:"key_share_distribution_policy"`
-}
-
-// ReqKeyAssignNext represents a request to assign a new key
-type ReqKeyAssignNext struct {
-	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
-	KeyID   string       `json:"key_id" yaml:"key_id"`
-	KeyRole string       `json:"key_role" yaml:"key_role"`
 }
 
 // ReqKeyRotate represents a request to rotate a key
@@ -48,7 +40,6 @@ type ReqKeyRotate struct {
 func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx := clientUtils.RegisterTxHandlerFn(r, types.RestRoute)
 	registerTx(GetHandlerKeygenStart(cliCtx), TxMethodKeygenStart)
-	registerTx(GetHandlerKeyAssignNext(cliCtx), TxMethodMasterKeyAssignNext, clientUtils.PathVarChain)
 	registerTx(GetHandlerKeyRotate(cliCtx), TxMethodMasterKeyRotate, clientUtils.PathVarChain)
 }
 
@@ -77,39 +68,6 @@ func GetHandlerKeygenStart(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		msg := types.NewStartKeygenRequest(sender, req.NewKeyID, req.SubsetSize, keyShareDistributionPolicy)
-		if err := msg.ValidateBasic(); err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
-	}
-}
-
-// GetHandlerKeyAssignNext returns the handler to assign a role to an existing key
-func GetHandlerKeyAssignNext(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReqKeyAssignNext
-		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
-			return
-		}
-		req.BaseReq = req.BaseReq.Sanitize()
-		if !req.BaseReq.ValidateBasic(w) {
-			return
-		}
-
-		sender, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
-		if !ok {
-			return
-		}
-
-		keyRole, err := exported.KeyRoleFromSimpleStr(req.KeyRole)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		msg := types.NewAssignKeyRequest(sender, mux.Vars(r)[clientUtils.PathVarChain], req.KeyID, keyRole)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

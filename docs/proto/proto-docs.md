@@ -147,8 +147,6 @@
     - [GenesisState](#tss.v1beta1.GenesisState)
   
 - [tss/v1beta1/tx.proto](#tss/v1beta1/tx.proto)
-    - [AssignKeyRequest](#tss.v1beta1.AssignKeyRequest)
-    - [AssignKeyResponse](#tss.v1beta1.AssignKeyResponse)
     - [ProcessKeygenTrafficRequest](#tss.v1beta1.ProcessKeygenTrafficRequest)
     - [ProcessKeygenTrafficResponse](#tss.v1beta1.ProcessKeygenTrafficResponse)
     - [ProcessSignTrafficRequest](#tss.v1beta1.ProcessSignTrafficRequest)
@@ -805,6 +803,7 @@ KeyRequirement defines requirements for keys
 | `key_role` | [KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
 | `min_validator_subset_size` | [int64](#int64) |  |  |
 | `key_share_distribution_policy` | [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
+| `needs_assignment` | [bool](#bool) |  |  |
 
 
 
@@ -1984,34 +1983,6 @@ Params is the parameter set for this module
 
 
 
-<a name="tss.v1beta1.AssignKeyRequest"></a>
-
-### AssignKeyRequest
-AssignKeyRequest represents a message to assign a new key
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `chain` | [string](#string) |  |  |
-| `key_id` | [string](#string) |  |  |
-| `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
-
-
-
-
-
-
-<a name="tss.v1beta1.AssignKeyResponse"></a>
-
-### AssignKeyResponse
-
-
-
-
-
-
-
 <a name="tss.v1beta1.ProcessKeygenTrafficRequest"></a>
 
 ### ProcessKeygenTrafficRequest
@@ -2207,7 +2178,6 @@ Msg defines the tss Msg service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `StartKeygen` | [StartKeygenRequest](#tss.v1beta1.StartKeygenRequest) | [StartKeygenResponse](#tss.v1beta1.StartKeygenResponse) |  | POST|/axelar/tss/startKeygen|
 | `ProcessKeygenTraffic` | [ProcessKeygenTrafficRequest](#tss.v1beta1.ProcessKeygenTrafficRequest) | [ProcessKeygenTrafficResponse](#tss.v1beta1.ProcessKeygenTrafficResponse) |  | ||
-| `AssignKey` | [AssignKeyRequest](#tss.v1beta1.AssignKeyRequest) | [AssignKeyResponse](#tss.v1beta1.AssignKeyResponse) |  | POST|/axelar/tss/assign/{chain}|
 | `RotateKey` | [RotateKeyRequest](#tss.v1beta1.RotateKeyRequest) | [RotateKeyResponse](#tss.v1beta1.RotateKeyResponse) |  | POST|/axelar/tss/assign/{chain}|
 | `VotePubKey` | [VotePubKeyRequest](#tss.v1beta1.VotePubKeyRequest) | [VotePubKeyResponse](#tss.v1beta1.VotePubKeyResponse) |  | ||
 | `ProcessSignTraffic` | [ProcessSignTrafficRequest](#tss.v1beta1.ProcessSignTrafficRequest) | [ProcessSignTrafficResponse](#tss.v1beta1.ProcessSignTrafficResponse) |  | ||

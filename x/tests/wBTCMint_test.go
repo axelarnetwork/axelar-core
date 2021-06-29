@@ -85,9 +85,6 @@ func Test_wBTC_mint(t *testing.T) {
 			assert.FailNow(t, "keygen", err)
 		}
 
-		assignMasterKeyResult := <-chain.Submit(types.NewAssignKeyRequest(randomSender(), c, masterKeyID, tss.MasterKey))
-		assert.NoError(t, assignMasterKeyResult.Error)
-
 		rotateMasterKeyResult := <-chain.Submit(types.NewRotateKeyRequest(randomSender(), c, tss.MasterKey, masterKeyID))
 		assert.NoError(t, rotateMasterKeyResult.Error)
 
@@ -100,9 +97,6 @@ func Test_wBTC_mint(t *testing.T) {
 			if err := waitFor(listeners.keygenDone, 1); err != nil {
 				assert.FailNow(t, "keygen", err)
 			}
-
-			assignSecondaryKeyResult := <-chain.Submit(types.NewAssignKeyRequest(randomSender(), c, secondaryKeyID, tss.SecondaryKey))
-			assert.NoError(t, assignSecondaryKeyResult.Error)
 
 			rotateSecondaryKeyResult := <-chain.Submit(types.NewRotateKeyRequest(randomSender(), c, tss.SecondaryKey, secondaryKeyID))
 			assert.NoError(t, rotateSecondaryKeyResult.Error)

@@ -11,6 +11,7 @@ message KeyRequirement {
   KeyRole key_role = 2;
   int64 min_validator_subset_size = 3;
   KeyShareDistributionPolicy key_share_distribution_policy = 4;
+  bool needs_assignment = 5;
 }
 
 enum KeyRole {

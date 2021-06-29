@@ -217,6 +217,25 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 			// if this is the consolidation outpoint it means the latest consolidation transaction is confirmed on Bitcoin
 			if wire.NewOutPoint(&txHash, vout).String() == pendingOutPointInfo.OutPoint {
 				s.DeleteSignedTx(ctx)
+				mk, ok := s.signer.GetCurrentKey(ctx, exported.Bitcoin, tss.MasterKey)
+				if !ok {
+					return nil, fmt.Errorf("master key not found")
+				}
+				nextMK, nextMKFound := s.signer.GetNextKey(ctx, exported.Bitcoin, tss.MasterKey)
+
+				switch {
+				// reason to land in this case: a consolidation transaction from key1 to key2 has been confirmed
+				// and now another outpoint is voted on with key1 consolidating to key3.
+				// Note this should only be possible if a validator willfully votes wrong,
+				// but we need to guard the blockchain state against it regardless
+				case addr.KeyID != mk.ID && nextMKFound && addr.KeyID != nextMK.ID:
+					return nil, fmt.Errorf("consolidation address is controlled by key %s, expected it to be key %s", addr.KeyID, nextMK.ID)
+				case addr.KeyID != mk.ID && !nextMKFound:
+					if err := s.signer.AssignNextKey(ctx, exported.Bitcoin, tss.MasterKey, addr.KeyID); err != nil {
+						return nil, err
+					}
+				}
+
 				return &types.VoteConfirmOutpointResponse{
 					Status: "confirmed consolidation transaction"}, nil
 			}
@@ -241,21 +260,35 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 		return nil, fmt.Errorf("previous consolidation transaction %s:%d must be confirmed first", tx.TxHash().String(), vout)
 	}
 
-	key, ok := s.signer.GetKey(ctx, req.KeyID)
+	consolidationKey, ok := s.signer.GetKey(ctx, req.KeyID)
 	if !ok {
 		return nil, fmt.Errorf("unkown key %s", req.KeyID)
 	}
-	if key.Role != tss.MasterKey {
-		return nil, fmt.Errorf("given key must have role %s instead of %s", tss.MasterKey.SimpleString(), key.Role.SimpleString())
-	}
+
 	current, ok := s.signer.GetCurrentKey(ctx, exported.Bitcoin, tss.MasterKey)
 	if !ok {
 		return nil, fmt.Errorf("current %s key is not set", tss.MasterKey.SimpleString())
 	}
 
 	next, nextAssigned := s.signer.GetNextKey(ctx, exported.Bitcoin, tss.MasterKey)
-	if current.ID != key.ID && nextAssigned && next.ID != key.ID {
-		return nil, fmt.Errorf("key %s already assigned as the next %s key for chain %s", next.ID, tss.MasterKey.SimpleString(), exported.Bitcoin.Name)
+	if nextAssigned {
+		return nil, fmt.Errorf("key %s is already assigned as the next %s key, rotate keys first", next.ID, tss.MasterKey.SimpleString())
+	}
+
+	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, consolidationKey.ID)
+	if !ok {
+		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", consolidationKey.ID)
+	}
+
+	snapshot, ok := s.snapshotter.GetSnapshot(ctx, counter)
+	if !ok {
+		return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
+	}
+
+	if current.ID != consolidationKey.ID {
+		if err := s.signer.AssertMatchesRequirements(ctx, snapshot, exported.Bitcoin, consolidationKey.ID, tss.MasterKey); err != nil {
+			return nil, sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", consolidationKey.ID, tss.MasterKey.SimpleString())
+		}
 	}
 
 	outputs, totalOut := prepareOutputs(ctx, s, s.nexus)
@@ -271,7 +304,7 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 		return nil, err
 	}
 
-	consolidationAddress := types.NewConsolidationAddress(key, s.GetNetwork(ctx))
+	consolidationAddress := types.NewConsolidationAddress(consolidationKey, s.GetNetwork(ctx))
 	txSizeUpperBound, err := estimateTxSizeWithZeroChange(ctx, s, consolidationAddress, inputs, append([]types.Output{anyoneCanSpendOutput}, outputs...))
 	if err != nil {
 		return nil, err

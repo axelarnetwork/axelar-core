@@ -292,6 +292,9 @@ var _ types.Signer = &SignerMock{}
 //
 // 		// make and configure a mocked types.Signer
 // 		mockedSigner := &SignerMock{
+// 			AssertMatchesRequirementsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotMoqParam snapshot.Snapshot, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error {
+// 				panic("mock out the AssertMatchesRequirements method")
+// 			},
 // 			AssignNextKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error {
 // 				panic("mock out the AssignNextKey method")
 // 			},
@@ -326,6 +329,9 @@ var _ types.Signer = &SignerMock{}
 //
 // 	}
 type SignerMock struct {
+	// AssertMatchesRequirementsFunc mocks the AssertMatchesRequirements method.
+	AssertMatchesRequirementsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotMoqParam snapshot.Snapshot, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error
+
 	// AssignNextKeyFunc mocks the AssignNextKey method.
 	AssignNextKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error
 
@@ -357,6 +363,19 @@ type SignerMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// AssertMatchesRequirements holds details about calls to the AssertMatchesRequirements method.
+		AssertMatchesRequirements []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// SnapshotMoqParam is the snapshotMoqParam argument value.
+			SnapshotMoqParam snapshot.Snapshot
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+			// KeyID is the keyID argument value.
+			KeyID string
+			// KeyRole is the keyRole argument value.
+			KeyRole tss.KeyRole
+		}
 		// AssignNextKey holds details about calls to the AssignNextKey method.
 		AssignNextKey []struct {
 			// Ctx is the ctx argument value.
@@ -441,6 +460,7 @@ type SignerMock struct {
 			SnapshotMoqParam snapshot.Snapshot
 		}
 	}
+	lockAssertMatchesRequirements  sync.RWMutex
 	lockAssignNextKey              sync.RWMutex
 	lockGetCurrentKey              sync.RWMutex
 	lockGetCurrentKeyID            sync.RWMutex
@@ -450,6 +470,53 @@ type SignerMock struct {
 	lockGetSig                     sync.RWMutex
 	lockGetSnapshotCounterForKeyID sync.RWMutex
 	lockStartSign                  sync.RWMutex
+}
+
+// AssertMatchesRequirements calls AssertMatchesRequirementsFunc.
+func (mock *SignerMock) AssertMatchesRequirements(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotMoqParam snapshot.Snapshot, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error {
+	if mock.AssertMatchesRequirementsFunc == nil {
+		panic("SignerMock.AssertMatchesRequirementsFunc: method is nil but Signer.AssertMatchesRequirements was just called")
+	}
+	callInfo := struct {
+		Ctx              github_com_cosmos_cosmos_sdk_types.Context
+		SnapshotMoqParam snapshot.Snapshot
+		Chain            nexus.Chain
+		KeyID            string
+		KeyRole          tss.KeyRole
+	}{
+		Ctx:              ctx,
+		SnapshotMoqParam: snapshotMoqParam,
+		Chain:            chain,
+		KeyID:            keyID,
+		KeyRole:          keyRole,
+	}
+	mock.lockAssertMatchesRequirements.Lock()
+	mock.calls.AssertMatchesRequirements = append(mock.calls.AssertMatchesRequirements, callInfo)
+	mock.lockAssertMatchesRequirements.Unlock()
+	return mock.AssertMatchesRequirementsFunc(ctx, snapshotMoqParam, chain, keyID, keyRole)
+}
+
+// AssertMatchesRequirementsCalls gets all the calls that were made to AssertMatchesRequirements.
+// Check the length with:
+//     len(mockedSigner.AssertMatchesRequirementsCalls())
+func (mock *SignerMock) AssertMatchesRequirementsCalls() []struct {
+	Ctx              github_com_cosmos_cosmos_sdk_types.Context
+	SnapshotMoqParam snapshot.Snapshot
+	Chain            nexus.Chain
+	KeyID            string
+	KeyRole          tss.KeyRole
+} {
+	var calls []struct {
+		Ctx              github_com_cosmos_cosmos_sdk_types.Context
+		SnapshotMoqParam snapshot.Snapshot
+		Chain            nexus.Chain
+		KeyID            string
+		KeyRole          tss.KeyRole
+	}
+	mock.lockAssertMatchesRequirements.RLock()
+	calls = mock.calls.AssertMatchesRequirements
+	mock.lockAssertMatchesRequirements.RUnlock()
+	return calls
 }
 
 // AssignNextKey calls AssignNextKeyFunc.
@@ -1483,6 +1550,9 @@ var _ types.EVMKeeper = &EVMKeeperMock{}
 //
 // 		// make and configure a mocked types.EVMKeeper
 // 		mockedEVMKeeper := &EVMKeeperMock{
+// 			ArchiveTransferOwnershipFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta)  {
+// 				panic("mock out the ArchiveTransferOwnership method")
+// 			},
 // 			DeleteDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, deposit types.ERC20Deposit)  {
 // 				panic("mock out the DeleteDeposit method")
 // 			},
@@ -1495,8 +1565,8 @@ var _ types.EVMKeeper = &EVMKeeperMock{}
 // 			DeletePendingTokenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta)  {
 // 				panic("mock out the DeletePendingToken method")
 // 			},
-// 			DeletePendingTransferOwnershipFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta)  {
-// 				panic("mock out the DeletePendingTransferOwnership method")
+// 			GetArchivedTransferOwnershipFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta) (types.TransferOwnership, bool) {
+// 				panic("mock out the GetArchivedTransferOwnership method")
 // 			},
 // 			GetBurnerAddressAndSaltFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error) {
 // 				panic("mock out the GetBurnerAddressAndSalt method")
@@ -1595,6 +1665,9 @@ var _ types.EVMKeeper = &EVMKeeperMock{}
 //
 // 	}
 type EVMKeeperMock struct {
+	// ArchiveTransferOwnershipFunc mocks the ArchiveTransferOwnership method.
+	ArchiveTransferOwnershipFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta)
+
 	// DeleteDepositFunc mocks the DeleteDeposit method.
 	DeleteDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, deposit types.ERC20Deposit)
 
@@ -1607,8 +1680,8 @@ type EVMKeeperMock struct {
 	// DeletePendingTokenFunc mocks the DeletePendingToken method.
 	DeletePendingTokenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta)
 
-	// DeletePendingTransferOwnershipFunc mocks the DeletePendingTransferOwnership method.
-	DeletePendingTransferOwnershipFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta)
+	// GetArchivedTransferOwnershipFunc mocks the GetArchivedTransferOwnership method.
+	GetArchivedTransferOwnershipFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta) (types.TransferOwnership, bool)
 
 	// GetBurnerAddressAndSaltFunc mocks the GetBurnerAddressAndSalt method.
 	GetBurnerAddressAndSaltFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error)
@@ -1702,6 +1775,15 @@ type EVMKeeperMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// ArchiveTransferOwnership holds details about calls to the ArchiveTransferOwnership method.
+		ArchiveTransferOwnership []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain string
+			// Poll is the poll argument value.
+			Poll exported.PollMeta
+		}
 		// DeleteDeposit holds details about calls to the DeleteDeposit method.
 		DeleteDeposit []struct {
 			// Ctx is the ctx argument value.
@@ -1736,8 +1818,8 @@ type EVMKeeperMock struct {
 			// Poll is the poll argument value.
 			Poll exported.PollMeta
 		}
-		// DeletePendingTransferOwnership holds details about calls to the DeletePendingTransferOwnership method.
-		DeletePendingTransferOwnership []struct {
+		// GetArchivedTransferOwnership holds details about calls to the GetArchivedTransferOwnership method.
+		GetArchivedTransferOwnership []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
@@ -2012,41 +2094,81 @@ type EVMKeeperMock struct {
 			Tx *ethTypes.Transaction
 		}
 	}
-	lockDeleteDeposit                  sync.RWMutex
-	lockDeletePendingChain             sync.RWMutex
-	lockDeletePendingDeposit           sync.RWMutex
-	lockDeletePendingToken             sync.RWMutex
-	lockDeletePendingTransferOwnership sync.RWMutex
-	lockGetBurnerAddressAndSalt        sync.RWMutex
-	lockGetBurnerInfo                  sync.RWMutex
-	lockGetChainIDByNetwork            sync.RWMutex
-	lockGetConfirmedDeposits           sync.RWMutex
-	lockGetDeposit                     sync.RWMutex
-	lockGetGatewayAddress              sync.RWMutex
-	lockGetGatewayByteCodes            sync.RWMutex
-	lockGetHashToSign                  sync.RWMutex
-	lockGetNetwork                     sync.RWMutex
-	lockGetNetworkByID                 sync.RWMutex
-	lockGetParams                      sync.RWMutex
-	lockGetPendingChain                sync.RWMutex
-	lockGetPendingDeposit              sync.RWMutex
-	lockGetPendingTokenDeployment      sync.RWMutex
-	lockGetPendingTransferOwnership    sync.RWMutex
-	lockGetRequiredConfirmationHeight  sync.RWMutex
-	lockGetRevoteLockingPeriod         sync.RWMutex
-	lockGetTokenAddress                sync.RWMutex
-	lockLogger                         sync.RWMutex
-	lockSetBurnerInfo                  sync.RWMutex
-	lockSetCommandData                 sync.RWMutex
-	lockSetDeposit                     sync.RWMutex
-	lockSetGatewayAddress              sync.RWMutex
-	lockSetParams                      sync.RWMutex
-	lockSetPendingChain                sync.RWMutex
-	lockSetPendingDeposit              sync.RWMutex
-	lockSetPendingTokenDeployment      sync.RWMutex
-	lockSetPendingTransferOwnership    sync.RWMutex
-	lockSetTokenInfo                   sync.RWMutex
-	lockSetUnsignedTx                  sync.RWMutex
+	lockArchiveTransferOwnership      sync.RWMutex
+	lockDeleteDeposit                 sync.RWMutex
+	lockDeletePendingChain            sync.RWMutex
+	lockDeletePendingDeposit          sync.RWMutex
+	lockDeletePendingToken            sync.RWMutex
+	lockGetArchivedTransferOwnership  sync.RWMutex
+	lockGetBurnerAddressAndSalt       sync.RWMutex
+	lockGetBurnerInfo                 sync.RWMutex
+	lockGetChainIDByNetwork           sync.RWMutex
+	lockGetConfirmedDeposits          sync.RWMutex
+	lockGetDeposit                    sync.RWMutex
+	lockGetGatewayAddress             sync.RWMutex
+	lockGetGatewayByteCodes           sync.RWMutex
+	lockGetHashToSign                 sync.RWMutex
+	lockGetNetwork                    sync.RWMutex
+	lockGetNetworkByID                sync.RWMutex
+	lockGetParams                     sync.RWMutex
+	lockGetPendingChain               sync.RWMutex
+	lockGetPendingDeposit             sync.RWMutex
+	lockGetPendingTokenDeployment     sync.RWMutex
+	lockGetPendingTransferOwnership   sync.RWMutex
+	lockGetRequiredConfirmationHeight sync.RWMutex
+	lockGetRevoteLockingPeriod        sync.RWMutex
+	lockGetTokenAddress               sync.RWMutex
+	lockLogger                        sync.RWMutex
+	lockSetBurnerInfo                 sync.RWMutex
+	lockSetCommandData                sync.RWMutex
+	lockSetDeposit                    sync.RWMutex
+	lockSetGatewayAddress             sync.RWMutex
+	lockSetParams                     sync.RWMutex
+	lockSetPendingChain               sync.RWMutex
+	lockSetPendingDeposit             sync.RWMutex
+	lockSetPendingTokenDeployment     sync.RWMutex
+	lockSetPendingTransferOwnership   sync.RWMutex
+	lockSetTokenInfo                  sync.RWMutex
+	lockSetUnsignedTx                 sync.RWMutex
+}
+
+// ArchiveTransferOwnership calls ArchiveTransferOwnershipFunc.
+func (mock *EVMKeeperMock) ArchiveTransferOwnership(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta) {
+	if mock.ArchiveTransferOwnershipFunc == nil {
+		panic("EVMKeeperMock.ArchiveTransferOwnershipFunc: method is nil but EVMKeeper.ArchiveTransferOwnership was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain string
+		Poll  exported.PollMeta
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+		Poll:  poll,
+	}
+	mock.lockArchiveTransferOwnership.Lock()
+	mock.calls.ArchiveTransferOwnership = append(mock.calls.ArchiveTransferOwnership, callInfo)
+	mock.lockArchiveTransferOwnership.Unlock()
+	mock.ArchiveTransferOwnershipFunc(ctx, chain, poll)
+}
+
+// ArchiveTransferOwnershipCalls gets all the calls that were made to ArchiveTransferOwnership.
+// Check the length with:
+//     len(mockedEVMKeeper.ArchiveTransferOwnershipCalls())
+func (mock *EVMKeeperMock) ArchiveTransferOwnershipCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain string
+	Poll  exported.PollMeta
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain string
+		Poll  exported.PollMeta
+	}
+	mock.lockArchiveTransferOwnership.RLock()
+	calls = mock.calls.ArchiveTransferOwnership
+	mock.lockArchiveTransferOwnership.RUnlock()
+	return calls
 }
 
 // DeleteDeposit calls DeleteDepositFunc.
@@ -2201,10 +2323,10 @@ func (mock *EVMKeeperMock) DeletePendingTokenCalls() []struct {
 	return calls
 }
 
-// DeletePendingTransferOwnership calls DeletePendingTransferOwnershipFunc.
-func (mock *EVMKeeperMock) DeletePendingTransferOwnership(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta) {
-	if mock.DeletePendingTransferOwnershipFunc == nil {
-		panic("EVMKeeperMock.DeletePendingTransferOwnershipFunc: method is nil but EVMKeeper.DeletePendingTransferOwnership was just called")
+// GetArchivedTransferOwnership calls GetArchivedTransferOwnershipFunc.
+func (mock *EVMKeeperMock) GetArchivedTransferOwnership(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string, poll exported.PollMeta) (types.TransferOwnership, bool) {
+	if mock.GetArchivedTransferOwnershipFunc == nil {
+		panic("EVMKeeperMock.GetArchivedTransferOwnershipFunc: method is nil but EVMKeeper.GetArchivedTransferOwnership was just called")
 	}
 	callInfo := struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
@@ -2215,16 +2337,16 @@ func (mock *EVMKeeperMock) DeletePendingTransferOwnership(ctx github_com_cosmos_
 		Chain: chain,
 		Poll:  poll,
 	}
-	mock.lockDeletePendingTransferOwnership.Lock()
-	mock.calls.DeletePendingTransferOwnership = append(mock.calls.DeletePendingTransferOwnership, callInfo)
-	mock.lockDeletePendingTransferOwnership.Unlock()
-	mock.DeletePendingTransferOwnershipFunc(ctx, chain, poll)
+	mock.lockGetArchivedTransferOwnership.Lock()
+	mock.calls.GetArchivedTransferOwnership = append(mock.calls.GetArchivedTransferOwnership, callInfo)
+	mock.lockGetArchivedTransferOwnership.Unlock()
+	return mock.GetArchivedTransferOwnershipFunc(ctx, chain, poll)
 }
 
-// DeletePendingTransferOwnershipCalls gets all the calls that were made to DeletePendingTransferOwnership.
+// GetArchivedTransferOwnershipCalls gets all the calls that were made to GetArchivedTransferOwnership.
 // Check the length with:
-//     len(mockedEVMKeeper.DeletePendingTransferOwnershipCalls())
-func (mock *EVMKeeperMock) DeletePendingTransferOwnershipCalls() []struct {
+//     len(mockedEVMKeeper.GetArchivedTransferOwnershipCalls())
+func (mock *EVMKeeperMock) GetArchivedTransferOwnershipCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	Chain string
 	Poll  exported.PollMeta
@@ -2234,9 +2356,9 @@ func (mock *EVMKeeperMock) DeletePendingTransferOwnershipCalls() []struct {
 		Chain string
 		Poll  exported.PollMeta
 	}
-	mock.lockDeletePendingTransferOwnership.RLock()
-	calls = mock.calls.DeletePendingTransferOwnership
-	mock.lockDeletePendingTransferOwnership.RUnlock()
+	mock.lockGetArchivedTransferOwnership.RLock()
+	calls = mock.calls.GetArchivedTransferOwnership
+	mock.lockGetArchivedTransferOwnership.RUnlock()
 	return calls
 }
 

@@ -26,14 +26,6 @@ service MsgService {
     };
   }
 
-  rpc AssignKey(tss.v1beta1.AssignKeyRequest)
-      returns (tss.v1beta1.AssignKeyResponse) {
-    option (google.api.http) = {
-      post : "/axelar/tss/assign/{chain}"
-      body : "*"
-    };
-  }
-
   rpc RotateKey(tss.v1beta1.RotateKeyRequest)
       returns (tss.v1beta1.RotateKeyResponse) {
     option (google.api.http) = {
