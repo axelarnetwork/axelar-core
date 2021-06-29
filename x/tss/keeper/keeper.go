@@ -38,7 +38,7 @@ type Keeper struct {
 }
 
 // MatchesRequirements checks if the properties of the given key match the requirements for the given role
-func (k Keeper) MatchesRequirements(ctx sdk.Context, snap snapshot.Snapshot, chain nexus.Chain, keyID string, keyRole exported.KeyRole) error {
+func (k Keeper) AssertMatchesRequirements(ctx sdk.Context, snap snapshot.Snapshot, chain nexus.Chain, keyID string, keyRole exported.KeyRole) error {
 	counter, ok := k.GetSnapshotCounterForKeyID(ctx, keyID)
 	if !ok {
 		return fmt.Errorf("could not find snapshot counter for given key ID")
