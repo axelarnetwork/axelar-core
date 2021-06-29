@@ -77,6 +77,8 @@ type Signer interface {
 	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool)
 	GetKey(ctx sdk.Context, keyID string) (tss.Key, bool)
+	AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error
+	AssertMatchesRequirements(ctx sdk.Context, snapshot snapshot.Snapshot, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error
 }
 
 // Nexus provides functionality to manage cross-chain transfers

@@ -11,6 +11,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	gogoprototypes "github.com/gogo/protobuf/types"
@@ -308,14 +309,14 @@ func (s msgServer) ConfirmTransferOwnership(c context.Context, req *types.Confir
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
+	currentKeyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
 	if !ok {
 		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
 	}
 
-	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
+	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, currentKeyID)
 	if !ok {
-		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
+		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", currentKeyID)
 	}
 
 	period, ok := s.EVMKeeper.GetRevoteLockingPeriod(ctx, chain.Name)
@@ -564,22 +565,16 @@ func (s msgServer) VoteConfirmTransferOwnership(c context.Context, req *types.Vo
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	pendingTransferOwnership, pollFound := s.GetPendingTransferOwnership(ctx, chain.Name, req.Poll)
-	_, hasNextKeyAssigned := s.signer.GetNextKey(ctx, chain, tss.MasterKey)
+	pendingTransferOwnership, pendingTransferFound := s.GetPendingTransferOwnership(ctx, chain.Name, req.Poll)
+	archivedTransferOwnership, archivedtransferFound := s.GetArchivedTransferOwnership(ctx, chain.Name, req.Poll)
 
 	switch {
-	// a malicious user could try to delete an ongoing poll by providing an already confirmed transfer ownership,
-	// so we need to check that it matches the poll before deleting
-	case pollFound && hasNextKeyAssigned:
-		s.voter.DeletePoll(ctx, req.Poll)
-		s.DeletePendingTransferOwnership(ctx, chain.Name, req.Poll)
-		fallthrough
-	// If the voting threshold has been met and additional votes are received they should not return an error
-	case hasNextKeyAssigned:
-		return &types.VoteConfirmTransferOwnershipResponse{Log: fmt.Sprintf("transfer ownership in %s to keyID %s already confirmed", pendingTransferOwnership.TxID.Hex(), pendingTransferOwnership.NextKeyID)}, nil
-	case !pollFound:
+	case !pendingTransferFound && !archivedtransferFound:
 		return nil, fmt.Errorf("no transfer ownership found for poll %s", req.Poll.String())
-	case pollFound:
+	// If the voting threshold has been met and additional votes are received they should not return an error
+	case archivedtransferFound:
+		return &types.VoteConfirmTransferOwnershipResponse{Log: fmt.Sprintf("transfer ownership in %s to keyID %s already confirmed", archivedTransferOwnership.TxID.Hex(), archivedTransferOwnership.NextKeyID)}, nil
+	case pendingTransferFound:
 		pk, ok := s.signer.GetKey(ctx, pendingTransferOwnership.NextKeyID)
 		if !ok {
 			return nil, fmt.Errorf("key %s cannot be found", pendingTransferOwnership.NextKeyID)
@@ -609,7 +604,7 @@ func (s msgServer) VoteConfirmTransferOwnership(c context.Context, req *types.Vo
 
 	s.Logger(ctx).Info(fmt.Sprintf("ethereum transfer ownership confirmation result is %s", result))
 	s.voter.DeletePoll(ctx, req.Poll)
-	s.DeletePendingTransferOwnership(ctx, chain.Name, req.Poll)
+	s.ArchiveTransferOwnership(ctx, chain.Name, req.Poll)
 
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeTransferOwnershipConfirmation,
@@ -627,6 +622,9 @@ func (s msgServer) VoteConfirmTransferOwnership(c context.Context, req *types.Vo
 	ctx.EventManager().EmitEvent(
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
+	if err := s.signer.AssignNextKey(ctx, exported.Ethereum, tss.MasterKey, pendingTransferOwnership.NextKeyID); err != nil {
+		return nil, err
+	}
 	return &types.VoteConfirmTransferOwnershipResponse{}, nil
 }
 
@@ -932,6 +930,20 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 	if nextAssigned {
 		return nil, fmt.Errorf("key %s already assigned as the next %s key for chain %s", next.ID, tss.MasterKey.SimpleString(), exported.Ethereum.Name)
 	}
+
+	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, key.ID)
+	if !ok {
+		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", key.ID)
+	}
+	snap, ok := s.snapshotter.GetSnapshot(ctx, counter)
+	if !ok {
+		return nil, fmt.Errorf("no snapshot found for key %s", key.ID)
+	}
+
+	if err := s.signer.AssertMatchesRequirements(ctx, snap, exported.Ethereum, key.ID, tss.MasterKey); err != nil {
+		return nil, sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", key.ID, tss.MasterKey.SimpleString())
+	}
+
 	newOwner := crypto.PubkeyToAddress(key.Value)
 
 	commandID := getCommandID(newOwner.Bytes(), chainID)
@@ -952,7 +964,7 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 
 	signHash := types.GetEthereumSignHash(data)
 
-	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
+	counter, ok = s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
 	if !ok {
 		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
 	}

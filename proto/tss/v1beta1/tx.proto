@@ -10,17 +10,6 @@ import "vote/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
-// AssignKeyRequest represents a message to assign a new key
-message AssignKeyRequest {
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string chain = 2;
-  string key_id = 3 [ (gogoproto.customname) = "KeyID" ];
-  tss.exported.v1beta1.KeyRole key_role = 4;
-}
-
-message AssignKeyResponse {}
-
 // StartKeygenRequest indicate the start of keygen
 message StartKeygenRequest {
   string sender = 1 [ (gogoproto.casttype) =

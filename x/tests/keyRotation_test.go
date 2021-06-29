@@ -87,9 +87,6 @@ func TestBitcoinKeyRotation(t *testing.T) {
 			assert.FailNow(t, "keygen", err)
 		}
 
-		assignMasterKeyResult := <-chain.Submit(types2.NewAssignKeyRequest(randomSender(), c, masterKeyID, tss.MasterKey))
-		assert.NoError(t, assignMasterKeyResult.Error)
-
 		rotateMasterKeyResult := <-chain.Submit(types2.NewRotateKeyRequest(randomSender(), c, tss.MasterKey, masterKeyID))
 		assert.NoError(t, rotateMasterKeyResult.Error)
 
@@ -102,9 +99,6 @@ func TestBitcoinKeyRotation(t *testing.T) {
 			if err := waitFor(listeners.keygenDone, 1); err != nil {
 				assert.FailNow(t, "keygen", err)
 			}
-
-			assignSecondaryKeyResult := <-chain.Submit(types2.NewAssignKeyRequest(randomSender(), c, secondaryKeyID, tss.SecondaryKey))
-			assert.NoError(t, assignSecondaryKeyResult.Error)
 
 			rotateSecondaryKeyResult := <-chain.Submit(types2.NewRotateKeyRequest(randomSender(), c, tss.SecondaryKey, secondaryKeyID))
 			assert.NoError(t, rotateSecondaryKeyResult.Error)
@@ -266,10 +260,6 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	if err := waitFor(listeners.keygenDone, 1); err != nil {
 		assert.FailNow(t, "keygen", err)
 	}
-
-	// assign second key to be the new master key
-	assignKeyResult := <-chain.Submit(types2.NewAssignKeyRequest(randomSender(), btc.Bitcoin.Name, masterKeyID2, tss.MasterKey))
-	assert.NoError(t, assignKeyResult.Error)
 
 	// sign the consolidation transaction
 	signResult := <-chain.Submit(btcTypes.NewSignPendingTransfersRequest(randomSender(), masterKeyID2))
