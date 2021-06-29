@@ -24,8 +24,9 @@ func TestMsgServer_RotateKey(t *testing.T) {
 	)
 	setup := func() {
 		tssKeeper = &mock.TSSKeeperMock{
-			RotateKeyFunc: func(sdk.Context, nexus.Chain, exported.KeyRole) error { return nil },
-			LoggerFunc:    func(ctx sdk.Context) log.Logger { return ctx.Logger() },
+			RotateKeyFunc:     func(sdk.Context, nexus.Chain, exported.KeyRole) error { return nil },
+			LoggerFunc:        func(ctx sdk.Context) log.Logger { return ctx.Logger() },
+			AssignNextKeyFunc: func(sdk.Context, nexus.Chain, exported.KeyRole, string) error { return nil },
 		}
 		snapshotter := &mock.SnapshotterMock{}
 		staker := &mock.StakingKeeperMock{}
@@ -47,6 +48,9 @@ func TestMsgServer_RotateKey(t *testing.T) {
 		setup()
 		tssKeeper.GetCurrentKeyIDFunc = func(sdk.Context, nexus.Chain, exported.KeyRole) (string, bool) { return "", false }
 		tssKeeper.GetNextKeyIDFunc = func(sdk.Context, nexus.Chain, exported.KeyRole) (string, bool) { return "", false }
+		tssKeeper.GetKeyRequirementFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyRequirement, bool) {
+			return exported.KeyRequirement{NeedsAssignment: rand.Bools(0.5).Next()}, true
+		}
 
 		_, err := server.RotateKey(sdk.WrapSDKContext(ctx), &types.RotateKeyRequest{
 			Sender:  rand.Bytes(sdk.AddrLen),
@@ -64,6 +68,9 @@ func TestMsgServer_RotateKey(t *testing.T) {
 		keyID := rand.StrBetween(5, 20)
 		tssKeeper.GetCurrentKeyIDFunc = func(sdk.Context, nexus.Chain, exported.KeyRole) (string, bool) { return rand.StrBetween(5, 20), true }
 		tssKeeper.GetNextKeyIDFunc = func(sdk.Context, nexus.Chain, exported.KeyRole) (string, bool) { return keyID, true }
+		tssKeeper.GetKeyRequirementFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyRequirement, bool) {
+			return exported.KeyRequirement{NeedsAssignment: true}, true
+		}
 
 		_, err := server.RotateKey(sdk.WrapSDKContext(ctx), &types.RotateKeyRequest{
 			Sender:  rand.Bytes(sdk.AddrLen),
@@ -80,6 +87,9 @@ func TestMsgServer_RotateKey(t *testing.T) {
 		setup()
 		tssKeeper.GetCurrentKeyIDFunc = func(sdk.Context, nexus.Chain, exported.KeyRole) (string, bool) { return rand.StrBetween(5, 20), true }
 		tssKeeper.GetNextKeyIDFunc = func(sdk.Context, nexus.Chain, exported.KeyRole) (string, bool) { return rand.StrBetween(5, 20), true }
+		tssKeeper.GetKeyRequirementFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyRequirement, bool) {
+			return exported.KeyRequirement{NeedsAssignment: true}, true
+		}
 
 		_, err := server.RotateKey(sdk.WrapSDKContext(ctx), &types.RotateKeyRequest{
 			Sender:  rand.Bytes(sdk.AddrLen),
@@ -95,6 +105,9 @@ func TestMsgServer_RotateKey(t *testing.T) {
 		setup()
 		tssKeeper.GetCurrentKeyIDFunc = func(sdk.Context, nexus.Chain, exported.KeyRole) (string, bool) { return rand.StrBetween(5, 20), true }
 		tssKeeper.GetNextKeyIDFunc = func(sdk.Context, nexus.Chain, exported.KeyRole) (string, bool) { return "", false }
+		tssKeeper.GetKeyRequirementFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyRequirement, bool) {
+			return exported.KeyRequirement{NeedsAssignment: true}, true
+		}
 
 		_, err := server.RotateKey(sdk.WrapSDKContext(ctx), &types.RotateKeyRequest{
 			Sender:  rand.Bytes(sdk.AddrLen),

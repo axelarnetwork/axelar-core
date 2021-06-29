@@ -250,10 +250,15 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		nexusKeeper = &mock.NexusMock{
 			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) error { return nil },
 		}
-		privateKey, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
-		masterKey := tss.Key{ID: rand.StrBetween(5, 20), Value: privateKey.PublicKey, Role: tss.MasterKey}
+		// privateKey1, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
+		// nextMasterKey := tss.Key{ID: rand.StrBetween(5, 20), Value: privateKey1.PublicKey, Role: tss.MasterKey}
+
+		privateKey2, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
+		currentMasterKey := tss.Key{ID: rand.StrBetween(5, 20), Value: privateKey2.PublicKey, Role: tss.MasterKey}
 		signerKeeper := &mock.SignerMock{
-			GetNextKeyFunc: func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) { return masterKey, false },
+			GetNextKeyFunc:    func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) { return tss.Key{}, false },
+			GetCurrentKeyFunc: func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) { return currentMasterKey, true },
+			AssignNextKeyFunc: func(sdk.Context, nexus.Chain, tss.KeyRole, string) error { return nil },
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		server = NewMsgServerImpl(btcKeeper, signerKeeper, nexusKeeper, voter, &mock.SnapshotterMock{})
@@ -620,7 +625,10 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 			GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
 				return rand.PosI64(), true
 			},
-			StartSignFunc:   func(sdk.Context, types.InitPoller, string, string, []byte, snapshot.Snapshot) error { return nil },
+			StartSignFunc: func(sdk.Context, types.InitPoller, string, string, []byte, snapshot.Snapshot) error { return nil },
+			MatchesRequirementsFunc: func(sdk.Context, snapshot.Snapshot, nexus.Chain, string, tss.KeyRole) error {
+				return nil
+			},
 		}
 		snapshotter = &mock.SnapshotterMock{
 			GetSnapshotFunc: func(_ sdk.Context, counter int64) (snapshot.Snapshot, bool) {
@@ -655,7 +663,21 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 
 	t.Run("happy path consolidation to next master key", testutils.Func(func(t *testing.T) {
 		setup()
-		signer.GetNextKeyFunc = signer.GetCurrentKeyFunc
+		nextMKID := rand.StrBetween(5, 20)
+		msg = types.NewSignPendingTransfersRequest(rand.Bytes(sdk.AddrLen), nextMKID)
+		prevGetKey := signer.GetKeyFunc
+		pk, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
+		signer.GetKeyFunc = func(ctx sdk.Context, keyID string) (tss.Key, bool) {
+			key, ok := prevGetKey(ctx, keyID)
+			if !ok {
+				return tss.Key{
+					ID:    keyID,
+					Value: pk.PublicKey,
+					Role:  tss.Unknown,
+				}, true
+			}
+			return key, ok
+		}
 
 		_, err := server.SignPendingTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)

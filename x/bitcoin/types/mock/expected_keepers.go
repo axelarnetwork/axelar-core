@@ -220,6 +220,9 @@ var _ types.Signer = &SignerMock{}
 //
 // 		// make and configure a mocked types.Signer
 // 		mockedSigner := &SignerMock{
+// 			AssignNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error {
+// 				panic("mock out the AssignNextKey method")
+// 			},
 // 			GetCurrentKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
 // 				panic("mock out the GetCurrentKey method")
 // 			},
@@ -238,6 +241,9 @@ var _ types.Signer = &SignerMock{}
 // 			GetSnapshotCounterForKeyIDFunc: func(ctx sdk.Context, keyID string) (int64, bool) {
 // 				panic("mock out the GetSnapshotCounterForKeyID method")
 // 			},
+// 			MatchesRequirementsFunc: func(ctx sdk.Context, snapshotMoqParam snapshot.Snapshot, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error {
+// 				panic("mock out the MatchesRequirements method")
+// 			},
 // 			StartSignFunc: func(ctx sdk.Context, initPoll interface{InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
 // 				panic("mock out the StartSign method")
 // 			},
@@ -248,6 +254,9 @@ var _ types.Signer = &SignerMock{}
 //
 // 	}
 type SignerMock struct {
+	// AssignNextKeyFunc mocks the AssignNextKey method.
+	AssignNextKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error
+
 	// GetCurrentKeyFunc mocks the GetCurrentKey method.
 	GetCurrentKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 
@@ -266,6 +275,9 @@ type SignerMock struct {
 	// GetSnapshotCounterForKeyIDFunc mocks the GetSnapshotCounterForKeyID method.
 	GetSnapshotCounterForKeyIDFunc func(ctx sdk.Context, keyID string) (int64, bool)
 
+	// MatchesRequirementsFunc mocks the MatchesRequirements method.
+	MatchesRequirementsFunc func(ctx sdk.Context, snapshotMoqParam snapshot.Snapshot, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error
+
 	// StartSignFunc mocks the StartSign method.
 	StartSignFunc func(ctx sdk.Context, initPoll interface {
 		InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error
@@ -273,6 +285,17 @@ type SignerMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// AssignNextKey holds details about calls to the AssignNextKey method.
+		AssignNextKey []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+			// KeyRole is the keyRole argument value.
+			KeyRole tss.KeyRole
+			// KeyID is the keyID argument value.
+			KeyID string
+		}
 		// GetCurrentKey holds details about calls to the GetCurrentKey method.
 		GetCurrentKey []struct {
 			// Ctx is the ctx argument value.
@@ -321,6 +344,19 @@ type SignerMock struct {
 			// KeyID is the keyID argument value.
 			KeyID string
 		}
+		// MatchesRequirements holds details about calls to the MatchesRequirements method.
+		MatchesRequirements []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// SnapshotMoqParam is the snapshotMoqParam argument value.
+			SnapshotMoqParam snapshot.Snapshot
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+			// KeyID is the keyID argument value.
+			KeyID string
+			// KeyRole is the keyRole argument value.
+			KeyRole tss.KeyRole
+		}
 		// StartSign holds details about calls to the StartSign method.
 		StartSign []struct {
 			// Ctx is the ctx argument value.
@@ -339,13 +375,58 @@ type SignerMock struct {
 			SnapshotMoqParam snapshot.Snapshot
 		}
 	}
+	lockAssignNextKey              sync.RWMutex
 	lockGetCurrentKey              sync.RWMutex
 	lockGetCurrentKeyID            sync.RWMutex
 	lockGetKey                     sync.RWMutex
 	lockGetNextKey                 sync.RWMutex
 	lockGetSig                     sync.RWMutex
 	lockGetSnapshotCounterForKeyID sync.RWMutex
+	lockMatchesRequirements        sync.RWMutex
 	lockStartSign                  sync.RWMutex
+}
+
+// AssignNextKey calls AssignNextKeyFunc.
+func (mock *SignerMock) AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error {
+	if mock.AssignNextKeyFunc == nil {
+		panic("SignerMock.AssignNextKeyFunc: method is nil but Signer.AssignNextKey was just called")
+	}
+	callInfo := struct {
+		Ctx     sdk.Context
+		Chain   nexus.Chain
+		KeyRole tss.KeyRole
+		KeyID   string
+	}{
+		Ctx:     ctx,
+		Chain:   chain,
+		KeyRole: keyRole,
+		KeyID:   keyID,
+	}
+	mock.lockAssignNextKey.Lock()
+	mock.calls.AssignNextKey = append(mock.calls.AssignNextKey, callInfo)
+	mock.lockAssignNextKey.Unlock()
+	return mock.AssignNextKeyFunc(ctx, chain, keyRole, keyID)
+}
+
+// AssignNextKeyCalls gets all the calls that were made to AssignNextKey.
+// Check the length with:
+//     len(mockedSigner.AssignNextKeyCalls())
+func (mock *SignerMock) AssignNextKeyCalls() []struct {
+	Ctx     sdk.Context
+	Chain   nexus.Chain
+	KeyRole tss.KeyRole
+	KeyID   string
+} {
+	var calls []struct {
+		Ctx     sdk.Context
+		Chain   nexus.Chain
+		KeyRole tss.KeyRole
+		KeyID   string
+	}
+	mock.lockAssignNextKey.RLock()
+	calls = mock.calls.AssignNextKey
+	mock.lockAssignNextKey.RUnlock()
+	return calls
 }
 
 // GetCurrentKey calls GetCurrentKeyFunc.
@@ -567,6 +648,53 @@ func (mock *SignerMock) GetSnapshotCounterForKeyIDCalls() []struct {
 	mock.lockGetSnapshotCounterForKeyID.RLock()
 	calls = mock.calls.GetSnapshotCounterForKeyID
 	mock.lockGetSnapshotCounterForKeyID.RUnlock()
+	return calls
+}
+
+// MatchesRequirements calls MatchesRequirementsFunc.
+func (mock *SignerMock) MatchesRequirements(ctx sdk.Context, snapshotMoqParam snapshot.Snapshot, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error {
+	if mock.MatchesRequirementsFunc == nil {
+		panic("SignerMock.MatchesRequirementsFunc: method is nil but Signer.MatchesRequirements was just called")
+	}
+	callInfo := struct {
+		Ctx              sdk.Context
+		SnapshotMoqParam snapshot.Snapshot
+		Chain            nexus.Chain
+		KeyID            string
+		KeyRole          tss.KeyRole
+	}{
+		Ctx:              ctx,
+		SnapshotMoqParam: snapshotMoqParam,
+		Chain:            chain,
+		KeyID:            keyID,
+		KeyRole:          keyRole,
+	}
+	mock.lockMatchesRequirements.Lock()
+	mock.calls.MatchesRequirements = append(mock.calls.MatchesRequirements, callInfo)
+	mock.lockMatchesRequirements.Unlock()
+	return mock.MatchesRequirementsFunc(ctx, snapshotMoqParam, chain, keyID, keyRole)
+}
+
+// MatchesRequirementsCalls gets all the calls that were made to MatchesRequirements.
+// Check the length with:
+//     len(mockedSigner.MatchesRequirementsCalls())
+func (mock *SignerMock) MatchesRequirementsCalls() []struct {
+	Ctx              sdk.Context
+	SnapshotMoqParam snapshot.Snapshot
+	Chain            nexus.Chain
+	KeyID            string
+	KeyRole          tss.KeyRole
+} {
+	var calls []struct {
+		Ctx              sdk.Context
+		SnapshotMoqParam snapshot.Snapshot
+		Chain            nexus.Chain
+		KeyID            string
+		KeyRole          tss.KeyRole
+	}
+	mock.lockMatchesRequirements.RLock()
+	calls = mock.calls.MatchesRequirements
+	mock.lockMatchesRequirements.RUnlock()
 	return calls
 }
 

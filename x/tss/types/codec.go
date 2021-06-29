@@ -12,7 +12,6 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&StartKeygenRequest{}, "tss/StartKeygen", nil)
 	cdc.RegisterConcrete(&ProcessKeygenTrafficResponse{}, "tss/KeygenTraffic", nil)
 	cdc.RegisterConcrete(&ProcessSignTrafficRequest{}, "tss/SignTraffic", nil)
-	cdc.RegisterConcrete(&AssignKeyRequest{}, "tss/AssignKey", nil)
 	cdc.RegisterConcrete(&RotateKeyRequest{}, "tss/RotateKey", nil)
 	cdc.RegisterConcrete(&VoteSigRequest{}, "tss/VoteSig", nil)
 	cdc.RegisterConcrete(&VotePubKeyRequest{}, "tss/VotePubKey", nil)
@@ -24,7 +23,6 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&StartKeygenRequest{},
 		&ProcessKeygenTrafficRequest{},
 		&ProcessSignTrafficRequest{},
-		&AssignKeyRequest{},
 		&RotateKeyRequest{},
 		&VoteSigRequest{},
 		&VotePubKeyRequest{},

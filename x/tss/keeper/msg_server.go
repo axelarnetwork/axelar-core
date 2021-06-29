@@ -116,66 +116,6 @@ func (s msgServer) ProcessKeygenTraffic(c context.Context, req *types.ProcessKey
 	return &types.ProcessKeygenTrafficResponse{}, nil
 }
 
-func (s msgServer) AssignKey(c context.Context, req *types.AssignKeyRequest) (*types.AssignKeyResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-	chain, ok := s.nexus.GetChain(ctx, req.Chain)
-	if !ok {
-		return nil, fmt.Errorf("unknown chain")
-	}
-
-	counter, ok := s.GetSnapshotCounterForKeyID(ctx, req.KeyID)
-	if !ok {
-		return nil, fmt.Errorf("could not find snapshot counter for given key ID")
-	}
-
-	snapshot, ok := s.snapshotter.GetSnapshot(ctx, counter)
-	if !ok {
-		return nil, fmt.Errorf("could not find snapshot for given key ID")
-	}
-
-	keyRequirement, found := s.GetKeyRequirement(ctx, chain, req.KeyRole)
-	if !found {
-		return nil, fmt.Errorf("%s key is not required for chain %s", req.KeyRole.SimpleString(), chain.Name)
-	}
-
-	if len(snapshot.Validators) < int(keyRequirement.MinValidatorSubsetSize) {
-		return nil, fmt.Errorf(
-			"expected %s's %s key to be generated with at least %d validators, actual %d",
-			chain.Name,
-			req.KeyRole.SimpleString(),
-			keyRequirement.MinValidatorSubsetSize,
-			len(snapshot.Validators),
-		)
-	}
-
-	if snapshot.KeyShareDistributionPolicy != keyRequirement.KeyShareDistributionPolicy {
-		return nil, fmt.Errorf(
-			"expected %s's %s key to have tss shares distributed with policy %s, actual %s",
-			chain.Name,
-			req.KeyRole.SimpleString(),
-			keyRequirement.KeyShareDistributionPolicy.SimpleString(),
-			snapshot.KeyShareDistributionPolicy.SimpleString(),
-		)
-	}
-
-	err := s.AssignNextKey(ctx, chain, req.KeyRole, req.KeyID)
-	if err != nil {
-		return nil, err
-	}
-
-	s.Logger(ctx).Debug(fmt.Sprintf("prepared %s key rotation for chain %s", req.KeyRole.SimpleString(), chain.Name))
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
-		),
-	)
-
-	return &types.AssignKeyResponse{}, nil
-}
-
 func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*types.RotateKeyResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
@@ -183,15 +123,24 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 	if !ok {
 		return nil, fmt.Errorf("unknown chain")
 	}
+	keyReqs, ok := s.GetKeyRequirement(ctx, chain, req.KeyRole)
+	if !ok {
+		return nil, fmt.Errorf("key requirements for chain %s and role %s not found", chain.Name, req.KeyRole.SimpleString())
+	}
 
 	_, hasActiveKey := s.TSSKeeper.GetCurrentKeyID(ctx, chain, req.KeyRole)
 	assignedKeyID, hasNextKeyAssigned := s.TSSKeeper.GetNextKeyID(ctx, chain, req.KeyRole)
 
 	switch {
-	case hasActiveKey && !hasNextKeyAssigned:
+	case hasActiveKey && keyReqs.NeedsAssignment && !hasNextKeyAssigned:
 		return nil, fmt.Errorf("no key assigned for rotation yet")
-	case hasActiveKey && assignedKeyID != req.KeyID:
+	case hasActiveKey && keyReqs.NeedsAssignment && assignedKeyID != req.KeyID:
 		return nil, fmt.Errorf("expected rotation to key ID %s, got key ID %s", assignedKeyID, req.KeyID)
+	case !hasActiveKey || !keyReqs.NeedsAssignment:
+		if err := s.TSSKeeper.AssignNextKey(ctx, chain, req.KeyRole, req.KeyID); err != nil {
+			return nil, err
+		}
+		fallthrough
 	default:
 		if err := s.TSSKeeper.RotateKey(ctx, chain, req.KeyRole); err != nil {
 			return nil, err

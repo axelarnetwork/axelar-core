@@ -37,6 +37,45 @@ type Keeper struct {
 	cdc      *codec.LegacyAmino
 }
 
+// MatchesRequirements checks if the properties of the given key match the requirements for the given role
+func (k Keeper) MatchesRequirements(ctx sdk.Context, snap snapshot.Snapshot, chain nexus.Chain, keyID string, keyRole exported.KeyRole) error {
+	counter, ok := k.GetSnapshotCounterForKeyID(ctx, keyID)
+	if !ok {
+		return fmt.Errorf("could not find snapshot counter for given key ID")
+	}
+
+	if snap.Counter != counter {
+		return fmt.Errorf("the given snapshot does not match the key %s", keyID)
+	}
+
+	keyRequirement, found := k.GetKeyRequirement(ctx, chain, keyRole)
+	if !found {
+		return fmt.Errorf("%s key is not required for chain %s", keyRole.SimpleString(), chain.Name)
+	}
+
+	if len(snap.Validators) < int(keyRequirement.MinValidatorSubsetSize) {
+		return fmt.Errorf(
+			"expected %s's %s key to be generated with at least %d validators, actual %d",
+			chain.Name,
+			keyRole.SimpleString(),
+			keyRequirement.MinValidatorSubsetSize,
+			len(snap.Validators),
+		)
+	}
+
+	if snap.KeyShareDistributionPolicy != keyRequirement.KeyShareDistributionPolicy {
+		return fmt.Errorf(
+			"expected %s's %s key to have tss shares distributed with policy %s, actual %s",
+			chain.Name,
+			keyRole.SimpleString(),
+			keyRequirement.KeyShareDistributionPolicy.SimpleString(),
+			snap.KeyShareDistributionPolicy.SimpleString(),
+		)
+	}
+
+	return nil
+}
+
 // NewKeeper constructs a tss keeper
 func NewKeeper(cdc *codec.LegacyAmino, storeKey sdk.StoreKey, paramSpace params.Subspace, slasher snapshot.Slasher) Keeper {
 	return Keeper{
