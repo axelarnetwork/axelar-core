@@ -224,6 +224,10 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 				nextMK, nextMKFound := s.signer.GetNextKey(ctx, exported.Bitcoin, tss.MasterKey)
 
 				switch {
+				// reason to land in this case: a consolidation transaction from key1 to key2 has been confirmed
+				// and now another outpoint is voted on with key1 consolidating to key3.
+				// Note this should only be possible if a validator willfully votes wrong,
+				// but we need to guard the blockchain state against it regardless
 				case addr.KeyID != mk.ID && nextMKFound && addr.KeyID != nextMK.ID:
 					return nil, fmt.Errorf("consolidation address is controlled by key %s, expected it to be key %s", addr.KeyID, nextMK.ID)
 				case addr.KeyID != mk.ID && !nextMKFound:
