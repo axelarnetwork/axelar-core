@@ -33,10 +33,10 @@ const (
 	TxSignTransferOwnership    = "sign-transfer-ownership"
 	TxAddChain                 = "add-chain"
 
-	QueryMasterAddress        = keeper.QueryMasterAddress
-	QueryNextMasterAddress    = keeper.QueryNextMasterAddress
-	QueryAxelarGatewayAddress = keeper.QueryAxelarGatewayAddress
-	QueryCommandData          = keeper.QueryCommandData
+	QueryMasterAddress        = keeper.QMasterAddress
+	QueryNextMasterAddress    = keeper.QNextMasterAddress
+	QueryAxelarGatewayAddress = keeper.QAxelarGatewayAddress
+	QueryCommandData          = keeper.QCommandData
 	QueryCreateDeployTx       = keeper.CreateDeployTx
 	QuerySendTx               = keeper.SendTx
 	QuerySendCommand          = keeper.SendCommand

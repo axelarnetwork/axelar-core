@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/axelarnetwork/axelar-core/testutils"
+	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
@@ -40,7 +40,7 @@ import (
 
 func Test_wBTC_mint(t *testing.T) {
 	randStrings := rand.Strings(5, 50)
-	cdc := testutils.MakeEncodingConfig().Amino
+	cdc := app.MakeEncodingConfig().Amino
 
 	// 0. Set up chain
 	const nodeCount = 10
@@ -174,13 +174,13 @@ func Test_wBTC_mint(t *testing.T) {
 	txHash := common.BytesToHash(bz)
 
 	bz, err = nodeData[0].Node.Query(
-		[]string{evmTypes.QuerierRoute, evmKeeper.QueryTokenAddress, "ethereum", "satoshi"},
+		[]string{evmTypes.QuerierRoute, evmKeeper.QTokenAddress, "ethereum", "satoshi"},
 		abci.RequestQuery{Data: nil},
 	)
 	assert.NoError(t, err)
 	tokenAddr := common.BytesToAddress(bz)
 	bz, err = nodeData[0].Node.Query(
-		[]string{evmTypes.QuerierRoute, evmKeeper.QueryAxelarGatewayAddress, "ethereum"},
+		[]string{evmTypes.QuerierRoute, evmKeeper.QAxelarGatewayAddress, "ethereum"},
 		abci.RequestQuery{Data: nil},
 	)
 	assert.NoError(t, err)

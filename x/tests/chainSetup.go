@@ -28,6 +28,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
+	"github.com/axelarnetwork/axelar-core/app"
 	eth2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -37,7 +38,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/snapshot"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 
-	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
@@ -89,7 +89,7 @@ type nodeData struct {
 
 func newNode(moniker string, mocks testMocks) *fake.Node {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger().With("node", moniker))
-	encCfg := testutils.MakeEncodingConfig()
+	encCfg := app.MakeEncodingConfig()
 
 	snapSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
 	snapKeeper := snapshotKeeper.NewKeeper(encCfg.Amino, sdk.NewKVStoreKey(snapshotTypes.StoreKey), snapSubspace, mocks.Staker, mocks.Slasher, mocks.Tss)
@@ -271,7 +271,7 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 }
 
 func registerBTCEventListener(n nodeData, submitMsg func(msg sdk.Msg) (result <-chan *fake.Result)) {
-	encCfg := testutils.MakeEncodingConfig()
+	encCfg := app.MakeEncodingConfig()
 
 	// register listener for confirmation
 	n.Node.RegisterEventListener(func(event abci.Event) bool {
@@ -296,7 +296,7 @@ func registerBTCEventListener(n nodeData, submitMsg func(msg sdk.Msg) (result <-
 }
 
 func registerETHEventListener(n nodeData, submitMsg func(msg sdk.Msg) (result <-chan *fake.Result)) {
-	encCfg := testutils.MakeEncodingConfig()
+	encCfg := app.MakeEncodingConfig()
 	// register listener for deposit confirmation
 	n.Node.RegisterEventListener(func(event abci.Event) bool {
 		if event.Type != evmTypes.EventTypeDepositConfirmation {

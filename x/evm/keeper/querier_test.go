@@ -1,4 +1,4 @@
-package keeper
+package keeper_test
 
 import (
 	"fmt"
@@ -14,6 +14,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
+	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -57,7 +58,7 @@ func TestQueryTokenAddress(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		res, err := queryTokenAddress(ctx, ethKeeper, nexusKeeper, evmChain, symbol)
+		res, err := evmKeeper.QueryTokenAddress(ctx, ethKeeper, nexusKeeper, evmChain, symbol)
 
 		assert := assert.New(t)
 		assert.NoError(err)
@@ -70,7 +71,7 @@ func TestQueryTokenAddress(t *testing.T) {
 		setup()
 		ethKeeper.GetGatewayAddressFunc = func(ctx sdk.Context, evmChain string) (common.Address, bool) { return common.Address{}, false }
 
-		_, err := queryTokenAddress(ctx, ethKeeper, nexusKeeper, evmChain, symbol)
+		_, err := evmKeeper.QueryTokenAddress(ctx, ethKeeper, nexusKeeper, evmChain, symbol)
 
 		assert := assert.New(t)
 		assert.Error(err)
@@ -83,7 +84,7 @@ func TestQueryTokenAddress(t *testing.T) {
 			return common.Address{}, fmt.Errorf("could not find token address")
 		}
 
-		_, err := queryTokenAddress(ctx, ethKeeper, nexusKeeper, evmChain, symbol)
+		_, err := evmKeeper.QueryTokenAddress(ctx, ethKeeper, nexusKeeper, evmChain, symbol)
 
 		assert := assert.New(t)
 		assert.Error(err)
@@ -145,7 +146,7 @@ func TestQueryDepositAddress(t *testing.T) {
 	t.Run("happy path hard coded", testutils.Func(func(t *testing.T) {
 		setup()
 
-		res, err := queryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
+		res, err := evmKeeper.QueryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
 
 		assert := assert.New(t)
 		assert.NoError(err)
@@ -164,7 +165,7 @@ func TestQueryDepositAddress(t *testing.T) {
 		}
 		data = types.ModuleCdc.MustMarshalJSON(dataStr)
 
-		res, err := queryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
+		res, err := evmKeeper.QueryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
 
 		assert := assert.New(t)
 		assert.NoError(err)
@@ -178,7 +179,7 @@ func TestQueryDepositAddress(t *testing.T) {
 		setup()
 		ethKeeper.GetGatewayAddressFunc = func(ctx sdk.Context, evmChain string) (common.Address, bool) { return common.Address{}, false }
 
-		_, err := queryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
+		_, err := evmKeeper.QueryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
 
 		assert := assert.New(t)
 		assert.Error(err)
@@ -191,7 +192,7 @@ func TestQueryDepositAddress(t *testing.T) {
 			return common.Address{}, fmt.Errorf("could not find token address")
 		}
 
-		_, err := queryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
+		_, err := evmKeeper.QueryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
 
 		assert := assert.New(t)
 		assert.Error(err)
@@ -204,7 +205,7 @@ func TestQueryDepositAddress(t *testing.T) {
 			return common.Address{}, common.Hash{}, fmt.Errorf("could not find deposit address")
 		}
 
-		_, err := queryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
+		_, err := evmKeeper.QueryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
 
 		assert := assert.New(t)
 		assert.Error(err)
@@ -216,7 +217,7 @@ func TestQueryDepositAddress(t *testing.T) {
 		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 			return nexus.Chain{}, false
 		}
-		_, err := queryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
+		_, err := evmKeeper.QueryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
 
 		assert := assert.New(t)
 		assert.Error(err)
@@ -228,7 +229,7 @@ func TestQueryDepositAddress(t *testing.T) {
 		nexusKeeper.GetRecipientFunc = func(sdk.Context, nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
 			return nexus.CrossChainAddress{}, false
 		}
-		_, err := queryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
+		_, err := evmKeeper.QueryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
 
 		assert := assert.New(t)
 		assert.Error(err)

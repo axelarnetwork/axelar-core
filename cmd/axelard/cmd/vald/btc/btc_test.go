@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/axelarnetwork/axelar-core/app"
 	mock3 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types/mock"
 	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
@@ -32,7 +33,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 	)
 
 	setup := func() {
-		cdc := testutils.MakeEncodingConfig().Amino
+		cdc := app.MakeEncodingConfig().Amino
 		rpc = &mock2.ClientMock{}
 		broadcaster = &mock3.BroadcasterMock{}
 		mgr = NewMgr(rpc, broadcaster, nil, log.TestingLogger(), cdc)
