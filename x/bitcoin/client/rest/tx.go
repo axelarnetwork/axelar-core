@@ -38,7 +38,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
 	registerQuery(QueryHandlerDepositAddress(cliCtx), QueryDepositAddress, clientUtils.PathVarChain, clientUtils.PathVarEthereumAddress)
 	registerQuery(QueryHandlerMasterAddress(cliCtx), QueryMasterAddress)
-	registerQuery(QueryHandlerKeyConsolidationAddress(cliCtx), QueryKeyConsolidationAddress)
+	registerQuery(QueryHandlerKeyConsolidationAddress(cliCtx), QueryKeyConsolidationAddress, clientUtils.PathVarKeyID)
 	registerQuery(QueryHandlerGetConsolidationTx(cliCtx), QueryGetConsolidationTx)
 	registerQuery(QueryHandlerGetPayForConsolidationTx(cliCtx), QueryGetPayForConsolidationTx)
 	registerQuery(QueryHandlerMinimumWithdrawAmount(cliCtx), QueryMinimumWithdrawAmount)

@@ -117,8 +117,8 @@ func queryMasterAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer) ([]b
 	return []byte(addr.Address), nil
 }
 
-func queryKeyConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, data []byte) ([]byte, error) {
-	keyID := string(data)
+func queryKeyConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, keyIDBytes []byte) ([]byte, error) {
+	keyID := string(keyIDBytes)
 
 	masterKey, ok := s.GetKey(ctx, keyID)
 	if !ok {

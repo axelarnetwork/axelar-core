@@ -22,7 +22,6 @@ import (
 // query parameters
 const (
 	QueryParamFeeRate = "fee_rate"
-	QueryParamKeyID   = "key_id"
 )
 
 // QueryHandlerDepositAddress returns a handler to query a deposit address
@@ -108,7 +107,7 @@ func QueryHandlerKeyConsolidationAddress(cliCtx client.Context) http.HandlerFunc
 			return
 		}
 
-		keyID := r.URL.Query().Get(QueryParamKeyID)
+		keyID := mux.Vars(r)[utils.PathVarKeyID]
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryKeyConsolidationAddress), []byte(keyID))
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
