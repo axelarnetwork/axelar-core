@@ -123,7 +123,7 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 	if !ok {
 		return nil, fmt.Errorf("unknown chain")
 	}
-	keyReqs, ok := s.GetKeyRequirement(ctx, chain, req.KeyRole)
+	keyReq, ok := s.GetKeyRequirement(ctx, chain, req.KeyRole)
 	if !ok {
 		return nil, fmt.Errorf("key requirements for chain %s and role %s not found", chain.Name, req.KeyRole.SimpleString())
 	}
