@@ -41,7 +41,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 // GetCmdDepositAddress returns the deposit address command
 func GetCmdDepositAddress(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "deposit-addr [chain] [recipient address]",
+		Use:   "deposit-address [chain] [recipient address]",
 		Short: "Returns a bitcoin deposit address for a recipient address on another blockchain",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -68,8 +68,8 @@ func GetCmdDepositAddress(queryRoute string) *cobra.Command {
 func GetCmdMasterAddress(queryRoute string) *cobra.Command {
 	var IncludeKeyID bool
 	cmd := &cobra.Command{
-		Use:   "master-addr",
-		Short: "Returns the bitcoin address of the current master key, and optionally the current master key ID",
+		Use:   "master-address",
+		Short: "Returns the bitcoin address of the current master key, and optionally the key's ID",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)

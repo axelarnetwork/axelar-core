@@ -14,3 +14,8 @@ message DepositQueryParams {
   string symbol = 2;
   string chain = 3;
 }
+
+message QueryMasterAddressResponse {
+  bytes master_address = 1;
+  string master_key_id = 2;
+}

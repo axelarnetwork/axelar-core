@@ -112,9 +112,12 @@ func queryMasterAddress(ctx sdk.Context, s types.Signer, n types.Nexus, chainNam
 
 	fromAddress := crypto.PubkeyToAddress(pk.Value)
 
-	bz := fromAddress.Bytes()
+	resp := types.QueryMasterAddressResponse{
+		MasterAddress: fromAddress.Bytes(),
+		MasterKeyId:   pk.ID,
+	}
 
-	return bz, nil
+	return resp.Marshal()
 }
 
 func queryKeyAddress(ctx sdk.Context, s types.Signer, keyIDBytes []byte) ([]byte, error) {

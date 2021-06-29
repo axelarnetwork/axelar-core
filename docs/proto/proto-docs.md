@@ -54,6 +54,7 @@
   
 - [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
     - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
+    - [QueryMasterAddressResponse](#evm.v1beta1.QueryMasterAddressResponse)
   
 - [tss/exported/v1beta1/types.proto](#tss/exported/v1beta1/types.proto)
     - [KeyRequirement](#tss.exported.v1beta1.KeyRequirement)
@@ -789,6 +790,22 @@ deposit address
 | `address` | [string](#string) |  |  |
 | `symbol` | [string](#string) |  |  |
 | `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryMasterAddressResponse"></a>
+
+### QueryMasterAddressResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `master_address` | [bytes](#bytes) |  |  |
+| `master_key_id` | [string](#string) |  |  |
 
 
 
