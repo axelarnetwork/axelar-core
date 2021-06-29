@@ -415,7 +415,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 		prevNewOwnerAddrBytes []byte
 	)
 	setup := func() {
-		cdc := testutils.MakeEncodingConfig().Amino
+		cdc := app.MakeEncodingConfig().Amino
 		poll := exported.NewPollMeta(evmTypes.ModuleName, rand.StrBetween(5, 20))
 
 		gatewayAddrBytes := rand.Bytes(common.AddressLength)
