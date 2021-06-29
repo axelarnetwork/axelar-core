@@ -24,13 +24,13 @@ import (
 
 // Query paths
 const (
-	QueryDepositAddress      	= "depositAddr"
-	QueryMasterAddress       	= "masterAddr"
-	QueryMinimumWithdrawAmount 	= "minWithdrawAmount"
-	QueryTxState				= "txState"
-	GetConsolidationTx      	= "getConsolidationTx"
-	GetConsolidationTxState		= "getConsolidationTxState"
-	GetPayForConsolidationTx  	= "getPayForConsolidationTx"
+	QueryDepositAddress        = "depositAddr"
+	QueryMasterAddress         = "masterAddr"
+	QueryMinimumWithdrawAmount = "minWithdrawAmount"
+	QueryTxState               = "txState"
+	GetConsolidationTx         = "getConsolidationTx"
+	GetConsolidationTxState    = "getConsolidationTxState"
+	GetPayForConsolidationTx   = "getPayForConsolidationTx"
 )
 
 // NewQuerier returns a new querier for the Bitcoin module
@@ -108,13 +108,13 @@ func queryMasterAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer) ([]b
 	// After a key rotation, the master address is not known to Axelar Core until a consolidation
 	// transaction is completed, during which k.SetAddress() is called.
 	if _, ok := k.GetAddress(ctx, addr.Address); !ok {
-		return nil, fmt.Errorf("no address found for current %s masterKey", tss.MasterKey.String())
+		return nil, fmt.Errorf("no address found for current %s key %s", tss.MasterKey.SimpleString(), masterKey.ID)
 	}
 
 	return []byte(addr.Address), nil
 }
 
-func queryMinimumWithdrawAmount(ctx sdk.Context, k types.BTCKeeper) ([]byte) {
+func queryMinimumWithdrawAmount(ctx sdk.Context, k types.BTCKeeper) []byte {
 
 	amount := make([]byte, 8)
 	binary.LittleEndian.PutUint64(amount, uint64(k.GetMinimumWithdrawalAmount(ctx)))
@@ -147,7 +147,7 @@ func queryTxState(ctx sdk.Context, k types.BTCKeeper, data []byte) ([]byte, erro
 
 func getConsolidationTxState(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {
 
-	tx, ok := k.GetSignedTx(ctx);
+	tx, ok := k.GetSignedTx(ctx)
 	if !ok {
 		return nil, fmt.Errorf("could not find the signed consolidation transaction")
 	}
