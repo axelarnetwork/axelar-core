@@ -3,6 +3,7 @@ package utils
 import (
 	"testing"
 
+	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -28,30 +29,34 @@ func createBlockHeightKVQueue(name string) BlockHeightKVQueue {
 	return NewBlockHeightKVQueue(store, ctx, name).(BlockHeightKVQueue)
 }
 
-func TestNewBlockHeightKVQueue_EnqueueDequeue(t *testing.T) {
-	kvQueue := createBlockHeightKVQueue("test-push")
+func TestNewBlockHeightKVQueue(t *testing.T) {
+	repeats := 20
 
-	blockHeight := rand.I64Between(1, 10000)
-	kvQueue.ctx = kvQueue.ctx.WithBlockHeight(blockHeight)
-	itemCount := rand.I64Between(10, 1000)
-	items := make([]string, itemCount)
+	t.Run("enqueue and dequeue", testutils.Func(func(t *testing.T) {
+		kvQueue := createBlockHeightKVQueue("test-enqueue-dequeue")
 
-	for i := 0; i < int(itemCount); i++ {
-		items[i] = rand.Str(10)
-	}
-
-	for _, item := range items {
-		kvQueue.Enqueue(RegularKey(item), &gogoprototypes.StringValue{Value: item})
-		blockHeight += rand.I64Between(0, 1000)
+		blockHeight := rand.I64Between(1, 10000)
 		kvQueue.ctx = kvQueue.ctx.WithBlockHeight(blockHeight)
-	}
+		itemCount := rand.I64Between(10, 1000)
+		items := make([]string, itemCount)
 
-	actualItems := []string{}
-	var actualItem gogoprototypes.StringValue
+		for i := 0; i < int(itemCount); i++ {
+			items[i] = rand.Str(10)
+		}
 
-	for kvQueue.Dequeue(&actualItem) {
-		actualItems = append(actualItems, actualItem.Value)
-	}
+		for _, item := range items {
+			kvQueue.Enqueue(RegularKey(item), &gogoprototypes.StringValue{Value: item})
+			blockHeight += rand.I64Between(1, 1000)
+			kvQueue.ctx = kvQueue.ctx.WithBlockHeight(blockHeight)
+		}
 
-	assert.Equal(t, items, actualItems)
+		actualItems := []string{}
+		var actualItem gogoprototypes.StringValue
+
+		for kvQueue.Dequeue(&actualItem) {
+			actualItems = append(actualItems, actualItem.Value)
+		}
+
+		assert.Equal(t, items, actualItems)
+	}).Repeat(repeats))
 }
