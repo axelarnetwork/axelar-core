@@ -33,4 +33,5 @@ axelard query evm [flags]
 - [axelard query evm master-address](axelard_query_evm_master-address.md)	 - Returns the EVM address of the current master key, and optionally the key's ID
 - [axelard query evm sendCommand](axelard_query_evm_sendCommand.md)	 - Send a transaction signed by \[fromAddress\] that executes the command \[commandID\] to Axelar Gateway
 - [axelard query evm sendTx](axelard_query_evm_sendTx.md)	 - Send a transaction that spends tx \[txID\] to chain \[chain\]
+- [axelard query evm signedTx](axelard_query_evm_signedTx.md)	 - Fetch an EVM transaction \[txID\] that has been signed by the validators for chain \[chain\]
 - [axelard query evm token-address](axelard_query_evm_token-address.md)	 - Query a token address by symbol

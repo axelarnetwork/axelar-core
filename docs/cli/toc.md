@@ -56,6 +56,7 @@
       - [master-address \[chain\]](axelard_query_evm_master-address.md)	 - Returns the EVM address of the current master key, and optionally the key's ID
       - [sendCommand \[chain\] \[commandID\] \[fromAddress\]](axelard_query_evm_sendCommand.md)	 - Send a transaction signed by \[fromAddress\] that executes the command \[commandID\] to Axelar Gateway
       - [sendTx \[chain\] \[txID\]](axelard_query_evm_sendTx.md)	 - Send a transaction that spends tx \[txID\] to chain \[chain\]
+      - [signedTx \[chain\] \[txID\]](axelard_query_evm_signedTx.md)	 - Fetch an EVM transaction \[txID\] that has been signed by the validators for chain \[chain\]
       - [token-address \[chain\] \[symbol\]](axelard_query_evm_token-address.md)	 - Query a token address by symbol
     - [gov](axelard_query_gov.md)	 - Querying commands for the governance module
       - [deposit \[proposal-id\] \[depositer-addr\]](axelard_query_gov_deposit.md)	 - Query details of a deposit
