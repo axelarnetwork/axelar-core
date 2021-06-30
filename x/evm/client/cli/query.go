@@ -33,6 +33,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdAxelarGatewayAddress(queryRoute),
 		GetCmdTokenAddress(queryRoute),
 		GetCmdCreateDeployTx(queryRoute),
+		GetCmdSignedTx(queryRoute),
 		GetCmdSendTx(queryRoute),
 		GetCmdSendCommand(queryRoute),
 		GetCmdQueryCommandData(queryRoute),
@@ -212,6 +213,56 @@ func GetCmdCreateDeployTx(queryRoute string) *cobra.Command {
 		"EVM gas limit to use in the transaction (default value is 3000000). Set to 0 to estimate gas limit at the node.")
 	cmd.Flags().StringVar(&gasPriceStr, "gas-price", "0",
 		"EVM gas price to use in the transaction. If flag is omitted (or value set to 0), the gas price will be suggested by the node")
+	return cmd
+}
+
+// GetCmdBytecodes fetches the bytecodes of an EVM contract
+func GetCmdBytecodes(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "bytecodes [chain] [contract]",
+		Short: "Fetch the bytecodes of an EVM contract [contract] for chain [chain]",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QBytecodes, args[0], args[1]), nil)
+			if err != nil {
+				return sdkerrors.Wrapf(err, types.ErrFBytecodes, args[1])
+			}
+
+			fmt.Println(common.Bytes2Hex(res))
+			return nil
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdSignedTx fetches an EVM transaction that has been signed by the validators
+func GetCmdSignedTx(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "signedTx [chain] [txID]",
+		Short: "Fetch an EVM transaction [txID] that has been signed by the validators for chain [chain]",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QSignedTx, args[0], args[1]), nil)
+			if err != nil {
+				return sdkerrors.Wrapf(err, types.ErrFSignedTx, args[1])
+			}
+
+			fmt.Println(string(cliCtx.LegacyAmino.MustMarshalJSON(res)))
+			return nil
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }
 

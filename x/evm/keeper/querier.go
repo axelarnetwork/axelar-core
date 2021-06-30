@@ -29,6 +29,8 @@ const (
 	QAxelarGatewayAddress = "gateway-address"
 	QCommandData          = "command-data"
 	QDepositAddress       = "deposit-address"
+	QBytecodes            = "bytecodes"
+	QSignedTx             = "signed-tx"
 	CreateDeployTx        = "deploy-gateway"
 	SendTx                = "send-tx"
 	SendCommand           = "send-command"
@@ -52,6 +54,10 @@ func NewQuerier(rpcs map[string]types.RPCClient, k Keeper, s types.Signer, n typ
 			return queryCommandData(ctx, k, s, n, path[1], path[2])
 		case QDepositAddress:
 			return QueryDepositAddress(ctx, k, n, path[1], req.Data)
+		case QBytecodes:
+			return queryBytecodes(ctx, k, n, path[1], path[2])
+		case QSignedTx:
+			return querySignedTx(ctx, k, s, n, path[1], path[2])
 		case CreateDeployTx:
 			return createDeployGateway(ctx, k, rpcs, s, n, req.Data)
 		case SendTx:
@@ -251,6 +257,55 @@ func createDeployGateway(ctx sdk.Context, k Keeper, rpcs map[string]types.RPCCli
 	}
 	k.Logger(ctx).Debug(fmt.Sprintf("Contract address: %s", result.ContractAddress))
 	return types.ModuleCdc.LegacyAmino.MustMarshalJSON(result), nil
+}
+
+func queryBytecodes(ctx sdk.Context, k Keeper, n types.Nexus, chainName, contract string) ([]byte, error) {
+
+	_, ok := n.GetChain(ctx, chainName)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
+	}
+
+	var bz []byte
+	switch strings.ToLower(contract) {
+	case "gateway":
+		bz, _ = k.GetGatewayByteCodes(ctx, chainName)
+	case "token":
+		bz = k.getTokenBC(ctx, chainName)
+	case "burner":
+		bz = k.getBurnerBC(ctx, chainName)
+	}
+
+	if bz == nil {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not retrieve bytecodes for chain %s", chainName))
+	}
+
+	return bz, nil
+}
+
+func querySignedTx(ctx sdk.Context, k Keeper, s types.Signer, n types.Nexus, chainName, txID string) ([]byte, error) {
+
+	_, ok := n.GetChain(ctx, chainName)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
+	}
+
+	pk, ok := s.GetKeyForSigID(ctx, txID)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding key for sig ID %s", txID))
+	}
+
+	sig, ok := s.GetSig(ctx, txID)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding signature for sig ID %s", txID))
+	}
+
+	signedTx, err := k.AssembleEthTx(ctx, chainName, txID, pk.Value, sig)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not insert generated signature: %v", err))
+	}
+
+	return signedTx.MarshalJSON()
 }
 
 func sendSignedTx(ctx sdk.Context, k Keeper, rpcs map[string]types.RPCClient, s types.Signer, n types.Nexus, chainName, txID string) ([]byte, error) {
