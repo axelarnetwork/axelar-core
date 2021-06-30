@@ -1,4 +1,4 @@
-package keeper
+package keeper_test
 
 import (
 	"crypto/ecdsa"
@@ -27,6 +27,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	utilsmock "github.com/axelarnetwork/axelar-core/utils/mock"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
+	bitcoinKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -68,7 +69,7 @@ func TestHandleMsgLink(t *testing.T) {
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		msg = randomMsgLink()
-		server = NewMsgServerImpl(btcKeeper, signer, nexusKeeper, &mock.VoterMock{}, &mock.SnapshotterMock{})
+		server = bitcoinKeeper.NewMsgServerImpl(btcKeeper, signer, nexusKeeper, &mock.VoterMock{}, &mock.SnapshotterMock{})
 	}
 	repeatCount := 20
 
@@ -149,7 +150,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		msg = randomMsgConfirmOutpoint()
 		msg.OutPointInfo.Address = address.EncodeAddress()
-		server = NewMsgServerImpl(btcKeeper, signer, &mock.NexusMock{}, voter, &mock.SnapshotterMock{})
+		server = bitcoinKeeper.NewMsgServerImpl(btcKeeper, signer, &mock.NexusMock{}, voter, &mock.SnapshotterMock{})
 	}
 
 	repeatCount := 20
@@ -265,7 +266,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			AssignNextKeyFunc: func(sdk.Context, nexus.Chain, tss.KeyRole, string) error { return nil },
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		server = NewMsgServerImpl(btcKeeper, signerKeeper, nexusKeeper, voter, &mock.SnapshotterMock{})
+		server = bitcoinKeeper.NewMsgServerImpl(btcKeeper, signerKeeper, nexusKeeper, voter, &mock.SnapshotterMock{})
 	}
 
 	repeats := 20
@@ -672,7 +673,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 				}, true
 			},
 		}
-		server = NewMsgServerImpl(btcKeeper, signer, nexusKeeper, voter, snapshotter)
+		server = bitcoinKeeper.NewMsgServerImpl(btcKeeper, signer, nexusKeeper, voter, snapshotter)
 	}
 
 	repeatCount := 20

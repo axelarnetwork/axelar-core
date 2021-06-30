@@ -1,4 +1,4 @@
-package keeper
+package keeper_test
 
 import (
 	mathRand "math/rand"
@@ -19,19 +19,20 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	bitcoinKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
 
 func TestKeeper_GetAddress(t *testing.T) {
 	var (
 		ctx    sdk.Context
-		keeper Keeper
+		keeper bitcoinKeeper.Keeper
 	)
 	setup := func() {
 		encCfg := appParams.MakeEncodingConfig()
 		btcSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"), "btc")
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-		keeper = NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("btc"), btcSubspace)
+		keeper = bitcoinKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("btc"), btcSubspace)
 	}
 	t.Run("case insensitive", testutils.Func(func(t *testing.T) {
 		setup()
@@ -59,13 +60,13 @@ func TestKeeper_GetAddress(t *testing.T) {
 func TestKeeper_GetOutPointInfo(t *testing.T) {
 	var (
 		ctx    sdk.Context
-		keeper Keeper
+		keeper bitcoinKeeper.Keeper
 	)
 	setup := func() {
 		encCfg := appParams.MakeEncodingConfig()
 		btcSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"), "btc")
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-		keeper = NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("btc"), btcSubspace)
+		keeper = bitcoinKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("btc"), btcSubspace)
 	}
 
 	t.Run("case insensitive", testutils.Func(func(t *testing.T) {

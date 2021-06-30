@@ -24,14 +24,14 @@ import (
 
 // Query paths
 const (
-	QueryDepositAddress          = "depositAddr"
-	QueryMasterAddress           = "masterAddr"
-	QueryKeyConsolidationAddress = "keyConsolidationAddress"
-	QueryMinimumWithdrawAmount   = "minWithdrawAmount"
-	QueryTxState                 = "txState"
-	GetConsolidationTx           = "getConsolidationTx"
-	GetConsolidationTxState      = "getConsolidationTxState"
-	GetPayForConsolidationTx     = "getPayForConsolidationTx"
+	QDepositAddress          = "depositAddr"
+	QMasterAddress           = "masterAddr"
+	QKeyConsolidationAddress = "keyConsolidationAddress"
+	QMinimumWithdrawAmount   = "minWithdrawAmount"
+	QTxState                 = "txState"
+	QConsolidationTx         = "getConsolidationTx"
+	QConsolidationTxState    = "QConsolidationTxState"
+	QPayForConsolidationTx   = "getPayForConsolidationTx"
 )
 
 // NewQuerier returns a new querier for the Bitcoin module
@@ -40,21 +40,21 @@ func NewQuerier(rpc types.RPCClient, k types.BTCKeeper, s types.Signer, n types.
 		var res []byte
 		var err error
 		switch path[0] {
-		case QueryDepositAddress:
-			res, err = queryDepositAddress(ctx, k, s, n, req.Data)
-		case QueryMasterAddress:
-			res, err = queryMasterAddress(ctx, k, s)
-		case QueryKeyConsolidationAddress:
+		case QDepositAddress:
+			res, err = QueryDepositAddress(ctx, k, s, n, req.Data)
+		case QMasterAddress:
+			res, err = QueryMasterAddress(ctx, k, s)
+		case QKeyConsolidationAddress:
 			res, err = queryKeyConsolidationAddress(ctx, k, s, req.Data)
-		case QueryMinimumWithdrawAmount:
+		case QMinimumWithdrawAmount:
 			res = queryMinimumWithdrawAmount(ctx, k)
-		case QueryTxState:
-			res, err = queryTxState(ctx, k, req.Data)
-		case GetConsolidationTx:
-			res, err = getRawConsolidationTx(ctx, k)
-		case GetConsolidationTxState:
-			res, err = getConsolidationTxState(ctx, k)
-		case GetPayForConsolidationTx:
+		case QTxState:
+			res, err = QueryTxState(ctx, k, req.Data)
+		case QConsolidationTx:
+			res, err = GetRawConsolidationTx(ctx, k)
+		case QConsolidationTxState:
+			res, err = GetConsolidationTxState(ctx, k)
+		case QPayForConsolidationTx:
 			res, err = payForConsolidationTx(ctx, k, rpc, req.Data)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown btc-bridge query endpoint: %s", path[1]))
@@ -67,7 +67,8 @@ func NewQuerier(rpc types.RPCClient, k types.BTCKeeper, s types.Signer, n types.
 	}
 }
 
-func queryDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n types.Nexus, data []byte) ([]byte, error) {
+// QueryDepositAddress returns deposit address
+func QueryDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n types.Nexus, data []byte) ([]byte, error) {
 	var params types.DepositQueryParams
 	if err := types.ModuleCdc.UnmarshalJSON(data, &params); err != nil {
 		return nil, fmt.Errorf("could not parse the recipient")
@@ -100,7 +101,8 @@ func queryDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n t
 	return []byte(depositAddr.Address), nil
 }
 
-func queryMasterAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer) ([]byte, error) {
+// QueryMasterAddress returns the master address
+func QueryMasterAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer) ([]byte, error) {
 	masterKey, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.MasterKey)
 	if !ok {
 		return nil, fmt.Errorf("masterKey not found")
@@ -143,7 +145,8 @@ func queryMinimumWithdrawAmount(ctx sdk.Context, k types.BTCKeeper) []byte {
 	return amount
 }
 
-func queryTxState(ctx sdk.Context, k types.BTCKeeper, data []byte) ([]byte, error) {
+// QueryTxState returns the state of given transaction
+func QueryTxState(ctx sdk.Context, k types.BTCKeeper, data []byte) ([]byte, error) {
 
 	outpoint, err := types.OutPointFromStr(string(data))
 	if err != nil {
@@ -167,7 +170,8 @@ func queryTxState(ctx sdk.Context, k types.BTCKeeper, data []byte) ([]byte, erro
 	return []byte(message), nil
 }
 
-func getConsolidationTxState(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {
+// GetConsolidationTxState returns the state of consolidqtion transaction
+func GetConsolidationTxState(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {
 
 	tx, ok := k.GetSignedTx(ctx)
 	if !ok {
@@ -181,7 +185,7 @@ func getConsolidationTxState(ctx sdk.Context, k types.BTCKeeper) ([]byte, error)
 
 	outpointByte := []byte(wire.NewOutPoint(&txID, vout).String())
 
-	stateMsg, err := queryTxState(ctx, k, outpointByte)
+	stateMsg, err := QueryTxState(ctx, k, outpointByte)
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +193,8 @@ func getConsolidationTxState(ctx sdk.Context, k types.BTCKeeper) ([]byte, error)
 	return stateMsg, nil
 }
 
-func getRawConsolidationTx(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {
+// GetRawConsolidationTx returns the consolidation transaction in bytes
+func GetRawConsolidationTx(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {
 	if _, ok := k.GetUnsignedTx(ctx); ok {
 		rawTxResponse := &types.QueryRawTxResponse{StateOrTx: &types.QueryRawTxResponse_State{State: types.Signing}}
 		return rawTxResponse.Marshal()
