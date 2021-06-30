@@ -203,7 +203,7 @@ func GetHandlerQueryBytecode(cliCtx client.Context) http.HandlerFunc {
 
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QSignedTx, chain, contract), nil)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFBytecodes, contract).Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFBytecode, contract).Error())
 			return
 		}
 

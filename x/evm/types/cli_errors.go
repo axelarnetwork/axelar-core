@@ -9,7 +9,7 @@ const (
 	ErrFTokenAddress   = "could not resolve token address: %s\n"
 	ErrFDeployTx       = "could not send the command transaction with txID %s"
 	ErrFSignedTx       = "could not get transaction with txID %s"
-	ErrFBytecodes      = "could not get the bytecodes for contract %s"
+	ErrFBytecode       = "could not get the bytecodes for contract %s"
 	ErrFSendTx         = "could not send the transaction with txID %s"
 	ErrFSendCommandTx  = "could not send %s transaction executing command %s"
 )

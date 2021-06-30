@@ -234,7 +234,7 @@ func GetCmdBytecode(queryRoute string) *cobra.Command {
 
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QBytecode, args[0], args[1]), nil)
 			if err != nil {
-				return sdkerrors.Wrapf(err, types.ErrFBytecodes, args[1])
+				return sdkerrors.Wrapf(err, types.ErrFBytecode, args[1])
 			}
 
 			fmt.Println("0x" + common.Bytes2Hex(res))
