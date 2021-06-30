@@ -78,8 +78,8 @@ func TestQueryMasterAddress(t *testing.T) {
 		assert.Len(btcKeeper.GetAddressCalls(), 1)
 		assert.Len(signer.GetCurrentKeyCalls(), 1)
 
-		assert.Equal(btcKeeper.GetAddressCalls()[0].EncodedAddress, resp.MasterAddress)
-		assert.Equal(key.ID, resp.MasterKeyId)
+		assert.Equal(btcKeeper.GetAddressCalls()[0].EncodedAddress, resp.Address)
+		assert.Equal(key.ID, resp.KeyId)
 
 	}).Repeat(repeatCount))
 
