@@ -41,7 +41,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 // GetCmdDepositAddress returns the deposit address command
 func GetCmdDepositAddress(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "deposit-addr [chain] [recipient address]",
+		Use:   "deposit-address [chain] [recipient address]",
 		Short: "Returns a bitcoin deposit address for a recipient address on another blockchain",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -54,7 +54,7 @@ func GetCmdDepositAddress(queryRoute string) *cobra.Command {
 
 			res, _, err := clientCtx.QueryWithData(path, types.ModuleCdc.MustMarshalJSON(&types.DepositQueryParams{Chain: args[0], Address: args[1]}))
 			if err != nil {
-				return sdkerrors.Wrap(err, types.ErrFDepositAddress)
+				return sdkerrors.Wrap(err, types.ErrFMasterKey)
 			}
 
 			return clientCtx.PrintObjectLegacy(string(res))
@@ -66,9 +66,10 @@ func GetCmdDepositAddress(queryRoute string) *cobra.Command {
 
 // GetCmdMasterAddress returns the master address command
 func GetCmdMasterAddress(queryRoute string) *cobra.Command {
+	var IncludeKeyID bool
 	cmd := &cobra.Command{
-		Use:   "master-addr",
-		Short: "Returns the bitcoin address of the current master key",
+		Use:   "master-address",
+		Short: "Returns the bitcoin address of the current master key, and optionally the key's ID",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
@@ -80,13 +81,24 @@ func GetCmdMasterAddress(queryRoute string) *cobra.Command {
 
 			res, _, err := clientCtx.QueryWithData(path, nil)
 			if err != nil {
-				return sdkerrors.Wrap(err, types.ErrFDepositAddress)
+				return sdkerrors.Wrap(err, types.ErrFMasterKey)
 			}
 
-			return clientCtx.PrintString(string(res))
+			var resp types.QueryMasterAddressResponse
+			err = resp.Unmarshal(res)
+			if err != nil {
+				return sdkerrors.Wrap(err, types.ErrFMasterKey)
+			}
+
+			if IncludeKeyID {
+				return clientCtx.PrintObjectLegacy(resp)
+			}
+
+			return clientCtx.PrintObjectLegacy(resp.Address)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
+	cmd.Flags().BoolVar(&IncludeKeyID, "include-key-id", false, "include the current master key ID in the output")
 	return cmd
 }
 

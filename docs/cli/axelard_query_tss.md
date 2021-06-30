@@ -1,17 +1,15 @@
-## axelard query bitcoin deposit-addr
+## axelard query tss
 
-Returns a bitcoin deposit address for a recipient address on another blockchain
+Querying commands for the tss module
 
 ```
-axelard query bitcoin deposit-addr [chain] [recipient address] [flags]
+axelard query tss [flags]
 ```
 
 ### Options
 
 ```
-      --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for deposit-addr
-      --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+  -h, --help   help for tss
 ```
 
 ### Options inherited from parent commands
@@ -27,4 +25,5 @@ axelard query bitcoin deposit-addr [chain] [recipient address] [flags]
 
 ### SEE ALSO
 
-- [axelard query bitcoin](axelard_query_bitcoin.md)	 - bitcoin query subcommands
+- [axelard query](axelard_query.md)	 - Querying subcommands
+- [axelard query tss signature](axelard_query_tss_signature.md)	 - Query a signature by sig ID

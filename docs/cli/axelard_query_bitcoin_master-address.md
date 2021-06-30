@@ -1,9 +1,9 @@
-## axelard query evm master-address
+## axelard query bitcoin master-address
 
-Returns the EVM address of the current master key, and optionally the key's ID
+Returns the bitcoin address of the current master key, and optionally the key's ID
 
 ```
-axelard query evm master-address [chain] [flags]
+axelard query bitcoin master-address [flags]
 ```
 
 ### Options
@@ -28,4 +28,4 @@ axelard query evm master-address [chain] [flags]
 
 ### SEE ALSO
 
-- [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module
+- [axelard query bitcoin](axelard_query_bitcoin.md)	 - bitcoin query subcommands

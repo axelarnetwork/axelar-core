@@ -21,3 +21,8 @@ message QueryRawTxResponse {
     SignState state = 2;
   }
 }
+
+message QueryMasterAddressResponse {
+  string address = 1;
+  string key_id = 2;
+}

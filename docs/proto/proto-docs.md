@@ -20,6 +20,7 @@
   
 - [bitcoin/v1beta1/query.proto](#bitcoin/v1beta1/query.proto)
     - [DepositQueryParams](#bitcoin.v1beta1.DepositQueryParams)
+    - [QueryMasterAddressResponse](#bitcoin.v1beta1.QueryMasterAddressResponse)
     - [QueryRawTxResponse](#bitcoin.v1beta1.QueryRawTxResponse)
   
 - [vote/exported/v1beta1/types.proto](#vote/exported/v1beta1/types.proto)
@@ -53,6 +54,7 @@
   
 - [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
     - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
+    - [QueryMasterAddressResponse](#evm.v1beta1.QueryMasterAddressResponse)
   
 - [tss/exported/v1beta1/types.proto](#tss/exported/v1beta1/types.proto)
     - [KeyRequirement](#tss.exported.v1beta1.KeyRequirement)
@@ -145,6 +147,9 @@
   
 - [tss/v1beta1/genesis.proto](#tss/v1beta1/genesis.proto)
     - [GenesisState](#tss.v1beta1.GenesisState)
+  
+- [tss/v1beta1/query.proto](#tss/v1beta1/query.proto)
+    - [QuerySigResponse](#tss.v1beta1.QuerySigResponse)
   
 - [tss/v1beta1/tx.proto](#tss/v1beta1/tx.proto)
     - [ProcessKeygenTrafficRequest](#tss.v1beta1.ProcessKeygenTrafficRequest)
@@ -353,6 +358,22 @@ deposit address
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  |  |
 | `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.QueryMasterAddressResponse"></a>
+
+### QueryMasterAddressResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
 
 
 
@@ -769,6 +790,22 @@ deposit address
 | `address` | [string](#string) |  |  |
 | `symbol` | [string](#string) |  |  |
 | `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryMasterAddressResponse"></a>
+
+### QueryMasterAddressResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [bytes](#bytes) |  |  |
+| `key_id` | [string](#string) |  |  |
 
 
 
@@ -1960,6 +1997,38 @@ Params is the parameter set for this module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#tss.v1beta1.Params) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="tss/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tss/v1beta1/query.proto
+
+
+
+<a name="tss.v1beta1.QuerySigResponse"></a>
+
+### QuerySigResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `r` | [bytes](#bytes) |  |  |
+| `s` | [bytes](#bytes) |  |  |
 
 
 

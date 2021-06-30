@@ -42,12 +42,14 @@ func GetHandlerQueryMasterAddress(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		if len(res) == 0 {
-			rest.PostProcessResponse(w, cliCtx, "")
+		var resp types.QueryMasterAddressResponse
+		err = resp.Unmarshal(res)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
 			return
 		}
 
-		rest.PostProcessResponse(w, cliCtx, common.BytesToAddress(res).Hex())
+		rest.PostProcessResponse(w, cliCtx, resp)
 	}
 }
 

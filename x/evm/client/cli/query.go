@@ -45,7 +45,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 // GetCmdDepositAddress returns the deposit address command
 func GetCmdDepositAddress(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "deposit-addr [evm chain] [recipient chain] [recipient address] [symbol]",
+		Use:   "deposit-address [evm chain] [recipient chain] [recipient address] [symbol]",
 		Short: "Returns an evm chain deposit address for a recipient address on another blockchain",
 		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -71,9 +71,10 @@ func GetCmdDepositAddress(queryRoute string) *cobra.Command {
 
 // GetCmdMasterAddress returns the query for an EVM chain master address that owns the AxelarGateway contract
 func GetCmdMasterAddress(queryRoute string) *cobra.Command {
+	var IncludeKeyID bool
 	cmd := &cobra.Command{
 		Use:   "master-address [chain]",
-		Short: "Query an address by key ID",
+		Short: "Returns the EVM address of the current master key, and optionally the key's ID",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientQueryContext(cmd)
@@ -88,12 +89,24 @@ func GetCmdMasterAddress(queryRoute string) *cobra.Command {
 				return nil
 			}
 
-			out := common.BytesToAddress(res)
-			return cliCtx.PrintObjectLegacy(out.Hex())
+			var resp types.QueryMasterAddressResponse
+			err = resp.Unmarshal(res)
+			if err != nil {
+				return sdkerrors.Wrap(err, types.ErrFMasterKey)
+			}
+
+			if IncludeKeyID {
+				return cliCtx.PrintObjectLegacy(resp)
+			}
+
+			address := common.BytesToAddress(resp.Address)
+
+			return cliCtx.PrintObjectLegacy(address.Hex())
 		},
 	}
 
 	flags.AddQueryFlagsToCmd(cmd)
+	cmd.Flags().BoolVar(&IncludeKeyID, "include-key-id", false, "include the current master key ID in the output")
 	return cmd
 }
 

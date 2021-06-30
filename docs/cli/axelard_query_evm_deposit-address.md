@@ -1,18 +1,17 @@
-## axelard query evm master-address
+## axelard query evm deposit-address
 
-Returns the EVM address of the current master key, and optionally the key's ID
+Returns an evm chain deposit address for a recipient address on another blockchain
 
 ```
-axelard query evm master-address [chain] [flags]
+axelard query evm deposit-address [evm chain] [recipient chain] [recipient address] [symbol] [flags]
 ```
 
 ### Options
 
 ```
-      --height int       Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help             help for master-address
-      --include-key-id   include the current master key ID in the output
-      --node string      <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+      --height int    Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help          help for deposit-address
+      --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 
 ### Options inherited from parent commands

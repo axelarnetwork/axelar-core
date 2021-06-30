@@ -1,16 +1,16 @@
-## axelard query evm deposit-addr
+## axelard query bitcoin deposit-address
 
-Returns an evm chain deposit address for a recipient address on another blockchain
+Returns a bitcoin deposit address for a recipient address on another blockchain
 
 ```
-axelard query evm deposit-addr [evm chain] [recipient chain] [recipient address] [symbol] [flags]
+axelard query bitcoin deposit-address [chain] [recipient address] [flags]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for deposit-addr
+  -h, --help          help for deposit-address
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 
@@ -27,4 +27,4 @@ axelard query evm deposit-addr [evm chain] [recipient chain] [recipient address]
 
 ### SEE ALSO
 
-- [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module
+- [axelard query bitcoin](axelard_query_bitcoin.md)	 - bitcoin query subcommands

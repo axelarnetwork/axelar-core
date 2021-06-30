@@ -41,7 +41,7 @@ func QueryHandlerDepositAddress(cliCtx client.Context) http.HandlerFunc {
 
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryDepositAddress), queryData)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFDepositAddress).Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
 			return
 		}
 
@@ -65,7 +65,7 @@ func QueryHandlerMinimumWithdrawAmount(cliCtx client.Context) http.HandlerFunc {
 
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryMinimumWithdrawAmount), nil)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFDepositAddress).Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
 			return
 		}
 
@@ -89,12 +89,14 @@ func QueryHandlerMasterAddress(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		if len(res) == 0 {
-			rest.PostProcessResponse(w, cliCtx, "")
+		var resp types.QueryMasterAddressResponse
+		err = resp.Unmarshal(res)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		rest.PostProcessResponse(w, cliCtx, string(res))
+		rest.PostProcessResponse(w, cliCtx, resp)
 	}
 }
 

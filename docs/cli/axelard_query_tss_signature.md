@@ -1,16 +1,16 @@
-## axelard query bitcoin master-addr
+## axelard query tss signature
 
-Returns the bitcoin address of the current master key
+Query a signature by sig ID
 
 ```
-axelard query bitcoin master-addr [flags]
+axelard query tss signature [sig ID] [flags]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for master-addr
+  -h, --help          help for signature
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 
@@ -27,4 +27,4 @@ axelard query bitcoin master-addr [flags]
 
 ### SEE ALSO
 
-- [axelard query bitcoin](axelard_query_bitcoin.md)	 - bitcoin query subcommands
+- [axelard query tss](axelard_query_tss.md)	 - Querying commands for the tss module
