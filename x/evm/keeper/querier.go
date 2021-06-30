@@ -29,7 +29,7 @@ const (
 	QAxelarGatewayAddress = "gateway-address"
 	QCommandData          = "command-data"
 	QDepositAddress       = "deposit-address"
-	QBytecodes            = "bytecodes"
+	QBytecode            = "bytecode"
 	QSignedTx             = "signed-tx"
 	CreateDeployTx        = "deploy-gateway"
 	SendTx                = "send-tx"
