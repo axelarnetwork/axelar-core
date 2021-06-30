@@ -262,7 +262,7 @@ func GetCmdSignedTx(queryRoute string) *cobra.Command {
 				return sdkerrors.Wrapf(err, types.ErrFSignedTx, args[1])
 			}
 
-			fmt.Println(string(res))
+			fmt.Println("0x" + common.Bytes2Hex(res))
 			return nil
 		},
 	}

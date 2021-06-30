@@ -305,7 +305,7 @@ func querySignedTx(ctx sdk.Context, k Keeper, s types.Signer, n types.Nexus, cha
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not insert generated signature: %v", err))
 	}
 
-	return signedTx.MarshalJSON()
+	return signedTx.MarshalBinary()
 }
 
 func sendSignedTx(ctx sdk.Context, k Keeper, rpcs map[string]types.RPCClient, s types.Signer, n types.Nexus, chainName, txID string) ([]byte, error) {
