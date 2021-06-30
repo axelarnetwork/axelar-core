@@ -259,7 +259,7 @@ func GetCmdSignedTx(queryRoute string) *cobra.Command {
 				return sdkerrors.Wrapf(err, types.ErrFSignedTx, args[1])
 			}
 
-			fmt.Println(string(cliCtx.LegacyAmino.MustMarshalJSON(res)))
+			fmt.Println(string(res))
 			return nil
 		},
 	}
