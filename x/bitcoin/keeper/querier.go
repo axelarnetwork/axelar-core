@@ -24,13 +24,14 @@ import (
 
 // Query paths
 const (
-	QueryDepositAddress        = "depositAddr"
-	QueryMasterAddress         = "masterAddr"
-	QueryMinimumWithdrawAmount = "minWithdrawAmount"
-	QueryTxState               = "txState"
-	GetConsolidationTx         = "getConsolidationTx"
-	GetConsolidationTxState    = "getConsolidationTxState"
-	GetPayForConsolidationTx   = "getPayForConsolidationTx"
+	QueryDepositAddress          = "depositAddr"
+	QueryMasterAddress           = "masterAddr"
+	QueryKeyConsolidationAddress = "keyConsolidationAddress"
+	QueryMinimumWithdrawAmount   = "minWithdrawAmount"
+	QueryTxState                 = "txState"
+	GetConsolidationTx           = "getConsolidationTx"
+	GetConsolidationTxState      = "getConsolidationTxState"
+	GetPayForConsolidationTx     = "getPayForConsolidationTx"
 )
 
 // NewQuerier returns a new querier for the Bitcoin module
@@ -43,6 +44,8 @@ func NewQuerier(rpc types.RPCClient, k types.BTCKeeper, s types.Signer, n types.
 			res, err = queryDepositAddress(ctx, k, s, n, req.Data)
 		case QueryMasterAddress:
 			res, err = queryMasterAddress(ctx, k, s)
+		case QueryKeyConsolidationAddress:
+			res, err = queryKeyConsolidationAddress(ctx, k, s, req.Data)
 		case QueryMinimumWithdrawAmount:
 			res = queryMinimumWithdrawAmount(ctx, k)
 		case QueryTxState:
@@ -114,8 +117,22 @@ func queryMasterAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer) ([]b
 	return []byte(addr.Address), nil
 }
 
-func queryMinimumWithdrawAmount(ctx sdk.Context, k types.BTCKeeper) []byte {
+func queryKeyConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, keyIDBytes []byte) ([]byte, error) {
+	keyID := string(keyIDBytes)
 
+	key, ok := s.GetKey(ctx, keyID)
+	if !ok {
+		return nil, fmt.Errorf("no key with keyID %s found", keyID)
+	}
+	if key.Role != tss.MasterKey {
+		return nil, fmt.Errorf("key %s does not have the role %s", keyID, tss.MasterKey)
+	}
+
+	addr := types.NewConsolidationAddress(key, k.GetNetwork(ctx))
+	return []byte(addr.Address), nil
+}
+
+func queryMinimumWithdrawAmount(ctx sdk.Context, k types.BTCKeeper) []byte {
 	amount := make([]byte, 8)
 	binary.LittleEndian.PutUint64(amount, uint64(k.GetMinimumWithdrawalAmount(ctx)))
 	return amount

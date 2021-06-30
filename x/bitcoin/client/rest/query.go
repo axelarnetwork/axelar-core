@@ -98,6 +98,31 @@ func QueryHandlerMasterAddress(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
+// QueryHandlerKeyConsolidationAddress  returns a handler to query the consolidation segwit address of any key
+func QueryHandlerKeyConsolidationAddress(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		keyID := mux.Vars(r)[utils.PathVarKeyID]
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryKeyConsolidationAddress), []byte(keyID))
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		if len(res) == 0 {
+			rest.PostProcessResponse(w, cliCtx, "")
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, string(res))
+	}
+}
+
 // GetConsolidationTxResult models the QueryRawTxResponse from keeper.GetConsolidationTx as a JSON response
 type GetConsolidationTxResult struct {
 	State types.SignState `json:"state"`
