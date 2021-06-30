@@ -33,6 +33,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdAxelarGatewayAddress(queryRoute),
 		GetCmdTokenAddress(queryRoute),
 		GetCmdCreateDeployTx(queryRoute),
+		GetCmdBytecodes(queryRoute),
 		GetCmdSignedTx(queryRoute),
 		GetCmdSendTx(queryRoute),
 		GetCmdSendCommand(queryRoute),
