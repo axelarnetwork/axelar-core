@@ -344,7 +344,8 @@ func GetCmdQueryCommandData(queryRoute string) *cobra.Command {
 				return sdkerrors.Wrapf(err, "could not get command %s", commandIDHex)
 			}
 
-			return cliCtx.PrintObjectLegacy(common.Bytes2Hex(res))
+			fmt.Println("0x" + common.Bytes2Hex(res))
+			return nil
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
