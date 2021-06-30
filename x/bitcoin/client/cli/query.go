@@ -94,7 +94,7 @@ func GetCmdMasterAddress(queryRoute string) *cobra.Command {
 				return clientCtx.PrintObjectLegacy(resp)
 			}
 
-			return clientCtx.PrintObjectLegacy(resp.MasterAddress)
+			return clientCtx.PrintObjectLegacy(resp.Address)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)

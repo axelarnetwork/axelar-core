@@ -372,8 +372,8 @@ deposit address
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `master_address` | [string](#string) |  |  |
-| `master_key_id` | [string](#string) |  |  |
+| `address` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
 
 
 
@@ -804,8 +804,8 @@ deposit address
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `master_address` | [bytes](#bytes) |  |  |
-| `master_key_id` | [string](#string) |  |  |
+| `address` | [bytes](#bytes) |  |  |
+| `key_id` | [string](#string) |  |  |
 
 
 

@@ -115,8 +115,8 @@ func queryMasterAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer) ([]b
 	}
 
 	resp := types.QueryMasterAddressResponse{
-		MasterAddress: addr.Address,
-		MasterKeyId:   masterKey.ID,
+		Address: addr.Address,
+		KeyId:   masterKey.ID,
 	}
 
 	return resp.Marshal()

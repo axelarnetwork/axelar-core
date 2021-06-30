@@ -99,7 +99,7 @@ func GetCmdMasterAddress(queryRoute string) *cobra.Command {
 				return cliCtx.PrintObjectLegacy(resp)
 			}
 
-			address := common.BytesToAddress(resp.MasterAddress)
+			address := common.BytesToAddress(resp.Address)
 
 			return cliCtx.PrintObjectLegacy(address.Hex())
 		},

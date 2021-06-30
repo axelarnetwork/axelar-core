@@ -16,6 +16,6 @@ message DepositQueryParams {
 }
 
 message QueryMasterAddressResponse {
-  bytes master_address = 1;
-  string master_key_id = 2;
+  bytes address = 1;
+  string key_id = 2;
 }
