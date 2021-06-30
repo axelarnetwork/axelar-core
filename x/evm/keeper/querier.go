@@ -113,17 +113,10 @@ func QueryDepositAddress(ctx sdk.Context, k types.EVMKeeper, n types.Nexus, chai
 
 func queryMasterAddress(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string) ([]byte, error) {
 
-	chain, ok := n.GetChain(ctx, chainName)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
+	fromAddress, pk, err := getContractOwner(ctx, s, n, chainName)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
 	}
-
-	pk, ok := s.GetCurrentKey(ctx, chain, tss.MasterKey)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, "key not found")
-	}
-
-	fromAddress := crypto.PubkeyToAddress(pk.Value)
 
 	resp := types.QueryMasterAddressResponse{
 		Address: fromAddress.Bytes(),
@@ -222,7 +215,7 @@ func createDeployGateway(ctx sdk.Context, k Keeper, rpcs map[string]types.RPCCli
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find RPC for chain '%s'", params.Chain))
 	}
 
-	contractOwner, err := getContractOwner(ctx, s, n, params.Chain)
+	contractOwner, _, err := getContractOwner(ctx, s, n, params.Chain)
 	if err != nil {
 		return nil, err
 	}
@@ -445,17 +438,17 @@ func queryCommandData(ctx sdk.Context, k Keeper, s types.Signer, n types.Nexus, 
 	return executeData, nil
 }
 
-func getContractOwner(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string) (common.Address, error) {
+func getContractOwner(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string) (common.Address, tss.Key, error) {
 	chain, ok := n.GetChain(ctx, chainName)
 	if !ok {
-		return common.Address{}, sdkerrors.Wrap(types.ErrEVM, fmt.Errorf("%s is not a registered chain", chainName).Error())
+		return common.Address{}, tss.Key{}, fmt.Errorf("%s is not a registered chain", chainName)
 	}
 
 	pk, ok := s.GetCurrentKey(ctx, chain, tss.MasterKey)
 	if !ok {
-		return common.Address{}, fmt.Errorf("key not found")
+		return common.Address{}, tss.Key{}, fmt.Errorf("key not found")
 	}
 
 	fromAddress := crypto.PubkeyToAddress(pk.Value)
-	return fromAddress, nil
+	return fromAddress, pk, nil
 }
