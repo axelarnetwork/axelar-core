@@ -41,8 +41,11 @@ import (
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
-// RWALL grants rw-rw-rw- file permissions
-const RWALL = 0555
+// RW grants -rw------- file permissions
+const RW = 0600
+
+// RWX grants -rwx------ file permissions
+const RWX = 0700
 
 var once sync.Once
 var cleanupCommands []func()
@@ -101,7 +104,7 @@ func GetValdCommand() *cobra.Command {
 			valdHome := filepath.Join(cliCtx.HomeDir, "vald")
 			if _, err := os.Stat(valdHome); os.IsNotExist(err) {
 				logger.Info(fmt.Sprintf("folder %s does not exist, creating...", valdHome))
-				err := os.Mkdir(valdHome, RWALL)
+				err := os.Mkdir(valdHome, RWX)
 				if err != nil {
 					return err
 				}
@@ -322,4 +325,4 @@ func NewRWFile(path string) RWFile {
 func (f RWFile) ReadAll() ([]byte, error) { return os.ReadFile(f.path) }
 
 // WriteAll writes the given bytes to a file. Creates a new fille if it does not exist, overwrites the previous content otherwise.
-func (f RWFile) WriteAll(bz []byte) error { return os.WriteFile(f.path, bz, RWALL) }
+func (f RWFile) WriteAll(bz []byte) error { return os.WriteFile(f.path, bz, RW) }
