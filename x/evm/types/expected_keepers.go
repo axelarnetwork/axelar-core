@@ -116,4 +116,6 @@ type Signer interface {
 // Snapshotter provides access to the snapshot functionality
 type Snapshotter interface {
 	GetSnapshot(ctx sdk.Context, counter int64) (snapshot.Snapshot, bool)
+	GetLatestCounter(ctx sdk.Context) int64
+	TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (snapshotConsensusPower sdk.Int, totalConsensusPower sdk.Int, err error)
 }
