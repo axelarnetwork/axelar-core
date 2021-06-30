@@ -222,7 +222,10 @@ func GetCmdBytecode(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "bytecode [chain] [contract]",
 		Short: "Fetch the bytecodes of an EVM contract [contract] for chain [chain]",
-		Args:  cobra.ExactArgs(2),
+		Long: "Fetch the bytecodes of an EVM contract [contract] for chain [chain]. " +
+			fmt.Sprintf("The value for [contract] can be either '%s', '%s', or '%s'.",
+				keeper.BCGateway, keeper.BCToken, keeper.BCBurner),
+		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {

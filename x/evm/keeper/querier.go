@@ -36,6 +36,13 @@ const (
 	SendCommand           = "send-command"
 )
 
+//Bytecode labels
+const (
+	BCGateway = "gateway"
+	BCToken   = "token"
+	BCBurner  = "burner"
+)
+
 // NewQuerier returns a new querier for the evm module
 func NewQuerier(rpcs map[string]types.RPCClient, k Keeper, s types.Signer, n types.Nexus) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
@@ -268,11 +275,11 @@ func queryBytecode(ctx sdk.Context, k Keeper, n types.Nexus, chainName, contract
 
 	var bz []byte
 	switch strings.ToLower(contract) {
-	case "gateway":
+	case BCGateway:
 		bz, _ = k.GetGatewayByteCodes(ctx, chainName)
-	case "token":
+	case BCToken:
 		bz = k.getTokenBC(ctx, chainName)
-	case "burner":
+	case BCBurner:
 		bz = k.getBurnerBC(ctx, chainName)
 	}
 
