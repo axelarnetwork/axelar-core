@@ -237,7 +237,7 @@ func GetCmdBytecode(queryRoute string) *cobra.Command {
 				return sdkerrors.Wrapf(err, types.ErrFBytecodes, args[1])
 			}
 
-			fmt.Println(common.Bytes2Hex(res))
+			fmt.Println("0x" + common.Bytes2Hex(res))
 			return nil
 		},
 	}
