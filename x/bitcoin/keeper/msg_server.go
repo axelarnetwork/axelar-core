@@ -363,7 +363,7 @@ func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.
 	minAmount := sdk.NewInt(int64(k.GetMinimumWithdrawalAmount(ctx)))
 	pendingTransfers := n.GetTransfersForChain(ctx, exported.Bitcoin, nexus.Pending)
 	outputs := []types.Output{}
-	totalOut := sdk.ZeroInt()
+	total := sdk.ZeroInt()
 	network := k.GetNetwork(ctx).Params()
 
 	// Combine output to same destination address
@@ -408,21 +408,23 @@ func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.
 
 		outputs = append(outputs,
 			types.Output{Amount: btcutil.Amount(amount.Int64()), Recipient: recipient})
-
-		totalOut = totalOut.Add(amount)
+		total = total.Add(amount)
 	}
 
-	return outputs, totalOut
+	return outputs, total
 }
 
 func prepareInputs(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) ([]types.OutPointToSign, sdk.Int, error) {
-	var prevOuts []types.OutPointToSign
-	totalDeposits := sdk.ZeroInt()
+	var inputs []types.OutPointToSign
+	total := sdk.ZeroInt()
+	var info types.OutPointInfo
 
 	_, masterKeyUtxoExists := k.GetMasterKeyVout(ctx)
 	masterKeyUtxoFound := false
+	confirmedOutpointInfoQueue := k.GetConfirmedOutpointInfoQueue(ctx)
+	maxInputCount := k.GetMaxInputCount(ctx)
 
-	for _, info := range k.GetConfirmedOutPointInfos(ctx) {
+	for len(inputs) < int(maxInputCount) && confirmedOutpointInfoQueue.Dequeue(&info) {
 		addr, ok := k.GetAddress(ctx, info.Address)
 		if !ok {
 			return nil, sdk.ZeroInt(), fmt.Errorf("address for confirmed outpoint %s must be known", info.OutPoint)
@@ -441,8 +443,8 @@ func prepareInputs(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) ([]t
 			masterKeyUtxoFound = true
 		}
 
-		prevOuts = append(prevOuts, types.OutPointToSign{OutPointInfo: info, AddressInfo: addr})
-		totalDeposits = totalDeposits.AddRaw(int64(info.Amount))
+		inputs = append(inputs, types.OutPointToSign{OutPointInfo: info, AddressInfo: addr})
+		total = total.AddRaw(int64(info.Amount))
 		k.DeleteOutpointInfo(ctx, info.GetOutPoint())
 		k.SetOutpointInfo(ctx, info, types.SPENT)
 	}
@@ -451,7 +453,7 @@ func prepareInputs(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) ([]t
 		return nil, sdk.ZeroInt(), fmt.Errorf("previous consolidation outpoint must be confirmed first")
 	}
 
-	return prevOuts, totalDeposits, nil
+	return inputs, total, nil
 }
 
 func prepareChange(ctx sdk.Context, k types.BTCKeeper, consolidationAddress types.AddressInfo, change sdk.Int) (types.Output, error) {

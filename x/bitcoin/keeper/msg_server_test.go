@@ -1,4 +1,4 @@
-package keeper
+package keeper_test
 
 import (
 	"crypto/ecdsa"
@@ -12,6 +12,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
+	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	gogoprototypes "github.com/gogo/protobuf/types"
@@ -20,9 +21,13 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
+	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/utils"
+	utilsmock "github.com/axelarnetwork/axelar-core/utils/mock"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
+	bitcoinKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -64,7 +69,7 @@ func TestHandleMsgLink(t *testing.T) {
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		msg = randomMsgLink()
-		server = NewMsgServerImpl(btcKeeper, signer, nexusKeeper, &mock.VoterMock{}, &mock.SnapshotterMock{})
+		server = bitcoinKeeper.NewMsgServerImpl(btcKeeper, signer, nexusKeeper, &mock.VoterMock{}, &mock.SnapshotterMock{})
 	}
 	repeatCount := 20
 
@@ -145,7 +150,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		msg = randomMsgConfirmOutpoint()
 		msg.OutPointInfo.Address = address.EncodeAddress()
-		server = NewMsgServerImpl(btcKeeper, signer, &mock.NexusMock{}, voter, &mock.SnapshotterMock{})
+		server = bitcoinKeeper.NewMsgServerImpl(btcKeeper, signer, &mock.NexusMock{}, voter, &mock.SnapshotterMock{})
 	}
 
 	repeatCount := 20
@@ -261,7 +266,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			AssignNextKeyFunc: func(sdk.Context, nexus.Chain, tss.KeyRole, string) error { return nil },
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		server = NewMsgServerImpl(btcKeeper, signerKeeper, nexusKeeper, voter, &mock.SnapshotterMock{})
+		server = bitcoinKeeper.NewMsgServerImpl(btcKeeper, signerKeeper, nexusKeeper, voter, &mock.SnapshotterMock{})
 	}
 
 	repeats := 20
@@ -520,6 +525,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		nexusKeeper *mock.NexusMock
 		snapshotter *mock.SnapshotterMock
 		ctx         sdk.Context
+		cdc         codec.Marshaler
 		msg         *types.SignPendingTransfersRequest
 		server      types.MsgServiceServer
 
@@ -532,23 +538,32 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		cdc = app.MakeEncodingConfig().Marshaler
 
 		// let the minimum start at 2 so the dust limit can still go below
 		minimumWithdrawalAmount = btcutil.Amount(rand.I64Between(2, 5000))
-		transferAmount = 0
-		transfers = []nexus.CrossChainTransfer{}
-		for i := int64(0); i < rand.I64Between(0, 50); i++ {
-			transfers = append(transfers, randomTransfer(int64(minimumWithdrawalAmount), 1000000))
-			transferAmount += transfers[i].Asset.Amount.Int64()
-		}
-		depositAmount = 0
-		deposits = []types.OutPointInfo{}
-		for depositAmount <= transferAmount {
+		depositAmount, transferAmount = 0, 0
+		deposits, transfers = []types.OutPointInfo{}, []nexus.CrossChainTransfer{}
+
+		for i := int64(0); i < rand.I64Between(1, types.DefaultParams().MaxInputCount); i++ {
 			deposit := randomOutpointInfo()
 			deposits = append(deposits, deposit)
 			depositAmount += int64(deposit.Amount)
 		}
+
+		for true {
+			transfer := randomTransfer(int64(minimumWithdrawalAmount), depositAmount)
+
+			if transferAmount+transfer.Asset.Amount.Int64() > depositAmount {
+				break
+			}
+
+			transfers = append(transfers, transfer)
+			transferAmount += transfer.Asset.Amount.Int64()
+		}
+
 		dustAmount := make(map[string]btcutil.Amount)
+		dequeueCount := 0
 
 		masterPrivateKey, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
 		masterKey := tss.Key{ID: rand.StrBetween(5, 20), Value: masterPrivateKey.PublicKey, Role: tss.MasterKey}
@@ -558,15 +573,31 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		msg = types.NewSignPendingTransfersRequest(rand.Bytes(sdk.AddrLen), masterKey.ID)
 
 		btcKeeper = &mock.BTCKeeperMock{
-			GetUnsignedTxFunc:             func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
-			GetSignedTxFunc:               func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
-			GetNetworkFunc:                func(sdk.Context) types.Network { return types.Mainnet },
-			LoggerFunc:                    func(sdk.Context) log.Logger { return log.TestingLogger() },
-			GetConfirmedOutPointInfosFunc: func(sdk.Context) []types.OutPointInfo { return deposits },
-			DeleteOutpointInfoFunc:        func(sdk.Context, wire.OutPoint) {},
-			SetOutpointInfoFunc:           func(sdk.Context, types.OutPointInfo, types.OutPointState) {},
-			GetMasterKeyVoutFunc:          func(sdk.Context) (uint32, bool) { return 0, false },
-			SetMasterKeyVoutFunc:          func(sdk.Context, uint32) {},
+			GetUnsignedTxFunc: func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
+			GetSignedTxFunc:   func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
+			GetNetworkFunc:    func(sdk.Context) types.Network { return types.Mainnet },
+			LoggerFunc:        func(sdk.Context) log.Logger { return log.TestingLogger() },
+			GetConfirmedOutpointInfoQueueFunc: func(sdk.Context) utils.KVQueue {
+				return &utilsmock.KVQueueMock{
+					DequeueFunc: func(value codec.ProtoMarshaler) bool {
+						if dequeueCount >= len(deposits) {
+							return false
+						}
+
+						cdc.MustUnmarshalBinaryLengthPrefixed(
+							cdc.MustMarshalBinaryLengthPrefixed(&deposits[dequeueCount]),
+							value,
+						)
+
+						dequeueCount++
+						return true
+					},
+				}
+			},
+			DeleteOutpointInfoFunc: func(sdk.Context, wire.OutPoint) {},
+			SetOutpointInfoFunc:    func(sdk.Context, types.OutPointInfo, types.OutPointState) {},
+			GetMasterKeyVoutFunc:   func(sdk.Context) (uint32, bool) { return 0, false },
+			SetMasterKeyVoutFunc:   func(sdk.Context, uint32) {},
 			GetAddressFunc: func(_ sdk.Context, encodedAddress string) (types.AddressInfo, bool) {
 				return types.AddressInfo{
 					Address:      "",
@@ -577,6 +608,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 			SetAddressFunc:                 func(sdk.Context, types.AddressInfo) {},
 			SetUnsignedTxFunc:              func(sdk.Context, *wire.MsgTx) {},
 			GetMinimumWithdrawalAmountFunc: func(sdk.Context) btcutil.Amount { return minimumWithdrawalAmount },
+			GetMaxInputCountFunc:           func(sdk.Context) int64 { return types.DefaultParams().MaxInputCount },
 			GetDustAmountFunc: func(ctx sdk.Context, encodeAddr string) btcutil.Amount {
 				amount, ok := dustAmount[encodeAddr]
 				if !ok {
@@ -641,7 +673,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 				}, true
 			},
 		}
-		server = NewMsgServerImpl(btcKeeper, signer, nexusKeeper, voter, snapshotter)
+		server = bitcoinKeeper.NewMsgServerImpl(btcKeeper, signer, nexusKeeper, voter, snapshotter)
 	}
 
 	repeatCount := 20
@@ -797,6 +829,25 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 
 	}).Repeat(repeatCount))
 
+	t.Run("it should include inputs less than or equal to maxInputCount", testutils.Func(func(t *testing.T) {
+		setup()
+
+		depositCount := rand.I64Between(types.DefaultParams().MaxInputCount+1, types.DefaultParams().MaxInputCount*100)
+		for len(deposits) <= int(depositCount) {
+			deposit := randomOutpointInfo()
+			deposits = append(deposits, deposit)
+			depositAmount += int64(deposit.Amount)
+		}
+
+		_, err := server.SignPendingTransfers(sdk.WrapSDKContext(ctx), msg)
+		assert.NoError(t, err)
+
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls()[0].Tx.TxIn, int(types.DefaultParams().MaxInputCount))
+		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), int(types.DefaultParams().MaxInputCount))
+		assert.Len(t, btcKeeper.SetOutpointInfoCalls(), int(types.DefaultParams().MaxInputCount))
+		assert.Len(t, signer.StartSignCalls(), int(types.DefaultParams().MaxInputCount))
+	}).Repeat(repeatCount))
+
 	t.Run("deposits == transfers", testutils.Func(func(t *testing.T) {
 		setup()
 		// equalize deposits and transfers
@@ -835,7 +886,11 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 
 	t.Run("not enough deposits", testutils.Func(func(t *testing.T) {
 		setup()
-		deposits = deposits[:len(deposits)-1]
+		transfers = append(transfers, nexus.CrossChainTransfer{
+			Recipient: nexus.CrossChainAddress{Chain: exported.Bitcoin, Address: randomAddress().EncodeAddress()},
+			Asset:     sdk.NewInt64Coin(exported.Bitcoin.NativeAsset, depositAmount),
+			ID:        mathRand.Uint64(),
+		})
 
 		_, err := server.SignPendingTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)

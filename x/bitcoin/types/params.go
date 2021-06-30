@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+
 	"github.com/btcsuite/btcutil"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
@@ -10,11 +11,12 @@ import (
 
 // Parameter keys
 var (
-	KeyConfirmationHeight    = []byte("confirmationHeight")
-	KeyNetwork               = []byte("network")
-	KeyRevoteLockingPeriod   = []byte("RevoteLockingPeriod")
-	KeySigCheckInterval      = []byte("KeySigCheckInterval")
+	KeyConfirmationHeight      = []byte("confirmationHeight")
+	KeyNetwork                 = []byte("network")
+	KeyRevoteLockingPeriod     = []byte("RevoteLockingPeriod")
+	KeySigCheckInterval        = []byte("KeySigCheckInterval")
 	KeyMinimumWithdrawalAmount = []byte("KeyMinimumWithdrawalAmount")
+	KeyMaxInputCount           = []byte("KeyMaxInputCount")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -25,11 +27,12 @@ func KeyTable() paramtypes.KeyTable {
 // DefaultParams returns the module's parameter set initialized with default values
 func DefaultParams() Params {
 	return Params{
-		ConfirmationHeight:  1,
-		Network:             Network{Name: Regtest.Name},
-		RevoteLockingPeriod: 50,
-		SigCheckInterval: 10,
+		ConfirmationHeight:      1,
+		Network:                 Network{Name: Regtest.Name},
+		RevoteLockingPeriod:     50,
+		SigCheckInterval:        10,
 		MinimumWithdrawalAmount: 5000,
+		MaxInputCount:           50,
 	}
 }
 
@@ -48,6 +51,7 @@ func (m *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(KeyRevoteLockingPeriod, &m.RevoteLockingPeriod, validateRevoteLockingPeriod),
 		paramtypes.NewParamSetPair(KeySigCheckInterval, &m.SigCheckInterval, validateSigCheckInterval),
 		paramtypes.NewParamSetPair(KeyMinimumWithdrawalAmount, &m.MinimumWithdrawalAmount, validateMinimumWithdrawalAmount),
+		paramtypes.NewParamSetPair(KeyMaxInputCount, &m.MaxInputCount, validateMaxInputCount),
 	}
 }
 
@@ -110,6 +114,19 @@ func validateSigCheckInterval(interval interface{}) error {
 	return nil
 }
 
+func validateMaxInputCount(maxInputCount interface{}) error {
+	m, ok := maxInputCount.(int64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for max input count: %T", maxInputCount)
+	}
+
+	if m <= 0 {
+		return sdkerrors.Wrap(types.ErrInvalidGenesis, "max input count must be greater than 0")
+	}
+
+	return nil
+}
+
 // Validate checks the validity of the values of the parameter set
 func (m Params) Validate() error {
 	if err := validateConfirmationHeight(m.ConfirmationHeight); err != nil {
@@ -128,6 +145,10 @@ func (m Params) Validate() error {
 	}
 
 	if err := validateMinimumWithdrawalAmount(m.MinimumWithdrawalAmount); err != nil {
+		return err
+	}
+
+	if err := validateMaxInputCount(m.MaxInputCount); err != nil {
 		return err
 	}
 

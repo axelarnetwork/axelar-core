@@ -20,12 +20,12 @@ const (
 	TxConfirmTx              = "confirm"
 	TxSignPendingTransfersTx = "sign"
 
-	QueryDepositAddress           = keeper.QueryDepositAddress
-	QueryMasterAddress            = keeper.QueryMasterAddress
-	QueryKeyConsolidationAddress  = keeper.QueryKeyConsolidationAddress
-	QueryGetConsolidationTx       = keeper.GetConsolidationTx
-	QueryGetPayForConsolidationTx = keeper.GetPayForConsolidationTx
-	QueryMinimumWithdrawAmount    = keeper.QueryMinimumWithdrawAmount
+	QueryDepositAddress           = keeper.QDepositAddress
+	QueryMasterAddress            = keeper.QMasterAddress
+	QueryKeyConsolidationAddress  = keeper.QKeyConsolidationAddress
+	QueryGetConsolidationTx       = keeper.QConsolidationTx
+	QueryGetPayForConsolidationTx = keeper.QPayForConsolidationTx
+	QueryMinimumWithdrawAmount    = keeper.QMinimumWithdrawAmount
 )
 
 // RegisterRoutes registers this module's REST routes with the given router
