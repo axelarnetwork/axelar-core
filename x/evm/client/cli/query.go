@@ -218,7 +218,7 @@ func GetCmdCreateDeployTx(queryRoute string) *cobra.Command {
 }
 
 // GetCmdBytecodes fetches the bytecodes of an EVM contract
-func GetCmdBytecodes(queryRoute string) *cobra.Command {
+func GetCmdBytecode(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "bytecode [chain] [contract]",
 		Short: "Fetch the bytecodes of an EVM contract [contract] for chain [chain]",
