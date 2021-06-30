@@ -190,8 +190,8 @@ func GetHandlerQueryCreateDeployTx(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// GetHandlerQueryBytecodes returns a handler to fetch the bytecodes of an EVM contract
-func GetHandlerQueryBytecodes(cliCtx client.Context) http.HandlerFunc {
+// GetHandlerQueryBytecode returns a handler to fetch the bytecodes of an EVM contract
+func GetHandlerQueryBytecode(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)

@@ -38,7 +38,7 @@ const (
 	QueryKeyAddress           = keeper.QKeyAddress
 	QueryAxelarGatewayAddress = keeper.QAxelarGatewayAddress
 	QueryCommandData          = keeper.QCommandData
-	QueryBytecodes            = keeper.QBytecodes
+	QueryBytecode             = keeper.QBytecode
 	QuerySignedTx             = keeper.QSignedTx
 	QueryCreateDeployTx       = keeper.CreateDeployTx
 	QuerySendTx               = keeper.SendTx
@@ -66,7 +66,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery(GetHandlerQueryKeyAddress(cliCtx), QueryKeyAddress, clientUtils.PathVarKeyID)
 	registerQuery(GetHandlerQueryAxelarGatewayAddress(cliCtx), QueryAxelarGatewayAddress, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQueryCommandData(cliCtx), QueryCommandData, clientUtils.PathVarChain, clientUtils.PathVarCommandID)
-	registerQuery(GetHandlerQueryBytecodes(cliCtx), QueryBytecodes, clientUtils.PathVarChain, clientUtils.PathVarContract)
+	registerQuery(GetHandlerQueryBytecode(cliCtx), QueryBytecode, clientUtils.PathVarChain, clientUtils.PathVarContract)
 	registerQuery(GetHandlerQuerySignedTx(cliCtx), QuerySignedTx, clientUtils.PathVarChain, clientUtils.PathVarTxID)
 	registerQuery(GetHandlerQueryCreateDeployTx(cliCtx), QueryCreateDeployTx, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQuerySendTx(cliCtx), QuerySendTx, clientUtils.PathVarChain, clientUtils.PathVarTxID)

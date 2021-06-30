@@ -33,7 +33,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdAxelarGatewayAddress(queryRoute),
 		GetCmdTokenAddress(queryRoute),
 		GetCmdCreateDeployTx(queryRoute),
-		GetCmdBytecodes(queryRoute),
+		GetCmdBytecode(queryRoute),
 		GetCmdSignedTx(queryRoute),
 		GetCmdSendTx(queryRoute),
 		GetCmdSendCommand(queryRoute),
@@ -217,7 +217,7 @@ func GetCmdCreateDeployTx(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdBytecodes fetches the bytecodes of an EVM contract
+// GetCmdBytecode fetches the bytecodes of an EVM contract
 func GetCmdBytecode(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "bytecode [chain] [contract]",
@@ -229,7 +229,7 @@ func GetCmdBytecode(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QBytecodes, args[0], args[1]), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QBytecode, args[0], args[1]), nil)
 			if err != nil {
 				return sdkerrors.Wrapf(err, types.ErrFBytecodes, args[1])
 			}

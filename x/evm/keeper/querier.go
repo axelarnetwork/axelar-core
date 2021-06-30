@@ -29,7 +29,7 @@ const (
 	QAxelarGatewayAddress = "gateway-address"
 	QCommandData          = "command-data"
 	QDepositAddress       = "deposit-address"
-	QBytecode            = "bytecode"
+	QBytecode             = "bytecode"
 	QSignedTx             = "signed-tx"
 	CreateDeployTx        = "deploy-gateway"
 	SendTx                = "send-tx"
@@ -54,8 +54,8 @@ func NewQuerier(rpcs map[string]types.RPCClient, k Keeper, s types.Signer, n typ
 			return queryCommandData(ctx, k, s, n, path[1], path[2])
 		case QDepositAddress:
 			return QueryDepositAddress(ctx, k, n, path[1], req.Data)
-		case QBytecodes:
-			return queryBytecodes(ctx, k, n, path[1], path[2])
+		case QBytecode:
+			return queryBytecode(ctx, k, n, path[1], path[2])
 		case QSignedTx:
 			return querySignedTx(ctx, k, s, n, path[1], path[2])
 		case CreateDeployTx:
@@ -259,7 +259,7 @@ func createDeployGateway(ctx sdk.Context, k Keeper, rpcs map[string]types.RPCCli
 	return types.ModuleCdc.LegacyAmino.MustMarshalJSON(result), nil
 }
 
-func queryBytecodes(ctx sdk.Context, k Keeper, n types.Nexus, chainName, contract string) ([]byte, error) {
+func queryBytecode(ctx sdk.Context, k Keeper, n types.Nexus, chainName, contract string) ([]byte, error) {
 
 	_, ok := n.GetChain(ctx, chainName)
 	if !ok {
