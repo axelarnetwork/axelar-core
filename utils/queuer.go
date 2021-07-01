@@ -20,19 +20,19 @@ type KVQueue interface {
 // the order of items that are enqueued at the same block height is deterministically based on their actual key
 // in the KVStore
 type BlockHeightKVQueue struct {
-	store NormalizedKVStore
-	ctx   sdk.Context
-	name  string
+	store             NormalizedKVStore
+	blockHeightPrefix string
+	name              string
 }
 
 // NewBlockHeightKVQueue is the constructor of BlockHeightKVQueue
-func NewBlockHeightKVQueue(store NormalizedKVStore, ctx sdk.Context, name string) KVQueue {
-	return BlockHeightKVQueue{store, ctx, name}
+func NewBlockHeightKVQueue(name string, store NormalizedKVStore, blockHeight int64) BlockHeightKVQueue {
+	return BlockHeightKVQueue{store: store, name: name}.WithBlockHeight(blockHeight)
 }
 
 // Enqueue pushes the given value onto the top of the queue and stores the value at given key
 func (q BlockHeightKVQueue) Enqueue(key Keyer, value codec.ProtoMarshaler) {
-	q.store.Set(RegularKey(key.AsKey()).WithPrefix(string(q.getBlockHeightInBytes())).WithPrefix(q.name), &gogoprototypes.BytesValue{Value: key.AsKey()})
+	q.store.Set(key.WithPrefix(q.blockHeightPrefix).WithPrefix(q.name), &gogoprototypes.BytesValue{Value: key.AsKey()})
 	q.store.Set(key, value)
 }
 
@@ -40,6 +40,7 @@ func (q BlockHeightKVQueue) Enqueue(key Keyer, value codec.ProtoMarshaler) {
 // in the queue is found
 func (q BlockHeightKVQueue) Dequeue(value codec.ProtoMarshaler) bool {
 	iter := sdk.KVStorePrefixIterator(q.store.KVStore, []byte(q.name))
+	//goland:noinspection GoUnhandledErrorResult
 	defer iter.Close()
 
 	if !iter.Valid() {
@@ -58,10 +59,9 @@ func (q BlockHeightKVQueue) Dequeue(value codec.ProtoMarshaler) bool {
 	return true
 }
 
-func (q BlockHeightKVQueue) getBlockHeightInBytes() []byte {
+func (q BlockHeightKVQueue) WithBlockHeight(blockHeight int64) BlockHeightKVQueue {
 	bz := make([]byte, 8)
-	blockHeight := q.ctx.BlockHeight()
 	binary.BigEndian.PutUint64(bz, uint64(blockHeight))
-
-	return bz
+	q.blockHeightPrefix = string(bz)
+	return q
 }
