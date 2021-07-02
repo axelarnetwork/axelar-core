@@ -33,6 +33,8 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdAxelarGatewayAddress(queryRoute),
 		GetCmdTokenAddress(queryRoute),
 		GetCmdCreateDeployTx(queryRoute),
+		GetCmdBytecode(queryRoute),
+		GetCmdSignedTx(queryRoute),
 		GetCmdSendTx(queryRoute),
 		GetCmdSendCommand(queryRoute),
 		GetCmdQueryCommandData(queryRoute),
@@ -215,6 +217,59 @@ func GetCmdCreateDeployTx(queryRoute string) *cobra.Command {
 	return cmd
 }
 
+// GetCmdBytecode fetches the bytecodes of an EVM contract
+func GetCmdBytecode(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "bytecode [chain] [contract]",
+		Short: "Fetch the bytecodes of an EVM contract [contract] for chain [chain]",
+		Long: fmt.Sprintf("Fetch the bytecodes of an EVM contract [contract] for chain [chain]. "+
+			"The value for [contract] can be either '%s', '%s', or '%s'.",
+			keeper.BCGateway, keeper.BCToken, keeper.BCBurner),
+		Args: cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QBytecode, args[0], args[1]), nil)
+			if err != nil {
+				return sdkerrors.Wrapf(err, types.ErrFBytecode, args[1])
+			}
+
+			fmt.Println("0x" + common.Bytes2Hex(res))
+			return nil
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdSignedTx fetches an EVM transaction that has been signed by the validators
+func GetCmdSignedTx(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "signedTx [chain] [txID]",
+		Short: "Fetch an EVM transaction [txID] that has been signed by the validators for chain [chain]",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QSignedTx, args[0], args[1]), nil)
+			if err != nil {
+				return sdkerrors.Wrapf(err, types.ErrFSignedTx, args[1])
+			}
+
+			fmt.Println("0x" + common.Bytes2Hex(res))
+			return nil
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
 // GetCmdSendTx sends a transaction to an EVM chain
 func GetCmdSendTx(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
@@ -289,7 +344,8 @@ func GetCmdQueryCommandData(queryRoute string) *cobra.Command {
 				return sdkerrors.Wrapf(err, "could not get command %s", commandIDHex)
 			}
 
-			return cliCtx.PrintObjectLegacy(common.Bytes2Hex(res))
+			fmt.Println("0x" + common.Bytes2Hex(res))
+			return nil
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)

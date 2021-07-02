@@ -13,6 +13,7 @@ import (
 // routes
 const (
 	PathVarChain           = "Chain"
+	PathVarContract        = "Contract"
 	PathVarEthereumAddress = "EthereumAddress"
 	PathVarSymbol          = "Symbol"
 	PathVarTxID            = "TxID"

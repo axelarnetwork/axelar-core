@@ -190,6 +190,48 @@ func GetHandlerQueryCreateDeployTx(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
+// GetHandlerQueryBytecode returns a handler to fetch the bytecodes of an EVM contract
+func GetHandlerQueryBytecode(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+		chain := mux.Vars(r)[utils.PathVarChain]
+		contract := mux.Vars(r)[utils.PathVarContract]
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QSignedTx, chain, contract), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFBytecode, contract).Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, common.BytesToHash(res).Hex())
+	}
+}
+
+// GetHandlerQuerySignedTx returns a handler to fetch an EVM transaction that has been signed by the validators
+func GetHandlerQuerySignedTx(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+		chain := mux.Vars(r)[utils.PathVarChain]
+		txID := mux.Vars(r)[utils.PathVarTxID]
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QSignedTx, chain, txID), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSignedTx, txID).Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, common.BytesToHash(res).Hex())
+	}
+}
+
 // GetHandlerQuerySendTx returns a handler to send a transaction to an EVM chain wallet to be signed and submitted by a specified account
 func GetHandlerQuerySendTx(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

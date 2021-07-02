@@ -29,9 +29,18 @@ const (
 	QAxelarGatewayAddress = "gateway-address"
 	QCommandData          = "command-data"
 	QDepositAddress       = "deposit-address"
+	QBytecode             = "bytecode"
+	QSignedTx             = "signed-tx"
 	CreateDeployTx        = "deploy-gateway"
 	SendTx                = "send-tx"
 	SendCommand           = "send-command"
+)
+
+//Bytecode labels
+const (
+	BCGateway = "gateway"
+	BCToken   = "token"
+	BCBurner  = "burner"
 )
 
 // NewQuerier returns a new querier for the evm module
@@ -52,6 +61,10 @@ func NewQuerier(rpcs map[string]types.RPCClient, k Keeper, s types.Signer, n typ
 			return queryCommandData(ctx, k, s, n, path[1], path[2])
 		case QDepositAddress:
 			return QueryDepositAddress(ctx, k, n, path[1], req.Data)
+		case QBytecode:
+			return queryBytecode(ctx, k, n, path[1], path[2])
+		case QSignedTx:
+			return querySignedTx(ctx, k, s, n, path[1], path[2])
 		case CreateDeployTx:
 			return createDeployGateway(ctx, k, rpcs, s, n, req.Data)
 		case SendTx:
@@ -100,17 +113,10 @@ func QueryDepositAddress(ctx sdk.Context, k types.EVMKeeper, n types.Nexus, chai
 
 func queryMasterAddress(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string) ([]byte, error) {
 
-	chain, ok := n.GetChain(ctx, chainName)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
+	fromAddress, pk, err := getContractOwner(ctx, s, n, chainName)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
 	}
-
-	pk, ok := s.GetCurrentKey(ctx, chain, tss.MasterKey)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, "key not found")
-	}
-
-	fromAddress := crypto.PubkeyToAddress(pk.Value)
 
 	resp := types.QueryMasterAddressResponse{
 		Address: fromAddress.Bytes(),
@@ -209,7 +215,7 @@ func createDeployGateway(ctx sdk.Context, k Keeper, rpcs map[string]types.RPCCli
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find RPC for chain '%s'", params.Chain))
 	}
 
-	contractOwner, err := getContractOwner(ctx, s, n, params.Chain)
+	contractOwner, _, err := getContractOwner(ctx, s, n, params.Chain)
 	if err != nil {
 		return nil, err
 	}
@@ -251,6 +257,55 @@ func createDeployGateway(ctx sdk.Context, k Keeper, rpcs map[string]types.RPCCli
 	}
 	k.Logger(ctx).Debug(fmt.Sprintf("Contract address: %s", result.ContractAddress))
 	return types.ModuleCdc.LegacyAmino.MustMarshalJSON(result), nil
+}
+
+func queryBytecode(ctx sdk.Context, k Keeper, n types.Nexus, chainName, contract string) ([]byte, error) {
+
+	_, ok := n.GetChain(ctx, chainName)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
+	}
+
+	var bz []byte
+	switch strings.ToLower(contract) {
+	case BCGateway:
+		bz, _ = k.GetGatewayByteCodes(ctx, chainName)
+	case BCToken:
+		bz = k.getTokenBC(ctx, chainName)
+	case BCBurner:
+		bz = k.getBurnerBC(ctx, chainName)
+	}
+
+	if bz == nil {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not retrieve bytecodes for chain %s", chainName))
+	}
+
+	return bz, nil
+}
+
+func querySignedTx(ctx sdk.Context, k Keeper, s types.Signer, n types.Nexus, chainName, txID string) ([]byte, error) {
+
+	_, ok := n.GetChain(ctx, chainName)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
+	}
+
+	pk, ok := s.GetKeyForSigID(ctx, txID)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding key for sig ID %s", txID))
+	}
+
+	sig, ok := s.GetSig(ctx, txID)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding signature for sig ID %s", txID))
+	}
+
+	signedTx, err := k.AssembleEthTx(ctx, chainName, txID, pk.Value, sig)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not insert generated signature: %v", err))
+	}
+
+	return signedTx.MarshalBinary()
 }
 
 func sendSignedTx(ctx sdk.Context, k Keeper, rpcs map[string]types.RPCClient, s types.Signer, n types.Nexus, chainName, txID string) ([]byte, error) {
@@ -383,17 +438,17 @@ func queryCommandData(ctx sdk.Context, k Keeper, s types.Signer, n types.Nexus, 
 	return executeData, nil
 }
 
-func getContractOwner(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string) (common.Address, error) {
+func getContractOwner(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string) (common.Address, tss.Key, error) {
 	chain, ok := n.GetChain(ctx, chainName)
 	if !ok {
-		return common.Address{}, sdkerrors.Wrap(types.ErrEVM, fmt.Errorf("%s is not a registered chain", chainName).Error())
+		return common.Address{}, tss.Key{}, fmt.Errorf("%s is not a registered chain", chainName)
 	}
 
 	pk, ok := s.GetCurrentKey(ctx, chain, tss.MasterKey)
 	if !ok {
-		return common.Address{}, fmt.Errorf("key not found")
+		return common.Address{}, tss.Key{}, fmt.Errorf("key not found")
 	}
 
 	fromAddress := crypto.PubkeyToAddress(pk.Value)
-	return fromAddress, nil
+	return fromAddress, pk, nil
 }
