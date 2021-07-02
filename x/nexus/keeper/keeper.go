@@ -15,14 +15,14 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
-const (
-	senderPrefix     = "send"
-	chainPrefix      = "chain"
-	totalPrefix      = "total"
-	registeredPrefix = "registered"
+var (
+	senderPrefix     = utils.KeyFromStr("send")
+	chainPrefix      = utils.KeyFromStr("chain")
+	totalPrefix      = utils.KeyFromStr("total")
+	registeredPrefix = utils.KeyFromStr("registered")
 
-	sequenceKey = "nextID"
-	registered  = 0x01
+	sequenceKey = utils.KeyFromStr("nextID")
+	registered  = []byte{0x01}
 )
 
 // Keeper represents a nexus keeper
@@ -65,20 +65,21 @@ func (k Keeper) GetParams(ctx sdk.Context) types.Params {
 
 // RegisterAsset indicates that the specified asset is supported by the given chain
 func (k Keeper) RegisterAsset(ctx sdk.Context, chainName, denom string) {
-	k.getStore(ctx).SetRaw(utils.LowerCaseKey(denom).WithPrefix(chainName).WithPrefix(registeredPrefix), []byte{registered})
+	key := registeredPrefix.Append(utils.LowerCaseKey(chainName)).Append(utils.LowerCaseKey(denom))
+	k.getStore(ctx).SetRaw(key, registered)
 }
 
 // IsAssetRegistered returns true if the specified asset is supported by the given chain
 func (k Keeper) IsAssetRegistered(ctx sdk.Context, chainName, denom string) bool {
-	return k.getStore(ctx).GetRaw(utils.LowerCaseKey(denom).WithPrefix(chainName).WithPrefix(registeredPrefix)) != nil
+	key := registeredPrefix.Append(utils.LowerCaseKey(chainName)).Append(utils.LowerCaseKey(denom))
+	return k.getStore(ctx).GetRaw(key) != nil
 }
 
 // GetChains retrieves the specification for all supported blockchains
 func (k Keeper) GetChains(ctx sdk.Context) []exported.Chain {
 	var results []exported.Chain
 
-	prefix := utils.EmptyLowerCaseKey.WithPrefix(chainPrefix).AsKey()
-	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), prefix)
+	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), chainPrefix.AsKey())
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
@@ -93,25 +94,26 @@ func (k Keeper) GetChains(ctx sdk.Context) []exported.Chain {
 // GetChain retrieves the specification for a supported blockchain
 func (k Keeper) GetChain(ctx sdk.Context, chainName string) (exported.Chain, bool) {
 	var chain exported.Chain
-	ok := k.getStore(ctx).Get(utils.LowerCaseKey(chainName).WithPrefix(chainPrefix), &chain)
+	key := chainPrefix.Append(utils.LowerCaseKey(chainName))
+	ok := k.getStore(ctx).Get(key, &chain)
 
 	return chain, ok
 }
 
 // SetChain sets the specification for a supported chain
 func (k Keeper) SetChain(ctx sdk.Context, chain exported.Chain) {
-	k.getStore(ctx).Set(utils.LowerCaseKey(chain.Name).WithPrefix(chainPrefix), &chain)
+	k.getStore(ctx).Set(chainPrefix.Append(utils.LowerCaseKey(chain.Name)), &chain)
 }
 
 // LinkAddresses links a sender address to a cross-chain recipient address
 func (k Keeper) LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) {
-	k.getStore(ctx).Set(utils.ToLowerCaseKey(&sender).WithPrefix(senderPrefix), &recipient)
+	k.getStore(ctx).Set(senderPrefix.Append(utils.LowerCaseKey(sender.String())), &recipient)
 }
 
 // GetRecipient retrieves the cross chain recipient associated to the specified sender
 func (k Keeper) GetRecipient(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool) {
 	var recp exported.CrossChainAddress
-	ok := k.getStore(ctx).Get(utils.ToLowerCaseKey(&sender).WithPrefix(senderPrefix), &recp)
+	ok := k.getStore(ctx).Get(senderPrefix.Append(utils.LowerCaseKey(sender.String())), &recp)
 	return recp, ok
 }
 
@@ -147,15 +149,16 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 // ArchivePendingTransfer marks the transfer for the given recipient as concluded and archived
 func (k Keeper) ArchivePendingTransfer(ctx sdk.Context, transfer exported.CrossChainTransfer) {
 	store := k.getStore(ctx)
-	key := utils.LowerCaseKey(strconv.FormatUint(transfer.ID, 10)).WithPrefix(transfer.Recipient.Chain.Name)
-	bz := store.GetRaw(key.WithPrefix(exported.Pending.String()))
+	key := utils.LowerCaseKey(transfer.Recipient.Chain.Name).
+		Append(utils.LowerCaseKey(strconv.FormatUint(transfer.ID, 10)))
+	bz := store.GetRaw(utils.LowerCaseKey(exported.Pending.String()).Append(key))
 	if bz == nil {
 		return
 	}
 
 	// Archive the transfer
-	store.Delete(key.WithPrefix(exported.Pending.String()))
-	store.SetRaw(key.WithPrefix(exported.Archived.String()), bz)
+	store.Delete(utils.LowerCaseKey(exported.Pending.String()).Append(key))
+	store.SetRaw(utils.LowerCaseKey(exported.Archived.String()).Append(key), bz)
 
 	// Update the total nexus for the chain if it is a foreign asset
 	var t exported.CrossChainTransfer
@@ -168,7 +171,7 @@ func (k Keeper) ArchivePendingTransfer(ctx sdk.Context, transfer exported.CrossC
 
 func (k Keeper) getChainTotal(ctx sdk.Context, chain exported.Chain, denom string) sdk.Coin {
 	var total sdk.Coin
-	ok := k.getStore(ctx).Get(utils.LowerCaseKey(denom).WithPrefix(chain.Name).WithPrefix(totalPrefix), &total)
+	ok := k.getStore(ctx).Get(totalPrefix.Append(utils.LowerCaseKey(chain.Name)).Append(utils.LowerCaseKey(denom)), &total)
 	if !ok {
 		return sdk.NewCoin(denom, sdk.ZeroInt())
 	}
@@ -180,38 +183,41 @@ func (k Keeper) addToChainTotal(ctx sdk.Context, chain exported.Chain, amount sd
 	total := k.getChainTotal(ctx, chain, amount.Denom)
 	total = total.Add(amount)
 
-	k.getStore(ctx).Set(utils.LowerCaseKey(amount.Denom).WithPrefix(chain.Name).WithPrefix(totalPrefix), &total)
+	k.getStore(ctx).Set(totalPrefix.Append(utils.LowerCaseKey(chain.Name)).Append(utils.LowerCaseKey(amount.Denom)), &total)
 }
 
 func (k Keeper) subtractFromChainTotal(ctx sdk.Context, chain exported.Chain, withdrawal sdk.Coin) {
 	total := k.getChainTotal(ctx, chain, withdrawal.Denom)
 	total = total.Sub(withdrawal)
 
-	k.getStore(ctx).Set(utils.LowerCaseKey(withdrawal.Denom).WithPrefix(chain.Name).WithPrefix(totalPrefix), &total)
+	k.getStore(ctx).Set(totalPrefix.Append(utils.LowerCaseKey(chain.Name)).Append(utils.LowerCaseKey(withdrawal.Denom)), &total)
 }
 
 func (k Keeper) setPendingTransfer(ctx sdk.Context, recipient exported.CrossChainAddress, amount sdk.Coin) {
 	var next uint64
 	store := k.getStore(ctx)
-	bz := store.GetRaw(utils.LowerCaseKey(sequenceKey))
+	bz := store.GetRaw(sequenceKey)
 	if bz != nil {
 		next = binary.LittleEndian.Uint64(bz)
 	}
 
 	transfer := exported.CrossChainTransfer{Recipient: recipient, Asset: amount, ID: next}
-	store.Set(utils.LowerCaseKey(strconv.FormatUint(next, 10)).WithPrefix(recipient.Chain.Name).WithPrefix(exported.Pending.String()), &transfer)
+	key := utils.LowerCaseKey(exported.Pending.String()).
+		Append(utils.LowerCaseKey(recipient.Chain.Name)).
+		Append(utils.LowerCaseKey(strconv.FormatUint(next, 10)))
+	store.Set(key, &transfer)
 
 	next++
 	bz = make([]byte, 8)
 	binary.LittleEndian.PutUint64(bz, next)
-	store.SetRaw(utils.LowerCaseKey(sequenceKey), bz)
+	store.SetRaw(sequenceKey, bz)
 }
 
 // GetTransfersForChain returns the current set of transfers with the given state for the given chain
 func (k Keeper) GetTransfersForChain(ctx sdk.Context, chain exported.Chain, state exported.TransferState) []exported.CrossChainTransfer {
 	transfers := make([]exported.CrossChainTransfer, 0)
 
-	prefix := utils.EmptyLowerCaseKey.WithPrefix(chain.Name).WithPrefix(state.String())
+	prefix := utils.LowerCaseKey(state.String()).Append(utils.LowerCaseKey(chain.Name))
 	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), prefix.AsKey())
 	defer iter.Close()
 
