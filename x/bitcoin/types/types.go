@@ -423,3 +423,18 @@ func ParseSatoshi(rawCoin string) (sdk.Coin, error) {
 	}
 	return sat, nil
 }
+
+// SetTx sets the underlying tx
+func (m *Transaction) SetTx(tx *wire.MsgTx) {
+	m.Tx = MustEncodeTx(tx)
+}
+
+// GetTx gets the underlying tx
+func (m Transaction) GetTx() *wire.MsgTx {
+	if m.Tx == nil {
+		return nil
+	}
+
+	result := MustDecodeTx(m.Tx)
+	return &result
+}

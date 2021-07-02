@@ -38,14 +38,15 @@ type Keeper struct {
 }
 
 // AssertMatchesRequirements checks if the properties of the given key match the requirements for the given role
-func (k Keeper) AssertMatchesRequirements(ctx sdk.Context, snap snapshot.Snapshot, chain nexus.Chain, keyID string, keyRole exported.KeyRole) error {
+func (k Keeper) AssertMatchesRequirements(ctx sdk.Context, snapshotter snapshot.Snapshotter, chain nexus.Chain, keyID string, keyRole exported.KeyRole) error {
 	counter, ok := k.GetSnapshotCounterForKeyID(ctx, keyID)
 	if !ok {
-		return fmt.Errorf("could not find snapshot counter for given key ID")
+		return fmt.Errorf("could not find snapshot counter for given key ID %s", keyID)
 	}
 
-	if snap.Counter != counter {
-		return fmt.Errorf("the given snapshot does not match the key %s", keyID)
+	snap, ok := snapshotter.GetSnapshot(ctx, counter)
+	if !ok {
+		return fmt.Errorf("could not find snapshot for given key ID %s", keyID)
 	}
 
 	currentKeyID, ok := k.GetCurrentKeyID(ctx, chain, keyRole)
@@ -82,6 +83,12 @@ func (k Keeper) AssertMatchesRequirements(ctx sdk.Context, snap snapshot.Snapsho
 			keyRequirement.KeyShareDistributionPolicy.SimpleString(),
 			snap.KeyShareDistributionPolicy.SimpleString(),
 		)
+	}
+
+	for _, validator := range snap.Validators {
+		if !snapshot.IsValidatorEligibleForNewKey(ctx, k.slasher, snapshotter, k, validator.GetSDKValidator()) {
+			return fmt.Errorf("validator %s in snapshot %d is not eligible for handling key %s", validator.GetSDKValidator().GetOperator().String(), counter, keyID)
+		}
 	}
 
 	return nil

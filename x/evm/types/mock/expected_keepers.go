@@ -301,7 +301,7 @@ var _ types.Signer = &SignerMock{}
 //
 // 		// make and configure a mocked types.Signer
 // 		mockedSigner := &SignerMock{
-// 			AssertMatchesRequirementsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotMoqParam snapshot.Snapshot, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error {
+// 			AssertMatchesRequirementsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter snapshot.Snapshotter, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error {
 // 				panic("mock out the AssertMatchesRequirements method")
 // 			},
 // 			AssignNextKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error {
@@ -339,7 +339,7 @@ var _ types.Signer = &SignerMock{}
 // 	}
 type SignerMock struct {
 	// AssertMatchesRequirementsFunc mocks the AssertMatchesRequirements method.
-	AssertMatchesRequirementsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotMoqParam snapshot.Snapshot, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error
+	AssertMatchesRequirementsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter snapshot.Snapshotter, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error
 
 	// AssignNextKeyFunc mocks the AssignNextKey method.
 	AssignNextKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error
@@ -376,8 +376,8 @@ type SignerMock struct {
 		AssertMatchesRequirements []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// SnapshotMoqParam is the snapshotMoqParam argument value.
-			SnapshotMoqParam snapshot.Snapshot
+			// Snapshotter is the snapshotter argument value.
+			Snapshotter snapshot.Snapshotter
 			// Chain is the chain argument value.
 			Chain nexus.Chain
 			// KeyID is the keyID argument value.
@@ -482,45 +482,45 @@ type SignerMock struct {
 }
 
 // AssertMatchesRequirements calls AssertMatchesRequirementsFunc.
-func (mock *SignerMock) AssertMatchesRequirements(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotMoqParam snapshot.Snapshot, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error {
+func (mock *SignerMock) AssertMatchesRequirements(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter snapshot.Snapshotter, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error {
 	if mock.AssertMatchesRequirementsFunc == nil {
 		panic("SignerMock.AssertMatchesRequirementsFunc: method is nil but Signer.AssertMatchesRequirements was just called")
 	}
 	callInfo := struct {
-		Ctx              github_com_cosmos_cosmos_sdk_types.Context
-		SnapshotMoqParam snapshot.Snapshot
-		Chain            nexus.Chain
-		KeyID            string
-		KeyRole          tss.KeyRole
+		Ctx         github_com_cosmos_cosmos_sdk_types.Context
+		Snapshotter snapshot.Snapshotter
+		Chain       nexus.Chain
+		KeyID       string
+		KeyRole     tss.KeyRole
 	}{
-		Ctx:              ctx,
-		SnapshotMoqParam: snapshotMoqParam,
-		Chain:            chain,
-		KeyID:            keyID,
-		KeyRole:          keyRole,
+		Ctx:         ctx,
+		Snapshotter: snapshotter,
+		Chain:       chain,
+		KeyID:       keyID,
+		KeyRole:     keyRole,
 	}
 	mock.lockAssertMatchesRequirements.Lock()
 	mock.calls.AssertMatchesRequirements = append(mock.calls.AssertMatchesRequirements, callInfo)
 	mock.lockAssertMatchesRequirements.Unlock()
-	return mock.AssertMatchesRequirementsFunc(ctx, snapshotMoqParam, chain, keyID, keyRole)
+	return mock.AssertMatchesRequirementsFunc(ctx, snapshotter, chain, keyID, keyRole)
 }
 
 // AssertMatchesRequirementsCalls gets all the calls that were made to AssertMatchesRequirements.
 // Check the length with:
 //     len(mockedSigner.AssertMatchesRequirementsCalls())
 func (mock *SignerMock) AssertMatchesRequirementsCalls() []struct {
-	Ctx              github_com_cosmos_cosmos_sdk_types.Context
-	SnapshotMoqParam snapshot.Snapshot
-	Chain            nexus.Chain
-	KeyID            string
-	KeyRole          tss.KeyRole
+	Ctx         github_com_cosmos_cosmos_sdk_types.Context
+	Snapshotter snapshot.Snapshotter
+	Chain       nexus.Chain
+	KeyID       string
+	KeyRole     tss.KeyRole
 } {
 	var calls []struct {
-		Ctx              github_com_cosmos_cosmos_sdk_types.Context
-		SnapshotMoqParam snapshot.Snapshot
-		Chain            nexus.Chain
-		KeyID            string
-		KeyRole          tss.KeyRole
+		Ctx         github_com_cosmos_cosmos_sdk_types.Context
+		Snapshotter snapshot.Snapshotter
+		Chain       nexus.Chain
+		KeyID       string
+		KeyRole     tss.KeyRole
 	}
 	mock.lockAssertMatchesRequirements.RLock()
 	calls = mock.calls.AssertMatchesRequirements
@@ -1393,6 +1393,15 @@ var _ types.Snapshotter = &SnapshotterMock{}
 // 			GetLatestCounterFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
 // 				panic("mock out the GetLatestCounter method")
 // 			},
+// 			GetLatestSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (snapshot.Snapshot, bool) {
+// 				panic("mock out the GetLatestSnapshot method")
+// 			},
+// 			GetPrincipalFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, proxy github_com_cosmos_cosmos_sdk_types.AccAddress) github_com_cosmos_cosmos_sdk_types.ValAddress {
+// 				panic("mock out the GetPrincipal method")
+// 			},
+// 			GetProxyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, principal github_com_cosmos_cosmos_sdk_types.ValAddress) (github_com_cosmos_cosmos_sdk_types.AccAddress, bool) {
+// 				panic("mock out the GetProxy method")
+// 			},
 // 			GetSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, counter int64) (snapshot.Snapshot, bool) {
 // 				panic("mock out the GetSnapshot method")
 // 			},
@@ -1409,6 +1418,15 @@ type SnapshotterMock struct {
 	// GetLatestCounterFunc mocks the GetLatestCounter method.
 	GetLatestCounterFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64
 
+	// GetLatestSnapshotFunc mocks the GetLatestSnapshot method.
+	GetLatestSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (snapshot.Snapshot, bool)
+
+	// GetPrincipalFunc mocks the GetPrincipal method.
+	GetPrincipalFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, proxy github_com_cosmos_cosmos_sdk_types.AccAddress) github_com_cosmos_cosmos_sdk_types.ValAddress
+
+	// GetProxyFunc mocks the GetProxy method.
+	GetProxyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, principal github_com_cosmos_cosmos_sdk_types.ValAddress) (github_com_cosmos_cosmos_sdk_types.AccAddress, bool)
+
 	// GetSnapshotFunc mocks the GetSnapshot method.
 	GetSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, counter int64) (snapshot.Snapshot, bool)
 
@@ -1421,6 +1439,25 @@ type SnapshotterMock struct {
 		GetLatestCounter []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
+		// GetLatestSnapshot holds details about calls to the GetLatestSnapshot method.
+		GetLatestSnapshot []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
+		// GetPrincipal holds details about calls to the GetPrincipal method.
+		GetPrincipal []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Proxy is the proxy argument value.
+			Proxy github_com_cosmos_cosmos_sdk_types.AccAddress
+		}
+		// GetProxy holds details about calls to the GetProxy method.
+		GetProxy []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Principal is the principal argument value.
+			Principal github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
 		// GetSnapshot holds details about calls to the GetSnapshot method.
 		GetSnapshot []struct {
@@ -1439,9 +1476,12 @@ type SnapshotterMock struct {
 			KeyShareDistributionPolicy tss.KeyShareDistributionPolicy
 		}
 	}
-	lockGetLatestCounter sync.RWMutex
-	lockGetSnapshot      sync.RWMutex
-	lockTakeSnapshot     sync.RWMutex
+	lockGetLatestCounter  sync.RWMutex
+	lockGetLatestSnapshot sync.RWMutex
+	lockGetPrincipal      sync.RWMutex
+	lockGetProxy          sync.RWMutex
+	lockGetSnapshot       sync.RWMutex
+	lockTakeSnapshot      sync.RWMutex
 }
 
 // GetLatestCounter calls GetLatestCounterFunc.
@@ -1472,6 +1512,107 @@ func (mock *SnapshotterMock) GetLatestCounterCalls() []struct {
 	mock.lockGetLatestCounter.RLock()
 	calls = mock.calls.GetLatestCounter
 	mock.lockGetLatestCounter.RUnlock()
+	return calls
+}
+
+// GetLatestSnapshot calls GetLatestSnapshotFunc.
+func (mock *SnapshotterMock) GetLatestSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context) (snapshot.Snapshot, bool) {
+	if mock.GetLatestSnapshotFunc == nil {
+		panic("SnapshotterMock.GetLatestSnapshotFunc: method is nil but Snapshotter.GetLatestSnapshot was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetLatestSnapshot.Lock()
+	mock.calls.GetLatestSnapshot = append(mock.calls.GetLatestSnapshot, callInfo)
+	mock.lockGetLatestSnapshot.Unlock()
+	return mock.GetLatestSnapshotFunc(ctx)
+}
+
+// GetLatestSnapshotCalls gets all the calls that were made to GetLatestSnapshot.
+// Check the length with:
+//     len(mockedSnapshotter.GetLatestSnapshotCalls())
+func (mock *SnapshotterMock) GetLatestSnapshotCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockGetLatestSnapshot.RLock()
+	calls = mock.calls.GetLatestSnapshot
+	mock.lockGetLatestSnapshot.RUnlock()
+	return calls
+}
+
+// GetPrincipal calls GetPrincipalFunc.
+func (mock *SnapshotterMock) GetPrincipal(ctx github_com_cosmos_cosmos_sdk_types.Context, proxy github_com_cosmos_cosmos_sdk_types.AccAddress) github_com_cosmos_cosmos_sdk_types.ValAddress {
+	if mock.GetPrincipalFunc == nil {
+		panic("SnapshotterMock.GetPrincipalFunc: method is nil but Snapshotter.GetPrincipal was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Proxy github_com_cosmos_cosmos_sdk_types.AccAddress
+	}{
+		Ctx:   ctx,
+		Proxy: proxy,
+	}
+	mock.lockGetPrincipal.Lock()
+	mock.calls.GetPrincipal = append(mock.calls.GetPrincipal, callInfo)
+	mock.lockGetPrincipal.Unlock()
+	return mock.GetPrincipalFunc(ctx, proxy)
+}
+
+// GetPrincipalCalls gets all the calls that were made to GetPrincipal.
+// Check the length with:
+//     len(mockedSnapshotter.GetPrincipalCalls())
+func (mock *SnapshotterMock) GetPrincipalCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Proxy github_com_cosmos_cosmos_sdk_types.AccAddress
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Proxy github_com_cosmos_cosmos_sdk_types.AccAddress
+	}
+	mock.lockGetPrincipal.RLock()
+	calls = mock.calls.GetPrincipal
+	mock.lockGetPrincipal.RUnlock()
+	return calls
+}
+
+// GetProxy calls GetProxyFunc.
+func (mock *SnapshotterMock) GetProxy(ctx github_com_cosmos_cosmos_sdk_types.Context, principal github_com_cosmos_cosmos_sdk_types.ValAddress) (github_com_cosmos_cosmos_sdk_types.AccAddress, bool) {
+	if mock.GetProxyFunc == nil {
+		panic("SnapshotterMock.GetProxyFunc: method is nil but Snapshotter.GetProxy was just called")
+	}
+	callInfo := struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		Principal github_com_cosmos_cosmos_sdk_types.ValAddress
+	}{
+		Ctx:       ctx,
+		Principal: principal,
+	}
+	mock.lockGetProxy.Lock()
+	mock.calls.GetProxy = append(mock.calls.GetProxy, callInfo)
+	mock.lockGetProxy.Unlock()
+	return mock.GetProxyFunc(ctx, principal)
+}
+
+// GetProxyCalls gets all the calls that were made to GetProxy.
+// Check the length with:
+//     len(mockedSnapshotter.GetProxyCalls())
+func (mock *SnapshotterMock) GetProxyCalls() []struct {
+	Ctx       github_com_cosmos_cosmos_sdk_types.Context
+	Principal github_com_cosmos_cosmos_sdk_types.ValAddress
+} {
+	var calls []struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		Principal github_com_cosmos_cosmos_sdk_types.ValAddress
+	}
+	mock.lockGetProxy.RLock()
+	calls = mock.calls.GetProxy
+	mock.lockGetProxy.RUnlock()
 	return calls
 }
 

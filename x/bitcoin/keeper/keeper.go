@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -22,11 +23,12 @@ var (
 	spentOutPointPrefix     = utils.KeyFromStr("spent_")
 	addrPrefix              = utils.KeyFromStr("addr_")
 	dustAmtPrefix           = utils.KeyFromStr("dust_")
+	signedTxPrefix          = utils.KeyFromStr("signed_tx_")
 
 	anyoneCanSpendAddressKey = utils.KeyFromStr("anyone_can_spend_address")
-	unsignedTxKey            = utils.KeyFromStr("unsignedTx")
-	signedTxKey              = utils.KeyFromStr("signedTx")
-	masterKeyVoutKey         = utils.KeyFromStr("master_key_vout")
+	unsignedTxKey            = utils.KeyFromStr("unsigned_tx")
+	secondaryKeyVoutKey      = utils.KeyFromStr("secondary_key_vout")
+	latestSignedTxHashKey    = utils.KeyFromStr("latest_signed_tx_hash")
 
 	confirmedOutpointQueueName = "confirmed_outpoint"
 )
@@ -179,39 +181,40 @@ func (k Keeper) DeletePendingOutPointInfo(ctx sdk.Context, poll exported.PollKey
 	k.getStore(ctx).Delete(pendingOutpointPrefix.Append(utils.LowerCaseKey(poll.String())))
 }
 
-// SetOutpointInfo stores confirmed or spent outpoints
-func (k Keeper) SetOutpointInfo(ctx sdk.Context, info types.OutPointInfo, state types.OutPointState) {
+// SetSpentOutpointInfo stores the given outpoint info as spent
+func (k Keeper) SetSpentOutpointInfo(ctx sdk.Context, info types.OutPointInfo) {
 	key := utils.LowerCaseKey(info.OutPoint)
-	switch state {
-	case types.CONFIRMED:
-		k.GetConfirmedOutpointInfoQueue(ctx).Enqueue(confirmedOutPointPrefix.Append(key), &info)
-	case types.SPENT:
-		k.getStore(ctx).Set(spentOutPointPrefix.Append(key), &info)
-	default:
-		panic("invalid outpoint state")
-	}
+
+	k.getStore(ctx).Set(spentOutPointPrefix.Append(key), &info)
 }
 
-// GetConfirmedOutpointInfoQueue returns the queue for confirmed outpoint infos
-func (k Keeper) GetConfirmedOutpointInfoQueue(ctx sdk.Context) utils.KVQueue {
-	return utils.NewBlockHeightKVQueue(confirmedOutpointQueueName, k.getStore(ctx), ctx.BlockHeight(), k.Logger(ctx))
+// SetConfirmedOutpointInfo stores the given outpoint info as confirmed and push it into the queue of given keyID
+func (k Keeper) SetConfirmedOutpointInfo(ctx sdk.Context, keyID string, info types.OutPointInfo) {
+	key := utils.LowerCaseKey(info.OutPoint)
+
+	k.GetConfirmedOutpointInfoQueueForKey(ctx, keyID).Enqueue(confirmedOutPointPrefix.Append(key), &info)
+}
+
+// GetConfirmedOutpointInfoQueueForKey retrieves the outpoint info queue for the given keyID
+func (k Keeper) GetConfirmedOutpointInfoQueueForKey(ctx sdk.Context, keyID string) utils.KVQueue {
+	queueName := fmt.Sprintf("%s_%s", confirmedOutpointQueueName, keyID)
+
+	return utils.NewBlockHeightKVQueue(queueName, k.getStore(ctx), ctx.BlockHeight(), k.Logger(ctx))
 }
 
 // SetUnsignedTx stores a raw transaction for outpoint consolidation
-func (k Keeper) SetUnsignedTx(ctx sdk.Context, tx *wire.MsgTx) {
-	k.getStore(ctx).SetRaw(unsignedTxKey, types.MustEncodeTx(tx))
+func (k Keeper) SetUnsignedTx(ctx sdk.Context, tx *types.Transaction) {
+	k.getStore(ctx).Set(unsignedTxKey, tx)
 }
 
 // GetUnsignedTx returns the raw unsigned transaction for outpoint consolidation
-func (k Keeper) GetUnsignedTx(ctx sdk.Context) (*wire.MsgTx, bool) {
-	bz := k.getStore(ctx).GetRaw(unsignedTxKey)
-	if bz == nil {
+func (k Keeper) GetUnsignedTx(ctx sdk.Context) (*types.Transaction, bool) {
+	var result types.Transaction
+	if ok := k.getStore(ctx).Get(unsignedTxKey, &result); !ok {
 		return nil, false
 	}
 
-	tx := types.MustDecodeTx(bz)
-
-	return &tx, true
+	return &result, true
 }
 
 // DeleteUnsignedTx deletes the raw unsigned transaction for outpoint consolidation
@@ -221,12 +224,16 @@ func (k Keeper) DeleteUnsignedTx(ctx sdk.Context) {
 
 // SetSignedTx stores the signed transaction for outpoint consolidation
 func (k Keeper) SetSignedTx(ctx sdk.Context, tx *wire.MsgTx) {
-	k.getStore(ctx).SetRaw(signedTxKey, types.MustEncodeTx(tx))
+	txHash := tx.TxHash()
+
+	k.getStore(ctx).SetRaw(latestSignedTxHashKey, txHash.CloneBytes())
+	k.getStore(ctx).SetRaw(signedTxPrefix.Append(utils.LowerCaseKey(txHash.String())), types.MustEncodeTx(tx))
 }
 
 // GetSignedTx returns the signed transaction for outpoint consolidation
-func (k Keeper) GetSignedTx(ctx sdk.Context) (*wire.MsgTx, bool) {
-	bz := k.getStore(ctx).GetRaw(signedTxKey)
+// TODO: think about how to get all signed txs in the correct order
+func (k Keeper) GetSignedTx(ctx sdk.Context, txHash chainhash.Hash) (*wire.MsgTx, bool) {
+	bz := k.getStore(ctx).GetRaw(signedTxPrefix.Append(utils.LowerCaseKey(txHash.String())))
 	if bz == nil {
 		return nil, false
 	}
@@ -236,9 +243,19 @@ func (k Keeper) GetSignedTx(ctx sdk.Context) (*wire.MsgTx, bool) {
 	return &tx, true
 }
 
-// DeleteSignedTx deletes the signed transaction for outpoint consolidation
-func (k Keeper) DeleteSignedTx(ctx sdk.Context) {
-	k.getStore(ctx).Delete(signedTxKey)
+// GetLatestSignedTxHash retrieves the tx hash of the most recent signed transaction
+func (k Keeper) GetLatestSignedTxHash(ctx sdk.Context) (*chainhash.Hash, bool) {
+	bz := k.getStore(ctx).GetRaw(latestSignedTxHashKey)
+	if bz == nil {
+		return nil, false
+	}
+
+	txHash, err := chainhash.NewHash(bz)
+	if err != nil {
+		panic(err)
+	}
+
+	return txHash, true
 }
 
 // SetDustAmount stores the dust amount for a destination bitcoin address
@@ -262,22 +279,6 @@ func (k Keeper) GetDustAmount(ctx sdk.Context, encodedAddress string) btcutil.Am
 // DeleteDustAmount deletes the dust amount for a destination bitcoin address
 func (k Keeper) DeleteDustAmount(ctx sdk.Context, encodedAddress string) {
 	k.getStore(ctx).Delete(dustAmtPrefix.Append(utils.LowerCaseKey(encodedAddress)))
-}
-
-// SetMasterKeyVout sets the index of the consolidation outpoint
-func (k Keeper) SetMasterKeyVout(ctx sdk.Context, vout uint32) {
-	bz := make([]byte, 4)
-	binary.LittleEndian.PutUint32(bz, vout)
-	k.getStore(ctx).SetRaw(masterKeyVoutKey, bz)
-}
-
-// GetMasterKeyVout returns the index of the consolidation outpoint if there is any UTXO controlled by the master key; otherwise, false
-func (k Keeper) GetMasterKeyVout(ctx sdk.Context) (uint32, bool) {
-	bz := k.getStore(ctx).GetRaw(masterKeyVoutKey)
-	if bz == nil {
-		return 0, false
-	}
-	return binary.LittleEndian.Uint32(bz), true
 }
 
 func (k Keeper) getStore(ctx sdk.Context) utils.NormalizedKVStore {

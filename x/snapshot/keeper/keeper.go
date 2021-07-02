@@ -139,9 +139,7 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64
 			return false
 		}
 
-		if !exported.IsValidatorActive(ctx, k.slasher, &v) ||
-			!exported.HasProxyRegistered(ctx, k, &v) ||
-			exported.IsValidatorTssSuspended(ctx, k.tss, &v) {
+		if !exported.IsValidatorEligibleForNewKey(ctx, k.slasher, k, k.tss, &v) {
 			return false
 		}
 
@@ -295,7 +293,7 @@ func (k Keeper) setProxyCount(ctx sdk.Context, count int) {
 }
 
 func (k Keeper) getProxyCount(ctx sdk.Context) int {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(lastCounterKey))
+	bz := ctx.KVStore(k.storeKey).Get([]byte(proxyCountKey))
 	if bz == nil {
 		return 0
 	}

@@ -7,6 +7,12 @@ import "gogoproto/gogo.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
+message Transaction {
+  bytes tx = 1;
+  bool assign_next_key = 2;
+  string next_key_id = 3 [ (gogoproto.customname) = "NextKeyID" ];
+}
+
 // OutPointInfo describes all the necessary information to confirm the outPoint
 // of a transaction
 message OutPointInfo {

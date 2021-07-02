@@ -93,8 +93,9 @@ func TestKeeper_GetOutPointInfo(t *testing.T) {
 			Amount:   btcutil.Amount(rand.PosI64()),
 			Address:  rand.StrBetween(5, 100),
 		}
+		keyID := rand.StrBetween(5, 100)
 
-		keeper.SetOutpointInfo(ctx, info, types.CONFIRMED)
+		keeper.SetConfirmedOutpointInfo(ctx, keyID, info)
 
 		_, _, ok := keeper.GetOutPointInfo(ctx, *outpoint)
 		assert.True(t, ok)

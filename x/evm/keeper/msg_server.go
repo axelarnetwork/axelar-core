@@ -949,16 +949,7 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 		return nil, fmt.Errorf("key %s already assigned as the next %s key for chain %s", next.ID, tss.MasterKey.SimpleString(), chain.Name)
 	}
 
-	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, key.ID)
-	if !ok {
-		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", key.ID)
-	}
-	snap, ok := s.snapshotter.GetSnapshot(ctx, counter)
-	if !ok {
-		return nil, fmt.Errorf("no snapshot found for key %s", key.ID)
-	}
-
-	if err := s.signer.AssertMatchesRequirements(ctx, snap, chain, key.ID, tss.MasterKey); err != nil {
+	if err := s.signer.AssertMatchesRequirements(ctx, s.snapshotter, chain, key.ID, tss.MasterKey); err != nil {
 		return nil, sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", key.ID, tss.MasterKey.SimpleString())
 	}
 
@@ -984,7 +975,7 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 
 	signHash := types.GetSignHash(data)
 
-	counter, ok = s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
+	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
 	if !ok {
 		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
 	}

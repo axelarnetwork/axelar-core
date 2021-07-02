@@ -15,6 +15,7 @@ import (
 type KVQueue interface {
 	Enqueue(key Key, value codec.ProtoMarshaler)
 	Dequeue(value codec.ProtoMarshaler) bool
+	IsEmpty() bool
 }
 
 // BlockHeightKVQueue is a queue that orders items with the block height at which the items are enqueued;
@@ -58,6 +59,15 @@ func (q BlockHeightKVQueue) Dequeue(value codec.ProtoMarshaler) bool {
 	q.store.Delete(KeyFromBz(iter.Key()))
 
 	return true
+}
+
+// IsEmpty returns true if the queue is empty; otherwise, false
+func (q BlockHeightKVQueue) IsEmpty() bool {
+	iter := sdk.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
+	//goland:noinspection GoUnhandledErrorResult
+	defer iter.Close()
+
+	return !iter.Valid()
 }
 
 // WithBlockHeight returns a queue with the given block height

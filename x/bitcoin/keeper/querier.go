@@ -159,7 +159,6 @@ func queryMinimumWithdrawAmount(ctx sdk.Context, k types.BTCKeeper) []byte {
 
 // QueryTxState returns the state of given transaction
 func QueryTxState(ctx sdk.Context, k types.BTCKeeper, data []byte) ([]byte, error) {
-
 	outpoint, err := types.OutPointFromStr(string(data))
 	if err != nil {
 		return nil, err
@@ -184,18 +183,12 @@ func QueryTxState(ctx sdk.Context, k types.BTCKeeper, data []byte) ([]byte, erro
 
 // GetConsolidationTxState returns the state of consolidqtion transaction
 func GetConsolidationTxState(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {
-
-	tx, ok := k.GetSignedTx(ctx)
+	txHash, ok := k.GetLatestSignedTxHash(ctx)
 	if !ok {
 		return nil, fmt.Errorf("could not find the signed consolidation transaction")
 	}
-	txID := tx.TxHash()
-	vout, ok := k.GetMasterKeyVout(ctx)
-	if !ok {
-		return nil, fmt.Errorf("could not find the consolidation transaction vout")
-	}
 
-	outpointByte := []byte(wire.NewOutPoint(&txID, vout).String())
+	outpointByte := []byte(wire.NewOutPoint(txHash, 0).String())
 
 	stateMsg, err := QueryTxState(ctx, k, outpointByte)
 	if err != nil {
@@ -207,27 +200,26 @@ func GetConsolidationTxState(ctx sdk.Context, k types.BTCKeeper) ([]byte, error)
 
 // GetRawConsolidationTx returns the consolidation transaction in bytes
 func GetRawConsolidationTx(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {
-	if _, ok := k.GetUnsignedTx(ctx); ok {
-		rawTxResponse := &types.QueryRawTxResponse{StateOrTx: &types.QueryRawTxResponse_State{State: types.Signing}}
+	txHash, ok := k.GetLatestSignedTxHash(ctx)
+	if !ok {
+		rawTxResponse := &types.QueryRawTxResponse{StateOrTx: &types.QueryRawTxResponse_State{State: types.Ready}}
 		return rawTxResponse.Marshal()
 	}
 
-	if tx, ok := k.GetSignedTx(ctx); ok {
-		rawTxResponse := &types.QueryRawTxResponse{StateOrTx: &types.QueryRawTxResponse_RawTx{RawTx: hex.EncodeToString(types.MustEncodeTx(tx))}}
-		return rawTxResponse.Marshal()
-	}
+	tx, _ := k.GetSignedTx(ctx, *txHash)
 
-	rawTxResponse := &types.QueryRawTxResponse{StateOrTx: &types.QueryRawTxResponse_State{State: types.Ready}}
+	rawTxResponse := &types.QueryRawTxResponse{StateOrTx: &types.QueryRawTxResponse_RawTx{RawTx: hex.EncodeToString(types.MustEncodeTx(tx))}}
 	return rawTxResponse.Marshal()
 }
 
 func payForConsolidationTx(ctx sdk.Context, k types.BTCKeeper, rpc types.RPCClient, data []byte) ([]byte, error) {
-	feeRate := int64(binary.LittleEndian.Uint64(data))
-
-	consolidationTx, ok := k.GetSignedTx(ctx)
+	txHash, ok := k.GetLatestSignedTxHash(ctx)
 	if !ok {
 		return nil, fmt.Errorf("no signed consolidation transaction ready")
 	}
+
+	feeRate := int64(binary.LittleEndian.Uint64(data))
+	consolidationTx, _ := k.GetSignedTx(ctx, *txHash)
 
 	utxos, err := rpc.ListUnspent()
 	if err != nil {

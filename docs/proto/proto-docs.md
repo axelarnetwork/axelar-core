@@ -8,6 +8,7 @@
     - [AddressInfo](#bitcoin.v1beta1.AddressInfo)
     - [Network](#bitcoin.v1beta1.Network)
     - [OutPointInfo](#bitcoin.v1beta1.OutPointInfo)
+    - [Transaction](#bitcoin.v1beta1.Transaction)
   
     - [AddressRole](#bitcoin.v1beta1.AddressRole)
     - [SignState](#bitcoin.v1beta1.SignState)
@@ -240,6 +241,23 @@ of a transaction
 | `out_point` | [string](#string) |  |  |
 | `amount` | [int64](#int64) |  |  |
 | `address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.Transaction"></a>
+
+### Transaction
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx` | [bytes](#bytes) |  |  |
+| `assign_next_key` | [bool](#bool) |  |  |
+| `next_key_id` | [string](#string) |  |  |
 
 
 
