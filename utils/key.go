@@ -107,7 +107,7 @@ func (k key) asKey(delimiter string) []byte {
 	if k.prefix != nil {
 		prefix := k.prefix.AsKey()
 		delim := []byte(delimiter)
-		compKey := make([]byte, 0, len(prefix) + +len(delim) + len(k.key))
+		compKey := make([]byte, 0, len(prefix)+len(delim)+len(k.key))
 		return append(append(append(compKey, prefix...), delim...), k.key...)
 	}
 	return k.key
