@@ -95,7 +95,7 @@ func KeyFromBz(k []byte) Key {
 	}
 }
 
-// AsKey returns the byte representation of the key. If given, uses a delimiter string to separate prefixes
+// AsKey returns the byte representation of the key. If given, uses a delimiter string to separate prefixes (default is "_")
 func (k key) AsKey(delimiter ...string) []byte {
 	if len(delimiter) == 0 {
 		return k.asKey("_")
