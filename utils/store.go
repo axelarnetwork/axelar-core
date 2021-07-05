@@ -21,6 +21,7 @@ type Key interface {
 	Equals(key Key) bool
 }
 
+// StringKey extends the Key interface for simplified appending and prepending
 type StringKey interface {
 	Key
 	AppendStr(key string, stringTransformations ...func(string) string) StringKey
