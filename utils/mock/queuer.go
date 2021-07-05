@@ -22,7 +22,7 @@ var _ utils.KVQueue = &KVQueueMock{}
 // 			DequeueFunc: func(value codec.ProtoMarshaler) bool {
 // 				panic("mock out the Dequeue method")
 // 			},
-// 			EnqueueFunc: func(key utils.Keyer, value codec.ProtoMarshaler)  {
+// 			EnqueueFunc: func(key utils.Key, value codec.ProtoMarshaler)  {
 // 				panic("mock out the Enqueue method")
 // 			},
 // 		}
@@ -36,7 +36,7 @@ type KVQueueMock struct {
 	DequeueFunc func(value codec.ProtoMarshaler) bool
 
 	// EnqueueFunc mocks the Enqueue method.
-	EnqueueFunc func(key utils.Keyer, value codec.ProtoMarshaler)
+	EnqueueFunc func(key utils.Key, value codec.ProtoMarshaler)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -48,7 +48,7 @@ type KVQueueMock struct {
 		// Enqueue holds details about calls to the Enqueue method.
 		Enqueue []struct {
 			// Key is the key argument value.
-			Key utils.Keyer
+			Key utils.Key
 			// Value is the value argument value.
 			Value codec.ProtoMarshaler
 		}
@@ -89,12 +89,12 @@ func (mock *KVQueueMock) DequeueCalls() []struct {
 }
 
 // Enqueue calls EnqueueFunc.
-func (mock *KVQueueMock) Enqueue(key utils.Keyer, value codec.ProtoMarshaler) {
+func (mock *KVQueueMock) Enqueue(key utils.Key, value codec.ProtoMarshaler) {
 	if mock.EnqueueFunc == nil {
 		panic("KVQueueMock.EnqueueFunc: method is nil but KVQueue.Enqueue was just called")
 	}
 	callInfo := struct {
-		Key   utils.Keyer
+		Key   utils.Key
 		Value codec.ProtoMarshaler
 	}{
 		Key:   key,
@@ -110,11 +110,11 @@ func (mock *KVQueueMock) Enqueue(key utils.Keyer, value codec.ProtoMarshaler) {
 // Check the length with:
 //     len(mockedKVQueue.EnqueueCalls())
 func (mock *KVQueueMock) EnqueueCalls() []struct {
-	Key   utils.Keyer
+	Key   utils.Key
 	Value codec.ProtoMarshaler
 } {
 	var calls []struct {
-		Key   utils.Keyer
+		Key   utils.Key
 		Value codec.ProtoMarshaler
 	}
 	mock.lockEnqueue.RLock()
