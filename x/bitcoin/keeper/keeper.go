@@ -194,7 +194,7 @@ func (k Keeper) SetOutpointInfo(ctx sdk.Context, info types.OutPointInfo, state 
 
 // GetConfirmedOutpointInfoQueue returns the queue for confirmed outpoint infos
 func (k Keeper) GetConfirmedOutpointInfoQueue(ctx sdk.Context) utils.KVQueue {
-	return utils.NewBlockHeightKVQueue(confirmedOutpointQueueName, k.getStore(ctx), ctx.BlockHeight())
+	return utils.NewBlockHeightKVQueue(confirmedOutpointQueueName, k.getStore(ctx), ctx.BlockHeight(), k.Logger(ctx))
 }
 
 // SetUnsignedTx stores a raw transaction for outpoint consolidation

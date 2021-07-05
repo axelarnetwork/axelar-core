@@ -44,7 +44,7 @@ func TestNewBlockHeightKVQueue(t *testing.T) {
 		}
 
 		blockHeight := rand.I64Between(1, 10000)
-		kvQueue := NewBlockHeightKVQueue("test-enqueue-dequeue", store, blockHeight)
+		kvQueue := NewBlockHeightKVQueue("test-enqueue-dequeue", store, blockHeight, log.TestingLogger())
 		for _, item := range items {
 			kvQueue.Enqueue(KeyFromStr(item), &gogoprototypes.StringValue{Value: item})
 			blockHeight += rand.I64Between(1, 1000)

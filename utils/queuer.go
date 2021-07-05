@@ -6,6 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	gogoprototypes "github.com/gogo/protobuf/types"
+	"github.com/tendermint/tendermint/libs/log"
 )
 
 //go:generate moq -out ./mock/queuer.go -pkg mock . KVQueue
@@ -23,11 +24,12 @@ type BlockHeightKVQueue struct {
 	store       NormalizedKVStore
 	blockHeight Key
 	name        Key
+	logger      log.Logger
 }
 
 // NewBlockHeightKVQueue is the constructor of BlockHeightKVQueue
-func NewBlockHeightKVQueue(name string, store NormalizedKVStore, blockHeight int64) BlockHeightKVQueue {
-	return BlockHeightKVQueue{store: store, name: KeyFromStr(name)}.WithBlockHeight(blockHeight)
+func NewBlockHeightKVQueue(name string, store NormalizedKVStore, blockHeight int64, logger log.Logger) BlockHeightKVQueue {
+	return BlockHeightKVQueue{store: store, name: KeyFromStr(name), logger: logger}.WithBlockHeight(blockHeight)
 }
 
 // Enqueue pushes the given value onto the top of the queue and stores the value at given key
@@ -40,8 +42,7 @@ func (q BlockHeightKVQueue) Enqueue(key Key, value codec.ProtoMarshaler) {
 // in the queue is found
 func (q BlockHeightKVQueue) Dequeue(value codec.ProtoMarshaler) bool {
 	iter := sdk.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
-	//goland:noinspection GoUnhandledErrorResult
-	defer iter.Close()
+	defer CloseLogError(iter, q.logger)
 
 	if !iter.Valid() {
 		return false
