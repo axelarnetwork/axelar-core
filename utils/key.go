@@ -8,6 +8,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+const defaultDelimiter = "_"
+
 // Key represents a store key to interact with the NormalizedKVStore
 type Key interface {
 	// AsKey returns the byte representation of the key. If given, uses a delimiter string to separate prefixes
@@ -98,14 +100,14 @@ func KeyFromBz(k []byte) Key {
 // AsKey returns the byte representation of the key. If given, uses a delimiter string to separate prefixes (default is "_")
 func (k key) AsKey(delimiter ...string) []byte {
 	if len(delimiter) == 0 {
-		return k.asKey("_")
+		return k.asKey(defaultDelimiter)
 	}
 	return k.asKey(delimiter[0])
 }
 
 func (k key) asKey(delimiter string) []byte {
 	if k.prefix != nil {
-		prefix := k.prefix.AsKey()
+		prefix := k.prefix.AsKey(delimiter)
 		delim := []byte(delimiter)
 		compKey := make([]byte, 0, len(prefix)+len(delim)+len(k.key))
 		return append(append(append(compKey, prefix...), delim...), k.key...)
