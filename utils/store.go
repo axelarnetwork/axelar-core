@@ -138,6 +138,7 @@ func (k key) Equals(other Key) bool {
 	return bytes.Equal(k.AsKey(), other.AsKey())
 }
 
+// CloseLogError closes the given iterator and logs if an error is returned
 func CloseLogError(iter sdk.Iterator, logger log.Logger) {
 	err := iter.Close()
 	if err != nil {
