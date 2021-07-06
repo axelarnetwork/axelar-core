@@ -12,12 +12,12 @@ import (
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	snapshottypes "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 // StartKeygen starts a keygen protocol with the specified parameters
-func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID string, snapshot snapshottypes.Snapshot) error {
+func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID string, snapshot snapshot.Snapshot) error {
 	if _, found := k.getKeygenStart(ctx, keyID); found {
 		return fmt.Errorf("keyID %s is already in use", keyID)
 	}

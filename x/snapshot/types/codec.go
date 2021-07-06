@@ -15,11 +15,6 @@ import (
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&RegisterProxyRequest{}, "snapshot/RegisterProxy", nil)
 	cdc.RegisterConcrete(&DeactivateProxyRequest{}, "snapshot/DeactivateProxy", nil)
-
-	/* The snapshot keeper is dependent on the StakingKeeper interface, which returns validators through interfaces.
-	However, the snapshot keeper has to marshal the validators, so it must register the actual concrete type that is returned. */
-	//cdc.RegisterConcrete(&stakingtypes.Validator{}, "snapshot/SDKValidator", nil)
-	//cdc.RegisterConcrete(&exported.Validator{}, "snapshot/Validator", nil)
 }
 
 // RegisterInterfaces registers types and interfaces with the given registry

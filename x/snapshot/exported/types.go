@@ -101,7 +101,7 @@ type Snapshotter interface {
 // GetSDKValidator returns the SdkValidator
 func (m Validator) GetSDKValidator() SDKValidator {
 	if m.SDKValidator == nil {
-		return nil
+		panic("SDLValidator cannot be nil")
 	}
 
 	return m.SDKValidator.GetCachedValue().(SDKValidator)
