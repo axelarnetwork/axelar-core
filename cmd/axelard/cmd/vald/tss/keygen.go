@@ -163,6 +163,61 @@ func (mgr *Mgr) handleIntermediateKeygenMsgs(keyID string, intermediate <-chan *
 	return nil
 }
 
+// validateKeygenResult validates the individual fields of KeygenResult message
+func (mgr *Mgr) validateKeygenResult(result *tofnd.MessageOut_KeygenResult) error {
+	// if result is nil, return immediately
+	if result == nil {
+		return fmt.Errorf("handler goroutine: KeygenResult is nil")
+	}
+
+	// result should either be KeygenData or Criminals
+	// if result is keygen data propagate the result to caller
+	isKeygenDataMsg, err := mgr.validateKeygenData(result.GetData())
+	if isKeygenDataMsg {
+		return err
+	}
+
+	// if message was not KeygenData, it should be Criminals; sort criminals and return
+	if criminals := result.GetCriminals(); criminals != nil {
+		// criminals have to be sorted in ascending order
+		sort.Stable(result.GetCriminals())
+		return nil
+	}
+
+	// if none of possible fields is non-nil, return error
+	return fmt.Errorf("Keygen result validation failed: KeygenData and Criminals are nil")
+}
+
+// validateKeygenData returns true if keygenData is a non-nil message and and error if any the necessary fields of KeygenData is missing or is invalid
+func (mgr *Mgr) validateKeygenData(keygenData *tofnd.MessageOut_KeygenResult_KeygenOutput) (bool, error) {
+	// if data is nil, the message was not KeygenData
+	if keygenData == nil {
+		return false, nil
+	}
+
+	// check share recovery info
+	shareRecovery := keygenData.GetShareRecoveryInfos()
+	if shareRecovery == nil {
+		return true, fmt.Errorf("handler goroutine: share recovery info is nil")
+	}
+
+	// check pubkey
+	pubKeyBytes := keygenData.GetPubKey()
+	if pubKeyBytes == nil {
+		return true, fmt.Errorf("handler goroutine: pubkey bytes is nil")
+	}
+
+	// try to deserialize pubkey
+	btcecPK, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
+	if err != nil {
+		return true, sdkerrors.Wrap(err, "handler goroutine: failure to deserialize pubkey")
+	}
+
+	mgr.Logger.Info(fmt.Sprintf("handler goroutine: received pubkey from server! [%v]", btcecPK.ToECDSA()))
+
+	return true, nil
+}
+
 func (mgr *Mgr) handleKeygenResult(keyID string, resultChan <-chan interface{}) error {
 	// Delete the reference to the keygen stream with keyID because entering this function means the tss protocol has completed
 	defer func() {
@@ -176,10 +231,13 @@ func (mgr *Mgr) handleKeygenResult(keyID string, resultChan <-chan interface{}) 
 		return fmt.Errorf("failed to receive keygen result, channel was closed by the server")
 	}
 
+	// get result
 	result := r.(*tofnd.MessageOut_KeygenResult)
-	if result.GetCriminals() != nil {
-		// criminals have to be sorted in ascending order
-		sort.Stable(result.GetCriminals())
+
+	// validate result
+	err := mgr.validateKeygenResult(result)
+	if err != nil {
+		return sdkerrors.Wrap(err, "Key result validation failed: %s")
 	}
 
 	mgr.Logger.Debug(fmt.Sprintf("handler goroutine: received keygen result for %s [%+v]", keyID, result))
