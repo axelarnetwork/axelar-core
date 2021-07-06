@@ -381,8 +381,15 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd, submitMsg func(msg sdk
 
 		pk := t.KeyGen(m[tssTypes.AttributeKeyKeyID]) // simulate correct keygen + vote
 		// TODO: retrieve actual recovery info
-		recoveryInfo := [][]byte{}
-		result := &tofnd.MessageOut_KeygenResult{KeygenResultData: &tofnd.MessageOut_KeygenResult_Data{Data: &tofnd.MessageOut_KeygenResult_KeygenOutput{PubKey: pk, ShareRecoveryInfos: recoveryInfo}}}
+
+		recoveryInfo := [][]byte{{1}}
+		result := &tofnd.MessageOut_KeygenResult{
+			KeygenResultData: &tofnd.MessageOut_KeygenResult_Data{
+				Data: &tofnd.MessageOut_KeygenResult_KeygenOutput{
+					PubKey: pk, ShareRecoveryInfos: recoveryInfo,
+				},
+			},
+		}
 
 		_ = submitMsg(&tssTypes.VotePubKeyRequest{
 			Sender:  n.Proxy,

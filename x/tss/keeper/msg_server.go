@@ -201,7 +201,9 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	switch keygenResult := result.(type) {
 	case *tofnd.MessageOut_KeygenResult:
 
+		// result should be either KeygenData or Criminals
 		if keygenData := keygenResult.GetData(); keygenData != nil {
+			// if any member of KeygenData is nil, propagete an error
 			pubKeyBytes := keygenData.GetPubKey()
 			if pubKeyBytes == nil {
 				return nil, fmt.Errorf("pubkey bytes is nil")
@@ -210,6 +212,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			if recoveryInfo == nil {
 				return nil, fmt.Errorf("recovery info is nil")
 			}
+			// TODO: check that the number of shares is the same as the number of recovery info
 			btcecPK, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
 			if err != nil {
 				return nil, fmt.Errorf("could not unmarshal public key bytes: [%w]", err)
