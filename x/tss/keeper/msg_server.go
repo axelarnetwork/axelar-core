@@ -201,24 +201,26 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	switch keygenResult := result.(type) {
 	case *tofnd.MessageOut_KeygenResult:
 
-		if pubKeyBytes := keygenResult.GetData().GetPubKey(); pubKeyBytes != nil {
-			btcecPK, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
-			if err != nil {
-				return nil, fmt.Errorf("could not unmarshal public key bytes: [%w]", err)
+		if keygenData := keygenResult.GetData(); keygenData != nil {
+			if pubKeyBytes := keygenData.GetPubKey(); pubKeyBytes != nil {
+				btcecPK, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
+				if err != nil {
+					return nil, fmt.Errorf("could not unmarshal public key bytes: [%w]", err)
+				}
+
+				pubKey := btcecPK.ToECDSA()
+				s.SetKey(ctx, req.PollMeta.ID, *pubKey)
+
+				ctx.EventManager().EmitEvent(
+					event.AppendAttributes(
+						sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
+						sdk.NewAttribute(types.AttributeKeyPayload, keygenResult.String()),
+					),
+				)
+				s.Logger(ctx).Info(fmt.Sprintf("public key confirmation result is %.10s", result))
+
+				return &types.VotePubKeyResponse{}, nil
 			}
-
-			pubKey := btcecPK.ToECDSA()
-			s.SetKey(ctx, req.PollKey.ID, *pubKey)
-
-			ctx.EventManager().EmitEvent(
-				event.AppendAttributes(
-					sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
-					sdk.NewAttribute(types.AttributeKeyPayload, keygenResult.String()),
-				),
-			)
-			s.Logger(ctx).Info(fmt.Sprintf("public key confirmation result is %.10s", result))
-
-			return &types.VotePubKeyResponse{}, nil
 		}
 
 		// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed

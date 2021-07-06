@@ -185,14 +185,15 @@ func (mgr *Mgr) handleKeygenResult(keyID string, resultChan <-chan interface{}) 
 	mgr.Logger.Debug(fmt.Sprintf("handler goroutine: received keygen result for %s [%+v]", keyID, result))
 
 	// TODO: here result data contain the pub key and recovery info. For now we only use pubkey.
-	pubKeyBytes := result.GetData().PubKey
-	if pubKeyBytes != nil {
-		btcecPK, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
-		if err != nil {
-			return sdkerrors.Wrap(err, "handler goroutine: failure to deserialize pubkey")
-		}
+	if keygenData := result.GetData(); keygenData != nil {
+		if pubKeyBytes := keygenData.GetPubKey(); pubKeyBytes != nil {
+			btcecPK, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
+			if err != nil {
+				return sdkerrors.Wrap(err, "handler goroutine: failure to deserialize pubkey")
+			}
 
-		mgr.Logger.Info(fmt.Sprintf("handler goroutine: received pubkey from server! [%v]", btcecPK.ToECDSA()))
+			mgr.Logger.Info(fmt.Sprintf("handler goroutine: received pubkey from server! [%v]", btcecPK.ToECDSA()))
+		}
 	}
 
 	pollKey := voting.NewPollKey(tss.ModuleName, keyID)
