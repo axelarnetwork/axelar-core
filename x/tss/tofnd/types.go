@@ -63,14 +63,20 @@ func (m *MessageOut_SignResult) Validate() error {
 // Validate checks if the keygen result is valid
 func (m *MessageOut_KeygenResult) Validate() error {
 	if keygenData := m.GetData(); keygenData != nil {
-		if pubKeyBytes := keygenData.GetPubKey(); pubKeyBytes != nil {
-			_, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
-			if err != nil {
-				return err
-			}
-
-			return nil
+		pubKeyBytes := keygenData.GetPubKey()
+		if pubKeyBytes == nil {
+			return fmt.Errorf("pubkey is nil")
 		}
+		recoveryInfo := keygenData.GetShareRecoveryInfos()
+		if recoveryInfo == nil {
+			return fmt.Errorf("recovery info is nil")
+		}
+		_, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
+		if err != nil {
+			return err
+		}
+
+		return nil
 	}
 
 	if criminalList := m.GetCriminals(); criminalList != nil {

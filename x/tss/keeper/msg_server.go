@@ -202,25 +202,30 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	case *tofnd.MessageOut_KeygenResult:
 
 		if keygenData := keygenResult.GetData(); keygenData != nil {
-			if pubKeyBytes := keygenData.GetPubKey(); pubKeyBytes != nil {
-				btcecPK, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
-				if err != nil {
-					return nil, fmt.Errorf("could not unmarshal public key bytes: [%w]", err)
-				}
-
-				pubKey := btcecPK.ToECDSA()
-				s.SetKey(ctx, req.PollMeta.ID, *pubKey)
-
-				ctx.EventManager().EmitEvent(
-					event.AppendAttributes(
-						sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
-						sdk.NewAttribute(types.AttributeKeyPayload, keygenResult.String()),
-					),
-				)
-				s.Logger(ctx).Info(fmt.Sprintf("public key confirmation result is %.10s", result))
-
-				return &types.VotePubKeyResponse{}, nil
+			pubKeyBytes := keygenData.GetPubKey()
+			if pubKeyBytes == nil {
+				return nil, fmt.Errorf("pubkey bytes is nil")
 			}
+			recoveryInfo := keygenData.GetShareRecoveryInfos()
+			if recoveryInfo == nil {
+				return nil, fmt.Errorf("recovery info is nil")
+			}
+			btcecPK, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
+			if err != nil {
+				return nil, fmt.Errorf("could not unmarshal public key bytes: [%w]", err)
+			}
+
+			pubKey := btcecPK.ToECDSA()
+			s.SetKey(ctx, req.PollMeta.ID, *pubKey)
+
+			ctx.EventManager().EmitEvent(
+				event.AppendAttributes(
+					sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
+					sdk.NewAttribute(types.AttributeKeyPayload, keygenResult.String()),
+				),
+			)
+
+			return &types.VotePubKeyResponse{}, nil
 		}
 
 		// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed
