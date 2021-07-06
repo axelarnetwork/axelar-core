@@ -13,7 +13,6 @@ import (
 // InitGenesis initialize default parameters
 // from the genesis state
 func InitGenesis(ctx sdk.Context, k keeper.Keeper, state types.GenesisState) {
-	k.SetVotingInterval(ctx, state.VotingInterval)
 	k.SetVotingThreshold(ctx, state.VotingThreshold)
 }
 
@@ -22,7 +21,6 @@ func InitGenesis(ctx sdk.Context, k keeper.Keeper, state types.GenesisState) {
 // with InitGenesis
 func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
 	state := &types.GenesisState{
-		VotingInterval:  k.GetVotingInterval(ctx),
 		VotingThreshold: k.GetVotingThreshold(ctx),
 	}
 

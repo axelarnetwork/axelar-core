@@ -20,6 +20,7 @@
   
 - [bitcoin/v1beta1/query.proto](#bitcoin/v1beta1/query.proto)
     - [DepositQueryParams](#bitcoin.v1beta1.DepositQueryParams)
+    - [QueryMasterAddressResponse](#bitcoin.v1beta1.QueryMasterAddressResponse)
     - [QueryRawTxResponse](#bitcoin.v1beta1.QueryRawTxResponse)
   
 - [vote/exported/v1beta1/types.proto](#vote/exported/v1beta1/types.proto)
@@ -53,6 +54,7 @@
   
 - [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
     - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
+    - [QueryMasterAddressResponse](#evm.v1beta1.QueryMasterAddressResponse)
   
 - [tss/exported/v1beta1/types.proto](#tss/exported/v1beta1/types.proto)
     - [KeyRequirement](#tss.exported.v1beta1.KeyRequirement)
@@ -150,9 +152,10 @@
 - [tss/v1beta1/genesis.proto](#tss/v1beta1/genesis.proto)
     - [GenesisState](#tss.v1beta1.GenesisState)
   
+- [tss/v1beta1/query.proto](#tss/v1beta1/query.proto)
+    - [QuerySigResponse](#tss.v1beta1.QuerySigResponse)
+  
 - [tss/v1beta1/tx.proto](#tss/v1beta1/tx.proto)
-    - [AssignKeyRequest](#tss.v1beta1.AssignKeyRequest)
-    - [AssignKeyResponse](#tss.v1beta1.AssignKeyResponse)
     - [ProcessKeygenTrafficRequest](#tss.v1beta1.ProcessKeygenTrafficRequest)
     - [ProcessKeygenTrafficResponse](#tss.v1beta1.ProcessKeygenTrafficResponse)
     - [ProcessSignTrafficRequest](#tss.v1beta1.ProcessSignTrafficRequest)
@@ -295,6 +298,7 @@ of a transaction
 | `revote_locking_period` | [int64](#int64) |  |  |
 | `sig_check_interval` | [int64](#int64) |  |  |
 | `minimum_withdrawal_amount` | [int64](#int64) |  |  |
+| `max_input_count` | [int64](#int64) |  |  |
 
 
 
@@ -359,6 +363,22 @@ deposit address
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  |  |
 | `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.QueryMasterAddressResponse"></a>
+
+### QueryMasterAddressResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
 
 
 
@@ -780,6 +800,22 @@ deposit address
 
 
 
+
+<a name="evm.v1beta1.QueryMasterAddressResponse"></a>
+
+### QueryMasterAddressResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [bytes](#bytes) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -809,6 +845,7 @@ KeyRequirement defines requirements for keys
 | `key_role` | [KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
 | `min_validator_subset_size` | [int64](#int64) |  |  |
 | `key_share_distribution_policy` | [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
+| `needs_assignment` | [bool](#bool) |  |  |
 
 
 
@@ -2032,38 +2069,42 @@ Params is the parameter set for this module
 
 
 
-<a name="tss/v1beta1/tx.proto"></a>
+<a name="tss/v1beta1/query.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## tss/v1beta1/tx.proto
+## tss/v1beta1/query.proto
 
 
 
-<a name="tss.v1beta1.AssignKeyRequest"></a>
+<a name="tss.v1beta1.QuerySigResponse"></a>
 
-### AssignKeyRequest
-AssignKeyRequest represents a message to assign a new key
+### QuerySigResponse
+
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `chain` | [string](#string) |  |  |
-| `key_id` | [string](#string) |  |  |
-| `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+| `r` | [bytes](#bytes) |  |  |
+| `s` | [bytes](#bytes) |  |  |
 
 
 
 
 
+ <!-- end messages -->
 
-<a name="tss.v1beta1.AssignKeyResponse"></a>
+ <!-- end enums -->
 
-### AssignKeyResponse
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
 
 
 
+<a name="tss/v1beta1/tx.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
 
+## tss/v1beta1/tx.proto
 
 
 
@@ -2262,7 +2303,6 @@ Msg defines the tss Msg service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `StartKeygen` | [StartKeygenRequest](#tss.v1beta1.StartKeygenRequest) | [StartKeygenResponse](#tss.v1beta1.StartKeygenResponse) |  | POST|/axelar/tss/startKeygen|
 | `ProcessKeygenTraffic` | [ProcessKeygenTrafficRequest](#tss.v1beta1.ProcessKeygenTrafficRequest) | [ProcessKeygenTrafficResponse](#tss.v1beta1.ProcessKeygenTrafficResponse) |  | ||
-| `AssignKey` | [AssignKeyRequest](#tss.v1beta1.AssignKeyRequest) | [AssignKeyResponse](#tss.v1beta1.AssignKeyResponse) |  | POST|/axelar/tss/assign/{chain}|
 | `RotateKey` | [RotateKeyRequest](#tss.v1beta1.RotateKeyRequest) | [RotateKeyResponse](#tss.v1beta1.RotateKeyResponse) |  | POST|/axelar/tss/assign/{chain}|
 | `VotePubKey` | [VotePubKeyRequest](#tss.v1beta1.VotePubKeyRequest) | [VotePubKeyResponse](#tss.v1beta1.VotePubKeyResponse) |  | ||
 | `ProcessSignTraffic` | [ProcessSignTrafficRequest](#tss.v1beta1.ProcessSignTrafficRequest) | [ProcessSignTrafficResponse](#tss.v1beta1.ProcessSignTrafficResponse) |  | ||
@@ -2287,7 +2327,6 @@ Msg defines the tss Msg service.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `voting_interval` | [int64](#int64) |  |  |
 | `voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 
 

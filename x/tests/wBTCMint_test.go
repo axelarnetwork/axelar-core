@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/axelarnetwork/axelar-core/testutils"
+	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
@@ -40,7 +40,7 @@ import (
 
 func Test_wBTC_mint(t *testing.T) {
 	randStrings := rand.Strings(5, 50)
-	cdc := testutils.MakeEncodingConfig().Amino
+	cdc := app.MakeEncodingConfig().Amino
 
 	// 0. Set up chain
 	const nodeCount = 10
@@ -85,9 +85,6 @@ func Test_wBTC_mint(t *testing.T) {
 			assert.FailNow(t, "keygen", err)
 		}
 
-		assignMasterKeyResult := <-chain.Submit(types.NewAssignKeyRequest(randomSender(), c, masterKeyID, tss.MasterKey))
-		assert.NoError(t, assignMasterKeyResult.Error)
-
 		rotateMasterKeyResult := <-chain.Submit(types.NewRotateKeyRequest(randomSender(), c, tss.MasterKey, masterKeyID))
 		assert.NoError(t, rotateMasterKeyResult.Error)
 
@@ -100,9 +97,6 @@ func Test_wBTC_mint(t *testing.T) {
 			if err := waitFor(listeners.keygenDone, 1); err != nil {
 				assert.FailNow(t, "keygen", err)
 			}
-
-			assignSecondaryKeyResult := <-chain.Submit(types.NewAssignKeyRequest(randomSender(), c, secondaryKeyID, tss.SecondaryKey))
-			assert.NoError(t, assignSecondaryKeyResult.Error)
 
 			rotateSecondaryKeyResult := <-chain.Submit(types.NewRotateKeyRequest(randomSender(), c, tss.SecondaryKey, secondaryKeyID))
 			assert.NoError(t, rotateSecondaryKeyResult.Error)
@@ -174,13 +168,13 @@ func Test_wBTC_mint(t *testing.T) {
 	txHash := common.BytesToHash(bz)
 
 	bz, err = nodeData[0].Node.Query(
-		[]string{evmTypes.QuerierRoute, evmKeeper.QueryTokenAddress, "ethereum", "satoshi"},
+		[]string{evmTypes.QuerierRoute, evmKeeper.QTokenAddress, "ethereum", "satoshi"},
 		abci.RequestQuery{Data: nil},
 	)
 	assert.NoError(t, err)
 	tokenAddr := common.BytesToAddress(bz)
 	bz, err = nodeData[0].Node.Query(
-		[]string{evmTypes.QuerierRoute, evmKeeper.QueryAxelarGatewayAddress, "ethereum"},
+		[]string{evmTypes.QuerierRoute, evmKeeper.QAxelarGatewayAddress, "ethereum"},
 		abci.RequestQuery{Data: nil},
 	)
 	assert.NoError(t, err)

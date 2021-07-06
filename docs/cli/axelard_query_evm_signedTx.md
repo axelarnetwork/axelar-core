@@ -1,16 +1,16 @@
-## axelard query evm deposit-addr
+## axelard query evm signedTx
 
-Returns an evm chain deposit address for a recipient address on another blockchain
+Fetch an EVM transaction \[txID\] that has been signed by the validators for chain \[chain\]
 
 ```
-axelard query evm deposit-addr [evm chain] [recipient chain] [recipient address] [symbol] [flags]
+axelard query evm signedTx [chain] [txID] [flags]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for deposit-addr
+  -h, --help          help for signedTx
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 

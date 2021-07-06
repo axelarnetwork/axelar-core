@@ -20,11 +20,12 @@ const (
 	TxConfirmTx              = "confirm"
 	TxSignPendingTransfersTx = "sign"
 
-	QueryDepositAddress           = keeper.QueryDepositAddress
-	QueryMasterAddress            = keeper.QueryMasterAddress
-	QueryGetConsolidationTx       = keeper.GetConsolidationTx
-	QueryGetPayForConsolidationTx = keeper.GetPayForConsolidationTx
-	QueryMinimumWithdrawAmount    = keeper.QueryMinimumWithdrawAmount
+	QueryDepositAddress           = keeper.QDepositAddress
+	QueryMasterAddress            = keeper.QMasterAddress
+	QueryKeyConsolidationAddress  = keeper.QKeyConsolidationAddress
+	QueryGetConsolidationTx       = keeper.QConsolidationTx
+	QueryGetPayForConsolidationTx = keeper.QPayForConsolidationTx
+	QueryMinimumWithdrawAmount    = keeper.QMinimumWithdrawAmount
 )
 
 // RegisterRoutes registers this module's REST routes with the given router
@@ -37,6 +38,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
 	registerQuery(QueryHandlerDepositAddress(cliCtx), QueryDepositAddress, clientUtils.PathVarChain, clientUtils.PathVarEthereumAddress)
 	registerQuery(QueryHandlerMasterAddress(cliCtx), QueryMasterAddress)
+	registerQuery(QueryHandlerKeyConsolidationAddress(cliCtx), QueryKeyConsolidationAddress, clientUtils.PathVarKeyID)
 	registerQuery(QueryHandlerGetConsolidationTx(cliCtx), QueryGetConsolidationTx)
 	registerQuery(QueryHandlerGetPayForConsolidationTx(cliCtx), QueryGetPayForConsolidationTx)
 	registerQuery(QueryHandlerMinimumWithdrawAmount(cliCtx), QueryMinimumWithdrawAmount)

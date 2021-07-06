@@ -33,6 +33,8 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdAxelarGatewayAddress(queryRoute),
 		GetCmdTokenAddress(queryRoute),
 		GetCmdCreateDeployTx(queryRoute),
+		GetCmdBytecode(queryRoute),
+		GetCmdSignedTx(queryRoute),
 		GetCmdSendTx(queryRoute),
 		GetCmdSendCommand(queryRoute),
 		GetCmdQueryCommandData(queryRoute),
@@ -45,7 +47,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 // GetCmdDepositAddress returns the deposit address command
 func GetCmdDepositAddress(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "deposit-addr [evm chain] [recipient chain] [recipient address] [symbol]",
+		Use:   "deposit-address [evm chain] [recipient chain] [recipient address] [symbol]",
 		Short: "Returns an evm chain deposit address for a recipient address on another blockchain",
 		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -54,7 +56,7 @@ func GetCmdDepositAddress(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			path := fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryDepositAddress, args[0])
+			path := fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QDepositAddress, args[0])
 
 			res, _, err := cliCtx.QueryWithData(path, types.ModuleCdc.MustMarshalJSON(&types.DepositQueryParams{Chain: args[1], Address: args[2], Symbol: args[3]}))
 			if err != nil {
@@ -71,9 +73,10 @@ func GetCmdDepositAddress(queryRoute string) *cobra.Command {
 
 // GetCmdMasterAddress returns the query for an EVM chain master address that owns the AxelarGateway contract
 func GetCmdMasterAddress(queryRoute string) *cobra.Command {
+	var IncludeKeyID bool
 	cmd := &cobra.Command{
 		Use:   "master-address [chain]",
-		Short: "Query an address by key ID",
+		Short: "Returns the EVM address of the current master key, and optionally the key's ID",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientQueryContext(cmd)
@@ -81,19 +84,31 @@ func GetCmdMasterAddress(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryMasterAddress, args[0]), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QMasterAddress, args[0]), nil)
 			if err != nil {
 				fmt.Printf(types.ErrFMasterKey, err.Error())
 
 				return nil
 			}
 
-			out := common.BytesToAddress(res)
-			return cliCtx.PrintObjectLegacy(out.Hex())
+			var resp types.QueryMasterAddressResponse
+			err = resp.Unmarshal(res)
+			if err != nil {
+				return sdkerrors.Wrap(err, types.ErrFMasterKey)
+			}
+
+			if IncludeKeyID {
+				return cliCtx.PrintObjectLegacy(resp)
+			}
+
+			address := common.BytesToAddress(resp.Address)
+
+			return cliCtx.PrintObjectLegacy(address.Hex())
 		},
 	}
 
 	flags.AddQueryFlagsToCmd(cmd)
+	cmd.Flags().BoolVar(&IncludeKeyID, "include-key-id", false, "include the current master key ID in the output")
 	return cmd
 }
 
@@ -109,7 +124,7 @@ func GetCmdTokenAddress(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QueryTokenAddress, args[0], args[1]), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QTokenAddress, args[0], args[1]), nil)
 			if err != nil {
 				fmt.Printf(types.ErrFTokenAddress, err.Error())
 
@@ -137,7 +152,7 @@ func GetCmdAxelarGatewayAddress(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryAxelarGatewayAddress, args[0]), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QAxelarGatewayAddress, args[0]), nil)
 			if err != nil {
 				fmt.Printf(types.ErrFGatewayAddress, err.Error())
 
@@ -199,6 +214,59 @@ func GetCmdCreateDeployTx(queryRoute string) *cobra.Command {
 		"EVM gas limit to use in the transaction (default value is 3000000). Set to 0 to estimate gas limit at the node.")
 	cmd.Flags().StringVar(&gasPriceStr, "gas-price", "0",
 		"EVM gas price to use in the transaction. If flag is omitted (or value set to 0), the gas price will be suggested by the node")
+	return cmd
+}
+
+// GetCmdBytecode fetches the bytecodes of an EVM contract
+func GetCmdBytecode(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "bytecode [chain] [contract]",
+		Short: "Fetch the bytecodes of an EVM contract [contract] for chain [chain]",
+		Long: fmt.Sprintf("Fetch the bytecodes of an EVM contract [contract] for chain [chain]. "+
+			"The value for [contract] can be either '%s', '%s', or '%s'.",
+			keeper.BCGateway, keeper.BCToken, keeper.BCBurner),
+		Args: cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QBytecode, args[0], args[1]), nil)
+			if err != nil {
+				return sdkerrors.Wrapf(err, types.ErrFBytecode, args[1])
+			}
+
+			fmt.Println("0x" + common.Bytes2Hex(res))
+			return nil
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdSignedTx fetches an EVM transaction that has been signed by the validators
+func GetCmdSignedTx(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "signedTx [chain] [txID]",
+		Short: "Fetch an EVM transaction [txID] that has been signed by the validators for chain [chain]",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QSignedTx, args[0], args[1]), nil)
+			if err != nil {
+				return sdkerrors.Wrapf(err, types.ErrFSignedTx, args[1])
+			}
+
+			fmt.Println("0x" + common.Bytes2Hex(res))
+			return nil
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }
 
@@ -271,12 +339,13 @@ func GetCmdQueryCommandData(queryRoute string) *cobra.Command {
 			chain := args[0]
 			commandIDHex := args[1]
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QueryCommandData, chain, commandIDHex), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QCommandData, chain, commandIDHex), nil)
 			if err != nil {
 				return sdkerrors.Wrapf(err, "could not get command %s", commandIDHex)
 			}
 
-			return cliCtx.PrintObjectLegacy(common.Bytes2Hex(res))
+			fmt.Println("0x" + common.Bytes2Hex(res))
+			return nil
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)

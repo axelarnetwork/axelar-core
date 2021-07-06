@@ -9,6 +9,7 @@ import (
 
 	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/axelarnetwork/axelar-core/app"
 	broadcastMock "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types/mock"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss/rpc/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
@@ -22,7 +23,7 @@ func TestProcessNewBlockHeader(t *testing.T) {
 	sender := rand.Bytes(sdk.AddrLen)
 	sessionTimeout := int64(100)
 	logger := log.TestingLogger()
-	cdc := testutils.MakeEncodingConfig().Amino
+	cdc := app.MakeEncodingConfig().Amino
 
 	t.Run("should do nothing when the timeout queue is empty", testutils.Func(func(t *testing.T) {
 		mgr := NewMgr(&rpcClient, time.Second, principalAddr, &broadcaster, sender, sessionTimeout, logger, cdc)

@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -27,6 +28,7 @@ type BTCKeeper interface {
 	GetSigCheckInterval(ctx sdk.Context) int64
 	GetNetwork(ctx sdk.Context) Network
 	GetMinimumWithdrawalAmount(ctx sdk.Context) btcutil.Amount
+	GetMaxInputCount(ctx sdk.Context) int64
 
 	SetPendingOutpointInfo(ctx sdk.Context, poll vote.PollMeta, info OutPointInfo)
 	GetPendingOutPointInfo(ctx sdk.Context, poll vote.PollMeta) (OutPointInfo, bool)
@@ -34,7 +36,7 @@ type BTCKeeper interface {
 	SetOutpointInfo(ctx sdk.Context, info OutPointInfo, state OutPointState)
 	GetOutPointInfo(ctx sdk.Context, outPoint wire.OutPoint) (OutPointInfo, OutPointState, bool)
 	DeleteOutpointInfo(ctx sdk.Context, outPoint wire.OutPoint)
-	GetConfirmedOutPointInfos(ctx sdk.Context) []OutPointInfo
+	GetConfirmedOutpointInfoQueue(ctx sdk.Context) utils.KVQueue
 
 	SetUnsignedTx(ctx sdk.Context, tx *wire.MsgTx)
 	GetUnsignedTx(ctx sdk.Context) (*wire.MsgTx, bool)
@@ -77,6 +79,8 @@ type Signer interface {
 	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool)
 	GetKey(ctx sdk.Context, keyID string) (tss.Key, bool)
+	AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error
+	AssertMatchesRequirements(ctx sdk.Context, snapshot snapshot.Snapshot, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error
 }
 
 // Nexus provides functionality to manage cross-chain transfers

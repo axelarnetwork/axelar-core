@@ -1,4 +1,4 @@
-package keeper
+package keeper_test
 
 import (
 	"crypto/ecdsa"
@@ -11,13 +11,14 @@ import (
 	"github.com/btcsuite/btcd/wire"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	"github.com/tendermint/tendermint/libs/log"
 	"github.com/stretchr/testify/assert"
+	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
+	bitcoinKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -27,16 +28,15 @@ import (
 func TestQueryMasterAddress(t *testing.T) {
 
 	var (
-		btcKeeper   *mock.BTCKeeperMock
-		signer      *mock.SignerMock
-		ctx         sdk.Context
+		btcKeeper *mock.BTCKeeperMock
+		signer    *mock.SignerMock
+		ctx       sdk.Context
 	)
-
 
 	setup := func() {
 		btcKeeper = &mock.BTCKeeperMock{
 			GetNetworkFunc: func(ctx sdk.Context) types.Network { return types.Mainnet },
-			GetAddressFunc: func(sdk.Context, string) ( types.AddressInfo, bool) { 
+			GetAddressFunc: func(sdk.Context, string) (types.AddressInfo, bool) {
 				return types.AddressInfo{
 					Address:      randomAddress().EncodeAddress(),
 					RedeemScript: rand.Bytes(200),
@@ -54,19 +54,33 @@ func TestQueryMasterAddress(t *testing.T) {
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 	}
 
-
 	repeatCount := 20
 
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
-
-		res, err := queryMasterAddress(ctx, btcKeeper, signer)
-
 		assert := assert.New(t)
-		assert.NoError(err)
-		assert.Len(btcKeeper.GetAddressCalls(), 1)
 
-		assert.Equal(btcKeeper.GetAddressCalls()[0].EncodedAddress, string(res))
+		var key tss.Key
+		signer = &mock.SignerMock{
+			GetCurrentKeyFunc: func(_ sdk.Context, _ nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+				sk, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
+				key = tss.Key{Value: sk.PublicKey, ID: rand.StrBetween(5, 20), Role: keyRole}
+				return key, true
+			},
+		}
+
+		res, err := bitcoinKeeper.QueryMasterAddress(ctx, btcKeeper, signer)
+		assert.NoError(err)
+
+		var resp types.QueryMasterAddressResponse
+		err = resp.Unmarshal(res)
+		assert.NoError(err)
+
+		assert.Len(btcKeeper.GetAddressCalls(), 1)
+		assert.Len(signer.GetCurrentKeyCalls(), 1)
+
+		assert.Equal(btcKeeper.GetAddressCalls()[0].EncodedAddress, resp.Address)
+		assert.Equal(key.ID, resp.KeyId)
 
 	}).Repeat(repeatCount))
 
@@ -74,7 +88,7 @@ func TestQueryMasterAddress(t *testing.T) {
 		setup()
 		signer.GetCurrentKeyFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) { return tss.Key{}, false }
 
-		_, err := queryMasterAddress(ctx, btcKeeper, signer)
+		_, err := bitcoinKeeper.QueryMasterAddress(ctx, btcKeeper, signer)
 
 		assert := assert.New(t)
 		assert.Error(err)
@@ -83,9 +97,9 @@ func TestQueryMasterAddress(t *testing.T) {
 
 	t.Run("master key has no address", testutils.Func(func(t *testing.T) {
 		setup()
-		btcKeeper.GetAddressFunc = func(sdk.Context, string) ( types.AddressInfo, bool) { return types.AddressInfo {}, false }
+		btcKeeper.GetAddressFunc = func(sdk.Context, string) (types.AddressInfo, bool) { return types.AddressInfo{}, false }
 
-		_, err := queryMasterAddress(ctx, btcKeeper, signer)
+		_, err := bitcoinKeeper.QueryMasterAddress(ctx, btcKeeper, signer)
 
 		assert := assert.New(t)
 		assert.Error(err)
@@ -101,9 +115,8 @@ func TestQueryDepositAddress(t *testing.T) {
 		signer      *mock.SignerMock
 		nexusKeeper *mock.NexusMock
 		ctx         sdk.Context
-		data		[]byte
+		data        []byte
 	)
-
 
 	setup := func() {
 
@@ -126,8 +139,8 @@ func TestQueryDepositAddress(t *testing.T) {
 			},
 			GetRecipientFunc: func(sdk.Context, nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
 				return nexus.CrossChainAddress{
-					Chain:		exported.Bitcoin,
-					Address:	randomAddress().EncodeAddress(),
+					Chain:   exported.Bitcoin,
+					Address: randomAddress().EncodeAddress(),
 				}, true
 			},
 		}
@@ -135,13 +148,12 @@ func TestQueryDepositAddress(t *testing.T) {
 		data = types.ModuleCdc.MustMarshalJSON(&types.DepositQueryParams{Chain: "ethereum", Address: "0xf2151de34BbFb22f799243FFBeFf18FD5D701147"})
 	}
 
-
 	repeatCount := 20
 
 	t.Run("happy path hard coded", testutils.Func(func(t *testing.T) {
 		setup()
 
-		res, err := queryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, data)
+		res, err := bitcoinKeeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, data)
 
 		assert := assert.New(t)
 		assert.NoError(err)
@@ -157,7 +169,7 @@ func TestQueryDepositAddress(t *testing.T) {
 		dataStr := &types.DepositQueryParams{Chain: rand.StrBetween(5, 20), Address: "0x" + rand.HexStr(40)}
 		data = types.ModuleCdc.MustMarshalJSON(dataStr)
 
-		res, err := queryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, data)
+		res, err := bitcoinKeeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, data)
 
 		assert := assert.New(t)
 		assert.NoError(err)
@@ -172,7 +184,7 @@ func TestQueryDepositAddress(t *testing.T) {
 		setup()
 		data = nil
 
-		_, err := queryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, data)
+		_, err := bitcoinKeeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, data)
 
 		assert := assert.New(t)
 		assert.Error(err)
@@ -185,19 +197,18 @@ func TestQueryDepositAddress(t *testing.T) {
 			return exported.Bitcoin, false
 		}
 
-		_, err := queryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, data)
+		_, err := bitcoinKeeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, data)
 
 		assert := assert.New(t)
 		assert.Error(err)
 
 	}).Repeat(repeatCount))
 
-
 	t.Run("no master/secondary key", testutils.Func(func(t *testing.T) {
 		setup()
 		signer.GetCurrentKeyFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) { return tss.Key{}, false }
 
-		_, err := queryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, data)
+		_, err := bitcoinKeeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, data)
 
 		assert := assert.New(t)
 		assert.Error(err)
@@ -210,32 +221,31 @@ func TestQueryDepositAddress(t *testing.T) {
 			return nexus.CrossChainAddress{}, false
 		}
 
-		_, err := queryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, data)
+		_, err := bitcoinKeeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, data)
 
 		assert := assert.New(t)
 		assert.Error(err)
 
 	}).Repeat(repeatCount))
-	
+
 }
 
 func TestQueryTxState(t *testing.T) {
 
 	var (
-		btcKeeper   *mock.BTCKeeperMock
-		ctx         sdk.Context
-		data		[]byte
+		btcKeeper *mock.BTCKeeperMock
+		ctx       sdk.Context
+		data      []byte
 	)
-
 
 	setup := func() {
 		btcKeeper = &mock.BTCKeeperMock{
-			GetOutPointInfoFunc: func(ctx sdk.Context, outpoint wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) { 
+			GetOutPointInfoFunc: func(ctx sdk.Context, outpoint wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
 				return randomOutpointInfo(), types.CONFIRMED, true
 			},
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		
+
 		txHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
 		if err != nil {
 			panic(err)
@@ -252,7 +262,7 @@ func TestQueryTxState(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		_, err := queryTxState(ctx, btcKeeper, data)
+		_, err := bitcoinKeeper.QueryTxState(ctx, btcKeeper, data)
 
 		assert := assert.New(t)
 		assert.NoError(err)
@@ -262,11 +272,11 @@ func TestQueryTxState(t *testing.T) {
 
 	t.Run("transaction not found", testutils.Func(func(t *testing.T) {
 		setup()
-		btcKeeper.GetOutPointInfoFunc = func(ctx sdk.Context, outpoint wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) { 
+		btcKeeper.GetOutPointInfoFunc = func(ctx sdk.Context, outpoint wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
 			return types.OutPointInfo{}, 0, false
 		}
 
-		_, err := queryTxState(ctx, btcKeeper, data)
+		_, err := bitcoinKeeper.QueryTxState(ctx, btcKeeper, data)
 
 		assert := assert.New(t)
 		assert.Error(err)
@@ -277,14 +287,14 @@ func TestQueryTxState(t *testing.T) {
 func TestGetRawConsolidationTx(t *testing.T) {
 
 	var (
-		btcKeeper   *mock.BTCKeeperMock
-		ctx         sdk.Context
+		btcKeeper *mock.BTCKeeperMock
+		ctx       sdk.Context
 	)
 
 	setup := func() {
 		btcKeeper = &mock.BTCKeeperMock{
-			GetUnsignedTxFunc:        	func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
-			GetSignedTxFunc:            func(sdk.Context) (*wire.MsgTx, bool) { return wire.NewMsgTx(wire.TxVersion), true },
+			GetUnsignedTxFunc: func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
+			GetSignedTxFunc:   func(sdk.Context) (*wire.MsgTx, bool) { return wire.NewMsgTx(wire.TxVersion), true },
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 	}
@@ -294,7 +304,7 @@ func TestGetRawConsolidationTx(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		_, err := getRawConsolidationTx(ctx, btcKeeper)
+		_, err := bitcoinKeeper.GetRawConsolidationTx(ctx, btcKeeper)
 
 		assert := assert.New(t)
 		assert.NoError(err)
@@ -306,7 +316,7 @@ func TestGetRawConsolidationTx(t *testing.T) {
 	t.Run("consolidation transaction unsigned", testutils.Func(func(t *testing.T) {
 		setup()
 
-		_, err := getRawConsolidationTx(ctx, btcKeeper)
+		_, err := bitcoinKeeper.GetRawConsolidationTx(ctx, btcKeeper)
 		btcKeeper.GetUnsignedTxFunc = func(sdk.Context) (*wire.MsgTx, bool) { return wire.NewMsgTx(wire.TxVersion), true }
 		btcKeeper.GetSignedTxFunc = func(sdk.Context) (*wire.MsgTx, bool) { return nil, false }
 
@@ -319,7 +329,7 @@ func TestGetRawConsolidationTx(t *testing.T) {
 	t.Run("no consolidation transaction", testutils.Func(func(t *testing.T) {
 		setup()
 
-		_, err := getRawConsolidationTx(ctx, btcKeeper)
+		_, err := bitcoinKeeper.GetRawConsolidationTx(ctx, btcKeeper)
 		btcKeeper.GetUnsignedTxFunc = func(sdk.Context) (*wire.MsgTx, bool) { return nil, false }
 		btcKeeper.GetSignedTxFunc = func(sdk.Context) (*wire.MsgTx, bool) { return nil, false }
 
@@ -334,17 +344,17 @@ func TestGetRawConsolidationTx(t *testing.T) {
 func TestGetConsolidationTxState(t *testing.T) {
 
 	var (
-		btcKeeper   *mock.BTCKeeperMock
-		ctx         sdk.Context
+		btcKeeper *mock.BTCKeeperMock
+		ctx       sdk.Context
 	)
 
 	setup := func() {
 		btcKeeper = &mock.BTCKeeperMock{
-			GetSignedTxFunc:            func(sdk.Context) (*wire.MsgTx, bool) { return wire.NewMsgTx(wire.TxVersion), true },
-			GetOutPointInfoFunc: func(ctx sdk.Context, outpoint wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) { 
+			GetSignedTxFunc: func(sdk.Context) (*wire.MsgTx, bool) { return wire.NewMsgTx(wire.TxVersion), true },
+			GetOutPointInfoFunc: func(ctx sdk.Context, outpoint wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
 				return randomOutpointInfo(), types.CONFIRMED, true
 			},
-			GetMasterKeyVoutFunc:       func(sdk.Context) (uint32, bool) { 
+			GetMasterKeyVoutFunc: func(sdk.Context) (uint32, bool) {
 				vout := mathRand.Uint32()
 				if vout == 0 {
 					vout++
@@ -360,7 +370,7 @@ func TestGetConsolidationTxState(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		res, err := getConsolidationTxState(ctx, btcKeeper)
+		res, err := bitcoinKeeper.GetConsolidationTxState(ctx, btcKeeper)
 
 		assert := assert.New(t)
 		assert.NoError(err)
@@ -374,7 +384,7 @@ func TestGetConsolidationTxState(t *testing.T) {
 		setup()
 		btcKeeper.GetSignedTxFunc = func(sdk.Context) (*wire.MsgTx, bool) { return nil, false }
 
-		_, err := getConsolidationTxState(ctx, btcKeeper)
+		_, err := bitcoinKeeper.GetConsolidationTxState(ctx, btcKeeper)
 
 		assert := assert.New(t)
 		assert.Error(err)
@@ -385,7 +395,7 @@ func TestGetConsolidationTxState(t *testing.T) {
 		setup()
 		btcKeeper.GetMasterKeyVoutFunc = func(sdk.Context) (uint32, bool) { return 0, false }
 
-		_, err := getConsolidationTxState(ctx, btcKeeper)
+		_, err := bitcoinKeeper.GetConsolidationTxState(ctx, btcKeeper)
 
 		assert := assert.New(t)
 		assert.Error(err)
@@ -394,11 +404,11 @@ func TestGetConsolidationTxState(t *testing.T) {
 
 	t.Run("consolidation transaction not tracked", testutils.Func(func(t *testing.T) {
 		setup()
-		btcKeeper.GetOutPointInfoFunc = func(ctx sdk.Context, outpoint wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) { 
+		btcKeeper.GetOutPointInfoFunc = func(ctx sdk.Context, outpoint wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
 			return types.OutPointInfo{}, 0, false
 		}
 
-		_, err := getConsolidationTxState(ctx, btcKeeper)
+		_, err := bitcoinKeeper.GetConsolidationTxState(ctx, btcKeeper)
 
 		assert := assert.New(t)
 		assert.Error(err)

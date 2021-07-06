@@ -33,8 +33,8 @@
       - [total](axelard_query_bank_total.md)	 - Query the total supply of coins of the chain
     - [bitcoin](axelard_query_bitcoin.md)	 - bitcoin query subcommands
       - [consolidationTxState](axelard_query_bitcoin_consolidationTxState.md)	 - Returns the state of the consolidation transaction as seen by Axelar network
-      - [deposit-addr \[chain\] \[recipient address\]](axelard_query_bitcoin_deposit-addr.md)	 - Returns a bitcoin deposit address for a recipient address on another blockchain
-      - [master-addr](axelard_query_bitcoin_master-addr.md)	 - Returns the bitcoin address of the current master key
+      - [deposit-address \[chain\] \[recipient address\]](axelard_query_bitcoin_deposit-address.md)	 - Returns a bitcoin deposit address for a recipient address on another blockchain
+      - [master-address](axelard_query_bitcoin_master-address.md)	 - Returns the bitcoin address of the current master key, and optionally the key's ID
       - [minWithdraw](axelard_query_bitcoin_minWithdraw.md)	 - Returns the minimum withdraw amount in satoshi
       - [rawPayForConsolidationTx](axelard_query_bitcoin_rawPayForConsolidationTx.md)	 - Returns the encoded hex string of a fully signed transaction that pays for the consolidation transaction
       - [rawTx](axelard_query_bitcoin_rawTx.md)	 - Returns the encoded hex string of a fully signed transfer and consolidation transaction
@@ -49,13 +49,15 @@
       - [validator-outstanding-rewards \[validator\]](axelard_query_distribution_validator-outstanding-rewards.md)	 - Query distribution outstanding (un-withdrawn) rewards for a validator and all their delegations
     - [evidence](axelard_query_evidence.md)	 - Query for evidence by hash or for all (paginated) submitted evidence
     - [evm](axelard_query_evm.md)	 - Querying commands for the evm module
+      - [bytecode \[chain\] \[contract\]](axelard_query_evm_bytecode.md)	 - Fetch the bytecodes of an EVM contract \[contract\] for chain \[chain\]
       - [command \[chain\] \[commandID\]](axelard_query_evm_command.md)	 - Get the signed command data that can be wrapped in an EVM transaction to execute the command \[commandID\] on Axelar Gateway
       - [deploy-gateway \[chain\]](axelard_query_evm_deploy-gateway.md)	 - Obtain a raw transaction for the deployment of Axelar Gateway.
-      - [deposit-addr \[evm chain\] \[recipient chain\] \[recipient address\] \[symbol\]](axelard_query_evm_deposit-addr.md)	 - Returns an evm chain deposit address for a recipient address on another blockchain
+      - [deposit-address \[evm chain\] \[recipient chain\] \[recipient address\] \[symbol\]](axelard_query_evm_deposit-address.md)	 - Returns an evm chain deposit address for a recipient address on another blockchain
       - [gateway-address \[chain\]](axelard_query_evm_gateway-address.md)	 - Query the Axelar Gateway contract address
-      - [master-address \[chain\]](axelard_query_evm_master-address.md)	 - Query an address by key ID
+      - [master-address \[chain\]](axelard_query_evm_master-address.md)	 - Returns the EVM address of the current master key, and optionally the key's ID
       - [sendCommand \[chain\] \[commandID\] \[fromAddress\]](axelard_query_evm_sendCommand.md)	 - Send a transaction signed by \[fromAddress\] that executes the command \[commandID\] to Axelar Gateway
       - [sendTx \[chain\] \[txID\]](axelard_query_evm_sendTx.md)	 - Send a transaction that spends tx \[txID\] to chain \[chain\]
+      - [signedTx \[chain\] \[txID\]](axelard_query_evm_signedTx.md)	 - Fetch an EVM transaction \[txID\] that has been signed by the validators for chain \[chain\]
       - [token-address \[chain\] \[symbol\]](axelard_query_evm_token-address.md)	 - Query a token address by symbol
     - [gov](axelard_query_gov.md)	 - Querying commands for the governance module
       - [deposit \[proposal-id\] \[depositer-addr\]](axelard_query_gov_deposit.md)	 - Query details of a deposit
@@ -94,6 +96,8 @@
       - [validator \[validator-addr\]](axelard_query_staking_validator.md)	 - Query a validator
       - [validators](axelard_query_staking_validators.md)	 - Query for all validators
     - [tendermint-validator-set \[height\]](axelard_query_tendermint-validator-set.md)	 - Get the full tendermint validator set at given height
+    - [tss](axelard_query_tss.md)	 - Querying commands for the tss module
+      - [signature \[sig ID\]](axelard_query_tss_signature.md)	 - Query a signature by sig ID
     - [tx \[hash\]](axelard_query_tx.md)	 - Query for a transaction by hash in a committed block
     - [txs](axelard_query_txs.md)	 - Query for paginated transactions that match a set of events
     - [upgrade](axelard_query_upgrade.md)	 - Querying commands for the upgrade module
@@ -166,7 +170,6 @@
       - [redelegate \[src-validator-addr\] \[dst-validator-addr\] \[amount\]](axelard_tx_staking_redelegate.md)	 - Redelegate illiquid tokens from one validator to another
       - [unbond \[validator-addr\] \[amount\]](axelard_tx_staking_unbond.md)	 - Unbond shares from a validator
     - [tss](axelard_tx_tss.md)	 - tss transactions subcommands
-      - [assign-next \[chain\] \[role\] \[keyID\]](axelard_tx_tss_assign-next.md)	 - Assigns a previously created key with \[keyID\] as the next key for \[chain\]
       - [rotate \[chain\] \[role\] \[keyID\]](axelard_tx_tss_rotate.md)	 - Rotate the given chain from the old key to the given key
       - [start-keygen](axelard_tx_tss_start-keygen.md)	 - Initiate threshold key generation protocol
     - [validate-signatures \[file\]](axelard_tx_validate-signatures.md)	 - Validate transactions signatures

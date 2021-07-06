@@ -10,7 +10,6 @@ axelard set-genesis-vote [flags]
 
 ```
   -h, --help               help for set-genesis-vote
-      --interval int       A positive integer representing the number of blocks between tallying votes.
       --threshold string   The % of stake that is required for a voting poll to conclude (e.g., "2/3").
 ```
 

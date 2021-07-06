@@ -1,4 +1,4 @@
-package keeper
+package keeper_test
 
 import (
 	"bytes"
@@ -13,12 +13,14 @@ import (
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
+	"github.com/axelarnetwork/axelar-core/app"
 	appParams "github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	"github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
@@ -26,10 +28,11 @@ import (
 
 	snapshotMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	staking "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
+
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 var encCfg appParams.EncodingConfig
@@ -54,10 +57,8 @@ var testCases = []struct {
 
 func init() {
 	// Necessary if tests execute with the real sdk staking keeper
-	encCfg = testutils.MakeEncodingConfig()
+	encCfg = app.MakeEncodingConfig()
 	encCfg.Amino.RegisterConcrete("", "string", nil)
-	staking.RegisterLegacyAminoCodec(encCfg.Amino)
-
 }
 
 func TestTakeSnapshot_WithSubsetSize(t *testing.T) {
@@ -89,16 +90,16 @@ func TestTakeSnapshot_WithSubsetSize(t *testing.T) {
 		GetTssSuspendedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
 	}
 
-	keeper := NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, slashingKeeper, tssMock)
-	keeper.SetParams(ctx, types.DefaultParams())
+	snapshotKeeper := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, slashingKeeper, tssMock)
+	snapshotKeeper.SetParams(ctx, types.DefaultParams())
 	for _, v := range validators {
-		keeper.RegisterProxy(ctx, v.GetOperator(), rand.Bytes(sdk.AddrLen))
+		_ = snapshotKeeper.RegisterProxy(ctx, v.GetOperator(), rand.Bytes(sdk.AddrLen))
 	}
 
-	_, _, err := keeper.TakeSnapshot(ctx, subsetSize, tss.WeightedByStake)
+	_, _, err := snapshotKeeper.TakeSnapshot(ctx, subsetSize, tss.WeightedByStake)
 	assert.NoError(t, err)
 
-	actual, ok := keeper.GetSnapshot(ctx, 0)
+	actual, ok := snapshotKeeper.GetSnapshot(ctx, 0)
 	assert.True(t, ok)
 	assert.Equal(t, int(subsetSize), len(actual.Validators))
 }
@@ -137,48 +138,48 @@ func TestSnapshots(t *testing.T) {
 				GetTssSuspendedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
 			}
 
-			keeper := NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, slashingKeeper, tssMock)
-			keeper.SetParams(ctx, types.DefaultParams())
+			snapshotKeeper := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, slashingKeeper, tssMock)
+			snapshotKeeper.SetParams(ctx, types.DefaultParams())
 			for _, v := range validators {
-				keeper.RegisterProxy(ctx, v.GetOperator(), rand.Bytes(sdk.AddrLen))
+				_ = snapshotKeeper.RegisterProxy(ctx, v.GetOperator(), rand.Bytes(sdk.AddrLen))
 			}
 
-			_, ok := keeper.GetSnapshot(ctx, 0)
+			_, ok := snapshotKeeper.GetSnapshot(ctx, 0)
 
 			assert.False(t, ok)
-			assert.Equal(t, int64(-1), keeper.GetLatestCounter(ctx))
+			assert.Equal(t, int64(-1), snapshotKeeper.GetLatestCounter(ctx))
 
-			_, ok = keeper.GetLatestSnapshot(ctx)
+			_, ok = snapshotKeeper.GetLatestSnapshot(ctx)
 
 			assert.False(t, ok)
 
-			_, _, err := keeper.TakeSnapshot(ctx, 0, tss.WeightedByStake)
+			_, _, err := snapshotKeeper.TakeSnapshot(ctx, 0, tss.WeightedByStake)
 
 			assert.NoError(t, err)
 
-			snapshot, ok := keeper.GetSnapshot(ctx, 0)
+			snapshot, ok := snapshotKeeper.GetSnapshot(ctx, 0)
 
 			assert.True(t, ok)
-			assert.Equal(t, int64(0), keeper.GetLatestCounter(ctx))
+			assert.Equal(t, int64(0), snapshotKeeper.GetLatestCounter(ctx))
 			for i, val := range validators {
 				assert.Equal(t, val.GetConsensusPower(), snapshot.Validators[i].GetSDKValidator().GetConsensusPower())
 				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetSDKValidator().GetOperator())
 			}
 
-			_, _, err = keeper.TakeSnapshot(ctx, 0, tss.WeightedByStake)
+			_, _, err = snapshotKeeper.TakeSnapshot(ctx, 0, tss.WeightedByStake)
 
 			assert.Error(t, err)
 
 			ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.DefaultParams().LockingPeriod + 100))
 
-			_, _, err = keeper.TakeSnapshot(ctx, 0, tss.WeightedByStake)
+			_, _, err = snapshotKeeper.TakeSnapshot(ctx, 0, tss.WeightedByStake)
 
 			assert.NoError(t, err)
 
-			snapshot, ok = keeper.GetSnapshot(ctx, 1)
+			snapshot, ok = snapshotKeeper.GetSnapshot(ctx, 1)
 
 			assert.True(t, ok)
-			assert.Equal(t, keeper.GetLatestCounter(ctx), int64(1))
+			assert.Equal(t, snapshotKeeper.GetLatestCounter(ctx), int64(1))
 			for i, val := range validators {
 				assert.Equal(t, val.GetConsensusPower(), snapshot.Validators[i].GetSDKValidator().GetConsensusPower())
 				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetSDKValidator().GetOperator())
@@ -190,7 +191,7 @@ func TestSnapshots(t *testing.T) {
 func TestKeeper_RegisterProxy(t *testing.T) {
 	var (
 		ctx              sdk.Context
-		keeper           Keeper
+		snapshotKeeper   keeper.Keeper
 		principalAddress sdk.ValAddress
 		staker           *mockStaker
 		validators       []staking.ValidatorI
@@ -204,16 +205,16 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 		staker = newMockStaker(validators...)
 		principalAddress = validators[rand.I64Between(0, 10)].GetOperator()
 
-		keeper = NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
+		snapshotKeeper = keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
 	}
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
 		expectedProxy := sdk.AccAddress(rand.Bytes(sdk.AddrLen))
-		err := keeper.RegisterProxy(ctx, principalAddress, expectedProxy)
+		err := snapshotKeeper.RegisterProxy(ctx, principalAddress, expectedProxy)
 
 		assert.NoError(t, err)
-		proxy, active := keeper.GetProxy(ctx, principalAddress)
+		proxy, active := snapshotKeeper.GetProxy(ctx, principalAddress)
 		assert.True(t, active)
 		assert.Equal(t, expectedProxy, proxy)
 
@@ -224,7 +225,7 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 
 		address := sdk.ValAddress(rand.Bytes(sdk.AddrLen))
 		proxy := sdk.AccAddress(rand.Bytes(sdk.AddrLen))
-		err := keeper.RegisterProxy(ctx, address, proxy)
+		err := snapshotKeeper.RegisterProxy(ctx, address, proxy)
 
 		assert.Error(t, err)
 
@@ -234,7 +235,7 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 func TestKeeper_DeregisterProxy(t *testing.T) {
 	var (
 		ctx              sdk.Context
-		keeper           Keeper
+		snapshotKeeper   keeper.Keeper
 		principalAddress sdk.ValAddress
 		expectedProxy    sdk.AccAddress
 		staker           *mockStaker
@@ -248,20 +249,20 @@ func TestKeeper_DeregisterProxy(t *testing.T) {
 		validators = genValidators(t, 10, 100)
 		staker = newMockStaker(validators...)
 		principalAddress = validators[rand.I64Between(0, 10)].GetOperator()
-		expectedProxy = sdk.AccAddress(rand.Bytes(sdk.AddrLen))
+		expectedProxy = rand.Bytes(sdk.AddrLen)
 
-		keeper = NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
-		if err := keeper.RegisterProxy(ctx, principalAddress, expectedProxy); err != nil {
+		snapshotKeeper = keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
+		if err := snapshotKeeper.RegisterProxy(ctx, principalAddress, expectedProxy); err != nil {
 			panic(fmt.Sprintf("setup failed for unit test: %v", err))
 		}
 	}
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		err := keeper.DeactivateProxy(ctx, principalAddress)
+		err := snapshotKeeper.DeactivateProxy(ctx, principalAddress)
 
 		assert.NoError(t, err)
-		proxy, active := keeper.GetProxy(ctx, principalAddress)
+		proxy, active := snapshotKeeper.GetProxy(ctx, principalAddress)
 		assert.False(t, active)
 		assert.Equal(t, expectedProxy, proxy)
 
@@ -271,7 +272,7 @@ func TestKeeper_DeregisterProxy(t *testing.T) {
 		setup()
 
 		address := sdk.ValAddress(rand.Bytes(sdk.AddrLen))
-		err := keeper.DeactivateProxy(ctx, address)
+		err := snapshotKeeper.DeactivateProxy(ctx, address)
 
 		assert.Error(t, err)
 
@@ -289,7 +290,7 @@ func TestKeeper_DeregisterProxy(t *testing.T) {
 		}
 
 		principalAddress = address
-		err := keeper.DeactivateProxy(ctx, principalAddress)
+		err := snapshotKeeper.DeactivateProxy(ctx, principalAddress)
 
 		assert.Error(t, err)
 
@@ -339,17 +340,17 @@ type mockStaker struct {
 }
 
 func newMockStaker(validators ...stakingtypes.ValidatorI) *mockStaker {
-	keeper := &mockStaker{
+	staker := &mockStaker{
 		make([]stakingtypes.ValidatorI, 0),
 		sdk.ZeroInt(),
 	}
 
 	for _, val := range validators {
-		keeper.validators = append(keeper.validators, val)
-		keeper.totalPower = keeper.totalPower.AddRaw(val.GetConsensusPower())
+		staker.validators = append(staker.validators, val)
+		staker.totalPower = staker.totalPower.AddRaw(val.GetConsensusPower())
 	}
 
-	return keeper
+	return staker
 }
 
 func (k mockStaker) GetLastTotalPower(_ sdk.Context) (power sdk.Int) {

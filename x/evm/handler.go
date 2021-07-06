@@ -7,7 +7,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 )
@@ -96,7 +95,7 @@ func NewHandler(k keeper.Keeper, t types.TSS, v types.Voter, s types.Signer, n t
 					result.Log = "no confirmed deposits found to burn"
 				} else {
 					result.Log = fmt.Sprintf("successfully started signing protocol for burning %s token deposits, commandID: %s",
-						exported.Ethereum.Name, hex.EncodeToString(res.CommandID))
+						msg.Chain, hex.EncodeToString(res.CommandID))
 				}
 			}
 			return sdk.WrapServiceResult(ctx, res, err)
@@ -112,10 +111,10 @@ func NewHandler(k keeper.Keeper, t types.TSS, v types.Voter, s types.Signer, n t
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
 				if res.CommandID == nil {
-					result.Log = fmt.Sprintf("no pending transfer for chain %s found", exported.Ethereum.Name)
+					result.Log = fmt.Sprintf("no pending transfer for chain %s found", msg.Chain)
 				} else {
 					result.Log = fmt.Sprintf("successfully started signing protocol for %s pending transfers, commandID: %s",
-						exported.Ethereum.Name, hex.EncodeToString(res.CommandID))
+						msg.Chain, hex.EncodeToString(res.CommandID))
 				}
 			}
 			return result, err

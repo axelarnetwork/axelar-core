@@ -36,7 +36,34 @@ func GetHandlerQueryMasterAddress(cliCtx client.Context) http.HandlerFunc {
 		}
 		chain := mux.Vars(r)[utils.PathVarChain]
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryMasterAddress, chain), nil)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QMasterAddress, chain), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
+			return
+		}
+
+		var resp types.QueryMasterAddressResponse
+		err = resp.Unmarshal(res)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, resp)
+	}
+}
+
+// GetHandlerQueryNextMasterAddress returns a handler to query an EVM chain next master address
+func GetHandlerQueryNextMasterAddress(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+		chain := mux.Vars(r)[utils.PathVarChain]
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QNextMasterAddress, chain), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
 			return
@@ -51,19 +78,19 @@ func GetHandlerQueryMasterAddress(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// GetHandlerQueryNextMasterAddress returns a handler to query an EVM chain next master address
-func GetHandlerQueryNextMasterAddress(cliCtx client.Context) http.HandlerFunc {
+// GetHandlerQueryKeyAddress returns a handler to query to query the EVM address of any key
+func GetHandlerQueryKeyAddress(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
 		if !ok {
 			return
 		}
-		chain := mux.Vars(r)[utils.PathVarChain]
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryNextMasterAddress, chain), nil)
+		keyID := mux.Vars(r)[utils.PathVarKeyID]
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QKeyAddress), []byte(keyID))
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFMasterKey, keyID).Error())
 			return
 		}
 
@@ -86,7 +113,7 @@ func GetHandlerQueryAxelarGatewayAddress(cliCtx client.Context) http.HandlerFunc
 		}
 		chain := mux.Vars(r)[utils.PathVarChain]
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryAxelarGatewayAddress, chain), nil)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QAxelarGatewayAddress, chain), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
 			return
@@ -112,7 +139,7 @@ func GetHandlerQueryCommandData(cliCtx client.Context) http.HandlerFunc {
 		chain := mux.Vars(r)[utils.PathVarChain]
 		commandID := mux.Vars(r)[utils.PathVarCommandID]
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QueryCommandData, chain, commandID), nil)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QCommandData, chain, commandID), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSendCommandTx, chain, commandID).Error())
 			return
@@ -160,6 +187,48 @@ func GetHandlerQueryCreateDeployTx(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}
+
+// GetHandlerQueryBytecode returns a handler to fetch the bytecodes of an EVM contract
+func GetHandlerQueryBytecode(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+		chain := mux.Vars(r)[utils.PathVarChain]
+		contract := mux.Vars(r)[utils.PathVarContract]
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QSignedTx, chain, contract), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFBytecode, contract).Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, common.BytesToHash(res).Hex())
+	}
+}
+
+// GetHandlerQuerySignedTx returns a handler to fetch an EVM transaction that has been signed by the validators
+func GetHandlerQuerySignedTx(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+		chain := mux.Vars(r)[utils.PathVarChain]
+		txID := mux.Vars(r)[utils.PathVarTxID]
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QSignedTx, chain, txID), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSignedTx, txID).Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, common.BytesToHash(res).Hex())
 	}
 }
 

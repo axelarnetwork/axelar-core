@@ -13,10 +13,13 @@ import (
 // routes
 const (
 	PathVarChain           = "Chain"
+	PathVarContract        = "Contract"
 	PathVarEthereumAddress = "EthereumAddress"
 	PathVarSymbol          = "Symbol"
 	PathVarTxID            = "TxID"
 	PathVarCommandID       = "CommandID"
+	PathVarKeyID           = "KeyID"
+	PathVarSigID           = "SigID"
 )
 
 // ExtractReqSender extracts the sender address from an SDK base request

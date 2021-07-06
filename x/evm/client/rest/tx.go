@@ -33,10 +33,13 @@ const (
 	TxSignTransferOwnership    = "sign-transfer-ownership"
 	TxAddChain                 = "add-chain"
 
-	QueryMasterAddress        = keeper.QueryMasterAddress
-	QueryNextMasterAddress    = keeper.QueryNextMasterAddress
-	QueryAxelarGatewayAddress = keeper.QueryAxelarGatewayAddress
-	QueryCommandData          = keeper.QueryCommandData
+	QueryMasterAddress        = keeper.QMasterAddress
+	QueryNextMasterAddress    = keeper.QNextMasterAddress
+	QueryKeyAddress           = keeper.QKeyAddress
+	QueryAxelarGatewayAddress = keeper.QAxelarGatewayAddress
+	QueryCommandData          = keeper.QCommandData
+	QueryBytecode             = keeper.QBytecode
+	QuerySignedTx             = keeper.QSignedTx
 	QueryCreateDeployTx       = keeper.CreateDeployTx
 	QuerySendTx               = keeper.SendTx
 	QuerySendCommand          = keeper.SendCommand
@@ -60,8 +63,11 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
 	registerQuery(GetHandlerQueryMasterAddress(cliCtx), QueryMasterAddress, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQueryNextMasterAddress(cliCtx), QueryNextMasterAddress, clientUtils.PathVarChain)
+	registerQuery(GetHandlerQueryKeyAddress(cliCtx), QueryKeyAddress, clientUtils.PathVarKeyID)
 	registerQuery(GetHandlerQueryAxelarGatewayAddress(cliCtx), QueryAxelarGatewayAddress, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQueryCommandData(cliCtx), QueryCommandData, clientUtils.PathVarChain, clientUtils.PathVarCommandID)
+	registerQuery(GetHandlerQueryBytecode(cliCtx), QueryBytecode, clientUtils.PathVarChain, clientUtils.PathVarContract)
+	registerQuery(GetHandlerQuerySignedTx(cliCtx), QuerySignedTx, clientUtils.PathVarChain, clientUtils.PathVarTxID)
 	registerQuery(GetHandlerQueryCreateDeployTx(cliCtx), QueryCreateDeployTx, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQuerySendTx(cliCtx), QuerySendTx, clientUtils.PathVarChain, clientUtils.PathVarTxID)
 	registerQuery(GetHandlerQuerySendCommandTx(cliCtx), QuerySendCommand, clientUtils.PathVarChain)

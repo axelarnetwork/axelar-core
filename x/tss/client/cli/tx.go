@@ -24,7 +24,6 @@ func GetTxCmd() *cobra.Command {
 
 	tssTxCmd.AddCommand(
 		getCmdKeygenStart(),
-		getCmdAssignNextKey(),
 		getCmdRotateKey(),
 	)
 
@@ -73,39 +72,6 @@ func getCmdKeygenStart() *cobra.Command {
 	return cmd
 }
 
-func getCmdAssignNextKey() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "assign-next [chain] [role] [keyID]",
-		Short: "Assigns a previously created key with [keyID] as the next key for [chain]",
-		Args:  cobra.ExactArgs(3),
-	}
-
-	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		clientCtx, err := client.GetClientTxContext(cmd)
-		if err != nil {
-			return err
-		}
-
-		chain := args[0]
-		keyRole, err := exported.KeyRoleFromSimpleStr(args[1])
-		if err != nil {
-			return err
-		}
-		keyID := args[2]
-
-		msg := types.NewAssignKeyRequest(clientCtx.FromAddress, chain, keyID, keyRole)
-
-		if err := msg.ValidateBasic(); err != nil {
-			return err
-		}
-
-		return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
-	}
-
-	flags.AddTxFlagsToCmd(cmd)
-	return cmd
-}
-
 func getCmdRotateKey() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "rotate [chain] [role] [keyID]",
@@ -125,7 +91,7 @@ func getCmdRotateKey() *cobra.Command {
 			return err
 		}
 
-		msg := types.NewRotateKeyRequest(clientCtx.FromAddress, chain, keyRole, args[0])
+		msg := types.NewRotateKeyRequest(clientCtx.FromAddress, chain, keyRole, args[2])
 		if err := msg.ValidateBasic(); err != nil {
 			return err
 		}

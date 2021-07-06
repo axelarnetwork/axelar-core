@@ -21,7 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/axelarnetwork/axelar-core/testutils"
+	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
@@ -58,7 +58,7 @@ import (
 // 18. Rotate to the new master key
 func TestBitcoinKeyRotation(t *testing.T) {
 	randStrings := rand.Strings(5, 20)
-	cdc := testutils.MakeEncodingConfig().Amino
+	cdc := app.MakeEncodingConfig().Amino
 
 	// set up chain
 	const nodeCount = 10
@@ -87,9 +87,6 @@ func TestBitcoinKeyRotation(t *testing.T) {
 			assert.FailNow(t, "keygen", err)
 		}
 
-		assignMasterKeyResult := <-chain.Submit(types2.NewAssignKeyRequest(randomSender(), c, masterKeyID, tss.MasterKey))
-		assert.NoError(t, assignMasterKeyResult.Error)
-
 		rotateMasterKeyResult := <-chain.Submit(types2.NewRotateKeyRequest(randomSender(), c, tss.MasterKey, masterKeyID))
 		assert.NoError(t, rotateMasterKeyResult.Error)
 
@@ -102,9 +99,6 @@ func TestBitcoinKeyRotation(t *testing.T) {
 			if err := waitFor(listeners.keygenDone, 1); err != nil {
 				assert.FailNow(t, "keygen", err)
 			}
-
-			assignSecondaryKeyResult := <-chain.Submit(types2.NewAssignKeyRequest(randomSender(), c, secondaryKeyID, tss.SecondaryKey))
-			assert.NoError(t, assignSecondaryKeyResult.Error)
 
 			rotateSecondaryKeyResult := <-chain.Submit(types2.NewRotateKeyRequest(randomSender(), c, tss.SecondaryKey, secondaryKeyID))
 			assert.NoError(t, rotateSecondaryKeyResult.Error)
@@ -176,13 +170,13 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	txHash := common.BytesToHash(bz)
 
 	bz, err = nodeData[0].Node.Query(
-		[]string{evmTypes.QuerierRoute, evmKeeper.QueryTokenAddress, "ethereum", "satoshi"},
+		[]string{evmTypes.QuerierRoute, evmKeeper.QTokenAddress, "ethereum", "satoshi"},
 		abci.RequestQuery{Data: nil},
 	)
 	assert.NoError(t, err)
 	tokenAddr := common.BytesToAddress(bz)
 	bz, err = nodeData[0].Node.Query(
-		[]string{evmTypes.QuerierRoute, evmKeeper.QueryAxelarGatewayAddress, "ethereum"},
+		[]string{evmTypes.QuerierRoute, evmKeeper.QAxelarGatewayAddress, "ethereum"},
 		abci.RequestQuery{Data: nil},
 	)
 	assert.NoError(t, err)
@@ -267,10 +261,6 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		assert.FailNow(t, "keygen", err)
 	}
 
-	// assign second key to be the new master key
-	assignKeyResult := <-chain.Submit(types2.NewAssignKeyRequest(randomSender(), btc.Bitcoin.Name, masterKeyID2, tss.MasterKey))
-	assert.NoError(t, assignKeyResult.Error)
-
 	// sign the consolidation transaction
 	signResult := <-chain.Submit(btcTypes.NewSignPendingTransfersRequest(randomSender(), masterKeyID2))
 	assert.NoError(t, signResult.Error)
@@ -284,7 +274,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	chain.WaitNBlocks(2 * btcTypes.DefaultParams().SigCheckInterval)
 
 	// get signed tx to Bitcoin
-	bz, err = nodeData[0].Node.Query([]string{btcTypes.QuerierRoute, btcKeeper.GetConsolidationTx}, abci.RequestQuery{})
+	bz, err = nodeData[0].Node.Query([]string{btcTypes.QuerierRoute, btcKeeper.QConsolidationTx}, abci.RequestQuery{})
 	assert.NoError(t, err)
 
 	var rawTx types.QueryRawTxResponse

@@ -43,7 +43,8 @@ const (
 	burnerAddrPrefix       = "burnerAddr_"
 	tokenAddrPrefix        = "tokenAddr_"
 
-	pendingTransferOwnershipPrefix = "pending_transfer_ownership_"
+	pendingTransferOwnershipPrefix  = "pending_transfer_ownership_"
+	archivedTransferOwnershipPrefix = "archived_transfer_ownership_"
 )
 
 // Keeper represents the EVM keeper
@@ -94,7 +95,7 @@ func (k Keeper) GetParams(ctx sdk.Context) []types.Params {
 	return params
 }
 
-// GetNetwork returns the Ethereum network Axelar-Core is expected to connect to
+// GetNetwork returns the EVM network Axelar-Core is expected to connect to
 func (k Keeper) GetNetwork(ctx sdk.Context, chain string) (string, bool) {
 	var network string
 	subspace, ok := k.getSubspace(ctx, chain)
@@ -490,9 +491,24 @@ func (k Keeper) SetPendingTransferOwnership(ctx sdk.Context, chain string, poll 
 	k.getStore(ctx, chain).Set([]byte(pendingTransferOwnershipPrefix+poll.String()), bz)
 }
 
-// DeletePendingTransferOwnership deletes the transfer ownership associated with the given poll
-func (k Keeper) DeletePendingTransferOwnership(ctx sdk.Context, chain string, poll exported.PollMeta) {
-	k.getStore(ctx, chain).Delete([]byte(pendingTransferOwnershipPrefix + poll.String()))
+// ArchiveTransferOwnership archives an ownership transfer so it is no longer pending but can still be queried
+func (k Keeper) ArchiveTransferOwnership(ctx sdk.Context, chain string, poll exported.PollMeta) {
+	transfer := k.getStore(ctx, chain).Get([]byte(pendingTransferOwnershipPrefix + poll.String()))
+	if transfer != nil {
+		k.getStore(ctx, chain).Set([]byte(archivedTransferOwnershipPrefix+poll.String()), transfer)
+	}
+}
+
+// GetArchivedTransferOwnership returns an archived transfer of ownership associated with the given poll
+func (k Keeper) GetArchivedTransferOwnership(ctx sdk.Context, chain string, poll exported.PollMeta) (types.TransferOwnership, bool) {
+	bz := k.getStore(ctx, chain).Get([]byte(archivedTransferOwnershipPrefix + poll.String()))
+	if bz == nil {
+		return types.TransferOwnership{}, false
+	}
+	var transferOwnership types.TransferOwnership
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &transferOwnership)
+
+	return transferOwnership, true
 }
 
 // GetPendingTransferOwnership returns the transfer ownership associated with the given poll
