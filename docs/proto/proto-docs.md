@@ -2271,7 +2271,6 @@ Msg defines the tss Msg service.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `voting_interval` | [int64](#int64) |  |  |
 | `voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 
 
