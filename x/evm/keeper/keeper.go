@@ -21,6 +21,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -81,7 +82,7 @@ func (k Keeper) SetParams(ctx sdk.Context, params ...types.Params) {
 func (k Keeper) GetParams(ctx sdk.Context) []types.Params {
 	params := make([]types.Params, 0)
 	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(subspacePrefix))
-	defer iter.Close()
+	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
 		chain := string(iter.Value())
@@ -363,7 +364,7 @@ func (k Keeper) GetDeposit(ctx sdk.Context, chain string, txID common.Hash, burn
 func (k Keeper) GetConfirmedDeposits(ctx sdk.Context, chain string) []types.ERC20Deposit {
 	var deposits []types.ERC20Deposit
 	iter := sdk.KVStorePrefixIterator(k.getStore(ctx, chain), []byte(confirmedDepositPrefix))
-	defer iter.Close()
+	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
 		bz := iter.Value()

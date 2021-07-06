@@ -6,6 +6,8 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/tendermint/tendermint/libs/log"
 )
 
 const defaultDelimiter = "_"
@@ -134,4 +136,12 @@ func (k key) Append(key Key) Key {
 // Equals compares two keys for equality
 func (k key) Equals(other Key) bool {
 	return bytes.Equal(k.AsKey(), other.AsKey())
+}
+
+// CloseLogError closes the given iterator and logs if an error is returned
+func CloseLogError(iter sdk.Iterator, logger log.Logger) {
+	err := iter.Close()
+	if err != nil {
+		logger.Error(sdkerrors.Wrap(err, "failed to close kv store iterator").Error())
+	}
 }

@@ -80,7 +80,7 @@ func (k Keeper) GetChains(ctx sdk.Context) []exported.Chain {
 	var results []exported.Chain
 
 	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), chainPrefix.AsKey())
-	defer iter.Close()
+	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
 		var chain exported.Chain
@@ -219,7 +219,7 @@ func (k Keeper) GetTransfersForChain(ctx sdk.Context, chain exported.Chain, stat
 
 	prefix := utils.LowerCaseKey(state.String()).Append(utils.LowerCaseKey(chain.Name))
 	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), prefix.AsKey())
-	defer iter.Close()
+	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
 		bz := iter.Value()

@@ -218,7 +218,7 @@ func (k Keeper) GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64
 func (k Keeper) DeleteParticipantsInKeygen(ctx sdk.Context, keyID string) {
 	store := ctx.KVStore(k.storeKey)
 	iter := sdk.KVStorePrefixIterator(store, []byte(participatePrefix+"key_"+keyID))
-	defer iter.Close()
+	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
 		store.Delete(iter.Key())
