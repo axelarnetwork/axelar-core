@@ -176,10 +176,12 @@ func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta expor
 
 // GetPoll returns the poll given poll meta
 func (k Keeper) GetPoll(ctx sdk.Context, pollMeta exported.PollMeta) *types.Poll {
-	var poll *types.Poll
-	k.getStore(ctx).Get(pollPrefix.AppendStr(pollMeta.String()), poll)
+	var poll types.Poll
+	if ok := k.getStore(ctx).Get(pollPrefix.AppendStr(pollMeta.String()), &poll); !ok {
+		return nil
+	}
 
-	return poll
+	return &poll
 }
 
 func (k Keeper) setPoll(ctx sdk.Context, poll types.Poll) {
