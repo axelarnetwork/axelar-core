@@ -113,7 +113,6 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	nexusK := nexusKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(nexusTypes.StoreKey), nexusSubspace)
 	nexusK.SetParams(ctx, nexusTypes.DefaultParams())
 
-	voter.SetVotingInterval(ctx, voteTypes.DefaultGenesisState().VotingInterval)
 	voter.SetVotingThreshold(ctx, voteTypes.DefaultGenesisState().VotingThreshold)
 
 	router := fake.NewRouter()

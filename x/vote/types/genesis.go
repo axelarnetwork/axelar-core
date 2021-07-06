@@ -10,7 +10,6 @@ import (
 // DefaultGenesisState represents the default genesis state
 func DefaultGenesisState() *GenesisState {
 	return &GenesisState{
-		VotingInterval: 10,
 		VotingThreshold: utils.Threshold{
 			Numerator:   2,
 			Denominator: 3,
@@ -20,9 +19,6 @@ func DefaultGenesisState() *GenesisState {
 
 // Validate validates the genesis state
 func (m GenesisState) Validate() error {
-	if m.VotingInterval <= 0 {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, "voting interval must be larger than 0")
-	}
 	if m.VotingThreshold.Numerator < 0 || m.VotingThreshold.Denominator <= 0 {
 		return sdkerrors.Wrap(types.ErrInvalidGenesis, "voting threshold must contain positive integers")
 	}

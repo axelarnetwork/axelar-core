@@ -18,7 +18,6 @@ import (
 )
 
 const (
-	votingIntervalKey  = "votingInterval"
 	votingThresholdKey = "votingThreshold"
 	pollPrefix         = "poll_"
 	talliedPrefix      = "tallied_"
@@ -49,21 +48,6 @@ func NewKeeper(cdc codec.BinaryMarshaler, key sdk.StoreKey, snapshotter types.Sn
 // Logger returns a module-specific logger.
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
-}
-
-// SetVotingInterval sets the interval in which votes are supposed to be broadcast
-func (k Keeper) SetVotingInterval(ctx sdk.Context, votingInterval int64) {
-	bz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(bz, uint64(votingInterval))
-
-	ctx.KVStore(k.storeKey).Set([]byte(votingIntervalKey), bz)
-}
-
-// GetVotingInterval returns the interval in which votes are supposed to be broadcast
-func (k Keeper) GetVotingInterval(ctx sdk.Context) int64 {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(votingIntervalKey))
-
-	return int64(binary.LittleEndian.Uint64(bz))
 }
 
 // SetVotingThreshold sets the voting power threshold that must be reached to decide a poll
