@@ -4,7 +4,11 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"github.com/armon/go-metrics"
+	"github.com/cosmos/cosmos-sdk/telemetry"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -150,6 +154,18 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 		}
 
 		s.Logger(ctx).Debug(fmt.Sprintf("rotated %s key for chain %s", req.KeyRole.SimpleString(), chain.Name))
+		defer func() {
+			counter, _ := s.TSSKeeper.GetSnapshotCounterForKeyID(ctx, req.KeyID)
+			snapshot, _ := s.snapshotter.GetSnapshot(ctx, counter)
+			ts := time.Now().Unix()
+			for _, validator := range snapshot.Validators {
+				telemetry.SetGaugeWithLabels(
+					[]string{types.ModuleName, strings.ToLower(chain.Name), req.KeyRole.SimpleString(), "current"},
+					float32(validator.ShareCount),
+					[]metrics.Label{telemetry.NewLabel("keyID", req.KeyID), telemetry.NewLabel("address", validator.GetOperator().String()), telemetry.NewLabel("time", strconv.FormatInt(ts, 10))})
+			}
+			telemetry.IncrCounter(1, types.ModuleName, strings.ToLower(chain.Name), req.KeyRole.SimpleString(), "count")
+		}()
 
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent(

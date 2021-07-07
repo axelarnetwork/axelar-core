@@ -5,9 +5,11 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"github.com/armon/go-metrics"
 	"math/big"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -152,8 +154,6 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	s.SetPendingTokenDeployment(ctx, chain.Name, poll, deploy)
 
 	height, _ := s.EVMKeeper.GetRequiredConfirmationHeight(ctx, chain.Name)
-
-	telemetry.NewLabel("eth_token_addr", tokenAddr.String())
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeTokenConfirmation,
@@ -479,6 +479,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	}
 	s.SetDeposit(ctx, chain.Name, pendingDeposit, types.CONFIRMED)
 
+	telemetry.IncrCounter(float32(pendingDeposit.Amount.BigInt().Int64()), types.ModuleName, strings.ToLower(chain.Name), strings.ToLower(pendingDeposit.Symbol), "deposit")
 	return &types.VoteConfirmDepositResponse{}, nil
 }
 
@@ -546,6 +547,11 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 	}
 	ctx.EventManager().EmitEvent(
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
+
+	telemetry.SetGaugeWithLabels(
+		[]string{types.ModuleName, strings.ToLower(chain.Name), strings.ToLower(token.Symbol), "address"},
+		0,
+		[]metrics.Label{telemetry.NewLabel("address", token.TokenAddress.Hex())})
 
 	s.nexus.RegisterAsset(ctx, chain.Name, token.Symbol)
 
@@ -615,12 +621,26 @@ func (s msgServer) VoteConfirmTransferOwnership(c context.Context, req *types.Vo
 			Log: fmt.Sprintf("transfer ownership in %s to %s was discarded", req.TxID, req.NewOwnerAddress.Hex()),
 		}, nil
 	}
+
+	telemetry.SetGaugeWithLabels(
+		[]string{types.ModuleName, strings.ToLower(chain.Name), "gateway", "owner"},
+		0,
+		[]metrics.Label{telemetry.NewLabel("address", req.NewOwnerAddress.Hex()), telemetry.NewLabel("time", strconv.FormatInt(time.Now().Unix(), 10))})
+
 	ctx.EventManager().EmitEvent(
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
 	if err := s.signer.AssignNextKey(ctx, chain, tss.MasterKey, pendingTransferOwnership.NextKeyID); err != nil {
 		return nil, err
 	}
+	telemetry.SetGaugeWithLabels(
+		[]string{types.ModuleName, strings.ToLower(chain.Name), "next", "assigned", "key"},
+		0,
+		[]metrics.Label{telemetry.NewLabel("keyID", pendingTransferOwnership.NextKeyID), telemetry.NewLabel("time", strconv.FormatInt(time.Now().Unix(), 10))})
+	telemetry.SetGaugeWithLabels(
+		[]string{types.ModuleName, strings.ToLower(chain.Name), "gateway", "owner"},
+		0,
+		[]metrics.Label{telemetry.NewLabel("address", req.NewOwnerAddress.Hex()), telemetry.NewLabel("time", strconv.FormatInt(time.Now().Unix(), 10))})
 	return &types.VoteConfirmTransferOwnershipResponse{}, nil
 }
 
@@ -761,6 +781,10 @@ func (s msgServer) SignBurnTokens(c context.Context, req *types.SignBurnTokensRe
 			sdk.NewAttribute(types.AttributeKeyCommandID, commandIDHex),
 		),
 	)
+	telemetry.SetGaugeWithLabels(
+		[]string{types.ModuleName, strings.ToLower(chain.Name), "sign", "burn", "tokens"},
+		0,
+		[]metrics.Label{telemetry.NewLabel("commandID", commandIDHex), telemetry.NewLabel("time", strconv.FormatInt(time.Now().Unix(), 10))})
 	return &types.SignBurnTokensResponse{CommandID: commandID[:]}, nil
 }
 
@@ -826,8 +850,9 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 
 		addr := crypto.CreateAddress(crypto.PubkeyToAddress(pub.Value), tx.Nonce())
 		s.SetGatewayAddress(ctx, chain.Name, addr)
-
-		telemetry.NewLabel("eth_factory_addr", addr.String())
+		telemetry.SetGaugeWithLabels([]string{types.ModuleName, strings.ToLower(chain.Name), "gateway", "address"},
+			0,
+			[]metrics.Label{telemetry.NewLabel("address", addr.String())})
 	}
 
 	return &types.SignTxResponse{TxID: txID}, nil
@@ -901,7 +926,10 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 			sdk.NewAttribute(types.AttributeKeyCommandID, commandIDHex),
 		),
 	)
-
+	defer telemetry.SetGaugeWithLabels(
+		[]string{types.ModuleName, strings.ToLower(chain.Name), "sign", "pending", "transfers"},
+		0,
+		[]metrics.Label{telemetry.NewLabel("commandID", commandIDHex), telemetry.NewLabel("time", strconv.FormatInt(time.Now().Unix(), 10))})
 	return &types.SignPendingTransfersResponse{CommandID: commandID[:]}, nil
 }
 
@@ -983,7 +1011,9 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 			sdk.NewAttribute(types.AttributeKeyCommandID, commandIDHex),
 		),
 	)
-
+	telemetry.SetGaugeWithLabels([]string{types.ModuleName, strings.ToLower(chain.Name), "sign", "transfer", "ownership"},
+		0,
+		[]metrics.Label{telemetry.NewLabel("commandID", commandIDHex), telemetry.NewLabel("time", strconv.FormatInt(time.Now().Unix(), 10))})
 	return &types.SignTransferOwnershipResponse{CommandID: commandID[:]}, nil
 }
 

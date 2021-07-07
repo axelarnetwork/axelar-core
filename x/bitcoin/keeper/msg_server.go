@@ -5,7 +5,10 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strconv"
+	"strings"
+	"time"
 
+	"github.com/armon/go-metrics"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
@@ -203,6 +206,9 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 			return nil, sdkerrors.Wrap(err, "cross-chain transfer failed")
 		}
 
+		telemetry.IncrCounter(float32(pendingOutPointInfo.Amount), types.ModuleName, strings.ToLower(addr.Role.String()))
+		telemetry.IncrCounter(1, types.ModuleName, strings.ToLower(addr.Role.String()), "count")
+
 		return &types.VoteConfirmOutpointResponse{
 			Status: fmt.Sprintf("transfer of %s from {%s} successfully prepared", amount.Amount.String(), depositAddr.String()),
 		}, nil
@@ -234,7 +240,17 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 					if err := s.signer.AssignNextKey(ctx, exported.Bitcoin, tss.MasterKey, addr.KeyID); err != nil {
 						return nil, err
 					}
+					telemetry.SetGaugeWithLabels(
+						[]string{types.ModuleName, "next", "assigned", "key"},
+						0,
+						[]metrics.Label{telemetry.NewLabel("keyID", addr.KeyID), telemetry.NewLabel("time", strconv.FormatInt(time.Now().Unix(), 10))})
 				}
+
+				telemetry.SetGaugeWithLabels(
+					[]string{types.ModuleName, strings.ToLower(addr.Role.String())},
+					float32(pendingOutPointInfo.Amount),
+					[]metrics.Label{telemetry.NewLabel("outpoint", pendingOutPointInfo.OutPoint), telemetry.NewLabel("address", pendingOutPointInfo.Address), telemetry.NewLabel("time", strconv.FormatInt(time.Now().Unix(), 10))})
+				telemetry.IncrCounter(1, types.ModuleName, strings.ToLower(addr.Role.String()), "count")
 
 				return &types.VoteConfirmOutpointResponse{
 					Status: "confirmed consolidation transaction"}, nil
@@ -462,9 +478,6 @@ func prepareChange(ctx sdk.Context, k types.BTCKeeper, consolidationAddress type
 	}
 
 	k.SetAddress(ctx, consolidationAddress)
-
-	telemetry.NewLabel("btc_master_addr", consolidationAddress.Address)
-	telemetry.SetGauge(float32(change.Int64()), "btc_master_addr_balance")
 
 	return types.Output{Amount: btcutil.Amount(change.Int64()), Recipient: consolidationAddress.GetAddress()}, nil
 }
