@@ -17,10 +17,10 @@ import (
 
 // rest routes
 const (
-	TxMethodKeygenStart         = "start"
-	TxMethodMasterKeyRotate     = "rotate"
+	TxMethodKeygenStart     = "start"
+	TxMethodMasterKeyRotate = "rotate"
 
-	QueryMethodGetSig = keeper.QueryGetSig
+	QueryMethodGetSig = keeper.QuerySigStatus
 )
 
 // ReqKeygenStart represents a key-gen request

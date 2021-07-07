@@ -25,8 +25,8 @@ func QueryHandlerGetSig(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		queryData := []byte(mux.Vars(r)[utils.PathVarSigID])
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryGetSig), queryData)
+		sigID := mux.Vars(r)[utils.PathVarSigID]
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QuerySigStatus, sigID), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

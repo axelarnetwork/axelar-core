@@ -153,7 +153,10 @@
     - [GenesisState](#tss.v1beta1.GenesisState)
   
 - [tss/v1beta1/query.proto](#tss/v1beta1/query.proto)
+    - [QueryKeyResponse](#tss.v1beta1.QueryKeyResponse)
     - [QuerySigResponse](#tss.v1beta1.QuerySigResponse)
+  
+    - [VoteStatus](#tss.v1beta1.VoteStatus)
   
 - [tss/v1beta1/tx.proto](#tss/v1beta1/tx.proto)
     - [ProcessKeygenTrafficRequest](#tss.v1beta1.ProcessKeygenTrafficRequest)
@@ -2076,6 +2079,22 @@ Params is the parameter set for this module
 
 
 
+<a name="tss.v1beta1.QueryKeyResponse"></a>
+
+### QueryKeyResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `vote_status` | [VoteStatus](#tss.v1beta1.VoteStatus) |  |  |
+| `role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+
+
+
+
+
+
 <a name="tss.v1beta1.QuerySigResponse"></a>
 
 ### QuerySigResponse
@@ -2084,6 +2103,7 @@ Params is the parameter set for this module
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| `vote_status` | [VoteStatus](#tss.v1beta1.VoteStatus) |  |  |
 | `r` | [bytes](#bytes) |  |  |
 | `s` | [bytes](#bytes) |  |  |
 
@@ -2092,6 +2112,19 @@ Params is the parameter set for this module
 
 
  <!-- end messages -->
+
+
+<a name="tss.v1beta1.VoteStatus"></a>
+
+### VoteStatus
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| VOTE_STATUS_UNSPECIFIED | 0 |  |
+| VOTE_STATUS_DECIDED | 1 |  |
+| VOTE_STATUS_PENDING | 2 |  |
+
 
  <!-- end enums -->
 
