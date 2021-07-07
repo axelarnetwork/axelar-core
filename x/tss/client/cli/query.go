@@ -63,7 +63,7 @@ func GetCmdGetSig(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdGetSig returns the query for a key by its keyID
+// GetCmdGetKey returns the query for a key by its keyID
 func GetCmdGetKey(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "key [key ID]",
