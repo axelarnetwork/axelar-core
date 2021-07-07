@@ -4,8 +4,7 @@ go 1.16
 
 require (
 	github.com/axelarnetwork/tm-events v0.0.0-20210603164553-dc0202f4ebaf
-	// TODO: update to v0.22.0-beta once https://github.com/btcsuite/btcd/issues/1706 is resolved
-	github.com/btcsuite/btcd v0.21.0-beta.0.20210506225145-0ec4bdc1b8e1
+	github.com/btcsuite/btcd v0.22.0-beta
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/cosmos/cosmos-sdk v0.42.4
 	github.com/ethereum/go-ethereum v1.10.2
@@ -25,6 +24,8 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/tendermint/tendermint v0.34.10
 	github.com/tendermint/tm-db v0.6.4
+	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
+	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
 	google.golang.org/genproto v0.0.0-20210303154014-9728d6b83eeb
 	google.golang.org/grpc v1.37.0
 	google.golang.org/protobuf v1.26.0
