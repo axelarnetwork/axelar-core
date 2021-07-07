@@ -25,6 +25,6 @@ enum VoteStatus {
 
   VOTE_STATUS_UNSPECIFIED = 0
       [ (gogoproto.enumvalue_customname) = "Unspecified" ];
-  VOTE_STATUS_DECIDED = 1 [ (gogoproto.enumvalue_customname) = "Decided" ];
-  VOTE_STATUS_PENDING = 2 [ (gogoproto.enumvalue_customname) = "Pending" ];
+  VOTE_STATUS_PENDING = 1 [ (gogoproto.enumvalue_customname) = "Pending" ];
+  VOTE_STATUS_DECIDED = 2 [ (gogoproto.enumvalue_customname) = "Decided" ];
 }

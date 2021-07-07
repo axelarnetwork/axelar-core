@@ -2122,8 +2122,8 @@ Params is the parameter set for this module
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | VOTE_STATUS_UNSPECIFIED | 0 |  |
-| VOTE_STATUS_DECIDED | 1 |  |
-| VOTE_STATUS_PENDING | 2 |  |
+| VOTE_STATUS_PENDING | 1 |  |
+| VOTE_STATUS_DECIDED | 2 |  |
 
 
  <!-- end enums -->
