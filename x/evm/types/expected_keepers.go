@@ -1,6 +1,7 @@
 package types
 
 import (
+	"crypto/ecdsa"
 	"math/big"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -18,48 +19,60 @@ import (
 	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . TSS Voter Signer Nexus Snapshotter EVMKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . TSS Voter Signer Nexus Snapshotter BaseKeeper ChainKeeper
 
-// EVMKeeper is implemented by this module's keeper
-type EVMKeeper interface {
+// BaseKeeper is implemented by this module's base keeper
+type BaseKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 
 	GetParams(ctx sdk.Context) []Params
 	SetParams(ctx sdk.Context, params ...Params)
-	GetNetwork(ctx sdk.Context, chain string) (string, bool)
-	GetRequiredConfirmationHeight(ctx sdk.Context, chain string) (uint64, bool)
-	GetRevoteLockingPeriod(ctx sdk.Context, chain string) (int64, bool)
-	GetGatewayByteCodes(ctx sdk.Context, chain string) ([]byte, bool)
 
-	GetGatewayAddress(ctx sdk.Context, chain string) (common.Address, bool)
-	GetTokenAddress(ctx sdk.Context, chain, symbol string, gatewayAddr common.Address) (common.Address, error)
-	SetPendingTokenDeployment(ctx sdk.Context, chain string, poll vote.PollMeta, tokenDeploy ERC20TokenDeployment)
-	GetDeposit(ctx sdk.Context, chain string, txID common.Hash, burnerAddr common.Address) (ERC20Deposit, DepositState, bool)
-	GetBurnerInfo(ctx sdk.Context, chain string, address common.Address) *BurnerInfo
-	SetPendingDeposit(ctx sdk.Context, chain string, poll vote.PollMeta, deposit *ERC20Deposit)
-	GetBurnerAddressAndSalt(ctx sdk.Context, chain string, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error)
-	SetBurnerInfo(ctx sdk.Context, chain string, burnerAddr common.Address, burnerInfo *BurnerInfo)
-	GetPendingDeposit(ctx sdk.Context, chain string, poll vote.PollMeta) (ERC20Deposit, bool)
-	DeletePendingDeposit(ctx sdk.Context, chain string, poll vote.PollMeta)
-	DeleteDeposit(ctx sdk.Context, chain string, deposit ERC20Deposit)
-	SetDeposit(ctx sdk.Context, chain string, deposit ERC20Deposit, state DepositState)
-	GetPendingTokenDeployment(ctx sdk.Context, chain string, poll vote.PollMeta) (ERC20TokenDeployment, bool)
-	DeletePendingToken(ctx sdk.Context, chain string, poll vote.PollMeta)
-	SetCommandData(ctx sdk.Context, chain string, commandID CommandID, commandData []byte)
-	SetTokenInfo(ctx sdk.Context, chain string, msg *SignDeployTokenRequest)
-	GetConfirmedDeposits(ctx sdk.Context, chain string) []ERC20Deposit
-	SetUnsignedTx(ctx sdk.Context, chain, txID string, tx *ethTypes.Transaction)
-	GetHashToSign(ctx sdk.Context, chain, txID string) (common.Hash, error)
-	SetGatewayAddress(ctx sdk.Context, chain string, addr common.Address)
-	DeletePendingChain(ctx sdk.Context, chain string)
+	ForChain(ctx sdk.Context, chain string) ChainKeeper
 	SetPendingChain(ctx sdk.Context, chain nexus.Chain)
 	GetPendingChain(ctx sdk.Context, chain string) (nexus.Chain, bool)
-	GetPendingTransferOwnership(ctx sdk.Context, chain string, poll vote.PollMeta) (TransferOwnership, bool)
-	SetPendingTransferOwnership(ctx sdk.Context, chain string, poll vote.PollMeta, transferOwnership *TransferOwnership)
-	GetArchivedTransferOwnership(ctx sdk.Context, chain string, poll vote.PollMeta) (TransferOwnership, bool)
-	ArchiveTransferOwnership(ctx sdk.Context, chain string, poll vote.PollMeta)
-	GetNetworkByID(ctx sdk.Context, chain string, id *big.Int) (string, bool)
-	GetChainIDByNetwork(ctx sdk.Context, chain, network string) *big.Int
+	DeletePendingChain(ctx sdk.Context, chain string)
+}
+
+// ChainKeeper is implemented by this module's chain keeper
+type ChainKeeper interface {
+	Logger(ctx sdk.Context) log.Logger
+
+	GetName() string
+	AssembleEthTx(ctx sdk.Context, txID string, pk ecdsa.PublicKey, sig tss.Signature) (*ethTypes.Transaction, error)
+	GetCommandData(ctx sdk.Context, commandID CommandID) []byte
+	GetNetwork(ctx sdk.Context) (string, bool)
+	GetRequiredConfirmationHeight(ctx sdk.Context) (uint64, bool)
+	GetRevoteLockingPeriod(ctx sdk.Context) (int64, bool)
+	GetGatewayByteCodes(ctx sdk.Context) ([]byte, bool)
+	GetBurnerByteCodes(ctx sdk.Context) ([]byte, bool)
+	GetTokenByteCodes(ctx sdk.Context) ([]byte, bool)
+	GetGatewayAddress(ctx sdk.Context) (common.Address, bool)
+	GetTokenAddress(ctx sdk.Context, symbol string, gatewayAddr common.Address) (common.Address, error)
+	SetPendingTokenDeployment(ctx sdk.Context, poll vote.PollMeta, tokenDeploy ERC20TokenDeployment)
+	GetDeposit(ctx sdk.Context, txID common.Hash, burnerAddr common.Address) (ERC20Deposit, DepositState, bool)
+	GetBurnerInfo(ctx sdk.Context, address common.Address) *BurnerInfo
+	SetPendingDeposit(ctx sdk.Context, poll vote.PollMeta, deposit *ERC20Deposit)
+	GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error)
+	SetBurnerInfo(ctx sdk.Context, burnerAddr common.Address, burnerInfo *BurnerInfo)
+	GetPendingDeposit(ctx sdk.Context, poll vote.PollMeta) (ERC20Deposit, bool)
+	DeletePendingDeposit(ctx sdk.Context, poll vote.PollMeta)
+	DeleteDeposit(ctx sdk.Context, deposit ERC20Deposit)
+	SetDeposit(ctx sdk.Context, deposit ERC20Deposit, state DepositState)
+	GetPendingTokenDeployment(ctx sdk.Context, poll vote.PollMeta) (ERC20TokenDeployment, bool)
+	DeletePendingToken(ctx sdk.Context, poll vote.PollMeta)
+	SetCommandData(ctx sdk.Context, commandID CommandID, commandData []byte)
+	SetTokenInfo(ctx sdk.Context, msg *SignDeployTokenRequest)
+	GetConfirmedDeposits(ctx sdk.Context) []ERC20Deposit
+	SetUnsignedTx(ctx sdk.Context, txID string, tx *ethTypes.Transaction)
+	GetHashToSign(ctx sdk.Context, txID string) (common.Hash, error)
+	SetGatewayAddress(ctx sdk.Context, addr common.Address)
+	GetPendingTransferOwnership(ctx sdk.Context, poll vote.PollMeta) (TransferOwnership, bool)
+	SetPendingTransferOwnership(ctx sdk.Context, poll vote.PollMeta, transferOwnership *TransferOwnership)
+	GetArchivedTransferOwnership(ctx sdk.Context, poll vote.PollMeta) (TransferOwnership, bool)
+	ArchiveTransferOwnership(ctx sdk.Context, poll vote.PollMeta)
+	GetNetworkByID(ctx sdk.Context, id *big.Int) (string, bool)
+	GetChainIDByNetwork(ctx sdk.Context, network string) *big.Int
 }
 
 // ParamsKeeper represents a global paramstore

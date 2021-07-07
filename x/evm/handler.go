@@ -12,7 +12,7 @@ import (
 )
 
 // NewHandler returns the handler of the EVM module
-func NewHandler(k keeper.Keeper, t types.TSS, v types.Voter, s types.Signer, n types.Nexus, snapshotter types.Snapshotter) sdk.Handler {
+func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, n types.Nexus, snapshotter types.Snapshotter) sdk.Handler {
 	server := keeper.NewMsgServerImpl(k, t, n, s, v, snapshotter)
 	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())

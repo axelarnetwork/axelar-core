@@ -44,8 +44,14 @@ const (
 )
 
 // NewQuerier returns a new querier for the evm module
-func NewQuerier(rpcs map[string]types.RPCClient, k Keeper, s types.Signer, n types.Nexus) sdk.Querier {
+func NewQuerier(rpcs map[string]types.RPCClient, k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
+
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
+		var chainKeeper types.ChainKeeper
+		if len(path) > 1 {
+			chainKeeper = k.ForChain(ctx, path[1])
+		}
+
 		switch path[0] {
 		case QMasterAddress:
 			return queryMasterAddress(ctx, s, n, path[1])
@@ -54,21 +60,21 @@ func NewQuerier(rpcs map[string]types.RPCClient, k Keeper, s types.Signer, n typ
 		case QKeyAddress:
 			return queryKeyAddress(ctx, s, req.Data)
 		case QAxelarGatewayAddress:
-			return queryAxelarGateway(ctx, k, n, path[1])
+			return queryAxelarGateway(ctx, chainKeeper, n)
 		case QTokenAddress:
-			return QueryTokenAddress(ctx, k, n, path[1], path[2])
+			return QueryTokenAddress(ctx, chainKeeper, n, path[2])
 		case QCommandData:
-			return queryCommandData(ctx, k, s, n, path[1], path[2])
+			return queryCommandData(ctx, chainKeeper, s, n, path[2])
 		case QDepositAddress:
-			return QueryDepositAddress(ctx, k, n, path[1], req.Data)
+			return QueryDepositAddress(ctx, chainKeeper, n, req.Data)
 		case QBytecode:
-			return queryBytecode(ctx, k, n, path[1], path[2])
+			return queryBytecode(ctx, chainKeeper, n, path[2])
 		case QSignedTx:
-			return querySignedTx(ctx, k, s, n, path[1], path[2])
+			return querySignedTx(ctx, chainKeeper, s, n, path[2])
 		case CreateDeployTx:
 			return createDeployGateway(ctx, k, rpcs, s, n, req.Data)
 		case SendTx:
-			return sendSignedTx(ctx, k, rpcs, s, n, path[1], path[2])
+			return sendSignedTx(ctx, chainKeeper, rpcs, s, n, path[2])
 		case SendCommand:
 			return createTxAndSend(ctx, k, rpcs, s, n, req.Data)
 		default:
@@ -78,27 +84,27 @@ func NewQuerier(rpcs map[string]types.RPCClient, k Keeper, s types.Signer, n typ
 }
 
 // QueryDepositAddress returns the deposit address linked to the given recipient address
-func QueryDepositAddress(ctx sdk.Context, k types.EVMKeeper, n types.Nexus, chainName string, data []byte) ([]byte, error) {
-	depositChain, ok := n.GetChain(ctx, chainName)
+func QueryDepositAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, data []byte) ([]byte, error) {
+	depositChain, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
 	}
 	var params types.DepositQueryParams
 	if err := types.ModuleCdc.UnmarshalJSON(data, &params); err != nil {
 		return nil, fmt.Errorf("could not parse the recipient")
 	}
 
-	gatewayAddr, ok := k.GetGatewayAddress(ctx, chainName)
+	gatewayAddr, ok := k.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	tokenAddr, err := k.GetTokenAddress(ctx, chainName, params.Symbol, gatewayAddr)
+	tokenAddr, err := k.GetTokenAddress(ctx, params.Symbol, gatewayAddr)
 	if err != nil {
 		return nil, err
 	}
 
-	depositAddr, _, err := k.GetBurnerAddressAndSalt(ctx, chainName, tokenAddr, params.Address, gatewayAddr)
+	depositAddr, _, err := k.GetBurnerAddressAndSalt(ctx, tokenAddr, params.Address, gatewayAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -159,14 +165,14 @@ func queryNextMasterAddress(ctx sdk.Context, s types.Signer, n types.Nexus, chai
 	return bz, nil
 }
 
-func queryAxelarGateway(ctx sdk.Context, k Keeper, n types.Nexus, chainName string) ([]byte, error) {
+func queryAxelarGateway(ctx sdk.Context, k types.ChainKeeper, n types.Nexus) ([]byte, error) {
 
-	_, ok := n.GetChain(ctx, chainName)
+	_, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
 	}
 
-	addr, ok := k.GetGatewayAddress(ctx, chainName)
+	addr, ok := k.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEVM, "axelar gateway not set")
 	}
@@ -175,19 +181,19 @@ func queryAxelarGateway(ctx sdk.Context, k Keeper, n types.Nexus, chainName stri
 }
 
 // QueryTokenAddress returns the address of the token contract with the given parameters
-func QueryTokenAddress(ctx sdk.Context, k types.EVMKeeper, n types.Nexus, chainName, symbol string) ([]byte, error) {
+func QueryTokenAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, symbol string) ([]byte, error) {
 
-	_, ok := n.GetChain(ctx, chainName)
+	_, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
 	}
 
-	gateway, ok := k.GetGatewayAddress(ctx, chainName)
+	gateway, ok := k.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEVM, "axelar gateway not set")
 	}
 
-	addr, err := k.GetTokenAddress(ctx, chainName, symbol, gateway)
+	addr, err := k.GetTokenAddress(ctx, symbol, gateway)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
 	}
@@ -203,7 +209,7 @@ func QueryTokenAddress(ctx sdk.Context, k types.EVMKeeper, n types.Nexus, chainN
 
   If gasLimit is set to 0, the function will attempt to estimate the amount of gas needed
 */
-func createDeployGateway(ctx sdk.Context, k Keeper, rpcs map[string]types.RPCClient, s types.Signer, n types.Nexus, data []byte) ([]byte, error) {
+func createDeployGateway(ctx sdk.Context, k types.BaseKeeper, rpcs map[string]types.RPCClient, s types.Signer, n types.Nexus, data []byte) ([]byte, error) {
 	var params types.DeployParams
 	err := types.ModuleCdc.LegacyAmino.UnmarshalJSON(data, &params)
 	if err != nil {
@@ -233,7 +239,7 @@ func createDeployGateway(ctx sdk.Context, k Keeper, rpcs map[string]types.RPCCli
 		}
 	}
 
-	byteCodes, ok := k.GetGatewayByteCodes(ctx, params.Chain)
+	byteCodes, ok := k.ForChain(ctx, params.Chain).GetGatewayByteCodes(ctx)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("Could not retrieve gateway bytecodes for chain %s", params.Chain))
 	}
@@ -259,35 +265,35 @@ func createDeployGateway(ctx sdk.Context, k Keeper, rpcs map[string]types.RPCCli
 	return types.ModuleCdc.LegacyAmino.MustMarshalJSON(result), nil
 }
 
-func queryBytecode(ctx sdk.Context, k Keeper, n types.Nexus, chainName, contract string) ([]byte, error) {
+func queryBytecode(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, contract string) ([]byte, error) {
 
-	_, ok := n.GetChain(ctx, chainName)
+	_, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
 	}
 
 	var bz []byte
 	switch strings.ToLower(contract) {
 	case BCGateway:
-		bz, _ = k.GetGatewayByteCodes(ctx, chainName)
+		bz, _ = k.GetGatewayByteCodes(ctx)
 	case BCToken:
-		bz = k.getTokenBC(ctx, chainName)
+		bz, _ = k.GetTokenByteCodes(ctx)
 	case BCBurner:
-		bz = k.getBurnerBC(ctx, chainName)
+		bz, _ = k.GetBurnerByteCodes(ctx)
 	}
 
 	if bz == nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not retrieve bytecodes for chain %s", chainName))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not retrieve bytecodes for chain %s", k.GetName()))
 	}
 
 	return bz, nil
 }
 
-func querySignedTx(ctx sdk.Context, k Keeper, s types.Signer, n types.Nexus, chainName, txID string) ([]byte, error) {
+func querySignedTx(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types.Nexus, txID string) ([]byte, error) {
 
-	_, ok := n.GetChain(ctx, chainName)
+	_, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
 	}
 
 	pk, ok := s.GetKeyForSigID(ctx, txID)
@@ -300,7 +306,7 @@ func querySignedTx(ctx sdk.Context, k Keeper, s types.Signer, n types.Nexus, cha
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding signature for sig ID %s", txID))
 	}
 
-	signedTx, err := k.AssembleEthTx(ctx, chainName, txID, pk.Value, sig)
+	signedTx, err := k.AssembleEthTx(ctx, txID, pk.Value, sig)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not insert generated signature: %v", err))
 	}
@@ -308,16 +314,16 @@ func querySignedTx(ctx sdk.Context, k Keeper, s types.Signer, n types.Nexus, cha
 	return signedTx.MarshalBinary()
 }
 
-func sendSignedTx(ctx sdk.Context, k Keeper, rpcs map[string]types.RPCClient, s types.Signer, n types.Nexus, chainName, txID string) ([]byte, error) {
+func sendSignedTx(ctx sdk.Context, k types.ChainKeeper, rpcs map[string]types.RPCClient, s types.Signer, n types.Nexus, txID string) ([]byte, error) {
 
-	_, ok := n.GetChain(ctx, chainName)
+	_, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
 	}
 
-	rpc, found := rpcs[strings.ToLower(chainName)]
+	rpc, found := rpcs[strings.ToLower(k.GetName())]
 	if !found {
-		return nil, fmt.Errorf("could not find RPC for chain '%s'", chainName)
+		return nil, fmt.Errorf("could not find RPC for chain '%s'", k.GetName())
 	}
 
 	pk, ok := s.GetKeyForSigID(ctx, txID)
@@ -330,7 +336,7 @@ func sendSignedTx(ctx sdk.Context, k Keeper, rpcs map[string]types.RPCClient, s 
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding signature for sig ID %s", txID))
 	}
 
-	signedTx, err := k.AssembleEthTx(ctx, chainName, txID, pk.Value, sig)
+	signedTx, err := k.AssembleEthTx(ctx, txID, pk.Value, sig)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not insert generated signature: %v", err))
 	}
@@ -343,7 +349,7 @@ func sendSignedTx(ctx sdk.Context, k Keeper, rpcs map[string]types.RPCClient, s 
 	return signedTx.Hash().Bytes(), nil
 }
 
-func createTxAndSend(ctx sdk.Context, k Keeper, rpcs map[string]types.RPCClient, s types.Signer, n types.Nexus, data []byte) ([]byte, error) {
+func createTxAndSend(ctx sdk.Context, k types.BaseKeeper, rpcs map[string]types.RPCClient, s types.Signer, n types.Nexus, data []byte) ([]byte, error) {
 	var params types.CommandParams
 	err := types.ModuleCdc.LegacyAmino.UnmarshalJSON(data, &params)
 	if err != nil {
@@ -371,7 +377,7 @@ func createTxAndSend(ctx sdk.Context, k Keeper, rpcs map[string]types.RPCClient,
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding key for sig ID %s", commandIDHex))
 	}
 
-	commandData := k.GetCommandData(ctx, params.Chain, params.CommandID)
+	commandData := k.ForChain(ctx, params.Chain).GetCommandData(ctx, params.CommandID)
 	commandSig, err := types.ToEthSignature(sig, types.GetEthereumSignHash(commandData), pk.Value)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not create recoverable signature: %v", err))
@@ -384,7 +390,7 @@ func createTxAndSend(ctx sdk.Context, k Keeper, rpcs map[string]types.RPCClient,
 
 	k.Logger(ctx).Debug(common.Bytes2Hex(executeData))
 
-	contractAddr, ok := k.GetGatewayAddress(ctx, params.Chain)
+	contractAddr, ok := k.ForChain(ctx, params.Chain).GetGatewayAddress(ctx)
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrEVM, "axelar gateway not deployed yet")
 	}
@@ -404,11 +410,11 @@ func createTxAndSend(ctx sdk.Context, k Keeper, rpcs map[string]types.RPCClient,
 	return common.FromHex(txHash), nil
 }
 
-func queryCommandData(ctx sdk.Context, k Keeper, s types.Signer, n types.Nexus, chainName, commandIDHex string) ([]byte, error) {
+func queryCommandData(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types.Nexus, commandIDHex string) ([]byte, error) {
 
-	_, ok := n.GetChain(ctx, chainName)
+	_, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
 	}
 
 	sig, ok := s.GetSig(ctx, commandIDHex)
@@ -424,7 +430,7 @@ func queryCommandData(ctx sdk.Context, k Keeper, s types.Signer, n types.Nexus, 
 	var commandID types.CommandID
 	copy(commandID[:], common.Hex2Bytes(commandIDHex))
 
-	commandData := k.GetCommandData(ctx, chainName, commandID)
+	commandData := k.GetCommandData(ctx, commandID)
 	commandSig, err := types.ToEthSignature(sig, types.GetEthereumSignHash(commandData), pk.Value)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not create recoverable signature: %v", err))

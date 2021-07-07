@@ -22,7 +22,7 @@ import (
 func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
 	var (
 		ctx    sdk.Context
-		keeper evmKeeper.Keeper
+		keeper types.BaseKeeper
 		chain  string
 	)
 
@@ -44,8 +44,8 @@ func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
 		}
 		burnerAddress := common.BytesToAddress(rand.Bytes(common.AddressLength))
 
-		keeper.SetBurnerInfo(ctx, chain, burnerAddress, &burnerInfo)
-		actual := keeper.GetBurnerInfo(ctx, chain, burnerAddress)
+		keeper.ForChain(ctx, chain).SetBurnerInfo(ctx, burnerAddress, &burnerInfo)
+		actual := keeper.ForChain(ctx, chain).GetBurnerInfo(ctx, burnerAddress)
 
 		assert.NotNil(t, actual)
 		assert.Equal(t, *actual, burnerInfo)
@@ -55,8 +55,8 @@ func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
 
 func TestKeeper_GetParams(t *testing.T) {
 	var (
-		keeperWithSubspace    evmKeeper.Keeper
-		keeperWithoutSubspace evmKeeper.Keeper
+		keeperWithSubspace    types.BaseKeeper
+		keeperWithoutSubspace types.BaseKeeper
 		ctx                   sdk.Context
 	)
 	setup := func() {

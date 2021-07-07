@@ -174,9 +174,10 @@ func TestGetTokenAddress_CorrectData(t *testing.T) {
 	k.SetParams(ctx, types.DefaultParams()...)
 	account, err := sdk.AccAddressFromBech32("cosmos1vjyc4qmsdtdl5a4ruymnjqpchm5gyqde63sqdh")
 	assert.NoError(t, err)
-	k.SetTokenInfo(ctx, chain, &types.SignDeployTokenRequest{Sender: account, TokenName: tokenName, Symbol: tokenSymbol, Decimals: decimals, Capacity: capacity})
+	keeper := k.ForChain(ctx, chain)
+	keeper.SetTokenInfo(ctx, &types.SignDeployTokenRequest{Sender: account, TokenName: tokenName, Symbol: tokenSymbol, Decimals: decimals, Capacity: capacity})
 
-	actual, err := k.GetTokenAddress(ctx, chain, tokenSymbol, axelarGateway)
+	actual, err := keeper.GetTokenAddress(ctx, tokenSymbol, axelarGateway)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
@@ -196,7 +197,7 @@ func TestGetBurnerAddressAndSalt_CorrectData(t *testing.T) {
 
 	k.SetParams(ctx, types.DefaultParams()...)
 
-	actualburnerAddr, actualSalt, err := k.GetBurnerAddressAndSalt(ctx, exported.Ethereum.Name, tokenAddr, recipient, axelarGateway)
+	actualburnerAddr, actualSalt, err := k.ForChain(ctx, exported.Ethereum.Name).GetBurnerAddressAndSalt(ctx, tokenAddr, recipient, axelarGateway)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedBurnerAddr, actualburnerAddr)
