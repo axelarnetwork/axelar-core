@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	gogoprototypes "github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/assert"
@@ -37,7 +38,7 @@ type testSetup struct {
 
 func setup() *testSetup {
 	encCfg := app.MakeEncodingConfig()
-	encCfg.InterfaceRegistry.RegisterImplementations((*exported.VotingData)(nil),
+	encCfg.InterfaceRegistry.RegisterImplementations((*codec.ProtoMarshaler)(nil),
 		&gogoprototypes.StringValue{},
 	)
 
@@ -280,7 +281,7 @@ func TestTallyVote_FailedPoll(t *testing.T) {
 	assert.True(t, poll.Failed)
 }
 
-func randomData() exported.VotingData {
+func randomData() codec.ProtoMarshaler {
 	return &gogoprototypes.StringValue{Value: stringGen.Next()}
 }
 

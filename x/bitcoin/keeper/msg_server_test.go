@@ -245,7 +245,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			},
 		}
 		voter = &mock.VoterMock{
-			TallyVoteFunc: func(sdk.Context, sdk.AccAddress, vote.PollMeta, vote.VotingData) (*votetypes.Poll, error) {
+			TallyVoteFunc: func(sdk.Context, sdk.AccAddress, vote.PollMeta, codec.ProtoMarshaler) (*votetypes.Poll, error) {
 				result, _ := codectypes.NewAnyWithValue(&gogoprototypes.BoolValue{Value: true})
 
 				return &votetypes.Poll{Result: result}, nil
@@ -400,7 +400,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 	t.Run("happy path reject", testutils.Func(func(t *testing.T) {
 		setup()
 		voter.TallyVoteFunc =
-			func(sdk.Context, sdk.AccAddress, vote.PollMeta, vote.VotingData) (*votetypes.Poll, error) {
+			func(sdk.Context, sdk.AccAddress, vote.PollMeta, codec.ProtoMarshaler) (*votetypes.Poll, error) {
 				result, _ := codectypes.NewAnyWithValue(&gogoprototypes.BoolValue{Value: false})
 
 				return &votetypes.Poll{Result: result}, nil
@@ -418,7 +418,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 	t.Run("happy path no result yet", testutils.Func(func(t *testing.T) {
 		setup()
 		voter.TallyVoteFunc =
-			func(sdk.Context, sdk.AccAddress, vote.PollMeta, vote.VotingData) (*votetypes.Poll, error) {
+			func(sdk.Context, sdk.AccAddress, vote.PollMeta, codec.ProtoMarshaler) (*votetypes.Poll, error) {
 				return &votetypes.Poll{}, nil
 			}
 
@@ -491,7 +491,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 	t.Run("tally failed", testutils.Func(func(t *testing.T) {
 		setup()
 		voter.TallyVoteFunc =
-			func(sdk.Context, sdk.AccAddress, vote.PollMeta, vote.VotingData) (*votetypes.Poll, error) {
+			func(sdk.Context, sdk.AccAddress, vote.PollMeta, codec.ProtoMarshaler) (*votetypes.Poll, error) {
 				return nil, fmt.Errorf("failed")
 			}
 

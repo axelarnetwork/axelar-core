@@ -3,6 +3,7 @@ package types
 import (
 	"math/big"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -76,7 +77,7 @@ type TSS interface {
 type Voter interface {
 	InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64, expireAt int64) error
 	DeletePoll(ctx sdk.Context, poll vote.PollMeta)
-	TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta vote.PollMeta, data vote.VotingData) (*votetypes.Poll, error)
+	TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta vote.PollMeta, data codec.ProtoMarshaler) (*votetypes.Poll, error)
 }
 
 // Nexus provides functionality to manage cross-chain transfers

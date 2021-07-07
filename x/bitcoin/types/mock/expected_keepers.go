@@ -13,6 +13,7 @@ import (
 	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/btcsuite/btcd/wire"
 	github_com_btcsuite_btcutil "github.com/btcsuite/btcutil"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
 	"sync"
@@ -34,7 +35,7 @@ var _ types.Voter = &VoterMock{}
 // 			InitPollFunc: func(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error {
 // 				panic("mock out the InitPoll method")
 // 			},
-// 			TallyVoteFunc: func(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data exported.VotingData) (*votetypes.Poll, error) {
+// 			TallyVoteFunc: func(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data codec.ProtoMarshaler) (*votetypes.Poll, error) {
 // 				panic("mock out the TallyVote method")
 // 			},
 // 		}
@@ -51,7 +52,7 @@ type VoterMock struct {
 	InitPollFunc func(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error
 
 	// TallyVoteFunc mocks the TallyVote method.
-	TallyVoteFunc func(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data exported.VotingData) (*votetypes.Poll, error)
+	TallyVoteFunc func(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data codec.ProtoMarshaler) (*votetypes.Poll, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -82,7 +83,7 @@ type VoterMock struct {
 			// PollMeta is the pollMeta argument value.
 			PollMeta exported.PollMeta
 			// Data is the data argument value.
-			Data exported.VotingData
+			Data codec.ProtoMarshaler
 		}
 	}
 	lockDeletePoll sync.RWMutex
@@ -169,7 +170,7 @@ func (mock *VoterMock) InitPollCalls() []struct {
 }
 
 // TallyVote calls TallyVoteFunc.
-func (mock *VoterMock) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data exported.VotingData) (*votetypes.Poll, error) {
+func (mock *VoterMock) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data codec.ProtoMarshaler) (*votetypes.Poll, error) {
 	if mock.TallyVoteFunc == nil {
 		panic("VoterMock.TallyVoteFunc: method is nil but Voter.TallyVote was just called")
 	}
@@ -177,7 +178,7 @@ func (mock *VoterMock) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMet
 		Ctx      sdk.Context
 		Sender   sdk.AccAddress
 		PollMeta exported.PollMeta
-		Data     exported.VotingData
+		Data     codec.ProtoMarshaler
 	}{
 		Ctx:      ctx,
 		Sender:   sender,
@@ -197,13 +198,13 @@ func (mock *VoterMock) TallyVoteCalls() []struct {
 	Ctx      sdk.Context
 	Sender   sdk.AccAddress
 	PollMeta exported.PollMeta
-	Data     exported.VotingData
+	Data     codec.ProtoMarshaler
 } {
 	var calls []struct {
 		Ctx      sdk.Context
 		Sender   sdk.AccAddress
 		PollMeta exported.PollMeta
-		Data     exported.VotingData
+		Data     codec.ProtoMarshaler
 	}
 	mock.lockTallyVote.RLock()
 	calls = mock.calls.TallyVote
