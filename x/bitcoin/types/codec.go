@@ -1,7 +1,6 @@
 package types
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
@@ -24,7 +23,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&ConfirmOutpointRequest{},
 		&LinkRequest{},
 		&SignPendingTransfersRequest{})
-	registry.RegisterImplementations((*exported.VotingData)(nil),
+	registry.RegisterImplementations((*codec.ProtoMarshaler)(nil),
 		&gogoprototypes.BoolValue{},
 	)
 }

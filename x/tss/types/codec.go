@@ -5,6 +5,8 @@ import (
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 )
 
 // RegisterLegacyAminoCodec registers concrete types on codec
@@ -26,6 +28,10 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&RotateKeyRequest{},
 		&VoteSigRequest{},
 		&VotePubKeyRequest{},
+	)
+	registry.RegisterImplementations((*codec.ProtoMarshaler)(nil),
+		&tofnd.MessageOut_SignResult{},
+		&tofnd.MessageOut_KeygenResult{},
 	)
 }
 

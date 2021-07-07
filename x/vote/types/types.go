@@ -1,17 +1,19 @@
 package types
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/codec/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	types "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 var _ types.UnpackInterfacesMessage = TalliedVote{}
 var _ types.UnpackInterfacesMessage = Poll{}
 
 // NewTalliedVote is the constructor for TalliedVote
-func NewTalliedVote(tally int64, data exported.VotingData) TalliedVote {
+func NewTalliedVote(tally int64, data codec.ProtoMarshaler) TalliedVote {
 	d, err := codectypes.NewAnyWithValue(data)
 	if err != nil {
 		panic(err)
@@ -24,26 +26,26 @@ func NewTalliedVote(tally int64, data exported.VotingData) TalliedVote {
 }
 
 // NewPoll is the constructor for Poll
-func NewPoll(meta exported.PollMeta, validatorSnapshotCounter int64, expireAt int64) Poll {
+func NewPoll(meta exported.PollMeta, validatorSnapshotCounter int64, expiresAt int64) Poll {
 	return Poll{
 		Meta:                     meta,
 		ValidatorSnapshotCounter: validatorSnapshotCounter,
-		ExpireAt:                 expireAt,
+		ExpiresAt:                expiresAt,
 	}
 }
 
 // HasExpired returns true if the poll has expired; otherwise, false
 func (m Poll) HasExpired(ctx sdk.Context) bool {
-	return m.ExpireAt > 0 && ctx.BlockHeight() >= m.ExpireAt
+	return m.ExpiresAt > 0 && ctx.BlockHeight() >= m.ExpiresAt
 }
 
 // GetResult returns the poll result
-func (m Poll) GetResult() exported.VotingData {
+func (m Poll) GetResult() codec.ProtoMarshaler {
 	if m.Result == nil {
 		return nil
 	}
 
-	return m.Result.GetCachedValue().(exported.VotingData)
+	return m.Result.GetCachedValue().(codec.ProtoMarshaler)
 }
 
 // GetVotedShareCount returns the total voted share count in poll
@@ -84,12 +86,12 @@ func (m Poll) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
 		return nil
 	}
 
-	var result exported.VotingData
+	var result codec.ProtoMarshaler
 	return unpacker.UnpackAny(m.Result, &result)
 }
 
 // UnpackInterfaces implements UnpackInterfacesMessage
 func (m TalliedVote) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
-	var data exported.VotingData
+	var data codec.ProtoMarshaler
 	return unpacker.UnpackAny(m.Data, &data)
 }

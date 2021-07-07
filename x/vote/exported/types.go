@@ -2,14 +2,7 @@ package exported
 
 import (
 	"fmt"
-
-	"github.com/cosmos/cosmos-sdk/codec"
 )
-
-// VotingData is needed so that the amino codec can (un)marshal the voting data correctly
-type VotingData interface {
-	codec.ProtoMarshaler
-}
 
 // NewPollMeta constructor for PollMeta without nonce
 func NewPollMeta(module string, id string) PollMeta {

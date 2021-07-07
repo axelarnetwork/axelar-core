@@ -108,7 +108,7 @@ func (k Keeper) DeletePoll(ctx sdk.Context, poll exported.PollMeta) {
 }
 
 // TallyVote tallies votes that have been broadcast. Each validator can only vote once per poll.
-func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data exported.VotingData) (*types.Poll, error) {
+func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data codec.ProtoMarshaler) (*types.Poll, error) {
 	poll := k.GetPoll(ctx, pollMeta)
 	if poll == nil {
 		return nil, fmt.Errorf("poll does not exist or is closed")
@@ -190,7 +190,7 @@ func (k Keeper) setPoll(ctx sdk.Context, poll types.Poll) {
 
 // To adhere to the same one-return-value pattern as the other getters return a marker value if not found
 // (returning an int with a pointer reference to be able to return nil instead seems bizarre)
-func (k Keeper) getTalliedVoteIdx(ctx sdk.Context, poll exported.PollMeta, data exported.VotingData) int {
+func (k Keeper) getTalliedVoteIdx(ctx sdk.Context, poll exported.PollMeta, data codec.ProtoMarshaler) int {
 	// check if there have been identical votes
 	key := talliedPrefix.AppendStr(poll.String()).AppendStr(k.hash(data))
 	bz := k.getStore(ctx).GetRaw(key)
@@ -201,7 +201,7 @@ func (k Keeper) getTalliedVoteIdx(ctx sdk.Context, poll exported.PollMeta, data 
 	return int(binary.LittleEndian.Uint64(bz))
 }
 
-func (k Keeper) setTalliedVoteIdx(ctx sdk.Context, poll exported.PollMeta, data exported.VotingData, i int) {
+func (k Keeper) setTalliedVoteIdx(ctx sdk.Context, poll exported.PollMeta, data codec.ProtoMarshaler, i int) {
 	bz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(bz, uint64(i))
 
@@ -217,7 +217,7 @@ func (k Keeper) setHasVoted(ctx sdk.Context, poll exported.PollMeta, address sdk
 	k.getStore(ctx).SetRaw(addrPrefix.AppendStr(poll.String()).AppendStr(address.String()), voted)
 }
 
-func (k Keeper) hash(data exported.VotingData) string {
+func (k Keeper) hash(data codec.ProtoMarshaler) string {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(data)
 	h := sha256.Sum256(bz)
 

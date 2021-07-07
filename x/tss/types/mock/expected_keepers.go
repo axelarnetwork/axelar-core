@@ -14,6 +14,7 @@ import (
 	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	exported1 "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
+	"github.com/cosmos/cosmos-sdk/codec"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -823,7 +824,7 @@ var _ tsstypes.Voter = &VoterMock{}
 // 			InitPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta, snapshotCounter int64, expireAt int64) error {
 // 				panic("mock out the InitPoll method")
 // 			},
-// 			TallyVoteFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.AccAddress, pollMeta exported1.PollMeta, data exported1.VotingData) (*votetypes.Poll, error) {
+// 			TallyVoteFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.AccAddress, pollMeta exported1.PollMeta, data codec.ProtoMarshaler) (*votetypes.Poll, error) {
 // 				panic("mock out the TallyVote method")
 // 			},
 // 		}
@@ -843,7 +844,7 @@ type VoterMock struct {
 	InitPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported1.PollMeta, snapshotCounter int64, expireAt int64) error
 
 	// TallyVoteFunc mocks the TallyVote method.
-	TallyVoteFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.AccAddress, pollMeta exported1.PollMeta, data exported1.VotingData) (*votetypes.Poll, error)
+	TallyVoteFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.AccAddress, pollMeta exported1.PollMeta, data codec.ProtoMarshaler) (*votetypes.Poll, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -881,7 +882,7 @@ type VoterMock struct {
 			// PollMeta is the pollMeta argument value.
 			PollMeta exported1.PollMeta
 			// Data is the data argument value.
-			Data exported1.VotingData
+			Data codec.ProtoMarshaler
 		}
 	}
 	lockDeletePoll sync.RWMutex
@@ -1004,7 +1005,7 @@ func (mock *VoterMock) InitPollCalls() []struct {
 }
 
 // TallyVote calls TallyVoteFunc.
-func (mock *VoterMock) TallyVote(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.AccAddress, pollMeta exported1.PollMeta, data exported1.VotingData) (*votetypes.Poll, error) {
+func (mock *VoterMock) TallyVote(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.AccAddress, pollMeta exported1.PollMeta, data codec.ProtoMarshaler) (*votetypes.Poll, error) {
 	if mock.TallyVoteFunc == nil {
 		panic("VoterMock.TallyVoteFunc: method is nil but Voter.TallyVote was just called")
 	}
@@ -1012,7 +1013,7 @@ func (mock *VoterMock) TallyVote(ctx github_com_cosmos_cosmos_sdk_types.Context,
 		Ctx      github_com_cosmos_cosmos_sdk_types.Context
 		Sender   github_com_cosmos_cosmos_sdk_types.AccAddress
 		PollMeta exported1.PollMeta
-		Data     exported1.VotingData
+		Data     codec.ProtoMarshaler
 	}{
 		Ctx:      ctx,
 		Sender:   sender,
@@ -1032,13 +1033,13 @@ func (mock *VoterMock) TallyVoteCalls() []struct {
 	Ctx      github_com_cosmos_cosmos_sdk_types.Context
 	Sender   github_com_cosmos_cosmos_sdk_types.AccAddress
 	PollMeta exported1.PollMeta
-	Data     exported1.VotingData
+	Data     codec.ProtoMarshaler
 } {
 	var calls []struct {
 		Ctx      github_com_cosmos_cosmos_sdk_types.Context
 		Sender   github_com_cosmos_cosmos_sdk_types.AccAddress
 		PollMeta exported1.PollMeta
-		Data     exported1.VotingData
+		Data     codec.ProtoMarshaler
 	}
 	mock.lockTallyVote.RLock()
 	calls = mock.calls.TallyVote
