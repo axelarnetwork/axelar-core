@@ -44,8 +44,14 @@ const (
 )
 
 // NewQuerier returns a new querier for the evm module
-func NewQuerier(rpcs map[string]types.RPCClient, k Keeper, s types.Signer, n types.Nexus) sdk.Querier {
+func NewQuerier(rpcs map[string]types.RPCClient, k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
+
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
+		var chain types.ChainKeeper
+		if len(path) > 1 {
+			chain = k.GetChain(ctx, path[1])
+		}
+
 		switch path[0] {
 		case QMasterAddress:
 			return queryMasterAddress(ctx, s, n, path[1])
@@ -54,21 +60,21 @@ func NewQuerier(rpcs map[string]types.RPCClient, k Keeper, s types.Signer, n typ
 		case QKeyAddress:
 			return queryKeyAddress(ctx, s, req.Data)
 		case QAxelarGatewayAddress:
-			return queryAxelarGateway(ctx, k.GetChain(ctx, path[1]), n, path[1])
+			return queryAxelarGateway(ctx, chain, n)
 		case QTokenAddress:
-			return QueryTokenAddress(ctx, k.GetChain(ctx, path[1]), n, path[1], path[2])
+			return QueryTokenAddress(ctx, chain, n, path[2])
 		case QCommandData:
-			return queryCommandData(ctx, k.GetChain(ctx, path[1]), s, n, path[1], path[2])
+			return queryCommandData(ctx, chain, s, n, path[2])
 		case QDepositAddress:
-			return QueryDepositAddress(ctx, k.GetChain(ctx, path[1]), n, path[1], req.Data)
+			return QueryDepositAddress(ctx, chain, n, req.Data)
 		case QBytecode:
-			return queryBytecode(ctx, k.GetChain(ctx, path[1]), n, path[1], path[2])
+			return queryBytecode(ctx, chain, n, path[2])
 		case QSignedTx:
-			return querySignedTx(ctx, k.GetChain(ctx, path[1]), s, n, path[1], path[2])
+			return querySignedTx(ctx, chain, s, n, path[2])
 		case CreateDeployTx:
 			return createDeployGateway(ctx, k, rpcs, s, n, req.Data)
 		case SendTx:
-			return sendSignedTx(ctx, k.GetChain(ctx, path[1]), rpcs, s, n, path[1], path[2])
+			return sendSignedTx(ctx, chain, rpcs, s, n, path[2])
 		case SendCommand:
 			return createTxAndSend(ctx, k, rpcs, s, n, req.Data)
 		default:
@@ -78,10 +84,10 @@ func NewQuerier(rpcs map[string]types.RPCClient, k Keeper, s types.Signer, n typ
 }
 
 // QueryDepositAddress returns the deposit address linked to the given recipient address
-func QueryDepositAddress(ctx sdk.Context, k types.EVMKeeper, n types.Nexus, chainName string, data []byte) ([]byte, error) {
-	depositChain, ok := n.GetChain(ctx, chainName)
+func QueryDepositAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, data []byte) ([]byte, error) {
+	depositChain, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
 	}
 	var params types.DepositQueryParams
 	if err := types.ModuleCdc.UnmarshalJSON(data, &params); err != nil {
@@ -159,11 +165,11 @@ func queryNextMasterAddress(ctx sdk.Context, s types.Signer, n types.Nexus, chai
 	return bz, nil
 }
 
-func queryAxelarGateway(ctx sdk.Context, k types.EVMKeeper, n types.Nexus, chainName string) ([]byte, error) {
+func queryAxelarGateway(ctx sdk.Context, k types.ChainKeeper, n types.Nexus) ([]byte, error) {
 
-	_, ok := n.GetChain(ctx, chainName)
+	_, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
 	}
 
 	addr, ok := k.GetGatewayAddress(ctx)
@@ -175,11 +181,11 @@ func queryAxelarGateway(ctx sdk.Context, k types.EVMKeeper, n types.Nexus, chain
 }
 
 // QueryTokenAddress returns the address of the token contract with the given parameters
-func QueryTokenAddress(ctx sdk.Context, k types.EVMKeeper, n types.Nexus, chainName, symbol string) ([]byte, error) {
+func QueryTokenAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, symbol string) ([]byte, error) {
 
-	_, ok := n.GetChain(ctx, chainName)
+	_, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
 	}
 
 	gateway, ok := k.GetGatewayAddress(ctx)
@@ -203,7 +209,7 @@ func QueryTokenAddress(ctx sdk.Context, k types.EVMKeeper, n types.Nexus, chainN
 
   If gasLimit is set to 0, the function will attempt to estimate the amount of gas needed
 */
-func createDeployGateway(ctx sdk.Context, k types.EVMKeeper, rpcs map[string]types.RPCClient, s types.Signer, n types.Nexus, data []byte) ([]byte, error) {
+func createDeployGateway(ctx sdk.Context, k types.BaseKeeper, rpcs map[string]types.RPCClient, s types.Signer, n types.Nexus, data []byte) ([]byte, error) {
 	var params types.DeployParams
 	err := types.ModuleCdc.LegacyAmino.UnmarshalJSON(data, &params)
 	if err != nil {
@@ -259,11 +265,11 @@ func createDeployGateway(ctx sdk.Context, k types.EVMKeeper, rpcs map[string]typ
 	return types.ModuleCdc.LegacyAmino.MustMarshalJSON(result), nil
 }
 
-func queryBytecode(ctx sdk.Context, k types.EVMKeeper, n types.Nexus, chainName, contract string) ([]byte, error) {
+func queryBytecode(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, contract string) ([]byte, error) {
 
-	_, ok := n.GetChain(ctx, chainName)
+	_, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
 	}
 
 	var bz []byte
@@ -277,17 +283,17 @@ func queryBytecode(ctx sdk.Context, k types.EVMKeeper, n types.Nexus, chainName,
 	}
 
 	if bz == nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not retrieve bytecodes for chain %s", chainName))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not retrieve bytecodes for chain %s", k.GetName()))
 	}
 
 	return bz, nil
 }
 
-func querySignedTx(ctx sdk.Context, k types.EVMKeeper, s types.Signer, n types.Nexus, chainName, txID string) ([]byte, error) {
+func querySignedTx(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types.Nexus, txID string) ([]byte, error) {
 
-	_, ok := n.GetChain(ctx, chainName)
+	_, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
 	}
 
 	pk, ok := s.GetKeyForSigID(ctx, txID)
@@ -308,16 +314,16 @@ func querySignedTx(ctx sdk.Context, k types.EVMKeeper, s types.Signer, n types.N
 	return signedTx.MarshalBinary()
 }
 
-func sendSignedTx(ctx sdk.Context, k types.EVMKeeper, rpcs map[string]types.RPCClient, s types.Signer, n types.Nexus, chainName, txID string) ([]byte, error) {
+func sendSignedTx(ctx sdk.Context, k types.ChainKeeper, rpcs map[string]types.RPCClient, s types.Signer, n types.Nexus, txID string) ([]byte, error) {
 
-	_, ok := n.GetChain(ctx, chainName)
+	_, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
 	}
 
-	rpc, found := rpcs[strings.ToLower(chainName)]
+	rpc, found := rpcs[strings.ToLower(k.GetName())]
 	if !found {
-		return nil, fmt.Errorf("could not find RPC for chain '%s'", chainName)
+		return nil, fmt.Errorf("could not find RPC for chain '%s'", k.GetName())
 	}
 
 	pk, ok := s.GetKeyForSigID(ctx, txID)
@@ -343,7 +349,7 @@ func sendSignedTx(ctx sdk.Context, k types.EVMKeeper, rpcs map[string]types.RPCC
 	return signedTx.Hash().Bytes(), nil
 }
 
-func createTxAndSend(ctx sdk.Context, k types.EVMKeeper, rpcs map[string]types.RPCClient, s types.Signer, n types.Nexus, data []byte) ([]byte, error) {
+func createTxAndSend(ctx sdk.Context, k types.BaseKeeper, rpcs map[string]types.RPCClient, s types.Signer, n types.Nexus, data []byte) ([]byte, error) {
 	var params types.CommandParams
 	err := types.ModuleCdc.LegacyAmino.UnmarshalJSON(data, &params)
 	if err != nil {
@@ -404,11 +410,11 @@ func createTxAndSend(ctx sdk.Context, k types.EVMKeeper, rpcs map[string]types.R
 	return common.FromHex(txHash), nil
 }
 
-func queryCommandData(ctx sdk.Context, k types.EVMKeeper, s types.Signer, n types.Nexus, chainName, commandIDHex string) ([]byte, error) {
+func queryCommandData(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types.Nexus, commandIDHex string) ([]byte, error) {
 
-	_, ok := n.GetChain(ctx, chainName)
+	_, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
 	}
 
 	sig, ok := s.GetSig(ctx, commandIDHex)

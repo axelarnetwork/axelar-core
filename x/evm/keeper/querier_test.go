@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -23,7 +24,7 @@ import (
 func TestQueryTokenAddress(t *testing.T) {
 
 	var (
-		ethKeeper       *mock.EVMKeeperMock
+		ethKeeper       *mock.ChainKeeperMock
 		nexusKeeper     *mock.NexusMock
 		ctx             sdk.Context
 		evmChain        string
@@ -32,21 +33,26 @@ func TestQueryTokenAddress(t *testing.T) {
 	)
 
 	setup := func() {
+		evmChain = rand.StrBetween(5, 10)
 		expectedAddress = randomAddress()
 
-		ethKeeper = &mock.EVMKeeperMock{
+		ethKeeper = &mock.ChainKeeperMock{
+			GetNameFunc:           func() string { return evmChain },
 			GetGatewayAddressFunc: func(sdk.Context) (common.Address, bool) { return randomAddress(), true },
 			GetTokenAddressFunc: func(sdk.Context, string, common.Address) (common.Address, error) {
 				return expectedAddress, nil
 			},
 		}
 		nexusKeeper = &mock.NexusMock{
-			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
-				return nexus.Chain{
-					Name:                  chain,
-					NativeAsset:           rand.StrBetween(5, 20),
-					SupportsForeignAssets: true,
-				}, true
+			GetChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
+				if strings.ToLower(chain) == strings.ToLower(evmChain) {
+					return nexus.Chain{
+						Name:                  chain,
+						NativeAsset:           rand.StrBetween(5, 20),
+						SupportsForeignAssets: true,
+					}, true
+				}
+				return nexus.Chain{}, false
 			},
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
@@ -58,7 +64,7 @@ func TestQueryTokenAddress(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		res, err := evmKeeper.QueryTokenAddress(ctx, ethKeeper, nexusKeeper, evmChain, symbol)
+		res, err := evmKeeper.QueryTokenAddress(ctx, ethKeeper, nexusKeeper, symbol)
 
 		assert := assert.New(t)
 		assert.NoError(err)
@@ -71,7 +77,7 @@ func TestQueryTokenAddress(t *testing.T) {
 		setup()
 		ethKeeper.GetGatewayAddressFunc = func(sdk.Context) (common.Address, bool) { return common.Address{}, false }
 
-		_, err := evmKeeper.QueryTokenAddress(ctx, ethKeeper, nexusKeeper, evmChain, symbol)
+		_, err := evmKeeper.QueryTokenAddress(ctx, ethKeeper, nexusKeeper, symbol)
 
 		assert := assert.New(t)
 		assert.Error(err)
@@ -84,7 +90,7 @@ func TestQueryTokenAddress(t *testing.T) {
 			return common.Address{}, fmt.Errorf("could not find token address")
 		}
 
-		_, err := evmKeeper.QueryTokenAddress(ctx, ethKeeper, nexusKeeper, evmChain, symbol)
+		_, err := evmKeeper.QueryTokenAddress(ctx, ethKeeper, nexusKeeper, symbol)
 
 		assert := assert.New(t)
 		assert.Error(err)
@@ -96,7 +102,7 @@ func TestQueryTokenAddress(t *testing.T) {
 func TestQueryDepositAddress(t *testing.T) {
 
 	var (
-		ethKeeper       *mock.EVMKeeperMock
+		ethKeeper       *mock.ChainKeeperMock
 		nexusKeeper     *mock.NexusMock
 		ctx             sdk.Context
 		evmChain        string
@@ -105,9 +111,11 @@ func TestQueryDepositAddress(t *testing.T) {
 	)
 
 	setup := func() {
+		evmChain = rand.StrBetween(5, 10)
 		expectedAddress = randomAddress()
 
-		ethKeeper = &mock.EVMKeeperMock{
+		ethKeeper = &mock.ChainKeeperMock{
+			GetNameFunc:           func() string { return evmChain },
 			GetGatewayAddressFunc: func(sdk.Context) (common.Address, bool) { return randomAddress(), true },
 			GetTokenAddressFunc: func(sdk.Context, string, common.Address) (common.Address, error) {
 				return randomAddress(), nil
@@ -117,12 +125,15 @@ func TestQueryDepositAddress(t *testing.T) {
 			},
 		}
 		nexusKeeper = &mock.NexusMock{
-			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
-				return nexus.Chain{
-					Name:                  chain,
-					NativeAsset:           rand.StrBetween(5, 20),
-					SupportsForeignAssets: true,
-				}, true
+			GetChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
+				if strings.ToLower(chain) == strings.ToLower(evmChain) {
+					return nexus.Chain{
+						Name:                  chain,
+						NativeAsset:           rand.StrBetween(5, 20),
+						SupportsForeignAssets: true,
+					}, true
+				}
+				return nexus.Chain{}, false
 			},
 			GetRecipientFunc: func(sdk.Context, nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
 				return nexus.CrossChainAddress{
@@ -146,7 +157,7 @@ func TestQueryDepositAddress(t *testing.T) {
 	t.Run("happy path hard coded", testutils.Func(func(t *testing.T) {
 		setup()
 
-		res, err := evmKeeper.QueryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
+		res, err := evmKeeper.QueryDepositAddress(ctx, ethKeeper, nexusKeeper, data)
 
 		assert := assert.New(t)
 		assert.NoError(err)
@@ -165,7 +176,7 @@ func TestQueryDepositAddress(t *testing.T) {
 		}
 		data = types.ModuleCdc.MustMarshalJSON(dataStr)
 
-		res, err := evmKeeper.QueryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
+		res, err := evmKeeper.QueryDepositAddress(ctx, ethKeeper, nexusKeeper, data)
 
 		assert := assert.New(t)
 		assert.NoError(err)
@@ -179,7 +190,7 @@ func TestQueryDepositAddress(t *testing.T) {
 		setup()
 		ethKeeper.GetGatewayAddressFunc = func(sdk.Context) (common.Address, bool) { return common.Address{}, false }
 
-		_, err := evmKeeper.QueryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
+		_, err := evmKeeper.QueryDepositAddress(ctx, ethKeeper, nexusKeeper, data)
 
 		assert := assert.New(t)
 		assert.Error(err)
@@ -192,7 +203,7 @@ func TestQueryDepositAddress(t *testing.T) {
 			return common.Address{}, fmt.Errorf("could not find token address")
 		}
 
-		_, err := evmKeeper.QueryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
+		_, err := evmKeeper.QueryDepositAddress(ctx, ethKeeper, nexusKeeper, data)
 
 		assert := assert.New(t)
 		assert.Error(err)
@@ -205,7 +216,7 @@ func TestQueryDepositAddress(t *testing.T) {
 			return common.Address{}, common.Hash{}, fmt.Errorf("could not find deposit address")
 		}
 
-		_, err := evmKeeper.QueryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
+		_, err := evmKeeper.QueryDepositAddress(ctx, ethKeeper, nexusKeeper, data)
 
 		assert := assert.New(t)
 		assert.Error(err)
@@ -217,7 +228,7 @@ func TestQueryDepositAddress(t *testing.T) {
 		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 			return nexus.Chain{}, false
 		}
-		_, err := evmKeeper.QueryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
+		_, err := evmKeeper.QueryDepositAddress(ctx, ethKeeper, nexusKeeper, data)
 
 		assert := assert.New(t)
 		assert.Error(err)
@@ -229,7 +240,7 @@ func TestQueryDepositAddress(t *testing.T) {
 		nexusKeeper.GetRecipientFunc = func(sdk.Context, nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
 			return nexus.CrossChainAddress{}, false
 		}
-		_, err := evmKeeper.QueryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
+		_, err := evmKeeper.QueryDepositAddress(ctx, ethKeeper, nexusKeeper, data)
 
 		assert := assert.New(t)
 		assert.Error(err)

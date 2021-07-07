@@ -1541,16 +1541,369 @@ func (mock *SnapshotterMock) TakeSnapshotCalls() []struct {
 	return calls
 }
 
-// Ensure, that EVMKeeperMock does implement types.EVMKeeper.
+// Ensure, that BaseKeeperMock does implement types.BaseKeeper.
 // If this is not the case, regenerate this file with moq.
-var _ types.EVMKeeper = &EVMKeeperMock{}
+var _ types.BaseKeeper = &BaseKeeperMock{}
 
-// EVMKeeperMock is a mock implementation of types.EVMKeeper.
+// BaseKeeperMock is a mock implementation of types.BaseKeeper.
 //
-// 	func TestSomethingThatUsesEVMKeeper(t *testing.T) {
+// 	func TestSomethingThatUsesBaseKeeper(t *testing.T) {
 //
-// 		// make and configure a mocked types.EVMKeeper
-// 		mockedEVMKeeper := &EVMKeeperMock{
+// 		// make and configure a mocked types.BaseKeeper
+// 		mockedBaseKeeper := &BaseKeeperMock{
+// 			DeletePendingChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string)  {
+// 				panic("mock out the DeletePendingChain method")
+// 			},
+// 			GetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) types.ChainKeeper {
+// 				panic("mock out the GetChain method")
+// 			},
+// 			GetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.Params {
+// 				panic("mock out the GetParams method")
+// 			},
+// 			GetPendingChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (nexus.Chain, bool) {
+// 				panic("mock out the GetPendingChain method")
+// 			},
+// 			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
+// 				panic("mock out the Logger method")
+// 			},
+// 			SetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, params ...types.Params)  {
+// 				panic("mock out the SetParams method")
+// 			},
+// 			SetPendingChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain)  {
+// 				panic("mock out the SetPendingChain method")
+// 			},
+// 		}
+//
+// 		// use mockedBaseKeeper in code that requires types.BaseKeeper
+// 		// and then make assertions.
+//
+// 	}
+type BaseKeeperMock struct {
+	// DeletePendingChainFunc mocks the DeletePendingChain method.
+	DeletePendingChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string)
+
+	// GetChainFunc mocks the GetChain method.
+	GetChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) types.ChainKeeper
+
+	// GetParamsFunc mocks the GetParams method.
+	GetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.Params
+
+	// GetPendingChainFunc mocks the GetPendingChain method.
+	GetPendingChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (nexus.Chain, bool)
+
+	// LoggerFunc mocks the Logger method.
+	LoggerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger
+
+	// SetParamsFunc mocks the SetParams method.
+	SetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, params ...types.Params)
+
+	// SetPendingChainFunc mocks the SetPendingChain method.
+	SetPendingChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// DeletePendingChain holds details about calls to the DeletePendingChain method.
+		DeletePendingChain []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain string
+		}
+		// GetChain holds details about calls to the GetChain method.
+		GetChain []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain string
+		}
+		// GetParams holds details about calls to the GetParams method.
+		GetParams []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
+		// GetPendingChain holds details about calls to the GetPendingChain method.
+		GetPendingChain []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain string
+		}
+		// Logger holds details about calls to the Logger method.
+		Logger []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
+		// SetParams holds details about calls to the SetParams method.
+		SetParams []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Params is the params argument value.
+			Params []types.Params
+		}
+		// SetPendingChain holds details about calls to the SetPendingChain method.
+		SetPendingChain []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+		}
+	}
+	lockDeletePendingChain sync.RWMutex
+	lockGetChain           sync.RWMutex
+	lockGetParams          sync.RWMutex
+	lockGetPendingChain    sync.RWMutex
+	lockLogger             sync.RWMutex
+	lockSetParams          sync.RWMutex
+	lockSetPendingChain    sync.RWMutex
+}
+
+// DeletePendingChain calls DeletePendingChainFunc.
+func (mock *BaseKeeperMock) DeletePendingChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) {
+	if mock.DeletePendingChainFunc == nil {
+		panic("BaseKeeperMock.DeletePendingChainFunc: method is nil but BaseKeeper.DeletePendingChain was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain string
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockDeletePendingChain.Lock()
+	mock.calls.DeletePendingChain = append(mock.calls.DeletePendingChain, callInfo)
+	mock.lockDeletePendingChain.Unlock()
+	mock.DeletePendingChainFunc(ctx, chain)
+}
+
+// DeletePendingChainCalls gets all the calls that were made to DeletePendingChain.
+// Check the length with:
+//     len(mockedBaseKeeper.DeletePendingChainCalls())
+func (mock *BaseKeeperMock) DeletePendingChainCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain string
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain string
+	}
+	mock.lockDeletePendingChain.RLock()
+	calls = mock.calls.DeletePendingChain
+	mock.lockDeletePendingChain.RUnlock()
+	return calls
+}
+
+// GetChain calls GetChainFunc.
+func (mock *BaseKeeperMock) GetChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) types.ChainKeeper {
+	if mock.GetChainFunc == nil {
+		panic("BaseKeeperMock.GetChainFunc: method is nil but BaseKeeper.GetChain was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain string
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockGetChain.Lock()
+	mock.calls.GetChain = append(mock.calls.GetChain, callInfo)
+	mock.lockGetChain.Unlock()
+	return mock.GetChainFunc(ctx, chain)
+}
+
+// GetChainCalls gets all the calls that were made to GetChain.
+// Check the length with:
+//     len(mockedBaseKeeper.GetChainCalls())
+func (mock *BaseKeeperMock) GetChainCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain string
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain string
+	}
+	mock.lockGetChain.RLock()
+	calls = mock.calls.GetChain
+	mock.lockGetChain.RUnlock()
+	return calls
+}
+
+// GetParams calls GetParamsFunc.
+func (mock *BaseKeeperMock) GetParams(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.Params {
+	if mock.GetParamsFunc == nil {
+		panic("BaseKeeperMock.GetParamsFunc: method is nil but BaseKeeper.GetParams was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetParams.Lock()
+	mock.calls.GetParams = append(mock.calls.GetParams, callInfo)
+	mock.lockGetParams.Unlock()
+	return mock.GetParamsFunc(ctx)
+}
+
+// GetParamsCalls gets all the calls that were made to GetParams.
+// Check the length with:
+//     len(mockedBaseKeeper.GetParamsCalls())
+func (mock *BaseKeeperMock) GetParamsCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockGetParams.RLock()
+	calls = mock.calls.GetParams
+	mock.lockGetParams.RUnlock()
+	return calls
+}
+
+// GetPendingChain calls GetPendingChainFunc.
+func (mock *BaseKeeperMock) GetPendingChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (nexus.Chain, bool) {
+	if mock.GetPendingChainFunc == nil {
+		panic("BaseKeeperMock.GetPendingChainFunc: method is nil but BaseKeeper.GetPendingChain was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain string
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockGetPendingChain.Lock()
+	mock.calls.GetPendingChain = append(mock.calls.GetPendingChain, callInfo)
+	mock.lockGetPendingChain.Unlock()
+	return mock.GetPendingChainFunc(ctx, chain)
+}
+
+// GetPendingChainCalls gets all the calls that were made to GetPendingChain.
+// Check the length with:
+//     len(mockedBaseKeeper.GetPendingChainCalls())
+func (mock *BaseKeeperMock) GetPendingChainCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain string
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain string
+	}
+	mock.lockGetPendingChain.RLock()
+	calls = mock.calls.GetPendingChain
+	mock.lockGetPendingChain.RUnlock()
+	return calls
+}
+
+// Logger calls LoggerFunc.
+func (mock *BaseKeeperMock) Logger(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
+	if mock.LoggerFunc == nil {
+		panic("BaseKeeperMock.LoggerFunc: method is nil but BaseKeeper.Logger was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockLogger.Lock()
+	mock.calls.Logger = append(mock.calls.Logger, callInfo)
+	mock.lockLogger.Unlock()
+	return mock.LoggerFunc(ctx)
+}
+
+// LoggerCalls gets all the calls that were made to Logger.
+// Check the length with:
+//     len(mockedBaseKeeper.LoggerCalls())
+func (mock *BaseKeeperMock) LoggerCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockLogger.RLock()
+	calls = mock.calls.Logger
+	mock.lockLogger.RUnlock()
+	return calls
+}
+
+// SetParams calls SetParamsFunc.
+func (mock *BaseKeeperMock) SetParams(ctx github_com_cosmos_cosmos_sdk_types.Context, params ...types.Params) {
+	if mock.SetParamsFunc == nil {
+		panic("BaseKeeperMock.SetParamsFunc: method is nil but BaseKeeper.SetParams was just called")
+	}
+	callInfo := struct {
+		Ctx    github_com_cosmos_cosmos_sdk_types.Context
+		Params []types.Params
+	}{
+		Ctx:    ctx,
+		Params: params,
+	}
+	mock.lockSetParams.Lock()
+	mock.calls.SetParams = append(mock.calls.SetParams, callInfo)
+	mock.lockSetParams.Unlock()
+	mock.SetParamsFunc(ctx, params...)
+}
+
+// SetParamsCalls gets all the calls that were made to SetParams.
+// Check the length with:
+//     len(mockedBaseKeeper.SetParamsCalls())
+func (mock *BaseKeeperMock) SetParamsCalls() []struct {
+	Ctx    github_com_cosmos_cosmos_sdk_types.Context
+	Params []types.Params
+} {
+	var calls []struct {
+		Ctx    github_com_cosmos_cosmos_sdk_types.Context
+		Params []types.Params
+	}
+	mock.lockSetParams.RLock()
+	calls = mock.calls.SetParams
+	mock.lockSetParams.RUnlock()
+	return calls
+}
+
+// SetPendingChain calls SetPendingChainFunc.
+func (mock *BaseKeeperMock) SetPendingChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain) {
+	if mock.SetPendingChainFunc == nil {
+		panic("BaseKeeperMock.SetPendingChainFunc: method is nil but BaseKeeper.SetPendingChain was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain nexus.Chain
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockSetPendingChain.Lock()
+	mock.calls.SetPendingChain = append(mock.calls.SetPendingChain, callInfo)
+	mock.lockSetPendingChain.Unlock()
+	mock.SetPendingChainFunc(ctx, chain)
+}
+
+// SetPendingChainCalls gets all the calls that were made to SetPendingChain.
+// Check the length with:
+//     len(mockedBaseKeeper.SetPendingChainCalls())
+func (mock *BaseKeeperMock) SetPendingChainCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain nexus.Chain
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain nexus.Chain
+	}
+	mock.lockSetPendingChain.RLock()
+	calls = mock.calls.SetPendingChain
+	mock.lockSetPendingChain.RUnlock()
+	return calls
+}
+
+// Ensure, that ChainKeeperMock does implement types.ChainKeeper.
+// If this is not the case, regenerate this file with moq.
+var _ types.ChainKeeper = &ChainKeeperMock{}
+
+// ChainKeeperMock is a mock implementation of types.ChainKeeper.
+//
+// 	func TestSomethingThatUsesChainKeeper(t *testing.T) {
+//
+// 		// make and configure a mocked types.ChainKeeper
+// 		mockedChainKeeper := &ChainKeeperMock{
 // 			ArchiveTransferOwnershipFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta)  {
 // 				panic("mock out the ArchiveTransferOwnership method")
 // 			},
@@ -1559,9 +1912,6 @@ var _ types.EVMKeeper = &EVMKeeperMock{}
 // 			},
 // 			DeleteDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit)  {
 // 				panic("mock out the DeleteDeposit method")
-// 			},
-// 			DeletePendingChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string)  {
-// 				panic("mock out the DeletePendingChain method")
 // 			},
 // 			DeletePendingDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta)  {
 // 				panic("mock out the DeletePendingDeposit method")
@@ -1580,9 +1930,6 @@ var _ types.EVMKeeper = &EVMKeeperMock{}
 // 			},
 // 			GetBurnerInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address common.Address) *types.BurnerInfo {
 // 				panic("mock out the GetBurnerInfo method")
-// 			},
-// 			GetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) types.EVMKeeper {
-// 				panic("mock out the GetChain method")
 // 			},
 // 			GetChainIDByNetworkFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, network string) *big.Int {
 // 				panic("mock out the GetChainIDByNetwork method")
@@ -1605,17 +1952,14 @@ var _ types.EVMKeeper = &EVMKeeperMock{}
 // 			GetHashToSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string) (common.Hash, error) {
 // 				panic("mock out the GetHashToSign method")
 // 			},
+// 			GetNameFunc: func() string {
+// 				panic("mock out the GetName method")
+// 			},
 // 			GetNetworkFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (string, bool) {
 // 				panic("mock out the GetNetwork method")
 // 			},
 // 			GetNetworkByIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id *big.Int) (string, bool) {
 // 				panic("mock out the GetNetworkByID method")
-// 			},
-// 			GetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.Params {
-// 				panic("mock out the GetParams method")
-// 			},
-// 			GetPendingChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (nexus.Chain, bool) {
-// 				panic("mock out the GetPendingChain method")
 // 			},
 // 			GetPendingDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta) (types.ERC20Deposit, bool) {
 // 				panic("mock out the GetPendingDeposit method")
@@ -1653,12 +1997,6 @@ var _ types.EVMKeeper = &EVMKeeperMock{}
 // 			SetGatewayAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr common.Address)  {
 // 				panic("mock out the SetGatewayAddress method")
 // 			},
-// 			SetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, params ...types.Params)  {
-// 				panic("mock out the SetParams method")
-// 			},
-// 			SetPendingChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain)  {
-// 				panic("mock out the SetPendingChain method")
-// 			},
 // 			SetPendingDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, deposit *types.ERC20Deposit)  {
 // 				panic("mock out the SetPendingDeposit method")
 // 			},
@@ -1676,11 +2014,11 @@ var _ types.EVMKeeper = &EVMKeeperMock{}
 // 			},
 // 		}
 //
-// 		// use mockedEVMKeeper in code that requires types.EVMKeeper
+// 		// use mockedChainKeeper in code that requires types.ChainKeeper
 // 		// and then make assertions.
 //
 // 	}
-type EVMKeeperMock struct {
+type ChainKeeperMock struct {
 	// ArchiveTransferOwnershipFunc mocks the ArchiveTransferOwnership method.
 	ArchiveTransferOwnershipFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta)
 
@@ -1689,9 +2027,6 @@ type EVMKeeperMock struct {
 
 	// DeleteDepositFunc mocks the DeleteDeposit method.
 	DeleteDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit)
-
-	// DeletePendingChainFunc mocks the DeletePendingChain method.
-	DeletePendingChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string)
 
 	// DeletePendingDepositFunc mocks the DeletePendingDeposit method.
 	DeletePendingDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta)
@@ -1710,9 +2045,6 @@ type EVMKeeperMock struct {
 
 	// GetBurnerInfoFunc mocks the GetBurnerInfo method.
 	GetBurnerInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address common.Address) *types.BurnerInfo
-
-	// GetChainFunc mocks the GetChain method.
-	GetChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) types.EVMKeeper
 
 	// GetChainIDByNetworkFunc mocks the GetChainIDByNetwork method.
 	GetChainIDByNetworkFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, network string) *big.Int
@@ -1735,17 +2067,14 @@ type EVMKeeperMock struct {
 	// GetHashToSignFunc mocks the GetHashToSign method.
 	GetHashToSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string) (common.Hash, error)
 
+	// GetNameFunc mocks the GetName method.
+	GetNameFunc func() string
+
 	// GetNetworkFunc mocks the GetNetwork method.
 	GetNetworkFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (string, bool)
 
 	// GetNetworkByIDFunc mocks the GetNetworkByID method.
 	GetNetworkByIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, id *big.Int) (string, bool)
-
-	// GetParamsFunc mocks the GetParams method.
-	GetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.Params
-
-	// GetPendingChainFunc mocks the GetPendingChain method.
-	GetPendingChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (nexus.Chain, bool)
 
 	// GetPendingDepositFunc mocks the GetPendingDeposit method.
 	GetPendingDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta) (types.ERC20Deposit, bool)
@@ -1782,12 +2111,6 @@ type EVMKeeperMock struct {
 
 	// SetGatewayAddressFunc mocks the SetGatewayAddress method.
 	SetGatewayAddressFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr common.Address)
-
-	// SetParamsFunc mocks the SetParams method.
-	SetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, params ...types.Params)
-
-	// SetPendingChainFunc mocks the SetPendingChain method.
-	SetPendingChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain)
 
 	// SetPendingDepositFunc mocks the SetPendingDeposit method.
 	SetPendingDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, deposit *types.ERC20Deposit)
@@ -1830,13 +2153,6 @@ type EVMKeeperMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Deposit is the deposit argument value.
 			Deposit types.ERC20Deposit
-		}
-		// DeletePendingChain holds details about calls to the DeletePendingChain method.
-		DeletePendingChain []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Chain is the chain argument value.
-			Chain string
 		}
 		// DeletePendingDeposit holds details about calls to the DeletePendingDeposit method.
 		DeletePendingDeposit []struct {
@@ -1881,13 +2197,6 @@ type EVMKeeperMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Address is the address argument value.
 			Address common.Address
-		}
-		// GetChain holds details about calls to the GetChain method.
-		GetChain []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Chain is the chain argument value.
-			Chain string
 		}
 		// GetChainIDByNetwork holds details about calls to the GetChainIDByNetwork method.
 		GetChainIDByNetwork []struct {
@@ -1934,6 +2243,9 @@ type EVMKeeperMock struct {
 			// TxID is the txID argument value.
 			TxID string
 		}
+		// GetName holds details about calls to the GetName method.
+		GetName []struct {
+		}
 		// GetNetwork holds details about calls to the GetNetwork method.
 		GetNetwork []struct {
 			// Ctx is the ctx argument value.
@@ -1945,18 +2257,6 @@ type EVMKeeperMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// ID is the id argument value.
 			ID *big.Int
-		}
-		// GetParams holds details about calls to the GetParams method.
-		GetParams []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-		}
-		// GetPendingChain holds details about calls to the GetPendingChain method.
-		GetPendingChain []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Chain is the chain argument value.
-			Chain string
 		}
 		// GetPendingDeposit holds details about calls to the GetPendingDeposit method.
 		GetPendingDeposit []struct {
@@ -2042,20 +2342,6 @@ type EVMKeeperMock struct {
 			// Addr is the addr argument value.
 			Addr common.Address
 		}
-		// SetParams holds details about calls to the SetParams method.
-		SetParams []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Params is the params argument value.
-			Params []types.Params
-		}
-		// SetPendingChain holds details about calls to the SetPendingChain method.
-		SetPendingChain []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Chain is the chain argument value.
-			Chain nexus.Chain
-		}
 		// SetPendingDeposit holds details about calls to the SetPendingDeposit method.
 		SetPendingDeposit []struct {
 			// Ctx is the ctx argument value.
@@ -2103,14 +2389,12 @@ type EVMKeeperMock struct {
 	lockArchiveTransferOwnership      sync.RWMutex
 	lockAssembleEthTx                 sync.RWMutex
 	lockDeleteDeposit                 sync.RWMutex
-	lockDeletePendingChain            sync.RWMutex
 	lockDeletePendingDeposit          sync.RWMutex
 	lockDeletePendingToken            sync.RWMutex
 	lockGetArchivedTransferOwnership  sync.RWMutex
 	lockGetBurnerAddressAndSalt       sync.RWMutex
 	lockGetBurnerByteCodes            sync.RWMutex
 	lockGetBurnerInfo                 sync.RWMutex
-	lockGetChain                      sync.RWMutex
 	lockGetChainIDByNetwork           sync.RWMutex
 	lockGetCommandData                sync.RWMutex
 	lockGetConfirmedDeposits          sync.RWMutex
@@ -2118,10 +2402,9 @@ type EVMKeeperMock struct {
 	lockGetGatewayAddress             sync.RWMutex
 	lockGetGatewayByteCodes           sync.RWMutex
 	lockGetHashToSign                 sync.RWMutex
+	lockGetName                       sync.RWMutex
 	lockGetNetwork                    sync.RWMutex
 	lockGetNetworkByID                sync.RWMutex
-	lockGetParams                     sync.RWMutex
-	lockGetPendingChain               sync.RWMutex
 	lockGetPendingDeposit             sync.RWMutex
 	lockGetPendingTokenDeployment     sync.RWMutex
 	lockGetPendingTransferOwnership   sync.RWMutex
@@ -2134,8 +2417,6 @@ type EVMKeeperMock struct {
 	lockSetCommandData                sync.RWMutex
 	lockSetDeposit                    sync.RWMutex
 	lockSetGatewayAddress             sync.RWMutex
-	lockSetParams                     sync.RWMutex
-	lockSetPendingChain               sync.RWMutex
 	lockSetPendingDeposit             sync.RWMutex
 	lockSetPendingTokenDeployment     sync.RWMutex
 	lockSetPendingTransferOwnership   sync.RWMutex
@@ -2144,9 +2425,9 @@ type EVMKeeperMock struct {
 }
 
 // ArchiveTransferOwnership calls ArchiveTransferOwnershipFunc.
-func (mock *EVMKeeperMock) ArchiveTransferOwnership(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta) {
+func (mock *ChainKeeperMock) ArchiveTransferOwnership(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta) {
 	if mock.ArchiveTransferOwnershipFunc == nil {
-		panic("EVMKeeperMock.ArchiveTransferOwnershipFunc: method is nil but EVMKeeper.ArchiveTransferOwnership was just called")
+		panic("ChainKeeperMock.ArchiveTransferOwnershipFunc: method is nil but ChainKeeper.ArchiveTransferOwnership was just called")
 	}
 	callInfo := struct {
 		Ctx  github_com_cosmos_cosmos_sdk_types.Context
@@ -2163,8 +2444,8 @@ func (mock *EVMKeeperMock) ArchiveTransferOwnership(ctx github_com_cosmos_cosmos
 
 // ArchiveTransferOwnershipCalls gets all the calls that were made to ArchiveTransferOwnership.
 // Check the length with:
-//     len(mockedEVMKeeper.ArchiveTransferOwnershipCalls())
-func (mock *EVMKeeperMock) ArchiveTransferOwnershipCalls() []struct {
+//     len(mockedChainKeeper.ArchiveTransferOwnershipCalls())
+func (mock *ChainKeeperMock) ArchiveTransferOwnershipCalls() []struct {
 	Ctx  github_com_cosmos_cosmos_sdk_types.Context
 	Poll exported.PollMeta
 } {
@@ -2179,9 +2460,9 @@ func (mock *EVMKeeperMock) ArchiveTransferOwnershipCalls() []struct {
 }
 
 // AssembleEthTx calls AssembleEthTxFunc.
-func (mock *EVMKeeperMock) AssembleEthTx(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, pk ecdsa.PublicKey, sig tss.Signature) (*ethTypes.Transaction, error) {
+func (mock *ChainKeeperMock) AssembleEthTx(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, pk ecdsa.PublicKey, sig tss.Signature) (*ethTypes.Transaction, error) {
 	if mock.AssembleEthTxFunc == nil {
-		panic("EVMKeeperMock.AssembleEthTxFunc: method is nil but EVMKeeper.AssembleEthTx was just called")
+		panic("ChainKeeperMock.AssembleEthTxFunc: method is nil but ChainKeeper.AssembleEthTx was just called")
 	}
 	callInfo := struct {
 		Ctx  github_com_cosmos_cosmos_sdk_types.Context
@@ -2202,8 +2483,8 @@ func (mock *EVMKeeperMock) AssembleEthTx(ctx github_com_cosmos_cosmos_sdk_types.
 
 // AssembleEthTxCalls gets all the calls that were made to AssembleEthTx.
 // Check the length with:
-//     len(mockedEVMKeeper.AssembleEthTxCalls())
-func (mock *EVMKeeperMock) AssembleEthTxCalls() []struct {
+//     len(mockedChainKeeper.AssembleEthTxCalls())
+func (mock *ChainKeeperMock) AssembleEthTxCalls() []struct {
 	Ctx  github_com_cosmos_cosmos_sdk_types.Context
 	TxID string
 	Pk   ecdsa.PublicKey
@@ -2222,9 +2503,9 @@ func (mock *EVMKeeperMock) AssembleEthTxCalls() []struct {
 }
 
 // DeleteDeposit calls DeleteDepositFunc.
-func (mock *EVMKeeperMock) DeleteDeposit(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit) {
+func (mock *ChainKeeperMock) DeleteDeposit(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit) {
 	if mock.DeleteDepositFunc == nil {
-		panic("EVMKeeperMock.DeleteDepositFunc: method is nil but EVMKeeper.DeleteDeposit was just called")
+		panic("ChainKeeperMock.DeleteDepositFunc: method is nil but ChainKeeper.DeleteDeposit was just called")
 	}
 	callInfo := struct {
 		Ctx     github_com_cosmos_cosmos_sdk_types.Context
@@ -2241,8 +2522,8 @@ func (mock *EVMKeeperMock) DeleteDeposit(ctx github_com_cosmos_cosmos_sdk_types.
 
 // DeleteDepositCalls gets all the calls that were made to DeleteDeposit.
 // Check the length with:
-//     len(mockedEVMKeeper.DeleteDepositCalls())
-func (mock *EVMKeeperMock) DeleteDepositCalls() []struct {
+//     len(mockedChainKeeper.DeleteDepositCalls())
+func (mock *ChainKeeperMock) DeleteDepositCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
 	Deposit types.ERC20Deposit
 } {
@@ -2256,45 +2537,10 @@ func (mock *EVMKeeperMock) DeleteDepositCalls() []struct {
 	return calls
 }
 
-// DeletePendingChain calls DeletePendingChainFunc.
-func (mock *EVMKeeperMock) DeletePendingChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) {
-	if mock.DeletePendingChainFunc == nil {
-		panic("EVMKeeperMock.DeletePendingChainFunc: method is nil but EVMKeeper.DeletePendingChain was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain string
-	}{
-		Ctx:   ctx,
-		Chain: chain,
-	}
-	mock.lockDeletePendingChain.Lock()
-	mock.calls.DeletePendingChain = append(mock.calls.DeletePendingChain, callInfo)
-	mock.lockDeletePendingChain.Unlock()
-	mock.DeletePendingChainFunc(ctx, chain)
-}
-
-// DeletePendingChainCalls gets all the calls that were made to DeletePendingChain.
-// Check the length with:
-//     len(mockedEVMKeeper.DeletePendingChainCalls())
-func (mock *EVMKeeperMock) DeletePendingChainCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	Chain string
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain string
-	}
-	mock.lockDeletePendingChain.RLock()
-	calls = mock.calls.DeletePendingChain
-	mock.lockDeletePendingChain.RUnlock()
-	return calls
-}
-
 // DeletePendingDeposit calls DeletePendingDepositFunc.
-func (mock *EVMKeeperMock) DeletePendingDeposit(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta) {
+func (mock *ChainKeeperMock) DeletePendingDeposit(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta) {
 	if mock.DeletePendingDepositFunc == nil {
-		panic("EVMKeeperMock.DeletePendingDepositFunc: method is nil but EVMKeeper.DeletePendingDeposit was just called")
+		panic("ChainKeeperMock.DeletePendingDepositFunc: method is nil but ChainKeeper.DeletePendingDeposit was just called")
 	}
 	callInfo := struct {
 		Ctx  github_com_cosmos_cosmos_sdk_types.Context
@@ -2311,8 +2557,8 @@ func (mock *EVMKeeperMock) DeletePendingDeposit(ctx github_com_cosmos_cosmos_sdk
 
 // DeletePendingDepositCalls gets all the calls that were made to DeletePendingDeposit.
 // Check the length with:
-//     len(mockedEVMKeeper.DeletePendingDepositCalls())
-func (mock *EVMKeeperMock) DeletePendingDepositCalls() []struct {
+//     len(mockedChainKeeper.DeletePendingDepositCalls())
+func (mock *ChainKeeperMock) DeletePendingDepositCalls() []struct {
 	Ctx  github_com_cosmos_cosmos_sdk_types.Context
 	Poll exported.PollMeta
 } {
@@ -2327,9 +2573,9 @@ func (mock *EVMKeeperMock) DeletePendingDepositCalls() []struct {
 }
 
 // DeletePendingToken calls DeletePendingTokenFunc.
-func (mock *EVMKeeperMock) DeletePendingToken(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta) {
+func (mock *ChainKeeperMock) DeletePendingToken(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta) {
 	if mock.DeletePendingTokenFunc == nil {
-		panic("EVMKeeperMock.DeletePendingTokenFunc: method is nil but EVMKeeper.DeletePendingToken was just called")
+		panic("ChainKeeperMock.DeletePendingTokenFunc: method is nil but ChainKeeper.DeletePendingToken was just called")
 	}
 	callInfo := struct {
 		Ctx  github_com_cosmos_cosmos_sdk_types.Context
@@ -2346,8 +2592,8 @@ func (mock *EVMKeeperMock) DeletePendingToken(ctx github_com_cosmos_cosmos_sdk_t
 
 // DeletePendingTokenCalls gets all the calls that were made to DeletePendingToken.
 // Check the length with:
-//     len(mockedEVMKeeper.DeletePendingTokenCalls())
-func (mock *EVMKeeperMock) DeletePendingTokenCalls() []struct {
+//     len(mockedChainKeeper.DeletePendingTokenCalls())
+func (mock *ChainKeeperMock) DeletePendingTokenCalls() []struct {
 	Ctx  github_com_cosmos_cosmos_sdk_types.Context
 	Poll exported.PollMeta
 } {
@@ -2362,9 +2608,9 @@ func (mock *EVMKeeperMock) DeletePendingTokenCalls() []struct {
 }
 
 // GetArchivedTransferOwnership calls GetArchivedTransferOwnershipFunc.
-func (mock *EVMKeeperMock) GetArchivedTransferOwnership(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta) (types.TransferOwnership, bool) {
+func (mock *ChainKeeperMock) GetArchivedTransferOwnership(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta) (types.TransferOwnership, bool) {
 	if mock.GetArchivedTransferOwnershipFunc == nil {
-		panic("EVMKeeperMock.GetArchivedTransferOwnershipFunc: method is nil but EVMKeeper.GetArchivedTransferOwnership was just called")
+		panic("ChainKeeperMock.GetArchivedTransferOwnershipFunc: method is nil but ChainKeeper.GetArchivedTransferOwnership was just called")
 	}
 	callInfo := struct {
 		Ctx  github_com_cosmos_cosmos_sdk_types.Context
@@ -2381,8 +2627,8 @@ func (mock *EVMKeeperMock) GetArchivedTransferOwnership(ctx github_com_cosmos_co
 
 // GetArchivedTransferOwnershipCalls gets all the calls that were made to GetArchivedTransferOwnership.
 // Check the length with:
-//     len(mockedEVMKeeper.GetArchivedTransferOwnershipCalls())
-func (mock *EVMKeeperMock) GetArchivedTransferOwnershipCalls() []struct {
+//     len(mockedChainKeeper.GetArchivedTransferOwnershipCalls())
+func (mock *ChainKeeperMock) GetArchivedTransferOwnershipCalls() []struct {
 	Ctx  github_com_cosmos_cosmos_sdk_types.Context
 	Poll exported.PollMeta
 } {
@@ -2397,9 +2643,9 @@ func (mock *EVMKeeperMock) GetArchivedTransferOwnershipCalls() []struct {
 }
 
 // GetBurnerAddressAndSalt calls GetBurnerAddressAndSaltFunc.
-func (mock *EVMKeeperMock) GetBurnerAddressAndSalt(ctx github_com_cosmos_cosmos_sdk_types.Context, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error) {
+func (mock *ChainKeeperMock) GetBurnerAddressAndSalt(ctx github_com_cosmos_cosmos_sdk_types.Context, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error) {
 	if mock.GetBurnerAddressAndSaltFunc == nil {
-		panic("EVMKeeperMock.GetBurnerAddressAndSaltFunc: method is nil but EVMKeeper.GetBurnerAddressAndSalt was just called")
+		panic("ChainKeeperMock.GetBurnerAddressAndSaltFunc: method is nil but ChainKeeper.GetBurnerAddressAndSalt was just called")
 	}
 	callInfo := struct {
 		Ctx         github_com_cosmos_cosmos_sdk_types.Context
@@ -2420,8 +2666,8 @@ func (mock *EVMKeeperMock) GetBurnerAddressAndSalt(ctx github_com_cosmos_cosmos_
 
 // GetBurnerAddressAndSaltCalls gets all the calls that were made to GetBurnerAddressAndSalt.
 // Check the length with:
-//     len(mockedEVMKeeper.GetBurnerAddressAndSaltCalls())
-func (mock *EVMKeeperMock) GetBurnerAddressAndSaltCalls() []struct {
+//     len(mockedChainKeeper.GetBurnerAddressAndSaltCalls())
+func (mock *ChainKeeperMock) GetBurnerAddressAndSaltCalls() []struct {
 	Ctx         github_com_cosmos_cosmos_sdk_types.Context
 	TokenAddr   common.Address
 	Recipient   string
@@ -2440,9 +2686,9 @@ func (mock *EVMKeeperMock) GetBurnerAddressAndSaltCalls() []struct {
 }
 
 // GetBurnerByteCodes calls GetBurnerByteCodesFunc.
-func (mock *EVMKeeperMock) GetBurnerByteCodes(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool) {
+func (mock *ChainKeeperMock) GetBurnerByteCodes(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool) {
 	if mock.GetBurnerByteCodesFunc == nil {
-		panic("EVMKeeperMock.GetBurnerByteCodesFunc: method is nil but EVMKeeper.GetBurnerByteCodes was just called")
+		panic("ChainKeeperMock.GetBurnerByteCodesFunc: method is nil but ChainKeeper.GetBurnerByteCodes was just called")
 	}
 	callInfo := struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
@@ -2457,8 +2703,8 @@ func (mock *EVMKeeperMock) GetBurnerByteCodes(ctx github_com_cosmos_cosmos_sdk_t
 
 // GetBurnerByteCodesCalls gets all the calls that were made to GetBurnerByteCodes.
 // Check the length with:
-//     len(mockedEVMKeeper.GetBurnerByteCodesCalls())
-func (mock *EVMKeeperMock) GetBurnerByteCodesCalls() []struct {
+//     len(mockedChainKeeper.GetBurnerByteCodesCalls())
+func (mock *ChainKeeperMock) GetBurnerByteCodesCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
 	var calls []struct {
@@ -2471,9 +2717,9 @@ func (mock *EVMKeeperMock) GetBurnerByteCodesCalls() []struct {
 }
 
 // GetBurnerInfo calls GetBurnerInfoFunc.
-func (mock *EVMKeeperMock) GetBurnerInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, address common.Address) *types.BurnerInfo {
+func (mock *ChainKeeperMock) GetBurnerInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, address common.Address) *types.BurnerInfo {
 	if mock.GetBurnerInfoFunc == nil {
-		panic("EVMKeeperMock.GetBurnerInfoFunc: method is nil but EVMKeeper.GetBurnerInfo was just called")
+		panic("ChainKeeperMock.GetBurnerInfoFunc: method is nil but ChainKeeper.GetBurnerInfo was just called")
 	}
 	callInfo := struct {
 		Ctx     github_com_cosmos_cosmos_sdk_types.Context
@@ -2490,8 +2736,8 @@ func (mock *EVMKeeperMock) GetBurnerInfo(ctx github_com_cosmos_cosmos_sdk_types.
 
 // GetBurnerInfoCalls gets all the calls that were made to GetBurnerInfo.
 // Check the length with:
-//     len(mockedEVMKeeper.GetBurnerInfoCalls())
-func (mock *EVMKeeperMock) GetBurnerInfoCalls() []struct {
+//     len(mockedChainKeeper.GetBurnerInfoCalls())
+func (mock *ChainKeeperMock) GetBurnerInfoCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
 	Address common.Address
 } {
@@ -2505,45 +2751,10 @@ func (mock *EVMKeeperMock) GetBurnerInfoCalls() []struct {
 	return calls
 }
 
-// GetChain calls GetChainFunc.
-func (mock *EVMKeeperMock) GetChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) types.EVMKeeper {
-	if mock.GetChainFunc == nil {
-		panic("EVMKeeperMock.GetChainFunc: method is nil but EVMKeeper.GetChain was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain string
-	}{
-		Ctx:   ctx,
-		Chain: chain,
-	}
-	mock.lockGetChain.Lock()
-	mock.calls.GetChain = append(mock.calls.GetChain, callInfo)
-	mock.lockGetChain.Unlock()
-	return mock.GetChainFunc(ctx, chain)
-}
-
-// GetChainCalls gets all the calls that were made to GetChain.
-// Check the length with:
-//     len(mockedEVMKeeper.GetChainCalls())
-func (mock *EVMKeeperMock) GetChainCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	Chain string
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain string
-	}
-	mock.lockGetChain.RLock()
-	calls = mock.calls.GetChain
-	mock.lockGetChain.RUnlock()
-	return calls
-}
-
 // GetChainIDByNetwork calls GetChainIDByNetworkFunc.
-func (mock *EVMKeeperMock) GetChainIDByNetwork(ctx github_com_cosmos_cosmos_sdk_types.Context, network string) *big.Int {
+func (mock *ChainKeeperMock) GetChainIDByNetwork(ctx github_com_cosmos_cosmos_sdk_types.Context, network string) *big.Int {
 	if mock.GetChainIDByNetworkFunc == nil {
-		panic("EVMKeeperMock.GetChainIDByNetworkFunc: method is nil but EVMKeeper.GetChainIDByNetwork was just called")
+		panic("ChainKeeperMock.GetChainIDByNetworkFunc: method is nil but ChainKeeper.GetChainIDByNetwork was just called")
 	}
 	callInfo := struct {
 		Ctx     github_com_cosmos_cosmos_sdk_types.Context
@@ -2560,8 +2771,8 @@ func (mock *EVMKeeperMock) GetChainIDByNetwork(ctx github_com_cosmos_cosmos_sdk_
 
 // GetChainIDByNetworkCalls gets all the calls that were made to GetChainIDByNetwork.
 // Check the length with:
-//     len(mockedEVMKeeper.GetChainIDByNetworkCalls())
-func (mock *EVMKeeperMock) GetChainIDByNetworkCalls() []struct {
+//     len(mockedChainKeeper.GetChainIDByNetworkCalls())
+func (mock *ChainKeeperMock) GetChainIDByNetworkCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
 	Network string
 } {
@@ -2576,9 +2787,9 @@ func (mock *EVMKeeperMock) GetChainIDByNetworkCalls() []struct {
 }
 
 // GetCommandData calls GetCommandDataFunc.
-func (mock *EVMKeeperMock) GetCommandData(ctx github_com_cosmos_cosmos_sdk_types.Context, commandID types.CommandID) []byte {
+func (mock *ChainKeeperMock) GetCommandData(ctx github_com_cosmos_cosmos_sdk_types.Context, commandID types.CommandID) []byte {
 	if mock.GetCommandDataFunc == nil {
-		panic("EVMKeeperMock.GetCommandDataFunc: method is nil but EVMKeeper.GetCommandData was just called")
+		panic("ChainKeeperMock.GetCommandDataFunc: method is nil but ChainKeeper.GetCommandData was just called")
 	}
 	callInfo := struct {
 		Ctx       github_com_cosmos_cosmos_sdk_types.Context
@@ -2595,8 +2806,8 @@ func (mock *EVMKeeperMock) GetCommandData(ctx github_com_cosmos_cosmos_sdk_types
 
 // GetCommandDataCalls gets all the calls that were made to GetCommandData.
 // Check the length with:
-//     len(mockedEVMKeeper.GetCommandDataCalls())
-func (mock *EVMKeeperMock) GetCommandDataCalls() []struct {
+//     len(mockedChainKeeper.GetCommandDataCalls())
+func (mock *ChainKeeperMock) GetCommandDataCalls() []struct {
 	Ctx       github_com_cosmos_cosmos_sdk_types.Context
 	CommandID types.CommandID
 } {
@@ -2611,9 +2822,9 @@ func (mock *EVMKeeperMock) GetCommandDataCalls() []struct {
 }
 
 // GetConfirmedDeposits calls GetConfirmedDepositsFunc.
-func (mock *EVMKeeperMock) GetConfirmedDeposits(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.ERC20Deposit {
+func (mock *ChainKeeperMock) GetConfirmedDeposits(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.ERC20Deposit {
 	if mock.GetConfirmedDepositsFunc == nil {
-		panic("EVMKeeperMock.GetConfirmedDepositsFunc: method is nil but EVMKeeper.GetConfirmedDeposits was just called")
+		panic("ChainKeeperMock.GetConfirmedDepositsFunc: method is nil but ChainKeeper.GetConfirmedDeposits was just called")
 	}
 	callInfo := struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
@@ -2628,8 +2839,8 @@ func (mock *EVMKeeperMock) GetConfirmedDeposits(ctx github_com_cosmos_cosmos_sdk
 
 // GetConfirmedDepositsCalls gets all the calls that were made to GetConfirmedDeposits.
 // Check the length with:
-//     len(mockedEVMKeeper.GetConfirmedDepositsCalls())
-func (mock *EVMKeeperMock) GetConfirmedDepositsCalls() []struct {
+//     len(mockedChainKeeper.GetConfirmedDepositsCalls())
+func (mock *ChainKeeperMock) GetConfirmedDepositsCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
 	var calls []struct {
@@ -2642,9 +2853,9 @@ func (mock *EVMKeeperMock) GetConfirmedDepositsCalls() []struct {
 }
 
 // GetDeposit calls GetDepositFunc.
-func (mock *EVMKeeperMock) GetDeposit(ctx github_com_cosmos_cosmos_sdk_types.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositState, bool) {
+func (mock *ChainKeeperMock) GetDeposit(ctx github_com_cosmos_cosmos_sdk_types.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositState, bool) {
 	if mock.GetDepositFunc == nil {
-		panic("EVMKeeperMock.GetDepositFunc: method is nil but EVMKeeper.GetDeposit was just called")
+		panic("ChainKeeperMock.GetDepositFunc: method is nil but ChainKeeper.GetDeposit was just called")
 	}
 	callInfo := struct {
 		Ctx        github_com_cosmos_cosmos_sdk_types.Context
@@ -2663,8 +2874,8 @@ func (mock *EVMKeeperMock) GetDeposit(ctx github_com_cosmos_cosmos_sdk_types.Con
 
 // GetDepositCalls gets all the calls that were made to GetDeposit.
 // Check the length with:
-//     len(mockedEVMKeeper.GetDepositCalls())
-func (mock *EVMKeeperMock) GetDepositCalls() []struct {
+//     len(mockedChainKeeper.GetDepositCalls())
+func (mock *ChainKeeperMock) GetDepositCalls() []struct {
 	Ctx        github_com_cosmos_cosmos_sdk_types.Context
 	TxID       common.Hash
 	BurnerAddr common.Address
@@ -2681,9 +2892,9 @@ func (mock *EVMKeeperMock) GetDepositCalls() []struct {
 }
 
 // GetGatewayAddress calls GetGatewayAddressFunc.
-func (mock *EVMKeeperMock) GetGatewayAddress(ctx github_com_cosmos_cosmos_sdk_types.Context) (common.Address, bool) {
+func (mock *ChainKeeperMock) GetGatewayAddress(ctx github_com_cosmos_cosmos_sdk_types.Context) (common.Address, bool) {
 	if mock.GetGatewayAddressFunc == nil {
-		panic("EVMKeeperMock.GetGatewayAddressFunc: method is nil but EVMKeeper.GetGatewayAddress was just called")
+		panic("ChainKeeperMock.GetGatewayAddressFunc: method is nil but ChainKeeper.GetGatewayAddress was just called")
 	}
 	callInfo := struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
@@ -2698,8 +2909,8 @@ func (mock *EVMKeeperMock) GetGatewayAddress(ctx github_com_cosmos_cosmos_sdk_ty
 
 // GetGatewayAddressCalls gets all the calls that were made to GetGatewayAddress.
 // Check the length with:
-//     len(mockedEVMKeeper.GetGatewayAddressCalls())
-func (mock *EVMKeeperMock) GetGatewayAddressCalls() []struct {
+//     len(mockedChainKeeper.GetGatewayAddressCalls())
+func (mock *ChainKeeperMock) GetGatewayAddressCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
 	var calls []struct {
@@ -2712,9 +2923,9 @@ func (mock *EVMKeeperMock) GetGatewayAddressCalls() []struct {
 }
 
 // GetGatewayByteCodes calls GetGatewayByteCodesFunc.
-func (mock *EVMKeeperMock) GetGatewayByteCodes(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool) {
+func (mock *ChainKeeperMock) GetGatewayByteCodes(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool) {
 	if mock.GetGatewayByteCodesFunc == nil {
-		panic("EVMKeeperMock.GetGatewayByteCodesFunc: method is nil but EVMKeeper.GetGatewayByteCodes was just called")
+		panic("ChainKeeperMock.GetGatewayByteCodesFunc: method is nil but ChainKeeper.GetGatewayByteCodes was just called")
 	}
 	callInfo := struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
@@ -2729,8 +2940,8 @@ func (mock *EVMKeeperMock) GetGatewayByteCodes(ctx github_com_cosmos_cosmos_sdk_
 
 // GetGatewayByteCodesCalls gets all the calls that were made to GetGatewayByteCodes.
 // Check the length with:
-//     len(mockedEVMKeeper.GetGatewayByteCodesCalls())
-func (mock *EVMKeeperMock) GetGatewayByteCodesCalls() []struct {
+//     len(mockedChainKeeper.GetGatewayByteCodesCalls())
+func (mock *ChainKeeperMock) GetGatewayByteCodesCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
 	var calls []struct {
@@ -2743,9 +2954,9 @@ func (mock *EVMKeeperMock) GetGatewayByteCodesCalls() []struct {
 }
 
 // GetHashToSign calls GetHashToSignFunc.
-func (mock *EVMKeeperMock) GetHashToSign(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string) (common.Hash, error) {
+func (mock *ChainKeeperMock) GetHashToSign(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string) (common.Hash, error) {
 	if mock.GetHashToSignFunc == nil {
-		panic("EVMKeeperMock.GetHashToSignFunc: method is nil but EVMKeeper.GetHashToSign was just called")
+		panic("ChainKeeperMock.GetHashToSignFunc: method is nil but ChainKeeper.GetHashToSign was just called")
 	}
 	callInfo := struct {
 		Ctx  github_com_cosmos_cosmos_sdk_types.Context
@@ -2762,8 +2973,8 @@ func (mock *EVMKeeperMock) GetHashToSign(ctx github_com_cosmos_cosmos_sdk_types.
 
 // GetHashToSignCalls gets all the calls that were made to GetHashToSign.
 // Check the length with:
-//     len(mockedEVMKeeper.GetHashToSignCalls())
-func (mock *EVMKeeperMock) GetHashToSignCalls() []struct {
+//     len(mockedChainKeeper.GetHashToSignCalls())
+func (mock *ChainKeeperMock) GetHashToSignCalls() []struct {
 	Ctx  github_com_cosmos_cosmos_sdk_types.Context
 	TxID string
 } {
@@ -2777,10 +2988,36 @@ func (mock *EVMKeeperMock) GetHashToSignCalls() []struct {
 	return calls
 }
 
+// GetName calls GetNameFunc.
+func (mock *ChainKeeperMock) GetName() string {
+	if mock.GetNameFunc == nil {
+		panic("ChainKeeperMock.GetNameFunc: method is nil but ChainKeeper.GetName was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetName.Lock()
+	mock.calls.GetName = append(mock.calls.GetName, callInfo)
+	mock.lockGetName.Unlock()
+	return mock.GetNameFunc()
+}
+
+// GetNameCalls gets all the calls that were made to GetName.
+// Check the length with:
+//     len(mockedChainKeeper.GetNameCalls())
+func (mock *ChainKeeperMock) GetNameCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetName.RLock()
+	calls = mock.calls.GetName
+	mock.lockGetName.RUnlock()
+	return calls
+}
+
 // GetNetwork calls GetNetworkFunc.
-func (mock *EVMKeeperMock) GetNetwork(ctx github_com_cosmos_cosmos_sdk_types.Context) (string, bool) {
+func (mock *ChainKeeperMock) GetNetwork(ctx github_com_cosmos_cosmos_sdk_types.Context) (string, bool) {
 	if mock.GetNetworkFunc == nil {
-		panic("EVMKeeperMock.GetNetworkFunc: method is nil but EVMKeeper.GetNetwork was just called")
+		panic("ChainKeeperMock.GetNetworkFunc: method is nil but ChainKeeper.GetNetwork was just called")
 	}
 	callInfo := struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
@@ -2795,8 +3032,8 @@ func (mock *EVMKeeperMock) GetNetwork(ctx github_com_cosmos_cosmos_sdk_types.Con
 
 // GetNetworkCalls gets all the calls that were made to GetNetwork.
 // Check the length with:
-//     len(mockedEVMKeeper.GetNetworkCalls())
-func (mock *EVMKeeperMock) GetNetworkCalls() []struct {
+//     len(mockedChainKeeper.GetNetworkCalls())
+func (mock *ChainKeeperMock) GetNetworkCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
 	var calls []struct {
@@ -2809,9 +3046,9 @@ func (mock *EVMKeeperMock) GetNetworkCalls() []struct {
 }
 
 // GetNetworkByID calls GetNetworkByIDFunc.
-func (mock *EVMKeeperMock) GetNetworkByID(ctx github_com_cosmos_cosmos_sdk_types.Context, id *big.Int) (string, bool) {
+func (mock *ChainKeeperMock) GetNetworkByID(ctx github_com_cosmos_cosmos_sdk_types.Context, id *big.Int) (string, bool) {
 	if mock.GetNetworkByIDFunc == nil {
-		panic("EVMKeeperMock.GetNetworkByIDFunc: method is nil but EVMKeeper.GetNetworkByID was just called")
+		panic("ChainKeeperMock.GetNetworkByIDFunc: method is nil but ChainKeeper.GetNetworkByID was just called")
 	}
 	callInfo := struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
@@ -2828,8 +3065,8 @@ func (mock *EVMKeeperMock) GetNetworkByID(ctx github_com_cosmos_cosmos_sdk_types
 
 // GetNetworkByIDCalls gets all the calls that were made to GetNetworkByID.
 // Check the length with:
-//     len(mockedEVMKeeper.GetNetworkByIDCalls())
-func (mock *EVMKeeperMock) GetNetworkByIDCalls() []struct {
+//     len(mockedChainKeeper.GetNetworkByIDCalls())
+func (mock *ChainKeeperMock) GetNetworkByIDCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 	ID  *big.Int
 } {
@@ -2843,76 +3080,10 @@ func (mock *EVMKeeperMock) GetNetworkByIDCalls() []struct {
 	return calls
 }
 
-// GetParams calls GetParamsFunc.
-func (mock *EVMKeeperMock) GetParams(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.Params {
-	if mock.GetParamsFunc == nil {
-		panic("EVMKeeperMock.GetParamsFunc: method is nil but EVMKeeper.GetParams was just called")
-	}
-	callInfo := struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockGetParams.Lock()
-	mock.calls.GetParams = append(mock.calls.GetParams, callInfo)
-	mock.lockGetParams.Unlock()
-	return mock.GetParamsFunc(ctx)
-}
-
-// GetParamsCalls gets all the calls that were made to GetParams.
-// Check the length with:
-//     len(mockedEVMKeeper.GetParamsCalls())
-func (mock *EVMKeeperMock) GetParamsCalls() []struct {
-	Ctx github_com_cosmos_cosmos_sdk_types.Context
-} {
-	var calls []struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}
-	mock.lockGetParams.RLock()
-	calls = mock.calls.GetParams
-	mock.lockGetParams.RUnlock()
-	return calls
-}
-
-// GetPendingChain calls GetPendingChainFunc.
-func (mock *EVMKeeperMock) GetPendingChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (nexus.Chain, bool) {
-	if mock.GetPendingChainFunc == nil {
-		panic("EVMKeeperMock.GetPendingChainFunc: method is nil but EVMKeeper.GetPendingChain was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain string
-	}{
-		Ctx:   ctx,
-		Chain: chain,
-	}
-	mock.lockGetPendingChain.Lock()
-	mock.calls.GetPendingChain = append(mock.calls.GetPendingChain, callInfo)
-	mock.lockGetPendingChain.Unlock()
-	return mock.GetPendingChainFunc(ctx, chain)
-}
-
-// GetPendingChainCalls gets all the calls that were made to GetPendingChain.
-// Check the length with:
-//     len(mockedEVMKeeper.GetPendingChainCalls())
-func (mock *EVMKeeperMock) GetPendingChainCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	Chain string
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain string
-	}
-	mock.lockGetPendingChain.RLock()
-	calls = mock.calls.GetPendingChain
-	mock.lockGetPendingChain.RUnlock()
-	return calls
-}
-
 // GetPendingDeposit calls GetPendingDepositFunc.
-func (mock *EVMKeeperMock) GetPendingDeposit(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta) (types.ERC20Deposit, bool) {
+func (mock *ChainKeeperMock) GetPendingDeposit(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta) (types.ERC20Deposit, bool) {
 	if mock.GetPendingDepositFunc == nil {
-		panic("EVMKeeperMock.GetPendingDepositFunc: method is nil but EVMKeeper.GetPendingDeposit was just called")
+		panic("ChainKeeperMock.GetPendingDepositFunc: method is nil but ChainKeeper.GetPendingDeposit was just called")
 	}
 	callInfo := struct {
 		Ctx  github_com_cosmos_cosmos_sdk_types.Context
@@ -2929,8 +3100,8 @@ func (mock *EVMKeeperMock) GetPendingDeposit(ctx github_com_cosmos_cosmos_sdk_ty
 
 // GetPendingDepositCalls gets all the calls that were made to GetPendingDeposit.
 // Check the length with:
-//     len(mockedEVMKeeper.GetPendingDepositCalls())
-func (mock *EVMKeeperMock) GetPendingDepositCalls() []struct {
+//     len(mockedChainKeeper.GetPendingDepositCalls())
+func (mock *ChainKeeperMock) GetPendingDepositCalls() []struct {
 	Ctx  github_com_cosmos_cosmos_sdk_types.Context
 	Poll exported.PollMeta
 } {
@@ -2945,9 +3116,9 @@ func (mock *EVMKeeperMock) GetPendingDepositCalls() []struct {
 }
 
 // GetPendingTokenDeployment calls GetPendingTokenDeploymentFunc.
-func (mock *EVMKeeperMock) GetPendingTokenDeployment(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta) (types.ERC20TokenDeployment, bool) {
+func (mock *ChainKeeperMock) GetPendingTokenDeployment(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta) (types.ERC20TokenDeployment, bool) {
 	if mock.GetPendingTokenDeploymentFunc == nil {
-		panic("EVMKeeperMock.GetPendingTokenDeploymentFunc: method is nil but EVMKeeper.GetPendingTokenDeployment was just called")
+		panic("ChainKeeperMock.GetPendingTokenDeploymentFunc: method is nil but ChainKeeper.GetPendingTokenDeployment was just called")
 	}
 	callInfo := struct {
 		Ctx  github_com_cosmos_cosmos_sdk_types.Context
@@ -2964,8 +3135,8 @@ func (mock *EVMKeeperMock) GetPendingTokenDeployment(ctx github_com_cosmos_cosmo
 
 // GetPendingTokenDeploymentCalls gets all the calls that were made to GetPendingTokenDeployment.
 // Check the length with:
-//     len(mockedEVMKeeper.GetPendingTokenDeploymentCalls())
-func (mock *EVMKeeperMock) GetPendingTokenDeploymentCalls() []struct {
+//     len(mockedChainKeeper.GetPendingTokenDeploymentCalls())
+func (mock *ChainKeeperMock) GetPendingTokenDeploymentCalls() []struct {
 	Ctx  github_com_cosmos_cosmos_sdk_types.Context
 	Poll exported.PollMeta
 } {
@@ -2980,9 +3151,9 @@ func (mock *EVMKeeperMock) GetPendingTokenDeploymentCalls() []struct {
 }
 
 // GetPendingTransferOwnership calls GetPendingTransferOwnershipFunc.
-func (mock *EVMKeeperMock) GetPendingTransferOwnership(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta) (types.TransferOwnership, bool) {
+func (mock *ChainKeeperMock) GetPendingTransferOwnership(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta) (types.TransferOwnership, bool) {
 	if mock.GetPendingTransferOwnershipFunc == nil {
-		panic("EVMKeeperMock.GetPendingTransferOwnershipFunc: method is nil but EVMKeeper.GetPendingTransferOwnership was just called")
+		panic("ChainKeeperMock.GetPendingTransferOwnershipFunc: method is nil but ChainKeeper.GetPendingTransferOwnership was just called")
 	}
 	callInfo := struct {
 		Ctx  github_com_cosmos_cosmos_sdk_types.Context
@@ -2999,8 +3170,8 @@ func (mock *EVMKeeperMock) GetPendingTransferOwnership(ctx github_com_cosmos_cos
 
 // GetPendingTransferOwnershipCalls gets all the calls that were made to GetPendingTransferOwnership.
 // Check the length with:
-//     len(mockedEVMKeeper.GetPendingTransferOwnershipCalls())
-func (mock *EVMKeeperMock) GetPendingTransferOwnershipCalls() []struct {
+//     len(mockedChainKeeper.GetPendingTransferOwnershipCalls())
+func (mock *ChainKeeperMock) GetPendingTransferOwnershipCalls() []struct {
 	Ctx  github_com_cosmos_cosmos_sdk_types.Context
 	Poll exported.PollMeta
 } {
@@ -3015,9 +3186,9 @@ func (mock *EVMKeeperMock) GetPendingTransferOwnershipCalls() []struct {
 }
 
 // GetRequiredConfirmationHeight calls GetRequiredConfirmationHeightFunc.
-func (mock *EVMKeeperMock) GetRequiredConfirmationHeight(ctx github_com_cosmos_cosmos_sdk_types.Context) (uint64, bool) {
+func (mock *ChainKeeperMock) GetRequiredConfirmationHeight(ctx github_com_cosmos_cosmos_sdk_types.Context) (uint64, bool) {
 	if mock.GetRequiredConfirmationHeightFunc == nil {
-		panic("EVMKeeperMock.GetRequiredConfirmationHeightFunc: method is nil but EVMKeeper.GetRequiredConfirmationHeight was just called")
+		panic("ChainKeeperMock.GetRequiredConfirmationHeightFunc: method is nil but ChainKeeper.GetRequiredConfirmationHeight was just called")
 	}
 	callInfo := struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
@@ -3032,8 +3203,8 @@ func (mock *EVMKeeperMock) GetRequiredConfirmationHeight(ctx github_com_cosmos_c
 
 // GetRequiredConfirmationHeightCalls gets all the calls that were made to GetRequiredConfirmationHeight.
 // Check the length with:
-//     len(mockedEVMKeeper.GetRequiredConfirmationHeightCalls())
-func (mock *EVMKeeperMock) GetRequiredConfirmationHeightCalls() []struct {
+//     len(mockedChainKeeper.GetRequiredConfirmationHeightCalls())
+func (mock *ChainKeeperMock) GetRequiredConfirmationHeightCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
 	var calls []struct {
@@ -3046,9 +3217,9 @@ func (mock *EVMKeeperMock) GetRequiredConfirmationHeightCalls() []struct {
 }
 
 // GetRevoteLockingPeriod calls GetRevoteLockingPeriodFunc.
-func (mock *EVMKeeperMock) GetRevoteLockingPeriod(ctx github_com_cosmos_cosmos_sdk_types.Context) (int64, bool) {
+func (mock *ChainKeeperMock) GetRevoteLockingPeriod(ctx github_com_cosmos_cosmos_sdk_types.Context) (int64, bool) {
 	if mock.GetRevoteLockingPeriodFunc == nil {
-		panic("EVMKeeperMock.GetRevoteLockingPeriodFunc: method is nil but EVMKeeper.GetRevoteLockingPeriod was just called")
+		panic("ChainKeeperMock.GetRevoteLockingPeriodFunc: method is nil but ChainKeeper.GetRevoteLockingPeriod was just called")
 	}
 	callInfo := struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
@@ -3063,8 +3234,8 @@ func (mock *EVMKeeperMock) GetRevoteLockingPeriod(ctx github_com_cosmos_cosmos_s
 
 // GetRevoteLockingPeriodCalls gets all the calls that were made to GetRevoteLockingPeriod.
 // Check the length with:
-//     len(mockedEVMKeeper.GetRevoteLockingPeriodCalls())
-func (mock *EVMKeeperMock) GetRevoteLockingPeriodCalls() []struct {
+//     len(mockedChainKeeper.GetRevoteLockingPeriodCalls())
+func (mock *ChainKeeperMock) GetRevoteLockingPeriodCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
 	var calls []struct {
@@ -3077,9 +3248,9 @@ func (mock *EVMKeeperMock) GetRevoteLockingPeriodCalls() []struct {
 }
 
 // GetTokenAddress calls GetTokenAddressFunc.
-func (mock *EVMKeeperMock) GetTokenAddress(ctx github_com_cosmos_cosmos_sdk_types.Context, symbol string, gatewayAddr common.Address) (common.Address, error) {
+func (mock *ChainKeeperMock) GetTokenAddress(ctx github_com_cosmos_cosmos_sdk_types.Context, symbol string, gatewayAddr common.Address) (common.Address, error) {
 	if mock.GetTokenAddressFunc == nil {
-		panic("EVMKeeperMock.GetTokenAddressFunc: method is nil but EVMKeeper.GetTokenAddress was just called")
+		panic("ChainKeeperMock.GetTokenAddressFunc: method is nil but ChainKeeper.GetTokenAddress was just called")
 	}
 	callInfo := struct {
 		Ctx         github_com_cosmos_cosmos_sdk_types.Context
@@ -3098,8 +3269,8 @@ func (mock *EVMKeeperMock) GetTokenAddress(ctx github_com_cosmos_cosmos_sdk_type
 
 // GetTokenAddressCalls gets all the calls that were made to GetTokenAddress.
 // Check the length with:
-//     len(mockedEVMKeeper.GetTokenAddressCalls())
-func (mock *EVMKeeperMock) GetTokenAddressCalls() []struct {
+//     len(mockedChainKeeper.GetTokenAddressCalls())
+func (mock *ChainKeeperMock) GetTokenAddressCalls() []struct {
 	Ctx         github_com_cosmos_cosmos_sdk_types.Context
 	Symbol      string
 	GatewayAddr common.Address
@@ -3116,9 +3287,9 @@ func (mock *EVMKeeperMock) GetTokenAddressCalls() []struct {
 }
 
 // GetTokenByteCodes calls GetTokenByteCodesFunc.
-func (mock *EVMKeeperMock) GetTokenByteCodes(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool) {
+func (mock *ChainKeeperMock) GetTokenByteCodes(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool) {
 	if mock.GetTokenByteCodesFunc == nil {
-		panic("EVMKeeperMock.GetTokenByteCodesFunc: method is nil but EVMKeeper.GetTokenByteCodes was just called")
+		panic("ChainKeeperMock.GetTokenByteCodesFunc: method is nil but ChainKeeper.GetTokenByteCodes was just called")
 	}
 	callInfo := struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
@@ -3133,8 +3304,8 @@ func (mock *EVMKeeperMock) GetTokenByteCodes(ctx github_com_cosmos_cosmos_sdk_ty
 
 // GetTokenByteCodesCalls gets all the calls that were made to GetTokenByteCodes.
 // Check the length with:
-//     len(mockedEVMKeeper.GetTokenByteCodesCalls())
-func (mock *EVMKeeperMock) GetTokenByteCodesCalls() []struct {
+//     len(mockedChainKeeper.GetTokenByteCodesCalls())
+func (mock *ChainKeeperMock) GetTokenByteCodesCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
 	var calls []struct {
@@ -3147,9 +3318,9 @@ func (mock *EVMKeeperMock) GetTokenByteCodesCalls() []struct {
 }
 
 // Logger calls LoggerFunc.
-func (mock *EVMKeeperMock) Logger(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
+func (mock *ChainKeeperMock) Logger(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
 	if mock.LoggerFunc == nil {
-		panic("EVMKeeperMock.LoggerFunc: method is nil but EVMKeeper.Logger was just called")
+		panic("ChainKeeperMock.LoggerFunc: method is nil but ChainKeeper.Logger was just called")
 	}
 	callInfo := struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
@@ -3164,8 +3335,8 @@ func (mock *EVMKeeperMock) Logger(ctx github_com_cosmos_cosmos_sdk_types.Context
 
 // LoggerCalls gets all the calls that were made to Logger.
 // Check the length with:
-//     len(mockedEVMKeeper.LoggerCalls())
-func (mock *EVMKeeperMock) LoggerCalls() []struct {
+//     len(mockedChainKeeper.LoggerCalls())
+func (mock *ChainKeeperMock) LoggerCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
 	var calls []struct {
@@ -3178,9 +3349,9 @@ func (mock *EVMKeeperMock) LoggerCalls() []struct {
 }
 
 // SetBurnerInfo calls SetBurnerInfoFunc.
-func (mock *EVMKeeperMock) SetBurnerInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, burnerAddr common.Address, burnerInfo *types.BurnerInfo) {
+func (mock *ChainKeeperMock) SetBurnerInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, burnerAddr common.Address, burnerInfo *types.BurnerInfo) {
 	if mock.SetBurnerInfoFunc == nil {
-		panic("EVMKeeperMock.SetBurnerInfoFunc: method is nil but EVMKeeper.SetBurnerInfo was just called")
+		panic("ChainKeeperMock.SetBurnerInfoFunc: method is nil but ChainKeeper.SetBurnerInfo was just called")
 	}
 	callInfo := struct {
 		Ctx        github_com_cosmos_cosmos_sdk_types.Context
@@ -3199,8 +3370,8 @@ func (mock *EVMKeeperMock) SetBurnerInfo(ctx github_com_cosmos_cosmos_sdk_types.
 
 // SetBurnerInfoCalls gets all the calls that were made to SetBurnerInfo.
 // Check the length with:
-//     len(mockedEVMKeeper.SetBurnerInfoCalls())
-func (mock *EVMKeeperMock) SetBurnerInfoCalls() []struct {
+//     len(mockedChainKeeper.SetBurnerInfoCalls())
+func (mock *ChainKeeperMock) SetBurnerInfoCalls() []struct {
 	Ctx        github_com_cosmos_cosmos_sdk_types.Context
 	BurnerAddr common.Address
 	BurnerInfo *types.BurnerInfo
@@ -3217,9 +3388,9 @@ func (mock *EVMKeeperMock) SetBurnerInfoCalls() []struct {
 }
 
 // SetCommandData calls SetCommandDataFunc.
-func (mock *EVMKeeperMock) SetCommandData(ctx github_com_cosmos_cosmos_sdk_types.Context, commandID types.CommandID, commandData []byte) {
+func (mock *ChainKeeperMock) SetCommandData(ctx github_com_cosmos_cosmos_sdk_types.Context, commandID types.CommandID, commandData []byte) {
 	if mock.SetCommandDataFunc == nil {
-		panic("EVMKeeperMock.SetCommandDataFunc: method is nil but EVMKeeper.SetCommandData was just called")
+		panic("ChainKeeperMock.SetCommandDataFunc: method is nil but ChainKeeper.SetCommandData was just called")
 	}
 	callInfo := struct {
 		Ctx         github_com_cosmos_cosmos_sdk_types.Context
@@ -3238,8 +3409,8 @@ func (mock *EVMKeeperMock) SetCommandData(ctx github_com_cosmos_cosmos_sdk_types
 
 // SetCommandDataCalls gets all the calls that were made to SetCommandData.
 // Check the length with:
-//     len(mockedEVMKeeper.SetCommandDataCalls())
-func (mock *EVMKeeperMock) SetCommandDataCalls() []struct {
+//     len(mockedChainKeeper.SetCommandDataCalls())
+func (mock *ChainKeeperMock) SetCommandDataCalls() []struct {
 	Ctx         github_com_cosmos_cosmos_sdk_types.Context
 	CommandID   types.CommandID
 	CommandData []byte
@@ -3256,9 +3427,9 @@ func (mock *EVMKeeperMock) SetCommandDataCalls() []struct {
 }
 
 // SetDeposit calls SetDepositFunc.
-func (mock *EVMKeeperMock) SetDeposit(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit, state types.DepositState) {
+func (mock *ChainKeeperMock) SetDeposit(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit, state types.DepositState) {
 	if mock.SetDepositFunc == nil {
-		panic("EVMKeeperMock.SetDepositFunc: method is nil but EVMKeeper.SetDeposit was just called")
+		panic("ChainKeeperMock.SetDepositFunc: method is nil but ChainKeeper.SetDeposit was just called")
 	}
 	callInfo := struct {
 		Ctx     github_com_cosmos_cosmos_sdk_types.Context
@@ -3277,8 +3448,8 @@ func (mock *EVMKeeperMock) SetDeposit(ctx github_com_cosmos_cosmos_sdk_types.Con
 
 // SetDepositCalls gets all the calls that were made to SetDeposit.
 // Check the length with:
-//     len(mockedEVMKeeper.SetDepositCalls())
-func (mock *EVMKeeperMock) SetDepositCalls() []struct {
+//     len(mockedChainKeeper.SetDepositCalls())
+func (mock *ChainKeeperMock) SetDepositCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
 	Deposit types.ERC20Deposit
 	State   types.DepositState
@@ -3295,9 +3466,9 @@ func (mock *EVMKeeperMock) SetDepositCalls() []struct {
 }
 
 // SetGatewayAddress calls SetGatewayAddressFunc.
-func (mock *EVMKeeperMock) SetGatewayAddress(ctx github_com_cosmos_cosmos_sdk_types.Context, addr common.Address) {
+func (mock *ChainKeeperMock) SetGatewayAddress(ctx github_com_cosmos_cosmos_sdk_types.Context, addr common.Address) {
 	if mock.SetGatewayAddressFunc == nil {
-		panic("EVMKeeperMock.SetGatewayAddressFunc: method is nil but EVMKeeper.SetGatewayAddress was just called")
+		panic("ChainKeeperMock.SetGatewayAddressFunc: method is nil but ChainKeeper.SetGatewayAddress was just called")
 	}
 	callInfo := struct {
 		Ctx  github_com_cosmos_cosmos_sdk_types.Context
@@ -3314,8 +3485,8 @@ func (mock *EVMKeeperMock) SetGatewayAddress(ctx github_com_cosmos_cosmos_sdk_ty
 
 // SetGatewayAddressCalls gets all the calls that were made to SetGatewayAddress.
 // Check the length with:
-//     len(mockedEVMKeeper.SetGatewayAddressCalls())
-func (mock *EVMKeeperMock) SetGatewayAddressCalls() []struct {
+//     len(mockedChainKeeper.SetGatewayAddressCalls())
+func (mock *ChainKeeperMock) SetGatewayAddressCalls() []struct {
 	Ctx  github_com_cosmos_cosmos_sdk_types.Context
 	Addr common.Address
 } {
@@ -3329,80 +3500,10 @@ func (mock *EVMKeeperMock) SetGatewayAddressCalls() []struct {
 	return calls
 }
 
-// SetParams calls SetParamsFunc.
-func (mock *EVMKeeperMock) SetParams(ctx github_com_cosmos_cosmos_sdk_types.Context, params ...types.Params) {
-	if mock.SetParamsFunc == nil {
-		panic("EVMKeeperMock.SetParamsFunc: method is nil but EVMKeeper.SetParams was just called")
-	}
-	callInfo := struct {
-		Ctx    github_com_cosmos_cosmos_sdk_types.Context
-		Params []types.Params
-	}{
-		Ctx:    ctx,
-		Params: params,
-	}
-	mock.lockSetParams.Lock()
-	mock.calls.SetParams = append(mock.calls.SetParams, callInfo)
-	mock.lockSetParams.Unlock()
-	mock.SetParamsFunc(ctx, params...)
-}
-
-// SetParamsCalls gets all the calls that were made to SetParams.
-// Check the length with:
-//     len(mockedEVMKeeper.SetParamsCalls())
-func (mock *EVMKeeperMock) SetParamsCalls() []struct {
-	Ctx    github_com_cosmos_cosmos_sdk_types.Context
-	Params []types.Params
-} {
-	var calls []struct {
-		Ctx    github_com_cosmos_cosmos_sdk_types.Context
-		Params []types.Params
-	}
-	mock.lockSetParams.RLock()
-	calls = mock.calls.SetParams
-	mock.lockSetParams.RUnlock()
-	return calls
-}
-
-// SetPendingChain calls SetPendingChainFunc.
-func (mock *EVMKeeperMock) SetPendingChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain) {
-	if mock.SetPendingChainFunc == nil {
-		panic("EVMKeeperMock.SetPendingChainFunc: method is nil but EVMKeeper.SetPendingChain was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain nexus.Chain
-	}{
-		Ctx:   ctx,
-		Chain: chain,
-	}
-	mock.lockSetPendingChain.Lock()
-	mock.calls.SetPendingChain = append(mock.calls.SetPendingChain, callInfo)
-	mock.lockSetPendingChain.Unlock()
-	mock.SetPendingChainFunc(ctx, chain)
-}
-
-// SetPendingChainCalls gets all the calls that were made to SetPendingChain.
-// Check the length with:
-//     len(mockedEVMKeeper.SetPendingChainCalls())
-func (mock *EVMKeeperMock) SetPendingChainCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	Chain nexus.Chain
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain nexus.Chain
-	}
-	mock.lockSetPendingChain.RLock()
-	calls = mock.calls.SetPendingChain
-	mock.lockSetPendingChain.RUnlock()
-	return calls
-}
-
 // SetPendingDeposit calls SetPendingDepositFunc.
-func (mock *EVMKeeperMock) SetPendingDeposit(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, deposit *types.ERC20Deposit) {
+func (mock *ChainKeeperMock) SetPendingDeposit(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, deposit *types.ERC20Deposit) {
 	if mock.SetPendingDepositFunc == nil {
-		panic("EVMKeeperMock.SetPendingDepositFunc: method is nil but EVMKeeper.SetPendingDeposit was just called")
+		panic("ChainKeeperMock.SetPendingDepositFunc: method is nil but ChainKeeper.SetPendingDeposit was just called")
 	}
 	callInfo := struct {
 		Ctx     github_com_cosmos_cosmos_sdk_types.Context
@@ -3421,8 +3522,8 @@ func (mock *EVMKeeperMock) SetPendingDeposit(ctx github_com_cosmos_cosmos_sdk_ty
 
 // SetPendingDepositCalls gets all the calls that were made to SetPendingDeposit.
 // Check the length with:
-//     len(mockedEVMKeeper.SetPendingDepositCalls())
-func (mock *EVMKeeperMock) SetPendingDepositCalls() []struct {
+//     len(mockedChainKeeper.SetPendingDepositCalls())
+func (mock *ChainKeeperMock) SetPendingDepositCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
 	Poll    exported.PollMeta
 	Deposit *types.ERC20Deposit
@@ -3439,9 +3540,9 @@ func (mock *EVMKeeperMock) SetPendingDepositCalls() []struct {
 }
 
 // SetPendingTokenDeployment calls SetPendingTokenDeploymentFunc.
-func (mock *EVMKeeperMock) SetPendingTokenDeployment(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, tokenDeploy types.ERC20TokenDeployment) {
+func (mock *ChainKeeperMock) SetPendingTokenDeployment(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, tokenDeploy types.ERC20TokenDeployment) {
 	if mock.SetPendingTokenDeploymentFunc == nil {
-		panic("EVMKeeperMock.SetPendingTokenDeploymentFunc: method is nil but EVMKeeper.SetPendingTokenDeployment was just called")
+		panic("ChainKeeperMock.SetPendingTokenDeploymentFunc: method is nil but ChainKeeper.SetPendingTokenDeployment was just called")
 	}
 	callInfo := struct {
 		Ctx         github_com_cosmos_cosmos_sdk_types.Context
@@ -3460,8 +3561,8 @@ func (mock *EVMKeeperMock) SetPendingTokenDeployment(ctx github_com_cosmos_cosmo
 
 // SetPendingTokenDeploymentCalls gets all the calls that were made to SetPendingTokenDeployment.
 // Check the length with:
-//     len(mockedEVMKeeper.SetPendingTokenDeploymentCalls())
-func (mock *EVMKeeperMock) SetPendingTokenDeploymentCalls() []struct {
+//     len(mockedChainKeeper.SetPendingTokenDeploymentCalls())
+func (mock *ChainKeeperMock) SetPendingTokenDeploymentCalls() []struct {
 	Ctx         github_com_cosmos_cosmos_sdk_types.Context
 	Poll        exported.PollMeta
 	TokenDeploy types.ERC20TokenDeployment
@@ -3478,9 +3579,9 @@ func (mock *EVMKeeperMock) SetPendingTokenDeploymentCalls() []struct {
 }
 
 // SetPendingTransferOwnership calls SetPendingTransferOwnershipFunc.
-func (mock *EVMKeeperMock) SetPendingTransferOwnership(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, transferOwnership *types.TransferOwnership) {
+func (mock *ChainKeeperMock) SetPendingTransferOwnership(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.PollMeta, transferOwnership *types.TransferOwnership) {
 	if mock.SetPendingTransferOwnershipFunc == nil {
-		panic("EVMKeeperMock.SetPendingTransferOwnershipFunc: method is nil but EVMKeeper.SetPendingTransferOwnership was just called")
+		panic("ChainKeeperMock.SetPendingTransferOwnershipFunc: method is nil but ChainKeeper.SetPendingTransferOwnership was just called")
 	}
 	callInfo := struct {
 		Ctx               github_com_cosmos_cosmos_sdk_types.Context
@@ -3499,8 +3600,8 @@ func (mock *EVMKeeperMock) SetPendingTransferOwnership(ctx github_com_cosmos_cos
 
 // SetPendingTransferOwnershipCalls gets all the calls that were made to SetPendingTransferOwnership.
 // Check the length with:
-//     len(mockedEVMKeeper.SetPendingTransferOwnershipCalls())
-func (mock *EVMKeeperMock) SetPendingTransferOwnershipCalls() []struct {
+//     len(mockedChainKeeper.SetPendingTransferOwnershipCalls())
+func (mock *ChainKeeperMock) SetPendingTransferOwnershipCalls() []struct {
 	Ctx               github_com_cosmos_cosmos_sdk_types.Context
 	Poll              exported.PollMeta
 	TransferOwnership *types.TransferOwnership
@@ -3517,9 +3618,9 @@ func (mock *EVMKeeperMock) SetPendingTransferOwnershipCalls() []struct {
 }
 
 // SetTokenInfo calls SetTokenInfoFunc.
-func (mock *EVMKeeperMock) SetTokenInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, msg *types.SignDeployTokenRequest) {
+func (mock *ChainKeeperMock) SetTokenInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, msg *types.SignDeployTokenRequest) {
 	if mock.SetTokenInfoFunc == nil {
-		panic("EVMKeeperMock.SetTokenInfoFunc: method is nil but EVMKeeper.SetTokenInfo was just called")
+		panic("ChainKeeperMock.SetTokenInfoFunc: method is nil but ChainKeeper.SetTokenInfo was just called")
 	}
 	callInfo := struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
@@ -3536,8 +3637,8 @@ func (mock *EVMKeeperMock) SetTokenInfo(ctx github_com_cosmos_cosmos_sdk_types.C
 
 // SetTokenInfoCalls gets all the calls that were made to SetTokenInfo.
 // Check the length with:
-//     len(mockedEVMKeeper.SetTokenInfoCalls())
-func (mock *EVMKeeperMock) SetTokenInfoCalls() []struct {
+//     len(mockedChainKeeper.SetTokenInfoCalls())
+func (mock *ChainKeeperMock) SetTokenInfoCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 	Msg *types.SignDeployTokenRequest
 } {
@@ -3552,9 +3653,9 @@ func (mock *EVMKeeperMock) SetTokenInfoCalls() []struct {
 }
 
 // SetUnsignedTx calls SetUnsignedTxFunc.
-func (mock *EVMKeeperMock) SetUnsignedTx(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, tx *ethTypes.Transaction) {
+func (mock *ChainKeeperMock) SetUnsignedTx(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, tx *ethTypes.Transaction) {
 	if mock.SetUnsignedTxFunc == nil {
-		panic("EVMKeeperMock.SetUnsignedTxFunc: method is nil but EVMKeeper.SetUnsignedTx was just called")
+		panic("ChainKeeperMock.SetUnsignedTxFunc: method is nil but ChainKeeper.SetUnsignedTx was just called")
 	}
 	callInfo := struct {
 		Ctx  github_com_cosmos_cosmos_sdk_types.Context
@@ -3573,8 +3674,8 @@ func (mock *EVMKeeperMock) SetUnsignedTx(ctx github_com_cosmos_cosmos_sdk_types.
 
 // SetUnsignedTxCalls gets all the calls that were made to SetUnsignedTx.
 // Check the length with:
-//     len(mockedEVMKeeper.SetUnsignedTxCalls())
-func (mock *EVMKeeperMock) SetUnsignedTxCalls() []struct {
+//     len(mockedChainKeeper.SetUnsignedTxCalls())
+func (mock *ChainKeeperMock) SetUnsignedTxCalls() []struct {
 	Ctx  github_com_cosmos_cosmos_sdk_types.Context
 	TxID string
 	Tx   *ethTypes.Transaction

@@ -22,7 +22,7 @@ import (
 func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
 	var (
 		ctx    sdk.Context
-		keeper evmKeeper.Keeper
+		keeper types.BaseKeeper
 		chain  string
 	)
 
@@ -55,8 +55,8 @@ func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
 
 func TestKeeper_GetParams(t *testing.T) {
 	var (
-		keeperWithSubspace    evmKeeper.Keeper
-		keeperWithoutSubspace evmKeeper.Keeper
+		keeperWithSubspace    types.BaseKeeper
+		keeperWithoutSubspace types.BaseKeeper
 		ctx                   sdk.Context
 	)
 	setup := func() {

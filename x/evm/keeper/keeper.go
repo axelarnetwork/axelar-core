@@ -48,9 +48,10 @@ const (
 	archivedTransferOwnershipPrefix = "archived_transfer_ownership_"
 )
 
-var _ types.EVMKeeper = Keeper{}
+var _ types.BaseKeeper = Keeper{}
+var _ types.ChainKeeper = Keeper{}
 
-// Keeper represents the EVM keeper
+// Keeper implements both the base keeper and chain keeper
 type Keeper struct {
 	chain        string
 	storeKey     sdk.StoreKey
@@ -59,8 +60,8 @@ type Keeper struct {
 	subspaces    map[string]params.Subspace
 }
 
-// NewKeeper returns a new EVM keeper
-func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramsKeeper types.ParamsKeeper) Keeper {
+// NewKeeper returns a new EVM base keeper
+func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramsKeeper types.ParamsKeeper) types.BaseKeeper {
 	return Keeper{
 		chain:        "",
 		cdc:          cdc,
@@ -76,7 +77,7 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 }
 
 // GetChain returns the keeper associated to the given chain
-func (k Keeper) GetChain(ctx sdk.Context, chain string) types.EVMKeeper {
+func (k Keeper) GetChain(ctx sdk.Context, chain string) types.ChainKeeper {
 	k.chain = strings.ToLower(chain)
 	return k
 }
@@ -130,6 +131,11 @@ func (k Keeper) GetParams(ctx sdk.Context) []types.Params {
 	}
 
 	return params
+}
+
+// GetName returns the chain name
+func (k Keeper) GetName() string {
+	return k.chain
 }
 
 // GetNetwork returns the EVM network Axelar-Core is expected to connect to

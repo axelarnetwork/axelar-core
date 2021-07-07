@@ -25,7 +25,7 @@ import (
 var _ types.MsgServiceServer = msgServer{}
 
 type msgServer struct {
-	types.EVMKeeper
+	types.BaseKeeper
 	tss         types.TSS
 	signer      types.Signer
 	nexus       types.Nexus
@@ -35,9 +35,9 @@ type msgServer struct {
 
 // NewMsgServerImpl returns an implementation of the bitcoin MsgServiceServer interface
 // for the provided Keeper.
-func NewMsgServerImpl(keeper types.EVMKeeper, t types.TSS, n types.Nexus, s types.Signer, v types.Voter, snap types.Snapshotter) types.MsgServiceServer {
+func NewMsgServerImpl(keeper types.BaseKeeper, t types.TSS, n types.Nexus, s types.Signer, v types.Voter, snap types.Snapshotter) types.MsgServiceServer {
 	return msgServer{
-		EVMKeeper:   keeper,
+		BaseKeeper:  keeper,
 		tss:         t,
 		signer:      s,
 		nexus:       n,
@@ -309,7 +309,7 @@ func (s msgServer) ConfirmTransferOwnership(c context.Context, req *types.Confir
 
 	keeper := s.GetChain(ctx, chain.Name)
 
-	gatewayAddr, ok := s.GetGatewayAddress(ctx)
+	gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}

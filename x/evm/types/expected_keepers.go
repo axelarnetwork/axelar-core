@@ -18,20 +18,26 @@ import (
 	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . TSS Voter Signer Nexus Snapshotter EVMKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . TSS Voter Signer Nexus Snapshotter BaseKeeper ChainKeeper
 
-// EVMKeeper is implemented by this module's keeper
-type EVMKeeper interface {
+// BaseKeeper is implemented by this module's base keeper
+type BaseKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
-
-	GetChain(ctx sdk.Context, chain string) EVMKeeper
-	SetPendingChain(ctx sdk.Context, chain nexus.Chain)
-	GetPendingChain(ctx sdk.Context, chain string) (nexus.Chain, bool)
-	DeletePendingChain(ctx sdk.Context, chain string)
 
 	GetParams(ctx sdk.Context) []Params
 	SetParams(ctx sdk.Context, params ...Params)
 
+	GetChain(ctx sdk.Context, chain string) ChainKeeper
+	SetPendingChain(ctx sdk.Context, chain nexus.Chain)
+	GetPendingChain(ctx sdk.Context, chain string) (nexus.Chain, bool)
+	DeletePendingChain(ctx sdk.Context, chain string)
+}
+
+// ChainKeeper is implemented by this module's chain keeper
+type ChainKeeper interface {
+	Logger(ctx sdk.Context) log.Logger
+
+	GetName() string
 	AssembleEthTx(ctx sdk.Context, txID string, pk ecdsa.PublicKey, sig tss.Signature) (*ethTypes.Transaction, error)
 	GetCommandData(ctx sdk.Context, commandID CommandID) []byte
 	GetNetwork(ctx sdk.Context) (string, bool)
