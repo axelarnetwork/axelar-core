@@ -41,6 +41,7 @@ func NewQuerier(k tssTypes.TSSKeeper, v tssTypes.Voter) sdk.Querier {
 func querySigStatus(ctx sdk.Context, k tssTypes.TSSKeeper, v tssTypes.Voter, sigID string) ([]byte, error) {
 	var resp tssTypes.QuerySigResponse
 	if sig, ok := k.GetSig(ctx, sigID); ok {
+		// poll was successful
 		resp := tssTypes.QuerySigResponse{
 			VoteStatus: tssTypes.Decided,
 			R:          sig.R.Bytes(),
@@ -53,10 +54,10 @@ func querySigStatus(ctx sdk.Context, k tssTypes.TSSKeeper, v tssTypes.Voter, sig
 	poll := v.GetPoll(ctx, pollMeta)
 
 	if poll == nil {
-		// poll either never existed or has been deleted
+		// poll either never existed or has been closed
 		resp.VoteStatus = tssTypes.Unspecified
 	} else {
-		// poll still pending a decision
+		// poll still open, pending a decision
 		resp.VoteStatus = tssTypes.Pending
 	}
 
@@ -79,10 +80,10 @@ func queryKeygenStatus(ctx sdk.Context, k tssTypes.TSSKeeper, v tssTypes.Voter, 
 	pollMeta := voting.NewPollMeta(tssTypes.ModuleName, keyID)
 	poll := v.GetPoll(ctx, pollMeta)
 	if poll == nil {
-		// poll either never existed or has been deleted
+		// poll either never existed or has been closed
 		resp.VoteStatus = tssTypes.Unspecified
 	} else {
-		// poll still pending a decision
+		// poll still open, pending a decision
 		resp.VoteStatus = tssTypes.Pending
 	}
 

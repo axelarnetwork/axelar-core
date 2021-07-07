@@ -17,10 +17,11 @@ import (
 
 // rest routes
 const (
-	TxMethodKeygenStart     = "start"
-	TxMethodMasterKeyRotate = "rotate"
+	TxKeygenStart     = "start"
+	TxMasterKeyRotate = "rotate"
 
-	QueryMethodGetSig = keeper.QuerySigStatus
+	QuerySigStatus = keeper.QuerySigStatus
+	QueryKeyStatus = keeper.QueryKeyStatus
 )
 
 // ReqKeygenStart represents a key-gen request
@@ -42,11 +43,12 @@ type ReqKeyRotate struct {
 // RegisterRoutes registers all REST routes with the given router
 func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx := clientUtils.RegisterTxHandlerFn(r, types.RestRoute)
-	registerTx(GetHandlerKeygenStart(cliCtx), TxMethodKeygenStart)
-	registerTx(GetHandlerKeyRotate(cliCtx), TxMethodMasterKeyRotate, clientUtils.PathVarChain)
+	registerTx(GetHandlerKeygenStart(cliCtx), TxKeygenStart)
+	registerTx(GetHandlerKeyRotate(cliCtx), TxMasterKeyRotate, clientUtils.PathVarChain)
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
-	registerQuery(QueryHandlerGetSig(cliCtx), QueryMethodGetSig, clientUtils.PathVarSigID)
+	registerQuery(QueryHandlerSigStatus(cliCtx), QuerySigStatus, clientUtils.PathVarSigID)
+	registerQuery(QueryHandlerKeyStatus(cliCtx), QueryKeyStatus, clientUtils.PathVarKeyID)
 }
 
 // GetHandlerKeygenStart returns the handler to start a keygen
