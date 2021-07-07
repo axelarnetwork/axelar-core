@@ -47,7 +47,7 @@ const (
 func NewQuerier(rpcs map[string]types.RPCClient, k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
-		var chain types.ChainKeeper
+		var chainKeeper types.ChainKeeper
 		if len(path) > 1 {
 			chain = k.GetChain(ctx, path[1])
 		}
