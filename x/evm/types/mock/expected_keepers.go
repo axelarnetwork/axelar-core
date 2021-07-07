@@ -1554,8 +1554,8 @@ var _ types.BaseKeeper = &BaseKeeperMock{}
 // 			DeletePendingChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string)  {
 // 				panic("mock out the DeletePendingChain method")
 // 			},
-// 			GetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) types.ChainKeeper {
-// 				panic("mock out the GetChain method")
+// 			ForChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) types.ChainKeeper {
+// 				panic("mock out the ForChain method")
 // 			},
 // 			GetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.Params {
 // 				panic("mock out the GetParams method")
@@ -1582,8 +1582,8 @@ type BaseKeeperMock struct {
 	// DeletePendingChainFunc mocks the DeletePendingChain method.
 	DeletePendingChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string)
 
-	// GetChainFunc mocks the GetChain method.
-	GetChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) types.ChainKeeper
+	// ForChainFunc mocks the ForChain method.
+	ForChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) types.ChainKeeper
 
 	// GetParamsFunc mocks the GetParams method.
 	GetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.Params
@@ -1609,8 +1609,8 @@ type BaseKeeperMock struct {
 			// Chain is the chain argument value.
 			Chain string
 		}
-		// GetChain holds details about calls to the GetChain method.
-		GetChain []struct {
+		// ForChain holds details about calls to the ForChain method.
+		ForChain []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
@@ -1649,7 +1649,7 @@ type BaseKeeperMock struct {
 		}
 	}
 	lockDeletePendingChain sync.RWMutex
-	lockGetChain           sync.RWMutex
+	lockForChain           sync.RWMutex
 	lockGetParams          sync.RWMutex
 	lockGetPendingChain    sync.RWMutex
 	lockLogger             sync.RWMutex
@@ -1692,10 +1692,10 @@ func (mock *BaseKeeperMock) DeletePendingChainCalls() []struct {
 	return calls
 }
 
-// GetChain calls GetChainFunc.
-func (mock *BaseKeeperMock) GetChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) types.ChainKeeper {
-	if mock.GetChainFunc == nil {
-		panic("BaseKeeperMock.GetChainFunc: method is nil but BaseKeeper.GetChain was just called")
+// ForChain calls ForChainFunc.
+func (mock *BaseKeeperMock) ForChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) types.ChainKeeper {
+	if mock.ForChainFunc == nil {
+		panic("BaseKeeperMock.ForChainFunc: method is nil but BaseKeeper.ForChain was just called")
 	}
 	callInfo := struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
@@ -1704,16 +1704,16 @@ func (mock *BaseKeeperMock) GetChain(ctx github_com_cosmos_cosmos_sdk_types.Cont
 		Ctx:   ctx,
 		Chain: chain,
 	}
-	mock.lockGetChain.Lock()
-	mock.calls.GetChain = append(mock.calls.GetChain, callInfo)
-	mock.lockGetChain.Unlock()
-	return mock.GetChainFunc(ctx, chain)
+	mock.lockForChain.Lock()
+	mock.calls.ForChain = append(mock.calls.ForChain, callInfo)
+	mock.lockForChain.Unlock()
+	return mock.ForChainFunc(ctx, chain)
 }
 
-// GetChainCalls gets all the calls that were made to GetChain.
+// ForChainCalls gets all the calls that were made to ForChain.
 // Check the length with:
-//     len(mockedBaseKeeper.GetChainCalls())
-func (mock *BaseKeeperMock) GetChainCalls() []struct {
+//     len(mockedBaseKeeper.ForChainCalls())
+func (mock *BaseKeeperMock) ForChainCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	Chain string
 } {
@@ -1721,9 +1721,9 @@ func (mock *BaseKeeperMock) GetChainCalls() []struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
 		Chain string
 	}
-	mock.lockGetChain.RLock()
-	calls = mock.calls.GetChain
-	mock.lockGetChain.RUnlock()
+	mock.lockForChain.RLock()
+	calls = mock.calls.ForChain
+	mock.lockForChain.RUnlock()
 	return calls
 }
 

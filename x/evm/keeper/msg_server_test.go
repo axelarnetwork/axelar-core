@@ -196,15 +196,15 @@ func TestLink_Success(t *testing.T) {
 	k := newKeeper(ctx, chain, minConfHeight)
 	msg := createMsgSignDeploy()
 
-	k.GetChain(ctx, chain).SetTokenInfo(ctx, msg)
+	k.ForChain(ctx, chain).SetTokenInfo(ctx, msg)
 
 	recipient := nexus.CrossChainAddress{Address: "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L", Chain: btc.Bitcoin}
-	tokenAddr, err := k.GetChain(ctx, chain).GetTokenAddress(ctx, msg.Symbol, common.HexToAddress(gateway))
+	tokenAddr, err := k.ForChain(ctx, chain).GetTokenAddress(ctx, msg.Symbol, common.HexToAddress(gateway))
 	if err != nil {
 		panic(err)
 	}
 
-	burnAddr, salt, err := k.GetChain(ctx, chain).GetBurnerAddressAndSalt(ctx, tokenAddr, recipient.Address, common.HexToAddress(gateway))
+	burnAddr, salt, err := k.ForChain(ctx, chain).GetBurnerAddressAndSalt(ctx, tokenAddr, recipient.Address, common.HexToAddress(gateway))
 	if err != nil {
 		panic(err)
 	}
@@ -237,7 +237,7 @@ func TestLink_Success(t *testing.T) {
 	assert.Equal(t, sender, n.LinkAddressesCalls()[0].Sender)
 	assert.Equal(t, recipient, n.LinkAddressesCalls()[0].Recipient)
 
-	assert.Equal(t, types.BurnerInfo{TokenAddress: types.Address(tokenAddr), Symbol: msg.Symbol, Salt: types.Hash(salt)}, *k.GetChain(ctx, chain).GetBurnerInfo(ctx, burnAddr))
+	assert.Equal(t, types.BurnerInfo{TokenAddress: types.Address(tokenAddr), Symbol: msg.Symbol, Salt: types.Hash(salt)}, *k.ForChain(ctx, chain).GetBurnerInfo(ctx, burnAddr))
 }
 
 func TestDeployTx_DifferentValue_DifferentHash(t *testing.T) {
@@ -363,7 +363,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 
 		basek = &evmMock.BaseKeeperMock{
 
-			GetChainFunc: func(ctx sdk.Context, chain string) types.ChainKeeper {
+			ForChainFunc: func(ctx sdk.Context, chain string) types.ChainKeeper {
 				if strings.ToLower(chain) == strings.ToLower(msg.Name) {
 					return chaink
 				}
@@ -473,7 +473,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
 
 		basek = &evmMock.BaseKeeperMock{
-			GetChainFunc: func(ctx sdk.Context, chain string) types.ChainKeeper {
+			ForChainFunc: func(ctx sdk.Context, chain string) types.ChainKeeper {
 				if strings.ToLower(chain) == strings.ToLower(evmChain) {
 					return chaink
 				}
@@ -693,7 +693,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
 		basek = &evmMock.BaseKeeperMock{
-			GetChainFunc: func(ctx sdk.Context, chain string) types.ChainKeeper {
+			ForChainFunc: func(ctx sdk.Context, chain string) types.ChainKeeper {
 				if strings.ToLower(chain) == strings.ToLower(evmChain) {
 					return chaink
 				}
@@ -880,7 +880,7 @@ func newKeeper(ctx sdk.Context, chain string, confHeight int64) types.BaseKeeper
 		Burnable:            burnerBC,
 		RevoteLockingPeriod: 50,
 	})
-	k.GetChain(ctx, chain).SetGatewayAddress(ctx, common.HexToAddress(gateway))
+	k.ForChain(ctx, chain).SetGatewayAddress(ctx, common.HexToAddress(gateway))
 
 	return k
 }

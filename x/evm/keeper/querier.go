@@ -49,7 +49,7 @@ func NewQuerier(rpcs map[string]types.RPCClient, k types.BaseKeeper, s types.Sig
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		var chainKeeper types.ChainKeeper
 		if len(path) > 1 {
-			chain = k.GetChain(ctx, path[1])
+			chainKeeper = k.ForChain(ctx, path[1])
 		}
 
 		switch path[0] {
@@ -60,21 +60,21 @@ func NewQuerier(rpcs map[string]types.RPCClient, k types.BaseKeeper, s types.Sig
 		case QKeyAddress:
 			return queryKeyAddress(ctx, s, req.Data)
 		case QAxelarGatewayAddress:
-			return queryAxelarGateway(ctx, chain, n)
+			return queryAxelarGateway(ctx, chainKeeper, n)
 		case QTokenAddress:
-			return QueryTokenAddress(ctx, chain, n, path[2])
+			return QueryTokenAddress(ctx, chainKeeper, n, path[2])
 		case QCommandData:
-			return queryCommandData(ctx, chain, s, n, path[2])
+			return queryCommandData(ctx, chainKeeper, s, n, path[2])
 		case QDepositAddress:
-			return QueryDepositAddress(ctx, chain, n, req.Data)
+			return QueryDepositAddress(ctx, chainKeeper, n, req.Data)
 		case QBytecode:
-			return queryBytecode(ctx, chain, n, path[2])
+			return queryBytecode(ctx, chainKeeper, n, path[2])
 		case QSignedTx:
-			return querySignedTx(ctx, chain, s, n, path[2])
+			return querySignedTx(ctx, chainKeeper, s, n, path[2])
 		case CreateDeployTx:
 			return createDeployGateway(ctx, k, rpcs, s, n, req.Data)
 		case SendTx:
-			return sendSignedTx(ctx, chain, rpcs, s, n, path[2])
+			return sendSignedTx(ctx, chainKeeper, rpcs, s, n, path[2])
 		case SendCommand:
 			return createTxAndSend(ctx, k, rpcs, s, n, req.Data)
 		default:
@@ -239,7 +239,7 @@ func createDeployGateway(ctx sdk.Context, k types.BaseKeeper, rpcs map[string]ty
 		}
 	}
 
-	byteCodes, ok := k.GetChain(ctx, params.Chain).GetGatewayByteCodes(ctx)
+	byteCodes, ok := k.ForChain(ctx, params.Chain).GetGatewayByteCodes(ctx)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("Could not retrieve gateway bytecodes for chain %s", params.Chain))
 	}
@@ -377,7 +377,7 @@ func createTxAndSend(ctx sdk.Context, k types.BaseKeeper, rpcs map[string]types.
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding key for sig ID %s", commandIDHex))
 	}
 
-	commandData := k.GetChain(ctx, params.Chain).GetCommandData(ctx, params.CommandID)
+	commandData := k.ForChain(ctx, params.Chain).GetCommandData(ctx, params.CommandID)
 	commandSig, err := types.ToEthSignature(sig, types.GetEthereumSignHash(commandData), pk.Value)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not create recoverable signature: %v", err))
@@ -390,7 +390,7 @@ func createTxAndSend(ctx sdk.Context, k types.BaseKeeper, rpcs map[string]types.
 
 	k.Logger(ctx).Debug(common.Bytes2Hex(executeData))
 
-	contractAddr, ok := k.GetChain(ctx, params.Chain).GetGatewayAddress(ctx)
+	contractAddr, ok := k.ForChain(ctx, params.Chain).GetGatewayAddress(ctx)
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrEVM, "axelar gateway not deployed yet")
 	}

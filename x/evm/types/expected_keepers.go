@@ -27,7 +27,7 @@ type BaseKeeper interface {
 	GetParams(ctx sdk.Context) []Params
 	SetParams(ctx sdk.Context, params ...Params)
 
-	GetChain(ctx sdk.Context, chain string) ChainKeeper
+	ForChain(ctx sdk.Context, chain string) ChainKeeper
 	SetPendingChain(ctx sdk.Context, chain nexus.Chain)
 	GetPendingChain(ctx sdk.Context, chain string) (nexus.Chain, bool)
 	DeletePendingChain(ctx sdk.Context, chain string)

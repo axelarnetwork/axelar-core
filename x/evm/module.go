@@ -135,7 +135,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 			panic(err)
 		}
 
-		actualNetwork, found := am.keeper.GetChain(ctx, chain).GetNetworkByID(ctx, id)
+		actualNetwork, found := am.keeper.ForChain(ctx, chain).GetNetworkByID(ctx, id)
 		if !found {
 			am.logger.With("module", fmt.Sprintf("x/%s", types.ModuleName)).Error(
 				fmt.Sprintf(
@@ -147,7 +147,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 			continue
 		}
 
-		network, found := am.keeper.GetChain(ctx, chain).GetNetwork(ctx)
+		network, found := am.keeper.ForChain(ctx, chain).GetNetwork(ctx)
 		if !found {
 			panic(fmt.Sprintf(
 				"unable to find chain %s",

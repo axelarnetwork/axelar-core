@@ -54,7 +54,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	keeper := s.GetChain(ctx, senderChain.Name)
+	keeper := s.ForChain(ctx, senderChain.Name)
 
 	gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
 	if !ok {
@@ -116,7 +116,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("token %s is already registered", req.Symbol)
 	}
 
-	keeper := s.GetChain(ctx, chain.Name)
+	keeper := s.ForChain(ctx, chain.Name)
 
 	gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
 	if !ok {
@@ -194,7 +194,7 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 		}
 		counter = s.snapshotter.GetLatestCounter(ctx)
 	}
-	keeper := s.GetChain(ctx, req.Name)
+	keeper := s.ForChain(ctx, req.Name)
 
 	period, ok := keeper.GetRevoteLockingPeriod(ctx)
 	if !ok {
@@ -226,7 +226,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	keeper := s.GetChain(ctx, chain.Name)
+	keeper := s.ForChain(ctx, chain.Name)
 
 	_, state, ok := keeper.GetDeposit(ctx, common.Hash(req.TxID), common.Address(req.BurnerAddress))
 	switch {
@@ -307,7 +307,7 @@ func (s msgServer) ConfirmTransferOwnership(c context.Context, req *types.Confir
 		return nil, fmt.Errorf("next %s key for chain %s already set", tss.MasterKey.SimpleString(), chain.Name)
 	}
 
-	keeper := s.GetChain(ctx, chain.Name)
+	keeper := s.ForChain(ctx, chain.Name)
 
 	gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
 	if !ok {
@@ -419,7 +419,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	keeper := s.GetChain(ctx, chain.Name)
+	keeper := s.ForChain(ctx, chain.Name)
 
 	pendingDeposit, pollFound := keeper.GetPendingDeposit(ctx, req.Poll)
 	confirmedDeposit, state, depositFound := keeper.GetDeposit(ctx, common.Hash(req.TxID), common.Address(req.BurnAddress))
@@ -501,7 +501,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	keeper := s.GetChain(ctx, chain.Name)
+	keeper := s.ForChain(ctx, chain.Name)
 
 	// is there an ongoing poll?
 	token, pollFound := keeper.GetPendingTokenDeployment(ctx, req.Poll)
@@ -574,7 +574,7 @@ func (s msgServer) VoteConfirmTransferOwnership(c context.Context, req *types.Vo
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	keeper := s.GetChain(ctx, chain.Name)
+	keeper := s.ForChain(ctx, chain.Name)
 
 	pendingTransferOwnership, pendingTransferFound := keeper.GetPendingTransferOwnership(ctx, req.Poll)
 	archivedTransferOwnership, archivedtransferFound := keeper.GetArchivedTransferOwnership(ctx, req.Poll)
@@ -663,7 +663,7 @@ func (s msgServer) SignDeployToken(c context.Context, req *types.SignDeployToken
 		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
 	}
 
-	keeper := s.GetChain(ctx, chain.Name)
+	keeper := s.ForChain(ctx, chain.Name)
 
 	commandIDHex := common.Bytes2Hex(commandID[:])
 	s.Logger(ctx).Info(fmt.Sprintf("storing data for deploy-token command %s", commandIDHex))
@@ -705,7 +705,7 @@ func (s msgServer) SignBurnTokens(c context.Context, req *types.SignBurnTokensRe
 	if !ok {
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
-	keeper := s.GetChain(ctx, chain.Name)
+	keeper := s.ForChain(ctx, chain.Name)
 
 	deposits := keeper.GetConfirmedDeposits(ctx)
 
@@ -791,7 +791,7 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 
 	tx := req.UnmarshaledTx()
 	txID := tx.Hash().String()
-	keeper := s.GetChain(ctx, chain.Name)
+	keeper := s.ForChain(ctx, chain.Name)
 
 	keeper.SetUnsignedTx(ctx, txID, tx)
 	s.Logger(ctx).Info(fmt.Sprintf("storing raw tx %s", txID))
@@ -887,7 +887,7 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 	}
 
 	commandIDHex := hex.EncodeToString(commandID[:])
-	keeper := s.GetChain(ctx, chain.Name)
+	keeper := s.ForChain(ctx, chain.Name)
 
 	s.Logger(ctx).Info(fmt.Sprintf("storing data for mint command %s", commandIDHex))
 	keeper.SetCommandData(ctx, commandID, data)
@@ -977,7 +977,7 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 	}
 
 	commandIDHex := hex.EncodeToString(commandID[:])
-	keeper := s.GetChain(ctx, chain.Name)
+	keeper := s.ForChain(ctx, chain.Name)
 
 	s.Logger(ctx).Info(fmt.Sprintf("storing data for transfer-ownership command %s", commandIDHex))
 	keeper.SetCommandData(ctx, commandID, data)
@@ -1037,7 +1037,7 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 func (s msgServer) getChainID(ctx sdk.Context, chain string) (chainID *big.Int) {
 	for _, p := range s.GetParams(ctx) {
 		if strings.ToLower(p.Chain) == strings.ToLower(chain) {
-			chainID = s.GetChain(ctx, chain).GetChainIDByNetwork(ctx, p.Network)
+			chainID = s.ForChain(ctx, chain).GetChainIDByNetwork(ctx, p.Network)
 		}
 	}
 
