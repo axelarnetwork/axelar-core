@@ -21,6 +21,13 @@ type Key interface {
 	Equals(key Key) bool
 }
 
+// StringKey extends the Key interface for simplified appending and prepending
+type StringKey interface {
+	Key
+	AppendStr(key string, stringTransformations ...func(string) string) StringKey
+	PrependStr(key string, stringTransformations ...func(string) string) StringKey
+}
+
 // NormalizedKVStore is a wrapper around the cosmos-sdk KVStore to provide more safety regarding key management and better ease-of-use
 type NormalizedKVStore struct {
 	sdk.KVStore
@@ -76,7 +83,7 @@ type key struct {
 }
 
 // KeyFromStr applies the optional string transformations to the given key in sequence and returns a structured key
-func KeyFromStr(k string, stringTransformations ...func(string) string) Key {
+func KeyFromStr(k string, stringTransformations ...func(string) string) StringKey {
 	for _, transform := range stringTransformations {
 		k = transform(k)
 	}
@@ -87,12 +94,12 @@ func KeyFromStr(k string, stringTransformations ...func(string) string) Key {
 }
 
 // LowerCaseKey returns a key with the input converted to lower case
-func LowerCaseKey(k string) Key {
+func LowerCaseKey(k string) StringKey {
 	return KeyFromStr(k, strings.ToLower)
 }
 
 // KeyFromBz returns a structured key
-func KeyFromBz(k []byte) Key {
+func KeyFromBz(k []byte) StringKey {
 	return key{
 		prefix: nil,
 		key:    k,
@@ -128,9 +135,19 @@ func (k key) Prepend(prefix Key) Key {
 	return k
 }
 
+// PrependStr prepends the given string to this key
+func (k key) PrependStr(prefix string, stringTransformations ...func(string) string) StringKey {
+	return k.Prepend(KeyFromStr(prefix, stringTransformations...)).(StringKey)
+}
+
 // Append appends the given key to this key
 func (k key) Append(key Key) Key {
 	return key.Prepend(k)
+}
+
+// AppendStr appends the given string to this key
+func (k key) AppendStr(key string, stringTransformations ...func(string) string) StringKey {
+	return KeyFromStr(key, stringTransformations...).Prepend(k).(StringKey)
 }
 
 // Equals compares two keys for equality

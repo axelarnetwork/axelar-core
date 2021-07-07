@@ -18,14 +18,18 @@ import (
 )
 
 const (
-	votingThresholdKey = "votingThreshold"
-	pollPrefix         = "poll_"
-	talliedPrefix      = "tallied_"
-	addrPrefix         = "addr_"
+	// Dummy value: the values do not matter, used as markers
+	indexNotFound int = -1
+)
 
-	// Dummy values: the values do not matter, used as markers
-	voted         byte = 0
-	indexNotFound int  = -1
+var (
+	votingThresholdKey = utils.KeyFromStr("votingThreshold")
+	pollPrefix         = utils.KeyFromStr("poll")
+	talliedPrefix      = utils.KeyFromStr("tallied")
+	addrPrefix         = utils.KeyFromStr("addr")
+
+	// Dummy value: the values do not matter, used as markers
+	voted = []byte{0}
 )
 
 // Keeper - the vote module's keeper
@@ -52,14 +56,13 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 
 // SetVotingThreshold sets the voting power threshold that must be reached to decide a poll
 func (k Keeper) SetVotingThreshold(ctx sdk.Context, threshold utils.Threshold) {
-	ctx.KVStore(k.storeKey).Set([]byte(votingThresholdKey), k.cdc.MustMarshalBinaryLengthPrefixed(&threshold))
+	k.getStore(ctx).Set(votingThresholdKey, &threshold)
 }
 
 // GetVotingThreshold returns the voting power threshold that must be reached to decide a poll
 func (k Keeper) GetVotingThreshold(ctx sdk.Context) utils.Threshold {
-	rawThreshold := ctx.KVStore(k.storeKey).Get([]byte(votingThresholdKey))
 	var threshold utils.Threshold
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(rawThreshold, &threshold)
+	k.getStore(ctx).Get(votingThresholdKey, &threshold)
 
 	return threshold
 }
@@ -85,22 +88,22 @@ func (k Keeper) InitPoll(ctx sdk.Context, pollMeta exported.PollMeta, snapshotCo
 // DeletePoll deletes the specified poll.
 func (k Keeper) DeletePoll(ctx sdk.Context, poll exported.PollMeta) {
 	// delete poll
-	ctx.KVStore(k.storeKey).Delete([]byte(pollPrefix + poll.String()))
+	k.getStore(ctx).Delete(pollPrefix.AppendStr(poll.String()))
 
 	// delete tallied votes index for poll
-	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(talliedPrefix+poll.String()))
+	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), talliedPrefix.AppendStr(poll.String()).AsKey())
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
-		ctx.KVStore(k.storeKey).Delete(iter.Key())
+		k.getStore(ctx).Delete(utils.KeyFromBz(iter.Key()))
 	}
 
 	// delete voter index for poll
-	iter = sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(addrPrefix+poll.String()))
+	iter = sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), addrPrefix.AppendStr(poll.String()).AsKey())
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
-		ctx.KVStore(k.storeKey).Delete(iter.Key())
+		k.getStore(ctx).Delete(utils.KeyFromBz(iter.Key()))
 	}
 }
 
@@ -173,26 +176,24 @@ func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta expor
 
 // GetPoll returns the poll given poll meta
 func (k Keeper) GetPoll(ctx sdk.Context, pollMeta exported.PollMeta) *types.Poll {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(pollPrefix + pollMeta.String()))
-	if bz == nil {
+	var poll types.Poll
+	if ok := k.getStore(ctx).Get(pollPrefix.AppendStr(pollMeta.String()), &poll); !ok {
 		return nil
 	}
-
-	var poll types.Poll
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &poll)
 
 	return &poll
 }
 
 func (k Keeper) setPoll(ctx sdk.Context, poll types.Poll) {
-	ctx.KVStore(k.storeKey).Set([]byte(pollPrefix+poll.Meta.String()), k.cdc.MustMarshalBinaryLengthPrefixed(&poll))
+	k.getStore(ctx).Set(pollPrefix.AppendStr(poll.Meta.String()), &poll)
 }
 
 // To adhere to the same one-return-value pattern as the other getters return a marker value if not found
 // (returning an int with a pointer reference to be able to return nil instead seems bizarre)
 func (k Keeper) getTalliedVoteIdx(ctx sdk.Context, poll exported.PollMeta, data exported.VotingData) int {
 	// check if there have been identical votes
-	bz := ctx.KVStore(k.storeKey).Get(k.talliedVoteKey(poll, data))
+	key := talliedPrefix.AppendStr(poll.String()).AppendStr(k.hash(data))
+	bz := k.getStore(ctx).GetRaw(key)
 	if bz == nil {
 		return indexNotFound
 	}
@@ -201,23 +202,19 @@ func (k Keeper) getTalliedVoteIdx(ctx sdk.Context, poll exported.PollMeta, data 
 }
 
 func (k Keeper) setTalliedVoteIdx(ctx sdk.Context, poll exported.PollMeta, data exported.VotingData, i int) {
-	voteKey := k.talliedVoteKey(poll, data)
 	bz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(bz, uint64(i))
 
-	ctx.KVStore(k.storeKey).Set(voteKey, bz)
+	key := talliedPrefix.AppendStr(poll.String()).AppendStr(k.hash(data))
+	k.getStore(ctx).SetRaw(key, bz)
 }
 
 func (k Keeper) getHasVoted(ctx sdk.Context, poll exported.PollMeta, address sdk.ValAddress) bool {
-	return ctx.KVStore(k.storeKey).Has([]byte(addrPrefix + poll.String() + address.String()))
+	return k.getStore(ctx).Has(addrPrefix.AppendStr(poll.String()).AppendStr(address.String()))
 }
 
 func (k Keeper) setHasVoted(ctx sdk.Context, poll exported.PollMeta, address sdk.ValAddress) {
-	ctx.KVStore(k.storeKey).Set([]byte(addrPrefix+poll.String()+address.String()), []byte{voted})
-}
-
-func (k Keeper) talliedVoteKey(poll exported.PollMeta, data exported.VotingData) []byte {
-	return []byte(talliedPrefix + poll.String() + k.hash(data))
+	k.getStore(ctx).SetRaw(addrPrefix.AppendStr(poll.String()).AppendStr(address.String()), voted)
 }
 
 func (k Keeper) hash(data exported.VotingData) string {
@@ -225,4 +222,8 @@ func (k Keeper) hash(data exported.VotingData) string {
 	h := sha256.Sum256(bz)
 
 	return string(h[:])
+}
+
+func (k Keeper) getStore(ctx sdk.Context) utils.NormalizedKVStore {
+	return utils.NewNormalizedStore(ctx.KVStore(k.storeKey), k.cdc)
 }
