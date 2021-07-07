@@ -160,11 +160,11 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 			ts := time.Now().Unix()
 			for _, validator := range snapshot.Validators {
 				telemetry.SetGaugeWithLabels(
-					[]string{types.ModuleName, strings.ToLower(chain.Name), req.KeyRole.SimpleString(), "current"},
+					[]string{types.ModuleName, strings.ToLower(chain.Name), req.KeyRole.SimpleString(), "key", "share"},
 					float32(validator.ShareCount),
 					[]metrics.Label{telemetry.NewLabel("keyID", req.KeyID), telemetry.NewLabel("address", validator.GetOperator().String()), telemetry.NewLabel("time", strconv.FormatInt(ts, 10))})
 			}
-			telemetry.IncrCounter(1, types.ModuleName, strings.ToLower(chain.Name), req.KeyRole.SimpleString(), "count")
+			telemetry.IncrCounter(1, types.ModuleName, strings.ToLower(chain.Name), req.KeyRole.SimpleString(), "key", "rotation", "count")
 		}()
 
 		ctx.EventManager().EmitEvent(
