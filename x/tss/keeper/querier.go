@@ -17,7 +17,7 @@ const (
 	QueryKeyStatus = "key-status"
 )
 
-// NewQuerier returns a new querier for the Bitcoin module
+// NewQuerier returns a new querier for the TSS module
 func NewQuerier(k tssTypes.TSSKeeper, v tssTypes.Voter) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		var res []byte
