@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"testing"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
@@ -11,6 +12,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/axelarnetwork/axelar-core/x/tss/types/mock"
@@ -28,7 +30,17 @@ func TestMsgServer_RotateKey(t *testing.T) {
 			LoggerFunc:        func(ctx sdk.Context) log.Logger { return ctx.Logger() },
 			AssignNextKeyFunc: func(sdk.Context, nexus.Chain, exported.KeyRole, string) error { return nil },
 		}
-		snapshotter := &mock.SnapshotterMock{}
+		snapshotter := &mock.SnapshotterMock{
+			GetSnapshotFunc: func(ctx sdk.Context, counter int64) (snapshot.Snapshot, bool) {
+				return snapshot.Snapshot{
+					Validators:      []snapshot.Validator{},
+					Timestamp:       time.Now(),
+					Height:          rand.PosI64(),
+					TotalShareCount: sdk.NewInt(rand.PosI64()),
+					Counter:         counter,
+				}, true
+			},
+		}
 		staker := &mock.StakingKeeperMock{}
 		voter := &mock.VoterMock{}
 		nexusKeeper := &mock.NexusMock{
@@ -51,6 +63,7 @@ func TestMsgServer_RotateKey(t *testing.T) {
 		tssKeeper.GetKeyRequirementFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyRequirement, bool) {
 			return exported.KeyRequirement{NeedsAssignment: rand.Bools(0.5).Next()}, true
 		}
+		tssKeeper.GetSnapshotCounterForKeyIDFunc = func(ctx sdk.Context, keyID string) (int64, bool) { return 0, true }
 
 		_, err := server.RotateKey(sdk.WrapSDKContext(ctx), &types.RotateKeyRequest{
 			Sender:  rand.Bytes(sdk.AddrLen),
@@ -71,6 +84,7 @@ func TestMsgServer_RotateKey(t *testing.T) {
 		tssKeeper.GetKeyRequirementFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyRequirement, bool) {
 			return exported.KeyRequirement{NeedsAssignment: true}, true
 		}
+		tssKeeper.GetSnapshotCounterForKeyIDFunc = func(ctx sdk.Context, keyID string) (int64, bool) { return 0, true }
 
 		_, err := server.RotateKey(sdk.WrapSDKContext(ctx), &types.RotateKeyRequest{
 			Sender:  rand.Bytes(sdk.AddrLen),
