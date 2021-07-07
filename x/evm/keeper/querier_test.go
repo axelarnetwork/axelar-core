@@ -35,8 +35,8 @@ func TestQueryTokenAddress(t *testing.T) {
 		expectedAddress = randomAddress()
 
 		ethKeeper = &mock.EVMKeeperMock{
-			GetGatewayAddressFunc: func(ctx sdk.Context, evmChain string) (common.Address, bool) { return randomAddress(), true },
-			GetTokenAddressFunc: func(ctx sdk.Context, evmChain string, symbol string, gatewayAddr common.Address) (common.Address, error) {
+			GetGatewayAddressFunc: func(sdk.Context) (common.Address, bool) { return randomAddress(), true },
+			GetTokenAddressFunc: func(sdk.Context, string, common.Address) (common.Address, error) {
 				return expectedAddress, nil
 			},
 		}
@@ -69,7 +69,7 @@ func TestQueryTokenAddress(t *testing.T) {
 
 	t.Run("gateway not set", testutils.Func(func(t *testing.T) {
 		setup()
-		ethKeeper.GetGatewayAddressFunc = func(ctx sdk.Context, evmChain string) (common.Address, bool) { return common.Address{}, false }
+		ethKeeper.GetGatewayAddressFunc = func(sdk.Context) (common.Address, bool) { return common.Address{}, false }
 
 		_, err := evmKeeper.QueryTokenAddress(ctx, ethKeeper, nexusKeeper, evmChain, symbol)
 
@@ -80,7 +80,7 @@ func TestQueryTokenAddress(t *testing.T) {
 
 	t.Run("token not deployed", testutils.Func(func(t *testing.T) {
 		setup()
-		ethKeeper.GetTokenAddressFunc = func(ctx sdk.Context, evmChain string, symbol string, gatewayAddr common.Address) (common.Address, error) {
+		ethKeeper.GetTokenAddressFunc = func(sdk.Context, string, common.Address) (common.Address, error) {
 			return common.Address{}, fmt.Errorf("could not find token address")
 		}
 
@@ -108,11 +108,11 @@ func TestQueryDepositAddress(t *testing.T) {
 		expectedAddress = randomAddress()
 
 		ethKeeper = &mock.EVMKeeperMock{
-			GetGatewayAddressFunc: func(ctx sdk.Context, evmChain string) (common.Address, bool) { return randomAddress(), true },
-			GetTokenAddressFunc: func(ctx sdk.Context, evmChain string, symbol string, gatewayAddr common.Address) (common.Address, error) {
+			GetGatewayAddressFunc: func(sdk.Context) (common.Address, bool) { return randomAddress(), true },
+			GetTokenAddressFunc: func(sdk.Context, string, common.Address) (common.Address, error) {
 				return randomAddress(), nil
 			},
-			GetBurnerAddressAndSaltFunc: func(ctx sdk.Context, evmChain string, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error) {
+			GetBurnerAddressAndSaltFunc: func(sdk.Context, common.Address, string, common.Address) (common.Address, common.Hash, error) {
 				return expectedAddress, randomHash(), nil
 			},
 		}
@@ -177,7 +177,7 @@ func TestQueryDepositAddress(t *testing.T) {
 
 	t.Run("gateway not deployed", testutils.Func(func(t *testing.T) {
 		setup()
-		ethKeeper.GetGatewayAddressFunc = func(ctx sdk.Context, evmChain string) (common.Address, bool) { return common.Address{}, false }
+		ethKeeper.GetGatewayAddressFunc = func(sdk.Context) (common.Address, bool) { return common.Address{}, false }
 
 		_, err := evmKeeper.QueryDepositAddress(ctx, ethKeeper, nexusKeeper, evmChain, data)
 
@@ -188,7 +188,7 @@ func TestQueryDepositAddress(t *testing.T) {
 
 	t.Run("token contract not deployed", testutils.Func(func(t *testing.T) {
 		setup()
-		ethKeeper.GetTokenAddressFunc = func(ctx sdk.Context, evmChain string, symbol string, gatewayAddr common.Address) (common.Address, error) {
+		ethKeeper.GetTokenAddressFunc = func(sdk.Context, string, common.Address) (common.Address, error) {
 			return common.Address{}, fmt.Errorf("could not find token address")
 		}
 
@@ -201,7 +201,7 @@ func TestQueryDepositAddress(t *testing.T) {
 
 	t.Run("cannot get deposit address", testutils.Func(func(t *testing.T) {
 		setup()
-		ethKeeper.GetBurnerAddressAndSaltFunc = func(ctx sdk.Context, evmChain string, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error) {
+		ethKeeper.GetBurnerAddressAndSaltFunc = func(sdk.Context, common.Address, string, common.Address) (common.Address, common.Hash, error) {
 			return common.Address{}, common.Hash{}, fmt.Errorf("could not find deposit address")
 		}
 

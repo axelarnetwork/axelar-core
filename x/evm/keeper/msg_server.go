@@ -54,7 +54,9 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	gatewayAddr, ok := s.GetGatewayAddress(ctx, senderChain.Name)
+	keeper := s.GetChain(ctx, senderChain.Name)
+
+	gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
@@ -69,12 +71,12 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", req.Symbol, recipientChain.Name)
 	}
 
-	tokenAddr, err := s.GetTokenAddress(ctx, senderChain.Name, req.Symbol, gatewayAddr)
+	tokenAddr, err := keeper.GetTokenAddress(ctx, req.Symbol, gatewayAddr)
 	if err != nil {
 		return nil, err
 	}
 
-	burnerAddr, salt, err := s.GetBurnerAddressAndSalt(ctx, senderChain.Name, tokenAddr, req.RecipientAddr, gatewayAddr)
+	burnerAddr, salt, err := keeper.GetBurnerAddressAndSalt(ctx, tokenAddr, req.RecipientAddr, gatewayAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +90,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		Symbol:       req.Symbol,
 		Salt:         types.Hash(salt),
 	}
-	s.SetBurnerInfo(ctx, senderChain.Name, burnerAddr, &burnerInfo)
+	keeper.SetBurnerInfo(ctx, burnerAddr, &burnerInfo)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -114,12 +116,14 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("token %s is already registered", req.Symbol)
 	}
 
-	gatewayAddr, ok := s.GetGatewayAddress(ctx, chain.Name)
+	keeper := s.GetChain(ctx, chain.Name)
+
+	gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	tokenAddr, err := s.GetTokenAddress(ctx, chain.Name, req.Symbol, gatewayAddr)
+	tokenAddr, err := keeper.GetTokenAddress(ctx, req.Symbol, gatewayAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +140,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 
 	poll := vote.NewPollMeta(types.ModuleName, req.TxID.Hex()+"_"+req.Symbol)
 
-	period, ok := s.EVMKeeper.GetRevoteLockingPeriod(ctx, chain.Name)
+	period, ok := keeper.GetRevoteLockingPeriod(ctx)
 	if !ok {
 		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", req.Chain)
 	}
@@ -149,9 +153,9 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		Symbol:       req.Symbol,
 		TokenAddress: types.Address(tokenAddr),
 	}
-	s.SetPendingTokenDeployment(ctx, chain.Name, poll, deploy)
+	keeper.SetPendingTokenDeployment(ctx, poll, deploy)
 
-	height, _ := s.EVMKeeper.GetRequiredConfirmationHeight(ctx, chain.Name)
+	height, _ := keeper.GetRequiredConfirmationHeight(ctx)
 
 	telemetry.NewLabel("eth_token_addr", tokenAddr.String())
 
@@ -178,7 +182,7 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 		return &types.ConfirmChainResponse{}, fmt.Errorf("chain '%s' is already confirmed", req.Name)
 	}
 
-	if _, ok := s.EVMKeeper.GetPendingChain(ctx, req.Name); !ok {
+	if _, ok := s.GetPendingChain(ctx, req.Name); !ok {
 		return &types.ConfirmChainResponse{}, fmt.Errorf("'%s' has not been added yet", req.Name)
 	}
 
@@ -190,8 +194,9 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 		}
 		counter = s.snapshotter.GetLatestCounter(ctx)
 	}
+	keeper := s.GetChain(ctx, req.Name)
 
-	period, ok := s.EVMKeeper.GetRevoteLockingPeriod(ctx, req.Name)
+	period, ok := keeper.GetRevoteLockingPeriod(ctx)
 	if !ok {
 		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", req.Name)
 	}
@@ -221,7 +226,9 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	_, state, ok := s.GetDeposit(ctx, chain.Name, common.Hash(req.TxID), common.Address(req.BurnerAddress))
+	keeper := s.GetChain(ctx, chain.Name)
+
+	_, state, ok := keeper.GetDeposit(ctx, common.Hash(req.TxID), common.Address(req.BurnerAddress))
 	switch {
 	case !ok:
 		break
@@ -231,7 +238,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("already burned")
 	}
 
-	burnerInfo := s.GetBurnerInfo(ctx, chain.Name, common.Address(req.BurnerAddress))
+	burnerInfo := keeper.GetBurnerInfo(ctx, common.Address(req.BurnerAddress))
 	if burnerInfo == nil {
 		return nil, fmt.Errorf("no burner info found for address %s", req.BurnerAddress)
 	}
@@ -246,7 +253,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
 	}
 
-	period, ok := s.EVMKeeper.GetRevoteLockingPeriod(ctx, chain.Name)
+	period, ok := keeper.GetRevoteLockingPeriod(ctx)
 	if !ok {
 		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", req.Chain)
 	}
@@ -262,9 +269,9 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		Symbol:        burnerInfo.Symbol,
 		BurnerAddress: req.BurnerAddress,
 	}
-	s.SetPendingDeposit(ctx, chain.Name, poll, &erc20Deposit)
+	keeper.SetPendingDeposit(ctx, poll, &erc20Deposit)
 
-	height, _ := s.EVMKeeper.GetRequiredConfirmationHeight(ctx, chain.Name)
+	height, _ := keeper.GetRequiredConfirmationHeight(ctx)
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeDepositConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
@@ -300,7 +307,9 @@ func (s msgServer) ConfirmTransferOwnership(c context.Context, req *types.Confir
 		return nil, fmt.Errorf("next %s key for chain %s already set", tss.MasterKey.SimpleString(), chain.Name)
 	}
 
-	gatewayAddr, ok := s.GetGatewayAddress(ctx, chain.Name)
+	keeper := s.GetChain(ctx, chain.Name)
+
+	gatewayAddr, ok := s.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
@@ -315,7 +324,7 @@ func (s msgServer) ConfirmTransferOwnership(c context.Context, req *types.Confir
 		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", currentKeyID)
 	}
 
-	period, ok := s.EVMKeeper.GetRevoteLockingPeriod(ctx, chain.Name)
+	period, ok := keeper.GetRevoteLockingPeriod(ctx)
 	if !ok {
 		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", req.Chain)
 	}
@@ -329,9 +338,9 @@ func (s msgServer) ConfirmTransferOwnership(c context.Context, req *types.Confir
 		TxID:      req.TxID,
 		NextKeyID: pk.ID,
 	}
-	s.SetPendingTransferOwnership(ctx, chain.Name, poll, &transferOwnership)
+	keeper.SetPendingTransferOwnership(ctx, poll, &transferOwnership)
 
-	height, _ := s.EVMKeeper.GetRequiredConfirmationHeight(ctx, chain.Name)
+	height, _ := keeper.GetRequiredConfirmationHeight(ctx)
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeTransferOwnershipConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
@@ -410,15 +419,17 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	pendingDeposit, pollFound := s.GetPendingDeposit(ctx, chain.Name, req.Poll)
-	confirmedDeposit, state, depositFound := s.GetDeposit(ctx, chain.Name, common.Hash(req.TxID), common.Address(req.BurnAddress))
+	keeper := s.GetChain(ctx, chain.Name)
+
+	pendingDeposit, pollFound := keeper.GetPendingDeposit(ctx, req.Poll)
+	confirmedDeposit, state, depositFound := keeper.GetDeposit(ctx, common.Hash(req.TxID), common.Address(req.BurnAddress))
 
 	switch {
 	// a malicious user could try to delete an ongoing poll by providing an already confirmed deposit,
 	// so we need to check that it matches the poll before deleting
 	case depositFound && pollFound && confirmedDeposit == pendingDeposit:
 		s.voter.DeletePoll(ctx, req.Poll)
-		s.DeletePendingDeposit(ctx, chain.Name, req.Poll)
+		keeper.DeletePendingDeposit(ctx, req.Poll)
 		fallthrough
 	// If the voting threshold has been met and additional votes are received they should not return an error
 	case depositFound:
@@ -454,7 +465,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 
 	s.Logger(ctx).Info(fmt.Sprintf("ethereum deposit confirmation result is %s", result))
 	s.voter.DeletePoll(ctx, req.Poll)
-	s.DeletePendingDeposit(ctx, chain.Name, req.Poll)
+	keeper.DeletePendingDeposit(ctx, req.Poll)
 
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeDepositConfirmation,
@@ -477,7 +488,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
 		return nil, err
 	}
-	s.SetDeposit(ctx, chain.Name, pendingDeposit, types.CONFIRMED)
+	keeper.SetDeposit(ctx, pendingDeposit, types.CONFIRMED)
 
 	return &types.VoteConfirmDepositResponse{}, nil
 }
@@ -490,15 +501,17 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
+	keeper := s.GetChain(ctx, chain.Name)
+
 	// is there an ongoing poll?
-	token, pollFound := s.GetPendingTokenDeployment(ctx, chain.Name, req.Poll)
+	token, pollFound := keeper.GetPendingTokenDeployment(ctx, req.Poll)
 	registered := s.nexus.IsAssetRegistered(ctx, chain.Name, req.Symbol)
 	switch {
 	// a malicious user could try to delete an ongoing poll by providing an already confirmed token,
 	// so we need to check that it matches the poll before deleting
 	case registered && pollFound && token.Symbol == req.Symbol:
 		s.voter.DeletePoll(ctx, req.Poll)
-		s.DeletePendingToken(ctx, chain.Name, req.Poll)
+		keeper.DeletePendingToken(ctx, req.Poll)
 		fallthrough
 	// If the voting threshold has been met and additional votes are received they should not return an error
 	case registered:
@@ -529,7 +542,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 
 	s.Logger(ctx).Info(fmt.Sprintf("token deployment confirmation result is %s", result))
 	s.voter.DeletePoll(ctx, req.Poll)
-	s.DeletePendingToken(ctx, chain.Name, req.Poll)
+	keeper.DeletePendingToken(ctx, req.Poll)
 
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeTokenConfirmation,
@@ -561,8 +574,10 @@ func (s msgServer) VoteConfirmTransferOwnership(c context.Context, req *types.Vo
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	pendingTransferOwnership, pendingTransferFound := s.GetPendingTransferOwnership(ctx, chain.Name, req.Poll)
-	archivedTransferOwnership, archivedtransferFound := s.GetArchivedTransferOwnership(ctx, chain.Name, req.Poll)
+	keeper := s.GetChain(ctx, chain.Name)
+
+	pendingTransferOwnership, pendingTransferFound := keeper.GetPendingTransferOwnership(ctx, req.Poll)
+	archivedTransferOwnership, archivedtransferFound := keeper.GetArchivedTransferOwnership(ctx, req.Poll)
 
 	switch {
 	case !pendingTransferFound && !archivedtransferFound:
@@ -600,7 +615,7 @@ func (s msgServer) VoteConfirmTransferOwnership(c context.Context, req *types.Vo
 
 	s.Logger(ctx).Info(fmt.Sprintf("ethereum transfer ownership confirmation result is %s", result))
 	s.voter.DeletePoll(ctx, req.Poll)
-	s.ArchiveTransferOwnership(ctx, chain.Name, req.Poll)
+	keeper.ArchiveTransferOwnership(ctx, req.Poll)
 
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeTransferOwnershipConfirmation,
@@ -648,9 +663,11 @@ func (s msgServer) SignDeployToken(c context.Context, req *types.SignDeployToken
 		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
 	}
 
+	keeper := s.GetChain(ctx, chain.Name)
+
 	commandIDHex := common.Bytes2Hex(commandID[:])
 	s.Logger(ctx).Info(fmt.Sprintf("storing data for deploy-token command %s", commandIDHex))
-	s.SetCommandData(ctx, chain.Name, commandID, data)
+	keeper.SetCommandData(ctx, commandID, data)
 
 	signHash := types.GetEthereumSignHash(data)
 
@@ -669,7 +686,7 @@ func (s msgServer) SignDeployToken(c context.Context, req *types.SignDeployToken
 		return nil, err
 	}
 
-	s.SetTokenInfo(ctx, chain.Name, req)
+	keeper.SetTokenInfo(ctx, req)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -688,8 +705,9 @@ func (s msgServer) SignBurnTokens(c context.Context, req *types.SignBurnTokensRe
 	if !ok {
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
+	keeper := s.GetChain(ctx, chain.Name)
 
-	deposits := s.GetConfirmedDeposits(ctx, chain.Name)
+	deposits := keeper.GetConfirmedDeposits(ctx)
 
 	if len(deposits) == 0 {
 		return &types.SignBurnTokensResponse{}, nil
@@ -706,7 +724,7 @@ func (s msgServer) SignBurnTokens(c context.Context, req *types.SignBurnTokensRe
 		if seen[deposit.BurnerAddress.Hex()] {
 			continue
 		}
-		burnerInfo := s.GetBurnerInfo(ctx, chain.Name, common.Address(deposit.BurnerAddress))
+		burnerInfo := keeper.GetBurnerInfo(ctx, common.Address(deposit.BurnerAddress))
 		if burnerInfo == nil {
 			return nil, fmt.Errorf("no burner info found for address %s", deposit.BurnerAddress.Hex())
 		}
@@ -728,7 +746,7 @@ func (s msgServer) SignBurnTokens(c context.Context, req *types.SignBurnTokensRe
 
 	commandIDHex := hex.EncodeToString(commandID[:])
 	s.Logger(ctx).Info(fmt.Sprintf("storing data for burn command %s", commandIDHex))
-	s.SetCommandData(ctx, chain.Name, commandID, data)
+	keeper.SetCommandData(ctx, commandID, data)
 
 	s.Logger(ctx).Info(fmt.Sprintf("signing burn command [%s] for token deposits to chain %s", commandIDHex, chain.Name))
 	signHash := types.GetEthereumSignHash(data)
@@ -749,8 +767,8 @@ func (s msgServer) SignBurnTokens(c context.Context, req *types.SignBurnTokensRe
 	}
 
 	for _, deposit := range deposits {
-		s.DeleteDeposit(ctx, chain.Name, deposit)
-		s.SetDeposit(ctx, chain.Name, deposit, types.BURNED)
+		keeper.DeleteDeposit(ctx, deposit)
+		keeper.SetDeposit(ctx, deposit, types.BURNED)
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -773,9 +791,11 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 
 	tx := req.UnmarshaledTx()
 	txID := tx.Hash().String()
-	s.SetUnsignedTx(ctx, chain.Name, txID, tx)
+	keeper := s.GetChain(ctx, chain.Name)
+
+	keeper.SetUnsignedTx(ctx, txID, tx)
 	s.Logger(ctx).Info(fmt.Sprintf("storing raw tx %s", txID))
-	hash, err := s.GetHashToSign(ctx, chain.Name, txID)
+	hash, err := keeper.GetHashToSign(ctx, txID)
 	if err != nil {
 		return nil, err
 	}
@@ -810,7 +830,7 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 		return nil, err
 	}
 
-	byteCodes, ok := s.GetGatewayByteCodes(ctx, req.Chain)
+	byteCodes, ok := keeper.GetGatewayByteCodes(ctx)
 	if !ok {
 		return nil, fmt.Errorf("Could not retrieve gateway bytecodes for chain %s", req.Chain)
 	}
@@ -825,7 +845,7 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 		}
 
 		addr := crypto.CreateAddress(crypto.PubkeyToAddress(pub.Value), tx.Nonce())
-		s.SetGatewayAddress(ctx, chain.Name, addr)
+		keeper.SetGatewayAddress(ctx, addr)
 
 		telemetry.NewLabel("eth_factory_addr", addr.String())
 	}
@@ -867,8 +887,10 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 	}
 
 	commandIDHex := hex.EncodeToString(commandID[:])
+	keeper := s.GetChain(ctx, chain.Name)
+
 	s.Logger(ctx).Info(fmt.Sprintf("storing data for mint command %s", commandIDHex))
-	s.SetCommandData(ctx, chain.Name, commandID, data)
+	keeper.SetCommandData(ctx, commandID, data)
 
 	s.Logger(ctx).Info(fmt.Sprintf("signing mint command [%s] for pending transfers to chain %s", commandIDHex, chain.Name))
 	signHash := types.GetEthereumSignHash(data)
@@ -955,8 +977,10 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 	}
 
 	commandIDHex := hex.EncodeToString(commandID[:])
+	keeper := s.GetChain(ctx, chain.Name)
+
 	s.Logger(ctx).Info(fmt.Sprintf("storing data for transfer-ownership command %s", commandIDHex))
-	s.SetCommandData(ctx, chain.Name, commandID, data)
+	keeper.SetCommandData(ctx, commandID, data)
 
 	signHash := types.GetEthereumSignHash(data)
 
@@ -1013,7 +1037,7 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 func (s msgServer) getChainID(ctx sdk.Context, chain string) (chainID *big.Int) {
 	for _, p := range s.GetParams(ctx) {
 		if strings.ToLower(p.Chain) == strings.ToLower(chain) {
-			chainID = s.GetChainIDByNetwork(ctx, chain, p.Network)
+			chainID = s.GetChain(ctx, chain).GetChainIDByNetwork(ctx, p.Network)
 		}
 	}
 

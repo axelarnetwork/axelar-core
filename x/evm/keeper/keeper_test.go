@@ -44,8 +44,8 @@ func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
 		}
 		burnerAddress := common.BytesToAddress(rand.Bytes(common.AddressLength))
 
-		keeper.SetBurnerInfo(ctx, chain, burnerAddress, &burnerInfo)
-		actual := keeper.GetBurnerInfo(ctx, chain, burnerAddress)
+		keeper.GetChain(ctx, chain).SetBurnerInfo(ctx, burnerAddress, &burnerInfo)
+		actual := keeper.GetChain(ctx, chain).GetBurnerInfo(ctx, burnerAddress)
 
 		assert.NotNil(t, actual)
 		assert.Equal(t, *actual, burnerInfo)

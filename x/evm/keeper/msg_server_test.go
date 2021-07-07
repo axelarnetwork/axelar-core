@@ -193,18 +193,18 @@ func TestLink_Success(t *testing.T) {
 	minConfHeight := rand.I64Between(1, 10)
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	chain := "Ethereum"
-	k := newKeeper(ctx, chain, minConfHeight)
+	k := newKeeper(ctx, chain, minConfHeight).GetChain(ctx, chain)
 	msg := createMsgSignDeploy()
 
-	k.SetTokenInfo(ctx, chain, msg)
+	k.SetTokenInfo(ctx, msg)
 
 	recipient := nexus.CrossChainAddress{Address: "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L", Chain: btc.Bitcoin}
-	tokenAddr, err := k.GetTokenAddress(ctx, chain, msg.Symbol, common.HexToAddress(gateway))
+	tokenAddr, err := k.GetTokenAddress(ctx, msg.Symbol, common.HexToAddress(gateway))
 	if err != nil {
 		panic(err)
 	}
 
-	burnAddr, salt, err := k.GetBurnerAddressAndSalt(ctx, chain, tokenAddr, recipient.Address, common.HexToAddress(gateway))
+	burnAddr, salt, err := k.GetBurnerAddressAndSalt(ctx, tokenAddr, recipient.Address, common.HexToAddress(gateway))
 	if err != nil {
 		panic(err)
 	}
@@ -237,7 +237,7 @@ func TestLink_Success(t *testing.T) {
 	assert.Equal(t, sender, n.LinkAddressesCalls()[0].Sender)
 	assert.Equal(t, recipient, n.LinkAddressesCalls()[0].Recipient)
 
-	assert.Equal(t, types.BurnerInfo{TokenAddress: types.Address(tokenAddr), Symbol: msg.Symbol, Salt: types.Hash(salt)}, *k.GetBurnerInfo(ctx, chain, burnAddr))
+	assert.Equal(t, types.BurnerInfo{TokenAddress: types.Address(tokenAddr), Symbol: msg.Symbol, Salt: types.Hash(salt)}, *k.GetBurnerInfo(ctx, burnAddr))
 }
 
 func TestDeployTx_DifferentValue_DifferentHash(t *testing.T) {
@@ -355,11 +355,16 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 		}
 
 		k = &evmMock.EVMKeeperMock{
-			GetRevoteLockingPeriodFunc: func(ctx sdk.Context, chain string) (int64, bool) {
+
+			GetChainFunc: func(ctx sdk.Context, chain string) types.EVMKeeper {
 				if strings.ToLower(chain) == strings.ToLower(msg.Name) {
-					return rand.I64Between(50, 100), true
+					return k
 				}
-				return -1, false
+				return nil
+			},
+
+			GetRevoteLockingPeriodFunc: func(ctx sdk.Context) (int64, bool) {
+				return rand.I64Between(50, 100), true
 			},
 			SetPendingChainFunc: func(sdk.Context, nexus.Chain) {},
 			GetPendingChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
@@ -463,15 +468,21 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
 
 		k = &evmMock.EVMKeeperMock{
-			GetGatewayAddressFunc: func(sdk.Context, string) (common.Address, bool) {
+			GetChainFunc: func(ctx sdk.Context, chain string) types.EVMKeeper {
+				if strings.ToLower(chain) == strings.ToLower(evmChain) {
+					return k
+				}
+				return nil
+			},
+			GetGatewayAddressFunc: func(sdk.Context) (common.Address, bool) {
 				return common.BytesToAddress(rand.Bytes(common.AddressLength)), true
 			},
-			GetTokenAddressFunc: func(sdk.Context, string, string, common.Address) (common.Address, error) {
+			GetTokenAddressFunc: func(sdk.Context, string, common.Address) (common.Address, error) {
 				return common.BytesToAddress(rand.Bytes(common.AddressLength)), nil
 			},
-			GetRevoteLockingPeriodFunc:        func(ctx sdk.Context, _ string) (int64, bool) { return rand.PosI64(), true },
-			GetRequiredConfirmationHeightFunc: func(sdk.Context, string) (uint64, bool) { return mathRand.Uint64(), true },
-			SetPendingTokenDeploymentFunc:     func(sdk.Context, string, vote.PollMeta, types.ERC20TokenDeployment) {},
+			GetRevoteLockingPeriodFunc:        func(sdk.Context) (int64, bool) { return rand.PosI64(), true },
+			GetRequiredConfirmationHeightFunc: func(sdk.Context) (uint64, bool) { return mathRand.Uint64(), true },
+			SetPendingTokenDeploymentFunc:     func(sdk.Context, vote.PollMeta, types.ERC20TokenDeployment) {},
 		}
 		v = &evmMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta, int64, int64) error { return nil }}
 		chains := map[string]nexus.Chain{exported.Ethereum.Name: exported.Ethereum}
@@ -523,7 +534,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 	t.Run("no gateway", testutils.Func(func(t *testing.T) {
 		setup()
-		k.GetGatewayAddressFunc = func(sdk.Context, string) (common.Address, bool) { return common.Address{}, false }
+		k.GetGatewayAddressFunc = func(sdk.Context) (common.Address, bool) { return common.Address{}, false }
 
 		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
 
@@ -532,7 +543,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 	t.Run("token unknown", testutils.Func(func(t *testing.T) {
 		setup()
-		k.GetTokenAddressFunc = func(sdk.Context, string, string, common.Address) (common.Address, error) {
+		k.GetTokenAddressFunc = func(sdk.Context, string, common.Address) (common.Address, error) {
 			return common.Address{}, fmt.Errorf("failed")
 		}
 
@@ -674,19 +685,25 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
 		k = &evmMock.EVMKeeperMock{
-			GetDepositFunc: func(sdk.Context, string, common.Hash, common.Address) (types.ERC20Deposit, types.DepositState, bool) {
+			GetChainFunc: func(ctx sdk.Context, chain string) types.EVMKeeper {
+				if strings.ToLower(chain) == strings.ToLower(evmChain) {
+					return k
+				}
+				return nil
+			},
+			GetDepositFunc: func(sdk.Context, common.Hash, common.Address) (types.ERC20Deposit, types.DepositState, bool) {
 				return types.ERC20Deposit{}, 0, false
 			},
-			GetBurnerInfoFunc: func(sdk.Context, string, common.Address) *types.BurnerInfo {
+			GetBurnerInfoFunc: func(sdk.Context, common.Address) *types.BurnerInfo {
 				return &types.BurnerInfo{
 					TokenAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
 					Symbol:       rand.StrBetween(5, 10),
 					Salt:         types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 				}
 			},
-			GetRevoteLockingPeriodFunc:        func(sdk.Context, string) (int64, bool) { return rand.PosI64(), true },
-			SetPendingDepositFunc:             func(sdk.Context, string, vote.PollMeta, *types.ERC20Deposit) {},
-			GetRequiredConfirmationHeightFunc: func(sdk.Context, string) (uint64, bool) { return mathRand.Uint64(), true },
+			GetRevoteLockingPeriodFunc:        func(sdk.Context) (int64, bool) { return rand.PosI64(), true },
+			SetPendingDepositFunc:             func(sdk.Context, vote.PollMeta, *types.ERC20Deposit) {},
+			GetRequiredConfirmationHeightFunc: func(sdk.Context) (uint64, bool) { return mathRand.Uint64(), true },
 		}
 		v = &evmMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta, int64, int64) error { return nil }}
 		s = &mock.SignerMock{
@@ -737,7 +754,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	t.Run("deposit confirmed", testutils.Func(func(t *testing.T) {
 		setup()
-		k.GetDepositFunc = func(sdk.Context, string, common.Hash, common.Address) (types.ERC20Deposit, types.DepositState, bool) {
+		k.GetDepositFunc = func(sdk.Context, common.Hash, common.Address) (types.ERC20Deposit, types.DepositState, bool) {
 			return types.ERC20Deposit{
 				TxID:          types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 				Amount:        sdk.NewUint(mathRand.Uint64()),
@@ -753,7 +770,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	t.Run("deposit burned", testutils.Func(func(t *testing.T) {
 		setup()
-		k.GetDepositFunc = func(sdk.Context, string, common.Hash, common.Address) (types.ERC20Deposit, types.DepositState, bool) {
+		k.GetDepositFunc = func(sdk.Context, common.Hash, common.Address) (types.ERC20Deposit, types.DepositState, bool) {
 			return types.ERC20Deposit{
 				TxID:          types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 				Amount:        sdk.NewUint(mathRand.Uint64()),
@@ -769,7 +786,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	t.Run("burner address unknown", testutils.Func(func(t *testing.T) {
 		setup()
-		k.GetBurnerInfoFunc = func(sdk.Context, string, common.Address) *types.BurnerInfo { return nil }
+		k.GetBurnerInfoFunc = func(sdk.Context, common.Address) *types.BurnerInfo { return nil }
 
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
@@ -853,7 +870,7 @@ func newKeeper(ctx sdk.Context, chain string, confHeight int64) keeper.Keeper {
 		Burnable:            burnerBC,
 		RevoteLockingPeriod: 50,
 	})
-	k.SetGatewayAddress(ctx, chain, common.HexToAddress(gateway))
+	k.GetChain(ctx, chain).SetGatewayAddress(ctx, common.HexToAddress(gateway))
 
 	return k
 }
