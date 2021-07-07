@@ -56,6 +56,7 @@ func setup() *testSetup {
 	}
 
 	setup.Keeper = keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(stringGen.Next()), setup.Snapshotter)
+	setup.Keeper.SetDefaultVotingThreshold(setup.Ctx, types.DefaultGenesisState().VotingThreshold)
 	return setup
 }
 
@@ -73,7 +74,7 @@ func TestInitPoll(t *testing.T) {
 
 		assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollMeta, snapshotCounter, expireAt))
 
-		expected := types.NewPoll(pollMeta, snapshotCounter, expireAt)
+		expected := types.NewPoll(pollMeta, snapshotCounter, expireAt, types.DefaultGenesisState().VotingThreshold)
 		actual := s.Keeper.GetPoll(s.Ctx, pollMeta)
 		assert.Equal(t, expected, *actual)
 	}))
@@ -99,7 +100,7 @@ func TestInitPoll(t *testing.T) {
 		assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollMeta, snapshotCounter1, expireAt1))
 		assert.NoError(t, s.Keeper.InitPoll(s.Ctx.WithBlockHeight(expireAt1), pollMeta, snapshotCounter2, expireAt2))
 
-		expected := types.NewPoll(pollMeta, snapshotCounter2, expireAt2)
+		expected := types.NewPoll(pollMeta, snapshotCounter2, expireAt2, types.DefaultGenesisState().VotingThreshold)
 		actual := s.Keeper.GetPoll(s.Ctx, pollMeta)
 		assert.Equal(t, expected, *actual)
 	}))
@@ -133,7 +134,7 @@ func TestTallyVote_UnknownVoter_ReturnError(t *testing.T) {
 func TestTallyVote_NoWinner(t *testing.T) {
 	s := setup()
 	threshold := utils.Threshold{Numerator: 2, Denominator: 3}
-	s.Keeper.SetVotingThreshold(s.Ctx, threshold)
+	s.Keeper.SetDefaultVotingThreshold(s.Ctx, threshold)
 	minorityPower := newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(1, 200))
 	majorityPower := newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(calcMajorityLowerLimit(threshold, minorityPower), 1000))
 	s.ValidatorSet = []snapshot.Validator{minorityPower, majorityPower}
@@ -154,7 +155,7 @@ func TestTallyVote_NoWinner(t *testing.T) {
 func TestTallyVote_WithWinner(t *testing.T) {
 	s := setup()
 	threshold := utils.Threshold{Numerator: 2, Denominator: 3}
-	s.Keeper.SetVotingThreshold(s.Ctx, threshold)
+	s.Keeper.SetDefaultVotingThreshold(s.Ctx, threshold)
 	minorityPower := newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(1, 200))
 	majorityPower := newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(calcMajorityLowerLimit(threshold, minorityPower), 1000))
 	s.ValidatorSet = []snapshot.Validator{minorityPower, majorityPower}
@@ -175,7 +176,7 @@ func TestTallyVote_WithWinner(t *testing.T) {
 // error when tallying second vote from same validator
 func TestTallyVote_TwoVotesFromSameValidator_ReturnError(t *testing.T) {
 	s := setup()
-	s.Keeper.SetVotingThreshold(s.Ctx, utils.Threshold{Numerator: 2, Denominator: 3})
+	s.Keeper.SetDefaultVotingThreshold(s.Ctx, utils.Threshold{Numerator: 2, Denominator: 3})
 	s.ValidatorSet = []snapshot.Validator{newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(1, 1000))}
 
 	// return same validator for all votes
@@ -198,7 +199,7 @@ func TestTallyVote_TwoVotesFromSameValidator_ReturnError(t *testing.T) {
 // tally multiple votes until poll is decided
 func TestTallyVote_MultipleVotesUntilDecision(t *testing.T) {
 	s := setup()
-	s.Keeper.SetVotingThreshold(s.Ctx, utils.Threshold{Numerator: 2, Denominator: 3})
+	s.Keeper.SetDefaultVotingThreshold(s.Ctx, utils.Threshold{Numerator: 2, Denominator: 3})
 	s.ValidatorSet = []snapshot.Validator{
 		// ensure first validator does not have majority voting power
 		newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(1, 100)),
@@ -242,7 +243,7 @@ func TestTallyVote_MultipleVotesUntilDecision(t *testing.T) {
 func TestTallyVote_ForDecidedPoll(t *testing.T) {
 	s := setup()
 	threshold := utils.Threshold{Numerator: 2, Denominator: 3}
-	s.Keeper.SetVotingThreshold(s.Ctx, threshold)
+	s.Keeper.SetDefaultVotingThreshold(s.Ctx, threshold)
 	minorityPower := newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(1, 200))
 	majorityPower := newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(calcMajorityLowerLimit(threshold, minorityPower), 1000))
 	s.ValidatorSet = []snapshot.Validator{minorityPower, majorityPower}
@@ -273,7 +274,7 @@ func TestTallyVote_ForDecidedPoll(t *testing.T) {
 func TestTallyVote_FailedPoll(t *testing.T) {
 	s := setup()
 	threshold := utils.Threshold{Numerator: 1, Denominator: 2}
-	s.Keeper.SetVotingThreshold(s.Ctx, threshold)
+	s.Keeper.SetDefaultVotingThreshold(s.Ctx, threshold)
 	validatorPower := rand.I64Between(1, 200)
 	validator1 := newValidator(rand.Bytes(sdk.AddrLen), validatorPower)
 	validator2 := newValidator(rand.Bytes(sdk.AddrLen), validatorPower)

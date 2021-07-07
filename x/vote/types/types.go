@@ -6,6 +6,7 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -26,11 +27,12 @@ func NewTalliedVote(tally int64, data codec.ProtoMarshaler) TalliedVote {
 }
 
 // NewPoll is the constructor for Poll
-func NewPoll(meta exported.PollMeta, validatorSnapshotCounter int64, expiresAt int64) Poll {
+func NewPoll(meta exported.PollMeta, validatorSnapshotCounter int64, expiresAt int64, threshold utils.Threshold) Poll {
 	return Poll{
 		Meta:                     meta,
 		ValidatorSnapshotCounter: validatorSnapshotCounter,
 		ExpiresAt:                expiresAt,
+		VotingThreshold:          threshold,
 	}
 }
 

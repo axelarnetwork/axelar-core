@@ -54,13 +54,13 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-// SetVotingThreshold sets the voting power threshold that must be reached to decide a poll
-func (k Keeper) SetVotingThreshold(ctx sdk.Context, threshold utils.Threshold) {
+// SetDefaultVotingThreshold sets the default voting power threshold that must be reached to decide a poll
+func (k Keeper) SetDefaultVotingThreshold(ctx sdk.Context, threshold utils.Threshold) {
 	k.getStore(ctx).Set(votingThresholdKey, &threshold)
 }
 
-// GetVotingThreshold returns the voting power threshold that must be reached to decide a poll
-func (k Keeper) GetVotingThreshold(ctx sdk.Context) utils.Threshold {
+// GetDefaultVotingThreshold returns the default voting power threshold that must be reached to decide a poll
+func (k Keeper) GetDefaultVotingThreshold(ctx sdk.Context) utils.Threshold {
 	var threshold utils.Threshold
 	k.getStore(ctx).Get(votingThresholdKey, &threshold)
 
@@ -79,7 +79,7 @@ func (k Keeper) InitPoll(ctx sdk.Context, pollMeta exported.PollMeta, snapshotCo
 		return fmt.Errorf("poll %s has already got result", pollMeta.String())
 	default:
 		k.DeletePoll(ctx, pollMeta)
-		k.setPoll(ctx, types.NewPoll(pollMeta, snapshotCounter, expireAt))
+		k.setPoll(ctx, types.NewPoll(pollMeta, snapshotCounter, expireAt, k.GetDefaultVotingThreshold(ctx)))
 
 		return nil
 	}
@@ -154,10 +154,9 @@ func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta expor
 		poll.Votes[i] = talliedVote
 	}
 
-	threshold := k.GetVotingThreshold(ctx)
-	if threshold.IsMet(talliedVote.Tally, snap.TotalShareCount) {
+	if poll.VotingThreshold.IsMet(talliedVote.Tally, snap.TotalShareCount) {
 		k.Logger(ctx).Debug(fmt.Sprintf("threshold of %d/%d has been met for %s: %s/%s",
-			threshold.Numerator, threshold.Denominator, pollMeta, talliedVote.Tally.String(), snap.TotalShareCount.String()))
+			poll.VotingThreshold.Numerator, poll.VotingThreshold.Denominator, pollMeta, talliedVote.Tally.String(), snap.TotalShareCount.String()))
 
 		poll.Result = talliedVote.Data
 	}
@@ -165,7 +164,7 @@ func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta expor
 	_, highestTalliedVote := poll.GetHighestTalliedVote()
 	votedShareCount := poll.GetVotedShareCount()
 
-	if !threshold.IsMet(highestTalliedVote.Tally.Add(snap.TotalShareCount).Sub(votedShareCount), snap.TotalShareCount) {
+	if !poll.VotingThreshold.IsMet(highestTalliedVote.Tally.Add(snap.TotalShareCount).Sub(votedShareCount), snap.TotalShareCount) {
 		poll.Failed = true
 	}
 

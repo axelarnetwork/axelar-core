@@ -13,7 +13,7 @@ import (
 // InitGenesis initialize default parameters
 // from the genesis state
 func InitGenesis(ctx sdk.Context, k keeper.Keeper, state types.GenesisState) {
-	k.SetVotingThreshold(ctx, state.VotingThreshold)
+	k.SetDefaultVotingThreshold(ctx, state.VotingThreshold)
 }
 
 // ExportGenesis writes the current store values
@@ -21,7 +21,7 @@ func InitGenesis(ctx sdk.Context, k keeper.Keeper, state types.GenesisState) {
 // with InitGenesis
 func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
 	state := &types.GenesisState{
-		VotingThreshold: k.GetVotingThreshold(ctx),
+		VotingThreshold: k.GetDefaultVotingThreshold(ctx),
 	}
 
 	return state

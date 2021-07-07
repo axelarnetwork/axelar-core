@@ -2364,6 +2364,7 @@ have any data type
 | `votes` | [TalliedVote](#vote.v1beta1.TalliedVote) | repeated |  |
 | `expires_at` | [int64](#int64) |  |  |
 | `result` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+| `voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `failed` | [bool](#bool) |  |  |
 
 
