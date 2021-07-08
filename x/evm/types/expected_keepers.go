@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	evmTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -39,7 +39,7 @@ type ChainKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 
 	GetName() string
-	AssembleEthTx(ctx sdk.Context, txID string, pk ecdsa.PublicKey, sig tss.Signature) (*ethTypes.Transaction, error)
+	AssembleTx(ctx sdk.Context, txID string, pk ecdsa.PublicKey, sig tss.Signature) (*evmTypes.Transaction, error)
 	GetCommandData(ctx sdk.Context, commandID CommandID) []byte
 	GetNetwork(ctx sdk.Context) (string, bool)
 	GetRequiredConfirmationHeight(ctx sdk.Context) (uint64, bool)
@@ -64,7 +64,7 @@ type ChainKeeper interface {
 	SetCommandData(ctx sdk.Context, commandID CommandID, commandData []byte)
 	SetTokenInfo(ctx sdk.Context, msg *SignDeployTokenRequest)
 	GetConfirmedDeposits(ctx sdk.Context) []ERC20Deposit
-	SetUnsignedTx(ctx sdk.Context, txID string, tx *ethTypes.Transaction)
+	SetUnsignedTx(ctx sdk.Context, txID string, tx *evmTypes.Transaction)
 	GetHashToSign(ctx sdk.Context, txID string) (common.Hash, error)
 	SetGatewayAddress(ctx sdk.Context, addr common.Address)
 	GetPendingTransferOwnership(ctx sdk.Context, poll vote.PollMeta) (TransferOwnership, bool)

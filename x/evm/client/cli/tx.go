@@ -13,7 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	evmTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/spf13/cobra"
 )
 
@@ -86,8 +86,8 @@ func GetCmdSignTx() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			var ethtx *ethTypes.Transaction
-			cliCtx.LegacyAmino.MustUnmarshalJSON(json, &ethtx)
+			var evmtx *evmTypes.Transaction
+			cliCtx.LegacyAmino.MustUnmarshalJSON(json, &evmtx)
 
 			msg := types.NewSignTxRequest(cliCtx.GetFromAddress(), chain, json)
 

@@ -175,7 +175,7 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 	eventMgr := createEventMgr(ctx, stateSource, logger)
 	tssMgr := createTSSMgr(broadcaster, ctx.FromAddress, &tssGenesisState, axelarCfg, logger, valAddr, cdc)
 	btcMgr := createBTCMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
-	ethMgr := createEVMMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
+	evmMgr := createEVMMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
 
 	// we have two processes listening to block headers
 	blockHeader1 := tmEvents.MustSubscribeNewBlockHeader(hub)
@@ -188,11 +188,11 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 
 	btcConf := tmEvents.MustSubscribeTx(eventMgr, btcTypes.EventTypeOutpointConfirmation, btcTypes.ModuleName, btcTypes.AttributeValueStart)
 
-	ethNewChain := tmEvents.MustSubscribeTx(hub, evmTypes.EventTypeNewChain, evmTypes.ModuleName, evmTypes.AttributeValueUpdate)
-	ethChainConf := tmEvents.MustSubscribeTx(hub, evmTypes.EventTypeChainConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	ethDepConf := tmEvents.MustSubscribeTx(eventMgr, evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	ethTokConf := tmEvents.MustSubscribeTx(eventMgr, evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	ethTraConf := tmEvents.MustSubscribeTx(eventMgr, evmTypes.EventTypeTransferOwnershipConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	evmNewChain := tmEvents.MustSubscribeTx(hub, evmTypes.EventTypeNewChain, evmTypes.ModuleName, evmTypes.AttributeValueUpdate)
+	evmChainConf := tmEvents.MustSubscribeTx(hub, evmTypes.EventTypeChainConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	evmDepConf := tmEvents.MustSubscribeTx(eventMgr, evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	evmTokConf := tmEvents.MustSubscribeTx(eventMgr, evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	evmTraConf := tmEvents.MustSubscribeTx(eventMgr, evmTypes.EventTypeTransferOwnershipConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 
 	// stop the jobs if process gets interrupted/terminated
 	cleanupCommands = append(cleanupCommands, func() {
@@ -219,11 +219,11 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 		events.Consume(signStart, tssMgr.ProcessSignStart),
 		events.Consume(signMsg, events.OnlyAttributes(tssMgr.ProcessSignMsg)),
 		events.Consume(btcConf, events.OnlyAttributes(btcMgr.ProcessConfirmation)),
-		events.Consume(ethNewChain, events.OnlyAttributes(ethMgr.ProcessNewChain)),
-		events.Consume(ethChainConf, events.OnlyAttributes(ethMgr.ProcessChainConfirmation)),
-		events.Consume(ethDepConf, events.OnlyAttributes(ethMgr.ProcessDepositConfirmation)),
-		events.Consume(ethTokConf, events.OnlyAttributes(ethMgr.ProcessTokenConfirmation)),
-		events.Consume(ethTraConf, events.OnlyAttributes(ethMgr.ProcessTransferOwnershipConfirmation)),
+		events.Consume(evmNewChain, events.OnlyAttributes(evmMgr.ProcessNewChain)),
+		events.Consume(evmChainConf, events.OnlyAttributes(evmMgr.ProcessChainConfirmation)),
+		events.Consume(evmDepConf, events.OnlyAttributes(evmMgr.ProcessDepositConfirmation)),
+		events.Consume(evmTokConf, events.OnlyAttributes(evmMgr.ProcessTokenConfirmation)),
+		events.Consume(evmTraConf, events.OnlyAttributes(evmMgr.ProcessTransferOwnershipConfirmation)),
 	}
 
 	// errGroup runs async processes and cancels their context if ANY of them returns an error.
@@ -300,15 +300,15 @@ func createEVMMgr(axelarCfg app.Config, b broadcasterTypes.Broadcaster, sender s
 			logger.Error(err.Error())
 			panic(err)
 		}
-		// clean up ethRPC connection on process shutdown
+		// clean up evmRPC connection on process shutdown
 		cleanupCommands = append(cleanupCommands, rpc.Close)
 
 		rpcs[strings.ToLower(evmChainConf.Name)] = rpc
 		logger.Info(fmt.Sprintf("Successfully connected to EVM bridge for chain %s", evmChainConf.Name))
 	}
 
-	ethMgr := evm.NewMgr(rpcs, b, sender, logger, cdc)
-	return ethMgr
+	evmMgr := evm.NewMgr(rpcs, b, sender, logger, cdc)
+	return evmMgr
 }
 
 // RWFile implements the ReadWriter interface for an underlying file

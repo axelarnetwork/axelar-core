@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	evmTypes "github.com/ethereum/go-ethereum/core/types"
 )
 
 // NewSignTxRequest - constructor
@@ -38,7 +38,7 @@ func (m SignTxRequest) ValidateBasic() error {
 	if m.Tx == nil {
 		return fmt.Errorf("missing tx")
 	}
-	tx := ethTypes.Transaction{}
+	tx := evmTypes.Transaction{}
 	if err := tx.UnmarshalJSON(m.Tx); err != nil {
 		return err
 	}
@@ -58,8 +58,8 @@ func (m SignTxRequest) GetSigners() []sdk.AccAddress {
 }
 
 // UnmarshaledTx returns the unmarshaled evm transaction contained in this message
-func (m SignTxRequest) UnmarshaledTx() *ethTypes.Transaction {
-	tx := &ethTypes.Transaction{}
+func (m SignTxRequest) UnmarshaledTx() *evmTypes.Transaction {
+	tx := &evmTypes.Transaction{}
 	err := tx.UnmarshalJSON(m.Tx)
 	if err != nil {
 		panic(err)

@@ -6,9 +6,9 @@ import (
 	"math/big"
 	"strings"
 
-	ethereumRoot "github.com/ethereum/go-ethereum"
+	evm "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	evmTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -246,7 +246,7 @@ func createDeployGateway(ctx sdk.Context, k types.BaseKeeper, rpcs map[string]ty
 
 	gasLimit := params.GasLimit
 	if gasLimit == 0 {
-		gasLimit, err = rpc.EstimateGas(context.Background(), ethereumRoot.CallMsg{
+		gasLimit, err = rpc.EstimateGas(context.Background(), evm.CallMsg{
 			To:   nil,
 			Data: byteCodes,
 		})
@@ -256,7 +256,7 @@ func createDeployGateway(ctx sdk.Context, k types.BaseKeeper, rpcs map[string]ty
 		}
 	}
 
-	tx := ethTypes.NewContractCreation(nonce, big.NewInt(0), gasLimit, gasPrice, byteCodes)
+	tx := evmTypes.NewContractCreation(nonce, big.NewInt(0), gasLimit, gasPrice, byteCodes)
 	result := types.DeployResult{
 		Tx:              tx,
 		ContractAddress: crypto.CreateAddress(contractOwner, nonce).String(),
@@ -306,7 +306,7 @@ func querySignedTx(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding signature for sig ID %s", txID))
 	}
 
-	signedTx, err := k.AssembleEthTx(ctx, txID, pk.Value, sig)
+	signedTx, err := k.AssembleTx(ctx, txID, pk.Value, sig)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not insert generated signature: %v", err))
 	}
@@ -336,7 +336,7 @@ func sendSignedTx(ctx sdk.Context, k types.ChainKeeper, rpcs map[string]types.RP
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding signature for sig ID %s", txID))
 	}
 
-	signedTx, err := k.AssembleEthTx(ctx, txID, pk.Value, sig)
+	signedTx, err := k.AssembleTx(ctx, txID, pk.Value, sig)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not insert generated signature: %v", err))
 	}
@@ -378,7 +378,7 @@ func createTxAndSend(ctx sdk.Context, k types.BaseKeeper, rpcs map[string]types.
 	}
 
 	commandData := k.ForChain(ctx, params.Chain).GetCommandData(ctx, params.CommandID)
-	commandSig, err := types.ToEthSignature(sig, types.GetEthereumSignHash(commandData), pk.Value)
+	commandSig, err := types.ToSignature(sig, types.GetSignHash(commandData), pk.Value)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not create recoverable signature: %v", err))
 	}
@@ -395,7 +395,7 @@ func createTxAndSend(ctx sdk.Context, k types.BaseKeeper, rpcs map[string]types.
 		return nil, sdkerrors.Wrapf(types.ErrEVM, "axelar gateway not deployed yet")
 	}
 
-	msg := ethereumRoot.CallMsg{
+	msg := evm.CallMsg{
 		From: common.HexToAddress(params.Sender),
 		To:   &contractAddr,
 		Data: executeData,
@@ -431,7 +431,7 @@ func queryCommandData(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n ty
 	copy(commandID[:], common.Hex2Bytes(commandIDHex))
 
 	commandData := k.GetCommandData(ctx, commandID)
-	commandSig, err := types.ToEthSignature(sig, types.GetEthereumSignHash(commandData), pk.Value)
+	commandSig, err := types.ToSignature(sig, types.GetSignHash(commandData), pk.Value)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not create recoverable signature: %v", err))
 	}

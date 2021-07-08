@@ -1,6 +1,6 @@
 package types
 
-// EVMConfig contains all Ethereum module configuration values
+// EVMConfig contains all EVM module configuration values
 type EVMConfig struct {
 	Name       string `mapstructure:"name"`
 	RPCAddr    string `mapstructure:"rpc_addr"`

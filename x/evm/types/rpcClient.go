@@ -5,37 +5,37 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum"
+	evm "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
+	evmTypes "github.com/ethereum/go-ethereum/core/types"
+	evmClient "github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
 //go:generate moq -out ./mock/rpcClient.go -pkg mock . RPCClient
 
-// RPCClient provides calls to an Ethereum RPC endpoint
+// RPCClient provides calls to an EVM RPC endpoint
 type RPCClient interface {
 	BlockNumber(ctx context.Context) (uint64, error)
-	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
-	SendTransaction(ctx context.Context, tx *types.Transaction) error
-	SendAndSignTransaction(ctx context.Context, msg ethereum.CallMsg) (string, error)
+	TransactionReceipt(ctx context.Context, txHash common.Hash) (*evmTypes.Receipt, error)
+	SendTransaction(ctx context.Context, tx *evmTypes.Transaction) error
+	SendAndSignTransaction(ctx context.Context, msg evm.CallMsg) (string, error)
 	PendingNonceAt(ctx context.Context, account common.Address) (uint64, error)
 	SuggestGasPrice(ctx context.Context) (*big.Int, error)
 	ChainID(ctx context.Context) (*big.Int, error)
-	EstimateGas(ctx context.Context, msg ethereum.CallMsg) (uint64, error)
+	EstimateGas(ctx context.Context, msg evm.CallMsg) (uint64, error)
 }
 
 // RPCClientImpl implements RPCClient
 type RPCClientImpl struct {
-	*ethclient.Client
+	*evmClient.Client
 	rpc *rpc.Client
 }
 
-// NewRPCClient returns an Ethereum rpc client
+// NewRPCClient returns an EVM rpc client
 func NewRPCClient(url string) (*RPCClientImpl, error) {
-	client, err := ethclient.Dial(url)
+	client, err := evmClient.Dial(url)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func NewRPCClient(url string) (*RPCClientImpl, error) {
 		return nil, err
 	}
 
-	// try to access ethereum network
+	// try to access EVM network
 	if _, err := client.ChainID(context.Background()); err != nil {
 		return nil, err
 	}
@@ -53,11 +53,11 @@ func NewRPCClient(url string) (*RPCClientImpl, error) {
 	return &RPCClientImpl{Client: client, rpc: rpcClient}, nil
 }
 
-// SendAndSignTransaction sends an unsigned transaction to an Ethereum node which tries to sign and submit it
-func (ethRPCClient *RPCClientImpl) SendAndSignTransaction(ctx context.Context, msg ethereum.CallMsg) (string, error) {
+// SendAndSignTransaction sends an unsigned transaction to an EVM node which tries to sign and submit it
+func (evmRPCClient *RPCClientImpl) SendAndSignTransaction(ctx context.Context, msg evm.CallMsg) (string, error) {
 	var txHash hexutil.Bytes
 
-	err := ethRPCClient.rpc.CallContext(ctx, &txHash, "eth_sendTransaction", toCallArg(msg))
+	err := evmRPCClient.rpc.CallContext(ctx, &txHash, "eth_sendTransaction", toCallArg(msg))
 	if err != nil {
 		return "", err
 	}
@@ -66,7 +66,7 @@ func (ethRPCClient *RPCClientImpl) SendAndSignTransaction(ctx context.Context, m
 }
 
 /* Copied from https://github.com/ethereum/go-ethereum/blob/053ed9cc847647a9b3ef707d0efe7104c4ab2a4c/ethclient/ethclient.go#L531 */
-func toCallArg(msg ethereum.CallMsg) interface{} {
+func toCallArg(msg evm.CallMsg) interface{} {
 	arg := map[string]interface{}{
 		"from": msg.From,
 		"to":   msg.To,
@@ -104,17 +104,17 @@ func (d dummyClient) BlockNumber(context.Context) (uint64, error) {
 }
 
 // TransactionReceipt implements RPCClient
-func (d dummyClient) TransactionReceipt(context.Context, common.Hash) (*types.Receipt, error) {
+func (d dummyClient) TransactionReceipt(context.Context, common.Hash) (*evmTypes.Receipt, error) {
 	return nil, fmt.Errorf("no response")
 }
 
 // SendTransaction implements RPCClient
-func (d dummyClient) SendTransaction(context.Context, *types.Transaction) error {
+func (d dummyClient) SendTransaction(context.Context, *evmTypes.Transaction) error {
 	return fmt.Errorf("no response")
 }
 
 // SendAndSignTransaction implements RPCClient
-func (d dummyClient) SendAndSignTransaction(context.Context, ethereum.CallMsg) (string, error) {
+func (d dummyClient) SendAndSignTransaction(context.Context, evm.CallMsg) (string, error) {
 	return "", fmt.Errorf("no response")
 }
 
@@ -134,6 +134,6 @@ func (d dummyClient) ChainID(context.Context) (*big.Int, error) {
 }
 
 // EstimateGas implements RPCClient
-func (d dummyClient) EstimateGas(context.Context, ethereum.CallMsg) (uint64, error) {
+func (d dummyClient) EstimateGas(context.Context, evm.CallMsg) (uint64, error) {
 	return 0, fmt.Errorf("no response")
 }
