@@ -26,4 +26,5 @@ axelard query tss [flags]
 ### SEE ALSO
 
 - [axelard query](axelard_query.md)	 - Querying subcommands
+- [axelard query tss key](axelard_query_tss_key.md)	 - Query a key by key ID
 - [axelard query tss signature](axelard_query_tss_signature.md)	 - Query a signature by sig ID
