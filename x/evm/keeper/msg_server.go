@@ -138,7 +138,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
 	}
 
-	poll := vote.NewPollMeta(types.ModuleName, req.TxID.Hex()+"_"+req.Symbol)
+	poll := vote.NewPollKey(types.ModuleName, req.TxID.Hex()+"_"+req.Symbol)
 
 	period, ok := keeper.GetRevoteLockingPeriod(ctx)
 	if !ok {
@@ -201,7 +201,7 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", req.Name)
 	}
 
-	poll := vote.NewPollMeta(types.ModuleName, req.Name)
+	poll := vote.NewPollKey(types.ModuleName, req.Name)
 	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+period); err != nil {
 		return nil, err
 	}
@@ -258,7 +258,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", req.Chain)
 	}
 
-	poll := vote.NewPollMeta(types.ModuleName, req.TxID.Hex()+"_"+req.BurnerAddress.Hex())
+	poll := vote.NewPollKey(types.ModuleName, req.TxID.Hex()+"_"+req.BurnerAddress.Hex())
 	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+period); err != nil {
 		return nil, err
 	}
@@ -329,7 +329,7 @@ func (s msgServer) ConfirmTransferOwnership(c context.Context, req *types.Confir
 		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", req.Chain)
 	}
 
-	poll := vote.NewPollMeta(types.ModuleName, req.TxID.Hex()+"_"+req.KeyID)
+	poll := vote.NewPollKey(types.ModuleName, req.TxID.Hex()+"_"+req.KeyID)
 	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+period); err != nil {
 		return nil, err
 	}

@@ -19,9 +19,9 @@ func TestMsgVotePubKey_Marshaling(t *testing.T) {
 		sender[i] = 0
 	}
 	vote := tss.VotePubKeyRequest{
-		Sender:   sender,
-		PollMeta: exported.NewPollMeta("test", "test"),
-		Result:   &tofnd.MessageOut_KeygenResult{KeygenResultData: &tofnd.MessageOut_KeygenResult_Pubkey{Pubkey: []byte("some bytes")}},
+		Sender:  sender,
+		PollKey: exported.NewPollKey("test", "test"),
+		Result:  &tofnd.MessageOut_KeygenResult{KeygenResultData: &tofnd.MessageOut_KeygenResult_Pubkey{Pubkey: []byte("some bytes")}},
 	}
 	encCfg := app.MakeEncodingConfig()
 

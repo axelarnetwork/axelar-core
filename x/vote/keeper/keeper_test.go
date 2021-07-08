@@ -56,6 +56,7 @@ func setup() *testSetup {
 	}
 
 	setup.Keeper = keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(stringGen.Next()), setup.Snapshotter)
+	setup.Keeper.SetDefaultVotingThreshold(setup.Ctx, types.DefaultGenesisState().VotingThreshold)
 	return setup
 }
 
@@ -67,40 +68,40 @@ func TestInitPoll(t *testing.T) {
 	t.Run("should create a new poll", testutils.Func(func(t *testing.T) {
 		s := setup()
 
-		pollMeta := randomPollMeta()
+		pollKey := randomPollKey()
 		snapshotCounter := int64(100)
 		expireAt := int64(0)
 
-		assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollMeta, snapshotCounter, expireAt))
+		assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollKey, snapshotCounter, expireAt))
 
-		expected := types.NewPoll(pollMeta, snapshotCounter, expireAt)
-		actual := s.Keeper.GetPoll(s.Ctx, pollMeta)
+		expected := types.NewPoll(pollKey, snapshotCounter, expireAt, types.DefaultGenesisState().VotingThreshold)
+		actual := s.Keeper.GetPoll(s.Ctx, pollKey)
 		assert.Equal(t, expected, *actual)
 	}))
 
-	t.Run("should return error if poll with same meta exists and has not expired yet", testutils.Func(func(t *testing.T) {
+	t.Run("should return error if poll with same key exists and has not expired yet", testutils.Func(func(t *testing.T) {
 		s := setup()
-		pollMeta := randomPollMeta()
+		pollKey := randomPollKey()
 		snapshotCounter := int64(100)
 		expireAt := int64(0)
 
-		assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollMeta, snapshotCounter, expireAt))
-		assert.Error(t, s.Keeper.InitPoll(s.Ctx, pollMeta, snapshotCounter, expireAt))
+		assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollKey, snapshotCounter, expireAt))
+		assert.Error(t, s.Keeper.InitPoll(s.Ctx, pollKey, snapshotCounter, expireAt))
 	}))
 
-	t.Run("should create a new poll if poll with same meta exists and has already expired", testutils.Func(func(t *testing.T) {
+	t.Run("should create a new poll if poll with same key exists and has already expired", testutils.Func(func(t *testing.T) {
 		s := setup()
-		pollMeta := randomPollMeta()
+		pollKey := randomPollKey()
 		snapshotCounter1 := int64(100)
 		snapshotCounter2 := int64(101)
 		expireAt1 := int64(10)
 		expireAt2 := int64(20)
 
-		assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollMeta, snapshotCounter1, expireAt1))
-		assert.NoError(t, s.Keeper.InitPoll(s.Ctx.WithBlockHeight(expireAt1), pollMeta, snapshotCounter2, expireAt2))
+		assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollKey, snapshotCounter1, expireAt1))
+		assert.NoError(t, s.Keeper.InitPoll(s.Ctx.WithBlockHeight(expireAt1), pollKey, snapshotCounter2, expireAt2))
 
-		expected := types.NewPoll(pollMeta, snapshotCounter2, expireAt2)
-		actual := s.Keeper.GetPoll(s.Ctx, pollMeta)
+		expected := types.NewPoll(pollKey, snapshotCounter2, expireAt2, types.DefaultGenesisState().VotingThreshold)
+		actual := s.Keeper.GetPoll(s.Ctx, pollKey)
 		assert.Equal(t, expected, *actual)
 	}))
 }
@@ -109,10 +110,10 @@ func TestInitPoll(t *testing.T) {
 func TestTallyVote_NonExistingPoll_ReturnError(t *testing.T) {
 	s := setup()
 
-	pollMeta := randomPollMeta()
+	pollKey := randomPollKey()
 
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollMeta, rand.PosI64(), 0))
-	_, err := s.Keeper.TallyVote(s.Ctx, randomSender(), pollMeta, randomData())
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollKey, rand.PosI64(), 0))
+	_, err := s.Keeper.TallyVote(s.Ctx, randomSender(), pollKey, randomData())
 	assert.Error(t, err)
 }
 
@@ -122,10 +123,10 @@ func TestTallyVote_UnknownVoter_ReturnError(t *testing.T) {
 	// proxy is unknown
 	s.Snapshotter.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return nil }
 
-	pollMeta := randomPollMeta()
+	pollKey := randomPollKey()
 
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollMeta, rand.PosI64(), 0))
-	_, err := s.Keeper.TallyVote(s.Ctx, randomSender(), pollMeta, randomData())
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollKey, rand.PosI64(), 0))
+	_, err := s.Keeper.TallyVote(s.Ctx, randomSender(), pollKey, randomData())
 	assert.Error(t, err)
 }
 
@@ -133,7 +134,7 @@ func TestTallyVote_UnknownVoter_ReturnError(t *testing.T) {
 func TestTallyVote_NoWinner(t *testing.T) {
 	s := setup()
 	threshold := utils.Threshold{Numerator: 2, Denominator: 3}
-	s.Keeper.SetVotingThreshold(s.Ctx, threshold)
+	s.Keeper.SetDefaultVotingThreshold(s.Ctx, threshold)
 	minorityPower := newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(1, 200))
 	majorityPower := newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(calcMajorityLowerLimit(threshold, minorityPower), 1000))
 	s.ValidatorSet = []snapshot.Validator{minorityPower, majorityPower}
@@ -142,10 +143,10 @@ func TestTallyVote_NoWinner(t *testing.T) {
 		return minorityPower.GetSDKValidator().GetOperator()
 	}
 
-	pollMeta := randomPollMeta()
+	pollKey := randomPollKey()
 
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollMeta, rand.PosI64(), 0))
-	poll, err := s.Keeper.TallyVote(s.Ctx, randomSender(), pollMeta, randomData())
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollKey, rand.PosI64(), 0))
+	poll, err := s.Keeper.TallyVote(s.Ctx, randomSender(), pollKey, randomData())
 	assert.NoError(t, err)
 	assert.Nil(t, poll.GetResult())
 }
@@ -154,7 +155,7 @@ func TestTallyVote_NoWinner(t *testing.T) {
 func TestTallyVote_WithWinner(t *testing.T) {
 	s := setup()
 	threshold := utils.Threshold{Numerator: 2, Denominator: 3}
-	s.Keeper.SetVotingThreshold(s.Ctx, threshold)
+	s.Keeper.SetDefaultVotingThreshold(s.Ctx, threshold)
 	minorityPower := newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(1, 200))
 	majorityPower := newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(calcMajorityLowerLimit(threshold, minorityPower), 1000))
 	s.ValidatorSet = []snapshot.Validator{minorityPower, majorityPower}
@@ -162,11 +163,11 @@ func TestTallyVote_WithWinner(t *testing.T) {
 	s.Snapshotter.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
 		return majorityPower.GetSDKValidator().GetOperator()
 	}
-	pollMeta := randomPollMeta()
+	pollKey := randomPollKey()
 	data := randomData()
 
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollMeta, rand.PosI64(), 0))
-	poll, err := s.Keeper.TallyVote(s.Ctx, randomSender(), pollMeta, data)
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollKey, rand.PosI64(), 0))
+	poll, err := s.Keeper.TallyVote(s.Ctx, randomSender(), pollKey, data)
 
 	assert.NoError(t, err)
 	assert.Equal(t, data, poll.GetResult())
@@ -175,7 +176,7 @@ func TestTallyVote_WithWinner(t *testing.T) {
 // error when tallying second vote from same validator
 func TestTallyVote_TwoVotesFromSameValidator_ReturnError(t *testing.T) {
 	s := setup()
-	s.Keeper.SetVotingThreshold(s.Ctx, utils.Threshold{Numerator: 2, Denominator: 3})
+	s.Keeper.SetDefaultVotingThreshold(s.Ctx, utils.Threshold{Numerator: 2, Denominator: 3})
 	s.ValidatorSet = []snapshot.Validator{newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(1, 1000))}
 
 	// return same validator for all votes
@@ -183,22 +184,22 @@ func TestTallyVote_TwoVotesFromSameValidator_ReturnError(t *testing.T) {
 		return s.ValidatorSet[0].GetSDKValidator().GetOperator()
 	}
 
-	pollMeta := randomPollMeta()
+	pollKey := randomPollKey()
 	sender := randomSender()
 
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollMeta, rand.PosI64(), 0))
-	_, err := s.Keeper.TallyVote(s.Ctx, sender, pollMeta, randomData())
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollKey, rand.PosI64(), 0))
+	_, err := s.Keeper.TallyVote(s.Ctx, sender, pollKey, randomData())
 	assert.NoError(t, err)
-	_, err = s.Keeper.TallyVote(s.Ctx, sender, pollMeta, randomData())
+	_, err = s.Keeper.TallyVote(s.Ctx, sender, pollKey, randomData())
 	assert.Error(t, err)
-	_, err = s.Keeper.TallyVote(s.Ctx, sender, pollMeta, randomData())
+	_, err = s.Keeper.TallyVote(s.Ctx, sender, pollKey, randomData())
 	assert.Error(t, err)
 }
 
 // tally multiple votes until poll is decided
 func TestTallyVote_MultipleVotesUntilDecision(t *testing.T) {
 	s := setup()
-	s.Keeper.SetVotingThreshold(s.Ctx, utils.Threshold{Numerator: 2, Denominator: 3})
+	s.Keeper.SetDefaultVotingThreshold(s.Ctx, utils.Threshold{Numerator: 2, Denominator: 3})
 	s.ValidatorSet = []snapshot.Validator{
 		// ensure first validator does not have majority voting power
 		newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(1, 100)),
@@ -208,8 +209,8 @@ func TestTallyVote_MultipleVotesUntilDecision(t *testing.T) {
 		newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(100, 200)),
 	}
 
-	pollMeta := randomPollMeta()
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollMeta, 100, 0))
+	pollKey := randomPollKey()
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollKey, 100, 0))
 
 	sender := randomSender()
 	data := randomData()
@@ -218,7 +219,7 @@ func TestTallyVote_MultipleVotesUntilDecision(t *testing.T) {
 		return s.ValidatorSet[0].GetSDKValidator().GetOperator()
 	}
 
-	poll, err := s.Keeper.TallyVote(s.Ctx, sender, pollMeta, data)
+	poll, err := s.Keeper.TallyVote(s.Ctx, sender, pollKey, data)
 	assert.NoError(t, err)
 	assert.Nil(t, poll.GetResult())
 
@@ -230,32 +231,32 @@ func TestTallyVote_MultipleVotesUntilDecision(t *testing.T) {
 		s.Snapshotter.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
 			return val.GetSDKValidator().GetOperator()
 		}
-		poll, err = s.Keeper.TallyVote(s.Ctx, sender, pollMeta, data)
+		poll, err = s.Keeper.TallyVote(s.Ctx, sender, pollKey, data)
 		assert.NoError(t, err)
 		pollDecided = pollDecided || poll.GetResult() != nil
 	}
 
-	assert.Equal(t, data, s.Keeper.GetPoll(s.Ctx, pollMeta).GetResult())
+	assert.Equal(t, data, s.Keeper.GetPoll(s.Ctx, pollKey).GetResult())
 }
 
 // tally vote for already decided vote
 func TestTallyVote_ForDecidedPoll(t *testing.T) {
 	s := setup()
 	threshold := utils.Threshold{Numerator: 2, Denominator: 3}
-	s.Keeper.SetVotingThreshold(s.Ctx, threshold)
+	s.Keeper.SetDefaultVotingThreshold(s.Ctx, threshold)
 	minorityPower := newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(1, 200))
 	majorityPower := newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(calcMajorityLowerLimit(threshold, minorityPower), 1000))
 	s.ValidatorSet = []snapshot.Validator{minorityPower, majorityPower}
 
-	pollMeta := randomPollMeta()
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollMeta, 100, 0))
+	pollKey := randomPollKey()
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollKey, 100, 0))
 
 	s.Snapshotter.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
 		return majorityPower.GetSDKValidator().GetOperator()
 	}
 
 	data1 := randomData()
-	poll, err := s.Keeper.TallyVote(s.Ctx, randomSender(), pollMeta, data1)
+	poll, err := s.Keeper.TallyVote(s.Ctx, randomSender(), pollKey, data1)
 	assert.NoError(t, err)
 	assert.Equal(t, data1, poll.GetResult())
 
@@ -264,7 +265,7 @@ func TestTallyVote_ForDecidedPoll(t *testing.T) {
 	}
 
 	data2 := randomData()
-	poll, err = s.Keeper.TallyVote(s.Ctx, randomSender(), pollMeta, data2)
+	poll, err = s.Keeper.TallyVote(s.Ctx, randomSender(), pollKey, data2)
 	assert.NoError(t, err)
 	// does not change outcome
 	assert.Equal(t, data1, poll.GetResult())
@@ -273,23 +274,23 @@ func TestTallyVote_ForDecidedPoll(t *testing.T) {
 func TestTallyVote_FailedPoll(t *testing.T) {
 	s := setup()
 	threshold := utils.Threshold{Numerator: 1, Denominator: 2}
-	s.Keeper.SetVotingThreshold(s.Ctx, threshold)
+	s.Keeper.SetDefaultVotingThreshold(s.Ctx, threshold)
 	validatorPower := rand.I64Between(1, 200)
 	validator1 := newValidator(rand.Bytes(sdk.AddrLen), validatorPower)
 	validator2 := newValidator(rand.Bytes(sdk.AddrLen), validatorPower)
 	s.ValidatorSet = []snapshot.Validator{validator1, validator2}
 
-	pollMeta := randomPollMeta()
-	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollMeta, 100, 0))
+	pollKey := randomPollKey()
+	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollKey, 100, 0))
 
 	s.Snapshotter.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return validator1.GetSDKValidator().GetOperator() }
-	poll, err := s.Keeper.TallyVote(s.Ctx, randomSender(), pollMeta, randomData())
+	poll, err := s.Keeper.TallyVote(s.Ctx, randomSender(), pollKey, randomData())
 	assert.NoError(t, err)
 	assert.Nil(t, poll.GetResult())
 	assert.False(t, poll.Failed)
 
 	s.Snapshotter.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return validator2.GetSDKValidator().GetOperator() }
-	poll, err = s.Keeper.TallyVote(s.Ctx, randomSender(), pollMeta, randomData())
+	poll, err = s.Keeper.TallyVote(s.Ctx, randomSender(), pollKey, randomData())
 	assert.NoError(t, err)
 	assert.Nil(t, poll.GetResult())
 	assert.True(t, poll.Failed)
@@ -303,8 +304,8 @@ func randomSender() sdk.AccAddress {
 	return rand.Bytes(sdk.AddrLen)
 }
 
-func randomPollMeta() exported.PollMeta {
-	return exported.NewPollMeta(stringGen.Next(), stringGen.Next())
+func randomPollKey() exported.PollKey {
+	return exported.NewPollKey(stringGen.Next(), stringGen.Next())
 }
 
 func newValidator(address sdk.ValAddress, power int64) snapshot.Validator {

@@ -181,8 +181,8 @@ func (mgr *Mgr) handleSignResult(sigID string, resultChan <-chan interface{}) er
 
 	mgr.Logger.Debug(fmt.Sprintf("handler goroutine: received sign result for %s [%+v]", sigID, result))
 
-	poll := voting.NewPollMeta(tss.ModuleName, sigID)
-	vote := &tss.VoteSigRequest{Sender: mgr.sender, PollMeta: poll, Result: result}
+	poll := voting.NewPollKey(tss.ModuleName, sigID)
+	vote := &tss.VoteSigRequest{Sender: mgr.sender, PollKey: poll, Result: result}
 	return mgr.broadcaster.Broadcast(vote)
 }
 

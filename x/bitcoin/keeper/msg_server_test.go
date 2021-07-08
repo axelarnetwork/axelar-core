@@ -132,10 +132,10 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 			},
 			GetRevoteLockingPeriodFunc:        func(sdk.Context) int64 { return int64(mathRand.Uint32()) },
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) uint64 { return mathRand.Uint64() },
-			SetPendingOutpointInfoFunc:        func(sdk.Context, vote.PollMeta, types.OutPointInfo) {},
+			SetPendingOutpointInfoFunc:        func(sdk.Context, vote.PollKey, types.OutPointInfo) {},
 		}
 		voter = &mock.VoterMock{
-			InitPollFunc: func(sdk.Context, vote.PollMeta, int64, int64) error { return nil },
+			InitPollFunc: func(sdk.Context, vote.PollKey, int64, int64, ...utils.Threshold) error { return nil },
 		}
 
 		signer = &mock.SignerMock{
@@ -205,7 +205,9 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 
 	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
 		setup()
-		voter.InitPollFunc = func(sdk.Context, vote.PollMeta, int64, int64) error { return fmt.Errorf("poll setup failed") }
+		voter.InitPollFunc = func(sdk.Context, vote.PollKey, int64, int64, ...utils.Threshold) error {
+			return fmt.Errorf("poll setup failed")
+		}
 		_, err := server.ConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
@@ -231,8 +233,8 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 				return types.OutPointInfo{}, 0, false
 			},
 			SetOutpointInfoFunc:           func(sdk.Context, types.OutPointInfo, types.OutPointState) {},
-			GetPendingOutPointInfoFunc:    func(sdk.Context, vote.PollMeta) (types.OutPointInfo, bool) { return info, true },
-			DeletePendingOutPointInfoFunc: func(sdk.Context, vote.PollMeta) {},
+			GetPendingOutPointInfoFunc:    func(sdk.Context, vote.PollKey) (types.OutPointInfo, bool) { return info, true },
+			DeletePendingOutPointInfoFunc: func(sdk.Context, vote.PollKey) {},
 			GetSignedTxFunc:               func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
 			GetMasterKeyVoutFunc:          func(sdk.Context) (uint32, bool) { return 0, false },
 			GetAddressFunc: func(sdk.Context, string) (types.AddressInfo, bool) {
@@ -245,12 +247,12 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			},
 		}
 		voter = &mock.VoterMock{
-			TallyVoteFunc: func(sdk.Context, sdk.AccAddress, vote.PollMeta, codec.ProtoMarshaler) (*votetypes.Poll, error) {
+			TallyVoteFunc: func(sdk.Context, sdk.AccAddress, vote.PollKey, codec.ProtoMarshaler) (*votetypes.Poll, error) {
 				result, _ := codectypes.NewAnyWithValue(&gogoprototypes.BoolValue{Value: true})
 
 				return &votetypes.Poll{Result: result}, nil
 			},
-			DeletePollFunc: func(sdk.Context, vote.PollMeta) {},
+			DeletePollFunc: func(sdk.Context, vote.PollKey) {},
 		}
 		nexusKeeper = &mock.NexusMock{
 			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) error { return nil },
@@ -400,7 +402,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 	t.Run("happy path reject", testutils.Func(func(t *testing.T) {
 		setup()
 		voter.TallyVoteFunc =
-			func(sdk.Context, sdk.AccAddress, vote.PollMeta, codec.ProtoMarshaler) (*votetypes.Poll, error) {
+			func(sdk.Context, sdk.AccAddress, vote.PollKey, codec.ProtoMarshaler) (*votetypes.Poll, error) {
 				result, _ := codectypes.NewAnyWithValue(&gogoprototypes.BoolValue{Value: false})
 
 				return &votetypes.Poll{Result: result}, nil
@@ -418,7 +420,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 	t.Run("happy path no result yet", testutils.Func(func(t *testing.T) {
 		setup()
 		voter.TallyVoteFunc =
-			func(sdk.Context, sdk.AccAddress, vote.PollMeta, codec.ProtoMarshaler) (*votetypes.Poll, error) {
+			func(sdk.Context, sdk.AccAddress, vote.PollKey, codec.ProtoMarshaler) (*votetypes.Poll, error) {
 				return &votetypes.Poll{}, nil
 			}
 
@@ -433,7 +435,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 
 	t.Run("happy path poll already completed", testutils.Func(func(t *testing.T) {
 		setup()
-		btcKeeper.GetPendingOutPointInfoFunc = func(sdk.Context, vote.PollMeta) (types.OutPointInfo, bool) {
+		btcKeeper.GetPendingOutPointInfoFunc = func(sdk.Context, vote.PollKey) (types.OutPointInfo, bool) {
 			return types.OutPointInfo{}, false
 		}
 		btcKeeper.GetOutPointInfoFunc = func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
@@ -482,7 +484,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 	t.Run("unknown outpoint", testutils.Func(func(t *testing.T) {
 		setup()
 		btcKeeper.GetPendingOutPointInfoFunc =
-			func(sdk.Context, vote.PollMeta) (types.OutPointInfo, bool) { return types.OutPointInfo{}, false }
+			func(sdk.Context, vote.PollKey) (types.OutPointInfo, bool) { return types.OutPointInfo{}, false }
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
@@ -491,7 +493,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 	t.Run("tally failed", testutils.Func(func(t *testing.T) {
 		setup()
 		voter.TallyVoteFunc =
-			func(sdk.Context, sdk.AccAddress, vote.PollMeta, codec.ProtoMarshaler) (*votetypes.Poll, error) {
+			func(sdk.Context, sdk.AccAddress, vote.PollKey, codec.ProtoMarshaler) (*votetypes.Poll, error) {
 				return nil, fmt.Errorf("failed")
 			}
 
@@ -953,7 +955,7 @@ func randomMsgConfirmOutpoint() *types.ConfirmOutpointRequest {
 func randomMsgVoteConfirmOutpoint() *types.VoteConfirmOutpointRequest {
 	return types.NewVoteConfirmOutpointRequest(
 		rand.Bytes(sdk.AddrLen),
-		vote.PollMeta{
+		vote.PollKey{
 			Module: types.ModuleName,
 			ID:     rand.StrBetween(5, 20),
 		},

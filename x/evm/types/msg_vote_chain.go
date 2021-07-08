@@ -3,16 +3,17 @@ package types
 import (
 	"fmt"
 
-	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // NewVoteConfirmChainRequest creates a message of type ConfirmTokenRequest
 func NewVoteConfirmChainRequest(
 	sender sdk.AccAddress,
 	name string,
-	poll vote.PollMeta,
+	poll vote.PollKey,
 	confirmed bool) *VoteConfirmChainRequest {
 	return &VoteConfirmChainRequest{
 		Sender:    sender,

@@ -54,13 +54,13 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-// SetVotingThreshold sets the voting power threshold that must be reached to decide a poll
-func (k Keeper) SetVotingThreshold(ctx sdk.Context, threshold utils.Threshold) {
+// SetDefaultVotingThreshold sets the default voting power threshold that must be reached to decide a poll
+func (k Keeper) SetDefaultVotingThreshold(ctx sdk.Context, threshold utils.Threshold) {
 	k.getStore(ctx).Set(votingThresholdKey, &threshold)
 }
 
-// GetVotingThreshold returns the voting power threshold that must be reached to decide a poll
-func (k Keeper) GetVotingThreshold(ctx sdk.Context) utils.Threshold {
+// GetDefaultVotingThreshold returns the default voting power threshold that must be reached to decide a poll
+func (k Keeper) GetDefaultVotingThreshold(ctx sdk.Context) utils.Threshold {
 	var threshold utils.Threshold
 	k.getStore(ctx).Get(votingThresholdKey, &threshold)
 
@@ -69,24 +69,29 @@ func (k Keeper) GetVotingThreshold(ctx sdk.Context) utils.Threshold {
 
 // InitPoll initializes a new poll. This is the first step of the voting protocol.
 // The Keeper only accepts votes for initialized polls.
-func (k Keeper) InitPoll(ctx sdk.Context, pollMeta exported.PollMeta, snapshotCounter int64, expireAt int64) error {
-	poll := k.GetPoll(ctx, pollMeta)
+func (k Keeper) InitPoll(ctx sdk.Context, pollKey exported.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error {
+	poll := k.GetPoll(ctx, pollKey)
 
 	switch {
 	case poll != nil && !poll.HasExpired(ctx):
-		return fmt.Errorf("poll %s already exists and has not expired yet", pollMeta.String())
+		return fmt.Errorf("poll %s already exists and has not expired yet", pollKey.String())
 	case poll != nil && poll.GetResult() != nil:
-		return fmt.Errorf("poll %s has already got result", pollMeta.String())
+		return fmt.Errorf("poll %s has already got result", pollKey.String())
 	default:
-		k.DeletePoll(ctx, pollMeta)
-		k.setPoll(ctx, types.NewPoll(pollMeta, snapshotCounter, expireAt))
+		k.DeletePoll(ctx, pollKey)
+
+		t := k.GetDefaultVotingThreshold(ctx)
+		if len(threshold) > 0 {
+			t = threshold[0]
+		}
+		k.setPoll(ctx, types.NewPoll(pollKey, snapshotCounter, expireAt, t))
 
 		return nil
 	}
 }
 
 // DeletePoll deletes the specified poll.
-func (k Keeper) DeletePoll(ctx sdk.Context, poll exported.PollMeta) {
+func (k Keeper) DeletePoll(ctx sdk.Context, poll exported.PollKey) {
 	// delete poll
 	k.getStore(ctx).Delete(pollPrefix.AppendStr(poll.String()))
 
@@ -108,8 +113,8 @@ func (k Keeper) DeletePoll(ctx sdk.Context, poll exported.PollMeta) {
 }
 
 // TallyVote tallies votes that have been broadcast. Each validator can only vote once per poll.
-func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data codec.ProtoMarshaler) (*types.Poll, error) {
-	poll := k.GetPoll(ctx, pollMeta)
+func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollKey exported.PollKey, data codec.ProtoMarshaler) (*types.Poll, error) {
+	poll := k.GetPoll(ctx, pollKey)
 	if poll == nil {
 		return nil, fmt.Errorf("poll does not exist or is closed")
 	}
@@ -129,7 +134,7 @@ func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta expor
 		return nil, fmt.Errorf("address %s is not eligible to vote in this poll", valAddress.String())
 	}
 
-	if k.getHasVoted(ctx, pollMeta, valAddress) {
+	if k.getHasVoted(ctx, pollKey, valAddress) {
 		return nil, fmt.Errorf("each validator can only vote once")
 	}
 
@@ -138,15 +143,15 @@ func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta expor
 		return poll, nil
 	}
 
-	k.setHasVoted(ctx, pollMeta, valAddress)
+	k.setHasVoted(ctx, pollKey, valAddress)
 	var talliedVote types.TalliedVote
 	// check if others match this vote, create a new unique entry if not, simply add voting power if match is found
-	i := k.getTalliedVoteIdx(ctx, pollMeta, data)
+	i := k.getTalliedVoteIdx(ctx, pollKey, data)
 	if i == indexNotFound {
 		talliedVote = types.NewTalliedVote(validator.ShareCount, data)
 
 		poll.Votes = append(poll.Votes, talliedVote)
-		k.setTalliedVoteIdx(ctx, pollMeta, data, len(poll.Votes)-1)
+		k.setTalliedVoteIdx(ctx, pollKey, data, len(poll.Votes)-1)
 	} else {
 		// this assignment copies the value, so we need to write it back into the array
 		talliedVote = poll.Votes[i]
@@ -154,10 +159,9 @@ func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta expor
 		poll.Votes[i] = talliedVote
 	}
 
-	threshold := k.GetVotingThreshold(ctx)
-	if threshold.IsMet(talliedVote.Tally, snap.TotalShareCount) {
+	if poll.VotingThreshold.IsMet(talliedVote.Tally, snap.TotalShareCount) {
 		k.Logger(ctx).Debug(fmt.Sprintf("threshold of %d/%d has been met for %s: %s/%s",
-			threshold.Numerator, threshold.Denominator, pollMeta, talliedVote.Tally.String(), snap.TotalShareCount.String()))
+			poll.VotingThreshold.Numerator, poll.VotingThreshold.Denominator, pollKey, talliedVote.Tally.String(), snap.TotalShareCount.String()))
 
 		poll.Result = talliedVote.Data
 	}
@@ -165,7 +169,7 @@ func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta expor
 	_, highestTalliedVote := poll.GetHighestTalliedVote()
 	votedShareCount := poll.GetVotedShareCount()
 
-	if !threshold.IsMet(highestTalliedVote.Tally.Add(snap.TotalShareCount).Sub(votedShareCount), snap.TotalShareCount) {
+	if !poll.VotingThreshold.IsMet(highestTalliedVote.Tally.Add(snap.TotalShareCount).Sub(votedShareCount), snap.TotalShareCount) {
 		poll.Failed = true
 	}
 
@@ -175,9 +179,9 @@ func (k Keeper) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta expor
 }
 
 // GetPoll returns the poll given poll meta
-func (k Keeper) GetPoll(ctx sdk.Context, pollMeta exported.PollMeta) *types.Poll {
+func (k Keeper) GetPoll(ctx sdk.Context, pollKey exported.PollKey) *types.Poll {
 	var poll types.Poll
-	if ok := k.getStore(ctx).Get(pollPrefix.AppendStr(pollMeta.String()), &poll); !ok {
+	if ok := k.getStore(ctx).Get(pollPrefix.AppendStr(pollKey.String()), &poll); !ok {
 		return nil
 	}
 
@@ -185,12 +189,12 @@ func (k Keeper) GetPoll(ctx sdk.Context, pollMeta exported.PollMeta) *types.Poll
 }
 
 func (k Keeper) setPoll(ctx sdk.Context, poll types.Poll) {
-	k.getStore(ctx).Set(pollPrefix.AppendStr(poll.Meta.String()), &poll)
+	k.getStore(ctx).Set(pollPrefix.AppendStr(poll.Key.String()), &poll)
 }
 
 // To adhere to the same one-return-value pattern as the other getters return a marker value if not found
 // (returning an int with a pointer reference to be able to return nil instead seems bizarre)
-func (k Keeper) getTalliedVoteIdx(ctx sdk.Context, poll exported.PollMeta, data codec.ProtoMarshaler) int {
+func (k Keeper) getTalliedVoteIdx(ctx sdk.Context, poll exported.PollKey, data codec.ProtoMarshaler) int {
 	// check if there have been identical votes
 	key := talliedPrefix.AppendStr(poll.String()).AppendStr(k.hash(data))
 	bz := k.getStore(ctx).GetRaw(key)
@@ -201,7 +205,7 @@ func (k Keeper) getTalliedVoteIdx(ctx sdk.Context, poll exported.PollMeta, data 
 	return int(binary.LittleEndian.Uint64(bz))
 }
 
-func (k Keeper) setTalliedVoteIdx(ctx sdk.Context, poll exported.PollMeta, data codec.ProtoMarshaler, i int) {
+func (k Keeper) setTalliedVoteIdx(ctx sdk.Context, poll exported.PollKey, data codec.ProtoMarshaler, i int) {
 	bz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(bz, uint64(i))
 
@@ -209,11 +213,11 @@ func (k Keeper) setTalliedVoteIdx(ctx sdk.Context, poll exported.PollMeta, data 
 	k.getStore(ctx).SetRaw(key, bz)
 }
 
-func (k Keeper) getHasVoted(ctx sdk.Context, poll exported.PollMeta, address sdk.ValAddress) bool {
+func (k Keeper) getHasVoted(ctx sdk.Context, poll exported.PollKey, address sdk.ValAddress) bool {
 	return k.getStore(ctx).Has(addrPrefix.AppendStr(poll.String()).AppendStr(address.String()))
 }
 
-func (k Keeper) setHasVoted(ctx sdk.Context, poll exported.PollMeta, address sdk.ValAddress) {
+func (k Keeper) setHasVoted(ctx sdk.Context, poll exported.PollKey, address sdk.ValAddress) {
 	k.getStore(ctx).SetRaw(addrPrefix.AppendStr(poll.String()).AppendStr(address.String()), voted)
 }
 
