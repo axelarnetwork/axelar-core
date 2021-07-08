@@ -194,8 +194,8 @@ func (mgr *Mgr) handleKeygenResult(keyID string, resultChan <-chan interface{}) 
 		mgr.Logger.Info(fmt.Sprintf("handler goroutine: received pubkey from server! [%v]", btcecPK.ToECDSA()))
 	}
 
-	poll := voting.NewPollMeta(tss.ModuleName, keyID)
-	vote := &tss.VotePubKeyRequest{Sender: mgr.sender, PollMeta: poll, Result: result}
+	poll := voting.NewPollKey(tss.ModuleName, keyID)
+	vote := &tss.VotePubKeyRequest{Sender: mgr.sender, PollKey: poll, Result: result}
 
 	return mgr.broadcaster.Broadcast(vote)
 }

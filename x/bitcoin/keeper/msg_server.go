@@ -100,7 +100,7 @@ func (s msgServer) ConfirmOutpoint(c context.Context, req *types.ConfirmOutpoint
 		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
 	}
 
-	poll := vote.NewPollMeta(types.ModuleName, req.OutPointInfo.OutPoint)
+	poll := vote.NewPollKey(types.ModuleName, req.OutPointInfo.OutPoint)
 	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+s.BTCKeeper.GetRevoteLockingPeriod(ctx)); err != nil {
 		return nil, err
 	}

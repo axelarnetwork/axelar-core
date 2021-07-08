@@ -24,7 +24,7 @@
     - [QueryRawTxResponse](#bitcoin.v1beta1.QueryRawTxResponse)
   
 - [vote/exported/v1beta1/types.proto](#vote/exported/v1beta1/types.proto)
-    - [PollMeta](#vote.exported.v1beta1.PollMeta)
+    - [PollKey](#vote.exported.v1beta1.PollKey)
   
 - [bitcoin/v1beta1/tx.proto](#bitcoin/v1beta1/tx.proto)
     - [ConfirmOutpointRequest](#bitcoin.v1beta1.ConfirmOutpointRequest)
@@ -417,10 +417,10 @@ deposit address
 
 
 
-<a name="vote.exported.v1beta1.PollMeta"></a>
+<a name="vote.exported.v1beta1.PollKey"></a>
 
-### PollMeta
-PollMeta represents the meta data for a poll
+### PollKey
+PollKey represents the key data for a poll
 
 
 | Field | Type | Label | Description |
@@ -545,7 +545,7 @@ MsgVoteConfirmOutpoint represents a message to that votes on an outpoint
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `poll` | [vote.exported.v1beta1.PollMeta](#vote.exported.v1beta1.PollMeta) |  |  |
+| `poll` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
 | `out_point` | [string](#string) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
 
@@ -1244,7 +1244,7 @@ MsgVoteConfirmChain represents a message that votes on a new EVM chain
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `name` | [string](#string) |  |  |
-| `poll` | [vote.exported.v1beta1.PollMeta](#vote.exported.v1beta1.PollMeta) |  |  |
+| `poll` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
 
 
@@ -1277,7 +1277,7 @@ MsgVoteConfirmDeposit represents a message that votes on a deposit
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
-| `poll` | [vote.exported.v1beta1.PollMeta](#vote.exported.v1beta1.PollMeta) |  |  |
+| `poll` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `burn_address` | [bytes](#bytes) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
@@ -1312,7 +1312,7 @@ MsgVoteConfirmToken represents a message that votes on a token deploy
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
-| `poll` | [vote.exported.v1beta1.PollMeta](#vote.exported.v1beta1.PollMeta) |  |  |
+| `poll` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `symbol` | [string](#string) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
@@ -1347,7 +1347,7 @@ MsgVoteConfirmDeposit represents a message that votes on a deposit
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
-| `poll` | [vote.exported.v1beta1.PollMeta](#vote.exported.v1beta1.PollMeta) |  |  |
+| `poll` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `new_owner_address` | [bytes](#bytes) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
@@ -2227,7 +2227,7 @@ VotePubKeyRequest represents the message to vote on a public key
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `poll_meta` | [vote.exported.v1beta1.PollMeta](#vote.exported.v1beta1.PollMeta) |  |  |
+| `poll_key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
 | `result` | [tss.tofnd.v1beta1.MessageOut.KeygenResult](#tss.tofnd.v1beta1.MessageOut.KeygenResult) |  |  |
 
 
@@ -2254,7 +2254,7 @@ VoteSigRequest represents a message to vote for a signature
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `poll_meta` | [vote.exported.v1beta1.PollMeta](#vote.exported.v1beta1.PollMeta) |  |  |
+| `poll_key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
 | `result` | [tss.tofnd.v1beta1.MessageOut.SignResult](#tss.tofnd.v1beta1.MessageOut.SignResult) |  |  |
 
 
@@ -2359,7 +2359,7 @@ have any data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `meta` | [vote.exported.v1beta1.PollMeta](#vote.exported.v1beta1.PollMeta) |  |  |
+| `key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
 | `validator_snapshot_counter` | [int64](#int64) |  |  |
 | `votes` | [TalliedVote](#vote.v1beta1.TalliedVote) | repeated |  |
 | `expires_at` | [int64](#int64) |  |  |

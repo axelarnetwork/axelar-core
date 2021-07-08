@@ -29,13 +29,13 @@ var _ types.Voter = &VoterMock{}
 //
 // 		// make and configure a mocked types.Voter
 // 		mockedVoter := &VoterMock{
-// 			DeletePollFunc: func(ctx sdk.Context, poll exported.PollMeta)  {
+// 			DeletePollFunc: func(ctx sdk.Context, poll exported.PollKey)  {
 // 				panic("mock out the DeletePoll method")
 // 			},
-// 			InitPollFunc: func(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error {
+// 			InitPollFunc: func(ctx sdk.Context, poll exported.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error {
 // 				panic("mock out the InitPoll method")
 // 			},
-// 			TallyVoteFunc: func(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data codec.ProtoMarshaler) (*votetypes.Poll, error) {
+// 			TallyVoteFunc: func(ctx sdk.Context, sender sdk.AccAddress, pollKey exported.PollKey, data codec.ProtoMarshaler) (*votetypes.Poll, error) {
 // 				panic("mock out the TallyVote method")
 // 			},
 // 		}
@@ -46,13 +46,13 @@ var _ types.Voter = &VoterMock{}
 // 	}
 type VoterMock struct {
 	// DeletePollFunc mocks the DeletePoll method.
-	DeletePollFunc func(ctx sdk.Context, poll exported.PollMeta)
+	DeletePollFunc func(ctx sdk.Context, poll exported.PollKey)
 
 	// InitPollFunc mocks the InitPoll method.
-	InitPollFunc func(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
+	InitPollFunc func(ctx sdk.Context, poll exported.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
 
 	// TallyVoteFunc mocks the TallyVote method.
-	TallyVoteFunc func(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data codec.ProtoMarshaler) (*votetypes.Poll, error)
+	TallyVoteFunc func(ctx sdk.Context, sender sdk.AccAddress, pollKey exported.PollKey, data codec.ProtoMarshaler) (*votetypes.Poll, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -61,14 +61,14 @@ type VoterMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Poll is the poll argument value.
-			Poll exported.PollMeta
+			Poll exported.PollKey
 		}
 		// InitPoll holds details about calls to the InitPoll method.
 		InitPoll []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Poll is the poll argument value.
-			Poll exported.PollMeta
+			Poll exported.PollKey
 			// SnapshotCounter is the snapshotCounter argument value.
 			SnapshotCounter int64
 			// ExpireAt is the expireAt argument value.
@@ -82,8 +82,8 @@ type VoterMock struct {
 			Ctx sdk.Context
 			// Sender is the sender argument value.
 			Sender sdk.AccAddress
-			// PollMeta is the pollMeta argument value.
-			PollMeta exported.PollMeta
+			// PollKey is the pollKey argument value.
+			PollKey exported.PollKey
 			// Data is the data argument value.
 			Data codec.ProtoMarshaler
 		}
@@ -94,13 +94,13 @@ type VoterMock struct {
 }
 
 // DeletePoll calls DeletePollFunc.
-func (mock *VoterMock) DeletePoll(ctx sdk.Context, poll exported.PollMeta) {
+func (mock *VoterMock) DeletePoll(ctx sdk.Context, poll exported.PollKey) {
 	if mock.DeletePollFunc == nil {
 		panic("VoterMock.DeletePollFunc: method is nil but Voter.DeletePoll was just called")
 	}
 	callInfo := struct {
 		Ctx  sdk.Context
-		Poll exported.PollMeta
+		Poll exported.PollKey
 	}{
 		Ctx:  ctx,
 		Poll: poll,
@@ -116,11 +116,11 @@ func (mock *VoterMock) DeletePoll(ctx sdk.Context, poll exported.PollMeta) {
 //     len(mockedVoter.DeletePollCalls())
 func (mock *VoterMock) DeletePollCalls() []struct {
 	Ctx  sdk.Context
-	Poll exported.PollMeta
+	Poll exported.PollKey
 } {
 	var calls []struct {
 		Ctx  sdk.Context
-		Poll exported.PollMeta
+		Poll exported.PollKey
 	}
 	mock.lockDeletePoll.RLock()
 	calls = mock.calls.DeletePoll
@@ -129,13 +129,13 @@ func (mock *VoterMock) DeletePollCalls() []struct {
 }
 
 // InitPoll calls InitPollFunc.
-func (mock *VoterMock) InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error {
+func (mock *VoterMock) InitPoll(ctx sdk.Context, poll exported.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error {
 	if mock.InitPollFunc == nil {
 		panic("VoterMock.InitPollFunc: method is nil but Voter.InitPoll was just called")
 	}
 	callInfo := struct {
 		Ctx             sdk.Context
-		Poll            exported.PollMeta
+		Poll            exported.PollKey
 		SnapshotCounter int64
 		ExpireAt        int64
 		Threshold       []utils.Threshold
@@ -157,14 +157,14 @@ func (mock *VoterMock) InitPoll(ctx sdk.Context, poll exported.PollMeta, snapsho
 //     len(mockedVoter.InitPollCalls())
 func (mock *VoterMock) InitPollCalls() []struct {
 	Ctx             sdk.Context
-	Poll            exported.PollMeta
+	Poll            exported.PollKey
 	SnapshotCounter int64
 	ExpireAt        int64
 	Threshold       []utils.Threshold
 } {
 	var calls []struct {
 		Ctx             sdk.Context
-		Poll            exported.PollMeta
+		Poll            exported.PollKey
 		SnapshotCounter int64
 		ExpireAt        int64
 		Threshold       []utils.Threshold
@@ -176,41 +176,41 @@ func (mock *VoterMock) InitPollCalls() []struct {
 }
 
 // TallyVote calls TallyVoteFunc.
-func (mock *VoterMock) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data codec.ProtoMarshaler) (*votetypes.Poll, error) {
+func (mock *VoterMock) TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollKey exported.PollKey, data codec.ProtoMarshaler) (*votetypes.Poll, error) {
 	if mock.TallyVoteFunc == nil {
 		panic("VoterMock.TallyVoteFunc: method is nil but Voter.TallyVote was just called")
 	}
 	callInfo := struct {
-		Ctx      sdk.Context
-		Sender   sdk.AccAddress
-		PollMeta exported.PollMeta
-		Data     codec.ProtoMarshaler
+		Ctx     sdk.Context
+		Sender  sdk.AccAddress
+		PollKey exported.PollKey
+		Data    codec.ProtoMarshaler
 	}{
-		Ctx:      ctx,
-		Sender:   sender,
-		PollMeta: pollMeta,
-		Data:     data,
+		Ctx:     ctx,
+		Sender:  sender,
+		PollKey: pollKey,
+		Data:    data,
 	}
 	mock.lockTallyVote.Lock()
 	mock.calls.TallyVote = append(mock.calls.TallyVote, callInfo)
 	mock.lockTallyVote.Unlock()
-	return mock.TallyVoteFunc(ctx, sender, pollMeta, data)
+	return mock.TallyVoteFunc(ctx, sender, pollKey, data)
 }
 
 // TallyVoteCalls gets all the calls that were made to TallyVote.
 // Check the length with:
 //     len(mockedVoter.TallyVoteCalls())
 func (mock *VoterMock) TallyVoteCalls() []struct {
-	Ctx      sdk.Context
-	Sender   sdk.AccAddress
-	PollMeta exported.PollMeta
-	Data     codec.ProtoMarshaler
+	Ctx     sdk.Context
+	Sender  sdk.AccAddress
+	PollKey exported.PollKey
+	Data    codec.ProtoMarshaler
 } {
 	var calls []struct {
-		Ctx      sdk.Context
-		Sender   sdk.AccAddress
-		PollMeta exported.PollMeta
-		Data     codec.ProtoMarshaler
+		Ctx     sdk.Context
+		Sender  sdk.AccAddress
+		PollKey exported.PollKey
+		Data    codec.ProtoMarshaler
 	}
 	mock.lockTallyVote.RLock()
 	calls = mock.calls.TallyVote
@@ -252,7 +252,7 @@ var _ types.Signer = &SignerMock{}
 // 			GetSnapshotCounterForKeyIDFunc: func(ctx sdk.Context, keyID string) (int64, bool) {
 // 				panic("mock out the GetSnapshotCounterForKeyID method")
 // 			},
-// 			StartSignFunc: func(ctx sdk.Context, initPoll interface{InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
+// 			StartSignFunc: func(ctx sdk.Context, initPoll interface{InitPoll(ctx sdk.Context, poll exported.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
 // 				panic("mock out the StartSign method")
 // 			},
 // 		}
@@ -288,7 +288,7 @@ type SignerMock struct {
 
 	// StartSignFunc mocks the StartSign method.
 	StartSignFunc func(ctx sdk.Context, initPoll interface {
-		InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
+		InitPoll(ctx sdk.Context, poll exported.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
 	}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error
 
 	// calls tracks calls to the methods.
@@ -371,7 +371,7 @@ type SignerMock struct {
 			Ctx sdk.Context
 			// InitPoll is the initPoll argument value.
 			InitPoll interface {
-				InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
+				InitPoll(ctx sdk.Context, poll exported.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
 			}
 			// KeyID is the keyID argument value.
 			KeyID string
@@ -708,7 +708,7 @@ func (mock *SignerMock) GetSnapshotCounterForKeyIDCalls() []struct {
 
 // StartSign calls StartSignFunc.
 func (mock *SignerMock) StartSign(ctx sdk.Context, initPoll interface {
-	InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
+	InitPoll(ctx sdk.Context, poll exported.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
 }, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
 	if mock.StartSignFunc == nil {
 		panic("SignerMock.StartSignFunc: method is nil but Signer.StartSign was just called")
@@ -716,7 +716,7 @@ func (mock *SignerMock) StartSign(ctx sdk.Context, initPoll interface {
 	callInfo := struct {
 		Ctx      sdk.Context
 		InitPoll interface {
-			InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
+			InitPoll(ctx sdk.Context, poll exported.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
 		}
 		KeyID            string
 		SigID            string
@@ -742,7 +742,7 @@ func (mock *SignerMock) StartSign(ctx sdk.Context, initPoll interface {
 func (mock *SignerMock) StartSignCalls() []struct {
 	Ctx      sdk.Context
 	InitPoll interface {
-		InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
+		InitPoll(ctx sdk.Context, poll exported.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
 	}
 	KeyID            string
 	SigID            string
@@ -752,7 +752,7 @@ func (mock *SignerMock) StartSignCalls() []struct {
 	var calls []struct {
 		Ctx      sdk.Context
 		InitPoll interface {
-			InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
+			InitPoll(ctx sdk.Context, poll exported.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
 		}
 		KeyID            string
 		SigID            string
@@ -1241,7 +1241,7 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			DeleteOutpointInfoFunc: func(ctx sdk.Context, outPoint wire.OutPoint)  {
 // 				panic("mock out the DeleteOutpointInfo method")
 // 			},
-// 			DeletePendingOutPointInfoFunc: func(ctx sdk.Context, poll exported.PollMeta)  {
+// 			DeletePendingOutPointInfoFunc: func(ctx sdk.Context, poll exported.PollKey)  {
 // 				panic("mock out the DeletePendingOutPointInfo method")
 // 			},
 // 			DeleteSignedTxFunc: func(ctx sdk.Context)  {
@@ -1280,7 +1280,7 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			GetParamsFunc: func(ctx sdk.Context) types.Params {
 // 				panic("mock out the GetParams method")
 // 			},
-// 			GetPendingOutPointInfoFunc: func(ctx sdk.Context, poll exported.PollMeta) (types.OutPointInfo, bool) {
+// 			GetPendingOutPointInfoFunc: func(ctx sdk.Context, poll exported.PollKey) (types.OutPointInfo, bool) {
 // 				panic("mock out the GetPendingOutPointInfo method")
 // 			},
 // 			GetRequiredConfirmationHeightFunc: func(ctx sdk.Context) uint64 {
@@ -1316,7 +1316,7 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			SetParamsFunc: func(ctx sdk.Context, p types.Params)  {
 // 				panic("mock out the SetParams method")
 // 			},
-// 			SetPendingOutpointInfoFunc: func(ctx sdk.Context, poll exported.PollMeta, info types.OutPointInfo)  {
+// 			SetPendingOutpointInfoFunc: func(ctx sdk.Context, poll exported.PollKey, info types.OutPointInfo)  {
 // 				panic("mock out the SetPendingOutpointInfo method")
 // 			},
 // 			SetSignedTxFunc: func(ctx sdk.Context, tx *wire.MsgTx)  {
@@ -1339,7 +1339,7 @@ type BTCKeeperMock struct {
 	DeleteOutpointInfoFunc func(ctx sdk.Context, outPoint wire.OutPoint)
 
 	// DeletePendingOutPointInfoFunc mocks the DeletePendingOutPointInfo method.
-	DeletePendingOutPointInfoFunc func(ctx sdk.Context, poll exported.PollMeta)
+	DeletePendingOutPointInfoFunc func(ctx sdk.Context, poll exported.PollKey)
 
 	// DeleteSignedTxFunc mocks the DeleteSignedTx method.
 	DeleteSignedTxFunc func(ctx sdk.Context)
@@ -1378,7 +1378,7 @@ type BTCKeeperMock struct {
 	GetParamsFunc func(ctx sdk.Context) types.Params
 
 	// GetPendingOutPointInfoFunc mocks the GetPendingOutPointInfo method.
-	GetPendingOutPointInfoFunc func(ctx sdk.Context, poll exported.PollMeta) (types.OutPointInfo, bool)
+	GetPendingOutPointInfoFunc func(ctx sdk.Context, poll exported.PollKey) (types.OutPointInfo, bool)
 
 	// GetRequiredConfirmationHeightFunc mocks the GetRequiredConfirmationHeight method.
 	GetRequiredConfirmationHeightFunc func(ctx sdk.Context) uint64
@@ -1414,7 +1414,7 @@ type BTCKeeperMock struct {
 	SetParamsFunc func(ctx sdk.Context, p types.Params)
 
 	// SetPendingOutpointInfoFunc mocks the SetPendingOutpointInfo method.
-	SetPendingOutpointInfoFunc func(ctx sdk.Context, poll exported.PollMeta, info types.OutPointInfo)
+	SetPendingOutpointInfoFunc func(ctx sdk.Context, poll exported.PollKey, info types.OutPointInfo)
 
 	// SetSignedTxFunc mocks the SetSignedTx method.
 	SetSignedTxFunc func(ctx sdk.Context, tx *wire.MsgTx)
@@ -1443,7 +1443,7 @@ type BTCKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Poll is the poll argument value.
-			Poll exported.PollMeta
+			Poll exported.PollKey
 		}
 		// DeleteSignedTx holds details about calls to the DeleteSignedTx method.
 		DeleteSignedTx []struct {
@@ -1516,7 +1516,7 @@ type BTCKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Poll is the poll argument value.
-			Poll exported.PollMeta
+			Poll exported.PollKey
 		}
 		// GetRequiredConfirmationHeight holds details about calls to the GetRequiredConfirmationHeight method.
 		GetRequiredConfirmationHeight []struct {
@@ -1592,7 +1592,7 @@ type BTCKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Poll is the poll argument value.
-			Poll exported.PollMeta
+			Poll exported.PollKey
 			// Info is the info argument value.
 			Info types.OutPointInfo
 		}
@@ -1714,13 +1714,13 @@ func (mock *BTCKeeperMock) DeleteOutpointInfoCalls() []struct {
 }
 
 // DeletePendingOutPointInfo calls DeletePendingOutPointInfoFunc.
-func (mock *BTCKeeperMock) DeletePendingOutPointInfo(ctx sdk.Context, poll exported.PollMeta) {
+func (mock *BTCKeeperMock) DeletePendingOutPointInfo(ctx sdk.Context, poll exported.PollKey) {
 	if mock.DeletePendingOutPointInfoFunc == nil {
 		panic("BTCKeeperMock.DeletePendingOutPointInfoFunc: method is nil but BTCKeeper.DeletePendingOutPointInfo was just called")
 	}
 	callInfo := struct {
 		Ctx  sdk.Context
-		Poll exported.PollMeta
+		Poll exported.PollKey
 	}{
 		Ctx:  ctx,
 		Poll: poll,
@@ -1736,11 +1736,11 @@ func (mock *BTCKeeperMock) DeletePendingOutPointInfo(ctx sdk.Context, poll expor
 //     len(mockedBTCKeeper.DeletePendingOutPointInfoCalls())
 func (mock *BTCKeeperMock) DeletePendingOutPointInfoCalls() []struct {
 	Ctx  sdk.Context
-	Poll exported.PollMeta
+	Poll exported.PollKey
 } {
 	var calls []struct {
 		Ctx  sdk.Context
-		Poll exported.PollMeta
+		Poll exported.PollKey
 	}
 	mock.lockDeletePendingOutPointInfo.RLock()
 	calls = mock.calls.DeletePendingOutPointInfo
@@ -2133,13 +2133,13 @@ func (mock *BTCKeeperMock) GetParamsCalls() []struct {
 }
 
 // GetPendingOutPointInfo calls GetPendingOutPointInfoFunc.
-func (mock *BTCKeeperMock) GetPendingOutPointInfo(ctx sdk.Context, poll exported.PollMeta) (types.OutPointInfo, bool) {
+func (mock *BTCKeeperMock) GetPendingOutPointInfo(ctx sdk.Context, poll exported.PollKey) (types.OutPointInfo, bool) {
 	if mock.GetPendingOutPointInfoFunc == nil {
 		panic("BTCKeeperMock.GetPendingOutPointInfoFunc: method is nil but BTCKeeper.GetPendingOutPointInfo was just called")
 	}
 	callInfo := struct {
 		Ctx  sdk.Context
-		Poll exported.PollMeta
+		Poll exported.PollKey
 	}{
 		Ctx:  ctx,
 		Poll: poll,
@@ -2155,11 +2155,11 @@ func (mock *BTCKeeperMock) GetPendingOutPointInfo(ctx sdk.Context, poll exported
 //     len(mockedBTCKeeper.GetPendingOutPointInfoCalls())
 func (mock *BTCKeeperMock) GetPendingOutPointInfoCalls() []struct {
 	Ctx  sdk.Context
-	Poll exported.PollMeta
+	Poll exported.PollKey
 } {
 	var calls []struct {
 		Ctx  sdk.Context
-		Poll exported.PollMeta
+		Poll exported.PollKey
 	}
 	mock.lockGetPendingOutPointInfo.RLock()
 	calls = mock.calls.GetPendingOutPointInfo
@@ -2537,13 +2537,13 @@ func (mock *BTCKeeperMock) SetParamsCalls() []struct {
 }
 
 // SetPendingOutpointInfo calls SetPendingOutpointInfoFunc.
-func (mock *BTCKeeperMock) SetPendingOutpointInfo(ctx sdk.Context, poll exported.PollMeta, info types.OutPointInfo) {
+func (mock *BTCKeeperMock) SetPendingOutpointInfo(ctx sdk.Context, poll exported.PollKey, info types.OutPointInfo) {
 	if mock.SetPendingOutpointInfoFunc == nil {
 		panic("BTCKeeperMock.SetPendingOutpointInfoFunc: method is nil but BTCKeeper.SetPendingOutpointInfo was just called")
 	}
 	callInfo := struct {
 		Ctx  sdk.Context
-		Poll exported.PollMeta
+		Poll exported.PollKey
 		Info types.OutPointInfo
 	}{
 		Ctx:  ctx,
@@ -2561,12 +2561,12 @@ func (mock *BTCKeeperMock) SetPendingOutpointInfo(ctx sdk.Context, poll exported
 //     len(mockedBTCKeeper.SetPendingOutpointInfoCalls())
 func (mock *BTCKeeperMock) SetPendingOutpointInfoCalls() []struct {
 	Ctx  sdk.Context
-	Poll exported.PollMeta
+	Poll exported.PollKey
 	Info types.OutPointInfo
 } {
 	var calls []struct {
 		Ctx  sdk.Context
-		Poll exported.PollMeta
+		Poll exported.PollKey
 		Info types.OutPointInfo
 	}
 	mock.lockSetPendingOutpointInfo.RLock()

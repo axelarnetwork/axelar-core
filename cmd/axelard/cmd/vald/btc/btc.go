@@ -53,7 +53,7 @@ func (mgr *Mgr) ProcessConfirmation(attributes []sdk.Attribute) error {
 	return mgr.broadcaster.Broadcast(msg)
 }
 
-func parseConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (outPoint btc.OutPointInfo, confHeight int64, poll vote.PollMeta, err error) {
+func parseConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (outPoint btc.OutPointInfo, confHeight int64, poll vote.PollKey, err error) {
 	var outPointFound, confHeightFound, pollFound bool
 	for _, attribute := range attributes {
 		switch attribute.Key {
@@ -63,7 +63,7 @@ func parseConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute)
 		case btc.AttributeKeyConfHeight:
 			h, err := strconv.Atoi(attribute.Value)
 			if err != nil {
-				return btc.OutPointInfo{}, 0, vote.PollMeta{}, sdkerrors.Wrap(err, "could not parse confirmation height")
+				return btc.OutPointInfo{}, 0, vote.PollKey{}, sdkerrors.Wrap(err, "could not parse confirmation height")
 			}
 			confHeight = int64(h)
 			confHeightFound = true
@@ -74,7 +74,7 @@ func parseConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute)
 		}
 	}
 	if !outPointFound || !confHeightFound || !pollFound {
-		return btc.OutPointInfo{}, 0, vote.PollMeta{}, fmt.Errorf("insufficient event attributes")
+		return btc.OutPointInfo{}, 0, vote.PollKey{}, fmt.Errorf("insufficient event attributes")
 	}
 
 	return outPoint, confHeight, poll, nil

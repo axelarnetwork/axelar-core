@@ -54,7 +54,7 @@ func TestTalliedVote_Marshaling(t *testing.T) {
 
 func TestPoll_TallyNewVote(t *testing.T) {
 	poll := types.Poll{
-		Meta:                     exported.NewPollMeta("test", "test"),
+		Key:                      exported.NewPollKey("test", "test"),
 		ValidatorSnapshotCounter: 0,
 		Votes:                    []types.TalliedVote{types.NewTalliedVote(23, &gogoprototypes.BytesValue{Value: []byte("a public key")})},
 		Result:                   nil,

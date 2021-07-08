@@ -25,7 +25,7 @@ func (m VoteSigRequest) ValidateBasic() error {
 		return err
 	}
 
-	return m.PollMeta.Validate()
+	return m.PollKey.Validate()
 }
 
 // GetSignBytes returns the bytes to sign for this message

@@ -234,7 +234,7 @@ func createMsgsWithRandomSigner() []sdk.Msg {
 		}
 		msg := btc.NewVoteConfirmOutpointRequest(
 			signer,
-			exported.NewPollMeta(btc.ModuleName, rand.StrBetween(5, 100)),
+			exported.NewPollKey(btc.ModuleName, rand.StrBetween(5, 100)),
 			*wire.NewOutPoint(txHash, mathRand.Uint32()),
 			rand.Bools(0.5).Next(),
 		)

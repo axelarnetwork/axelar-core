@@ -122,7 +122,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 	)
 	setup := func() {
 		cdc := app.MakeEncodingConfig().Amino
-		poll := exported.NewPollMeta(evmTypes.ModuleName, rand.StrBetween(5, 20))
+		poll := exported.NewPollKey(evmTypes.ModuleName, rand.StrBetween(5, 20))
 
 		burnAddrBytes := rand.Bytes(common.AddressLength)
 		tokenAddrBytes := rand.Bytes(common.AddressLength)
@@ -274,7 +274,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 	)
 	setup := func() {
 		cdc := app.MakeEncodingConfig().Amino
-		poll := exported.NewPollMeta(evmTypes.ModuleName, rand.StrBetween(5, 20))
+		poll := exported.NewPollKey(evmTypes.ModuleName, rand.StrBetween(5, 20))
 
 		gatewayAddrBytes = rand.Bytes(common.AddressLength)
 		tokenAddrBytes := rand.Bytes(common.AddressLength)
@@ -416,7 +416,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 	)
 	setup := func() {
 		cdc := app.MakeEncodingConfig().Amino
-		poll := exported.NewPollMeta(evmTypes.ModuleName, rand.StrBetween(5, 20))
+		poll := exported.NewPollKey(evmTypes.ModuleName, rand.StrBetween(5, 20))
 
 		gatewayAddrBytes := rand.Bytes(common.AddressLength)
 		newOwnerAddrBytes := rand.Bytes(common.AddressLength)

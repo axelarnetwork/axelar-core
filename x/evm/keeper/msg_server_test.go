@@ -24,6 +24,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/utils"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
@@ -378,7 +379,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 				return nexus.Chain{}, false
 			},
 		}
-		v = &evmMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta, int64, int64) error { return nil }}
+		v = &evmMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollKey, int64, int64, ...utils.Threshold) error { return nil }}
 		chains := map[string]nexus.Chain{exported.Ethereum.Name: exported.Ethereum}
 		n = &evmMock.NexusMock{
 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
@@ -450,7 +451,9 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 
 	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
 		setup()
-		v.InitPollFunc = func(sdk.Context, vote.PollMeta, int64, int64) error { return fmt.Errorf("poll setup failed") }
+		v.InitPollFunc = func(sdk.Context, vote.PollKey, int64, int64, ...utils.Threshold) error {
+			return fmt.Errorf("poll setup failed")
+		}
 
 		_, err := server.ConfirmChain(sdk.WrapSDKContext(ctx), msg)
 
@@ -489,9 +492,9 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			},
 			GetRevoteLockingPeriodFunc:        func(sdk.Context) (int64, bool) { return rand.PosI64(), true },
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) (uint64, bool) { return mathRand.Uint64(), true },
-			SetPendingTokenDeploymentFunc:     func(sdk.Context, vote.PollMeta, types.ERC20TokenDeployment) {},
+			SetPendingTokenDeploymentFunc:     func(sdk.Context, vote.PollKey, types.ERC20TokenDeployment) {},
 		}
-		v = &evmMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta, int64, int64) error { return nil }}
+		v = &evmMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollKey, int64, int64, ...utils.Threshold) error { return nil }}
 		chains := map[string]nexus.Chain{exported.Ethereum.Name: exported.Ethereum}
 		n = &evmMock.NexusMock{
 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
@@ -570,7 +573,9 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
 		setup()
-		v.InitPollFunc = func(sdk.Context, vote.PollMeta, int64, int64) error { return fmt.Errorf("poll setup failed") }
+		v.InitPollFunc = func(sdk.Context, vote.PollKey, int64, int64, ...utils.Threshold) error {
+			return fmt.Errorf("poll setup failed")
+		}
 
 		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
 
@@ -712,10 +717,10 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 				}
 			},
 			GetRevoteLockingPeriodFunc:        func(sdk.Context) (int64, bool) { return rand.PosI64(), true },
-			SetPendingDepositFunc:             func(sdk.Context, vote.PollMeta, *types.ERC20Deposit) {},
+			SetPendingDepositFunc:             func(sdk.Context, vote.PollKey, *types.ERC20Deposit) {},
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) (uint64, bool) { return mathRand.Uint64(), true },
 		}
-		v = &evmMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollMeta, int64, int64) error { return nil }}
+		v = &evmMock.VoterMock{InitPollFunc: func(sdk.Context, vote.PollKey, int64, int64, ...utils.Threshold) error { return nil }}
 		s = &mock.SignerMock{
 			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
 				return rand.StrBetween(5, 20), true
@@ -805,7 +810,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
 		setup()
-		v.InitPollFunc = func(sdk.Context, vote.PollMeta, int64, int64) error { return fmt.Errorf("failed") }
+		v.InitPollFunc = func(sdk.Context, vote.PollKey, int64, int64, ...utils.Threshold) error { return fmt.Errorf("failed") }
 
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 

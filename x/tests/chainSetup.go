@@ -283,7 +283,7 @@ func registerBTCEventListener(n nodeData, submitMsg func(msg sdk.Msg) (result <-
 			return false
 		}
 
-		var poll voting.PollMeta
+		var poll voting.PollKey
 		encCfg.Amino.MustUnmarshalJSON([]byte(m[btcTypes.AttributeKeyPoll]), &poll)
 
 		var out btcTypes.OutPointInfo
@@ -307,7 +307,7 @@ func registerETHEventListener(n nodeData, submitMsg func(msg sdk.Msg) (result <-
 			return false
 		}
 
-		var poll voting.PollMeta
+		var poll voting.PollKey
 		encCfg.Amino.MustUnmarshalJSON([]byte(m[evmTypes.AttributeKeyPoll]), &poll)
 
 		_ = submitMsg(&evmTypes.VoteConfirmDepositRequest{
@@ -333,7 +333,7 @@ func registerETHEventListener(n nodeData, submitMsg func(msg sdk.Msg) (result <-
 			return false
 		}
 
-		var poll voting.PollMeta
+		var poll voting.PollKey
 		encCfg.Amino.MustUnmarshalJSON([]byte(m[evmTypes.AttributeKeyPoll]), &poll)
 
 		_ = submitMsg(
@@ -381,9 +381,9 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd, submitMsg func(msg sdk
 
 		pk := t.KeyGen(m[tssTypes.AttributeKeyKeyID]) // simulate correct keygen + vote
 		_ = submitMsg(&tssTypes.VotePubKeyRequest{
-			Sender:   n.Proxy,
-			Result:   &tofnd.MessageOut_KeygenResult{KeygenResultData: &tofnd.MessageOut_KeygenResult_Pubkey{Pubkey: pk}},
-			PollMeta: voting.NewPollMeta(tssTypes.ModuleName, m[tssTypes.AttributeKeyKeyID])})
+			Sender:  n.Proxy,
+			Result:  &tofnd.MessageOut_KeygenResult{KeygenResultData: &tofnd.MessageOut_KeygenResult_Pubkey{Pubkey: pk}},
+			PollKey: voting.NewPollKey(tssTypes.ModuleName, m[tssTypes.AttributeKeyKeyID])})
 
 		return true
 	})
@@ -407,7 +407,7 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd, submitMsg func(msg sdk
 		_ = submitMsg(&tssTypes.VoteSigRequest{
 			Sender: n.Proxy,
 			Result: &tofnd.MessageOut_SignResult{SignResultData: &tofnd.MessageOut_SignResult_Signature{Signature: sig}},
-			PollMeta: voting.NewPollMeta(
+			PollKey: voting.NewPollKey(
 				tssTypes.ModuleName,
 				m[tssTypes.AttributeKeySigID],
 			)})

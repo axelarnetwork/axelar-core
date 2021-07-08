@@ -328,7 +328,7 @@ func (k keeper) GetGatewayByteCodes(ctx sdk.Context) ([]byte, bool) {
 }
 
 // SetPendingTokenDeployment stores a pending ERC20 token deployment
-func (k keeper) SetPendingTokenDeployment(ctx sdk.Context, poll exported.PollMeta, token types.ERC20TokenDeployment) {
+func (k keeper) SetPendingTokenDeployment(ctx sdk.Context, poll exported.PollKey, token types.ERC20TokenDeployment) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(&token)
 	k.getStore(ctx, k.chain).Set([]byte(pendingTokenPrefix+poll.String()), bz)
 }
@@ -391,7 +391,7 @@ func (k keeper) SetUnsignedTx(ctx sdk.Context, txID string, tx *ethTypes.Transac
 }
 
 // SetPendingDeposit stores a pending deposit
-func (k keeper) SetPendingDeposit(ctx sdk.Context, poll exported.PollMeta, deposit *types.ERC20Deposit) {
+func (k keeper) SetPendingDeposit(ctx sdk.Context, poll exported.PollKey, deposit *types.ERC20Deposit) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(deposit)
 	k.getStore(ctx, k.chain).Set([]byte(pendingDepositPrefix+poll.String()), bz)
 }
@@ -467,12 +467,12 @@ func (k keeper) getSigner(ctx sdk.Context) ethTypes.EIP155Signer {
 }
 
 // DeletePendingToken deletes the token associated with the given poll
-func (k keeper) DeletePendingToken(ctx sdk.Context, poll exported.PollMeta) {
+func (k keeper) DeletePendingToken(ctx sdk.Context, poll exported.PollKey) {
 	k.getStore(ctx, k.chain).Delete([]byte(pendingTokenPrefix + poll.String()))
 }
 
 // GetPendingTokenDeployment returns the token associated with the given poll
-func (k keeper) GetPendingTokenDeployment(ctx sdk.Context, poll exported.PollMeta) (types.ERC20TokenDeployment, bool) {
+func (k keeper) GetPendingTokenDeployment(ctx sdk.Context, poll exported.PollKey) (types.ERC20TokenDeployment, bool) {
 	bz := k.getStore(ctx, k.chain).Get([]byte(pendingTokenPrefix + poll.String()))
 	if bz == nil {
 		return types.ERC20TokenDeployment{}, false
@@ -484,12 +484,12 @@ func (k keeper) GetPendingTokenDeployment(ctx sdk.Context, poll exported.PollMet
 }
 
 // DeletePendingDeposit deletes the deposit associated with the given poll
-func (k keeper) DeletePendingDeposit(ctx sdk.Context, poll exported.PollMeta) {
+func (k keeper) DeletePendingDeposit(ctx sdk.Context, poll exported.PollKey) {
 	k.getStore(ctx, k.chain).Delete([]byte(pendingTokenPrefix + poll.String()))
 }
 
 // GetPendingDeposit returns the deposit associated with the given poll
-func (k keeper) GetPendingDeposit(ctx sdk.Context, poll exported.PollMeta) (types.ERC20Deposit, bool) {
+func (k keeper) GetPendingDeposit(ctx sdk.Context, poll exported.PollKey) (types.ERC20Deposit, bool) {
 	bz := k.getStore(ctx, k.chain).Get([]byte(pendingDepositPrefix + poll.String()))
 	if bz == nil {
 		return types.ERC20Deposit{}, false
@@ -521,13 +521,13 @@ func (k keeper) DeleteDeposit(ctx sdk.Context, deposit types.ERC20Deposit) {
 }
 
 // SetPendingTransferOwnership stores a pending transfer ownership
-func (k keeper) SetPendingTransferOwnership(ctx sdk.Context, poll exported.PollMeta, transferOwnership *types.TransferOwnership) {
+func (k keeper) SetPendingTransferOwnership(ctx sdk.Context, poll exported.PollKey, transferOwnership *types.TransferOwnership) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(transferOwnership)
 	k.getStore(ctx, k.chain).Set([]byte(pendingTransferOwnershipPrefix+poll.String()), bz)
 }
 
 // ArchiveTransferOwnership archives an ownership transfer so it is no longer pending but can still be queried
-func (k keeper) ArchiveTransferOwnership(ctx sdk.Context, poll exported.PollMeta) {
+func (k keeper) ArchiveTransferOwnership(ctx sdk.Context, poll exported.PollKey) {
 	transfer := k.getStore(ctx, k.chain).Get([]byte(pendingTransferOwnershipPrefix + poll.String()))
 	if transfer != nil {
 		k.getStore(ctx, k.chain).Set([]byte(archivedTransferOwnershipPrefix+poll.String()), transfer)
@@ -535,7 +535,7 @@ func (k keeper) ArchiveTransferOwnership(ctx sdk.Context, poll exported.PollMeta
 }
 
 // GetArchivedTransferOwnership returns an archived transfer of ownership associated with the given poll
-func (k keeper) GetArchivedTransferOwnership(ctx sdk.Context, poll exported.PollMeta) (types.TransferOwnership, bool) {
+func (k keeper) GetArchivedTransferOwnership(ctx sdk.Context, poll exported.PollKey) (types.TransferOwnership, bool) {
 	bz := k.getStore(ctx, k.chain).Get([]byte(archivedTransferOwnershipPrefix + poll.String()))
 	if bz == nil {
 		return types.TransferOwnership{}, false
@@ -547,7 +547,7 @@ func (k keeper) GetArchivedTransferOwnership(ctx sdk.Context, poll exported.Poll
 }
 
 // GetPendingTransferOwnership returns the transfer ownership associated with the given poll
-func (k keeper) GetPendingTransferOwnership(ctx sdk.Context, poll exported.PollMeta) (types.TransferOwnership, bool) {
+func (k keeper) GetPendingTransferOwnership(ctx sdk.Context, poll exported.PollKey) (types.TransferOwnership, bool) {
 	bz := k.getStore(ctx, k.chain).Get([]byte(pendingTransferOwnershipPrefix + poll.String()))
 	if bz == nil {
 		return types.TransferOwnership{}, false

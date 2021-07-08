@@ -178,7 +178,7 @@ func parseNewChainParams(attributes []sdk.Attribute) (
 
 func parseChainConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (
 	chain string,
-	poll vote.PollMeta,
+	poll vote.PollKey,
 	err error,
 ) {
 	var chainFound, pollFound bool
@@ -194,7 +194,7 @@ func parseChainConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attri
 		}
 	}
 	if !chainFound || !pollFound {
-		return "", vote.PollMeta{}, fmt.Errorf("insufficient event attributes")
+		return "", vote.PollKey{}, fmt.Errorf("insufficient event attributes")
 	}
 	return chain, poll, nil
 }
@@ -205,7 +205,7 @@ func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Att
 	amount sdk.Uint,
 	burnAddr, tokenAddr common.Address,
 	confHeight uint64,
-	poll vote.PollMeta,
+	poll vote.PollKey,
 	err error,
 ) {
 	var chainFound, txIDFound, amountFound, burnAddrFound, tokenAddrFound, confHeightFound, pollFound bool
@@ -220,7 +220,7 @@ func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Att
 		case evmTypes.AttributeKeyAmount:
 			amount, err = sdk.ParseUint(attribute.Value)
 			if err != nil {
-				return "", common.Hash{}, sdk.Uint{}, common.Address{}, common.Address{}, 0, vote.PollMeta{},
+				return "", common.Hash{}, sdk.Uint{}, common.Address{}, common.Address{}, 0, vote.PollKey{},
 					sdkerrors.Wrap(err, "parsing transfer amount failed")
 			}
 			amountFound = true
@@ -233,7 +233,7 @@ func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Att
 		case evmTypes.AttributeKeyConfHeight:
 			confHeight, err = strconv.ParseUint(attribute.Value, 10, 64)
 			if err != nil {
-				return "", common.Hash{}, sdk.Uint{}, common.Address{}, common.Address{}, 0, vote.PollMeta{},
+				return "", common.Hash{}, sdk.Uint{}, common.Address{}, common.Address{}, 0, vote.PollKey{},
 					sdkerrors.Wrap(err, "parsing confirmation height failed")
 			}
 			confHeightFound = true
@@ -244,7 +244,7 @@ func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Att
 		}
 	}
 	if !chainFound || !txIDFound || !amountFound || !burnAddrFound || !tokenAddrFound || !confHeightFound || !pollFound {
-		return "", common.Hash{}, sdk.Uint{}, common.Address{}, common.Address{}, 0, vote.PollMeta{},
+		return "", common.Hash{}, sdk.Uint{}, common.Address{}, common.Address{}, 0, vote.PollKey{},
 			fmt.Errorf("insufficient event attributes")
 	}
 	return chain, txID, amount, burnAddr, tokenAddr, confHeight, poll, nil
@@ -256,7 +256,7 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attri
 	gatewayAddr, tokenAddr common.Address,
 	symbol string,
 	confHeight uint64,
-	poll vote.PollMeta,
+	poll vote.PollKey,
 	err error,
 ) {
 	var chainFound, txIDFound, gatewayAddrFound, tokenAddrFound, symbolFound, confHeightFound, pollFound bool
@@ -280,7 +280,7 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attri
 		case evmTypes.AttributeKeyConfHeight:
 			h, err := strconv.Atoi(attribute.Value)
 			if err != nil {
-				return "", common.Hash{}, common.Address{}, common.Address{}, "", 0, vote.PollMeta{},
+				return "", common.Hash{}, common.Address{}, common.Address{}, "", 0, vote.PollKey{},
 					sdkerrors.Wrap(err, "parsing confirmation height failed")
 			}
 			confHeight = uint64(h)
@@ -292,7 +292,7 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attri
 		}
 	}
 	if !chainFound || !txIDFound || !gatewayAddrFound || !tokenAddrFound || !symbolFound || !confHeightFound || !pollFound {
-		return "", common.Hash{}, common.Address{}, common.Address{}, "", 0, vote.PollMeta{},
+		return "", common.Hash{}, common.Address{}, common.Address{}, "", 0, vote.PollKey{},
 			fmt.Errorf("insufficient event attributes")
 	}
 	return chain, txID, gatewayAddr, tokenAddr, symbol, confHeight, poll, nil
@@ -303,7 +303,7 @@ func parseTransferOwnershipConfirmationParams(cdc *codec.LegacyAmino, attributes
 	txID common.Hash,
 	gatewayAddr, newOwnerAddr common.Address,
 	confHeight uint64,
-	poll vote.PollMeta,
+	poll vote.PollKey,
 	err error,
 ) {
 	var chainFound, txIDFound, gatewayAddrFound, newOwnerAddrFound, confHeightFound, pollFound bool
@@ -325,7 +325,7 @@ func parseTransferOwnershipConfirmationParams(cdc *codec.LegacyAmino, attributes
 		case evmTypes.AttributeKeyConfHeight:
 			confHeight, err = strconv.ParseUint(attribute.Value, 10, 64)
 			if err != nil {
-				return "", common.Hash{}, common.Address{}, common.Address{}, 0, vote.PollMeta{},
+				return "", common.Hash{}, common.Address{}, common.Address{}, 0, vote.PollKey{},
 					sdkerrors.Wrap(err, "parsing confirmation height failed")
 			}
 			confHeightFound = true
@@ -336,7 +336,7 @@ func parseTransferOwnershipConfirmationParams(cdc *codec.LegacyAmino, attributes
 		}
 	}
 	if !chainFound || !txIDFound || !gatewayAddrFound || !newOwnerAddrFound || !confHeightFound || !pollFound {
-		return "", common.Hash{}, common.Address{}, common.Address{}, 0, vote.PollMeta{},
+		return "", common.Hash{}, common.Address{}, common.Address{}, 0, vote.PollKey{},
 			fmt.Errorf("insufficient event attributes")
 	}
 	return chain, txID, gatewayAddr, newOwnerAddr, confHeight, poll, nil
@@ -427,7 +427,7 @@ func confirmERC20TokenDeployment(txReceipt *geth.Receipt, expectedSymbol string,
 }
 
 func confirmTransferOwnership(txReceipt *geth.Receipt, gatewayAddr, expectedNewOwnerAddr common.Address) error {
-	for i := len(txReceipt.Logs)-1; i >= 0; i-- {
+	for i := len(txReceipt.Logs) - 1; i >= 0; i-- {
 		log := txReceipt.Logs[i]
 		// Event is not emitted by the axelar gateway
 		if log.Address != gatewayAddr {

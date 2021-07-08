@@ -56,7 +56,7 @@ message ProcessSignTrafficResponse {}
 message VotePubKeyRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  vote.exported.v1beta1.PollMeta poll_meta = 2 [ (gogoproto.nullable) = false ];
+  vote.exported.v1beta1.PollKey poll_key = 2 [ (gogoproto.nullable) = false ];
   tss.tofnd.v1beta1.MessageOut.KeygenResult result = 3;
 }
 message VotePubKeyResponse {}
@@ -65,7 +65,7 @@ message VotePubKeyResponse {}
 message VoteSigRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  vote.exported.v1beta1.PollMeta poll_meta = 2 [ (gogoproto.nullable) = false ];
+  vote.exported.v1beta1.PollKey poll_key = 2 [ (gogoproto.nullable) = false ];
   tss.tofnd.v1beta1.MessageOut.SignResult result = 3;
 }
 

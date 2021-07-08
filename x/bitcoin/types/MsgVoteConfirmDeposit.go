@@ -9,7 +9,7 @@ import (
 )
 
 // NewVoteConfirmOutpointRequest - MsgVoteConfirmOutpoint constructor
-func NewVoteConfirmOutpointRequest(sender sdk.AccAddress, poll exported.PollMeta, outPoint wire.OutPoint, confirmed bool) *VoteConfirmOutpointRequest {
+func NewVoteConfirmOutpointRequest(sender sdk.AccAddress, poll exported.PollKey, outPoint wire.OutPoint, confirmed bool) *VoteConfirmOutpointRequest {
 	return &VoteConfirmOutpointRequest{
 		Sender:    sender,
 		Poll:      poll,
