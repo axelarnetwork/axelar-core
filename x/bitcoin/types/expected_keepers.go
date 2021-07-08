@@ -59,7 +59,7 @@ type BTCKeeper interface {
 
 // Voter is the interface that provides voting functionality
 type Voter interface {
-	InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64, expireAt int64) error
+	InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
 	DeletePoll(ctx sdk.Context, poll vote.PollMeta)
 	TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta vote.PollMeta, data codec.ProtoMarshaler) (*votetypes.Poll, error)
 }
@@ -68,7 +68,7 @@ type Voter interface {
 // because the concrete implementation of Signer (specifically StartSign) is defined in a different package using another (identical)
 // InitPoller interface. Go cannot match the types otherwise
 type InitPoller = interface {
-	InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64, expireAt int64) error
+	InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
 }
 
 // Signer provides keygen and signing functionality

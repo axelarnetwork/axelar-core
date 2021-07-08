@@ -12,6 +12,7 @@ import (
 
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -88,7 +89,7 @@ type TSS interface {
 
 // Voter exposes voting functionality
 type Voter interface {
-	InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64, expireAt int64) error
+	InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
 	DeletePoll(ctx sdk.Context, poll vote.PollMeta)
 	TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollMeta vote.PollMeta, data codec.ProtoMarshaler) (*votetypes.Poll, error)
 }
@@ -110,7 +111,7 @@ type Nexus interface {
 // because the concrete implementation of Signer (specifically StartSign) is defined in a different package using another (identical)
 // InitPoller interface. Go cannot match the types otherwise
 type InitPoller = interface {
-	InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64, expireAt int64) error
+	InitPoll(ctx sdk.Context, poll vote.PollMeta, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
 }
 
 // Signer provides keygen and signing functionality

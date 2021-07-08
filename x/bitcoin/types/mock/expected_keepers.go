@@ -32,7 +32,7 @@ var _ types.Voter = &VoterMock{}
 // 			DeletePollFunc: func(ctx sdk.Context, poll exported.PollMeta)  {
 // 				panic("mock out the DeletePoll method")
 // 			},
-// 			InitPollFunc: func(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error {
+// 			InitPollFunc: func(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error {
 // 				panic("mock out the InitPoll method")
 // 			},
 // 			TallyVoteFunc: func(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data codec.ProtoMarshaler) (*votetypes.Poll, error) {
@@ -49,7 +49,7 @@ type VoterMock struct {
 	DeletePollFunc func(ctx sdk.Context, poll exported.PollMeta)
 
 	// InitPollFunc mocks the InitPoll method.
-	InitPollFunc func(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error
+	InitPollFunc func(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
 
 	// TallyVoteFunc mocks the TallyVote method.
 	TallyVoteFunc func(ctx sdk.Context, sender sdk.AccAddress, pollMeta exported.PollMeta, data codec.ProtoMarshaler) (*votetypes.Poll, error)
@@ -73,6 +73,8 @@ type VoterMock struct {
 			SnapshotCounter int64
 			// ExpireAt is the expireAt argument value.
 			ExpireAt int64
+			// Threshold is the threshold argument value.
+			Threshold []utils.Threshold
 		}
 		// TallyVote holds details about calls to the TallyVote method.
 		TallyVote []struct {
@@ -127,7 +129,7 @@ func (mock *VoterMock) DeletePollCalls() []struct {
 }
 
 // InitPoll calls InitPollFunc.
-func (mock *VoterMock) InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error {
+func (mock *VoterMock) InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error {
 	if mock.InitPollFunc == nil {
 		panic("VoterMock.InitPollFunc: method is nil but Voter.InitPoll was just called")
 	}
@@ -136,16 +138,18 @@ func (mock *VoterMock) InitPoll(ctx sdk.Context, poll exported.PollMeta, snapsho
 		Poll            exported.PollMeta
 		SnapshotCounter int64
 		ExpireAt        int64
+		Threshold       []utils.Threshold
 	}{
 		Ctx:             ctx,
 		Poll:            poll,
 		SnapshotCounter: snapshotCounter,
 		ExpireAt:        expireAt,
+		Threshold:       threshold,
 	}
 	mock.lockInitPoll.Lock()
 	mock.calls.InitPoll = append(mock.calls.InitPoll, callInfo)
 	mock.lockInitPoll.Unlock()
-	return mock.InitPollFunc(ctx, poll, snapshotCounter, expireAt)
+	return mock.InitPollFunc(ctx, poll, snapshotCounter, expireAt, threshold...)
 }
 
 // InitPollCalls gets all the calls that were made to InitPoll.
@@ -156,12 +160,14 @@ func (mock *VoterMock) InitPollCalls() []struct {
 	Poll            exported.PollMeta
 	SnapshotCounter int64
 	ExpireAt        int64
+	Threshold       []utils.Threshold
 } {
 	var calls []struct {
 		Ctx             sdk.Context
 		Poll            exported.PollMeta
 		SnapshotCounter int64
 		ExpireAt        int64
+		Threshold       []utils.Threshold
 	}
 	mock.lockInitPoll.RLock()
 	calls = mock.calls.InitPoll
@@ -246,7 +252,7 @@ var _ types.Signer = &SignerMock{}
 // 			GetSnapshotCounterForKeyIDFunc: func(ctx sdk.Context, keyID string) (int64, bool) {
 // 				panic("mock out the GetSnapshotCounterForKeyID method")
 // 			},
-// 			StartSignFunc: func(ctx sdk.Context, initPoll interface{InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
+// 			StartSignFunc: func(ctx sdk.Context, initPoll interface{InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
 // 				panic("mock out the StartSign method")
 // 			},
 // 		}
@@ -282,7 +288,7 @@ type SignerMock struct {
 
 	// StartSignFunc mocks the StartSign method.
 	StartSignFunc func(ctx sdk.Context, initPoll interface {
-		InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error
+		InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
 	}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error
 
 	// calls tracks calls to the methods.
@@ -365,7 +371,7 @@ type SignerMock struct {
 			Ctx sdk.Context
 			// InitPoll is the initPoll argument value.
 			InitPoll interface {
-				InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error
+				InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
 			}
 			// KeyID is the keyID argument value.
 			KeyID string
@@ -702,7 +708,7 @@ func (mock *SignerMock) GetSnapshotCounterForKeyIDCalls() []struct {
 
 // StartSign calls StartSignFunc.
 func (mock *SignerMock) StartSign(ctx sdk.Context, initPoll interface {
-	InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error
+	InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
 }, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
 	if mock.StartSignFunc == nil {
 		panic("SignerMock.StartSignFunc: method is nil but Signer.StartSign was just called")
@@ -710,7 +716,7 @@ func (mock *SignerMock) StartSign(ctx sdk.Context, initPoll interface {
 	callInfo := struct {
 		Ctx      sdk.Context
 		InitPoll interface {
-			InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error
+			InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
 		}
 		KeyID            string
 		SigID            string
@@ -736,7 +742,7 @@ func (mock *SignerMock) StartSign(ctx sdk.Context, initPoll interface {
 func (mock *SignerMock) StartSignCalls() []struct {
 	Ctx      sdk.Context
 	InitPoll interface {
-		InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error
+		InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
 	}
 	KeyID            string
 	SigID            string
@@ -746,7 +752,7 @@ func (mock *SignerMock) StartSignCalls() []struct {
 	var calls []struct {
 		Ctx      sdk.Context
 		InitPoll interface {
-			InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64) error
+			InitPoll(ctx sdk.Context, poll exported.PollMeta, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
 		}
 		KeyID            string
 		SigID            string
