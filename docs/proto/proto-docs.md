@@ -155,6 +155,7 @@
 - [tss/v1beta1/query.proto](#tss/v1beta1/query.proto)
     - [QueryKeyResponse](#tss.v1beta1.QueryKeyResponse)
     - [QuerySigResponse](#tss.v1beta1.QuerySigResponse)
+    - [Signature](#tss.v1beta1.Signature)
   
     - [VoteStatus](#tss.v1beta1.VoteStatus)
   
@@ -2104,6 +2105,21 @@ Params is the parameter set for this module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `vote_status` | [VoteStatus](#tss.v1beta1.VoteStatus) |  |  |
+| `signature` | [Signature](#tss.v1beta1.Signature) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.Signature"></a>
+
+### Signature
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
 | `r` | [bytes](#bytes) |  |  |
 | `s` | [bytes](#bytes) |  |  |
 

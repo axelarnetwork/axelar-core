@@ -44,8 +44,10 @@ func querySigStatus(ctx sdk.Context, k tssTypes.TSSKeeper, v tssTypes.Voter, sig
 		// poll was successful
 		resp := tssTypes.QuerySigResponse{
 			VoteStatus: tssTypes.Decided,
-			R:          sig.R.Bytes(),
-			S:          sig.S.Bytes(),
+			Signature: &tssTypes.Signature{
+				R: sig.R.Bytes(),
+				S: sig.S.Bytes(),
+			},
 		}
 		return resp.Marshal()
 	}

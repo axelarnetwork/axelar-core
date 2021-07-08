@@ -11,7 +11,7 @@ type HexSignature struct {
 // NewHexSignatureFromQuerySigResponse converts a QuerySigResponse to a HexSignature
 func NewHexSignatureFromQuerySigResponse(sigResp *QuerySigResponse) HexSignature {
 	return HexSignature{
-		R: hexutil.Encode(sigResp.R),
-		S: hexutil.Encode(sigResp.S),
+		R: hexutil.Encode(sigResp.Signature.R),
+		S: hexutil.Encode(sigResp.Signature.S),
 	}
 }

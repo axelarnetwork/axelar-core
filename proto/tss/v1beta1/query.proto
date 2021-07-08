@@ -10,6 +10,10 @@ option (gogoproto.goproto_getters_all) = false;
 
 message QuerySigResponse {
   VoteStatus vote_status = 1;
+  Signature signature = 2;
+}
+
+message Signature {
   bytes r = 2;
   bytes s = 3;
 }
