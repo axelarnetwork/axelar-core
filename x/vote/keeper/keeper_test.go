@@ -138,7 +138,9 @@ func TestTallyVote_NoWinner(t *testing.T) {
 	majorityPower := newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(calcMajorityLowerLimit(threshold, minorityPower), 1000))
 	s.ValidatorSet = []snapshot.Validator{minorityPower, majorityPower}
 
-	s.Snapshotter.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return minorityPower.GetOperator() }
+	s.Snapshotter.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
+		return minorityPower.GetSDKValidator().GetOperator()
+	}
 
 	pollMeta := randomPollMeta()
 
@@ -157,7 +159,9 @@ func TestTallyVote_WithWinner(t *testing.T) {
 	majorityPower := newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(calcMajorityLowerLimit(threshold, minorityPower), 1000))
 	s.ValidatorSet = []snapshot.Validator{minorityPower, majorityPower}
 
-	s.Snapshotter.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return majorityPower.GetOperator() }
+	s.Snapshotter.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
+		return majorityPower.GetSDKValidator().GetOperator()
+	}
 	pollMeta := randomPollMeta()
 	data := randomData()
 
@@ -175,7 +179,9 @@ func TestTallyVote_TwoVotesFromSameValidator_ReturnError(t *testing.T) {
 	s.ValidatorSet = []snapshot.Validator{newValidator(rand.Bytes(sdk.AddrLen), rand.I64Between(1, 1000))}
 
 	// return same validator for all votes
-	s.Snapshotter.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress { return s.ValidatorSet[0].GetOperator() }
+	s.Snapshotter.GetPrincipalFunc = func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
+		return s.ValidatorSet[0].GetSDKValidator().GetOperator()
+	}
 
 	pollMeta := randomPollMeta()
 	sender := randomSender()
@@ -208,7 +214,9 @@ func TestTallyVote_MultipleVotesUntilDecision(t *testing.T) {
 	sender := randomSender()
 	data := randomData()
 
-	s.Snapshotter.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return s.ValidatorSet[0].GetOperator() }
+	s.Snapshotter.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
+		return s.ValidatorSet[0].GetSDKValidator().GetOperator()
+	}
 
 	poll, err := s.Keeper.TallyVote(s.Ctx, sender, pollMeta, data)
 	assert.NoError(t, err)
@@ -219,7 +227,9 @@ func TestTallyVote_MultipleVotesUntilDecision(t *testing.T) {
 		if i == 0 {
 			continue
 		}
-		s.Snapshotter.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return val.GetOperator() }
+		s.Snapshotter.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
+			return val.GetSDKValidator().GetOperator()
+		}
 		poll, err = s.Keeper.TallyVote(s.Ctx, sender, pollMeta, data)
 		assert.NoError(t, err)
 		pollDecided = pollDecided || poll.GetResult() != nil
@@ -240,14 +250,18 @@ func TestTallyVote_ForDecidedPoll(t *testing.T) {
 	pollMeta := randomPollMeta()
 	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollMeta, 100, 0))
 
-	s.Snapshotter.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return majorityPower.GetOperator() }
+	s.Snapshotter.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
+		return majorityPower.GetSDKValidator().GetOperator()
+	}
 
 	data1 := randomData()
 	poll, err := s.Keeper.TallyVote(s.Ctx, randomSender(), pollMeta, data1)
 	assert.NoError(t, err)
 	assert.Equal(t, data1, poll.GetResult())
 
-	s.Snapshotter.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return minorityPower.GetOperator() }
+	s.Snapshotter.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
+		return minorityPower.GetSDKValidator().GetOperator()
+	}
 
 	data2 := randomData()
 	poll, err = s.Keeper.TallyVote(s.Ctx, randomSender(), pollMeta, data2)
@@ -268,13 +282,13 @@ func TestTallyVote_FailedPoll(t *testing.T) {
 	pollMeta := randomPollMeta()
 	assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollMeta, 100, 0))
 
-	s.Snapshotter.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return validator1.GetOperator() }
+	s.Snapshotter.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return validator1.GetSDKValidator().GetOperator() }
 	poll, err := s.Keeper.TallyVote(s.Ctx, randomSender(), pollMeta, randomData())
 	assert.NoError(t, err)
 	assert.Nil(t, poll.GetResult())
 	assert.False(t, poll.Failed)
 
-	s.Snapshotter.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return validator2.GetOperator() }
+	s.Snapshotter.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return validator2.GetSDKValidator().GetOperator() }
 	poll, err = s.Keeper.TallyVote(s.Ctx, randomSender(), pollMeta, randomData())
 	assert.NoError(t, err)
 	assert.Nil(t, poll.GetResult())

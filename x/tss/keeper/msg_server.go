@@ -73,7 +73,7 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 	participants := make([]string, 0, len(snapshot.Validators))
 	participantShareCounts := make([]uint32, 0, len(snapshot.Validators))
 	for _, validator := range snapshot.Validators {
-		participants = append(participants, validator.GetOperator().String())
+		participants = append(participants, validator.GetSDKValidator().GetOperator().String())
 		participantShareCounts = append(participantShareCounts, uint32(validator.ShareCount))
 	}
 

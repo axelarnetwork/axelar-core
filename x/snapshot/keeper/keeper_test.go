@@ -90,7 +90,7 @@ func TestTakeSnapshot_WithSubsetSize(t *testing.T) {
 		GetTssSuspendedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
 	}
 
-	snapshotKeeper := keeper.NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("staking"), snapSubspace, staker, slashingKeeper, tssMock)
+	snapshotKeeper := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, slashingKeeper, tssMock)
 	snapshotKeeper.SetParams(ctx, types.DefaultParams())
 	for _, v := range validators {
 		_ = snapshotKeeper.RegisterProxy(ctx, v.GetOperator(), rand.Bytes(sdk.AddrLen))
@@ -138,7 +138,7 @@ func TestSnapshots(t *testing.T) {
 				GetTssSuspendedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
 			}
 
-			snapshotKeeper := keeper.NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("staking"), snapSubspace, staker, slashingKeeper, tssMock)
+			snapshotKeeper := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, slashingKeeper, tssMock)
 			snapshotKeeper.SetParams(ctx, types.DefaultParams())
 			for _, v := range validators {
 				_ = snapshotKeeper.RegisterProxy(ctx, v.GetOperator(), rand.Bytes(sdk.AddrLen))
@@ -162,8 +162,8 @@ func TestSnapshots(t *testing.T) {
 			assert.True(t, ok)
 			assert.Equal(t, int64(0), snapshotKeeper.GetLatestCounter(ctx))
 			for i, val := range validators {
-				assert.Equal(t, val.GetConsensusPower(), snapshot.Validators[i].GetConsensusPower())
-				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetOperator())
+				assert.Equal(t, val.GetConsensusPower(), snapshot.Validators[i].GetSDKValidator().GetConsensusPower())
+				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetSDKValidator().GetOperator())
 			}
 
 			_, _, err = snapshotKeeper.TakeSnapshot(ctx, 0, tss.WeightedByStake)
@@ -181,8 +181,8 @@ func TestSnapshots(t *testing.T) {
 			assert.True(t, ok)
 			assert.Equal(t, snapshotKeeper.GetLatestCounter(ctx), int64(1))
 			for i, val := range validators {
-				assert.Equal(t, val.GetConsensusPower(), snapshot.Validators[i].GetConsensusPower())
-				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetOperator())
+				assert.Equal(t, val.GetConsensusPower(), snapshot.Validators[i].GetSDKValidator().GetConsensusPower())
+				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetSDKValidator().GetOperator())
 			}
 		})
 	}
@@ -205,7 +205,7 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 		staker = newMockStaker(validators...)
 		principalAddress = validators[rand.I64Between(0, 10)].GetOperator()
 
-		snapshotKeeper = keeper.NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("staking"), snapSubspace, staker, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
+		snapshotKeeper = keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
 	}
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
@@ -251,7 +251,7 @@ func TestKeeper_DeregisterProxy(t *testing.T) {
 		principalAddress = validators[rand.I64Between(0, 10)].GetOperator()
 		expectedProxy = rand.Bytes(sdk.AddrLen)
 
-		snapshotKeeper = keeper.NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("staking"), snapSubspace, staker, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
+		snapshotKeeper = keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
 		if err := snapshotKeeper.RegisterProxy(ctx, principalAddress, expectedProxy); err != nil {
 			panic(fmt.Sprintf("setup failed for unit test: %v", err))
 		}

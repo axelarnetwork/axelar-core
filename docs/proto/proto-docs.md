@@ -110,6 +110,10 @@
 - [nexus/v1beta1/genesis.proto](#nexus/v1beta1/genesis.proto)
     - [GenesisState](#nexus.v1beta1.GenesisState)
   
+- [snapshot/exported/v1beta1/types.proto](#snapshot/exported/v1beta1/types.proto)
+    - [Snapshot](#snapshot.exported.v1beta1.Snapshot)
+    - [Validator](#snapshot.exported.v1beta1.Validator)
+  
 - [snapshot/v1beta1/params.proto](#snapshot/v1beta1/params.proto)
     - [Params](#snapshot.v1beta1.Params)
   
@@ -1544,6 +1548,58 @@ GenesisState represents the genesis state
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#nexus.v1beta1.Params) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="snapshot/exported/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## snapshot/exported/v1beta1/types.proto
+
+
+
+<a name="snapshot.exported.v1beta1.Snapshot"></a>
+
+### Snapshot
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `validators` | [Validator](#snapshot.exported.v1beta1.Validator) | repeated |  |
+| `timestamp` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
+| `height` | [int64](#int64) |  |  |
+| `total_share_count` | [bytes](#bytes) |  |  |
+| `counter` | [int64](#int64) |  |  |
+| `key_share_distribution_policy` | [tss.exported.v1beta1.KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
+
+
+
+
+
+
+<a name="snapshot.exported.v1beta1.Validator"></a>
+
+### Validator
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sdk_validator` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+| `share_count` | [int64](#int64) |  |  |
 
 
 

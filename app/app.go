@@ -318,7 +318,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		app.legacyAmino, keys[tssTypes.StoreKey], app.getSubspace(tssTypes.ModuleName), slashingKCast,
 	)
 	snapK := snapKeeper.NewKeeper(
-		app.legacyAmino, keys[snapTypes.StoreKey], app.getSubspace(snapTypes.ModuleName), stakingK,
+		appCodec, keys[snapTypes.StoreKey], app.getSubspace(snapTypes.ModuleName), stakingK,
 		slashingKCast, tssK,
 	)
 	nexusK := nexusKeeper.NewKeeper(

@@ -3,7 +3,6 @@ package exported
 import (
 	"bytes"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	"time"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -11,12 +10,14 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/gogo/protobuf/proto"
 )
 
 //go:generate moq -out ./mock/types.go -pkg mock . SDKValidator Snapshotter Slasher Tss
 
 // SDKValidator is an interface for a Cosmos validator account
 type SDKValidator interface {
+	proto.Message
 	codectypes.UnpackInterfacesMessage
 	GetOperator() sdk.ValAddress
 	GetConsAddr() (sdk.ConsAddress, error)
@@ -24,15 +25,14 @@ type SDKValidator interface {
 	IsJailed() bool
 }
 
-// Validator represents a validator that participates in tss and voting
-type Validator struct {
-	SDKValidator
-	ShareCount int64
-}
-
 // NewValidator is the constructor for Validator
 func NewValidator(validator SDKValidator, shareCount int64) Validator {
-	return Validator{SDKValidator: validator, ShareCount: shareCount}
+	// Pack the validator into an Any
+	validatorAny, err := codectypes.NewAnyWithValue(validator)
+	if err != nil {
+		panic(err)
+	}
+	return Validator{SDKValidator: validatorAny, ShareCount: shareCount}
 }
 
 // ValidatorInfo adopts the methods from "github.com/cosmos/cosmos-sdk/x/slashing" that are
@@ -77,35 +77,15 @@ func IsValidatorTssSuspended(ctx sdk.Context, tss Tss, validator SDKValidator) b
 	return tss.GetTssSuspendedUntil(ctx, validator.GetOperator()) > ctx.BlockHeight()
 }
 
-// Snapshot is a snapshot of the validator set at a given block height.
-type Snapshot struct {
-	Validators                 []Validator                    `json:"validators"`
-	Timestamp                  time.Time                      `json:"timestamp"`
-	Height                     int64                          `json:"height"`
-	TotalShareCount            sdk.Int                        `json:"totalsharecount"`
-	Counter                    int64                          `json:"counter"`
-	KeyShareDistributionPolicy tss.KeyShareDistributionPolicy `json:"keysharedistributionpolicy"`
-}
-
 // GetValidator returns the validator for a given address, if it is part of the snapshot
-func (s Snapshot) GetValidator(address sdk.ValAddress) (Validator, bool) {
-	for _, validator := range s.Validators {
-		if bytes.Equal(validator.GetOperator(), address) {
+func (m Snapshot) GetValidator(address sdk.ValAddress) (Validator, bool) {
+	for _, validator := range m.Validators {
+		if bytes.Equal(validator.GetSDKValidator().GetOperator(), address) {
 			return validator, true
 		}
 	}
 
 	return Validator{}, false
-}
-
-// UnpackInterfaces implements UnpackInterfacesMessage
-func (s Snapshot) UnpackInterfaces(c codectypes.AnyUnpacker) error {
-	for _, v := range s.Validators {
-		if err := v.UnpackInterfaces(c); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // Snapshotter represents the interface for the snapshot module's functionality
@@ -116,4 +96,32 @@ type Snapshotter interface {
 	TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (snapshotConsensusPower sdk.Int, totalConsensusPower sdk.Int, err error)
 	GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
 	GetProxy(ctx sdk.Context, principal sdk.ValAddress) (addr sdk.AccAddress, active bool)
+}
+
+// GetSDKValidator returns the SdkValidator
+func (m Validator) GetSDKValidator() SDKValidator {
+	if m.SDKValidator == nil {
+		panic("SDLValidator cannot be nil")
+	}
+
+	return m.SDKValidator.GetCachedValue().(SDKValidator)
+}
+
+// UnpackInterfaces implements UnpackInterfacesMessage
+func (m Validator) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
+	if m.SDKValidator != nil {
+		var sdkValidator SDKValidator
+		return unpacker.UnpackAny(m.SDKValidator, &sdkValidator)
+	}
+	return nil
+}
+
+// UnpackInterfaces implements UnpackInterfacesMessage
+func (m Snapshot) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
+	for i := range m.Validators {
+		if err := m.Validators[i].UnpackInterfaces(unpacker); err != nil {
+			return err
+		}
+	}
+	return nil
 }

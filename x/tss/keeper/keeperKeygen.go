@@ -24,7 +24,7 @@ func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID string, sn
 
 	// set keygen participants
 	for _, v := range snapshot.Validators {
-		k.setParticipatesInKeygen(ctx, keyID, v.GetOperator())
+		k.setParticipatesInKeygen(ctx, keyID, v.GetSDKValidator().GetOperator())
 	}
 
 	// store block height for this keygen to be able to confirm later if the produced key is allowed as a master key

@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"encoding/binary"
 	"fmt"
 	"time"
 
@@ -31,12 +32,12 @@ type Keeper struct {
 	staking  types.StakingKeeper
 	slasher  exported.Slasher
 	tss      exported.Tss
-	cdc      *codec.LegacyAmino
+	cdc      codec.BinaryMarshaler
 	params   params.Subspace
 }
 
 // NewKeeper creates a new keeper for the staking module
-func NewKeeper(cdc *codec.LegacyAmino, key sdk.StoreKey, paramSpace params.Subspace, staking types.StakingKeeper, slasher exported.Slasher, tss exported.Tss) Keeper {
+func NewKeeper(cdc codec.BinaryMarshaler, key sdk.StoreKey, paramSpace params.Subspace, staking types.StakingKeeper, slasher exported.Slasher, tss exported.Tss) Keeper {
 	return Keeper{
 		storeKey: key,
 		cdc:      cdc,
@@ -115,15 +116,11 @@ func (k Keeper) GetSnapshot(ctx sdk.Context, counter int64) (exported.Snapshot, 
 // GetLatestCounter returns the latest snapshot counter
 func (k Keeper) GetLatestCounter(ctx sdk.Context) int64 {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(lastCounterKey))
-
 	if bz == nil {
-
 		return -1
 	}
 
-	var i int64
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &i)
-	return i
+	return int64(binary.LittleEndian.Uint64(bz))
 }
 
 func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (snapshotConsensusPower sdk.Int, totalConsensusPower sdk.Int, err error) {
@@ -135,19 +132,20 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64
 
 		// this explicit type cast is necessary, because snapshot needs to call UnpackInterfaces() on the validator
 		// and it is not exposed in the ValidatorI interface
-		v, ok := validator.(exported.SDKValidator)
+		v, ok := validator.(stakingtypes.Validator)
+
 		if !ok {
 			k.Logger(ctx).Error(fmt.Sprintf("unexpected validator type: expected %T, got %T", stakingtypes.Validator{}, validator))
 			return false
 		}
 
-		if !exported.IsValidatorActive(ctx, k.slasher, v) ||
-			!exported.HasProxyRegistered(ctx, k, v) ||
-			exported.IsValidatorTssSuspended(ctx, k.tss, v) {
+		if !exported.IsValidatorActive(ctx, k.slasher, &v) ||
+			!exported.HasProxyRegistered(ctx, k, &v) ||
+			exported.IsValidatorTssSuspended(ctx, k.tss, &v) {
 			return false
 		}
 
-		validators = append(validators, v)
+		validators = append(validators, &v)
 
 		// if subsetSize equals 0, we will iterate through all validators and potentially put them all into the snapshot
 		return len(validators) == int(subsetSize)
@@ -179,12 +177,12 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64
 
 	// Since IterateBondedValidatorsByPower iterates validators by power in descending order, the last participant is
 	// the one with least amount of bond among all participants
-	bondPerShare := participants[len(participants)-1].GetConsensusPower()
+	bondPerShare := participants[len(participants)-1].GetSDKValidator().GetConsensusPower()
 	totalShareCount := sdk.ZeroInt()
 	for i := range participants {
 		switch keyShareDistributionPolicy {
 		case tss.WeightedByStake:
-			participants[i].ShareCount = participants[i].GetConsensusPower() / bondPerShare
+			participants[i].ShareCount = participants[i].GetSDKValidator().GetConsensusPower() / bondPerShare
 		case tss.OnePerValidator:
 			participants[i].ShareCount = 1
 		default:
@@ -203,13 +201,16 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64
 		KeyShareDistributionPolicy: keyShareDistributionPolicy,
 	}
 
-	ctx.KVStore(k.storeKey).Set(counterKey(counter), k.cdc.MustMarshalBinaryLengthPrefixed(snapshot))
+	ctx.KVStore(k.storeKey).Set(counterKey(counter), k.cdc.MustMarshalBinaryLengthPrefixed(&snapshot))
 
 	return snapshotConsensusPower, totalConsensusPower, nil
 }
 
 func (k Keeper) setLatestCounter(ctx sdk.Context, counter int64) {
-	ctx.KVStore(k.storeKey).Set([]byte(lastCounterKey), k.cdc.MustMarshalBinaryLengthPrefixed(counter))
+	bz := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bz, uint64(counter))
+
+	ctx.KVStore(k.storeKey).Set([]byte(lastCounterKey), bz)
 }
 
 func counterKey(counter int64) []byte {
@@ -286,15 +287,18 @@ func (k Keeper) GetProxy(ctx sdk.Context, principal sdk.ValAddress) (addr sdk.Ac
 
 func (k Keeper) setProxyCount(ctx sdk.Context, count int) {
 	k.Logger(ctx).Debug(fmt.Sprintf("number of known proxies: %v", count))
-	ctx.KVStore(k.storeKey).Set([]byte(proxyCountKey), k.cdc.MustMarshalBinaryLengthPrefixed(count))
+	bz := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bz, uint64(count))
+
+	ctx.KVStore(k.storeKey).Set([]byte(proxyCountKey), bz)
+
 }
 
 func (k Keeper) getProxyCount(ctx sdk.Context) int {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(proxyCountKey))
+	bz := ctx.KVStore(k.storeKey).Get([]byte(lastCounterKey))
 	if bz == nil {
 		return 0
 	}
-	var count int
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &count)
-	return count
+
+	return int(binary.LittleEndian.Uint64(bz))
 }
