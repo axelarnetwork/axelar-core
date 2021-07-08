@@ -161,7 +161,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(events).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeOutpointConfirmation }), 1)
 		assert.Equal(t, msg.OutPointInfo, btcKeeper.SetPendingOutpointInfoCalls()[0].Info)
-		assert.Equal(t, voter.InitPollCalls()[0].Poll, btcKeeper.SetPendingOutpointInfoCalls()[0].Poll)
+		assert.Equal(t, voter.InitPollCalls()[0].Key, btcKeeper.SetPendingOutpointInfoCalls()[0].Key)
 	}).Repeat(repeatCount))
 	t.Run("happy path consolidation", testutils.Func(func(t *testing.T) {
 		setup()
@@ -176,7 +176,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(events).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeOutpointConfirmation }), 1)
 		assert.Equal(t, msg.OutPointInfo, btcKeeper.SetPendingOutpointInfoCalls()[0].Info)
-		assert.Equal(t, voter.InitPollCalls()[0].Poll, btcKeeper.SetPendingOutpointInfoCalls()[0].Poll)
+		assert.Equal(t, voter.InitPollCalls()[0].Key, btcKeeper.SetPendingOutpointInfoCalls()[0].Key)
 	}).Repeat(repeatCount))
 	t.Run("already confirmed", testutils.Func(func(t *testing.T) {
 		setup()
@@ -250,12 +250,11 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			},
 		}
 		voter = &mock.VoterMock{
-			TallyVoteFunc: func(sdk.Context, sdk.AccAddress, vote.PollKey, codec.ProtoMarshaler) (*votetypes.Poll, error) {
+			TallyVoteFunc: func(sdk.Context, sdk.AccAddress, vote.PollKey, codec.ProtoMarshaler) (votetypes.PollMetadata, error) {
 				result, _ := codectypes.NewAnyWithValue(&gogoprototypes.BoolValue{Value: true})
 
-				return &votetypes.Poll{Result: result}, nil
+				return votetypes.PollMetadata{State: votetypes.Completed, Result: result}, nil
 			},
-			DeletePollFunc: func(sdk.Context, vote.PollKey) {},
 		}
 		nexusKeeper = &mock.NexusMock{
 			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) error { return nil },
@@ -278,7 +277,6 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
-		assert.Len(t, voter.DeletePollCalls(), 1)
 		assert.Len(t, btcKeeper.DeletePendingOutPointInfoCalls(), 1)
 		assert.Equal(t, info, btcKeeper.SetConfirmedOutpointInfoCalls()[0].Info)
 		assert.Equal(t, depositAddressInfo.KeyID, btcKeeper.SetConfirmedOutpointInfoCalls()[0].KeyID)
@@ -296,7 +294,6 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
-		assert.Len(t, voter.DeletePollCalls(), 1)
 		assert.Len(t, btcKeeper.DeletePendingOutPointInfoCalls(), 1)
 		assert.Equal(t, info, btcKeeper.SetConfirmedOutpointInfoCalls()[0].Info)
 		assert.Equal(t, depositAddressInfo.KeyID, btcKeeper.SetConfirmedOutpointInfoCalls()[0].KeyID)
@@ -318,7 +315,6 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
-		assert.Len(t, voter.DeletePollCalls(), 1)
 		assert.Len(t, btcKeeper.DeletePendingOutPointInfoCalls(), 1)
 		assert.Equal(t, info, btcKeeper.SetConfirmedOutpointInfoCalls()[0].Info)
 		assert.Equal(t, depositAddressInfo.KeyID, btcKeeper.SetConfirmedOutpointInfoCalls()[0].KeyID)
@@ -335,7 +331,6 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
-		assert.Len(t, voter.DeletePollCalls(), 1)
 		assert.Len(t, btcKeeper.DeletePendingOutPointInfoCalls(), 1)
 		assert.Equal(t, info, btcKeeper.SetConfirmedOutpointInfoCalls()[0].Info)
 		assert.Equal(t, depositAddressInfo.KeyID, btcKeeper.SetConfirmedOutpointInfoCalls()[0].KeyID)
@@ -345,15 +340,14 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 	t.Run("happy path reject", testutils.Func(func(t *testing.T) {
 		setup()
 		voter.TallyVoteFunc =
-			func(sdk.Context, sdk.AccAddress, vote.PollKey, codec.ProtoMarshaler) (*votetypes.Poll, error) {
+			func(sdk.Context, sdk.AccAddress, vote.PollKey, codec.ProtoMarshaler) (votetypes.PollMetadata, error) {
 				result, _ := codectypes.NewAnyWithValue(&gogoprototypes.BoolValue{Value: false})
 
-				return &votetypes.Poll{Result: result}, nil
+				return votetypes.PollMetadata{State: votetypes.Completed, Result: result}, nil
 			}
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
-		assert.Len(t, voter.DeletePollCalls(), 1)
 		assert.Len(t, btcKeeper.DeletePendingOutPointInfoCalls(), 1)
 		assert.Len(t, btcKeeper.SetConfirmedOutpointInfoCalls(), 0)
 		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
@@ -362,13 +356,12 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 	t.Run("happy path no result yet", testutils.Func(func(t *testing.T) {
 		setup()
 		voter.TallyVoteFunc =
-			func(sdk.Context, sdk.AccAddress, vote.PollKey, codec.ProtoMarshaler) (*votetypes.Poll, error) {
-				return &votetypes.Poll{}, nil
+			func(sdk.Context, sdk.AccAddress, vote.PollKey, codec.ProtoMarshaler) (votetypes.PollMetadata, error) {
+				return votetypes.PollMetadata{}, nil
 			}
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
-		assert.Len(t, voter.DeletePollCalls(), 0)
 		assert.Len(t, btcKeeper.DeletePendingOutPointInfoCalls(), 0)
 		assert.Len(t, btcKeeper.SetConfirmedOutpointInfoCalls(), 0)
 		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
@@ -385,7 +378,6 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
-		assert.Len(t, voter.DeletePollCalls(), 0)
 		assert.Len(t, btcKeeper.DeletePendingOutPointInfoCalls(), 0)
 		assert.Len(t, btcKeeper.SetConfirmedOutpointInfoCalls(), 0)
 		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
@@ -399,7 +391,6 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
-		assert.Len(t, voter.DeletePollCalls(), 1)
 		assert.Len(t, btcKeeper.DeletePendingOutPointInfoCalls(), 1)
 		assert.Len(t, btcKeeper.SetConfirmedOutpointInfoCalls(), 0)
 		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
@@ -413,7 +404,6 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
-		assert.Len(t, voter.DeletePollCalls(), 1)
 		assert.Len(t, btcKeeper.DeletePendingOutPointInfoCalls(), 1)
 		assert.Len(t, btcKeeper.SetConfirmedOutpointInfoCalls(), 0)
 		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
@@ -431,8 +421,8 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 	t.Run("tally failed", testutils.Func(func(t *testing.T) {
 		setup()
 		voter.TallyVoteFunc =
-			func(sdk.Context, sdk.AccAddress, vote.PollKey, codec.ProtoMarshaler) (*votetypes.Poll, error) {
-				return nil, fmt.Errorf("failed")
+			func(sdk.Context, sdk.AccAddress, vote.PollKey, codec.ProtoMarshaler) (votetypes.PollMetadata, error) {
+				return votetypes.PollMetadata{}, fmt.Errorf("failed")
 			}
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)

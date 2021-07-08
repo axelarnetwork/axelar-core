@@ -283,12 +283,12 @@ func registerBTCEventListener(n nodeData, submitMsg func(msg sdk.Msg) (result <-
 			return false
 		}
 
-		var poll voting.PollKey
-		encCfg.Amino.MustUnmarshalJSON([]byte(m[btcTypes.AttributeKeyPoll]), &poll)
+		var pollKey voting.PollKey
+		encCfg.Amino.MustUnmarshalJSON([]byte(m[btcTypes.AttributeKeyPoll]), &pollKey)
 
 		var out btcTypes.OutPointInfo
 		encCfg.Amino.MustUnmarshalJSON([]byte(m[btcTypes.AttributeKeyOutPointInfo]), &out)
-		_ = submitMsg(btcTypes.NewVoteConfirmOutpointRequest(n.Proxy, poll, out.GetOutPoint(), true))
+		_ = submitMsg(btcTypes.NewVoteConfirmOutpointRequest(n.Proxy, pollKey, out.GetOutPoint(), true))
 
 		return true
 	})
@@ -307,13 +307,13 @@ func registerETHEventListener(n nodeData, submitMsg func(msg sdk.Msg) (result <-
 			return false
 		}
 
-		var poll voting.PollKey
-		encCfg.Amino.MustUnmarshalJSON([]byte(m[evmTypes.AttributeKeyPoll]), &poll)
+		var pollKey voting.PollKey
+		encCfg.Amino.MustUnmarshalJSON([]byte(m[evmTypes.AttributeKeyPoll]), &pollKey)
 
 		_ = submitMsg(&evmTypes.VoteConfirmDepositRequest{
 			Sender:      n.Proxy,
 			Chain:       m[evmTypes.AttributeKeyChain],
-			Poll:        poll,
+			PollKey:     pollKey,
 			Confirmed:   true,
 			TxID:        types.Hash(common.HexToHash(m[evmTypes.AttributeKeyTxID])),
 			BurnAddress: types.Address(common.HexToAddress(m[evmTypes.AttributeKeyBurnAddress])),
@@ -333,14 +333,14 @@ func registerETHEventListener(n nodeData, submitMsg func(msg sdk.Msg) (result <-
 			return false
 		}
 
-		var poll voting.PollKey
-		encCfg.Amino.MustUnmarshalJSON([]byte(m[evmTypes.AttributeKeyPoll]), &poll)
+		var pollKey voting.PollKey
+		encCfg.Amino.MustUnmarshalJSON([]byte(m[evmTypes.AttributeKeyPoll]), &pollKey)
 
 		_ = submitMsg(
 			&evmTypes.VoteConfirmTokenRequest{
 				Sender:    n.Proxy,
 				Chain:     m[evmTypes.AttributeKeyChain],
-				Poll:      poll,
+				PollKey:   pollKey,
 				Confirmed: true,
 				TxID:      evmTypes.Hash(common.HexToHash(m[evmTypes.AttributeKeyTxID])),
 				Symbol:    m[evmTypes.AttributeKeySymbol],

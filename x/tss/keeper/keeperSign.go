@@ -49,8 +49,8 @@ func (k Keeper) StartSign(ctx sdk.Context, voter types.InitPoller, keyID string,
 		k.setParticipateInSign(ctx, sigID, v.GetSDKValidator().GetOperator())
 	}
 
-	poll := vote.NewPollKey(types.ModuleName, sigID)
-	if err := voter.InitPoll(ctx, poll, s.Counter, 0); err != nil {
+	pollKey := vote.NewPollKey(types.ModuleName, sigID)
+	if err := voter.InitPoll(ctx, pollKey, s.Counter, 0); err != nil {
 		return err
 	}
 

@@ -181,8 +181,10 @@
     - [GenesisState](#vote.v1beta1.GenesisState)
   
 - [vote/v1beta1/types.proto](#vote/v1beta1/types.proto)
-    - [Poll](#vote.v1beta1.Poll)
+    - [PollMetadata](#vote.v1beta1.PollMetadata)
     - [TalliedVote](#vote.v1beta1.TalliedVote)
+  
+    - [PollMetadata.State](#vote.v1beta1.PollMetadata.State)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -629,7 +631,7 @@ MsgVoteConfirmOutpoint represents a message to that votes on an outpoint
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `poll` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
+| `poll_key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
 | `out_point` | [string](#string) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
 
@@ -1267,7 +1269,7 @@ MsgVoteConfirmChain represents a message that votes on a new EVM chain
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `name` | [string](#string) |  |  |
-| `poll` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
+| `poll_key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
 
 
@@ -1300,7 +1302,7 @@ MsgVoteConfirmDeposit represents a message that votes on a deposit
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
-| `poll` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
+| `poll_key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `burn_address` | [bytes](#bytes) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
@@ -1335,7 +1337,7 @@ MsgVoteConfirmToken represents a message that votes on a token deploy
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
-| `poll` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
+| `poll_key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `symbol` | [string](#string) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
@@ -1370,7 +1372,7 @@ MsgVoteConfirmDeposit represents a message that votes on a deposit
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
-| `poll` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
+| `poll_key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `new_owner_address` | [bytes](#bytes) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
@@ -2418,22 +2420,21 @@ Msg defines the tss Msg service.
 
 
 
-<a name="vote.v1beta1.Poll"></a>
+<a name="vote.v1beta1.PollMetadata"></a>
 
-### Poll
-Poll represents a poll with write-in voting, i.e. the result of the vote can
-have any data type
+### PollMetadata
+PollMetadata represents a poll with write-in voting, i.e. the result of the
+vote can have any data type
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
-| `validator_snapshot_counter` | [int64](#int64) |  |  |
-| `votes` | [TalliedVote](#vote.v1beta1.TalliedVote) | repeated |  |
+| `snapshot_seq_no` | [int64](#int64) |  |  |
 | `expires_at` | [int64](#int64) |  |  |
 | `result` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
 | `voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
-| `failed` | [bool](#bool) |  |  |
+| `state` | [PollMetadata.State](#vote.v1beta1.PollMetadata.State) |  |  |
 
 
 
@@ -2444,12 +2445,13 @@ have any data type
 
 ### TalliedVote
 TalliedVote represents a vote for a poll with the accumulated stake of all
-validators voting for the same VotingData
+validators voting for the same data
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `tally` | [bytes](#bytes) |  |  |
+| `voters` | [bytes](#bytes) | repeated |  |
 | `data` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
 
 
@@ -2457,6 +2459,21 @@ validators voting for the same VotingData
 
 
  <!-- end messages -->
+
+
+<a name="vote.v1beta1.PollMetadata.State"></a>
+
+### PollMetadata.State
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| STATE_UNSPECIFIED | 0 |  |
+| STATE_PENDING | 1 |  |
+| STATE_COMPLETED | 2 |  |
+| STATE_FAILED | 3 |  |
+| STATE_EXPIRED | 4 |  |
+
 
  <!-- end enums -->
 

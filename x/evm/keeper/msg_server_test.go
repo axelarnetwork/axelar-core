@@ -530,7 +530,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeTokenConfirmation }), 1)
-		assert.Equal(t, v.InitPollCalls()[0].Poll, chaink.SetPendingTokenDeploymentCalls()[0].Poll)
+		assert.Equal(t, v.InitPollCalls()[0].PollKey, chaink.SetPendingTokenDeploymentCalls()[0].PollKey)
 	}).Repeat(repeats))
 
 	t.Run("unknown chain", testutils.Func(func(t *testing.T) {
@@ -755,7 +755,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeDepositConfirmation }), 1)
-		assert.Equal(t, v.InitPollCalls()[0].Poll, chaink.SetPendingDepositCalls()[0].Poll)
+		assert.Equal(t, v.InitPollCalls()[0].PollKey, chaink.SetPendingDepositCalls()[0].Key)
 	}).Repeat(repeats))
 
 	t.Run("unknown chain", testutils.Func(func(t *testing.T) {

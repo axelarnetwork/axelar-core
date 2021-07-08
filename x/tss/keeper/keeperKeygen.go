@@ -33,8 +33,8 @@ func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID string, sn
 	// store snapshot round to be able to look up the correct validator set when signing with this key
 	k.setSnapshotCounterForKeyID(ctx, keyID, snapshot.Counter)
 
-	poll := voting.NewPollKey(types.ModuleName, keyID)
-	if err := voter.InitPoll(ctx, poll, snapshot.Counter, 0); err != nil {
+	pollKey := voting.NewPollKey(types.ModuleName, keyID)
+	if err := voter.InitPoll(ctx, pollKey, snapshot.Counter, 0); err != nil {
 		return err
 	}
 

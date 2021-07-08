@@ -38,7 +38,7 @@ func NewMgr(rpc rpc3.Client, broadcaster types.Broadcaster, sender sdk.AccAddres
 
 // ProcessConfirmation votes on the correctness of a Bitcoin deposit
 func (mgr *Mgr) ProcessConfirmation(attributes []sdk.Attribute) error {
-	outPointInfo, confHeight, poll, err := parseConfirmationParams(mgr.cdc, attributes)
+	outPointInfo, confHeight, pollKey, err := parseConfirmationParams(mgr.cdc, attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "Bitcoin transaction confirmation failed")
 	}
@@ -47,14 +47,14 @@ func (mgr *Mgr) ProcessConfirmation(attributes []sdk.Attribute) error {
 	if err != nil {
 		mgr.logger.Debug(sdkerrors.Wrap(err, "tx outpoint confirmation failed").Error())
 	}
-	msg := btc.NewVoteConfirmOutpointRequest(mgr.sender, poll, outPointInfo.GetOutPoint(), err == nil)
+	msg := btc.NewVoteConfirmOutpointRequest(mgr.sender, pollKey, outPointInfo.GetOutPoint(), err == nil)
 
-	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, poll.String()))
+	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
 	return mgr.broadcaster.Broadcast(msg)
 }
 
-func parseConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (outPoint btc.OutPointInfo, confHeight int64, poll vote.PollKey, err error) {
-	var outPointFound, confHeightFound, pollFound bool
+func parseConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (outPoint btc.OutPointInfo, confHeight int64, pollKey vote.PollKey, err error) {
+	var outPointFound, confHeightFound, pollKeyFound bool
 	for _, attribute := range attributes {
 		switch attribute.Key {
 		case btc.AttributeKeyOutPointInfo:
@@ -68,16 +68,16 @@ func parseConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute)
 			confHeight = int64(h)
 			confHeightFound = true
 		case btc.AttributeKeyPoll:
-			cdc.MustUnmarshalJSON([]byte(attribute.Value), &poll)
-			pollFound = true
+			cdc.MustUnmarshalJSON([]byte(attribute.Value), &pollKey)
+			pollKeyFound = true
 		default:
 		}
 	}
-	if !outPointFound || !confHeightFound || !pollFound {
+	if !outPointFound || !confHeightFound || !pollKeyFound {
 		return btc.OutPointInfo{}, 0, vote.PollKey{}, fmt.Errorf("insufficient event attributes")
 	}
 
-	return outPoint, confHeight, poll, nil
+	return outPoint, confHeight, pollKey, nil
 }
 
 func confirmTx(rpc rpc3.Client, outPointInfo btc.OutPointInfo, requiredConfirmations int64) error {

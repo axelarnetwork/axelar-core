@@ -70,20 +70,20 @@ func TestInitPoll(t *testing.T) {
 
 		pollKey := randomPollKey()
 		snapshotCounter := int64(100)
-		expireAt := int64(0)
+		expireAt := s.Ctx.BlockHeight() + rand.I64Between(1, 100)
 
 		assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollKey, snapshotCounter, expireAt))
 
-		expected := types.NewPoll(pollKey, snapshotCounter, expireAt, types.DefaultGenesisState().VotingThreshold)
-		actual := s.Keeper.GetPoll(s.Ctx, pollKey)
-		assert.Equal(t, expected, *actual)
+		expected := types.NewPollMetaData(pollKey, snapshotCounter, expireAt, types.DefaultGenesisState().VotingThreshold)
+		actual := s.Keeper.GetPollMetadata(s.Ctx, pollKey)
+		assert.Equal(t, expected, actual)
 	}))
 
 	t.Run("should return error if poll with same key exists and has not expired yet", testutils.Func(func(t *testing.T) {
 		s := setup()
 		pollKey := randomPollKey()
 		snapshotCounter := int64(100)
-		expireAt := int64(0)
+		expireAt := s.Ctx.BlockHeight() + rand.I64Between(1, 100)
 
 		assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollKey, snapshotCounter, expireAt))
 		assert.Error(t, s.Keeper.InitPoll(s.Ctx, pollKey, snapshotCounter, expireAt))
@@ -100,9 +100,9 @@ func TestInitPoll(t *testing.T) {
 		assert.NoError(t, s.Keeper.InitPoll(s.Ctx, pollKey, snapshotCounter1, expireAt1))
 		assert.NoError(t, s.Keeper.InitPoll(s.Ctx.WithBlockHeight(expireAt1), pollKey, snapshotCounter2, expireAt2))
 
-		expected := types.NewPoll(pollKey, snapshotCounter2, expireAt2, types.DefaultGenesisState().VotingThreshold)
-		actual := s.Keeper.GetPoll(s.Ctx, pollKey)
-		assert.Equal(t, expected, *actual)
+		expected := types.NewPollMetaData(pollKey, snapshotCounter2, expireAt2, types.DefaultGenesisState().VotingThreshold)
+		actual := s.Keeper.GetPollMetadata(s.Ctx, pollKey)
+		assert.Equal(t, expected, actual)
 	}))
 }
 
@@ -236,7 +236,7 @@ func TestTallyVote_MultipleVotesUntilDecision(t *testing.T) {
 		pollDecided = pollDecided || poll.GetResult() != nil
 	}
 
-	assert.Equal(t, data, s.Keeper.GetPoll(s.Ctx, pollKey).GetResult())
+	assert.Equal(t, data, s.Keeper.GetPollMetadata(s.Ctx, pollKey).GetResult())
 }
 
 // tally vote for already decided vote
@@ -287,13 +287,13 @@ func TestTallyVote_FailedPoll(t *testing.T) {
 	poll, err := s.Keeper.TallyVote(s.Ctx, randomSender(), pollKey, randomData())
 	assert.NoError(t, err)
 	assert.Nil(t, poll.GetResult())
-	assert.False(t, poll.Failed)
+	assert.False(t, poll.Is(types.Failed))
 
 	s.Snapshotter.GetPrincipalFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return validator2.GetSDKValidator().GetOperator() }
 	poll, err = s.Keeper.TallyVote(s.Ctx, randomSender(), pollKey, randomData())
 	assert.NoError(t, err)
 	assert.Nil(t, poll.GetResult())
-	assert.True(t, poll.Failed)
+	assert.True(t, poll.Is(types.Failed))
 }
 
 func randomData() codec.ProtoMarshaler {

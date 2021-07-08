@@ -14,13 +14,13 @@ import (
 func NewVoteConfirmTokenRequest(
 	sender sdk.AccAddress,
 	chain, symbol string,
-	poll vote.PollKey,
+	key vote.PollKey,
 	txID common.Hash,
 	confirmed bool) *VoteConfirmTokenRequest {
 	return &VoteConfirmTokenRequest{
 		Sender:    sender,
 		Chain:     chain,
-		Poll:      poll,
+		PollKey:   key,
 		TxID:      Hash(txID),
 		Symbol:    symbol,
 		Confirmed: confirmed,
@@ -49,7 +49,7 @@ func (m VoteConfirmTokenRequest) ValidateBasic() error {
 		return fmt.Errorf("symbol missing")
 	}
 
-	return m.Poll.Validate()
+	return m.PollKey.Validate()
 }
 
 // GetSignBytes returns the message bytes that need to be signed

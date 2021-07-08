@@ -44,7 +44,7 @@ message SignPendingTransfersResponse {};
 message VoteConfirmOutpointRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  vote.exported.v1beta1.PollKey poll = 2 [ (gogoproto.nullable) = false ];
+  vote.exported.v1beta1.PollKey poll_key = 2 [ (gogoproto.nullable) = false ];
   string out_point = 3;
   bool confirmed = 4;
 }

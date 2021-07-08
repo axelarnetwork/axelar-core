@@ -12,6 +12,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
+	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 var _ types.MsgServiceServer = msgServer{}
@@ -173,32 +174,13 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		return &types.VotePubKeyResponse{}, nil
 	}
 
-	poll := s.voter.GetPoll(ctx, req.PollKey)
-	if poll == nil {
-		return nil, fmt.Errorf("poll does not exist or is closed")
-	}
-
-	snapshot, found := s.snapshotter.GetSnapshot(ctx, poll.ValidatorSnapshotCounter)
-	if !found {
-		return nil, fmt.Errorf("no snapshot found for counter %d", poll.ValidatorSnapshotCounter)
-	}
-
-	if criminals := req.Result.GetCriminals(); criminals != nil {
-		for _, criminal := range criminals.Criminals {
-			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
-			if _, found := snapshot.GetValidator(criminalAddress); !found {
-				return nil, fmt.Errorf("received criminal %s who is not a participant of producing key %s", criminalAddress.String(), req.PollKey.ID)
-			}
-		}
-	}
-
 	poll, err := s.voter.TallyVote(ctx, req.Sender, req.PollKey, req.Result)
 	if err != nil {
 		return nil, err
 	}
 
 	result := poll.GetResult()
-	if result == nil && !poll.Failed {
+	if !poll.Is(voteTypes.Completed) {
 		return &types.VotePubKeyResponse{}, nil
 	}
 
@@ -209,12 +191,11 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	)
 	defer ctx.EventManager().EmitEvent(event)
 
-	if poll.Failed {
+	if poll.Is(voteTypes.Failed) {
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
 		)
 
-		s.voter.DeletePoll(ctx, req.PollKey)
 		s.DeleteSnapshotCounterForKeyID(ctx, req.PollKey.ID)
 		s.DeleteKeygenStart(ctx, req.PollKey.ID)
 		s.DeleteParticipantsInKeygen(ctx, req.PollKey.ID)
@@ -224,7 +205,6 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 
 	switch keygenResult := result.(type) {
 	case *tofnd.MessageOut_KeygenResult:
-		s.voter.DeletePoll(ctx, req.PollKey)
 
 		if pubKeyBytes := keygenResult.GetPubkey(); pubKeyBytes != nil {
 			btcecPK, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
@@ -256,8 +236,18 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
 		)
 
+		snapshot, found := s.snapshotter.GetSnapshot(ctx, poll.SnapshotSeqNo)
+		if !found {
+			return nil, fmt.Errorf("no snapshot found for counter %d", poll.SnapshotSeqNo)
+		}
+
 		for _, criminal := range keygenResult.GetCriminals().Criminals {
 			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
+			if _, found := snapshot.GetValidator(criminalAddress); !found {
+				s.Logger(ctx).Info(fmt.Sprintf("received criminal %s who is not a participant of producing key %s", criminalAddress.String(), req.PollKey.ID))
+				continue
+			}
+
 			s.TSSKeeper.PenalizeSignCriminal(ctx, criminalAddress, criminal.GetCrimeType())
 
 			s.Logger(ctx).Info(fmt.Sprintf("criminal for generating key %s verified: %s - %s", req.PollKey.ID, criminal.GetPartyUid(), criminal.CrimeType.String()))
@@ -302,32 +292,12 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		return &types.VoteSigResponse{}, nil
 	}
 
-	poll := s.voter.GetPoll(ctx, req.PollKey)
-	if poll == nil {
-		return nil, fmt.Errorf("poll does not exist or is closed")
-	}
-
-	snapshot, found := s.snapshotter.GetSnapshot(ctx, poll.ValidatorSnapshotCounter)
-	if !found {
-		return nil, fmt.Errorf("no snapshot found for counter %d", poll.ValidatorSnapshotCounter)
-	}
-
-	if criminals := req.Result.GetCriminals(); criminals != nil {
-		for _, criminal := range criminals.Criminals {
-			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
-			if _, found := snapshot.GetValidator(criminalAddress); !found {
-				return nil, fmt.Errorf("received criminal %s who is not a participant of producing signature %s", criminalAddress.String(), req.PollKey.ID)
-			}
-		}
-	}
-
 	poll, err := s.voter.TallyVote(ctx, req.Sender, req.PollKey, req.Result)
 	if err != nil {
 		return nil, err
 	}
 
-	result := poll.GetResult()
-	if result == nil && !poll.Failed {
+	if !poll.Is(voteTypes.Completed) {
 		return &types.VoteSigResponse{}, nil
 	}
 
@@ -338,20 +308,19 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 	)
 	defer ctx.EventManager().EmitEvent(event)
 
-	if poll.Failed {
+	if poll.Is(voteTypes.Failed) {
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
 		)
 
-		s.voter.DeletePoll(ctx, req.PollKey)
 		s.DeleteKeyIDForSig(ctx, req.PollKey.ID)
 
 		return &types.VoteSigResponse{}, nil
 	}
 
+	result := poll.GetResult()
 	switch signResult := result.(type) {
 	case *tofnd.MessageOut_SignResult:
-		s.voter.DeletePoll(ctx, req.PollKey)
 
 		if signature := signResult.GetSignature(); signature != nil {
 			s.SetSig(ctx, req.PollKey.ID, signature)
@@ -373,8 +342,17 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
 		)
 
+		snapshot, found := s.snapshotter.GetSnapshot(ctx, poll.SnapshotSeqNo)
+		if !found {
+			return nil, fmt.Errorf("no snapshot found for counter %d", poll.SnapshotSeqNo)
+		}
 		for _, criminal := range signResult.GetCriminals().Criminals {
 			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
+			if _, found := snapshot.GetValidator(criminalAddress); !found {
+				s.Logger(ctx).Info(fmt.Sprintf("received criminal %s who is not a participant of producing signature %s",
+					criminalAddress.String(), req.PollKey.ID))
+				continue
+			}
 			s.TSSKeeper.PenalizeSignCriminal(ctx, criminalAddress, criminal.GetCrimeType())
 
 			s.Logger(ctx).Info(fmt.Sprintf("criminal for signature %s verified: %s - %s", req.PollKey.ID, criminal.GetPartyUid(), criminal.CrimeType.String()))

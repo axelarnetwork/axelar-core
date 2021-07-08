@@ -20,6 +20,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 var _ types.MsgServiceServer = msgServer{}
@@ -369,31 +370,28 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 		return nil, fmt.Errorf("unknown chain %s", req.Name)
 	}
 
-	poll, err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed})
+	poll, err := s.voter.TallyVote(ctx, req.Sender, req.PollKey, &gogoprototypes.BoolValue{Value: req.Confirmed})
 	if err != nil {
 		return nil, err
 	}
 
-	result := poll.GetResult()
-	if result == nil {
+	if !poll.Is(voteTypes.Completed) {
 		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("not enough votes to confirm chain in %s yet", req.Name)}, nil
 	}
 
-	// assert: the poll has completed
-	confirmed, ok := result.(*gogoprototypes.BoolValue)
+	confirmed, ok := poll.GetResult().(*gogoprototypes.BoolValue)
 	if !ok {
-		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.Poll.String(), result)
+		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("EVM chain confirmation result is %s", result))
-	s.voter.DeletePoll(ctx, req.Poll)
+	s.Logger(ctx).Info(fmt.Sprintf("EVM chain confirmation result is %s", poll.GetResult()))
 	s.DeletePendingChain(ctx, req.Name)
 
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeChainConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyChain, req.Name),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.Poll))))
+		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
 
 	if !confirmed.Value {
 		ctx.EventManager().EmitEvent(
@@ -421,15 +419,14 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 
 	keeper := s.ForChain(ctx, chain.Name)
 
-	pendingDeposit, pollFound := keeper.GetPendingDeposit(ctx, req.Poll)
+	pendingDeposit, pollFound := keeper.GetPendingDeposit(ctx, req.PollKey)
 	confirmedDeposit, state, depositFound := keeper.GetDeposit(ctx, common.Hash(req.TxID), common.Address(req.BurnAddress))
 
 	switch {
 	// a malicious user could try to delete an ongoing poll by providing an already confirmed deposit,
 	// so we need to check that it matches the poll before deleting
 	case depositFound && pollFound && confirmedDeposit == pendingDeposit:
-		s.voter.DeletePoll(ctx, req.Poll)
-		keeper.DeletePendingDeposit(ctx, req.Poll)
+		keeper.DeletePendingDeposit(ctx, req.PollKey)
 		fallthrough
 	// If the voting threshold has been met and additional votes are received they should not return an error
 	case depositFound:
@@ -440,38 +437,35 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 			return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("deposit in %s to address %s already spent", pendingDeposit.TxID.Hex(), pendingDeposit.BurnerAddress.Hex())}, nil
 		}
 	case !pollFound:
-		return nil, fmt.Errorf("no deposit found for poll %s", req.Poll.String())
+		return nil, fmt.Errorf("no deposit found for poll %s", req.PollKey.String())
 	case pendingDeposit.BurnerAddress != req.BurnAddress || pendingDeposit.TxID != req.TxID:
-		return nil, fmt.Errorf("deposit in %s to address %s does not match poll %s", req.TxID, req.BurnAddress.Hex(), req.Poll.String())
+		return nil, fmt.Errorf("deposit in %s to address %s does not match poll %s", req.TxID, req.BurnAddress.Hex(), req.PollKey.String())
 	default:
 		// assert: the deposit is known and has not been confirmed before
 	}
 
-	poll, err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed})
+	poll, err := s.voter.TallyVote(ctx, req.Sender, req.PollKey, &gogoprototypes.BoolValue{Value: req.Confirmed})
 	if err != nil {
 		return nil, err
 	}
 
-	result := poll.GetResult()
-	if result == nil {
+	if !poll.Is(voteTypes.Completed) {
 		return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("not enough votes to confirm deposit in %s to %s yet", req.TxID, req.BurnAddress.Hex())}, nil
 	}
 
-	// assert: the poll has completed
-	confirmed, ok := result.(*gogoprototypes.BoolValue)
+	confirmed, ok := poll.GetResult().(*gogoprototypes.BoolValue)
 	if !ok {
-		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.Poll.String(), result)
+		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
 	}
 
 	s.Logger(ctx).Info(fmt.Sprintf("%s deposit confirmation result is %s", chain.Name, result))
-	s.voter.DeletePoll(ctx, req.Poll)
-	keeper.DeletePendingDeposit(ctx, req.Poll)
+	keeper.DeletePendingDeposit(ctx, req.PollKey)
 
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeDepositConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.Poll))))
+		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
 
 	if !confirmed.Value {
 		ctx.EventManager().EmitEvent(
@@ -504,51 +498,47 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 	keeper := s.ForChain(ctx, chain.Name)
 
 	// is there an ongoing poll?
-	token, pollFound := keeper.GetPendingTokenDeployment(ctx, req.Poll)
+	token, pollFound := keeper.GetPendingTokenDeployment(ctx, req.PollKey)
 	registered := s.nexus.IsAssetRegistered(ctx, chain.Name, req.Symbol)
 	switch {
 	// a malicious user could try to delete an ongoing poll by providing an already confirmed token,
 	// so we need to check that it matches the poll before deleting
 	case registered && pollFound && token.Symbol == req.Symbol:
-		s.voter.DeletePoll(ctx, req.Poll)
-		keeper.DeletePendingToken(ctx, req.Poll)
+		keeper.DeletePendingToken(ctx, req.PollKey)
 		fallthrough
 	// If the voting threshold has been met and additional votes are received they should not return an error
 	case registered:
 		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("token %s already confirmed", req.Symbol)}, nil
 	case !pollFound:
-		return nil, fmt.Errorf("no token found for poll %s", req.Poll.String())
+		return nil, fmt.Errorf("no token found for poll %s", req.PollKey.String())
 	case token.Symbol != req.Symbol:
-		return nil, fmt.Errorf("token %s does not match poll %s", req.Symbol, req.Poll.String())
+		return nil, fmt.Errorf("token %s does not match poll %s", req.Symbol, req.PollKey.String())
 	default:
 		// assert: the token is known and has not been confirmed before
 	}
 
-	poll, err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed})
+	poll, err := s.voter.TallyVote(ctx, req.Sender, req.PollKey, &gogoprototypes.BoolValue{Value: req.Confirmed})
 	if err != nil {
 		return nil, err
 	}
 
-	result := poll.GetResult()
-	if result == nil {
+	if !poll.Is(voteTypes.Completed) {
 		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("not enough votes to confirm token %s yet", req.Symbol)}, nil
 	}
 
-	// assert: the poll has completed
-	confirmed, ok := result.(*gogoprototypes.BoolValue)
+	confirmed, ok := poll.GetResult().(*gogoprototypes.BoolValue)
 	if !ok {
-		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.Poll.String(), result)
+		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("token deployment confirmation result is %s", result))
-	s.voter.DeletePoll(ctx, req.Poll)
-	keeper.DeletePendingToken(ctx, req.Poll)
+	s.Logger(ctx).Info(fmt.Sprintf("token deployment confirmation result is %s", poll.GetResult()))
+	keeper.DeletePendingToken(ctx, req.PollKey)
 
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeTokenConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.Poll))))
+		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
 
 	if !confirmed.Value {
 		ctx.EventManager().EmitEvent(
@@ -576,12 +566,12 @@ func (s msgServer) VoteConfirmTransferOwnership(c context.Context, req *types.Vo
 
 	keeper := s.ForChain(ctx, chain.Name)
 
-	pendingTransferOwnership, pendingTransferFound := keeper.GetPendingTransferOwnership(ctx, req.Poll)
-	archivedTransferOwnership, archivedtransferFound := keeper.GetArchivedTransferOwnership(ctx, req.Poll)
+	pendingTransferOwnership, pendingTransferFound := keeper.GetPendingTransferOwnership(ctx, req.PollKey)
+	archivedTransferOwnership, archivedtransferFound := keeper.GetArchivedTransferOwnership(ctx, req.PollKey)
 
 	switch {
 	case !pendingTransferFound && !archivedtransferFound:
-		return nil, fmt.Errorf("no transfer ownership found for poll %s", req.Poll.String())
+		return nil, fmt.Errorf("no transfer ownership found for poll %s", req.PollKey.String())
 	// If the voting threshold has been met and additional votes are received they should not return an error
 	case archivedtransferFound:
 		return &types.VoteConfirmTransferOwnershipResponse{Log: fmt.Sprintf("transfer ownership in %s to keyID %s already confirmed", archivedTransferOwnership.TxID.Hex(), archivedTransferOwnership.NextKeyID)}, nil
@@ -591,37 +581,34 @@ func (s msgServer) VoteConfirmTransferOwnership(c context.Context, req *types.Vo
 			return nil, fmt.Errorf("key %s cannot be found", pendingTransferOwnership.NextKeyID)
 		}
 		if crypto.PubkeyToAddress(pk.Value) != common.Address(req.NewOwnerAddress) || pendingTransferOwnership.TxID != req.TxID {
-			return nil, fmt.Errorf("transfer ownership in %s to address %s does not match poll %s", req.TxID, req.NewOwnerAddress.Hex(), req.Poll.String())
+			return nil, fmt.Errorf("transfer ownership in %s to address %s does not match poll %s", req.TxID, req.NewOwnerAddress.Hex(), req.PollKey.String())
 		}
 	default:
 		// assert: the transfer ownership is known and has not been confirmed before
 	}
 
-	poll, err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed})
+	poll, err := s.voter.TallyVote(ctx, req.Sender, req.PollKey, &gogoprototypes.BoolValue{Value: req.Confirmed})
 	if err != nil {
 		return nil, err
 	}
 
-	result := poll.GetResult()
-	if result == nil {
+	if !poll.Is(voteTypes.Completed) {
 		return &types.VoteConfirmTransferOwnershipResponse{Log: fmt.Sprintf("not enough votes to confirm transfer ownership in %s to %s yet", req.TxID, req.NewOwnerAddress.Hex())}, nil
 	}
 
-	// assert: the poll has completed
-	confirmed, ok := result.(*gogoprototypes.BoolValue)
+	confirmed, ok := poll.GetResult().(*gogoprototypes.BoolValue)
 	if !ok {
-		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.Poll.String(), result)
+		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
 	}
 
 	s.Logger(ctx).Info(fmt.Sprintf("%s transfer ownership confirmation result is %s", chain.Name, result))
-	s.voter.DeletePoll(ctx, req.Poll)
-	keeper.ArchiveTransferOwnership(ctx, req.Poll)
+	keeper.ArchiveTransferOwnership(ctx, req.PollKey)
 
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeTransferOwnershipConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.Poll))))
+		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
 
 	if !confirmed.Value {
 		ctx.EventManager().EmitEvent(
