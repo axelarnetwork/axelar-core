@@ -11,7 +11,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	evmTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -51,7 +51,7 @@ const (
 	axelarGatewayFuncExecute              = "execute"
 )
 
-// Address wraps ethereum Address
+// Address wraps EVM Address
 type Address common.Address
 
 // Bytes returns the actual byte array of the address
@@ -95,7 +95,7 @@ func (a Address) Size() int {
 	return common.AddressLength
 }
 
-// Hash wraps ethereum Hash
+// Hash wraps EVM Hash
 type Hash common.Hash
 
 // Bytes returns the actual byte array of the hash
@@ -139,11 +139,11 @@ func (h Hash) Size() int {
 	return common.HashLength
 }
 
-// Signature encodes the parameters R,S,V in the byte format expected by Ethereum
+// Signature encodes the parameters R,S,V in the byte format expected by an EVM chain
 type Signature [crypto.SignatureLength]byte
 
-// ToEthSignature transforms an Axelar generated signature into an ethereum recoverable signature
-func ToEthSignature(sig tss.Signature, hash common.Hash, pk ecdsa.PublicKey) (Signature, error) {
+// ToSignature transforms an Axelar generated signature into a recoverable signature
+func ToSignature(sig tss.Signature, hash common.Hash, pk ecdsa.PublicKey) (Signature, error) {
 	s := Signature{}
 	copy(s[:32], common.LeftPadBytes(sig.R.Bytes(), 32))
 	copy(s[32:], common.LeftPadBytes(sig.S.Bytes(), 32))
@@ -163,7 +163,7 @@ func ToEthSignature(sig tss.Signature, hash common.Hash, pk ecdsa.PublicKey) (Si
 	return s, nil
 }
 
-// DeployParams describe the parameters used to create a deploy contract transaction for Ethereum
+// DeployParams describe the parameters used to create a deploy contract transaction for an EVM chain
 type DeployParams struct {
 	Chain    string
 	GasPrice sdk.Int
@@ -174,11 +174,11 @@ type DeployParams struct {
 // containing the raw unsigned transaction and the address to which the contract will be deployed
 type DeployResult struct {
 	ContractAddress string                `json:"contract_address"`
-	Tx              *ethTypes.Transaction `json:"tx"`
+	Tx              *evmTypes.Transaction `json:"tx"`
 }
 
 // CommandParams describe the parameters used to send a pre-signed command to the given contract,
-// with the sender signing the transaction on the Ethereum node
+// with the sender signing the transaction on the node
 type CommandParams struct {
 	Chain     string
 	CommandID CommandID
@@ -195,7 +195,7 @@ const (
 )
 
 // CreateExecuteData wraps the specific command data and includes the command signature.
-// Returns the data that goes into the data field of an Ethereum transaction
+// Returns the data that goes into the data field of an EVM transaction
 func CreateExecuteData(commandData []byte, commandSig Signature) ([]byte, error) {
 	abiEncoder, err := abi.JSON(strings.NewReader(axelarGatewayABI))
 	if err != nil {
@@ -232,8 +232,8 @@ func CreateExecuteData(commandData []byte, commandSig Signature) ([]byte, error)
 	return result, nil
 }
 
-// GetEthereumSignHash returns the hash that needs to be signed so AxelarGateway accepts the given command
-func GetEthereumSignHash(commandData []byte) common.Hash {
+// GetSignHash returns the hash that needs to be signed so AxelarGateway accepts the given command
+func GetSignHash(commandData []byte) common.Hash {
 	hash := crypto.Keccak256(commandData)
 
 	//TODO: is this the same across any EVM chain?

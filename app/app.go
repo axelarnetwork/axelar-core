@@ -303,7 +303,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	btcK := btcKeeper.NewKeeper(
 		appCodec, keys[btcTypes.StoreKey], app.getSubspace(btcTypes.ModuleName),
 	)
-	ethK := evmKeeper.NewKeeper(
+	evmK := evmKeeper.NewKeeper(
 		appCodec, keys[evmTypes.StoreKey], app.paramsKeeper,
 	)
 
@@ -380,7 +380,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		tss.NewAppModule(tssK, snapK, votingK, nexusK, stakingK),
 		vote.NewAppModule(votingK),
 		nexus.NewAppModule(nexusK),
-		evm.NewAppModule(ethK, tssK, votingK, tssK, nexusK, snapK, rpcsEVM, logger),
+		evm.NewAppModule(evmK, tssK, votingK, tssK, nexusK, snapK, rpcsEVM, logger),
 		bitcoin.NewAppModule(btcK, votingK, tssK, nexusK, snapK, rpcBtc),
 	)
 

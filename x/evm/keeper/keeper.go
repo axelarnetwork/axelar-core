@@ -15,7 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/tendermint/tendermint/libs/log"
 
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	evmTypes "github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 
@@ -365,13 +365,13 @@ func (k keeper) GetCommandData(ctx sdk.Context, commandID types.CommandID) []byt
 	return k.getStore(ctx, k.chain).Get(key)
 }
 
-func (k keeper) getUnsignedTx(ctx sdk.Context, txID string) *ethTypes.Transaction {
+func (k keeper) getUnsignedTx(ctx sdk.Context, txID string) *evmTypes.Transaction {
 	bz := k.getStore(ctx, k.chain).Get([]byte(unsignedPrefix + txID))
 	if bz == nil {
 		return nil
 	}
 
-	var tx ethTypes.Transaction
+	var tx evmTypes.Transaction
 	err := tx.UnmarshalBinary(bz)
 	if err != nil {
 		panic(err)
@@ -381,7 +381,7 @@ func (k keeper) getUnsignedTx(ctx sdk.Context, txID string) *ethTypes.Transactio
 }
 
 // SetUnsignedTx stores an unsigned transaction by hash
-func (k keeper) SetUnsignedTx(ctx sdk.Context, txID string, tx *ethTypes.Transaction) {
+func (k keeper) SetUnsignedTx(ctx sdk.Context, txID string, tx *evmTypes.Transaction) {
 	bz, err := tx.MarshalBinary()
 	if err != nil {
 		panic(err)
@@ -432,8 +432,8 @@ func (k keeper) GetConfirmedDeposits(ctx sdk.Context) []types.ERC20Deposit {
 	return deposits
 }
 
-// AssembleEthTx sets a signature for a previously stored raw transaction
-func (k keeper) AssembleEthTx(ctx sdk.Context, txID string, pk ecdsa.PublicKey, sig tss.Signature) (*ethTypes.Transaction, error) {
+// AssembleTx sets a signature for a previously stored raw transaction
+func (k keeper) AssembleTx(ctx sdk.Context, txID string, pk ecdsa.PublicKey, sig tss.Signature) (*evmTypes.Transaction, error) {
 	rawTx := k.getUnsignedTx(ctx, txID)
 	if rawTx == nil {
 		return nil, fmt.Errorf("raw tx for ID %s has not been prepared yet", txID)
@@ -441,7 +441,7 @@ func (k keeper) AssembleEthTx(ctx sdk.Context, txID string, pk ecdsa.PublicKey, 
 
 	signer := k.getSigner(ctx)
 
-	recoverableSig, err := types.ToEthSignature(sig, signer.Hash(rawTx), pk)
+	recoverableSig, err := types.ToSignature(sig, signer.Hash(rawTx), pk)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not create recoverable signature: %v", err))
 	}
@@ -459,11 +459,11 @@ func (k keeper) GetHashToSign(ctx sdk.Context, txID string) (common.Hash, error)
 	return signer.Hash(rawTx), nil
 }
 
-func (k keeper) getSigner(ctx sdk.Context) ethTypes.EIP155Signer {
+func (k keeper) getSigner(ctx sdk.Context) evmTypes.EIP155Signer {
 	var network string
 	subspace, _ := k.getSubspace(ctx, k.chain)
 	subspace.Get(ctx, types.KeyNetwork, &network)
-	return ethTypes.NewEIP155Signer(k.GetChainIDByNetwork(ctx, network))
+	return evmTypes.NewEIP155Signer(k.GetChainIDByNetwork(ctx, network))
 }
 
 // DeletePendingToken deletes the token associated with the given poll

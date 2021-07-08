@@ -21,7 +21,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	evmTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	hdwallet "github.com/miguelmota/go-ethereum-hdwallet"
 	"github.com/stretchr/testify/assert"
@@ -45,8 +45,8 @@ const (
 	// This mnemonic creates deterministic wallet accounts
 	mnemonic = "invest cloud minimum mirror keen razor husband desert engine actual flower shop"
 
-	// EthereumDerivationPath describes the hierarchical deterministic wallet path to derive Ethereum addresses
-	EthereumDerivationPath = "m/44'/60'/0'/0/0"
+	// DerivationPath describes the hierarchical deterministic wallet path to derive addresses
+	DerivationPath = "m/44'/60'/0'/0/0"
 )
 
 /*
@@ -91,7 +91,7 @@ func TestSig(t *testing.T) {
 		panic(err)
 	}
 
-	path := hdwallet.MustParseDerivationPath(EthereumDerivationPath)
+	path := hdwallet.MustParseDerivationPath(DerivationPath)
 	account, err := wallet.Derive(path, false)
 	if err != nil {
 		panic(err)
@@ -113,19 +113,19 @@ func TestSig(t *testing.T) {
 
 		addr := crypto.PubkeyToAddress(privateKey.PublicKey)
 
-		tx1 := ethTypes.NewTransaction(nonce, addr, amount, gasLimit, gasPrice, data)
-		tx2 := ethTypes.NewTransaction(nonce, addr, amount, gasLimit, gasPrice, data)
+		tx1 := evmTypes.NewTransaction(nonce, addr, amount, gasLimit, gasPrice, data)
+		tx2 := evmTypes.NewTransaction(nonce, addr, amount, gasLimit, gasPrice, data)
 
-		signer := ethTypes.NewEIP155Signer(chainID)
+		signer := evmTypes.NewEIP155Signer(chainID)
 
-		signedTx1, err := ethTypes.SignTx(tx1, signer, privateKey)
+		signedTx1, err := evmTypes.SignTx(tx1, signer, privateKey)
 		assert.NoError(t, err)
 
 		V1, R1, S1 := signedTx1.RawSignatureValues()
 
 		hash := signer.Hash(tx1)
 
-		sig, err := types.ToEthSignature(tss.Signature{R: R1, S: S1}, hash, privateKey.PublicKey)
+		sig, err := types.ToSignature(tss.Signature{R: R1, S: S1}, hash, privateKey.PublicKey)
 		assert.NoError(t, err)
 
 		recoveredPK, err := crypto.SigToPub(hash.Bytes(), sig[:])
@@ -173,7 +173,7 @@ func TestDeploy(t *testing.T) {
 		panic(err)
 	}
 
-	path := hdwallet.MustParseDerivationPath(EthereumDerivationPath)
+	path := hdwallet.MustParseDerivationPath(DerivationPath)
 	account, err := wallet.Derive(path, false)
 	if err != nil {
 		panic(err)
@@ -192,7 +192,7 @@ func TestDeploy(t *testing.T) {
 	chain := "Ethereum"
 	chainID := backend.Blockchain().Config().ChainID
 	assert.NoError(t, err)
-	signer := ethTypes.NewEIP155Signer(chainID)
+	signer := evmTypes.NewEIP155Signer(chainID)
 	var gasLimit uint64 = 3000000
 	tssSigner := &mock.SignerMock{GetCurrentKeyFunc: func(_ sdk.Context, _ nexus.Chain, _ tss.KeyRole) (tss.Key, bool) {
 		return tss.Key{
@@ -232,7 +232,7 @@ func TestDeploy(t *testing.T) {
 	var result types.DeployResult
 	encCfg.Amino.MustUnmarshalJSON(res, &result)
 
-	signedTx, err := ethTypes.SignTx(result.Tx, signer, privateKey)
+	signedTx, err := evmTypes.SignTx(result.Tx, signer, privateKey)
 	assert.NoError(t, err)
 	err = backend.SendTransaction(context.Background(), signedTx)
 	assert.NoError(t, err)

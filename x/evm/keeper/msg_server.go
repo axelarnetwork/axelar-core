@@ -463,7 +463,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.Poll.String(), result)
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("ethereum deposit confirmation result is %s", result))
+	s.Logger(ctx).Info(fmt.Sprintf("%s deposit confirmation result is %s", chain.Name, result))
 	s.voter.DeletePoll(ctx, req.Poll)
 	keeper.DeletePendingDeposit(ctx, req.Poll)
 
@@ -613,7 +613,7 @@ func (s msgServer) VoteConfirmTransferOwnership(c context.Context, req *types.Vo
 		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.Poll.String(), result)
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("ethereum transfer ownership confirmation result is %s", result))
+	s.Logger(ctx).Info(fmt.Sprintf("%s transfer ownership confirmation result is %s", chain.Name, result))
 	s.voter.DeletePoll(ctx, req.Poll)
 	keeper.ArchiveTransferOwnership(ctx, req.Poll)
 
@@ -669,7 +669,7 @@ func (s msgServer) SignDeployToken(c context.Context, req *types.SignDeployToken
 	s.Logger(ctx).Info(fmt.Sprintf("storing data for deploy-token command %s", commandIDHex))
 	keeper.SetCommandData(ctx, commandID, data)
 
-	signHash := types.GetEthereumSignHash(data)
+	signHash := types.GetSignHash(data)
 
 	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
 	if !ok {
@@ -749,7 +749,7 @@ func (s msgServer) SignBurnTokens(c context.Context, req *types.SignBurnTokensRe
 	keeper.SetCommandData(ctx, commandID, data)
 
 	s.Logger(ctx).Info(fmt.Sprintf("signing burn command [%s] for token deposits to chain %s", commandIDHex, chain.Name))
-	signHash := types.GetEthereumSignHash(data)
+	signHash := types.GetSignHash(data)
 
 	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
 	if !ok {
@@ -800,7 +800,7 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 		return nil, err
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("ethereum tx [%s] to sign: %s", txID, hash.Hex()))
+	s.Logger(ctx).Info(fmt.Sprintf("%s tx [%s] to sign: %s", chain.Name, txID, hash.Hex()))
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
@@ -893,7 +893,7 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 	keeper.SetCommandData(ctx, commandID, data)
 
 	s.Logger(ctx).Info(fmt.Sprintf("signing mint command [%s] for pending transfers to chain %s", commandIDHex, chain.Name))
-	signHash := types.GetEthereumSignHash(data)
+	signHash := types.GetSignHash(data)
 
 	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
 	if !ok {
@@ -982,7 +982,7 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 	s.Logger(ctx).Info(fmt.Sprintf("storing data for transfer-ownership command %s", commandIDHex))
 	keeper.SetCommandData(ctx, commandID, data)
 
-	signHash := types.GetEthereumSignHash(data)
+	signHash := types.GetSignHash(data)
 
 	counter, ok = s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
 	if !ok {

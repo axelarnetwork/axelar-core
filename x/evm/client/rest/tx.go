@@ -10,7 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/ethereum/go-ethereum/common"
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	evmTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/gorilla/mux"
 
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
@@ -308,8 +308,8 @@ func GetHandlerSignTx(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		txJSON := []byte(req.TxJSON)
-		var ethtx *ethTypes.Transaction
-		err := cliCtx.LegacyAmino.UnmarshalJSON(txJSON, &ethtx)
+		var evmtx *evmTypes.Transaction
+		err := cliCtx.LegacyAmino.UnmarshalJSON(txJSON, &evmtx)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

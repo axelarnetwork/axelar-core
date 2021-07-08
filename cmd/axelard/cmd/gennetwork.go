@@ -168,7 +168,7 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 
 				genesisStateBz, err = cdc.MarshalJSON(&genesisState)
 				if err != nil {
-					return fmt.Errorf("failed to marshal ethereum genesis state: %w", err)
+					return fmt.Errorf("failed to marshal genesis state: %w", err)
 				}
 			default:
 				return fmt.Errorf("unknown platform: %s", platformStr)

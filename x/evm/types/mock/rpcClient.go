@@ -6,9 +6,9 @@ package mock
 import (
 	context "context"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	"github.com/ethereum/go-ethereum"
+	evm "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	evmTypes "github.com/ethereum/go-ethereum/core/types"
 	"math/big"
 	"sync"
 )
@@ -29,22 +29,22 @@ var _ types.RPCClient = &RPCClientMock{}
 // 			ChainIDFunc: func(ctx context.Context) (*big.Int, error) {
 // 				panic("mock out the ChainID method")
 // 			},
-// 			EstimateGasFunc: func(ctx context.Context, msg ethereum.CallMsg) (uint64, error) {
+// 			EstimateGasFunc: func(ctx context.Context, msg evm.CallMsg) (uint64, error) {
 // 				panic("mock out the EstimateGas method")
 // 			},
 // 			PendingNonceAtFunc: func(ctx context.Context, account common.Address) (uint64, error) {
 // 				panic("mock out the PendingNonceAt method")
 // 			},
-// 			SendAndSignTransactionFunc: func(ctx context.Context, msg ethereum.CallMsg) (string, error) {
+// 			SendAndSignTransactionFunc: func(ctx context.Context, msg evm.CallMsg) (string, error) {
 // 				panic("mock out the SendAndSignTransaction method")
 // 			},
-// 			SendTransactionFunc: func(ctx context.Context, tx *ethTypes.Transaction) error {
+// 			SendTransactionFunc: func(ctx context.Context, tx *evmTypes.Transaction) error {
 // 				panic("mock out the SendTransaction method")
 // 			},
 // 			SuggestGasPriceFunc: func(ctx context.Context) (*big.Int, error) {
 // 				panic("mock out the SuggestGasPrice method")
 // 			},
-// 			TransactionReceiptFunc: func(ctx context.Context, txHash common.Hash) (*ethTypes.Receipt, error) {
+// 			TransactionReceiptFunc: func(ctx context.Context, txHash common.Hash) (*evmTypes.Receipt, error) {
 // 				panic("mock out the TransactionReceipt method")
 // 			},
 // 		}
@@ -61,22 +61,22 @@ type RPCClientMock struct {
 	ChainIDFunc func(ctx context.Context) (*big.Int, error)
 
 	// EstimateGasFunc mocks the EstimateGas method.
-	EstimateGasFunc func(ctx context.Context, msg ethereum.CallMsg) (uint64, error)
+	EstimateGasFunc func(ctx context.Context, msg evm.CallMsg) (uint64, error)
 
 	// PendingNonceAtFunc mocks the PendingNonceAt method.
 	PendingNonceAtFunc func(ctx context.Context, account common.Address) (uint64, error)
 
 	// SendAndSignTransactionFunc mocks the SendAndSignTransaction method.
-	SendAndSignTransactionFunc func(ctx context.Context, msg ethereum.CallMsg) (string, error)
+	SendAndSignTransactionFunc func(ctx context.Context, msg evm.CallMsg) (string, error)
 
 	// SendTransactionFunc mocks the SendTransaction method.
-	SendTransactionFunc func(ctx context.Context, tx *ethTypes.Transaction) error
+	SendTransactionFunc func(ctx context.Context, tx *evmTypes.Transaction) error
 
 	// SuggestGasPriceFunc mocks the SuggestGasPrice method.
 	SuggestGasPriceFunc func(ctx context.Context) (*big.Int, error)
 
 	// TransactionReceiptFunc mocks the TransactionReceipt method.
-	TransactionReceiptFunc func(ctx context.Context, txHash common.Hash) (*ethTypes.Receipt, error)
+	TransactionReceiptFunc func(ctx context.Context, txHash common.Hash) (*evmTypes.Receipt, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -95,7 +95,7 @@ type RPCClientMock struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Msg is the msg argument value.
-			Msg ethereum.CallMsg
+			Msg evm.CallMsg
 		}
 		// PendingNonceAt holds details about calls to the PendingNonceAt method.
 		PendingNonceAt []struct {
@@ -109,14 +109,14 @@ type RPCClientMock struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Msg is the msg argument value.
-			Msg ethereum.CallMsg
+			Msg evm.CallMsg
 		}
 		// SendTransaction holds details about calls to the SendTransaction method.
 		SendTransaction []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Tx is the tx argument value.
-			Tx *ethTypes.Transaction
+			Tx *evmTypes.Transaction
 		}
 		// SuggestGasPrice holds details about calls to the SuggestGasPrice method.
 		SuggestGasPrice []struct {
@@ -204,13 +204,13 @@ func (mock *RPCClientMock) ChainIDCalls() []struct {
 }
 
 // EstimateGas calls EstimateGasFunc.
-func (mock *RPCClientMock) EstimateGas(ctx context.Context, msg ethereum.CallMsg) (uint64, error) {
+func (mock *RPCClientMock) EstimateGas(ctx context.Context, msg evm.CallMsg) (uint64, error) {
 	if mock.EstimateGasFunc == nil {
 		panic("RPCClientMock.EstimateGasFunc: method is nil but RPCClient.EstimateGas was just called")
 	}
 	callInfo := struct {
 		Ctx context.Context
-		Msg ethereum.CallMsg
+		Msg evm.CallMsg
 	}{
 		Ctx: ctx,
 		Msg: msg,
@@ -226,11 +226,11 @@ func (mock *RPCClientMock) EstimateGas(ctx context.Context, msg ethereum.CallMsg
 //     len(mockedRPCClient.EstimateGasCalls())
 func (mock *RPCClientMock) EstimateGasCalls() []struct {
 	Ctx context.Context
-	Msg ethereum.CallMsg
+	Msg evm.CallMsg
 } {
 	var calls []struct {
 		Ctx context.Context
-		Msg ethereum.CallMsg
+		Msg evm.CallMsg
 	}
 	mock.lockEstimateGas.RLock()
 	calls = mock.calls.EstimateGas
@@ -274,13 +274,13 @@ func (mock *RPCClientMock) PendingNonceAtCalls() []struct {
 }
 
 // SendAndSignTransaction calls SendAndSignTransactionFunc.
-func (mock *RPCClientMock) SendAndSignTransaction(ctx context.Context, msg ethereum.CallMsg) (string, error) {
+func (mock *RPCClientMock) SendAndSignTransaction(ctx context.Context, msg evm.CallMsg) (string, error) {
 	if mock.SendAndSignTransactionFunc == nil {
 		panic("RPCClientMock.SendAndSignTransactionFunc: method is nil but RPCClient.SendAndSignTransaction was just called")
 	}
 	callInfo := struct {
 		Ctx context.Context
-		Msg ethereum.CallMsg
+		Msg evm.CallMsg
 	}{
 		Ctx: ctx,
 		Msg: msg,
@@ -296,11 +296,11 @@ func (mock *RPCClientMock) SendAndSignTransaction(ctx context.Context, msg ether
 //     len(mockedRPCClient.SendAndSignTransactionCalls())
 func (mock *RPCClientMock) SendAndSignTransactionCalls() []struct {
 	Ctx context.Context
-	Msg ethereum.CallMsg
+	Msg evm.CallMsg
 } {
 	var calls []struct {
 		Ctx context.Context
-		Msg ethereum.CallMsg
+		Msg evm.CallMsg
 	}
 	mock.lockSendAndSignTransaction.RLock()
 	calls = mock.calls.SendAndSignTransaction
@@ -309,13 +309,13 @@ func (mock *RPCClientMock) SendAndSignTransactionCalls() []struct {
 }
 
 // SendTransaction calls SendTransactionFunc.
-func (mock *RPCClientMock) SendTransaction(ctx context.Context, tx *ethTypes.Transaction) error {
+func (mock *RPCClientMock) SendTransaction(ctx context.Context, tx *evmTypes.Transaction) error {
 	if mock.SendTransactionFunc == nil {
 		panic("RPCClientMock.SendTransactionFunc: method is nil but RPCClient.SendTransaction was just called")
 	}
 	callInfo := struct {
 		Ctx context.Context
-		Tx  *ethTypes.Transaction
+		Tx  *evmTypes.Transaction
 	}{
 		Ctx: ctx,
 		Tx:  tx,
@@ -331,11 +331,11 @@ func (mock *RPCClientMock) SendTransaction(ctx context.Context, tx *ethTypes.Tra
 //     len(mockedRPCClient.SendTransactionCalls())
 func (mock *RPCClientMock) SendTransactionCalls() []struct {
 	Ctx context.Context
-	Tx  *ethTypes.Transaction
+	Tx  *evmTypes.Transaction
 } {
 	var calls []struct {
 		Ctx context.Context
-		Tx  *ethTypes.Transaction
+		Tx  *evmTypes.Transaction
 	}
 	mock.lockSendTransaction.RLock()
 	calls = mock.calls.SendTransaction
@@ -375,7 +375,7 @@ func (mock *RPCClientMock) SuggestGasPriceCalls() []struct {
 }
 
 // TransactionReceipt calls TransactionReceiptFunc.
-func (mock *RPCClientMock) TransactionReceipt(ctx context.Context, txHash common.Hash) (*ethTypes.Receipt, error) {
+func (mock *RPCClientMock) TransactionReceipt(ctx context.Context, txHash common.Hash) (*evmTypes.Receipt, error) {
 	if mock.TransactionReceiptFunc == nil {
 		panic("RPCClientMock.TransactionReceiptFunc: method is nil but RPCClient.TransactionReceipt was just called")
 	}
