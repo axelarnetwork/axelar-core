@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	evmParams "github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,7 +15,7 @@ func TestEthToWei_IsInteger(t *testing.T) {
 		Amount: amount,
 	}
 	wei := eth
-	wei.Amount = eth.Amount.MulInt64(evmParams.Ether)
+	wei.Amount = eth.Amount.MulInt64(params.Ether)
 
 	assert.True(t, wei.Amount.IsInteger())
 }
@@ -27,7 +27,7 @@ func TestGweiToWei_IsNotInteger(t *testing.T) {
 		Amount: amount,
 	}
 	wei := gwei
-	wei.Amount = gwei.Amount.MulInt64(evmParams.GWei)
+	wei.Amount = gwei.Amount.MulInt64(params.GWei)
 
 	assert.False(t, wei.Amount.IsInteger())
 }
