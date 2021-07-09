@@ -52,7 +52,7 @@ func querySigStatus(ctx sdk.Context, k tssTypes.TSSKeeper, v tssTypes.Voter, sig
 		return resp.Marshal()
 	}
 
-	pollMeta := voting.NewPollMeta(tssTypes.ModuleName, sigID)
+	pollMeta := voting.NewPollKey(tssTypes.ModuleName, sigID)
 	poll := v.GetPoll(ctx, pollMeta)
 
 	if poll == nil {
@@ -79,7 +79,7 @@ func queryKeygenStatus(ctx sdk.Context, k tssTypes.TSSKeeper, v tssTypes.Voter, 
 		return resp.Marshal()
 	}
 
-	pollMeta := voting.NewPollMeta(tssTypes.ModuleName, keyID)
+	pollMeta := voting.NewPollKey(tssTypes.ModuleName, keyID)
 	poll := v.GetPoll(ctx, pollMeta)
 	if poll == nil {
 		// poll either never existed or has been closed
