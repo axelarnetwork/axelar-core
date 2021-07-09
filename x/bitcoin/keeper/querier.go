@@ -145,7 +145,7 @@ func queryKeyConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.Si
 func queryNextMasterKeyID(ctx sdk.Context, s types.Signer) ([]byte, error) {
 	next, nextAssigned := s.GetNextKey(ctx, exported.Bitcoin, tss.MasterKey)
 	if !nextAssigned {
-		return nil, fmt.Errorf("no next key is assigned, pending transfers must be signed first")
+		return []byte{}, nil
 	}
 
 	return []byte(next.ID), nil

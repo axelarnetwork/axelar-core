@@ -23,6 +23,7 @@ const (
 	QueryDepositAddress           = keeper.QDepositAddress
 	QueryMasterAddress            = keeper.QMasterAddress
 	QueryKeyConsolidationAddress  = keeper.QKeyConsolidationAddress
+	QueryNextMasterKeyID          = keeper.QNextMasterKeyID
 	QueryGetConsolidationTx       = keeper.QConsolidationTx
 	QueryGetPayForConsolidationTx = keeper.QPayForConsolidationTx
 	QueryMinimumWithdrawAmount    = keeper.QMinimumWithdrawAmount
@@ -39,6 +40,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery(QueryHandlerDepositAddress(cliCtx), QueryDepositAddress, clientUtils.PathVarChain, clientUtils.PathVarEthereumAddress)
 	registerQuery(QueryHandlerMasterAddress(cliCtx), QueryMasterAddress)
 	registerQuery(QueryHandlerKeyConsolidationAddress(cliCtx), QueryKeyConsolidationAddress, clientUtils.PathVarKeyID)
+	registerQuery(QueryHandlerNextMasterKeyID(cliCtx), QueryNextMasterKeyID)
 	registerQuery(QueryHandlerGetConsolidationTx(cliCtx), QueryGetConsolidationTx)
 	registerQuery(QueryHandlerGetPayForConsolidationTx(cliCtx), QueryGetPayForConsolidationTx)
 	registerQuery(QueryHandlerMinimumWithdrawAmount(cliCtx), QueryMinimumWithdrawAmount)
