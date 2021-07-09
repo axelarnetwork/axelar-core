@@ -3,6 +3,7 @@ package types
 // CLI query error message formats
 const (
 	ErrFMasterKey            = "could not resolve master key"
+	ErrFNextMasterKey        = "could not get next master key ID"
 	ErrFGetRawTx             = "could not get the raw consolidation transaction"
 	ErrFGetPayForRawTx       = "could not get the raw pay-for-consolidation transaction"
 	ErrFInvalidFeeRate       = "invalid fee rate"
