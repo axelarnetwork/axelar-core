@@ -75,7 +75,7 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, k types.BTCKeeper, si
 	txHash := tx.TxHash()
 
 	// Confirm all outpoints that axelar controls the keys of
-	for _, output := range tx.TxOut {
+	for i, output := range tx.TxOut {
 		_, addresses, _, err := txscript.ExtractPkScriptAddrs(output.PkScript, network.Params())
 		if err != nil {
 			k.Logger(ctx).Error(sdkerrors.Wrap(err, fmt.Sprintf("failed to extract change output address from transaction %s", txHash.String())).Error())
@@ -91,7 +91,7 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, k types.BTCKeeper, si
 			continue
 		}
 
-		outpointInfo := types.NewOutPointInfo(wire.NewOutPoint(&txHash, 0), btcutil.Amount(output.Value), address.Address)
+		outpointInfo := types.NewOutPointInfo(wire.NewOutPoint(&txHash, uint32(i)), btcutil.Amount(output.Value), address.Address)
 		k.SetConfirmedOutpointInfo(ctx, address.KeyID, outpointInfo)
 
 		ctx.EventManager().EmitEvent(
