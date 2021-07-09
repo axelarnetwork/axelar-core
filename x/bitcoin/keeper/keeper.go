@@ -27,7 +27,6 @@ var (
 
 	anyoneCanSpendAddressKey = utils.KeyFromStr("anyone_can_spend_address")
 	unsignedTxKey            = utils.KeyFromStr("unsigned_tx")
-	secondaryKeyVoutKey      = utils.KeyFromStr("secondary_key_vout")
 	latestSignedTxHashKey    = utils.KeyFromStr("latest_signed_tx_hash")
 
 	confirmedOutpointQueueName = "confirmed_outpoint"
@@ -120,6 +119,14 @@ func (k Keeper) GetMinimumWithdrawalAmount(ctx sdk.Context) btcutil.Amount {
 func (k Keeper) GetMaxInputCount(ctx sdk.Context) int64 {
 	var result int64
 	k.params.Get(ctx, types.KeyMaxInputCount, &result)
+
+	return result
+}
+
+// GetMaxSecondaryOutputAmount returns the max secondary output amount
+func (k Keeper) GetMaxSecondaryOutputAmount(ctx sdk.Context) btcutil.Amount {
+	var result btcutil.Amount
+	k.params.Get(ctx, types.KeyMaxSecondaryOutputAmount, &result)
 
 	return result
 }

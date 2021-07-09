@@ -27,8 +27,8 @@
   
 - [bitcoin/v1beta1/query.proto](#bitcoin/v1beta1/query.proto)
     - [DepositQueryParams](#bitcoin.v1beta1.DepositQueryParams)
-    - [QueryMasterAddressResponse](#bitcoin.v1beta1.QueryMasterAddressResponse)
     - [QueryRawTxResponse](#bitcoin.v1beta1.QueryRawTxResponse)
+    - [QuerySecondaryConsolidationAddressResponse](#bitcoin.v1beta1.QuerySecondaryConsolidationAddressResponse)
   
 - [utils/v1beta1/threshold.proto](#utils/v1beta1/threshold.proto)
     - [Threshold](#utils.v1beta1.Threshold)
@@ -44,6 +44,10 @@
     - [ConfirmOutpointResponse](#bitcoin.v1beta1.ConfirmOutpointResponse)
     - [LinkRequest](#bitcoin.v1beta1.LinkRequest)
     - [LinkResponse](#bitcoin.v1beta1.LinkResponse)
+    - [RegisterExternalKeyRequest](#bitcoin.v1beta1.RegisterExternalKeyRequest)
+    - [RegisterExternalKeyResponse](#bitcoin.v1beta1.RegisterExternalKeyResponse)
+    - [SignMasterConsolidationTransactionRequest](#bitcoin.v1beta1.SignMasterConsolidationTransactionRequest)
+    - [SignMasterConsolidationTransactionResponse](#bitcoin.v1beta1.SignMasterConsolidationTransactionResponse)
     - [SignPendingTransfersRequest](#bitcoin.v1beta1.SignPendingTransfersRequest)
     - [SignPendingTransfersResponse](#bitcoin.v1beta1.SignPendingTransfersResponse)
     - [VoteConfirmOutpointRequest](#bitcoin.v1beta1.VoteConfirmOutpointRequest)
@@ -209,7 +213,6 @@ KeyRequirement defines requirements for keys
 | `key_role` | [KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
 | `min_validator_subset_size` | [int64](#int64) |  |  |
 | `key_share_distribution_policy` | [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
-| `needs_assignment` | [bool](#bool) |  |  |
 
 
 
@@ -228,6 +231,7 @@ KeyRequirement defines requirements for keys
 | KEY_ROLE_UNSPECIFIED | 0 |  |
 | KEY_ROLE_MASTER_KEY | 1 |  |
 | KEY_ROLE_SECONDARY_KEY | 2 |  |
+| KEY_ROLE_EXTERNAL_KEY | 3 |  |
 
 
 
@@ -271,6 +275,7 @@ corresponding script and the underlying key
 | `role` | [AddressRole](#bitcoin.v1beta1.AddressRole) |  |  |
 | `redeem_script` | [bytes](#bytes) |  |  |
 | `key_id` | [string](#string) |  |  |
+| `max_sig_count` | [uint32](#uint32) |  |  |
 
 
 
@@ -385,6 +390,7 @@ of a transaction
 | `sig_check_interval` | [int64](#int64) |  |  |
 | `minimum_withdrawal_amount` | [int64](#int64) |  |  |
 | `max_input_count` | [int64](#int64) |  |  |
+| `max_secondary_output_amount` | [int64](#int64) |  |  |
 
 
 
@@ -455,22 +461,6 @@ deposit address
 
 
 
-<a name="bitcoin.v1beta1.QueryMasterAddressResponse"></a>
-
-### QueryMasterAddressResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `address` | [string](#string) |  |  |
-| `key_id` | [string](#string) |  |  |
-
-
-
-
-
-
 <a name="bitcoin.v1beta1.QueryRawTxResponse"></a>
 
 ### QueryRawTxResponse
@@ -481,6 +471,22 @@ deposit address
 | ----- | ---- | ----- | ----------- |
 | `raw_tx` | [string](#string) |  |  |
 | `state` | [SignState](#bitcoin.v1beta1.SignState) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.QuerySecondaryConsolidationAddressResponse"></a>
+
+### QuerySecondaryConsolidationAddressResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
 
 
 
@@ -663,6 +669,60 @@ address
 
 
 
+<a name="bitcoin.v1beta1.RegisterExternalKeyRequest"></a>
+
+### RegisterExternalKeyRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `pub_key` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.RegisterExternalKeyResponse"></a>
+
+### RegisterExternalKeyResponse
+
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.SignMasterConsolidationTransactionRequest"></a>
+
+### SignMasterConsolidationTransactionRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `secondary_key_amount` | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.SignMasterConsolidationTransactionResponse"></a>
+
+### SignMasterConsolidationTransactionResponse
+
+
+
+
+
+
+
 <a name="bitcoin.v1beta1.SignPendingTransfersRequest"></a>
 
 ### SignPendingTransfersRequest
@@ -674,6 +734,7 @@ consolidation transaction
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `key_id` | [string](#string) |  |  |
+| `master_key_amount` | [int64](#int64) |  |  |
 
 
 
@@ -755,7 +816,9 @@ Msg defines the bitcoin Msg service.
 | `Link` | [LinkRequest](#bitcoin.v1beta1.LinkRequest) | [LinkResponse](#bitcoin.v1beta1.LinkResponse) |  | POST|/axelar/bitcoin/link/{recipient_chain}|
 | `ConfirmOutpoint` | [ConfirmOutpointRequest](#bitcoin.v1beta1.ConfirmOutpointRequest) | [ConfirmOutpointResponse](#bitcoin.v1beta1.ConfirmOutpointResponse) |  | POST|/axelar/bitcoin/confirm|
 | `VoteConfirmOutpoint` | [VoteConfirmOutpointRequest](#bitcoin.v1beta1.VoteConfirmOutpointRequest) | [VoteConfirmOutpointResponse](#bitcoin.v1beta1.VoteConfirmOutpointResponse) |  | ||
-| `SignPendingTransfers` | [SignPendingTransfersRequest](#bitcoin.v1beta1.SignPendingTransfersRequest) | [SignPendingTransfersResponse](#bitcoin.v1beta1.SignPendingTransfersResponse) |  | POST|/axelar/bitcoin/sign|
+| `SignPendingTransfers` | [SignPendingTransfersRequest](#bitcoin.v1beta1.SignPendingTransfersRequest) | [SignPendingTransfersResponse](#bitcoin.v1beta1.SignPendingTransfersResponse) |  | POST|/axelar/bitcoin/sign-pending-transfers|
+| `SignMasterConsolidationTransaction` | [SignMasterConsolidationTransactionRequest](#bitcoin.v1beta1.SignMasterConsolidationTransactionRequest) | [SignMasterConsolidationTransactionResponse](#bitcoin.v1beta1.SignMasterConsolidationTransactionResponse) |  | POST|/axelar/bitcoin/sign-master-consolidation-transaction|
+| `RegisterExternalKey` | [RegisterExternalKeyRequest](#bitcoin.v1beta1.RegisterExternalKeyRequest) | [RegisterExternalKeyResponse](#bitcoin.v1beta1.RegisterExternalKeyResponse) |  | POST|/axelar/bitcoin/register-external-key|
 
  <!-- end services -->
 

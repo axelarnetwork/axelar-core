@@ -69,43 +69,28 @@ func TestQueryMasterAddress(t *testing.T) {
 			},
 		}
 
-		res, err := bitcoinKeeper.QueryMasterAddress(ctx, btcKeeper, signer)
+		res, err := bitcoinKeeper.QuerySecondaryConsolidationAddress(ctx, btcKeeper, signer)
 		assert.NoError(err)
 
-		var resp types.QueryMasterAddressResponse
+		var resp types.QuerySecondaryConsolidationAddressResponse
 		err = resp.Unmarshal(res)
 		assert.NoError(err)
 
-		assert.Len(btcKeeper.GetAddressCalls(), 1)
 		assert.Len(signer.GetCurrentKeyCalls(), 1)
-
-		assert.Equal(btcKeeper.GetAddressCalls()[0].EncodedAddress, resp.Address)
 		assert.Equal(key.ID, resp.KeyId)
 
 	}).Repeat(repeatCount))
 
-	t.Run("no master key", testutils.Func(func(t *testing.T) {
+	t.Run("no secondary key", testutils.Func(func(t *testing.T) {
 		setup()
 		signer.GetCurrentKeyFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) { return tss.Key{}, false }
 
-		_, err := bitcoinKeeper.QueryMasterAddress(ctx, btcKeeper, signer)
+		_, err := bitcoinKeeper.QuerySecondaryConsolidationAddress(ctx, btcKeeper, signer)
 
 		assert := assert.New(t)
 		assert.Error(err)
 
 	}).Repeat(repeatCount))
-
-	t.Run("master key has no address", testutils.Func(func(t *testing.T) {
-		setup()
-		btcKeeper.GetAddressFunc = func(sdk.Context, string) (types.AddressInfo, bool) { return types.AddressInfo{}, false }
-
-		_, err := bitcoinKeeper.QueryMasterAddress(ctx, btcKeeper, signer)
-
-		assert := assert.New(t)
-		assert.Error(err)
-
-	}).Repeat(repeatCount))
-
 }
 
 func TestQueryDepositAddress(t *testing.T) {

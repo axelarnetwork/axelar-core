@@ -30,7 +30,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdConsolidationTxState(queryRoute),
 		GetCmdConsolidationTx(queryRoute),
 		GetCmdPayForConsolidationTx(queryRoute),
-		GetCmdMasterAddress(queryRoute),
+		GetCmdSecondaryConsolidationAddress(queryRoute),
 		GetCmdNextMasterKeyID(queryRoute),
 		GetCmdMinimumWithdrawAmount(queryRoute),
 		GetCmdTxState(queryRoute),
@@ -65,12 +65,12 @@ func GetCmdDepositAddress(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdMasterAddress returns the master address command
-func GetCmdMasterAddress(queryRoute string) *cobra.Command {
+// GetCmdSecondaryConsolidationAddress returns the secondary key's consolidation address command
+func GetCmdSecondaryConsolidationAddress(queryRoute string) *cobra.Command {
 	var IncludeKeyID bool
 	cmd := &cobra.Command{
-		Use:   "master-address",
-		Short: "Returns the bitcoin address of the current master key, and optionally the key's ID",
+		Use:   "secondary-address",
+		Short: "Returns the bitcoin consolidation address of the current secondary key, and optionally the key's ID",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
@@ -78,17 +78,17 @@ func GetCmdMasterAddress(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QMasterAddress)
+			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QSecondaryConsolidationAddress)
 
 			res, _, err := clientCtx.QueryWithData(path, nil)
 			if err != nil {
-				return sdkerrors.Wrap(err, types.ErrFMasterKey)
+				return sdkerrors.Wrap(err, types.ErrFSecondaryKey)
 			}
 
-			var resp types.QueryMasterAddressResponse
+			var resp types.QuerySecondaryConsolidationAddressResponse
 			err = resp.Unmarshal(res)
 			if err != nil {
-				return sdkerrors.Wrap(err, types.ErrFMasterKey)
+				return sdkerrors.Wrap(err, types.ErrFSecondaryKey)
 			}
 
 			if IncludeKeyID {
@@ -99,7 +99,7 @@ func GetCmdMasterAddress(queryRoute string) *cobra.Command {
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
-	cmd.Flags().BoolVar(&IncludeKeyID, "include-key-id", false, "include the current master key ID in the output")
+	cmd.Flags().BoolVar(&IncludeKeyID, "include-key-id", false, "include the current secondary key ID in the output")
 	return cmd
 }
 

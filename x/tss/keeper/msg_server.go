@@ -124,45 +124,35 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 	if !ok {
 		return nil, fmt.Errorf("unknown chain")
 	}
-	keyReq, ok := s.GetKeyRequirement(ctx, chain, req.KeyRole)
-	if !ok {
-		return nil, fmt.Errorf("key requirement for chain %s and role %s not found", chain.Name, req.KeyRole.SimpleString())
-	}
 
 	_, hasActiveKey := s.TSSKeeper.GetCurrentKeyID(ctx, chain, req.KeyRole)
-	assignedKeyID, hasNextKeyAssigned := s.TSSKeeper.GetNextKeyID(ctx, chain, req.KeyRole)
-
-	// TSS does not know if another module needs to do a cleanup step before it is ready to rotate in a new key.
-	// Therefore we use the NeedsAssignment requirement to indicate if a key needs to be explicitly assigned before rotation.
-	// Keys without such requirement can be rotated immediately
-	switch {
-	case hasActiveKey && keyReq.NeedsAssignment && !hasNextKeyAssigned:
-		return nil, fmt.Errorf("no key assigned for rotation yet")
-	case hasActiveKey && keyReq.NeedsAssignment && assignedKeyID != req.KeyID:
-		return nil, fmt.Errorf("expected rotation to key ID %s, got key ID %s", assignedKeyID, req.KeyID)
-	case !hasActiveKey || !keyReq.NeedsAssignment:
+	if !hasActiveKey {
 		if err := s.TSSKeeper.AssignNextKey(ctx, chain, req.KeyRole, req.KeyID); err != nil {
 			return nil, err
 		}
-		fallthrough
-	default:
-		if err := s.TSSKeeper.RotateKey(ctx, chain, req.KeyRole); err != nil {
-			return nil, err
-		}
-
-		s.Logger(ctx).Debug(fmt.Sprintf("rotated %s key for chain %s", req.KeyRole.SimpleString(), chain.Name))
-
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(
-				sdk.EventTypeMessage,
-				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-				sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
-				sdk.NewAttribute(types.AttributeChain, chain.Name),
-			),
-		)
-
-		return &types.RotateKeyResponse{}, nil
 	}
+
+	_, hasNextKeyAssigned := s.TSSKeeper.GetNextKeyID(ctx, chain, req.KeyRole)
+	if !hasNextKeyAssigned {
+		return nil, fmt.Errorf("no key assigned for rotation yet")
+	}
+
+	if err := s.TSSKeeper.RotateKey(ctx, chain, req.KeyRole); err != nil {
+		return nil, err
+	}
+
+	s.Logger(ctx).Debug(fmt.Sprintf("rotated %s key for chain %s", req.KeyRole.SimpleString(), chain.Name))
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
+			sdk.NewAttribute(types.AttributeChain, chain.Name),
+		),
+	)
+
+	return &types.RotateKeyResponse{}, nil
 }
 
 func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (*types.VotePubKeyResponse, error) {

@@ -15,4 +15,6 @@ message Params {
   int64 minimum_withdrawal_amount = 5
       [ (gogoproto.casttype) = "github.com/btcsuite/btcutil.Amount" ];
   int64 max_input_count = 6;
+  int64 max_secondary_output_amount = 7
+      [ (gogoproto.casttype) = "github.com/btcsuite/btcutil.Amount" ];
 }

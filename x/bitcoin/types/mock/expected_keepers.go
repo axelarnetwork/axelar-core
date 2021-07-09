@@ -4,6 +4,7 @@
 package mock
 
 import (
+	"crypto/ecdsa"
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -184,6 +185,12 @@ var _ types.Signer = &SignerMock{}
 // 			GetSnapshotCounterForKeyIDFunc: func(ctx sdk.Context, keyID string) (int64, bool) {
 // 				panic("mock out the GetSnapshotCounterForKeyID method")
 // 			},
+// 			RotateKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) error {
+// 				panic("mock out the RotateKey method")
+// 			},
+// 			SetKeyFunc: func(ctx sdk.Context, keyID string, key ecdsa.PublicKey)  {
+// 				panic("mock out the SetKey method")
+// 			},
 // 			StartSignFunc: func(ctx sdk.Context, voter interface{InitializePoll(ctx sdk.Context, key voteexported.PollKey, snapshotSeqNo int64, pollProperties ...voteexported.PollProperty) error}, keyID string, sigID string, msg []byte, snapshotMoqParam snapshot.Snapshot) error {
 // 				panic("mock out the StartSign method")
 // 			},
@@ -217,6 +224,12 @@ type SignerMock struct {
 
 	// GetSnapshotCounterForKeyIDFunc mocks the GetSnapshotCounterForKeyID method.
 	GetSnapshotCounterForKeyIDFunc func(ctx sdk.Context, keyID string) (int64, bool)
+
+	// RotateKeyFunc mocks the RotateKey method.
+	RotateKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) error
+
+	// SetKeyFunc mocks the SetKey method.
+	SetKeyFunc func(ctx sdk.Context, keyID string, key ecdsa.PublicKey)
 
 	// StartSignFunc mocks the StartSign method.
 	StartSignFunc func(ctx sdk.Context, voter interface {
@@ -297,6 +310,24 @@ type SignerMock struct {
 			// KeyID is the keyID argument value.
 			KeyID string
 		}
+		// RotateKey holds details about calls to the RotateKey method.
+		RotateKey []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+			// KeyRole is the keyRole argument value.
+			KeyRole tssexported.KeyRole
+		}
+		// SetKey holds details about calls to the SetKey method.
+		SetKey []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// KeyID is the keyID argument value.
+			KeyID string
+			// Key is the key argument value.
+			Key ecdsa.PublicKey
+		}
 		// StartSign holds details about calls to the StartSign method.
 		StartSign []struct {
 			// Ctx is the ctx argument value.
@@ -323,6 +354,8 @@ type SignerMock struct {
 	lockGetNextKey                 sync.RWMutex
 	lockGetSig                     sync.RWMutex
 	lockGetSnapshotCounterForKeyID sync.RWMutex
+	lockRotateKey                  sync.RWMutex
+	lockSetKey                     sync.RWMutex
 	lockStartSign                  sync.RWMutex
 }
 
@@ -635,6 +668,84 @@ func (mock *SignerMock) GetSnapshotCounterForKeyIDCalls() []struct {
 	mock.lockGetSnapshotCounterForKeyID.RLock()
 	calls = mock.calls.GetSnapshotCounterForKeyID
 	mock.lockGetSnapshotCounterForKeyID.RUnlock()
+	return calls
+}
+
+// RotateKey calls RotateKeyFunc.
+func (mock *SignerMock) RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) error {
+	if mock.RotateKeyFunc == nil {
+		panic("SignerMock.RotateKeyFunc: method is nil but Signer.RotateKey was just called")
+	}
+	callInfo := struct {
+		Ctx     sdk.Context
+		Chain   nexus.Chain
+		KeyRole tssexported.KeyRole
+	}{
+		Ctx:     ctx,
+		Chain:   chain,
+		KeyRole: keyRole,
+	}
+	mock.lockRotateKey.Lock()
+	mock.calls.RotateKey = append(mock.calls.RotateKey, callInfo)
+	mock.lockRotateKey.Unlock()
+	return mock.RotateKeyFunc(ctx, chain, keyRole)
+}
+
+// RotateKeyCalls gets all the calls that were made to RotateKey.
+// Check the length with:
+//     len(mockedSigner.RotateKeyCalls())
+func (mock *SignerMock) RotateKeyCalls() []struct {
+	Ctx     sdk.Context
+	Chain   nexus.Chain
+	KeyRole tssexported.KeyRole
+} {
+	var calls []struct {
+		Ctx     sdk.Context
+		Chain   nexus.Chain
+		KeyRole tssexported.KeyRole
+	}
+	mock.lockRotateKey.RLock()
+	calls = mock.calls.RotateKey
+	mock.lockRotateKey.RUnlock()
+	return calls
+}
+
+// SetKey calls SetKeyFunc.
+func (mock *SignerMock) SetKey(ctx sdk.Context, keyID string, key ecdsa.PublicKey) {
+	if mock.SetKeyFunc == nil {
+		panic("SignerMock.SetKeyFunc: method is nil but Signer.SetKey was just called")
+	}
+	callInfo := struct {
+		Ctx   sdk.Context
+		KeyID string
+		Key   ecdsa.PublicKey
+	}{
+		Ctx:   ctx,
+		KeyID: keyID,
+		Key:   key,
+	}
+	mock.lockSetKey.Lock()
+	mock.calls.SetKey = append(mock.calls.SetKey, callInfo)
+	mock.lockSetKey.Unlock()
+	mock.SetKeyFunc(ctx, keyID, key)
+}
+
+// SetKeyCalls gets all the calls that were made to SetKey.
+// Check the length with:
+//     len(mockedSigner.SetKeyCalls())
+func (mock *SignerMock) SetKeyCalls() []struct {
+	Ctx   sdk.Context
+	KeyID string
+	Key   ecdsa.PublicKey
+} {
+	var calls []struct {
+		Ctx   sdk.Context
+		KeyID string
+		Key   ecdsa.PublicKey
+	}
+	mock.lockSetKey.RLock()
+	calls = mock.calls.SetKey
+	mock.lockSetKey.RUnlock()
 	return calls
 }
 
@@ -1436,6 +1547,9 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			GetMaxInputCountFunc: func(ctx sdk.Context) int64 {
 // 				panic("mock out the GetMaxInputCount method")
 // 			},
+// 			GetMaxSecondaryOutputAmountFunc: func(ctx sdk.Context) github_com_btcsuite_btcutil.Amount {
+// 				panic("mock out the GetMaxSecondaryOutputAmount method")
+// 			},
 // 			GetMinimumWithdrawalAmountFunc: func(ctx sdk.Context) github_com_btcsuite_btcutil.Amount {
 // 				panic("mock out the GetMinimumWithdrawalAmount method")
 // 			},
@@ -1529,6 +1643,9 @@ type BTCKeeperMock struct {
 
 	// GetMaxInputCountFunc mocks the GetMaxInputCount method.
 	GetMaxInputCountFunc func(ctx sdk.Context) int64
+
+	// GetMaxSecondaryOutputAmountFunc mocks the GetMaxSecondaryOutputAmount method.
+	GetMaxSecondaryOutputAmountFunc func(ctx sdk.Context) github_com_btcsuite_btcutil.Amount
 
 	// GetMinimumWithdrawalAmountFunc mocks the GetMinimumWithdrawalAmount method.
 	GetMinimumWithdrawalAmountFunc func(ctx sdk.Context) github_com_btcsuite_btcutil.Amount
@@ -1648,6 +1765,11 @@ type BTCKeeperMock struct {
 		}
 		// GetMaxInputCount holds details about calls to the GetMaxInputCount method.
 		GetMaxInputCount []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
+		// GetMaxSecondaryOutputAmount holds details about calls to the GetMaxSecondaryOutputAmount method.
+		GetMaxSecondaryOutputAmount []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 		}
@@ -1785,6 +1907,7 @@ type BTCKeeperMock struct {
 	lockGetDustAmount                       sync.RWMutex
 	lockGetLatestSignedTxHash               sync.RWMutex
 	lockGetMaxInputCount                    sync.RWMutex
+	lockGetMaxSecondaryOutputAmount         sync.RWMutex
 	lockGetMinimumWithdrawalAmount          sync.RWMutex
 	lockGetNetwork                          sync.RWMutex
 	lockGetOutPointInfo                     sync.RWMutex
@@ -2137,6 +2260,37 @@ func (mock *BTCKeeperMock) GetMaxInputCountCalls() []struct {
 	mock.lockGetMaxInputCount.RLock()
 	calls = mock.calls.GetMaxInputCount
 	mock.lockGetMaxInputCount.RUnlock()
+	return calls
+}
+
+// GetMaxSecondaryOutputAmount calls GetMaxSecondaryOutputAmountFunc.
+func (mock *BTCKeeperMock) GetMaxSecondaryOutputAmount(ctx sdk.Context) github_com_btcsuite_btcutil.Amount {
+	if mock.GetMaxSecondaryOutputAmountFunc == nil {
+		panic("BTCKeeperMock.GetMaxSecondaryOutputAmountFunc: method is nil but BTCKeeper.GetMaxSecondaryOutputAmount was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetMaxSecondaryOutputAmount.Lock()
+	mock.calls.GetMaxSecondaryOutputAmount = append(mock.calls.GetMaxSecondaryOutputAmount, callInfo)
+	mock.lockGetMaxSecondaryOutputAmount.Unlock()
+	return mock.GetMaxSecondaryOutputAmountFunc(ctx)
+}
+
+// GetMaxSecondaryOutputAmountCalls gets all the calls that were made to GetMaxSecondaryOutputAmount.
+// Check the length with:
+//     len(mockedBTCKeeper.GetMaxSecondaryOutputAmountCalls())
+func (mock *BTCKeeperMock) GetMaxSecondaryOutputAmountCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockGetMaxSecondaryOutputAmount.RLock()
+	calls = mock.calls.GetMaxSecondaryOutputAmount
+	mock.lockGetMaxSecondaryOutputAmount.RUnlock()
 	return calls
 }
 

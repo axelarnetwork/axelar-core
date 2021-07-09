@@ -35,6 +35,12 @@ func NewHandler(k types.BTCKeeper, v types.Voter, signer types.Signer, n types.N
 		case *types.SignPendingTransfersRequest:
 			res, err := server.SignPendingTransfers(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
+		case *types.SignMasterConsolidationTransactionRequest:
+			res, err := server.SignMasterConsolidationTransaction(sdk.WrapSDKContext(ctx), msg)
+			return sdk.WrapServiceResult(ctx, res, err)
+		case *types.RegisterExternalKeyRequest:
+			res, err := server.RegisterExternalKey(sdk.WrapSDKContext(ctx), msg)
+			return sdk.WrapServiceResult(ctx, res, err)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))

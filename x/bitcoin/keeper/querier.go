@@ -24,15 +24,15 @@ import (
 
 // Query paths
 const (
-	QDepositAddress          = "depositAddr"
-	QMasterAddress           = "masterAddr"
-	QKeyConsolidationAddress = "keyConsolidationAddress"
-	QNextMasterKeyID         = "nextMasterKeyID"
-	QMinimumWithdrawAmount   = "minWithdrawAmount"
-	QTxState                 = "txState"
-	QConsolidationTx         = "getConsolidationTx"
-	QConsolidationTxState    = "QConsolidationTxState"
-	QPayForConsolidationTx   = "getPayForConsolidationTx"
+	QDepositAddress                = "depositAddr"
+	QSecondaryConsolidationAddress = "masterAddr"
+	QKeyConsolidationAddress       = "keyConsolidationAddress"
+	QNextMasterKeyID               = "nextMasterKeyID"
+	QMinimumWithdrawAmount         = "minWithdrawAmount"
+	QTxState                       = "txState"
+	QConsolidationTx               = "getConsolidationTx"
+	QConsolidationTxState          = "QConsolidationTxState"
+	QPayForConsolidationTx         = "getPayForConsolidationTx"
 )
 
 // NewQuerier returns a new querier for the Bitcoin module
@@ -43,8 +43,8 @@ func NewQuerier(rpc types.RPCClient, k types.BTCKeeper, s types.Signer, n types.
 		switch path[0] {
 		case QDepositAddress:
 			res, err = QueryDepositAddress(ctx, k, s, n, req.Data)
-		case QMasterAddress:
-			res, err = QueryMasterAddress(ctx, k, s)
+		case QSecondaryConsolidationAddress:
+			res, err = QuerySecondaryConsolidationAddress(ctx, k, s)
 		case QKeyConsolidationAddress:
 			res, err = queryKeyConsolidationAddress(ctx, k, s, req.Data)
 		case QNextMasterKeyID:
@@ -94,7 +94,7 @@ func QueryDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n t
 		return nil, fmt.Errorf("secondary key not set")
 	}
 
-	depositAddr := types.NewLinkedAddress(masterKey, secondaryKey, k.GetNetwork(ctx), recipient)
+	depositAddr := types.NewDepositAddress(masterKey, secondaryKey, k.GetNetwork(ctx), recipient)
 
 	_, ok = n.GetRecipient(ctx, depositAddr.ToCrossChainAddr())
 	if !ok {
@@ -104,24 +104,16 @@ func QueryDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n t
 	return []byte(depositAddr.Address), nil
 }
 
-// QueryMasterAddress returns the master address
-func QueryMasterAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer) ([]byte, error) {
-	masterKey, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.MasterKey)
+// QuerySecondaryConsolidationAddress returns the master address
+func QuerySecondaryConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer) ([]byte, error) {
+	secondaryKey, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.SecondaryKey)
 	if !ok {
-		return nil, fmt.Errorf("masterKey not found")
+		return nil, fmt.Errorf("secondaryKey not found")
 	}
 
-	addr := types.NewConsolidationAddress(masterKey, k.GetNetwork(ctx))
-
-	// After a key rotation, the master address is not known to Axelar Core until a consolidation
-	// transaction is completed, during which k.SetAddress() is called.
-	if _, ok := k.GetAddress(ctx, addr.Address); !ok {
-		return nil, fmt.Errorf("no address found for current %s key %s", tss.MasterKey.SimpleString(), masterKey.ID)
-	}
-
-	resp := types.QueryMasterAddressResponse{
-		Address: addr.Address,
-		KeyId:   masterKey.ID,
+	resp := types.QuerySecondaryConsolidationAddressResponse{
+		Address: types.NewSecondaryConsolidationAddress(secondaryKey, k.GetNetwork(ctx)).Address,
+		KeyId:   secondaryKey.ID,
 	}
 
 	return resp.Marshal()
@@ -138,7 +130,7 @@ func queryKeyConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.Si
 		return nil, fmt.Errorf("key %s does not have the role %s", keyID, tss.MasterKey)
 	}
 
-	addr := types.NewConsolidationAddress(key, k.GetNetwork(ctx))
+	addr := types.NewSecondaryConsolidationAddress(key, k.GetNetwork(ctx))
 	return []byte(addr.Address), nil
 }
 
@@ -249,6 +241,7 @@ func payForConsolidationTx(ctx sdk.Context, k types.BTCKeeper, rpc types.RPCClie
 	inputs := []types.OutPointToSign{
 		{
 			OutPointInfo: types.NewOutPointInfo(
+				// TODO: anyone-can-spend output is no longer harded-coded at vout 1. Will fix soon.
 				wire.NewOutPoint(&consolidationTxHash, 1),
 				k.GetMinimumWithdrawalAmount(ctx),
 				anyoneCanSpendAddress.Address,
@@ -322,8 +315,8 @@ func payForConsolidationTx(ctx sdk.Context, k types.BTCKeeper, rpc types.RPCClie
 	}
 
 	tx.TxIn[0].Witness = wire.TxWitness{anyoneCanSpendAddress.RedeemScript}
-	// By setting an input's sequence to be (wire.MaxTxInSequenceNum - 2), it makes the transaction opt-in to transaction replacement (https://github.com/bitcoin/bips/blob/master/bip-0125.mediawiki)
-	tx.TxIn[0].Sequence = wire.MaxTxInSequenceNum - 2
+	tx = types.EnableTimelockAndRBF(tx)
+
 	tx, _, err = rpc.SignRawTransactionWithWallet(tx)
 	if err != nil {
 		return nil, err

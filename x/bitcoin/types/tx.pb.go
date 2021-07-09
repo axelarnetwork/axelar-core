@@ -6,6 +6,7 @@ package types
 import (
 	fmt "fmt"
 	exported "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	github_com_btcsuite_btcutil "github.com/btcsuite/btcutil"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
@@ -182,8 +183,9 @@ var xxx_messageInfo_LinkResponse proto.InternalMessageInfo
 // MsgSignPendingTransfers represents a message to trigger the signing of a
 // consolidation transaction
 type SignPendingTransfersRequest struct {
-	Sender github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
-	KeyID  string                                        `protobuf:"bytes,2,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`
+	Sender          github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	KeyID           string                                        `protobuf:"bytes,2,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`
+	MasterKeyAmount github_com_btcsuite_btcutil.Amount            `protobuf:"varint,3,opt,name=master_key_amount,json=masterKeyAmount,proto3,casttype=github.com/btcsuite/btcutil.Amount" json:"master_key_amount,omitempty"`
 }
 
 func (m *SignPendingTransfersRequest) Reset()         { *m = SignPendingTransfersRequest{} }
@@ -333,6 +335,164 @@ func (m *VoteConfirmOutpointResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_VoteConfirmOutpointResponse proto.InternalMessageInfo
 
+type RegisterExternalKeyRequest struct {
+	Sender github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	KeyID  string                                        `protobuf:"bytes,2,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`
+	PubKey []byte                                        `protobuf:"bytes,3,opt,name=pub_key,json=pubKey,proto3" json:"pub_key,omitempty"`
+}
+
+func (m *RegisterExternalKeyRequest) Reset()         { *m = RegisterExternalKeyRequest{} }
+func (m *RegisterExternalKeyRequest) String() string { return proto.CompactTextString(m) }
+func (*RegisterExternalKeyRequest) ProtoMessage()    {}
+func (*RegisterExternalKeyRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5f5c2c0447d15a63, []int{8}
+}
+func (m *RegisterExternalKeyRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *RegisterExternalKeyRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_RegisterExternalKeyRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *RegisterExternalKeyRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RegisterExternalKeyRequest.Merge(m, src)
+}
+func (m *RegisterExternalKeyRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *RegisterExternalKeyRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_RegisterExternalKeyRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RegisterExternalKeyRequest proto.InternalMessageInfo
+
+type RegisterExternalKeyResponse struct {
+}
+
+func (m *RegisterExternalKeyResponse) Reset()         { *m = RegisterExternalKeyResponse{} }
+func (m *RegisterExternalKeyResponse) String() string { return proto.CompactTextString(m) }
+func (*RegisterExternalKeyResponse) ProtoMessage()    {}
+func (*RegisterExternalKeyResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5f5c2c0447d15a63, []int{9}
+}
+func (m *RegisterExternalKeyResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *RegisterExternalKeyResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_RegisterExternalKeyResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *RegisterExternalKeyResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RegisterExternalKeyResponse.Merge(m, src)
+}
+func (m *RegisterExternalKeyResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *RegisterExternalKeyResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_RegisterExternalKeyResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RegisterExternalKeyResponse proto.InternalMessageInfo
+
+type SignMasterConsolidationTransactionRequest struct {
+	Sender             github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	KeyID              string                                        `protobuf:"bytes,2,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`
+	SecondaryKeyAmount github_com_btcsuite_btcutil.Amount            `protobuf:"varint,3,opt,name=secondary_key_amount,json=secondaryKeyAmount,proto3,casttype=github.com/btcsuite/btcutil.Amount" json:"secondary_key_amount,omitempty"`
+}
+
+func (m *SignMasterConsolidationTransactionRequest) Reset() {
+	*m = SignMasterConsolidationTransactionRequest{}
+}
+func (m *SignMasterConsolidationTransactionRequest) String() string {
+	return proto.CompactTextString(m)
+}
+func (*SignMasterConsolidationTransactionRequest) ProtoMessage() {}
+func (*SignMasterConsolidationTransactionRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5f5c2c0447d15a63, []int{10}
+}
+func (m *SignMasterConsolidationTransactionRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SignMasterConsolidationTransactionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SignMasterConsolidationTransactionRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SignMasterConsolidationTransactionRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SignMasterConsolidationTransactionRequest.Merge(m, src)
+}
+func (m *SignMasterConsolidationTransactionRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *SignMasterConsolidationTransactionRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SignMasterConsolidationTransactionRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SignMasterConsolidationTransactionRequest proto.InternalMessageInfo
+
+type SignMasterConsolidationTransactionResponse struct {
+}
+
+func (m *SignMasterConsolidationTransactionResponse) Reset() {
+	*m = SignMasterConsolidationTransactionResponse{}
+}
+func (m *SignMasterConsolidationTransactionResponse) String() string {
+	return proto.CompactTextString(m)
+}
+func (*SignMasterConsolidationTransactionResponse) ProtoMessage() {}
+func (*SignMasterConsolidationTransactionResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5f5c2c0447d15a63, []int{11}
+}
+func (m *SignMasterConsolidationTransactionResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SignMasterConsolidationTransactionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SignMasterConsolidationTransactionResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SignMasterConsolidationTransactionResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SignMasterConsolidationTransactionResponse.Merge(m, src)
+}
+func (m *SignMasterConsolidationTransactionResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *SignMasterConsolidationTransactionResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_SignMasterConsolidationTransactionResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SignMasterConsolidationTransactionResponse proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*ConfirmOutpointRequest)(nil), "bitcoin.v1beta1.ConfirmOutpointRequest")
 	proto.RegisterType((*ConfirmOutpointResponse)(nil), "bitcoin.v1beta1.ConfirmOutpointResponse")
@@ -342,46 +502,59 @@ func init() {
 	proto.RegisterType((*SignPendingTransfersResponse)(nil), "bitcoin.v1beta1.SignPendingTransfersResponse")
 	proto.RegisterType((*VoteConfirmOutpointRequest)(nil), "bitcoin.v1beta1.VoteConfirmOutpointRequest")
 	proto.RegisterType((*VoteConfirmOutpointResponse)(nil), "bitcoin.v1beta1.VoteConfirmOutpointResponse")
+	proto.RegisterType((*RegisterExternalKeyRequest)(nil), "bitcoin.v1beta1.RegisterExternalKeyRequest")
+	proto.RegisterType((*RegisterExternalKeyResponse)(nil), "bitcoin.v1beta1.RegisterExternalKeyResponse")
+	proto.RegisterType((*SignMasterConsolidationTransactionRequest)(nil), "bitcoin.v1beta1.SignMasterConsolidationTransactionRequest")
+	proto.RegisterType((*SignMasterConsolidationTransactionResponse)(nil), "bitcoin.v1beta1.SignMasterConsolidationTransactionResponse")
 }
 
 func init() { proto.RegisterFile("bitcoin/v1beta1/tx.proto", fileDescriptor_5f5c2c0447d15a63) }
 
 var fileDescriptor_5f5c2c0447d15a63 = []byte{
-	// 531 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x54, 0xcd, 0x6e, 0xd3, 0x40,
-	0x10, 0x8e, 0xa1, 0x0d, 0xcd, 0x36, 0xb4, 0x92, 0x85, 0x4a, 0x68, 0x8a, 0x93, 0x5a, 0x42, 0xe4,
-	0x12, 0x5b, 0xe1, 0xe7, 0x8c, 0x9a, 0x72, 0x89, 0x8a, 0xd4, 0xc8, 0x20, 0x0e, 0x5c, 0x22, 0xc7,
-	0x3b, 0x49, 0x57, 0x4e, 0x76, 0xcc, 0xee, 0xba, 0xc4, 0xaf, 0xc0, 0x89, 0xc7, 0xe0, 0xc4, 0x73,
-	0xe4, 0xd8, 0x23, 0xa7, 0x08, 0x92, 0xb7, 0xe0, 0x84, 0x6c, 0x6f, 0x92, 0x42, 0x73, 0xcd, 0xc9,
-	0x3b, 0xdf, 0x7e, 0x3b, 0x9e, 0x6f, 0xe7, 0x9b, 0x25, 0x95, 0x3e, 0x53, 0x01, 0x32, 0xee, 0x5e,
-	0xb7, 0xfa, 0xa0, 0xfc, 0x96, 0xab, 0x26, 0x4e, 0x24, 0x50, 0xa1, 0x79, 0xa8, 0x77, 0x1c, 0xbd,
-	0x73, 0x5c, 0xbd, 0x43, 0x4d, 0x22, 0x90, 0x39, 0xfb, 0xf8, 0xf4, 0x1a, 0x15, 0xb8, 0x30, 0x89,
-	0x50, 0x28, 0xa0, 0x1b, 0x29, 0x8f, 0x86, 0x38, 0xc4, 0x6c, 0xe9, 0xa6, 0xab, 0x1c, 0xb5, 0x7f,
-	0x18, 0xe4, 0xe8, 0x1c, 0xf9, 0x80, 0x89, 0xf1, 0x65, 0xac, 0x22, 0x64, 0x5c, 0x79, 0xf0, 0x39,
-	0x06, 0xa9, 0xcc, 0x0e, 0x29, 0x4a, 0xe0, 0x14, 0x44, 0xc5, 0xa8, 0x1b, 0x8d, 0x72, 0xbb, 0xf5,
-	0x67, 0x56, 0x6b, 0x0e, 0x99, 0xba, 0x8a, 0xfb, 0x4e, 0x80, 0x63, 0x37, 0x40, 0x39, 0x46, 0xa9,
-	0x3f, 0x4d, 0x49, 0x43, 0xfd, 0xbb, 0xb3, 0x20, 0x38, 0xa3, 0x54, 0x80, 0x94, 0x9e, 0x4e, 0x60,
-	0x76, 0xc8, 0x01, 0xc6, 0xaa, 0x97, 0xa5, 0xef, 0x31, 0x3e, 0xc0, 0xca, 0xbd, 0xba, 0xd1, 0xd8,
-	0x7f, 0xf1, 0xd4, 0xf9, 0x4f, 0xa5, 0x73, 0x19, 0xab, 0x6e, 0xca, 0xea, 0xf0, 0x01, 0xb6, 0x77,
-	0xa6, 0xb3, 0x5a, 0xc1, 0x2b, 0xe3, 0x2d, 0xcc, 0x7e, 0x42, 0x1e, 0xdf, 0xa9, 0x57, 0x46, 0xc8,
-	0x25, 0xd8, 0xdf, 0x0d, 0xb2, 0xff, 0x8e, 0xf1, 0x70, 0x0b, 0x02, 0x9e, 0x91, 0x03, 0x01, 0x01,
-	0x8b, 0x18, 0x70, 0xd5, 0xf3, 0x29, 0x15, 0x99, 0x80, 0x92, 0xf7, 0x70, 0x85, 0xa6, 0x27, 0xcc,
-	0xe7, 0xe4, 0x70, 0x4d, 0x0b, 0xae, 0x7c, 0xc6, 0x2b, 0xf7, 0x33, 0xde, 0xfa, 0xf4, 0x79, 0x8a,
-	0xda, 0x2d, 0x52, 0xce, 0x2b, 0xcd, 0x4b, 0x37, 0x4f, 0x49, 0x99, 0x42, 0x84, 0x92, 0xfd, 0x93,
-	0x7d, 0x5f, 0x63, 0x69, 0x6e, 0xfb, 0xab, 0x41, 0xaa, 0xef, 0xd9, 0x90, 0x77, 0x81, 0x53, 0xc6,
-	0x87, 0x1f, 0x84, 0xcf, 0xe5, 0x00, 0x84, 0xdc, 0x82, 0xda, 0x3a, 0x29, 0x86, 0x90, 0xf4, 0x18,
-	0xcd, 0xeb, 0x68, 0x97, 0xe6, 0xb3, 0xda, 0xee, 0x05, 0x24, 0x9d, 0xb7, 0xde, 0x6e, 0x08, 0x49,
-	0x87, 0xda, 0x16, 0x39, 0xd9, 0x5c, 0x8b, 0x6e, 0xc5, 0xc2, 0x20, 0xc7, 0x1f, 0x51, 0xc1, 0xf6,
-	0xad, 0xf5, 0x86, 0xec, 0x45, 0x38, 0x1a, 0xf5, 0x42, 0x48, 0xb4, 0xa9, 0x2c, 0x27, 0x1d, 0x06,
-	0x67, 0x39, 0x0c, 0x2b, 0x6b, 0x75, 0x71, 0x34, 0xba, 0x80, 0x44, 0xbb, 0xea, 0x41, 0x94, 0x87,
-	0x66, 0x95, 0x94, 0x56, 0xde, 0xd4, 0xdd, 0xda, 0x5b, 0x3a, 0xce, 0x3c, 0x21, 0xa5, 0x20, 0x97,
-	0x00, 0xb4, 0xb2, 0x53, 0x37, 0x1a, 0x7b, 0xde, 0x1a, 0xb0, 0x5f, 0x93, 0xea, 0x46, 0x91, 0xba,
-	0xa9, 0x47, 0xa4, 0x28, 0x95, 0xaf, 0x62, 0x99, 0xa9, 0x2c, 0x79, 0x3a, 0x6a, 0x7b, 0xd3, 0xdf,
-	0x56, 0x61, 0x3a, 0xb7, 0x8c, 0x9b, 0xb9, 0x65, 0xfc, 0x9a, 0x5b, 0xc6, 0xb7, 0x85, 0x55, 0xb8,
-	0x59, 0x58, 0x85, 0x9f, 0x0b, 0xab, 0xf0, 0xe9, 0xd5, 0xad, 0x7b, 0xf0, 0x27, 0x30, 0xf2, 0x05,
-	0x07, 0xf5, 0x05, 0x45, 0xa8, 0xa3, 0x66, 0x80, 0x02, 0xdc, 0x89, 0xbb, 0x7c, 0x0e, 0xb2, 0x9b,
-	0xe9, 0x17, 0xb3, 0x71, 0x7e, 0xf9, 0x37, 0x00, 0x00, 0xff, 0xff, 0x13, 0x3a, 0x16, 0xac, 0x51,
-	0x04, 0x00, 0x00,
+	// 679 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xc4, 0x95, 0xcf, 0x6e, 0xd3, 0x4a,
+	0x14, 0xc6, 0xe3, 0xdb, 0x36, 0x6d, 0xa6, 0xb9, 0xad, 0xae, 0x55, 0xb5, 0xb9, 0x49, 0xeb, 0xa4,
+	0x96, 0xee, 0xa5, 0x20, 0xea, 0x28, 0xfc, 0x59, 0xa3, 0xa6, 0xb0, 0x88, 0x02, 0x6a, 0x65, 0x10,
+	0x42, 0x6c, 0x22, 0xc7, 0x3e, 0x49, 0x47, 0x49, 0xe6, 0x98, 0x99, 0x71, 0x89, 0xdf, 0x82, 0x67,
+	0x60, 0xc5, 0x8a, 0xe7, 0xe8, 0xb2, 0x4b, 0x56, 0x11, 0x24, 0x6f, 0xc0, 0xb2, 0x2b, 0x34, 0xf6,
+	0x34, 0x29, 0x34, 0x0b, 0x84, 0x54, 0x75, 0xe5, 0x33, 0xc7, 0x9f, 0x8f, 0xcf, 0x77, 0xe6, 0x37,
+	0x1a, 0x52, 0x68, 0x53, 0xe9, 0x23, 0x65, 0xd5, 0xd3, 0x5a, 0x1b, 0xa4, 0x57, 0xab, 0xca, 0xa1,
+	0x13, 0x72, 0x94, 0x68, 0xae, 0xeb, 0x37, 0x8e, 0x7e, 0x53, 0x2c, 0x5d, 0x93, 0xc6, 0x21, 0x88,
+	0x54, 0x5d, 0xdc, 0x3d, 0x45, 0x09, 0x55, 0x18, 0x86, 0xc8, 0x25, 0x04, 0x73, 0x25, 0x1b, 0x5d,
+	0xec, 0x62, 0x12, 0x56, 0x55, 0x94, 0x66, 0xed, 0xcf, 0x06, 0xd9, 0x3c, 0x44, 0xd6, 0xa1, 0x7c,
+	0x70, 0x14, 0xc9, 0x10, 0x29, 0x93, 0x2e, 0xbc, 0x8b, 0x40, 0x48, 0xb3, 0x41, 0xb2, 0x02, 0x58,
+	0x00, 0xbc, 0x60, 0x54, 0x8c, 0xbd, 0x7c, 0xbd, 0x76, 0x31, 0x2a, 0xef, 0x77, 0xa9, 0x3c, 0x89,
+	0xda, 0x8e, 0x8f, 0x83, 0xaa, 0x8f, 0x62, 0x80, 0x42, 0x3f, 0xf6, 0x45, 0xd0, 0xd3, 0xbf, 0x3b,
+	0xf0, 0xfd, 0x83, 0x20, 0xe0, 0x20, 0x84, 0xab, 0x0b, 0x98, 0x0d, 0xb2, 0x86, 0x91, 0x6c, 0x25,
+	0xe5, 0x5b, 0x94, 0x75, 0xb0, 0xf0, 0x57, 0xc5, 0xd8, 0x5b, 0x7d, 0xb0, 0xe3, 0xfc, 0xe2, 0xd2,
+	0x39, 0x8a, 0xe4, 0xb1, 0x52, 0x35, 0x58, 0x07, 0xeb, 0x8b, 0x67, 0xa3, 0x72, 0xc6, 0xcd, 0xe3,
+	0x95, 0x9c, 0xfd, 0x2f, 0xd9, 0xba, 0xd6, 0xaf, 0x08, 0x91, 0x09, 0xb0, 0x3f, 0x19, 0x64, 0xf5,
+	0x39, 0x65, 0xbd, 0x1b, 0x30, 0xf0, 0x1f, 0x59, 0xe3, 0xe0, 0xd3, 0x90, 0x02, 0x93, 0x2d, 0x2f,
+	0x08, 0x78, 0x62, 0x20, 0xe7, 0xfe, 0x3d, 0xcd, 0xaa, 0x2f, 0xcc, 0x3b, 0x64, 0x7d, 0x26, 0xf3,
+	0x4f, 0x3c, 0xca, 0x0a, 0x0b, 0x89, 0x6e, 0xf6, 0xf5, 0xa1, 0xca, 0xda, 0x35, 0x92, 0x4f, 0x3b,
+	0x4d, 0x5b, 0x37, 0x77, 0x49, 0x3e, 0x80, 0x10, 0x05, 0xfd, 0xa9, 0xfa, 0xaa, 0xce, 0xa9, 0xda,
+	0xf6, 0xc8, 0x20, 0xa5, 0x97, 0xb4, 0xcb, 0x8e, 0x81, 0x05, 0x94, 0x75, 0x5f, 0x71, 0x8f, 0x89,
+	0x0e, 0x70, 0x71, 0x03, 0x6e, 0x2b, 0x24, 0xdb, 0x83, 0xb8, 0x45, 0x83, 0xb4, 0x8f, 0x7a, 0x6e,
+	0x3c, 0x2a, 0x2f, 0x35, 0x21, 0x6e, 0x3c, 0x75, 0x97, 0x7a, 0x10, 0x37, 0x02, 0xd3, 0x25, 0xff,
+	0x0c, 0x3c, 0x21, 0x81, 0xb7, 0x94, 0xd0, 0x1b, 0x60, 0xc4, 0x64, 0x62, 0x75, 0xa1, 0xfe, 0xff,
+	0xc5, 0xa8, 0x6c, 0x5f, 0xf9, 0x6f, 0x5b, 0xfa, 0x22, 0xa2, 0x12, 0x54, 0x10, 0x49, 0xda, 0x77,
+	0x0e, 0x12, 0xb5, 0xbb, 0x9e, 0x16, 0x68, 0x42, 0x9c, 0x26, 0x6c, 0x8b, 0x6c, 0xcf, 0xf7, 0xa7,
+	0xb7, 0x77, 0x62, 0x90, 0xe2, 0x6b, 0x94, 0x70, 0xf3, 0xb8, 0x3e, 0x21, 0x2b, 0x21, 0xf6, 0xfb,
+	0xca, 0x9b, 0x06, 0xd5, 0x72, 0xd4, 0x01, 0x73, 0x2e, 0x0f, 0xd8, 0x14, 0xd7, 0x63, 0xec, 0xf7,
+	0x9b, 0x10, 0x6b, 0x52, 0x97, 0xc3, 0x74, 0x69, 0x96, 0x48, 0x6e, 0xca, 0xbb, 0x26, 0x60, 0xe5,
+	0x92, 0x62, 0x73, 0x9b, 0xe4, 0xfc, 0xd4, 0x02, 0x04, 0x85, 0xc5, 0x8a, 0xb1, 0xb7, 0xe2, 0xce,
+	0x12, 0xf6, 0x63, 0x52, 0x9a, 0x6b, 0x52, 0x83, 0xb2, 0x49, 0xb2, 0x42, 0x7a, 0x32, 0x12, 0x89,
+	0xcb, 0x9c, 0xab, 0x57, 0xf6, 0x47, 0x83, 0x14, 0x5d, 0xe8, 0x52, 0x35, 0xd2, 0x67, 0x43, 0x09,
+	0x9c, 0x79, 0xaa, 0x93, 0x5b, 0x81, 0x63, 0x8b, 0x2c, 0x87, 0x51, 0x3b, 0x99, 0x9e, 0xf2, 0x9e,
+	0x77, 0xb3, 0x61, 0xd4, 0x6e, 0x42, 0x6c, 0xef, 0x90, 0xd2, 0xdc, 0x1e, 0xf5, 0x06, 0x7f, 0x37,
+	0xc8, 0x5d, 0x45, 0xc0, 0x8b, 0x04, 0x8c, 0x43, 0x64, 0x02, 0xfb, 0x34, 0xf0, 0x24, 0x45, 0x96,
+	0xd0, 0xe0, 0xf9, 0x2a, 0xbc, 0x15, 0x4b, 0x6f, 0xc8, 0x86, 0x00, 0x1f, 0x59, 0xe0, 0xf1, 0xf8,
+	0xcf, 0x91, 0x37, 0xa7, 0x35, 0x66, 0xd4, 0xdf, 0x27, 0xf7, 0x7e, 0xc7, 0x73, 0x3a, 0xa2, 0xba,
+	0x7b, 0xf6, 0xcd, 0xca, 0x9c, 0x8d, 0x2d, 0xe3, 0x7c, 0x6c, 0x19, 0x5f, 0xc7, 0x96, 0xf1, 0x61,
+	0x62, 0x65, 0xce, 0x27, 0x56, 0xe6, 0xcb, 0xc4, 0xca, 0xbc, 0x7d, 0x74, 0xa5, 0x07, 0x6f, 0x08,
+	0x7d, 0x8f, 0x33, 0x90, 0xef, 0x91, 0xf7, 0xf4, 0x6a, 0xdf, 0x47, 0x0e, 0xd5, 0x61, 0xf5, 0xf2,
+	0x26, 0x49, 0x06, 0xd2, 0xce, 0x26, 0x37, 0xc1, 0xc3, 0x1f, 0x01, 0x00, 0x00, 0xff, 0xff, 0x14,
+	0x84, 0xb2, 0xf9, 0x8c, 0x06, 0x00, 0x00,
 }
 
 func (m *ConfirmOutpointRequest) Marshal() (dAtA []byte, err error) {
@@ -541,6 +714,11 @@ func (m *SignPendingTransfersRequest) MarshalToSizedBuffer(dAtA []byte) (int, er
 	_ = i
 	var l int
 	_ = l
+	if m.MasterKeyAmount != 0 {
+		i = encodeVarintTx(dAtA, i, uint64(m.MasterKeyAmount))
+		i--
+		dAtA[i] = 0x18
+	}
 	if len(m.KeyID) > 0 {
 		i -= len(m.KeyID)
 		copy(dAtA[i:], m.KeyID)
@@ -668,6 +846,138 @@ func (m *VoteConfirmOutpointResponse) MarshalToSizedBuffer(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
+func (m *RegisterExternalKeyRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *RegisterExternalKeyRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *RegisterExternalKeyRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.PubKey) > 0 {
+		i -= len(m.PubKey)
+		copy(dAtA[i:], m.PubKey)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.PubKey)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.KeyID) > 0 {
+		i -= len(m.KeyID)
+		copy(dAtA[i:], m.KeyID)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.KeyID)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Sender) > 0 {
+		i -= len(m.Sender)
+		copy(dAtA[i:], m.Sender)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Sender)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *RegisterExternalKeyResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *RegisterExternalKeyResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *RegisterExternalKeyResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *SignMasterConsolidationTransactionRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SignMasterConsolidationTransactionRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SignMasterConsolidationTransactionRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.SecondaryKeyAmount != 0 {
+		i = encodeVarintTx(dAtA, i, uint64(m.SecondaryKeyAmount))
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.KeyID) > 0 {
+		i -= len(m.KeyID)
+		copy(dAtA[i:], m.KeyID)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.KeyID)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Sender) > 0 {
+		i -= len(m.Sender)
+		copy(dAtA[i:], m.Sender)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Sender)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *SignMasterConsolidationTransactionResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SignMasterConsolidationTransactionResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SignMasterConsolidationTransactionResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTx(v)
 	base := offset
@@ -751,6 +1061,9 @@ func (m *SignPendingTransfersRequest) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
 	}
+	if m.MasterKeyAmount != 0 {
+		n += 1 + sovTx(uint64(m.MasterKeyAmount))
+	}
 	return n
 }
 
@@ -795,6 +1108,65 @@ func (m *VoteConfirmOutpointResponse) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
 	}
+	return n
+}
+
+func (m *RegisterExternalKeyRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Sender)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.KeyID)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.PubKey)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *RegisterExternalKeyResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *SignMasterConsolidationTransactionRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Sender)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.KeyID)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	if m.SecondaryKeyAmount != 0 {
+		n += 1 + sovTx(uint64(m.SecondaryKeyAmount))
+	}
+	return n
+}
+
+func (m *SignMasterConsolidationTransactionResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
 	return n
 }
 
@@ -1296,6 +1668,25 @@ func (m *SignPendingTransfersRequest) Unmarshal(dAtA []byte) error {
 			}
 			m.KeyID = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MasterKeyAmount", wireType)
+			}
+			m.MasterKeyAmount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.MasterKeyAmount |= github_com_btcsuite_btcutil.Amount(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTx(dAtA[iNdEx:])
@@ -1597,6 +1988,391 @@ func (m *VoteConfirmOutpointResponse) Unmarshal(dAtA []byte) error {
 			}
 			m.Status = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *RegisterExternalKeyRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RegisterExternalKeyRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RegisterExternalKeyRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Sender", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Sender = append(m.Sender[:0], dAtA[iNdEx:postIndex]...)
+			if m.Sender == nil {
+				m.Sender = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field KeyID", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.KeyID = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PubKey", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PubKey = append(m.PubKey[:0], dAtA[iNdEx:postIndex]...)
+			if m.PubKey == nil {
+				m.PubKey = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *RegisterExternalKeyResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RegisterExternalKeyResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RegisterExternalKeyResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SignMasterConsolidationTransactionRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SignMasterConsolidationTransactionRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SignMasterConsolidationTransactionRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Sender", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Sender = append(m.Sender[:0], dAtA[iNdEx:postIndex]...)
+			if m.Sender == nil {
+				m.Sender = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field KeyID", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.KeyID = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SecondaryKeyAmount", wireType)
+			}
+			m.SecondaryKeyAmount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SecondaryKeyAmount |= github_com_btcsuite_btcutil.Amount(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SignMasterConsolidationTransactionResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SignMasterConsolidationTransactionResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SignMasterConsolidationTransactionResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTx(dAtA[iNdEx:])

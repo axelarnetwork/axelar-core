@@ -5,6 +5,7 @@ import (
 	mathRand "math/rand"
 	"strings"
 	"testing"
+	"time"
 	"unicode"
 
 	"github.com/btcsuite/btcd/btcec"
@@ -61,21 +62,183 @@ func TestOutPointInfo_Equals(t *testing.T) {
 	assert.Equal(t, op1, op2)
 }
 
-func TestNewLinkedAddress_SpendableByMasterKey(t *testing.T) {
-	masterPrivateKey, err := btcec.NewPrivateKey(btcec.S256())
+func TestNewMasterConsolidationAddress(t *testing.T) {
+	privKey1, err := btcec.NewPrivateKey(btcec.S256())
 	if err != nil {
 		panic(err)
 	}
-	secondaryPrivateKey, err := btcec.NewPrivateKey(btcec.S256())
+	privKey2, err := btcec.NewPrivateKey(btcec.S256())
 	if err != nil {
 		panic(err)
 	}
-	masterKey := tss.Key{ID: rand.Str(10), Value: masterPrivateKey.PublicKey, Role: tss.MasterKey}
-	secondaryKey := tss.Key{ID: rand.Str(10), Value: secondaryPrivateKey.PublicKey, Role: tss.SecondaryKey}
+	privKey3, err := btcec.NewPrivateKey(btcec.S256())
+	if err != nil {
+		panic(err)
+	}
+	pubKey1 := tss.Key{ID: rand.Str(10), Value: privKey1.PublicKey, Role: tss.MasterKey}
+	pubKey2 := tss.Key{ID: rand.Str(10), Value: privKey2.PublicKey, Role: tss.MasterKey}
+	pubKey3 := tss.Key{ID: rand.Str(10), Value: privKey3.PublicKey, Role: tss.Unknown}
+	inputAmount := btcutil.Amount(100000000) // 1btc
+	outputAmount := btcutil.Amount(10000000) // 0.1btc
+	outPoint, err := types.OutPointFromStr(fmt.Sprintf("%s:0", rand.HexStr(64)))
+	if err != nil {
+		panic(err)
+	}
+
+	t.Run("should not be spendable by (pubKey1 or pubKey2) before the timelock elapses", testutils.Func(func(t *testing.T) {
+		address := types.NewMasterConsolidationAddress(pubKey1, pubKey2, pubKey3, time.Now(), types.Testnet3)
+		inputs := []types.OutPointToSign{
+			{
+				AddressInfo: address,
+				OutPointInfo: types.NewOutPointInfo(
+					outPoint,
+					inputAmount,
+					address.Address,
+				),
+			},
+		}
+		outputs := []types.Output{
+			{
+				Amount:    outputAmount,
+				Recipient: address.GetAddress(),
+			},
+		}
+
+		tx, err := types.CreateTx(inputs, outputs)
+		assert.NoError(t, err)
+		tx.LockTime = uint32(time.Now().AddDate(0, 0, -1).Unix())
+		tx = types.EnableTimelockAndRBF(tx)
+
+		sigHash, err := txscript.CalcWitnessSigHash(address.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, 0, int64(inputAmount))
+		assert.NoError(t, err)
+
+		sig1, err := privKey1.Sign(sigHash)
+		assert.NoError(t, err)
+		sig2, err := privKey2.Sign(sigHash)
+		assert.NoError(t, err)
+		sig3, err := privKey3.Sign(sigHash)
+		assert.NoError(t, err)
+
+		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig1}})
+		assert.Error(t, err)
+		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig2}})
+		assert.Error(t, err)
+		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig3}})
+		assert.Error(t, err)
+	}))
+
+	t.Run("should be spendable by (pubKey1 or pubKey2) after the timelock elapses", testutils.Func(func(t *testing.T) {
+		address := types.NewMasterConsolidationAddress(pubKey1, pubKey2, pubKey3, time.Now(), types.Testnet3)
+		inputs := []types.OutPointToSign{
+			{
+				AddressInfo: address,
+				OutPointInfo: types.NewOutPointInfo(
+					outPoint,
+					inputAmount,
+					address.Address,
+				),
+			},
+		}
+		outputs := []types.Output{
+			{
+				Amount:    outputAmount,
+				Recipient: address.GetAddress(),
+			},
+		}
+
+		tx, err := types.CreateTx(inputs, outputs)
+		assert.NoError(t, err)
+		tx.LockTime = uint32(time.Now().AddDate(0, 0, 1).Unix())
+		tx = types.EnableTimelockAndRBF(tx)
+
+		sigHash, err := txscript.CalcWitnessSigHash(address.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, 0, int64(inputAmount))
+		assert.NoError(t, err)
+
+		sig1, err := privKey1.Sign(sigHash)
+		assert.NoError(t, err)
+		sig2, err := privKey2.Sign(sigHash)
+		assert.NoError(t, err)
+		sig3, err := privKey3.Sign(sigHash)
+		assert.NoError(t, err)
+
+		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig1}})
+		assert.NoError(t, err)
+		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig2}})
+		assert.NoError(t, err)
+		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig3}})
+		assert.Error(t, err)
+	}))
+
+	t.Run("should be spendable by ((pubKey1 or pubKey2) and pubKey3) before the timelock elapses", testutils.Func(func(t *testing.T) {
+		address := types.NewMasterConsolidationAddress(pubKey1, pubKey2, pubKey3, time.Now(), types.Testnet3)
+		inputs := []types.OutPointToSign{
+			{
+				AddressInfo: address,
+				OutPointInfo: types.NewOutPointInfo(
+					outPoint,
+					inputAmount,
+					address.Address,
+				),
+			},
+		}
+		outputs := []types.Output{
+			{
+				Amount:    outputAmount,
+				Recipient: address.GetAddress(),
+			},
+		}
+
+		tx, err := types.CreateTx(inputs, outputs)
+		assert.NoError(t, err)
+		tx.LockTime = uint32(time.Now().AddDate(0, 0, -1).Unix())
+		tx = types.EnableTimelockAndRBF(tx)
+
+		sigHash, err := txscript.CalcWitnessSigHash(address.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, 0, int64(inputAmount))
+		assert.NoError(t, err)
+
+		sig1, err := privKey1.Sign(sigHash)
+		assert.NoError(t, err)
+		sig2, err := privKey2.Sign(sigHash)
+		assert.NoError(t, err)
+		sig3, err := privKey3.Sign(sigHash)
+		assert.NoError(t, err)
+
+		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig1, *sig3}})
+		assert.NoError(t, err)
+		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig2, *sig3}})
+		assert.NoError(t, err)
+		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig3, *sig2}})
+		assert.Error(t, err)
+		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig3, *sig1}})
+		assert.Error(t, err)
+		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig1, *sig2}})
+		assert.Error(t, err)
+		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig2, *sig1}})
+		assert.Error(t, err)
+		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig1, *sig1}})
+		assert.Error(t, err)
+		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig2, *sig2}})
+		assert.Error(t, err)
+		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig3, *sig3}})
+		assert.Error(t, err)
+	}))
+}
+
+func TestNewDepositAddress_SpendableByTheFirstKey(t *testing.T) {
+	privKey1, err := btcec.NewPrivateKey(btcec.S256())
+	if err != nil {
+		panic(err)
+	}
+	privKey2, err := btcec.NewPrivateKey(btcec.S256())
+	if err != nil {
+		panic(err)
+	}
+	pubKey1 := tss.Key{ID: rand.Str(10), Value: privKey1.PublicKey, Role: tss.MasterKey}
+	pubKey2 := tss.Key{ID: rand.Str(10), Value: privKey2.PublicKey, Role: tss.SecondaryKey}
 
 	inputAmount := btcutil.Amount(100000000) // 1btc
 	outputAmount := btcutil.Amount(10000000) // 0.1btc
-	linkedAddressInfo := types.NewLinkedAddress(masterKey, secondaryKey, types.Testnet3, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress})
+	linkedAddressInfo := types.NewDepositAddress(pubKey1, pubKey2, types.Testnet3, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress})
 	outPoint, err := types.OutPointFromStr(fmt.Sprintf("%s:0", rand.HexStr(64)))
 	if err != nil {
 		panic(err)
@@ -103,28 +266,33 @@ func TestNewLinkedAddress_SpendableByMasterKey(t *testing.T) {
 	sigHash, err := txscript.CalcWitnessSigHash(linkedAddressInfo.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, 0, int64(inputAmount))
 	assert.NoError(t, err)
 
-	sig, err := masterPrivateKey.Sign(sigHash)
+	sig, err := privKey1.Sign(sigHash)
 	assert.NoError(t, err)
 
-	_, err = types.AssembleBtcTx(tx, inputs, []btcec.Signature{*sig})
+	_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig}})
+	assert.NoError(t, err)
+
+	sig, err = privKey2.Sign(sigHash)
+	assert.NoError(t, err)
+	_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig}})
 	assert.NoError(t, err)
 }
 
-func TestNewLinkedAddress_SpendableBySecondaryKey(t *testing.T) {
-	masterPrivateKey, err := btcec.NewPrivateKey(btcec.S256())
+func TestNewDepositAddress_SpendableByTheSecondKey(t *testing.T) {
+	privKey1, err := btcec.NewPrivateKey(btcec.S256())
 	if err != nil {
 		panic(err)
 	}
-	secondaryPrivateKey, err := btcec.NewPrivateKey(btcec.S256())
+	privKey2, err := btcec.NewPrivateKey(btcec.S256())
 	if err != nil {
 		panic(err)
 	}
-	masterKey := tss.Key{ID: rand.Str(10), Value: masterPrivateKey.PublicKey, Role: tss.MasterKey}
-	secondaryKey := tss.Key{ID: rand.Str(10), Value: secondaryPrivateKey.PublicKey, Role: tss.SecondaryKey}
+	pubKey1 := tss.Key{ID: rand.Str(10), Value: privKey1.PublicKey, Role: tss.MasterKey}
+	pubKey2 := tss.Key{ID: rand.Str(10), Value: privKey2.PublicKey, Role: tss.SecondaryKey}
 
 	inputAmount := btcutil.Amount(100000000) // 1btc
 	outputAmount := btcutil.Amount(10000000) // 0.1btc
-	linkedAddressInfo := types.NewLinkedAddress(masterKey, secondaryKey, types.Testnet3, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress})
+	linkedAddressInfo := types.NewDepositAddress(pubKey1, pubKey2, types.Testnet3, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress})
 	outPoint, err := types.OutPointFromStr(fmt.Sprintf("%s:0", rand.HexStr(64)))
 	if err != nil {
 		panic(err)
@@ -152,19 +320,19 @@ func TestNewLinkedAddress_SpendableBySecondaryKey(t *testing.T) {
 	sigHash, err := txscript.CalcWitnessSigHash(linkedAddressInfo.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, 0, int64(inputAmount))
 	assert.NoError(t, err)
 
-	sig, err := secondaryPrivateKey.Sign(sigHash)
+	sig, err := privKey2.Sign(sigHash)
 	assert.NoError(t, err)
 
-	_, err = types.AssembleBtcTx(tx, inputs, []btcec.Signature{*sig})
+	_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig}})
 	assert.NoError(t, err)
 }
 
-func TestNewLinkedAddress_NotSpendableByRandomKey(t *testing.T) {
-	masterPrivateKey, err := btcec.NewPrivateKey(btcec.S256())
+func TestNewDepositAddress_NotSpendableByARandomKey(t *testing.T) {
+	privKey1, err := btcec.NewPrivateKey(btcec.S256())
 	if err != nil {
 		panic(err)
 	}
-	secondaryPrivateKey, err := btcec.NewPrivateKey(btcec.S256())
+	privKey2, err := btcec.NewPrivateKey(btcec.S256())
 	if err != nil {
 		panic(err)
 	}
@@ -172,12 +340,12 @@ func TestNewLinkedAddress_NotSpendableByRandomKey(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	masterKey := tss.Key{ID: rand.Str(10), Value: masterPrivateKey.PublicKey, Role: tss.MasterKey}
-	secondaryKey := tss.Key{ID: rand.Str(10), Value: secondaryPrivateKey.PublicKey, Role: tss.SecondaryKey}
+	pubKey1 := tss.Key{ID: rand.Str(10), Value: privKey1.PublicKey, Role: tss.MasterKey}
+	pubKey2 := tss.Key{ID: rand.Str(10), Value: privKey2.PublicKey, Role: tss.SecondaryKey}
 
 	inputAmount := btcutil.Amount(100000000) // 1btc
 	outputAmount := btcutil.Amount(10000000) // 0.1btc
-	linkedAddressInfo := types.NewLinkedAddress(masterKey, secondaryKey, types.Testnet3, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress})
+	linkedAddressInfo := types.NewDepositAddress(pubKey1, pubKey2, types.Testnet3, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress})
 	outPoint, err := types.OutPointFromStr(fmt.Sprintf("%s:0", rand.HexStr(64)))
 	if err != nil {
 		panic(err)
@@ -208,7 +376,7 @@ func TestNewLinkedAddress_NotSpendableByRandomKey(t *testing.T) {
 	sig, err := randomPrivateKey.Sign(sigHash)
 	assert.NoError(t, err)
 
-	_, err = types.AssembleBtcTx(tx, inputs, []btcec.Signature{*sig})
+	_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig}})
 	assert.Error(t, err)
 }
 
@@ -261,16 +429,16 @@ func TestEstimateTxSize(t *testing.T) {
 	repeats := 100
 
 	t.Run("should return a reasonable transaction size estimation", testutils.Func(func(t *testing.T) {
-		masterPrivateKey, err := btcec.NewPrivateKey(btcec.S256())
+		privKey1, err := btcec.NewPrivateKey(btcec.S256())
 		if err != nil {
 			panic(err)
 		}
-		secondaryPrivateKey, err := btcec.NewPrivateKey(btcec.S256())
+		privKey2, err := btcec.NewPrivateKey(btcec.S256())
 		if err != nil {
 			panic(err)
 		}
-		masterKey := tss.Key{ID: rand.Str(10), Value: masterPrivateKey.PublicKey, Role: tss.MasterKey}
-		secondaryKey := tss.Key{ID: rand.Str(10), Value: secondaryPrivateKey.PublicKey, Role: tss.SecondaryKey}
+		pubKey1 := tss.Key{ID: rand.Str(10), Value: privKey1.PublicKey, Role: tss.MasterKey}
+		pubKey2 := tss.Key{ID: rand.Str(10), Value: privKey2.PublicKey, Role: tss.SecondaryKey}
 
 		inputCount := rand.I64Between(11, 20)
 		outputCount := rand.I64Between(1, 11)
@@ -278,7 +446,7 @@ func TestEstimateTxSize(t *testing.T) {
 		var outputs []types.Output
 
 		for i := 0; i < int(inputCount); i++ {
-			addressInfo := types.NewLinkedAddress(masterKey, secondaryKey, types.Testnet3, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress})
+			addressInfo := types.NewDepositAddress(pubKey1, pubKey2, types.Testnet3, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress})
 			outPoint, err := types.OutPointFromStr(fmt.Sprintf("%s:%d", rand.HexStr(64), rand.I64Between(0, 100)))
 			if err != nil {
 				panic(err)
@@ -296,7 +464,7 @@ func TestEstimateTxSize(t *testing.T) {
 		}
 
 		for i := 0; i < int(outputCount); i++ {
-			addressInfo := types.NewConsolidationAddress(masterKey, types.Testnet3)
+			addressInfo := types.NewSecondaryConsolidationAddress(pubKey1, types.Testnet3)
 			outputAmount := btcutil.Amount(rand.I64Between(1, 100))
 
 			outputs = append(outputs, types.Output{
@@ -308,15 +476,15 @@ func TestEstimateTxSize(t *testing.T) {
 		tx, err := types.CreateTx(inputs, outputs)
 		assert.NoError(t, err)
 
-		var signatures []btcec.Signature
+		var signatures [][]btcec.Signature
 
 		for i, input := range inputs {
 			sigHash, err := txscript.CalcWitnessSigHash(input.AddressInfo.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, i, int64(input.OutPointInfo.Amount))
 			assert.NoError(t, err)
 
-			signature, err := masterPrivateKey.Sign(sigHash)
+			signature, err := privKey1.Sign(sigHash)
 			assert.NoError(t, err)
-			signatures = append(signatures, *signature)
+			signatures = append(signatures, []btcec.Signature{*signature})
 		}
 
 		signedTx, err := types.AssembleBtcTx(tx, inputs, signatures)

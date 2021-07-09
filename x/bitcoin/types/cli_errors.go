@@ -2,6 +2,7 @@ package types
 
 // CLI query error message formats
 const (
+	ErrFSecondaryKey         = "could not resolve secondary key"
 	ErrFMasterKey            = "could not resolve master key"
 	ErrFNextMasterKey        = "could not get next master key ID"
 	ErrFGetRawTx             = "could not get the raw consolidation transaction"

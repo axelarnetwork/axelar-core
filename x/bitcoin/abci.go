@@ -42,7 +42,7 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, k types.BTCKeeper, si
 	k.Logger(ctx).Debug("checking for completed signatures")
 
 	// Assemble transaction with signatures
-	var sigs []btcec.Signature
+	var sigs [][]btcec.Signature
 	for i, in := range outpointsToSign {
 		hash, err := txscript.CalcWitnessSigHash(in.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, i, int64(in.Amount))
 		if err != nil {
@@ -56,7 +56,8 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, k types.BTCKeeper, si
 			k.Logger(ctx).Debug(fmt.Sprintf("signature for tx %s not yet found", sigID))
 			return nil
 		}
-		sigs = append(sigs, btcec.Signature{R: sig.R, S: sig.S})
+		// TODO: handle multiple signatures per input
+		sigs = append(sigs, []btcec.Signature{{R: sig.R, S: sig.S}})
 	}
 
 	tx, err = types.AssembleBtcTx(tx, outpointsToSign, sigs)

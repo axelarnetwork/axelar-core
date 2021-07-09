@@ -22,7 +22,7 @@ message QueryRawTxResponse {
   }
 }
 
-message QueryMasterAddressResponse {
+message QuerySecondaryConsolidationAddressResponse {
   string address = 1;
   string key_id = 2;
 }

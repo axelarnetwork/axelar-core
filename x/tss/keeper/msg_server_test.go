@@ -47,10 +47,7 @@ func TestMsgServer_RotateKey(t *testing.T) {
 	t.Run("first key rotation", testutils.Func(func(t *testing.T) {
 		setup()
 		tssKeeper.GetCurrentKeyIDFunc = func(sdk.Context, nexus.Chain, exported.KeyRole) (string, bool) { return "", false }
-		tssKeeper.GetNextKeyIDFunc = func(sdk.Context, nexus.Chain, exported.KeyRole) (string, bool) { return "", false }
-		tssKeeper.GetKeyRequirementFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyRequirement, bool) {
-			return exported.KeyRequirement{NeedsAssignment: rand.Bools(0.5).Next()}, true
-		}
+		tssKeeper.GetNextKeyIDFunc = func(sdk.Context, nexus.Chain, exported.KeyRole) (string, bool) { return "", true }
 
 		_, err := server.RotateKey(sdk.WrapSDKContext(ctx), &types.RotateKeyRequest{
 			Sender:  rand.Bytes(sdk.AddrLen),
@@ -60,6 +57,7 @@ func TestMsgServer_RotateKey(t *testing.T) {
 		})
 
 		assert.NoError(t, err)
+		assert.Len(t, tssKeeper.AssignNextKeyCalls(), 1)
 		assert.Len(t, tssKeeper.RotateKeyCalls(), 1)
 	}).Repeat(repeats))
 
@@ -68,9 +66,6 @@ func TestMsgServer_RotateKey(t *testing.T) {
 		keyID := rand.StrBetween(5, 20)
 		tssKeeper.GetCurrentKeyIDFunc = func(sdk.Context, nexus.Chain, exported.KeyRole) (string, bool) { return rand.StrBetween(5, 20), true }
 		tssKeeper.GetNextKeyIDFunc = func(sdk.Context, nexus.Chain, exported.KeyRole) (string, bool) { return keyID, true }
-		tssKeeper.GetKeyRequirementFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyRequirement, bool) {
-			return exported.KeyRequirement{NeedsAssignment: true}, true
-		}
 
 		_, err := server.RotateKey(sdk.WrapSDKContext(ctx), &types.RotateKeyRequest{
 			Sender:  rand.Bytes(sdk.AddrLen),
@@ -80,34 +75,14 @@ func TestMsgServer_RotateKey(t *testing.T) {
 		})
 
 		assert.NoError(t, err)
+		assert.Len(t, tssKeeper.AssignNextKeyCalls(), 0)
 		assert.Len(t, tssKeeper.RotateKeyCalls(), 1)
-	}).Repeat(repeats))
-
-	t.Run("different key is assigned", testutils.Func(func(t *testing.T) {
-		setup()
-		tssKeeper.GetCurrentKeyIDFunc = func(sdk.Context, nexus.Chain, exported.KeyRole) (string, bool) { return rand.StrBetween(5, 20), true }
-		tssKeeper.GetNextKeyIDFunc = func(sdk.Context, nexus.Chain, exported.KeyRole) (string, bool) { return rand.StrBetween(5, 20), true }
-		tssKeeper.GetKeyRequirementFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyRequirement, bool) {
-			return exported.KeyRequirement{NeedsAssignment: true}, true
-		}
-
-		_, err := server.RotateKey(sdk.WrapSDKContext(ctx), &types.RotateKeyRequest{
-			Sender:  rand.Bytes(sdk.AddrLen),
-			Chain:   rand.StrBetween(5, 20),
-			KeyRole: exported.KeyRole(rand.I64Between(1, 3)),
-			KeyID:   rand.StrBetween(5, 20),
-		})
-
-		assert.Error(t, err)
 	}).Repeat(repeats))
 
 	t.Run("no next key is assigned", testutils.Func(func(t *testing.T) {
 		setup()
 		tssKeeper.GetCurrentKeyIDFunc = func(sdk.Context, nexus.Chain, exported.KeyRole) (string, bool) { return rand.StrBetween(5, 20), true }
 		tssKeeper.GetNextKeyIDFunc = func(sdk.Context, nexus.Chain, exported.KeyRole) (string, bool) { return "", false }
-		tssKeeper.GetKeyRequirementFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyRequirement, bool) {
-			return exported.KeyRequirement{NeedsAssignment: true}, true
-		}
 
 		_, err := server.RotateKey(sdk.WrapSDKContext(ctx), &types.RotateKeyRequest{
 			Sender:  rand.Bytes(sdk.AddrLen),

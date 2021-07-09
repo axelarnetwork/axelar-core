@@ -11,12 +11,13 @@ import (
 
 // Parameter keys
 var (
-	KeyConfirmationHeight      = []byte("confirmationHeight")
-	KeyNetwork                 = []byte("network")
-	KeyRevoteLockingPeriod     = []byte("RevoteLockingPeriod")
-	KeySigCheckInterval        = []byte("KeySigCheckInterval")
-	KeyMinimumWithdrawalAmount = []byte("KeyMinimumWithdrawalAmount")
-	KeyMaxInputCount           = []byte("KeyMaxInputCount")
+	KeyConfirmationHeight       = []byte("confirmationHeight")
+	KeyNetwork                  = []byte("network")
+	KeyRevoteLockingPeriod      = []byte("RevoteLockingPeriod")
+	KeySigCheckInterval         = []byte("KeySigCheckInterval")
+	KeyMinimumWithdrawalAmount  = []byte("KeyMinimumWithdrawalAmount")
+	KeyMaxInputCount            = []byte("KeyMaxInputCount")
+	KeyMaxSecondaryOutputAmount = []byte("KeyMaxSecondaryOutputAmount")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -27,12 +28,13 @@ func KeyTable() paramtypes.KeyTable {
 // DefaultParams returns the module's parameter set initialized with default values
 func DefaultParams() Params {
 	return Params{
-		ConfirmationHeight:      1,
-		Network:                 Network{Name: Regtest.Name},
-		RevoteLockingPeriod:     50,
-		SigCheckInterval:        10,
-		MinimumWithdrawalAmount: 5000,
-		MaxInputCount:           50,
+		ConfirmationHeight:       1,
+		Network:                  Network{Name: Regtest.Name},
+		RevoteLockingPeriod:      50,
+		SigCheckInterval:         10,
+		MinimumWithdrawalAmount:  1000,
+		MaxInputCount:            50,
+		MaxSecondaryOutputAmount: 30000000000,
 	}
 }
 
@@ -52,6 +54,7 @@ func (m *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(KeySigCheckInterval, &m.SigCheckInterval, validateSigCheckInterval),
 		paramtypes.NewParamSetPair(KeyMinimumWithdrawalAmount, &m.MinimumWithdrawalAmount, validateMinimumWithdrawalAmount),
 		paramtypes.NewParamSetPair(KeyMaxInputCount, &m.MaxInputCount, validateMaxInputCount),
+		paramtypes.NewParamSetPair(KeyMaxSecondaryOutputAmount, &m.MaxSecondaryOutputAmount, validateMaxSecondaryOutputAmount),
 	}
 }
 
@@ -127,6 +130,19 @@ func validateMaxInputCount(maxInputCount interface{}) error {
 	return nil
 }
 
+func validateMaxSecondaryOutputAmount(maxSecondaryOutputAmount interface{}) error {
+	m, ok := maxSecondaryOutputAmount.(btcutil.Amount)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for max input count: %T", maxSecondaryOutputAmount)
+	}
+
+	if m <= 0 {
+		return sdkerrors.Wrap(types.ErrInvalidGenesis, "max secondary output amount must be greater than 0")
+	}
+
+	return nil
+}
+
 // Validate checks the validity of the values of the parameter set
 func (m Params) Validate() error {
 	if err := validateConfirmationHeight(m.ConfirmationHeight); err != nil {
@@ -149,6 +165,10 @@ func (m Params) Validate() error {
 	}
 
 	if err := validateMaxInputCount(m.MaxInputCount); err != nil {
+		return err
+	}
+
+	if err := validateMaxSecondaryOutputAmount(m.MaxSecondaryOutputAmount); err != nil {
 		return err
 	}
 

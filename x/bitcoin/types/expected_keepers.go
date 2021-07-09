@@ -1,6 +1,8 @@
 package types
 
 import (
+	"crypto/ecdsa"
+
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
@@ -29,6 +31,7 @@ type BTCKeeper interface {
 	GetNetwork(ctx sdk.Context) Network
 	GetMinimumWithdrawalAmount(ctx sdk.Context) btcutil.Amount
 	GetMaxInputCount(ctx sdk.Context) int64
+	GetMaxSecondaryOutputAmount(ctx sdk.Context) btcutil.Amount
 
 	SetPendingOutpointInfo(ctx sdk.Context, key vote.PollKey, info OutPointInfo)
 	GetPendingOutPointInfo(ctx sdk.Context, key vote.PollKey) (OutPointInfo, bool)
@@ -75,8 +78,10 @@ type Signer interface {
 	GetCurrentKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool)
+	SetKey(ctx sdk.Context, keyID string, key ecdsa.PublicKey)
 	GetKey(ctx sdk.Context, keyID string) (tss.Key, bool)
 	AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error
+	RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) error
 	AssertMatchesRequirements(ctx sdk.Context, snapshotter Snapshotter, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error
 }
 

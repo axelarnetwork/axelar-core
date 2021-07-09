@@ -518,7 +518,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		secondaryPrivateKey, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
 		secondaryKey := tss.Key{ID: rand.StrBetween(5, 20), Value: secondaryPrivateKey.PublicKey, Role: tss.SecondaryKey}
 
-		msg = types.NewSignPendingTransfersRequest(rand.Bytes(sdk.AddrLen), secondaryKey.ID)
+		msg = types.NewSignPendingTransfersRequest(rand.Bytes(sdk.AddrLen), secondaryKey.ID, 0)
 
 		btcKeeper = &mock.BTCKeeperMock{
 			GetUnsignedTxFunc: func(sdk.Context) (*types.Transaction, bool) { return nil, false },
@@ -641,7 +641,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 	t.Run("happy path consolidation to next secondary key", testutils.Func(func(t *testing.T) {
 		setup()
 		nextSecondaryKeyID := rand.StrBetween(5, 20)
-		msg = types.NewSignPendingTransfersRequest(rand.Bytes(sdk.AddrLen), nextSecondaryKeyID)
+		msg = types.NewSignPendingTransfersRequest(rand.Bytes(sdk.AddrLen), nextSecondaryKeyID, 0)
 		prevGetKey := signer.GetKeyFunc
 		pk, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
 		signer.GetKeyFunc = func(ctx sdk.Context, keyID string) (tss.Key, bool) {
@@ -759,7 +759,7 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 		for i := 0; i < len(transfers); i++ {
 			encodeAddr := transfers[i].Recipient.Address
 			assert.Equal(t, btcKeeper.GetDustAmountFunc(ctx, encodeAddr), btcutil.Amount(0))
-			assert.Equal(t, int64(dust[encodeAddr])+transfers[i].Asset.Amount.Int64(), txOut[i+2].Value)
+			assert.Equal(t, int64(dust[encodeAddr])+transfers[i].Asset.Amount.Int64(), txOut[i].Value)
 		}
 
 	}).Repeat(repeatCount))

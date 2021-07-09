@@ -237,7 +237,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 		outpointsToSign = append(outpointsToSign, btcTypes.OutPointToSign{
 			OutPointInfo: depositInfo,
-			AddressInfo: btcTypes.NewLinkedAddress(
+			AddressInfo: btcTypes.NewDepositAddress(
 				tss.Key{ID: rand.Str(10), Value: randomPrivateKey.PublicKey, Role: tss.MasterKey},
 				tss.Key{ID: rand.Str(10), Value: randomPrivateKey.PublicKey, Role: tss.SecondaryKey},
 				btcTypes.DefaultParams().Network,
@@ -262,7 +262,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	// sign the consolidation transaction
-	signResult := <-chain.Submit(btcTypes.NewSignPendingTransfersRequest(randomSender(), secondaryKeyID2))
+	signResult := <-chain.Submit(btcTypes.NewSignPendingTransfersRequest(randomSender(), secondaryKeyID2, 0))
 	assert.NoError(t, signResult.Error)
 
 	// wait for voting to be done
@@ -320,6 +320,6 @@ func txCorrectlyFormed(tx *wire.MsgTx, deposits map[string]btcTypes.OutPointInfo
 	}
 
 	return len(tx.TxOut) == 2 && // two TxOut's
-		tx.TxOut[0].Value == txAmount && // change TxOut
-		tx.TxOut[1].Value == int64(btcTypes.DefaultParams().MinimumWithdrawalAmount) // anyone-can-spend TxOut
+		tx.TxOut[1].Value == txAmount && // change TxOut
+		tx.TxOut[0].Value == int64(btcTypes.DefaultParams().MinimumWithdrawalAmount) // anyone-can-spend TxOut
 }
