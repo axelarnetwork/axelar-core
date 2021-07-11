@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/assert"
@@ -20,12 +21,14 @@ import (
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
+	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	voteMock "github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
+	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 
 	slashingTypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
-	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 var (
@@ -57,7 +60,12 @@ func setup() *testSetup {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	encCfg := appParams.MakeEncodingConfig()
 	voter := &tssMock.VoterMock{
-		InitPollFunc: func(sdk.Context, exported.PollKey, int64, int64, ...utils.Threshold) error { return nil },
+		NewPollFunc: func(sdk.Context, exported.PollMetadata) exported.Poll {
+			return &voteMock.PollMock{
+				InitializeFunc: func() error { return nil },
+				VoteFunc:       func(sdk.ValAddress, codec.ProtoMarshaler) error { return nil }}
+		},
+		GetDefaultVotingThresholdFunc: func(sdk.Context) utils.Threshold { return voteTypes.DefaultGenesisState().VotingThreshold },
 	}
 
 	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), "tss")

@@ -50,7 +50,9 @@ func (k Keeper) StartSign(ctx sdk.Context, voter types.InitPoller, keyID string,
 	}
 
 	pollKey := vote.NewPollKey(types.ModuleName, sigID)
-	if err := voter.InitPoll(ctx, pollKey, s.Counter, 0); err != nil {
+	metadata := vote.NewPollMetaData(pollKey, s.Counter, 0, voter.GetDefaultVotingThreshold(ctx))
+	poll := voter.NewPoll(ctx, metadata)
+	if err := poll.Initialize(); err != nil {
 		return err
 	}
 

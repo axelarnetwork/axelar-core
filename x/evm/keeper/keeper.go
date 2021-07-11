@@ -526,10 +526,16 @@ func (k keeper) SetPendingTransferOwnership(ctx sdk.Context, key exported.PollKe
 	k.getStore(ctx, k.chain).Set([]byte(pendingTransferOwnershipPrefix+key.String()), bz)
 }
 
+// DeletePendingTransferOwnership deletes a pending transfer ownership
+func (k keeper) DeletePendingTransferOwnership(ctx sdk.Context, key exported.PollKey) {
+	k.getStore(ctx, k.chain).Delete([]byte(pendingTransferOwnershipPrefix + key.String()))
+}
+
 // ArchiveTransferOwnership archives an ownership transfer so it is no longer pending but can still be queried
 func (k keeper) ArchiveTransferOwnership(ctx sdk.Context, key exported.PollKey) {
 	transfer := k.getStore(ctx, k.chain).Get([]byte(pendingTransferOwnershipPrefix + key.String()))
 	if transfer != nil {
+		k.DeletePendingTransferOwnership(ctx, key)
 		k.getStore(ctx, k.chain).Set([]byte(archivedTransferOwnershipPrefix+key.String()), transfer)
 	}
 }

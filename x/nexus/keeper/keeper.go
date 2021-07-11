@@ -231,6 +231,6 @@ func (k Keeper) GetTransfersForChain(ctx sdk.Context, chain exported.Chain, stat
 	return transfers
 }
 
-func (k Keeper) getStore(ctx sdk.Context) utils.NormalizedKVStore {
+func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
 	return utils.NewNormalizedStore(ctx.KVStore(k.storeKey), k.cdc)
 }

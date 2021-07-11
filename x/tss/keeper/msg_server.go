@@ -12,7 +12,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
-	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 var _ types.MsgServiceServer = msgServer{}
@@ -174,13 +174,17 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		return &types.VotePubKeyResponse{}, nil
 	}
 
-	poll, err := s.voter.TallyVote(ctx, req.Sender, req.PollKey, req.Result)
-	if err != nil {
+	voter := s.snapshotter.GetPrincipal(ctx, req.Sender)
+	if voter == nil {
+		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
+	}
+
+	poll := s.voter.GetPoll(ctx, req.PollKey)
+	if err := poll.Vote(voter, req.Result); err != nil {
 		return nil, err
 	}
 
-	result := poll.GetResult()
-	if !poll.Is(voteTypes.Completed) {
+	if poll.Is(vote.Pending) {
 		return &types.VotePubKeyResponse{}, nil
 	}
 
@@ -191,7 +195,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	)
 	defer ctx.EventManager().EmitEvent(event)
 
-	if poll.Is(voteTypes.Failed) {
+	if poll.Is(vote.Failed) {
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
 		)
@@ -203,6 +207,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		return &types.VotePubKeyResponse{}, nil
 	}
 
+	result := poll.GetMetadata().GetResult()
 	switch keygenResult := result.(type) {
 	case *tofnd.MessageOut_KeygenResult:
 
@@ -236,9 +241,9 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
 		)
 
-		snapshot, found := s.snapshotter.GetSnapshot(ctx, poll.SnapshotSeqNo)
+		snapshot, found := s.snapshotter.GetSnapshot(ctx, poll.GetMetadata().SnapshotSeqNo)
 		if !found {
-			return nil, fmt.Errorf("no snapshot found for counter %d", poll.SnapshotSeqNo)
+			return nil, fmt.Errorf("no snapshot found for counter %d", poll.GetMetadata().SnapshotSeqNo)
 		}
 
 		for _, criminal := range keygenResult.GetCriminals().Criminals {
@@ -292,12 +297,17 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		return &types.VoteSigResponse{}, nil
 	}
 
-	poll, err := s.voter.TallyVote(ctx, req.Sender, req.PollKey, req.Result)
-	if err != nil {
+	voter := s.snapshotter.GetPrincipal(ctx, req.Sender)
+	if voter == nil {
+		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
+	}
+
+	poll := s.voter.GetPoll(ctx, req.PollKey)
+	if err := poll.Vote(voter, req.Result); err != nil {
 		return nil, err
 	}
 
-	if !poll.Is(voteTypes.Completed) {
+	if poll.Is(vote.Pending) {
 		return &types.VoteSigResponse{}, nil
 	}
 
@@ -308,7 +318,7 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 	)
 	defer ctx.EventManager().EmitEvent(event)
 
-	if poll.Is(voteTypes.Failed) {
+	if poll.Is(vote.Failed) {
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
 		)
@@ -318,7 +328,7 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		return &types.VoteSigResponse{}, nil
 	}
 
-	result := poll.GetResult()
+	result := poll.GetMetadata().GetResult()
 	switch signResult := result.(type) {
 	case *tofnd.MessageOut_SignResult:
 
@@ -342,9 +352,9 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
 		)
 
-		snapshot, found := s.snapshotter.GetSnapshot(ctx, poll.SnapshotSeqNo)
+		snapshot, found := s.snapshotter.GetSnapshot(ctx, poll.GetMetadata().SnapshotSeqNo)
 		if !found {
-			return nil, fmt.Errorf("no snapshot found for counter %d", poll.SnapshotSeqNo)
+			return nil, fmt.Errorf("no snapshot found for counter %d", poll.GetMetadata().SnapshotSeqNo)
 		}
 		for _, criminal := range signResult.GetCriminals().Criminals {
 			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())

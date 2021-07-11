@@ -13,8 +13,6 @@ import (
 	tofnd "github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	exported1 "github.com/axelarnetwork/axelar-core/x/vote/exported"
-	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
-	"github.com/cosmos/cosmos-sdk/codec"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -815,11 +813,14 @@ var _ tsstypes.Voter = &VoterMock{}
 //
 // 		// make and configure a mocked tsstypes.Voter
 // 		mockedVoter := &VoterMock{
-// 			InitPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, pollKey exported1.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error {
-// 				panic("mock out the InitPoll method")
+// 			GetDefaultVotingThresholdFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold {
+// 				panic("mock out the GetDefaultVotingThreshold method")
 // 			},
-// 			TallyVoteFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.AccAddress, pollKey exported1.PollKey, data codec.ProtoMarshaler) (votetypes.PollMetadata, error) {
-// 				panic("mock out the TallyVote method")
+// 			GetPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, pollKey exported1.PollKey) exported1.Poll {
+// 				panic("mock out the GetPoll method")
+// 			},
+// 			NewPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, metadataMoqParam exported1.PollMetadata) exported1.Poll {
+// 				panic("mock out the NewPoll method")
 // 			},
 // 		}
 //
@@ -828,130 +829,140 @@ var _ tsstypes.Voter = &VoterMock{}
 //
 // 	}
 type VoterMock struct {
-	// InitPollFunc mocks the InitPoll method.
-	InitPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, pollKey exported1.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
+	// GetDefaultVotingThresholdFunc mocks the GetDefaultVotingThreshold method.
+	GetDefaultVotingThresholdFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold
 
-	// TallyVoteFunc mocks the TallyVote method.
-	TallyVoteFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.AccAddress, pollKey exported1.PollKey, data codec.ProtoMarshaler) (votetypes.PollMetadata, error)
+	// GetPollFunc mocks the GetPoll method.
+	GetPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, pollKey exported1.PollKey) exported1.Poll
+
+	// NewPollFunc mocks the NewPoll method.
+	NewPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, metadataMoqParam exported1.PollMetadata) exported1.Poll
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// InitPoll holds details about calls to the InitPoll method.
-		InitPoll []struct {
+		// GetDefaultVotingThreshold holds details about calls to the GetDefaultVotingThreshold method.
+		GetDefaultVotingThreshold []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// PollKey is the pollKey argument value.
-			PollKey exported1.PollKey
-			// SnapshotCounter is the snapshotCounter argument value.
-			SnapshotCounter int64
-			// ExpireAt is the expireAt argument value.
-			ExpireAt int64
-			// Threshold is the threshold argument value.
-			Threshold []utils.Threshold
 		}
-		// TallyVote holds details about calls to the TallyVote method.
-		TallyVote []struct {
+		// GetPoll holds details about calls to the GetPoll method.
+		GetPoll []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Sender is the sender argument value.
-			Sender github_com_cosmos_cosmos_sdk_types.AccAddress
 			// PollKey is the pollKey argument value.
 			PollKey exported1.PollKey
-			// Data is the data argument value.
-			Data codec.ProtoMarshaler
+		}
+		// NewPoll holds details about calls to the NewPoll method.
+		NewPoll []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// MetadataMoqParam is the metadataMoqParam argument value.
+			MetadataMoqParam exported1.PollMetadata
 		}
 	}
-	lockInitPoll  sync.RWMutex
-	lockTallyVote sync.RWMutex
+	lockGetDefaultVotingThreshold sync.RWMutex
+	lockGetPoll                   sync.RWMutex
+	lockNewPoll                   sync.RWMutex
 }
 
-// InitPoll calls InitPollFunc.
-func (mock *VoterMock) InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollKey exported1.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error {
-	if mock.InitPollFunc == nil {
-		panic("VoterMock.InitPollFunc: method is nil but Voter.InitPoll was just called")
+// GetDefaultVotingThreshold calls GetDefaultVotingThresholdFunc.
+func (mock *VoterMock) GetDefaultVotingThreshold(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold {
+	if mock.GetDefaultVotingThresholdFunc == nil {
+		panic("VoterMock.GetDefaultVotingThresholdFunc: method is nil but Voter.GetDefaultVotingThreshold was just called")
 	}
 	callInfo := struct {
-		Ctx             github_com_cosmos_cosmos_sdk_types.Context
-		PollKey         exported1.PollKey
-		SnapshotCounter int64
-		ExpireAt        int64
-		Threshold       []utils.Threshold
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
 	}{
-		Ctx:             ctx,
-		PollKey:         pollKey,
-		SnapshotCounter: snapshotCounter,
-		ExpireAt:        expireAt,
-		Threshold:       threshold,
+		Ctx: ctx,
 	}
-	mock.lockInitPoll.Lock()
-	mock.calls.InitPoll = append(mock.calls.InitPoll, callInfo)
-	mock.lockInitPoll.Unlock()
-	return mock.InitPollFunc(ctx, pollKey, snapshotCounter, expireAt, threshold...)
+	mock.lockGetDefaultVotingThreshold.Lock()
+	mock.calls.GetDefaultVotingThreshold = append(mock.calls.GetDefaultVotingThreshold, callInfo)
+	mock.lockGetDefaultVotingThreshold.Unlock()
+	return mock.GetDefaultVotingThresholdFunc(ctx)
 }
 
-// InitPollCalls gets all the calls that were made to InitPoll.
+// GetDefaultVotingThresholdCalls gets all the calls that were made to GetDefaultVotingThreshold.
 // Check the length with:
-//     len(mockedVoter.InitPollCalls())
-func (mock *VoterMock) InitPollCalls() []struct {
-	Ctx             github_com_cosmos_cosmos_sdk_types.Context
-	PollKey         exported1.PollKey
-	SnapshotCounter int64
-	ExpireAt        int64
-	Threshold       []utils.Threshold
+//     len(mockedVoter.GetDefaultVotingThresholdCalls())
+func (mock *VoterMock) GetDefaultVotingThresholdCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
 	var calls []struct {
-		Ctx             github_com_cosmos_cosmos_sdk_types.Context
-		PollKey         exported1.PollKey
-		SnapshotCounter int64
-		ExpireAt        int64
-		Threshold       []utils.Threshold
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
 	}
-	mock.lockInitPoll.RLock()
-	calls = mock.calls.InitPoll
-	mock.lockInitPoll.RUnlock()
+	mock.lockGetDefaultVotingThreshold.RLock()
+	calls = mock.calls.GetDefaultVotingThreshold
+	mock.lockGetDefaultVotingThreshold.RUnlock()
 	return calls
 }
 
-// TallyVote calls TallyVoteFunc.
-func (mock *VoterMock) TallyVote(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.AccAddress, pollKey exported1.PollKey, data codec.ProtoMarshaler) (votetypes.PollMetadata, error) {
-	if mock.TallyVoteFunc == nil {
-		panic("VoterMock.TallyVoteFunc: method is nil but Voter.TallyVote was just called")
+// GetPoll calls GetPollFunc.
+func (mock *VoterMock) GetPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollKey exported1.PollKey) exported1.Poll {
+	if mock.GetPollFunc == nil {
+		panic("VoterMock.GetPollFunc: method is nil but Voter.GetPoll was just called")
 	}
 	callInfo := struct {
 		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Sender  github_com_cosmos_cosmos_sdk_types.AccAddress
 		PollKey exported1.PollKey
-		Data    codec.ProtoMarshaler
 	}{
 		Ctx:     ctx,
-		Sender:  sender,
 		PollKey: pollKey,
-		Data:    data,
 	}
-	mock.lockTallyVote.Lock()
-	mock.calls.TallyVote = append(mock.calls.TallyVote, callInfo)
-	mock.lockTallyVote.Unlock()
-	return mock.TallyVoteFunc(ctx, sender, pollKey, data)
+	mock.lockGetPoll.Lock()
+	mock.calls.GetPoll = append(mock.calls.GetPoll, callInfo)
+	mock.lockGetPoll.Unlock()
+	return mock.GetPollFunc(ctx, pollKey)
 }
 
-// TallyVoteCalls gets all the calls that were made to TallyVote.
+// GetPollCalls gets all the calls that were made to GetPoll.
 // Check the length with:
-//     len(mockedVoter.TallyVoteCalls())
-func (mock *VoterMock) TallyVoteCalls() []struct {
+//     len(mockedVoter.GetPollCalls())
+func (mock *VoterMock) GetPollCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
-	Sender  github_com_cosmos_cosmos_sdk_types.AccAddress
 	PollKey exported1.PollKey
-	Data    codec.ProtoMarshaler
 } {
 	var calls []struct {
 		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Sender  github_com_cosmos_cosmos_sdk_types.AccAddress
 		PollKey exported1.PollKey
-		Data    codec.ProtoMarshaler
 	}
-	mock.lockTallyVote.RLock()
-	calls = mock.calls.TallyVote
-	mock.lockTallyVote.RUnlock()
+	mock.lockGetPoll.RLock()
+	calls = mock.calls.GetPoll
+	mock.lockGetPoll.RUnlock()
+	return calls
+}
+
+// NewPoll calls NewPollFunc.
+func (mock *VoterMock) NewPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, metadataMoqParam exported1.PollMetadata) exported1.Poll {
+	if mock.NewPollFunc == nil {
+		panic("VoterMock.NewPollFunc: method is nil but Voter.NewPoll was just called")
+	}
+	callInfo := struct {
+		Ctx              github_com_cosmos_cosmos_sdk_types.Context
+		MetadataMoqParam exported1.PollMetadata
+	}{
+		Ctx:              ctx,
+		MetadataMoqParam: metadataMoqParam,
+	}
+	mock.lockNewPoll.Lock()
+	mock.calls.NewPoll = append(mock.calls.NewPoll, callInfo)
+	mock.lockNewPoll.Unlock()
+	return mock.NewPollFunc(ctx, metadataMoqParam)
+}
+
+// NewPollCalls gets all the calls that were made to NewPoll.
+// Check the length with:
+//     len(mockedVoter.NewPollCalls())
+func (mock *VoterMock) NewPollCalls() []struct {
+	Ctx              github_com_cosmos_cosmos_sdk_types.Context
+	MetadataMoqParam exported1.PollMetadata
+} {
+	var calls []struct {
+		Ctx              github_com_cosmos_cosmos_sdk_types.Context
+		MetadataMoqParam exported1.PollMetadata
+	}
+	mock.lockNewPoll.RLock()
+	calls = mock.calls.NewPoll
+	mock.lockNewPoll.RUnlock()
 	return calls
 }
 
@@ -1166,7 +1177,7 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			StartKeygenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, voter tsstypes.Voter, keyID string, snapshotMoqParam snapshot.Snapshot) error {
 // 				panic("mock out the StartKeygen method")
 // 			},
-// 			StartSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, voter interface{InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollKey exported1.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error}, keyID string, sigID string, msg []byte, s snapshot.Snapshot) error {
+// 			StartSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, voter interface{GetDefaultVotingThreshold(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold; NewPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, metadata exported1.PollMetadata) exported1.Poll}, keyID string, sigID string, msg []byte, s snapshot.Snapshot) error {
 // 				panic("mock out the StartSign method")
 // 			},
 // 		}
@@ -1265,7 +1276,8 @@ type TSSKeeperMock struct {
 
 	// StartSignFunc mocks the StartSign method.
 	StartSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, voter interface {
-		InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollKey exported1.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
+		GetDefaultVotingThreshold(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold
+		NewPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, metadata exported1.PollMetadata) exported1.Poll
 	}, keyID string, sigID string, msg []byte, s snapshot.Snapshot) error
 
 	// calls tracks calls to the methods.
@@ -1501,7 +1513,8 @@ type TSSKeeperMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Voter is the voter argument value.
 			Voter interface {
-				InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollKey exported1.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
+				GetDefaultVotingThreshold(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold
+				NewPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, metadata exported1.PollMetadata) exported1.Poll
 			}
 			// KeyID is the keyID argument value.
 			KeyID string
@@ -2606,7 +2619,8 @@ func (mock *TSSKeeperMock) StartKeygenCalls() []struct {
 
 // StartSign calls StartSignFunc.
 func (mock *TSSKeeperMock) StartSign(ctx github_com_cosmos_cosmos_sdk_types.Context, voter interface {
-	InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollKey exported1.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
+	GetDefaultVotingThreshold(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold
+	NewPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, metadata exported1.PollMetadata) exported1.Poll
 }, keyID string, sigID string, msg []byte, s snapshot.Snapshot) error {
 	if mock.StartSignFunc == nil {
 		panic("TSSKeeperMock.StartSignFunc: method is nil but TSSKeeper.StartSign was just called")
@@ -2614,7 +2628,8 @@ func (mock *TSSKeeperMock) StartSign(ctx github_com_cosmos_cosmos_sdk_types.Cont
 	callInfo := struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
 		Voter interface {
-			InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollKey exported1.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
+			GetDefaultVotingThreshold(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold
+			NewPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, metadata exported1.PollMetadata) exported1.Poll
 		}
 		KeyID string
 		SigID string
@@ -2640,7 +2655,8 @@ func (mock *TSSKeeperMock) StartSign(ctx github_com_cosmos_cosmos_sdk_types.Cont
 func (mock *TSSKeeperMock) StartSignCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	Voter interface {
-		InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollKey exported1.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
+		GetDefaultVotingThreshold(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold
+		NewPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, metadata exported1.PollMetadata) exported1.Poll
 	}
 	KeyID string
 	SigID string
@@ -2650,7 +2666,8 @@ func (mock *TSSKeeperMock) StartSignCalls() []struct {
 	var calls []struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
 		Voter interface {
-			InitPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollKey exported1.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
+			GetDefaultVotingThreshold(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold
+			NewPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, metadata exported1.PollMetadata) exported1.Poll
 		}
 		KeyID string
 		SigID string

@@ -20,7 +20,6 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
-	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 var _ types.MsgServiceServer = msgServer{}
@@ -134,19 +133,21 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
 	}
 
-	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
+	seqNo, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
 	if !ok {
-		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
+		return nil, fmt.Errorf("no snapshot seqNo for key ID %s registered", keyID)
 	}
 
-	poll := vote.NewPollKey(types.ModuleName, req.TxID.Hex()+"_"+req.Symbol)
+	pollKey := vote.NewPollKey(types.ModuleName, req.TxID.Hex()+"_"+req.Symbol)
 
 	period, ok := keeper.GetRevoteLockingPeriod(ctx)
 	if !ok {
 		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", req.Chain)
 	}
 
-	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+period); err != nil {
+	metadata := vote.NewPollMetaData(pollKey, seqNo, ctx.BlockHeight()+period, s.voter.GetDefaultVotingThreshold(ctx))
+	poll := s.voter.NewPoll(ctx, metadata)
+	if err := poll.Initialize(); err != nil {
 		return nil, err
 	}
 
@@ -154,7 +155,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		Symbol:       req.Symbol,
 		TokenAddress: types.Address(tokenAddr),
 	}
-	keeper.SetPendingTokenDeployment(ctx, poll, deploy)
+	keeper.SetPendingTokenDeployment(ctx, pollKey, deploy)
 
 	height, _ := keeper.GetRequiredConfirmationHeight(ctx)
 
@@ -170,7 +171,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),
 			sdk.NewAttribute(types.AttributeKeySymbol, req.Symbol),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
-			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&poll))),
+			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
 		),
 	)
 
@@ -187,13 +188,13 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 		return &types.ConfirmChainResponse{}, fmt.Errorf("'%s' has not been added yet", req.Name)
 	}
 
-	counter := s.snapshotter.GetLatestCounter(ctx)
-	if counter < 0 {
+	seqNo := s.snapshotter.GetLatestCounter(ctx)
+	if seqNo < 0 {
 		_, _, err := s.snapshotter.TakeSnapshot(ctx, 0, tss.WeightedByStake)
 		if err != nil {
 			return nil, fmt.Errorf("unable to take snapshot: %v", err)
 		}
-		counter = s.snapshotter.GetLatestCounter(ctx)
+		seqNo = s.snapshotter.GetLatestCounter(ctx)
 	}
 	keeper := s.ForChain(ctx, req.Name)
 
@@ -202,8 +203,10 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", req.Name)
 	}
 
-	poll := vote.NewPollKey(types.ModuleName, req.Name)
-	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+period); err != nil {
+	pollKey := vote.NewPollKey(types.ModuleName, req.Name)
+	metadata := vote.NewPollMetaData(pollKey, seqNo, ctx.BlockHeight()+period, s.voter.GetDefaultVotingThreshold(ctx))
+	poll := s.voter.NewPoll(ctx, metadata)
+	if err := poll.Initialize(); err != nil {
 		return nil, err
 	}
 
@@ -212,7 +215,7 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 			sdk.NewAttribute(types.AttributeKeyChain, req.Name),
-			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&poll))),
+			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
 		),
 	)
 
@@ -249,9 +252,9 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
 	}
 
-	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
+	seqNo, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
 	if !ok {
-		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
+		return nil, fmt.Errorf("no snapshot seqNo for key ID %s registered", keyID)
 	}
 
 	period, ok := keeper.GetRevoteLockingPeriod(ctx)
@@ -259,8 +262,10 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", req.Chain)
 	}
 
-	poll := vote.NewPollKey(types.ModuleName, req.TxID.Hex()+"_"+req.BurnerAddress.Hex())
-	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+period); err != nil {
+	pollKey := vote.NewPollKey(types.ModuleName, req.TxID.Hex()+"_"+req.BurnerAddress.Hex())
+	metadata := vote.NewPollMetaData(pollKey, seqNo, ctx.BlockHeight()+period, s.voter.GetDefaultVotingThreshold(ctx))
+	poll := s.voter.NewPoll(ctx, metadata)
+	if err := poll.Initialize(); err != nil {
 		return nil, err
 	}
 
@@ -270,7 +275,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		Symbol:        burnerInfo.Symbol,
 		BurnerAddress: req.BurnerAddress,
 	}
-	keeper.SetPendingDeposit(ctx, poll, &erc20Deposit)
+	keeper.SetPendingDeposit(ctx, pollKey, &erc20Deposit)
 
 	height, _ := keeper.GetRequiredConfirmationHeight(ctx)
 	ctx.EventManager().EmitEvent(
@@ -283,7 +288,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 			sdk.NewAttribute(types.AttributeKeyBurnAddress, req.BurnerAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
-			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&poll))),
+			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
 		),
 	)
 
@@ -320,9 +325,9 @@ func (s msgServer) ConfirmTransferOwnership(c context.Context, req *types.Confir
 		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
 	}
 
-	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, currentKeyID)
+	seqNo, ok := s.signer.GetSnapshotCounterForKeyID(ctx, currentKeyID)
 	if !ok {
-		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", currentKeyID)
+		return nil, fmt.Errorf("no snapshot seqNo for key ID %s registered", currentKeyID)
 	}
 
 	period, ok := keeper.GetRevoteLockingPeriod(ctx)
@@ -330,8 +335,10 @@ func (s msgServer) ConfirmTransferOwnership(c context.Context, req *types.Confir
 		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", req.Chain)
 	}
 
-	poll := vote.NewPollKey(types.ModuleName, req.TxID.Hex()+"_"+req.KeyID)
-	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+period); err != nil {
+	pollKey := vote.NewPollKey(types.ModuleName, req.TxID.Hex()+"_"+req.KeyID)
+	metadata := vote.NewPollMetaData(pollKey, seqNo, ctx.BlockHeight()+period, s.voter.GetDefaultVotingThreshold(ctx))
+	poll := s.voter.NewPoll(ctx, metadata)
+	if err := poll.Initialize(); err != nil {
 		return nil, err
 	}
 
@@ -339,7 +346,7 @@ func (s msgServer) ConfirmTransferOwnership(c context.Context, req *types.Confir
 		TxID:      req.TxID,
 		NextKeyID: pk.ID,
 	}
-	keeper.SetPendingTransferOwnership(ctx, poll, &transferOwnership)
+	keeper.SetPendingTransferOwnership(ctx, pollKey, &transferOwnership)
 
 	height, _ := keeper.GetRequiredConfirmationHeight(ctx)
 	ctx.EventManager().EmitEvent(
@@ -351,7 +358,7 @@ func (s msgServer) ConfirmTransferOwnership(c context.Context, req *types.Confir
 			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
 			sdk.NewAttribute(types.AttributeKeyAddress, crypto.PubkeyToAddress(pk.Value).Hex()),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
-			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&poll))),
+			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
 		),
 	)
 
@@ -370,21 +377,31 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 		return nil, fmt.Errorf("unknown chain %s", req.Name)
 	}
 
-	poll, err := s.voter.TallyVote(ctx, req.Sender, req.PollKey, &gogoprototypes.BoolValue{Value: req.Confirmed})
-	if err != nil {
+	voter := s.snapshotter.GetPrincipal(ctx, req.Sender)
+	if voter == nil {
+		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
+	}
+
+	poll := s.voter.GetPoll(ctx, req.PollKey)
+	if err := poll.Vote(voter, &gogoprototypes.BoolValue{Value: req.Confirmed}); err != nil {
 		return nil, err
 	}
 
-	if !poll.Is(voteTypes.Completed) {
+	if poll.Is(vote.Pending) {
 		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("not enough votes to confirm chain in %s yet", req.Name)}, nil
 	}
 
-	confirmed, ok := poll.GetResult().(*gogoprototypes.BoolValue)
-	if !ok {
-		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
+	if poll.Is(vote.Failed) {
+		s.DeletePendingChain(ctx, req.Name)
+		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("poll %s failed", poll.GetMetadata().Key)}, nil
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("EVM chain confirmation result is %s", poll.GetResult()))
+	confirmed, ok := poll.GetMetadata().GetResult().(*gogoprototypes.BoolValue)
+	if !ok {
+		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetMetadata().GetResult())
+	}
+
+	s.Logger(ctx).Info(fmt.Sprintf("EVM chain confirmation result is %s", poll.GetMetadata().GetResult()))
 	s.DeletePendingChain(ctx, req.Name)
 
 	// handle poll result
@@ -444,21 +461,31 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		// assert: the deposit is known and has not been confirmed before
 	}
 
-	poll, err := s.voter.TallyVote(ctx, req.Sender, req.PollKey, &gogoprototypes.BoolValue{Value: req.Confirmed})
-	if err != nil {
+	voter := s.snapshotter.GetPrincipal(ctx, req.Sender)
+	if voter == nil {
+		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
+	}
+
+	poll := s.voter.GetPoll(ctx, req.PollKey)
+	if err := poll.Vote(voter, &gogoprototypes.BoolValue{Value: req.Confirmed}); err != nil {
 		return nil, err
 	}
 
-	if !poll.Is(voteTypes.Completed) {
+	if poll.Is(vote.Pending) {
 		return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("not enough votes to confirm deposit in %s to %s yet", req.TxID, req.BurnAddress.Hex())}, nil
 	}
 
-	confirmed, ok := poll.GetResult().(*gogoprototypes.BoolValue)
-	if !ok {
-		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
+	if poll.Is(vote.Failed) {
+		keeper.DeletePendingDeposit(ctx, req.PollKey)
+		return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("poll %s failed", poll.GetMetadata().Key)}, nil
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("%s deposit confirmation result is %s", chain.Name, result))
+	confirmed, ok := poll.GetMetadata().GetResult().(*gogoprototypes.BoolValue)
+	if !ok {
+		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetMetadata().GetResult())
+	}
+
+	s.Logger(ctx).Info(fmt.Sprintf("%s deposit confirmation result is %s", chain.Name, poll.GetMetadata().GetResult()))
 	keeper.DeletePendingDeposit(ctx, req.PollKey)
 
 	// handle poll result
@@ -517,21 +544,31 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 		// assert: the token is known and has not been confirmed before
 	}
 
-	poll, err := s.voter.TallyVote(ctx, req.Sender, req.PollKey, &gogoprototypes.BoolValue{Value: req.Confirmed})
-	if err != nil {
+	voter := s.snapshotter.GetPrincipal(ctx, req.Sender)
+	if voter == nil {
+		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
+	}
+
+	poll := s.voter.GetPoll(ctx, req.PollKey)
+	if err := poll.Vote(voter, &gogoprototypes.BoolValue{Value: req.Confirmed}); err != nil {
 		return nil, err
 	}
 
-	if !poll.Is(voteTypes.Completed) {
+	if poll.Is(vote.Pending) {
 		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("not enough votes to confirm token %s yet", req.Symbol)}, nil
 	}
 
-	confirmed, ok := poll.GetResult().(*gogoprototypes.BoolValue)
-	if !ok {
-		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
+	if poll.Is(vote.Failed) {
+		keeper.DeletePendingToken(ctx, req.PollKey)
+		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("poll %s failed", poll.GetMetadata().Key)}, nil
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("token deployment confirmation result is %s", poll.GetResult()))
+	confirmed, ok := poll.GetMetadata().GetResult().(*gogoprototypes.BoolValue)
+	if !ok {
+		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetMetadata().GetResult())
+	}
+
+	s.Logger(ctx).Info(fmt.Sprintf("token deployment confirmation result is %s", poll.GetMetadata().GetResult()))
 	keeper.DeletePendingToken(ctx, req.PollKey)
 
 	// handle poll result
@@ -587,21 +624,33 @@ func (s msgServer) VoteConfirmTransferOwnership(c context.Context, req *types.Vo
 		// assert: the transfer ownership is known and has not been confirmed before
 	}
 
-	poll, err := s.voter.TallyVote(ctx, req.Sender, req.PollKey, &gogoprototypes.BoolValue{Value: req.Confirmed})
-	if err != nil {
+	voter := s.snapshotter.GetPrincipal(ctx, req.Sender)
+	if voter == nil {
+		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
+	}
+
+	poll := s.voter.GetPoll(ctx, req.PollKey)
+	if err := poll.Vote(voter, &gogoprototypes.BoolValue{Value: req.Confirmed}); err != nil {
 		return nil, err
 	}
 
-	if !poll.Is(voteTypes.Completed) {
+	if poll.Is(vote.Pending) {
 		return &types.VoteConfirmTransferOwnershipResponse{Log: fmt.Sprintf("not enough votes to confirm transfer ownership in %s to %s yet", req.TxID, req.NewOwnerAddress.Hex())}, nil
 	}
 
-	confirmed, ok := poll.GetResult().(*gogoprototypes.BoolValue)
-	if !ok {
-		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
+	if poll.Is(vote.Failed) {
+		keeper.DeletePendingTransferOwnership(ctx, req.PollKey)
+		return &types.VoteConfirmTransferOwnershipResponse{Log: fmt.Sprintf("poll %s failed", poll.GetMetadata().Key)}, nil
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("%s transfer ownership confirmation result is %s", chain.Name, result))
+	confirmed, ok := poll.GetMetadata().GetResult().(*gogoprototypes.BoolValue)
+	if !ok {
+		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetMetadata().GetResult())
+	}
+
+	// TODO: handle rejected case
+
+	s.Logger(ctx).Info(fmt.Sprintf("%s transfer ownership confirmation result is %s", chain.Name, poll.GetMetadata().GetResult()))
 	keeper.ArchiveTransferOwnership(ctx, req.PollKey)
 
 	// handle poll result

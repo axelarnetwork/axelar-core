@@ -3,7 +3,6 @@ package types
 import (
 	"crypto/ecdsa"
 
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -15,7 +14,6 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
-	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 //go:generate moq -pkg mock -out ./mock/expected_keepers.go . TofndClient TofndKeyGenClient TofndSignClient Voter StakingKeeper TSSKeeper Snapshotter Nexus
@@ -40,13 +38,15 @@ type Nexus interface {
 
 // Voter provides voting functionality
 type Voter interface {
-	InitPoll(ctx sdk.Context, pollKey vote.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
-	TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollKey vote.PollKey, data codec.ProtoMarshaler) (votetypes.PollMetadata, error)
+	NewPoll(ctx sdk.Context, metadata vote.PollMetadata) vote.Poll
+	GetPoll(ctx sdk.Context, pollKey vote.PollKey) vote.Poll
+	GetDefaultVotingThreshold(ctx sdk.Context) utils.Threshold
 }
 
 // InitPoller is a minimal interface to start a poll
 type InitPoller = interface {
-	InitPoll(ctx sdk.Context, pollKey vote.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
+	NewPoll(ctx sdk.Context, metadata vote.PollMetadata) vote.Poll
+	GetDefaultVotingThreshold(ctx sdk.Context) utils.Threshold
 }
 
 // TofndClient wraps around TofndKeyGenClient and TofndSignClient

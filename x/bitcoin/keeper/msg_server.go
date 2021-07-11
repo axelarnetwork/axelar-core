@@ -19,7 +19,6 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
-	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 var _ types.MsgServiceServer = msgServer{}
@@ -102,7 +101,9 @@ func (s msgServer) ConfirmOutpoint(c context.Context, req *types.ConfirmOutpoint
 	}
 
 	pollKey := vote.NewPollKey(types.ModuleName, req.OutPointInfo.OutPoint)
-	if err := s.voter.InitPoll(ctx, pollKey, counter, ctx.BlockHeight()+s.BTCKeeper.GetRevoteLockingPeriod(ctx)); err != nil {
+	metadata := vote.NewPollMetaData(pollKey, counter, ctx.BlockHeight()+s.BTCKeeper.GetRevoteLockingPeriod(ctx), s.voter.GetDefaultVotingThreshold(ctx))
+	poll := s.voter.NewPoll(ctx, metadata)
+	if err := poll.Initialize(); err != nil {
 		return nil, err
 	}
 	s.SetPendingOutpointInfo(ctx, pollKey, req.OutPointInfo)
@@ -151,22 +152,32 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 		// assert: the outpoint is known and has not been confirmed before
 	}
 
-	poll, err := s.voter.TallyVote(ctx, req.Sender, req.PollKey, &gogoprototypes.BoolValue{Value: req.Confirmed})
-	if err != nil {
+	voter := s.snapshotter.GetPrincipal(ctx, req.Sender)
+	if voter == nil {
+		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
+	}
+
+	poll := s.voter.GetPoll(ctx, req.PollKey)
+	if err := poll.Vote(voter, &gogoprototypes.BoolValue{Value: req.Confirmed}); err != nil {
 		return nil, err
 	}
 
-	if !poll.Is(voteTypes.Completed) {
+	if poll.Is(vote.Pending) {
 		return &types.VoteConfirmOutpointResponse{Status: fmt.Sprintf("not enough votes to confirm outpoint %s yet", req.OutPoint)}, nil
 	}
 
-	confirmed, ok := poll.GetResult().(*gogoprototypes.BoolValue)
+	if poll.Is(vote.Failed) {
+		s.DeletePendingOutPointInfo(ctx, req.PollKey)
+		return &types.VoteConfirmOutpointResponse{Status: fmt.Sprintf("poll %s failed", poll.GetMetadata().Key)}, nil
+	}
+
+	confirmed, ok := poll.GetMetadata().GetResult().(*gogoprototypes.BoolValue)
 	if !ok {
-		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
+		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetMetadata().GetResult())
 	}
 
 	logger := ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
-	logger.Info(fmt.Sprintf("bitcoin outpoint confirmation result is %s", poll.GetResult()))
+	logger.Info(fmt.Sprintf("bitcoin outpoint confirmation result is %s", poll.GetMetadata().GetResult()))
 	s.DeletePendingOutPointInfo(ctx, req.PollKey)
 
 	// handle poll result

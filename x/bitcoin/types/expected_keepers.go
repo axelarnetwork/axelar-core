@@ -4,7 +4,6 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -13,7 +12,6 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
-	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 //go:generate moq -pkg mock -out ./mock/expected_keepers.go . Voter Signer Nexus Snapshotter BTCKeeper
@@ -58,20 +56,22 @@ type BTCKeeper interface {
 
 // Voter is the interface that provides voting functionality
 type Voter interface {
-	InitPoll(ctx sdk.Context, key vote.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
-	TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollKey vote.PollKey, data codec.ProtoMarshaler) (votetypes.PollMetadata, error)
+	NewPoll(ctx sdk.Context, metadata vote.PollMetadata) vote.Poll
+	GetPoll(ctx sdk.Context, pollKey vote.PollKey) vote.Poll
+	GetDefaultVotingThreshold(ctx sdk.Context) utils.Threshold
 }
 
 // InitPoller is a minimal interface to start a poll. This must be a type alias instead of a type definition,
 // because the concrete implementation of Signer (specifically StartSign) is defined in a different package using another (identical)
 // InitPoller interface. Go cannot match the types otherwise
 type InitPoller = interface {
-	InitPoll(ctx sdk.Context, pollKey vote.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
+	NewPoll(ctx sdk.Context, metadata vote.PollMetadata) vote.Poll
+	GetDefaultVotingThreshold(ctx sdk.Context) utils.Threshold
 }
 
 // Signer provides keygen and signing functionality
 type Signer interface {
-	StartSign(ctx sdk.Context, initPoll InitPoller, keyID string, sigID string, msg []byte, snapshot snapshot.Snapshot) error
+	StartSign(ctx sdk.Context, voter InitPoller, keyID string, sigID string, msg []byte, snapshot snapshot.Snapshot) error
 	GetSig(ctx sdk.Context, sigID string) (tss.Signature, bool)
 	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool)
 	GetCurrentKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)

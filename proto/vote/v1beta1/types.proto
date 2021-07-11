@@ -5,10 +5,7 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/vote/types";
 
 import "google/protobuf/any.proto";
 import "gogoproto/gogo.proto";
-import "vote/exported/v1beta1/types.proto";
 import "cosmos_proto/cosmos.proto";
-import "utils/v1beta1/threshold.proto";
-import "snapshot/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -22,28 +19,4 @@ message TalliedVote {
   repeated bytes voters = 2 [ (gogoproto.castrepeated) = "Voters" ];
   google.protobuf.Any data = 3 [ (cosmos_proto.accepts_interface) =
                                      "github.com/cosmos/codec/ProtoMarshaler" ];
-}
-
-// PollMetadata represents a poll with write-in voting, i.e. the result of the
-// vote can have any data type
-message PollMetadata {
-  vote.exported.v1beta1.PollKey key = 1 [ (gogoproto.nullable) = false ];
-  int64 snapshot_seq_no = 2;
-  int64 expires_at = 4;
-  google.protobuf.Any result = 5
-      [ (cosmos_proto.accepts_interface) =
-            "github.com/cosmos/codec/ProtoMarshaler" ];
-  utils.v1beta1.Threshold voting_threshold = 6 [ (gogoproto.nullable) = false ];
-  State state = 8;
-
-  enum State {
-    option (gogoproto.goproto_enum_prefix) = false;
-    option (gogoproto.goproto_enum_stringer) = true;
-
-    STATE_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "NonExistant" ];
-    STATE_PENDING = 1 [ (gogoproto.enumvalue_customname) = "Pending" ];
-    STATE_COMPLETED = 2 [ (gogoproto.enumvalue_customname) = "Completed" ];
-    STATE_FAILED = 3 [ (gogoproto.enumvalue_customname) = "Failed" ];
-    STATE_EXPIRED = 4 [ (gogoproto.enumvalue_customname) = "Expired" ];
-  }
 }

@@ -281,6 +281,6 @@ func (k Keeper) DeleteDustAmount(ctx sdk.Context, encodedAddress string) {
 	k.getStore(ctx).Delete(dustAmtPrefix.Append(utils.LowerCaseKey(encodedAddress)))
 }
 
-func (k Keeper) getStore(ctx sdk.Context) utils.NormalizedKVStore {
+func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
 	return utils.NewNormalizedStore(ctx.KVStore(k.storeKey), k.cdc)
 }
