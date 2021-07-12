@@ -124,9 +124,9 @@ func deleteLineBreakCmds(cmd *cobra.Command) {
 
 func setupMetrics() {
 	telemetry.New(telemetry.Config{
-		Enabled:                 true,
-		EnableHostname:          false,
-		ServiceName:             "axelar",
+		Enabled:        true,
+		EnableHostname: false,
+		ServiceName:    "axelar",
 		// 1<<62, https://play.golang.org/p/szrQPRHxE0O
 		// A hacky way to essentially prevent prometheus metrics from ever expiring
 		PrometheusRetentionTime: 4611686018427387904,

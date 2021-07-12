@@ -78,15 +78,21 @@ func GetValdCommand() *cobra.Command {
 				return fmt.Errorf("failed to unmarshal genesis state: %w", err)
 			}
 
-			cliCtx, err := sdkClient.GetClientTxContext(cmd)
+			node, err := cmd.Flags().GetString(flags.FlagNode)
 			if err != nil {
 				return err
 			}
 
+			cliCtx, err := sdkClient.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+			cliCtx.WithNodeURI(node)
+
 			// dynamically adjust gas limit by simulating the tx first
 			txf := tx.NewFactoryCLI(cliCtx, cmd.Flags()).WithSimulateAndExecute(true)
 
-			hub, err := newHub(logger)
+			hub, err := newHub(node, logger)
 			if err != nil {
 				return err
 			}
@@ -146,8 +152,8 @@ func setPersistentFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().String(flags.FlagChainID, app.Name, "The network chain ID")
 }
 
-func newHub(logger log.Logger) (*tmEvents.Hub, error) {
-	c, err := client.NewClient(client.DefaultAddress, client.DefaultWSEndpoint, logger)
+func newHub(node string, logger log.Logger) (*tmEvents.Hub, error) {
+	c, err := client.NewClient(node, client.DefaultWSEndpoint, logger)
 	if err != nil {
 		return nil, err
 	}
