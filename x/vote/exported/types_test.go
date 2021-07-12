@@ -20,6 +20,13 @@ func TestPollMetadata_Is(t *testing.T) {
 		poll.State = exported.PollState(state)
 
 		assert.True(t, poll.Is(exported.PollState(state)))
+
+		for _, otherState := range exported.PollState_value {
+			if otherState == state {
+				continue
+			}
+			assert.False(t, poll.Is(exported.PollState(otherState)), "poll: %s, other: %s", poll.State, exported.PollState(otherState))
+		}
 	}
 }
 

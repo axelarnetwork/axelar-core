@@ -52,6 +52,7 @@ func NewPollMetaData(key PollKey, snapshotSeqNo int64, expiresAt int64, threshol
 }
 
 func (m PollMetadata) Is(state PollState) bool {
+	// this special case check is needed, because 0 & x == 0 is true for any x
 	if state == NonExistent {
 		return m.State == NonExistent
 	}
