@@ -16,8 +16,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/rest"
 )
 
-// QueryHandlerGetSig returns a handler to query a signature by its sigID
-func QueryHandlerGetSig(cliCtx client.Context) http.HandlerFunc {
+// QueryHandlerSigStatus returns a handler to query a signature's vote status by its sigID
+func QueryHandlerSigStatus(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -25,8 +25,8 @@ func QueryHandlerGetSig(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		queryData := []byte(mux.Vars(r)[utils.PathVarSigID])
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryGetSig), queryData)
+		sigID := mux.Vars(r)[utils.PathVarSigID]
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QuerySigStatus, sigID), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -35,10 +35,37 @@ func QueryHandlerGetSig(cliCtx client.Context) http.HandlerFunc {
 		var sigResponse types.QuerySigResponse
 		err = sigResponse.Unmarshal(res)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "failed to get sig").Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "failed to get sig status").Error())
 			return
 		}
 
 		rest.PostProcessResponse(w, cliCtx, sigResponse)
+	}
+}
+
+// QueryHandlerKeyStatus returns a handler to query a key's vote status by its keyID
+func QueryHandlerKeyStatus(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		keyID := mux.Vars(r)[utils.PathVarKeyID]
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryKeyStatus, keyID), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		var keyResponse types.QueryKeyResponse
+		err = keyResponse.Unmarshal(res)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "failed to get key status").Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, keyResponse)
 	}
 }
