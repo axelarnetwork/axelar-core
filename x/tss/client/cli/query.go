@@ -14,7 +14,7 @@ import (
 
 // GetQueryCmd returns the cli query commands for this module
 func GetQueryCmd(queryRoute string) *cobra.Command {
-	evmQueryCmd := &cobra.Command{
+	tssQueryCmd := &cobra.Command{
 		Use:                        "tss",
 		Short:                      fmt.Sprintf("Querying commands for the %s module", types.ModuleName),
 		DisableFlagParsing:         true,
@@ -22,12 +22,12 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	evmQueryCmd.AddCommand(
+	tssQueryCmd.AddCommand(
 		GetCmdGetSig(queryRoute),
+		GetCmdGetKey(queryRoute),
 	)
 
-	return evmQueryCmd
-
+	return tssQueryCmd
 }
 
 // GetCmdGetSig returns the query for a signature by its sigID
@@ -42,7 +42,8 @@ func GetCmdGetSig(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryGetSig), []byte(args[0]))
+			sigID := args[0]
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QuerySigStatus, sigID), nil)
 			if err != nil {
 				return sdkerrors.Wrapf(err, "failed to get signature")
 			}
@@ -55,6 +56,38 @@ func GetCmdGetSig(queryRoute string) *cobra.Command {
 
 			hexSig := types.NewHexSignatureFromQuerySigResponse(&sigResponse)
 			return cliCtx.PrintObjectLegacy(hexSig)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdGetKey returns the query for a key by its keyID
+func GetCmdGetKey(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "key [key ID]",
+		Short: "Query a key by key ID",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			keyID := args[0]
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryKeyStatus, keyID), nil)
+			if err != nil {
+				return sdkerrors.Wrapf(err, "failed to get key")
+			}
+
+			var keyResponse types.QueryKeyResponse
+			err = keyResponse.Unmarshal(res)
+			if err != nil {
+				return sdkerrors.Wrapf(err, "failed to get key")
+			}
+
+			return cliCtx.PrintObjectLegacy(keyResponse)
 		},
 	}
 
