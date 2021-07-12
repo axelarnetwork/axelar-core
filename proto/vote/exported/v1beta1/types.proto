@@ -23,12 +23,12 @@ message PollKey {
 message PollMetadata {
   vote.exported.v1beta1.PollKey key = 1 [ (gogoproto.nullable) = false ];
   int64 snapshot_seq_no = 2;
-  int64 expires_at = 4;
-  google.protobuf.Any result = 5
+  int64 expires_at = 3;
+  google.protobuf.Any result = 4
       [ (cosmos_proto.accepts_interface) =
             "github.com/cosmos/codec/ProtoMarshaler" ];
-  utils.v1beta1.Threshold voting_threshold = 6 [ (gogoproto.nullable) = false ];
-  exported.v1beta1.PollState state = 7;
+  utils.v1beta1.Threshold voting_threshold = 5 [ (gogoproto.nullable) = false ];
+  exported.v1beta1.PollState state = 6;
 }
 
 enum PollState {
