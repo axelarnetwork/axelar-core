@@ -27,6 +27,7 @@ const (
 	QDepositAddress          = "depositAddr"
 	QMasterAddress           = "masterAddr"
 	QKeyConsolidationAddress = "keyConsolidationAddress"
+	QNextMasterKeyID         = "nextMasterKeyID"
 	QMinimumWithdrawAmount   = "minWithdrawAmount"
 	QTxState                 = "txState"
 	QConsolidationTx         = "getConsolidationTx"
@@ -46,6 +47,8 @@ func NewQuerier(rpc types.RPCClient, k types.BTCKeeper, s types.Signer, n types.
 			res, err = QueryMasterAddress(ctx, k, s)
 		case QKeyConsolidationAddress:
 			res, err = queryKeyConsolidationAddress(ctx, k, s, req.Data)
+		case QNextMasterKeyID:
+			res, err = queryNextMasterKeyID(ctx, s)
 		case QMinimumWithdrawAmount:
 			res = queryMinimumWithdrawAmount(ctx, k)
 		case QTxState:
@@ -137,6 +140,15 @@ func queryKeyConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.Si
 
 	addr := types.NewConsolidationAddress(key, k.GetNetwork(ctx))
 	return []byte(addr.Address), nil
+}
+
+func queryNextMasterKeyID(ctx sdk.Context, s types.Signer) ([]byte, error) {
+	next, nextAssigned := s.GetNextKey(ctx, exported.Bitcoin, tss.MasterKey)
+	if !nextAssigned {
+		return []byte{}, nil
+	}
+
+	return []byte(next.ID), nil
 }
 
 func queryMinimumWithdrawAmount(ctx sdk.Context, k types.BTCKeeper) []byte {

@@ -31,6 +31,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdConsolidationTx(queryRoute),
 		GetCmdPayForConsolidationTx(queryRoute),
 		GetCmdMasterAddress(queryRoute),
+		GetCmdNextMasterKeyID(queryRoute),
 		GetCmdMinimumWithdrawAmount(queryRoute),
 		GetCmdTxState(queryRoute),
 	)
@@ -99,6 +100,32 @@ func GetCmdMasterAddress(queryRoute string) *cobra.Command {
 	}
 	flags.AddQueryFlagsToCmd(cmd)
 	cmd.Flags().BoolVar(&IncludeKeyID, "include-key-id", false, "include the current master key ID in the output")
+	return cmd
+}
+
+// GetCmdNextMasterKeyID returns the the assigned master key ID
+func GetCmdNextMasterKeyID(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "nextMasterKeyID",
+		Short: "Returns the next assigned master key ID",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QNextMasterKeyID)
+
+			res, _, err := clientCtx.QueryWithData(path, nil)
+			if err != nil {
+				return sdkerrors.Wrap(err, types.ErrFNextMasterKey)
+			}
+
+			return clientCtx.PrintString(string(res))
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }
 
