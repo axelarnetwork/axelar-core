@@ -38,10 +38,16 @@ initGenesis() {
   fi
 }
 
-startValProc() {
-  sleep 10s
+startValdProc() {
+  DURATION=${SLEEP_TIME:+"1s"}
+  sleep $DURATION
   axelard vald-start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} \
-    --validator-addr "$(axelard keys show validator -a --bech val)" &
+    --validator-addr "$(axelard keys show validator -a --bech val)" \
+    --node "$VALIDATOR_HOST"
+}
+
+startNodeProc() {
+  axelard start
 }
 
 D_HOME_DIR="$HOME_DIR/.axelar"
@@ -69,8 +75,6 @@ if [ -n "$PEERS_FILE" ]; then
   addPeers "$PEERS"
 fi
 
-startValProc &
-
-axelard start &
+$@ &
 
 wait

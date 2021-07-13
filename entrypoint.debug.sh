@@ -46,15 +46,25 @@ cont(){
   fi
 }
 
-startValProc() {
-  sleep 10s
-
+startValdProc() {
+  DURATION=${SLEEP_TIME:+"1s"}
+  sleep $DURATION
+  
   if [ "$VALD_CONTINUE" != true ]; then
     unset VALD_CONTINUE
   fi
 
   dlv --listen=:2346 --headless=true ${VALD_CONTINUE:+--continue} --api-version=2 --accept-multiclient exec \
-    /usr/local/bin/axelard -- vald-start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} --validator-addr "$(axelard keys show validator -a --bech val)" &
+    /usr/local/bin/axelard -- vald-start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} --validator-addr "$(axelard keys show validator -a --bech val)" --node "$VALIDATOR_HOST" &
+}
+
+startNodeProc() {
+  if [ "$CORE_CONTINUE" != true ]; then
+    unset CORE_CONTINUE
+  fi
+
+  dlv --listen=:2345 --headless=true ${CORE_CONTINUE:+--continue} --api-version=2 --accept-multiclient exec \
+    /usr/local/bin/axelard -- start
 }
 
 D_HOME_DIR="$HOME_DIR/.axelar"
@@ -86,13 +96,6 @@ if [ "$REST_CONTINUE" != true ]; then
   unset REST_CONTINUE
 fi
 
-startValProc &
-
-if [ "$CORE_CONTINUE" != true ]; then
-    unset CORE_CONTINUE
-fi
-
-dlv --listen=:2345 --headless=true ${CORE_CONTINUE:+--continue} --api-version=2 --accept-multiclient exec \
-  /usr/local/bin/axelard -- start &
+$@ &
 
 wait
