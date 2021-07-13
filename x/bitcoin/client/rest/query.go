@@ -125,7 +125,7 @@ func QueryHandlerKeyConsolidationAddress(cliCtx client.Context) http.HandlerFunc
 	}
 }
 
-// QueryHandlerNextKeyID returns a query handler to get the next assigned master key ID
+// QueryHandlerNextMasterKeyID returns a query handler to get the next assigned master key ID
 func QueryHandlerNextMasterKeyID(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
