@@ -111,7 +111,7 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, k types.BTCKeeper, si
 			return nil
 		}
 
-		if err := signer.AssignNextKey(ctx, exported.Bitcoin, nextKey.Role, nextKey.ID); err != nil {
+		if err := signer.AssignNextKey(ctx, exported.Bitcoin, unsignedTx.NextKeyRole, unsignedTx.NextKeyID); err != nil {
 			k.Logger(ctx).Error(sdkerrors.Wrap(err, fmt.Sprintf("failed to assign the next %s key to %s", nextKey.Role.SimpleString(), nextKey.ID)).Error())
 			return nil
 		}

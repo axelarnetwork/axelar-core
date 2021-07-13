@@ -268,6 +268,7 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 		}
 
 		unsignedTx.AssignNextKey = true
+		unsignedTx.NextKeyRole = tss.SecondaryKey
 		unsignedTx.NextKeyID = consolidationKey.ID
 	}
 
