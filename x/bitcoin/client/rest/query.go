@@ -125,6 +125,25 @@ func QueryHandlerKeyConsolidationAddress(cliCtx client.Context) http.HandlerFunc
 	}
 }
 
+// QueryHandlerNextKeyID returns a query handler to get the next assigned master key ID
+func QueryHandlerNextMasterKeyID(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QNextMasterKeyID), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, string(res))
+	}
+}
+
 // GetConsolidationTxResult models the QueryRawTxResponse from keeper.GetConsolidationTx as a JSON response
 type GetConsolidationTxResult struct {
 	State types.SignState `json:"state"`

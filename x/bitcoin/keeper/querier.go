@@ -24,14 +24,15 @@ import (
 
 // Query paths
 const (
-	QueryDepositAddress          = "depositAddr"
-	QueryMasterAddress           = "masterAddr"
-	QueryKeyConsolidationAddress = "keyConsolidationAddress"
-	QueryMinimumWithdrawAmount   = "minWithdrawAmount"
-	QueryTxState                 = "txState"
-	GetConsolidationTx           = "getConsolidationTx"
-	GetConsolidationTxState      = "getConsolidationTxState"
-	GetPayForConsolidationTx     = "getPayForConsolidationTx"
+	QDepositAddress          = "depositAddr"
+	QMasterAddress           = "masterAddr"
+	QKeyConsolidationAddress = "keyConsolidationAddress"
+	QNextMasterKeyID         = "nextMasterKeyID"
+	QMinimumWithdrawAmount   = "minWithdrawAmount"
+	QTxState                 = "txState"
+	QConsolidationTx         = "getConsolidationTx"
+	QConsolidationTxState    = "QConsolidationTxState"
+	QPayForConsolidationTx   = "getPayForConsolidationTx"
 )
 
 // NewQuerier returns a new querier for the Bitcoin module
@@ -46,7 +47,9 @@ func NewQuerier(rpc types.RPCClient, k types.BTCKeeper, s types.Signer, n types.
 			res, err = queryMasterAddress(ctx, k, s)
 		case QueryKeyConsolidationAddress:
 			res, err = queryKeyConsolidationAddress(ctx, k, s, req.Data)
-		case QueryMinimumWithdrawAmount:
+		case QNextMasterKeyID:
+			res, err = queryNextMasterKeyID(ctx, s)
+		case QMinimumWithdrawAmount:
 			res = queryMinimumWithdrawAmount(ctx, k)
 		case QueryTxState:
 			res, err = queryTxState(ctx, k, req.Data)
@@ -135,6 +138,15 @@ func queryKeyConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.Si
 
 	addr := types.NewConsolidationAddress(key, k.GetNetwork(ctx))
 	return []byte(addr.Address), nil
+}
+
+func queryNextMasterKeyID(ctx sdk.Context, s types.Signer) ([]byte, error) {
+	next, nextAssigned := s.GetNextKey(ctx, exported.Bitcoin, tss.MasterKey)
+	if !nextAssigned {
+		return []byte{}, nil
+	}
+
+	return []byte(next.ID), nil
 }
 
 func queryMinimumWithdrawAmount(ctx sdk.Context, k types.BTCKeeper) []byte {
