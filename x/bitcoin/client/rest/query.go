@@ -39,7 +39,7 @@ func QueryHandlerDepositAddress(cliCtx client.Context) http.HandlerFunc {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 		}
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryDepositAddress), queryData)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QDepositAddress), queryData)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
 			return
@@ -63,7 +63,7 @@ func QueryHandlerMinimumWithdrawAmount(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryMinimumWithdrawAmount), nil)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QMinimumWithdrawAmount), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
 			return
@@ -83,7 +83,7 @@ func QueryHandlerMasterAddress(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryMasterAddress), nil)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QMasterAddress), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -110,7 +110,7 @@ func QueryHandlerKeyConsolidationAddress(cliCtx client.Context) http.HandlerFunc
 		}
 
 		keyID := mux.Vars(r)[utils.PathVarKeyID]
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryKeyConsolidationAddress), []byte(keyID))
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QKeyConsolidationAddress), []byte(keyID))
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -144,7 +144,7 @@ func QueryHandlerNextMasterKeyID(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// GetConsolidationTxResult models the QueryRawTxResponse from keeper.GetConsolidationTx as a JSON response
+// GetConsolidationTxResult models the QueryRawTxResponse from keeper.QConsolidationTx as a JSON response
 type GetConsolidationTxResult struct {
 	State types.SignState `json:"state"`
 	RawTx string          `json:"raw_tx"`
@@ -159,7 +159,7 @@ func QueryHandlerGetConsolidationTx(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.GetConsolidationTx), nil)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QConsolidationTx), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, types.ErrFGetRawTx)
 			return
@@ -205,7 +205,7 @@ func QueryHandlerGetPayForConsolidationTx(cliCtx client.Context) http.HandlerFun
 		bz := make([]byte, 8)
 		binary.LittleEndian.PutUint64(bz, uint64(feeRate))
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.GetPayForConsolidationTx), bz)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QPayForConsolidationTx), bz)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFGetPayForRawTx).Error())
 			return
