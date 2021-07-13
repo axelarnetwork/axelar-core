@@ -4,10 +4,17 @@
 
 ## Table of Contents
 
+- [tss/exported/v1beta1/types.proto](#tss/exported/v1beta1/types.proto)
+    - [KeyRequirement](#tss.exported.v1beta1.KeyRequirement)
+  
+    - [KeyRole](#tss.exported.v1beta1.KeyRole)
+    - [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy)
+  
 - [bitcoin/v1beta1/types.proto](#bitcoin/v1beta1/types.proto)
     - [AddressInfo](#bitcoin.v1beta1.AddressInfo)
     - [Network](#bitcoin.v1beta1.Network)
     - [OutPointInfo](#bitcoin.v1beta1.OutPointInfo)
+    - [Transaction](#bitcoin.v1beta1.Transaction)
   
     - [AddressRole](#bitcoin.v1beta1.AddressRole)
     - [SignState](#bitcoin.v1beta1.SignState)
@@ -55,12 +62,6 @@
 - [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
     - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
     - [QueryMasterAddressResponse](#evm.v1beta1.QueryMasterAddressResponse)
-  
-- [tss/exported/v1beta1/types.proto](#tss/exported/v1beta1/types.proto)
-    - [KeyRequirement](#tss.exported.v1beta1.KeyRequirement)
-  
-    - [KeyRole](#tss.exported.v1beta1.KeyRole)
-    - [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy)
   
 - [evm/v1beta1/tx.proto](#evm/v1beta1/tx.proto)
     - [AddChainRequest](#evm.v1beta1.AddChainRequest)
@@ -187,6 +188,67 @@
 
 
 
+<a name="tss/exported/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tss/exported/v1beta1/types.proto
+
+
+
+<a name="tss.exported.v1beta1.KeyRequirement"></a>
+
+### KeyRequirement
+KeyRequirement defines requirements for keys
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain_name` | [string](#string) |  |  |
+| `key_role` | [KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+| `min_validator_subset_size` | [int64](#int64) |  |  |
+| `key_share_distribution_policy` | [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
+| `needs_assignment` | [bool](#bool) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+
+<a name="tss.exported.v1beta1.KeyRole"></a>
+
+### KeyRole
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| KEY_ROLE_UNSPECIFIED | 0 |  |
+| KEY_ROLE_MASTER_KEY | 1 |  |
+| KEY_ROLE_SECONDARY_KEY | 2 |  |
+
+
+
+<a name="tss.exported.v1beta1.KeyShareDistributionPolicy"></a>
+
+### KeyShareDistributionPolicy
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| KEY_SHARE_DISTRIBUTION_POLICY_UNSPECIFIED | 0 |  |
+| KEY_SHARE_DISTRIBUTION_POLICY_WEIGHTED_BY_STAKE | 1 |  |
+| KEY_SHARE_DISTRIBUTION_POLICY_ONE_PER_VALIDATOR | 2 |  |
+
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="bitcoin/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -240,6 +302,24 @@ of a transaction
 | `out_point` | [string](#string) |  |  |
 | `amount` | [int64](#int64) |  |  |
 | `address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.Transaction"></a>
+
+### Transaction
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx` | [bytes](#bytes) |  |  |
+| `assign_next_key` | [bool](#bool) |  |  |
+| `next_key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+| `next_key_id` | [string](#string) |  |  |
 
 
 
@@ -821,67 +901,6 @@ deposit address
 
 
  <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="tss/exported/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## tss/exported/v1beta1/types.proto
-
-
-
-<a name="tss.exported.v1beta1.KeyRequirement"></a>
-
-### KeyRequirement
-KeyRequirement defines requirements for keys
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain_name` | [string](#string) |  |  |
-| `key_role` | [KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
-| `min_validator_subset_size` | [int64](#int64) |  |  |
-| `key_share_distribution_policy` | [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
-| `needs_assignment` | [bool](#bool) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
-
-<a name="tss.exported.v1beta1.KeyRole"></a>
-
-### KeyRole
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| KEY_ROLE_UNSPECIFIED | 0 |  |
-| KEY_ROLE_MASTER_KEY | 1 |  |
-| KEY_ROLE_SECONDARY_KEY | 2 |  |
-
-
-
-<a name="tss.exported.v1beta1.KeyShareDistributionPolicy"></a>
-
-### KeyShareDistributionPolicy
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| KEY_SHARE_DISTRIBUTION_POLICY_UNSPECIFIED | 0 |  |
-| KEY_SHARE_DISTRIBUTION_POLICY_WEIGHTED_BY_STAKE | 1 |  |
-| KEY_SHARE_DISTRIBUTION_POLICY_ONE_PER_VALIDATOR | 2 |  |
-
 
  <!-- end enums -->
 

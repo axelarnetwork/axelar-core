@@ -252,8 +252,8 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	// start new keygen
-	masterKeyID2 := randStrings.Next()
-	keygenResult := <-chain.Submit(types2.NewStartKeygenRequest(randomSender(), masterKeyID2, 0, tss.WeightedByStake))
+	secondaryKeyID2 := randStrings.Next()
+	keygenResult := <-chain.Submit(types2.NewStartKeygenRequest(randomSender(), secondaryKeyID2, 0, tss.OnePerValidator))
 	assert.NoError(t, keygenResult.Error)
 
 	// wait for voting to be done
@@ -262,7 +262,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	// sign the consolidation transaction
-	signResult := <-chain.Submit(btcTypes.NewSignPendingTransfersRequest(randomSender(), masterKeyID2))
+	signResult := <-chain.Submit(btcTypes.NewSignPendingTransfersRequest(randomSender(), secondaryKeyID2))
 	assert.NoError(t, signResult.Error)
 
 	// wait for voting to be done
@@ -295,17 +295,8 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	hash := signedTx.TxHash()
 	consolidationInfo.OutPoint = wire.NewOutPoint(&hash, 0).String()
 
-	// confirm master key transfer
-	confirmResult2 := <-chain.Submit(btcTypes.NewConfirmOutpointRequest(randomSender(), consolidationInfo))
-	assert.NoError(t, confirmResult2.Error)
-
-	// wait for voting to be done
-	if err := waitFor(listeners.btcDone, 1); err != nil {
-		assert.FailNow(t, "confirmation", err)
-	}
-
 	// rotate master key to new key
-	rotateResult := <-chain.Submit(types2.NewRotateKeyRequest(randomSender(), btc.Bitcoin.Name, tss.MasterKey, masterKeyID2))
+	rotateResult := <-chain.Submit(types2.NewRotateKeyRequest(randomSender(), btc.Bitcoin.Name, tss.SecondaryKey, secondaryKeyID2))
 	assert.NoError(t, rotateResult.Error)
 }
 

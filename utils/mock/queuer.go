@@ -25,6 +25,9 @@ var _ utils.KVQueue = &KVQueueMock{}
 // 			EnqueueFunc: func(key utils.Key, value codec.ProtoMarshaler)  {
 // 				panic("mock out the Enqueue method")
 // 			},
+// 			IsEmptyFunc: func() bool {
+// 				panic("mock out the IsEmpty method")
+// 			},
 // 		}
 //
 // 		// use mockedKVQueue in code that requires utils.KVQueue
@@ -37,6 +40,9 @@ type KVQueueMock struct {
 
 	// EnqueueFunc mocks the Enqueue method.
 	EnqueueFunc func(key utils.Key, value codec.ProtoMarshaler)
+
+	// IsEmptyFunc mocks the IsEmpty method.
+	IsEmptyFunc func() bool
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -52,9 +58,13 @@ type KVQueueMock struct {
 			// Value is the value argument value.
 			Value codec.ProtoMarshaler
 		}
+		// IsEmpty holds details about calls to the IsEmpty method.
+		IsEmpty []struct {
+		}
 	}
 	lockDequeue sync.RWMutex
 	lockEnqueue sync.RWMutex
+	lockIsEmpty sync.RWMutex
 }
 
 // Dequeue calls DequeueFunc.
@@ -120,5 +130,31 @@ func (mock *KVQueueMock) EnqueueCalls() []struct {
 	mock.lockEnqueue.RLock()
 	calls = mock.calls.Enqueue
 	mock.lockEnqueue.RUnlock()
+	return calls
+}
+
+// IsEmpty calls IsEmptyFunc.
+func (mock *KVQueueMock) IsEmpty() bool {
+	if mock.IsEmptyFunc == nil {
+		panic("KVQueueMock.IsEmptyFunc: method is nil but KVQueue.IsEmpty was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockIsEmpty.Lock()
+	mock.calls.IsEmpty = append(mock.calls.IsEmpty, callInfo)
+	mock.lockIsEmpty.Unlock()
+	return mock.IsEmptyFunc()
+}
+
+// IsEmptyCalls gets all the calls that were made to IsEmpty.
+// Check the length with:
+//     len(mockedKVQueue.IsEmptyCalls())
+func (mock *KVQueueMock) IsEmptyCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockIsEmpty.RLock()
+	calls = mock.calls.IsEmpty
+	mock.lockIsEmpty.RUnlock()
 	return calls
 }

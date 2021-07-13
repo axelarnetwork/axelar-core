@@ -289,12 +289,22 @@ func TestGetRawConsolidationTx(t *testing.T) {
 	var (
 		btcKeeper *mock.BTCKeeperMock
 		ctx       sdk.Context
+
+		latestSignedTxHash *chainhash.Hash
 	)
 
 	setup := func() {
+		latestSignedTxHash, _ = chainhash.NewHash(rand.Bytes(32))
+
 		btcKeeper = &mock.BTCKeeperMock{
-			GetUnsignedTxFunc: func(sdk.Context) (*wire.MsgTx, bool) { return nil, false },
-			GetSignedTxFunc:   func(sdk.Context) (*wire.MsgTx, bool) { return wire.NewMsgTx(wire.TxVersion), true },
+			GetLatestSignedTxHashFunc: func(sdk.Context) (*chainhash.Hash, bool) { return latestSignedTxHash, true },
+			GetSignedTxFunc: func(_ sdk.Context, txHash chainhash.Hash) (*wire.MsgTx, bool) {
+				if txHash.IsEqual(latestSignedTxHash) {
+					return wire.NewMsgTx(wire.TxVersion), true
+				}
+
+				return nil, false
+			},
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 	}
@@ -308,35 +318,20 @@ func TestGetRawConsolidationTx(t *testing.T) {
 
 		assert := assert.New(t)
 		assert.NoError(err)
-		assert.Len(btcKeeper.GetUnsignedTxCalls(), 1)
+		assert.Len(btcKeeper.GetLatestSignedTxHashCalls(), 1)
 		assert.Len(btcKeeper.GetSignedTxCalls(), 1)
-
-	}).Repeat(repeatCount))
-
-	t.Run("consolidation transaction unsigned", testutils.Func(func(t *testing.T) {
-		setup()
-
-		_, err := bitcoinKeeper.GetRawConsolidationTx(ctx, btcKeeper)
-		btcKeeper.GetUnsignedTxFunc = func(sdk.Context) (*wire.MsgTx, bool) { return wire.NewMsgTx(wire.TxVersion), true }
-		btcKeeper.GetSignedTxFunc = func(sdk.Context) (*wire.MsgTx, bool) { return nil, false }
-
-		assert := assert.New(t)
-		assert.NoError(err)
-		assert.Len(btcKeeper.GetUnsignedTxCalls(), 1)
 
 	}).Repeat(repeatCount))
 
 	t.Run("no consolidation transaction", testutils.Func(func(t *testing.T) {
 		setup()
+		btcKeeper.GetLatestSignedTxHashFunc = func(sdk.Context) (*chainhash.Hash, bool) { return nil, false }
 
 		_, err := bitcoinKeeper.GetRawConsolidationTx(ctx, btcKeeper)
-		btcKeeper.GetUnsignedTxFunc = func(sdk.Context) (*wire.MsgTx, bool) { return nil, false }
-		btcKeeper.GetSignedTxFunc = func(sdk.Context) (*wire.MsgTx, bool) { return nil, false }
 
 		assert := assert.New(t)
 		assert.NoError(err)
-		assert.Len(btcKeeper.GetUnsignedTxCalls(), 1)
-		assert.Len(btcKeeper.GetSignedTxCalls(), 1)
+		assert.Len(btcKeeper.GetSignedTxCalls(), 0)
 
 	}).Repeat(repeatCount))
 }
@@ -346,20 +341,17 @@ func TestGetConsolidationTxState(t *testing.T) {
 	var (
 		btcKeeper *mock.BTCKeeperMock
 		ctx       sdk.Context
+
+		latestSignedTxHash *chainhash.Hash
 	)
 
 	setup := func() {
+		latestSignedTxHash, _ = chainhash.NewHash(rand.Bytes(32))
+
 		btcKeeper = &mock.BTCKeeperMock{
-			GetSignedTxFunc: func(sdk.Context) (*wire.MsgTx, bool) { return wire.NewMsgTx(wire.TxVersion), true },
-			GetOutPointInfoFunc: func(ctx sdk.Context, outpoint wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
-				return randomOutpointInfo(), types.CONFIRMED, true
-			},
-			GetMasterKeyVoutFunc: func(sdk.Context) (uint32, bool) {
-				vout := mathRand.Uint32()
-				if vout == 0 {
-					vout++
-				}
-				return vout, true
+			GetLatestSignedTxHashFunc: func(sdk.Context) (*chainhash.Hash, bool) { return latestSignedTxHash, true },
+			GetOutPointInfoFunc: func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
+				return types.OutPointInfo{}, types.CONFIRMED, true
 			},
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
@@ -374,44 +366,20 @@ func TestGetConsolidationTxState(t *testing.T) {
 
 		assert := assert.New(t)
 		assert.NoError(err)
-		assert.Len(btcKeeper.GetSignedTxCalls(), 1)
 		assert.Len(btcKeeper.GetOutPointInfoCalls(), 1)
+		assert.Equal(btcKeeper.GetOutPointInfoCalls()[0].OutPoint.Hash, *latestSignedTxHash)
+		assert.Equal(btcKeeper.GetOutPointInfoCalls()[0].OutPoint.Index, uint32(0))
 		assert.Equal(string(res), "bitcoin transaction state is confirmed")
-
 	}).Repeat(repeatCount))
 
 	t.Run("no signed consolidation transaction", testutils.Func(func(t *testing.T) {
 		setup()
-		btcKeeper.GetSignedTxFunc = func(sdk.Context) (*wire.MsgTx, bool) { return nil, false }
+		btcKeeper.GetLatestSignedTxHashFunc = func(sdk.Context) (*chainhash.Hash, bool) { return nil, false }
 
 		_, err := bitcoinKeeper.GetConsolidationTxState(ctx, btcKeeper)
 
 		assert := assert.New(t)
 		assert.Error(err)
-
-	}).Repeat(repeatCount))
-
-	t.Run("master key vout not set", testutils.Func(func(t *testing.T) {
-		setup()
-		btcKeeper.GetMasterKeyVoutFunc = func(sdk.Context) (uint32, bool) { return 0, false }
-
-		_, err := bitcoinKeeper.GetConsolidationTxState(ctx, btcKeeper)
-
-		assert := assert.New(t)
-		assert.Error(err)
-
-	}).Repeat(repeatCount))
-
-	t.Run("consolidation transaction not tracked", testutils.Func(func(t *testing.T) {
-		setup()
-		btcKeeper.GetOutPointInfoFunc = func(ctx sdk.Context, outpoint wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
-			return types.OutPointInfo{}, 0, false
-		}
-
-		_, err := bitcoinKeeper.GetConsolidationTxState(ctx, btcKeeper)
-
-		assert := assert.New(t)
-		assert.Error(err)
-
+		assert.Len(btcKeeper.GetOutPointInfoCalls(), 0)
 	}).Repeat(repeatCount))
 }

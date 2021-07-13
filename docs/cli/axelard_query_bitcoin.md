@@ -30,6 +30,7 @@ axelard query bitcoin [flags]
 - [axelard query bitcoin deposit-address](axelard_query_bitcoin_deposit-address.md)	 - Returns a bitcoin deposit address for a recipient address on another blockchain
 - [axelard query bitcoin master-address](axelard_query_bitcoin_master-address.md)	 - Returns the bitcoin address of the current master key, and optionally the key's ID
 - [axelard query bitcoin minWithdraw](axelard_query_bitcoin_minWithdraw.md)	 - Returns the minimum withdraw amount in satoshi
+- [axelard query bitcoin nextMasterKeyID](axelard_query_bitcoin_nextMasterKeyID.md)	 - Returns the next assigned master key ID
 - [axelard query bitcoin rawPayForConsolidationTx](axelard_query_bitcoin_rawPayForConsolidationTx.md)	 - Returns the encoded hex string of a fully signed transaction that pays for the consolidation transaction
 - [axelard query bitcoin rawTx](axelard_query_bitcoin_rawTx.md)	 - Returns the encoded hex string of a fully signed transfer and consolidation transaction
 - [axelard query bitcoin txState](axelard_query_bitcoin_txState.md)	 - Returns the state of a bitcoin transaction as seen by Axelar network

@@ -4,8 +4,16 @@ package bitcoin.v1beta1;
 option go_package = "github.com/axelarnetwork/axelar-core/x/bitcoin/types";
 
 import "gogoproto/gogo.proto";
+import "tss/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
+
+message Transaction {
+  bytes tx = 1;
+  bool assign_next_key = 2;
+  tss.exported.v1beta1.KeyRole next_key_role = 3;
+  string next_key_id = 4 [ (gogoproto.customname) = "NextKeyID" ];
+}
 
 // OutPointInfo describes all the necessary information to confirm the outPoint
 // of a transaction

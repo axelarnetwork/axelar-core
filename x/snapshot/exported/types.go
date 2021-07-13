@@ -2,6 +2,7 @@ package exported
 
 import (
 	"bytes"
+
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -52,6 +53,13 @@ type Tss interface {
 	GetMinBondFractionPerShare(ctx sdk.Context) utils.Threshold
 	GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
 	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
+}
+
+// IsValidatorEligibleForNewKey returns true if given validator is eligible for handling a new key; otherwise, false
+func IsValidatorEligibleForNewKey(ctx sdk.Context, slasher Slasher, snapshotter Snapshotter, tss Tss, validator SDKValidator) bool {
+	return IsValidatorActive(ctx, slasher, validator) &&
+		HasProxyRegistered(ctx, snapshotter, validator) &&
+		!IsValidatorTssSuspended(ctx, tss, validator)
 }
 
 // IsValidatorActive returns true if the validator is active; otherwise, false

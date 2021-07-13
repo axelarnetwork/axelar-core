@@ -1,6 +1,7 @@
 package types
 
 import (
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -34,17 +35,18 @@ type BTCKeeper interface {
 	SetPendingOutpointInfo(ctx sdk.Context, poll vote.PollKey, info OutPointInfo)
 	GetPendingOutPointInfo(ctx sdk.Context, poll vote.PollKey) (OutPointInfo, bool)
 	DeletePendingOutPointInfo(ctx sdk.Context, poll vote.PollKey)
-	SetOutpointInfo(ctx sdk.Context, info OutPointInfo, state OutPointState)
 	GetOutPointInfo(ctx sdk.Context, outPoint wire.OutPoint) (OutPointInfo, OutPointState, bool)
 	DeleteOutpointInfo(ctx sdk.Context, outPoint wire.OutPoint)
-	GetConfirmedOutpointInfoQueue(ctx sdk.Context) utils.KVQueue
+	SetSpentOutpointInfo(ctx sdk.Context, info OutPointInfo)
+	SetConfirmedOutpointInfo(ctx sdk.Context, keyID string, info OutPointInfo)
+	GetConfirmedOutpointInfoQueueForKey(ctx sdk.Context, keyID string) utils.KVQueue
 
-	SetUnsignedTx(ctx sdk.Context, tx *wire.MsgTx)
-	GetUnsignedTx(ctx sdk.Context) (*wire.MsgTx, bool)
+	SetUnsignedTx(ctx sdk.Context, tx *Transaction)
+	GetUnsignedTx(ctx sdk.Context) (*Transaction, bool)
 	DeleteUnsignedTx(ctx sdk.Context)
 	SetSignedTx(ctx sdk.Context, tx *wire.MsgTx)
-	GetSignedTx(ctx sdk.Context) (*wire.MsgTx, bool)
-	DeleteSignedTx(ctx sdk.Context)
+	GetSignedTx(ctx sdk.Context, txHash chainhash.Hash) (*wire.MsgTx, bool)
+	GetLatestSignedTxHash(ctx sdk.Context) (*chainhash.Hash, bool)
 
 	SetAddress(ctx sdk.Context, address AddressInfo)
 	GetAddress(ctx sdk.Context, encodedAddress string) (AddressInfo, bool)
@@ -52,9 +54,6 @@ type BTCKeeper interface {
 	GetDustAmount(ctx sdk.Context, encodedAddress string) btcutil.Amount
 	SetDustAmount(ctx sdk.Context, encodedAddress string, amount btcutil.Amount)
 	DeleteDustAmount(ctx sdk.Context, encodedAddress string)
-
-	SetMasterKeyVout(ctx sdk.Context, vout uint32)
-	GetMasterKeyVout(ctx sdk.Context) (uint32, bool)
 }
 
 // Voter is the interface that provides voting functionality
@@ -81,7 +80,7 @@ type Signer interface {
 	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool)
 	GetKey(ctx sdk.Context, keyID string) (tss.Key, bool)
 	AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error
-	AssertMatchesRequirements(ctx sdk.Context, snapshot snapshot.Snapshot, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error
+	AssertMatchesRequirements(ctx sdk.Context, snapshotter Snapshotter, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error
 }
 
 // Nexus provides functionality to manage cross-chain transfers
@@ -96,6 +95,4 @@ type Nexus interface {
 }
 
 // Snapshotter provides snapshot functionality
-type Snapshotter interface {
-	GetSnapshot(ctx sdk.Context, counter int64) (snapshot.Snapshot, bool)
-}
+type Snapshotter = snapshot.Snapshotter
