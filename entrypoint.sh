@@ -39,11 +39,10 @@ initGenesis() {
 }
 
 startValdProc() {
-  DURATION=${SLEEP_TIME:+"1s"}
+  DURATION=${SLEEP_TIME:-"10s"}
   sleep $DURATION
-  axelard vald-start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} \
-    --validator-addr "$(axelard keys show validator -a --bech val)" \
-    --node "$VALIDATOR_HOST"
+  axelard vald-start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} ${VALIDATOR_HOST:+--node "$VALIDATOR_HOST"} \
+    --validator-addr "$(axelard keys show validator -a --bech val)"
 }
 
 startNodeProc() {
@@ -75,6 +74,18 @@ if [ -n "$PEERS_FILE" ]; then
   addPeers "$PEERS"
 fi
 
-$@ &
+if [ -z "$1" ]; then
 
-wait
+  startValdProc &
+
+  startNodeProc &
+
+  wait
+
+else
+
+  $@ &
+
+  wait
+
+fi
