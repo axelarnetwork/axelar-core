@@ -35,6 +35,8 @@ axelard query [flags]
 - [axelard query evidence](axelard_query_evidence.md)	 - Query for evidence by hash or for all (paginated) submitted evidence
 - [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module
 - [axelard query gov](axelard_query_gov.md)	 - Querying commands for the governance module
+- [axelard query ibc](axelard_query_ibc.md)	 - Querying commands for the IBC module
+- [axelard query ibc-transfer](axelard_query_ibc-transfer.md)	 - IBC fungible token transfer query subcommands
 - [axelard query mint](axelard_query_mint.md)	 - Querying commands for the minting module
 - [axelard query params](axelard_query_params.md)	 - Querying commands for the params module
 - [axelard query slashing](axelard_query_slashing.md)	 - Querying commands for the slashing module
