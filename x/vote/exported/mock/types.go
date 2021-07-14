@@ -20,14 +20,17 @@ var _ exported.Poll = &PollMock{}
 //
 // 		// make and configure a mocked exported.Poll
 // 		mockedPoll := &PollMock{
-// 			DeleteFunc: func()  {
+// 			DeleteFunc: func() error {
 // 				panic("mock out the Delete method")
 // 			},
-// 			GetMetadataFunc: func() exported.PollMetadata {
-// 				panic("mock out the GetMetadata method")
+// 			GetKeyFunc: func() exported.PollKey {
+// 				panic("mock out the GetKey method")
 // 			},
-// 			InitializeFunc: func() error {
-// 				panic("mock out the Initialize method")
+// 			GetResultFunc: func() codec.ProtoMarshaler {
+// 				panic("mock out the GetResult method")
+// 			},
+// 			GetSnapshotSeqNoFunc: func() int64 {
+// 				panic("mock out the GetSnapshotSeqNo method")
 // 			},
 // 			IsFunc: func(state exported.PollState) bool {
 // 				panic("mock out the Is method")
@@ -43,13 +46,16 @@ var _ exported.Poll = &PollMock{}
 // 	}
 type PollMock struct {
 	// DeleteFunc mocks the Delete method.
-	DeleteFunc func()
+	DeleteFunc func() error
 
-	// GetMetadataFunc mocks the GetMetadata method.
-	GetMetadataFunc func() exported.PollMetadata
+	// GetKeyFunc mocks the GetKey method.
+	GetKeyFunc func() exported.PollKey
 
-	// InitializeFunc mocks the Initialize method.
-	InitializeFunc func() error
+	// GetResultFunc mocks the GetResult method.
+	GetResultFunc func() codec.ProtoMarshaler
+
+	// GetSnapshotSeqNoFunc mocks the GetSnapshotSeqNo method.
+	GetSnapshotSeqNoFunc func() int64
 
 	// IsFunc mocks the Is method.
 	IsFunc func(state exported.PollState) bool
@@ -62,11 +68,14 @@ type PollMock struct {
 		// Delete holds details about calls to the Delete method.
 		Delete []struct {
 		}
-		// GetMetadata holds details about calls to the GetMetadata method.
-		GetMetadata []struct {
+		// GetKey holds details about calls to the GetKey method.
+		GetKey []struct {
 		}
-		// Initialize holds details about calls to the Initialize method.
-		Initialize []struct {
+		// GetResult holds details about calls to the GetResult method.
+		GetResult []struct {
+		}
+		// GetSnapshotSeqNo holds details about calls to the GetSnapshotSeqNo method.
+		GetSnapshotSeqNo []struct {
 		}
 		// Is holds details about calls to the Is method.
 		Is []struct {
@@ -81,15 +90,16 @@ type PollMock struct {
 			Data codec.ProtoMarshaler
 		}
 	}
-	lockDelete      sync.RWMutex
-	lockGetMetadata sync.RWMutex
-	lockInitialize  sync.RWMutex
-	lockIs          sync.RWMutex
-	lockVote        sync.RWMutex
+	lockDelete           sync.RWMutex
+	lockGetKey           sync.RWMutex
+	lockGetResult        sync.RWMutex
+	lockGetSnapshotSeqNo sync.RWMutex
+	lockIs               sync.RWMutex
+	lockVote             sync.RWMutex
 }
 
 // Delete calls DeleteFunc.
-func (mock *PollMock) Delete() {
+func (mock *PollMock) Delete() error {
 	if mock.DeleteFunc == nil {
 		panic("PollMock.DeleteFunc: method is nil but Poll.Delete was just called")
 	}
@@ -98,7 +108,7 @@ func (mock *PollMock) Delete() {
 	mock.lockDelete.Lock()
 	mock.calls.Delete = append(mock.calls.Delete, callInfo)
 	mock.lockDelete.Unlock()
-	mock.DeleteFunc()
+	return mock.DeleteFunc()
 }
 
 // DeleteCalls gets all the calls that were made to Delete.
@@ -114,55 +124,81 @@ func (mock *PollMock) DeleteCalls() []struct {
 	return calls
 }
 
-// GetMetadata calls GetMetadataFunc.
-func (mock *PollMock) GetMetadata() exported.PollMetadata {
-	if mock.GetMetadataFunc == nil {
-		panic("PollMock.GetMetadataFunc: method is nil but Poll.GetMetadata was just called")
+// GetKey calls GetKeyFunc.
+func (mock *PollMock) GetKey() exported.PollKey {
+	if mock.GetKeyFunc == nil {
+		panic("PollMock.GetKeyFunc: method is nil but Poll.GetKey was just called")
 	}
 	callInfo := struct {
 	}{}
-	mock.lockGetMetadata.Lock()
-	mock.calls.GetMetadata = append(mock.calls.GetMetadata, callInfo)
-	mock.lockGetMetadata.Unlock()
-	return mock.GetMetadataFunc()
+	mock.lockGetKey.Lock()
+	mock.calls.GetKey = append(mock.calls.GetKey, callInfo)
+	mock.lockGetKey.Unlock()
+	return mock.GetKeyFunc()
 }
 
-// GetMetadataCalls gets all the calls that were made to GetMetadata.
+// GetKeyCalls gets all the calls that were made to GetKey.
 // Check the length with:
-//     len(mockedPoll.GetMetadataCalls())
-func (mock *PollMock) GetMetadataCalls() []struct {
+//     len(mockedPoll.GetKeyCalls())
+func (mock *PollMock) GetKeyCalls() []struct {
 } {
 	var calls []struct {
 	}
-	mock.lockGetMetadata.RLock()
-	calls = mock.calls.GetMetadata
-	mock.lockGetMetadata.RUnlock()
+	mock.lockGetKey.RLock()
+	calls = mock.calls.GetKey
+	mock.lockGetKey.RUnlock()
 	return calls
 }
 
-// Initialize calls InitializeFunc.
-func (mock *PollMock) Initialize() error {
-	if mock.InitializeFunc == nil {
-		panic("PollMock.InitializeFunc: method is nil but Poll.Initialize was just called")
+// GetResult calls GetResultFunc.
+func (mock *PollMock) GetResult() codec.ProtoMarshaler {
+	if mock.GetResultFunc == nil {
+		panic("PollMock.GetResultFunc: method is nil but Poll.GetResult was just called")
 	}
 	callInfo := struct {
 	}{}
-	mock.lockInitialize.Lock()
-	mock.calls.Initialize = append(mock.calls.Initialize, callInfo)
-	mock.lockInitialize.Unlock()
-	return mock.InitializeFunc()
+	mock.lockGetResult.Lock()
+	mock.calls.GetResult = append(mock.calls.GetResult, callInfo)
+	mock.lockGetResult.Unlock()
+	return mock.GetResultFunc()
 }
 
-// InitializeCalls gets all the calls that were made to Initialize.
+// GetResultCalls gets all the calls that were made to GetResult.
 // Check the length with:
-//     len(mockedPoll.InitializeCalls())
-func (mock *PollMock) InitializeCalls() []struct {
+//     len(mockedPoll.GetResultCalls())
+func (mock *PollMock) GetResultCalls() []struct {
 } {
 	var calls []struct {
 	}
-	mock.lockInitialize.RLock()
-	calls = mock.calls.Initialize
-	mock.lockInitialize.RUnlock()
+	mock.lockGetResult.RLock()
+	calls = mock.calls.GetResult
+	mock.lockGetResult.RUnlock()
+	return calls
+}
+
+// GetSnapshotSeqNo calls GetSnapshotSeqNoFunc.
+func (mock *PollMock) GetSnapshotSeqNo() int64 {
+	if mock.GetSnapshotSeqNoFunc == nil {
+		panic("PollMock.GetSnapshotSeqNoFunc: method is nil but Poll.GetSnapshotSeqNo was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetSnapshotSeqNo.Lock()
+	mock.calls.GetSnapshotSeqNo = append(mock.calls.GetSnapshotSeqNo, callInfo)
+	mock.lockGetSnapshotSeqNo.Unlock()
+	return mock.GetSnapshotSeqNoFunc()
+}
+
+// GetSnapshotSeqNoCalls gets all the calls that were made to GetSnapshotSeqNo.
+// Check the length with:
+//     len(mockedPoll.GetSnapshotSeqNoCalls())
+func (mock *PollMock) GetSnapshotSeqNoCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetSnapshotSeqNo.RLock()
+	calls = mock.calls.GetSnapshotSeqNo
+	mock.lockGetSnapshotSeqNo.RUnlock()
 	return calls
 }
 

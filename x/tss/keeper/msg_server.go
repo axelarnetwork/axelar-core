@@ -207,7 +207,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		return &types.VotePubKeyResponse{}, nil
 	}
 
-	result := poll.GetMetadata().GetResult()
+	result := poll.GetResult()
 	switch keygenResult := result.(type) {
 	case *tofnd.MessageOut_KeygenResult:
 
@@ -241,9 +241,9 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
 		)
 
-		snapshot, found := s.snapshotter.GetSnapshot(ctx, poll.GetMetadata().SnapshotSeqNo)
+		snapshot, found := s.snapshotter.GetSnapshot(ctx, poll.GetSnapshotSeqNo())
 		if !found {
-			return nil, fmt.Errorf("no snapshot found for counter %d", poll.GetMetadata().SnapshotSeqNo)
+			return nil, fmt.Errorf("no snapshot found for counter %d", poll.GetSnapshotSeqNo())
 		}
 
 		for _, criminal := range keygenResult.GetCriminals().Criminals {
@@ -328,7 +328,7 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		return &types.VoteSigResponse{}, nil
 	}
 
-	result := poll.GetMetadata().GetResult()
+	result := poll.GetResult()
 	switch signResult := result.(type) {
 	case *tofnd.MessageOut_SignResult:
 
@@ -352,9 +352,9 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
 		)
 
-		snapshot, found := s.snapshotter.GetSnapshot(ctx, poll.GetMetadata().SnapshotSeqNo)
+		snapshot, found := s.snapshotter.GetSnapshot(ctx, poll.GetSnapshotSeqNo())
 		if !found {
-			return nil, fmt.Errorf("no snapshot found for counter %d", poll.GetMetadata().SnapshotSeqNo)
+			return nil, fmt.Errorf("no snapshot found for counter %d", poll.GetSnapshotSeqNo())
 		}
 		for _, criminal := range signResult.GetCriminals().Criminals {
 			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())

@@ -145,9 +145,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", req.Chain)
 	}
 
-	metadata := vote.NewPollMetaData(pollKey, seqNo, ctx.BlockHeight()+period, s.voter.GetDefaultVotingThreshold(ctx))
-	poll := s.voter.NewPoll(ctx, metadata)
-	if err := poll.Initialize(); err != nil {
+	if err := s.voter.InitializePoll(ctx, pollKey, seqNo, vote.ExpiryAt(ctx.BlockHeight()+period)); err != nil {
 		return nil, err
 	}
 
@@ -204,9 +202,7 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 	}
 
 	pollKey := vote.NewPollKey(types.ModuleName, req.Name)
-	metadata := vote.NewPollMetaData(pollKey, seqNo, ctx.BlockHeight()+period, s.voter.GetDefaultVotingThreshold(ctx))
-	poll := s.voter.NewPoll(ctx, metadata)
-	if err := poll.Initialize(); err != nil {
+	if err := s.voter.InitializePoll(ctx, pollKey, seqNo, vote.ExpiryAt(ctx.BlockHeight()+period)); err != nil {
 		return nil, err
 	}
 
@@ -263,9 +259,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	}
 
 	pollKey := vote.NewPollKey(types.ModuleName, req.TxID.Hex()+"_"+req.BurnerAddress.Hex())
-	metadata := vote.NewPollMetaData(pollKey, seqNo, ctx.BlockHeight()+period, s.voter.GetDefaultVotingThreshold(ctx))
-	poll := s.voter.NewPoll(ctx, metadata)
-	if err := poll.Initialize(); err != nil {
+	if err := s.voter.InitializePoll(ctx, pollKey, seqNo, vote.ExpiryAt(ctx.BlockHeight()+period)); err != nil {
 		return nil, err
 	}
 
@@ -336,9 +330,7 @@ func (s msgServer) ConfirmTransferOwnership(c context.Context, req *types.Confir
 	}
 
 	pollKey := vote.NewPollKey(types.ModuleName, req.TxID.Hex()+"_"+req.KeyID)
-	metadata := vote.NewPollMetaData(pollKey, seqNo, ctx.BlockHeight()+period, s.voter.GetDefaultVotingThreshold(ctx))
-	poll := s.voter.NewPoll(ctx, metadata)
-	if err := poll.Initialize(); err != nil {
+	if err := s.voter.InitializePoll(ctx, pollKey, seqNo, vote.ExpiryAt(ctx.BlockHeight()+period)); err != nil {
 		return nil, err
 	}
 
@@ -393,15 +385,15 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 
 	if poll.Is(vote.Failed) {
 		s.DeletePendingChain(ctx, req.Name)
-		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("poll %s failed", poll.GetMetadata().Key)}, nil
+		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("poll %s failed", poll.GetKey())}, nil
 	}
 
-	confirmed, ok := poll.GetMetadata().GetResult().(*gogoprototypes.BoolValue)
+	confirmed, ok := poll.GetResult().(*gogoprototypes.BoolValue)
 	if !ok {
-		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetMetadata().GetResult())
+		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("EVM chain confirmation result is %s", poll.GetMetadata().GetResult()))
+	s.Logger(ctx).Info(fmt.Sprintf("EVM chain confirmation result is %s", poll.GetResult()))
 	s.DeletePendingChain(ctx, req.Name)
 
 	// handle poll result
@@ -477,15 +469,15 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 
 	if poll.Is(vote.Failed) {
 		keeper.DeletePendingDeposit(ctx, req.PollKey)
-		return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("poll %s failed", poll.GetMetadata().Key)}, nil
+		return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("poll %s failed", poll.GetKey())}, nil
 	}
 
-	confirmed, ok := poll.GetMetadata().GetResult().(*gogoprototypes.BoolValue)
+	confirmed, ok := poll.GetResult().(*gogoprototypes.BoolValue)
 	if !ok {
-		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetMetadata().GetResult())
+		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("%s deposit confirmation result is %s", chain.Name, poll.GetMetadata().GetResult()))
+	s.Logger(ctx).Info(fmt.Sprintf("%s deposit confirmation result is %s", chain.Name, poll.GetResult()))
 	keeper.DeletePendingDeposit(ctx, req.PollKey)
 
 	// handle poll result
@@ -560,15 +552,15 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 
 	if poll.Is(vote.Failed) {
 		keeper.DeletePendingToken(ctx, req.PollKey)
-		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("poll %s failed", poll.GetMetadata().Key)}, nil
+		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("poll %s failed", poll.GetKey())}, nil
 	}
 
-	confirmed, ok := poll.GetMetadata().GetResult().(*gogoprototypes.BoolValue)
+	confirmed, ok := poll.GetResult().(*gogoprototypes.BoolValue)
 	if !ok {
-		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetMetadata().GetResult())
+		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("token deployment confirmation result is %s", poll.GetMetadata().GetResult()))
+	s.Logger(ctx).Info(fmt.Sprintf("token deployment confirmation result is %s", poll.GetResult()))
 	keeper.DeletePendingToken(ctx, req.PollKey)
 
 	// handle poll result
@@ -640,17 +632,17 @@ func (s msgServer) VoteConfirmTransferOwnership(c context.Context, req *types.Vo
 
 	if poll.Is(vote.Failed) {
 		keeper.DeletePendingTransferOwnership(ctx, req.PollKey)
-		return &types.VoteConfirmTransferOwnershipResponse{Log: fmt.Sprintf("poll %s failed", poll.GetMetadata().Key)}, nil
+		return &types.VoteConfirmTransferOwnershipResponse{Log: fmt.Sprintf("poll %s failed", poll.GetKey())}, nil
 	}
 
-	confirmed, ok := poll.GetMetadata().GetResult().(*gogoprototypes.BoolValue)
+	confirmed, ok := poll.GetResult().(*gogoprototypes.BoolValue)
 	if !ok {
-		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetMetadata().GetResult())
+		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
 	}
 
 	// TODO: handle rejected case
 
-	s.Logger(ctx).Info(fmt.Sprintf("%s transfer ownership confirmation result is %s", chain.Name, poll.GetMetadata().GetResult()))
+	s.Logger(ctx).Info(fmt.Sprintf("%s transfer ownership confirmation result is %s", chain.Name, poll.GetResult()))
 	keeper.ArchiveTransferOwnership(ctx, req.PollKey)
 
 	// handle poll result

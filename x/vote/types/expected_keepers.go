@@ -9,5 +9,4 @@ import (
 // Snapshotter provides snapshot functionality
 type Snapshotter interface {
 	GetSnapshot(ctx sdk.Context, counter int64) (snapshot.Snapshot, bool)
-	GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
 }

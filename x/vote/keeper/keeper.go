@@ -58,66 +58,102 @@ func (k Keeper) GetDefaultVotingThreshold(ctx sdk.Context) utils.Threshold {
 	return threshold
 }
 
-func (k Keeper) NewPoll(ctx sdk.Context, metadata exported.PollMetadata) exported.Poll {
-	return types.NewPollWithLogging(metadata.UpdateBlockHeight(ctx.BlockHeight()), k.newPollStore(ctx), k.Logger(ctx))
+// InitializePoll initializes a new poll
+func (k Keeper) InitializePoll(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error {
+	metadata := types.NewPollMetaData(key, k.GetDefaultVotingThreshold(ctx), snapshotSeqNo).With(pollProperties...)
+
+	snap, ok := k.snapshotter.GetSnapshot(ctx, metadata.SnapshotSeqNo)
+	if !ok {
+		return fmt.Errorf("snapshot %d for poll %s must exist", metadata.SnapshotSeqNo, metadata.Key)
+	}
+
+	poll := types.NewPoll(metadata, k.newPollStore(ctx, metadata.Key, snap))
+
+	return poll.WithLogging(k.Logger(ctx)).Initialize()
 }
 
 // GetPoll returns an existing poll to record votes
 func (k Keeper) GetPoll(ctx sdk.Context, pollKey exported.PollKey) exported.Poll {
-	return types.NewPollWithLogging(k.getPollMetadata(ctx, pollKey), k.newPollStore(ctx), k.Logger(ctx))
-}
-
-func (k Keeper) getPollMetadata(ctx sdk.Context, pollKey exported.PollKey) exported.PollMetadata {
-	var poll exported.PollMetadata
-	if ok := k.getKVStore(ctx).Get(pollPrefix.AppendStr(pollKey.String()), &poll); !ok {
-		return exported.PollMetadata{State: exported.NonExistent}
+	metadata, ok := k.getPollMetadata(ctx, pollKey)
+	if !ok {
+		return &types.Poll{PollMetadata: exported.PollMetadata{State: exported.NonExistent}}
 	}
 
-	return poll.UpdateBlockHeight(ctx.BlockHeight())
+	snap, ok := k.snapshotter.GetSnapshot(ctx, metadata.SnapshotSeqNo)
+	if !ok {
+		// if the poll already exists the snapshot MUST be there
+		panic(fmt.Errorf("could not find snapshot %d for poll %s", metadata.SnapshotSeqNo, pollKey))
+	}
+	poll := types.NewPoll(metadata, k.newPollStore(ctx, metadata.Key, snap))
+	poll.CheckExpiry(ctx.BlockHeight())
+
+	return poll.WithLogging(k.Logger(ctx))
+}
+
+func (k Keeper) getPollMetadata(ctx sdk.Context, pollKey exported.PollKey) (exported.PollMetadata, bool) {
+	var poll exported.PollMetadata
+	if ok := k.getKVStore(ctx).Get(pollPrefix.AppendStr(pollKey.String()), &poll); !ok {
+		return exported.PollMetadata{}, false
+	}
+
+	return poll, true
 }
 
 func (k Keeper) getKVStore(ctx sdk.Context) utils.KVStore {
 	return utils.NewNormalizedStore(ctx.KVStore(k.storeKey), k.cdc)
 }
 
-func (k Keeper) newPollStore(ctx sdk.Context) *pollStore {
+func (k Keeper) newPollStore(ctx sdk.Context, key exported.PollKey, snap snapshot.Snapshot) *pollStore {
 	return &pollStore{
-		KVStore:     k.getKVStore(ctx),
-		logger:      k.Logger(ctx),
-		getSnapshot: func(seqNo int64) (snapshot.Snapshot, bool) { return k.snapshotter.GetSnapshot(ctx, seqNo) },
-		getPoll:     func(key exported.PollKey) exported.Poll { return k.GetPoll(ctx, key) },
+		key:      key,
+		snapshot: snap,
+		KVStore:  k.getKVStore(ctx),
+		getPoll:  func(key exported.PollKey) exported.Poll { return k.GetPoll(ctx, key) },
+		logger:   k.Logger(ctx),
 	}
 }
 
 var _ types.Store = &pollStore{}
 
 type pollStore struct {
-	votesCached    bool
-	snapshotCached bool
+	votesCached bool
 	utils.KVStore
-	logger      log.Logger
-	votes       []types.TalliedVote
-	snapshot    snapshot.Snapshot
-	getSnapshot func(seqNo int64) (snapshot.Snapshot, bool)
-	getPoll     func(key exported.PollKey) exported.Poll
+	logger   log.Logger
+	votes    []types.TalliedVote
+	getPoll  func(key exported.PollKey) exported.Poll
+	snapshot snapshot.Snapshot
+	key      exported.PollKey
 }
 
-func (p *pollStore) SetVote(key exported.PollKey, vote types.TalliedVote) {
+func (p *pollStore) GetTotalShareCount() sdk.Int {
+	return p.snapshot.TotalShareCount
+}
+
+func (p *pollStore) GetShareCount(voter sdk.ValAddress) (int64, bool) {
+	val, ok := p.snapshot.GetValidator(voter)
+	if !ok {
+		return 0, false
+	}
+	return val.ShareCount, true
+}
+
+func (p *pollStore) SetVote(voter sdk.ValAddress, vote types.TalliedVote) {
 	// to keep it simple a single write invalidates the cache
 	p.votesCached = false
 
-	p.Set(votesPrefix.AppendStr(key.String()).AppendStr(vote.Hash()), &vote)
+	p.SetRaw(voterPrefix.AppendStr(p.key.String()).AppendStr(voter.String()), []byte{})
+	p.Set(votesPrefix.AppendStr(p.key.String()).AppendStr(vote.Hash()), &vote)
 }
 
-func (p pollStore) GetVote(key exported.PollKey, hash string) (types.TalliedVote, bool) {
+func (p pollStore) GetVote(hash string) (types.TalliedVote, bool) {
 	var vote types.TalliedVote
-	ok := p.Get(votesPrefix.AppendStr(key.String()).AppendStr(hash), &vote)
+	ok := p.Get(votesPrefix.AppendStr(p.key.String()).AppendStr(hash), &vote)
 	return vote, ok
 }
 
-func (p *pollStore) GetVotes(key exported.PollKey) []types.TalliedVote {
+func (p *pollStore) GetVotes() []types.TalliedVote {
 	if !p.votesCached {
-		iter := p.Iterator(votesPrefix.AppendStr(key.String()))
+		iter := p.Iterator(votesPrefix.AppendStr(p.key.String()))
 		defer utils.CloseLogError(iter, p.logger)
 
 		for ; iter.Valid(); iter.Next() {
@@ -132,40 +168,8 @@ func (p *pollStore) GetVotes(key exported.PollKey) []types.TalliedVote {
 	return p.votes
 }
 
-func (p pollStore) SetVoted(key exported.PollKey, voter sdk.ValAddress) {
-	p.SetRaw(voterPrefix.AppendStr(key.String()).AppendStr(voter.String()), []byte{})
-}
-
-func (p pollStore) HasVoted(key exported.PollKey, voter sdk.ValAddress) bool {
-	return p.Has(voterPrefix.AppendStr(key.String()).AppendStr(voter.String()))
-}
-
-func (p *pollStore) GetShareCount(snapSeqNo int64, address sdk.ValAddress) (int64, bool) {
-	if !p.snapshotCached {
-		var ok bool
-		p.snapshot, ok = p.getSnapshot(snapSeqNo)
-		if !ok {
-			panic(fmt.Sprintf("snapshot %d not found", snapSeqNo))
-		}
-		p.snapshotCached = true
-	}
-	val, ok := p.snapshot.GetValidator(address)
-	if !ok {
-		return 0, false
-	}
-	return val.ShareCount, true
-}
-
-func (p *pollStore) GetTotalShareCount(snapSeqNo int64) sdk.Int {
-	if !p.snapshotCached {
-		var ok bool
-		p.snapshot, ok = p.getSnapshot(snapSeqNo)
-		if !ok {
-			panic(fmt.Sprintf("snapshot %d not found", snapSeqNo))
-		}
-		p.snapshotCached = true
-	}
-	return p.snapshot.TotalShareCount
+func (p pollStore) HasVoted(voter sdk.ValAddress) bool {
+	return p.Has(voterPrefix.AppendStr(p.key.String()).AppendStr(voter.String()))
 }
 
 func (p pollStore) SetMetadata(metadata exported.PollMetadata) {
@@ -176,12 +180,12 @@ func (p pollStore) GetPoll(key exported.PollKey) exported.Poll {
 	return p.getPoll(key)
 }
 
-func (p pollStore) DeletePoll(pollKey exported.PollKey) {
+func (p pollStore) DeletePoll() {
 	// delete poll metadata
-	p.Delete(pollPrefix.AppendStr(pollKey.String()))
+	p.Delete(pollPrefix.AppendStr(p.key.String()))
 
 	// delete tallied votes index for poll
-	iter := p.Iterator(votesPrefix.AppendStr(pollKey.String()))
+	iter := p.Iterator(votesPrefix.AppendStr(p.key.String()))
 	defer utils.CloseLogError(iter, p.logger)
 
 	for ; iter.Valid(); iter.Next() {
@@ -189,7 +193,7 @@ func (p pollStore) DeletePoll(pollKey exported.PollKey) {
 	}
 
 	// delete records of past voters
-	iter = p.Iterator(voterPrefix.AppendStr(pollKey.String()))
+	iter = p.Iterator(voterPrefix.AppendStr(p.key.String()))
 	defer utils.CloseLogError(iter, p.logger)
 
 	for ; iter.Valid(); iter.Next() {

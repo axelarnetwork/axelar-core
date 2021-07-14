@@ -77,11 +77,13 @@ func (store KVStore) Delete(key Key) {
 	store.KVStore.Delete(key.AsKey())
 }
 
+// Iterator returns an Iterator that can handle a structured Key
 func (store KVStore) Iterator(prefix Key) Iterator {
 	iter := sdk.KVStorePrefixIterator(store.KVStore, prefix.AsKey())
 	return iterator{Iterator: iter, cdc: store.cdc}
 }
 
+// Iterator is an easier and safer to use sdk.Iterator extension
 type Iterator interface {
 	sdk.Iterator
 	UnmarshalValue(marshaler codec.ProtoMarshaler)
@@ -93,10 +95,12 @@ type iterator struct {
 	cdc codec.BinaryMarshaler
 }
 
+// UnmarshalValue returns the value marshalled into the given type
 func (i iterator) UnmarshalValue(value codec.ProtoMarshaler) {
 	i.cdc.MustUnmarshalBinaryLengthPrefixed(i.Value(), value)
 }
 
+// GetKey returns the key of the current iterator value
 func (i iterator) GetKey() Key {
 	return KeyFromBz(i.Key())
 }

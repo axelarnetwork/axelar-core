@@ -5,18 +5,19 @@ import (
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/codec/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 //go:generate moq -out ./mock/types.go -pkg mock . Store
 
-var _ types.UnpackInterfacesMessage = TalliedVote{}
+var _ codectypes.UnpackInterfacesMessage = TalliedVote{}
 
+// Voters is a type alias necessary to unmarshal TalliedVote
 type Voters []sdk.ValAddress
 
 // NewTalliedVote is the constructor for TalliedVote
@@ -42,63 +43,106 @@ func (m TalliedVote) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
 	return unpacker.UnpackAny(m.Data, &data)
 }
 
+// Hash returns the hash of the value of the vote
 func (m TalliedVote) Hash() string {
 	return hash(m.Data.GetCachedValue().(codec.ProtoMarshaler))
 }
 
+// NewPollMetaData is the constructor for PollMetadata.
+// It is not in the exported package to make it clear that only the vote module is supposed to use it.
+func NewPollMetaData(key exported.PollKey, threshold utils.Threshold, snapshotSeqNo int64) exported.PollMetadata {
+	return exported.PollMetadata{
+		Key:             key,
+		SnapshotSeqNo:   snapshotSeqNo,
+		ExpiresAt:       -1,
+		Result:          nil,
+		VotingThreshold: threshold,
+		State:           exported.Pending,
+	}
+}
+
 var _ exported.Poll = &Poll{}
 
+// Poll represents a poll with write-in voting
 type Poll struct {
 	exported.PollMetadata
-	store Store
+	Store
 }
 
-func (p *Poll) GetMetadata() exported.PollMetadata {
-	return p.PollMetadata
-}
-
+// Store enables a poll to communicate with the keeper
 type Store interface {
-	SetVote(key exported.PollKey, vote TalliedVote)
-	GetVote(key exported.PollKey, hash string) (TalliedVote, bool)
-	GetVotes(key exported.PollKey) []TalliedVote
-	SetVoted(key exported.PollKey, voter sdk.ValAddress)
-	HasVoted(key exported.PollKey, voter sdk.ValAddress) bool
-	GetShareCount(snapSeqNo int64, address sdk.ValAddress) (int64, bool)
-	GetTotalShareCount(snapSeqNo int64) sdk.Int
+	SetVote(voter sdk.ValAddress, vote TalliedVote)
+	GetVote(hash string) (TalliedVote, bool)
+	HasVoted(voter sdk.ValAddress) bool
+	GetVotes() []TalliedVote
+	GetShareCount(voter sdk.ValAddress) (int64, bool)
+	GetTotalShareCount() sdk.Int
 	SetMetadata(metadata exported.PollMetadata)
 	GetPoll(key exported.PollKey) exported.Poll
-	DeletePoll(key exported.PollKey)
+	DeletePoll()
 }
 
+// NewPoll creates a new poll
 func NewPoll(meta exported.PollMetadata, store Store) *Poll {
 	return &Poll{
 		PollMetadata: meta,
-		store:        store,
+		Store:        store,
 	}
 }
-func NewPollWithLogging(meta exported.PollMetadata, store Store, logger log.Logger) *PollWithLogging {
+
+// WithLogging adds logging capability to the poll
+func (p Poll) WithLogging(logger log.Logger) *PollWithLogging {
 	return &PollWithLogging{
-		Poll:   *NewPoll(meta, store),
+		Poll:   p,
 		logger: logger,
 	}
 }
 
-func (p Poll) Initialize() error {
-	other := p.store.GetPoll(p.Key)
+// CheckExpiry changes the state of the poll if the currentBlockHeight is equal or after the set expiry block
+func (p *Poll) CheckExpiry(currentBlockHeight int64) {
+	if p.ExpiresAt != -1 && p.ExpiresAt <= currentBlockHeight && p.Is(exported.Pending) {
+		p.State |= exported.Expired
+	}
+}
 
+// Is checks if the poll is in the given state
+func (p Poll) Is(state exported.PollState) bool {
+	// this special case check is needed, because 0 & x == 0 is true for any x
+	if state == exported.NonExistent {
+		return p.State == exported.NonExistent
+	}
+	return state&p.State == state
+}
+
+// GetResult returns the result of the poll. Returns nil if the poll is not completed.
+func (p Poll) GetResult() codec.ProtoMarshaler {
+	if p.Result == nil {
+		return nil
+	}
+
+	return p.Result.GetCachedValue().(codec.ProtoMarshaler)
+}
+
+// Initialize initializes the poll
+func (p Poll) Initialize() error {
+	other := p.Store.GetPoll(p.Key)
 	switch {
 	case other.Is(exported.Pending):
 		return fmt.Errorf("poll %s already exists and has not expired yet", p.Key.String())
 	case other.Is(exported.Completed):
 		return fmt.Errorf("poll %s already exists and has a result", p.Key.String())
 	case other.Is(exported.Failed) || other.Is(exported.Expired):
-		other.Delete()
+		err := other.Delete()
+		if err != nil {
+			return err
+		}
 	}
 
-	p.store.SetMetadata(p.PollMetadata)
+	p.SetMetadata(p.PollMetadata)
 	return nil
 }
 
+// Vote records the given vote
 func (p *Poll) Vote(voter sdk.ValAddress, data codec.ProtoMarshaler) error {
 	if p.Is(exported.NonExistent) {
 		return fmt.Errorf("poll does not exist")
@@ -109,72 +153,91 @@ func (p *Poll) Vote(voter sdk.ValAddress, data codec.ProtoMarshaler) error {
 		return nil
 	}
 
-	shareCount, ok := p.store.GetShareCount(p.SnapshotSeqNo, voter)
+	shareCount, ok := p.GetShareCount(voter)
 	if !ok {
 		return fmt.Errorf("address %s is not eligible to Vote in this poll", voter)
 	}
 
-	if p.store.HasVoted(p.Key, voter) {
+	if p.HasVoted(voter) {
 		return fmt.Errorf("voter %s has already voted", voter.String())
 	}
 
-	p.store.SetVoted(p.Key, voter)
+	p.SetVote(voter, p.tally(voter, shareCount, data))
 
-	var talliedVote TalliedVote
-	if existingVote, ok := p.store.GetVote(p.Key, hash(data)); !ok {
-		talliedVote = NewTalliedVote(voter, shareCount, data)
-		p.store.SetVote(p.Key, talliedVote)
-	} else {
-		talliedVote = existingVote
-		talliedVote.Tally = talliedVote.Tally.AddRaw(shareCount)
-		p.store.SetVote(p.Key, talliedVote)
-	}
-
-	if p.hasEnoughVotes(talliedVote) {
-		p.Result = talliedVote.Data
+	majorityVote := p.getMajorityVote()
+	if p.hasEnoughVotes(majorityVote.Tally) {
+		p.Result = majorityVote.Data
 		p.State = exported.Completed
-	} else if p.cannotComplete() {
+	} else if p.cannotWin(majorityVote.Tally) {
 		p.State = exported.Failed
 	}
 
-	p.store.SetMetadata(p.PollMetadata)
+	p.SetMetadata(p.PollMetadata)
 
 	return nil
 }
 
-func (p Poll) Delete() {
-	p.store.DeletePoll(p.Key)
+// Delete deletes the poll. Returns error if the poll is in a state that does not allow deletion
+func (p Poll) Delete() error {
+	switch {
+	case p.Is(exported.NonExistent):
+		return nil
+	case p.Is(exported.Failed), p.Is(exported.Expired):
+		p.Store.DeletePoll()
+		return nil
+	default:
+		return fmt.Errorf("cannot delete poll %s with state %s, must be either %s or %s", p.Key, p.State, exported.Failed, exported.Expired)
+	}
 }
 
-func (p *Poll) hasEnoughVotes(talliedVote TalliedVote) bool {
-	return p.VotingThreshold.IsMet(talliedVote.Tally, p.store.GetTotalShareCount(p.SnapshotSeqNo))
+// GetKey returns the poll's key
+func (p *Poll) GetKey() exported.PollKey {
+	return p.Key
 }
 
-func (p *Poll) cannotComplete() bool {
-	majorityShare := p.getMajorityVoteShareCount()
-	totalShares := p.store.GetTotalShareCount(p.SnapshotSeqNo)
+// GetSnapshotSeqNo returns the sequence number of the snapshot associated with the poll
+func (p *Poll) GetSnapshotSeqNo() int64 {
+	return p.SnapshotSeqNo
+}
+
+func (p *Poll) tally(voter sdk.ValAddress, shareCount int64, data codec.ProtoMarshaler) TalliedVote {
+	var talliedVote TalliedVote
+	if existingVote, ok := p.GetVote(hash(data)); !ok {
+		talliedVote = NewTalliedVote(voter, shareCount, data)
+	} else {
+		talliedVote = existingVote
+		talliedVote.Tally = talliedVote.Tally.AddRaw(shareCount)
+	}
+	return talliedVote
+}
+
+func (p *Poll) hasEnoughVotes(majorityShare sdk.Int) bool {
+	return p.VotingThreshold.IsMet(majorityShare, p.GetTotalShareCount())
+}
+
+func (p *Poll) cannotWin(majorityShare sdk.Int) bool {
 	alreadyTallied := p.getTalliedShareCount()
-	missingShares := totalShares.Sub(alreadyTallied)
+	missingShares := p.GetTotalShareCount().Sub(alreadyTallied)
 
-	return !p.VotingThreshold.IsMet(majorityShare.Add(missingShares), totalShares)
+	return !p.VotingThreshold.IsMet(majorityShare.Add(missingShares), p.GetTotalShareCount())
 }
 
-func (p Poll) getMajorityVoteShareCount() sdk.Int {
+func (p Poll) getMajorityVote() TalliedVote {
 	var result TalliedVote
 
-	for i, talliedVote := range p.store.GetVotes(p.Key) {
+	for i, talliedVote := range p.GetVotes() {
 		if i == 0 || talliedVote.Tally.GT(result.Tally) {
 			result = talliedVote
 		}
 	}
 
-	return result.Tally
+	return result
 }
 
 func (p Poll) getTalliedShareCount() sdk.Int {
 	result := sdk.ZeroInt()
 
-	for _, talliedVote := range p.store.GetVotes(p.Key) {
+	for _, talliedVote := range p.GetVotes() {
 		result = result.Add(talliedVote.Tally)
 	}
 
@@ -191,11 +254,13 @@ func hash(data codec.ProtoMarshaler) string {
 	return string(h[:])
 }
 
+// PollWithLogging wraps a poll to add logging
 type PollWithLogging struct {
 	Poll
 	logger log.Logger
 }
 
+// Vote records a vote
 func (p *PollWithLogging) Vote(voter sdk.ValAddress, data codec.ProtoMarshaler) error {
 	if err := p.Poll.Vote(voter, data); err != nil {
 		return err
@@ -212,9 +277,10 @@ func (p *PollWithLogging) Vote(voter sdk.ValAddress, data codec.ProtoMarshaler) 
 	return nil
 }
 
-func (p PollWithLogging) Delete() {
+// Delete deletes the poll. Returns error if the poll is in a state that does not allow deletion
+func (p PollWithLogging) Delete() error {
 	if p.Is(exported.Failed) || p.Is(exported.Expired) {
-		p.logger.Debug(fmt.Sprintf("deleting poll %s due to expiry or failure", p.Key.String()))
-		p.Poll.Delete()
+		p.logger.Debug(fmt.Sprintf("deleting poll %s in state %s", p.Key.String(), p.State))
 	}
+	return p.Poll.Delete()
 }

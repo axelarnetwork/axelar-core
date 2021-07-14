@@ -101,9 +101,7 @@ func (s msgServer) ConfirmOutpoint(c context.Context, req *types.ConfirmOutpoint
 	}
 
 	pollKey := vote.NewPollKey(types.ModuleName, req.OutPointInfo.OutPoint)
-	metadata := vote.NewPollMetaData(pollKey, counter, ctx.BlockHeight()+s.BTCKeeper.GetRevoteLockingPeriod(ctx), s.voter.GetDefaultVotingThreshold(ctx))
-	poll := s.voter.NewPoll(ctx, metadata)
-	if err := poll.Initialize(); err != nil {
+	if err := s.voter.InitializePoll(ctx, pollKey, counter, vote.ExpiryAt(ctx.BlockHeight()+s.BTCKeeper.GetRevoteLockingPeriod(ctx))); err != nil {
 		return nil, err
 	}
 	s.SetPendingOutpointInfo(ctx, pollKey, req.OutPointInfo)
@@ -168,16 +166,16 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 
 	if poll.Is(vote.Failed) {
 		s.DeletePendingOutPointInfo(ctx, req.PollKey)
-		return &types.VoteConfirmOutpointResponse{Status: fmt.Sprintf("poll %s failed", poll.GetMetadata().Key)}, nil
+		return &types.VoteConfirmOutpointResponse{Status: fmt.Sprintf("poll %s failed", poll.GetKey())}, nil
 	}
 
-	confirmed, ok := poll.GetMetadata().GetResult().(*gogoprototypes.BoolValue)
+	confirmed, ok := poll.GetResult().(*gogoprototypes.BoolValue)
 	if !ok {
-		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetMetadata().GetResult())
+		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
 	}
 
 	logger := ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
-	logger.Info(fmt.Sprintf("bitcoin outpoint confirmation result is %s", poll.GetMetadata().GetResult()))
+	logger.Info(fmt.Sprintf("bitcoin outpoint confirmation result is %s", poll.GetResult()))
 	s.DeletePendingOutPointInfo(ctx, req.PollKey)
 
 	// handle poll result

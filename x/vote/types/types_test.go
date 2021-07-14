@@ -54,6 +54,75 @@ func TestTalliedVote_Marshaling(t *testing.T) {
 	assert.Equal(t, vote.Data.GetCachedValue(), actual2.Data.GetCachedValue())
 }
 
+func TestPoll_CheckExpiry(t *testing.T) {
+	setup := func() exported.PollMetadata {
+		key := exported.NewPollKey(rand.StrBetween(5, 20), rand.StrBetween(5, 20))
+		return types.NewPollMetaData(key, types.DefaultGenesisState().VotingThreshold, rand.PosI64())
+	}
+	repeats := 20
+	notExpiredStates := []exported.PollState{exported.NonExistent, exported.Pending, exported.Completed, exported.Failed}
+
+	t.Run("poll is not expired", testutils.Func(func(t *testing.T) {
+		metadata := setup()
+		initialState := notExpiredStates[rand.I64Between(0, int64(len(notExpiredStates)))]
+		metadata.State = initialState
+		expiry := rand.PosI64()
+		metadata.ExpiresAt = expiry
+		poll := types.NewPoll(metadata, &mock.StoreMock{})
+
+		currBlockHeight := expiry - rand.I64Between(0, expiry)
+		poll.CheckExpiry(currBlockHeight)
+
+		assert.True(t, poll.Is(initialState))
+	}).Repeat(repeats))
+
+	t.Run("pending poll expires", testutils.Func(func(t *testing.T) {
+		metadata := setup()
+		metadata.State = exported.Pending
+		expiry := rand.I64Between(0, 1000000)
+		metadata.ExpiresAt = expiry
+		poll := types.NewPoll(metadata, &mock.StoreMock{})
+
+		currBlockHeight := expiry + rand.I64Between(1, 1000000)
+		poll.CheckExpiry(currBlockHeight)
+
+		assert.True(t, poll.Is(exported.Pending))
+		assert.True(t, poll.Is(exported.Expired))
+	}).Repeat(repeats))
+
+	t.Run("not-pending poll does not expire", testutils.Func(func(t *testing.T) {
+		initialState := notExpiredStates[rand.I64GenBetween(0, int64(len(notExpiredStates))).
+			Where(func(i int64) bool { return i != int64(exported.Pending) }).
+			Next()]
+		metadata := setup()
+		metadata.State = initialState
+		expiry := rand.I64Between(0, 1000000)
+		metadata.ExpiresAt = expiry
+		poll := types.NewPoll(metadata, &mock.StoreMock{})
+
+		currBlockHeight := expiry + rand.I64Between(1, 1000000)
+		poll.CheckExpiry(currBlockHeight)
+
+		assert.True(t, poll.Is(initialState))
+		assert.False(t, poll.Is(exported.Expired))
+	}).Repeat(repeats))
+}
+
+func TestPoll_Is(t *testing.T) {
+	for _, state := range exported.PollState_value {
+		poll := types.Poll{PollMetadata: exported.PollMetadata{State: exported.PollState(state)}}
+
+		assert.True(t, poll.Is(exported.PollState(state)))
+
+		for _, otherState := range exported.PollState_value {
+			if otherState == state {
+				continue
+			}
+			assert.False(t, poll.Is(exported.PollState(otherState)), "poll: %s, other: %s", poll.State, exported.PollState(otherState))
+		}
+	}
+}
+
 func TestPoll_Vote(t *testing.T) {
 	var (
 		shareCounts     map[string]int64
@@ -61,7 +130,7 @@ func TestPoll_Vote(t *testing.T) {
 	)
 
 	setup := func(metadata exported.PollMetadata) *types.PollWithLogging {
-		shareCounts = randomEvenedShareCounts()
+		shareCounts = randomEvenShareCounts()
 		totalShareCount = sdk.ZeroInt()
 		for _, share := range shareCounts {
 			totalShareCount = totalShareCount.AddRaw(share)
@@ -70,23 +139,25 @@ func TestPoll_Vote(t *testing.T) {
 		allVotes := make(map[string]types.TalliedVote)
 		hasVoted := make(map[string]bool)
 		store := &mock.StoreMock{
-			SetVoteFunc: func(_ exported.PollKey, v types.TalliedVote) { allVotes[v.Hash()] = v },
-			GetVoteFunc: func(_ exported.PollKey, h string) (types.TalliedVote, bool) {
+			SetVoteFunc: func(addr sdk.ValAddress, v types.TalliedVote) {
+				hasVoted[addr.String()] = true
+				allVotes[v.Hash()] = v
+			},
+			GetVoteFunc: func(h string) (types.TalliedVote, bool) {
 				vote, ok := allVotes[h]
 				return vote, ok
 			},
-			GetVotesFunc: func(exported.PollKey) []types.TalliedVote { return getValues(allVotes) },
-			SetVotedFunc: func(_ exported.PollKey, addr sdk.ValAddress) { hasVoted[addr.String()] = true },
-			HasVotedFunc: func(_ exported.PollKey, addr sdk.ValAddress) bool { return hasVoted[addr.String()] },
-			GetShareCountFunc: func(_ int64, address sdk.ValAddress) (int64, bool) {
+			GetVotesFunc: func() []types.TalliedVote { return getValues(allVotes) },
+			HasVotedFunc: func(addr sdk.ValAddress) bool { return hasVoted[addr.String()] },
+			GetShareCountFunc: func(address sdk.ValAddress) (int64, bool) {
 				shareCount, ok := shareCounts[address.String()]
 				return shareCount, ok
 			},
-			GetTotalShareCountFunc: func(int64) sdk.Int { return totalShareCount },
+			GetTotalShareCountFunc: func() sdk.Int { return totalShareCount },
 			SetMetadataFunc:        func(exported.PollMetadata) {},
 		}
 
-		return types.NewPollWithLogging(metadata, store, log.TestingLogger())
+		return types.NewPoll(metadata, store).WithLogging(log.TestingLogger())
 	}
 	repeats := 20
 
@@ -149,8 +220,10 @@ func TestPoll_Vote(t *testing.T) {
 	t.Run("vote after expiry", testutils.Func(func(t *testing.T) {
 		metadata := newRandomPollMetadata()
 		poll := setup(metadata)
+		currBlockHeight := poll.PollMetadata.ExpiresAt + rand.I64Between(1, 1000000)
 
-		poll.PollMetadata = poll.UpdateBlockHeight(poll.ExpiresAt + rand.I64Between(1, 100000))
+		poll.CheckExpiry(currBlockHeight)
+
 		assert.True(t, poll.Is(exported.Expired))
 		assert.True(t, poll.Is(exported.Pending))
 
@@ -190,7 +263,7 @@ func TestPoll_Vote(t *testing.T) {
 		}
 
 		assert.True(t, poll.Is(exported.Completed))
-		assert.Equal(t, voteValue, poll.GetMetadata().GetResult())
+		assert.Equal(t, voteValue, poll.GetResult())
 	}).Repeat(repeats))
 
 	t.Run("poll fails", testutils.Func(func(t *testing.T) {
@@ -208,19 +281,19 @@ func TestPoll_Vote(t *testing.T) {
 	}).Repeat(repeats))
 }
 
-func TestInitPoll(t *testing.T) {
+func TestPoll_Initialize(t *testing.T) {
 	var (
 		previousPollState exported.PollState
 	)
 
 	previousPoll := &voteMock.PollMock{
 		IsFunc:     func(state exported.PollState) bool { return state == previousPollState },
-		DeleteFunc: func() {},
+		DeleteFunc: func() error { return nil },
 	}
 	store := &mock.StoreMock{
 		GetPollFunc:     func(exported.PollKey) exported.Poll { return previousPoll },
 		SetMetadataFunc: func(exported.PollMetadata) {},
-		DeletePollFunc:  func(exported.PollKey) {},
+		DeletePollFunc:  func() {},
 	}
 
 	repeats := 20
@@ -240,7 +313,8 @@ func TestInitPoll(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.label, testutils.Func(func(t *testing.T) {
 			previousPollState = testCase.previousPollState
-			poll := types.NewPollWithLogging(newRandomPollMetadata(), store, log.TestingLogger())
+			p := types.NewPoll(newRandomPollMetadata(), store)
+			poll := p.WithLogging(log.TestingLogger())
 
 			if testCase.expectError {
 				assert.Error(t, poll.Initialize())
@@ -254,10 +328,10 @@ func TestInitPoll(t *testing.T) {
 func TestPollWithLogging_Delete(t *testing.T) {
 	var store *mock.StoreMock
 	setup := func(pollState exported.PollState) exported.Poll {
-		store = &mock.StoreMock{DeletePollFunc: func(exported.PollKey) {}}
+		store = &mock.StoreMock{DeletePollFunc: func() {}}
 		metadata := newRandomPollMetadata()
 		metadata.State = pollState
-		return types.NewPollWithLogging(metadata, store, log.TestingLogger())
+		return types.NewPoll(metadata, store).WithLogging(log.TestingLogger())
 	}
 
 	testCases := []struct {
@@ -287,7 +361,7 @@ func TestPollWithLogging_Delete(t *testing.T) {
 	}
 }
 
-func randomEvenedShareCounts() map[string]int64 {
+func randomEvenShareCounts() map[string]int64 {
 	shareCounts := make(map[string]int64)
 
 	total := sdk.ZeroInt()
@@ -301,7 +375,7 @@ func randomEvenedShareCounts() map[string]int64 {
 	// redraw shares if any one share is greater than half of the total
 	for _, share := range shareCounts {
 		if total.QuoRaw(2).LT(sdk.NewInt(share)) {
-			return randomEvenedShareCounts()
+			return randomEvenShareCounts()
 		}
 	}
 
@@ -318,7 +392,7 @@ func getValues(m map[string]types.TalliedVote) []types.TalliedVote {
 
 func newRandomPollMetadata() exported.PollMetadata {
 	key := exported.NewPollKey(rand.StrBetween(5, 20), rand.StrBetween(5, 20))
-	expiresAt := rand.I64Between(0, 1000000)
-	poll := exported.NewPollMetaData(key, rand.PosI64(), expiresAt, types.DefaultGenesisState().VotingThreshold)
+	poll := types.NewPollMetaData(key, types.DefaultGenesisState().VotingThreshold, rand.PosI64())
+	poll.ExpiresAt = rand.I64Between(0, 1000000)
 	return poll
 }

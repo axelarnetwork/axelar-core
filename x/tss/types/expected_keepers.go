@@ -38,15 +38,13 @@ type Nexus interface {
 
 // Voter provides voting functionality
 type Voter interface {
-	NewPoll(ctx sdk.Context, metadata vote.PollMetadata) vote.Poll
+	InitializePoll(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
 	GetPoll(ctx sdk.Context, pollKey vote.PollKey) vote.Poll
-	GetDefaultVotingThreshold(ctx sdk.Context) utils.Threshold
 }
 
 // InitPoller is a minimal interface to start a poll
 type InitPoller = interface {
-	NewPoll(ctx sdk.Context, metadata vote.PollMetadata) vote.Poll
-	GetDefaultVotingThreshold(ctx sdk.Context) utils.Threshold
+	InitializePoll(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
 }
 
 // TofndClient wraps around TofndKeyGenClient and TofndSignClient

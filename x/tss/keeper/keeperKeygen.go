@@ -34,12 +34,9 @@ func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID string, sn
 	k.setSnapshotCounterForKeyID(ctx, keyID, snapshot.Counter)
 
 	pollKey := vote.NewPollKey(types.ModuleName, keyID)
-	metadata := vote.NewPollMetaData(pollKey, snapshot.Counter, 0, voter.GetDefaultVotingThreshold(ctx))
-	poll := voter.NewPoll(ctx, metadata)
-	if err := poll.Initialize(); err != nil {
+	if err := voter.InitializePoll(ctx, pollKey, snapshot.Counter, vote.ExpiryAt(0)); err != nil {
 		return err
 	}
-
 	return nil
 }
 

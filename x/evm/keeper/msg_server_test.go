@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	evmCrypto "github.com/ethereum/go-ethereum/crypto"
@@ -25,7 +24,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	"github.com/axelarnetwork/axelar-core/utils"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
@@ -36,8 +34,6 @@ import (
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
-	voteMock "github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
-	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 var (
@@ -383,13 +379,9 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 			},
 		}
 		v = &evmMock.VoterMock{
-			NewPollFunc: func(sdk.Context, vote.PollMetadata) vote.Poll {
-				return &voteMock.PollMock{
-					InitializeFunc: func() error { return nil },
-					VoteFunc:       func(sdk.ValAddress, codec.ProtoMarshaler) error { return nil }}
-			},
-			GetDefaultVotingThresholdFunc: func(sdk.Context) utils.Threshold { return voteTypes.DefaultGenesisState().VotingThreshold },
-		}
+			InitializePollFunc: func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error {
+				return nil
+			}}
 
 		chains := map[string]nexus.Chain{exported.Ethereum.Name: exported.Ethereum}
 		n = &evmMock.NexusMock{
@@ -417,7 +409,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeChainConfirmation }), 1)
-		assert.Equal(t, 1, len(v.NewPollCalls()))
+		assert.Equal(t, 1, len(v.InitializePollCalls()))
 	}).Repeat(repeats))
 
 	t.Run("happy path with no snapshot", testutils.Func(func(t *testing.T) {
@@ -439,7 +431,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeChainConfirmation }), 1)
-		assert.Equal(t, 1, len(v.NewPollCalls()))
+		assert.Equal(t, 1, len(v.InitializePollCalls()))
 	}).Repeat(repeats))
 
 	t.Run("registered chain", testutils.Func(func(t *testing.T) {
@@ -462,10 +454,8 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 
 	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
 		setup()
-		v.NewPollFunc = func(sdk.Context, vote.PollMetadata) vote.Poll {
-			return &voteMock.PollMock{InitializeFunc: func() error {
-				return fmt.Errorf("poll setup failed")
-			}}
+		v.InitializePollFunc = func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error {
+			return fmt.Errorf("poll setup failed")
 		}
 
 		_, err := server.ConfirmChain(sdk.WrapSDKContext(ctx), msg)
@@ -508,10 +498,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			SetPendingTokenDeploymentFunc:     func(sdk.Context, vote.PollKey, types.ERC20TokenDeployment) {},
 		}
 		v = &evmMock.VoterMock{
-			NewPollFunc: func(sdk.Context, vote.PollMetadata) vote.Poll {
-				return &voteMock.PollMock{InitializeFunc: func() error { return nil }}
-			},
-			GetDefaultVotingThresholdFunc: func(sdk.Context) utils.Threshold { return voteTypes.DefaultGenesisState().VotingThreshold },
+			InitializePollFunc: func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error { return nil },
 		}
 		chains := map[string]nexus.Chain{exported.Ethereum.Name: exported.Ethereum}
 		n = &evmMock.NexusMock{
@@ -548,7 +535,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeTokenConfirmation }), 1)
-		assert.Equal(t, v.NewPollCalls()[0].Metadata.Key, chaink.SetPendingTokenDeploymentCalls()[0].PollKey)
+		assert.Equal(t, v.InitializePollCalls()[0].Key, chaink.SetPendingTokenDeploymentCalls()[0].PollKey)
 	}).Repeat(repeats))
 
 	t.Run("unknown chain", testutils.Func(func(t *testing.T) {
@@ -591,8 +578,8 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
 		setup()
-		v.NewPollFunc = func(sdk.Context, vote.PollMetadata) vote.Poll {
-			return &voteMock.PollMock{InitializeFunc: func() error { return fmt.Errorf("poll setup failed") }}
+		v.InitializePollFunc = func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error {
+			return fmt.Errorf("poll setup failed")
 		}
 
 		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
@@ -739,10 +726,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) (uint64, bool) { return mathRand.Uint64(), true },
 		}
 		v = &evmMock.VoterMock{
-			NewPollFunc: func(sdk.Context, vote.PollMetadata) vote.Poll {
-				return &voteMock.PollMock{InitializeFunc: func() error { return nil }}
-			},
-			GetDefaultVotingThresholdFunc: func(sdk.Context) utils.Threshold { return voteTypes.DefaultGenesisState().VotingThreshold },
+			InitializePollFunc: func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error { return nil },
 		}
 		s = &mock.SignerMock{
 			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
@@ -778,7 +762,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeDepositConfirmation }), 1)
-		assert.Equal(t, v.NewPollCalls()[0].Metadata.Key, chaink.SetPendingDepositCalls()[0].Key)
+		assert.Equal(t, v.InitializePollCalls()[0].Key, chaink.SetPendingDepositCalls()[0].Key)
 	}).Repeat(repeats))
 
 	t.Run("unknown chain", testutils.Func(func(t *testing.T) {
@@ -833,9 +817,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
 		setup()
-		v.NewPollFunc = func(sdk.Context, vote.PollMetadata) vote.Poll {
-			return &voteMock.PollMock{InitializeFunc: func() error { return fmt.Errorf("failed") }}
-		}
+		v.InitializePollFunc = func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error { return fmt.Errorf("failed") }
 
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
