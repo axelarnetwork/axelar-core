@@ -34,6 +34,7 @@ import (
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/capability"
+	capabilitykeeper "github.com/cosmos/cosmos-sdk/x/capability/keeper"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	crisiskeeper "github.com/cosmos/cosmos-sdk/x/crisis/keeper"
@@ -50,6 +51,13 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	"github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer"
+	ibctransferkeeper "github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer/keeper"
+	ibctransfertypes "github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer/types"
+	ibc "github.com/cosmos/cosmos-sdk/x/ibc/core"
+	porttypes "github.com/cosmos/cosmos-sdk/x/ibc/core/05-port/types"
+	ibchost "github.com/cosmos/cosmos-sdk/x/ibc/core/24-host"
+	ibckeeper "github.com/cosmos/cosmos-sdk/x/ibc/core/keeper"
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
@@ -130,6 +138,8 @@ var (
 		upgrade.AppModuleBasic{},
 		evidence.AppModuleBasic{},
 		vesting.AppModuleBasic{},
+		ibc.AppModuleBasic{},
+		transfer.AppModuleBasic{},
 
 		tss.AppModuleBasic{},
 		vote.AppModuleBasic{},
@@ -147,6 +157,7 @@ var (
 		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
 		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
 		govtypes.ModuleName:            {authtypes.Burner},
+		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
 	}
 )
 
@@ -178,6 +189,10 @@ type AxelarApp struct {
 	crisisKeeper   crisiskeeper.Keeper
 	distrKeeper    distrkeeper.Keeper
 	slashingKeeper slashingkeeper.Keeper
+	ibcKeeper        *ibckeeper.Keeper
+	evidenceKeeper   evidencekeeper.Keeper
+	transferKeeper   ibctransferkeeper.Keeper
+	capabilityKeeper *capabilitykeeper.Keeper
 
 	// keys to access the substores
 	keys    map[string]*sdk.KVStoreKey
@@ -219,6 +234,9 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		paramstypes.StoreKey,
 		upgradetypes.StoreKey,
 		evidencetypes.StoreKey,
+		ibchost.StoreKey,
+		ibctransfertypes.StoreKey,
+		capabilitytypes.StoreKey,
 
 		voteTypes.StoreKey,
 		btcTypes.StoreKey,
@@ -280,6 +298,8 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	evidenceK := evidencekeeper.NewKeeper(
 		appCodec, keys[evidencetypes.StoreKey], &stakingK, slashingK,
 	)
+	app.evidenceKeeper = *evidenceK
+
 	// register the proposal types
 	govRouter := govtypes.NewRouter()
 	govRouter.AddRoute(govtypes.RouterKey, govtypes.ProposalHandler).
@@ -298,6 +318,33 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		stakingtypes.NewMultiStakingHooks(distrK.Hooks(), slashingK.Hooks()),
 	)
 	app.stakingKeeper = stakingK
+
+	// add capability keeper and ScopeToModule for ibc module
+	app.capabilityKeeper = capabilitykeeper.NewKeeper(appCodec, keys[capabilitytypes.StoreKey], memKeys[capabilitytypes.MemStoreKey])
+
+	// grant capabilities for the ibc and ibc-transfer modules
+	scopedIBCK := app.capabilityKeeper.ScopeToModule(ibchost.ModuleName)
+	scopedTransferK := app.capabilityKeeper.ScopeToModule(ibctransfertypes.ModuleName)
+
+	// Create IBC Keeper
+	app.ibcKeeper = ibckeeper.NewKeeper(
+		appCodec, keys[ibchost.StoreKey], app.getSubspace(ibchost.ModuleName), app.stakingKeeper, scopedIBCK,
+	)
+
+	// Create Transfer Keepers
+	app.transferKeeper = ibctransferkeeper.NewKeeper(
+		appCodec, keys[ibctransfertypes.StoreKey], app.getSubspace(ibctransfertypes.ModuleName),
+		app.ibcKeeper.ChannelKeeper, &app.ibcKeeper.PortKeeper,
+		accountK, bankK, scopedTransferK,
+	)
+	transferModule := transfer.NewAppModule(app.transferKeeper)
+
+	// Create static IBC router, add transfer route, then set and seal it
+	ibcRouter := porttypes.NewRouter()
+	ibcRouter.AddRoute(ibctransfertypes.ModuleName, transferModule)
+	// Setting Router will finalize all routes by sealing router
+	// No more routes can be added
+	app.ibcKeeper.SetRouter(ibcRouter)
 
 	// axelar custom keepers
 	btcK := btcKeeper.NewKeeper(
@@ -375,6 +422,10 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		upgrade.NewAppModule(upgradeK),
 		evidence.NewAppModule(*evidenceK),
 		params.NewAppModule(paramsK),
+		capability.NewAppModule(appCodec, *app.capabilityKeeper),
+		evidence.NewAppModule(app.evidenceKeeper),
+		ibc.NewAppModule(app.ibcKeeper),
+		transferModule,
 
 		snapshot.NewAppModule(snapK),
 		tss.NewAppModule(tssK, snapK, votingK, nexusK, stakingK),
@@ -389,13 +440,14 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	// CanWithdrawInvariant invariant.
 	// NOTE: staking module is required if HistoricalEntries param > 0
 	app.mm.SetOrderBeginBlockers(upgradetypes.ModuleName, minttypes.ModuleName, distrtypes.ModuleName, slashingtypes.ModuleName,
-		evidencetypes.ModuleName, stakingtypes.ModuleName)
+		evidencetypes.ModuleName, stakingtypes.ModuleName, ibchost.ModuleName)
 	app.mm.SetOrderEndBlockers(crisistypes.ModuleName, govtypes.ModuleName, stakingtypes.ModuleName, btcTypes.ModuleName)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	// NOTE: The genutils module must occur after staking so that pools are
 	// properly initialized with tokens from genesis accounts.
 	app.mm.SetOrderInitGenesis(
+		capabilitytypes.ModuleName,
 		authtypes.ModuleName,
 		banktypes.ModuleName,
 		distrtypes.ModuleName,
@@ -406,6 +458,9 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		crisistypes.ModuleName,
 		genutiltypes.ModuleName,
 		evidencetypes.ModuleName,
+		ibchost.ModuleName,
+		evidencetypes.ModuleName,
+		ibctransfertypes.ModuleName,
 
 		snapTypes.ModuleName,
 		tssTypes.ModuleName,
@@ -466,6 +521,8 @@ func initParamsKeeper(appCodec codec.Marshaler, legacyAmino *codec.LegacyAmino, 
 	paramsKeeper.Subspace(slashingtypes.ModuleName)
 	paramsKeeper.Subspace(govtypes.ModuleName).WithKeyTable(govtypes.ParamKeyTable())
 	paramsKeeper.Subspace(crisistypes.ModuleName)
+	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
+	paramsKeeper.Subspace(ibchost.ModuleName)
 
 	paramsKeeper.Subspace(snapTypes.ModuleName)
 	paramsKeeper.Subspace(tssTypes.ModuleName)
