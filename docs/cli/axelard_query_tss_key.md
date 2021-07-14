@@ -1,15 +1,17 @@
-## axelard query tss
+## axelard query tss key
 
-Querying commands for the tss module
+Query a key by key ID
 
 ```
-axelard query tss [flags]
+axelard query tss key [key ID] [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for tss
+      --height int    Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help          help for key
+      --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 
 ### Options inherited from parent commands
@@ -25,6 +27,4 @@ axelard query tss [flags]
 
 ### SEE ALSO
 
-- [axelard query](axelard_query.md)	 - Querying subcommands
-- [axelard query tss key](axelard_query_tss_key.md)	 - Query a key by key ID
-- [axelard query tss signature](axelard_query_tss_signature.md)	 - Query a signature by sig ID
+- [axelard query tss](axelard_query_tss.md)	 - Querying commands for the tss module

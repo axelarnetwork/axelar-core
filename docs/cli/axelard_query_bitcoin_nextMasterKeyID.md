@@ -1,15 +1,17 @@
-## axelard query tss
+## axelard query bitcoin nextMasterKeyID
 
-Querying commands for the tss module
+Returns the next assigned master key ID
 
 ```
-axelard query tss [flags]
+axelard query bitcoin nextMasterKeyID [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for tss
+      --height int    Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help          help for nextMasterKeyID
+      --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 
 ### Options inherited from parent commands
@@ -25,6 +27,4 @@ axelard query tss [flags]
 
 ### SEE ALSO
 
-- [axelard query](axelard_query.md)	 - Querying subcommands
-- [axelard query tss key](axelard_query_tss_key.md)	 - Query a key by key ID
-- [axelard query tss signature](axelard_query_tss_signature.md)	 - Query a signature by sig ID
+- [axelard query bitcoin](axelard_query_bitcoin.md)	 - bitcoin query subcommands

@@ -31,6 +31,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdConsolidationTx(queryRoute),
 		GetCmdPayForConsolidationTx(queryRoute),
 		GetCmdMasterAddress(queryRoute),
+		GetCmdNextMasterKeyID(queryRoute),
 		GetCmdMinimumWithdrawAmount(queryRoute),
 		GetCmdTxState(queryRoute),
 	)
@@ -50,7 +51,7 @@ func GetCmdDepositAddress(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryDepositAddress)
+			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QDepositAddress)
 
 			res, _, err := clientCtx.QueryWithData(path, types.ModuleCdc.MustMarshalJSON(&types.DepositQueryParams{Chain: args[0], Address: args[1]}))
 			if err != nil {
@@ -77,7 +78,7 @@ func GetCmdMasterAddress(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryMasterAddress)
+			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QMasterAddress)
 
 			res, _, err := clientCtx.QueryWithData(path, nil)
 			if err != nil {
@@ -102,6 +103,32 @@ func GetCmdMasterAddress(queryRoute string) *cobra.Command {
 	return cmd
 }
 
+// GetCmdNextMasterKeyID returns the the assigned master key ID
+func GetCmdNextMasterKeyID(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "nextMasterKeyID",
+		Short: "Returns the next assigned master key ID",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QNextMasterKeyID)
+
+			res, _, err := clientCtx.QueryWithData(path, nil)
+			if err != nil {
+				return sdkerrors.Wrap(err, types.ErrFNextMasterKey)
+			}
+
+			return clientCtx.PrintString(string(res))
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
 // GetCmdConsolidationTxState returns the state of the bitcoin consolidation transaction
 func GetCmdConsolidationTxState(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
@@ -114,7 +141,7 @@ func GetCmdConsolidationTxState(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.GetConsolidationTxState)
+			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QConsolidationTxState)
 
 			res, _, err := clientCtx.QueryWithData(path, nil)
 			if err != nil {
@@ -140,7 +167,7 @@ func GetCmdConsolidationTx(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			res, _, err := clientCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.GetConsolidationTx), nil)
+			res, _, err := clientCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QConsolidationTx), nil)
 			if err != nil {
 				return sdkerrors.Wrap(err, types.ErrFGetRawTx)
 			}
@@ -177,7 +204,7 @@ func GetCmdPayForConsolidationTx(queryRoute string) *cobra.Command {
 		bz := make([]byte, 8)
 		binary.LittleEndian.PutUint64(bz, uint64(*feeRate))
 
-		res, _, err := clientCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.GetPayForConsolidationTx), bz)
+		res, _, err := clientCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QPayForConsolidationTx), bz)
 		if err != nil {
 			return sdkerrors.Wrap(err, types.ErrFGetPayForRawTx)
 		}
@@ -201,7 +228,7 @@ func GetCmdMinimumWithdrawAmount(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryMinimumWithdrawAmount)
+			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QMinimumWithdrawAmount)
 
 			res, _, err := clientCtx.QueryWithData(path, nil)
 			if err != nil {
@@ -230,7 +257,7 @@ func GetCmdTxState(queryRoute string) *cobra.Command {
 			}
 
 			outpointBytes := []byte(args[0])
-			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryTxState)
+			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QTxState)
 
 			res, _, err := clientCtx.QueryWithData(path, outpointBytes)
 			if err != nil {
