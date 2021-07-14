@@ -35,7 +35,8 @@ enum PollState {
   option (gogoproto.goproto_enum_prefix) = false;
   option (gogoproto.goproto_enum_stringer) = true;
 
-  // these enum values are used for bitwise operations, therefore they need to be powers of 2
+  // these enum values are used for bitwise operations, therefore they need to
+  // be powers of 2
   POLL_STATE_UNSPECIFIED = 0
       [ (gogoproto.enumvalue_customname) = "NonExistent" ];
   POLL_STATE_PENDING = 1 [ (gogoproto.enumvalue_customname) = "Pending" ];

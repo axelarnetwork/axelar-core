@@ -581,7 +581,7 @@ vote can have any data type
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| POLL_STATE_UNSPECIFIED | 0 |  |
+| POLL_STATE_UNSPECIFIED | 0 | these enum values are used for bitwise operations, therefore they need to be powers of 2 |
 | POLL_STATE_PENDING | 1 |  |
 | POLL_STATE_COMPLETED | 2 |  |
 | POLL_STATE_FAILED | 4 |  |
