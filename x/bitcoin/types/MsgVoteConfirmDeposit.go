@@ -9,10 +9,10 @@ import (
 )
 
 // NewVoteConfirmOutpointRequest - MsgVoteConfirmOutpoint constructor
-func NewVoteConfirmOutpointRequest(sender sdk.AccAddress, poll exported.PollKey, outPoint wire.OutPoint, confirmed bool) *VoteConfirmOutpointRequest {
+func NewVoteConfirmOutpointRequest(sender sdk.AccAddress, key exported.PollKey, outPoint wire.OutPoint, confirmed bool) *VoteConfirmOutpointRequest {
 	return &VoteConfirmOutpointRequest{
 		Sender:    sender,
-		Poll:      poll,
+		PollKey:   key,
 		OutPoint:  outPoint.String(),
 		Confirmed: confirmed,
 	}
@@ -37,7 +37,7 @@ func (m VoteConfirmOutpointRequest) ValidateBasic() error {
 	if _, err := OutPointFromStr(m.OutPoint); err != nil {
 		return sdkerrors.Wrap(err, "outpoint malformed")
 	}
-	return m.Poll.Validate()
+	return m.PollKey.Validate()
 }
 
 // GetSignBytes returns the message bytes that need to be signed

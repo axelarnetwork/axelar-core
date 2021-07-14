@@ -145,9 +145,9 @@ func (k Keeper) DeleteOutpointInfo(ctx sdk.Context, outPoint wire.OutPoint) {
 }
 
 // GetPendingOutPointInfo returns outpoint information associated with the given poll
-func (k Keeper) GetPendingOutPointInfo(ctx sdk.Context, poll exported.PollKey) (types.OutPointInfo, bool) {
+func (k Keeper) GetPendingOutPointInfo(ctx sdk.Context, key exported.PollKey) (types.OutPointInfo, bool) {
 	var info types.OutPointInfo
-	ok := k.getStore(ctx).Get(pendingOutpointPrefix.Append(utils.LowerCaseKey(poll.String())), &info)
+	ok := k.getStore(ctx).Get(pendingOutpointPrefix.Append(utils.LowerCaseKey(key.String())), &info)
 	return info, ok
 }
 
@@ -172,13 +172,13 @@ func (k Keeper) GetOutPointInfo(ctx sdk.Context, outPoint wire.OutPoint) (types.
 // SetPendingOutpointInfo stores an unconfirmed outpoint.
 // Since the information is not yet confirmed the outpoint info is not necessarily unique.
 // Therefore we need to store by the poll that confirms/rejects it
-func (k Keeper) SetPendingOutpointInfo(ctx sdk.Context, poll exported.PollKey, info types.OutPointInfo) {
-	k.getStore(ctx).Set(pendingOutpointPrefix.Append(utils.LowerCaseKey(poll.String())), &info)
+func (k Keeper) SetPendingOutpointInfo(ctx sdk.Context, key exported.PollKey, info types.OutPointInfo) {
+	k.getStore(ctx).Set(pendingOutpointPrefix.Append(utils.LowerCaseKey(key.String())), &info)
 }
 
 // DeletePendingOutPointInfo deletes the outpoint information associated with the given poll
-func (k Keeper) DeletePendingOutPointInfo(ctx sdk.Context, poll exported.PollKey) {
-	k.getStore(ctx).Delete(pendingOutpointPrefix.Append(utils.LowerCaseKey(poll.String())))
+func (k Keeper) DeletePendingOutPointInfo(ctx sdk.Context, key exported.PollKey) {
+	k.getStore(ctx).Delete(pendingOutpointPrefix.Append(utils.LowerCaseKey(key.String())))
 }
 
 // SetSpentOutpointInfo stores the given outpoint info as spent
@@ -281,6 +281,6 @@ func (k Keeper) DeleteDustAmount(ctx sdk.Context, encodedAddress string) {
 	k.getStore(ctx).Delete(dustAmtPrefix.Append(utils.LowerCaseKey(encodedAddress)))
 }
 
-func (k Keeper) getStore(ctx sdk.Context) utils.NormalizedKVStore {
+func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
 	return utils.NewNormalizedStore(ctx.KVStore(k.storeKey), k.cdc)
 }

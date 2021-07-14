@@ -13,12 +13,12 @@ import (
 func NewVoteConfirmChainRequest(
 	sender sdk.AccAddress,
 	name string,
-	poll vote.PollKey,
+	key vote.PollKey,
 	confirmed bool) *VoteConfirmChainRequest {
 	return &VoteConfirmChainRequest{
 		Sender:    sender,
 		Name:      name,
-		Poll:      poll,
+		PollKey:   key,
 		Confirmed: confirmed,
 	}
 }
@@ -42,7 +42,7 @@ func (m VoteConfirmChainRequest) ValidateBasic() error {
 		return fmt.Errorf("missing chain")
 	}
 
-	return m.Poll.Validate()
+	return m.PollKey.Validate()
 }
 
 // GetSignBytes returns the message bytes that need to be signed

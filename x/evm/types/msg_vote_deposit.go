@@ -14,14 +14,14 @@ import (
 func NewVoteConfirmDepositRequest(
 	sender sdk.AccAddress,
 	chain string,
-	poll vote.PollKey,
+	key vote.PollKey,
 	txID common.Hash,
 	burnAddr Address,
 	confirmed bool) *VoteConfirmDepositRequest {
 	return &VoteConfirmDepositRequest{
 		Sender:      sender,
 		Chain:       chain,
-		Poll:        poll,
+		PollKey:     key,
 		TxID:        Hash(txID),
 		BurnAddress: burnAddr,
 		Confirmed:   confirmed,
@@ -47,7 +47,7 @@ func (m VoteConfirmDepositRequest) ValidateBasic() error {
 		return fmt.Errorf("missing chain")
 	}
 
-	return m.Poll.Validate()
+	return m.PollKey.Validate()
 }
 
 // GetSignBytes returns the message bytes that need to be signed

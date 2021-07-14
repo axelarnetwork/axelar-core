@@ -2,7 +2,15 @@ package exported
 
 import (
 	"fmt"
+
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/axelarnetwork/axelar-core/utils"
 )
+
+//go:generate moq -out ./mock/types.go -pkg mock . Poll
 
 // NewPollKey constructor for PollKey without nonce
 func NewPollKey(module string, id string) PollKey {
@@ -27,4 +35,56 @@ func (m PollKey) Validate() error {
 	}
 
 	return nil
+}
+
+// PollProperty is a modifier for PollMetadata. It should never be manually initialized
+type PollProperty struct {
+	do func(metadata PollMetadata) PollMetadata
+}
+
+func (p PollProperty) apply(metadata PollMetadata) PollMetadata {
+	return p.do(metadata)
+}
+
+var _ codectypes.UnpackInterfacesMessage = PollMetadata{}
+
+// UnpackInterfaces implements UnpackInterfacesMessage
+func (m PollMetadata) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
+	var data codec.ProtoMarshaler
+	return unpacker.UnpackAny(m.Result, &data)
+}
+
+// With returns a new metadata object with all the given properties set
+func (m PollMetadata) With(properties ...PollProperty) PollMetadata {
+	newMetadata := m
+	for _, property := range properties {
+		newMetadata = property.apply(newMetadata)
+	}
+	return newMetadata
+}
+
+// ExpiryAt sets the expiry property on PollMetadata
+func ExpiryAt(blockHeight int64) PollProperty {
+	return PollProperty{do: func(metadata PollMetadata) PollMetadata {
+		metadata.ExpiresAt = blockHeight
+		return metadata
+	}}
+}
+
+// Threshold sets the threshold property on PollMetadata
+func Threshold(threshold utils.Threshold) PollProperty {
+	return PollProperty{do: func(metadata PollMetadata) PollMetadata {
+		metadata.VotingThreshold = threshold
+		return metadata
+	}}
+}
+
+// Poll provides an interface for other modules to interact with polls
+type Poll interface {
+	Vote(voter sdk.ValAddress, data codec.ProtoMarshaler) error
+	Is(state PollState) bool
+	GetResult() codec.ProtoMarshaler
+	GetKey() PollKey
+	GetSnapshotSeqNo() int64
+	Delete() error
 }

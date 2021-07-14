@@ -30,8 +30,14 @@
     - [QueryMasterAddressResponse](#bitcoin.v1beta1.QueryMasterAddressResponse)
     - [QueryRawTxResponse](#bitcoin.v1beta1.QueryRawTxResponse)
   
+- [utils/v1beta1/threshold.proto](#utils/v1beta1/threshold.proto)
+    - [Threshold](#utils.v1beta1.Threshold)
+  
 - [vote/exported/v1beta1/types.proto](#vote/exported/v1beta1/types.proto)
     - [PollKey](#vote.exported.v1beta1.PollKey)
+    - [PollMetadata](#vote.exported.v1beta1.PollMetadata)
+  
+    - [PollState](#vote.exported.v1beta1.PollState)
   
 - [bitcoin/v1beta1/tx.proto](#bitcoin/v1beta1/tx.proto)
     - [ConfirmOutpointRequest](#bitcoin.v1beta1.ConfirmOutpointRequest)
@@ -144,9 +150,6 @@
   
     - [MessageOut.CriminalList.Criminal.CrimeType](#tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal.CrimeType)
   
-- [utils/v1beta1/threshold.proto](#utils/v1beta1/threshold.proto)
-    - [Threshold](#utils.v1beta1.Threshold)
-  
 - [tss/v1beta1/params.proto](#tss/v1beta1/params.proto)
     - [Params](#tss.v1beta1.Params)
   
@@ -181,7 +184,6 @@
     - [GenesisState](#vote.v1beta1.GenesisState)
   
 - [vote/v1beta1/types.proto](#vote/v1beta1/types.proto)
-    - [Poll](#vote.v1beta1.Poll)
     - [TalliedVote](#vote.v1beta1.TalliedVote)
   
 - [Scalar Value Types](#scalar-value-types)
@@ -494,6 +496,38 @@ deposit address
 
 
 
+<a name="utils/v1beta1/threshold.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## utils/v1beta1/threshold.proto
+
+
+
+<a name="utils.v1beta1.Threshold"></a>
+
+### Threshold
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `numerator` | [int64](#int64) |  | split threshold into Numerator and denominator to avoid floating point errors down the line |
+| `denominator` | [int64](#int64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="vote/exported/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -516,7 +550,43 @@ PollKey represents the key data for a poll
 
 
 
+
+<a name="vote.exported.v1beta1.PollMetadata"></a>
+
+### PollMetadata
+PollMetadata represents a poll with write-in voting, i.e. the result of the
+vote can have any data type
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [PollKey](#vote.exported.v1beta1.PollKey) |  |  |
+| `snapshot_seq_no` | [int64](#int64) |  |  |
+| `expires_at` | [int64](#int64) |  |  |
+| `result` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+| `voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `state` | [PollState](#vote.exported.v1beta1.PollState) |  |  |
+
+
+
+
+
  <!-- end messages -->
+
+
+<a name="vote.exported.v1beta1.PollState"></a>
+
+### PollState
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| POLL_STATE_UNSPECIFIED | 0 | these enum values are used for bitwise operations, therefore they need to be powers of 2 |
+| POLL_STATE_PENDING | 1 |  |
+| POLL_STATE_COMPLETED | 2 |  |
+| POLL_STATE_FAILED | 4 |  |
+| POLL_STATE_EXPIRED | 8 |  |
+
 
  <!-- end enums -->
 
@@ -629,7 +699,7 @@ MsgVoteConfirmOutpoint represents a message to that votes on an outpoint
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `poll` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
+| `poll_key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
 | `out_point` | [string](#string) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
 
@@ -1267,7 +1337,7 @@ MsgVoteConfirmChain represents a message that votes on a new EVM chain
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `name` | [string](#string) |  |  |
-| `poll` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
+| `poll_key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
 
 
@@ -1300,7 +1370,7 @@ MsgVoteConfirmDeposit represents a message that votes on a deposit
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
-| `poll` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
+| `poll_key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `burn_address` | [bytes](#bytes) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
@@ -1335,7 +1405,7 @@ MsgVoteConfirmToken represents a message that votes on a token deploy
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
-| `poll` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
+| `poll_key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `symbol` | [string](#string) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
@@ -1370,7 +1440,7 @@ MsgVoteConfirmDeposit represents a message that votes on a deposit
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
-| `poll` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
+| `poll_key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `new_owner_address` | [bytes](#bytes) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
@@ -1992,38 +2062,6 @@ File copied from golang tofnd with minor tweaks
 
 
 
-<a name="utils/v1beta1/threshold.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## utils/v1beta1/threshold.proto
-
-
-
-<a name="utils.v1beta1.Threshold"></a>
-
-### Threshold
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `numerator` | [int64](#int64) |  | split threshold into Numerator and denominator to avoid floating point errors down the line |
-| `denominator` | [int64](#int64) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
 <a name="tss/v1beta1/params.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -2418,38 +2456,17 @@ Msg defines the tss Msg service.
 
 
 
-<a name="vote.v1beta1.Poll"></a>
-
-### Poll
-Poll represents a poll with write-in voting, i.e. the result of the vote can
-have any data type
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
-| `validator_snapshot_counter` | [int64](#int64) |  |  |
-| `votes` | [TalliedVote](#vote.v1beta1.TalliedVote) | repeated |  |
-| `expires_at` | [int64](#int64) |  |  |
-| `result` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
-| `voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
-| `failed` | [bool](#bool) |  |  |
-
-
-
-
-
-
 <a name="vote.v1beta1.TalliedVote"></a>
 
 ### TalliedVote
 TalliedVote represents a vote for a poll with the accumulated stake of all
-validators voting for the same VotingData
+validators voting for the same data
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `tally` | [bytes](#bytes) |  |  |
+| `voters` | [bytes](#bytes) | repeated |  |
 | `data` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
 
 

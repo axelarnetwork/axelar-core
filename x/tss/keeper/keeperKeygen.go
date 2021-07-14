@@ -9,7 +9,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
-	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -33,11 +33,10 @@ func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID string, sn
 	// store snapshot round to be able to look up the correct validator set when signing with this key
 	k.setSnapshotCounterForKeyID(ctx, keyID, snapshot.Counter)
 
-	poll := voting.NewPollKey(types.ModuleName, keyID)
-	if err := voter.InitPoll(ctx, poll, snapshot.Counter, 0); err != nil {
+	pollKey := vote.NewPollKey(types.ModuleName, keyID)
+	if err := voter.InitializePoll(ctx, pollKey, snapshot.Counter, vote.ExpiryAt(0)); err != nil {
 		return err
 	}
-
 	return nil
 }
 

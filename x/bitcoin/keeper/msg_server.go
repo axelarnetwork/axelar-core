@@ -100,18 +100,18 @@ func (s msgServer) ConfirmOutpoint(c context.Context, req *types.ConfirmOutpoint
 		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
 	}
 
-	poll := vote.NewPollKey(types.ModuleName, req.OutPointInfo.OutPoint)
-	if err := s.voter.InitPoll(ctx, poll, counter, ctx.BlockHeight()+s.BTCKeeper.GetRevoteLockingPeriod(ctx)); err != nil {
+	pollKey := vote.NewPollKey(types.ModuleName, req.OutPointInfo.OutPoint)
+	if err := s.voter.InitializePoll(ctx, pollKey, counter, vote.ExpiryAt(ctx.BlockHeight()+s.BTCKeeper.GetRevoteLockingPeriod(ctx))); err != nil {
 		return nil, err
 	}
-	s.SetPendingOutpointInfo(ctx, poll, req.OutPointInfo)
+	s.SetPendingOutpointInfo(ctx, pollKey, req.OutPointInfo)
 
 	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeOutpointConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 		sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(s.GetRequiredConfirmationHeight(ctx), 10)),
 		sdk.NewAttribute(types.AttributeKeyOutPointInfo, string(types.ModuleCdc.MustMarshalJSON(&req.OutPointInfo))),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&poll))),
+		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
 	))
 
 	return &types.ConfirmOutpointResponse{}, nil
@@ -124,14 +124,13 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 	// has the outpoint been confirmed before?
 	confirmedOutPointInfo, state, confirmedBefore := s.GetOutPointInfo(ctx, *types.MustConvertOutPointFromStr(req.OutPoint))
 	// is there an ongoing poll?
-	pendingOutPointInfo, pollFound := s.GetPendingOutPointInfo(ctx, req.Poll)
+	pendingOutPointInfo, pollFound := s.GetPendingOutPointInfo(ctx, req.PollKey)
 
 	switch {
 	// a malicious user could try to delete an ongoing poll by providing an already confirmed outpoint,
 	// so we need to check that it matches the poll before deleting
 	case confirmedBefore && pollFound && pendingOutPointInfo.OutPoint == confirmedOutPointInfo.OutPoint:
-		s.voter.DeletePoll(ctx, req.Poll)
-		s.DeletePendingOutPointInfo(ctx, req.Poll)
+		s.DeletePendingOutPointInfo(ctx, req.PollKey)
 		fallthrough
 	// If the voting threshold has been met and additional votes are received they should not return an error
 	case confirmedBefore:
@@ -144,38 +143,45 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 			panic(fmt.Sprintf("invalid outpoint state %v", state))
 		}
 	case !pollFound:
-		return nil, fmt.Errorf("no outpoint found for poll %s", req.Poll.String())
+		return nil, fmt.Errorf("no outpoint found for poll %s", req.PollKey.String())
 	case pendingOutPointInfo.OutPoint != req.OutPoint:
-		return nil, fmt.Errorf("outpoint %s does not match poll %s", req.OutPoint, req.Poll.String())
+		return nil, fmt.Errorf("outpoint %s does not match poll %s", req.OutPoint, req.PollKey.String())
 	default:
 		// assert: the outpoint is known and has not been confirmed before
 	}
 
-	poll, err := s.voter.TallyVote(ctx, req.Sender, req.Poll, &gogoprototypes.BoolValue{Value: req.Confirmed})
-	if err != nil {
+	voter := s.snapshotter.GetPrincipal(ctx, req.Sender)
+	if voter == nil {
+		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
+	}
+
+	poll := s.voter.GetPoll(ctx, req.PollKey)
+	if err := poll.Vote(voter, &gogoprototypes.BoolValue{Value: req.Confirmed}); err != nil {
 		return nil, err
 	}
 
-	result := poll.GetResult()
-	if result == nil {
+	if poll.Is(vote.Pending) {
 		return &types.VoteConfirmOutpointResponse{Status: fmt.Sprintf("not enough votes to confirm outpoint %s yet", req.OutPoint)}, nil
 	}
 
-	// assert: the poll has completed
-	confirmed, ok := result.(*gogoprototypes.BoolValue)
+	if poll.Is(vote.Failed) {
+		s.DeletePendingOutPointInfo(ctx, req.PollKey)
+		return &types.VoteConfirmOutpointResponse{Status: fmt.Sprintf("poll %s failed", poll.GetKey())}, nil
+	}
+
+	confirmed, ok := poll.GetResult().(*gogoprototypes.BoolValue)
 	if !ok {
-		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.Poll.String(), result)
+		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
 	}
 
 	logger := ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
-	logger.Info(fmt.Sprintf("bitcoin outpoint confirmation result is %s", result))
-	s.voter.DeletePoll(ctx, req.Poll)
-	s.DeletePendingOutPointInfo(ctx, req.Poll)
+	logger.Info(fmt.Sprintf("bitcoin outpoint confirmation result is %s", poll.GetResult()))
+	s.DeletePendingOutPointInfo(ctx, req.PollKey)
 
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeOutpointConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.Poll))),
+		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))),
 		sdk.NewAttribute(types.AttributeKeyOutPointInfo, string(types.ModuleCdc.MustMarshalJSON(&pendingOutPointInfo))))
 
 	if !confirmed.Value {

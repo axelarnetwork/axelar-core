@@ -14,14 +14,14 @@ import (
 func NewVoteConfirmTransferOwnershipRequest(
 	sender sdk.AccAddress,
 	chain string,
-	poll vote.PollKey,
+	key vote.PollKey,
 	txID common.Hash,
 	newOwnerAddr Address,
 	confirmed bool) *VoteConfirmTransferOwnershipRequest {
 	return &VoteConfirmTransferOwnershipRequest{
 		Sender:          sender,
 		Chain:           chain,
-		Poll:            poll,
+		PollKey:         key,
 		TxID:            Hash(txID),
 		NewOwnerAddress: newOwnerAddr,
 		Confirmed:       confirmed,
@@ -47,7 +47,7 @@ func (m VoteConfirmTransferOwnershipRequest) ValidateBasic() error {
 		return fmt.Errorf("missing chain")
 	}
 
-	return m.Poll.Validate()
+	return m.PollKey.Validate()
 }
 
 // GetSignBytes returns the message bytes that need to be signed

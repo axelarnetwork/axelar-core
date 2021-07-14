@@ -4,7 +4,6 @@ import (
 	"crypto/ecdsa"
 	"math/big"
 
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	evmTypes "github.com/ethereum/go-ethereum/core/types"
@@ -12,12 +11,10 @@ import (
 
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
-	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 //go:generate moq -out ./mock/expected_keepers.go -pkg mock . TSS Voter Signer Nexus Snapshotter BaseKeeper ChainKeeper
@@ -50,28 +47,29 @@ type ChainKeeper interface {
 	GetTokenByteCodes(ctx sdk.Context) ([]byte, bool)
 	GetGatewayAddress(ctx sdk.Context) (common.Address, bool)
 	GetTokenAddress(ctx sdk.Context, symbol string, gatewayAddr common.Address) (common.Address, error)
-	SetPendingTokenDeployment(ctx sdk.Context, poll vote.PollKey, tokenDeploy ERC20TokenDeployment)
+	SetPendingTokenDeployment(ctx sdk.Context, pollKey vote.PollKey, tokenDeploy ERC20TokenDeployment)
 	GetDeposit(ctx sdk.Context, txID common.Hash, burnerAddr common.Address) (ERC20Deposit, DepositState, bool)
 	GetBurnerInfo(ctx sdk.Context, address common.Address) *BurnerInfo
-	SetPendingDeposit(ctx sdk.Context, poll vote.PollKey, deposit *ERC20Deposit)
+	SetPendingDeposit(ctx sdk.Context, key vote.PollKey, deposit *ERC20Deposit)
 	GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error)
 	SetBurnerInfo(ctx sdk.Context, burnerAddr common.Address, burnerInfo *BurnerInfo)
-	GetPendingDeposit(ctx sdk.Context, poll vote.PollKey) (ERC20Deposit, bool)
-	DeletePendingDeposit(ctx sdk.Context, poll vote.PollKey)
+	GetPendingDeposit(ctx sdk.Context, key vote.PollKey) (ERC20Deposit, bool)
+	DeletePendingDeposit(ctx sdk.Context, key vote.PollKey)
 	DeleteDeposit(ctx sdk.Context, deposit ERC20Deposit)
 	SetDeposit(ctx sdk.Context, deposit ERC20Deposit, state DepositState)
-	GetPendingTokenDeployment(ctx sdk.Context, poll vote.PollKey) (ERC20TokenDeployment, bool)
-	DeletePendingToken(ctx sdk.Context, poll vote.PollKey)
+	GetPendingTokenDeployment(ctx sdk.Context, key vote.PollKey) (ERC20TokenDeployment, bool)
+	DeletePendingToken(ctx sdk.Context, key vote.PollKey)
 	SetCommandData(ctx sdk.Context, commandID CommandID, commandData []byte)
 	SetTokenInfo(ctx sdk.Context, msg *SignDeployTokenRequest)
 	GetConfirmedDeposits(ctx sdk.Context) []ERC20Deposit
 	SetUnsignedTx(ctx sdk.Context, txID string, tx *evmTypes.Transaction)
 	GetHashToSign(ctx sdk.Context, txID string) (common.Hash, error)
 	SetGatewayAddress(ctx sdk.Context, addr common.Address)
-	GetPendingTransferOwnership(ctx sdk.Context, poll vote.PollKey) (TransferOwnership, bool)
-	SetPendingTransferOwnership(ctx sdk.Context, poll vote.PollKey, transferOwnership *TransferOwnership)
-	GetArchivedTransferOwnership(ctx sdk.Context, poll vote.PollKey) (TransferOwnership, bool)
-	ArchiveTransferOwnership(ctx sdk.Context, poll vote.PollKey)
+	GetPendingTransferOwnership(ctx sdk.Context, key vote.PollKey) (TransferOwnership, bool)
+	SetPendingTransferOwnership(ctx sdk.Context, key vote.PollKey, transferOwnership *TransferOwnership)
+	GetArchivedTransferOwnership(ctx sdk.Context, key vote.PollKey) (TransferOwnership, bool)
+	ArchiveTransferOwnership(ctx sdk.Context, key vote.PollKey)
+	DeletePendingTransferOwnership(ctx sdk.Context, key vote.PollKey)
 	GetNetworkByID(ctx sdk.Context, id *big.Int) (string, bool)
 	GetChainIDByNetwork(ctx sdk.Context, network string) *big.Int
 }
@@ -89,9 +87,8 @@ type TSS interface {
 
 // Voter exposes voting functionality
 type Voter interface {
-	InitPoll(ctx sdk.Context, poll vote.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
-	DeletePoll(ctx sdk.Context, poll vote.PollKey)
-	TallyVote(ctx sdk.Context, sender sdk.AccAddress, pollKey vote.PollKey, data codec.ProtoMarshaler) (*votetypes.Poll, error)
+	InitializePoll(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
+	GetPoll(ctx sdk.Context, pollKey vote.PollKey) vote.Poll
 }
 
 // Nexus provides functionality to manage cross-chain transfers
@@ -111,12 +108,12 @@ type Nexus interface {
 // because the concrete implementation of Signer (specifically StartSign) is defined in a different package using another (identical)
 // InitPoller interface. Go cannot match the types otherwise
 type InitPoller = interface {
-	InitPoll(ctx sdk.Context, poll vote.PollKey, snapshotCounter int64, expireAt int64, threshold ...utils.Threshold) error
+	InitializePoll(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
 }
 
 // Signer provides keygen and signing functionality
 type Signer interface {
-	StartSign(ctx sdk.Context, initPoll InitPoller, keyID string, sigID string, msg []byte, snapshot snapshot.Snapshot) error
+	StartSign(ctx sdk.Context, voter InitPoller, keyID string, sigID string, msg []byte, snapshot snapshot.Snapshot) error
 	GetSig(ctx sdk.Context, sigID string) (tss.Signature, bool)
 	GetKey(ctx sdk.Context, keyID string) (tss.Key, bool)
 	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool)

@@ -12,7 +12,7 @@ import (
 
 const defaultDelimiter = "_"
 
-// Key represents a store key to interact with the NormalizedKVStore
+// Key represents a store key to interact with the KVStore
 type Key interface {
 	// AsKey returns the byte representation of the key. If given, uses a delimiter string to separate prefixes
 	AsKey(delimiter ...string) []byte
@@ -28,32 +28,32 @@ type StringKey interface {
 	PrependStr(key string, stringTransformations ...func(string) string) StringKey
 }
 
-// NormalizedKVStore is a wrapper around the cosmos-sdk KVStore to provide more safety regarding key management and better ease-of-use
-type NormalizedKVStore struct {
+// KVStore is a wrapper around the cosmos-sdk KVStore to provide more safety regarding key management and better ease-of-use
+type KVStore struct {
 	sdk.KVStore
 	cdc codec.BinaryMarshaler
 }
 
-// NewNormalizedStore returns a new NormalizedKVStore
-func NewNormalizedStore(store sdk.KVStore, cdc codec.BinaryMarshaler) NormalizedKVStore {
-	return NormalizedKVStore{
+// NewNormalizedStore returns a new KVStore
+func NewNormalizedStore(store sdk.KVStore, cdc codec.BinaryMarshaler) KVStore {
+	return KVStore{
 		KVStore: store,
 		cdc:     cdc,
 	}
 }
 
 // Set marshals the value and stores it under the given key
-func (store NormalizedKVStore) Set(key Key, value codec.ProtoMarshaler) {
+func (store KVStore) Set(key Key, value codec.ProtoMarshaler) {
 	store.KVStore.Set(key.AsKey(), store.cdc.MustMarshalBinaryLengthPrefixed(value))
 }
 
 // SetRaw stores the value under the given key
-func (store NormalizedKVStore) SetRaw(key Key, value []byte) {
+func (store KVStore) SetRaw(key Key, value []byte) {
 	store.KVStore.Set(key.AsKey(), value)
 }
 
 // Get unmarshals the raw bytes stored under the given key into the value object. Returns true if the key exists.
-func (store NormalizedKVStore) Get(key Key, value codec.ProtoMarshaler) bool {
+func (store KVStore) Get(key Key, value codec.ProtoMarshaler) bool {
 	bz := store.KVStore.Get(key.AsKey())
 	if bz == nil {
 		return false
@@ -63,18 +63,46 @@ func (store NormalizedKVStore) Get(key Key, value codec.ProtoMarshaler) bool {
 }
 
 // GetRaw returns the raw bytes stored under the given key. Returns nil with key does not exist.
-func (store NormalizedKVStore) GetRaw(key Key) []byte {
+func (store KVStore) GetRaw(key Key) []byte {
 	return store.KVStore.Get(key.AsKey())
 }
 
 // Has returns true if the key exists.
-func (store NormalizedKVStore) Has(key Key) bool {
+func (store KVStore) Has(key Key) bool {
 	return store.KVStore.Has(key.AsKey())
 }
 
 // Delete deletes the value stored under the given key, if it exists
-func (store NormalizedKVStore) Delete(key Key) {
+func (store KVStore) Delete(key Key) {
 	store.KVStore.Delete(key.AsKey())
+}
+
+// Iterator returns an Iterator that can handle a structured Key
+func (store KVStore) Iterator(prefix Key) Iterator {
+	iter := sdk.KVStorePrefixIterator(store.KVStore, prefix.AsKey())
+	return iterator{Iterator: iter, cdc: store.cdc}
+}
+
+// Iterator is an easier and safer to use sdk.Iterator extension
+type Iterator interface {
+	sdk.Iterator
+	UnmarshalValue(marshaler codec.ProtoMarshaler)
+	GetKey() Key
+}
+
+type iterator struct {
+	sdk.Iterator
+	cdc codec.BinaryMarshaler
+}
+
+// UnmarshalValue returns the value marshalled into the given type
+func (i iterator) UnmarshalValue(value codec.ProtoMarshaler) {
+	i.cdc.MustUnmarshalBinaryLengthPrefixed(i.Value(), value)
+}
+
+// GetKey returns the key of the current iterator value
+func (i iterator) GetKey() Key {
+	return KeyFromBz(i.Key())
 }
 
 type key struct {

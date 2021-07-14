@@ -122,7 +122,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 	)
 	setup := func() {
 		cdc := app.MakeEncodingConfig().Amino
-		poll := exported.NewPollKey(evmTypes.ModuleName, rand.StrBetween(5, 20))
+		pollKey := exported.NewPollKey(evmTypes.ModuleName, rand.StrBetween(5, 20))
 
 		burnAddrBytes := rand.Bytes(common.AddressLength)
 		tokenAddrBytes := rand.Bytes(common.AddressLength)
@@ -136,7 +136,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 			sdk.NewAttribute(evmTypes.AttributeKeyBurnAddress, common.Bytes2Hex(burnAddrBytes)),
 			sdk.NewAttribute(evmTypes.AttributeKeyTokenAddress, common.Bytes2Hex(tokenAddrBytes)),
 			sdk.NewAttribute(evmTypes.AttributeKeyConfHeight, strconv.FormatUint(uint64(confHeight), 10)),
-			sdk.NewAttribute(evmTypes.AttributeKeyPoll, string(cdc.MustMarshalJSON(poll))),
+			sdk.NewAttribute(evmTypes.AttributeKeyPoll, string(cdc.MustMarshalJSON(pollKey))),
 		}
 
 		rpc = &mock.ClientMock{
@@ -274,7 +274,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 	)
 	setup := func() {
 		cdc := app.MakeEncodingConfig().Amino
-		poll := exported.NewPollKey(evmTypes.ModuleName, rand.StrBetween(5, 20))
+		pollKey := exported.NewPollKey(evmTypes.ModuleName, rand.StrBetween(5, 20))
 
 		gatewayAddrBytes = rand.Bytes(common.AddressLength)
 		tokenAddrBytes := rand.Bytes(common.AddressLength)
@@ -289,7 +289,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 			sdk.NewAttribute(evmTypes.AttributeKeyTokenAddress, common.Bytes2Hex(tokenAddrBytes)),
 			sdk.NewAttribute(evmTypes.AttributeKeySymbol, symbol),
 			sdk.NewAttribute(evmTypes.AttributeKeyConfHeight, strconv.FormatUint(uint64(confHeight), 10)),
-			sdk.NewAttribute(evmTypes.AttributeKeyPoll, string(cdc.MustMarshalJSON(poll))),
+			sdk.NewAttribute(evmTypes.AttributeKeyPoll, string(cdc.MustMarshalJSON(pollKey))),
 		}
 
 		rpc = &mock.ClientMock{
@@ -416,7 +416,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 	)
 	setup := func() {
 		cdc := app.MakeEncodingConfig().Amino
-		poll := exported.NewPollKey(evmTypes.ModuleName, rand.StrBetween(5, 20))
+		pollKey := exported.NewPollKey(evmTypes.ModuleName, rand.StrBetween(5, 20))
 
 		gatewayAddrBytes := rand.Bytes(common.AddressLength)
 		newOwnerAddrBytes := rand.Bytes(common.AddressLength)
@@ -430,7 +430,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 			sdk.NewAttribute(evmTypes.AttributeKeyGatewayAddress, common.Bytes2Hex(gatewayAddrBytes)),
 			sdk.NewAttribute(evmTypes.AttributeKeyAddress, common.Bytes2Hex(newOwnerAddrBytes)),
 			sdk.NewAttribute(evmTypes.AttributeKeyConfHeight, strconv.FormatUint(uint64(confHeight), 10)),
-			sdk.NewAttribute(evmTypes.AttributeKeyPoll, string(cdc.MustMarshalJSON(poll))),
+			sdk.NewAttribute(evmTypes.AttributeKeyPoll, string(cdc.MustMarshalJSON(pollKey))),
 		}
 
 		rpc = &mock.ClientMock{

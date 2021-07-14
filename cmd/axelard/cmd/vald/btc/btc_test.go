@@ -39,13 +39,13 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 		mgr = NewMgr(rpc, broadcaster, nil, log.TestingLogger(), cdc)
 
 		confHeight = rand.PosI64()
-		poll := exported.NewPollKey(btc.ModuleName, rand.StrBetween(1, 100))
+		pollKey := exported.NewPollKey(btc.ModuleName, rand.StrBetween(1, 100))
 
 		info = randomOutpointInfo()
 		attributes = []sdk.Attribute{
 			sdk.NewAttribute(btc.AttributeKeyConfHeight, strconv.FormatInt(confHeight, 10)),
 			sdk.NewAttribute(btc.AttributeKeyOutPointInfo, string(mgr.cdc.MustMarshalJSON(info))),
-			sdk.NewAttribute(btc.AttributeKeyPoll, string(mgr.cdc.MustMarshalJSON(poll))),
+			sdk.NewAttribute(btc.AttributeKeyPoll, string(mgr.cdc.MustMarshalJSON(pollKey))),
 		}
 	}
 

@@ -22,14 +22,14 @@ type KVQueue interface {
 // the order of items that are enqueued at the same block height is deterministically based on their actual key
 // in the KVStore
 type BlockHeightKVQueue struct {
-	store       NormalizedKVStore
+	store       KVStore
 	blockHeight Key
 	name        Key
 	logger      log.Logger
 }
 
 // NewBlockHeightKVQueue is the constructor of BlockHeightKVQueue
-func NewBlockHeightKVQueue(name string, store NormalizedKVStore, blockHeight int64, logger log.Logger) BlockHeightKVQueue {
+func NewBlockHeightKVQueue(name string, store KVStore, blockHeight int64, logger log.Logger) BlockHeightKVQueue {
 	return BlockHeightKVQueue{store: store, name: KeyFromStr(name), logger: logger}.WithBlockHeight(blockHeight)
 }
 

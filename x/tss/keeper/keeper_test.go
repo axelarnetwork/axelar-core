@@ -13,6 +13,8 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
+	slashingTypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
+
 	appParams "github.com/axelarnetwork/axelar-core/app/params"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -20,12 +22,10 @@ import (
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
-
-	slashingTypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
+	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
-	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 var (
@@ -57,7 +57,7 @@ func setup() *testSetup {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	encCfg := appParams.MakeEncodingConfig()
 	voter := &tssMock.VoterMock{
-		InitPollFunc: func(sdk.Context, exported.PollKey, int64, int64, ...utils.Threshold) error { return nil },
+		InitializePollFunc: func(sdk.Context, exported.PollKey, int64, ...exported.PollProperty) error { return nil },
 	}
 
 	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), "tss")
