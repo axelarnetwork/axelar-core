@@ -27,6 +27,10 @@ func (m RegisterExternalKeyRequest) Type() string {
 
 // ValidateBasic executes a stateless message validation
 func (m RegisterExternalKeyRequest) ValidateBasic() error {
+	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	}
+
 	if m.KeyID == "" {
 		return sdkerrors.Wrap(ErrBitcoin, "key id must be set")
 	}

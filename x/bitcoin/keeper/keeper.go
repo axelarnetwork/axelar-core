@@ -109,10 +109,15 @@ func (k Keeper) GetNetwork(ctx sdk.Context) types.Network {
 
 // GetMinimumWithdrawalAmount returns the minimum withdrawal threshold
 func (k Keeper) GetMinimumWithdrawalAmount(ctx sdk.Context) btcutil.Amount {
-	var result btcutil.Amount
+	var result string
 	k.params.Get(ctx, types.KeyMinimumWithdrawalAmount, &result)
 
-	return result
+	satoshi, err := types.ParseSatoshi(result)
+	if err != nil {
+		panic(err)
+	}
+
+	return btcutil.Amount(satoshi.Amount.Int64())
 }
 
 // GetMaxInputCount returns the max input count
@@ -125,10 +130,15 @@ func (k Keeper) GetMaxInputCount(ctx sdk.Context) int64 {
 
 // GetMaxSecondaryOutputAmount returns the max secondary output amount
 func (k Keeper) GetMaxSecondaryOutputAmount(ctx sdk.Context) btcutil.Amount {
-	var result btcutil.Amount
+	var result string
 	k.params.Get(ctx, types.KeyMaxSecondaryOutputAmount, &result)
 
-	return result
+	satoshi, err := types.ParseSatoshi(result)
+	if err != nil {
+		panic(err)
+	}
+
+	return btcutil.Amount(satoshi.Amount.Int64())
 }
 
 // SetAddress stores the given address information

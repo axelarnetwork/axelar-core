@@ -12,9 +12,7 @@ message Params {
   uint64 confirmation_height = 2;
   int64 revote_locking_period = 3;
   int64 sig_check_interval = 4;
-  int64 minimum_withdrawal_amount = 5
-      [ (gogoproto.casttype) = "github.com/btcsuite/btcutil.Amount" ];
+  string minimum_withdrawal_amount = 5;
   int64 max_input_count = 6;
-  int64 max_secondary_output_amount = 7
-      [ (gogoproto.casttype) = "github.com/btcsuite/btcutil.Amount" ];
+  string max_secondary_output_amount = 7;
 }

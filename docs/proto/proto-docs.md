@@ -388,9 +388,9 @@ of a transaction
 | `confirmation_height` | [uint64](#uint64) |  |  |
 | `revote_locking_period` | [int64](#int64) |  |  |
 | `sig_check_interval` | [int64](#int64) |  |  |
-| `minimum_withdrawal_amount` | [int64](#int64) |  |  |
+| `minimum_withdrawal_amount` | [string](#string) |  |  |
 | `max_input_count` | [int64](#int64) |  |  |
-| `max_secondary_output_amount` | [int64](#int64) |  |  |
+| `max_secondary_output_amount` | [string](#string) |  |  |
 
 
 

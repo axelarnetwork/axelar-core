@@ -255,6 +255,7 @@ func (s msgServer) SignMasterConsolidationTransaction(c context.Context, req *ty
 		return nil, fmt.Errorf("secondary key amount %d is below the minimum", req.SecondaryKeyAmount)
 	}
 
+	// the secondary key amount has to be less than or equal to the maximum
 	if req.SecondaryKeyAmount > s.GetMaxSecondaryOutputAmount(ctx) {
 		return nil, fmt.Errorf("secondary key amount %d is above the maximum", req.SecondaryKeyAmount)
 	}
@@ -366,6 +367,7 @@ func (s msgServer) SignMasterConsolidationTransaction(c context.Context, req *ty
 func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendingTransfersRequest) (*types.SignPendingTransfersResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
+	// if transfering coin to the master key, the amount has to be greater than or equal to the minimum
 	if req.MasterKeyAmount > 0 && req.MasterKeyAmount < s.GetMinimumWithdrawalAmount(ctx) {
 		return nil, fmt.Errorf("master key amount %d is below the minimum", req.MasterKeyAmount)
 	}

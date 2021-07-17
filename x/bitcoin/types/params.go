@@ -3,10 +3,13 @@ package types
 import (
 	"fmt"
 
-	"github.com/btcsuite/btcutil"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
+)
+
+const (
+	dustLimit = 546
 )
 
 // Parameter keys
@@ -32,9 +35,9 @@ func DefaultParams() Params {
 		Network:                  Network{Name: Regtest.Name},
 		RevoteLockingPeriod:      50,
 		SigCheckInterval:         10,
-		MinimumWithdrawalAmount:  1000,
+		MinimumWithdrawalAmount:  "0.00001btc",
 		MaxInputCount:            50,
-		MaxSecondaryOutputAmount: 30000000000,
+		MaxSecondaryOutputAmount: "300btc",
 	}
 }
 
@@ -91,14 +94,19 @@ func validateRevoteLockingPeriod(period interface{}) error {
 }
 
 func validateMinimumWithdrawalAmount(amount interface{}) error {
-	i, ok := amount.(btcutil.Amount)
+	i, ok := amount.(string)
 	if !ok {
 		return fmt.Errorf("invalid parameter type for minimum withdrawal amount: %T", i)
 	}
 
+	satoshi, err := ParseSatoshi(i)
+	if err != nil {
+		return err
+	}
+
 	// Dust limit is 546 satoshis for non-SegWit, 294 satoshis for SegWit
-	if i <= 546 {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, " minimum withdrawal amount must be greater than 0")
+	if satoshi.Amount.Int64() <= dustLimit {
+		return sdkerrors.Wrapf(types.ErrInvalidGenesis, "minimum withdrawal amount must be greater than %d", dustLimit)
 	}
 
 	return nil
@@ -131,12 +139,17 @@ func validateMaxInputCount(maxInputCount interface{}) error {
 }
 
 func validateMaxSecondaryOutputAmount(maxSecondaryOutputAmount interface{}) error {
-	m, ok := maxSecondaryOutputAmount.(btcutil.Amount)
+	m, ok := maxSecondaryOutputAmount.(string)
 	if !ok {
 		return fmt.Errorf("invalid parameter type for max input count: %T", maxSecondaryOutputAmount)
 	}
 
-	if m <= 0 {
+	satoshi, err := ParseSatoshi(m)
+	if err != nil {
+		return err
+	}
+
+	if satoshi.Amount.Int64() <= 0 {
 		return sdkerrors.Wrap(types.ErrInvalidGenesis, "max secondary output amount must be greater than 0")
 	}
 
