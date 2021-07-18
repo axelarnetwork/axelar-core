@@ -238,11 +238,16 @@ func payForConsolidationTx(ctx sdk.Context, k types.BTCKeeper, rpc types.RPCClie
 	network := k.GetNetwork(ctx)
 	consolidationTxHash := consolidationTx.TxHash()
 	anyoneCanSpendAddress := k.GetAnyoneCanSpendAddress(ctx)
+
+	anyoneCanSpendVout, ok := k.GetAnyoneCanSpendVout(ctx, consolidationTxHash)
+	if !ok {
+		return nil, fmt.Errorf("no anyone-can-spend output found in consolidation transaction %s", consolidationTxHash.String())
+	}
+
 	inputs := []types.OutPointToSign{
 		{
 			OutPointInfo: types.NewOutPointInfo(
-				// TODO: anyone-can-spend output is no longer harded-coded at vout 1. Will fix soon.
-				wire.NewOutPoint(&consolidationTxHash, 1),
+				wire.NewOutPoint(&consolidationTxHash, uint32(anyoneCanSpendVout)),
 				k.GetMinimumWithdrawalAmount(ctx),
 				anyoneCanSpendAddress.Address,
 			),

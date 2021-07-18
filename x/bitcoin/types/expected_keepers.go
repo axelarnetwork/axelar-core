@@ -55,6 +55,9 @@ type BTCKeeper interface {
 	GetDustAmount(ctx sdk.Context, encodedAddress string) btcutil.Amount
 	SetDustAmount(ctx sdk.Context, encodedAddress string, amount btcutil.Amount)
 	DeleteDustAmount(ctx sdk.Context, encodedAddress string)
+
+	SetAnyoneCanSpendVout(ctx sdk.Context, txHash chainhash.Hash, vout int64)
+	GetAnyoneCanSpendVout(ctx sdk.Context, txHash chainhash.Hash) (int64, bool)
 }
 
 // Voter is the interface that provides voting functionality

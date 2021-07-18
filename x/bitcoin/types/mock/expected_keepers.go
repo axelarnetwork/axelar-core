@@ -1535,6 +1535,9 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			GetAnyoneCanSpendAddressFunc: func(ctx sdk.Context) types.AddressInfo {
 // 				panic("mock out the GetAnyoneCanSpendAddress method")
 // 			},
+// 			GetAnyoneCanSpendVoutFunc: func(ctx sdk.Context, txHash chainhash.Hash) (int64, bool) {
+// 				panic("mock out the GetAnyoneCanSpendVout method")
+// 			},
 // 			GetConfirmedOutpointInfoQueueForKeyFunc: func(ctx sdk.Context, keyID string) utils.KVQueue {
 // 				panic("mock out the GetConfirmedOutpointInfoQueueForKey method")
 // 			},
@@ -1586,6 +1589,9 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			SetAddressFunc: func(ctx sdk.Context, address types.AddressInfo)  {
 // 				panic("mock out the SetAddress method")
 // 			},
+// 			SetAnyoneCanSpendVoutFunc: func(ctx sdk.Context, txHash chainhash.Hash, vout int64)  {
+// 				panic("mock out the SetAnyoneCanSpendVout method")
+// 			},
 // 			SetConfirmedOutpointInfoFunc: func(ctx sdk.Context, keyID string, info types.OutPointInfo)  {
 // 				panic("mock out the SetConfirmedOutpointInfo method")
 // 			},
@@ -1631,6 +1637,9 @@ type BTCKeeperMock struct {
 
 	// GetAnyoneCanSpendAddressFunc mocks the GetAnyoneCanSpendAddress method.
 	GetAnyoneCanSpendAddressFunc func(ctx sdk.Context) types.AddressInfo
+
+	// GetAnyoneCanSpendVoutFunc mocks the GetAnyoneCanSpendVout method.
+	GetAnyoneCanSpendVoutFunc func(ctx sdk.Context, txHash chainhash.Hash) (int64, bool)
 
 	// GetConfirmedOutpointInfoQueueForKeyFunc mocks the GetConfirmedOutpointInfoQueueForKey method.
 	GetConfirmedOutpointInfoQueueForKeyFunc func(ctx sdk.Context, keyID string) utils.KVQueue
@@ -1682,6 +1691,9 @@ type BTCKeeperMock struct {
 
 	// SetAddressFunc mocks the SetAddress method.
 	SetAddressFunc func(ctx sdk.Context, address types.AddressInfo)
+
+	// SetAnyoneCanSpendVoutFunc mocks the SetAnyoneCanSpendVout method.
+	SetAnyoneCanSpendVoutFunc func(ctx sdk.Context, txHash chainhash.Hash, vout int64)
 
 	// SetConfirmedOutpointInfoFunc mocks the SetConfirmedOutpointInfo method.
 	SetConfirmedOutpointInfoFunc func(ctx sdk.Context, keyID string, info types.OutPointInfo)
@@ -1743,6 +1755,13 @@ type BTCKeeperMock struct {
 		GetAnyoneCanSpendAddress []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
+		}
+		// GetAnyoneCanSpendVout holds details about calls to the GetAnyoneCanSpendVout method.
+		GetAnyoneCanSpendVout []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// TxHash is the txHash argument value.
+			TxHash chainhash.Hash
 		}
 		// GetConfirmedOutpointInfoQueueForKey holds details about calls to the GetConfirmedOutpointInfoQueueForKey method.
 		GetConfirmedOutpointInfoQueueForKey []struct {
@@ -1841,6 +1860,15 @@ type BTCKeeperMock struct {
 			// Address is the address argument value.
 			Address types.AddressInfo
 		}
+		// SetAnyoneCanSpendVout holds details about calls to the SetAnyoneCanSpendVout method.
+		SetAnyoneCanSpendVout []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// TxHash is the txHash argument value.
+			TxHash chainhash.Hash
+			// Vout is the vout argument value.
+			Vout int64
+		}
 		// SetConfirmedOutpointInfo holds details about calls to the SetConfirmedOutpointInfo method.
 		SetConfirmedOutpointInfo []struct {
 			// Ctx is the ctx argument value.
@@ -1903,6 +1931,7 @@ type BTCKeeperMock struct {
 	lockDeleteUnsignedTx                    sync.RWMutex
 	lockGetAddress                          sync.RWMutex
 	lockGetAnyoneCanSpendAddress            sync.RWMutex
+	lockGetAnyoneCanSpendVout               sync.RWMutex
 	lockGetConfirmedOutpointInfoQueueForKey sync.RWMutex
 	lockGetDustAmount                       sync.RWMutex
 	lockGetLatestSignedTxHash               sync.RWMutex
@@ -1920,6 +1949,7 @@ type BTCKeeperMock struct {
 	lockGetUnsignedTx                       sync.RWMutex
 	lockLogger                              sync.RWMutex
 	lockSetAddress                          sync.RWMutex
+	lockSetAnyoneCanSpendVout               sync.RWMutex
 	lockSetConfirmedOutpointInfo            sync.RWMutex
 	lockSetDustAmount                       sync.RWMutex
 	lockSetParams                           sync.RWMutex
@@ -2128,6 +2158,41 @@ func (mock *BTCKeeperMock) GetAnyoneCanSpendAddressCalls() []struct {
 	mock.lockGetAnyoneCanSpendAddress.RLock()
 	calls = mock.calls.GetAnyoneCanSpendAddress
 	mock.lockGetAnyoneCanSpendAddress.RUnlock()
+	return calls
+}
+
+// GetAnyoneCanSpendVout calls GetAnyoneCanSpendVoutFunc.
+func (mock *BTCKeeperMock) GetAnyoneCanSpendVout(ctx sdk.Context, txHash chainhash.Hash) (int64, bool) {
+	if mock.GetAnyoneCanSpendVoutFunc == nil {
+		panic("BTCKeeperMock.GetAnyoneCanSpendVoutFunc: method is nil but BTCKeeper.GetAnyoneCanSpendVout was just called")
+	}
+	callInfo := struct {
+		Ctx    sdk.Context
+		TxHash chainhash.Hash
+	}{
+		Ctx:    ctx,
+		TxHash: txHash,
+	}
+	mock.lockGetAnyoneCanSpendVout.Lock()
+	mock.calls.GetAnyoneCanSpendVout = append(mock.calls.GetAnyoneCanSpendVout, callInfo)
+	mock.lockGetAnyoneCanSpendVout.Unlock()
+	return mock.GetAnyoneCanSpendVoutFunc(ctx, txHash)
+}
+
+// GetAnyoneCanSpendVoutCalls gets all the calls that were made to GetAnyoneCanSpendVout.
+// Check the length with:
+//     len(mockedBTCKeeper.GetAnyoneCanSpendVoutCalls())
+func (mock *BTCKeeperMock) GetAnyoneCanSpendVoutCalls() []struct {
+	Ctx    sdk.Context
+	TxHash chainhash.Hash
+} {
+	var calls []struct {
+		Ctx    sdk.Context
+		TxHash chainhash.Hash
+	}
+	mock.lockGetAnyoneCanSpendVout.RLock()
+	calls = mock.calls.GetAnyoneCanSpendVout
+	mock.lockGetAnyoneCanSpendVout.RUnlock()
 	return calls
 }
 
@@ -2679,6 +2744,45 @@ func (mock *BTCKeeperMock) SetAddressCalls() []struct {
 	mock.lockSetAddress.RLock()
 	calls = mock.calls.SetAddress
 	mock.lockSetAddress.RUnlock()
+	return calls
+}
+
+// SetAnyoneCanSpendVout calls SetAnyoneCanSpendVoutFunc.
+func (mock *BTCKeeperMock) SetAnyoneCanSpendVout(ctx sdk.Context, txHash chainhash.Hash, vout int64) {
+	if mock.SetAnyoneCanSpendVoutFunc == nil {
+		panic("BTCKeeperMock.SetAnyoneCanSpendVoutFunc: method is nil but BTCKeeper.SetAnyoneCanSpendVout was just called")
+	}
+	callInfo := struct {
+		Ctx    sdk.Context
+		TxHash chainhash.Hash
+		Vout   int64
+	}{
+		Ctx:    ctx,
+		TxHash: txHash,
+		Vout:   vout,
+	}
+	mock.lockSetAnyoneCanSpendVout.Lock()
+	mock.calls.SetAnyoneCanSpendVout = append(mock.calls.SetAnyoneCanSpendVout, callInfo)
+	mock.lockSetAnyoneCanSpendVout.Unlock()
+	mock.SetAnyoneCanSpendVoutFunc(ctx, txHash, vout)
+}
+
+// SetAnyoneCanSpendVoutCalls gets all the calls that were made to SetAnyoneCanSpendVout.
+// Check the length with:
+//     len(mockedBTCKeeper.SetAnyoneCanSpendVoutCalls())
+func (mock *BTCKeeperMock) SetAnyoneCanSpendVoutCalls() []struct {
+	Ctx    sdk.Context
+	TxHash chainhash.Hash
+	Vout   int64
+} {
+	var calls []struct {
+		Ctx    sdk.Context
+		TxHash chainhash.Hash
+		Vout   int64
+	}
+	mock.lockSetAnyoneCanSpendVout.RLock()
+	calls = mock.calls.SetAnyoneCanSpendVout
+	mock.lockSetAnyoneCanSpendVout.RUnlock()
 	return calls
 }
 

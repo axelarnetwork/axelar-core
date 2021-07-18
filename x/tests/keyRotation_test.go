@@ -286,7 +286,12 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	signedTx := types.MustDecodeTx(buf)
 
 	fee := btcTypes.EstimateTxSize(signedTx, outpointsToSign)
-	assert.True(t, txCorrectlyFormed(&signedTx, deposits, totalDepositAmount-fee-int64(btcTypes.DefaultParams().MinimumWithdrawalAmount)))
+
+	satoshi, err := types.ParseSatoshi(btcTypes.DefaultParams().MinimumWithdrawalAmount)
+	if err != nil {
+		panic(err)
+	}
+	assert.True(t, txCorrectlyFormed(&signedTx, deposits, totalDepositAmount-fee-satoshi.Amount.Int64()))
 
 	// expected consolidation info
 	consAddr := getAddress(signedTx.TxOut[0], btcTypes.DefaultParams().Network.Params())
@@ -319,7 +324,12 @@ func txCorrectlyFormed(tx *wire.MsgTx, deposits map[string]btcTypes.OutPointInfo
 		}
 	}
 
+	satoshi, err := types.ParseSatoshi(btcTypes.DefaultParams().MinimumWithdrawalAmount)
+	if err != nil {
+		panic(err)
+	}
+
 	return len(tx.TxOut) == 2 && // two TxOut's
 		tx.TxOut[1].Value == txAmount && // change TxOut
-		tx.TxOut[0].Value == int64(btcTypes.DefaultParams().MinimumWithdrawalAmount) // anyone-can-spend TxOut
+		tx.TxOut[0].Value == satoshi.Amount.Int64() // anyone-can-spend TxOut
 }

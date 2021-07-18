@@ -74,6 +74,7 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, k types.BTCKeeper, si
 	}
 
 	txHash := tx.TxHash()
+	anyoneCanSpentAddress := k.GetAnyoneCanSpendAddress(ctx).GetAddress().EncodeAddress()
 
 	// Confirm all outpoints that axelar controls the keys of
 	for i, output := range tx.TxOut {
@@ -87,13 +88,19 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, k types.BTCKeeper, si
 			continue
 		}
 
-		address, ok := k.GetAddress(ctx, addresses[0].EncodeAddress())
+		address := addresses[0].EncodeAddress()
+
+		if address == anyoneCanSpentAddress {
+			k.SetAnyoneCanSpendVout(ctx, txHash, int64(i))
+		}
+
+		addressInfo, ok := k.GetAddress(ctx, address)
 		if !ok {
 			continue
 		}
 
-		outpointInfo := types.NewOutPointInfo(wire.NewOutPoint(&txHash, uint32(i)), btcutil.Amount(output.Value), address.Address)
-		k.SetConfirmedOutpointInfo(ctx, address.KeyID, outpointInfo)
+		outpointInfo := types.NewOutPointInfo(wire.NewOutPoint(&txHash, uint32(i)), btcutil.Amount(output.Value), addressInfo.Address)
+		k.SetConfirmedOutpointInfo(ctx, addressInfo.KeyID, outpointInfo)
 
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent(types.EventTypeOutpointConfirmation,
