@@ -143,6 +143,14 @@ func (k Keeper) GetMaxSecondaryOutputAmount(ctx sdk.Context) btcutil.Amount {
 	return btcutil.Amount(satoshi.Amount.Int64())
 }
 
+// GetPrevMasterKeyCycle returns the prev master key cycle
+func (k Keeper) GetPrevMasterKeyCycle(ctx sdk.Context) int64 {
+	var result int64
+	k.params.Get(ctx, types.KeyPrevMasterKeyCycle, &result)
+
+	return result
+}
+
 // SetAddress stores the given address information
 func (k Keeper) SetAddress(ctx sdk.Context, address types.AddressInfo) {
 	k.getStore(ctx).Set(addrPrefix.Append(utils.LowerCaseKey(address.Address)), &address)

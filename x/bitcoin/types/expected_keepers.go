@@ -12,6 +12,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	exported "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -32,6 +33,7 @@ type BTCKeeper interface {
 	GetMinimumWithdrawalAmount(ctx sdk.Context) btcutil.Amount
 	GetMaxInputCount(ctx sdk.Context) int64
 	GetMaxSecondaryOutputAmount(ctx sdk.Context) btcutil.Amount
+	GetPrevMasterKeyCycle(ctx sdk.Context) int64
 
 	SetPendingOutpointInfo(ctx sdk.Context, key vote.PollKey, info OutPointInfo)
 	GetPendingOutPointInfo(ctx sdk.Context, key vote.PollKey) (OutPointInfo, bool)
@@ -86,6 +88,8 @@ type Signer interface {
 	AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error
 	RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) error
 	AssertMatchesRequirements(ctx sdk.Context, snapshotter Snapshotter, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error
+	GetRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64
+	GetKeyByRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, rotationCount int64) (exported.Key, bool)
 }
 
 // Nexus provides functionality to manage cross-chain transfers

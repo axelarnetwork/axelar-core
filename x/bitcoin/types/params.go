@@ -21,6 +21,7 @@ var (
 	KeyMinimumWithdrawalAmount  = []byte("KeyMinimumWithdrawalAmount")
 	KeyMaxInputCount            = []byte("KeyMaxInputCount")
 	KeyMaxSecondaryOutputAmount = []byte("KeyMaxSecondaryOutputAmount")
+	KeyPrevMasterKeyCycle       = []byte("KeyPrevMasterKeyCycle")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -38,6 +39,7 @@ func DefaultParams() Params {
 		MinimumWithdrawalAmount:  "0.00001btc",
 		MaxInputCount:            50,
 		MaxSecondaryOutputAmount: "300btc",
+		PrevMasterKeyCycle:       8,
 	}
 }
 
@@ -58,6 +60,7 @@ func (m *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(KeyMinimumWithdrawalAmount, &m.MinimumWithdrawalAmount, validateMinimumWithdrawalAmount),
 		paramtypes.NewParamSetPair(KeyMaxInputCount, &m.MaxInputCount, validateMaxInputCount),
 		paramtypes.NewParamSetPair(KeyMaxSecondaryOutputAmount, &m.MaxSecondaryOutputAmount, validateMaxSecondaryOutputAmount),
+		paramtypes.NewParamSetPair(KeyPrevMasterKeyCycle, &m.PrevMasterKeyCycle, validatePrevMasterKeyCycle),
 	}
 }
 
@@ -156,6 +159,19 @@ func validateMaxSecondaryOutputAmount(maxSecondaryOutputAmount interface{}) erro
 	return nil
 }
 
+func validatePrevMasterKeyCycle(prevMasterKeyCycle interface{}) error {
+	m, ok := prevMasterKeyCycle.(int64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for prev master key cycle: %T", prevMasterKeyCycle)
+	}
+
+	if m <= 0 {
+		return fmt.Errorf("prev master key cycle has to be greater than 0")
+	}
+
+	return nil
+}
+
 // Validate checks the validity of the values of the parameter set
 func (m Params) Validate() error {
 	if err := validateConfirmationHeight(m.ConfirmationHeight); err != nil {
@@ -182,6 +198,10 @@ func (m Params) Validate() error {
 	}
 
 	if err := validateMaxSecondaryOutputAmount(m.MaxSecondaryOutputAmount); err != nil {
+		return err
+	}
+
+	if err := validatePrevMasterKeyCycle(m.PrevMasterKeyCycle); err != nil {
 		return err
 	}
 

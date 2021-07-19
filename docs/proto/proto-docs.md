@@ -391,6 +391,7 @@ of a transaction
 | `minimum_withdrawal_amount` | [string](#string) |  |  |
 | `max_input_count` | [int64](#int64) |  |  |
 | `max_secondary_output_amount` | [string](#string) |  |  |
+| `prev_master_key_cycle` | [int64](#int64) |  |  |
 
 
 

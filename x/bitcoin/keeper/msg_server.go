@@ -307,8 +307,13 @@ func (s msgServer) SignMasterConsolidationTransaction(c context.Context, req *ty
 		totalOut = totalOut.AddRaw(int64(req.SecondaryKeyAmount))
 	}
 
+	prevMasterKey, ok := getPrevMasterKey(ctx, s.BTCKeeper, s.signer)
+	if !ok {
+		return nil, fmt.Errorf("cannot find the %s key for the period", tss.MasterKey.SimpleString())
+	}
+
 	// TODO: figure out a proper value for lockedUntil and pass in old master key
-	consolidationAddress := types.NewMasterConsolidationAddress(consolidationKey, consolidationKey, externalKey, ctx.BlockTime(), s.GetNetwork(ctx))
+	consolidationAddress := types.NewMasterConsolidationAddress(consolidationKey, prevMasterKey, externalKey, ctx.BlockTime(), s.GetNetwork(ctx))
 	txSizeUpperBound, err := estimateTxSizeWithZeroChange(ctx, s, consolidationAddress, inputs, outputs)
 	if err != nil {
 		return nil, err
@@ -407,7 +412,12 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 			return nil, fmt.Errorf("external key not registered")
 		}
 
-		currMasterAddress := types.NewMasterConsolidationAddress(currMasterKey, currMasterKey, externalKey, ctx.BlockTime(), s.GetNetwork(ctx))
+		prevMasterKey, ok := getPrevMasterKey(ctx, s.BTCKeeper, s.signer)
+		if !ok {
+			return nil, fmt.Errorf("cannot find the %s key for the period", tss.MasterKey.SimpleString())
+		}
+
+		currMasterAddress := types.NewMasterConsolidationAddress(currMasterKey, prevMasterKey, externalKey, ctx.BlockTime(), s.GetNetwork(ctx))
 		masterOutput := types.Output{Amount: btcutil.Amount(req.MasterKeyAmount), Recipient: currMasterAddress.GetAddress()}
 
 		outputs = append(outputs, masterOutput)
@@ -477,6 +487,13 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 	}
 
 	return &types.SignPendingTransfersResponse{}, nil
+}
+
+func getPrevMasterKey(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) (tss.Key, bool) {
+	currRotationCount := signer.GetRotationCount(ctx, exported.Bitcoin, tss.MasterKey)
+	prevMasterKeyRotationCount := currRotationCount - (currRotationCount-1)%k.GetPrevMasterKeyCycle(ctx)
+
+	return signer.GetKeyByRotationCount(ctx, exported.Bitcoin, tss.MasterKey, prevMasterKeyRotationCount)
 }
 
 func estimateTxSizeWithZeroChange(ctx sdk.Context, k types.BTCKeeper, address types.AddressInfo, inputs []types.OutPointToSign, outputs []types.Output) (int64, error) {

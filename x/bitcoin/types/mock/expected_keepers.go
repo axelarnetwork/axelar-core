@@ -176,8 +176,14 @@ var _ types.Signer = &SignerMock{}
 // 			GetKeyFunc: func(ctx sdk.Context, keyID string) (tssexported.Key, bool) {
 // 				panic("mock out the GetKey method")
 // 			},
+// 			GetKeyByRotationCountFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole, rotationCount int64) (tssexported.Key, bool) {
+// 				panic("mock out the GetKeyByRotationCount method")
+// 			},
 // 			GetNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) (tssexported.Key, bool) {
 // 				panic("mock out the GetNextKey method")
+// 			},
+// 			GetRotationCountFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) int64 {
+// 				panic("mock out the GetRotationCount method")
 // 			},
 // 			GetSigFunc: func(ctx sdk.Context, sigID string) (tssexported.Signature, bool) {
 // 				panic("mock out the GetSig method")
@@ -216,8 +222,14 @@ type SignerMock struct {
 	// GetKeyFunc mocks the GetKey method.
 	GetKeyFunc func(ctx sdk.Context, keyID string) (tssexported.Key, bool)
 
+	// GetKeyByRotationCountFunc mocks the GetKeyByRotationCount method.
+	GetKeyByRotationCountFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole, rotationCount int64) (tssexported.Key, bool)
+
 	// GetNextKeyFunc mocks the GetNextKey method.
 	GetNextKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) (tssexported.Key, bool)
+
+	// GetRotationCountFunc mocks the GetRotationCount method.
+	GetRotationCountFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) int64
 
 	// GetSigFunc mocks the GetSig method.
 	GetSigFunc func(ctx sdk.Context, sigID string) (tssexported.Signature, bool)
@@ -287,8 +299,28 @@ type SignerMock struct {
 			// KeyID is the keyID argument value.
 			KeyID string
 		}
+		// GetKeyByRotationCount holds details about calls to the GetKeyByRotationCount method.
+		GetKeyByRotationCount []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+			// KeyRole is the keyRole argument value.
+			KeyRole tssexported.KeyRole
+			// RotationCount is the rotationCount argument value.
+			RotationCount int64
+		}
 		// GetNextKey holds details about calls to the GetNextKey method.
 		GetNextKey []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+			// KeyRole is the keyRole argument value.
+			KeyRole tssexported.KeyRole
+		}
+		// GetRotationCount holds details about calls to the GetRotationCount method.
+		GetRotationCount []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Chain is the chain argument value.
@@ -351,7 +383,9 @@ type SignerMock struct {
 	lockGetCurrentKey              sync.RWMutex
 	lockGetCurrentKeyID            sync.RWMutex
 	lockGetKey                     sync.RWMutex
+	lockGetKeyByRotationCount      sync.RWMutex
 	lockGetNextKey                 sync.RWMutex
+	lockGetRotationCount           sync.RWMutex
 	lockGetSig                     sync.RWMutex
 	lockGetSnapshotCounterForKeyID sync.RWMutex
 	lockRotateKey                  sync.RWMutex
@@ -562,6 +596,49 @@ func (mock *SignerMock) GetKeyCalls() []struct {
 	return calls
 }
 
+// GetKeyByRotationCount calls GetKeyByRotationCountFunc.
+func (mock *SignerMock) GetKeyByRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole, rotationCount int64) (tssexported.Key, bool) {
+	if mock.GetKeyByRotationCountFunc == nil {
+		panic("SignerMock.GetKeyByRotationCountFunc: method is nil but Signer.GetKeyByRotationCount was just called")
+	}
+	callInfo := struct {
+		Ctx           sdk.Context
+		Chain         nexus.Chain
+		KeyRole       tssexported.KeyRole
+		RotationCount int64
+	}{
+		Ctx:           ctx,
+		Chain:         chain,
+		KeyRole:       keyRole,
+		RotationCount: rotationCount,
+	}
+	mock.lockGetKeyByRotationCount.Lock()
+	mock.calls.GetKeyByRotationCount = append(mock.calls.GetKeyByRotationCount, callInfo)
+	mock.lockGetKeyByRotationCount.Unlock()
+	return mock.GetKeyByRotationCountFunc(ctx, chain, keyRole, rotationCount)
+}
+
+// GetKeyByRotationCountCalls gets all the calls that were made to GetKeyByRotationCount.
+// Check the length with:
+//     len(mockedSigner.GetKeyByRotationCountCalls())
+func (mock *SignerMock) GetKeyByRotationCountCalls() []struct {
+	Ctx           sdk.Context
+	Chain         nexus.Chain
+	KeyRole       tssexported.KeyRole
+	RotationCount int64
+} {
+	var calls []struct {
+		Ctx           sdk.Context
+		Chain         nexus.Chain
+		KeyRole       tssexported.KeyRole
+		RotationCount int64
+	}
+	mock.lockGetKeyByRotationCount.RLock()
+	calls = mock.calls.GetKeyByRotationCount
+	mock.lockGetKeyByRotationCount.RUnlock()
+	return calls
+}
+
 // GetNextKey calls GetNextKeyFunc.
 func (mock *SignerMock) GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) (tssexported.Key, bool) {
 	if mock.GetNextKeyFunc == nil {
@@ -598,6 +675,45 @@ func (mock *SignerMock) GetNextKeyCalls() []struct {
 	mock.lockGetNextKey.RLock()
 	calls = mock.calls.GetNextKey
 	mock.lockGetNextKey.RUnlock()
+	return calls
+}
+
+// GetRotationCount calls GetRotationCountFunc.
+func (mock *SignerMock) GetRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) int64 {
+	if mock.GetRotationCountFunc == nil {
+		panic("SignerMock.GetRotationCountFunc: method is nil but Signer.GetRotationCount was just called")
+	}
+	callInfo := struct {
+		Ctx     sdk.Context
+		Chain   nexus.Chain
+		KeyRole tssexported.KeyRole
+	}{
+		Ctx:     ctx,
+		Chain:   chain,
+		KeyRole: keyRole,
+	}
+	mock.lockGetRotationCount.Lock()
+	mock.calls.GetRotationCount = append(mock.calls.GetRotationCount, callInfo)
+	mock.lockGetRotationCount.Unlock()
+	return mock.GetRotationCountFunc(ctx, chain, keyRole)
+}
+
+// GetRotationCountCalls gets all the calls that were made to GetRotationCount.
+// Check the length with:
+//     len(mockedSigner.GetRotationCountCalls())
+func (mock *SignerMock) GetRotationCountCalls() []struct {
+	Ctx     sdk.Context
+	Chain   nexus.Chain
+	KeyRole tssexported.KeyRole
+} {
+	var calls []struct {
+		Ctx     sdk.Context
+		Chain   nexus.Chain
+		KeyRole tssexported.KeyRole
+	}
+	mock.lockGetRotationCount.RLock()
+	calls = mock.calls.GetRotationCount
+	mock.lockGetRotationCount.RUnlock()
 	return calls
 }
 
@@ -1568,6 +1684,9 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			GetPendingOutPointInfoFunc: func(ctx sdk.Context, key voteexported.PollKey) (types.OutPointInfo, bool) {
 // 				panic("mock out the GetPendingOutPointInfo method")
 // 			},
+// 			GetPrevMasterKeyCycleFunc: func(ctx sdk.Context) int64 {
+// 				panic("mock out the GetPrevMasterKeyCycle method")
+// 			},
 // 			GetRequiredConfirmationHeightFunc: func(ctx sdk.Context) uint64 {
 // 				panic("mock out the GetRequiredConfirmationHeight method")
 // 			},
@@ -1670,6 +1789,9 @@ type BTCKeeperMock struct {
 
 	// GetPendingOutPointInfoFunc mocks the GetPendingOutPointInfo method.
 	GetPendingOutPointInfoFunc func(ctx sdk.Context, key voteexported.PollKey) (types.OutPointInfo, bool)
+
+	// GetPrevMasterKeyCycleFunc mocks the GetPrevMasterKeyCycle method.
+	GetPrevMasterKeyCycleFunc func(ctx sdk.Context) int64
 
 	// GetRequiredConfirmationHeightFunc mocks the GetRequiredConfirmationHeight method.
 	GetRequiredConfirmationHeightFunc func(ctx sdk.Context) uint64
@@ -1821,6 +1943,11 @@ type BTCKeeperMock struct {
 			// Key is the key argument value.
 			Key voteexported.PollKey
 		}
+		// GetPrevMasterKeyCycle holds details about calls to the GetPrevMasterKeyCycle method.
+		GetPrevMasterKeyCycle []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
 		// GetRequiredConfirmationHeight holds details about calls to the GetRequiredConfirmationHeight method.
 		GetRequiredConfirmationHeight []struct {
 			// Ctx is the ctx argument value.
@@ -1942,6 +2069,7 @@ type BTCKeeperMock struct {
 	lockGetOutPointInfo                     sync.RWMutex
 	lockGetParams                           sync.RWMutex
 	lockGetPendingOutPointInfo              sync.RWMutex
+	lockGetPrevMasterKeyCycle               sync.RWMutex
 	lockGetRequiredConfirmationHeight       sync.RWMutex
 	lockGetRevoteLockingPeriod              sync.RWMutex
 	lockGetSigCheckInterval                 sync.RWMutex
@@ -2519,6 +2647,37 @@ func (mock *BTCKeeperMock) GetPendingOutPointInfoCalls() []struct {
 	mock.lockGetPendingOutPointInfo.RLock()
 	calls = mock.calls.GetPendingOutPointInfo
 	mock.lockGetPendingOutPointInfo.RUnlock()
+	return calls
+}
+
+// GetPrevMasterKeyCycle calls GetPrevMasterKeyCycleFunc.
+func (mock *BTCKeeperMock) GetPrevMasterKeyCycle(ctx sdk.Context) int64 {
+	if mock.GetPrevMasterKeyCycleFunc == nil {
+		panic("BTCKeeperMock.GetPrevMasterKeyCycleFunc: method is nil but BTCKeeper.GetPrevMasterKeyCycle was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetPrevMasterKeyCycle.Lock()
+	mock.calls.GetPrevMasterKeyCycle = append(mock.calls.GetPrevMasterKeyCycle, callInfo)
+	mock.lockGetPrevMasterKeyCycle.Unlock()
+	return mock.GetPrevMasterKeyCycleFunc(ctx)
+}
+
+// GetPrevMasterKeyCycleCalls gets all the calls that were made to GetPrevMasterKeyCycle.
+// Check the length with:
+//     len(mockedBTCKeeper.GetPrevMasterKeyCycleCalls())
+func (mock *BTCKeeperMock) GetPrevMasterKeyCycleCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockGetPrevMasterKeyCycle.RLock()
+	calls = mock.calls.GetPrevMasterKeyCycle
+	mock.lockGetPrevMasterKeyCycle.RUnlock()
 	return calls
 }
 

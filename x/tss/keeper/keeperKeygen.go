@@ -65,30 +65,32 @@ func (k Keeper) SetKey(ctx sdk.Context, keyID string, key ecdsa.PublicKey) {
 
 // GetCurrentKeyID returns the current key ID for given chain and role
 func (k Keeper) GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (string, bool) {
-	return k.getKeyID(ctx, chain, k.getRotationCount(ctx, chain, keyRole), keyRole)
+	return k.getKeyID(ctx, chain, k.GetRotationCount(ctx, chain, keyRole), keyRole)
 }
 
 // GetCurrentKey returns the current key for given chain and role
 func (k Keeper) GetCurrentKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.Key, bool) {
-	if keyID, found := k.GetCurrentKeyID(ctx, chain, keyRole); found {
-		return k.GetKey(ctx, keyID)
-	}
-
-	return exported.Key{}, false
+	return k.GetKeyByRotationCount(ctx, chain, keyRole, k.GetRotationCount(ctx, chain, keyRole))
 }
 
 // GetNextKeyID returns the next key ID for given chain and role
 func (k Keeper) GetNextKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (string, bool) {
-	return k.getKeyID(ctx, chain, k.getRotationCount(ctx, chain, keyRole)+1, keyRole)
+	return k.getKeyID(ctx, chain, k.GetRotationCount(ctx, chain, keyRole)+1, keyRole)
 }
 
 // GetNextKey returns the next key for given chain and role
 func (k Keeper) GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.Key, bool) {
-	if keyID, found := k.GetNextKeyID(ctx, chain, keyRole); found {
-		return k.GetKey(ctx, keyID)
+	return k.GetKeyByRotationCount(ctx, chain, keyRole, k.GetRotationCount(ctx, chain, keyRole)+1)
+}
+
+// GetKeyByRotationCount returns the key for given chain and key role by rotation count
+func (k Keeper) GetKeyByRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole, rotationCount int64) (exported.Key, bool) {
+	keyID, found := k.getKeyID(ctx, chain, rotationCount, keyRole)
+	if !found {
+		return exported.Key{}, false
 	}
 
-	return exported.Key{}, false
+	return k.GetKey(ctx, keyID)
 }
 
 func (k Keeper) setKeyRole(ctx sdk.Context, keyID string, keyRole exported.KeyRole) {
@@ -119,7 +121,7 @@ func (k Keeper) AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole export
 
 	// The key entry needs to store the keyID instead of the public key, because the keyID is needed whenever
 	// the keeper calls the secure private key store (e.g. for signing) and we would lose the keyID information otherwise
-	k.setKeyID(ctx, chain, k.getRotationCount(ctx, chain, keyRole)+1, keyRole, keyID)
+	k.setKeyID(ctx, chain, k.GetRotationCount(ctx, chain, keyRole)+1, keyRole, keyID)
 	k.setKeyRole(ctx, keyID, keyRole)
 
 	return nil
@@ -127,7 +129,7 @@ func (k Keeper) AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole export
 
 // RotateKey rotates to the next stored key. Returns an error if no new key has been prepared
 func (k Keeper) RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) error {
-	r := k.getRotationCount(ctx, chain, keyRole)
+	r := k.GetRotationCount(ctx, chain, keyRole)
 	if _, found := k.getKeyID(ctx, chain, r+1, keyRole); !found {
 		return fmt.Errorf("next %s key for chain %s not set", keyRole.SimpleString(), chain.Name)
 	}
@@ -175,7 +177,8 @@ func (k Keeper) setKeyID(ctx sdk.Context, chain nexus.Chain, rotation int64, key
 	ctx.KVStore(k.storeKey).Set([]byte(storageKey), []byte(keyID))
 }
 
-func (k Keeper) getRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) int64 {
+// GetRotationCount returns the current rotation count for the given chain and key role
+func (k Keeper) GetRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) int64 {
 	storageKey := fmt.Sprintf("%s%s_%s", rotationPrefix, chain.Name, keyRole.SimpleString())
 
 	bz := ctx.KVStore(k.storeKey).Get([]byte(storageKey))

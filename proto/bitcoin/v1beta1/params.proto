@@ -15,4 +15,5 @@ message Params {
   string minimum_withdrawal_amount = 5;
   int64 max_input_count = 6;
   string max_secondary_output_amount = 7;
+  int64 prev_master_key_cycle = 8;
 }
