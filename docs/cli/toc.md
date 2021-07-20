@@ -71,6 +71,35 @@
       - [tally \[proposal-id\]](axelard_query_gov_tally.md)	 - Get the tally of a proposal vote
       - [vote \[proposal-id\] \[voter-addr\]](axelard_query_gov_vote.md)	 - Query details of a single vote
       - [votes \[proposal-id\]](axelard_query_gov_votes.md)	 - Query votes on a proposal
+    - [ibc](axelard_query_ibc.md)	 - Querying commands for the IBC module
+      - [channel](axelard_query_ibc_channel.md)	 - IBC channel query subcommands
+        - [channels](axelard_query_ibc_channel_channels.md)	 - Query all channels
+        - [client-state \[port-id\] \[channel-id\]](axelard_query_ibc_channel_client-state.md)	 - Query the client state associated with a channel
+        - [connections \[connection-id\]](axelard_query_ibc_channel_connections.md)	 - Query all channels associated with a connection
+        - [end \[port-id\] \[channel-id\]](axelard_query_ibc_channel_end.md)	 - Query a channel end
+        - [next-sequence-receive \[port-id\] \[channel-id\]](axelard_query_ibc_channel_next-sequence-receive.md)	 - Query a next receive sequence
+        - [packet-ack \[port-id\] \[channel-id\] \[sequence\]](axelard_query_ibc_channel_packet-ack.md)	 - Query a packet acknowledgement
+        - [packet-commitment \[port-id\] \[channel-id\] \[sequence\]](axelard_query_ibc_channel_packet-commitment.md)	 - Query a packet commitment
+        - [packet-commitments \[port-id\] \[channel-id\]](axelard_query_ibc_channel_packet-commitments.md)	 - Query all packet commitments associated with a channel
+        - [packet-receipt \[port-id\] \[channel-id\] \[sequence\]](axelard_query_ibc_channel_packet-receipt.md)	 - Query a packet receipt
+        - [unreceived-acks \[port-id\] \[channel-id\]](axelard_query_ibc_channel_unreceived-acks.md)	 - Query all the unreceived acks associated with a channel
+        - [unreceived-packets \[port-id\] \[channel-id\]](axelard_query_ibc_channel_unreceived-packets.md)	 - Query all the unreceived packets associated with a channel
+      - [client](axelard_query_ibc_client.md)	 - IBC client query subcommands
+        - [consensus-state \[client-id\] \[height\]](axelard_query_ibc_client_consensus-state.md)	 - Query the consensus state of a client at a given height
+        - [consensus-states \[client-id\]](axelard_query_ibc_client_consensus-states.md)	 - Query all the consensus states of a client.
+        - [header](axelard_query_ibc_client_header.md)	 - Query the latest header of the running chain
+        - [node-state](axelard_query_ibc_client_node-state.md)	 - Query a node consensus state
+        - [params](axelard_query_ibc_client_params.md)	 - Query the current ibc client parameters
+        - [state \[client-id\]](axelard_query_ibc_client_state.md)	 - Query a client state
+        - [states](axelard_query_ibc_client_states.md)	 - Query all available light clients
+      - [connection](axelard_query_ibc_connection.md)	 - IBC connection query subcommands
+        - [connections](axelard_query_ibc_connection_connections.md)	 - Query all connections
+        - [end \[connection-id\]](axelard_query_ibc_connection_end.md)	 - Query stored connection end
+        - [path \[client-id\]](axelard_query_ibc_connection_path.md)	 - Query stored client connection paths
+    - [ibc-transfer](axelard_query_ibc-transfer.md)	 - IBC fungible token transfer query subcommands
+      - [denom-trace \[hash\]](axelard_query_ibc-transfer_denom-trace.md)	 - Query the denom trace info from a given trace hash
+      - [denom-traces](axelard_query_ibc-transfer_denom-traces.md)	 - Query the trace info for all token denominations
+      - [params](axelard_query_ibc-transfer_params.md)	 - Query the current ibc-transfer parameters
     - [mint](axelard_query_mint.md)	 - Querying commands for the minting module
       - [annual-provisions](axelard_query_mint_annual-provisions.md)	 - Query the current minting annual provisions value
       - [inflation](axelard_query_mint_inflation.md)	 - Query the current minting inflation value
@@ -156,6 +185,32 @@
         - [param-change \[proposal-file\]](axelard_tx_gov_submit-proposal_param-change.md)	 - Submit a parameter change proposal
         - [software-upgrade \[name\] (--upgrade-height \[height\] | --upgrade-time \[time\]) (--upgrade-info \[info\]) \[flags\]](axelard_tx_gov_submit-proposal_software-upgrade.md)	 - Submit a software upgrade proposal
       - [vote \[proposal-id\] \[option\]](axelard_tx_gov_vote.md)	 - Vote for an active proposal, options: yes/no/no_with_veto/abstain
+    - [ibc](axelard_tx_ibc.md)	 - IBC transaction subcommands
+      - [channel](axelard_tx_ibc_channel.md)	 - IBC channel transaction subcommands
+        - [close-confirm \[port-id\] \[channel-id\] \[/path/to/proof_init.json\] \[proof-height\]](axelard_tx_ibc_channel_close-confirm.md)	 - Creates and sends a ChannelCloseConfirm message
+        - [close-init \[port-id\] \[channel-id\]](axelard_tx_ibc_channel_close-init.md)	 - Creates and sends a ChannelCloseInit message
+        - [open-ack \[port-id\] \[channel-id\] \[counterparty-channel-id\] \[/path/to/proof_try.json\] \[proof-height\]](axelard_tx_ibc_channel_open-ack.md)	 - Creates and sends a ChannelOpenAck message
+        - [open-confirm \[port-id\] \[channel-id\] \[/path/to/proof_ack.json\] \[proof-height\]](axelard_tx_ibc_channel_open-confirm.md)	 - Creates and sends a ChannelOpenConfirm message
+        - [open-init \[port-id\] \[counterparty-port-id\] \[connection-hops\]](axelard_tx_ibc_channel_open-init.md)	 - Creates and sends a ChannelOpenInit message
+        - [open-try \[port-id\] \[channel-id\] \[counterparty-port-id\] \[counterparty-channel-id\] \[connection-hops\] \[/path/to/proof_init.json\] \[proof-height\]](axelard_tx_ibc_channel_open-try.md)	 - Creates and sends a ChannelOpenTry message
+      - [connection](axelard_tx_ibc_connection.md)	 - IBC connection transaction subcommands
+        - [open-ack \[connection-id\] \[counterparty-connection-id\] \[path/to/client_state.json\] \[consensus-height\] \[proof-height\]
+          \[path/to/proof_try.json\] \[path/to/proof_client.json\] \[path/to/proof_consensus.json\] \[version\]](axelard_tx_ibc_connection_open-ack.md)	 - relay the acceptance of a connection open attempt
+        - [open-confirm \[connection-id\] \[proof-height\] \[path/to/proof_ack.json\]](axelard_tx_ibc_connection_open-confirm.md)	 - confirm to chain B that connection is open on chain A
+        - [open-init \[client-id\] \[counterparty-client-id\] \[path/to/counterparty_prefix.json\]](axelard_tx_ibc_connection_open-init.md)	 - Initialize connection on chain A
+        - [open-try \[connection-id\] \[client-id\]
+          \[counterparty-connection-id\] \[counterparty-client-id\] \[path/to/counterparty_prefix.json\] \[path/to/client_state.json\]
+          \[path/to/counterparty_version1.json,path/to/counterparty_version2.json...\] \[consensus-height\] \[proof-height\] \[path/to/proof_init.json\] \[path/to/proof_client.json\] \[path/to/proof_consensus.json\]](axelard_tx_ibc_connection_open-try.md)	 - initiate connection handshake between two chains
+      - [solo machine](axelard_tx_ibc_solo.md)	 - Solo Machine transaction subcommands
+        - [create \[sequence\] \[path/to/consensus_state.json\]](axelard_tx_ibc_solo_create.md)	 - create new solo machine client
+        - [misbehaviour \[path/to/misbehaviour.json\]](axelard_tx_ibc_solo_misbehaviour.md)	 - submit a client misbehaviour
+        - [update \[client-id\] \[path/to/header.json\]](axelard_tx_ibc_solo_update.md)	 - update existing client with a header
+      - [tendermint-client](axelard_tx_ibc_tendermint-client.md)	 - Tendermint client transaction subcommands
+        - [create \[path/to/consensus_state.json\] \[trusting_period\] \[unbonding_period\] \[max_clock_drift\]](axelard_tx_ibc_tendermint-client_create.md)	 - create new tendermint client
+        - [misbehaviour \[path/to/misbehaviour.json\]](axelard_tx_ibc_tendermint-client_misbehaviour.md)	 - submit a client misbehaviour
+        - [update \[client-id\] \[path/to/header.json\]](axelard_tx_ibc_tendermint-client_update.md)	 - update existing client with a header
+    - [ibc-transfer](axelard_tx_ibc-transfer.md)	 - IBC fungible token transfer transaction subcommands
+      - [transfer \[src-port\] \[src-channel\] \[receiver\] \[amount\]](axelard_tx_ibc-transfer_transfer.md)	 - Transfer a fungible token through IBC
     - [multisign \[file\] \[name\] \[\[signature\]...\]](axelard_tx_multisign.md)	 - Generate multisig signatures for transactions generated offline
     - [sign \[file\]](axelard_tx_sign.md)	 - Sign a transaction generated offline
     - [sign-batch \[file\]](axelard_tx_sign-batch.md)	 - Sign transaction batch files
