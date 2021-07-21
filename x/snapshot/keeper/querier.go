@@ -109,6 +109,9 @@ func querySnapshot(ctx sdk.Context, k Keeper, counter string) ([]byte, error) {
 		validators[i].Validator = val.GetSDKValidator().GetOperator().String()
 	}
 
+	distPolicyStr := strings.ToLower(strings.TrimPrefix(
+		snapshot.KeyShareDistributionPolicy.String(), "KEY_SHARE_DISTRIBUTION_POLICY_"))
+
 	reply := struct {
 		Validators []validator `json:"validators"`
 
@@ -122,7 +125,7 @@ func querySnapshot(ctx sdk.Context, k Keeper, counter string) ([]byte, error) {
 		Validators: validators,
 
 		Timestamp:                  snapshot.Timestamp.String(),
-		KeyShareDistributionPolicy: strings.TrimPrefix(snapshot.KeyShareDistributionPolicy.String(), "KEY_SHARE_DISTRIBUTION_POLICY_"),
+		KeyShareDistributionPolicy: distPolicyStr,
 
 		Height:          snapshot.Height,
 		TotalShareCount: snapshot.TotalShareCount.Int64(),
