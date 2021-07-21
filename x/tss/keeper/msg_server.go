@@ -97,7 +97,7 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 func (s msgServer) ProcessKeygenTraffic(c context.Context, req *types.ProcessKeygenTrafficRequest) (*types.ProcessKeygenTrafficResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	senderAddress := s.snapshotter.GetPrincipal(ctx, req.Sender)
+	senderAddress := s.snapshotter.GetOperator(ctx, req.Sender)
 	if senderAddress.Empty() {
 		return nil, fmt.Errorf("invalid message: sender [%s] is not a validator", req.Sender)
 	}
@@ -174,7 +174,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		return &types.VotePubKeyResponse{}, nil
 	}
 
-	voter := s.snapshotter.GetPrincipal(ctx, req.Sender)
+	voter := s.snapshotter.GetOperator(ctx, req.Sender)
 	if voter == nil {
 		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
 	}
@@ -268,7 +268,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 func (s msgServer) ProcessSignTraffic(c context.Context, req *types.ProcessSignTrafficRequest) (*types.ProcessSignTrafficResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	senderAddress := s.snapshotter.GetPrincipal(ctx, req.Sender)
+	senderAddress := s.snapshotter.GetOperator(ctx, req.Sender)
 	if senderAddress.Empty() {
 		return nil, fmt.Errorf("invalid message: sender [%s] is not a validator", req.Sender)
 	}
@@ -297,7 +297,7 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		return &types.VoteSigResponse{}, nil
 	}
 
-	voter := s.snapshotter.GetPrincipal(ctx, req.Sender)
+	voter := s.snapshotter.GetOperator(ctx, req.Sender)
 	if voter == nil {
 		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
 	}

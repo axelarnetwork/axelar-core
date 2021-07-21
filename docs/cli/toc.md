@@ -110,6 +110,10 @@
       - [params](axelard_query_slashing_params.md)	 - Query the current slashing parameters
       - [signing-info \[validator-conspub\]](axelard_query_slashing_signing-info.md)	 - Query a validator's signing information
       - [signing-infos](axelard_query_slashing_signing-infos.md)	 - Query signing information of all validators
+    - [snapshot](axelard_query_snapshot.md)	 - Querying commands for the snapshot module
+      - [info \[counter\]](axelard_query_snapshot_info.md)	 - Fetch the snapshot for a given counter
+      - [operator \[proxy address\]](axelard_query_snapshot_operator.md)	 - Fetch the operator address associated with \[proxy address\]
+      - [proxy \[operator address\]](axelard_query_snapshot_proxy.md)	 - Fetch the proxy address associated with \[operator address\] and status (active/inactive)
     - [staking](axelard_query_staking.md)	 - Querying commands for the staking module
       - [delegation \[delegator-addr\] \[validator-addr\]](axelard_query_staking_delegation.md)	 - Query a delegation based on address and validator address
       - [delegations \[delegator-addr\]](axelard_query_staking_delegations.md)	 - Query all delegations made by one delegator
@@ -218,7 +222,7 @@
       - [unjail](axelard_tx_slashing_unjail.md)	 - unjail validator previously jailed for downtime
     - [snapshot](axelard_tx_snapshot.md)	 - snapshot transactions subcommands
       - [deactivateProxy](axelard_tx_snapshot_deactivateProxy.md)	 - Deactivate the proxy account of the sender
-      - [registerProxy \[proxy\] ](axelard_tx_snapshot_registerProxy.md)	 - Register a proxy account for a specific validator principal to broadcast transactions in its stead
+      - [registerProxy \[proxy address\]](axelard_tx_snapshot_registerProxy.md)	 - Register a proxy account for a specific validator principal to broadcast transactions in its stead
       - [sendTokens \[amount\] \[address 1\] ... \[address n\]](axelard_tx_snapshot_sendTokens.md)	 - Sends the specified amount of tokens to the designated addresses
     - [staking](axelard_tx_staking.md)	 - Staking transaction subcommands
       - [create-validator](axelard_tx_staking_create-validator.md)	 - create new validator initialized with a self-delegation to it

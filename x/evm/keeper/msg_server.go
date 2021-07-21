@@ -369,7 +369,7 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 		return nil, fmt.Errorf("unknown chain %s", req.Name)
 	}
 
-	voter := s.snapshotter.GetPrincipal(ctx, req.Sender)
+	voter := s.snapshotter.GetOperator(ctx, req.Sender)
 	if voter == nil {
 		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
 	}
@@ -453,7 +453,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		// assert: the deposit is known and has not been confirmed before
 	}
 
-	voter := s.snapshotter.GetPrincipal(ctx, req.Sender)
+	voter := s.snapshotter.GetOperator(ctx, req.Sender)
 	if voter == nil {
 		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
 	}
@@ -536,7 +536,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 		// assert: the token is known and has not been confirmed before
 	}
 
-	voter := s.snapshotter.GetPrincipal(ctx, req.Sender)
+	voter := s.snapshotter.GetOperator(ctx, req.Sender)
 	if voter == nil {
 		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
 	}
@@ -616,7 +616,7 @@ func (s msgServer) VoteConfirmTransferOwnership(c context.Context, req *types.Vo
 		// assert: the transfer ownership is known and has not been confirmed before
 	}
 
-	voter := s.snapshotter.GetPrincipal(ctx, req.Sender)
+	voter := s.snapshotter.GetOperator(ctx, req.Sender)
 	if voter == nil {
 		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
 	}

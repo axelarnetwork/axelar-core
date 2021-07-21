@@ -40,6 +40,7 @@ axelard query [flags]
 - [axelard query mint](axelard_query_mint.md)	 - Querying commands for the minting module
 - [axelard query params](axelard_query_params.md)	 - Querying commands for the params module
 - [axelard query slashing](axelard_query_slashing.md)	 - Querying commands for the slashing module
+- [axelard query snapshot](axelard_query_snapshot.md)	 - Querying commands for the snapshot module
 - [axelard query staking](axelard_query_staking.md)	 - Querying commands for the staking module
 - [axelard query tendermint-validator-set](axelard_query_tendermint-validator-set.md)	 - Get the full tendermint validator set at given height
 - [axelard query tss](axelard_query_tss.md)	 - Querying commands for the tss module

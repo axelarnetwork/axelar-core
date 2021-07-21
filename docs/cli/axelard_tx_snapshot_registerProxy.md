@@ -3,7 +3,7 @@
 Register a proxy account for a specific validator principal to broadcast transactions in its stead
 
 ```
-axelard tx snapshot registerProxy [proxy]  [flags]
+axelard tx snapshot registerProxy [proxy address] [flags]
 ```
 
 ### Options

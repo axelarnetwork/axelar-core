@@ -32,7 +32,7 @@ isGenesisInitialized() {
 initGenesis() {
   if [ -n "$INIT_SCRIPT" ] && [ -f "$INIT_SCRIPT" ]; then
     echo "Running script at $INIT_SCRIPT to create the genesis file"
-    "$INIT_SCRIPT" "$(hostname)" "$CHAIN_ID"
+    source "$INIT_SCRIPT" "$(hostname)" "$CHAIN_ID"
   else
     axelard init "$(hostname)" --chain-id "$CHAIN_ID"
   fi
@@ -55,7 +55,7 @@ startValdProc() {
   fi
 
   dlv --listen=:2346 --headless=true ${VALD_CONTINUE:+--continue} --api-version=2 --accept-multiclient exec \
-    /usr/local/bin/axelard -- vald-start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} ${VALIDATOR_HOST:+--node "$VALIDATOR_HOST"} --validator-addr "$(axelard keys show validator -a --bech val)"
+    /usr/local/bin/axelard -- vald-start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} ${VALIDATOR_HOST:+--node "$VALIDATOR_HOST"} --validator-addr "${VALIDATOR_ADDR:-$(axelard keys show validator -a --bech val)}"
 }
 
 startNodeProc() {

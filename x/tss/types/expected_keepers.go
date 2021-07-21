@@ -18,17 +18,12 @@ import (
 
 //go:generate moq -pkg mock -out ./mock/expected_keepers.go . TofndClient TofndKeyGenClient TofndSignClient Voter StakingKeeper TSSKeeper Snapshotter Nexus
 
-// Broadcaster provides broadcasting functionality
-type Broadcaster interface {
-	GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
-}
-
 // Snapshotter provides validator snapshot functionality
 type Snapshotter interface {
 	GetLatestSnapshot(ctx sdk.Context) (snapshot.Snapshot, bool)
 	GetSnapshot(ctx sdk.Context, counter int64) (snapshot.Snapshot, bool)
 	TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy exported.KeyShareDistributionPolicy) (snapshotConsensusPower sdk.Int, totalConsensusPower sdk.Int, err error)
-	GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
+	GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
 }
 
 // Nexus provides access to the nexus functionality

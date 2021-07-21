@@ -13,4 +13,7 @@ const (
 
 	// QuerierRoute to be used for legacy query routing
 	QuerierRoute = ModuleName
+
+	// RestRoute to be used for rest routing
+	RestRoute = ModuleName
 )

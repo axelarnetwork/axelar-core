@@ -150,7 +150,7 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 		// assert: the outpoint is known and has not been confirmed before
 	}
 
-	voter := s.snapshotter.GetPrincipal(ctx, req.Sender)
+	voter := s.snapshotter.GetOperator(ctx, req.Sender)
 	if voter == nil {
 		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
 	}

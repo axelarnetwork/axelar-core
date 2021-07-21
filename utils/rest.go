@@ -14,6 +14,8 @@ import (
 const (
 	PathVarChain           = "Chain"
 	PathVarContract        = "Contract"
+	PathVarCosmosAddress   = "CosmosAddress"
+	PathVarCounter         = "Counter"
 	PathVarEthereumAddress = "EthereumAddress"
 	PathVarSymbol          = "Symbol"
 	PathVarTxID            = "TxID"

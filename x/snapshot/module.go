@@ -75,7 +75,7 @@ func (AppModuleBasic) GetTxCmd() *cobra.Command {
 
 // GetQueryCmd returns all CLI query commands for this module
 func (AppModuleBasic) GetQueryCmd() *cobra.Command {
-	return nil
+	return cli.GetQueryCmd(types.QuerierRoute)
 }
 
 // AppModule implements module.AppModule
@@ -140,4 +140,6 @@ func (AppModule) QuerierRoute() string {
 }
 
 // LegacyQuerierHandler returns a new query handler for this module
-func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier { return nil }
+func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
+	return keeper.NewQuerier(am.keeper)
+}
