@@ -138,11 +138,11 @@ func querySnapshot(ctx sdk.Context, k Keeper, counter string) ([]byte, error) {
 }
 
 func toJSON(v interface{}) ([]byte, error) {
-
 	buff := bytes.NewBuffer([]byte{})
 	enc := json.NewEncoder(buff)
 	enc.SetEscapeHTML(false)
 	enc.SetIndent("", "  ")
+
 	err := enc.Encode(v)
 	if err != nil {
 		return nil, err
