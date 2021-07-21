@@ -147,6 +147,7 @@ func (m Snapshot) GetSuccinctJSON() ([]byte, error) {
 
 	distPolicyStr := strings.ToLower(strings.TrimPrefix(
 		m.KeyShareDistributionPolicy.String(), "KEY_SHARE_DISTRIBUTION_POLICY_"))
+	timestampStr := m.Timestamp.Format("2 Jan 2006 15:04:05 MST")
 
 	s := struct {
 		Validators []validator `json:"validators"`
@@ -160,7 +161,7 @@ func (m Snapshot) GetSuccinctJSON() ([]byte, error) {
 	}{
 		Validators: validators,
 
-		Timestamp:                  m.Timestamp.String(),
+		Timestamp:                  timestampStr,
 		KeyShareDistributionPolicy: distPolicyStr,
 
 		Height:          m.Height,
