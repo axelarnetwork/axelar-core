@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/mux"
 
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 )
 
@@ -28,6 +29,11 @@ type ReqDeactivateProxy struct {
 func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("/tx/%s/registerProxy/{voter}", types.ModuleName), registerProxyHandlerFn(cliCtx)).Methods("POST")
 	r.HandleFunc(fmt.Sprintf("/tx/%s/deactivateProxy", types.ModuleName), deactivateProxyHandlerFn(cliCtx)).Methods("POST")
+
+	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
+	registerQuery(GetHandlerQueryProxy(cliCtx), keeper.QProxy, clientUtils.PathVarCosmosAddress)
+	registerQuery(GetHandlerQueryOperator(cliCtx), keeper.QOperator, clientUtils.PathVarCosmosAddress)
+	registerQuery(GetHandlerQuerySnapshot(cliCtx), keeper.QInfo, clientUtils.PathVarCounter)
 }
 
 func registerProxyHandlerFn(cliCtx client.Context) http.HandlerFunc {

@@ -28,7 +28,7 @@ type Snapshotter interface {
 	GetLatestSnapshot(ctx sdk.Context) (snapshot.Snapshot, bool)
 	GetSnapshot(ctx sdk.Context, counter int64) (snapshot.Snapshot, bool)
 	TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy exported.KeyShareDistributionPolicy) (snapshotConsensusPower sdk.Int, totalConsensusPower sdk.Int, err error)
-	GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
+	GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
 }
 
 // Nexus provides access to the nexus functionality

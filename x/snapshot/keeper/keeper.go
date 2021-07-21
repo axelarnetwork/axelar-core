@@ -261,8 +261,8 @@ func (k Keeper) DeactivateProxy(ctx sdk.Context, principal sdk.ValAddress) error
 	return nil
 }
 
-// GetPrincipal returns the proxy address for a given principal address. Returns nil if not set.
-func (k Keeper) GetPrincipal(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
+// GetOperator returns the proxy address for a given principal address. Returns nil if not set.
+func (k Keeper) GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
 	if proxy == nil {
 		return nil
 	}

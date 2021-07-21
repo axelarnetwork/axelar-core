@@ -32,7 +32,7 @@ isGenesisInitialized() {
 initGenesis() {
   if [ -n "$INIT_SCRIPT" ] && [ -f "$INIT_SCRIPT" ]; then
     echo "Running script at $INIT_SCRIPT to create the genesis file"
-    "$INIT_SCRIPT" "$(hostname)" "$CHAIN_ID"
+    source "$INIT_SCRIPT" "$(hostname)" "$CHAIN_ID"
   else
     axelard init "$(hostname)" --chain-id "$CHAIN_ID"
   fi
@@ -42,7 +42,7 @@ startValdProc() {
   DURATION=${SLEEP_TIME:-"10s"}
   sleep $DURATION
   axelard vald-start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} ${VALIDATOR_HOST:+--node "$VALIDATOR_HOST"} \
-    --validator-addr "$(axelard keys show validator -a --bech val)"
+    --validator-addr "${VALIDATOR_ADDR:-$(axelard keys show validator -a --bech val)}"
 }
 
 startNodeProc() {
