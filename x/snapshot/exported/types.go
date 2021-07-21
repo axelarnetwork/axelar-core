@@ -2,6 +2,8 @@ package exported
 
 import (
 	"bytes"
+	"encoding/json"
+	"strings"
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 
@@ -132,4 +134,54 @@ func (m Snapshot) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
 		}
 	}
 	return nil
+}
+
+// GetSuccinctJSON marshals the snapshot as JSON without including the SDKValidator data
+func (m Snapshot) GetSuccinctJSON() ([]byte, error) {
+	validators := make([]validator, len(m.Validators))
+
+	for i, val := range m.Validators {
+		validators[i].ShareCount = val.ShareCount
+		validators[i].Validator = val.GetSDKValidator().GetOperator().String()
+	}
+
+	distPolicyStr := strings.ToLower(strings.TrimPrefix(
+		m.KeyShareDistributionPolicy.String(), "KEY_SHARE_DISTRIBUTION_POLICY_"))
+
+	s := struct {
+		Validators []validator `json:"validators"`
+
+		Timestamp                  string `json:"timestamp"`
+		KeyShareDistributionPolicy string `json:"key_share_distribution_policy"`
+
+		Height          int64 `json:"height"`
+		TotalShareCount int64 `json:"total_share_count"`
+		Counter         int64 `json:"counter"`
+	}{
+		Validators: validators,
+
+		Timestamp:                  m.Timestamp.String(),
+		KeyShareDistributionPolicy: distPolicyStr,
+
+		Height:          m.Height,
+		TotalShareCount: m.TotalShareCount.Int64(),
+		Counter:         m.Counter,
+	}
+
+	buff := bytes.NewBuffer([]byte{})
+	enc := json.NewEncoder(buff)
+	enc.SetEscapeHTML(false)
+	enc.SetIndent("", "  ")
+
+	err := enc.Encode(s)
+	if err != nil {
+		return nil, err
+	}
+
+	return buff.Bytes(), nil
+}
+
+type validator struct {
+	Validator  string `json:"validator"`
+	ShareCount int64  `json:"share_count"`
 }

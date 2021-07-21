@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -61,7 +60,7 @@ func queryProxy(ctx sdk.Context, k Keeper, address string) ([]byte, error) {
 		Status:  statusStr,
 	}
 
-	bz, err := toJSON(reply)
+	bz, err := json.Marshal(reply)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrSnapshot, err.Error())
 	}
@@ -102,59 +101,10 @@ func querySnapshot(ctx sdk.Context, k Keeper, counter string) ([]byte, error) {
 		return nil, sdkerrors.Wrap(types.ErrSnapshot, "no snapshot found")
 	}
 
-	validators := make([]validator, len(snapshot.Validators))
-
-	for i, val := range snapshot.Validators {
-		validators[i].ShareCount = val.ShareCount
-		validators[i].Validator = val.GetSDKValidator().GetOperator().String()
-	}
-
-	distPolicyStr := strings.ToLower(strings.TrimPrefix(
-		snapshot.KeyShareDistributionPolicy.String(), "KEY_SHARE_DISTRIBUTION_POLICY_"))
-
-	reply := struct {
-		Validators []validator `json:"validators"`
-
-		Timestamp                  string `json:"timestamp"`
-		KeyShareDistributionPolicy string `json:"key_share_distribution_policy"`
-
-		Height          int64 `json:"height"`
-		TotalShareCount int64 `json:"total_share_count"`
-		Counter         int64 `json:"counter"`
-	}{
-		Validators: validators,
-
-		Timestamp:                  snapshot.Timestamp.String(),
-		KeyShareDistributionPolicy: distPolicyStr,
-
-		Height:          snapshot.Height,
-		TotalShareCount: snapshot.TotalShareCount.Int64(),
-		Counter:         snapshot.Counter,
-	}
-
-	bz, err := toJSON(reply)
+	bz, err := snapshot.GetSuccinctJSON()
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrSnapshot, err.Error())
 	}
 
 	return bz, nil
-}
-
-func toJSON(v interface{}) ([]byte, error) {
-	buff := bytes.NewBuffer([]byte{})
-	enc := json.NewEncoder(buff)
-	enc.SetEscapeHTML(false)
-	enc.SetIndent("", "  ")
-
-	err := enc.Encode(v)
-	if err != nil {
-		return nil, err
-	}
-
-	return buff.Bytes(), nil
-}
-
-type validator struct {
-	Validator  string `json:"validator"`
-	ShareCount int64  `json:"share_count"`
 }
