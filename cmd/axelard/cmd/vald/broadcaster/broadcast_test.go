@@ -30,6 +30,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/app"
 	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types/mock"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/utils"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -122,10 +123,10 @@ func TestBroadcast(t *testing.T) {
 func TestRetryPipeline_Push(t *testing.T) {
 	testCases := []struct {
 		label    string
-		strategy func(minTimeOut time.Duration) BackOff
+		strategy func(minTimeOut time.Duration) utils.BackOff
 	}{
-		{"exponential", ExponentialBackOff},
-		{"linear", LinearBackOff}}
+		{"exponential", utils.ExponentialBackOff},
+		{"linear", utils.LinearBackOff}}
 
 	for _, testCase := range testCases {
 		t.Run(fmt.Sprintf("failed broadcast with %s backoff", testCase.label), func(t *testing.T) {
@@ -156,7 +157,7 @@ func TestRetryPipeline_Push(t *testing.T) {
 
 	t.Run("called concurrently", func(t *testing.T) {
 		retries := int(rand.I64Between(1, 20))
-		backOff := LinearBackOff(2 * time.Microsecond)
+		backOff := utils.LinearBackOff(2 * time.Microsecond)
 		p := NewPipelineWithRetry(int(rand.I64Between(10, 100000)), retries, backOff, log.TestingLogger())
 
 		iterations := int(rand.I64Between(20, 100))

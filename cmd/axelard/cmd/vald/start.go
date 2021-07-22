@@ -1,6 +1,7 @@
 package vald
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -24,6 +25,7 @@ import (
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/tendermint/libs/log"
+	rpcclient "github.com/tendermint/tendermint/rpc/client"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
@@ -36,6 +38,7 @@ import (
 	evmRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/jobs"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss"
+	utils2 "github.com/axelarnetwork/axelar-core/utils"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -162,7 +165,7 @@ func newHub(node string, logger log.Logger) (*tmEvents.Hub, error) {
 	return &hub, nil
 }
 
-func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmEvents.Hub, txf tx.Factory, axelarCfg app.Config, valAddr string, stateSource events.ReadWriter, logger log.Logger) {
+func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmEvents.Hub, txf tx.Factory, axelarCfg app.Config, valAddr string, stateSource ReadWriter, logger log.Logger) {
 	encCfg := app.MakeEncodingConfig()
 	cdc := encCfg.Amino
 	protoCdc := encCfg.Marshaler
@@ -178,48 +181,52 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 
 	broadcaster := createBroadcaster(ctx, txf, axelarCfg, logger)
 
-	eventMgr := createEventMgr(ctx, stateSource, logger)
+	stateStore := NewStateStore(stateSource)
+	startBlock, err := stateStore.GetState()
+	if err != nil {
+		logger.Error(err.Error())
+		startBlock = 0
+	}
+	eventBus := createEventBus(ctx, startBlock, logger)
+
 	tssMgr := createTSSMgr(broadcaster, ctx.FromAddress, &tssGenesisState, axelarCfg, logger, valAddr, cdc)
 	btcMgr := createBTCMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
 	evmMgr := createEVMMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
 
 	// we have two processes listening to block headers
-	blockHeader1 := tmEvents.MustSubscribeNewBlockHeader(hub)
-	blockHeader2 := tmEvents.MustSubscribeNewBlockHeader(hub)
+	blockHeaderForTSS := tmEvents.MustSubscribeNewBlockHeader(hub)
+	blockHeaderForStateUpdate := tmEvents.MustSubscribeNewBlockHeader(hub)
 
-	keygenStart := tmEvents.MustSubscribeTx(eventMgr, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
-	keygenMsg := tmEvents.MustSubscribeTx(eventMgr, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
-	signStart := tmEvents.MustSubscribeTx(eventMgr, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueStart)
-	signMsg := tmEvents.MustSubscribeTx(eventMgr, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
+	keygenStart := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
+	keygenMsg := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
+	signStart := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueStart)
+	signMsg := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
 
-	btcConf := tmEvents.MustSubscribeTx(eventMgr, btcTypes.EventTypeOutpointConfirmation, btcTypes.ModuleName, btcTypes.AttributeValueStart)
+	btcConf := tmEvents.MustSubscribeTx(eventBus, btcTypes.EventTypeOutpointConfirmation, btcTypes.ModuleName, btcTypes.AttributeValueStart)
 
 	evmNewChain := tmEvents.MustSubscribeTx(hub, evmTypes.EventTypeNewChain, evmTypes.ModuleName, evmTypes.AttributeValueUpdate)
 	evmChainConf := tmEvents.MustSubscribeTx(hub, evmTypes.EventTypeChainConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	evmDepConf := tmEvents.MustSubscribeTx(eventMgr, evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	evmTokConf := tmEvents.MustSubscribeTx(eventMgr, evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	evmTraConf := tmEvents.MustSubscribeTx(eventMgr, evmTypes.EventTypeTransferOwnershipConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	evmDepConf := tmEvents.MustSubscribeTx(eventBus, evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	evmTokConf := tmEvents.MustSubscribeTx(eventBus, evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	evmTraConf := tmEvents.MustSubscribeTx(eventBus, evmTypes.EventTypeTransferOwnershipConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 
+	eventCtx, cancelEventCtx := context.WithCancel(context.Background())
 	// stop the jobs if process gets interrupted/terminated
 	cleanupCommands = append(cleanupCommands, func() {
-		logger.Info("persisting event state...")
-		eventMgr.Shutdown()
-		logger.Info("event state persisted")
 		logger.Info("stopping listening for blocks...")
-		blockHeader1.Close()
-		blockHeader2.Close()
+		blockHeaderForTSS.Close()
 		logger.Info("block listener stopped")
+		logger.Info("stop listening for events...")
+		cancelEventCtx()
+		<-eventBus.Done()
+		logger.Info("event listener stopped")
 	})
 
-	fetchEvents := func(errChan chan<- error) {
-		for err := range eventMgr.FetchEvents() {
-			errChan <- err
-		}
-	}
+	fetchEvents := func(errChan chan<- error) { errChan <- <-eventBus.FetchEvents(eventCtx) }
 	js := []jobs.Job{
 		fetchEvents,
-		events.Consume(blockHeader1, events.OnlyBlockHeight(eventMgr.NotifyNewBlock)),
-		events.Consume(blockHeader2, events.OnlyBlockHeight(tssMgr.ProcessNewBlockHeader)),
+		events.Consume(blockHeaderForStateUpdate, func(height int64, _ []sdk.Attribute) error { return stateStore.SetState(height) }),
+		events.Consume(blockHeaderForTSS, events.OnlyBlockHeight(tssMgr.ProcessNewBlockHeader)),
 		events.Consume(keygenStart, tssMgr.ProcessKeygenStart),
 		events.Consume(keygenMsg, events.OnlyAttributes(tssMgr.ProcessKeygenMsg)),
 		events.Consume(signStart, tssMgr.ProcessSignStart),
@@ -240,17 +247,18 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 	mgr.Wait()
 }
 
-func createEventMgr(ctx sdkClient.Context, stateSource events.ReadWriter, logger log.Logger) *events.Mgr {
+func createEventBus(ctx sdkClient.Context, startBlock int64, logger log.Logger) *events.EventBus {
 	node, err := ctx.GetNode()
 	if err != nil {
 		panic(err)
 	}
 
-	return events.NewMgr(node, stateSource, pubsub.NewBus, logger)
+	notifier := events.NewBlockNotifier(NewBlockClient(node), startBlock, logger)
+	return events.NewEventBus(events.NewBlockSource(node, notifier), pubsub.NewBus, logger)
 }
 
 func createBroadcaster(ctx sdkClient.Context, txf tx.Factory, axelarCfg app.Config, logger log.Logger) broadcasterTypes.Broadcaster {
-	pipeline := broadcaster.NewPipelineWithRetry(10000, axelarCfg.MaxRetries, broadcaster.LinearBackOff(axelarCfg.MinTimeout), logger)
+	pipeline := broadcaster.NewPipelineWithRetry(10000, axelarCfg.MaxRetries, utils2.LinearBackOff(axelarCfg.MinTimeout), logger)
 	return broadcaster.NewBroadcaster(ctx, txf, pipeline, logger)
 }
 
@@ -332,3 +340,17 @@ func (f RWFile) ReadAll() ([]byte, error) { return os.ReadFile(f.path) }
 
 // WriteAll writes the given bytes to a file. Creates a new fille if it does not exist, overwrites the previous content otherwise.
 func (f RWFile) WriteAll(bz []byte) error { return os.WriteFile(f.path, bz, RW) }
+
+type blockClient struct{ rpcclient.Client }
+
+func (b blockClient) LatestBlockHeight(ctx context.Context) (int64, error) {
+	status, err := b.Status(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return status.SyncInfo.LatestBlockHeight, nil
+}
+
+func NewBlockClient(client rpcclient.Client) events.BlockClient {
+	return blockClient{client}
+}
