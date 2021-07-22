@@ -110,7 +110,7 @@ func QueryHandlerKeyConsolidationAddress(cliCtx client.Context) http.HandlerFunc
 		}
 
 		keyID := mux.Vars(r)[utils.PathVarKeyID]
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QKeyConsolidationAddress), []byte(keyID))
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QKeySecondaryConsolidationAddress), []byte(keyID))
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

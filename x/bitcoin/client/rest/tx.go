@@ -23,7 +23,7 @@ const (
 
 	QueryDepositAddress           = keeper.QDepositAddress
 	QueryMasterAddress            = keeper.QSecondaryConsolidationAddress
-	QueryKeyConsolidationAddress  = keeper.QKeyConsolidationAddress
+	QueryKeyConsolidationAddress  = keeper.QKeySecondaryConsolidationAddress
 	QueryNextMasterKeyID          = keeper.QNextMasterKeyID
 	QueryGetConsolidationTx       = keeper.QConsolidationTx
 	QueryGetPayForConsolidationTx = keeper.QPayForConsolidationTx

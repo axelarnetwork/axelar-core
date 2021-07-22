@@ -251,13 +251,14 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 func (s msgServer) SignMasterConsolidationTransaction(c context.Context, req *types.SignMasterConsolidationTransactionRequest) (*types.SignMasterConsolidationTransactionResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if req.SecondaryKeyAmount > 0 && req.SecondaryKeyAmount < s.GetMinimumWithdrawalAmount(ctx) {
-		return nil, fmt.Errorf("secondary key amount %d is below the minimum", req.SecondaryKeyAmount)
+	secondaryMin := s.GetMinOutputAmount(ctx)
+	if req.SecondaryKeyAmount > 0 && req.SecondaryKeyAmount < secondaryMin {
+		return nil, fmt.Errorf("cannot transfer %d to secondary key, it is below the minimum of %d", req.SecondaryKeyAmount, secondaryMin)
 	}
 
-	// the secondary key amount has to be less than or equal to the maximum
-	if req.SecondaryKeyAmount > s.GetMaxSecondaryOutputAmount(ctx) {
-		return nil, fmt.Errorf("secondary key amount %d is above the maximum", req.SecondaryKeyAmount)
+	secondaryMax := s.GetMaxSecondaryOutputAmount(ctx)
+	if req.SecondaryKeyAmount > secondaryMax {
+		return nil, fmt.Errorf("cannot transfer %d to secondary key, it is above the maximum of %d", req.SecondaryKeyAmount, secondaryMax)
 	}
 
 	if _, ok := s.GetUnsignedTx(ctx); ok {
@@ -289,7 +290,7 @@ func (s msgServer) SignMasterConsolidationTransaction(c context.Context, req *ty
 		return nil, err
 	}
 
-	anyoneCanSpendOutput := types.Output{Amount: s.BTCKeeper.GetMinimumWithdrawalAmount(ctx), Recipient: s.BTCKeeper.GetAnyoneCanSpendAddress(ctx).GetAddress()}
+	anyoneCanSpendOutput := types.Output{Amount: s.BTCKeeper.GetMinOutputAmount(ctx), Recipient: s.BTCKeeper.GetAnyoneCanSpendAddress(ctx).GetAddress()}
 
 	outputs := []types.Output{anyoneCanSpendOutput}
 	totalOut := sdk.NewInt(int64(anyoneCanSpendOutput.Amount))
@@ -372,9 +373,9 @@ func (s msgServer) SignMasterConsolidationTransaction(c context.Context, req *ty
 func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendingTransfersRequest) (*types.SignPendingTransfersResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	// if transfering coin to the master key, the amount has to be greater than or equal to the minimum
-	if req.MasterKeyAmount > 0 && req.MasterKeyAmount < s.GetMinimumWithdrawalAmount(ctx) {
-		return nil, fmt.Errorf("master key amount %d is below the minimum", req.MasterKeyAmount)
+	masterMin := s.GetMinOutputAmount(ctx)
+	if req.MasterKeyAmount > 0 && req.MasterKeyAmount < masterMin {
+		return nil, fmt.Errorf("cannot transfer %d to the master key, it is below the minimum amount of %d", req.MasterKeyAmount, masterMin)
 	}
 
 	if _, ok := s.GetUnsignedTx(ctx); ok {
@@ -426,7 +427,7 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 		s.SetAddress(ctx, currMasterAddress)
 	}
 
-	anyoneCanSpendOutput := types.Output{Amount: s.BTCKeeper.GetMinimumWithdrawalAmount(ctx), Recipient: s.BTCKeeper.GetAnyoneCanSpendAddress(ctx).GetAddress()}
+	anyoneCanSpendOutput := types.Output{Amount: s.BTCKeeper.GetMinOutputAmount(ctx), Recipient: s.BTCKeeper.GetAnyoneCanSpendAddress(ctx).GetAddress()}
 	outputs = append(outputs, anyoneCanSpendOutput)
 	totalOut = totalOut.AddRaw(int64(anyoneCanSpendOutput.Amount))
 
@@ -511,7 +512,7 @@ func estimateTxSizeWithZeroChange(ctx sdk.Context, k types.BTCKeeper, address ty
 }
 
 func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.Output, sdk.Int) {
-	minAmount := sdk.NewInt(int64(k.GetMinimumWithdrawalAmount(ctx)))
+	minAmount := sdk.NewInt(int64(k.GetMinOutputAmount(ctx)))
 	pendingTransfers := n.GetTransfersForChain(ctx, exported.Bitcoin, nexus.Pending)
 	outputs := []types.Output{}
 	total := sdk.ZeroInt()

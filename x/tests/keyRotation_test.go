@@ -287,7 +287,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	fee := btcTypes.EstimateTxSize(signedTx, outpointsToSign)
 
-	satoshi, err := types.ParseSatoshi(btcTypes.DefaultParams().MinimumWithdrawalAmount)
+	satoshi, err := types.ToSatoshiCoin(btcTypes.DefaultParams().MinOutputAmount)
 	if err != nil {
 		panic(err)
 	}
@@ -324,7 +324,7 @@ func txCorrectlyFormed(tx *wire.MsgTx, deposits map[string]btcTypes.OutPointInfo
 		}
 	}
 
-	satoshi, err := types.ParseSatoshi(btcTypes.DefaultParams().MinimumWithdrawalAmount)
+	satoshi, err := types.ToSatoshiCoin(btcTypes.DefaultParams().MinOutputAmount)
 	if err != nil {
 		panic(err)
 	}

@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 
+	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -18,7 +19,7 @@ var (
 	KeyNetwork                  = []byte("network")
 	KeyRevoteLockingPeriod      = []byte("RevoteLockingPeriod")
 	KeySigCheckInterval         = []byte("KeySigCheckInterval")
-	KeyMinimumWithdrawalAmount  = []byte("KeyMinimumWithdrawalAmount")
+	KeyMinOutputAmount          = []byte("KeyMinOutputAmount")
 	KeyMaxInputCount            = []byte("KeyMaxInputCount")
 	KeyMaxSecondaryOutputAmount = []byte("KeyMaxSecondaryOutputAmount")
 	KeyPrevMasterKeyCycle       = []byte("KeyPrevMasterKeyCycle")
@@ -36,9 +37,9 @@ func DefaultParams() Params {
 		Network:                  Network{Name: Regtest.Name},
 		RevoteLockingPeriod:      50,
 		SigCheckInterval:         10,
-		MinimumWithdrawalAmount:  "0.00001btc",
+		MinOutputAmount:          sdktypes.NewDecCoin(Satoshi, sdktypes.NewInt(1000)),
 		MaxInputCount:            50,
-		MaxSecondaryOutputAmount: "300btc",
+		MaxSecondaryOutputAmount: sdktypes.NewDecCoin(Bitcoin, sdktypes.NewInt(300)),
 		PrevMasterKeyCycle:       8,
 	}
 }
@@ -57,7 +58,7 @@ func (m *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(KeyNetwork, &m.Network, validateNetwork),
 		paramtypes.NewParamSetPair(KeyRevoteLockingPeriod, &m.RevoteLockingPeriod, validateRevoteLockingPeriod),
 		paramtypes.NewParamSetPair(KeySigCheckInterval, &m.SigCheckInterval, validateSigCheckInterval),
-		paramtypes.NewParamSetPair(KeyMinimumWithdrawalAmount, &m.MinimumWithdrawalAmount, validateMinimumWithdrawalAmount),
+		paramtypes.NewParamSetPair(KeyMinOutputAmount, &m.MinOutputAmount, validateMinOutputAmount),
 		paramtypes.NewParamSetPair(KeyMaxInputCount, &m.MaxInputCount, validateMaxInputCount),
 		paramtypes.NewParamSetPair(KeyMaxSecondaryOutputAmount, &m.MaxSecondaryOutputAmount, validateMaxSecondaryOutputAmount),
 		paramtypes.NewParamSetPair(KeyPrevMasterKeyCycle, &m.PrevMasterKeyCycle, validatePrevMasterKeyCycle),
@@ -96,20 +97,19 @@ func validateRevoteLockingPeriod(period interface{}) error {
 	return nil
 }
 
-func validateMinimumWithdrawalAmount(amount interface{}) error {
-	i, ok := amount.(string)
+func validateMinOutputAmount(amount interface{}) error {
+	coin, ok := amount.(sdktypes.DecCoin)
 	if !ok {
-		return fmt.Errorf("invalid parameter type for minimum withdrawal amount: %T", i)
+		return fmt.Errorf("invalid parameter type for min output amount: %T", coin)
 	}
 
-	satoshi, err := ParseSatoshi(i)
+	satoshi, err := ToSatoshiCoin(coin)
 	if err != nil {
-		return err
+		return sdkerrors.Wrapf(types.ErrInvalidGenesis, "invalid min output amount with error %s", err.Error())
 	}
 
-	// Dust limit is 546 satoshis for non-SegWit, 294 satoshis for SegWit
-	if satoshi.Amount.Int64() <= dustLimit {
-		return sdkerrors.Wrapf(types.ErrInvalidGenesis, "minimum withdrawal amount must be greater than %d", dustLimit)
+	if satoshi.Amount.LT(sdktypes.NewInt(dustLimit)) {
+		return sdkerrors.Wrapf(types.ErrInvalidGenesis, "min output amount has to be greater than %d", dustLimit)
 	}
 
 	return nil
@@ -141,19 +141,19 @@ func validateMaxInputCount(maxInputCount interface{}) error {
 	return nil
 }
 
-func validateMaxSecondaryOutputAmount(maxSecondaryOutputAmount interface{}) error {
-	m, ok := maxSecondaryOutputAmount.(string)
+func validateMaxSecondaryOutputAmount(amount interface{}) error {
+	coin, ok := amount.(sdktypes.DecCoin)
 	if !ok {
-		return fmt.Errorf("invalid parameter type for max input count: %T", maxSecondaryOutputAmount)
+		return fmt.Errorf("invalid parameter type for max secondary output amount: %T", coin)
 	}
 
-	satoshi, err := ParseSatoshi(m)
+	satoshi, err := ToSatoshiCoin(coin)
 	if err != nil {
-		return err
+		return sdkerrors.Wrapf(types.ErrInvalidGenesis, "invalid max secondary output amount with error %s", err.Error())
 	}
 
-	if satoshi.Amount.Int64() <= 0 {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, "max secondary output amount must be greater than 0")
+	if satoshi.Amount.LT(sdktypes.NewInt(dustLimit)) {
+		return sdkerrors.Wrapf(types.ErrInvalidGenesis, "max secondary output amount has to be greater than %d", dustLimit)
 	}
 
 	return nil
@@ -189,7 +189,7 @@ func (m Params) Validate() error {
 		return err
 	}
 
-	if err := validateMinimumWithdrawalAmount(m.MinimumWithdrawalAmount); err != nil {
+	if err := validateMinOutputAmount(m.MinOutputAmount); err != nil {
 		return err
 	}
 

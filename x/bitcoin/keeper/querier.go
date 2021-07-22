@@ -24,15 +24,15 @@ import (
 
 // Query paths
 const (
-	QDepositAddress                = "depositAddr"
-	QSecondaryConsolidationAddress = "masterAddr"
-	QKeyConsolidationAddress       = "keyConsolidationAddress"
-	QNextMasterKeyID               = "nextMasterKeyID"
-	QMinimumWithdrawAmount         = "minWithdrawAmount"
-	QTxState                       = "txState"
-	QConsolidationTx               = "getConsolidationTx"
-	QConsolidationTxState          = "QConsolidationTxState"
-	QPayForConsolidationTx         = "getPayForConsolidationTx"
+	QDepositAddress                   = "depositAddr"
+	QSecondaryConsolidationAddress    = "masterAddr"
+	QKeySecondaryConsolidationAddress = "keySecondaryConsolidationAddress"
+	QNextMasterKeyID                  = "nextMasterKeyID"
+	QMinimumWithdrawAmount            = "minWithdrawAmount"
+	QTxState                          = "txState"
+	QConsolidationTx                  = "getConsolidationTx"
+	QConsolidationTxState             = "QConsolidationTxState"
+	QPayForConsolidationTx            = "getPayForConsolidationTx"
 )
 
 // NewQuerier returns a new querier for the Bitcoin module
@@ -45,7 +45,7 @@ func NewQuerier(rpc types.RPCClient, k types.BTCKeeper, s types.Signer, n types.
 			res, err = QueryDepositAddress(ctx, k, s, n, req.Data)
 		case QSecondaryConsolidationAddress:
 			res, err = QuerySecondaryConsolidationAddress(ctx, k, s)
-		case QKeyConsolidationAddress:
+		case QKeySecondaryConsolidationAddress:
 			res, err = queryKeyConsolidationAddress(ctx, k, s, req.Data)
 		case QNextMasterKeyID:
 			res, err = queryNextMasterKeyID(ctx, s)
@@ -145,7 +145,7 @@ func queryNextMasterKeyID(ctx sdk.Context, s types.Signer) ([]byte, error) {
 
 func queryMinimumWithdrawAmount(ctx sdk.Context, k types.BTCKeeper) []byte {
 	amount := make([]byte, 8)
-	binary.LittleEndian.PutUint64(amount, uint64(k.GetMinimumWithdrawalAmount(ctx)))
+	binary.LittleEndian.PutUint64(amount, uint64(k.GetMinOutputAmount(ctx)))
 	return amount
 }
 
@@ -248,7 +248,7 @@ func payForConsolidationTx(ctx sdk.Context, k types.BTCKeeper, rpc types.RPCClie
 		{
 			OutPointInfo: types.NewOutPointInfo(
 				wire.NewOutPoint(&consolidationTxHash, uint32(anyoneCanSpendVout)),
-				k.GetMinimumWithdrawalAmount(ctx),
+				k.GetMinOutputAmount(ctx),
 				anyoneCanSpendAddress.Address,
 			),
 			AddressInfo: types.AddressInfo{
@@ -257,7 +257,7 @@ func payForConsolidationTx(ctx sdk.Context, k types.BTCKeeper, rpc types.RPCClie
 			},
 		},
 	}
-	inputTotal := sdk.NewInt(int64(k.GetMinimumWithdrawalAmount(ctx)))
+	inputTotal := sdk.NewInt(int64(k.GetMinOutputAmount(ctx)))
 
 	for _, utxo := range utxos {
 		hash, err := chainhash.NewHashFromStr(utxo.TxID)

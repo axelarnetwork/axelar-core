@@ -1669,8 +1669,8 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			GetMaxSecondaryOutputAmountFunc: func(ctx sdk.Context) github_com_btcsuite_btcutil.Amount {
 // 				panic("mock out the GetMaxSecondaryOutputAmount method")
 // 			},
-// 			GetMinimumWithdrawalAmountFunc: func(ctx sdk.Context) github_com_btcsuite_btcutil.Amount {
-// 				panic("mock out the GetMinimumWithdrawalAmount method")
+// 			GetMinOutputAmountFunc: func(ctx sdk.Context) github_com_btcsuite_btcutil.Amount {
+// 				panic("mock out the GetMinOutputAmount method")
 // 			},
 // 			GetNetworkFunc: func(ctx sdk.Context) types.Network {
 // 				panic("mock out the GetNetwork method")
@@ -1775,8 +1775,8 @@ type BTCKeeperMock struct {
 	// GetMaxSecondaryOutputAmountFunc mocks the GetMaxSecondaryOutputAmount method.
 	GetMaxSecondaryOutputAmountFunc func(ctx sdk.Context) github_com_btcsuite_btcutil.Amount
 
-	// GetMinimumWithdrawalAmountFunc mocks the GetMinimumWithdrawalAmount method.
-	GetMinimumWithdrawalAmountFunc func(ctx sdk.Context) github_com_btcsuite_btcutil.Amount
+	// GetMinOutputAmountFunc mocks the GetMinOutputAmount method.
+	GetMinOutputAmountFunc func(ctx sdk.Context) github_com_btcsuite_btcutil.Amount
 
 	// GetNetworkFunc mocks the GetNetwork method.
 	GetNetworkFunc func(ctx sdk.Context) types.Network
@@ -1914,8 +1914,8 @@ type BTCKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 		}
-		// GetMinimumWithdrawalAmount holds details about calls to the GetMinimumWithdrawalAmount method.
-		GetMinimumWithdrawalAmount []struct {
+		// GetMinOutputAmount holds details about calls to the GetMinOutputAmount method.
+		GetMinOutputAmount []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 		}
@@ -2064,7 +2064,7 @@ type BTCKeeperMock struct {
 	lockGetLatestSignedTxHash               sync.RWMutex
 	lockGetMaxInputCount                    sync.RWMutex
 	lockGetMaxSecondaryOutputAmount         sync.RWMutex
-	lockGetMinimumWithdrawalAmount          sync.RWMutex
+	lockGetMinOutputAmount                  sync.RWMutex
 	lockGetNetwork                          sync.RWMutex
 	lockGetOutPointInfo                     sync.RWMutex
 	lockGetParams                           sync.RWMutex
@@ -2487,34 +2487,34 @@ func (mock *BTCKeeperMock) GetMaxSecondaryOutputAmountCalls() []struct {
 	return calls
 }
 
-// GetMinimumWithdrawalAmount calls GetMinimumWithdrawalAmountFunc.
-func (mock *BTCKeeperMock) GetMinimumWithdrawalAmount(ctx sdk.Context) github_com_btcsuite_btcutil.Amount {
-	if mock.GetMinimumWithdrawalAmountFunc == nil {
-		panic("BTCKeeperMock.GetMinimumWithdrawalAmountFunc: method is nil but BTCKeeper.GetMinimumWithdrawalAmount was just called")
+// GetMinOutputAmount calls GetMinOutputAmountFunc.
+func (mock *BTCKeeperMock) GetMinOutputAmount(ctx sdk.Context) github_com_btcsuite_btcutil.Amount {
+	if mock.GetMinOutputAmountFunc == nil {
+		panic("BTCKeeperMock.GetMinOutputAmountFunc: method is nil but BTCKeeper.GetMinOutputAmount was just called")
 	}
 	callInfo := struct {
 		Ctx sdk.Context
 	}{
 		Ctx: ctx,
 	}
-	mock.lockGetMinimumWithdrawalAmount.Lock()
-	mock.calls.GetMinimumWithdrawalAmount = append(mock.calls.GetMinimumWithdrawalAmount, callInfo)
-	mock.lockGetMinimumWithdrawalAmount.Unlock()
-	return mock.GetMinimumWithdrawalAmountFunc(ctx)
+	mock.lockGetMinOutputAmount.Lock()
+	mock.calls.GetMinOutputAmount = append(mock.calls.GetMinOutputAmount, callInfo)
+	mock.lockGetMinOutputAmount.Unlock()
+	return mock.GetMinOutputAmountFunc(ctx)
 }
 
-// GetMinimumWithdrawalAmountCalls gets all the calls that were made to GetMinimumWithdrawalAmount.
+// GetMinOutputAmountCalls gets all the calls that were made to GetMinOutputAmount.
 // Check the length with:
-//     len(mockedBTCKeeper.GetMinimumWithdrawalAmountCalls())
-func (mock *BTCKeeperMock) GetMinimumWithdrawalAmountCalls() []struct {
+//     len(mockedBTCKeeper.GetMinOutputAmountCalls())
+func (mock *BTCKeeperMock) GetMinOutputAmountCalls() []struct {
 	Ctx sdk.Context
 } {
 	var calls []struct {
 		Ctx sdk.Context
 	}
-	mock.lockGetMinimumWithdrawalAmount.RLock()
-	calls = mock.calls.GetMinimumWithdrawalAmount
-	mock.lockGetMinimumWithdrawalAmount.RUnlock()
+	mock.lockGetMinOutputAmount.RLock()
+	calls = mock.calls.GetMinOutputAmount
+	mock.lockGetMinOutputAmount.RUnlock()
 	return calls
 }
 

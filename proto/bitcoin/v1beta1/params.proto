@@ -4,6 +4,7 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/bitcoin/types";
 
 import "gogoproto/gogo.proto";
 import "bitcoin/v1beta1/types.proto";
+import "cosmos/base/v1beta1/coin.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -12,8 +13,10 @@ message Params {
   uint64 confirmation_height = 2;
   int64 revote_locking_period = 3;
   int64 sig_check_interval = 4;
-  string minimum_withdrawal_amount = 5;
+  cosmos.base.v1beta1.DecCoin min_output_amount = 5
+      [ (gogoproto.nullable) = false ];
   int64 max_input_count = 6;
-  string max_secondary_output_amount = 7;
+  cosmos.base.v1beta1.DecCoin max_secondary_output_amount = 7
+      [ (gogoproto.nullable) = false ];
   int64 prev_master_key_cycle = 8;
 }

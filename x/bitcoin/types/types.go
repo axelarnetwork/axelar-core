@@ -479,14 +479,8 @@ const (
 	Bitcoin = "bitcoin"
 )
 
-// ParseSatoshi parses a string to Satoshi, returning errors if invalid. Inputs in Bitcoin are automatically converted.
-// This returns an error on an empty string as well.
-func ParseSatoshi(rawCoin string) (sdk.Coin, error) {
-	coin, err := sdk.ParseDecCoin(rawCoin)
-	if err != nil {
-		return sdk.Coin{}, fmt.Errorf("could not parse coin string")
-	}
-
+// ToSatoshiCoin converts the given bitcoin or satoshi dec coin to the equivalent satoshi coin
+func ToSatoshiCoin(coin sdk.DecCoin) (sdk.Coin, error) {
 	switch coin.Denom {
 	case Sat, Satoshi:
 		break
@@ -500,7 +494,19 @@ func ParseSatoshi(rawCoin string) (sdk.Coin, error) {
 	if !remainder.IsZero() {
 		return sdk.Coin{}, fmt.Errorf("amount in satoshi must be an integer value")
 	}
+
 	return sat, nil
+}
+
+// ParseSatoshi parses a string to Satoshi, returning errors if invalid. Inputs in Bitcoin are automatically converted.
+// This returns an error on an empty string as well.
+func ParseSatoshi(rawCoin string) (sdk.Coin, error) {
+	coin, err := sdk.ParseDecCoin(rawCoin)
+	if err != nil {
+		return sdk.Coin{}, fmt.Errorf("could not parse coin string")
+	}
+
+	return ToSatoshiCoin(coin)
 }
 
 // SetTx sets the underlying tx

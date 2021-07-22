@@ -109,12 +109,12 @@ func (k Keeper) GetNetwork(ctx sdk.Context) types.Network {
 	return network
 }
 
-// GetMinimumWithdrawalAmount returns the minimum withdrawal threshold
-func (k Keeper) GetMinimumWithdrawalAmount(ctx sdk.Context) btcutil.Amount {
-	var result string
-	k.params.Get(ctx, types.KeyMinimumWithdrawalAmount, &result)
+// GetMinOutputAmount returns the minimum withdrawal threshold
+func (k Keeper) GetMinOutputAmount(ctx sdk.Context) btcutil.Amount {
+	var coin sdk.DecCoin
+	k.params.Get(ctx, types.KeyMinOutputAmount, &coin)
 
-	satoshi, err := types.ParseSatoshi(result)
+	satoshi, err := types.ToSatoshiCoin(coin)
 	if err != nil {
 		panic(err)
 	}
@@ -132,10 +132,10 @@ func (k Keeper) GetMaxInputCount(ctx sdk.Context) int64 {
 
 // GetMaxSecondaryOutputAmount returns the max secondary output amount
 func (k Keeper) GetMaxSecondaryOutputAmount(ctx sdk.Context) btcutil.Amount {
-	var result string
-	k.params.Get(ctx, types.KeyMaxSecondaryOutputAmount, &result)
+	var coin sdk.DecCoin
+	k.params.Get(ctx, types.KeyMaxSecondaryOutputAmount, &coin)
 
-	satoshi, err := types.ParseSatoshi(result)
+	satoshi, err := types.ToSatoshiCoin(coin)
 	if err != nil {
 		panic(err)
 	}

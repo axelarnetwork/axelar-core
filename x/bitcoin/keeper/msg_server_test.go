@@ -552,10 +552,10 @@ func TestHandleMsgSignPendingTransfers(t *testing.T) {
 					KeyID:        secondaryKey.ID,
 				}, true
 			},
-			SetAddressFunc:                 func(sdk.Context, types.AddressInfo) {},
-			SetUnsignedTxFunc:              func(sdk.Context, *types.Transaction) {},
-			GetMinimumWithdrawalAmountFunc: func(sdk.Context) btcutil.Amount { return minimumWithdrawalAmount },
-			GetMaxInputCountFunc:           func(sdk.Context) int64 { return types.DefaultParams().MaxInputCount },
+			SetAddressFunc:         func(sdk.Context, types.AddressInfo) {},
+			SetUnsignedTxFunc:      func(sdk.Context, *types.Transaction) {},
+			GetMinOutputAmountFunc: func(sdk.Context) btcutil.Amount { return minimumWithdrawalAmount },
+			GetMaxInputCountFunc:   func(sdk.Context) int64 { return types.DefaultParams().MaxInputCount },
 			GetDustAmountFunc: func(ctx sdk.Context, encodeAddr string) btcutil.Amount {
 				amount, ok := dustAmount[encodeAddr]
 				if !ok {

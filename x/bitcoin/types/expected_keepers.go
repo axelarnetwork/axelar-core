@@ -30,7 +30,7 @@ type BTCKeeper interface {
 	GetRevoteLockingPeriod(ctx sdk.Context) int64
 	GetSigCheckInterval(ctx sdk.Context) int64
 	GetNetwork(ctx sdk.Context) Network
-	GetMinimumWithdrawalAmount(ctx sdk.Context) btcutil.Amount
+	GetMinOutputAmount(ctx sdk.Context) btcutil.Amount
 	GetMaxInputCount(ctx sdk.Context) int64
 	GetMaxSecondaryOutputAmount(ctx sdk.Context) btcutil.Amount
 	GetPrevMasterKeyCycle(ctx sdk.Context) int64
