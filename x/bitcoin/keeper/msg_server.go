@@ -2,13 +2,14 @@ package keeper
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/txscript"
-	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -44,6 +45,41 @@ func NewMsgServerImpl(keeper types.BTCKeeper, s types.Signer, n types.Nexus, v t
 	}
 }
 
+func (s msgServer) SubmitExternalSignature(c context.Context, req *types.SubmitExternalSignatureRequest) (*types.SubmitExternalSignatureResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	externalKey, ok := s.signer.GetCurrentKey(ctx, exported.Bitcoin, tss.ExternalKey)
+	if !ok {
+		return nil, fmt.Errorf("external key not found")
+	}
+
+	if externalKey.ID != req.KeyID {
+		return nil, fmt.Errorf("unknown key ID %s", req.KeyID)
+	}
+
+	sig, err := btcec.ParseDERSignature(req.Signature, btcec.S256())
+	if err != nil {
+		return nil, err
+	}
+
+	if !ecdsa.Verify(&externalKey.Value, req.SigHash, sig.R, sig.S) {
+		return nil, fmt.Errorf("invalid signature for external key %s received", req.KeyID)
+	}
+
+	sigID := getSigID(req.SigHash, req.KeyID)
+	s.signer.SetSig(ctx, sigID, req.Signature)
+	s.signer.SetKeyIDForSig(ctx, sigID, req.KeyID)
+
+	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeExternalSignature,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueSubmitted),
+		sdk.NewAttribute(types.AttributeKeyKeyID, req.KeyID),
+		sdk.NewAttribute(types.AttributeKeySigID, sigID),
+	))
+
+	return &types.SubmitExternalSignatureResponse{}, nil
+}
+
 func (s msgServer) RegisterExternalKey(c context.Context, req *types.RegisterExternalKeyRequest) (*types.RegisterExternalKeyResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
@@ -63,6 +99,13 @@ func (s msgServer) RegisterExternalKey(c context.Context, req *types.RegisterExt
 
 	s.signer.SetKey(ctx, req.KeyID, *key.ToECDSA())
 	s.signer.AssignNextKey(ctx, exported.Bitcoin, tss.ExternalKey, req.KeyID)
+
+	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeKey,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueAssigned),
+		sdk.NewAttribute(types.AttributeKeyRole, tss.ExternalKey.SimpleString()),
+		sdk.NewAttribute(types.AttributeKeyKeyID, req.KeyID),
+	))
 
 	return &types.RegisterExternalKeyResponse{}, nil
 }
@@ -240,6 +283,8 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 			Status: fmt.Sprintf("transfer of %s from {%s} successfully prepared", amount.Amount.String(), depositAddr.String()),
 		}, nil
 	case types.Consolidation:
+		unconfirmedAmount := s.BTCKeeper.GetUnconfirmedAmount(ctx, addr.KeyID)
+		s.BTCKeeper.SetUnconfirmedAmount(ctx, addr.KeyID, unconfirmedAmount-pendingOutPointInfo.Amount)
 		// the outpoint simply deposits funds into a consolidation address. Simply confirm
 		return &types.VoteConfirmOutpointResponse{
 			Status: "confirmed top up of consolidation balance"}, nil
@@ -248,7 +293,124 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 	}
 }
 
-func (s msgServer) SignMasterConsolidationTransaction(c context.Context, req *types.SignMasterConsolidationTransactionRequest) (*types.SignMasterConsolidationTransactionResponse, error) {
+func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.SignTxResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	unsignedTx, ok := s.GetUnsignedTx(ctx, req.KeyRole)
+	if !ok || (!unsignedTx.Is(types.Created) && !unsignedTx.Is(types.Aborted)) {
+		return nil, fmt.Errorf("no unsigned %s tx ready for signing", req.KeyRole.SimpleString())
+	}
+
+	s.Logger(ctx).Debug(fmt.Sprintf("signing %s consolidation transaction", req.KeyRole.SimpleString()))
+
+	var maxLockTime *time.Time
+	var outpointsToSign []types.OutPointToSign
+	for _, inputInfo := range unsignedTx.Info.InputInfos {
+		addressInfo, ok := s.BTCKeeper.GetAddress(ctx, inputInfo.OutPointInfo.Address)
+		if !ok {
+			return nil, fmt.Errorf("address for confirmed outpoint %s must be known", inputInfo.OutPointInfo.OutPoint)
+		}
+
+		outpointsToSign = append(outpointsToSign, types.OutPointToSign{OutPointInfo: inputInfo.OutPointInfo, AddressInfo: addressInfo})
+
+		if addressInfo.LockTime != nil && (maxLockTime == nil || addressInfo.LockTime.After(*maxLockTime)) {
+			maxLockTime = addressInfo.LockTime
+		}
+	}
+
+	tx := unsignedTx.GetTx()
+
+	switch {
+	// when no UTXO is locked or some UTXOs cannot be spent without the external key
+	case maxLockTime == nil || maxLockTime.After(ctx.BlockTime()):
+		tx.LockTime = 0
+		tx = types.DisableTimelockAndRBF(tx)
+
+		s.Logger(ctx).Debug(fmt.Sprintf("disabled lock time on %s consolidation transaction", req.KeyRole.SimpleString()))
+	// when all UTXOs can be spent without the external key
+	default:
+		tx.LockTime = uint32(maxLockTime.Unix())
+		tx = types.EnableTimelockAndRBF(tx)
+
+		s.Logger(ctx).Debug(fmt.Sprintf("enabled lock time as %d on %s consolidation transaction", tx.LockTime, req.KeyRole.SimpleString()))
+	}
+
+	var sigHashes [][]byte
+	for i := range unsignedTx.Info.InputInfos {
+		sigHash, err := txscript.CalcWitnessSigHash(outpointsToSign[i].RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, i, int64(outpointsToSign[i].Amount))
+		if err != nil {
+			return nil, err
+		}
+
+		sigHashes = append(sigHashes, sigHash)
+
+		unsignedTx.Info.InputInfos[i].SigRequirements = []types.UnsignedTx_Info_InputInfo_SigRequirement{
+			types.NewSigRequirement(outpointsToSign[i].KeyID, sigHash),
+		}
+	}
+
+	// when some UTXOs cannot be spent without the external key
+	if maxLockTime != nil && maxLockTime.After(ctx.BlockTime()) {
+		externalKeyID, ok := s.signer.GetCurrentKeyID(ctx, exported.Bitcoin, tss.ExternalKey)
+		if !ok {
+			return nil, fmt.Errorf("external key ID not found")
+		}
+
+		// Verify that external key has submitted all signatures
+		for i := range outpointsToSign {
+			sigHash := sigHashes[i]
+			sigID := getSigID(sigHash, externalKeyID)
+			if _, ok := s.signer.GetSig(ctx, sigID); !ok {
+				return nil, fmt.Errorf("missing signature from external key %s for sig hash %s", externalKeyID, hex.EncodeToString(sigHash))
+			}
+
+			unsignedTx.Info.InputInfos[i].SigRequirements = append(
+				unsignedTx.Info.InputInfos[i].SigRequirements,
+				types.NewSigRequirement(externalKeyID, sigHash),
+			)
+		}
+	}
+
+	for _, inputInfo := range unsignedTx.Info.InputInfos {
+		for _, sigRequirement := range inputInfo.SigRequirements {
+			sigID := getSigID(sigRequirement.SigHash, sigRequirement.KeyID)
+			// if the signature already exists, ignore it
+			if _, ok := s.signer.GetSig(ctx, sigID); ok {
+				s.Logger(ctx).Debug(fmt.Sprintf("signature %s for %s transaction exists already and therefore skipping", req.KeyRole.SimpleString(), sigID))
+				continue
+			}
+
+			counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, sigRequirement.KeyID)
+			if !ok {
+				return nil, fmt.Errorf("no snapshot counter for key ID %s registered", sigRequirement.KeyID)
+			}
+
+			snapshot, ok := s.snapshotter.GetSnapshot(ctx, counter)
+			if !ok {
+				return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
+			}
+
+			if err := s.signer.StartSign(ctx, s.voter, sigRequirement.KeyID, sigID, sigRequirement.SigHash, snapshot); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	unsignedTx.SetTx(tx)
+	unsignedTx.Status = types.Signing
+	s.SetUnsignedTx(ctx, req.KeyRole, unsignedTx)
+
+	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeConsolidationTx,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueSigning),
+		sdk.NewAttribute(types.AttributeKeyRole, req.KeyRole.SimpleString()),
+	))
+
+	return &types.SignTxResponse{}, nil
+}
+
+// CreateMasterTx creates a master key consolidation transaction
+func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRequest) (*types.CreateMasterTxResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
 	secondaryMin := s.GetMinOutputAmount(ctx)
@@ -261,7 +423,7 @@ func (s msgServer) SignMasterConsolidationTransaction(c context.Context, req *ty
 		return nil, fmt.Errorf("cannot transfer %d to secondary key, it is above the maximum of %d", req.SecondaryKeyAmount, secondaryMax)
 	}
 
-	if _, ok := s.GetUnsignedTx(ctx); ok {
+	if _, ok := s.GetUnsignedTx(ctx, tss.MasterKey); ok {
 		return nil, fmt.Errorf("consolidation in progress")
 	}
 
@@ -294,6 +456,7 @@ func (s msgServer) SignMasterConsolidationTransaction(c context.Context, req *ty
 
 	outputs := []types.Output{anyoneCanSpendOutput}
 	totalOut := sdk.NewInt(int64(anyoneCanSpendOutput.Amount))
+	anyoneCanSpendVout := uint32(0)
 
 	if req.SecondaryKeyAmount > 0 {
 		currSecondaryKey, ok := s.signer.GetCurrentKey(ctx, exported.Bitcoin, tss.SecondaryKey)
@@ -313,8 +476,8 @@ func (s msgServer) SignMasterConsolidationTransaction(c context.Context, req *ty
 		return nil, fmt.Errorf("cannot find the %s key for the period", tss.MasterKey.SimpleString())
 	}
 
-	// TODO: figure out a proper value for lockedUntil and pass in old master key
-	consolidationAddress := types.NewMasterConsolidationAddress(consolidationKey, oldMasterKey, externalKey, ctx.BlockTime(), s.GetNetwork(ctx))
+	lockTime := currMasterKey.RotatedAt.Add(s.GetMasterAddressLockDuration(ctx))
+	consolidationAddress := types.NewMasterConsolidationAddress(consolidationKey, oldMasterKey, externalKey, lockTime, s.GetNetwork(ctx))
 	txSizeUpperBound, err := estimateTxSizeWithZeroChange(ctx, s, consolidationAddress, inputs, outputs)
 	if err != nil {
 		return nil, err
@@ -338,39 +501,32 @@ func (s msgServer) SignMasterConsolidationTransaction(c context.Context, req *ty
 		return nil, err
 	}
 
-	// TODO: only turn on locktime if all inputs can be spent right away
-	tx.LockTime = uint32(ctx.BlockTime().Unix())
-
-	unsignedTx := types.Transaction{}
+	tx.LockTime = 0
+	tx = types.DisableTimelockAndRBF(tx)
+	unsignedTx := types.NewUnsignedTx(tx, anyoneCanSpendVout, inputs)
 	// If consolidating to a new key, that key has to be eligible for the role
 	if currMasterKey.ID != consolidationKey.ID {
-		if err := s.signer.AssertMatchesRequirements(ctx, s.snapshotter, exported.Bitcoin, consolidationKey.ID, tss.MasterKey); err != nil {
-			return nil, sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", consolidationKey.ID, tss.MasterKey.SimpleString())
+		if err := validateKeyAssignment(ctx, s.BTCKeeper, s.signer, s.snapshotter, currMasterKey, consolidationKey); err != nil {
+			return nil, err
 		}
 
-		// TODO: think about the solution how to make sure the queue is never empty
-		if !s.GetConfirmedOutpointInfoQueueForKey(ctx, currMasterKey.ID).IsEmpty() {
-			return nil, sdkerrors.Wrapf(err, "key %s still has outpoints to be signed and therefore it cannot be rotated out yet", currMasterKey.ID)
-		}
-
-		unsignedTx.AssignNextKey = true
-		unsignedTx.NextKeyRole = tss.MasterKey
-		unsignedTx.NextKeyID = consolidationKey.ID
+		unsignedTx.Info.AssignNextKey = true
+		unsignedTx.Info.NextKeyID = consolidationKey.ID
 	}
 
-	unsignedTx.SetTx(types.EnableTimelockAndRBF(tx))
-	s.SetUnsignedTx(ctx, &unsignedTx)
+	s.SetUnsignedTx(ctx, tss.MasterKey, unsignedTx)
 
-	err = startSignInputs(ctx, s.signer, s.snapshotter, s.voter, tx, inputs)
-	if err != nil {
-		return nil, err
-	}
+	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeConsolidationTx,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueCreated),
+		sdk.NewAttribute(types.AttributeKeyRole, tss.MasterKey.SimpleString()),
+	))
 
-	return &types.SignMasterConsolidationTransactionResponse{}, nil
+	return &types.CreateMasterTxResponse{}, nil
 }
 
-// SignPendingTransfers handles the signing of a consolidation transaction (consolidate confirmed outpoints and pay out transfers)
-func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendingTransfersRequest) (*types.SignPendingTransfersResponse, error) {
+// CreatePendingTransfersTx creates a secondary key consolidation transaction
+func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.CreatePendingTransfersTxRequest) (*types.CreatePendingTransfersTxResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
 	masterMin := s.GetMinOutputAmount(ctx)
@@ -378,7 +534,7 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 		return nil, fmt.Errorf("cannot transfer %d to the master key, it is below the minimum amount of %d", req.MasterKeyAmount, masterMin)
 	}
 
-	if _, ok := s.GetUnsignedTx(ctx); ok {
+	if _, ok := s.GetUnsignedTx(ctx, tss.SecondaryKey); ok {
 		return nil, fmt.Errorf("consolidation in progress")
 	}
 
@@ -418,7 +574,8 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 			return nil, fmt.Errorf("cannot find the %s key for the period", tss.MasterKey.SimpleString())
 		}
 
-		currMasterAddress := types.NewMasterConsolidationAddress(currMasterKey, prevMasterKey, externalKey, ctx.BlockTime(), s.GetNetwork(ctx))
+		lockTime := currMasterKey.RotatedAt.Add(s.GetMasterAddressLockDuration(ctx))
+		currMasterAddress := types.NewMasterConsolidationAddress(currMasterKey, prevMasterKey, externalKey, lockTime, s.GetNetwork(ctx))
 		masterOutput := types.Output{Amount: btcutil.Amount(req.MasterKeyAmount), Recipient: currMasterAddress.GetAddress()}
 
 		outputs = append(outputs, masterOutput)
@@ -430,6 +587,7 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 	anyoneCanSpendOutput := types.Output{Amount: s.BTCKeeper.GetMinOutputAmount(ctx), Recipient: s.BTCKeeper.GetAnyoneCanSpendAddress(ctx).GetAddress()}
 	outputs = append(outputs, anyoneCanSpendOutput)
 	totalOut = totalOut.AddRaw(int64(anyoneCanSpendOutput.Amount))
+	anyoneCanSpendVout := uint32(len(outputs) - 1)
 
 	inputs, totalDeposits, err := prepareInputs(ctx, s, s.signer, currSecondaryKey.ID)
 	if err != nil {
@@ -462,32 +620,28 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 		return nil, err
 	}
 
-	unsignedTx := types.Transaction{}
+	tx.LockTime = 0
+	tx = types.DisableTimelockAndRBF(tx)
+	unsignedTx := types.NewUnsignedTx(tx, anyoneCanSpendVout, inputs)
 	// If consolidating to a new key, that key has to be eligible for the role
 	if currSecondaryKey.ID != consolidationKey.ID {
-		if err := s.signer.AssertMatchesRequirements(ctx, s.snapshotter, exported.Bitcoin, consolidationKey.ID, tss.SecondaryKey); err != nil {
-			return nil, sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", consolidationKey.ID, tss.SecondaryKey.SimpleString())
+		if err := validateKeyAssignment(ctx, s.BTCKeeper, s.signer, s.snapshotter, currSecondaryKey, consolidationKey); err != nil {
+			return nil, err
 		}
 
-		// TODO: think about the solution how to make sure the queue is never empty
-		if !s.GetConfirmedOutpointInfoQueueForKey(ctx, currSecondaryKey.ID).IsEmpty() {
-			return nil, sdkerrors.Wrapf(err, "key %s still has outpoints to be signed and therefore it cannot be rotated out yet", currSecondaryKey.ID)
-		}
-
-		unsignedTx.AssignNextKey = true
-		unsignedTx.NextKeyRole = tss.SecondaryKey
-		unsignedTx.NextKeyID = consolidationKey.ID
+		unsignedTx.Info.AssignNextKey = true
+		unsignedTx.Info.NextKeyID = consolidationKey.ID
 	}
 
-	unsignedTx.SetTx(tx)
-	s.SetUnsignedTx(ctx, &unsignedTx)
+	s.SetUnsignedTx(ctx, tss.SecondaryKey, unsignedTx)
 
-	err = startSignInputs(ctx, s.signer, s.snapshotter, s.voter, tx, inputs)
-	if err != nil {
-		return nil, err
-	}
+	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeConsolidationTx,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueCreated),
+		sdk.NewAttribute(types.AttributeKeyRole, tss.SecondaryKey.SimpleString()),
+	))
 
-	return &types.SignPendingTransfersResponse{}, nil
+	return &types.CreatePendingTransfersTxResponse{}, nil
 }
 
 func getOldMasterKey(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) (tss.Key, bool) {
@@ -547,14 +701,15 @@ func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.
 		if amount.LT(minAmount) {
 			// Set and continue
 			k.SetDustAmount(ctx, encodedAddress, btcutil.Amount(amount.Int64()))
-			event := sdk.NewEvent(types.EventTypeWithdrawal,
+
+			ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeWithdrawal,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueFailed),
 				sdk.NewAttribute(types.AttributeKeyDestinationAddress, encodedAddress),
 				sdk.NewAttribute(types.AttributeKeyAmount, amount.String()),
 				sdk.NewAttribute(sdk.EventTypeMessage, fmt.Sprintf("Withdrawal below minmum amount %s", minAmount)),
-			)
-			ctx.EventManager().EmitEvent(event)
+			))
+
 			continue
 		}
 
@@ -603,28 +758,23 @@ func prepareChange(ctx sdk.Context, k types.BTCKeeper, consolidationAddress type
 	return types.Output{Amount: btcutil.Amount(change.Int64()), Recipient: consolidationAddress.GetAddress()}, nil
 }
 
-func startSignInputs(ctx sdk.Context, signer types.Signer, snapshotter types.Snapshotter, v types.Voter, tx *wire.MsgTx, outpointsToSign []types.OutPointToSign) error {
-	for i, in := range outpointsToSign {
-		hash, err := txscript.CalcWitnessSigHash(in.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, i, int64(in.Amount))
-		if err != nil {
-			return err
-		}
+func getSigID(sigHash []byte, keyID string) string {
+	return fmt.Sprintf("%s-%s", hex.EncodeToString(sigHash), keyID)
+}
 
-		counter, ok := signer.GetSnapshotCounterForKeyID(ctx, in.KeyID)
-		if !ok {
-			return fmt.Errorf("no snapshot counter for key ID %s registered", in.KeyID)
-		}
-
-		snapshot, ok := snapshotter.GetSnapshot(ctx, counter)
-		if !ok {
-			return fmt.Errorf("no snapshot found for counter num %d", counter)
-		}
-
-		sigID := hex.EncodeToString(hash)
-		err = signer.StartSign(ctx, v, in.KeyID, sigID, hash, snapshot)
-		if err != nil {
-			return err
-		}
+func validateKeyAssignment(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, snapshotter types.Snapshotter, from tss.Key, to tss.Key) error {
+	if err := signer.AssertMatchesRequirements(ctx, snapshotter, exported.Bitcoin, to.ID, from.Role); err != nil {
+		return sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", to.ID, from.Role.SimpleString())
 	}
+
+	// TODO: think about the solution how to make sure the queue is never empty
+	if !k.GetConfirmedOutpointInfoQueueForKey(ctx, from.ID).IsEmpty() {
+		return fmt.Errorf("key %s still has outpoints to be signed and therefore it cannot be rotated out yet", from.ID)
+	}
+
+	if k.GetUnconfirmedAmount(ctx, from.ID) > 0 {
+		return fmt.Errorf("key %s still has unconfirmed outpoints and therefore it cannot be rotated out yet", from.ID)
+	}
+
 	return nil
 }

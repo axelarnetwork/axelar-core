@@ -27,6 +27,7 @@ const (
 	keyRequirementPrefix   = "key_requirement_"
 	keyRolePrefix          = "key_role_"
 	keyTssSuspendedUntil   = "key_tss_suspended_until_"
+	keyRotatedAtPrefix     = "key_rotated_at_"
 )
 
 // Keeper allows access to the broadcast state

@@ -1,18 +1,17 @@
-## axelard query bitcoin rawPayForConsolidationTx
+## axelard query bitcoin min-output-amount
 
-Returns the encoded hex string of a fully signed transaction that pays for the consolidation transaction
+Returns the minimum amount allowed for any transaction output in satoshi
 
 ```
-axelard query bitcoin rawPayForConsolidationTx [flags]
+axelard query bitcoin min-output-amount [flags]
 ```
 
 ### Options
 
 ```
-      --fee-rate int   fee rate to be set for the child-pay-for-parent transaction
-      --height int     Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help           help for rawPayForConsolidationTx
-      --node string    <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+      --height int    Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help          help for min-output-amount
+      --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 
 ### Options inherited from parent commands

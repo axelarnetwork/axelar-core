@@ -35,21 +35,21 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 			res, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
-				result.Log = fmt.Sprintf("votes on confirmation of token deployment %s started", msg.TxID)
+				result.Log = fmt.Sprintf("votes on confirmation of token deployment %s started", msg.TxID.Hex())
 			}
 			return result, err
 		case *types.ConfirmDepositRequest:
 			res, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
-				result.Log = fmt.Sprintf("votes on confirmation of deposit %s started", msg.TxID)
+				result.Log = fmt.Sprintf("votes on confirmation of deposit %s started", msg.TxID.Hex())
 			}
 			return result, err
 		case *types.ConfirmTransferOwnershipRequest:
 			res, err := server.ConfirmTransferOwnership(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
-				result.Log = fmt.Sprintf("votes on confirmation of transfer ownership %s started", msg.TxID)
+				result.Log = fmt.Sprintf("votes on confirmation of transfer ownership %s started", msg.TxID.Hex())
 			}
 			return result, err
 		case *types.VoteConfirmChainRequest:

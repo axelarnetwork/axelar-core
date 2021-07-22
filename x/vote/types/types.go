@@ -127,15 +127,14 @@ func (p Poll) GetResult() codec.ProtoMarshaler {
 func (p Poll) Initialize() error {
 	other := p.Store.GetPoll(p.Key)
 	switch {
+	case other.Is(exported.Failed) || other.Is(exported.Expired):
+		if err := other.Delete(); err != nil {
+			return err
+		}
 	case other.Is(exported.Pending):
 		return fmt.Errorf("poll %s already exists and has not expired yet", p.Key.String())
 	case other.Is(exported.Completed):
 		return fmt.Errorf("poll %s already exists and has a result", p.Key.String())
-	case other.Is(exported.Failed) || other.Is(exported.Expired):
-		err := other.Delete()
-		if err != nil {
-			return err
-		}
 	}
 
 	p.SetMetadata(p.PollMetadata)

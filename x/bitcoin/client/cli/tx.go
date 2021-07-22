@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -28,9 +29,11 @@ func GetTxCmd() *cobra.Command {
 	btcTxCmd.AddCommand(
 		GetCmdConfirmTxOut(),
 		GetCmdLink(),
-		GetCmdSignPendingTransfersTx(),
-		GetCmdSignMasterConsolidationTx(),
+		GetCmdCreatePendingTransfersTx(),
+		GetCmdCreateMasterConsolidationTx(),
+		GetCmdSignTx(),
 		GetCmdRegisterExternalKey(),
+		GetCmdSubmitExternalSignature(),
 	)
 
 	return btcTxCmd
@@ -39,7 +42,7 @@ func GetTxCmd() *cobra.Command {
 // GetCmdConfirmTxOut returns the transaction confirmation command
 func GetCmdConfirmTxOut() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "confirmTxOut [txID:voutIdx] [amount] [address]",
+		Use:   "confirm-tx-out [txID:voutIdx] [amount] [address]",
 		Short: "Confirm a Bitcoin transaction",
 		Long:  "Confirm that a transaction happened on the Bitcoin network so it can be processed on axelar.",
 		Args:  cobra.ExactArgs(3),
@@ -97,11 +100,11 @@ func GetCmdLink() *cobra.Command {
 	return cmd
 }
 
-// GetCmdSignPendingTransfersTx returns the cli command to sign all pending token transfers from other chains
-func GetCmdSignPendingTransfersTx() *cobra.Command {
+// GetCmdCreatePendingTransfersTx returns the cli command to sign all pending token transfers from other chains
+func GetCmdCreatePendingTransfersTx() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "sign-pending-transfers [keyID]",
-		Short: "Create a Bitcoin transaction for all pending transfers and sign it",
+		Use:   "create-pending-transfers-tx [keyID]",
+		Short: "Create a Bitcoin transaction for all pending transfers",
 		Args:  cobra.ExactArgs(1),
 	}
 
@@ -118,7 +121,7 @@ func GetCmdSignPendingTransfersTx() *cobra.Command {
 			return err
 		}
 
-		msg := types.NewSignPendingTransfersRequest(clientCtx.GetFromAddress(), args[0], btcutil.Amount(masterKeyAmount.Amount.Int64()))
+		msg := types.NewCreatePendingTransfersTxRequest(clientCtx.GetFromAddress(), args[0], btcutil.Amount(masterKeyAmount.Amount.Int64()))
 		if err := msg.ValidateBasic(); err != nil {
 			return err
 		}
@@ -130,10 +133,10 @@ func GetCmdSignPendingTransfersTx() *cobra.Command {
 	return cmd
 }
 
-// GetCmdSignMasterConsolidationTx returns the cli command to sign the master key consolidation transaction
-func GetCmdSignMasterConsolidationTx() *cobra.Command {
+// GetCmdCreateMasterConsolidationTx returns the cli command to sign the master key consolidation transaction
+func GetCmdCreateMasterConsolidationTx() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "sign-master-consolidation [keyID]",
+		Use:   "create-master-tx [keyID]",
 		Short: "Create a Bitcoin transaction for consolidating master key UTXOs, and send the change to an address controlled by [keyID]",
 		Args:  cobra.ExactArgs(1),
 	}
@@ -151,7 +154,7 @@ func GetCmdSignMasterConsolidationTx() *cobra.Command {
 			return err
 		}
 
-		msg := types.NewSignMasterConsolidationTransactionRequest(clientCtx.GetFromAddress(), args[0], btcutil.Amount(secondaryKeyAmount.Amount.Int64()))
+		msg := types.NewCreateMasterTxRequest(clientCtx.GetFromAddress(), args[0], btcutil.Amount(secondaryKeyAmount.Amount.Int64()))
 		if err := msg.ValidateBasic(); err != nil {
 			return err
 		}
@@ -160,6 +163,37 @@ func GetCmdSignMasterConsolidationTx() *cobra.Command {
 	}
 
 	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdSignTx returns the cli command to sign a consolidation transaction
+func GetCmdSignTx() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "sign-tx [keyRole]",
+		Short: "Sign a consolidation transaction with the current key of given key role",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			keyRole, err := tss.KeyRoleFromSimpleStr(args[0])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewSignTxRequest(clientCtx.FromAddress, keyRole)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+		},
+	}
+
+	flags.AddTxFlagsToCmd(cmd)
+
 	return cmd
 }
 
@@ -189,6 +223,43 @@ func GetCmdRegisterExternalKey() *cobra.Command {
 			}
 
 			msg := types.NewRegisterExternalKeyRequest(clientCtx.GetFromAddress(), keyID, pubKey)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+		},
+	}
+
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdSubmitExternalSignature returns the cli command to submit a signature from an external key
+func GetCmdSubmitExternalSignature() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "submit-external-signature [keyID] [signatureHex] [sigHashHex]",
+		Short: "Submit a signature of the given external key signing the given sig hash",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			keyID := args[0]
+
+			signature, err := hex.DecodeString(args[1])
+			if err != nil {
+				return err
+			}
+
+			sigHash, err := hex.DecodeString(args[2])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewSubmitExternalSignatureRequest(clientCtx.GetFromAddress(), keyID, signature, sigHash)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

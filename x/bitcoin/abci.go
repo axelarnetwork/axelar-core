@@ -14,6 +14,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // BeginBlocker check for infraction evidence or downtime of validators
@@ -26,117 +27,169 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, k types.BTCKeeper, si
 		return nil
 	}
 
-	unsignedTx, ok := k.GetUnsignedTx(ctx)
-	if !ok {
-		k.Logger(ctx).Debug("no unsigned transaction ready")
-		return nil
+	for _, keyRole := range tss.GetKeyRoles() {
+		unsignedTx, ok := k.GetUnsignedTx(ctx, keyRole)
+		if !ok || !unsignedTx.Is(types.Signing) {
+			k.Logger(ctx).Debug(fmt.Sprintf("no unsigned %s key transaction ready", keyRole.SimpleString()))
+			continue
+		}
+
+		signedTx, abort, err := assembleTx(ctx, k, signer, &unsignedTx)
+		if err != nil {
+			if abort {
+				ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeConsolidationTx,
+					sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+					sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueSigningAborted),
+					sdk.NewAttribute(types.AttributeKeyRole, keyRole.SimpleString()),
+				))
+
+				unsignedTx.ConfirmationRequired = true
+				unsignedTx.Status = types.Aborted
+				k.SetUnsignedTx(ctx, keyRole, unsignedTx)
+			}
+
+			k.Logger(ctx).Debug(sdkerrors.Wrapf(err, "failed to assemble tx %s with signatures", unsignedTx.GetTx().TxHash().String()).Error())
+			continue
+		}
+
+		txHash := signedTx.TxHash()
+		knownOutPoints, err := getKnownOutPoints(ctx, k, signedTx)
+		if err != nil {
+			k.Logger(ctx).Debug(sdkerrors.Wrapf(err, "failed to confirm known out points in tx %s", txHash.String()).Error())
+			continue
+		}
+
+		for _, outPoint := range knownOutPoints {
+			// Ignore error here because out point here must be known
+			addressInfo, _ := k.GetAddress(ctx, outPoint.Address)
+
+			if !unsignedTx.ConfirmationRequired {
+				k.SetConfirmedOutpointInfo(ctx, addressInfo.KeyID, outPoint)
+
+				ctx.EventManager().EmitEvent(
+					sdk.NewEvent(types.EventTypeOutpointConfirmation,
+						sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+						sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
+						sdk.NewAttribute(types.AttributeKeyOutPointInfo, string(types.ModuleCdc.MustMarshalJSON(&outPoint))),
+					),
+				)
+
+				continue
+			}
+
+			unconfirmedAmount := k.GetUnconfirmedAmount(ctx, addressInfo.KeyID)
+			k.SetUnconfirmedAmount(ctx, addressInfo.KeyID, unconfirmedAmount+outPoint.Amount)
+		}
+
+		// Assign the next key if necessary
+		if unsignedTx.Info.AssignNextKey {
+			nextKey, ok := signer.GetKey(ctx, unsignedTx.Info.NextKeyID)
+			if !ok {
+				k.Logger(ctx).Error(sdkerrors.Wrap(err, fmt.Sprintf("failed to get the next %s key %s to assign", keyRole, unsignedTx.Info.NextKeyID)).Error())
+				continue
+			}
+
+			if err := signer.AssignNextKey(ctx, exported.Bitcoin, keyRole, unsignedTx.Info.NextKeyID); err != nil {
+				k.Logger(ctx).Error(sdkerrors.Wrap(err, fmt.Sprintf("failed to assign the next %s key to %s", keyRole.SimpleString(), nextKey.ID)).Error())
+				continue
+			}
+
+			ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeKey,
+				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueAssigned),
+				sdk.NewAttribute(types.AttributeKeyRole, keyRole.SimpleString()),
+				sdk.NewAttribute(types.AttributeKeyKeyID, unsignedTx.Info.NextKeyID),
+			))
+		}
+
+		k.DeleteUnsignedTx(ctx, keyRole)
+		k.SetSignedTx(ctx, keyRole, types.NewSignedTx(signedTx, unsignedTx.ConfirmationRequired, unsignedTx.AnyoneCanSpendVout))
+		k.SetLatestSignedTxHash(ctx, keyRole, txHash)
+
+		// Notify that consolidation tx can be queried
+		ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeConsolidationTx,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueSigned),
+			sdk.NewAttribute(types.AttributeKeyRole, keyRole.SimpleString()),
+		))
+		k.Logger(ctx).Info(fmt.Sprintf("transaction %s is fully signed", txHash.String()))
 	}
 
+	return nil
+}
+
+func assembleTx(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, unsignedTx *types.UnsignedTx) (*wire.MsgTx, bool, error) {
 	tx := unsignedTx.GetTx()
-	outpointsToSign, err := getOutPointsToSign(ctx, tx, k)
+	outPointsToSign, err := getOutPointsToSign(ctx, tx, k)
 	if err != nil {
-		k.Logger(ctx).Error(sdkerrors.Wrapf(err, "failed to collect outpoints waiting to be signed for unsigned tx %s", tx.TxHash().String()).Error())
-		return nil
+		return nil, false, sdkerrors.Wrapf(err, "failed to collect outpoints waiting to be signed for unsigned tx %s", tx.TxHash().String())
 	}
-
-	k.Logger(ctx).Debug("checking for completed signatures")
 
 	// Assemble transaction with signatures
 	var sigs [][]btcec.Signature
-	for i, in := range outpointsToSign {
-		hash, err := txscript.CalcWitnessSigHash(in.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, i, int64(in.Amount))
-		if err != nil {
-			k.Logger(ctx).Error(fmt.Sprintf("could not calculate sig hash for outpoint %s", in.OutPoint))
-			return nil
+	for _, inputInfo := range unsignedTx.Info.InputInfos {
+		var sigsForOutPoint []btcec.Signature
+
+		for _, sigRequirement := range inputInfo.SigRequirements {
+			sigHashHex := hex.EncodeToString(sigRequirement.SigHash)
+			sigID := fmt.Sprintf("%s-%s", sigHashHex, sigRequirement.KeyID)
+			sig, ok := signer.GetSig(ctx, sigID)
+			if !ok {
+				err := fmt.Errorf("signature for tx %s not yet found", sigID)
+
+				// TODO: keyID for sigID is deleted on signing failure/timeout. Some more explicit state is needed.
+				if _, ok := signer.GetKeyForSigID(ctx, sigID); !ok {
+					return nil, true, err
+				}
+
+				return nil, false, err
+			}
+
+			sigsForOutPoint = append(sigsForOutPoint, btcec.Signature{R: sig.R, S: sig.S})
 		}
 
-		sigID := hex.EncodeToString(hash)
-		sig, ok := signer.GetSig(ctx, sigID)
-		if !ok {
-			k.Logger(ctx).Debug(fmt.Sprintf("signature for tx %s not yet found", sigID))
-			return nil
-		}
-		// TODO: handle multiple signatures per input
-		sigs = append(sigs, []btcec.Signature{{R: sig.R, S: sig.S}})
+		sigs = append(sigs, sigsForOutPoint)
 	}
 
-	tx, err = types.AssembleBtcTx(tx, outpointsToSign, sigs)
+	signedTx, err := types.AssembleBtcTx(tx, outPointsToSign, sigs)
 	if err != nil {
-		k.Logger(ctx).Error(sdkerrors.Wrap(err, "failed to assemble Bitcoin tx signatures").Error())
-		return nil
+		return nil, false, err
 	}
+
+	return signedTx, false, nil
+}
+
+func getKnownOutPoints(ctx sdk.Context, k types.BTCKeeper, signedTx *wire.MsgTx) ([]types.OutPointInfo, error) {
+	var knownOutPoints []types.OutPointInfo
 
 	networkName := k.GetNetwork(ctx).Name
 	network, err := types.NetworkFromStr(networkName)
 	if err != nil {
-		k.Logger(ctx).Error(sdkerrors.Wrap(err, fmt.Sprintf("failed to get network %s", networkName)).Error())
-		return nil
+		return nil, sdkerrors.Wrap(err, fmt.Sprintf("failed to get network %s", networkName))
 	}
 
-	txHash := tx.TxHash()
-	anyoneCanSpentAddress := k.GetAnyoneCanSpendAddress(ctx).GetAddress().EncodeAddress()
-
+	txHash := signedTx.TxHash()
 	// Confirm all outpoints that axelar controls the keys of
-	for i, output := range tx.TxOut {
+	for i, output := range signedTx.TxOut {
 		_, addresses, _, err := txscript.ExtractPkScriptAddrs(output.PkScript, network.Params())
 		if err != nil {
-			k.Logger(ctx).Error(sdkerrors.Wrap(err, fmt.Sprintf("failed to extract change output address from transaction %s", txHash.String())).Error())
-			return nil
+			continue
 		}
 
 		if len(addresses) != 1 {
 			continue
 		}
 
-		address := addresses[0].EncodeAddress()
-
-		if address == anyoneCanSpentAddress {
-			k.SetAnyoneCanSpendVout(ctx, txHash, int64(i))
-		}
-
-		addressInfo, ok := k.GetAddress(ctx, address)
+		addressInfo, ok := k.GetAddress(ctx, addresses[0].EncodeAddress())
 		if !ok {
 			continue
 		}
 
 		outpointInfo := types.NewOutPointInfo(wire.NewOutPoint(&txHash, uint32(i)), btcutil.Amount(output.Value), addressInfo.Address)
-		k.SetConfirmedOutpointInfo(ctx, addressInfo.KeyID, outpointInfo)
-
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(types.EventTypeOutpointConfirmation,
-				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-				sdk.NewAttribute(types.AttributeKeyOutPointInfo, string(types.ModuleCdc.MustMarshalJSON(&outpointInfo))),
-				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
-			),
-		)
+		knownOutPoints = append(knownOutPoints, outpointInfo)
 	}
 
-	// Assign the next key if necessary
-	if unsignedTx.AssignNextKey {
-		nextKey, ok := signer.GetKey(ctx, unsignedTx.NextKeyID)
-		if !ok {
-			k.Logger(ctx).Error(sdkerrors.Wrap(err, fmt.Sprintf("failed to get next key %s to assign", unsignedTx.NextKeyID)).Error())
-			return nil
-		}
-
-		if err := signer.AssignNextKey(ctx, exported.Bitcoin, unsignedTx.NextKeyRole, unsignedTx.NextKeyID); err != nil {
-			k.Logger(ctx).Error(sdkerrors.Wrap(err, fmt.Sprintf("failed to assign the next %s key to %s", nextKey.Role.SimpleString(), nextKey.ID)).Error())
-			return nil
-		}
-	}
-
-	k.DeleteUnsignedTx(ctx)
-	k.SetSignedTx(ctx, tx)
-
-	// notify that consolidation tx can be queried
-	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeTransactionSigned,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyTxHash, txHash.String()),
-	))
-
-	k.Logger(ctx).Info(fmt.Sprintf("transaction %s is fully signed", txHash.String()))
-
-	return nil
+	return knownOutPoints, nil
 }
 
 func getOutPointsToSign(ctx sdk.Context, tx *wire.MsgTx, k types.BTCKeeper) ([]types.OutPointToSign, error) {

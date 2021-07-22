@@ -1,216 +1,216 @@
 package rest
 
-import (
-	"encoding/binary"
-	"fmt"
-	"net/http"
-	"strconv"
+// import (
+// 	"encoding/binary"
+// 	"fmt"
+// 	"net/http"
+// 	"strconv"
 
-	"github.com/cosmos/cosmos-sdk/client"
+// 	"github.com/cosmos/cosmos-sdk/client"
 
-	"github.com/axelarnetwork/axelar-core/utils"
+// 	"github.com/axelarnetwork/axelar-core/utils"
 
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+// 	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
+// 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/gorilla/mux"
+// 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+// 	"github.com/gorilla/mux"
 
-	"github.com/cosmos/cosmos-sdk/types/rest"
-)
+// 	"github.com/cosmos/cosmos-sdk/types/rest"
+// )
 
-// query parameters
-const (
-	QueryParamFeeRate = "fee_rate"
-)
+// // query parameters
+// const (
+// 	QueryParamFeeRate = "fee_rate"
+// )
 
-// QueryHandlerDepositAddress returns a handler to query a deposit address
-func QueryHandlerDepositAddress(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
+// // QueryHandlerDepositAddress returns a handler to query a deposit address
+// func QueryHandlerDepositAddress(cliCtx client.Context) http.HandlerFunc {
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		w.Header().Set("Content-Type", "application/json")
+// 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+// 		if !ok {
+// 			return
+// 		}
 
-		vars := mux.Vars(r)
-		queryData, err := cliCtx.LegacyAmino.MarshalJSON(types.DepositQueryParams{Chain: vars[utils.PathVarChain], Address: vars[utils.PathVarEthereumAddress]})
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-		}
+// 		vars := mux.Vars(r)
+// 		queryData, err := cliCtx.LegacyAmino.MarshalJSON(types.DepositQueryParams{Chain: vars[utils.PathVarChain], Address: vars[utils.PathVarEthereumAddress]})
+// 		if err != nil {
+// 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+// 		}
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QDepositAddress), queryData)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
-			return
-		}
+// 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QDepositAddress), queryData)
+// 		if err != nil {
+// 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
+// 			return
+// 		}
 
-		if len(res) == 0 {
-			rest.PostProcessResponse(w, cliCtx, "")
-			return
-		}
+// 		if len(res) == 0 {
+// 			rest.PostProcessResponse(w, cliCtx, "")
+// 			return
+// 		}
 
-		rest.PostProcessResponse(w, cliCtx, string(res))
-	}
-}
+// 		rest.PostProcessResponse(w, cliCtx, string(res))
+// 	}
+// }
 
-// QueryHandlerMinimumWithdrawAmount returns a handler to query the minimum amount to withdraw in satoshi
-func QueryHandlerMinimumWithdrawAmount(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
+// // QueryHandlerMinimumWithdrawAmount returns a handler to query the minimum amount to withdraw in satoshi
+// func QueryHandlerMinimumWithdrawAmount(cliCtx client.Context) http.HandlerFunc {
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		w.Header().Set("Content-Type", "application/json")
+// 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+// 		if !ok {
+// 			return
+// 		}
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QMinimumWithdrawAmount), nil)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
-			return
-		}
+// 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QMinimumWithdrawAmount), nil)
+// 		if err != nil {
+// 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
+// 			return
+// 		}
 
-		response := int64(binary.LittleEndian.Uint64(res))
-		rest.PostProcessResponse(w, cliCtx, strconv.FormatInt(response, 10))
-	}
-}
+// 		response := int64(binary.LittleEndian.Uint64(res))
+// 		rest.PostProcessResponse(w, cliCtx, strconv.FormatInt(response, 10))
+// 	}
+// }
 
-// QueryHandlerSecondaryConsolidationAddress returns a handler to query the segwit address of the master key
-func QueryHandlerSecondaryConsolidationAddress(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
+// // QueryHandlerSecondaryConsolidationAddress returns a handler to query the segwit address of the master key
+// func QueryHandlerSecondaryConsolidationAddress(cliCtx client.Context) http.HandlerFunc {
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		w.Header().Set("Content-Type", "application/json")
+// 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+// 		if !ok {
+// 			return
+// 		}
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QSecondaryConsolidationAddress), nil)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
+// 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QSecondaryConsolidationAddress), nil)
+// 		if err != nil {
+// 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+// 			return
+// 		}
 
-		var resp types.QuerySecondaryConsolidationAddressResponse
-		err = resp.Unmarshal(res)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
+// 		var resp types.QuerySecondaryConsolidationAddressResponse
+// 		err = resp.Unmarshal(res)
+// 		if err != nil {
+// 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+// 			return
+// 		}
 
-		rest.PostProcessResponse(w, cliCtx, resp)
-	}
-}
+// 		rest.PostProcessResponse(w, cliCtx, resp)
+// 	}
+// }
 
-// QueryHandlerKeyConsolidationAddress  returns a handler to query the consolidation segwit address of any key
-func QueryHandlerKeyConsolidationAddress(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
+// // QueryHandlerKeyConsolidationAddress  returns a handler to query the consolidation segwit address of any key
+// func QueryHandlerKeyConsolidationAddress(cliCtx client.Context) http.HandlerFunc {
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		w.Header().Set("Content-Type", "application/json")
+// 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+// 		if !ok {
+// 			return
+// 		}
 
-		keyID := mux.Vars(r)[utils.PathVarKeyID]
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QKeySecondaryConsolidationAddress), []byte(keyID))
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
+// 		keyID := mux.Vars(r)[utils.PathVarKeyID]
+// 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QKeySecondaryConsolidationAddress), []byte(keyID))
+// 		if err != nil {
+// 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+// 			return
+// 		}
 
-		if len(res) == 0 {
-			rest.PostProcessResponse(w, cliCtx, "")
-			return
-		}
+// 		if len(res) == 0 {
+// 			rest.PostProcessResponse(w, cliCtx, "")
+// 			return
+// 		}
 
-		rest.PostProcessResponse(w, cliCtx, string(res))
-	}
-}
+// 		rest.PostProcessResponse(w, cliCtx, string(res))
+// 	}
+// }
 
-// QueryHandlerNextMasterKeyID returns a query handler to get the next assigned master key ID
-func QueryHandlerNextMasterKeyID(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
+// // QueryHandlerNextMasterKeyID returns a query handler to get the next assigned master key ID
+// func QueryHandlerNextMasterKeyID(cliCtx client.Context) http.HandlerFunc {
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		w.Header().Set("Content-Type", "application/json")
+// 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+// 		if !ok {
+// 			return
+// 		}
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QNextMasterKeyID), nil)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
+// 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QNextMasterKeyID), nil)
+// 		if err != nil {
+// 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+// 			return
+// 		}
 
-		rest.PostProcessResponse(w, cliCtx, string(res))
-	}
-}
+// 		rest.PostProcessResponse(w, cliCtx, string(res))
+// 	}
+// }
 
-// GetConsolidationTxResult models the QueryRawTxResponse from keeper.GetConsolidationTx as a JSON response
-type GetConsolidationTxResult struct {
-	State types.SignState `json:"state"`
-	RawTx string          `json:"raw_tx"`
-}
+// // GetConsolidationTxResult models the QueryRawTxResponse from keeper.GetConsolidationTx as a JSON response
+// type GetConsolidationTxResult struct {
+// 	State types.SignState `json:"state"`
+// 	RawTx string          `json:"raw_tx"`
+// }
 
-// QueryHandlerGetConsolidationTx returns a handler to build a consolidation transaction
-func QueryHandlerGetConsolidationTx(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
+// // QueryHandlerGetConsolidationTx returns a handler to build a consolidation transaction
+// func QueryHandlerGetConsolidationTx(cliCtx client.Context) http.HandlerFunc {
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		w.Header().Set("Content-Type", "application/json")
+// 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+// 		if !ok {
+// 			return
+// 		}
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QConsolidationTx), nil)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, types.ErrFGetRawTx)
-			return
-		}
+// 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QConsolidationTx), nil)
+// 		if err != nil {
+// 			rest.WriteErrorResponse(w, http.StatusBadRequest, types.ErrFGetRawTx)
+// 			return
+// 		}
 
-		var proto types.QueryRawTxResponse
-		err = proto.Unmarshal(res)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to unmarshal QueryRawTxResponse: "+err.Error())
-			return
-		}
+// 		var proto types.QueryRawTxResponse
+// 		err = proto.Unmarshal(res)
+// 		if err != nil {
+// 			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to unmarshal QueryRawTxResponse: "+err.Error())
+// 			return
+// 		}
 
-		result := GetConsolidationTxResult{
-			State: proto.GetState(),
-			RawTx: proto.GetRawTx(),
-		}
+// 		result := GetConsolidationTxResult{
+// 			State: proto.GetState(),
+// 			RawTx: proto.GetRawTx(),
+// 		}
 
-		rest.PostProcessResponse(w, cliCtx, result)
-	}
-}
+// 		rest.PostProcessResponse(w, cliCtx, result)
+// 	}
+// }
 
-// QueryHandlerGetPayForConsolidationTx returns a handler to build a transaction that pays for the consolidation transaction
-func QueryHandlerGetPayForConsolidationTx(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
+// // QueryHandlerGetPayForConsolidationTx returns a handler to build a transaction that pays for the consolidation transaction
+// func QueryHandlerGetPayForConsolidationTx(cliCtx client.Context) http.HandlerFunc {
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		w.Header().Set("Content-Type", "application/json")
+// 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+// 		if !ok {
+// 			return
+// 		}
 
-		// Parse fee rate
-		feeRateStr := r.URL.Query().Get(QueryParamFeeRate)
-		if feeRateStr == "" {
-			feeRateStr = "0" // fee is optional and defaults to zero
-		}
+// 		// Parse fee rate
+// 		feeRateStr := r.URL.Query().Get(QueryParamFeeRate)
+// 		if feeRateStr == "" {
+// 			feeRateStr = "0" // fee is optional and defaults to zero
+// 		}
 
-		feeRate, err := strconv.ParseInt(feeRateStr, 10, 64)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, types.ErrFInvalidFeeRate)
-			return
-		}
+// 		feeRate, err := strconv.ParseInt(feeRateStr, 10, 64)
+// 		if err != nil {
+// 			rest.WriteErrorResponse(w, http.StatusBadRequest, types.ErrFInvalidFeeRate)
+// 			return
+// 		}
 
-		bz := make([]byte, 8)
-		binary.LittleEndian.PutUint64(bz, uint64(feeRate))
+// 		bz := make([]byte, 8)
+// 		binary.LittleEndian.PutUint64(bz, uint64(feeRate))
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QPayForConsolidationTx), bz)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFGetPayForRawTx).Error())
-			return
-		}
+// 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QPayForConsolidationTx), bz)
+// 		if err != nil {
+// 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFGetPayForRawTx).Error())
+// 			return
+// 		}
 
-		rest.PostProcessResponse(w, cliCtx, string(res))
-	}
-}
+// 		rest.PostProcessResponse(w, cliCtx, string(res))
+// 	}
+// }

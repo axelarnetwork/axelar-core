@@ -13,8 +13,10 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&VoteConfirmOutpointRequest{}, "bitcoin/VoteConfirmOutpoint", nil)
 	cdc.RegisterConcrete(&ConfirmOutpointRequest{}, "bitcoin/ConfirmOutpoint", nil)
 	cdc.RegisterConcrete(&LinkRequest{}, "bitcoin/Link", nil)
-	cdc.RegisterConcrete(&SignPendingTransfersRequest{}, "bitcoin/SignPendingTransfers", nil)
-	cdc.RegisterConcrete(&SignMasterConsolidationTransactionRequest{}, "bitcoin/SignMasterConsolidationTransaction", nil)
+	cdc.RegisterConcrete(&CreatePendingTransfersTxRequest{}, "bitcoin/CreatePendingTransfersTx", nil)
+	cdc.RegisterConcrete(&CreateMasterTxRequest{}, "bitcoin/CreateMasterTx", nil)
+	cdc.RegisterConcrete(&SignTxRequest{}, "bitcoin/SignTx", nil)
+	cdc.RegisterConcrete(&SubmitExternalSignatureRequest{}, "bitcoin/SubmitExternalSignature", nil)
 	cdc.RegisterConcrete(&RegisterExternalKeyRequest{}, "bitcoin/RegisterExternalKey", nil)
 }
 
@@ -24,8 +26,10 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&VoteConfirmOutpointRequest{},
 		&ConfirmOutpointRequest{},
 		&LinkRequest{},
-		&SignPendingTransfersRequest{},
-		&SignMasterConsolidationTransactionRequest{},
+		&CreatePendingTransfersTxRequest{},
+		&CreateMasterTxRequest{},
+		&SignTxRequest{},
+		&SubmitExternalSignatureRequest{},
 		&RegisterExternalKeyRequest{},
 	)
 	registry.RegisterImplementations((*codec.ProtoMarshaler)(nil),

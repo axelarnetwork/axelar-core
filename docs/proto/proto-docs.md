@@ -31,10 +31,14 @@
     - [AddressInfo](#bitcoin.v1beta1.AddressInfo)
     - [Network](#bitcoin.v1beta1.Network)
     - [OutPointInfo](#bitcoin.v1beta1.OutPointInfo)
-    - [Transaction](#bitcoin.v1beta1.Transaction)
+    - [SignedTx](#bitcoin.v1beta1.SignedTx)
+    - [UnsignedTx](#bitcoin.v1beta1.UnsignedTx)
+    - [UnsignedTx.Info](#bitcoin.v1beta1.UnsignedTx.Info)
+    - [UnsignedTx.Info.InputInfo](#bitcoin.v1beta1.UnsignedTx.Info.InputInfo)
+    - [UnsignedTx.Info.InputInfo.SigRequirement](#bitcoin.v1beta1.UnsignedTx.Info.InputInfo.SigRequirement)
   
     - [AddressRole](#bitcoin.v1beta1.AddressRole)
-    - [SignState](#bitcoin.v1beta1.SignState)
+    - [TxStatus](#bitcoin.v1beta1.TxStatus)
   
 - [bitcoin/v1beta1/params.proto](#bitcoin/v1beta1/params.proto)
     - [Params](#bitcoin.v1beta1.Params)
@@ -44,8 +48,9 @@
   
 - [bitcoin/v1beta1/query.proto](#bitcoin/v1beta1/query.proto)
     - [DepositQueryParams](#bitcoin.v1beta1.DepositQueryParams)
-    - [QueryRawTxResponse](#bitcoin.v1beta1.QueryRawTxResponse)
-    - [QuerySecondaryConsolidationAddressResponse](#bitcoin.v1beta1.QuerySecondaryConsolidationAddressResponse)
+    - [QueryAddressResponse](#bitcoin.v1beta1.QueryAddressResponse)
+    - [QueryTxResponse](#bitcoin.v1beta1.QueryTxResponse)
+    - [QueryTxResponse.SigningInfo](#bitcoin.v1beta1.QueryTxResponse.SigningInfo)
   
 - [utils/v1beta1/threshold.proto](#utils/v1beta1/threshold.proto)
     - [Threshold](#utils.v1beta1.Threshold)
@@ -59,14 +64,18 @@
 - [bitcoin/v1beta1/tx.proto](#bitcoin/v1beta1/tx.proto)
     - [ConfirmOutpointRequest](#bitcoin.v1beta1.ConfirmOutpointRequest)
     - [ConfirmOutpointResponse](#bitcoin.v1beta1.ConfirmOutpointResponse)
+    - [CreateMasterTxRequest](#bitcoin.v1beta1.CreateMasterTxRequest)
+    - [CreateMasterTxResponse](#bitcoin.v1beta1.CreateMasterTxResponse)
+    - [CreatePendingTransfersTxRequest](#bitcoin.v1beta1.CreatePendingTransfersTxRequest)
+    - [CreatePendingTransfersTxResponse](#bitcoin.v1beta1.CreatePendingTransfersTxResponse)
     - [LinkRequest](#bitcoin.v1beta1.LinkRequest)
     - [LinkResponse](#bitcoin.v1beta1.LinkResponse)
     - [RegisterExternalKeyRequest](#bitcoin.v1beta1.RegisterExternalKeyRequest)
     - [RegisterExternalKeyResponse](#bitcoin.v1beta1.RegisterExternalKeyResponse)
-    - [SignMasterConsolidationTransactionRequest](#bitcoin.v1beta1.SignMasterConsolidationTransactionRequest)
-    - [SignMasterConsolidationTransactionResponse](#bitcoin.v1beta1.SignMasterConsolidationTransactionResponse)
-    - [SignPendingTransfersRequest](#bitcoin.v1beta1.SignPendingTransfersRequest)
-    - [SignPendingTransfersResponse](#bitcoin.v1beta1.SignPendingTransfersResponse)
+    - [SignTxRequest](#bitcoin.v1beta1.SignTxRequest)
+    - [SignTxResponse](#bitcoin.v1beta1.SignTxResponse)
+    - [SubmitExternalSignatureRequest](#bitcoin.v1beta1.SubmitExternalSignatureRequest)
+    - [SubmitExternalSignatureResponse](#bitcoin.v1beta1.SubmitExternalSignatureResponse)
     - [VoteConfirmOutpointRequest](#bitcoin.v1beta1.VoteConfirmOutpointRequest)
     - [VoteConfirmOutpointResponse](#bitcoin.v1beta1.VoteConfirmOutpointResponse)
   
@@ -488,6 +497,7 @@ corresponding script and the underlying key
 | `redeem_script` | [bytes](#bytes) |  |  |
 | `key_id` | [string](#string) |  |  |
 | `max_sig_count` | [uint32](#uint32) |  |  |
+| `lock_time` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
 
 
 
@@ -527,18 +537,86 @@ of a transaction
 
 
 
-<a name="bitcoin.v1beta1.Transaction"></a>
+<a name="bitcoin.v1beta1.SignedTx"></a>
 
-### Transaction
+### SignedTx
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `tx` | [bytes](#bytes) |  |  |
+| `prev_signed_tx_hash` | [bytes](#bytes) |  |  |
+| `confirmation_required` | [bool](#bool) |  |  |
+| `anyone_can_spend_vout` | [uint32](#uint32) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.UnsignedTx"></a>
+
+### UnsignedTx
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx` | [bytes](#bytes) |  |  |
+| `info` | [UnsignedTx.Info](#bitcoin.v1beta1.UnsignedTx.Info) |  |  |
+| `status` | [TxStatus](#bitcoin.v1beta1.TxStatus) |  |  |
+| `confirmation_required` | [bool](#bool) |  |  |
+| `anyone_can_spend_vout` | [uint32](#uint32) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.UnsignedTx.Info"></a>
+
+### UnsignedTx.Info
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
 | `assign_next_key` | [bool](#bool) |  |  |
-| `next_key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
 | `next_key_id` | [string](#string) |  |  |
+| `input_infos` | [UnsignedTx.Info.InputInfo](#bitcoin.v1beta1.UnsignedTx.Info.InputInfo) | repeated |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.UnsignedTx.Info.InputInfo"></a>
+
+### UnsignedTx.Info.InputInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `out_point_info` | [OutPointInfo](#bitcoin.v1beta1.OutPointInfo) |  |  |
+| `sig_requirements` | [UnsignedTx.Info.InputInfo.SigRequirement](#bitcoin.v1beta1.UnsignedTx.Info.InputInfo.SigRequirement) | repeated |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.UnsignedTx.Info.InputInfo.SigRequirement"></a>
+
+### UnsignedTx.Info.InputInfo.SigRequirement
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
+| `sig_hash` | [bytes](#bytes) |  |  |
 
 
 
@@ -560,17 +638,18 @@ of a transaction
 
 
 
-<a name="bitcoin.v1beta1.SignState"></a>
+<a name="bitcoin.v1beta1.TxStatus"></a>
 
-### SignState
+### TxStatus
 
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| SIGN_STATE_UNSPECIFIED | 0 |  |
-| SIGN_STATE_SIGNING_PENDING_TRANSFERS | 1 |  |
-| SIGN_STATE_SIGNED_NOT_CONFIRMED | 2 |  |
-| SIGN_STATE_READY_TO_SIGN | 3 |  |
+| TX_STATUS_UNSPECIFIED | 0 |  |
+| TX_STATUS_CREATED | 1 |  |
+| TX_STATUS_SIGNING | 2 |  |
+| TX_STATUS_ABORTED | 3 |  |
+| TX_STATUS_SIGNED | 4 |  |
 
 
  <!-- end enums -->
@@ -604,6 +683,7 @@ of a transaction
 | `max_input_count` | [int64](#int64) |  |  |
 | `max_secondary_output_amount` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) |  |  |
 | `master_key_retention_period` | [int64](#int64) |  |  |
+| `master_address_lock_duration` | [int64](#int64) |  |  |
 
 
 
@@ -674,25 +754,9 @@ deposit address
 
 
 
-<a name="bitcoin.v1beta1.QueryRawTxResponse"></a>
+<a name="bitcoin.v1beta1.QueryAddressResponse"></a>
 
-### QueryRawTxResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `raw_tx` | [string](#string) |  |  |
-| `state` | [SignState](#bitcoin.v1beta1.SignState) |  |  |
-
-
-
-
-
-
-<a name="bitcoin.v1beta1.QuerySecondaryConsolidationAddressResponse"></a>
-
-### QuerySecondaryConsolidationAddressResponse
+### QueryAddressResponse
 
 
 
@@ -700,6 +764,42 @@ deposit address
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  |  |
 | `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.QueryTxResponse"></a>
+
+### QueryTxResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx` | [string](#string) |  |  |
+| `status` | [TxStatus](#bitcoin.v1beta1.TxStatus) |  |  |
+| `confirmation_required` | [bool](#bool) |  |  |
+| `prev_signed_tx_hash` | [string](#string) |  |  |
+| `anyone_can_spend_vout` | [uint32](#uint32) |  |  |
+| `signing_infos` | [QueryTxResponse.SigningInfo](#bitcoin.v1beta1.QueryTxResponse.SigningInfo) | repeated |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.QueryTxResponse.SigningInfo"></a>
+
+### QueryTxResponse.SigningInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `redeem_script` | [string](#string) |  |  |
+| `amount` | [int64](#int64) |  |  |
 
 
 
@@ -849,6 +949,61 @@ Bitcoin outpoint
 
 
 
+<a name="bitcoin.v1beta1.CreateMasterTxRequest"></a>
+
+### CreateMasterTxRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `secondary_key_amount` | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.CreateMasterTxResponse"></a>
+
+### CreateMasterTxResponse
+
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.CreatePendingTransfersTxRequest"></a>
+
+### CreatePendingTransfersTxRequest
+CreatePendingTransfersTxRequest represents a message to trigger the creation
+of a secondary key consolidation transaction
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `master_key_amount` | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.CreatePendingTransfersTxResponse"></a>
+
+### CreatePendingTransfersTxResponse
+
+
+
+
+
+
+
 <a name="bitcoin.v1beta1.LinkRequest"></a>
 
 ### LinkRequest
@@ -909,9 +1064,35 @@ address
 
 
 
-<a name="bitcoin.v1beta1.SignMasterConsolidationTransactionRequest"></a>
+<a name="bitcoin.v1beta1.SignTxRequest"></a>
 
-### SignMasterConsolidationTransactionRequest
+### SignTxRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.SignTxResponse"></a>
+
+### SignTxResponse
+
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.SubmitExternalSignatureRequest"></a>
+
+### SubmitExternalSignatureRequest
 
 
 
@@ -919,44 +1100,17 @@ address
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `key_id` | [string](#string) |  |  |
-| `secondary_key_amount` | [int64](#int64) |  |  |
+| `signature` | [bytes](#bytes) |  |  |
+| `sig_hash` | [bytes](#bytes) |  |  |
 
 
 
 
 
 
-<a name="bitcoin.v1beta1.SignMasterConsolidationTransactionResponse"></a>
+<a name="bitcoin.v1beta1.SubmitExternalSignatureResponse"></a>
 
-### SignMasterConsolidationTransactionResponse
-
-
-
-
-
-
-
-<a name="bitcoin.v1beta1.SignPendingTransfersRequest"></a>
-
-### SignPendingTransfersRequest
-MsgSignPendingTransfers represents a message to trigger the signing of a
-consolidation transaction
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `key_id` | [string](#string) |  |  |
-| `master_key_amount` | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="bitcoin.v1beta1.SignPendingTransfersResponse"></a>
-
-### SignPendingTransfersResponse
+### SubmitExternalSignatureResponse
 
 
 
@@ -1029,9 +1183,11 @@ Msg defines the bitcoin Msg service.
 | `Link` | [LinkRequest](#bitcoin.v1beta1.LinkRequest) | [LinkResponse](#bitcoin.v1beta1.LinkResponse) |  | POST|/axelar/bitcoin/link/{recipient_chain}|
 | `ConfirmOutpoint` | [ConfirmOutpointRequest](#bitcoin.v1beta1.ConfirmOutpointRequest) | [ConfirmOutpointResponse](#bitcoin.v1beta1.ConfirmOutpointResponse) |  | POST|/axelar/bitcoin/confirm|
 | `VoteConfirmOutpoint` | [VoteConfirmOutpointRequest](#bitcoin.v1beta1.VoteConfirmOutpointRequest) | [VoteConfirmOutpointResponse](#bitcoin.v1beta1.VoteConfirmOutpointResponse) |  | ||
-| `SignPendingTransfers` | [SignPendingTransfersRequest](#bitcoin.v1beta1.SignPendingTransfersRequest) | [SignPendingTransfersResponse](#bitcoin.v1beta1.SignPendingTransfersResponse) |  | POST|/axelar/bitcoin/sign-pending-transfers|
-| `SignMasterConsolidationTransaction` | [SignMasterConsolidationTransactionRequest](#bitcoin.v1beta1.SignMasterConsolidationTransactionRequest) | [SignMasterConsolidationTransactionResponse](#bitcoin.v1beta1.SignMasterConsolidationTransactionResponse) |  | POST|/axelar/bitcoin/sign-master-consolidation-transaction|
+| `CreatePendingTransfersTx` | [CreatePendingTransfersTxRequest](#bitcoin.v1beta1.CreatePendingTransfersTxRequest) | [CreatePendingTransfersTxResponse](#bitcoin.v1beta1.CreatePendingTransfersTxResponse) |  | POST|/axelar/bitcoin/create-pending-transfers-tx|
+| `CreateMasterTx` | [CreateMasterTxRequest](#bitcoin.v1beta1.CreateMasterTxRequest) | [CreateMasterTxResponse](#bitcoin.v1beta1.CreateMasterTxResponse) |  | POST|/axelar/bitcoin/create-master-tx|
+| `SignTx` | [SignTxRequest](#bitcoin.v1beta1.SignTxRequest) | [SignTxResponse](#bitcoin.v1beta1.SignTxResponse) |  | POST|/axelar/bitcoin/sign-tx|
 | `RegisterExternalKey` | [RegisterExternalKeyRequest](#bitcoin.v1beta1.RegisterExternalKeyRequest) | [RegisterExternalKeyResponse](#bitcoin.v1beta1.RegisterExternalKeyResponse) |  | POST|/axelar/bitcoin/register-external-key|
+| `SubmitExternalSignature` | [SubmitExternalSignatureRequest](#bitcoin.v1beta1.SubmitExternalSignatureRequest) | [SubmitExternalSignatureResponse](#bitcoin.v1beta1.SubmitExternalSignatureResponse) |  | POST|/axelar/bitcoin/submit-external-signature|
 
  <!-- end services -->
 

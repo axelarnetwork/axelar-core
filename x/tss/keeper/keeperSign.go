@@ -18,7 +18,7 @@ func (k Keeper) StartSign(ctx sdk.Context, voter types.InitPoller, keyID string,
 	if _, ok := k.getKeyIDForSig(ctx, sigID); ok {
 		return fmt.Errorf("sigID %s has been used before", sigID)
 	}
-	k.setKeyIDForSig(ctx, sigID, keyID)
+	k.SetKeyIDForSig(ctx, sigID, keyID)
 
 	// for now we recalculate the threshold
 	// might make sense to store it with the snapshot after keygen is done.
@@ -98,7 +98,8 @@ func (k Keeper) GetKeyForSigID(ctx sdk.Context, sigID string) (exported.Key, boo
 	return k.GetKey(ctx, keyID)
 }
 
-func (k Keeper) setKeyIDForSig(ctx sdk.Context, sigID string, keyID string) {
+// SetKeyIDForSig stores key ID for the given sig ID
+func (k Keeper) SetKeyIDForSig(ctx sdk.Context, sigID string, keyID string) {
 	ctx.KVStore(k.storeKey).Set([]byte(keyIDForSigPrefix+sigID), []byte(keyID))
 }
 

@@ -246,7 +246,7 @@ func createP2pkScript(pubKey btcec.PublicKey) RedeemScript {
 	return redeemScript
 }
 
-func createTimelockScript(pubKey1 btcec.PublicKey, pubKey2 btcec.PublicKey, pubKey3 btcec.PublicKey, lockedUntil time.Time) RedeemScript {
+func createTimelockScript(pubKey1 btcec.PublicKey, pubKey2 btcec.PublicKey, pubKey3 btcec.PublicKey, lockTime time.Time) RedeemScript {
 	redeemScript, err := txscript.NewScriptBuilder().
 		AddOp(txscript.OP_DEPTH).
 		AddOp(txscript.OP_2).
@@ -273,7 +273,7 @@ func createTimelockScript(pubKey1 btcec.PublicKey, pubKey2 btcec.PublicKey, pubK
 		AddOp(txscript.OP_DEPTH).
 		AddOp(txscript.OP_1).
 		AddOp(txscript.OP_EQUALVERIFY).
-		AddInt64(lockedUntil.Unix()).
+		AddInt64(lockTime.Unix()).
 		AddOp(txscript.OP_CHECKLOCKTIMEVERIFY).
 		AddOp(txscript.OP_DROP).
 		AddOp(txscript.OP_0).
@@ -309,8 +309,8 @@ func createP2wshAddress(script RedeemScript, network Network) *btcutil.AddressWi
 // NewMasterConsolidationAddress returns a p2wsh-wrapped address that is
 // 1) spendable by the ((currMasterKey or oldMasterKey) and externalKey) before the timelock elapses
 // 2) spendable by the (currMasterKey or oldMasterKey) after the timelock elapses
-func NewMasterConsolidationAddress(currMasterKey tss.Key, oldMasterKey tss.Key, externalKey tss.Key, lockedUntil time.Time, network Network) AddressInfo {
-	script := createTimelockScript(btcec.PublicKey(currMasterKey.Value), btcec.PublicKey(oldMasterKey.Value), btcec.PublicKey(externalKey.Value), lockedUntil)
+func NewMasterConsolidationAddress(currMasterKey tss.Key, oldMasterKey tss.Key, externalKey tss.Key, lockTime time.Time, network Network) AddressInfo {
+	script := createTimelockScript(btcec.PublicKey(currMasterKey.Value), btcec.PublicKey(oldMasterKey.Value), btcec.PublicKey(externalKey.Value), lockTime)
 	address := createP2wshAddress(script, network)
 
 	return AddressInfo{
@@ -319,6 +319,7 @@ func NewMasterConsolidationAddress(currMasterKey tss.Key, oldMasterKey tss.Key, 
 		Role:         Consolidation,
 		KeyID:        currMasterKey.ID,
 		MaxSigCount:  2,
+		LockTime:     &lockTime,
 	}
 }
 
@@ -333,6 +334,7 @@ func NewSecondaryConsolidationAddress(secondaryKey tss.Key, network Network) Add
 		Role:         Consolidation,
 		KeyID:        secondaryKey.ID,
 		MaxSigCount:  1,
+		LockTime:     nil,
 	}
 }
 
@@ -352,6 +354,7 @@ func NewDepositAddress(masterKey tss.Key, secondaryKey tss.Key, network Network,
 		Role:         Deposit,
 		KeyID:        secondaryKey.ID,
 		MaxSigCount:  1,
+		LockTime:     nil,
 	}
 }
 
@@ -365,6 +368,7 @@ func NewAnyoneCanSpendAddress(network Network) AddressInfo {
 		Address:      address.EncodeAddress(),
 		Role:         None,
 		MaxSigCount:  0,
+		LockTime:     nil,
 	}
 }
 
@@ -509,19 +513,53 @@ func ParseSatoshi(rawCoin string) (sdk.Coin, error) {
 	return ToSatoshiCoin(coin)
 }
 
+// NewSignedTx is the constructor for SignedTx
+func NewSignedTx(tx *wire.MsgTx, confirmationRequired bool, anyoneCanSpendVout uint32) SignedTx {
+	return SignedTx{
+		Tx:                   MustEncodeTx(tx),
+		ConfirmationRequired: confirmationRequired,
+		AnyoneCanSpendVout:   anyoneCanSpendVout,
+	}
+}
+
+// GetTx gets the underlying tx
+func (m SignedTx) GetTx() *wire.MsgTx {
+	result := MustDecodeTx(m.Tx)
+	return &result
+}
+
+// NewUnsignedTx is the constructor for UnsignedTx
+func NewUnsignedTx(tx *wire.MsgTx, anyoneCanSpendVout uint32, outPointsToSign []OutPointToSign) UnsignedTx {
+	unsignedTx := UnsignedTx{
+		Tx:                   MustEncodeTx(tx),
+		Status:               Created,
+		ConfirmationRequired: false,
+		AnyoneCanSpendVout:   anyoneCanSpendVout,
+	}
+
+	for _, outPointToSign := range outPointsToSign {
+		unsignedTx.Info.InputInfos = append(unsignedTx.Info.InputInfos, UnsignedTx_Info_InputInfo{
+			OutPointInfo: outPointToSign.OutPointInfo,
+		})
+	}
+
+	return unsignedTx
+}
+
 // SetTx sets the underlying tx
-func (m *Transaction) SetTx(tx *wire.MsgTx) {
+func (m *UnsignedTx) SetTx(tx *wire.MsgTx) {
 	m.Tx = MustEncodeTx(tx)
 }
 
 // GetTx gets the underlying tx
-func (m Transaction) GetTx() *wire.MsgTx {
-	if m.Tx == nil {
-		return nil
-	}
-
+func (m UnsignedTx) GetTx() *wire.MsgTx {
 	result := MustDecodeTx(m.Tx)
 	return &result
+}
+
+// Is returns true if unsigned transaction is in the given status; false otherwise
+func (m UnsignedTx) Is(status TxStatus) bool {
+	return m.Status == status
 }
 
 // EnableTimelockAndRBF enables timelock(https://en.bitcoin.it/wiki/Timelock) and replace-by-fee(https://github.com/bitcoin/bips/blob/master/bip-0125.mediawiki) on the given transaction.
@@ -531,4 +569,21 @@ func EnableTimelockAndRBF(tx *wire.MsgTx) *wire.MsgTx {
 	}
 
 	return tx
+}
+
+// DisableTimelockAndRBF disables timelock(https://en.bitcoin.it/wiki/Timelock) and replace-by-fee(https://github.com/bitcoin/bips/blob/master/bip-0125.mediawiki) on the given transaction.
+func DisableTimelockAndRBF(tx *wire.MsgTx) *wire.MsgTx {
+	for i := range tx.TxIn {
+		tx.TxIn[i].Sequence = wire.MaxTxInSequenceNum
+	}
+
+	return tx
+}
+
+// NewSigRequirement is the constructor for UnsignedTx_Info_InputInfo_SigRequirement
+func NewSigRequirement(keyID string, sigHash []byte) UnsignedTx_Info_InputInfo_SigRequirement {
+	return UnsignedTx_Info_InputInfo_SigRequirement{
+		KeyID:   keyID,
+		SigHash: sigHash,
+	}
 }
