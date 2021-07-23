@@ -1,0 +1,43 @@
+syntax = "proto3";
+package axelarnet.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/axelarnet/types";
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// MsgLink represents a message to link a cross-chain address to an Axelar
+// address
+message LinkRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string recipient_addr = 2;
+  string recipient_chain = 3;
+}
+
+message LinkResponse { string deposit_addr = 2; };
+
+// MsgConfirmDeposit represents a deposit confirmation message
+message ConfirmDepositRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2;
+  bytes tx_id = 3 [ (gogoproto.customname) = "TxID" ];
+  cosmos.base.v1beta1.Coin token = 4 [ (gogoproto.nullable) = false ];
+  bytes burner_address = 5
+      [ (gogoproto.casttype) =
+            "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+}
+
+message ConfirmDepositResponse {}
+
+// MsgExecutePendingTransfers represents a message to trigger transfer all
+// pending transfers
+message ExecutePendingTransfersRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+}
+
+message ExecutePendingTransfersResponse {}
