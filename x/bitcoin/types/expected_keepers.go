@@ -33,7 +33,7 @@ type BTCKeeper interface {
 	GetMinOutputAmount(ctx sdk.Context) btcutil.Amount
 	GetMaxInputCount(ctx sdk.Context) int64
 	GetMaxSecondaryOutputAmount(ctx sdk.Context) btcutil.Amount
-	GetPrevMasterKeyCycle(ctx sdk.Context) int64
+	GetMasterKeyRetentionPeriod(ctx sdk.Context) int64
 
 	SetPendingOutpointInfo(ctx sdk.Context, key vote.PollKey, info OutPointInfo)
 	GetPendingOutPointInfo(ctx sdk.Context, key vote.PollKey) (OutPointInfo, bool)

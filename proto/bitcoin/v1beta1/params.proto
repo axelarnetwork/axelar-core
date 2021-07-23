@@ -18,5 +18,5 @@ message Params {
   int64 max_input_count = 6;
   cosmos.base.v1beta1.DecCoin max_secondary_output_amount = 7
       [ (gogoproto.nullable) = false ];
-  int64 prev_master_key_cycle = 8;
+  int64 master_key_retention_period = 8;
 }

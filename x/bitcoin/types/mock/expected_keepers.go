@@ -1663,6 +1663,9 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			GetLatestSignedTxHashFunc: func(ctx sdk.Context) (*chainhash.Hash, bool) {
 // 				panic("mock out the GetLatestSignedTxHash method")
 // 			},
+// 			GetMasterKeyRetentionPeriodFunc: func(ctx sdk.Context) int64 {
+// 				panic("mock out the GetMasterKeyRetentionPeriod method")
+// 			},
 // 			GetMaxInputCountFunc: func(ctx sdk.Context) int64 {
 // 				panic("mock out the GetMaxInputCount method")
 // 			},
@@ -1683,9 +1686,6 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			},
 // 			GetPendingOutPointInfoFunc: func(ctx sdk.Context, key voteexported.PollKey) (types.OutPointInfo, bool) {
 // 				panic("mock out the GetPendingOutPointInfo method")
-// 			},
-// 			GetPrevMasterKeyCycleFunc: func(ctx sdk.Context) int64 {
-// 				panic("mock out the GetPrevMasterKeyCycle method")
 // 			},
 // 			GetRequiredConfirmationHeightFunc: func(ctx sdk.Context) uint64 {
 // 				panic("mock out the GetRequiredConfirmationHeight method")
@@ -1769,6 +1769,9 @@ type BTCKeeperMock struct {
 	// GetLatestSignedTxHashFunc mocks the GetLatestSignedTxHash method.
 	GetLatestSignedTxHashFunc func(ctx sdk.Context) (*chainhash.Hash, bool)
 
+	// GetMasterKeyRetentionPeriodFunc mocks the GetMasterKeyRetentionPeriod method.
+	GetMasterKeyRetentionPeriodFunc func(ctx sdk.Context) int64
+
 	// GetMaxInputCountFunc mocks the GetMaxInputCount method.
 	GetMaxInputCountFunc func(ctx sdk.Context) int64
 
@@ -1789,9 +1792,6 @@ type BTCKeeperMock struct {
 
 	// GetPendingOutPointInfoFunc mocks the GetPendingOutPointInfo method.
 	GetPendingOutPointInfoFunc func(ctx sdk.Context, key voteexported.PollKey) (types.OutPointInfo, bool)
-
-	// GetPrevMasterKeyCycleFunc mocks the GetPrevMasterKeyCycle method.
-	GetPrevMasterKeyCycleFunc func(ctx sdk.Context) int64
 
 	// GetRequiredConfirmationHeightFunc mocks the GetRequiredConfirmationHeight method.
 	GetRequiredConfirmationHeightFunc func(ctx sdk.Context) uint64
@@ -1904,6 +1904,11 @@ type BTCKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 		}
+		// GetMasterKeyRetentionPeriod holds details about calls to the GetMasterKeyRetentionPeriod method.
+		GetMasterKeyRetentionPeriod []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
 		// GetMaxInputCount holds details about calls to the GetMaxInputCount method.
 		GetMaxInputCount []struct {
 			// Ctx is the ctx argument value.
@@ -1942,11 +1947,6 @@ type BTCKeeperMock struct {
 			Ctx sdk.Context
 			// Key is the key argument value.
 			Key voteexported.PollKey
-		}
-		// GetPrevMasterKeyCycle holds details about calls to the GetPrevMasterKeyCycle method.
-		GetPrevMasterKeyCycle []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
 		}
 		// GetRequiredConfirmationHeight holds details about calls to the GetRequiredConfirmationHeight method.
 		GetRequiredConfirmationHeight []struct {
@@ -2062,6 +2062,7 @@ type BTCKeeperMock struct {
 	lockGetConfirmedOutpointInfoQueueForKey sync.RWMutex
 	lockGetDustAmount                       sync.RWMutex
 	lockGetLatestSignedTxHash               sync.RWMutex
+	lockGetMasterKeyRetentionPeriod         sync.RWMutex
 	lockGetMaxInputCount                    sync.RWMutex
 	lockGetMaxSecondaryOutputAmount         sync.RWMutex
 	lockGetMinOutputAmount                  sync.RWMutex
@@ -2069,7 +2070,6 @@ type BTCKeeperMock struct {
 	lockGetOutPointInfo                     sync.RWMutex
 	lockGetParams                           sync.RWMutex
 	lockGetPendingOutPointInfo              sync.RWMutex
-	lockGetPrevMasterKeyCycle               sync.RWMutex
 	lockGetRequiredConfirmationHeight       sync.RWMutex
 	lockGetRevoteLockingPeriod              sync.RWMutex
 	lockGetSigCheckInterval                 sync.RWMutex
@@ -2425,6 +2425,37 @@ func (mock *BTCKeeperMock) GetLatestSignedTxHashCalls() []struct {
 	return calls
 }
 
+// GetMasterKeyRetentionPeriod calls GetMasterKeyRetentionPeriodFunc.
+func (mock *BTCKeeperMock) GetMasterKeyRetentionPeriod(ctx sdk.Context) int64 {
+	if mock.GetMasterKeyRetentionPeriodFunc == nil {
+		panic("BTCKeeperMock.GetMasterKeyRetentionPeriodFunc: method is nil but BTCKeeper.GetMasterKeyRetentionPeriod was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetMasterKeyRetentionPeriod.Lock()
+	mock.calls.GetMasterKeyRetentionPeriod = append(mock.calls.GetMasterKeyRetentionPeriod, callInfo)
+	mock.lockGetMasterKeyRetentionPeriod.Unlock()
+	return mock.GetMasterKeyRetentionPeriodFunc(ctx)
+}
+
+// GetMasterKeyRetentionPeriodCalls gets all the calls that were made to GetMasterKeyRetentionPeriod.
+// Check the length with:
+//     len(mockedBTCKeeper.GetMasterKeyRetentionPeriodCalls())
+func (mock *BTCKeeperMock) GetMasterKeyRetentionPeriodCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockGetMasterKeyRetentionPeriod.RLock()
+	calls = mock.calls.GetMasterKeyRetentionPeriod
+	mock.lockGetMasterKeyRetentionPeriod.RUnlock()
+	return calls
+}
+
 // GetMaxInputCount calls GetMaxInputCountFunc.
 func (mock *BTCKeeperMock) GetMaxInputCount(ctx sdk.Context) int64 {
 	if mock.GetMaxInputCountFunc == nil {
@@ -2647,37 +2678,6 @@ func (mock *BTCKeeperMock) GetPendingOutPointInfoCalls() []struct {
 	mock.lockGetPendingOutPointInfo.RLock()
 	calls = mock.calls.GetPendingOutPointInfo
 	mock.lockGetPendingOutPointInfo.RUnlock()
-	return calls
-}
-
-// GetPrevMasterKeyCycle calls GetPrevMasterKeyCycleFunc.
-func (mock *BTCKeeperMock) GetPrevMasterKeyCycle(ctx sdk.Context) int64 {
-	if mock.GetPrevMasterKeyCycleFunc == nil {
-		panic("BTCKeeperMock.GetPrevMasterKeyCycleFunc: method is nil but BTCKeeper.GetPrevMasterKeyCycle was just called")
-	}
-	callInfo := struct {
-		Ctx sdk.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockGetPrevMasterKeyCycle.Lock()
-	mock.calls.GetPrevMasterKeyCycle = append(mock.calls.GetPrevMasterKeyCycle, callInfo)
-	mock.lockGetPrevMasterKeyCycle.Unlock()
-	return mock.GetPrevMasterKeyCycleFunc(ctx)
-}
-
-// GetPrevMasterKeyCycleCalls gets all the calls that were made to GetPrevMasterKeyCycle.
-// Check the length with:
-//     len(mockedBTCKeeper.GetPrevMasterKeyCycleCalls())
-func (mock *BTCKeeperMock) GetPrevMasterKeyCycleCalls() []struct {
-	Ctx sdk.Context
-} {
-	var calls []struct {
-		Ctx sdk.Context
-	}
-	mock.lockGetPrevMasterKeyCycle.RLock()
-	calls = mock.calls.GetPrevMasterKeyCycle
-	mock.lockGetPrevMasterKeyCycle.RUnlock()
 	return calls
 }
 

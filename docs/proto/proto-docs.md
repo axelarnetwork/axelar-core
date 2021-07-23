@@ -391,7 +391,7 @@ of a transaction
 | `min_output_amount` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) |  |  |
 | `max_input_count` | [int64](#int64) |  |  |
 | `max_secondary_output_amount` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) |  |  |
-| `prev_master_key_cycle` | [int64](#int64) |  |  |
+| `master_key_retention_period` | [int64](#int64) |  |  |
 
 
 

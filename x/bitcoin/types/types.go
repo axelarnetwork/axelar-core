@@ -307,10 +307,10 @@ func createP2wshAddress(script RedeemScript, network Network) *btcutil.AddressWi
 }
 
 // NewMasterConsolidationAddress returns a p2wsh-wrapped address that is
-// 1) spendable by the ((currMasterKey or prevMasterKey) and externalKey) before the timelock elapses
-// 2) spendable by the (currMasterKey or prevMasterKey) after the timelock elapses
-func NewMasterConsolidationAddress(currMasterKey tss.Key, prevMasterKey tss.Key, externalKey tss.Key, lockedUntil time.Time, network Network) AddressInfo {
-	script := createTimelockScript(btcec.PublicKey(currMasterKey.Value), btcec.PublicKey(prevMasterKey.Value), btcec.PublicKey(externalKey.Value), lockedUntil)
+// 1) spendable by the ((currMasterKey or oldMasterKey) and externalKey) before the timelock elapses
+// 2) spendable by the (currMasterKey or oldMasterKey) after the timelock elapses
+func NewMasterConsolidationAddress(currMasterKey tss.Key, oldMasterKey tss.Key, externalKey tss.Key, lockedUntil time.Time, network Network) AddressInfo {
+	script := createTimelockScript(btcec.PublicKey(currMasterKey.Value), btcec.PublicKey(oldMasterKey.Value), btcec.PublicKey(externalKey.Value), lockedUntil)
 	address := createP2wshAddress(script, network)
 
 	return AddressInfo{

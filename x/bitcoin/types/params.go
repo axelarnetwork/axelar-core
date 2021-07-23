@@ -22,7 +22,7 @@ var (
 	KeyMinOutputAmount          = []byte("KeyMinOutputAmount")
 	KeyMaxInputCount            = []byte("KeyMaxInputCount")
 	KeyMaxSecondaryOutputAmount = []byte("KeyMaxSecondaryOutputAmount")
-	KeyPrevMasterKeyCycle       = []byte("KeyPrevMasterKeyCycle")
+	KeyMasterKeyRetentionPeriod = []byte("KeyMasterKeyRetentionPeriod")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -40,7 +40,7 @@ func DefaultParams() Params {
 		MinOutputAmount:          sdktypes.NewDecCoin(Satoshi, sdktypes.NewInt(1000)),
 		MaxInputCount:            50,
 		MaxSecondaryOutputAmount: sdktypes.NewDecCoin(Bitcoin, sdktypes.NewInt(300)),
-		PrevMasterKeyCycle:       8,
+		MasterKeyRetentionPeriod: 8,
 	}
 }
 
@@ -61,7 +61,7 @@ func (m *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(KeyMinOutputAmount, &m.MinOutputAmount, validateMinOutputAmount),
 		paramtypes.NewParamSetPair(KeyMaxInputCount, &m.MaxInputCount, validateMaxInputCount),
 		paramtypes.NewParamSetPair(KeyMaxSecondaryOutputAmount, &m.MaxSecondaryOutputAmount, validateMaxSecondaryOutputAmount),
-		paramtypes.NewParamSetPair(KeyPrevMasterKeyCycle, &m.PrevMasterKeyCycle, validatePrevMasterKeyCycle),
+		paramtypes.NewParamSetPair(KeyMasterKeyRetentionPeriod, &m.MasterKeyRetentionPeriod, validateMasterKeyRetentionPeriod),
 	}
 }
 
@@ -159,14 +159,14 @@ func validateMaxSecondaryOutputAmount(amount interface{}) error {
 	return nil
 }
 
-func validatePrevMasterKeyCycle(prevMasterKeyCycle interface{}) error {
-	m, ok := prevMasterKeyCycle.(int64)
+func validateMasterKeyRetentionPeriod(masterKeyRetentionPeriod interface{}) error {
+	m, ok := masterKeyRetentionPeriod.(int64)
 	if !ok {
-		return fmt.Errorf("invalid parameter type for prev master key cycle: %T", prevMasterKeyCycle)
+		return fmt.Errorf("invalid parameter type for master key retention period: %T", masterKeyRetentionPeriod)
 	}
 
 	if m <= 0 {
-		return fmt.Errorf("prev master key cycle has to be greater than 0")
+		return fmt.Errorf("master key retention period has to be greater than 0")
 	}
 
 	return nil
@@ -201,7 +201,7 @@ func (m Params) Validate() error {
 		return err
 	}
 
-	if err := validatePrevMasterKeyCycle(m.PrevMasterKeyCycle); err != nil {
+	if err := validateMasterKeyRetentionPeriod(m.MasterKeyRetentionPeriod); err != nil {
 		return err
 	}
 

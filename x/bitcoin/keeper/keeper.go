@@ -143,10 +143,10 @@ func (k Keeper) GetMaxSecondaryOutputAmount(ctx sdk.Context) btcutil.Amount {
 	return btcutil.Amount(satoshi.Amount.Int64())
 }
 
-// GetPrevMasterKeyCycle returns the prev master key cycle
-func (k Keeper) GetPrevMasterKeyCycle(ctx sdk.Context) int64 {
+// GetMasterKeyRetentionPeriod returns the prev master key cycle
+func (k Keeper) GetMasterKeyRetentionPeriod(ctx sdk.Context) int64 {
 	var result int64
-	k.params.Get(ctx, types.KeyPrevMasterKeyCycle, &result)
+	k.params.Get(ctx, types.KeyMasterKeyRetentionPeriod, &result)
 
 	return result
 }
