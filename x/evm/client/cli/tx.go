@@ -240,7 +240,7 @@ func GetCmdSignDeployToken() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "sign-deploy-token [evm chain] [origin chain] [name] [symbol] [decimals] [capacity]",
 		Short: "Signs the call data to deploy a token with the AxelarGateway contract",
-		Args:  cobra.ExactArgs(5),
+		Args:  cobra.ExactArgs(6),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
