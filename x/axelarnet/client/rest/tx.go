@@ -13,6 +13,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 )
 
+// rest routes
 const (
 	TxLink                      = "link"
 	TxConfirmDeposit            = "confirm-deposit"
