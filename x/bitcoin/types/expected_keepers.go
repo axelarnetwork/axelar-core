@@ -1,6 +1,8 @@
 package types
 
 import (
+	"crypto/ecdsa"
+
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
@@ -10,6 +12,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	exported "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -27,8 +30,10 @@ type BTCKeeper interface {
 	GetRevoteLockingPeriod(ctx sdk.Context) int64
 	GetSigCheckInterval(ctx sdk.Context) int64
 	GetNetwork(ctx sdk.Context) Network
-	GetMinimumWithdrawalAmount(ctx sdk.Context) btcutil.Amount
+	GetMinOutputAmount(ctx sdk.Context) btcutil.Amount
 	GetMaxInputCount(ctx sdk.Context) int64
+	GetMaxSecondaryOutputAmount(ctx sdk.Context) btcutil.Amount
+	GetMasterKeyRetentionPeriod(ctx sdk.Context) int64
 
 	SetPendingOutpointInfo(ctx sdk.Context, key vote.PollKey, info OutPointInfo)
 	GetPendingOutPointInfo(ctx sdk.Context, key vote.PollKey) (OutPointInfo, bool)
@@ -52,6 +57,9 @@ type BTCKeeper interface {
 	GetDustAmount(ctx sdk.Context, encodedAddress string) btcutil.Amount
 	SetDustAmount(ctx sdk.Context, encodedAddress string, amount btcutil.Amount)
 	DeleteDustAmount(ctx sdk.Context, encodedAddress string)
+
+	SetAnyoneCanSpendVout(ctx sdk.Context, txHash chainhash.Hash, vout int64)
+	GetAnyoneCanSpendVout(ctx sdk.Context, txHash chainhash.Hash) (int64, bool)
 }
 
 // Voter is the interface that provides voting functionality
@@ -75,9 +83,13 @@ type Signer interface {
 	GetCurrentKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool)
+	SetKey(ctx sdk.Context, keyID string, key ecdsa.PublicKey)
 	GetKey(ctx sdk.Context, keyID string) (tss.Key, bool)
 	AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error
+	RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) error
 	AssertMatchesRequirements(ctx sdk.Context, snapshotter Snapshotter, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error
+	GetRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64
+	GetKeyByRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, rotationCount int64) (exported.Key, bool)
 }
 
 // Nexus provides functionality to manage cross-chain transfers

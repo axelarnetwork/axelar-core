@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
@@ -43,6 +44,29 @@ func NewMsgServerImpl(keeper types.BTCKeeper, s types.Signer, n types.Nexus, v t
 	}
 }
 
+func (s msgServer) RegisterExternalKey(c context.Context, req *types.RegisterExternalKeyRequest) (*types.RegisterExternalKeyResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	// TODO: allow rotation for the external key?
+	if _, ok := s.signer.GetCurrentKeyID(ctx, exported.Bitcoin, tss.ExternalKey); ok {
+		return nil, fmt.Errorf("external key ID already registered")
+	}
+
+	if _, ok := s.signer.GetKey(ctx, req.KeyID); ok {
+		return nil, fmt.Errorf("keyID %s already exists", req.KeyID)
+	}
+
+	key, err := btcec.ParsePubKey(req.PubKey, btcec.S256())
+	if err != nil {
+		return nil, fmt.Errorf("invalid external key received")
+	}
+
+	s.signer.SetKey(ctx, req.KeyID, *key.ToECDSA())
+	s.signer.AssignNextKey(ctx, exported.Bitcoin, tss.ExternalKey, req.KeyID)
+
+	return &types.RegisterExternalKeyResponse{}, nil
+}
+
 // Link handles address linking
 func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
@@ -66,7 +90,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 	}
 
 	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
-	depositAddressInfo := types.NewLinkedAddress(masterKey, secondaryKey, s.GetNetwork(ctx), recipient)
+	depositAddressInfo := types.NewDepositAddress(masterKey, secondaryKey, s.GetNetwork(ctx), recipient)
 	s.nexus.LinkAddresses(ctx, depositAddressInfo.ToCrossChainAddr(), recipient)
 	s.SetAddress(ctx, depositAddressInfo)
 
@@ -224,9 +248,135 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 	}
 }
 
+func (s msgServer) SignMasterConsolidationTransaction(c context.Context, req *types.SignMasterConsolidationTransactionRequest) (*types.SignMasterConsolidationTransactionResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	secondaryMin := s.GetMinOutputAmount(ctx)
+	if req.SecondaryKeyAmount > 0 && req.SecondaryKeyAmount < secondaryMin {
+		return nil, fmt.Errorf("cannot transfer %d to secondary key, it is below the minimum of %d", req.SecondaryKeyAmount, secondaryMin)
+	}
+
+	secondaryMax := s.GetMaxSecondaryOutputAmount(ctx)
+	if req.SecondaryKeyAmount > secondaryMax {
+		return nil, fmt.Errorf("cannot transfer %d to secondary key, it is above the maximum of %d", req.SecondaryKeyAmount, secondaryMax)
+	}
+
+	if _, ok := s.GetUnsignedTx(ctx); ok {
+		return nil, fmt.Errorf("consolidation in progress")
+	}
+
+	externalKey, ok := s.signer.GetCurrentKey(ctx, exported.Bitcoin, tss.ExternalKey)
+	if !ok {
+		return nil, fmt.Errorf("external key not registered")
+	}
+
+	consolidationKey, ok := s.signer.GetKey(ctx, req.KeyID)
+	if !ok {
+		return nil, fmt.Errorf("unkown key %s", req.KeyID)
+	}
+
+	currMasterKey, ok := s.signer.GetCurrentKey(ctx, exported.Bitcoin, tss.MasterKey)
+	if !ok {
+		return nil, fmt.Errorf("current %s key is not set", tss.MasterKey.SimpleString())
+	}
+
+	nextMasterKey, nextMasterKeyAssigned := s.signer.GetNextKey(ctx, exported.Bitcoin, tss.MasterKey)
+	if nextMasterKeyAssigned {
+		return nil, fmt.Errorf("key %s is already assigned as the next %s key, rotate key first", nextMasterKey.ID, tss.MasterKey.SimpleString())
+	}
+
+	inputs, totalInputs, err := prepareInputs(ctx, s.BTCKeeper, s.signer, currMasterKey.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	anyoneCanSpendOutput := types.Output{Amount: s.BTCKeeper.GetMinOutputAmount(ctx), Recipient: s.BTCKeeper.GetAnyoneCanSpendAddress(ctx).GetAddress()}
+
+	outputs := []types.Output{anyoneCanSpendOutput}
+	totalOut := sdk.NewInt(int64(anyoneCanSpendOutput.Amount))
+
+	if req.SecondaryKeyAmount > 0 {
+		currSecondaryKey, ok := s.signer.GetCurrentKey(ctx, exported.Bitcoin, tss.SecondaryKey)
+		if !ok {
+			return nil, fmt.Errorf("current %s key is not set", tss.SecondaryKey.SimpleString())
+		}
+
+		currSecondaryAddress := types.NewSecondaryConsolidationAddress(currSecondaryKey, s.GetNetwork(ctx))
+		secondaryOutput := types.Output{Amount: btcutil.Amount(req.SecondaryKeyAmount), Recipient: currSecondaryAddress.GetAddress()}
+
+		outputs = append(outputs, secondaryOutput)
+		totalOut = totalOut.AddRaw(int64(req.SecondaryKeyAmount))
+	}
+
+	oldMasterKey, ok := getOldMasterKey(ctx, s.BTCKeeper, s.signer)
+	if !ok {
+		return nil, fmt.Errorf("cannot find the %s key for the period", tss.MasterKey.SimpleString())
+	}
+
+	// TODO: figure out a proper value for lockedUntil and pass in old master key
+	consolidationAddress := types.NewMasterConsolidationAddress(consolidationKey, oldMasterKey, externalKey, ctx.BlockTime(), s.GetNetwork(ctx))
+	txSizeUpperBound, err := estimateTxSizeWithZeroChange(ctx, s, consolidationAddress, inputs, outputs)
+	if err != nil {
+		return nil, err
+	}
+
+	// consolidation transactions always pay 1 satoshi/byte, which is the default minimum relay fee rate bitcoin-core sets
+	fee := sdk.NewInt(txSizeUpperBound).MulRaw(types.MinRelayTxFeeSatoshiPerByte)
+	change := totalInputs.Sub(totalOut).Sub(fee)
+
+	if change.Sign() <= 0 {
+		return nil, fmt.Errorf("not enough inputs (%d) to cover the fee (%d) for master consolidation transaction", totalInputs.Int64(), fee.Int64())
+	}
+
+	changeOutput, err := prepareChange(ctx, s, consolidationAddress, change)
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := types.CreateTx(inputs, append(outputs, changeOutput))
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: only turn on locktime if all inputs can be spent right away
+	tx.LockTime = uint32(ctx.BlockTime().Unix())
+
+	unsignedTx := types.Transaction{}
+	// If consolidating to a new key, that key has to be eligible for the role
+	if currMasterKey.ID != consolidationKey.ID {
+		if err := s.signer.AssertMatchesRequirements(ctx, s.snapshotter, exported.Bitcoin, consolidationKey.ID, tss.MasterKey); err != nil {
+			return nil, sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", consolidationKey.ID, tss.MasterKey.SimpleString())
+		}
+
+		// TODO: think about the solution how to make sure the queue is never empty
+		if !s.GetConfirmedOutpointInfoQueueForKey(ctx, currMasterKey.ID).IsEmpty() {
+			return nil, sdkerrors.Wrapf(err, "key %s still has outpoints to be signed and therefore it cannot be rotated out yet", currMasterKey.ID)
+		}
+
+		unsignedTx.AssignNextKey = true
+		unsignedTx.NextKeyRole = tss.MasterKey
+		unsignedTx.NextKeyID = consolidationKey.ID
+	}
+
+	unsignedTx.SetTx(types.EnableTimelockAndRBF(tx))
+	s.SetUnsignedTx(ctx, &unsignedTx)
+
+	err = startSignInputs(ctx, s.signer, s.snapshotter, s.voter, tx, inputs)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.SignMasterConsolidationTransactionResponse{}, nil
+}
+
 // SignPendingTransfers handles the signing of a consolidation transaction (consolidate confirmed outpoints and pay out transfers)
 func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendingTransfersRequest) (*types.SignPendingTransfersResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+
+	masterMin := s.GetMinOutputAmount(ctx)
+	if req.MasterKeyAmount > 0 && req.MasterKeyAmount < masterMin {
+		return nil, fmt.Errorf("cannot transfer %d to the master key, it is below the minimum amount of %d", req.MasterKeyAmount, masterMin)
+	}
 
 	if _, ok := s.GetUnsignedTx(ctx); ok {
 		return nil, fmt.Errorf("consolidation in progress")
@@ -244,7 +394,7 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 
 	nextSecondaryKey, nextSecondaryKeyAssigned := s.signer.GetNextKey(ctx, exported.Bitcoin, tss.SecondaryKey)
 	if nextSecondaryKeyAssigned {
-		return nil, fmt.Errorf("key %s is already assigned as the next %s key, rotate keys first", nextSecondaryKey.ID, tss.SecondaryKey.SimpleString())
+		return nil, fmt.Errorf("key %s is already assigned as the next %s key, rotate key first", nextSecondaryKey.ID, tss.SecondaryKey.SimpleString())
 	}
 
 	outputs, totalOut := prepareOutputs(ctx, s, s.nexus)
@@ -252,7 +402,33 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 		s.Logger(ctx).Info("creating consolidation transaction without any withdrawals")
 	}
 
-	anyoneCanSpendOutput := types.Output{Amount: s.BTCKeeper.GetMinimumWithdrawalAmount(ctx), Recipient: s.BTCKeeper.GetAnyoneCanSpendAddress(ctx).GetAddress()}
+	if req.MasterKeyAmount > 0 {
+		currMasterKey, ok := s.signer.GetCurrentKey(ctx, exported.Bitcoin, tss.MasterKey)
+		if !ok {
+			return nil, fmt.Errorf("current %s key is not set", tss.MasterKey.SimpleString())
+		}
+
+		externalKey, ok := s.signer.GetCurrentKey(ctx, exported.Bitcoin, tss.ExternalKey)
+		if !ok {
+			return nil, fmt.Errorf("external key not registered")
+		}
+
+		prevMasterKey, ok := getOldMasterKey(ctx, s.BTCKeeper, s.signer)
+		if !ok {
+			return nil, fmt.Errorf("cannot find the %s key for the period", tss.MasterKey.SimpleString())
+		}
+
+		currMasterAddress := types.NewMasterConsolidationAddress(currMasterKey, prevMasterKey, externalKey, ctx.BlockTime(), s.GetNetwork(ctx))
+		masterOutput := types.Output{Amount: btcutil.Amount(req.MasterKeyAmount), Recipient: currMasterAddress.GetAddress()}
+
+		outputs = append(outputs, masterOutput)
+		totalOut = totalOut.AddRaw(int64(req.MasterKeyAmount))
+
+		s.SetAddress(ctx, currMasterAddress)
+	}
+
+	anyoneCanSpendOutput := types.Output{Amount: s.BTCKeeper.GetMinOutputAmount(ctx), Recipient: s.BTCKeeper.GetAnyoneCanSpendAddress(ctx).GetAddress()}
+	outputs = append(outputs, anyoneCanSpendOutput)
 	totalOut = totalOut.AddRaw(int64(anyoneCanSpendOutput.Amount))
 
 	inputs, totalDeposits, err := prepareInputs(ctx, s, s.signer, currSecondaryKey.ID)
@@ -260,26 +436,8 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 		return nil, err
 	}
 
-	unsignedTx := types.Transaction{}
-
-	// If consolidating to a new key, that key has to be eligible for the role
-	if currSecondaryKey.ID != consolidationKey.ID {
-		if err := s.signer.AssertMatchesRequirements(ctx, s.snapshotter, exported.Bitcoin, consolidationKey.ID, tss.SecondaryKey); err != nil {
-			return nil, sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", consolidationKey.ID, tss.SecondaryKey.SimpleString())
-		}
-
-		// TODO: think about the solution how to make sure the queue is never empty
-		if !s.GetConfirmedOutpointInfoQueueForKey(ctx, currSecondaryKey.ID).IsEmpty() {
-			return nil, sdkerrors.Wrapf(err, "key %s still has outpoints to be signed and therefore it cannot be rotated out yet", currSecondaryKey.ID)
-		}
-
-		unsignedTx.AssignNextKey = true
-		unsignedTx.NextKeyRole = tss.SecondaryKey
-		unsignedTx.NextKeyID = consolidationKey.ID
-	}
-
-	consolidationAddress := types.NewConsolidationAddress(consolidationKey, s.GetNetwork(ctx))
-	txSizeUpperBound, err := estimateTxSizeWithZeroChange(ctx, s, consolidationAddress, inputs, append([]types.Output{anyoneCanSpendOutput}, outputs...))
+	consolidationAddress := types.NewSecondaryConsolidationAddress(consolidationKey, s.GetNetwork(ctx))
+	txSizeUpperBound, err := estimateTxSizeWithZeroChange(ctx, s, consolidationAddress, inputs, outputs)
 	if err != nil {
 		return nil, err
 	}
@@ -298,12 +456,27 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 	if err != nil {
 		return nil, err
 	}
-	// vout 0 is always the change, and vout 1 is always anyone-can-spend for consolidation transaction
-	outputs = append([]types.Output{changeOutput, anyoneCanSpendOutput}, outputs...)
 
-	tx, err := types.CreateTx(inputs, outputs)
+	tx, err := types.CreateTx(inputs, append(outputs, changeOutput))
 	if err != nil {
 		return nil, err
+	}
+
+	unsignedTx := types.Transaction{}
+	// If consolidating to a new key, that key has to be eligible for the role
+	if currSecondaryKey.ID != consolidationKey.ID {
+		if err := s.signer.AssertMatchesRequirements(ctx, s.snapshotter, exported.Bitcoin, consolidationKey.ID, tss.SecondaryKey); err != nil {
+			return nil, sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", consolidationKey.ID, tss.SecondaryKey.SimpleString())
+		}
+
+		// TODO: think about the solution how to make sure the queue is never empty
+		if !s.GetConfirmedOutpointInfoQueueForKey(ctx, currSecondaryKey.ID).IsEmpty() {
+			return nil, sdkerrors.Wrapf(err, "key %s still has outpoints to be signed and therefore it cannot be rotated out yet", currSecondaryKey.ID)
+		}
+
+		unsignedTx.AssignNextKey = true
+		unsignedTx.NextKeyRole = tss.SecondaryKey
+		unsignedTx.NextKeyID = consolidationKey.ID
 	}
 
 	unsignedTx.SetTx(tx)
@@ -315,6 +488,13 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 	}
 
 	return &types.SignPendingTransfersResponse{}, nil
+}
+
+func getOldMasterKey(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) (tss.Key, bool) {
+	currRotationCount := signer.GetRotationCount(ctx, exported.Bitcoin, tss.MasterKey)
+	oldMasterKeyRotationCount := currRotationCount - (currRotationCount-1)%k.GetMasterKeyRetentionPeriod(ctx)
+
+	return signer.GetKeyByRotationCount(ctx, exported.Bitcoin, tss.MasterKey, oldMasterKeyRotationCount)
 }
 
 func estimateTxSizeWithZeroChange(ctx sdk.Context, k types.BTCKeeper, address types.AddressInfo, inputs []types.OutPointToSign, outputs []types.Output) (int64, error) {
@@ -332,7 +512,7 @@ func estimateTxSizeWithZeroChange(ctx sdk.Context, k types.BTCKeeper, address ty
 }
 
 func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.Output, sdk.Int) {
-	minAmount := sdk.NewInt(int64(k.GetMinimumWithdrawalAmount(ctx)))
+	minAmount := sdk.NewInt(int64(k.GetMinOutputAmount(ctx)))
 	pendingTransfers := n.GetTransfersForChain(ctx, exported.Bitcoin, nexus.Pending)
 	outputs := []types.Output{}
 	total := sdk.ZeroInt()

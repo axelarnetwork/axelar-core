@@ -74,8 +74,8 @@ func QueryHandlerMinimumWithdrawAmount(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// QueryHandlerMasterAddress returns a handler to query the segwit address of the master key
-func QueryHandlerMasterAddress(cliCtx client.Context) http.HandlerFunc {
+// QueryHandlerSecondaryConsolidationAddress returns a handler to query the segwit address of the master key
+func QueryHandlerSecondaryConsolidationAddress(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -83,13 +83,13 @@ func QueryHandlerMasterAddress(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QMasterAddress), nil)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QSecondaryConsolidationAddress), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		var resp types.QueryMasterAddressResponse
+		var resp types.QuerySecondaryConsolidationAddressResponse
 		err = resp.Unmarshal(res)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
@@ -110,7 +110,7 @@ func QueryHandlerKeyConsolidationAddress(cliCtx client.Context) http.HandlerFunc
 		}
 
 		keyID := mux.Vars(r)[utils.PathVarKeyID]
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QKeyConsolidationAddress), []byte(keyID))
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QKeySecondaryConsolidationAddress), []byte(keyID))
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

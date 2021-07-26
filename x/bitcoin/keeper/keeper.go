@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
+	gogoprototypes "github.com/gogo/protobuf/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -18,16 +19,16 @@ import (
 )
 
 var (
-	pendingOutpointPrefix   = utils.KeyFromStr("pend_")
-	confirmedOutPointPrefix = utils.KeyFromStr("conf_")
-	spentOutPointPrefix     = utils.KeyFromStr("spent_")
-	addrPrefix              = utils.KeyFromStr("addr_")
-	dustAmtPrefix           = utils.KeyFromStr("dust_")
-	signedTxPrefix          = utils.KeyFromStr("signed_tx_")
+	pendingOutpointPrefix    = utils.KeyFromStr("pend_")
+	confirmedOutPointPrefix  = utils.KeyFromStr("conf_")
+	spentOutPointPrefix      = utils.KeyFromStr("spent_")
+	addrPrefix               = utils.KeyFromStr("addr_")
+	dustAmtPrefix            = utils.KeyFromStr("dust_")
+	signedTxPrefix           = utils.KeyFromStr("signed_tx_")
+	anyoneCanSpendVoutPrefix = utils.KeyFromStr("anyone_can_spend_vout_")
 
 	anyoneCanSpendAddressKey = utils.KeyFromStr("anyone_can_spend_address")
 	unsignedTxKey            = utils.KeyFromStr("unsigned_tx")
-	secondaryKeyVoutKey      = utils.KeyFromStr("secondary_key_vout")
 	latestSignedTxHashKey    = utils.KeyFromStr("latest_signed_tx_hash")
 
 	confirmedOutpointQueueName = "confirmed_outpoint"
@@ -108,18 +109,44 @@ func (k Keeper) GetNetwork(ctx sdk.Context) types.Network {
 	return network
 }
 
-// GetMinimumWithdrawalAmount returns the minimum withdrawal threshold
-func (k Keeper) GetMinimumWithdrawalAmount(ctx sdk.Context) btcutil.Amount {
-	var result btcutil.Amount
-	k.params.Get(ctx, types.KeyMinimumWithdrawalAmount, &result)
+// GetMinOutputAmount returns the minimum withdrawal threshold
+func (k Keeper) GetMinOutputAmount(ctx sdk.Context) btcutil.Amount {
+	var coin sdk.DecCoin
+	k.params.Get(ctx, types.KeyMinOutputAmount, &coin)
 
-	return result
+	satoshi, err := types.ToSatoshiCoin(coin)
+	if err != nil {
+		panic(err)
+	}
+
+	return btcutil.Amount(satoshi.Amount.Int64())
 }
 
 // GetMaxInputCount returns the max input count
 func (k Keeper) GetMaxInputCount(ctx sdk.Context) int64 {
 	var result int64
 	k.params.Get(ctx, types.KeyMaxInputCount, &result)
+
+	return result
+}
+
+// GetMaxSecondaryOutputAmount returns the max secondary output amount
+func (k Keeper) GetMaxSecondaryOutputAmount(ctx sdk.Context) btcutil.Amount {
+	var coin sdk.DecCoin
+	k.params.Get(ctx, types.KeyMaxSecondaryOutputAmount, &coin)
+
+	satoshi, err := types.ToSatoshiCoin(coin)
+	if err != nil {
+		panic(err)
+	}
+
+	return btcutil.Amount(satoshi.Amount.Int64())
+}
+
+// GetMasterKeyRetentionPeriod returns the prev master key cycle
+func (k Keeper) GetMasterKeyRetentionPeriod(ctx sdk.Context) int64 {
+	var result int64
+	k.params.Get(ctx, types.KeyMasterKeyRetentionPeriod, &result)
 
 	return result
 }
@@ -279,6 +306,21 @@ func (k Keeper) GetDustAmount(ctx sdk.Context, encodedAddress string) btcutil.Am
 // DeleteDustAmount deletes the dust amount for a destination bitcoin address
 func (k Keeper) DeleteDustAmount(ctx sdk.Context, encodedAddress string) {
 	k.getStore(ctx).Delete(dustAmtPrefix.Append(utils.LowerCaseKey(encodedAddress)))
+}
+
+// GetAnyoneCanSpendVout retrieves the vout of anyone-can-spend output of given transaction hash
+func (k Keeper) GetAnyoneCanSpendVout(ctx sdk.Context, txHash chainhash.Hash) (int64, bool) {
+	var result gogoprototypes.Int64Value
+	if ok := k.getStore(ctx).Get(anyoneCanSpendVoutPrefix.Append(utils.LowerCaseKey(txHash.String())), &result); !ok {
+		return 0, false
+	}
+
+	return result.Value, true
+}
+
+// SetAnyoneCanSpendVout sets the vout of anyone-can-spend output for the given transaction hash
+func (k Keeper) SetAnyoneCanSpendVout(ctx sdk.Context, txHash chainhash.Hash, vout int64) {
+	k.getStore(ctx).Set(anyoneCanSpendVoutPrefix.Append(utils.LowerCaseKey(txHash.String())), &gogoprototypes.Int64Value{Value: int64(vout)})
 }
 
 func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {

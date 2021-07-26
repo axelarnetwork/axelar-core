@@ -43,6 +43,7 @@ message AddressInfo {
   AddressRole role = 2;
   bytes redeem_script = 3;
   string key_id = 4 [ (gogoproto.customname) = "KeyID" ];
+  uint32 max_sig_count = 5;
 }
 
 message Network { string name = 1; }

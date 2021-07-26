@@ -1,17 +1,17 @@
-## axelard query bitcoin master-address
+## axelard query bitcoin secondary-address
 
-Returns the bitcoin address of the current master key, and optionally the key's ID
+Returns the bitcoin consolidation address of the current secondary key, and optionally the key's ID
 
 ```
-axelard query bitcoin master-address [flags]
+axelard query bitcoin secondary-address [flags]
 ```
 
 ### Options
 
 ```
       --height int       Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help             help for master-address
-      --include-key-id   include the current master key ID in the output
+  -h, --help             help for secondary-address
+      --include-key-id   include the current secondary key ID in the output
       --node string      <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 

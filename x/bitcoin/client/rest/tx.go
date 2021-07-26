@@ -3,6 +3,7 @@ package rest
 import (
 	"net/http"
 
+	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 
@@ -21,8 +22,8 @@ const (
 	TxSignPendingTransfersTx = "sign"
 
 	QueryDepositAddress           = keeper.QDepositAddress
-	QueryMasterAddress            = keeper.QMasterAddress
-	QueryKeyConsolidationAddress  = keeper.QKeyConsolidationAddress
+	QueryMasterAddress            = keeper.QSecondaryConsolidationAddress
+	QueryKeyConsolidationAddress  = keeper.QKeySecondaryConsolidationAddress
 	QueryNextMasterKeyID          = keeper.QNextMasterKeyID
 	QueryGetConsolidationTx       = keeper.QConsolidationTx
 	QueryGetPayForConsolidationTx = keeper.QPayForConsolidationTx
@@ -38,7 +39,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
 	registerQuery(QueryHandlerDepositAddress(cliCtx), QueryDepositAddress, clientUtils.PathVarChain, clientUtils.PathVarEthereumAddress)
-	registerQuery(QueryHandlerMasterAddress(cliCtx), QueryMasterAddress)
+	registerQuery(QueryHandlerSecondaryConsolidationAddress(cliCtx), QueryMasterAddress)
 	registerQuery(QueryHandlerKeyConsolidationAddress(cliCtx), QueryKeyConsolidationAddress, clientUtils.PathVarKeyID)
 	registerQuery(QueryHandlerNextMasterKeyID(cliCtx), QueryNextMasterKeyID)
 	registerQuery(QueryHandlerGetConsolidationTx(cliCtx), QueryGetConsolidationTx)
@@ -60,8 +61,9 @@ type ReqConfirmOutPoint struct {
 
 // ReqSignPendingTransfersTx represents a request to sign pending token transfers
 type ReqSignPendingTransfersTx struct {
-	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
-	KeyID   string       `json:"key_id" yaml:"key_id"`
+	BaseReq         rest.BaseReq `json:"base_req" yaml:"base_req"`
+	KeyID           string       `json:"key_id" yaml:"key_id"`
+	MasterKeyAmount string       `json:"master_key_amount" yaml:"master_key_amount"`
 }
 
 // TxHandlerSignPendingTransfersTx returns the handler to sign pending transfers to Bitcoin
@@ -81,7 +83,13 @@ func TxHandlerSignPendingTransfersTx(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewSignPendingTransfersRequest(fromAddr, req.KeyID)
+		masterKeyAmount, err := types.ParseSatoshi(req.MasterKeyAmount)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		msg := types.NewSignPendingTransfersRequest(fromAddr, req.KeyID, btcutil.Amount(masterKeyAmount.Amount.Int64()))
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

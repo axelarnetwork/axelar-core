@@ -42,7 +42,7 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, k types.BTCKeeper, si
 	k.Logger(ctx).Debug("checking for completed signatures")
 
 	// Assemble transaction with signatures
-	var sigs []btcec.Signature
+	var sigs [][]btcec.Signature
 	for i, in := range outpointsToSign {
 		hash, err := txscript.CalcWitnessSigHash(in.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, i, int64(in.Amount))
 		if err != nil {
@@ -56,7 +56,8 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, k types.BTCKeeper, si
 			k.Logger(ctx).Debug(fmt.Sprintf("signature for tx %s not yet found", sigID))
 			return nil
 		}
-		sigs = append(sigs, btcec.Signature{R: sig.R, S: sig.S})
+		// TODO: handle multiple signatures per input
+		sigs = append(sigs, []btcec.Signature{{R: sig.R, S: sig.S}})
 	}
 
 	tx, err = types.AssembleBtcTx(tx, outpointsToSign, sigs)
@@ -73,6 +74,7 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, k types.BTCKeeper, si
 	}
 
 	txHash := tx.TxHash()
+	anyoneCanSpentAddress := k.GetAnyoneCanSpendAddress(ctx).GetAddress().EncodeAddress()
 
 	// Confirm all outpoints that axelar controls the keys of
 	for i, output := range tx.TxOut {
@@ -86,13 +88,19 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, k types.BTCKeeper, si
 			continue
 		}
 
-		address, ok := k.GetAddress(ctx, addresses[0].EncodeAddress())
+		address := addresses[0].EncodeAddress()
+
+		if address == anyoneCanSpentAddress {
+			k.SetAnyoneCanSpendVout(ctx, txHash, int64(i))
+		}
+
+		addressInfo, ok := k.GetAddress(ctx, address)
 		if !ok {
 			continue
 		}
 
-		outpointInfo := types.NewOutPointInfo(wire.NewOutPoint(&txHash, uint32(i)), btcutil.Amount(output.Value), address.Address)
-		k.SetConfirmedOutpointInfo(ctx, address.KeyID, outpointInfo)
+		outpointInfo := types.NewOutPointInfo(wire.NewOutPoint(&txHash, uint32(i)), btcutil.Amount(output.Value), addressInfo.Address)
+		k.SetConfirmedOutpointInfo(ctx, addressInfo.KeyID, outpointInfo)
 
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent(types.EventTypeOutpointConfirmation,

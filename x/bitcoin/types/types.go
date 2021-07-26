@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg"
@@ -190,10 +191,8 @@ type Output struct {
 // RedeemScript represents the script that is used to redeem a transaction that spent to the address derived from the script
 type RedeemScript []byte
 
-// createCrossChainRedeemScript generates a redeem script unique to the given keys and cross-chain address
-func createCrossChainRedeemScript(pk1 btcec.PublicKey, pk2 btcec.PublicKey, crossAddr nexus.CrossChainAddress) RedeemScript {
-	nonce := btcutil.Hash160([]byte(crossAddr.String()))
-
+// createMultisigScript creates a 1-of-2 multisig script with a nonce providing uniqueness
+func createMultisigScript(pubKey1 btcec.PublicKey, pubKey2 btcec.PublicKey, nonce []byte) RedeemScript {
 	// the UTXOs sent to deposit addresses can be spent by both the master and secondary keys
 	// therefore the redeem script requires a 1-of-2 multisig
 	redeemScript, err := txscript.NewScriptBuilder().
@@ -202,8 +201,8 @@ func createCrossChainRedeemScript(pk1 btcec.PublicKey, pk2 btcec.PublicKey, cros
 		AddOp(txscript.OP_0).
 		AddOp(txscript.OP_SWAP).
 		AddOp(txscript.OP_1).
-		AddData(pk1.SerializeCompressed()).
-		AddData(pk2.SerializeCompressed()).
+		AddData(pubKey1.SerializeCompressed()).
+		AddData(pubKey2.SerializeCompressed()).
 		AddOp(txscript.OP_2).
 		AddOp(txscript.OP_CHECKMULTISIG).
 		AddData(nonce).
@@ -232,10 +231,10 @@ func createAnyoneCanSpendRedeemScript() RedeemScript {
 	return redeemScript
 }
 
-// CreateMasterRedeemScript generates a redeem script unique to the given key
-func CreateMasterRedeemScript(pk btcec.PublicKey) RedeemScript {
+// createP2pkScript generates a redeem script unique to the given key
+func createP2pkScript(pubKey btcec.PublicKey) RedeemScript {
 	redeemScript, err := txscript.NewScriptBuilder().
-		AddData(pk.SerializeCompressed()).
+		AddData(pubKey.SerializeCompressed()).
 		AddOp(txscript.OP_CHECKSIG).
 		Script()
 	// The script builder only returns an error if the script is non-canonical.
@@ -247,8 +246,57 @@ func CreateMasterRedeemScript(pk btcec.PublicKey) RedeemScript {
 	return redeemScript
 }
 
-// CreateP2WSHAddress creates a SeqWit script address based on a redeem script
-func CreateP2WSHAddress(script RedeemScript, network Network) *btcutil.AddressWitnessScriptHash {
+func createTimelockScript(pubKey1 btcec.PublicKey, pubKey2 btcec.PublicKey, pubKey3 btcec.PublicKey, lockedUntil time.Time) RedeemScript {
+	redeemScript, err := txscript.NewScriptBuilder().
+		AddOp(txscript.OP_DEPTH).
+		AddOp(txscript.OP_2).
+		AddOp(txscript.OP_EQUAL).
+		AddOp(txscript.OP_IF).
+		// if two signatures exist on the stack
+		AddOp(txscript.OP_2DUP).
+		AddOp(txscript.OP_0).
+		AddOp(txscript.OP_0).
+		AddOp(txscript.OP_2SWAP).
+		AddOp(txscript.OP_2).
+		AddData(pubKey1.SerializeCompressed()).
+		AddData(pubKey2.SerializeCompressed()).
+		AddData(pubKey3.SerializeCompressed()).
+		AddOp(txscript.OP_3).
+		AddOp(txscript.OP_CHECKMULTISIGVERIFY).
+		AddOp(txscript.OP_DROP).
+		AddData(pubKey3.SerializeCompressed()).
+		AddOp(txscript.OP_CHECKSIGVERIFY).
+		AddOp(txscript.OP_DROP).
+		AddOp(txscript.OP_TRUE).
+		// if one signature exists on the stack
+		AddOp(txscript.OP_ELSE).
+		AddOp(txscript.OP_DEPTH).
+		AddOp(txscript.OP_1).
+		AddOp(txscript.OP_EQUALVERIFY).
+		AddInt64(lockedUntil.Unix()).
+		AddOp(txscript.OP_CHECKLOCKTIMEVERIFY).
+		AddOp(txscript.OP_DROP).
+		AddOp(txscript.OP_0).
+		AddOp(txscript.OP_SWAP).
+		AddOp(txscript.OP_1).
+		AddData(pubKey1.SerializeCompressed()).
+		AddData(pubKey2.SerializeCompressed()).
+		AddOp(txscript.OP_2).
+		AddOp(txscript.OP_CHECKMULTISIG).
+		AddOp(txscript.OP_ENDIF).
+		Script()
+
+	// The script builder only returns an error if the script is non-canonical.
+	// Since we want to build canonical scripts and the template is predefined, an error here means the template is wrong,
+	// i.e. it's a bug.
+	if err != nil {
+		panic(err)
+	}
+	return redeemScript
+}
+
+// createP2wshAddress creates a SeqWit script address based on a redeem script
+func createP2wshAddress(script RedeemScript, network Network) *btcutil.AddressWitnessScriptHash {
 	hash := sha256.Sum256(script)
 	// hash is 32 bit long, so this cannot throw an error if there is no bug
 	addr, err := btcutil.NewAddressWitnessScriptHash(hash[:], network.Params())
@@ -258,45 +306,65 @@ func CreateP2WSHAddress(script RedeemScript, network Network) *btcutil.AddressWi
 	return addr
 }
 
-// NewConsolidationAddress creates a new address used to consolidate all unspent outpoints
-func NewConsolidationAddress(pk tss.Key, network Network) AddressInfo {
-	script := CreateMasterRedeemScript(btcec.PublicKey(pk.Value))
-	address := CreateP2WSHAddress(script, network)
+// NewMasterConsolidationAddress returns a p2wsh-wrapped address that is
+// 1) spendable by the ((currMasterKey or oldMasterKey) and externalKey) before the timelock elapses
+// 2) spendable by the (currMasterKey or oldMasterKey) after the timelock elapses
+func NewMasterConsolidationAddress(currMasterKey tss.Key, oldMasterKey tss.Key, externalKey tss.Key, lockedUntil time.Time, network Network) AddressInfo {
+	script := createTimelockScript(btcec.PublicKey(currMasterKey.Value), btcec.PublicKey(oldMasterKey.Value), btcec.PublicKey(externalKey.Value), lockedUntil)
+	address := createP2wshAddress(script, network)
 
 	return AddressInfo{
 		RedeemScript: script,
 		Address:      address.EncodeAddress(),
 		Role:         Consolidation,
-		KeyID:        pk.ID,
+		KeyID:        currMasterKey.ID,
+		MaxSigCount:  2,
 	}
 }
 
-// NewLinkedAddress creates a new address to make a deposit which can be transfered to another blockchain
-func NewLinkedAddress(masterKey tss.Key, secondaryKey tss.Key, network Network, recipient nexus.CrossChainAddress) AddressInfo {
-	script := createCrossChainRedeemScript(
+// NewSecondaryConsolidationAddress returns a p2wsh-wrapped p2pk address for the secondary key
+func NewSecondaryConsolidationAddress(secondaryKey tss.Key, network Network) AddressInfo {
+	script := createP2pkScript(btcec.PublicKey(secondaryKey.Value))
+	address := createP2wshAddress(script, network)
+
+	return AddressInfo{
+		RedeemScript: script,
+		Address:      address.EncodeAddress(),
+		Role:         Consolidation,
+		KeyID:        secondaryKey.ID,
+		MaxSigCount:  1,
+	}
+}
+
+// NewDepositAddress returns a p2wsh-wrapped 1-of-2 multisig address that is spendable by the secondary or master key
+// with a recipient cross chain address to provide uniqueness
+func NewDepositAddress(masterKey tss.Key, secondaryKey tss.Key, network Network, recipient nexus.CrossChainAddress) AddressInfo {
+	script := createMultisigScript(
 		btcec.PublicKey(masterKey.Value),
 		btcec.PublicKey(secondaryKey.Value),
-		recipient,
+		btcutil.Hash160([]byte(recipient.String())),
 	)
-	address := CreateP2WSHAddress(script, network)
+	address := createP2wshAddress(script, network)
 
 	return AddressInfo{
 		RedeemScript: script,
 		Address:      address.EncodeAddress(),
 		Role:         Deposit,
 		KeyID:        secondaryKey.ID,
+		MaxSigCount:  1,
 	}
 }
 
-// NewAnyoneCanSpendAddress creates a p2wsh address that anyone can spend
+// NewAnyoneCanSpendAddress returns a p2wsh-wrapped anyone-can-spend address
 func NewAnyoneCanSpendAddress(network Network) AddressInfo {
 	script := createAnyoneCanSpendRedeemScript()
-	address := CreateP2WSHAddress(script, network)
+	address := createP2wshAddress(script, network)
 
 	return AddressInfo{
 		RedeemScript: script,
 		Address:      address.EncodeAddress(),
 		Role:         None,
+		MaxSigCount:  0,
 	}
 }
 
@@ -342,10 +410,14 @@ type OutPointToSign struct {
 
 // AssembleBtcTx assembles the unsigned transaction and given signature.
 // Returns an error if the resulting signed Bitcoin transaction is invalid.
-func AssembleBtcTx(rawTx *wire.MsgTx, outpointsToSign []OutPointToSign, sigs []btcec.Signature) (*wire.MsgTx, error) {
+func AssembleBtcTx(rawTx *wire.MsgTx, outpointsToSign []OutPointToSign, sigs [][]btcec.Signature) (*wire.MsgTx, error) {
 	for i, in := range outpointsToSign {
-		sigBytes := append(sigs[i].Serialize(), byte(txscript.SigHashAll))
-		rawTx.TxIn[i].Witness = wire.TxWitness{sigBytes, in.RedeemScript}
+		witness := wire.TxWitness{}
+
+		for _, sig := range sigs[i] {
+			witness = append(witness, append(sig.Serialize(), byte(txscript.SigHashAll)))
+		}
+		rawTx.TxIn[i].Witness = append(witness, in.RedeemScript)
 
 		payScript, err := txscript.PayToAddrScript(in.AddressInfo.GetAddress())
 		if err != nil {
@@ -384,9 +456,16 @@ func MustDecodeTx(bz []byte) wire.MsgTx {
 
 // EstimateTxSize calculates the upper limit of the size in byte of given transaction after all witness data is attached
 func EstimateTxSize(tx wire.MsgTx, outpointsToSign []OutPointToSign) int64 {
+	zeroSigBytes := make([]byte, maxDerSigLength)
+
 	for i, input := range outpointsToSign {
-		zeroSigBytes := make([]byte, maxDerSigLength)
-		tx.TxIn[i].Witness = wire.TxWitness{zeroSigBytes, input.RedeemScript}
+		var witness wire.TxWitness
+
+		for j := 0; j < int(input.MaxSigCount); j++ {
+			witness = append(witness, zeroSigBytes)
+		}
+
+		tx.TxIn[i].Witness = append(witness, input.RedeemScript)
 	}
 
 	return mempool.GetTxVirtualSize(btcutil.NewTx(&tx))
@@ -400,14 +479,8 @@ const (
 	Bitcoin = "bitcoin"
 )
 
-// ParseSatoshi parses a string to Satoshi, returning errors if invalid. Inputs in Bitcoin are automatically converted.
-// This returns an error on an empty string as well.
-func ParseSatoshi(rawCoin string) (sdk.Coin, error) {
-	coin, err := sdk.ParseDecCoin(rawCoin)
-	if err != nil {
-		return sdk.Coin{}, fmt.Errorf("could not parse coin string")
-	}
-
+// ToSatoshiCoin converts the given bitcoin or satoshi dec coin to the equivalent satoshi coin
+func ToSatoshiCoin(coin sdk.DecCoin) (sdk.Coin, error) {
 	switch coin.Denom {
 	case Sat, Satoshi:
 		break
@@ -421,7 +494,19 @@ func ParseSatoshi(rawCoin string) (sdk.Coin, error) {
 	if !remainder.IsZero() {
 		return sdk.Coin{}, fmt.Errorf("amount in satoshi must be an integer value")
 	}
+
 	return sat, nil
+}
+
+// ParseSatoshi parses a string to Satoshi, returning errors if invalid. Inputs in Bitcoin are automatically converted.
+// This returns an error on an empty string as well.
+func ParseSatoshi(rawCoin string) (sdk.Coin, error) {
+	coin, err := sdk.ParseDecCoin(rawCoin)
+	if err != nil {
+		return sdk.Coin{}, fmt.Errorf("could not parse coin string")
+	}
+
+	return ToSatoshiCoin(coin)
 }
 
 // SetTx sets the underlying tx
@@ -437,4 +522,13 @@ func (m Transaction) GetTx() *wire.MsgTx {
 
 	result := MustDecodeTx(m.Tx)
 	return &result
+}
+
+// EnableTimelockAndRBF enables timelock(https://en.bitcoin.it/wiki/Timelock) and replace-by-fee(https://github.com/bitcoin/bips/blob/master/bip-0125.mediawiki) on the given transaction.
+func EnableTimelockAndRBF(tx *wire.MsgTx) *wire.MsgTx {
+	for i := range tx.TxIn {
+		tx.TxIn[i].Sequence = wire.MaxTxInSequenceNum - 1
+	}
+
+	return tx
 }

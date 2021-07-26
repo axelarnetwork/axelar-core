@@ -13,7 +13,7 @@ func InitGenesis(ctx sdk.Context, k types.BTCKeeper, g types.GenesisState) {
 	k.SetParams(ctx, g.Params)
 
 	// expose some parameters from genesis of btc module
-	minAmount := int64(k.GetMinimumWithdrawalAmount(ctx))
+	minAmount := int64(k.GetMinOutputAmount(ctx))
 	telemetry.SetGauge(float32(minAmount), "btc", "min_withdrawal_mount")
 }
 

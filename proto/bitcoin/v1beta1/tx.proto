@@ -36,6 +36,8 @@ message SignPendingTransfersRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string key_id = 2 [ (gogoproto.customname) = "KeyID" ];
+  int64 master_key_amount = 3
+      [ (gogoproto.casttype) = "github.com/btcsuite/btcutil.Amount" ];
 }
 
 message SignPendingTransfersResponse {};
@@ -50,3 +52,22 @@ message VoteConfirmOutpointRequest {
 }
 
 message VoteConfirmOutpointResponse { string status = 1; };
+
+message RegisterExternalKeyRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string key_id = 2 [ (gogoproto.customname) = "KeyID" ];
+  bytes pub_key = 3;
+}
+
+message RegisterExternalKeyResponse {};
+
+message SignMasterConsolidationTransactionRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string key_id = 2 [ (gogoproto.customname) = "KeyID" ];
+  int64 secondary_key_amount = 3
+      [ (gogoproto.casttype) = "github.com/btcsuite/btcutil.Amount" ];
+}
+
+message SignMasterConsolidationTransactionResponse {}

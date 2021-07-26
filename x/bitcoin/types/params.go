@@ -3,20 +3,26 @@ package types
 import (
 	"fmt"
 
-	"github.com/btcsuite/btcutil"
+	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
+const (
+	dustLimit = 546
+)
+
 // Parameter keys
 var (
-	KeyConfirmationHeight      = []byte("confirmationHeight")
-	KeyNetwork                 = []byte("network")
-	KeyRevoteLockingPeriod     = []byte("RevoteLockingPeriod")
-	KeySigCheckInterval        = []byte("KeySigCheckInterval")
-	KeyMinimumWithdrawalAmount = []byte("KeyMinimumWithdrawalAmount")
-	KeyMaxInputCount           = []byte("KeyMaxInputCount")
+	KeyConfirmationHeight       = []byte("confirmationHeight")
+	KeyNetwork                  = []byte("network")
+	KeyRevoteLockingPeriod      = []byte("RevoteLockingPeriod")
+	KeySigCheckInterval         = []byte("KeySigCheckInterval")
+	KeyMinOutputAmount          = []byte("KeyMinOutputAmount")
+	KeyMaxInputCount            = []byte("KeyMaxInputCount")
+	KeyMaxSecondaryOutputAmount = []byte("KeyMaxSecondaryOutputAmount")
+	KeyMasterKeyRetentionPeriod = []byte("KeyMasterKeyRetentionPeriod")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -27,12 +33,14 @@ func KeyTable() paramtypes.KeyTable {
 // DefaultParams returns the module's parameter set initialized with default values
 func DefaultParams() Params {
 	return Params{
-		ConfirmationHeight:      1,
-		Network:                 Network{Name: Regtest.Name},
-		RevoteLockingPeriod:     50,
-		SigCheckInterval:        10,
-		MinimumWithdrawalAmount: 5000,
-		MaxInputCount:           50,
+		ConfirmationHeight:       1,
+		Network:                  Network{Name: Regtest.Name},
+		RevoteLockingPeriod:      50,
+		SigCheckInterval:         10,
+		MinOutputAmount:          sdktypes.NewDecCoin(Satoshi, sdktypes.NewInt(1000)),
+		MaxInputCount:            50,
+		MaxSecondaryOutputAmount: sdktypes.NewDecCoin(Bitcoin, sdktypes.NewInt(300)),
+		MasterKeyRetentionPeriod: 8,
 	}
 }
 
@@ -50,8 +58,10 @@ func (m *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(KeyNetwork, &m.Network, validateNetwork),
 		paramtypes.NewParamSetPair(KeyRevoteLockingPeriod, &m.RevoteLockingPeriod, validateRevoteLockingPeriod),
 		paramtypes.NewParamSetPair(KeySigCheckInterval, &m.SigCheckInterval, validateSigCheckInterval),
-		paramtypes.NewParamSetPair(KeyMinimumWithdrawalAmount, &m.MinimumWithdrawalAmount, validateMinimumWithdrawalAmount),
+		paramtypes.NewParamSetPair(KeyMinOutputAmount, &m.MinOutputAmount, validateMinOutputAmount),
 		paramtypes.NewParamSetPair(KeyMaxInputCount, &m.MaxInputCount, validateMaxInputCount),
+		paramtypes.NewParamSetPair(KeyMaxSecondaryOutputAmount, &m.MaxSecondaryOutputAmount, validateMaxSecondaryOutputAmount),
+		paramtypes.NewParamSetPair(KeyMasterKeyRetentionPeriod, &m.MasterKeyRetentionPeriod, validateMasterKeyRetentionPeriod),
 	}
 }
 
@@ -87,15 +97,19 @@ func validateRevoteLockingPeriod(period interface{}) error {
 	return nil
 }
 
-func validateMinimumWithdrawalAmount(amount interface{}) error {
-	i, ok := amount.(btcutil.Amount)
+func validateMinOutputAmount(amount interface{}) error {
+	coin, ok := amount.(sdktypes.DecCoin)
 	if !ok {
-		return fmt.Errorf("invalid parameter type for minimum withdrawal amount: %T", i)
+		return fmt.Errorf("invalid parameter type for min output amount: %T", coin)
 	}
 
-	// Dust limit is 546 satoshis for non-SegWit, 294 satoshis for SegWit
-	if i <= 546 {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, " minimum withdrawal amount must be greater than 0")
+	satoshi, err := ToSatoshiCoin(coin)
+	if err != nil {
+		return sdkerrors.Wrapf(types.ErrInvalidGenesis, "invalid min output amount with error %s", err.Error())
+	}
+
+	if satoshi.Amount.LT(sdktypes.NewInt(dustLimit)) {
+		return sdkerrors.Wrapf(types.ErrInvalidGenesis, "min output amount has to be greater than %d", dustLimit)
 	}
 
 	return nil
@@ -127,6 +141,37 @@ func validateMaxInputCount(maxInputCount interface{}) error {
 	return nil
 }
 
+func validateMaxSecondaryOutputAmount(amount interface{}) error {
+	coin, ok := amount.(sdktypes.DecCoin)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for max secondary output amount: %T", coin)
+	}
+
+	satoshi, err := ToSatoshiCoin(coin)
+	if err != nil {
+		return sdkerrors.Wrapf(types.ErrInvalidGenesis, "invalid max secondary output amount with error %s", err.Error())
+	}
+
+	if satoshi.Amount.LT(sdktypes.NewInt(dustLimit)) {
+		return sdkerrors.Wrapf(types.ErrInvalidGenesis, "max secondary output amount has to be greater than %d", dustLimit)
+	}
+
+	return nil
+}
+
+func validateMasterKeyRetentionPeriod(masterKeyRetentionPeriod interface{}) error {
+	m, ok := masterKeyRetentionPeriod.(int64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for master key retention period: %T", masterKeyRetentionPeriod)
+	}
+
+	if m <= 0 {
+		return fmt.Errorf("master key retention period has to be greater than 0")
+	}
+
+	return nil
+}
+
 // Validate checks the validity of the values of the parameter set
 func (m Params) Validate() error {
 	if err := validateConfirmationHeight(m.ConfirmationHeight); err != nil {
@@ -144,11 +189,19 @@ func (m Params) Validate() error {
 		return err
 	}
 
-	if err := validateMinimumWithdrawalAmount(m.MinimumWithdrawalAmount); err != nil {
+	if err := validateMinOutputAmount(m.MinOutputAmount); err != nil {
 		return err
 	}
 
 	if err := validateMaxInputCount(m.MaxInputCount); err != nil {
+		return err
+	}
+
+	if err := validateMaxSecondaryOutputAmount(m.MaxSecondaryOutputAmount); err != nil {
+		return err
+	}
+
+	if err := validateMasterKeyRetentionPeriod(m.MasterKeyRetentionPeriod); err != nil {
 		return err
 	}
 

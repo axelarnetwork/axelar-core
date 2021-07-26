@@ -32,6 +32,8 @@ func KeyRoleFromSimpleStr(str string) (KeyRole, error) {
 		return MasterKey, nil
 	case SecondaryKey.SimpleString():
 		return SecondaryKey, nil
+	case ExternalKey.SimpleString():
+		return ExternalKey, nil
 	default:
 		return -1, fmt.Errorf("invalid key role %s", str)
 	}
@@ -44,6 +46,8 @@ func (x KeyRole) SimpleString() string {
 		return "master"
 	case SecondaryKey:
 		return "secondary"
+	case ExternalKey:
+		return "external"
 	default:
 		return "unknown"
 	}
@@ -52,7 +56,7 @@ func (x KeyRole) SimpleString() string {
 // Validate validates the KeyRole
 func (x KeyRole) Validate() error {
 	switch x {
-	case MasterKey, SecondaryKey:
+	case MasterKey, SecondaryKey, ExternalKey:
 		return nil
 	default:
 		return fmt.Errorf("invalid key role %d", x)
@@ -101,6 +105,10 @@ func (m KeyRequirement) Validate() error {
 
 	if err := m.KeyRole.Validate(); err != nil {
 		return err
+	}
+
+	if m.KeyRole == ExternalKey {
+		return nil
 	}
 
 	if m.MinValidatorSubsetSize <= 0 {

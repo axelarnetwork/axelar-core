@@ -35,7 +35,24 @@ service MsgService {
   rpc SignPendingTransfers(bitcoin.v1beta1.SignPendingTransfersRequest)
       returns (bitcoin.v1beta1.SignPendingTransfersResponse) {
     option (google.api.http) = {
-      post : "/axelar/bitcoin/sign"
+      post : "/axelar/bitcoin/sign-pending-transfers"
+      body : "*"
+    };
+  }
+
+  rpc SignMasterConsolidationTransaction(
+      bitcoin.v1beta1.SignMasterConsolidationTransactionRequest)
+      returns (bitcoin.v1beta1.SignMasterConsolidationTransactionResponse) {
+    option (google.api.http) = {
+      post : "/axelar/bitcoin/sign-master-consolidation-transaction"
+      body : "*"
+    };
+  }
+
+  rpc RegisterExternalKey(bitcoin.v1beta1.RegisterExternalKeyRequest)
+      returns (bitcoin.v1beta1.RegisterExternalKeyResponse) {
+    option (google.api.http) = {
+      post : "/axelar/bitcoin/register-external-key"
       body : "*"
     };
   }
