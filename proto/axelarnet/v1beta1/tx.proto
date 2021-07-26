@@ -15,6 +15,7 @@ message LinkRequest {
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string recipient_addr = 2;
   string recipient_chain = 3;
+  string symbol = 4;
 }
 
 message LinkResponse { string deposit_addr = 2; };
@@ -26,6 +27,7 @@ message ConfirmDepositRequest {
   string chain = 2;
   bytes tx_id = 3 [ (gogoproto.customname) = "TxID" ];
   cosmos.base.v1beta1.Coin token = 4 [ (gogoproto.nullable) = false ];
+
   bytes burner_address = 5
       [ (gogoproto.casttype) =
             "github.com/cosmos/cosmos-sdk/types.AccAddress" ];

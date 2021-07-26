@@ -4,6 +4,20 @@
 
 ## Table of Contents
 
+- [axelarnet/v1beta1/genesis.proto](#axelarnet/v1beta1/genesis.proto)
+    - [GenesisState](#axelarnet.v1beta1.GenesisState)
+  
+- [axelarnet/v1beta1/tx.proto](#axelarnet/v1beta1/tx.proto)
+    - [ConfirmDepositRequest](#axelarnet.v1beta1.ConfirmDepositRequest)
+    - [ConfirmDepositResponse](#axelarnet.v1beta1.ConfirmDepositResponse)
+    - [ExecutePendingTransfersRequest](#axelarnet.v1beta1.ExecutePendingTransfersRequest)
+    - [ExecutePendingTransfersResponse](#axelarnet.v1beta1.ExecutePendingTransfersResponse)
+    - [LinkRequest](#axelarnet.v1beta1.LinkRequest)
+    - [LinkResponse](#axelarnet.v1beta1.LinkResponse)
+  
+- [axelarnet/v1beta1/service.proto](#axelarnet/v1beta1/service.proto)
+    - [MsgService](#axelarnet.v1beta1.MsgService)
+  
 - [tss/exported/v1beta1/types.proto](#tss/exported/v1beta1/types.proto)
     - [KeyRequirement](#tss.exported.v1beta1.KeyRequirement)
   
@@ -187,6 +201,165 @@
     - [TalliedVote](#vote.v1beta1.TalliedVote)
   
 - [Scalar Value Types](#scalar-value-types)
+
+
+
+<a name="axelarnet/v1beta1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelarnet/v1beta1/genesis.proto
+
+
+
+<a name="axelarnet.v1beta1.GenesisState"></a>
+
+### GenesisState
+
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelarnet/v1beta1/tx.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelarnet/v1beta1/tx.proto
+
+
+
+<a name="axelarnet.v1beta1.ConfirmDepositRequest"></a>
+
+### ConfirmDepositRequest
+MsgConfirmDeposit represents a deposit confirmation message
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `token` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `burner_address` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.ConfirmDepositResponse"></a>
+
+### ConfirmDepositResponse
+
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.ExecutePendingTransfersRequest"></a>
+
+### ExecutePendingTransfersRequest
+MsgExecutePendingTransfers represents a message to trigger transfer all
+pending transfers
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.ExecutePendingTransfersResponse"></a>
+
+### ExecutePendingTransfersResponse
+
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.LinkRequest"></a>
+
+### LinkRequest
+MsgLink represents a message to link a cross-chain address to an Axelar
+address
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `recipient_addr` | [string](#string) |  |  |
+| `recipient_chain` | [string](#string) |  |  |
+| `symbol` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.LinkResponse"></a>
+
+### LinkResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `deposit_addr` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelarnet/v1beta1/service.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelarnet/v1beta1/service.proto
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="axelarnet.v1beta1.MsgService"></a>
+
+### MsgService
+Msg defines the evm Msg service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `Link` | [LinkRequest](#axelarnet.v1beta1.LinkRequest) | [LinkResponse](#axelarnet.v1beta1.LinkResponse) |  | POST|/axelar/cosmos/link/{recipient_chain}|
+| `ConfirmDeposit` | [ConfirmDepositRequest](#axelarnet.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#axelarnet.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/cosmos/confirm-deposit|
+| `ExecutePendingTransfers` | [ExecutePendingTransfersRequest](#axelarnet.v1beta1.ExecutePendingTransfersRequest) | [ExecutePendingTransfersResponse](#axelarnet.v1beta1.ExecutePendingTransfersResponse) |  | POST|/axelar/cosmos/execute-pending-transfers|
+
+ <!-- end services -->
 
 
 

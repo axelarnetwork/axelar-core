@@ -5,6 +5,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 
+	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -24,7 +25,7 @@ func KeyTable() params.KeyTable {
 // DefaultParams creates the default genesis parameters
 func DefaultParams() Params {
 	return Params{
-		Chains: []exported.Chain{btc.Bitcoin, evm.Ethereum},
+		Chains: []exported.Chain{btc.Bitcoin, evm.Ethereum, axelarnet.Axelar},
 	}
 }
 

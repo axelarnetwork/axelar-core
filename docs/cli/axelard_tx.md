@@ -26,6 +26,7 @@ axelard tx [flags]
 ### SEE ALSO
 
 - [axelard](axelard.md)	 - Axelar App
+- [axelard tx axelarnet](axelard_tx_axelarnet.md)	 - axelarnet transactions subcommands
 - [axelard tx bank](axelard_tx_bank.md)	 - Bank transaction subcommands
 - [axelard tx bitcoin](axelard_tx_bitcoin.md)	 - bitcoin transactions subcommands
 - [axelard tx crisis](axelard_tx_crisis.md)	 - Crisis transactions subcommands
