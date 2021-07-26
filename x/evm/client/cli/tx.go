@@ -131,8 +131,8 @@ func GetCmdConfirmChain() *cobra.Command {
 // GetCmdConfirmERC20TokenDeployment returns the cli command to confirm a ERC20 token deployment
 func GetCmdConfirmERC20TokenDeployment() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "confirm-erc20-token [chain] [txID] [symbol]",
-		Short: "Confirm an ERC20 token deployment in an EVM chain transaction for a given symbol of token and gateway address",
+		Use:   "confirm-erc20-token [chain] [origin chain] [txID]",
+		Short: "Confirm an ERC20 token deployment in an EVM chain transaction for a given native asset of some origin chain and gateway address",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
@@ -141,9 +141,9 @@ func GetCmdConfirmERC20TokenDeployment() *cobra.Command {
 			}
 
 			chain := args[0]
-			txID := common.HexToHash(args[1])
-			symbol := args[2]
-			msg := types.NewConfirmTokenRequest(cliCtx.GetFromAddress(), chain, symbol, txID)
+			originChain := args[1]
+			txID := common.HexToHash(args[2])
+			msg := types.NewConfirmTokenRequest(cliCtx.GetFromAddress(), chain, originChain, txID)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

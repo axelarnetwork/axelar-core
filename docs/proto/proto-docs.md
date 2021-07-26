@@ -1146,7 +1146,7 @@ MsgConfirmToken represents a token deploy confirmation message
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
-| `asset` | [string](#string) |  |  |
+| `origin_chain` | [string](#string) |  |  |
 
 
 
@@ -1561,7 +1561,7 @@ Msg defines the evm Msg service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `Link` | [LinkRequest](#evm.v1beta1.LinkRequest) | [LinkResponse](#evm.v1beta1.LinkResponse) |  | POST|/axelar/evm/link/{recipient_chain}|
 | `ConfirmChain` | [ConfirmChainRequest](#evm.v1beta1.ConfirmChainRequest) | [ConfirmChainResponse](#evm.v1beta1.ConfirmChainResponse) |  | POST|/axelar/evm/confirm-chain|
-| `ConfirmToken` | [ConfirmTokenRequest](#evm.v1beta1.ConfirmTokenRequest) | [ConfirmTokenResponse](#evm.v1beta1.ConfirmTokenResponse) |  | POST|/axelar/evm/confirm-erc20-deploy/{asset}|
+| `ConfirmToken` | [ConfirmTokenRequest](#evm.v1beta1.ConfirmTokenRequest) | [ConfirmTokenResponse](#evm.v1beta1.ConfirmTokenResponse) |  | POST|/axelar/evm/confirm-erc20-deploy|
 | `ConfirmDeposit` | [ConfirmDepositRequest](#evm.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#evm.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/evm/confirm-erc20-deposit|
 | `ConfirmTransferOwnership` | [ConfirmTransferOwnershipRequest](#evm.v1beta1.ConfirmTransferOwnershipRequest) | [ConfirmTransferOwnershipResponse](#evm.v1beta1.ConfirmTransferOwnershipResponse) |  | POST|/axelar/evm/confirm-transfer-ownership|
 | `VoteConfirmChain` | [VoteConfirmChainRequest](#evm.v1beta1.VoteConfirmChainRequest) | [VoteConfirmChainResponse](#evm.v1beta1.VoteConfirmChainResponse) |  | ||

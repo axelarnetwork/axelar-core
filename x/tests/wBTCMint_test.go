@@ -196,7 +196,7 @@ func Test_wBTC_mint(t *testing.T) {
 		}
 	}
 
-	confirmResult := <-chain.Submit(evmTypes.NewConfirmTokenRequest(randomSender(), "ethereum", "satoshi", txHash))
+	confirmResult := <-chain.Submit(evmTypes.NewConfirmTokenRequest(randomSender(), "ethereum", "bitcoin", txHash))
 	assert.NoError(t, confirmResult.Error)
 
 	if err := waitFor(listeners.ethTokenDone, 1); err != nil {

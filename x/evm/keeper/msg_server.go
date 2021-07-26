@@ -112,8 +112,13 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	if s.nexus.IsAssetRegistered(ctx, chain.Name, req.Asset) {
-		return nil, fmt.Errorf("token %s is already registered", req.Asset)
+	originChain, ok := s.nexus.GetChain(ctx, req.OriginChain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.OriginChain)
+	}
+
+	if s.nexus.IsAssetRegistered(ctx, chain.Name, originChain.NativeAsset) {
+		return nil, fmt.Errorf("token %s is already registered", originChain.NativeAsset)
 	}
 
 	keeper := s.ForChain(ctx, chain.Name)
@@ -123,7 +128,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	tokenAddr, err := keeper.GetTokenAddress(ctx, req.Asset, gatewayAddr)
+	tokenAddr, err := keeper.GetTokenAddress(ctx, originChain.NativeAsset, gatewayAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +143,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("no snapshot seqNo for key ID %s registered", keyID)
 	}
 
-	pollKey := vote.NewPollKey(types.ModuleName, req.TxID.Hex()+"_"+req.Asset)
+	pollKey := vote.NewPollKey(types.ModuleName, req.TxID.Hex()+"_"+originChain.NativeAsset)
 
 	period, ok := keeper.GetRevoteLockingPeriod(ctx)
 	if !ok {
@@ -149,13 +154,13 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, err
 	}
 
-	symbol, ok := keeper.GetTokenSymbol(ctx, req.Asset)
+	symbol, ok := keeper.GetTokenSymbol(ctx, originChain.NativeAsset)
 	if !ok {
-		return nil, fmt.Errorf("Could not retrieve symbol for token %s", req.Asset)
+		return nil, fmt.Errorf("Could not retrieve symbol for token %s", originChain.NativeAsset)
 	}
 
 	deploy := types.ERC20TokenDeployment{
-		Asset:        req.Asset,
+		Asset:        originChain.NativeAsset,
 		TokenAddress: types.Address(tokenAddr),
 	}
 	keeper.SetPendingTokenDeployment(ctx, pollKey, deploy)
@@ -173,7 +178,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),
 			sdk.NewAttribute(types.AttributeKeySymbol, symbol),
-			sdk.NewAttribute(types.AttributeKeyAsset, req.Asset),
+			sdk.NewAttribute(types.AttributeKeyAsset, originChain.NativeAsset),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
 			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
 		),

@@ -147,24 +147,6 @@ func request_MsgService_ConfirmToken_0(ctx context.Context, marshaler runtime.Ma
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["asset"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "asset")
-	}
-
-	protoReq.Asset, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "asset", err)
-	}
-
 	msg, err := client.ConfirmToken(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
@@ -180,24 +162,6 @@ func local_request_MsgService_ConfirmToken_0(ctx context.Context, marshaler runt
 	}
 	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["asset"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "asset")
-	}
-
-	protoReq.Asset, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "asset", err)
 	}
 
 	msg, err := server.ConfirmToken(ctx, &protoReq)
@@ -934,7 +898,7 @@ var (
 
 	pattern_MsgService_ConfirmChain_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "confirm-chain"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_ConfirmToken_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"axelar", "evm", "confirm-erc20-deploy", "asset"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_ConfirmToken_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "confirm-erc20-deploy"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_MsgService_ConfirmDeposit_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "confirm-erc20-deposit"}, "", runtime.AssumeColonVerbOpt(true)))
 

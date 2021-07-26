@@ -27,7 +27,7 @@ service MsgService {
 
   rpc ConfirmToken(ConfirmTokenRequest) returns (ConfirmTokenResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/confirm-erc20-deploy/{asset}"
+      post : "/axelar/evm/confirm-erc20-deploy"
       body : "*"
     };
   }

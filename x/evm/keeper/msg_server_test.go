@@ -501,7 +501,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		v = &evmMock.VoterMock{
 			InitializePollFunc: func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error { return nil },
 		}
-		chains := map[string]nexus.Chain{exported.Ethereum.Name: exported.Ethereum}
+		chains := map[string]nexus.Chain{btc.Bitcoin.Name: btc.Bitcoin, exported.Ethereum.Name: exported.Ethereum}
 		n = &evmMock.NexusMock{
 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 				c, ok := chains[chain]
@@ -519,10 +519,10 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		}
 
 		msg = &types.ConfirmTokenRequest{
-			Sender: rand.Bytes(20),
-			Chain:  evmChain,
-			TxID:   types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
-			Asset:  rand.StrBetween(5, 10),
+			Sender:      rand.Bytes(20),
+			Chain:       evmChain,
+			TxID:        types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+			OriginChain: btc.Bitcoin.Name,
 		}
 
 		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{})

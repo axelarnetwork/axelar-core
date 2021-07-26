@@ -198,7 +198,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		}
 	}
 
-	confirmResult1 := <-chain.Submit(evmTypes.NewConfirmTokenRequest(randomSender(), "ethereum", "satoshi", txHash))
+	confirmResult1 := <-chain.Submit(evmTypes.NewConfirmTokenRequest(randomSender(), "ethereum", "bitcoin", txHash))
 	assert.NoError(t, confirmResult1.Error)
 
 	if err := waitFor(listeners.ethTokenDone, 1); err != nil {

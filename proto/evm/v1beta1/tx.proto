@@ -47,7 +47,7 @@ message ConfirmTokenRequest {
     (gogoproto.customtype) = "Hash",
     (gogoproto.customname) = "TxID"
   ];
-  string asset = 4;
+  string origin_chain = 4;
 }
 
 message ConfirmTokenResponse {}
