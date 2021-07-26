@@ -40,7 +40,7 @@ const (
 	confirmedDepositPrefix = "confirmed_deposit_"
 	burnedDepositPrefix    = "burned_deposit_"
 	commandPrefix          = "command_"
-	symbolPrefix           = "symbol_"
+	assetPrefix            = "asset_"
 	burnerAddrPrefix       = "burnerAddr_"
 	tokenAddrPrefix        = "tokenAddr_"
 
@@ -213,22 +213,32 @@ func (k keeper) GetBurnerInfo(ctx sdk.Context, burnerAddr common.Address) *types
 	return &result
 }
 
-// GetTokenAddress calculates the token address given symbol and axelar gateway address
-func (k keeper) GetTokenAddress(ctx sdk.Context, symbol string, gatewayAddr common.Address) (common.Address, error) {
-	symbol = strings.ToLower(symbol)
+// GetTokenSymbol returns the symbol for a given token
+func (k keeper) GetTokenSymbol(ctx sdk.Context, assetName string) (string, bool) {
+	tokenInfo := k.getTokenInfo(ctx, assetName)
+	if tokenInfo == nil {
+		return "", false
+	}
 
-	bz := k.getStore(ctx, k.chain).Get([]byte(tokenAddrPrefix + symbol))
+	return tokenInfo.Symbol, true
+}
+
+// GetTokenAddress calculates the token address given asset name and axelar gateway address
+func (k keeper) GetTokenAddress(ctx sdk.Context, assetName string, gatewayAddr common.Address) (common.Address, error) {
+	assetName = strings.ToLower(assetName)
+
+	bz := k.getStore(ctx, k.chain).Get([]byte(tokenAddrPrefix + assetName))
 	if bz != nil {
 		return common.BytesToAddress(bz), nil
 	}
 
-	tokenInfo := k.getTokenInfo(ctx, symbol)
+	tokenInfo := k.getTokenInfo(ctx, assetName)
 	if tokenInfo == nil {
 		return common.Address{}, fmt.Errorf("symbol not found/confirmed")
 	}
 
 	var saltToken [32]byte
-	copy(saltToken[:], crypto.Keccak256Hash([]byte(symbol)).Bytes())
+	copy(saltToken[:], crypto.Keccak256Hash([]byte(tokenInfo.Symbol)).Bytes())
 
 	uint8Type, err := abi.NewType("uint8", "uint8", nil)
 	if err != nil {
@@ -246,7 +256,7 @@ func (k keeper) GetTokenAddress(ctx sdk.Context, symbol string, gatewayAddr comm
 	}
 
 	arguments := abi.Arguments{{Type: stringType}, {Type: stringType}, {Type: uint8Type}, {Type: uint256Type}}
-	packed, err := arguments.Pack(tokenInfo.TokenName, symbol, tokenInfo.Decimals, tokenInfo.Capacity.BigInt())
+	packed, err := arguments.Pack(tokenInfo.TokenName, tokenInfo.Symbol, tokenInfo.Decimals, tokenInfo.Capacity.BigInt())
 	if err != nil {
 		return common.Address{}, err
 	}
@@ -260,7 +270,7 @@ func (k keeper) GetTokenAddress(ctx sdk.Context, symbol string, gatewayAddr comm
 	tokenInitCodeHash := crypto.Keccak256Hash(tokenInitCode)
 
 	tokenAddr := crypto.CreateAddress2(gatewayAddr, saltToken, tokenInitCodeHash.Bytes())
-	k.getStore(ctx, k.chain).Set([]byte(tokenAddrPrefix+symbol), tokenAddr.Bytes())
+	k.getStore(ctx, k.chain).Set([]byte(tokenAddrPrefix+assetName), tokenAddr.Bytes())
 	return tokenAddr, nil
 }
 
@@ -336,14 +346,14 @@ func (k keeper) SetPendingTokenDeployment(ctx sdk.Context, key exported.PollKey,
 }
 
 // SetTokenInfo stores the token info
-func (k keeper) SetTokenInfo(ctx sdk.Context, msg *types.SignDeployTokenRequest) {
+func (k keeper) SetTokenInfo(ctx sdk.Context, assetName string, msg *types.SignDeployTokenRequest) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(msg)
-	k.getStore(ctx, k.chain).Set([]byte(symbolPrefix+strings.ToLower(msg.Symbol)), bz)
+	k.getStore(ctx, k.chain).Set([]byte(assetPrefix+strings.ToLower(assetName)), bz)
 }
 
 // getTokenInfo retrieves the token info
-func (k keeper) getTokenInfo(ctx sdk.Context, symbol string) *types.SignDeployTokenRequest {
-	bz := k.getStore(ctx, k.chain).Get([]byte(symbolPrefix + strings.ToLower(symbol)))
+func (k keeper) getTokenInfo(ctx sdk.Context, assetName string) *types.SignDeployTokenRequest {
+	bz := k.getStore(ctx, k.chain).Get([]byte(assetPrefix + strings.ToLower(assetName)))
 	if bz == nil {
 		return nil
 	}

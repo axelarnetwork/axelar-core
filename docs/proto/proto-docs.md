@@ -842,7 +842,7 @@ that is deposited by an user
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `token_address` | [bytes](#bytes) |  |  |
-| `symbol` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
 | `salt` | [bytes](#bytes) |  |  |
 
 
@@ -860,7 +860,7 @@ ERC20Deposit contains information for an ERC20 deposit
 | ----- | ---- | ----- | ----------- |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `amount` | [bytes](#bytes) |  |  |
-| `symbol` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
 | `burner_address` | [bytes](#bytes) |  |  |
 
 
@@ -1203,7 +1203,7 @@ address
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
 | `recipient_addr` | [string](#string) |  |  |
-| `symbol` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
 | `recipient_chain` | [string](#string) |  |  |
 
 

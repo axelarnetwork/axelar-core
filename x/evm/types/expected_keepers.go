@@ -46,6 +46,7 @@ type ChainKeeper interface {
 	GetBurnerByteCodes(ctx sdk.Context) ([]byte, bool)
 	GetTokenByteCodes(ctx sdk.Context) ([]byte, bool)
 	GetGatewayAddress(ctx sdk.Context) (common.Address, bool)
+	GetTokenSymbol(ctx sdk.Context, assetName string) (string, bool)
 	GetTokenAddress(ctx sdk.Context, symbol string, gatewayAddr common.Address) (common.Address, error)
 	SetPendingTokenDeployment(ctx sdk.Context, pollKey vote.PollKey, tokenDeploy ERC20TokenDeployment)
 	GetDeposit(ctx sdk.Context, txID common.Hash, burnerAddr common.Address) (ERC20Deposit, DepositState, bool)
@@ -60,7 +61,7 @@ type ChainKeeper interface {
 	GetPendingTokenDeployment(ctx sdk.Context, key vote.PollKey) (ERC20TokenDeployment, bool)
 	DeletePendingToken(ctx sdk.Context, key vote.PollKey)
 	SetCommandData(ctx sdk.Context, commandID CommandID, commandData []byte)
-	SetTokenInfo(ctx sdk.Context, msg *SignDeployTokenRequest)
+	SetTokenInfo(ctx sdk.Context, assetName string, msg *SignDeployTokenRequest)
 	GetConfirmedDeposits(ctx sdk.Context) []ERC20Deposit
 	SetUnsignedTx(ctx sdk.Context, txID string, tx *evmTypes.Transaction)
 	GetHashToSign(ctx sdk.Context, txID string) (common.Hash, error)

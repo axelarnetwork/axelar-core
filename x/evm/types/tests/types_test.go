@@ -98,7 +98,7 @@ func TestCreateDeployTokenCommandData_CorrectData(t *testing.T) {
 
 func TestCreateBurnCommandData_SingleBurn(t *testing.T) {
 	chainID := big.NewInt(1)
-	symbol := "aat"
+	asset := "aat"
 	salt := types.Hash(common.HexToHash("0x35f28b34202f4e3de20c1710696e3f294ebe4df686b17be00fedf991190f9654"))
 	height := int64(50)
 
@@ -106,7 +106,7 @@ func TestCreateBurnCommandData_SingleBurn(t *testing.T) {
 	actual, err := types.CreateBurnCommandData(
 		chainID,
 		height,
-		[]types.BurnerInfo{{Symbol: symbol, Salt: salt}},
+		[]types.BurnerInfo{{Asset: asset, Salt: salt}},
 	)
 
 	assert.NoError(t, err)
@@ -115,8 +115,8 @@ func TestCreateBurnCommandData_SingleBurn(t *testing.T) {
 
 func TestCreateBurnCommandData_MultipleBurn(t *testing.T) {
 	chainID := big.NewInt(1)
-	symbolA := "aat"
-	symbolB := "abtc"
+	assetA := "aat"
+	assetB := "abtc"
 	saltA := types.Hash(common.HexToHash("0x35f28b34202f4e3de20c1710696e3f294ebe4df686b17be00fedf991190f9654"))
 	saltB := types.Hash(common.HexToHash("0xf15b565f2e52197b78d55c1cc9c5e27f28dcce75ae0e89d75e768a0542dac1ab"))
 	height := int64(50)
@@ -126,8 +126,8 @@ func TestCreateBurnCommandData_MultipleBurn(t *testing.T) {
 		chainID,
 		height,
 		[]types.BurnerInfo{
-			{Symbol: symbolA, Salt: saltA},
-			{Symbol: symbolB, Salt: saltB},
+			{Asset: assetA, Salt: saltA},
+			{Asset: assetB, Salt: saltB},
 		},
 	)
 
@@ -175,9 +175,9 @@ func TestGetTokenAddress_CorrectData(t *testing.T) {
 	account, err := sdk.AccAddressFromBech32("cosmos1vjyc4qmsdtdl5a4ruymnjqpchm5gyqde63sqdh")
 	assert.NoError(t, err)
 	keeper := k.ForChain(ctx, chain)
-	keeper.SetTokenInfo(ctx, &types.SignDeployTokenRequest{Sender: account, TokenName: tokenName, Symbol: tokenSymbol, Decimals: decimals, Capacity: capacity})
+	keeper.SetTokenInfo(ctx, tokenName, &types.SignDeployTokenRequest{Sender: account, TokenName: tokenName, Symbol: tokenSymbol, Decimals: decimals, Capacity: capacity})
 
-	actual, err := keeper.GetTokenAddress(ctx, tokenSymbol, axelarGateway)
+	actual, err := keeper.GetTokenAddress(ctx, tokenName, axelarGateway)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)

@@ -3,7 +3,7 @@
 Link a cross chain address to an EVM chain address created by Axelar
 
 ```
-axelard tx evm link [chain] [recipient chain] [recipient address] [symbol] [flags]
+axelard tx evm link [chain] [recipient chain] [recipient address] [asset name] [flags]
 ```
 
 ### Options

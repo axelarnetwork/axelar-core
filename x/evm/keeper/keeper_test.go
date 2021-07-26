@@ -39,7 +39,7 @@ func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
 
 		burnerInfo := types.BurnerInfo{
 			TokenAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
-			Symbol:       rand.StrBetween(2, 5),
+			Asset:        rand.StrBetween(2, 5),
 			Salt:         types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 		}
 		burnerAddress := common.BytesToAddress(rand.Bytes(common.AddressLength))

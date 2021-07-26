@@ -78,7 +78,7 @@ type ReqLink struct {
 	BaseReq        rest.BaseReq `json:"base_req" yaml:"base_req"`
 	RecipientChain string       `json:"chain" yaml:"chain"`
 	RecipientAddr  string       `json:"recipient" yaml:"recipient"`
-	Symbol         string       `json:"symbol" yaml:"symbol"`
+	Asset          string       `json:"asset" yaml:"asset"`
 }
 
 // ReqConfirmChain represents a request to confirm a token deployment
@@ -169,7 +169,7 @@ func GetHandlerLink(cliCtx client.Context) http.HandlerFunc {
 			Sender:         fromAddr,
 			RecipientChain: req.RecipientChain,
 			RecipientAddr:  req.RecipientAddr,
-			Symbol:         req.Symbol,
+			Asset:          req.Asset,
 		}
 
 		if err := msg.ValidateBasic(); err != nil {

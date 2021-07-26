@@ -73,7 +73,7 @@ message LinkRequest {
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
   string recipient_addr = 3;
-  string symbol = 4;
+  string asset = 4;
   string recipient_chain = 5;
 }
 
