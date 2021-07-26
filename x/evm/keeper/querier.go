@@ -193,7 +193,7 @@ func QueryTokenAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, symb
 		return nil, sdkerrors.Wrap(types.ErrEVM, "axelar gateway not set")
 	}
 
-	addr, err := k.GetTokenAddress(ctx, strings.ToLower(symbol), gateway)
+	addr, err := k.GetTokenAddress(ctx, symbol, gateway)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
 	}

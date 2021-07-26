@@ -215,6 +215,8 @@ func (k keeper) GetBurnerInfo(ctx sdk.Context, burnerAddr common.Address) *types
 
 // GetTokenAddress calculates the token address given symbol and axelar gateway address
 func (k keeper) GetTokenAddress(ctx sdk.Context, symbol string, gatewayAddr common.Address) (common.Address, error) {
+	symbol = strings.ToLower(symbol)
+
 	bz := k.getStore(ctx, k.chain).Get([]byte(tokenAddrPrefix + symbol))
 	if bz != nil {
 		return common.BytesToAddress(bz), nil
@@ -336,12 +338,12 @@ func (k keeper) SetPendingTokenDeployment(ctx sdk.Context, key exported.PollKey,
 // SetTokenInfo stores the token info
 func (k keeper) SetTokenInfo(ctx sdk.Context, msg *types.SignDeployTokenRequest) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(msg)
-	k.getStore(ctx, k.chain).Set([]byte(symbolPrefix+msg.Symbol), bz)
+	k.getStore(ctx, k.chain).Set([]byte(symbolPrefix+strings.ToLower(msg.Symbol)), bz)
 }
 
 // getTokenInfo retrieves the token info
 func (k keeper) getTokenInfo(ctx sdk.Context, symbol string) *types.SignDeployTokenRequest {
-	bz := k.getStore(ctx, k.chain).Get([]byte(symbolPrefix + symbol))
+	bz := k.getStore(ctx, k.chain).Get([]byte(symbolPrefix + strings.ToLower(symbol)))
 	if bz == nil {
 		return nil
 	}
