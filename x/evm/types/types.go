@@ -301,7 +301,7 @@ func CreateBurnCommandData(chainID *big.Int, height int64, burnerInfos []BurnerI
 	binary.LittleEndian.PutUint64(heightBytes, uint64(height))
 
 	for _, burnerInfo := range burnerInfos {
-		commandParam, err := createBurnTokenParams(burnerInfo.Symbol, common.Hash(burnerInfo.Salt))
+		commandParam, err := createBurnTokenParams(strings.ToLower(burnerInfo.Symbol), common.Hash(burnerInfo.Salt))
 		if err != nil {
 			return nil, err
 		}
