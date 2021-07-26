@@ -238,7 +238,7 @@ func randomTransfer() nexus.CrossChainTransfer {
 	ranAddr := sdk.AccAddress(hash[:20]).String()
 
 	return nexus.CrossChainTransfer{
-		Recipient: nexus.CrossChainAddress{Chain: exported.Axelar, Address: ranAddr},
+		Recipient: nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: ranAddr},
 		Asset:     sdk.NewInt64Coin(btc.Bitcoin.NativeAsset, rand.I64Between(1, 10000000000)),
 		ID:        mathRand.Uint64(),
 	}
