@@ -15,11 +15,11 @@ const (
 	// RouterKey to be used for routing msgs
 	RouterKey = ModuleName
 
+	// QuerierRoute to be used for legacy query routing
 	QuerierRoute = ModuleName
 
+	// RestRoute to be used for rest routing
 	RestRoute = ModuleName
-
-	Axelar = "axelar"
 )
 
 // NewLinkedAddress create a new address to make a deposit which can be transferred to another blockchain

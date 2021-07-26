@@ -25,7 +25,7 @@ func KeyTable() params.KeyTable {
 // DefaultParams creates the default genesis parameters
 func DefaultParams() Params {
 	return Params{
-		Chains: []exported.Chain{btc.Bitcoin, evm.Ethereum, axelarnet.Axelar},
+		Chains: []exported.Chain{btc.Bitcoin, evm.Ethereum, axelarnet.Axelarnet},
 	}
 }
 

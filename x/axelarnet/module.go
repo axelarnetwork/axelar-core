@@ -15,7 +15,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/client/cli"
-	//"github.com/axelarnetwork/axelar-core/x/axelar/client/rest"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/client/rest"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 )
 
@@ -56,7 +56,7 @@ func (AppModuleBasic) ValidateGenesis(cdc codec.JSONMarshaler, _ client.TxEncodi
 
 // RegisterRESTRoutes registers the REST routes for this module
 func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Router) {
-	//rest.RegisterRoutes(clientCtx, rtr)
+	rest.RegisterRoutes(clientCtx, rtr)
 }
 
 // RegisterGRPCGatewayRoutes registers the gRPC Gateway routes for the module.
@@ -101,6 +101,7 @@ func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {
 
 // InitGenesis initializes the module's keeper from the given genesis state
 func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs json.RawMessage) []abci.ValidatorUpdate {
+	am.nexus.RegisterAsset(ctx, "Axelarnet", "satoshi")
 	return []abci.ValidatorUpdate{}
 }
 

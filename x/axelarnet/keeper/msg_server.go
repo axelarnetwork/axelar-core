@@ -43,7 +43,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 
 	linkedAddress := types.NewLinkedAddress(recipientChain.Name, req.Symbol, req.RecipientAddr)
 	s.nexus.LinkAddresses(ctx,
-		nexus.CrossChainAddress{Chain: exported.Axelar, Address: linkedAddress.String()},
+		nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: linkedAddress.String()},
 		nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr})
 	return &types.LinkResponse{DepositAddr: linkedAddress.String()}, nil
 }
@@ -77,7 +77,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		panic(fmt.Sprintf("cannot burn coins after a successful send to a module account: %v", err))
 	}
 
-	depositAddr := nexus.CrossChainAddress{Address: req.BurnerAddress.String(), Chain: exported.Axelar}
+	depositAddr := nexus.CrossChainAddress{Address: req.BurnerAddress.String(), Chain: exported.Axelarnet}
 	if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, req.Token); err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 // ExecutePendingTransfers handles execute pending transfers
 func (s msgServer) ExecutePendingTransfers(c context.Context, req *types.ExecutePendingTransfersRequest) (*types.ExecutePendingTransfersResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	chain, ok := s.nexus.GetChain(ctx, types.Axelar)
+	chain, ok := s.nexus.GetChain(ctx, types.ModuleName)
 	if !ok {
 		return nil, fmt.Errorf("%s is not a registered chain", types.ModuleName)
 	}
