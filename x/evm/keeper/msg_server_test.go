@@ -494,6 +494,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 				return common.BytesToAddress(rand.Bytes(common.AddressLength)), nil
 			},
 			GetRevoteLockingPeriodFunc:        func(sdk.Context) (int64, bool) { return rand.PosI64(), true },
+			GetTokenSymbolFunc:                func(sdk.Context, string) (string, bool) { return rand.StrBetween(3, 5), true },
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) (uint64, bool) { return mathRand.Uint64(), true },
 			SetPendingTokenDeploymentFunc:     func(sdk.Context, vote.PollKey, types.ERC20TokenDeployment) {},
 		}
@@ -521,7 +522,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			Sender: rand.Bytes(20),
 			Chain:  evmChain,
 			TxID:   types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
-			Symbol: rand.StrBetween(5, 10),
+			Asset:  rand.StrBetween(5, 10),
 		}
 
 		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{})

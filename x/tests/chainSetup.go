@@ -343,7 +343,7 @@ func registerETHEventListener(n nodeData, submitMsg func(msg sdk.Msg) (result <-
 				PollKey:   pollKey,
 				Confirmed: true,
 				TxID:      evmTypes.Hash(common.HexToHash(m[evmTypes.AttributeKeyTxID])),
-				Symbol:    m[evmTypes.AttributeKeySymbol],
+				Asset:     m[evmTypes.AttributeKeyAsset],
 			})
 
 		return true

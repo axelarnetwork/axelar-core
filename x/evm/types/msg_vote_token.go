@@ -13,7 +13,7 @@ import (
 // NewVoteConfirmTokenRequest creates a message of type ConfirmTokenRequest
 func NewVoteConfirmTokenRequest(
 	sender sdk.AccAddress,
-	chain, symbol string,
+	chain, asset string,
 	key vote.PollKey,
 	txID common.Hash,
 	confirmed bool) *VoteConfirmTokenRequest {
@@ -22,7 +22,7 @@ func NewVoteConfirmTokenRequest(
 		Chain:     chain,
 		PollKey:   key,
 		TxID:      Hash(txID),
-		Symbol:    symbol,
+		Asset:     asset,
 		Confirmed: confirmed,
 	}
 }
@@ -45,8 +45,8 @@ func (m VoteConfirmTokenRequest) ValidateBasic() error {
 	if m.Chain == "" {
 		return fmt.Errorf("missing chain")
 	}
-	if m.Symbol == "" {
-		return fmt.Errorf("symbol missing")
+	if m.Asset == "" {
+		return fmt.Errorf("asset missing")
 	}
 
 	return m.PollKey.Validate()

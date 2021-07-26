@@ -47,7 +47,7 @@ message ConfirmTokenRequest {
     (gogoproto.customtype) = "Hash",
     (gogoproto.customname) = "TxID"
   ];
-  string symbol = 4;
+  string asset = 4;
 }
 
 message ConfirmTokenResponse {}
@@ -174,7 +174,7 @@ message VoteConfirmTokenRequest {
     (gogoproto.customtype) = "Hash",
     (gogoproto.customname) = "TxID"
   ];
-  string symbol = 5;
+  string asset = 5;
   bool confirmed = 6;
 }
 

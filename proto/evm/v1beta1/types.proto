@@ -44,7 +44,7 @@ message ERC20Deposit {
 
 // ERC20TokenDeployment describes information about an ERC20 token
 message ERC20TokenDeployment {
-  string symbol = 1;
+  string asset = 1;
   string token_address = 2
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
 }

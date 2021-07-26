@@ -112,8 +112,8 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	if s.nexus.IsAssetRegistered(ctx, chain.Name, req.Symbol) {
-		return nil, fmt.Errorf("token %s is already registered", req.Symbol)
+	if s.nexus.IsAssetRegistered(ctx, chain.Name, req.Asset) {
+		return nil, fmt.Errorf("token %s is already registered", req.Asset)
 	}
 
 	keeper := s.ForChain(ctx, chain.Name)
@@ -123,7 +123,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	tokenAddr, err := keeper.GetTokenAddress(ctx, req.Symbol, gatewayAddr)
+	tokenAddr, err := keeper.GetTokenAddress(ctx, req.Asset, gatewayAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +138,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("no snapshot seqNo for key ID %s registered", keyID)
 	}
 
-	pollKey := vote.NewPollKey(types.ModuleName, req.TxID.Hex()+"_"+req.Symbol)
+	pollKey := vote.NewPollKey(types.ModuleName, req.TxID.Hex()+"_"+req.Asset)
 
 	period, ok := keeper.GetRevoteLockingPeriod(ctx)
 	if !ok {
@@ -149,8 +149,13 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, err
 	}
 
+	symbol, ok := keeper.GetTokenSymbol(ctx, req.Asset)
+	if !ok {
+		return nil, fmt.Errorf("Could not retrieve symbol for token %s", req.Asset)
+	}
+
 	deploy := types.ERC20TokenDeployment{
-		Symbol:       req.Symbol,
+		Asset:        req.Asset,
 		TokenAddress: types.Address(tokenAddr),
 	}
 	keeper.SetPendingTokenDeployment(ctx, pollKey, deploy)
@@ -167,7 +172,8 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),
-			sdk.NewAttribute(types.AttributeKeySymbol, req.Symbol),
+			sdk.NewAttribute(types.AttributeKeySymbol, symbol),
+			sdk.NewAttribute(types.AttributeKeyAsset, req.Asset),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
 			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
 		),
@@ -523,20 +529,20 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 
 	// is there an ongoing poll?
 	token, pollFound := keeper.GetPendingTokenDeployment(ctx, req.PollKey)
-	registered := s.nexus.IsAssetRegistered(ctx, chain.Name, req.Symbol)
+	registered := s.nexus.IsAssetRegistered(ctx, chain.Name, req.Asset)
 	switch {
 	// a malicious user could try to delete an ongoing poll by providing an already confirmed token,
 	// so we need to check that it matches the poll before deleting
-	case registered && pollFound && token.Symbol == req.Symbol:
+	case registered && pollFound && token.Asset == req.Asset:
 		keeper.DeletePendingToken(ctx, req.PollKey)
 		fallthrough
 	// If the voting threshold has been met and additional votes are received they should not return an error
 	case registered:
-		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("token %s already confirmed", req.Symbol)}, nil
+		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("token %s already confirmed", req.Asset)}, nil
 	case !pollFound:
 		return nil, fmt.Errorf("no token found for poll %s", req.PollKey.String())
-	case token.Symbol != req.Symbol:
-		return nil, fmt.Errorf("token %s does not match poll %s", req.Symbol, req.PollKey.String())
+	case token.Asset != req.Asset:
+		return nil, fmt.Errorf("token %s does not match poll %s", req.Asset, req.PollKey.String())
 	default:
 		// assert: the token is known and has not been confirmed before
 	}
@@ -552,7 +558,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 	}
 
 	if poll.Is(vote.Pending) {
-		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("not enough votes to confirm token %s yet", req.Symbol)}, nil
+		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("not enough votes to confirm token %s yet", req.Asset)}, nil
 	}
 
 	if poll.Is(vote.Failed) {
@@ -578,16 +584,16 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
 		return &types.VoteConfirmTokenResponse{
-			Log: fmt.Sprintf("token %s was discarded", req.Symbol),
+			Log: fmt.Sprintf("token %s was discarded", req.Asset),
 		}, nil
 	}
 	ctx.EventManager().EmitEvent(
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
-	s.nexus.RegisterAsset(ctx, chain.Name, token.Symbol)
+	s.nexus.RegisterAsset(ctx, chain.Name, token.Asset)
 
 	return &types.VoteConfirmTokenResponse{
-		Log: fmt.Sprintf("token %s deployment confirmed", token.Symbol)}, nil
+		Log: fmt.Sprintf("token %s deployment confirmed", token.Asset)}, nil
 }
 
 // VoteConfirmTransferOwnership handles votes for transfer ownership confirmations

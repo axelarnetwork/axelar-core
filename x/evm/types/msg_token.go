@@ -9,11 +9,11 @@ import (
 )
 
 // NewConfirmTokenRequest creates a message of type ConfirmTokenRequest
-func NewConfirmTokenRequest(sender sdk.AccAddress, chain, symbol string, txID common.Hash) *ConfirmTokenRequest {
+func NewConfirmTokenRequest(sender sdk.AccAddress, chain, asset string, txID common.Hash) *ConfirmTokenRequest {
 	return &ConfirmTokenRequest{
 		Sender: sender,
 		Chain:  chain,
-		Symbol: symbol,
+		Asset:  asset,
 		TxID:   Hash(txID),
 	}
 }
