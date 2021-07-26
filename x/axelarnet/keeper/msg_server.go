@@ -18,7 +18,7 @@ type msgServer struct {
 	bank  types.BankKeeper
 }
 
-// NewMsgServerImpl returns an implementation of the bitcoin MsgServiceServer interface
+// NewMsgServerImpl returns an implementation of the axelarnet MsgServiceServer interface
 // for the provided Keeper.
 func NewMsgServerImpl(n types.Nexus, b types.BankKeeper) types.MsgServiceServer {
 	return msgServer{
@@ -45,6 +45,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 	s.nexus.LinkAddresses(ctx,
 		nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: linkedAddress.String()},
 		nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr})
+
 	return &types.LinkResponse{DepositAddr: linkedAddress.String()}, nil
 }
 
@@ -61,7 +62,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", req.Token.Denom, recipientChain.Name)
 	}
 
-	// transfer the coins from linked address to Module account and burn them
+	// transfer the coins from linked address to module account and burn them
 	if err := s.bank.SendCoinsFromAccountToModule(
 		ctx, req.BurnerAddress, types.ModuleName, sdk.NewCoins(req.Token),
 	); err != nil {

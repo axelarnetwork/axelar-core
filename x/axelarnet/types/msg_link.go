@@ -7,7 +7,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// NewLinkRequest - LinkRequest constructor
+// NewLinkRequest creates a message of type LinkRequest
 func NewLinkRequest(sender sdk.AccAddress, recipientChain, recipientAddr, symbol string) *LinkRequest {
 	return &LinkRequest{
 		Sender:         sender,

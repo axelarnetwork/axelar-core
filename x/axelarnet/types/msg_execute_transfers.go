@@ -5,7 +5,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// NewExecutePendingTransfersRequest - ExecutePendingTransfersRequest constructor
+// NewExecutePendingTransfersRequest creates a message of type ExecutePendingTransfersRequest
 func NewExecutePendingTransfersRequest(sender sdk.AccAddress) *ExecutePendingTransfersRequest {
 	return &ExecutePendingTransfersRequest{Sender: sender}
 }

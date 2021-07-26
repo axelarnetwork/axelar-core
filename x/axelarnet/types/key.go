@@ -22,7 +22,7 @@ const (
 	RestRoute = ModuleName
 )
 
-// NewLinkedAddress create a new address to make a deposit which can be transferred to another blockchain
+// NewLinkedAddress creates a new address to make a deposit which can be transferred to another blockchain
 func NewLinkedAddress(chain, symbol, recipientAddr string) sdk.AccAddress {
 	preImage := []byte(chain)
 	preImage = append(preImage, symbol...)

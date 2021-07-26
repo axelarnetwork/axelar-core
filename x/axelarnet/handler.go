@@ -34,7 +34,7 @@ func NewHandler(n types.Nexus, b types.BankKeeper) sdk.Handler {
 			res, err := server.ExecutePendingTransfers(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
-				result.Log = fmt.Sprintf("successfully execute pending transfers")
+				result.Log = fmt.Sprintf("successfully executed pending transfers")
 			}
 			return result, err
 		default:

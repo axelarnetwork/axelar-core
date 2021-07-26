@@ -2,7 +2,6 @@ package keeper_test
 
 import (
 	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -48,8 +47,8 @@ func TestHandleMsgLink(t *testing.T) {
 		msg = randomMsgLink()
 		server = keeper.NewMsgServerImpl(nexusKeeper, &mock.BankKeeperMock{})
 	}
-	repeatCount := 20
 
+	repeatCount := 20
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 		_, err := server.Link(sdk.WrapSDKContext(ctx), msg)
@@ -224,11 +223,10 @@ func randomMsgLink() *types.LinkRequest {
 }
 
 func randomMsgConfirmDeposit() *types.ConfirmDepositRequest {
-	txID, _ := hex.DecodeString(rand.Str(64))
 	return types.NewConfirmDepositRequest(
 		rand.Bytes(sdk.AddrLen),
 		rand.StrBetween(5, 100),
-		txID,
+		rand.BytesBetween(5, 100),
 		sdk.NewCoin("testDenom", sdk.NewInt(rand.I64Between(1, 10000000000))),
 		rand.Bytes(sdk.AddrLen))
 }
