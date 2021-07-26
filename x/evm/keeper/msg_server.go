@@ -679,6 +679,16 @@ func (s msgServer) SignDeployToken(c context.Context, req *types.SignDeployToken
 		return nil, fmt.Errorf("Could not find chain ID for '%s'", req.Chain)
 	}
 
+	originChain, found := s.nexus.GetChain(ctx, req.OriginChain)
+	if !found {
+		return nil, fmt.Errorf("%s is not a registered chain", req.OriginChain)
+	}
+
+	if strings.ToLower(originChain.NativeAsset) != strings.ToLower(req.Symbol) {
+		return nil, fmt.Errorf("%s is not a native asset on chain %s", req.Symbol, originChain.Name)
+
+	}
+
 	commandID := getCommandID([]byte(req.TokenName), chainID)
 
 	data, err := types.CreateDeployTokenCommandData(chainID, commandID, req.TokenName, req.Symbol, req.Decimals, req.Capacity)

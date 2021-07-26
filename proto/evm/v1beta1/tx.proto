@@ -97,13 +97,14 @@ message SignDeployTokenRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
-  bytes capacity = 3 [
+  string origin_chain = 3;
+  bytes capacity = 4 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.nullable) = false
   ];
-  uint32 decimals = 4 [ (gogoproto.casttype) = "uint8" ];
-  string symbol = 5;
-  string token_name = 6;
+  uint32 decimals = 5 [ (gogoproto.casttype) = "uint8" ];
+  string symbol = 6;
+  string token_name = 7;
 }
 
 message SignDeployTokenResponse {

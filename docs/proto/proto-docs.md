@@ -1269,6 +1269,7 @@ AxelarGateway
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
+| `origin_chain` | [string](#string) |  |  |
 | `capacity` | [bytes](#bytes) |  |  |
 | `decimals` | [uint32](#uint32) |  |  |
 | `symbol` | [string](#string) |  |  |

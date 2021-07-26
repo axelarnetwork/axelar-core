@@ -3,7 +3,7 @@
 Signs the call data to deploy a token with the AxelarGateway contract
 
 ```
-axelard tx evm sign-deploy-token [chain] [name] [symbol] [decimals] [capacity] [flags]
+axelard tx evm sign-deploy-token [evm chain] [origin chain] [name] [symbol] [decimals] [capacity] [flags]
 ```
 
 ### Options

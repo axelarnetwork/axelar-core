@@ -121,10 +121,11 @@ type ReqSignPendingTransfers struct {
 
 // ReqSignDeployToken represents a request to sign a deploy token command
 type ReqSignDeployToken struct {
-	BaseReq  rest.BaseReq `json:"base_req" yaml:"base_req"`
-	Name     string       `json:"name" yaml:"name"`
-	Decimals string       `json:"decimals" yaml:"decimals"`
-	Capacity string       `json:"capacity" yaml:"capacity"`
+	BaseReq     rest.BaseReq `json:"base_req" yaml:"base_req"`
+	OriginChain string       `json:"origin_chain" yaml:"origin_chain"`
+	Name        string       `json:"name" yaml:"name"`
+	Decimals    string       `json:"decimals" yaml:"decimals"`
+	Capacity    string       `json:"capacity" yaml:"capacity"`
 }
 
 // ReqSignBurnTokens represents a request to sign all outstanding burn commands
@@ -376,7 +377,7 @@ func GetHandlerSignDeployToken(cliCtx client.Context) http.HandlerFunc {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, errors.New("could not parse capacity").Error())
 		}
 
-		msg := types.NewSignDeployTokenRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], req.Name, symbol, uint8(decs), capacity)
+		msg := types.NewSignDeployTokenRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], req.OriginChain, req.Name, symbol, uint8(decs), capacity)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
