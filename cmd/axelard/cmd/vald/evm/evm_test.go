@@ -288,6 +288,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 			sdk.NewAttribute(evmTypes.AttributeKeyGatewayAddress, common.Bytes2Hex(gatewayAddrBytes)),
 			sdk.NewAttribute(evmTypes.AttributeKeyTokenAddress, common.Bytes2Hex(tokenAddrBytes)),
 			sdk.NewAttribute(evmTypes.AttributeKeySymbol, symbol),
+			sdk.NewAttribute(evmTypes.AttributeKeyAsset, "Satoshi"),
 			sdk.NewAttribute(evmTypes.AttributeKeyConfHeight, strconv.FormatUint(uint64(confHeight), 10)),
 			sdk.NewAttribute(evmTypes.AttributeKeyPoll, string(cdc.MustMarshalJSON(pollKey))),
 		}
