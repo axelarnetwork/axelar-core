@@ -91,9 +91,10 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr})
 
 	burnerInfo := types.BurnerInfo{
-		TokenAddress: types.Address(tokenAddr),
-		Symbol:       symbol,
-		Salt:         types.Hash(salt),
+		TokenAddress:     types.Address(tokenAddr),
+		DestinationChain: req.RecipientChain,
+		Symbol:           symbol,
+		Salt:             types.Hash(salt),
 	}
 	keeper.SetBurnerInfo(ctx, burnerAddr, &burnerInfo)
 
@@ -280,10 +281,10 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	}
 
 	erc20Deposit := types.ERC20Deposit{
-		TxID:          req.TxID,
-		Amount:        req.Amount,
-		Symbol:        burnerInfo.Symbol,
-		BurnerAddress: req.BurnerAddress,
+		TxID:             req.TxID,
+		Amount:           req.Amount,
+		DestinationChain: burnerInfo.DestinationChain,
+		BurnerAddress:    req.BurnerAddress,
 	}
 	keeper.SetPendingDeposit(ctx, pollKey, &erc20Deposit)
 
@@ -445,6 +446,12 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	keeper := s.ForChain(ctx, chain.Name)
 
 	pendingDeposit, pollFound := keeper.GetPendingDeposit(ctx, req.PollKey)
+
+	destChain, ok := s.nexus.GetChain(ctx, pendingDeposit.DestinationChain)
+	if !ok {
+		return nil, fmt.Errorf("destination chain %s is not a registered chain", pendingDeposit.DestinationChain)
+	}
+
 	confirmedDeposit, state, depositFound := keeper.GetDeposit(ctx, common.Hash(req.TxID), common.Address(req.BurnAddress))
 
 	switch {
@@ -513,7 +520,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
 	depositAddr := nexus.CrossChainAddress{Address: pendingDeposit.BurnerAddress.Hex(), Chain: chain}
-	amount := sdk.NewInt64Coin(pendingDeposit.Symbol, pendingDeposit.Amount.BigInt().Int64())
+	amount := sdk.NewInt64Coin(destChain.NativeAsset, pendingDeposit.Amount.BigInt().Int64())
 	if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
 		return nil, err
 	}
@@ -920,10 +927,17 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 		return nil, fmt.Errorf("Could not find chain ID for '%s'", req.Chain)
 	}
 
+	keeper := s.ForChain(ctx, chain.Name)
+
 	getRecipientAndAsset := func(transfer nexus.CrossChainTransfer) string {
 		return fmt.Sprintf("%s-%s", transfer.Recipient.Address, transfer.Asset.Denom)
 	}
-	data, err := types.CreateMintCommandData(chainID, nexus.MergeTransfersBy(pendingTransfers, getRecipientAndAsset))
+
+	retrieveSymbol := func(denom string) (string, bool) {
+		return keeper.GetTokenSymbol(ctx, denom)
+	}
+
+	data, err := types.CreateMintCommandData(chainID, nexus.MergeTransfersBy(pendingTransfers, getRecipientAndAsset), retrieveSymbol)
 	if err != nil {
 		return nil, err
 	}
@@ -936,7 +950,6 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 	}
 
 	commandIDHex := hex.EncodeToString(commandID[:])
-	keeper := s.ForChain(ctx, chain.Name)
 
 	s.Logger(ctx).Info(fmt.Sprintf("storing data for mint command %s", commandIDHex))
 	keeper.SetCommandData(ctx, commandID, data)

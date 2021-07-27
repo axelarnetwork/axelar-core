@@ -237,7 +237,7 @@ func TestLink_Success(t *testing.T) {
 	assert.Equal(t, sender, n.LinkAddressesCalls()[0].Sender)
 	assert.Equal(t, recipient, n.LinkAddressesCalls()[0].Recipient)
 
-	assert.Equal(t, types.BurnerInfo{TokenAddress: types.Address(tokenAddr), Symbol: msg.Symbol, Salt: types.Hash(salt)}, *k.ForChain(ctx, chain).GetBurnerInfo(ctx, burnAddr))
+	assert.Equal(t, types.BurnerInfo{TokenAddress: types.Address(tokenAddr), DestinationChain: recipient.Chain.Name, Symbol: msg.Symbol, Salt: types.Hash(salt)}, *k.ForChain(ctx, chain).GetBurnerInfo(ctx, burnAddr))
 }
 
 func TestDeployTx_DifferentValue_DifferentHash(t *testing.T) {
@@ -737,7 +737,10 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 				return rand.PosI64(), true
 			},
 		}
-		chains := map[string]nexus.Chain{exported.Ethereum.Name: exported.Ethereum}
+		chains := map[string]nexus.Chain{
+			exported.Ethereum.Name: exported.Ethereum,
+			btc.Bitcoin.Name:       btc.Bitcoin,
+		}
 		n = &evmMock.NexusMock{
 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 				c, ok := chains[chain]
@@ -779,10 +782,10 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		setup()
 		chaink.GetDepositFunc = func(sdk.Context, common.Hash, common.Address) (types.ERC20Deposit, types.DepositState, bool) {
 			return types.ERC20Deposit{
-				TxID:          types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
-				Amount:        sdk.NewUint(mathRand.Uint64()),
-				Symbol:        rand.StrBetween(5, 10),
-				BurnerAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
+				TxID:             types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+				Amount:           sdk.NewUint(mathRand.Uint64()),
+				DestinationChain: btc.Bitcoin.Name,
+				BurnerAddress:    types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
 			}, types.CONFIRMED, true
 		}
 
@@ -795,10 +798,10 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		setup()
 		chaink.GetDepositFunc = func(sdk.Context, common.Hash, common.Address) (types.ERC20Deposit, types.DepositState, bool) {
 			return types.ERC20Deposit{
-				TxID:          types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
-				Amount:        sdk.NewUint(mathRand.Uint64()),
-				Symbol:        rand.StrBetween(5, 10),
-				BurnerAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
+				TxID:             types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+				Amount:           sdk.NewUint(mathRand.Uint64()),
+				DestinationChain: btc.Bitcoin.Name,
+				BurnerAddress:    types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
 			}, types.BURNED, true
 		}
 

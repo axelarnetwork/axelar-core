@@ -254,13 +254,19 @@ func transferIDtoCommandID(transferID uint64) CommandID {
 }
 
 // CreateMintCommandData returns the command data to mint tokens for the specified transfers
-func CreateMintCommandData(chainID *big.Int, transfers []nexus.CrossChainTransfer) ([]byte, error) {
+func CreateMintCommandData(chainID *big.Int, transfers []nexus.CrossChainTransfer, symbolRetriever func(denom string) (string, bool)) ([]byte, error) {
 	var commandIDs []CommandID
 	var commands []string
 	var commandParams [][]byte
 
 	for _, transfer := range transfers {
-		commandParam, err := createMintParams(common.HexToAddress(transfer.Recipient.Address), transfer.Asset.Denom, transfer.Asset.Amount.BigInt())
+
+		symbol, found := symbolRetriever(transfer.Asset.Denom)
+		if !found {
+			return nil, fmt.Errorf("could not find symbol for asset %s", transfer.Asset.Denom)
+		}
+
+		commandParam, err := createMintParams(common.HexToAddress(transfer.Recipient.Address), symbol, transfer.Asset.Amount.BigInt())
 		if err != nil {
 			return nil, err
 		}
