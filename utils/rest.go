@@ -17,7 +17,6 @@ const (
 	PathVarCosmosAddress   = "CosmosAddress"
 	PathVarCounter         = "Counter"
 	PathVarEthereumAddress = "EthereumAddress"
-	PathVarSymbol          = "Symbol"
 	PathVarTxID            = "TxID"
 	PathVarCommandID       = "CommandID"
 	PathVarKeyID           = "KeyID"

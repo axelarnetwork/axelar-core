@@ -249,24 +249,6 @@ func request_MsgService_SignDeployToken_0(ctx context.Context, marshaler runtime
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["symbol"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "symbol")
-	}
-
-	protoReq.Symbol, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "symbol", err)
-	}
-
 	msg, err := client.SignDeployToken(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
@@ -282,24 +264,6 @@ func local_request_MsgService_SignDeployToken_0(ctx context.Context, marshaler r
 	}
 	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["symbol"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "symbol")
-	}
-
-	protoReq.Symbol, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "symbol", err)
 	}
 
 	msg, err := server.SignDeployToken(ctx, &protoReq)
@@ -904,7 +868,7 @@ var (
 
 	pattern_MsgService_ConfirmTransferOwnership_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "confirm-transfer-ownership"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_SignDeployToken_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"axelar", "evm", "sign-deploy-token", "symbol"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_SignDeployToken_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "sign-deploy-token"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_MsgService_SignBurnTokens_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "sign-burn"}, "", runtime.AssumeColonVerbOpt(true)))
 

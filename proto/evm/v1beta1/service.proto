@@ -74,7 +74,7 @@ service MsgService {
   rpc SignDeployToken(SignDeployTokenRequest)
       returns (SignDeployTokenResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/sign-deploy-token/{symbol}"
+      post : "/axelar/evm/sign-deploy-token"
       body : "*"
     };
   }

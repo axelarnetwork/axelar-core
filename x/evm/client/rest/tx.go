@@ -49,12 +49,12 @@ const (
 func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx := clientUtils.RegisterTxHandlerFn(r, types.RestRoute)
 	registerTx(GetHandlerLink(cliCtx), TxLink, clientUtils.PathVarChain)
-	registerTx(GetHandlerConfirmTokenDeploy(cliCtx), TxConfirmTokenDeploy, clientUtils.PathVarChain, clientUtils.PathVarSymbol)
+	registerTx(GetHandlerConfirmTokenDeploy(cliCtx), TxConfirmTokenDeploy, clientUtils.PathVarChain)
 	registerTx(GetHandlerConfirmDeposit(cliCtx), TxConfirmDeposit, clientUtils.PathVarChain)
 	registerTx(GetHandlerConfirmTransferOwnership(cliCtx), TxConfirmTransferOwnership, clientUtils.PathVarChain)
 	registerTx(GetHandlerSignTx(cliCtx), TxSignTx, clientUtils.PathVarChain)
 	registerTx(GetHandlerSignPendingTransfers(cliCtx), TxSignPending, clientUtils.PathVarChain)
-	registerTx(GetHandlerSignDeployToken(cliCtx), TxSignDeployToken, clientUtils.PathVarChain, clientUtils.PathVarSymbol)
+	registerTx(GetHandlerSignDeployToken(cliCtx), TxSignDeployToken, clientUtils.PathVarChain)
 	registerTx(GetHandlerSignBurnTokens(cliCtx), TxSignBurnTokens, clientUtils.PathVarChain)
 	registerTx(GetHandlerSignTransferOwnership(cliCtx), TxSignTransferOwnership, clientUtils.PathVarChain)
 	registerTx(GetHandlerConfirmChain(cliCtx), TxConfirmChain)
@@ -89,8 +89,9 @@ type ReqConfirmChain struct {
 
 // ReqConfirmTokenDeploy represents a request to confirm a token deployment
 type ReqConfirmTokenDeploy struct {
-	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
-	TxID    string       `json:"tx_id" yaml:"tx_id"`
+	BaseReq     rest.BaseReq `json:"base_req" yaml:"base_req"`
+	OriginChain string       `json:"origin_chain" yaml:"origin_chain"`
+	TxID        string       `json:"tx_id" yaml:"tx_id"`
 }
 
 // ReqConfirmDeposit represents a request to confirm a deposit
@@ -123,6 +124,7 @@ type ReqSignPendingTransfers struct {
 type ReqSignDeployToken struct {
 	BaseReq     rest.BaseReq `json:"base_req" yaml:"base_req"`
 	OriginChain string       `json:"origin_chain" yaml:"origin_chain"`
+	Symbol      string       `json:"symbol" yaml:"symbol"`
 	Name        string       `json:"name" yaml:"name"`
 	Decimals    string       `json:"decimals" yaml:"decimals"`
 	Capacity    string       `json:"capacity" yaml:"capacity"`
@@ -198,7 +200,7 @@ func GetHandlerConfirmTokenDeploy(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		txID := common.HexToHash(req.TxID)
-		msg := types.NewConfirmTokenRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], mux.Vars(r)[clientUtils.PathVarSymbol], txID)
+		msg := types.NewConfirmTokenRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], req.OriginChain, txID)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -367,7 +369,6 @@ func GetHandlerSignDeployToken(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		symbol := mux.Vars(r)[clientUtils.PathVarSymbol]
 		decs, err := strconv.ParseUint(req.Decimals, 10, 8)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, errors.New("could not parse decimals").Error())
@@ -377,7 +378,7 @@ func GetHandlerSignDeployToken(cliCtx client.Context) http.HandlerFunc {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, errors.New("could not parse capacity").Error())
 		}
 
-		msg := types.NewSignDeployTokenRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], req.OriginChain, req.Name, symbol, uint8(decs), capacity)
+		msg := types.NewSignDeployTokenRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], req.OriginChain, req.Name, req.Symbol, uint8(decs), capacity)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
