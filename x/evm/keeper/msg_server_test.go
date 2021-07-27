@@ -237,7 +237,7 @@ func TestLink_Success(t *testing.T) {
 	assert.Equal(t, sender, n.LinkAddressesCalls()[0].Sender)
 	assert.Equal(t, recipient, n.LinkAddressesCalls()[0].Recipient)
 
-	assert.Equal(t, types.BurnerInfo{TokenAddress: types.Address(tokenAddr), Asset: btc.Bitcoin.NativeAsset, Salt: types.Hash(salt)}, *k.ForChain(ctx, chain).GetBurnerInfo(ctx, burnAddr))
+	assert.Equal(t, types.BurnerInfo{TokenAddress: types.Address(tokenAddr), Symbol: msg.Symbol, Salt: types.Hash(salt)}, *k.ForChain(ctx, chain).GetBurnerInfo(ctx, burnAddr))
 }
 
 func TestDeployTx_DifferentValue_DifferentHash(t *testing.T) {
@@ -718,7 +718,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			GetBurnerInfoFunc: func(sdk.Context, common.Address) *types.BurnerInfo {
 				return &types.BurnerInfo{
 					TokenAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
-					Asset:        rand.StrBetween(5, 10),
+					Symbol:       rand.StrBetween(5, 10),
 					Salt:         types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 				}
 			},
@@ -781,7 +781,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			return types.ERC20Deposit{
 				TxID:          types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 				Amount:        sdk.NewUint(mathRand.Uint64()),
-				Asset:         rand.StrBetween(5, 10),
+				Symbol:        rand.StrBetween(5, 10),
 				BurnerAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
 			}, types.CONFIRMED, true
 		}
@@ -797,7 +797,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			return types.ERC20Deposit{
 				TxID:          types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 				Amount:        sdk.NewUint(mathRand.Uint64()),
-				Asset:         rand.StrBetween(5, 10),
+				Symbol:        rand.StrBetween(5, 10),
 				BurnerAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
 			}, types.BURNED, true
 		}

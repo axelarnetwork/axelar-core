@@ -21,7 +21,7 @@ message NetworkInfo {
 message BurnerInfo {
   bytes token_address = 1
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
-  string asset = 2;
+  string symbol = 2;
   bytes salt = 3
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
 }
@@ -37,7 +37,7 @@ message ERC20Deposit {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
     (gogoproto.nullable) = false
   ];
-  string asset = 3;
+  string symbol = 3;
   bytes burner_address = 4
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
 }

@@ -81,13 +81,18 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, err
 	}
 
+	symbol, ok := keeper.GetTokenSymbol(ctx, req.Asset)
+	if !ok {
+		return nil, fmt.Errorf("Could not retrieve symbol for token %s", req.Asset)
+	}
+
 	s.nexus.LinkAddresses(ctx,
 		nexus.CrossChainAddress{Chain: senderChain, Address: burnerAddr.String()},
 		nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr})
 
 	burnerInfo := types.BurnerInfo{
 		TokenAddress: types.Address(tokenAddr),
-		Asset:        req.Asset,
+		Symbol:       symbol,
 		Salt:         types.Hash(salt),
 	}
 	keeper.SetBurnerInfo(ctx, burnerAddr, &burnerInfo)
@@ -277,7 +282,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	erc20Deposit := types.ERC20Deposit{
 		TxID:          req.TxID,
 		Amount:        req.Amount,
-		Asset:         burnerInfo.Asset,
+		Symbol:        burnerInfo.Symbol,
 		BurnerAddress: req.BurnerAddress,
 	}
 	keeper.SetPendingDeposit(ctx, pollKey, &erc20Deposit)
@@ -464,11 +469,6 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		// assert: the deposit is known and has not been confirmed before
 	}
 
-	symbol, ok := keeper.GetTokenSymbol(ctx, pendingDeposit.Asset)
-	if !ok {
-		return nil, fmt.Errorf("could not retrieve symbol for token %s", pendingDeposit.Asset)
-	}
-
 	voter := s.snapshotter.GetOperator(ctx, req.Sender)
 	if voter == nil {
 		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
@@ -513,7 +513,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
 	depositAddr := nexus.CrossChainAddress{Address: pendingDeposit.BurnerAddress.Hex(), Chain: chain}
-	amount := sdk.NewInt64Coin(symbol, pendingDeposit.Amount.BigInt().Int64())
+	amount := sdk.NewInt64Coin(pendingDeposit.Symbol, pendingDeposit.Amount.BigInt().Int64())
 	if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
 		return nil, err
 	}

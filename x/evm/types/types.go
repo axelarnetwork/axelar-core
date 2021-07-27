@@ -275,7 +275,7 @@ func CreateMintCommandData(chainID *big.Int, transfers []nexus.CrossChainTransfe
 
 // CreateDeployTokenCommandData returns the command data to deploy the specified token
 func CreateDeployTokenCommandData(chainID *big.Int, commandID CommandID, tokenName string, symbol string, decimals uint8, capacity sdk.Int) ([]byte, error) {
-	deployParams, err := createDeployTokenParams(tokenName, strings.ToLower(symbol), decimals, capacity.BigInt())
+	deployParams, err := createDeployTokenParams(tokenName, symbol, decimals, capacity.BigInt())
 	if err != nil {
 		return nil, err
 	}
@@ -301,7 +301,7 @@ func CreateBurnCommandData(chainID *big.Int, height int64, burnerInfos []BurnerI
 	binary.LittleEndian.PutUint64(heightBytes, uint64(height))
 
 	for _, burnerInfo := range burnerInfos {
-		commandParam, err := createBurnTokenParams(strings.ToLower(burnerInfo.Asset), common.Hash(burnerInfo.Salt))
+		commandParam, err := createBurnTokenParams(burnerInfo.Symbol, common.Hash(burnerInfo.Salt))
 		if err != nil {
 			return nil, err
 		}
