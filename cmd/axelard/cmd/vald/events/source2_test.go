@@ -109,7 +109,7 @@ func (t *testEnv) ContextIsCanceled() error {
 }
 
 func (t *testEnv) ReceiveAllBlocks(start, latest int64) error {
-	timeout, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	timeout, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
 loop:
@@ -130,7 +130,7 @@ loop:
 }
 
 func (t *testEnv) BlockChannelGetsClosed() error {
-	timeout, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	timeout, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
 loop:
@@ -152,7 +152,7 @@ loop:
 }
 
 func (t *testEnv) ResultChannelGetsClosed() error {
-	timeout, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	timeout, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
 loop:
@@ -174,7 +174,7 @@ loop:
 }
 
 func (t *testEnv) BlockNotifierFails() error {
-	timeout, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	timeout, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 loop:
 	for {
@@ -192,7 +192,7 @@ loop:
 }
 
 func (t *testEnv) BlockResultSourceFails() error {
-	timeout, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	timeout, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 loop:
 	for {
@@ -229,7 +229,7 @@ func (t *testEnv) ResultsClient() error {
 }
 
 func (t *testEnv) BlockResultSource() error {
-	t.blockSource = events.NewBlockSource(t.resultsClient, t.notifierMock, 100*time.Millisecond)
+	t.blockSource = events.NewBlockSource(t.resultsClient, t.notifierMock, 1*time.Second)
 	return nil
 }
 
@@ -243,7 +243,7 @@ func (t *testEnv) BlocksAvailable(start int64, latest int64) error {
 }
 
 func (t *testEnv) ReceiveAllResults(start int64, latest int64) error {
-	timeout, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	timeout, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
 loop:
