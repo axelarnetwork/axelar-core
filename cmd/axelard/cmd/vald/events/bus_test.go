@@ -2,127 +2,59 @@ package events_test
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	mathRand "math/rand"
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/axelarnetwork/tm-events/pkg/pubsub"
+	tmEvents "github.com/axelarnetwork/tm-events/pkg/tendermint/types"
 	"github.com/stretchr/testify/assert"
-	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 	tm "github.com/tendermint/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/events"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/events/mock"
-	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 )
 
 func TestMgr_FetchEvents(t *testing.T) {
-	var (
-		rw  *mock2.ReadWriterMock
-		mgr *events.EventBus
-	)
-	setup := func(initialComplete int64) {
+
+	t.Run("returns error", func(t *testing.T) {
 		bus := func() pubsub.Bus { return &mock.BusMock{} }
-		rw = &mock2.ReadWriterMock{
-			ReadAllFunc:  func() ([]byte, error) { return json.Marshal(initialComplete) },
-			WriteAllFunc: func([]byte) error { return nil },
-		}
-		client := &mock.SignClientMock{
-			BlockResultsFunc: func(_ context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
-				return &coretypes.ResultBlockResults{Height: *height}, nil
+		errors := make(chan error, 1)
+		source := &mock.BlockSourceMock{
+			BlockResultsFunc: func(ctx context.Context) (<-chan *coretypes.ResultBlockResults, <-chan error) {
+				return make(chan *coretypes.ResultBlockResults), errors
 			},
 		}
-		mgr = events.NewEventBus(client, rw, bus, log.TestingLogger())
-	}
+		mgr := events.NewEventBus(source, bus, log.TestingLogger())
 
-	repeats := 20
-	t.Run("stops when done", testutils.Func(func(t *testing.T) {
-		setup(0)
+		errChan := mgr.FetchEvents(context.Background())
 
-		ctx, cancel := context.WithCancel(context.Background())
-		errChan := mgr.FetchEvents(ctx)
-		cancel()
+		errors <- fmt.Errorf("some error")
 
-		for err := range errChan {
-			assert.Nil(t, err)
-		}
-	}).Repeat(repeats))
-
-	t.Run("fetch all available blocks", testutils.Func(func(t *testing.T) {
-		initialCompleted := rand.I64Between(0, 10000)
-		setup(initialCompleted)
-
-		ctx, cancel := context.WithCancel(context.Background())
-		errChan := mgr.FetchEvents(ctx)
-
-		seen := rand.I64Between(initialCompleted+1, initialCompleted+30)
-		done := make(chan struct{})
-		rw.WriteAllFunc = func(bz []byte) error {
-			var written int64
-			err := json.Unmarshal(bz, &written)
-			assert.NoError(t, err)
-			if written == seen {
-				done <- struct{}{}
-			}
-			return nil
-		}
-		mgr.NotifyNewBlock(seen)
-
-		assert.NoError(t, waitFor(done))
-
-		cancel()
-		for err := range errChan {
-			assert.Nil(t, err)
-		}
-		var actualCompleted int64
-		assert.NoError(t, json.Unmarshal(rw.WriteAllCalls()[len(rw.WriteAllCalls())-1].Bytes, &actualCompleted))
-		assert.Equal(t, seen, actualCompleted)
-	}).Repeat(1))
+		err := <-errChan
+		assert.Error(t, err)
+	})
 }
 
 func TestMgr_Subscribe(t *testing.T) {
 	var (
-		mgr            *events.EventBus
-		client         *mock.SignClientMock
-		expectedEvents []tmTypes.Event
-		rw             *mock.ReadWriterMock
-		query          *mock.QueryMock
+		mgr       *events.EventBus
+		query     *mock.QueryMock
+		newBlocks chan *coretypes.ResultBlockResults
 	)
 
-	setup := func(initialComplete int64) {
-		client = &mock.SignClientMock{
-			BlockResultsFunc: func(_ context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
-				result := &coretypes.ResultBlockResults{
-					Height:     *height,
-					TxsResults: randomTxResults(rand.I64Between(1, 100)),
-				}
-
-				expectedEvents = nil
-				for _, tx := range result.TxsResults {
-					for _, event := range tx.Events {
-						e, ok := events.ProcessEvent(event)
-						e.Height = result.Height
-						assert.True(t, ok)
-						expectedEvents = append(expectedEvents, e)
-					}
-				}
-				return result, nil
-			},
-		}
-		rw = &mock.ReadWriterMock{
-			ReadAllFunc:  func() ([]byte, error) { return json.Marshal(initialComplete) },
-			WriteAllFunc: func([]byte) error { return nil },
-		}
+	setup := func() {
+		newBlocks = make(chan *coretypes.ResultBlockResults, 10000)
+		source := &mock.BlockSourceMock{BlockResultsFunc: func(ctx context.Context) (<-chan *coretypes.ResultBlockResults, <-chan error) {
+			return newBlocks, nil
+		}}
 
 		actualEvents := make(chan pubsub.Event, 100000)
-		mgr = events.NewEventBus(client, rw, func() pubsub.Bus {
+		busFactory := func() pubsub.Bus {
 			return &mock.BusMock{
 				PublishFunc: func(event pubsub.Event) error {
 					actualEvents <- event
@@ -137,7 +69,8 @@ func TestMgr_Subscribe(t *testing.T) {
 					close(actualEvents)
 				},
 			}
-		}, log.TestingLogger())
+		}
+		mgr = events.NewEventBus(source, busFactory, log.TestingLogger())
 
 		query = &mock.QueryMock{
 			MatchesFunc: func(map[string][]string) (bool, error) { return true, nil },
@@ -147,196 +80,108 @@ func TestMgr_Subscribe(t *testing.T) {
 
 	repeats := 20
 	t.Run("query block with txs", testutils.Func(func(t *testing.T) {
-		completed := rand.I64Between(0, 10000)
-		setup(completed)
+		setup()
 
+		mgr.FetchEvents(context.Background())
 		sub, err := mgr.Subscribe(query)
 		assert.NoError(t, err)
 
-		mgr.FetchEvents()
-		mgr.NotifyNewBlock(completed + 1)
-
-		var actualEvents []tmTypes.Event
-		once := sync.Once{}
-		for e := range sub.Events() {
-			// closes once we get events, because then we can be sure the whole block has been processed
-			once.Do(mgr.Shutdown)
-			actualEvents = append(actualEvents, e.(tmTypes.Event))
+		newBlock := &coretypes.ResultBlockResults{
+			Height:           rand.PosI64(),
+			BeginBlockEvents: randomEvents(rand.I64Between(0, 10)),
+			TxsResults:       randomTxResults(rand.I64Between(1, 10)),
+			EndBlockEvents:   randomEvents(rand.I64Between(0, 10)),
 		}
 
-		assert.Equal(t, expectedEvents, actualEvents)
-	}).Repeat(repeats))
-
-	t.Run("query block without txs", testutils.Func(func(t *testing.T) {
-		completed := rand.I64Between(0, 10000)
-		setup(completed)
-		client.BlockResultsFunc = func(_ context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
-			return &coretypes.ResultBlockResults{
-				Height:     *height,
-				TxsResults: nil,
-			}, nil
+		endMarkerBlock := &coretypes.ResultBlockResults{
+			Height:           0,
+			BeginBlockEvents: randomEvents(rand.I64Between(3, 10)),
+			TxsResults:       randomTxResults(rand.I64Between(1, 10)),
+			EndBlockEvents:   randomEvents(rand.I64Between(3, 10)),
 		}
-		rw.WriteAllFunc = func(_ []byte) error {
-			// closes once the block was received. Shutdown is blocking, so need to call it async
-			go mgr.Shutdown()
-			return nil
+		newBlocks <- newBlock
+		newBlocks <- endMarkerBlock
+
+		timeout, cancel := context.WithTimeout(context.Background(), 100*time.Minute)
+		defer cancel()
+
+		expectedEventCount := len(newBlock.BeginBlockEvents) + len(newBlock.EndBlockEvents)
+		for _, result := range newBlock.TxsResults {
+			expectedEventCount += len(result.Events)
 		}
-
-		sub, err := mgr.Subscribe(query)
-		assert.NoError(t, err)
-
-		mgr.FetchEvents()
-		mgr.NotifyNewBlock(completed + 1)
-
-		var actualEvents []abci.Event
-		for e := range sub.Events() {
-			actualEvents = append(actualEvents, e.(abci.Event))
-		}
-		assert.Len(t, actualEvents, 0)
-	}).Repeat(repeats))
-
-	t.Run("match only some events", testutils.Func(func(t *testing.T) {
-		completed := rand.I64Between(0, 10000)
-		setup(completed)
-		mockedResults := client.BlockResultsFunc
-		expectedResult := make(chan *coretypes.ResultBlockResults, 1)
-		client.BlockResultsFunc = func(ctx context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
-			res, err := mockedResults(ctx, height)
-			assert.NoError(t, err)
-			expectedResult <- res
-			return res, err
-		}
-
-		eventCount := 0
-		n := int(rand.I64Between(1, 10))
-		sub, err := mgr.Subscribe(&mock.QueryMock{
-			MatchesFunc: func(map[string][]string) (bool, error) {
-				eventCount++
-				return eventCount%n == 0, nil
-			},
-			StringFunc: func() string { return rand.StrBetween(1, 100) },
-		})
-		assert.NoError(t, err)
-
-		mgr.FetchEvents()
-		mgr.NotifyNewBlock(completed + 1)
-
-		filteredCount := 0
-		var expectedEventsFiltered []tmTypes.Event
-		res := <-expectedResult
-		for _, tx := range res.TxsResults {
-			filteredCount++
-			if filteredCount%n == 0 {
-				for _, event := range tx.Events {
-					e, ok := events.ProcessEvent(event)
-					assert.True(t, ok)
-					e.Height = res.Height
-					expectedEventsFiltered = append(expectedEventsFiltered, e)
+		var eventCount int
+		for {
+			select {
+			case <-timeout.Done():
+				assert.FailNow(t, "timed out")
+			case event := <-sub.Events():
+				assert.IsType(t, tmEvents.Event{}, event)
+				actualHeight := event.(tmEvents.Event).Height
+				if actualHeight == 0 {
+					assert.Equal(t, expectedEventCount, eventCount)
+					return
 				}
+				assert.Equal(t, newBlock.Height, actualHeight)
+				eventCount++
 			}
 		}
-
-		mgr.Shutdown()
-
-		var actualEvents []tmTypes.Event
-		for e := range sub.Events() {
-			actualEvents = append(actualEvents, e.(tmTypes.Event))
-		}
-		assert.Equal(t, expectedEventsFiltered, actualEvents)
 	}).Repeat(repeats))
 
 	t.Run("match tm.event=Tx", testutils.Func(func(t *testing.T) {
-		completed := rand.I64Between(0, 10000)
-		setup(completed)
+		setup()
 
-		var err error
-		sub, err := mgr.Subscribe(&mock.QueryMock{
-			MatchesFunc: func(events map[string][]string) (bool, error) {
-				for key, values := range events {
-					if key != tm.EventTypeKey {
-						continue
-					}
+		mgr.FetchEvents(context.Background())
+		query.MatchesFunc = func(events map[string][]string) (bool, error) {
+			types := events[tm.EventTypeKey]
 
-					for _, value := range values {
-						if value == tm.EventTx {
-							return true, nil
-						}
-					}
+			for _, t := range types {
+				if t == tm.EventTx {
+					return true, nil
 				}
-				return false, nil
-			},
-			StringFunc: func() string { return rand.StrBetween(1, 100) },
-		})
+			}
+			return false, nil
+		}
+		sub, err := mgr.Subscribe(query)
 		assert.NoError(t, err)
 
-		errChan := mgr.FetchEvents()
-		mgr.NotifyNewBlock(completed + 1)
-
-		once := sync.Once{}
-		var actualEvents []tmTypes.Event
-		for e := range sub.Events() {
-			// closes once we get events, because then we can be sure the whole block has been processed
-			once.Do(mgr.Shutdown)
-
-			actualEvents = append(actualEvents, e.(tmTypes.Event))
+		newBlock := &coretypes.ResultBlockResults{
+			Height:           rand.PosI64(),
+			BeginBlockEvents: randomEvents(rand.I64Between(0, 10)),
+			TxsResults:       randomTxResults(rand.I64Between(1, 10)),
+			EndBlockEvents:   randomEvents(rand.I64Between(0, 10)),
 		}
 
-		for err := range errChan {
-			assert.NoError(t, err)
+		endMarkerBlock := &coretypes.ResultBlockResults{
+			Height:           0,
+			BeginBlockEvents: randomEvents(rand.I64Between(3, 10)),
+			TxsResults:       randomTxResults(rand.I64Between(1, 10)),
+			EndBlockEvents:   randomEvents(rand.I64Between(3, 10)),
 		}
+		newBlocks <- newBlock
+		newBlocks <- endMarkerBlock
 
-		assert.Equal(t, expectedEvents, actualEvents)
+		timeout, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+		defer cancel()
+
+		expectedEventCount := 0
+		for _, result := range newBlock.TxsResults {
+			expectedEventCount += len(result.Events)
+		}
+		var eventCount int
+		for {
+			select {
+			case <-timeout.Done():
+				assert.FailNow(t, "timed out")
+			case event := <-sub.Events():
+				assert.IsType(t, tmEvents.Event{}, event)
+				actualHeight := event.(tmEvents.Event).Height
+				if actualHeight == 0 {
+					assert.Equal(t, expectedEventCount, eventCount)
+					return
+				}
+				assert.Equal(t, newBlock.Height, actualHeight)
+				eventCount++
+			}
+		}
 	}).Repeat(repeats))
-}
-
-func randomTxResults(count int64) []*abci.ResponseDeliverTx {
-	resp := make([]*abci.ResponseDeliverTx, 0, count)
-	for i := 0; i < cap(resp); i++ {
-		resp = append(resp, &abci.ResponseDeliverTx{
-			Code:      mathRand.Uint32(),
-			Data:      rand.Bytes(int(rand.I64Between(100, 200))),
-			Log:       rand.StrBetween(5, 100),
-			Info:      rand.StrBetween(5, 100),
-			GasWanted: rand.PosI64(),
-			GasUsed:   rand.PosI64(),
-			Events:    randomEvents(rand.I64Between(1, 10)),
-			Codespace: rand.StrBetween(5, 100),
-		})
-	}
-
-	return resp
-}
-
-func randomEvents(count int64) []abci.Event {
-	events := make([]abci.Event, 0, count)
-	for i := 0; i < cap(events); i++ {
-		events = append(events, abci.Event{
-			Type:       tm.EventTx,
-			Attributes: randomAttributes(rand.I64Between(1, 10)),
-		})
-	}
-	return events
-}
-
-func randomAttributes(count int64) []abci.EventAttribute {
-	attributes := make([]abci.EventAttribute, 0, count)
-	for i := 0; i < cap(attributes); i++ {
-		attributes = append(attributes, abci.EventAttribute{
-			Key:   rand.BytesBetween(5, 100),
-			Value: rand.BytesBetween(5, 100),
-			Index: rand.Bools(0.5).Next(),
-		})
-	}
-	return attributes
-}
-
-func waitFor(done <-chan struct{}) error {
-	timeout, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-	select {
-	case <-done:
-		return nil
-	case <-timeout.Done():
-		return fmt.Errorf("timeout")
-	}
 }

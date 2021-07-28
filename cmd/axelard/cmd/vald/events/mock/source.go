@@ -326,3 +326,68 @@ func (mock *BlockResultClientMock) BlockResultsCalls() []struct {
 	mock.lockBlockResults.RUnlock()
 	return calls
 }
+
+// Ensure, that BlockNotifierMock does implement events.BlockNotifier.
+// If this is not the case, regenerate this file with moq.
+var _ events.BlockNotifier = &BlockNotifierMock{}
+
+// BlockNotifierMock is a mock implementation of events.BlockNotifier.
+//
+// 	func TestSomethingThatUsesBlockNotifier(t *testing.T) {
+//
+// 		// make and configure a mocked events.BlockNotifier
+// 		mockedBlockNotifier := &BlockNotifierMock{
+// 			BlockHeightsFunc: func(ctx context.Context) (<-chan int64, <-chan error) {
+// 				panic("mock out the BlockHeights method")
+// 			},
+// 		}
+//
+// 		// use mockedBlockNotifier in code that requires events.BlockNotifier
+// 		// and then make assertions.
+//
+// 	}
+type BlockNotifierMock struct {
+	// BlockHeightsFunc mocks the BlockHeights method.
+	BlockHeightsFunc func(ctx context.Context) (<-chan int64, <-chan error)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// BlockHeights holds details about calls to the BlockHeights method.
+		BlockHeights []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+		}
+	}
+	lockBlockHeights sync.RWMutex
+}
+
+// BlockHeights calls BlockHeightsFunc.
+func (mock *BlockNotifierMock) BlockHeights(ctx context.Context) (<-chan int64, <-chan error) {
+	if mock.BlockHeightsFunc == nil {
+		panic("BlockNotifierMock.BlockHeightsFunc: method is nil but BlockNotifier.BlockHeights was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockBlockHeights.Lock()
+	mock.calls.BlockHeights = append(mock.calls.BlockHeights, callInfo)
+	mock.lockBlockHeights.Unlock()
+	return mock.BlockHeightsFunc(ctx)
+}
+
+// BlockHeightsCalls gets all the calls that were made to BlockHeights.
+// Check the length with:
+//     len(mockedBlockNotifier.BlockHeightsCalls())
+func (mock *BlockNotifierMock) BlockHeightsCalls() []struct {
+	Ctx context.Context
+} {
+	var calls []struct {
+		Ctx context.Context
+	}
+	mock.lockBlockHeights.RLock()
+	calls = mock.calls.BlockHeights
+	mock.lockBlockHeights.RUnlock()
+	return calls
+}

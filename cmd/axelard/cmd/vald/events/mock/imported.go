@@ -123,7 +123,7 @@ var _ Bus = &BusMock{}
 // 				panic("mock out the Close method")
 // 			},
 // 			DoneFunc: func() <-chan struct{} {
-// 				panic("mock out the done method")
+// 				panic("mock out the Done method")
 // 			},
 // 			PublishFunc: func(event pubsub.Event) error {
 // 				panic("mock out the Publish method")
@@ -141,7 +141,7 @@ type BusMock struct {
 	// CloseFunc mocks the Close method.
 	CloseFunc func()
 
-	// DoneFunc mocks the done method.
+	// DoneFunc mocks the Done method.
 	DoneFunc func() <-chan struct{}
 
 	// PublishFunc mocks the Publish method.
@@ -155,7 +155,7 @@ type BusMock struct {
 		// Close holds details about calls to the Close method.
 		Close []struct {
 		}
-		// done holds details about calls to the done method.
+		// Done holds details about calls to the Done method.
 		Done []struct {
 		}
 		// Publish holds details about calls to the Publish method.
@@ -199,10 +199,10 @@ func (mock *BusMock) CloseCalls() []struct {
 	return calls
 }
 
-// done calls DoneFunc.
+// Done calls DoneFunc.
 func (mock *BusMock) Done() <-chan struct{} {
 	if mock.DoneFunc == nil {
-		panic("BusMock.DoneFunc: method is nil but Bus.done was just called")
+		panic("BusMock.DoneFunc: method is nil but Bus.Done was just called")
 	}
 	callInfo := struct {
 	}{}
@@ -212,7 +212,7 @@ func (mock *BusMock) Done() <-chan struct{} {
 	return mock.DoneFunc()
 }
 
-// DoneCalls gets all the calls that were made to done.
+// DoneCalls gets all the calls that were made to Done.
 // Check the length with:
 //     len(mockedBus.DoneCalls())
 func (mock *BusMock) DoneCalls() []struct {
@@ -299,7 +299,7 @@ var _ Subscriber = &SubscriberMock{}
 // 				panic("mock out the Close method")
 // 			},
 // 			DoneFunc: func() <-chan struct{} {
-// 				panic("mock out the done method")
+// 				panic("mock out the Done method")
 // 			},
 // 			EventsFunc: func() <-chan pubsub.Event {
 // 				panic("mock out the Events method")
@@ -317,7 +317,7 @@ type SubscriberMock struct {
 	// CloseFunc mocks the Close method.
 	CloseFunc func()
 
-	// DoneFunc mocks the done method.
+	// DoneFunc mocks the Done method.
 	DoneFunc func() <-chan struct{}
 
 	// EventsFunc mocks the Events method.
@@ -331,7 +331,7 @@ type SubscriberMock struct {
 		// Close holds details about calls to the Close method.
 		Close []struct {
 		}
-		// done holds details about calls to the done method.
+		// Done holds details about calls to the Done method.
 		Done []struct {
 		}
 		// Events holds details about calls to the Events method.
@@ -396,10 +396,10 @@ func (mock *SubscriberMock) CloseCalls() []struct {
 	return calls
 }
 
-// done calls DoneFunc.
+// Done calls DoneFunc.
 func (mock *SubscriberMock) Done() <-chan struct{} {
 	if mock.DoneFunc == nil {
-		panic("SubscriberMock.DoneFunc: method is nil but Subscriber.done was just called")
+		panic("SubscriberMock.DoneFunc: method is nil but Subscriber.Done was just called")
 	}
 	callInfo := struct {
 	}{}
@@ -409,7 +409,7 @@ func (mock *SubscriberMock) Done() <-chan struct{} {
 	return mock.DoneFunc()
 }
 
-// DoneCalls gets all the calls that were made to done.
+// DoneCalls gets all the calls that were made to Done.
 // Check the length with:
 //     len(mockedSubscriber.DoneCalls())
 func (mock *SubscriberMock) DoneCalls() []struct {

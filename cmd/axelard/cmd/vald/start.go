@@ -122,9 +122,9 @@ func GetValdCommand() *cobra.Command {
 			fPath := filepath.Join(valdHome, "state.json")
 			stateSource := NewRWFile(fPath)
 
-			logger.Info("Start listening to events")
+			logger.Info("start listening to events")
 			listen(cliCtx, appState, hub, txf, axConf, valAddr, stateSource, logger)
-			logger.Info("Shutting down")
+			logger.Info("shutting down")
 			return nil
 		},
 	}
@@ -351,6 +351,7 @@ func (b blockClient) LatestBlockHeight(ctx context.Context) (int64, error) {
 	return status.SyncInfo.LatestBlockHeight, nil
 }
 
+// NewBlockClient returns a new events.BlockClient instance
 func NewBlockClient(client rpcclient.Client) events.BlockClient {
 	return blockClient{client}
 }

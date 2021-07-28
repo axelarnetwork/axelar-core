@@ -16,7 +16,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 )
 
-//go:generate moq -pkg mock -out ./mock/source.go . BlockSource BlockClient BlockResultClient
+//go:generate moq -pkg mock -out ./mock/source.go . BlockSource BlockClient BlockResultClient BlockNotifier
 
 type dialOptions struct {
 	timeout   time.Duration
@@ -195,27 +195,35 @@ func newQueryBlockNotifier(client BlockHeightClient, logger log.Logger, options 
 	}
 }
 
-func (s queryBlockNotifier) BlockHeights(ctx context.Context) (<-chan int64, <-chan error) {
+func (q queryBlockNotifier) BlockHeights(ctx context.Context) (<-chan int64, <-chan error) {
 	blocks := make(chan int64)
 	errChan := make(chan error, 1)
 
 	go func() {
 		defer close(blocks)
-		defer s.logger.Info("stopped block query")
+		defer q.logger.Info("stopped block query")
 
-		keepAlive, keepAliveCancel := ctxWithTimeout(context.Background(), s.keepAliveInterval)
+		keepAlive, keepAliveCancel := ctxWithTimeout(context.Background(), q.keepAliveInterval)
 		defer func() { keepAliveCancel() }() // the cancel function might get reassigned, so call it indirectly
 
 		for {
+			var latest int64
+			var err error
 			select {
 			case <-keepAlive.Done():
-				latest, err := s.latestFromSyncStatus(ctx)
+				latest, err = q.latestFromSyncStatus(ctx)
 				if err != nil {
 					errChan <- err
 					return
 				}
-				keepAlive, keepAliveCancel = ctxWithTimeout(context.Background(), s.keepAliveInterval)
-				blocks <- latest
+				keepAlive, keepAliveCancel = ctxWithTimeout(context.Background(), q.keepAliveInterval)
+			case <-ctx.Done():
+				return
+			}
+
+			select {
+			case blocks <- latest:
+				break
 			case <-ctx.Done():
 				return
 			}
@@ -224,19 +232,19 @@ func (s queryBlockNotifier) BlockHeights(ctx context.Context) (<-chan int64, <-c
 	return blocks, errChan
 }
 
-func (s *queryBlockNotifier) latestFromSyncStatus(ctx context.Context) (int64, error) {
-	backoff := utils.LinearBackOff(s.timeout)
-	for i := 0; i <= s.retries; i++ {
-		ctx, cancel := ctxWithTimeout(ctx, s.timeout)
-		latestBlockHeight, err := s.client.LatestBlockHeight(ctx)
+func (q *queryBlockNotifier) latestFromSyncStatus(ctx context.Context) (int64, error) {
+	backoff := utils.LinearBackOff(q.timeout)
+	for i := 0; i <= q.retries; i++ {
+		ctx, cancel := ctxWithTimeout(ctx, q.timeout)
+		latestBlockHeight, err := q.client.LatestBlockHeight(ctx)
 		cancel()
 		if err == nil {
 			return latestBlockHeight, nil
 		}
-		s.logger.Info(sdkerrors.Wrapf(err, "failed to retrieve node status, attempt %d", i+1).Error())
+		q.logger.Info(sdkerrors.Wrapf(err, "failed to retrieve node status, attempt %d", i+1).Error())
 		time.Sleep(backoff(i))
 	}
-	return 0, fmt.Errorf("aborting sync status retrieval after %d attemts ", s.retries+1)
+	return 0, fmt.Errorf("aborting sync status retrieval after %d attemts ", q.retries+1)
 }
 
 // BlockHeightClient can query the latest block height
@@ -259,7 +267,7 @@ type BlockClient interface {
 type blockNotifier struct {
 	logger         log.Logger
 	start          int64
-	syncNotifier   *queryBlockNotifier
+	queryNotifier  *queryBlockNotifier
 	eventsNotifier *eventblockNotifier
 	running        context.Context
 	shutdown       context.CancelFunc
@@ -274,7 +282,7 @@ func NewBlockNotifier(client BlockClient, startBlock int64, logger log.Logger, o
 		start:          startBlock,
 		logger:         logger,
 		eventsNotifier: newEventBlockNotifier(client, logger, options...),
-		syncNotifier:   newQueryBlockNotifier(client, logger, options...),
+		queryNotifier:  newQueryBlockNotifier(client, logger, options...),
 	}
 }
 
@@ -283,52 +291,37 @@ func (b blockNotifier) BlockHeights(ctx context.Context) (<-chan int64, <-chan e
 	errChan := make(chan error, 1)
 	b.running, b.shutdown = context.WithCancel(ctx)
 
-	blocksFromSync, syncErrs := b.syncNotifier.BlockHeights(b.running)
+	blocksFromQuery, queryErrs := b.queryNotifier.BlockHeights(b.running)
 	blocksFromEvents, eventErrs := b.eventsNotifier.BlockHeights(b.running)
 
-	go b.handleErrors(eventErrs, syncErrs, errChan)
+	go b.handleErrors(eventErrs, queryErrs, errChan)
 
 	b.logger.Info(fmt.Sprintf("syncing blocks starting with block %d", b.start))
-	blocksFromNotifiers := make(chan int64)
-
-	go b.pipeInto(blocksFromSync, blocksFromNotifiers)
-	go b.pipeInto(blocksFromEvents, blocksFromNotifiers)
 
 	blocks := make(chan int64)
-	go b.pipeEachBlock(blocksFromNotifiers, blocks)
+	go b.pipeLatestBlock(blocksFromQuery, blocksFromEvents, blocks)
 
 	return blocks, errChan
 }
 
-func (b blockNotifier) handleErrors(eventErrs <-chan error, syncErrs <-chan error, errChan chan error) {
+func (b blockNotifier) handleErrors(eventErrs <-chan error, queryErrs <-chan error, errChan chan error) {
 	defer b.shutdown()
 
 	for {
-		// the sync notifier is more reliable but slower, so we still continue on as long as it's available
+		// the query notifier is more reliable but slower, so we still continue on as long as it's available
 		select {
-		case err := <-syncErrs:
+		case err := <-queryErrs:
 			errChan <- err
 			return
 		case err := <-eventErrs:
-			b.logger.Error(sdkerrors.Wrapf(err, "cannot receive new blocks from events, fallback on querying actively for blocks").Error())
+			b.logger.Error(sdkerrors.Wrapf(err, "cannot receive new blocks from events, falling back on querying actively for blocks").Error())
 		case <-b.running.Done():
 			return
 		}
 	}
 }
 
-func (b blockNotifier) pipeInto(source <-chan int64, sink chan int64) {
-	for block := range source {
-		select {
-		case sink <- block:
-			break
-		case <-b.running.Done():
-			return
-		}
-	}
-}
-
-func (b blockNotifier) pipeEachBlock(blocksFromNotifiers <-chan int64, blockHeights chan int64) {
+func (b blockNotifier) pipeLatestBlock(fromQuery <-chan int64, fromEvents <-chan int64, blockHeights chan int64) {
 	defer close(blockHeights)
 	defer b.logger.Info("stopped block sync")
 
@@ -337,8 +330,13 @@ func (b blockNotifier) pipeEachBlock(blocksFromNotifiers <-chan int64, blockHeig
 	for {
 		for {
 			select {
-			case block := <-blocksFromNotifiers:
-				if latestBlock >= block {
+			case block := <-fromQuery:
+				if latestBlock > block || pendingBlockHeight > block {
+					continue
+				}
+				latestBlock = block
+			case block := <-fromEvents:
+				if latestBlock > block || pendingBlockHeight > block {
 					continue
 				}
 				latestBlock = block

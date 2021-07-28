@@ -17,13 +17,10 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/jobs"
 )
 
-//go:generate moq -pkg mock -out ./mock/bus_test.go . pubsub.Bus
-
 // Consume processes all events from the given subscriber with the given function.
 // Do not consume the same subscriber multiple times.
 func Consume(subscriber events.FilteredSubscriber, process func(blockHeight int64, attributes []sdk.Attribute) error) jobs.Job {
 	return func(errChan chan<- error) {
-	loop:
 		for {
 			select {
 			case e := <-subscriber.Events():
@@ -34,7 +31,7 @@ func Consume(subscriber events.FilteredSubscriber, process func(blockHeight int6
 					}
 				}()
 			case <-subscriber.Done():
-				break loop
+				return
 			}
 		}
 	}
@@ -92,7 +89,7 @@ func NewEventBus(source BlockSource, pubsubFactory func() pubsub.Bus, logger log
 }
 
 // FetchEvents asynchronously queries the blockchain for new blocks and publishes all txs events in those blocks to the event manager's subscribers.
-// Any occurring events are pushed into the returned error channel.
+// Any occurring errors are pushed into the returned error channel.
 func (m *EventBus) FetchEvents(ctx context.Context) <-chan error {
 	// either the block source or the event manager could push an error at the same time, so we need to make sure we don't block
 	errChan := make(chan error, 2)
@@ -112,8 +109,8 @@ func (m *EventBus) FetchEvents(ctx context.Context) <-chan error {
 	}()
 
 	go func() {
-		defer m.logger.Info("shutting down")
 		defer m.shutdown()
+		defer m.logger.Info("shutting down")
 
 		for {
 			select {
@@ -170,37 +167,56 @@ func (m *EventBus) publishEvents(block *coretypes.ResultBlockResults) error {
 	m.subscribeLock.RLock()
 	defer m.subscribeLock.RUnlock()
 
+	// beginBlock and endBlock events are published together as block events
+	blockEvents := append(block.BeginBlockEvents, block.EndBlockEvents...)
+	eventMap := mapifyEvents(blockEvents)
+	eventMap[tm.EventTypeKey] = append(eventMap[tm.EventTypeKey], tm.EventNewBlockHeader, tm.EventNewBlock)
+	err := m.publishMatches(blockEvents, eventMap, block.Height)
+	if err != nil {
+		return err
+	}
+
 	for _, txRes := range block.TxsResults {
-		eventMap := mapifyEvents(txRes.Events)
-		for _, subscription := range m.subscriptions {
-			match, err := subscription.Query.Matches(eventMap)
+		eventMap = mapifyEvents(txRes.Events)
+		eventMap[tm.EventTypeKey] = append(eventMap[tm.EventTypeKey], tm.EventTx)
+		err := m.publishMatches(txRes.Events, eventMap, block.Height)
+		if err != nil {
+			return err
+		}
+	}
+
+	m.logger.Debug(fmt.Sprintf("published all events for block %d", block.Height))
+	return nil
+}
+
+func (m *EventBus) publishMatches(abciEvents []abci.Event, eventMap map[string][]string, blockHeight int64) error {
+	for _, subscription := range m.subscriptions {
+		match, err := subscription.Query.Matches(eventMap)
+		if err != nil {
+			return fmt.Errorf("failed to match against query %s: %w", subscription.Query.String(), err)
+		}
+
+		if !match {
+			continue
+		}
+
+		for _, abciEvent := range abciEvents {
+			event, ok := events.ProcessEvent(abciEvent)
+			if !ok {
+				return fmt.Errorf("could not parse event %v", abciEvent)
+			}
+			event.Height = blockHeight
+			err := subscription.Publish(event)
 			if err != nil {
-				return fmt.Errorf("failed to match against query %s: %w", subscription.Query.String(), err)
-			}
-
-			if !match {
-				continue
-			}
-
-			for _, event := range txRes.Events {
-				e, ok := events.ProcessEvent(event)
-				if !ok {
-					return fmt.Errorf("could not parse event %v", event)
-				}
-				e.Height = block.Height
-				err := subscription.Publish(event)
-				if err != nil {
-					return err
-				}
+				return err
 			}
 		}
 	}
-	m.logger.Debug(fmt.Sprintf("published all tx events for block %d", block.Height))
 	return nil
 }
 
 func mapifyEvents(events []abci.Event) map[string][]string {
-	result := map[string][]string{tm.EventTypeKey: {tm.EventTx}}
+	result := make(map[string][]string)
 	for _, event := range events {
 		if len(event.Type) == 0 {
 			return nil
