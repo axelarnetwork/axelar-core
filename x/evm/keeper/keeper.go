@@ -234,7 +234,7 @@ func (k keeper) GetTokenAddress(ctx sdk.Context, assetName string, gatewayAddr c
 
 	tokenInfo := k.getTokenInfo(ctx, assetName)
 	if tokenInfo == nil {
-		return common.Address{}, fmt.Errorf("symbol not found/confirmed")
+		return common.Address{}, fmt.Errorf("symbol not found")
 	}
 
 	var saltToken [32]byte
