@@ -219,7 +219,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			}
 
 			pubKey := btcecPK.ToECDSA()
-			s.SetKey(ctx, req.PollMeta.ID, *pubKey)
+			s.SetKey(ctx, req.PollKey.ID, *pubKey)
 
 			ctx.EventManager().EmitEvent(
 				event.AppendAttributes(
