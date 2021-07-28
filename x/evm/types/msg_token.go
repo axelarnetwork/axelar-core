@@ -37,6 +37,10 @@ func (m ConfirmTokenRequest) ValidateBasic() error {
 		return fmt.Errorf("missing chain")
 	}
 
+	if m.OriginChain == "" {
+		return fmt.Errorf("missing origin chain")
+	}
+
 	return nil
 }
 

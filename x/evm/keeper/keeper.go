@@ -223,7 +223,7 @@ func (k keeper) GetTokenSymbol(ctx sdk.Context, assetName string) (string, bool)
 	return tokenInfo.Symbol, true
 }
 
-// GetTokenAddress calculates the token address given asset name and axelar gateway address
+// GetTokenAddress calculates the token address for some asset with the provided axelar gateway address
 func (k keeper) GetTokenAddress(ctx sdk.Context, assetName string, gatewayAddr common.Address) (common.Address, error) {
 	assetName = strings.ToLower(assetName)
 
