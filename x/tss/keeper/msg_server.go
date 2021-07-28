@@ -7,12 +7,14 @@ import (
 	"strconv"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	gogoprototypes "github.com/gogo/protobuf/types"
 )
 
 var _ types.MsgServiceServer = msgServer{}
@@ -170,7 +172,23 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	}
 
 	poll := s.voter.GetPoll(ctx, req.PollKey)
-	if err := poll.Vote(voter, req.Result); err != nil {
+
+	var voteResult codec.ProtoMarshaler
+	if keygenData := req.Result.GetData(); keygenData != nil {
+		voteResult = &gogoprototypes.BytesValue{Value: keygenData.GetPubKey()}
+
+		//TODO: store the recovery data in the keeper
+		_ = keygenData.ShareRecoveryInfos
+		if voteResult == nil {
+			voteResult = req.Result.GetCriminals()
+		}
+	}
+
+	if voteResult == nil {
+		return nil, fmt.Errorf("invalid result")
+	}
+
+	if err := poll.Vote(voter, voteResult); err != nil {
 		return nil, err
 	}
 
@@ -198,39 +216,29 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	}
 
 	result := poll.GetResult()
+	// result should be either the PubKey or Criminals
 	switch keygenResult := result.(type) {
-	case *tofnd.MessageOut_KeygenResult:
+	case *gogoprototypes.BytesValue:
 
-		// result should be either KeygenData or Criminals
-		if keygenData := keygenResult.GetData(); keygenData != nil {
-			// if any member of KeygenData is nil, propagete an error
-			pubKeyBytes := keygenData.GetPubKey()
-			if pubKeyBytes == nil {
-				return nil, fmt.Errorf("pubkey bytes is nil")
-			}
-			recoveryInfo := keygenData.GetShareRecoveryInfos()
-			if recoveryInfo == nil {
-				return nil, fmt.Errorf("recovery info is nil")
-			}
-			// TODO: check that the number of shares is the same as the number of recovery info
-			btcecPK, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
-			if err != nil {
-				return nil, fmt.Errorf("could not unmarshal public key bytes: [%w]", err)
-			}
-
-			pubKey := btcecPK.ToECDSA()
-			s.SetKey(ctx, req.PollKey.ID, *pubKey)
-
-			ctx.EventManager().EmitEvent(
-				event.AppendAttributes(
-					sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
-					sdk.NewAttribute(types.AttributeKeyPayload, keygenResult.String()),
-				),
-			)
-
-			return &types.VotePubKeyResponse{}, nil
+		// keygenResult.GetValue() cannot be nil, because we already guard agaisnt that case
+		// TODO: check that the number of shares is the same as the number of recovery info
+		btcecPK, err := btcec.ParsePubKey(keygenResult.GetValue(), btcec.S256())
+		if err != nil {
+			return nil, fmt.Errorf("could not unmarshal public key bytes: [%w]", err)
 		}
 
+		pubKey := btcecPK.ToECDSA()
+		s.SetKey(ctx, req.PollKey.ID, *pubKey)
+
+		ctx.EventManager().EmitEvent(
+			event.AppendAttributes(
+				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
+				sdk.NewAttribute(types.AttributeKeyPayload, keygenResult.String()),
+			),
+		)
+
+		return &types.VotePubKeyResponse{}, nil
+	case *tofnd.MessageOut_CriminalList:
 		// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed
 		// TODO: the snapshot itself can be deleted too but we need to be more careful with it
 		s.DeleteSnapshotCounterForKeyID(ctx, req.PollKey.ID)
@@ -246,7 +254,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			return nil, fmt.Errorf("no snapshot found for counter %d", poll.GetSnapshotSeqNo())
 		}
 
-		for _, criminal := range keygenResult.GetCriminals().Criminals {
+		for _, criminal := range keygenResult.Criminals {
 			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
 			if _, found := snapshot.GetValidator(criminalAddress); !found {
 				s.Logger(ctx).Info(fmt.Sprintf("received criminal %s who is not a participant of producing key %s", criminalAddress.String(), req.PollKey.ID))
