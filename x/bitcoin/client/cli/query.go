@@ -128,7 +128,7 @@ func GetCmdNextKeyID(queryRoute string) *cobra.Command {
 
 			path := fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QNextKeyID, args[0])
 
-			bz, _, err := clientCtx.QueryWithData(path, nil)
+			bz, _, err := clientCtx.Query(path)
 			if err != nil {
 				return sdkerrors.Wrap(err, types.ErrFNextKeyID)
 			}
@@ -157,7 +157,7 @@ func GetCmdMinOutputAmount(queryRoute string) *cobra.Command {
 
 			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QMinOutputAmount)
 
-			bz, _, err := clientCtx.QueryWithData(path, nil)
+			bz, _, err := clientCtx.Query(path)
 			if err != nil {
 				return sdkerrors.Wrap(err, types.ErrFMinOutputAmount)
 			}
@@ -186,7 +186,7 @@ func GetCmdLatestTx(queryRoute string) *cobra.Command {
 
 			path := fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QLatestTxByKeyRole, args[0])
 
-			bz, _, err := clientCtx.QueryWithData(path, nil)
+			bz, _, err := clientCtx.Query(path)
 			if err != nil {
 				return sdkerrors.Wrap(err, types.ErrFLatestTx)
 			}
@@ -216,7 +216,7 @@ func GetCmdSignedTx(queryRoute string) *cobra.Command {
 
 			path := fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QSignedTx, args[0])
 
-			bz, _, err := clientCtx.QueryWithData(path, nil)
+			bz, _, err := clientCtx.Query(path)
 			if err != nil {
 				return sdkerrors.Wrap(err, types.ErrFSignedTx)
 			}

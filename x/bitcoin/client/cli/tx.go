@@ -100,7 +100,7 @@ func GetCmdLink() *cobra.Command {
 	return cmd
 }
 
-// GetCmdCreatePendingTransfersTx returns the cli command to sign all pending token transfers from other chains
+// GetCmdCreatePendingTransfersTx returns the cli command to create a secondary key consolidation transaction handling all pending transfers
 func GetCmdCreatePendingTransfersTx() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create-pending-transfers-tx [keyID]",
@@ -133,7 +133,7 @@ func GetCmdCreatePendingTransfersTx() *cobra.Command {
 	return cmd
 }
 
-// GetCmdCreateMasterConsolidationTx returns the cli command to sign the master key consolidation transaction
+// GetCmdCreateMasterConsolidationTx returns the cli command to create a master key consolidation transaction
 func GetCmdCreateMasterConsolidationTx() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create-master-tx [keyID]",
