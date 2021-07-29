@@ -238,9 +238,9 @@ func GetCmdSignPendingTransfersTx() *cobra.Command {
 // GetCmdSignDeployToken returns the cli command to sign deploy-token command data for an EVM chain
 func GetCmdSignDeployToken() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "sign-deploy-token [evm chain] [origin chain] [name] [symbol] [decimals] [capacity]",
+		Use:   "sign-deploy-token [evm chain] [origin chain] [symbol] [decimals] [capacity]",
 		Short: "Signs the call data to deploy a token with the AxelarGateway contract",
-		Args:  cobra.ExactArgs(6),
+		Args:  cobra.ExactArgs(5),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -249,18 +249,17 @@ func GetCmdSignDeployToken() *cobra.Command {
 
 			chain := args[0]
 			originChain := args[1]
-			name := args[2]
-			symbol := args[3]
-			decs, err := strconv.ParseUint(args[4], 10, 8)
+			symbol := args[2]
+			decs, err := strconv.ParseUint(args[3], 10, 8)
 			if err != nil {
 				return fmt.Errorf("could not parse decimals")
 			}
-			capacity, ok := sdk.NewIntFromString(args[5])
+			capacity, ok := sdk.NewIntFromString(args[4])
 			if !ok {
 				return fmt.Errorf("could not parse capacity")
 			}
 
-			msg := types.NewSignDeployTokenRequest(cliCtx.GetFromAddress(), chain, originChain, name, symbol, uint8(decs), capacity)
+			msg := types.NewSignDeployTokenRequest(cliCtx.GetFromAddress(), chain, originChain, symbol, uint8(decs), capacity)
 			if err = msg.ValidateBasic(); err != nil {
 				return err
 			}

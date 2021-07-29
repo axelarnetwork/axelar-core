@@ -172,7 +172,7 @@ func TestGetTokenAddress_CorrectData(t *testing.T) {
 
 	chain := "Ethereum"
 	axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
-	tokenName := "axelar token"
+	assetName := "axelar token"
 	tokenSymbol := "at"
 	decimals := uint8(18)
 	capacity := sdk.NewIntFromUint64(uint64(10000))
@@ -183,9 +183,9 @@ func TestGetTokenAddress_CorrectData(t *testing.T) {
 	account, err := sdk.AccAddressFromBech32("cosmos1vjyc4qmsdtdl5a4ruymnjqpchm5gyqde63sqdh")
 	assert.NoError(t, err)
 	keeper := k.ForChain(ctx, chain)
-	keeper.SetTokenInfo(ctx, tokenName, &types.SignDeployTokenRequest{Sender: account, TokenName: tokenName, Symbol: tokenSymbol, Decimals: decimals, Capacity: capacity})
+	keeper.SetTokenInfo(ctx, assetName, &types.SignDeployTokenRequest{Sender: account, Symbol: tokenSymbol, Decimals: decimals, Capacity: capacity})
 
-	actual, err := keeper.GetTokenAddress(ctx, tokenName, axelarGateway)
+	actual, err := keeper.GetTokenAddress(ctx, assetName, axelarGateway)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)

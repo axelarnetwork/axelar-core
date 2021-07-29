@@ -256,7 +256,7 @@ func (k keeper) GetTokenAddress(ctx sdk.Context, assetName string, gatewayAddr c
 	}
 
 	arguments := abi.Arguments{{Type: stringType}, {Type: stringType}, {Type: uint8Type}, {Type: uint256Type}}
-	packed, err := arguments.Pack(tokenInfo.TokenName, tokenInfo.Symbol, tokenInfo.Decimals, tokenInfo.Capacity.BigInt())
+	packed, err := arguments.Pack(assetName, tokenInfo.Symbol, tokenInfo.Decimals, tokenInfo.Capacity.BigInt())
 	if err != nil {
 		return common.Address{}, err
 	}

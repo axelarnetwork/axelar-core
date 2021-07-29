@@ -707,9 +707,9 @@ func (s msgServer) SignDeployToken(c context.Context, req *types.SignDeployToken
 		return nil, fmt.Errorf("%s is not a registered chain", req.OriginChain)
 	}
 
-	commandID := getCommandID([]byte(req.TokenName), chainID)
+	commandID := getCommandID([]byte(originChain.NativeAsset), chainID)
 
-	data, err := types.CreateDeployTokenCommandData(chainID, commandID, req.TokenName, req.Symbol, req.Decimals, req.Capacity)
+	data, err := types.CreateDeployTokenCommandData(chainID, commandID, originChain.NativeAsset, req.Symbol, req.Decimals, req.Capacity)
 	if err != nil {
 		return nil, err
 	}
