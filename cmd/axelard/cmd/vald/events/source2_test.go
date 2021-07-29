@@ -6,12 +6,10 @@ import (
 	"fmt"
 	mathRand "math/rand"
 	"os"
-	"strconv"
 	"testing"
 	"time"
 
 	"github.com/cucumber/godog"
-	"github.com/cucumber/messages-go/v10"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -109,7 +107,7 @@ func (t *testEnv) ContextIsCanceled() error {
 }
 
 func (t *testEnv) ReceiveAllBlocks(start, latest int64) error {
-	timeout, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	timeout, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 loop:
@@ -130,7 +128,7 @@ loop:
 }
 
 func (t *testEnv) BlockChannelGetsClosed() error {
-	timeout, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	timeout, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 loop:
@@ -152,7 +150,7 @@ loop:
 }
 
 func (t *testEnv) ResultChannelGetsClosed() error {
-	timeout, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	timeout, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 loop:
@@ -174,7 +172,7 @@ loop:
 }
 
 func (t *testEnv) BlockNotifierFails() error {
-	timeout, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	timeout, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 loop:
 	for {
@@ -192,7 +190,7 @@ loop:
 }
 
 func (t *testEnv) BlockResultSourceFails() error {
-	timeout, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	timeout, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 loop:
 	for {
@@ -243,7 +241,7 @@ func (t *testEnv) BlocksAvailable(start int64, latest int64) error {
 }
 
 func (t *testEnv) ReceiveAllResults(start int64, latest int64) error {
-	timeout, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	timeout, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 loop:
@@ -355,39 +353,6 @@ func randomTxResults(count int64) []*abci.ResponseDeliverTx {
 	}
 
 	return resp
-}
-
-func toEvents(table *messages.PickleStepArgument_PickleTable) map[int64]*coretypes.ResultBlockResults {
-	results := make(map[int64]*coretypes.ResultBlockResults)
-
-	for i := 1; i < len(table.Rows); i++ {
-		height, err := strconv.ParseInt(table.Rows[i].Cells[0].GetValue(), 10, 64)
-		if err != nil {
-			panic(err)
-		}
-
-		beginBlockEventCount, err := strconv.ParseInt(table.Rows[i].Cells[1].GetValue(), 10, 64)
-		if err != nil {
-			panic(err)
-		}
-		txResultCount, err := strconv.ParseInt(table.Rows[i].Cells[2].GetValue(), 10, 64)
-		if err != nil {
-			panic(err)
-		}
-		endBlockEventCount, err := strconv.ParseInt(table.Rows[i].Cells[3].GetValue(), 10, 64)
-		if err != nil {
-			panic(err)
-		}
-
-		results[height] = &coretypes.ResultBlockResults{
-			Height:           height,
-			TxsResults:       randomTxResults(txResultCount),
-			BeginBlockEvents: randomEvents(beginBlockEventCount),
-			EndBlockEvents:   randomEvents(endBlockEventCount),
-		}
-	}
-
-	return results
 }
 
 func randomEvents(count int64) []abci.Event {
