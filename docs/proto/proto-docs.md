@@ -1274,6 +1274,7 @@ AxelarGateway
 | `capacity` | [bytes](#bytes) |  |  |
 | `decimals` | [uint32](#uint32) |  |  |
 | `symbol` | [string](#string) |  |  |
+| `token_name` | [string](#string) |  |  |
 
 
 

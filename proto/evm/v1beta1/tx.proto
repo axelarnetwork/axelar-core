@@ -104,6 +104,7 @@ message SignDeployTokenRequest {
   ];
   uint32 decimals = 5 [ (gogoproto.casttype) = "uint8" ];
   string symbol = 6;
+  string token_name = 7;
 }
 
 message SignDeployTokenResponse {
