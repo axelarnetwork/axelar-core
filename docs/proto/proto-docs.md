@@ -842,6 +842,7 @@ that is deposited by an user
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `token_address` | [bytes](#bytes) |  |  |
+| `destination_chain` | [string](#string) |  |  |
 | `symbol` | [string](#string) |  |  |
 | `salt` | [bytes](#bytes) |  |  |
 
@@ -860,7 +861,7 @@ ERC20Deposit contains information for an ERC20 deposit
 | ----- | ---- | ----- | ----------- |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `amount` | [bytes](#bytes) |  |  |
-| `symbol` | [string](#string) |  |  |
+| `destination_chain` | [string](#string) |  |  |
 | `burner_address` | [bytes](#bytes) |  |  |
 
 
@@ -876,7 +877,7 @@ ERC20TokenDeployment describes information about an ERC20 token
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `symbol` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
 | `token_address` | [string](#string) |  |  |
 
 
@@ -1146,7 +1147,7 @@ MsgConfirmToken represents a token deploy confirmation message
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
-| `symbol` | [string](#string) |  |  |
+| `origin_chain` | [string](#string) |  |  |
 
 
 
@@ -1203,7 +1204,7 @@ address
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
 | `recipient_addr` | [string](#string) |  |  |
-| `symbol` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
 | `recipient_chain` | [string](#string) |  |  |
 
 
@@ -1269,6 +1270,7 @@ AxelarGateway
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
+| `origin_chain` | [string](#string) |  |  |
 | `capacity` | [bytes](#bytes) |  |  |
 | `decimals` | [uint32](#uint32) |  |  |
 | `symbol` | [string](#string) |  |  |
@@ -1471,7 +1473,7 @@ MsgVoteConfirmToken represents a message that votes on a token deploy
 | `chain` | [string](#string) |  |  |
 | `poll_key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
-| `symbol` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
 
 
@@ -1560,14 +1562,14 @@ Msg defines the evm Msg service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `Link` | [LinkRequest](#evm.v1beta1.LinkRequest) | [LinkResponse](#evm.v1beta1.LinkResponse) |  | POST|/axelar/evm/link/{recipient_chain}|
 | `ConfirmChain` | [ConfirmChainRequest](#evm.v1beta1.ConfirmChainRequest) | [ConfirmChainResponse](#evm.v1beta1.ConfirmChainResponse) |  | POST|/axelar/evm/confirm-chain|
-| `ConfirmToken` | [ConfirmTokenRequest](#evm.v1beta1.ConfirmTokenRequest) | [ConfirmTokenResponse](#evm.v1beta1.ConfirmTokenResponse) |  | POST|/axelar/evm/confirm-erc20-deploy/{symbol}|
+| `ConfirmToken` | [ConfirmTokenRequest](#evm.v1beta1.ConfirmTokenRequest) | [ConfirmTokenResponse](#evm.v1beta1.ConfirmTokenResponse) |  | POST|/axelar/evm/confirm-erc20-deploy|
 | `ConfirmDeposit` | [ConfirmDepositRequest](#evm.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#evm.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/evm/confirm-erc20-deposit|
 | `ConfirmTransferOwnership` | [ConfirmTransferOwnershipRequest](#evm.v1beta1.ConfirmTransferOwnershipRequest) | [ConfirmTransferOwnershipResponse](#evm.v1beta1.ConfirmTransferOwnershipResponse) |  | POST|/axelar/evm/confirm-transfer-ownership|
 | `VoteConfirmChain` | [VoteConfirmChainRequest](#evm.v1beta1.VoteConfirmChainRequest) | [VoteConfirmChainResponse](#evm.v1beta1.VoteConfirmChainResponse) |  | ||
 | `VoteConfirmDeposit` | [VoteConfirmDepositRequest](#evm.v1beta1.VoteConfirmDepositRequest) | [VoteConfirmDepositResponse](#evm.v1beta1.VoteConfirmDepositResponse) |  | ||
 | `VoteConfirmToken` | [VoteConfirmTokenRequest](#evm.v1beta1.VoteConfirmTokenRequest) | [VoteConfirmTokenResponse](#evm.v1beta1.VoteConfirmTokenResponse) |  | ||
 | `VoteConfirmTransferOwnership` | [VoteConfirmTransferOwnershipRequest](#evm.v1beta1.VoteConfirmTransferOwnershipRequest) | [VoteConfirmTransferOwnershipResponse](#evm.v1beta1.VoteConfirmTransferOwnershipResponse) |  | ||
-| `SignDeployToken` | [SignDeployTokenRequest](#evm.v1beta1.SignDeployTokenRequest) | [SignDeployTokenResponse](#evm.v1beta1.SignDeployTokenResponse) |  | POST|/axelar/evm/sign-deploy-token/{symbol}|
+| `SignDeployToken` | [SignDeployTokenRequest](#evm.v1beta1.SignDeployTokenRequest) | [SignDeployTokenResponse](#evm.v1beta1.SignDeployTokenResponse) |  | POST|/axelar/evm/sign-deploy-token|
 | `SignBurnTokens` | [SignBurnTokensRequest](#evm.v1beta1.SignBurnTokensRequest) | [SignBurnTokensResponse](#evm.v1beta1.SignBurnTokensResponse) |  | POST|/axelar/evm/sign-burn|
 | `SignTx` | [SignTxRequest](#evm.v1beta1.SignTxRequest) | [SignTxResponse](#evm.v1beta1.SignTxResponse) |  | POST|/axelar/evm/sign-tx|
 | `SignPendingTransfers` | [SignPendingTransfersRequest](#evm.v1beta1.SignPendingTransfersRequest) | [SignPendingTransfersResponse](#evm.v1beta1.SignPendingTransfersResponse) |  | POST|/axelar/evm/sign-pending|

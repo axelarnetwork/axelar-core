@@ -20,7 +20,7 @@ message Signature {
 
 message QueryKeyResponse {
   VoteStatus vote_status = 1;
-  exported.v1beta1.KeyRole role = 2;
+  tss.exported.v1beta1.KeyRole role = 2;
 }
 
 enum VoteStatus {

@@ -21,6 +21,7 @@ const (
 	AttributeKeyTokenAddress   = "tokenAddress"
 	AttributeKeyGatewayAddress = "gatewayAddress"
 	AttributeKeyConfHeight     = "confHeight"
+	AttributeKeyAsset          = "asset"
 	AttributeKeySymbol         = "symbol"
 	AttributeKeyNativeAsset    = "nativeAsset"
 )

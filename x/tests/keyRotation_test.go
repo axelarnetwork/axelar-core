@@ -139,7 +139,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// deploy token
 	deployTokenResult := <-chain.Submit(
-		&evmTypes.SignDeployTokenRequest{Sender: randomSender(), Chain: "ethereum", Capacity: sdk.NewInt(100000), Decimals: 8, Symbol: "satoshi", TokenName: "Satoshi"})
+		&evmTypes.SignDeployTokenRequest{Sender: randomSender(), Chain: "ethereum", OriginChain: "bitcoin", Capacity: sdk.NewInt(100000), Decimals: 8, Symbol: "satoshi", TokenName: "Satoshi"})
 	assert.NoError(t, deployTokenResult.Error)
 
 	// wait for voting to be done (signing takes longer to tally up)
@@ -198,7 +198,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		}
 	}
 
-	confirmResult1 := <-chain.Submit(evmTypes.NewConfirmTokenRequest(randomSender(), "ethereum", "satoshi", txHash))
+	confirmResult1 := <-chain.Submit(evmTypes.NewConfirmTokenRequest(randomSender(), "ethereum", "bitcoin", txHash))
 	assert.NoError(t, confirmResult1.Error)
 
 	if err := waitFor(listeners.ethTokenDone, 1); err != nil {

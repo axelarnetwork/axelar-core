@@ -175,12 +175,12 @@
       - [add-chain \[name\] \[native asset\] \[chain config\]](axelard_tx_evm_add-chain.md)	 - Add a new EVM chain
       - [confirm-chain \[chain\]](axelard_tx_evm_confirm-chain.md)	 - Confirm an EVM chain for a given name and native asset
       - [confirm-erc20-deposit \[chain\] \[txID\] \[amount\] \[burnerAddr\]](axelard_tx_evm_confirm-erc20-deposit.md)	 - Confirm an ERC20 deposit in an EVM chain transaction that sent given amount of token to a burner address
-      - [confirm-erc20-token \[chain\] \[txID\] \[symbol\]](axelard_tx_evm_confirm-erc20-token.md)	 - Confirm an ERC20 token deployment in an EVM chain transaction for a given symbol of token and gateway address
+      - [confirm-erc20-token \[chain\] \[origin chain\] \[txID\]](axelard_tx_evm_confirm-erc20-token.md)	 - Confirm an ERC20 token deployment in an EVM chain transaction for a given native asset of some origin chain and gateway address
       - [confirm-transfer-ownership \[chain\] \[txID\] \[keyID\]](axelard_tx_evm_confirm-transfer-ownership.md)	 - Confirm a transfer ownership in an EVM chain transaction
-      - [link \[chain\] \[recipient chain\] \[recipient address\] \[symbol\]](axelard_tx_evm_link.md)	 - Link a cross chain address to an EVM chain address created by Axelar
+      - [link \[chain\] \[recipient chain\] \[recipient address\] \[asset name\]](axelard_tx_evm_link.md)	 - Link a cross chain address to an EVM chain address created by Axelar
       - [sign \[chain\] \[tx json file path\]](axelard_tx_evm_sign.md)	 - sign a raw EVM chain transaction
       - [sign-burn-tokens \[chain\]](axelard_tx_evm_sign-burn-tokens.md)	 - Sign burn command for all confirmed token deposits in an EVM chain
-      - [sign-deploy-token \[chain\] \[name\] \[symbol\] \[decimals\] \[capacity\]](axelard_tx_evm_sign-deploy-token.md)	 - Signs the call data to deploy a token with the AxelarGateway contract
+      - [sign-deploy-token \[evm chain\] \[origin chain\] \[name\] \[symbol\] \[decimals\] \[capacity\]](axelard_tx_evm_sign-deploy-token.md)	 - Signs the call data to deploy a token with the AxelarGateway contract
       - [sign-pending-transfers \[chain\]](axelard_tx_evm_sign-pending-transfers.md)	 - Sign all pending transfers to an EVM chain
       - [transfer-ownership \[chain\] \[keyID\]](axelard_tx_evm_transfer-ownership.md)	 - Sign transfer ownership command for an EVM chain contract
     - [gov](axelard_tx_gov.md)	 - Governance transactions subcommands

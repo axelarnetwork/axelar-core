@@ -27,7 +27,7 @@ service MsgService {
 
   rpc ConfirmToken(ConfirmTokenRequest) returns (ConfirmTokenResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/confirm-erc20-deploy/{symbol}"
+      post : "/axelar/evm/confirm-erc20-deploy"
       body : "*"
     };
   }
@@ -74,7 +74,7 @@ service MsgService {
   rpc SignDeployToken(SignDeployTokenRequest)
       returns (SignDeployTokenResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/sign-deploy-token/{symbol}"
+      post : "/axelar/evm/sign-deploy-token"
       body : "*"
     };
   }

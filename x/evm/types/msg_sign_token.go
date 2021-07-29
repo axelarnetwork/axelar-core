@@ -8,14 +8,15 @@ import (
 )
 
 // NewSignDeployTokenRequest is the constructor for SignDeployTokenRequest
-func NewSignDeployTokenRequest(sender sdk.AccAddress, chain, tokenName, symbol string, decimals uint8, capacity sdk.Int) *SignDeployTokenRequest {
+func NewSignDeployTokenRequest(sender sdk.AccAddress, chain, originChain, tokenName, symbol string, decimals uint8, capacity sdk.Int) *SignDeployTokenRequest {
 	return &SignDeployTokenRequest{
-		Sender:    sender,
-		Chain:     chain,
-		TokenName: tokenName,
-		Symbol:    symbol,
-		Decimals:  decimals,
-		Capacity:  capacity,
+		Sender:      sender,
+		Chain:       chain,
+		OriginChain: originChain,
+		TokenName:   tokenName,
+		Symbol:      symbol,
+		Decimals:    decimals,
+		Capacity:    capacity,
 	}
 }
 
@@ -47,6 +48,9 @@ func (m SignDeployTokenRequest) ValidateBasic() error {
 	}
 	if m.Chain == "" {
 		return fmt.Errorf("missing chain")
+	}
+	if m.OriginChain == "" {
+		return fmt.Errorf("missing origin chain")
 	}
 	if m.TokenName == "" {
 		return fmt.Errorf("missing token name")

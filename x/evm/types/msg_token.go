@@ -9,12 +9,12 @@ import (
 )
 
 // NewConfirmTokenRequest creates a message of type ConfirmTokenRequest
-func NewConfirmTokenRequest(sender sdk.AccAddress, chain, symbol string, txID common.Hash) *ConfirmTokenRequest {
+func NewConfirmTokenRequest(sender sdk.AccAddress, chain, originChain string, txID common.Hash) *ConfirmTokenRequest {
 	return &ConfirmTokenRequest{
-		Sender: sender,
-		Chain:  chain,
-		Symbol: symbol,
-		TxID:   Hash(txID),
+		Sender:      sender,
+		Chain:       chain,
+		OriginChain: originChain,
+		TxID:        Hash(txID),
 	}
 }
 
@@ -35,6 +35,10 @@ func (m ConfirmTokenRequest) ValidateBasic() error {
 	}
 	if m.Chain == "" {
 		return fmt.Errorf("missing chain")
+	}
+
+	if m.OriginChain == "" {
+		return fmt.Errorf("missing origin chain")
 	}
 
 	return nil

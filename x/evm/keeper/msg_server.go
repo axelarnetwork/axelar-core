@@ -66,12 +66,12 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, fmt.Errorf("unknown recipient chain")
 	}
 
-	found := s.nexus.IsAssetRegistered(ctx, recipientChain.Name, req.Symbol)
+	found := s.nexus.IsAssetRegistered(ctx, recipientChain.Name, req.Asset)
 	if !found {
-		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", req.Symbol, recipientChain.Name)
+		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", req.Asset, recipientChain.Name)
 	}
 
-	tokenAddr, err := keeper.GetTokenAddress(ctx, req.Symbol, gatewayAddr)
+	tokenAddr, err := keeper.GetTokenAddress(ctx, req.Asset, gatewayAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -81,14 +81,20 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, err
 	}
 
+	symbol, ok := keeper.GetTokenSymbol(ctx, req.Asset)
+	if !ok {
+		return nil, fmt.Errorf("Could not retrieve symbol for token %s", req.Asset)
+	}
+
 	s.nexus.LinkAddresses(ctx,
 		nexus.CrossChainAddress{Chain: senderChain, Address: burnerAddr.String()},
 		nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr})
 
 	burnerInfo := types.BurnerInfo{
-		TokenAddress: types.Address(tokenAddr),
-		Symbol:       req.Symbol,
-		Salt:         types.Hash(salt),
+		TokenAddress:     types.Address(tokenAddr),
+		DestinationChain: req.RecipientChain,
+		Symbol:           symbol,
+		Salt:             types.Hash(salt),
 	}
 	keeper.SetBurnerInfo(ctx, burnerAddr, &burnerInfo)
 
@@ -112,8 +118,13 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	if s.nexus.IsAssetRegistered(ctx, chain.Name, req.Symbol) {
-		return nil, fmt.Errorf("token %s is already registered", req.Symbol)
+	originChain, ok := s.nexus.GetChain(ctx, req.OriginChain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.OriginChain)
+	}
+
+	if s.nexus.IsAssetRegistered(ctx, chain.Name, originChain.NativeAsset) {
+		return nil, fmt.Errorf("token %s is already registered", originChain.NativeAsset)
 	}
 
 	keeper := s.ForChain(ctx, chain.Name)
@@ -123,7 +134,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	tokenAddr, err := keeper.GetTokenAddress(ctx, req.Symbol, gatewayAddr)
+	tokenAddr, err := keeper.GetTokenAddress(ctx, originChain.NativeAsset, gatewayAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +149,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("no snapshot seqNo for key ID %s registered", keyID)
 	}
 
-	pollKey := vote.NewPollKey(types.ModuleName, req.TxID.Hex()+"_"+req.Symbol)
+	pollKey := vote.NewPollKey(types.ModuleName, req.TxID.Hex()+"_"+originChain.NativeAsset)
 
 	period, ok := keeper.GetRevoteLockingPeriod(ctx)
 	if !ok {
@@ -149,8 +160,13 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, err
 	}
 
+	symbol, ok := keeper.GetTokenSymbol(ctx, originChain.NativeAsset)
+	if !ok {
+		return nil, fmt.Errorf("Could not retrieve symbol for token %s", originChain.NativeAsset)
+	}
+
 	deploy := types.ERC20TokenDeployment{
-		Symbol:       req.Symbol,
+		Asset:        originChain.NativeAsset,
 		TokenAddress: types.Address(tokenAddr),
 	}
 	keeper.SetPendingTokenDeployment(ctx, pollKey, deploy)
@@ -167,7 +183,8 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),
-			sdk.NewAttribute(types.AttributeKeySymbol, req.Symbol),
+			sdk.NewAttribute(types.AttributeKeySymbol, symbol),
+			sdk.NewAttribute(types.AttributeKeyAsset, originChain.NativeAsset),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
 			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
 		),
@@ -264,10 +281,10 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	}
 
 	erc20Deposit := types.ERC20Deposit{
-		TxID:          req.TxID,
-		Amount:        req.Amount,
-		Symbol:        burnerInfo.Symbol,
-		BurnerAddress: req.BurnerAddress,
+		TxID:             req.TxID,
+		Amount:           req.Amount,
+		DestinationChain: burnerInfo.DestinationChain,
+		BurnerAddress:    req.BurnerAddress,
 	}
 	keeper.SetPendingDeposit(ctx, pollKey, &erc20Deposit)
 
@@ -429,6 +446,12 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	keeper := s.ForChain(ctx, chain.Name)
 
 	pendingDeposit, pollFound := keeper.GetPendingDeposit(ctx, req.PollKey)
+
+	destChain, ok := s.nexus.GetChain(ctx, pendingDeposit.DestinationChain)
+	if !ok {
+		return nil, fmt.Errorf("destination chain %s is not a registered chain", pendingDeposit.DestinationChain)
+	}
+
 	confirmedDeposit, state, depositFound := keeper.GetDeposit(ctx, common.Hash(req.TxID), common.Address(req.BurnAddress))
 
 	switch {
@@ -497,7 +520,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
 	depositAddr := nexus.CrossChainAddress{Address: pendingDeposit.BurnerAddress.Hex(), Chain: chain}
-	amount := sdk.NewInt64Coin(pendingDeposit.Symbol, pendingDeposit.Amount.BigInt().Int64())
+	amount := sdk.NewInt64Coin(destChain.NativeAsset, pendingDeposit.Amount.BigInt().Int64())
 	if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
 		return nil, err
 	}
@@ -518,20 +541,20 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 
 	// is there an ongoing poll?
 	token, pollFound := keeper.GetPendingTokenDeployment(ctx, req.PollKey)
-	registered := s.nexus.IsAssetRegistered(ctx, chain.Name, req.Symbol)
+	registered := s.nexus.IsAssetRegistered(ctx, chain.Name, req.Asset)
 	switch {
 	// a malicious user could try to delete an ongoing poll by providing an already confirmed token,
 	// so we need to check that it matches the poll before deleting
-	case registered && pollFound && token.Symbol == req.Symbol:
+	case registered && pollFound && token.Asset == req.Asset:
 		keeper.DeletePendingToken(ctx, req.PollKey)
 		fallthrough
 	// If the voting threshold has been met and additional votes are received they should not return an error
 	case registered:
-		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("token %s already confirmed", req.Symbol)}, nil
+		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("token %s already confirmed", req.Asset)}, nil
 	case !pollFound:
 		return nil, fmt.Errorf("no token found for poll %s", req.PollKey.String())
-	case token.Symbol != req.Symbol:
-		return nil, fmt.Errorf("token %s does not match poll %s", req.Symbol, req.PollKey.String())
+	case token.Asset != req.Asset:
+		return nil, fmt.Errorf("token %s does not match poll %s", req.Asset, req.PollKey.String())
 	default:
 		// assert: the token is known and has not been confirmed before
 	}
@@ -547,7 +570,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 	}
 
 	if poll.Is(vote.Pending) {
-		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("not enough votes to confirm token %s yet", req.Symbol)}, nil
+		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("not enough votes to confirm token %s yet", req.Asset)}, nil
 	}
 
 	if poll.Is(vote.Failed) {
@@ -573,16 +596,16 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
 		return &types.VoteConfirmTokenResponse{
-			Log: fmt.Sprintf("token %s was discarded", req.Symbol),
+			Log: fmt.Sprintf("token %s was discarded", req.Asset),
 		}, nil
 	}
 	ctx.EventManager().EmitEvent(
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
-	s.nexus.RegisterAsset(ctx, chain.Name, token.Symbol)
+	s.nexus.RegisterAsset(ctx, chain.Name, token.Asset)
 
 	return &types.VoteConfirmTokenResponse{
-		Log: fmt.Sprintf("token %s deployment confirmed", token.Symbol)}, nil
+		Log: fmt.Sprintf("token %s deployment confirmed", token.Asset)}, nil
 }
 
 // VoteConfirmTransferOwnership handles votes for transfer ownership confirmations
@@ -679,6 +702,11 @@ func (s msgServer) SignDeployToken(c context.Context, req *types.SignDeployToken
 		return nil, fmt.Errorf("Could not find chain ID for '%s'", req.Chain)
 	}
 
+	originChain, found := s.nexus.GetChain(ctx, req.OriginChain)
+	if !found {
+		return nil, fmt.Errorf("%s is not a registered chain", req.OriginChain)
+	}
+
 	commandID := getCommandID([]byte(req.TokenName), chainID)
 
 	data, err := types.CreateDeployTokenCommandData(chainID, commandID, req.TokenName, req.Symbol, req.Decimals, req.Capacity)
@@ -714,7 +742,7 @@ func (s msgServer) SignDeployToken(c context.Context, req *types.SignDeployToken
 		return nil, err
 	}
 
-	keeper.SetTokenInfo(ctx, req)
+	keeper.SetTokenInfo(ctx, originChain.NativeAsset, req)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -899,10 +927,17 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 		return nil, fmt.Errorf("Could not find chain ID for '%s'", req.Chain)
 	}
 
+	keeper := s.ForChain(ctx, chain.Name)
+
 	getRecipientAndAsset := func(transfer nexus.CrossChainTransfer) string {
 		return fmt.Sprintf("%s-%s", transfer.Recipient.Address, transfer.Asset.Denom)
 	}
-	data, err := types.CreateMintCommandData(chainID, nexus.MergeTransfersBy(pendingTransfers, getRecipientAndAsset))
+
+	retrieveSymbol := func(denom string) (string, bool) {
+		return keeper.GetTokenSymbol(ctx, denom)
+	}
+
+	data, err := types.CreateMintCommandData(chainID, nexus.MergeTransfersBy(pendingTransfers, getRecipientAndAsset), retrieveSymbol)
 	if err != nil {
 		return nil, err
 	}
@@ -915,7 +950,6 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 	}
 
 	commandIDHex := hex.EncodeToString(commandID[:])
-	keeper := s.ForChain(ctx, chain.Name)
 
 	s.Logger(ctx).Info(fmt.Sprintf("storing data for mint command %s", commandIDHex))
 	keeper.SetCommandData(ctx, commandID, data)

@@ -2064,6 +2064,9 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetTokenByteCodesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool) {
 // 				panic("mock out the GetTokenByteCodes method")
 // 			},
+// 			GetTokenSymbolFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, assetName string) (string, bool) {
+// 				panic("mock out the GetTokenSymbol method")
+// 			},
 // 			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
@@ -2088,7 +2091,7 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			SetPendingTransferOwnershipFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey, transferOwnership *types.TransferOwnership)  {
 // 				panic("mock out the SetPendingTransferOwnership method")
 // 			},
-// 			SetTokenInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, msg *types.SignDeployTokenRequest)  {
+// 			SetTokenInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, assetName string, msg *types.SignDeployTokenRequest)  {
 // 				panic("mock out the SetTokenInfo method")
 // 			},
 // 			SetUnsignedTxFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, tx *evmTypes.Transaction)  {
@@ -2182,6 +2185,9 @@ type ChainKeeperMock struct {
 	// GetTokenByteCodesFunc mocks the GetTokenByteCodes method.
 	GetTokenByteCodesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool)
 
+	// GetTokenSymbolFunc mocks the GetTokenSymbol method.
+	GetTokenSymbolFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, assetName string) (string, bool)
+
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger
 
@@ -2207,7 +2213,7 @@ type ChainKeeperMock struct {
 	SetPendingTransferOwnershipFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey, transferOwnership *types.TransferOwnership)
 
 	// SetTokenInfoFunc mocks the SetTokenInfo method.
-	SetTokenInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, msg *types.SignDeployTokenRequest)
+	SetTokenInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, assetName string, msg *types.SignDeployTokenRequest)
 
 	// SetUnsignedTxFunc mocks the SetUnsignedTx method.
 	SetUnsignedTxFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, tx *evmTypes.Transaction)
@@ -2395,6 +2401,13 @@ type ChainKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
+		// GetTokenSymbol holds details about calls to the GetTokenSymbol method.
+		GetTokenSymbol []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// AssetName is the assetName argument value.
+			AssetName string
+		}
 		// Logger holds details about calls to the Logger method.
 		Logger []struct {
 			// Ctx is the ctx argument value.
@@ -2465,6 +2478,8 @@ type ChainKeeperMock struct {
 		SetTokenInfo []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// AssetName is the assetName argument value.
+			AssetName string
 			// Msg is the msg argument value.
 			Msg *types.SignDeployTokenRequest
 		}
@@ -2505,6 +2520,7 @@ type ChainKeeperMock struct {
 	lockGetRevoteLockingPeriod         sync.RWMutex
 	lockGetTokenAddress                sync.RWMutex
 	lockGetTokenByteCodes              sync.RWMutex
+	lockGetTokenSymbol                 sync.RWMutex
 	lockLogger                         sync.RWMutex
 	lockSetBurnerInfo                  sync.RWMutex
 	lockSetCommandData                 sync.RWMutex
@@ -3445,6 +3461,41 @@ func (mock *ChainKeeperMock) GetTokenByteCodesCalls() []struct {
 	return calls
 }
 
+// GetTokenSymbol calls GetTokenSymbolFunc.
+func (mock *ChainKeeperMock) GetTokenSymbol(ctx github_com_cosmos_cosmos_sdk_types.Context, assetName string) (string, bool) {
+	if mock.GetTokenSymbolFunc == nil {
+		panic("ChainKeeperMock.GetTokenSymbolFunc: method is nil but ChainKeeper.GetTokenSymbol was just called")
+	}
+	callInfo := struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		AssetName string
+	}{
+		Ctx:       ctx,
+		AssetName: assetName,
+	}
+	mock.lockGetTokenSymbol.Lock()
+	mock.calls.GetTokenSymbol = append(mock.calls.GetTokenSymbol, callInfo)
+	mock.lockGetTokenSymbol.Unlock()
+	return mock.GetTokenSymbolFunc(ctx, assetName)
+}
+
+// GetTokenSymbolCalls gets all the calls that were made to GetTokenSymbol.
+// Check the length with:
+//     len(mockedChainKeeper.GetTokenSymbolCalls())
+func (mock *ChainKeeperMock) GetTokenSymbolCalls() []struct {
+	Ctx       github_com_cosmos_cosmos_sdk_types.Context
+	AssetName string
+} {
+	var calls []struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		AssetName string
+	}
+	mock.lockGetTokenSymbol.RLock()
+	calls = mock.calls.GetTokenSymbol
+	mock.lockGetTokenSymbol.RUnlock()
+	return calls
+}
+
 // Logger calls LoggerFunc.
 func (mock *ChainKeeperMock) Logger(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
 	if mock.LoggerFunc == nil {
@@ -3746,33 +3797,37 @@ func (mock *ChainKeeperMock) SetPendingTransferOwnershipCalls() []struct {
 }
 
 // SetTokenInfo calls SetTokenInfoFunc.
-func (mock *ChainKeeperMock) SetTokenInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, msg *types.SignDeployTokenRequest) {
+func (mock *ChainKeeperMock) SetTokenInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, assetName string, msg *types.SignDeployTokenRequest) {
 	if mock.SetTokenInfoFunc == nil {
 		panic("ChainKeeperMock.SetTokenInfoFunc: method is nil but ChainKeeper.SetTokenInfo was just called")
 	}
 	callInfo := struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-		Msg *types.SignDeployTokenRequest
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		AssetName string
+		Msg       *types.SignDeployTokenRequest
 	}{
-		Ctx: ctx,
-		Msg: msg,
+		Ctx:       ctx,
+		AssetName: assetName,
+		Msg:       msg,
 	}
 	mock.lockSetTokenInfo.Lock()
 	mock.calls.SetTokenInfo = append(mock.calls.SetTokenInfo, callInfo)
 	mock.lockSetTokenInfo.Unlock()
-	mock.SetTokenInfoFunc(ctx, msg)
+	mock.SetTokenInfoFunc(ctx, assetName, msg)
 }
 
 // SetTokenInfoCalls gets all the calls that were made to SetTokenInfo.
 // Check the length with:
 //     len(mockedChainKeeper.SetTokenInfoCalls())
 func (mock *ChainKeeperMock) SetTokenInfoCalls() []struct {
-	Ctx github_com_cosmos_cosmos_sdk_types.Context
-	Msg *types.SignDeployTokenRequest
+	Ctx       github_com_cosmos_cosmos_sdk_types.Context
+	AssetName string
+	Msg       *types.SignDeployTokenRequest
 } {
 	var calls []struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-		Msg *types.SignDeployTokenRequest
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		AssetName string
+		Msg       *types.SignDeployTokenRequest
 	}
 	mock.lockSetTokenInfo.RLock()
 	calls = mock.calls.SetTokenInfo

@@ -103,7 +103,7 @@ func (mgr Mgr) ProcessDepositConfirmation(attributes []sdk.Attribute) (err error
 
 // ProcessTokenConfirmation votes on the correctness of an EVM chain token deployment
 func (mgr Mgr) ProcessTokenConfirmation(attributes []sdk.Attribute) error {
-	chain, txID, gatewayAddr, tokenAddr, symbol, confHeight, pollKey, err := parseTokenConfirmationParams(mgr.cdc, attributes)
+	chain, txID, gatewayAddr, tokenAddr, asset, symbol, confHeight, pollKey, err := parseTokenConfirmationParams(mgr.cdc, attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "EVM token deployment confirmation failed")
 	}
@@ -122,7 +122,7 @@ func (mgr Mgr) ProcessTokenConfirmation(attributes []sdk.Attribute) error {
 		return true
 	})
 
-	msg := evmTypes.NewVoteConfirmTokenRequest(mgr.sender, chain, symbol, pollKey, txID, confirmed)
+	msg := evmTypes.NewVoteConfirmTokenRequest(mgr.sender, chain, asset, pollKey, txID, confirmed)
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
 	return mgr.broadcaster.Broadcast(msg)
 }
@@ -254,12 +254,13 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attri
 	chain string,
 	txID common.Hash,
 	gatewayAddr, tokenAddr common.Address,
+	asset string,
 	symbol string,
 	confHeight uint64,
 	pollKey vote.PollKey,
 	err error,
 ) {
-	var chainFound, txIDFound, gatewayAddrFound, tokenAddrFound, symbolFound, confHeightFound, pollKeyFound bool
+	var chainFound, txIDFound, gatewayAddrFound, tokenAddrFound, assetFound, symbolFound, confHeightFound, pollKeyFound bool
 	for _, attribute := range attributes {
 		switch attribute.Key {
 		case evmTypes.AttributeKeyChain:
@@ -274,13 +275,16 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attri
 		case evmTypes.AttributeKeyTokenAddress:
 			tokenAddr = common.HexToAddress(attribute.Value)
 			tokenAddrFound = true
+		case evmTypes.AttributeKeyAsset:
+			asset = attribute.Value
+			assetFound = true
 		case evmTypes.AttributeKeySymbol:
 			symbol = attribute.Value
 			symbolFound = true
 		case evmTypes.AttributeKeyConfHeight:
 			h, err := strconv.Atoi(attribute.Value)
 			if err != nil {
-				return "", common.Hash{}, common.Address{}, common.Address{}, "", 0, vote.PollKey{},
+				return "", common.Hash{}, common.Address{}, common.Address{}, "", "", 0, vote.PollKey{},
 					sdkerrors.Wrap(err, "parsing confirmation height failed")
 			}
 			confHeight = uint64(h)
@@ -291,11 +295,11 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attri
 		default:
 		}
 	}
-	if !chainFound || !txIDFound || !gatewayAddrFound || !tokenAddrFound || !symbolFound || !confHeightFound || !pollKeyFound {
-		return "", common.Hash{}, common.Address{}, common.Address{}, "", 0, vote.PollKey{},
+	if !chainFound || !txIDFound || !gatewayAddrFound || !tokenAddrFound || !assetFound || !symbolFound || !confHeightFound || !pollKeyFound {
+		return "", common.Hash{}, common.Address{}, common.Address{}, "", "", 0, vote.PollKey{},
 			fmt.Errorf("insufficient event attributes")
 	}
-	return chain, txID, gatewayAddr, tokenAddr, symbol, confHeight, pollKey, nil
+	return chain, txID, gatewayAddr, tokenAddr, asset, symbol, confHeight, pollKey, nil
 }
 
 func parseTransferOwnershipConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (
