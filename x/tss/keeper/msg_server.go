@@ -216,7 +216,6 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	switch keygenResult := result.(type) {
 	case *gogoprototypes.BytesValue:
 
-		// keygenResult.GetValue() cannot be nil, because we already guard agaisnt that case
 		// TODO: check that the number of shares is the same as the number of recovery info
 		btcecPK, err := btcec.ParsePubKey(keygenResult.GetValue(), btcec.S256())
 		if err != nil {
